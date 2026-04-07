@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from '../components/layout/AppShell';
 import Login from '../pages/auth/Login';
 
@@ -22,7 +22,7 @@ import SupplierRegistration from '../pages/onboarding/SupplierRegistration';
 
 const AppRouter: React.FC = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<SupplierRegistration />} />
@@ -40,7 +40,7 @@ const AppRouter: React.FC = () => {
           <Route path="supplier/inventory" element={<MyInventory />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
