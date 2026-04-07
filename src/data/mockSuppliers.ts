@@ -1,0 +1,40 @@
+import { Supplier } from '../types/supplier.types';
+
+export const mockSuppliers: Supplier[] = [
+  {
+    id: 'sup-001',
+    name: 'Acme Industrial Co.',
+    contactName: 'Jane Smith',
+    email: 'jane.smith@acme.com',
+    phone: '+1-555-0101',
+    country: 'US',
+    category: 'Raw Materials',
+    status: 'active',
+    rating: 4.5,
+    onboardedDate: '2023-01-15',
+  },
+  {
+    id: 'sup-002',
+    name: 'GlobalTech Supplies',
+    contactName: 'Carlos Ramirez',
+    email: 'c.ramirez@globaltech.com',
+    phone: '+1-555-0202',
+    country: 'MX',
+    category: 'Electronics',
+    status: 'active',
+    rating: 4.2,
+    onboardedDate: '2023-03-22',
+  },
+  {
+    id: 'sup-003',
+    name: 'NovaParts Ltd.',
+    contactName: 'Lisa Chen',
+    email: 'l.chen@novaparts.com',
+    phone: '+44-20-5551234',
+    country: 'GB',
+    category: 'Components',
+    status: 'pending',
+    rating: 3.8,
+    onboardedDate: '2024-06-01',
+  },
+];
