@@ -18,6 +18,7 @@ const BUYER_ITEMS: NavItem[] = [
   { text: 'Sourcing & RFQ', icon: '🎯', path: '/buyer/sourcing' },
   { text: 'Supplier Directory', icon: '🏢', path: '/buyer/suppliers' },
   { text: 'Inventory Visibility', icon: '📦', path: '/buyer/inventory' },
+  { text: 'Shipments & ASN', icon: '🚢', path: '/buyer/shipments' },
   { text: 'Analytics', icon: '📊', path: '/buyer/analytics' },
 ];
 
@@ -29,7 +30,7 @@ const BUYER_FIXED_ITEMS: NavItem[] = [
 const SUPPLIER_ITEMS: NavItem[] = [
   { text: 'My Dashboard', icon: '⊞', path: '/supplier/dashboard' },
   { text: 'My Orders', icon: '📋', path: '/supplier/orders' },
-  { text: 'Ship Notices', icon: '🚚', path: '/supplier/ship-notices' },
+  { text: 'My Shipments & ASN', icon: '🚚', path: '/supplier/asn' },
   { text: 'Invoices', icon: '🧾', path: '/supplier/invoices' },
   { text: 'My Inventory', icon: '📦', path: '/supplier/inventory' },
   { text: 'My Documents', icon: '📎', path: '/supplier/documents' },
