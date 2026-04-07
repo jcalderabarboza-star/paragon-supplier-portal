@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import TopBar from './TopBar';
 import Sidebar from './Sidebar';
-import { PARAGON_TEAL, BACKGROUND } from '../../theme/fioriTheme';
+import { BACKGROUND } from '../../theme/fioriTheme';
 
 const AppShell: React.FC = () => {
   const [collapsed, setCollapsed] = useState(window.innerWidth < 768);
@@ -14,9 +14,9 @@ const AppShell: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', borderTop: `3px solid ${PARAGON_TEAL}` }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <TopBar />
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: BACKGROUND }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <Sidebar collapsed={collapsed} />
         <main style={{ flex: 1, overflow: 'auto', padding: '1.5rem', background: BACKGROUND }}>
           <Outlet />

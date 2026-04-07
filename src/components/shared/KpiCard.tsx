@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, CardHeader, Text, Icon } from '@ui5/webcomponents-react';
 import { KpiItem } from '../../types/kpi.types';
 
 // ─── New typed props ──────────────────────────────────────────────────────────
@@ -29,7 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
   success: '#107E3E',
   warning: '#E9730C',
   error: '#BB0000',
-  neutral: '#354A5F',
+  neutral: '#0097A7',
 };
 
 const TREND_SYMBOL: Record<string, string> = {
@@ -47,61 +46,60 @@ const KpiCard: React.FC<KpiCardProps> = (props) => {
     const isPositive = typeof kpi.trend === 'number' && kpi.trend > 0;
     const trendColor = isPositive ? '#107E3E' : kpi.trend === 0 ? '#6c757d' : '#BB0000';
     return (
-      <Card
-        header={<CardHeader titleText={kpi.label} />}
-        style={{ minWidth: '200px' }}
-      >
-        <div style={{ padding: '1rem', textAlign: 'center' }}>
-          <Text style={{ fontSize: '2rem', fontWeight: 'bold' }}>{kpi.value}</Text>
-          {kpi.unit && <Text style={{ marginLeft: '0.25rem' }}>{kpi.unit}</Text>}
+      <div style={{
+        background: 'white', borderRadius: '8px', minWidth: '200px', flex: 1,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+        borderLeft: '4px solid #0097A7', overflow: 'hidden',
+      }}>
+        <div style={{ padding: '16px 20px' }}>
+          <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+            {kpi.label}
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: 700, color: '#0097A7', lineHeight: 1 }}>
+            {kpi.value}
+            {kpi.unit && <span style={{ fontSize: '14px', fontWeight: 500, color: '#64748B', marginLeft: '4px' }}>{kpi.unit}</span>}
+          </div>
           {typeof kpi.trend === 'number' && kpi.trend !== 0 && (
-            <div style={{ marginTop: '0.5rem' }}>
-              <Text style={{ color: trendColor }}>
-                {kpi.trend > 0 ? '▲' : '▼'} {Math.abs(kpi.trend)}%
-              </Text>
+            <div style={{ marginTop: '8px', fontSize: '12px', color: trendColor, fontWeight: 500 }}>
+              {kpi.trend > 0 ? '▲' : '▼'} {Math.abs(kpi.trend)}%
             </div>
           )}
         </div>
-      </Card>
+      </div>
     );
   }
 
   // New typed branch
-  const { title, value, unit, trend, trendValue, status, icon, subtitle } = props;
-  const statusColor = STATUS_COLORS[status] ?? '#354A5F';
+  const { title, value, unit, trend, trendValue, status, subtitle } = props;
+  const statusColor = STATUS_COLORS[status] ?? '#0097A7';
   const trendSymbol = TREND_SYMBOL[trend];
   const trendColor =
     trend === 'up' ? '#107E3E' : trend === 'down' ? '#BB0000' : '#6c757d';
 
   return (
-    <Card
-      header={
-        <CardHeader
-          titleText={title}
-          avatar={<Icon name={icon} style={{ color: statusColor, fontSize: '1.25rem' }} />}
-        />
-      }
-      style={{ flex: 1, minWidth: '200px' }}
-    >
-      <div style={{ padding: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.25rem' }}>
-          <Text style={{ fontSize: '2rem', fontWeight: 'bold', color: statusColor }}>
-            {value}
-          </Text>
-          {unit && (
-            <Text style={{ fontSize: '1rem', color: '#6c757d' }}>{unit}</Text>
-          )}
+    <div style={{
+      background: 'white', borderRadius: '8px', flex: 1, minWidth: '200px',
+      boxShadow: '0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+      borderLeft: `4px solid ${statusColor}`, overflow: 'hidden',
+    }}>
+      <div style={{ padding: '16px 20px' }}>
+        <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+          {title}
         </div>
-        <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <Text style={{ color: trendColor, fontSize: '0.875rem' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+          <span style={{ fontSize: '28px', fontWeight: 700, color: statusColor, lineHeight: 1 }}>{value}</span>
+          {unit && <span style={{ fontSize: '14px', color: '#64748B', fontWeight: 500 }}>{unit}</span>}
+        </div>
+        <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ color: trendColor, fontSize: '12px', fontWeight: 600 }}>
             {trendSymbol} {trendValue}
-          </Text>
+          </span>
           {subtitle && (
-            <Text style={{ color: '#6c757d', fontSize: '0.75rem' }}>{subtitle}</Text>
+            <span style={{ color: '#94A3B8', fontSize: '11px' }}>{subtitle}</span>
           )}
         </div>
       </div>
-    </Card>
+    </div>
   );
 };
 
