@@ -1,15 +1,116 @@
 import { KpiItem } from '../types/kpi.types';
 
+// ─── Buyer & Supplier KPI cards (hook-compatible, KpiItem[]) ────────────────
+
 export const mockBuyerKpis: KpiItem[] = [
-  { id: 'kpi-001', label: 'Active Suppliers', value: 42, trend: 5, category: 'buyer' },
-  { id: 'kpi-002', label: 'Open POs', value: 18, trend: -2, category: 'buyer' },
-  { id: 'kpi-003', label: 'On-Time Delivery', value: '94.2', unit: '%', trend: 1.3, category: 'buyer' },
-  { id: 'kpi-004', label: 'Total Spend YTD', value: '2.4M', unit: 'USD', trend: 8, category: 'buyer' },
+  { id: 'kpi-001', label: 'Active Suppliers', value: 28, trend: 4, category: 'buyer' },
+  { id: 'kpi-002', label: 'Open POs', value: 9, trend: -1, category: 'buyer' },
+  { id: 'kpi-003', label: 'OTIF', value: '87', unit: '%', trend: 1.2, category: 'buyer' },
+  { id: 'kpi-004', label: 'Total Spend YTD', value: '12.8B', unit: 'IDR', trend: 9, category: 'buyer' },
 ];
 
 export const mockSupplierKpis: KpiItem[] = [
-  { id: 'kpi-005', label: 'Open Orders', value: 7, trend: 0, category: 'supplier' },
-  { id: 'kpi-006', label: 'Pending Invoices', value: 3, trend: -1, category: 'supplier' },
+  { id: 'kpi-005', label: 'Open Orders', value: 4, trend: 0, category: 'supplier' },
+  { id: 'kpi-006', label: 'Pending Invoices', value: 2, trend: -1, category: 'supplier' },
   { id: 'kpi-007', label: 'Fill Rate', value: '97.8', unit: '%', trend: 0.5, category: 'supplier' },
-  { id: 'kpi-008', label: 'Revenue MTD', value: '148K', unit: 'USD', trend: 12, category: 'supplier' },
+  { id: 'kpi-008', label: 'Revenue MTD', value: '2.1B', unit: 'IDR', trend: 12, category: 'supplier' },
 ];
+
+// ─── Portal-wide overall KPIs ────────────────────────────────────────────────
+
+export interface PortalOverallKpis {
+  otif: number;
+  otdr: number;
+  avgPOCycleTimeHours: number;
+  invoiceAccuracy: number;
+  avgLeadTimeAdherence: number;
+}
+
+export const mockPortalOverallKpis: PortalOverallKpis = {
+  otif: 87,
+  otdr: 91,
+  avgPOCycleTimeHours: 18,
+  invoiceAccuracy: 94,
+  avgLeadTimeAdherence: 89,
+};
+
+// ─── KPIs by category ────────────────────────────────────────────────────────
+
+export interface CategoryKpi {
+  category: string;
+  otif: number;
+  otdr: number;
+  supplierCount: number;
+}
+
+export const mockKpisByCategory: CategoryKpi[] = [
+  { category: 'Raw Material', otif: 91, otdr: 94, supplierCount: 4 },
+  { category: 'Fragrance', otif: 89, otdr: 92, supplierCount: 3 },
+  { category: 'Active Ingredient', otif: 85, otdr: 88, supplierCount: 4 },
+  { category: 'Packaging', otif: 80, otdr: 85, supplierCount: 3 },
+];
+
+// ─── 6-month trend data ───────────────────────────────────────────────────────
+
+export interface TrendPoint {
+  month: string;
+  otif: number;
+  otdr: number;
+}
+
+export const mockTrendData: TrendPoint[] = [
+  { month: 'Oct-24', otif: 82, otdr: 86 },
+  { month: 'Nov-24', otif: 83, otdr: 87 },
+  { month: 'Dec-24', otif: 84, otdr: 88 },
+  { month: 'Jan-25', otif: 85, otdr: 89 },
+  { month: 'Feb-25', otif: 86, otdr: 90 },
+  { month: 'Mar-25', otif: 87, otdr: 91 },
+];
+
+// ─── Channel adoption (percentage of POs by channel) ─────────────────────────
+
+export interface ChannelAdoption {
+  whatsapp: number;
+  email: number;
+  web: number;
+  api: number;
+}
+
+export const mockChannelAdoption: ChannelAdoption = {
+  whatsapp: 34,
+  email: 18,
+  web: 41,
+  api: 7,
+};
+
+// ─── Onboarding funnel ────────────────────────────────────────────────────────
+
+export interface OnboardingFunnel {
+  invited: number;
+  registered: number;
+  verified: number;
+  active: number;
+}
+
+export const mockOnboardingFunnel: OnboardingFunnel = {
+  invited: 45,
+  registered: 38,
+  verified: 31,
+  active: 28,
+};
+
+// ─── Alert counts ─────────────────────────────────────────────────────────────
+
+export interface PortalAlerts {
+  expiringCertificates: number;
+  unacknowledgedPOs: number;
+  criticalStock: number;
+  lowStock: number;
+}
+
+export const mockAlerts: PortalAlerts = {
+  expiringCertificates: 2,
+  unacknowledgedPOs: 3,
+  criticalStock: 2,
+  lowStock: 4,
+};
