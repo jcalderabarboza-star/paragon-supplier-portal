@@ -10,6 +10,7 @@ import PurchaseOrders from '../pages/buyer/PurchaseOrders';
 import SupplierDirectory from '../pages/buyer/SupplierDirectory';
 import InventoryVisibility from '../pages/buyer/InventoryVisibility';
 import Analytics from '../pages/buyer/Analytics';
+import Sourcing from '../pages/buyer/Sourcing';
 
 // Supplier pages
 import SupplierDashboard from '../pages/supplier/SupplierDashboard';
@@ -33,6 +34,7 @@ const AppRouter: React.FC = () => {
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
             <Route path="buyer/dashboard" element={<Dashboard />} />
             <Route path="buyer/purchase-orders" element={<PurchaseOrders />} />
+            <Route path="buyer/sourcing" element={<Sourcing />} />
             <Route path="buyer/suppliers" element={<SupplierDirectory />} />
             <Route path="buyer/inventory" element={<InventoryVisibility />} />
             <Route path="buyer/analytics" element={<Analytics />} />

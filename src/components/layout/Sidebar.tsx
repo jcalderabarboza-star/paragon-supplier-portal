@@ -15,6 +15,7 @@ interface NavItem {
 const BUYER_ITEMS: NavItem[] = [
   { text: 'Dashboard', icon: '⊞', path: '/buyer/dashboard' },
   { text: 'Purchase Orders', icon: '📄', path: '/buyer/purchase-orders' },
+  { text: 'Sourcing & RFQ', icon: '🎯', path: '/buyer/sourcing' },
   { text: 'Supplier Directory', icon: '🏢', path: '/buyer/suppliers' },
   { text: 'Inventory Visibility', icon: '📦', path: '/buyer/inventory' },
   { text: 'Analytics', icon: '📊', path: '/buyer/analytics' },
