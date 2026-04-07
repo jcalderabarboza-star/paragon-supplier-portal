@@ -1,84 +1,84 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { SideNavigation, SideNavigationItem, SideNavigationSubItem } from '@ui5/webcomponents-react';
+import { SideNavigation, SideNavigationItem } from '@ui5/webcomponents-react';
+import { usePersona } from '../../context/PersonaContext';
 
-const Sidebar: React.FC = () => {
+interface NavItem {
+  text: string;
+  icon: string;
+  path: string;
+}
+
+const BUYER_ITEMS: NavItem[] = [
+  { text: 'Dashboard', icon: 'home', path: '/buyer/dashboard' },
+  { text: 'Purchase Orders', icon: 'document', path: '/buyer/purchase-orders' },
+  { text: 'Supplier Directory', icon: 'business-partner', path: '/buyer/suppliers' },
+  { text: 'Inventory Visibility', icon: 'inventory', path: '/buyer/inventory' },
+  { text: 'Analytics', icon: 'bar-chart', path: '/buyer/analytics' },
+];
+
+const BUYER_FIXED_ITEMS: NavItem[] = [
+  { text: 'Compliance (2)', icon: 'certificate', path: '/buyer/compliance' },
+  { text: 'Settings', icon: 'action-settings', path: '/buyer/settings' },
+];
+
+const SUPPLIER_ITEMS: NavItem[] = [
+  { text: 'My Dashboard', icon: 'home', path: '/supplier/dashboard' },
+  { text: 'My Orders', icon: 'sales-order', path: '/supplier/orders' },
+  { text: 'Ship Notices', icon: 'shipping-status', path: '/supplier/ship-notices' },
+  { text: 'Invoices', icon: 'invoice', path: '/supplier/invoices' },
+  { text: 'My Inventory', icon: 'inventory', path: '/supplier/inventory' },
+  { text: 'My Documents', icon: 'attachment', path: '/supplier/documents' },
+];
+
+const SUPPLIER_FIXED_ITEMS: NavItem[] = [
+  { text: 'My Performance', icon: 'employee-approvals', path: '/supplier/performance' },
+  { text: 'Support', icon: 'sys-help', path: '/supplier/support' },
+];
+
+interface SidebarProps {
+  collapsed?: boolean;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { persona } = usePersona();
+
+  const mainItems = persona === 'buyer' ? BUYER_ITEMS : SUPPLIER_ITEMS;
+  const fixedItems = persona === 'buyer' ? BUYER_FIXED_ITEMS : SUPPLIER_FIXED_ITEMS;
+
+  const handleSelectionChange = (e: CustomEvent) => {
+    const item = e.detail?.item as HTMLElement | undefined;
+    const path = item?.dataset?.path;
+    if (path) navigate(path);
+  };
 
   return (
     <SideNavigation
-      style={{ width: '15rem', height: '100%' }}
-      onSelectionChange={(e) => {
-        const item = e.detail?.item;
-        const path = item?.dataset?.path;
-        if (path) navigate(path);
-      }}
+      style={{ width: collapsed ? '3.5rem' : '15rem', height: '100%', transition: 'width 0.2s' }}
+      collapsed={collapsed}
+      onSelectionChange={handleSelectionChange}
     >
-      <SideNavigationItem text="Buyer" icon="manager" expanded>
-        <SideNavigationSubItem
-          text="Dashboard"
-          icon="home"
-          data-path="/buyer/dashboard"
-          selected={location.pathname === '/buyer/dashboard'}
+      {mainItems.map((item) => (
+        <SideNavigationItem
+          key={item.path}
+          text={item.text}
+          icon={item.icon}
+          data-path={item.path}
+          selected={location.pathname === item.path}
         />
-        <SideNavigationSubItem
-          text="Purchase Orders"
-          icon="document"
-          data-path="/buyer/purchase-orders"
-          selected={location.pathname === '/buyer/purchase-orders'}
+      ))}
+      {fixedItems.map((item) => (
+        <SideNavigationItem
+          key={item.path}
+          slot="fixedItems"
+          text={item.text}
+          icon={item.icon}
+          data-path={item.path}
+          selected={location.pathname === item.path}
         />
-        <SideNavigationSubItem
-          text="Supplier Directory"
-          icon="business-partner"
-          data-path="/buyer/suppliers"
-          selected={location.pathname === '/buyer/suppliers'}
-        />
-        <SideNavigationSubItem
-          text="Inventory Visibility"
-          icon="inventory"
-          data-path="/buyer/inventory"
-          selected={location.pathname === '/buyer/inventory'}
-        />
-        <SideNavigationSubItem
-          text="Analytics"
-          icon="bar-chart"
-          data-path="/buyer/analytics"
-          selected={location.pathname === '/buyer/analytics'}
-        />
-      </SideNavigationItem>
-      <SideNavigationItem text="Supplier" icon="supplier" expanded>
-        <SideNavigationSubItem
-          text="My Dashboard"
-          icon="home"
-          data-path="/supplier/dashboard"
-          selected={location.pathname === '/supplier/dashboard'}
-        />
-        <SideNavigationSubItem
-          text="My Orders"
-          icon="sales-order"
-          data-path="/supplier/orders"
-          selected={location.pathname === '/supplier/orders'}
-        />
-        <SideNavigationSubItem
-          text="Ship Notices"
-          icon="shipping-status"
-          data-path="/supplier/ship-notices"
-          selected={location.pathname === '/supplier/ship-notices'}
-        />
-        <SideNavigationSubItem
-          text="Invoices"
-          icon="invoice"
-          data-path="/supplier/invoices"
-          selected={location.pathname === '/supplier/invoices'}
-        />
-        <SideNavigationSubItem
-          text="My Inventory"
-          icon="inventory"
-          data-path="/supplier/inventory"
-          selected={location.pathname === '/supplier/inventory'}
-        />
-      </SideNavigationItem>
+      ))}
     </SideNavigation>
   );
 };
