@@ -1,4 +1,13 @@
-import { KpiItem } from '../types/kpi.types';
+import {
+  KpiItem,
+  PortalOverallKpis,
+  KpiByCategory,
+  PortalTrendPoint,
+  ChannelAdoptionMetrics,
+  OnboardingFunnel,
+  PortalAlerts,
+  PortalKpiSummary,
+} from '../types/kpi.types';
 
 // ─── Buyer & Supplier KPI cards (hook-compatible, KpiItem[]) ────────────────
 
@@ -18,14 +27,6 @@ export const mockSupplierKpis: KpiItem[] = [
 
 // ─── Portal-wide overall KPIs ────────────────────────────────────────────────
 
-export interface PortalOverallKpis {
-  otif: number;
-  otdr: number;
-  avgPOCycleTimeHours: number;
-  invoiceAccuracy: number;
-  avgLeadTimeAdherence: number;
-}
-
 export const mockPortalOverallKpis: PortalOverallKpis = {
   otif: 87,
   otdr: 91,
@@ -36,14 +37,7 @@ export const mockPortalOverallKpis: PortalOverallKpis = {
 
 // ─── KPIs by category ────────────────────────────────────────────────────────
 
-export interface CategoryKpi {
-  category: string;
-  otif: number;
-  otdr: number;
-  supplierCount: number;
-}
-
-export const mockKpisByCategory: CategoryKpi[] = [
+export const mockKpisByCategory: KpiByCategory[] = [
   { category: 'Raw Material', otif: 91, otdr: 94, supplierCount: 4 },
   { category: 'Fragrance', otif: 89, otdr: 92, supplierCount: 3 },
   { category: 'Active Ingredient', otif: 85, otdr: 88, supplierCount: 4 },
@@ -52,13 +46,7 @@ export const mockKpisByCategory: CategoryKpi[] = [
 
 // ─── 6-month trend data ───────────────────────────────────────────────────────
 
-export interface TrendPoint {
-  month: string;
-  otif: number;
-  otdr: number;
-}
-
-export const mockTrendData: TrendPoint[] = [
+export const mockTrendData: PortalTrendPoint[] = [
   { month: 'Oct-24', otif: 82, otdr: 86 },
   { month: 'Nov-24', otif: 83, otdr: 87 },
   { month: 'Dec-24', otif: 84, otdr: 88 },
@@ -69,14 +57,7 @@ export const mockTrendData: TrendPoint[] = [
 
 // ─── Channel adoption (percentage of POs by channel) ─────────────────────────
 
-export interface ChannelAdoption {
-  whatsapp: number;
-  email: number;
-  web: number;
-  api: number;
-}
-
-export const mockChannelAdoption: ChannelAdoption = {
+export const mockChannelAdoption: ChannelAdoptionMetrics = {
   whatsapp: 34,
   email: 18,
   web: 41,
@@ -84,13 +65,6 @@ export const mockChannelAdoption: ChannelAdoption = {
 };
 
 // ─── Onboarding funnel ────────────────────────────────────────────────────────
-
-export interface OnboardingFunnel {
-  invited: number;
-  registered: number;
-  verified: number;
-  active: number;
-}
 
 export const mockOnboardingFunnel: OnboardingFunnel = {
   invited: 45,
@@ -101,16 +75,19 @@ export const mockOnboardingFunnel: OnboardingFunnel = {
 
 // ─── Alert counts ─────────────────────────────────────────────────────────────
 
-export interface PortalAlerts {
-  expiringCertificates: number;
-  unacknowledgedPOs: number;
-  criticalStock: number;
-  lowStock: number;
-}
-
 export const mockAlerts: PortalAlerts = {
   expiringCertificates: 2,
   unacknowledgedPOs: 3,
   criticalStock: 2,
   lowStock: 4,
+};
+
+// ─── Composite KPI summary ────────────────────────────────────────────────────
+
+export const mockPortalKpiSummary: PortalKpiSummary = {
+  overall: mockPortalOverallKpis,
+  byCategory: mockKpisByCategory,
+  channelAdoption: mockChannelAdoption,
+  onboardingFunnel: mockOnboardingFunnel,
+  alerts: mockAlerts,
 };

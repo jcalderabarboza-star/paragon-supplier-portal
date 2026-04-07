@@ -1,33 +1,14 @@
-export type StockStatus = 'Critical' | 'Low' | 'Normal' | 'Excess';
+import { InventoryRecord, StockStatus } from '../types/supplier.types';
 
-// daysOfSupply thresholds: Critical <7, Low 7-14, Normal 14-30, Excess >30
+// daysOfSupply thresholds: Critical <7, Low 7–14, Normal 14–30, Excess >30
 function calcStockStatus(days: number): StockStatus {
-  if (days < 7) return 'Critical';
-  if (days < 14) return 'Low';
-  if (days <= 30) return 'Normal';
-  return 'Excess';
+  if (days < 7) return StockStatus.CRITICAL;
+  if (days < 14) return StockStatus.LOW;
+  if (days <= 30) return StockStatus.NORMAL;
+  return StockStatus.EXCESS;
 }
 
-export interface InventoryItem {
-  id: string;
-  supplierId: string;
-  supplierName: string;
-  materialCode: string;
-  materialDescription: string;
-  qtyOnHand: number;
-  qtyAvailable: number;
-  qtyReserved: number;
-  qtyInTransit: number;
-  uom: 'KG' | 'L' | 'PCS' | 'MT';
-  daysOfSupply: number;
-  avgDailyDemand: number;
-  lastUpdated: string;
-  dataSource: 'API Push' | 'Manual' | 'EDI 846';
-  stockStatus: StockStatus;
-  location: string;
-}
-
-const items: Omit<InventoryItem, 'stockStatus'>[] = [
+const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-001',
     supplierId: 'sup-001',
@@ -285,7 +266,7 @@ const items: Omit<InventoryItem, 'stockStatus'>[] = [
   },
 ];
 
-export const mockInventory: InventoryItem[] = items.map((item) => ({
+export const mockInventory: InventoryRecord[] = items.map((item) => ({
   ...item,
   stockStatus: calcStockStatus(item.daysOfSupply),
 }));
