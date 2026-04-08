@@ -36,8 +36,7 @@ const BUYER_SECTIONS: NavSection[] = [
   {
     header: 'ACQUIRE',
     items: [
-      { text: 'Supplier Discovery', icon: '🔍', path: '/buyer/discovery',
-        toastMsg: 'Supplier Discovery — Coming Soon in Phase 2' },
+      { text: 'Supplier Discovery', icon: '🔍', path: '/buyer/discovery' },
       { text: 'Marketplace',        icon: '🏪', path: '/marketplace' },
       { text: 'Supplier Directory', icon: '🤝', path: '/buyer/suppliers' },
       { text: 'Sourcing & RFQ',     icon: '📋', path: '/buyer/sourcing' },
@@ -49,6 +48,7 @@ const BUYER_SECTIONS: NavSection[] = [
       { text: 'Purchase Orders',      icon: '📄', path: '/buyer/purchase-orders' },
       { text: 'Inventory Visibility', icon: '📦', path: '/buyer/inventory' },
       { text: 'Shipments & ASN',      icon: '🚢', path: '/buyer/shipments' },
+      { text: 'Goods Receipt & QC',   icon: '📥', path: '/buyer/goods-receipt' },
     ],
   },
   {

@@ -15,6 +15,8 @@ import ShipmentTracking from '../pages/buyer/ShipmentTracking';
 import SupplierScorecard from '../pages/buyer/SupplierScorecard';
 import SupplyRisk from '../pages/buyer/SupplyRisk';
 import SupplierProfile from '../pages/buyer/SupplierProfile';
+import GoodsReceipt from '../pages/buyer/GoodsReceipt';
+import SupplierDiscovery from '../pages/buyer/SupplierDiscovery';
 
 // Marketplace pages
 import MarketplaceDiscovery from '../pages/marketplace/MarketplaceDiscovery';
@@ -50,6 +52,8 @@ const AppRouter: React.FC = () => {
             <Route path="buyer/suppliers/:id" element={<SupplierProfile />} />
             <Route path="buyer/inventory" element={<InventoryVisibility />} />
             <Route path="buyer/shipments" element={<ShipmentTracking />} />
+            <Route path="buyer/goods-receipt" element={<GoodsReceipt />} />
+            <Route path="buyer/discovery" element={<SupplierDiscovery />} />
             <Route path="buyer/analytics" element={<Analytics />} />
             <Route path="buyer/scorecard" element={<SupplierScorecard />} />
             <Route path="buyer/risk" element={<SupplyRisk />} />
