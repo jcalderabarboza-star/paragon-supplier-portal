@@ -124,12 +124,13 @@ const SectionHeader: React.FC<{ label: string; collapsed: boolean }> = ({ label,
   if (collapsed) return null;
   return (
     <div style={{
-      fontSize: '10px',
+      fontSize: 10,
       fontWeight: 600,
       color: TEXT_MID,
       letterSpacing: '2px',
-      padding: '16px 16px 4px',
+      padding: '14px 16px 4px 16px',
       textTransform: 'uppercase',
+      display: 'block',
       userSelect: 'none',
     }}>
       {label}
@@ -157,19 +158,19 @@ const NavRow: React.FC<{
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: collapsed ? 0 : '10px',
-        padding: collapsed ? '10px 0' : '8px 16px',
+        gap: collapsed ? 0 : 8,
+        padding: collapsed ? '10px 0' : active ? '7px 14px 7px 19px' : '7px 14px',
+        margin: collapsed ? undefined : active ? '1px 0' : '1px 8px',
         justifyContent: collapsed ? 'center' : 'flex-start',
         background: bg,
         color,
         cursor: 'pointer',
-        fontSize: '13px',
+        fontSize: 13,
         fontWeight: active ? 600 : 400,
         transition: 'all 0.15s ease',
         userSelect: 'none',
-        borderLeft: active ? `3px solid ${TEAL}` : '3px solid transparent',
-        marginLeft: '-3px',
-        borderRadius: active ? '0 6px 6px 0' : '0',
+        borderLeft: active ? `3px solid ${TEAL}` : 'none',
+        borderRadius: active ? '0 6px 6px 0' : collapsed ? 0 : 6,
       }}
     >
       <span style={{
@@ -244,7 +245,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
     <div style={{
       width: collapsed ? '56px' : '220px',
       minWidth: collapsed ? '56px' : '220px',
-      height: '100%',
+      height: '100vh',
       background: NAVY,
       display: 'flex',
       flexDirection: 'column',
@@ -279,27 +280,28 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
       {/* OPS PROJECT header */}
       {!collapsed && (
         <div style={{
+          height: 36,
           background: 'rgba(0, 151, 167, 0.08)',
           borderBottom: `1px solid ${BORDER}`,
-          padding: '10px 16px 8px',
-          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}>
-          <div style={{
-            fontSize: '8px',
+          <span style={{
+            fontSize: 8,
             fontWeight: 600,
-            color: TEAL,
-            letterSpacing: '2px',
             textTransform: 'uppercase',
-            lineHeight: 1,
+            letterSpacing: '2px',
+            color: TEAL,
           }}>
             OPS PROJECT #11
-          </div>
+          </span>
         </div>
       )}
 
       {/* Persona toggle */}
       {!collapsed && (
-        <div style={{ padding: '10px 12px 8px', borderBottom: `1px solid ${BORDER}` }}>
+        <div style={{ padding: '10px 12px', borderBottom: `1px solid ${BORDER}` }}>
           <div style={{ display: 'flex', gap: '4px' }}>
             {(['buyer', 'supplier'] as const).map(p => (
               <button
@@ -350,8 +352,8 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
       {/* Fixed bottom items */}
       <div style={{
         borderTop: `1px solid ${BORDER}`,
-        paddingTop: '4px',
-        paddingBottom: '8px',
+        padding: '8px 0',
+        marginTop: 'auto',
       }}>
         {fixedItems.map(item => (
           <NavRow
