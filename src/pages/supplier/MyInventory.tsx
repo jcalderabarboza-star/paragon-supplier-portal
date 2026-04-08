@@ -78,8 +78,6 @@ const MyInventory: React.FC = () => {
     setTimeout(() => setToast(null), 3500);
   };
 
-  console.log('MyInventory v2', mockInventory.length);
-
   // Filter to current supplier's materials (Phase 2: from JWT)
   const myInventory = mockInventory.filter(r => r.supplierId === DEMO_SUPPLIER_ID);
   // For richer demo, show all inventory with supplier filter dropdown
