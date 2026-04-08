@@ -31,6 +31,7 @@ const BUYER_SECTIONS: NavSection[] = [
     items: [
       { text: 'Supplier Discovery', icon: '🔍', path: '/buyer/discovery',
         toastMsg: 'Supplier Discovery — Coming Soon in Phase 2' },
+      { text: 'Marketplace',        icon: '🏪', path: '/marketplace' },
       { text: 'Supplier Directory', icon: '🤝', path: '/buyer/suppliers' },
       { text: 'Sourcing & RFQ',     icon: '📋', path: '/buyer/sourcing'  },
     ],
@@ -100,6 +101,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
       { text: 'My Inventory',   icon: '📦', path: '/supplier/inventory'   },
       { text: 'My Performance', icon: '📊', path: '/supplier/performance',
         toastMsg: 'My Performance — Coming Soon in Phase 2' },
+      { text: 'My Storefront',  icon: '🏪', path: '/supplier/storefront' },
     ],
   },
 ];
