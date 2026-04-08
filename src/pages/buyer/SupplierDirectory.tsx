@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Title, Text, Button } from '@ui5/webcomponents-react';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { Supplier, SupplierStatus, SupplierTier, ScorecardGrade } from '../../types/supplier.types';
@@ -145,6 +146,7 @@ const InviteModal: React.FC<{ onClose: () => void; onToast: (m: string) => void 
 // ─── Supplier Card ────────────────────────────────────────────────────────────
 
 const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({ s, onToast }) => {
+  const navigate = useNavigate();
   const catColor = CATEGORY_COLORS[s.category] ?? '#6c757d';
   const gradeColor = GRADE_COLORS[s.scorecardGrade] ?? '#6c757d';
   const statusColor = STATUS_COLORS[s.status] ?? '#6c757d';
@@ -225,7 +227,7 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
       {/* Actions */}
       <div style={{ padding: '0.625rem 1rem', borderTop: '1px solid #f0f0f0', display: 'flex', gap: '0.5rem', background: '#fafafa' }}>
         <Button design="Transparent" style={{ flex: 1, fontSize: '0.78rem' }}
-          onClick={() => onToast('Supplier detail view coming in Phase 2')}>
+          onClick={() => navigate(`/buyer/suppliers/${s.id}`)}>
           View Details
         </Button>
         <Button design="Default" style={{ flex: 1, fontSize: '0.78rem' }}

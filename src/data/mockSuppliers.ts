@@ -6,11 +6,36 @@ import {
   ScorecardGrade,
 } from '../types/supplier.types';
 
-export const mockSuppliers: Supplier[] = [
+// Extended with adaptive intelligence profile fields
+export interface SupplierExtended extends Supplier {
+  legalName?: string;
+  taxId?: string;           // NPWP / SIRET / EIN etc.
+  businessRegNo?: string;   // NIB / SIRET etc.
+  website?: string;
+  founded?: number;
+  employees?: string;
+  annualRevenue?: string;
+  shipFromLocations?: string[];
+  paymentTerms?: string;
+  incoterms?: string;
+  intelligenceNote?: string;
+}
+
+export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-001',
     sapBpNumber: 'BP-10001234',
     name: 'PT Ecogreen Oleochemicals',
+    legalName: 'PT Ecogreen Oleochemicals Tbk.',
+    taxId: '02.345.678.9-217.000',
+    businessRegNo: '9120100987654',
+    website: 'www.ecogreen-oleo.co.id',
+    founded: 1995,
+    employees: '1,000–2,500',
+    annualRevenue: 'Rp 800+ Miliar',
+    shipFromLocations: ['Batam, Riau Islands'],
+    paymentTerms: 'Net 45',
+    incoterms: 'CIF Jakarta',
     category: 'Raw Material',
     country: 'ID',
     city: 'Batam',
@@ -167,6 +192,17 @@ export const mockSuppliers: Supplier[] = [
     id: 'sup-007',
     sapBpNumber: 'BP-10001240',
     name: 'PT Berlina Packaging Indonesia',
+    legalName: 'PT Berlina Tbk.',
+    taxId: '01.234.567.8-041.000',
+    businessRegNo: '9120300123456',
+    website: 'www.berlina.co.id',
+    founded: 2005,
+    employees: '250–500',
+    annualRevenue: 'Rp 85–120 Miliar',
+    shipFromLocations: ['Tangerang, Banten', 'Cikarang, Jawa Barat'],
+    paymentTerms: 'Net 30',
+    incoterms: 'FCA Tangerang',
+    intelligenceNote: 'Primary packaging supplier for Wardah and Emina lines. Capacity expansion planned Q3 2026.',
     category: 'Packaging',
     country: 'ID',
     city: 'Tangerang',
