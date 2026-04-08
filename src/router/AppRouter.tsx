@@ -32,6 +32,7 @@ import CreateASN from '../pages/supplier/CreateASN';
 import Invoices from '../pages/supplier/Invoices';
 import MyInventory from '../pages/supplier/MyInventory';
 import MyDocuments from '../pages/supplier/MyDocuments';
+import MyPerformance from '../pages/supplier/MyPerformance';
 import SupplierRFQs from '../pages/supplier/SupplierRFQs';
 import MyStorefront from '../pages/supplier/MyStorefront';
 import WhatsAppSimulator from '../pages/supplier/WhatsAppSimulator';
@@ -48,32 +49,40 @@ const AppRouter: React.FC = () => {
           <Route path="/register" element={<SupplierRegistration />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
-            <Route path="buyer/dashboard" element={<Dashboard />} />
-            <Route path="buyer/purchase-orders" element={<PurchaseOrders />} />
-            <Route path="buyer/sourcing" element={<Sourcing />} />
-            <Route path="buyer/suppliers" element={<SupplierDirectory />} />
-            <Route path="buyer/suppliers/:id" element={<SupplierProfile />} />
-            <Route path="buyer/inventory" element={<InventoryVisibility />} />
-            <Route path="buyer/shipments" element={<ShipmentTracking />} />
-            <Route path="buyer/goods-receipt" element={<GoodsReceipt />} />
-            <Route path="buyer/discovery" element={<SupplierDiscovery />} />
-            <Route path="buyer/contracts" element={<ContractManagement />} />
-            <Route path="buyer/whatsapp" element={<WhatsAppHub />} />
-            <Route path="buyer/analytics" element={<Analytics />} />
-            <Route path="buyer/scorecard" element={<SupplierScorecard />} />
-            <Route path="buyer/risk" element={<SupplyRisk />} />
-            <Route path="marketplace" element={<MarketplaceDiscovery />} />
+
+            {/* ── Buyer routes ── */}
+            <Route path="buyer/dashboard"        element={<Dashboard />} />
+            <Route path="buyer/purchase-orders"  element={<PurchaseOrders />} />
+            <Route path="buyer/sourcing"         element={<Sourcing />} />
+            <Route path="buyer/suppliers"        element={<SupplierDirectory />} />
+            <Route path="buyer/suppliers/:id"    element={<SupplierProfile />} />
+            <Route path="buyer/inventory"        element={<InventoryVisibility />} />
+            <Route path="buyer/shipments"        element={<ShipmentTracking />} />
+            <Route path="buyer/goods-receipt"    element={<GoodsReceipt />} />
+            <Route path="buyer/discovery"        element={<SupplierDiscovery />} />
+            <Route path="buyer/contracts"        element={<ContractManagement />} />
+            <Route path="buyer/whatsapp"         element={<WhatsAppHub />} />
+            <Route path="buyer/analytics"        element={<Analytics />} />
+            <Route path="buyer/scorecard"        element={<SupplierScorecard />} />
+            <Route path="buyer/risk"             element={<SupplyRisk />} />
+
+            {/* ── Marketplace routes ── */}
+            <Route path="marketplace"              element={<MarketplaceDiscovery />} />
             <Route path="marketplace/supplier/:id" element={<SupplierStorefront />} />
-            <Route path="supplier/dashboard" element={<SupplierDashboard />} />
-            <Route path="supplier/rfqs" element={<SupplierRFQs />} />
-            <Route path="supplier/orders" element={<MyOrders />} />
+
+            {/* ── Supplier routes ── */}
+            <Route path="supplier/dashboard"    element={<SupplierDashboard />} />
+            <Route path="supplier/rfqs"         element={<SupplierRFQs />} />
+            <Route path="supplier/orders"       element={<MyOrders />} />
             <Route path="supplier/ship-notices" element={<ShipNotices />} />
-            <Route path="supplier/asn" element={<CreateASN />} />
-            <Route path="supplier/invoices" element={<Invoices />} />
-            <Route path="supplier/inventory" element={<MyInventory />} />
-            <Route path="supplier/documents" element={<MyDocuments />} />
-            <Route path="supplier/storefront" element={<MyStorefront />} />
-            <Route path="supplier/whatsapp" element={<WhatsAppSimulator />} />
+            <Route path="supplier/asn"          element={<CreateASN />} />
+            <Route path="supplier/invoices"     element={<Invoices />} />
+            <Route path="supplier/inventory"    element={<MyInventory />} />
+            <Route path="supplier/documents"    element={<MyDocuments />} />
+            <Route path="supplier/performance"  element={<MyPerformance />} />
+            <Route path="supplier/storefront"   element={<MyStorefront />} />
+            <Route path="supplier/whatsapp"     element={<WhatsAppSimulator />} />
+
             <Route path="*" element={<Navigate to="/buyer/dashboard" replace />} />
           </Route>
         </Routes>
