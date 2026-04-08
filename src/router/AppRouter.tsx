@@ -12,6 +12,7 @@ import InventoryVisibility from '../pages/buyer/InventoryVisibility';
 import Analytics from '../pages/buyer/Analytics';
 import Sourcing from '../pages/buyer/Sourcing';
 import ShipmentTracking from '../pages/buyer/ShipmentTracking';
+import SupplierScorecard from '../pages/buyer/SupplierScorecard';
 
 // Supplier pages
 import SupplierDashboard from '../pages/supplier/SupplierDashboard';
@@ -41,6 +42,7 @@ const AppRouter: React.FC = () => {
             <Route path="buyer/inventory" element={<InventoryVisibility />} />
             <Route path="buyer/shipments" element={<ShipmentTracking />} />
             <Route path="buyer/analytics" element={<Analytics />} />
+            <Route path="buyer/scorecard" element={<SupplierScorecard />} />
             <Route path="supplier/dashboard" element={<SupplierDashboard />} />
             <Route path="supplier/orders" element={<MyOrders />} />
             <Route path="supplier/ship-notices" element={<ShipNotices />} />
