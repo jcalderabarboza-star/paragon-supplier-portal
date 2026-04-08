@@ -40,6 +40,7 @@ const BUYER_SECTIONS: NavSection[] = [
       { text: 'Marketplace',        icon: '🏪', path: '/marketplace' },
       { text: 'Supplier Directory', icon: '🤝', path: '/buyer/suppliers' },
       { text: 'Sourcing & RFQ',     icon: '📋', path: '/buyer/sourcing' },
+      { text: 'Contracts',          icon: '📝', path: '/buyer/contracts' },
     ],
   },
   {
