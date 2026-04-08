@@ -6,6 +6,7 @@ import Login from '../pages/auth/Login';
 
 // Buyer pages
 import Dashboard from '../pages/buyer/Dashboard';
+import InvoicePayment from '../pages/buyer/InvoicePayment';
 import PurchaseOrders from '../pages/buyer/PurchaseOrders';
 import SupplierDirectory from '../pages/buyer/SupplierDirectory';
 import InventoryVisibility from '../pages/buyer/InventoryVisibility';
@@ -63,6 +64,7 @@ const AppRouter: React.FC = () => {
             <Route path="buyer/contracts"        element={<ContractManagement />} />
             <Route path="buyer/whatsapp"         element={<WhatsAppHub />} />
             <Route path="buyer/analytics"        element={<Analytics />} />
+            <Route path="buyer/invoices"         element={<InvoicePayment />} />
             <Route path="buyer/scorecard"        element={<SupplierScorecard />} />
             <Route path="buyer/risk"             element={<SupplyRisk />} />
 

@@ -2,22 +2,22 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePersona } from '../../context/PersonaContext';
 
-// ─── Design tokens (inline — matches Odyssey brand system) ──────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
 const NAVY      = '#0D1B2A';
 const BORDER    = '#1E3A5F';
 const TEAL      = '#0097A7';
 const TEAL_WASH = 'rgba(0, 151, 167, 0.15)';
 const HOVER_BG  = 'rgba(255, 255, 255, 0.05)';
-const TEXT_DIM  = '#94A3B8';   // default nav item text
-const TEXT_MID  = '#64748B';   // section headers, inactive toggle
-const TEXT_HOVER = '#CBD5E1';  // hovered nav item
+const TEXT_DIM  = '#94A3B8';
+const TEXT_MID  = '#64748B';
+const TEXT_HOVER = '#CBD5E1';
 
 interface NavItem {
   text: string;
   icon: string;
   path: string;
   badge?: string;
-  badgeColor?: string;  // defaults to TEAL; use '#BB0000' for error badges
+  badgeColor?: string;
   toastMsg?: string;
 }
 
@@ -55,8 +55,7 @@ const BUYER_SECTIONS: NavSection[] = [
   {
     header: 'SETTLE',
     items: [
-      { text: 'Invoices & Payment', icon: '🧾', path: '/buyer/invoices',
-        toastMsg: 'Invoices & Payment — Coming Soon in Phase 2' },
+      { text: 'Invoices & Payment', icon: '🧾', path: '/buyer/invoices' },
     ],
   },
   {
@@ -73,9 +72,9 @@ const BUYER_SECTIONS: NavSection[] = [
 const BUYER_FIXED: NavItem[] = [
   { text: 'Compliance (2)', icon: '✅', path: '/buyer/compliance',
     badge: '2', badgeColor: '#BB0000',
-    toastMsg: 'Compliance module — Coming Soon in Phase 2' },
+    toastMsg: 'Compliance module — Phase 2' },
   { text: 'Settings', icon: '⚙️', path: '/buyer/settings',
-    toastMsg: 'Settings — Coming Soon in Phase 2' },
+    toastMsg: 'Settings — Phase 2' },
 ];
 
 // ─── Supplier nav ─────────────────────────────────────────────────────────────
@@ -110,8 +109,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
     items: [
       { text: 'My Documents',   icon: '📄', path: '/supplier/documents' },
       { text: 'My Inventory',   icon: '📦', path: '/supplier/inventory' },
-      { text: 'My Performance', icon: '📊', path: '/supplier/performance',
-        toastMsg: 'My Performance — Coming Soon in Phase 2' },
+      { text: 'My Performance', icon: '📊', path: '/supplier/performance' },
       { text: 'My Storefront',  icon: '🏪', path: '/supplier/storefront' },
     ],
   },
@@ -119,7 +117,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
 
 const SUPPLIER_FIXED: NavItem[] = [
   { text: 'Support', icon: '💬', path: '/supplier/support',
-    toastMsg: 'Support chat coming in Phase 2' },
+    toastMsg: 'Support chat — Phase 2' },
 ];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -133,7 +131,6 @@ const SectionHeader: React.FC<{ label: string; collapsed: boolean }> = ({ label,
       letterSpacing: '2px',
       padding: '14px 16px 4px 16px',
       textTransform: 'uppercase',
-      display: 'block',
       userSelect: 'none',
     }}>
       {label}
@@ -176,35 +173,21 @@ const NavRow: React.FC<{
         borderRadius: active ? '0 6px 6px 0' : collapsed ? 0 : 6,
       }}
     >
-      <span style={{
-        fontSize: '15px',
-        flexShrink: 0,
-        width: collapsed ? 'auto' : '18px',
-        textAlign: 'center',
-      }}>
+      <span style={{ fontSize: '15px', flexShrink: 0, width: collapsed ? 'auto' : '18px', textAlign: 'center' }}>
         {item.icon}
       </span>
       {!collapsed && (
-        <span style={{
-          flex: 1,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}>
+        <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {item.text}
         </span>
       )}
       {!collapsed && item.badge && (
         <span style={{
           background: item.badgeColor ?? TEAL,
-          color: 'white',
-          borderRadius: '9999px',
-          fontSize: '10px',
-          fontWeight: 700,
-          padding: '1px 6px',
-          flexShrink: 0,
-          minWidth: '18px',
-          textAlign: 'center',
+          color: 'white', borderRadius: '9999px',
+          fontSize: '10px', fontWeight: 700,
+          padding: '1px 6px', flexShrink: 0,
+          minWidth: '18px', textAlign: 'center',
         }}>
           {item.badge}
         </span>
@@ -213,19 +196,19 @@ const NavRow: React.FC<{
   );
 };
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
+// ─── Toast timer ──────────────────────────────────────────────────────────────
 let toastTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ─── Main Sidebar ─────────────────────────────────────────────────────────────
 interface SidebarProps { collapsed?: boolean; }
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
-  const navigate  = useNavigate();
-  const location  = useLocation();
+  const navigate   = useNavigate();
+  const location   = useLocation();
   const { persona, setPersona } = usePersona();
   const [toast, setToast] = useState<string | null>(null);
 
-  const sections  = persona === 'buyer' ? BUYER_SECTIONS  : SUPPLIER_SECTIONS;
+  const sections   = persona === 'buyer' ? BUYER_SECTIONS  : SUPPLIER_SECTIONS;
   const fixedItems = persona === 'buyer' ? BUYER_FIXED     : SUPPLIER_FIXED;
 
   const handlePersonaToggle = (next: 'buyer' | 'supplier') => {
@@ -341,9 +324,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
               <NavRow
                 key={item.path}
                 item={item}
-                active={location.pathname === item.path ||
+                active={
+                  location.pathname === item.path ||
                   (item.path !== '/buyer/dashboard' && item.path !== '/supplier/dashboard' &&
-                   location.pathname.startsWith(item.path))}
+                   location.pathname.startsWith(item.path))
+                }
                 collapsed={collapsed}
                 onClick={() => handleClick(item)}
               />
@@ -353,11 +338,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
       </nav>
 
       {/* Fixed bottom items */}
-      <div style={{
-        borderTop: `1px solid ${BORDER}`,
-        padding: '8px 0',
-        marginTop: 'auto',
-      }}>
+      <div style={{ borderTop: `1px solid ${BORDER}`, padding: '8px 0', marginTop: 'auto' }}>
         {fixedItems.map(item => (
           <NavRow
             key={item.path}
