@@ -36,11 +36,11 @@ const BUYER_SECTIONS: NavSection[] = [
   {
     header: 'ACQUIRE',
     items: [
-      { text: 'Supplier Discovery', icon: '🔍', path: '/buyer/discovery',
-        toastMsg: 'Supplier Discovery — Coming Soon in Phase 2' },
+      { text: 'Supplier Discovery', icon: '🔍', path: '/buyer/discovery' },
       { text: 'Marketplace',        icon: '🏪', path: '/marketplace' },
       { text: 'Supplier Directory', icon: '🤝', path: '/buyer/suppliers' },
       { text: 'Sourcing & RFQ',     icon: '📋', path: '/buyer/sourcing' },
+      { text: 'Contracts',          icon: '📝', path: '/buyer/contracts' },
     ],
   },
   {
@@ -49,6 +49,7 @@ const BUYER_SECTIONS: NavSection[] = [
       { text: 'Purchase Orders',      icon: '📄', path: '/buyer/purchase-orders' },
       { text: 'Inventory Visibility', icon: '📦', path: '/buyer/inventory' },
       { text: 'Shipments & ASN',      icon: '🚢', path: '/buyer/shipments' },
+      { text: 'Goods Receipt & QC',   icon: '📥', path: '/buyer/goods-receipt' },
     ],
   },
   {
@@ -64,6 +65,7 @@ const BUYER_SECTIONS: NavSection[] = [
       { text: 'Supplier Scorecard', icon: '🏅', path: '/buyer/scorecard' },
       { text: 'Analytics',          icon: '📈', path: '/buyer/analytics' },
       { text: 'Supply Risk',        icon: '⚠️', path: '/buyer/risk' },
+      { text: 'WhatsApp Hub',       icon: '📱', path: '/buyer/whatsapp' },
     ],
   },
 ];
@@ -86,6 +88,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
   {
     header: 'RESPOND',
     items: [
+      { text: 'WhatsApp',         icon: '📱', path: '/supplier/whatsapp' },
       { text: 'My RFQs & Quotes', icon: '📋', path: '/supplier/rfqs' },
     ],
   },
@@ -245,7 +248,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed = false }) => {
     <div style={{
       width: collapsed ? '56px' : '220px',
       minWidth: collapsed ? '56px' : '220px',
-      height: '100%',
+      height: '100vh',
       background: NAVY,
       display: 'flex',
       flexDirection: 'column',
