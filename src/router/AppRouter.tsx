@@ -23,6 +23,7 @@ import CreateASN from '../pages/supplier/CreateASN';
 import Invoices from '../pages/supplier/Invoices';
 import MyInventory from '../pages/supplier/MyInventory';
 import MyDocuments from '../pages/supplier/MyDocuments';
+import SupplierRFQs from '../pages/supplier/SupplierRFQs';
 
 // Onboarding
 import SupplierRegistration from '../pages/onboarding/SupplierRegistration';
@@ -46,6 +47,7 @@ const AppRouter: React.FC = () => {
             <Route path="buyer/scorecard" element={<SupplierScorecard />} />
             <Route path="buyer/risk" element={<SupplyRisk />} />
             <Route path="supplier/dashboard" element={<SupplierDashboard />} />
+            <Route path="supplier/rfqs" element={<SupplierRFQs />} />
             <Route path="supplier/orders" element={<MyOrders />} />
             <Route path="supplier/ship-notices" element={<ShipNotices />} />
             <Route path="supplier/asn" element={<CreateASN />} />
