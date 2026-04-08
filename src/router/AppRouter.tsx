@@ -18,6 +18,7 @@ import SupplierProfile from '../pages/buyer/SupplierProfile';
 import GoodsReceipt from '../pages/buyer/GoodsReceipt';
 import SupplierDiscovery from '../pages/buyer/SupplierDiscovery';
 import ContractManagement from '../pages/buyer/ContractManagement';
+import WhatsAppHub from '../pages/buyer/WhatsAppHub';
 
 // Marketplace pages
 import MarketplaceDiscovery from '../pages/marketplace/MarketplaceDiscovery';
@@ -33,6 +34,7 @@ import MyInventory from '../pages/supplier/MyInventory';
 import MyDocuments from '../pages/supplier/MyDocuments';
 import SupplierRFQs from '../pages/supplier/SupplierRFQs';
 import MyStorefront from '../pages/supplier/MyStorefront';
+import WhatsAppSimulator from '../pages/supplier/WhatsAppSimulator';
 
 // Onboarding
 import SupplierRegistration from '../pages/onboarding/SupplierRegistration';
@@ -56,6 +58,7 @@ const AppRouter: React.FC = () => {
             <Route path="buyer/goods-receipt" element={<GoodsReceipt />} />
             <Route path="buyer/discovery" element={<SupplierDiscovery />} />
             <Route path="buyer/contracts" element={<ContractManagement />} />
+            <Route path="buyer/whatsapp" element={<WhatsAppHub />} />
             <Route path="buyer/analytics" element={<Analytics />} />
             <Route path="buyer/scorecard" element={<SupplierScorecard />} />
             <Route path="buyer/risk" element={<SupplyRisk />} />
@@ -70,6 +73,7 @@ const AppRouter: React.FC = () => {
             <Route path="supplier/inventory" element={<MyInventory />} />
             <Route path="supplier/documents" element={<MyDocuments />} />
             <Route path="supplier/storefront" element={<MyStorefront />} />
+            <Route path="supplier/whatsapp" element={<WhatsAppSimulator />} />
             <Route path="*" element={<Navigate to="/buyer/dashboard" replace />} />
           </Route>
         </Routes>

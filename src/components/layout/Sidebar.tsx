@@ -65,6 +65,7 @@ const BUYER_SECTIONS: NavSection[] = [
       { text: 'Supplier Scorecard', icon: '🏅', path: '/buyer/scorecard' },
       { text: 'Analytics',          icon: '📈', path: '/buyer/analytics' },
       { text: 'Supply Risk',        icon: '⚠️', path: '/buyer/risk' },
+      { text: 'WhatsApp Hub',       icon: '📱', path: '/buyer/whatsapp' },
     ],
   },
 ];
@@ -87,6 +88,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
   {
     header: 'RESPOND',
     items: [
+      { text: 'WhatsApp',         icon: '📱', path: '/supplier/whatsapp' },
       { text: 'My RFQs & Quotes', icon: '📋', path: '/supplier/rfqs' },
     ],
   },
