@@ -157,13 +157,13 @@ const MyInventory: React.FC = () => {
       {/* Summary tiles */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         {([
-          { label: 'Critical Stock',  count: counts.critical, ...STATUS_CFG[StockStatus.CRITICAL], filter: StockStatus.CRITICAL },
-          { label: 'Low Stock',       count: counts.low,      ...STATUS_CFG[StockStatus.LOW],      filter: StockStatus.LOW },
-          { label: 'Normal',          count: counts.normal,   ...STATUS_CFG[StockStatus.NORMAL],   filter: StockStatus.NORMAL },
-          { label: 'Excess',          count: counts.excess,   ...STATUS_CFG[StockStatus.EXCESS],   filter: StockStatus.EXCESS },
-        ] as const).map(({ label, count, bg, color, bar, filter }) => (
+          { title: 'Critical Stock',  count: counts.critical, ...STATUS_CFG[StockStatus.CRITICAL], filter: StockStatus.CRITICAL },
+          { title: 'Low Stock',       count: counts.low,      ...STATUS_CFG[StockStatus.LOW],      filter: StockStatus.LOW },
+          { title: 'Normal',          count: counts.normal,   ...STATUS_CFG[StockStatus.NORMAL],   filter: StockStatus.NORMAL },
+          { title: 'Excess',          count: counts.excess,   ...STATUS_CFG[StockStatus.EXCESS],   filter: StockStatus.EXCESS },
+        ] as const).map(({ title, count, bg, color, bar, filter }) => (
           <div
-            key={label}
+            key={title}
             onClick={() => setFilterStatus(filterStatus === filter ? 'All' : filter as StockStatus)}
             style={{
               background: filterStatus === filter ? bg : 'white',
@@ -175,7 +175,7 @@ const MyInventory: React.FC = () => {
             }}
           >
             <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>
-              {label}
+              {title}
             </div>
             <div style={{ fontSize: 28, fontWeight: 700, color: bar, lineHeight: 1 }}>{count}</div>
             <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>
