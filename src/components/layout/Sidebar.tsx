@@ -21,6 +21,7 @@ const BUYER_ITEMS: NavItem[] = [
   { text: 'Shipments & ASN', icon: '🚢', path: '/buyer/shipments' },
   { text: 'Analytics', icon: '📊', path: '/buyer/analytics' },
   { text: 'Supplier Scorecard', icon: '🏅', path: '/buyer/scorecard' },
+  { text: 'Supply Risk', icon: '⚠️', path: '/buyer/risk' },
 ];
 
 const BUYER_FIXED_ITEMS: NavItem[] = [
