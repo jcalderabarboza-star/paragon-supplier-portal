@@ -102,17 +102,27 @@ const SupplierDashboard: React.FC = () => {
             Paragon Corp Supplier Portal &nbsp;·&nbsp; Last login: 5 April 2026 &nbsp;·&nbsp; Channel: {channelLabel}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
-          <div style={{ textAlign: 'right', fontSize: '0.78rem', opacity: 0.85 }}>
-            Scorecard Grade
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '0.7rem', opacity: 0.85, marginBottom: '0.3rem', letterSpacing: '1px', textTransform: 'uppercase' }}>Paragon Grade</div>
+            <div style={{
+              width: '64px', height: '64px', borderRadius: '12px',
+              border: '3px solid rgba(255,255,255,0.9)',
+              background: gradeColor,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              fontSize: '1.8rem', fontWeight: 900,
+            }}>
+              {mySupplier.scorecardGrade}
+            </div>
+            <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '0.3rem' }}>82 / 100</div>
           </div>
-          <div style={{
-            width: '46px', height: '46px', borderRadius: '50%',
-            border: '3px solid rgba(255,255,255,0.8)',
-            background: gradeColor,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.35rem', fontWeight: 900,
-          }}>{mySupplier.scorecardGrade}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+            <div style={{ fontSize: '0.78rem', opacity: 0.9, fontWeight: 600 }}>
+              {mySupplier.otif >= 90 ? '🟢 On Track' : mySupplier.otif >= 80 ? '🟡 Needs Attention' : '🔴 At Risk'}
+            </div>
+            <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>OTIF: {mySupplier.otif}%</div>
+            <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Target: ≥ 95%</div>
+          </div>
         </div>
       </div>
 
