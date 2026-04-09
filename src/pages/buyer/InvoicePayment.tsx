@@ -174,4 +174,75 @@ function PaymentConfirmModal({ invoice, onClose, onConfirm }: {
     </div>
   );
 }
+
+const InvoicePayment: React.FC = () => {
+  const [invoices, setInvoices]         = useState<BuyerInvoice[]>(BUYER_INVOICES);
+  const [activeTab, setActiveTab]       = useState<'queue' | 'analytics' | 'aging'>('queue');
+  const [filterStatus, setFilterStatus] = useState<InvStatus | 'All'>('All');
+  const [confirmInv, setConfirmInv]     = useState<BuyerInvoice | null>(null);
+  const [toast, setToast]               = useState<string | null>(null);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
+
+  const handleReleased = (invId: string) => {
+    setInvoices(prev => prev.map(inv =>
+      inv.id === invId ? { ...inv, status: 'Payment Released' as InvStatus, paymentDate: new Date().toISOString().slice(0, 10) } : inv
+    ));
+    showToast('Payment released — SAP FI document will be posted within 24 hours');
+  };
+
+  const filtered = filterStatus === 'All' ? invoices : invoices.filter(i => i.status === filterStatus);
+
+  const totalPending  = invoices.filter(i => ['Pending Match', 'Approved'].includes(i.status)).reduce((a, b) => a + b.amount, 0);
+  const totalReleased = invoices.filter(i => i.status === 'Payment Released').reduce((a, b) => a + b.amount, 0);
+  const totalDisputed = invoices.filter(i => i.status === 'Disputed').reduce((a, b) => a + b.amount, 0);
+  const totalOverdue  = invoices.filter(i => i.status === 'Overdue').reduce((a, b) => a + b.amount, 0);
+
+  const STATUSES: Array<InvStatus | 'All'> = ['All', 'Pending Match', 'Approved', 'Payment Released', 'Disputed', 'Overdue'];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+      {confirmInv && (
+        <PaymentConfirmModal
+          invoice={confirmInv}
+          onClose={() => setConfirmInv(null)}
+          onConfirm={() => handleReleased(confirmInv.id)}
+        />
+      )}
+
+      {toast && (
+        <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: NAVY, color: 'white', padding: '0.75rem 1.25rem', borderRadius: 8, zIndex: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.25)', fontSize: 13, borderLeft: `3px solid ${TEAL}`, maxWidth: 360 }}>{toast}</div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: NAVY, marginBottom: 4 }}>Invoices & Payment</div>
+          <div style={{ fontSize: 13, color: MUTED }}>3-way match · Approval queue · Payment release · SAP FI integration</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => showToast('Exporting to SAP AP batch...')} style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: MID, cursor: 'pointer', fontFamily: 'inherit' }}>
+            📤 SAP AP Export
+          </button>
+          <button onClick={() => showToast('Downloading aging report...')} style={{ background: TEAL, border: 'none', borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
+            📥 Export Report
+          </button>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        {[
+          { label: 'Pending Approval', value: fmt(totalPending),  count: invoices.filter(i => ['Pending Match','Approved'].includes(i.status)).length, color: WARNING, icon: '⏳' },
+          { label: 'Payments Released', value: fmt(totalReleased), count: invoices.filter(i => i.status === 'Payment Released').length, color: SUCCESS, icon: '✅' },
+          { label: 'Disputed',          value: fmt(totalDisputed), count: invoices.filter(i => i.status === 'Disputed').length, color: ERROR, icon: '⚠️' },
+          { label: 'Overdue',           value: fmt(totalOverdue),  count: invoices.filter(i => i.status === 'Overdue').length, color: ERROR, icon: '❗' },
+        ].map(({ label, value, count, color, icon }) => (
+          <div key={label} style={{ background: 'white', border: `1px solid ${BORDER}`, borderLeft: `4px solid ${color}`, borderRadius: 8, padding: '16px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>{icon} {label}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color, lineHeight: 1, marginBottom: 4 }}>{value}</div>
+            <div style={{ fontSize: 11, color: MUTED }}>{count} invoice{count !== 1 ? 's' : ''}</div>
+          </div>
+        ))}
+      </div>
+
 };
