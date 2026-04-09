@@ -119,3 +119,56 @@ const MyInventory: React.FC = () => {
         <span style={{ fontSize: 12, color: MUTED }}>{filtered.length} of {allInventory.length} materials</span>
       </div>
 
+      <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: NAVY, color: 'white' }}>
+              {['Material Code', 'Description', 'Supplier', 'On Hand', 'Available', 'In Transit', 'UoM', 'Days Supply', 'Status', 'Source', 'Last Updated'].map(h => (
+                <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={11} style={{ padding: '2rem', textAlign: 'center', color: MUTED, fontSize: 13 }}>No materials match the current filter.</td></tr>
+            ) : filtered.map((row, idx) => {
+              const cfg = STATUS_CFG[row.stockStatus];
+              const [srcBg, srcColor] = SOURCE_STYLE[row.dataSource] ?? ['#F8FAFC', '#475569'];
+              return (
+                <tr key={row.id} style={{ background: idx % 2 === 0 ? 'white' : '#F8FAFC', borderTop: `1px solid ${BORDER}` }}>
+                  <td style={{ padding: '10px 12px', fontFamily: 'var(--font-mono)', fontSize: 11, color: TEAL, fontWeight: 600 }}>{row.materialCode}</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 500, color: NAVY, maxWidth: 220 }}>
+                    <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>{row.materialDescription}</div>
+                  </td>
+                  <td style={{ padding: '10px 12px', color: MID, fontSize: 12 }}>{row.supplierName.replace('PT ', '').split(' ').slice(0, 2).join(' ')}</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 600, color: NAVY, textAlign: 'right' }}>{fmt(row.qtyOnHand)}</td>
+                  <td style={{ padding: '10px 12px', color: NAVY, textAlign: 'right' }}>{fmt(row.qtyAvailable)}</td>
+                  <td style={{ padding: '10px 12px', color: row.qtyInTransit > 0 ? '#0A6ED1' : MUTED, textAlign: 'right' }}>{row.qtyInTransit > 0 ? fmt(row.qtyInTransit) : '—'}</td>
+                  <td style={{ padding: '10px 12px', color: MUTED, fontSize: 11 }}>{row.uom}</td>
+                  <td style={{ padding: '10px 12px', minWidth: 120 }}><DaysBar days={row.daysOfSupply} /></td>
+                  <td style={{ padding: '10px 12px' }}><Pill label={cfg.label} bg={cfg.bg} color={cfg.color} /></td>
+                  <td style={{ padding: '10px 12px' }}><Pill label={row.dataSource} bg={srcBg} color={srcColor} /></td>
+                  <td style={{ padding: '10px 12px', color: MUTED, fontSize: 11, whiteSpace: 'nowrap' }}>{fmtDate(row.lastUpdated)}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ background: '#E0F7FA', border: '1px solid #0097A744', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#006064', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <span>📡</span>
+          <span><strong>Data sources:</strong> API Push (real-time), EDI 846 (daily), Manual (supplier-updated). Phase 2 will add SAP MM stock pull and VMI signal integration.</span>
+        </div>
+        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B44', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <span>⏱</span>
+          <span><strong>Thresholds:</strong> Critical &lt;7 days · Low 7–14 days · Normal 14–30 days · Excess &gt;30 days. Paragon minimum stock requirements enforced at category level.</span>
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+export default MyInventory;
