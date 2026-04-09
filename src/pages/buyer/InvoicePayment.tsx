@@ -344,4 +344,93 @@ const InvoicePayment: React.FC = () => {
         </>
       )}
 
+      {activeTab === 'analytics' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14, borderBottom: `2px solid ${BORDER}`, paddingBottom: 10 }}>Monthly Invoice Flow (Rp jT)</div>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={MONTHLY_SPEND} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar dataKey="paid"    fill={SUCCESS} name="Released" radius={[4,4,0,0]} stackId="a" />
+                  <Bar dataKey="pending" fill={TEAL}    name="Pending"  radius={[4,4,0,0]} stackId="a" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14, borderBottom: `2px solid ${BORDER}`, paddingBottom: 10 }}>3-Way Match Summary</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {[
+                  { label: 'Auto-Matched',  count: invoices.filter(i => i.matchStatus === 'Matched').length,       color: SUCCESS, bg: '#DCFCE7' },
+                  { label: 'Pending GR',    count: invoices.filter(i => i.matchStatus === 'Pending GR').length,    color: WARNING, bg: '#FEF3C7' },
+                  { label: 'Qty Mismatch',  count: invoices.filter(i => i.matchStatus === 'Qty Mismatch').length,  color: ERROR,   bg: '#FEE2E2' },
+                  { label: 'Price Var.',    count: invoices.filter(i => i.matchStatus === 'Price Variance').length, color: ERROR,   bg: '#FEE2E2' },
+                ].map(({ label, count, color, bg }) => (
+                  <div key={label} style={{ background: bg, borderRadius: 8, padding: '14px 16px', textAlign: 'center' }}>
+                    <div style={{ fontSize: 10, fontWeight: 600, color, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>{label}</div>
+                    <div style={{ fontSize: 24, fontWeight: 700, color }}>{count}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'aging' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14, borderBottom: `2px solid ${BORDER}`, paddingBottom: 10 }}>Invoice Aging Report (Rp jT)</div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={AGING_DATA} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                <XAxis dataKey="bucket" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="amount" fill={TEAL} name="Amount (jT)" radius={[4,4,0,0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: NAVY, color: 'white' }}>
+                  {['Aging Bucket', 'Invoice Count', 'Total Amount', '% of AP', 'Risk'].map(h => (
+                    <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, fontSize: 11, letterSpacing: '0.5px' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {AGING_DATA.map(({ bucket, amount, count }, idx) => {
+                  const totalAmt = AGING_DATA.reduce((a, b) => a + b.amount, 0);
+                  const pct = totalAmt > 0 ? ((amount / totalAmt) * 100).toFixed(1) : '0.0';
+                  const risk = bucket === 'Current' ? { label: 'Low', bg: '#DCFCE7', color: SUCCESS } : bucket === '1–30d' ? { label: 'Medium', bg: '#FEF3C7', color: WARNING } : { label: 'High', bg: '#FEE2E2', color: ERROR };
+                  return (
+                    <tr key={bucket} style={{ background: idx % 2 === 0 ? 'white' : '#F8FAFC', borderTop: `1px solid ${BORDER}` }}>
+                      <td style={{ padding: '11px 14px', fontWeight: 600, color: NAVY }}>{bucket}</td>
+                      <td style={{ padding: '11px 14px', color: MUTED }}>{count}</td>
+                      <td style={{ padding: '11px 14px', fontWeight: 600, color: amount > 0 ? NAVY : MUTED }}>{amount > 0 ? `Rp ${amount}jT` : '—'}</td>
+                      <td style={{ padding: '11px 14px', color: MUTED }}>{amount > 0 ? `${pct}%` : '—'}</td>
+                      <td style={{ padding: '11px 14px' }}>{amount > 0 && <Pill label={risk.label} bg={risk.bg} color={risk.color} />}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ background: '#E0F7FA', border: '1px solid #0097A744', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#006064', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <span>💡</span>
+            <span><strong>Phase 2 — SAP FI Integration:</strong> Aging will pull from SAP AP open items. Payment runs triggered via SAP F110.</span>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
 };
+
+export default InvoicePayment;
+
