@@ -67,3 +67,106 @@ function fmtDate(s: string): string {
   if (!s) return '—';
   return new Date(s).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
+
+function UploadModal({ doc, onClose }: { doc: SupplierDocument; onClose: () => void }) {
+  const [uploaded, setUploaded] = useState(false);
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 800 }}>
+      <div style={{ background: 'white', borderRadius: 12, padding: 28, maxWidth: 480, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: NAVY, marginBottom: 4 }}>Upload Document</div>
+        <div style={{ fontSize: 12, color: MUTED, marginBottom: 20 }}>{doc.name}</div>
+        {!uploaded ? (
+          <div onDrop={e => { e.preventDefault(); setUploaded(true); }} onDragOver={e => e.preventDefault()} style={{ border: `2px dashed ${BORDER}`, borderRadius: 8, padding: '2rem', textAlign: 'center', cursor: 'pointer', background: '#F8FAFC', marginBottom: 16 }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>📎</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: MID }}>Drop file here or click to browse</div>
+            <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>PDF, JPG, PNG · Max 20 MB</div>
+          </div>
+        ) : (
+          <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 8, padding: '1rem', textAlign: 'center', marginBottom: 16 }}>
+            <div style={{ fontSize: 20, marginBottom: 4 }}>✅</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#166534' }}>Document uploaded — pending Paragon review</div>
+          </div>
+        )}
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button onClick={onClose} style={{ padding: '8px 18px', border: `1px solid ${BORDER}`, borderRadius: 6, background: 'white', color: MID, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{uploaded ? 'Close' : 'Cancel'}</button>
+          {!uploaded && <button onClick={() => setUploaded(true)} style={{ padding: '8px 18px', border: 'none', borderRadius: 6, background: TEAL, color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Submit</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const MyDocuments: React.FC = () => {
+  const [filterCat, setFilterCat] = useState<DocCategory | 'All'>('All');
+  const [search, setSearch]       = useState('');
+  const [uploadDoc, setUploadDoc] = useState<SupplierDocument | null>(null);
+  const [toast, setToast]         = useState<string | null>(null);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
+
+  const filtered = DOCUMENTS.filter(d => {
+    const matchCat = filterCat === 'All' || d.category === filterCat;
+    const matchSearch = search === '' || d.name.toLowerCase().includes(search.toLowerCase()) || d.issuedBy.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  const expiringSoon = DOCUMENTS.filter(d => { const days = daysUntil(d.expiryDate); return days !== null && days > 0 && days <= 180; });
+  const expired      = DOCUMENTS.filter(d => { const days = daysUntil(d.expiryDate); return days !== null && days <= 0; });
+  const awaitingUpload = DOCUMENTS.filter(d => d.status === 'Awaiting Upload');
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {uploadDoc && <UploadModal doc={uploadDoc} onClose={() => setUploadDoc(null)} />}
+      {toast && <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: NAVY, color: 'white', padding: '0.75rem 1.25rem', borderRadius: 8, zIndex: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.25)', fontSize: 13, borderLeft: `3px solid ${TEAL}` }}>{toast}</div>}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: NAVY, marginBottom: 4 }}>My Documents</div>
+          <div style={{ fontSize: 13, color: MUTED }}>Certifications, compliance documents, COAs, and contracts · Halal & BPOM tracking</div>
+        </div>
+        <button onClick={() => showToast('New document upload — select category to begin')} style={{ background: TEAL, border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>＋ Upload Document</button>
+      </div>
+
+      {expired.length > 0 && (
+        <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#991B1B' }}>
+          <span>❌</span>
+          <div><strong>{expired.length} expired document{expired.length > 1 ? 's' : ''} — immediate renewal required: </strong>{expired.map(d => d.name.split('—')[0].trim()).join(' · ')}</div>
+        </div>
+      )}
+      {expiringSoon.length > 0 && (
+        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#92400E' }}>
+          <span>⚠️</span>
+          <div><strong>{expiringSoon.length} document{expiringSoon.length > 1 ? 's' : ''} expiring within 6 months: </strong>{expiringSoon.map(d => d.name.split('—')[0].trim()).join(' · ')}</div>
+        </div>
+      )}
+      {awaitingUpload.length > 0 && (
+        <div style={{ background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#475569' }}>
+          <span>📎</span>
+          <div><strong>{awaitingUpload.length} document{awaitingUpload.length > 1 ? 's' : ''} awaiting upload: </strong>{awaitingUpload.map(d => d.linkedTo).join(' · ')}</div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+        {[
+          { label: 'Total Documents', value: DOCUMENTS.length,  color: TEAL,      icon: '📋' },
+          { label: 'Valid',           value: DOCUMENTS.filter(d => d.status === 'Valid').length, color: '#107E3E', icon: '✅' },
+          { label: 'Expiring ≤180d',  value: expiringSoon.length, color: '#E9730C', icon: '⚠️' },
+          { label: 'Expired',         value: expired.length,      color: '#BB0000', icon: '✗' },
+          { label: 'Needs Action',    value: awaitingUpload.length, color: '#475569', icon: '❗' },
+        ].map(({ label, value, color, icon }) => (
+          <div key={label} style={{ background: 'white', border: `1px solid ${BORDER}`, borderLeft: `4px solid ${color}`, borderRadius: 8, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>{icon} {label}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input type="text" placeholder="Search documents..." value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, minWidth: 200, padding: '8px 12px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 13, color: NAVY, fontFamily: 'inherit', outline: 'none' }} />
+        <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: 6, padding: 3, gap: 2, flexWrap: 'wrap' }}>
+          {CATEGORIES.map(c => (
+            <button key={c} onClick={() => setFilterCat(c)} style={{ padding: '5px 10px', border: 'none', borderRadius: 4, background: filterCat === c ? 'white' : 'transparent', color: filterCat === c ? NAVY : MUTED, fontWeight: filterCat === c ? 700 : 500, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', boxShadow: filterCat === c ? '0 1px 3px rgba(0,0,0,0.1)' : undefined, whiteSpace: 'nowrap' }}>{c}</button>
+          ))}
+        </div>
+      </div>
+
