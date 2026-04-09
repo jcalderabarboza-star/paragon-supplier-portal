@@ -514,3 +514,24 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <div style={{ background: `linear-gradient(135deg, ${NAVY2} 0%, #1a2f4a 100%)`, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 16 }}>🧠</span>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>IBP Brain Engine — Demand Signal</div>
+            <div style={{ fontSize: 10, color: '#8DA4BC' }}>Next S&OP cycle: 14 Apr 2026 · IBP Demand module active · IBP Inventory planned Q3 2026</div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Pill label="IBP Demand — Live" bg="rgba(0,151,167,0.2)" color={TEAL} />
+          <Pill label="IBP Inventory — Roadmap" bg="rgba(255,255,255,0.08)" color="#8DA4BC" />
+          <Pill label="aATP — Future" bg="rgba(255,255,255,0.05)" color="#64748B" />
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+export default Dashboard;
