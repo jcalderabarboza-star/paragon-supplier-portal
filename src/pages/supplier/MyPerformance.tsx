@@ -193,3 +193,83 @@ const MyPerformance: React.FC = () => {
           </div>
         </>
       )}
+
+      {activeTab === 'trends' && (
+        <>
+          <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14, borderBottom: `2px solid ${BORDER}`, paddingBottom: 10 }}>OTIF Rate — 12-Week Rolling (%)</div>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={WEEKLY_TREND} margin={{ top: 10, right: 20, bottom: 0, left: -10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                <XAxis dataKey="week" tick={{ fontSize: 9 }} interval={1} />
+                <YAxis domain={[70, 100]} tick={{ fontSize: 10 }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line type="monotone" dataKey="otif" stroke={TEAL} strokeWidth={2} dot={{ r: 2 }} name="OTIF %" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14, borderBottom: `2px solid ${BORDER}`, paddingBottom: 10 }}>ASN Accuracy (%)</div>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={WEEKLY_TREND} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                  <XAxis dataKey="week" tick={{ fontSize: 8 }} interval={2} />
+                  <YAxis domain={[90, 100]} tick={{ fontSize: 10 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="asnAcc" stroke={SUCCESS} strokeWidth={2} dot={{ r: 2 }} name="ASN Accuracy %" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14, borderBottom: `2px solid ${BORDER}`, paddingBottom: 10 }}>POA Response Time (hours)</div>
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={WEEKLY_TREND} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                  <XAxis dataKey="week" tick={{ fontSize: 8 }} interval={2} />
+                  <YAxis tick={{ fontSize: 10 }} />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="ackHrs" stroke={WARNING} strokeWidth={2} dot={{ r: 2 }} name="Ack Time (hrs)" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'actions' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ fontSize: 13, color: MUTED }}>Below-target KPIs and recommended corrective actions to improve your Paragon supplier grade.</div>
+          {IMPROVEMENT_ACTIONS.map((item, i) => (
+            <div key={i} style={{ background: 'white', border: `1px solid ${BORDER}`, borderLeft: `4px solid ${item.priority === 'High' ? ERROR : WARNING}`, borderRadius: 8, padding: '18px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>{item.kpi}</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <Pill label={`Current: ${item.current}`} bg="#F1F5F9" color={MID} />
+                    <Pill label={`Target: ${item.target}`} bg="#DCFCE7" color="#166534" />
+                    <Pill label={`Gap: ${item.gap}`} bg="#FEE2E2" color="#991B1B" />
+                  </div>
+                </div>
+                <Pill label={item.priority} bg={item.priority === 'High' ? '#FEE2E2' : '#FEF3C7'} color={item.priority === 'High' ? '#991B1B' : '#92400E'} />
+              </div>
+              <div style={{ fontSize: 13, color: MID, lineHeight: 1.6 }}>💡 {item.action}</div>
+              <div style={{ marginTop: 12 }}>
+                <button onClick={() => showToast(`Action plan submitted for ${item.kpi} — Paragon team notified`)} style={{ background: TEAL, color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Acknowledge & Plan
+                </button>
+              </div>
+            </div>
+          ))}
+          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '14px 18px', fontSize: 12, color: '#1E40AF', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <span>🏅</span>
+            <div><strong>Paragon Supplier Tier System:</strong> Achieve Grade A (≥ 90/100) for 3 consecutive months to qualify for Tier 1 status — faster payment terms (Net 30 → Net 15), priority capacity allocation, and inclusion in Paragon strategic supplier development program.</div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default MyPerformance;
