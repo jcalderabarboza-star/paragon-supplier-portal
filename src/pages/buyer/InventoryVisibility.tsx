@@ -293,7 +293,13 @@ const InventoryVisibility: React.FC = () => {
                       whiteSpace: 'nowrap',
                     }}>{inv.dataSource}</span>
                   </td>
-                  <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap' }}>
+                  <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                    {(inv.stockStatus === StockStatus.CRITICAL || inv.stockStatus === StockStatus.LOW) && (
+                      <Button design="Emphasized" style={{ fontSize: '0.73rem', padding: '0.2rem 0.5rem', background: '#BB0000', border: 'none' }}
+                        onClick={() => showToast(`Creating PO for ${inv.materialCode} — ${inv.supplierName} · ${inv.daysOfSupply}d supply remaining`)}>
+                        + Create PO
+                      </Button>
+                    )}
                     <Button design="Default" style={{ fontSize: '0.73rem', padding: '0.2rem 0.5rem' }}
                       onClick={() => showToast(`Update request sent to ${inv.supplierName} via ${channel}`)}>
                       Request Update
