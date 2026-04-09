@@ -331,3 +331,90 @@ const Dashboard: React.FC = () => {
         <KpiTile label="Active Suppliers" value={d.activeSuppliers} sub={`/ ${mockSuppliers.length} total`} trend={`${mockSuppliers.filter(s => s.status === 'Onboarding').length} onboarding`} trendUp={null} color={TEAL} onClick={() => navigate('/buyer/suppliers')} />
         <KpiTile label="Open Purchase Orders" value={d.openPOs.length} sub="active" trend={`${d.unacknowledged.length} unacknowledged >48h`} trendUp={d.unacknowledged.length === 0} color={d.unacknowledged.length > 0 ? ERROR : TEAL} alert={d.unacknowledged.length > 0} onClick={() => navigate('/buyer/purchase-orders')} />
       </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>🏭 Production Line Risk</div>
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>RM/PM supply coverage vs active production schedule</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {productionLines.map(line => (
+              <div key={line.line} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: line.risk ? 'rgba(187,0,0,0.04)' : '#F8FAFC', border: `1px solid ${line.risk ? 'rgba(187,0,0,0.2)' : BORDER}`, borderRadius: 6 }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: NAVY }}>{line.line}</div>
+                  {line.risk && <div style={{ fontSize: 10, color: ERROR, marginTop: 1 }}>⚠ Critical material {line.sku} — {line.daysLeft}d supply left</div>}
+                </div>
+                <Pill label={line.risk ? `AT RISK · ${line.daysLeft}d` : 'COVERED'} bg={line.risk ? '#FEE2E2' : '#DCFCE7'} color={line.risk ? ERROR : SUCCESS} />
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: MUTED, marginTop: 12, borderTop: `1px solid ${BORDER}`, paddingTop: 10 }}>Phase 3 — Live SAP PP integration · IBP Demand signal sync</div>
+        </div>
+
+        <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>🏅 Supplier Health Index</div>
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>Portfolio grade distribution · Avg OTIF {d.avgOTIF}%</div>
+          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+            {gradeData.map(({ grade, count, color }) => (
+              <div key={grade} onClick={() => navigate('/buyer/suppliers')} style={{ flex: 1, textAlign: 'center', cursor: 'pointer', background: `${color}18`, border: `1px solid ${color}44`, borderRadius: 8, padding: '12px 8px' }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color }}>{count}</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color, letterSpacing: '1px' }}>Grade {grade}</div>
+              </div>
+            ))}
+          </div>
+          <ResponsiveContainer width="100%" height={100}>
+            <BarChart data={catOTIF} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+              <XAxis dataKey="name" tick={{ fontSize: 9 }} />
+              <YAxis domain={[70, 100]} tick={{ fontSize: 9 }} />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar dataKey="otif" fill={TEAL} radius={[3, 3, 0, 0]} name="OTIF %" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <SectionLabel color={MID}>Layer 2 — Tactical · VP SCM & Procurement Managers</SectionLabel>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>📄 PO Pipeline — Live Status</div>
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>{mockPurchaseOrders.length} purchase orders · derived from live data</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {d.poFunnel.map(({ status, count, color }) => {
+              const pct = Math.round((count / mockPurchaseOrders.length) * 100);
+              return (
+                <div key={status} onClick={() => navigate('/buyer/purchase-orders')} style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+                  <div style={{ width: 72, fontSize: 11, color: MUTED, textAlign: 'right', flexShrink: 0 }}>{status}</div>
+                  <div style={{ flex: 1, background: '#F1F5F9', borderRadius: 4, height: 20, overflow: 'hidden' }}>
+                    <div style={{ width: count === 0 ? '0%' : `${Math.max(pct, 4)}%`, background: color, height: '100%', borderRadius: 4, display: 'flex', alignItems: 'center', paddingLeft: 6 }}>
+                      {count > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: 'white' }}>{count}</span>}
+                    </div>
+                  </div>
+                  <div style={{ width: 28, fontSize: 10, color: MUTED, textAlign: 'right', flexShrink: 0 }}>{pct}%</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>📦 Critical & Low Stock</div>
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>{d.criticalStock.length} critical (&lt;7d) · {d.lowStock.length} low (7–14d)</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[...d.criticalStock, ...d.lowStock].slice(0, 6).map(item => {
+              const isCritical = item.stockStatus === StockStatus.CRITICAL;
+              return (
+                <div key={item.id} onClick={() => navigate('/buyer/inventory')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: isCritical ? 'rgba(187,0,0,0.04)' : 'rgba(233,115,12,0.04)', border: `1px solid ${isCritical ? 'rgba(187,0,0,0.15)' : 'rgba(233,115,12,0.15)'}`, borderRadius: 5, cursor: 'pointer' }}>
+                  <div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: NAVY, fontFamily: 'var(--font-mono)' }}>{item.materialCode}</div>
+                    <div style={{ fontSize: 10, color: MUTED }}>{item.supplierName.split(' ').slice(0, 2).join(' ')}</div>
+                  </div>
+                  <Pill label={`${item.daysOfSupply}d left`} bg={isCritical ? '#FEE2E2' : '#FEF3C7'} color={isCritical ? ERROR : WARNING} />
+                </div>
+              );
+            })}
+          </div>
+          <button onClick={() => navigate('/buyer/inventory')} style={{ marginTop: 12, width: '100%', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: 5, padding: '6px', fontSize: 11, fontWeight: 600, color: TEAL, cursor: 'pointer', fontFamily: 'inherit' }}>
+            View All Inventory →
+          </button>
+        </div>
+      </div>
