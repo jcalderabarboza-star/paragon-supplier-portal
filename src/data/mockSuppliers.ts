@@ -223,7 +223,7 @@ export const mockSuppliers: SupplierExtended[] = [
     otif: 82,
     leadTimeAdherence: 80,
     invoiceAccuracy: 91,
-    scorecardGrade: ScorecardGrade.C,
+    scorecardGrade: ScorecardGrade.B,
   },
   {
     id: 'sup-008',
