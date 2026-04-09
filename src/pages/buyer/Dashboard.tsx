@@ -204,44 +204,52 @@ function WarRoomBanner({ items, onEscalate }: {
   const critical = items.filter(i => i.severity === 'critical');
   const warning  = items.filter(i => i.severity === 'warning');
   return (
-    <div style={{ background: 'linear-gradient(135deg, #1a0000 0%, #2d0a0a 100%)', border: `1px solid ${ERROR}`, borderRadius: 10, overflow: 'hidden', boxShadow: '0 4px 24px rgba(187,0,0,0.2)' }}>
-      <div style={{ background: ERROR, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ background: '#FFFBFB', border: '1px solid #FECACA', borderRadius: 10, overflow: 'hidden', boxShadow: '0 2px 12px rgba(187,0,0,0.08)' }}>
+      {/* Header */}
+      <div style={{ background: '#FEF2F2', borderBottom: '1px solid #FECACA', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 16 }}>🚨</span>
-          <span style={{ color: 'white', fontWeight: 800, fontSize: 13, letterSpacing: '1px', textTransform: 'uppercase' }}>
-            WAR ROOM — {critical.length} Critical · {warning.length} Warning
+          <span style={{ fontSize: 15 }}>⚠️</span>
+          <span style={{ color: '#991B1B', fontWeight: 800, fontSize: 13, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+            Critical Material Alerts — Production at Risk
+          </span>
+          <span style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 9999, padding: '1px 8px', fontSize: 10, fontWeight: 700 }}>
+            {critical.length} Critical · {warning.length} Warning
           </span>
         </div>
-        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', letterSpacing: '1px' }}>
-          {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+        <div style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '0.5px' }}>
+          Materials below safety stock — immediate procurement action required · {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
         </div>
       </div>
-      <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+      {/* Critical rows */}
+      <div style={{ padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {critical.map(item => (
-          <div key={item.id} style={{ background: 'rgba(187,0,0,0.15)', border: '1px solid rgba(187,0,0,0.3)', borderRadius: 6, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+          <div key={item.id} style={{ background: 'white', border: '1px solid #FECACA', borderLeft: '3px solid #BB0000', borderRadius: 6, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
               <span style={{ fontSize: 14, flexShrink: 0 }}>
                 {item.type === 'Production Risk' ? '🏭' : item.type === 'PO Unacknowledged' ? '📄' : item.type === 'Cert Expired' ? '📋' : '⚠️'}
               </span>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#FCA5A5' }}>{item.title}</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 1 }}>{item.supplier} · {item.detail}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#BB0000' }}>{item.title}</div>
+                <div style={{ fontSize: 10, color: '#6B7280', marginTop: 2 }}>{item.supplier} · {item.detail}</div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-              <Pill label={item.type} bg="rgba(187,0,0,0.3)" color="#FCA5A5" />
-              <button onClick={() => onEscalate(item.id)} style={{ background: ERROR, color: 'white', border: 'none', borderRadius: 5, padding: '4px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+              <Pill label={item.type} bg="#FEE2E2" color="#991B1B" />
+              <button onClick={() => onEscalate(item.id)} style={{ background: '#BB0000', color: 'white', border: 'none', borderRadius: 5, padding: '4px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.5px' }}>
                 ESCALATE
               </button>
             </div>
           </div>
         ))}
+
+        {/* Warning row — compact chips */}
         {warning.length > 0 && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4, paddingTop: 8, borderTop: '1px solid #FEE2E2' }}>
             {warning.map(item => (
-              <div key={item.id} style={{ background: 'rgba(233,115,12,0.15)', border: '1px solid rgba(233,115,12,0.3)', borderRadius: 5, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 11, color: '#FCD34D', fontWeight: 600 }}>⚠ {item.title}</span>
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>· {item.supplier}</span>
+              <div key={item.id} style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderLeft: '3px solid #E9730C', borderRadius: 5, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 11, color: '#92400E', fontWeight: 600 }}>⚠ {item.title}</span>
+                <span style={{ fontSize: 10, color: '#B45309' }}>· {item.supplier}</span>
               </div>
             ))}
           </div>
