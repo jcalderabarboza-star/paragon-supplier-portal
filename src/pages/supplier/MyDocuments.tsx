@@ -170,3 +170,69 @@ const MyDocuments: React.FC = () => {
         </div>
       </div>
 
+      <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: NAVY, color: 'white' }}>
+              {['Document', 'Category', 'Issued By', 'Issued', 'Expiry', 'Status', 'Ver.', 'Actions'].map(h => (
+                <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((doc, idx) => {
+              const sCfg = STATUS_CFG[doc.status];
+              const cCfg = CAT_CFG[doc.category];
+              const days = daysUntil(doc.expiryDate);
+              return (
+                <tr key={doc.id} style={{ background: idx % 2 === 0 ? 'white' : '#F8FAFC', borderTop: `1px solid ${BORDER}` }}>
+                  <td style={{ padding: '10px 12px', maxWidth: 280 }}>
+                    <div style={{ fontWeight: 600, color: NAVY, marginBottom: 2, fontSize: 12 }}>{doc.name}</div>
+                    {doc.notes && <div style={{ fontSize: 10, color: '#E9730C', marginBottom: 2 }}>⚠ {doc.notes}</div>}
+                    <div style={{ fontSize: 10, color: MUTED }}>Linked: {doc.linkedTo}</div>
+                  </td>
+                  <td style={{ padding: '10px 12px' }}><Pill label={doc.category} bg={cCfg.bg} color={cCfg.color} /></td>
+                  <td style={{ padding: '10px 12px', fontSize: 11, color: MUTED, maxWidth: 160 }}>{doc.issuedBy}</td>
+                  <td style={{ padding: '10px 12px', fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>{fmtDate(doc.issuedDate)}</td>
+                  <td style={{ padding: '10px 12px', whiteSpace: 'nowrap' }}>
+                    {doc.expiryDate ? (
+                      <div>
+                        <div style={{ fontSize: 11, color: days !== null && days <= 90 ? '#E9730C' : MUTED }}>{fmtDate(doc.expiryDate)}</div>
+                        {days !== null && <div style={{ fontSize: 10, color: days <= 0 ? '#BB0000' : days <= 90 ? '#E9730C' : MUTED }}>{days > 0 ? `${days}d remaining` : `Expired ${Math.abs(days)}d ago`}</div>}
+                      </div>
+                    ) : <span style={{ color: MUTED, fontSize: 11 }}>No expiry</span>}
+                  </td>
+                  <td style={{ padding: '10px 12px' }}><Pill label={`${sCfg.icon} ${doc.status}`} bg={sCfg.bg} color={sCfg.color} /></td>
+                  <td style={{ padding: '10px 12px', fontSize: 11, color: MUTED, textAlign: 'center' }}>{doc.version}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {doc.status === 'Awaiting Upload' ? (
+                        <button onClick={() => setUploadDoc(doc)} style={{ background: TEAL, color: 'white', border: 'none', borderRadius: 5, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>↑ Upload</button>
+                      ) : (
+                        <button onClick={() => showToast(`Downloading ${doc.name}...`)} style={{ background: 'white', color: MID, border: `1px solid ${BORDER}`, borderRadius: 5, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>↓ View</button>
+                      )}
+                      {doc.expiryDate && days !== null && days <= 180 && (
+                        <button onClick={() => showToast(`Renewal workflow started for ${doc.name.split('—')[0].trim()}`)} style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid #F59E0B', borderRadius: 5, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Renew</button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ background: '#FEF9C3', border: '1px solid #F59E0B', borderRadius: 8, padding: '14px 18px', fontSize: 12, color: '#854D0E', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <span style={{ fontSize: 16 }}>🕌</span>
+        <div>
+          <strong>BPJPH Halal Mandatory Transition — October 2026:</strong> All cosmetics and personal care products distributed in Indonesia must carry BPJPH-issued halal certification. MUI certificates issued before the transition remain valid until expiry but cannot be renewed — new BPJPH certification must be obtained.
+          <a href="https://halal.go.id" target="_blank" rel="noopener noreferrer" style={{ color: '#92400E', marginLeft: 6, fontWeight: 600 }}>halal.go.id ↗</a>
+        </div>
+      </div>
+
+    </div>
+  );
+};
+
+export default MyDocuments;
