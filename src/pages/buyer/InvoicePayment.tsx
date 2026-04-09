@@ -245,4 +245,103 @@ const InvoicePayment: React.FC = () => {
         ))}
       </div>
 
+      {invoices.some(i => i.status === 'Overdue') && (
+        <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#991B1B', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <span>❗</span>
+          <div>
+            <strong>{invoices.filter(i => i.status === 'Overdue').length} overdue invoice{invoices.filter(i => i.status === 'Overdue').length > 1 ? 's' : ''}: </strong>
+            {invoices.filter(i => i.status === 'Overdue').map(i => `${i.invoiceNumber} (${i.daysOutstanding}d overdue)`).join(' · ')}
+          </div>
+        </div>
+      )}
+
+      {invoices.some(i => i.status === 'Disputed') && (
+        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#92400E', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <span>⚠️</span>
+          <div>
+            <strong>Invoice dispute: </strong>
+            {invoices.filter(i => i.status === 'Disputed').map(i => i.invoiceNumber).join(', ')} — Quantity mismatch on PT Berlina Packaging. Credit note required before payment.
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', borderBottom: `2px solid ${BORDER}` }}>
+        {(['queue', 'analytics', 'aging'] as const).map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '10px 20px', border: 'none', borderBottom: activeTab === tab ? `2px solid ${TEAL}` : '2px solid transparent', background: 'transparent', color: activeTab === tab ? TEAL : MUTED, fontWeight: activeTab === tab ? 700 : 500, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginBottom: -2, textTransform: 'capitalize' }}>
+            {tab === 'queue' ? '🧾 Invoice Queue' : tab === 'analytics' ? '📊 Spend Analytics' : '📅 Aging Analysis'}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'queue' && (
+        <>
+          <div style={{ display: 'flex', background: '#F1F5F9', borderRadius: 6, padding: 3, gap: 2, flexWrap: 'wrap', alignSelf: 'flex-start' }}>
+            {STATUSES.map(s => (
+              <button key={s} onClick={() => setFilterStatus(s)} style={{ padding: '5px 12px', border: 'none', borderRadius: 4, background: filterStatus === s ? 'white' : 'transparent', color: filterStatus === s ? NAVY : MUTED, fontWeight: filterStatus === s ? 700 : 500, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', boxShadow: filterStatus === s ? '0 1px 3px rgba(0,0,0,0.1)' : undefined, whiteSpace: 'nowrap' }}>{s}</button>
+            ))}
+          </div>
+
+          <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: NAVY, color: 'white' }}>
+                  {['Invoice #', 'Supplier', 'PO Ref', 'Amount', '3-Way Match', 'Status', 'Due Date', 'SAP FI', 'Action'].map(h => (
+                    <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((inv, idx) => {
+                  const sCfg = STATUS_CFG[inv.status];
+                  const mCfg = MATCH_CFG[inv.matchStatus] ?? { bg: '#F1F5F9', color: '#475569' };
+                  return (
+                    <tr key={inv.id} style={{ background: idx % 2 === 0 ? 'white' : '#F8FAFC', borderTop: `1px solid ${BORDER}` }}>
+                      <td style={{ padding: '11px 12px', fontFamily: 'var(--font-mono)', fontSize: 11, fontWeight: 700, color: TEAL, whiteSpace: 'nowrap' }}>{inv.invoiceNumber}</td>
+                      <td style={{ padding: '11px 12px' }}>
+                        <div style={{ fontWeight: 600, color: NAVY, fontSize: 12 }}>{inv.supplierName.replace('PT ', '').split(' ').slice(0, 3).join(' ')}</div>
+                        <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>via {inv.channel}</div>
+                      </td>
+                      <td style={{ padding: '11px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, color: MID }}>{inv.poNumber}</td>
+                      <td style={{ padding: '11px 12px', fontWeight: 700, color: NAVY, whiteSpace: 'nowrap' }}>
+                        {fmt(inv.amount)}
+                        <div style={{ fontSize: 10, color: MUTED, fontWeight: 400 }}>{fmtFull(inv.amount)}</div>
+                      </td>
+                      <td style={{ padding: '11px 12px' }}><Pill label={inv.matchStatus} bg={mCfg.bg} color={mCfg.color} /></td>
+                      <td style={{ padding: '11px 12px' }}>
+                        <Pill label={inv.status} bg={sCfg.bg} color={sCfg.color} />
+                        {inv.status === 'Overdue' && <div style={{ fontSize: 10, color: ERROR, marginTop: 2 }}>{inv.daysOutstanding}d overdue</div>}
+                      </td>
+                      <td style={{ padding: '11px 12px', fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>
+                        {fmtDate(inv.dueDate)}
+                        {inv.paymentDate && <div style={{ fontSize: 10, color: SUCCESS }}>Paid {fmtDate(inv.paymentDate)}</div>}
+                      </td>
+                      <td style={{ padding: '11px 12px', fontFamily: 'var(--font-mono)', fontSize: 10, color: inv.sapFiDoc ? SUCCESS : MUTED }}>{inv.sapFiDoc ?? '—'}</td>
+                      <td style={{ padding: '11px 12px' }}>
+                        {inv.status === 'Approved' ? (
+                          <button onClick={() => setConfirmInv(inv)} style={{ background: SUCCESS, color: 'white', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Release ▶
+                          </button>
+                        ) : inv.status === 'Pending Match' ? (
+                          <button onClick={() => showToast('Awaiting GR confirmation in SAP before approval')} style={{ background: TEAL, color: 'white', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Review
+                          </button>
+                        ) : inv.status === 'Overdue' ? (
+                          <button onClick={() => showToast('Escalating overdue payment to Finance Controller')} style={{ background: ERROR, color: 'white', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Urgent
+                          </button>
+                        ) : (
+                          <button onClick={() => showToast(`Viewing ${inv.invoiceNumber}`)} style={{ background: 'white', color: MID, border: `1px solid ${BORDER}`, borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            View
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
 };
