@@ -51,7 +51,7 @@ function useDerivedData() {
     const gradeD = suppliers.filter(s => s.scorecardGrade === ScorecardGrade.D || s.scorecardGrade === ScorecardGrade.F);
     const expiringCerts = suppliers.filter(s => {
       const days = (new Date(s.certExpiryDate).getTime() - Date.now()) / 86400000;
-      return days <= 180;
+      return days > 0 && days <= 90;
     });
     const expiredCerts = suppliers.filter(s => {
       const days = (new Date(s.certExpiryDate).getTime() - Date.now()) / 86400000;
