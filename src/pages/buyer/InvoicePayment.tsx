@@ -109,3 +109,69 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     </div>
   );
 };
+
+function PaymentConfirmModal({ invoice, onClose, onConfirm }: {
+  invoice: BuyerInvoice;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const [confirmed, setConfirmed] = useState(false);
+
+  const handleConfirm = () => {
+    setConfirmed(true);
+    setTimeout(() => { onConfirm(); onClose(); }, 1800);
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 800 }}>
+      <div style={{ background: 'white', borderRadius: 12, padding: 28, maxWidth: 480, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+        {confirmed ? (
+          <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>Payment Released</div>
+            <div style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>SAP FI payment document will be posted within 24 hours</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <span style={{ fontSize: 24 }}>⚠️</span>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>Confirm Payment Release</div>
+                <div style={{ fontSize: 12, color: MUTED }}>This action cannot be undone</div>
+              </div>
+            </div>
+
+            <div style={{ background: '#F8FAFC', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '16px 18px', marginBottom: 20 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 20px', fontSize: 13 }}>
+                <div><span style={{ color: MUTED }}>Supplier: </span><span style={{ fontWeight: 700, color: NAVY }}>{invoice.supplierName}</span></div>
+                <div><span style={{ color: MUTED }}>Invoice: </span><span style={{ fontWeight: 700, color: NAVY }}>{invoice.invoiceNumber}</span></div>
+                <div><span style={{ color: MUTED }}>PO Reference: </span><span style={{ fontWeight: 600 }}>{invoice.poNumber}</span></div>
+                <div><span style={{ color: MUTED }}>Payment Terms: </span><span style={{ fontWeight: 600 }}>{invoice.paymentTerms}</span></div>
+                <div><span style={{ color: MUTED }}>Bank Account: </span><span style={{ fontWeight: 600 }}>{invoice.bankAccount}</span></div>
+                <div><span style={{ color: MUTED }}>SAP FI Doc: </span><span style={{ fontWeight: 600, color: SUCCESS }}>{invoice.sapFiDoc}</span></div>
+              </div>
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: MUTED }}>Total Payment Amount</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: NAVY }}>{fmtFull(invoice.amount)}</span>
+              </div>
+            </div>
+
+            <div style={{ background: '#FEF9C3', border: '1px solid #F59E0B', borderRadius: 6, padding: '10px 14px', marginBottom: 20, fontSize: 12, color: '#92400E' }}>
+              ⚠ Payment will be transferred to <strong>{invoice.bankAccount}</strong>. Verify bank details before confirming.
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={onClose} style={{ padding: '9px 20px', border: `1px solid ${BORDER}`, borderRadius: 6, background: 'white', color: MID, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Cancel
+              </button>
+              <button onClick={handleConfirm} style={{ padding: '9px 20px', border: 'none', borderRadius: 6, background: SUCCESS, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Confirm Release — {fmt(invoice.amount)}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+};
