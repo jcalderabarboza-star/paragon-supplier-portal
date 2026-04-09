@@ -418,3 +418,99 @@ const Dashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 16 }}>
+        <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>📈 OTIF & OTDR — 6-Month Trend</div>
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>On-time in-full vs on-time delivery rate · Target 95%</div>
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={mockTrendData} margin={{ top: 10, right: 10, bottom: 0, left: -10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+              <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+              <YAxis domain={[78, 96]} tick={{ fontSize: 10 }} />
+              <Tooltip content={<CustomTooltip />} />
+              <Line type="monotone" dataKey="otif" stroke={TEAL} strokeWidth={2} dot={{ r: 3 }} name="OTIF %" />
+              <Line type="monotone" dataKey="otdr" stroke={NAVY} strokeWidth={2} dot={{ r: 3 }} name="OTDR %" />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>📱 Channel Mix</div>
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>PO confirmations by channel</div>
+          <ResponsiveContainer width="100%" height={160}>
+            <PieChart>
+              <Pie data={d.channelData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value" nameKey="name">
+                {d.channelData.map((entry, i) => (
+                  <Cell key={i} fill={entry.name === ChannelType.WHATSAPP ? '#25D366' : entry.name === ChannelType.EMAIL ? '#EA4335' : entry.name === ChannelType.WEB ? INFO : MID} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(v: number) => [`${v} POs`, '']} />
+              <Legend iconSize={10} wrapperStyle={{ fontSize: 10 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <SectionLabel color={MUTED}>Layer 3 — Operational · Procurement Officers · Live Action Queue</SectionLabel>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>⚡ Action Queue — Today</div>
+          <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>{d.actionQueue.length} items require attention · click to navigate</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {d.actionQueue.map(item => (
+              <div key={item.id} onClick={() => navigate(item.path)} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '10px 12px', background: item.severity === 'critical' ? 'rgba(187,0,0,0.04)' : 'rgba(233,115,12,0.04)', border: `1px solid ${item.severity === 'critical' ? 'rgba(187,0,0,0.2)' : 'rgba(233,115,12,0.2)'}`, borderLeft: `3px solid ${item.severity === 'critical' ? ERROR : WARNING}`, borderRadius: 5, cursor: 'pointer', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: NAVY, marginBottom: 2 }}>{item.title}</div>
+                  <div style={{ fontSize: 10, color: MUTED }}>{item.supplier} · {item.detail}</div>
+                </div>
+                <Pill label={item.type} bg={item.severity === 'critical' ? '#FEE2E2' : '#FEF3C7'} color={item.severity === 'critical' ? ERROR : WARNING} />
+              </div>
+            ))}
+            {d.actionQueue.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: SUCCESS, fontSize: 13 }}>✅ No actions required — all clear</div>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, flex: 1, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 14 }}>📬 Unacknowledged POs (&gt;48h)</div>
+            {d.unacknowledged.length === 0 ? (
+              <div style={{ color: SUCCESS, fontSize: 12 }}>✅ All POs acknowledged</div>
+            ) : d.unacknowledged.map(po => (
+              <div key={po.id} onClick={() => navigate('/buyer/purchase-orders')} style={{ padding: '8px 10px', marginBottom: 6, cursor: 'pointer', background: '#FEF9C3', border: '1px solid #FCD34D', borderRadius: 5 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: NAVY }}>{po.poNumber}</div>
+                <div style={{ fontSize: 10, color: MUTED }}>{po.supplierName} · {po.acknowledgmentTimeHours}h since sent</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 14 }}>📋 Compliance Alerts</div>
+            {d.expiredCerts.map(s => (
+              <div key={s.id} onClick={() => navigate('/buyer/suppliers')} style={{ padding: '8px 10px', marginBottom: 6, cursor: 'pointer', background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 5 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: ERROR }}>{s.name}</div>
+                <div style={{ fontSize: 10, color: MUTED }}>Certificate EXPIRED · {s.certExpiryDate}</div>
+              </div>
+            ))}
+            {d.expiringCerts.filter(s => {
+              const days = (new Date(s.certExpiryDate).getTime() - Date.now()) / 86400000;
+              return days > 0 && days <= 90;
+            }).map(s => (
+              <div key={s.id + 'exp'} onClick={() => navigate('/buyer/suppliers')} style={{ padding: '8px 10px', marginBottom: 6, cursor: 'pointer', background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 5 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: WARNING }}>{s.name}</div>
+                <div style={{ fontSize: 10, color: MUTED }}>Cert expires {s.certExpiryDate}</div>
+              </div>
+            ))}
+            {d.expiredCerts.length === 0 && d.expiringCerts.filter(s => {
+              const days = (new Date(s.certExpiryDate).getTime() - Date.now()) / 86400000;
+              return days > 0 && days <= 90;
+            }).length === 0 && (
+              <div style={{ color: SUCCESS, fontSize: 12 }}>✅ All certifications current</div>
+            )}
+          </div>
+        </div>
+      </div>
