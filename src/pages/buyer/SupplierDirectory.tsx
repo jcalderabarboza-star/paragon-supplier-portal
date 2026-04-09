@@ -231,8 +231,12 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
           View Details
         </Button>
         <Button design="Default" style={{ flex: 1, fontSize: '0.78rem' }}
+          onClick={() => navigate(`/buyer/purchase-orders?supplier=${s.id}`)}>
+          View POs
+        </Button>
+        <Button design="Default" style={{ flex: 1, fontSize: '0.78rem' }}
           onClick={() => onToast(`Message sent via ${s.preferredChannel}`)}>
-          Send Message
+          Message
         </Button>
       </div>
     </div>
