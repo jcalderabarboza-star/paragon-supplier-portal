@@ -55,8 +55,7 @@ const BUYER_SECTIONS: NavSection[] = [
   {
     header: 'SETTLE',
     items: [
-      { text: 'Invoices & Payment', icon: '🧾', path: '/buyer/invoices',
-        toastMsg: 'Invoices & Payment — Coming Soon in Phase 2' },
+      { text: 'Invoices & Payment', icon: '🧾', path: '/buyer/invoices' },
     ],
   },
   {
