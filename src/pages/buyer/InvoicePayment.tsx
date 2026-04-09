@@ -51,3 +51,61 @@ const BUYER_INVOICES: BuyerInvoice[] = [
   { id: 'binv-007', invoiceNumber: 'INV-2025-EVO-0188', supplierName: 'Evonik Specialty Chemicals France', supplierId: 'sup-006', poNumber: 'PO-2025-00014', poId: 'po-014', amount: 410_000_000, currency: 'IDR', status: 'Overdue', receivedDate: '2025-03-25', dueDate: '2025-04-03', paymentDate: null, matchStatus: 'Matched', sapFiDoc: 'FI-5100009288', sapGrDoc: 'GR-4900009302', approver: 'Finance Controller', paymentTerms: 'Net 10', daysOutstanding: 34, bankAccount: 'Société Générale FR76-3000', channel: 'Email' },
   { id: 'binv-008', invoiceNumber: 'INV-2025-FIR-0309', supplierName: 'Firmenich Malaysia Sdn. Bhd.', supplierId: 'sup-004', poNumber: 'PO-2025-00018', poId: 'po-018', amount: 890_000_000, currency: 'IDR', status: 'Payment Released', receivedDate: '2025-03-18', dueDate: '2025-04-17', paymentDate: '2025-04-15', matchStatus: 'Matched', sapFiDoc: 'FI-5100009241', sapGrDoc: 'GR-4900009255', approver: 'VP SCM', paymentTerms: 'Net 30', daysOutstanding: 0, bankAccount: 'Maybank MY-1234-5678', channel: 'Web' },
 ];
+
+const STATUS_CFG: Record<InvStatus, { bg: string; color: string }> = {
+  'Pending Match':    { bg: '#FEF9C3', color: '#854D0E' },
+  'Approved':         { bg: '#DBEAFE', color: '#1E40AF' },
+  'Disputed':         { bg: '#FEE2E2', color: '#991B1B' },
+  'Payment Released': { bg: '#DCFCE7', color: '#166534' },
+  'Overdue':          { bg: '#FEE2E2', color: '#991B1B' },
+};
+
+const MATCH_CFG: Record<string, { bg: string; color: string }> = {
+  'Matched':        { bg: '#DCFCE7', color: '#166534' },
+  'Pending GR':     { bg: '#FEF9C3', color: '#854D0E' },
+  'Pending':        { bg: '#FEF9C3', color: '#854D0E' },
+  'Qty Mismatch':   { bg: '#FEE2E2', color: '#991B1B' },
+  'Price Variance': { bg: '#FEE2E2', color: '#991B1B' },
+};
+
+const AGING_DATA = [
+  { bucket: 'Current', amount: 3195, count: 3 },
+  { bucket: '1–30d',   amount: 320,  count: 1 },
+  { bucket: '31–60d',  amount: 410,  count: 1 },
+  { bucket: '61–90d',  amount: 0,    count: 0 },
+  { bucket: '>90d',    amount: 0,    count: 0 },
+];
+
+const MONTHLY_SPEND = [
+  { month: 'Nov 24', paid: 1800, pending: 400 },
+  { month: 'Dec 24', paid: 2100, pending: 350 },
+  { month: 'Jan 25', paid: 1950, pending: 500 },
+  { month: 'Feb 25', paid: 2400, pending: 280 },
+  { month: 'Mar 25', paid: 3100, pending: 380 },
+  { month: 'Apr 25', paid: 890,  pending: 3195 },
+];
+
+function fmt(n: number) { return `Rp ${(n / 1_000_000).toFixed(0)}jT`; }
+function fmtFull(n: number) { return `Rp ${n.toLocaleString('id-ID')}`; }
+function fmtDate(s: string) {
+  if (!s) return '—';
+  return new Date(s).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function Pill({ label, bg, color }: { label: string; bg: string; color: string }) {
+  return (
+    <span style={{ background: bg, color, borderRadius: 9999, padding: '2px 9px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>
+      {label}
+    </span>
+  );
+}
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '8px 12px', fontSize: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+      <div style={{ fontWeight: 700, marginBottom: 4, color: NAVY }}>{label}</div>
+      {payload.map((p: any) => <div key={p.name} style={{ color: p.color }}>Rp {p.value}jT</div>)}
+    </div>
+  );
+};
