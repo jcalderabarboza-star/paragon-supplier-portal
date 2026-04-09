@@ -109,8 +109,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
     items: [
       { text: 'My Documents',   icon: '📄', path: '/supplier/documents' },
       { text: 'My Inventory',   icon: '📦', path: '/supplier/inventory' },
-      { text: 'My Performance', icon: '📊', path: '/supplier/performance',
-        toastMsg: 'My Performance — Coming Soon in Phase 2' },
+      { text: 'My Performance', icon: '📊', path: '/supplier/performance' },
       { text: 'My Storefront',  icon: '🏪', path: '/supplier/storefront' },
     ],
   },
