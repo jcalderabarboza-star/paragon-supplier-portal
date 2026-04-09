@@ -10,6 +10,7 @@ import PurchaseOrders from '../pages/buyer/PurchaseOrders';
 import SupplierDirectory from '../pages/buyer/SupplierDirectory';
 import InventoryVisibility from '../pages/buyer/InventoryVisibility';
 import Analytics from '../pages/buyer/Analytics';
+import InvoicePayment from '../pages/buyer/InvoicePayment';
 import Sourcing from '../pages/buyer/Sourcing';
 import ShipmentTracking from '../pages/buyer/ShipmentTracking';
 import SupplierScorecard from '../pages/buyer/SupplierScorecard';
@@ -63,6 +64,7 @@ const AppRouter: React.FC = () => {
             <Route path="buyer/contracts"        element={<ContractManagement />} />
             <Route path="buyer/whatsapp"         element={<WhatsAppHub />} />
             <Route path="buyer/analytics"        element={<Analytics />} />
+            <Route path="buyer/invoices"         element={<InvoicePayment />} />
             <Route path="buyer/scorecard"        element={<SupplierScorecard />} />
             <Route path="buyer/risk"             element={<SupplyRisk />} />
 
