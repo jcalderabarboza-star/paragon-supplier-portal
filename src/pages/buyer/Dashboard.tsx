@@ -250,3 +250,84 @@ function WarRoomBanner({ items, onEscalate }: {
     </div>
   );
 }
+
+const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
+  const d = useDerivedData();
+  const [toast, setToast] = useState<string | null>(null);
+  const [escalated, setEscalated] = useState<Set<string>>(new Set());
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
+
+  const handleEscalate = (id: string) => {
+    setEscalated(prev => new Set([...prev, id]));
+    showToast('Escalation sent — WhatsApp + email notification dispatched to supplier and procurement lead');
+  };
+
+  const now = new Date();
+  const timeStr = now.toLocaleString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  const gradeData = ['A', 'B', 'C', 'D'].map(g => ({
+    grade: g,
+    count: mockSuppliers.filter(s => s.scorecardGrade === g).length,
+    color: g === 'A' ? SUCCESS : g === 'B' ? INFO : g === 'C' ? WARNING : ERROR,
+  }));
+
+  const catOTIF = mockKpisByCategory.map(c => ({
+    name: c.category.replace('Raw Material', 'Raw Mat.').replace('Active Ingredient', 'Active Ing.'),
+    otif: c.otif, target: 95,
+  }));
+
+  const productionLines = [
+    { line: 'Line 1 — Wardah Moisturizing',  risk: d.productionRisk.some(r => r.materialCode.startsWith('FR-WARD')), daysLeft: 5,  sku: 'FR-WARD-4410' },
+    { line: 'Line 2 — Emina Bright Stuff',   risk: d.productionRisk.some(r => r.materialCode.startsWith('FR-EMIN')), daysLeft: 3,  sku: 'FR-EMIN-4420' },
+    { line: 'Line 3 — Make Over Foundation', risk: false, daysLeft: 18, sku: '' },
+    { line: 'Line 4 — Scarlett Body Lotion', risk: d.productionRisk.some(r => r.materialCode === 'RM-EMUL-3320'), daysLeft: 6, sku: 'RM-EMUL-3320' },
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+      {toast && (
+        <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: NAVY, color: 'white', padding: '0.75rem 1.25rem', borderRadius: 8, zIndex: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.25)', fontSize: 13, borderLeft: `3px solid ${TEAL}`, maxWidth: 360 }}>{toast}</div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: NAVY, marginBottom: 2 }}>Procurement Command Center</div>
+          <div style={{ fontSize: 12, color: MUTED }}>
+            Paragon Corp · Odyssey Program · Live as of {timeStr}
+            <span style={{ marginLeft: 10, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: d.warRoomActive ? ERROR : SUCCESS, display: 'inline-block' }} />
+              <span style={{ color: d.warRoomActive ? ERROR : SUCCESS, fontWeight: 600 }}>
+                {d.warRoomActive ? `${d.actionQueue.filter(i => i.severity === 'critical').length} Critical Alerts` : 'All Systems Normal'}
+              </span>
+            </span>
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => showToast('Executive PDF report generating...')} style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: MID, cursor: 'pointer', fontFamily: 'inherit' }}>
+            📥 Export Briefing
+          </button>
+          <button onClick={() => navigate('/buyer/analytics')} style={{ background: TEAL, border: 'none', borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
+            📊 Full Analytics
+          </button>
+        </div>
+      </div>
+
+      {d.warRoomActive && <WarRoomBanner items={d.actionQueue} onEscalate={handleEscalate} />}
+
+      <SectionLabel color={NAVY}>Layer 1 — Strategic · C-Level & Directors</SectionLabel>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <KpiTile label="Total Spend YTD" value={fmt(d.totalSpend)} trend="+8.4% vs last year" trendUp={true} color={TEAL} onClick={() => navigate('/buyer/analytics')} />
+        <KpiTile label="Portfolio OTIF" value={`${d.otif}%`} trend="Target ≥ 95% · 8pp gap" trendUp={false} color={WARNING} alert={d.otif < 90} onClick={() => navigate('/buyer/analytics')} />
+        <KpiTile label="Active Suppliers" value={d.activeSuppliers} sub={`/ ${mockSuppliers.length} total`} trend={`${mockSuppliers.filter(s => s.status === 'Onboarding').length} onboarding`} trendUp={null} color={TEAL} onClick={() => navigate('/buyer/suppliers')} />
+        <KpiTile label="Open Purchase Orders" value={d.openPOs.length} sub="active" trend={`${d.unacknowledged.length} unacknowledged >48h`} trendUp={d.unacknowledged.length === 0} color={d.unacknowledged.length > 0 ? ERROR : TEAL} alert={d.unacknowledged.length > 0} onClick={() => navigate('/buyer/purchase-orders')} />
+      </div>
