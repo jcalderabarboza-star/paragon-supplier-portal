@@ -138,3 +138,115 @@ function useDerivedData() {
     };
   }, []);
 }
+
+function fmt(n: number) { return `Rp ${(n / 1_000_000_000).toFixed(1)}B`; }
+
+function Pill({ label, bg, color }: { label: string; bg: string; color: string }) {
+  return (
+    <span style={{ background: bg, color, borderRadius: 9999, padding: '2px 9px', fontSize: 10, fontWeight: 700, whiteSpace: 'nowrap' }}>
+      {label}
+    </span>
+  );
+}
+
+function SectionLabel({ children, color = TEAL }: { children: React.ReactNode; color?: string }) {
+  return (
+    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: 1, height: 1, background: BORDER }} />
+      {children}
+      <div style={{ flex: 1, height: 1, background: BORDER }} />
+    </div>
+  );
+}
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '8px 12px', fontSize: 11, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+      <div style={{ fontWeight: 700, marginBottom: 4, color: NAVY }}>{label}</div>
+      {payload.map((p: any) => <div key={p.name} style={{ color: p.color ?? TEAL }}>{p.name}: {p.value}</div>)}
+    </div>
+  );
+};
+
+function KpiTile({ label, value, sub, trend, trendUp, color, alert, onClick }: {
+  label: string; value: string | number; sub?: string;
+  trend?: string; trendUp?: boolean | null;
+  color?: string; alert?: boolean; onClick?: () => void;
+}) {
+  const c = color ?? TEAL;
+  return (
+    <div onClick={onClick} style={{
+      background: 'white', border: `1px solid ${alert ? ERROR : BORDER}`,
+      borderLeft: `4px solid ${alert ? ERROR : c}`,
+      borderRadius: 8, padding: '16px 18px',
+      boxShadow: alert ? '0 0 0 2px rgba(187,0,0,0.1)' : '0 1px 3px rgba(0,0,0,0.06)',
+      cursor: onClick ? 'pointer' : 'default',
+    }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+        <span style={{ fontSize: 26, fontWeight: 700, color: alert ? ERROR : c, lineHeight: 1 }}>{value}</span>
+        {sub && <span style={{ fontSize: 12, color: MUTED }}>{sub}</span>}
+      </div>
+      {trend && (
+        <div style={{ fontSize: 11, color: trendUp === true ? SUCCESS : trendUp === false ? ERROR : MUTED, fontWeight: 500 }}>
+          {trendUp === true ? '▲' : trendUp === false ? '▼' : '→'} {trend}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WarRoomBanner({ items, onEscalate }: {
+  items: ReturnType<typeof useDerivedData>['actionQueue'];
+  onEscalate: (id: string) => void;
+}) {
+  const critical = items.filter(i => i.severity === 'critical');
+  const warning  = items.filter(i => i.severity === 'warning');
+  return (
+    <div style={{ background: 'linear-gradient(135deg, #1a0000 0%, #2d0a0a 100%)', border: `1px solid ${ERROR}`, borderRadius: 10, overflow: 'hidden', boxShadow: '0 4px 24px rgba(187,0,0,0.2)' }}>
+      <div style={{ background: ERROR, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 16 }}>🚨</span>
+          <span style={{ color: 'white', fontWeight: 800, fontSize: 13, letterSpacing: '1px', textTransform: 'uppercase' }}>
+            WAR ROOM — {critical.length} Critical · {warning.length} Warning
+          </span>
+        </div>
+        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', letterSpacing: '1px' }}>
+          {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+        </div>
+      </div>
+      <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {critical.map(item => (
+          <div key={item.id} style={{ background: 'rgba(187,0,0,0.15)', border: '1px solid rgba(187,0,0,0.3)', borderRadius: 6, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+              <span style={{ fontSize: 14, flexShrink: 0 }}>
+                {item.type === 'Production Risk' ? '🏭' : item.type === 'PO Unacknowledged' ? '📄' : item.type === 'Cert Expired' ? '📋' : '⚠️'}
+              </span>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#FCA5A5' }}>{item.title}</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 1 }}>{item.supplier} · {item.detail}</div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+              <Pill label={item.type} bg="rgba(187,0,0,0.3)" color="#FCA5A5" />
+              <button onClick={() => onEscalate(item.id)} style={{ background: ERROR, color: 'white', border: 'none', borderRadius: 5, padding: '4px 10px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                ESCALATE
+              </button>
+            </div>
+          </div>
+        ))}
+        {warning.length > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+            {warning.map(item => (
+              <div key={item.id} style={{ background: 'rgba(233,115,12,0.15)', border: '1px solid rgba(233,115,12,0.3)', borderRadius: 5, padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 11, color: '#FCD34D', fontWeight: 600 }}>⚠ {item.title}</span>
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>· {item.supplier}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
