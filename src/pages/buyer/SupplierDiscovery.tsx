@@ -285,3 +285,75 @@ const GlobalSupplierCard: React.FC<{ s: GlobalSupplier; onToast: (m: string) => 
     </div>
   );
 };
+
+// ─── Qualification Card ───────────────────────────────────────────────────────
+const QualificationCard: React.FC<{ q: QualificationItem }> = ({ q }) => {
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  return (
+    <div style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+      {toast && <div style={{ position: 'fixed', bottom: 80, right: 24, background: NAVY, color: 'white', borderRadius: 8, padding: '10px 16px', fontSize: 13, boxShadow: '0 4px 16px rgba(0,0,0,0.25)', zIndex: 9999, borderLeft: `3px solid ${TEAL}` }}>{toast}</div>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: NAVY }}>{q.flag} {q.supplier}</div>
+        <span style={{ background: STATUS_BG[q.status], color: STATUS_COLOR[q.status], borderRadius: 9999, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>{q.status}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 14, alignItems: 'center' }}>
+        {STAGE_LABELS.map((label, i) => {
+          const stepNum = i + 1; const isDone = stepNum < q.stage; const isActive = stepNum === q.stage;
+          return (
+            <React.Fragment key={label}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                <div style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: isDone ? SUCCESS : isActive ? TEAL : '#E2E8F0', color: isDone || isActive ? 'white' : '#94A3B8', fontSize: 11, fontWeight: 700, marginBottom: 4 }}>
+                  {isDone ? '✓' : stepNum}
+                </div>
+                <div style={{ fontSize: 9, color: isActive ? TEAL : '#94A3B8', textAlign: 'center', fontWeight: isActive ? 700 : 400, lineHeight: 1.2 }}>{label}</div>
+              </div>
+              {i < STAGE_LABELS.length - 1 && <div style={{ height: 2, flex: 0.3, background: isDone ? SUCCESS : '#E2E8F0', marginBottom: 18 }} />}
+            </React.Fragment>
+          );
+        })}
+      </div>
+      <div style={{ fontSize: 12, color: MUTED, marginBottom: 6 }}><span style={{ fontWeight: 600, color: NAVY }}>Next: </span>{q.nextAction}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 12, color: '#94A3B8' }}>Due: {q.dueDate} · {q.owner}</span>
+        <button onClick={() => showToast('Status updated')} style={{ padding: '5px 12px', borderRadius: 6, background: '#F0F4F8', border: `1px solid ${BORDER}`, fontSize: 12, cursor: 'pointer', color: NAVY, fontWeight: 500, fontFamily: 'inherit' }}>Update Status →</button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Recommendation Card ──────────────────────────────────────────────────────
+const RecommendationCard: React.FC<{ sup: RecommendedSupplier }> = ({ sup }) => {
+  const navigate = useNavigate();
+  const [toast, setToast] = useState<string | null>(null);
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+  const scoreColor = sup.matchScore >= 90 ? SUCCESS : sup.matchScore >= 80 ? TEAL : WARNING;
+  return (
+    <div style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)', marginBottom: 14 }}>
+      {toast && <div style={{ position: 'fixed', bottom: 80, right: 24, background: NAVY, color: 'white', borderRadius: 8, padding: '10px 16px', fontSize: 13, boxShadow: '0 4px 16px rgba(0,0,0,0.25)', zIndex: 9999, borderLeft: `3px solid ${TEAL}` }}>{toast}</div>}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>{sup.flag} {sup.name}</div>
+          <div style={{ fontSize: 12, color: MUTED }}>{sup.country}</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 22, fontWeight: 800, color: scoreColor }}>{sup.matchScore}<span style={{ fontSize: 13, fontWeight: 500 }}>/100</span></div>
+          <div style={{ fontSize: 11, color: scoreColor, fontWeight: 600 }}>AI Match Score</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 13, color: NAVY, lineHeight: 1.6, marginBottom: 10 }}>{sup.whyRecommended}</div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 12, color: MUTED, fontWeight: 600 }}>Covers:</span>
+        <span style={{ background: 'rgba(0,151,167,0.1)', color: TEAL, borderRadius: 9999, padding: '2px 10px', fontSize: 12, fontWeight: 500 }}>{sup.covers}</span>
+      </div>
+      {sup.riskNote && (
+        <div style={{ background: '#FEF3C7', borderLeft: '3px solid #F59E0B', borderRadius: 4, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: '#92400E' }}>{sup.riskNote}</div>
+      )}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={() => navigate(sup.storefrontPath)} style={{ padding: '7px 14px', borderRadius: 6, background: TEAL, color: 'white', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>View Storefront →</button>
+        <button onClick={() => showToast(`Qualification initiated for ${sup.name}. Discovery team notified.`)} style={{ padding: '7px 14px', borderRadius: 6, background: '#F0F4F8', border: `1px solid ${BORDER}`, fontSize: 13, cursor: 'pointer', color: NAVY, fontWeight: 500, fontFamily: 'inherit' }}>Start Qualification →</button>
+        <button onClick={() => showToast(`${sup.name} invited to RFQ. Invitation sent via email.`)} style={{ padding: '7px 14px', borderRadius: 6, background: '#F0F4F8', border: `1px solid ${BORDER}`, fontSize: 13, cursor: 'pointer', color: NAVY, fontWeight: 500, fontFamily: 'inherit' }}>Invite to RFQ →</button>
+      </div>
+    </div>
+  );
+};
