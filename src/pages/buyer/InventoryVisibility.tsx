@@ -189,6 +189,14 @@ const InventoryVisibility: React.FC = () => {
     []
   );
 
+  const supplierCertMap = useMemo(() => {
+    return Object.fromEntries(mockSuppliers.map(s => {
+      const days = (new Date(s.certExpiryDate).getTime() - Date.now()) / 86400000;
+      const status = days <= 0 ? 'expired' : days <= 90 ? 'expiring' : 'valid';
+      return [s.id, { status, expiryDate: s.certExpiryDate }];
+    }));
+  }, []);
+
   const criticalCount = useMemo(() => mockInventory.filter(i => i.stockStatus === StockStatus.CRITICAL).length, []);
   const lowCount = useMemo(() => mockInventory.filter(i => i.stockStatus === StockStatus.LOW).length, []);
   const normalCount = useMemo(() => mockInventory.filter(i => i.stockStatus === StockStatus.NORMAL).length, []);
