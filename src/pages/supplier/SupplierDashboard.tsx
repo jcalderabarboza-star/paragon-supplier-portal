@@ -136,7 +136,7 @@ const SupplierDashboard: React.FC = () => {
           { icon: <Target size={20} />, label: 'My OTIF Score', value: `${mySupplier.otif}%`, sub: 'last 6 months', color: otifColor, bg: 'white' },
         ].map(({ icon, label, value, sub, color, bg }) => (
           <div key={label} style={{ flex: '1 1 160px', background: bg, border: '1px solid #E2E8F0', borderLeft: `4px solid ${color}`, borderRadius: '8px', padding: '1rem 1.125rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-            <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{icon}</div>
+            <div style={{ color, marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>{icon}</div>
             <div style={{ fontSize: '1.75rem', fontWeight: 700, color }}>{value}</div>
             <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#354A5F' }}>{label}</div>
             <div style={{ fontSize: '0.72rem', color: '#6c757d' }}>{sub}</div>
