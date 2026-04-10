@@ -36,9 +36,9 @@ const HEATMAP_CELL_BG: Record<string, string> = {
 };
 
 const SOURCE_CHIPS: Record<string, { bg: string; color: string }> = {
-  'API Push': { bg: '#E3F2FD', color: '#0A6ED1' },
-  'Manual': { bg: '#F5F5F5', color: '#6c757d' },
-  'EDI 846': { bg: '#F3E5F5', color: '#9C27B0' },
+  'API Push': { bg: '#E0F7FA', color: '#0097A7' },
+  'Manual':   { bg: '#F8FAFC', color: '#64748B' },
+  'EDI 846':  { bg: '#F1F5F9', color: '#354A5F' },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
