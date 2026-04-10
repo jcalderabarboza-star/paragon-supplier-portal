@@ -85,17 +85,17 @@ const DetailPanel: React.FC<{
 }> = ({ po, onClose, onToast }) => {
   const timeline: { icon: string; label: string; date: string }[] = [];
 
-  timeline.push({ icon: '📤', label: `Sent via ${po.channel}`, date: po.orderDate });
+  timeline.push({ icon: '→', label: `Sent via ${po.channel}`, date: po.orderDate });
   if (statusReached(po.status, POStatus.VIEWED))
-    timeline.push({ icon: '👁', label: 'Viewed by supplier', date: po.orderDate });
+    timeline.push({ icon: '◎', label: 'Viewed by supplier', date: po.orderDate });
   if (statusReached(po.status, POStatus.ACKNOWLEDGED))
-    timeline.push({ icon: '✅', label: 'Acknowledged', date: po.orderDate });
+    timeline.push({ icon: '✓', label: 'Acknowledged', date: po.orderDate });
   if (statusReached(po.status, POStatus.CONFIRMED))
-    timeline.push({ icon: '📋', label: 'Confirmed', date: po.confirmedDeliveryDate || po.orderDate });
+    timeline.push({ icon: '✓', label: 'Confirmed', date: po.confirmedDeliveryDate || po.orderDate });
   if (statusReached(po.status, POStatus.PARTIALLY_DELIVERED))
-    timeline.push({ icon: '🚚', label: 'Partially Delivered', date: po.deliveryDate });
+    timeline.push({ icon: '▷', label: 'Partially Delivered', date: po.deliveryDate });
   if (statusReached(po.status, POStatus.DELIVERED))
-    timeline.push({ icon: '📦', label: 'Delivered', date: po.deliveryDate });
+    timeline.push({ icon: '■', label: 'Delivered', date: po.deliveryDate });
 
   return (
     <>
