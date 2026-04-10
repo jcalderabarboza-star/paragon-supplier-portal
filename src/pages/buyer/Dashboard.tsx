@@ -537,7 +537,7 @@ const Dashboard: React.FC = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>⚡ Action Queue — Today</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><Zap size={14} /> Action Queue — Today</div>
           <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>{d.actionQueue.length} items require attention · click to navigate</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {d.actionQueue.map(item => (
