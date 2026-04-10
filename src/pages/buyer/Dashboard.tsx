@@ -569,7 +569,7 @@ const Dashboard: React.FC = () => {
           </div>
 
           <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 14 }}>📋 Compliance Alerts</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}><ShieldAlert size={14} /> Compliance Alerts</div>
             {d.expiredCerts.map(s => (
               <div key={s.id} onClick={() => navigate('/buyer/suppliers')} style={{ padding: '8px 10px', marginBottom: 6, cursor: 'pointer', background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 5 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: ERROR }}>{s.name}</div>
