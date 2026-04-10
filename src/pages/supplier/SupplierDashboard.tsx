@@ -153,7 +153,7 @@ const SupplierDashboard: React.FC = () => {
           {/* Action Required */}
           <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '1rem', fontWeight: 700, color: '#354A5F' }}>⚡ Action Required</span>
+              <span style={{ fontSize: '1rem', fontWeight: 700, color: '#354A5F' }}>Action Required</span>
               <span style={{
                 background: '#BB0000', color: 'white', fontSize: '0.7rem', fontWeight: 700,
                 padding: '0.1rem 0.5rem', borderRadius: '12px', minWidth: '20px', textAlign: 'center',
