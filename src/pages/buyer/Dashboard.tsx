@@ -518,7 +518,7 @@ const Dashboard: React.FC = () => {
             <PieChart>
               <Pie data={d.channelData} cx="50%" cy="50%" innerRadius={40} outerRadius={65} dataKey="value" nameKey="name">
                 {d.channelData.map((entry, i) => (
-                  <Cell key={i} fill={entry.name === ChannelType.WHATSAPP ? '#25D366' : entry.name === ChannelType.EMAIL ? '#EA4335' : entry.name === ChannelType.WEB ? INFO : MID} />
+                  <Cell key={i} fill={entry.name === ChannelType.WHATSAPP ? '#107E3E' : entry.name === ChannelType.EMAIL ? '#BB0000' : entry.name === ChannelType.WEB ? '#0097A7' : '#0D1B2A'} />
                 ))}
               </Pie>
               <Tooltip formatter={(v: number) => [`${v} POs`, '']} />
