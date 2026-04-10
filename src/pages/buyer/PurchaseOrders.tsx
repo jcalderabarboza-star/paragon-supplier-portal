@@ -22,10 +22,10 @@ function fmtDate(s: string): string {
 }
 
 const CHANNEL_EMOJI: Record<ChannelType, string> = {
-  [ChannelType.WHATSAPP]: '📱',
-  [ChannelType.EMAIL]: '📧',
-  [ChannelType.WEB]: '🌐',
-  [ChannelType.API]: '⚙️',
+  [ChannelType.WHATSAPP]: 'WA',
+  [ChannelType.EMAIL]: 'Email',
+  [ChannelType.WEB]: 'Web',
+  [ChannelType.API]: 'API',
 };
 
 function ackColor(h: number): string {
