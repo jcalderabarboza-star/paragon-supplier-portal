@@ -345,7 +345,7 @@ function DockAppointments() {
       </div>
 
       <div style={{ background:'#E0F7FA', border:'1px solid #0097A744', borderRadius:8, padding:'12px 16px', fontSize:'12px', color:'#006064', display:'flex', alignItems:'flex-start', gap:10 }}>
-        <span style={{ fontSize:'16px', flexShrink:0 }}>💡</span>
+        <span style={{ fontSize:'16px', flexShrink:0, fontWeight: 700 }}>i</span>
         <span>Dock appointment requests for new ASNs are processed by the Paragon Inbound Team. Confirmation is sent via <strong>WhatsApp</strong> within 2 hours of ASN submission.</span>
       </div>
     </div>
