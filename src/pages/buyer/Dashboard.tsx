@@ -10,6 +10,11 @@ import { mockSuppliers } from '../../data/mockSuppliers';
 import { mockInventory } from '../../data/mockInventory';
 import { mockTrendData, mockKpisByCategory } from '../../data/mockKpis';
 import { POStatus, ChannelType } from '../../types/purchaseOrder.types';
+import {
+  AlertTriangle, Factory, FileText, ClipboardList, Package,
+  TrendingUp, Smartphone, Zap, Mail, ShieldAlert, Brain,
+  Download, BarChart2, ShoppingCart, Truck, CheckCircle,
+} from 'lucide-react';
 import { StockStatus, ScorecardGrade } from '../../types/supplier.types';
 
 const NAVY    = '#0D1B2A';
