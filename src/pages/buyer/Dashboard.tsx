@@ -197,9 +197,11 @@ function KpiTile({ label, value, sub, trend, trendUp, color, alert, onClick }: {
   );
 }
 
-function WarRoomBanner({ items, onEscalate }: {
+function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: {
   items: ReturnType<typeof useDerivedData>['actionQueue'];
   onEscalate: (id: string) => void;
+  isFullScreen: boolean;
+  onToggleFullScreen: () => void;
 }) {
   const critical = items.filter(i => i.severity === 'critical');
   const warning  = items.filter(i => i.severity === 'warning');
