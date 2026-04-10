@@ -404,7 +404,7 @@ const InspectionCard: React.FC<{ item: InspectionItem }> = ({ item }) => {
         <span>CoA: {item.coaReceived ? '✅ Received' : '❌ Missing'}</span>
         <span>SDS: {item.sdsReceived ? '✅ Received' : '❌ Missing'}</span>
         {item.halalRequired
-          ? <span>Halal Cert: {item.coaReceived ? '✅ Required + Received' : '⚠️ Required + Missing'}</span>
+          ? <span>Halal Cert: {item.coaReceived ? '✅ Required + Received' : 'Required + Missing'}</span>
           : <span style={{ color: '#94A3B8' }}>Halal: N/A</span>}
       </div>
 
@@ -519,10 +519,10 @@ const GoodsReceipt: React.FC = () => {
 
       {/* Alert bar */}
       <div style={{ background: '#FEE2E2', borderLeft: '4px solid #BB0000', borderRadius: 6, padding: '10px 16px', marginBottom: 10, fontSize: 13, color: '#BB0000', fontWeight: 500 }}>
-        ⛔ 1 batch rejected — BASF Panthenol B5 purity failure. Return process initiated.
+        1 batch rejected — BASF Panthenol B5 purity failure. Return process initiated.
       </div>
       <div style={{ background: '#FEF3C7', borderLeft: '4px solid #F59E0B', borderRadius: 6, padding: '10px 16px', marginBottom: 20, fontSize: 13, color: '#E9730C', fontWeight: 500 }}>
-        ⚠️ 1 batch on hold — PT Halal Emulsifier Glycerin pending lab results (ETA 2 days)
+        1 batch on hold — PT Halal Emulsifier Glycerin pending lab results (ETA 2 days)
       </div>
 
       {/* Tabs */}
@@ -641,7 +641,7 @@ const GoodsReceipt: React.FC = () => {
           </div>
           <div style={{ background: 'rgba(0,151,167,0.08)', borderLeft: '4px solid #0097A7', borderRadius: 6, padding: 16 }}>
             <div style={{ fontSize: 13, color: '#0D1B2A', fontWeight: 500, lineHeight: 1.6 }}>
-              💡 <strong>Quality Insight:</strong> BASF Personal Care DE accounts for 50% of rejections YTD. Recommend supplier quality audit and updated CoA requirements. Consider activating Evonik Specialty as primary source for Panthenol B5.
+              <strong>Quality Insight:</strong> BASF Personal Care DE accounts for 50% of rejections YTD. Recommend supplier quality audit and updated CoA requirements. Consider activating Evonik Specialty as primary source for Panthenol B5.
             </div>
           </div>
         </div>
