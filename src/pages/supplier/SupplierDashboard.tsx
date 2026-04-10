@@ -129,10 +129,10 @@ const SupplierDashboard: React.FC = () => {
       {/* ── Quick Stats ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         {[
-          { icon: '📋', label: 'Open Orders', value: openOrders, sub: 'awaiting action', color: '#0097A7', bg: '#E3F2FD' },
-          { icon: '🚚', label: 'Pending ASNs', value: pendingASNs, sub: 'need shipment notice', color: '#E9730C', bg: '#FFF3E0' },
-          { icon: '💰', label: 'Unpaid Invoices', value: 2, sub: 'pending payment', color: '#BB0000', bg: '#FFEBEE' },
-          { icon: '🎯', label: 'My OTIF Score', value: `${mySupplier.otif}%`, sub: 'last 6 months', color: otifColor, bg: mySupplier.otif >= 90 ? '#E8F5E9' : '#FFF3E0' },
+          { icon: '📋', label: 'Open Orders', value: openOrders, sub: 'awaiting action', color: '#0097A7', bg: 'white' },
+          { icon: '🚚', label: 'Pending ASNs', value: pendingASNs, sub: 'need shipment notice', color: '#E9730C', bg: 'white' },
+          { icon: '💰', label: 'Unpaid Invoices', value: 2, sub: 'pending payment', color: '#BB0000', bg: 'white' },
+          { icon: '🎯', label: 'My OTIF Score', value: `${mySupplier.otif}%`, sub: 'last 6 months', color: otifColor, bg: 'white' },
         ].map(({ icon, label, value, sub, color, bg }) => (
           <div key={label} style={{ flex: '1 1 160px', background: bg, border: `1px solid ${color}33`, borderRadius: '8px', padding: '1rem 1.125rem' }}>
             <div style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{icon}</div>
