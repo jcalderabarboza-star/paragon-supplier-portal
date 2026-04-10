@@ -378,8 +378,8 @@ const Dashboard: React.FC = () => {
                       cursor: 'pointer',
                     }} onClick={() => { setIsFullScreen(false); }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1 }}>
-                        <span style={{ fontSize: 20 }}>
-                          {item.type === 'Production Risk' ? '🏭' : item.type === 'PO Unacknowledged' ? '📄' : item.type === 'Cert Expired' ? '📋' : '⚠️'}
+                        <span style={{ display: 'flex', alignItems: 'center' }}>
+                          {item.type === 'Production Risk' ? <Factory size={20} /> : item.type === 'PO Unacknowledged' ? <FileText size={20} /> : item.type === 'Cert Expired' ? <ClipboardList size={20} /> : <AlertTriangle size={20} />}
                         </span>
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: item.severity === 'critical' ? '#BB0000' : '#E9730C' }}>{item.title}</div>
