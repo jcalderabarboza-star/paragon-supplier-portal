@@ -28,11 +28,11 @@ const STATUS_TILE_BG: Record<StockStatus, string> = {
 };
 
 const HEATMAP_CELL_BG: Record<string, string> = {
-  [StockStatus.CRITICAL]: '#EF5350',
-  [StockStatus.LOW]: '#FFA726',
-  [StockStatus.NORMAL]: '#66BB6A',
-  [StockStatus.EXCESS]: '#42A5F5',
-  'No Data': '#E0E0E0',
+  [StockStatus.CRITICAL]: '#BB0000',
+  [StockStatus.LOW]: '#E9730C',
+  [StockStatus.NORMAL]: '#107E3E',
+  [StockStatus.EXCESS]: '#0097A7',
+  'No Data': '#E2E8F0',
 };
 
 const SOURCE_CHIPS: Record<string, { bg: string; color: string }> = {
