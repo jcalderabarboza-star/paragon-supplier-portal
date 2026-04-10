@@ -305,7 +305,7 @@ const SupplierDashboard: React.FC = () => {
                 {
                   name: 'BPOM Registration',
                   valid: mySupplier.bpomRegistered,
-                  status: mySupplier.bpomRegistered ? '✅ Registered' : '❌ Not Registered',
+                  status: mySupplier.bpomRegistered ? '✓ Registered' : '✗ Not Registered',
                   expiry: 'Annual renewal',
                   color: mySupplier.bpomRegistered ? '#107E3E' : '#BB0000',
                   action: 'Apply',
