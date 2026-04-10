@@ -297,7 +297,7 @@ const SupplierDashboard: React.FC = () => {
                 {
                   name: 'Halal Certificate',
                   valid: mySupplier.halalCertified,
-                  status: mySupplier.halalCertified ? '✅ Valid' : '❌ Not Certified',
+                  status: mySupplier.halalCertified ? '✓ Valid' : '✗ Not Certified',
                   expiry: mySupplier.halalCertified ? `Exp: ${fmtDate(mySupplier.certExpiryDate)}` : 'Not registered',
                   color: mySupplier.halalCertified ? '#107E3E' : '#BB0000',
                   action: 'Upload',
