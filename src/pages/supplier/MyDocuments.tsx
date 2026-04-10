@@ -135,7 +135,7 @@ const MyDocuments: React.FC = () => {
       )}
       {expiringSoon.length > 0 && (
         <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#E9730C' }}>
-          <span>⚠️</span>
+          <span>!</span>
           <div><strong>{expiringSoon.length} document{expiringSoon.length > 1 ? 's' : ''} expiring within 6 months: </strong>{expiringSoon.map(d => d.name.split('—')[0].trim()).join(' · ')}</div>
         </div>
       )}
