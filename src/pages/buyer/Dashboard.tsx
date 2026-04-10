@@ -238,8 +238,8 @@ function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: 
         {critical.map(item => (
           <div key={item.id} style={{ background: 'white', border: '1px solid #FECACA', borderLeft: '3px solid #BB0000', borderRadius: 6, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
-              <span style={{ fontSize: 14, flexShrink: 0 }}>
-                {item.type === 'Production Risk' ? '🏭' : item.type === 'PO Unacknowledged' ? '📄' : item.type === 'Cert Expired' ? '📋' : '⚠️'}
+              <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                {item.type === 'Production Risk' ? <Factory size={14} /> : item.type === 'PO Unacknowledged' ? <FileText size={14} /> : item.type === 'Cert Expired' ? <ClipboardList size={14} /> : <AlertTriangle size={14} />}
               </span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#BB0000' }}>{item.title}</div>
