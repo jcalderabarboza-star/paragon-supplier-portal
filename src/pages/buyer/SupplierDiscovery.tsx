@@ -508,7 +508,7 @@ const SupplierDiscovery: React.FC = () => {
             5 critical materials have only one qualified supplier — dual sourcing strongly recommended
           </div>
           <div style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', overflowX: 'auto', marginBottom: 24 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14 }}>⚠️ Materials Requiring Second Source</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14 }}>Materials Requiring Second Source</div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ background: '#F0F4F8', borderBottom: `2px solid ${BORDER}` }}>
