@@ -31,7 +31,7 @@ function useDerivedData() {
 
     const openPOs = pos.filter(p => ![POStatus.CLOSED, POStatus.DELIVERED].includes(p.status));
     const unacknowledged = pos.filter(p => p.status === POStatus.SENT && p.acknowledgmentTimeHours > 48);
-    const overduePOs = pos.filter(p => p.daysOverdue > 0);
+    const overduePOs = pos.filter(p => p.daysOverdue > 0 && ![POStatus.CLOSED, POStatus.DELIVERED].includes(p.status));
     const totalSpend = pos.reduce((a, b) => a + b.totalValue, 0);
     const deliveredOnTime = pos.filter(p => p.status === POStatus.DELIVERED && p.daysOverdue <= 0).length;
     const delivered = pos.filter(p => p.status === POStatus.DELIVERED).length;
