@@ -37,50 +37,50 @@ interface NavSection {
 const BUYER_SECTIONS: NavSection[] = [
   {
     items: [
-      { text: 'Dashboard', icon: '📊', path: '/buyer/dashboard' },
+      { text: 'Dashboard', icon: <LayoutDashboard size={16} />, path: '/buyer/dashboard' },
     ],
   },
   {
     header: 'ACQUIRE',
     items: [
-      { text: 'Supplier Discovery', icon: '🔍', path: '/buyer/discovery' },
-      { text: 'Marketplace',        icon: '🏪', path: '/marketplace' },
-      { text: 'Supplier Directory', icon: '🤝', path: '/buyer/suppliers' },
-      { text: 'Sourcing & RFQ',     icon: '📋', path: '/buyer/sourcing' },
-      { text: 'Contracts',          icon: '📝', path: '/buyer/contracts' },
+      { text: 'Supplier Discovery', icon: <Search size={16} />,       path: '/buyer/discovery' },
+      { text: 'Marketplace',        icon: <Store size={16} />,        path: '/marketplace' },
+      { text: 'Supplier Directory', icon: <Users size={16} />,        path: '/buyer/suppliers' },
+      { text: 'Sourcing & RFQ',     icon: <FileText size={16} />,     path: '/buyer/sourcing' },
+      { text: 'Contracts',          icon: <ScrollText size={16} />,   path: '/buyer/contracts' },
     ],
   },
   {
     header: 'TRANSACT',
     items: [
-      { text: 'Purchase Orders',      icon: '📄', path: '/buyer/purchase-orders' },
-      { text: 'Inventory Visibility', icon: '📦', path: '/buyer/inventory' },
-      { text: 'Shipments & ASN',      icon: '🚢', path: '/buyer/shipments' },
-      { text: 'Goods Receipt & QC',   icon: '📥', path: '/buyer/goods-receipt' },
+      { text: 'Purchase Orders',      icon: <ShoppingCart size={16} />,    path: '/buyer/purchase-orders' },
+      { text: 'Inventory Visibility', icon: <Package size={16} />,         path: '/buyer/inventory' },
+      { text: 'Shipments & ASN',      icon: <Ship size={16} />,            path: '/buyer/shipments' },
+      { text: 'Goods Receipt & QC',   icon: <ClipboardCheck size={16} />,  path: '/buyer/goods-receipt' },
     ],
   },
   {
     header: 'SETTLE',
     items: [
-      { text: 'Invoices & Payment', icon: '🧾', path: '/buyer/invoices' },
+      { text: 'Invoices & Payment', icon: <Receipt size={16} />, path: '/buyer/invoices' },
     ],
   },
   {
     header: 'INTELLIGENCE',
     items: [
-      { text: 'Supplier Scorecard', icon: '🏅', path: '/buyer/scorecard' },
-      { text: 'Analytics',          icon: '📈', path: '/buyer/analytics' },
-      { text: 'Supply Risk',        icon: '⚠️', path: '/buyer/risk' },
-      { text: 'WhatsApp Hub',       icon: '📱', path: '/buyer/whatsapp' },
+      { text: 'Supplier Scorecard', icon: <Award size={16} />,        path: '/buyer/scorecard' },
+      { text: 'Analytics',          icon: <BarChart2 size={16} />,    path: '/buyer/analytics' },
+      { text: 'Supply Risk',        icon: <AlertTriangle size={16} />, path: '/buyer/risk' },
+      { text: 'WhatsApp Hub',       icon: <Smartphone size={16} />,   path: '/buyer/whatsapp' },
     ],
   },
 ];
 
 const BUYER_FIXED: NavItem[] = [
-  { text: 'Compliance (2)', icon: '✅', path: '/buyer/compliance',
+  { text: 'Compliance (2)', icon: <ShieldCheck size={16} />, path: '/buyer/compliance',
     badge: '2', badgeColor: '#BB0000',
     toastMsg: 'Compliance module — Coming Soon in Phase 2' },
-  { text: 'Settings', icon: '⚙️', path: '/buyer/settings',
+  { text: 'Settings', icon: <Settings size={16} />, path: '/buyer/settings',
     toastMsg: 'Settings — Coming Soon in Phase 2' },
 ];
 
