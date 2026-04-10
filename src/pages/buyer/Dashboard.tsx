@@ -456,7 +456,7 @@ const Dashboard: React.FC = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>📄 PO Pipeline — Live Status</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><ShoppingCart size={14} /> PO Pipeline — Live Status</div>
           <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>{mockPurchaseOrders.length} purchase orders · derived from live data</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {d.poFunnel.map(({ status, count, color }) => {
