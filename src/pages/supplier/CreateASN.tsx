@@ -253,6 +253,8 @@ function CreateASNWizard({ onToast }: { onToast:(m:string)=>void }) {
             ['Ship Date', fmtDate(form.shipDate)],
             ['ETA', form.eta ? fmtDate(form.eta) : '—'],
             ['Packages', form.packages || '—'],
+            ['Batch Number', form.batchNumber || '—'],
+            ['Lot Number', form.lotNumber || '—'],
           ].map(([k,v]) => (
             <div key={k} style={{ padding:'10px 14px', background:'#F8FAFC', borderRadius:6, border:'1px solid #E2E8F0' }}>
               <div style={{ fontSize:'11px', color:'#64748B', fontWeight:600 }}>{k}</div>
