@@ -119,7 +119,7 @@ const SupplierDashboard: React.FC = () => {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <div style={{ fontSize: '0.78rem', opacity: 0.9, fontWeight: 600 }}>
-              {mySupplier.otif >= 90 ? '🟢 On Track' : mySupplier.otif >= 80 ? '🟡 Needs Attention' : '🔴 At Risk'}
+              {mySupplier.otif >= 90 ? '● On Track' : mySupplier.otif >= 80 ? '● Needs Attention' : '● At Risk'}
             </div>
             <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>OTIF: {mySupplier.otif}%</div>
             <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Target: ≥ 95%</div>
