@@ -272,6 +272,7 @@ const Dashboard: React.FC = () => {
   const [toast, setToast] = useState<string | null>(null);
   const [escalated, setEscalated] = useState<Set<string>>(new Set());
   const [tick, setTick] = useState(0);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setTick(n => n + 1), 60000);
