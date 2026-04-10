@@ -21,10 +21,10 @@ const TEXT_HOVER = '#CBD5E1';  // hovered nav item
 
 interface NavItem {
   text: string;
-  icon: string;
+  icon: React.ReactNode;
   path: string;
   badge?: string;
-  badgeColor?: string;  // defaults to TEAL; use '#BB0000' for error badges
+  badgeColor?: string;
   toastMsg?: string;
 }
 
