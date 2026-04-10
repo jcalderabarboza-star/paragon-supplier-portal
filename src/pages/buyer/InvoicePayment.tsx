@@ -176,7 +176,14 @@ function PaymentConfirmModal({ invoice, onClose, onConfirm }: {
 }
 
 const InvoicePayment: React.FC = () => {
-  const [invoices, setInvoices]         = useState<BuyerInvoice[]>(BUYER_INVOICES);
+  const [invoices, setInvoices] = useState<BuyerInvoice[]>(() => {
+    const posted: string[] = JSON.parse(localStorage.getItem('paragon_gr_posted') || '[]');
+    return BUYER_INVOICES.map(inv =>
+      posted.includes(inv.poNumber) && inv.status === 'Pending Match' && inv.matchStatus === 'Pending GR'
+        ? { ...inv, status: 'Approved' as InvStatus, matchStatus: 'Matched' as const, sapGrDoc: `GR-490000${Math.floor(1000 + Math.random() * 9000)}` }
+        : inv
+    );
+  });
   const [activeTab, setActiveTab]       = useState<'queue' | 'analytics' | 'aging'>('queue');
   const [filterStatus, setFilterStatus] = useState<InvStatus | 'All'>('All');
   const [confirmInv, setConfirmInv]     = useState<BuyerInvoice | null>(null);
