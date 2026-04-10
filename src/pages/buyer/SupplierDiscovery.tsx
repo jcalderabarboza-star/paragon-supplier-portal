@@ -400,10 +400,10 @@ const SupplierDiscovery: React.FC = () => {
   ];
 
   const TABS = [
-    { key: 'search',         label: '🔍 Global Search' },
-    { key: 'recommendations',label: '🤖 AI Recommendations' },
-    { key: 'qualification',  label: '📋 Qualification Pipeline' },
-    { key: 'intelligence',   label: '📊 Market Intelligence' },
+    { key: 'search',         label: 'Global Search' },
+    { key: 'recommendations',label: 'AI Recommendations' },
+    { key: 'qualification',  label: 'Qualification Pipeline' },
+    { key: 'intelligence',   label: 'Market Intelligence' },
   ] as const;
 
   return (
