@@ -158,7 +158,7 @@ const MyInventory: React.FC = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         <div style={{ background: '#E0F7FA', border: '1px solid #0097A744', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#006064', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <span>📡</span>
+          <span>↻</span>
           <span><strong>Data sources:</strong> API Push (real-time), EDI 846 (daily), Manual (supplier-updated). Phase 2 will add SAP MM stock pull and VMI signal integration.</span>
         </div>
         <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B44', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#E9730C', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
