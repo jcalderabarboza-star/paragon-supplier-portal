@@ -589,7 +589,7 @@ const Dashboard: React.FC = () => {
               const days = (new Date(s.certExpiryDate).getTime() - Date.now()) / 86400000;
               return days > 0 && days <= 90;
             }).length === 0 && (
-              <div style={{ color: SUCCESS, fontSize: 12 }}>✅ All certifications current</div>
+              <div style={{ color: SUCCESS, fontSize: 12 }}>✓ All certifications current</div>
             )}
           </div>
         </div>
