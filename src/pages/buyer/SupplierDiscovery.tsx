@@ -120,3 +120,91 @@ const GLOBAL_SUPPLIERS: GlobalSupplier[] = [
     halalCertified: true, alreadyInNetwork: false,
   },
 ];
+
+// ─── Existing Mock Data ───────────────────────────────────────────────────────
+const SINGLE_SOURCE: SingleSourceItem[] = [
+  { material: 'Givaudan Floral Accord FG-2847', category: 'Fragrance',
+    currentSupplier: 'Givaudan DE', riskLevel: 'Critical',
+    risk: 'Critical — Suez disruption',
+    suggestedAlternatives: ['PT Indesso Aroma ID', 'PT Mane Indonesia ID'] },
+  { material: 'Hyaluronic Acid HA-100', category: 'Active Ingredient',
+    currentSupplier: 'Evonik Specialty FR', riskLevel: 'High',
+    risk: 'High — single EU source',
+    suggestedAlternatives: ['Zhejiang NHU CN', 'Bloomage Biotechnology CN'] },
+  { material: 'Panthenol B5 USP', category: 'Active Ingredient',
+    currentSupplier: 'BASF Personal Care DE', riskLevel: 'High',
+    risk: 'High — quality issues + single source',
+    suggestedAlternatives: ['DSM Nutritional SG', 'Univar Solutions MY'] },
+  { material: 'Centella Asiatica Extract 10:1', category: 'Natural Botanical',
+    currentSupplier: 'PT Ecogreen ID', riskLevel: 'Medium',
+    risk: 'Medium — single local source',
+    suggestedAlternatives: ['PT Indesso Aroma ID', 'Shaanxi Sciphar CN'] },
+  { material: 'Salicylic Acid USP', category: 'Active Ingredient',
+    currentSupplier: 'Not yet sourced', riskLevel: 'Critical',
+    risk: 'Critical — no qualified supplier',
+    suggestedAlternatives: ['Anhui Salicylics CN', 'Seqens FR'] },
+];
+
+const RECOMMENDED: RecommendedSupplier[] = [
+  { id: 'mkt-001', name: 'PT Indesso Aroma', country: 'Indonesia', flag: '🇮🇩',
+    matchScore: 94,
+    whyRecommended: 'Indonesian fragrance specialist. BPJPH halal certified. Supplies major local FMCG brands. Would reduce Suez Canal exposure for fragrance compounds. Lead time 7 days vs. 35 days from European suppliers.',
+    covers: 'Givaudan Floral Accord gap + Centella gap',
+    storefrontPath: '/marketplace/supplier/mkt-001' },
+  { id: 'mkt-003', name: 'Univar Solutions Malaysia', country: 'Malaysia', flag: '🇲🇾',
+    matchScore: 88,
+    whyRecommended: 'Global ingredient distributor with Malaysia hub. Distributes BASF, Evonik, Croda, DSM products across SEA. JAKIM halal certified. Would provide single-point access to multiple European ingredient brands without Suez Canal risk.',
+    covers: 'Hyaluronic Acid gap + Panthenol B5 gap',
+    storefrontPath: '/marketplace/supplier/mkt-003' },
+  { id: 'mkt-004', name: 'Anhui Salicylics China', country: 'China', flag: '🇨🇳',
+    matchScore: 79,
+    whyRecommended: 'Specialist BHA/salicylic acid manufacturer. GMP certified. Supplies Korean and Japanese beauty brands. Halal certification pending — recommend requesting BPJPH application as qualification condition.',
+    covers: 'Salicylic Acid — no current supplier',
+    riskNote: '⚠️ Halal certification not yet obtained. Add as qualification requirement.',
+    storefrontPath: '/marketplace/supplier/mkt-004' },
+];
+
+const QUALIFICATIONS: QualificationItem[] = [
+  { supplier: 'PT Indesso Aroma', flag: '🇮🇩', stage: 2, stageName: 'Document Review',
+    stageTotal: 5, startDate: '2026-03-15', owner: 'Procurement Team',
+    nextAction: 'Upload BPJPH certificate', dueDate: '2026-04-15', status: 'On Track' },
+  { supplier: 'Univar Solutions MY', flag: '🇲🇾', stage: 1, stageName: 'Initial Contact',
+    stageTotal: 5, startDate: '2026-04-01', owner: 'Procurement Team',
+    nextAction: 'Schedule capability call', dueDate: '2026-04-12', status: 'On Track' },
+  { supplier: 'Anhui Salicylics CN', flag: '🇨🇳', stage: 1, stageName: 'Initial Contact',
+    stageTotal: 5, startDate: '2026-04-03', owner: 'Procurement Team',
+    nextAction: 'Request halal cert application confirmation', dueDate: '2026-04-17', status: 'At Risk' },
+  { supplier: 'Bloomage Biotechnology CN', flag: '🇨🇳', stage: 3, stageName: 'Technical Evaluation',
+    stageTotal: 5, startDate: '2026-02-20', owner: 'Quality Team',
+    nextAction: 'Receive sample batch results', dueDate: '2026-04-10', status: 'On Track' },
+];
+
+const STAGE_LABELS = ['Initial Contact', 'Document Review', 'Technical Eval', 'Commercial', 'Approved'];
+
+const MARKET_INTEL: MarketIntelCard[] = [
+  { category: 'Fragrance Compounds', icon: '🌸', marketStatus: 'Tight supply — High demand from Asian markets',
+    suppliersGlobal: 12, suppliersParagon: 3, priceDir: '↑', priceColor: ERROR,
+    priceTrend: '+2.1% this month (IFRA index)',
+    recommendation: 'Expand Indonesian supplier base to reduce European dependency' },
+  { category: 'Active Ingredients (Vitamins)', icon: '💊', marketStatus: 'Oversupply from China — favorable pricing',
+    suppliersGlobal: 45, suppliersParagon: 2, priceDir: '↓', priceColor: SUCCESS,
+    priceTrend: '-3.2% (Niacinamide spot)',
+    recommendation: 'Good time to negotiate long-term contracts with Chinese suppliers' },
+  { category: 'Packaging (PET)', icon: '📦', marketStatus: 'Stable — moderate demand',
+    suppliersGlobal: 89, suppliersParagon: 3, priceDir: '→', priceColor: WARNING,
+    priceTrend: '+1.2% (ICIS PET index)',
+    recommendation: 'Evaluate sustainable/recycled PET alternatives for Paragon ESG goals' },
+  { category: 'Halal Emulsifiers', icon: '🌿', marketStatus: 'Growing supply — Indonesian producers expanding',
+    suppliersGlobal: 28, suppliersParagon: 4, priceDir: '↓', priceColor: SUCCESS,
+    priceTrend: '-1.5%',
+    recommendation: 'Strong Indonesian supplier base — consider expanding VMI arrangements' },
+];
+
+const RISK_COLOR: Record<string, string> = { Critical: ERROR, High: WARNING, Medium: '#F59E0B' };
+const RISK_BG: Record<string, string> = { Critical: '#FEE2E2', High: '#FEF3C7', Medium: '#FEF9C3' };
+const STATUS_COLOR: Record<string, string> = { 'On Track': SUCCESS, 'At Risk': WARNING, 'Blocked': ERROR };
+const STATUS_BG: Record<string, string> = { 'On Track': '#DCFCE7', 'At Risk': '#FEF3C7', 'Blocked': '#FEE2E2' };
+
+function Pill({ label, bg, color }: { label: string; bg: string; color: string }) {
+  return <span style={{ background: bg, color, borderRadius: 9999, padding: '2px 8px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</span>;
+}
