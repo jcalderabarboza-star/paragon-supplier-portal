@@ -431,7 +431,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>🏅 Supplier Health Index</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><CheckCircle size={14} /> Supplier Health Index</div>
           <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>Portfolio grade distribution · Avg OTIF {d.avgOTIF}%</div>
           <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
             {gradeData.map(({ grade, count, color }) => (
