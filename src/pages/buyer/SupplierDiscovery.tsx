@@ -357,3 +357,82 @@ const RecommendationCard: React.FC<{ sup: RecommendedSupplier }> = ({ sup }) => 
     </div>
   );
 };
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+const SupplierDiscovery: React.FC = () => {
+  const navigate = useNavigate();
+  const [toast, setToast] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchCategory, setSearchCategory] = useState('All');
+  const [searchRegion, setSearchRegion] = useState('All');
+  const [halalOnly, setHalalOnly] = useState(false);
+  const [majorBrandsOnly, setMajorBrandsOnly] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [activeTab, setActiveTab] = useState<'search' | 'recommendations' | 'qualification' | 'intelligence'>('search');
+
+  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
+
+  const MAJOR_BRANDS = ["L'Oréal", 'Unilever', 'P&G', 'Shiseido', 'LVMH', 'Estée Lauder', 'Beiersdorf'];
+
+  const filteredSuppliers = GLOBAL_SUPPLIERS.filter(s => {
+    if (halalOnly && !s.halalCertified) return false;
+    if (searchRegion !== 'All' && s.region !== searchRegion) return false;
+    if (searchCategory !== 'All' && !s.categories.includes(searchCategory)) return false;
+    if (majorBrandsOnly && !s.validatedBy.some(b => MAJOR_BRANDS.includes(b))) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return s.name.toLowerCase().includes(q) ||
+        s.categories.some(c => c.toLowerCase().includes(q)) ||
+        s.description.toLowerCase().includes(q) ||
+        s.country.toLowerCase().includes(q);
+    }
+    return true;
+  });
+
+  const kpis = [
+    { label: 'Candidates Identified', value: '18', color: INFO },
+    { label: 'In Qualification',      value: '4',  color: WARNING },
+    { label: 'Approved This Month',   value: '2',  color: SUCCESS },
+    { label: 'Dual Source Gaps',      value: '5',  color: ERROR },
+  ];
+
+  const TABS = [
+    { key: 'search',         label: '🔍 Global Search' },
+    { key: 'recommendations',label: '🤖 AI Recommendations' },
+    { key: 'qualification',  label: '📋 Qualification Pipeline' },
+    { key: 'intelligence',   label: '📊 Market Intelligence' },
+  ] as const;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+      {toast && <div style={{ position: 'fixed', bottom: 80, right: 24, background: NAVY, color: 'white', borderRadius: 8, padding: '10px 16px', fontSize: 13, boxShadow: '0 4px 16px rgba(0,0,0,0.25)', zIndex: 9999, borderLeft: `3px solid ${TEAL}`, maxWidth: 400 }}>{toast}</div>}
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: NAVY, marginBottom: 4 }}>Supplier Discovery</div>
+          <div style={{ fontSize: 13, color: MUTED }}>Find and qualify new suppliers globally — market-validated by L'Oréal, Unilever, P&G, Shiseido and more</div>
+        </div>
+        <button onClick={() => navigate('/buyer/marketplace')} style={{ padding: '8px 16px', borderRadius: 8, background: TEAL, color: 'white', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+          🌐 Open Marketplace →
+        </button>
+      </div>
+
+      {/* KPI tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        {kpis.map(k => (
+          <div key={k.label} style={{ background: 'white', borderRadius: 10, padding: '16px 20px', borderLeft: `4px solid ${k.color}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: k.color }}>{k.value}</div>
+            <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{k.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', borderBottom: `2px solid ${BORDER}`, gap: 4 }}>
+        {TABS.map(tab => (
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{ padding: '10px 20px', border: 'none', borderBottom: activeTab === tab.key ? `2px solid ${TEAL}` : '2px solid transparent', background: 'transparent', color: activeTab === tab.key ? TEAL : MUTED, fontWeight: activeTab === tab.key ? 700 : 500, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginBottom: -2, whiteSpace: 'nowrap' }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
