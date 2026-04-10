@@ -290,7 +290,7 @@ const SupplierDashboard: React.FC = () => {
           {/* Compliance Documents */}
           <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem' }}>
             <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#354A5F', marginBottom: '1rem' }}>
-              📄 My Documents
+              My Documents
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
               {[
