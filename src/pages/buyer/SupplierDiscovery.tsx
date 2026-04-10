@@ -537,7 +537,7 @@ const SupplierDiscovery: React.FC = () => {
               </tbody>
             </table>
           </div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>🤖 AI Supplier Matches — Recommended for Paragon</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>AI Supplier Matches — Recommended for Paragon</div>
           <div style={{ fontSize: 13, color: MUTED, marginBottom: 14 }}>Based on your category requirements, compliance standards, and halal certification needs</div>
           {RECOMMENDED.map(sup => <RecommendationCard key={sup.id} sup={sup} />)}
         </div>
