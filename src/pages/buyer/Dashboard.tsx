@@ -337,7 +337,66 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {d.warRoomActive && <WarRoomBanner items={d.actionQueue} onEscalate={handleEscalate} />}
+      {d.warRoomActive && (
+        <>
+          <WarRoomBanner
+            items={d.actionQueue}
+            onEscalate={handleEscalate}
+            isFullScreen={isFullScreen}
+            onToggleFullScreen={() => setIsFullScreen(f => !f)}
+          />
+          {isFullScreen && (
+            <div style={{
+              position: 'fixed', inset: 0, background: '#FFFBFB',
+              zIndex: 900, overflowY: 'auto', padding: '2rem',
+            }}>
+              <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                  <div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#991B1B' }}>⚠️ War Room — Full Screen</div>
+                    <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>
+                      {d.actionQueue.filter(i => i.severity === 'critical').length} Critical · {d.actionQueue.filter(i => i.severity === 'warning').length} Warning · {new Date().toLocaleString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  <button onClick={() => setIsFullScreen(false)} style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, color: '#991B1B', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    ✕ Exit War Room
+                  </button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {d.actionQueue.map(item => (
+                    <div key={item.id} style={{
+                      background: 'white',
+                      border: `1px solid ${item.severity === 'critical' ? '#FECACA' : '#FCD34D'}`,
+                      borderLeft: `4px solid ${item.severity === 'critical' ? '#BB0000' : '#E9730C'}`,
+                      borderRadius: 8, padding: '16px 20px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+                      cursor: 'pointer',
+                    }} onClick={() => { setIsFullScreen(false); }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1 }}>
+                        <span style={{ fontSize: 20 }}>
+                          {item.type === 'Production Risk' ? '🏭' : item.type === 'PO Unacknowledged' ? '📄' : item.type === 'Cert Expired' ? '📋' : '⚠️'}
+                        </span>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: item.severity === 'critical' ? '#BB0000' : '#92400E' }}>{item.title}</div>
+                          <div style={{ fontSize: 12, color: '#6B7280', marginTop: 3 }}>{item.supplier} · {item.detail}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
+                        <span style={{ background: item.severity === 'critical' ? '#FEE2E2' : '#FEF3C7', color: item.severity === 'critical' ? '#991B1B' : '#92400E', borderRadius: 9999, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>{item.type}</span>
+                        {item.severity === 'critical' && (
+                          <button onClick={e => { e.stopPropagation(); handleEscalate(item.id); }} style={{ background: '#BB0000', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            ESCALATE
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
       <SectionLabel color={NAVY}>Layer 1 — Strategic · C-Level & Directors</SectionLabel>
 
