@@ -444,7 +444,7 @@ const SupplierDiscovery: React.FC = () => {
       {activeTab === 'search' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>🔍 Global Supplier Search</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>Global Supplier Search</div>
             <div style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>Search across market-validated suppliers from global beauty brands — Givaudan, DSM-Firmenich, Croda, Ashland and more</div>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
               <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') setSearched(true); }}
