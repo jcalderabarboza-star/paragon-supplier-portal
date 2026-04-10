@@ -280,7 +280,23 @@ const InventoryVisibility: React.FC = () => {
                   <td style={{ padding: '0.5rem 0.75rem', maxWidth: '200px' }}>
                     <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={inv.materialDescription}>{inv.materialDescription}</div>
                   </td>
-                  <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', color: '#354A5F' }}>{inv.supplierName}</td>
+                  <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', color: '#354A5F' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span>{inv.supplierName}</span>
+                      {supplierCertMap[inv.supplierId]?.status === 'expired' && (
+                        <span title={`Cert EXPIRED — ${supplierCertMap[inv.supplierId].expiryDate}`}
+                          style={{ background: '#FEE2E2', color: '#BB0000', borderRadius: 9999, padding: '1px 6px', fontSize: 9, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          CERT EXPIRED
+                        </span>
+                      )}
+                      {supplierCertMap[inv.supplierId]?.status === 'expiring' && (
+                        <span title={`Cert expiring — ${supplierCertMap[inv.supplierId].expiryDate}`}
+                          style={{ background: '#FEF3C7', color: '#92400E', borderRadius: 9999, padding: '1px 6px', fontSize: 9, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          EXPIRING
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', color: '#6c757d' }}>{inv.location}</td>
                   <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 600 }}>{inv.qtyAvailable.toLocaleString()}</td>
                   <td style={{ padding: '0.5rem 0.75rem', color: '#6c757d' }}>{inv.uom}</td>
