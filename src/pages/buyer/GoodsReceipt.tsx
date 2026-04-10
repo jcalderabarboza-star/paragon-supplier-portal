@@ -279,7 +279,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
           <div>
             <span style={s.label}>Non-halal ingredients detected?</span>
             <div style={s.radioRow}>
-              {[['no','No — Halal Compliant ✅','#107E3E'],['yes','Yes — REJECT REQUIRED ❌','#BB0000']].map(([v,l,c]) => (
+              {[['no','No — Halal Compliant','#107E3E'],['yes','Yes — REJECT REQUIRED','#BB0000']].map(([v,l,c]) => (
                 <div key={v} onClick={() => { setHalalNonHalal(v); if (v === 'yes') setDisposition('reject'); }}
                   style={radioBtn(halalNonHalal === v, c)}>{l}</div>
               ))}
