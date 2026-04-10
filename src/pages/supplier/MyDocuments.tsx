@@ -224,7 +224,7 @@ const MyDocuments: React.FC = () => {
       </div>
 
       <div style={{ background: '#FEF9C3', border: '1px solid #F59E0B', borderRadius: 8, padding: '14px 18px', fontSize: 12, color: '#E9730C', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <span style={{ fontSize: 16 }}>🕌</span>
+        <span style={{ fontSize: 16 }}>☪</span>
         <div>
           <strong>BPJPH Halal Mandatory Transition — October 2026:</strong> All cosmetics and personal care products distributed in Indonesia must carry BPJPH-issued halal certification. MUI certificates issued before the transition remain valid until expiry but cannot be renewed — new BPJPH certification must be obtained.
           <a href="https://halal.go.id" target="_blank" rel="noopener noreferrer" style={{ color: '#E9730C', marginLeft: 6, fontWeight: 600 }}>halal.go.id ↗</a>
