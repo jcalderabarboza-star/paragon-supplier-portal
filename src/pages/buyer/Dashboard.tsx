@@ -477,7 +477,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>📦 Critical & Low Stock</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><Package size={14} /> Critical & Low Stock</div>
           <div style={{ fontSize: 11, color: MUTED, marginBottom: 14 }}>{d.criticalStock.length} critical (&lt;7d) · {d.lowStock.length} low (7–14d)</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {[...d.criticalStock, ...d.lowStock].slice(0, 6).map(item => {
