@@ -557,7 +557,7 @@ const Dashboard: React.FC = () => {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, flex: 1, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 14 }}>📬 Unacknowledged POs (&gt;48h)</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}><Mail size={14} /> Unacknowledged POs (&gt;48h)</div>
             {d.unacknowledged.length === 0 ? (
               <div style={{ color: SUCCESS, fontSize: 12 }}>✅ All POs acknowledged</div>
             ) : d.unacknowledged.map(po => (
