@@ -214,6 +214,12 @@ function CreateASNWizard({ onToast }: { onToast:(m:string)=>void }) {
       <FF label="Total Weight (KG)">
         <input style={INP} type="number" min={0} placeholder="0.00" value={form.weightKg} onChange={e => update({ weightKg: e.target.value })} />
       </FF>
+      <FF label="Batch Number" required>
+        <input style={INP} placeholder="e.g. PKG-2026-441" value={form.batchNumber} onChange={e => update({ batchNumber: e.target.value })} />
+      </FF>
+      <FF label="Lot Number">
+        <input style={INP} placeholder="e.g. LOT-2026-001" value={form.lotNumber} onChange={e => update({ lotNumber: e.target.value })} />
+      </FF>
       <div style={{ gridColumn:'1/-1' }}>
         <FF label="Packing List">
           <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}>
