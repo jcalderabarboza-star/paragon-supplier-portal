@@ -517,7 +517,7 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4 }}>📱 Channel Mix</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}><Smartphone size={14} /> Channel Mix</div>
           <div style={{ fontSize: 11, color: MUTED, marginBottom: 10 }}>PO confirmations by channel</div>
           <ResponsiveContainer width="100%" height={160}>
             <PieChart>
