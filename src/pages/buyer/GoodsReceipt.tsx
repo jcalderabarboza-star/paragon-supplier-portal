@@ -208,7 +208,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
         <div style={{ marginBottom: 12 }}>
           <span style={s.label}>Label Compliance</span>
           <div style={s.radioRow}>
-            {[['correct','Correct ✅','#107E3E'],['minor','Minor Issues ⚠️','#E9730C'],['noncomp','Non-compliant ❌','#BB0000']].map(([v,l,c]) => (
+            {[['correct','Correct','#107E3E'],['minor','Minor Issues','#E9730C'],['noncomp','Non-compliant','#BB0000']].map(([v,l,c]) => (
               <div key={v} onClick={() => setLabel(v)} style={radioBtn(label === v, c)}>{l}</div>
             ))}
           </div>
