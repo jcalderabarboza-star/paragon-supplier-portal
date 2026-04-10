@@ -148,11 +148,11 @@ const MyDocuments: React.FC = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
         {[
-          { label: 'Total Documents', value: DOCUMENTS.length,  color: TEAL,      icon: '📋' },
-          { label: 'Valid',           value: DOCUMENTS.filter(d => d.status === 'Valid').length, color: '#107E3E', icon: '✅' },
-          { label: 'Expiring ≤180d',  value: expiringSoon.length, color: '#E9730C', icon: '⚠️' },
+          { label: 'Total Documents', value: DOCUMENTS.length,  color: TEAL,      icon: '≡' },
+          { label: 'Valid',           value: DOCUMENTS.filter(d => d.status === 'Valid').length, color: '#107E3E', icon: '✓' },
+          { label: 'Expiring ≤180d',  value: expiringSoon.length, color: '#E9730C', icon: '!' },
           { label: 'Expired',         value: expired.length,      color: '#BB0000', icon: '✗' },
-          { label: 'Needs Action',    value: awaitingUpload.length, color: '#475569', icon: '❗' },
+          { label: 'Needs Action',    value: awaitingUpload.length, color: '#475569', icon: '↑' },
         ].map(({ label, value, color, icon }) => (
           <div key={label} style={{ background: 'white', border: `1px solid ${BORDER}`, borderLeft: `4px solid ${color}`, borderRadius: 8, padding: '14px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>{icon} {label}</div>
