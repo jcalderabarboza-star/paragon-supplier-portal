@@ -104,7 +104,7 @@ const MyInventory: React.FC = () => {
 
       {counts.critical > 0 && (
         <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#BB0000' }}>
-          <span>⚠️</span>
+          <span style={{ fontWeight: 700 }}>!</span>
           <span><strong>{counts.critical} material{counts.critical > 1 ? 's' : ''}</strong> at critical stock level. Paragon procurement team has been automatically notified.</span>
         </div>
       )}
