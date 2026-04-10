@@ -436,3 +436,159 @@ const SupplierDiscovery: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* Tab: Global Search */}
+      {activeTab === 'search' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>🔍 Global Supplier Search</div>
+            <div style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>Search across market-validated suppliers from global beauty brands — Givaudan, DSM-Firmenich, Croda, Ashland and more</div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 14 }}>
+              <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') setSearched(true); }}
+                placeholder="Search by material, category, country or capability..."
+                style={{ flex: 1, minWidth: 280, padding: '10px 14px', border: `1px solid ${BORDER}`, borderRadius: 8, fontSize: 13, color: NAVY, fontFamily: 'inherit', outline: 'none' }} />
+              <button onClick={() => setSearched(true)} style={{ padding: '10px 20px', background: TEAL, color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Search</button>
+            </div>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+              <select value={searchCategory} onChange={e => setSearchCategory(e.target.value)} style={{ padding: '7px 12px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 12, color: NAVY, fontFamily: 'inherit', background: 'white' }}>
+                {['All', 'Fragrance', 'Active Ingredient', 'Raw Material', 'Packaging', 'Vitamin', 'Emollient'].map(c => <option key={c}>{c === 'All' ? 'All Categories' : c}</option>)}
+              </select>
+              <select value={searchRegion} onChange={e => setSearchRegion(e.target.value)} style={{ padding: '7px 12px', border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 12, color: NAVY, fontFamily: 'inherit', background: 'white' }}>
+                {['All', 'Asia Pacific', 'Europe', 'Americas', 'Middle East'].map(r => <option key={r}>{r === 'All' ? 'All Regions' : r}</option>)}
+              </select>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: NAVY, cursor: 'pointer' }}>
+                <input type="checkbox" checked={halalOnly} onChange={e => setHalalOnly(e.target.checked)} />
+                Halal Certified Only
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: NAVY, cursor: 'pointer' }}>
+                <input type="checkbox" checked={majorBrandsOnly} onChange={e => setMajorBrandsOnly(e.target.checked)} />
+                Major Brand Validated Only
+              </label>
+              {(searchQuery || searchCategory !== 'All' || searchRegion !== 'All' || halalOnly || majorBrandsOnly) && (
+                <button onClick={() => { setSearchQuery(''); setSearchCategory('All'); setSearchRegion('All'); setHalalOnly(false); setMajorBrandsOnly(false); setSearched(false); }} style={{ background: 'transparent', border: 'none', color: INFO, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Clear Filters</button>
+              )}
+            </div>
+          </div>
+
+          {(searched || searchQuery || searchCategory !== 'All' || searchRegion !== 'All' || halalOnly || majorBrandsOnly) ? (
+            <>
+              <div style={{ fontSize: 13, color: MUTED, fontWeight: 500 }}>{filteredSuppliers.length} supplier{filteredSuppliers.length !== 1 ? 's' : ''} found — sorted by AI match score</div>
+              {filteredSuppliers.length === 0 ? (
+                <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '3rem', textAlign: 'center', color: MUTED }}>No suppliers match your search criteria. Try broadening your filters.</div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))', gap: 16 }}>
+                  {filteredSuppliers.sort((a, b) => b.matchScore - a.matchScore).map(s => <GlobalSupplierCard key={s.id} s={s} onToast={showToast} />)}
+                </div>
+              )}
+            </>
+          ) : (
+            <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '2rem', textAlign: 'center' }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>🌐</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: NAVY, marginBottom: 8 }}>Search the Global Supplier Market</div>
+              <div style={{ fontSize: 13, color: MUTED, maxWidth: 480, margin: '0 auto', lineHeight: 1.6, marginBottom: 16 }}>
+                Find suppliers already validated by L'Oréal, Unilever, P&G, Shiseido, and LVMH. Filter by halal certification, region, and category. Invite directly to Paragon Marketplace or contact via ARIA AI agent.
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {['Fragrance Indonesia', 'Niacinamide China', 'Halal emulsifier', 'Packaging SEA', 'Active ingredient Europe'].map(suggestion => (
+                  <button key={suggestion} onClick={() => { setSearchQuery(suggestion); setSearched(true); }} style={{ background: '#F1F5F9', border: `1px solid ${BORDER}`, borderRadius: 20, padding: '6px 14px', fontSize: 12, color: MID, cursor: 'pointer', fontFamily: 'inherit' }}>{suggestion}</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab: AI Recommendations */}
+      {activeTab === 'recommendations' && (
+        <div>
+          <div style={{ background: '#FEE2E2', borderLeft: `4px solid ${ERROR}`, borderRadius: 6, padding: '10px 16px', marginBottom: 14, fontSize: 13, color: ERROR, fontWeight: 500 }}>
+            5 critical materials have only one qualified supplier — dual sourcing strongly recommended
+          </div>
+          <div style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.06)', overflowX: 'auto', marginBottom: 24 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14 }}>⚠️ Materials Requiring Second Source</div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#F0F4F8', borderBottom: `2px solid ${BORDER}` }}>
+                  {['Material', 'Category', 'Current Supplier', 'Risk Level', 'Suggested Alternatives', 'Action'].map(h => (
+                    <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: MUTED }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {SINGLE_SOURCE.map(row => (
+                  <tr key={row.material} style={{ borderBottom: `1px solid ${BORDER}` }}>
+                    <td style={{ padding: '12px', fontWeight: 600, color: NAVY }}>{row.material}</td>
+                    <td style={{ padding: '12px', color: MUTED }}>{row.category}</td>
+                    <td style={{ padding: '12px', color: row.currentSupplier === 'Not yet sourced' ? ERROR : NAVY }}>{row.currentSupplier}</td>
+                    <td style={{ padding: '12px' }}><span style={{ background: RISK_BG[row.riskLevel], color: RISK_COLOR[row.riskLevel], borderRadius: 9999, padding: '2px 10px', fontSize: 11, fontWeight: 700 }}>{row.riskLevel}</span></td>
+                    <td style={{ padding: '12px' }}>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {row.suggestedAlternatives.map(alt => <span key={alt} style={{ background: 'rgba(0,151,167,0.1)', color: TEAL, borderRadius: 9999, padding: '2px 8px', fontSize: 11, fontWeight: 500 }}>{alt}</span>)}
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px' }}>
+                      <button onClick={() => showToast(`Qualification initiated for ${row.suggestedAlternatives[0]}`)} style={{ padding: '5px 12px', borderRadius: 6, background: TEAL, color: 'white', border: 'none', fontSize: 12, cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap', fontFamily: 'inherit' }}>Start Qualification →</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>🤖 AI Supplier Matches — Recommended for Paragon</div>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 14 }}>Based on your category requirements, compliance standards, and halal certification needs</div>
+          {RECOMMENDED.map(sup => <RecommendationCard key={sup.id} sup={sup} />)}
+        </div>
+      )}
+
+      {/* Tab: Qualification Pipeline */}
+      {activeTab === 'qualification' && (
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 14 }}>Active Qualification Processes</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {QUALIFICATIONS.map(q => <QualificationCard key={q.supplier} q={q} />)}
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Market Intelligence */}
+      {activeTab === 'intelligence' && (
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>📊 Category Market Intelligence</div>
+          <div style={{ fontSize: 13, color: MUTED, marginBottom: 14 }}>Current market conditions for Paragon's key procurement categories</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            {MARKET_INTEL.map(card => (
+              <div key={card.category} style={{ background: 'white', borderRadius: 10, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: NAVY }}>{card.icon} {card.category}</div>
+                    <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>{card.marketStatus}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: card.priceColor }}>{card.priceDir}</div>
+                    <div style={{ fontSize: 11, color: card.priceColor, fontWeight: 600 }}>{card.priceTrend}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: NAVY }}>{card.suppliersGlobal}</div>
+                    <div style={{ fontSize: 11, color: '#94A3B8' }}>Global</div>
+                  </div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: 18, fontWeight: 700, color: TEAL }}>{card.suppliersParagon}</div>
+                    <div style={{ fontSize: 11, color: '#94A3B8' }}>In Network</div>
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(0,151,167,0.08)', borderLeft: `3px solid ${TEAL}`, borderRadius: 4, padding: '8px 12px', fontSize: 12, color: NAVY }}>
+                  💡 {card.recommendation}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+};
+
+export default SupplierDiscovery;
