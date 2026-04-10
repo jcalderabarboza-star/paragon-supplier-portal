@@ -208,3 +208,80 @@ const STATUS_BG: Record<string, string> = { 'On Track': '#DCFCE7', 'At Risk': '#
 function Pill({ label, bg, color }: { label: string; bg: string; color: string }) {
   return <span style={{ background: bg, color, borderRadius: 9999, padding: '2px 8px', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap' }}>{label}</span>;
 }
+
+// ─── Global Search Result Card ────────────────────────────────────────────────
+const GlobalSupplierCard: React.FC<{ s: GlobalSupplier; onToast: (m: string) => void }> = ({ s, onToast }) => {
+  const scoreColor = s.matchScore >= 90 ? SUCCESS : s.matchScore >= 80 ? TEAL : WARNING;
+  return (
+    <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 10, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 20 }}>{s.flag}</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: NAVY }}>{s.name}</span>
+            {s.alreadyInNetwork && <Pill label="In Network" bg="#DCFCE7" color={SUCCESS} />}
+          </div>
+          <div style={{ fontSize: 12, color: MUTED }}>{s.country} · {s.region} · Est. {s.founded} · {s.employees} employees</div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: scoreColor }}>{s.matchScore}<span style={{ fontSize: 12, fontWeight: 500 }}>/100</span></div>
+          <div style={{ fontSize: 10, color: scoreColor, fontWeight: 600 }}>AI Match Score</div>
+        </div>
+      </div>
+
+      <div style={{ fontSize: 13, color: MID, lineHeight: 1.6 }}>{s.description}</div>
+
+      {/* Validated by */}
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Market Validated By</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {s.validatedBy.map(brand => (
+            <span key={brand} style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0369A1', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
+              ✓ {brand}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Categories + Certs */}
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Categories</div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {s.categories.map(c => <Pill key={c} label={c} bg="#F1F5F9" color={MID} />)}
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Certifications</div>
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {s.halalCertified && <Pill label="✓ Halal" bg="#DCFCE7" color={SUCCESS} />}
+            {s.certifications.filter(c => !c.toLowerCase().includes('halal')).slice(0, 3).map(c => <Pill key={c} label={c} bg="#F1F5F9" color={MID} />)}
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: 8, paddingTop: 8, borderTop: `1px solid ${BORDER}`, flexWrap: 'wrap' }}>
+        {!s.alreadyInNetwork ? (
+          <button onClick={() => onToast(`Invitation sent to ${s.name} via email — ARIA will follow up via WhatsApp within 24 hours`)}
+            style={{ padding: '7px 14px', borderRadius: 6, background: TEAL, color: 'white', border: 'none', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+            📨 Invite to Marketplace
+          </button>
+        ) : (
+          <button onClick={() => onToast(`${s.name} is already in your supplier network`)}
+            style={{ padding: '7px 14px', borderRadius: 6, background: '#F1F5F9', color: MID, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            ✓ Already in Network
+          </button>
+        )}
+        <button onClick={() => onToast(`ARIA is drafting a personalized outreach message to ${s.name}...`)}
+          style={{ padding: '7px 14px', borderRadius: 6, background: '#F5F3FF', color: '#6D28D9', border: '1px solid #DDD6FE', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+          🤖 Contact via ARIA
+        </button>
+        <button onClick={() => onToast(`Starting qualification process for ${s.name}`)}
+          style={{ padding: '7px 14px', borderRadius: 6, background: 'white', color: MID, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+          Start Qualification →
+        </button>
+      </div>
+    </div>
+  );
+};
