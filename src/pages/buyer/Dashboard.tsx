@@ -216,8 +216,13 @@ function WarRoomBanner({ items, onEscalate }: {
             {critical.length} Critical · {warning.length} Warning
           </span>
         </div>
-        <div style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '0.5px' }}>
-          Materials below safety stock — immediate procurement action required · {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '0.5px' }}>
+            Materials below safety stock — immediate procurement action required · {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+          </div>
+          <button onClick={onToggleFullScreen} style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#991B1B', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+            {isFullScreen ? '✕ Exit War Room' : '⛶ War Room Mode'}
+          </button>
         </div>
       </div>
 
