@@ -123,11 +123,13 @@ interface ASNForm {
   poId: string; carrier: string; trackingNumber: string;
   shipDate: string; eta: string; packages: string; weightKg: string;
   packingList: string; notes: string; confirmed: boolean;
+  batchNumber: string; lotNumber: string;
 }
 
 const DEFAULT_FORM: ASNForm = {
   poId:'', carrier:'JNE', trackingNumber:'', shipDate:'2026-04-07',
   eta:'', packages:'', weightKg:'', packingList:'', notes:'', confirmed:false,
+  batchNumber:'', lotNumber:'',
 };
 
 const FF = ({ label, required, children }: { label:string; required?:boolean; children:React.ReactNode }) => (
