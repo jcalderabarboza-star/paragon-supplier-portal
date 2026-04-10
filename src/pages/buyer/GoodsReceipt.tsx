@@ -336,7 +336,14 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
       </div>
 
       <div style={{ display: 'flex', gap: 10 }}>
-        <button onClick={() => showToast(`GR posted to SAP S/4HANA (movement type 101). Material document MAT-490003${Math.floor(10 + Math.random() * 90)} created. Quality result recorded.`)}
+        <button onClick={() => {
+          const poNum = item.poNumber;
+          const posted = JSON.parse(localStorage.getItem('paragon_gr_posted') || '[]');
+          if (!posted.includes(poNum)) {
+            localStorage.setItem('paragon_gr_posted', JSON.stringify([...posted, poNum]));
+          }
+          showToast(`GR posted to SAP S/4HANA (movement type 101). Material document MAT-490003${Math.floor(10 + Math.random() * 90)} created. Invoice for ${poNum} automatically unblocked — status updated to Approved.`);
+        }}
           style={{ padding: '9px 18px', borderRadius: 6, background: '#107E3E', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
           ✅ Post GR & Record Result
         </button>
