@@ -313,7 +313,7 @@ const SupplierDashboard: React.FC = () => {
                 {
                   name: 'ISO 9001:2015',
                   valid: false,
-                  status: '⚠️ Expiring soon',
+                  status: '! Expiring soon',
                   expiry: 'Expires in ~45 days',
                   color: '#E9730C',
                   action: 'Renew',
