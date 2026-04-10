@@ -27,7 +27,7 @@ const TIER_LABELS: Record<number, string> = {
 
 const GRADE_COLORS: Record<string, string> = {
   [ScorecardGrade.A]: '#107E3E',
-  [ScorecardGrade.B]: '#0A6ED1',
+  [ScorecardGrade.B]: '#0097A7',
   [ScorecardGrade.C]: '#E9730C',
   [ScorecardGrade.D]: '#BB0000',
   [ScorecardGrade.F]: '#BB0000',
