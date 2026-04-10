@@ -321,7 +321,7 @@ const SupplierDashboard: React.FC = () => {
                 {
                   name: 'Business License (SIUP)',
                   valid: true,
-                  status: '✅ Valid',
+                  status: '✓ Valid',
                   expiry: 'Exp: 01 Sep 2027',
                   color: '#107E3E',
                   action: 'View',
