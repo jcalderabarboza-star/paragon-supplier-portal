@@ -401,10 +401,10 @@ const InspectionCard: React.FC<{ item: InspectionItem }> = ({ item }) => {
 
       {/* Documents row */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 14, fontSize: 12 }}>
-        <span>CoA: {item.coaReceived ? '✅ Received' : '❌ Missing'}</span>
-        <span>SDS: {item.sdsReceived ? '✅ Received' : '❌ Missing'}</span>
+        <span>CoA: {item.coaReceived ? '✓ Received' : '✗ Missing'}</span>
+        <span>SDS: {item.sdsReceived ? '✓ Received' : '✗ Missing'}</span>
         {item.halalRequired
-          ? <span>Halal Cert: {item.coaReceived ? '✅ Required + Received' : 'Required + Missing'}</span>
+          ? <span>Halal Cert: {item.coaReceived ? '✓ Required + Received' : '! Required + Missing'}</span>
           : <span style={{ color: '#94A3B8' }}>Halal: N/A</span>}
       </div>
 
