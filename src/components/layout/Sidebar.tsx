@@ -88,42 +88,42 @@ const BUYER_FIXED: NavItem[] = [
 const SUPPLIER_SECTIONS: NavSection[] = [
   {
     items: [
-      { text: 'My Dashboard', icon: '🏠', path: '/supplier/dashboard' },
+      { text: 'My Dashboard', icon: <Home size={16} />, path: '/supplier/dashboard' },
     ],
   },
   {
     header: 'RESPOND',
     items: [
-      { text: 'WhatsApp',         icon: '📱', path: '/supplier/whatsapp' },
-      { text: 'My RFQs & Quotes', icon: '📋', path: '/supplier/rfqs' },
+      { text: 'WhatsApp',         icon: <Smartphone size={16} />,    path: '/supplier/whatsapp' },
+      { text: 'My RFQs & Quotes', icon: <ClipboardList size={16} />, path: '/supplier/rfqs' },
     ],
   },
   {
     header: 'EXECUTE',
     items: [
-      { text: 'My Orders',          icon: '📄', path: '/supplier/orders' },
-      { text: 'My Shipments & ASN', icon: '🚚', path: '/supplier/asn' },
+      { text: 'My Orders',          icon: <ShoppingCart size={16} />, path: '/supplier/orders' },
+      { text: 'My Shipments & ASN', icon: <Truck size={16} />,        path: '/supplier/asn' },
     ],
   },
   {
     header: 'SETTLE',
     items: [
-      { text: 'My Invoices', icon: '🧾', path: '/supplier/invoices' },
+      { text: 'My Invoices', icon: <Receipt size={16} />, path: '/supplier/invoices' },
     ],
   },
   {
     header: 'MY PROFILE',
     items: [
-      { text: 'My Documents',   icon: '📄', path: '/supplier/documents' },
-      { text: 'My Inventory',   icon: '📦', path: '/supplier/inventory' },
-      { text: 'My Performance', icon: '📊', path: '/supplier/performance' },
-      { text: 'My Storefront',  icon: '🏪', path: '/supplier/storefront' },
+      { text: 'My Documents',   icon: <FolderOpen size={16} />, path: '/supplier/documents' },
+      { text: 'My Inventory',   icon: <Package size={16} />,    path: '/supplier/inventory' },
+      { text: 'My Performance', icon: <BarChart size={16} />,   path: '/supplier/performance' },
+      { text: 'My Storefront',  icon: <ShoppingBag size={16} />, path: '/supplier/storefront' },
     ],
   },
 ];
 
 const SUPPLIER_FIXED: NavItem[] = [
-  { text: 'Support', icon: '💬', path: '/supplier/support',
+  { text: 'Support', icon: <HelpCircle size={16} />, path: '/supplier/support',
     toastMsg: 'Support chat coming in Phase 2' },
 ];
 
