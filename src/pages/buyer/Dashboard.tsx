@@ -215,7 +215,7 @@ function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: 
       {/* Header */}
       <div style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 15 }}>⚠️</span>
+          <AlertTriangle size={15} />
           <span style={{ color: '#BB0000', fontWeight: 800, fontSize: 13, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
             Critical Material Alerts — Production at Risk
           </span>
