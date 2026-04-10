@@ -556,7 +556,7 @@ const SupplierDiscovery: React.FC = () => {
       {/* Tab: Market Intelligence */}
       {activeTab === 'intelligence' && (
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>📊 Category Market Intelligence</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>Category Market Intelligence</div>
           <div style={{ fontSize: 13, color: MUTED, marginBottom: 14 }}>Current market conditions for Paragon's key procurement categories</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             {MARKET_INTEL.map(card => (
