@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePersona } from '../../context/PersonaContext';
+import {
+  LayoutDashboard, Search, Store, Users, FileText, ScrollText,
+  ShoppingCart, Package, Ship, ClipboardCheck, Receipt,
+  Award, BarChart2, AlertTriangle, Smartphone,
+  Home, MessageSquare, ClipboardList, Truck,
+  FolderOpen, BarChart, ShoppingBag, ShieldCheck, Settings, HelpCircle,
+} from 'lucide-react';
 
 // ─── Design tokens (inline — matches Odyssey brand system) ──────────────────
 const NAVY      = '#0D1B2A';
