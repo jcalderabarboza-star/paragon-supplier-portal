@@ -182,10 +182,11 @@ const NavRow: React.FC<{
       }}
     >
       <span style={{
-        fontSize: '15px',
         flexShrink: 0,
         width: collapsed ? 'auto' : '18px',
-        textAlign: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}>
         {item.icon}
       </span>
