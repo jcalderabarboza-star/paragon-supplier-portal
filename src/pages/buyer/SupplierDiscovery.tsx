@@ -9,7 +9,7 @@ const BORDER = '#E2E8F0';
 const SUCCESS = '#107E3E';
 const WARNING = '#E9730C';
 const ERROR   = '#BB0000';
-const INFO    = '#0A6ED1';
+const INFO    = '#0097A7';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface GlobalSupplier {
