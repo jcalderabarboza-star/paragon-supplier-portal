@@ -345,11 +345,11 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
           showToast(`GR posted to SAP S/4HANA (movement type 101). Material document MAT-490003${Math.floor(10 + Math.random() * 90)} created. Invoice for ${poNum} automatically unblocked — status updated to Approved.`);
         }}
           style={{ padding: '9px 18px', borderRadius: 6, background: '#107E3E', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          ✅ Post GR & Record Result
+          Post GR & Record Result
         </button>
         <button onClick={() => showToast('Inspection draft saved')}
           style={{ padding: '9px 18px', borderRadius: 6, background: '#F0F4F8', color: '#0D1B2A', border: '1px solid #E2E8F0', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-          💾 Save Draft
+          Save Draft
         </button>
         <button onClick={onClose}
           style={{ padding: '9px 18px', borderRadius: 6, background: 'none', color: '#94A3B8', border: '1px solid #E2E8F0', fontSize: 13, cursor: 'pointer' }}>
@@ -416,7 +416,7 @@ const InspectionCard: React.FC<{ item: InspectionItem }> = ({ item }) => {
         </button>
         <button onClick={() => showToast(`Opening ${item.asnNumber}...`)}
           style={{ padding: '8px 14px', borderRadius: 6, background: '#F0F4F8', color: '#0D1B2A', border: '1px solid #E2E8F0', fontSize: 13, cursor: 'pointer' }}>
-          📋 View ASN
+          View ASN
         </button>
         <button onClick={() => showToast(`Contacting ${item.supplier} via ${item.channel}...`)}
           style={{ padding: '8px 14px', borderRadius: 6, background: '#F0F4F8', color: '#0D1B2A', border: '1px solid #E2E8F0', fontSize: 13, cursor: 'pointer' }}>
@@ -562,7 +562,7 @@ const GoodsReceipt: React.FC = () => {
               </select>
             ))}
             <button style={{ marginLeft: 'auto', padding: '6px 14px', borderRadius: 6, background: '#0097A7', color: '#fff', border: 'none', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}>
-              📥 Export GR Report
+              Export GR Report
             </button>
           </div>
           {/* Summary stats */}

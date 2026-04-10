@@ -232,7 +232,7 @@ const InventoryVisibility: React.FC = () => {
           setLastRefreshed(new Date());
           showToast('Inventory data refreshed');
         }}>
-          🔄 Refresh
+          Refresh
         </Button>
       </div>
 

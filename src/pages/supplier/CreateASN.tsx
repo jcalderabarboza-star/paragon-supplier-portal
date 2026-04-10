@@ -181,7 +181,7 @@ function CreateASNWizard({ onToast }: { onToast:(m:string)=>void }) {
                     <div><strong>Supplier:</strong> {po.supplierName}</div>
                     <div><strong>Requested Delivery:</strong> {fmtDate(po.requestedDeliveryDate)}</div>
                     <div><strong>Delivery Address:</strong> NDC Jatake 6, Tangerang</div>
-                    <div><strong>Channel:</strong> 📱 WhatsApp</div>
+                    <div><strong>Channel:</strong> WhatsApp</div>
                   </div>
                 )}
               </div>
@@ -224,7 +224,7 @@ function CreateASNWizard({ onToast }: { onToast:(m:string)=>void }) {
         <FF label="Packing List">
           <label style={{ display:'flex', alignItems:'center', gap:10, cursor:'pointer' }}>
             <input type="file" style={{ display:'none' }} onChange={e => update({ packingList: e.target.files?.[0]?.name ?? '' })} />
-            <span style={{ padding:'7px 14px', border:'1px solid #CBD5E1', borderRadius:6, fontSize:'13px', color:TEAL, fontWeight:600, background:'white', cursor:'pointer' }}>📎 Choose File</span>
+            <span style={{ padding:'7px 14px', border:'1px solid #CBD5E1', borderRadius:6, fontSize:'13px', color:TEAL, fontWeight:600, background:'white', cursor:'pointer' }}>Choose File</span>
             <span style={{ fontSize:'12px', color: form.packingList ? '#107E3E' : '#94A3B8' }}>{form.packingList || 'No file chosen'}</span>
           </label>
         </FF>
@@ -327,7 +327,7 @@ function DockAppointments() {
           {[
             ['📅 Date','Monday, 7 April 2026'],
             ['🕙 Time','10:00 WIB'],
-            ['🏭 Dock','Dock 3'],
+            ['Dock','Dock 3'],
             ['📍 Location','NDC Jatake 6, Tangerang Selatan'],
           ].map(([icon_label, val]) => (
             <div key={icon_label} style={{ padding:'8px 12px', background:'#F8FAFC', borderRadius:6 }}>

@@ -82,8 +82,8 @@ const MyInventory: React.FC = () => {
           <div style={{ fontSize: 13, color: MUTED }}>Live stock visibility · Days-of-supply tracking · Paragon minimum thresholds</div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => showToast('Syncing inventory from supplier API feeds...')} style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: MID, cursor: 'pointer', fontFamily: 'inherit' }}>🔄 Sync Now</button>
-          <button onClick={() => showToast('Export preparing... EDI 846 format download starting')} style={{ background: TEAL, border: 'none', borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>📥 Export EDI 846</button>
+          <button onClick={() => showToast('Syncing inventory from supplier API feeds...')} style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: MID, cursor: 'pointer', fontFamily: 'inherit' }}>Sync Now</button>
+          <button onClick={() => showToast('Export preparing... EDI 846 format download starting')} style={{ background: TEAL, border: 'none', borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>Export EDI 846</button>
         </div>
       </div>
 
