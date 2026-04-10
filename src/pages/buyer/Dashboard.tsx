@@ -358,7 +358,7 @@ const Dashboard: React.FC = () => {
               <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                   <div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#BB0000' }}>⚠️ War Room — Full Screen</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#BB0000', display: 'flex', alignItems: 'center', gap: 8 }}><AlertTriangle size={20} /> War Room — Full Screen</div>
                     <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>
                       {d.actionQueue.filter(i => i.severity === 'critical').length} Critical · {d.actionQueue.filter(i => i.severity === 'warning').length} Warning · {new Date().toLocaleString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
