@@ -380,11 +380,14 @@ const SupplierDiscovery: React.FC = () => {
     if (searchCategory !== 'All' && !s.categories.includes(searchCategory)) return false;
     if (majorBrandsOnly && !s.validatedBy.some(b => MAJOR_BRANDS.includes(b))) return false;
     if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return s.name.toLowerCase().includes(q) ||
-        s.categories.some(c => c.toLowerCase().includes(q)) ||
-        s.description.toLowerCase().includes(q) ||
-        s.country.toLowerCase().includes(q);
+      const words = searchQuery.toLowerCase().split(' ').filter(w => w.length > 1);
+      return words.some(w =>
+        s.name.toLowerCase().includes(w) ||
+        s.categories.some(c => c.toLowerCase().includes(w)) ||
+        s.description.toLowerCase().includes(w) ||
+        s.country.toLowerCase().includes(w) ||
+        s.region.toLowerCase().includes(w)
+      );
     }
     return true;
   });
