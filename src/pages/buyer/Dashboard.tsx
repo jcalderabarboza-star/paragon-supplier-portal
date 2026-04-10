@@ -206,7 +206,7 @@ function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: 
   const critical = items.filter(i => i.severity === 'critical');
   const warning  = items.filter(i => i.severity === 'warning');
   return (
-    <div style={{ background: '#FFFBFB', border: '1px solid #FECACA', borderRadius: 10, overflow: 'hidden', boxShadow: '0 2px 12px rgba(187,0,0,0.08)' }}>
+    <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
       {/* Header */}
       <div style={{ background: '#FEF2F2', borderBottom: '1px solid #FECACA', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
