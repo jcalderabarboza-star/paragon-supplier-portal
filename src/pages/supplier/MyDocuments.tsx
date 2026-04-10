@@ -141,7 +141,7 @@ const MyDocuments: React.FC = () => {
       )}
       {awaitingUpload.length > 0 && (
         <div style={{ background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#475569' }}>
-          <span>📎</span>
+          <span style={{ fontWeight: 700 }}>↑</span>
           <div><strong>{awaitingUpload.length} document{awaitingUpload.length > 1 ? 's' : ''} awaiting upload: </strong>{awaitingUpload.map(d => d.linkedTo).join(' · ')}</div>
         </div>
       )}
