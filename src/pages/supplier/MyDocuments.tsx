@@ -129,7 +129,7 @@ const MyDocuments: React.FC = () => {
 
       {expired.length > 0 && (
         <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#BB0000' }}>
-          <span>❌</span>
+          <span>✗</span>
           <div><strong>{expired.length} expired document{expired.length > 1 ? 's' : ''} — immediate renewal required: </strong>{expired.map(d => d.name.split('—')[0].trim()).join(' · ')}</div>
         </div>
       )}
