@@ -248,11 +248,13 @@ const InventoryVisibility: React.FC = () => {
         {tileSummary.map(({ label, sub, count, status }) => (
           <div key={label} style={{
             flex: '1 1 140px', borderRadius: '8px', padding: '0.875rem 1.125rem',
-            background: STATUS_TILE_BG[status], border: `1px solid ${STATUS_CELL_COLOR[status]}33`,
+            background: 'white', border: `1px solid #E2E8F0`,
+            borderLeft: `4px solid ${STATUS_CELL_COLOR[status]}`,
+            boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
           }}>
-            <div style={{ fontSize: '0.68rem', color: STATUS_CELL_COLOR[status], fontWeight: 700, textTransform: 'uppercase' }}>{label}</div>
+            <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
             <div style={{ fontSize: '1.75rem', fontWeight: 700, color: STATUS_CELL_COLOR[status], margin: '0.2rem 0' }}>{count}</div>
-            <div style={{ fontSize: '0.73rem', color: '#6c757d' }}>{sub}</div>
+            <div style={{ fontSize: '0.73rem', color: '#64748B' }}>{sub}</div>
           </div>
         ))}
       </div>
