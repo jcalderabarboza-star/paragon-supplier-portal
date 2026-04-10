@@ -162,7 +162,7 @@ const MyInventory: React.FC = () => {
           <span><strong>Data sources:</strong> API Push (real-time), EDI 846 (daily), Manual (supplier-updated). Phase 2 will add SAP MM stock pull and VMI signal integration.</span>
         </div>
         <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B44', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#E9730C', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-          <span>⏱</span>
+          <span>⏲</span>
           <span><strong>Thresholds:</strong> Critical &lt;7 days · Low 7–14 days · Normal 14–30 days · Excess &gt;30 days. Paragon minimum stock requirements enforced at category level.</span>
         </div>
       </div>
