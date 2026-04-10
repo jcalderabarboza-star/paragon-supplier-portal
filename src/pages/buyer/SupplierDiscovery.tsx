@@ -236,7 +236,7 @@ const GlobalSupplierCard: React.FC<{ s: GlobalSupplier; onToast: (m: string) => 
         <div style={{ fontSize: 10, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>Market Validated By</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {s.validatedBy.map(brand => (
-            <span key={brand} style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', color: '#0369A1', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
+            <span key={brand} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', color: '#354A5F', borderRadius: 6, padding: '3px 8px', fontSize: 11, fontWeight: 600 }}>
               ✓ {brand}
             </span>
           ))}
