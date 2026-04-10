@@ -83,7 +83,7 @@ function UploadModal({ doc, onClose }: { doc: SupplierDocument; onClose: () => v
           </div>
         ) : (
           <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 8, padding: '1rem', textAlign: 'center', marginBottom: 16 }}>
-            <div style={{ fontSize: 20, marginBottom: 4 }}>✅</div>
+            <div style={{ fontSize: 20, marginBottom: 4, color: '#107E3E', fontWeight: 700 }}>✓</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#107E3E' }}>Document uploaded — pending Paragon review</div>
           </div>
         )}
