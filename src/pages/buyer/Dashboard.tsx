@@ -550,7 +550,7 @@ const Dashboard: React.FC = () => {
               </div>
             ))}
             {d.actionQueue.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '1.5rem', color: SUCCESS, fontSize: 13 }}>✅ No actions required — all clear</div>
+              <div style={{ textAlign: 'center', padding: '1.5rem', color: SUCCESS, fontSize: 13 }}>✓ No actions required — all clear</div>
             )}
           </div>
         </div>
