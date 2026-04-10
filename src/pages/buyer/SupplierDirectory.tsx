@@ -192,14 +192,14 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
           <div style={{ fontSize: '0.67rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.3rem' }}>Compliance</div>
           <div style={{ display: 'flex', gap: '0.875rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
             <span style={{ fontSize: '0.78rem', color: s.halalCertified ? '#107E3E' : '#BB0000' }}>
-              {s.halalCertified ? '✅' : '❌'} Halal
+              {s.halalCertified ? '✓' : '✗'} Halal
             </span>
             <span style={{ fontSize: '0.78rem', color: s.bpomRegistered ? '#107E3E' : '#BB0000' }}>
-              {s.bpomRegistered ? '✅' : '❌'} BPOM
+              {s.bpomRegistered ? '✓' : '✗'} BPOM
             </span>
           </div>
           <span style={{ fontSize: '0.78rem', color: certBad ? '#BB0000' : '#107E3E', fontWeight: certBad ? 600 : 400 }}>
-            {certBad ? '⚠️' : '✅'} Cert expires {fmtDate(s.certExpiryDate)}
+            {certBad ? '!' : '✓'} Cert expires {fmtDate(s.certExpiryDate)}
           </span>
         </div>
 
