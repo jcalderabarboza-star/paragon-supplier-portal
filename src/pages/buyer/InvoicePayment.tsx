@@ -275,7 +275,7 @@ const InvoicePayment: React.FC = () => {
       <div style={{ display: 'flex', borderBottom: `2px solid ${BORDER}` }}>
         {(['queue', 'analytics', 'aging'] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} style={{ padding: '10px 20px', border: 'none', borderBottom: activeTab === tab ? `2px solid ${TEAL}` : '2px solid transparent', background: 'transparent', color: activeTab === tab ? TEAL : MUTED, fontWeight: activeTab === tab ? 700 : 500, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', marginBottom: -2, textTransform: 'capitalize' }}>
-            {tab === 'queue' ? '🧾 Invoice Queue' : tab === 'analytics' ? '📊 Spend Analytics' : '📅 Aging Analysis'}
+            {tab === 'queue' ? 'Invoice Queue' : tab === 'analytics' ? 'Spend Analytics' : 'Aging Analysis'}
           </button>
         ))}
       </div>
