@@ -200,7 +200,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
         <div style={{ marginBottom: 12 }}>
           <span style={s.label}>Packaging Condition</span>
           <div style={s.radioRow}>
-            {[['intact','Intact ✅','#107E3E'],['damaged','Damaged ⚠️','#E9730C'],['severe','Severely Damaged ❌','#BB0000']].map(([v,l,c]) => (
+            {[['intact','Intact','#107E3E'],['damaged','Damaged','#E9730C'],['severe','Severely Damaged','#BB0000']].map(([v,l,c]) => (
               <div key={v} onClick={() => setPackaging(v)} style={radioBtn(packaging === v, c)}>{l}</div>
             ))}
           </div>
