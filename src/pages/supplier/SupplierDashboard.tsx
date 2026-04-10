@@ -32,7 +32,7 @@ function perfColor(v: number): string {
 }
 
 const CHANNEL_LABEL: Record<PreferredChannel, string> = {
-  [PreferredChannel.WHATSAPP]: '📱 WhatsApp',
+  [PreferredChannel.WHATSAPP]: 'WhatsApp',
   [PreferredChannel.WEB]: '🌐 Web Portal',
   [PreferredChannel.EMAIL]: '📧 Email',
   [PreferredChannel.API]: '⚙️ API/EDI',
