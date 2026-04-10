@@ -15,7 +15,7 @@ const COUNTRY_FLAG: Record<string, string> = {
 const CATEGORY_COLORS: Record<string, string> = {
   'Raw Material': '#0097A7',
   'Packaging': '#354A5F',
-  'Fragrance': '#9C27B0',
+  'Fragrance': '#64748B',
   'Active Ingredient': '#E9730C',
 };
 
@@ -27,7 +27,7 @@ const TIER_LABELS: Record<number, string> = {
 
 const GRADE_COLORS: Record<string, string> = {
   [ScorecardGrade.A]: '#107E3E',
-  [ScorecardGrade.B]: '#0A6ED1',
+  [ScorecardGrade.B]: '#0097A7',
   [ScorecardGrade.C]: '#E9730C',
   [ScorecardGrade.D]: '#BB0000',
   [ScorecardGrade.F]: '#BB0000',
@@ -330,7 +330,7 @@ const SupplierDirectory: React.FC = () => {
 
         {hasFilters && (
           <button onClick={() => { setCategoryFilter('All'); setTierFilter('All'); setStatusFilter('All'); setCountryFilter('All'); setGradeFilter('All'); setSearch(''); }}
-            style={{ background: 'transparent', border: 'none', color: '#0A6ED1', cursor: 'pointer', fontSize: '0.8rem', paddingBottom: '4px' }}>
+            style={{ background: 'transparent', border: 'none', color: '#0097A7', cursor: 'pointer', fontSize: '0.8rem', paddingBottom: '4px' }}>
             Clear Filters
           </button>
         )}

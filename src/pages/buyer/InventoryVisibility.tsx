@@ -17,7 +17,7 @@ const STATUS_CELL_COLOR: Record<StockStatus, string> = {
   [StockStatus.CRITICAL]: '#BB0000',
   [StockStatus.LOW]: '#E9730C',
   [StockStatus.NORMAL]: '#107E3E',
-  [StockStatus.EXCESS]: '#0A6ED1',
+  [StockStatus.EXCESS]: '#0097A7',
 };
 
 const STATUS_TILE_BG: Record<StockStatus, string> = {
@@ -47,7 +47,7 @@ function dosColor(days: number): string {
   if (days < 7) return '#BB0000';
   if (days < 14) return '#E9730C';
   if (days <= 30) return '#107E3E';
-  return '#0A6ED1';
+  return '#0097A7';
 }
 
 function fmtDate(s: string): string {
@@ -278,7 +278,7 @@ const InventoryVisibility: React.FC = () => {
                 <tr key={inv.id} style={{ background: rowBg, transition: 'background 0.1s' }}
                   onMouseEnter={() => setHoveredRow(inv.id)}
                   onMouseLeave={() => setHoveredRow(null)}>
-                  <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: '#0A6ED1', whiteSpace: 'nowrap' }}>{inv.materialCode}</td>
+                  <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: '#0097A7', whiteSpace: 'nowrap' }}>{inv.materialCode}</td>
                   <td style={{ padding: '0.5rem 0.75rem', maxWidth: '200px' }}>
                     <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={inv.materialDescription}>{inv.materialDescription}</div>
                   </td>
@@ -293,7 +293,7 @@ const InventoryVisibility: React.FC = () => {
                       )}
                       {supplierCertMap[inv.supplierId]?.status === 'expiring' && (
                         <span title={`Cert expiring — ${supplierCertMap[inv.supplierId].expiryDate}`}
-                          style={{ background: '#FEF3C7', color: '#92400E', borderRadius: 9999, padding: '1px 6px', fontSize: 9, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                          style={{ background: '#FEF3C7', color: '#E9730C', borderRadius: 9999, padding: '1px 6px', fontSize: 9, fontWeight: 700, whiteSpace: 'nowrap' }}>
                           EXPIRING
                         </span>
                       )}

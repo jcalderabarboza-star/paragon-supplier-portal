@@ -35,10 +35,10 @@ const MOCK_INVOICES: MockInvoice[] = [
 ];
 
 const STATUS_STYLES: Record<string, [string, string]> = {
-  'Pending Approval': ['#FEF9C3', '#854D0E'],
+  'Pending Approval': ['#FEF9C3', '#E9730C'],
   'Draft':            ['#F1F5F9', '#475569'],
-  'Approved':         ['#DCFCE7', '#166534'],
-  'Rejected':         ['#FEE2E2', '#991B1B'],
+  'Approved':         ['#DCFCE7', '#107E3E'],
+  'Rejected':         ['#FEE2E2', '#BB0000'],
 };
 
 function fmtDate(s: string): string {

@@ -7,30 +7,30 @@ interface StatusBadgeProps {
 // bg, color pairs keyed by normalised status string
 const STATUS_STYLES: Record<string, [string, string]> = {
   // Green — positive outcomes
-  active:    ['#DCFCE7', '#166534'],
-  delivered: ['#DCFCE7', '#166534'],
-  approved:  ['#DCFCE7', '#166534'],
-  closed:    ['#DCFCE7', '#166534'],
-  success:   ['#DCFCE7', '#166534'],
+  active:    ['#DCFCE7', '#107E3E'],
+  delivered: ['#DCFCE7', '#107E3E'],
+  approved:  ['#DCFCE7', '#107E3E'],
+  closed:    ['#DCFCE7', '#107E3E'],
+  success:   ['#DCFCE7', '#107E3E'],
 
   // Yellow — in-progress / needs attention
-  onboarding:    ['#FEF9C3', '#854D0E'],
-  acknowledged:  ['#FEF9C3', '#854D0E'],
-  warning:       ['#FEF9C3', '#854D0E'],
-  pending:       ['#FEF9C3', '#854D0E'],
-  'in transit':  ['#FEF9C3', '#854D0E'],
+  onboarding:    ['#FEF9C3', '#E9730C'],
+  acknowledged:  ['#FEF9C3', '#E9730C'],
+  warning:       ['#FEF9C3', '#E9730C'],
+  pending:       ['#FEF9C3', '#E9730C'],
+  'in transit':  ['#FEF9C3', '#E9730C'],
 
   // Red — errors / suspended
-  suspended: ['#FEE2E2', '#991B1B'],
-  rejected:  ['#FEE2E2', '#991B1B'],
-  error:     ['#FEE2E2', '#991B1B'],
-  critical:  ['#FEE2E2', '#991B1B'],
-  cancelled: ['#FEE2E2', '#991B1B'],
-  overdue:   ['#FEE2E2', '#991B1B'],
+  suspended: ['#FEE2E2', '#BB0000'],
+  rejected:  ['#FEE2E2', '#BB0000'],
+  error:     ['#FEE2E2', '#BB0000'],
+  critical:  ['#FEE2E2', '#BB0000'],
+  cancelled: ['#FEE2E2', '#BB0000'],
+  overdue:   ['#FEE2E2', '#BB0000'],
 
   // Blue — confirmed / normal
-  confirmed: ['#DBEAFE', '#1E40AF'],
-  normal:    ['#DBEAFE', '#1E40AF'],
+  confirmed: ['#DBEAFE', '#0D1B2A'],
+  normal:    ['#DBEAFE', '#0D1B2A'],
 
   // Slate — sent / neutral info
   sent:     ['#F1F5F9', '#475569'],
@@ -40,7 +40,7 @@ const STATUS_STYLES: Record<string, [string, string]> = {
   info:     ['#F1F5F9', '#475569'],
 
   // Purple — excess
-  excess: ['#EDE9FE', '#5B21B6'],
+  excess: ['#EDE9FE', '#0D1B2A'],
 };
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {

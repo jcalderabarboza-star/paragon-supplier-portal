@@ -38,7 +38,7 @@ const CHANNEL_LABEL: Record<PreferredChannel, string> = {
 };
 
 const GRADE_COLORS: Record<string, string> = {
-  A: '#107E3E', B: '#0A6ED1', C: '#E9730C', D: '#BB0000', F: '#BB0000',
+  A: '#107E3E', B: '#0097A7', C: '#E9730C', D: '#BB0000', F: '#BB0000',
 };
 
 function StatusPill({ status }: { status: POStatus }) {
@@ -129,7 +129,7 @@ const SupplierDashboard: React.FC = () => {
       {/* ── Quick Stats ─────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         {[
-          { icon: '📋', label: 'Open Orders', value: openOrders, sub: 'awaiting action', color: '#0A6ED1', bg: '#E3F2FD' },
+          { icon: '📋', label: 'Open Orders', value: openOrders, sub: 'awaiting action', color: '#0097A7', bg: '#E3F2FD' },
           { icon: '🚚', label: 'Pending ASNs', value: pendingASNs, sub: 'need shipment notice', color: '#E9730C', bg: '#FFF3E0' },
           { icon: '💰', label: 'Unpaid Invoices', value: 2, sub: 'pending payment', color: '#BB0000', bg: '#FFEBEE' },
           { icon: '🎯', label: 'My OTIF Score', value: `${mySupplier.otif}%`, sub: 'last 6 months', color: otifColor, bg: mySupplier.otif >= 90 ? '#E8F5E9' : '#FFF3E0' },
@@ -187,7 +187,7 @@ const SupplierDashboard: React.FC = () => {
               </div>
 
               {/* Blue — Profile */}
-              <div style={{ borderLeft: '4px solid #0A6ED1', padding: '0.875rem 1rem', background: '#F0F6FF', borderRadius: '0 6px 6px 0' }}>
+              <div style={{ borderLeft: '4px solid #0097A7', padding: '0.875rem 1rem', background: '#F0F6FF', borderRadius: '0 6px 6px 0' }}>
                 <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
                   Complete your company profile
                 </div>
@@ -220,7 +220,7 @@ const SupplierDashboard: React.FC = () => {
                   const isConfirmed = po.status === POStatus.CONFIRMED;
                   return (
                     <tr key={po.id} style={{ background: idx % 2 === 0 ? 'white' : '#F7F7F7', borderBottom: '1px solid #f0f0f0' }}>
-                      <td style={{ padding: '0.6rem 0.875rem', fontFamily: 'monospace', fontWeight: 700, color: '#0A6ED1' }}>{po.poNumber}</td>
+                      <td style={{ padding: '0.6rem 0.875rem', fontFamily: 'monospace', fontWeight: 700, color: '#0097A7' }}>{po.poNumber}</td>
                       <td style={{ padding: '0.6rem 0.875rem', whiteSpace: 'nowrap' }}>{fmtDate(po.orderDate)}</td>
                       <td style={{ padding: '0.6rem 0.875rem', textAlign: 'center' }}>{po.lineItems.length}</td>
                       <td style={{ padding: '0.6rem 0.875rem', fontWeight: 600, whiteSpace: 'nowrap' }}>{fmtIDR(po.totalValue)}</td>

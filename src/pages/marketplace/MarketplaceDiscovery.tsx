@@ -117,14 +117,14 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
 const CATEGORIES = [
   { icon:'🧪', category:'Active Ingredients',        count:34, color:'#0097A7' },
   { icon:'🌿', category:'Natural & Botanical',       count:28, color:'#107E3E' },
-  { icon:'💧', category:'Surfactants & Emulsifiers', count:22, color:'#0A6ED1' },
-  { icon:'🌸', category:'Fragrance & Aroma',         count:18, color:'#5B21B6' },
+  { icon:'💧', category:'Surfactants & Emulsifiers', count:22, color:'#0097A7' },
+  { icon:'🌸', category:'Fragrance & Aroma',         count:18, color:'#0D1B2A' },
   { icon:'✅', category:'Halal Emulsifiers',         count:15, color:'#E9730C' },
   { icon:'🧴', category:'Preservatives',             count:12, color:'#354A5F' },
   { icon:'📦', category:'Primary Packaging',         count:31, color:'#0097A7' },
   { icon:'📫', category:'Secondary Packaging',       count:24, color:'#107E3E' },
-  { icon:'🏷️', category:'Labels & Print',            count:19, color:'#0A6ED1' },
-  { icon:'♻️', category:'Sustainable Packaging',     count:11, color:'#5B21B6' },
+  { icon:'🏷️', category:'Labels & Print',            count:19, color:'#0097A7' },
+  { icon:'♻️', category:'Sustainable Packaging',     count:11, color:'#0D1B2A' },
   { icon:'🔬', category:'Testing & Certification',   count: 8, color:'#E9730C' },
   { icon:'🏭', category:'Contract Manufacturing',    count: 6, color:'#354A5F' },
 ];
@@ -204,12 +204,12 @@ const SupplierMktCard: React.FC<{
               Grade {s.grade}
             </span>
           ) : (
-            <span style={{ background: '#FEF9C3', color: '#92400E', borderRadius: 9999,
+            <span style={{ background: '#FEF9C3', color: '#E9730C', borderRadius: 9999,
               padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>NEW</span>
           )}
           <span style={{
             background: s.status === 'Approved Supplier' ? '#F0FDF4' : '#FEF9C3',
-            color: s.status === 'Approved Supplier' ? GREEN : '#92400E',
+            color: s.status === 'Approved Supplier' ? GREEN : '#E9730C',
             borderRadius: 9999, padding: '1px 7px', fontSize: 10, fontWeight: 600,
           }}>{s.status}</span>
         </div>
@@ -251,7 +251,7 @@ const SupplierMktCard: React.FC<{
           {s.halalCert && <span style={{ fontSize: 10, color: GREEN }}>✅ Halal</span>}
           {s.iso9001  && <span style={{ fontSize: 10, color: BLUE }}>✅ ISO 9001</span>}
           {s.bpom     && <span style={{ fontSize: 10, color: TEAL }}>✅ BPOM</span>}
-          {s.reach    && <span style={{ fontSize: 10, color: '#5B21B6' }}>✅ REACH</span>}
+          {s.reach    && <span style={{ fontSize: 10, color: '#0D1B2A' }}>✅ REACH</span>}
         </div>
       </div>
 

@@ -21,7 +21,7 @@ const BORDER  = '#E2E8F0';
 const SUCCESS = '#107E3E';
 const WARNING = '#E9730C';
 const ERROR   = '#BB0000';
-const INFO    = '#0A6ED1';
+const INFO    = '#0097A7';
 
 function useDerivedData() {
   return useMemo(() => {
@@ -40,7 +40,7 @@ function useDerivedData() {
     const poFunnel = [
       { status: 'Sent',       count: pos.filter(p => p.status === POStatus.SENT).length,               color: WARNING },
       { status: 'Viewed',     count: pos.filter(p => p.status === POStatus.VIEWED).length,              color: INFO },
-      { status: "Ack'd",      count: pos.filter(p => p.status === POStatus.ACKNOWLEDGED).length,        color: '#5B21B6' },
+      { status: "Ack'd",      count: pos.filter(p => p.status === POStatus.ACKNOWLEDGED).length,        color: '#0D1B2A' },
       { status: 'Confirmed',  count: pos.filter(p => p.status === POStatus.CONFIRMED).length,           color: TEAL },
       { status: 'Part. Del.', count: pos.filter(p => p.status === POStatus.PARTIALLY_DELIVERED).length, color: INFO },
       { status: 'Delivered',  count: pos.filter(p => p.status === POStatus.DELIVERED).length,           color: SUCCESS },
@@ -211,10 +211,10 @@ function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: 
       <div style={{ background: '#FEF2F2', borderBottom: '1px solid #FECACA', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 15 }}>⚠️</span>
-          <span style={{ color: '#991B1B', fontWeight: 800, fontSize: 13, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+          <span style={{ color: '#BB0000', fontWeight: 800, fontSize: 13, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
             Critical Material Alerts — Production at Risk
           </span>
-          <span style={{ background: '#FEE2E2', color: '#991B1B', borderRadius: 9999, padding: '1px 8px', fontSize: 10, fontWeight: 700 }}>
+          <span style={{ background: '#FEE2E2', color: '#BB0000', borderRadius: 9999, padding: '1px 8px', fontSize: 10, fontWeight: 700 }}>
             {critical.length} Critical · {warning.length} Warning
           </span>
         </div>
@@ -222,7 +222,7 @@ function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: 
           <div style={{ fontSize: 10, color: '#9CA3AF', letterSpacing: '0.5px' }}>
             Materials below safety stock — immediate procurement action required · {new Date().toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
           </div>
-          <button onClick={onToggleFullScreen} style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#991B1B', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+          <button onClick={onToggleFullScreen} style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, color: '#BB0000', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
             {isFullScreen ? '✕ Exit War Room' : '⛶ War Room Mode'}
           </button>
         </div>
@@ -242,7 +242,7 @@ function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: 
               </div>
             </div>
             <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
-              <Pill label={item.type} bg="#FEE2E2" color="#991B1B" />
+              <Pill label={item.type} bg="#FEE2E2" color="#BB0000" />
               <button onClick={() => onEscalate(item.id)} style={{ background: '#BB0000', color: 'white', border: 'none', borderRadius: 5, padding: '4px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.5px' }}>
                 ESCALATE
               </button>
@@ -255,7 +255,7 @@ function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 4, paddingTop: 8, borderTop: '1px solid #FEE2E2' }}>
             {warning.map(item => (
               <div key={item.id} style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderLeft: '3px solid #E9730C', borderRadius: 5, padding: '5px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 11, color: '#92400E', fontWeight: 600 }}>⚠ {item.title}</span>
+                <span style={{ fontSize: 11, color: '#E9730C', fontWeight: 600 }}>⚠ {item.title}</span>
                 <span style={{ fontSize: 10, color: '#B45309' }}>· {item.supplier}</span>
               </div>
             ))}
@@ -353,12 +353,12 @@ const Dashboard: React.FC = () => {
               <div style={{ maxWidth: 1100, margin: '0 auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                   <div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color: '#991B1B' }}>⚠️ War Room — Full Screen</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: '#BB0000' }}>⚠️ War Room — Full Screen</div>
                     <div style={{ fontSize: 13, color: '#9CA3AF', marginTop: 4 }}>
                       {d.actionQueue.filter(i => i.severity === 'critical').length} Critical · {d.actionQueue.filter(i => i.severity === 'warning').length} Warning · {new Date().toLocaleString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </div>
                   </div>
-                  <button onClick={() => setIsFullScreen(false)} style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, color: '#991B1B', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  <button onClick={() => setIsFullScreen(false)} style={{ background: '#FEE2E2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 18px', fontSize: 13, fontWeight: 700, color: '#BB0000', cursor: 'pointer', fontFamily: 'inherit' }}>
                     ✕ Exit War Room
                   </button>
                 </div>
@@ -377,12 +377,12 @@ const Dashboard: React.FC = () => {
                           {item.type === 'Production Risk' ? '🏭' : item.type === 'PO Unacknowledged' ? '📄' : item.type === 'Cert Expired' ? '📋' : '⚠️'}
                         </span>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: item.severity === 'critical' ? '#BB0000' : '#92400E' }}>{item.title}</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: item.severity === 'critical' ? '#BB0000' : '#E9730C' }}>{item.title}</div>
                           <div style={{ fontSize: 12, color: '#6B7280', marginTop: 3 }}>{item.supplier} · {item.detail}</div>
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
-                        <span style={{ background: item.severity === 'critical' ? '#FEE2E2' : '#FEF3C7', color: item.severity === 'critical' ? '#991B1B' : '#92400E', borderRadius: 9999, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>{item.type}</span>
+                        <span style={{ background: item.severity === 'critical' ? '#FEE2E2' : '#FEF3C7', color: item.severity === 'critical' ? '#BB0000' : '#E9730C', borderRadius: 9999, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>{item.type}</span>
                         {item.severity === 'critical' && (
                           <button onClick={e => { e.stopPropagation(); handleEscalate(item.id); }} style={{ background: '#BB0000', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                             ESCALATE

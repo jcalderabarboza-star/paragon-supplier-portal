@@ -347,7 +347,7 @@ const RecommendationCard: React.FC<{ sup: RecommendedSupplier }> = ({ sup }) => 
         <span style={{ background: 'rgba(0,151,167,0.1)', color: TEAL, borderRadius: 9999, padding: '2px 10px', fontSize: 12, fontWeight: 500 }}>{sup.covers}</span>
       </div>
       {sup.riskNote && (
-        <div style={{ background: '#FEF3C7', borderLeft: '3px solid #F59E0B', borderRadius: 4, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: '#92400E' }}>{sup.riskNote}</div>
+        <div style={{ background: '#FEF3C7', borderLeft: '3px solid #F59E0B', borderRadius: 4, padding: '8px 12px', marginBottom: 12, fontSize: 12, color: '#E9730C' }}>{sup.riskNote}</div>
       )}
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={() => navigate(sup.storefrontPath)} style={{ padding: '7px 14px', borderRadius: 6, background: TEAL, color: 'white', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>View Storefront →</button>

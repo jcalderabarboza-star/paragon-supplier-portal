@@ -151,11 +151,11 @@ export type CountryCode = keyof typeof COUNTRY_PROFILES;
 
 // Channel definitions
 export const CHANNEL_CONFIG = {
-  whatsapp: { label: 'WhatsApp',    icon: '📱', color: '#25D366', description: 'Real-time messaging, interactive buttons, document sharing' },
+  whatsapp: { label: 'WhatsApp',    icon: '📱', color: '#107E3E', description: 'Real-time messaging, interactive buttons, document sharing' },
   wechat:   { label: 'WeChat Work', icon: '💬', color: '#07C160', description: 'WeCom for Chinese business suppliers, formal B2B messaging' },
-  email:    { label: 'Email',       icon: '📧', color: '#EA4335', description: 'Structured email with reply parsing, DKIM/DMARC secured' },
-  api:      { label: 'REST API',    icon: '⚙️', color: '#0A6ED1', description: 'System-to-system, OAuth 2.0, CloudEvents webhooks' },
-  edi:      { label: 'EDI',         icon: '🔗', color: '#5B21B6', description: 'X12 / EDIFACT via AS2/SFTP through Cleo Integration Cloud' },
+  email:    { label: 'Email',       icon: '📧', color: '#BB0000', description: 'Structured email with reply parsing, DKIM/DMARC secured' },
+  api:      { label: 'REST API',    icon: '⚙️', color: '#0097A7', description: 'System-to-system, OAuth 2.0, CloudEvents webhooks' },
+  edi:      { label: 'EDI',         icon: '🔗', color: '#0D1B2A', description: 'X12 / EDIFACT via AS2/SFTP through Cleo Integration Cloud' },
   portal:   { label: 'Web Portal',  icon: '🌐', color: '#354A5F', description: 'Browser-based portal, PWA mobile support' },
 } as const;
 

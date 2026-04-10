@@ -85,7 +85,7 @@ const ShipNotices: React.FC = () => {
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{
-                        background: '#DBEAFE', color: '#1E40AF',
+                        background: '#DBEAFE', color: '#0D1B2A',
                         borderRadius: '9999px', padding: '2px 10px',
                         fontSize: '11px', fontWeight: 600,
                       }}>
@@ -116,7 +116,7 @@ const ShipNotices: React.FC = () => {
       {/* Info note */}
       <div style={{
         background: '#FEF9C3', border: '1px solid #FDE047', borderRadius: '8px',
-        padding: '12px 16px', fontSize: '12px', color: '#854D0E',
+        padding: '12px 16px', fontSize: '12px', color: '#E9730C',
         display: 'flex', alignItems: 'center', gap: '8px',
       }}>
         <span>⚠️</span>

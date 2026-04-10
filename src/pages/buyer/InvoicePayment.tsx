@@ -14,7 +14,7 @@ const BORDER = '#E2E8F0';
 const SUCCESS = '#107E3E';
 const WARNING = '#E9730C';
 const ERROR   = '#BB0000';
-const INFO    = '#0A6ED1';
+const INFO    = '#0097A7';
 
 type InvStatus = 'Pending Match' | 'Approved' | 'Disputed' | 'Payment Released' | 'Overdue';
 
@@ -53,19 +53,19 @@ const BUYER_INVOICES: BuyerInvoice[] = [
 ];
 
 const STATUS_CFG: Record<InvStatus, { bg: string; color: string }> = {
-  'Pending Match':    { bg: '#FEF9C3', color: '#854D0E' },
-  'Approved':         { bg: '#DBEAFE', color: '#1E40AF' },
-  'Disputed':         { bg: '#FEE2E2', color: '#991B1B' },
-  'Payment Released': { bg: '#DCFCE7', color: '#166534' },
-  'Overdue':          { bg: '#FEE2E2', color: '#991B1B' },
+  'Pending Match':    { bg: '#FEF9C3', color: '#E9730C' },
+  'Approved':         { bg: '#DBEAFE', color: '#0D1B2A' },
+  'Disputed':         { bg: '#FEE2E2', color: '#BB0000' },
+  'Payment Released': { bg: '#DCFCE7', color: '#107E3E' },
+  'Overdue':          { bg: '#FEE2E2', color: '#BB0000' },
 };
 
 const MATCH_CFG: Record<string, { bg: string; color: string }> = {
-  'Matched':        { bg: '#DCFCE7', color: '#166534' },
-  'Pending GR':     { bg: '#FEF9C3', color: '#854D0E' },
-  'Pending':        { bg: '#FEF9C3', color: '#854D0E' },
-  'Qty Mismatch':   { bg: '#FEE2E2', color: '#991B1B' },
-  'Price Variance': { bg: '#FEE2E2', color: '#991B1B' },
+  'Matched':        { bg: '#DCFCE7', color: '#107E3E' },
+  'Pending GR':     { bg: '#FEF9C3', color: '#E9730C' },
+  'Pending':        { bg: '#FEF9C3', color: '#E9730C' },
+  'Qty Mismatch':   { bg: '#FEE2E2', color: '#BB0000' },
+  'Price Variance': { bg: '#FEE2E2', color: '#BB0000' },
 };
 
 const AGING_DATA = [
@@ -156,7 +156,7 @@ function PaymentConfirmModal({ invoice, onClose, onConfirm }: {
               </div>
             </div>
 
-            <div style={{ background: '#FEF9C3', border: '1px solid #F59E0B', borderRadius: 6, padding: '10px 14px', marginBottom: 20, fontSize: 12, color: '#92400E' }}>
+            <div style={{ background: '#FEF9C3', border: '1px solid #F59E0B', borderRadius: 6, padding: '10px 14px', marginBottom: 20, fontSize: 12, color: '#E9730C' }}>
               ⚠ Payment will be transferred to <strong>{invoice.bankAccount}</strong>. Verify bank details before confirming.
             </div>
 
@@ -253,7 +253,7 @@ const InvoicePayment: React.FC = () => {
       </div>
 
       {invoices.some(i => i.status === 'Overdue') && (
-        <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#991B1B', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#BB0000', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <span>❗</span>
           <div>
             <strong>{invoices.filter(i => i.status === 'Overdue').length} overdue invoice{invoices.filter(i => i.status === 'Overdue').length > 1 ? 's' : ''}: </strong>
@@ -263,7 +263,7 @@ const InvoicePayment: React.FC = () => {
       )}
 
       {invoices.some(i => i.status === 'Disputed') && (
-        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#92400E', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#E9730C', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <span>⚠️</span>
           <div>
             <strong>Invoice dispute: </strong>

@@ -144,7 +144,7 @@ const ALL_SUPPLIERS = [
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const GRADE_STYLE: Record<string,[string,string]> = {
-  A:['#DCFCE7','#166534'], B:['#DBEAFE','#1E40AF'], C:['#FEF3C7','#92400E'], D:['#FEE2E2','#991B1B'],
+  A:['#DCFCE7','#107E3E'], B:['#DBEAFE','#0D1B2A'], C:['#FEF3C7','#E9730C'], D:['#FEE2E2','#BB0000'],
 };
 
 function Pill({ label, bg, color }: { label:string; bg:string; color:string }) {
@@ -290,7 +290,7 @@ const SupplierScorecard: React.FC = () => {
       {/* Section 5 — Improvement Plan (grade C only) */}
       {'impPlan' in supp && supp.impPlan && (
         <Card>
-          <div style={{ background:'#FEE2E2', border:'1px solid #FCA5A5', borderRadius:6, padding:'12px 16px', display:'flex', alignItems:'center', gap:10, marginBottom:16, fontSize:'13px', color:'#991B1B', fontWeight:600 }}>
+          <div style={{ background:'#FEE2E2', border:'1px solid #FCA5A5', borderRadius:6, padding:'12px 16px', display:'flex', alignItems:'center', gap:10, marginBottom:16, fontSize:'13px', color:'#BB0000', fontWeight:600 }}>
             🚨 This supplier is on a Conditional rating — improvement plan active. 30-day review period.
           </div>
           <STitle>Improvement Plan — Action Items</STitle>
@@ -307,7 +307,7 @@ const SupplierScorecard: React.FC = () => {
                 </div>
                 <div style={{ textAlign:'right', flexShrink:0, marginLeft:12 }}>
                   <div style={{ fontSize:'11px', color:'#64748B' }}>Due: {a.due}</div>
-                  <Pill label={a.status} bg={a.status==='In Progress'?'#FEF3C7':'#F1F5F9'} color={a.status==='In Progress'?'#92400E':'#475569'} />
+                  <Pill label={a.status} bg={a.status==='In Progress'?'#FEF3C7':'#F1F5F9'} color={a.status==='In Progress'?'#E9730C':'#475569'} />
                 </div>
               </div>
             ))}
@@ -336,7 +336,7 @@ const SupplierScorecard: React.FC = () => {
                   <div style={{ fontSize:'12px', fontWeight:700, color:MID, marginBottom:2 }}>{log.type}</div>
                   <div style={{ fontSize:'12px', color:'#475569' }}>{log.message}</div>
                 </div>
-                <Pill label={log.status} bg={log.status==='Completed'?'#DCFCE7':log.status==='Active'?'#FEF3C7':log.status==='Open'?'#FEE2E2':'#F1F5F9'} color={log.status==='Completed'?'#166534':log.status==='Active'?'#92400E':log.status==='Open'?'#991B1B':'#475569'} />
+                <Pill label={log.status} bg={log.status==='Completed'?'#DCFCE7':log.status==='Active'?'#FEF3C7':log.status==='Open'?'#FEE2E2':'#F1F5F9'} color={log.status==='Completed'?'#107E3E':log.status==='Active'?'#E9730C':log.status==='Open'?'#BB0000':'#475569'} />
               </div>
             ))}
           </div>

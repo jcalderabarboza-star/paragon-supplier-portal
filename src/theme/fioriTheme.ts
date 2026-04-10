@@ -9,7 +9,7 @@ export const FIORI_THEME = {
 // ─── Paragon brand colours ────────────────────────────────────────────────────
 
 export const PRIMARY = '#354A5F';
-export const ACCENT = '#0A6ED1';
+export const ACCENT = '#0097A7';
 export const SUCCESS = '#107E3E';
 export const WARNING = '#E9730C';
 export const ERROR = '#BB0000';

@@ -188,7 +188,7 @@ const PhoneMockup: React.FC<{
         <div style={{ borderRadius: 24, overflow: 'hidden', background: '#ECE5DD' }}>
           {/* WhatsApp header */}
           <div style={{ background: '#075E54', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', fontWeight: 700, flexShrink: 0 }}>PC</div>
+            <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#107E3E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', fontWeight: 700, flexShrink: 0 }}>PC</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>Paragon Corp ✅</div>
               <div style={{ fontSize: 9, color: '#B2DFDB' }}>Business Account</div>
@@ -217,7 +217,7 @@ const PhoneMockup: React.FC<{
             <div style={{ background: '#F0F0F0', padding: '6px 8px', display: 'flex', gap: 6, flexWrap: 'wrap', borderTop: '1px solid #E0E0E0' }}>
               {quickReplies.map(r => (
                 <button key={r} onClick={() => onQuickReply(r)}
-                  style={{ padding: '4px 10px', borderRadius: 14, border: '1px solid #25D366', background: '#fff', color: '#075E54', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  style={{ padding: '4px 10px', borderRadius: 14, border: '1px solid #107E3E', background: '#fff', color: '#075E54', fontSize: 11, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   {r}
                 </button>
               ))}
@@ -231,7 +231,7 @@ const PhoneMockup: React.FC<{
                 <input value={inputValue} onChange={e => setInputValue(e.target.value)}
                   style={{ flex: 1, padding: '6px 10px', borderRadius: 18, border: 'none', fontSize: 11, background: '#fff', outline: 'none' }} />
                 <button onClick={() => onSend(inputValue)}
-                  style={{ width: 30, height: 30, borderRadius: '50%', background: '#25D366', border: 'none', color: '#fff', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  style={{ width: 30, height: 30, borderRadius: '50%', background: '#107E3E', border: 'none', color: '#fff', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   ➤
                 </button>
               </>

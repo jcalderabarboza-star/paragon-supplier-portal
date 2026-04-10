@@ -17,8 +17,8 @@ const SPEND_CAT = [
   { category:'Fragrance',           value:840,  color:'#354A5F' },
   { category:'Packaging Primary',   value:630,  color:'#107E3E' },
   { category:'Natural/Botanical',   value:504,  color:'#E9730C' },
-  { category:'Packaging Secondary', value:420,  color:'#0A6ED1' },
-  { category:'Halal Emulsifiers',   value:336,  color:'#5B21B6' },
+  { category:'Packaging Secondary', value:420,  color:'#0097A7' },
+  { category:'Halal Emulsifiers',   value:336,  color:'#0D1B2A' },
   { category:'Other',               value:210,  color:'#64748B' },
 ];
 const TOTAL_SPEND = SPEND_CAT.reduce((a, b) => a + b.value, 0);
@@ -65,7 +65,7 @@ const PERF_TABLE = [
 function rateColor(v: number) { return v >= 90 ? '#107E3E' : v >= 80 ? '#E9730C' : '#BB0000'; }
 function rateBg(v: number)    { return v >= 90 ? '#DCFCE7' : v >= 80 ? '#FEF3C7' : '#FEE2E2'; }
 const GRADE_STYLE: Record<string, [string,string]> = {
-  A:['#DCFCE7','#166534'], B:['#DBEAFE','#1E40AF'], C:['#FEF3C7','#92400E'], D:['#FEE2E2','#991B1B'],
+  A:['#DCFCE7','#107E3E'], B:['#DBEAFE','#0D1B2A'], C:['#FEF3C7','#E9730C'], D:['#FEE2E2','#BB0000'],
 };
 function Pill({ label, bg, color }: { label:string; bg:string; color:string }) {
   return <span style={{ background:bg, color, borderRadius:'9999px', padding:'2px 9px', fontSize:'11px', fontWeight:600, whiteSpace:'nowrap' }}>{label}</span>;
@@ -262,9 +262,9 @@ const Analytics: React.FC = () => {
             <YAxis tick={{ fontSize:11 }} tickFormatter={(v) => `${v}%`} />
             <Tooltip formatter={(v: number) => [`${v}%`,'']} />
             <Legend iconSize={10} wrapperStyle={{ fontSize:11 }} />
-            <Bar dataKey="whatsapp" stackId="a" fill="#25D366" name="WhatsApp"  />
-            <Bar dataKey="web"      stackId="a" fill="#0A6ED1" name="Web Portal" />
-            <Bar dataKey="email"    stackId="a" fill="#EA4335" name="Email" />
+            <Bar dataKey="whatsapp" stackId="a" fill="#107E3E" name="WhatsApp"  />
+            <Bar dataKey="web"      stackId="a" fill="#0097A7" name="Web Portal" />
+            <Bar dataKey="email"    stackId="a" fill="#BB0000" name="Email" />
             <Bar dataKey="api"      stackId="a" fill="#354A5F" name="API/EDI" radius={[4,4,0,0]} />
           </BarChart>
         </ResponsiveContainer>

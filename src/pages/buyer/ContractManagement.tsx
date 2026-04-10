@@ -124,7 +124,7 @@ const CONTRACT_OBLIGATIONS: Record<string, { obligation:string; frequency:string
 
 // ─── Style tokens ──────────────────────────────────────────────────────────
 const STATUS_COLOR: Record<string, string> = {
-  Active:'#107E3E', 'Expiring Soon':'#E9730C', 'Pending Signature':'#0A6ED1',
+  Active:'#107E3E', 'Expiring Soon':'#E9730C', 'Pending Signature':'#0097A7',
   Expired:'#94A3B8', Terminated:'#BB0000',
 };
 const STATUS_BG: Record<string, string> = {
@@ -132,7 +132,7 @@ const STATUS_BG: Record<string, string> = {
   Expired:'#F1F5F9', Terminated:'#FEE2E2',
 };
 const OBL_COLOR: Record<string, string> = {
-  Compliant:'#107E3E', Pending:'#E9730C', Overdue:'#BB0000', Upcoming:'#0A6ED1',
+  Compliant:'#107E3E', Pending:'#E9730C', Overdue:'#BB0000', Upcoming:'#0097A7',
 };
 const OBL_BG: Record<string, string> = {
   Compliant:'#DCFCE7', Pending:'#FEF3C7', Overdue:'#FEE2E2', Upcoming:'#EFF6FF',
@@ -481,7 +481,7 @@ const ActiveContractsTab: React.FC = () => {
                     )}
                     {c.status === 'Pending Signature' && (
                       <button onClick={() => showToast(`Contract sent to ${c.supplier} for countersignature via Email`)}
-                        style={{ padding:'4px 10px', borderRadius:4, background:'#EFF6FF', color:'#0A6ED1', border:'1px solid #BFDBFE', fontSize:12, cursor:'pointer', fontWeight:500, whiteSpace:'nowrap' }}>Send</button>
+                        style={{ padding:'4px 10px', borderRadius:4, background:'#EFF6FF', color:'#0097A7', border:'1px solid #BFDBFE', fontSize:12, cursor:'pointer', fontWeight:500, whiteSpace:'nowrap' }}>Send</button>
                     )}
                   </div>
                 </td>
@@ -574,7 +574,7 @@ const TemplatesTab: React.FC = () => {
   const [toast, setToast] = useState<string|null>(null);
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
 
-  const catColor: Record<string,string> = { General:'#0097A7', International:'#0A6ED1', Compliance:'#107E3E', Packaging:'#E9730C' };
+  const catColor: Record<string,string> = { General:'#0097A7', International:'#0097A7', Compliance:'#107E3E', Packaging:'#E9730C' };
 
   return (
     <div>
@@ -728,7 +728,7 @@ const ContractManagement: React.FC = () => {
   const kpis = [
     { label:'Active Contracts',      value:'8',         color:'#0097A7' },
     { label:'Expiring in 90 Days',   value:'3',         color:'#E9730C' },
-    { label:'Pending Signature',     value:'2',         color:'#0A6ED1' },
+    { label:'Pending Signature',     value:'2',         color:'#0097A7' },
     { label:'Total Contract Value',  value:'Rp 12.4M',  color:'#64748B' },
   ];
 
@@ -759,10 +759,10 @@ const ContractManagement: React.FC = () => {
       </div>
 
       {/* Alert bars */}
-      <div style={{ background:'#FEF3C7', borderLeft:'4px solid #E9730C', borderRadius:6, padding:'10px 16px', marginBottom:10, fontSize:13, color:'#92400E', fontWeight:500 }}>
+      <div style={{ background:'#FEF3C7', borderLeft:'4px solid #E9730C', borderRadius:6, padding:'10px 16px', marginBottom:10, fontSize:13, color:'#E9730C', fontWeight:500 }}>
         ⏰ 3 contracts expiring within 90 days — renewal process should begin now
       </div>
-      <div style={{ background:'#EFF6FF', borderLeft:'4px solid #0A6ED1', borderRadius:6, padding:'10px 16px', marginBottom:20, fontSize:13, color:'#1E40AF', fontWeight:500 }}>
+      <div style={{ background:'#EFF6FF', borderLeft:'4px solid #0097A7', borderRadius:6, padding:'10px 16px', marginBottom:20, fontSize:13, color:'#0D1B2A', fontWeight:500 }}>
         ✍️ 2 contracts awaiting supplier countersignature
       </div>
 

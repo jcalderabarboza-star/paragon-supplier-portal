@@ -9,15 +9,15 @@ const MUTED  = '#64748B';
 const BORDER = '#E2E8F0';
 
 const STATUS_CFG: Record<StockStatus, { bg: string; color: string; label: string; bar: string }> = {
-  [StockStatus.CRITICAL]: { bg: '#FEE2E2', color: '#991B1B', label: 'Critical', bar: '#BB0000' },
-  [StockStatus.LOW]:      { bg: '#FEF3C7', color: '#92400E', label: 'Low',      bar: '#E9730C' },
-  [StockStatus.NORMAL]:   { bg: '#DCFCE7', color: '#166534', label: 'Normal',   bar: '#107E3E' },
-  [StockStatus.EXCESS]:   { bg: '#EDE9FE', color: '#5B21B6', label: 'Excess',   bar: '#5B21B6' },
+  [StockStatus.CRITICAL]: { bg: '#FEE2E2', color: '#BB0000', label: 'Critical', bar: '#BB0000' },
+  [StockStatus.LOW]:      { bg: '#FEF3C7', color: '#E9730C', label: 'Low',      bar: '#E9730C' },
+  [StockStatus.NORMAL]:   { bg: '#DCFCE7', color: '#107E3E', label: 'Normal',   bar: '#107E3E' },
+  [StockStatus.EXCESS]:   { bg: '#EDE9FE', color: '#0D1B2A', label: 'Excess',   bar: '#0D1B2A' },
 };
 
 const SOURCE_STYLE: Record<string, [string, string]> = {
-  'API Push': ['#EFF6FF', '#1E40AF'],
-  'EDI 846':  ['#F0FDF4', '#166534'],
+  'API Push': ['#EFF6FF', '#0D1B2A'],
+  'EDI 846':  ['#F0FDF4', '#107E3E'],
   'Manual':   ['#F8FAFC', '#475569'],
 };
 
@@ -92,7 +92,7 @@ const MyInventory: React.FC = () => {
           { label: 'Critical Stock', count: counts.critical, color: '#BB0000', bg: '#FEE2E2', filter: StockStatus.CRITICAL },
           { label: 'Low Stock',      count: counts.low,      color: '#E9730C', bg: '#FEF3C7', filter: StockStatus.LOW },
           { label: 'Normal',         count: counts.normal,   color: '#107E3E', bg: '#DCFCE7', filter: StockStatus.NORMAL },
-          { label: 'Excess',         count: counts.excess,   color: '#5B21B6', bg: '#EDE9FE', filter: StockStatus.EXCESS },
+          { label: 'Excess',         count: counts.excess,   color: '#0D1B2A', bg: '#EDE9FE', filter: StockStatus.EXCESS },
         ] as const).map(({ label, count, color, bg, filter }) => (
           <div key={label} onClick={() => setFilterStatus(filterStatus === filter ? 'All' : filter as StockStatus)} style={{ background: filterStatus === filter ? bg : 'white', border: `1px solid ${filterStatus === filter ? color : BORDER}`, borderLeft: `4px solid ${color}`, borderRadius: 8, padding: '14px 18px', cursor: 'pointer', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 6 }}>{label}</div>
@@ -103,7 +103,7 @@ const MyInventory: React.FC = () => {
       </div>
 
       {counts.critical > 0 && (
-        <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#991B1B' }}>
+        <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#BB0000' }}>
           <span>⚠️</span>
           <span><strong>{counts.critical} material{counts.critical > 1 ? 's' : ''}</strong> at critical stock level. Paragon procurement team has been automatically notified.</span>
         </div>
@@ -143,7 +143,7 @@ const MyInventory: React.FC = () => {
                   <td style={{ padding: '10px 12px', color: MID, fontSize: 12 }}>{row.supplierName.replace('PT ', '').split(' ').slice(0, 2).join(' ')}</td>
                   <td style={{ padding: '10px 12px', fontWeight: 600, color: NAVY, textAlign: 'right' }}>{fmt(row.qtyOnHand)}</td>
                   <td style={{ padding: '10px 12px', color: NAVY, textAlign: 'right' }}>{fmt(row.qtyAvailable)}</td>
-                  <td style={{ padding: '10px 12px', color: row.qtyInTransit > 0 ? '#0A6ED1' : MUTED, textAlign: 'right' }}>{row.qtyInTransit > 0 ? fmt(row.qtyInTransit) : '—'}</td>
+                  <td style={{ padding: '10px 12px', color: row.qtyInTransit > 0 ? '#0097A7' : MUTED, textAlign: 'right' }}>{row.qtyInTransit > 0 ? fmt(row.qtyInTransit) : '—'}</td>
                   <td style={{ padding: '10px 12px', color: MUTED, fontSize: 11 }}>{row.uom}</td>
                   <td style={{ padding: '10px 12px', minWidth: 120 }}><DaysBar days={row.daysOfSupply} /></td>
                   <td style={{ padding: '10px 12px' }}><Pill label={cfg.label} bg={cfg.bg} color={cfg.color} /></td>
@@ -161,7 +161,7 @@ const MyInventory: React.FC = () => {
           <span>📡</span>
           <span><strong>Data sources:</strong> API Push (real-time), EDI 846 (daily), Manual (supplier-updated). Phase 2 will add SAP MM stock pull and VMI signal integration.</span>
         </div>
-        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B44', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#92400E', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B44', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#E9730C', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
           <span>⏱</span>
           <span><strong>Thresholds:</strong> Critical &lt;7 days · Low 7–14 days · Normal 14–30 days · Excess &gt;30 days. Paragon minimum stock requirements enforced at category level.</span>
         </div>

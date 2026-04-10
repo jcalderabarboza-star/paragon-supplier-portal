@@ -104,7 +104,7 @@ const MONTHS = ['May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar
 const PASS_TREND = [88,85,90,87,83,89,91,88,86,90,88,83].map((v,i) => ({ month: MONTHS[i], rate: v }));
 const PIE_RESULT = [
   { name: 'Passed', value: 14, color: '#107E3E' },
-  { name: 'Partial', value: 2, color: '#0A6ED1' },
+  { name: 'Partial', value: 2, color: '#0097A7' },
   { name: 'Hold', value: 1, color: '#E9730C' },
   { name: 'Rejected', value: 1, color: '#BB0000' },
 ];
@@ -123,7 +123,7 @@ const PRIORITY_COLOR: Record<string, string> = {
   High: '#BB0000', Medium: '#E9730C', Low: '#94A3B8',
 };
 const RESULT_COLOR: Record<string, string> = {
-  PASSED: '#107E3E', PARTIAL: '#0A6ED1', HOLD: '#E9730C', REJECTED: '#BB0000',
+  PASSED: '#107E3E', PARTIAL: '#0097A7', HOLD: '#E9730C', REJECTED: '#BB0000',
 };
 const RESULT_BG: Record<string, string> = {
   PASSED: '#DCFCE7', PARTIAL: '#EFF6FF', HOLD: '#FEF3C7', REJECTED: '#FEE2E2',
@@ -521,7 +521,7 @@ const GoodsReceipt: React.FC = () => {
       <div style={{ background: '#FEE2E2', borderLeft: '4px solid #BB0000', borderRadius: 6, padding: '10px 16px', marginBottom: 10, fontSize: 13, color: '#BB0000', fontWeight: 500 }}>
         ⛔ 1 batch rejected — BASF Panthenol B5 purity failure. Return process initiated.
       </div>
-      <div style={{ background: '#FEF3C7', borderLeft: '4px solid #F59E0B', borderRadius: 6, padding: '10px 16px', marginBottom: 20, fontSize: 13, color: '#92400E', fontWeight: 500 }}>
+      <div style={{ background: '#FEF3C7', borderLeft: '4px solid #F59E0B', borderRadius: 6, padding: '10px 16px', marginBottom: 20, fontSize: 13, color: '#E9730C', fontWeight: 500 }}>
         ⚠️ 1 batch on hold — PT Halal Emulsifier Glycerin pending lab results (ETA 2 days)
       </div>
 

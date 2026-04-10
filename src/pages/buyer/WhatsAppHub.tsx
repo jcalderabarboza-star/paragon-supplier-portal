@@ -127,7 +127,7 @@ const formatMsg = (text: string) => {
 };
 
 const STATUS_DOT: Record<string, string> = {
-  active: '#25D366', awaiting: '#F59E0B', resolved: '#94A3B8',
+  active: '#107E3E', awaiting: '#F59E0B', resolved: '#94A3B8',
 };
 
 // ─── Conversation List Item ───────────────────────────────────────────────────
@@ -197,12 +197,12 @@ const ChatThread: React.FC<{ conv: Conversation; messages: ChatMessage[] }> = ({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {toast && (
-        <div style={{ position: 'fixed', bottom: 80, right: 24, background: '#0D1B2A', color: '#fff', borderRadius: 8, padding: '10px 16px', fontSize: 13, zIndex: 9999, borderLeft: '3px solid #25D366' }}>{toast}</div>
+        <div style={{ position: 'fixed', bottom: 80, right: 24, background: '#0D1B2A', color: '#fff', borderRadius: 8, padding: '10px 16px', fontSize: 13, zIndex: 9999, borderLeft: '3px solid #107E3E' }}>{toast}</div>
       )}
 
       {/* Thread header */}
       <div style={{ background: '#075E54', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+        <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#107E3E', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
           {conv.supplier.slice(-2)}
         </div>
         <div style={{ flex: 1 }}>
@@ -225,7 +225,7 @@ const ChatThread: React.FC<{ conv: Conversation; messages: ChatMessage[] }> = ({
         <input style={{ flex: 1, padding: '8px 12px', borderRadius: 20, border: 'none', fontSize: 13, background: '#fff', outline: 'none', color: '#94A3B8' }} value="Type a message..." readOnly />
         <div style={{ position: 'relative' }}>
           <button onClick={() => setShowBotMenu(m => !m)}
-            style={{ padding: '7px 14px', borderRadius: 20, background: '#25D366', color: '#fff', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            style={{ padding: '7px 14px', borderRadius: 20, background: '#107E3E', color: '#fff', border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
             🤖 Bot Message ▾
           </button>
           {showBotMenu && (
@@ -292,7 +292,7 @@ const AutomationTab: React.FC = () => {
   return (
     <div>
       {toast && (
-        <div style={{ position: 'fixed', bottom: 80, right: 24, background: '#0D1B2A', color: '#fff', borderRadius: 8, padding: '10px 16px', fontSize: 13, zIndex: 9999, borderLeft: '3px solid #25D366' }}>{toast}</div>
+        <div style={{ position: 'fixed', bottom: 80, right: 24, background: '#0D1B2A', color: '#fff', borderRadius: 8, padding: '10px 16px', fontSize: 13, zIndex: 9999, borderLeft: '3px solid #107E3E' }}>{toast}</div>
       )}
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#0D1B2A' }}>WhatsApp Automation Rules</div>
@@ -312,16 +312,16 @@ const AutomationTab: React.FC = () => {
               <div style={{ fontSize: 12, color: '#64748B', marginBottom: 6 }}>
                 <span style={{ fontWeight: 600, color: '#0D1B2A' }}>Action: </span>{rule.action}
               </div>
-              <div style={{ background: '#FEF3C7', borderRadius: 4, padding: '5px 10px', fontSize: 11, color: '#92400E', display: 'inline-block' }}>
+              <div style={{ background: '#FEF3C7', borderRadius: 4, padding: '5px 10px', fontSize: 11, color: '#E9730C', display: 'inline-block' }}>
                 ⚡ Escalate if: {rule.escalateIf}
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, flexShrink: 0 }}>
               <div onClick={() => setToggles(t => ({ ...t, [rule.rule]: !t[rule.rule] }))}
-                style={{ width: 52, height: 28, borderRadius: 14, background: toggles[rule.rule] ? '#25D366' : '#E2E8F0', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+                style={{ width: 52, height: 28, borderRadius: 14, background: toggles[rule.rule] ? '#107E3E' : '#E2E8F0', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
                 <div style={{ position: 'absolute', top: 4, left: toggles[rule.rule] ? 28 : 4, width: 20, height: 20, borderRadius: '50%', background: '#fff', transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
               </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: toggles[rule.rule] ? '#25D366' : '#94A3B8' }}>
+              <span style={{ fontSize: 11, fontWeight: 600, color: toggles[rule.rule] ? '#107E3E' : '#94A3B8' }}>
                 {toggles[rule.rule] ? '🤖 Auto' : '👤 Manual'}
               </span>
               <button onClick={() => showToast('Rule editor coming in Phase 2A')}
@@ -346,7 +346,7 @@ const AnalyticsTab: React.FC = () => (
       {[
         ['Messages Sent (Month)','247','#0097A7'],
         ['Automated Actions','183 (74%)','#107E3E'],
-        ['Avg Response Time','4.2 min','#0A6ED1'],
+        ['Avg Response Time','4.2 min','#0097A7'],
         ['Supplier Satisfaction','4.6/5.0 ⭐','#E9730C'],
       ].map(([l,v,c]) => (
         <div key={l} style={{ background: '#fff', borderRadius: 10, padding: '16px 20px', borderLeft: `4px solid ${c}`, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
@@ -425,7 +425,7 @@ const WhatsAppHub: React.FC = () => {
     { label:'Active Conversations', value:'6', color:'#0097A7' },
     { label:'Pending Responses', value:'3', color:'#E9730C' },
     { label:'Automated Today', value:'18', color:'#107E3E' },
-    { label:'Avg Response Time', value:'4 min', color:'#0A6ED1' },
+    { label:'Avg Response Time', value:'4 min', color:'#0097A7' },
   ];
 
   return (
@@ -437,7 +437,7 @@ const WhatsAppHub: React.FC = () => {
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>All supplier WhatsApp conversations — powered by 360dialog + Paragon AI</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', padding: '8px 14px', borderRadius: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#25D366', opacity: pulse ? 1 : 0.3, transition: 'opacity 0.6s' }} />
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#107E3E', opacity: pulse ? 1 : 0.3, transition: 'opacity 0.6s' }} />
           <span style={{ fontSize: 12, fontWeight: 600, color: '#107E3E' }}>CONNECTED — 360dialog Business API</span>
         </div>
       </div>

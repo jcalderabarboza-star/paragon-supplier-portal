@@ -273,7 +273,7 @@ const SupplierStorefront: React.FC = () => {
               </div>
             ) : (
               <div style={{ background: '#FFFBEB', borderRadius: 10, padding: '8px 14px',
-                fontSize: 11, fontWeight: 700, color: '#92400E', textAlign: 'center' }}>
+                fontSize: 11, fontWeight: 700, color: '#E9730C', textAlign: 'center' }}>
                 ⏳ Qualification<br />Pending
               </div>
             )}
@@ -465,7 +465,7 @@ const SupplierStorefront: React.FC = () => {
             </div>
           ) : (
             <div style={{ background: '#FFFBEB', border: `1px solid ${AMBER}44`, borderRadius: 8,
-              padding: '24px', textAlign: 'center', color: '#92400E' }}>
+              padding: '24px', textAlign: 'center', color: '#E9730C' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
               <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Qualification Pending</div>
               <div style={{ fontSize: 13, lineHeight: 1.6 }}>

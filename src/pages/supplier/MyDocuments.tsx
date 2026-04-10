@@ -38,18 +38,18 @@ const DOCUMENTS: SupplierDocument[] = [
 ];
 
 const STATUS_CFG: Record<DocStatus, { bg: string; color: string; icon: string }> = {
-  'Valid':           { bg: '#DCFCE7', color: '#166534', icon: '✓' },
-  'Expiring Soon':   { bg: '#FEF3C7', color: '#92400E', icon: '⚠' },
-  'Expired':         { bg: '#FEE2E2', color: '#991B1B', icon: '✗' },
+  'Valid':           { bg: '#DCFCE7', color: '#107E3E', icon: '✓' },
+  'Expiring Soon':   { bg: '#FEF3C7', color: '#E9730C', icon: '⚠' },
+  'Expired':         { bg: '#FEE2E2', color: '#BB0000', icon: '✗' },
   'Awaiting Upload': { bg: '#F1F5F9', color: '#475569', icon: '↑' },
-  'Under Review':    { bg: '#EFF6FF', color: '#1E40AF', icon: '⟳' },
+  'Under Review':    { bg: '#EFF6FF', color: '#0D1B2A', icon: '⟳' },
 };
 
 const CAT_CFG: Record<DocCategory, { color: string; bg: string }> = {
-  'Halal Compliance': { bg: '#FEF9C3', color: '#854D0E' },
-  'BPOM Regulatory':  { bg: '#EFF6FF', color: '#1E40AF' },
-  'Tax & Legal':      { bg: '#F0FDF4', color: '#166534' },
-  'Quality':          { bg: '#F5F3FF', color: '#5B21B6' },
+  'Halal Compliance': { bg: '#FEF9C3', color: '#E9730C' },
+  'BPOM Regulatory':  { bg: '#EFF6FF', color: '#0D1B2A' },
+  'Tax & Legal':      { bg: '#F0FDF4', color: '#107E3E' },
+  'Quality':          { bg: '#F5F3FF', color: '#0D1B2A' },
   'Contract':         { bg: '#FFF7ED', color: '#C2410C' },
   'Other':            { bg: '#F8FAFC', color: '#475569' },
 };
@@ -84,7 +84,7 @@ function UploadModal({ doc, onClose }: { doc: SupplierDocument; onClose: () => v
         ) : (
           <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 8, padding: '1rem', textAlign: 'center', marginBottom: 16 }}>
             <div style={{ fontSize: 20, marginBottom: 4 }}>✅</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#166534' }}>Document uploaded — pending Paragon review</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#107E3E' }}>Document uploaded — pending Paragon review</div>
           </div>
         )}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
@@ -128,13 +128,13 @@ const MyDocuments: React.FC = () => {
       </div>
 
       {expired.length > 0 && (
-        <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#991B1B' }}>
+        <div style={{ background: '#FEE2E2', border: '1px solid #FCA5A5', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#BB0000' }}>
           <span>❌</span>
           <div><strong>{expired.length} expired document{expired.length > 1 ? 's' : ''} — immediate renewal required: </strong>{expired.map(d => d.name.split('—')[0].trim()).join(' · ')}</div>
         </div>
       )}
       {expiringSoon.length > 0 && (
-        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#92400E' }}>
+        <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '12px 16px', display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: '#E9730C' }}>
           <span>⚠️</span>
           <div><strong>{expiringSoon.length} document{expiringSoon.length > 1 ? 's' : ''} expiring within 6 months: </strong>{expiringSoon.map(d => d.name.split('—')[0].trim()).join(' · ')}</div>
         </div>
@@ -212,7 +212,7 @@ const MyDocuments: React.FC = () => {
                         <button onClick={() => showToast(`Downloading ${doc.name}...`)} style={{ background: 'white', color: MID, border: `1px solid ${BORDER}`, borderRadius: 5, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>↓ View</button>
                       )}
                       {doc.expiryDate && days !== null && days <= 180 && (
-                        <button onClick={() => showToast(`Renewal workflow started for ${doc.name.split('—')[0].trim()}`)} style={{ background: '#FEF3C7', color: '#92400E', border: '1px solid #F59E0B', borderRadius: 5, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Renew</button>
+                        <button onClick={() => showToast(`Renewal workflow started for ${doc.name.split('—')[0].trim()}`)} style={{ background: '#FEF3C7', color: '#E9730C', border: '1px solid #F59E0B', borderRadius: 5, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Renew</button>
                       )}
                     </div>
                   </td>
@@ -223,11 +223,11 @@ const MyDocuments: React.FC = () => {
         </table>
       </div>
 
-      <div style={{ background: '#FEF9C3', border: '1px solid #F59E0B', borderRadius: 8, padding: '14px 18px', fontSize: 12, color: '#854D0E', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+      <div style={{ background: '#FEF9C3', border: '1px solid #F59E0B', borderRadius: 8, padding: '14px 18px', fontSize: 12, color: '#E9730C', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         <span style={{ fontSize: 16 }}>🕌</span>
         <div>
           <strong>BPJPH Halal Mandatory Transition — October 2026:</strong> All cosmetics and personal care products distributed in Indonesia must carry BPJPH-issued halal certification. MUI certificates issued before the transition remain valid until expiry but cannot be renewed — new BPJPH certification must be obtained.
-          <a href="https://halal.go.id" target="_blank" rel="noopener noreferrer" style={{ color: '#92400E', marginLeft: 6, fontWeight: 600 }}>halal.go.id ↗</a>
+          <a href="https://halal.go.id" target="_blank" rel="noopener noreferrer" style={{ color: '#E9730C', marginLeft: 6, fontWeight: 600 }}>halal.go.id ↗</a>
         </div>
       </div>
 

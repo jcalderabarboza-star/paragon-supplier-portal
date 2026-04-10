@@ -64,10 +64,10 @@ function MyShipments({ onCreateASN }: { onCreateASN: () => void }) {
                 </td>
                 <td style={{ padding:'12px', color:'#64748B', whiteSpace:'nowrap' }}>{mat ? `${mat.quantity.toLocaleString()} ${mat.uom}` : '—'}</td>
                 <td style={{ padding:'12px' }}>
-                  <Pill label={po.status} bg={po.status===POStatus.CONFIRMED?'#DBEAFE':'#FEF3C7'} color={po.status===POStatus.CONFIRMED?'#1E40AF':'#92400E'} />
+                  <Pill label={po.status} bg={po.status===POStatus.CONFIRMED?'#DBEAFE':'#FEF3C7'} color={po.status===POStatus.CONFIRMED?'#0D1B2A':'#E9730C'} />
                 </td>
                 <td style={{ padding:'12px' }}>
-                  {asn ? <Pill label={`${asn.asnNumber} — ${asn.status}`} bg='#DBEAFE' color='#1E40AF' />
+                  {asn ? <Pill label={`${asn.asnNumber} — ${asn.status}`} bg='#DBEAFE' color='#0D1B2A' />
                        : <span style={{ color:'#94A3B8', fontSize:'12px' }}>No ASN submitted</span>}
                 </td>
                 <td style={{ padding:'12px', color:'#64748B', whiteSpace:'nowrap' }}>{asn ? fmtDate(asn.eta) : '—'}</td>
@@ -321,7 +321,7 @@ function DockAppointments() {
             <div style={{ fontWeight:700, fontSize:'15px', color:NAVY }}>ASN-2026-001</div>
             <div style={{ fontSize:'12px', color:'#64748B', marginTop:2 }}>PO-2025-00107 · PET Bottle 100ml Airless Pump</div>
           </div>
-          <Pill label="Confirmed" bg='#DCFCE7' color='#166534' />
+          <Pill label="Confirmed" bg='#DCFCE7' color='#107E3E' />
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', fontSize:'13px' }}>
           {[
@@ -339,7 +339,7 @@ function DockAppointments() {
       </div>
 
       {/* Instruction note */}
-      <div style={{ background:'#FEF9C3', border:'1px solid #FDE047', borderRadius:8, padding:'12px 16px', fontSize:'12px', color:'#854D0E', display:'flex', alignItems:'flex-start', gap:10 }}>
+      <div style={{ background:'#FEF9C3', border:'1px solid #FDE047', borderRadius:8, padding:'12px 16px', fontSize:'12px', color:'#E9730C', display:'flex', alignItems:'flex-start', gap:10 }}>
         <span style={{ fontSize:'16px', flexShrink:0 }}>⏰</span>
         <span>Please arrive <strong>15 minutes before your slot</strong>. Bring a printed copy of your ASN and packing list. Contact the receiving team at <strong>+62-21-5595-xxxx</strong> if you anticipate delays.</span>
       </div>

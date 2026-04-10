@@ -204,7 +204,7 @@ const OverviewTab: React.FC<{ supp: SupplierExtended }> = ({ supp }) => {
         </SCard>
 
         <div style={{ background: '#EFF6FF', border: `1px solid #BFDBFE`, borderRadius: 8,
-          padding: '10px 14px', fontSize: 12, color: '#1E40AF', lineHeight: 1.6 }}>
+          padding: '10px 14px', fontSize: 12, color: '#0D1B2A', lineHeight: 1.6 }}>
           ℹ️ This profile was automatically configured based on <strong>{cp.name}</strong> business standards. Customize any setting in the Communication Setup tab.
         </div>
       </div>

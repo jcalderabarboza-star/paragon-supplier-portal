@@ -334,7 +334,7 @@ const SupplierDirectory: React.FC = () => {
 
         {hasFilters && (
           <button onClick={() => { setCategoryFilter('All'); setTierFilter('All'); setStatusFilter('All'); setCountryFilter('All'); setGradeFilter('All'); setSearch(''); }}
-            style={{ background: 'transparent', border: 'none', color: '#0A6ED1', cursor: 'pointer', fontSize: '0.8rem', paddingBottom: '4px' }}>
+            style={{ background: 'transparent', border: 'none', color: '#0097A7', cursor: 'pointer', fontSize: '0.8rem', paddingBottom: '4px' }}>
             Clear Filters
           </button>
         )}

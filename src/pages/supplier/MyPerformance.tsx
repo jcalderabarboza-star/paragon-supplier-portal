@@ -15,7 +15,7 @@ const BORDER = '#E2E8F0';
 const SUCCESS = '#107E3E';
 const WARNING = '#E9730C';
 const ERROR   = '#BB0000';
-const INFO    = '#0A6ED1';
+const INFO    = '#0097A7';
 
 const DEMO_SUPPLIER = mockSuppliers.find(s => s.id === 'sup-007')!;
 
@@ -247,11 +247,11 @@ const MyPerformance: React.FC = () => {
                   <div style={{ fontSize: 14, fontWeight: 700, color: NAVY, marginBottom: 4 }}>{item.kpi}</div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <Pill label={`Current: ${item.current}`} bg="#F1F5F9" color={MID} />
-                    <Pill label={`Target: ${item.target}`} bg="#DCFCE7" color="#166534" />
-                    <Pill label={`Gap: ${item.gap}`} bg="#FEE2E2" color="#991B1B" />
+                    <Pill label={`Target: ${item.target}`} bg="#DCFCE7" color="#107E3E" />
+                    <Pill label={`Gap: ${item.gap}`} bg="#FEE2E2" color="#BB0000" />
                   </div>
                 </div>
-                <Pill label={item.priority} bg={item.priority === 'High' ? '#FEE2E2' : '#FEF3C7'} color={item.priority === 'High' ? '#991B1B' : '#92400E'} />
+                <Pill label={item.priority} bg={item.priority === 'High' ? '#FEE2E2' : '#FEF3C7'} color={item.priority === 'High' ? '#BB0000' : '#E9730C'} />
               </div>
               <div style={{ fontSize: 13, color: MID, lineHeight: 1.6 }}>💡 {item.action}</div>
               <div style={{ marginTop: 12 }}>
@@ -261,7 +261,7 @@ const MyPerformance: React.FC = () => {
               </div>
             </div>
           ))}
-          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '14px 18px', fontSize: 12, color: '#1E40AF', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+          <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '14px 18px', fontSize: 12, color: '#0D1B2A', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <span>🏅</span>
             <div><strong>Paragon Supplier Tier System:</strong> Achieve Grade A (≥ 90/100) for 3 consecutive months to qualify for Tier 1 status — faster payment terms (Net 30 → Net 15), priority capacity allocation, and inclusion in Paragon strategic supplier development program.</div>
           </div>

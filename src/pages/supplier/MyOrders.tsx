@@ -73,7 +73,7 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
   };
 
   return (
-    <div style={{ padding: '1.25rem', background: '#F8F9FA', borderTop: '2px solid #0A6ED1' }}>
+    <div style={{ padding: '1.25rem', background: '#F8F9FA', borderTop: '2px solid #0097A7' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#354A5F' }}>
           Confirm PO: {po.poNumber}
@@ -97,7 +97,7 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
           <tbody>
             {po.lineItems.map((li, idx) => (
               <tr key={li.id} style={{ borderBottom: '1px solid #dee2e6', background: 'white' }}>
-                <td style={{ padding: '0.4rem 0.6rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#0A6ED1' }}>{li.materialCode}</td>
+                <td style={{ padding: '0.4rem 0.6rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#0097A7' }}>{li.materialCode}</td>
                 <td style={{ padding: '0.4rem 0.6rem', color: '#354A5F' }}>{li.description}</td>
                 <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontWeight: 600 }}>{li.qty.toLocaleString()}</td>
                 <td style={{ padding: '0.4rem 0.6rem', color: '#6c757d' }}>{li.uom}</td>
@@ -295,7 +295,7 @@ const MyOrders: React.FC = () => {
                       onMouseEnter={() => setHoveredRow(po.id)}
                       onMouseLeave={() => setHoveredRow(null)}
                     >
-                      <td style={{ padding: '0.6rem 0.875rem', fontFamily: 'monospace', fontWeight: 700, color: '#0A6ED1' }}>{po.poNumber}</td>
+                      <td style={{ padding: '0.6rem 0.875rem', fontFamily: 'monospace', fontWeight: 700, color: '#0097A7' }}>{po.poNumber}</td>
                       <td style={{ padding: '0.6rem 0.875rem', whiteSpace: 'nowrap' }}>{fmtDate(po.orderDate)}</td>
                       <td style={{ padding: '0.6rem 0.875rem', whiteSpace: 'nowrap' }}>{fmtDate(po.requestedDeliveryDate)}</td>
                       <td style={{ padding: '0.6rem 0.875rem', textAlign: 'center' }}>{po.lineItems.length}</td>

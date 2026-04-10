@@ -93,16 +93,16 @@ function fmtDate(s: string): string {
 }
 
 const STATUS_STYLE: Record<RFQStatus, [string, string]> = {
-  'Open':           ['#DBEAFE', '#1E40AF'],
+  'Open':           ['#DBEAFE', '#0D1B2A'],
   'Quotes Received':['#CCFBF1', '#0F766E'],
-  'Awaiting Award': ['#FEF3C7', '#92400E'],
-  'Awarded':        ['#DCFCE7', '#166534'],
-  'Cancelled':      ['#FEE2E2', '#991B1B'],
+  'Awaiting Award': ['#FEF3C7', '#E9730C'],
+  'Awarded':        ['#DCFCE7', '#107E3E'],
+  'Cancelled':      ['#FEE2E2', '#BB0000'],
 };
 
 const PRIORITY_STYLE: Record<Priority, [string, string]> = {
-  High:   ['#FEE2E2', '#991B1B'],
-  Medium: ['#FEF3C7', '#92400E'],
+  High:   ['#FEE2E2', '#BB0000'],
+  Medium: ['#FEF3C7', '#E9730C'],
   Low:    ['#F1F5F9', '#475569'],
 };
 
@@ -282,10 +282,10 @@ function ActiveRFQs({ onToast }: { onToast: (m: string) => void }) {
       {/* Summary tiles */}
       <div style={{ display:'flex', gap:12, marginBottom:20, flexWrap:'wrap' }}>
         {[
-          { label:'Open RFQs', value:stats.open, color:'#1E40AF', bg:'#DBEAFE' },
+          { label:'Open RFQs', value:stats.open, color:'#0D1B2A', bg:'#DBEAFE' },
           { label:'Quotes Received', value:stats.quotesReceived, color:'#0F766E', bg:'#CCFBF1' },
-          { label:'Awaiting Award', value:stats.awaitingAward, color:'#92400E', bg:'#FEF3C7' },
-          { label:'Avg Response Time', value:'18h', color:'#166534', bg:'#DCFCE7' },
+          { label:'Awaiting Award', value:stats.awaitingAward, color:'#E9730C', bg:'#FEF3C7' },
+          { label:'Avg Response Time', value:'18h', color:'#107E3E', bg:'#DCFCE7' },
         ].map(t => (
           <div key={t.label} style={TILE_STYLE}>
             <div style={{ fontSize:'11px', fontWeight:600, color:'#64748B', textTransform:'uppercase', letterSpacing:'1px', marginBottom:6 }}>{t.label}</div>
@@ -338,9 +338,9 @@ function ActiveRFQs({ onToast }: { onToast: (m: string) => void }) {
                         style={{ padding:'5px 10px', border:'none', borderRadius:5, background: rfq.quotesReceived === 0 ? '#F1F5F9' : TEAL, color: rfq.quotesReceived === 0 ? '#CBD5E1' : 'white', fontSize:'11px', fontWeight:600, cursor: rfq.quotesReceived === 0 ? 'not-allowed' : 'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}
                       >View Quotes</button>
                       {rfq.status === 'Awaiting Award' && (
-                        <button onClick={() => onToast('Award workflow opening...')} style={{ padding:'5px 10px', border:'none', borderRadius:5, background:'#FEF3C7', color:'#92400E', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Award</button>
+                        <button onClick={() => onToast('Award workflow opening...')} style={{ padding:'5px 10px', border:'none', borderRadius:5, background:'#FEF3C7', color:'#E9730C', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Award</button>
                       )}
-                      <button onClick={() => onToast(`${rfq.rfqNumber} cancelled`)} style={{ padding:'5px 10px', border:'none', borderRadius:5, background:'#FEE2E2', color:'#991B1B', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+                      <button onClick={() => onToast(`${rfq.rfqNumber} cancelled`)} style={{ padding:'5px 10px', border:'none', borderRadius:5, background:'#FEE2E2', color:'#BB0000', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
                     </div>
                   </td>
                 </tr>
@@ -536,9 +536,9 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
             <div style={{ fontWeight:700, fontSize:'13px', color:NAVY }}>{COUNTRY_FLAGS[s.country] ?? '🌍'} {s.name}</div>
             <div style={{ display:'flex', gap:6, marginTop:5, flexWrap:'wrap' }}>
               <Pill label={tierLabel} bg='#F1F5F9' color='#475569' />
-              <Pill label={`Grade ${s.scorecardGrade}`} bg={s.scorecardGrade === 'A' ? '#DCFCE7' : s.scorecardGrade === 'B' ? '#DBEAFE' : '#FEF3C7'} color={s.scorecardGrade === 'A' ? '#166534' : s.scorecardGrade === 'B' ? '#1E40AF' : '#92400E'} />
+              <Pill label={`Grade ${s.scorecardGrade}`} bg={s.scorecardGrade === 'A' ? '#DCFCE7' : s.scorecardGrade === 'B' ? '#DBEAFE' : '#FEF3C7'} color={s.scorecardGrade === 'A' ? '#107E3E' : s.scorecardGrade === 'B' ? '#0D1B2A' : '#E9730C'} />
               <Pill label={`OTIF ${s.otif}%`} bg='#F1F5F9' color='#475569' />
-              {s.halalCertified && <Pill label="✅ Halal" bg='#F0FDF4' color='#166534' />}
+              {s.halalCertified && <Pill label="✅ Halal" bg='#F0FDF4' color='#107E3E' />}
             </div>
           </div>
         </div>
@@ -576,8 +576,8 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
         </FF>
       ))}
       <div style={{ padding:'10px 14px', borderRadius:6, background: totalWeight === 100 ? '#DCFCE7' : '#FEE2E2', display:'flex', justifyContent:'space-between', marginBottom:20 }}>
-        <span style={{ fontWeight:600, fontSize:'13px', color: totalWeight === 100 ? '#166534' : '#991B1B' }}>Total Weight</span>
-        <span style={{ fontWeight:700, fontSize:'15px', color: totalWeight === 100 ? '#166534' : '#991B1B' }}>{totalWeight}%</span>
+        <span style={{ fontWeight:600, fontSize:'13px', color: totalWeight === 100 ? '#107E3E' : '#BB0000' }}>Total Weight</span>
+        <span style={{ fontWeight:700, fontSize:'15px', color: totalWeight === 100 ? '#107E3E' : '#BB0000' }}>{totalWeight}%</span>
       </div>
       <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
         {([['allowPartial','Allow Partial Quantities'],['multiCurrency','Multi-Currency Quotes'],['anonymous','Anonymous Bidding (suppliers cannot see each other\'s prices)']] as const).map(([key, label]) => (
@@ -612,7 +612,7 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
           <div style={{ marginBottom:16 }}>
             <div style={{ fontSize:'11px', color:'#64748B', fontWeight:600, marginBottom:6 }}>Brand Assignment</div>
             <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-              {state.brands.map(b => <Pill key={b} label={b} bg='#DBEAFE' color='#1E40AF' />)}
+              {state.brands.map(b => <Pill key={b} label={b} bg='#DBEAFE' color='#0D1B2A' />)}
             </div>
           </div>
         )}
@@ -684,7 +684,7 @@ function Quotations() {
     q.score >= minScore
   );
 
-  const scoreColor = (s: number) => s >= 85 ? '#166534' : s >= 70 ? '#92400E' : '#991B1B';
+  const scoreColor = (s: number) => s >= 85 ? '#107E3E' : s >= 70 ? '#E9730C' : '#BB0000';
   const scoreBg = (s: number) => s >= 85 ? '#DCFCE7' : s >= 70 ? '#FEF3C7' : '#FEE2E2';
 
   return (
@@ -762,7 +762,7 @@ function Awards() {
               <td style={{ padding:'12px', color:'#64748B', whiteSpace:'nowrap' }}>{fmtDate(a.awardDate)}</td>
               <td style={{ padding:'12px', fontWeight:700, color:'#107E3E' }}>{a.value}</td>
               <td style={{ padding:'12px', fontFamily:'monospace', fontSize:'12px', color:MID }}>{a.sapInfoRecord}</td>
-              <td style={{ padding:'12px' }}><Pill label={a.status} bg='#DCFCE7' color='#166534' /></td>
+              <td style={{ padding:'12px' }}><Pill label={a.status} bg='#DCFCE7' color='#107E3E' /></td>
             </tr>
           ))}
         </tbody>

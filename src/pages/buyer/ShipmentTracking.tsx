@@ -61,17 +61,17 @@ function fmtTime() {
 }
 
 const STATUS_STYLE: Record<string, [string, string]> = {
-  'In Transit':     ['#DBEAFE','#1E40AF'],
-  'Arriving Today': ['#DCFCE7','#166534'],
-  'Overdue':        ['#FEE2E2','#991B1B'],
+  'In Transit':     ['#DBEAFE','#0D1B2A'],
+  'Arriving Today': ['#DCFCE7','#107E3E'],
+  'Overdue':        ['#FEE2E2','#BB0000'],
   'Delivered':      ['#F1F5F9','#475569'],
-  'Customs Hold':   ['#FEF3C7','#92400E'],
+  'Customs Hold':   ['#FEF3C7','#E9730C'],
 };
 
 const QC_STYLE: Record<string, [string, string]> = {
-  'Passed':                  ['#DCFCE7','#166534'],
-  'Hold — pending lab':      ['#FEF3C7','#92400E'],
-  'Rejected — purity fail':  ['#FEE2E2','#991B1B'],
+  'Passed':                  ['#DCFCE7','#107E3E'],
+  'Hold — pending lab':      ['#FEF3C7','#E9730C'],
+  'Rejected — purity fail':  ['#FEE2E2','#BB0000'],
 };
 
 const CHANNEL_ICON: Record<string, string> = {
@@ -187,7 +187,7 @@ function InboundShipments({ shipments, setShipments, onToast }: {
                     <div style={{ whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }} title={s.location}>{s.location}</div>
                   </td>
                   <td style={{ padding:'10px 12px', fontSize:'12px' }}>
-                    {s.dockSlot ? <Pill label={s.dockSlot} bg='#DCFCE7' color='#166534' /> : <span style={{ color:'#94A3B8' }}>—</span>}
+                    {s.dockSlot ? <Pill label={s.dockSlot} bg='#DCFCE7' color='#107E3E' /> : <span style={{ color:'#94A3B8' }}>—</span>}
                   </td>
                   <td style={{ padding:'10px 12px' }}>
                     <div style={{ display:'flex', gap:5, flexWrap:'nowrap' }}>
@@ -195,7 +195,7 @@ function InboundShipments({ shipments, setShipments, onToast }: {
                         style={{ padding:'5px 9px', border:`1px solid #CBD5E1`, borderRadius:5, background:'white', color:MID, fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>🔍 Track</button>
                       {!s.dockSlot && (
                         <button onClick={() => setSchedulingId(isScheduling ? null : s.id)}
-                          style={{ padding:'5px 9px', border:'none', borderRadius:5, background:isScheduling?'#FEF3C7':TEAL, color:isScheduling?'#92400E':'white', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>📅 Dock</button>
+                          style={{ padding:'5px 9px', border:'none', borderRadius:5, background:isScheduling?'#FEF3C7':TEAL, color:isScheduling?'#E9730C':'white', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>📅 Dock</button>
                       )}
                       <button onClick={() => onToast(`Sending message to ${s.supplier} via ${CHANNEL_ICON[s.channel]??''} ${s.channel}...`)}
                         style={{ padding:'5px 9px', border:'none', borderRadius:5, background:'#F1F5F9', color:'#475569', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>💬</button>
@@ -257,7 +257,7 @@ function PendingASNTab({ onToast }: { onToast:(m:string)=>void }) {
                   <button onClick={() => onToast(`ASN reminder sent to ${p.supplier} via ${p.channel}`)}
                     style={{ padding:'5px 10px', border:'none', borderRadius:5, background:TEAL, color:'white', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>Send Reminder</button>
                   <button onClick={() => onToast('Escalation sent to procurement manager')}
-                    style={{ padding:'5px 10px', border:'none', borderRadius:5, background:'#FEE2E2', color:'#991B1B', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Escalate</button>
+                    style={{ padding:'5px 10px', border:'none', borderRadius:5, background:'#FEE2E2', color:'#BB0000', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Escalate</button>
                 </div>
               </td>
             </tr>
@@ -287,9 +287,9 @@ function getWeekDays() {
 
 type DockKey = `${string}|${string}|${string}`;
 const PREFILLED: Record<DockKey, { asn:string; supplier:string; color:string; bg:string }> = {
-  '2026-04-07|Dock 3|10:00': { asn:'ASN-2026-002', supplier:'Zhejiang NHU', color:'#166534', bg:'#DCFCE7' },
-  '2026-04-09|Dock 1|09:00': { asn:'ASN-2026-001', supplier:'PT Berlina', color:'#1E40AF', bg:'#DBEAFE' },
-  '2026-04-10|Dock 2|14:00': { asn:'ASN-2026-004', supplier:'PT Indo Karton', color:'#1E40AF', bg:'#DBEAFE' },
+  '2026-04-07|Dock 3|10:00': { asn:'ASN-2026-002', supplier:'Zhejiang NHU', color:'#107E3E', bg:'#DCFCE7' },
+  '2026-04-09|Dock 1|09:00': { asn:'ASN-2026-001', supplier:'PT Berlina', color:'#0D1B2A', bg:'#DBEAFE' },
+  '2026-04-10|Dock 2|14:00': { asn:'ASN-2026-004', supplier:'PT Indo Karton', color:'#0D1B2A', bg:'#DBEAFE' },
 };
 
 function DockScheduleTab() {
@@ -421,10 +421,10 @@ const ShipmentTracking: React.FC = () => {
       {/* Stat tiles */}
       <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
         {[
-          { label:'In Transit', value:stats.inTransit, color:'#1E40AF', bg:'#DBEAFE', border:'#1E40AF' },
-          { label:'Arriving Today', value:stats.arrivingToday, color:'#166534', bg:'#DCFCE7', border:'#166534' },
-          { label:'Overdue', value:stats.overdue, color:'#991B1B', bg:'#FEE2E2', border:'#991B1B' },
-          { label:'Pending ASN', value:stats.pendingASN, color:'#92400E', bg:'#FEF3C7', border:'#E9730C' },
+          { label:'In Transit', value:stats.inTransit, color:'#0D1B2A', bg:'#DBEAFE', border:'#0D1B2A' },
+          { label:'Arriving Today', value:stats.arrivingToday, color:'#107E3E', bg:'#DCFCE7', border:'#107E3E' },
+          { label:'Overdue', value:stats.overdue, color:'#BB0000', bg:'#FEE2E2', border:'#BB0000' },
+          { label:'Pending ASN', value:stats.pendingASN, color:'#E9730C', bg:'#FEF3C7', border:'#E9730C' },
         ].map(t => (
           <div key={t.label} style={{ ...TILE, borderLeft:`4px solid ${t.border}` }}>
             <div style={{ fontSize:'11px', fontWeight:600, color:'#64748B', textTransform:'uppercase', letterSpacing:'1px', marginBottom:6 }}>{t.label}</div>
@@ -435,12 +435,12 @@ const ShipmentTracking: React.FC = () => {
 
       {/* Alert bars */}
       {stats.overdue > 0 && (
-        <div style={{ background:'#FEE2E2', border:'1px solid #FCA5A5', borderRadius:6, padding:'10px 14px', display:'flex', alignItems:'center', gap:10, fontSize:'13px', color:'#991B1B', fontWeight:600 }}>
+        <div style={{ background:'#FEE2E2', border:'1px solid #FCA5A5', borderRadius:6, padding:'10px 14px', display:'flex', alignItems:'center', gap:10, fontSize:'13px', color:'#BB0000', fontWeight:600 }}>
           🚨 {stats.overdue} shipment{stats.overdue>1?'s are':' is'} overdue — immediate follow-up required
         </div>
       )}
       {stats.pendingASN > 0 && (
-        <div style={{ background:'#FEF3C7', border:'1px solid #FDE047', borderRadius:6, padding:'10px 14px', display:'flex', alignItems:'center', gap:10, fontSize:'13px', color:'#92400E', fontWeight:600 }}>
+        <div style={{ background:'#FEF3C7', border:'1px solid #FDE047', borderRadius:6, padding:'10px 14px', display:'flex', alignItems:'center', gap:10, fontSize:'13px', color:'#E9730C', fontWeight:600 }}>
           ⚠️ {stats.pendingASN} confirmed PO{stats.pendingASN>1?'s have':' has'} no ASN submitted — contact suppliers
         </div>
       )}

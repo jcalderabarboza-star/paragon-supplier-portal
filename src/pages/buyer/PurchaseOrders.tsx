@@ -377,7 +377,7 @@ const PurchaseOrders: React.FC = () => {
             style={{
               background: 'transparent',
               border: 'none',
-              color: '#0A6ED1',
+              color: '#0097A7',
               cursor: 'pointer',
               fontSize: '0.875rem',
               padding: '0.25rem',
@@ -457,7 +457,7 @@ const PurchaseOrders: React.FC = () => {
                     onMouseLeave={() => setHoveredRow(null)}
                   >
                     {/* PO Number */}
-                    <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: '#0A6ED1', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: '#0097A7', whiteSpace: 'nowrap' }}>
                       {po.poNumber}
                     </td>
                     {/* Supplier + channel */}
