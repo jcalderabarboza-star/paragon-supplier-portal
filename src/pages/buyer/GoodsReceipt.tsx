@@ -293,10 +293,10 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
         <div style={s.sectionTitle}>D — Disposition Decision</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginBottom: 14 }}>
           {[
-            ['pass','🟢 PASS — Accept Full Quantity','#107E3E'],
-            ['partial','🟡 PARTIAL — Accept with Deviation','#E9730C'],
-            ['hold','🟠 HOLD — Pending Further Testing','#F59E0B'],
-            ['reject','🔴 REJECT — Return to Supplier','#BB0000'],
+            ['pass','PASS — Accept Full Quantity','#107E3E'],
+            ['partial','PARTIAL — Accept with Deviation','#E9730C'],
+            ['hold','HOLD — Pending Further Testing','#E9730C'],
+            ['reject','REJECT — Return to Supplier','#BB0000'],
           ].map(([v,l,c]) => (
             <div key={v} onClick={() => setDisposition(v)} style={dispoBtn(disposition === v, c)}>{l}</div>
           ))}
