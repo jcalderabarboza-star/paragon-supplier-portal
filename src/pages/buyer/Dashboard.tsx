@@ -208,7 +208,7 @@ function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: 
   return (
     <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
       {/* Header */}
-      <div style={{ background: '#FEF2F2', borderBottom: '1px solid #FECACA', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 15 }}>⚠️</span>
           <span style={{ color: '#BB0000', fontWeight: 800, fontSize: 13, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
