@@ -14,8 +14,8 @@ const COUNTRY_FLAG: Record<string, string> = {
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Raw Material': '#0097A7',
-  'Packaging': '#354A5F',
-  'Fragrance': '#9C27B0',
+  'Packaging': '#0D1B2A',
+  'Fragrance': '#64748B',
   'Active Ingredient': '#E9730C',
 };
 
