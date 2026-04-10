@@ -597,7 +597,7 @@ const Dashboard: React.FC = () => {
 
       <div style={{ background: `linear-gradient(135deg, ${NAVY2} 0%, #1a2f4a 100%)`, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 16 }}>🧠</span>
+          <Brain size={16} />
           <div>
             <div style={{ fontSize: 12, fontWeight: 700, color: 'white' }}>IBP Brain Engine — Demand Signal</div>
             <div style={{ fontSize: 10, color: '#8DA4BC' }}>Next S&OP cycle: 14 Apr 2026 · IBP Demand module active · IBP Inventory planned Q3 2026</div>
