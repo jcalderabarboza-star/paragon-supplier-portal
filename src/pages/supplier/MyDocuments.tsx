@@ -77,7 +77,7 @@ function UploadModal({ doc, onClose }: { doc: SupplierDocument; onClose: () => v
         <div style={{ fontSize: 12, color: MUTED, marginBottom: 20 }}>{doc.name}</div>
         {!uploaded ? (
           <div onDrop={e => { e.preventDefault(); setUploaded(true); }} onDragOver={e => e.preventDefault()} style={{ border: `2px dashed ${BORDER}`, borderRadius: 8, padding: '2rem', textAlign: 'center', cursor: 'pointer', background: '#F8FAFC', marginBottom: 16 }}>
-            <div style={{ fontSize: 24, marginBottom: 8 }}>📎</div>
+            <div style={{ fontSize: 24, marginBottom: 8, fontWeight: 700, color: '#0097A7' }}>↑</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: MID }}>Drop file here or click to browse</div>
             <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>PDF, JPG, PNG · Max 20 MB</div>
           </div>
