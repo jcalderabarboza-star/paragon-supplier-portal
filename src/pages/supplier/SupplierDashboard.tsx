@@ -65,6 +65,8 @@ function StatusPill({ status }: { status: POStatus }) {
 const SupplierDashboard: React.FC = () => {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const showToast = (msg: string) => { setToastMsg(msg); setTimeout(() => setToastMsg(null), 3500); };
+  const [dismissedActions, setDismissedActions] = useState<string[]>([]);
+  const dismissAction = (id: string) => setDismissedActions(prev => [...prev, id]);
 
   // Quick stats
   const openOrders = useMemo(() =>
