@@ -153,73 +153,63 @@ const SupplierDashboard: React.FC = () => {
         <div style={{ flex: '3 1 420px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
           {/* Today's Briefing */}
-          <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
-            <div style={{ background: '#0D1B2A', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'white' }}>Today's Briefing</div>
-                <div style={{ fontSize: '11px', color: '#8DA4BC', marginTop: 2 }}>
-                  {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+          {(() => {
+            const allActions = [
+              { id: 'po-confirm', priority: 1, icon: <AlertTriangle size={16} color="#BB0000" />, iconBg: '#FEE2E2', title: `Confirm ${needsConfirmCount} Purchase Order${needsConfirmCount !== 1 ? 's' : ''}`, badge: 'Urgent', badgeBg: '#FEE2E2', badgeColor: '#BB0000', desc: 'PO-2025-00108 · Rp 185jT · Delivery 25 Apr 2025 — acknowledgement overdue 96h', btnLabel: 'Confirm Now', btnBg: '#BB0000', time: '~2 min', onAction: () => dismissAction('po-confirm') },
+              { id: 'iso-upload', priority: 2, icon: <Clock size={16} color="#E9730C" />, iconBg: '#FEF3C7', title: 'Upload ISO 9001:2015 Certificate', badge: '45 days left', badgeBg: '#FEF3C7', badgeColor: '#E9730C', desc: 'Cert expires 24 May 2026 — upload renewal to avoid disruption to active POs', btnLabel: 'Upload Certificate', btnBg: '#E9730C', time: '~5 min', onAction: () => dismissAction('iso-upload') },
+              { id: 'profile', priority: 3, icon: <User size={16} color="#0097A7" />, iconBg: '#E0F7FA', title: 'Complete company profile', badge: 'When ready', badgeBg: '#E0F7FA', badgeColor: '#0097A7', desc: 'Add bank account details and payment preferences to enable Net 15 payment terms', btnLabel: 'Update Profile', btnBg: 'white', time: '~10 min', onAction: () => dismissAction('profile') },
+            ];
+            const activeActions = allActions.filter(a => !dismissedActions.includes(a.id));
+            const remaining = activeActions.length;
+            return (
+              <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
+                <div style={{ background: '#0D1B2A', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'white' }}>Today's Briefing</div>
+                    <div style={{ fontSize: '11px', color: '#8DA4BC', marginTop: 2 }}>
+                      {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                    </div>
+                  </div>
+                  <span style={{ background: remaining > 0 ? '#BB0000' : '#107E3E', color: 'white', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: 9999 }}>
+                    {remaining > 0 ? `${remaining} action${remaining !== 1 ? 's' : ''}` : 'All clear'}
+                  </span>
                 </div>
+                {remaining === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                        <circle cx="20" cy="20" r="18" stroke="#107E3E" strokeWidth="1.5" fill="#DCFCE7"/>
+                        <path d="M12 20l6 6 10-12" stroke="#107E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#107E3E', marginBottom: 4 }}>All done for today</div>
+                    <div style={{ fontSize: 12, color: '#64748B' }}>No pending actions. Check back tomorrow.</div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {activeActions.map((action, idx) => (
+                      <div key={action.id} style={{ padding: '16px 20px', borderBottom: idx < activeActions.length - 1 ? '1px solid #F1F5F9' : 'none', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 8, background: action.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {action.icon}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#0D1B2A' }}>{action.title}</span>
+                            <span style={{ background: action.badgeBg, color: action.badgeColor, fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: 9999 }}>{action.badge}</span>
+                          </div>
+                          <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>{action.desc}</div>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <button onClick={action.onAction} style={{ padding: '6px 14px', background: action.btnBg, color: action.btnBg === 'white' ? '#0097A7' : 'white', border: action.btnBg === 'white' ? '1px solid #0097A7' : 'none', borderRadius: 6, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{action.btnLabel}</button>
+                            <span style={{ fontSize: '11px', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> {action.time}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <span style={{ background: '#BB0000', color: 'white', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: 9999 }}>3 actions</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* Priority 1 — PO confirmation */}
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <AlertTriangle size={16} color="#BB0000" />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0D1B2A' }}>Confirm {needsConfirmCount} Purchase Order{needsConfirmCount !== 1 ? 's' : ''}</span>
-                    <span style={{ background: '#FEE2E2', color: '#BB0000', fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: 9999 }}>Urgent</span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>PO-2025-00108 · Rp 185jT · Delivery 25 Apr 2025 — acknowledgement overdue 96h</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button onClick={() => showToast('Opening PO-2025-00108 for confirmation...')} style={{ padding: '6px 14px', background: '#BB0000', color: 'white', border: 'none', borderRadius: 6, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Confirm Now</button>
-                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> ~2 min</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Priority 2 — ISO certificate */}
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Clock size={16} color="#E9730C" />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0D1B2A' }}>Upload ISO 9001:2015 Certificate</span>
-                    <span style={{ background: '#FEF3C7', color: '#E9730C', fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: 9999 }}>45 days left</span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Cert expires 24 May 2026 — upload renewal to avoid disruption to active POs</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button onClick={() => showToast('Document upload — go to My Documents to upload')} style={{ padding: '6px 14px', background: '#E9730C', color: 'white', border: 'none', borderRadius: 6, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Upload Certificate</button>
-                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> ~5 min</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Priority 3 — Profile */}
-              <div style={{ padding: '16px 20px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#E0F7FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <User size={16} color="#0097A7" />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0D1B2A' }}>Complete company profile</span>
-                    <span style={{ background: '#E0F7FA', color: '#0097A7', fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: 9999 }}>When ready</span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Add bank account details and payment preferences to enable Net 15 payment terms</div>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <button onClick={() => showToast('Profile editor — coming in Phase 2')} style={{ padding: '6px 14px', background: 'white', color: '#0097A7', border: '1px solid #0097A7', borderRadius: 6, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Update Profile</button>
-                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> ~10 min</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Recent Orders Table */}
           <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', overflow: 'hidden' }}>
