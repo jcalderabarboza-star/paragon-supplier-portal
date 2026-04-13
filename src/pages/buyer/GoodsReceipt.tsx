@@ -383,10 +383,14 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
           if (!posted.includes(poNum)) {
             localStorage.setItem('paragon_gr_posted', JSON.stringify([...posted, poNum]));
           }
-          setGrPosted(true);
+          if (disposition === 'reject') {
+            setShowRejectNotif(true);
+          } else {
+            setGrPosted(true);
+          }
         }}
-          style={{ padding: '9px 18px', borderRadius: 6, background: '#107E3E', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
-          Post GR & Record Result
+          style={{ padding: '9px 18px', borderRadius: 6, background: disposition === 'reject' ? '#BB0000' : '#107E3E', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+          {disposition === 'reject' ? 'Post Rejection & Notify Supplier' : 'Post GR & Record Result'}
         </button>
         <button onClick={() => showToast('Inspection draft saved')}
           style={{ padding: '9px 18px', borderRadius: 6, background: '#F0F4F8', color: '#0D1B2A', border: '1px solid #E2E8F0', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
