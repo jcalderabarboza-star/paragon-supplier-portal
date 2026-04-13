@@ -4,6 +4,7 @@ import {
   Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { mockPurchaseOrders } from '../../data/mockPurchaseOrders';
+import StatusBadge from '../../components/shared/StatusBadge';
 import { POStatus } from '../../types/purchaseOrder.types';
 
 const NAVY   = '#0D1B2A';
