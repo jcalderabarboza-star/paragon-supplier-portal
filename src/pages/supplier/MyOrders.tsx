@@ -68,7 +68,7 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
   const [changeText, setChangeText] = useState('');
 
   const inputStyle: React.CSSProperties = {
-    border: '1px solid #c9c9c9', borderRadius: '4px', padding: '0.375rem 0.5rem',
+    border: '1px solid #C9C9C9', borderRadius: '4px', padding: '0.375rem 0.5rem',
     fontSize: '13px', background: 'white', width: '100%', boxSizing: 'border-box' as const,
   };
 

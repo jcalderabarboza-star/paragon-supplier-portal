@@ -45,7 +45,7 @@ function daysOverdueLabel(d: number): { label: string; color: string } {
 
 const inputStyle: React.CSSProperties = {
   height: '36px',
-  border: '1px solid #c9c9c9',
+  border: '1px solid #C9C9C9',
   borderRadius: '4px',
   padding: '0 0.5rem',
   fontSize: '13px',

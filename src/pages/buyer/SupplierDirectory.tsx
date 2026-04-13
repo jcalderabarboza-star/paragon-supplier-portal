@@ -67,7 +67,7 @@ function fmtDate(s: string): string {
 }
 
 const baseInput: React.CSSProperties = {
-  height: '34px', border: '1px solid #c9c9c9', borderRadius: '4px',
+  height: '34px', border: '1px solid #C9C9C9', borderRadius: '4px',
   padding: '0 0.5rem', fontSize: '13px', background: 'white', color: '#354A5F',
 };
 
