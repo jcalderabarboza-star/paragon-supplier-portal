@@ -298,9 +298,19 @@ const Dashboard: React.FC = () => {
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
 
-  const handleEscalate = (id: string) => {
-    setEscalated(prev => new Set([...prev, id]));
-    showToast('Escalation sent — WhatsApp + email notification dispatched to supplier and procurement lead');
+  const handleEscalate = (id: string, title: string, type: string) => {
+    setEscalateTarget({ id, title, type });
+    setEscalateAssignee('');
+    setEscalateePriority('High');
+    setEscalateNotes('');
+    setEscalateDate('');
+  };
+
+  const confirmEscalate = () => {
+    if (!escalateTarget) return;
+    setEscalated(prev => new Set([...prev, escalateTarget.id]));
+    showToast(`Escalated: ${escalateTarget.title} — assigned to ${escalateAssignee || 'Procurement Team'}`);
+    setEscalateTarget(null);
   };
 
   const now = new Date();
