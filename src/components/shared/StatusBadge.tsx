@@ -41,6 +41,30 @@ const STATUS_STYLES: Record<string, [string, string]> = {
 
   // Purple — excess
   excess: ['#EDE9FE', '#0D1B2A'],
+
+  // Invoice statuses
+  'payment released': ['#DCFCE7', '#107E3E'],
+  'pending match':    ['#FEF9C3', '#E9730C'],
+  'qty mismatch':     ['#FEE2E2', '#BB0000'],
+  'pending gr':       ['#FEF9C3', '#E9730C'],
+  disputed:           ['#FEE2E2', '#BB0000'],
+
+  // Document statuses
+  valid:             ['#DCFCE7', '#107E3E'],
+  expired:           ['#FEE2E2', '#BB0000'],
+  'expiring soon':   ['#FEF9C3', '#E9730C'],
+  'awaiting upload': ['#F1F5F9', '#475569'],
+  'under review':    ['#EFF6FF', '#0097A7'],
+
+  // Qualification statuses
+  'on track': ['#DCFCE7', '#107E3E'],
+  'at risk':  ['#FEF9C3', '#E9730C'],
+  blocked:    ['#FEE2E2', '#BB0000'],
+
+  // Stock statuses
+  low:      ['#FEF9C3', '#E9730C'],
+  viewed:   ['#EFF6FF', '#0097A7'],
+  'partially delivered': ['#FEF9C3', '#E9730C'],
 };
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
