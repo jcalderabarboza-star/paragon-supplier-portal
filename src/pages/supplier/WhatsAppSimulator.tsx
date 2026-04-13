@@ -29,7 +29,7 @@ const SCENARIOS: Record<ScenarioId, {
     quickReplies: ['KONFIRMASI', 'TOLAK', 'UBAH'],
   },
   asn: {
-    label: 'Submit ASN', icon: '🚚',
+    label: 'Submit ASN', icon: '→',
     initial: [{
       id: 'bot-init', from: 'bot',
       content: '🚚 *Pengingat ASN*\nPO-2025-00108 delivery dalam 3 hari.\nFormat ASN:\n*ASN [PO] [tgl kirim] [carrier] [resi]*\n\nContoh:\nASN PO-00108 2026-04-12 JNE JNE123456',
