@@ -155,6 +155,11 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
   const [toast, setToast] = useState<string | null>(null);
   const [grPosted, setGrPosted] = useState(false);
   const [grRef] = useState(`MAT-490003${Math.floor(10 + Math.random() * 90)}`);
+  const [showRejectNotif, setShowRejectNotif] = useState(false);
+  const [rejectNotifSent, setRejectNotifSent] = useState(false);
+  const [returnDate, setReturnDate] = useState('');
+  const [returnInstructions, setReturnInstructions] = useState('');
+  const [returnCarrier, setReturnCarrier] = useState('');
   const qcRef = `QC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
   const showToast = (msg: string) => {
