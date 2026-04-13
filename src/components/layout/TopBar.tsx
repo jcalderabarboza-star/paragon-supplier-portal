@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import CommandPalette from '../shared/CommandPalette';
 import { useNavigate } from 'react-router-dom';
 import { usePersona } from '../../context/PersonaContext';
 import { mockAlerts } from '../../data/mockKpis';
