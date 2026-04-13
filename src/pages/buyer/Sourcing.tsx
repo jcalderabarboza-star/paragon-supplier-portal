@@ -776,6 +776,7 @@ function Awards() {
 const Sourcing: React.FC = () => {
   const [tab, setTab] = useState<Tab>('Active RFQs');
   const [toast, setToast] = useState<string | null>(null);
+  const [awardedRFQ, setAwardedRFQ] = useState<{ rfqId: string; supplier: string; amount: string; poNumber: string } | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
