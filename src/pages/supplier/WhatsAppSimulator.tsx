@@ -20,7 +20,7 @@ const SCENARIOS: Record<ScenarioId, {
   inputPlaceholder?: string;
 }> = {
   po: {
-    label: 'Confirm a PO', icon: '📦',
+    label: 'Confirm a PO', icon: '✓',
     initial: [{
       id: 'bot-init', from: 'bot',
       content: 'Selamat pagi! 👋\n*PO-2025-00108* diterbitkan:\n📦 PET Bottle 100ml — 50,000 PCS\n💰 Rp 185.000.000\n📅 Delivery: 15 Apr 2026\n\nBalas: KONFIRMASI / TOLAK / UBAH',
