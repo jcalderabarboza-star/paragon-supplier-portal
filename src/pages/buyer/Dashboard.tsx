@@ -277,6 +277,11 @@ const Dashboard: React.FC = () => {
   const d = useDerivedData();
   const [toast, setToast] = useState<string | null>(null);
   const [escalated, setEscalated] = useState<Set<string>>(new Set());
+  const [escalateTarget, setEscalateTarget] = useState<{ id: string; title: string; type: string } | null>(null);
+  const [escalateAssignee, setEscalateAssignee] = useState('');
+  const [escalatePriority, setEscalateePriority] = useState('High');
+  const [escalateNotes, setEscalateNotes] = useState('');
+  const [escalateDate, setEscalateDate] = useState('');
   const [tick, setTick] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
