@@ -116,12 +116,12 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
 
 const CATEGORIES = [
   { icon:'🧪', category:'Active Ingredients',        count:34, color:'#0097A7' },
-  { icon:'🌿', category:'Natural & Botanical',       count:28, color:'#107E3E' },
+  { icon:'✦', category:'Natural & Botanical',       count:28, color:'#107E3E' },
   { icon:'💧', category:'Surfactants & Emulsifiers', count:22, color:'#0097A7' },
-  { icon:'🌸', category:'Fragrance & Aroma',         count:18, color:'#0D1B2A' },
+  { icon:'✦', category:'Fragrance & Aroma',         count:18, color:'#0D1B2A' },
   { icon:'✅', category:'Halal Emulsifiers',         count:15, color:'#E9730C' },
   { icon:'🧴', category:'Preservatives',             count:12, color:'#354A5F' },
-  { icon:'📦', category:'Primary Packaging',         count:31, color:'#0097A7' },
+  { icon:'↓', category:'Primary Packaging',         count:31, color:'#0097A7' },
   { icon:'📫', category:'Secondary Packaging',       count:24, color:'#107E3E' },
   { icon:'🏷️', category:'Labels & Print',            count:19, color:'#0097A7' },
   { icon:'♻️', category:'Sustainable Packaging',     count:11, color:'#0D1B2A' },
@@ -248,10 +248,10 @@ const SupplierMktCard: React.FC<{
         </div>
         {/* Certifications */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {s.halalCert && <span style={{ fontSize: 10, color: GREEN }}>✅ Halal</span>}
-          {s.iso9001  && <span style={{ fontSize: 10, color: BLUE }}>✅ ISO 9001</span>}
-          {s.bpom     && <span style={{ fontSize: 10, color: TEAL }}>✅ BPOM</span>}
-          {s.reach    && <span style={{ fontSize: 10, color: '#0D1B2A' }}>✅ REACH</span>}
+          {s.halalCert && <span style={{ fontSize: 10, color: GREEN }}>✓ Halal</span>}
+          {s.iso9001  && <span style={{ fontSize: 10, color: BLUE }}>✓ ISO 9001</span>}
+          {s.bpom     && <span style={{ fontSize: 10, color: TEAL }}>✓ BPOM</span>}
+          {s.reach    && <span style={{ fontSize: 10, color: '#0D1B2A' }}>✓ REACH</span>}
         </div>
       </div>
 
@@ -403,9 +403,9 @@ const MarketplaceDiscovery: React.FC = () => {
           {/* Quick filters */}
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
             {[
-              { label: '🌿 Halal Certified', cert: 'Halal Certified' },
+              { label: '✦ Halal Certified', cert: 'Halal Certified' },
               { label: '🇮🇩 Indonesian Suppliers', country: 'ID' },
-              { label: '⭐ Grade A Suppliers', grade: 'A' },
+              { label: 'Grade A Suppliers', grade: 'A' },
             ].map(qf => (
               <button key={qf.label}
                 onClick={() => {
@@ -524,7 +524,7 @@ const MarketplaceDiscovery: React.FC = () => {
                     {rfq.material}
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94A3B8', marginBottom: 10 }}>
-                    <span>📦 {rfq.qty}</span>
+                    <span>↓ {rfq.qty}</span>
                     <span>⏰ {rfq.deadline}</span>
                   </div>
                   <button onClick={() => showToast('Expression of interest submitted. Paragon procurement team will contact you within 2 business days.')}

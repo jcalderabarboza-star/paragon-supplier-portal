@@ -155,7 +155,7 @@ const gradeColor = (g: string | null) =>
 const certStatusColor = (s: string) =>
   s === 'valid' ? GREEN : s === 'expiring' ? AMBER : RED;
 const certStatusLabel = (s: string) =>
-  s === 'valid' ? '✅ Valid' : s === 'expiring' ? '⚠️ Expiring' : '❌ Missing';
+  s === 'valid' ? '✓ Valid' : s === 'expiring' ? '! Expiring' : '✗ Missing';
 
 // Simple SVG country location map
 const CountryDot: React.FC<{ country: string; flag: string }> = ({ country, flag }) => {
@@ -281,10 +281,10 @@ const SupplierStorefront: React.FC = () => {
         </div>
         {/* Trust badges */}
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
-          {data.halalCert && <span style={{ background: '#16A34A22', color: '#4ADE80', border: '1px solid #16A34A44', borderRadius: 9999, padding: '4px 12px', fontSize: 11, fontWeight: 600 }}>✅ Halal Certified</span>}
-          {data.iso9001   && <span style={{ background: '#2563EB22', color: '#93C5FD', border: '1px solid #2563EB44', borderRadius: 9999, padding: '4px 12px', fontSize: 11, fontWeight: 600 }}>✅ ISO 9001</span>}
-          {data.bpom      && <span style={{ background: `${TEAL}22`, color: '#67E8F9', border: `1px solid ${TEAL}44`, borderRadius: 9999, padding: '4px 12px', fontSize: 11, fontWeight: 600 }}>✅ BPOM</span>}
-          {data.reach     && <span style={{ background: '#7C3AED22', color: '#C4B5FD', border: '1px solid #7C3AED44', borderRadius: 9999, padding: '4px 12px', fontSize: 11, fontWeight: 600 }}>✅ REACH</span>}
+          {data.halalCert && <span style={{ background: '#16A34A22', color: '#4ADE80', border: '1px solid #16A34A44', borderRadius: 9999, padding: '4px 12px', fontSize: 11, fontWeight: 600 }}>✓ Halal Certified</span>}
+          {data.iso9001   && <span style={{ background: '#2563EB22', color: '#93C5FD', border: '1px solid #2563EB44', borderRadius: 9999, padding: '4px 12px', fontSize: 11, fontWeight: 600 }}>✓ ISO 9001</span>}
+          {data.bpom      && <span style={{ background: `${TEAL}22`, color: '#67E8F9', border: `1px solid ${TEAL}44`, borderRadius: 9999, padding: '4px 12px', fontSize: 11, fontWeight: 600 }}>✓ BPOM</span>}
+          {data.reach     && <span style={{ background: '#7C3AED22', color: '#C4B5FD', border: '1px solid #7C3AED44', borderRadius: 9999, padding: '4px 12px', fontSize: 11, fontWeight: 600 }}>✓ REACH</span>}
         </div>
         {/* CTA buttons */}
         <div style={{ display: 'flex', gap: 10 }}>
@@ -379,7 +379,7 @@ const SupplierStorefront: React.FC = () => {
                   { label: 'Language',  value: `${data.flag} ${cp.languageLabel}` },
                   { label: 'Hours',     value: `${cp.businessHours.start}–${cp.businessHours.end}` },
                   { label: 'Local Time', value: localTime },
-                  { label: 'Status',    value: bizHours ? '✅ Open Now' : '🔴 Closed' },
+                  { label: 'Status',    value: bizHours ? '✓ Open Now' : '🔴 Closed' },
                 ].map(r => (
                   <div key={r.label} style={{ display: 'flex', gap: 10, marginBottom: 6, fontSize: 12 }}>
                     <span style={{ width: 80, color: MUTED, flexShrink: 0 }}>{r.label}</span>
@@ -519,7 +519,7 @@ const SupplierStorefront: React.FC = () => {
               <div style={{ marginBottom: 12 }}>
                 {bizHours ? (
                   <span style={{ background: '#F0FDF4', color: GREEN, borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 600 }}>
-                    ✅ Open Now — {localTime} local
+                    ✓ Open Now — {localTime} local
                   </span>
                 ) : (
                   <span style={{ background: '#FEF2F2', color: RED, borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 600 }}>

@@ -399,7 +399,7 @@ const RFQCard: React.FC<{
         {urgent && (
           <span style={{ background: '#FFFBEB', color: AMBER, border: `1px solid ${AMBER}44`,
             borderRadius: 9999, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>
-            ⚠️ {rfq.daysRemaining} days remaining
+            ! {rfq.daysRemaining} days remaining
           </span>
         )}
         {!urgent && (
@@ -583,7 +583,7 @@ const MyQuotesTab: React.FC<{
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               {['Halal Certificate', 'BPOM Registration', 'ISO 9001'].map(d => (
-                <span key={d} style={{ fontSize: 12, color: GREEN }}>✅ {d}</span>
+                <span key={d} style={{ fontSize: 12, color: GREEN }}>✓ {d}</span>
               ))}
             </div>
           </div>

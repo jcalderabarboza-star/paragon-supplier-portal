@@ -381,7 +381,7 @@ const MyStorefront: React.FC = () => {
                 <div style={{ display: 'flex', gap: 8, marginTop: 3 }}>
                   <span style={{ background: certStatusBg(cert.status), color: certStatusColor(cert.status),
                     borderRadius: 9999, padding: '1px 8px', fontSize: 10, fontWeight: 600 }}>
-                    {cert.status === 'valid' ? '✅ Valid' : cert.status === 'expiring' ? '⚠️ Expiring' : '❌ Missing'}
+                    {cert.status === 'valid' ? '✓ Valid' : cert.status === 'expiring' ? '! Expiring' : '✗ Missing'}
                   </span>
                   {cert.expiry && <span style={{ fontSize: 10, color: MUTED }}>Exp: {cert.expiry}</span>}
                 </div>
@@ -460,7 +460,7 @@ const MyStorefront: React.FC = () => {
             <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', marginBottom: 4 }}>Current Status</div>
             <div style={{ padding: '7px 12px', background: bizHours ? '#F0FDF4' : '#FEF2F2',
               color: bizHours ? GREEN : RED, borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
-              {bizHours ? `✅ Open — ${localTime}` : `🔴 Closed — ${localTime}`}
+              {bizHours ? `✓ Open — ${localTime}` : `🔴 Closed — ${localTime}`}
             </div>
           </div>
         </div>
@@ -487,7 +487,7 @@ const MyStorefront: React.FC = () => {
           <div onClick={() => setStatsExpanded(!statsExpanded)}
             style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between',
               alignItems: 'center' }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: TEAL }}>💡 How to improve your ranking</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: TEAL }}>i How to improve your ranking</span>
             <span style={{ color: TEAL, fontSize: 12 }}>{statsExpanded ? '▲' : '▼'}</span>
           </div>
           {statsExpanded && (
