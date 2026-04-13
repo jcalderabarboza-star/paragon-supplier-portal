@@ -412,7 +412,7 @@ const Dashboard: React.FC = () => {
                       <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
                         <span style={{ background: item.severity === 'critical' ? '#FEE2E2' : '#FEF3C7', color: item.severity === 'critical' ? '#BB0000' : '#E9730C', borderRadius: 9999, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>{item.type}</span>
                         {item.severity === 'critical' && (
-                          <button onClick={e => { e.stopPropagation(); handleEscalate(item.id); }} style={{ background: '#BB0000', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                          <button onClick={e => { e.stopPropagation(); handleEscalate(item.id, item.title, item.type); }} style={{ background: '#BB0000', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                             ESCALATE
                           </button>
                         )}
