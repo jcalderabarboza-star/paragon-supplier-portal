@@ -342,6 +342,47 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
         </div>
       </div>
 
+      {showRejectNotif && !rejectNotifSent && (
+        <div style={{ background: '#FEF2F2', border: '1px solid #BB0000', borderRadius: 8, padding: 20, marginTop: 16, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#BB0000', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ color: 'white', fontSize: 16, fontWeight: 700 }}>!</span>
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#BB0000' }}>Batch Rejected — Notify Supplier</div>
+              <div style={{ fontSize: 12, color: '#64748B' }}>{item.supplier} · {item.batchNumber} · Reason: {rejectReason || 'Not specified'}</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Expected Return Date</div>
+              <input type="date" value={returnDate} onChange={e => setReturnDate(e.target.value)} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 13, boxSizing: 'border-box' as const }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Return Carrier</div>
+              <select value={returnCarrier} onChange={e => setReturnCarrier(e.target.value)} style={{ width: '100%', padding: '6px 10px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 13, boxSizing: 'border-box' as const, background: 'white' }}>
+                <option value="">Select carrier...</option>
+                <option>JNE Express</option>
+                <option>J&T Express</option>
+                <option>SiCepat</option>
+                <option>Anteraja</option>
+                <option>SAP Express</option>
+                <option>DHL International</option>
+                <option>FedEx International</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Return Instructions for Supplier</div>
+            <textarea value={returnInstructions} onChange={e => setReturnInstructions(e.target.value)} placeholder="e.g. Please arrange collection from NDC Jatake 6, Dock 3. Contact logistics team at +62-21-xxxx before arrival." rows={3} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid #E2E8F0', fontSize: 13, resize: 'vertical', boxSizing: 'border-box' as const, fontFamily: 'inherit' }} />
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { setRejectNotifSent(true); setGrPosted(true); }} style={{ padding: '8px 16px', background: '#BB0000', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Send Rejection Notice to Supplier</button>
+            <button onClick={() => { setShowRejectNotif(false); setGrPosted(true); }} style={{ padding: '8px 16px', background: 'white', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Skip Notification</button>
+          </div>
+        </div>
+      )}
+
       {grPosted ? (
         <div style={{ background: '#F0FDF4', border: '1px solid #107E3E', borderRadius: 8, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
