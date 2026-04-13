@@ -165,6 +165,17 @@ const SupplierDashboard: React.FC = () => {
             const allActions = [
               { id: 'po-confirm', priority: 1, icon: <AlertTriangle size={16} color="#BB0000" />, iconBg: '#FEE2E2', title: `Confirm ${needsConfirmCount} Purchase Order${needsConfirmCount !== 1 ? 's' : ''}`, badge: 'Urgent', badgeBg: '#FEE2E2', badgeColor: '#BB0000', desc: 'PO-2025-00108 · Rp 185jT · Delivery 25 Apr 2025 — acknowledgement overdue 96h', btnLabel: 'Confirm Now', btnBg: '#BB0000', time: '~2 min', onAction: () => dismissAction('po-confirm') },
               { id: 'iso-upload', priority: 2, icon: <Clock size={16} color="#E9730C" />, iconBg: '#FEF3C7', title: 'Upload ISO 9001:2015 Certificate', badge: '45 days left', badgeBg: '#FEF3C7', badgeColor: '#E9730C', desc: 'Cert expires 24 May 2026 — upload renewal to avoid disruption to active POs', btnLabel: 'Upload Certificate', btnBg: '#E9730C', time: '~5 min', onAction: () => dismissAction('iso-upload') },
+              ...asnDueOrders.map(po => ({
+                id: `asn-${po.id}`, priority: 2,
+                icon: <Truck size={16} color="#0097A7" />,
+                iconBg: '#E0F7FA',
+                title: `Create ASN for ${po.poNumber}`,
+                badge: `Delivery in ${Math.ceil((new Date(po.requestedDeliveryDate).getTime() - new Date().getTime()) / 86400000)}d`,
+                badgeBg: '#E0F7FA', badgeColor: '#0097A7',
+                desc: `${po.supplierName} · ${po.requestedDeliveryDate} — ASN must be submitted before delivery`,
+                btnLabel: 'Create ASN', btnBg: '#0097A7', time: '~5 min',
+                onAction: () => dismissAction(`asn-${po.id}`),
+              })),
               { id: 'profile', priority: 3, icon: <User size={16} color="#0097A7" />, iconBg: '#E0F7FA', title: 'Complete company profile', badge: 'When ready', badgeBg: '#E0F7FA', badgeColor: '#0097A7', desc: 'Add bank account details and payment preferences to enable Net 15 payment terms', btnLabel: 'Update Profile', btnBg: 'white', time: '~10 min', onAction: () => dismissAction('profile') },
             ];
             const activeActions = allActions.filter(a => !dismissedActions.includes(a.id));
