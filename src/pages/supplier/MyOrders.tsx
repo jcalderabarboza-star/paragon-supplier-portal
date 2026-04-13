@@ -183,7 +183,7 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
       )}
 
       {/* Change request panel */}
-      {showChangeReq && (
+      {!confirmed && showChangeReq && (
         <div style={{ marginTop: '0.875rem', padding: '14px', background: '#FFF8E1', border: '1px solid #FFE082', borderRadius: '6px' }}>
           <div style={{ fontSize: '13px', fontWeight: 600, color: '#E9730C', marginBottom: '0.5rem' }}>
             Describe the change needed
