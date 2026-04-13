@@ -49,7 +49,7 @@ const SCENARIOS: Record<ScenarioId, {
     inputPlaceholder: 'STOK MAT-10234 2400 KG',
   },
   invoice: {
-    label: 'Invoice Query', icon: '💰',
+    label: 'Invoice Query', icon: '?',
     initial: [{
       id: 'bot-init', from: 'bot',
       content: '💰 *Status Invoice INV-2026-00234*\nStatus: ✅ Approved\nSAP Document: 5105000234\nEstimasi pembayaran: 5 Mei 2026\nBank: BCA ****4521\n\nAda pertanyaan? Balas chat ini.',
@@ -385,10 +385,10 @@ const WhatsAppSimulator: React.FC = () => {
   };
 
   const SCENARIO_LIST: { id: ScenarioId; label: string; icon: string }[] = [
-    { id: 'po', label: 'Confirm a PO', icon: '📦' },
-    { id: 'asn', label: 'Submit ASN', icon: '🚚' },
-    { id: 'inventory', label: 'Update Inventory', icon: '📊' },
-    { id: 'invoice', label: 'Invoice Query', icon: '💰' },
+    { id: 'po', label: 'Confirm a PO', icon: '✓' },
+    { id: 'asn', label: 'Submit ASN', icon: '→' },
+    { id: 'inventory', label: 'Update Inventory', icon: '↑' },
+    { id: 'invoice', label: 'Invoice Query', icon: '?' },
   ];
 
   return (
