@@ -35,7 +35,7 @@ function StatusPill({ status }: { status: POStatus }) {
   };
   const [bg, color] = map[status] ?? ['#f5f5f5', '#6c757d'];
   return (
-    <span style={{ background: bg, color, fontSize: '0.72rem', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px', whiteSpace: 'nowrap' }}>
+    <span style={{ background: bg, color, fontSize: '11px', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px', whiteSpace: 'nowrap' }}>
       {status}
     </span>
   );
@@ -69,13 +69,13 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
 
   const inputStyle: React.CSSProperties = {
     border: '1px solid #c9c9c9', borderRadius: '4px', padding: '0.375rem 0.5rem',
-    fontSize: '0.8rem', background: 'white', width: '100%', boxSizing: 'border-box' as const,
+    fontSize: '13px', background: 'white', width: '100%', boxSizing: 'border-box' as const,
   };
 
   return (
     <div style={{ padding: '1.25rem', background: '#F8F9FA', borderTop: '2px solid #0097A7' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#354A5F' }}>
+        <span style={{ fontWeight: 700, fontSize: '14px', color: '#354A5F' }}>
           Confirm PO: {po.poNumber}
         </span>
         <button onClick={onClose} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6c757d', fontSize: '1.1rem' }}>✕</button>
@@ -83,21 +83,21 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
 
       {/* Line items */}
       <div style={{ marginBottom: '1rem' }}>
-        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#6c757d', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: '12px', fontWeight: 700, color: '#6c757d', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
           Line Items — Confirmed Quantities
         </div>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
           <thead>
             <tr style={{ background: '#eaecef' }}>
               {['Material Code', 'Description', 'Ordered Qty', 'UoM', 'Confirmed Qty'].map(h => (
-                <th key={h} style={{ padding: '0.4rem 0.6rem', textAlign: 'left', fontWeight: 600, fontSize: '0.73rem', color: '#354A5F', whiteSpace: 'nowrap' }}>{h}</th>
+                <th key={h} style={{ padding: '0.4rem 0.6rem', textAlign: 'left', fontWeight: 600, fontSize: '12px', color: '#354A5F', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {po.lineItems.map((li, idx) => (
               <tr key={li.id} style={{ borderBottom: '1px solid #dee2e6', background: 'white' }}>
-                <td style={{ padding: '0.4rem 0.6rem', fontFamily: 'monospace', fontSize: '0.75rem', color: '#0097A7' }}>{li.materialCode}</td>
+                <td style={{ padding: '0.4rem 0.6rem', fontFamily: 'monospace', fontSize: '12px', color: '#0097A7' }}>{li.materialCode}</td>
                 <td style={{ padding: '0.4rem 0.6rem', color: '#354A5F' }}>{li.description}</td>
                 <td style={{ padding: '0.4rem 0.6rem', textAlign: 'right', fontWeight: 600 }}>{li.qty.toLocaleString()}</td>
                 <td style={{ padding: '0.4rem 0.6rem', color: '#6c757d' }}>{li.uom}</td>
@@ -124,11 +124,11 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
       {/* Delivery date + notes */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem', marginBottom: '1rem' }}>
         <label>
-          <div style={{ fontSize: '0.73rem', fontWeight: 600, color: '#6c757d', marginBottom: '0.25rem' }}>Confirmed Delivery Date</div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6c757d', marginBottom: '0.25rem' }}>Confirmed Delivery Date</div>
           <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} style={inputStyle} />
         </label>
         <label>
-          <div style={{ fontSize: '0.73rem', fontWeight: 600, color: '#6c757d', marginBottom: '0.25rem' }}>Notes for Paragon team</div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: '#6c757d', marginBottom: '0.25rem' }}>Notes for Paragon team</div>
           <input
             value={notes}
             onChange={e => setNotes(e.target.value)}
@@ -154,7 +154,7 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
       {/* Change request panel */}
       {showChangeReq && (
         <div style={{ marginTop: '0.875rem', padding: '0.875rem', background: '#FFF8E1', border: '1px solid #FFE082', borderRadius: '6px' }}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#E9730C', marginBottom: '0.5rem' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: '#E9730C', marginBottom: '0.5rem' }}>
             Describe the change needed
           </div>
           <textarea
@@ -218,14 +218,14 @@ const MyOrders: React.FC = () => {
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', background: '#354A5F', color: 'white',
           padding: '0.75rem 1.25rem', borderRadius: '6px', zIndex: 500,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '0.875rem', maxWidth: '360px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '13px', maxWidth: '360px',
         }}>{toastMsg}</div>
       )}
 
       {/* Header */}
       <div>
         <Title level="H2">My Orders</Title>
-        <div style={{ fontSize: '0.875rem', color: '#6c757d' }}>PT Berlina Packaging Indonesia</div>
+        <div style={{ fontSize: '13px', color: '#6c757d' }}>PT Berlina Packaging Indonesia</div>
       </div>
 
       {/* Tabs */}
@@ -245,7 +245,7 @@ const MyOrders: React.FC = () => {
                 cursor: 'pointer',
                 fontWeight: isActive ? 700 : 400,
                 color: isActive ? '#0097A7' : '#6c757d',
-                fontSize: '0.875rem',
+                fontSize: '13px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.4rem',
@@ -257,7 +257,7 @@ const MyOrders: React.FC = () => {
               <span style={{
                 background: hasAlert ? '#BB0000' : isActive ? '#0097A7' : '#dee2e6',
                 color: (hasAlert || isActive) ? 'white' : '#6c757d',
-                fontSize: '0.68rem', fontWeight: 700,
+                fontSize: '11px', fontWeight: 700,
                 padding: '0.1rem 0.45rem', borderRadius: '10px', minWidth: '18px', textAlign: 'center',
               }}>
                 {tab.count}
@@ -274,11 +274,11 @@ const MyOrders: React.FC = () => {
             No orders in this category.
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem', minWidth: '700px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '700px' }}>
             <thead>
               <tr style={{ background: '#354A5F', color: 'white' }}>
                 {['PO Number', 'Order Date', 'Req. Delivery', 'Items', 'Value', 'Status', 'Action'].map(h => (
-                  <th key={h} style={{ padding: '0.6rem 0.875rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{h}</th>
+                  <th key={h} style={{ padding: '0.6rem 0.875rem', textAlign: 'left', fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -304,7 +304,7 @@ const MyOrders: React.FC = () => {
                       <td style={{ padding: '0.6rem 0.875rem', whiteSpace: 'nowrap' }}>
                         <Button
                           design={isConfirmable ? 'Emphasized' : 'Default'}
-                          style={{ fontSize: '0.75rem' }}
+                          style={{ fontSize: '12px' }}
                           onClick={() => handleRowAction(po)}
                         >
                           {isConfirmable ? (isExpanded ? '▲ Cancel' : '✓ Confirm') : po.status === POStatus.CONFIRMED ? 'Create ASN' : 'View'}

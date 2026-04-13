@@ -48,7 +48,7 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid #c9c9c9',
   borderRadius: '4px',
   padding: '0 0.5rem',
-  fontSize: '0.875rem',
+  fontSize: '13px',
   background: 'white',
   color: '#354A5F',
   outline: 'none',
@@ -154,15 +154,15 @@ const DetailPanel: React.FC<{
         <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
           {/* Supplier + channel */}
           <div>
-            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#354A5F' }}>{po.supplierName}</div>
-            <div style={{ fontSize: '0.8rem', color: '#6c757d', marginTop: '0.25rem' }}>
+            <div style={{ fontWeight: 600, fontSize: '14px', color: '#354A5F' }}>{po.supplierName}</div>
+            <div style={{ fontSize: '13px', color: '#6c757d', marginTop: '0.25rem' }}>
               {CHANNEL_EMOJI[po.channel]} {po.channel}
             </div>
           </div>
 
           {/* Status */}
           <div>
-            <div style={{ fontSize: '0.75rem', color: '#6c757d', marginBottom: '0.25rem' }}>Status</div>
+            <div style={{ fontSize: '12px', color: '#6c757d', marginBottom: '0.25rem' }}>Status</div>
             <StatusBadge status={po.status.toLowerCase().replace(' ', '_')} />
           </div>
 
@@ -175,18 +175,18 @@ const DetailPanel: React.FC<{
               { label: 'Total Value', val: fmtIDR(po.totalValue) },
             ].map(({ label, val }) => (
               <div key={label}>
-                <div style={{ fontSize: '0.7rem', color: '#6c757d' }}>{label}</div>
-                <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{val}</div>
+                <div style={{ fontSize: '11px', color: '#6c757d' }}>{label}</div>
+                <div style={{ fontSize: '13px', fontWeight: 600 }}>{val}</div>
               </div>
             ))}
           </div>
 
           {/* Line items */}
           <div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#354A5F', marginBottom: '0.5rem' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: '#354A5F', marginBottom: '0.5rem' }}>
               Line Items
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
               <thead>
                 <tr style={{ background: '#f5f5f5' }}>
                   {['Material', 'Qty', 'UoM', 'Unit Price', 'Conf. Qty'].map((h) => (
@@ -214,16 +214,16 @@ const DetailPanel: React.FC<{
 
           {/* Timeline */}
           <div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#354A5F', marginBottom: '0.5rem' }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: '#354A5F', marginBottom: '0.5rem' }}>
               Activity Timeline
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {timeline.map((t, i) => (
-                <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', fontSize: '0.8rem' }}>
+                <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', fontSize: '13px' }}>
                   <span>{t.icon}</span>
                   <div>
                     <div>{t.label}</div>
-                    <div style={{ color: '#6c757d', fontSize: '0.7rem' }}>{fmtDate(t.date)}</div>
+                    <div style={{ color: '#6c757d', fontSize: '11px' }}>{fmtDate(t.date)}</div>
                   </div>
                 </div>
               ))}
@@ -300,7 +300,7 @@ const PurchaseOrders: React.FC = () => {
             borderRadius: '6px',
             zIndex: 300,
             boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
-            fontSize: '0.875rem',
+            fontSize: '13px',
             maxWidth: '320px',
             transition: 'right 0.2s ease',
           }}
@@ -313,7 +313,7 @@ const PurchaseOrders: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <Title level="H2">Purchase Orders</Title>
-          <Text style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+          <Text style={{ color: '#6c757d', fontSize: '13px' }}>
             {filtered.length} order{filtered.length !== 1 ? 's' : ''}
             {filtered.length < mockPurchaseOrders.length && ` (filtered from ${mockPurchaseOrders.length})`}
           </Text>
@@ -342,7 +342,7 @@ const PurchaseOrders: React.FC = () => {
         }}
       >
         <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-          <span style={{ fontSize: '0.7rem', color: '#6c757d', fontWeight: 600 }}>STATUS</span>
+          <span style={{ fontSize: '11px', color: '#6c757d', fontWeight: 600 }}>STATUS</span>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={inputStyle}>
             <option value="All">All Statuses</option>
             {Object.values(POStatus).map((s) => (
@@ -352,7 +352,7 @@ const PurchaseOrders: React.FC = () => {
         </label>
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-          <span style={{ fontSize: '0.7rem', color: '#6c757d', fontWeight: 600 }}>CHANNEL</span>
+          <span style={{ fontSize: '11px', color: '#6c757d', fontWeight: 600 }}>CHANNEL</span>
           <select value={channelFilter} onChange={(e) => setChannelFilter(e.target.value)} style={inputStyle}>
             <option value="All">All Channels</option>
             {Object.values(ChannelType).map((c) => (
@@ -362,7 +362,7 @@ const PurchaseOrders: React.FC = () => {
         </label>
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: 1, minWidth: '200px' }}>
-          <span style={{ fontSize: '0.7rem', color: '#6c757d', fontWeight: 600 }}>SEARCH</span>
+          <span style={{ fontSize: '11px', color: '#6c757d', fontWeight: 600 }}>SEARCH</span>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -379,7 +379,7 @@ const PurchaseOrders: React.FC = () => {
               border: 'none',
               color: '#0097A7',
               cursor: 'pointer',
-              fontSize: '0.875rem',
+              fontSize: '13px',
               padding: '0.25rem',
               alignSelf: 'flex-end',
               marginBottom: '2px',
@@ -393,35 +393,35 @@ const PurchaseOrders: React.FC = () => {
       {/* ── Summary tiles ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         <div style={tileStyle}>
-          <div style={{ fontSize: '0.7rem', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>Total Value</div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 700, color: '#354A5F', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '11px', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>Total Value</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#354A5F', marginTop: '0.25rem' }}>
             {fmtIDR(totalValue)}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>{filtered.length} orders</div>
+          <div style={{ fontSize: '12px', color: '#6c757d' }}>{filtered.length} orders</div>
         </div>
 
         <div style={tileStyle}>
-          <div style={{ fontSize: '0.7rem', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>Overdue</div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 700, color: overdueCount > 0 ? '#BB0000' : '#107E3E', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '11px', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>Overdue</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: overdueCount > 0 ? '#BB0000' : '#107E3E', marginTop: '0.25rem' }}>
             {overdueCount}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>past requested delivery</div>
+          <div style={{ fontSize: '12px', color: '#6c757d' }}>past requested delivery</div>
         </div>
 
         <div style={tileStyle}>
-          <div style={{ fontSize: '0.7rem', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>Avg Ack Time</div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 700, color: ackColor(avgAck), marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '11px', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>Avg Ack Time</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: ackColor(avgAck), marginTop: '0.25rem' }}>
             {avgAck}h
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>target: &lt;24h</div>
+          <div style={{ fontSize: '12px', color: '#6c757d' }}>target: &lt;24h</div>
         </div>
 
         <div style={tileStyle}>
-          <div style={{ fontSize: '0.7rem', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>Unack &gt;48h</div>
-          <div style={{ fontSize: '1.375rem', fontWeight: 700, color: unackOver48 > 0 ? '#BB0000' : '#107E3E', marginTop: '0.25rem' }}>
+          <div style={{ fontSize: '11px', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>Unack &gt;48h</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: unackOver48 > 0 ? '#BB0000' : '#107E3E', marginTop: '0.25rem' }}>
             {unackOver48}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>need immediate action</div>
+          <div style={{ fontSize: '12px', color: '#6c757d' }}>need immediate action</div>
         </div>
       </div>
 
@@ -431,7 +431,7 @@ const PurchaseOrders: React.FC = () => {
           <thead>
             <tr style={{ background: '#354A5F', color: 'white' }}>
               {['PO Number', 'Supplier', 'Order Date', 'Req. Delivery', 'Value', 'Status', 'Ack Time', 'Days', 'Actions'].map((h) => (
-                <th key={h} style={{ padding: '0.625rem 0.75rem', textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                <th key={h} style={{ padding: '0.625rem 0.75rem', textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap', fontSize: '13px' }}>
                   {h}
                 </th>
               ))}
@@ -463,7 +463,7 @@ const PurchaseOrders: React.FC = () => {
                     {/* Supplier + channel */}
                     <td style={{ padding: '0.5rem 0.75rem' }}>
                       <div>{po.supplierName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#6c757d' }}>
+                      <div style={{ fontSize: '12px', color: '#6c757d' }}>
                         {CHANNEL_EMOJI[po.channel]} {po.channel}
                       </div>
                     </td>
@@ -484,7 +484,7 @@ const PurchaseOrders: React.FC = () => {
                       {po.acknowledgmentTimeHours === 0 ? '—' : `${po.acknowledgmentTimeHours}h`}
                     </td>
                     {/* Days overdue */}
-                    <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', color: overdueInfo.color, fontWeight: 600, fontSize: '0.75rem' }}>
+                    <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', color: overdueInfo.color, fontWeight: 600, fontSize: '12px' }}>
                       {overdueInfo.label}
                     </td>
                     {/* Actions */}
@@ -492,14 +492,14 @@ const PurchaseOrders: React.FC = () => {
                       <div style={{ display: 'flex', gap: '0.375rem' }}>
                         <Button
                           design="Transparent"
-                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                          style={{ fontSize: '12px', padding: '0.25rem 0.5rem' }}
                           onClick={() => setSelectedPO(po)}
                         >
                           View
                         </Button>
                         <Button
                           design="Default"
-                          style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
+                          style={{ fontSize: '12px', padding: '0.25rem 0.5rem' }}
                           onClick={() => showToast(`Reminder sent via ${po.channel} to ${po.supplierName}`)}
                         >
                           Remind

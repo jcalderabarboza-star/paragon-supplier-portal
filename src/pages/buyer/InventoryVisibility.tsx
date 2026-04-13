@@ -99,7 +99,7 @@ const Heatmap: React.FC = () => {
 
   return (
     <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem' }}>
-      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#354A5F', marginBottom: '1rem' }}>
+      <div style={{ fontWeight: 700, fontSize: '14px', color: '#354A5F', marginBottom: '1rem' }}>
         Stock Status Heatmap — Materials × Suppliers
       </div>
 
@@ -107,11 +107,11 @@ const Heatmap: React.FC = () => {
         <table style={{ borderCollapse: 'separate', borderSpacing: '4px' }}>
           <thead>
             <tr>
-              <th style={{ fontSize: '0.7rem', color: '#6c757d', textAlign: 'left', paddingRight: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap', minWidth: '120px' }}>
+              <th style={{ fontSize: '11px', color: '#6c757d', textAlign: 'left', paddingRight: '0.75rem', fontWeight: 600, whiteSpace: 'nowrap', minWidth: '120px' }}>
                 Material
               </th>
               {suppliers.map(sup => (
-                <th key={sup.id} style={{ fontSize: '0.68rem', color: '#354A5F', fontWeight: 600, textAlign: 'center', width: '80px', whiteSpace: 'nowrap' }}>
+                <th key={sup.id} style={{ fontSize: '11px', color: '#354A5F', fontWeight: 600, textAlign: 'center', width: '80px', whiteSpace: 'nowrap' }}>
                   {sup.short}
                 </th>
               ))}
@@ -120,7 +120,7 @@ const Heatmap: React.FC = () => {
           <tbody>
             {materials.map(mat => (
               <tr key={mat.code}>
-                <td style={{ fontSize: '0.72rem', color: '#354A5F', paddingRight: '0.75rem', whiteSpace: 'nowrap', fontFamily: 'monospace', verticalAlign: 'middle' }}>
+                <td style={{ fontSize: '11px', color: '#354A5F', paddingRight: '0.75rem', whiteSpace: 'nowrap', fontFamily: 'monospace', verticalAlign: 'middle' }}>
                   {mat.code}
                 </td>
                 {suppliers.map(sup => {
@@ -137,7 +137,7 @@ const Heatmap: React.FC = () => {
                         style={{
                           width: '64px', height: '40px', borderRadius: '6px', background: bg,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '0.72rem', fontWeight: 700, color: textColor,
+                          fontSize: '11px', fontWeight: 700, color: textColor,
                           cursor: rec ? 'help' : 'default',
                           margin: '0 auto',
                         }}
@@ -164,7 +164,7 @@ const Heatmap: React.FC = () => {
         ].map(({ label, color }) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
             <div style={{ width: '14px', height: '14px', borderRadius: '3px', background: color, flexShrink: 0 }} />
-            <span style={{ fontSize: '0.75rem', color: '#6c757d' }}>{label}</span>
+            <span style={{ fontSize: '12px', color: '#6c757d' }}>{label}</span>
           </div>
         ))}
       </div>
@@ -216,7 +216,7 @@ const InventoryVisibility: React.FC = () => {
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', background: '#354A5F', color: 'white',
           padding: '0.75rem 1.25rem', borderRadius: '6px', zIndex: 500,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '0.875rem', maxWidth: '360px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '13px', maxWidth: '360px',
         }}>{toastMsg}</div>
       )}
 
@@ -224,7 +224,7 @@ const InventoryVisibility: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <Title level="H2">Inventory Visibility</Title>
-          <Text style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+          <Text style={{ color: '#6c757d', fontSize: '13px' }}>
             Last updated: {fmtDate(lastRefreshed.toISOString().slice(0, 10))} {fmtTs(lastRefreshed)}
           </Text>
         </div>
@@ -252,20 +252,20 @@ const InventoryVisibility: React.FC = () => {
             borderLeft: `4px solid ${STATUS_CELL_COLOR[status]}`,
             boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
           }}>
-            <div style={{ fontSize: '0.68rem', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700, color: STATUS_CELL_COLOR[status], margin: '0.2rem 0' }}>{count}</div>
-            <div style={{ fontSize: '0.73rem', color: '#64748B' }}>{sub}</div>
+            <div style={{ fontSize: '11px', color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: STATUS_CELL_COLOR[status], margin: '0.2rem 0' }}>{count}</div>
+            <div style={{ fontSize: '12px', color: '#64748B' }}>{sub}</div>
           </div>
         ))}
       </div>
 
       {/* Inventory table */}
       <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', overflow: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', minWidth: '1100px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '1100px' }}>
           <thead>
             <tr style={{ background: '#354A5F', color: 'white' }}>
               {['Material Code', 'Description', 'Supplier', 'Location', 'Qty Available', 'UoM', 'Days of Supply', 'Avg Daily Demand', 'Status', 'Last Updated', 'Source', 'Actions'].map(h => (
-                <th key={h} style={{ padding: '0.6rem 0.75rem', textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap', fontSize: '0.75rem' }}>{h}</th>
+                <th key={h} style={{ padding: '0.6rem 0.75rem', textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap', fontSize: '12px' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -307,7 +307,7 @@ const InventoryVisibility: React.FC = () => {
                   <td style={{ padding: '0.5rem 0.75rem' }}>
                     <span style={{
                       background: STATUS_TILE_BG[inv.stockStatus], color: STATUS_CELL_COLOR[inv.stockStatus],
-                      fontWeight: 700, fontSize: '0.72rem', padding: '0.2rem 0.6rem', borderRadius: '12px',
+                      fontWeight: 700, fontSize: '11px', padding: '0.2rem 0.6rem', borderRadius: '12px',
                       border: `1px solid ${STATUS_CELL_COLOR[inv.stockStatus]}44`,
                     }}>{inv.stockStatus}</span>
                   </td>
@@ -315,18 +315,18 @@ const InventoryVisibility: React.FC = () => {
                   <td style={{ padding: '0.5rem 0.75rem' }}>
                     <span style={{
                       background: chip.bg, color: chip.color, fontWeight: 600,
-                      fontSize: '0.7rem', padding: '0.2rem 0.55rem', borderRadius: '12px',
+                      fontSize: '11px', padding: '0.2rem 0.55rem', borderRadius: '12px',
                       whiteSpace: 'nowrap',
                     }}>{inv.dataSource}</span>
                   </td>
                   <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                     {(inv.stockStatus === StockStatus.CRITICAL || inv.stockStatus === StockStatus.LOW) && (
-                      <Button design="Emphasized" style={{ fontSize: '0.73rem', padding: '0.2rem 0.5rem', background: '#BB0000', border: 'none' }}
+                      <Button design="Emphasized" style={{ fontSize: '12px', padding: '0.2rem 0.5rem', background: '#BB0000', border: 'none' }}
                         onClick={() => showToast(`Creating PO for ${inv.materialCode} — ${inv.supplierName} · ${inv.daysOfSupply}d supply remaining`)}>
                         + Create PO
                       </Button>
                     )}
-                    <Button design="Default" style={{ fontSize: '0.73rem', padding: '0.2rem 0.5rem' }}
+                    <Button design="Default" style={{ fontSize: '12px', padding: '0.2rem 0.5rem' }}
                       onClick={() => showToast(`Update request sent to ${inv.supplierName} via ${channel}`)}>
                       Request Update
                     </Button>

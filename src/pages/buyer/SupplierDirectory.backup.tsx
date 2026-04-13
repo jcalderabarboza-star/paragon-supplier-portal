@@ -68,7 +68,7 @@ function fmtDate(s: string): string {
 
 const baseInput: React.CSSProperties = {
   height: '34px', border: '1px solid #c9c9c9', borderRadius: '4px',
-  padding: '0 0.5rem', fontSize: '0.8rem', background: 'white', color: '#354A5F',
+  padding: '0 0.5rem', fontSize: '13px', background: 'white', color: '#354A5F',
 };
 
 // ─── Invite Modal ─────────────────────────────────────────────────────────────
@@ -99,29 +99,29 @@ const InviteModal: React.FC<{ onClose: () => void; onToast: (m: string) => void 
         </div>
         <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           <label>
-            <div style={{ fontSize: '0.72rem', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Company Name *</div>
+            <div style={{ fontSize: '11px', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Company Name *</div>
             <input value={form.companyName} onChange={set('companyName')} placeholder="e.g. PT Supplier Baru" style={fieldStyle} />
           </label>
           <label>
-            <div style={{ fontSize: '0.72rem', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Contact Email *</div>
+            <div style={{ fontSize: '11px', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Contact Email *</div>
             <input type="email" value={form.email} onChange={set('email')} placeholder="contact@supplier.com" style={fieldStyle} />
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
             <label>
-              <div style={{ fontSize: '0.72rem', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Category</div>
+              <div style={{ fontSize: '11px', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Category</div>
               <select value={form.category} onChange={set('category')} style={fieldStyle}>
                 {['Raw Material', 'Packaging', 'Fragrance', 'Active Ingredient'].map(c => <option key={c}>{c}</option>)}
               </select>
             </label>
             <label>
-              <div style={{ fontSize: '0.72rem', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Preferred Channel</div>
+              <div style={{ fontSize: '11px', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Preferred Channel</div>
               <select value={form.channel} onChange={set('channel')} style={fieldStyle}>
                 {['WhatsApp', 'Email', 'Web', 'API'].map(c => <option key={c}>{c}</option>)}
               </select>
             </label>
           </div>
           <label>
-            <div style={{ fontSize: '0.72rem', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Personal Message (optional)</div>
+            <div style={{ fontSize: '11px', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Personal Message (optional)</div>
             <textarea
               value={form.message} onChange={set('message')}
               placeholder="Add a personal message to the invitation..."
@@ -164,17 +164,17 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
       <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1 }}>
         {/* Name + flag */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
-          <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1A2B3C', lineHeight: 1.3 }}>{s.name}</div>
+          <div style={{ fontWeight: 700, fontSize: '14px', color: '#1A2B3C', lineHeight: 1.3 }}>{s.name}</div>
           <span style={{ fontSize: '1.2rem', flexShrink: 0 }} title={`${s.city}, ${s.country}`}>{COUNTRY_FLAG[s.country] ?? s.country}</span>
         </div>
-        <div style={{ fontSize: '0.73rem', color: '#6c757d', marginTop: '-0.3rem' }}>{s.city}, {s.country} · {s.sapBpNumber}</div>
+        <div style={{ fontSize: '12px', color: '#6c757d', marginTop: '-0.3rem' }}>{s.city}, {s.country} · {s.sapBpNumber}</div>
 
         {/* Category + Tier */}
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <span style={{ background: catColor, color: 'white', fontSize: '0.68rem', fontWeight: 600, padding: '0.18rem 0.55rem', borderRadius: '12px' }}>
+          <span style={{ background: catColor, color: 'white', fontSize: '11px', fontWeight: 600, padding: '0.18rem 0.55rem', borderRadius: '12px' }}>
             {s.category}
           </span>
-          <span style={{ background: '#f0f4f8', color: '#354A5F', fontSize: '0.68rem', fontWeight: 600, padding: '0.18rem 0.55rem', borderRadius: '12px', border: '1px solid #dce3ea' }}>
+          <span style={{ background: '#f0f4f8', color: '#354A5F', fontSize: '11px', fontWeight: 600, padding: '0.18rem 0.55rem', borderRadius: '12px', border: '1px solid #dce3ea' }}>
             {TIER_LABELS[s.tier]}
           </span>
         </div>
@@ -182,23 +182,23 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
         {/* Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: statusColor, flexShrink: 0, display: 'inline-block' }} />
-          <span style={{ fontSize: '0.8rem', color: statusColor, fontWeight: 600 }}>{s.status}</span>
+          <span style={{ fontSize: '13px', color: statusColor, fontWeight: 600 }}>{s.status}</span>
         </div>
 
         <hr style={{ border: 'none', borderTop: '1px solid #f0f0f0', margin: '0.1rem 0' }} />
 
         {/* Compliance */}
         <div>
-          <div style={{ fontSize: '0.67rem', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.3rem' }}>Compliance</div>
+          <div style={{ fontSize: '11px', color: '#999', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.3rem' }}>Compliance</div>
           <div style={{ display: 'flex', gap: '0.875rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
-            <span style={{ fontSize: '0.78rem', color: s.halalCertified ? '#107E3E' : '#BB0000' }}>
+            <span style={{ fontSize: '13px', color: s.halalCertified ? '#107E3E' : '#BB0000' }}>
               {s.halalCertified ? '✅' : '❌'} Halal
             </span>
-            <span style={{ fontSize: '0.78rem', color: s.bpomRegistered ? '#107E3E' : '#BB0000' }}>
+            <span style={{ fontSize: '13px', color: s.bpomRegistered ? '#107E3E' : '#BB0000' }}>
               {s.bpomRegistered ? '✅' : '❌'} BPOM
             </span>
           </div>
-          <span style={{ fontSize: '0.78rem', color: certBad ? '#BB0000' : '#107E3E', fontWeight: certBad ? 600 : 400 }}>
+          <span style={{ fontSize: '13px', color: certBad ? '#BB0000' : '#107E3E', fontWeight: certBad ? 600 : 400 }}>
             {certBad ? '⚠️' : '✅'} Cert expires {fmtDate(s.certExpiryDate)}
           </span>
         </div>
@@ -208,12 +208,12 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
         {/* Performance */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '0.68rem', color: '#999', fontWeight: 600, marginBottom: '0.3rem' }}>OTIF</div>
+            <div style={{ fontSize: '11px', color: '#999', fontWeight: 600, marginBottom: '0.3rem' }}>OTIF</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <div style={{ flex: 1, height: '6px', background: '#e9ecef', borderRadius: '3px' }}>
                 <div style={{ height: '100%', width: `${s.otif}%`, background: oColor, borderRadius: '3px' }} />
               </div>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: oColor, minWidth: '34px' }}>{s.otif}%</span>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: oColor, minWidth: '34px' }}>{s.otif}%</span>
             </div>
           </div>
           <div style={{
@@ -226,11 +226,11 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
 
       {/* Actions */}
       <div style={{ padding: '0.625rem 1rem', borderTop: '1px solid #f0f0f0', display: 'flex', gap: '0.5rem', background: '#fafafa' }}>
-        <Button design="Transparent" style={{ flex: 1, fontSize: '0.78rem' }}
+        <Button design="Transparent" style={{ flex: 1, fontSize: '13px' }}
           onClick={() => navigate(`/buyer/suppliers/${s.id}`)}>
           View Details
         </Button>
-        <Button design="Default" style={{ flex: 1, fontSize: '0.78rem' }}
+        <Button design="Default" style={{ flex: 1, fontSize: '13px' }}
           onClick={() => onToast(`Message sent via ${s.preferredChannel}`)}>
           Send Message
         </Button>
@@ -283,7 +283,7 @@ const SupplierDirectory: React.FC = () => {
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', background: '#354A5F', color: 'white',
           padding: '0.75rem 1.25rem', borderRadius: '6px', zIndex: 500,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '0.875rem', maxWidth: '320px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '13px', maxWidth: '320px',
         }}>{toastMsg}</div>
       )}
 
@@ -293,7 +293,7 @@ const SupplierDirectory: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <Title level="H2">Supplier Directory</Title>
-          <Text style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+          <Text style={{ color: '#6c757d', fontSize: '13px' }}>
             {filtered.length} supplier{filtered.length !== 1 ? 's' : ''}
             {filtered.length < mockSuppliers.length && ` (filtered from ${mockSuppliers.length})`}
           </Text>
@@ -314,7 +314,7 @@ const SupplierDirectory: React.FC = () => {
           { label: 'GRADE', val: gradeFilter, set: setGradeFilter, opts: [['All', 'All'], ['A', 'Grade A'], ['B', 'Grade B'], ['C', 'Grade C'], ['D', 'Grade D']] },
         ] as const).map(({ label, val, set, opts }) => (
           <label key={label} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-            <span style={{ fontSize: '0.67rem', color: '#6c757d', fontWeight: 700 }}>{label}</span>
+            <span style={{ fontSize: '11px', color: '#6c757d', fontWeight: 700 }}>{label}</span>
             <select value={val} onChange={e => set(e.target.value)} style={selStyle}>
               {(opts as readonly (readonly [string, string])[]).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
@@ -322,7 +322,7 @@ const SupplierDirectory: React.FC = () => {
         ))}
 
         <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', flex: '1 1 160px' }}>
-          <span style={{ fontSize: '0.67rem', color: '#6c757d', fontWeight: 700 }}>SEARCH</span>
+          <span style={{ fontSize: '11px', color: '#6c757d', fontWeight: 700 }}>SEARCH</span>
           <input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Search supplier name..."
             style={{ ...baseInput, width: '100%', boxSizing: 'border-box' }} />
@@ -330,7 +330,7 @@ const SupplierDirectory: React.FC = () => {
 
         {hasFilters && (
           <button onClick={() => { setCategoryFilter('All'); setTierFilter('All'); setStatusFilter('All'); setCountryFilter('All'); setGradeFilter('All'); setSearch(''); }}
-            style={{ background: 'transparent', border: 'none', color: '#0097A7', cursor: 'pointer', fontSize: '0.8rem', paddingBottom: '4px' }}>
+            style={{ background: 'transparent', border: 'none', color: '#0097A7', cursor: 'pointer', fontSize: '13px', paddingBottom: '4px' }}>
             Clear Filters
           </button>
         )}
@@ -345,9 +345,9 @@ const SupplierDirectory: React.FC = () => {
           { label: 'Expiring Documents', value: expiringCount, color: expiringCount > 0 ? '#BB0000' : '#107E3E', sub: 'within 90 days' },
         ].map(({ label, value, color, sub }) => (
           <div key={label} style={{ flex: '1 1 140px', background: 'white', border: '1px solid #e0e0e0', borderRadius: '6px', padding: '0.875rem 1.125rem' }}>
-            <div style={{ fontSize: '0.68rem', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700, color, margin: '0.2rem 0' }}>{value}</div>
-            <div style={{ fontSize: '0.73rem', color: '#6c757d' }}>{sub}</div>
+            <div style={{ fontSize: '11px', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color, margin: '0.2rem 0' }}>{value}</div>
+            <div style={{ fontSize: '12px', color: '#6c757d' }}>{sub}</div>
           </div>
         ))}
       </div>

@@ -54,7 +54,7 @@ function StatusPill({ status }: { status: POStatus }) {
   };
   const [bg, color] = map[status] ?? ['#f5f5f5', '#6c757d'];
   return (
-    <span style={{ background: bg, color, fontSize: '0.72rem', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px', whiteSpace: 'nowrap' }}>
+    <span style={{ background: bg, color, fontSize: '11px', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px', whiteSpace: 'nowrap' }}>
       {status}
     </span>
   );
@@ -85,7 +85,7 @@ const SupplierDashboard: React.FC = () => {
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', background: '#354A5F', color: 'white',
           padding: '0.75rem 1.25rem', borderRadius: '6px', zIndex: 500,
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '0.875rem', maxWidth: '340px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '13px', maxWidth: '340px',
         }}>{toastMsg}</div>
       )}
 
@@ -96,16 +96,16 @@ const SupplierDashboard: React.FC = () => {
         color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       }}>
         <div>
-          <div style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.4rem' }}>
+          <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '0.4rem' }}>
             Selamat datang, {mySupplier.name} 👋
           </div>
-          <div style={{ fontSize: '0.875rem', opacity: 0.88 }}>
+          <div style={{ fontSize: '13px', opacity: 0.88 }}>
             Paragon Corp Supplier Portal &nbsp;·&nbsp; Last login: 5 April 2026 &nbsp;·&nbsp; Channel: {channelLabel}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexShrink: 0 }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '0.7rem', opacity: 0.85, marginBottom: '0.3rem', letterSpacing: '1px', textTransform: 'uppercase' }}>Paragon Grade</div>
+            <div style={{ fontSize: '11px', opacity: 0.85, marginBottom: '0.3rem', letterSpacing: '1px', textTransform: 'uppercase' }}>Paragon Grade</div>
             <div style={{
               width: '64px', height: '64px', borderRadius: '12px',
               border: '3px solid rgba(255,255,255,0.9)',
@@ -115,14 +115,14 @@ const SupplierDashboard: React.FC = () => {
             }}>
               {mySupplier.scorecardGrade}
             </div>
-            <div style={{ fontSize: '0.7rem', opacity: 0.8, marginTop: '0.3rem' }}>82 / 100</div>
+            <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '0.3rem' }}>82 / 100</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-            <div style={{ fontSize: '0.78rem', opacity: 0.9, fontWeight: 600 }}>
+            <div style={{ fontSize: '13px', opacity: 0.9, fontWeight: 600 }}>
               {mySupplier.otif >= 90 ? '● On Track' : mySupplier.otif >= 80 ? '● Needs Attention' : '● At Risk'}
             </div>
-            <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>OTIF: {mySupplier.otif}%</div>
-            <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Target: ≥ 95%</div>
+            <div style={{ fontSize: '12px', opacity: 0.8 }}>OTIF: {mySupplier.otif}%</div>
+            <div style={{ fontSize: '12px', opacity: 0.8 }}>Target: ≥ 95%</div>
           </div>
         </div>
       </div>
@@ -137,9 +137,9 @@ const SupplierDashboard: React.FC = () => {
         ].map(({ icon, label, value, sub, color, bg }) => (
           <div key={label} style={{ flex: '1 1 160px', background: bg, border: '1px solid #E2E8F0', borderLeft: `4px solid ${color}`, borderRadius: '8px', padding: '1rem 1.125rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <div style={{ color, marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>{icon}</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 700, color }}>{value}</div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#354A5F' }}>{label}</div>
-            <div style={{ fontSize: '0.72rem', color: '#6c757d' }}>{sub}</div>
+            <div style={{ fontSize: '28px', fontWeight: 700, color }}>{value}</div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#354A5F' }}>{label}</div>
+            <div style={{ fontSize: '11px', color: '#6c757d' }}>{sub}</div>
           </div>
         ))}
       </div>
@@ -155,7 +155,7 @@ const SupplierDashboard: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <span style={{ fontSize: '1rem', fontWeight: 700, color: '#354A5F' }}>Action Required</span>
               <span style={{
-                background: '#BB0000', color: 'white', fontSize: '0.7rem', fontWeight: 700,
+                background: '#BB0000', color: 'white', fontSize: '11px', fontWeight: 700,
                 padding: '0.1rem 0.5rem', borderRadius: '12px', minWidth: '20px', textAlign: 'center',
               }}>3</span>
             </div>
@@ -163,10 +163,10 @@ const SupplierDashboard: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {/* Red — PO confirmation */}
               <div style={{ borderLeft: '4px solid #BB0000', padding: '0.875rem 1rem', background: '#FFF5F5', borderRadius: '0 6px 6px 0' }}>
-                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '0.25rem' }}>
                   Purchase Orders awaiting confirmation
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.625rem' }}>
+                <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '0.625rem' }}>
                   {needsConfirmCount} PO{needsConfirmCount !== 1 ? 's' : ''} need your acknowledgement to proceed
                 </div>
                 <Button design="Emphasized" onClick={() => showToast('Opening PO confirmation...')}>
@@ -176,10 +176,10 @@ const SupplierDashboard: React.FC = () => {
 
               {/* Yellow — ISO expiry */}
               <div style={{ borderLeft: '4px solid #E9730C', padding: '0.875rem 1rem', background: '#FFFBF0', borderRadius: '0 6px 6px 0' }}>
-                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '0.25rem' }}>
                   ISO Certificate expiring in 45 days
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.625rem' }}>
+                <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '0.625rem' }}>
                   Upload your renewed certificate to avoid disruption
                 </div>
                 <Button design="Default" onClick={() => showToast('Document upload coming in Phase 2')}>
@@ -189,10 +189,10 @@ const SupplierDashboard: React.FC = () => {
 
               {/* Blue — Profile */}
               <div style={{ borderLeft: '4px solid #0097A7', padding: '0.875rem 1rem', background: '#F0F6FF', borderRadius: '0 6px 6px 0' }}>
-                <div style={{ fontWeight: 600, fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '0.25rem' }}>
                   Complete your company profile
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.625rem' }}>
+                <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '0.625rem' }}>
                   Add bank account details to enable faster payments
                 </div>
                 <Button design="Default" onClick={() => showToast('Profile editor coming in Phase 2')}>
@@ -204,14 +204,14 @@ const SupplierDashboard: React.FC = () => {
 
           {/* Recent Orders Table */}
           <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', overflow: 'hidden' }}>
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #e0e0e0', fontWeight: 700, fontSize: '0.95rem', color: '#354A5F' }}>
+            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid #e0e0e0', fontWeight: 700, fontSize: '14px', color: '#354A5F' }}>
               My Recent Purchase Orders
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: '#354A5F', color: 'white' }}>
                   {['PO Number', 'Order Date', 'Items', 'Value', 'Status', 'Action'].map(h => (
-                    <th key={h} style={{ padding: '0.6rem 0.875rem', textAlign: 'left', fontWeight: 600, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>{h}</th>
+                    <th key={h} style={{ padding: '0.6rem 0.875rem', textAlign: 'left', fontWeight: 600, fontSize: '12px', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -229,7 +229,7 @@ const SupplierDashboard: React.FC = () => {
                       <td style={{ padding: '0.6rem 0.875rem' }}>
                         <Button
                           design={isActionable ? 'Emphasized' : 'Default'}
-                          style={{ fontSize: '0.75rem' }}
+                          style={{ fontSize: '12px' }}
                           onClick={() => showToast(
                             isActionable ? `Opening ${po.poNumber} for confirmation...`
                               : isConfirmed ? `Creating ASN for ${po.poNumber}...`
@@ -253,11 +253,11 @@ const SupplierDashboard: React.FC = () => {
           {/* My Performance Card */}
           <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#354A5F' }}>My Performance Score</span>
+              <span style={{ fontWeight: 700, fontSize: '14px', color: '#354A5F' }}>My Performance Score</span>
               <div style={{
                 width: '42px', height: '42px', borderRadius: '8px', background: gradeColor, color: 'white',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '1.3rem', fontWeight: 900,
+                fontSize: '20px', fontWeight: 900,
               }}>{mySupplier.scorecardGrade}</div>
             </div>
 
@@ -271,8 +271,8 @@ const SupplierDashboard: React.FC = () => {
                 return (
                   <div key={label}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                      <span style={{ fontSize: '0.8rem', color: '#354A5F' }}>{label}</span>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 700, color: c }}>{value}%</span>
+                      <span style={{ fontSize: '13px', color: '#354A5F' }}>{label}</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: c }}>{value}%</span>
                     </div>
                     <div style={{ height: '7px', background: '#e9ecef', borderRadius: '4px' }}>
                       <div style={{ height: '100%', width: `${value}%`, background: c, borderRadius: '4px' }} />
@@ -282,14 +282,14 @@ const SupplierDashboard: React.FC = () => {
               })}
             </div>
 
-            <div style={{ marginTop: '1rem', fontSize: '0.72rem', color: '#6c757d', fontStyle: 'italic', borderTop: '1px solid #f0f0f0', paddingTop: '0.75rem' }}>
+            <div style={{ marginTop: '1rem', fontSize: '11px', color: '#6c757d', fontStyle: 'italic', borderTop: '1px solid #f0f0f0', paddingTop: '0.75rem' }}>
               Performance reviewed monthly by Paragon procurement team
             </div>
           </div>
 
           {/* Compliance Documents */}
           <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem' }}>
-            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#354A5F', marginBottom: '1rem' }}>
+            <div style={{ fontWeight: 700, fontSize: '14px', color: '#354A5F', marginBottom: '1rem' }}>
               My Documents
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
@@ -333,11 +333,11 @@ const SupplierDashboard: React.FC = () => {
                   borderBottom: idx < arr.length - 1 ? '1px solid #f0f0f0' : 'none',
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#354A5F' }}>{doc.name}</div>
-                    <div style={{ fontSize: '0.73rem', color: doc.color, fontWeight: 600 }}>{doc.status}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#6c757d' }}>{doc.expiry}</div>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: '#354A5F' }}>{doc.name}</div>
+                    <div style={{ fontSize: '12px', color: doc.color, fontWeight: 600 }}>{doc.status}</div>
+                    <div style={{ fontSize: '11px', color: '#6c757d' }}>{doc.expiry}</div>
                   </div>
-                  <Button design="Transparent" style={{ fontSize: '0.72rem', flexShrink: 0 }}
+                  <Button design="Transparent" style={{ fontSize: '11px', flexShrink: 0 }}
                     onClick={() => showToast('Document management coming in Phase 2')}>
                     {doc.action}
                   </Button>

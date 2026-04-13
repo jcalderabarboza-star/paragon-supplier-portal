@@ -62,12 +62,12 @@ const TEAL = '#0097A7';
 const NAVY = '#354A5F';
 const INPUT_STYLE: React.CSSProperties = {
   width: '100%', padding: '0.5rem 0.625rem', border: '1px solid #ccc',
-  borderRadius: '4px', fontSize: '0.875rem', boxSizing: 'border-box',
+  borderRadius: '4px', fontSize: '13px', boxSizing: 'border-box',
   fontFamily: 'inherit', background: 'white', color: '#1d2d3e',
 };
-const ERROR_STYLE: React.CSSProperties = { color: '#BB0000', fontSize: '0.75rem', marginTop: '0.2rem' };
-const LABEL_STYLE: React.CSSProperties = { fontSize: '0.8rem', color: NAVY, fontWeight: 600, marginBottom: '0.25rem', display: 'block' };
-const SECTION_TITLE: React.CSSProperties = { fontSize: '0.9rem', fontWeight: 700, color: NAVY, borderBottom: `2px solid ${TEAL}`, paddingBottom: '0.375rem', marginBottom: '1rem' };
+const ERROR_STYLE: React.CSSProperties = { color: '#BB0000', fontSize: '12px', marginTop: '0.2rem' };
+const LABEL_STYLE: React.CSSProperties = { fontSize: '13px', color: NAVY, fontWeight: 600, marginBottom: '0.25rem', display: 'block' };
+const SECTION_TITLE: React.CSSProperties = { fontSize: '14px', fontWeight: 700, color: NAVY, borderBottom: `2px solid ${TEAL}`, paddingBottom: '0.375rem', marginBottom: '1rem' };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -85,13 +85,13 @@ const StepBar: React.FC<{ step: number }> = ({ step }) => (
               background: done ? NAVY : active ? TEAL : 'white',
               border: `2px solid ${done ? NAVY : active ? TEAL : '#ccc'}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '0.8rem', fontWeight: 700,
+              fontSize: '13px', fontWeight: 700,
               color: done || active ? 'white' : '#aaa',
               flexShrink: 0,
             }}>
               {done ? '✓' : num}
             </div>
-            <span style={{ fontSize: '0.68rem', color: active ? TEAL : done ? NAVY : '#aaa', fontWeight: active ? 700 : 500, marginTop: '0.3rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
+            <span style={{ fontSize: '11px', color: active ? TEAL : done ? NAVY : '#aaa', fontWeight: active ? 700 : 500, marginTop: '0.3rem', textAlign: 'center', whiteSpace: 'nowrap' }}>
               {label}
             </span>
           </div>
@@ -309,9 +309,9 @@ const SupplierRegistration: React.FC = () => {
       {contacts.map((c, i) => (
         <div key={i} style={{ background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <span style={{ fontWeight: 700, fontSize: '0.82rem', color: NAVY }}>Contact {i + 1}</span>
+            <span style={{ fontWeight: 700, fontSize: '13px', color: NAVY }}>Contact {i + 1}</span>
             {contacts.length > 1 && (
-              <button onClick={() => removeContact(i)} style={{ border: 'none', background: 'none', color: '#BB0000', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}>
+              <button onClick={() => removeContact(i)} style={{ border: 'none', background: 'none', color: '#BB0000', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }}>
                 Remove
               </button>
             )}
@@ -343,7 +343,7 @@ const SupplierRegistration: React.FC = () => {
         <button onClick={addContact} style={{
           border: `1.5px dashed ${TEAL}`, background: 'transparent', color: TEAL,
           borderRadius: '6px', padding: '0.5rem 1.25rem', cursor: 'pointer',
-          fontSize: '0.82rem', fontWeight: 600, width: '100%',
+          fontSize: '13px', fontWeight: 600, width: '100%',
         }}>
           + Add Another Contact
         </button>
@@ -354,7 +354,7 @@ const SupplierRegistration: React.FC = () => {
   const renderStep3 = () => (
     <div>
       <div style={SECTION_TITLE}>Supply Categories</div>
-      <div style={{ marginBottom: '0.5rem', fontSize: '0.8rem', color: '#6c757d' }}>Select all categories that apply to your business (at least 1 required)</div>
+      <div style={{ marginBottom: '0.5rem', fontSize: '13px', color: '#6c757d' }}>Select all categories that apply to your business (at least 1 required)</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
         {SUPPLY_CATEGORIES.map(cat => {
           const checked = selCats.includes(cat);
@@ -364,7 +364,7 @@ const SupplierRegistration: React.FC = () => {
               padding: '0.5rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
               background: checked ? '#E0F7FA' : '#f9f9f9',
               border: `1.5px solid ${checked ? TEAL : '#e0e0e0'}`,
-              fontSize: '0.82rem', color: checked ? '#006064' : '#354A5F', fontWeight: checked ? 600 : 400,
+              fontSize: '13px', color: checked ? '#006064' : '#354A5F', fontWeight: checked ? 600 : 400,
             }}>
               <input type="checkbox" checked={checked} onChange={() => toggleCat(cat)} style={{ accentColor: TEAL }} />
               {cat}
@@ -388,8 +388,8 @@ const SupplierRegistration: React.FC = () => {
               <input type="radio" name="channel" value={ch.value} checked={active} onChange={() => setChannel(ch.value)} style={{ accentColor: TEAL }} />
               <span style={{ fontSize: '1.4rem' }}>{ch.icon}</span>
               <div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: active ? '#006064' : NAVY }}>{ch.label}</div>
-                <div style={{ fontSize: '0.72rem', color: '#6c757d' }}>{ch.desc}</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: active ? '#006064' : NAVY }}>{ch.label}</div>
+                <div style={{ fontSize: '11px', color: '#6c757d' }}>{ch.desc}</div>
               </div>
             </label>
           );
@@ -407,12 +407,12 @@ const SupplierRegistration: React.FC = () => {
           return (
             <div key={doc.key} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: NAVY }}>{doc.label}</div>
-                {d.uploaded && <div style={{ fontSize: '0.72rem', color: '#6c757d', marginTop: '0.15rem' }}>📎 {d.fileName}</div>}
+                <div style={{ fontSize: '13px', fontWeight: 600, color: NAVY }}>{doc.label}</div>
+                {d.uploaded && <div style={{ fontSize: '11px', color: '#6c757d', marginTop: '0.15rem' }}>📎 {d.fileName}</div>}
               </div>
               {doc.hasExpiry && d.uploaded && (
                 <div>
-                  <label style={{ fontSize: '0.72rem', color: '#6c757d', display: 'block', marginBottom: '0.15rem' }}>Expiry date</label>
+                  <label style={{ fontSize: '11px', color: '#6c757d', display: 'block', marginBottom: '0.15rem' }}>Expiry date</label>
                   <input type="date" style={{ ...INPUT_STYLE, width: '140px', padding: '0.3rem 0.5rem' }}
                     value={d.expiry}
                     onChange={e => setDocs(prev => ({ ...prev, [doc.key]: { ...prev[doc.key], expiry: e.target.value } }))} />
@@ -421,7 +421,7 @@ const SupplierRegistration: React.FC = () => {
               <label style={{
                 background: d.uploaded ? '#E8F5E9' : TEAL, color: d.uploaded ? '#107E3E' : 'white',
                 border: 'none', borderRadius: '6px', padding: '0.4rem 0.875rem',
-                fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                fontSize: '13px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
                 flexShrink: 0,
               }}>
                 {d.uploaded ? '✓ Uploaded' : 'Upload'}
@@ -455,14 +455,14 @@ const SupplierRegistration: React.FC = () => {
 
   const ReviewRow: React.FC<{ label: string; value: string }> = ({ label, value }) => (
     <div style={{ display: 'flex', padding: '0.45rem 0', borderBottom: '1px solid #f0f0f0' }}>
-      <span style={{ width: '180px', flexShrink: 0, fontSize: '0.78rem', color: '#6c757d', fontWeight: 500 }}>{label}</span>
-      <span style={{ fontSize: '0.82rem', color: NAVY, fontWeight: 500 }}>{value || '—'}</span>
+      <span style={{ width: '180px', flexShrink: 0, fontSize: '13px', color: '#6c757d', fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: '13px', color: NAVY, fontWeight: 500 }}>{value || '—'}</span>
     </div>
   );
 
   const renderStep5 = () => (
     <div>
-      <div style={{ background: '#FFF8E1', border: '1px solid #FFD54F', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', fontSize: '0.8rem', color: '#7B4F00' }}>
+      <div style={{ background: '#FFF8E1', border: '1px solid #FFD54F', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', fontSize: '13px', color: '#7B4F00' }}>
         Please review all information below before submitting. Go back to make any changes.
       </div>
 
@@ -479,7 +479,7 @@ const SupplierRegistration: React.FC = () => {
       <div style={{ ...SECTION_TITLE, marginTop: '1.25rem' }}>Contact Persons</div>
       {contacts.map((c, i) => (
         <div key={i} style={{ marginBottom: '0.75rem' }}>
-          <div style={{ fontSize: '0.78rem', fontWeight: 700, color: TEAL, marginBottom: '0.25rem' }}>Contact {i + 1}</div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: TEAL, marginBottom: '0.25rem' }}>Contact {i + 1}</div>
           <ReviewRow label="Name" value={c.name} />
           <ReviewRow label="Role" value={c.role} />
           <ReviewRow label="Email" value={c.email} />
@@ -504,14 +504,14 @@ const SupplierRegistration: React.FC = () => {
       <div style={{ marginTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem', cursor: 'pointer' }}>
           <input type="checkbox" checked={agreed1} onChange={e => setAgreed1(e.target.checked)} style={{ accentColor: TEAL, marginTop: '2px', flexShrink: 0 }} />
-          <span style={{ fontSize: '0.8rem', color: NAVY }}>
+          <span style={{ fontSize: '13px', color: NAVY }}>
             I agree to Paragon's <span style={{ color: TEAL, textDecoration: 'underline', cursor: 'pointer' }}>Supplier Code of Conduct</span> and <span style={{ color: TEAL, textDecoration: 'underline', cursor: 'pointer' }}>Terms & Conditions</span>.
           </span>
         </label>
         {errors.agreed1 && <div style={{ ...ERROR_STYLE, marginTop: '-0.5rem' }}>{errors.agreed1}</div>}
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.625rem', cursor: 'pointer' }}>
           <input type="checkbox" checked={agreed2} onChange={e => setAgreed2(e.target.checked)} style={{ accentColor: TEAL, marginTop: '2px', flexShrink: 0 }} />
-          <span style={{ fontSize: '0.8rem', color: NAVY }}>
+          <span style={{ fontSize: '13px', color: NAVY }}>
             I confirm that all information provided is accurate and complete. I understand that providing false information may result in rejection.
           </span>
         </label>
@@ -523,7 +523,7 @@ const SupplierRegistration: React.FC = () => {
         style={{
           width: '100%', marginTop: '1.5rem', padding: '0.875rem',
           background: NAVY, color: 'white', border: 'none', borderRadius: '6px',
-          fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em',
+          fontSize: '14px', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em',
         }}
       >
         Submit Registration
@@ -535,9 +535,9 @@ const SupplierRegistration: React.FC = () => {
     <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
       <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>✅</div>
       <div style={{ fontSize: '1.4rem', fontWeight: 700, color: NAVY, marginBottom: '0.5rem' }}>Registration Submitted!</div>
-      <div style={{ fontSize: '0.875rem', color: '#6c757d', marginBottom: '1.5rem' }}>Your application has been received and is under review.</div>
+      <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '1.5rem' }}>Your application has been received and is under review.</div>
       <div style={{ background: '#E0F7FA', border: `1.5px solid ${TEAL}`, borderRadius: '8px', padding: '1rem 1.5rem', display: 'inline-block', marginBottom: '2rem' }}>
-        <div style={{ fontSize: '0.75rem', color: '#6c757d', fontWeight: 500 }}>Application Number</div>
+        <div style={{ fontSize: '12px', color: '#6c757d', fontWeight: 500 }}>Application Number</div>
         <div style={{ fontSize: '1.5rem', fontWeight: 700, color: TEAL, letterSpacing: '0.05em' }}>APP-2026-{appNumber}</div>
       </div>
       <div style={{ background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem', textAlign: 'left', marginBottom: '2rem' }}>
@@ -548,7 +548,7 @@ const SupplierRegistration: React.FC = () => {
           'If approved, you will receive onboarding instructions and portal access credentials.',
           'For urgent queries, contact supplier-support@paragon.id quoting your application number.',
         ].map((txt, i) => (
-          <div key={i} style={{ display: 'flex', gap: '0.625rem', marginBottom: '0.5rem', fontSize: '0.82rem', color: '#354A5F' }}>
+          <div key={i} style={{ display: 'flex', gap: '0.625rem', marginBottom: '0.5rem', fontSize: '13px', color: '#354A5F' }}>
             <span style={{ color: TEAL, fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
             <span>{txt}</span>
           </div>
@@ -556,7 +556,7 @@ const SupplierRegistration: React.FC = () => {
       </div>
       <button
         onClick={() => navigate('/buyer/dashboard')}
-        style={{ background: TEAL, color: 'white', border: 'none', borderRadius: '6px', padding: '0.75rem 2rem', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer' }}
+        style={{ background: TEAL, color: 'white', border: 'none', borderRadius: '6px', padding: '0.75rem 2rem', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
       >
         Return to Home
       </button>
@@ -597,7 +597,7 @@ const SupplierRegistration: React.FC = () => {
                     style={{
                       border: `1.5px solid ${step === 1 ? '#e0e0e0' : NAVY}`, background: 'white',
                       color: step === 1 ? '#ccc' : NAVY, borderRadius: '6px', padding: '0.5rem 1.5rem',
-                      fontSize: '0.875rem', fontWeight: 600, cursor: step === 1 ? 'default' : 'pointer',
+                      fontSize: '13px', fontWeight: 600, cursor: step === 1 ? 'default' : 'pointer',
                     }}
                   >
                     ← Back
@@ -606,7 +606,7 @@ const SupplierRegistration: React.FC = () => {
                     onClick={handleNext}
                     style={{
                       background: TEAL, color: 'white', border: 'none', borderRadius: '6px',
-                      padding: '0.5rem 1.75rem', fontSize: '0.875rem', fontWeight: 700, cursor: 'pointer',
+                      padding: '0.5rem 1.75rem', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
                     }}
                   >
                     Next →
@@ -620,7 +620,7 @@ const SupplierRegistration: React.FC = () => {
                     style={{
                       border: `1.5px solid ${NAVY}`, background: 'white', color: NAVY,
                       borderRadius: '6px', padding: '0.5rem 1.5rem',
-                      fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer',
+                      fontSize: '13px', fontWeight: 600, cursor: 'pointer',
                     }}
                   >
                     ← Back
