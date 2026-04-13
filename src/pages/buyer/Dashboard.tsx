@@ -205,7 +205,7 @@ function KpiTile({ label, value, sub, trend, trendUp, color, alert, onClick }: {
 
 function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: {
   items: ReturnType<typeof useDerivedData>['actionQueue'];
-  onEscalate: (id: string) => void;
+  onEscalate: (id: string, title: string, type: string) => void;
   isFullScreen: boolean;
   onToggleFullScreen: () => void;
 }) {
