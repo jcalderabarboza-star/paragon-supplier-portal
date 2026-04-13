@@ -10,6 +10,7 @@ import { mockSuppliers } from '../../data/mockSuppliers';
 import { mockInventory } from '../../data/mockInventory';
 import { mockTrendData, mockKpisByCategory } from '../../data/mockKpis';
 import { POStatus, ChannelType } from '../../types/purchaseOrder.types';
+import { SkeletonDashboard } from '../../components/shared/Skeleton';
 import {
   AlertTriangle, Factory, FileText, ClipboardList, Package,
   TrendingUp, Smartphone, Zap, Mail, ShieldAlert, Brain,
