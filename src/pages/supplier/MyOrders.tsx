@@ -140,18 +140,47 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
         </label>
       </div>
 
-      {/* Action buttons */}
+      {confirmed ? (
+        <div style={{ background: '#F0FDF4', border: '1px solid #107E3E', borderRadius: 8, padding: '20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#107E3E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ color: 'white', fontSize: 18, fontWeight: 700 }}>✓</span>
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#107E3E' }}>Order Confirmed</div>
+              <div style={{ fontSize: 12, color: '#64748B' }}>{po.poNumber} · Confirmed at {confirmedAt}</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <div style={{ background: 'white', borderRadius: 6, padding: '10px 12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Confirmed Delivery</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#0D1B2A' }}>{fmtDate(deliveryDate)}</div>
+            </div>
+            <div style={{ background: 'white', borderRadius: 6, padding: '10px 12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Total Quantity</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#0D1B2A' }}>{qtys.reduce((a, b) => a + b, 0).toLocaleString()} units</div>
+            </div>
+            <div style={{ background: 'white', borderRadius: 6, padding: '10px 12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Next Step</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#0097A7' }}>Create ASN</div>
+            </div>
+          </div>
+          {notes && <div style={{ fontSize: 12, color: '#64748B', background: 'white', padding: '8px 12px', borderRadius: 6, border: '1px solid #E2E8F0' }}>Notes: {notes}</div>}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { onToast(`ASN creation for ${po.poNumber} — go to My Shipments & ASN`); onClose(); }} style={{ padding: '8px 16px', background: '#0097A7', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Create ASN Now</button>
+            <button onClick={onClose} style={{ padding: '8px 16px', background: 'white', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
+          </div>
+        </div>
+      ) : (
       <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
-        <Button design="Emphasized" onClick={() => {
-          onToast(`PO ${po.poNumber} confirmed successfully! Paragon team will be notified.`);
-          onClose();
-        }}>
+        <Button design="Emphasized" onClick={() => setConfirmed(true)}>
           ✓ Confirm Order
         </Button>
         <Button design="Default" onClick={() => setShowChangeReq(v => !v)}>
            Request Change
         </Button>
       </div>
+      )}
 
       {/* Change request panel */}
       {showChangeReq && (
