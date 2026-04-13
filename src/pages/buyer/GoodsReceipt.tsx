@@ -539,7 +539,24 @@ const GoodsReceipt: React.FC = () => {
       {/* Tab 1 */}
       {tab === 0 && (
         <div>
-          {PENDING_ITEMS.map(item => <InspectionCard key={item.id} item={item} />)}
+          {PENDING_ITEMS.length === 0 ? (
+            <div style={{ background: 'white', borderRadius: 10, padding: '3rem', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="8" y="6" width="32" height="36" rx="3" stroke="#CBD5E1" strokeWidth="2" fill="none"/>
+                  <line x1="14" y1="16" x2="34" y2="16" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="14" y1="22" x2="34" y2="22" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round"/>
+                  <line x1="14" y1="28" x2="26" y2="28" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round"/>
+                  <circle cx="36" cy="36" r="8" fill="#DCFCE7" stroke="#107E3E" strokeWidth="1.5"/>
+                  <path d="M32 36l3 3 5-5" stroke="#107E3E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#0D1B2A', marginBottom: 6 }}>No pending inspections</div>
+              <div style={{ fontSize: 13, color: '#64748B' }}>All inbound shipments have been inspected and processed. New items appear here when ASNs are received.</div>
+            </div>
+          ) : (
+            PENDING_ITEMS.map(item => <InspectionCard key={item.id} item={item} />)
+          )}
         </div>
       )}
 
