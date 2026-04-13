@@ -171,7 +171,7 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
 
 // ─── Detail Panel ─────────────────────────────────────────────────────────────
 
-function DetailPanel({ rfq, onClose, onToast }: { rfq: RFQ; onClose: () => void; onToast: (m: string) => void }) {
+function DetailPanel({ rfq, onClose, onToast, onAward }: { rfq: RFQ; onClose: () => void; onToast: (m: string) => void; onAward: (data: { rfqId: string; supplier: string; amount: string; poNumber: string }) => void }) {
   const quotes = QUOTES[rfq.id] ?? [];
   const insight = AI_INSIGHTS[rfq.id];
   return (
