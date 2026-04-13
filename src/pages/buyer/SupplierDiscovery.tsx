@@ -160,7 +160,7 @@ const RECOMMENDED: RecommendedSupplier[] = [
     matchScore: 79,
     whyRecommended: 'Specialist BHA/salicylic acid manufacturer. GMP certified. Supplies Korean and Japanese beauty brands. Halal certification pending — recommend requesting BPJPH application as qualification condition.',
     covers: 'Salicylic Acid — no current supplier',
-    riskNote: '⚠️ Halal certification not yet obtained. Add as qualification requirement.',
+    riskNote: '! Halal certification not yet obtained. Add as qualification requirement.',
     storefrontPath: '/marketplace/supplier/mkt-004' },
 ];
 
@@ -190,7 +190,7 @@ const MARKET_INTEL: MarketIntelCard[] = [
     suppliersGlobal: 45, suppliersParagon: 2, priceDir: '↓', priceColor: SUCCESS,
     priceTrend: '-3.2% (Niacinamide spot)',
     recommendation: 'Good time to negotiate long-term contracts with Chinese suppliers' },
-  { category: 'Packaging (PET)', icon: '📦', marketStatus: 'Stable — moderate demand',
+  { category: 'Packaging (PET)', icon: '', marketStatus: 'Stable — moderate demand',
     suppliersGlobal: 89, suppliersParagon: 3, priceDir: '→', priceColor: WARNING,
     priceTrend: '+1.2% (ICIS PET index)',
     recommendation: 'Evaluate sustainable/recycled PET alternatives for Paragon ESG goals' },
@@ -275,7 +275,7 @@ const GlobalSupplierCard: React.FC<{ s: GlobalSupplier; onToast: (m: string) => 
         )}
         <button onClick={() => onToast(`ARIA is drafting a personalized outreach message to ${s.name}...`)}
           style={{ padding: '7px 14px', borderRadius: 6, background: '#F5F3FF', color: '#6D28D9', border: '1px solid #DDD6FE', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-          🤖 Contact via ARIA
+           Contact via ARIA
         </button>
         <button onClick={() => onToast(`Starting qualification process for ${s.name}`)}
           style={{ padding: '7px 14px', borderRadius: 6, background: 'white', color: MID, border: `1px solid ${BORDER}`, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -417,7 +417,7 @@ const SupplierDiscovery: React.FC = () => {
           <div style={{ fontSize: 13, color: MUTED }}>Find and qualify new suppliers globally — market-validated by L'Oréal, Unilever, P&G, Shiseido and more</div>
         </div>
         <button onClick={() => navigate('/buyer/marketplace')} style={{ padding: '8px 16px', borderRadius: 8, background: TEAL, color: 'white', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-          🌐 Open Marketplace →
+           Open Marketplace →
         </button>
       </div>
 
@@ -602,7 +602,7 @@ const SupplierDiscovery: React.FC = () => {
                   </div>
                 </div>
                 <div style={{ background: 'rgba(0,151,167,0.08)', borderLeft: `3px solid ${TEAL}`, borderRadius: 4, padding: '8px 12px', fontSize: 12, color: NAVY }}>
-                  💡 {card.recommendation}
+                   {card.recommendation}
                 </div>
               </div>
             ))}

@@ -115,7 +115,7 @@ const MyPerformance: React.FC = () => {
             <div style={{ fontSize: 32, fontWeight: 800, color: gradeColor(currentGrade), lineHeight: 1 }}>{currentGrade}</div>
             <div style={{ fontSize: 11, color: gradeColor(currentGrade) }}>{currentScore}/100</div>
           </div>
-          <button onClick={() => showToast('Downloading performance report PDF...')} style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '8px 14px', fontSize: 12, fontWeight: 600, color: MID, cursor: 'pointer', fontFamily: 'inherit' }}>📥 Export Report</button>
+          <button onClick={() => showToast('Downloading performance report PDF...')} style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '8px 14px', fontSize: 12, fontWeight: 600, color: MID, cursor: 'pointer', fontFamily: 'inherit' }}> Export Report</button>
         </div>
       </div>
 
@@ -253,7 +253,7 @@ const MyPerformance: React.FC = () => {
                 </div>
                 <Pill label={item.priority} bg={item.priority === 'High' ? '#FEE2E2' : '#FEF3C7'} color={item.priority === 'High' ? '#BB0000' : '#E9730C'} />
               </div>
-              <div style={{ fontSize: 13, color: MID, lineHeight: 1.6 }}>💡 {item.action}</div>
+              <div style={{ fontSize: 13, color: MID, lineHeight: 1.6 }}> {item.action}</div>
               <div style={{ marginTop: 12 }}>
                 <button onClick={() => showToast(`Action plan submitted for ${item.kpi} — Paragon team notified`)} style={{ background: TEAL, color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                   Acknowledge & Plan
@@ -262,7 +262,7 @@ const MyPerformance: React.FC = () => {
             </div>
           ))}
           <div style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, padding: '14px 18px', fontSize: 12, color: '#0D1B2A', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-            <span>🏅</span>
+            <span></span>
             <div><strong>Paragon Supplier Tier System:</strong> Achieve Grade A (≥ 90/100) for 3 consecutive months to qualify for Tier 1 status — faster payment terms (Net 30 → Net 15), priority capacity allocation, and inclusion in Paragon strategic supplier development program.</div>
           </div>
         </div>

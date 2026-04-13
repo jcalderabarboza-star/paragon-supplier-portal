@@ -328,7 +328,7 @@ function DockAppointments() {
             ['📅 Date','Monday, 7 April 2026'],
             ['🕙 Time','10:00 WIB'],
             ['Dock','Dock 3'],
-            ['📍 Location','NDC Jatake 6, Tangerang Selatan'],
+            [' Location','NDC Jatake 6, Tangerang Selatan'],
           ].map(([icon_label, val]) => (
             <div key={icon_label} style={{ padding:'8px 12px', background:'#F8FAFC', borderRadius:6 }}>
               <div style={{ fontWeight:600, color:NAVY }}>{icon_label}</div>

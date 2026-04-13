@@ -128,14 +128,14 @@ function PaymentConfirmModal({ invoice, onClose, onConfirm }: {
       <div style={{ background: 'white', borderRadius: 12, padding: 28, maxWidth: 480, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
         {confirmed ? (
           <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
             <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>Payment Released</div>
             <div style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>SAP FI payment document will be posted within 24 hours</div>
           </div>
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <span style={{ fontSize: 24 }}>⚠️</span>
+              <span style={{ fontSize: 24 }}>!</span>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>Confirm Payment Release</div>
                 <div style={{ fontSize: 12, color: MUTED }}>This action cannot be undone</div>
@@ -230,10 +230,10 @@ const InvoicePayment: React.FC = () => {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => showToast('Exporting to SAP AP batch...')} style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: MID, cursor: 'pointer', fontFamily: 'inherit' }}>
-            📤 SAP AP Export
+             SAP AP Export
           </button>
           <button onClick={() => showToast('Downloading aging report...')} style={{ background: TEAL, border: 'none', borderRadius: 6, padding: '7px 14px', fontSize: 12, fontWeight: 600, color: 'white', cursor: 'pointer', fontFamily: 'inherit' }}>
-            📥 Export Report
+             Export Report
           </button>
         </div>
       </div>
@@ -241,8 +241,8 @@ const InvoicePayment: React.FC = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         {[
           { label: 'Pending Approval', value: fmt(totalPending),  count: invoices.filter(i => ['Pending Match','Approved'].includes(i.status)).length, color: WARNING, icon: '⏳' },
-          { label: 'Payments Released', value: fmt(totalReleased), count: invoices.filter(i => i.status === 'Payment Released').length, color: SUCCESS, icon: '✅' },
-          { label: 'Disputed',          value: fmt(totalDisputed), count: invoices.filter(i => i.status === 'Disputed').length, color: ERROR, icon: '⚠️' },
+          { label: 'Payments Released', value: fmt(totalReleased), count: invoices.filter(i => i.status === 'Payment Released').length, color: SUCCESS, icon: '✓' },
+          { label: 'Disputed',          value: fmt(totalDisputed), count: invoices.filter(i => i.status === 'Disputed').length, color: ERROR, icon: '!' },
           { label: 'Overdue',           value: fmt(totalOverdue),  count: invoices.filter(i => i.status === 'Overdue').length, color: ERROR, icon: '❗' },
         ].map(({ label, value, count, color, icon }) => (
           <div key={label} style={{ background: 'white', border: `1px solid ${BORDER}`, borderLeft: `4px solid ${color}`, borderRadius: 8, padding: '16px 18px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
@@ -265,7 +265,7 @@ const InvoicePayment: React.FC = () => {
 
       {invoices.some(i => i.status === 'Disputed') && (
         <div style={{ background: '#FEF3C7', border: '1px solid #F59E0B', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#E9730C', display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-          <span>⚠️</span>
+          <span>!</span>
           <div>
             <strong>Invoice dispute: </strong>
             {invoices.filter(i => i.status === 'Disputed').map(i => i.invoiceNumber).join(', ')} — Quantity mismatch on PT Berlina Packaging. Credit note required before payment.
@@ -430,7 +430,7 @@ const InvoicePayment: React.FC = () => {
             </table>
           </div>
           <div style={{ background: '#E0F7FA', border: '1px solid #0097A744', borderRadius: 8, padding: '12px 16px', fontSize: 12, color: '#006064', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-            <span>💡</span>
+            <span></span>
             <span><strong>Phase 2 — SAP FI Integration:</strong> Aging will pull from SAP AP open items. Payment runs triggered via SAP F110.</span>
           </div>
         </div>

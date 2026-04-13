@@ -379,7 +379,7 @@ const SupplierStorefront: React.FC = () => {
                   { label: 'Language',  value: `${data.flag} ${cp.languageLabel}` },
                   { label: 'Hours',     value: `${cp.businessHours.start}–${cp.businessHours.end}` },
                   { label: 'Local Time', value: localTime },
-                  { label: 'Status',    value: bizHours ? '✓ Open Now' : '🔴 Closed' },
+                  { label: 'Status',    value: bizHours ? '✓ Open Now' : ' Closed' },
                 ].map(r => (
                   <div key={r.label} style={{ display: 'flex', gap: 10, marginBottom: 6, fontSize: 12 }}>
                     <span style={{ width: 80, color: MUTED, flexShrink: 0 }}>{r.label}</span>
@@ -523,7 +523,7 @@ const SupplierStorefront: React.FC = () => {
                   </span>
                 ) : (
                   <span style={{ background: '#FEF2F2', color: RED, borderRadius: 6, padding: '5px 12px', fontSize: 12, fontWeight: 600 }}>
-                    🔴 Closed — {localTime} local
+                     Closed — {localTime} local
                   </span>
                 )}
               </div>

@@ -150,7 +150,7 @@ const Invoices: React.FC = () => {
         padding: '12px 16px', fontSize: '12px', color: '#006064',
         display: 'flex', alignItems: 'center', gap: '8px',
       }}>
-        <span>💡</span>
+        <span></span>
         <span>Full e-invoicing with SAP Ariba integration is planned for Phase 2 of the Paragon Odyssey program.</span>
       </div>
     </div>

@@ -48,8 +48,8 @@ const QUOTES: Record<string, Quote[]> = {
 };
 
 const AI_INSIGHTS: Record<string, string> = {
-  'rfq-001': '💡 AI Recommendation: Zhejiang NHU offers the lowest unit price at Rp 158,000/KG — 13% below the next quote. Lead time of 21 days is within acceptable range. Halal certified. Recommended for award.',
-  'rfq-003': '💡 AI Recommendation: PT Halal Emulsifier Nusantara scores highest at 91 with the lowest price and shortest route — local Indonesian supplier minimizes logistics risk. Fully halal certified. Recommended for award.',
+  'rfq-001': ' AI Recommendation: Zhejiang NHU offers the lowest unit price at Rp 158,000/KG — 13% below the next quote. Lead time of 21 days is within acceptable range. Halal certified. Recommended for award.',
+  'rfq-003': ' AI Recommendation: PT Halal Emulsifier Nusantara scores highest at 91 with the lowest price and shortest route — local Indonesian supplier minimizes logistics risk. Fully halal certified. Recommended for award.',
 };
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -222,8 +222,8 @@ function DetailPanel({ rfq, onClose, onToast }: { rfq: RFQ; onClose: () => void;
                       <div><span style={{ color:'#64748B' }}>Total: </span><strong>{q.totalPrice}</strong></div>
                       <div><span style={{ color:'#64748B' }}>Lead Time: </span><strong>{q.leadTime}</strong></div>
                       <div style={{ display:'flex', gap:8 }}>
-                        <span>{q.halalCert ? '✅' : '❌'} Halal</span>
-                        <span>{q.iso9001 ? '✅' : '❌'} ISO</span>
+                        <span>{q.halalCert ? '✓' : '✗'} Halal</span>
+                        <span>{q.iso9001 ? '✓' : '✗'} ISO</span>
                       </div>
                     </div>
 
@@ -437,8 +437,8 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
   const totalWeight = Object.values(state.weights).reduce((a, b) => a + b, 0);
 
   const channelForTier = (tier: SupplierTier) => {
-    if (tier === SupplierTier.WHATSAPP) return '📱 WhatsApp notification + portal link';
-    if (tier === SupplierTier.WEB) return '🌐 Portal notification + email';
+    if (tier === SupplierTier.WHATSAPP) return ' WhatsApp notification + portal link';
+    if (tier === SupplierTier.WEB) return ' Portal notification + email';
     return '⚙️ API webhook + email';
   };
 
@@ -538,7 +538,7 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
               <Pill label={tierLabel} bg='#F1F5F9' color='#475569' />
               <Pill label={`Grade ${s.scorecardGrade}`} bg={s.scorecardGrade === 'A' ? '#DCFCE7' : s.scorecardGrade === 'B' ? '#DBEAFE' : '#FEF3C7'} color={s.scorecardGrade === 'A' ? '#107E3E' : s.scorecardGrade === 'B' ? '#0D1B2A' : '#E9730C'} />
               <Pill label={`OTIF ${s.otif}%`} bg='#F1F5F9' color='#475569' />
-              {s.halalCertified && <Pill label="✅ Halal" bg='#F0FDF4' color='#107E3E' />}
+              {s.halalCertified && <Pill label="✓ Halal" bg='#F0FDF4' color='#107E3E' />}
             </div>
           </div>
         </div>
@@ -723,7 +723,7 @@ function Quotations() {
                 <td style={{ padding:'10px 12px', fontWeight:600, color:NAVY }}>{q.unitPrice}</td>
                 <td style={{ padding:'10px 12px', fontWeight:600, color:NAVY }}>{q.total}</td>
                 <td style={{ padding:'10px 12px', color:'#64748B' }}>{q.leadTime}</td>
-                <td style={{ padding:'10px 12px', textAlign:'center' }}>{q.halal ? '✅' : '❌'}</td>
+                <td style={{ padding:'10px 12px', textAlign:'center' }}>{q.halal ? '✓' : '✗'}</td>
                 <td style={{ padding:'10px 12px' }}>
                   <Pill label={String(q.score)} bg={scoreBg(q.score)} color={scoreColor(q.score)} />
                 </td>

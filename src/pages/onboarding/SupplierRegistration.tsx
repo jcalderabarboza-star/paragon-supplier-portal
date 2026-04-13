@@ -14,8 +14,8 @@ const SUPPLY_CATEGORIES = [
 const CONTACT_ROLES = ['Primary Contact', 'Finance', 'Operations', 'Legal', 'Technical'];
 
 const CHANNELS = [
-  { value: 'WhatsApp', icon: '📱', label: 'WhatsApp', desc: 'Tier 1 — best for SMEs' },
-  { value: 'Web Portal', icon: '🌐', label: 'Web Portal', desc: 'Tier 2 — self-service' },
+  { value: 'WhatsApp', icon: '', label: 'WhatsApp', desc: 'Tier 1 — best for SMEs' },
+  { value: 'Web Portal', icon: '', label: 'Web Portal', desc: 'Tier 2 — self-service' },
   { value: 'API', icon: '⚙️', label: 'API Integration', desc: 'Tier 3 — automated' },
   { value: 'EDI', icon: '📡', label: 'EDI 846', desc: 'Enterprise data exchange' },
 ];
@@ -533,7 +533,7 @@ const SupplierRegistration: React.FC = () => {
 
   const renderSuccess = () => (
     <div style={{ textAlign: 'center', padding: '2rem 1rem' }}>
-      <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>✅</div>
+      <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>✓</div>
       <div style={{ fontSize: '1.4rem', fontWeight: 700, color: NAVY, marginBottom: '0.5rem' }}>Registration Submitted!</div>
       <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '1.5rem' }}>Your application has been received and is under review.</div>
       <div style={{ background: '#E0F7FA', border: `1.5px solid ${TEAL}`, borderRadius: '8px', padding: '1rem 1.5rem', display: 'inline-block', marginBottom: '2rem' }}>

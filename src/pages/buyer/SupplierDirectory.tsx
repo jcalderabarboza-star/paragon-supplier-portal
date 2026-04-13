@@ -20,8 +20,8 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const TIER_LABELS: Record<number, string> = {
-  [SupplierTier.WHATSAPP]: '📱 WhatsApp',
-  [SupplierTier.WEB]: '🌐 Web Portal',
+  [SupplierTier.WHATSAPP]: ' WhatsApp',
+  [SupplierTier.WEB]: ' Web Portal',
   [SupplierTier.API]: '⚙️ API/EDI',
 };
 
