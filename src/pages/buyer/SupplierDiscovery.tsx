@@ -369,6 +369,7 @@ const SupplierDiscovery: React.FC = () => {
   const [majorBrandsOnly, setMajorBrandsOnly] = useState(false);
   const [searched, setSearched] = useState(false);
   const [activeTab, setActiveTab] = useState<'search' | 'recommendations' | 'qualification' | 'intelligence'>('search');
+  const [sortBy, setSortBy] = useState<'relevance' | 'grade' | 'otif' | 'compliance'>('relevance');
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 4000); };
 
