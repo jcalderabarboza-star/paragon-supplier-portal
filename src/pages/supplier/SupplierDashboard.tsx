@@ -75,6 +75,14 @@ const SupplierDashboard: React.FC = () => {
     MY_POS.filter(po => po.status === POStatus.CONFIRMED).length, []);
   const needsConfirmCount = useMemo(() =>
     MY_POS.filter(po => po.status === POStatus.SENT || po.status === POStatus.ACKNOWLEDGED).length, []);
+  const asnDueOrders = useMemo(() =>
+    MY_POS.filter(po => {
+      if (po.status !== POStatus.CONFIRMED) return false;
+      const delivery = new Date(po.requestedDeliveryDate);
+      const today = new Date();
+      const daysLeft = Math.ceil((delivery.getTime() - today.getTime()) / 86400000);
+      return daysLeft <= 7;
+    }), []);
 
   const otifColor = perfColor(mySupplier.otif);
   const gradeColor = GRADE_COLORS[mySupplier.scorecardGrade] ?? '#6c757d';
