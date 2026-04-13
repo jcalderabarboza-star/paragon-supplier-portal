@@ -278,7 +278,43 @@ function ActiveRFQs({ onToast }: { onToast: (m: string) => void }) {
 
   return (
     <div>
-      {selectedRFQ && <DetailPanel rfq={selectedRFQ} onClose={() => setSelectedRFQ(null)} onToast={onToast} />}
+      {selectedRFQ && <DetailPanel rfq={selectedRFQ} onClose={() => setSelectedRFQ(null)} onToast={onToast} onAward={(data) => { setAwardedData(data); setSelectedRFQ(null); }} />}
+
+      {awardedData && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:800 }}>
+          <div style={{ background:'white', borderRadius:12, padding:28, maxWidth:520, width:'90%', boxShadow:'0 20px 60px rgba(0,0,0,0.3)', display:'flex', flexDirection:'column', gap:16 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+              <div style={{ width:44, height:44, borderRadius:'50%', background:'#107E3E', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <span style={{ color:'white', fontSize:22, fontWeight:700 }}>✓</span>
+              </div>
+              <div>
+                <div style={{ fontSize:16, fontWeight:700, color:NAVY }}>Supplier Awarded</div>
+                <div style={{ fontSize:12, color:'#64748B' }}>{awardedData.supplier} · {awardedData.amount}</div>
+              </div>
+            </div>
+            <div style={{ background:'#F0FDF4', border:'1px solid #BBF7D0', borderRadius:8, padding:'14px 16px', fontSize:13, color:'#166534' }}>
+              SAP Info Record will be created automatically. Would you like to create a contract now with the awarded terms pre-filled?
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              {[
+                { label:'RFQ Reference', value: awardedData.poNumber },
+                { label:'Awarded Supplier', value: awardedData.supplier },
+                { label:'Contract Value', value: awardedData.amount },
+                { label:'Suggested Type', value: 'Framework Agreement' },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ background:'#F8FAFC', borderRadius:6, padding:'10px 12px', border:'1px solid #E2E8F0' }}>
+                  <div style={{ fontSize:10, fontWeight:600, color:'#64748B', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:4 }}>{label}</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:NAVY }}>{value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
+              <button onClick={() => { onToast(`Award confirmed for ${awardedData.supplier}. SAP Info Record created.`); setAwardedData(null); }} style={{ padding:'9px 18px', border:'1px solid #E2E8F0', borderRadius:6, background:'white', color:'#64748B', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Skip — Award Only</button>
+              <button onClick={() => { onToast(`Contract draft created for ${awardedData.supplier} · ${awardedData.amount} — navigate to Contracts to complete.`); setAwardedData(null); }} style={{ padding:'9px 18px', border:'none', borderRadius:6, background:TEAL, color:'white', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Create Contract →</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary tiles */}
       <div style={{ display:'flex', gap:12, marginBottom:20, flexWrap:'wrap' }}>
