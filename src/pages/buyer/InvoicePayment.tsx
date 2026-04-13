@@ -314,9 +314,9 @@ const InvoicePayment: React.FC = () => {
                         {fmt(inv.amount)}
                         <div style={{ fontSize: 10, color: MUTED, fontWeight: 400 }}>{fmtFull(inv.amount)}</div>
                       </td>
-                      <td style={{ padding: '11px 12px' }}><Pill label={inv.matchStatus} bg={mCfg.bg} color={mCfg.color} /></td>
+                      <td style={{ padding: '11px 12px' }}><StatusBadge status={inv.matchStatus} /></td>
                       <td style={{ padding: '11px 12px' }}>
-                        <Pill label={inv.status} bg={sCfg.bg} color={sCfg.color} />
+                        <StatusBadge status={inv.status} />
                         {inv.status === 'Overdue' && <div style={{ fontSize: 10, color: ERROR, marginTop: 2 }}>{inv.daysOutstanding}d overdue</div>}
                       </td>
                       <td style={{ padding: '11px 12px', fontSize: 11, color: MUTED, whiteSpace: 'nowrap' }}>
