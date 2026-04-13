@@ -263,6 +263,7 @@ function DetailPanel({ rfq, onClose, onToast, onAward }: { rfq: RFQ; onClose: ()
 
 function ActiveRFQs({ onToast }: { onToast: (m: string) => void }) {
   const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
+  const [awardedData, setAwardedData] = useState<{ rfqId: string; supplier: string; amount: string; poNumber: string } | null>(null);
 
   const stats = useMemo(() => ({
     open: MOCK_RFQS.filter(r => r.status === 'Open').length,
