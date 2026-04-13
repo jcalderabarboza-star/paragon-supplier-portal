@@ -70,7 +70,7 @@ const TopBar: React.FC = () => {
 
   const initials     = persona === 'buyer' ? 'JC' : 'SK';
   const notifCount   = mockAlerts.unacknowledgedPOs;
-  const personaIcon  = persona === 'buyer' ? '👔' : '🏭';
+  const personaIcon  = persona === 'buyer' ? 'i' : 'i';
   const personaLabel = persona === 'buyer' ? 'Buyer View' : 'Supplier View';
 
   return (

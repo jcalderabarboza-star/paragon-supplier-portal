@@ -488,7 +488,7 @@ const ScenarioTab: React.FC = () => {
       <div style={{ background: 'linear-gradient(135deg, #0D1B2A 0%, #1E3A5F 100%)', borderRadius: 8,
         padding: '16px 20px', color: 'white' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <span style={{ fontSize: 18 }}>🤖</span>
+          <span style={{ fontSize: 18 }}>i</span>
           <span style={{ fontWeight: 700, fontSize: 13, color: TEAL }}>ARIA Recommendation</span>
           <span style={{ fontSize: 10, background: `${TEAL}33`, color: TEAL, borderRadius: 9999,
             padding: '1px 8px', fontWeight: 600 }}>AI-Powered</span>

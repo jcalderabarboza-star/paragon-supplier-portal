@@ -813,7 +813,7 @@ const ProfileHeader: React.FC<{
           ) : (
             <div style={{ background: '#DC262622', border: '1px solid #DC262666', borderRadius: 6,
               padding: '6px 12px', fontSize: 12, color: '#F87171', fontWeight: 600 }}>
-              🔴 Outside Business Hours
+              ● Outside Business Hours
             </div>
           )}
           <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 6 }}>
@@ -862,7 +862,7 @@ const ProfileHeader: React.FC<{
 const TABS = [
   { id: 'overview',    label: ' Overview' },
   { id: 'comm',        label: ' Communication Setup' },
-  { id: 'compliance',  label: '📄 Compliance Documents' },
+  { id: 'compliance',  label: 'Compliance Documents' },
   { id: 'catalog',     label: ' Catalog & Capacity' },
   { id: 'performance', label: ' Performance History' },
   { id: 'msglog',      label: ' Message Log' },

@@ -408,7 +408,7 @@ const SupplierRegistration: React.FC = () => {
             <div key={doc.key} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '12px 16px', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: NAVY }}>{doc.label}</div>
-                {d.uploaded && <div style={{ fontSize: '11px', color: '#6c757d', marginTop: '0.15rem' }}>📎 {d.fileName}</div>}
+                {d.uploaded && <div style={{ fontSize: '11px', color: '#6c757d', marginTop: '0.15rem' }}>↑ {d.fileName}</div>}
               </div>
               {doc.hasExpiry && d.uploaded && (
                 <div>

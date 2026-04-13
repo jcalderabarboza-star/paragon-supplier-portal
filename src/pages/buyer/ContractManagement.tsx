@@ -271,7 +271,7 @@ const ContractDetailPanel: React.FC<{ contract: Contract; onClose: () => void }>
 
         {/* Section 5 — Actions */}
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', borderTop:'1px solid #E2E8F0', paddingTop:16 }}>
-          <button onClick={() => showToast('Contract PDF downloading...')} style={{ padding:'8px 14px', borderRadius:6, background:'#0097A7', color:'#fff', border:'none', fontSize:13, fontWeight:600, cursor:'pointer' }}>📄 Download PDF</button>
+          <button onClick={() => showToast('Contract PDF downloading...')} style={{ padding:'8px 14px', borderRadius:6, background:'#0097A7', color:'#fff', border:'none', fontSize:13, fontWeight:600, cursor:'pointer' }}>Download PDF</button>
           <button onClick={() => showToast('Amendment request initiated. Legal team notified.')} style={{ padding:'8px 14px', borderRadius:6, background:'#F0F4F8', color:'#0D1B2A', border:'1px solid #E2E8F0', fontSize:13, cursor:'pointer' }}>✏️ Amendment</button>
           <button onClick={() => showToast('Renewal workflow initiated for ' + c.title)} style={{ padding:'8px 14px', borderRadius:6, background:'#F0F4F8', color:'#0D1B2A', border:'1px solid #E2E8F0', fontSize:13, cursor:'pointer' }}> Renew</button>
           <button onClick={() => showToast('! WARNING: Contract termination will immediately stop all POs. This action is irreversible. Please confirm with your manager.')} style={{ padding:'8px 14px', borderRadius:6, background:'#FEE2E2', color:'#BB0000', border:'1px solid #FCA5A5', fontSize:13, cursor:'pointer' }}>⛔ Terminate</button>
@@ -345,7 +345,7 @@ const RenewalModal: React.FC<{ contract: Contract; onClose: () => void }> = ({ c
             </button>
             <button onClick={() => showToast('Renewal draft saved')}
               style={{ padding:'9px 18px', borderRadius:6, background:'#F0F4F8', color:'#0D1B2A', border:'1px solid #E2E8F0', fontSize:13, cursor:'pointer' }}>
-              💾 Save Draft
+              Save Draft
             </button>
           </div>
         </div>

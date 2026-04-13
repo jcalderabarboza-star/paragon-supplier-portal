@@ -351,7 +351,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({ rfq, onClose, onSubmit, showToa
             <label style={{ fontSize: 11, fontWeight: 600, color: MUTED, display: 'block', marginBottom: 6, textTransform: 'uppercase' }}>Quotation PDF (optional)</label>
             <div style={{ border: `2px dashed ${BORDER}`, borderRadius: 8, padding: '16px',
               textAlign: 'center', cursor: 'pointer', fontSize: 12, color: MUTED }}>
-              📎 Click to attach quotation PDF or drag & drop
+              ↑ Click to attach quotation PDF or drag & drop
             </div>
           </div>
         </div>

@@ -460,7 +460,7 @@ const MyStorefront: React.FC = () => {
             <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', marginBottom: 4 }}>Current Status</div>
             <div style={{ padding: '7px 12px', background: bizHours ? '#F0FDF4' : '#FEF2F2',
               color: bizHours ? GREEN : RED, borderRadius: 6, fontSize: 12, fontWeight: 600 }}>
-              {bizHours ? `✓ Open — ${localTime}` : `🔴 Closed — ${localTime}`}
+              {bizHours ? `✓ Open — ${localTime}` : `● Closed — ${localTime}`}
             </div>
           </div>
         </div>

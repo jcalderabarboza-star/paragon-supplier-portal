@@ -182,11 +182,11 @@ const QUALIFICATIONS: QualificationItem[] = [
 const STAGE_LABELS = ['Initial Contact', 'Document Review', 'Technical Eval', 'Commercial', 'Approved'];
 
 const MARKET_INTEL: MarketIntelCard[] = [
-  { category: 'Fragrance Compounds', icon: '🌸', marketStatus: 'Tight supply — High demand from Asian markets',
+  { category: 'Fragrance Compounds', icon: '✦', marketStatus: 'Tight supply — High demand from Asian markets',
     suppliersGlobal: 12, suppliersParagon: 3, priceDir: '↑', priceColor: ERROR,
     priceTrend: '+2.1% this month (IFRA index)',
     recommendation: 'Expand Indonesian supplier base to reduce European dependency' },
-  { category: 'Active Ingredients (Vitamins)', icon: '💊', marketStatus: 'Oversupply from China — favorable pricing',
+  { category: 'Active Ingredients (Vitamins)', icon: '✦', marketStatus: 'Oversupply from China — favorable pricing',
     suppliersGlobal: 45, suppliersParagon: 2, priceDir: '↓', priceColor: SUCCESS,
     priceTrend: '-3.2% (Niacinamide spot)',
     recommendation: 'Good time to negotiate long-term contracts with Chinese suppliers' },
@@ -194,7 +194,7 @@ const MARKET_INTEL: MarketIntelCard[] = [
     suppliersGlobal: 89, suppliersParagon: 3, priceDir: '→', priceColor: WARNING,
     priceTrend: '+1.2% (ICIS PET index)',
     recommendation: 'Evaluate sustainable/recycled PET alternatives for Paragon ESG goals' },
-  { category: 'Halal Emulsifiers', icon: '🌿', marketStatus: 'Growing supply — Indonesian producers expanding',
+  { category: 'Halal Emulsifiers', icon: '✦', marketStatus: 'Growing supply — Indonesian producers expanding',
     suppliersGlobal: 28, suppliersParagon: 4, priceDir: '↓', priceColor: SUCCESS,
     priceTrend: '-1.5%',
     recommendation: 'Strong Indonesian supplier base — consider expanding VMI arrangements' },

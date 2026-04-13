@@ -420,7 +420,7 @@ const InspectionCard: React.FC<{ item: InspectionItem }> = ({ item }) => {
         </button>
         <button onClick={() => showToast(`Contacting ${item.supplier} via ${item.channel}...`)}
           style={{ padding: '8px 14px', borderRadius: 6, background: '#F0F4F8', color: '#0D1B2A', border: '1px solid #E2E8F0', fontSize: 13, cursor: 'pointer' }}>
-          📞 Contact Supplier
+          ↗ Contact Supplier
         </button>
       </div>
 

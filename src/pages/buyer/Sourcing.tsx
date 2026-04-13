@@ -211,7 +211,7 @@ function DetailPanel({ rfq, onClose, onToast }: { rfq: RFQ; onClose: () => void;
                           {COUNTRY_FLAGS[q.country] ?? '🌍'} {q.supplier}
                         </div>
                         {q.recommended && (
-                          <span style={{ background:TEAL, color:'white', borderRadius:'9999px', padding:'1px 8px', fontSize:'10px', fontWeight:700, marginTop:4, display:'inline-block' }}>⭐ RECOMMENDED</span>
+                          <span style={{ background:TEAL, color:'white', borderRadius:'9999px', padding:'1px 8px', fontSize:'10px', fontWeight:700, marginTop:4, display:'inline-block' }}>RECOMMENDED</span>
                         )}
                       </div>
                       <ScoreCircle score={q.score} />
@@ -554,7 +554,7 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
             Select All Qualified
           </button>
         </div>
-        <div style={{ fontWeight:700, fontSize:'12px', color:MID, textTransform:'uppercase', letterSpacing:'1px', marginBottom:8 }}>⭐ Recommended Suppliers</div>
+        <div style={{ fontWeight:700, fontSize:'12px', color:MID, textTransform:'uppercase', letterSpacing:'1px', marginBottom:8 }}>★ Recommended Suppliers</div>
         <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:16 }}>
           {recommended.map(s => <SupplierCard key={s.id} s={s} />)}
         </div>
