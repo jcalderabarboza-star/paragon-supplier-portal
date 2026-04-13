@@ -35,7 +35,7 @@ function StatusPill({ status }: { status: POStatus }) {
   };
   const [bg, color] = map[status] ?? ['#f5f5f5', '#6c757d'];
   return (
-    <span style={{ background: bg, color, fontSize: '11px', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px', whiteSpace: 'nowrap' }}>
+    <span style={{ background: bg, color, fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '12px', whiteSpace: 'nowrap' }}>
       {status}
     </span>
   );
@@ -73,7 +73,7 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
   };
 
   return (
-    <div style={{ padding: '1.25rem', background: '#F8F9FA', borderTop: '2px solid #0097A7' }}>
+    <div style={{ padding: '20px', background: '#F8F9FA', borderTop: '2px solid #0097A7' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <span style={{ fontWeight: 700, fontSize: '14px', color: '#354A5F' }}>
           Confirm PO: {po.poNumber}
@@ -153,7 +153,7 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
 
       {/* Change request panel */}
       {showChangeReq && (
-        <div style={{ marginTop: '0.875rem', padding: '0.875rem', background: '#FFF8E1', border: '1px solid #FFE082', borderRadius: '6px' }}>
+        <div style={{ marginTop: '0.875rem', padding: '14px', background: '#FFF8E1', border: '1px solid #FFE082', borderRadius: '6px' }}>
           <div style={{ fontSize: '13px', fontWeight: 600, color: '#E9730C', marginBottom: '0.5rem' }}>
             Describe the change needed
           </div>
@@ -162,7 +162,7 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
             onChange={e => setChangeText(e.target.value)}
             placeholder="Describe the change needed (e.g. reduced quantity, alternative delivery date)..."
             rows={3}
-            style={{ ...inputStyle, height: 'auto', resize: 'vertical', padding: '0.5rem' }}
+            style={{ ...inputStyle, height: 'auto', resize: 'vertical', padding: '8px' }}
           />
           <div style={{ marginTop: '0.5rem' }}>
             <Button design="Default" onClick={() => {
@@ -217,7 +217,7 @@ const MyOrders: React.FC = () => {
       {toastMsg && (
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', background: '#354A5F', color: 'white',
-          padding: '0.75rem 1.25rem', borderRadius: '6px', zIndex: 500,
+          padding: '12px 20px', borderRadius: '6px', zIndex: 500,
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '13px', maxWidth: '360px',
         }}>{toastMsg}</div>
       )}

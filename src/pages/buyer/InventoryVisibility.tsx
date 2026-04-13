@@ -98,7 +98,7 @@ const Heatmap: React.FC = () => {
   }, []);
 
   return (
-    <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem' }}>
+    <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '20px' }}>
       <div style={{ fontWeight: 700, fontSize: '14px', color: '#354A5F', marginBottom: '1rem' }}>
         Stock Status Heatmap — Materials × Suppliers
       </div>
@@ -215,7 +215,7 @@ const InventoryVisibility: React.FC = () => {
       {toastMsg && (
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', background: '#354A5F', color: 'white',
-          padding: '0.75rem 1.25rem', borderRadius: '6px', zIndex: 500,
+          padding: '12px 20px', borderRadius: '6px', zIndex: 500,
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '13px', maxWidth: '360px',
         }}>{toastMsg}</div>
       )}
@@ -247,7 +247,7 @@ const InventoryVisibility: React.FC = () => {
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
         {tileSummary.map(({ label, sub, count, status }) => (
           <div key={label} style={{
-            flex: '1 1 140px', borderRadius: '8px', padding: '0.875rem 1.125rem',
+            flex: '1 1 140px', borderRadius: '8px', padding: '16px 20px',
             background: 'white', border: `1px solid #E2E8F0`,
             borderLeft: `4px solid ${STATUS_CELL_COLOR[status]}`,
             boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
@@ -278,11 +278,11 @@ const InventoryVisibility: React.FC = () => {
                 <tr key={inv.id} style={{ background: rowBg, transition: 'background 0.1s' }}
                   onMouseEnter={() => setHoveredRow(inv.id)}
                   onMouseLeave={() => setHoveredRow(null)}>
-                  <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: '#0097A7', whiteSpace: 'nowrap' }}>{inv.materialCode}</td>
-                  <td style={{ padding: '0.5rem 0.75rem', maxWidth: '200px' }}>
+                  <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 700, color: '#0097A7', whiteSpace: 'nowrap' }}>{inv.materialCode}</td>
+                  <td style={{ padding: '8px 12px', maxWidth: '200px' }}>
                     <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={inv.materialDescription}>{inv.materialDescription}</div>
                   </td>
-                  <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', color: '#354A5F' }}>
+                  <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', color: '#354A5F' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                       <span>{inv.supplierName}</span>
                       {supplierCertMap[inv.supplierId]?.status === 'expired' && (
@@ -299,27 +299,27 @@ const InventoryVisibility: React.FC = () => {
                       )}
                     </div>
                   </td>
-                  <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', color: '#6c757d' }}>{inv.location}</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 600 }}>{inv.qtyAvailable.toLocaleString()}</td>
-                  <td style={{ padding: '0.5rem 0.75rem', color: '#6c757d' }}>{inv.uom}</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', fontWeight: 700, color: dosColor(inv.daysOfSupply) }}>{inv.daysOfSupply}d</td>
-                  <td style={{ padding: '0.5rem 0.75rem', textAlign: 'right', color: '#6c757d' }}>{inv.avgDailyDemand.toLocaleString()}/{inv.uom}</td>
-                  <td style={{ padding: '0.5rem 0.75rem' }}>
+                  <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', color: '#6c757d' }}>{inv.location}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>{inv.qtyAvailable.toLocaleString()}</td>
+                  <td style={{ padding: '8px 12px', color: '#6c757d' }}>{inv.uom}</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 700, color: dosColor(inv.daysOfSupply) }}>{inv.daysOfSupply}d</td>
+                  <td style={{ padding: '8px 12px', textAlign: 'right', color: '#6c757d' }}>{inv.avgDailyDemand.toLocaleString()}/{inv.uom}</td>
+                  <td style={{ padding: '8px 12px' }}>
                     <span style={{
                       background: STATUS_TILE_BG[inv.stockStatus], color: STATUS_CELL_COLOR[inv.stockStatus],
-                      fontWeight: 700, fontSize: '11px', padding: '0.2rem 0.6rem', borderRadius: '12px',
+                      fontWeight: 700, fontSize: '11px', padding: '3px 10px', borderRadius: '12px',
                       border: `1px solid ${STATUS_CELL_COLOR[inv.stockStatus]}44`,
                     }}>{inv.stockStatus}</span>
                   </td>
-                  <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', color: '#6c757d' }}>{fmtDate(inv.lastUpdated)}</td>
-                  <td style={{ padding: '0.5rem 0.75rem' }}>
+                  <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', color: '#6c757d' }}>{fmtDate(inv.lastUpdated)}</td>
+                  <td style={{ padding: '8px 12px' }}>
                     <span style={{
                       background: chip.bg, color: chip.color, fontWeight: 600,
-                      fontSize: '11px', padding: '0.2rem 0.55rem', borderRadius: '12px',
+                      fontSize: '11px', padding: '3px 9px', borderRadius: '12px',
                       whiteSpace: 'nowrap',
                     }}>{inv.dataSource}</span>
                   </td>
-                  <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                  <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                     {(inv.stockStatus === StockStatus.CRITICAL || inv.stockStatus === StockStatus.LOW) && (
                       <Button design="Emphasized" style={{ fontSize: '12px', padding: '0.2rem 0.5rem', background: '#BB0000', border: 'none' }}
                         onClick={() => showToast(`Creating PO for ${inv.materialCode} — ${inv.supplierName} · ${inv.daysOfSupply}d supply remaining`)}>

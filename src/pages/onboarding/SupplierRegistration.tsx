@@ -307,7 +307,7 @@ const SupplierRegistration: React.FC = () => {
     <div>
       <div style={SECTION_TITLE}>Contact Persons (up to 3)</div>
       {contacts.map((c, i) => (
-        <div key={i} style={{ background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+        <div key={i} style={{ background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '16px', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
             <span style={{ fontWeight: 700, fontSize: '13px', color: NAVY }}>Contact {i + 1}</span>
             {contacts.length > 1 && (
@@ -361,7 +361,7 @@ const SupplierRegistration: React.FC = () => {
           return (
             <label key={cat} style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem',
-              padding: '0.5rem 0.75rem', borderRadius: '6px', cursor: 'pointer',
+              padding: '8px 12px', borderRadius: '6px', cursor: 'pointer',
               background: checked ? '#E0F7FA' : '#f9f9f9',
               border: `1.5px solid ${checked ? TEAL : '#e0e0e0'}`,
               fontSize: '13px', color: checked ? '#006064' : '#354A5F', fontWeight: checked ? 600 : 400,
@@ -381,7 +381,7 @@ const SupplierRegistration: React.FC = () => {
           return (
             <label key={ch.value} style={{
               display: 'flex', alignItems: 'center', gap: '0.75rem',
-              padding: '0.75rem 1rem', borderRadius: '8px', cursor: 'pointer',
+              padding: '12px 16px', borderRadius: '8px', cursor: 'pointer',
               background: active ? '#E0F7FA' : '#f9f9f9',
               border: `2px solid ${active ? TEAL : '#e0e0e0'}`,
             }}>
@@ -405,7 +405,7 @@ const SupplierRegistration: React.FC = () => {
         {DOCUMENTS.map(doc => {
           const d = docs[doc.key];
           return (
-            <div key={doc.key} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+            <div key={doc.key} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '12px 16px', background: '#f9f9f9', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: NAVY }}>{doc.label}</div>
                 {d.uploaded && <div style={{ fontSize: '11px', color: '#6c757d', marginTop: '0.15rem' }}>📎 {d.fileName}</div>}
@@ -462,7 +462,7 @@ const SupplierRegistration: React.FC = () => {
 
   const renderStep5 = () => (
     <div>
-      <div style={{ background: '#FFF8E1', border: '1px solid #FFD54F', borderRadius: '8px', padding: '0.75rem 1rem', marginBottom: '1.5rem', fontSize: '13px', color: '#7B4F00' }}>
+      <div style={{ background: '#FFF8E1', border: '1px solid #FFD54F', borderRadius: '8px', padding: '12px 16px', marginBottom: '1.5rem', fontSize: '13px', color: '#7B4F00' }}>
         Please review all information below before submitting. Go back to make any changes.
       </div>
 
@@ -521,7 +521,7 @@ const SupplierRegistration: React.FC = () => {
       <button
         onClick={handleSubmit}
         style={{
-          width: '100%', marginTop: '1.5rem', padding: '0.875rem',
+          width: '100%', marginTop: '1.5rem', padding: '14px',
           background: NAVY, color: 'white', border: 'none', borderRadius: '6px',
           fontSize: '14px', fontWeight: 700, cursor: 'pointer', letterSpacing: '0.02em',
         }}
@@ -540,7 +540,7 @@ const SupplierRegistration: React.FC = () => {
         <div style={{ fontSize: '12px', color: '#6c757d', fontWeight: 500 }}>Application Number</div>
         <div style={{ fontSize: '1.5rem', fontWeight: 700, color: TEAL, letterSpacing: '0.05em' }}>APP-2026-{appNumber}</div>
       </div>
-      <div style={{ background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem', textAlign: 'left', marginBottom: '2rem' }}>
+      <div style={{ background: '#f9f9f9', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '20px', textAlign: 'left', marginBottom: '2rem' }}>
         <div style={{ fontWeight: 700, fontSize: '0.85rem', color: NAVY, marginBottom: '0.75rem' }}>What happens next?</div>
         {[
           'Our procurement team will review your application within 3–5 business days.',

@@ -97,7 +97,7 @@ const InviteModal: React.FC<{ onClose: () => void; onToast: (m: string) => void 
           <span style={{ fontWeight: 700 }}>Invite Supplier</span>
           <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.25rem', cursor: 'pointer' }}>×</button>
         </div>
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
           <label>
             <div style={{ fontSize: '11px', color: '#6c757d', marginBottom: '0.2rem', fontWeight: 600 }}>Company Name *</div>
             <input value={form.companyName} onChange={set('companyName')} placeholder="e.g. PT Supplier Baru" style={fieldStyle} />
@@ -126,7 +126,7 @@ const InviteModal: React.FC<{ onClose: () => void; onToast: (m: string) => void 
               value={form.message} onChange={set('message')}
               placeholder="Add a personal message to the invitation..."
               rows={3}
-              style={{ ...fieldStyle, height: 'auto', resize: 'vertical', padding: '0.5rem' }}
+              style={{ ...fieldStyle, height: 'auto', resize: 'vertical', padding: '8px' }}
             />
           </label>
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
@@ -161,7 +161,7 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
     }}>
       <div style={{ height: '4px', background: catColor }} />
 
-      <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1 }}>
+      <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1 }}>
         {/* Name + flag */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
           <div style={{ fontWeight: 700, fontSize: '14px', color: '#1A2B3C', lineHeight: 1.3 }}>{s.name}</div>
@@ -171,10 +171,10 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
 
         {/* Category + Tier */}
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <span style={{ background: catColor, color: 'white', fontSize: '11px', fontWeight: 600, padding: '0.18rem 0.55rem', borderRadius: '12px' }}>
+          <span style={{ background: catColor, color: 'white', fontSize: '11px', fontWeight: 600, padding: '3px 9px', borderRadius: '12px' }}>
             {s.category}
           </span>
-          <span style={{ background: '#f0f4f8', color: '#354A5F', fontSize: '11px', fontWeight: 600, padding: '0.18rem 0.55rem', borderRadius: '12px', border: '1px solid #dce3ea' }}>
+          <span style={{ background: '#f0f4f8', color: '#354A5F', fontSize: '11px', fontWeight: 600, padding: '3px 9px', borderRadius: '12px', border: '1px solid #dce3ea' }}>
             {TIER_LABELS[s.tier]}
           </span>
         </div>
@@ -225,7 +225,7 @@ const SupplierCard: React.FC<{ s: Supplier; onToast: (m: string) => void }> = ({
       </div>
 
       {/* Actions */}
-      <div style={{ padding: '0.625rem 1rem', borderTop: '1px solid #f0f0f0', display: 'flex', gap: '0.5rem', background: '#fafafa' }}>
+      <div style={{ padding: '10px 16px', borderTop: '1px solid #f0f0f0', display: 'flex', gap: '0.5rem', background: '#fafafa' }}>
         <Button design="Transparent" style={{ flex: 1, fontSize: '13px' }}
           onClick={() => navigate(`/buyer/suppliers/${s.id}`)}>
           View Details
@@ -282,7 +282,7 @@ const SupplierDirectory: React.FC = () => {
       {toastMsg && (
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', background: '#354A5F', color: 'white',
-          padding: '0.75rem 1.25rem', borderRadius: '6px', zIndex: 500,
+          padding: '12px 20px', borderRadius: '6px', zIndex: 500,
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '13px', maxWidth: '320px',
         }}>{toastMsg}</div>
       )}
@@ -304,7 +304,7 @@ const SupplierDirectory: React.FC = () => {
       {/* Filter bar */}
       <div style={{
         display: 'flex', gap: '0.625rem', flexWrap: 'wrap', alignItems: 'flex-end',
-        background: 'white', border: '1px solid #e0e0e0', borderRadius: '6px', padding: '0.75rem 1rem',
+        background: 'white', border: '1px solid #e0e0e0', borderRadius: '6px', padding: '12px 16px',
       }}>
         {([
           { label: 'CATEGORY', val: categoryFilter, set: setCategoryFilter, opts: [['All', 'All Categories'], ['Raw Material', 'Raw Material'], ['Packaging', 'Packaging'], ['Fragrance', 'Fragrance'], ['Active Ingredient', 'Active Ingredient']] },
@@ -344,7 +344,7 @@ const SupplierDirectory: React.FC = () => {
           { label: 'Onboarding', value: onboardingCount, color: '#E9730C', sub: 'in progress' },
           { label: 'Expiring Documents', value: expiringCount, color: expiringCount > 0 ? '#BB0000' : '#107E3E', sub: 'within 90 days' },
         ].map(({ label, value, color, sub }) => (
-          <div key={label} style={{ flex: '1 1 140px', background: 'white', border: '1px solid #e0e0e0', borderRadius: '6px', padding: '0.875rem 1.125rem' }}>
+          <div key={label} style={{ flex: '1 1 140px', background: 'white', border: '1px solid #e0e0e0', borderRadius: '6px', padding: '16px 20px' }}>
             <div style={{ fontSize: '11px', color: '#6c757d', fontWeight: 600, textTransform: 'uppercase' }}>{label}</div>
             <div style={{ fontSize: '28px', fontWeight: 700, color, margin: '0.2rem 0' }}>{value}</div>
             <div style={{ fontSize: '12px', color: '#6c757d' }}>{sub}</div>

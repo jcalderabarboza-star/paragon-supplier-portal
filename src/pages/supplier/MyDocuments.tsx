@@ -82,7 +82,7 @@ function UploadModal({ doc, onClose }: { doc: SupplierDocument; onClose: () => v
             <div style={{ fontSize: 11, color: MUTED, marginTop: 4 }}>PDF, JPG, PNG · Max 20 MB</div>
           </div>
         ) : (
-          <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 8, padding: '1rem', textAlign: 'center', marginBottom: 16 }}>
+          <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: 8, padding: '16px', textAlign: 'center', marginBottom: 16 }}>
             <div style={{ fontSize: 20, marginBottom: 4, color: '#107E3E', fontWeight: 700 }}>✓</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: '#107E3E' }}>Document uploaded — pending Paragon review</div>
           </div>
@@ -117,7 +117,7 @@ const MyDocuments: React.FC = () => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
       {uploadDoc && <UploadModal doc={uploadDoc} onClose={() => setUploadDoc(null)} />}
-      {toast && <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: NAVY, color: 'white', padding: '0.75rem 1.25rem', borderRadius: 8, zIndex: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.25)', fontSize: 13, borderLeft: `3px solid ${TEAL}` }}>{toast}</div>}
+      {toast && <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: NAVY, color: 'white', padding: '12px 20px', borderRadius: 8, zIndex: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.25)', fontSize: 13, borderLeft: `3px solid ${TEAL}` }}>{toast}</div>}
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
         <div>

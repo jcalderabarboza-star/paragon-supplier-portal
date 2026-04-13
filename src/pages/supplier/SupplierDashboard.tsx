@@ -54,7 +54,7 @@ function StatusPill({ status }: { status: POStatus }) {
   };
   const [bg, color] = map[status] ?? ['#f5f5f5', '#6c757d'];
   return (
-    <span style={{ background: bg, color, fontSize: '11px', fontWeight: 600, padding: '0.2rem 0.6rem', borderRadius: '12px', whiteSpace: 'nowrap' }}>
+    <span style={{ background: bg, color, fontSize: '11px', fontWeight: 600, padding: '3px 10px', borderRadius: '12px', whiteSpace: 'nowrap' }}>
       {status}
     </span>
   );
@@ -84,7 +84,7 @@ const SupplierDashboard: React.FC = () => {
       {toastMsg && (
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', background: '#354A5F', color: 'white',
-          padding: '0.75rem 1.25rem', borderRadius: '6px', zIndex: 500,
+          padding: '12px 20px', borderRadius: '6px', zIndex: 500,
           boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '13px', maxWidth: '340px',
         }}>{toastMsg}</div>
       )}
@@ -135,7 +135,7 @@ const SupplierDashboard: React.FC = () => {
           { icon: <CreditCard size={20} />, label: 'Unpaid Invoices', value: 2, sub: 'pending payment', color: '#BB0000', bg: 'white' },
           { icon: <Target size={20} />, label: 'My OTIF Score', value: `${mySupplier.otif}%`, sub: 'last 6 months', color: otifColor, bg: 'white' },
         ].map(({ icon, label, value, sub, color, bg }) => (
-          <div key={label} style={{ flex: '1 1 160px', background: bg, border: '1px solid #E2E8F0', borderLeft: `4px solid ${color}`, borderRadius: '8px', padding: '1rem 1.125rem', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div key={label} style={{ flex: '1 1 160px', background: bg, border: '1px solid #E2E8F0', borderLeft: `4px solid ${color}`, borderRadius: '8px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             <div style={{ color, marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>{icon}</div>
             <div style={{ fontSize: '28px', fontWeight: 700, color }}>{value}</div>
             <div style={{ fontSize: '13px', fontWeight: 600, color: '#354A5F' }}>{label}</div>
@@ -151,7 +151,7 @@ const SupplierDashboard: React.FC = () => {
         <div style={{ flex: '3 1 420px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
           {/* Action Required */}
-          <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem' }}>
+          <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <span style={{ fontSize: '1rem', fontWeight: 700, color: '#354A5F' }}>Action Required</span>
               <span style={{
@@ -251,7 +251,7 @@ const SupplierDashboard: React.FC = () => {
         <div style={{ flex: '2 1 280px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
           {/* My Performance Card */}
-          <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem' }}>
+          <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '20px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
               <span style={{ fontWeight: 700, fontSize: '14px', color: '#354A5F' }}>My Performance Score</span>
               <div style={{
@@ -288,7 +288,7 @@ const SupplierDashboard: React.FC = () => {
           </div>
 
           {/* Compliance Documents */}
-          <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '1.25rem' }}>
+          <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '20px' }}>
             <div style={{ fontWeight: 700, fontSize: '14px', color: '#354A5F', marginBottom: '1rem' }}>
               My Documents
             </div>

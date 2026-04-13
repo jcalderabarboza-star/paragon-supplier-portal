@@ -29,7 +29,7 @@ const ShipNotices: React.FC = () => {
       {toast && (
         <div style={{
           position: 'fixed', bottom: '2rem', right: '2rem', background: NAVY,
-          color: 'white', padding: '0.75rem 1.25rem', borderRadius: '6px',
+          color: 'white', padding: '12px 20px', borderRadius: '6px',
           zIndex: 500, boxShadow: '0 4px 16px rgba(0,0,0,0.2)', fontSize: '13px',
         }}>{toast}</div>
       )}

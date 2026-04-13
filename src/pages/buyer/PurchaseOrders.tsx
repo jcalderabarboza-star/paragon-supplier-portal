@@ -59,7 +59,7 @@ const tileStyle: React.CSSProperties = {
   background: 'white',
   border: '1px solid #e0e0e0',
   borderRadius: '6px',
-  padding: '0.875rem 1.125rem',
+  padding: '16px 20px',
 };
 
 const STATUS_ORDER: POStatus[] = [
@@ -151,7 +151,7 @@ const DetailPanel: React.FC<{
         </div>
 
         {/* Body */}
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
           {/* Supplier + channel */}
           <div>
             <div style={{ fontWeight: 600, fontSize: '14px', color: '#354A5F' }}>{po.supplierName}</div>
@@ -296,7 +296,7 @@ const PurchaseOrders: React.FC = () => {
             right: selectedPO ? '400px' : '2rem',
             background: '#354A5F',
             color: 'white',
-            padding: '0.75rem 1.25rem',
+            padding: '12px 20px',
             borderRadius: '6px',
             zIndex: 300,
             boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
@@ -338,7 +338,7 @@ const PurchaseOrders: React.FC = () => {
           background: 'white',
           border: '1px solid #e0e0e0',
           borderRadius: '6px',
-          padding: '0.75rem 1rem',
+          padding: '12px 16px',
         }}
       >
         <label style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
@@ -380,7 +380,7 @@ const PurchaseOrders: React.FC = () => {
               color: '#0097A7',
               cursor: 'pointer',
               fontSize: '13px',
-              padding: '0.25rem',
+              padding: '4px',
               alignSelf: 'flex-end',
               marginBottom: '2px',
             }}
@@ -457,38 +457,38 @@ const PurchaseOrders: React.FC = () => {
                     onMouseLeave={() => setHoveredRow(null)}
                   >
                     {/* PO Number */}
-                    <td style={{ padding: '0.5rem 0.75rem', fontFamily: 'monospace', fontWeight: 700, color: '#0097A7', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 700, color: '#0097A7', whiteSpace: 'nowrap' }}>
                       {po.poNumber}
                     </td>
                     {/* Supplier + channel */}
-                    <td style={{ padding: '0.5rem 0.75rem' }}>
+                    <td style={{ padding: '8px 12px' }}>
                       <div>{po.supplierName}</div>
                       <div style={{ fontSize: '12px', color: '#6c757d' }}>
                         {CHANNEL_EMOJI[po.channel]} {po.channel}
                       </div>
                     </td>
                     {/* Order Date */}
-                    <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap' }}>{fmtDate(po.orderDate)}</td>
+                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{fmtDate(po.orderDate)}</td>
                     {/* Req. Delivery */}
-                    <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap' }}>{fmtDate(po.requestedDeliveryDate)}</td>
+                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>{fmtDate(po.requestedDeliveryDate)}</td>
                     {/* Value */}
-                    <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', fontWeight: 600 }}>
                       {fmtIDR(po.totalValue)}
                     </td>
                     {/* Status */}
-                    <td style={{ padding: '0.5rem 0.75rem' }}>
+                    <td style={{ padding: '8px 12px' }}>
                       <StatusBadge status={po.status.toLowerCase().replace(' ', '_')} />
                     </td>
                     {/* Ack Time */}
-                    <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', fontWeight: 600, color: ackColor(po.acknowledgmentTimeHours) }}>
+                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', fontWeight: 600, color: ackColor(po.acknowledgmentTimeHours) }}>
                       {po.acknowledgmentTimeHours === 0 ? '—' : `${po.acknowledgmentTimeHours}h`}
                     </td>
                     {/* Days overdue */}
-                    <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap', color: overdueInfo.color, fontWeight: 600, fontSize: '12px' }}>
+                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap', color: overdueInfo.color, fontWeight: 600, fontSize: '12px' }}>
                       {overdueInfo.label}
                     </td>
                     {/* Actions */}
-                    <td style={{ padding: '0.5rem 0.75rem', whiteSpace: 'nowrap' }}>
+                    <td style={{ padding: '8px 12px', whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', gap: '0.375rem' }}>
                         <Button
                           design="Transparent"
