@@ -119,7 +119,7 @@ const ShipNotices: React.FC = () => {
         padding: '12px 16px', fontSize: '12px', color: '#E9730C',
         display: 'flex', alignItems: 'center', gap: '8px',
       }}>
-        <span>⚠️</span>
+        <span>!</span>
         <span>ASN submission with EDI 856 integration is planned for Phase 2 of the Paragon Odyssey program.</span>
       </div>
     </div>

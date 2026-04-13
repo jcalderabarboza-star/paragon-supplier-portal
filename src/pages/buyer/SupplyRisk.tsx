@@ -89,7 +89,7 @@ const EXPOSURE_DATA = [
 const SCENARIOS = [
   { id: 'me', label: '🌊 Middle East Conflict', active: true },
   { id: 'tw', label: '🇹🇼 Taiwan Strait Closure', active: false },
-  { id: 'pa', label: '⚡ Pandemic Resurgence', active: false },
+  { id: 'pa', label: ' Pandemic Resurgence', active: false },
 ];
 
 const SCENARIO_ME = {
@@ -168,7 +168,7 @@ const dosColor = (dos: number) =>
 const AlertBanner: React.FC<{ alert: Alert; onDismiss: () => void }> = ({ alert, onDismiss }) => {
   const bg = alert.level === 'critical' ? '#FEF2F2' : alert.level === 'warning' ? '#FFFBEB' : '#EFF6FF';
   const border = alert.level === 'critical' ? RED : alert.level === 'warning' ? AMBER : BLUE;
-  const icon = alert.level === 'critical' ? '🚨' : alert.level === 'warning' ? '⚠️' : 'ℹ️';
+  const icon = alert.level === 'critical' ? '' : alert.level === 'warning' ? '!' : 'ℹ️';
   return (
     <div style={{ background: bg, border: `1px solid ${border}`, borderLeft: `4px solid ${border}`,
       borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 10,
@@ -368,7 +368,7 @@ const ExposureTab: React.FC = () => {
                   </span>
                 </td>
                 <td style={{ padding: '9px 10px', textAlign: 'center', fontSize: 15 }}>
-                  {row.dualSource ? '✅' : '❌'}
+                  {row.dualSource ? '✓' : '✗'}
                 </td>
               </tr>
             ))}
@@ -430,7 +430,7 @@ const ScenarioTab: React.FC = () => {
             style={{ background: RED, color: 'white', border: 'none', borderRadius: 6,
               padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer',
               whiteSpace: 'nowrap', flexShrink: 0 }}>
-            {warRoomSent ? '✓ Sent!' : '🚨 Send to War Room'}
+            {warRoomSent ? '✓ Sent!' : ' Send to War Room'}
           </button>
         </div>
       </div>
@@ -673,10 +673,10 @@ const CommodityTab: React.FC = () => (
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const TABS = [
   { id: 'geo',        label: '🌍 Geopolitical Risks' },
-  { id: 'exposure',   label: '📊 Supply Exposure' },
-  { id: 'scenario',   label: '⚡ Scenario Modeling' },
+  { id: 'exposure',   label: ' Supply Exposure' },
+  { id: 'scenario',   label: ' Scenario Modeling' },
   { id: 'compliance', label: '🛡️ Compliance Risks' },
-  { id: 'commodity',  label: '📈 Commodity Prices' },
+  { id: 'commodity',  label: ' Commodity Prices' },
 ];
 
 const SupplyRisk: React.FC = () => {

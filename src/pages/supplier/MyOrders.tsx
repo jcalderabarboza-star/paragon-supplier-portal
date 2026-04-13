@@ -144,10 +144,10 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
           onToast(`PO ${po.poNumber} confirmed successfully! Paragon team will be notified.`);
           onClose();
         }}>
-          ✅ Confirm Order
+          ✓ Confirm Order
         </Button>
         <Button design="Default" onClick={() => setShowChangeReq(v => !v)}>
-          📝 Request Change
+           Request Change
         </Button>
       </div>
 

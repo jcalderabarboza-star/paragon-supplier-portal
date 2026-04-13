@@ -59,7 +59,7 @@ const SUPPLIER_DATA: SuppData[] = [
   },
   {
     id:'berlina', name:'PT Berlina Packaging Indonesia', country:'ID',
-    category:'Packaging Primary', tier:'Tier 1 — WhatsApp', sapBp:'BP-10007', channel:'📱 WhatsApp',
+    category:'Packaging Primary', tier:'Tier 1 — WhatsApp', sapBp:'BP-10007', channel:' WhatsApp',
     grade:'B', score:82, status:'Approved Supplier',
     kpis:[
       { name:'OTIF',               value:'88%',     target:'95%',     pct:88,  color:'#E9730C', trend:'↑' },
@@ -134,7 +134,7 @@ const ALL_SUPPLIERS = [
   ...(['PT Musim Mas Specialty Fats','PT Halal Emulsifier Nusantara','Givaudan Fragrance SG','PT Ecogreen Oleochemicals','Evonik Specialty FR'] as const).map((name, i) => ({
     id: `sup-extra-${i}`, name, country:['ID','ID','SG','ID','FR'][i], category:['Halal Emulsifier','Halal Emulsifier','Fragrance','Natural Botanical','Active Ingredients'][i],
     tier:['Tier 2 — Web','Tier 1 — WhatsApp','Tier 3 — API','Tier 2 — Web','Tier 2 — Web'][i],
-    sapBp:`BP-2000${10+i}`, channel:['🌐 Web','📱 WhatsApp','⚙️ API','🌐 Web','🌐 Web'][i],
+    sapBp:`BP-2000${10+i}`, channel:[' Web',' WhatsApp','⚙️ API',' Web',' Web'][i],
     grade:['A','B','A','B','C'][i], score:[92,84,91,83,72][i], status:'Approved Supplier',
     kpis: SUPPLIER_DATA[0].kpis, radar: SUPPLIER_DATA[0].radar,
     otifTrend: [82,84,85,87,88,89,90,91,91,92,92,91], commLog: [],
@@ -291,7 +291,7 @@ const SupplierScorecard: React.FC = () => {
       {'impPlan' in supp && supp.impPlan && (
         <Card>
           <div style={{ background:'#FEE2E2', border:'1px solid #FCA5A5', borderRadius:6, padding:'12px 16px', display:'flex', alignItems:'center', gap:10, marginBottom:16, fontSize:'13px', color:'#BB0000', fontWeight:600 }}>
-            🚨 This supplier is on a Conditional rating — improvement plan active. 30-day review period.
+             This supplier is on a Conditional rating — improvement plan active. 30-day review period.
           </div>
           <STitle>Improvement Plan — Action Items</STitle>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>

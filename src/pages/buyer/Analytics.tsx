@@ -129,7 +129,7 @@ const Analytics: React.FC = () => {
             ))}
           </div>
           <button onClick={() => showToast('Report export starting...')} style={{ padding:'7px 14px', border:`1px solid ${TEAL}`, borderRadius:6, background:'white', color:TEAL, fontSize:'12px', fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-            📥 Export Report
+             Export Report
           </button>
         </div>
       </div>

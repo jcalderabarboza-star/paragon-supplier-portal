@@ -213,7 +213,7 @@ const ContractDetailPanel: React.FC<{ contract: Contract; onClose: () => void }>
               ['Start Date', c.startDate], ['Contract Value', c.value],
               ['End Date', c.endDate], ['Currency', c.currency],
               ['Days Remaining', String(c.daysRemaining)], ['Payment Terms', c.paymentTerms],
-              ['Auto-Renew', c.autoRenew ? '✅ Yes' : '❌ No'], ['Incoterms', c.incoterms],
+              ['Auto-Renew', c.autoRenew ? '✓ Yes' : '✗ No'], ['Incoterms', c.incoterms],
             ].map(([label, val]) => (
               <div key={label} style={{ background:'#F8FAFC', borderRadius:6, padding:'10px 12px' }}>
                 <div style={{ fontSize:11, color:'#94A3B8', marginBottom:2 }}>{label}</div>
@@ -273,8 +273,8 @@ const ContractDetailPanel: React.FC<{ contract: Contract; onClose: () => void }>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', borderTop:'1px solid #E2E8F0', paddingTop:16 }}>
           <button onClick={() => showToast('Contract PDF downloading...')} style={{ padding:'8px 14px', borderRadius:6, background:'#0097A7', color:'#fff', border:'none', fontSize:13, fontWeight:600, cursor:'pointer' }}>📄 Download PDF</button>
           <button onClick={() => showToast('Amendment request initiated. Legal team notified.')} style={{ padding:'8px 14px', borderRadius:6, background:'#F0F4F8', color:'#0D1B2A', border:'1px solid #E2E8F0', fontSize:13, cursor:'pointer' }}>✏️ Amendment</button>
-          <button onClick={() => showToast('Renewal workflow initiated for ' + c.title)} style={{ padding:'8px 14px', borderRadius:6, background:'#F0F4F8', color:'#0D1B2A', border:'1px solid #E2E8F0', fontSize:13, cursor:'pointer' }}>🔄 Renew</button>
-          <button onClick={() => showToast('⚠️ WARNING: Contract termination will immediately stop all POs. This action is irreversible. Please confirm with your manager.')} style={{ padding:'8px 14px', borderRadius:6, background:'#FEE2E2', color:'#BB0000', border:'1px solid #FCA5A5', fontSize:13, cursor:'pointer' }}>⛔ Terminate</button>
+          <button onClick={() => showToast('Renewal workflow initiated for ' + c.title)} style={{ padding:'8px 14px', borderRadius:6, background:'#F0F4F8', color:'#0D1B2A', border:'1px solid #E2E8F0', fontSize:13, cursor:'pointer' }}> Renew</button>
+          <button onClick={() => showToast('! WARNING: Contract termination will immediately stop all POs. This action is irreversible. Please confirm with your manager.')} style={{ padding:'8px 14px', borderRadius:6, background:'#FEE2E2', color:'#BB0000', border:'1px solid #FCA5A5', fontSize:13, cursor:'pointer' }}>⛔ Terminate</button>
         </div>
       </div>
     </div>
@@ -469,7 +469,7 @@ const ActiveContractsTab: React.FC = () => {
                 <td style={{ padding:'11px 12px', fontFamily:'monospace', fontSize:12 }}>{c.endDate}</td>
                 <td style={{ padding:'11px 12px', fontWeight:600, whiteSpace:'nowrap' }}>{c.value}</td>
                 <td style={{ padding:'11px 12px', fontWeight:700, color: daysColor(c.daysRemaining), whiteSpace:'nowrap' }}>{c.daysRemaining}d</td>
-                <td style={{ padding:'11px 12px', textAlign:'center' }}>{c.autoRenew ? '✅' : '❌'}</td>
+                <td style={{ padding:'11px 12px', textAlign:'center' }}>{c.autoRenew ? '✓' : '✗'}</td>
                 <td style={{ padding:'11px 12px', fontFamily:'monospace', fontSize:12, color: c.sapInfoRecord === '—' ? '#94A3B8' : '#0D1B2A' }}>{c.sapInfoRecord}</td>
                 <td style={{ padding:'11px 12px' }}>
                   <div style={{ display:'flex', gap:6 }}>
@@ -503,7 +503,7 @@ const RenewalPipelineTab: React.FC = () => {
     { ...CONTRACTS[2], stepActive:1, nextAction:'Review current pricing vs. market index', btnLabel:'Start Renewal →', special:null },
     { ...CONTRACTS[3], stepActive:2, nextAction:'Confirm fragrance portfolio pricing for H2 2026', btnLabel:'Continue Renewal →', special:null },
     { ...CONTRACTS[4], stepActive:1, nextAction:'Review supplier quality record before renewing', btnLabel:'Review Alternatives →',
-      special:'⚠️ Consider NOT renewing — 2 quality rejections YTD. Recommend qualifying Evonik as primary source.' },
+      special:'! Consider NOT renewing — 2 quality rejections YTD. Recommend qualifying Evonik as primary source.' },
   ];
 
   const steps = ['Not Started','Terms Review','Negotiation','Signed'];

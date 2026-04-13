@@ -56,10 +56,10 @@ const PERF_HISTORY = Array.from({ length: 13 }, (_, i) => ({
 }));
 
 const RECENT_POS = [
-  { poNum: 'PO-2026-00421', material: 'PET Bottle 100ml', qty: '50,000 PCS', value: 'Rp 185jT', ordered: '2026-03-10', delivery: '2026-03-24', otif: '✅ On Time', status: 'Delivered' },
-  { poNum: 'PO-2026-00389', material: 'PET Bottle 200ml', qty: '30,000 PCS', value: 'Rp 126jT', ordered: '2026-02-18', delivery: '2026-03-05', otif: '✅ On Time', status: 'Delivered' },
-  { poNum: 'PO-2026-00351', material: 'Airless Pump 15ml', qty: '20,000 PCS', value: 'Rp 56jT', ordered: '2026-01-25', delivery: '2026-02-18', otif: '⚠️ +3 days', status: 'Delivered' },
-  { poNum: 'PO-2025-00298', material: 'PET Bottle 100ml', qty: '40,000 PCS', value: 'Rp 148jT', ordered: '2025-12-10', delivery: '2025-12-24', otif: '✅ On Time', status: 'Delivered' },
+  { poNum: 'PO-2026-00421', material: 'PET Bottle 100ml', qty: '50,000 PCS', value: 'Rp 185jT', ordered: '2026-03-10', delivery: '2026-03-24', otif: '✓ On Time', status: 'Delivered' },
+  { poNum: 'PO-2026-00389', material: 'PET Bottle 200ml', qty: '30,000 PCS', value: 'Rp 126jT', ordered: '2026-02-18', delivery: '2026-03-05', otif: '✓ On Time', status: 'Delivered' },
+  { poNum: 'PO-2026-00351', material: 'Airless Pump 15ml', qty: '20,000 PCS', value: 'Rp 56jT', ordered: '2026-01-25', delivery: '2026-02-18', otif: '! +3 days', status: 'Delivered' },
+  { poNum: 'PO-2025-00298', material: 'PET Bottle 100ml', qty: '40,000 PCS', value: 'Rp 148jT', ordered: '2025-12-10', delivery: '2025-12-24', otif: '✓ On Time', status: 'Delivered' },
 ];
 
 const MSG_LOG = [
@@ -83,12 +83,12 @@ const docStatusColor = (s: string) =>
 const docStatusBg    = (s: string) =>
   s === 'valid' ? '#F0FDF4' : s === 'expiring' ? '#FFFBEB' : s === 'missing' ? '#FEF2F2' : '#F8FAFC';
 const docStatusLabel = (s: string) =>
-  s === 'valid' ? '✅ Valid' : s === 'expiring' ? '⚠️ Expiring' : s === 'missing' ? '❌ Missing' : 'N/A';
+  s === 'valid' ? '✓ Valid' : s === 'expiring' ? '! Expiring' : s === 'missing' ? '✗ Missing' : 'N/A';
 
 const msgDirIcon = (dir: string) => dir === 'out' ? '→' : '←';
 const msgDirColor = (dir: string) => dir === 'out' ? TEAL : NAVY;
 
-const statusIcon = (s: string) => s === 'read' ? '👁️' : s === 'delivered' ? '✅✅' : s === 'sent' ? '✅' : '❌';
+const statusIcon = (s: string) => s === 'read' ? '👁️' : s === 'delivered' ? '✓✓' : s === 'sent' ? '✓' : '✗';
 
 const channelCfg = (ch: string) => CHANNEL_CONFIG[ch as keyof typeof CHANNEL_CONFIG] ?? CHANNEL_CONFIG.email;
 
@@ -120,7 +120,7 @@ const OverviewTab: React.FC<{ supp: SupplierExtended }> = ({ supp }) => {
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
       {/* Left — Company Info */}
       <div>
-        <SCard title="📋 Company Information">
+        <SCard title=" Company Information">
           <Row label="Legal Name"    value={supp.legalName ?? supp.name} />
           <Row label="SAP BP Number" value={supp.sapBpNumber} />
           <Row label="Tax ID"        value={supp.taxId ?? '—'} />
@@ -138,7 +138,7 @@ const OverviewTab: React.FC<{ supp: SupplierExtended }> = ({ supp }) => {
         {supp.intelligenceNote && (
           <div style={{ background: `${TEAL}10`, border: `1px solid ${TEAL}33`, borderRadius: 8,
             padding: '10px 14px', fontSize: 12, color: NAVY, lineHeight: 1.6 }}>
-            💡 {supp.intelligenceNote}
+             {supp.intelligenceNote}
           </div>
         )}
       </div>
@@ -147,12 +147,12 @@ const OverviewTab: React.FC<{ supp: SupplierExtended }> = ({ supp }) => {
       <div>
         <SCard title="🧠 Adaptive Profile — Auto-configured">
           {[
-            { icon: '🌐', label: 'Language',        value: `${cp.flag} ${cp.languageLabel}` },
-            { icon: '📱', label: 'Primary Channel',  value: `${getChannelConfig(cp.primaryChannel).icon} ${getChannelConfig(cp.primaryChannel).label}` },
-            { icon: '🔄', label: 'Fallback Channel', value: `${getChannelConfig(cp.fallbackChannel).icon} ${getChannelConfig(cp.fallbackChannel).label}` },
+            { icon: '', label: 'Language',        value: `${cp.flag} ${cp.languageLabel}` },
+            { icon: '', label: 'Primary Channel',  value: `${getChannelConfig(cp.primaryChannel).icon} ${getChannelConfig(cp.primaryChannel).label}` },
+            { icon: '', label: 'Fallback Channel', value: `${getChannelConfig(cp.fallbackChannel).icon} ${getChannelConfig(cp.fallbackChannel).label}` },
             { icon: '🕐', label: 'Timezone',         value: cp.timezone },
-            { icon: '💰', label: 'Currency',         value: `${cp.currency}` },
-            { icon: '🎭', label: 'Comm. Tone',       value: cp.tone === 'conversational' ? '🤝 Conversational' : '💼 Formal' },
+            { icon: '', label: 'Currency',         value: `${cp.currency}` },
+            { icon: '🎭', label: 'Comm. Tone',       value: cp.tone === 'conversational' ? ' Conversational' : '💼 Formal' },
             { icon: '📅', label: 'Date Format',      value: cp.dateFormat },
             { icon: '⏰', label: 'Business Hours',   value: `${cp.businessHours.start} – ${cp.businessHours.end}` },
             { icon: '💳', label: cp.taxLabel,        value: `${cp.taxRate}%` },
@@ -178,7 +178,7 @@ const OverviewTab: React.FC<{ supp: SupplierExtended }> = ({ supp }) => {
 
           {/* Invoice fields */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 8 }}>
-            <span style={{ fontSize: 14, width: 20, flexShrink: 0 }}>📋</span>
+            <span style={{ fontSize: 14, width: 20, flexShrink: 0 }}></span>
             <span style={{ fontSize: 11, fontWeight: 600, color: MUTED, width: 130, flexShrink: 0 }}>Invoice Fields</span>
             <span style={{ fontSize: 11, color: '#374151', flex: 1 }}>{cp.invoiceFields.join(', ')}</span>
           </div>
@@ -414,7 +414,7 @@ IEA*1*000000001`}
           <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8,
             padding: '8px 12px', background: '#F8FAFC', borderRadius: 6, border: `1px solid ${BORDER}` }}>
             <span style={{ fontSize: 13, color: docStatusColor(d.status) }}>
-              {d.status === 'valid' ? '✅' : d.status === 'expiring' ? '⚠️' : '❌'}
+              {d.status === 'valid' ? '✓' : d.status === 'expiring' ? '!' : '✗'}
             </span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 12, fontWeight: 600, color: NAVY }}>{d.name}</div>
@@ -426,7 +426,7 @@ IEA*1*000000001`}
         <button onClick={() => showToast('Compliance rules updated from country profile')}
           style={{ marginTop: 8, background: 'white', border: `1px solid ${BORDER}`, borderRadius: 6,
             padding: '7px 14px', fontSize: 12, cursor: 'pointer', color: MUTED }}>
-          🔄 Refresh Rules
+           Refresh Rules
         </button>
       </SCard>
 
@@ -544,7 +544,7 @@ const CatalogTab: React.FC<{ supp: SupplierExtended; showToast: (m: string) => v
                 <td style={{ padding: '10px 14px' }}>{item.leadTime}</td>
                 <td style={{ padding: '10px 14px', fontWeight: 600, color: TEAL }}>{item.unitPrice}</td>
                 <td style={{ padding: '10px 14px' }}>{item.capacity}</td>
-                <td style={{ padding: '10px 14px', textAlign: 'center', fontSize: 14 }}>{item.halalMaterial ? '✅' : '—'}</td>
+                <td style={{ padding: '10px 14px', textAlign: 'center', fontSize: 14 }}>{item.halalMaterial ? '✓' : '—'}</td>
                 <td style={{ padding: '10px 14px', color: MUTED, fontSize: 11 }}>{item.lastUpdated}</td>
                 <td style={{ padding: '10px 14px' }}>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -661,13 +661,13 @@ const PerfTab: React.FC<{ supp: SupplierExtended }> = ({ supp }) => (
     {/* Strengths & Improvements */}
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
       <div style={{ background: '#F0FDF4', border: `1px solid #BBF7D0`, borderRadius: 8, padding: '14px 16px' }}>
-        <div style={{ fontWeight: 600, fontSize: 12, color: GREEN, marginBottom: 10 }}>✅ Top 3 Strengths</div>
+        <div style={{ fontWeight: 600, fontSize: 12, color: GREEN, marginBottom: 10 }}>✓ Top 3 Strengths</div>
         {['Invoice accuracy (91%) — above category average', 'Responsive communication (WhatsApp ≤2h reply)', 'Consistent sample quality and colour matching'].map(s => (
           <div key={s} style={{ fontSize: 12, color: '#374151', marginBottom: 6 }}>• {s}</div>
         ))}
       </div>
       <div style={{ background: '#FFFBEB', border: `1px solid #FDE68A`, borderRadius: 8, padding: '14px 16px' }}>
-        <div style={{ fontWeight: 600, fontSize: 12, color: AMBER, marginBottom: 10 }}>⚠️ Top 2 Improvement Areas</div>
+        <div style={{ fontWeight: 600, fontSize: 12, color: AMBER, marginBottom: 10 }}>! Top 2 Improvement Areas</div>
         {['OTIF (82%) — below 90% target 9 of 12 months', 'Missing BPJPH Halal Certificate — blocking halal line orders'].map(s => (
           <div key={s} style={{ fontSize: 12, color: '#374151', marginBottom: 6 }}>• {s}</div>
         ))}
@@ -808,7 +808,7 @@ const ProfileHeader: React.FC<{
           {bizHours ? (
             <div style={{ background: '#16A34A22', border: '1px solid #16A34A66', borderRadius: 6,
               padding: '6px 12px', fontSize: 12, color: '#4ADE80', fontWeight: 600 }}>
-              ✅ Business Hours Now
+              ✓ Business Hours Now
             </div>
           ) : (
             <div style={{ background: '#DC262622', border: '1px solid #DC262666', borderRadius: 6,
@@ -827,7 +827,7 @@ const ProfileHeader: React.FC<{
           </span>
           <span style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 9999,
             padding: '3px 10px', fontSize: 11, color: '#CBD5E1' }}>
-            {cp.tone === 'conversational' ? '🤝 Conversational' : '💼 Formal'}
+            {cp.tone === 'conversational' ? ' Conversational' : '💼 Formal'}
           </span>
         </div>
       </div>
@@ -846,7 +846,7 @@ const ProfileHeader: React.FC<{
         <button onClick={() => showToast(`Opening message composer for ${supp.name} via ${ch.label}...`)}
           style={{ background: TEAL, color: 'white', border: 'none', borderRadius: 6,
             padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', width: '100%' }}>
-          💬 Send Message
+           Send Message
         </button>
         <button onClick={() => showToast('Edit mode — coming soon')}
           style={{ background: 'transparent', color: '#CBD5E1', border: '1px solid rgba(255,255,255,0.2)',
@@ -860,12 +860,12 @@ const ProfileHeader: React.FC<{
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'overview',    label: '📋 Overview' },
-  { id: 'comm',        label: '💬 Communication Setup' },
+  { id: 'overview',    label: ' Overview' },
+  { id: 'comm',        label: ' Communication Setup' },
   { id: 'compliance',  label: '📄 Compliance Documents' },
-  { id: 'catalog',     label: '📦 Catalog & Capacity' },
-  { id: 'performance', label: '📊 Performance History' },
-  { id: 'msglog',      label: '💬 Message Log' },
+  { id: 'catalog',     label: ' Catalog & Capacity' },
+  { id: 'performance', label: ' Performance History' },
+  { id: 'msglog',      label: ' Message Log' },
 ];
 
 const SupplierProfile: React.FC = () => {
@@ -879,7 +879,7 @@ const SupplierProfile: React.FC = () => {
   if (!supp) {
     return (
       <div style={{ padding: '60px 0', textAlign: 'center', color: MUTED }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+        <div style={{ fontSize: 40, marginBottom: 12 }}></div>
         <div style={{ fontSize: 16, fontWeight: 600 }}>Supplier not found</div>
         <button onClick={() => navigate('/buyer/suppliers')}
           style={{ marginTop: 16, background: TEAL, color: 'white', border: 'none', borderRadius: 6,

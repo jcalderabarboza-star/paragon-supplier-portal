@@ -33,7 +33,7 @@ function perfColor(v: number): string {
 
 const CHANNEL_LABEL: Record<PreferredChannel, string> = {
   [PreferredChannel.WHATSAPP]: 'WhatsApp',
-  [PreferredChannel.WEB]: '🌐 Web Portal',
+  [PreferredChannel.WEB]: ' Web Portal',
   [PreferredChannel.EMAIL]: '📧 Email',
   [PreferredChannel.API]: '⚙️ API/EDI',
 };
@@ -97,7 +97,7 @@ const SupplierDashboard: React.FC = () => {
       }}>
         <div>
           <div style={{ fontSize: '20px', fontWeight: 700, marginBottom: '0.4rem' }}>
-            Selamat datang, {mySupplier.name} 👋
+            Selamat datang, {mySupplier.name} 
           </div>
           <div style={{ fontSize: '13px', opacity: 0.88 }}>
             Paragon Corp Supplier Portal &nbsp;·&nbsp; Last login: 5 April 2026 &nbsp;·&nbsp; Channel: {channelLabel}

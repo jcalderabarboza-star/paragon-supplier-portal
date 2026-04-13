@@ -75,7 +75,7 @@ const QC_STYLE: Record<string, [string, string]> = {
 };
 
 const CHANNEL_ICON: Record<string, string> = {
-  WhatsApp:'📱', Web:'🌐', API:'⚙️', EDI:'📡', Email:'✉️',
+  WhatsApp:'', Web:'', API:'⚙️', EDI:'📡', Email:'✉️',
 };
 
 function Pill({ label, bg, color }: { label:string; bg:string; color:string }) {
@@ -192,13 +192,13 @@ function InboundShipments({ shipments, setShipments, onToast }: {
                   <td style={{ padding:'10px 12px' }}>
                     <div style={{ display:'flex', gap:5, flexWrap:'nowrap' }}>
                       <button onClick={() => onToast(`Opening carrier tracking for ${s.trackingNumber}...`)}
-                        style={{ padding:'5px 9px', border:`1px solid #CBD5E1`, borderRadius:5, background:'white', color:MID, fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>🔍 Track</button>
+                        style={{ padding:'5px 9px', border:`1px solid #CBD5E1`, borderRadius:5, background:'white', color:MID, fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}> Track</button>
                       {!s.dockSlot && (
                         <button onClick={() => setSchedulingId(isScheduling ? null : s.id)}
                           style={{ padding:'5px 9px', border:'none', borderRadius:5, background:isScheduling?'#FEF3C7':TEAL, color:isScheduling?'#E9730C':'white', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>📅 Dock</button>
                       )}
                       <button onClick={() => onToast(`Sending message to ${s.supplier} via ${CHANNEL_ICON[s.channel]??''} ${s.channel}...`)}
-                        style={{ padding:'5px 9px', border:'none', borderRadius:5, background:'#F1F5F9', color:'#475569', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>💬</button>
+                        style={{ padding:'5px 9px', border:'none', borderRadius:5, background:'#F1F5F9', color:'#475569', fontSize:'11px', fontWeight:600, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}></button>
                     </div>
                   </td>
                 </tr>
@@ -436,12 +436,12 @@ const ShipmentTracking: React.FC = () => {
       {/* Alert bars */}
       {stats.overdue > 0 && (
         <div style={{ background:'#FEE2E2', border:'1px solid #FCA5A5', borderRadius:6, padding:'10px 14px', display:'flex', alignItems:'center', gap:10, fontSize:'13px', color:'#BB0000', fontWeight:600 }}>
-          🚨 {stats.overdue} shipment{stats.overdue>1?'s are':' is'} overdue — immediate follow-up required
+           {stats.overdue} shipment{stats.overdue>1?'s are':' is'} overdue — immediate follow-up required
         </div>
       )}
       {stats.pendingASN > 0 && (
         <div style={{ background:'#FEF3C7', border:'1px solid #FDE047', borderRadius:6, padding:'10px 14px', display:'flex', alignItems:'center', gap:10, fontSize:'13px', color:'#E9730C', fontWeight:600 }}>
-          ⚠️ {stats.pendingASN} confirmed PO{stats.pendingASN>1?'s have':' has'} no ASN submitted — contact suppliers
+          ! {stats.pendingASN} confirmed PO{stats.pendingASN>1?'s have':' has'} no ASN submitted — contact suppliers
         </div>
       )}
 
