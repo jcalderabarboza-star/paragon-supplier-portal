@@ -10,7 +10,14 @@ const MID  = '#354A5F';
 
 // ─── Supplier data ────────────────────────────────────────────────────────────
 
-const COUNTRY_FLAGS: Record<string,string> = { ID:'🇮🇩', CN:'🇨🇳', DE:'🇩🇪', FR:'🇫🇷', MY:'🇲🇾', SG:'🇸🇬' };
+const COUNTRY_FLAGS: Record<string,string> = { ID:'ID', CN:'CN', DE:'DE', FR:'FR', MY:'MY', SG:'SG' };
+
+const COMPLIANCE_ISSUES: Record<string, { level: 'expired' | 'expiring' | 'missing'; label: string }> = {
+  'Caelo PET Bottle Manufacturer GmbH': { level: 'expired', label: 'Halal cert EXPIRED' },
+  'Firmenich Malaysia Sdn. Bhd.': { level: 'expiring', label: 'ISO expiring in 70d' },
+  'Evonik Specialty Chemicals France': { level: 'expiring', label: 'REACH expiring in 85d' },
+  'Anhui Salicylics & Niacinamide Ltd.': { level: 'missing', label: 'BPJPH cert missing' },
+};
 
 interface SuppData {
   id: string; name: string; country: string; category: string; tier: string;
