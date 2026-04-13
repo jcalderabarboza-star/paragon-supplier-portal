@@ -23,20 +23,23 @@ if (!document.head.querySelector('[data-topbar-responsive]')) {
   document.head.appendChild(responsiveStyle);
 }
 
-const ParagonCorpLogo: React.FC<{ height?: number }> = ({ height = 32 }) => (
-  <svg height={height} viewBox="0 0 160 36" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
-    <g transform="translate(0, 2)">
-      <polygon points="16,0 28,8 24,28 8,28 4,8" fill="none" stroke="#5BA3E8" strokeWidth="1.2" strokeLinejoin="round" />
-      <polygon points="16,0 4,8 16,14" fill="rgba(91,163,232,0.18)" />
-      <polygon points="16,0 28,8 16,14" fill="rgba(91,163,232,0.28)" />
-      <polygon points="4,8 8,28 16,14" fill="rgba(91,163,232,0.10)" />
-      <polygon points="28,8 24,28 16,14" fill="rgba(91,163,232,0.22)" />
-      <polygon points="8,28 24,28 16,14" fill="rgba(91,163,232,0.14)" />
-      <line x1="4" y1="8" x2="28" y2="8" stroke="#5BA3E8" strokeWidth="0.6" opacity="0.5" />
-      <line x1="16" y1="0" x2="16" y2="14" stroke="#5BA3E8" strokeWidth="0.6" opacity="0.3" />
+const ParagonCorpLogo: React.FC<{ height?: number }> = ({ height = 36 }) => (
+  <svg height={height} viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }} aria-label="Paragon Technology and Innovation">
+    {/* Icon — stylized P: vertical bar + half-circle arc */}
+    <g transform="translate(2, 2)">
+      {/* Outer circle */}
+      <circle cx="18" cy="18" r="16" stroke="#0097A7" strokeWidth="2.5" fill="none" />
+      {/* Vertical bar (spine of P) */}
+      <rect x="10" y="7" width="3.5" height="22" rx="1.75" fill="#0097A7" />
+      {/* Bowl of P — half disc */}
+      <path d="M13.5 8 C13.5 8, 28 8, 28 18 C28 28, 13.5 28, 13.5 28" fill="none" stroke="#0097A7" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Inner accent dot */}
+      <circle cx="21" cy="18" r="3" fill="#0097A7" opacity="0.3" />
     </g>
-    <text x="38" y="16" fontFamily="'Inter', -apple-system, sans-serif" fontSize="11" fontWeight="700" fill="#FFFFFF" letterSpacing="1.5">PARAGON</text>
-    <text x="38" y="28" fontFamily="'Inter', -apple-system, sans-serif" fontSize="8.5" fontWeight="500" fill="#8DA4BC" letterSpacing="1.8">CORP</text>
+    {/* Wordmark — "paragon" */}
+    <text x="44" y="18" fontFamily="'Inter', -apple-system, sans-serif" fontSize="14" fontWeight="700" fill="#FFFFFF" letterSpacing="1.2">paragon</text>
+    {/* Subtitle */}
+    <text x="44" y="30" fontFamily="'Inter', -apple-system, sans-serif" fontSize="6.5" fontWeight="500" fill="#8DA4BC" letterSpacing="2.2">TECHNOLOGY AND INNOVATION</text>
   </svg>
 );
 
