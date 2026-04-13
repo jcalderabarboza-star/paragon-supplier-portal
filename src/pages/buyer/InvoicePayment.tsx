@@ -118,19 +118,52 @@ function PaymentConfirmModal({ invoice, onClose, onConfirm }: {
 }) {
   const [confirmed, setConfirmed] = useState(false);
 
+  const [payRef] = useState(`PAY-${new Date().getFullYear()}-${Math.floor(10000 + Math.random() * 90000)}`);
+  const [payDate] = useState(new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }));
+
   const handleConfirm = () => {
     setConfirmed(true);
-    setTimeout(() => { onConfirm(); onClose(); }, 1800);
+    onConfirm();
   };
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 800 }}>
-      <div style={{ background: 'white', borderRadius: 12, padding: 28, maxWidth: 480, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+      <div style={{ background: 'white', borderRadius: 12, padding: 28, maxWidth: 520, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
         {confirmed ? (
-          <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>Payment Released</div>
-            <div style={{ fontSize: 13, color: MUTED, marginTop: 6 }}>SAP FI payment document will be posted within 24 hours</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: SUCCESS, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <span style={{ color: 'white', fontSize: 22, fontWeight: 700 }}>✓</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>Payment Released</div>
+                <div style={{ fontSize: 12, color: MUTED }}>{invoice.invoiceNumber} · {payDate}</div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <div style={{ background: '#F8FAFC', borderRadius: 6, padding: '10px 12px', border: `1px solid ${BORDER}` }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Payment Reference</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, fontFamily: 'monospace' }}>{payRef}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', borderRadius: 6, padding: '10px 12px', border: `1px solid ${BORDER}` }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Amount Transferred</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{fmtFull(invoice.amount)}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', borderRadius: 6, padding: '10px 12px', border: `1px solid ${BORDER}` }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Bank Account</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: NAVY }}>{invoice.bankAccount}</div>
+              </div>
+              <div style={{ background: '#F8FAFC', borderRadius: 6, padding: '10px 12px', border: `1px solid ${BORDER}` }}>
+                <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>SAP FI Document</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: SUCCESS, fontFamily: 'monospace' }}>{invoice.sapFiDoc}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: MUTED, background: '#F0FDF4', padding: '10px 14px', borderRadius: 6, border: '1px solid #BBF7D0' }}>
+              SAP FI payment document will be posted within 24 hours. Supplier will receive remittance advice via {invoice.channel}.
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={onClose} style={{ padding: '9px 20px', border: 'none', borderRadius: 6, background: TEAL, color: 'white', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Done</button>
+            </div>
           </div>
         ) : (
           <>
