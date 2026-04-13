@@ -72,14 +72,14 @@ const TopBar: React.FC = () => {
           <ParagonCorpLogo height={32} />
         </div>
         <div style={{ width: 1, height: 28, background: BORDER, flexShrink: 0 }} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+        <div className="topbar-portal-label" style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
           <span style={{ color: TEAL, fontWeight: 600, fontSize: '10px', letterSpacing: '1.5px', lineHeight: 1.2, textTransform: 'uppercase' }}>
             Supplier Portal
           </span>
           <OdysseyBadge />
         </div>
-        <div style={{ width: 1, height: 28, background: BORDER, flexShrink: 0 }} />
-        <span style={{ fontSize: '12px', color: MUTED, fontWeight: 400, letterSpacing: '0.2px' }}>
+        <div className="topbar-portal-label" style={{ width: 1, height: 28, background: BORDER, flexShrink: 0 }} />
+        <span className="topbar-persona" style={{ fontSize: '12px', color: MUTED, fontWeight: 400, letterSpacing: '0.2px' }}>
           {personaIcon} {personaLabel}
         </span>
       </div>
