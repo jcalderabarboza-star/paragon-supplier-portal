@@ -550,7 +550,16 @@ const Dashboard: React.FC = () => {
               </div>
             ))}
             {d.actionQueue.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '1.5rem', color: SUCCESS, fontSize: 13 }}>✓ No actions required — all clear</div>
+              <div style={{ textAlign: 'center', padding: '2rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                  <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="20" cy="20" r="18" stroke="#107E3E" strokeWidth="1.5" fill="#DCFCE7"/>
+                    <path d="M12 20l6 6 10-12" stroke="#107E3E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: SUCCESS, marginBottom: 4 }}>All clear</div>
+                <div style={{ fontSize: 12, color: MUTED }}>No actions required right now.</div>
+              </div>
             )}
           </div>
         </div>
