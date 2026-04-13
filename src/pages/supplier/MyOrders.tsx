@@ -66,6 +66,8 @@ const ConfirmPanel: React.FC<ConfirmPanelProps> = ({ po, onToast, onClose }) => 
   const [notes, setNotes] = useState('');
   const [showChangeReq, setShowChangeReq] = useState(false);
   const [changeText, setChangeText] = useState('');
+  const [confirmed, setConfirmed] = useState(false);
+  const [confirmedAt] = useState(new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }));
 
   const inputStyle: React.CSSProperties = {
     border: '1px solid #C9C9C9', borderRadius: '4px', padding: '0.375rem 0.5rem',
