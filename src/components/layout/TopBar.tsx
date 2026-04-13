@@ -3,6 +3,7 @@ import CommandPalette from '../shared/CommandPalette';
 import { useNavigate } from 'react-router-dom';
 import { usePersona } from '../../context/PersonaContext';
 import { mockAlerts } from '../../data/mockKpis';
+import paragonLogo from '../../assets/paragon-corp-white.svg';
 
 const NAVY   = '#0D1B2A';
 const BORDER = '#1E3A5F';
@@ -23,25 +24,6 @@ if (!document.head.querySelector('[data-topbar-responsive]')) {
   document.head.appendChild(responsiveStyle);
 }
 
-const ParagonCorpLogo: React.FC<{ height?: number }> = ({ height = 36 }) => (
-  <svg height={height} viewBox="0 0 200 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }} aria-label="Paragon Technology and Innovation">
-    {/* Icon — stylized P: vertical bar + half-circle arc */}
-    <g transform="translate(2, 2)">
-      {/* Outer circle */}
-      <circle cx="18" cy="18" r="16" stroke="#0097A7" strokeWidth="2.5" fill="none" />
-      {/* Vertical bar (spine of P) */}
-      <rect x="10" y="7" width="3.5" height="22" rx="1.75" fill="#0097A7" />
-      {/* Bowl of P — half disc */}
-      <path d="M13.5 8 C13.5 8, 28 8, 28 18 C28 28, 13.5 28, 13.5 28" fill="none" stroke="#0097A7" strokeWidth="2.5" strokeLinecap="round" />
-      {/* Inner accent dot */}
-      <circle cx="21" cy="18" r="3" fill="#0097A7" opacity="0.3" />
-    </g>
-    {/* Wordmark — "paragon" */}
-    <text x="44" y="18" fontFamily="'Inter', -apple-system, sans-serif" fontSize="14" fontWeight="700" fill="#FFFFFF" letterSpacing="1.2">paragon</text>
-    {/* Subtitle */}
-    <text x="44" y="30" fontFamily="'Inter', -apple-system, sans-serif" fontSize="6.5" fontWeight="500" fill="#8DA4BC" letterSpacing="2.2">TECHNOLOGY AND INNOVATION</text>
-  </svg>
-);
 
 const OdysseyBadge: React.FC = () => (
   <svg height="20" viewBox="0 0 88 20" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
@@ -86,7 +68,7 @@ const TopBar: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           onClick={() => navigate(persona === 'buyer' ? '/buyer/dashboard' : '/supplier/dashboard')}>
-          <ParagonCorpLogo height={32} />
+          <img src={paragonLogo} alt="Paragon Corp" height={28} style={{ display: 'block', flexShrink: 0, objectFit: 'contain' }} />
         </div>
         <div style={{ width: 1, height: 28, background: BORDER, flexShrink: 0 }} />
         <div className="topbar-portal-label" style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
