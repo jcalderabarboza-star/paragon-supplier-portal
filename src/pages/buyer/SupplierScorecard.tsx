@@ -32,7 +32,7 @@ interface SuppData {
 const SUPPLIER_DATA: SuppData[] = [
   {
     id:'zhejiang', name:'Zhejiang NHU Vitamins Co.', country:'CN',
-    category:'Active Ingredients', tier:'Tier 3 — API', sapBp:'BP-20045', channel:'⚙️ API',
+    category:'Active Ingredients', tier:'Tier 3 — API', sapBp:'BP-20045', channel:'API',
     grade:'A', score:94, status:'Preferred Supplier',
     kpis:[
       { name:'OTIF',               value:'94%',     target:'95%',     pct:94,  color:'#107E3E', trend:'↑' },
@@ -100,7 +100,7 @@ const SUPPLIER_DATA: SuppData[] = [
   },
   {
     id:'basf', name:'BASF Personal Care DE', country:'DE',
-    category:'Active Ingredients', tier:'Tier 3 — API', sapBp:'BP-20012', channel:'⚙️ API',
+    category:'Active Ingredients', tier:'Tier 3 — API', sapBp:'BP-20012', channel:'API',
     grade:'C', score:74, status:'Conditional — Improvement Plan Active', impPlan:true,
     kpis:[
       { name:'OTIF',               value:'78%',     target:'95%',     pct:78,  color:'#BB0000', trend:'↓' },
@@ -141,7 +141,7 @@ const ALL_SUPPLIERS = [
   ...(['PT Musim Mas Specialty Fats','PT Halal Emulsifier Nusantara','Givaudan Fragrance SG','PT Ecogreen Oleochemicals','Evonik Specialty FR'] as const).map((name, i) => ({
     id: `sup-extra-${i}`, name, country:['ID','ID','SG','ID','FR'][i], category:['Halal Emulsifier','Halal Emulsifier','Fragrance','Natural Botanical','Active Ingredients'][i],
     tier:['Tier 2 — Web','Tier 1 — WhatsApp','Tier 3 — API','Tier 2 — Web','Tier 2 — Web'][i],
-    sapBp:`BP-2000${10+i}`, channel:[' Web',' WhatsApp','⚙️ API',' Web',' Web'][i],
+    sapBp:`BP-2000${10+i}`, channel:[' Web',' WhatsApp','API',' Web',' Web'][i],
     grade:['A','B','A','B','C'][i], score:[92,84,91,83,72][i], status:'Approved Supplier',
     kpis: SUPPLIER_DATA[0].kpis, radar: SUPPLIER_DATA[0].radar,
     otifTrend: [82,84,85,87,88,89,90,91,91,92,92,91], commLog: [],
@@ -221,7 +221,7 @@ const SupplierScorecard: React.FC = () => {
       <div style={{ background:NAVY, borderRadius:8, padding:'24px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }}>
         <div>
           <div style={{ fontSize:'20px', fontWeight:700, color:'white', marginBottom:8 }}>
-            {COUNTRY_FLAGS[supp.country] ?? '🌍'} {supp.name}
+            {COUNTRY_FLAGS[supp.country] ?? '●'} {supp.name}
           </div>
           <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginBottom:10 }}>
             <Pill label={supp.category} bg='#1E3A5F' color='#CBD5E1' />
@@ -232,6 +232,16 @@ const SupplierScorecard: React.FC = () => {
             <span><strong style={{ color:'#94A3B8' }}>Channel:</strong> {supp.channel}</span>
           </div>
         </div>
+        {/* Compliance warning */}
+        {COMPLIANCE_ISSUES[supp.name] && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: COMPLIANCE_ISSUES[supp.name].level === 'expired' ? '#FEE2E2' : COMPLIANCE_ISSUES[supp.name].level === 'missing' ? '#FEE2E2' : '#FEF3C7', border: `1px solid ${COMPLIANCE_ISSUES[supp.name].level === 'expired' || COMPLIANCE_ISSUES[supp.name].level === 'missing' ? '#FCA5A5' : '#F59E0B'}`, borderRadius: 6, padding: '6px 12px', fontSize: 12, fontWeight: 600, color: COMPLIANCE_ISSUES[supp.name].level === 'expiring' ? '#92400E' : '#991B1B', marginBottom: 12 }}>
+            <span style={{ fontSize: 14 }}>!</span>
+            <span>Compliance alert: {COMPLIANCE_ISSUES[supp.name].label}</span>
+            <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 400, color: '#64748B' }}>See Compliance Tracker →</span>
+          </div>
+        )}
+
+        {/* Grade */}
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
           <div style={{ width:80, height:80, borderRadius:'50%', background:gBg, border:`4px solid ${gColor}`, display:'flex', alignItems:'center', justifyContent:'center' }}>
             <span style={{ fontSize:'36px', fontWeight:800, color:gColor }}>{supp.grade}</span>
