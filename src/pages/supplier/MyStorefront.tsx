@@ -247,7 +247,7 @@ const MyStorefront: React.FC = () => {
             <div style={{ display: 'flex', gap: 14, marginTop: 8, flexWrap: 'wrap' }}>
               {COMPLETENESS_ITEMS.map(item => (
                 <span key={item.label} style={{ fontSize: 11, color: item.done ? GREEN : RED }}>
-                  {item.done ? '✅' : '❌'} {item.label}
+                  {item.done ? '✓' : '✗'} {item.label}
                 </span>
               ))}
             </div>

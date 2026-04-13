@@ -119,14 +119,14 @@ const CATEGORIES = [
   { icon:'✦', category:'Natural & Botanical',       count:28, color:'#107E3E' },
   { icon:'💧', category:'Surfactants & Emulsifiers', count:22, color:'#0097A7' },
   { icon:'✦', category:'Fragrance & Aroma',         count:18, color:'#0D1B2A' },
-  { icon:'✅', category:'Halal Emulsifiers',         count:15, color:'#E9730C' },
+  { icon:'✓', category:'Halal Emulsifiers',         count:15, color:'#E9730C' },
   { icon:'🧴', category:'Preservatives',             count:12, color:'#354A5F' },
   { icon:'↓', category:'Primary Packaging',         count:31, color:'#0097A7' },
   { icon:'📫', category:'Secondary Packaging',       count:24, color:'#107E3E' },
   { icon:'🏷️', category:'Labels & Print',            count:19, color:'#0097A7' },
   { icon:'♻️', category:'Sustainable Packaging',     count:11, color:'#0D1B2A' },
   { icon:'🔬', category:'Testing & Certification',   count: 8, color:'#E9730C' },
-  { icon:'🏭', category:'Contract Manufacturing',    count: 6, color:'#354A5F' },
+  { icon:'i', category:'Contract Manufacturing',    count: 6, color:'#354A5F' },
 ];
 
 const OPEN_RFQS = [
@@ -171,7 +171,7 @@ const gradeBg = (g: string | null) =>
   g === 'A' ? '#F0FDF4' : g === 'B' ? '#EFF6FF' : g === 'C' ? '#FFFBEB' : '#F8FAFC';
 
 const channelIcon: Record<string, string> = {
-  whatsapp: '📱', wechat: '💬', email: '📧', api: '⚙️', edi: '🔗', web: '🌐',
+  whatsapp: 'WA', wechat: 'Chat', email: 'Email', api: 'API', edi: 'Link', web: 'Web',
 };
 const channelLabel: Record<string, string> = {
   whatsapp: 'WhatsApp', wechat: 'WeChat', email: 'Email', api: 'REST API', edi: 'EDI', web: 'Web Portal',
@@ -241,7 +241,7 @@ const SupplierMktCard: React.FC<{
         {/* Metrics */}
         <div style={{ display: 'flex', gap: 12, fontSize: 11, color: MUTED, marginBottom: 8 }}>
           <span>{s.otif != null ? `OTIF ${s.otif}%` : '— Not yet rated'}</span>
-          <span>⚡ {s.responseSpeed}</span>
+          <span> {s.responseSpeed}</span>
           <span style={{ marginLeft: 'auto', background: '#F1F5F9', borderRadius: 4, padding: '1px 6px' }}>
             {channelIcon[s.channel]} {channelLabel[s.channel]}
           </span>
@@ -392,7 +392,7 @@ const MarketplaceDiscovery: React.FC = () => {
           {/* Search */}
           <div style={{ position: 'relative', marginBottom: 16 }}>
             <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)',
-              fontSize: 18, color: MUTED }}>🔍</span>
+              fontSize: 18, color: MUTED }}></span>
             <input
               type="text" value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Search by material, category, country, or certification..."
@@ -496,7 +496,7 @@ const MarketplaceDiscovery: React.FC = () => {
             {filtered.map(s => <SupplierMktCard key={s.id} s={s} onToast={showToast} />)}
             {filtered.length === 0 && (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '60px 0', color: MUTED }}>
-                <div style={{ fontSize: 32, marginBottom: 12 }}>🔍</div>
+                <div style={{ fontSize: 32, marginBottom: 12 }}></div>
                 <div style={{ fontSize: 14, fontWeight: 600 }}>No suppliers match your filters</div>
                 <button onClick={clearAll} style={{ marginTop: 12, background: TEAL, color: 'white',
                   border: 'none', borderRadius: 6, padding: '8px 18px', fontSize: 12, cursor: 'pointer' }}>
@@ -510,7 +510,7 @@ const MarketplaceDiscovery: React.FC = () => {
           <div style={{ marginTop: 32, background: `linear-gradient(135deg, ${NAVY} 0%, #1A3254 100%)`,
             borderRadius: 10, padding: '20px 24px' }}>
             <div style={{ color: 'white', fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
-              🎯 Open RFQ Opportunities — Paragon is actively sourcing
+               Open RFQ Opportunities — Paragon is actively sourcing
             </div>
             <div style={{ color: '#94A3B8', fontSize: 12, marginBottom: 16 }}>
               Qualified suppliers can submit quotations for these active requirements

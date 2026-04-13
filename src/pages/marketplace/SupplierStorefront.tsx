@@ -202,7 +202,7 @@ const SupplierStorefront: React.FC = () => {
   if (!data) {
     return (
       <div style={{ padding: '60px 0', textAlign: 'center', color: MUTED }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+        <div style={{ fontSize: 40, marginBottom: 12 }}></div>
         <div style={{ fontSize: 16, fontWeight: 600 }}>Supplier not found in marketplace</div>
         <button onClick={() => navigate('/marketplace')}
           style={{ marginTop: 16, background: TEAL, color: 'white', border: 'none', borderRadius: 6,
@@ -220,11 +220,11 @@ const SupplierStorefront: React.FC = () => {
   const localTime = getLocalTime(data.country);
 
   const TABS = [
-    { id: 'about',   label: '📋 About' },
-    { id: 'catalog', label: '📦 Materials' },
+    { id: 'about',   label: ' About' },
+    { id: 'catalog', label: ' Materials' },
     { id: 'certs',   label: '🛡️ Certifications' },
-    { id: 'perf',    label: '📊 Track Record' },
-    { id: 'contact', label: '💬 Contact' },
+    { id: 'perf',    label: ' Track Record' },
+    { id: 'contact', label: ' Contact' },
   ] as const;
 
   return (
@@ -529,7 +529,7 @@ const SupplierStorefront: React.FC = () => {
               </div>
               <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>
                 <strong style={{ color: NAVY }}>Language:</strong> {cp.languageLabel}<br />
-                <strong style={{ color: NAVY }}>Tone:</strong> {cp.tone === 'conversational' ? '🤝 Conversational' : '💼 Formal'}<br />
+                <strong style={{ color: NAVY }}>Tone:</strong> {cp.tone === 'conversational' ? ' Conversational' : ' Formal'}<br />
                 <strong style={{ color: NAVY }}>Cultural Notes:</strong> {cp.culturalNotes.slice(0, 120)}...
               </div>
             </div>

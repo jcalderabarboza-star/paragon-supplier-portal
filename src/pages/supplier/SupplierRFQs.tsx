@@ -120,7 +120,7 @@ const EVAL_SEGMENTS = [
 
 const resultColor = (r: string) => r === 'Awarded' ? GREEN : r === 'Not Awarded' ? MUTED : RED;
 const resultBg    = (r: string) => r === 'Awarded' ? '#F0FDF4' : r === 'Not Awarded' ? '#F8FAFC' : '#FEF2F2';
-const resultIcon  = (r: string) => r === 'Awarded' ? '✅' : r === 'Not Awarded' ? '❌' : '—';
+const resultIcon  = (r: string) => r === 'Awarded' ? '✓' : r === 'Not Awarded' ? '✗' : '—';
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 let _toastTimer: ReturnType<typeof setTimeout> | null = null;
@@ -306,7 +306,7 @@ const QuotePanel: React.FC<QuotePanelProps> = ({ rfq, onClose, onSubmit, showToa
               { label: 'BPOM Registration', status: 'On file' },
             ].map(d => (
               <div key={d.label} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, fontSize: 12 }}>
-                <span style={{ color: GREEN }}>✅</span>
+                <span style={{ color: GREEN }}>✓</span>
                 <span style={{ color: NAVY, fontWeight: 500 }}>{d.label}</span>
                 <span style={{ color: MUTED }}>— {d.status}</span>
               </div>
@@ -427,8 +427,8 @@ const RFQCard: React.FC<{
 
         {/* Details row */}
         <div style={{ display: 'flex', gap: 20, fontSize: 12, color: MUTED, marginBottom: 12, flexWrap: 'wrap' }}>
-          <span>📦 Qty: <strong style={{ color: NAVY }}>{rfq.qty}</strong></span>
-          <span>📍 {rfq.deliveryLocation}</span>
+          <span> Qty: <strong style={{ color: NAVY }}>{rfq.qty}</strong></span>
+          <span> {rfq.deliveryLocation}</span>
           <span>🗓️ Req. Delivery: <strong style={{ color: NAVY }}>{rfq.requestedDelivery}</strong></span>
           <span>⏰ Deadline: <strong style={{ color: urgent ? RED : NAVY }}>{rfq.deadline}</strong></span>
         </div>
