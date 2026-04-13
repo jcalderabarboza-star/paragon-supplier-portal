@@ -150,54 +150,71 @@ const SupplierDashboard: React.FC = () => {
         {/* LEFT ── Action Required + Recent Orders */}
         <div style={{ flex: '3 1 420px', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
-          {/* Action Required */}
-          <div style={{ background: 'white', border: '1px solid #e0e0e0', borderRadius: '8px', padding: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '1rem', fontWeight: 700, color: '#354A5F' }}>Action Required</span>
-              <span style={{
-                background: '#BB0000', color: 'white', fontSize: '11px', fontWeight: 700,
-                padding: '0.1rem 0.5rem', borderRadius: '12px', minWidth: '20px', textAlign: 'center',
-              }}>3</span>
+          {/* Today's Briefing */}
+          <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px', overflow: 'hidden' }}>
+            <div style={{ background: '#0D1B2A', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 700, color: 'white' }}>Today's Briefing</div>
+                <div style={{ fontSize: '11px', color: '#8DA4BC', marginTop: 2 }}>
+                  {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                </div>
+              </div>
+              <span style={{ background: '#BB0000', color: 'white', fontSize: '11px', fontWeight: 700, padding: '2px 10px', borderRadius: 9999 }}>3 actions</span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {/* Red — PO confirmation */}
-              <div style={{ borderLeft: '4px solid #BB0000', padding: '0.875rem 1rem', background: '#FFF5F5', borderRadius: '0 6px 6px 0' }}>
-                <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '0.25rem' }}>
-                  Purchase Orders awaiting confirmation
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {/* Priority 1 — PO confirmation */}
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <AlertTriangle size={16} color="#BB0000" />
                 </div>
-                <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '0.625rem' }}>
-                  {needsConfirmCount} PO{needsConfirmCount !== 1 ? 's' : ''} need your acknowledgement to proceed
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0D1B2A' }}>Confirm {needsConfirmCount} Purchase Order{needsConfirmCount !== 1 ? 's' : ''}</span>
+                    <span style={{ background: '#FEE2E2', color: '#BB0000', fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: 9999 }}>Urgent</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>PO-2025-00108 · Rp 185jT · Delivery 25 Apr 2025 — acknowledgement overdue 96h</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button onClick={() => showToast('Opening PO-2025-00108 for confirmation...')} style={{ padding: '6px 14px', background: '#BB0000', color: 'white', border: 'none', borderRadius: 6, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Confirm Now</button>
+                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> ~2 min</span>
+                  </div>
                 </div>
-                <Button design="Emphasized" onClick={() => showToast('Opening PO confirmation...')}>
-                  Confirm Now →
-                </Button>
               </div>
 
-              {/* Yellow — ISO expiry */}
-              <div style={{ borderLeft: '4px solid #E9730C', padding: '0.875rem 1rem', background: '#FFFBF0', borderRadius: '0 6px 6px 0' }}>
-                <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '0.25rem' }}>
-                  ISO Certificate expiring in 45 days
+              {/* Priority 2 — ISO certificate */}
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Clock size={16} color="#E9730C" />
                 </div>
-                <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '0.625rem' }}>
-                  Upload your renewed certificate to avoid disruption
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0D1B2A' }}>Upload ISO 9001:2015 Certificate</span>
+                    <span style={{ background: '#FEF3C7', color: '#E9730C', fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: 9999 }}>45 days left</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Cert expires 24 May 2026 — upload renewal to avoid disruption to active POs</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button onClick={() => showToast('Document upload — go to My Documents to upload')} style={{ padding: '6px 14px', background: '#E9730C', color: 'white', border: 'none', borderRadius: 6, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Upload Certificate</button>
+                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> ~5 min</span>
+                  </div>
                 </div>
-                <Button design="Default" onClick={() => showToast('Document upload coming in Phase 2')}>
-                  Upload Certificate →
-                </Button>
               </div>
 
-              {/* Blue — Profile */}
-              <div style={{ borderLeft: '4px solid #0097A7', padding: '0.875rem 1rem', background: '#F0F6FF', borderRadius: '0 6px 6px 0' }}>
-                <div style={{ fontWeight: 600, fontSize: '13px', marginBottom: '0.25rem' }}>
-                  Complete your company profile
+              {/* Priority 3 — Profile */}
+              <div style={{ padding: '16px 20px', display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#E0F7FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <User size={16} color="#0097A7" />
                 </div>
-                <div style={{ fontSize: '13px', color: '#6c757d', marginBottom: '0.625rem' }}>
-                  Add bank account details to enable faster payments
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0D1B2A' }}>Complete company profile</span>
+                    <span style={{ background: '#E0F7FA', color: '#0097A7', fontSize: '10px', fontWeight: 700, padding: '1px 7px', borderRadius: 9999 }}>When ready</span>
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#64748B', marginBottom: 8 }}>Add bank account details and payment preferences to enable Net 15 payment terms</div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button onClick={() => showToast('Profile editor — coming in Phase 2')} style={{ padding: '6px 14px', background: 'white', color: '#0097A7', border: '1px solid #0097A7', borderRadius: 6, fontSize: '12px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Update Profile</button>
+                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}><Clock size={11} /> ~10 min</span>
+                  </div>
                 </div>
-                <Button design="Default" onClick={() => showToast('Profile editor coming in Phase 2')}>
-                  Update Profile →
-                </Button>
               </div>
             </div>
           </div>
