@@ -41,7 +41,7 @@ interface MktSupplier {
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
   {
-    id: 'sup-001', name: 'PT Ecogreen Oleochemicals', country: 'ID', flag: '🇮🇩',
+    id: 'sup-001', name: 'PT Ecogreen Oleochemicals', country: 'ID', flag: 'ID',
     category: 'Halal Emulsifiers', grade: ScorecardGrade.A, otif: 95,
     halalCert: true, iso9001: true, bpom: true, reach: false, tier: 3, channel: 'api',
     establishedYear: 1995, employees: '1,000–2,500', annualRevenue: 'Rp 800+ Miliar',
@@ -50,7 +50,7 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
     status: 'Approved Supplier', responseSpeed: '<12h', existingSupplierId: 'sup-001',
   },
   {
-    id: 'sup-002', name: 'PT Musim Mas Specialty Fats', country: 'ID', flag: '🇮🇩',
+    id: 'sup-002', name: 'PT Musim Mas Specialty Fats', country: 'ID', flag: 'ID',
     category: 'Halal Emulsifiers', grade: ScorecardGrade.A, otif: 91,
     halalCert: true, iso9001: true, bpom: true, reach: false, tier: 2, channel: 'web',
     establishedYear: 1972, employees: '5,000–10,000', annualRevenue: 'USD 2B+',
@@ -59,7 +59,7 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
     status: 'Approved Supplier', responseSpeed: '<24h', existingSupplierId: 'sup-002',
   },
   {
-    id: 'sup-009', name: 'Zhejiang NHU Vitamins Co.', country: 'CN', flag: '🇨🇳',
+    id: 'sup-009', name: 'Zhejiang NHU Vitamins Co.', country: 'CN', flag: 'CN',
     category: 'Active Ingredients', grade: ScorecardGrade.B, otif: 85,
     halalCert: false, iso9001: true, bpom: true, reach: true, tier: 2, channel: 'web',
     establishedYear: 1999, employees: '5,000+', annualRevenue: 'CNY 8B+',
@@ -68,7 +68,7 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
     status: 'Approved Supplier', responseSpeed: '<24h', existingSupplierId: 'sup-009',
   },
   {
-    id: 'sup-006', name: 'Evonik Specialty Chemicals', country: 'FR', flag: '🇫🇷',
+    id: 'sup-006', name: 'Evonik Specialty Chemicals', country: 'FR', flag: 'FR',
     category: 'Active Ingredients', grade: ScorecardGrade.B, otif: 87,
     halalCert: false, iso9001: true, bpom: true, reach: true, tier: 2, channel: 'email',
     establishedYear: 1920, employees: '33,000+', annualRevenue: 'EUR 15B+',
@@ -77,7 +77,7 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
     status: 'Approved Supplier', responseSpeed: '<48h', existingSupplierId: 'sup-006',
   },
   {
-    id: 'mkt-001', name: 'PT Indesso Aroma Indonesia', country: 'ID', flag: '🇮🇩',
+    id: 'mkt-001', name: 'PT Indesso Aroma Indonesia', country: 'ID', flag: 'ID',
     category: 'Fragrance & Aroma', grade: null, otif: null,
     halalCert: true, iso9001: true, bpom: true, reach: false, tier: 2, channel: 'web',
     establishedYear: 1968, employees: '500–1,000', annualRevenue: 'USD 50–100M',
@@ -86,7 +86,7 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
     status: 'Not Yet Qualified', responseSpeed: '<24h',
   },
   {
-    id: 'mkt-002', name: 'Givaudan Fragrance Singapore', country: 'SG', flag: '🇸🇬',
+    id: 'mkt-002', name: 'Givaudan Fragrance Singapore', country: 'SG', flag: 'SG',
     category: 'Fragrance & Aroma', grade: ScorecardGrade.A, otif: 96,
     halalCert: true, iso9001: true, bpom: false, reach: true, tier: 3, channel: 'api',
     establishedYear: 1895, employees: '10,000+', annualRevenue: 'CHF 7B+',
@@ -95,7 +95,7 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
     status: 'Approved Supplier', responseSpeed: '<12h',
   },
   {
-    id: 'mkt-003', name: 'Univar Solutions Malaysia', country: 'MY', flag: '🇲🇾',
+    id: 'mkt-003', name: 'Univar Solutions Malaysia', country: 'MY', flag: 'MY',
     category: 'Active Ingredients', grade: null, otif: null,
     halalCert: true, iso9001: true, bpom: false, reach: true, tier: 2, channel: 'web',
     establishedYear: 1924, employees: '10,000+', annualRevenue: 'USD 10B+',
@@ -104,7 +104,7 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
     status: 'Not Yet Qualified', responseSpeed: '<24h',
   },
   {
-    id: 'mkt-004', name: 'Anhui Salicylics CN', country: 'CN', flag: '🇨🇳',
+    id: 'mkt-004', name: 'Anhui Salicylics CN', country: 'CN', flag: 'CN',
     category: 'Active Ingredients', grade: null, otif: null,
     halalCert: false, iso9001: true, bpom: false, reach: false, tier: 3, channel: 'edi',
     establishedYear: 2003, employees: '200–500', annualRevenue: 'USD 20–50M',
@@ -115,17 +115,17 @@ const MARKETPLACE_SUPPLIERS: MktSupplier[] = [
 ];
 
 const CATEGORIES = [
-  { icon:'🧪', category:'Active Ingredients',        count:34, color:'#0097A7' },
+  { icon:'✦', category:'Active Ingredients',        count:34, color:'#0097A7' },
   { icon:'✦', category:'Natural & Botanical',       count:28, color:'#107E3E' },
-  { icon:'💧', category:'Surfactants & Emulsifiers', count:22, color:'#0097A7' },
+  { icon:'✦', category:'Surfactants & Emulsifiers', count:22, color:'#0097A7' },
   { icon:'✦', category:'Fragrance & Aroma',         count:18, color:'#0D1B2A' },
   { icon:'✓', category:'Halal Emulsifiers',         count:15, color:'#E9730C' },
-  { icon:'🧴', category:'Preservatives',             count:12, color:'#354A5F' },
+  { icon:'✦', category:'Preservatives',             count:12, color:'#354A5F' },
   { icon:'↓', category:'Primary Packaging',         count:31, color:'#0097A7' },
-  { icon:'📫', category:'Secondary Packaging',       count:24, color:'#107E3E' },
-  { icon:'🏷️', category:'Labels & Print',            count:19, color:'#0097A7' },
-  { icon:'♻️', category:'Sustainable Packaging',     count:11, color:'#0D1B2A' },
-  { icon:'🔬', category:'Testing & Certification',   count: 8, color:'#E9730C' },
+  { icon:'✦', category:'Secondary Packaging',       count:24, color:'#107E3E' },
+  { icon:'✦', category:'Labels & Print',            count:19, color:'#0097A7' },
+  { icon:'✦', category:'Sustainable Packaging',     count:11, color:'#0D1B2A' },
+  { icon:'✦', category:'Testing & Certification',   count: 8, color:'#E9730C' },
   { icon:'i', category:'Contract Manufacturing',    count: 6, color:'#354A5F' },
 ];
 
@@ -136,14 +136,14 @@ const OPEN_RFQS = [
 ];
 
 const COUNTRIES = [
-  { code:'ID', name:'Indonesia', count:89, flag:'🇮🇩' },
-  { code:'CN', name:'China',     count:42, flag:'🇨🇳' },
-  { code:'DE', name:'Germany',   count:31, flag:'🇩🇪' },
-  { code:'FR', name:'France',    count:24, flag:'🇫🇷' },
-  { code:'SG', name:'Singapore', count:18, flag:'🇸🇬' },
-  { code:'IN', name:'India',     count:15, flag:'🇮🇳' },
-  { code:'MY', name:'Malaysia',  count:12, flag:'🇲🇾' },
-  { code:'--', name:'Other',     count:16, flag:'🌍' },
+  { code:'ID', name:'Indonesia', count:89, flag:'ID' },
+  { code:'CN', name:'China',     count:42, flag:'CN' },
+  { code:'DE', name:'Germany',   count:31, flag:'DE' },
+  { code:'FR', name:'France',    count:24, flag:'FR' },
+  { code:'SG', name:'Singapore', count:18, flag:'SG' },
+  { code:'IN', name:'India',     count:15, flag:'IN' },
+  { code:'MY', name:'Malaysia',  count:12, flag:'MY' },
+  { code:'--', name:'Other',     count:16, flag:'●' },
 ];
 
 
@@ -404,7 +404,7 @@ const MarketplaceDiscovery: React.FC = () => {
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
             {[
               { label: '✦ Halal Certified', cert: 'Halal Certified' },
-              { label: '🇮🇩 Indonesian Suppliers', country: 'ID' },
+              { label: 'ID Indonesian Suppliers', country: 'ID' },
               { label: 'Grade A Suppliers', grade: 'A' },
             ].map(qf => (
               <button key={qf.label}
@@ -525,7 +525,7 @@ const MarketplaceDiscovery: React.FC = () => {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#94A3B8', marginBottom: 10 }}>
                     <span>↓ {rfq.qty}</span>
-                    <span>⏰ {rfq.deadline}</span>
+                    <span>! {rfq.deadline}</span>
                   </div>
                   <button onClick={() => showToast('Expression of interest submitted. Paragon procurement team will contact you within 2 business days.')}
                     style={{ width: '100%', padding: '8px 0', background: TEAL, color: 'white',
