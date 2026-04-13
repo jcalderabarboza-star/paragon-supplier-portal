@@ -476,7 +476,19 @@ const SupplierDiscovery: React.FC = () => {
 
           {(searched || searchQuery || searchCategory !== 'All' || searchRegion !== 'All' || halalOnly || majorBrandsOnly) ? (
             <>
-              <div style={{ fontSize: 13, color: MUTED, fontWeight: 500 }}>{filteredSuppliers.length} supplier{filteredSuppliers.length !== 1 ? 's' : ''} found — sorted by AI match score</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ fontSize: 12, color: MUTED }}>
+                  {filteredSuppliers.length} supplier{filteredSuppliers.length !== 1 ? 's' : ''} found
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 11, color: MUTED }}>Sort by:</span>
+                  {(['relevance', 'grade', 'otif', 'compliance'] as const).map(s => (
+                    <button key={s} onClick={() => setSortBy(s)} style={{ padding: '3px 10px', border: `1px solid ${sortBy === s ? TEAL : BORDER}`, borderRadius: 9999, background: sortBy === s ? TEAL : 'white', color: sortBy === s ? 'white' : MUTED, fontSize: 11, fontWeight: sortBy === s ? 600 : 400, cursor: 'pointer', fontFamily: 'inherit', textTransform: 'capitalize' }}>
+                      {s === 'otif' ? 'OTIF' : s.charAt(0).toUpperCase() + s.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
               {filteredSuppliers.length === 0 ? (
                 <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '3rem', textAlign: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
