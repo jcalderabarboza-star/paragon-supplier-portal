@@ -78,8 +78,7 @@ const BUYER_SECTIONS: NavSection[] = [
 
 const BUYER_FIXED: NavItem[] = [
   { text: 'Compliance (2)', icon: <ShieldCheck size={16} />, path: '/buyer/compliance',
-    badge: '2', badgeColor: '#BB0000',
-    toastMsg: 'Compliance module — Coming Soon in Phase 2' },
+    badge: '2', badgeColor: '#BB0000' },
   { text: 'Settings', icon: <Settings size={16} />, path: '/buyer/settings',
     toastMsg: 'Settings — Coming Soon in Phase 2' },
 ];

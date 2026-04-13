@@ -20,6 +20,7 @@ import GoodsReceipt from '../pages/buyer/GoodsReceipt';
 import SupplierDiscovery from '../pages/buyer/SupplierDiscovery';
 import ContractManagement from '../pages/buyer/ContractManagement';
 import WhatsAppHub from '../pages/buyer/WhatsAppHub';
+import Compliance from '../pages/buyer/Compliance';
 
 // Marketplace pages
 import MarketplaceDiscovery from '../pages/marketplace/MarketplaceDiscovery';
@@ -67,6 +68,7 @@ const AppRouter: React.FC = () => {
             <Route path="buyer/invoices"         element={<InvoicePayment />} />
             <Route path="buyer/scorecard"        element={<SupplierScorecard />} />
             <Route path="buyer/risk"             element={<SupplyRisk />} />
+            <Route path="buyer/compliance"       element={<Compliance />} />
 
             {/* ── Marketplace routes ── */}
             <Route path="marketplace"              element={<MarketplaceDiscovery />} />
