@@ -409,7 +409,12 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
             </div>
           </div>
           <div style={{ fontSize: 12, color: '#64748B', background: 'white', padding: '8px 12px', borderRadius: 6, border: '1px solid #E2E8F0' }}>
-            Invoice for {item.poNumber} automatically unblocked. Navigate to Invoices & Payment to review and release.
+                {disposition === 'reject'
+                  ? rejectNotifSent
+                    ? `Rejection notice sent to ${item.supplier}. Return expected by ${returnDate || 'TBD'} via ${returnCarrier || 'TBD'}.`
+                    : `Batch rejected and recorded in SAP. No supplier notification sent.`
+                  : `Invoice for ${item.poNumber} automatically unblocked. Navigate to Invoices & Payment to review and release.`
+                }
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => { onClose(); }} style={{ padding: '8px 16px', background: '#0097A7', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Invoices & Payment</button>
