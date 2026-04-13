@@ -39,7 +39,7 @@ const SCENARIOS: Record<ScenarioId, {
     inputPlaceholder: 'ASN PO-00108 2026-04-12 JNE JNE123456',
   },
   inventory: {
-    label: 'Update Inventory', icon: '📊',
+    label: 'Update Inventory', icon: '↑',
     initial: [{
       id: 'bot-init', from: 'bot',
       content: '📊 *Update Stok Diperlukan*\nStok Niacinamide B3 Anda di sistem kami: 24 hari.\nMohon update posisi stok terkini.\n\nFormat: *STOK [material code] [qty] [unit]*',
