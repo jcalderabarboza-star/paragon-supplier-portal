@@ -279,6 +279,12 @@ const Dashboard: React.FC = () => {
   const [escalated, setEscalated] = useState<Set<string>>(new Set());
   const [tick, setTick] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  React.useEffect(() => {
+    const t = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const t = setInterval(() => setTick(n => n + 1), 60000);
