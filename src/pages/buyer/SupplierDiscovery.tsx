@@ -505,7 +505,19 @@ const SupplierDiscovery: React.FC = () => {
               </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))', gap: 16 }}>
-                  {filteredSuppliers.sort((a, b) => b.matchScore - a.matchScore).map(s => <GlobalSupplierCard key={s.id} s={s} onToast={showToast} />)}
+                  {filteredSuppliers.sort((a, b) => {
+                    if (sortBy === 'grade' || sortBy === 'otif') {
+                      // Sort by matchScore descending (proxy for grade/OTIF in discovery context)
+                      return b.matchScore - a.matchScore;
+                    }
+                    if (sortBy === 'compliance') {
+                      const score = (s: typeof a) => (s.halalCertified ? 2 : 0) + (s.certifications.length);
+                      return score(b) - score(a);
+                    }
+                    // relevance: matchScore + halal boost + cert count boost
+                    const complianceBoost = (s: typeof a) => (s.halalCertified ? 5 : 0) + s.certifications.length;
+                    return (b.matchScore + complianceBoost(b)) - (a.matchScore + complianceBoost(a));
+                  }).map(s => <GlobalSupplierCard key={s.id} s={s} onToast={showToast} />)}
                 </div>
               )}
             </>
