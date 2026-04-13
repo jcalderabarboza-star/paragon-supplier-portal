@@ -486,7 +486,15 @@ const SupplierDiscovery: React.FC = () => {
             </>
           ) : (
             <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '2rem', textAlign: 'center' }}>
-              <div style={{ fontSize: 32, marginBottom: 12 }}>🌐</div>
+              <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="20" cy="20" r="18" stroke="#0097A7" strokeWidth="1.5" fill="none"/>
+                  <ellipse cx="20" cy="20" rx="8" ry="18" stroke="#0097A7" strokeWidth="1.5" fill="none"/>
+                  <line x1="2" y1="20" x2="38" y2="20" stroke="#0097A7" strokeWidth="1.5"/>
+                  <line x1="5" y1="12" x2="35" y2="12" stroke="#0097A7" strokeWidth="1" opacity="0.5"/>
+                  <line x1="5" y1="28" x2="35" y2="28" stroke="#0097A7" strokeWidth="1" opacity="0.5"/>
+                </svg>
+              </div>
               <div style={{ fontSize: 15, fontWeight: 700, color: NAVY, marginBottom: 8 }}>Search the Global Supplier Market</div>
               <div style={{ fontSize: 13, color: MUTED, maxWidth: 480, margin: '0 auto', lineHeight: 1.6, marginBottom: 16 }}>
                 Find suppliers already validated by L'Oréal, Unilever, P&G, Shiseido, and LVMH. Filter by halal certification, region, and category. Invite directly to Paragon Marketplace or contact via ARIA AI agent.
