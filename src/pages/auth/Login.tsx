@@ -205,7 +205,7 @@ const Login: React.FC = () => {
             onMouseEnter={e => (e.currentTarget.style.borderColor = NAVY)}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#CBD5E1')}
           >
-            👔 View as Buyer
+            i View as Buyer
           </button>
           <button
             onClick={handleViewAsSupplier}

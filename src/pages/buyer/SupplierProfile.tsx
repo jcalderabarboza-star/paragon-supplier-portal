@@ -152,7 +152,7 @@ const OverviewTab: React.FC<{ supp: SupplierExtended }> = ({ supp }) => {
             { icon: '', label: 'Fallback Channel', value: `${getChannelConfig(cp.fallbackChannel).icon} ${getChannelConfig(cp.fallbackChannel).label}` },
             { icon: '🕐', label: 'Timezone',         value: cp.timezone },
             { icon: '', label: 'Currency',         value: `${cp.currency}` },
-            { icon: '🎭', label: 'Comm. Tone',       value: cp.tone === 'conversational' ? ' Conversational' : '💼 Formal' },
+            { icon: '', label: 'Comm. Tone',       value: cp.tone === 'conversational' ? ' Conversational' : ' Formal' },
             { icon: '📅', label: 'Date Format',      value: cp.dateFormat },
             { icon: '⏰', label: 'Business Hours',   value: `${cp.businessHours.start} – ${cp.businessHours.end}` },
             { icon: '💳', label: cp.taxLabel,        value: `${cp.taxRate}%` },
@@ -827,7 +827,7 @@ const ProfileHeader: React.FC<{
           </span>
           <span style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 9999,
             padding: '3px 10px', fontSize: 11, color: '#CBD5E1' }}>
-            {cp.tone === 'conversational' ? ' Conversational' : '💼 Formal'}
+            {cp.tone === 'conversational' ? ' Conversational' : ' Formal'}
           </span>
         </div>
       </div>
