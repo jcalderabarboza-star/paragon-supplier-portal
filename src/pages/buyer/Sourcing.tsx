@@ -236,7 +236,7 @@ function DetailPanel({ rfq, onClose, onToast }: { rfq: RFQ; onClose: () => void;
                     </div>
 
                     <button
-                      onClick={() => { onClose(); onToast(`Award sent to ${q.supplier}. SAP Info Record will be created.`); }}
+                      onClick={() => { onAward({ rfqId: rfq.id, supplier: q.supplier, amount: q.totalPrice, poNumber: rfq.rfqNumber }); }}
                       style={{ width:'100%', padding:'8px', border:'none', borderRadius:6, background: q.recommended ? TEAL : NAVY, color:'white', fontSize:'12px', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}
                     >
                       Award to Supplier
