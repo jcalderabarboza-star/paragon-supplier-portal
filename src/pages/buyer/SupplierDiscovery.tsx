@@ -477,7 +477,19 @@ const SupplierDiscovery: React.FC = () => {
             <>
               <div style={{ fontSize: 13, color: MUTED, fontWeight: 500 }}>{filteredSuppliers.length} supplier{filteredSuppliers.length !== 1 ? 's' : ''} found — sorted by AI match score</div>
               {filteredSuppliers.length === 0 ? (
-                <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '3rem', textAlign: 'center', color: MUTED }}>No suppliers match your search criteria. Try broadening your filters.</div>
+                <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '3rem', textAlign: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="22" cy="22" r="14" stroke="#CBD5E1" strokeWidth="2" fill="none"/>
+                    <line x1="32" y1="32" x2="42" y2="42" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="17" y1="22" x2="27" y2="22" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round"/>
+                    <line x1="22" y1="17" x2="22" y2="27" stroke="#CBD5E1" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: NAVY, marginBottom: 6 }}>No suppliers found</div>
+                <div style={{ fontSize: 13, color: MUTED, marginBottom: 16, maxWidth: 320, margin: '0 auto 16px' }}>No suppliers match your current search. Try different keywords, remove filters, or browse all regions.</div>
+                <button onClick={() => { setSearchQuery(''); setSearchCategory('All'); setSearchRegion('All'); setHalalOnly(false); setMajorBrandsOnly(false); setSearched(false); }} style={{ padding: '8px 18px', background: TEAL, color: 'white', border: 'none', borderRadius: 6, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Clear all filters</button>
+              </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(480px, 1fr))', gap: 16 }}>
                   {filteredSuppliers.sort((a, b) => b.matchScore - a.matchScore).map(s => <GlobalSupplierCard key={s.id} s={s} onToast={showToast} />)}
