@@ -102,6 +102,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
     items: [
       { text: 'My Orders',          icon: <ShoppingCart size={16} />, path: '/supplier/orders' },
       { text: 'My Shipments & ASN', icon: <Truck size={16} />,        path: '/supplier/asn' },
+      { text: 'My Inventory',       icon: <Package size={16} />,      path: '/supplier/inventory' },
     ],
   },
   {
@@ -113,9 +114,8 @@ const SUPPLIER_SECTIONS: NavSection[] = [
   {
     header: 'MY PROFILE',
     items: [
-      { text: 'My Documents',   icon: <FolderOpen size={16} />, path: '/supplier/documents' },
-      { text: 'My Inventory',   icon: <Package size={16} />,    path: '/supplier/inventory' },
-      { text: 'My Performance', icon: <BarChart size={16} />,   path: '/supplier/performance' },
+      { text: 'My Documents',   icon: <FolderOpen size={16} />,  path: '/supplier/documents' },
+      { text: 'My Performance', icon: <BarChart size={16} />,    path: '/supplier/performance' },
       { text: 'My Storefront',  icon: <ShoppingBag size={16} />, path: '/supplier/storefront' },
     ],
   },
