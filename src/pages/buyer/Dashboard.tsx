@@ -249,7 +249,7 @@ function WarRoomBanner({ items, onEscalate, isFullScreen, onToggleFullScreen }: 
             </div>
             <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
               <Pill label={item.type} bg="#FEE2E2" color="#BB0000" />
-              <button onClick={() => onEscalate(item.id)} style={{ background: '#BB0000', color: 'white', border: 'none', borderRadius: 5, padding: '4px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.5px' }}>
+              <button onClick={() => onEscalate(item.id, item.title, item.type)} style={{ background: '#BB0000', color: 'white', border: 'none', borderRadius: 5, padding: '4px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.5px' }}>
                 ESCALATE
               </button>
             </div>
