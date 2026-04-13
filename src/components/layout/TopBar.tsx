@@ -84,7 +84,15 @@ const TopBar: React.FC = () => {
         </span>
       </div>
 
+      {showSearch && <CommandPalette onClose={() => setShowSearch(false)} />}
+
+      {/* RIGHT — search + notification bell + avatar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <button onClick={() => setShowSearch(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', color: '#8DA4BC', fontSize: 12, fontFamily: 'inherit' }}>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5.5" cy="5.5" r="4" stroke="#8DA4BC" strokeWidth="1.2"/><line x1="8.5" y1="8.5" x2="12" y2="12" stroke="#8DA4BC" strokeWidth="1.2" strokeLinecap="round"/></svg>
+          <span>Search</span>
+          <kbd style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, padding: '1px 5px', fontSize: 10, fontFamily: 'inherit', color: '#64748B' }}>/</kbd>
+        </button>
         <div style={{ position: 'relative', cursor: 'pointer' }}
           onClick={() => setShowNotifHint(h => !h)}
           title={`${notifCount} unacknowledged POs`}>
