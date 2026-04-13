@@ -338,6 +338,59 @@ const Dashboard: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
       {isLoading ? <SkeletonDashboard /> : <>
+
+      {escalateTarget && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 800 }}>
+          <div style={{ background: 'white', borderRadius: 12, padding: 28, maxWidth: 500, width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <AlertTriangle size={20} color="#BB0000" />
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: NAVY }}>Log Escalation</div>
+                <div style={{ fontSize: 12, color: MUTED }}>{escalateTarget.title}</div>
+              </div>
+            </div>
+            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#991B1B' }}>
+              Type: {escalateTarget.type} — This escalation will be logged and assigned for immediate action.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Assign To</div>
+                <select value={escalateAssignee} onChange={e => setEscalateAssignee(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: `1px solid ${BORDER}`, fontSize: 13, fontFamily: 'inherit', background: 'white', color: NAVY }}>
+                  <option value="">Procurement Team</option>
+                  <option>VP SCM</option>
+                  <option>Finance Controller</option>
+                  <option>Quality Manager</option>
+                  <option>Compliance Officer</option>
+                  <option>CEO Office</option>
+                </select>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Priority</div>
+                <select value={escalatePriority} onChange={e => setEscalateePriority(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: `1px solid ${BORDER}`, fontSize: 13, fontFamily: 'inherit', background: 'white', color: NAVY }}>
+                  <option>Critical</option>
+                  <option>High</option>
+                  <option>Medium</option>
+                </select>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Resolution Date</div>
+                <input type="date" value={escalateDate} onChange={e => setEscalateDate(e.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: `1px solid ${BORDER}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' as const }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Notes</div>
+                <input value={escalateNotes} onChange={e => setEscalateNotes(e.target.value)} placeholder="Additional context..." style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: `1px solid ${BORDER}`, fontSize: 13, fontFamily: 'inherit', boxSizing: 'border-box' as const }} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button onClick={() => setEscalateTarget(null)} style={{ padding: '9px 18px', border: `1px solid ${BORDER}`, borderRadius: 6, background: 'white', color: MUTED, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+              <button onClick={confirmEscalate} style={{ padding: '9px 18px', border: 'none', borderRadius: 6, background: ERROR, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Confirm Escalation</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {toast && (
         <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', background: NAVY, color: 'white', padding: '12px 20px', borderRadius: 8, zIndex: 600, boxShadow: '0 4px 16px rgba(0,0,0,0.25)', fontSize: 13, borderLeft: `3px solid ${TEAL}`, maxWidth: 360 }}>{toast}</div>
       )}
