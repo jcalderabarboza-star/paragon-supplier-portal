@@ -9,6 +9,20 @@ const BORDER = '#1E3A5F';
 const TEAL   = '#0097A7';
 const MUTED  = '#64748B';
 
+const responsiveStyle = document.createElement('style');
+responsiveStyle.textContent = `
+  @media (max-width: 900px) {
+    .topbar-portal-label { display: none !important; }
+  }
+  @media (max-width: 700px) {
+    .topbar-persona { display: none !important; }
+  }
+`;
+if (!document.head.querySelector('[data-topbar-responsive]')) {
+  responsiveStyle.setAttribute('data-topbar-responsive', '');
+  document.head.appendChild(responsiveStyle);
+}
+
 const ParagonCorpLogo: React.FC<{ height?: number }> = ({ height = 32 }) => (
   <svg height={height} viewBox="0 0 160 36" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }}>
     <g transform="translate(0, 2)">
