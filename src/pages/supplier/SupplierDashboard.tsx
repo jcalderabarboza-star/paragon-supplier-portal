@@ -4,7 +4,7 @@ import { mockSuppliers } from '../../data/mockSuppliers';
 import { mockPurchaseOrders } from '../../data/mockPurchaseOrders';
 import { PreferredChannel } from '../../types/supplier.types';
 import { POStatus } from '../../types/purchaseOrder.types';
-import { ClipboardList, Truck, CreditCard, Target } from 'lucide-react';
+import { ClipboardList, Truck, CreditCard, Target, AlertTriangle, Clock, CheckCircle, User } from 'lucide-react';
 
 // ─── Supplier context ─────────────────────────────────────────────────────────
 
