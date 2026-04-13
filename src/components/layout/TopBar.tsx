@@ -3,7 +3,6 @@ import CommandPalette from '../shared/CommandPalette';
 import { useNavigate } from 'react-router-dom';
 import { usePersona } from '../../context/PersonaContext';
 import { mockAlerts } from '../../data/mockKpis';
-import paragonLogo from '../../assets/paragon-corp-white.svg';
 
 const NAVY   = '#0D1B2A';
 const BORDER = '#1E3A5F';
@@ -68,7 +67,9 @@ const TopBar: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
         <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
           onClick={() => navigate(persona === 'buyer' ? '/buyer/dashboard' : '/supplier/dashboard')}>
-          <img src={paragonLogo} alt="Paragon Corp" height={28} style={{ display: 'block', flexShrink: 0, objectFit: 'contain' }} />
+          <svg height="28" viewBox="0 0 220 28" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ display: 'block', flexShrink: 0 }} aria-label="Paragon Corp">
+            <text x="0" y="20" fontFamily="'Inter','Segoe UI',sans-serif" fontSize="15" fontWeight="500" fill="white" letterSpacing="3.5">PARAGONCORP</text>
+          </svg>
         </div>
         <div style={{ width: 1, height: 28, background: BORDER, flexShrink: 0 }} />
         <div className="topbar-portal-label" style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
