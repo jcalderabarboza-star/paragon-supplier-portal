@@ -420,7 +420,7 @@ const WhatsAppHub: React.FC = () => {
   const [pulse, setPulse] = useState(true);
   useEffect(() => { const t = setInterval(() => setPulse(p => !p), 1200); return () => clearInterval(t); }, []);
 
-  const tabs = ['💬 Active Conversations','🤖 Automation Rules','📊 Channel Analytics'];
+  const tabs = ['Active Conversations', 'Automation Rules', 'Channel Analytics'];
   const kpis = [
     { label:'Active Conversations', value:'6', color:'#0097A7' },
     { label:'Pending Responses', value:'3', color:'#E9730C' },
