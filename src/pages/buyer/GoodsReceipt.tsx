@@ -337,6 +337,40 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
         </div>
       </div>
 
+      {grPosted ? (
+        <div style={{ background: '#F0FDF4', border: '1px solid #107E3E', borderRadius: 8, padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#107E3E', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ color: 'white', fontSize: 18, fontWeight: 700 }}>✓</span>
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#107E3E' }}>GR Posted to SAP S/4HANA</div>
+              <div style={{ fontSize: 12, color: '#64748B' }}>Movement type 101 · {item.grNumber}</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+            <div style={{ background: 'white', borderRadius: 6, padding: '10px 12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Material Document</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#0D1B2A', fontFamily: 'monospace' }}>{grRef}</div>
+            </div>
+            <div style={{ background: 'white', borderRadius: 6, padding: '10px 12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>QC Reference</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#0D1B2A', fontFamily: 'monospace' }}>{qcRef}</div>
+            </div>
+            <div style={{ background: 'white', borderRadius: 6, padding: '10px 12px', border: '1px solid #E2E8F0' }}>
+              <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Invoice Status</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#107E3E' }}>Approved — Unblocked</div>
+            </div>
+          </div>
+          <div style={{ fontSize: 12, color: '#64748B', background: 'white', padding: '8px 12px', borderRadius: 6, border: '1px solid #E2E8F0' }}>
+            Invoice for {item.poNumber} automatically unblocked. Navigate to Invoices & Payment to review and release.
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { onClose(); }} style={{ padding: '8px 16px', background: '#0097A7', color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Go to Invoices & Payment</button>
+            <button onClick={onClose} style={{ padding: '8px 16px', background: 'white', color: '#64748B', border: '1px solid #E2E8F0', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
+          </div>
+        </div>
+      ) : (
       <div style={{ display: 'flex', gap: 10 }}>
         <button onClick={() => {
           const poNum = item.poNumber;
@@ -344,7 +378,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
           if (!posted.includes(poNum)) {
             localStorage.setItem('paragon_gr_posted', JSON.stringify([...posted, poNum]));
           }
-          showToast(`GR posted to SAP S/4HANA (movement type 101). Material document MAT-490003${Math.floor(10 + Math.random() * 90)} created. Invoice for ${poNum} automatically unblocked — status updated to Approved.`);
+          setGrPosted(true);
         }}
           style={{ padding: '9px 18px', borderRadius: 6, background: '#107E3E', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
           Post GR & Record Result
@@ -358,6 +392,7 @@ const InspectionForm: React.FC<InspectionFormProps> = ({ item, onClose }) => {
           Cancel
         </button>
       </div>
+      )}
     </div>
   );
 };
