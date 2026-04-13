@@ -41,6 +41,18 @@ const TopBar: React.FC = () => {
   const navigate = useNavigate();
   const { persona } = usePersona();
   const [showNotifHint, setShowNotifHint] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === '/' && e.target === document.body) {
+        e.preventDefault();
+        setShowSearch(true);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
 
   const initials     = persona === 'buyer' ? 'JC' : 'SK';
   const notifCount   = mockAlerts.unacknowledgedPOs;
