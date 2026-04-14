@@ -21,3 +21,11 @@ git checkout main && git pull origin main
 This is a solo project with no team and no code review process.
 The owner has explicitly configured main as the only working branch.
 GitHub Pages deploys automatically from main.
+
+## After every commit — mandatory
+Always rebuild and commit dist before pushing:
+1. npm install (if node_modules missing)
+2. npm run build
+3. git add dist -f
+4. git commit -m "build: rebuild dist"
+5. git push origin main
