@@ -414,6 +414,118 @@ const AnalyticsTab: React.FC = () => (
   </div>
 );
 
+// ─── Buyer WeChat Hub ─────────────────────────────────────────────────────────
+const WECHAT_GREEN = '#07C160';
+
+const WECHAT_CONVS = [
+  { id:'wc-001', supplier:'Zhejiang NHU Vitamins 🇨🇳', lastMsg:'库存更新：烟酰胺B3 2,400 KG 已确认', time:'18 min ago', status:'confirmed' },
+  { id:'wc-002', supplier:'Anhui Salicylics & Niacinamide 🇨🇳', lastMsg:'BPJPH申请材料已提交 / BPJPH docs submitted', time:'2 hr ago', status:'pending' },
+  { id:'wc-003', supplier:'Shanghai Berlina Packaging 🇨🇳', lastMsg:'报价单 RFQ-2026-004 已提交 / Quote submitted', time:'1 day ago', status:'confirmed' },
+];
+
+const WECHAT_THREAD = [
+  { id:'1', from:'bot' as const, cn:'您好！📊 库存更新请求', en:'Stock Update Request', sub:'烟酰胺B3 (MAT-10234) · Current: 24 days\nReply: STOCK MAT-10234 [qty] KG', time:'17:00' },
+  { id:'2', from:'supplier' as const, cn:'STOK MAT-10234 2400 KG', en:'', sub:'', time:'17:15' },
+  { id:'3', from:'bot' as const, cn:'✅ 库存已更新', en:'Stock Updated', sub:'烟酰胺B3: 2,400 KG (24 days)\nIBP auto-synced · IBP已自动同步 🙏', time:'17:15' },
+  { id:'4', from:'supplier' as const, cn:'库存更新：烟酰胺B3 2,400 KG 已确认', en:'Confirmed', sub:'', time:'17:18' },
+];
+
+const BuyerWeChatHub: React.FC = () => {
+  const [selected, setSelected] = useState('wc-001');
+  const NAVY = '#0D1B2A'; const BORDER = '#E2E8F0'; const MUTED = '#64748B';
+  const [toast, setToast] = useState<string|null>(null);
+  const showToast = (m: string) => { setToast(m); setTimeout(()=>setToast(null), 3000); };
+
+  const STATUS_COLOR: Record<string, string> = {
+    confirmed: '#107E3E', pending: '#E9730C',
+  };
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      {toast && <div style={{ position:'fixed', bottom:'2rem', right:'2rem', background:NAVY, color:'white', padding:'12px 20px', borderRadius:8, zIndex:600, fontSize:13, borderLeft:`3px solid ${WECHAT_GREEN}` }}>{toast}</div>}
+      <div>
+        <div style={{ fontSize:20, fontWeight:700, color:NAVY, marginBottom:4 }}>WeChat Hub</div>
+        <div style={{ fontSize:13, color:MUTED }}>Chinese supplier communications · Bilingual CN/EN · Official Account</div>
+      </div>
+
+      {/* Note banner */}
+      <div style={{ background:'#F0FDF4', border:'1px solid #86EFAC', borderRadius:8, padding:'10px 16px', fontSize:12, color:'#166534' }}>
+        <strong>WeChat channel</strong> targets Chinese suppliers — packaging components, active ingredients, fragrance compounds. Messages delivered via WeChat Official Account with bilingual CN/EN content.
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'35% 65%', gap:16, alignItems:'flex-start' }}>
+
+        {/* Conversation list */}
+        <div style={{ background:'white', border:`1px solid ${BORDER}`, borderRadius:8, overflow:'hidden' }}>
+          <div style={{ padding:'10px 14px', background:'#F8FAFC', borderBottom:`1px solid ${BORDER}`, fontSize:11, fontWeight:600, color:MUTED, textTransform:'uppercase', letterSpacing:'0.8px' }}>
+            Conversations ({WECHAT_CONVS.length})
+          </div>
+          {WECHAT_CONVS.map(conv => (
+            <div key={conv.id} onClick={() => setSelected(conv.id)}
+              style={{ padding:'12px 14px', borderBottom:`1px solid ${BORDER}`, cursor:'pointer', borderLeft: selected === conv.id ? `3px solid ${WECHAT_GREEN}` : '3px solid transparent', background: selected === conv.id ? '#F0FDF4' : 'white' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:3 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:NAVY }}>{conv.supplier}</div>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  <span style={{ fontSize:10, color:MUTED, whiteSpace:'nowrap' }}>{conv.time}</span>
+                  <div style={{ width:8, height:8, borderRadius:'50%', background:STATUS_COLOR[conv.status], flexShrink:0 }} />
+                </div>
+              </div>
+              <div style={{ fontSize:11, color:'#354A5F', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{conv.lastMsg}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Chat panel */}
+        <div style={{ background:'white', border:`1px solid ${BORDER}`, borderRadius:8, overflow:'hidden' }}>
+          {/* WeChat header */}
+          <div style={{ background:WECHAT_GREEN, padding:'12px 16px', display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:32, height:32, borderRadius:'50%', background:'white', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:700, color:WECHAT_GREEN }}>P</div>
+            <div>
+              <div style={{ color:'white', fontWeight:700, fontSize:13 }}>Paragon Corp Official Account</div>
+              <div style={{ color:'rgba(255,255,255,0.8)', fontSize:10 }}>企业公众号 · Zhejiang NHU Vitamins</div>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div style={{ background:'#EDEDED', padding:16, minHeight:280, display:'flex', flexDirection:'column', gap:10 }}>
+            {WECHAT_THREAD.map(msg => (
+              <div key={msg.id} style={{ display:'flex', flexDirection: msg.from === 'supplier' ? 'row-reverse' : 'row', gap:8, alignItems:'flex-start' }}>
+                {msg.from === 'bot' && (
+                  <div style={{ width:30, height:30, borderRadius:6, background:WECHAT_GREEN, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'white' }}>P</div>
+                )}
+                <div style={{ background: msg.from === 'supplier' ? WECHAT_GREEN : 'white', borderRadius: msg.from === 'supplier' ? '10px 0 10px 10px' : '0 10px 10px 10px', padding:'8px 12px', maxWidth:'72%', fontSize:11, color: msg.from === 'supplier' ? 'white' : '#1A1A1A', lineHeight:1.6 }}>
+                  {msg.cn && <div style={{ fontWeight:700 }}>{msg.cn}</div>}
+                  {msg.en && <div style={{ color: msg.from === 'supplier' ? 'rgba(255,255,255,0.85)' : '#0097A7', fontSize:10, marginTop:1 }}>{msg.en}</div>}
+                  {msg.sub && <div style={{ marginTop:4, fontSize:10, color: msg.from === 'supplier' ? 'rgba(255,255,255,0.8)' : '#64748B', whiteSpace:'pre-line' }}>{msg.sub}</div>}
+                  <div style={{ fontSize:9, color: msg.from === 'supplier' ? 'rgba(255,255,255,0.6)' : '#999', marginTop:4, textAlign:'right' }}>{msg.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Action bar */}
+          <div style={{ padding:'12px 16px', borderTop:`1px solid ${BORDER}`, display:'flex', gap:8 }}>
+            <button onClick={() => showToast('Sending WeChat message to Zhejiang NHU Vitamins...')}
+              style={{ background:WECHAT_GREEN, color:'white', border:'none', borderRadius:6, padding:'7px 16px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+              Send Message
+            </button>
+            <button onClick={() => showToast('Exporting WeChat conversation to SAP...')}
+              style={{ background:'white', color:'#354A5F', border:`1px solid ${BORDER}`, borderRadius:6, padding:'7px 16px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+              Export to SAP
+            </button>
+          </div>
+
+          {/* SAP note */}
+          <div style={{ background:'#F0FDF4', borderTop:`1px solid #86EFAC`, padding:'10px 16px', fontSize:11, color:'#166534', display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontWeight:700 }}>SAP</span>
+            <span>IBP inventory auto-updated from WeChat reply · MAT-10234 stock: 2,400 KG</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Buyer Email Hub ──────────────────────────────────────────────────────────
 const BUYER_EMAILS = [
   { id:'em-001', supplier:'PT Berlina Packaging 🇮🇩', subject:'RE: PO-2025-00108 — Order Confirmed', time:'2 min ago', status:'confirmed', preview:'Konfirmasi PO-2025-00108 diterima. Pengiriman dijadwalkan 15 Apr 2026.' },
@@ -624,11 +736,7 @@ const WhatsAppHub: React.FC = () => {
       )}
 
       {channel === 'email' && <BuyerEmailHub />}
-      {channel === 'wechat' && (
-        <div style={{ padding:'3rem', textAlign:'center', color:'#64748B', fontSize:13 }}>
-          WeChat Hub — coming in Task 3
-        </div>
-      )}
+      {channel === 'wechat' && <BuyerWeChatHub />}
     </div>
   );
 };
