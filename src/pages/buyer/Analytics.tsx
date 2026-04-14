@@ -101,15 +101,6 @@ const Analytics: React.FC = () => {
 
   const PERIODS: [string, typeof period][] = [['Last 30 Days','30d'],['Last 90 Days','90d'],['YTD','ytd']];
 
-  const KPI_DATA = [
-    { label:'Total Spend YTD', value:'Rp 4.2M', sub:'miliar', trend:'+8% vs last year', trendUp:true },
-    { label:'Active Suppliers', value:'12', sub:'', trend:'Flat vs last period', trendUp:null },
-    { label:'POs Issued', value:'47', sub:'', trend:'+12% vs last year', trendUp:true },
-    { label:'OTIF Rate', value:'87%', sub:'', trend:'+2% vs last period', trendUp:true, warn:true },
-    { label:'Avg PO Cycle Time', value:'22h', sub:'', trend:'-18% improvement', trendUp:true },
-    { label:'Invoice Match Rate', value:'89%', sub:'', trend:'+4% vs last period', trendUp:true },
-  ];
-
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.25rem' }}>
       {toast && <Toast msg={toast} />}
@@ -185,23 +176,6 @@ const Analytics: React.FC = () => {
               {deltaUp ? '▲' : '▼'} {delta}
             </div>
             <div style={{ fontSize: 11, color: '#64748B' }}>{sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Section 1 — KPI Tiles */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
-        {KPI_DATA.map(k => (
-          <div key={k.label} style={{ background:'white', borderRadius:8, padding:'16px 20px', boxShadow:'0 1px 3px rgba(0,0,0,0.08)', borderLeft:`4px solid ${k.warn?'#E9730C':TEAL}` }}>
-            <div style={{ fontSize:'11px', fontWeight:600, color:'#64748B', textTransform:'uppercase', letterSpacing:'1px', marginBottom:6 }}>{k.label}</div>
-            <div style={{ display:'flex', alignItems:'baseline', gap:4, marginBottom:6 }}>
-              <span style={{ fontSize:'26px', fontWeight:700, color:k.warn?'#E9730C':NAVY }}>{k.value}</span>
-              {k.sub && <span style={{ fontSize:'12px', color:'#64748B' }}>{k.sub}</span>}
-            </div>
-            <div style={{ fontSize:'11px', color:k.trendUp===true?'#107E3E':k.trendUp===false?'#BB0000':'#64748B', fontWeight:500 }}>
-              {k.trendUp===true?'▲':k.trendUp===false?'▼':'→'} {k.trend}
-              {k.warn && <span style={{ color:'#E9730C', marginLeft:6 }}>⚠ Below 90% target</span>}
-            </div>
           </div>
         ))}
       </div>
