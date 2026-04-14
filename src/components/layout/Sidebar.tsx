@@ -93,7 +93,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
   {
     header: 'RESPOND',
     items: [
-      { text: 'WhatsApp',         icon: <Smartphone size={16} />,    path: '/supplier/whatsapp' },
+      { text: 'Communication Tools', icon: <MessageSquare size={16} />, path: '/supplier/whatsapp' },
       { text: 'My RFQs & Quotes', icon: <ClipboardList size={16} />, path: '/supplier/rfqs' },
     ],
   },
