@@ -71,7 +71,7 @@ const BUYER_SECTIONS: NavSection[] = [
       { text: 'Supplier Scorecard', icon: <Award size={16} />,        path: '/buyer/scorecard' },
       { text: 'Analytics',          icon: <BarChart2 size={16} />,    path: '/buyer/analytics' },
       { text: 'Supply Risk',        icon: <AlertTriangle size={16} />, path: '/buyer/risk' },
-      { text: 'WhatsApp Hub',       icon: <Smartphone size={16} />,   path: '/buyer/whatsapp' },
+      { text: 'Communication Tools', icon: <MessageSquare size={16} />, path: '/buyer/whatsapp' },
     ],
   },
 ];

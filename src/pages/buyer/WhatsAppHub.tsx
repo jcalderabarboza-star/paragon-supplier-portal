@@ -416,6 +416,7 @@ const AnalyticsTab: React.FC = () => (
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const WhatsAppHub: React.FC = () => {
+  const [channel, setChannel] = useState<'whatsapp' | 'email' | 'wechat'>('whatsapp');
   const [tab, setTab] = useState(0);
   const [pulse, setPulse] = useState(true);
   useEffect(() => { const t = setInterval(() => setPulse(p => !p), 1200); return () => clearInterval(t); }, []);
@@ -430,6 +431,30 @@ const WhatsAppHub: React.FC = () => {
 
   return (
     <div style={{ padding: '24px 28px', background: '#F0F4F8', minHeight: '100vh' }}>
+      {/* Channel tab switcher */}
+      <div style={{ display:'flex', borderBottom:'2px solid #E2E8F0', marginBottom:'1.25rem' }}>
+        {([
+          { id:'whatsapp', label:'WhatsApp', color:'#25D366' },
+          { id:'email',    label:'Email',    color:'#0097A7' },
+          { id:'wechat',   label:'WeChat',   color:'#07C160' },
+        ] as const).map(tab => (
+          <button key={tab.id} onClick={() => setChannel(tab.id)}
+            style={{ padding:'10px 24px', border:'none',
+              borderBottom: channel === tab.id
+                ? `2px solid ${tab.color}`
+                : '2px solid transparent',
+              background:'transparent',
+              color: channel === tab.id ? tab.color : '#64748B',
+              fontWeight: channel === tab.id ? 700 : 500,
+              fontSize:13, cursor:'pointer',
+              fontFamily:'inherit', marginBottom:-2 }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {channel === 'whatsapp' && (
+      <>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
@@ -471,6 +496,19 @@ const WhatsAppHub: React.FC = () => {
       {tab === 0 && <ConversationsTab />}
       {tab === 1 && <AutomationTab />}
       {tab === 2 && <AnalyticsTab />}
+      </>
+      )}
+
+      {channel === 'email' && (
+        <div style={{ padding:'3rem', textAlign:'center', color:'#64748B', fontSize:13 }}>
+          Email Hub — coming in Task 2
+        </div>
+      )}
+      {channel === 'wechat' && (
+        <div style={{ padding:'3rem', textAlign:'center', color:'#64748B', fontSize:13 }}>
+          WeChat Hub — coming in Task 3
+        </div>
+      )}
     </div>
   );
 };
