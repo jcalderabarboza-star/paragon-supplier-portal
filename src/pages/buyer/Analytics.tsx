@@ -134,6 +134,61 @@ const Analytics: React.FC = () => {
         </div>
       </div>
 
+      {/* ── KPI Hero Row ─────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        {[
+          {
+            label: 'Total Spend YTD',
+            value: 'Rp 4.2B',
+            delta: '+12% vs last year',
+            deltaUp: true,
+            sub: 'Across 8 categories',
+            color: '#0097A7',
+          },
+          {
+            label: 'Active Suppliers',
+            value: '12',
+            delta: '2 onboarding',
+            deltaUp: true,
+            sub: '8 Grade A or B',
+            color: '#107E3E',
+          },
+          {
+            label: 'Portfolio OTIF',
+            value: '87%',
+            delta: '-3pp vs target 90%',
+            deltaUp: false,
+            sub: 'Last 15 months avg',
+            color: '#E9730C',
+          },
+          {
+            label: 'Avg PO Cycle Time',
+            value: '28h',
+            delta: '-42% vs 6 months ago',
+            deltaUp: true,
+            sub: 'From issue to confirm',
+            color: '#0097A7',
+          },
+        ].map(({ label, value, delta, deltaUp, sub, color }) => (
+          <div key={label} style={{
+            background: 'white', borderRadius: 8, padding: '18px 20px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+            borderTop: `3px solid ${color}`,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>
+              {label}
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 700, color: '#0D1B2A', lineHeight: 1, marginBottom: 6 }}>
+              {value}
+            </div>
+            <div style={{ fontSize: 12, color: deltaUp ? '#107E3E' : '#BB0000', fontWeight: 600, marginBottom: 2 }}>
+              {deltaUp ? '▲' : '▼'} {delta}
+            </div>
+            <div style={{ fontSize: 11, color: '#64748B' }}>{sub}</div>
+          </div>
+        ))}
+      </div>
+
       {/* Section 1 — KPI Tiles */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12 }}>
         {KPI_DATA.map(k => (
