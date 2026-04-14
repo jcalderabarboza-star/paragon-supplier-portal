@@ -29,3 +29,11 @@ Always rebuild and commit dist before pushing:
 3. git add dist -f
 4. git commit -m "build: rebuild dist"
 5. git push origin main
+
+## GitHub Pages configuration
+- Source: Deploy from a branch
+- Branch: main
+- Folder: / (root)
+- Built files must be copied to repo root (index.html, assets/, favicon.ico)
+- After any change: rebuild dist, copy to root, commit, push to main
+- If changes don't appear on live site, check Settings → Pages and verify the source is saved correctly
