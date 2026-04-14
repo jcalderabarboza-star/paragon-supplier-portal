@@ -101,7 +101,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
     header: 'EXECUTE',
     items: [
       { text: 'My Orders',          icon: <ShoppingCart size={16} />, path: '/supplier/orders' },
-      { text: 'My Shipments & ASN', icon: <Truck size={16} />,        path: '/supplier/asn' },
+      { text: 'My Shipments & ASN', icon: <Truck size={16} />,        path: '/supplier/ship-notices' },
       { text: 'My Inventory',       icon: <Package size={16} />,      path: '/supplier/inventory' },
     ],
   },
