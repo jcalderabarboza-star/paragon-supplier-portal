@@ -23,12 +23,20 @@ The owner has explicitly configured main as the only working branch.
 GitHub Pages deploys automatically from main.
 
 ## After every commit — mandatory
-Always rebuild and commit dist before pushing:
-1. npm install (if node_modules missing)
-2. npm run build
-3. git add dist -f
-4. git commit -m "build: rebuild dist"
-5. git push origin main
+Vite root is app/ — never edit app/index.html directly.
+Build and deploy workflow:
+1. npm run build  (outputs to dist/)
+2. cp dist/index.html index.html
+3. cp -r dist/assets ./assets  (rm -rf assets first if it exists)
+4. cp dist/favicon.ico favicon.ico
+5. git add -A
+6. git commit -m "build: rebuild dist"
+7. git push origin main
+
+GitHub Pages serves from main / (root folder).
+Built files live at repo root: index.html, assets/, favicon.ico, dist/
+Source entry lives at: app/index.html
+vite.config.ts root: app  |  outDir: ../dist
 
 ## GitHub Pages configuration
 - Source: Deploy from a branch
