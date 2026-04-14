@@ -414,6 +414,130 @@ const AnalyticsTab: React.FC = () => (
   </div>
 );
 
+// ─── Buyer Email Hub ──────────────────────────────────────────────────────────
+const BUYER_EMAILS = [
+  { id:'em-001', supplier:'PT Berlina Packaging 🇮🇩', subject:'RE: PO-2025-00108 — Order Confirmed', time:'2 min ago', status:'confirmed', preview:'Konfirmasi PO-2025-00108 diterima. Pengiriman dijadwalkan 15 Apr 2026.' },
+  { id:'em-002', supplier:'Zhejiang NHU Vitamins 🇨🇳', subject:'Invoice INV-2026-00234 Submitted', time:'1 hr ago', status:'pending', preview:'Please find attached invoice for PO-2025-00103. Amount: Rp 540,000,000.' },
+  { id:'em-003', supplier:'Firmenich Malaysia Sdn. Bhd. 🇲🇾', subject:'ISO 9001 Certificate — Renewal Notice', time:'3 hr ago', status:'action', preview:'Our ISO 9001:2015 certificate expires 19 Jun 2026. Renewal in progress.' },
+  { id:'em-004', supplier:'PT Musim Mas Specialty 🇮🇩', subject:'ASN Submitted — PO-2025-00115', time:'5 hr ago', status:'confirmed', preview:'ASN-2026-006 submitted. Carrier: Pos Logistik. ETA: 8 Apr 2026.' },
+  { id:'em-005', supplier:'Evonik Specialty FR 🇫🇷', subject:'Quote Submitted — RFQ-2026-004', time:'1 day ago', status:'pending', preview:'Please find our quotation for RFQ-2026-004. Unit price: EUR 145/KG.' },
+];
+
+const EMAIL_STATUS_DOT: Record<string, string> = {
+  confirmed: '#107E3E', pending: '#E9730C', action: '#BB0000',
+};
+
+const BERLINA_EMAIL = {
+  from: 'procurement@berlina.co.id',
+  to: 'procurement@paragoncorp.com',
+  subject: 'RE: PO-2025-00108 — Order Confirmed',
+  date: 'Mon, 14 Apr 2026, 09:03',
+  body: [
+    { type: 'text', content: 'Dear Paragon Procurement Team,' },
+    { type: 'text', content: 'We confirm receipt and acceptance of PO-2025-00108. Details below:' },
+    { type: 'table', rows: [
+      ['PO Number', 'PO-2025-00108'],
+      ['Material', 'PET Bottle 100ml — Natural Transparent'],
+      ['Quantity', '50,000 PCS'],
+      ['Unit Price', 'Rp 3,700 / PCS'],
+      ['Total Value', 'Rp 185,000,000'],
+      ['Delivery Date', '15 April 2026'],
+      ['Ship To', 'Paragon DC — Cikande, Serang'],
+    ]},
+    { type: 'text', content: 'We will submit the ASN 3 days before the delivery date. Please confirm dock slot availability.' },
+    { type: 'text', content: 'Best regards,\nPT Berlina Packaging Indonesia' },
+  ],
+  sapNote: 'SAP auto-updated — PO-2025-00108 confirmed at 09:03 · Order Confirmation Key updated',
+};
+
+const BuyerEmailHub: React.FC = () => {
+  const [selected, setSelected] = useState('em-001');
+  const TEAL = '#0097A7'; const NAVY = '#0D1B2A';
+  const BORDER = '#E2E8F0'; const MUTED = '#64748B';
+  const [toast, setToast] = useState<string|null>(null);
+  const showToast = (m: string) => { setToast(m); setTimeout(()=>setToast(null), 3000); };
+
+  return (
+    <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+      {toast && <div style={{ position:'fixed', bottom:'2rem', right:'2rem', background:NAVY, color:'white', padding:'12px 20px', borderRadius:8, zIndex:600, fontSize:13, borderLeft:`3px solid ${TEAL}` }}>{toast}</div>}
+      <div>
+        <div style={{ fontSize:20, fontWeight:700, color:NAVY, marginBottom:4 }}>Email Hub</div>
+        <div style={{ fontSize:13, color:MUTED }}>Supplier email communications · Template-driven · Auto-parsed responses</div>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'35% 65%', gap:16, alignItems:'flex-start' }}>
+        {/* Inbox list */}
+        <div style={{ background:'white', border:`1px solid ${BORDER}`, borderRadius:8, overflow:'hidden' }}>
+          <div style={{ padding:'10px 14px', background:'#F8FAFC', borderBottom:`1px solid ${BORDER}`, fontSize:11, fontWeight:600, color:MUTED, textTransform:'uppercase', letterSpacing:'0.8px' }}>Inbox ({BUYER_EMAILS.length})</div>
+          {BUYER_EMAILS.map(em => (
+            <div key={em.id} onClick={() => setSelected(em.id)}
+              style={{ padding:'12px 14px', borderBottom:`1px solid ${BORDER}`, cursor:'pointer', borderLeft: selected === em.id ? `3px solid ${TEAL}` : '3px solid transparent', background: selected === em.id ? '#F0F9FF' : 'white' }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:3 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:NAVY }}>{em.supplier}</div>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  <span style={{ fontSize:10, color:MUTED, whiteSpace:'nowrap' }}>{em.time}</span>
+                  <div style={{ width:8, height:8, borderRadius:'50%', background:EMAIL_STATUS_DOT[em.status], flexShrink:0 }} />
+                </div>
+              </div>
+              <div style={{ fontSize:11, fontWeight:600, color:'#354A5F', marginBottom:2, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{em.subject}</div>
+              <div style={{ fontSize:10, color:MUTED, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{em.preview}</div>
+            </div>
+          ))}
+        </div>
+        {/* Email preview */}
+        <div style={{ background:'white', border:`1px solid ${BORDER}`, borderRadius:8, overflow:'hidden' }}>
+          {/* Paragon header */}
+          <div style={{ background:NAVY, padding:'12px 20px', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+            <span style={{ color:'white', fontWeight:700, fontSize:14, letterSpacing:'2px' }}>PARAGONCORP</span>
+            <span style={{ color:'#8DA4BC', fontSize:11 }}>Supplier Portal · Odyssey Program</span>
+          </div>
+          {/* Email meta */}
+          <div style={{ padding:'14px 20px', borderBottom:`1px solid ${BORDER}`, background:'#F8FAFC' }}>
+            {[['From', BERLINA_EMAIL.from],['To', BERLINA_EMAIL.to],['Subject', BERLINA_EMAIL.subject],['Date', BERLINA_EMAIL.date]].map(([k,v]) => (
+              <div key={k} style={{ display:'flex', gap:12, marginBottom:4, fontSize:12 }}>
+                <span style={{ color:MUTED, width:52, flexShrink:0 }}>{k}</span>
+                <span style={{ color:NAVY, fontWeight: k==='Subject' ? 600 : 400 }}>{v}</span>
+              </div>
+            ))}
+          </div>
+          {/* Email body */}
+          <div style={{ padding:'20px' }}>
+            {BERLINA_EMAIL.body.map((block, i) => {
+              if (block.type === 'text') return <p key={i} style={{ fontSize:13, color:'#354A5F', marginBottom:12, lineHeight:1.6, whiteSpace:'pre-line' }}>{block.content as string}</p>;
+              if (block.type === 'table') return (
+                <table key={i} style={{ width:'100%', borderCollapse:'collapse', marginBottom:16, fontSize:12 }}>
+                  <tbody>
+                  {(block.rows as string[][]).map(([label, value]) => (
+                    <tr key={label} style={{ borderBottom:`1px solid ${BORDER}` }}>
+                      <td style={{ padding:'7px 12px', color:MUTED, width:'40%', background:'#F8FAFC' }}>{label}</td>
+                      <td style={{ padding:'7px 12px', color:NAVY, fontWeight:500 }}>{value}</td>
+                    </tr>
+                  ))}
+                  </tbody>
+                </table>
+              );
+              return null;
+            })}
+            {/* Action buttons */}
+            <div style={{ display:'flex', gap:8, marginTop:8 }}>
+              {[['Reply','#0097A7','white'],['Forward','white','#354A5F'],['Archive','white','#64748B']].map(([label,bg,color]) => (
+                <button key={label} onClick={() => showToast(`${label} action — ${BERLINA_EMAIL.subject}`)}
+                  style={{ padding:'7px 18px', border:`1px solid #E2E8F0`, borderRadius:6, background:bg, color:color, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* SAP note */}
+          <div style={{ background:'#E0F7FA', borderTop:`1px solid #0097A744`, padding:'10px 20px', fontSize:11, color:'#006064', display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontWeight:700 }}>SAP</span>
+            <span>{BERLINA_EMAIL.sapNote}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const WhatsAppHub: React.FC = () => {
   const [channel, setChannel] = useState<'whatsapp' | 'email' | 'wechat'>('whatsapp');
@@ -499,11 +623,7 @@ const WhatsAppHub: React.FC = () => {
       </>
       )}
 
-      {channel === 'email' && (
-        <div style={{ padding:'3rem', textAlign:'center', color:'#64748B', fontSize:13 }}>
-          Email Hub — coming in Task 2
-        </div>
-      )}
+      {channel === 'email' && <BuyerEmailHub />}
       {channel === 'wechat' && (
         <div style={{ padding:'3rem', textAlign:'center', color:'#64748B', fontSize:13 }}>
           WeChat Hub — coming in Task 3
