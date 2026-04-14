@@ -325,6 +325,159 @@ const LANGUAGES = [
   ['🇧🇷', 'Portuguese'],
 ];
 
+// ─── WeChat Simulator ─────────────────────────────────────────────────────────
+const WeChatSimulator: React.FC = () => {
+  const WECHAT_GREEN = '#07C160';
+  const WECHAT_BG = '#EDEDED';
+  const [scenario, setScenario] = useState<'po'|'asn'|'inventory'|'invoice'>('po');
+  const [replied, setReplied] = useState(false);
+
+  const SCENARIOS = {
+    po: {
+      label: 'Confirm PO', icon: '✓',
+      bot: 'Selamat pagi / 早上好\nPurchase Order received:\n📦 PO-2025-00108\nPET Bottle 100ml — 50,000 PCS\nRp 185,000,000\nDelivery: 15 Apr 2026\n\n中文: 采购订单已发出，请确认。\nReply: CONFIRM / REJECT / CHANGE',
+      replies: ['CONFIRM', 'REJECT', 'CHANGE'],
+      success: '✅ PO-2025-00108 Confirmed\nSAP updated automatically.\n已自动更新SAP系统。',
+    },
+    asn: {
+      label: 'Submit ASN', icon: '→',
+      bot: 'ASN Reminder / 发货通知提醒\nPO-2025-00108 delivery in 3 days.\nFormat: ASN [PO] [date] [carrier] [tracking]\n\n中文: 请在3天内提交发货通知。',
+      replies: ['SUBMIT ASN'],
+      success: '✅ ASN received. Dock slot: NDC Jatake 6 — Dock 1, 09:00 WIB\n装货通知已收到。',
+    },
+    inventory: {
+      label: 'Inventory Alert', icon: '↑',
+      bot: 'Stock Update / 库存更新\nNiacinamide B3 stock: 24 days\nPlease update current stock level.\n\n中文: 请更新当前库存水平。\nFormat: STOCK [code] [qty] [unit]',
+      replies: ['UPDATE STOCK'],
+      success: '✅ Stock updated: 2,400 KG\nIBP system synced automatically.\n库存已自动同步至IBP系统。',
+    },
+    invoice: {
+      label: 'Invoice Status', icon: '?',
+      bot: 'Invoice Status / 发票状态\nINV-2026-00234: ✅ Approved\nSAP Doc: 5105000234\nPayment est: 5 May 2026\n\n中文: 发票已批准，预计付款日期5月5日。',
+      replies: ['VIEW DETAILS'],
+      success: '💰 Payment scheduled: Friday 2 May 2026\nBank: BCA ****4521\n付款日期：2026年5月2日（星期五）',
+    },
+  };
+
+  const current = SCENARIOS[scenario];
+
+  return (
+    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+
+      {/* LEFT — WeChat mockup */}
+      <div style={{ width: '42%', flexShrink: 0 }}>
+
+        {/* WeChat note banner */}
+        <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#166534' }}>
+          <strong>WeChat channel</strong> targets Chinese suppliers — packaging components, active ingredients, fragrance compounds. Supports CN / EN / ID.
+        </div>
+
+        {/* Scenario buttons */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+          {(Object.entries(SCENARIOS) as [typeof scenario, typeof current][]).map(([id, s]) => (
+            <button key={id} onClick={() => { setScenario(id); setReplied(false); }}
+              style={{ padding: '6px 14px', borderRadius: 9999, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                background: scenario === id ? WECHAT_GREEN : '#F1F5F9',
+                color: scenario === id ? 'white' : '#64748B',
+                border: `1px solid ${scenario === id ? WECHAT_GREEN : '#E2E8F0'}` }}>
+              {s.icon} {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Phone frame */}
+        <div style={{ background: '#1A1A1A', borderRadius: 36, padding: '12px 8px', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }}>
+          {/* Status bar */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 16px 8px', fontSize: 10, color: 'white' }}>
+            <span>09:00</span><span>●●●</span>
+          </div>
+          {/* WeChat header */}
+          <div style={{ background: WECHAT_GREEN, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: WECHAT_GREEN }}>P</div>
+            <div>
+              <div style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>Paragon Corp</div>
+              <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 10 }}>Official Account · 企业账号</div>
+            </div>
+          </div>
+          {/* Chat area */}
+          <div style={{ background: WECHAT_BG, padding: 12, minHeight: 260, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {/* Bot message */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: WECHAT_GREEN, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white' }}>P</div>
+              <div style={{ background: 'white', borderRadius: '0 10px 10px 10px', padding: '8px 12px', maxWidth: '75%', fontSize: 11, color: '#1A1A1A', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+                {current.bot}
+              </div>
+            </div>
+            {/* Quick reply buttons */}
+            {!replied && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 36 }}>
+                {current.replies.map(r => (
+                  <button key={r} onClick={() => setReplied(true)}
+                    style={{ background: WECHAT_GREEN, color: 'white', border: 'none', borderRadius: 16, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {r}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Supplier reply + confirmation */}
+            {replied && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ background: WECHAT_GREEN, borderRadius: '10px 0 10px 10px', padding: '8px 12px', maxWidth: '70%', fontSize: 11, color: 'white' }}>
+                    {current.replies[0]}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 6, background: WECHAT_GREEN, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'white' }}>P</div>
+                  <div style={{ background: 'white', borderRadius: '0 10px 10px 10px', padding: '8px 12px', maxWidth: '75%', fontSize: 11, color: '#107E3E', lineHeight: 1.6, whiteSpace: 'pre-line', fontWeight: 600 }}>
+                    {current.success}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          {/* Input bar */}
+          <div style={{ background: '#F7F7F7', padding: '8px 12px', borderRadius: '0 0 28px 28px', display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ flex: 1, background: 'white', borderRadius: 16, padding: '6px 12px', fontSize: 11, color: '#999' }}>Type a message...</div>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: WECHAT_GREEN, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: 'white' }}>+</div>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT — Flow diagram */}
+      <div style={{ flex: 1 }}>
+        <div style={{ background: 'white', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#0D1B2A', marginBottom: 16 }}>How Paragon WeChat Engine Works</div>
+          {[
+            { bg: '#0D1B2A', color: 'white', title: 'SAP S/4HANA Event', sub: 'PO created, delivery approaching, invoice overdue...' },
+            { bg: '#0097A7', color: 'white', title: 'WeChat Template Engine', sub: 'Formats message, selects language (CN/EN/ID)' },
+            { bg: WECHAT_GREEN, color: 'white', title: 'WeChat Official Account API', sub: 'Delivers via Official Account. Mini Program cards. Read receipts.' },
+            { bg: '#F1F5F9', color: '#0D1B2A', title: 'Supplier replies', sub: 'Text reply or Mini Program button tap' },
+          ].map((box, i) => (
+            <div key={i}>
+              <div style={{ background: box.bg, color: box.color, borderRadius: 8, padding: '12px 16px', marginBottom: 4 }}>
+                <div style={{ fontWeight: 700, fontSize: 13 }}>{box.title}</div>
+                <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>{box.sub}</div>
+              </div>
+              {i < 3 && <div style={{ textAlign: 'center', fontSize: 10, color: '#64748B', margin: '2px 0 4px' }}>▼</div>}
+            </div>
+          ))}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
+            <div style={{ background: '#107E3E', color: 'white', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ fontWeight: 700, fontSize: 12 }}>Auto-Execute</div>
+              <div style={{ fontSize: 11, opacity: 0.9, marginTop: 3 }}>Parses reply, updates SAP, sends confirmation · 自动执行</div>
+            </div>
+            <div style={{ background: '#E9730C', color: 'white', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ fontWeight: 700, fontSize: 12 }}>Escalate to Buyer</div>
+              <div style={{ fontSize: 11, opacity: 0.9, marginTop: 3 }}>Dispute, no response 24h, complex query · 升级处理</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─── Email Simulator ──────────────────────────────────────────────────────────
 type EmailScenarioId = 'po' | 'asn' | 'inventory' | 'invoice';
 
@@ -823,11 +976,7 @@ const WhatsAppSimulator: React.FC = () => {
       )}
 
       {channel === 'email' && <EmailSimulator />}
-      {channel === 'wechat' && (
-        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748B', fontSize: 13 }}>
-          WeChat channel coming in Task 2.
-        </div>
-      )}
+      {channel === 'wechat' && <WeChatSimulator />}
     </div>
   );
 };
