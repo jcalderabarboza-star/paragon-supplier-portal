@@ -109,6 +109,30 @@ const Compliance: React.FC = () => {
         <div><strong>BPJPH Mandatory Transition — October 2026:</strong> All cosmetics and personal care products distributed in Indonesia must carry BPJPH-issued halal certification. Suppliers with MUI-only certificates must initiate BPJPH applications now. <strong>{COMPLIANCE_ITEMS.filter(i => i.category === 'Halal' && i.status !== 'Expired').length} of {COMPLIANCE_ITEMS.filter(i => i.category === 'Halal').length} halal certs</strong> are BPJPH-compliant.</div>
       </div>
 
+      {(() => {
+        const deadline = new Date('2026-10-01');
+        const today = new Date();
+        const daysLeft = Math.ceil((deadline.getTime() - today.getTime()) / 86400000);
+        const pct = Math.max(0, Math.min(100, (daysLeft / 365) * 100));
+        return (
+          <div style={{ background: 'white', border: '1px solid #F59E0B', borderRadius: 8, padding: '16px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0D1B2A' }}>BPJPH Mandatory Deadline</div>
+                <div style={{ fontSize: 12, color: '#64748B' }}>All Indonesian cosmetics must carry BPJPH halal cert by 01 Oct 2026</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 28, fontWeight: 800, color: daysLeft <= 90 ? '#BB0000' : '#E9730C', lineHeight: 1 }}>{daysLeft}</div>
+                <div style={{ fontSize: 11, color: '#64748B' }}>days remaining</div>
+              </div>
+            </div>
+            <div style={{ background: '#F1F5F9', borderRadius: 9999, height: 6, overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, background: daysLeft <= 90 ? '#BB0000' : '#E9730C', height: 6, borderRadius: 9999, transition: 'width 0.3s' }} />
+            </div>
+          </div>
+        );
+      })()}
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
         {[
           { label: 'Expired', value: expired,  color: ERROR,   bg: '#FEE2E2', icon: <AlertTriangle size={14} /> },
@@ -141,7 +165,7 @@ const Compliance: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: NAVY, color: 'white' }}>
-              {['Supplier', 'Certificate Type', 'Category', 'Issued By', 'Expiry', 'Status', 'Priority', 'Action Required'].map(h => (
+              {['Supplier', 'Certificate Type', 'Category', 'Issued By', 'Expiry', 'Status', 'Priority', 'Action Required', 'Remind'].map(h => (
                 <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap', letterSpacing: '0.5px' }}>{h}</th>
               ))}
             </tr>
@@ -170,6 +194,16 @@ const Compliance: React.FC = () => {
                   <td style={{ padding: '11px 12px' }}><Pill label={item.status} bg={sCfg.bg} color={sCfg.color} icon={sCfg.icon} /></td>
                   <td style={{ padding: '11px 12px' }}><Pill label={item.priority} bg={pCfg.bg} color={pCfg.color} /></td>
                   <td style={{ padding: '11px 12px', fontSize: 11, color: item.priority === 'Critical' ? ERROR : item.priority === 'High' ? WARNING : MUTED, maxWidth: 200 }}>{item.action}</td>
+                  <td style={{ padding: '11px 12px' }}>
+                    {(item.priority === 'Critical' || item.priority === 'High' || item.priority === 'Medium') && (
+                      <button
+                        onClick={() => showToast(`Renewal reminder sent to ${item.supplier.split(' ').slice(0,2).join(' ')} via WhatsApp`)}
+                        style={{ background: item.priority === 'Critical' ? '#BB0000' : '#E9730C', color: 'white', border: 'none', borderRadius: 5, padding: '4px 10px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                      >
+                        Send Reminder
+                      </button>
+                    )}
+                  </td>
                 </tr>
               );
             })}
