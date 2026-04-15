@@ -7,6 +7,7 @@ import Login from '../pages/auth/Login';
 // Buyer pages
 import Dashboard from '../pages/buyer/Dashboard';
 import PurchaseOrders from '../pages/buyer/PurchaseOrders';
+import PurchaseRequisition from '../pages/buyer/PurchaseRequisition';
 import SupplierDirectory from '../pages/buyer/SupplierDirectory';
 import InventoryVisibility from '../pages/buyer/InventoryVisibility';
 import Analytics from '../pages/buyer/Analytics';
@@ -54,6 +55,7 @@ const AppRouter: React.FC = () => {
 
             {/* ── Buyer routes ── */}
             <Route path="buyer/dashboard"        element={<Dashboard />} />
+            <Route path="buyer/purchase-requisition" element={<PurchaseRequisition />} />
             <Route path="buyer/purchase-orders"  element={<PurchaseOrders />} />
             <Route path="buyer/sourcing"         element={<Sourcing />} />
             <Route path="buyer/suppliers"        element={<SupplierDirectory />} />

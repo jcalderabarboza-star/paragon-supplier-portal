@@ -53,6 +53,7 @@ const BUYER_SECTIONS: NavSection[] = [
   {
     header: 'TRANSACT',
     items: [
+      { text: 'Purchase Requisition', icon: <ClipboardList size={16} />, path: '/buyer/purchase-requisition' },
       { text: 'Purchase Orders',      icon: <ShoppingCart size={16} />,    path: '/buyer/purchase-orders' },
       { text: 'Inventory Visibility', icon: <Package size={16} />,         path: '/buyer/inventory' },
       { text: 'Shipments & ASN',      icon: <Ship size={16} />,            path: '/buyer/shipments' },
