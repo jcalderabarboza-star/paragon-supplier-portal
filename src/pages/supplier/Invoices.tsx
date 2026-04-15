@@ -13,7 +13,7 @@ interface SupplierInvoice {
   invoiceNumber: string;
   poNumber: string;
   amount: number;
-  status: 'Draft' | 'Pending Approval' | 'Approved' | 'Payment Released' | 'Overdue' | 'Disputed';
+  status: 'Draft' | 'Pending Approval' | 'Approved' | 'Payment Released' | 'Remittance Received' | 'Overdue' | 'Disputed';
   submittedDate: string;
   dueDate: string;
   paymentDate: string | null;
@@ -37,6 +37,7 @@ const STATUS_CFG: Record<string, { bg: string; color: string }> = {
   'Pending Approval': { bg: '#FEF9C3', color: WARNING },
   'Approved':         { bg: '#DBEAFE', color: NAVY },
   'Payment Released': { bg: '#DCFCE7', color: SUCCESS },
+  'Remittance Received': { bg: '#DCFCE7', color: SUCCESS },
   'Overdue':          { bg: '#FEE2E2', color: ERROR },
   'Disputed':         { bg: '#FEE2E2', color: ERROR },
 };
@@ -112,7 +113,7 @@ const Invoices: React.FC = () => {
             {INVOICES.map((inv, idx) => {
               const cfg = STATUS_CFG[inv.status] ?? { bg: '#F1F5F9', color: MUTED };
               const isExpanded = expandedId === inv.id;
-              const isPaid = inv.status === 'Payment Released';
+              const isPaid = inv.status === 'Payment Released' || inv.status === 'Remittance Received';
               return (
                 <React.Fragment key={inv.id}>
                   <tr style={{ background: idx % 2 === 0 ? 'white' : '#F8FAFC', borderTop: `1px solid ${BORDER}` }}>
@@ -134,7 +135,7 @@ const Invoices: React.FC = () => {
                     <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }}>
                       {isPaid ? (
                         <button onClick={() => setExpandedId(isExpanded ? null : inv.id)} style={{ background: SUCCESS, color: 'white', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                          {isExpanded ? '▲ Hide' : '▼ Remittance'}
+                          {isExpanded ? '▲ Hide' : 'View Remittance'}
                         </button>
                       ) : inv.status === 'Draft' ? (
                         <button onClick={() => showToast(`${inv.invoiceNumber} submitted for approval`)} style={{ background: TEAL, color: 'white', border: 'none', borderRadius: 6, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Submit</button>
@@ -148,37 +149,40 @@ const Invoices: React.FC = () => {
                   {isExpanded && isPaid && (
                     <tr>
                       <td colSpan={7} style={{ padding: 0, borderTop: `2px solid ${SUCCESS}` }}>
-                        <div style={{ background: '#F0FDF4', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: SUCCESS, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                              <span style={{ color: 'white', fontSize: 16, fontWeight: 700 }}>✓</span>
+                        <div style={{ background: '#F0FDF4', display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ background: SUCCESS, color: 'white', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <span style={{ color: 'white', fontSize: 14, fontWeight: 700 }}>✓</span>
                             </div>
-                            <div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: SUCCESS }}>Remittance Advice — Payment Received</div>
-                              <div style={{ fontSize: 12, color: MUTED }}>{inv.invoiceNumber} · Paid {fmtDate(inv.paymentDate)}</div>
-                            </div>
+                            <div style={{ fontSize: 14, fontWeight: 700 }}>Remittance Advice Received</div>
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
-                            {[
-                              { label: 'Payment Reference', value: inv.paymentRef, mono: true },
-                              { label: 'Amount Paid', value: fmtIDRFull(inv.amount), mono: false },
-                              { label: 'Bank Account', value: inv.bankAccount, mono: false },
-                              { label: 'SAP FI Document', value: inv.sapFiDoc, mono: true },
-                            ].map(({ label, value, mono }) => (
-                              <div key={label} style={{ background: 'white', borderRadius: 6, padding: '10px 12px', border: `1px solid ${BORDER}` }}>
-                                <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{label}</div>
-                                <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, fontFamily: mono ? 'monospace' : 'inherit' }}>{value ?? '—'}</div>
+                          <div style={{ padding: '18px 24px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+                              {[
+                                { label: 'Invoice No', value: inv.invoiceNumber, mono: true },
+                                { label: 'Amount Paid', value: fmtIDRFull(inv.amount), mono: false },
+                                { label: 'Payment Date', value: fmtDate(inv.paymentDate), mono: false },
+                                { label: 'Bank Account Credited', value: inv.bankAccount, mono: false },
+                                { label: 'Reference Number', value: inv.paymentRef, mono: true },
+                              ].map(({ label, value, mono }) => (
+                                <div key={label} style={{ background: 'white', borderRadius: 6, padding: '10px 12px', border: `1px solid ${BORDER}` }}>
+                                  <div style={{ fontSize: 10, fontWeight: 600, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>{label}</div>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: NAVY, fontFamily: mono ? 'monospace' : 'inherit' }}>{value ?? '—'}</div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{ fontSize: 12, color: '#354A5F', background: 'white', padding: '10px 14px', borderRadius: 6, border: `1px solid ${BORDER}` }}>
+                              Payment has been credited to your account. Keep this remittance advice for your records.
+                            </div>
+                            {inv.remittanceNote && (
+                              <div style={{ fontSize: 12, color: MUTED, background: 'white', padding: '8px 12px', borderRadius: 6, border: `1px solid ${BORDER}` }}>
+                                <strong>Payment note:</strong> {inv.remittanceNote}
                               </div>
-                            ))}
-                          </div>
-                          {inv.remittanceNote && (
-                            <div style={{ fontSize: 12, color: MUTED, background: 'white', padding: '8px 12px', borderRadius: 6, border: `1px solid ${BORDER}` }}>
-                              <strong>Payment note:</strong> {inv.remittanceNote}
+                            )}
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button onClick={() => showToast('Downloading remittance advice PDF...')} style={{ padding: '7px 14px', background: 'white', color: SUCCESS, border: `1px solid ${SUCCESS}`, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Download PDF</button>
+                              <button onClick={() => setExpandedId(null)} style={{ padding: '7px 14px', background: 'white', color: MUTED, border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
                             </div>
-                          )}
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button onClick={() => showToast('Downloading remittance advice PDF...')} style={{ padding: '7px 14px', background: SUCCESS, color: 'white', border: 'none', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Download Remittance PDF</button>
-                            <button onClick={() => setExpandedId(null)} style={{ padding: '7px 14px', background: 'white', color: MUTED, border: `1px solid ${BORDER}`, borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Close</button>
                           </div>
                         </div>
                       </td>

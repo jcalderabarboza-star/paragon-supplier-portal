@@ -209,6 +209,61 @@ function PaymentConfirmModal({ invoice, onClose, onConfirm }: {
   );
 }
 
+function RemittanceAdviceModal({ invoice, onClose, onSend }: {
+  invoice: BuyerInvoice;
+  onClose: () => void;
+  onSend: () => void;
+}) {
+  const rows: Array<{ label: string; value: string }> = [
+    { label: 'Invoice No', value: invoice.invoiceNumber },
+    { label: 'PO Reference', value: invoice.poNumber },
+    { label: 'Amount', value: fmtFull(invoice.amount) },
+    { label: 'Payment Date', value: fmtDate(invoice.paymentDate ?? '') },
+    { label: 'Bank Account', value: invoice.bankAccount },
+  ];
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 800 }}>
+      <div style={{ background: 'white', borderRadius: 12, width: '90%', maxWidth: 620, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+        <div style={{ background: NAVY, color: 'white', padding: '14px 22px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Remittance Advice — {invoice.invoiceNumber}</div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: '#F1F5F9' }}>
+                  {rows.map(r => (
+                    <th key={r.label} style={{ padding: '8px 10px', textAlign: 'left', fontWeight: 600, fontSize: 10, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: `1px solid ${BORDER}` }}>{r.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  {rows.map(r => (
+                    <td key={r.label} style={{ padding: '10px', fontSize: 12, fontWeight: 600, color: NAVY, whiteSpace: 'nowrap' }}>{r.value}</td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize: 12, color: MID, background: '#F0FDF4', padding: '10px 14px', borderRadius: 6, border: '1px solid #BBF7D0' }}>
+            This remittance advice confirms payment has been processed. The supplier will receive notification via their preferred communication channel.
+          </div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button onClick={() => {}} style={{ padding: '9px 18px', border: `1px solid ${BORDER}`, borderRadius: 6, background: 'white', color: MID, fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Download PDF
+            </button>
+            <button onClick={onSend} style={{ padding: '9px 18px', border: 'none', borderRadius: 6, background: TEAL, color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+              Send to Supplier
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const InvoicePayment: React.FC = () => {
   const [invoices, setInvoices] = useState<BuyerInvoice[]>(() => {
     const posted: string[] = JSON.parse(localStorage.getItem('paragon_gr_posted') || '[]');
@@ -221,6 +276,7 @@ const InvoicePayment: React.FC = () => {
   const [activeTab, setActiveTab]       = useState<'queue' | 'analytics' | 'aging'>('queue');
   const [filterStatus, setFilterStatus] = useState<InvStatus | 'All'>('All');
   const [confirmInv, setConfirmInv]     = useState<BuyerInvoice | null>(null);
+  const [remittanceInv, setRemittanceInv] = useState<BuyerInvoice | null>(null);
   const [toast, setToast]               = useState<string | null>(null);
 
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(null), 3500); };
@@ -249,6 +305,19 @@ const InvoicePayment: React.FC = () => {
           invoice={confirmInv}
           onClose={() => setConfirmInv(null)}
           onConfirm={() => handleReleased(confirmInv.id)}
+        />
+      )}
+
+      {remittanceInv && (
+        <RemittanceAdviceModal
+          invoice={remittanceInv}
+          onClose={() => setRemittanceInv(null)}
+          onSend={() => {
+            const supplier = remittanceInv.supplierName;
+            const channel = remittanceInv.channel;
+            setRemittanceInv(null);
+            showToast(`Remittance advice sent to ${supplier} via ${channel}`);
+          }}
         />
       )}
 
@@ -369,6 +438,10 @@ const InvoicePayment: React.FC = () => {
                         ) : inv.status === 'Overdue' ? (
                           <button onClick={() => showToast('Escalating overdue payment to Finance Controller')} style={{ background: ERROR, color: 'white', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
                             Urgent
+                          </button>
+                        ) : inv.status === 'Payment Released' ? (
+                          <button onClick={() => setRemittanceInv(inv)} style={{ background: TEAL, color: 'white', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Send Remittance
                           </button>
                         ) : (
                           <button onClick={() => showToast(`Viewing ${inv.invoiceNumber}`)} style={{ background: 'white', color: MID, border: `1px solid ${BORDER}`, borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
