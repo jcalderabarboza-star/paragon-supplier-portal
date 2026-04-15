@@ -216,7 +216,7 @@ const MyStorefront: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h1 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: NAVY }}>My Supplier Storefront</h1>
+          <h1 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700, color: NAVY }}>My Catalog</h1>
           <div style={{ fontSize: 13, color: MUTED }}>
             Your public profile in the Paragon Supplier Marketplace — {supp.name}
           </div>

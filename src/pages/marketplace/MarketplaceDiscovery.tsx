@@ -384,7 +384,7 @@ const MarketplaceDiscovery: React.FC = () => {
       <div style={{ background: `linear-gradient(135deg, ${NAVY} 0%, #1A3254 100%)`, padding: '40px 28px 32px' }}>
         <div style={{ maxWidth: 720, margin: '0 auto', textAlign: 'center' }}>
           <h1 style={{ margin: '0 0 8px', fontSize: 34, fontWeight: 800, color: 'white', lineHeight: 1.1 }}>
-            Paragon Supplier Marketplace
+            Supplier Catalog
           </h1>
           <p style={{ margin: '0 0 24px', fontSize: 15, color: TEAL, fontWeight: 500 }}>
             Discover qualified suppliers for beauty & personal care — globally

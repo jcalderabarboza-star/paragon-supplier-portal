@@ -590,7 +590,7 @@ const GoodsReceipt: React.FC = () => {
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0D1B2A' }}>Goods Receipt & Quality Control</h1>
+          <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#0D1B2A' }}>Goods Receipt (GR)</h1>
           <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>Inbound inspection, GR posting, and quality disposition</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#64748B' }}>
