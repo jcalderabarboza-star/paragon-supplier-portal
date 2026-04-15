@@ -3,6 +3,36 @@ import { useNavigate } from 'react-router-dom';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
+const REQUEST_TYPES = [
+  {
+    id: 'External SR' as const,
+    label: 'External Supplier Request',
+    sub: 'New vendor — never worked with Paragon',
+    detail: 'Full 5-step registration: Company Info, Contacts, Categories, Documents, Review. Requires NPWP, NIB, and full qualification. Will be synced to S/4HANA as vendor account group Z002.',
+    color: '#0097A7',
+    steps: 5,
+    badge: 'Full process',
+  },
+  {
+    id: 'Internal SR' as const,
+    label: 'Internal Supplier Request',
+    sub: 'Existing vendor — adding new category or commodity',
+    detail: 'Short 3-step update: Category expansion, additional contacts, supplementary documents. Existing S/4HANA vendor record is updated — no new master data creation.',
+    color: '#354A5F',
+    steps: 3,
+    badge: 'Short form',
+  },
+  {
+    id: 'KOL' as const,
+    label: 'KOL — Key Opinion Leader',
+    sub: 'Below Rp 7jT — generic vendor at DC level',
+    detail: 'Minimal 2-step form: basic company info and bank details only. No Ariba registration required. Created directly in S/4HANA as a generic DC-level vendor. Invoice processed via Web Tukar Faktur.',
+    color: '#E9730C',
+    steps: 2,
+    badge: 'Minimal form',
+  },
+];
+
 const STEP_LABELS = ['Company Info', 'Contacts', 'Categories', 'Documents', 'Review'];
 
 const SUPPLY_CATEGORIES = [
@@ -116,6 +146,7 @@ const FF: React.FC<{ label: string; required?: boolean; error?: string; children
 
 const SupplierRegistration: React.FC = () => {
   const navigate = useNavigate();
+  const [requestType, setRequestType] = useState<'External SR' | 'Internal SR' | 'KOL' | null>(null);
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [appNumber] = useState(() => String(10000 + Math.floor(Math.random() * 90000)));
@@ -563,6 +594,54 @@ const SupplierRegistration: React.FC = () => {
     </div>
   );
 
+  const renderStep0 = () => (
+    <div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: NAVY, marginBottom: 6 }}>
+        Select registration type
+      </div>
+      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>
+        Choose the type that matches your supplier situation. This determines the form length and S/4HANA integration path.
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {REQUEST_TYPES.map(rt => (
+          <div key={rt.id}
+            onClick={() => setRequestType(rt.id)}
+            style={{
+              border: `2px solid ${requestType === rt.id ? rt.color : '#E2E8F0'}`,
+              borderRadius: 8,
+              padding: '16px 20px',
+              cursor: 'pointer',
+              background: requestType === rt.id ? `${rt.color}10` : 'white',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 16,
+            }}>
+            <div style={{ width: 44, height: 44, borderRadius: 8, background: rt.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 10, flexShrink: 0, textAlign: 'center' as const, lineHeight: 1.3 }}>
+              {rt.id === 'External SR' ? 'EXT' : rt.id === 'Internal SR' ? 'INT' : 'KOL'}
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0D1B2A' }}>{rt.label}</div>
+                <span style={{ background: `${rt.color}20`, color: rt.color, borderRadius: 9999, padding: '1px 8px', fontSize: 10, fontWeight: 700 }}>{rt.badge}</span>
+                <span style={{ background: '#F1F5F9', color: '#64748B', borderRadius: 9999, padding: '1px 8px', fontSize: 10, fontWeight: 600, marginLeft: 'auto' }}>{rt.steps} steps</span>
+              </div>
+              <div style={{ fontSize: 12, color: '#64748B', marginBottom: 6 }}>{rt.sub}</div>
+              <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>{rt.detail}</div>
+            </div>
+            {requestType === rt.id && (
+              <div style={{ width: 22, height: 22, borderRadius: '50%', background: rt.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>✓</div>
+            )}
+          </div>
+        ))}
+      </div>
+      {requestType && (
+        <div style={{ marginTop: 16, background: '#E0F7FA', border: '1px solid #0097A744', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#006064' }}>
+          <strong>{requestType}</strong> selected — {REQUEST_TYPES.find(r => r.id === requestType)?.detail}
+        </div>
+      )}
+    </div>
+  );
+
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
@@ -578,8 +657,27 @@ const SupplierRegistration: React.FC = () => {
         </div>
 
         <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', boxShadow: '0 2px 12px rgba(0,0,0,0.08)' }}>
-          {submitted ? renderSuccess() : (
-            <>
+          {submitted ? renderSuccess() : requestType === null ? (
+            <div>
+              {renderStep0()}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
+                <button
+                  onClick={() => requestType !== null && setStep(1)}
+                  disabled={requestType === null}
+                  style={{ padding: '10px 28px', border: 'none', borderRadius: 6, background: requestType !== null ? TEAL : '#CBD5E1', color: 'white', fontSize: 14, fontWeight: 700, cursor: requestType !== null ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
+                  Continue →
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <button onClick={() => setRequestType(null)}
+                style={{ background: 'none', border: 'none', color: '#64748B', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', marginBottom: 12, padding: 0 }}>
+                ← Change registration type
+              </button>
+              <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 6, padding: '8px 14px', fontSize: 12, color: '#0369A1', marginBottom: 16 }}>
+                {requestType} — {REQUEST_TYPES.find(r => r.id === requestType)?.sub}
+              </div>
               <StepBar step={step} />
 
               {step === 1 && renderStep1()}
@@ -627,7 +725,7 @@ const SupplierRegistration: React.FC = () => {
                   </button>
                 </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>
