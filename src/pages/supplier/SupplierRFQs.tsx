@@ -481,7 +481,7 @@ const RFQCard: React.FC<{
   );
 };
 
-// ─── Tab 1: Open RFQs ─────────────────────────────────────────────────────────
+// ─── Tab 1: Open Events ─────────────────────────────────────────────────────────
 const OpenRFQsTab: React.FC<{
   rfqs: OpenRFQ[];
   onSubmitQuote: (rfq: OpenRFQ) => void;
@@ -507,7 +507,7 @@ const OpenRFQsTab: React.FC<{
 };
 
 
-// ─── Tab 2: My Quotes ─────────────────────────────────────────────────────────
+// ─── Tab 2: My Responses ─────────────────────────────────────────────────────────
 const MyQuotesTab: React.FC<{
   extra: string[];
   showToast: (msg: string) => void;
@@ -664,8 +664,8 @@ const AwardsTab: React.FC = () => {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'open',    label: 'Open RFQs' },
-  { id: 'quotes',  label: 'My Quotes' },
+  { id: 'open',    label: 'Open Events' },
+  { id: 'quotes',  label: 'My Responses' },
   { id: 'history', label: 'Awards & History' },
 ];
 
@@ -709,7 +709,7 @@ const SupplierRFQs: React.FC = () => {
 
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: NAVY }}>My RFQs & Quotes</h1>
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: NAVY }}>My Sourcing Events</h1>
         <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>
           RFQs received from Paragon Corp procurement team — PT Berlina Packaging Indonesia
         </div>
@@ -718,7 +718,7 @@ const SupplierRFQs: React.FC = () => {
       {/* Summary Tiles */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap' }}>
         {[
-          { label: 'Open RFQs',        value: openCount,      sub: 'Awaiting your quotation', color: BLUE  },
+          { label: 'Open Events',        value: openCount,      sub: 'Awaiting your quotation', color: BLUE  },
           { label: 'Quotes Submitted',  value: submittedCount, sub: 'Pending evaluation',      color: TEAL  },
           { label: 'Awaiting Award',    value: awaitingCount,  sub: 'Decision pending',         color: AMBER },
         ].map(t => (
