@@ -173,6 +173,8 @@ const DetailPanel: React.FC<{
               { label: 'Req. Delivery', val: fmtDate(po.requestedDeliveryDate) },
               { label: 'Conf. Delivery', val: fmtDate(po.confirmedDeliveryDate) },
               { label: 'Total Value', val: fmtIDR(po.totalValue) },
+              { label: 'PR Reference', val: po.prReference || '—' },
+              { label: 'Source of Supply', val: po.sourceOfSupply || '—' },
             ].map(({ label, val }) => (
               <div key={label}>
                 <div style={{ fontSize: '11px', color: '#6c757d' }}>{label}</div>

@@ -4,6 +4,8 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
   {
     id: 'po-001',
     poNumber: 'PO-2025-00101',
+    prReference: 'PR-2025-00281',
+    sourceOfSupply: 'PIR: INF-2025-0045',
     supplierId: 'sup-001',
     supplierName: 'PT Ecogreen Oleochemicals',
     status: POStatus.DELIVERED,
@@ -47,6 +49,8 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
   {
     id: 'po-002',
     poNumber: 'PO-2025-00102',
+    prReference: 'PR-2025-00284',
+    sourceOfSupply: 'PIR: INF-2025-0051',
     supplierId: 'sup-002',
     supplierName: 'PT Musim Mas Specialty Fats',
     status: POStatus.CONFIRMED,
@@ -197,6 +201,8 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
   {
     id: 'po-006',
     poNumber: 'PO-2025-00106',
+    prReference: 'PR-2026-00340',
+    sourceOfSupply: 'PIR: INF-2026-0089',
     supplierId: 'sup-006',
     supplierName: 'Evonik Specialty Chemicals France',
     status: POStatus.VIEWED,
@@ -261,6 +267,8 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
   {
     id: 'po-008',
     poNumber: 'PO-2025-00108',
+    prReference: 'PR-2026-00341',
+    sourceOfSupply: 'Outline Agreement: OA-4600001234',
     supplierId: 'sup-007',
     supplierName: 'PT Berlina Packaging Indonesia',
     status: POStatus.SENT,

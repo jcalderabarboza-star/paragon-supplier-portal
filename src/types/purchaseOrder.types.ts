@@ -36,6 +36,8 @@ export interface POLineItem {
 export interface PurchaseOrder {
   id: string;
   poNumber: string;
+  prReference?: string;
+  sourceOfSupply?: string;
   supplierId: string;
   supplierName: string;
   status: POStatus;
