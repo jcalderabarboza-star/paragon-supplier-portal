@@ -392,10 +392,11 @@ function ActiveRFQs({ onToast }: { onToast: (m: string) => void }) {
 
 // ─── Tab 2: New Sourcing Event Wizard ────────────────────────────────────────────────────
 
-const STEP_LABELS = ['Material & Quantity', 'Select Suppliers', 'Evaluation Criteria', 'Review & Publish'];
+const STEP_LABELS = ['Event Type', 'Material & Quantity', 'Select Suppliers', 'Evaluation Criteria', 'Review & Publish'];
 const BRANDS = ['Wardah', 'Emina', 'Make Over', 'BLP', 'Scarlett'];
 
 interface WizardState {
+  eventType: 'RFI' | 'RFP' | 'RFQ' | 'E-Auction';
   material: string; manualMaterial: string; useManual: boolean;
   qty: string; uom: string; deliveryDate: string; location: string;
   rfqDeadline: string; priority: string; requirements: string;
@@ -406,6 +407,7 @@ interface WizardState {
 }
 
 const DEFAULT_WIZARD: WizardState = {
+  eventType: 'RFQ',
   material:'', manualMaterial:'', useManual:false, qty:'', uom:'KG',
   deliveryDate:'', location:'', rfqDeadline:'', priority:'Medium',
   requirements:'', brands:[], selectedSuppliers:[],
@@ -463,7 +465,7 @@ function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void 
 }
 
 function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [state, setState] = useState<WizardState>(DEFAULT_WIZARD);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const filtered = MATERIALS_FOR_SEARCH.filter(m => m.toLowerCase().includes(state.material.toLowerCase()) && state.material.length > 0);
@@ -480,6 +482,58 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
   };
 
   const selectedSupplierObjs = mockSuppliers.filter(s => state.selectedSuppliers.includes(s.id));
+
+  const EVENT_TYPES: Array<{
+    id: 'RFI' | 'RFP' | 'RFQ' | 'E-Auction';
+    label: string;
+    sub: string;
+    detail: string;
+    color: string;
+  }> = [
+    { id: 'RFI', label: 'RFI', sub: 'Request for Information', detail: 'Market scan — gather supplier capabilities, lead times, and pricing ranges. No commitment required from suppliers.', color: '#0097A7' },
+    { id: 'RFP', label: 'RFP', sub: 'Request for Proposal', detail: 'Detailed proposal — suppliers submit technical approach, quality plan, and pricing. Evaluated on multiple criteria.', color: '#354A5F' },
+    { id: 'RFQ', label: 'RFQ', sub: 'Request for Quotation', detail: 'Price & quantity — for known materials with defined specs. Suppliers compete on price, lead time, and compliance.', color: '#107E3E' },
+    { id: 'E-Auction', label: 'E-Auction', sub: 'Reverse Auction', detail: 'Competitive bidding — suppliers bid in real time. Price is the primary award criterion. Best for commodity items.', color: '#E9730C' },
+  ];
+
+  const renderStep0 = () => (
+    <div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: '#0D1B2A', marginBottom: 16 }}>
+        Select sourcing event type
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        {EVENT_TYPES.map(et => (
+          <div key={et.id}
+            onClick={() => update({ eventType: et.id })}
+            style={{
+              border: `2px solid ${state.eventType === et.id ? et.color : '#E2E8F0'}`,
+              borderRadius: 8,
+              padding: '16px',
+              cursor: 'pointer',
+              background: state.eventType === et.id ? `${et.color}10` : 'white',
+              transition: 'all 0.15s',
+            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: et.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 11, flexShrink: 0 }}>
+                {et.label}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#0D1B2A' }}>{et.label}</div>
+                <div style={{ fontSize: 11, color: '#64748B' }}>{et.sub}</div>
+              </div>
+              {state.eventType === et.id && (
+                <div style={{ marginLeft: 'auto', width: 18, height: 18, borderRadius: '50%', background: et.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 700 }}>✓</div>
+              )}
+            </div>
+            <div style={{ fontSize: 12, color: '#475569', lineHeight: 1.5 }}>{et.detail}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 16, background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#0369A1' }}>
+        Selected: <strong>{state.eventType}</strong> — {EVENT_TYPES.find(e => e.id === state.eventType)?.sub}. This determines the supplier response form and evaluation method.
+      </div>
+    </div>
+  );
 
   const renderStep1 = () => (
     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0 20px' }}>
@@ -669,7 +723,7 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
             const wap = selectedSupplierObjs.filter(s => s.tier === SupplierTier.WHATSAPP).length;
             const web = selectedSupplierObjs.filter(s => s.tier === SupplierTier.WEB).length;
             const api = selectedSupplierObjs.filter(s => s.tier === SupplierTier.API).length;
-            onToast(`RFQ-2026-007 published to ${selectedSupplierObjs.length} suppliers via WhatsApp (${wap}), Portal (${web}), API (${api})`);
+            onToast(`${state.eventType}-2026-007 published to ${selectedSupplierObjs.length} suppliers via WhatsApp (${wap}), Portal (${web}), API (${api})`);
             setStep(1); setState(DEFAULT_WIZARD);
           }}
           style={{ width:'100%', padding:'12px', border:'none', borderRadius:6, background:NAVY, color:'white', fontSize:'14px', fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}
@@ -684,13 +738,14 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
     <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:8, padding:'24px' }}>
       <StepBar step={step} />
       <div style={{ maxHeight:'calc(100vh - 360px)', overflowY:'auto', paddingRight:4 }}>
+        {step === 0 && renderStep0()}
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
         {step === 3 && renderStep3()}
         {step === 4 && renderStep4()}
       </div>
       <div style={{ display:'flex', justifyContent:'space-between', marginTop:20, paddingTop:16, borderTop:'1px solid #E2E8F0' }}>
-        <button onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}
+        <button onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}
           style={{ padding:'9px 20px', border:'1px solid #CBD5E1', borderRadius:6, background:'white', color: step === 1 ? '#CBD5E1' : NAVY, fontFamily:'inherit', fontSize:'13px', fontWeight:600, cursor: step === 1 ? 'not-allowed' : 'pointer' }}>
           ← Back
         </button>
