@@ -736,7 +736,7 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
 
   return (
     <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:8, padding:'24px' }}>
-      <StepBar step={step} />
+      <StepBar step={step + 1} />
       <div style={{ maxHeight:'calc(100vh - 360px)', overflowY:'auto', paddingRight:4 }}>
         {step === 0 && renderStep0()}
         {step === 1 && renderStep1()}
@@ -746,7 +746,7 @@ function NewRFQ({ onToast }: { onToast: (m: string) => void }) {
       </div>
       <div style={{ display:'flex', justifyContent:'space-between', marginTop:20, paddingTop:16, borderTop:'1px solid #E2E8F0' }}>
         <button onClick={() => setStep(s => Math.max(0, s - 1))} disabled={step === 0}
-          style={{ padding:'9px 20px', border:'1px solid #CBD5E1', borderRadius:6, background:'white', color: step === 1 ? '#CBD5E1' : NAVY, fontFamily:'inherit', fontSize:'13px', fontWeight:600, cursor: step === 1 ? 'not-allowed' : 'pointer' }}>
+          style={{ padding:'9px 20px', border:'1px solid #CBD5E1', borderRadius:6, background:'white', color: step === 0 ? '#CBD5E1' : NAVY, fontFamily:'inherit', fontSize:'13px', fontWeight:600, cursor: step === 0 ? 'not-allowed' : 'pointer' }}>
           ← Back
         </button>
         {step < 4 && (
