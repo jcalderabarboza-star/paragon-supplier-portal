@@ -58,7 +58,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
 
 const MOCK_AWARDS = [
   { rfq:'RFQ-2026-006', material:'Centella Asiatica Extract', awardedTo:'PT Ecogreen Oleochemicals', awardDate:'2026-03-26', value:'Rp 64jT', sapInfoRecord:'INF-2026-0089', status:'PO Issued' },
-  { rfq:'RFQ-2025-044', material:'Hyaluronic Acid HA-100', awardedTo:'Zhejiang NHU Vitamins Co.', awardDate:'2026-02-14', value:'Rp 38jT', sapInfoRecord:'INF-2026-0067', status:'PO Issued' },
+  { rfq:'RFQ-2025-044', material:'Hyaluronic Acid HA-100', awardedTo:'Zhejiang NHU Vitamins Co.', awardDate:'2026-02-14', value:'Rp 38jT', sapInfoRecord:'—', status:'Awarded' },
 ];
 
 const MOCK_ALL_QUOTES = [
