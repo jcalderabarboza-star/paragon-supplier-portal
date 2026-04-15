@@ -33,7 +33,9 @@ const REQUEST_TYPES = [
   },
 ];
 
-const STEP_LABELS = ['Company Info', 'Contacts', 'Categories', 'Documents', 'Review'];
+const ALL_STEP_LABELS = ['Company Info', 'Contacts', 'Categories', 'Documents', 'Review'];
+const INTERNAL_SR_LABELS = ['Category Expansion', 'Additional Contacts', 'Review'];
+const KOL_LABELS = ['Company Info', 'Bank Details'];
 
 const SUPPLY_CATEGORIES = [
   'Raw Materials', 'Electronics', 'Mechanical Components', 'Packaging',
@@ -101,9 +103,9 @@ const SECTION_TITLE: React.CSSProperties = { fontSize: '14px', fontWeight: 700, 
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const StepBar: React.FC<{ step: number }> = ({ step }) => (
+const StepBar: React.FC<{ step: number; labels: string[] }> = ({ step, labels }) => (
   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '2rem' }}>
-    {STEP_LABELS.map((label, i) => {
+    {labels.map((label, i) => {
       const num = i + 1;
       const done = step > num;
       const active = step === num;
@@ -125,7 +127,7 @@ const StepBar: React.FC<{ step: number }> = ({ step }) => (
               {label}
             </span>
           </div>
-          {i < STEP_LABELS.length - 1 && (
+          {i < labels.length - 1 && (
             <div style={{ flex: 1, height: '2px', background: step > num ? NAVY : '#e0e0e0', margin: '0 0.25rem', marginBottom: '1.2rem' }} />
           )}
         </React.Fragment>
@@ -147,6 +149,12 @@ const FF: React.FC<{ label: string; required?: boolean; error?: string; children
 const SupplierRegistration: React.FC = () => {
   const navigate = useNavigate();
   const [requestType, setRequestType] = useState<'External SR' | 'Internal SR' | 'KOL' | null>(null);
+  const stepLabels = requestType === 'Internal SR'
+    ? INTERNAL_SR_LABELS
+    : requestType === 'KOL'
+    ? KOL_LABELS
+    : ALL_STEP_LABELS;
+  const maxSteps = stepLabels.length;
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [appNumber] = useState(() => String(10000 + Math.floor(Math.random() * 90000)));
@@ -594,6 +602,55 @@ const SupplierRegistration: React.FC = () => {
     </div>
   );
 
+  const renderKOLBankStep = () => (
+    <div>
+      <div style={SECTION_TITLE}>Bank Details</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        <FF label="Bank Name" required error={errors.bankName}>
+          <select style={INPUT_STYLE} value={bankName} onChange={e => setBankName(e.target.value)}>
+            <option value="">Select bank...</option>
+            {BANKS.map(b => <option key={b}>{b}</option>)}
+          </select>
+        </FF>
+        <FF label="Account Number" required error={errors.accountNumber}>
+          <input style={INPUT_STYLE} value={accountNumber} onChange={e => setAccountNumber(e.target.value)} placeholder="e.g. 1234567890" />
+        </FF>
+        <FF label="Account Holder Name" required error={errors.accountHolder}>
+          <input style={INPUT_STYLE} value={accountHolder} onChange={e => setAccountHolder(e.target.value)} placeholder="As per bank records" />
+        </FF>
+      </div>
+      <div style={{ marginTop: 16, background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '10px 14px', fontSize: 12, color: '#92400E' }}>
+        <strong>KOL vendor:</strong> Invoices are processed via Web Tukar Faktur. No Ariba registration required. Vendor will be created directly in S/4HANA at DC level.
+      </div>
+    </div>
+  );
+
+  const renderInternalSRStep1 = () => (
+    <div>
+      <div style={SECTION_TITLE}>Category Expansion</div>
+      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>
+        Select the new categories or commodities you want to add to this existing vendor.
+      </div>
+      <FF label="Additional Supply Categories" required>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {SUPPLY_CATEGORIES.map(cat => (
+            <label key={cat} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', padding: '6px 10px', border: `1px solid ${selCats.includes(cat) ? TEAL : '#E2E8F0'}`, borderRadius: 6, background: selCats.includes(cat) ? '#E0F7FA' : 'white' }}>
+              <input type="checkbox" checked={selCats.includes(cat)}
+                onChange={e => setSelCats(prev => e.target.checked ? [...prev, cat] : prev.filter(c => c !== cat))} />
+              {cat}
+            </label>
+          ))}
+        </div>
+      </FF>
+      <FF label="Existing S/4HANA Vendor Number" required>
+        <input style={INPUT_STYLE} placeholder="e.g. 1000456" />
+      </FF>
+      <FF label="Reason for Category Expansion">
+        <textarea style={{ ...INPUT_STYLE, minHeight: 72, resize: 'vertical' as const }} placeholder="Explain why this vendor is being expanded to new categories..." />
+      </FF>
+    </div>
+  );
+
   const renderStep0 = () => (
     <div>
       <div style={{ fontSize: 15, fontWeight: 700, color: NAVY, marginBottom: 6 }}>
@@ -662,7 +719,7 @@ const SupplierRegistration: React.FC = () => {
               {renderStep0()}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 24 }}>
                 <button
-                  onClick={() => requestType !== null && setStep(1)}
+                  onClick={() => setStep(1)}
                   disabled={requestType === null}
                   style={{ padding: '10px 28px', border: 'none', borderRadius: 6, background: requestType !== null ? TEAL : '#CBD5E1', color: 'white', fontSize: 14, fontWeight: 700, cursor: requestType !== null ? 'pointer' : 'not-allowed', fontFamily: 'inherit' }}>
                   Continue →
@@ -678,16 +735,21 @@ const SupplierRegistration: React.FC = () => {
               <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: 6, padding: '8px 14px', fontSize: 12, color: '#0369A1', marginBottom: 16 }}>
                 {requestType} — {REQUEST_TYPES.find(r => r.id === requestType)?.sub}
               </div>
-              <StepBar step={step} />
+              <StepBar step={step} labels={stepLabels} />
 
-              {step === 1 && renderStep1()}
-              {step === 2 && renderStep2()}
-              {step === 3 && renderStep3()}
-              {step === 4 && renderStep4()}
-              {step === 5 && renderStep5()}
+              {requestType === 'KOL' && step === 1 && renderStep1()}
+              {requestType === 'KOL' && step === 2 && renderKOLBankStep()}
+              {requestType === 'Internal SR' && step === 1 && renderInternalSRStep1()}
+              {requestType === 'Internal SR' && step === 2 && renderStep2()}
+              {requestType === 'Internal SR' && step === 3 && renderStep5()}
+              {requestType === 'External SR' && step === 1 && renderStep1()}
+              {requestType === 'External SR' && step === 2 && renderStep2()}
+              {requestType === 'External SR' && step === 3 && renderStep3()}
+              {requestType === 'External SR' && step === 4 && renderStep4()}
+              {requestType === 'External SR' && step === 5 && renderStep5()}
 
               {/* Navigation — hidden on step 5 (submit is inside renderStep5) */}
-              {step < 5 && (
+              {step < maxSteps && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid #f0f0f0' }}>
                   <button
                     onClick={handleBack}
@@ -711,7 +773,7 @@ const SupplierRegistration: React.FC = () => {
                   </button>
                 </div>
               )}
-              {step === 5 && (
+              {step === maxSteps && (
                 <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f0f0f0' }}>
                   <button
                     onClick={handleBack}
