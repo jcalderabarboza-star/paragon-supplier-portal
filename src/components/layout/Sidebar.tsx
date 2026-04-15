@@ -43,10 +43,10 @@ const BUYER_SECTIONS: NavSection[] = [
   {
     header: 'ACQUIRE',
     items: [
-      { text: 'Supplier Discovery', icon: <Search size={16} />,       path: '/buyer/discovery' },
-      { text: 'Marketplace',        icon: <Store size={16} />,        path: '/marketplace' },
+      { text: 'Supplier Request & Discovery', icon: <Search size={16} />,       path: '/buyer/discovery' },
+      { text: 'Supplier Catalog',        icon: <Store size={16} />,        path: '/marketplace' },
       { text: 'Supplier Directory', icon: <Users size={16} />,        path: '/buyer/suppliers' },
-      { text: 'Sourcing & RFQ',     icon: <FileText size={16} />,     path: '/buyer/sourcing' },
+      { text: 'Sourcing Events',     icon: <FileText size={16} />,     path: '/buyer/sourcing' },
       { text: 'Contracts',          icon: <ScrollText size={16} />,   path: '/buyer/contracts' },
     ],
   },
@@ -56,7 +56,7 @@ const BUYER_SECTIONS: NavSection[] = [
       { text: 'Purchase Orders',      icon: <ShoppingCart size={16} />,    path: '/buyer/purchase-orders' },
       { text: 'Inventory Visibility', icon: <Package size={16} />,         path: '/buyer/inventory' },
       { text: 'Shipments & ASN',      icon: <Ship size={16} />,            path: '/buyer/shipments' },
-      { text: 'Goods Receipt & QC',   icon: <ClipboardCheck size={16} />,  path: '/buyer/goods-receipt' },
+      { text: 'Goods Receipt (GR)',   icon: <ClipboardCheck size={16} />,  path: '/buyer/goods-receipt' },
     ],
   },
   {
