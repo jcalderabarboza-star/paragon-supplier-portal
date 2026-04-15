@@ -94,7 +94,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
     header: 'RESPOND',
     items: [
       { text: 'Communication Tools', icon: <MessageSquare size={16} />, path: '/supplier/whatsapp' },
-      { text: 'My RFQs & Quotes', icon: <ClipboardList size={16} />, path: '/supplier/rfqs' },
+      { text: 'My Sourcing Events', icon: <ClipboardList size={16} />, path: '/supplier/rfqs' },
     ],
   },
   {
@@ -116,7 +116,7 @@ const SUPPLIER_SECTIONS: NavSection[] = [
     items: [
       { text: 'My Documents',   icon: <FolderOpen size={16} />,  path: '/supplier/documents' },
       { text: 'My Performance', icon: <BarChart size={16} />,    path: '/supplier/performance' },
-      { text: 'My Storefront',  icon: <ShoppingBag size={16} />, path: '/supplier/storefront' },
+      { text: 'My Catalog',  icon: <ShoppingBag size={16} />, path: '/supplier/storefront' },
     ],
   },
 ];
