@@ -72,6 +72,12 @@ const CONTRACTS: Contract[] = [
     value:'Rp 570jT', currency:'IDR', paymentTerms:'Net 30', incoterms:'DDP RM/PM Warehouse',
     autoRenew:false, linkedRFQ:'RFQ-2026-003', sapInfoRecord:'—',
     signedDate:'—', daysRemaining:190 },
+  { id:'ctr-OA-001', contractNumber:'OA-4600001234', title:'Outline Agreement — Palm Kernel Oil RBD',
+    supplier:'PT Musim Mas Specialty Fats', country:'🇮🇩', category:'Halal Emulsifiers',
+    type:'Outline Agreement', status:'Active', startDate:'2026-01-01', endDate:'2026-12-31',
+    value:'Rp 2.4B', currency:'IDR', paymentTerms:'Net 30', incoterms:'DDP RM/PM Warehouse',
+    autoRenew:true, linkedRFQ:'RFQ-2026-003', sapInfoRecord:'OA-4600001234',
+    signedDate:'2025-12-22', daysRemaining:267 },
 ];
 
 const OBLIGATIONS: Obligation[] = [
@@ -193,6 +199,11 @@ const ContractDetailPanel: React.FC<{ contract: Contract; onClose: () => void }>
       </div>
 
       <div style={{ padding:24, flex:1 }}>
+        {c.type === 'Outline Agreement' && (
+          <div style={{ marginBottom:20, background:'#E0F7FA', border:'1px solid #0097A744', borderRadius:8, padding:'12px 16px', fontSize:12, color:'#006064', lineHeight:1.6 }}>
+            <strong>Outline Agreement (S/4HANA):</strong> A blanket purchase order covering recurring material requirements over a defined period. Individual release orders are created against the agreement as needed, without repeating the full sourcing process.
+          </div>
+        )}
         {/* Section 1 — Supplier */}
         <div style={{ marginBottom:20, padding:16, background:'#F8FAFC', borderRadius:8 }}>
           <div style={{ fontSize:12, fontWeight:700, color:'#64748B', textTransform:'uppercase', letterSpacing:'1px', marginBottom:10 }}>Supplier</div>
@@ -391,7 +402,7 @@ const NewContractPanel: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       <div style={{ padding:24, display:'flex', flexDirection:'column', gap:14 }}>
         <div>{label('Contract Title')}{inp('text','e.g. Niacinamide B3 Supply Agreement 2027')}</div>
         <div>{label('Supplier')}{sel(['Select supplier...', ...suppliers])}</div>
-        <div>{label('Contract Type')}{sel(['Framework Agreement','Annual Contract','Blanket Order','Spot Contract'])}</div>
+        <div>{label('Contract Type')}{sel(['Framework Agreement','Annual Contract','Blanket Order','Spot Contract','Outline Agreement'])}</div>
         <div>{label('Template')}{sel(['Select template...', ...TEMPLATES.map(t => t.name)])}</div>
         <div>{label('Linked RFQ (optional)')}{sel(['None','RFQ-2026-001','RFQ-2026-003','RFQ-2026-005','RFQ-2026-006'])}</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
