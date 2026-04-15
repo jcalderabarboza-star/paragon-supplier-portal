@@ -148,7 +148,7 @@ function Toast({ msg }: { msg: string }) {
 
 // ─── Tab bar ─────────────────────────────────────────────────────────────────
 
-const TABS = ['Active RFQs', 'New RFQ', 'Quotations', 'Awards'] as const;
+const TABS = ['Active Events', 'New Sourcing Event', 'Supplier Responses', 'Awards & PIR'] as const;
 type Tab = typeof TABS[number];
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
@@ -259,7 +259,7 @@ function DetailPanel({ rfq, onClose, onToast, onAward }: { rfq: RFQ; onClose: ()
   );
 }
 
-// ─── Tab 1: Active RFQs ───────────────────────────────────────────────────────
+// ─── Tab 1: Active Events ───────────────────────────────────────────────────────
 
 function ActiveRFQs({ onToast }: { onToast: (m: string) => void }) {
   const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
@@ -390,7 +390,7 @@ function ActiveRFQs({ onToast }: { onToast: (m: string) => void }) {
   );
 }
 
-// ─── Tab 2: New RFQ Wizard ────────────────────────────────────────────────────
+// ─── Tab 2: New Sourcing Event Wizard ────────────────────────────────────────────────────
 
 const STEP_LABELS = ['Material & Quantity', 'Select Suppliers', 'Evaluation Criteria', 'Review & Publish'];
 const BRANDS = ['Wardah', 'Emina', 'Make Over', 'BLP', 'Scarlett'];
@@ -811,7 +811,7 @@ function Awards() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const Sourcing: React.FC = () => {
-  const [tab, setTab] = useState<Tab>('Active RFQs');
+  const [tab, setTab] = useState<Tab>('Active Events');
   const [toast, setToast] = useState<string | null>(null);
   const [awardedRFQ, setAwardedRFQ] = useState<{ rfqId: string; supplier: string; amount: string; poNumber: string } | null>(null);
 
@@ -825,16 +825,16 @@ const Sourcing: React.FC = () => {
       {toast && <Toast msg={toast} />}
 
       <div>
-        <div style={{ fontSize:'20px', fontWeight:600, color:NAVY, marginBottom:4 }}>Sourcing &amp; RFQ</div>
+        <div style={{ fontSize:'20px', fontWeight:600, color:NAVY, marginBottom:4 }}>Sourcing Events</div>
         <div style={{ fontSize:'13px', color:'#64748B' }}>Manage RFQs, evaluate quotations, and award contracts</div>
       </div>
 
       <TabBar active={tab} onChange={setTab} />
 
-      {tab === 'Active RFQs' && <ActiveRFQs onToast={showToast} />}
-      {tab === 'New RFQ' && <NewRFQ onToast={showToast} />}
-      {tab === 'Quotations' && <Quotations />}
-      {tab === 'Awards' && <Awards />}
+      {tab === 'Active Events' && <ActiveRFQs onToast={showToast} />}
+      {tab === 'New Sourcing Event' && <NewRFQ onToast={showToast} />}
+      {tab === 'Supplier Responses' && <Quotations />}
+      {tab === 'Awards & PIR' && <Awards />}
     </div>
   );
 };
