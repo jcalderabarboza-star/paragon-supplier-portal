@@ -76,6 +76,20 @@ function statusReached(current: POStatus, target: POStatus): boolean {
   return STATUS_ORDER.indexOf(current) >= STATUS_ORDER.indexOf(target);
 }
 
+const PO_LINEAGE: Record<string, {
+  pr: string;
+  eventType: string;
+  eventNumber: string;
+  supplier: string;
+  quotedValue: string;
+  awardDate: string;
+}> = {
+  'PO-2025-00101': { pr: 'PR-2025-00281', eventType: 'RFQ', eventNumber: 'RFQ-2025-034', supplier: 'PT Ecogreen Oleochemicals', quotedValue: 'Rp 1.25M', awardDate: '2025-02-28' },
+  'PO-2025-00102': { pr: 'PR-2025-00284', eventType: 'RFP', eventNumber: 'RFP-2025-041', supplier: 'Zhejiang NHU Vitamins Co.', quotedValue: 'Rp 540jT', awardDate: '2025-03-05' },
+  'PO-2025-00106': { pr: 'PR-2026-00340', eventType: 'RFQ', eventNumber: 'RFQ-2026-006', supplier: 'PT Ecogreen Oleochemicals', quotedValue: 'Rp 67jT', awardDate: '2026-03-26' },
+  'PO-2025-00108': { pr: 'PR-2026-00341', eventType: 'RFQ', eventNumber: 'RFQ-2026-001', supplier: 'Zhejiang NHU Vitamins Co.', quotedValue: 'Rp 79jT', awardDate: '2026-04-02' },
+};
+
 // ─── Detail Panel ─────────────────────────────────────────────────────────────
 
 const DetailPanel: React.FC<{
@@ -182,6 +196,49 @@ const DetailPanel: React.FC<{
               </div>
             ))}
           </div>
+
+          {/* Procurement Chain */}
+          {(() => {
+            const lineage = PO_LINEAGE[po.poNumber];
+            return (
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: '#354A5F', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                  Procurement Chain
+                </div>
+                {lineage ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {[
+                      { step: 'PR', value: lineage.pr, color: '#0097A7', sub: 'Purchase Requisition' },
+                      { step: lineage.eventType, value: lineage.eventNumber, color: '#354A5F', sub: `Awarded ${lineage.awardDate}` },
+                      { step: 'Quote', value: lineage.supplier, color: '#107E3E', sub: lineage.quotedValue },
+                      { step: 'PO', value: po.poNumber, color: '#0097A7', sub: `Issued ${fmtDate(po.orderDate)}` },
+                    ].map((node, i, arr) => (
+                      <div key={node.step}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: 6, background: node.color, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 9, fontWeight: 700, textAlign: 'center' as const, lineHeight: 1.2 }}>
+                              {node.step}
+                            </div>
+                            {i < arr.length - 1 && (
+                              <div style={{ width: 2, height: 14, background: '#E2E8F0', margin: '1px 0' }} />
+                            )}
+                          </div>
+                          <div style={{ paddingTop: 4 }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: '#0D1B2A', fontFamily: 'monospace' }}>{node.value}</div>
+                            <div style={{ fontSize: 10, color: '#64748B' }}>{node.sub}</div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: '#64748B', background: '#F8FAFC', borderRadius: 6, padding: '10px 12px', border: '1px solid #E2E8F0' }}>
+                    No sourcing event linked. This PO was created directly from a PIR or Outline Agreement.
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Line items */}
           <div>
