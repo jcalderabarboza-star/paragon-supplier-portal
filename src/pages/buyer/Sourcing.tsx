@@ -835,30 +835,108 @@ function Quotations() {
 // ─── Tab 4: Awards ─────────────────────────────────────────────────────────────
 
 function Awards() {
+  const [syncedRows, setSyncedRows] = useState<Record<string, string>>({});
+  const [showModal, setShowModal] = useState<string | null>(null);
+  const TEAL = '#0097A7'; const NAVY = '#0D1B2A'; const BORDER = '#E2E8F0';
+  const SUCCESS = '#107E3E';
+
+  const handleSync = (rfq: string) => {
+    const pirNum = `INF-2026-${String(Math.floor(1000 + Math.random() * 9000))}`;
+    setSyncedRows(prev => ({ ...prev, [rfq]: pirNum }));
+    setShowModal(null);
+  };
+
   return (
-    <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:8, overflow:'hidden' }}>
-      <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
-        <thead>
-          <tr style={{ background:NAVY }}>
-            {['RFQ Number','Material','Awarded To','Award Date','Contract Value','SAP Info Record','Status'].map(h => (
-              <th key={h} style={{ padding:'10px 12px', textAlign:'left', color:'white', fontWeight:600, fontSize:'11px', whiteSpace:'nowrap' }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {MOCK_AWARDS.map((a, idx) => (
-            <tr key={a.rfq} style={{ background: idx % 2 === 0 ? 'white' : '#F8FAFC', borderTop:'1px solid #F1F5F9' }}>
-              <td style={{ padding:'12px', fontFamily:'monospace', fontWeight:700, color:TEAL }}>{a.rfq}</td>
-              <td style={{ padding:'12px', fontWeight:600, color:NAVY }}>{a.material}</td>
-              <td style={{ padding:'12px', color:'#354A5F' }}>{a.awardedTo}</td>
-              <td style={{ padding:'12px', color:'#64748B', whiteSpace:'nowrap' }}>{fmtDate(a.awardDate)}</td>
-              <td style={{ padding:'12px', fontWeight:700, color:'#107E3E' }}>{a.value}</td>
-              <td style={{ padding:'12px', fontFamily:'monospace', fontSize:'12px', color:MID }}>{a.sapInfoRecord}</td>
-              <td style={{ padding:'12px' }}><Pill label={a.status} bg='#DCFCE7' color='#107E3E' /></td>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {showModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 800 }}>
+          <div style={{ background: 'white', borderRadius: 10, width: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+            <div style={{ background: NAVY, padding: '14px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ color: 'white', fontWeight: 700, fontSize: 14 }}>Sync Award to S/4HANA</div>
+              <button onClick={() => setShowModal(null)} style={{ background: 'none', border: 'none', color: '#8DA4BC', cursor: 'pointer', fontSize: 18 }}>×</button>
+            </div>
+            <div style={{ padding: 20 }}>
+              <div style={{ fontSize: 13, color: '#354A5F', marginBottom: 16, lineHeight: 1.6 }}>
+                This will create a <strong>Purchasing Info Record (PIR)</strong> in S/4HANA linking the awarded supplier, material, and negotiated price for future PO creation.
+              </div>
+              {(() => {
+                const a = MOCK_AWARDS.find(x => x.rfq === showModal);
+                if (!a) return null;
+                return (
+                  <div style={{ background: '#F8FAFC', border: `1px solid ${BORDER}`, borderRadius: 8, padding: 14, marginBottom: 16 }}>
+                    {[
+                      ['Sourcing Event', a.rfq],
+                      ['Material', a.material],
+                      ['Awarded Supplier', a.awardedTo],
+                      ['Contract Value', a.value],
+                      ['S/4HANA Action', 'Create Purchasing Info Record (PIR)'],
+                      ['Optional', 'Create Outline Agreement for recurring orders'],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid ${BORDER}`, fontSize: 12 }}>
+                        <span style={{ color: '#64748B' }}>{k}</span>
+                        <span style={{ fontWeight: 600, color: k === 'S/4HANA Action' ? TEAL : NAVY }}>{v}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button onClick={() => setShowModal(null)} style={{ padding: '8px 16px', border: `1px solid ${BORDER}`, borderRadius: 6, background: 'white', color: '#354A5F', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                <button onClick={() => handleSync(showModal)} style={{ padding: '8px 20px', border: 'none', borderRadius: 6, background: TEAL, color: 'white', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Create PIR in S/4HANA</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ background: '#E0F7FA', border: '1px solid #0097A744', borderRadius: 8, padding: '10px 16px', fontSize: 12, color: '#006064' }}>
+        After awarding a sourcing event, sync the result to S/4HANA to create a <strong>Purchasing Info Record (PIR)</strong> — this links the supplier, material, and price for future direct PO creation.
+      </div>
+
+      <div style={{ background: 'white', border: `1px solid ${BORDER}`, borderRadius: 8, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+          <thead>
+            <tr style={{ background: NAVY }}>
+              {['Event Number', 'Material', 'Awarded To', 'Award Date', 'Contract Value', 'PIR / S/4HANA', 'Status', 'Action'].map(h => (
+                <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: 'white', fontWeight: 600, fontSize: '11px', whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {MOCK_AWARDS.map((a, idx) => {
+              const pirNum = syncedRows[a.rfq] || a.sapInfoRecord;
+              const isSynced = !!syncedRows[a.rfq] || a.sapInfoRecord !== '—';
+              return (
+                <tr key={a.rfq} style={{ background: idx % 2 === 0 ? 'white' : '#F8FAFC', borderTop: '1px solid #F1F5F9' }}>
+                  <td style={{ padding: '12px', fontFamily: 'monospace', fontWeight: 700, color: TEAL }}>{a.rfq}</td>
+                  <td style={{ padding: '12px', fontWeight: 600, color: NAVY }}>{a.material}</td>
+                  <td style={{ padding: '12px', color: '#354A5F' }}>{a.awardedTo}</td>
+                  <td style={{ padding: '12px', color: '#64748B', whiteSpace: 'nowrap' }}>{a.awardDate}</td>
+                  <td style={{ padding: '12px', fontWeight: 700, color: SUCCESS }}>{a.value}</td>
+                  <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '12px', color: isSynced ? TEAL : '#64748B' }}>
+                    {isSynced ? pirNum : '— Not synced'}
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    <span style={{ background: isSynced ? '#DCFCE7' : '#FEF3C7', color: isSynced ? SUCCESS : '#E9730C', borderRadius: 9999, padding: '2px 9px', fontSize: 11, fontWeight: 600 }}>
+                      {isSynced ? (a.status || 'PO Issued') : 'Pending Sync'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    {!syncedRows[a.rfq] && a.sapInfoRecord === '—' ? (
+                      <button onClick={() => setShowModal(a.rfq)}
+                        style={{ background: TEAL, color: 'white', border: 'none', borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                        Sync to S/4HANA
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 11, color: SUCCESS, fontWeight: 600 }}>✓ Synced</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
