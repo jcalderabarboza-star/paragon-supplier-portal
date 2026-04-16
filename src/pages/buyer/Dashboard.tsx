@@ -136,9 +136,19 @@ function useDerivedData() {
       })),
     ];
 
+    const MOCK_PR_DATA = [
+      { status: 'Pending Approval', priority: 'High' },
+      { status: 'Pending Approval', priority: 'Medium' },
+      { status: 'Approved', priority: 'High' },
+      { status: 'Draft', priority: 'Low' },
+    ];
+    const openPRs = MOCK_PR_DATA.filter(p => p.status === 'Pending Approval').length;
+    const expiringComplianceDocs = 2;
+
     return {
       pos, openPOs, unacknowledged, overduePOs, totalSpend,
       otif, avgOTIF, activeSuppliers, gradeD, expiringCerts, expiredCerts,
+      openPRs, expiringComplianceDocs,
       criticalStock, lowStock, productionRisk, poFunnel, channelData,
       warRoomActive, actionQueue,
     };
@@ -481,11 +491,13 @@ const Dashboard: React.FC = () => {
 
       <SectionLabel color={NAVY}>Layer 1 — Strategic · C-Level & Directors</SectionLabel>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
         <KpiTile label="Total Spend YTD" value={fmt(d.totalSpend)} trend="+8.4% vs last year" trendUp={true} color={TEAL} onClick={() => navigate('/buyer/analytics')} />
         <KpiTile label="Portfolio OTIF" value={`${d.otif}%`} trend="Target ≥ 95% · 8pp gap" trendUp={false} color={WARNING} alert={d.otif < 90} onClick={() => navigate('/buyer/analytics')} />
         <KpiTile label="Active Suppliers" value={d.activeSuppliers} sub={`/ ${mockSuppliers.length} total`} trend={`${mockSuppliers.filter(s => s.status === 'Onboarding').length} onboarding`} trendUp={null} color={TEAL} onClick={() => navigate('/buyer/suppliers')} />
         <KpiTile label="Open Purchase Orders" value={d.openPOs.length} sub="active" trend={`${d.unacknowledged.length} unacknowledged >48h`} trendUp={d.unacknowledged.length === 0} color={d.unacknowledged.length > 0 ? ERROR : TEAL} alert={d.unacknowledged.length > 0} onClick={() => navigate('/buyer/purchase-orders')} />
+        <KpiTile label="Open Requisitions" value={d.openPRs} sub="pending approval" trend="Requires procurement action" trendUp={d.openPRs === 0} color={d.openPRs > 0 ? WARNING : TEAL} alert={d.openPRs > 0} onClick={() => navigate('/buyer/purchase-requisition')} />
+        <KpiTile label="Expiring Certs" value={d.expiringComplianceDocs} sub="within 90 days" trend="Click to view compliance tracker" trendUp={false} color={d.expiringComplianceDocs > 0 ? WARNING : TEAL} alert={d.expiringComplianceDocs > 0} onClick={() => navigate('/buyer/compliance')} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>

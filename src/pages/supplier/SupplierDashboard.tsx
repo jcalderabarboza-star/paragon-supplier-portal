@@ -143,6 +143,7 @@ const SupplierDashboard: React.FC = () => {
           { icon: <ClipboardList size={20} />, label: 'Open Orders', value: openOrders, sub: 'awaiting action', color: '#0097A7', bg: 'white' },
           { icon: <Truck size={20} />, label: 'Pending ASNs', value: pendingASNs, sub: 'need shipment notice', color: '#E9730C', bg: 'white' },
           { icon: <CreditCard size={20} />, label: 'Unpaid Invoices', value: 2, sub: 'pending payment', color: '#BB0000', bg: 'white' },
+          { icon: <ClipboardList size={20} />, label: 'Open Sourcing Events', value: 2, sub: 'awaiting your response', color: '#6D28D9', bg: 'white' },
           { icon: <Target size={20} />, label: 'My OTIF Score', value: `${mySupplier.otif}%`, sub: 'last 6 months', color: otifColor, bg: 'white' },
         ].map(({ icon, label, value, sub, color, bg }) => (
           <div key={label} style={{ flex: '1 1 160px', background: bg, border: '1px solid #E2E8F0', borderLeft: `4px solid ${color}`, borderRadius: '8px', padding: '16px 20px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>

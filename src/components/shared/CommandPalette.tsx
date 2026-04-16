@@ -64,6 +64,44 @@ function useSearchResults(query: string): SearchResult[] {
         icon: <Package size={14} color={TEAL} />,
       }));
 
+    const MOCK_PR_SEARCH = [
+      { prNumber: 'PR-2026-00341', material: 'Niacinamide B3 USP Grade', status: 'PO Created', value: 'Rp 79jT' },
+      { prNumber: 'PR-2026-00342', material: 'PET Bottle 100ml Airless Pump', status: 'Approved', value: 'Rp 105jT' },
+      { prNumber: 'PR-2026-00343', material: 'Givaudan Floral Accord FG-2847', status: 'Sourcing Event', value: 'Rp 210jT' },
+      { prNumber: 'PR-2026-00344', material: 'Halal Glycerin 99.5%', status: 'Pending Approval', value: 'Rp 43jT' },
+      { prNumber: 'PR-2026-00345', material: 'Folding Carton 150gsm Wardah', status: 'Draft', value: 'Rp 84jT' },
+    ];
+
+    MOCK_PR_SEARCH
+      .filter(pr => pr.prNumber.toLowerCase().includes(q) || pr.material.toLowerCase().includes(q))
+      .slice(0, 3)
+      .forEach(pr => results.push({
+        id: `pr-${pr.prNumber}`, category: 'Purchase Requisitions',
+        title: pr.prNumber,
+        subtitle: `${pr.material} · ${pr.value} · ${pr.status}`,
+        path: '/buyer/purchase-requisition',
+        icon: <FileText size={14} color="#6D28D9" />,
+      }));
+
+    const MOCK_QT_SEARCH = [
+      { qtNumber: 'QT-2026-0891', rfq: 'RFQ-2026-001', supplier: 'Zhejiang NHU Vitamins Co.', value: 'Rp 79jT' },
+      { qtNumber: 'QT-2026-0892', rfq: 'RFQ-2026-001', supplier: 'BASF Personal Care DE', value: 'Rp 91jT' },
+      { qtNumber: 'QT-2026-0894', rfq: 'RFQ-2026-003', supplier: 'PT Halal Emulsifier Nusantara', value: 'Rp 43jT' },
+      { qtNumber: 'QT-2026-0896', rfq: 'RFQ-2026-002', supplier: 'PT Berlina Packaging', value: 'Rp 105jT' },
+      { qtNumber: 'QT-2026-0897', rfq: 'RFQ-2026-005', supplier: 'PT Indo Karton Packaging', value: 'Rp 84jT' },
+    ];
+
+    MOCK_QT_SEARCH
+      .filter(qt => qt.qtNumber.toLowerCase().includes(q) || qt.supplier.toLowerCase().includes(q) || qt.rfq.toLowerCase().includes(q))
+      .slice(0, 3)
+      .forEach(qt => results.push({
+        id: `qt-${qt.qtNumber}`, category: 'Quotations',
+        title: qt.qtNumber,
+        subtitle: `${qt.rfq} · ${qt.supplier} · ${qt.value}`,
+        path: '/buyer/sourcing',
+        icon: <Receipt size={14} color="#107E3E" />,
+      }));
+
     return results;
   }, [query]);
 }
@@ -74,6 +112,8 @@ const QUICK_ACTIONS = [
   { title: 'Inventory Visibility', subtitle: 'Check stock levels', path: '/buyer/inventory', icon: <Package size={14} color={TEAL} /> },
   { title: 'Invoices & Payment', subtitle: 'AP queue and approvals', path: '/buyer/invoices', icon: <Receipt size={14} color={TEAL} /> },
   { title: 'Compliance Tracker', subtitle: 'Halal · BPOM · ISO', path: '/buyer/compliance', icon: <FileText size={14} color={TEAL} /> },
+  { title: 'Purchase Requisitions', subtitle: 'PR pipeline · pending approvals', path: '/buyer/purchase-requisition', icon: <FileText size={14} color="#6D28D9" /> },
+  { title: 'Sourcing Events', subtitle: 'RFQ · RFP · E-Auction', path: '/buyer/sourcing', icon: <FileText size={14} color="#107E3E" /> },
 ];
 
 const CommandPalette: React.FC<{ onClose: () => void }> = ({ onClose }) => {

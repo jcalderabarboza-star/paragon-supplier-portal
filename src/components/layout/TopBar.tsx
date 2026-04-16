@@ -102,8 +102,7 @@ const TopBar: React.FC = () => {
           <kbd style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 3, padding: '1px 5px', fontSize: 10, fontFamily: 'inherit', color: '#64748B' }}>/</kbd>
         </button>
         <div style={{ position: 'relative', cursor: 'pointer' }}
-          onClick={() => setShowNotifHint(h => !h)}
-          title={`${notifCount} unacknowledged POs`}>
+          onClick={() => setShowNotifHint(h => !h)}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
             stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -116,6 +115,36 @@ const TopBar: React.FC = () => {
               fontSize: '9px', fontWeight: 700, minWidth: '16px', height: '16px',
               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px',
             }}>{notifCount}</span>
+          )}
+          {showNotifHint && (
+            <div style={{ position: 'absolute', top: 32, right: -8, width: 320, background: 'white', border: '1px solid #E2E8F0', borderRadius: 8, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 500, overflow: 'hidden' }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ background: '#0D1B2A', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'white', fontWeight: 700, fontSize: 13 }}>Notifications</span>
+                <span style={{ background: '#0097A7', color: 'white', borderRadius: 9999, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>{notifCount} new</span>
+              </div>
+              {[
+                { icon: '⚠', color: '#BB0000', bg: '#FEE2E2', title: 'PO unacknowledged >48h', sub: 'PO-2025-00103 · Zhejiang NHU · Rp 540jT', path: '/buyer/purchase-orders', time: '2h ago' },
+                { icon: '📄', color: '#E9730C', bg: '#FEF3C7', title: 'PR pending approval', sub: 'PR-2026-00344 · Halal Glycerin · Rp 43jT', path: '/buyer/purchase-requisition', time: '4h ago' },
+                { icon: '🔔', color: '#E9730C', bg: '#FEF3C7', title: 'Certificate expiring in 70 days', sub: 'Firmenich Malaysia · ISO 9001:2015', path: '/buyer/compliance', time: '1d ago' },
+              ].map((n, i) => (
+                <div key={i} style={{ padding: '12px 14px', borderBottom: i < 2 ? '1px solid #F1F5F9' : 'none', display: 'flex', gap: 10, alignItems: 'flex-start', cursor: 'pointer', background: 'white' }}
+                  onClick={() => { setShowNotifHint(false); }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 6, background: n.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>{n.icon}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: '#0D1B2A', marginBottom: 2 }}>{n.title}</div>
+                    <div style={{ fontSize: 11, color: '#64748B' }}>{n.sub}</div>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#94A3B8', whiteSpace: 'nowrap', flexShrink: 0 }}>{n.time}</div>
+                </div>
+              ))}
+              <div style={{ padding: '8px 14px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0' }}>
+                <button style={{ width: '100%', background: 'none', border: 'none', color: '#0097A7', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                  onClick={() => setShowNotifHint(false)}>
+                  Mark all as read
+                </button>
+              </div>
+            </div>
           )}
         </div>
         <div style={{
