@@ -153,6 +153,17 @@ function InboundShipments({ shipments, setShipments, onToast }: {
     <th style={{ padding:'10px 12px', textAlign:'left', color:'white', fontWeight:600, fontSize:'11px', whiteSpace:'nowrap' }}>{children}</th>
   );
 
+  if (shipments.length === 0) {
+    return (
+      <div style={{ textAlign:'center', padding:'3rem 2rem', color:'#64748B', background:'white', borderRadius:8, border:'1px solid #E2E8F0' }}>
+        <div style={{ fontSize:32, marginBottom:12 }}>🚚</div>
+        <div style={{ fontSize:15, fontWeight:600, color:'#0D1B2A', marginBottom:6 }}>No shipments found</div>
+        <div style={{ fontSize:13, marginBottom:16 }}>No shipments match your current filters. Try adjusting the status filter or date range.</div>
+        <button onClick={() => setShipments(MOCK_SHIPMENTS_INIT)} style={{ padding:'7px 18px', border:'1px solid #0097A7', borderRadius:6, background:'white', color:'#0097A7', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Clear Filters</button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ background:'white', border:'1px solid #E2E8F0', borderRadius:8, overflow:'hidden' }}>
       <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>

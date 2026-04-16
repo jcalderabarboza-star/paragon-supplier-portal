@@ -273,6 +273,15 @@ const InventoryVisibility: React.FC = () => {
             </tr>
           </thead>
           <tbody>
+            {mockInventory.length === 0 && (
+              <tr>
+                <td colSpan={12}>
+                  <div style={{ textAlign:'center', padding:'2rem', color:'#64748B', fontSize:13 }}>
+                    No materials match the current filter. Try selecting a different stock status.
+                  </div>
+                </td>
+              </tr>
+            )}
             {mockInventory.map((inv, idx) => {
               const rowBg = hoveredRow === inv.id ? '#E6F3FF' : STATUS_ROW_BG[inv.stockStatus] || (idx % 2 === 0 ? 'white' : '#F7F7F7');
               const chip = SOURCE_CHIPS[inv.dataSource] ?? { bg: '#f5f5f5', color: '#6c757d' };
