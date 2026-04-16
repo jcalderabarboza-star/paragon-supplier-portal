@@ -18,7 +18,7 @@ const AppShell: React.FC = () => {
       <TopBar />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <Sidebar collapsed={collapsed} />
-        <main style={{ flex: 1, overflow: 'auto', padding: '1.5rem', background: BACKGROUND }}>
+        <main style={{ flex: 1, overflow: 'auto', padding: collapsed ? '1rem 0.75rem' : '1.5rem', background: BACKGROUND }}>
           <Outlet />
         </main>
       </div>

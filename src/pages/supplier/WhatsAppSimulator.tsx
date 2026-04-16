@@ -362,10 +362,10 @@ const WeChatSimulator: React.FC = () => {
   const current = SCENARIOS[scenario];
 
   return (
-    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
       {/* LEFT — WeChat mockup */}
-      <div style={{ width: '42%', flexShrink: 0 }}>
+      <div style={{ width: '42%', flexShrink: 0, minWidth: '280px' }}>
 
         {/* WeChat note banner */}
         <div style={{ background: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: '#166534' }}>
@@ -711,9 +711,9 @@ const EmailSimulator: React.FC = () => {
   const meta = EMAIL_SCENARIOS[scenario];
 
   return (
-    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
       {/* LEFT PANEL */}
-      <div style={{ width: '42%', flexShrink: 0 }}>
+      <div style={{ width: '42%', flexShrink: 0, minWidth: '280px' }}>
         <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: '#0D1B2A', marginBottom: 4 }}>✉️ Email Procurement Simulator</div>
           <div style={{ fontSize: 12, color: '#64748B', marginBottom: 16 }}>Experience how suppliers respond to procurement notifications via email</div>
@@ -882,10 +882,10 @@ const WhatsAppSimulator: React.FC = () => {
       </div>
 
       {channel === 'whatsapp' && (
-      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start', flexWrap: 'wrap' }}>
 
         {/* ── LEFT PANEL ─────────────────────────────────────────── */}
-        <div style={{ width: '42%', flexShrink: 0 }}>
+        <div style={{ width: '42%', flexShrink: 0, minWidth: '280px' }}>
           <div style={{ background: '#fff', borderRadius: 12, padding: '20px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: '#0D1B2A', marginBottom: 4 }}>📱 WhatsApp Procurement Simulator</div>
             <div style={{ fontSize: 12, color: '#64748B', marginBottom: 16 }}>Experience how suppliers interact with Paragon without logging into any portal</div>

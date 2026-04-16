@@ -431,7 +431,8 @@ const ShipNotices: React.FC = () => {
           )}
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', minWidth: '700px' }}>
           <thead>
             <tr style={{ background: NAVY, color: 'white' }}>
               {['', 'ASN Number', 'PO Reference', 'Status', 'Carrier', 'Tracking No.', 'ETA', 'Actions'].map((h, i) => (
@@ -757,6 +758,7 @@ const ShipNotices: React.FC = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* 5. FOOTER INFO STRIP */}

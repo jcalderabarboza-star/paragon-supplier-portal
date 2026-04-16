@@ -619,7 +619,8 @@ const AwardsTab: React.FC = () => {
     <div>
       <div style={{ background: 'white', borderRadius: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
         overflow: 'hidden', marginBottom: 12 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, minWidth: '600px' }}>
           <thead>
             <tr style={{ background: '#F8FAFC', borderBottom: `2px solid ${BORDER}` }}>
               {['RFQ Number', 'Material', 'Result', 'Award Date', 'Contract Value', 'PO Issued', 'Notes'].map(h => (
@@ -648,6 +649,7 @@ const AwardsTab: React.FC = () => {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Win rate bar */}
