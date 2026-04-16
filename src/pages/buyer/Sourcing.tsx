@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { mockSuppliers } from '../../data/mockSuppliers';
 import { SupplierTier, PreferredChannel } from '../../types/supplier.types';
 
@@ -264,6 +264,16 @@ function DetailPanel({ rfq, onClose, onToast, onAward }: { rfq: RFQ; onClose: ()
 function ActiveRFQs({ onToast }: { onToast: (m: string) => void }) {
   const [selectedRFQ, setSelectedRFQ] = useState<RFQ | null>(null);
   const [awardedData, setAwardedData] = useState<{ rfqId: string; supplier: string; amount: string; poNumber: string } | null>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setAwardedData(null);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const stats = useMemo(() => ({
     open: MOCK_RFQS.filter(r => r.status === 'Open').length,

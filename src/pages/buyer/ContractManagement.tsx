@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -734,6 +734,16 @@ const ObligationsTab: React.FC = () => {
 const ContractManagement: React.FC = () => {
   const [tab, setTab] = useState(0);
   const [showNewContract, setShowNewContract] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowNewContract(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const tabs = ['Active Contracts','Renewal Pipeline','Contract Templates','Obligations Tracker'];
   const kpis = [

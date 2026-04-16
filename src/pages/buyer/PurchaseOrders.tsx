@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Title, Text, Button } from '@ui5/webcomponents-react';
 import { mockPurchaseOrders } from '../../data/mockPurchaseOrders';
 import { POStatus, ChannelType, PurchaseOrder } from '../../types/purchaseOrder.types';
@@ -150,19 +150,22 @@ const DetailPanel: React.FC<{
           <span style={{ fontWeight: 700, fontSize: '1rem', fontFamily: 'monospace' }}>
             {po.poNumber}
           </span>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'white',
-              fontSize: '1.25rem',
-              cursor: 'pointer',
-              lineHeight: 1,
-            }}
-          >
-            ×
-          </button>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <kbd style={{ background:'rgba(255,255,255,0.1)', border:'1px solid rgba(255,255,255,0.2)', borderRadius:3, padding:'1px 5px', fontSize:9, color:'rgba(255,255,255,0.6)', fontFamily:'inherit' }}>Esc</kbd>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'white',
+                fontSize: '1.25rem',
+                cursor: 'pointer',
+                lineHeight: 1,
+              }}
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -312,6 +315,13 @@ const PurchaseOrders: React.FC = () => {
   const [channelFilter, setChannelFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedPO(null);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
