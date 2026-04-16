@@ -24,6 +24,8 @@ interface SuppData {
   kpis: { name:string; value:string; target:string; pct:number; color:string; trend:string }[];
   radar: { axis:string; value:number }[];
   otifTrend: number[];
+  ackSpeedTrend: number[];
+  defectTrend: number[];
   impPlan?: boolean;
   commLog: { date:string; type:string; channel:string; message:string; status:string }[];
 }
@@ -55,6 +57,8 @@ const SUPPLIER_DATA: SuppData[] = [
       { axis:'Sustainability',value:82 },
     ],
     otifTrend:[88,89,90,91,92,91,93,94,93,94,95,94],
+    ackSpeedTrend:[8,7,6,6,5,5,4,6,5,4,6,6],
+    defectTrend:[0.4,0.3,0.3,0.2,0.2,0.2,0.1,0.2,0.2,0.2,0.1,0.2],
     commLog:[
       { date:'Apr 6 2026',  type:'PO Confirmation',  channel:'API',        message:'PO-2025-00108 confirmed via API in 4 minutes', status:'Completed' },
       { date:'Apr 4 2026',  type:'Invoice Submitted', channel:'Web Portal', message:'INV-2026-00235 submitted — 3-way match: Perfect', status:'Completed' },
@@ -89,6 +93,8 @@ const SUPPLIER_DATA: SuppData[] = [
       { axis:'Sustainability',value:68 },
     ],
     otifTrend:[82,83,84,84,85,85,86,87,87,88,88,88],
+    ackSpeedTrend:[22,20,19,18,18,17,16,18,17,18,17,18],
+    defectTrend:[0.6,0.5,0.5,0.5,0.4,0.4,0.4,0.3,0.4,0.3,0.4,0.3],
     commLog:[
       { date:'Apr 5 2026',  type:'PO Confirmation', channel:'WhatsApp', message:'PO-2025-00107 confirmed via WhatsApp in 3 hours', status:'Completed' },
       { date:'Mar 31 2026', type:'ASN Submitted',   channel:'Web Portal', message:'ASN-2026-001 submitted for PO-2025-00107', status:'Completed' },
@@ -123,6 +129,8 @@ const SUPPLIER_DATA: SuppData[] = [
       { axis:'Sustainability',value:70 },
     ],
     otifTrend:[85,84,82,83,81,80,79,78,78,79,78,78],
+    ackSpeedTrend:[28,30,32,29,31,33,35,34,36,34,33,34],
+    defectTrend:[0.8,0.9,1.0,0.9,1.1,1.0,1.2,1.1,1.0,1.1,1.2,1.1],
     commLog:[
       { date:'Apr 5 2026',  type:'Late Delivery Alert', channel:'Email', message:'PO-2025-00099 is 5 days overdue — held at Jakarta Customs', status:'Open' },
       { date:'Apr 2 2026',  type:'Improvement Plan',    channel:'Email', message:'Improvement plan issued — 30-day review period', status:'Active' },
@@ -143,7 +151,10 @@ const ALL_SUPPLIERS = [
     sapBp:`BP-2000${10+i}`, channel:[' Web',' WhatsApp','API',' Web',' Web'][i],
     grade:['A','B','A','B','C'][i], score:[92,84,91,83,72][i], status:'Approved Supplier',
     kpis: SUPPLIER_DATA[0].kpis, radar: SUPPLIER_DATA[0].radar,
-    otifTrend: [82,84,85,87,88,89,90,91,91,92,92,91], commLog: [],
+    otifTrend: [82,84,85,87,88,89,90,91,91,92,92,91],
+    ackSpeedTrend:[12,11,10,9,8,8,7,7,6,6,5,5],
+    defectTrend:[0.5,0.4,0.4,0.3,0.3,0.2,0.2,0.2,0.1,0.2,0.1,0.2],
+    commLog: [],
   })),
 ];
 
@@ -193,7 +204,12 @@ const SupplierScorecard: React.FC = () => {
   const supp = useMemo(() => ALL_SUPPLIERS.find(s => s.id === selectedId) ?? ALL_SUPPLIERS[0], [selectedId]);
   const [gBg, gColor] = GRADE_STYLE[supp.grade] ?? ['#F1F5F9','#475569'];
 
-  const otifData = supp.otifTrend.map((v,i) => ({ month: OTIF_MONTHS[i], otif: v }));
+  const otifData = supp.otifTrend.map((v,i) => ({
+    month: OTIF_MONTHS[i],
+    otif: v,
+    ackSpeed: supp.ackSpeedTrend[i],
+    defect: supp.defectTrend[i],
+  }));
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'1.25rem' }}>
@@ -288,16 +304,20 @@ const SupplierScorecard: React.FC = () => {
         </Card>
 
         <Card>
-          <STitle>OTIF Trend — 12 Months</STitle>
+          <STitle>Performance Trends — 12 Months</STitle>
+          <div style={{ fontSize:12, color:'#64748B', marginBottom:12 }}>OTIF % (left axis) · Ack Speed in hours · Defect Rate %</div>
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={otifData} margin={{ top:10, right:10, bottom:0, left:-10 }}>
+            <LineChart data={otifData} margin={{ top:10, right:40, bottom:0, left:-10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
               <XAxis dataKey="month" tick={{ fontSize:10 }} />
-              <YAxis domain={[60,100]} tick={{ fontSize:10 }} />
+              <YAxis yAxisId="pct" domain={[60,100]} tick={{ fontSize:10 }} />
+              <YAxis yAxisId="hrs" orientation="right" domain={[0,40]} tick={{ fontSize:10 }} tickFormatter={(v: number) => `${v}h`} />
               <Tooltip content={<CTT />} />
-              <ReferenceLine y={90} stroke="#BB0000" strokeDasharray="4 2" label={{ value:'Target 90%', fill:'#BB0000', fontSize:9, position:'insideTopRight' }} />
-              <ReferenceLine y={95} stroke="#107E3E" strokeDasharray="4 2" label={{ value:'Stretch 95%', fill:'#107E3E', fontSize:9, position:'insideTopRight' }} />
-              <Line type="monotone" dataKey="otif" stroke={TEAL} strokeWidth={2.5} dot={{ r:3 }} name="OTIF %" activeDot={{ r:5 }} />
+              <ReferenceLine yAxisId="pct" y={95} stroke="#107E3E" strokeDasharray="4 2" label={{ value:'OTIF target', fill:'#107E3E', fontSize:9, position:'insideTopRight' }} />
+              <Line yAxisId="pct" type="monotone" dataKey="otif" stroke={TEAL} strokeWidth={2.5} dot={{ r:3 }} name="OTIF %" activeDot={{ r:5 }} />
+              <Line yAxisId="hrs" type="monotone" dataKey="ackSpeed" stroke="#E9730C" strokeWidth={1.5} dot={{ r:2 }} name="Ack Speed (h)" strokeDasharray="4 2" />
+              <Line yAxisId="pct" type="monotone" dataKey="defect" stroke="#BB0000" strokeWidth={1.5} dot={{ r:2 }} name="Defect Rate %" strokeDasharray="2 2" />
+              <Legend iconSize={10} wrapperStyle={{ fontSize:11 }} />
             </LineChart>
           </ResponsiveContainer>
         </Card>
