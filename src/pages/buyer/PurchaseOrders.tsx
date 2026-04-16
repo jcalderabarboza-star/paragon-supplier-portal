@@ -80,14 +80,15 @@ const PO_LINEAGE: Record<string, {
   pr: string;
   eventType: string;
   eventNumber: string;
+  quoteNumber?: string;
   supplier: string;
   quotedValue: string;
   awardDate: string;
 }> = {
-  'PO-2025-00101': { pr: 'PR-2025-00281', eventType: 'RFQ', eventNumber: 'RFQ-2025-034', supplier: 'PT Ecogreen Oleochemicals', quotedValue: 'Rp 1.25M', awardDate: '2025-02-28' },
-  'PO-2025-00102': { pr: 'PR-2025-00284', eventType: 'RFP', eventNumber: 'RFP-2025-041', supplier: 'Zhejiang NHU Vitamins Co.', quotedValue: 'Rp 540jT', awardDate: '2025-03-05' },
-  'PO-2025-00106': { pr: 'PR-2026-00340', eventType: 'RFQ', eventNumber: 'RFQ-2026-006', supplier: 'PT Ecogreen Oleochemicals', quotedValue: 'Rp 67jT', awardDate: '2026-03-26' },
-  'PO-2025-00108': { pr: 'PR-2026-00341', eventType: 'RFQ', eventNumber: 'RFQ-2026-001', supplier: 'Zhejiang NHU Vitamins Co.', quotedValue: 'Rp 79jT', awardDate: '2026-04-02' },
+  'PO-2025-00101': { pr: 'PR-2025-00281', eventType: 'RFQ', eventNumber: 'RFQ-2025-034', quoteNumber: 'QT-2025-0412', supplier: 'PT Ecogreen Oleochemicals', quotedValue: 'Rp 1.25M', awardDate: '2025-02-28' },
+  'PO-2025-00102': { pr: 'PR-2025-00284', eventType: 'RFP', eventNumber: 'RFP-2025-041', quoteNumber: 'QT-2025-0438', supplier: 'Zhejiang NHU Vitamins Co.', quotedValue: 'Rp 540jT', awardDate: '2025-03-05' },
+  'PO-2025-00106': { pr: 'PR-2026-00340', eventType: 'RFQ', eventNumber: 'RFQ-2026-006', quoteNumber: 'QT-2026-0889', supplier: 'PT Ecogreen Oleochemicals', quotedValue: 'Rp 67jT', awardDate: '2026-03-26' },
+  'PO-2025-00108': { pr: 'PR-2026-00341', eventType: 'RFQ', eventNumber: 'RFQ-2026-001', quoteNumber: 'QT-2026-0891', supplier: 'Zhejiang NHU Vitamins Co.', quotedValue: 'Rp 79jT', awardDate: '2026-04-02' },
 };
 
 // ─── Detail Panel ─────────────────────────────────────────────────────────────
@@ -210,7 +211,7 @@ const DetailPanel: React.FC<{
                     {[
                       { step: 'PR', value: lineage.pr, color: '#0097A7', sub: 'Purchase Requisition' },
                       { step: lineage.eventType, value: lineage.eventNumber, color: '#354A5F', sub: `Awarded ${lineage.awardDate}` },
-                      { step: 'Quote', value: lineage.supplier, color: '#107E3E', sub: lineage.quotedValue },
+                      { step: 'Quote', value: (lineage as any).quoteNumber || lineage.supplier, color: '#107E3E', sub: `${lineage.supplier} · ${lineage.quotedValue}` },
                       { step: 'PO', value: po.poNumber, color: '#0097A7', sub: `Issued ${fmtDate(po.orderDate)}` },
                     ].map((node, i, arr) => (
                       <div key={node.step}>

@@ -62,13 +62,13 @@ const MOCK_AWARDS = [
 ];
 
 const MOCK_ALL_QUOTES = [
-  { rfq:'RFQ-2026-001', material:'Niacinamide B3 USP Grade', supplier:'Zhejiang NHU Vitamins Co.', submitted:'2026-04-02', unitPrice:'Rp 158,000/KG', total:'Rp 79jT', leadTime:'21 days', halal:true, score:87, status:'Under Review' },
-  { rfq:'RFQ-2026-001', material:'Niacinamide B3 USP Grade', supplier:'BASF Personal Care DE', submitted:'2026-04-03', unitPrice:'Rp 182,000/KG', total:'Rp 91jT', leadTime:'35 days', halal:true, score:82, status:'Under Review' },
-  { rfq:'RFQ-2026-001', material:'Niacinamide B3 USP Grade', supplier:'Evonik Specialty FR', submitted:'2026-04-04', unitPrice:'Rp 195,000/KG', total:'Rp 97.5jT', leadTime:'28 days', halal:false, score:71, status:'Under Review' },
-  { rfq:'RFQ-2026-003', material:'Halal Glycerin 99.5% Kosher', supplier:'PT Halal Emulsifier Nusantara', submitted:'2026-03-28', unitPrice:'Rp 21,500/KG', total:'Rp 43jT', leadTime:'7 days', halal:true, score:91, status:'Awaiting Award' },
-  { rfq:'RFQ-2026-003', material:'Halal Glycerin 99.5% Kosher', supplier:'PT Musim Mas Specialty Fats', submitted:'2026-03-27', unitPrice:'Rp 22,800/KG', total:'Rp 45.6jT', leadTime:'5 days', halal:true, score:89, status:'Awaiting Award' },
-  { rfq:'RFQ-2026-002', material:'PET Bottle 100ml Airless Pump', supplier:'PT Berlina Packaging', submitted:'2026-04-05', unitPrice:'Rp 2,100/PCS', total:'Rp 105jT', leadTime:'14 days', halal:true, score:85, status:'Under Review' },
-  { rfq:'RFQ-2026-005', material:'Folding Carton 150gsm Wardah', supplier:'PT Indo Karton Packaging', submitted:'2026-04-01', unitPrice:'Rp 420/PCS', total:'Rp 84jT', leadTime:'10 days', halal:true, score:92, status:'Under Review' },
+  { rfq:'RFQ-2026-001', quoteNumber:'QT-2026-0891', material:'Niacinamide B3 USP Grade', supplier:'Zhejiang NHU Vitamins Co.', submitted:'2026-04-02', unitPrice:'Rp 158,000/KG', total:'Rp 79jT', leadTime:'21 days', halal:true, score:87, status:'Under Review' },
+  { rfq:'RFQ-2026-001', quoteNumber:'QT-2026-0892', material:'Niacinamide B3 USP Grade', supplier:'BASF Personal Care DE', submitted:'2026-04-03', unitPrice:'Rp 182,000/KG', total:'Rp 91jT', leadTime:'35 days', halal:true, score:82, status:'Under Review' },
+  { rfq:'RFQ-2026-001', quoteNumber:'QT-2026-0893', material:'Niacinamide B3 USP Grade', supplier:'Evonik Specialty FR', submitted:'2026-04-04', unitPrice:'Rp 195,000/KG', total:'Rp 97.5jT', leadTime:'28 days', halal:false, score:71, status:'Under Review' },
+  { rfq:'RFQ-2026-003', quoteNumber:'QT-2026-0894', material:'Halal Glycerin 99.5% Kosher', supplier:'PT Halal Emulsifier Nusantara', submitted:'2026-03-28', unitPrice:'Rp 21,500/KG', total:'Rp 43jT', leadTime:'7 days', halal:true, score:91, status:'Awaiting Award' },
+  { rfq:'RFQ-2026-003', quoteNumber:'QT-2026-0895', material:'Halal Glycerin 99.5% Kosher', supplier:'PT Musim Mas Specialty Fats', submitted:'2026-03-27', unitPrice:'Rp 22,800/KG', total:'Rp 45.6jT', leadTime:'5 days', halal:true, score:89, status:'Awaiting Award' },
+  { rfq:'RFQ-2026-002', quoteNumber:'QT-2026-0896', material:'PET Bottle 100ml Airless Pump', supplier:'PT Berlina Packaging', submitted:'2026-04-05', unitPrice:'Rp 2,100/PCS', total:'Rp 105jT', leadTime:'14 days', halal:true, score:85, status:'Under Review' },
+  { rfq:'RFQ-2026-005', quoteNumber:'QT-2026-0897', material:'Folding Carton 150gsm Wardah', supplier:'PT Indo Karton Packaging', submitted:'2026-04-01', unitPrice:'Rp 420/PCS', total:'Rp 84jT', leadTime:'10 days', halal:true, score:92, status:'Under Review' },
 ];
 
 const MATERIALS_FOR_SEARCH = [
@@ -800,7 +800,7 @@ function Quotations() {
         <table style={{ width:'100%', borderCollapse:'collapse', fontSize:'13px' }}>
           <thead>
             <tr style={{ background:NAVY }}>
-              {['RFQ','Material','Supplier','Submitted','Unit Price','Total','Lead Time','Halal','Score','Status'].map(h => (
+              {['Quote #','RFQ','Material','Supplier','Submitted','Unit Price','Total','Lead Time','Halal','Score','Status'].map(h => (
                 <th key={h} style={{ padding:'10px 12px', textAlign:'left', color:'white', fontWeight:600, fontSize:'11px', whiteSpace:'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -808,6 +808,7 @@ function Quotations() {
           <tbody>
             {filtered.map((q, idx) => (
               <tr key={idx} style={{ background: idx % 2 === 0 ? 'white' : '#F8FAFC', borderTop:'1px solid #F1F5F9' }}>
+                <td style={{ padding:'10px 12px', fontFamily:'monospace', fontWeight:700, color:'#6D28D9', whiteSpace:'nowrap', fontSize:'11px' }}>{(q as any).quoteNumber || '—'}</td>
                 <td style={{ padding:'10px 12px', fontFamily:'monospace', fontWeight:700, color:TEAL, whiteSpace:'nowrap' }}>{q.rfq}</td>
                 <td style={{ padding:'10px 12px', maxWidth:160 }}><div style={{ whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', fontWeight:600, color:NAVY }}>{q.material}</div></td>
                 <td style={{ padding:'10px 12px', color:'#354A5F' }}>{q.supplier}</td>

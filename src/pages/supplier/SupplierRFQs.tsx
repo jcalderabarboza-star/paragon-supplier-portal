@@ -67,6 +67,7 @@ const OPEN_RFQS_INITIAL: OpenRFQ[] = [
 
 const SUBMITTED_QUOTE = {
   rfqNumber: 'RFQ-2026-005',
+  quoteNumber: 'QT-2026-0897',
   material: 'Folding Carton 150gsm Wardah',
   submittedDate: '2026-03-27',
   unitPrice: 'Rp 420/PCS',
@@ -535,7 +536,14 @@ const MyQuotesTab: React.FC<{
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 14, color: TEAL }}>{q.rfqNumber}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: TEAL }}>{q.rfqNumber}</div>
+                {(q as any).quoteNumber && (
+                  <span style={{ background: '#EDE9FE', color: '#6D28D9', borderRadius: 9999, padding: '2px 8px', fontSize: 11, fontWeight: 700, fontFamily: 'monospace' }}>
+                    {(q as any).quoteNumber}
+                  </span>
+                )}
+              </div>
               <div style={{ fontSize: 15, fontWeight: 600, color: NAVY, marginTop: 2 }}>{q.material}</div>
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -555,6 +563,7 @@ const MyQuotesTab: React.FC<{
           {/* Details grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 12 }}>
             {[
+              { label: 'Quote #', value: (q as any).quoteNumber || 'Auto-assigned' },
               { label: 'Submitted', value: q.submittedDate },
               { label: 'Unit Price', value: q.unitPrice },
               { label: 'Total Price', value: q.totalPrice },
