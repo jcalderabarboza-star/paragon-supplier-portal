@@ -710,6 +710,9 @@ const SupplyRisk: React.FC = () => {
             <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: NAVY }}>
               Supply Risk & Scenario Intelligence
             </h1>
+            <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>
+              Geopolitical · Single-source · Compliance · Financial risk · Live alerts
+            </div>
             {/* Live dot */}
             <div style={{ position: 'relative', width: 10, height: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <div className="live-pulse" style={{ width: 10, height: 10, borderRadius: '50%', background: RED, position: 'relative' }} />

@@ -224,6 +224,9 @@ const InventoryVisibility: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <Title level="H2">Inventory Visibility</Title>
+          <Text style={{ color: '#6c757d', fontSize: '13px', display: 'block', marginBottom: 2 }}>
+            RM/PM stock levels · Days of supply · Supplier coverage · Critical alerts
+          </Text>
           <Text style={{ color: '#6c757d', fontSize: '13px' }}>
             Last updated: {fmtDate(lastRefreshed.toISOString().slice(0, 10))} {fmtTs(lastRefreshed)}
           </Text>
