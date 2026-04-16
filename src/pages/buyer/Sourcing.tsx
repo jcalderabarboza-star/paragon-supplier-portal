@@ -148,7 +148,7 @@ function Toast({ msg }: { msg: string }) {
 
 // ─── Tab bar ─────────────────────────────────────────────────────────────────
 
-const TABS = ['Active Events', 'New Sourcing Event', 'Supplier Responses', 'Awards & PIR'] as const;
+const TABS = ['Active Events', 'New Sourcing Event', 'Supplier Responses', 'Awards & PIR', 'Procurement Chain'] as const;
 type Tab = typeof TABS[number];
 
 function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
@@ -952,6 +952,99 @@ function Awards() {
   );
 }
 
+// ─── Tab 5: Procurement Chain ───────────────────────────────────────────────────
+
+const CHAIN_DATA = [
+  { pr: 'PR-2026-00341', eventType: 'RFQ', event: 'RFQ-2026-001', quote: 'QT-2026-0891', supplier: 'Zhejiang NHU Vitamins Co.', quotedValue: 'Rp 79jT', po: 'PO-2025-00108', poValue: 'Rp 79jT', status: 'PO Issued', awardDate: '2026-04-02' },
+  { pr: 'PR-2026-00340', eventType: 'RFQ', event: 'RFQ-2026-006', quote: 'QT-2026-0889', supplier: 'PT Ecogreen Oleochemicals', quotedValue: 'Rp 64jT', po: 'PO-2025-00106', poValue: 'Rp 67jT', status: 'PO Issued', awardDate: '2026-03-26' },
+  { pr: 'PR-2026-00343', eventType: 'RFQ', event: 'RFQ-2026-004', quote: '—', supplier: 'Givaudan Fragrance SG', quotedValue: 'Rp 210jT', po: '—', poValue: '—', status: 'Sourcing Open', awardDate: '—' },
+  { pr: 'PR-2026-00344', eventType: 'RFQ', event: 'RFQ-2026-003', quote: 'QT-2026-0894', supplier: 'PT Halal Emulsifier Nusantara', quotedValue: 'Rp 43jT', po: '—', poValue: '—', status: 'Awaiting Award', awardDate: '—' },
+  { pr: 'PR-2025-00281', eventType: 'RFQ', event: 'RFQ-2025-034', quote: 'QT-2025-0412', supplier: 'PT Ecogreen Oleochemicals', quotedValue: 'Rp 1.25M', po: 'PO-2025-00101', poValue: 'Rp 1.25M', status: 'PO Issued', awardDate: '2025-02-28' },
+  { pr: 'PR-2025-00284', eventType: 'RFP', event: 'RFP-2025-041', quote: 'QT-2025-0438', supplier: 'Zhejiang NHU Vitamins Co.', quotedValue: 'Rp 540jT', po: 'PO-2025-00102', poValue: 'Rp 540jT', status: 'PO Issued', awardDate: '2025-03-05' },
+  { pr: 'PR-2026-00342', eventType: 'RFQ', event: 'RFQ-2026-002', quote: 'QT-2026-0896', supplier: 'PT Berlina Packaging', quotedValue: 'Rp 105jT', po: '—', poValue: '—', status: 'Under Review', awardDate: '—' },
+];
+
+const STATUS_CHAIN: Record<string, [string, string]> = {
+  'PO Issued':      ['#DCFCE7', '#107E3E'],
+  'Awaiting Award': ['#FEF3C7', '#E9730C'],
+  'Sourcing Open':  ['#EDE9FE', '#6D28D9'],
+  'Under Review':   ['#DBEAFE', '#1D4ED8'],
+};
+
+function ProcurementChain() {
+  const [filter, setFilter] = useState<string>('All');
+  const statuses = ['All', 'PO Issued', 'Awaiting Award', 'Sourcing Open', 'Under Review'];
+  const filtered = filter === 'All' ? CHAIN_DATA : CHAIN_DATA.filter(c => c.status === filter);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ background: '#E0F7FA', border: '1px solid #0097A744', borderRadius: 8, padding: '10px 16px', fontSize: 12, color: '#006064' }}>
+        Full procurement lineage — every sourcing event traced from Purchase Requisition through to PO. Click any document number to navigate.
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {statuses.map(s => (
+          <button key={s} onClick={() => setFilter(s)}
+            style={{ padding: '5px 14px', borderRadius: 9999, border: `1px solid ${filter === s ? TEAL : '#E2E8F0'}`, background: filter === s ? TEAL : 'white', color: filter === s ? 'white' : '#64748B', fontSize: 12, fontWeight: filter === s ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit' }}>
+            {s} {s !== 'All' && <span style={{ opacity: 0.8 }}>({CHAIN_DATA.filter(c => c.status === s).length})</span>}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: 8, overflow: 'hidden' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+          <thead>
+            <tr style={{ background: NAVY }}>
+              {['PR', 'Event Type', 'Sourcing Event', 'Quotation', 'Awarded Supplier', 'Quoted Value', 'PO Number', 'PO Value', 'Status', 'Award Date'].map(h => (
+                <th key={h} style={{ padding: '10px 12px', textAlign: 'left', color: 'white', fontWeight: 600, fontSize: 11, whiteSpace: 'nowrap' }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr><td colSpan={10} style={{ padding: '2rem', textAlign: 'center', color: '#64748B', fontSize: 13 }}>No chains match the selected filter.</td></tr>
+            ) : filtered.map((c, idx) => {
+              const [bg, color] = STATUS_CHAIN[c.status] ?? ['#F1F5F9', '#64748B'];
+              return (
+                <tr key={c.pr} style={{ background: idx % 2 === 0 ? 'white' : '#F8FAFC', borderTop: '1px solid #F1F5F9' }}>
+                  <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 700, color: '#6D28D9', fontSize: 11, whiteSpace: 'nowrap' }}>{c.pr}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <span style={{ background: c.eventType === 'RFP' ? '#EDE9FE' : '#E0F7FA', color: c.eventType === 'RFP' ? '#6D28D9' : TEAL, borderRadius: 9999, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>{c.eventType}</span>
+                  </td>
+                  <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontWeight: 700, color: TEAL, fontSize: 11 }}>{c.event}</td>
+                  <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 11, color: c.quote === '—' ? '#CBD5E1' : '#6D28D9', fontWeight: c.quote === '—' ? 400 : 700 }}>{c.quote}</td>
+                  <td style={{ padding: '10px 12px', color: '#354A5F', maxWidth: 160 }}><div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.supplier}</div></td>
+                  <td style={{ padding: '10px 12px', fontWeight: 600, color: NAVY }}>{c.quotedValue}</td>
+                  <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: 11, color: c.po === '—' ? '#CBD5E1' : TEAL, fontWeight: c.po === '—' ? 400 : 700 }}>{c.po}</td>
+                  <td style={{ padding: '10px 12px', fontWeight: 600, color: c.poValue === '—' ? '#CBD5E1' : NAVY }}>{c.poValue}</td>
+                  <td style={{ padding: '10px 12px' }}>
+                    <span style={{ background: bg, color, borderRadius: 9999, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{c.status}</span>
+                  </td>
+                  <td style={{ padding: '10px 12px', color: '#64748B', fontSize: 11, whiteSpace: 'nowrap' }}>{c.awardDate}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+        {[
+          { label: 'Total Chains', value: CHAIN_DATA.length, color: TEAL },
+          { label: 'PO Issued', value: CHAIN_DATA.filter(c => c.status === 'PO Issued').length, color: '#107E3E' },
+          { label: 'In Progress', value: CHAIN_DATA.filter(c => c.status !== 'PO Issued').length, color: '#E9730C' },
+          { label: 'Conversion Rate', value: `${Math.round((CHAIN_DATA.filter(c => c.status === 'PO Issued').length / CHAIN_DATA.length) * 100)}%`, color: TEAL },
+        ].map(({ label, value, color }) => (
+          <div key={label} style={{ background: 'white', border: '1px solid #E2E8F0', borderLeft: `4px solid ${color}`, borderRadius: 8, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>{label}</div>
+            <div style={{ fontSize: 22, fontWeight: 700, color }}>{value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const Sourcing: React.FC = () => {
@@ -979,6 +1072,7 @@ const Sourcing: React.FC = () => {
       {tab === 'New Sourcing Event' && <NewRFQ onToast={showToast} />}
       {tab === 'Supplier Responses' && <Quotations />}
       {tab === 'Awards & PIR' && <Awards />}
+      {tab === 'Procurement Chain' && <ProcurementChain />}
     </div>
   );
 };
