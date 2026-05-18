@@ -8,10 +8,17 @@ import {
   Download,
   FileSpreadsheet,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   MessageCircle,
   Mail,
   Globe,
   Send,
+  FileText,
+  CheckCircle2,
+  Package,
+  Receipt,
+  Wallet,
   LucideIcon,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
@@ -27,7 +34,9 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
+import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
+import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
 import { mockSuppliers } from '../data/mockSuppliers';
 import {
@@ -98,6 +107,9 @@ const formatIDR = (value: number): string =>
     maximumFractionDigits: 0,
   }).format(value);
 
+const formatNumber = (value: number): string =>
+  new Intl.NumberFormat('id-ID').format(value);
+
 const formatDate = (iso: string): string => {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -124,11 +136,121 @@ const supplierCountryById = new Map(
   mockSuppliers.map((s) => [s.id, s.country]),
 );
 
+const FOOTER_ACTION_LABEL: Record<POStatus, string> = {
+  [POStatus.SENT]: 'Send reminder',
+  [POStatus.VIEWED]: 'Send reminder',
+  [POStatus.ACKNOWLEDGED]: 'Request ASN',
+  [POStatus.CONFIRMED]: 'Request ASN',
+  [POStatus.PARTIALLY_DELIVERED]: 'Track shipment',
+  [POStatus.DELIVERED]: 'View GR',
+  [POStatus.CLOSED]: 'View GR',
+};
+
+const STATUS_RANK: Record<POStatus, number> = {
+  [POStatus.SENT]: 1,
+  [POStatus.VIEWED]: 2,
+  [POStatus.ACKNOWLEDGED]: 3,
+  [POStatus.CONFIRMED]: 4,
+  [POStatus.PARTIALLY_DELIVERED]: 5,
+  [POStatus.DELIVERED]: 6,
+  [POStatus.CLOSED]: 7,
+};
+
+const buildTimeline = (po: PurchaseOrder): TimelineEvent[] => {
+  const r = STATUS_RANK[po.status];
+  const stateFor = (
+    requiredRank: number,
+  ): 'completed' | 'current' | 'pending' => {
+    if (r > requiredRank) return 'completed';
+    if (r === requiredRank) return 'current';
+    return 'pending';
+  };
+
+  return [
+    {
+      id: 'created',
+      title: 'PO Created',
+      timestamp: formatDate(po.createdDate),
+      status: 'completed',
+      icon: FileText,
+    },
+    {
+      id: 'sent',
+      title: 'Sent to Supplier',
+      timestamp: `${formatDate(po.createdDate)} · ${po.channel}`,
+      status: 'completed',
+      icon: Send,
+    },
+    {
+      id: 'ack',
+      title: 'Acknowledged by Supplier',
+      timestamp:
+        r >= 3 ? `${po.acknowledgmentTimeHours}h after send` : undefined,
+      status: r >= 3 ? 'completed' : 'current',
+      icon: CheckCircle2,
+    },
+    {
+      id: 'asn',
+      title: 'ASN Received',
+      timestamp: r >= 5 ? formatDate(po.confirmedDeliveryDate) : undefined,
+      status: stateFor(4),
+      icon: Truck,
+    },
+    {
+      id: 'gr',
+      title: 'Goods Received',
+      timestamp: r >= 6 ? formatDate(po.deliveryDate) : undefined,
+      status: stateFor(5),
+      icon: Package,
+    },
+    {
+      id: 'invoice',
+      title: 'Invoice Submitted',
+      status: stateFor(6),
+      icon: Receipt,
+    },
+    {
+      id: 'payment',
+      title: 'Payment Posted',
+      status: stateFor(7),
+      icon: Wallet,
+    },
+  ];
+};
+
+const buildComms = (po: PurchaseOrder) => [
+  {
+    ts: `${po.createdDate} 09:00`,
+    sender: 'Procurement',
+    channel: po.channel,
+    preview: `${po.poNumber} issued to ${po.supplierName}. Total ${formatIDR(po.totalAmount)}.`,
+  },
+  {
+    ts: `${po.createdDate} 10:18`,
+    sender: po.supplierName,
+    channel: po.channel,
+    preview:
+      po.acknowledgmentTimeHours > 0
+        ? 'Received, will confirm shortly.'
+        : 'Auto-receipt logged via API.',
+  },
+  {
+    ts: `${po.requestedDeliveryDate} 14:32`,
+    sender: 'Procurement',
+    channel: po.channel,
+    preview: `Reminder: requested delivery ${formatDate(po.requestedDeliveryDate)}.`,
+  },
+];
+
+const lineTotal = (li: PurchaseOrder['lineItems'][number]): number =>
+  li.quantity * li.unitPrice;
+
 const BuyerOrders: React.FC = () => {
   const [group, setGroup] = useState<GroupTab>('all');
   const [range, setRange] = useState<RangeFilter>('all');
   const [search, setSearch] = useState('');
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+  const [commsOpen, setCommsOpen] = useState(false);
 
   const orders = mockPurchaseOrders;
 
@@ -196,7 +318,10 @@ const BuyerOrders: React.FC = () => {
     });
   }, [orders, group, range, search, maxOrderDate]);
 
-  const closePanel = () => setSelectedPO(null);
+  const closePanel = () => {
+    setSelectedPO(null);
+    setCommsOpen(false);
+  };
 
   const panelTitle = selectedPO
     ? `PO ${selectedPO.poNumber} — ${selectedPO.supplierName}`
@@ -401,6 +526,16 @@ const BuyerOrders: React.FC = () => {
         open={selectedPO !== null}
         onClose={closePanel}
         title={panelTitle}
+        footerActions={
+          selectedPO && (
+            <>
+              <Button variant="secondary">View Full Details</Button>
+              <Button variant="primary">
+                {FOOTER_ACTION_LABEL[selectedPO.status]}
+              </Button>
+            </>
+          )
+        }
       >
         {selectedPO && (
           <div className="space-y-6">
@@ -453,7 +588,133 @@ const BuyerOrders: React.FC = () => {
                     {selectedPO.currency}
                   </dd>
                 </div>
+                <div>
+                  <dt className="text-text-tertiary">Incoterms</dt>
+                  <dd className="text-text-primary font-medium">CIF Jakarta</dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Payment terms</dt>
+                  <dd className="text-text-primary font-medium">Net 30</dd>
+                </div>
               </dl>
+            </section>
+
+            <section>
+              <h3 className="text-label text-text-tertiary uppercase mb-3">
+                Line items
+              </h3>
+              <div className="border border-border-subtle rounded-md overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
+                    <tr>
+                      <th className="text-left px-3 py-2 font-semibold">
+                        Material
+                      </th>
+                      <th className="text-right px-3 py-2 font-semibold">
+                        Qty
+                      </th>
+                      <th className="text-right px-3 py-2 font-semibold">
+                        Unit
+                      </th>
+                      <th className="text-right px-3 py-2 font-semibold">
+                        Line total
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedPO.lineItems.map((li) => (
+                      <tr
+                        key={li.id}
+                        className="border-t border-border-subtle"
+                      >
+                        <td className="px-3 py-2">
+                          <div className="font-mono text-xs text-text-tertiary">
+                            {li.materialCode}
+                          </div>
+                          <div className="text-text-primary mt-0.5">
+                            {li.description}
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
+                          {formatNumber(li.quantity)} {li.uom}
+                        </td>
+                        <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
+                          {formatIDR(li.unitPrice)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-semibold text-text-primary whitespace-nowrap">
+                          {formatIDR(lineTotal(li))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-border-subtle bg-bg-hover">
+                      <td
+                        className="px-3 py-2 text-right font-semibold text-text-tertiary uppercase tracking-wider"
+                        colSpan={3}
+                      >
+                        Total
+                      </td>
+                      <td className="px-3 py-2 text-right font-semibold text-text-primary whitespace-nowrap">
+                        {formatIDR(selectedPO.totalAmount)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </section>
+
+            <section>
+              <h3 className="text-label text-text-tertiary uppercase mb-3">
+                Lifecycle
+              </h3>
+              <Timeline events={buildTimeline(selectedPO)} />
+            </section>
+
+            <section>
+              <button
+                type="button"
+                onClick={() => setCommsOpen((v) => !v)}
+                className="flex items-center gap-2 text-sm font-medium text-teal hover:text-teal-hover"
+              >
+                {commsOpen ? (
+                  <ChevronUp size={14} />
+                ) : (
+                  <ChevronDown size={14} />
+                )}
+                {commsOpen ? 'Hide' : 'Show'} communication history (
+                {buildComms(selectedPO).length} messages)
+              </button>
+              {commsOpen && (
+                <ul className="mt-3 space-y-3">
+                  {buildComms(selectedPO).map((m, i) => {
+                    const Icon = CHANNEL_ICON[m.channel];
+                    return (
+                      <li
+                        key={i}
+                        className="flex gap-3 p-3 border border-border-subtle rounded-md"
+                      >
+                        <Icon
+                          size={14}
+                          className="text-text-tertiary shrink-0 mt-0.5"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                            <span className="font-medium text-text-secondary">
+                              {m.sender}
+                            </span>
+                            <span>·</span>
+                            <span>{m.ts}</span>
+                          </div>
+                          <p className="text-sm text-text-secondary mt-0.5">
+                            {m.preview}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </section>
           </div>
         )}
