@@ -44,7 +44,7 @@ import WhatsAppSimulator from '../pages/supplier/WhatsAppSimulator';
 import SupplierRegistration from '../pages/onboarding/SupplierRegistration';
 
 // V2 pages (new design system — additive)
-import DashboardV2 from '../pages-v2/DashboardV2';
+import BuyerDashboard from '../pages-v2/BuyerDashboard';
 
 const AppRouter: React.FC = () => {
   return (
@@ -53,7 +53,7 @@ const AppRouter: React.FC = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<SupplierRegistration />} />
-          <Route path="/buyer/dashboard" element={<DashboardV2 />} />
+          <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 

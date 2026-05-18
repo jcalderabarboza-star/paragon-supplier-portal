@@ -99,7 +99,7 @@ const RISK_VARIANT: Record<ProductionLineRow['risk'], 'success' | 'warning' | 'd
   high: 'danger',
 };
 
-const DashboardV2: React.FC = () => {
+const BuyerDashboard: React.FC = () => {
   const [range, setRange] = useState<RangeId>('week');
 
   return (
@@ -246,4 +246,4 @@ const DashboardV2: React.FC = () => {
   );
 };
 
-export default DashboardV2;
+export default BuyerDashboard;
