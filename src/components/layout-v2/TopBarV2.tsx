@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, Search, Bell, ChevronDown } from 'lucide-react';
+import { Menu, Search, Bell, ChevronDown, Languages } from 'lucide-react';
 
 const TopBarV2: React.FC = () => {
   return (
@@ -40,8 +40,9 @@ const TopBarV2: React.FC = () => {
       <div className="flex items-center gap-3">
         <button
           type="button"
-          className="flex items-center gap-1 text-sm text-text-secondary hover:text-text-primary px-2 py-1.5 rounded-md hover:bg-bg-hover"
+          className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary px-2 py-1.5 rounded-md hover:bg-bg-hover"
         >
+          <Languages size={16} className="text-text-tertiary" />
           <span className="font-medium">EN</span>
           <ChevronDown size={14} />
         </button>
