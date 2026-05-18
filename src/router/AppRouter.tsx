@@ -58,7 +58,7 @@ const AppRouter: React.FC = () => {
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
             {/* ── Buyer routes ── */}
-            <Route path="buyer/dashboard"        element={<Dashboard />} />
+            <Route path="v1/buyer/dashboard"     element={<Dashboard />} />
             <Route path="buyer/purchase-requisition" element={<PurchaseRequisition />} />
             <Route path="buyer/purchase-orders"  element={<PurchaseOrders />} />
             <Route path="buyer/sourcing"         element={<Sourcing />} />
