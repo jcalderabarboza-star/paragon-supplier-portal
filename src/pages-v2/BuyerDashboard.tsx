@@ -18,6 +18,7 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
+import TimeRangeToggle from '../components/ui-v2/TimeRangeToggle';
 
 type RangeId = 'today' | 'week' | 'month';
 
@@ -100,7 +101,7 @@ const RISK_VARIANT: Record<ProductionLineRow['risk'], 'success' | 'warning' | 'd
 };
 
 const BuyerDashboard: React.FC = () => {
-  const [range, setRange] = useState<RangeId>('week');
+  const [range, setRange] = useState<RangeId>('today');
 
   return (
     <AppShellV2>
@@ -109,22 +110,7 @@ const BuyerDashboard: React.FC = () => {
         title="Procurement Command Center"
         subtitle="Paragon Corp · Odyssey Program · Live operational view"
         actions={
-          <div className="inline-flex bg-bg-surface border border-border-subtle rounded-full p-1">
-            {RANGES.map((r) => (
-              <button
-                key={r.id}
-                type="button"
-                onClick={() => setRange(r.id)}
-                className={`px-4 h-8 rounded-full text-xs font-semibold transition-colors ${
-                  range === r.id
-                    ? 'bg-teal text-white'
-                    : 'text-text-tertiary hover:text-text-secondary'
-                }`}
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
+          <TimeRangeToggle options={RANGES} value={range} onChange={setRange} />
         }
       />
 
