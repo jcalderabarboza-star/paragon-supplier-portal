@@ -196,24 +196,20 @@ const DashboardV2: React.FC = () => {
         </section>
 
         <section className="bg-bg-surface rounded-lg shadow-sm border border-border-subtle p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="text-eyebrow text-text-tertiary uppercase">Intelligence</div>
-              <h2 className="text-lg font-semibold text-text-primary mt-1">
-                Supplier Health Index
-              </h2>
-            </div>
-            <div className="flex items-center gap-3 text-meta text-text-tertiary">
-              {(['A', 'B', 'C', 'D'] as const).map((g) => (
-                <div key={g} className="flex items-center gap-1.5">
-                  <span
-                    className="inline-block w-2.5 h-2.5 rounded-sm"
-                    style={{ backgroundColor: GRADE_COLOR[g] }}
-                  />
-                  <span className="font-semibold">{g}</span>
-                </div>
-              ))}
-            </div>
+          <div className="text-eyebrow text-text-tertiary uppercase">Intelligence</div>
+          <h2 className="text-lg font-semibold text-text-primary mt-1">
+            Supplier Health Index
+          </h2>
+          <div className="flex items-center gap-4 mt-1 mb-4 text-meta text-text-tertiary">
+            {(['A', 'B', 'C', 'D'] as const).map((g) => (
+              <div key={g} className="flex items-center gap-1.5">
+                <span
+                  className="inline-block w-2.5 h-2.5 rounded-sm"
+                  style={{ backgroundColor: GRADE_COLOR[g] }}
+                />
+                <span className="font-semibold">{g}</span>
+              </div>
+            ))}
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
