@@ -37,7 +37,7 @@ interface NavSection {
 const BUYER_SECTIONS: NavSection[] = [
   {
     items: [
-      { text: 'Dashboard', icon: <LayoutDashboard size={16} />, path: '/buyer/dashboard' },
+      { text: 'Dashboard', icon: <LayoutDashboard size={16} />, path: '/v1/buyer/dashboard' },
     ],
   },
   {
