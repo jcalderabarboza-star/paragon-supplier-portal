@@ -10,6 +10,11 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  Send,
+  Sparkles,
+  ClipboardCheck,
+  Trophy,
+  Archive,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -25,7 +30,11 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
+import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
+import ScoreBadge from '../components/ui-v2/ScoreBadge';
+import Button from '../components/ui-v2/Button';
 import { mockRfqs, RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
+import { mockQuotations } from '../data/mockQuotations';
 import { mockSuppliers } from '../data/mockSuppliers';
 
 type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed';
@@ -86,6 +95,107 @@ const formatDate = (iso: string): string => {
   });
 };
 
+const buildTimeline = (r: RFQ): TimelineEvent[] => {
+  const totalInvited = r.invitedSupplierIds.length;
+  const responded = r.respondedSupplierIds.length;
+  const allResponded = isAllResponded(r);
+
+  const isDraft = r.status === 'Draft';
+  const isOpen = r.status === 'Open';
+  const isAwarded = r.status === 'Awarded';
+  const isClosed = r.status === 'Closed' || r.status === 'Cancelled';
+
+  return [
+    {
+      id: 'drafted',
+      title: 'RFQ Drafted',
+      timestamp: formatDate(r.createdAt),
+      status: 'completed',
+      icon: FileText,
+    },
+    {
+      id: 'sent',
+      title: `Sent to ${totalInvited} supplier${totalInvited === 1 ? '' : 's'}`,
+      timestamp: isDraft ? undefined : formatDate(r.createdAt),
+      status: isDraft ? 'pending' : 'completed',
+      icon: Send,
+    },
+    {
+      id: 'responses',
+      title: `Responses Received (${responded}/${totalInvited})`,
+      timestamp:
+        responded > 0 ? `Latest: ${formatDate(r.responseDeadline)}` : undefined,
+      status: isDraft
+        ? 'pending'
+        : allResponded || isAwarded || isClosed
+          ? 'completed'
+          : 'current',
+      icon: CheckCircle2,
+    },
+    {
+      id: 'evaluation',
+      title: 'Evaluation',
+      status: isAwarded || isClosed
+        ? 'completed'
+        : allResponded && isOpen
+          ? 'current'
+          : 'pending',
+      icon: ClipboardCheck,
+    },
+    {
+      id: 'awarded',
+      title: 'Awarded',
+      timestamp: isAwarded ? formatDate(r.awardDeadline) : undefined,
+      status: isAwarded ? 'completed' : isClosed ? 'pending' : 'pending',
+      icon: Trophy,
+    },
+    {
+      id: 'closed',
+      title: 'Closed',
+      status: isClosed ? 'completed' : 'pending',
+      icon: Archive,
+    },
+  ];
+};
+
+const FOOTER_LABEL = (r: RFQ): string => {
+  if (r.status === 'Open') {
+    return isAllResponded(r) ? 'Award RFQ' : 'Send reminder';
+  }
+  if (r.status === 'Awarded') return 'View award details';
+  if (r.status === 'Closed' || r.status === 'Cancelled')
+    return 'View final report';
+  return 'Continue draft';
+};
+
+const ComparisonRow: React.FC<{
+  label: string;
+  children: React.ReactNode;
+}> = ({ label, children }) => (
+  <tr className="border-t border-border-subtle">
+    <th
+      scope="row"
+      className="text-left px-2 py-2 font-medium text-text-tertiary uppercase tracking-wider text-[10px] sticky left-0 bg-bg-surface z-10 align-middle"
+    >
+      {label}
+    </th>
+    {children}
+  </tr>
+);
+
+const ComparisonCell: React.FC<{
+  highlight?: boolean;
+  children: React.ReactNode;
+}> = ({ highlight, children }) => (
+  <td
+    className={`px-2 py-2 align-middle ${
+      highlight ? 'border-x-2 border-teal bg-teal-soft/40' : ''
+    }`}
+  >
+    {children}
+  </td>
+);
+
 const matchesGroup = (r: RFQ, group: GroupTab): boolean => {
   if (group === 'all') return true;
   if (group === 'open') return r.status === 'Open' && !isAllResponded(r);
@@ -102,6 +212,22 @@ const BuyerSourcing: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [awardsOpen, setAwardsOpen] = useState(true);
+  const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+
+  const openRfq = (r: RFQ) => {
+    setSelectedRfq(r);
+    setSelectedQuoteId(null);
+  };
+
+  const closePanel = () => {
+    setSelectedRfq(null);
+    setSelectedQuoteId(null);
+  };
+
+  const quotesForSelected = useMemo(() => {
+    if (!selectedRfq) return [];
+    return mockQuotations.filter((q) => q.rfqId === selectedRfq.id);
+  }, [selectedRfq]);
 
   const rfqs = mockRfqs;
 
@@ -297,7 +423,7 @@ const BuyerSourcing: React.FC = () => {
                 <TableRow
                   key={r.id}
                   className="cursor-pointer"
-                  onClick={() => setSelectedRfq(r)}
+                  onClick={() => openRfq(r)}
                 >
                   <TableCell>
                     <div className="font-semibold text-text-primary">
@@ -417,7 +543,7 @@ const BuyerSourcing: React.FC = () => {
                 <TableRow
                   key={r.id}
                   className="cursor-pointer"
-                  onClick={() => setSelectedRfq(r)}
+                  onClick={() => openRfq(r)}
                 >
                   <TableCell className="font-semibold text-text-primary">
                     {r.rfqNumber}
@@ -461,59 +587,291 @@ const BuyerSourcing: React.FC = () => {
 
       <SidePanel
         open={selectedRfq !== null}
-        onClose={() => setSelectedRfq(null)}
+        onClose={closePanel}
         title={
           selectedRfq
             ? `RFQ ${selectedRfq.rfqNumber} — ${selectedRfq.title}`
             : ''
         }
+        footerActions={
+          selectedRfq && (
+            <>
+              <Button variant="secondary" icon={Download}>
+                Export comparison
+              </Button>
+              <Button
+                variant="primary"
+                disabled={
+                  selectedRfq.status === 'Open' &&
+                  isAllResponded(selectedRfq) &&
+                  !selectedQuoteId
+                }
+              >
+                {FOOTER_LABEL(selectedRfq)}
+              </Button>
+            </>
+          )
+        }
       >
         {selectedRfq && (
-          <section>
-            <h3 className="text-label text-text-tertiary uppercase mb-3">
-              Summary
-            </h3>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-              <div>
-                <dt className="text-text-tertiary">Category</dt>
-                <dd className="text-text-primary font-medium">
-                  {selectedRfq.materialCategory}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Status</dt>
-                <dd>
-                  <StatusPill variant={STATUS_VARIANT[selectedRfq.status]}>
-                    {selectedRfq.status}
-                  </StatusPill>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Created</dt>
-                <dd className="text-text-primary font-medium">
-                  {formatDate(selectedRfq.createdAt)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Response deadline</dt>
-                <dd className="text-text-primary font-medium">
-                  {formatDate(selectedRfq.responseDeadline)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Total qty</dt>
-                <dd className="text-text-primary font-medium">
-                  {formatNumber(selectedRfq.totalQty)} {selectedRfq.uom}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Est. value</dt>
-                <dd className="text-text-primary font-semibold">
-                  {formatIDR(selectedRfq.estimatedValue)}
-                </dd>
-              </div>
-            </dl>
-          </section>
+          <div className="space-y-6">
+            <section>
+              <h3 className="text-label text-text-tertiary uppercase mb-3">
+                Summary
+              </h3>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                <div>
+                  <dt className="text-text-tertiary">Category</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedRfq.materialCategory}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Status</dt>
+                  <dd>
+                    <StatusPill variant={STATUS_VARIANT[selectedRfq.status]}>
+                      {selectedRfq.status}
+                    </StatusPill>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Created</dt>
+                  <dd className="text-text-primary font-medium">
+                    {formatDate(selectedRfq.createdAt)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Response deadline</dt>
+                  <dd className="text-text-primary font-medium">
+                    {formatDate(selectedRfq.responseDeadline)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Award deadline</dt>
+                  <dd className="text-text-primary font-medium">
+                    {formatDate(selectedRfq.awardDeadline)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Total qty</dt>
+                  <dd className="text-text-primary font-medium">
+                    {formatNumber(selectedRfq.totalQty)} {selectedRfq.uom}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Est. value</dt>
+                  <dd className="text-text-primary font-semibold">
+                    {formatIDR(selectedRfq.estimatedValue)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Currency</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedRfq.currency}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Incoterms</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedRfq.incoterms}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Payment terms</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedRfq.paymentTerms}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <section>
+              <h3 className="text-label text-text-tertiary uppercase mb-3">
+                Lifecycle
+              </h3>
+              <Timeline events={buildTimeline(selectedRfq)} />
+            </section>
+
+            <section>
+              <h3 className="text-label text-text-tertiary uppercase mb-3">
+                Quote comparison ({quotesForSelected.length} quote
+                {quotesForSelected.length === 1 ? '' : 's'})
+              </h3>
+              {quotesForSelected.length === 0 ? (
+                <div className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
+                  No quotes received yet.
+                </div>
+              ) : (
+                <div className="overflow-x-auto -mx-6 px-6">
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="text-left px-2 py-2 font-semibold text-text-tertiary uppercase tracking-wider align-bottom w-32 sticky left-0 bg-bg-surface z-10">
+                          Criterion
+                        </th>
+                        {quotesForSelected.map((q) => {
+                          const supplier =
+                            supplierNameById.get(q.supplierId) ?? q.supplierId;
+                          return (
+                            <th
+                              key={q.id}
+                              className={`align-bottom px-2 pt-2 pb-2 font-semibold text-text-primary text-left min-w-[10rem] ${
+                                q.aiRecommended
+                                  ? 'border-2 border-teal rounded-t-md bg-teal-soft/40'
+                                  : ''
+                              }`}
+                            >
+                              {q.aiRecommended && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal uppercase tracking-wider mb-1">
+                                  <Sparkles size={10} /> AI recommended
+                                </span>
+                              )}
+                              <div className="text-sm">{supplier}</div>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody className="text-text-secondary">
+                      <ComparisonRow label="Unit Price">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <span className="font-semibold text-text-primary whitespace-nowrap">
+                              {formatIDR(q.unitPrice)}/{selectedRfq.uom}
+                            </span>
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label="Total Price">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <span className="font-semibold text-text-primary whitespace-nowrap">
+                              {formatIDR(q.totalPrice)}
+                            </span>
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label="Lead Time">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <span className="whitespace-nowrap">
+                              {q.leadTimeDays} days
+                            </span>
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label="Payment Terms">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            {q.paymentTermsOffered}
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label="Compliance">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <ScoreBadge
+                              score={q.complianceScore}
+                              size="sm"
+                              variant="bar"
+                            />
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label="Price Score">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <ScoreBadge
+                              score={q.priceScore}
+                              size="sm"
+                              variant="bar"
+                            />
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label="Lead Time Score">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <ScoreBadge
+                              score={q.leadTimeScore}
+                              size="sm"
+                              variant="bar"
+                            />
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label="Reliability">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <ScoreBadge
+                              score={q.reliabilityScore}
+                              size="sm"
+                              variant="bar"
+                            />
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label="AI Composite">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <ScoreBadge
+                              score={q.aiCompositeScore}
+                              size="md"
+                              variant="circular"
+                            />
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      <ComparisonRow label="Select">
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <label className="inline-flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="award-select"
+                                value={q.id}
+                                checked={selectedQuoteId === q.id}
+                                onChange={() => setSelectedQuoteId(q.id)}
+                                className="accent-teal"
+                              />
+                              <span className="text-xs text-text-secondary">
+                                Award
+                              </span>
+                            </label>
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            {selectedRfq.status === 'Open' &&
+              isAllResponded(selectedRfq) &&
+              quotesForSelected.length > 0 && (
+                <section className="bg-teal-soft border border-teal/20 rounded-md p-4">
+                  <h3 className="text-sm font-semibold text-text-primary mb-2">
+                    Award action
+                  </h3>
+                  <p className="text-sm text-text-secondary mb-3">
+                    {selectedQuoteId
+                      ? `Selected: ${supplierNameById.get(quotesForSelected.find((q) => q.id === selectedQuoteId)?.supplierId ?? '') ?? '—'}`
+                      : 'Select a quote above to enable the award action.'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant="primary"
+                      icon={Trophy}
+                      disabled={!selectedQuoteId}
+                    >
+                      Award to selected
+                    </Button>
+                    <Button variant="secondary">Reject all & resource</Button>
+                  </div>
+                </section>
+              )}
+          </div>
         )}
       </SidePanel>
     </AppShellV2>
