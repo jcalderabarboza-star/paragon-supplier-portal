@@ -5,6 +5,7 @@ import App from './App';
 import { AdaptiveProvider } from './context/AdaptiveContext';
 import '@ui5/webcomponents-react/dist/Assets';
 import './index.css';
+import './styles/tailwind.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
