@@ -109,14 +109,14 @@ const SidebarV2: React.FC = () => {
   return (
     <aside className="w-60 shrink-0 h-full bg-bg-sidebar border-r border-border-subtle flex flex-col">
       {/* Persona toggle */}
-      <div className="px-4 pt-4">
-        <div className="bg-bg-hover rounded-full p-1 flex text-xs font-semibold">
+      <div className="mt-4 mb-6 mx-3">
+        <div className="bg-bg-hover rounded-full h-8 p-0.5 flex">
           <button
             type="button"
             onClick={() => setPersona('buyer')}
-            className={`flex-1 h-7 rounded-full transition-colors ${
+            className={`flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               persona === 'buyer'
-                ? 'bg-bg-surface text-text-primary shadow-sm'
+                ? 'bg-white shadow-sm text-text-primary'
                 : 'text-text-tertiary'
             }`}
           >
@@ -125,9 +125,9 @@ const SidebarV2: React.FC = () => {
           <button
             type="button"
             onClick={() => setPersona('supplier')}
-            className={`flex-1 h-7 rounded-full transition-colors ${
+            className={`flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               persona === 'supplier'
-                ? 'bg-bg-surface text-text-primary shadow-sm'
+                ? 'bg-white shadow-sm text-text-primary'
                 : 'text-text-tertiary'
             }`}
           >
@@ -137,7 +137,7 @@ const SidebarV2: React.FC = () => {
       </div>
 
       {/* Nav groups */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-4">
+      <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-4">
         {groups.map((group) => (
           <div key={group.label}>
             <div className="text-label text-text-tertiary px-3 py-2 uppercase">
