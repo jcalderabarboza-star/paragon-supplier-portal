@@ -46,6 +46,7 @@ import SupplierRegistration from '../pages/onboarding/SupplierRegistration';
 // V2 pages (new design system — additive)
 import BuyerDashboard from '../pages-v2/BuyerDashboard';
 import BuyerSuppliers from '../pages-v2/BuyerSuppliers';
+import BuyerSupplierProfile from '../pages-v2/BuyerSupplierProfile';
 
 const AppRouter: React.FC = () => {
   return (
@@ -56,6 +57,7 @@ const AppRouter: React.FC = () => {
           <Route path="/register" element={<SupplierRegistration />} />
           <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
           <Route path="/buyer/suppliers" element={<BuyerSuppliers />} />
+          <Route path="/buyer/suppliers/:id" element={<BuyerSupplierProfile />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -66,7 +68,6 @@ const AppRouter: React.FC = () => {
             <Route path="buyer/sourcing"         element={<Sourcing />} />
             <Route path="v1/buyer/suppliers"     element={<SupplierDirectory />} />
             <Route path="v1/buyer/suppliers/:id" element={<SupplierProfile />} />
-            <Route path="buyer/suppliers/:id"    element={<SupplierProfile />} />
             <Route path="buyer/inventory"        element={<InventoryVisibility />} />
             <Route path="buyer/shipments"        element={<ShipmentTracking />} />
             <Route path="buyer/goods-receipt"    element={<GoodsReceipt />} />
