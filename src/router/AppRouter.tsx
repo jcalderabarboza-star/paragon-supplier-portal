@@ -47,6 +47,7 @@ import SupplierRegistration from '../pages/onboarding/SupplierRegistration';
 import BuyerDashboard from '../pages-v2/BuyerDashboard';
 import BuyerSuppliers from '../pages-v2/BuyerSuppliers';
 import BuyerSupplierProfile from '../pages-v2/BuyerSupplierProfile';
+import Marketplace from '../pages-v2/Marketplace';
 
 const AppRouter: React.FC = () => {
   return (
@@ -58,6 +59,7 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
           <Route path="/buyer/suppliers" element={<BuyerSuppliers />} />
           <Route path="/buyer/suppliers/:id" element={<BuyerSupplierProfile />} />
+          <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -81,8 +83,9 @@ const AppRouter: React.FC = () => {
             <Route path="buyer/compliance"       element={<Compliance />} />
 
             {/* ── Marketplace routes ── */}
-            <Route path="marketplace"              element={<MarketplaceDiscovery />} />
-            <Route path="marketplace/supplier/:id" element={<SupplierStorefront />} />
+            <Route path="v1/marketplace"              element={<MarketplaceDiscovery />} />
+            <Route path="v1/marketplace/supplier/:id" element={<SupplierStorefront />} />
+            <Route path="marketplace/supplier/:id"    element={<SupplierStorefront />} />
 
             {/* ── Supplier routes ── */}
             <Route path="supplier/dashboard"    element={<SupplierDashboard />} />
