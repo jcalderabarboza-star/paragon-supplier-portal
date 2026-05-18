@@ -50,6 +50,7 @@ import BuyerSupplierProfile from '../pages-v2/BuyerSupplierProfile';
 import Marketplace from '../pages-v2/Marketplace';
 import SupplierStorefrontV2 from '../pages-v2/SupplierStorefront';
 import BuyerOrders from '../pages-v2/BuyerOrders';
+import BuyerSourcing from '../pages-v2/BuyerSourcing';
 
 const AppRouter: React.FC = () => {
   return (
@@ -64,6 +65,7 @@ const AppRouter: React.FC = () => {
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/marketplace/supplier/:id" element={<SupplierStorefrontV2 />} />
           <Route path="/buyer/orders" element={<BuyerOrders />} />
+          <Route path="/buyer/sourcing" element={<BuyerSourcing />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -71,7 +73,7 @@ const AppRouter: React.FC = () => {
             <Route path="v1/buyer/dashboard"     element={<Dashboard />} />
             <Route path="buyer/purchase-requisition" element={<PurchaseRequisition />} />
             <Route path="v1/buyer/orders"        element={<PurchaseOrders />} />
-            <Route path="buyer/sourcing"         element={<Sourcing />} />
+            <Route path="v1/buyer/sourcing"      element={<Sourcing />} />
             <Route path="v1/buyer/suppliers"     element={<SupplierDirectory />} />
             <Route path="v1/buyer/suppliers/:id" element={<SupplierProfile />} />
             <Route path="buyer/inventory"        element={<InventoryVisibility />} />
