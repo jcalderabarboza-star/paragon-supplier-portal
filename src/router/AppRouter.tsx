@@ -53,7 +53,7 @@ const AppRouter: React.FC = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<SupplierRegistration />} />
-          <Route path="/v2/dashboard" element={<DashboardV2 />} />
+          <Route path="/buyer/dashboard" element={<DashboardV2 />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
