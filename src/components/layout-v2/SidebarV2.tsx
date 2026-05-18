@@ -108,23 +108,6 @@ const SidebarV2: React.FC = () => {
 
   return (
     <aside className="w-60 shrink-0 h-full bg-bg-sidebar border-r border-border-subtle flex flex-col">
-      {/* Logo block */}
-      <div className="px-5 pt-5 pb-4 border-b border-border-subtle">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-md bg-teal flex items-center justify-center text-white text-xs font-bold">
-            P
-          </div>
-          <div className="leading-tight">
-            <div className="text-[11px] font-bold tracking-widest text-text-primary">
-              PARAGON CORP
-            </div>
-            <div className="text-[10px] tracking-widest text-teal font-semibold">
-              SUPPLIER PORTAL
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Persona toggle */}
       <div className="px-4 pt-4">
         <div className="bg-bg-hover rounded-full p-1 flex text-xs font-semibold">
