@@ -46,7 +46,7 @@ const BUYER_SECTIONS: NavSection[] = [
       { text: 'Supplier Request & Discovery', icon: <Search size={16} />,       path: '/buyer/discovery' },
       { text: 'Supplier Catalog',        icon: <Store size={16} />,        path: '/v1/marketplace' },
       { text: 'Supplier Directory', icon: <Users size={16} />,        path: '/v1/buyer/suppliers' },
-      { text: 'Sourcing Events',     icon: <FileText size={16} />,     path: '/buyer/sourcing' },
+      { text: 'Sourcing Events',     icon: <FileText size={16} />,     path: '/v1/buyer/sourcing' },
       { text: 'Contracts',          icon: <ScrollText size={16} />,   path: '/buyer/contracts' },
     ],
   },
