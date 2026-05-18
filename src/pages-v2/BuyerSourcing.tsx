@@ -33,6 +33,7 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Button from '../components/ui-v2/Button';
+import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { mockRfqs, RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
 import { mockQuotations } from '../data/mockQuotations';
 import { mockSuppliers } from '../data/mockSuppliers';
@@ -46,6 +47,61 @@ const CATEGORY_OPTIONS: RFQCategory[] = [
   'Emulsifiers',
   'Botanical',
   'Other',
+];
+
+const CATEGORY_TO_SUPPLIER_CATEGORY: Record<RFQCategory, string[]> = {
+  Fragrance: ['Fragrance'],
+  'Active Ingredients': ['Active Ingredient'],
+  Packaging: ['Packaging'],
+  Emulsifiers: ['Raw Material'],
+  Botanical: ['Raw Material'],
+  Other: ['Raw Material', 'Active Ingredient', 'Packaging', 'Fragrance'],
+};
+
+const MATERIAL_CATALOG: Record<RFQCategory, string[]> = {
+  Fragrance: [
+    'Wardah Floral Accord',
+    'Givaudan Citrus Compound',
+    'Make Over Oud Base',
+    'Emina Fresh Accord',
+  ],
+  'Active Ingredients': [
+    'Niacinamide USP',
+    'Sodium Hyaluronate HMW',
+    'Vitamin C Derivative',
+    'Retinyl Palmitate',
+    'Salicylic Acid',
+  ],
+  Packaging: [
+    'PET Bottle 100ml',
+    'PET Bottle 200ml',
+    'Airless Pump 15ml',
+    'Folding Carton 150gsm',
+    'Shipper Box 12-pack',
+  ],
+  Emulsifiers: [
+    'Glyceryl Stearate SE',
+    'Polysorbate 80',
+    'Cetearyl Alcohol',
+    'Lecithin (Soy)',
+  ],
+  Botanical: [
+    'Centella Asiatica Extract',
+    'Green Tea Extract',
+    'Rice Bran Extract',
+    'Mulberry Extract',
+  ],
+  Other: ['Custom material — specify in notes'],
+};
+
+const UOM_OPTIONS = ['KG', 'PCS', 'L', 'MT'] as const;
+const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
+const PAYMENT_TERMS_OPTIONS = [
+  'Net 30',
+  'Net 45',
+  'Net 60',
+  'Letter of Credit',
+  'Advance Payment',
 ];
 
 const STATUS_VARIANT: Record<
@@ -168,6 +224,33 @@ const FOOTER_LABEL = (r: RFQ): string => {
   return 'Continue draft';
 };
 
+const ReviewSection: React.FC<{
+  label: string;
+  rows: [string, React.ReactNode][];
+  onEdit: () => void;
+}> = ({ label, rows, onEdit }) => (
+  <section className="border border-border-subtle rounded-md">
+    <header className="flex items-center justify-between px-4 py-2 bg-bg-hover">
+      <span className="text-label text-text-tertiary uppercase">{label}</span>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="text-xs font-medium text-teal hover:text-teal-hover"
+      >
+        Edit
+      </button>
+    </header>
+    <dl className="px-4 py-3 divide-y divide-border-subtle">
+      {rows.map(([k, v]) => (
+        <div key={k} className="flex justify-between py-2 gap-4">
+          <dt className="text-text-tertiary">{k}</dt>
+          <dd className="text-text-primary text-right">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+);
+
 const ComparisonRow: React.FC<{
   label: string;
   children: React.ReactNode;
@@ -206,6 +289,36 @@ const matchesGroup = (r: RFQ, group: GroupTab): boolean => {
   return true;
 };
 
+interface DraftRfq {
+  title: string;
+  category: RFQCategory | '';
+  materials: string[];
+  totalQty: string;
+  uom: (typeof UOM_OPTIONS)[number];
+  budget: string;
+  responseDeadline: string;
+  awardDeadline: string;
+  incoterms: string;
+  paymentTerms: string;
+  currency: 'IDR' | 'USD';
+  invitedSupplierIds: string[];
+}
+
+const EMPTY_DRAFT: DraftRfq = {
+  title: '',
+  category: '',
+  materials: [],
+  totalQty: '',
+  uom: 'KG',
+  budget: '',
+  responseDeadline: '',
+  awardDeadline: '',
+  incoterms: 'CIF Jakarta',
+  paymentTerms: 'Net 30',
+  currency: 'IDR',
+  invitedSupplierIds: [],
+};
+
 const BuyerSourcing: React.FC = () => {
   const [group, setGroup] = useState<GroupTab>('all');
   const [selectedCats, setSelectedCats] = useState<RFQCategory[]>([]);
@@ -213,6 +326,12 @@ const BuyerSourcing: React.FC = () => {
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [awardsOpen, setAwardsOpen] = useState(true);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  const [extraRfqs, setExtraRfqs] = useState<RFQ[]>([]);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState(0);
+  const [draft, setDraft] = useState<DraftRfq>(EMPTY_DRAFT);
+  const [supplierSearch, setSupplierSearch] = useState('');
+  const [toast, setToast] = useState<string | null>(null);
 
   const openRfq = (r: RFQ) => {
     setSelectedRfq(r);
@@ -229,7 +348,526 @@ const BuyerSourcing: React.FC = () => {
     return mockQuotations.filter((q) => q.rfqId === selectedRfq.id);
   }, [selectedRfq]);
 
-  const rfqs = mockRfqs;
+  const rfqs = useMemo(() => [...extraRfqs, ...mockRfqs], [extraRfqs]);
+
+  const openWizard = () => {
+    setDraft(EMPTY_DRAFT);
+    setWizardStep(0);
+    setSupplierSearch('');
+    setWizardOpen(true);
+  };
+
+  const closeWizard = () => {
+    setWizardOpen(false);
+  };
+
+  const updateDraft = <K extends keyof DraftRfq>(
+    key: K,
+    value: DraftRfq[K],
+  ) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+  };
+
+  const toggleMaterial = (m: string) => {
+    setDraft((d) => ({
+      ...d,
+      materials: d.materials.includes(m)
+        ? d.materials.filter((x) => x !== m)
+        : [...d.materials, m],
+    }));
+  };
+
+  const toggleSupplier = (id: string) => {
+    setDraft((d) => ({
+      ...d,
+      invitedSupplierIds: d.invitedSupplierIds.includes(id)
+        ? d.invitedSupplierIds.filter((x) => x !== id)
+        : [...d.invitedSupplierIds, id],
+    }));
+  };
+
+  const isStepValid = (step: number): boolean => {
+    if (step === 0) {
+      return (
+        draft.title.trim().length > 0 &&
+        draft.category !== '' &&
+        draft.materials.length > 0 &&
+        Number(draft.totalQty) > 0
+      );
+    }
+    if (step === 1) return draft.invitedSupplierIds.length > 0;
+    if (step === 2) {
+      if (!draft.responseDeadline || !draft.awardDeadline) return false;
+      return new Date(draft.awardDeadline) > new Date(draft.responseDeadline);
+    }
+    return true;
+  };
+
+  const submitWizard = () => {
+    const yr = new Date().getFullYear();
+    const nextNum = mockRfqs.length + extraRfqs.length + 1;
+    const newRfq: RFQ = {
+      id: `rfq-new-${Date.now()}`,
+      rfqNumber: `RFQ-${yr}-${String(nextNum).padStart(3, '0')}`,
+      title: draft.title.trim(),
+      materialCategory: draft.category as RFQCategory,
+      materialIds: draft.materials,
+      buyerId: 'buyer-001',
+      status: 'Open',
+      createdAt: new Date().toISOString().slice(0, 10),
+      responseDeadline: draft.responseDeadline,
+      awardDeadline: draft.awardDeadline,
+      invitedSupplierIds: draft.invitedSupplierIds,
+      respondedSupplierIds: [],
+      totalQty: Number(draft.totalQty),
+      uom: draft.uom,
+      estimatedValue: Number(draft.budget) || 0,
+      currency: 'IDR',
+      incoterms: draft.incoterms,
+      paymentTerms: draft.paymentTerms,
+    };
+    setExtraRfqs((prev) => [newRfq, ...prev]);
+    setWizardOpen(false);
+    setToast(
+      `${newRfq.rfqNumber} created and sent to ${newRfq.invitedSupplierIds.length} supplier${newRfq.invitedSupplierIds.length === 1 ? '' : 's'}`,
+    );
+    window.setTimeout(() => setToast(null), 4500);
+  };
+
+  const aiRecommendedSuppliers = useMemo(() => {
+    if (!draft.category) return [];
+    const cats = CATEGORY_TO_SUPPLIER_CATEGORY[draft.category];
+    return mockSuppliers
+      .filter((s) => cats.includes(s.category))
+      .sort((a, b) => b.otif - a.otif)
+      .slice(0, 4);
+  }, [draft.category]);
+
+  const supplierTableFiltered = useMemo(() => {
+    if (!draft.category) return [];
+    const cats = CATEGORY_TO_SUPPLIER_CATEGORY[draft.category];
+    return mockSuppliers
+      .filter((s) => cats.includes(s.category))
+      .filter((s) => {
+        if (!supplierSearch) return true;
+        const q = supplierSearch.toLowerCase();
+        return (
+          s.name.toLowerCase().includes(q) ||
+          s.country.toLowerCase().includes(q)
+        );
+      });
+  }, [draft.category, supplierSearch]);
+
+  const wizardSteps: WizardStep[] = [
+    {
+      id: 'scope',
+      title: 'Define Scope',
+      shortTitle: 'Scope',
+      description: 'What are you sourcing and how much?',
+      content: (
+        <div className="space-y-5">
+          <div>
+            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+              RFQ title <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              value={draft.title}
+              onChange={(e) => updateDraft('title', e.target.value)}
+              placeholder="e.g. Q3 2026 Fragrance Sourcing — Floral Compounds"
+              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Material category <span className="text-danger">*</span>
+              </label>
+              <select
+                value={draft.category}
+                onChange={(e) => {
+                  updateDraft('category', e.target.value as RFQCategory);
+                  updateDraft('materials', []);
+                }}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              >
+                <option value="">Select a category…</option>
+                {CATEGORY_OPTIONS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Estimated budget (IDR)
+              </label>
+              <input
+                type="number"
+                value={draft.budget}
+                onChange={(e) => updateDraft('budget', e.target.value)}
+                placeholder="Optional"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+              Specific material(s) <span className="text-danger">*</span>
+            </label>
+            {draft.category ? (
+              <div className="flex flex-wrap gap-2">
+                {MATERIAL_CATALOG[draft.category as RFQCategory].map((m) => {
+                  const selected = draft.materials.includes(m);
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => toggleMaterial(m)}
+                      className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                        selected
+                          ? 'bg-teal text-white border border-teal'
+                          : 'bg-bg-surface text-text-secondary border border-border-input hover:border-teal'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-text-tertiary">
+                Select a category first to see available materials.
+              </p>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Total quantity <span className="text-danger">*</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={draft.totalQty}
+                onChange={(e) => updateDraft('totalQty', e.target.value)}
+                placeholder="0"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              />
+            </div>
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                UoM
+              </label>
+              <select
+                value={draft.uom}
+                onChange={(e) =>
+                  updateDraft(
+                    'uom',
+                    e.target.value as (typeof UOM_OPTIONS)[number],
+                  )
+                }
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              >
+                {UOM_OPTIONS.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'suppliers',
+      title: 'Invite Suppliers',
+      shortTitle: 'Suppliers',
+      description: 'Pick suppliers to request quotes from.',
+      content: (
+        <div className="space-y-5">
+          {aiRecommendedSuppliers.length > 0 && (
+            <div className="bg-teal-soft border border-teal/20 rounded-md p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={16} className="text-teal" />
+                <h4 className="text-sm font-semibold text-text-primary">
+                  AI recommendation
+                </h4>
+                <span className="text-xs text-text-tertiary">
+                  · Based on category, tier, and OTIF
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {aiRecommendedSuppliers.map((s) => {
+                  const selected = draft.invitedSupplierIds.includes(s.id);
+                  return (
+                    <label
+                      key={s.id}
+                      className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                        selected
+                          ? 'bg-bg-surface border-teal'
+                          : 'bg-bg-surface border-border-subtle hover:border-teal'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleSupplier(s.id)}
+                        className="mt-0.5 accent-teal"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-semibold text-text-primary truncate">
+                          {s.name}
+                        </div>
+                        <div className="text-xs text-text-tertiary">
+                          {s.country} · OTIF {s.otif}% · Grade{' '}
+                          {s.scorecardGrade}
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <SearchBar
+              value={supplierSearch}
+              onChange={setSupplierSearch}
+              placeholder="Search suppliers by name or country…"
+            />
+          </div>
+
+          <div className="border border-border-subtle rounded-md overflow-hidden max-h-64 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider text-xs sticky top-0">
+                <tr>
+                  <th className="px-3 py-2 text-left font-semibold w-10"></th>
+                  <th className="px-3 py-2 text-left font-semibold">
+                    Supplier
+                  </th>
+                  <th className="px-3 py-2 text-left font-semibold">
+                    Country
+                  </th>
+                  <th className="px-3 py-2 text-right font-semibold">OTIF</th>
+                </tr>
+              </thead>
+              <tbody>
+                {supplierTableFiltered.map((s) => {
+                  const selected = draft.invitedSupplierIds.includes(s.id);
+                  return (
+                    <tr
+                      key={s.id}
+                      className="border-t border-border-subtle hover:bg-bg-hover cursor-pointer"
+                      onClick={() => toggleSupplier(s.id)}
+                    >
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleSupplier(s.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="accent-teal"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-text-primary">
+                        {s.name}
+                      </td>
+                      <td className="px-3 py-2 text-text-secondary">
+                        {s.country}
+                      </td>
+                      <td className="px-3 py-2 text-right text-text-secondary">
+                        {s.otif}%
+                      </td>
+                    </tr>
+                  );
+                })}
+                {supplierTableFiltered.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      className="text-center text-sm text-text-tertiary py-6"
+                    >
+                      {draft.category
+                        ? 'No suppliers match the current search.'
+                        : 'Select a category in step 1.'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="text-sm text-text-secondary">
+            <span className="inline-flex items-center gap-1.5 bg-teal-soft text-teal rounded-full px-3 py-1 text-xs font-semibold">
+              {draft.invitedSupplierIds.length} supplier
+              {draft.invitedSupplierIds.length === 1 ? '' : 's'} selected
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'terms',
+      title: 'Terms & Deadlines',
+      shortTitle: 'Terms',
+      description: 'When are responses due and on what commercial terms?',
+      content: (
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Response deadline <span className="text-danger">*</span>
+              </label>
+              <input
+                type="date"
+                value={draft.responseDeadline}
+                onChange={(e) =>
+                  updateDraft('responseDeadline', e.target.value)
+                }
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              />
+            </div>
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Award deadline <span className="text-danger">*</span>
+              </label>
+              <input
+                type="date"
+                value={draft.awardDeadline}
+                onChange={(e) => updateDraft('awardDeadline', e.target.value)}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              />
+              {draft.responseDeadline &&
+                draft.awardDeadline &&
+                new Date(draft.awardDeadline) <=
+                  new Date(draft.responseDeadline) && (
+                  <p className="text-xs text-danger mt-1">
+                    Award deadline must be after response deadline.
+                  </p>
+                )}
+            </div>
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Incoterms
+              </label>
+              <select
+                value={draft.incoterms}
+                onChange={(e) => updateDraft('incoterms', e.target.value)}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              >
+                {INCOTERMS_OPTIONS.map((i) => (
+                  <option key={i} value={i}>
+                    {i}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Payment terms
+              </label>
+              <select
+                value={draft.paymentTerms}
+                onChange={(e) => updateDraft('paymentTerms', e.target.value)}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              >
+                {PAYMENT_TERMS_OPTIONS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+              Currency
+            </label>
+            <div className="flex gap-4">
+              {(['IDR', 'USD'] as const).map((cur) => (
+                <label
+                  key={cur}
+                  className="inline-flex items-center gap-2 cursor-pointer"
+                >
+                  <input
+                    type="radio"
+                    name="currency"
+                    value={cur}
+                    checked={draft.currency === cur}
+                    onChange={() => updateDraft('currency', cur)}
+                    className="accent-teal"
+                  />
+                  <span className="text-sm text-text-secondary">{cur}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'review',
+      title: 'Review & Submit',
+      shortTitle: 'Review',
+      description: 'Check the details before sending to suppliers.',
+      content: (
+        <div className="space-y-5 text-sm">
+          <ReviewSection
+            label="Scope"
+            onEdit={() => setWizardStep(0)}
+            rows={[
+              ['Title', draft.title || '—'],
+              ['Category', draft.category || '—'],
+              ['Materials', draft.materials.join(', ') || '—'],
+              [
+                'Quantity',
+                draft.totalQty
+                  ? `${formatNumber(Number(draft.totalQty))} ${draft.uom}`
+                  : '—',
+              ],
+              [
+                'Budget',
+                draft.budget ? formatIDR(Number(draft.budget)) : 'Not specified',
+              ],
+            ]}
+          />
+          <ReviewSection
+            label="Suppliers"
+            onEdit={() => setWizardStep(1)}
+            rows={[
+              [
+                'Invited',
+                draft.invitedSupplierIds.length > 0
+                  ? `${draft.invitedSupplierIds.length} supplier${draft.invitedSupplierIds.length === 1 ? '' : 's'}`
+                  : '—',
+              ],
+              [
+                'Names',
+                draft.invitedSupplierIds
+                  .map((id) => supplierNameById.get(id) ?? id)
+                  .join(', ') || '—',
+              ],
+            ]}
+          />
+          <ReviewSection
+            label="Terms & Deadlines"
+            onEdit={() => setWizardStep(2)}
+            rows={[
+              ['Response deadline', draft.responseDeadline || '—'],
+              ['Award deadline', draft.awardDeadline || '—'],
+              ['Incoterms', draft.incoterms],
+              ['Payment terms', draft.paymentTerms],
+              ['Currency', draft.currency],
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
 
   const lastUpdated = useMemo(
     () =>
@@ -320,7 +958,7 @@ const BuyerSourcing: React.FC = () => {
               { label: 'Export', icon: FileSpreadsheet },
               { label: 'Templates', icon: FileText },
             ]}
-            primary={{ label: 'New RFQ', icon: Plus }}
+            primary={{ label: 'New RFQ', icon: Plus, onClick: openWizard }}
           />
         }
       />
@@ -874,6 +1512,26 @@ const BuyerSourcing: React.FC = () => {
           </div>
         )}
       </SidePanel>
+
+      {wizardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.4)]">
+          <Wizard
+            steps={wizardSteps}
+            currentStep={wizardStep}
+            onStepChange={setWizardStep}
+            onCancel={closeWizard}
+            onComplete={submitWizard}
+            isStepValid={isStepValid}
+            completeLabel="Create & Send RFQ"
+          />
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-[60] bg-navy text-white rounded-md shadow-md px-4 py-3 text-sm border-l-4 border-teal max-w-md">
+          {toast}
+        </div>
+      )}
     </AppShellV2>
   );
 };
