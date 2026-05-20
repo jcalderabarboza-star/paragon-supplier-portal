@@ -654,6 +654,18 @@ const SupplierRFQs: React.FC = () => {
 
   const submitQuote = () => {
     if (!quotePanelRFQ) return;
+    const missing: string[] = [];
+    if (!form.unitPrice.trim() || !(parseFloat(form.unitPrice) > 0)) missing.push('Unit price');
+    if (!form.leadTimeNum.trim() || !(parseFloat(form.leadTimeNum) > 0)) missing.push('Lead time');
+    if (!form.validUntil.trim()) missing.push('Quote valid until');
+    if (missing.length > 0) {
+      toast({
+        variant: 'error',
+        title: 'Required fields missing',
+        description: `Please fill: ${missing.join(', ')}.`,
+      });
+      return;
+    }
     setSubmitting(true);
     toast({
       variant: 'success',
