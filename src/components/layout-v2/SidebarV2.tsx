@@ -7,6 +7,7 @@ import {
   Users,
   FileText,
   ShoppingCart,
+  Boxes,
   Truck,
   ClipboardCheck,
   Receipt,
@@ -14,6 +15,7 @@ import {
   Award,
   AlertTriangle,
   ShieldCheck,
+  ScrollText,
   LucideIcon,
 } from 'lucide-react';
 
@@ -34,17 +36,19 @@ const BUYER_NAV: NavGroup[] = [
   {
     label: 'ACQUIRE',
     items: [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/v2/dashboard' },
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/buyer/dashboard' },
       { label: 'Discovery', icon: Search, path: '/buyer/discovery' },
       { label: 'Marketplace', icon: Store, path: '/marketplace' },
       { label: 'Suppliers', icon: Users, path: '/buyer/suppliers' },
+      { label: 'Sourcing & RFQ', icon: FileText, path: '/buyer/sourcing' },
     ],
   },
   {
     label: 'TRANSACT',
     items: [
       { label: 'Requisitions', icon: FileText, path: '/buyer/purchase-requisition' },
-      { label: 'Purchase Orders', icon: ShoppingCart, path: '/buyer/purchase-orders' },
+      { label: 'Purchase Orders', icon: ShoppingCart, path: '/buyer/orders' },
+      { label: 'Inventory Visibility', icon: Boxes, path: '/buyer/inventory' },
       { label: 'Shipments', icon: Truck, path: '/buyer/shipments' },
       { label: 'Goods Receipt', icon: ClipboardCheck, path: '/buyer/goods-receipt' },
     ],
@@ -53,7 +57,7 @@ const BUYER_NAV: NavGroup[] = [
     label: 'SETTLE',
     items: [
       { label: 'Invoices', icon: Receipt, path: '/buyer/invoices' },
-      { label: 'Contracts', icon: FileText, path: '/buyer/contracts' },
+      { label: 'Contracts', icon: ScrollText, path: '/buyer/contracts' },
     ],
   },
   {
