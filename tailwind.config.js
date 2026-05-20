@@ -29,7 +29,7 @@ export default {
         'success': { DEFAULT: '#107E3E', soft: '#E8F5EC' },
         'warning': { DEFAULT: '#B45309', soft: '#FEF3D6' },
         'danger': { DEFAULT: '#BB0000', soft: '#FCE4E4' },
-        'info': { DEFAULT: '#0A6ED1', soft: '#E5F0FF' },
+        'info': { DEFAULT: '#1E5BAE', soft: '#E5F0FF' },
         // Borders
         'border-subtle': '#E5E9EE',
         'border-input': '#D1D8E0',

@@ -63,7 +63,7 @@ const STATUS_VARIANT: Record<
   'success' | 'warning' | 'danger' | 'info' | 'neutral'
 > = {
   'Pending Inspection': 'neutral',
-  'Under Inspection': 'info',
+  'Under Inspection': 'warning',
   'Quality Hold': 'danger',
   Approved: 'success',
   'Partially Approved': 'warning',
