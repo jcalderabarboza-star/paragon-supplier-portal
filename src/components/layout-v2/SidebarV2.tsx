@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   ShieldCheck,
   ScrollText,
+  MessageCircle,
   LucideIcon,
 } from 'lucide-react';
 
@@ -67,6 +68,7 @@ const BUYER_NAV: NavGroup[] = [
       { label: 'Scorecard', icon: Award, path: '/buyer/scorecard' },
       { label: 'Risk', icon: AlertTriangle, path: '/buyer/risk' },
       { label: 'Compliance', icon: ShieldCheck, path: '/buyer/compliance' },
+      { label: 'WhatsApp Hub', icon: MessageCircle, path: '/buyer/whatsapp' },
     ],
   },
 ];

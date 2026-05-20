@@ -59,6 +59,10 @@ import BuyerDiscovery from '../pages-v2/BuyerDiscovery';
 import BuyerRequisitions from '../pages-v2/BuyerRequisitions';
 import BuyerInvoices from '../pages-v2/BuyerInvoices';
 import BuyerScorecard from '../pages-v2/BuyerScorecard';
+import BuyerAnalytics from '../pages-v2/BuyerAnalytics';
+import BuyerRisk from '../pages-v2/BuyerRisk';
+import BuyerWhatsAppHub from '../pages-v2/BuyerWhatsAppHub';
+import BuyerCompliance from '../pages-v2/BuyerCompliance';
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -87,6 +91,10 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/purchase-requisition" element={<BuyerRequisitions />} />
           <Route path="/buyer/invoices" element={<BuyerInvoices />} />
           <Route path="/buyer/scorecard" element={<BuyerScorecard />} />
+          <Route path="/buyer/analytics" element={<BuyerAnalytics />} />
+          <Route path="/buyer/risk" element={<BuyerRisk />} />
+          <Route path="/buyer/whatsapp" element={<BuyerWhatsAppHub />} />
+          <Route path="/buyer/compliance" element={<BuyerCompliance />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -102,12 +110,12 @@ const AppRouter: React.FC = () => {
             <Route path="v1/buyer/goods-receipt" element={<GoodsReceipt />} />
             <Route path="v1/buyer/discovery"     element={<SupplierDiscovery />} />
             <Route path="v1/buyer/contracts"     element={<ContractManagement />} />
-            <Route path="buyer/whatsapp"         element={<WhatsAppHub />} />
-            <Route path="buyer/analytics"        element={<Analytics />} />
+            <Route path="v1/buyer/whatsapp"      element={<WhatsAppHub />} />
+            <Route path="v1/buyer/analytics"     element={<Analytics />} />
             <Route path="v1/buyer/invoices"      element={<InvoicePayment />} />
             <Route path="v1/buyer/scorecard"     element={<SupplierScorecard />} />
-            <Route path="buyer/risk"             element={<SupplyRisk />} />
-            <Route path="buyer/compliance"       element={<Compliance />} />
+            <Route path="v1/buyer/risk"          element={<SupplyRisk />} />
+            <Route path="v1/buyer/compliance"    element={<Compliance />} />
 
             {/* ── Marketplace routes ── */}
             <Route path="v1/marketplace"              element={<MarketplaceDiscovery />} />
