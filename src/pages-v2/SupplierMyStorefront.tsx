@@ -21,6 +21,7 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
+import Switch from '../components/ui-v2/Switch';
 import { useToast } from '../hooks/useToast';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { useAdaptive } from '../context/AdaptiveContext';
@@ -95,28 +96,6 @@ const CERT_LABEL: Record<ProfileCert['status'], string> = {
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
-
-const Toggle: React.FC<{ on: boolean; onChange: () => void; ariaLabel: string }> = ({
-  on,
-  onChange,
-  ariaLabel,
-}) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={on}
-    aria-label={ariaLabel}
-    onClick={onChange}
-    className={`relative w-10 h-5 rounded-full transition-colors ${
-      on ? 'bg-teal' : 'bg-bg-hover border border-border-input'
-    }`}
-  >
-    <span
-      className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all"
-      style={{ left: on ? '22px' : '2px' }}
-    />
-  </button>
-);
 
 interface NewMaterial {
   material: string;
@@ -477,8 +456,8 @@ const SupplierMyStorefront: React.FC = () => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Toggle
-                        on={item.visible}
+                      <Switch
+                        checked={item.visible}
                         onChange={() => toggleCatalogVisibility(item.id)}
                         ariaLabel={`Toggle visibility for ${item.material}`}
                       />
@@ -701,8 +680,8 @@ const SupplierMyStorefront: React.FC = () => {
                     {cert.visible ? <Eye size={12} /> : <EyeOff size={12} />}
                     {cert.visible ? 'Shown' : 'Hidden'}
                   </span>
-                  <Toggle
-                    on={cert.visible}
+                  <Switch
+                    checked={cert.visible}
                     onChange={() => toggleCertVisibility(i)}
                     ariaLabel={`Toggle visibility for ${cert.name}`}
                   />

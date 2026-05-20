@@ -30,6 +30,7 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
+import Switch from '../components/ui-v2/Switch';
 import { useToast } from '../hooks/useToast';
 
 type Channel = 'whatsapp' | 'email' | 'wechat';
@@ -211,26 +212,6 @@ const PULSE_CSS = `
   animation: wa-connected-pulse 1.6s ease-in-out infinite;
 }
 `;
-
-const Toggle: React.FC<{ on: boolean; onChange: () => void }> = ({
-  on,
-  onChange,
-}) => (
-  <button
-    type="button"
-    role="switch"
-    aria-checked={on}
-    onClick={onChange}
-    className={`relative w-12 h-6 rounded-full transition-colors ${
-      on ? 'bg-success' : 'bg-bg-hover border border-border-input'
-    }`}
-  >
-    <span
-      className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-all"
-      style={{ left: on ? '24px' : '4px' }}
-    />
-  </button>
-);
 
 interface ConvItemProps {
   conv: Conversation;
@@ -487,8 +468,11 @@ const AutomationTab: React.FC = () => {
                 </div>
               </div>
               <div className="flex flex-col items-center gap-2 shrink-0">
-                <Toggle
-                  on={on}
+                <Switch
+                  size="md"
+                  onColor="success"
+                  checked={on}
+                  ariaLabel={`${on ? 'Disable' : 'Enable'} ${rule.rule}`}
                   onChange={() =>
                     setToggles((t) => ({ ...t, [rule.rule]: !t[rule.rule] }))
                   }
