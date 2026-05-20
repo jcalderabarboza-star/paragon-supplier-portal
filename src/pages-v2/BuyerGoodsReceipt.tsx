@@ -25,6 +25,7 @@ import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
+import GRInspectionWizard from '../components/v2-features/GRInspectionWizard';
 import { useToast } from '../hooks/useToast';
 import {
   mockGoodsReceipts as mockGRSeed,
@@ -125,23 +126,17 @@ const totals = (results: InspectionResult[]) =>
     { received: 0, accepted: 0, rejected: 0 }
   );
 
-interface BuyerGoodsReceiptProps {
-  externalGRs?: GoodsReceipt[];
-  onNewGR?: () => void;
-}
-
-const BuyerGoodsReceipt: React.FC<BuyerGoodsReceiptProps> = ({
-  externalGRs,
-  onNewGR,
-}) => {
+const BuyerGoodsReceipt: React.FC = () => {
   const { toast } = useToast();
   const [tab, setTab] = useState<GroupTab>('all');
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [localGRs] = useState<GoodsReceipt[]>(mockGRSeed);
+  const [localGRs, setLocalGRs] = useState<GoodsReceipt[]>(mockGRSeed);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardAsnId, setWizardAsnId] = useState<string | undefined>(undefined);
 
-  const allGRs = externalGRs ?? localGRs;
+  const allGRs = localGRs;
 
   const counts = useMemo(() => {
     let pending = 0;
@@ -284,8 +279,9 @@ const BuyerGoodsReceipt: React.FC<BuyerGoodsReceiptProps> = ({
           <Button
             variant="primary"
             onClick={() => {
+              setWizardAsnId(g.asnId);
               setSelectedId(null);
-              onNewGR?.();
+              setWizardOpen(true);
             }}
           >
             Start inspection
@@ -386,13 +382,15 @@ const BuyerGoodsReceipt: React.FC<BuyerGoodsReceiptProps> = ({
     });
 
   const handleNewGR = () => {
-    if (onNewGR) onNewGR();
-    else
-      toast({
-        variant: 'info',
-        title: 'New GR',
-        description: 'Inspection wizard will open in a future release.',
-      });
+    setWizardAsnId(undefined);
+    setWizardOpen(true);
+  };
+
+  const nextSeqNumber = localGRs.length + 1;
+
+  const handleWizardComplete = (gr: GoodsReceipt) => {
+    setLocalGRs((prev) => [gr, ...prev]);
+    setWizardOpen(false);
   };
 
   return (
@@ -778,6 +776,15 @@ const BuyerGoodsReceipt: React.FC<BuyerGoodsReceiptProps> = ({
           </div>
         )}
       </SidePanel>
+
+      {wizardOpen && (
+        <GRInspectionWizard
+          onClose={() => setWizardOpen(false)}
+          onComplete={handleWizardComplete}
+          initialAsnId={wizardAsnId}
+          nextSeqNumber={nextSeqNumber}
+        />
+      )}
     </AppShellV2>
   );
 };
