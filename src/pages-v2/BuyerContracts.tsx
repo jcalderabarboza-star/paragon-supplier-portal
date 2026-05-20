@@ -37,6 +37,7 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
+import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
 import {
   ContractObligation,
@@ -240,6 +241,126 @@ const FOOTER_PRIMARY_LABEL = (c: Contract): string => {
   return 'View full contract';
 };
 
+const ReviewSection: React.FC<{
+  label: string;
+  rows: [string, React.ReactNode][];
+  onEdit: () => void;
+}> = ({ label, rows, onEdit }) => (
+  <section className="border border-border-subtle rounded-md">
+    <header className="flex items-center justify-between px-4 py-2 bg-bg-hover">
+      <span className="text-label text-text-tertiary uppercase">{label}</span>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="text-xs font-medium text-teal hover:text-teal-hover"
+      >
+        Edit
+      </button>
+    </header>
+    <dl className="px-4 py-3 divide-y divide-border-subtle">
+      {rows.map(([k, v]) => (
+        <div key={k} className="flex justify-between py-2 gap-4">
+          <dt className="text-text-tertiary">{k}</dt>
+          <dd className="text-text-primary text-right">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+);
+
+const BRAND_OPTIONS = ['Wardah', 'Emina', 'Make Over', 'BLP', 'Scarlett'];
+
+const CATEGORY_OPTIONS = [
+  'Raw Material',
+  'Active Ingredient',
+  'Fragrance',
+  'Packaging',
+  'Other',
+];
+
+const PAYMENT_TERMS_OPTIONS = [
+  'Net 30',
+  'Net 45',
+  'Net 60',
+  'Letter of Credit',
+  'Advance Payment',
+];
+
+const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
+
+const OBLIGATION_SUGGESTIONS: Record<
+  ContractType,
+  { title: string; owner: 'Buyer' | 'Supplier' | 'Both' }[]
+> = {
+  Supply: [
+    { title: 'Quarterly delivery performance report', owner: 'Supplier' },
+    { title: 'Annual halal certificate renewal', owner: 'Supplier' },
+    { title: 'Quality audit access', owner: 'Both' },
+  ],
+  Service: [
+    { title: 'Monthly service review', owner: 'Both' },
+    { title: 'SLA reporting', owner: 'Supplier' },
+    { title: 'Annual contract review', owner: 'Both' },
+  ],
+  Framework: [
+    { title: 'Quarterly volume review', owner: 'Both' },
+    { title: 'Annual price benchmarking', owner: 'Buyer' },
+    { title: 'Innovation pipeline review', owner: 'Supplier' },
+  ],
+  NDA: [
+    { title: 'Annual confidentiality acknowledgment', owner: 'Both' },
+    { title: 'Renewal decision before expiry', owner: 'Buyer' },
+  ],
+  Quality: [
+    { title: 'Semi-annual on-site audit', owner: 'Both' },
+    { title: 'Non-conformance closure SLA', owner: 'Supplier' },
+    { title: 'Annual quality scorecard', owner: 'Both' },
+  ],
+  Pricing: [
+    { title: 'Monthly price index publication', owner: 'Supplier' },
+    { title: 'Quarterly business review', owner: 'Both' },
+    { title: 'Annual price adjustment review', owner: 'Both' },
+  ],
+};
+
+interface DraftObligation {
+  title: string;
+  owner: 'Buyer' | 'Supplier' | 'Both';
+  dueDate: string;
+}
+
+interface DraftContract {
+  title: string;
+  type: ContractType | '';
+  supplierId: string;
+  category: string;
+  brands: string[];
+  startDate: string;
+  endDate: string;
+  autoRenewal: boolean;
+  noticeRequiredDays: string;
+  value: string;
+  paymentTerms: string;
+  incoterms: string;
+  obligations: DraftObligation[];
+}
+
+const EMPTY_DRAFT: DraftContract = {
+  title: '',
+  type: '',
+  supplierId: '',
+  category: '',
+  brands: [],
+  startDate: '',
+  endDate: '',
+  autoRenewal: false,
+  noticeRequiredDays: '90',
+  value: '',
+  paymentTerms: 'Net 30',
+  incoterms: 'CIF Jakarta',
+  obligations: [],
+};
+
 const PLACEHOLDER_DOCS = (c: Contract): {
   name: string;
   status: 'valid' | 'expiring' | 'expired';
@@ -275,9 +396,621 @@ const BuyerContracts: React.FC = () => {
     null,
   );
   const [docsOpen, setDocsOpen] = useState(false);
+  const [extraContracts, setExtraContracts] = useState<Contract[]>([]);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [wizardStep, setWizardStep] = useState(0);
+  const [draft, setDraft] = useState<DraftContract>(EMPTY_DRAFT);
+  const [supplierSearch, setSupplierSearch] = useState('');
+  const [customObligationTitle, setCustomObligationTitle] = useState('');
   const { toast } = useToast();
 
-  const contracts = mockContracts;
+  const contracts = useMemo(
+    () => [...extraContracts, ...mockContracts],
+    [extraContracts],
+  );
+
+  const updateDraft = <K extends keyof DraftContract>(
+    key: K,
+    value: DraftContract[K],
+  ) => setDraft((d) => ({ ...d, [key]: value }));
+
+  const openWizard = () => {
+    setDraft(EMPTY_DRAFT);
+    setWizardStep(0);
+    setSupplierSearch('');
+    setCustomObligationTitle('');
+    setWizardOpen(true);
+  };
+
+  const closeWizard = () => setWizardOpen(false);
+
+  const toggleBrand = (b: string) =>
+    setDraft((d) => ({
+      ...d,
+      brands: d.brands.includes(b)
+        ? d.brands.filter((x) => x !== b)
+        : [...d.brands, b],
+    }));
+
+  const toggleSuggestedObligation = (title: string, owner: DraftObligation['owner']) =>
+    setDraft((d) => {
+      const idx = d.obligations.findIndex((o) => o.title === title);
+      if (idx >= 0) {
+        return {
+          ...d,
+          obligations: d.obligations.filter((_, i) => i !== idx),
+        };
+      }
+      return {
+        ...d,
+        obligations: [...d.obligations, { title, owner, dueDate: '' }],
+      };
+    });
+
+  const addCustomObligation = () => {
+    if (!customObligationTitle.trim()) return;
+    setDraft((d) => ({
+      ...d,
+      obligations: [
+        ...d.obligations,
+        { title: customObligationTitle.trim(), owner: 'Both', dueDate: '' },
+      ],
+    }));
+    setCustomObligationTitle('');
+  };
+
+  const removeObligation = (i: number) =>
+    setDraft((d) => ({
+      ...d,
+      obligations: d.obligations.filter((_, idx) => idx !== i),
+    }));
+
+  const updateObligation = <K extends keyof DraftObligation>(
+    i: number,
+    key: K,
+    value: DraftObligation[K],
+  ) =>
+    setDraft((d) => ({
+      ...d,
+      obligations: d.obligations.map((o, idx) =>
+        idx === i ? { ...o, [key]: value } : o,
+      ),
+    }));
+
+  const supplierTableFiltered = useMemo(() => {
+    if (!supplierSearch) return mockSuppliers;
+    const q = supplierSearch.toLowerCase();
+    return mockSuppliers.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.country.toLowerCase().includes(q),
+    );
+  }, [supplierSearch]);
+
+  const isStepValid = (step: number): boolean => {
+    if (step === 0) {
+      return (
+        draft.title.trim().length > 0 &&
+        draft.type !== '' &&
+        draft.supplierId !== '' &&
+        draft.category !== ''
+      );
+    }
+    if (step === 1) {
+      if (!draft.startDate || !draft.endDate) return false;
+      if (new Date(draft.endDate) <= new Date(draft.startDate)) return false;
+      return Number(draft.value) > 0;
+    }
+    return true;
+  };
+
+  const submitWizard = () => {
+    const yr = new Date().getFullYear();
+    const nextNum = mockContracts.length + extraContracts.length + 1;
+    const todayIso = new Date().toISOString().slice(0, 10);
+    const end = new Date(draft.endDate);
+    const today = new Date(todayIso);
+    const daysUntilExpiry = Math.round(
+      (end.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
+    );
+    const newContract: Contract = {
+      id: `ctr-new-${Date.now()}`,
+      contractNumber: `CTR-${yr}-${String(nextNum).padStart(3, '0')}`,
+      supplierId: draft.supplierId,
+      title: draft.title.trim(),
+      type: draft.type as ContractType,
+      status: 'Draft',
+      startDate: draft.startDate,
+      endDate: draft.endDate,
+      autoRenewal: draft.autoRenewal,
+      noticeRequiredDays: Number(draft.noticeRequiredDays) || 0,
+      value: Number(draft.value) || 0,
+      currency: 'IDR',
+      paymentTerms: draft.paymentTerms,
+      incoterms: draft.incoterms,
+      signedByBuyer: '—',
+      signedBySupplier: '—',
+      signedDate: '',
+      obligationCount: draft.obligations.length,
+      obligationsMet: 0,
+      daysUntilExpiry,
+      category: draft.category,
+      brands: draft.brands,
+      performanceScore: 0,
+    };
+    setExtraContracts((prev) => [newContract, ...prev]);
+    setWizardOpen(false);
+    toast({
+      variant: 'success',
+      title: `Contract ${newContract.contractNumber} created`,
+      description: 'Saved as Draft. Sign workflow coming in Phase 2A.',
+    });
+  };
+
+  const wizardSteps: WizardStep[] = [
+    {
+      id: 'basics',
+      title: 'Basics',
+      shortTitle: 'Basics',
+      description: 'Set the contract type, supplier, and brand scope.',
+      content: (
+        <div className="space-y-5">
+          <div>
+            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+              Contract title <span className="text-danger">*</span>
+            </label>
+            <input
+              type="text"
+              value={draft.title}
+              onChange={(e) => updateDraft('title', e.target.value)}
+              placeholder="e.g. Halal Emulsifier Master Supply Agreement 2027"
+              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Contract type <span className="text-danger">*</span>
+              </label>
+              <select
+                value={draft.type}
+                onChange={(e) =>
+                  updateDraft('type', e.target.value as ContractType)
+                }
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              >
+                <option value="">Select a type…</option>
+                {TYPE_OPTIONS.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Category <span className="text-danger">*</span>
+              </label>
+              <select
+                value={draft.category}
+                onChange={(e) => updateDraft('category', e.target.value)}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              >
+                <option value="">Select a category…</option>
+                {CATEGORY_OPTIONS.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+              Supplier <span className="text-danger">*</span>
+            </label>
+            <div className="mb-2">
+              <SearchBar
+                value={supplierSearch}
+                onChange={setSupplierSearch}
+                placeholder="Search suppliers by name or country…"
+              />
+            </div>
+            <div className="border border-border-subtle rounded-md overflow-hidden max-h-56 overflow-y-auto">
+              <table className="w-full text-sm">
+                <tbody>
+                  {supplierTableFiltered.map((s) => (
+                    <tr
+                      key={s.id}
+                      onClick={() => updateDraft('supplierId', s.id)}
+                      className={`border-t border-border-subtle cursor-pointer hover:bg-bg-hover ${
+                        draft.supplierId === s.id ? 'bg-teal-soft' : ''
+                      }`}
+                    >
+                      <td className="px-3 py-2">
+                        <input
+                          type="radio"
+                          name="supplier"
+                          checked={draft.supplierId === s.id}
+                          onChange={() => updateDraft('supplierId', s.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="accent-teal"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-text-primary">{s.name}</td>
+                      <td className="px-3 py-2 text-text-secondary">
+                        {s.country} · {s.category}
+                      </td>
+                    </tr>
+                  ))}
+                  {supplierTableFiltered.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="text-center text-sm text-text-tertiary py-6"
+                      >
+                        No suppliers match the current search.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+              Brands
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {BRAND_OPTIONS.map((b) => {
+                const selected = draft.brands.includes(b);
+                return (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => toggleBrand(b)}
+                    className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                      selected
+                        ? 'bg-teal text-white border border-teal'
+                        : 'bg-bg-surface text-text-secondary border border-border-input hover:border-teal'
+                    }`}
+                  >
+                    {b}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'terms',
+      title: 'Terms & Duration',
+      shortTitle: 'Terms',
+      description: 'Set the term, value, and commercial terms.',
+      content: (
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Start date <span className="text-danger">*</span>
+              </label>
+              <input
+                type="date"
+                value={draft.startDate}
+                onChange={(e) => updateDraft('startDate', e.target.value)}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              />
+            </div>
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                End date <span className="text-danger">*</span>
+              </label>
+              <input
+                type="date"
+                value={draft.endDate}
+                onChange={(e) => updateDraft('endDate', e.target.value)}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              />
+              {draft.startDate &&
+                draft.endDate &&
+                new Date(draft.endDate) <= new Date(draft.startDate) && (
+                  <p className="text-xs text-danger mt-1">
+                    End date must be after start date.
+                  </p>
+                )}
+            </div>
+          </div>
+          <div>
+            <label className="inline-flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={draft.autoRenewal}
+                onChange={(e) => updateDraft('autoRenewal', e.target.checked)}
+                className="accent-teal w-4 h-4"
+              />
+              <span className="text-sm text-text-primary font-medium">
+                Auto-renewal
+              </span>
+              <span className="text-xs text-text-tertiary">
+                Contract renews unless notice is given.
+              </span>
+            </label>
+            {draft.autoRenewal && (
+              <div className="mt-3 max-w-xs">
+                <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                  Notice required (days)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={draft.noticeRequiredDays}
+                  onChange={(e) =>
+                    updateDraft('noticeRequiredDays', e.target.value)
+                  }
+                  className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                />
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="text-label text-text-tertiary uppercase block mb-1.5">
+              Total contract value (IDR) <span className="text-danger">*</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              value={draft.value}
+              onChange={(e) => updateDraft('value', e.target.value)}
+              placeholder="0"
+              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Payment terms
+              </label>
+              <select
+                value={draft.paymentTerms}
+                onChange={(e) => updateDraft('paymentTerms', e.target.value)}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              >
+                {PAYMENT_TERMS_OPTIONS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-label text-text-tertiary uppercase block mb-1.5">
+                Incoterms
+              </label>
+              <select
+                value={draft.incoterms}
+                onChange={(e) => updateDraft('incoterms', e.target.value)}
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              >
+                {INCOTERMS_OPTIONS.map((i) => (
+                  <option key={i} value={i}>
+                    {i}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 'obligations',
+      title: 'Obligations',
+      shortTitle: 'Obligations',
+      description: 'Pick suggested obligations or add custom ones.',
+      content: (
+        <div className="space-y-5">
+          {draft.type && (
+            <div>
+              <h4 className="text-sm font-semibold text-text-primary mb-2">
+                Suggested for {draft.type} contracts
+              </h4>
+              <div className="space-y-2">
+                {OBLIGATION_SUGGESTIONS[draft.type as ContractType].map(
+                  (s) => {
+                    const selected = draft.obligations.some(
+                      (o) => o.title === s.title,
+                    );
+                    return (
+                      <label
+                        key={s.title}
+                        className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
+                          selected
+                            ? 'bg-bg-surface border-teal'
+                            : 'bg-bg-surface border-border-subtle hover:border-teal'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() =>
+                            toggleSuggestedObligation(s.title, s.owner)
+                          }
+                          className="mt-0.5 accent-teal"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-text-primary">
+                            {s.title}
+                          </div>
+                          <div className="text-xs text-text-tertiary">
+                            Owner: {s.owner}
+                          </div>
+                        </div>
+                      </label>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          )}
+
+          <div>
+            <h4 className="text-sm font-semibold text-text-primary mb-2">
+              Add custom obligation
+            </h4>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={customObligationTitle}
+                onChange={(e) => setCustomObligationTitle(e.target.value)}
+                placeholder="e.g. Submit annual sustainability report"
+                className="flex-1 bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              />
+              <Button
+                variant="secondary"
+                icon={Plus}
+                onClick={addCustomObligation}
+                disabled={!customObligationTitle.trim()}
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+
+          {draft.obligations.length > 0 && (
+            <div>
+              <h4 className="text-sm font-semibold text-text-primary mb-2">
+                Selected obligations ({draft.obligations.length})
+              </h4>
+              <div className="border border-border-subtle rounded-md overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider text-xs">
+                    <tr>
+                      <th className="text-left px-3 py-2">Title</th>
+                      <th className="text-left px-3 py-2">Owner</th>
+                      <th className="text-left px-3 py-2 whitespace-nowrap">
+                        Due date
+                      </th>
+                      <th className="text-right px-3 py-2 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {draft.obligations.map((o, i) => (
+                      <tr key={i} className="border-t border-border-subtle">
+                        <td className="px-3 py-2 text-text-primary">
+                          {o.title}
+                        </td>
+                        <td className="px-3 py-2">
+                          <select
+                            value={o.owner}
+                            onChange={(e) =>
+                              updateObligation(
+                                i,
+                                'owner',
+                                e.target.value as DraftObligation['owner'],
+                              )
+                            }
+                            className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-teal"
+                          >
+                            <option value="Buyer">Buyer</option>
+                            <option value="Supplier">Supplier</option>
+                            <option value="Both">Both</option>
+                          </select>
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="date"
+                            value={o.dueDate}
+                            onChange={(e) =>
+                              updateObligation(i, 'dueDate', e.target.value)
+                            }
+                            className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-teal"
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => removeObligation(i)}
+                            className="text-text-tertiary hover:text-danger text-xs"
+                            aria-label="Remove obligation"
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
+      id: 'review',
+      title: 'Review & Submit',
+      shortTitle: 'Review',
+      description: 'Check the details before creating the contract draft.',
+      content: (
+        <div className="space-y-5 text-sm">
+          <ReviewSection
+            label="Basics"
+            onEdit={() => setWizardStep(0)}
+            rows={[
+              ['Title', draft.title || '—'],
+              ['Type', draft.type || '—'],
+              [
+                'Supplier',
+                draft.supplierId
+                  ? (supplierById.get(draft.supplierId)?.name ??
+                    draft.supplierId)
+                  : '—',
+              ],
+              ['Category', draft.category || '—'],
+              ['Brands', draft.brands.join(', ') || '—'],
+            ]}
+          />
+          <ReviewSection
+            label="Terms & Duration"
+            onEdit={() => setWizardStep(1)}
+            rows={[
+              ['Start date', draft.startDate || '—'],
+              ['End date', draft.endDate || '—'],
+              ['Auto-renewal', draft.autoRenewal ? 'Yes' : 'No'],
+              ...(draft.autoRenewal
+                ? ([['Notice required', `${draft.noticeRequiredDays} days`]] as [
+                    string,
+                    React.ReactNode,
+                  ][])
+                : []),
+              [
+                'Value',
+                draft.value ? formatIDR(Number(draft.value)) : '—',
+              ],
+              ['Payment terms', draft.paymentTerms],
+              ['Incoterms', draft.incoterms],
+            ]}
+          />
+          <ReviewSection
+            label="Obligations"
+            onEdit={() => setWizardStep(2)}
+            rows={[
+              [
+                'Count',
+                `${draft.obligations.length} obligation${draft.obligations.length === 1 ? '' : 's'}`,
+              ],
+              [
+                'Titles',
+                draft.obligations.map((o) => o.title).join(', ') || '—',
+              ],
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
 
   const obligationsForSelected = useMemo<ContractObligation[]>(() => {
     if (!selectedContract) return [];
@@ -385,7 +1118,7 @@ const BuyerContracts: React.FC = () => {
               { label: 'Export', icon: FileSpreadsheet },
               { label: 'Templates', icon: ScrollText },
             ]}
-            primary={{ label: 'New Contract', icon: Plus }}
+            primary={{ label: 'New Contract', icon: Plus, onClick: openWizard }}
           />
         }
       />
@@ -949,6 +1682,20 @@ const BuyerContracts: React.FC = () => {
           </div>
         )}
       </SidePanel>
+
+      {wizardOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.4)]">
+          <Wizard
+            steps={wizardSteps}
+            currentStep={wizardStep}
+            onStepChange={setWizardStep}
+            onCancel={closeWizard}
+            onComplete={submitWizard}
+            isStepValid={isStepValid}
+            completeLabel="Create Contract"
+          />
+        </div>
+      )}
     </AppShellV2>
   );
 };
