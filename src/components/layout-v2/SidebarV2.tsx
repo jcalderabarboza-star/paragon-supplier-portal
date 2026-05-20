@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -19,8 +19,7 @@ import {
   MessageCircle,
   LucideIcon,
 } from 'lucide-react';
-
-type Persona = 'buyer' | 'supplier';
+import { usePersona } from '../../context/PersonaContext';
 
 interface NavItem {
   label: string;
@@ -110,7 +109,7 @@ const SidebarV2: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = `${location.pathname}`;
-  const [persona, setPersona] = useState<Persona>('buyer');
+  const { persona, setPersona } = usePersona();
 
   const groups = persona === 'buyer' ? BUYER_NAV : SUPPLIER_NAV;
 
