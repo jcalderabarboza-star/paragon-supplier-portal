@@ -1186,6 +1186,10 @@ const validateAgreements = (form: FormState): Record<string, string> => {
 };
 
 const SupplierRegistrationV2: React.FC = () => {
+  // Two-stage selection: pendingRequestType is what the card click sets (drives info banner);
+  // confirmedRequestType is what Continue commits (drives wizard mount).
+  const [pendingRequestType, setPendingRequestType] =
+    useState<RequestType | null>(null);
   const [requestType, setRequestType] = useState<RequestType | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [form, setForm] = useState<FormState>(emptyForm);
@@ -1204,15 +1208,18 @@ const SupplierRegistrationV2: React.FC = () => {
   };
 
   const handleSelectRequestType = (t: RequestType) => {
-    setRequestType(t);
+    setPendingRequestType(t);
   };
 
   const handleContinueFromTypeSelector = () => {
+    if (!pendingRequestType) return;
     resetWizardState();
+    setRequestType(pendingRequestType);
   };
 
   const changeRequestType = () => {
     setRequestType(null);
+    setPendingRequestType(null);
     resetWizardState();
   };
 
@@ -1403,7 +1410,7 @@ const SupplierRegistrationV2: React.FC = () => {
             <SuccessScreen appNumber={appNumber} />
           ) : requestType === null ? (
             <RequestTypeSelector
-              value={requestType}
+              value={pendingRequestType}
               onChange={handleSelectRequestType}
               onContinue={handleContinueFromTypeSelector}
             />
