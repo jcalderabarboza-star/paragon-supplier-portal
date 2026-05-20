@@ -55,9 +55,9 @@ const BUYER_SECTIONS: NavSection[] = [
     items: [
       { text: 'Purchase Requisition', icon: <ClipboardList size={16} />, path: '/buyer/purchase-requisition' },
       { text: 'Purchase Orders',      icon: <ShoppingCart size={16} />,    path: '/v1/buyer/orders' },
-      { text: 'Inventory Visibility', icon: <Package size={16} />,         path: '/buyer/inventory' },
-      { text: 'Shipments & ASN',      icon: <Ship size={16} />,            path: '/buyer/shipments' },
-      { text: 'Goods Receipt (GR)',   icon: <ClipboardCheck size={16} />,  path: '/buyer/goods-receipt' },
+      { text: 'Inventory Visibility', icon: <Package size={16} />,         path: '/v1/buyer/inventory' },
+      { text: 'Shipments & ASN',      icon: <Ship size={16} />,            path: '/v1/buyer/shipments' },
+      { text: 'Goods Receipt (GR)',   icon: <ClipboardCheck size={16} />,  path: '/v1/buyer/goods-receipt' },
     ],
   },
   {
