@@ -72,6 +72,7 @@ import SupplierRFQsV2 from '../pages-v2/SupplierRFQs';
 import SupplierShipments from '../pages-v2/SupplierShipments';
 import SupplierInvoicesV2 from '../pages-v2/SupplierInvoices';
 import SupplierInventoryV2 from '../pages-v2/SupplierInventory';
+import SupplierRegistrationV2 from '../pages-v2/SupplierRegistration';
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -84,7 +85,8 @@ const AppRouter: React.FC = () => {
         <PersonaProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<SupplierRegistration />} />
+          <Route path="/register" element={<SupplierRegistrationV2 />} />
+          <Route path="/v1/register" element={<SupplierRegistration />} />
           <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
           <Route path="/buyer/suppliers" element={<BuyerSuppliers />} />
           <Route path="/buyer/suppliers/:id" element={<BuyerSupplierProfile />} />
