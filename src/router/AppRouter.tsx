@@ -57,6 +57,8 @@ import BuyerShipments from '../pages-v2/BuyerShipments';
 import BuyerGoodsReceipt from '../pages-v2/BuyerGoodsReceipt';
 import BuyerDiscovery from '../pages-v2/BuyerDiscovery';
 import BuyerRequisitions from '../pages-v2/BuyerRequisitions';
+import BuyerInvoices from '../pages-v2/BuyerInvoices';
+import BuyerScorecard from '../pages-v2/BuyerScorecard';
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -83,6 +85,8 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/goods-receipt" element={<BuyerGoodsReceipt />} />
           <Route path="/buyer/discovery" element={<BuyerDiscovery />} />
           <Route path="/buyer/purchase-requisition" element={<BuyerRequisitions />} />
+          <Route path="/buyer/invoices" element={<BuyerInvoices />} />
+          <Route path="/buyer/scorecard" element={<BuyerScorecard />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -100,8 +104,8 @@ const AppRouter: React.FC = () => {
             <Route path="v1/buyer/contracts"     element={<ContractManagement />} />
             <Route path="buyer/whatsapp"         element={<WhatsAppHub />} />
             <Route path="buyer/analytics"        element={<Analytics />} />
-            <Route path="buyer/invoices"         element={<InvoicePayment />} />
-            <Route path="buyer/scorecard"        element={<SupplierScorecard />} />
+            <Route path="v1/buyer/invoices"      element={<InvoicePayment />} />
+            <Route path="v1/buyer/scorecard"     element={<SupplierScorecard />} />
             <Route path="buyer/risk"             element={<SupplyRisk />} />
             <Route path="buyer/compliance"       element={<Compliance />} />
 
