@@ -100,6 +100,7 @@ const SUPPLIER_NAV: NavGroup[] = [
     label: 'INTELLIGENCE',
     items: [
       { label: 'Performance', icon: BarChart2, path: '/supplier/performance' },
+      { label: 'WhatsApp Hub', icon: MessageCircle, path: '/supplier/whatsapp' },
     ],
   },
 ];

@@ -63,6 +63,10 @@ import BuyerAnalytics from '../pages-v2/BuyerAnalytics';
 import BuyerRisk from '../pages-v2/BuyerRisk';
 import BuyerWhatsAppHub from '../pages-v2/BuyerWhatsAppHub';
 import BuyerCompliance from '../pages-v2/BuyerCompliance';
+import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
+import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
+import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
+import SupplierWhatsApp from '../pages-v2/SupplierWhatsApp';
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -95,6 +99,10 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/risk" element={<BuyerRisk />} />
           <Route path="/buyer/whatsapp" element={<BuyerWhatsAppHub />} />
           <Route path="/buyer/compliance" element={<BuyerCompliance />} />
+          <Route path="/supplier/dashboard" element={<SupplierDashboardV2 />} />
+          <Route path="/supplier/storefront" element={<SupplierMyStorefront />} />
+          <Route path="/supplier/documents" element={<SupplierDocumentsV2 />} />
+          <Route path="/supplier/whatsapp" element={<SupplierWhatsApp />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -122,17 +130,17 @@ const AppRouter: React.FC = () => {
             <Route path="v1/marketplace/supplier/:id" element={<SupplierStorefront />} />
 
             {/* ── Supplier routes ── */}
-            <Route path="supplier/dashboard"    element={<SupplierDashboard />} />
+            <Route path="v1/supplier/dashboard"  element={<SupplierDashboard />} />
             <Route path="supplier/rfqs"         element={<SupplierRFQs />} />
             <Route path="supplier/orders"       element={<MyOrders />} />
             <Route path="supplier/ship-notices" element={<ShipNotices />} />
             <Route path="supplier/asn"          element={<CreateASN />} />
             <Route path="supplier/invoices"     element={<Invoices />} />
             <Route path="supplier/inventory"    element={<MyInventory />} />
-            <Route path="supplier/documents"    element={<MyDocuments />} />
+            <Route path="v1/supplier/documents"  element={<MyDocuments />} />
             <Route path="supplier/performance"  element={<MyPerformance />} />
-            <Route path="supplier/storefront"   element={<MyStorefront />} />
-            <Route path="supplier/whatsapp"     element={<WhatsAppSimulator />} />
+            <Route path="v1/supplier/storefront" element={<MyStorefront />} />
+            <Route path="v1/supplier/whatsapp"   element={<WhatsAppSimulator />} />
 
             <Route path="*" element={<Navigate to="/buyer/dashboard" replace />} />
           </Route>
