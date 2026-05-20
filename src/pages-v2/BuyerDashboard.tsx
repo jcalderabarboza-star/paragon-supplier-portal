@@ -89,7 +89,7 @@ const SUPPLIER_HEALTH: SupplierHealthRow[] = [
 
 const GRADE_COLOR: Record<SupplierHealthRow['grade'], string> = {
   A: '#107E3E',
-  B: '#0A6ED1',
+  B: '#1E5BAE',
   C: '#B45309',
   D: '#BB0000',
 };

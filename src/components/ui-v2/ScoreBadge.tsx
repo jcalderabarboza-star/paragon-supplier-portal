@@ -23,7 +23,7 @@ const tone = (score: number): ToneStyle => {
   if (score < 75)
     return { text: 'text-warning', stroke: '#B45309', bg: 'bg-warning-soft' };
   if (score < 90)
-    return { text: 'text-info', stroke: '#0A6ED1', bg: 'bg-info-soft' };
+    return { text: 'text-info', stroke: '#1E5BAE', bg: 'bg-info-soft' };
   return { text: 'text-success', stroke: '#107E3E', bg: 'bg-success-soft' };
 };
 
