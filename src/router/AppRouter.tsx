@@ -54,6 +54,7 @@ import BuyerSourcing from '../pages-v2/BuyerSourcing';
 import BuyerContracts from '../pages-v2/BuyerContracts';
 import BuyerInventory from '../pages-v2/BuyerInventory';
 import BuyerShipments from '../pages-v2/BuyerShipments';
+import BuyerGoodsReceipt from '../pages-v2/BuyerGoodsReceipt';
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -77,6 +78,7 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/contracts" element={<BuyerContracts />} />
           <Route path="/buyer/inventory" element={<BuyerInventory />} />
           <Route path="/buyer/shipments" element={<BuyerShipments />} />
+          <Route path="/buyer/goods-receipt" element={<BuyerGoodsReceipt />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -89,7 +91,7 @@ const AppRouter: React.FC = () => {
             <Route path="v1/buyer/suppliers/:id" element={<SupplierProfile />} />
             <Route path="v1/buyer/inventory"     element={<InventoryVisibility />} />
             <Route path="v1/buyer/shipments"     element={<ShipmentTracking />} />
-            <Route path="buyer/goods-receipt"    element={<GoodsReceipt />} />
+            <Route path="v1/buyer/goods-receipt" element={<GoodsReceipt />} />
             <Route path="buyer/discovery"        element={<SupplierDiscovery />} />
             <Route path="v1/buyer/contracts"     element={<ContractManagement />} />
             <Route path="buyer/whatsapp"         element={<WhatsAppHub />} />

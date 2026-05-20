@@ -1,0 +1,785 @@
+import React, { useMemo, useState } from 'react';
+import {
+  ClipboardCheck,
+  AlertTriangle,
+  CheckCircle2,
+  TrendingDown,
+  ChevronRight,
+  FileSpreadsheet,
+  Plus,
+  FlaskConical,
+} from 'lucide-react';
+import AppShellV2 from '../components/layout-v2/AppShellV2';
+import PageHeader from '../components/ui-v2/PageHeader';
+import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import KpiCard from '../components/ui-v2/KpiCard';
+import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
+import SubTabs from '../components/ui-v2/SubTabs';
+import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
+import SearchBar from '../components/ui-v2/SearchBar';
+import StatusPill from '../components/ui-v2/StatusPill';
+import Table from '../components/ui-v2/Table';
+import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
+import TableRow from '../components/ui-v2/TableRow';
+import TableCell from '../components/ui-v2/TableCell';
+import SidePanel from '../components/ui-v2/SidePanel';
+import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
+import Button from '../components/ui-v2/Button';
+import { useToast } from '../hooks/useToast';
+import {
+  mockGoodsReceipts as mockGRSeed,
+  GoodsReceipt,
+  GRStatus,
+  InspectionResult,
+} from '../data/mockGoodsReceipts';
+import { mockSuppliers } from '../data/mockSuppliers';
+
+const TODAY = '2026-05-20';
+
+type GroupTab =
+  | 'all'
+  | 'pending'
+  | 'under-inspection'
+  | 'approved'
+  | 'hold'
+  | 'rejected'
+  | 'posted';
+
+type DateFilter = 'today' | 'week' | 'month' | '30d' | 'all';
+
+const COUNTRY_FLAG: Record<string, string> = {
+  ID: 'ID',
+  MY: 'MY',
+  DE: 'DE',
+  FR: 'FR',
+  CN: 'CN',
+  SG: 'SG',
+  IN: 'IN',
+};
+
+const STATUS_VARIANT: Record<
+  GRStatus,
+  'success' | 'warning' | 'danger' | 'info' | 'neutral'
+> = {
+  'Pending Inspection': 'neutral',
+  'Under Inspection': 'info',
+  'Quality Hold': 'danger',
+  Approved: 'success',
+  'Partially Approved': 'warning',
+  Rejected: 'danger',
+  'Posted to SAP': 'success',
+};
+
+const CHECK_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'neutral'> = {
+  Pass: 'success',
+  Fail: 'danger',
+  Pending: 'warning',
+  'N/A': 'neutral',
+};
+
+const supplierById = new Map(mockSuppliers.map((s) => [s.id, s]));
+
+const formatNumber = (n: number): string =>
+  new Intl.NumberFormat('id-ID').format(n);
+
+const formatDate = (iso?: string): string => {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const todayMs = new Date(TODAY).getTime();
+const isInRange = (iso: string, filter: DateFilter): boolean => {
+  if (filter === 'all') return true;
+  const t = new Date(iso).getTime();
+  const diff = todayMs - t;
+  if (filter === 'today') return iso === TODAY;
+  if (filter === 'week') return diff >= 0 && diff <= 7 * DAY_MS;
+  if (filter === 'month') return diff >= 0 && diff <= 31 * DAY_MS;
+  if (filter === '30d') return diff >= 0 && diff <= 30 * DAY_MS;
+  return true;
+};
+
+const matchesGroup = (s: GRStatus, g: GroupTab): boolean => {
+  if (g === 'all') return true;
+  if (g === 'pending') return s === 'Pending Inspection';
+  if (g === 'under-inspection') return s === 'Under Inspection';
+  if (g === 'approved') return s === 'Approved' || s === 'Partially Approved';
+  if (g === 'hold') return s === 'Quality Hold';
+  if (g === 'rejected') return s === 'Rejected';
+  if (g === 'posted') return s === 'Posted to SAP';
+  return true;
+};
+
+const totals = (results: InspectionResult[]) =>
+  results.reduce(
+    (acc, r) => ({
+      received: acc.received + r.qtyReceived,
+      accepted: acc.accepted + r.qtyAccepted,
+      rejected: acc.rejected + r.qtyRejected,
+    }),
+    { received: 0, accepted: 0, rejected: 0 }
+  );
+
+interface BuyerGoodsReceiptProps {
+  externalGRs?: GoodsReceipt[];
+  onNewGR?: () => void;
+}
+
+const BuyerGoodsReceipt: React.FC<BuyerGoodsReceiptProps> = ({
+  externalGRs,
+  onNewGR,
+}) => {
+  const { toast } = useToast();
+  const [tab, setTab] = useState<GroupTab>('all');
+  const [search, setSearch] = useState('');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [localGRs] = useState<GoodsReceipt[]>(mockGRSeed);
+
+  const allGRs = externalGRs ?? localGRs;
+
+  const counts = useMemo(() => {
+    let pending = 0;
+    let underInspection = 0;
+    let approved = 0;
+    let hold = 0;
+    let rejected = 0;
+    let posted = 0;
+    for (const g of allGRs) {
+      if (g.status === 'Pending Inspection') pending++;
+      else if (g.status === 'Under Inspection') underInspection++;
+      else if (g.status === 'Approved' || g.status === 'Partially Approved')
+        approved++;
+      else if (g.status === 'Quality Hold') hold++;
+      else if (g.status === 'Rejected') rejected++;
+      else if (g.status === 'Posted to SAP') posted++;
+    }
+    return {
+      all: allGRs.length,
+      pending,
+      underInspection,
+      approved,
+      hold,
+      rejected,
+      posted,
+    };
+  }, [allGRs]);
+
+  const approvedToday = useMemo(
+    () =>
+      allGRs.filter(
+        (g) =>
+          (g.status === 'Approved' || g.status === 'Partially Approved') &&
+          g.receivedDate === TODAY
+      ).length,
+    [allGRs]
+  );
+
+  const rejectionRate = useMemo(() => {
+    let received = 0;
+    let rejected = 0;
+    for (const g of allGRs) {
+      if (!isInRange(g.receivedDate, '30d')) continue;
+      const t = totals(g.inspectionResults);
+      received += t.received;
+      rejected += t.rejected;
+    }
+    if (received === 0) return 0;
+    return (rejected / received) * 100;
+  }, [allGRs]);
+
+  const filtered = useMemo(() => {
+    return allGRs.filter((g) => {
+      if (!matchesGroup(g.status, tab)) return false;
+      if (!isInRange(g.receivedDate, dateFilter)) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        if (
+          !g.grNumber.toLowerCase().includes(q) &&
+          !g.asnNumber.toLowerCase().includes(q) &&
+          !g.poNumber.toLowerCase().includes(q) &&
+          !g.supplierName.toLowerCase().includes(q)
+        )
+          return false;
+      }
+      return true;
+    });
+  }, [allGRs, tab, dateFilter, search]);
+
+  const selected = selectedId
+    ? allGRs.find((g) => g.id === selectedId) ?? null
+    : null;
+  const selectedSupplier = selected
+    ? supplierById.get(selected.supplierId)
+    : undefined;
+
+  const buildTimeline = (g: GoodsReceipt): TimelineEvent[] => {
+    const order = (s: GRStatus): number => {
+      switch (s) {
+        case 'Pending Inspection':
+          return 1;
+        case 'Under Inspection':
+          return 2;
+        case 'Quality Hold':
+          return 3;
+        case 'Approved':
+        case 'Partially Approved':
+        case 'Rejected':
+          return 4;
+        case 'Posted to SAP':
+          return 5;
+        default:
+          return 0;
+      }
+    };
+    const cur = order(g.status);
+    const hasLab = g.inspectionResults.some((r) => r.labResultId);
+    const at = (n: number): 'completed' | 'current' | 'pending' =>
+      n < cur ? 'completed' : n === cur ? 'current' : 'pending';
+
+    return [
+      {
+        id: 't1',
+        title: 'Received',
+        timestamp: formatDate(g.receivedDate),
+        status: 'completed',
+      },
+      {
+        id: 't2',
+        title: 'Inspection Started',
+        status: at(2),
+      },
+      {
+        id: 't3',
+        title: 'Lab Results Received',
+        timestamp: hasLab
+          ? g.inspectionResults.find((r) => r.labResultId)?.labResultId
+          : 'No lab required',
+        status: hasLab ? (cur >= 3 ? 'completed' : 'current') : 'pending',
+      },
+      {
+        id: 't4',
+        title: 'Disposition Decision',
+        timestamp: g.disposition !== 'Pending' ? g.disposition : undefined,
+        status: at(4),
+      },
+      {
+        id: 't5',
+        title: 'Posted to SAP',
+        timestamp: g.sapMaterialDoc,
+        status: g.status === 'Posted to SAP' ? 'completed' : 'pending',
+      },
+    ];
+  };
+
+  const footerForStatus = (g: GoodsReceipt): React.ReactNode => {
+    switch (g.status) {
+      case 'Pending Inspection':
+        return (
+          <Button
+            variant="primary"
+            onClick={() => {
+              setSelectedId(null);
+              onNewGR?.();
+            }}
+          >
+            Start inspection
+          </Button>
+        );
+      case 'Under Inspection':
+        return (
+          <Button
+            variant="primary"
+            onClick={() =>
+              toast({
+                variant: 'info',
+                title: 'Inspection results',
+                description: 'Submit form will open in a future release.',
+              })
+            }
+          >
+            Submit inspection results
+          </Button>
+        );
+      case 'Quality Hold':
+        return (
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() =>
+                toast({
+                  variant: 'info',
+                  title: 'Retest requested',
+                  description: 'Lab retest queued.',
+                })
+              }
+            >
+              Request lab retest
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() =>
+                toast({
+                  variant: 'warning',
+                  title: 'Hold override requested',
+                  description: 'Awaiting QC manager approval.',
+                })
+              }
+            >
+              Override hold
+            </Button>
+          </div>
+        );
+      case 'Approved':
+      case 'Partially Approved':
+        return (
+          <Button
+            variant="primary"
+            onClick={() =>
+              toast({
+                variant: 'success',
+                title: 'Posted to SAP',
+                description: `${g.grNumber} forwarded to SAP MM.`,
+              })
+            }
+          >
+            Post to SAP
+          </Button>
+        );
+      case 'Posted to SAP':
+        return (
+          <Button
+            variant="secondary"
+            onClick={() =>
+              toast({
+                variant: 'info',
+                title: 'Opening SAP',
+                description: g.sapMaterialDoc ?? 'Material document',
+              })
+            }
+          >
+            View in SAP
+          </Button>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const handleExport = () =>
+    toast({
+      variant: 'info',
+      title: 'Export queued',
+      description: 'Goods receipts export will download shortly.',
+    });
+
+  const handleLabResults = () =>
+    toast({
+      variant: 'info',
+      title: 'Lab results overview',
+      description: 'Lab dashboard will open in a future release.',
+    });
+
+  const handleNewGR = () => {
+    if (onNewGR) onNewGR();
+    else
+      toast({
+        variant: 'info',
+        title: 'New GR',
+        description: 'Inspection wizard will open in a future release.',
+      });
+  };
+
+  return (
+    <AppShellV2>
+      <PageHeader
+        breadcrumb={['TRANSACT', 'GOODS RECEIPT & QC']}
+        title="Goods Receipt & Quality Control"
+        subtitle="Receipt posting, inspection workflows, lab results, and disposition decisions."
+        actions={
+          <BulkActionsBar
+            actions={[
+              {
+                label: 'Export',
+                icon: FileSpreadsheet,
+                onClick: handleExport,
+              },
+              {
+                label: 'Lab Results',
+                icon: FlaskConical,
+                onClick: handleLabResults,
+              },
+            ]}
+            primary={{ label: 'New GR', icon: Plus, onClick: handleNewGR }}
+          />
+        }
+      />
+
+      <PageMetaLine className="mb-6">
+        {counts.all} GRs this month · last posted {formatDate(TODAY)}
+      </PageMetaLine>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <KpiCard
+          eyebrow="Pending Inspection"
+          value={formatNumber(counts.pending)}
+          icon={ClipboardCheck}
+          subtitle="Awaiting QC start"
+        />
+        <KpiCard
+          eyebrow="On Quality Hold"
+          value={
+            <span className="text-danger">{formatNumber(counts.hold)}</span>
+          }
+          icon={AlertTriangle}
+          subtitle="Quarantined / retest"
+        />
+        <KpiCard
+          eyebrow="Approved Today"
+          value={formatNumber(approvedToday)}
+          icon={CheckCircle2}
+          subtitle={formatDate(TODAY)}
+        />
+        <KpiCard
+          eyebrow="Rejection Rate (30d)"
+          value={`${rejectionRate.toFixed(1)}%`}
+          icon={TrendingDown}
+          subtitle="Qty rejected / received"
+        />
+      </div>
+
+      <SubTabs<GroupTab>
+        options={[
+          { id: 'all', label: 'All', count: counts.all },
+          { id: 'pending', label: 'Pending', count: counts.pending },
+          {
+            id: 'under-inspection',
+            label: 'Under Inspection',
+            count: counts.underInspection,
+          },
+          { id: 'approved', label: 'Approved', count: counts.approved },
+          { id: 'hold', label: 'Quality Hold', count: counts.hold },
+          { id: 'rejected', label: 'Rejected', count: counts.rejected },
+          { id: 'posted', label: 'Posted', count: counts.posted },
+        ]}
+        value={tab}
+        onChange={setTab}
+        className="mb-6"
+      />
+
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <div className="flex-1 min-w-[280px]">
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by GR, ASN, PO, or supplier..."
+          />
+        </div>
+        <FilterChipsBar<DateFilter>
+          options={[
+            { id: 'today', label: 'Today' },
+            { id: 'week', label: 'This week' },
+            { id: 'month', label: 'This month' },
+            { id: '30d', label: 'Last 30 days' },
+            { id: 'all', label: 'All time' },
+          ]}
+          value={dateFilter}
+          onChange={setDateFilter}
+        />
+      </div>
+
+      <div className="border border-border-subtle rounded-lg bg-white overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableHeaderCell>GR / Refs</TableHeaderCell>
+            <TableHeaderCell>Supplier</TableHeaderCell>
+            <TableHeaderCell>Received</TableHeaderCell>
+            <TableHeaderCell>Received By</TableHeaderCell>
+            <TableHeaderCell>Items</TableHeaderCell>
+            <TableHeaderCell>Status</TableHeaderCell>
+            <TableHeaderCell>Disposition</TableHeaderCell>
+            <TableHeaderCell>SAP Doc</TableHeaderCell>
+            <TableHeaderCell> </TableHeaderCell>
+          </TableHeader>
+          <tbody>
+            {filtered.map((g) => {
+              const sup = supplierById.get(g.supplierId);
+              return (
+                <TableRow
+                  key={g.id}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedId(g.id)}
+                >
+                  <TableCell>
+                    <div className="font-semibold text-text-primary">
+                      {g.grNumber}
+                    </div>
+                    <div className="text-xs text-text-tertiary font-mono">
+                      {g.asnNumber} · {g.poNumber}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-text-primary">
+                      {g.supplierName}
+                    </div>
+                    <div className="text-xs text-text-tertiary">
+                      {sup
+                        ? COUNTRY_FLAG[sup.country] ?? sup.country
+                        : '—'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-text-secondary">
+                      {formatDate(g.receivedDate)}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-text-secondary">
+                      {g.receivedBy}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-text-primary">
+                      {g.inspectionResults.length} item
+                      {g.inspectionResults.length === 1 ? '' : 's'}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <StatusPill variant={STATUS_VARIANT[g.status]}>
+                      {g.status}
+                    </StatusPill>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-text-secondary">
+                      {g.disposition}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-mono text-xs text-text-secondary">
+                      {g.sapMaterialDoc ?? '—'}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <ChevronRight
+                      size={16}
+                      className="text-text-tertiary inline"
+                    />
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr>
+                <td
+                  colSpan={9}
+                  className="py-10 text-center text-sm text-text-tertiary"
+                >
+                  No goods receipts match the current filters.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </Table>
+      </div>
+
+      <SidePanel
+        open={!!selected}
+        onClose={() => setSelectedId(null)}
+        title={selected ? selected.grNumber : ''}
+        footerActions={selected ? footerForStatus(selected) : null}
+      >
+        {selected && (
+          <div className="flex flex-col gap-6">
+            <section>
+              <div className="text-label text-text-tertiary uppercase mb-2">
+                Key facts
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <div className="text-xs text-text-tertiary">GR #</div>
+                  <div className="font-semibold text-text-primary">
+                    {selected.grNumber}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-text-tertiary">ASN #</div>
+                  <div className="font-mono text-text-primary">
+                    {selected.asnNumber}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-text-tertiary">PO #</div>
+                  <div className="font-mono text-text-primary">
+                    {selected.poNumber}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-text-tertiary">
+                    SAP Material Doc
+                  </div>
+                  <div className="font-mono text-text-primary">
+                    {selected.sapMaterialDoc ?? '—'}
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <div className="text-xs text-text-tertiary">Supplier</div>
+                  <div className="text-text-primary">
+                    {selected.supplierName}{' '}
+                    {selectedSupplier && (
+                      <span className="text-xs text-text-tertiary">
+                        ·{' '}
+                        {COUNTRY_FLAG[selectedSupplier.country] ??
+                          selectedSupplier.country}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-text-tertiary">
+                    Received Date
+                  </div>
+                  <div className="text-text-primary">
+                    {formatDate(selected.receivedDate)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-text-tertiary">Received By</div>
+                  <div className="text-text-primary">{selected.receivedBy}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-text-tertiary">Status</div>
+                  <StatusPill variant={STATUS_VARIANT[selected.status]}>
+                    {selected.status}
+                  </StatusPill>
+                </div>
+                <div>
+                  <div className="text-xs text-text-tertiary">Disposition</div>
+                  <div className="text-text-primary">{selected.disposition}</div>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <div className="text-label text-text-tertiary uppercase mb-2">
+                Line items
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableHeaderCell>Material</TableHeaderCell>
+                    <TableHeaderCell className="text-right">
+                      Exp
+                    </TableHeaderCell>
+                    <TableHeaderCell className="text-right">
+                      Recv
+                    </TableHeaderCell>
+                    <TableHeaderCell className="text-right">
+                      Acc
+                    </TableHeaderCell>
+                    <TableHeaderCell className="text-right">
+                      Rej
+                    </TableHeaderCell>
+                    <TableHeaderCell>Checks</TableHeaderCell>
+                  </TableHeader>
+                  <tbody>
+                    {selected.inspectionResults.map((r, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <div className="font-mono text-xs text-text-primary">
+                            {r.materialCode}
+                          </div>
+                          <div className="text-xs text-text-tertiary truncate max-w-[180px]">
+                            {r.description}
+                          </div>
+                          {r.rejectionReason && (
+                            <div className="text-xs text-danger mt-1">
+                              {r.rejectionReason}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right text-xs">
+                          {formatNumber(r.qtyExpected)}
+                        </TableCell>
+                        <TableCell className="text-right text-xs">
+                          {formatNumber(r.qtyReceived)}
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-success">
+                          {formatNumber(r.qtyAccepted)}
+                        </TableCell>
+                        <TableCell className="text-right text-xs text-danger">
+                          {formatNumber(r.qtyRejected)}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            <StatusPill
+                              variant={CHECK_VARIANT[r.visualCheck] ?? 'neutral'}
+                            >
+                              V
+                            </StatusPill>
+                            <StatusPill
+                              variant={
+                                CHECK_VARIANT[r.packagingCheck] ?? 'neutral'
+                              }
+                            >
+                              P
+                            </StatusPill>
+                            {r.halalSealCheck && (
+                              <StatusPill
+                                variant={
+                                  CHECK_VARIANT[r.halalSealCheck] ?? 'neutral'
+                                }
+                              >
+                                H
+                              </StatusPill>
+                            )}
+                            {r.bpomLotCheck && (
+                              <StatusPill
+                                variant={
+                                  CHECK_VARIANT[r.bpomLotCheck] ?? 'neutral'
+                                }
+                              >
+                                B
+                              </StatusPill>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+              <div className="text-xs text-text-tertiary mt-2">
+                V = Visual · P = Packaging · H = Halal Seal · B = BPOM Lot
+              </div>
+            </section>
+
+            {selected.notes && (
+              <section>
+                <div className="text-label text-text-tertiary uppercase mb-2">
+                  Inspection notes
+                </div>
+                <p className="text-sm text-text-secondary border border-border-subtle rounded-md p-3 bg-bg-hover">
+                  {selected.notes}
+                </p>
+              </section>
+            )}
+
+            <section>
+              <div className="text-label text-text-tertiary uppercase mb-2">
+                Disposition workflow
+              </div>
+              <Timeline events={buildTimeline(selected)} />
+            </section>
+          </div>
+        )}
+      </SidePanel>
+    </AppShellV2>
+  );
+};
+
+export default BuyerGoodsReceipt;
