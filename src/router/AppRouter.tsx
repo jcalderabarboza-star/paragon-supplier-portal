@@ -52,10 +52,15 @@ import SupplierStorefrontV2 from '../pages-v2/SupplierStorefront';
 import BuyerOrders from '../pages-v2/BuyerOrders';
 import BuyerSourcing from '../pages-v2/BuyerSourcing';
 
+import { ToastProvider } from '../hooks/useToast';
+import Toaster from '../components/ui-v2/Toaster';
+
 const AppRouter: React.FC = () => {
   return (
     <HashRouter>
-      <PersonaProvider>
+      <ToastProvider>
+        <Toaster />
+        <PersonaProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<SupplierRegistration />} />
@@ -108,7 +113,8 @@ const AppRouter: React.FC = () => {
             <Route path="*" element={<Navigate to="/buyer/dashboard" replace />} />
           </Route>
         </Routes>
-      </PersonaProvider>
+        </PersonaProvider>
+      </ToastProvider>
     </HashRouter>
   );
 };
