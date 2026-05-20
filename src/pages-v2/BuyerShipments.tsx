@@ -64,9 +64,9 @@ const STATUS_VARIANT: Record<
   'success' | 'warning' | 'danger' | 'info' | 'neutral'
 > = {
   'Pending ASN': 'neutral',
-  'ASN Received': 'info',
-  'In Transit': 'info',
-  'Arrived at Port': 'info',
+  'ASN Received': 'neutral',
+  'In Transit': 'neutral',
+  'Arrived at Port': 'neutral',
   'Customs Clearance': 'warning',
   'At Dock': 'warning',
   Unloading: 'warning',
