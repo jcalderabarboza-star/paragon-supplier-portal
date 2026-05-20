@@ -1,49 +1,9 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { PersonaProvider } from '../context/PersonaContext';
-import AppShell from '../components/layout/AppShell';
 import Login from '../pages/auth/Login';
 
-// Buyer pages
-import Dashboard from '../pages/buyer/Dashboard';
-import PurchaseOrders from '../pages/buyer/PurchaseOrders';
-import PurchaseRequisition from '../pages/buyer/PurchaseRequisition';
-import SupplierDirectory from '../pages/buyer/SupplierDirectory';
-import InventoryVisibility from '../pages/buyer/InventoryVisibility';
-import Analytics from '../pages/buyer/Analytics';
-import InvoicePayment from '../pages/buyer/InvoicePayment';
-import Sourcing from '../pages/buyer/Sourcing';
-import ShipmentTracking from '../pages/buyer/ShipmentTracking';
-import SupplierScorecard from '../pages/buyer/SupplierScorecard';
-import SupplyRisk from '../pages/buyer/SupplyRisk';
-import SupplierProfile from '../pages/buyer/SupplierProfile';
-import GoodsReceipt from '../pages/buyer/GoodsReceipt';
-import SupplierDiscovery from '../pages/buyer/SupplierDiscovery';
-import ContractManagement from '../pages/buyer/ContractManagement';
-import WhatsAppHub from '../pages/buyer/WhatsAppHub';
-import Compliance from '../pages/buyer/Compliance';
-
-// Marketplace pages
-import MarketplaceDiscovery from '../pages/marketplace/MarketplaceDiscovery';
-import SupplierStorefront from '../pages/marketplace/SupplierStorefront';
-
-// Supplier pages
-import SupplierDashboard from '../pages/supplier/SupplierDashboard';
-import MyOrders from '../pages/supplier/MyOrders';
-import ShipNotices from '../pages/supplier/ShipNotices';
-import CreateASN from '../pages/supplier/CreateASN';
-import Invoices from '../pages/supplier/Invoices';
-import MyInventory from '../pages/supplier/MyInventory';
-import MyDocuments from '../pages/supplier/MyDocuments';
-import MyPerformance from '../pages/supplier/MyPerformance';
-import SupplierRFQs from '../pages/supplier/SupplierRFQs';
-import MyStorefront from '../pages/supplier/MyStorefront';
-import WhatsAppSimulator from '../pages/supplier/WhatsAppSimulator';
-
-// Onboarding
-import SupplierRegistration from '../pages/onboarding/SupplierRegistration';
-
-// V2 pages (new design system — additive)
+// V2 pages (canonical)
 import BuyerDashboard from '../pages-v2/BuyerDashboard';
 import BuyerSuppliers from '../pages-v2/BuyerSuppliers';
 import BuyerSupplierProfile from '../pages-v2/BuyerSupplierProfile';
@@ -87,7 +47,6 @@ const AppRouter: React.FC = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<SupplierRegistrationV2 />} />
-          <Route path="/v1/register" element={<SupplierRegistration />} />
           <Route path="/buyer/dashboard" element={<BuyerDashboard />} />
           <Route path="/buyer/suppliers" element={<BuyerSuppliers />} />
           <Route path="/buyer/suppliers/:id" element={<BuyerSupplierProfile />} />
@@ -117,47 +76,8 @@ const AppRouter: React.FC = () => {
           <Route path="/supplier/invoices" element={<SupplierInvoicesV2 />} />
           <Route path="/supplier/inventory" element={<SupplierInventoryV2 />} />
           <Route path="/supplier/performance" element={<SupplierPerformance />} />
-          <Route path="/" element={<AppShell />}>
-            <Route index element={<Navigate to="/buyer/dashboard" replace />} />
-
-            {/* ── Buyer routes ── */}
-            <Route path="v1/buyer/dashboard"     element={<Dashboard />} />
-            <Route path="v1/buyer/purchase-requisition" element={<PurchaseRequisition />} />
-            <Route path="v1/buyer/orders"        element={<PurchaseOrders />} />
-            <Route path="v1/buyer/sourcing"      element={<Sourcing />} />
-            <Route path="v1/buyer/suppliers"     element={<SupplierDirectory />} />
-            <Route path="v1/buyer/suppliers/:id" element={<SupplierProfile />} />
-            <Route path="v1/buyer/inventory"     element={<InventoryVisibility />} />
-            <Route path="v1/buyer/shipments"     element={<ShipmentTracking />} />
-            <Route path="v1/buyer/goods-receipt" element={<GoodsReceipt />} />
-            <Route path="v1/buyer/discovery"     element={<SupplierDiscovery />} />
-            <Route path="v1/buyer/contracts"     element={<ContractManagement />} />
-            <Route path="v1/buyer/whatsapp"      element={<WhatsAppHub />} />
-            <Route path="v1/buyer/analytics"     element={<Analytics />} />
-            <Route path="v1/buyer/invoices"      element={<InvoicePayment />} />
-            <Route path="v1/buyer/scorecard"     element={<SupplierScorecard />} />
-            <Route path="v1/buyer/risk"          element={<SupplyRisk />} />
-            <Route path="v1/buyer/compliance"    element={<Compliance />} />
-
-            {/* ── Marketplace routes ── */}
-            <Route path="v1/marketplace"              element={<MarketplaceDiscovery />} />
-            <Route path="v1/marketplace/supplier/:id" element={<SupplierStorefront />} />
-
-            {/* ── Supplier routes ── */}
-            <Route path="v1/supplier/dashboard"  element={<SupplierDashboard />} />
-            <Route path="v1/supplier/rfqs"      element={<SupplierRFQs />} />
-            <Route path="v1/supplier/orders"    element={<MyOrders />} />
-            <Route path="v1/supplier/ship-notices" element={<ShipNotices />} />
-            <Route path="v1/supplier/asn"          element={<CreateASN />} />
-            <Route path="v1/supplier/invoices"     element={<Invoices />} />
-            <Route path="v1/supplier/inventory"    element={<MyInventory />} />
-            <Route path="v1/supplier/documents"  element={<MyDocuments />} />
-            <Route path="v1/supplier/performance" element={<MyPerformance />} />
-            <Route path="v1/supplier/storefront" element={<MyStorefront />} />
-            <Route path="v1/supplier/whatsapp"   element={<WhatsAppSimulator />} />
-
-            <Route path="*" element={<Navigate to="/buyer/dashboard" replace />} />
-          </Route>
+          <Route path="/" element={<Navigate to="/buyer/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/buyer/dashboard" replace />} />
         </Routes>
         </PersonaProvider>
       </ToastProvider>
