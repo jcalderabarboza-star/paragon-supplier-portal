@@ -127,10 +127,8 @@ const BuyerCompliance: React.FC = () => {
   }, []);
 
   const bpjph = useMemo(() => {
-    // Preserve v1 predicate: "not expired" counts as compliant.
-    // Flagged for Wave 2G cleanup — Missing should not be compliant.
     const halalAll = COMPLIANCE_ITEMS.filter((i) => i.category === 'Halal');
-    const halalCompliant = halalAll.filter((i) => i.status !== 'Expired');
+    const halalCompliant = halalAll.filter((i) => i.status === 'Valid');
     return { compliant: halalCompliant.length, total: halalAll.length };
   }, []);
 
