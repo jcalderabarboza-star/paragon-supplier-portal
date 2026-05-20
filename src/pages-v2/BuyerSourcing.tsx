@@ -34,6 +34,7 @@ import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
+import { useToast } from '../hooks/useToast';
 import { mockRfqs, RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
 import { mockQuotations } from '../data/mockQuotations';
 import { mockSuppliers } from '../data/mockSuppliers';
@@ -331,7 +332,7 @@ const BuyerSourcing: React.FC = () => {
   const [wizardStep, setWizardStep] = useState(0);
   const [draft, setDraft] = useState<DraftRfq>(EMPTY_DRAFT);
   const [supplierSearch, setSupplierSearch] = useState('');
-  const [toast, setToast] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const openRfq = (r: RFQ) => {
     setSelectedRfq(r);
@@ -428,10 +429,11 @@ const BuyerSourcing: React.FC = () => {
     };
     setExtraRfqs((prev) => [newRfq, ...prev]);
     setWizardOpen(false);
-    setToast(
-      `${newRfq.rfqNumber} created and sent to ${newRfq.invitedSupplierIds.length} supplier${newRfq.invitedSupplierIds.length === 1 ? '' : 's'}`,
-    );
-    window.setTimeout(() => setToast(null), 4500);
+    toast({
+      variant: 'success',
+      title: `${newRfq.rfqNumber} created`,
+      description: `Sent to ${newRfq.invitedSupplierIds.length} supplier${newRfq.invitedSupplierIds.length === 1 ? '' : 's'}`,
+    });
   };
 
   const aiRecommendedSuppliers = useMemo(() => {
@@ -1524,12 +1526,6 @@ const BuyerSourcing: React.FC = () => {
             isStepValid={isStepValid}
             completeLabel="Create & Send RFQ"
           />
-        </div>
-      )}
-
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-[60] bg-navy text-white rounded-md shadow-md px-4 py-3 text-sm border-l-4 border-teal max-w-md">
-          {toast}
         </div>
       )}
     </AppShellV2>
