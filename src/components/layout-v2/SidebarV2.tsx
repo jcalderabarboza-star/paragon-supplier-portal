@@ -86,7 +86,8 @@ const SUPPLIER_NAV: NavGroup[] = [
     label: 'TRANSACT',
     items: [
       { label: 'My Orders', icon: ShoppingCart, path: '/supplier/orders' },
-      { label: 'Ship Notices', icon: Truck, path: '/supplier/ship-notices' },
+      { label: 'Shipments & ASN', icon: Truck, path: '/supplier/shipments' },
+      { label: 'My Inventory', icon: Boxes, path: '/supplier/inventory' },
     ],
   },
   {

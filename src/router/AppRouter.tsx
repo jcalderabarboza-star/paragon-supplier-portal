@@ -69,6 +69,9 @@ import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
 import SupplierWhatsApp from '../pages-v2/SupplierWhatsApp';
 import SupplierOrders from '../pages-v2/SupplierOrders';
 import SupplierRFQsV2 from '../pages-v2/SupplierRFQs';
+import SupplierShipments from '../pages-v2/SupplierShipments';
+import SupplierInvoicesV2 from '../pages-v2/SupplierInvoices';
+import SupplierInventoryV2 from '../pages-v2/SupplierInventory';
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -107,6 +110,9 @@ const AppRouter: React.FC = () => {
           <Route path="/supplier/whatsapp" element={<SupplierWhatsApp />} />
           <Route path="/supplier/orders" element={<SupplierOrders />} />
           <Route path="/supplier/rfqs" element={<SupplierRFQsV2 />} />
+          <Route path="/supplier/shipments" element={<SupplierShipments />} />
+          <Route path="/supplier/invoices" element={<SupplierInvoicesV2 />} />
+          <Route path="/supplier/inventory" element={<SupplierInventoryV2 />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -137,10 +143,10 @@ const AppRouter: React.FC = () => {
             <Route path="v1/supplier/dashboard"  element={<SupplierDashboard />} />
             <Route path="v1/supplier/rfqs"      element={<SupplierRFQs />} />
             <Route path="v1/supplier/orders"    element={<MyOrders />} />
-            <Route path="supplier/ship-notices" element={<ShipNotices />} />
-            <Route path="supplier/asn"          element={<CreateASN />} />
-            <Route path="supplier/invoices"     element={<Invoices />} />
-            <Route path="supplier/inventory"    element={<MyInventory />} />
+            <Route path="v1/supplier/ship-notices" element={<ShipNotices />} />
+            <Route path="v1/supplier/asn"          element={<CreateASN />} />
+            <Route path="v1/supplier/invoices"     element={<Invoices />} />
+            <Route path="v1/supplier/inventory"    element={<MyInventory />} />
             <Route path="v1/supplier/documents"  element={<MyDocuments />} />
             <Route path="supplier/performance"  element={<MyPerformance />} />
             <Route path="v1/supplier/storefront" element={<MyStorefront />} />
