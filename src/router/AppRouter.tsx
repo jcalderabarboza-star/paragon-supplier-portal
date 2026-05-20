@@ -67,6 +67,8 @@ import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
 import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
 import SupplierWhatsApp from '../pages-v2/SupplierWhatsApp';
+import SupplierOrders from '../pages-v2/SupplierOrders';
+import SupplierRFQsV2 from '../pages-v2/SupplierRFQs';
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -103,6 +105,8 @@ const AppRouter: React.FC = () => {
           <Route path="/supplier/storefront" element={<SupplierMyStorefront />} />
           <Route path="/supplier/documents" element={<SupplierDocumentsV2 />} />
           <Route path="/supplier/whatsapp" element={<SupplierWhatsApp />} />
+          <Route path="/supplier/orders" element={<SupplierOrders />} />
+          <Route path="/supplier/rfqs" element={<SupplierRFQsV2 />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -131,8 +135,8 @@ const AppRouter: React.FC = () => {
 
             {/* ── Supplier routes ── */}
             <Route path="v1/supplier/dashboard"  element={<SupplierDashboard />} />
-            <Route path="supplier/rfqs"         element={<SupplierRFQs />} />
-            <Route path="supplier/orders"       element={<MyOrders />} />
+            <Route path="v1/supplier/rfqs"      element={<SupplierRFQs />} />
+            <Route path="v1/supplier/orders"    element={<MyOrders />} />
             <Route path="supplier/ship-notices" element={<ShipNotices />} />
             <Route path="supplier/asn"          element={<CreateASN />} />
             <Route path="supplier/invoices"     element={<Invoices />} />
