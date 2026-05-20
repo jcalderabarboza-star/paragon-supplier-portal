@@ -7,6 +7,8 @@ interface KpiCardProps {
   subtitle?: React.ReactNode;
   icon?: LucideIcon;
   className?: string;
+  onClick?: () => void;
+  active?: boolean;
 }
 
 const KpiCard: React.FC<KpiCardProps> = ({
@@ -15,11 +17,17 @@ const KpiCard: React.FC<KpiCardProps> = ({
   subtitle,
   icon: Icon,
   className = '',
+  onClick,
+  active = false,
 }) => {
-  return (
-    <div
-      className={`relative bg-bg-surface rounded-lg p-6 shadow-sm border border-border-subtle ${className}`}
-    >
+  const baseClass = `relative rounded-lg p-6 shadow-sm border text-left ${
+    active
+      ? 'bg-teal-soft border-teal'
+      : 'bg-bg-surface border-border-subtle'
+  } ${className}`;
+
+  const content = (
+    <>
       {Icon ? (
         <Icon
           size={18}
@@ -33,8 +41,23 @@ const KpiCard: React.FC<KpiCardProps> = ({
       {subtitle ? (
         <div className="text-meta text-text-secondary mt-2">{subtitle}</div>
       ) : null}
-    </div>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        aria-pressed={active}
+        className={`${baseClass} w-full cursor-pointer transition-colors hover:bg-bg-hover focus:outline-none focus:ring-2 focus:ring-teal/40`}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <div className={baseClass}>{content}</div>;
 };
 
 export default KpiCard;
