@@ -73,6 +73,7 @@ import SupplierShipments from '../pages-v2/SupplierShipments';
 import SupplierInvoicesV2 from '../pages-v2/SupplierInvoices';
 import SupplierInventoryV2 from '../pages-v2/SupplierInventory';
 import SupplierRegistrationV2 from '../pages-v2/SupplierRegistration';
+import SupplierPerformance from '../pages-v2/SupplierPerformance';
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -115,6 +116,7 @@ const AppRouter: React.FC = () => {
           <Route path="/supplier/shipments" element={<SupplierShipments />} />
           <Route path="/supplier/invoices" element={<SupplierInvoicesV2 />} />
           <Route path="/supplier/inventory" element={<SupplierInventoryV2 />} />
+          <Route path="/supplier/performance" element={<SupplierPerformance />} />
           <Route path="/" element={<AppShell />}>
             <Route index element={<Navigate to="/buyer/dashboard" replace />} />
 
@@ -150,7 +152,7 @@ const AppRouter: React.FC = () => {
             <Route path="v1/supplier/invoices"     element={<Invoices />} />
             <Route path="v1/supplier/inventory"    element={<MyInventory />} />
             <Route path="v1/supplier/documents"  element={<MyDocuments />} />
-            <Route path="supplier/performance"  element={<MyPerformance />} />
+            <Route path="v1/supplier/performance" element={<MyPerformance />} />
             <Route path="v1/supplier/storefront" element={<MyStorefront />} />
             <Route path="v1/supplier/whatsapp"   element={<WhatsAppSimulator />} />
 
