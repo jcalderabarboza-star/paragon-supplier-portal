@@ -1,9 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   root: 'app',
-  base: process.env.VERCEL ? '/' : '/paragon-supplier-portal/',
+  base:
+    command === 'serve'
+      ? '/'
+      : process.env.VERCEL
+        ? '/'
+        : '/paragon-supplier-portal/',
   publicDir: '../public',
   plugins: [react()],
   build: {
@@ -13,4 +18,4 @@ export default defineConfig({
   server: {
     port: 5173,
   },
-});
+}));
