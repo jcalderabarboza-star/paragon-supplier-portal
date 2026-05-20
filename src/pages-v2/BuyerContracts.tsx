@@ -7,8 +7,18 @@ import {
   Plus,
   FileSpreadsheet,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   RefreshCw,
   CalendarDays,
+  PenSquare,
+  Handshake,
+  CheckCircle2,
+  Activity,
+  Bell,
+  Archive,
+  Download,
+  ShieldCheck,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -25,6 +35,13 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
+import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
+import Button from '../components/ui-v2/Button';
+import { useToast } from '../hooks/useToast';
+import {
+  ContractObligation,
+  ObligationStatus,
+} from '../data/mockObligations';
 import {
   mockContracts,
   Contract,
@@ -105,6 +122,139 @@ const expiryTone = (days: number): string => {
   return 'text-success';
 };
 
+const OBLIGATION_VARIANT: Record<
+  ObligationStatus,
+  'success' | 'warning' | 'danger' | 'info' | 'neutral'
+> = {
+  Upcoming: 'info',
+  'In Progress': 'warning',
+  Completed: 'success',
+  Overdue: 'danger',
+};
+
+const OBLIGATION_RANK: Record<ObligationStatus, number> = {
+  Overdue: 0,
+  'In Progress': 1,
+  Upcoming: 2,
+  Completed: 3,
+};
+
+const sortObligations = (a: ContractObligation, b: ContractObligation) => {
+  const r = OBLIGATION_RANK[a.status] - OBLIGATION_RANK[b.status];
+  if (r !== 0) return r;
+  return a.dueDate.localeCompare(b.dueDate);
+};
+
+const shiftDays = (iso: string, days: number): string => {
+  if (!iso) return iso;
+  const d = new Date(iso);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+};
+
+const buildContractTimeline = (c: Contract): TimelineEvent[] => {
+  const isDraft = c.status === 'Draft';
+  const isActive = c.status === 'Active';
+  const isExpiring = c.status === 'Expiring';
+  const isExpired = c.status === 'Expired';
+  const isRenewed = c.status === 'Renewed';
+  const isTerminated = c.status === 'Terminated';
+
+  const finalLabel = isExpired
+    ? 'Expired'
+    : isRenewed
+      ? 'Renewed'
+      : isTerminated
+        ? 'Terminated'
+        : 'Expiry / Renewal';
+  const finalIcon = isTerminated ? Archive : isRenewed ? RefreshCw : Archive;
+
+  return [
+    {
+      id: 'drafted',
+      title: 'Drafted',
+      timestamp: c.signedDate ? formatDate(shiftDays(c.signedDate, -14)) : undefined,
+      status: 'completed',
+      icon: PenSquare,
+    },
+    {
+      id: 'negotiated',
+      title: 'Negotiated',
+      timestamp: c.signedDate ? formatDate(shiftDays(c.signedDate, -7)) : undefined,
+      status: isDraft ? 'current' : 'completed',
+      icon: Handshake,
+    },
+    {
+      id: 'signed',
+      title: 'Signed',
+      timestamp: c.signedDate ? formatDate(c.signedDate) : undefined,
+      status: isDraft ? 'pending' : 'completed',
+      icon: CheckCircle2,
+    },
+    {
+      id: 'active',
+      title: 'Active Period',
+      timestamp: `${formatDate(c.startDate)} → ${formatDate(c.endDate)}`,
+      status: isActive || isExpiring
+        ? 'current'
+        : isExpired || isRenewed || isTerminated
+          ? 'completed'
+          : 'pending',
+      icon: Activity,
+    },
+    {
+      id: 'renewal-decision',
+      title: 'Renewal Decision',
+      timestamp:
+        c.endDate && c.noticeRequiredDays
+          ? `Notice by ${formatDate(shiftDays(c.endDate, -c.noticeRequiredDays))}`
+          : undefined,
+      status: isExpiring
+        ? 'current'
+        : isExpired || isRenewed || isTerminated
+          ? 'completed'
+          : 'pending',
+      icon: Bell,
+    },
+    {
+      id: 'final',
+      title: finalLabel,
+      timestamp: isExpired || isRenewed || isTerminated
+        ? formatDate(c.endDate)
+        : undefined,
+      status: isExpired || isRenewed || isTerminated ? 'completed' : 'pending',
+      icon: finalIcon,
+    },
+  ];
+};
+
+const FOOTER_PRIMARY_LABEL = (c: Contract): string => {
+  if (c.status === 'Active' && c.daysUntilExpiry <= 90)
+    return 'Initiate renewal';
+  if (c.status === 'Active') return 'View full contract';
+  if (c.status === 'Expiring') return 'Initiate renewal';
+  if (c.status === 'Expired') return 'View renewal options';
+  if (c.status === 'Draft') return 'Continue editing';
+  if (c.status === 'Renewed') return 'View previous contract';
+  if (c.status === 'Terminated') return 'View termination notice';
+  return 'View full contract';
+};
+
+const PLACEHOLDER_DOCS = (c: Contract): {
+  name: string;
+  status: 'valid' | 'expiring' | 'expired';
+}[] => {
+  const docs: { name: string; status: 'valid' | 'expiring' | 'expired' }[] = [];
+  if (c.category.toLowerCase().includes('raw') || c.category.toLowerCase().includes('fragrance')) {
+    docs.push({ name: 'BPJPH Halal Certificate', status: 'valid' });
+  }
+  docs.push({ name: 'ISO 9001:2015', status: 'valid' });
+  if (c.type === 'Quality' || c.type === 'Supply') {
+    docs.push({ name: 'BPOM Registration', status: 'expiring' });
+  }
+  return docs;
+};
+
 const matchesGroup = (c: Contract, g: GroupTab): boolean => {
   if (g === 'all') return true;
   if (g === 'active') return c.status === 'Active';
@@ -124,8 +274,22 @@ const BuyerContracts: React.FC = () => {
   const [selectedContract, setSelectedContract] = useState<Contract | null>(
     null,
   );
+  const [docsOpen, setDocsOpen] = useState(false);
+  const { toast } = useToast();
 
   const contracts = mockContracts;
+
+  const obligationsForSelected = useMemo<ContractObligation[]>(() => {
+    if (!selectedContract) return [];
+    return mockObligations
+      .filter((o) => o.contractId === selectedContract.id)
+      .sort(sortObligations);
+  }, [selectedContract]);
+
+  const closePanel = () => {
+    setSelectedContract(null);
+    setDocsOpen(false);
+  };
 
   const lastUpdated = useMemo(() => {
     return contracts.reduce(
@@ -477,61 +641,312 @@ const BuyerContracts: React.FC = () => {
 
       <SidePanel
         open={selectedContract !== null}
-        onClose={() => setSelectedContract(null)}
+        onClose={closePanel}
         title={
           selectedContract
             ? `Contract ${selectedContract.contractNumber} — ${selectedContract.title}`
             : ''
         }
+        footerActions={
+          selectedContract && (
+            <>
+              <Button
+                variant="secondary"
+                icon={Download}
+                onClick={() =>
+                  toast({
+                    variant: 'info',
+                    title: 'PDF export queued',
+                    description: 'PDF export coming in Phase 2A.',
+                  })
+                }
+              >
+                Export PDF
+              </Button>
+              <Button variant="primary">
+                {FOOTER_PRIMARY_LABEL(selectedContract)}
+              </Button>
+            </>
+          )
+        }
       >
         {selectedContract && (
-          <section>
-            <h3 className="text-label text-text-tertiary uppercase mb-3">
-              Summary
-            </h3>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-              <div>
-                <dt className="text-text-tertiary">Supplier</dt>
-                <dd className="text-text-primary font-medium">
-                  {supplierById.get(selectedContract.supplierId)?.name ??
-                    selectedContract.supplierId}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Type</dt>
-                <dd>
-                  <StatusPill variant="neutral">
-                    {selectedContract.type}
-                  </StatusPill>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Status</dt>
-                <dd>
-                  <StatusPill
-                    variant={STATUS_VARIANT[selectedContract.status]}
+          <div className="space-y-6">
+            <section>
+              <h3 className="text-label text-text-tertiary uppercase mb-3">
+                Key facts
+              </h3>
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                <div>
+                  <dt className="text-text-tertiary">Supplier</dt>
+                  <dd className="text-text-primary font-medium">
+                    {supplierById.get(selectedContract.supplierId)?.name ??
+                      selectedContract.supplierId}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Type</dt>
+                  <dd>
+                    <StatusPill variant="neutral">
+                      {selectedContract.type}
+                    </StatusPill>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Status</dt>
+                  <dd>
+                    <StatusPill
+                      variant={STATUS_VARIANT[selectedContract.status]}
+                    >
+                      {selectedContract.status}
+                    </StatusPill>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Auto-renewal</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedContract.autoRenewal ? 'Yes' : 'No'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Start date</dt>
+                  <dd className="text-text-primary font-medium">
+                    {formatDate(selectedContract.startDate)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">End date</dt>
+                  <dd className="text-text-primary font-medium">
+                    {formatDate(selectedContract.endDate)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Notice required</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedContract.noticeRequiredDays} days
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Days until expiry</dt>
+                  <dd
+                    className={`font-semibold ${expiryTone(selectedContract.daysUntilExpiry)}`}
                   >
-                    {selectedContract.status}
-                  </StatusPill>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Period</dt>
-                <dd className="text-text-primary font-medium">
-                  {formatDate(selectedContract.startDate)} →{' '}
-                  {formatDate(selectedContract.endDate)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Value</dt>
-                <dd className="text-text-primary font-semibold">
-                  {selectedContract.value > 0
-                    ? formatIDR(selectedContract.value)
-                    : '—'}
-                </dd>
-              </div>
-            </dl>
-          </section>
+                    {selectedContract.daysUntilExpiry < 0
+                      ? `${Math.abs(selectedContract.daysUntilExpiry)}d ago`
+                      : `${selectedContract.daysUntilExpiry}d`}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Value</dt>
+                  <dd className="text-text-primary font-semibold">
+                    {selectedContract.value > 0
+                      ? formatIDR(selectedContract.value)
+                      : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Currency</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedContract.currency}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Payment terms</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedContract.paymentTerms}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Incoterms</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedContract.incoterms}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Signed by buyer</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedContract.signedByBuyer}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Signed by supplier</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedContract.signedBySupplier}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Signed date</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedContract.signedDate
+                      ? formatDate(selectedContract.signedDate)
+                      : '—'}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-text-tertiary">Category</dt>
+                  <dd className="text-text-primary font-medium">
+                    {selectedContract.category}
+                  </dd>
+                </div>
+                <div className="col-span-2">
+                  <dt className="text-text-tertiary">Brands</dt>
+                  <dd className="mt-1 flex flex-wrap gap-1.5">
+                    {selectedContract.brands.length === 0 ? (
+                      <span className="text-text-tertiary text-sm">—</span>
+                    ) : (
+                      selectedContract.brands.map((b) => (
+                        <span
+                          key={b}
+                          className="inline-flex items-center rounded-full bg-bg-hover text-text-secondary text-xs px-2 py-0.5"
+                        >
+                          {b}
+                        </span>
+                      ))
+                    )}
+                  </dd>
+                </div>
+                <div className="col-span-2 pt-2 flex items-center gap-3">
+                  <dt className="text-text-tertiary text-sm">
+                    Performance score
+                  </dt>
+                  <dd>
+                    {selectedContract.performanceScore > 0 ? (
+                      <ScoreBadge
+                        score={selectedContract.performanceScore}
+                        size="md"
+                        variant="circular"
+                      />
+                    ) : (
+                      <span className="text-text-tertiary text-sm">
+                        Not yet rated
+                      </span>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <section>
+              <h3 className="text-label text-text-tertiary uppercase mb-3">
+                Obligations ({obligationsForSelected.length})
+              </h3>
+              {obligationsForSelected.length === 0 ? (
+                <p className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
+                  No obligations defined for this contract.
+                </p>
+              ) : (
+                <div className="border border-border-subtle rounded-md overflow-hidden">
+                  <table className="w-full text-xs">
+                    <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
+                      <tr>
+                        <th className="text-left px-3 py-2 font-semibold">
+                          Title
+                        </th>
+                        <th className="text-left px-3 py-2 font-semibold">
+                          Owner
+                        </th>
+                        <th className="text-left px-3 py-2 font-semibold whitespace-nowrap">
+                          Due
+                        </th>
+                        <th className="text-left px-3 py-2 font-semibold">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {obligationsForSelected.map((o) => (
+                        <tr
+                          key={o.id}
+                          className="border-t border-border-subtle"
+                        >
+                          <td className="px-3 py-2">
+                            <div className="text-text-primary font-medium">
+                              {o.title}
+                            </div>
+                            <div className="text-text-tertiary text-[10px] uppercase tracking-wider mt-0.5">
+                              {o.category}
+                              {o.recurrence ? ` · ${o.recurrence}` : ''}
+                            </div>
+                          </td>
+                          <td className="px-3 py-2 text-text-secondary">
+                            {o.owner}
+                          </td>
+                          <td className="px-3 py-2 text-text-secondary whitespace-nowrap">
+                            {formatDate(o.dueDate)}
+                          </td>
+                          <td className="px-3 py-2">
+                            <StatusPill
+                              variant={OBLIGATION_VARIANT[o.status]}
+                            >
+                              {o.status}
+                            </StatusPill>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            <section>
+              <h3 className="text-label text-text-tertiary uppercase mb-3">
+                Lifecycle
+              </h3>
+              <Timeline events={buildContractTimeline(selectedContract)} />
+            </section>
+
+            <section>
+              <button
+                type="button"
+                onClick={() => setDocsOpen((v) => !v)}
+                className="flex items-center gap-2 text-sm font-medium text-teal hover:text-teal-hover"
+              >
+                {docsOpen ? (
+                  <ChevronUp size={14} />
+                ) : (
+                  <ChevronDown size={14} />
+                )}
+                {docsOpen ? 'Hide' : 'Show'} linked compliance documents (
+                {PLACEHOLDER_DOCS(selectedContract).length})
+              </button>
+              {docsOpen && (
+                <ul className="mt-3 space-y-2">
+                  {PLACEHOLDER_DOCS(selectedContract).map((d) => (
+                    <li
+                      key={d.name}
+                      className="flex items-center justify-between gap-3 p-3 border border-border-subtle rounded-md"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck
+                          size={14}
+                          className="text-text-tertiary"
+                        />
+                        <span className="text-sm text-text-primary">
+                          {d.name}
+                        </span>
+                      </div>
+                      <StatusPill
+                        variant={
+                          d.status === 'valid'
+                            ? 'success'
+                            : d.status === 'expiring'
+                              ? 'warning'
+                              : 'danger'
+                        }
+                      >
+                        {d.status === 'valid'
+                          ? 'Valid'
+                          : d.status === 'expiring'
+                            ? 'Expiring'
+                            : 'Expired'}
+                      </StatusPill>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
         )}
       </SidePanel>
     </AppShellV2>
