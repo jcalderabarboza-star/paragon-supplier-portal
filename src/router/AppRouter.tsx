@@ -1,6 +1,7 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { PersonaProvider } from '../context/PersonaContext';
+import { CurrentIdentityProvider } from '../context/CurrentIdentityContext';
+import { mockIdentitySource } from '../context/identitySources';
 import Login from '../pages/auth/Login';
 
 // V2 pages (canonical)
@@ -43,7 +44,7 @@ const AppRouter: React.FC = () => {
     <HashRouter>
       <ToastProvider>
         <Toaster />
-        <PersonaProvider>
+        <CurrentIdentityProvider source={mockIdentitySource}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<SupplierRegistrationV2 />} />
@@ -79,7 +80,7 @@ const AppRouter: React.FC = () => {
           <Route path="/" element={<Navigate to="/buyer/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/buyer/dashboard" replace />} />
         </Routes>
-        </PersonaProvider>
+        </CurrentIdentityProvider>
       </ToastProvider>
     </HashRouter>
   );
