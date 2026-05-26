@@ -30,14 +30,11 @@ import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
 import { useToast } from '../hooks/useToast';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
 import { mockSuppliers } from '../data/mockSuppliers';
-import { POStatus } from '../types/purchaseOrder.types';
-
-const SUPPLIER_ID = 'sup-007';
-const mySupplier = mockSuppliers.find((s) => s.id === SUPPLIER_ID)!;
-const MY_POS = mockPurchaseOrders.filter((po) => po.supplierId === SUPPLIER_ID);
-const CONFIRMED_POS = MY_POS.filter((po) => po.status === POStatus.CONFIRMED);
+import { POStatus, PurchaseOrder } from '../types/purchaseOrder.types';
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 
 type AsnStatus =
   | 'Draft'
@@ -277,6 +274,7 @@ interface ShipmentsListProps {
   onSubmitAsn: (asnNumber: string) => void;
   onResolveDiscrepancy: (asnNumber: string) => void;
   onCreateAsnForPO: (poId: string) => void;
+  confirmedPOs: PurchaseOrder[];
 }
 
 const ShipmentsList: React.FC<ShipmentsListProps> = ({
@@ -286,6 +284,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
   onSubmitAsn,
   onResolveDiscrepancy,
   onCreateAsnForPO,
+  confirmedPOs,
 }) => {
   const filtered = useMemo(
     () =>
@@ -297,8 +296,8 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
 
   const pendingPOs = useMemo(() => {
     const asnPoRefs = new Set(MOCK_ASNS.map((a) => a.poReference));
-    return CONFIRMED_POS.filter((po) => !asnPoRefs.has(po.poNumber));
-  }, []);
+    return confirmedPOs.filter((po) => !asnPoRefs.has(po.poNumber));
+  }, [confirmedPOs]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -557,11 +556,28 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
 
 const SupplierShipments: React.FC = () => {
   const { toast } = useToast();
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
   const [tab, setTab] = useState<TabKey>('shipments');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<AsnForm>(DEFAULT_FORM);
+
+  const mySupplier = useMemo(
+    () => mockSuppliers.find((s) => s.id === supplierId),
+    [supplierId],
+  );
+
+  const MY_POS = useMemo(
+    () => mockPurchaseOrders.filter((po) => po.supplierId === supplierId),
+    [supplierId],
+  );
+
+  const CONFIRMED_POS = useMemo(
+    () => MY_POS.filter((po) => po.status === POStatus.CONFIRMED),
+    [MY_POS],
+  );
 
   const counts = useMemo(() => {
     const base: Record<AsnStatus, number> = {
@@ -613,6 +629,8 @@ const SupplierShipments: React.FC = () => {
     setStep(0);
     setTab('create');
   };
+
+  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
 
   const selectedPO = CONFIRMED_POS.find((p) => p.id === form.poId);
   const step1Valid = form.poId !== '';
@@ -1008,6 +1026,7 @@ const SupplierShipments: React.FC = () => {
           onSubmitAsn={submitAsn}
           onResolveDiscrepancy={resolveDiscrepancy}
           onCreateAsnForPO={createAsnForPO}
+          confirmedPOs={CONFIRMED_POS}
         />
       )}
 
