@@ -22,16 +22,14 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
 import { PreferredChannel } from '../types/supplier.types';
 import { POStatus } from '../types/purchaseOrder.types';
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 
 type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
-
-const SUPPLIER_ID = 'sup-007';
-const mySupplier = mockSuppliers.find((s) => s.id === SUPPLIER_ID)!;
-const MY_POS = mockPurchaseOrders.filter((po) => po.supplierId === SUPPLIER_ID);
 
 const fmtIDR = (v: number): string => {
   if (v >= 1_000_000_000) return `Rp ${(v / 1_000_000_000).toFixed(1)}M`;
@@ -146,7 +144,19 @@ const ProgressBar: React.FC<{ value: number; variant: 'success' | 'warning' | 'd
 
 const SupplierDashboard: React.FC = () => {
   const { toast } = useToast();
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
   const [dismissedActions, setDismissedActions] = useState<string[]>([]);
+
+  const mySupplier = useMemo(
+    () => mockSuppliers.find((s) => s.id === supplierId),
+    [supplierId],
+  );
+
+  const MY_POS = useMemo(
+    () => mockPurchaseOrders.filter((po) => po.supplierId === supplierId),
+    [supplierId],
+  );
 
   const dismiss = (id: string) =>
     setDismissedActions((prev) => [...prev, id]);
@@ -157,12 +167,12 @@ const SupplierDashboard: React.FC = () => {
         (po) =>
           po.status !== POStatus.DELIVERED && po.status !== POStatus.CLOSED,
       ).length,
-    [],
+    [MY_POS],
   );
 
   const pendingASNs = useMemo(
     () => MY_POS.filter((po) => po.status === POStatus.CONFIRMED).length,
-    [],
+    [MY_POS],
   );
 
   const needsConfirmCount = useMemo(
@@ -170,7 +180,7 @@ const SupplierDashboard: React.FC = () => {
       MY_POS.filter(
         (po) => po.status === POStatus.SENT || po.status === POStatus.ACKNOWLEDGED,
       ).length,
-    [],
+    [MY_POS],
   );
 
   const asnDueOrders = useMemo(
@@ -184,8 +194,10 @@ const SupplierDashboard: React.FC = () => {
         );
         return daysLeft <= 7;
       }),
-    [],
+    [MY_POS],
   );
+
+  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
 
   const grade = mySupplier.scorecardGrade as Grade;
   const channelLabel = CHANNEL_LABEL[mySupplier.preferredChannel];
