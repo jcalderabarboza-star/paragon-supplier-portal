@@ -28,46 +28,20 @@ import { mockSuppliers } from '../data/mockSuppliers';
 import { useAdaptive } from '../context/AdaptiveContext';
 import { CHANNEL_CONFIG } from '../data/communicationProfiles';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
-
-interface CatalogItem {
-  id: string;
-  material: string;
-  sapCode: string;
-  category: string;
-  moq: string;
-  uom: string;
-  leadTime: string;
-  unitPrice: string;
-  currency: string;
-  certs: string[];
-  capacity: string;
-  visible: boolean;
-}
-
-interface ProfileCert {
-  name: string;
-  visible: boolean;
-  status: 'valid' | 'expiring' | 'missing';
-  expiry: string | null;
-}
+import type {
+  CatalogItem,
+  ProfileCert,
+  ProfileCertStatus,
+} from '../services/data/types';
+import {
+  INITIAL_CATALOG,
+  INITIAL_CERTS,
+} from '../services/data/mock/fixtures/supplierStorefront';
 
 interface CompletenessItem {
   label: string;
   done: boolean;
 }
-
-const INITIAL_CATALOG: CatalogItem[] = [
-  { id: 'c1', material: 'PET Bottle 100ml Airless Pump', sapCode: 'MAT-10045', category: 'Packaging Primary', moq: '10,000', uom: 'PCS', leadTime: '14', unitPrice: '3,700', currency: 'IDR', certs: ['Halal BPJPH', 'ISO 9001'], capacity: '200,000', visible: true },
-  { id: 'c2', material: 'PET Bottle 200ml Standard Pump', sapCode: 'MAT-10046', category: 'Packaging Primary', moq: '10,000', uom: 'PCS', leadTime: '14', unitPrice: '4,200', currency: 'IDR', certs: ['Halal BPJPH', 'ISO 9001'], capacity: '150,000', visible: true },
-  { id: 'c3', material: 'Airless Pump 15ml Travel Size', sapCode: 'MAT-10089', category: 'Packaging Secondary', moq: '5,000', uom: 'PCS', leadTime: '21', unitPrice: '2,800', currency: 'IDR', certs: ['ISO 9001'], capacity: '100,000', visible: true },
-];
-
-const INITIAL_CERTS: ProfileCert[] = [
-  { name: 'BPOM Registration', visible: true, status: 'valid', expiry: '2026-12-31' },
-  { name: 'ISO 9001:2015', visible: true, status: 'valid', expiry: '2026-08-14' },
-  { name: 'BPJPH Halal Cert', visible: false, status: 'missing', expiry: null },
-  { name: 'SNI Compliance', visible: true, status: 'expiring', expiry: '2026-05-01' },
-];
 
 const COMPLETENESS_ITEMS: CompletenessItem[] = [
   { label: 'Company description', done: true },
@@ -80,16 +54,20 @@ const COMPLETENESS_ITEMS: CompletenessItem[] = [
   { label: 'Profile photo / facility image', done: false },
 ];
 
-const CERT_VARIANT: Record<ProfileCert['status'], 'success' | 'warning' | 'danger'> = {
+const CERT_VARIANT: Record<ProfileCertStatus, 'success' | 'warning' | 'danger'> = {
   valid: 'success',
   expiring: 'warning',
+  expired: 'danger',
   missing: 'danger',
+  pending: 'warning',
 };
 
-const CERT_LABEL: Record<ProfileCert['status'], string> = {
+const CERT_LABEL: Record<ProfileCertStatus, string> = {
   valid: 'Valid',
   expiring: 'Expiring',
+  expired: 'Expired',
   missing: 'Missing',
+  pending: 'Pending',
 };
 
 const inputClass =
@@ -229,7 +207,7 @@ const SupplierMyStorefront: React.FC = () => {
     }
     setCatalog((prev) => [
       ...prev,
-      { id: `c${Date.now()}`, ...newMaterial, visible: true },
+      { id: `c${Date.now()}`, supplierId, ...newMaterial, visible: true },
     ]);
     setNewMaterial(emptyMaterial);
     setShowAddForm(false);
