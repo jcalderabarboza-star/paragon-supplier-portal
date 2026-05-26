@@ -19,7 +19,12 @@ import {
   MessageCircle,
   LucideIcon,
 } from 'lucide-react';
-import { usePersona } from '../../context/PersonaContext';
+import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
+import { mockSuppliers } from '../../data/mockSuppliers';
+
+const SEED_SUPPLIER_ID = 'sup-007';
+const SEED_SUPPLIER_NAME =
+  mockSuppliers.find((s) => s.id === SEED_SUPPLIER_ID)?.name ?? null;
 
 interface NavItem {
   label: string;
@@ -109,7 +114,8 @@ const SidebarV2: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = `${location.pathname}`;
-  const { persona, setPersona } = usePersona();
+  const { identity, setIdentity } = useCurrentIdentity();
+  const persona = identity.personaType;
 
   const groups = persona === 'buyer' ? BUYER_NAV : SUPPLIER_NAV;
 
@@ -120,7 +126,13 @@ const SidebarV2: React.FC = () => {
         <div className="bg-bg-hover rounded-full h-8 p-0.5 flex">
           <button
             type="button"
-            onClick={() => setPersona('buyer')}
+            onClick={() =>
+              setIdentity({
+                personaType: 'buyer',
+                supplierId: null,
+                supplierName: null,
+              })
+            }
             className={`flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               persona === 'buyer'
                 ? 'bg-white shadow-sm text-text-primary'
@@ -131,7 +143,13 @@ const SidebarV2: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setPersona('supplier')}
+            onClick={() =>
+              setIdentity({
+                personaType: 'supplier',
+                supplierId: SEED_SUPPLIER_ID,
+                supplierName: SEED_SUPPLIER_NAME,
+              })
+            }
             className={`flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               persona === 'supplier'
                 ? 'bg-white shadow-sm text-text-primary'
