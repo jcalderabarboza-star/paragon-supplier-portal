@@ -28,10 +28,9 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import { useToast } from '../hooks/useToast';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockSuppliers } from '../data/mockSuppliers';
-
-const SUPPLIER_ID = 'sup-007';
-const mySupplier = mockSuppliers.find((s) => s.id === SUPPLIER_ID)!;
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 
 type InvStatus =
   | 'Draft'
@@ -163,8 +162,15 @@ const buildTimeline = (inv: SupplierInvoice): TimelineEvent[] => {
 
 const SupplierInvoices: React.FC = () => {
   const { toast } = useToast();
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
   const [selected, setSelected] = useState<SupplierInvoice | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
+
+  const mySupplier = useMemo(
+    () => mockSuppliers.find((s) => s.id === supplierId),
+    [supplierId],
+  );
 
   const sums = useMemo(() => {
     const sum = (filter: (i: SupplierInvoice) => boolean) =>
@@ -209,6 +215,8 @@ const SupplierInvoices: React.FC = () => {
 
   const isPaidStatus = (s: InvStatus): boolean =>
     s === 'Payment Released' || s === 'Remittance Received';
+
+  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
 
   return (
     <AppShellV2>
