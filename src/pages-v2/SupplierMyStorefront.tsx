@@ -23,12 +23,11 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Switch from '../components/ui-v2/Switch';
 import { useToast } from '../hooks/useToast';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { useAdaptive } from '../context/AdaptiveContext';
 import { CHANNEL_CONFIG } from '../data/communicationProfiles';
-
-const SUPPLIER_ID = 'sup-007';
-const supp = mockSuppliers.find((s) => s.id === SUPPLIER_ID)!;
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 
 interface CatalogItem {
   id: string;
@@ -166,11 +165,14 @@ const AdvisorPanel: React.FC<{ completeness: number }> = ({ completeness }) => {
 const SupplierMyStorefront: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
   const { getSupplierProfile, isBusinessHours, getLocalTime } = useAdaptive();
 
-  const cp = getSupplierProfile(supp.country);
-  const bizHours = isBusinessHours(supp.country);
-  const localTime = getLocalTime(supp.country);
+  const supp = useMemo(
+    () => mockSuppliers.find((s) => s.id === supplierId),
+    [supplierId],
+  );
 
   const [catalog, setCatalog] = useState<CatalogItem[]>(INITIAL_CATALOG);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -187,6 +189,12 @@ const SupplierMyStorefront: React.FC = () => {
     const done = COMPLETENESS_ITEMS.filter((i) => i.done).length;
     return Math.round((done / COMPLETENESS_ITEMS.length) * 100);
   }, []);
+
+  if (!supplierId || !supp) return <NoSupplierIdentity />;
+
+  const cp = getSupplierProfile(supp.country);
+  const bizHours = isBusinessHours(supp.country);
+  const localTime = getLocalTime(supp.country);
 
   const toggleCertVisibility = (idx: number) => {
     setCerts((prev) =>
@@ -251,7 +259,7 @@ const SupplierMyStorefront: React.FC = () => {
           <Button
             variant="primary"
             icon={ExternalLink}
-            onClick={() => navigate('/marketplace/supplier/sup-007')}
+            onClick={() => navigate(`/marketplace/supplier/${supplierId}`)}
           >
             Preview public profile
           </Button>
