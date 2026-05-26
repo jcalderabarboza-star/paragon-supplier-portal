@@ -11,6 +11,8 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import Button from '../components/ui-v2/Button';
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 
 const WHATSAPP_GREEN_HEADER = '#075E54';
 const WHATSAPP_BG = '#ECE5DD';
@@ -1256,6 +1258,8 @@ const WeChatPanel: React.FC = () => {
 };
 
 const SupplierWhatsApp: React.FC = () => {
+  const { identity } = useCurrentIdentity();
+  const { supplierId, supplierName } = identity;
   const [channel, setChannel] = useState<Channel>('whatsapp');
 
   const lastUpdated = useMemo(
@@ -1270,13 +1274,15 @@ const SupplierWhatsApp: React.FC = () => {
     [],
   );
 
+  if (!supplierId) return <NoSupplierIdentity />;
+
   return (
     <AppShellV2>
       <style>{PULSE_CSS}</style>
       <PageHeader
         breadcrumb={['INTELLIGENCE', 'WHATSAPP HUB']}
         title="Communication Tools"
-        subtitle="Conversational commerce channels — WhatsApp, Email, and WeChat — for supplier engagement."
+        subtitle={`Conversational commerce channels — WhatsApp, Email, and WeChat — ${supplierName ?? 'Supplier'}.`}
       />
 
       <PageMetaLine className="-mt-6 mb-6">
