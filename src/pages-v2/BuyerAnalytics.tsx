@@ -38,10 +38,19 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import { useToast } from '../hooks/useToast';
+import type { KpiTrend as Trend } from '../services/data/types';
+import {
+  SPEND_CAT,
+  TOP_SUPPLIERS,
+  OTIF_DATA,
+  PO_VOL_DATA,
+  CHANNEL_DATA,
+  PERF_TABLE,
+  type AnalyticsGrade as Grade,
+  type PerfRow,
+} from '../services/data/mock/fixtures/buyerAnalytics';
 
 type Period = '30d' | '90d' | 'ytd';
-type Grade = 'A' | 'B' | 'C' | 'D';
-type Trend = '↑' | '↓' | '→';
 
 const PERIOD_OPTIONS: { id: Period; label: string }[] = [
   { id: '30d', label: 'Last 30 days' },
@@ -59,72 +68,7 @@ const TOKEN_INFO = '#1E5BAE';
 const TOKEN_MUTED = '#6B7785';
 const TOKEN_BORDER = '#E5E9EE';
 
-const SPEND_CAT: { category: string; value: number; color: string }[] = [
-  { category: 'Active Ingredients', value: 1260, color: TOKEN_TEAL },
-  { category: 'Fragrance', value: 840, color: TOKEN_MID },
-  { category: 'Packaging Primary', value: 630, color: TOKEN_SUCCESS },
-  { category: 'Natural/Botanical', value: 504, color: TOKEN_WARNING },
-  { category: 'Packaging Secondary', value: 420, color: TOKEN_INFO },
-  { category: 'Halal Emulsifiers', value: 336, color: TOKEN_NAVY },
-  { category: 'Other', value: 210, color: TOKEN_MUTED },
-];
 const TOTAL_SPEND = SPEND_CAT.reduce((a, b) => a + b.value, 0);
-
-const TOP_SUPPLIERS = [
-  { supplier: 'PT Berlina Packaging', spend: 820 },
-  { supplier: 'Zhejiang NHU Vitamins', spend: 680 },
-  { supplier: 'BASF Personal Care DE', spend: 540 },
-  { supplier: 'PT Musim Mas Specialty', spend: 420 },
-  { supplier: 'PT Halal Emulsifier Nusantara', spend: 380 },
-];
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
-const OTIF_VALS = [82, 84, 83, 85, 86, 84, 87, 88, 86, 87, 88, 87, 87, 88, 87];
-const OTDR_VALS = [85, 86, 87, 88, 87, 89, 90, 91, 89, 91, 92, 91, 91, 92, 91];
-const OTIF_DATA = OTIF_VALS.map((v, i) => ({
-  month: MONTHS[i],
-  otif: v,
-  otdr: OTDR_VALS[i],
-}));
-
-const PO_VOLS = [3, 4, 3, 5, 4, 6, 5, 4, 5, 6, 4, 5, 4, 5, 3];
-const CYCLE_VALS = [48, 42, 38, 35, 32, 30, 28, 26, 28, 25, 24, 23, 22, 21, 22];
-const PO_VOL_DATA = PO_VOLS.map((v, i) => ({
-  month: MONTHS[i],
-  pos: v,
-  cycleTime: CYCLE_VALS[i],
-}));
-
-const CHANNEL_DATA = [
-  { month: 'Oct', whatsapp: 20, web: 15, email: 55, api: 10 },
-  { month: 'Nov', whatsapp: 25, web: 18, email: 47, api: 10 },
-  { month: 'Dec', whatsapp: 30, web: 20, email: 40, api: 10 },
-  { month: 'Jan', whatsapp: 35, web: 22, email: 33, api: 10 },
-  { month: 'Feb', whatsapp: 40, web: 24, email: 26, api: 10 },
-  { month: 'Mar', whatsapp: 45, web: 25, email: 20, api: 10 },
-];
-
-interface PerfRow {
-  supplier: string;
-  category: string;
-  otif: number;
-  otdr: number;
-  ackSpeed: string;
-  invoiceMatch: string;
-  grade: Grade;
-  trend: Trend;
-}
-
-const PERF_TABLE: PerfRow[] = [
-  { supplier: 'PT Berlina Packaging Indonesia', category: 'Packaging Primary', otif: 88, otdr: 91, ackSpeed: '18h', invoiceMatch: '98%', grade: 'B', trend: '↑' },
-  { supplier: 'Zhejiang NHU Vitamins Co.', category: 'Active Ingredients', otif: 94, otdr: 96, ackSpeed: '6h', invoiceMatch: '100%', grade: 'A', trend: '↑' },
-  { supplier: 'BASF Personal Care DE', category: 'Active Ingredients', otif: 78, otdr: 82, ackSpeed: '42h', invoiceMatch: '85%', grade: 'C', trend: '↓' },
-  { supplier: 'PT Musim Mas Specialty Fats', category: 'Halal Emulsifier', otif: 92, otdr: 94, ackSpeed: '12h', invoiceMatch: '97%', grade: 'A', trend: '→' },
-  { supplier: 'PT Halal Emulsifier Nusantara', category: 'Halal Emulsifier', otif: 85, otdr: 88, ackSpeed: '24h', invoiceMatch: '95%', grade: 'B', trend: '↑' },
-  { supplier: 'Givaudan Fragrance SG', category: 'Fragrance', otif: 91, otdr: 93, ackSpeed: '8h', invoiceMatch: '99%', grade: 'A', trend: '→' },
-  { supplier: 'PT Ecogreen Oleochemicals', category: 'Natural Botanical', otif: 82, otdr: 85, ackSpeed: '30h', invoiceMatch: '92%', grade: 'B', trend: '↑' },
-  { supplier: 'Evonik Specialty FR', category: 'Active Ingredients', otif: 72, otdr: 76, ackSpeed: '56h', invoiceMatch: '88%', grade: 'C', trend: '↓' },
-];
 
 const GRADE_VARIANT: Record<Grade, 'success' | 'info' | 'warning' | 'danger'> = {
   A: 'success',
