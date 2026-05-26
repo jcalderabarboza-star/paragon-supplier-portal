@@ -26,6 +26,8 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import { useToast } from '../hooks/useToast';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 
 type DocStatus = 'Valid' | 'Expiring Soon' | 'Expired' | 'Awaiting Upload' | 'Under Review';
 type DocCategory =
@@ -101,6 +103,8 @@ type PanelMode = 'closed' | 'new' | 'upload-existing' | 'view';
 
 const SupplierDocuments: React.FC = () => {
   const { toast } = useToast();
+  const { identity } = useCurrentIdentity();
+  const { supplierId, supplierName } = identity;
   const [filterCat, setFilterCat] = useState<CategoryFilter>('All');
   const [search, setSearch] = useState('');
   const [panelMode, setPanelMode] = useState<PanelMode>('closed');
@@ -186,12 +190,14 @@ const SupplierDocuments: React.FC = () => {
         ? `Upload — ${activeDoc.name.split('—')[0].trim()}`
         : '';
 
+  if (!supplierId) return <NoSupplierIdentity />;
+
   return (
     <AppShellV2>
       <PageHeader
         breadcrumb={['SETTLE', 'MY DOCUMENTS']}
         title="My Documents"
-        subtitle="Certifications, compliance documents, COAs, and contracts · Halal & BPOM tracking."
+        subtitle={`Certifications, compliance documents, COAs, and contracts · Halal & BPOM tracking — ${supplierName ?? 'Supplier'}.`}
         actions={
           <BulkActionsBar
             primary={{
