@@ -1,9 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { usePersona } from '../../context/PersonaContext';
+import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
+import { mockSuppliers } from '../../data/mockSuppliers';
 
 const NAVY = '#0D1B2A';
 const TEAL = '#0097A7';
+
+const SEED_SUPPLIER_ID = 'sup-007';
+const SEED_SUPPLIER_NAME =
+  mockSuppliers.find((s) => s.id === SEED_SUPPLIER_ID)?.name ?? null;
 
 const INPUT_STYLE: React.CSSProperties = {
   width: '100%',
@@ -20,30 +25,36 @@ const INPUT_STYLE: React.CSSProperties = {
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { setPersona } = usePersona();
+  const { setIdentity } = useCurrentIdentity();
   const [activeTab, setActiveTab] = useState<'buyer' | 'supplier'>('buyer');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleSignIn = () => {
-    if (activeTab === 'buyer') {
-      setPersona('buyer');
-      navigate('/buyer/dashboard');
-    } else {
-      setPersona('supplier');
-      navigate('/supplier/dashboard');
-    }
-  };
-
-  const handleViewAsBuyer = () => {
-    setPersona('buyer');
+  const signInAsBuyer = () => {
+    setIdentity({
+      personaType: 'buyer',
+      supplierId: null,
+      supplierName: null,
+    });
     navigate('/buyer/dashboard');
   };
 
-  const handleViewAsSupplier = () => {
-    setPersona('supplier');
+  const signInAsSupplier = () => {
+    setIdentity({
+      personaType: 'supplier',
+      supplierId: SEED_SUPPLIER_ID,
+      supplierName: SEED_SUPPLIER_NAME,
+    });
     navigate('/supplier/dashboard');
   };
+
+  const handleSignIn = () => {
+    if (activeTab === 'buyer') signInAsBuyer();
+    else signInAsSupplier();
+  };
+
+  const handleViewAsBuyer = signInAsBuyer;
+  const handleViewAsSupplier = signInAsSupplier;
 
   return (
     <div style={{

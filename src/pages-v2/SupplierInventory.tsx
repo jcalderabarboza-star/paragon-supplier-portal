@@ -22,8 +22,11 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import { useToast } from '../hooks/useToast';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockInventory } from '../data/mockInventory';
+import { mockSuppliers } from '../data/mockSuppliers';
 import { StockStatus } from '../types/supplier.types';
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 
 const STATUS_VARIANT: Record<StockStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   [StockStatus.CRITICAL]: 'danger',
@@ -97,28 +100,38 @@ const STATUS_OPTIONS: { id: StatusFilter; label: string }[] = [
 
 const SupplierInventory: React.FC = () => {
   const { toast } = useToast();
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
   const [filterStatus, setFilterStatus] = useState<StatusFilter>('All');
   const [search, setSearch] = useState('');
 
-  const allInventory = mockInventory;
+  const mySupplier = useMemo(
+    () => mockSuppliers.find((s) => s.id === supplierId),
+    [supplierId],
+  );
+
+  const myInventory = useMemo(
+    () => mockInventory.filter((r) => r.supplierId === supplierId),
+    [supplierId],
+  );
 
   const counts = useMemo(
     () => ({
-      critical: allInventory.filter(
+      critical: myInventory.filter(
         (r) => r.stockStatus === StockStatus.CRITICAL,
       ).length,
-      low: allInventory.filter((r) => r.stockStatus === StockStatus.LOW).length,
-      normal: allInventory.filter((r) => r.stockStatus === StockStatus.NORMAL)
+      low: myInventory.filter((r) => r.stockStatus === StockStatus.LOW).length,
+      normal: myInventory.filter((r) => r.stockStatus === StockStatus.NORMAL)
         .length,
-      excess: allInventory.filter((r) => r.stockStatus === StockStatus.EXCESS)
+      excess: myInventory.filter((r) => r.stockStatus === StockStatus.EXCESS)
         .length,
     }),
-    [allInventory],
+    [myInventory],
   );
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
-    return allInventory.filter((r) => {
+    return myInventory.filter((r) => {
       const matchStatus =
         filterStatus === 'All' || r.stockStatus === filterStatus;
       const matchSearch =
@@ -128,16 +141,18 @@ const SupplierInventory: React.FC = () => {
         r.supplierName.toLowerCase().includes(q);
       return matchStatus && matchSearch;
     });
-  }, [filterStatus, search, allInventory]);
+  }, [filterStatus, search, myInventory]);
 
   const maxLastUpdated = useMemo(
     () =>
-      allInventory.reduce(
+      myInventory.reduce(
         (a, r) => (r.lastUpdated > a ? r.lastUpdated : a),
-        allInventory[0]?.lastUpdated ?? '',
+        myInventory[0]?.lastUpdated ?? '',
       ),
-    [allInventory],
+    [myInventory],
   );
+
+  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
 
   const setKpiFilter = (s: StockStatus) =>
     setFilterStatus((prev) => (prev === s ? 'All' : s));
@@ -176,7 +191,7 @@ const SupplierInventory: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {allInventory.length} materials · last sync {fmtDate(maxLastUpdated)}
+        {myInventory.length} materials · last sync {fmtDate(maxLastUpdated)}
       </PageMetaLine>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
@@ -185,7 +200,7 @@ const SupplierInventory: React.FC = () => {
           value={counts.critical.toString()}
           subtitle={
             <span className="text-danger">
-              {((counts.critical / allInventory.length) * 100).toFixed(0)}% of
+              {((counts.critical / myInventory.length) * 100).toFixed(0)}% of
               materials
             </span>
           }
@@ -198,7 +213,7 @@ const SupplierInventory: React.FC = () => {
           value={counts.low.toString()}
           subtitle={
             <span className="text-warning">
-              {((counts.low / allInventory.length) * 100).toFixed(0)}% of
+              {((counts.low / myInventory.length) * 100).toFixed(0)}% of
               materials
             </span>
           }
@@ -211,7 +226,7 @@ const SupplierInventory: React.FC = () => {
           value={counts.normal.toString()}
           subtitle={
             <span className="text-success">
-              {((counts.normal / allInventory.length) * 100).toFixed(0)}% of
+              {((counts.normal / myInventory.length) * 100).toFixed(0)}% of
               materials
             </span>
           }
@@ -224,7 +239,7 @@ const SupplierInventory: React.FC = () => {
           value={counts.excess.toString()}
           subtitle={
             <span className="text-text-secondary">
-              {((counts.excess / allInventory.length) * 100).toFixed(0)}% of
+              {((counts.excess / myInventory.length) * 100).toFixed(0)}% of
               materials
             </span>
           }
@@ -260,7 +275,7 @@ const SupplierInventory: React.FC = () => {
             onChange={setFilterStatus}
           />
           <span className="text-meta text-text-tertiary">
-            {filtered.length} of {allInventory.length} materials
+            {filtered.length} of {myInventory.length} materials
           </span>
         </div>
       </div>

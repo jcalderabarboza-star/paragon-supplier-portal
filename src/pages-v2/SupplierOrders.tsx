@@ -20,19 +20,14 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import { useToast } from '../hooks/useToast';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { POStatus, PurchaseOrder } from '../types/purchaseOrder.types';
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
-
-const SUPPLIER_ID = 'sup-007';
-const mySupplier = mockSuppliers.find((s) => s.id === SUPPLIER_ID)!;
-
-const MY_POS = mockPurchaseOrders
-  .filter((po) => po.supplierId === SUPPLIER_ID)
-  .sort((a, b) => b.orderDate.localeCompare(a.orderDate));
 
 const PO_STATUS_VARIANT: Record<
   POStatus,
@@ -84,6 +79,8 @@ const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 const SupplierOrders: React.FC = () => {
   const { toast } = useToast();
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [selected, setSelected] = useState<PurchaseOrder | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
@@ -93,6 +90,19 @@ const SupplierOrders: React.FC = () => {
   const [changeText, setChangeText] = useState('');
   const [confirmedAt, setConfirmedAt] = useState<string>('');
 
+  const mySupplier = useMemo(
+    () => mockSuppliers.find((s) => s.id === supplierId),
+    [supplierId],
+  );
+
+  const MY_POS = useMemo(
+    () =>
+      mockPurchaseOrders
+        .filter((po) => po.supplierId === supplierId)
+        .sort((a, b) => b.orderDate.localeCompare(a.orderDate)),
+    [supplierId],
+  );
+
   const counts = useMemo(
     () => ({
       all: MY_POS.length,
@@ -101,7 +111,7 @@ const SupplierOrders: React.FC = () => {
       completed: MY_POS.filter((p) => COMPLETED_STATUSES.includes(p.status))
         .length,
     }),
-    [],
+    [MY_POS],
   );
 
   const totalValuePending = useMemo(
@@ -110,18 +120,20 @@ const SupplierOrders: React.FC = () => {
         (s, p) => s + p.totalValue,
         0,
       ),
-    [],
+    [MY_POS],
   );
 
   const displayPOs = useMemo(
     () => filterByTab(activeTab, MY_POS),
-    [activeTab],
+    [activeTab, MY_POS],
   );
 
   const maxOrderDate = useMemo(
     () => MY_POS.reduce((a, p) => (p.orderDate > a ? p.orderDate : a), MY_POS[0]?.orderDate ?? ''),
-    [],
+    [MY_POS],
   );
+
+  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
 
   const openOrderPanel = (po: PurchaseOrder, mode: PanelMode = 'detail') => {
     setSelected(po);

@@ -30,8 +30,10 @@ import Tabs from '../components/ui-v2/Tabs';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 
 type Grade = 'A' | 'B' | 'C' | 'D';
 type Trend = '↑' | '↓' | '→';
@@ -53,9 +55,6 @@ interface ActionItem {
   action: string;
   priority: 'High' | 'Medium';
 }
-
-const SUPPLIER_ID = 'sup-007';
-const DEMO_SUPPLIER = mockSuppliers.find((s) => s.id === SUPPLIER_ID)!;
 
 const TOKEN_TEAL = '#0097A7';
 const TOKEN_MID = '#354A5F';
@@ -248,11 +247,18 @@ const TABS = [
 
 const SupplierPerformance: React.FC = () => {
   const { toast } = useToast();
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
   const [activeTab, setActiveTab] = useState<string>('overview');
 
+  const mySupplier = useMemo(
+    () => mockSuppliers.find((s) => s.id === supplierId),
+    [supplierId],
+  );
+
   const myPOs = useMemo(
-    () => mockPurchaseOrders.filter((po) => po.supplierId === SUPPLIER_ID),
-    [],
+    () => mockPurchaseOrders.filter((po) => po.supplierId === supplierId),
+    [supplierId],
   );
   const lateCount = myPOs.filter((p) => p.daysOverdue > 0).length;
   const onTimeCount = myPOs.filter((p) => p.daysOverdue <= 0).length;
@@ -271,6 +277,8 @@ const SupplierPerformance: React.FC = () => {
       description: 'Downloading performance report PDF...',
     });
 
+  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
+
   return (
     <AppShellV2>
       <PageHeader
@@ -288,12 +296,12 @@ const SupplierPerformance: React.FC = () => {
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="min-w-0 flex-1">
             <div className="text-xl font-bold text-white mb-2">
-              <span className="mr-2">{COUNTRY_FLAGS[DEMO_SUPPLIER.country] ?? '●'}</span>
-              {DEMO_SUPPLIER.name}
+              <span className="mr-2">{COUNTRY_FLAGS[mySupplier.country] ?? '●'}</span>
+              {mySupplier.name}
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
               <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-white/10 text-white/85">
-                {DEMO_SUPPLIER.category}
+                {mySupplier.category}
               </span>
               <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-white/10 text-white">
                 Tier 1 — WhatsApp
@@ -302,7 +310,7 @@ const SupplierPerformance: React.FC = () => {
             <div className="flex flex-wrap gap-5 text-xs text-white/70">
               <span>
                 <span className="text-white/50 font-semibold">SAP BP: </span>
-                {DEMO_SUPPLIER.sapBpNumber}
+                {mySupplier.sapBpNumber}
               </span>
               <span>
                 <span className="text-white/50 font-semibold">Channel: </span>
@@ -421,7 +429,7 @@ const SupplierPerformance: React.FC = () => {
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
             <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
-              Purchase order performance — {DEMO_SUPPLIER.name}
+              Purchase order performance — {mySupplier.name}
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
