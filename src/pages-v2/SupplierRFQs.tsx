@@ -26,10 +26,9 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import { useToast } from '../hooks/useToast';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockSuppliers } from '../data/mockSuppliers';
-
-const SUPPLIER_ID = 'sup-007';
-const mySupplier = mockSuppliers.find((s) => s.id === SUPPLIER_ID)!;
+import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 
 interface OpenRFQ {
   id: string;
@@ -604,12 +603,19 @@ const AwardsTab: React.FC = () => {
 
 const SupplierRFQs: React.FC = () => {
   const { toast } = useToast();
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
   const [activeTab, setActiveTab] = useState<TabKey>('open');
   const [openRFQs, setOpenRFQs] = useState<OpenRFQ[]>(OPEN_RFQS_INITIAL);
   const [quotePanelRFQ, setQuotePanelRFQ] = useState<OpenRFQ | null>(null);
   const [submittedNums, setSubmittedNums] = useState<string[]>([]);
   const [form, setForm] = useState<QuoteForm>(emptyQuoteForm);
   const [submitting, setSubmitting] = useState(false);
+
+  const mySupplier = useMemo(
+    () => mockSuppliers.find((s) => s.id === supplierId),
+    [supplierId],
+  );
 
   const openCount = openRFQs.length;
   const submittedCount = 1 + submittedNums.length;
@@ -681,6 +687,8 @@ const SupplierRFQs: React.FC = () => {
       setActiveTab('quotes');
     }, 600);
   };
+
+  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
 
   return (
     <AppShellV2>
