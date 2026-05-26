@@ -7,11 +7,17 @@ import {
 const IDENTITY_KEY = 'paragon.identity';
 const LEGACY_PERSONA_KEY = 'paragon.persona';
 
-const DEFAULT_IDENTITY: CurrentIdentity = {
-  personaType: 'buyer',
-  supplierId: null,
-  supplierName: null,
-};
+const SEEDED_SUPPLIER_ID = 'sup-007';
+const SEEDED_SUPPLIER_NAME = 'PT Berlina Packaging Indonesia';
+
+const identityForPersona = (persona: PersonaType): CurrentIdentity =>
+  persona === 'supplier'
+    ? {
+        personaType: 'supplier',
+        supplierId: SEEDED_SUPPLIER_ID,
+        supplierName: SEEDED_SUPPLIER_NAME,
+      }
+    : { personaType: 'buyer', supplierId: null, supplierName: null };
 
 const personaFromHash = (): PersonaType | null => {
   if (typeof window === 'undefined') return null;
@@ -36,40 +42,34 @@ const isCurrentIdentity = (v: unknown): v is CurrentIdentity => {
 
 export const mockIdentitySource: IdentitySource = {
   load(): CurrentIdentity {
-    if (typeof window === 'undefined') return DEFAULT_IDENTITY;
+    if (typeof window === 'undefined') return identityForPersona('buyer');
 
     const hashPersona = personaFromHash();
+
+    // Resolve effective persona: hash override > stored new key > legacy key > 'buyer'
+    let storedPersona: PersonaType | null = null;
 
     try {
       const raw = window.localStorage.getItem(IDENTITY_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as unknown;
-        if (isCurrentIdentity(parsed)) {
-          return hashPersona
-            ? { ...parsed, personaType: hashPersona }
-            : parsed;
-        }
+        if (isCurrentIdentity(parsed)) storedPersona = parsed.personaType;
       }
     } catch {
       // ignore parse / storage errors
     }
 
-    try {
-      const legacy = window.localStorage.getItem(LEGACY_PERSONA_KEY);
-      if (isPersonaType(legacy)) {
-        return {
-          personaType: hashPersona ?? legacy,
-          supplierId: null,
-          supplierName: null,
-        };
+    if (storedPersona === null) {
+      try {
+        const legacy = window.localStorage.getItem(LEGACY_PERSONA_KEY);
+        if (isPersonaType(legacy)) storedPersona = legacy;
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
     }
 
-    return hashPersona
-      ? { ...DEFAULT_IDENTITY, personaType: hashPersona }
-      : DEFAULT_IDENTITY;
+    const effective: PersonaType = hashPersona ?? storedPersona ?? 'buyer';
+    return identityForPersona(effective);
   },
 
   save(next: CurrentIdentity): void {
