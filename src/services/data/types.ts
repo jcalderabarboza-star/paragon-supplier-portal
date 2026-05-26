@@ -163,7 +163,8 @@ export type SupplierDocumentCategory =
   | 'BPOM Regulatory'
   | 'Tax & Legal'
   | 'Quality'
-  | 'Contract';
+  | 'Contract'
+  | 'Other';
 
 export interface SupplierDocument {
   id: string;
@@ -211,19 +212,18 @@ export interface SupplierInvoice {
 }
 
 export type BuyerInvoiceStatus =
-  | 'Draft'
   | 'Pending Match'
   | 'Approved'
-  | 'Payment Released'
   | 'Disputed'
+  | 'Payment Released'
   | 'Overdue';
 
 export type InvoiceMatchStatus =
   | 'Matched'
   | 'Pending GR'
-  | 'Price Mismatch'
-  | 'Quantity Mismatch'
-  | 'Not Matched';
+  | 'Qty Mismatch'
+  | 'Price Variance'
+  | 'Pending';
 
 export interface BuyerInvoice {
   id: string;
@@ -258,8 +258,17 @@ export type AsnStatus =
 export interface AsnLineItem {
   materialCode: string;
   description: string;
-  quantity: number;
-  uom: string;
+  orderedQty: number;
+  shippedQty: number;
+  lotNumber: string;
+}
+
+export interface AsnShipmentDetails {
+  originCity: string;
+  destinationWarehouse: string;
+  totalCartons: number;
+  grossWeightKg: number;
+  temperatureRequirement: string;
 }
 
 export interface ASN {
@@ -270,7 +279,7 @@ export interface ASN {
   carrier: string;
   trackingNumber: string;
   eta: string;
-  details?: string;
+  details: AsnShipmentDetails;
   lineItems: AsnLineItem[];
 }
 
@@ -280,56 +289,69 @@ export interface CatalogItem {
   material: string;
   sapCode: string;
   category: string;
-  moq: number;
+  moq: string;
   uom: string;
-  leadTime: number;
-  unitPrice: number;
+  leadTime: string;
+  unitPrice: string;
   currency: string;
   certs: string[];
   capacity: string;
   visible: boolean;
 }
 
-export type ProfileCertStatus = 'Valid' | 'Expiring' | 'Expired' | 'Pending';
+export type ProfileCertStatus =
+  | 'valid'
+  | 'expiring'
+  | 'expired'
+  | 'missing'
+  | 'pending';
 
 export interface ProfileCert {
   supplierId: string;
   name: string;
   visible: boolean;
   status: ProfileCertStatus;
-  expiry: string;
+  expiry: string | null;
 }
 
 export interface StorefrontProduct {
   supplierId: string;
   name: string;
   code: string;
-  moq: number;
-  leadTime: number;
+  moq: string;
+  leadTime: string;
 }
 
 // ─── Performance / KPI snapshots ────────────────────────────────────────────
 
+export type KpiTrend = '↑' | '↓' | '→';
+
 export interface KpiPoint {
   name: string;
-  value: number | string;
-  target?: number | string;
-  pct?: number;
-  color?: string;
-  trend?: number;
+  value: string;
+  target: string;
+  pct: number;
+  color: string;
+  trend: KpiTrend;
+}
+
+export interface RadarPoint {
+  axis: string;
+  value: number;
+  target: number;
 }
 
 export interface KpiSnapshot {
   kpis: KpiPoint[];
-  radar: { axis: string; value: number; target: number }[];
-  trend: { period: string; otif: number; otdr: number }[];
+  radar: RadarPoint[];
+  trend: PerformancePoint[];
   improvementActions: ImprovementAction[];
 }
 
 export interface ImprovementAction {
   kpi: string;
-  current: number | string;
-  target: number | string;
+  current: string;
+  target: string;
   gap: string;
   action: string;
   priority: 'High' | 'Medium' | 'Low';
@@ -338,18 +360,22 @@ export interface ImprovementAction {
 export type TrendRange = '7d' | '30d' | '90d' | '12m';
 
 export interface PerformancePoint {
-  period: string;
+  week: string;
   otif: number;
-  otdr: number;
+  asnAcc: number;
+  defect: number;
+  ackHrs: number;
 }
 
 // ─── Risk / Compliance entities (buyer-side, inline today) ──────────────────
 
 export type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
+export type RiskSeverity = 'critical' | 'high' | 'medium' | 'low';
+export type RiskAlertLevel = 'critical' | 'warning' | 'info';
 
 export interface RiskAlert {
   id: string;
-  level: RiskLevel;
+  level: RiskAlertLevel;
   title: string;
   body: string;
 }
@@ -358,13 +384,13 @@ export interface GeoRisk {
   region: string;
   country: string;
   flag: string;
-  severity: RiskLevel;
+  severity: RiskSeverity;
   score: number;
-  trend: number;
+  trend: 'rising' | 'stable' | 'declining';
   event: string;
   impact: string;
   exposure: string;
-  suppliers: number;
+  suppliers: string[];
   mitigation: string;
   probability: number;
   timeline: string;
@@ -376,16 +402,18 @@ export interface ExposureRow {
   region: string;
   spend: number;
   dos: number;
-  risk: RiskLevel;
+  risk: RiskSeverity;
   dualSource: boolean;
 }
+
+export type ComplianceState = 'ok' | 'expiring' | 'expired';
 
 export interface ComplianceRow {
   supplier: string;
   type: string;
   expires: string;
   daysLeft: number;
-  status: 'Valid' | 'Expiring Soon' | 'Expired' | 'Under Review';
+  status: ComplianceState;
 }
 
 export interface Commodity {
@@ -393,10 +421,10 @@ export interface Commodity {
   unit: string;
   current: number;
   change: number;
-  alert: boolean;
-  alertDir: 'up' | 'down';
+  alert: number;
+  alertDir: 'above' | 'below';
   color: string;
-  spark: number[];
+  spark: { t: number; v: number }[];
 }
 
 // ─── Discovery / Recommendation entities (buyer-side, inline today) ─────────
@@ -409,11 +437,11 @@ export interface GlobalSupplier {
   region: string;
   categories: string[];
   certifications: string[];
-  validatedBy: string;
+  validatedBy: string[];
   matchScore: number;
   description: string;
   employees: string;
-  founded: number;
+  founded: string;
   halalCertified: boolean;
   alreadyInNetwork: boolean;
 }
@@ -426,9 +454,11 @@ export interface RecommendedSupplier {
   matchScore: number;
   whyRecommended: string;
   covers: string;
-  riskNote: string;
+  riskNote?: string;
   storefrontPath: string;
 }
+
+export type QualificationStatus = 'On Track' | 'At Risk' | 'Blocked';
 
 export interface QualificationItem {
   supplier: string;
@@ -440,7 +470,7 @@ export interface QualificationItem {
   owner: string;
   nextAction: string;
   dueDate: string;
-  status: string;
+  status: QualificationStatus;
 }
 
 export interface MarketIntelCard {
@@ -453,12 +483,14 @@ export interface MarketIntelCard {
   recommendation: string;
 }
 
+export type SingleSourceRiskLevel = 'Critical' | 'High' | 'Medium';
+
 export interface SingleSourceItem {
   material: string;
   category: string;
   currentSupplier: string;
-  risk: RiskLevel;
-  riskLevel: number;
+  risk: string;
+  riskLevel: SingleSourceRiskLevel;
   suggestedAlternatives: string[];
 }
 

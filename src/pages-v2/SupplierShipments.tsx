@@ -35,117 +35,11 @@ import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { POStatus, PurchaseOrder } from '../types/purchaseOrder.types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import type { AsnStatus } from '../services/data/types';
+import { MOCK_ASNS } from '../services/data/mock/fixtures/supplierShipments';
 
-type AsnStatus =
-  | 'Draft'
-  | 'Submitted'
-  | 'In Transit'
-  | 'Delivered'
-  | 'Discrepancy';
 type TabKey = 'shipments' | 'create' | 'dock';
 type StatusFilter = AsnStatus | 'All';
-
-interface AsnLineItem {
-  materialCode: string;
-  description: string;
-  orderedQty: number;
-  shippedQty: number;
-  lotNumber: string;
-}
-
-interface AsnShipmentDetails {
-  originCity: string;
-  destinationWarehouse: string;
-  totalCartons: number;
-  grossWeightKg: number;
-  temperatureRequirement: string;
-}
-
-interface Asn {
-  asnNumber: string;
-  poReference: string;
-  status: AsnStatus;
-  carrier: string;
-  trackingNumber: string;
-  eta: string;
-  details: AsnShipmentDetails;
-  lineItems: AsnLineItem[];
-}
-
-const MOCK_ASNS: Asn[] = [
-  {
-    asnNumber: 'ASN-2025-00211',
-    poReference: 'PO-2025-00112',
-    status: 'In Transit',
-    carrier: 'JNE Express Cargo',
-    trackingNumber: 'JNE-TRK-882941-X',
-    eta: '2025-04-02',
-    details: {
-      originCity: 'Surabaya, ID',
-      destinationWarehouse: 'Paragon DC Cikarang (WH-04)',
-      totalCartons: 312,
-      grossWeightKg: 4280,
-      temperatureRequirement: 'Ambient (15–25°C)',
-    },
-    lineItems: [
-      { materialCode: 'MAT-88201', description: 'Fragrance concentrate – Rose Oud', orderedQty: 1200, shippedQty: 1200, lotNumber: 'LOT-A4481' },
-      { materialCode: 'MAT-88207', description: 'PET bottle 50ml – clear', orderedQty: 15000, shippedQty: 14820, lotNumber: 'LOT-A4482' },
-    ],
-  },
-  {
-    asnNumber: 'ASN-2025-00198',
-    poReference: 'PO-2025-00107',
-    status: 'Delivered',
-    carrier: 'Pos Logistik Indonesia',
-    trackingNumber: 'PLI-7723-BC-4401',
-    eta: '2025-03-22',
-    details: {
-      originCity: 'Bandung, ID',
-      destinationWarehouse: 'Paragon DC Karawang (WH-02)',
-      totalCartons: 188,
-      grossWeightKg: 2610,
-      temperatureRequirement: 'Ambient (15–25°C)',
-    },
-    lineItems: [
-      { materialCode: 'MAT-77014', description: 'Aluminium closure 24/410', orderedQty: 48000, shippedQty: 48000, lotNumber: 'LOT-C9911' },
-    ],
-  },
-  {
-    asnNumber: 'ASN-2025-00201',
-    poReference: 'PO-2025-00109',
-    status: 'Discrepancy',
-    carrier: 'SiCepat Cargo',
-    trackingNumber: 'SCP-X-119843-JKT',
-    eta: '2025-03-27',
-    details: {
-      originCity: 'Jakarta, ID',
-      destinationWarehouse: 'Paragon DC Cibitung (WH-01)',
-      totalCartons: 94,
-      grossWeightKg: 1340,
-      temperatureRequirement: 'Cool chain (2–8°C)',
-    },
-    lineItems: [
-      { materialCode: 'MAT-55022', description: 'Active emulsion – Niacinamide 5%', orderedQty: 800, shippedQty: 720, lotNumber: 'LOT-E2203' },
-      { materialCode: 'MAT-55031', description: 'Active emulsion – Hyaluronic 2%', orderedQty: 600, shippedQty: 540, lotNumber: 'LOT-E2204' },
-    ],
-  },
-  {
-    asnNumber: 'ASN-2025-00215',
-    poReference: 'PO-2025-00115',
-    status: 'Draft',
-    carrier: '—',
-    trackingNumber: '—',
-    eta: '',
-    details: {
-      originCity: '—',
-      destinationWarehouse: '—',
-      totalCartons: 0,
-      grossWeightKg: 0,
-      temperatureRequirement: '—',
-    },
-    lineItems: [],
-  },
-];
 
 const STATUS_VARIANT: Record<AsnStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   Draft: 'neutral',

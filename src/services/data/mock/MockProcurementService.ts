@@ -8,6 +8,21 @@ import { mockRfqs } from '../../../data/mockRfqs';
 import { mockQuotations } from '../../../data/mockQuotations';
 import { toCanonicalPOs } from '../dto';
 import { applySupplierScope } from '../scoping';
+import { MOCK_ASNS } from './fixtures/supplierShipments';
+import { DOCUMENTS } from './fixtures/supplierDocuments';
+import { INVOICES as MOCK_SUPPLIER_INVOICES } from './fixtures/supplierInvoices';
+import { BUYER_INVOICES } from './fixtures/buyerInvoices';
+import {
+  INITIAL_CATALOG,
+  INITIAL_CERTS,
+  PRODUCTS_DEFAULT,
+} from './fixtures/supplierStorefront';
+import {
+  KPIS,
+  RADAR_DATA,
+  WEEKLY_TREND,
+  SUP_007_SUPPLIER_ID,
+} from './fixtures/supplierPerformance';
 import type {
   IProcurementService,
   QueryScope,
@@ -52,6 +67,31 @@ const EMPTY_KPI_SNAPSHOT: KpiSnapshot = {
   trend: [],
   improvementActions: [],
 };
+
+const SUP_007_KPI_SNAPSHOT: KpiSnapshot = {
+  kpis: KPIS,
+  radar: RADAR_DATA,
+  trend: WEEKLY_TREND,
+  // Improvement actions remain inline in SupplierPerformance.tsx pending
+  // Batch 3-4 page migration; the fixture surface for them is deferred.
+  improvementActions: [],
+};
+
+// Today every relocated supplier fixture is tagged sup-007; the snapshot
+// is only meaningful when scope resolves to that supplier (or to a buyer
+// reading sup-007's data through the portfolio view). Fan-out across
+// suppliers is a deferred follow-up.
+function snapshotForScope(scope: QueryScope): KpiSnapshot {
+  if (scope.personaType === 'buyer') return SUP_007_KPI_SNAPSHOT;
+  if (scope.supplierId === SUP_007_SUPPLIER_ID) return SUP_007_KPI_SNAPSHOT;
+  return EMPTY_KPI_SNAPSHOT;
+}
+
+function trendForScope(scope: QueryScope): PerformancePoint[] {
+  if (scope.personaType === 'buyer') return [...WEEKLY_TREND];
+  if (scope.supplierId === SUP_007_SUPPLIER_ID) return [...WEEKLY_TREND];
+  return [];
+}
 
 export class MockProcurementService implements IProcurementService {
   // ─── Purchase orders ──────────────────────────────────────────────────────
@@ -140,10 +180,10 @@ export class MockProcurementService implements IProcurementService {
     return rows;
   }
 
-  // ASN fixtures still live inline in SupplierShipments.tsx (Batch 2 will
-  // relocate them with supplierId tagging).
-  async getASNs(_scope: QueryScope, _filter?: ASNFilter): Promise<ASN[]> {
-    return [];
+  async getASNs(scope: QueryScope, filter?: ASNFilter): Promise<ASN[]> {
+    let rows = applySupplierScope(scope, MOCK_ASNS);
+    if (filter?.status) rows = rows.filter((a) => matchesList(a.status, filter.status));
+    return rows;
   }
 
   async getGoodsReceipts(
@@ -157,20 +197,32 @@ export class MockProcurementService implements IProcurementService {
     return rows;
   }
 
-  // ─── Finance — fixtures inline today (Batch 2) ───────────────────────────
+  // ─── Finance ──────────────────────────────────────────────────────────────
 
   async getBuyerInvoices(
-    _scope: QueryScope,
-    _filter?: InvoiceFilter,
+    scope: QueryScope,
+    filter?: InvoiceFilter,
   ): Promise<BuyerInvoice[]> {
-    return [];
+    let rows = applySupplierScope(scope, BUYER_INVOICES);
+    if (filter?.supplierId)
+      rows = rows.filter((i) => i.supplierId === filter.supplierId);
+    if (filter?.poNumber)
+      rows = rows.filter((i) => i.poNumber === filter.poNumber);
+    if (filter?.status) rows = rows.filter((i) => i.status === filter.status);
+    return rows;
   }
 
   async getSupplierInvoices(
-    _scope: QueryScope,
-    _filter?: InvoiceFilter,
+    scope: QueryScope,
+    filter?: InvoiceFilter,
   ): Promise<SupplierInvoice[]> {
-    return [];
+    let rows = applySupplierScope(scope, MOCK_SUPPLIER_INVOICES);
+    if (filter?.supplierId)
+      rows = rows.filter((i) => i.supplierId === filter.supplierId);
+    if (filter?.poNumber)
+      rows = rows.filter((i) => i.poNumber === filter.poNumber);
+    if (filter?.status) rows = rows.filter((i) => i.status === filter.status);
+    return rows;
   }
 
   // ─── Contracts ────────────────────────────────────────────────────────────
@@ -202,43 +254,49 @@ export class MockProcurementService implements IProcurementService {
     return rows;
   }
 
-  // ─── Supplier-side supporting data — fixtures inline today (Batch 2) ──────
+  // ─── Supplier-side supporting data ────────────────────────────────────────
 
-  async getDocuments(_scope: QueryScope): Promise<SupplierDocument[]> {
-    return [];
+  async getDocuments(scope: QueryScope): Promise<SupplierDocument[]> {
+    return applySupplierScope(scope, DOCUMENTS);
   }
 
   async getStorefrontCatalog(
-    _scope: QueryScope,
-    _supplierId?: string,
+    scope: QueryScope,
+    supplierId?: string,
   ): Promise<CatalogItem[]> {
-    return [];
+    let rows = applySupplierScope(scope, INITIAL_CATALOG);
+    if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
+    return rows;
   }
 
   async getStorefrontCerts(
-    _scope: QueryScope,
-    _supplierId?: string,
+    scope: QueryScope,
+    supplierId?: string,
   ): Promise<ProfileCert[]> {
-    return [];
+    let rows = applySupplierScope(scope, INITIAL_CERTS);
+    if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
+    return rows;
   }
 
   async getStorefrontProducts(
-    _scope: QueryScope,
-    _supplierId?: string,
+    scope: QueryScope,
+    supplierId?: string,
   ): Promise<StorefrontProduct[]> {
-    return [];
+    let rows = applySupplierScope(scope, PRODUCTS_DEFAULT);
+    if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
+    return rows;
   }
 
-  // ─── KPIs / performance — fixtures inline today (Batch 2) ────────────────
+  // ─── KPIs / performance ───────────────────────────────────────────────────
 
-  async getKpis(_scope: QueryScope): Promise<KpiSnapshot> {
-    return EMPTY_KPI_SNAPSHOT;
+  async getKpis(scope: QueryScope): Promise<KpiSnapshot> {
+    return snapshotForScope(scope);
   }
 
   async getPerformanceTrend(
-    _scope: QueryScope,
+    scope: QueryScope,
     _range: TrendRange,
   ): Promise<PerformancePoint[]> {
-    return [];
+    return trendForScope(scope);
   }
 }

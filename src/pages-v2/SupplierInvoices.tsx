@@ -31,39 +31,11 @@ import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockSuppliers } from '../data/mockSuppliers';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
-
-type InvStatus =
-  | 'Draft'
-  | 'Pending Approval'
-  | 'Approved'
-  | 'Payment Released'
-  | 'Remittance Received'
-  | 'Overdue'
-  | 'Disputed';
-
-interface SupplierInvoice {
-  id: string;
-  invoiceNumber: string;
-  poNumber: string;
-  amount: number;
-  status: InvStatus;
-  submittedDate: string;
-  dueDate: string;
-  paymentDate: string | null;
-  paymentRef: string | null;
-  bankAccount: string;
-  sapFiDoc: string | null;
-  channel: 'WhatsApp' | 'Web' | 'Email' | 'API';
-  buyerContact: string;
-  remittanceNote: string | null;
-}
-
-const INVOICES: SupplierInvoice[] = [
-  { id: 'si-001', invoiceNumber: 'INV-2025-BRL-0042', poNumber: 'PO-2025-00107', amount: 320_000_000, status: 'Payment Released', submittedDate: '2025-04-10', dueDate: '2025-05-10', paymentDate: '2025-04-13', paymentRef: 'PAY-2026-85241', bankAccount: 'BCA 028-111-2222', sapFiDoc: 'FI-5100009441', channel: 'WhatsApp', buyerContact: 'Procurement Officer', remittanceNote: 'Payment for PO-2025-00107 · 50,000 PCS PET Bottle 100ml Airless Pump · Batch BRL-2026-0234' },
-  { id: 'si-002', invoiceNumber: 'INV-2025-BRL-0043', poNumber: 'PO-2025-00108', amount: 185_000_000, status: 'Disputed', submittedDate: '2025-04-12', dueDate: '2025-05-12', paymentDate: null, paymentRef: null, bankAccount: 'BCA 028-111-2222', sapFiDoc: null, channel: 'WhatsApp', buyerContact: 'Finance Controller', remittanceNote: null },
-  { id: 'si-003', invoiceNumber: 'INV-2026-BRL-0051', poNumber: 'PO-2025-00115', amount: 275_000_000, status: 'Pending Approval', submittedDate: '2026-04-01', dueDate: '2026-05-01', paymentDate: null, paymentRef: null, bankAccount: 'BCA 028-111-2222', sapFiDoc: 'FI-5100009512', channel: 'Web', buyerContact: 'Procurement Officer', remittanceNote: null },
-  { id: 'si-004', invoiceNumber: 'INV-2026-BRL-0055', poNumber: 'PO-2026-00003', amount: 410_000_000, status: 'Draft', submittedDate: '2026-04-08', dueDate: '2026-05-08', paymentDate: null, paymentRef: null, bankAccount: 'BCA 028-111-2222', sapFiDoc: null, channel: 'Web', buyerContact: 'Procurement Officer', remittanceNote: null },
-];
+import type {
+  SupplierInvoice,
+  SupplierInvoiceStatus as InvStatus,
+} from '../services/data/types';
+import { INVOICES } from '../services/data/mock/fixtures/supplierInvoices';
 
 const STATUS_VARIANT: Record<InvStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   Draft: 'neutral',

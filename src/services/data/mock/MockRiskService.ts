@@ -7,24 +7,35 @@ import type {
   ComplianceRow,
   Commodity,
 } from '../types';
+import {
+  ALERTS,
+  GEO_RISKS,
+  EXPOSURE_DATA,
+  COMPLIANCE_DATA,
+  COMMODITIES,
+} from './fixtures/buyerRisk';
 
-// All risk fixtures still live inline in BuyerRisk.tsx / BuyerCompliance.tsx.
-// Batch 2 will relocate them under fixtures/.
+// Risk fixtures are buyer-side aggregate views (geopolitical, exposure,
+// compliance, commodity prices). Suppliers do not see this surface — the
+// service returns [] for the supplier persona.
+function bufferForBuyer<T>(scope: QueryScope, rows: readonly T[]): T[] {
+  return scope.personaType === 'buyer' ? [...rows] : [];
+}
 
 export class MockRiskService implements IRiskService {
-  async getRiskAlerts(_scope: QueryScope): Promise<RiskAlert[]> {
-    return [];
+  async getRiskAlerts(scope: QueryScope): Promise<RiskAlert[]> {
+    return bufferForBuyer(scope, ALERTS);
   }
-  async getGeoRisks(_scope: QueryScope): Promise<GeoRisk[]> {
-    return [];
+  async getGeoRisks(scope: QueryScope): Promise<GeoRisk[]> {
+    return bufferForBuyer(scope, GEO_RISKS);
   }
-  async getExposure(_scope: QueryScope): Promise<ExposureRow[]> {
-    return [];
+  async getExposure(scope: QueryScope): Promise<ExposureRow[]> {
+    return bufferForBuyer(scope, EXPOSURE_DATA);
   }
-  async getCompliance(_scope: QueryScope): Promise<ComplianceRow[]> {
-    return [];
+  async getCompliance(scope: QueryScope): Promise<ComplianceRow[]> {
+    return bufferForBuyer(scope, COMPLIANCE_DATA);
   }
-  async getCommodities(_scope: QueryScope): Promise<Commodity[]> {
-    return [];
+  async getCommodities(scope: QueryScope): Promise<Commodity[]> {
+    return bufferForBuyer(scope, COMMODITIES);
   }
 }

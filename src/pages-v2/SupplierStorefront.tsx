@@ -25,22 +25,7 @@ import Tabs from '../components/ui-v2/Tabs';
 import Button from '../components/ui-v2/Button';
 import { mockSuppliers } from '../data/mockSuppliers';
 import { PreferredChannel } from '../types/supplier.types';
-
-type StorefrontProduct = {
-  name: string;
-  code: string;
-  moq: string;
-  leadTime: string;
-};
-
-const PRODUCTS_DEFAULT: StorefrontProduct[] = [
-  { name: 'Signature ingredient (per request)', code: 'CAT-0001', moq: '1,000 KG', leadTime: '14 days' },
-  { name: 'Premium grade variant', code: 'CAT-0002', moq: '500 KG', leadTime: '21 days' },
-  { name: 'Industrial grade variant', code: 'CAT-0003', moq: '5,000 KG', leadTime: '10 days' },
-  { name: 'Specialty derivative', code: 'CAT-0004', moq: '250 KG', leadTime: '28 days' },
-  { name: 'Bulk fulfilment SKU', code: 'CAT-0005', moq: '10,000 KG', leadTime: '35 days' },
-  { name: 'Sample / trial kit', code: 'CAT-0006', moq: '5 KG', leadTime: '7 days' },
-];
+import { PRODUCTS_DEFAULT } from '../services/data/mock/fixtures/supplierStorefront';
 
 type CertStatus = 'valid' | 'expiring' | 'expired';
 
