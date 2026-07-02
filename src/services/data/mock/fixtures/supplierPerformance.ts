@@ -6,7 +6,12 @@
 // ensures only the owning supplier (or buyer) can read it.
 // ────────────────────────────────────────────────────────────────────────────
 
-import type { KpiPoint, RadarPoint, PerformancePoint } from '../../types';
+import type {
+  KpiPoint,
+  RadarPoint,
+  PerformancePoint,
+  ImprovementAction,
+} from '../../types';
 
 export const SUP_007_SUPPLIER_ID = 'sup-007';
 
@@ -45,4 +50,36 @@ export const WEEKLY_TREND: PerformancePoint[] = [
   { week: 'W2 Mar', otif: 86, asnAcc: 98, defect: 0.7, ackHrs: 38 },
   { week: 'W3 Mar', otif: 85, asnAcc: 97, defect: 0.8, ackHrs: 40 },
   { week: 'W4 Mar', otif: 87, asnAcc: 98, defect: 0.8, ackHrs: 42 },
+];
+
+// Below-target KPIs with recommended corrective actions. Surfaced through
+// getKpis (KpiSnapshot.improvementActions) so the page reads them via useKpis.
+export const IMPROVEMENT_ACTIONS: ImprovementAction[] = [
+  {
+    kpi: 'OTIF Rate',
+    current: '87%',
+    target: '≥ 95%',
+    gap: '−8pp',
+    action:
+      'Review production schedule alignment with Paragon delivery windows. Current 7-day overdue on PO-2025-00107 indicates capacity constraint.',
+    priority: 'High',
+  },
+  {
+    kpi: 'POA Response Time',
+    current: '42 hrs avg',
+    target: '≤ 24 hrs',
+    gap: '+18 hrs',
+    action:
+      'Enable WhatsApp PO notification alerts for faster acknowledgement. Assign dedicated PO coordinator for Paragon account.',
+    priority: 'Medium',
+  },
+  {
+    kpi: 'Invoice Accuracy',
+    current: '91%',
+    target: '≥ 98%',
+    gap: '−7pp',
+    action:
+      'Quantity discrepancies detected on PO-2025-00108. Implement pre-shipment count verification before invoice submission.',
+    priority: 'Medium',
+  },
 ];

@@ -7,11 +7,13 @@ import type {
   ExposureRow,
   ComplianceRow,
   Commodity,
+  Scenario,
 } from '../types';
 import {
   ALERTS,
   GEO_RISKS,
   EXPOSURE_DATA,
+  SCENARIO_ME,
   COMPLIANCE_DATA,
   COMMODITIES,
 } from './fixtures/buyerRisk';
@@ -32,6 +34,11 @@ export class MockRiskService implements IRiskService {
   }
   async getExposure(scope: QueryScope): Promise<Page<ExposureRow>> {
     return { items: bufferForBuyer(scope, EXPOSURE_DATA) };
+  }
+  async getScenarios(scope: QueryScope): Promise<Page<Scenario>> {
+    // Only the Middle East scenario is fully modeled today; the picker in the
+    // page lists the wider library. Additional modeled scenarios append here.
+    return { items: bufferForBuyer(scope, [SCENARIO_ME]) };
   }
   async getCompliance(scope: QueryScope): Promise<Page<ComplianceRow>> {
     return { items: bufferForBuyer(scope, COMPLIANCE_DATA) };

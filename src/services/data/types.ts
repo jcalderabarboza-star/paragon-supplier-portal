@@ -469,6 +469,28 @@ export interface Commodity {
   spark: { t: number; v: number }[];
 }
 
+// Scenario modeling (buyer-side). A modeled disruption scenario with its
+// quantified impact and a set of response alternatives.
+export type ScenarioFeasibility = 'high' | 'medium' | 'low';
+
+export interface ScenarioAlt {
+  id: string;
+  name: string;
+  cost: string;
+  leadTime: string;
+  feasibility: ScenarioFeasibility;
+  details: string;
+}
+
+export interface Scenario {
+  id: string;
+  label: string;
+  title: string;
+  description: string;
+  impact: Record<string, string>;
+  alternatives: ScenarioAlt[];
+}
+
 // ─── Discovery / Recommendation entities (buyer-side, inline today) ─────────
 
 export interface GlobalSupplier {
@@ -670,6 +692,7 @@ export interface IRiskService {
   getRiskAlerts(scope: QueryScope): Promise<Page<RiskAlert>>;
   getGeoRisks(scope: QueryScope): Promise<Page<GeoRisk>>;
   getExposure(scope: QueryScope): Promise<Page<ExposureRow>>;
+  getScenarios(scope: QueryScope): Promise<Page<Scenario>>;
   getCompliance(scope: QueryScope): Promise<Page<ComplianceRow>>;
   getCommodities(scope: QueryScope): Promise<Page<Commodity>>;
 }

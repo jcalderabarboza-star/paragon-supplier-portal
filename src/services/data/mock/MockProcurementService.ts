@@ -22,6 +22,7 @@ import {
   KPIS,
   RADAR_DATA,
   WEEKLY_TREND,
+  IMPROVEMENT_ACTIONS,
   SUP_007_SUPPLIER_ID,
 } from './fixtures/supplierPerformance';
 import type {
@@ -76,9 +77,7 @@ const SUP_007_KPI_SNAPSHOT: KpiSnapshot = {
   kpis: KPIS,
   radar: RADAR_DATA,
   trend: WEEKLY_TREND,
-  // Improvement actions remain inline in SupplierPerformance.tsx pending
-  // Batch 3-4 page migration; the fixture surface for them is deferred.
-  improvementActions: [],
+  improvementActions: IMPROVEMENT_ACTIONS,
 };
 
 // Today every relocated supplier fixture is tagged sup-007; the snapshot
