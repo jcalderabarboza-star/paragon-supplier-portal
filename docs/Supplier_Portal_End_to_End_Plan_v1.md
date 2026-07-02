@@ -1,3 +1,5 @@
+> **SUPERSEDED by Revised Build Plan v2.1** (`docs/Supplier_Portal_Revised_Build_Plan_v2.1.md`). Retained for history.
+
 # Supplier Portal — End-to-End Build Plan
 
 **Version:** 1.0
