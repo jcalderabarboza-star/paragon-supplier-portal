@@ -61,6 +61,10 @@ export interface Supplier {
   leadTimeAdherence: number;
   invoiceAccuracy: number;
   scorecardGrade: ScorecardGrade;
+  // Optional profile attributes (surfaced on storefront/profile views).
+  founded?: number;
+  website?: string;
+  intelligenceNote?: string;
 }
 
 export interface SupplierSummary {

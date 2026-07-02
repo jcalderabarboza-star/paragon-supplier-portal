@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -23,9 +23,12 @@ import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Tabs from '../components/ui-v2/Tabs';
 import Button from '../components/ui-v2/Button';
-import { mockSuppliers } from '../data/mockSuppliers';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
 import { PreferredChannel } from '../types/supplier.types';
-import { PRODUCTS_DEFAULT } from '../services/data/mock/fixtures/supplierStorefront';
+import { useSupplier, useStorefrontProducts } from '../services/query/hooks';
+
+const STOREFRONT_CRUMB = ['ACQUIRE', 'MARKETPLACE'];
 
 type CertStatus = 'valid' | 'expiring' | 'expired';
 
@@ -95,10 +98,24 @@ const SupplierStorefront: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('catalog');
   const [message, setMessage] = useState('');
 
-  const supp = useMemo(
-    () => mockSuppliers.find((s) => s.id === id),
-    [id],
-  );
+  const supplierQuery = useSupplier(id ?? '');
+  const productsQuery = useStorefrontProducts(id);
+  const supp = supplierQuery.data ?? null;
+  const products = productsQuery.data?.items ?? [];
+
+  if (supplierQuery.isPending || productsQuery.isPending)
+    return <LoadingState breadcrumb={STOREFRONT_CRUMB} />;
+  if (supplierQuery.isError || productsQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={STOREFRONT_CRUMB}
+        error={supplierQuery.error ?? productsQuery.error}
+        onRetry={() => {
+          supplierQuery.refetch();
+          productsQuery.refetch();
+        }}
+      />
+    );
 
   if (!supp) {
     return (
@@ -190,10 +207,9 @@ const SupplierStorefront: React.FC = () => {
       />
 
       {/* Hero banner */}
-      <div className="relative bg-gradient-to-br from-teal to-navy text-white rounded-lg shadow-sm overflow-hidden mb-6">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_50%)]" />
-        <div className="relative p-8 flex items-center gap-6">
-          <div className="w-20 h-20 shrink-0 rounded-lg bg-white/15 backdrop-blur flex items-center justify-center text-2xl font-bold">
+      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
+        <div className="p-8 flex items-center gap-6">
+          <div className="w-20 h-20 shrink-0 rounded-lg bg-teal-soft text-teal flex items-center justify-center text-2xl font-bold">
             {supp.name
               .split(/\s+/)
               .map((w) => w[0])
@@ -203,7 +219,7 @@ const SupplierStorefront: React.FC = () => {
               .toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-white/70 font-semibold">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-text-tertiary font-semibold">
               <MapPin size={12} />
               <span>
                 {supp.city}, {supp.country}
@@ -215,8 +231,10 @@ const SupplierStorefront: React.FC = () => {
                 </>
               )}
             </div>
-            <h2 className="text-2xl font-semibold mt-1">{supp.name}</h2>
-            <p className="text-sm text-white/80 mt-1.5 max-w-2xl">
+            <h2 className="text-2xl font-semibold text-text-primary mt-1">
+              {supp.name}
+            </h2>
+            <p className="text-sm text-text-secondary mt-1.5 max-w-2xl">
               {supp.intelligenceNote ??
                 `${supp.category} specialist serving ${supp.country} and regional markets. Preferred channel: ${supp.preferredChannel}.`}
             </p>
@@ -259,9 +277,15 @@ const SupplierStorefront: React.FC = () => {
         className="mb-6"
       />
 
-      {activeTab === 'catalog' && (
+      {activeTab === 'catalog' && products.length === 0 && (
+        <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-8 text-center text-sm text-text-tertiary">
+          This supplier has not published a public catalog yet.
+        </div>
+      )}
+
+      {activeTab === 'catalog' && products.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {PRODUCTS_DEFAULT.map((p) => (
+          {products.map((p) => (
             <div
               key={p.code}
               className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5"
@@ -326,6 +350,12 @@ const SupplierStorefront: React.FC = () => {
 
       {activeTab === 'track' && (
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
+          <div className="flex items-center gap-2 mb-5">
+            <h2 className="text-base font-semibold text-text-primary">
+              Delivery track record
+            </h2>
+            <StatusPill variant="neutral">Sample data</StatusPill>
+          </div>
           <ol className="relative space-y-5">
             {TRACK_RECORD.map((e, i) => {
               const Icon = e.icon;
