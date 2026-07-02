@@ -71,14 +71,11 @@ const SCENARIO_LIBRARY: { id: string; label: string }[] = [
   { id: 'pa', label: 'Pandemic resurgence' },
 ];
 
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_MID = '#354A5F';
 const TOKEN_SUCCESS = '#107E3E';
 const TOKEN_WARNING = '#B45309';
 const TOKEN_DANGER = '#BB0000';
 const TOKEN_INFO = '#1E5BAE';
 const TOKEN_MUTED = '#6B7785';
-const TOKEN_BORDER = '#E5E9EE';
 
 const SEVERITY_VARIANT: Record<Severity, 'danger' | 'warning' | 'success'> = {
   critical: 'danger',
