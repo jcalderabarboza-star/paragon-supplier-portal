@@ -1,7 +1,9 @@
 import React from 'react';
 import { Menu, Search, Bell, ChevronDown, Languages } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const TopBarV2: React.FC = () => {
+  const { t } = useTranslation();
   return (
     <header className="h-14 w-full bg-bg-surface border-b border-border-subtle flex items-center px-4 gap-4">
       {/* Left cluster */}
@@ -14,7 +16,7 @@ const TopBarV2: React.FC = () => {
           <Menu size={18} />
         </button>
         <span className="text-sm font-semibold text-text-primary whitespace-nowrap">
-          Paragon Supplier Portal
+          {t('app.title')}
         </span>
         <span className="text-label bg-warning-soft text-warning px-2 py-0.5 rounded-full uppercase">
           Preview

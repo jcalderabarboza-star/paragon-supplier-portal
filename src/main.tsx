@@ -1,7 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
+import { I18nextProvider } from 'react-i18next';
 import App from './App';
+import i18n from './lib/i18n';
 import { AdaptiveProvider } from './context/AdaptiveContext';
 import { DataServiceProvider } from './services/data/DataServiceContext';
 import { mockDataService } from './services/data/mock/mockDataService';
@@ -20,12 +22,14 @@ const service: IDataService =
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <DataServiceProvider service={service}>
-        <AdaptiveProvider>
-          <App />
-        </AdaptiveProvider>
-      </DataServiceProvider>
-    </QueryClientProvider>
+    <I18nextProvider i18n={i18n}>
+      <QueryClientProvider client={queryClient}>
+        <DataServiceProvider service={service}>
+          <AdaptiveProvider>
+            <App />
+          </AdaptiveProvider>
+        </DataServiceProvider>
+      </QueryClientProvider>
+    </I18nextProvider>
   </React.StrictMode>
 );
