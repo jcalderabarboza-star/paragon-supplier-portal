@@ -97,6 +97,22 @@ describe('service scoping contract — non-supplierId scoping models', () => {
     expect(await svc.analytics.getSummary(aScope)).toBeNull();
   });
 
+  it('engagement: buyer sees the comms bus; a supplier sees none', async () => {
+    expect((await svc.engagement.getConversations(buyerScope)).items.length).toBeGreaterThan(0);
+    expect((await svc.engagement.getConversations(aScope)).items.length).toBe(0);
+    expect((await svc.engagement.getAutomationRules(buyerScope)).items.length).toBeGreaterThan(0);
+    expect((await svc.engagement.getAutomationRules(aScope)).items.length).toBe(0);
+    expect(await svc.engagement.getSummary(buyerScope)).not.toBeNull();
+    expect(await svc.engagement.getSummary(aScope)).toBeNull();
+  });
+
+  it('engagement: a conversation thread resolves for the buyer, empty for a supplier', async () => {
+    const buyerThread = (await svc.engagement.getConversationThread(buyerScope, 'wa-001')).items;
+    expect(buyerThread.length).toBeGreaterThan(0);
+    const supplierThread = (await svc.engagement.getConversationThread(aScope, 'wa-001')).items;
+    expect(supplierThread.length).toBe(0);
+  });
+
   it('getKpis: improvement actions are wired into the snapshot', async () => {
     // Buyer and the seeded supplier read the populated snapshot; an unrelated
     // supplier gets the empty snapshot.
