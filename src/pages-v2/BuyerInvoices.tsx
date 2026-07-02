@@ -47,6 +47,7 @@ import type {
   InvoiceMatchStatus as MatchStatus,
 } from '../services/data/types';
 import { useBuyerInvoices } from '../services/query/hooks';
+import { formatIDR, formatDate } from '../lib/format';
 
 const INV_CRUMB = ['TRANSACT', 'INVOICES & PAYMENT'];
 
@@ -90,16 +91,9 @@ const MONTHLY_SPEND = [
   { month: 'Apr 25', paid: 890, pending: 3195 },
 ];
 
-const fmtCompact = (n: number): string => `Rp ${(n / 1_000_000).toFixed(0)}jT`;
-const fmtFull = (n: number): string => `Rp ${n.toLocaleString('id-ID')}`;
-const fmtDate = (s: string | null): string => {
-  if (!s) return '—';
-  return new Date(s).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
+// Compact tiles use the shared jt/B/T scale; full amounts and dates delegate
+// to the locale utility directly (see call sites).
+const fmtCompact = (n: number): string => formatIDR(n, { compact: true });
 
 const TOKEN_SUCCESS = '#107E3E';
 const TOKEN_WARNING = '#B45309';
@@ -254,7 +248,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
       (acc, i) => (i.receivedDate > acc ? i.receivedDate : acc),
       invoices[0]?.receivedDate ?? '',
     );
-    return fmtDate(latest);
+    return formatDate(latest);
   }, [invoices]);
 
   const closePanel = () => {
@@ -505,7 +499,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                           {fmtCompact(inv.amount)}
                         </div>
                         <div className="text-xs text-text-tertiary">
-                          {fmtFull(inv.amount)}
+                          {formatIDR(inv.amount)}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -525,11 +519,11 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
                         <div className="text-sm text-text-secondary">
-                          {fmtDate(inv.dueDate)}
+                          {formatDate(inv.dueDate)}
                         </div>
                         {inv.paymentDate && (
                           <div className="text-xs text-success">
-                            Paid {fmtDate(inv.paymentDate)}
+                            Paid {formatDate(inv.paymentDate)}
                           </div>
                         )}
                       </TableCell>
@@ -787,7 +781,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                 <div>
                   <dt className="text-text-tertiary">Amount</dt>
                   <dd className="text-text-primary font-semibold">
-                    {fmtFull(selected.amount)}
+                    {formatIDR(selected.amount)}
                   </dd>
                 </div>
                 <div>
@@ -805,7 +799,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                         : 'text-text-primary'
                     }`}
                   >
-                    {fmtDate(selected.dueDate)}
+                    {formatDate(selected.dueDate)}
                   </dd>
                 </div>
                 <div>
@@ -901,7 +895,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                 <div>
                   <dt className="text-text-tertiary">Payment date</dt>
                   <dd className="text-text-primary font-medium">
-                    {fmtDate(selected.paymentDate)}
+                    {formatDate(selected.paymentDate)}
                   </dd>
                 </div>
               </dl>
@@ -913,7 +907,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                 <div className="text-text-secondary">
                   This action cannot be undone. Payment of{' '}
                   <strong className="text-text-primary">
-                    {fmtFull(selected.amount)}
+                    {formatIDR(selected.amount)}
                   </strong>{' '}
                   will be transferred to{' '}
                   <strong className="text-text-primary">
@@ -935,8 +929,8 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                       {[
                         ['Invoice no', selected.invoiceNumber],
                         ['PO reference', selected.poNumber],
-                        ['Amount', fmtFull(selected.amount)],
-                        ['Payment date', fmtDate(selected.paymentDate)],
+                        ['Amount', formatIDR(selected.amount)],
+                        ['Payment date', formatDate(selected.paymentDate)],
                         ['Bank account', selected.bankAccount],
                       ].map(([label, value]) => (
                         <tr
