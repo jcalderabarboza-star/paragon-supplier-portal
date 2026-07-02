@@ -36,13 +36,18 @@ import type {
   QualificationItem,
   MarketIntelCard,
 } from '../services/data/types';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import {
-  GLOBAL_SUPPLIERS,
-  SINGLE_SOURCE,
-  RECOMMENDED,
-  QUALIFICATIONS,
-  MARKET_INTEL,
-} from '../services/data/mock/fixtures/buyerDiscovery';
+  useGlobalSuppliers,
+  useRecommended,
+  useQualifications,
+  useMarketIntel,
+  useSingleSourceItems,
+} from '../services/query/hooks';
+
+const DISCOVERY_CRUMB = ['ACQUIRE', 'DISCOVERY'];
 
 const STAGE_LABELS = ['Initial Contact', 'Document Review', 'Technical Eval', 'Commercial', 'Approved'];
 
@@ -364,6 +369,18 @@ const BuyerDiscovery: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  const globalQ = useGlobalSuppliers();
+  const recommendedQ = useRecommended();
+  const qualificationsQ = useQualifications();
+  const marketIntelQ = useMarketIntel();
+  const singleSourceQ = useSingleSourceItems();
+
+  const GLOBAL_SUPPLIERS = globalQ.data?.items ?? [];
+  const RECOMMENDED = recommendedQ.data?.items ?? [];
+  const QUALIFICATIONS = qualificationsQ.data?.items ?? [];
+  const MARKET_INTEL = marketIntelQ.data?.items ?? [];
+  const SINGLE_SOURCE = singleSourceQ.data?.items ?? [];
+
   const [tab, setTab] = useState<TabKey>('search');
   const [search, setSearch] = useState('');
   const [region, setRegion] = useState<Region>('All');
@@ -417,7 +434,7 @@ const BuyerDiscovery: React.FC = () => {
       }
       return true;
     });
-  }, [search, region, category, halalOnly, majorOnly]);
+  }, [GLOBAL_SUPPLIERS, search, region, category, halalOnly, majorOnly]);
 
   const sorted = useMemo(() => {
     const list = [...filtered];
@@ -444,7 +461,7 @@ const BuyerDiscovery: React.FC = () => {
       month: 'short',
       year: 'numeric',
     });
-  }, []);
+  }, [QUALIFICATIONS]);
 
   const counts = {
     candidates: GLOBAL_SUPPLIERS.length + 10,
@@ -453,10 +470,60 @@ const BuyerDiscovery: React.FC = () => {
     gaps: SINGLE_SOURCE.length,
   };
 
+  const anyPending =
+    globalQ.isPending ||
+    recommendedQ.isPending ||
+    qualificationsQ.isPending ||
+    marketIntelQ.isPending ||
+    singleSourceQ.isPending;
+  const anyError =
+    globalQ.isError ||
+    recommendedQ.isError ||
+    qualificationsQ.isError ||
+    marketIntelQ.isError ||
+    singleSourceQ.isError;
+  const allEmpty =
+    GLOBAL_SUPPLIERS.length === 0 &&
+    RECOMMENDED.length === 0 &&
+    QUALIFICATIONS.length === 0 &&
+    MARKET_INTEL.length === 0 &&
+    SINGLE_SOURCE.length === 0;
+
+  if (anyPending) return <LoadingState breadcrumb={DISCOVERY_CRUMB} />;
+  if (anyError)
+    return (
+      <ErrorState
+        breadcrumb={DISCOVERY_CRUMB}
+        error={
+          globalQ.error ??
+          recommendedQ.error ??
+          qualificationsQ.error ??
+          marketIntelQ.error ??
+          singleSourceQ.error
+        }
+        onRetry={() => {
+          globalQ.refetch();
+          recommendedQ.refetch();
+          qualificationsQ.refetch();
+          marketIntelQ.refetch();
+          singleSourceQ.refetch();
+        }}
+      />
+    );
+  if (allEmpty)
+    return (
+      <EmptyState
+        breadcrumb={DISCOVERY_CRUMB}
+        title="No discovery data yet"
+        subtitle="Supplier discovery is a buyer-side surface."
+        message="Global candidates, recommendations, and market intelligence will appear here."
+      />
+    );
+
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['ACQUIRE', 'DISCOVERY']}
+        breadcrumb={DISCOVERY_CRUMB}
         title="Supplier Discovery"
         subtitle="Find and qualify new suppliers globally — market-validated by L'Oréal, Unilever, P&G, Shiseido and more."
         actions={

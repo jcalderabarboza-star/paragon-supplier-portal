@@ -11,7 +11,12 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
-import { mockSuppliers } from '../data/mockSuppliers';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import { useSuppliers } from '../services/query/hooks';
+
+const MARKETPLACE_CRUMB = ['ACQUIRE', 'MARKETPLACE'];
 
 const CATEGORIES = [
   'Active Ingredients',
@@ -51,20 +56,22 @@ const OPEN_RFQS = [
 
 const Marketplace: React.FC = () => {
   const navigate = useNavigate();
+  const suppliersQuery = useSuppliers();
+  const suppliers = suppliersQuery.data?.items ?? [];
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
   const [search, setSearch] = useState('');
 
   const stats = useMemo(() => {
-    const countries = new Set(mockSuppliers.map((s) => s.country));
+    const countries = new Set(suppliers.map((s) => s.country));
     return {
-      total: mockSuppliers.length,
+      total: suppliers.length,
       countries: countries.size,
       activeRfqs: OPEN_RFQS.length,
     };
-  }, []);
+  }, [suppliers]);
 
   const filtered = useMemo(() => {
-    return mockSuppliers.filter((s) => {
+    return suppliers.filter((s) => {
       if (
         selectedCats.length > 0 &&
         !selectedCats.includes(s.category)
@@ -78,7 +85,7 @@ const Marketplace: React.FC = () => {
       }
       return true;
     });
-  }, [selectedCats, search]);
+  }, [suppliers, selectedCats, search]);
 
   const toggleCat = (cat: string) => {
     setSelectedCats((prev) =>
@@ -86,10 +93,30 @@ const Marketplace: React.FC = () => {
     );
   };
 
+  if (suppliersQuery.isPending)
+    return <LoadingState breadcrumb={MARKETPLACE_CRUMB} />;
+  if (suppliersQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={MARKETPLACE_CRUMB}
+        error={suppliersQuery.error}
+        onRetry={() => suppliersQuery.refetch()}
+      />
+    );
+  if (suppliers.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={MARKETPLACE_CRUMB}
+        title="No suppliers in the marketplace"
+        subtitle="The marketplace directory is empty for this view."
+        message="Vetted suppliers will appear here once they join the network."
+      />
+    );
+
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['ACQUIRE', 'MARKETPLACE']}
+        breadcrumb={MARKETPLACE_CRUMB}
         title="Global Supplier Marketplace"
         subtitle="Discover and connect with vetted suppliers worldwide."
       />
@@ -186,11 +213,12 @@ const Marketplace: React.FC = () => {
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-text-primary">
+            <h2 className="text-base font-semibold text-text-primary flex items-center gap-2">
               Open RFQ Opportunities
+              <StatusPill variant="neutral">Sample data</StatusPill>
             </h2>
             <p className="text-meta text-text-tertiary">
-              Paragon is actively sourcing for these requirements.
+              Illustrative open-RFQ teaser — not yet wired to live sourcing data.
             </p>
           </div>
           <button

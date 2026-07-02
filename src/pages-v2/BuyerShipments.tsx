@@ -31,13 +31,17 @@ import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
 import FormSection from '../components/ui-v2/FormSection';
 import { useToast } from '../hooks/useToast';
-import {
-  mockShipments,
+import type {
   Shipment,
   ShipmentStatus,
   ShipmentMode,
 } from '../data/mockShipments';
-import { mockSuppliers } from '../data/mockSuppliers';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import { useShipments, useSuppliers } from '../services/query/hooks';
+
+const SHIPMENTS_CRUMB = ['TRANSACT', 'SHIPMENTS & ASN'];
 
 const TODAY = '2026-05-20';
 
@@ -90,8 +94,6 @@ const AT_DOCK_STATUSES: ShipmentStatus[] = ['At Dock', 'Unloading'];
 
 const PENDING_STATUSES: ShipmentStatus[] = ['Pending ASN', 'ASN Received'];
 
-const supplierById = new Map(mockSuppliers.map((s) => [s.id, s]));
-
 const formatNumber = (n: number): string =>
   new Intl.NumberFormat('id-ID').format(n);
 
@@ -122,6 +124,13 @@ const TIME_SLOTS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00
 const BuyerShipments: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const shipmentsQuery = useShipments();
+  const suppliersQuery = useSuppliers();
+  const shipments = shipmentsQuery.data?.items ?? [];
+  const supplierById = useMemo(
+    () => new Map((suppliersQuery.data?.items ?? []).map((s) => [s.id, s])),
+    [suppliersQuery.data],
+  );
   const [tab, setTab] = useState<GroupTab>('all');
   const [search, setSearch] = useState('');
   const [selectedModes, setSelectedModes] = useState<ShipmentMode[]>([]);
@@ -134,7 +143,7 @@ const BuyerShipments: React.FC = () => {
     let dock = 0;
     let delivered = 0;
     let delayed = 0;
-    for (const s of mockShipments) {
+    for (const s of shipments) {
       if (PENDING_STATUSES.includes(s.status)) pending++;
       if (IN_TRANSIT_STATUSES.includes(s.status)) transit++;
       if (AT_DOCK_STATUSES.includes(s.status)) dock++;
@@ -142,22 +151,22 @@ const BuyerShipments: React.FC = () => {
       if (s.status === 'Delayed') delayed++;
     }
     return {
-      all: mockShipments.length,
+      all: shipments.length,
       pending,
       transit,
       dock,
       delivered,
       delayed,
     };
-  }, []);
+  }, [shipments]);
 
   const arrivingToday = useMemo(
-    () => mockShipments.filter((s) => isToday(s.estimatedArrival)).length,
-    []
+    () => shipments.filter((s) => isToday(s.estimatedArrival)).length,
+    [shipments]
   );
 
   const filtered = useMemo(() => {
-    return mockShipments.filter((s) => {
+    return shipments.filter((s) => {
       if (!matchesGroup(s.status, tab)) return false;
       if (selectedModes.length > 0 && !selectedModes.includes(s.mode))
         return false;
@@ -173,7 +182,7 @@ const BuyerShipments: React.FC = () => {
       }
       return true;
     });
-  }, [tab, selectedModes, search]);
+  }, [shipments, tab, selectedModes, search]);
 
   const toggleMode = (m: ShipmentMode) => {
     setSelectedModes((prev) =>
@@ -182,7 +191,7 @@ const BuyerShipments: React.FC = () => {
   };
 
   const selected = selectedId
-    ? mockShipments.find((s) => s.id === selectedId) ?? null
+    ? shipments.find((s) => s.id === selectedId) ?? null
     : null;
   const selectedSupplier = selected
     ? supplierById.get(selected.supplierId)
@@ -298,7 +307,7 @@ const BuyerShipments: React.FC = () => {
       map[d] = {};
       for (const t of TIME_SLOTS) map[d][t] = undefined;
     }
-    for (const s of mockShipments) {
+    for (const s of shipments) {
       if (s.dockAssignment && s.dockTime && map[s.dockAssignment]) {
         if (s.dockTime in map[s.dockAssignment]) {
           map[s.dockAssignment][s.dockTime] = s;
@@ -306,7 +315,7 @@ const BuyerShipments: React.FC = () => {
       }
     }
     return map;
-  }, []);
+  }, [shipments]);
 
   const handleExport = () =>
     toast({
@@ -404,10 +413,33 @@ const BuyerShipments: React.FC = () => {
     }
   };
 
+  if (shipmentsQuery.isPending || suppliersQuery.isPending)
+    return <LoadingState breadcrumb={SHIPMENTS_CRUMB} />;
+  if (shipmentsQuery.isError || suppliersQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={SHIPMENTS_CRUMB}
+        error={shipmentsQuery.error ?? suppliersQuery.error}
+        onRetry={() => {
+          shipmentsQuery.refetch();
+          suppliersQuery.refetch();
+        }}
+      />
+    );
+  if (shipments.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={SHIPMENTS_CRUMB}
+        title="No shipments yet"
+        subtitle="No inbound shipments or ASNs to track."
+        message="Shipments and advance ship notices will appear here as suppliers dispatch orders."
+      />
+    );
+
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['TRANSACT', 'SHIPMENTS & ASN']}
+        breadcrumb={SHIPMENTS_CRUMB}
         title="Shipments & ASN"
         subtitle="Inbound shipment tracking, advance shipment notices, and dock scheduling."
         actions={

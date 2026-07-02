@@ -35,6 +35,7 @@ import SupplierInvoicesV2 from '../pages-v2/SupplierInvoices';
 import SupplierInventoryV2 from '../pages-v2/SupplierInventory';
 import SupplierRegistrationV2 from '../pages-v2/SupplierRegistration';
 import SupplierPerformance from '../pages-v2/SupplierPerformance';
+import NotFound from '../pages-v2/NotFound';
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -78,7 +79,7 @@ const AppRouter: React.FC = () => {
           <Route path="/supplier/inventory" element={<SupplierInventoryV2 />} />
           <Route path="/supplier/performance" element={<SupplierPerformance />} />
           <Route path="/" element={<Navigate to="/buyer/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/buyer/dashboard" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
         </CurrentIdentityProvider>
       </ToastProvider>
