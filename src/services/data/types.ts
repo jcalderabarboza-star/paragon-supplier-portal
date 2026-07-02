@@ -106,6 +106,35 @@ export interface QueryScope {
   supplierId: string | null;
 }
 
+// ─── Error contract (DR-4) — the single failure channel for the data layer ──
+//
+// The interface today returns T[] / Page<T> / T|null on success; failure is
+// signalled by *throwing* a DataError. This matches TanStack Query's model
+// (queryFn throws -> isError), so consumers render the error state via the
+// wrapper hook rather than unwrapping a Result envelope. The Phase-3 real
+// adapter maps HTTP/SAP failures onto the same DataErrorCode set.
+
+export type DataErrorCode =
+  | 'NOT_FOUND'
+  | 'SCOPE_DENIED'
+  | 'UPSTREAM'
+  | 'CHAOS'
+  | 'UNKNOWN';
+
+export class DataError extends Error {
+  readonly code: DataErrorCode;
+  readonly cause?: unknown;
+
+  constructor(code: DataErrorCode, message: string, cause?: unknown) {
+    super(message);
+    this.name = 'DataError';
+    this.code = code;
+    this.cause = cause;
+    // Restore prototype chain for instanceof across the TS target.
+    Object.setPrototypeOf(this, DataError.prototype);
+  }
+}
+
 // ─── Canonical Purchase Order (drift-resolved) ──────────────────────────────
 
 export interface POLineItem {
