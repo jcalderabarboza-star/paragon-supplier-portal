@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Mail,
@@ -30,8 +30,12 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
-import { mockSuppliers } from '../data/mockSuppliers';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import { useSupplier } from '../services/query/hooks';
 import { SupplierStatus, SupplierTier } from '../types/supplier.types';
+
+const PROFILE_CRUMB = ['ACQUIRE', 'SUPPLIER DIRECTORY'];
 
 const TIER_LABEL: Record<SupplierTier, string> = {
   [SupplierTier.WHATSAPP]: 'Tier 1 · WhatsApp',
@@ -131,10 +135,19 @@ const BuyerSupplierProfile: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
 
-  const supp = useMemo(
-    () => mockSuppliers.find((s) => s.id === id),
-    [id],
-  );
+  const supplierQuery = useSupplier(id ?? '');
+  const supp = supplierQuery.data ?? null;
+
+  if (supplierQuery.isPending)
+    return <LoadingState breadcrumb={PROFILE_CRUMB} />;
+  if (supplierQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={PROFILE_CRUMB}
+        error={supplierQuery.error}
+        onRetry={() => supplierQuery.refetch()}
+      />
+    );
 
   if (!supp) {
     return (
@@ -370,6 +383,12 @@ const BuyerSupplierProfile: React.FC = () => {
 
       {activeTab === 'compliance' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
+            <span className="text-sm font-semibold text-text-primary">
+              Compliance documents
+            </span>
+            <StatusPill variant="neutral">Sample data</StatusPill>
+          </div>
           <Table>
             <TableHeader>
               <TableHeaderCell>Document</TableHeaderCell>
@@ -408,6 +427,12 @@ const BuyerSupplierProfile: React.FC = () => {
 
       {activeTab === 'catalog' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
+            <span className="text-sm font-semibold text-text-primary">
+              Catalog
+            </span>
+            <StatusPill variant="neutral">Sample data</StatusPill>
+          </div>
           <Table>
             <TableHeader>
               <TableHeaderCell>Material</TableHeaderCell>
@@ -448,11 +473,15 @@ const BuyerSupplierProfile: React.FC = () => {
       {activeTab === 'performance' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 border-b border-border-subtle">
-            <h2 className="text-base font-semibold text-text-primary mb-1">
-              Recent purchase orders
-            </h2>
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-base font-semibold text-text-primary">
+                Recent purchase orders
+              </h2>
+              <StatusPill variant="neutral">Sample data</StatusPill>
+            </div>
             <p className="text-meta text-text-tertiary">
-              Last 4 closed POs with OTIF performance.
+              Last 4 closed POs with OTIF performance. Wires to live purchase
+              orders in Batch 1.2.
             </p>
           </div>
           <Table>
@@ -504,6 +533,12 @@ const BuyerSupplierProfile: React.FC = () => {
 
       {activeTab === 'msglog' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
+          <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
+            <span className="text-sm font-semibold text-text-primary">
+              Message log
+            </span>
+            <StatusPill variant="neutral">Sample data</StatusPill>
+          </div>
           <Table>
             <TableHeader>
               <TableHeaderCell>Timestamp</TableHeaderCell>

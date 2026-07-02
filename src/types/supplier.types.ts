@@ -62,8 +62,15 @@ export interface Supplier {
   invoiceAccuracy: number;
   scorecardGrade: ScorecardGrade;
   // Optional profile attributes (surfaced on storefront/profile views).
-  founded?: number;
+  legalName?: string;
+  taxId?: string;
+  businessRegNo?: string;
   website?: string;
+  founded?: number;
+  employees?: string;
+  annualRevenue?: string;
+  paymentTerms?: string;
+  incoterms?: string;
   intelligenceNote?: string;
 }
 
