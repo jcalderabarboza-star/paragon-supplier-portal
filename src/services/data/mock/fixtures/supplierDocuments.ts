@@ -20,4 +20,12 @@ export const DOCUMENTS: SupplierDocument[] = [
   { id: 'doc-009', supplierId: 'sup-007', name: 'NIB — Nomor Induk Berusaha (9120300123456)', category: 'Tax & Legal', status: 'Valid', issuedBy: 'OSS — Online Single Submission', issuedDate: '2018-07-01', expiryDate: null, fileType: 'PDF', fileSize: '220 KB', version: 'v1', linkedTo: 'Supplier Master Data' },
   { id: 'doc-010', supplierId: 'sup-007', name: 'Halal Assurance System (HAS) 23000 Manual', category: 'Halal Compliance', status: 'Under Review', issuedBy: 'MUI LP POM', issuedDate: '2025-03-01', expiryDate: null, fileType: 'PDF', fileSize: '5.2 MB', version: 'v2', linkedTo: 'Halal Certificate renewal', notes: 'Submitted for BPJPH review — 2026 mandatory transition' },
   { id: 'doc-011', supplierId: 'sup-007', name: 'BPJPH Halal Certificate Application — In Progress', category: 'Halal Compliance', status: 'Under Review', issuedBy: 'BPJPH — Badan Penyelenggara Jaminan Produk Halal', issuedDate: '2026-01-10', expiryDate: null, fileType: 'PDF', fileSize: '1.8 MB', version: 'v1', linkedTo: 'Replaces MUI cert doc-001', notes: 'BPJPH application submitted January 2026 — awaiting inspection schedule' },
+
+  // sup-002 — PT Musim Mas Specialty Fats
+  { id: 'doc-101', supplierId: 'sup-002', name: 'Halal Certificate — MUI No. 02022345671030', category: 'Halal Compliance', status: 'Valid', issuedBy: 'MUI (Majelis Ulama Indonesia)', issuedDate: '2024-02-01', expiryDate: '2027-01-31', fileType: 'PDF', fileSize: '1.1 MB', version: 'v2', linkedTo: 'PO-2025-00120' },
+  { id: 'doc-102', supplierId: 'sup-002', name: 'ISO 9001:2015 Quality Management Certificate', category: 'Quality', status: 'Valid', issuedBy: 'SGS Indonesia', issuedDate: '2024-06-10', expiryDate: '2027-06-09', fileType: 'PDF', fileSize: '2.0 MB', version: 'v1', linkedTo: 'All materials' },
+
+  // sup-005 — BASF Personal Care Emulsifiers
+  { id: 'doc-201', supplierId: 'sup-005', name: 'BPOM Notification — TD.02.02.66.10.23.0311', category: 'BPOM Regulatory', status: 'Valid', issuedBy: 'BPOM (Badan Pengawas Obat dan Makanan)', issuedDate: '2023-10-05', expiryDate: '2028-10-04', fileType: 'PDF', fileSize: '910 KB', version: 'v1', linkedTo: 'PO-2025-00131' },
+  { id: 'doc-202', supplierId: 'sup-005', name: 'REACH Compliance / Safety Data Sheet — Emulgade', category: 'Quality', status: 'Expiring Soon', issuedBy: 'BASF SE Regulatory Affairs', issuedDate: '2023-08-20', expiryDate: '2026-08-19', fileType: 'PDF', fileSize: '3.4 MB', version: 'v5', linkedTo: 'All emulsifier grades' },
 ];

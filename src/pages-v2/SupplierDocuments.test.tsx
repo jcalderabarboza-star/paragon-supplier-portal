@@ -8,10 +8,10 @@ import SupplierDocuments from './SupplierDocuments';
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
 
-// A supplier with no documents on file (all doc fixtures are sup-007).
+// A supplier with no documents on file (sup-007/002/005 have fixtures).
 const SUPPLIER_NO_DOCS: CurrentIdentity = {
   personaType: 'supplier',
-  supplierId: 'sup-002',
+  supplierId: 'sup-999',
   supplierName: 'PT Empty Supplier',
 };
 

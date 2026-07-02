@@ -86,4 +86,42 @@ export const MOCK_ASNS: ASN[] = [
     },
     lineItems: [],
   },
+  {
+    asnNumber: 'ASN-2025-00301',
+    supplierId: 'sup-002',
+    poReference: 'PO-2025-00120',
+    status: 'In Transit',
+    carrier: 'Meratus Line',
+    trackingNumber: 'MRT-4471-SBY',
+    eta: '2025-05-06',
+    details: {
+      originCity: 'Medan, ID',
+      destinationWarehouse: 'Paragon DC Cikarang (WH-04)',
+      totalCartons: 420,
+      grossWeightKg: 9800,
+      temperatureRequirement: 'Ambient (15–25°C)',
+    },
+    lineItems: [
+      { materialCode: 'MAT-30110', description: 'Specialty fat blend — RBD stearin', orderedQty: 8000, shippedQty: 8000, lotNumber: 'LOT-M7781' },
+    ],
+  },
+  {
+    asnNumber: 'ASN-2025-00302',
+    supplierId: 'sup-005',
+    poReference: 'PO-2025-00131',
+    status: 'Delivered',
+    carrier: 'Kuehne+Nagel',
+    trackingNumber: 'KN-DE-99120-JKT',
+    eta: '2025-04-18',
+    details: {
+      originCity: 'Ludwigshafen, DE',
+      destinationWarehouse: 'Paragon DC Karawang (WH-02)',
+      totalCartons: 96,
+      grossWeightKg: 2160,
+      temperatureRequirement: 'Ambient (15–25°C)',
+    },
+    lineItems: [
+      { materialCode: 'MAT-40220', description: 'Emulgade SE-PF emulsifier', orderedQty: 2400, shippedQty: 2400, lotNumber: 'LOT-B5540' },
+    ],
+  },
 ];
