@@ -149,6 +149,9 @@ export const useGeoRisks = () =>
 export const useExposure = () =>
   useServiceQuery(['risk', 'exposure'], (svc, scope) => svc.risk.getExposure(scope));
 
+export const useScenarios = () =>
+  useServiceQuery(['risk', 'scenarios'], (svc, scope) => svc.risk.getScenarios(scope));
+
 export const useCompliance = () =>
   useServiceQuery(['risk', 'compliance'], (svc, scope) => svc.risk.getCompliance(scope));
 

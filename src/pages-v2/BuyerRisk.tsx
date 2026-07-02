@@ -33,7 +33,18 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
+import {
+  useRiskAlerts,
+  useGeoRisks,
+  useExposure,
+  useScenarios,
+  useCompliance,
+  useCommodities,
+} from '../services/query/hooks';
 import type {
   RiskSeverity as Severity,
   RiskAlertLevel as AlertLevel,
@@ -43,30 +54,28 @@ import type {
   ComplianceRow,
   ComplianceState,
   Commodity,
+  Scenario,
+  ScenarioAlt,
+  ScenarioFeasibility as Feasibility,
 } from '../services/data/types';
-import {
-  ALERTS,
-  GEO_RISKS,
-  EXPOSURE_DATA,
-  SCENARIO_ME,
-  SCENARIOS,
-  COMPLIANCE_DATA,
-  COMMODITIES,
-  type ScenarioFeasibility as Feasibility,
-  type Scenario,
-  type ScenarioAlt,
-} from '../services/data/mock/fixtures/buyerRisk';
 
 type TabKey = 'geo' | 'exposure' | 'scenario' | 'compliance' | 'commodity';
 
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_MID = '#354A5F';
+const RISK_CRUMB = ['INTELLIGENCE', 'SUPPLY RISK'];
+
+// Scenario picker — the modelable library. Only fully-modeled scenarios carry
+// detail data (served by useScenarios); the picker lists the wider set.
+const SCENARIO_LIBRARY: { id: string; label: string }[] = [
+  { id: 'me', label: 'Middle East conflict' },
+  { id: 'tw', label: 'Taiwan Strait closure' },
+  { id: 'pa', label: 'Pandemic resurgence' },
+];
+
 const TOKEN_SUCCESS = '#107E3E';
 const TOKEN_WARNING = '#B45309';
 const TOKEN_DANGER = '#BB0000';
 const TOKEN_INFO = '#1E5BAE';
 const TOKEN_MUTED = '#6B7785';
-const TOKEN_BORDER = '#E5E9EE';
 
 const SEVERITY_VARIANT: Record<Severity, 'danger' | 'warning' | 'success'> = {
   critical: 'danger',
@@ -249,9 +258,9 @@ interface SparkTooltipPayload {
   value: number;
 }
 
-const GeopoliticalTab: React.FC = () => (
+const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => (
   <div className="flex flex-col gap-4">
-    {GEO_RISKS.map((r) => {
+    {geoRisks.map((r) => {
       const sevVariant = SEVERITY_VARIANT[r.severity];
       const sevSoftBg =
         sevVariant === 'danger'
@@ -338,20 +347,17 @@ const GeopoliticalTab: React.FC = () => (
   </div>
 );
 
-const ExposureTab: React.FC = () => {
+const ExposureTab: React.FC<{ exposure: ExposureRow[] }> = ({ exposure }) => {
   const totalExposed = useMemo(
     () =>
-      EXPOSURE_DATA.filter((r) => r.risk !== 'low').reduce(
-        (s, r) => s + r.spend,
-        0,
-      ),
-    [],
+      exposure.filter((r) => r.risk !== 'low').reduce((s, r) => s + r.spend, 0),
+    [exposure],
   );
-  const singleSourceCritical = EXPOSURE_DATA.filter(
+  const singleSourceCritical = exposure.filter(
     (r) => !r.dualSource && r.risk === 'critical',
   ).length;
-  const atRisk = EXPOSURE_DATA.filter((r) => r.risk !== 'low').length;
-  const dualSourced = EXPOSURE_DATA.filter((r) => r.dualSource).length;
+  const atRisk = exposure.filter((r) => r.risk !== 'low').length;
+  const dualSourced = exposure.filter((r) => r.dualSource).length;
 
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm">
@@ -388,7 +394,7 @@ const ExposureTab: React.FC = () => {
           <TableHeaderCell>Dual source</TableHeaderCell>
         </TableHeader>
         <tbody>
-          {EXPOSURE_DATA.map((row) => (
+          {exposure.map((row) => (
             <TableRow key={row.category + row.supplier}>
               <TableCell>
                 <span className="font-semibold text-text-primary">
@@ -446,18 +452,24 @@ const SummaryStat: React.FC<{
   </div>
 );
 
-const ScenarioTab: React.FC = () => {
+const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
   const { toast } = useToast();
   const [activeScenario, setActiveScenario] = useState<string>('me');
   const [expandedAlt, setExpandedAlt] = useState<string | null>('s1');
   const [warRoomSent, setWarRoomSent] = useState(false);
+
+  // Detail for the picked scenario; falls back to the first modeled one for
+  // library entries that are not yet fully modeled.
+  const featured =
+    scenarios.find((s) => s.id === activeScenario) ?? scenarios[0];
+  if (!featured) return null;
 
   const sendToWarRoom = () => {
     setWarRoomSent(true);
     toast({
       variant: 'success',
       title: 'Scenario forwarded to War Room',
-      description: `${SCENARIO_ME.title} dispatched to procurement leadership.`,
+      description: `${featured.title} dispatched to procurement leadership.`,
     });
     setTimeout(() => setWarRoomSent(false), 4000);
   };
@@ -465,7 +477,7 @@ const ScenarioTab: React.FC = () => {
   return (
     <div className="flex flex-col gap-5">
       <FilterChipsBar
-        options={SCENARIOS}
+        options={SCENARIO_LIBRARY}
         value={activeScenario}
         onChange={setActiveScenario}
       />
@@ -474,13 +486,13 @@ const ScenarioTab: React.FC = () => {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
             <div className="text-base font-bold text-text-primary mb-1">
-              {SCENARIO_ME.title}
+              {featured.title}
             </div>
             <div className="text-sm text-text-secondary mb-4">
-              {SCENARIO_ME.description}
+              {featured.description}
             </div>
             <div className="flex flex-wrap gap-6">
-              {Object.entries(SCENARIO_ME.impact).map(([k, v]) => (
+              {Object.entries(featured.impact).map(([k, v]) => (
                 <div key={k}>
                   <div className="text-lg font-bold text-danger">{v}</div>
                   <div className="text-[10px] text-text-tertiary uppercase tracking-wider mt-0.5">
@@ -506,7 +518,7 @@ const ScenarioTab: React.FC = () => {
           Response alternatives
         </div>
         <div className="flex flex-col gap-2">
-          {SCENARIO_ME.alternatives.map((alt) => {
+          {featured.alternatives.map((alt) => {
             const open = expandedAlt === alt.id;
             const feasVariant = FEASIBILITY_VARIANT[alt.feasibility];
             return (
@@ -579,7 +591,7 @@ const ScenarioTab: React.FC = () => {
         </div>
       </div>
 
-      <section className="bg-navy rounded-lg shadow-sm p-5">
+      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-teal" />
           <span className="text-sm font-bold text-teal">ARIA Recommendation</span>
@@ -587,16 +599,18 @@ const ScenarioTab: React.FC = () => {
             AI-Powered
           </StatusPill>
         </div>
-        <p className="text-sm text-white/85 leading-relaxed">
+        <p className="text-sm text-text-secondary leading-relaxed">
           Based on current inventory levels, open PO positions, and freight
           capacity availability, ARIA recommends combining{' '}
-          <strong className="text-white">Alternative A + Alternative C</strong>{' '}
+          <strong className="text-text-primary">
+            Alternative A + Alternative C
+          </strong>{' '}
           simultaneously. Activate Cape rerouting now for continuity, while
           building 90-day safety stock for your top 12 critical SKUs. Estimated
           total cost: <strong className="text-teal">$1.06M</strong> vs. $3.2M
           revenue-at-risk if no action taken.
         </p>
-        <div className="text-xs text-white/60 mt-3">
+        <div className="text-xs text-text-tertiary mt-3">
           Confidence: 84% · Based on 6 similar disruption scenarios · Last
           updated 2 hours ago
         </div>
@@ -605,10 +619,12 @@ const ScenarioTab: React.FC = () => {
   );
 };
 
-const ComplianceRisksTab: React.FC = () => {
+const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
+  compliance,
+}) => {
   const { toast } = useToast();
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const halalItem = COMPLIANCE_DATA.find((r) => r.type === 'Halal Cert');
+  const halalItem = compliance.find((r) => r.type === 'Halal Cert');
 
   return (
     <div className="flex flex-col gap-4">
@@ -650,7 +666,7 @@ const ComplianceRisksTab: React.FC = () => {
             <TableHeaderCell className="text-right">Action</TableHeaderCell>
           </TableHeader>
           <tbody>
-            {COMPLIANCE_DATA.map((row) => {
+            {compliance.map((row) => {
               const statusLabel =
                 row.status === 'expired'
                   ? 'Expired'
@@ -744,10 +760,12 @@ const CommoditySparkTooltip: React.FC<{
   );
 };
 
-const CommodityTab: React.FC = () => (
+const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
+  commodities,
+}) => (
   <div className="flex flex-col gap-5">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {COMMODITIES.map((c) => {
+      {commodities.map((c) => {
         const up = c.change > 0;
         const breached = c.alertDir === 'above' && c.current >= c.alert;
         return (
@@ -830,7 +848,7 @@ const CommodityTab: React.FC = () => (
         Procurement impact alerts
       </div>
       <div className="flex flex-col gap-1.5">
-        {COMMODITIES.map((c) => {
+        {commodities.map((c) => {
           const over = c.alertDir === 'above' && c.current >= c.alert;
           return (
             <div
@@ -859,10 +877,42 @@ const CommodityTab: React.FC = () => (
 
 const BuyerRisk: React.FC = () => {
   const { toast } = useToast();
+  const alertsQuery = useRiskAlerts();
+  const geoQuery = useGeoRisks();
+  const exposureQuery = useExposure();
+  const scenariosQuery = useScenarios();
+  const complianceQuery = useCompliance();
+  const commoditiesQuery = useCommodities();
+
   const [tab, setTab] = useState<TabKey>('geo');
   const [dismissedAlerts, setDismissedAlerts] = useState<string[]>([]);
 
-  const visibleAlerts = ALERTS.filter((a) => !dismissedAlerts.includes(a.id));
+  const alerts = alertsQuery.data?.items ?? [];
+  const geoRisks = geoQuery.data?.items ?? [];
+  const exposure = exposureQuery.data?.items ?? [];
+  const scenarios = scenariosQuery.data?.items ?? [];
+  const compliance = complianceQuery.data?.items ?? [];
+  const commodities = commoditiesQuery.data?.items ?? [];
+
+  const queries = [
+    alertsQuery,
+    geoQuery,
+    exposureQuery,
+    scenariosQuery,
+    complianceQuery,
+    commoditiesQuery,
+  ];
+  const anyPending = queries.some((q) => q.isPending);
+  const anyError = queries.some((q) => q.isError);
+  const allEmpty =
+    alerts.length === 0 &&
+    geoRisks.length === 0 &&
+    exposure.length === 0 &&
+    scenarios.length === 0 &&
+    compliance.length === 0 &&
+    commodities.length === 0;
+
+  const visibleAlerts = alerts.filter((a) => !dismissedAlerts.includes(a.id));
 
   const lastUpdated = new Date().toLocaleString('en-GB', {
     day: '2-digit',
@@ -872,11 +922,30 @@ const BuyerRisk: React.FC = () => {
     minute: '2-digit',
   });
 
+  if (anyPending) return <LoadingState breadcrumb={RISK_CRUMB} />;
+  if (anyError)
+    return (
+      <ErrorState
+        breadcrumb={RISK_CRUMB}
+        error={queries.find((q) => q.isError)?.error}
+        onRetry={() => queries.forEach((q) => q.refetch())}
+      />
+    );
+  if (allEmpty)
+    return (
+      <EmptyState
+        breadcrumb={RISK_CRUMB}
+        title="No risk intelligence yet"
+        subtitle="Supply-risk monitoring is a buyer-side view."
+        message="Geopolitical, exposure, scenario, and commodity signals appear here for buyer accounts."
+      />
+    );
+
   return (
     <AppShellV2>
       <style>{PULSE_CSS}</style>
       <PageHeader
-        breadcrumb={['INTELLIGENCE', 'SUPPLY RISK']}
+        breadcrumb={RISK_CRUMB}
         title="Supply Risk & Scenario Intelligence"
         subtitle="Geopolitical · single-source · compliance · financial risk · live alerts."
         actions={
@@ -973,11 +1042,11 @@ const BuyerRisk: React.FC = () => {
         className="mb-5"
       />
 
-      {tab === 'geo' && <GeopoliticalTab />}
-      {tab === 'exposure' && <ExposureTab />}
-      {tab === 'scenario' && <ScenarioTab />}
-      {tab === 'compliance' && <ComplianceRisksTab />}
-      {tab === 'commodity' && <CommodityTab />}
+      {tab === 'geo' && <GeopoliticalTab geoRisks={geoRisks} />}
+      {tab === 'exposure' && <ExposureTab exposure={exposure} />}
+      {tab === 'scenario' && <ScenarioTab scenarios={scenarios} />}
+      {tab === 'compliance' && <ComplianceRisksTab compliance={compliance} />}
+      {tab === 'commodity' && <CommodityTab commodities={commodities} />}
 
       <PageMetaLine className="mt-6">
         Last updated {lastUpdated}

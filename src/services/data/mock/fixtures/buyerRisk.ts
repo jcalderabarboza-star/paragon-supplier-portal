@@ -12,6 +12,7 @@ import type {
   ExposureRow,
   ComplianceRow,
   Commodity,
+  Scenario,
 } from '../../types';
 
 const TOKEN_TEAL = '#0097A7';
@@ -90,25 +91,8 @@ export const EXPOSURE_DATA: ExposureRow[] = [
   { category: 'Machined Parts', supplier: 'PrecisionMex SA', region: 'Mexico', spend: 370, dos: 66, risk: 'low', dualSource: true },
 ];
 
-export type ScenarioFeasibility = 'high' | 'medium' | 'low';
-
-export interface ScenarioAlt {
-  id: string;
-  name: string;
-  cost: string;
-  leadTime: string;
-  feasibility: ScenarioFeasibility;
-  details: string;
-}
-
-export interface Scenario {
-  id: string;
-  label: string;
-  title: string;
-  description: string;
-  impact: Record<string, string>;
-  alternatives: ScenarioAlt[];
-}
+// Scenario / ScenarioAlt / ScenarioFeasibility now live in the interface
+// contract (services/data/types) so IRiskService.getScenarios can return them.
 
 export const SCENARIO_ME: Scenario = {
   id: 'me',
@@ -152,12 +136,6 @@ export const SCENARIO_ME: Scenario = {
     },
   ],
 };
-
-export const SCENARIOS: { id: string; label: string }[] = [
-  { id: 'me', label: 'Middle East conflict' },
-  { id: 'tw', label: 'Taiwan Strait closure' },
-  { id: 'pa', label: 'Pandemic resurgence' },
-];
 
 export const COMPLIANCE_DATA: ComplianceRow[] = [
   { supplier: 'NanoFab Ltd', type: 'ISO 9001', expires: '2026-03-15', daysLeft: -24, status: 'expired' },

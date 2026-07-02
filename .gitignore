@@ -5,3 +5,6 @@ dist-ssr
 .env
 .env.local
 .DS_Store
+
+# Playwright MCP scratch snapshots
+.playwright-mcp/

@@ -80,6 +80,19 @@ describe('service scoping contract — non-supplierId scoping models', () => {
     expect((await svc.suppliers.list(buyerScope)).items.length).toBeGreaterThan(0);
     expect((await svc.suppliers.list(aScope)).items.length).toBe(0);
   });
+
+  it('getScenarios: buyer sees modeled scenarios; a supplier sees none', async () => {
+    expect((await svc.risk.getScenarios(buyerScope)).items.length).toBeGreaterThan(0);
+    expect((await svc.risk.getScenarios(aScope)).items.length).toBe(0);
+  });
+
+  it('getKpis: improvement actions are wired into the snapshot', async () => {
+    // Buyer and the seeded supplier read the populated snapshot; an unrelated
+    // supplier gets the empty snapshot.
+    expect((await svc.procurement.getKpis(buyerScope)).improvementActions.length).toBeGreaterThan(0);
+    expect((await svc.procurement.getKpis(aScope)).improvementActions.length).toBeGreaterThan(0);
+    expect((await svc.procurement.getKpis(bScope)).improvementActions.length).toBe(0);
+  });
 });
 
 describe('service scoping contract — SCOPE_DENIED on record lookup', () => {
