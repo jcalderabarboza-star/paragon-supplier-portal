@@ -126,13 +126,14 @@ const SidebarV2: React.FC = () => {
         <div className="bg-bg-hover rounded-full h-8 p-0.5 flex">
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               setIdentity({
                 personaType: 'buyer',
                 supplierId: null,
                 supplierName: null,
-              })
-            }
+              });
+              navigate('/buyer/dashboard');
+            }}
             className={`flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               persona === 'buyer'
                 ? 'bg-white shadow-sm text-text-primary'
@@ -143,13 +144,14 @@ const SidebarV2: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               setIdentity({
                 personaType: 'supplier',
                 supplierId: SEED_SUPPLIER_ID,
                 supplierName: SEED_SUPPLIER_NAME,
-              })
-            }
+              });
+              navigate('/supplier/dashboard');
+            }}
             className={`flex-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
               persona === 'supplier'
                 ? 'bg-white shadow-sm text-text-primary'
