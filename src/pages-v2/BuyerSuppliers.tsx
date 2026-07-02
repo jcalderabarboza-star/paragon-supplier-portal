@@ -19,11 +19,16 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
-import { mockSuppliers } from '../data/mockSuppliers';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import { useSuppliers } from '../services/query/hooks';
 import {
   SupplierStatus,
   SupplierTier,
 } from '../types/supplier.types';
+
+const SUPPLIERS_CRUMB = ['ACQUIRE', 'SUPPLIER DIRECTORY'];
 
 const COUNTRY_FLAG: Record<string, string> = {
   ID: 'ID', MY: 'MY', DE: 'DE', FR: 'FR', CN: 'CN', SG: 'SG', IN: 'IN',
@@ -58,27 +63,29 @@ type StatusFilter = 'active' | 'inactive' | 'all';
 
 const BuyerSuppliers: React.FC = () => {
   const navigate = useNavigate();
+  const suppliersQuery = useSuppliers();
+  const suppliers = suppliersQuery.data?.items ?? [];
   const [group, setGroup] = useState<GroupTab>('suppliers');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
 
   const lastUpdated = useMemo(() => {
-    const latest = mockSuppliers.reduce((acc, s) => {
+    const latest = suppliers.reduce((acc, s) => {
       return s.lastActivityDate > acc ? s.lastActivityDate : acc;
-    }, mockSuppliers[0]?.lastActivityDate ?? '');
+    }, suppliers[0]?.lastActivityDate ?? '');
     return latest ? formatDate(latest) : '';
-  }, []);
+  }, [suppliers]);
 
   const counts = useMemo(() => {
-    const active = mockSuppliers.filter(
+    const active = suppliers.filter(
       (s) => s.status === SupplierStatus.ACTIVE,
     ).length;
-    const inactive = mockSuppliers.length - active;
-    return { active, inactive, total: mockSuppliers.length };
-  }, []);
+    const inactive = suppliers.length - active;
+    return { active, inactive, total: suppliers.length };
+  }, [suppliers]);
 
   const filtered = useMemo(() => {
-    return mockSuppliers.filter((s) => {
+    return suppliers.filter((s) => {
       if (statusFilter === 'active' && s.status !== SupplierStatus.ACTIVE)
         return false;
       if (statusFilter === 'inactive' && s.status === SupplierStatus.ACTIVE)
@@ -91,12 +98,32 @@ const BuyerSuppliers: React.FC = () => {
       }
       return true;
     });
-  }, [statusFilter, search]);
+  }, [suppliers, statusFilter, search]);
+
+  if (suppliersQuery.isPending)
+    return <LoadingState breadcrumb={SUPPLIERS_CRUMB} />;
+  if (suppliersQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={SUPPLIERS_CRUMB}
+        error={suppliersQuery.error}
+        onRetry={() => suppliersQuery.refetch()}
+      />
+    );
+  if (suppliers.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={SUPPLIERS_CRUMB}
+        title="No suppliers yet"
+        subtitle="The supplier directory is empty."
+        message="Suppliers will appear here once they are onboarded to the network."
+      />
+    );
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['ACQUIRE', 'SUPPLIER DIRECTORY']}
+        breadcrumb={SUPPLIERS_CRUMB}
         title="Supplier Directory"
         subtitle="Manage your global supplier network across 12 countries."
         actions={
