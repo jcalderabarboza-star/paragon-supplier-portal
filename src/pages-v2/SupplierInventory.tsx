@@ -23,10 +23,14 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { mockInventory } from '../data/mockInventory';
-import { mockSuppliers } from '../data/mockSuppliers';
 import { StockStatus } from '../types/supplier.types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import { useInventory } from '../services/query/hooks';
+
+const INVENTORY_CRUMB = ['TRANSACT', 'MY INVENTORY'];
 
 const STATUS_VARIANT: Record<StockStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   [StockStatus.CRITICAL]: 'danger',
@@ -102,18 +106,10 @@ const SupplierInventory: React.FC = () => {
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
+  const inventoryQuery = useInventory();
+  const myInventory = inventoryQuery.data?.items ?? [];
   const [filterStatus, setFilterStatus] = useState<StatusFilter>('All');
   const [search, setSearch] = useState('');
-
-  const mySupplier = useMemo(
-    () => mockSuppliers.find((s) => s.id === supplierId),
-    [supplierId],
-  );
-
-  const myInventory = useMemo(
-    () => mockInventory.filter((r) => r.supplierId === supplierId),
-    [supplierId],
-  );
 
   const counts = useMemo(
     () => ({
@@ -152,7 +148,26 @@ const SupplierInventory: React.FC = () => {
     [myInventory],
   );
 
-  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (inventoryQuery.isPending)
+    return <LoadingState breadcrumb={INVENTORY_CRUMB} />;
+  if (inventoryQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={INVENTORY_CRUMB}
+        error={inventoryQuery.error}
+        onRetry={() => inventoryQuery.refetch()}
+      />
+    );
+  if (myInventory.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={INVENTORY_CRUMB}
+        title="No inventory yet"
+        subtitle={`No stock records on file for ${identity.supplierName ?? 'this supplier'}.`}
+        message="Live stock positions will appear here once inventory is reported."
+      />
+    );
 
   const setKpiFilter = (s: StockStatus) =>
     setFilterStatus((prev) => (prev === s ? 'All' : s));
@@ -160,7 +175,7 @@ const SupplierInventory: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['TRANSACT', 'MY INVENTORY']}
+        breadcrumb={INVENTORY_CRUMB}
         title="My Inventory"
         subtitle="Live stock visibility · days-of-supply tracking · Paragon minimum thresholds."
         actions={
