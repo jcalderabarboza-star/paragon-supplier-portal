@@ -15,12 +15,6 @@ import type {
   AnalyticsSummary,
 } from '../../types';
 
-// Transitional re-exports — the entity types now live in the data contract
-// (types.ts). Kept here only until BuyerAnalytics repoints its imports; drop
-// once the page migration lands.
-export type { AnalyticsGrade } from '../../types';
-export type { AnalyticsPerfRow as PerfRow } from '../../types';
-
 const TOKEN_TEAL = '#0097A7';
 const TOKEN_NAVY = '#0D1B2A';
 const TOKEN_MID = '#354A5F';
