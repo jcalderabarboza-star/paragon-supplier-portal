@@ -29,13 +29,17 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { mockSuppliers } from '../data/mockSuppliers';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import type {
   SupplierInvoice,
   SupplierInvoiceStatus as InvStatus,
 } from '../services/data/types';
-import { INVOICES } from '../services/data/mock/fixtures/supplierInvoices';
+import { useSupplierInvoices, useCurrentSupplier } from '../services/query/hooks';
+
+const INV_CRUMB = ['SETTLE', 'MY INVOICES'];
 
 const STATUS_VARIANT: Record<InvStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   Draft: 'neutral',
@@ -136,13 +140,12 @@ const SupplierInvoices: React.FC = () => {
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
+  const invoicesQuery = useSupplierInvoices();
+  const supplierQuery = useCurrentSupplier();
+  const INVOICES = invoicesQuery.data?.items ?? [];
+  const mySupplier = supplierQuery.data ?? null;
   const [selected, setSelected] = useState<SupplierInvoice | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
-
-  const mySupplier = useMemo(
-    () => mockSuppliers.find((s) => s.id === supplierId),
-    [supplierId],
-  );
 
   const sums = useMemo(() => {
     const sum = (filter: (i: SupplierInvoice) => boolean) =>
@@ -154,7 +157,7 @@ const SupplierInvoices: React.FC = () => {
       ),
       disputed: sum((i) => i.status === 'Disputed'),
     };
-  }, []);
+  }, [INVOICES]);
 
   const counts = useMemo(() => {
     return {
@@ -166,7 +169,7 @@ const SupplierInvoices: React.FC = () => {
       ).length,
       disputed: INVOICES.filter((i) => i.status === 'Disputed').length,
     };
-  }, []);
+  }, [INVOICES]);
 
   const disputed = INVOICES.filter((i) => i.status === 'Disputed');
 
@@ -188,14 +191,36 @@ const SupplierInvoices: React.FC = () => {
   const isPaidStatus = (s: InvStatus): boolean =>
     s === 'Payment Released' || s === 'Remittance Received';
 
-  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (invoicesQuery.isPending || supplierQuery.isPending)
+    return <LoadingState breadcrumb={INV_CRUMB} />;
+  if (invoicesQuery.isError || supplierQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={INV_CRUMB}
+        error={invoicesQuery.error ?? supplierQuery.error}
+        onRetry={() => {
+          invoicesQuery.refetch();
+          supplierQuery.refetch();
+        }}
+      />
+    );
+  if (INVOICES.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={INV_CRUMB}
+        title="No invoices yet"
+        subtitle={`No invoices on file for ${mySupplier?.name ?? identity.supplierName ?? 'this supplier'}.`}
+        message="Submitted invoices and payment status will appear here."
+      />
+    );
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['SETTLE', 'MY INVOICES']}
+        breadcrumb={INV_CRUMB}
         title="My Invoices"
-        subtitle={`Submit and track invoices · view payment status and remittance advice — ${mySupplier.name}.`}
+        subtitle={`Submit and track invoices · view payment status and remittance advice — ${mySupplier?.name ?? identity.supplierName ?? ''}.`}
         actions={
           <BulkActionsBar
             actions={[
