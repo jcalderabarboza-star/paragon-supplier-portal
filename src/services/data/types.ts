@@ -536,6 +536,25 @@ export interface SingleSourceItem {
   suggestedAlternatives: string[];
 }
 
+// ─── Buyer dashboard aggregates (command-center, buyer-only) ────────────────
+// Not supplier-scoped: production lines are internal to Paragon and supplier-
+// health rows span multiple suppliers. Served buyer-only (supplier sees empty).
+
+export interface ProductionLineRow {
+  line: string;
+  category: string;
+  risk: 'low' | 'medium' | 'high';
+  riskLabel: string;
+  coverDays: number;
+  blockedSkus: number;
+}
+
+export interface SupplierHealthRow {
+  name: string;
+  score: number;
+  grade: 'A' | 'B' | 'C' | 'D';
+}
+
 // ─── Filter inputs (lean shapes; expanded as pages migrate) ─────────────────
 
 export interface POFilter {
@@ -641,6 +660,10 @@ export interface IProcurementService {
   // — KPIs / performance —
   getKpis(scope: QueryScope): Promise<KpiSnapshot>;
   getPerformanceTrend(scope: QueryScope, range: TrendRange): Promise<Page<PerformancePoint>>;
+
+  // — Buyer command-center aggregates (buyer-only) —
+  getProductionLines(scope: QueryScope): Promise<Page<ProductionLineRow>>;
+  getSupplierHealth(scope: QueryScope): Promise<Page<SupplierHealthRow>>;
 }
 
 export interface IRiskService {

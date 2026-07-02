@@ -9,6 +9,7 @@ import { mockQuotations } from '../../../data/mockQuotations';
 import { toCanonicalPOs } from '../dto';
 import { applySupplierScope } from '../scoping';
 import { MOCK_ASNS } from './fixtures/supplierShipments';
+import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
 import { DOCUMENTS } from './fixtures/supplierDocuments';
 import { INVOICES as MOCK_SUPPLIER_INVOICES } from './fixtures/supplierInvoices';
 import { BUYER_INVOICES } from './fixtures/buyerInvoices';
@@ -55,6 +56,8 @@ import type {
   KpiSnapshot,
   PerformancePoint,
   TrendRange,
+  ProductionLineRow,
+  SupplierHealthRow,
 } from '../types';
 
 const matchesList = <T>(value: T, filter: T | T[] | undefined): boolean => {
@@ -299,5 +302,19 @@ export class MockProcurementService implements IProcurementService {
     _range: TrendRange,
   ): Promise<Page<PerformancePoint>> {
     return { items: trendForScope(scope) };
+  }
+
+  // ─── Buyer command-center aggregates (buyer-only) ─────────────────────────
+
+  async getProductionLines(
+    scope: QueryScope,
+  ): Promise<Page<ProductionLineRow>> {
+    return { items: scope.personaType === 'buyer' ? [...PRODUCTION_LINES] : [] };
+  }
+
+  async getSupplierHealth(
+    scope: QueryScope,
+  ): Promise<Page<SupplierHealthRow>> {
+    return { items: scope.personaType === 'buyer' ? [...SUPPLIER_HEALTH] : [] };
   }
 }

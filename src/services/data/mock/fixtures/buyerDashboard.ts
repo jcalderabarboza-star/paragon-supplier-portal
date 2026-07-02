@@ -7,20 +7,9 @@
 // not tagged with a single supplierId.
 // ────────────────────────────────────────────────────────────────────────────
 
-export interface ProductionLineRow {
-  line: string;
-  category: string;
-  risk: 'low' | 'medium' | 'high';
-  riskLabel: string;
-  coverDays: number;
-  blockedSkus: number;
-}
+import type { ProductionLineRow, SupplierHealthRow } from '../../types';
 
-export interface SupplierHealthRow {
-  name: string;
-  score: number;
-  grade: 'A' | 'B' | 'C' | 'D';
-}
+export type { ProductionLineRow, SupplierHealthRow };
 
 export const PRODUCTION_LINES: ProductionLineRow[] = [
   { line: 'Line A — Skin Care', category: 'Active Ingredient', risk: 'high', riskLabel: 'High', coverDays: 4, blockedSkus: 3 },

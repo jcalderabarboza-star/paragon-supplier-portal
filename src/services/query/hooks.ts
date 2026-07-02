@@ -128,6 +128,16 @@ export const usePerformanceTrend = (range: TrendRange) =>
     svc.procurement.getPerformanceTrend(scope, range),
   );
 
+export const useProductionLines = () =>
+  useServiceQuery(['procurement', 'productionLines'], (svc, scope) =>
+    svc.procurement.getProductionLines(scope),
+  );
+
+export const useSupplierHealth = () =>
+  useServiceQuery(['procurement', 'supplierHealth'], (svc, scope) =>
+    svc.procurement.getSupplierHealth(scope),
+  );
+
 // ─── Risk ─────────────────────────────────────────────────────────────────
 
 export const useRiskAlerts = () =>
