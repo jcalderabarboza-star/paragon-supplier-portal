@@ -1,11 +1,11 @@
 import { mockSuppliers } from '../../../data/mockSuppliers';
-import type { ISupplierService, QueryScope, Supplier } from '../types';
+import type { ISupplierService, Page, QueryScope, Supplier } from '../types';
 import { DataError } from '../types';
 
 export class MockSupplierService implements ISupplierService {
-  async list(scope: QueryScope): Promise<Supplier[]> {
-    if (scope.personaType === 'supplier') return [];
-    return [...mockSuppliers];
+  async list(scope: QueryScope): Promise<Page<Supplier>> {
+    if (scope.personaType === 'supplier') return { items: [] };
+    return { items: [...mockSuppliers] };
   }
 
   async getById(scope: QueryScope, id: string): Promise<Supplier | null> {

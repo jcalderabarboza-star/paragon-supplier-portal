@@ -25,6 +25,7 @@ import {
 } from './fixtures/supplierPerformance';
 import type {
   IProcurementService,
+  Page,
   QueryScope,
   PurchaseOrder,
   POFilter,
@@ -99,7 +100,7 @@ export class MockProcurementService implements IProcurementService {
   async getPurchaseOrders(
     scope: QueryScope,
     filter?: POFilter,
-  ): Promise<PurchaseOrder[]> {
+  ): Promise<Page<PurchaseOrder>> {
     const canonical = toCanonicalPOs(mockPurchaseOrders);
     let rows = applySupplierScope(scope, canonical);
     if (filter?.supplierId)
@@ -107,15 +108,15 @@ export class MockProcurementService implements IProcurementService {
     if (filter?.status) rows = rows.filter((p) => matchesList(p.status, filter.status));
     if (filter?.dateFrom) rows = rows.filter((p) => p.orderDate >= filter.dateFrom!);
     if (filter?.dateTo) rows = rows.filter((p) => p.orderDate <= filter.dateTo!);
-    return rows;
+    return { items: rows };
   }
 
   async getPurchaseOrder(
     scope: QueryScope,
     id: string,
   ): Promise<PurchaseOrder | null> {
-    const all = await this.getPurchaseOrders(scope);
-    return all.find((p) => p.id === id) ?? null;
+    const { items } = await this.getPurchaseOrders(scope);
+    return items.find((p) => p.id === id) ?? null;
   }
 
   // ─── Inventory ────────────────────────────────────────────────────────────
@@ -123,7 +124,7 @@ export class MockProcurementService implements IProcurementService {
   async getInventory(
     scope: QueryScope,
     filter?: InventoryFilter,
-  ): Promise<InventoryRecord[]> {
+  ): Promise<Page<InventoryRecord>> {
     let rows = applySupplierScope(scope, mockInventory);
     if (filter?.supplierId)
       rows = rows.filter((r) => r.supplierId === filter.supplierId);
@@ -131,17 +132,17 @@ export class MockProcurementService implements IProcurementService {
       rows = rows.filter((r) => r.materialCode === filter.materialCode);
     if (filter?.stockStatus)
       rows = rows.filter((r) => matchesList(r.stockStatus, filter.stockStatus));
-    return rows;
+    return { items: rows };
   }
 
   // ─── Sourcing ─────────────────────────────────────────────────────────────
 
-  async getRFQs(scope: QueryScope, filter?: RFQFilter): Promise<RFQ[]> {
+  async getRFQs(scope: QueryScope, filter?: RFQFilter): Promise<Page<RFQ>> {
     // RFQ scoping is not supplierId-based: an RFQ is visible to suppliers
     // whose id appears in invitedSupplierIds.
     let rows: RFQ[] = [...mockRfqs];
     if (scope.personaType === 'supplier') {
-      if (!scope.supplierId) return [];
+      if (!scope.supplierId) return { items: [] };
       rows = rows.filter((r) => r.invitedSupplierIds.includes(scope.supplierId!));
     }
     if (filter?.status) rows = rows.filter((r) => matchesList(r.status, filter.status));
@@ -151,19 +152,19 @@ export class MockProcurementService implements IProcurementService {
       rows = rows.filter((r) =>
         r.invitedSupplierIds.includes(filter.invitedSupplierId!),
       );
-    return rows;
+    return { items: rows };
   }
 
   async getQuotations(
     scope: QueryScope,
     filter?: QuotationFilter,
-  ): Promise<Quotation[]> {
+  ): Promise<Page<Quotation>> {
     let rows = applySupplierScope(scope, mockQuotations);
     if (filter?.rfqId) rows = rows.filter((q) => q.rfqId === filter.rfqId);
     if (filter?.supplierId)
       rows = rows.filter((q) => q.supplierId === filter.supplierId);
     if (filter?.status) rows = rows.filter((q) => matchesList(q.status, filter.status));
-    return rows;
+    return { items: rows };
   }
 
   // ─── Fulfilment ───────────────────────────────────────────────────────────
@@ -171,30 +172,30 @@ export class MockProcurementService implements IProcurementService {
   async getShipments(
     scope: QueryScope,
     filter?: ShipmentFilter,
-  ): Promise<Shipment[]> {
+  ): Promise<Page<Shipment>> {
     let rows = applySupplierScope(scope, mockShipments);
     if (filter?.supplierId)
       rows = rows.filter((s) => s.supplierId === filter.supplierId);
     if (filter?.status) rows = rows.filter((s) => matchesList(s.status, filter.status));
     if (filter?.mode) rows = rows.filter((s) => matchesList(s.mode, filter.mode));
-    return rows;
+    return { items: rows };
   }
 
-  async getASNs(scope: QueryScope, filter?: ASNFilter): Promise<ASN[]> {
+  async getASNs(scope: QueryScope, filter?: ASNFilter): Promise<Page<ASN>> {
     let rows = applySupplierScope(scope, MOCK_ASNS);
     if (filter?.status) rows = rows.filter((a) => matchesList(a.status, filter.status));
-    return rows;
+    return { items: rows };
   }
 
   async getGoodsReceipts(
     scope: QueryScope,
     filter?: GRFilter,
-  ): Promise<GoodsReceipt[]> {
+  ): Promise<Page<GoodsReceipt>> {
     let rows = applySupplierScope(scope, mockGoodsReceipts);
     if (filter?.supplierId)
       rows = rows.filter((g) => g.supplierId === filter.supplierId);
     if (filter?.status) rows = rows.filter((g) => matchesList(g.status, filter.status));
-    return rows;
+    return { items: rows };
   }
 
   // ─── Finance ──────────────────────────────────────────────────────────────
@@ -202,27 +203,27 @@ export class MockProcurementService implements IProcurementService {
   async getBuyerInvoices(
     scope: QueryScope,
     filter?: InvoiceFilter,
-  ): Promise<BuyerInvoice[]> {
+  ): Promise<Page<BuyerInvoice>> {
     let rows = applySupplierScope(scope, BUYER_INVOICES);
     if (filter?.supplierId)
       rows = rows.filter((i) => i.supplierId === filter.supplierId);
     if (filter?.poNumber)
       rows = rows.filter((i) => i.poNumber === filter.poNumber);
     if (filter?.status) rows = rows.filter((i) => i.status === filter.status);
-    return rows;
+    return { items: rows };
   }
 
   async getSupplierInvoices(
     scope: QueryScope,
     filter?: InvoiceFilter,
-  ): Promise<SupplierInvoice[]> {
+  ): Promise<Page<SupplierInvoice>> {
     let rows = applySupplierScope(scope, MOCK_SUPPLIER_INVOICES);
     if (filter?.supplierId)
       rows = rows.filter((i) => i.supplierId === filter.supplierId);
     if (filter?.poNumber)
       rows = rows.filter((i) => i.poNumber === filter.poNumber);
     if (filter?.status) rows = rows.filter((i) => i.status === filter.status);
-    return rows;
+    return { items: rows };
   }
 
   // ─── Contracts ────────────────────────────────────────────────────────────
@@ -230,61 +231,61 @@ export class MockProcurementService implements IProcurementService {
   async getContracts(
     scope: QueryScope,
     filter?: ContractFilter,
-  ): Promise<Contract[]> {
+  ): Promise<Page<Contract>> {
     let rows = applySupplierScope(scope, mockContracts);
     if (filter?.supplierId)
       rows = rows.filter((c) => c.supplierId === filter.supplierId);
     if (filter?.status) rows = rows.filter((c) => matchesList(c.status, filter.status));
     if (filter?.type) rows = rows.filter((c) => matchesList(c.type, filter.type));
-    return rows;
+    return { items: rows };
   }
 
   async getObligations(
     scope: QueryScope,
     filter?: ObligationFilter,
-  ): Promise<ContractObligation[]> {
+  ): Promise<Page<ContractObligation>> {
     // Obligation has no supplierId — scope via parent contract.
-    const scopedContracts = await this.getContracts(scope);
+    const { items: scopedContracts } = await this.getContracts(scope);
     const allowedContractIds = new Set(scopedContracts.map((c) => c.id));
     let rows = mockObligations.filter((o) => allowedContractIds.has(o.contractId));
     if (filter?.contractId)
       rows = rows.filter((o) => o.contractId === filter.contractId);
     if (filter?.status) rows = rows.filter((o) => matchesList(o.status, filter.status));
     if (filter?.owner) rows = rows.filter((o) => o.owner === filter.owner);
-    return rows;
+    return { items: rows };
   }
 
   // ─── Supplier-side supporting data ────────────────────────────────────────
 
-  async getDocuments(scope: QueryScope): Promise<SupplierDocument[]> {
-    return applySupplierScope(scope, DOCUMENTS);
+  async getDocuments(scope: QueryScope): Promise<Page<SupplierDocument>> {
+    return { items: applySupplierScope(scope, DOCUMENTS) };
   }
 
   async getStorefrontCatalog(
     scope: QueryScope,
     supplierId?: string,
-  ): Promise<CatalogItem[]> {
+  ): Promise<Page<CatalogItem>> {
     let rows = applySupplierScope(scope, INITIAL_CATALOG);
     if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
-    return rows;
+    return { items: rows };
   }
 
   async getStorefrontCerts(
     scope: QueryScope,
     supplierId?: string,
-  ): Promise<ProfileCert[]> {
+  ): Promise<Page<ProfileCert>> {
     let rows = applySupplierScope(scope, INITIAL_CERTS);
     if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
-    return rows;
+    return { items: rows };
   }
 
   async getStorefrontProducts(
     scope: QueryScope,
     supplierId?: string,
-  ): Promise<StorefrontProduct[]> {
+  ): Promise<Page<StorefrontProduct>> {
     let rows = applySupplierScope(scope, PRODUCTS_DEFAULT);
     if (supplierId) rows = rows.filter((r) => r.supplierId === supplierId);
-    return rows;
+    return { items: rows };
   }
 
   // ─── KPIs / performance ───────────────────────────────────────────────────
@@ -296,7 +297,7 @@ export class MockProcurementService implements IProcurementService {
   async getPerformanceTrend(
     scope: QueryScope,
     _range: TrendRange,
-  ): Promise<PerformancePoint[]> {
-    return trendForScope(scope);
+  ): Promise<Page<PerformancePoint>> {
+    return { items: trendForScope(scope) };
   }
 }

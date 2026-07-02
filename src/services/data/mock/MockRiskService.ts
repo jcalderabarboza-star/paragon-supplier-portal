@@ -1,5 +1,6 @@
 import type {
   IRiskService,
+  Page,
   QueryScope,
   RiskAlert,
   GeoRisk,
@@ -23,19 +24,19 @@ function bufferForBuyer<T>(scope: QueryScope, rows: readonly T[]): T[] {
 }
 
 export class MockRiskService implements IRiskService {
-  async getRiskAlerts(scope: QueryScope): Promise<RiskAlert[]> {
-    return bufferForBuyer(scope, ALERTS);
+  async getRiskAlerts(scope: QueryScope): Promise<Page<RiskAlert>> {
+    return { items: bufferForBuyer(scope, ALERTS) };
   }
-  async getGeoRisks(scope: QueryScope): Promise<GeoRisk[]> {
-    return bufferForBuyer(scope, GEO_RISKS);
+  async getGeoRisks(scope: QueryScope): Promise<Page<GeoRisk>> {
+    return { items: bufferForBuyer(scope, GEO_RISKS) };
   }
-  async getExposure(scope: QueryScope): Promise<ExposureRow[]> {
-    return bufferForBuyer(scope, EXPOSURE_DATA);
+  async getExposure(scope: QueryScope): Promise<Page<ExposureRow>> {
+    return { items: bufferForBuyer(scope, EXPOSURE_DATA) };
   }
-  async getCompliance(scope: QueryScope): Promise<ComplianceRow[]> {
-    return bufferForBuyer(scope, COMPLIANCE_DATA);
+  async getCompliance(scope: QueryScope): Promise<Page<ComplianceRow>> {
+    return { items: bufferForBuyer(scope, COMPLIANCE_DATA) };
   }
-  async getCommodities(scope: QueryScope): Promise<Commodity[]> {
-    return bufferForBuyer(scope, COMMODITIES);
+  async getCommodities(scope: QueryScope): Promise<Page<Commodity>> {
+    return { items: bufferForBuyer(scope, COMMODITIES) };
   }
 }
