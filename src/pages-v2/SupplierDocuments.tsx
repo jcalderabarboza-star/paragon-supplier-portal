@@ -37,6 +37,7 @@ import type {
   SupplierDocumentCategory as DocCategory,
 } from '../services/data/types';
 import { useDocuments } from '../services/query/hooks';
+import { formatDate } from '../lib/format';
 
 const DOCS_CRUMB = ['SETTLE', 'MY DOCUMENTS'];
 
@@ -64,14 +65,6 @@ const daysUntil = (dateStr: string | null): number | null => {
   return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
 };
 
-const fmtDate = (s: string): string => {
-  if (!s) return '—';
-  return new Date(s).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
 
 type PanelMode = 'closed' | 'new' | 'upload-existing' | 'view';
 
@@ -126,11 +119,7 @@ const SupplierDocuments: React.FC = () => {
     [docs],
   );
 
-  const today = new Date().toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  const today = formatDate(new Date());
 
   const openUploadFor = (doc: SupplierDocument) => {
     setActiveDoc(doc);
@@ -340,7 +329,7 @@ const SupplierDocuments: React.FC = () => {
                     {doc.issuedBy}
                   </TableCell>
                   <TableCell className="text-text-tertiary text-xs whitespace-nowrap">
-                    {fmtDate(doc.issuedDate)}
+                    {formatDate(doc.issuedDate)}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {doc.expiryDate ? (
@@ -352,7 +341,7 @@ const SupplierDocuments: React.FC = () => {
                               : 'text-text-tertiary'
                           }`}
                         >
-                          {fmtDate(doc.expiryDate)}
+                          {formatDate(doc.expiryDate)}
                         </div>
                         {days !== null && (
                           <div className={`text-xs ${expiryColor}`}>

@@ -16,6 +16,8 @@ export const INITIAL_CATALOG: CatalogItem[] = [
   { id: 'c1', supplierId: 'sup-007', material: 'PET Bottle 100ml Airless Pump', sapCode: 'MAT-10045', category: 'Packaging Primary', moq: '10,000', uom: 'PCS', leadTime: '14', unitPrice: '3,700', currency: 'IDR', certs: ['Halal BPJPH', 'ISO 9001'], capacity: '200,000', visible: true },
   { id: 'c2', supplierId: 'sup-007', material: 'PET Bottle 200ml Standard Pump', sapCode: 'MAT-10046', category: 'Packaging Primary', moq: '10,000', uom: 'PCS', leadTime: '14', unitPrice: '4,200', currency: 'IDR', certs: ['Halal BPJPH', 'ISO 9001'], capacity: '150,000', visible: true },
   { id: 'c3', supplierId: 'sup-007', material: 'Airless Pump 15ml Travel Size', sapCode: 'MAT-10089', category: 'Packaging Secondary', moq: '5,000', uom: 'PCS', leadTime: '21', unitPrice: '2,800', currency: 'IDR', certs: ['ISO 9001'], capacity: '100,000', visible: true },
+  { id: 'c101', supplierId: 'sup-002', material: 'RBD Palm Stearin — Specialty Fat', sapCode: 'MAT-30110', category: 'Raw Material', moq: '20,000', uom: 'KG', leadTime: '30', unitPrice: '14,500', currency: 'IDR', certs: ['Halal BPJPH', 'ISO 9001', 'RSPO'], capacity: '500,000', visible: true },
+  { id: 'c201', supplierId: 'sup-005', material: 'Emulgade SE-PF Emulsifier', sapCode: 'MAT-40220', category: 'Active Ingredient', moq: '1,000', uom: 'KG', leadTime: '45', unitPrice: '210,000', currency: 'IDR', certs: ['REACH', 'ISO 9001'], capacity: '60,000', visible: true },
 ];
 
 export const INITIAL_CERTS: ProfileCert[] = [
@@ -23,6 +25,8 @@ export const INITIAL_CERTS: ProfileCert[] = [
   { supplierId: 'sup-007', name: 'ISO 9001:2015', visible: true, status: 'valid', expiry: '2026-08-14' },
   { supplierId: 'sup-007', name: 'BPJPH Halal Cert', visible: false, status: 'missing', expiry: null },
   { supplierId: 'sup-007', name: 'SNI Compliance', visible: true, status: 'expiring', expiry: '2026-05-01' },
+  { supplierId: 'sup-002', name: 'RSPO Certification', visible: true, status: 'valid', expiry: '2027-03-31' },
+  { supplierId: 'sup-005', name: 'REACH Registration', visible: true, status: 'valid', expiry: '2028-01-15' },
 ];
 
 export const PRODUCTS_DEFAULT: StorefrontProduct[] = [
@@ -32,4 +36,6 @@ export const PRODUCTS_DEFAULT: StorefrontProduct[] = [
   { supplierId: 'sup-007', name: 'Specialty derivative', code: 'CAT-0004', moq: '250 KG', leadTime: '28 days' },
   { supplierId: 'sup-007', name: 'Bulk fulfilment SKU', code: 'CAT-0005', moq: '10,000 KG', leadTime: '35 days' },
   { supplierId: 'sup-007', name: 'Sample / trial kit', code: 'CAT-0006', moq: '5 KG', leadTime: '7 days' },
+  { supplierId: 'sup-002', name: 'RBD palm stearin (bulk)', code: 'CAT-0101', moq: '20,000 KG', leadTime: '30 days' },
+  { supplierId: 'sup-005', name: 'Emulgade SE-PF emulsifier', code: 'CAT-0201', moq: '1,000 KG', leadTime: '45 days' },
 ];
