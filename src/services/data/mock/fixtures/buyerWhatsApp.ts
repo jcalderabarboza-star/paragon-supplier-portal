@@ -17,16 +17,6 @@ import type {
   EngagementSummary,
 } from '../../types';
 
-// Transitional re-exports — the entity types now live in the data contract
-// (types.ts). Kept here only until BuyerWhatsAppHub repoints its imports; drop
-// once the page migration lands.
-export type {
-  Conversation,
-  ChatMessage,
-  AutomationRule,
-  RuleRate,
-} from '../../types';
-
 export const CONVERSATIONS: Conversation[] = [
   { id: 'wa-001', supplier: 'PT Berlina Packaging 🇮🇩', lastMsg: 'Siap, PO-2025-00107 kami konfirmasi dalam perjalanan...', time: '2 min ago', unread: 0, status: 'active' },
   { id: 'wa-002', supplier: 'Zhejiang NHU Vitamins 🇨🇳', lastMsg: '库存更新：烟酰胺B3 2,400 KG...', time: '18 min ago', unread: 0, status: 'active' },
