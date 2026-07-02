@@ -19,12 +19,14 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import TimeRangeToggle from '../components/ui-v2/TimeRangeToggle';
-import {
-  PRODUCTION_LINES,
-  SUPPLIER_HEALTH,
-  type ProductionLineRow,
-  type SupplierHealthRow,
-} from '../services/data/mock/fixtures/buyerDashboard';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import type {
+  ProductionLineRow,
+  SupplierHealthRow,
+} from '../services/data/types';
+import { useProductionLines, useSupplierHealth } from '../services/query/hooks';
 
 type RangeId = 'today' | 'week' | 'month';
 
@@ -47,8 +49,38 @@ const RISK_VARIANT: Record<ProductionLineRow['risk'], 'success' | 'warning' | 'd
   high: 'danger',
 };
 
+const DASH_CRUMB = ['DASHBOARDS', 'PROCUREMENT COMMAND CENTER'];
+
 const BuyerDashboard: React.FC = () => {
   const [range, setRange] = useState<RangeId>('today');
+  const linesQuery = useProductionLines();
+  const healthQuery = useSupplierHealth();
+
+  if (linesQuery.isPending || healthQuery.isPending)
+    return <LoadingState breadcrumb={DASH_CRUMB} />;
+  if (linesQuery.isError || healthQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={DASH_CRUMB}
+        error={linesQuery.error ?? healthQuery.error}
+        onRetry={() => {
+          linesQuery.refetch();
+          healthQuery.refetch();
+        }}
+      />
+    );
+
+  const productionLines = linesQuery.data.items;
+  const supplierHealth = healthQuery.data.items;
+
+  if (productionLines.length === 0 && supplierHealth.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={DASH_CRUMB}
+        title="No command-center data"
+        subtitle="Production-line and supplier-health data is available to buyer accounts."
+      />
+    );
 
   return (
     <AppShellV2>
@@ -107,7 +139,7 @@ const BuyerDashboard: React.FC = () => {
               <TableHeaderCell>Risk</TableHeaderCell>
             </TableHeader>
             <tbody>
-              {PRODUCTION_LINES.map((row) => (
+              {productionLines.map((row) => (
                 <TableRow key={row.line}>
                   <TableCell>
                     <div className="font-medium text-text-primary">{row.line}</div>
@@ -146,7 +178,7 @@ const BuyerDashboard: React.FC = () => {
           </div>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={SUPPLIER_HEALTH} margin={{ top: 8, right: 12, left: -16, bottom: 8 }}>
+              <BarChart data={supplierHealth} margin={{ top: 8, right: 12, left: -16, bottom: 8 }}>
                 <CartesianGrid stroke="#E5E9EE" vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -166,7 +198,7 @@ const BuyerDashboard: React.FC = () => {
                   }}
                 />
                 <Bar dataKey="score" radius={[6, 6, 0, 0]}>
-                  {SUPPLIER_HEALTH.map((row) => (
+                  {supplierHealth.map((row) => (
                     <Cell key={row.name} fill={GRADE_COLOR[row.grade]} />
                   ))}
                 </Bar>

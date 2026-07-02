@@ -38,12 +38,17 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import { useToast } from '../hooks/useToast';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import type {
   BuyerInvoice,
   BuyerInvoiceStatus as InvStatus,
   InvoiceMatchStatus as MatchStatus,
 } from '../services/data/types';
-import { BUYER_INVOICES } from '../services/data/mock/fixtures/buyerInvoices';
+import { useBuyerInvoices } from '../services/query/hooks';
+
+const INV_CRUMB = ['TRANSACT', 'INVOICES & PAYMENT'];
 
 const STATUS_VARIANT: Record<InvStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
   'Pending Match': 'neutral',
@@ -161,9 +166,12 @@ const loadGRPosted = (): string[] => {
   }
 };
 
-const initialInvoices = (): BuyerInvoice[] => {
+// Local overlay applied to the server list: GRs posted this session (tracked
+// in localStorage by the Goods Receipt page) auto-advance a Pending-Match
+// invoice to Approved/Matched. Applied to the query result, not a fixture.
+const applyGrOverlay = (source: BuyerInvoice[]): BuyerInvoice[] => {
   const posted = loadGRPosted();
-  return BUYER_INVOICES.map((inv) =>
+  return source.map((inv) =>
     posted.includes(inv.poNumber) &&
     inv.status === 'Pending Match' &&
     inv.matchStatus === 'Pending GR'
@@ -177,9 +185,13 @@ const initialInvoices = (): BuyerInvoice[] => {
   );
 };
 
-const BuyerInvoices: React.FC = () => {
+const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
+  initialInvoices,
+}) => {
   const { toast } = useToast();
-  const [invoices, setInvoices] = useState<BuyerInvoice[]>(() => initialInvoices());
+  const [invoices, setInvoices] = useState<BuyerInvoice[]>(() =>
+    applyGrOverlay(initialInvoices),
+  );
   const [tab, setTab] = useState<TabKey>('queue');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selected, setSelected] = useState<BuyerInvoice | null>(null);
@@ -986,5 +998,30 @@ const MatchTile: React.FC<MatchTileProps> = ({ label, count, variant }) => (
     <div className="text-3xl font-bold">{count}</div>
   </div>
 );
+
+// Query wrapper — resolves the scoped invoice list and renders the four honest
+// states. The presentational view (which owns local mutable state seeded from
+// the server list) only mounts once real data has resolved.
+const BuyerInvoices: React.FC = () => {
+  const invoicesQuery = useBuyerInvoices();
+  if (invoicesQuery.isPending) return <LoadingState breadcrumb={INV_CRUMB} />;
+  if (invoicesQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={INV_CRUMB}
+        error={invoicesQuery.error}
+        onRetry={() => invoicesQuery.refetch()}
+      />
+    );
+  if (invoicesQuery.data.items.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={INV_CRUMB}
+        title="No invoices"
+        subtitle="There are no invoices to match or pay for this view."
+      />
+    );
+  return <BuyerInvoicesView initialInvoices={invoicesQuery.data.items} />;
+};
 
 export default BuyerInvoices;
