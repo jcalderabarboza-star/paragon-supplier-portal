@@ -1,3 +1,5 @@
+> **SUPERSEDED by Revised Build Plan v2.1** (`docs/Supplier_Portal_Revised_Build_Plan_v2.1.md`). Retained for history. Note: this file was previously misnamed `Supplier_Portal_Current_State_of_Truth_v1.md` — it contains Build Plan **v1.1**, not a Current State of Truth (see `docs/findings.md` DOC-02).
+
 # Supplier Portal — End-to-End Build Plan
 
 **Version:** 1.1

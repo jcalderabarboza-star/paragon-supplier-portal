@@ -8,7 +8,7 @@ The portal enables Paragon's procurement team (buyers) and their suppliers to co
 
 ## Live Demo
 
-**[https://jcalderabarboza-star.github.io/paragon-supplier-portal/](https://jcalderabarboza-star.github.io/paragon-supplier-portal/)**
+**[https://paragon-supplier-portal.vercel.app/](https://paragon-supplier-portal.vercel.app/)**
 
 No credentials required — use Demo Mode on the login screen.
 
@@ -27,12 +27,16 @@ No credentials required — use Demo Mode on the login screen.
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| React | 18 | UI framework |
-| TypeScript | 5 | Type safety |
+| React | 18.3 | UI framework |
+| TypeScript | 5.6 | Type safety |
 | Vite | 6 | Build tooling & dev server |
-| SAP UI5 Web Components React | 2.5 | Enterprise component library |
-| Recharts | 2 | Charts & data visualisation |
-| React Router | 6 | Client-side routing (HashRouter for GH Pages) |
+| Tailwind CSS | 3.4 | Styling |
+| TanStack Query | 5 | Server-state & caching |
+| React Router | 6.28 | Client-side routing (HashRouter) |
+| Recharts | 2.13 | Charts & data visualisation |
+| lucide-react | 1 | Icons |
+| i18next / react-i18next | 26 / 17 | Internationalisation |
+| Vitest + Testing Library | 3 | Test floor |
 | Inter (Google Fonts) | — | Typography |
 
 ---
@@ -156,4 +160,4 @@ npm run build
 
 ---
 
-*Built with ❤️ using React + SAP UI5 Web Components*
+*Built with ❤️ using React + Vite + Tailwind CSS*
