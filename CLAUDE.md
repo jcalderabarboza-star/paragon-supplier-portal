@@ -37,9 +37,24 @@ Direct pushes to `main` are not used.
 - Canonical build plan: `docs/Supplier_Portal_Revised_Build_Plan_v2.1.md`.
 
 ## Routing
-Routing is HashRouter (`src/router/AppRouter.tsx`) — not BrowserRouter. The
-catch-all `*` route currently redirects to `/buyer/dashboard` (no 404; see
-`docs/findings.md` NAV-02).
+Routing is HashRouter (`src/router/AppRouter.tsx`) — not BrowserRouter. The `/`
+home redirect points to `/buyer/dashboard`; unknown routes render a real 404
+(`src/pages-v2/NotFound.tsx`).
+
+## Design principles
+
+### DP-1 — Fiori-aligned visual language
+- No dark solid backgrounds as content surfaces. Hero/identity cards restyle to
+  light surfaces: white / light-neutral card, subtle border, navy (`#0D1B2A`)
+  text, teal (`#0097A7`) accents/interactive, mid (`#354A5F`) secondary text.
+- Odyssey colors are accents, not fills. Semantic color (green/amber/red) is
+  reserved for state (as the KPI tiles already do).
+- Reference grammar: light shell, white cards, thin borders, high information
+  density, restrained color.
+- Applied opportunistically per touched page (formatter precedent) — restyle
+  when a batch touches the page, never as a standalone sweep. Applies from
+  Batch 1.1b onward. If a shared token / card-variant change makes it cheap,
+  propose it in that batch's investigation rather than patching per-page.
 
 ## Deploy
 Vite root is app/ — never edit app/index.html directly.
