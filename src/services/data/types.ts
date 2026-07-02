@@ -577,6 +577,70 @@ export interface SupplierHealthRow {
   grade: 'A' | 'B' | 'C' | 'D';
 }
 
+// ─── Analytics (buyer-side aggregate reporting) ─────────────────────────────
+// Portfolio-level procurement intelligence — spend, performance, channel mix.
+// Not per-supplier-scoped; served buyer-only (supplier sees empty / null).
+
+export type AnalyticsGrade = 'A' | 'B' | 'C' | 'D';
+
+export interface SpendCategoryRow {
+  category: string;
+  value: number;
+  color: string;
+}
+
+export interface TopSupplierSpend {
+  supplier: string;
+  spend: number;
+}
+
+export interface MonthlyOtifRow {
+  month: string;
+  otif: number;
+  otdr: number;
+}
+
+export interface MonthlyPoRow {
+  month: string;
+  pos: number;
+  cycleTime: number;
+}
+
+export interface MonthlyChannelMix {
+  month: string;
+  whatsapp: number;
+  web: number;
+  email: number;
+  api: number;
+}
+
+export interface AnalyticsPerfRow {
+  supplier: string;
+  category: string;
+  otif: number;
+  otdr: number;
+  ackSpeed: string;
+  invoiceMatch: string;
+  grade: AnalyticsGrade;
+  trend: KpiTrend;
+}
+
+// Headline KPI card — value + subtitle text + semantic tone (drives icon/color).
+export type KpiTone = 'success' | 'warning' | 'danger' | 'neutral';
+
+export interface AnalyticsKpi {
+  value: string;
+  subtitle: string;
+  tone: KpiTone;
+}
+
+export interface AnalyticsSummary {
+  totalSpend: AnalyticsKpi;
+  activeSuppliers: AnalyticsKpi;
+  portfolioOtif: AnalyticsKpi;
+  avgCycleTime: AnalyticsKpi;
+}
+
 // ─── Filter inputs (lean shapes; expanded as pages migrate) ─────────────────
 
 export interface POFilter {
@@ -705,9 +769,23 @@ export interface IDiscoveryService {
   getSingleSourceItems(scope: QueryScope): Promise<Page<SingleSourceItem>>;
 }
 
+// Discrete per-read analytics surface (D-4): each chart/table loads and errors
+// independently so a single slow/failed read never blanks the whole page.
+export interface IAnalyticsService {
+  /** Headline KPI cards. Buyer: populated. Supplier: null. */
+  getSummary(scope: QueryScope): Promise<AnalyticsSummary | null>;
+  getSpendByCategory(scope: QueryScope): Promise<Page<SpendCategoryRow>>;
+  getTopSuppliers(scope: QueryScope): Promise<Page<TopSupplierSpend>>;
+  getOtifTrend(scope: QueryScope): Promise<Page<MonthlyOtifRow>>;
+  getPoVolumeTrend(scope: QueryScope): Promise<Page<MonthlyPoRow>>;
+  getChannelMix(scope: QueryScope): Promise<Page<MonthlyChannelMix>>;
+  getSupplierPerformance(scope: QueryScope): Promise<Page<AnalyticsPerfRow>>;
+}
+
 export interface IDataService {
   suppliers: ISupplierService;
   procurement: IProcurementService;
   risk: IRiskService;
   discovery: IDiscoveryService;
+  analytics: IAnalyticsService;
 }

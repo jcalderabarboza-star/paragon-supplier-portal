@@ -86,6 +86,17 @@ describe('service scoping contract — non-supplierId scoping models', () => {
     expect((await svc.risk.getScenarios(aScope)).items.length).toBe(0);
   });
 
+  it('analytics: buyer sees the portfolio view; a supplier sees none', async () => {
+    // Discrete per-read reads are all buyer-only aggregates.
+    expect((await svc.analytics.getSpendByCategory(buyerScope)).items.length).toBeGreaterThan(0);
+    expect((await svc.analytics.getSpendByCategory(aScope)).items.length).toBe(0);
+    expect((await svc.analytics.getSupplierPerformance(buyerScope)).items.length).toBeGreaterThan(0);
+    expect((await svc.analytics.getSupplierPerformance(aScope)).items.length).toBe(0);
+    // The scalar summary is populated for the buyer, null for a supplier.
+    expect(await svc.analytics.getSummary(buyerScope)).not.toBeNull();
+    expect(await svc.analytics.getSummary(aScope)).toBeNull();
+  });
+
   it('getKpis: improvement actions are wired into the snapshot', async () => {
     // Buyer and the seeded supplier read the populated snapshot; an unrelated
     // supplier gets the empty snapshot.

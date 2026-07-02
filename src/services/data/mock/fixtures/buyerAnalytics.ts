@@ -5,46 +5,21 @@
 // Aggregate buyer-side reporting data — not per-supplier-scoped.
 // ────────────────────────────────────────────────────────────────────────────
 
-import type { KpiTrend } from '../../types';
+import type {
+  SpendCategoryRow,
+  TopSupplierSpend,
+  MonthlyOtifRow,
+  MonthlyPoRow,
+  MonthlyChannelMix,
+  AnalyticsPerfRow,
+  AnalyticsSummary,
+} from '../../types';
 
-export type AnalyticsGrade = 'A' | 'B' | 'C' | 'D';
-
-export interface SpendCategoryRow {
-  category: string;
-  value: number;
-  color: string;
-}
-
-export interface PerfRow {
-  supplier: string;
-  category: string;
-  otif: number;
-  otdr: number;
-  ackSpeed: string;
-  invoiceMatch: string;
-  grade: AnalyticsGrade;
-  trend: KpiTrend;
-}
-
-export interface MonthlyOtifRow {
-  month: string;
-  otif: number;
-  otdr: number;
-}
-
-export interface MonthlyPoRow {
-  month: string;
-  pos: number;
-  cycleTime: number;
-}
-
-export interface MonthlyChannelMix {
-  month: string;
-  whatsapp: number;
-  web: number;
-  email: number;
-  api: number;
-}
+// Transitional re-exports — the entity types now live in the data contract
+// (types.ts). Kept here only until BuyerAnalytics repoints its imports; drop
+// once the page migration lands.
+export type { AnalyticsGrade } from '../../types';
+export type { AnalyticsPerfRow as PerfRow } from '../../types';
 
 const TOKEN_TEAL = '#0097A7';
 const TOKEN_NAVY = '#0D1B2A';
@@ -64,7 +39,7 @@ export const SPEND_CAT: SpendCategoryRow[] = [
   { category: 'Other', value: 210, color: TOKEN_MUTED },
 ];
 
-export const TOP_SUPPLIERS: { supplier: string; spend: number }[] = [
+export const TOP_SUPPLIERS: TopSupplierSpend[] = [
   { supplier: 'PT Berlina Packaging', spend: 820 },
   { supplier: 'Zhejiang NHU Vitamins', spend: 680 },
   { supplier: 'BASF Personal Care DE', spend: 540 },
@@ -100,7 +75,7 @@ export const CHANNEL_DATA: MonthlyChannelMix[] = [
   { month: 'Mar', whatsapp: 45, web: 25, email: 20, api: 10 },
 ];
 
-export const PERF_TABLE: PerfRow[] = [
+export const PERF_TABLE: AnalyticsPerfRow[] = [
   { supplier: 'PT Berlina Packaging Indonesia', category: 'Packaging Primary', otif: 88, otdr: 91, ackSpeed: '18h', invoiceMatch: '98%', grade: 'B', trend: '↑' },
   { supplier: 'Zhejiang NHU Vitamins Co.', category: 'Active Ingredients', otif: 94, otdr: 96, ackSpeed: '6h', invoiceMatch: '100%', grade: 'A', trend: '↑' },
   { supplier: 'BASF Personal Care DE', category: 'Active Ingredients', otif: 78, otdr: 82, ackSpeed: '42h', invoiceMatch: '85%', grade: 'C', trend: '↓' },
@@ -110,3 +85,28 @@ export const PERF_TABLE: PerfRow[] = [
   { supplier: 'PT Ecogreen Oleochemicals', category: 'Natural Botanical', otif: 82, otdr: 85, ackSpeed: '30h', invoiceMatch: '92%', grade: 'B', trend: '↑' },
   { supplier: 'Evonik Specialty FR', category: 'Active Ingredients', otif: 72, otdr: 76, ackSpeed: '56h', invoiceMatch: '88%', grade: 'C', trend: '↓' },
 ];
+
+// Headline KPI cards — relocated from the inline JSX in BuyerAnalytics so the
+// summary reads through the service like every other analytics surface.
+export const ANALYTICS_SUMMARY: AnalyticsSummary = {
+  totalSpend: {
+    value: 'Rp 4.2B',
+    subtitle: '+12% vs last year · 8 categories',
+    tone: 'success',
+  },
+  activeSuppliers: {
+    value: '12',
+    subtitle: '2 onboarding · 8 Grade A or B',
+    tone: 'success',
+  },
+  portfolioOtif: {
+    value: '87%',
+    subtitle: '-3pp vs target 90% · 15-mo avg',
+    tone: 'danger',
+  },
+  avgCycleTime: {
+    value: '28h',
+    subtitle: '-42% vs 6 months ago',
+    tone: 'success',
+  },
+};
