@@ -158,6 +158,80 @@ export const useCompliance = () =>
 export const useCommodities = () =>
   useServiceQuery(['risk', 'commodities'], (svc, scope) => svc.risk.getCommodities(scope));
 
+// ─── Analytics (buyer-side; discrete per-read so each chart loads on its own) ─
+
+export const useAnalyticsSummary = () =>
+  useServiceQuery(['analytics', 'summary'], (svc, scope) =>
+    svc.analytics.getSummary(scope),
+  );
+
+export const useSpendByCategory = () =>
+  useServiceQuery(['analytics', 'spendByCategory'], (svc, scope) =>
+    svc.analytics.getSpendByCategory(scope),
+  );
+
+export const useTopSuppliers = () =>
+  useServiceQuery(['analytics', 'topSuppliers'], (svc, scope) =>
+    svc.analytics.getTopSuppliers(scope),
+  );
+
+export const useOtifTrend = () =>
+  useServiceQuery(['analytics', 'otifTrend'], (svc, scope) =>
+    svc.analytics.getOtifTrend(scope),
+  );
+
+export const usePoVolumeTrend = () =>
+  useServiceQuery(['analytics', 'poVolumeTrend'], (svc, scope) =>
+    svc.analytics.getPoVolumeTrend(scope),
+  );
+
+export const useChannelMix = () =>
+  useServiceQuery(['analytics', 'channelMix'], (svc, scope) =>
+    svc.analytics.getChannelMix(scope),
+  );
+
+export const useSupplierPerformance = () =>
+  useServiceQuery(['analytics', 'supplierPerformance'], (svc, scope) =>
+    svc.analytics.getSupplierPerformance(scope),
+  );
+
+// ─── Engagement (buyer-side comms bus; discrete per-read) ─────────────────────
+
+export const useEngagementSummary = () =>
+  useServiceQuery(['engagement', 'summary'], (svc, scope) =>
+    svc.engagement.getSummary(scope),
+  );
+
+export const useConversations = () =>
+  useServiceQuery(['engagement', 'conversations'], (svc, scope) =>
+    svc.engagement.getConversations(scope),
+  );
+
+export const useConversationThread = (conversationId: string) =>
+  useServiceQuery(['engagement', 'thread', conversationId], (svc, scope) =>
+    svc.engagement.getConversationThread(scope, conversationId),
+  );
+
+export const useAutomationRules = () =>
+  useServiceQuery(['engagement', 'automationRules'], (svc, scope) =>
+    svc.engagement.getAutomationRules(scope),
+  );
+
+export const useDailyMessages = () =>
+  useServiceQuery(['engagement', 'dailyMessages'], (svc, scope) =>
+    svc.engagement.getDailyMessages(scope),
+  );
+
+export const useRuleRates = () =>
+  useServiceQuery(['engagement', 'ruleRates'], (svc, scope) =>
+    svc.engagement.getRuleRates(scope),
+  );
+
+export const useResponseTimes = () =>
+  useServiceQuery(['engagement', 'responseTimes'], (svc, scope) =>
+    svc.engagement.getResponseTimes(scope),
+  );
+
 // ─── Discovery ──────────────────────────────────────────────────────────────
 
 export const useGlobalSuppliers = () =>

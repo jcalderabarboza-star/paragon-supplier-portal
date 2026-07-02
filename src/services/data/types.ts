@@ -577,6 +577,137 @@ export interface SupplierHealthRow {
   grade: 'A' | 'B' | 'C' | 'D';
 }
 
+// ─── Analytics (buyer-side aggregate reporting) ─────────────────────────────
+// Portfolio-level procurement intelligence — spend, performance, channel mix.
+// Not per-supplier-scoped; served buyer-only (supplier sees empty / null).
+
+export type AnalyticsGrade = 'A' | 'B' | 'C' | 'D';
+
+export interface SpendCategoryRow {
+  category: string;
+  value: number;
+  color: string;
+}
+
+export interface TopSupplierSpend {
+  supplier: string;
+  spend: number;
+}
+
+export interface MonthlyOtifRow {
+  month: string;
+  otif: number;
+  otdr: number;
+}
+
+export interface MonthlyPoRow {
+  month: string;
+  pos: number;
+  cycleTime: number;
+}
+
+export interface MonthlyChannelMix {
+  month: string;
+  whatsapp: number;
+  web: number;
+  email: number;
+  api: number;
+}
+
+export interface AnalyticsPerfRow {
+  supplier: string;
+  category: string;
+  otif: number;
+  otdr: number;
+  ackSpeed: string;
+  invoiceMatch: string;
+  grade: AnalyticsGrade;
+  trend: KpiTrend;
+}
+
+// Headline KPI card — value + subtitle text + semantic tone (drives icon/color).
+export type KpiTone = 'success' | 'warning' | 'danger' | 'neutral';
+
+export interface AnalyticsKpi {
+  value: string;
+  subtitle: string;
+  tone: KpiTone;
+}
+
+export interface AnalyticsSummary {
+  totalSpend: AnalyticsKpi;
+  activeSuppliers: AnalyticsKpi;
+  portfolioOtif: AnalyticsKpi;
+  avgCycleTime: AnalyticsKpi;
+}
+
+// ─── Engagement (buyer-side multi-channel comms) ────────────────────────────
+// Conversation bus spanning suppliers (WhatsApp today). Buyer-only aggregate;
+// not per-supplier-id scoped in the leak sense (threads span the network).
+
+export type ConvStatus = 'active' | 'awaiting' | 'resolved';
+
+export interface Conversation {
+  id: string;
+  supplier: string;
+  lastMsg: string;
+  time: string;
+  unread: number;
+  status: ConvStatus;
+}
+
+export interface ChatMessage {
+  id: string;
+  from: 'bot' | 'supplier';
+  content: string;
+  time: string;
+}
+
+export interface AutomationRule {
+  rule: string;
+  trigger: string;
+  action: string;
+  autoHandle: boolean;
+  escalateIf: string;
+  successRate: string;
+}
+
+export interface DailyMessageRow {
+  day: string;
+  outbound: number;
+  inbound: number;
+}
+
+export interface RuleRate {
+  rule: string;
+  rate: number;
+}
+
+export interface ResponseRow {
+  supplier: string;
+  avg: string;
+  fastest: string;
+  slowest: string;
+  automation: string;
+}
+
+export interface EngagementKpi {
+  value: string;
+  subtitle: string;
+  tone: KpiTone;
+}
+
+export interface EngagementSummary {
+  activeConversations: EngagementKpi;
+  pendingResponses: EngagementKpi;
+  automatedToday: EngagementKpi;
+  hubAvgResponse: EngagementKpi;
+  messagesThisMonth: EngagementKpi;
+  automatedActions: EngagementKpi;
+  analyticsAvgResponse: EngagementKpi;
+  satisfaction: EngagementKpi;
+}
+
 // ─── Filter inputs (lean shapes; expanded as pages migrate) ─────────────────
 
 export interface POFilter {
@@ -705,9 +836,36 @@ export interface IDiscoveryService {
   getSingleSourceItems(scope: QueryScope): Promise<Page<SingleSourceItem>>;
 }
 
+// Discrete per-read analytics surface (D-4): each chart/table is its own read,
+// so the service is shaped for per-section loading/error rendering. (The pages
+// today still gate at the page level; the read granularity is what D-4 secures.)
+export interface IAnalyticsService {
+  /** Headline KPI cards. Buyer: populated. Supplier: null. */
+  getSummary(scope: QueryScope): Promise<AnalyticsSummary | null>;
+  getSpendByCategory(scope: QueryScope): Promise<Page<SpendCategoryRow>>;
+  getTopSuppliers(scope: QueryScope): Promise<Page<TopSupplierSpend>>;
+  getOtifTrend(scope: QueryScope): Promise<Page<MonthlyOtifRow>>;
+  getPoVolumeTrend(scope: QueryScope): Promise<Page<MonthlyPoRow>>;
+  getChannelMix(scope: QueryScope): Promise<Page<MonthlyChannelMix>>;
+  getSupplierPerformance(scope: QueryScope): Promise<Page<AnalyticsPerfRow>>;
+}
+
+export interface IEngagementService {
+  /** Channel KPI cards. Buyer: populated. Supplier: null. */
+  getSummary(scope: QueryScope): Promise<EngagementSummary | null>;
+  getConversations(scope: QueryScope): Promise<Page<Conversation>>;
+  getConversationThread(scope: QueryScope, conversationId: string): Promise<Page<ChatMessage>>;
+  getAutomationRules(scope: QueryScope): Promise<Page<AutomationRule>>;
+  getDailyMessages(scope: QueryScope): Promise<Page<DailyMessageRow>>;
+  getRuleRates(scope: QueryScope): Promise<Page<RuleRate>>;
+  getResponseTimes(scope: QueryScope): Promise<Page<ResponseRow>>;
+}
+
 export interface IDataService {
   suppliers: ISupplierService;
   procurement: IProcurementService;
   risk: IRiskService;
   discovery: IDiscoveryService;
+  analytics: IAnalyticsService;
+  engagement: IEngagementService;
 }

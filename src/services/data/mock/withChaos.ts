@@ -50,6 +50,8 @@ export function withChaos(inner: IDataService, cfg: ChaosConfig): IDataService {
     procurement: chaosProxy(inner.procurement, cfg),
     risk: chaosProxy(inner.risk, cfg),
     discovery: chaosProxy(inner.discovery, cfg),
+    analytics: chaosProxy(inner.analytics, cfg),
+    engagement: chaosProxy(inner.engagement, cfg),
   };
 }
 

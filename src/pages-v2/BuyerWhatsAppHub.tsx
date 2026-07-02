@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -18,6 +18,8 @@ import {
   Clock,
   Activity,
   Sparkles,
+  Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -31,24 +33,36 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import Switch from '../components/ui-v2/Switch';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
 import {
-  CONVERSATIONS,
-  BERLINA_THREAD,
-  OTHER_THREADS,
-  AUTOMATION_RULES,
-  DAILY_MSGS,
-  RULE_RATES,
-  RESPONSE_TABLE,
-  type Conversation,
-  type ChatMessage,
-  type AutomationRule,
-  type RuleRate,
-} from '../services/data/mock/fixtures/buyerWhatsApp';
+  useEngagementSummary,
+  useConversations,
+  useConversationThread,
+  useAutomationRules,
+  useDailyMessages,
+  useRuleRates,
+  useResponseTimes,
+} from '../services/query/hooks';
+import type {
+  Conversation,
+  ConvStatus,
+  ChatMessage,
+  AutomationRule,
+  RuleRate,
+  ResponseRow,
+  DailyMessageRow,
+  EngagementSummary,
+  EngagementKpi,
+  KpiTone,
+} from '../services/data/types';
 
 type Channel = 'whatsapp' | 'email' | 'wechat';
 type WhatsAppTab = 'conversations' | 'automation' | 'analytics';
-type ConvStatus = 'active' | 'awaiting' | 'resolved';
+
+const ENGAGEMENT_CRUMB = ['INTELLIGENCE', 'COMMUNICATIONS HUB'];
 
 const TOKEN_TEAL = '#0097A7';
 const TOKEN_NAVY = '#0D1B2A';
@@ -57,6 +71,8 @@ const TOKEN_WARNING = '#B45309';
 const TOKEN_MUTED = '#6B7785';
 const TOKEN_BORDER = '#E5E9EE';
 
+// Messenger-chrome brand colors are intentionally exempt from DP-1 (D-2):
+// WhatsApp / WeChat headers stay on-brand so the channel is recognizable.
 const WHATSAPP_GREEN_HEADER = '#075E54';
 const WHATSAPP_GREEN_DOT = '#25D366';
 const WHATSAPP_BUBBLE = '#DCF8C6';
@@ -69,6 +85,21 @@ const STATUS_VARIANT: Record<ConvStatus, 'success' | 'warning' | 'neutral'> = {
   awaiting: 'warning',
   resolved: 'neutral',
 };
+
+const TONE_CLASS: Record<KpiTone, string> = {
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger',
+  neutral: '',
+};
+
+// Neutral cards render the plain subtitle (default color); toned cards wrap it.
+const kpiSubtitle = (kpi: EngagementKpi): React.ReactNode =>
+  kpi.tone === 'neutral' ? (
+    kpi.subtitle
+  ) : (
+    <span className={TONE_CLASS[kpi.tone]}>{kpi.subtitle}</span>
+  );
 
 const successVariant = (rate: string): 'success' | 'warning' | 'danger' | 'neutral' => {
   if (rate === 'N/A') return 'neutral';
@@ -104,6 +135,15 @@ const PULSE_CSS = `
   animation: wa-connected-pulse 1.6s ease-in-out infinite;
 }
 `;
+
+// Small inline marker for the static channel panels (WeChat / Email) that are
+// not yet wired to the engagement service (D-2 / Marketplace precedent).
+const SampleDataNote: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="flex items-center gap-2 mb-1">
+    <StatusPill variant="neutral">Sample data</StatusPill>
+    <span className="text-xs text-text-tertiary">{children}</span>
+  </div>
+);
 
 interface ConvItemProps {
   conv: Conversation;
@@ -184,10 +224,13 @@ const BOT_ACTIONS = [
   'Send payment notification',
 ];
 
-const ChatThread: React.FC<{ conv: Conversation; messages: ChatMessage[] }> = ({
-  conv,
-  messages,
-}) => {
+const ChatThread: React.FC<{
+  conv: Conversation;
+  messages: ChatMessage[];
+  loading: boolean;
+  error: boolean;
+  onRetry: () => void;
+}> = ({ conv, messages, loading, error, onRetry }) => {
   const { toast } = useToast();
   const [showBotMenu, setShowBotMenu] = useState(false);
 
@@ -220,14 +263,37 @@ const ChatThread: React.FC<{ conv: Conversation; messages: ChatMessage[] }> = ({
         className="flex-1 overflow-y-auto p-4 flex flex-col"
         style={{ background: WHATSAPP_BG }}
       >
-        {messages.map((m) => (
-          <Bubble key={m.id} msg={m} />
-        ))}
-        <div className="bg-teal-soft border border-teal/30 rounded-md px-3 py-2 mt-2 text-xs text-text-primary">
-          ℹ️ This conversation was handled{' '}
-          <strong>100% automatically</strong> by Paragon's WhatsApp AI. No
-          human intervention required. All SAP updates completed in real-time.
-        </div>
+        {error ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 px-6">
+            <AlertTriangle size={20} className="text-danger" aria-hidden="true" />
+            <div className="text-sm text-text-secondary">
+              Couldn't load this conversation.
+            </div>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="text-xs text-teal font-semibold hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        ) : loading && messages.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm gap-2">
+            <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+            Loading conversation…
+          </div>
+        ) : (
+          <>
+            {messages.map((m) => (
+              <Bubble key={m.id} msg={m} />
+            ))}
+            <div className="bg-teal-soft border border-teal/30 rounded-md px-3 py-2 mt-2 text-xs text-text-primary">
+              ℹ️ This conversation was handled{' '}
+              <strong>100% automatically</strong> by Paragon's WhatsApp AI. No
+              human intervention required. All SAP updates completed in real-time.
+            </div>
+          </>
+        )}
       </div>
 
       <div className="bg-bg-hover px-4 py-3 border-t border-border-subtle flex gap-2 items-center">
@@ -273,12 +339,14 @@ const ChatThread: React.FC<{ conv: Conversation; messages: ChatMessage[] }> = ({
   );
 };
 
-const ConversationsTab: React.FC = () => {
-  const [selected, setSelected] = useState<Conversation>(CONVERSATIONS[0]);
-  const messages = useMemo(() => {
-    if (selected.id === 'wa-001') return BERLINA_THREAD;
-    return OTHER_THREADS[selected.id] ?? [];
-  }, [selected]);
+const ConversationsTab: React.FC<{ conversations: Conversation[] }> = ({
+  conversations,
+}) => {
+  const [selectedId, setSelectedId] = useState<string>(conversations[0]?.id ?? '');
+  const selected =
+    conversations.find((c) => c.id === selectedId) ?? conversations[0];
+  const threadQuery = useConversationThread(selected.id);
+  const messages = threadQuery.data?.items ?? [];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[35%_65%] gap-0 bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden h-[72vh]">
@@ -292,26 +360,33 @@ const ConversationsTab: React.FC = () => {
             />
           </div>
         </div>
-        {CONVERSATIONS.map((conv) => (
+        {conversations.map((conv) => (
           <ConvItem
             key={conv.id}
             conv={conv}
             selected={selected.id === conv.id}
-            onClick={() => setSelected(conv)}
+            onClick={() => setSelectedId(conv.id)}
           />
         ))}
       </div>
       <div className="flex flex-col overflow-hidden">
-        <ChatThread conv={selected} messages={messages} />
+        <ChatThread
+          conv={selected}
+          messages={messages}
+          loading={threadQuery.isPending}
+          error={threadQuery.isError}
+          onRetry={() => threadQuery.refetch()}
+        />
       </div>
     </div>
   );
 };
 
-const AutomationTab: React.FC = () => {
+const AutomationTab: React.FC<{ rules: AutomationRule[] }> = ({ rules }) => {
   const { toast } = useToast();
+  // Toggle state stays page-local — real mutation lands in Phase 2′.
   const [toggles, setToggles] = useState<Record<string, boolean>>(
-    Object.fromEntries(AUTOMATION_RULES.map((r) => [r.rule, r.autoHandle])),
+    Object.fromEntries(rules.map((r) => [r.rule, r.autoHandle])),
   );
 
   return (
@@ -327,7 +402,7 @@ const AutomationTab: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-3">
-        {AUTOMATION_RULES.map((rule) => {
+        {rules.map((rule) => {
           const on = toggles[rule.rule];
           return (
             <div
@@ -419,31 +494,36 @@ const ChartTooltip: React.FC<{
   );
 };
 
-const AnalyticsTab: React.FC = () => (
+const AnalyticsTab: React.FC<{
+  summary: EngagementSummary;
+  dailyMsgs: DailyMessageRow[];
+  ruleRates: RuleRate[];
+  responseTable: ResponseRow[];
+}> = ({ summary, dailyMsgs, ruleRates, responseTable }) => (
   <div className="flex flex-col gap-5">
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
       <KpiCard
         eyebrow="Messages Sent (Month)"
-        value="247"
-        subtitle="Across 6 active suppliers"
+        value={summary.messagesThisMonth.value}
+        subtitle={kpiSubtitle(summary.messagesThisMonth)}
         icon={Send}
       />
       <KpiCard
         eyebrow="Automated Actions"
-        value="183"
-        subtitle={<span className="text-success">74% automated</span>}
+        value={summary.automatedActions.value}
+        subtitle={kpiSubtitle(summary.automatedActions)}
         icon={Bot}
       />
       <KpiCard
         eyebrow="Avg Response Time"
-        value="4.2 min"
-        subtitle="End-to-end channel response"
+        value={summary.analyticsAvgResponse.value}
+        subtitle={kpiSubtitle(summary.analyticsAvgResponse)}
         icon={Clock}
       />
       <KpiCard
         eyebrow="Supplier Satisfaction"
-        value="4.6/5.0"
-        subtitle="Channel NPS proxy"
+        value={summary.satisfaction.value}
+        subtitle={kpiSubtitle(summary.satisfaction)}
         icon={Sparkles}
       />
     </div>
@@ -454,7 +534,7 @@ const AnalyticsTab: React.FC = () => (
           Daily message volume (last 14 days)
         </h3>
         <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={DAILY_MSGS} barSize={10}>
+          <BarChart data={dailyMsgs} barSize={10}>
             <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
             <XAxis
               dataKey="day"
@@ -484,7 +564,7 @@ const AnalyticsTab: React.FC = () => (
           Automation success rate by rule
         </h3>
         <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={RULE_RATES} layout="vertical" barSize={14}>
+          <BarChart data={ruleRates} layout="vertical" barSize={14}>
             <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
             <XAxis
               type="number"
@@ -500,7 +580,7 @@ const AnalyticsTab: React.FC = () => (
             />
             <Tooltip content={<ChartTooltip />} />
             <Bar dataKey="rate" name="Success rate" radius={[0, 4, 4, 0]}>
-              {RULE_RATES.map((r) => (
+              {ruleRates.map((r) => (
                 <Cell key={r.rule} fill={rateColor(r.rate)} />
               ))}
             </Bar>
@@ -524,7 +604,7 @@ const AnalyticsTab: React.FC = () => (
           <TableHeaderCell>Automation rate</TableHeaderCell>
         </TableHeader>
         <tbody>
-          {RESPONSE_TABLE.map((r) => {
+          {responseTable.map((r) => {
             const automationVariant: 'success' | 'warning' =
               parseInt(r.automation, 10) >= 80 ? 'success' : 'warning';
             return (
@@ -572,6 +652,9 @@ const WeChatPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4">
+      <SampleDataNote>
+        WeChat channel wires to the engagement service in a later batch.
+      </SampleDataNote>
       <div className="bg-success-soft border-l-2 border-success rounded px-4 py-3 text-sm text-text-secondary">
         <strong className="text-success">WeChat channel</strong> targets
         Chinese suppliers — packaging components, active ingredients,
@@ -768,6 +851,9 @@ const EmailPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4">
+      <SampleDataNote>
+        Email channel wires to the engagement service in a later batch.
+      </SampleDataNote>
       <div className="grid grid-cols-1 lg:grid-cols-[35%_65%] gap-4">
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="px-4 py-3 bg-bg-hover border-b border-border-subtle text-label text-text-tertiary uppercase">
@@ -806,11 +892,11 @@ const EmailPanel: React.FC = () => {
         </div>
 
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-          <div className="bg-navy px-5 py-3 flex items-center justify-between">
-            <span className="text-white font-bold text-sm tracking-widest">
+          <div className="bg-bg-surface border-b-2 border-teal px-5 py-3 flex items-center justify-between">
+            <span className="text-navy font-bold text-sm tracking-widest">
               PARAGONCORP
             </span>
-            <span className="text-white/70 text-xs">
+            <span className="text-text-tertiary text-xs">
               Supplier Portal · Odyssey Program
             </span>
           </div>
@@ -905,12 +991,38 @@ const EmailPanel: React.FC = () => {
 const BuyerWhatsAppHub: React.FC = () => {
   const [channel, setChannel] = useState<Channel>('whatsapp');
   const [waTab, setWaTab] = useState<WhatsAppTab>('conversations');
-  const [pulse, setPulse] = useState(true);
 
-  useEffect(() => {
-    const t = setInterval(() => setPulse((p) => !p), 1200);
-    return () => clearInterval(t);
-  }, []);
+  const summaryQuery = useEngagementSummary();
+  const conversationsQuery = useConversations();
+  const rulesQuery = useAutomationRules();
+  const dailyQuery = useDailyMessages();
+  const ruleRatesQuery = useRuleRates();
+  const responseQuery = useResponseTimes();
+
+  const summary = summaryQuery.data ?? null;
+  const conversations = conversationsQuery.data?.items ?? [];
+  const rules = rulesQuery.data?.items ?? [];
+  const dailyMsgs = dailyQuery.data?.items ?? [];
+  const ruleRates = ruleRatesQuery.data?.items ?? [];
+  const responseTable = responseQuery.data?.items ?? [];
+
+  const queries = [
+    summaryQuery,
+    conversationsQuery,
+    rulesQuery,
+    dailyQuery,
+    ruleRatesQuery,
+    responseQuery,
+  ];
+  const anyPending = queries.some((q) => q.isPending);
+  const anyError = queries.some((q) => q.isError);
+  const allEmpty =
+    !summary &&
+    conversations.length === 0 &&
+    rules.length === 0 &&
+    dailyMsgs.length === 0 &&
+    ruleRates.length === 0 &&
+    responseTable.length === 0;
 
   const lastUpdated = new Date().toLocaleString('en-GB', {
     day: '2-digit',
@@ -920,11 +1032,30 @@ const BuyerWhatsAppHub: React.FC = () => {
     minute: '2-digit',
   });
 
+  if (anyPending) return <LoadingState breadcrumb={ENGAGEMENT_CRUMB} />;
+  if (anyError)
+    return (
+      <ErrorState
+        breadcrumb={ENGAGEMENT_CRUMB}
+        error={queries.find((q) => q.isError)?.error}
+        onRetry={() => queries.forEach((q) => q.refetch())}
+      />
+    );
+  if (allEmpty || !summary)
+    return (
+      <EmptyState
+        breadcrumb={ENGAGEMENT_CRUMB}
+        title="No conversations yet"
+        subtitle="The communications hub is a buyer-side view."
+        message="Supplier WhatsApp, Email, and WeChat threads appear here for buyer accounts."
+      />
+    );
+
   return (
     <AppShellV2>
       <style>{PULSE_CSS}</style>
       <PageHeader
-        breadcrumb={['INTELLIGENCE', 'COMMUNICATIONS HUB']}
+        breadcrumb={ENGAGEMENT_CRUMB}
         title="Communications Hub"
         subtitle="WhatsApp · Email · WeChat — all supplier conversations in one place."
       />
@@ -954,7 +1085,6 @@ const BuyerWhatsAppHub: React.FC = () => {
             <div className="inline-flex items-center gap-2 bg-bg-surface border border-border-subtle rounded-full px-3 py-1.5 shadow-sm">
               <span
                 className="wa-connected-dot inline-block w-2 h-2 rounded-full bg-success"
-                style={{ opacity: pulse ? 1 : 0.3 }}
                 aria-hidden="true"
               />
               <span className="text-xs font-bold text-success">
@@ -966,26 +1096,26 @@ const BuyerWhatsAppHub: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
             <KpiCard
               eyebrow="Active Conversations"
-              value="6"
-              subtitle="Across supplier network"
+              value={summary.activeConversations.value}
+              subtitle={kpiSubtitle(summary.activeConversations)}
               icon={MessageCircle}
             />
             <KpiCard
               eyebrow="Pending Responses"
-              value="3"
-              subtitle={<span className="text-warning">Awaiting supplier reply</span>}
+              value={summary.pendingResponses.value}
+              subtitle={kpiSubtitle(summary.pendingResponses)}
               icon={Clock}
             />
             <KpiCard
               eyebrow="Automated Today"
-              value="18"
-              subtitle={<span className="text-success">No human intervention</span>}
+              value={summary.automatedToday.value}
+              subtitle={kpiSubtitle(summary.automatedToday)}
               icon={Bot}
             />
             <KpiCard
               eyebrow="Avg Response Time"
-              value="4 min"
-              subtitle="End-to-end channel response"
+              value={summary.hubAvgResponse.value}
+              subtitle={kpiSubtitle(summary.hubAvgResponse)}
               icon={Activity}
             />
           </div>
@@ -1008,9 +1138,23 @@ const BuyerWhatsAppHub: React.FC = () => {
             className="mb-5"
           />
 
-          {waTab === 'conversations' && <ConversationsTab />}
-          {waTab === 'automation' && <AutomationTab />}
-          {waTab === 'analytics' && <AnalyticsTab />}
+          {waTab === 'conversations' &&
+            (conversations.length > 0 ? (
+              <ConversationsTab conversations={conversations} />
+            ) : (
+              <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm px-6 py-10 text-center text-sm text-text-tertiary">
+                No active conversations.
+              </div>
+            ))}
+          {waTab === 'automation' && <AutomationTab rules={rules} />}
+          {waTab === 'analytics' && (
+            <AnalyticsTab
+              summary={summary}
+              dailyMsgs={dailyMsgs}
+              ruleRates={ruleRates}
+              responseTable={responseTable}
+            />
+          )}
         </>
       )}
 

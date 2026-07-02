@@ -7,51 +7,15 @@
 // scoped in the leak sense (the conversations span multiple suppliers).
 // ────────────────────────────────────────────────────────────────────────────
 
-export type ConvStatus = 'active' | 'awaiting' | 'resolved';
-
-export interface Conversation {
-  id: string;
-  supplier: string;
-  lastMsg: string;
-  time: string;
-  unread: number;
-  status: ConvStatus;
-}
-
-export interface ChatMessage {
-  id: string;
-  from: 'bot' | 'supplier';
-  content: string;
-  time: string;
-}
-
-export interface AutomationRule {
-  rule: string;
-  trigger: string;
-  action: string;
-  autoHandle: boolean;
-  escalateIf: string;
-  successRate: string;
-}
-
-export interface DailyMessageRow {
-  day: string;
-  outbound: number;
-  inbound: number;
-}
-
-export interface RuleRate {
-  rule: string;
-  rate: number;
-}
-
-export interface ResponseRow {
-  supplier: string;
-  avg: string;
-  fastest: string;
-  slowest: string;
-  automation: string;
-}
+import type {
+  Conversation,
+  ChatMessage,
+  AutomationRule,
+  DailyMessageRow,
+  RuleRate,
+  ResponseRow,
+  EngagementSummary,
+} from '../../types';
 
 export const CONVERSATIONS: Conversation[] = [
   { id: 'wa-001', supplier: 'PT Berlina Packaging 🇮🇩', lastMsg: 'Siap, PO-2025-00107 kami konfirmasi dalam perjalanan...', time: '2 min ago', unread: 0, status: 'active' },
@@ -144,3 +108,17 @@ export const RESPONSE_TABLE: ResponseRow[] = [
   { supplier: 'PT Ecogreen 🇮🇩', avg: '12 min', fastest: '4 min', slowest: '1.2 hr', automation: '79%' },
   { supplier: 'Givaudan SG 🇸🇬', avg: '22 min', fastest: '8 min', slowest: '3.5 hr', automation: '45%' },
 ];
+
+// Channel KPI cards — relocated from the inline JSX in BuyerWhatsAppHub. The
+// first four feed the WhatsApp hub header; the last four feed the Channel
+// Analytics tab.
+export const ENGAGEMENT_SUMMARY: EngagementSummary = {
+  activeConversations: { value: '6', subtitle: 'Across supplier network', tone: 'neutral' },
+  pendingResponses: { value: '3', subtitle: 'Awaiting supplier reply', tone: 'warning' },
+  automatedToday: { value: '18', subtitle: 'No human intervention', tone: 'success' },
+  hubAvgResponse: { value: '4 min', subtitle: 'End-to-end channel response', tone: 'neutral' },
+  messagesThisMonth: { value: '247', subtitle: 'Across 6 active suppliers', tone: 'neutral' },
+  automatedActions: { value: '183', subtitle: '74% automated', tone: 'success' },
+  analyticsAvgResponse: { value: '4.2 min', subtitle: 'End-to-end channel response', tone: 'neutral' },
+  satisfaction: { value: '4.6/5.0', subtitle: 'Channel NPS proxy', tone: 'neutral' },
+};

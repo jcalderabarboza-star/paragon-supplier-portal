@@ -25,6 +25,7 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  LucideIcon,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -37,20 +38,29 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
-import type { KpiTrend as Trend } from '../services/data/types';
 import {
-  SPEND_CAT,
-  TOP_SUPPLIERS,
-  OTIF_DATA,
-  PO_VOL_DATA,
-  CHANNEL_DATA,
-  PERF_TABLE,
-  type AnalyticsGrade as Grade,
-  type PerfRow,
-} from '../services/data/mock/fixtures/buyerAnalytics';
+  useAnalyticsSummary,
+  useSpendByCategory,
+  useTopSuppliers,
+  useOtifTrend,
+  usePoVolumeTrend,
+  useChannelMix,
+  useSupplierPerformance,
+} from '../services/query/hooks';
+import type {
+  KpiTrend as Trend,
+  KpiTone,
+  AnalyticsGrade as Grade,
+  AnalyticsSummary,
+} from '../services/data/types';
 
 type Period = '30d' | '90d' | 'ytd';
+
+const ANALYTICS_CRUMB = ['INTELLIGENCE', 'ANALYTICS'];
 
 const PERIOD_OPTIONS: { id: Period; label: string }[] = [
   { id: '30d', label: 'Last 30 days' },
@@ -64,11 +74,8 @@ const TOKEN_MID = '#354A5F';
 const TOKEN_SUCCESS = '#107E3E';
 const TOKEN_WARNING = '#B45309';
 const TOKEN_DANGER = '#BB0000';
-const TOKEN_INFO = '#1E5BAE';
 const TOKEN_MUTED = '#6B7785';
 const TOKEN_BORDER = '#E5E9EE';
-
-const TOTAL_SPEND = SPEND_CAT.reduce((a, b) => a + b.value, 0);
 
 const GRADE_VARIANT: Record<Grade, 'success' | 'info' | 'warning' | 'danger'> = {
   A: 'success',
@@ -76,6 +83,32 @@ const GRADE_VARIANT: Record<Grade, 'success' | 'info' | 'warning' | 'danger'> = 
   C: 'warning',
   D: 'danger',
 };
+
+const TONE_CLASS: Record<KpiTone, string> = {
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger',
+  neutral: 'text-text-tertiary',
+};
+
+const ToneIcon: React.FC<{ tone: KpiTone }> = ({ tone }) => {
+  if (tone === 'success')
+    return <TrendingUp size={12} className="inline-block mr-1" aria-hidden="true" />;
+  if (tone === 'danger')
+    return <TrendingDown size={12} className="inline-block mr-1" aria-hidden="true" />;
+  return <Minus size={12} className="inline-block mr-1" aria-hidden="true" />;
+};
+
+const SUMMARY_CARDS: {
+  key: keyof AnalyticsSummary;
+  eyebrow: string;
+  icon: LucideIcon;
+}[] = [
+  { key: 'totalSpend', eyebrow: 'Total Spend YTD', icon: Wallet },
+  { key: 'activeSuppliers', eyebrow: 'Active Suppliers', icon: Users },
+  { key: 'portfolioOtif', eyebrow: 'Portfolio OTIF', icon: Activity },
+  { key: 'avgCycleTime', eyebrow: 'Avg PO Cycle Time', icon: Clock },
+];
 
 const rateVariant = (v: number): 'success' | 'warning' | 'danger' => {
   if (v >= 90) return 'success';
@@ -118,10 +151,16 @@ const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, label }) =
   );
 };
 
-const PieTooltip: React.FC<ChartTooltipProps> = ({ active, payload }) => {
+// `total` is supplied by the page (computed from the fetched spend rows);
+// Recharts merges the injected active/payload props onto this element.
+const PieTooltip: React.FC<ChartTooltipProps & { total?: number }> = ({
+  active,
+  payload,
+  total = 0,
+}) => {
   if (!active || !payload?.length) return null;
   const p = payload[0];
-  const pct = ((p.value / TOTAL_SPEND) * 100).toFixed(1);
+  const pct = total > 0 ? ((p.value / total) * 100).toFixed(1) : '0.0';
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-md shadow-sm px-3 py-2 text-xs">
       <div className="font-semibold text-text-primary">{p.name}</div>
@@ -136,13 +175,69 @@ const BuyerAnalytics: React.FC = () => {
   const { toast } = useToast();
   const [period, setPeriod] = useState<Period>('ytd');
 
+  const summaryQuery = useAnalyticsSummary();
+  const spendQuery = useSpendByCategory();
+  const topQuery = useTopSuppliers();
+  const otifQuery = useOtifTrend();
+  const poQuery = usePoVolumeTrend();
+  const channelQuery = useChannelMix();
+  const perfQuery = useSupplierPerformance();
+
+  const summary = summaryQuery.data ?? null;
+  const spendCat = spendQuery.data?.items ?? [];
+  const topSuppliers = topQuery.data?.items ?? [];
+  const otifData = otifQuery.data?.items ?? [];
+  const poVolData = poQuery.data?.items ?? [];
+  const channelData = channelQuery.data?.items ?? [];
+  const perfTable = perfQuery.data?.items ?? [];
+
+  const queries = [
+    summaryQuery,
+    spendQuery,
+    topQuery,
+    otifQuery,
+    poQuery,
+    channelQuery,
+    perfQuery,
+  ];
+  const anyPending = queries.some((q) => q.isPending);
+  const anyError = queries.some((q) => q.isError);
+  const allEmpty =
+    !summary &&
+    spendCat.length === 0 &&
+    topSuppliers.length === 0 &&
+    otifData.length === 0 &&
+    poVolData.length === 0 &&
+    channelData.length === 0 &&
+    perfTable.length === 0;
+
+  const totalSpend = spendCat.reduce((a, b) => a + b.value, 0);
   const periodLabel =
     PERIOD_OPTIONS.find((o) => o.id === period)?.label ?? 'YTD';
+
+  if (anyPending) return <LoadingState breadcrumb={ANALYTICS_CRUMB} />;
+  if (anyError)
+    return (
+      <ErrorState
+        breadcrumb={ANALYTICS_CRUMB}
+        error={queries.find((q) => q.isError)?.error}
+        onRetry={() => queries.forEach((q) => q.refetch())}
+      />
+    );
+  if (allEmpty)
+    return (
+      <EmptyState
+        breadcrumb={ANALYTICS_CRUMB}
+        title="No analytics yet"
+        subtitle="Procurement intelligence is a buyer-side view."
+        message="Spend, performance, and channel-adoption insights appear here for buyer accounts."
+      />
+    );
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['INTELLIGENCE', 'ANALYTICS']}
+        breadcrumb={ANALYTICS_CRUMB}
         title="Analytics & Procurement Intelligence"
         subtitle="YTD performance metrics and procurement insights."
         actions={
@@ -161,7 +256,7 @@ const BuyerAnalytics: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {PERF_TABLE.length} suppliers · period: {periodLabel}
+        {perfTable.length} suppliers · period: {periodLabel}
       </PageMetaLine>
 
       <div className="mb-6">
@@ -172,52 +267,27 @@ const BuyerAnalytics: React.FC = () => {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
-        <KpiCard
-          eyebrow="Total Spend YTD"
-          value="Rp 4.2B"
-          subtitle={
-            <span className="text-success font-medium">
-              <TrendingUp size={12} className="inline-block mr-1" />
-              +12% vs last year · 8 categories
-            </span>
-          }
-          icon={Wallet}
-        />
-        <KpiCard
-          eyebrow="Active Suppliers"
-          value="12"
-          subtitle={
-            <span className="text-success font-medium">
-              <TrendingUp size={12} className="inline-block mr-1" />
-              2 onboarding · 8 Grade A or B
-            </span>
-          }
-          icon={Users}
-        />
-        <KpiCard
-          eyebrow="Portfolio OTIF"
-          value="87%"
-          subtitle={
-            <span className="text-danger font-medium">
-              <TrendingDown size={12} className="inline-block mr-1" />
-              -3pp vs target 90% · 15-mo avg
-            </span>
-          }
-          icon={Activity}
-        />
-        <KpiCard
-          eyebrow="Avg PO Cycle Time"
-          value="28h"
-          subtitle={
-            <span className="text-success font-medium">
-              <TrendingUp size={12} className="inline-block mr-1" />
-              -42% vs 6 months ago
-            </span>
-          }
-          icon={Clock}
-        />
-      </div>
+      {summary && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+          {SUMMARY_CARDS.map((card) => {
+            const kpi = summary[card.key];
+            return (
+              <KpiCard
+                key={card.key}
+                eyebrow={card.eyebrow}
+                value={kpi.value}
+                subtitle={
+                  <span className={`${TONE_CLASS[kpi.tone]} font-medium`}>
+                    <ToneIcon tone={kpi.tone} />
+                    {kpi.subtitle}
+                  </span>
+                }
+                icon={card.icon}
+              />
+            );
+          })}
+        </div>
+      )}
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
@@ -231,7 +301,7 @@ const BuyerAnalytics: React.FC = () => {
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
-                  data={SPEND_CAT}
+                  data={spendCat}
                   dataKey="value"
                   nameKey="category"
                   cx="50%"
@@ -239,11 +309,11 @@ const BuyerAnalytics: React.FC = () => {
                   innerRadius={65}
                   outerRadius={105}
                 >
-                  {SPEND_CAT.map((e) => (
+                  {spendCat.map((e) => (
                     <Cell key={e.category} fill={e.color} />
                   ))}
                 </Pie>
-                <Tooltip content={<PieTooltip />} />
+                <Tooltip content={<PieTooltip total={totalSpend} />} />
                 <Legend
                   iconType="circle"
                   iconSize={10}
@@ -261,7 +331,7 @@ const BuyerAnalytics: React.FC = () => {
             </div>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart
-                data={TOP_SUPPLIERS}
+                data={topSuppliers}
                 layout="vertical"
                 margin={{ left: 10, right: 40 }}
               >
@@ -302,7 +372,7 @@ const BuyerAnalytics: React.FC = () => {
           </h2>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart
-              data={OTIF_DATA}
+              data={otifData}
               margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
@@ -354,7 +424,7 @@ const BuyerAnalytics: React.FC = () => {
           </h2>
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart
-              data={PO_VOL_DATA}
+              data={poVolData}
               margin={{ top: 10, right: 30, bottom: 0, left: -10 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
@@ -426,7 +496,7 @@ const BuyerAnalytics: React.FC = () => {
             <TableHeaderCell>Trend</TableHeaderCell>
           </TableHeader>
           <tbody>
-            {PERF_TABLE.map((row) => (
+            {perfTable.map((row) => (
               <TableRow key={row.supplier}>
                 <TableCell>
                   <span className="font-semibold text-text-primary">
@@ -472,7 +542,7 @@ const BuyerAnalytics: React.FC = () => {
         </h2>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart
-            data={CHANNEL_DATA}
+            data={channelData}
             margin={{ top: 10, right: 20, bottom: 0, left: -10 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
