@@ -119,8 +119,8 @@ npm run dev
 # Type-check and build for production
 npm run build
 
-# Deploy to GitHub Pages (gh-pages branch)
-npm run deploy
+# Deploy: Vercel builds from source via vercel.json (npm run build → dist/).
+# Nothing is copied to repo root.
 ```
 
 ---
