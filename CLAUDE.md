@@ -1,26 +1,27 @@
 # Claude Code — Project Rules
 
 ## Branch policy
-- Work directly on `main` branch only
-- Never create feature branches
-- Never create pull requests
-- Always push directly to `main`
+- Branch off `main` for every task (e.g. `chore/...`, `qa/...`, `feat/...`)
+- Open a pull request to `main`; never push directly to `main`
+- The operator reviews and merges via the GitHub UI (Squash + delete branch)
 
 ## Session startup — run these commands every time
 git checkout main && git pull origin main
 
 ## Workflow for every task
 1. git checkout main
-2. git pull origin main  
-3. Make changes
-4. git add .
-5. git commit -m "description"
-6. git push origin main
+2. git pull origin main
+3. git checkout -b <type>/<short-description>
+4. Make changes
+5. git add .
+6. git commit -m "description"
+7. git push -u origin <branch>
+8. Open a PR to main; the operator reviews and merges (Squash + delete branch)
 
 ## Why
-This is a solo project with no team and no code review process.
-The owner has explicitly configured main as the only working branch.
-GitHub Pages deploys automatically from main.
+This project uses a branch + PR + operator-merge workflow (the ratified
+four-actor model). Changes reach `main` only through a reviewed PR merged by
+the operator via the GitHub UI; direct pushes to `main` are not used.
 
 ## Deploy
 Vite root is app/ — never edit app/index.html directly.
