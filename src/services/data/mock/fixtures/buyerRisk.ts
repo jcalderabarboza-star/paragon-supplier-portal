@@ -93,8 +93,6 @@ export const EXPOSURE_DATA: ExposureRow[] = [
 
 // Scenario / ScenarioAlt / ScenarioFeasibility now live in the interface
 // contract (services/data/types) so IRiskService.getScenarios can return them.
-// Re-exported here transitionally until BuyerRisk reads them from the hook.
-export type { Scenario, ScenarioAlt, ScenarioFeasibility } from '../../types';
 
 export const SCENARIO_ME: Scenario = {
   id: 'me',
@@ -138,12 +136,6 @@ export const SCENARIO_ME: Scenario = {
     },
   ],
 };
-
-export const SCENARIOS: { id: string; label: string }[] = [
-  { id: 'me', label: 'Middle East conflict' },
-  { id: 'tw', label: 'Taiwan Strait closure' },
-  { id: 'pa', label: 'Pandemic resurgence' },
-];
 
 export const COMPLIANCE_DATA: ComplianceRow[] = [
   { supplier: 'NanoFab Ltd', type: 'ISO 9001', expires: '2026-03-15', daysLeft: -24, status: 'expired' },
