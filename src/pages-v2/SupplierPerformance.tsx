@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   RadarChart,
   Radar,
@@ -31,26 +31,20 @@ import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { mockSuppliers } from '../data/mockSuppliers';
-import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
-import type { KpiPoint as Kpi, KpiTrend as Trend } from '../services/data/types';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import {
-  KPIS,
-  RADAR_DATA,
-  WEEKLY_TREND,
-} from '../services/data/mock/fixtures/supplierPerformance';
+  useCurrentSupplier,
+  useKpis,
+  usePurchaseOrders,
+} from '../services/query/hooks';
+import type { KpiPoint as Kpi, KpiTrend as Trend } from '../services/data/types';
 
 type Grade = 'A' | 'B' | 'C' | 'D';
 
-interface ActionItem {
-  kpi: string;
-  current: string;
-  target: string;
-  gap: string;
-  action: string;
-  priority: 'High' | 'Medium';
-}
+const PERF_CRUMB = ['INTELLIGENCE', 'MY PERFORMANCE'];
 
 const TOKEN_TEAL = '#0097A7';
 const TOKEN_MID = '#354A5F';
@@ -77,36 +71,6 @@ const GRADE_HISTORY: { month: string; grade: Grade; score: number }[] = [
   { month: 'Jan 25', grade: 'B', score: 78 },
   { month: 'Feb 25', grade: 'B', score: 81 },
   { month: 'Mar 25', grade: 'B', score: 82 },
-];
-
-const IMPROVEMENT_ACTIONS: ActionItem[] = [
-  {
-    kpi: 'OTIF Rate',
-    current: '87%',
-    target: '≥ 95%',
-    gap: '−8pp',
-    action:
-      'Review production schedule alignment with Paragon delivery windows. Current 7-day overdue on PO-2025-00107 indicates capacity constraint.',
-    priority: 'High',
-  },
-  {
-    kpi: 'POA Response Time',
-    current: '42 hrs avg',
-    target: '≤ 24 hrs',
-    gap: '+18 hrs',
-    action:
-      'Enable WhatsApp PO notification alerts for faster acknowledgement. Assign dedicated PO coordinator for Paragon account.',
-    priority: 'Medium',
-  },
-  {
-    kpi: 'Invoice Accuracy',
-    current: '91%',
-    target: '≥ 98%',
-    gap: '−7pp',
-    action:
-      'Quantity discrepancies detected on PO-2025-00108. Implement pre-shipment count verification before invoice submission.',
-    priority: 'Medium',
-  },
 ];
 
 const COUNTRY_FLAGS: Record<string, string> = {
@@ -187,7 +151,7 @@ const GradeBadge: React.FC<{ grade: Grade; score: number }> = ({ grade, score })
           {grade}
         </span>
       </div>
-      <div className="text-base font-bold text-white">{score}/100</div>
+      <div className="text-base font-bold text-text-primary">{score}/100</div>
       <span
         className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
         style={{
@@ -214,15 +178,18 @@ const SupplierPerformance: React.FC = () => {
   const { supplierId } = identity;
   const [activeTab, setActiveTab] = useState<string>('overview');
 
-  const mySupplier = useMemo(
-    () => mockSuppliers.find((s) => s.id === supplierId),
-    [supplierId],
-  );
+  const supplierQuery = useCurrentSupplier();
+  const kpisQuery = useKpis();
+  const posQuery = usePurchaseOrders();
 
-  const myPOs = useMemo(
-    () => mockPurchaseOrders.filter((po) => po.supplierId === supplierId),
-    [supplierId],
-  );
+  const mySupplier = supplierQuery.data ?? null;
+  const snapshot = kpisQuery.data;
+  const kpis = snapshot?.kpis ?? [];
+  const radar = snapshot?.radar ?? [];
+  const trend = snapshot?.trend ?? [];
+  const improvementActions = snapshot?.improvementActions ?? [];
+  const myPOs = posQuery.data?.items ?? [];
+
   const lateCount = myPOs.filter((p) => p.daysOverdue > 0).length;
   const onTimeCount = myPOs.filter((p) => p.daysOverdue <= 0).length;
   const avgOverdue =
@@ -240,7 +207,31 @@ const SupplierPerformance: React.FC = () => {
       description: 'Downloading performance report PDF...',
     });
 
-  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
+  // Identity-gated (Pattern B): "My Performance" is supplier-only.
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (supplierQuery.isPending || kpisQuery.isPending || posQuery.isPending)
+    return <LoadingState breadcrumb={PERF_CRUMB} />;
+  if (supplierQuery.isError || kpisQuery.isError || posQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={PERF_CRUMB}
+        error={supplierQuery.error ?? kpisQuery.error ?? posQuery.error}
+        onRetry={() => {
+          supplierQuery.refetch();
+          kpisQuery.refetch();
+          posQuery.refetch();
+        }}
+      />
+    );
+  if (!mySupplier || kpis.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={PERF_CRUMB}
+        title="No performance data yet"
+        subtitle="Your Paragon scorecard is not available."
+        message="KPI scorecards, trends, and improvement actions appear here once Paragon publishes your performance data."
+      />
+    );
 
   return (
     <AppShellV2>
@@ -255,32 +246,32 @@ const SupplierPerformance: React.FC = () => {
         }
       />
 
-      <section className="bg-navy rounded-lg shadow-sm p-6 mb-6">
+      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="min-w-0 flex-1">
-            <div className="text-xl font-bold text-white mb-2">
+            <div className="text-xl font-bold text-text-primary mb-2">
               <span className="mr-2">{COUNTRY_FLAGS[mySupplier.country] ?? '●'}</span>
               {mySupplier.name}
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-white/10 text-white/85">
+              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-bg-hover text-text-secondary">
                 {mySupplier.category}
               </span>
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-white/10 text-white">
+              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal">
                 Tier 1 — WhatsApp
               </span>
             </div>
-            <div className="flex flex-wrap gap-5 text-xs text-white/70">
+            <div className="flex flex-wrap gap-5 text-xs text-text-secondary">
               <span>
-                <span className="text-white/50 font-semibold">SAP BP: </span>
+                <span className="text-text-tertiary font-semibold">SAP BP: </span>
                 {mySupplier.sapBpNumber}
               </span>
               <span>
-                <span className="text-white/50 font-semibold">Channel: </span>
+                <span className="text-text-tertiary font-semibold">Channel: </span>
                 WhatsApp
               </span>
               <span>
-                <span className="text-white/50 font-semibold">Reporting period: </span>
+                <span className="text-text-tertiary font-semibold">Reporting period: </span>
                 Rolling 12 weeks
               </span>
             </div>
@@ -298,7 +289,7 @@ const SupplierPerformance: React.FC = () => {
               KPI Scorecard — 6 metrics
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-              {KPIS.map((k) => (
+              {kpis.map((k) => (
                 <KpiProgressTile key={k.name} k={k} />
               ))}
             </div>
@@ -311,7 +302,7 @@ const SupplierPerformance: React.FC = () => {
               </h2>
               <ResponsiveContainer width="100%" height={280}>
                 <RadarChart
-                  data={RADAR_DATA}
+                  data={radar}
                   margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
                 >
                   <PolarGrid stroke={TOKEN_BORDER} />
@@ -347,8 +338,9 @@ const SupplierPerformance: React.FC = () => {
             </section>
 
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-              <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+              <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
                 Grade history — monthly score
+                <StatusPill variant="neutral">Sample data</StatusPill>
               </h2>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart
@@ -427,7 +419,7 @@ const SupplierPerformance: React.FC = () => {
             </h2>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart
-                data={WEEKLY_TREND}
+                data={trend}
                 margin={{ top: 10, right: 20, bottom: 0, left: -10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
@@ -453,7 +445,7 @@ const SupplierPerformance: React.FC = () => {
               </h2>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
-                  data={WEEKLY_TREND}
+                  data={trend}
                   margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
@@ -477,7 +469,7 @@ const SupplierPerformance: React.FC = () => {
               </h2>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
-                  data={WEEKLY_TREND}
+                  data={trend}
                   margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={TOKEN_BORDER} />
@@ -504,7 +496,7 @@ const SupplierPerformance: React.FC = () => {
           <div className="text-sm text-text-tertiary">
             Below-target KPIs and recommended corrective actions to improve your Paragon supplier grade.
           </div>
-          {IMPROVEMENT_ACTIONS.map((item) => {
+          {improvementActions.map((item) => {
             const isHigh = item.priority === 'High';
             return (
               <section
