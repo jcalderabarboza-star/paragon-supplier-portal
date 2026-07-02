@@ -1,6 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DataServiceProvider } from '../services/data/DataServiceContext';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { AdaptiveProvider } from '../context/AdaptiveContext';
@@ -37,22 +38,28 @@ interface RenderOptions {
 }
 
 // One wrapper every page test reuses: mirrors the real main.tsx -> AppRouter
-// provider nesting, swapping HashRouter for MemoryRouter.
+// provider nesting, swapping HashRouter for MemoryRouter. A fresh QueryClient
+// per call keeps the cache isolated between tests.
 export function renderWithProviders(
   ui: React.ReactNode,
   { identity = BUYER, route = '/' }: RenderOptions = {},
 ) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <DataServiceProvider service={mockDataService}>
-      <AdaptiveProvider>
-        <MemoryRouter initialEntries={[route]}>
-          <ToastProvider>
-            <CurrentIdentityProvider source={stubSource(identity)}>
-              {ui}
-            </CurrentIdentityProvider>
-          </ToastProvider>
-        </MemoryRouter>
-      </AdaptiveProvider>
-    </DataServiceProvider>,
+    <QueryClientProvider client={queryClient}>
+      <DataServiceProvider service={mockDataService}>
+        <AdaptiveProvider>
+          <MemoryRouter initialEntries={[route]}>
+            <ToastProvider>
+              <CurrentIdentityProvider source={stubSource(identity)}>
+                {ui}
+              </CurrentIdentityProvider>
+            </ToastProvider>
+          </MemoryRouter>
+        </AdaptiveProvider>
+      </DataServiceProvider>
+    </QueryClientProvider>,
   );
 }
