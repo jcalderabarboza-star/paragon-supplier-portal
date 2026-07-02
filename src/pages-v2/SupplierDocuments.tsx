@@ -28,12 +28,17 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import type {
   SupplierDocument,
   SupplierDocumentStatus as DocStatus,
   SupplierDocumentCategory as DocCategory,
 } from '../services/data/types';
-import { DOCUMENTS } from '../services/data/mock/fixtures/supplierDocuments';
+import { useDocuments } from '../services/query/hooks';
+
+const DOCS_CRUMB = ['SETTLE', 'MY DOCUMENTS'];
 
 type CategoryFilter = 'All' | DocCategory;
 
@@ -74,6 +79,8 @@ const SupplierDocuments: React.FC = () => {
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId, supplierName } = identity;
+  const docsQuery = useDocuments();
+  const docs = docsQuery.data?.items ?? [];
   const [filterCat, setFilterCat] = useState<CategoryFilter>('All');
   const [search, setSearch] = useState('');
   const [panelMode, setPanelMode] = useState<PanelMode>('closed');
@@ -82,7 +89,7 @@ const SupplierDocuments: React.FC = () => {
 
   const filtered = useMemo(
     () =>
-      DOCUMENTS.filter((d) => {
+      docs.filter((d) => {
         const matchCat = filterCat === 'All' || d.category === filterCat;
         const q = search.toLowerCase();
         const matchSearch =
@@ -91,32 +98,32 @@ const SupplierDocuments: React.FC = () => {
           d.issuedBy.toLowerCase().includes(q);
         return matchCat && matchSearch;
       }),
-    [filterCat, search],
+    [filterCat, search, docs],
   );
 
   const expiringSoon = useMemo(
     () =>
-      DOCUMENTS.filter((d) => {
+      docs.filter((d) => {
         const days = daysUntil(d.expiryDate);
         return days !== null && days > 0 && days <= 180;
       }),
-    [],
+    [docs],
   );
   const expired = useMemo(
     () =>
-      DOCUMENTS.filter((d) => {
+      docs.filter((d) => {
         const days = daysUntil(d.expiryDate);
         return days !== null && days <= 0;
       }),
-    [],
+    [docs],
   );
   const awaitingUpload = useMemo(
-    () => DOCUMENTS.filter((d) => d.status === 'Awaiting Upload'),
-    [],
+    () => docs.filter((d) => d.status === 'Awaiting Upload'),
+    [docs],
   );
   const validCount = useMemo(
-    () => DOCUMENTS.filter((d) => d.status === 'Valid').length,
-    [],
+    () => docs.filter((d) => d.status === 'Valid').length,
+    [docs],
   );
 
   const today = new Date().toLocaleDateString('en-GB', {
@@ -160,6 +167,24 @@ const SupplierDocuments: React.FC = () => {
         : '';
 
   if (!supplierId) return <NoSupplierIdentity />;
+  if (docsQuery.isPending) return <LoadingState breadcrumb={DOCS_CRUMB} />;
+  if (docsQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={DOCS_CRUMB}
+        error={docsQuery.error}
+        onRetry={() => docsQuery.refetch()}
+      />
+    );
+  if (docs.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={DOCS_CRUMB}
+        title="No documents yet"
+        subtitle={`No documents on file for ${supplierName ?? 'this supplier'}.`}
+        message="Uploaded certifications, COAs, and contracts will appear here."
+      />
+    );
 
   return (
     <AppShellV2>
@@ -179,7 +204,7 @@ const SupplierDocuments: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {DOCUMENTS.length} documents · last refreshed {today}
+        {docs.length} documents · last refreshed {today}
       </PageMetaLine>
 
       {expired.length > 0 && (
@@ -222,7 +247,7 @@ const SupplierDocuments: React.FC = () => {
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-5 mb-6">
         <KpiCard
           eyebrow="Total Documents"
-          value={DOCUMENTS.length.toString()}
+          value={docs.length.toString()}
           subtitle="In document vault"
           icon={Files}
         />
@@ -265,7 +290,7 @@ const SupplierDocuments: React.FC = () => {
             onChange={setFilterCat}
           />
           <span className="text-meta text-text-tertiary">
-            {filtered.length} of {DOCUMENTS.length} documents
+            {filtered.length} of {docs.length} documents
           </span>
         </div>
       </div>
