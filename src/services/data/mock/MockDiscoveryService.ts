@@ -1,5 +1,6 @@
 import type {
   IDiscoveryService,
+  Page,
   QueryScope,
   GlobalSupplier,
   RecommendedSupplier,
@@ -22,19 +23,19 @@ function buyerOnly<T>(scope: QueryScope, rows: readonly T[]): T[] {
 }
 
 export class MockDiscoveryService implements IDiscoveryService {
-  async getGlobalSuppliers(scope: QueryScope): Promise<GlobalSupplier[]> {
-    return buyerOnly(scope, GLOBAL_SUPPLIERS);
+  async getGlobalSuppliers(scope: QueryScope): Promise<Page<GlobalSupplier>> {
+    return { items: buyerOnly(scope, GLOBAL_SUPPLIERS) };
   }
-  async getRecommended(scope: QueryScope): Promise<RecommendedSupplier[]> {
-    return buyerOnly(scope, RECOMMENDED);
+  async getRecommended(scope: QueryScope): Promise<Page<RecommendedSupplier>> {
+    return { items: buyerOnly(scope, RECOMMENDED) };
   }
-  async getQualifications(scope: QueryScope): Promise<QualificationItem[]> {
-    return buyerOnly(scope, QUALIFICATIONS);
+  async getQualifications(scope: QueryScope): Promise<Page<QualificationItem>> {
+    return { items: buyerOnly(scope, QUALIFICATIONS) };
   }
-  async getMarketIntel(scope: QueryScope): Promise<MarketIntelCard[]> {
-    return buyerOnly(scope, MARKET_INTEL);
+  async getMarketIntel(scope: QueryScope): Promise<Page<MarketIntelCard>> {
+    return { items: buyerOnly(scope, MARKET_INTEL) };
   }
-  async getSingleSourceItems(scope: QueryScope): Promise<SingleSourceItem[]> {
-    return buyerOnly(scope, SINGLE_SOURCE);
+  async getSingleSourceItems(scope: QueryScope): Promise<Page<SingleSourceItem>> {
+    return { items: buyerOnly(scope, SINGLE_SOURCE) };
   }
 }

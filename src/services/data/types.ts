@@ -106,6 +106,48 @@ export interface QueryScope {
   supplierId: string | null;
 }
 
+// ─── Error contract (DR-4) — the single failure channel for the data layer ──
+//
+// The interface today returns T[] / Page<T> / T|null on success; failure is
+// signalled by *throwing* a DataError. This matches TanStack Query's model
+// (queryFn throws -> isError), so consumers render the error state via the
+// wrapper hook rather than unwrapping a Result envelope. The Phase-3 real
+// adapter maps HTTP/SAP failures onto the same DataErrorCode set.
+
+export type DataErrorCode =
+  | 'NOT_FOUND'
+  | 'SCOPE_DENIED'
+  | 'UPSTREAM'
+  | 'CHAOS'
+  | 'UNKNOWN';
+
+export class DataError extends Error {
+  readonly code: DataErrorCode;
+  readonly cause?: unknown;
+
+  constructor(code: DataErrorCode, message: string, cause?: unknown) {
+    super(message);
+    this.name = 'DataError';
+    this.code = code;
+    this.cause = cause;
+    // Restore prototype chain for instanceof across the TS target.
+    Object.setPrototypeOf(this, DataError.prototype);
+  }
+}
+
+// ─── List envelope (DR-5) — shape frozen now, pagination machinery deferred ─
+//
+// Every list-returning read method returns Page<T> rather than a bare T[], so
+// the 27 read surfaces are shaped for pagination from day one and pages migrate
+// once. The mock returns everything in `items` and leaves `cursor` null; no
+// pagination logic exists yet. The Phase-3 real adapter fills cursor/total.
+
+export interface Page<T> {
+  items: T[];
+  cursor?: string | null;
+  total?: number;
+}
+
 // ─── Canonical Purchase Order (drift-resolved) ──────────────────────────────
 
 export interface POLineItem {
@@ -557,8 +599,8 @@ export interface ObligationFilter {
 // ─── Service interfaces — the contract Phase 3 implements ───────────────────
 
 export interface ISupplierService {
-  /** Buyer: all suppliers. Supplier: returns []. */
-  list(scope: QueryScope): Promise<Supplier[]>;
+  /** Buyer: all suppliers. Supplier: returns empty page. */
+  list(scope: QueryScope): Promise<Page<Supplier>>;
   /** Buyer: any supplier. Supplier: only if id === own supplierId. */
   getById(scope: QueryScope, id: string): Promise<Supplier | null>;
   /** Supplier: returns self. Buyer: returns null. */
@@ -567,54 +609,54 @@ export interface ISupplierService {
 
 export interface IProcurementService {
   // — Purchase orders —
-  getPurchaseOrders(scope: QueryScope, filter?: POFilter): Promise<PurchaseOrder[]>;
+  getPurchaseOrders(scope: QueryScope, filter?: POFilter): Promise<Page<PurchaseOrder>>;
   getPurchaseOrder(scope: QueryScope, id: string): Promise<PurchaseOrder | null>;
 
   // — Inventory —
-  getInventory(scope: QueryScope, filter?: InventoryFilter): Promise<InventoryRecord[]>;
+  getInventory(scope: QueryScope, filter?: InventoryFilter): Promise<Page<InventoryRecord>>;
 
   // — Sourcing —
-  getRFQs(scope: QueryScope, filter?: RFQFilter): Promise<RFQ[]>;
-  getQuotations(scope: QueryScope, filter?: QuotationFilter): Promise<Quotation[]>;
+  getRFQs(scope: QueryScope, filter?: RFQFilter): Promise<Page<RFQ>>;
+  getQuotations(scope: QueryScope, filter?: QuotationFilter): Promise<Page<Quotation>>;
 
   // — Fulfilment —
-  getShipments(scope: QueryScope, filter?: ShipmentFilter): Promise<Shipment[]>;
-  getASNs(scope: QueryScope, filter?: ASNFilter): Promise<ASN[]>;
-  getGoodsReceipts(scope: QueryScope, filter?: GRFilter): Promise<GoodsReceipt[]>;
+  getShipments(scope: QueryScope, filter?: ShipmentFilter): Promise<Page<Shipment>>;
+  getASNs(scope: QueryScope, filter?: ASNFilter): Promise<Page<ASN>>;
+  getGoodsReceipts(scope: QueryScope, filter?: GRFilter): Promise<Page<GoodsReceipt>>;
 
   // — Finance —
-  getBuyerInvoices(scope: QueryScope, filter?: InvoiceFilter): Promise<BuyerInvoice[]>;
-  getSupplierInvoices(scope: QueryScope, filter?: InvoiceFilter): Promise<SupplierInvoice[]>;
+  getBuyerInvoices(scope: QueryScope, filter?: InvoiceFilter): Promise<Page<BuyerInvoice>>;
+  getSupplierInvoices(scope: QueryScope, filter?: InvoiceFilter): Promise<Page<SupplierInvoice>>;
 
   // — Contracts —
-  getContracts(scope: QueryScope, filter?: ContractFilter): Promise<Contract[]>;
-  getObligations(scope: QueryScope, filter?: ObligationFilter): Promise<ContractObligation[]>;
+  getContracts(scope: QueryScope, filter?: ContractFilter): Promise<Page<Contract>>;
+  getObligations(scope: QueryScope, filter?: ObligationFilter): Promise<Page<ContractObligation>>;
 
   // — Supplier-side supporting data (currently inline in pages) —
-  getDocuments(scope: QueryScope): Promise<SupplierDocument[]>;
-  getStorefrontCatalog(scope: QueryScope, supplierId?: string): Promise<CatalogItem[]>;
-  getStorefrontCerts(scope: QueryScope, supplierId?: string): Promise<ProfileCert[]>;
-  getStorefrontProducts(scope: QueryScope, supplierId?: string): Promise<StorefrontProduct[]>;
+  getDocuments(scope: QueryScope): Promise<Page<SupplierDocument>>;
+  getStorefrontCatalog(scope: QueryScope, supplierId?: string): Promise<Page<CatalogItem>>;
+  getStorefrontCerts(scope: QueryScope, supplierId?: string): Promise<Page<ProfileCert>>;
+  getStorefrontProducts(scope: QueryScope, supplierId?: string): Promise<Page<StorefrontProduct>>;
 
   // — KPIs / performance —
   getKpis(scope: QueryScope): Promise<KpiSnapshot>;
-  getPerformanceTrend(scope: QueryScope, range: TrendRange): Promise<PerformancePoint[]>;
+  getPerformanceTrend(scope: QueryScope, range: TrendRange): Promise<Page<PerformancePoint>>;
 }
 
 export interface IRiskService {
-  getRiskAlerts(scope: QueryScope): Promise<RiskAlert[]>;
-  getGeoRisks(scope: QueryScope): Promise<GeoRisk[]>;
-  getExposure(scope: QueryScope): Promise<ExposureRow[]>;
-  getCompliance(scope: QueryScope): Promise<ComplianceRow[]>;
-  getCommodities(scope: QueryScope): Promise<Commodity[]>;
+  getRiskAlerts(scope: QueryScope): Promise<Page<RiskAlert>>;
+  getGeoRisks(scope: QueryScope): Promise<Page<GeoRisk>>;
+  getExposure(scope: QueryScope): Promise<Page<ExposureRow>>;
+  getCompliance(scope: QueryScope): Promise<Page<ComplianceRow>>;
+  getCommodities(scope: QueryScope): Promise<Page<Commodity>>;
 }
 
 export interface IDiscoveryService {
-  getGlobalSuppliers(scope: QueryScope): Promise<GlobalSupplier[]>;
-  getRecommended(scope: QueryScope): Promise<RecommendedSupplier[]>;
-  getQualifications(scope: QueryScope): Promise<QualificationItem[]>;
-  getMarketIntel(scope: QueryScope): Promise<MarketIntelCard[]>;
-  getSingleSourceItems(scope: QueryScope): Promise<SingleSourceItem[]>;
+  getGlobalSuppliers(scope: QueryScope): Promise<Page<GlobalSupplier>>;
+  getRecommended(scope: QueryScope): Promise<Page<RecommendedSupplier>>;
+  getQualifications(scope: QueryScope): Promise<Page<QualificationItem>>;
+  getMarketIntel(scope: QueryScope): Promise<Page<MarketIntelCard>>;
+  getSingleSourceItems(scope: QueryScope): Promise<Page<SingleSourceItem>>;
 }
 
 export interface IDataService {
