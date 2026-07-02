@@ -39,6 +39,9 @@ interface RenderOptions {
   // Override the data service — e.g. pass withChaos(mockDataService, {failureRate: 1})
   // to exercise error states deterministically. Defaults to the plain mock.
   service?: IDataService;
+  // Share a QueryClient across renders (e.g. to inspect the cache in a
+  // scoping test). Defaults to a fresh per-render client.
+  queryClient?: QueryClient;
 }
 
 // One wrapper every page test reuses: mirrors the real main.tsx -> AppRouter
@@ -46,13 +49,12 @@ interface RenderOptions {
 // per call keeps the cache isolated between tests.
 export function renderWithProviders(
   ui: React.ReactNode,
-  { identity = BUYER, route = '/', service = mockDataService }: RenderOptions = {},
+  { identity = BUYER, route = '/', service = mockDataService, queryClient }: RenderOptions = {},
 ) {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
+  const client =
+    queryClient ?? new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={client}>
       <DataServiceProvider service={service}>
         <AdaptiveProvider>
           <MemoryRouter initialEntries={[route]}>
