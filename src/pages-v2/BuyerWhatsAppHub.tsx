@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -19,6 +19,7 @@ import {
   Activity,
   Sparkles,
   Loader2,
+  AlertTriangle,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -47,6 +48,7 @@ import {
 } from '../services/query/hooks';
 import type {
   Conversation,
+  ConvStatus,
   ChatMessage,
   AutomationRule,
   RuleRate,
@@ -59,7 +61,6 @@ import type {
 
 type Channel = 'whatsapp' | 'email' | 'wechat';
 type WhatsAppTab = 'conversations' | 'automation' | 'analytics';
-type ConvStatus = 'active' | 'awaiting' | 'resolved';
 
 const ENGAGEMENT_CRUMB = ['INTELLIGENCE', 'COMMUNICATIONS HUB'];
 
@@ -227,7 +228,9 @@ const ChatThread: React.FC<{
   conv: Conversation;
   messages: ChatMessage[];
   loading: boolean;
-}> = ({ conv, messages, loading }) => {
+  error: boolean;
+  onRetry: () => void;
+}> = ({ conv, messages, loading, error, onRetry }) => {
   const { toast } = useToast();
   const [showBotMenu, setShowBotMenu] = useState(false);
 
@@ -260,7 +263,21 @@ const ChatThread: React.FC<{
         className="flex-1 overflow-y-auto p-4 flex flex-col"
         style={{ background: WHATSAPP_BG }}
       >
-        {loading && messages.length === 0 ? (
+        {error ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 px-6">
+            <AlertTriangle size={20} className="text-danger" aria-hidden="true" />
+            <div className="text-sm text-text-secondary">
+              Couldn't load this conversation.
+            </div>
+            <button
+              type="button"
+              onClick={onRetry}
+              className="text-xs text-teal font-semibold hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        ) : loading && messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm gap-2">
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
             Loading conversation…
@@ -325,7 +342,7 @@ const ChatThread: React.FC<{
 const ConversationsTab: React.FC<{ conversations: Conversation[] }> = ({
   conversations,
 }) => {
-  const [selectedId, setSelectedId] = useState<string>(conversations[0].id);
+  const [selectedId, setSelectedId] = useState<string>(conversations[0]?.id ?? '');
   const selected =
     conversations.find((c) => c.id === selectedId) ?? conversations[0];
   const threadQuery = useConversationThread(selected.id);
@@ -357,6 +374,8 @@ const ConversationsTab: React.FC<{ conversations: Conversation[] }> = ({
           conv={selected}
           messages={messages}
           loading={threadQuery.isPending}
+          error={threadQuery.isError}
+          onRetry={() => threadQuery.refetch()}
         />
       </div>
     </div>
@@ -972,7 +991,6 @@ const EmailPanel: React.FC = () => {
 const BuyerWhatsAppHub: React.FC = () => {
   const [channel, setChannel] = useState<Channel>('whatsapp');
   const [waTab, setWaTab] = useState<WhatsAppTab>('conversations');
-  const [pulse, setPulse] = useState(true);
 
   const summaryQuery = useEngagementSummary();
   const conversationsQuery = useConversations();
@@ -1005,11 +1023,6 @@ const BuyerWhatsAppHub: React.FC = () => {
     dailyMsgs.length === 0 &&
     ruleRates.length === 0 &&
     responseTable.length === 0;
-
-  useEffect(() => {
-    const t = setInterval(() => setPulse((p) => !p), 1200);
-    return () => clearInterval(t);
-  }, []);
 
   const lastUpdated = new Date().toLocaleString('en-GB', {
     day: '2-digit',
@@ -1072,7 +1085,6 @@ const BuyerWhatsAppHub: React.FC = () => {
             <div className="inline-flex items-center gap-2 bg-bg-surface border border-border-subtle rounded-full px-3 py-1.5 shadow-sm">
               <span
                 className="wa-connected-dot inline-block w-2 h-2 rounded-full bg-success"
-                style={{ opacity: pulse ? 1 : 0.3 }}
                 aria-hidden="true"
               />
               <span className="text-xs font-bold text-success">
@@ -1126,9 +1138,14 @@ const BuyerWhatsAppHub: React.FC = () => {
             className="mb-5"
           />
 
-          {waTab === 'conversations' && (
-            <ConversationsTab conversations={conversations} />
-          )}
+          {waTab === 'conversations' &&
+            (conversations.length > 0 ? (
+              <ConversationsTab conversations={conversations} />
+            ) : (
+              <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm px-6 py-10 text-center text-sm text-text-tertiary">
+                No active conversations.
+              </div>
+            ))}
           {waTab === 'automation' && <AutomationTab rules={rules} />}
           {waTab === 'analytics' && (
             <AnalyticsTab

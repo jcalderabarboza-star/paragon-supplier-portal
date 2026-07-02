@@ -836,8 +836,9 @@ export interface IDiscoveryService {
   getSingleSourceItems(scope: QueryScope): Promise<Page<SingleSourceItem>>;
 }
 
-// Discrete per-read analytics surface (D-4): each chart/table loads and errors
-// independently so a single slow/failed read never blanks the whole page.
+// Discrete per-read analytics surface (D-4): each chart/table is its own read,
+// so the service is shaped for per-section loading/error rendering. (The pages
+// today still gate at the page level; the read granularity is what D-4 secures.)
 export interface IAnalyticsService {
   /** Headline KPI cards. Buyer: populated. Supplier: null. */
   getSummary(scope: QueryScope): Promise<AnalyticsSummary | null>;
