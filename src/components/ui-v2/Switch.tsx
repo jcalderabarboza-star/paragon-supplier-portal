@@ -27,8 +27,11 @@ const THUMB_OFFSET: Record<Size, { off: string; on: string }> = {
   md: { off: '4px', on: '24px' },
 };
 
+// DP-3: the default "on" color is the blue action token (a switch is an
+// interactive control). The `teal` key is retained for API compatibility but now
+// renders action-blue; `success` stays semantic.
 const ON_BG: Record<OnColor, string> = {
-  teal: 'bg-teal',
+  teal: 'bg-action',
   success: 'bg-success',
 };
 

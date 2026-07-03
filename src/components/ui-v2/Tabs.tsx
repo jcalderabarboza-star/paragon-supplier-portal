@@ -32,7 +32,7 @@ const Tabs: React.FC<TabsProps> = ({ tabs, active, onChange, className = '' }) =
             onClick={() => onChange(tab.id)}
             className={`-mb-px flex items-center gap-2 py-3 text-sm transition-colors ${
               isActive
-                ? 'text-teal font-semibold border-b-2 border-teal'
+                ? 'text-action-hover font-semibold border-b-2 border-action'
                 : 'text-text-tertiary border-b-2 border-transparent hover:text-text-secondary'
             }`}
           >

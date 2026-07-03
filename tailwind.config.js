@@ -18,13 +18,18 @@ export default {
         'text-secondary': '#354A5F',
         'text-tertiary': '#6B7785',
         // Brand
-        // Primary action color (DP-3 follow-up): Fiori "Morning Horizon" action
-        // blue. All primary buttons consume this token via ui-v2/Button. Teal is
-        // now accents-only (active nav, focus rings, links/badges, charts).
+        // Blue action/identity system (DP-3 follow-up). Fiori "Morning Horizon".
+        //  DEFAULT #0070F2 — primary buttons (white text 4.57:1 AA).
+        //  hover   #0064D9 — button hover; also selected-state TEXT on soft (4.76:1 AA).
+        //  soft    #E6F0FB — selected-state / in-flight backgrounds.
+        //  muted   #2A6FBF — identity marks/avatars, solid + white text (5.09:1 AA);
+        //                    a calmer, non-clickable blue (operator's #4A90D9 fails AA at 3.34:1).
+        // Teal is now DECORATIVE-only (charts, score dials, low-emphasis links).
         'action': {
           DEFAULT: '#0070F2',
           hover: '#0064D9',
-          soft: '#EAF2FE',
+          soft: '#E6F0FB',
+          muted: '#2A6FBF',
         },
         'teal': {
           DEFAULT: '#0097A7',
