@@ -29,16 +29,17 @@ import { CHANNEL_CONFIG } from '../data/communicationProfiles';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
-import { useCurrentSupplier } from '../services/query/hooks';
+import {
+  useCurrentSupplier,
+  useStorefrontCatalog,
+  useStorefrontCerts,
+} from '../services/query/hooks';
 import type {
   CatalogItem,
   ProfileCert,
   ProfileCertStatus,
+  Supplier,
 } from '../services/data/types';
-import {
-  INITIAL_CATALOG,
-  INITIAL_CERTS,
-} from '../services/data/mock/fixtures/supplierStorefront';
 
 interface CompletenessItem {
   label: string;
@@ -144,17 +145,24 @@ const AdvisorPanel: React.FC<{ completeness: number }> = ({ completeness }) => {
   );
 };
 
-const SupplierMyStorefront: React.FC = () => {
+interface StorefrontEditorProps {
+  supp: Supplier;
+  supplierId: string;
+  initialCatalog: CatalogItem[];
+  initialCerts: ProfileCert[];
+}
+
+const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
+  supp,
+  supplierId,
+  initialCatalog,
+  initialCerts,
+}) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { identity } = useCurrentIdentity();
-  const { supplierId } = identity;
   const { getSupplierProfile, isBusinessHours, getLocalTime } = useAdaptive();
 
-  const supplierQuery = useCurrentSupplier();
-  const supp = supplierQuery.data ?? null;
-
-  const [catalog, setCatalog] = useState<CatalogItem[]>(INITIAL_CATALOG);
+  const [catalog, setCatalog] = useState<CatalogItem[]>(initialCatalog);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editProfile, setEditProfile] = useState(false);
   const [description, setDescription] = useState(
@@ -162,26 +170,13 @@ const SupplierMyStorefront: React.FC = () => {
   );
   const [bizHoursStart, setBizHoursStart] = useState('08:00');
   const [bizHoursEnd, setBizHoursEnd] = useState('17:00');
-  const [certs, setCerts] = useState<ProfileCert[]>(INITIAL_CERTS);
+  const [certs, setCerts] = useState<ProfileCert[]>(initialCerts);
   const [newMaterial, setNewMaterial] = useState<NewMaterial>(emptyMaterial);
 
   const completeness = useMemo(() => {
     const done = COMPLETENESS_ITEMS.filter((i) => i.done).length;
     return Math.round((done / COMPLETENESS_ITEMS.length) * 100);
   }, []);
-
-  if (!supplierId) return <NoSupplierIdentity />;
-  if (supplierQuery.isPending)
-    return <LoadingState breadcrumb={STOREFRONT_CRUMB} />;
-  if (supplierQuery.isError)
-    return (
-      <ErrorState
-        breadcrumb={STOREFRONT_CRUMB}
-        error={supplierQuery.error}
-        onRetry={() => supplierQuery.refetch()}
-      />
-    );
-  if (!supp) return <NoSupplierIdentity />;
 
   const cp = getSupplierProfile(supp.country);
   const bizHours = isBusinessHours(supp.country);
@@ -825,6 +820,46 @@ const SupplierMyStorefront: React.FC = () => {
         </FormSection>
       </div>
     </AppShellV2>
+  );
+};
+
+// Wrapper: reads the current supplier + storefront catalog/certs through the
+// scoped hooks and renders the four honest states; the editor inner holds the
+// local (Phase-2′, non-persisting) catalog/cert/profile edit state seeded from
+// the resolved reads.
+const SupplierMyStorefront: React.FC = () => {
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
+  const supplierQuery = useCurrentSupplier();
+  const catalogQuery = useStorefrontCatalog();
+  const certsQuery = useStorefrontCerts();
+
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (supplierQuery.isPending || catalogQuery.isPending || certsQuery.isPending)
+    return <LoadingState breadcrumb={STOREFRONT_CRUMB} />;
+  if (supplierQuery.isError || catalogQuery.isError || certsQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={STOREFRONT_CRUMB}
+        error={supplierQuery.error ?? catalogQuery.error ?? certsQuery.error}
+        onRetry={() => {
+          supplierQuery.refetch();
+          catalogQuery.refetch();
+          certsQuery.refetch();
+        }}
+      />
+    );
+
+  const supp = supplierQuery.data ?? null;
+  if (!supp) return <NoSupplierIdentity />;
+
+  return (
+    <StorefrontEditor
+      supp={supp}
+      supplierId={supplierId}
+      initialCatalog={catalogQuery.data?.items ?? []}
+      initialCerts={certsQuery.data?.items ?? []}
+    />
   );
 };
 
