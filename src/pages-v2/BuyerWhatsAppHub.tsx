@@ -126,16 +126,6 @@ const formatMsg = (text: string): React.ReactNode => {
   );
 };
 
-const PULSE_CSS = `
-@keyframes wa-connected-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
-}
-.wa-connected-dot {
-  animation: wa-connected-pulse 1.6s ease-in-out infinite;
-}
-`;
-
 // Small inline marker for the static channel panels (WeChat / Email) that are
 // not yet wired to the engagement service (D-2 / Marketplace precedent).
 const SampleDataNote: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -1053,7 +1043,6 @@ const BuyerWhatsAppHub: React.FC = () => {
 
   return (
     <AppShellV2>
-      <style>{PULSE_CSS}</style>
       <PageHeader
         breadcrumb={ENGAGEMENT_CRUMB}
         title="Communications Hub"
@@ -1082,13 +1071,16 @@ const BuyerWhatsAppHub: React.FC = () => {
               All supplier WhatsApp conversations — powered by 360dialog +
               Paragon AI.
             </div>
+            {/* WA-CONNECT-01: no live 360dialog BSP connection exists yet, so
+                this is an honest "simulated" marker (amber, static) rather than
+                a green CONNECTED badge that would claim a live Business API link. */}
             <div className="inline-flex items-center gap-2 bg-bg-surface border border-border-subtle rounded-full px-3 py-1.5 shadow-sm">
               <span
-                className="wa-connected-dot inline-block w-2 h-2 rounded-full bg-success"
+                className="inline-block w-2 h-2 rounded-full bg-warning"
                 aria-hidden="true"
               />
-              <span className="text-xs font-bold text-success">
-                CONNECTED — 360dialog Business API
+              <span className="text-xs font-semibold text-text-secondary">
+                Simulated — 360dialog (Phase 4′)
               </span>
             </div>
           </div>
