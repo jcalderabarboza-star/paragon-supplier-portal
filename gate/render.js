@@ -20,6 +20,7 @@ const T = {
   tealSoft: '#E6F4F7',
   action: '#0070F2',
   actionHover: '#0064D9',
+  actionMuted: '#2A6FBF',
   border: '#E5E9EE',
   borderInput: '#D1D8E0',
   dangerText: '#BB0000',
@@ -34,7 +35,7 @@ const BASE_STYLE = `
   .card{background:${T.surface};width:100%;max-width:400px;border:1px solid ${T.border};border-radius:12px;
     padding:40px;box-shadow:0 4px 12px rgba(13,27,42,0.08)}
   .brand{text-align:center;margin-bottom:26px}
-  .mark{width:48px;height:48px;border-radius:50%;background:${T.teal};display:flex;align-items:center;
+  .mark{width:48px;height:48px;border-radius:50%;background:${T.actionMuted};display:flex;align-items:center;
     justify-content:center;margin:0 auto 12px}
   .mark span{color:#fff;font-weight:700;font-size:22px}
   .org{font-weight:700;font-size:16px;color:${T.navy};letter-spacing:.05em}
