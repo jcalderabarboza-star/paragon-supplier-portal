@@ -152,7 +152,7 @@ const emptyDoc = (): DocState => ({
 });
 
 const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
+  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 const errorClass = 'text-danger text-xs mt-1';
 
@@ -235,7 +235,7 @@ const RequestTypeSelector: React.FC<{
             aria-pressed={selected}
             className={`text-left rounded-lg p-4 sm:p-5 border-2 transition-colors flex items-start gap-4 ${
               selected
-                ? 'border-teal bg-teal-soft'
+                ? 'border-action bg-action-soft'
                 : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
             }`}
           >

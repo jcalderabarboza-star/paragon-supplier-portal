@@ -579,7 +579,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               value={draft.title}
               onChange={(e) => updateDraft('title', e.target.value)}
               placeholder="e.g. Halal Emulsifier Master Supply Agreement 2027"
-              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -592,7 +592,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 onChange={(e) =>
                   updateDraft('type', e.target.value as ContractType)
                 }
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 <option value="">Select a type…</option>
                 {TYPE_OPTIONS.map((t) => (
@@ -609,7 +609,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               <select
                 value={draft.category}
                 onChange={(e) => updateDraft('category', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 <option value="">Select a category…</option>
                 {CATEGORY_OPTIONS.map((c) => (
@@ -639,7 +639,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                       key={s.id}
                       onClick={() => updateDraft('supplierId', s.id)}
                       className={`border-t border-border-subtle cursor-pointer hover:bg-bg-hover ${
-                        draft.supplierId === s.id ? 'bg-teal-soft' : ''
+                        draft.supplierId === s.id ? 'bg-action-soft' : ''
                       }`}
                     >
                       <td className="px-3 py-2">
@@ -715,7 +715,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 type="date"
                 value={draft.startDate}
                 onChange={(e) => updateDraft('startDate', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
             </div>
             <div>
@@ -726,7 +726,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 type="date"
                 value={draft.endDate}
                 onChange={(e) => updateDraft('endDate', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
               {draft.startDate &&
                 draft.endDate &&
@@ -764,7 +764,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   onChange={(e) =>
                     updateDraft('noticeRequiredDays', e.target.value)
                   }
-                  className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                  className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
                 />
               </div>
             )}
@@ -779,7 +779,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               value={draft.value}
               onChange={(e) => updateDraft('value', e.target.value)}
               placeholder="0"
-              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -790,7 +790,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               <select
                 value={draft.paymentTerms}
                 onChange={(e) => updateDraft('paymentTerms', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {PAYMENT_TERMS_OPTIONS.map((p) => (
                   <option key={p} value={p}>
@@ -806,7 +806,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               <select
                 value={draft.incoterms}
                 onChange={(e) => updateDraft('incoterms', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {INCOTERMS_OPTIONS.map((i) => (
                   <option key={i} value={i}>
@@ -880,7 +880,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 value={customObligationTitle}
                 onChange={(e) => setCustomObligationTitle(e.target.value)}
                 placeholder="e.g. Submit annual sustainability report"
-                className="flex-1 bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="flex-1 bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
               <Button
                 variant="secondary"
@@ -926,7 +926,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                                 e.target.value as DraftObligation['owner'],
                               )
                             }
-                            className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-teal"
+                            className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-action"
                           >
                             <option value="Buyer">Buyer</option>
                             <option value="Supplier">Supplier</option>
@@ -940,7 +940,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             onChange={(e) =>
                               updateObligation(i, 'dueDate', e.target.value)
                             }
-                            className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-teal"
+                            className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-action"
                           />
                         </td>
                         <td className="px-3 py-2 text-right">

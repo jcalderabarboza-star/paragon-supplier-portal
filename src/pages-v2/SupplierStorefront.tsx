@@ -410,7 +410,7 @@ const SupplierStorefront: React.FC = () => {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder={`Hi ${supp.contactName.split(' ')[0]}, we'd like to discuss…`}
-              className="w-full bg-white border border-border-input rounded-md p-3 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-teal transition-colors"
+              className="w-full bg-white border border-border-input rounded-md p-3 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-action transition-colors"
             />
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="secondary">Save draft</Button>

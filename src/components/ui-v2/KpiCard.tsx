@@ -22,7 +22,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
 }) => {
   const baseClass = `relative rounded-lg p-6 shadow-sm border text-left ${
     active
-      ? 'bg-teal-soft border-teal'
+      ? 'bg-action-soft border-action'
       : 'bg-bg-surface border-border-subtle'
   } ${className}`;
 

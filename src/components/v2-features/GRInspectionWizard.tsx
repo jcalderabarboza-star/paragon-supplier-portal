@@ -52,7 +52,7 @@ const labelFor = (text: string) => (
 );
 
 const inputCls =
-  'w-full rounded-md border border-border-input bg-white px-3 py-2 text-sm text-text-primary focus:border-teal focus:outline-none';
+  'w-full rounded-md border border-border-input bg-white px-3 py-2 text-sm text-text-primary focus:border-action focus:outline-none';
 
 const radioCls = 'flex items-center gap-1.5 text-sm text-text-primary cursor-pointer';
 
@@ -190,7 +190,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           onClick={() => setSourceMode('shipment')}
           className={`flex-1 rounded-md border px-4 py-3 text-sm font-medium transition-colors ${
             sourceMode === 'shipment'
-              ? 'border-teal bg-teal-soft text-teal'
+              ? 'border-action bg-action-soft text-action-hover'
               : 'border-border-input text-text-secondary hover:bg-bg-hover'
           }`}
         >
@@ -201,7 +201,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           onClick={() => setSourceMode('manual')}
           className={`flex-1 rounded-md border px-4 py-3 text-sm font-medium transition-colors ${
             sourceMode === 'manual'
-              ? 'border-teal bg-teal-soft text-teal'
+              ? 'border-action bg-action-soft text-action-hover'
               : 'border-border-input text-text-secondary hover:bg-bg-hover'
           }`}
         >
@@ -226,7 +226,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               }}
               className={`w-full flex items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${
                 selectedShipmentId === s.id
-                  ? 'bg-teal-soft'
+                  ? 'bg-action-soft'
                   : 'hover:bg-bg-hover'
               }`}
             >

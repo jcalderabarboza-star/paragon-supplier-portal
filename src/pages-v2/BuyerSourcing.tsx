@@ -273,7 +273,7 @@ const ComparisonCell: React.FC<{
 }> = ({ highlight, children }) => (
   <td
     className={`px-2 py-2 align-middle ${
-      highlight ? 'border-x-2 border-teal bg-teal-soft/40' : ''
+      highlight ? 'border-x-2 border-action bg-action-soft/40' : ''
     }`}
   >
     {children}
@@ -491,7 +491,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               value={draft.title}
               onChange={(e) => updateDraft('title', e.target.value)}
               placeholder="e.g. Q3 2026 Fragrance Sourcing — Floral Compounds"
-              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+              className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -505,7 +505,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   updateDraft('category', e.target.value as RFQCategory);
                   updateDraft('materials', []);
                 }}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 <option value="">Select a category…</option>
                 {CATEGORY_OPTIONS.map((c) => (
@@ -524,7 +524,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 value={draft.budget}
                 onChange={(e) => updateDraft('budget', e.target.value)}
                 placeholder="Optional"
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
             </div>
           </div>
@@ -569,7 +569,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 value={draft.totalQty}
                 onChange={(e) => updateDraft('totalQty', e.target.value)}
                 placeholder="0"
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
             </div>
             <div>
@@ -584,7 +584,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     e.target.value as (typeof UOM_OPTIONS)[number],
                   )
                 }
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {UOM_OPTIONS.map((u) => (
                   <option key={u} value={u}>
@@ -744,7 +744,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 onChange={(e) =>
                   updateDraft('responseDeadline', e.target.value)
                 }
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
             </div>
             <div>
@@ -755,7 +755,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 type="date"
                 value={draft.awardDeadline}
                 onChange={(e) => updateDraft('awardDeadline', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
               {draft.responseDeadline &&
                 draft.awardDeadline &&
@@ -773,7 +773,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               <select
                 value={draft.incoterms}
                 onChange={(e) => updateDraft('incoterms', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {INCOTERMS_OPTIONS.map((i) => (
                   <option key={i} value={i}>
@@ -789,7 +789,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               <select
                 value={draft.paymentTerms}
                 onChange={(e) => updateDraft('paymentTerms', e.target.value)}
-                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-teal"
+                className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
                 {PAYMENT_TERMS_OPTIONS.map((p) => (
                   <option key={p} value={p}>
@@ -1377,7 +1377,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                               key={q.id}
                               className={`align-bottom px-2 pt-2 pb-2 font-semibold text-text-primary text-left min-w-[10rem] ${
                                 q.aiRecommended
-                                  ? 'border-2 border-teal rounded-t-md bg-teal-soft/40'
+                                  ? 'border-2 border-action rounded-t-md bg-action-soft/40'
                                   : ''
                               }`}
                             >
