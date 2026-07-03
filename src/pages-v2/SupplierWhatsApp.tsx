@@ -12,6 +12,7 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import Button from '../components/ui-v2/Button';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import Data from '../components/ui-v2/Data';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 
 const WHATSAPP_GREEN_HEADER = '#075E54';
@@ -980,11 +981,13 @@ const EmailPanel: React.FC = () => {
             <span className="text-text-primary font-semibold">To:</span>{' '}
             supplier@ptberlina.co.id ·{' '}
             <span className="text-text-primary font-semibold">Sent:</span>{' '}
-            {new Date().toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })}
+            <Data>
+              {new Date().toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </Data>
           </div>
           <div className="px-5 py-5 bg-bg-surface">
             <EmailBody
@@ -1286,7 +1289,7 @@ const SupplierWhatsApp: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        Interactive simulator · session opened {lastUpdated}
+        Interactive simulator · session opened <Data>{lastUpdated}</Data>
       </PageMetaLine>
 
       <SubTabs<Channel>

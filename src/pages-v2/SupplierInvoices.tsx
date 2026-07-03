@@ -27,6 +27,7 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -249,7 +250,8 @@ const SupplierInvoices: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {INVOICES.length} invoices · last submitted {fmtDate(lastSubmitted)}
+        {INVOICES.length} invoices · last submitted{' '}
+        <Data>{fmtDate(lastSubmitted)}</Data>
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
@@ -290,8 +292,9 @@ const SupplierInvoices: React.FC = () => {
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>Invoice dispute: </strong>
-            {disputed.map((i) => i.invoiceNumber).join(', ')} — Quantity
-            mismatch. Credit note required before payment can be released.
+            <Data>{disputed.map((i) => i.invoiceNumber).join(', ')}</Data> —
+            Quantity mismatch. Credit note required before payment can be
+            released.
           </div>
         </div>
       )}
@@ -318,25 +321,25 @@ const SupplierInvoices: React.FC = () => {
                   onClick={() => openDetail(inv)}
                 >
                   <TableCell>
-                    <div className="font-mono text-xs font-bold text-text-primary">
+                    <Data as="div" className="text-xs font-bold text-text-primary">
                       {inv.invoiceNumber}
-                    </div>
+                    </Data>
                     <div className="inline-flex items-center gap-1 text-[10px] text-text-tertiary mt-0.5">
                       <Channel size={10} />
                       via {inv.channel}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-xs text-text-secondary">
+                    <Data className="text-xs text-text-secondary">
                       {inv.poNumber}
-                    </span>
+                    </Data>
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap">
                     <div className="font-semibold text-text-primary">
-                      {fmtIDR(inv.amount)}
+                      <Data>{fmtIDR(inv.amount)}</Data>
                     </div>
                     <div className="text-xs text-text-tertiary">
-                      {fmtIDRFull(inv.amount)}
+                      <Data>{fmtIDRFull(inv.amount)}</Data>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -345,12 +348,12 @@ const SupplierInvoices: React.FC = () => {
                     </StatusPill>
                   </TableCell>
                   <TableCell className="text-text-tertiary text-xs whitespace-nowrap">
-                    {fmtDate(inv.dueDate)}
+                    <Data>{fmtDate(inv.dueDate)}</Data>
                   </TableCell>
                   <TableCell className="text-xs whitespace-nowrap">
                     {inv.paymentDate ? (
                       <span className="text-success font-semibold">
-                        {fmtDate(inv.paymentDate)}
+                        <Data>{fmtDate(inv.paymentDate)}</Data>
                       </span>
                     ) : (
                       <span className="text-text-tertiary">—</span>
@@ -461,26 +464,26 @@ const SupplierInvoices: React.FC = () => {
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
                   <dt className="text-text-tertiary">PO reference</dt>
-                  <dd className="text-text-primary font-mono">
+                  <Data as="dd" className="text-text-primary">
                     {selected.poNumber}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Amount</dt>
                   <dd className="text-text-primary font-semibold">
-                    {fmtIDRFull(selected.amount)}
+                    <Data>{fmtIDRFull(selected.amount)}</Data>
                   </dd>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Submitted</dt>
                   <dd className="text-text-primary font-medium">
-                    {fmtDate(selected.submittedDate)}
+                    <Data>{fmtDate(selected.submittedDate)}</Data>
                   </dd>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Due date</dt>
                   <dd className="text-text-primary font-medium">
-                    {fmtDate(selected.dueDate)}
+                    <Data>{fmtDate(selected.dueDate)}</Data>
                   </dd>
                 </div>
                 <div>
@@ -511,25 +514,27 @@ const SupplierInvoices: React.FC = () => {
                 </div>
                 <div>
                   <dt className="text-text-tertiary">SAP FI doc</dt>
-                  <dd
-                    className={`font-mono text-xs ${
+                  <Data
+                    as="dd"
+                    className={`text-xs ${
                       selected.sapFiDoc ? 'text-success' : 'text-text-tertiary'
                     }`}
                   >
                     {selected.sapFiDoc ?? '— pending —'}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Payment ref</dt>
-                  <dd
-                    className={`font-mono text-xs ${
+                  <Data
+                    as="dd"
+                    className={`text-xs ${
                       selected.paymentRef
                         ? 'text-text-primary'
                         : 'text-text-tertiary'
                     }`}
                   >
                     {selected.paymentRef ?? '— pending —'}
-                  </dd>
+                  </Data>
                 </div>
               </dl>
             </section>
@@ -566,20 +571,20 @@ const SupplierInvoices: React.FC = () => {
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                   <div>
                     <dt className="text-text-tertiary">Invoice no</dt>
-                    <dd className="text-text-primary font-mono">
+                    <Data as="dd" className="text-text-primary">
                       {selected.invoiceNumber}
-                    </dd>
+                    </Data>
                   </div>
                   <div>
                     <dt className="text-text-tertiary">Amount paid</dt>
                     <dd className="text-text-primary font-semibold">
-                      {fmtIDRFull(selected.amount)}
+                      <Data>{fmtIDRFull(selected.amount)}</Data>
                     </dd>
                   </div>
                   <div>
                     <dt className="text-text-tertiary">Payment date</dt>
                     <dd className="text-text-primary font-medium">
-                      {fmtDate(selected.paymentDate)}
+                      <Data>{fmtDate(selected.paymentDate)}</Data>
                     </dd>
                   </div>
                   <div>
@@ -590,9 +595,9 @@ const SupplierInvoices: React.FC = () => {
                   </div>
                   <div className="col-span-2">
                     <dt className="text-text-tertiary">Reference</dt>
-                    <dd className="text-text-primary font-mono">
+                    <Data as="dd" className="text-text-primary">
                       {selected.paymentRef ?? '—'}
-                    </dd>
+                    </Data>
                   </div>
                 </dl>
                 {selected.remittanceNote && (

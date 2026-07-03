@@ -32,6 +32,7 @@ import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
+import Data from '../components/ui-v2/Data';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
@@ -1080,9 +1081,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   onClick={() => openRfq(r)}
                 >
                   <TableCell>
-                    <div className="font-semibold text-text-primary">
+                    <Data as="div" className="font-semibold text-text-primary">
                       {r.rfqNumber}
-                    </div>
+                    </Data>
                     <div className="text-xs text-text-tertiary mt-0.5 max-w-[20rem] truncate">
                       {r.title}
                     </div>
@@ -1102,15 +1103,15 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="text-right text-sm text-text-secondary whitespace-nowrap">
-                    {formatNumber(r.totalQty)} {r.uom}
+                    <Data>{formatNumber(r.totalQty)} {r.uom}</Data>
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    {formatIDR(r.estimatedValue)}
+                    <Data>{formatIDR(r.estimatedValue)}</Data>
                   </TableCell>
                   <TableCell>
-                    <div className={`text-sm whitespace-nowrap ${deadlineTone}`}>
+                    <Data as="div" className={`text-sm whitespace-nowrap ${deadlineTone}`}>
                       {formatDate(r.responseDeadline)}
-                    </div>
+                    </Data>
                     {r.status === 'Open' && (
                       <div
                         className={`text-xs mt-0.5 ${
@@ -1200,7 +1201,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   onClick={() => openRfq(r)}
                 >
                   <TableCell className="font-semibold text-text-primary">
-                    {r.rfqNumber}
+                    <Data>{r.rfqNumber}</Data>
                   </TableCell>
                   <TableCell className="text-sm text-text-secondary max-w-md truncate">
                     {r.title}
@@ -1211,10 +1212,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       : '—'}
                   </TableCell>
                   <TableCell className="text-sm text-text-secondary whitespace-nowrap">
-                    {formatDate(r.awardDeadline)}
+                    <Data>{formatDate(r.awardDeadline)}</Data>
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    {formatIDR(r.estimatedValue)}
+                    <Data>{formatIDR(r.estimatedValue)}</Data>
                   </TableCell>
                   <TableCell className="text-right">
                     <ChevronRight
@@ -1290,33 +1291,33 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Created</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedRfq.createdAt)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Response deadline</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedRfq.responseDeadline)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Award deadline</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedRfq.awardDeadline)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Total qty</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatNumber(selectedRfq.totalQty)} {selectedRfq.uom}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Est. value</dt>
-                  <dd className="text-text-primary font-semibold">
+                  <Data as="dd" className="text-text-primary font-semibold">
                     {formatIDR(selectedRfq.estimatedValue)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Currency</dt>
@@ -1396,27 +1397,27 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       <ComparisonRow label="Unit Price">
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
-                            <span className="font-semibold text-text-primary whitespace-nowrap">
+                            <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
                               {formatIDR(q.unitPrice)}/{selectedRfq.uom}
-                            </span>
+                            </Data>
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
                       <ComparisonRow label="Total Price">
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
-                            <span className="font-semibold text-text-primary whitespace-nowrap">
+                            <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
                               {formatIDR(q.totalPrice)}
-                            </span>
+                            </Data>
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
                       <ComparisonRow label="Lead Time">
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
-                            <span className="whitespace-nowrap">
+                            <Data as="span" className="whitespace-nowrap">
                               {q.leadTimeDays} days
-                            </span>
+                            </Data>
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>

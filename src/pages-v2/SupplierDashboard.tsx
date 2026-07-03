@@ -21,6 +21,7 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { PreferredChannel } from '../types/supplier.types';
@@ -558,18 +559,18 @@ const SupplierDashboard: React.FC = () => {
                   return (
                     <TableRow key={po.id}>
                       <TableCell>
-                        <span className="font-mono text-xs font-bold text-text-primary">
+                        <Data className="text-xs font-bold text-text-primary">
                           {po.poNumber}
-                        </span>
+                        </Data>
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-text-secondary">
-                        {fmtDate(po.orderDate)}
+                        <Data>{fmtDate(po.orderDate)}</Data>
                       </TableCell>
                       <TableCell className="text-right text-text-secondary">
                         {po.lineItems.length}
                       </TableCell>
                       <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                        {fmtIDR(po.totalValue)}
+                        <Data>{fmtIDR(po.totalValue)}</Data>
                       </TableCell>
                       <TableCell>
                         <StatusPill variant={PO_STATUS_VARIANT[po.status]}>

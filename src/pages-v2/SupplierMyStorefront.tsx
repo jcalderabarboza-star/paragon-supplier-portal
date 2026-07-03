@@ -29,6 +29,7 @@ import { CHANNEL_CONFIG } from '../data/communicationProfiles';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
+import Data from '../components/ui-v2/Data';
 import {
   useCurrentSupplier,
   useStorefrontCatalog,
@@ -429,16 +430,16 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                       {item.category}
                     </TableCell>
                     <TableCell className="text-text-secondary">
-                      {item.moq} {item.uom}
+                      <Data>{item.moq} {item.uom}</Data>
                     </TableCell>
                     <TableCell className="text-text-secondary">
-                      {item.leadTime} days
+                      <Data>{item.leadTime} days</Data>
                     </TableCell>
                     <TableCell className="font-semibold text-teal">
-                      {item.currency} {item.unitPrice}/{item.uom}
+                      <Data>{item.currency} {item.unitPrice}/{item.uom}</Data>
                     </TableCell>
                     <TableCell className="text-text-secondary">
-                      {item.capacity}/mo
+                      <Data>{item.capacity}/mo</Data>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
@@ -660,7 +661,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                     </StatusPill>
                     {cert.expiry && (
                       <span className="text-xs text-text-tertiary">
-                        Exp: {cert.expiry}
+                        Exp: <Data>{cert.expiry}</Data>
                       </span>
                     )}
                   </div>
@@ -807,9 +808,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 key={s.label}
                 className="px-4 py-3 bg-bg-hover border border-border-subtle rounded-md text-center"
               >
-                <div className={`text-xl font-mono tabular-nums font-semibold ${s.tone}`}>
+                <Data as="div" className={`text-xl font-semibold ${s.tone}`}>
                   {s.value}
-                </div>
+                </Data>
                 <div className="text-xs text-text-tertiary mt-1">
                   {s.label}
                 </div>

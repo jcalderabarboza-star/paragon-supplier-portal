@@ -30,6 +30,7 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
+import Data from '../components/ui-v2/Data';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import {
@@ -233,9 +234,9 @@ const BuyerSupplierProfile: React.FC = () => {
               {supp.bpomRegistered && (
                 <StatusPill variant="info">BPOM Registered</StatusPill>
               )}
-              <span className="text-xs font-mono text-text-tertiary">
+              <Data className="text-xs text-text-tertiary">
                 {supp.sapBpNumber}
-              </span>
+              </Data>
             </div>
             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-sm text-text-secondary">
               <div className="flex items-center gap-2">
@@ -310,23 +311,23 @@ const BuyerSupplierProfile: React.FC = () => {
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
               <dt className="text-text-tertiary">Tax ID</dt>
-              <dd className="text-text-primary">{supp.taxId ?? '—'}</dd>
+              <dd className="text-text-primary"><Data>{supp.taxId ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
               <dt className="text-text-tertiary">Business reg.</dt>
-              <dd className="text-text-primary">{supp.businessRegNo ?? '—'}</dd>
+              <dd className="text-text-primary"><Data>{supp.businessRegNo ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
               <dt className="text-text-tertiary">Founded</dt>
-              <dd className="text-text-primary">{supp.founded ?? '—'}</dd>
+              <dd className="text-text-primary"><Data>{supp.founded ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
               <dt className="text-text-tertiary">Employees</dt>
-              <dd className="text-text-primary">{supp.employees ?? '—'}</dd>
+              <dd className="text-text-primary"><Data>{supp.employees ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
               <dt className="text-text-tertiary">Annual revenue</dt>
-              <dd className="text-text-primary">{supp.annualRevenue ?? '—'}</dd>
+              <dd className="text-text-primary"><Data>{supp.annualRevenue ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
               <dt className="text-text-tertiary">Payment terms</dt>
@@ -338,11 +339,11 @@ const BuyerSupplierProfile: React.FC = () => {
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
               <dt className="text-text-tertiary">Onboarded</dt>
-              <dd className="text-text-primary">{supp.onboardedDate}</dd>
+              <dd className="text-text-primary"><Data>{supp.onboardedDate}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
               <dt className="text-text-tertiary">Last activity</dt>
-              <dd className="text-text-primary">{supp.lastActivityDate}</dd>
+              <dd className="text-text-primary"><Data>{supp.lastActivityDate}</Data></dd>
             </div>
           </dl>
           {supp.intelligenceNote && (
@@ -423,10 +424,10 @@ const BuyerSupplierProfile: React.FC = () => {
                     </StatusPill>
                   </TableCell>
                   <TableCell className="text-text-secondary">
-                    {doc.uploaded ?? '—'}
+                    <Data>{doc.uploaded ?? '—'}</Data>
                   </TableCell>
                   <TableCell className="text-text-secondary">
-                    {doc.expiry ?? '—'}
+                    <Data>{doc.expiry ?? '—'}</Data>
                   </TableCell>
                 </TableRow>
               ))}
@@ -469,20 +470,20 @@ const BuyerSupplierProfile: React.FC = () => {
                       {m.material}
                     </div>
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-text-tertiary">
-                    {m.sapCode}
+                  <TableCell className="text-xs text-text-tertiary">
+                    <Data>{m.sapCode}</Data>
                   </TableCell>
                   <TableCell className="text-text-secondary">
-                    {m.moq} {m.uom}
+                    <Data>{m.moq} {m.uom}</Data>
                   </TableCell>
                   <TableCell className="text-text-secondary">
-                    {m.leadTime} days
+                    <Data>{m.leadTime} days</Data>
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary">
-                    Rp {m.unitPrice}
+                    <Data>Rp {m.unitPrice}</Data>
                   </TableCell>
                   <TableCell className="text-text-secondary">
-                    {m.capacity} {m.uom}/mo
+                    <Data>{m.capacity} {m.uom}/mo</Data>
                   </TableCell>
                 </TableRow>
               ))}
@@ -528,23 +529,23 @@ const BuyerSupplierProfile: React.FC = () => {
                 const otif = deriveOtif(po);
                 return (
                   <TableRow key={po.id}>
-                    <TableCell className="font-mono text-xs text-text-primary">
-                      {po.poNumber}
+                    <TableCell className="text-xs text-text-primary">
+                      <Data>{po.poNumber}</Data>
                     </TableCell>
                     <TableCell className="text-text-secondary">
                       {line?.description ?? '—'}
                     </TableCell>
                     <TableCell className="text-text-secondary">
-                      {line ? `${formatNumber(line.quantity)} ${line.uom}` : '—'}
+                      <Data>{line ? `${formatNumber(line.quantity)} ${line.uom}` : '—'}</Data>
                     </TableCell>
                     <TableCell className="text-right font-semibold text-text-primary">
-                      {formatIDR(po.totalValue, { compact: true })}
+                      <Data>{formatIDR(po.totalValue, { compact: true })}</Data>
                     </TableCell>
                     <TableCell className="text-text-secondary">
-                      {formatDate(po.orderDate)}
+                      <Data>{formatDate(po.orderDate)}</Data>
                     </TableCell>
                     <TableCell className="text-text-secondary">
-                      {formatDate(po.confirmedDeliveryDate)}
+                      <Data>{formatDate(po.confirmedDeliveryDate)}</Data>
                     </TableCell>
                     <TableCell>
                       <StatusPill variant={otif === 'On Time' ? 'success' : 'warning'}>
@@ -592,8 +593,8 @@ const BuyerSupplierProfile: React.FC = () => {
             <tbody>
               {MSG_LOG.map((m, i) => (
                 <TableRow key={i}>
-                  <TableCell className="font-mono text-xs text-text-tertiary whitespace-nowrap">
-                    {m.ts}
+                  <TableCell className="text-xs text-text-tertiary whitespace-nowrap">
+                    <Data>{m.ts}</Data>
                   </TableCell>
                   <TableCell>
                     <StatusPill variant={m.direction === 'in' ? 'info' : 'neutral'}>

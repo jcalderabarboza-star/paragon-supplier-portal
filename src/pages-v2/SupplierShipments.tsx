@@ -29,6 +29,7 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { POStatus } from '../types/purchaseOrder.types';
@@ -110,11 +111,11 @@ const DockAppointments: React.FC = () => (
     <div className="bg-bg-surface border-2 border-success rounded-lg shadow-sm p-5">
       <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
         <div>
-          <div className="text-base font-bold text-text-primary">
+          <Data as="div" className="text-base font-bold text-text-primary">
             ASN-2026-001
-          </div>
+          </Data>
           <div className="text-xs text-text-tertiary mt-0.5">
-            PO-2025-00107 · PET Bottle 100ml Airless Pump
+            <Data>PO-2025-00107</Data> · PET Bottle 100ml Airless Pump
           </div>
         </div>
         <StatusPill variant="success">Confirmed</StatusPill>
@@ -218,9 +219,9 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                   key={po.id}
                   className="bg-bg-surface border border-border-subtle rounded-md px-3 py-2 grid grid-cols-1 sm:grid-cols-[140px_1fr_180px_140px] gap-3 items-center text-sm"
                 >
-                  <span className="font-mono font-bold text-text-primary">
+                  <Data className="font-bold text-text-primary">
                     {po.poNumber}
-                  </span>
+                  </Data>
                   <span
                     className="text-text-secondary truncate"
                     title={first?.description ?? '—'}
@@ -228,7 +229,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                     {first?.description ?? '—'}
                   </span>
                   <span className="text-text-tertiary text-xs whitespace-nowrap">
-                    Req. {fmtDate(po.requestedDeliveryDate)}
+                    Req. <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
                   </span>
                   <div className="justify-self-end">
                     <Button
@@ -291,12 +292,12 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                       </button>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-xs font-bold text-text-primary whitespace-nowrap">
+                      <Data className="text-xs font-bold text-text-primary whitespace-nowrap">
                         {asn.asnNumber}
-                      </span>
+                      </Data>
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-text-secondary whitespace-nowrap">
-                      {asn.poReference}
+                    <TableCell className="text-xs text-text-secondary whitespace-nowrap">
+                      <Data>{asn.poReference}</Data>
                     </TableCell>
                     <TableCell>
                       <StatusPill variant={STATUS_VARIANT[asn.status]}>
@@ -306,11 +307,11 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                     <TableCell className="text-text-secondary whitespace-nowrap">
                       {asn.carrier}
                     </TableCell>
-                    <TableCell className="font-mono text-xs text-text-tertiary whitespace-nowrap">
-                      {asn.trackingNumber}
+                    <TableCell className="text-xs text-text-tertiary whitespace-nowrap">
+                      <Data>{asn.trackingNumber}</Data>
                     </TableCell>
                     <TableCell className="text-text-tertiary whitespace-nowrap">
-                      {asn.eta ? fmtDate(asn.eta) : '—'}
+                      <Data>{asn.eta ? fmtDate(asn.eta) : '—'}</Data>
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
                       {asn.status === 'Draft' && (
@@ -361,17 +362,21 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                                 Total cartons
                               </dt>
                               <dd className="text-text-primary">
-                                {asn.details.totalCartons
-                                  ? asn.details.totalCartons.toLocaleString()
-                                  : '—'}
+                                <Data>
+                                  {asn.details.totalCartons
+                                    ? asn.details.totalCartons.toLocaleString()
+                                    : '—'}
+                                </Data>
                               </dd>
                               <dt className="text-text-tertiary">
                                 Gross weight
                               </dt>
                               <dd className="text-text-primary">
-                                {asn.details.grossWeightKg
-                                  ? `${asn.details.grossWeightKg.toLocaleString()} kg`
-                                  : '—'}
+                                <Data>
+                                  {asn.details.grossWeightKg
+                                    ? `${asn.details.grossWeightKg.toLocaleString()} kg`
+                                    : '—'}
+                                </Data>
                               </dd>
                               <dt className="text-text-tertiary">
                                 Temperature
@@ -408,23 +413,23 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                                         className="border-t border-border-subtle"
                                       >
                                         <td className="py-1.5">
-                                          <div className="font-mono text-[10px] text-text-tertiary">
+                                          <Data as="div" className="text-[10px] text-text-tertiary">
                                             {li.materialCode}
-                                          </div>
+                                          </Data>
                                           <div className="text-text-primary">
                                             {li.description}
                                           </div>
                                         </td>
                                         <td className="py-1.5 text-right text-text-secondary">
-                                          {li.orderedQty.toLocaleString()}
+                                          <Data>{li.orderedQty.toLocaleString()}</Data>
                                         </td>
                                         <td
                                           className={`py-1.5 text-right font-semibold ${short ? 'text-warning' : 'text-text-primary'}`}
                                         >
-                                          {li.shippedQty.toLocaleString()}
+                                          <Data>{li.shippedQty.toLocaleString()}</Data>
                                         </td>
-                                        <td className="py-1.5 text-right font-mono text-text-tertiary">
-                                          {li.lotNumber}
+                                        <td className="py-1.5 text-right text-text-tertiary">
+                                          <Data>{li.lotNumber}</Data>
                                         </td>
                                       </tr>
                                     );
@@ -609,9 +614,9 @@ const SupplierShipments: React.FC = () => {
                 >
                   <div className="flex items-start justify-between gap-3 flex-wrap">
                     <div className="min-w-0">
-                      <div className="font-mono text-sm font-bold text-text-primary">
+                      <Data as="div" className="text-sm font-bold text-text-primary">
                         {po.poNumber}
-                      </div>
+                      </Data>
                       <div className="text-sm text-text-secondary mt-1">
                         {mat?.description ?? '—'}
                       </div>
@@ -619,10 +624,10 @@ const SupplierShipments: React.FC = () => {
                     <div className="text-right shrink-0">
                       <div className="text-xs text-text-tertiary">
                         Qty:{' '}
-                        {mat ? `${mat.quantity.toLocaleString()} ${mat.uom}` : '—'}
+                        <Data>{mat ? `${mat.quantity.toLocaleString()} ${mat.uom}` : '—'}</Data>
                       </div>
                       <div className="text-xs text-text-tertiary">
-                        Delivery: {fmtDate(po.requestedDeliveryDate)}
+                        Delivery: <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
                       </div>
                     </div>
                   </div>
@@ -636,7 +641,7 @@ const SupplierShipments: React.FC = () => {
                         <strong className="text-text-primary">
                           Requested Delivery:
                         </strong>{' '}
-                        {fmtDate(po.requestedDeliveryDate)}
+                        <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
                       </div>
                       <div>
                         <strong className="text-text-primary">

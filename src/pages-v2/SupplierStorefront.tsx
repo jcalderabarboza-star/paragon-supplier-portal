@@ -25,6 +25,7 @@ import Tabs from '../components/ui-v2/Tabs';
 import Button from '../components/ui-v2/Button';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
+import Data from '../components/ui-v2/Data';
 import { PreferredChannel } from '../types/supplier.types';
 import { useSupplier, useStorefrontProducts } from '../services/query/hooks';
 
@@ -290,9 +291,9 @@ const SupplierStorefront: React.FC = () => {
               key={p.code}
               className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5"
             >
-              <div className="font-mono text-xs text-text-tertiary">
+              <Data as="div" className="text-xs text-text-tertiary">
                 {p.code}
-              </div>
+              </Data>
               <h3 className="text-section text-text-primary mt-1">
                 {p.name}
               </h3>
@@ -301,14 +302,16 @@ const SupplierStorefront: React.FC = () => {
                   <div className="text-label text-text-tertiary uppercase">
                     MOQ
                   </div>
-                  <div className="text-text-primary font-medium">{p.moq}</div>
+                  <div className="text-text-primary font-medium">
+                    <Data>{p.moq}</Data>
+                  </div>
                 </div>
                 <div>
                   <div className="text-label text-text-tertiary uppercase">
                     Lead time
                   </div>
                   <div className="text-text-primary font-medium">
-                    {p.leadTime}
+                    <Data>{p.leadTime}</Data>
                   </div>
                 </div>
               </div>
@@ -337,7 +340,7 @@ const SupplierStorefront: React.FC = () => {
                   {c.issuer}
                 </div>
                 <div className="text-meta text-text-secondary mt-1">
-                  Expires {c.expiry}
+                  Expires <Data>{c.expiry}</Data>
                 </div>
               </div>
               <StatusPill variant={CERT_VARIANT[c.status]}>
@@ -372,7 +375,7 @@ const SupplierStorefront: React.FC = () => {
                         {e.label}
                       </span>
                       <span className="text-meta text-text-tertiary">
-                        {e.ts}
+                        <Data>{e.ts}</Data>
                       </span>
                     </div>
                     <p className="text-meta text-text-secondary mt-0.5">

@@ -36,6 +36,7 @@ import Button from '../components/ui-v2/Button';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import {
   useRiskAlerts,
@@ -288,8 +289,9 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => (
               <div className="text-sm text-text-secondary mt-1">{r.event}</div>
             </div>
             <div className="text-right shrink-0">
-              <div
-                className={`text-2xl font-mono tabular-nums font-semibold leading-none ${
+              <Data
+                as="div"
+                className={`text-2xl font-semibold leading-none ${
                   sevVariant === 'danger'
                     ? 'text-danger'
                     : sevVariant === 'warning'
@@ -298,7 +300,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => (
                 }`}
               >
                 {r.score}
-              </div>
+              </Data>
               <div className="text-[10px] text-text-tertiary mt-0.5">Risk score</div>
             </div>
           </div>
@@ -404,7 +406,7 @@ const ExposureTab: React.FC<{ exposure: ExposureRow[] }> = ({ exposure }) => {
               <TableCell className="text-text-secondary">{row.supplier}</TableCell>
               <TableCell className="text-text-tertiary">{row.region}</TableCell>
               <TableCell className="text-right font-semibold text-text-primary">
-                ${(row.spend / 1000).toFixed(1)}M
+                <Data>${(row.spend / 1000).toFixed(1)}M</Data>
               </TableCell>
               <TableCell>
                 <StatusPill variant={dosVariant(row.dos)}>
@@ -437,7 +439,8 @@ const SummaryStat: React.FC<{
   tone: 'danger' | 'warning' | 'success';
 }> = ({ label, value, tone }) => (
   <div className="text-center py-2 border-r border-border-subtle last:border-r-0">
-    <div
+    <Data
+      as="div"
       className={`text-2xl font-bold ${
         tone === 'danger'
           ? 'text-danger'
@@ -447,7 +450,7 @@ const SummaryStat: React.FC<{
       }`}
     >
       {value}
-    </div>
+    </Data>
     <div className="text-meta text-text-tertiary mt-1">{label}</div>
   </div>
 );
@@ -684,10 +687,10 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
                     {row.type}
                   </TableCell>
                   <TableCell className="text-text-tertiary">
-                    {row.expires}
+                    <Data>{row.expires}</Data>
                   </TableCell>
                   <TableCell>
-                    <span
+                    <Data
                       className={`font-bold ${
                         row.status === 'expired'
                           ? 'text-danger'
@@ -699,7 +702,7 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
                       {row.daysLeft < 0
                         ? `${Math.abs(row.daysLeft)}d overdue`
                         : `${row.daysLeft}d`}
-                    </span>
+                    </Data>
                   </TableCell>
                   <TableCell>
                     <StatusPill variant={COMPLIANCE_VARIANT[row.status]}>
@@ -782,12 +785,13 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
                 <div className="text-xs text-text-tertiary">{c.unit}</div>
               </div>
               <div className="text-right shrink-0">
-                <div
-                  className="text-xl font-mono tabular-nums font-semibold"
+                <Data
+                  as="div"
+                  className="text-xl font-semibold"
                   style={{ color: c.color }}
                 >
                   {c.current > 1000 ? c.current.toLocaleString() : c.current}
-                </div>
+                </Data>
                 <div
                   className={`text-xs font-semibold ${up ? 'text-danger' : 'text-success'}`}
                 >

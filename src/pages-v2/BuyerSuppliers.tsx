@@ -19,6 +19,7 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
+import Data from '../components/ui-v2/Data';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -139,7 +140,7 @@ const BuyerSuppliers: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {counts.total} records · last updated {lastUpdated}
+        {counts.total} records · last updated <Data>{lastUpdated}</Data>
       </PageMetaLine>
 
       <SubTabs
@@ -195,9 +196,9 @@ const BuyerSuppliers: React.FC = () => {
                   <div className="font-semibold text-text-primary">
                     {s.name}
                   </div>
-                  <div className="font-mono text-xs text-text-tertiary mt-0.5">
+                  <Data as="div" className="text-xs text-text-tertiary mt-0.5">
                     {s.sapBpNumber}
-                  </div>
+                  </Data>
                 </TableCell>
                 <TableCell>
                   <span className="text-sm text-text-secondary">
@@ -228,7 +229,7 @@ const BuyerSuppliers: React.FC = () => {
                   </div>
                 </TableCell>
                 <TableCell className="text-right font-semibold text-text-primary">
-                  {s.otif}%
+                  <Data>{s.otif}%</Data>
                 </TableCell>
                 <TableCell>
                   <StatusPill variant={STATUS_VARIANT[s.status]}>

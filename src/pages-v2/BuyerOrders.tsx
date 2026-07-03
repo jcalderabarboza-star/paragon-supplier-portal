@@ -40,6 +40,7 @@ import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import Data from '../components/ui-v2/Data';
 import { usePurchaseOrders, useSuppliers } from '../services/query/hooks';
 import { formatIDR, formatNumber, formatDate } from '../lib/format';
 // POStatus / ChannelType are runtime enums (used as values) — they stay sourced
@@ -449,13 +450,13 @@ const BuyerOrders: React.FC = () => {
                   onClick={() => setSelectedPO(po)}
                 >
                   <TableCell>
-                    <div className="font-semibold text-text-primary">
+                    <Data as="div" className="font-semibold text-text-primary">
                       {po.poNumber}
-                    </div>
+                    </Data>
                     {po.prReference && (
-                      <div className="font-mono text-xs text-text-tertiary mt-0.5">
+                      <Data as="div" className="text-xs text-text-tertiary mt-0.5">
                         {po.prReference}
-                      </div>
+                      </Data>
                     )}
                   </TableCell>
                   <TableCell>
@@ -479,7 +480,7 @@ const BuyerOrders: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell className="text-sm text-text-secondary whitespace-nowrap">
-                    {formatDate(po.orderDate)}
+                    <Data>{formatDate(po.orderDate)}</Data>
                   </TableCell>
                   <TableCell>
                     <div
@@ -489,7 +490,7 @@ const BuyerOrders: React.FC = () => {
                           : 'text-text-secondary'
                       }`}
                     >
-                      {formatDate(po.requestedDeliveryDate)}
+                      <Data>{formatDate(po.requestedDeliveryDate)}</Data>
                     </div>
                     {overdue && (
                       <div className="text-xs text-danger mt-0.5">
@@ -498,7 +499,7 @@ const BuyerOrders: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    {formatIDR(po.totalValue)}
+                    <Data>{formatIDR(po.totalValue)}</Data>
                   </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
@@ -558,13 +559,14 @@ const BuyerOrders: React.FC = () => {
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
                   <dt className="text-text-tertiary">Order date</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedPO.orderDate)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Delivery date</dt>
-                  <dd
+                  <Data
+                    as="dd"
                     className={`font-medium ${
                       isOverdue(selectedPO)
                         ? 'text-danger'
@@ -572,13 +574,13 @@ const BuyerOrders: React.FC = () => {
                     }`}
                   >
                     {formatDate(selectedPO.requestedDeliveryDate)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Total value</dt>
-                  <dd className="text-text-primary font-semibold">
+                  <Data as="dd" className="text-text-primary font-semibold">
                     {formatIDR(selectedPO.totalValue)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Channel</dt>
@@ -640,21 +642,21 @@ const BuyerOrders: React.FC = () => {
                         className="border-t border-border-subtle"
                       >
                         <td className="px-3 py-2">
-                          <div className="font-mono text-xs text-text-tertiary">
+                          <Data as="div" className="text-xs text-text-tertiary">
                             {li.materialCode}
-                          </div>
+                          </Data>
                           <div className="text-text-primary mt-0.5">
                             {li.description}
                           </div>
                         </td>
                         <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                          {formatNumber(li.quantity)} {li.uom}
+                          <Data>{formatNumber(li.quantity)} {li.uom}</Data>
                         </td>
                         <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                          {formatIDR(li.unitPrice)}
+                          <Data>{formatIDR(li.unitPrice)}</Data>
                         </td>
                         <td className="px-3 py-2 text-right font-semibold text-text-primary whitespace-nowrap">
-                          {formatIDR(lineTotal(li))}
+                          <Data>{formatIDR(lineTotal(li))}</Data>
                         </td>
                       </tr>
                     ))}
@@ -668,7 +670,7 @@ const BuyerOrders: React.FC = () => {
                         Total
                       </td>
                       <td className="px-3 py-2 text-right font-semibold text-text-primary whitespace-nowrap">
-                        {formatIDR(selectedPO.totalValue)}
+                        <Data>{formatIDR(selectedPO.totalValue)}</Data>
                       </td>
                     </tr>
                   </tfoot>

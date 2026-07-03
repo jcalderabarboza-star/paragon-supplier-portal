@@ -22,6 +22,7 @@ import TimeRangeToggle from '../components/ui-v2/TimeRangeToggle';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import Data from '../components/ui-v2/Data';
 import type {
   ProductionLineRow,
   SupplierHealthRow,
@@ -150,7 +151,7 @@ const BuyerDashboard: React.FC = () => {
                     ) : null}
                   </TableCell>
                   <TableCell className="text-text-secondary">{row.category}</TableCell>
-                  <TableCell className="font-mono text-text-primary">{row.coverDays}d</TableCell>
+                  <TableCell className="text-text-primary"><Data>{row.coverDays}d</Data></TableCell>
                   <TableCell>
                     <StatusPill variant={RISK_VARIANT[row.risk]}>{row.riskLabel}</StatusPill>
                   </TableCell>

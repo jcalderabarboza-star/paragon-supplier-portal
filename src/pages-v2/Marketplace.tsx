@@ -14,6 +14,7 @@ import TableCell from '../components/ui-v2/TableCell';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import Data from '../components/ui-v2/Data';
 import { useSuppliers } from '../services/query/hooks';
 
 const MARKETPLACE_CRUMB = ['ACQUIRE', 'MARKETPLACE'];
@@ -239,15 +240,15 @@ const Marketplace: React.FC = () => {
           <tbody>
             {OPEN_RFQS.map((r) => (
               <TableRow key={r.num}>
-                <TableCell className="font-mono text-xs text-text-primary">
-                  {r.num}
+                <TableCell className="text-xs text-text-primary">
+                  <Data>{r.num}</Data>
                 </TableCell>
                 <TableCell className="text-text-secondary">
                   {r.material}
                 </TableCell>
-                <TableCell className="text-text-secondary">{r.qty}</TableCell>
+                <TableCell className="text-text-secondary"><Data>{r.qty}</Data></TableCell>
                 <TableCell className="text-text-secondary">
-                  {r.deadline}
+                  <Data>{r.deadline}</Data>
                 </TableCell>
                 <TableCell>
                   <StatusPill variant="info">Open</StatusPill>

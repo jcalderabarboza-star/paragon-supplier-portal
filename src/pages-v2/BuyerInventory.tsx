@@ -40,6 +40,7 @@ import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import {
   useInventory,
@@ -504,7 +505,7 @@ const BuyerInventory: React.FC = () => {
                             avg
                           )}`}
                         >
-                          {avg > 0 ? `${avg}d` : '—'}
+                          <Data>{avg > 0 ? `${avg}d` : '—'}</Data>
                         </div>
                       </td>
                     );
@@ -541,9 +542,9 @@ const BuyerInventory: React.FC = () => {
                   onClick={() => setSelectedId(it.id)}
                 >
                   <TableCell>
-                    <div className="font-mono text-sm text-text-primary">
+                    <Data as="div" className="text-sm text-text-primary">
                       {it.materialCode}
-                    </div>
+                    </Data>
                     <div className="text-xs text-text-tertiary truncate max-w-[260px]">
                       {it.materialDescription}
                     </div>
@@ -565,13 +566,13 @@ const BuyerInventory: React.FC = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="text-sm text-text-primary">
-                      {formatNumber(it.qtyOnHand)}
+                      <Data>{formatNumber(it.qtyOnHand)}</Data>
                     </div>
                     <div className="text-xs text-text-tertiary">{it.uom}</div>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="text-sm text-text-primary">
-                      {formatNumber(it.qtyAvailable)}
+                      <Data>{formatNumber(it.qtyAvailable)}</Data>
                     </div>
                     <div className="text-xs text-text-tertiary">{it.uom}</div>
                   </TableCell>
@@ -584,7 +585,7 @@ const BuyerInventory: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
-                      {formatRelativeTime(it.lastUpdated)}
+                      <Data>{formatRelativeTime(it.lastUpdated)}</Data>
                     </span>
                   </TableCell>
                   <TableCell>
@@ -630,9 +631,9 @@ const BuyerInventory: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <div className="text-xs text-text-tertiary">Material</div>
-                  <div className="font-mono text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {selected.materialCode}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">Category</div>
@@ -655,20 +656,24 @@ const BuyerInventory: React.FC = () => {
                 <div>
                   <div className="text-xs text-text-tertiary">OTIF</div>
                   <div className="text-text-primary">
-                    {selectedSupplier
-                      ? `${selectedSupplier.otif}%`
-                      : '—'}
+                    <Data>
+                      {selectedSupplier
+                        ? `${selectedSupplier.otif}%`
+                        : '—'}
+                    </Data>
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">Lead Time</div>
-                  <div className="text-text-primary">14 days</div>
+                  <div className="text-text-primary"><Data>14 days</Data></div>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">MOQ</div>
                   <div className="text-text-primary">
-                    {formatNumber(Math.max(500, selected.avgDailyDemand * 7))}{' '}
-                    {selected.uom}
+                    <Data>
+                      {formatNumber(Math.max(500, selected.avgDailyDemand * 7))}{' '}
+                      {selected.uom}
+                    </Data>
                   </div>
                 </div>
                 <div>
@@ -676,7 +681,9 @@ const BuyerInventory: React.FC = () => {
                     Safety Stock
                   </div>
                   <div className="text-text-primary">
-                    {formatNumber(selected.avgDailyDemand * 7)} {selected.uom}
+                    <Data>
+                      {formatNumber(selected.avgDailyDemand * 7)} {selected.uom}
+                    </Data>
                   </div>
                 </div>
                 <div>
@@ -684,7 +691,9 @@ const BuyerInventory: React.FC = () => {
                     Reorder Point
                   </div>
                   <div className="text-text-primary">
-                    {formatNumber(selected.avgDailyDemand * 14)} {selected.uom}
+                    <Data>
+                      {formatNumber(selected.avgDailyDemand * 14)} {selected.uom}
+                    </Data>
                   </div>
                 </div>
               </div>
@@ -752,15 +761,19 @@ const BuyerInventory: React.FC = () => {
                       );
                       return (
                         <tr key={po.id} className="border-t border-border-subtle">
-                          <td className="py-2 font-mono text-text-primary">
-                            {po.poNumber}
+                          <td className="py-2 text-text-primary">
+                            <Data>{po.poNumber}</Data>
                           </td>
                           <td className="py-2 text-right text-text-primary">
-                            {li ? formatNumber(li.quantity) : '—'} {li?.uom ?? ''}
+                            <Data>
+                              {li ? formatNumber(li.quantity) : '—'} {li?.uom ?? ''}
+                            </Data>
                           </td>
                           <td className="py-2 pl-3 text-text-secondary">
-                            {po.confirmedDeliveryDate ||
-                              po.requestedDeliveryDate}
+                            <Data>
+                              {po.confirmedDeliveryDate ||
+                                po.requestedDeliveryDate}
+                            </Data>
                           </td>
                         </tr>
                       );

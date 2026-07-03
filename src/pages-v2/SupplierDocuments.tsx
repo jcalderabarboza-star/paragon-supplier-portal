@@ -25,6 +25,7 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -329,12 +330,13 @@ const SupplierDocuments: React.FC = () => {
                     {doc.issuedBy}
                   </TableCell>
                   <TableCell className="text-text-tertiary text-xs whitespace-nowrap">
-                    {formatDate(doc.issuedDate)}
+                    <Data>{formatDate(doc.issuedDate)}</Data>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {doc.expiryDate ? (
                       <div>
-                        <div
+                        <Data
+                          as="div"
                           className={`text-xs ${
                             days !== null && days <= 90
                               ? 'text-warning'
@@ -342,7 +344,7 @@ const SupplierDocuments: React.FC = () => {
                           }`}
                         >
                           {formatDate(doc.expiryDate)}
-                        </div>
+                        </Data>
                         {days !== null && (
                           <div className={`text-xs ${expiryColor}`}>
                             {days > 0
@@ -370,7 +372,7 @@ const SupplierDocuments: React.FC = () => {
                     </StatusPill>
                   </TableCell>
                   <TableCell className="text-text-tertiary text-xs">
-                    {doc.version}
+                    <Data>{doc.version}</Data>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1.5">

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Wizard, { WizardStep } from '../ui-v2/Wizard';
 import FormSection from '../ui-v2/FormSection';
+import Data from '../ui-v2/Data';
 import { useToast } from '../../hooks/useToast';
 import { mockShipments, Shipment } from '../../data/mockShipments';
 import {
@@ -232,10 +233,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             >
               <div>
                 <div className="font-semibold text-text-primary">
-                  {s.asnNumber}
+                  <Data>{s.asnNumber}</Data>
                 </div>
                 <div className="text-xs text-text-tertiary">
-                  {s.poNumber} · {s.supplierName}
+                  <Data>{s.poNumber}</Data> · {s.supplierName}
                 </div>
               </div>
               <div className="text-right text-xs text-text-secondary">
@@ -342,9 +343,9 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
-                      <div className="font-mono text-sm text-text-primary">
+                      <Data as="div" className="text-sm text-text-primary">
                         {l.materialCode}
-                      </div>
+                      </Data>
                       <div className="text-xs text-text-tertiary">
                         {l.description}
                       </div>
@@ -352,7 +353,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                     <div className="text-xs text-text-tertiary text-right">
                       Expected
                       <div className="font-semibold text-text-primary">
-                        {formatNumber(l.qtyExpected)}
+                        <Data>{formatNumber(l.qtyExpected)}</Data>
                       </div>
                     </div>
                   </div>
@@ -389,7 +390,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                     <div>
                       {labelFor('Rejected')}
                       <div className="rounded-md border border-border-input bg-bg-hover px-3 py-2 text-sm text-text-secondary">
-                        {formatNumber(rejected)}
+                        <Data>{formatNumber(rejected)}</Data>
                       </div>
                     </div>
                     <div className="col-span-4">
@@ -430,15 +431,15 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           >
             <div className="flex justify-between items-start">
               <div>
-                <div className="font-mono text-sm text-text-primary">
+                <Data as="div" className="text-sm text-text-primary">
                   {l.materialCode}
-                </div>
+                </Data>
                 <div className="text-xs text-text-tertiary">
                   {l.description}
                 </div>
               </div>
               <div className="text-xs text-text-tertiary">
-                {formatNumber(l.qtyReceived)} received
+                <Data>{formatNumber(l.qtyReceived)}</Data> received
               </div>
             </div>
 
@@ -531,7 +532,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               {l.labSampleRequired && (
                 <div className="text-xs text-text-secondary">
                   Lab Request ID:{' '}
-                  <span className="font-mono">{l.labRequestId}</span>
+                  <Data>{l.labRequestId}</Data>
                 </div>
               )}
             </div>
@@ -618,25 +619,25 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       <div className="border border-border-subtle rounded-lg p-4 bg-bg-hover grid grid-cols-4 gap-3 text-sm">
         <div>
           <div className="text-xs text-text-tertiary">Total items</div>
-          <div className="font-semibold text-text-primary">{totals.items}</div>
+          <div className="font-semibold text-text-primary"><Data>{totals.items}</Data></div>
         </div>
         <div>
           <div className="text-xs text-text-tertiary">Total accepted</div>
           <div className="font-semibold text-success">
-            {formatNumber(totals.accepted)}
+            <Data>{formatNumber(totals.accepted)}</Data>
           </div>
         </div>
         <div>
           <div className="text-xs text-text-tertiary">Total rejected</div>
           <div className="font-semibold text-danger">
-            {formatNumber(totals.rejected)}
+            <Data>{formatNumber(totals.rejected)}</Data>
           </div>
         </div>
         <div>
           <div className="text-xs text-text-tertiary">Est. SAP Doc</div>
-          <div className="font-mono text-text-primary">
+          <Data as="div" className="text-text-primary">
             {autoPostSap ? previewSapDoc : '—'}
-          </div>
+          </Data>
         </div>
       </div>
     </div>

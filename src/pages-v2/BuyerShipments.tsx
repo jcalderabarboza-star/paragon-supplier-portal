@@ -27,6 +27,7 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
+import Data from '../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
 import FormSection from '../components/ui-v2/FormSection';
@@ -556,12 +557,12 @@ const BuyerShipments: React.FC = () => {
                   onClick={() => setSelectedId(s.id)}
                 >
                   <TableCell>
-                    <div className="font-semibold text-text-primary">
+                    <Data as="div" className="font-semibold text-text-primary">
                       {s.asnNumber}
-                    </div>
-                    <div className="text-xs text-text-tertiary font-mono">
+                    </Data>
+                    <Data as="div" className="text-xs text-text-tertiary">
                       {s.poNumber}
-                    </div>
+                    </Data>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-text-primary">
@@ -588,16 +589,17 @@ const BuyerShipments: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="text-sm text-text-secondary">
+                    <Data as="span" className="text-sm text-text-secondary">
                       {formatDate(s.shipDate)}
-                    </span>
+                    </Data>
                   </TableCell>
                   <TableCell>
-                    <div
+                    <Data
+                      as="div"
                       className={`text-sm ${overdue ? 'text-danger font-semibold' : 'text-text-primary'}`}
                     >
                       {formatDate(s.estimatedArrival)}
-                    </div>
+                    </Data>
                     {overdue && (
                       <div className="text-xs text-danger">
                         +{s.delayDays}d late
@@ -605,12 +607,12 @@ const BuyerShipments: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm text-text-primary">
+                    <Data as="div" className="text-sm text-text-primary">
                       {formatNumber(s.packageCount)}
-                    </div>
-                    <div className="text-xs text-text-tertiary">
+                    </Data>
+                    <Data as="div" className="text-xs text-text-tertiary">
                       {formatNumber(s.totalWeight)} kg
-                    </div>
+                    </Data>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
@@ -685,7 +687,7 @@ const BuyerShipments: React.FC = () => {
                             onClick={() => setSelectedId(cell.id)}
                             className="w-full rounded-md px-2 py-2 text-xs font-semibold bg-teal-soft text-teal hover:bg-teal/20 transition-colors text-left"
                           >
-                            <div className="truncate">{cell.asnNumber}</div>
+                            <Data as="div" className="truncate">{cell.asnNumber}</Data>
                             <div className="text-[10px] text-teal/80 truncate">
                               {cell.supplierName}
                             </div>
@@ -720,15 +722,15 @@ const BuyerShipments: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <div className="text-xs text-text-tertiary">ASN #</div>
-                  <div className="font-semibold text-text-primary">
+                  <Data as="div" className="font-semibold text-text-primary">
                     {selected.asnNumber}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">PO #</div>
-                  <div className="font-mono text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {selected.poNumber}
-                  </div>
+                  </Data>
                 </div>
                 <div className="col-span-2">
                   <div className="text-xs text-text-tertiary">Supplier</div>
@@ -751,9 +753,9 @@ const BuyerShipments: React.FC = () => {
                   <div className="text-xs text-text-tertiary">
                     Tracking #
                   </div>
-                  <div className="font-mono text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {selected.trackingNumber}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">Mode</div>
@@ -761,9 +763,9 @@ const BuyerShipments: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">Container #</div>
-                  <div className="font-mono text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {selected.containerNumber ?? '—'}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">Origin</div>
@@ -777,13 +779,14 @@ const BuyerShipments: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">Ship Date</div>
-                  <div className="text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {formatDate(selected.shipDate)}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">ETA</div>
-                  <div
+                  <Data
+                    as="div"
                     className={
                       (selected.delayDays ?? 0) > 0
                         ? 'text-danger font-semibold'
@@ -791,27 +794,27 @@ const BuyerShipments: React.FC = () => {
                     }
                   >
                     {formatDate(selected.estimatedArrival)}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">
                     Actual Arrival
                   </div>
-                  <div className="text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {formatDate(selected.actualArrival)}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">Packages</div>
-                  <div className="text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {formatNumber(selected.packageCount)}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">Total Weight</div>
-                  <div className="text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {formatNumber(selected.totalWeight)} kg
-                  </div>
+                  </Data>
                 </div>
                 <div className="col-span-2">
                   <div className="text-xs text-text-tertiary">Dock</div>
@@ -839,14 +842,14 @@ const BuyerShipments: React.FC = () => {
                 <tbody>
                   {selected.lineItems.map((li, i) => (
                     <tr key={i} className="border-t border-border-subtle">
-                      <td className="py-2 font-mono text-text-primary">
-                        {li.materialCode}
+                      <td className="py-2 text-text-primary">
+                        <Data>{li.materialCode}</Data>
                       </td>
                       <td className="py-2 text-text-secondary">
                         {li.description}
                       </td>
                       <td className="py-2 text-right text-text-primary">
-                        {formatNumber(li.qty)}
+                        <Data>{formatNumber(li.qty)}</Data>
                       </td>
                       <td className="py-2 pl-2 text-text-tertiary">{li.uom}</td>
                     </tr>
