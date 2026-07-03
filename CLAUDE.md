@@ -56,6 +56,39 @@ home redirect points to `/buyer/dashboard`; unknown routes render a real 404
   Batch 1.1b onward. If a shared token / card-variant change makes it cheap,
   propose it in that batch's investigation rather than patching per-page.
 
+### DP-2 — Restrained beauty-tech palette (extends DP-1)
+- ONE brand accent: teal (`#0097A7`) for interactive / active / highlights.
+  Navy (`#0D1B2A`) is text/headings only — never a decorative fill. Mid
+  (`#354A5F`) is secondary text. Surfaces stay white / light-neutral with
+  subtle borders.
+- Semantic color (green/amber/red) is ONLY for true state, in soft/muted
+  variants — never saturated decoration. If a chip's color doesn't inform a
+  decision, it goes neutral.
+- Charts consume ONE ordered series ramp from `src/lib/chartPalette.ts`
+  (`CHART_SERIES`: teal → navy → teal-tint → navy-tint → neutral grey). No
+  rainbow donuts, no per-page ad-hoc hex. Migrate chart colors opportunistically
+  per touched page (SupplierPerformance is the first natural migrant).
+- Decorative color flattens: colored icon backgrounds, gradients, and multi-hue
+  step chips collapse to the neutral + teal system.
+- Applies every batch from 1.3 onward. Messenger-chrome exemption (D-2) and
+  GradeBadge / status semantics stand where they inform.
+
+### DP-3 — Odyssey platform family theme (TMS alignment; extends DP-1/DP-2)
+The Supplier Portal adopts the TMS Control Tower visual language so the Odyssey
+family reads as one product line.
+- TYPOGRAPHY: monospace for all DATA — document numbers (PO/GR/RFQ/CTR/SH), SAP
+  refs, material codes, currency amounts, dates/times, tracking refs. Clean sans
+  (current) for UI labels, headings, body. Implemented centrally via a
+  font-family token (tailwind.config) + a data-cell convention; exact mono face
+  (JetBrains Mono / IBM Plex Mono, checked for IDR digit legibility) confirmed in
+  the DP-3 seam investigation.
+- STATUS CHIPS: quiet outlined style — soft tint background, thin border, small
+  radius, no solid saturated fills. DP-2 semantic-color rules unchanged.
+- TABLES: light grey header band, thin row borders, generous row height.
+- DELIVERY: one small dedicated theme-token PR (central tokens + StatusPill +
+  table primitives only) immediately after PR-B merges — investigation-first, no
+  per-page sweep. Page-level cleanup stays opportunistic.
+
 ## Deploy
 Vite root is app/ — never edit app/index.html directly.
 Deploy is Vercel-only: Vercel builds from source via vercel.json (npm run build → dist/).
