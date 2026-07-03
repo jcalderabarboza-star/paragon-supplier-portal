@@ -7,10 +7,14 @@ import SupplierMyStorefront from './SupplierMyStorefront';
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
 
-describe('SupplierMyStorefront — identity states', () => {
-  it('data: renders the storefront once the supplier identity resolves', async () => {
+describe('SupplierMyStorefront — honest states + wired reads', () => {
+  it('data: renders the storefront with the scoped catalog read', async () => {
     renderWithProviders(<SupplierMyStorefront />, { identity: SUPPLIER });
     expect(await screen.findByText('My Catalog')).toBeInTheDocument();
+    // A real sup-007 catalog material proves useStorefrontCatalog drove the table.
+    expect(
+      await screen.findByText('PET Bottle 100ml Airless Pump'),
+    ).toBeInTheDocument();
   });
 
   it('loading: shows LoadingState while the supplier read is pending', () => {
