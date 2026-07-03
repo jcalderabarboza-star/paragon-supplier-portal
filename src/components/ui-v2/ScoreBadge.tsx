@@ -17,14 +17,14 @@ interface ToneStyle {
   bg: string;
 }
 
-const tone = (score: number): ToneStyle => {
-  if (score < 50)
-    return { text: 'text-danger', stroke: '#BB0000', bg: 'bg-danger-soft' };
-  if (score < 75)
-    return { text: 'text-warning', stroke: '#B45309', bg: 'bg-warning-soft' };
-  if (score < 90)
-    return { text: 'text-info', stroke: '#1E5BAE', bg: 'bg-info-soft' };
-  return { text: 'text-success', stroke: '#107E3E', bg: 'bg-success-soft' };
+// DP-2: a score bar/dial is single-accent teal — the number conveys the value,
+// the colour is not a decision signal (ranking is carried by the number and, in
+// comparisons, the aiRecommended column highlight). Semantic red/amber/green is
+// reserved for true state elsewhere, not for decorating a 0–100 score.
+const TONE: ToneStyle = {
+  text: 'text-teal',
+  stroke: '#0097A7',
+  bg: 'bg-teal-soft',
 };
 
 const CIRCULAR_SIZE: Record<Size, { px: number; stroke: number; font: string }> = {
@@ -41,7 +41,7 @@ const ScoreBadge: React.FC<ScoreBadgeProps> = ({
   className = '',
 }) => {
   const clamped = Math.max(0, Math.min(100, score));
-  const t = tone(clamped);
+  const t = TONE;
 
   if (variant === 'bar') {
     return (
