@@ -152,7 +152,7 @@ const emptyDoc = (): DocState => ({
 });
 
 const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
+  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 const errorClass = 'text-danger text-xs mt-1';
 
@@ -235,13 +235,13 @@ const RequestTypeSelector: React.FC<{
             aria-pressed={selected}
             className={`text-left rounded-lg p-4 sm:p-5 border-2 transition-colors flex items-start gap-4 ${
               selected
-                ? 'border-teal bg-teal-soft'
+                ? 'border-action bg-action-soft'
                 : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
             }`}
           >
             <div
               className={`w-11 h-11 rounded-md flex items-center justify-center shrink-0 ${
-                selected ? 'bg-teal text-white' : 'bg-bg-hover text-text-tertiary'
+                selected ? 'bg-action text-white' : 'bg-bg-hover text-text-tertiary'
               }`}
             >
               <Icon size={20} />
@@ -730,7 +730,7 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                   className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md font-semibold text-xs cursor-pointer whitespace-nowrap ${
                     d.uploaded
                       ? 'bg-success-soft text-success'
-                      : 'bg-teal text-white hover:bg-teal-hover'
+                      : 'bg-action text-white hover:bg-action-hover'
                   }`}
                 >
                   {d.uploaded ? (

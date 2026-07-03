@@ -77,7 +77,7 @@ const filterByTab = (tab: TabKey, pos: PurchaseOrder[]): PurchaseOrder[] => {
 };
 
 const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
+  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 const ORDERS_CRUMB = ['TRANSACT', 'MY ORDERS'];
@@ -332,7 +332,7 @@ const SupplierOrders: React.FC = () => {
                 onClick={() => openOrderPanel(po, 'detail')}
               >
                 <TableCell>
-                  <span className="font-mono text-xs font-bold text-teal">
+                  <span className="font-mono text-xs font-bold text-text-primary">
                     {po.poNumber}
                   </span>
                 </TableCell>

@@ -52,7 +52,7 @@ const STATUS_VARIANT: Record<
 type GroupTab = 'all' | 'Draft' | 'Pending Approval' | 'Approved' | 'Sourcing Event' | 'PO Created';
 
 const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
+  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass =
   'block text-label text-text-tertiary uppercase mb-1';
 
@@ -317,7 +317,7 @@ const BuyerRequisitions: React.FC = () => {
                   onClick={() => setSelectedPR(pr)}
                 >
                   <TableCell>
-                    <div className="font-mono text-xs font-semibold text-teal">
+                    <div className="font-mono text-xs font-semibold text-text-primary">
                       {pr.prNumber}
                     </div>
                   </TableCell>
@@ -358,7 +358,7 @@ const BuyerRequisitions: React.FC = () => {
                   <TableCell>
                     <span
                       className={`font-mono text-xs ${
-                        pr.linkedDoc ? 'text-teal' : 'text-text-tertiary'
+                        pr.linkedDoc ? 'text-text-primary' : 'text-text-tertiary'
                       }`}
                     >
                       {pr.linkedDoc || '—'}
@@ -544,7 +544,7 @@ const BuyerRequisitions: React.FC = () => {
               {selectedPR.linkedDoc && (
                 <div className="mt-3 text-sm text-text-secondary">
                   Linked document:{' '}
-                  <span className="font-mono text-teal">
+                  <span className="font-mono text-text-primary">
                     {selectedPR.linkedDoc}
                   </span>
                 </div>

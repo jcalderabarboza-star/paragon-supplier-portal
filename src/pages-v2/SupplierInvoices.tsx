@@ -318,7 +318,7 @@ const SupplierInvoices: React.FC = () => {
                   onClick={() => openDetail(inv)}
                 >
                   <TableCell>
-                    <div className="font-mono text-xs font-bold text-teal">
+                    <div className="font-mono text-xs font-bold text-text-primary">
                       {inv.invoiceNumber}
                     </div>
                     <div className="inline-flex items-center gap-1 text-[10px] text-text-tertiary mt-0.5">

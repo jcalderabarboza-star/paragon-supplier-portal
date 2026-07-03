@@ -234,7 +234,7 @@ const BuyerScorecard: React.FC = () => {
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="h-10 min-w-[260px] px-3 text-sm text-text-primary bg-bg-surface border border-border-input rounded-md focus:outline-none focus:border-teal cursor-pointer"
+            className="h-10 min-w-[260px] px-3 text-sm text-text-primary bg-bg-surface border border-border-input rounded-md focus:outline-none focus:border-action cursor-pointer"
             aria-label="Select supplier"
           >
             {suppliers.map((s) => (

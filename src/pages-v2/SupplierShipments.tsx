@@ -64,7 +64,7 @@ const fmtDate = (s: string): string => {
 };
 
 const inputClass =
-  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
+  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 const SHIPMENTS_CRUMB = ['TRANSACT', 'SHIPMENTS & ASN'];
@@ -218,7 +218,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                   key={po.id}
                   className="bg-bg-surface border border-border-subtle rounded-md px-3 py-2 grid grid-cols-1 sm:grid-cols-[140px_1fr_180px_140px] gap-3 items-center text-sm"
                 >
-                  <span className="font-mono font-bold text-teal">
+                  <span className="font-mono font-bold text-text-primary">
                     {po.poNumber}
                   </span>
                   <span
@@ -291,7 +291,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                       </button>
                     </TableCell>
                     <TableCell>
-                      <span className="font-mono text-xs font-bold text-teal whitespace-nowrap">
+                      <span className="font-mono text-xs font-bold text-text-primary whitespace-nowrap">
                         {asn.asnNumber}
                       </span>
                     </TableCell>

@@ -35,7 +35,7 @@ function SubTabs<T extends string>({
             onClick={() => onChange(opt.id)}
             className={`-mb-px flex items-center gap-2 py-3 text-sm transition-colors ${
               active
-                ? 'text-teal font-semibold border-b-2 border-teal'
+                ? 'text-action-hover font-semibold border-b-2 border-action'
                 : 'text-text-tertiary border-b-2 border-transparent hover:text-text-secondary'
             }`}
           >
@@ -44,7 +44,7 @@ function SubTabs<T extends string>({
               <span
                 className={`inline-flex items-center justify-center rounded-full px-2 h-5 text-xs font-semibold ${
                   active
-                    ? 'bg-teal-soft text-teal'
+                    ? 'bg-action-soft text-action-hover'
                     : 'bg-bg-hover text-text-tertiary'
                 }`}
               >

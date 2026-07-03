@@ -25,25 +25,25 @@ const Timeline: React.FC<TimelineProps> = ({ events, className = '' }) => {
         const Icon = event.icon;
         const connectorClass =
           event.status === 'completed'
-            ? 'bg-teal'
+            ? 'bg-action'
             : event.status === 'current'
-              ? 'bg-gradient-to-b from-teal to-border-subtle'
+              ? 'bg-gradient-to-b from-action to-border-subtle'
               : 'bg-border-subtle';
 
         let marker: React.ReactNode;
         if (event.status === 'completed') {
           marker = (
-            <span className="relative z-10 w-3 h-3 rounded-full bg-teal flex items-center justify-center">
+            <span className="relative z-10 w-3 h-3 rounded-full bg-action flex items-center justify-center">
               <Check size={8} className="text-white" strokeWidth={3} />
             </span>
           );
         } else if (event.status === 'current') {
           marker = (
-            <span className="relative z-10 w-4 h-4 rounded-full bg-white border-2 border-teal flex items-center justify-center">
+            <span className="relative z-10 w-4 h-4 rounded-full bg-white border-2 border-action flex items-center justify-center">
               {Icon ? (
-                <Icon size={8} className="text-teal" />
+                <Icon size={8} className="text-action" />
               ) : (
-                <span className="w-1.5 h-1.5 rounded-full bg-teal" />
+                <span className="w-1.5 h-1.5 rounded-full bg-action" />
               )}
             </span>
           );

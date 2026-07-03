@@ -315,7 +315,7 @@ const SupplierInventory: React.FC = () => {
               return (
                 <TableRow key={row.id}>
                   <TableCell>
-                    <div className="font-mono text-xs font-semibold text-teal">
+                    <div className="font-mono text-xs font-semibold text-text-primary">
                       {row.materialCode}
                     </div>
                     <div className="text-sm text-text-primary truncate max-w-[14rem]">

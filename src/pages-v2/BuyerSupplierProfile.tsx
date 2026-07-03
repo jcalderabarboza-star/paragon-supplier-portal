@@ -219,7 +219,7 @@ const BuyerSupplierProfile: React.FC = () => {
       {/* Overview card */}
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-start gap-5">
-          <div className="w-16 h-16 shrink-0 rounded-lg bg-teal-soft text-teal flex items-center justify-center text-xl font-semibold">
+          <div className="w-16 h-16 shrink-0 rounded-lg bg-action-soft text-action-hover flex items-center justify-center text-xl font-semibold">
             {initials}
           </div>
           <div className="flex-1 min-w-0">

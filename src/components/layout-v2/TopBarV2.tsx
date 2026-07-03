@@ -74,7 +74,7 @@ const TopBarV2: React.FC = () => {
         </button>
         <div
           aria-label="User avatar"
-          className="w-8 h-8 rounded-full bg-teal text-white text-xs font-semibold flex items-center justify-center"
+          className="w-8 h-8 rounded-full bg-action-muted text-white text-xs font-semibold flex items-center justify-center"
         >
           JJ
         </div>

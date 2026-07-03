@@ -249,7 +249,7 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
           const dotClass = isDone
             ? 'bg-success text-white'
             : isActive
-              ? 'bg-teal text-white'
+              ? 'bg-action text-white'
               : 'bg-bg-hover text-text-tertiary';
           const labelClass = isActive
             ? 'text-teal font-semibold'

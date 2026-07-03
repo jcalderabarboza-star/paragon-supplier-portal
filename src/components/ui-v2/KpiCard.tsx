@@ -22,7 +22,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
 }) => {
   const baseClass = `relative rounded-lg p-6 shadow-sm border text-left ${
     active
-      ? 'bg-teal-soft border-teal'
+      ? 'bg-action-soft border-action'
       : 'bg-bg-surface border-border-subtle'
   } ${className}`;
 
@@ -50,7 +50,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
         type="button"
         onClick={onClick}
         aria-pressed={active}
-        className={`${baseClass} w-full cursor-pointer transition-colors hover:bg-bg-hover focus:outline-none focus:ring-2 focus:ring-teal/40`}
+        className={`${baseClass} w-full cursor-pointer transition-colors hover:bg-bg-hover focus:outline-none focus:ring-2 focus:ring-action/40`}
       >
         {content}
       </button>

@@ -67,9 +67,9 @@ const Wizard: React.FC<WizardProps> = ({
                     aria-current={active ? 'step' : undefined}
                     className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
                       completed
-                        ? 'bg-teal text-white'
+                        ? 'bg-action text-white'
                         : active
-                          ? 'bg-teal-soft text-teal border-2 border-teal'
+                          ? 'bg-action-soft text-action-hover border-2 border-action'
                           : 'bg-bg-hover text-text-tertiary border border-border-subtle'
                     } ${reachable ? 'cursor-pointer' : 'cursor-default'}`}
                   >
@@ -90,7 +90,7 @@ const Wizard: React.FC<WizardProps> = ({
                 {i < steps.length - 1 && (
                   <div
                     className={`flex-1 h-px ${
-                      i < currentStep ? 'bg-teal' : 'bg-border-subtle'
+                      i < currentStep ? 'bg-action' : 'bg-border-subtle'
                     }`}
                   />
                 )}

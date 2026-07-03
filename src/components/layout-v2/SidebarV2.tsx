@@ -181,12 +181,12 @@ const SidebarV2: React.FC = () => {
                       onClick={() => navigate(item.path)}
                       className={`relative w-full h-9 px-3 rounded-md flex items-center gap-2.5 text-sm transition-colors ${
                         isActive
-                          ? 'bg-bg-active-soft text-teal font-semibold'
+                          ? 'bg-action-soft text-action-hover font-semibold'
                           : 'text-text-secondary hover:bg-bg-hover'
                       }`}
                     >
                       {isActive && (
-                        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-teal rounded-r" />
+                        <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-action rounded-r" />
                       )}
                       <Icon size={18} />
                       <span>{item.label}</span>
