@@ -289,7 +289,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => (
             </div>
             <div className="text-right shrink-0">
               <div
-                className={`text-2xl font-extrabold leading-none ${
+                className={`text-2xl font-mono tabular-nums font-semibold leading-none ${
                   sevVariant === 'danger'
                     ? 'text-danger'
                     : sevVariant === 'warning'
@@ -783,7 +783,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
               </div>
               <div className="text-right shrink-0">
                 <div
-                  className="text-xl font-extrabold"
+                  className="text-xl font-mono tabular-nums font-semibold"
                   style={{ color: c.color }}
                 >
                   {c.current > 1000 ? c.current.toLocaleString() : c.current}

@@ -297,7 +297,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
           </div>
           <div className="text-center shrink-0">
             <div
-              className={`text-3xl font-extrabold ${
+              className={`text-kpi font-mono tabular-nums ${
                 completenessVariant === 'success'
                   ? 'text-success'
                   : 'text-warning'
@@ -807,7 +807,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 key={s.label}
                 className="px-4 py-3 bg-bg-hover border border-border-subtle rounded-md text-center"
               >
-                <div className={`text-xl font-extrabold ${s.tone}`}>
+                <div className={`text-xl font-mono tabular-nums font-semibold ${s.tone}`}>
                   {s.value}
                 </div>
                 <div className="text-xs text-text-tertiary mt-1">

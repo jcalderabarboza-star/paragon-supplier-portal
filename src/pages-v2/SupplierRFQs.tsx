@@ -578,7 +578,7 @@ const AwardsTab: React.FC = () => {
           </div>
         </div>
         <div className="text-center shrink-0">
-          <div className="text-3xl font-extrabold text-success">{pct}%</div>
+          <div className="text-kpi font-mono tabular-nums text-success">{pct}%</div>
           <div className="text-xs text-text-tertiary">Win rate</div>
         </div>
       </div>

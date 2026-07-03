@@ -125,7 +125,7 @@ const GradeBadge: React.FC<{ grade: Grade }> = ({ grade }) => {
       }}
     >
       <span
-        className="text-4xl font-extrabold"
+        className="text-kpi"
         style={{ color: tone.stroke }}
       >
         {grade}

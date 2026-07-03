@@ -147,7 +147,7 @@ const GradeBadge: React.FC<{ grade: Grade; score: number }> = ({ grade, score })
         className="w-20 h-20 rounded-full flex items-center justify-center"
         style={{ backgroundColor: tone.soft, border: `4px solid ${tone.stroke}` }}
       >
-        <span className="text-4xl font-extrabold" style={{ color: tone.stroke }}>
+        <span className="text-kpi" style={{ color: tone.stroke }}>
           {grade}
         </span>
       </div>
@@ -369,7 +369,7 @@ const SupplierPerformance: React.FC = () => {
                       <div className="text-[9px] font-semibold" style={{ color: tone.stroke }}>
                         {month}
                       </div>
-                      <div className="text-sm font-extrabold" style={{ color: tone.stroke }}>
+                      <div className="text-sm font-bold" style={{ color: tone.stroke }}>
                         {grade}
                       </div>
                       <div className="text-[9px]" style={{ color: tone.stroke }}>

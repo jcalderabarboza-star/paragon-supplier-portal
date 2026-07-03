@@ -989,7 +989,7 @@ const MatchTile: React.FC<MatchTileProps> = ({ label, count, variant }) => (
     className={`rounded-md px-4 py-4 text-center ${MATCH_TILE_CLASS[variant]}`}
   >
     <div className="text-label uppercase mb-2">{label}</div>
-    <div className="text-3xl font-bold">{count}</div>
+    <div className="text-kpi font-mono tabular-nums">{count}</div>
   </div>
 );
 

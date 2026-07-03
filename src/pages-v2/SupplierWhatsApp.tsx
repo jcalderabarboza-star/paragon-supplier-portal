@@ -787,7 +787,7 @@ const EmailBody: React.FC<{
         </p>
         <div className={cardCls}>
           <div className={labelCls}>Current Stock Level</div>
-          <div className="text-3xl font-extrabold text-teal mt-1">24 days</div>
+          <div className="text-kpi font-mono tabular-nums text-teal mt-1">24 days</div>
           <div className="text-sm text-text-tertiary mt-0.5">
             2,400 KG · Material MAT-10234
           </div>
