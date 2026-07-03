@@ -18,6 +18,8 @@ const T = {
   teal: '#0097A7',
   tealHover: '#007A8A',
   tealSoft: '#E6F4F7',
+  action: '#0070F2',
+  actionHover: '#0064D9',
   border: '#E5E9EE',
   borderInput: '#D1D8E0',
   dangerText: '#BB0000',
@@ -46,9 +48,9 @@ const BASE_STYLE = `
     font-family:inherit;color:${T.navy};background:#fff;outline:none}
   input:focus{border-color:${T.teal};box-shadow:0 0 0 3px ${T.tealSoft}}
   .field{margin-bottom:14px}
-  button.submit{width:100%;padding:11px;border:none;border-radius:6px;background:${T.teal};color:#fff;
+  button.submit{width:100%;padding:11px;border:none;border-radius:6px;background:${T.action};color:#fff;
     font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;letter-spacing:.02em;margin-top:6px}
-  button.submit:hover{background:${T.tealHover}}
+  button.submit:hover{background:${T.actionHover}}
   .err{background:${T.dangerSoft};color:${T.dangerText};border:1px solid ${T.dangerText}33;border-radius:6px;
     padding:9px 12px;font-size:13px;margin-bottom:16px;text-align:center}
   .footer{margin-top:24px;font-size:11px;color:${T.mid};text-align:center;line-height:1.5}
