@@ -41,6 +41,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
+import StatusPill from '../components/ui-v2/StatusPill';
 import { useToast } from '../hooks/useToast';
 import {
   useInventory,
@@ -103,32 +104,37 @@ const formatRelativeTime = (iso: string): string => {
 
 const dosBucket = (
   dos: number
-): { tab: GroupTab; label: string; cls: string; cellCls: string } => {
+): {
+  tab: GroupTab;
+  label: string;
+  variant: 'danger' | 'warning' | 'success' | 'info';
+  cellCls: string;
+} => {
   if (dos < 14)
     return {
       tab: 'critical',
       label: `${dos}d`,
-      cls: 'bg-danger-soft text-danger',
+      variant: 'danger',
       cellCls: 'bg-danger-soft text-danger',
     };
   if (dos < 30)
     return {
       tab: 'warning',
       label: `${dos}d`,
-      cls: 'bg-warning-soft text-warning',
+      variant: 'warning',
       cellCls: 'bg-warning-soft text-warning',
     };
   if (dos <= 60)
     return {
       tab: 'healthy',
       label: `${dos}d`,
-      cls: 'bg-success-soft text-success',
+      variant: 'success',
       cellCls: 'bg-success-soft text-success',
     };
   return {
     tab: 'excess',
     label: `${dos}d`,
-    cls: 'bg-info-soft text-info',
+    variant: 'info',
     cellCls: 'bg-info-soft text-info',
   };
 };
@@ -577,11 +583,9 @@ const BuyerInventory: React.FC = () => {
                     <div className="text-xs text-text-tertiary">{it.uom}</div>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${bucket.cls}`}
-                    >
+                    <StatusPill variant={bucket.variant}>
                       {bucket.label}
-                    </span>
+                    </StatusPill>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
