@@ -103,7 +103,7 @@ const CARRIER_OPTIONS = ['JNE', 'SiCepat', 'J&T', 'Wahana', 'DHL', 'FedEx', 'Oth
 
 const DockAppointments: React.FC = () => (
   <div className="flex flex-col gap-4">
-    <h3 className="text-base font-bold text-text-primary">
+    <h3 className="text-section text-text-primary">
       Your scheduled dock appointments
     </h3>
 
@@ -248,7 +248,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-border-subtle flex items-center justify-between flex-wrap gap-2">
-          <h3 className="text-sm font-semibold text-text-primary">
+          <h3 className="text-section text-text-primary">
             Advance Ship Notices
             {statusFilter !== 'All' && (
               <span className="text-text-tertiary font-normal ml-2 text-xs">

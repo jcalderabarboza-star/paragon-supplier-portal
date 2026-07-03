@@ -1167,7 +1167,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           className="w-full flex items-center justify-between px-6 py-4 hover:bg-bg-hover transition-colors"
         >
           <div className="text-left">
-            <h2 className="text-base font-semibold text-text-primary">
+            <h2 className="text-section text-text-primary">
               Awards History
             </h2>
             <p className="text-meta text-text-tertiary">
@@ -1511,7 +1511,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               isAllResponded(selectedRfq) &&
               quotesForSelected.length > 0 && (
                 <section className="bg-teal-soft border border-teal/20 rounded-md p-4">
-                  <h3 className="text-sm font-semibold text-text-primary mb-2">
+                  <h3 className="text-section text-text-primary mb-2">
                     Award action
                   </h3>
                   <p className="text-sm text-text-secondary mb-3">

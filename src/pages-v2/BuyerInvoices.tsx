@@ -564,7 +564,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
       {tab === 'analytics' && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h3 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               Monthly Invoice Flow (Rp jT)
             </h3>
             <ResponsiveContainer width="100%" height={240}>
@@ -595,7 +595,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
           </section>
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h3 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               3-Way Match Summary
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -627,7 +627,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
       {tab === 'aging' && (
         <div className="flex flex-col gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h3 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               Invoice Aging Report (Rp jT)
             </h3>
             <ResponsiveContainer width="100%" height={240}>

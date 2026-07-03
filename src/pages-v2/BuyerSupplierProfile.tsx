@@ -300,7 +300,7 @@ const BuyerSupplierProfile: React.FC = () => {
 
       {activeTab === 'overview' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-base font-semibold text-text-primary mb-4">
+          <h2 className="text-section text-text-primary mb-4">
             Company overview
           </h2>
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
@@ -356,7 +356,7 @@ const BuyerSupplierProfile: React.FC = () => {
 
       {activeTab === 'comm' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-base font-semibold text-text-primary mb-4">
+          <h2 className="text-section text-text-primary mb-4">
             Communication setup
           </h2>
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
@@ -504,7 +504,7 @@ const BuyerSupplierProfile: React.FC = () => {
       {activeTab === 'performance' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 border-b border-border-subtle">
-            <h2 className="text-base font-semibold text-text-primary mb-1">
+            <h2 className="text-section text-text-primary mb-1">
               Recent purchase orders
             </h2>
             <p className="text-meta text-text-tertiary">

@@ -531,7 +531,7 @@ const SupplierDashboard: React.FC = () => {
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle">
-              <h2 className="text-base font-semibold text-text-primary">
+              <h2 className="text-section text-text-primary">
                 My recent purchase orders
               </h2>
             </div>
@@ -605,7 +605,7 @@ const SupplierDashboard: React.FC = () => {
         <div className="flex flex-col gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-text-primary">
+              <h2 className="text-section text-text-primary">
                 My performance score
               </h2>
               <GradeBadge grade={grade} size="sm" />
@@ -650,7 +650,7 @@ const SupplierDashboard: React.FC = () => {
           </section>
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-            <h2 className="text-base font-semibold text-text-primary mb-4">
+            <h2 className="text-section text-text-primary mb-4">
               My documents
             </h2>
             <div className="flex flex-col">

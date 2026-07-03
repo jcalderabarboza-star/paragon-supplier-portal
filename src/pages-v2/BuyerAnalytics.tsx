@@ -290,7 +290,7 @@ const BuyerAnalytics: React.FC = () => {
       )}
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-        <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+        <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
           Spend Analytics
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-[6fr_4fr] gap-6">
@@ -367,7 +367,7 @@ const BuyerAnalytics: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+          <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
             Monthly OTIF & OTDR trend (%)
           </h2>
           <ResponsiveContainer width="100%" height={240}>
@@ -419,7 +419,7 @@ const BuyerAnalytics: React.FC = () => {
         </section>
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+          <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
             PO volume & avg cycle time
           </h2>
           <ResponsiveContainer width="100%" height={240}>
@@ -480,7 +480,7 @@ const BuyerAnalytics: React.FC = () => {
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
         <div className="px-6 py-4 border-b border-border-subtle">
-          <h2 className="text-base font-semibold text-text-primary">
+          <h2 className="text-section text-text-primary">
             Supplier performance summary — YTD
           </h2>
         </div>
@@ -537,7 +537,7 @@ const BuyerAnalytics: React.FC = () => {
       </section>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-        <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+        <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
           Digital channel adoption — PO confirmations (%)
         </h2>
         <ResponsiveContainer width="100%" height={240}>

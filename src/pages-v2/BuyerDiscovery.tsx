@@ -796,7 +796,7 @@ const BuyerDiscovery: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Sparkles size={16} className="text-teal" />
-              <h3 className="text-base font-semibold text-text-primary">
+              <h3 className="text-section text-text-primary">
                 AI supplier matches — recommended for Paragon
               </h3>
             </div>
@@ -832,7 +832,7 @@ const BuyerDiscovery: React.FC = () => {
 
       {tab === 'qualification' && (
         <div>
-          <h3 className="text-base font-semibold text-text-primary mb-4">
+          <h3 className="text-section text-text-primary mb-4">
             Active qualification processes
           </h3>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
@@ -854,7 +854,7 @@ const BuyerDiscovery: React.FC = () => {
 
       {tab === 'intelligence' && (
         <div>
-          <h3 className="text-base font-semibold text-text-primary mb-1">
+          <h3 className="text-section text-text-primary mb-1">
             Category market intelligence
           </h3>
           <p className="text-sm text-text-tertiary mb-4">

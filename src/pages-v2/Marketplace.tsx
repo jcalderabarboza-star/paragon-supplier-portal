@@ -213,7 +213,7 @@ const Marketplace: React.FC = () => {
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-text-primary flex items-center gap-2">
+            <h2 className="text-section text-text-primary flex items-center gap-2">
               Open RFQ Opportunities
               <StatusPill variant="neutral">Sample data</StatusPill>
             </h2>

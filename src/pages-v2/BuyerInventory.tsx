@@ -445,7 +445,7 @@ const BuyerInventory: React.FC = () => {
             <div className="text-label text-text-tertiary uppercase mb-1">
               Coverage Overview
             </div>
-            <h3 className="text-base font-semibold text-text-primary">
+            <h3 className="text-section text-text-primary">
               DOS heatmap by category × brand
             </h3>
           </div>

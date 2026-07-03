@@ -1318,7 +1318,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           <div className="text-label text-text-tertiary uppercase">
             Intelligence
           </div>
-          <h2 className="text-base font-semibold text-text-primary mt-1">
+          <h2 className="text-section text-text-primary mt-1">
             Renewal Pipeline
           </h2>
           <p className="text-meta text-text-tertiary">
@@ -1335,7 +1335,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               <li key={month} className="px-6 py-4">
                 <div className="flex items-center gap-2 mb-3">
                   <CalendarDays size={14} className="text-teal" />
-                  <h3 className="text-sm font-semibold text-text-primary">
+                  <h3 className="text-section text-text-primary">
                     {month}
                   </h3>
                   <span className="text-xs text-text-tertiary">

@@ -293,7 +293,7 @@ const SupplierStorefront: React.FC = () => {
               <div className="font-mono text-xs text-text-tertiary">
                 {p.code}
               </div>
-              <h3 className="text-sm font-semibold text-text-primary mt-1">
+              <h3 className="text-section text-text-primary mt-1">
                 {p.name}
               </h3>
               <div className="grid grid-cols-2 gap-3 mt-4 text-meta">
@@ -351,7 +351,7 @@ const SupplierStorefront: React.FC = () => {
       {activeTab === 'track' && (
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <div className="flex items-center gap-2 mb-5">
-            <h2 className="text-base font-semibold text-text-primary">
+            <h2 className="text-section text-text-primary">
               Delivery track record
             </h2>
             <StatusPill variant="neutral">Sample data</StatusPill>
@@ -391,7 +391,7 @@ const SupplierStorefront: React.FC = () => {
           <div className="lg:col-span-2 bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
             <div className="flex items-center gap-2 mb-4">
               <ChannelIcon size={18} className="text-teal" />
-              <h2 className="text-base font-semibold text-text-primary">
+              <h2 className="text-section text-text-primary">
                 Send via {supp.preferredChannel}
               </h2>
             </div>
@@ -421,7 +421,7 @@ const SupplierStorefront: React.FC = () => {
           </div>
 
           <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-text-primary">
+            <h3 className="text-section text-text-primary">
               Primary contact
             </h3>
             <div className="text-sm">

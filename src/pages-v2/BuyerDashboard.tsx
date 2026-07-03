@@ -125,7 +125,7 @@ const BuyerDashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="text-eyebrow text-text-tertiary uppercase">Operations</div>
-              <h2 className="text-lg font-semibold text-text-primary mt-1">
+              <h2 className="text-section text-text-primary mt-1">
                 Production Line Risk
               </h2>
             </div>
@@ -162,7 +162,7 @@ const BuyerDashboard: React.FC = () => {
 
         <section className="bg-bg-surface rounded-lg shadow-sm border border-border-subtle p-6">
           <div className="text-eyebrow text-text-tertiary uppercase">Intelligence</div>
-          <h2 className="text-lg font-semibold text-text-primary mt-1">
+          <h2 className="text-section text-text-primary mt-1">
             Supplier Health Index
           </h2>
           <div className="flex items-center gap-4 mt-1 mb-4 text-meta text-text-tertiary">

@@ -382,7 +382,7 @@ const AutomationTab: React.FC<{ rules: AutomationRule[] }> = ({ rules }) => {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h3 className="text-base font-semibold text-text-primary">
+        <h3 className="text-section text-text-primary">
           WhatsApp automation rules
         </h3>
         <p className="text-sm text-text-tertiary mt-1">
@@ -520,7 +520,7 @@ const AnalyticsTab: React.FC<{
 
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-text-primary mb-4">
+        <h3 className="text-section text-text-primary mb-4">
           Daily message volume (last 14 days)
         </h3>
         <ResponsiveContainer width="100%" height={220}>
@@ -550,7 +550,7 @@ const AnalyticsTab: React.FC<{
       </section>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-text-primary mb-4">
+        <h3 className="text-section text-text-primary mb-4">
           Automation success rate by rule
         </h3>
         <ResponsiveContainer width="100%" height={220}>
@@ -581,7 +581,7 @@ const AnalyticsTab: React.FC<{
 
     <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
       <div className="px-5 py-3 border-b border-border-subtle">
-        <h3 className="text-sm font-semibold text-text-primary">
+        <h3 className="text-section text-text-primary">
           Supplier response times
         </h3>
       </div>
