@@ -30,6 +30,7 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { statusTone } from '../lib/statusTone';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -60,19 +61,6 @@ type GroupTab =
   | 'closed';
 
 type RangeFilter = '7d' | '30d' | '90d' | 'all';
-
-const STATUS_VARIANT: Record<
-  POStatus,
-  'success' | 'warning' | 'danger' | 'info' | 'neutral'
-> = {
-  [POStatus.SENT]: 'neutral',
-  [POStatus.VIEWED]: 'neutral',
-  [POStatus.ACKNOWLEDGED]: 'info',
-  [POStatus.CONFIRMED]: 'info',
-  [POStatus.PARTIALLY_DELIVERED]: 'warning',
-  [POStatus.DELIVERED]: 'success',
-  [POStatus.CLOSED]: 'success',
-};
 
 const CHANNEL_ICON: Record<ChannelType, LucideIcon> = {
   [ChannelType.WHATSAPP]: MessageCircle,
@@ -508,7 +496,7 @@ const BuyerOrders: React.FC = () => {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[po.status]}>
+                    <StatusPill variant={statusTone(po.status)}>
                       {po.status}
                     </StatusPill>
                   </TableCell>
@@ -591,7 +579,7 @@ const BuyerOrders: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">Status</dt>
                   <dd>
-                    <StatusPill variant={STATUS_VARIANT[selectedPO.status]}>
+                    <StatusPill variant={statusTone(selectedPO.status)}>
                       {selectedPO.status}
                     </StatusPill>
                   </dd>

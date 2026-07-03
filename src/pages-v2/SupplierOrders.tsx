@@ -13,6 +13,7 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { statusTone } from '../lib/statusTone';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -32,19 +33,6 @@ import type { PurchaseOrder } from '../services/data/types';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
-
-const PO_STATUS_VARIANT: Record<
-  POStatus,
-  'success' | 'warning' | 'danger' | 'info' | 'neutral'
-> = {
-  [POStatus.SENT]: 'neutral',
-  [POStatus.VIEWED]: 'neutral',
-  [POStatus.ACKNOWLEDGED]: 'info',
-  [POStatus.CONFIRMED]: 'info',
-  [POStatus.PARTIALLY_DELIVERED]: 'warning',
-  [POStatus.DELIVERED]: 'success',
-  [POStatus.CLOSED]: 'success',
-};
 
 const ACTION_STATUSES: POStatus[] = [POStatus.SENT, POStatus.ACKNOWLEDGED];
 const PROGRESS_STATUSES: POStatus[] = [
@@ -350,7 +338,7 @@ const SupplierOrders: React.FC = () => {
                   <Data>{fmtIDR(po.totalValue)}</Data>
                 </TableCell>
                 <TableCell>
-                  <StatusPill variant={PO_STATUS_VARIANT[po.status]}>
+                  <StatusPill variant={statusTone(po.status)}>
                     {po.status}
                   </StatusPill>
                 </TableCell>
@@ -483,7 +471,7 @@ const SupplierOrders: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">Status</dt>
                   <dd>
-                    <StatusPill variant={PO_STATUS_VARIANT[selected.status]}>
+                    <StatusPill variant={statusTone(selected.status)}>
                       {selected.status}
                     </StatusPill>
                   </dd>

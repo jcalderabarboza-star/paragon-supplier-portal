@@ -37,6 +37,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
+import { severityTone } from '../lib/statusTone';
 import { useToast } from '../hooks/useToast';
 import {
   useRiskAlerts,
@@ -78,12 +79,6 @@ const TOKEN_DANGER = '#BB0000';
 const TOKEN_INFO = '#1E5BAE';
 const TOKEN_MUTED = '#6B7785';
 
-const SEVERITY_VARIANT: Record<Severity, 'danger' | 'warning' | 'success'> = {
-  critical: 'danger',
-  high: 'danger',
-  medium: 'warning',
-  low: 'success',
-};
 
 const FEASIBILITY_VARIANT: Record<Feasibility, 'success' | 'warning' | 'danger'> = {
   high: 'success',
@@ -262,7 +257,7 @@ interface SparkTooltipPayload {
 const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => (
   <div className="flex flex-col gap-4">
     {geoRisks.map((r) => {
-      const sevVariant = SEVERITY_VARIANT[r.severity];
+      const sevVariant = severityTone(r.severity);
       const sevSoftBg =
         sevVariant === 'danger'
           ? 'bg-danger-soft'
@@ -414,7 +409,7 @@ const ExposureTab: React.FC<{ exposure: ExposureRow[] }> = ({ exposure }) => {
                 </StatusPill>
               </TableCell>
               <TableCell>
-                <StatusPill variant={SEVERITY_VARIANT[row.risk]}>
+                <StatusPill variant={severityTone(row.risk)}>
                   {row.risk}
                 </StatusPill>
               </TableCell>

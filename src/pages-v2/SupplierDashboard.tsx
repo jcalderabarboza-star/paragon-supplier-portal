@@ -16,6 +16,7 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { statusTone } from '../lib/statusTone';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -66,19 +67,6 @@ const CHANNEL_LABEL: Record<PreferredChannel, string> = {
   [PreferredChannel.WEB]: 'Web Portal',
   [PreferredChannel.EMAIL]: 'Email',
   [PreferredChannel.API]: 'API/EDI',
-};
-
-const PO_STATUS_VARIANT: Record<
-  POStatus,
-  'success' | 'warning' | 'danger' | 'info' | 'neutral'
-> = {
-  [POStatus.SENT]: 'neutral',
-  [POStatus.VIEWED]: 'neutral',
-  [POStatus.ACKNOWLEDGED]: 'info',
-  [POStatus.CONFIRMED]: 'info',
-  [POStatus.PARTIALLY_DELIVERED]: 'warning',
-  [POStatus.DELIVERED]: 'success',
-  [POStatus.CLOSED]: 'success',
 };
 
 const GRADE_TONE: Record<Grade, { stroke: string; soft: string }> = {
@@ -573,7 +561,7 @@ const SupplierDashboard: React.FC = () => {
                         <Data>{fmtIDR(po.totalValue)}</Data>
                       </TableCell>
                       <TableCell>
-                        <StatusPill variant={PO_STATUS_VARIANT[po.status]}>
+                        <StatusPill variant={statusTone(po.status)}>
                           {po.status}
                         </StatusPill>
                       </TableCell>

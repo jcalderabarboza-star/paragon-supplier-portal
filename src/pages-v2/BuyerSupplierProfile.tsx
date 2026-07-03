@@ -24,6 +24,7 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { statusTone } from '../lib/statusTone';
 import Tabs from '../components/ui-v2/Tabs';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
@@ -49,15 +50,6 @@ const TIER_LABEL: Record<SupplierTier, string> = {
   [SupplierTier.WHATSAPP]: 'Tier 1 · WhatsApp',
   [SupplierTier.WEB]: 'Tier 2 · Web Portal',
   [SupplierTier.API]: 'Tier 3 · API/EDI',
-};
-
-const STATUS_VARIANT: Record<
-  SupplierStatus,
-  'success' | 'warning' | 'danger'
-> = {
-  [SupplierStatus.ACTIVE]: 'success',
-  [SupplierStatus.ONBOARDING]: 'warning',
-  [SupplierStatus.SUSPENDED]: 'danger',
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -225,7 +217,7 @@ const BuyerSupplierProfile: React.FC = () => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <StatusPill variant={STATUS_VARIANT[supp.status]}>
+              <StatusPill variant={statusTone(supp.status)}>
                 {supp.status}
               </StatusPill>
               {supp.halalCertified && (
