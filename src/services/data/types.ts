@@ -354,6 +354,9 @@ export interface ProfileCert {
   visible: boolean;
   status: ProfileCertStatus;
   expiry: string | null;
+  // D-4: upload provenance — when the current document was filed (null when the
+  // cert is missing / not yet uploaded).
+  uploaded?: string | null;
 }
 
 export interface StorefrontProduct {

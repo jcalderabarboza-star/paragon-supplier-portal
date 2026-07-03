@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { Routes, Route } from 'react-router-dom';
 import { renderWithProviders } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
@@ -40,5 +40,24 @@ describe('BuyerSupplierProfile — honest states', () => {
   it('not found: shows the fallback for an unknown supplier id', async () => {
     renderWithProviders(routed, { route: '/buyer/suppliers/sup-999' });
     expect(await screen.findByText('Supplier not found')).toBeInTheDocument();
+  });
+
+  it('catalog tab: renders catalog rows folded onto the storefront read', async () => {
+    renderWithProviders(routed, { route: '/buyer/suppliers/sup-007' });
+    await screen.findByText('Company overview');
+    fireEvent.click(screen.getByRole('tab', { name: 'Catalog' }));
+    expect(
+      await screen.findByText('PET Bottle 100ml Airless Pump'),
+    ).toBeInTheDocument();
+  });
+
+  it('compliance tab: renders certs incl. the D-4 pending variant + upload date', async () => {
+    renderWithProviders(routed, { route: '/buyer/suppliers/sup-007' });
+    await screen.findByText('Company overview');
+    fireEvent.click(screen.getByRole('tab', { name: 'Compliance' }));
+    expect(await screen.findByText('BPOM Registration')).toBeInTheDocument();
+    // The seeded pending-review document exercises the 'pending' status variant.
+    expect(await screen.findByText('GMP Certificate')).toBeInTheDocument();
+    expect(await screen.findByText('Pending')).toBeInTheDocument();
   });
 });
