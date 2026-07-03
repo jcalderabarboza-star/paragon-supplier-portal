@@ -60,4 +60,15 @@ describe('BuyerSupplierProfile — honest states', () => {
     expect(await screen.findByText('GMP Certificate')).toBeInTheDocument();
     expect(await screen.findByText('Pending')).toBeInTheDocument();
   });
+
+  it('performance tab: recent POs fold onto usePurchaseOrders (no Sample data pill)', async () => {
+    renderWithProviders(routed, { route: '/buyer/suppliers/sup-007' });
+    await screen.findByText('Company overview');
+    fireEvent.click(screen.getByRole('tab', { name: 'Performance' }));
+    expect(await screen.findByText('Recent purchase orders')).toBeInTheDocument();
+    // A real sup-007 PO proves the scoped read drove the table.
+    expect(await screen.findByText('PO-2025-00108')).toBeInTheDocument();
+    // The former "Sample data" pill is gone from this section.
+    expect(screen.queryByText('Sample data')).not.toBeInTheDocument();
+  });
 });
