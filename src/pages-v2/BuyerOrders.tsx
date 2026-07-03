@@ -37,13 +37,18 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
-import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
-import { mockSuppliers } from '../data/mockSuppliers';
-import {
-  ChannelType,
-  POStatus,
-  PurchaseOrder,
-} from '../types/purchaseOrder.types';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import { usePurchaseOrders, useSuppliers } from '../services/query/hooks';
+import { formatIDR, formatNumber, formatDate } from '../lib/format';
+// POStatus / ChannelType are runtime enums (used as values) — they stay sourced
+// from the enum module; the canonical drift-resolved PurchaseOrder type comes
+// from the data layer.
+import { ChannelType, POStatus } from '../types/purchaseOrder.types';
+import type { PurchaseOrder } from '../services/data/types';
+
+const ORDERS_CRUMB = ['TRANSACT', 'PURCHASE ORDERS'];
 
 type GroupTab =
   | 'all'
@@ -100,26 +105,6 @@ const isOpen = (status: POStatus): boolean =>
 const isOverdue = (po: PurchaseOrder): boolean =>
   po.daysOverdue > 0 && isOpen(po.status);
 
-const formatIDR = (value: number): string =>
-  new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value);
-
-const formatNumber = (value: number): string =>
-  new Intl.NumberFormat('id-ID').format(value);
-
-const formatDate = (iso: string): string => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
-
 const COUNTRY_FLAG: Record<string, string> = {
   ID: 'ID',
   MY: 'MY',
@@ -131,10 +116,6 @@ const COUNTRY_FLAG: Record<string, string> = {
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-const supplierCountryById = new Map(
-  mockSuppliers.map((s) => [s.id, s.country]),
-);
 
 const FOOTER_ACTION_LABEL: Record<POStatus, string> = {
   [POStatus.SENT]: 'Send reminder',
@@ -170,14 +151,14 @@ const buildTimeline = (po: PurchaseOrder): TimelineEvent[] => {
     {
       id: 'created',
       title: 'PO Created',
-      timestamp: formatDate(po.createdDate),
+      timestamp: formatDate(po.orderDate),
       status: 'completed',
       icon: FileText,
     },
     {
       id: 'sent',
       title: 'Sent to Supplier',
-      timestamp: `${formatDate(po.createdDate)} · ${po.channel}`,
+      timestamp: `${formatDate(po.orderDate)} · ${po.channel}`,
       status: 'completed',
       icon: Send,
     },
@@ -199,7 +180,9 @@ const buildTimeline = (po: PurchaseOrder): TimelineEvent[] => {
     {
       id: 'gr',
       title: 'Goods Received',
-      timestamp: r >= 6 ? formatDate(po.deliveryDate) : undefined,
+      // Canonical dropped `deliveryDate`; goods-receipt aligns with the
+      // confirmed (actual) delivery date, so map to confirmedDeliveryDate.
+      timestamp: r >= 6 ? formatDate(po.confirmedDeliveryDate) : undefined,
       status: stateFor(5),
       icon: Package,
     },
@@ -220,13 +203,13 @@ const buildTimeline = (po: PurchaseOrder): TimelineEvent[] => {
 
 const buildComms = (po: PurchaseOrder) => [
   {
-    ts: `${po.createdDate} 09:00`,
+    ts: `${po.orderDate} 09:00`,
     sender: 'Procurement',
     channel: po.channel,
-    preview: `${po.poNumber} issued to ${po.supplierName}. Total ${formatIDR(po.totalAmount)}.`,
+    preview: `${po.poNumber} issued to ${po.supplierName}. Total ${formatIDR(po.totalValue)}.`,
   },
   {
-    ts: `${po.createdDate} 10:18`,
+    ts: `${po.orderDate} 10:18`,
     sender: po.supplierName,
     channel: po.channel,
     preview:
@@ -252,7 +235,16 @@ const BuyerOrders: React.FC = () => {
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
   const [commsOpen, setCommsOpen] = useState(false);
 
-  const orders = mockPurchaseOrders;
+  const ordersQuery = usePurchaseOrders();
+  const suppliersQuery = useSuppliers();
+  const orders = ordersQuery.data?.items ?? [];
+
+  // Country flags are a cosmetic cross-supplier join — best-effort off the
+  // suppliers list (empty for a supplier persona; the page still renders).
+  const supplierCountryById = useMemo(
+    () => new Map((suppliersQuery.data?.items ?? []).map((s) => [s.id, s.country])),
+    [suppliersQuery.data],
+  );
 
   const maxOrderDate = useMemo(() => {
     return orders.reduce(
@@ -318,6 +310,26 @@ const BuyerOrders: React.FC = () => {
     });
   }, [orders, group, range, search, maxOrderDate]);
 
+  // Primary gate is the PO read; the suppliers join is cosmetic and not gated.
+  if (ordersQuery.isPending) return <LoadingState breadcrumb={ORDERS_CRUMB} />;
+  if (ordersQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={ORDERS_CRUMB}
+        error={ordersQuery.error}
+        onRetry={() => ordersQuery.refetch()}
+      />
+    );
+  if (orders.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={ORDERS_CRUMB}
+        title="No purchase orders yet"
+        subtitle="Purchase orders across your supplier network appear here."
+        message="When POs are issued they show up here with their lifecycle and line items."
+      />
+    );
+
   const closePanel = () => {
     setSelectedPO(null);
     setCommsOpen(false);
@@ -330,7 +342,7 @@ const BuyerOrders: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['TRANSACT', 'PURCHASE ORDERS']}
+        breadcrumb={ORDERS_CRUMB}
         title="Purchase Orders"
         subtitle="Active and historical purchase orders across your supplier network."
         actions={
@@ -486,7 +498,7 @@ const BuyerOrders: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    {formatIDR(po.totalAmount)}
+                    {formatIDR(po.totalValue)}
                   </TableCell>
                   <TableCell>
                     <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
@@ -565,7 +577,7 @@ const BuyerOrders: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">Total value</dt>
                   <dd className="text-text-primary font-semibold">
-                    {formatIDR(selectedPO.totalAmount)}
+                    {formatIDR(selectedPO.totalValue)}
                   </dd>
                 </div>
                 <div>
@@ -656,7 +668,7 @@ const BuyerOrders: React.FC = () => {
                         Total
                       </td>
                       <td className="px-3 py-2 text-right font-semibold text-text-primary whitespace-nowrap">
-                        {formatIDR(selectedPO.totalAmount)}
+                        {formatIDR(selectedPO.totalValue)}
                       </td>
                     </tr>
                   </tfoot>
