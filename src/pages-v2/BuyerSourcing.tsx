@@ -259,7 +259,7 @@ const ComparisonRow: React.FC<{
   <tr className="border-t border-border-subtle">
     <th
       scope="row"
-      className="text-left px-2 py-2 font-medium text-text-tertiary uppercase tracking-wider text-[10px] sticky left-0 bg-bg-surface z-10 align-middle"
+      className="text-left px-2 py-2 font-medium text-text-tertiary uppercase tracking-wider text-[10px] w-36 min-w-[9rem] align-middle"
     >
       {label}
     </th>
@@ -1357,14 +1357,16 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 </div>
               ) : (
                 <div className="overflow-x-auto -mx-6 px-6">
-                  {/* min-w-full (not w-full): quote columns keep their 10rem
-                      min-width so 3+ quotes scroll horizontally instead of
-                      compressing into a collision / clipping the composite dials
-                      (RFQ-DRAWER-01). */}
+                  {/* RFQ-DRAWER-01: one horizontally-scrolling table, no sticky
+                      criterion column. The criterion (row-header) column and the
+                      quote columns each carry a min-width and scroll together, so
+                      they can never overlap — the pinned column previously
+                      collided with the first quote and clipped its composite dial
+                      (position:sticky + border-collapse). */}
                   <table className="min-w-full text-xs border-collapse">
                     <thead>
                       <tr>
-                        <th className="text-left px-2 py-2 font-semibold text-text-tertiary uppercase tracking-wider align-bottom w-32 sticky left-0 bg-bg-surface z-10">
+                        <th className="text-left px-2 py-2 font-semibold text-text-tertiary uppercase tracking-wider align-bottom w-36 min-w-[9rem]">
                           Criterion
                         </th>
                         {quotesForSelected.map((q) => {
