@@ -35,9 +35,13 @@ import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
-import { mockRfqs, RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
-import { mockQuotations } from '../data/mockQuotations';
-import { mockSuppliers } from '../data/mockSuppliers';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import { useRFQs, useQuotations, useSuppliers } from '../services/query/hooks';
+import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
+import type { Quotation } from '../data/mockQuotations';
+import type { Supplier } from '../services/data/types';
 
 type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed';
 
@@ -118,10 +122,6 @@ const STATUS_VARIANT: Record<
 
 const REFERENCE_TODAY = new Date('2026-05-18');
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-const supplierNameById = new Map(
-  mockSuppliers.map((s) => [s.id, s.name]),
-);
 
 const isAllResponded = (r: RFQ): boolean =>
   r.invitedSupplierIds.length > 0 &&
@@ -320,7 +320,21 @@ const EMPTY_DRAFT: DraftRfq = {
   invitedSupplierIds: [],
 };
 
-const BuyerSourcing: React.FC = () => {
+interface SourcingWorkspaceProps {
+  baseRfqs: RFQ[];
+  quotations: Quotation[];
+  suppliers: Supplier[];
+}
+
+const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
+  baseRfqs,
+  quotations,
+  suppliers,
+}) => {
+  const supplierNameById = useMemo(
+    () => new Map(suppliers.map((s) => [s.id, s.name])),
+    [suppliers],
+  );
   const [group, setGroup] = useState<GroupTab>('all');
   const [selectedCats, setSelectedCats] = useState<RFQCategory[]>([]);
   const [search, setSearch] = useState('');
@@ -346,10 +360,10 @@ const BuyerSourcing: React.FC = () => {
 
   const quotesForSelected = useMemo(() => {
     if (!selectedRfq) return [];
-    return mockQuotations.filter((q) => q.rfqId === selectedRfq.id);
-  }, [selectedRfq]);
+    return quotations.filter((q) => q.rfqId === selectedRfq.id);
+  }, [selectedRfq, quotations]);
 
-  const rfqs = useMemo(() => [...extraRfqs, ...mockRfqs], [extraRfqs]);
+  const rfqs = useMemo(() => [...extraRfqs, ...baseRfqs], [extraRfqs, baseRfqs]);
 
   const openWizard = () => {
     setDraft(EMPTY_DRAFT);
@@ -406,7 +420,7 @@ const BuyerSourcing: React.FC = () => {
 
   const submitWizard = () => {
     const yr = new Date().getFullYear();
-    const nextNum = mockRfqs.length + extraRfqs.length + 1;
+    const nextNum = baseRfqs.length + extraRfqs.length + 1;
     const newRfq: RFQ = {
       id: `rfq-new-${Date.now()}`,
       rfqNumber: `RFQ-${yr}-${String(nextNum).padStart(3, '0')}`,
@@ -439,16 +453,16 @@ const BuyerSourcing: React.FC = () => {
   const aiRecommendedSuppliers = useMemo(() => {
     if (!draft.category) return [];
     const cats = CATEGORY_TO_SUPPLIER_CATEGORY[draft.category];
-    return mockSuppliers
+    return suppliers
       .filter((s) => cats.includes(s.category))
       .sort((a, b) => b.otif - a.otif)
       .slice(0, 4);
-  }, [draft.category]);
+  }, [draft.category, suppliers]);
 
   const supplierTableFiltered = useMemo(() => {
     if (!draft.category) return [];
     const cats = CATEGORY_TO_SUPPLIER_CATEGORY[draft.category];
-    return mockSuppliers
+    return suppliers
       .filter((s) => cats.includes(s.category))
       .filter((s) => {
         if (!supplierSearch) return true;
@@ -458,7 +472,7 @@ const BuyerSourcing: React.FC = () => {
           s.country.toLowerCase().includes(q)
         );
       });
-  }, [draft.category, supplierSearch]);
+  }, [draft.category, supplierSearch, suppliers]);
 
   const wizardSteps: WizardStep[] = [
     {
@@ -1529,6 +1543,57 @@ const BuyerSourcing: React.FC = () => {
         </div>
       )}
     </AppShellV2>
+  );
+};
+
+const SOURCING_CRUMB = ['ACQUIRE', 'SOURCING & RFQ'];
+
+// Wrapper: reads the buyer-side sourcing aggregates through the scoped hooks and
+// renders the four honest states; the workspace inner keeps its local (Phase-2′,
+// non-persisting) RFQ-creation wizard state seeded from the resolved reads.
+const BuyerSourcing: React.FC = () => {
+  const rfqsQuery = useRFQs();
+  const quotationsQuery = useQuotations();
+  const suppliersQuery = useSuppliers();
+
+  if (
+    rfqsQuery.isPending ||
+    quotationsQuery.isPending ||
+    suppliersQuery.isPending
+  )
+    return <LoadingState breadcrumb={SOURCING_CRUMB} />;
+  if (rfqsQuery.isError || quotationsQuery.isError || suppliersQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={SOURCING_CRUMB}
+        error={
+          rfqsQuery.error ?? quotationsQuery.error ?? suppliersQuery.error
+        }
+        onRetry={() => {
+          rfqsQuery.refetch();
+          quotationsQuery.refetch();
+          suppliersQuery.refetch();
+        }}
+      />
+    );
+
+  const baseRfqs = rfqsQuery.data?.items ?? [];
+  if (baseRfqs.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={SOURCING_CRUMB}
+        title="No sourcing events yet"
+        subtitle="No RFQs are on file."
+        message="Sourcing events and quote evaluations appear here once RFQs are raised."
+      />
+    );
+
+  return (
+    <SourcingWorkspace
+      baseRfqs={baseRfqs}
+      quotations={quotationsQuery.data?.items ?? []}
+      suppliers={suppliersQuery.data?.items ?? []}
+    />
   );
 };
 
