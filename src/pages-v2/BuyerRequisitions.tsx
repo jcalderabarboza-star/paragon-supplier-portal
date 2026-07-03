@@ -16,6 +16,7 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
+import Data from '../components/ui-v2/Data';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import SearchBar from '../components/ui-v2/SearchBar';
@@ -317,9 +318,9 @@ const BuyerRequisitions: React.FC = () => {
                   onClick={() => setSelectedPR(pr)}
                 >
                   <TableCell>
-                    <div className="font-mono text-xs font-semibold text-text-primary">
+                    <Data as="div" className="text-xs font-semibold text-text-primary">
                       {pr.prNumber}
-                    </div>
+                    </Data>
                   </TableCell>
                   <TableCell>
                     <div className="font-semibold text-text-primary truncate max-w-[14rem]">
@@ -332,13 +333,13 @@ const BuyerRequisitions: React.FC = () => {
                     </span>
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap text-sm text-text-primary">
-                    {formatNumber(pr.quantity)} {pr.uom}
+                    <Data>{formatNumber(pr.quantity)} {pr.uom}</Data>
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-sm text-text-secondary">
-                    {formatDate(pr.requiredDate)}
+                    <Data>{formatDate(pr.requiredDate)}</Data>
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    {formatIDR(pr.estimatedValue, { compact: true })}
+                    <Data>{formatIDR(pr.estimatedValue, { compact: true })}</Data>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
@@ -356,13 +357,13 @@ const BuyerRequisitions: React.FC = () => {
                     </StatusPill>
                   </TableCell>
                   <TableCell>
-                    <span
-                      className={`font-mono text-xs ${
+                    <Data
+                      className={`text-xs ${
                         pr.linkedDoc ? 'text-text-primary' : 'text-text-tertiary'
                       }`}
                     >
                       {pr.linkedDoc || '—'}
-                    </span>
+                    </Data>
                   </TableCell>
                   <TableCell className="text-right">
                     <ChevronRight
@@ -468,21 +469,21 @@ const BuyerRequisitions: React.FC = () => {
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Quantity</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatNumber(selectedPR.quantity)} {selectedPR.uom}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Required date</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedPR.requiredDate)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Estimated value</dt>
-                  <dd className="text-text-primary font-semibold">
+                  <Data as="dd" className="text-text-primary font-semibold">
                     {formatIDR(selectedPR.estimatedValue, { compact: true })}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Priority</dt>
@@ -544,9 +545,9 @@ const BuyerRequisitions: React.FC = () => {
               {selectedPR.linkedDoc && (
                 <div className="mt-3 text-sm text-text-secondary">
                   Linked document:{' '}
-                  <span className="font-mono text-text-primary">
+                  <Data className="text-text-primary">
                     {selectedPR.linkedDoc}
-                  </span>
+                  </Data>
                 </div>
               )}
             </section>
