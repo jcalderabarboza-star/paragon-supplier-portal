@@ -30,7 +30,14 @@ import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
-import { useCurrentSupplier } from '../services/query/hooks';
+import EmptyState from '../components/ui-v2/EmptyState';
+import {
+  useCurrentSupplier,
+  useRFQs,
+  useQuotations,
+} from '../services/query/hooks';
+import type { RFQ, Supplier } from '../services/data/types';
+import { CHART_SERIES } from '../lib/chartPalette';
 
 interface OpenRFQ {
   id: string;
@@ -54,43 +61,6 @@ interface OpenRFQ {
   receivedVia: string;
   receivedDate: string;
 }
-
-const OPEN_RFQS_INITIAL: OpenRFQ[] = [
-  {
-    id: 'rfq-002',
-    rfqNumber: 'RFQ-2026-002',
-    material: 'PET Bottle 100ml Airless Pump',
-    category: 'Packaging Primary',
-    qty: '50,000 PCS',
-    deliveryLocation: 'NDC Jatake 6',
-    requestedDelivery: '2026-05-15',
-    deadline: '2026-04-15',
-    daysRemaining: 7,
-    specialRequirements:
-      'Food-grade PET, BPA-free. BPOM registered. Matching color: Wardah White. Provide sample batch with quotation.',
-    evaluationCriteria: { price: 40, quality: 25, leadTime: 15, sustainability: 10, risk: 10 },
-    status: 'Open — Awaiting Your Quote',
-    receivedVia: 'Web Portal',
-    receivedDate: '2026-04-01',
-  },
-  {
-    id: 'rfq-new',
-    rfqNumber: 'RFQ-2026-008',
-    material: 'Folding Carton 180gsm Emina',
-    category: 'Packaging Secondary',
-    qty: '150,000 PCS',
-    deliveryLocation: 'Plant Semarang',
-    requestedDelivery: '2026-05-30',
-    deadline: '2026-04-20',
-    daysRemaining: 12,
-    specialRequirements:
-      'FSC certified paper. Pantone color matching required. Include printing plate cost separately.',
-    evaluationCriteria: { price: 40, quality: 25, leadTime: 15, sustainability: 10, risk: 10 },
-    status: 'Open — Awaiting Your Quote',
-    receivedVia: 'Email',
-    receivedDate: '2026-04-05',
-  },
-];
 
 interface SubmittedQuote {
   rfqNumber: string;
@@ -167,11 +137,12 @@ const EVAL_SEGMENTS: {
   label: string;
   color: string;
 }[] = [
-  { key: 'price', label: 'Price', color: '#1E5BAE' }, // info
-  { key: 'quality', label: 'Quality', color: '#107E3E' }, // success
-  { key: 'leadTime', label: 'Lead Time', color: '#0097A7' }, // teal
-  { key: 'sustainability', label: 'Sustainability', color: '#354A5F' }, // mid
-  { key: 'risk', label: 'Risk', color: '#6B7785' }, // text-tertiary
+  // DP-2: single teal→navy ramp (chartPalette CHART_SERIES), not a rainbow.
+  { key: 'price', label: 'Price', color: CHART_SERIES[0] },
+  { key: 'quality', label: 'Quality', color: CHART_SERIES[1] },
+  { key: 'leadTime', label: 'Lead Time', color: CHART_SERIES[2] },
+  { key: 'sustainability', label: 'Sustainability', color: CHART_SERIES[3] },
+  { key: 'risk', label: 'Risk', color: CHART_SERIES[4] },
 ];
 
 const CHANNEL_ICON: Record<string, LucideIcon> = {
@@ -274,6 +245,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
             ? `${rfq.daysRemaining} days remaining`
             : `${rfq.daysRemaining} days to deadline`}
         </StatusPill>
+        <StatusPill variant="neutral">Sample detail</StatusPill>
         <span className="ml-auto inline-flex items-center gap-1 text-xs text-text-tertiary">
           <Icon size={12} />
           via {rfq.receivedVia}
@@ -434,6 +406,11 @@ const MyQuotesTab: React.FC<{
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2 text-xs text-text-tertiary">
+        <StatusPill variant="neutral">Sample data</StatusPill>
+        Quote detail (score, rank, line items) is illustrative pending the
+        supplier quotation read.
+      </div>
       {allQuotes.map((q, i) => (
         <div
           key={i}
@@ -446,7 +423,7 @@ const MyQuotesTab: React.FC<{
                   {q.rfqNumber}
                 </span>
                 {q.quoteNumber && (
-                  <span className="font-mono text-xs bg-info-soft text-info rounded-full px-2 py-0.5 font-semibold">
+                  <span className="font-mono text-xs bg-bg-hover text-text-secondary rounded-full px-2 py-0.5 font-semibold">
                     {q.quoteNumber}
                   </span>
                 )}
@@ -522,6 +499,10 @@ const AwardsTab: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2 text-xs text-text-tertiary">
+        <StatusPill variant="neutral">Sample data</StatusPill>
+        Award history is illustrative — no supplier award-outcome read exists yet.
+      </div>
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
@@ -605,22 +586,68 @@ const AwardsTab: React.FC = () => {
   );
 };
 
-const SupplierRFQs: React.FC = () => {
+const SAMPLE_EVAL: OpenRFQ['evaluationCriteria'] = {
+  price: 40,
+  quality: 25,
+  leadTime: 15,
+  sustainability: 10,
+  risk: 10,
+};
+
+// Adapter: canonical RFQ → the page's OpenRFQ display shape. Real fields come
+// from the read (number, material, category, qty, deadline, received date);
+// the supplier-facing detail the RFQ entity does NOT carry — evaluation weights,
+// special requirements, delivery location, received-via — is illustrative
+// sample, flagged with a "Sample detail" pill per card (partial migration).
+const RFQ_TODAY_MS = new Date('2026-04-25').getTime();
+
+const toOpenRfq = (r: RFQ): OpenRFQ => {
+  const daysRemaining = Math.max(
+    0,
+    Math.ceil(
+      (new Date(r.responseDeadline).getTime() - RFQ_TODAY_MS) / 86_400_000,
+    ),
+  );
+  return {
+    id: r.id,
+    rfqNumber: r.rfqNumber,
+    material: r.title,
+    category: r.materialCategory,
+    qty: `${r.totalQty.toLocaleString()} ${r.uom}`,
+    deliveryLocation: 'NDC Jatake 6',
+    requestedDelivery: r.awardDeadline,
+    deadline: r.responseDeadline,
+    daysRemaining,
+    specialRequirements:
+      'Full RFQ specifics arrive with the Paragon sourcing packet (illustrative sample).',
+    evaluationCriteria: SAMPLE_EVAL,
+    status: r.status === 'Open' ? 'Open — Awaiting Your Quote' : r.status,
+    receivedVia: 'Web Portal',
+    receivedDate: r.createdAt,
+  };
+};
+
+interface RfqWorkspaceProps {
+  mySupplier: Supplier;
+  initialRfqs: OpenRFQ[];
+  quoteCount: number;
+}
+
+const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
+  mySupplier,
+  initialRfqs,
+  quoteCount,
+}) => {
   const { toast } = useToast();
-  const { identity } = useCurrentIdentity();
-  const { supplierId } = identity;
   const [activeTab, setActiveTab] = useState<TabKey>('open');
-  const [openRFQs, setOpenRFQs] = useState<OpenRFQ[]>(OPEN_RFQS_INITIAL);
+  const [openRFQs, setOpenRFQs] = useState<OpenRFQ[]>(initialRfqs);
   const [quotePanelRFQ, setQuotePanelRFQ] = useState<OpenRFQ | null>(null);
   const [submittedNums, setSubmittedNums] = useState<string[]>([]);
   const [form, setForm] = useState<QuoteForm>(emptyQuoteForm);
   const [submitting, setSubmitting] = useState(false);
 
-  const supplierQuery = useCurrentSupplier();
-  const mySupplier = supplierQuery.data ?? null;
-
   const openCount = openRFQs.length;
-  const submittedCount = 1 + submittedNums.length;
+  const submittedCount = quoteCount + submittedNums.length;
   const awaitingCount = 1;
 
   const handleSubmitQuote = (rfq: OpenRFQ) => {
@@ -689,18 +716,6 @@ const SupplierRFQs: React.FC = () => {
       setActiveTab('quotes');
     }, 600);
   };
-
-  if (!supplierId) return <NoSupplierIdentity />;
-  if (supplierQuery.isPending) return <LoadingState breadcrumb={RFQS_CRUMB} />;
-  if (supplierQuery.isError)
-    return (
-      <ErrorState
-        breadcrumb={RFQS_CRUMB}
-        error={supplierQuery.error}
-        onRetry={() => supplierQuery.refetch()}
-      />
-    );
-  if (!mySupplier) return <NoSupplierIdentity />;
 
   return (
     <AppShellV2>
@@ -1006,6 +1021,69 @@ const SupplierRFQs: React.FC = () => {
         )}
       </SidePanel>
     </AppShellV2>
+  );
+};
+
+// Wrapper: reads the supplier + invited RFQs + quotations through the scoped
+// hooks and renders the four honest states; the workspace inner holds the local
+// (Phase-2′, non-persisting) quote-submission state seeded from the mapped read.
+// Partial migration (ruling B): the open-RFQ list + counts are wired; the RFQ
+// entity's missing supplier-facing detail is sampled and pilled per card, and
+// the quote/award tabs stay illustrative (pilled).
+const SupplierRFQs: React.FC = () => {
+  const { identity } = useCurrentIdentity();
+  const { supplierId } = identity;
+  const supplierQuery = useCurrentSupplier();
+  const rfqsQuery = useRFQs();
+  const quotationsQuery = useQuotations();
+
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (
+    supplierQuery.isPending ||
+    rfqsQuery.isPending ||
+    quotationsQuery.isPending
+  )
+    return <LoadingState breadcrumb={RFQS_CRUMB} />;
+  if (supplierQuery.isError || rfqsQuery.isError || quotationsQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={RFQS_CRUMB}
+        error={
+          supplierQuery.error ?? rfqsQuery.error ?? quotationsQuery.error
+        }
+        onRetry={() => {
+          supplierQuery.refetch();
+          rfqsQuery.refetch();
+          quotationsQuery.refetch();
+        }}
+      />
+    );
+
+  const mySupplier = supplierQuery.data ?? null;
+  if (!mySupplier) return <NoSupplierIdentity />;
+
+  const rfqs = rfqsQuery.data?.items ?? [];
+  const quoteCount = quotationsQuery.data?.items.length ?? 0;
+  if (rfqs.length === 0 && quoteCount === 0)
+    return (
+      <EmptyState
+        breadcrumb={RFQS_CRUMB}
+        title="No sourcing events yet"
+        subtitle={`No RFQ invitations on file for ${mySupplier.name}.`}
+        message="RFQ invitations from Paragon Corp appear here."
+      />
+    );
+
+  const initialRfqs = rfqs
+    .filter((r) => r.status === 'Open')
+    .map(toOpenRfq);
+
+  return (
+    <RfqWorkspace
+      mySupplier={mySupplier}
+      initialRfqs={initialRfqs}
+      quoteCount={quoteCount}
+    />
   );
 };
 
