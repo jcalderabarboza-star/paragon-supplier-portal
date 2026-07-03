@@ -11,6 +11,10 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+// Injected by vite `define` from process.env.VERCEL_ENV at build time
+// ('production' | 'preview' | 'development' | ''). See src/lib/envBadge.ts.
+declare const __DEPLOY_ENV__: string;
+
 declare module '*.svg' {
   const src: string;
   export default src;
