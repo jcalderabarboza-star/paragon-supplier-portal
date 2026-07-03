@@ -481,6 +481,42 @@ export interface SupplierScorecard {
   improvementActions?: ScorecardImprovementAction[];
 }
 
+// ─── Purchase requisitions (buyer-side ACQUIRE stage) ───────────────────────
+// The starting point of procurement (PR → Approval → Source check → PO or
+// Sourcing Event). A buyer-only internal document — suppliers never see PRs.
+// D-3: quantity and estimatedValue are NUMERIC (not pre-formatted strings), so
+// the render layer owns locale formatting via formatNumber / formatIDR.
+
+export type PRStatus =
+  | 'Draft'
+  | 'Pending Approval'
+  | 'Approved'
+  | 'Sourcing Event'
+  | 'PO Created'
+  | 'Rejected';
+
+export type PRPriority = 'High' | 'Medium' | 'Low';
+
+export interface PurchaseRequisition {
+  id: string;
+  prNumber: string;
+  material: string;
+  category: string;
+  quantity: number;
+  uom: string;
+  requiredDate: string;
+  estimatedValue: number;
+  requestor: string;
+  costCenter: string;
+  status: PRStatus;
+  createdDate: string;
+  approver: string;
+  sourceOfSupply: string;
+  linkedDoc: string;
+  priority: PRPriority;
+  justification: string;
+}
+
 // ─── Risk / Compliance entities (buyer-side, inline today) ──────────────────
 
 export type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
@@ -840,6 +876,10 @@ export interface ObligationFilter {
   owner?: ObligationOwner;
 }
 
+export interface PRFilter {
+  status?: PRStatus | PRStatus[];
+}
+
 // ─── Service interfaces — the contract Phase 3 implements ───────────────────
 
 export interface ISupplierService {
@@ -888,6 +928,9 @@ export interface IProcurementService {
 
   // — Supplier scorecard (buyer-only portfolio grading) —
   getSupplierScorecards(scope: QueryScope): Promise<Page<SupplierScorecard>>;
+
+  // — Purchase requisitions (buyer-only ACQUIRE stage) —
+  getRequisitions(scope: QueryScope, filter?: PRFilter): Promise<Page<PurchaseRequisition>>;
 
   // — Buyer command-center aggregates (buyer-only) —
   getProductionLines(scope: QueryScope): Promise<Page<ProductionLineRow>>;

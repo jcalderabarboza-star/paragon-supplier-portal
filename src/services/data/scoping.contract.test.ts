@@ -124,6 +124,17 @@ describe('service scoping contract — non-supplierId scoping models', () => {
     expect(basf?.complianceIssue?.level).toBe('expiring');
   });
 
+  it('getRequisitions: buyer sees PRs; a supplier sees none; status filter narrows', async () => {
+    const all = (await svc.procurement.getRequisitions(buyerScope)).items;
+    expect(all.length).toBeGreaterThan(0);
+    expect((await svc.procurement.getRequisitions(aScope)).items.length).toBe(0);
+    // The status filter narrows to a strict subset of the unfiltered buyer list.
+    const drafts = (await svc.procurement.getRequisitions(buyerScope, { status: 'Draft' })).items;
+    expect(drafts.every((r) => r.status === 'Draft')).toBe(true);
+    expect(drafts.length).toBeGreaterThan(0);
+    expect(drafts.length).toBeLessThan(all.length);
+  });
+
   it('getKpis: improvement actions are wired into the snapshot', async () => {
     // Buyer and the seeded supplier read the populated snapshot; an unrelated
     // supplier gets the empty snapshot.

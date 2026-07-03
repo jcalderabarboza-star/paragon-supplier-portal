@@ -12,6 +12,7 @@ import { MOCK_ASNS } from './fixtures/supplierShipments';
 import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
 import { DOCUMENTS } from './fixtures/supplierDocuments';
 import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
+import { REQUISITIONS } from './fixtures/buyerRequisitions';
 import { INVOICES as MOCK_SUPPLIER_INVOICES } from './fixtures/supplierInvoices';
 import { BUYER_INVOICES } from './fixtures/buyerInvoices';
 import {
@@ -61,6 +62,8 @@ import type {
   ProductionLineRow,
   SupplierHealthRow,
   SupplierScorecard,
+  PurchaseRequisition,
+  PRFilter,
 } from '../types';
 
 const matchesList = <T>(value: T, filter: T | T[] | undefined): boolean => {
@@ -315,6 +318,18 @@ export class MockProcurementService implements IProcurementService {
     return {
       items: scope.personaType === 'buyer' ? [...SUPPLIER_SCORECARDS] : [],
     };
+  }
+
+  // ─── Purchase requisitions (buyer-only ACQUIRE stage) ─────────────────────
+
+  async getRequisitions(
+    scope: QueryScope,
+    filter?: PRFilter,
+  ): Promise<Page<PurchaseRequisition>> {
+    if (scope.personaType !== 'buyer') return { items: [] };
+    let rows = [...REQUISITIONS];
+    if (filter?.status) rows = rows.filter((r) => matchesList(r.status, filter.status));
+    return { items: rows };
   }
 
   // ─── Buyer command-center aggregates (buyer-only) ─────────────────────────
