@@ -241,7 +241,7 @@ const RequestTypeSelector: React.FC<{
           >
             <div
               className={`w-11 h-11 rounded-md flex items-center justify-center shrink-0 ${
-                selected ? 'bg-teal text-white' : 'bg-bg-hover text-text-tertiary'
+                selected ? 'bg-action text-white' : 'bg-bg-hover text-text-tertiary'
               }`}
             >
               <Icon size={20} />
@@ -730,7 +730,7 @@ const DocumentsAndBankStep: React.FC<StepProps> = ({ form, setForm, errors }) =>
                   className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-md font-semibold text-xs cursor-pointer whitespace-nowrap ${
                     d.uploaded
                       ? 'bg-success-soft text-success'
-                      : 'bg-teal text-white hover:bg-teal-hover'
+                      : 'bg-action text-white hover:bg-action-hover'
                   }`}
                 >
                   {d.uploaded ? (
