@@ -409,6 +409,78 @@ export interface PerformancePoint {
   ackHrs: number;
 }
 
+// ─── Supplier scorecard (buyer-side performance intelligence) ───────────────
+// Portfolio scorecard: one record per active supplier, read buyer-only (the
+// scorecard spans the whole network — a supplier does not see the cross-network
+// grading view). D-2: the improvement-plan actions and the compliance issue are
+// per-supplier OPTIONAL fields on the record, not shared consts keyed by name.
+
+export type ScorecardGradeLetter = 'A' | 'B' | 'C' | 'D';
+
+export interface ScorecardKpi {
+  name: string;
+  value: string;
+  target: string;
+  pct: number;
+  color: string;
+  trend: KpiTrend;
+}
+
+export interface ScorecardRadarAxis {
+  axis: string;
+  value: number;
+}
+
+export type CommLogStatus = 'Completed' | 'Active' | 'Open' | 'Resolved';
+
+export interface CommLogEntry {
+  date: string;
+  type: string;
+  channel: string;
+  message: string;
+  status: CommLogStatus;
+}
+
+export type ScorecardComplianceLevel = 'expired' | 'expiring' | 'missing';
+
+export interface ScorecardComplianceIssue {
+  level: ScorecardComplianceLevel;
+  label: string;
+}
+
+export type ScorecardActionStatus = 'In Progress' | 'Pending';
+
+export interface ScorecardImprovementAction {
+  item: string;
+  due: string;
+  owner: string;
+  status: ScorecardActionStatus;
+}
+
+export interface SupplierScorecard {
+  id: string;
+  name: string;
+  country: string;
+  category: string;
+  tier: string;
+  sapBp: string;
+  channel: string;
+  grade: ScorecardGradeLetter;
+  score: number;
+  status: string;
+  kpis: ScorecardKpi[];
+  radar: ScorecardRadarAxis[];
+  otifTrend: number[];
+  ackSpeedTrend: number[];
+  defectTrend: number[];
+  impPlan?: boolean;
+  commLog: CommLogEntry[];
+  // D-2: folded off the page's shared IMPROVEMENT_ACTIONS / COMPLIANCE_ISSUES
+  // consts so per-supplier data lives on the per-supplier record.
+  complianceIssue?: ScorecardComplianceIssue | null;
+  improvementActions?: ScorecardImprovementAction[];
+}
+
 // ─── Risk / Compliance entities (buyer-side, inline today) ──────────────────
 
 export type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
@@ -813,6 +885,9 @@ export interface IProcurementService {
   // — KPIs / performance —
   getKpis(scope: QueryScope): Promise<KpiSnapshot>;
   getPerformanceTrend(scope: QueryScope, range: TrendRange): Promise<Page<PerformancePoint>>;
+
+  // — Supplier scorecard (buyer-only portfolio grading) —
+  getSupplierScorecards(scope: QueryScope): Promise<Page<SupplierScorecard>>;
 
   // — Buyer command-center aggregates (buyer-only) —
   getProductionLines(scope: QueryScope): Promise<Page<ProductionLineRow>>;

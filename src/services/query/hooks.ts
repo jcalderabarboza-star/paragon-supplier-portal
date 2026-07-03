@@ -128,6 +128,11 @@ export const usePerformanceTrend = (range: TrendRange) =>
     svc.procurement.getPerformanceTrend(scope, range),
   );
 
+export const useSupplierScorecards = () =>
+  useServiceQuery(['procurement', 'supplierScorecards'], (svc, scope) =>
+    svc.procurement.getSupplierScorecards(scope),
+  );
+
 export const useProductionLines = () =>
   useServiceQuery(['procurement', 'productionLines'], (svc, scope) =>
     svc.procurement.getProductionLines(scope),

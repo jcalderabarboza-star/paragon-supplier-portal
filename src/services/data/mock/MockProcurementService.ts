@@ -11,6 +11,7 @@ import { applySupplierScope } from '../scoping';
 import { MOCK_ASNS } from './fixtures/supplierShipments';
 import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
 import { DOCUMENTS } from './fixtures/supplierDocuments';
+import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
 import { INVOICES as MOCK_SUPPLIER_INVOICES } from './fixtures/supplierInvoices';
 import { BUYER_INVOICES } from './fixtures/buyerInvoices';
 import {
@@ -59,6 +60,7 @@ import type {
   TrendRange,
   ProductionLineRow,
   SupplierHealthRow,
+  SupplierScorecard,
 } from '../types';
 
 const matchesList = <T>(value: T, filter: T | T[] | undefined): boolean => {
@@ -301,6 +303,18 @@ export class MockProcurementService implements IProcurementService {
     _range: TrendRange,
   ): Promise<Page<PerformancePoint>> {
     return { items: trendForScope(scope) };
+  }
+
+  // ─── Supplier scorecard (buyer-only portfolio grading) ────────────────────
+  // Cross-network grading view. Suppliers do not see it — [] for the supplier
+  // persona (mirrors the analytics/engagement buyer-only aggregate pattern).
+
+  async getSupplierScorecards(
+    scope: QueryScope,
+  ): Promise<Page<SupplierScorecard>> {
+    return {
+      items: scope.personaType === 'buyer' ? [...SUPPLIER_SCORECARDS] : [],
+    };
   }
 
   // ─── Buyer command-center aggregates (buyer-only) ─────────────────────────
