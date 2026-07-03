@@ -1,0 +1,5 @@
+# Pre-release prototype (Odyssey program) — not for public indexing (SEC-GATE-01).
+# The access gate additionally serves X-Robots-Tag: noindex on every unauthenticated
+# response, and app/index.html carries a noindex meta tag.
+User-agent: *
+Disallow: /

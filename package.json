@@ -10,10 +10,12 @@
     "build:vercel": "VERCEL=1 vite build",
     "preview:vercel": "vite preview",
     "test": "vitest",
-    "test:run": "vitest run --passWithNoTests"
+    "test:run": "vitest run --passWithNoTests",
+    "test:gate": "node --test gate/session.test.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.2",
+    "@vercel/functions": "^3.7.5",
     "i18next": "^26.3.4",
     "lucide-react": "^1.16.0",
     "react": "^18.3.1",
