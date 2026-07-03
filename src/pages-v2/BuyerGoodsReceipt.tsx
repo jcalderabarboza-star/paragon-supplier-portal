@@ -27,13 +27,16 @@ import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
 import GRInspectionWizard from '../components/v2-features/GRInspectionWizard';
 import { useToast } from '../hooks/useToast';
-import {
-  mockGoodsReceipts as mockGRSeed,
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import { useGoodsReceipts, useSuppliers } from '../services/query/hooks';
+import type {
   GoodsReceipt,
   GRStatus,
   InspectionResult,
-} from '../data/mockGoodsReceipts';
-import { mockSuppliers } from '../data/mockSuppliers';
+  Supplier,
+} from '../services/data/types';
 
 const TODAY = '2026-05-20';
 
@@ -77,8 +80,6 @@ const CHECK_VARIANT: Record<string, 'success' | 'warning' | 'danger' | 'neutral'
   Pending: 'warning',
   'N/A': 'neutral',
 };
-
-const supplierById = new Map(mockSuppliers.map((s) => [s.id, s]));
 
 const formatNumber = (n: number): string =>
   new Intl.NumberFormat('id-ID').format(n);
@@ -126,13 +127,25 @@ const totals = (results: InspectionResult[]) =>
     { received: 0, accepted: 0, rejected: 0 }
   );
 
-const BuyerGoodsReceipt: React.FC = () => {
+interface GoodsReceiptWorkspaceProps {
+  goodsReceipts: GoodsReceipt[];
+  suppliers: Supplier[];
+}
+
+const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
+  goodsReceipts,
+  suppliers,
+}) => {
   const { toast } = useToast();
+  const supplierById = useMemo(
+    () => new Map(suppliers.map((s) => [s.id, s])),
+    [suppliers],
+  );
   const [tab, setTab] = useState<GroupTab>('all');
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [localGRs, setLocalGRs] = useState<GoodsReceipt[]>(mockGRSeed);
+  const [localGRs, setLocalGRs] = useState<GoodsReceipt[]>(goodsReceipts);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardAsnId, setWizardAsnId] = useState<string | undefined>(undefined);
 
@@ -786,6 +799,48 @@ const BuyerGoodsReceipt: React.FC = () => {
         />
       )}
     </AppShellV2>
+  );
+};
+
+const GR_CRUMB = ['TRANSACT', 'GOODS RECEIPT & QC'];
+
+// Wrapper: reads the QC command-center data through the scoped hooks and renders
+// the four honest states; the workspace inner holds the local (Phase-2′,
+// non-persisting) inspection-wizard state seeded from the resolved reads.
+const BuyerGoodsReceipt: React.FC = () => {
+  const grQuery = useGoodsReceipts();
+  const suppliersQuery = useSuppliers();
+
+  if (grQuery.isPending || suppliersQuery.isPending)
+    return <LoadingState breadcrumb={GR_CRUMB} />;
+  if (grQuery.isError || suppliersQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={GR_CRUMB}
+        error={grQuery.error ?? suppliersQuery.error}
+        onRetry={() => {
+          grQuery.refetch();
+          suppliersQuery.refetch();
+        }}
+      />
+    );
+
+  const goodsReceipts = grQuery.data?.items ?? [];
+  if (goodsReceipts.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={GR_CRUMB}
+        title="No goods receipts yet"
+        subtitle="No goods receipts have been posted."
+        message="Goods receipts and QC inspections appear here as deliveries arrive."
+      />
+    );
+
+  return (
+    <GoodsReceiptWorkspace
+      goodsReceipts={goodsReceipts}
+      suppliers={suppliersQuery.data?.items ?? []}
+    />
   );
 };
 

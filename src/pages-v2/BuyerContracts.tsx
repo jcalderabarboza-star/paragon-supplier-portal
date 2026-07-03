@@ -39,18 +39,20 @@ import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
-import {
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import { useContracts, useObligations, useSuppliers } from '../services/query/hooks';
+import type {
   ContractObligation,
   ObligationStatus,
 } from '../data/mockObligations';
-import {
-  mockContracts,
+import type {
   Contract,
   ContractStatus,
   ContractType,
 } from '../data/mockContracts';
-import { mockSuppliers } from '../data/mockSuppliers';
-import { mockObligations } from '../data/mockObligations';
+import type { Supplier } from '../services/data/types';
 
 type GroupTab =
   | 'all'
@@ -92,7 +94,6 @@ const COUNTRY_FLAG: Record<string, string> = {
   IN: 'IN',
 };
 
-const supplierById = new Map(mockSuppliers.map((s) => [s.id, s]));
 
 const formatIDR = (value: number): string =>
   new Intl.NumberFormat('id-ID', {
@@ -388,7 +389,21 @@ const matchesGroup = (c: Contract, g: GroupTab): boolean => {
   return true;
 };
 
-const BuyerContracts: React.FC = () => {
+interface ContractsWorkspaceProps {
+  baseContracts: Contract[];
+  obligations: ContractObligation[];
+  suppliers: Supplier[];
+}
+
+const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
+  baseContracts,
+  obligations,
+  suppliers,
+}) => {
+  const supplierById = useMemo(
+    () => new Map(suppliers.map((s) => [s.id, s])),
+    [suppliers],
+  );
   const [group, setGroup] = useState<GroupTab>('all');
   const [selectedTypes, setSelectedTypes] = useState<ContractType[]>([]);
   const [search, setSearch] = useState('');
@@ -405,8 +420,8 @@ const BuyerContracts: React.FC = () => {
   const { toast } = useToast();
 
   const contracts = useMemo(
-    () => [...extraContracts, ...mockContracts],
-    [extraContracts],
+    () => [...extraContracts, ...baseContracts],
+    [extraContracts, baseContracts],
   );
 
   const updateDraft = <K extends keyof DraftContract>(
@@ -478,14 +493,14 @@ const BuyerContracts: React.FC = () => {
     }));
 
   const supplierTableFiltered = useMemo(() => {
-    if (!supplierSearch) return mockSuppliers;
+    if (!supplierSearch) return suppliers;
     const q = supplierSearch.toLowerCase();
-    return mockSuppliers.filter(
+    return suppliers.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
         s.country.toLowerCase().includes(q),
     );
-  }, [supplierSearch]);
+  }, [supplierSearch, suppliers]);
 
   const isStepValid = (step: number): boolean => {
     if (step === 0) {
@@ -506,7 +521,7 @@ const BuyerContracts: React.FC = () => {
 
   const submitWizard = () => {
     const yr = new Date().getFullYear();
-    const nextNum = mockContracts.length + extraContracts.length + 1;
+    const nextNum = baseContracts.length + extraContracts.length + 1;
     const todayIso = new Date().toISOString().slice(0, 10);
     const end = new Date(draft.endDate);
     const today = new Date(todayIso);
@@ -1014,10 +1029,10 @@ const BuyerContracts: React.FC = () => {
 
   const obligationsForSelected = useMemo<ContractObligation[]>(() => {
     if (!selectedContract) return [];
-    return mockObligations
+    return obligations
       .filter((o) => o.contractId === selectedContract.id)
       .sort(sortObligations);
-  }, [selectedContract]);
+  }, [selectedContract, obligations]);
 
   const closePanel = () => {
     setSelectedContract(null);
@@ -1057,8 +1072,8 @@ const BuyerContracts: React.FC = () => {
   }, [contracts, counts.active]);
 
   const overdueObligations = useMemo(
-    () => mockObligations.filter((o) => o.status === 'Overdue').length,
-    [],
+    () => obligations.filter((o) => o.status === 'Overdue').length,
+    [obligations],
   );
 
   const filtered = useMemo(() => {
@@ -1697,6 +1712,64 @@ const BuyerContracts: React.FC = () => {
         </div>
       )}
     </AppShellV2>
+  );
+};
+
+const CONTRACTS_CRUMB = ['ACQUIRE', 'CONTRACTS'];
+
+// Wrapper: reads the buyer-side contract portfolio (contracts + obligations
+// scoped via parent contract) through the scoped hooks and renders the four
+// honest states; the workspace inner keeps its local (Phase-2′, non-persisting)
+// contract-creation wizard state seeded from the resolved reads.
+const BuyerContracts: React.FC = () => {
+  const contractsQuery = useContracts();
+  const obligationsQuery = useObligations();
+  const suppliersQuery = useSuppliers();
+
+  if (
+    contractsQuery.isPending ||
+    obligationsQuery.isPending ||
+    suppliersQuery.isPending
+  )
+    return <LoadingState breadcrumb={CONTRACTS_CRUMB} />;
+  if (
+    contractsQuery.isError ||
+    obligationsQuery.isError ||
+    suppliersQuery.isError
+  )
+    return (
+      <ErrorState
+        breadcrumb={CONTRACTS_CRUMB}
+        error={
+          contractsQuery.error ??
+          obligationsQuery.error ??
+          suppliersQuery.error
+        }
+        onRetry={() => {
+          contractsQuery.refetch();
+          obligationsQuery.refetch();
+          suppliersQuery.refetch();
+        }}
+      />
+    );
+
+  const baseContracts = contractsQuery.data?.items ?? [];
+  if (baseContracts.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={CONTRACTS_CRUMB}
+        title="No contracts yet"
+        subtitle="No contracts are on file across your supplier network."
+        message="Contracts, obligations, and the renewal pipeline appear here once agreements are signed."
+      />
+    );
+
+  return (
+    <ContractsWorkspace
+      baseContracts={baseContracts}
+      obligations={obligationsQuery.data?.items ?? []}
+      suppliers={suppliersQuery.data?.items ?? []}
+    />
   );
 };
 
