@@ -31,12 +31,17 @@ import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
-import { mockSuppliers } from '../data/mockSuppliers';
-import { POStatus, PurchaseOrder } from '../types/purchaseOrder.types';
+import { POStatus } from '../types/purchaseOrder.types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
-import type { AsnStatus } from '../services/data/types';
-import { MOCK_ASNS } from '../services/data/mock/fixtures/supplierShipments';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import {
+  useCurrentSupplier,
+  usePurchaseOrders,
+  useASNs,
+} from '../services/query/hooks';
+import type { AsnStatus, ASN, PurchaseOrder } from '../services/data/types';
 
 type TabKey = 'shipments' | 'create' | 'dock';
 type StatusFilter = AsnStatus | 'All';
@@ -61,6 +66,8 @@ const fmtDate = (s: string): string => {
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
+
+const SHIPMENTS_CRUMB = ['TRANSACT', 'SHIPMENTS & ASN'];
 
 interface AsnForm {
   poId: string;
@@ -162,6 +169,7 @@ const DockAppointments: React.FC = () => (
 );
 
 interface ShipmentsListProps {
+  asns: ASN[];
   statusFilter: StatusFilter;
   expanded: Set<string>;
   onToggleExpand: (asnNumber: string) => void;
@@ -172,6 +180,7 @@ interface ShipmentsListProps {
 }
 
 const ShipmentsList: React.FC<ShipmentsListProps> = ({
+  asns,
   statusFilter,
   expanded,
   onToggleExpand,
@@ -183,15 +192,15 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
   const filtered = useMemo(
     () =>
       statusFilter === 'All'
-        ? MOCK_ASNS
-        : MOCK_ASNS.filter((a) => a.status === statusFilter),
-    [statusFilter],
+        ? asns
+        : asns.filter((a) => a.status === statusFilter),
+    [statusFilter, asns],
   );
 
   const pendingPOs = useMemo(() => {
-    const asnPoRefs = new Set(MOCK_ASNS.map((a) => a.poReference));
+    const asnPoRefs = new Set(asns.map((a) => a.poReference));
     return confirmedPOs.filter((po) => !asnPoRefs.has(po.poNumber));
-  }, [confirmedPOs]);
+  }, [confirmedPOs, asns]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -458,19 +467,15 @@ const SupplierShipments: React.FC = () => {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<AsnForm>(DEFAULT_FORM);
 
-  const mySupplier = useMemo(
-    () => mockSuppliers.find((s) => s.id === supplierId),
-    [supplierId],
-  );
+  const supplierQuery = useCurrentSupplier();
+  const asnsQuery = useASNs();
+  const posQuery = usePurchaseOrders({ status: POStatus.CONFIRMED });
 
-  const MY_POS = useMemo(
-    () => mockPurchaseOrders.filter((po) => po.supplierId === supplierId),
-    [supplierId],
-  );
-
+  const mySupplier = supplierQuery.data ?? null;
+  const asns = useMemo(() => asnsQuery.data?.items ?? [], [asnsQuery.data]);
   const CONFIRMED_POS = useMemo(
-    () => MY_POS.filter((po) => po.status === POStatus.CONFIRMED),
-    [MY_POS],
+    () => posQuery.data?.items ?? [],
+    [posQuery.data],
   );
 
   const counts = useMemo(() => {
@@ -481,9 +486,9 @@ const SupplierShipments: React.FC = () => {
       Delivered: 0,
       Discrepancy: 0,
     };
-    for (const a of MOCK_ASNS) base[a.status]++;
+    for (const a of asns) base[a.status]++;
     return base;
-  }, []);
+  }, [asns]);
 
   const toggleExpand = (asnNumber: string) => {
     setExpanded((prev) => {
@@ -524,7 +529,31 @@ const SupplierShipments: React.FC = () => {
     setTab('create');
   };
 
-  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (supplierQuery.isPending || asnsQuery.isPending || posQuery.isPending)
+    return <LoadingState breadcrumb={SHIPMENTS_CRUMB} />;
+  if (supplierQuery.isError || asnsQuery.isError || posQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={SHIPMENTS_CRUMB}
+        error={supplierQuery.error ?? asnsQuery.error ?? posQuery.error}
+        onRetry={() => {
+          supplierQuery.refetch();
+          asnsQuery.refetch();
+          posQuery.refetch();
+        }}
+      />
+    );
+  if (!mySupplier) return <NoSupplierIdentity />;
+  if (asns.length === 0 && CONFIRMED_POS.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={SHIPMENTS_CRUMB}
+        title="No shipments yet"
+        subtitle="No advance ship notices or confirmed purchase orders to ship."
+        message="ASNs and shippable confirmed POs will appear here."
+      />
+    );
 
   const selectedPO = CONFIRMED_POS.find((p) => p.id === form.poId);
   const step1Valid = form.poId !== '';
@@ -839,7 +868,7 @@ const SupplierShipments: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['TRANSACT', 'SHIPMENTS & ASN']}
+        breadcrumb={SHIPMENTS_CRUMB}
         title="Shipments & ASN"
         subtitle={`Advance Ship Notices · Paragon WMS integration · EDI 856 — ${mySupplier.name}.`}
         actions={
@@ -859,7 +888,7 @@ const SupplierShipments: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {MOCK_ASNS.length} shipments · {CONFIRMED_POS.length} confirmed POs
+        {asns.length} shipments · {CONFIRMED_POS.length} confirmed POs
         ready to ship
       </PageMetaLine>
 
@@ -903,7 +932,7 @@ const SupplierShipments: React.FC = () => {
 
       <SubTabs<TabKey>
         options={[
-          { id: 'shipments', label: 'My Shipments', count: MOCK_ASNS.length },
+          { id: 'shipments', label: 'My Shipments', count: asns.length },
           { id: 'create', label: 'Create ASN' },
           { id: 'dock', label: 'Dock Appointments', count: 1 },
         ]}
@@ -914,6 +943,7 @@ const SupplierShipments: React.FC = () => {
 
       {tab === 'shipments' && (
         <ShipmentsList
+          asns={asns}
           statusFilter={statusFilter}
           expanded={expanded}
           onToggleExpand={toggleExpand}

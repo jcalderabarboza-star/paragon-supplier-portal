@@ -23,11 +23,19 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { mockSuppliers } from '../data/mockSuppliers';
-import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
 import { PreferredChannel } from '../types/supplier.types';
 import { POStatus } from '../types/purchaseOrder.types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import {
+  useCurrentSupplier,
+  usePurchaseOrders,
+  useSupplierInvoices,
+  useDocuments,
+} from '../services/query/hooks';
+import type { SupplierDocumentStatus } from '../services/data/types';
 
 type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
 
@@ -94,13 +102,26 @@ interface ActionItem {
   time: string;
 }
 
-interface DocRow {
-  name: string;
-  status: string;
-  variant: 'success' | 'warning' | 'danger';
-  expiry: string;
-  action: string;
-}
+const DASH_CRUMB = ['ACQUIRE', 'DASHBOARD'];
+
+const DOC_STATUS_TONE: Record<
+  SupplierDocumentStatus,
+  'success' | 'warning' | 'danger' | 'neutral'
+> = {
+  Valid: 'success',
+  'Expiring Soon': 'warning',
+  Expired: 'danger',
+  'Awaiting Upload': 'danger',
+  'Under Review': 'neutral',
+};
+
+const DOC_STATUS_ACTION: Record<SupplierDocumentStatus, string> = {
+  Valid: 'View',
+  'Expiring Soon': 'Renew',
+  Expired: 'Renew',
+  'Awaiting Upload': 'Upload',
+  'Under Review': 'View',
+};
 
 const GradeBadge: React.FC<{ grade: Grade; size?: 'sm' | 'md' }> = ({
   grade,
@@ -148,14 +169,28 @@ const SupplierDashboard: React.FC = () => {
   const { supplierId } = identity;
   const [dismissedActions, setDismissedActions] = useState<string[]>([]);
 
-  const mySupplier = useMemo(
-    () => mockSuppliers.find((s) => s.id === supplierId),
-    [supplierId],
+  const supplierQuery = useCurrentSupplier();
+  const posQuery = usePurchaseOrders();
+  const invoicesQuery = useSupplierInvoices();
+  const documentsQuery = useDocuments();
+
+  const mySupplier = supplierQuery.data ?? null;
+
+  const MY_POS = useMemo(() => posQuery.data?.items ?? [], [posQuery.data]);
+
+  const unpaidInvoices = useMemo(
+    () =>
+      (invoicesQuery.data?.items ?? []).filter(
+        (inv) =>
+          inv.status !== 'Payment Released' &&
+          inv.status !== 'Remittance Received',
+      ).length,
+    [invoicesQuery.data],
   );
 
-  const MY_POS = useMemo(
-    () => mockPurchaseOrders.filter((po) => po.supplierId === supplierId),
-    [supplierId],
+  const documents = useMemo(
+    () => (documentsQuery.data?.items ?? []).slice(0, 4),
+    [documentsQuery.data],
   );
 
   const dismiss = (id: string) =>
@@ -197,7 +232,46 @@ const SupplierDashboard: React.FC = () => {
     [MY_POS],
   );
 
-  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (
+    supplierQuery.isPending ||
+    posQuery.isPending ||
+    invoicesQuery.isPending ||
+    documentsQuery.isPending
+  )
+    return <LoadingState breadcrumb={DASH_CRUMB} />;
+  if (
+    supplierQuery.isError ||
+    posQuery.isError ||
+    invoicesQuery.isError ||
+    documentsQuery.isError
+  )
+    return (
+      <ErrorState
+        breadcrumb={DASH_CRUMB}
+        error={
+          supplierQuery.error ??
+          posQuery.error ??
+          invoicesQuery.error ??
+          documentsQuery.error
+        }
+        onRetry={() => {
+          supplierQuery.refetch();
+          posQuery.refetch();
+          invoicesQuery.refetch();
+          documentsQuery.refetch();
+        }}
+      />
+    );
+  if (!mySupplier)
+    return (
+      <EmptyState
+        breadcrumb={DASH_CRUMB}
+        title="No supplier profile yet"
+        subtitle="Your Paragon supplier record is not available."
+        message="Your dashboard appears here once Paragon links your supplier profile."
+      />
+    );
 
   const grade = mySupplier.scorecardGrade as Grade;
   const channelLabel = CHANNEL_LABEL[mySupplier.preferredChannel];
@@ -275,39 +349,6 @@ const SupplierDashboard: React.FC = () => {
   );
   const remaining = activeActions.length;
 
-  const documents: DocRow[] = [
-    {
-      name: 'Halal Certificate',
-      status: mySupplier.halalCertified ? 'Valid' : 'Not Certified',
-      variant: mySupplier.halalCertified ? 'success' : 'danger',
-      expiry: mySupplier.halalCertified
-        ? `Exp: ${fmtDate(mySupplier.certExpiryDate)}`
-        : 'Not registered',
-      action: 'Upload',
-    },
-    {
-      name: 'BPOM Registration',
-      status: mySupplier.bpomRegistered ? 'Registered' : 'Not Registered',
-      variant: mySupplier.bpomRegistered ? 'success' : 'danger',
-      expiry: 'Annual renewal',
-      action: 'Apply',
-    },
-    {
-      name: 'ISO 9001:2015',
-      status: 'Expiring soon',
-      variant: 'warning',
-      expiry: 'Expires in ~45 days',
-      action: 'Renew',
-    },
-    {
-      name: 'Business License (SIUP)',
-      status: 'Valid',
-      variant: 'success',
-      expiry: 'Exp: 01 Sep 2027',
-      action: 'View',
-    },
-  ];
-
   const today = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
     day: '2-digit',
@@ -331,37 +372,32 @@ const SupplierDashboard: React.FC = () => {
         Supplier identity · {mySupplier.country} · {mySupplier.category}
       </PageMetaLine>
 
-      <section className="bg-navy rounded-lg shadow-sm p-6 mb-6">
+      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between gap-6 flex-wrap">
           <div className="min-w-0">
-            <div className="text-xl font-bold text-white mb-1">
+            <div className="text-xl font-bold text-text-primary mb-1">
               {mySupplier.name}
             </div>
-            <div className="text-sm text-white/75">
+            <div className="text-sm text-text-secondary">
               SAP BP: {mySupplier.sapBpNumber} · Channel: {channelLabel}
             </div>
           </div>
           <div className="flex items-center gap-6 shrink-0">
             <div className="text-center">
-              <div className="text-[10px] text-white/70 uppercase tracking-wider mb-2">
+              <div className="text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
                 Paragon Grade
               </div>
               <GradeBadge grade={grade} />
-              <div className="text-xs text-white/85 mt-1">
+              <div className="text-xs text-text-secondary mt-1">
                 {mySupplier.otif >= 90 ? '94' : mySupplier.otif >= 80 ? '82' : '70'} / 100
               </div>
             </div>
-            <div className="flex flex-col gap-1 text-white">
-              <StatusPill
-                variant={otifVariant}
-                className="!bg-white/10 !text-white"
-              >
-                {otifStatusLabel}
-              </StatusPill>
-              <div className="text-xs text-white/80">
+            <div className="flex flex-col gap-1">
+              <StatusPill variant={otifVariant}>{otifStatusLabel}</StatusPill>
+              <div className="text-xs text-text-secondary">
                 OTIF: {mySupplier.otif}%
               </div>
-              <div className="text-xs text-white/60">Target: ≥ 95%</div>
+              <div className="text-xs text-text-tertiary">Target: ≥ 95%</div>
             </div>
           </div>
         </div>
@@ -382,8 +418,14 @@ const SupplierDashboard: React.FC = () => {
         />
         <KpiCard
           eyebrow="Unpaid Invoices"
-          value="2"
-          subtitle={<span className="text-danger">Pending payment</span>}
+          value={unpaidInvoices.toString()}
+          subtitle={
+            unpaidInvoices > 0 ? (
+              <span className="text-danger">Pending payment</span>
+            ) : (
+              'All settled'
+            )
+          }
           icon={CreditCard}
         />
         <KpiCard
@@ -403,21 +445,17 @@ const SupplierDashboard: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-5">
         <div className="flex flex-col gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
-            <div className="bg-navy px-5 py-4 flex items-center justify-between">
+            <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
               <div>
-                <div className="text-sm font-bold text-white">
-                  Today's briefing
+                <div className="flex items-center gap-2">
+                  <div className="text-sm font-bold text-text-primary">
+                    Today's briefing
+                  </div>
+                  <StatusPill variant="neutral">Sample data</StatusPill>
                 </div>
-                <div className="text-xs text-white/70 mt-0.5">{today}</div>
+                <div className="text-xs text-text-tertiary mt-0.5">{today}</div>
               </div>
-              <StatusPill
-                variant={remaining > 0 ? 'danger' : 'success'}
-                className={
-                  remaining > 0
-                    ? '!bg-danger !text-white'
-                    : '!bg-success !text-white'
-                }
-              >
+              <StatusPill variant={remaining > 0 ? 'danger' : 'success'}>
                 {remaining > 0
                   ? `${remaining} action${remaining !== 1 ? 's' : ''}`
                   : 'All clear'}
@@ -616,46 +654,51 @@ const SupplierDashboard: React.FC = () => {
               My documents
             </h2>
             <div className="flex flex-col">
-              {documents.map((doc, idx) => (
-                <div
-                  key={doc.name}
-                  className={`flex items-center justify-between gap-3 py-3 ${
-                    idx < documents.length - 1
-                      ? 'border-b border-border-subtle'
-                      : ''
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                      <FileText size={12} className="text-text-tertiary" />
-                      <span className="text-sm font-semibold text-text-primary">
-                        {doc.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <StatusPill variant={doc.variant}>
-                        {doc.status}
-                      </StatusPill>
-                      <span className="text-xs text-text-tertiary">
-                        {doc.expiry}
-                      </span>
-                    </div>
-                  </div>
-                  <Button
-                    variant="secondary"
-                    onClick={() =>
-                      toast({
-                        title: `${doc.action} — ${doc.name}`,
-                        description:
-                          'Document management workflow coming in Phase 2.',
-                      })
-                    }
+              {documents.map((doc, idx) => {
+                const action = DOC_STATUS_ACTION[doc.status];
+                return (
+                  <div
+                    key={doc.id}
+                    className={`flex items-center justify-between gap-3 py-3 ${
+                      idx < documents.length - 1
+                        ? 'border-b border-border-subtle'
+                        : ''
+                    }`}
                   >
-                    {doc.action}
-                    <ChevronRight size={14} />
-                  </Button>
-                </div>
-              ))}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <FileText size={12} className="text-text-tertiary" />
+                        <span className="text-sm font-semibold text-text-primary">
+                          {doc.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <StatusPill variant={DOC_STATUS_TONE[doc.status]}>
+                          {doc.status}
+                        </StatusPill>
+                        <span className="text-xs text-text-tertiary">
+                          {doc.expiryDate
+                            ? `Exp: ${fmtDate(doc.expiryDate)}`
+                            : 'No expiry'}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        toast({
+                          title: `${action} — ${doc.name}`,
+                          description:
+                            'Document management workflow coming in Phase 2.',
+                        })
+                      }
+                    >
+                      {action}
+                      <ChevronRight size={14} />
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </section>
         </div>

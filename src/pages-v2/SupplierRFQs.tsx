@@ -27,8 +27,10 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { mockSuppliers } from '../data/mockSuppliers';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import { useCurrentSupplier } from '../services/query/hooks';
 
 interface OpenRFQ {
   id: string;
@@ -183,6 +185,8 @@ const CHANNEL_ICON: Record<string, LucideIcon> = {
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
+
+const RFQS_CRUMB = ['ACQUIRE', 'MY RFQS & QUOTES'];
 
 interface QuoteForm {
   unitPrice: string;
@@ -612,10 +616,8 @@ const SupplierRFQs: React.FC = () => {
   const [form, setForm] = useState<QuoteForm>(emptyQuoteForm);
   const [submitting, setSubmitting] = useState(false);
 
-  const mySupplier = useMemo(
-    () => mockSuppliers.find((s) => s.id === supplierId),
-    [supplierId],
-  );
+  const supplierQuery = useCurrentSupplier();
+  const mySupplier = supplierQuery.data ?? null;
 
   const openCount = openRFQs.length;
   const submittedCount = 1 + submittedNums.length;
@@ -688,12 +690,22 @@ const SupplierRFQs: React.FC = () => {
     }, 600);
   };
 
-  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (supplierQuery.isPending) return <LoadingState breadcrumb={RFQS_CRUMB} />;
+  if (supplierQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={RFQS_CRUMB}
+        error={supplierQuery.error}
+        onRetry={() => supplierQuery.refetch()}
+      />
+    );
+  if (!mySupplier) return <NoSupplierIdentity />;
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['ACQUIRE', 'MY RFQS & QUOTES']}
+        breadcrumb={RFQS_CRUMB}
         title="My Sourcing Events"
         subtitle={`RFQs received from Paragon Corp procurement team — ${mySupplier.name}.`}
       />

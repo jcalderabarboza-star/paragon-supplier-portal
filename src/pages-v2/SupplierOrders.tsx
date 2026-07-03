@@ -21,10 +21,13 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
-import { mockSuppliers } from '../data/mockSuppliers';
-import { POStatus, PurchaseOrder } from '../types/purchaseOrder.types';
+import { POStatus } from '../types/purchaseOrder.types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
+import { useCurrentSupplier, usePurchaseOrders } from '../services/query/hooks';
+import type { PurchaseOrder } from '../services/data/types';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
@@ -77,6 +80,8 @@ const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
+const ORDERS_CRUMB = ['TRANSACT', 'MY ORDERS'];
+
 const SupplierOrders: React.FC = () => {
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
@@ -90,17 +95,17 @@ const SupplierOrders: React.FC = () => {
   const [changeText, setChangeText] = useState('');
   const [confirmedAt, setConfirmedAt] = useState<string>('');
 
-  const mySupplier = useMemo(
-    () => mockSuppliers.find((s) => s.id === supplierId),
-    [supplierId],
-  );
+  const supplierQuery = useCurrentSupplier();
+  const posQuery = usePurchaseOrders();
+
+  const mySupplier = supplierQuery.data ?? null;
 
   const MY_POS = useMemo(
     () =>
-      mockPurchaseOrders
-        .filter((po) => po.supplierId === supplierId)
-        .sort((a, b) => b.orderDate.localeCompare(a.orderDate)),
-    [supplierId],
+      [...(posQuery.data?.items ?? [])].sort((a, b) =>
+        b.orderDate.localeCompare(a.orderDate),
+      ),
+    [posQuery.data],
   );
 
   const counts = useMemo(
@@ -133,11 +138,34 @@ const SupplierOrders: React.FC = () => {
     [MY_POS],
   );
 
-  if (!supplierId || !mySupplier) return <NoSupplierIdentity />;
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (supplierQuery.isPending || posQuery.isPending)
+    return <LoadingState breadcrumb={ORDERS_CRUMB} />;
+  if (supplierQuery.isError || posQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={ORDERS_CRUMB}
+        error={supplierQuery.error ?? posQuery.error}
+        onRetry={() => {
+          supplierQuery.refetch();
+          posQuery.refetch();
+        }}
+      />
+    );
+  if (!mySupplier) return <NoSupplierIdentity />;
+  if (MY_POS.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={ORDERS_CRUMB}
+        title="No purchase orders yet"
+        subtitle={`No purchase orders on file for ${mySupplier.name}.`}
+        message="Purchase orders issued by Paragon Corp will appear here."
+      />
+    );
 
   const openOrderPanel = (po: PurchaseOrder, mode: PanelMode = 'detail') => {
     setSelected(po);
-    setConfirmedQtys(po.lineItems.map((li) => li.qty));
+    setConfirmedQtys(po.lineItems.map((li) => li.quantity));
     setDeliveryDate(po.requestedDeliveryDate);
     setNotes('');
     setChangeText('');
@@ -202,7 +230,7 @@ const SupplierOrders: React.FC = () => {
 
   const totalConfirmedQty = confirmedQtys.reduce((a, b) => a + b, 0);
   const orderedTotalQty = selected
-    ? selected.lineItems.reduce((a, li) => a + li.qty, 0)
+    ? selected.lineItems.reduce((a, li) => a + li.quantity, 0)
     : 0;
   const hasQtyChange = totalConfirmedQty !== orderedTotalQty;
   const hasDateChange =
@@ -506,15 +534,15 @@ const SupplierOrders: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                          {li.qty.toLocaleString()} {li.uom}
+                          {li.quantity.toLocaleString()} {li.uom}
                         </td>
                         {panelMode === 'editing' && (
                           <td className="px-3 py-2 text-right">
                             <input
                               type="number"
                               min={0}
-                              max={li.qty}
-                              value={confirmedQtys[idx] ?? li.qty}
+                              max={li.quantity}
+                              value={confirmedQtys[idx] ?? li.quantity}
                               onChange={(e) => {
                                 const v = Number(e.target.value);
                                 setConfirmedQtys((prev) => {
