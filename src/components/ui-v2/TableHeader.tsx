@@ -5,9 +5,11 @@ interface TableHeaderProps {
   className?: string;
 }
 
+// DP-3 (TMS alignment): a light grey header band over the thin bottom border.
+// Row grammar (thin borders, generous height) already lives in TableRow/TableCell.
 const TableHeader: React.FC<TableHeaderProps> = ({ children, className = '' }) => {
   return (
-    <thead className={`border-b border-border-subtle ${className}`}>
+    <thead className={`bg-bg-hover border-b border-border-subtle ${className}`}>
       <tr>{children}</tr>
     </thead>
   );
