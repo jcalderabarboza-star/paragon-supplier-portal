@@ -24,10 +24,12 @@ import TableCell from '../components/ui-v2/TableCell';
 import Switch from '../components/ui-v2/Switch';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { mockSuppliers } from '../data/mockSuppliers';
 import { useAdaptive } from '../context/AdaptiveContext';
 import { CHANNEL_CONFIG } from '../data/communicationProfiles';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import { useCurrentSupplier } from '../services/query/hooks';
 import type {
   CatalogItem,
   ProfileCert,
@@ -73,6 +75,8 @@ const CERT_LABEL: Record<ProfileCertStatus, string> = {
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
+
+const STOREFRONT_CRUMB = ['ACQUIRE', 'MY STOREFRONT'];
 
 interface NewMaterial {
   material: string;
@@ -147,10 +151,8 @@ const SupplierMyStorefront: React.FC = () => {
   const { supplierId } = identity;
   const { getSupplierProfile, isBusinessHours, getLocalTime } = useAdaptive();
 
-  const supp = useMemo(
-    () => mockSuppliers.find((s) => s.id === supplierId),
-    [supplierId],
-  );
+  const supplierQuery = useCurrentSupplier();
+  const supp = supplierQuery.data ?? null;
 
   const [catalog, setCatalog] = useState<CatalogItem[]>(INITIAL_CATALOG);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -168,7 +170,18 @@ const SupplierMyStorefront: React.FC = () => {
     return Math.round((done / COMPLETENESS_ITEMS.length) * 100);
   }, []);
 
-  if (!supplierId || !supp) return <NoSupplierIdentity />;
+  if (!supplierId) return <NoSupplierIdentity />;
+  if (supplierQuery.isPending)
+    return <LoadingState breadcrumb={STOREFRONT_CRUMB} />;
+  if (supplierQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={STOREFRONT_CRUMB}
+        error={supplierQuery.error}
+        onRetry={() => supplierQuery.refetch()}
+      />
+    );
+  if (!supp) return <NoSupplierIdentity />;
 
   const cp = getSupplierProfile(supp.country);
   const bizHours = isBusinessHours(supp.country);
