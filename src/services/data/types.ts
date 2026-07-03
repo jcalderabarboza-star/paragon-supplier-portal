@@ -354,6 +354,9 @@ export interface ProfileCert {
   visible: boolean;
   status: ProfileCertStatus;
   expiry: string | null;
+  // D-4: upload provenance — when the current document was filed (null when the
+  // cert is missing / not yet uploaded).
+  uploaded?: string | null;
 }
 
 export interface StorefrontProduct {
@@ -407,6 +410,114 @@ export interface PerformancePoint {
   asnAcc: number;
   defect: number;
   ackHrs: number;
+}
+
+// ─── Supplier scorecard (buyer-side performance intelligence) ───────────────
+// Portfolio scorecard: one record per active supplier, read buyer-only (the
+// scorecard spans the whole network — a supplier does not see the cross-network
+// grading view). D-2: the improvement-plan actions and the compliance issue are
+// per-supplier OPTIONAL fields on the record, not shared consts keyed by name.
+
+export type ScorecardGradeLetter = 'A' | 'B' | 'C' | 'D';
+
+export interface ScorecardKpi {
+  name: string;
+  value: string;
+  target: string;
+  pct: number;
+  color: string;
+  trend: KpiTrend;
+}
+
+export interface ScorecardRadarAxis {
+  axis: string;
+  value: number;
+}
+
+export type CommLogStatus = 'Completed' | 'Active' | 'Open' | 'Resolved';
+
+export interface CommLogEntry {
+  date: string;
+  type: string;
+  channel: string;
+  message: string;
+  status: CommLogStatus;
+}
+
+export type ScorecardComplianceLevel = 'expired' | 'expiring' | 'missing';
+
+export interface ScorecardComplianceIssue {
+  level: ScorecardComplianceLevel;
+  label: string;
+}
+
+export type ScorecardActionStatus = 'In Progress' | 'Pending';
+
+export interface ScorecardImprovementAction {
+  item: string;
+  due: string;
+  owner: string;
+  status: ScorecardActionStatus;
+}
+
+export interface SupplierScorecard {
+  id: string;
+  name: string;
+  country: string;
+  category: string;
+  tier: string;
+  sapBp: string;
+  channel: string;
+  grade: ScorecardGradeLetter;
+  score: number;
+  status: string;
+  kpis: ScorecardKpi[];
+  radar: ScorecardRadarAxis[];
+  otifTrend: number[];
+  ackSpeedTrend: number[];
+  defectTrend: number[];
+  impPlan?: boolean;
+  commLog: CommLogEntry[];
+  // D-2: folded off the page's shared IMPROVEMENT_ACTIONS / COMPLIANCE_ISSUES
+  // consts so per-supplier data lives on the per-supplier record.
+  complianceIssue?: ScorecardComplianceIssue | null;
+  improvementActions?: ScorecardImprovementAction[];
+}
+
+// ─── Purchase requisitions (buyer-side ACQUIRE stage) ───────────────────────
+// The starting point of procurement (PR → Approval → Source check → PO or
+// Sourcing Event). A buyer-only internal document — suppliers never see PRs.
+// D-3: quantity and estimatedValue are NUMERIC (not pre-formatted strings), so
+// the render layer owns locale formatting via formatNumber / formatIDR.
+
+export type PRStatus =
+  | 'Draft'
+  | 'Pending Approval'
+  | 'Approved'
+  | 'Sourcing Event'
+  | 'PO Created'
+  | 'Rejected';
+
+export type PRPriority = 'High' | 'Medium' | 'Low';
+
+export interface PurchaseRequisition {
+  id: string;
+  prNumber: string;
+  material: string;
+  category: string;
+  quantity: number;
+  uom: string;
+  requiredDate: string;
+  estimatedValue: number;
+  requestor: string;
+  costCenter: string;
+  status: PRStatus;
+  createdDate: string;
+  approver: string;
+  sourceOfSupply: string;
+  linkedDoc: string;
+  priority: PRPriority;
+  justification: string;
 }
 
 // ─── Risk / Compliance entities (buyer-side, inline today) ──────────────────
@@ -768,6 +879,10 @@ export interface ObligationFilter {
   owner?: ObligationOwner;
 }
 
+export interface PRFilter {
+  status?: PRStatus | PRStatus[];
+}
+
 // ─── Service interfaces — the contract Phase 3 implements ───────────────────
 
 export interface ISupplierService {
@@ -813,6 +928,12 @@ export interface IProcurementService {
   // — KPIs / performance —
   getKpis(scope: QueryScope): Promise<KpiSnapshot>;
   getPerformanceTrend(scope: QueryScope, range: TrendRange): Promise<Page<PerformancePoint>>;
+
+  // — Supplier scorecard (buyer-only portfolio grading) —
+  getSupplierScorecards(scope: QueryScope): Promise<Page<SupplierScorecard>>;
+
+  // — Purchase requisitions (buyer-only ACQUIRE stage) —
+  getRequisitions(scope: QueryScope, filter?: PRFilter): Promise<Page<PurchaseRequisition>>;
 
   // — Buyer command-center aggregates (buyer-only) —
   getProductionLines(scope: QueryScope): Promise<Page<ProductionLineRow>>;

@@ -20,6 +20,7 @@ import type {
   InvoiceFilter,
   ContractFilter,
   ObligationFilter,
+  PRFilter,
   TrendRange,
 } from '../data/types';
 
@@ -126,6 +127,16 @@ export const useKpis = () =>
 export const usePerformanceTrend = (range: TrendRange) =>
   useServiceQuery(['procurement', 'performanceTrend', range], (svc, scope) =>
     svc.procurement.getPerformanceTrend(scope, range),
+  );
+
+export const useSupplierScorecards = () =>
+  useServiceQuery(['procurement', 'supplierScorecards'], (svc, scope) =>
+    svc.procurement.getSupplierScorecards(scope),
+  );
+
+export const useRequisitions = (filter?: PRFilter) =>
+  useServiceQuery(['procurement', 'requisitions', filter], (svc, scope) =>
+    svc.procurement.getRequisitions(scope, filter),
   );
 
 export const useProductionLines = () =>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import {
   RadarChart,
   Radar,
@@ -31,52 +31,23 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
+import { useSupplierScorecards } from '../services/query/hooks';
+import type {
+  ScorecardKpi,
+  ScorecardRadarAxis,
+  ScorecardGradeLetter,
+  CommLogEntry,
+  KpiTrend,
+} from '../services/data/types';
 
-type Grade = 'A' | 'B' | 'C' | 'D';
-type Trend = '↑' | '↓' | '→';
+type Grade = ScorecardGradeLetter;
+type Trend = KpiTrend;
 
-interface KpiMetric {
-  name: string;
-  value: string;
-  target: string;
-  pct: number;
-  color: string;
-  trend: Trend;
-}
-
-interface RadarAxis {
-  axis: string;
-  value: number;
-}
-
-interface CommLogEntry {
-  date: string;
-  type: string;
-  channel: string;
-  message: string;
-  status: 'Completed' | 'Active' | 'Open' | 'Resolved';
-}
-
-interface SuppData {
-  id: string;
-  name: string;
-  country: string;
-  category: string;
-  tier: string;
-  sapBp: string;
-  channel: string;
-  grade: Grade;
-  score: number;
-  status: string;
-  kpis: KpiMetric[];
-  radar: RadarAxis[];
-  otifTrend: number[];
-  ackSpeedTrend: number[];
-  defectTrend: number[];
-  impPlan?: boolean;
-  commLog: CommLogEntry[];
-}
+const SCORECARD_CRUMB = ['INTELLIGENCE', 'SUPPLIER SCORECARD'];
 
 const COUNTRY_FLAGS: Record<string, string> = {
   ID: '🇮🇩',
@@ -87,191 +58,7 @@ const COUNTRY_FLAGS: Record<string, string> = {
   SG: '🇸🇬',
 };
 
-const COMPLIANCE_ISSUES: Record<
-  string,
-  { level: 'expired' | 'expiring' | 'missing'; label: string }
-> = {
-  'PT Berlina Packaging Indonesia': {
-    level: 'missing',
-    label: 'BPJPH Halal cert not certified',
-  },
-  'BASF Personal Care DE': {
-    level: 'expiring',
-    label: 'ISO 9001 expiring in 83d',
-  },
-  'Evonik Specialty Chemicals': {
-    level: 'expiring',
-    label: 'REACH compliance expiring in 85d',
-  },
-};
-
-const KPI_COLOR_SUCCESS = '#107E3E';
-const KPI_COLOR_WARNING = '#B45309';
-const KPI_COLOR_DANGER = '#BB0000';
-
-const SUPPLIER_DATA: SuppData[] = [
-  {
-    id: 'zhejiang',
-    name: 'Zhejiang NHU Vitamins Co.',
-    country: 'CN',
-    category: 'Active Ingredients',
-    tier: 'Tier 3 — API',
-    sapBp: 'BP-20045',
-    channel: 'API',
-    grade: 'A',
-    score: 94,
-    status: 'Preferred Supplier',
-    kpis: [
-      { name: 'OTIF', value: '94%', target: '95%', pct: 94, color: KPI_COLOR_SUCCESS, trend: '↑' },
-      { name: 'OTDR', value: '96%', target: '95%', pct: 96, color: KPI_COLOR_SUCCESS, trend: '↑' },
-      { name: 'PO Ack Rate', value: '100%', target: '95%', pct: 100, color: KPI_COLOR_SUCCESS, trend: '→' },
-      { name: 'Ack Speed', value: '6h', target: '<24h', pct: 90, color: KPI_COLOR_SUCCESS, trend: '↑' },
-      { name: 'Lead Time Adherence', value: '92%', target: '90%', pct: 92, color: KPI_COLOR_SUCCESS, trend: '↑' },
-      { name: 'GR/PO Variance', value: '−4%', target: '±2%', pct: 50, color: KPI_COLOR_WARNING, trend: '↓' },
-      { name: 'Fill Rate', value: '96%', target: '98%', pct: 96, color: KPI_COLOR_WARNING, trend: '↑' },
-      { name: 'Invoice Accuracy', value: '100%', target: '98%', pct: 100, color: KPI_COLOR_SUCCESS, trend: '→' },
-      { name: 'QNCR', value: '0.2%', target: '<0.5%', pct: 90, color: KPI_COLOR_SUCCESS, trend: '↑' },
-      { name: 'Inventory DOS', value: '24 days', target: '14-30d', pct: 80, color: KPI_COLOR_SUCCESS, trend: '→' },
-      { name: 'Responsiveness', value: '88/100', target: '≥80', pct: 88, color: KPI_COLOR_SUCCESS, trend: '↑' },
-      { name: 'Sustainability', value: '82/100', target: '≥75', pct: 82, color: KPI_COLOR_SUCCESS, trend: '↑' },
-    ],
-    radar: [
-      { axis: 'Delivery', value: 94 },
-      { axis: 'Quality', value: 96 },
-      { axis: 'Commercial', value: 88 },
-      { axis: 'Responsiveness', value: 88 },
-      { axis: 'Sustainability', value: 82 },
-    ],
-    otifTrend: [88, 89, 90, 91, 92, 91, 93, 94, 93, 94, 95, 94],
-    ackSpeedTrend: [8, 7, 6, 6, 5, 5, 4, 6, 5, 4, 6, 6],
-    defectTrend: [0.4, 0.3, 0.3, 0.2, 0.2, 0.2, 0.1, 0.2, 0.2, 0.2, 0.1, 0.2],
-    commLog: [
-      { date: 'Apr 6 2026', type: 'PO Confirmation', channel: 'API', message: 'PO-2025-00108 confirmed via API in 4 minutes', status: 'Completed' },
-      { date: 'Apr 4 2026', type: 'Invoice Submitted', channel: 'Web Portal', message: 'INV-2026-00235 submitted — 3-way match: Perfect', status: 'Completed' },
-      { date: 'Apr 1 2026', type: 'ASN Submitted', channel: 'API', message: 'ASN-2026-002 submitted for PO-2025-00108', status: 'Completed' },
-      { date: 'Mar 28 2026', type: 'RFQ Response', channel: 'API', message: 'Quotation submitted for RFQ-2026-001 — score: 87/100', status: 'Completed' },
-      { date: 'Mar 15 2026', type: 'Inventory Update', channel: 'API Push', message: 'Inventory position updated: Niacinamide B3 — 2,400 KG (24 days)', status: 'Completed' },
-    ],
-  },
-  {
-    id: 'berlina',
-    name: 'PT Berlina Packaging Indonesia',
-    country: 'ID',
-    category: 'Packaging Primary',
-    tier: 'Tier 1 — WhatsApp',
-    sapBp: 'BP-10007',
-    channel: 'WhatsApp',
-    grade: 'B',
-    score: 82,
-    status: 'Approved Supplier',
-    kpis: [
-      { name: 'OTIF', value: '88%', target: '95%', pct: 88, color: KPI_COLOR_WARNING, trend: '↑' },
-      { name: 'OTDR', value: '91%', target: '95%', pct: 91, color: KPI_COLOR_WARNING, trend: '↑' },
-      { name: 'PO Ack Rate', value: '92%', target: '95%', pct: 92, color: KPI_COLOR_WARNING, trend: '↑' },
-      { name: 'Ack Speed', value: '18h', target: '<24h', pct: 75, color: KPI_COLOR_SUCCESS, trend: '→' },
-      { name: 'Lead Time Adherence', value: '85%', target: '90%', pct: 85, color: KPI_COLOR_WARNING, trend: '↑' },
-      { name: 'GR/PO Variance', value: '0%', target: '±2%', pct: 100, color: KPI_COLOR_SUCCESS, trend: '→' },
-      { name: 'Fill Rate', value: '95%', target: '98%', pct: 95, color: KPI_COLOR_WARNING, trend: '↑' },
-      { name: 'Invoice Accuracy', value: '98%', target: '98%', pct: 98, color: KPI_COLOR_SUCCESS, trend: '→' },
-      { name: 'QNCR', value: '0.4%', target: '<0.5%', pct: 70, color: KPI_COLOR_WARNING, trend: '↑' },
-      { name: 'Inventory DOS', value: '18 days', target: '14-30d', pct: 80, color: KPI_COLOR_SUCCESS, trend: '→' },
-      { name: 'Responsiveness', value: '80/100', target: '≥80', pct: 80, color: KPI_COLOR_SUCCESS, trend: '↑' },
-      { name: 'Sustainability', value: '68/100', target: '≥75', pct: 68, color: KPI_COLOR_WARNING, trend: '↑' },
-    ],
-    radar: [
-      { axis: 'Delivery', value: 88 },
-      { axis: 'Quality', value: 91 },
-      { axis: 'Commercial', value: 82 },
-      { axis: 'Responsiveness', value: 80 },
-      { axis: 'Sustainability', value: 68 },
-    ],
-    otifTrend: [82, 83, 84, 84, 85, 85, 86, 87, 87, 88, 88, 88],
-    ackSpeedTrend: [22, 20, 19, 18, 18, 17, 16, 18, 17, 18, 17, 18],
-    defectTrend: [0.6, 0.5, 0.5, 0.5, 0.4, 0.4, 0.4, 0.3, 0.4, 0.3, 0.4, 0.3],
-    commLog: [
-      { date: 'Apr 5 2026', type: 'PO Confirmation', channel: 'WhatsApp', message: 'PO-2025-00107 confirmed via WhatsApp in 3 hours', status: 'Completed' },
-      { date: 'Mar 31 2026', type: 'ASN Submitted', channel: 'Web Portal', message: 'ASN-2026-001 submitted for PO-2025-00107', status: 'Completed' },
-      { date: 'Mar 15 2026', type: 'Invoice', channel: 'Email', message: 'INV-2026-00198 submitted via email', status: 'Completed' },
-      { date: 'Mar 10 2026', type: 'PO Confirmation', channel: 'WhatsApp', message: 'PO-2025-00098 confirmed', status: 'Completed' },
-      { date: 'Feb 28 2026', type: 'GR Discrepancy', channel: 'Web Portal', message: 'Short delivery on PO-2025-00091 — 5% variance', status: 'Resolved' },
-    ],
-  },
-  {
-    id: 'basf',
-    name: 'BASF Personal Care DE',
-    country: 'DE',
-    category: 'Active Ingredients',
-    tier: 'Tier 3 — API',
-    sapBp: 'BP-20012',
-    channel: 'API',
-    grade: 'C',
-    score: 74,
-    status: 'Conditional — Improvement Plan Active',
-    impPlan: true,
-    kpis: [
-      { name: 'OTIF', value: '78%', target: '95%', pct: 78, color: KPI_COLOR_DANGER, trend: '↓' },
-      { name: 'OTDR', value: '82%', target: '95%', pct: 82, color: KPI_COLOR_WARNING, trend: '↓' },
-      { name: 'PO Ack Rate', value: '88%', target: '95%', pct: 88, color: KPI_COLOR_WARNING, trend: '↑' },
-      { name: 'Ack Speed', value: '42h', target: '<24h', pct: 40, color: KPI_COLOR_DANGER, trend: '↓' },
-      { name: 'Lead Time Adherence', value: '74%', target: '90%', pct: 74, color: KPI_COLOR_DANGER, trend: '↓' },
-      { name: 'GR/PO Variance', value: '+1%', target: '±2%', pct: 80, color: KPI_COLOR_SUCCESS, trend: '→' },
-      { name: 'Fill Rate', value: '90%', target: '98%', pct: 90, color: KPI_COLOR_WARNING, trend: '↑' },
-      { name: 'Invoice Accuracy', value: '85%', target: '98%', pct: 85, color: KPI_COLOR_DANGER, trend: '↓' },
-      { name: 'QNCR', value: '1.2%', target: '<0.5%', pct: 30, color: KPI_COLOR_DANGER, trend: '↓' },
-      { name: 'Inventory DOS', value: '8 days', target: '14-30d', pct: 40, color: KPI_COLOR_DANGER, trend: '↓' },
-      { name: 'Responsiveness', value: '62/100', target: '≥80', pct: 62, color: KPI_COLOR_DANGER, trend: '↓' },
-      { name: 'Sustainability', value: '70/100', target: '≥75', pct: 70, color: KPI_COLOR_WARNING, trend: '↑' },
-    ],
-    radar: [
-      { axis: 'Delivery', value: 78 },
-      { axis: 'Quality', value: 82 },
-      { axis: 'Commercial', value: 74 },
-      { axis: 'Responsiveness', value: 62 },
-      { axis: 'Sustainability', value: 70 },
-    ],
-    otifTrend: [85, 84, 82, 83, 81, 80, 79, 78, 78, 79, 78, 78],
-    ackSpeedTrend: [28, 30, 32, 29, 31, 33, 35, 34, 36, 34, 33, 34],
-    defectTrend: [0.8, 0.9, 1.0, 0.9, 1.1, 1.0, 1.2, 1.1, 1.0, 1.1, 1.2, 1.1],
-    commLog: [
-      { date: 'Apr 5 2026', type: 'Late Delivery Alert', channel: 'Email', message: 'PO-2025-00099 is 5 days overdue — held at Jakarta Customs', status: 'Open' },
-      { date: 'Apr 2 2026', type: 'Improvement Plan', channel: 'Email', message: 'Improvement plan issued — 30-day review period', status: 'Active' },
-      { date: 'Mar 28 2026', type: 'PO Confirmation', channel: 'API', message: 'PO-2025-00099 confirmed — 42h delay', status: 'Completed' },
-      { date: 'Mar 20 2026', type: 'Invoice Dispute', channel: 'Email', message: 'INV-2026-00201 disputed — PPN calculation error', status: 'Resolved' },
-      { date: 'Mar 10 2026', type: 'QNCR Filed', channel: 'Email', message: 'Non-conformance report for batch BAS-2026-0034', status: 'Resolved' },
-    ],
-  },
-];
-
-const EXTRA_SUPPLIERS: SuppData[] = (
-  [
-    'PT Musim Mas Specialty Fats',
-    'PT Halal Emulsifier Nusantara',
-    'Givaudan Fragrance SG',
-    'PT Ecogreen Oleochemicals',
-    'Evonik Specialty FR',
-  ] as const
-).map((name, i) => ({
-  id: `sup-extra-${i}`,
-  name,
-  country: (['ID', 'ID', 'SG', 'ID', 'FR'] as const)[i],
-  category: (['Halal Emulsifier', 'Halal Emulsifier', 'Fragrance', 'Natural Botanical', 'Active Ingredients'] as const)[i],
-  tier: (['Tier 2 — Web', 'Tier 1 — WhatsApp', 'Tier 3 — API', 'Tier 2 — Web', 'Tier 2 — Web'] as const)[i],
-  sapBp: `BP-2000${10 + i}`,
-  channel: (['Web', 'WhatsApp', 'API', 'Web', 'Web'] as const)[i],
-  grade: (['A', 'B', 'A', 'B', 'C'] as const)[i],
-  score: ([92, 84, 91, 83, 72] as const)[i],
-  status: 'Approved Supplier',
-  kpis: SUPPLIER_DATA[0].kpis,
-  radar: SUPPLIER_DATA[0].radar,
-  otifTrend: [82, 84, 85, 87, 88, 89, 90, 91, 91, 92, 92, 91],
-  ackSpeedTrend: [12, 11, 10, 9, 8, 8, 7, 7, 6, 6, 5, 5],
-  defectTrend: [0.5, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2, 0.2, 0.1, 0.2, 0.1, 0.2],
-  commLog: [],
-}));
-
-const ALL_SUPPLIERS: SuppData[] = [...SUPPLIER_DATA, ...EXTRA_SUPPLIERS];
-
-const TARGET_RADAR: RadarAxis[] = [
+const TARGET_RADAR: ScorecardRadarAxis[] = [
   { axis: 'Delivery', value: 90 },
   { axis: 'Quality', value: 90 },
   { axis: 'Commercial', value: 90 },
@@ -355,7 +142,7 @@ const TrendIcon: React.FC<{ trend: Trend }> = ({ trend }) => {
   return <Minus size={14} className="text-text-tertiary" aria-hidden="true" />;
 };
 
-const KpiProgressTile: React.FC<{ k: KpiMetric }> = ({ k }) => {
+const KpiProgressTile: React.FC<{ k: ScorecardKpi }> = ({ k }) => {
   const width = Math.min(Math.max(k.pct, 0), 100);
   return (
     <div className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
@@ -391,29 +178,35 @@ const CHANNEL_ICON_MAP: Record<string, LucideIcon> = {
 const channelIcon = (channel: string): LucideIcon =>
   CHANNEL_ICON_MAP[channel] ?? Send;
 
-interface ImprovementAction {
-  item: string;
-  due: string;
-  owner: string;
-  status: 'In Progress' | 'Pending';
-}
-
-const IMPROVEMENT_ACTIONS: ImprovementAction[] = [
-  { item: 'Reduce PO acknowledgment time to <24h', due: 'Apr 30 2026', owner: 'Supplier OPS Team', status: 'In Progress' },
-  { item: 'Resolve quality non-conformance batch BAS-2026-0034 root cause', due: 'Apr 20 2026', owner: 'Quality Dept', status: 'In Progress' },
-  { item: 'Improve lead time adherence from 74% to ≥85%', due: 'May 31 2026', owner: 'Production Planning', status: 'Pending' },
-];
-
 const BuyerScorecard: React.FC = () => {
   const { toast } = useToast();
   const [selectedId, setSelectedId] = useState<string>('zhejiang');
 
-  const supp = useMemo(
-    () => ALL_SUPPLIERS.find((s) => s.id === selectedId) ?? ALL_SUPPLIERS[0],
-    [selectedId],
-  );
+  const scorecardsQuery = useSupplierScorecards();
+  const suppliers = scorecardsQuery.data?.items ?? [];
 
-  const compliance = COMPLIANCE_ISSUES[supp.name];
+  if (scorecardsQuery.isPending)
+    return <LoadingState breadcrumb={SCORECARD_CRUMB} />;
+  if (scorecardsQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={SCORECARD_CRUMB}
+        error={scorecardsQuery.error}
+        onRetry={() => scorecardsQuery.refetch()}
+      />
+    );
+  if (suppliers.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={SCORECARD_CRUMB}
+        title="No scorecards yet"
+        subtitle="Supplier scoring is a buyer-side view."
+        message="Portfolio performance grading across active suppliers appears here for buyer accounts."
+      />
+    );
+
+  const supp = suppliers.find((s) => s.id === selectedId) ?? suppliers[0];
+  const compliance = supp.complianceIssue;
   const tone = GRADE_TONE[supp.grade];
 
   const trendData = supp.otifTrend.map((v, i) => ({
@@ -429,11 +222,12 @@ const BuyerScorecard: React.FC = () => {
   }));
 
   const latestCommDate = supp.commLog[0]?.date ?? '—';
+  const improvementActions = supp.improvementActions ?? [];
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['INTELLIGENCE', 'SUPPLIER SCORECARD']}
+        breadcrumb={SCORECARD_CRUMB}
         title="Supplier Scorecard"
         subtitle="Real-time performance scoring across all active suppliers."
         actions={
@@ -443,7 +237,7 @@ const BuyerScorecard: React.FC = () => {
             className="h-10 min-w-[260px] px-3 text-sm text-text-primary bg-bg-surface border border-border-input rounded-md focus:outline-none focus:border-teal cursor-pointer"
             aria-label="Select supplier"
           >
-            {ALL_SUPPLIERS.map((s) => (
+            {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
@@ -453,31 +247,33 @@ const BuyerScorecard: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {ALL_SUPPLIERS.length} suppliers · last activity {latestCommDate}
+        {suppliers.length} suppliers · last activity {latestCommDate}
       </PageMetaLine>
 
-      <section className="bg-navy rounded-lg shadow-sm p-6 mb-6">
+      {/* DP-1: the supplier identity hero restyles from a solid navy fill to a
+          light surface — navy text, teal accents, semantic grade badge kept. */}
+      <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="min-w-0 flex-1">
-            <div className="text-xl font-bold text-white mb-2">
+            <div className="text-xl font-bold text-text-primary mb-2">
               <span className="mr-2">{COUNTRY_FLAGS[supp.country] ?? '●'}</span>
               {supp.name}
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-white/10 text-white/85">
+              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-bg-hover text-text-secondary border border-border-subtle">
                 {supp.category}
               </span>
-              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-white/10 text-white">
+              <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal">
                 {supp.tier}
               </span>
             </div>
-            <div className="flex flex-wrap gap-5 text-xs text-white/70">
+            <div className="flex flex-wrap gap-5 text-xs text-text-secondary">
               <span>
-                <span className="text-white/50 font-semibold">SAP BP: </span>
+                <span className="text-text-tertiary font-semibold">SAP BP: </span>
                 {supp.sapBp}
               </span>
               <span>
-                <span className="text-white/50 font-semibold">Channel: </span>
+                <span className="text-text-tertiary font-semibold">Channel: </span>
                 {supp.channel}
               </span>
             </div>
@@ -500,13 +296,13 @@ const BuyerScorecard: React.FC = () => {
 
           <div className="flex flex-col items-center gap-2 shrink-0">
             <GradeBadge grade={supp.grade} />
-            <div className="text-base font-bold text-white">
+            <div className="text-base font-bold text-text-primary">
               {supp.score}/100
             </div>
             <span
               className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold"
               style={{
-                backgroundColor: `${tone.soft}33`,
+                backgroundColor: `${tone.soft}`,
                 color: tone.stroke,
                 border: `1px solid ${tone.stroke}55`,
               }}
@@ -656,7 +452,7 @@ const BuyerScorecard: React.FC = () => {
             Improvement plan — action items
           </h2>
           <div className="flex flex-col gap-2 mb-4">
-            {IMPROVEMENT_ACTIONS.map((a) => (
+            {improvementActions.map((a) => (
               <div
                 key={a.item}
                 className="flex items-center justify-between gap-3 px-4 py-3 bg-danger-soft/40 border border-danger-soft rounded-md"

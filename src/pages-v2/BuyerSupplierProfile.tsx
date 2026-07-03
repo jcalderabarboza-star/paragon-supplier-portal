@@ -32,8 +32,13 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
-import { useSupplier } from '../services/query/hooks';
+import {
+  useSupplier,
+  useStorefrontCatalog,
+  useStorefrontCerts,
+} from '../services/query/hooks';
 import { SupplierStatus, SupplierTier } from '../types/supplier.types';
+import type { ProfileCertStatus } from '../services/data/types';
 
 const PROFILE_CRUMB = ['ACQUIRE', 'SUPPLIER DIRECTORY'];
 
@@ -52,27 +57,6 @@ const STATUS_VARIANT: Record<
   [SupplierStatus.SUSPENDED]: 'danger',
 };
 
-const CATALOG_ITEMS = [
-  { material: 'PET Bottle 100ml Airless Pump', sapCode: 'MAT-10045', moq: '10,000 PCS', leadTime: '14 days', unitPrice: 'Rp 3,700', capacity: '200,000 PCS/mo' },
-  { material: 'PET Bottle 200ml Standard Pump', sapCode: 'MAT-10046', moq: '10,000 PCS', leadTime: '14 days', unitPrice: 'Rp 4,200', capacity: '150,000 PCS/mo' },
-  { material: 'Airless Pump 15ml Travel Size', sapCode: 'MAT-10089', moq: '5,000 PCS', leadTime: '21 days', unitPrice: 'Rp 2,800', capacity: '100,000 PCS/mo' },
-];
-
-type ComplianceStatus = 'valid' | 'expiring' | 'expired' | 'missing';
-
-const COMPLIANCE_DOCS: {
-  name: string;
-  status: ComplianceStatus;
-  expiry: string | null;
-  uploaded: string | null;
-}[] = [
-  { name: 'BPOM Registration', status: 'valid', expiry: '2026-12-31', uploaded: '2024-01-10' },
-  { name: 'ISO 9001:2015', status: 'valid', expiry: '2026-08-14', uploaded: '2023-08-15' },
-  { name: 'BPJPH Halal Cert', status: 'missing', expiry: null, uploaded: null },
-  { name: 'SNI Compliance', status: 'expiring', expiry: '2026-05-01', uploaded: '2024-05-01' },
-  { name: 'NPWP Tax ID', status: 'valid', expiry: null, uploaded: '2022-09-01' },
-];
-
 const RECENT_POS = [
   { poNum: 'PO-2026-00421', material: 'PET Bottle 100ml', qty: '50,000 PCS', value: 'Rp 185jT', ordered: '2026-03-10', delivery: '2026-03-24', otif: 'On Time', status: 'Delivered' },
   { poNum: 'PO-2026-00389', material: 'PET Bottle 200ml', qty: '30,000 PCS', value: 'Rp 126jT', ordered: '2026-02-18', delivery: '2026-03-05', otif: 'On Time', status: 'Delivered' },
@@ -90,27 +74,30 @@ const MSG_LOG = [
 ];
 
 const COMPLIANCE_VARIANT: Record<
-  ComplianceStatus,
+  ProfileCertStatus,
   'success' | 'warning' | 'danger' | 'neutral'
 > = {
   valid: 'success',
   expiring: 'warning',
   expired: 'danger',
   missing: 'neutral',
+  pending: 'warning',
 };
 
-const COMPLIANCE_ICON: Record<ComplianceStatus, React.ReactNode> = {
+const COMPLIANCE_ICON: Record<ProfileCertStatus, React.ReactNode> = {
   valid: <CheckCircle2 size={14} />,
   expiring: <AlertTriangle size={14} />,
   expired: <XCircle size={14} />,
   missing: <XCircle size={14} />,
+  pending: <Clock size={14} />,
 };
 
-const COMPLIANCE_LABEL: Record<ComplianceStatus, string> = {
+const COMPLIANCE_LABEL: Record<ProfileCertStatus, string> = {
   valid: 'Valid',
   expiring: 'Expiring',
   expired: 'Expired',
   missing: 'Missing',
+  pending: 'Pending',
 };
 
 type TabId =
@@ -137,6 +124,13 @@ const BuyerSupplierProfile: React.FC = () => {
 
   const supplierQuery = useSupplier(id ?? '');
   const supp = supplierQuery.data ?? null;
+
+  // Catalog + compliance fold onto the storefront reads, scoped to this
+  // supplier id (replacing the former inline "Sample data" consts).
+  const catalogQuery = useStorefrontCatalog(id ?? '');
+  const certsQuery = useStorefrontCerts(id ?? '');
+  const catalog = catalogQuery.data?.items ?? [];
+  const certs = certsQuery.data?.items ?? [];
 
   if (supplierQuery.isPending)
     return <LoadingState breadcrumb={PROFILE_CRUMB} />;
@@ -387,7 +381,6 @@ const BuyerSupplierProfile: React.FC = () => {
             <span className="text-sm font-semibold text-text-primary">
               Compliance documents
             </span>
-            <StatusPill variant="neutral">Sample data</StatusPill>
           </div>
           <Table>
             <TableHeader>
@@ -397,7 +390,7 @@ const BuyerSupplierProfile: React.FC = () => {
               <TableHeaderCell>Expires</TableHeaderCell>
             </TableHeader>
             <tbody>
-              {COMPLIANCE_DOCS.map((doc) => (
+              {certs.map((doc) => (
                 <TableRow key={doc.name}>
                   <TableCell>
                     <div className="font-medium text-text-primary">
@@ -420,6 +413,16 @@ const BuyerSupplierProfile: React.FC = () => {
                   </TableCell>
                 </TableRow>
               ))}
+              {certs.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="text-center text-sm text-text-tertiary py-8"
+                  >
+                    No compliance documents on file.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </Table>
         </section>
@@ -431,7 +434,6 @@ const BuyerSupplierProfile: React.FC = () => {
             <span className="text-sm font-semibold text-text-primary">
               Catalog
             </span>
-            <StatusPill variant="neutral">Sample data</StatusPill>
           </div>
           <Table>
             <TableHeader>
@@ -443,8 +445,8 @@ const BuyerSupplierProfile: React.FC = () => {
               <TableHeaderCell>Capacity</TableHeaderCell>
             </TableHeader>
             <tbody>
-              {CATALOG_ITEMS.map((m) => (
-                <TableRow key={m.sapCode}>
+              {catalog.map((m) => (
+                <TableRow key={m.id}>
                   <TableCell>
                     <div className="font-medium text-text-primary">
                       {m.material}
@@ -453,18 +455,30 @@ const BuyerSupplierProfile: React.FC = () => {
                   <TableCell className="font-mono text-xs text-text-tertiary">
                     {m.sapCode}
                   </TableCell>
-                  <TableCell className="text-text-secondary">{m.moq}</TableCell>
                   <TableCell className="text-text-secondary">
-                    {m.leadTime}
+                    {m.moq} {m.uom}
+                  </TableCell>
+                  <TableCell className="text-text-secondary">
+                    {m.leadTime} days
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary">
-                    {m.unitPrice}
+                    Rp {m.unitPrice}
                   </TableCell>
                   <TableCell className="text-text-secondary">
-                    {m.capacity}
+                    {m.capacity} {m.uom}/mo
                   </TableCell>
                 </TableRow>
               ))}
+              {catalog.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="text-center text-sm text-text-tertiary py-8"
+                  >
+                    No catalog items published.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </Table>
         </section>

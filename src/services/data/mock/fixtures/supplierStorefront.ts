@@ -21,12 +21,14 @@ export const INITIAL_CATALOG: CatalogItem[] = [
 ];
 
 export const INITIAL_CERTS: ProfileCert[] = [
-  { supplierId: 'sup-007', name: 'BPOM Registration', visible: true, status: 'valid', expiry: '2026-12-31' },
-  { supplierId: 'sup-007', name: 'ISO 9001:2015', visible: true, status: 'valid', expiry: '2026-08-14' },
-  { supplierId: 'sup-007', name: 'BPJPH Halal Cert', visible: false, status: 'missing', expiry: null },
-  { supplierId: 'sup-007', name: 'SNI Compliance', visible: true, status: 'expiring', expiry: '2026-05-01' },
-  { supplierId: 'sup-002', name: 'RSPO Certification', visible: true, status: 'valid', expiry: '2027-03-31' },
-  { supplierId: 'sup-005', name: 'REACH Registration', visible: true, status: 'valid', expiry: '2028-01-15' },
+  { supplierId: 'sup-007', name: 'BPOM Registration', visible: true, status: 'valid', expiry: '2026-12-31', uploaded: '2024-01-10' },
+  { supplierId: 'sup-007', name: 'ISO 9001:2015', visible: true, status: 'valid', expiry: '2026-08-14', uploaded: '2023-08-15' },
+  { supplierId: 'sup-007', name: 'BPJPH Halal Cert', visible: false, status: 'missing', expiry: null, uploaded: null },
+  { supplierId: 'sup-007', name: 'SNI Compliance', visible: true, status: 'expiring', expiry: '2026-05-01', uploaded: '2024-05-01' },
+  // D-4: a pending-review document exercises the 'pending' status variant.
+  { supplierId: 'sup-007', name: 'GMP Certificate', visible: false, status: 'pending', expiry: null, uploaded: '2026-06-20' },
+  { supplierId: 'sup-002', name: 'RSPO Certification', visible: true, status: 'valid', expiry: '2027-03-31', uploaded: '2025-02-10' },
+  { supplierId: 'sup-005', name: 'REACH Registration', visible: true, status: 'valid', expiry: '2028-01-15', uploaded: '2026-01-05' },
 ];
 
 export const PRODUCTS_DEFAULT: StorefrontProduct[] = [

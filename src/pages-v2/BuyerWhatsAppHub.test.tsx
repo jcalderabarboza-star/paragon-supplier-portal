@@ -38,6 +38,16 @@ describe('BuyerWhatsAppHub — four honest states', () => {
     ).toBeGreaterThan(0);
   });
 
+  it('WA-CONNECT-01: shows the honest simulated marker, not a live CONNECTED badge', async () => {
+    renderWithProviders(<BuyerWhatsAppHub />);
+    expect(
+      await screen.findByText('Simulated — 360dialog (Phase 4′)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('CONNECTED — 360dialog Business API'),
+    ).not.toBeInTheDocument();
+  });
+
   it('loading: shows LoadingState while the reads are pending', () => {
     renderWithProviders(<BuyerWhatsAppHub />, { service: alwaysPending });
     expect(screen.getByText('Loading…')).toBeInTheDocument();
