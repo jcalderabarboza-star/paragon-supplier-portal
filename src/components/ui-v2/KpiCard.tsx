@@ -35,7 +35,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
         />
       ) : null}
       <div className="text-eyebrow text-text-tertiary uppercase">{eyebrow}</div>
-      <div className="text-4xl font-bold text-text-primary mt-3 leading-tight">
+      <div className="text-kpi font-mono tabular-nums text-text-primary mt-3">
         {value}
       </div>
       {subtitle ? (

@@ -19,7 +19,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         <div className="text-eyebrow text-text-tertiary uppercase">
           {breadcrumb.join(' · ')}
         </div>
-        <h1 className="text-3xl font-semibold text-text-primary mt-1">
+        <h1 className="text-title text-text-primary mt-1">
           {title}
         </h1>
         {subtitle ? (
