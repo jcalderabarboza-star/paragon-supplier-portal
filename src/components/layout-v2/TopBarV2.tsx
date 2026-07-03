@@ -7,6 +7,7 @@ const TopBarV2: React.FC = () => {
   const { t } = useTranslation();
   const badge = resolveEnvBadge(
     import.meta.env.DEV,
+    __DEPLOY_ENV__,
     typeof window !== 'undefined' ? window.location.hostname : undefined,
   );
   return (

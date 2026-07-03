@@ -7,6 +7,12 @@ import react from '@vitejs/plugin-react';
 // so `src/**` resolves for the test run.
 export default defineConfig({
   plugins: [react()],
+  // __DEPLOY_ENV__ is injected by vite `define` in the real build; define it here
+  // too so components that read it don't hit a ReferenceError under test. Empty
+  // string → the badge's hostname fallback path (ENV-BADGE-01).
+  define: {
+    __DEPLOY_ENV__: JSON.stringify(''),
+  },
   test: {
     environment: 'jsdom',
     globals: true,
