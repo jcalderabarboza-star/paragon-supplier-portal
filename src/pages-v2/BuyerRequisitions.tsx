@@ -27,44 +27,15 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
+import { useRequisitions } from '../services/query/hooks';
+import { formatNumber, formatIDR, formatDate } from '../lib/format';
+import type { PurchaseRequisition, PRStatus } from '../services/data/types';
 
-type PRStatus =
-  | 'Draft'
-  | 'Pending Approval'
-  | 'Approved'
-  | 'Sourcing Event'
-  | 'PO Created'
-  | 'Rejected';
-
-interface PR {
-  id: string;
-  prNumber: string;
-  material: string;
-  category: string;
-  qty: string;
-  uom: string;
-  requiredDate: string;
-  estimatedValue: string;
-  requestor: string;
-  costCenter: string;
-  status: PRStatus;
-  createdDate: string;
-  approver: string;
-  sourceOfSupply: string;
-  linkedDoc: string;
-  priority: 'High' | 'Medium' | 'Low';
-  justification: string;
-}
-
-const MOCK_PRS: PR[] = [
-  { id: 'pr-001', prNumber: 'PR-2026-00341', material: 'Niacinamide B3 USP Grade', category: 'Active Ingredients', qty: '500', uom: 'KG', requiredDate: '2026-05-15', estimatedValue: 'Rp 79jT', requestor: 'R&D Formulation', costCenter: 'CC-RD-001', status: 'PO Created', createdDate: '2026-04-01', approver: 'Procurement Head', sourceOfSupply: 'PIR exists', linkedDoc: 'PO-2026-00108', priority: 'High', justification: 'Quarterly replenishment Wardah Q2.' },
-  { id: 'pr-002', prNumber: 'PR-2026-00342', material: 'PET Bottle 100ml Airless Pump', category: 'Packaging Primary', qty: '50000', uom: 'PCS', requiredDate: '2026-05-20', estimatedValue: 'Rp 105jT', requestor: 'Packaging Engineering', costCenter: 'CC-PKG-002', status: 'Approved', createdDate: '2026-04-03', approver: 'Procurement Head', sourceOfSupply: 'PIR exists', linkedDoc: '', priority: 'High', justification: 'Make Over launch packaging.' },
-  { id: 'pr-003', prNumber: 'PR-2026-00343', material: 'Givaudan Floral Accord FG-2847', category: 'Fragrance', qty: '100', uom: 'KG', requiredDate: '2026-06-01', estimatedValue: 'Rp 210jT', requestor: 'Perfumer Team', costCenter: 'CC-RD-003', status: 'Sourcing Event', createdDate: '2026-04-05', approver: 'VP Procurement', sourceOfSupply: 'No source', linkedDoc: 'RFQ-2026-004', priority: 'High', justification: 'New fragrance Scarlett premium.' },
-  { id: 'pr-004', prNumber: 'PR-2026-00344', material: 'Halal Glycerin 99.5%', category: 'Halal Emulsifier', qty: '2000', uom: 'KG', requiredDate: '2026-05-30', estimatedValue: 'Rp 43jT', requestor: 'Production Planning', costCenter: 'CC-MFG-001', status: 'Pending Approval', createdDate: '2026-04-08', approver: 'Section Head', sourceOfSupply: 'PIR exists', linkedDoc: '', priority: 'Medium', justification: 'Safety stock below minimum.' },
-  { id: 'pr-005', prNumber: 'PR-2026-00345', material: 'Folding Carton 150gsm Wardah', category: 'Packaging Secondary', qty: '200000', uom: 'PCS', requiredDate: '2026-06-15', estimatedValue: 'Rp 84jT', requestor: 'Supply Chain Planning', costCenter: 'CC-SC-001', status: 'Draft', createdDate: '2026-04-10', approver: '—', sourceOfSupply: 'PIR exists', linkedDoc: '', priority: 'Low', justification: 'Standard quarterly order.' },
-  { id: 'pr-006', prNumber: 'PR-2026-00340', material: 'Centella Asiatica Extract 10:1', category: 'Natural Botanical', qty: '300', uom: 'KG', requiredDate: '2026-04-30', estimatedValue: 'Rp 67jT', requestor: 'R&D Formulation', costCenter: 'CC-RD-001', status: 'PO Created', createdDate: '2026-03-20', approver: 'Procurement Head', sourceOfSupply: 'PIR exists', linkedDoc: 'PO-2026-00106', priority: 'Medium', justification: 'Emina Cica Care — PT Ecogreen.' },
-];
+const REQUISITIONS_CRUMB = ['ACQUIRE', 'REQUISITIONS'];
 
 const STATUS_VARIANT: Record<
   PRStatus,
@@ -79,16 +50,6 @@ const STATUS_VARIANT: Record<
 };
 
 type GroupTab = 'all' | 'Draft' | 'Pending Approval' | 'Approved' | 'Sourcing Event' | 'PO Created';
-
-const formatDate = (iso: string): string => {
-  if (!iso || iso === '—') return '—';
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
 
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-teal placeholder:text-text-tertiary';
@@ -173,11 +134,12 @@ const BuyerRequisitions: React.FC = () => {
   const { toast } = useToast();
   const [group, setGroup] = useState<GroupTab>('all');
   const [search, setSearch] = useState('');
-  const [selectedPR, setSelectedPR] = useState<PR | null>(null);
+  const [selectedPR, setSelectedPR] = useState<PurchaseRequisition | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [form, setForm] = useState<NewPRForm>(emptyForm);
 
-  const prs = MOCK_PRS;
+  const reqQuery = useRequisitions();
+  const prs = reqQuery.data?.items ?? [];
 
   const counts = useMemo(() => {
     const by = (s: PRStatus) => prs.filter((p) => p.status === s).length;
@@ -214,6 +176,25 @@ const BuyerRequisitions: React.FC = () => {
     });
   }, [prs, group, search]);
 
+  if (reqQuery.isPending) return <LoadingState breadcrumb={REQUISITIONS_CRUMB} />;
+  if (reqQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={REQUISITIONS_CRUMB}
+        error={reqQuery.error}
+        onRetry={() => reqQuery.refetch()}
+      />
+    );
+  if (prs.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={REQUISITIONS_CRUMB}
+        title="No requisitions yet"
+        subtitle="Purchase requisitions are a buyer-side view."
+        message="PRs and their sourcing status appear here for buyer accounts."
+      />
+    );
+
   const canSubmit =
     !!form.material && !!form.qty && !!form.date && !!form.costCenter;
 
@@ -232,7 +213,7 @@ const BuyerRequisitions: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['ACQUIRE', 'REQUISITIONS']}
+        breadcrumb={REQUISITIONS_CRUMB}
         title="Purchase Requisitions"
         subtitle="Starting point of procurement · PR → Approval → Source check → PO or Sourcing Event."
         actions={
@@ -351,13 +332,13 @@ const BuyerRequisitions: React.FC = () => {
                     </span>
                   </TableCell>
                   <TableCell className="text-right whitespace-nowrap text-sm text-text-primary">
-                    {pr.qty} {pr.uom}
+                    {formatNumber(pr.quantity)} {pr.uom}
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-sm text-text-secondary">
                     {formatDate(pr.requiredDate)}
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    {pr.estimatedValue}
+                    {formatIDR(pr.estimatedValue, { compact: true })}
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
@@ -488,7 +469,7 @@ const BuyerRequisitions: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">Quantity</dt>
                   <dd className="text-text-primary font-medium">
-                    {selectedPR.qty} {selectedPR.uom}
+                    {formatNumber(selectedPR.quantity)} {selectedPR.uom}
                   </dd>
                 </div>
                 <div>
@@ -500,7 +481,7 @@ const BuyerRequisitions: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">Estimated value</dt>
                   <dd className="text-text-primary font-semibold">
-                    {selectedPR.estimatedValue}
+                    {formatIDR(selectedPR.estimatedValue, { compact: true })}
                   </dd>
                 </div>
                 <div>
