@@ -237,7 +237,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
       className={`bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-4 border-l-2 ${accentClass} overflow-hidden`}
     >
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle flex-wrap">
-        <span className="font-mono text-sm font-bold text-teal">
+        <span className="font-mono text-sm font-bold text-text-primary">
           {rfq.rfqNumber}
         </span>
         <StatusPill variant={urgent ? 'warning' : 'info'}>
@@ -419,7 +419,7 @@ const MyQuotesTab: React.FC<{
           <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-sm font-bold text-teal">
+                <span className="font-mono text-sm font-bold text-text-primary">
                   {q.rfqNumber}
                 </span>
                 {q.quoteNumber && (
@@ -518,7 +518,7 @@ const AwardsTab: React.FC = () => {
             {AWARD_HISTORY.map((row, i) => (
               <TableRow key={i}>
                 <TableCell>
-                  <span className="font-mono text-xs font-bold text-teal">
+                  <span className="font-mono text-xs font-bold text-text-primary">
                     {row.rfqNumber}
                   </span>
                 </TableCell>

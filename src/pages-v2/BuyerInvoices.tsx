@@ -476,7 +476,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                       onClick={() => openInvoice(inv)}
                     >
                       <TableCell>
-                        <div className="font-mono text-xs font-semibold text-teal">
+                        <div className="font-mono text-xs font-semibold text-text-primary">
                           {inv.invoiceNumber}
                         </div>
                       </TableCell>

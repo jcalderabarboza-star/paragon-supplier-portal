@@ -558,7 +558,7 @@ const SupplierDashboard: React.FC = () => {
                   return (
                     <TableRow key={po.id}>
                       <TableCell>
-                        <span className="font-mono text-xs font-bold text-teal">
+                        <span className="font-mono text-xs font-bold text-text-primary">
                           {po.poNumber}
                         </span>
                       </TableCell>

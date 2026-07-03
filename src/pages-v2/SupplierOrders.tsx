@@ -332,7 +332,7 @@ const SupplierOrders: React.FC = () => {
                 onClick={() => openOrderPanel(po, 'detail')}
               >
                 <TableCell>
-                  <span className="font-mono text-xs font-bold text-teal">
+                  <span className="font-mono text-xs font-bold text-text-primary">
                     {po.poNumber}
                   </span>
                 </TableCell>

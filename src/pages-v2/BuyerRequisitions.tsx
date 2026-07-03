@@ -317,7 +317,7 @@ const BuyerRequisitions: React.FC = () => {
                   onClick={() => setSelectedPR(pr)}
                 >
                   <TableCell>
-                    <div className="font-mono text-xs font-semibold text-teal">
+                    <div className="font-mono text-xs font-semibold text-text-primary">
                       {pr.prNumber}
                     </div>
                   </TableCell>
@@ -358,7 +358,7 @@ const BuyerRequisitions: React.FC = () => {
                   <TableCell>
                     <span
                       className={`font-mono text-xs ${
-                        pr.linkedDoc ? 'text-teal' : 'text-text-tertiary'
+                        pr.linkedDoc ? 'text-text-primary' : 'text-text-tertiary'
                       }`}
                     >
                       {pr.linkedDoc || '—'}
@@ -544,7 +544,7 @@ const BuyerRequisitions: React.FC = () => {
               {selectedPR.linkedDoc && (
                 <div className="mt-3 text-sm text-text-secondary">
                   Linked document:{' '}
-                  <span className="font-mono text-teal">
+                  <span className="font-mono text-text-primary">
                     {selectedPR.linkedDoc}
                   </span>
                 </div>
