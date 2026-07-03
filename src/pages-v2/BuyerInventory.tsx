@@ -37,12 +37,20 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
+import LoadingState from '../components/ui-v2/LoadingState';
+import ErrorState from '../components/ui-v2/ErrorState';
+import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
-import { mockInventory } from '../data/mockInventory';
-import { mockSuppliers } from '../data/mockSuppliers';
-import { mockPurchaseOrders } from '../data/mockPurchaseOrders';
+import {
+  useInventory,
+  useSuppliers,
+  usePurchaseOrders,
+} from '../services/query/hooks';
+import { formatNumber } from '../lib/format';
 import { InventoryRecord } from '../types/supplier.types';
 import { POStatus } from '../types/purchaseOrder.types';
+
+const INVENTORY_CRUMB = ['TRANSACT', 'INVENTORY VISIBILITY'];
 
 type GroupTab = 'all' | 'critical' | 'warning' | 'healthy' | 'excess';
 
@@ -67,8 +75,6 @@ const DATA_SOURCE_ICON: Record<string, LucideIcon> = {
   Manual: Hand,
 };
 
-const supplierById = new Map(mockSuppliers.map((s) => [s.id, s]));
-
 const inferBrand = (item: InventoryRecord): BrandKey[] => {
   const desc = item.materialDescription.toLowerCase();
   const found: BrandKey[] = [];
@@ -77,9 +83,6 @@ const inferBrand = (item: InventoryRecord): BrandKey[] => {
   }
   return found;
 };
-
-const formatNumber = (n: number): string =>
-  new Intl.NumberFormat('id-ID').format(n);
 
 const formatRelativeTime = (iso: string): string => {
   if (!iso) return '—';
@@ -155,12 +158,25 @@ const BuyerInventory: React.FC = () => {
   const [selectedBrands, setSelectedBrands] = useState<BrandKey[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const inventoryQuery = useInventory();
+  const suppliersQuery = useSuppliers();
+  const posQuery = usePurchaseOrders();
+
+  const inventory = inventoryQuery.data?.items ?? [];
+  const purchaseOrders = posQuery.data?.items ?? [];
+  // Category / country / OTIF are cross-supplier joins — best-effort off the
+  // suppliers list (empty for a supplier persona; the page still renders).
+  const supplierById = useMemo(
+    () => new Map((suppliersQuery.data?.items ?? []).map((s) => [s.id, s])),
+    [suppliersQuery.data],
+  );
+
   const counts = useMemo(() => {
     let critical = 0;
     let warning = 0;
     let healthy = 0;
     let excess = 0;
-    for (const it of mockInventory) {
+    for (const it of inventory) {
       const b = dosBucket(it.daysOfSupply).tab;
       if (b === 'critical') critical++;
       else if (b === 'warning') warning++;
@@ -168,21 +184,22 @@ const BuyerInventory: React.FC = () => {
       else if (b === 'excess') excess++;
     }
     return {
-      all: mockInventory.length,
+      all: inventory.length,
       critical,
       warning,
       healthy,
       excess,
     };
-  }, []);
+  }, [inventory]);
 
   const avgDos = useMemo(() => {
-    const sum = mockInventory.reduce((acc, it) => acc + it.daysOfSupply, 0);
-    return Math.round(sum / mockInventory.length);
-  }, []);
+    if (inventory.length === 0) return 0;
+    const sum = inventory.reduce((acc, it) => acc + it.daysOfSupply, 0);
+    return Math.round(sum / inventory.length);
+  }, [inventory]);
 
   const filtered = useMemo(() => {
-    return mockInventory.filter((it) => {
+    return inventory.filter((it) => {
       const bucket = dosBucket(it.daysOfSupply).tab;
       if (tab !== 'all' && bucket !== tab) return false;
       if (selectedBrands.length > 0) {
@@ -201,21 +218,21 @@ const BuyerInventory: React.FC = () => {
       }
       return true;
     });
-  }, [tab, search, selectedBrands]);
+  }, [inventory, tab, search, selectedBrands]);
 
   const selected = selectedId
-    ? mockInventory.find((it) => it.id === selectedId) ?? null
+    ? inventory.find((it) => it.id === selectedId) ?? null
     : null;
 
   // Build heatmap rows: category × brand
   const categories = useMemo(() => {
     const cats = new Set<string>();
-    for (const it of mockInventory) {
+    for (const it of inventory) {
       const sup = supplierById.get(it.supplierId);
       if (sup?.category) cats.add(sup.category);
     }
     return Array.from(cats);
-  }, []);
+  }, [inventory, supplierById]);
 
   const heatmap = useMemo(() => {
     const map: Record<string, Record<string, { dos: number; count: number }>> =
@@ -226,7 +243,7 @@ const BuyerInventory: React.FC = () => {
         map[cat][b] = { dos: 0, count: 0 };
       }
     }
-    for (const it of mockInventory) {
+    for (const it of inventory) {
       const sup = supplierById.get(it.supplierId);
       const cat = sup?.category ?? 'Other';
       const brands = inferBrand(it);
@@ -241,7 +258,29 @@ const BuyerInventory: React.FC = () => {
       }
     }
     return map;
-  }, [categories]);
+  }, [categories, inventory, supplierById]);
+
+  // Primary gate is the inventory read; the supplier / PO joins degrade
+  // gracefully and are not gated.
+  if (inventoryQuery.isPending)
+    return <LoadingState breadcrumb={INVENTORY_CRUMB} />;
+  if (inventoryQuery.isError)
+    return (
+      <ErrorState
+        breadcrumb={INVENTORY_CRUMB}
+        error={inventoryQuery.error}
+        onRetry={() => inventoryQuery.refetch()}
+      />
+    );
+  if (inventory.length === 0)
+    return (
+      <EmptyState
+        breadcrumb={INVENTORY_CRUMB}
+        title="No inventory positions yet"
+        subtitle="Upstream supplier inventory positions appear here."
+        message="When suppliers report stock, their days-of-supply positions show up here."
+      />
+    );
 
   const toggleBrand = (b: BrandKey) => {
     setSelectedBrands((prev) =>
@@ -275,7 +314,7 @@ const BuyerInventory: React.FC = () => {
   const dosTrend = selected ? buildDosTrend(selected.daysOfSupply) : [];
 
   const activePOs = selected
-    ? mockPurchaseOrders.filter(
+    ? purchaseOrders.filter(
         (po) =>
           po.supplierId === selected.supplierId &&
           po.lineItems.some((li) => li.materialCode === selected.materialCode) &&
@@ -322,7 +361,7 @@ const BuyerInventory: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['TRANSACT', 'INVENTORY VISIBILITY']}
+        breadcrumb={INVENTORY_CRUMB}
         title="Inventory Visibility"
         subtitle="Real-time upstream supplier inventory positions, days of supply, and critical material alerts."
         actions={
@@ -336,7 +375,7 @@ const BuyerInventory: React.FC = () => {
       />
 
       <PageMetaLine className="mb-6">
-        {mockInventory.length} materials tracked · last sync {lastSync}
+        {inventory.length} materials tracked · last sync {lastSync}
       </PageMetaLine>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -717,7 +756,7 @@ const BuyerInventory: React.FC = () => {
                             {po.poNumber}
                           </td>
                           <td className="py-2 text-right text-text-primary">
-                            {li ? formatNumber(li.qty) : '—'} {li?.uom ?? ''}
+                            {li ? formatNumber(li.quantity) : '—'} {li?.uom ?? ''}
                           </td>
                           <td className="py-2 pl-3 text-text-secondary">
                             {po.confirmedDeliveryDate ||

@@ -36,9 +36,11 @@ import {
   useSupplier,
   useStorefrontCatalog,
   useStorefrontCerts,
+  usePurchaseOrders,
 } from '../services/query/hooks';
+import { formatIDR, formatNumber, formatDate } from '../lib/format';
 import { SupplierStatus, SupplierTier } from '../types/supplier.types';
-import type { ProfileCertStatus } from '../services/data/types';
+import type { ProfileCertStatus, PurchaseOrder } from '../services/data/types';
 
 const PROFILE_CRUMB = ['ACQUIRE', 'SUPPLIER DIRECTORY'];
 
@@ -57,12 +59,19 @@ const STATUS_VARIANT: Record<
   [SupplierStatus.SUSPENDED]: 'danger',
 };
 
-const RECENT_POS = [
-  { poNum: 'PO-2026-00421', material: 'PET Bottle 100ml', qty: '50,000 PCS', value: 'Rp 185jT', ordered: '2026-03-10', delivery: '2026-03-24', otif: 'On Time', status: 'Delivered' },
-  { poNum: 'PO-2026-00389', material: 'PET Bottle 200ml', qty: '30,000 PCS', value: 'Rp 126jT', ordered: '2026-02-18', delivery: '2026-03-05', otif: 'On Time', status: 'Delivered' },
-  { poNum: 'PO-2026-00351', material: 'Airless Pump 15ml', qty: '20,000 PCS', value: 'Rp 56jT', ordered: '2026-01-25', delivery: '2026-02-18', otif: '+3 days', status: 'Delivered' },
-  { poNum: 'PO-2025-00298', material: 'PET Bottle 100ml', qty: '40,000 PCS', value: 'Rp 148jT', ordered: '2025-12-10', delivery: '2025-12-24', otif: 'On Time', status: 'Delivered' },
-];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// OTIF label derived page-side from canonical PO fields (there is no OTIF-per-PO
+// service field — a real metric waits for performance analytics to need it):
+// overdue → "+Nd"; else slip = confirmed − requested delivery; late → "+N days";
+// otherwise "On Time".
+const deriveOtif = (po: PurchaseOrder): string => {
+  if (po.daysOverdue > 0) return `+${po.daysOverdue}d`;
+  const req = new Date(po.requestedDeliveryDate).getTime();
+  const conf = new Date(po.confirmedDeliveryDate).getTime();
+  const slip = Math.round((conf - req) / DAY_MS);
+  return Number.isFinite(slip) && slip > 0 ? `+${slip} days` : 'On Time';
+};
 
 const MSG_LOG = [
   { ts: '2026-04-07 10:24 WIB', direction: 'out', channel: 'whatsapp', docType: 'RFQ', preview: 'RFQ-2026-002 sent: PET Bottle 100ml Airless Pump, 50,000 PCS.', status: 'read' },
@@ -132,6 +141,10 @@ const BuyerSupplierProfile: React.FC = () => {
   const catalog = catalogQuery.data?.items ?? [];
   const certs = certsQuery.data?.items ?? [];
 
+  // Recent purchase orders for this supplier — replaces the former inline
+  // RECENT_POS "Sample data" const (scoped server-side via the supplierId filter).
+  const ordersQuery = usePurchaseOrders({ supplierId: id });
+
   if (supplierQuery.isPending)
     return <LoadingState breadcrumb={PROFILE_CRUMB} />;
   if (supplierQuery.isError)
@@ -169,6 +182,10 @@ const BuyerSupplierProfile: React.FC = () => {
     .slice(0, 2)
     .join('')
     .toUpperCase();
+
+  const recentPOs = [...(ordersQuery.data?.items ?? [])]
+    .sort((a, b) => (a.orderDate < b.orderDate ? 1 : -1))
+    .slice(0, 4);
 
   return (
     <AppShellV2>
@@ -487,15 +504,11 @@ const BuyerSupplierProfile: React.FC = () => {
       {activeTab === 'performance' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 border-b border-border-subtle">
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-base font-semibold text-text-primary">
-                Recent purchase orders
-              </h2>
-              <StatusPill variant="neutral">Sample data</StatusPill>
-            </div>
+            <h2 className="text-base font-semibold text-text-primary mb-1">
+              Recent purchase orders
+            </h2>
             <p className="text-meta text-text-tertiary">
-              Last 4 closed POs with OTIF performance. Wires to live purchase
-              orders in Batch 1.2.
+              This supplier's most recent purchase orders with derived OTIF.
             </p>
           </div>
           <Table>
@@ -510,36 +523,50 @@ const BuyerSupplierProfile: React.FC = () => {
               <TableHeaderCell>Status</TableHeaderCell>
             </TableHeader>
             <tbody>
-              {RECENT_POS.map((po) => (
-                <TableRow key={po.poNum}>
-                  <TableCell className="font-mono text-xs text-text-primary">
-                    {po.poNum}
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    {po.material}
-                  </TableCell>
-                  <TableCell className="text-text-secondary">{po.qty}</TableCell>
-                  <TableCell className="text-right font-semibold text-text-primary">
-                    {po.value}
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    {po.ordered}
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    {po.delivery}
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill
-                      variant={po.otif === 'On Time' ? 'success' : 'warning'}
-                    >
-                      {po.otif}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant="success">{po.status}</StatusPill>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {recentPOs.map((po) => {
+                const line = po.lineItems[0];
+                const otif = deriveOtif(po);
+                return (
+                  <TableRow key={po.id}>
+                    <TableCell className="font-mono text-xs text-text-primary">
+                      {po.poNumber}
+                    </TableCell>
+                    <TableCell className="text-text-secondary">
+                      {line?.description ?? '—'}
+                    </TableCell>
+                    <TableCell className="text-text-secondary">
+                      {line ? `${formatNumber(line.quantity)} ${line.uom}` : '—'}
+                    </TableCell>
+                    <TableCell className="text-right font-semibold text-text-primary">
+                      {formatIDR(po.totalValue, { compact: true })}
+                    </TableCell>
+                    <TableCell className="text-text-secondary">
+                      {formatDate(po.orderDate)}
+                    </TableCell>
+                    <TableCell className="text-text-secondary">
+                      {formatDate(po.confirmedDeliveryDate)}
+                    </TableCell>
+                    <TableCell>
+                      <StatusPill variant={otif === 'On Time' ? 'success' : 'warning'}>
+                        {otif}
+                      </StatusPill>
+                    </TableCell>
+                    <TableCell>
+                      <StatusPill variant="success">{po.status}</StatusPill>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {recentPOs.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="text-center text-sm text-text-tertiary py-8"
+                  >
+                    No purchase orders for this supplier.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </Table>
         </section>
