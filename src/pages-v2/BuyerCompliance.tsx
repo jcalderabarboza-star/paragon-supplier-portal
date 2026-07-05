@@ -108,7 +108,7 @@ const BuyerCompliance: React.FC = () => {
   }, []);
 
   const deadline = useMemo(() => {
-    const target = new Date('2026-10-01');
+    const target = new Date('2026-10-17');
     const today = new Date();
     const daysLeft = Math.ceil(
       (target.getTime() - today.getTime()) / 86_400_000,
@@ -171,7 +171,7 @@ const BuyerCompliance: React.FC = () => {
               BPJPH mandatory deadline
             </div>
             <div className="text-xs text-text-tertiary mt-0.5">
-              All Indonesian cosmetics must carry BPJPH halal cert by 01 Oct
+              All Indonesian cosmetics must carry BPJPH halal cert by 17 Oct
               2026.
             </div>
           </div>
@@ -340,8 +340,9 @@ const BuyerCompliance: React.FC = () => {
                           toast({
                             variant:
                               item.priority === 'Critical' ? 'warning' : 'info',
-                            title: `Reminder sent to ${item.supplier}`,
-                            description: 'Delivered via WhatsApp.',
+                            title: `Reminder queued for ${item.supplier}`,
+                            description:
+                              'Simulated — delivery pending live channel.',
                           })
                         }
                       >

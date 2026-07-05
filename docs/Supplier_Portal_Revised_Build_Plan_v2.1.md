@@ -3,7 +3,7 @@
 **Document type:** Revised, dependency-ordered build plan — supersedes v1.1 and v2.0 upon ratification
 **Project:** Ops Project #11 — Global Supplier Portal Platform (Paragon Odyssey)
 **Built on:** Current State of Truth v1.0 (code-verified) · End-to-End Build Plan v1.1 (baseline) · Critical Review Report v1 + Revised Build Plan v2.0 + CMVE Infra Brief v1 (the Fable audit) · Fable Audit Adjudication v1 (the rulings) · CLI read-only fact-check (the verification)
-**Date:** 2026-07-03 · **Days to compliance deadline: ~106 (17 Oct 2026 — see D-DATE, unconfirmed vs 18 Oct)**
+**Date:** 2026-07-03 · **Days to compliance deadline: ~106 (17 Oct 2026 — CONFIRMED per GR 42/2024, D-DATE RESOLVED)**
 **As-built HEAD:** main @ 248ca75
 **Status:** RATIFIED · Phase 0 complete. Authored on **verified ground**: every repo-facing claim below was confirmed by CLI fact-check against the running tree, not reasoned from documents.
 
@@ -62,8 +62,6 @@ Everything in v1.1 stands, plus: **before the halal deadline, Paragon operates a
 - **R0.3 · WABA + template submissions.** 360dialog account + Meta business verification initiated; Bahasa renewal-reminder + escalation templates submitted as **utility category** (not marketing — avoids surcharge and higher rates; web-verified). Email fallback via SES API defined.
 - **R0.4 · UU PDP floor.** DPO appointment process opened (required pre-go-live); consent language for document intake drafted; retention/classification mapped onto the R1 schema (audit → 7-year WORM).
 - **R0.5 · SAP enforcement-joint engagement.** Open the SAP/BASIS conversation — **not "can you build a block" but "can an MM PO-create change land before the deadline at all?"** The answer determines whether the procedural floor is fallback or primary (F-5/X-4).
-- **R0.6 · Regulatory verification.** **Confirm the deadline date (17 vs 18 Oct) against the regulation text** — multiple primary sources say 18 Oct; our canon says 17. Standing monthly BPJPH primary-source check assigned to the strategist seat through October.
-
 **Exit R0:** registry v0 populated for critical categories; 90-day wave sent; templates in review; DPO process moving; SAP conversation opened; date confirmed.
 
 ### R1 — The thin real slice (~mid-Jul → ~mid-Aug)
