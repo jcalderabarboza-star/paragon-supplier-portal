@@ -50,7 +50,7 @@ import {
 } from '../services/query/hooks';
 import { formatNumber } from '../lib/format';
 import { InventoryRecord } from '../types/supplier.types';
-import { POStatus } from '../types/purchaseOrder.types';
+import { POStatus } from '../services/data/types';
 
 const INVENTORY_CRUMB = ['TRANSACT', 'INVENTORY VISIBILITY'];
 

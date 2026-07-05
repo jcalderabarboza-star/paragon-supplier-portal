@@ -1,4 +1,5 @@
-import { PurchaseOrder, POLineItem, POStatus, ChannelType } from '../types/purchaseOrder.types';
+import { PurchaseOrder, POLineItem } from '../types/purchaseOrder.types';
+import { POStatus, ChannelType } from '../services/data/types';
 
 export const mockPurchaseOrders: PurchaseOrder[] = [
   {

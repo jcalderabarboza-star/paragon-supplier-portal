@@ -1,21 +1,7 @@
-// ─── Enums ────────────────────────────────────────────────────────────────────
-
-export enum POStatus {
-  SENT = 'Sent',
-  VIEWED = 'Viewed',
-  ACKNOWLEDGED = 'Acknowledged',
-  CONFIRMED = 'Confirmed',
-  PARTIALLY_DELIVERED = 'Partially Delivered',
-  DELIVERED = 'Delivered',
-  CLOSED = 'Closed',
-}
-
-export enum ChannelType {
-  WHATSAPP = 'WhatsApp',
-  EMAIL = 'Email',
-  WEB = 'Web',
-  API = 'API',
-}
+// PO enums relocated to services/data/types.ts (canonical home). Re-imported
+// here so this legacy dual-field file keeps ONE enum identity with the
+// canonical shape until it is retired (Batch 1.4).
+import { POStatus, ChannelType } from '../services/data/types';
 
 // ─── Line item interface ──────────────────────────────────────────────────────
 
