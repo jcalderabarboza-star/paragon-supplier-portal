@@ -13,12 +13,14 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { statusTone } from '../lib/statusTone';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { POStatus } from '../types/purchaseOrder.types';
@@ -31,19 +33,6 @@ import type { PurchaseOrder } from '../services/data/types';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
-
-const PO_STATUS_VARIANT: Record<
-  POStatus,
-  'success' | 'warning' | 'danger' | 'info' | 'neutral'
-> = {
-  [POStatus.SENT]: 'neutral',
-  [POStatus.VIEWED]: 'neutral',
-  [POStatus.ACKNOWLEDGED]: 'info',
-  [POStatus.CONFIRMED]: 'info',
-  [POStatus.PARTIALLY_DELIVERED]: 'warning',
-  [POStatus.DELIVERED]: 'success',
-  [POStatus.CLOSED]: 'success',
-};
 
 const ACTION_STATUSES: POStatus[] = [POStatus.SENT, POStatus.ACKNOWLEDGED];
 const PROGRESS_STATUSES: POStatus[] = [
@@ -252,7 +241,7 @@ const SupplierOrders: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {MY_POS.length} orders · last updated {fmtDate(maxOrderDate)}
+        {MY_POS.length} orders · last updated <Data>{fmtDate(maxOrderDate)}</Data>
       </PageMetaLine>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
@@ -332,24 +321,24 @@ const SupplierOrders: React.FC = () => {
                 onClick={() => openOrderPanel(po, 'detail')}
               >
                 <TableCell>
-                  <span className="font-mono text-xs font-bold text-text-primary">
+                  <Data className="text-xs font-bold text-text-primary">
                     {po.poNumber}
-                  </span>
+                  </Data>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-text-secondary">
-                  {fmtDate(po.orderDate)}
+                  <Data>{fmtDate(po.orderDate)}</Data>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-text-secondary">
-                  {fmtDate(po.requestedDeliveryDate)}
+                  <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
                 </TableCell>
                 <TableCell className="text-right text-text-secondary">
                   {po.lineItems.length}
                 </TableCell>
                 <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                  {fmtIDR(po.totalValue)}
+                  <Data>{fmtIDR(po.totalValue)}</Data>
                 </TableCell>
                 <TableCell>
-                  <StatusPill variant={PO_STATUS_VARIANT[po.status]}>
+                  <StatusPill variant={statusTone(po.status)}>
                     {po.status}
                   </StatusPill>
                 </TableCell>
@@ -458,13 +447,13 @@ const SupplierOrders: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">Order date</dt>
                   <dd className="text-text-primary font-medium">
-                    {fmtDate(selected.orderDate)}
+                    <Data>{fmtDate(selected.orderDate)}</Data>
                   </dd>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Requested delivery</dt>
                   <dd className="text-text-primary font-medium">
-                    {fmtDate(selected.requestedDeliveryDate)}
+                    <Data>{fmtDate(selected.requestedDeliveryDate)}</Data>
                   </dd>
                 </div>
                 <div>
@@ -476,13 +465,13 @@ const SupplierOrders: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">Total value</dt>
                   <dd className="text-text-primary font-semibold">
-                    {fmtIDR(selected.totalValue)}
+                    <Data>{fmtIDR(selected.totalValue)}</Data>
                   </dd>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Status</dt>
                   <dd>
-                    <StatusPill variant={PO_STATUS_VARIANT[selected.status]}>
+                    <StatusPill variant={statusTone(selected.status)}>
                       {selected.status}
                     </StatusPill>
                   </dd>
@@ -526,15 +515,15 @@ const SupplierOrders: React.FC = () => {
                         className="border-t border-border-subtle"
                       >
                         <td className="px-3 py-2">
-                          <div className="font-mono text-xs text-text-tertiary">
+                          <Data as="div" className="text-xs text-text-tertiary">
                             {li.materialCode}
-                          </div>
+                          </Data>
                           <div className="text-text-primary mt-0.5">
                             {li.description}
                           </div>
                         </td>
                         <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
-                          {li.quantity.toLocaleString()} {li.uom}
+                          <Data>{li.quantity.toLocaleString()} {li.uom}</Data>
                         </td>
                         {panelMode === 'editing' && (
                           <td className="px-3 py-2 text-right">
@@ -627,7 +616,8 @@ const SupplierOrders: React.FC = () => {
                       Order confirmed
                     </div>
                     <div className="text-xs text-text-secondary">
-                      {selected.poNumber} · Confirmed at {confirmedAt}
+                      <Data>{selected.poNumber}</Data> · Confirmed at{' '}
+                      <Data>{confirmedAt}</Data>
                     </div>
                   </div>
                 </div>
@@ -637,7 +627,7 @@ const SupplierOrders: React.FC = () => {
                       Delivery
                     </dt>
                     <dd className="text-sm font-bold text-text-primary">
-                      {fmtDate(deliveryDate)}
+                      <Data>{fmtDate(deliveryDate)}</Data>
                     </dd>
                   </div>
                   <div className="bg-white rounded px-3 py-2 border border-border-subtle">
@@ -645,7 +635,7 @@ const SupplierOrders: React.FC = () => {
                       Total qty
                     </dt>
                     <dd className="text-sm font-bold text-text-primary">
-                      {totalConfirmedQty.toLocaleString()} units
+                      <Data>{totalConfirmedQty.toLocaleString()} units</Data>
                     </dd>
                   </div>
                   <div className="bg-white rounded px-3 py-2 border border-border-subtle">

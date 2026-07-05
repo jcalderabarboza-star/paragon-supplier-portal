@@ -15,10 +15,12 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { statusTone } from '../lib/statusTone';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
+import Data from '../components/ui-v2/Data';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
@@ -38,15 +40,6 @@ const TIER_LABEL: Record<SupplierTier, string> = {
   [SupplierTier.WHATSAPP]: 'Tier 1 · WhatsApp',
   [SupplierTier.WEB]: 'Tier 2 · Web Portal',
   [SupplierTier.API]: 'Tier 3 · API/EDI',
-};
-
-const STATUS_VARIANT: Record<
-  SupplierStatus,
-  'success' | 'warning' | 'danger' | 'neutral'
-> = {
-  [SupplierStatus.ACTIVE]: 'success',
-  [SupplierStatus.ONBOARDING]: 'warning',
-  [SupplierStatus.SUSPENDED]: 'danger',
 };
 
 const formatDate = (iso: string): string => {
@@ -139,7 +132,7 @@ const BuyerSuppliers: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {counts.total} records · last updated {lastUpdated}
+        {counts.total} records · last updated <Data>{lastUpdated}</Data>
       </PageMetaLine>
 
       <SubTabs
@@ -195,9 +188,9 @@ const BuyerSuppliers: React.FC = () => {
                   <div className="font-semibold text-text-primary">
                     {s.name}
                   </div>
-                  <div className="font-mono text-xs text-text-tertiary mt-0.5">
+                  <Data as="div" className="text-xs text-text-tertiary mt-0.5">
                     {s.sapBpNumber}
-                  </div>
+                  </Data>
                 </TableCell>
                 <TableCell>
                   <span className="text-sm text-text-secondary">
@@ -228,10 +221,10 @@ const BuyerSuppliers: React.FC = () => {
                   </div>
                 </TableCell>
                 <TableCell className="text-right font-semibold text-text-primary">
-                  {s.otif}%
+                  <Data>{s.otif}%</Data>
                 </TableCell>
                 <TableCell>
-                  <StatusPill variant={STATUS_VARIANT[s.status]}>
+                  <StatusPill variant={statusTone(s.status)}>
                     {s.status}
                   </StatusPill>
                 </TableCell>

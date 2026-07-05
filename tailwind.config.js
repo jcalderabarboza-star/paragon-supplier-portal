@@ -52,6 +52,17 @@ export default {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
       },
       fontSize: {
+        // DP3-FONT-01 canonical type scale. Roles below are the ONLY sanctioned
+        // sizes for their role — no ad-hoc text-2xl/3xl/4xl on titles/KPIs/sections.
+        //  title   — page h1 (via <PageHeader>). Was text-3xl font-semibold.
+        //  section — every card/section header. Replaces 8 ad-hoc variants
+        //            (text-sm..text-2xl, semibold vs bold).
+        //  kpi     — every headline/KPI number. Rendered mono (font-mono
+        //            tabular-nums, semibold) per DP-3 data grammar; kills
+        //            font-extrabold and the text-3xl/2xl hand-rolled tiles.
+        'title': ['30px', { lineHeight: '1.2', fontWeight: '600' }],
+        'section': ['16px', { lineHeight: '1.4', fontWeight: '600' }],
+        'kpi': ['36px', { lineHeight: '1.1', fontWeight: '600' }],
         'eyebrow': ['12px', { lineHeight: '1.4', letterSpacing: '0.08em', fontWeight: '600' }],
         'label': ['11px', { lineHeight: '1.3', letterSpacing: '0.06em', fontWeight: '600' }],
         'meta': ['13px', { lineHeight: '1.4', fontWeight: '400' }],

@@ -25,6 +25,7 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -237,9 +238,9 @@ const RFQCard: React.FC<RFQCardProps> = ({
       className={`bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-4 border-l-2 ${accentClass} overflow-hidden`}
     >
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border-subtle flex-wrap">
-        <span className="font-mono text-sm font-bold text-text-primary">
+        <Data className="text-sm font-bold text-text-primary">
           {rfq.rfqNumber}
-        </span>
+        </Data>
         <StatusPill variant={urgent ? 'warning' : 'info'}>
           {urgent
             ? `${rfq.daysRemaining} days remaining`
@@ -419,13 +420,13 @@ const MyQuotesTab: React.FC<{
           <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-sm font-bold text-text-primary">
+                <Data className="text-sm font-bold text-text-primary">
                   {q.rfqNumber}
-                </span>
+                </Data>
                 {q.quoteNumber && (
-                  <span className="font-mono text-xs bg-bg-hover text-text-secondary rounded-full px-2 py-0.5 font-semibold">
+                  <Data className="text-xs bg-bg-hover text-text-secondary rounded-full px-2 py-0.5 font-semibold">
                     {q.quoteNumber}
-                  </span>
+                  </Data>
                 )}
               </div>
               <div className="text-base font-semibold text-text-primary mt-1">
@@ -453,9 +454,9 @@ const MyQuotesTab: React.FC<{
                 <dt className="text-label text-text-tertiary uppercase mb-0.5">
                   {d.label}
                 </dt>
-                <dd className="text-sm font-semibold text-text-primary">
+                <Data as="dd" className="text-sm font-semibold text-text-primary">
                   {d.value}
-                </dd>
+                </Data>
               </div>
             ))}
           </dl>
@@ -518,9 +519,9 @@ const AwardsTab: React.FC = () => {
             {AWARD_HISTORY.map((row, i) => (
               <TableRow key={i}>
                 <TableCell>
-                  <span className="font-mono text-xs font-bold text-text-primary">
+                  <Data className="text-xs font-bold text-text-primary">
                     {row.rfqNumber}
-                  </span>
+                  </Data>
                 </TableCell>
                 <TableCell className="text-text-primary">
                   {row.material}
@@ -534,7 +535,7 @@ const AwardsTab: React.FC = () => {
                   </StatusPill>
                 </TableCell>
                 <TableCell className="text-text-tertiary text-sm whitespace-nowrap">
-                  {row.awardDate}
+                  <Data>{row.awardDate}</Data>
                 </TableCell>
                 <TableCell
                   className={`text-right font-semibold whitespace-nowrap ${
@@ -543,14 +544,14 @@ const AwardsTab: React.FC = () => {
                       : 'text-text-tertiary'
                   }`}
                 >
-                  {row.contractValue}
+                  <Data>{row.contractValue}</Data>
                 </TableCell>
                 <TableCell
-                  className={`font-mono text-xs ${
+                  className={`text-xs ${
                     row.poIssued !== '—' ? 'text-info' : 'text-text-tertiary'
                   }`}
                 >
-                  {row.poIssued}
+                  <Data>{row.poIssued}</Data>
                 </TableCell>
                 <TableCell className="text-xs text-text-secondary max-w-[16rem]">
                   {row.notes}
@@ -578,7 +579,7 @@ const AwardsTab: React.FC = () => {
           </div>
         </div>
         <div className="text-center shrink-0">
-          <div className="text-3xl font-extrabold text-success">{pct}%</div>
+          <div className="text-kpi font-mono tabular-nums text-success">{pct}%</div>
           <div className="text-xs text-text-tertiary">Win rate</div>
         </div>
       </div>

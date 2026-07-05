@@ -125,7 +125,7 @@ const GradeBadge: React.FC<{ grade: Grade }> = ({ grade }) => {
       }}
     >
       <span
-        className="text-4xl font-extrabold"
+        className="text-kpi"
         style={{ color: tone.stroke }}
       >
         {grade}
@@ -314,7 +314,7 @@ const BuyerScorecard: React.FC = () => {
       </section>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-        <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+        <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
           KPI Scorecard — 12 metrics
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -326,7 +326,7 @@ const BuyerScorecard: React.FC = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+          <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
             Score breakdown — radar
           </h2>
           <ResponsiveContainer width="100%" height={280}>
@@ -367,7 +367,7 @@ const BuyerScorecard: React.FC = () => {
         </section>
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-          <h2 className="text-base font-semibold text-text-primary mb-1 pb-3 border-b border-border-subtle">
+          <h2 className="text-section text-text-primary mb-1 pb-3 border-b border-border-subtle">
             Performance trends — 12 months
           </h2>
           <div className="text-meta text-text-tertiary mb-3 mt-3">
@@ -448,7 +448,7 @@ const BuyerScorecard: React.FC = () => {
             This supplier is on a Conditional rating — improvement plan
             active. 30-day review period.
           </div>
-          <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+          <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
             Improvement plan — action items
           </h2>
           <div className="flex flex-col gap-2 mb-4">
@@ -491,7 +491,7 @@ const BuyerScorecard: React.FC = () => {
       )}
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-        <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+        <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
           Communication log — last 5 interactions
         </h2>
         {supp.commLog.length === 0 ? (

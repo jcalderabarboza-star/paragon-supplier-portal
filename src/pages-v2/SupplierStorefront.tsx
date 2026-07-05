@@ -25,6 +25,7 @@ import Tabs from '../components/ui-v2/Tabs';
 import Button from '../components/ui-v2/Button';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
+import Data from '../components/ui-v2/Data';
 import { PreferredChannel } from '../types/supplier.types';
 import { useSupplier, useStorefrontProducts } from '../services/query/hooks';
 
@@ -290,10 +291,10 @@ const SupplierStorefront: React.FC = () => {
               key={p.code}
               className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5"
             >
-              <div className="font-mono text-xs text-text-tertiary">
+              <Data as="div" className="text-xs text-text-tertiary">
                 {p.code}
-              </div>
-              <h3 className="text-sm font-semibold text-text-primary mt-1">
+              </Data>
+              <h3 className="text-section text-text-primary mt-1">
                 {p.name}
               </h3>
               <div className="grid grid-cols-2 gap-3 mt-4 text-meta">
@@ -301,14 +302,16 @@ const SupplierStorefront: React.FC = () => {
                   <div className="text-label text-text-tertiary uppercase">
                     MOQ
                   </div>
-                  <div className="text-text-primary font-medium">{p.moq}</div>
+                  <div className="text-text-primary font-medium">
+                    <Data>{p.moq}</Data>
+                  </div>
                 </div>
                 <div>
                   <div className="text-label text-text-tertiary uppercase">
                     Lead time
                   </div>
                   <div className="text-text-primary font-medium">
-                    {p.leadTime}
+                    <Data>{p.leadTime}</Data>
                   </div>
                 </div>
               </div>
@@ -337,7 +340,7 @@ const SupplierStorefront: React.FC = () => {
                   {c.issuer}
                 </div>
                 <div className="text-meta text-text-secondary mt-1">
-                  Expires {c.expiry}
+                  Expires <Data>{c.expiry}</Data>
                 </div>
               </div>
               <StatusPill variant={CERT_VARIANT[c.status]}>
@@ -351,7 +354,7 @@ const SupplierStorefront: React.FC = () => {
       {activeTab === 'track' && (
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <div className="flex items-center gap-2 mb-5">
-            <h2 className="text-base font-semibold text-text-primary">
+            <h2 className="text-section text-text-primary">
               Delivery track record
             </h2>
             <StatusPill variant="neutral">Sample data</StatusPill>
@@ -372,7 +375,7 @@ const SupplierStorefront: React.FC = () => {
                         {e.label}
                       </span>
                       <span className="text-meta text-text-tertiary">
-                        {e.ts}
+                        <Data>{e.ts}</Data>
                       </span>
                     </div>
                     <p className="text-meta text-text-secondary mt-0.5">
@@ -391,7 +394,7 @@ const SupplierStorefront: React.FC = () => {
           <div className="lg:col-span-2 bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
             <div className="flex items-center gap-2 mb-4">
               <ChannelIcon size={18} className="text-teal" />
-              <h2 className="text-base font-semibold text-text-primary">
+              <h2 className="text-section text-text-primary">
                 Send via {supp.preferredChannel}
               </h2>
             </div>
@@ -421,7 +424,7 @@ const SupplierStorefront: React.FC = () => {
           </div>
 
           <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-text-primary">
+            <h3 className="text-section text-text-primary">
               Primary contact
             </h3>
             <div className="text-sm">

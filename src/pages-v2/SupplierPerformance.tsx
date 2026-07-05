@@ -147,7 +147,7 @@ const GradeBadge: React.FC<{ grade: Grade; score: number }> = ({ grade, score })
         className="w-20 h-20 rounded-full flex items-center justify-center"
         style={{ backgroundColor: tone.soft, border: `4px solid ${tone.stroke}` }}
       >
-        <span className="text-4xl font-extrabold" style={{ color: tone.stroke }}>
+        <span className="text-kpi" style={{ color: tone.stroke }}>
           {grade}
         </span>
       </div>
@@ -285,7 +285,7 @@ const SupplierPerformance: React.FC = () => {
       {activeTab === 'overview' && (
         <>
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               KPI Scorecard — 6 metrics
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -297,7 +297,7 @@ const SupplierPerformance: React.FC = () => {
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-              <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+              <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
                 Performance radar — vs Paragon targets
               </h2>
               <ResponsiveContainer width="100%" height={280}>
@@ -338,7 +338,7 @@ const SupplierPerformance: React.FC = () => {
             </section>
 
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+              <h2 className="flex items-center gap-2 text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
                 Grade history — monthly score
                 <StatusPill variant="neutral">Sample data</StatusPill>
               </h2>
@@ -369,7 +369,7 @@ const SupplierPerformance: React.FC = () => {
                       <div className="text-[9px] font-semibold" style={{ color: tone.stroke }}>
                         {month}
                       </div>
-                      <div className="text-sm font-extrabold" style={{ color: tone.stroke }}>
+                      <div className="text-sm font-bold" style={{ color: tone.stroke }}>
                         {grade}
                       </div>
                       <div className="text-[9px]" style={{ color: tone.stroke }}>
@@ -383,7 +383,7 @@ const SupplierPerformance: React.FC = () => {
           </div>
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               Purchase order performance — {mySupplier.name}
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -414,7 +414,7 @@ const SupplierPerformance: React.FC = () => {
       {activeTab === 'trends' && (
         <>
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               OTIF rate — 12-week rolling (%)
             </h2>
             <ResponsiveContainer width="100%" height={240}>
@@ -440,7 +440,7 @@ const SupplierPerformance: React.FC = () => {
           </section>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-              <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+              <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
                 ASN accuracy (%)
               </h2>
               <ResponsiveContainer width="100%" height={200}>
@@ -464,7 +464,7 @@ const SupplierPerformance: React.FC = () => {
               </ResponsiveContainer>
             </section>
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-              <h2 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+              <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
                 POA response time (hours)
               </h2>
               <ResponsiveContainer width="100%" height={200}>

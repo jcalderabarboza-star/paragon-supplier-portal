@@ -21,6 +21,7 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { StockStatus } from '../types/supplier.types';
@@ -87,9 +88,9 @@ const DaysBar: React.FC<{ days: number; status: StockStatus }> = ({
           style={{ width: `${pct}%`, background: color }}
         />
       </div>
-      <span className={`text-xs font-semibold min-w-[28px] text-right ${textClass}`}>
+      <Data className={`text-xs font-semibold min-w-[28px] text-right ${textClass}`}>
         {days}d
-      </span>
+      </Data>
     </div>
   );
 };
@@ -206,7 +207,7 @@ const SupplierInventory: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {myInventory.length} materials · last sync {fmtDate(maxLastUpdated)}
+        {myInventory.length} materials · last sync <Data>{fmtDate(maxLastUpdated)}</Data>
       </PageMetaLine>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
@@ -315,9 +316,9 @@ const SupplierInventory: React.FC = () => {
               return (
                 <TableRow key={row.id}>
                   <TableCell>
-                    <div className="font-mono text-xs font-semibold text-text-primary">
+                    <Data as="div" className="text-xs font-semibold text-text-primary">
                       {row.materialCode}
-                    </div>
+                    </Data>
                     <div className="text-sm text-text-primary truncate max-w-[14rem]">
                       {row.materialDescription}
                     </div>
@@ -330,17 +331,17 @@ const SupplierInventory: React.FC = () => {
                       .join(' ')}
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    {fmt(row.qtyOnHand)}
+                    <Data>{fmt(row.qtyOnHand)}</Data>
                   </TableCell>
                   <TableCell className="text-right text-text-primary whitespace-nowrap">
-                    {fmt(row.qtyAvailable)}
+                    <Data>{fmt(row.qtyAvailable)}</Data>
                   </TableCell>
                   <TableCell
                     className={`text-right whitespace-nowrap ${
                       row.qtyInTransit > 0 ? 'text-teal' : 'text-text-tertiary'
                     }`}
                   >
-                    {row.qtyInTransit > 0 ? fmt(row.qtyInTransit) : '—'}
+                    <Data>{row.qtyInTransit > 0 ? fmt(row.qtyInTransit) : '—'}</Data>
                   </TableCell>
                   <TableCell className="text-text-tertiary text-xs">
                     {row.uom}
@@ -362,7 +363,7 @@ const SupplierInventory: React.FC = () => {
                     </StatusPill>
                   </TableCell>
                   <TableCell className="text-text-tertiary text-xs whitespace-nowrap">
-                    {fmtDate(row.lastUpdated)}
+                    <Data>{fmtDate(row.lastUpdated)}</Data>
                   </TableCell>
                 </TableRow>
               );

@@ -23,6 +23,7 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
+import Data from '../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
 import GRInspectionWizard from '../components/v2-features/GRInspectionWizard';
@@ -432,7 +433,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       />
 
       <PageMetaLine className="mb-6">
-        {counts.all} GRs this month · last posted {formatDate(TODAY)}
+        {counts.all} GRs this month · last posted <Data>{formatDate(TODAY)}</Data>
       </PageMetaLine>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -528,11 +529,11 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 >
                   <TableCell>
                     <div className="font-semibold text-text-primary">
-                      {g.grNumber}
+                      <Data>{g.grNumber}</Data>
                     </div>
-                    <div className="text-xs text-text-tertiary font-mono">
+                    <Data as="div" className="text-xs text-text-tertiary">
                       {g.asnNumber} · {g.poNumber}
-                    </div>
+                    </Data>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-text-primary">
@@ -546,7 +547,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
-                      {formatDate(g.receivedDate)}
+                      <Data>{formatDate(g.receivedDate)}</Data>
                     </span>
                   </TableCell>
                   <TableCell>
@@ -571,9 +572,9 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <span className="font-mono text-xs text-text-secondary">
+                    <Data className="text-xs text-text-secondary">
                       {g.sapMaterialDoc ?? '—'}
-                    </span>
+                    </Data>
                   </TableCell>
                   <TableCell className="text-right">
                     <ChevronRight
@@ -614,28 +615,28 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 <div>
                   <div className="text-xs text-text-tertiary">GR #</div>
                   <div className="font-semibold text-text-primary">
-                    {selected.grNumber}
+                    <Data>{selected.grNumber}</Data>
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">ASN #</div>
-                  <div className="font-mono text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {selected.asnNumber}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">PO #</div>
-                  <div className="font-mono text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {selected.poNumber}
-                  </div>
+                  </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">
                     SAP Material Doc
                   </div>
-                  <div className="font-mono text-text-primary">
+                  <Data as="div" className="text-text-primary">
                     {selected.sapMaterialDoc ?? '—'}
-                  </div>
+                  </Data>
                 </div>
                 <div className="col-span-2">
                   <div className="text-xs text-text-tertiary">Supplier</div>
@@ -655,7 +656,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                     Received Date
                   </div>
                   <div className="text-text-primary">
-                    {formatDate(selected.receivedDate)}
+                    <Data>{formatDate(selected.receivedDate)}</Data>
                   </div>
                 </div>
                 <div>
@@ -701,9 +702,9 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                     {selected.inspectionResults.map((r, i) => (
                       <TableRow key={i}>
                         <TableCell>
-                          <div className="font-mono text-xs text-text-primary">
+                          <Data as="div" className="text-xs text-text-primary">
                             {r.materialCode}
-                          </div>
+                          </Data>
                           <div className="text-xs text-text-tertiary truncate max-w-[180px]">
                             {r.description}
                           </div>
@@ -714,16 +715,16 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                           )}
                         </TableCell>
                         <TableCell className="text-right text-xs">
-                          {formatNumber(r.qtyExpected)}
+                          <Data>{formatNumber(r.qtyExpected)}</Data>
                         </TableCell>
                         <TableCell className="text-right text-xs">
-                          {formatNumber(r.qtyReceived)}
+                          <Data>{formatNumber(r.qtyReceived)}</Data>
                         </TableCell>
                         <TableCell className="text-right text-xs text-success">
-                          {formatNumber(r.qtyAccepted)}
+                          <Data>{formatNumber(r.qtyAccepted)}</Data>
                         </TableCell>
                         <TableCell className="text-right text-xs text-danger">
-                          {formatNumber(r.qtyRejected)}
+                          <Data>{formatNumber(r.qtyRejected)}</Data>
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-wrap gap-1">

@@ -35,6 +35,7 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import SidePanel from '../components/ui-v2/SidePanel';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
+import Data from '../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
@@ -1229,9 +1230,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   onClick={() => setSelectedContract(c)}
                 >
                   <TableCell>
-                    <div className="font-semibold text-text-primary">
+                    <Data as="div" className="font-semibold text-text-primary">
                       {c.contractNumber}
-                    </div>
+                    </Data>
                     <div className="text-xs text-text-tertiary mt-0.5 max-w-[18rem] truncate">
                       {c.title}
                     </div>
@@ -1251,7 +1252,8 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-text-secondary whitespace-nowrap">
-                      {formatDate(c.startDate)} → {formatDate(c.endDate)}
+                      <Data>{formatDate(c.startDate)}</Data> →{' '}
+                      <Data>{formatDate(c.endDate)}</Data>
                     </div>
                     {c.autoRenewal && (
                       <div className="text-xs text-info mt-0.5 inline-flex items-center gap-1">
@@ -1269,7 +1271,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                    {c.value > 0 ? formatIDR(c.value) : '—'}
+                    <Data>{c.value > 0 ? formatIDR(c.value) : '—'}</Data>
                   </TableCell>
                   <TableCell>
                     {c.performanceScore > 0 ? (
@@ -1318,7 +1320,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           <div className="text-label text-text-tertiary uppercase">
             Intelligence
           </div>
-          <h2 className="text-base font-semibold text-text-primary mt-1">
+          <h2 className="text-section text-text-primary mt-1">
             Renewal Pipeline
           </h2>
           <p className="text-meta text-text-tertiary">
@@ -1335,7 +1337,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               <li key={month} className="px-6 py-4">
                 <div className="flex items-center gap-2 mb-3">
                   <CalendarDays size={14} className="text-teal" />
-                  <h3 className="text-sm font-semibold text-text-primary">
+                  <h3 className="text-section text-text-primary">
                     {month}
                   </h3>
                   <span className="text-xs text-text-tertiary">
@@ -1368,7 +1370,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             {supplier?.name ?? c.supplierId}
                           </div>
                           <div className="text-xs text-text-tertiary mt-0.5">
-                            {c.contractNumber} · {c.type}
+                            <Data>{c.contractNumber}</Data> · {c.type}
                           </div>
                         </div>
                         {c.autoRenewal && (
@@ -1458,21 +1460,21 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Start date</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedContract.startDate)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">End date</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedContract.endDate)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Notice required</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {selectedContract.noticeRequiredDays} days
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Days until expiry</dt>
@@ -1486,11 +1488,11 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Value</dt>
-                  <dd className="text-text-primary font-semibold">
+                  <Data as="dd" className="text-text-primary font-semibold">
                     {selectedContract.value > 0
                       ? formatIDR(selectedContract.value)
                       : '—'}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Currency</dt>
@@ -1524,11 +1526,11 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Signed date</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {selectedContract.signedDate
                       ? formatDate(selectedContract.signedDate)
                       : '—'}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Category</dt>
@@ -1620,7 +1622,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             {o.owner}
                           </td>
                           <td className="px-3 py-2 text-text-secondary whitespace-nowrap">
-                            {formatDate(o.dueDate)}
+                            <Data>{formatDate(o.dueDate)}</Data>
                           </td>
                           <td className="px-3 py-2">
                             <StatusPill

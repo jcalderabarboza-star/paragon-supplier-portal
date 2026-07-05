@@ -41,6 +41,7 @@ import { useToast } from '../hooks/useToast';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import Data from '../components/ui-v2/Data';
 import type {
   BuyerInvoice,
   BuyerInvoiceStatus as InvStatus,
@@ -476,9 +477,9 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                       onClick={() => openInvoice(inv)}
                     >
                       <TableCell>
-                        <div className="font-mono text-xs font-semibold text-text-primary">
+                        <Data as="div" className="text-xs font-semibold text-text-primary">
                           {inv.invoiceNumber}
-                        </div>
+                        </Data>
                       </TableCell>
                       <TableCell>
                         <div className="text-sm text-text-primary truncate max-w-[14rem]">
@@ -490,17 +491,17 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="font-mono text-xs text-text-secondary">
+                        <Data className="text-xs text-text-secondary">
                           {inv.poNumber}
-                        </span>
+                        </Data>
                       </TableCell>
                       <TableCell className="text-right whitespace-nowrap">
-                        <div className="font-semibold text-text-primary">
+                        <Data as="div" className="font-semibold text-text-primary">
                           {fmtCompact(inv.amount)}
-                        </div>
-                        <div className="text-xs text-text-tertiary">
+                        </Data>
+                        <Data as="div" className="text-xs text-text-tertiary">
                           {formatIDR(inv.amount)}
-                        </div>
+                        </Data>
                       </TableCell>
                       <TableCell>
                         <StatusPill variant={MATCH_VARIANT[inv.matchStatus]}>
@@ -518,23 +519,23 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                         )}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        <div className="text-sm text-text-secondary">
+                        <Data as="div" className="text-sm text-text-secondary">
                           {formatDate(inv.dueDate)}
-                        </div>
+                        </Data>
                         {inv.paymentDate && (
                           <div className="text-xs text-success">
-                            Paid {formatDate(inv.paymentDate)}
+                            Paid <Data>{formatDate(inv.paymentDate)}</Data>
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
-                        <span
-                          className={`font-mono text-xs ${
+                        <Data
+                          className={`text-xs ${
                             inv.sapFiDoc ? 'text-success' : 'text-text-tertiary'
                           }`}
                         >
                           {inv.sapFiDoc ?? '—'}
-                        </span>
+                        </Data>
                       </TableCell>
                       <TableCell className="text-right">
                         <ChevronRight
@@ -564,7 +565,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
       {tab === 'analytics' && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h3 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               Monthly Invoice Flow (Rp jT)
             </h3>
             <ResponsiveContainer width="100%" height={240}>
@@ -595,7 +596,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
           </section>
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h3 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               3-Way Match Summary
             </h3>
             <div className="grid grid-cols-2 gap-3">
@@ -627,7 +628,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
       {tab === 'aging' && (
         <div className="flex flex-col gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
-            <h3 className="text-base font-semibold text-text-primary mb-4 pb-3 border-b border-border-subtle">
+            <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
               Invoice Aging Report (Rp jT)
             </h3>
             <ResponsiveContainer width="100%" height={240}>
@@ -674,7 +675,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                         {row.count}
                       </TableCell>
                       <TableCell className="text-right">
-                        <span
+                        <Data
                           className={`font-semibold ${
                             row.amount > 0
                               ? 'text-text-primary'
@@ -682,10 +683,10 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                           }`}
                         >
                           {row.amount > 0 ? `Rp ${row.amount}jT` : '—'}
-                        </span>
+                        </Data>
                       </TableCell>
                       <TableCell className="text-right text-text-secondary">
-                        {row.amount > 0 ? `${pct}%` : '—'}
+                        <Data>{row.amount > 0 ? `${pct}%` : '—'}</Data>
                       </TableCell>
                       <TableCell>
                         {row.amount > 0 && (
@@ -774,15 +775,15 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                 </div>
                 <div>
                   <dt className="text-text-tertiary">PO reference</dt>
-                  <dd className="text-text-primary font-mono">
+                  <Data as="dd" className="text-text-primary">
                     {selected.poNumber}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Amount</dt>
-                  <dd className="text-text-primary font-semibold">
+                  <Data as="dd" className="text-text-primary font-semibold">
                     {formatIDR(selected.amount)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Payment terms</dt>
@@ -792,7 +793,8 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Due date</dt>
-                  <dd
+                  <Data
+                    as="dd"
                     className={`font-medium ${
                       selected.status === 'Overdue'
                         ? 'text-danger'
@@ -800,7 +802,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                     }`}
                   >
                     {formatDate(selected.dueDate)}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Approver</dt>
@@ -860,23 +862,25 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
                   <dt className="text-text-tertiary">FI document</dt>
-                  <dd
-                    className={`font-mono ${
+                  <Data
+                    as="dd"
+                    className={`${
                       selected.sapFiDoc ? 'text-success' : 'text-text-tertiary'
                     }`}
                   >
                     {selected.sapFiDoc ?? '— pending —'}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">GR document</dt>
-                  <dd
-                    className={`font-mono ${
+                  <Data
+                    as="dd"
+                    className={`${
                       selected.sapGrDoc ? 'text-success' : 'text-text-tertiary'
                     }`}
                   >
                     {selected.sapGrDoc ?? '— pending —'}
-                  </dd>
+                  </Data>
                 </div>
               </dl>
             </section>
@@ -888,15 +892,15 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
                   <dt className="text-text-tertiary">Bank account</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {selected.bankAccount}
-                  </dd>
+                  </Data>
                 </div>
                 <div>
                   <dt className="text-text-tertiary">Payment date</dt>
-                  <dd className="text-text-primary font-medium">
+                  <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selected.paymentDate)}
-                  </dd>
+                  </Data>
                 </div>
               </dl>
             </section>
@@ -906,13 +910,13 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                 <div className="font-semibold mb-1">Confirm payment release</div>
                 <div className="text-text-secondary">
                   This action cannot be undone. Payment of{' '}
-                  <strong className="text-text-primary">
+                  <Data as="strong" className="text-text-primary">
                     {formatIDR(selected.amount)}
-                  </strong>{' '}
+                  </Data>{' '}
                   will be transferred to{' '}
-                  <strong className="text-text-primary">
+                  <Data as="strong" className="text-text-primary">
                     {selected.bankAccount}
-                  </strong>
+                  </Data>
                   . Verify bank details before confirming.
                 </div>
               </section>
@@ -941,7 +945,7 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                             {label}
                           </td>
                           <td className="px-3 py-2 font-semibold text-text-primary">
-                            {value}
+                            <Data>{value}</Data>
                           </td>
                         </tr>
                       ))}
@@ -989,7 +993,7 @@ const MatchTile: React.FC<MatchTileProps> = ({ label, count, variant }) => (
     className={`rounded-md px-4 py-4 text-center ${MATCH_TILE_CLASS[variant]}`}
   >
     <div className="text-label uppercase mb-2">{label}</div>
-    <div className="text-3xl font-bold">{count}</div>
+    <div className="text-kpi font-mono tabular-nums">{count}</div>
   </div>
 );
 

@@ -12,6 +12,7 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import Button from '../components/ui-v2/Button';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
+import Data from '../components/ui-v2/Data';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 
 const WHATSAPP_GREEN_HEADER = '#075E54';
@@ -530,7 +531,7 @@ const WhatsAppPanel: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6">
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-sm font-bold text-text-primary mb-1">
+        <h3 className="text-section text-text-primary mb-1">
           WhatsApp Procurement Simulator
         </h3>
         <p className="text-xs text-text-tertiary mb-4">
@@ -574,14 +575,14 @@ const WhatsAppPanel: React.FC = () => {
 
       <div className="flex flex-col gap-5">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-          <h3 className="text-sm font-bold text-text-primary mb-4">
+          <h3 className="text-section text-text-primary mb-4">
             How Paragon's WhatsApp Commerce Engine works
           </h3>
           <WhatsAppFlow />
         </section>
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-          <h3 className="text-sm font-bold text-text-primary">
+          <h3 className="text-section text-text-primary">
             What suppliers can do via WhatsApp
           </h3>
           <p className="text-xs text-text-tertiary mb-4">
@@ -609,7 +610,7 @@ const WhatsAppPanel: React.FC = () => {
         </section>
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-          <h3 className="text-sm font-bold text-text-primary">
+          <h3 className="text-section text-text-primary">
             Languages supported
           </h3>
           <p className="text-xs text-text-tertiary mb-3">
@@ -787,7 +788,7 @@ const EmailBody: React.FC<{
         </p>
         <div className={cardCls}>
           <div className={labelCls}>Current Stock Level</div>
-          <div className="text-3xl font-extrabold text-teal mt-1">24 days</div>
+          <div className="text-kpi font-mono tabular-nums text-teal mt-1">24 days</div>
           <div className="text-sm text-text-tertiary mt-0.5">
             2,400 KG · Material MAT-10234
           </div>
@@ -937,7 +938,7 @@ const EmailPanel: React.FC = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6">
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-sm font-bold text-text-primary mb-1">
+        <h3 className="text-section text-text-primary mb-1">
           Email Procurement Simulator
         </h3>
         <p className="text-xs text-text-tertiary mb-4">
@@ -980,11 +981,13 @@ const EmailPanel: React.FC = () => {
             <span className="text-text-primary font-semibold">To:</span>{' '}
             supplier@ptberlina.co.id ·{' '}
             <span className="text-text-primary font-semibold">Sent:</span>{' '}
-            {new Date().toLocaleDateString('en-GB', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-            })}
+            <Data>
+              {new Date().toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </Data>
           </div>
           <div className="px-5 py-5 bg-bg-surface">
             <EmailBody
@@ -1013,7 +1016,7 @@ const EmailPanel: React.FC = () => {
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-sm font-bold text-text-primary mb-4">
+        <h3 className="text-section text-text-primary mb-4">
           How Paragon's Email Commerce Engine works
         </h3>
         <EmailFlow />
@@ -1248,7 +1251,7 @@ const WeChatPanel: React.FC = () => {
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-        <h3 className="text-sm font-bold text-text-primary mb-4">
+        <h3 className="text-section text-text-primary mb-4">
           How Paragon's WeChat Engine works
         </h3>
         <WeChatFlow />
@@ -1286,7 +1289,7 @@ const SupplierWhatsApp: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        Interactive simulator · session opened {lastUpdated}
+        Interactive simulator · session opened <Data>{lastUpdated}</Data>
       </PageMetaLine>
 
       <SubTabs<Channel>

@@ -16,11 +16,13 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { statusTone } from '../lib/statusTone';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
+import Data from '../components/ui-v2/Data';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { PreferredChannel } from '../types/supplier.types';
@@ -65,19 +67,6 @@ const CHANNEL_LABEL: Record<PreferredChannel, string> = {
   [PreferredChannel.WEB]: 'Web Portal',
   [PreferredChannel.EMAIL]: 'Email',
   [PreferredChannel.API]: 'API/EDI',
-};
-
-const PO_STATUS_VARIANT: Record<
-  POStatus,
-  'success' | 'warning' | 'danger' | 'info' | 'neutral'
-> = {
-  [POStatus.SENT]: 'neutral',
-  [POStatus.VIEWED]: 'neutral',
-  [POStatus.ACKNOWLEDGED]: 'info',
-  [POStatus.CONFIRMED]: 'info',
-  [POStatus.PARTIALLY_DELIVERED]: 'warning',
-  [POStatus.DELIVERED]: 'success',
-  [POStatus.CLOSED]: 'success',
 };
 
 const GRADE_TONE: Record<Grade, { stroke: string; soft: string }> = {
@@ -531,7 +520,7 @@ const SupplierDashboard: React.FC = () => {
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle">
-              <h2 className="text-base font-semibold text-text-primary">
+              <h2 className="text-section text-text-primary">
                 My recent purchase orders
               </h2>
             </div>
@@ -558,21 +547,21 @@ const SupplierDashboard: React.FC = () => {
                   return (
                     <TableRow key={po.id}>
                       <TableCell>
-                        <span className="font-mono text-xs font-bold text-text-primary">
+                        <Data className="text-xs font-bold text-text-primary">
                           {po.poNumber}
-                        </span>
+                        </Data>
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-text-secondary">
-                        {fmtDate(po.orderDate)}
+                        <Data>{fmtDate(po.orderDate)}</Data>
                       </TableCell>
                       <TableCell className="text-right text-text-secondary">
                         {po.lineItems.length}
                       </TableCell>
                       <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
-                        {fmtIDR(po.totalValue)}
+                        <Data>{fmtIDR(po.totalValue)}</Data>
                       </TableCell>
                       <TableCell>
-                        <StatusPill variant={PO_STATUS_VARIANT[po.status]}>
+                        <StatusPill variant={statusTone(po.status)}>
                           {po.status}
                         </StatusPill>
                       </TableCell>
@@ -605,7 +594,7 @@ const SupplierDashboard: React.FC = () => {
         <div className="flex flex-col gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold text-text-primary">
+              <h2 className="text-section text-text-primary">
                 My performance score
               </h2>
               <GradeBadge grade={grade} size="sm" />
@@ -650,7 +639,7 @@ const SupplierDashboard: React.FC = () => {
           </section>
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
-            <h2 className="text-base font-semibold text-text-primary mb-4">
+            <h2 className="text-section text-text-primary mb-4">
               My documents
             </h2>
             <div className="flex flex-col">
