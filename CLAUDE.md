@@ -24,8 +24,17 @@ model). Changes reach `main` only through a reviewed PR: the operator directs
 and approves, and the CLI merges via the GitHub UI (Squash + delete branch).
 Direct pushes to `main` are not used.
 
-## Current state (as-built: main @ 248ca75 — Phase 0 complete)
-- Phase 0 (0.1–0.7) is closed via PRs #11–#15. Test floor: 48 (never regresses).
+## Current state (as-built: main @ 99db9be — Phase 1′ in progress)
+- Phase 0 (0.1–0.7) closed via PRs #11–#17. Test floor: 167 (never regresses).
+- Phase 1′ page/read migrations merged — Batches 1.1a–1.3 (PRs #18–#24): buyer +
+  supplier pages consume `useDataService()` via scoped TanStack Query hooks;
+  DP-1/DP-2 restyle applied opportunistically per touched page.
+- SEC-GATE-01 (PR #25) + ENV-BADGE-01 hardening (PRs #27–#28) merged; DP-3
+  Odyssey/TMS theme + typography merged (PRs #29–#31).
+- Batch 1.4 (legacy PO alias collapse) + Phase 1′ close are pending (v2.2 Step 2).
+  BuyerCompliance is a registered fixture carve-out (COMPLIANCE-CARVEOUT-01, see
+  `docs/findings.md`) that lands at R2.2 — the Phase 1′ exit criterion is "all
+  pages on `useDataService()` EXCEPT this registered carve-out".
 - Consumption pattern is standardized: TanStack Query v5 over `useDataService()`,
   scoped query hooks (per-supplier cache isolation via `scopeKey`), a typed
   `DataError` contract, the `Page<T>` list envelope (shape frozen; no pagination
@@ -34,7 +43,8 @@ Direct pushes to `main` are not used.
   scoping contract guards buyer-superset / per-supplier-isolation / SCOPE_DENIED.
 - Locale + i18n: `formatIDR / formatDate / formatNumber` (Asia/Jakarta) and an
   i18next primitive are installed.
-- Canonical build plan: `docs/Supplier_Portal_Revised_Build_Plan_v2.1.md`.
+- Canonical build plan: `docs/Supplier_Portal_Revised_Build_Plan_v2_2.md`
+  (supersedes v2.1, which remains valid where not amended).
 
 ## Routing
 Routing is HashRouter (`src/router/AppRouter.tsx`) — not BrowserRouter. The `/`
@@ -94,3 +104,14 @@ Vite root is app/ — never edit app/index.html directly.
 Deploy is Vercel-only: Vercel builds from source via vercel.json (npm run build → dist/).
 Nothing is copied to repo root; there are no committed build artifacts.
 Source entry: app/index.html  |  vite.config.ts root: app  |  outDir: ../dist
+
+### Access gate (SEC-GATE-01)
+A Vercel Routing Middleware (`middleware.js`) runs BEFORE the SPA rewrite and
+fronts the entire app shell and every `/assets/*` chunk behind an HMAC-SHA256
+signed, HttpOnly, 7-day session cookie — the bundle never ships to an
+unauthenticated client. Credentials validate at the edge against NON-`VITE_`
+env (`GATE_USER` / `GATE_PASSWORD` / `GATE_SECRET`, never bundled); the gate
+fails CLOSED (503) if unprovisioned. Gate logic lives outside `src/` (`gate/`,
+`middleware.js`) so it does not touch the vitest floor. noindex is shipped
+(meta + robots.txt + `X-Robots-Tag`). The in-app persona / CurrentIdentity flow
+is separate and untouched by the gate.
