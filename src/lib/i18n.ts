@@ -1,9 +1,12 @@
 // ────────────────────────────────────────────────────────────────────────────
-// i18n primitive (Phase 0.6). Establishes the react-i18next pipeline with a
-// single proof key (app.title). No translation pass or key extraction yet —
-// strings migrate to keys opportunistically as Phase 1' touches each page.
+// i18n primitive (Phase 0.6; extended v2.2 I18N-01).
 //
-// English is the only bundled locale; id-ID can be added as a resource later.
+// react-i18next pipeline. Bilingual EN/ID is a platform requirement (I18N-01):
+// strings are externalized as keys, ID-first for supplier surfaces. The
+// PO-confirm proof (Step 3.10) is the FIRST surface on the pattern — its keys
+// carry real EN + an ID stub. The existing-page key sweep is Phase 3′; new
+// surfaces use keys from here on. English stays the default runtime locale
+// until the sweep flips ID-first.
 // ────────────────────────────────────────────────────────────────────────────
 
 import i18n from 'i18next';
@@ -13,6 +16,29 @@ export const resources = {
   en: {
     translation: {
       'app.title': 'Paragon Supplier Portal',
+      // — PO confirm (Step 3.10 proof surface) —
+      'po.confirm.action': 'Confirm order',
+      'po.confirm.submitting': 'Confirming…',
+      'po.confirm.success.title': '{{poNumber}} confirmed',
+      'po.confirm.success.desc': 'Confirmation {{correlationId}} · Paragon procurement notified.',
+      'po.confirm.failed.title': 'Could not confirm {{poNumber}}',
+      'po.confirm.failed.desc': 'The order could not be confirmed ({{reason}}).',
+      'po.confirm.denied.title': 'Not authorized',
+      'po.confirm.denied.desc': 'You are not authorized to confirm this order.',
+    },
+  },
+  id: {
+    translation: {
+      'app.title': 'Portal Pemasok Paragon',
+      // — PO confirm (ID stub — refined in the Phase 3′ ID-first sweep) —
+      'po.confirm.action': 'Konfirmasi pesanan',
+      'po.confirm.submitting': 'Mengonfirmasi…',
+      'po.confirm.success.title': '{{poNumber}} dikonfirmasi',
+      'po.confirm.success.desc': 'Konfirmasi {{correlationId}} · Pengadaan Paragon diberi tahu.',
+      'po.confirm.failed.title': 'Tidak dapat mengonfirmasi {{poNumber}}',
+      'po.confirm.failed.desc': 'Pesanan tidak dapat dikonfirmasi ({{reason}}).',
+      'po.confirm.denied.title': 'Tidak berwenang',
+      'po.confirm.denied.desc': 'Anda tidak berwenang mengonfirmasi pesanan ini.',
     },
   },
 } as const;

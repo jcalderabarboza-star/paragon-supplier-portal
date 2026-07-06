@@ -1,9 +1,18 @@
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
+import { beforeEach } from 'vitest';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
+import { purchaseOrderStore } from '../services/data/mock/stores/purchaseOrderStore';
+import { commandAuditSink } from '../services/data/mock/MockCommandService';
 import type { IDataService } from '../services/data/types';
 import SupplierOrders from './SupplierOrders';
+
+// The command layer mutates a shared store + audit sink — reset between tests.
+beforeEach(() => {
+  purchaseOrderStore.reset();
+  commandAuditSink.clear();
+});
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
@@ -52,5 +61,30 @@ describe('SupplierOrders — four honest states', () => {
       service: noOrders,
     });
     expect(await screen.findByText('No purchase orders yet')).toBeInTheDocument();
+  });
+});
+
+describe('SupplierOrders — PO-confirm end-to-end proof (Step 3.10)', () => {
+  it('confirms a Sent PO through the dispatcher: store mutates + event emitted', async () => {
+    renderWithProviders(<SupplierOrders />, { identity: SUPPLIER });
+
+    // The Sent PO (PO-2025-00108 / po-008) surfaces a "Confirm" row action.
+    await screen.findByText('PO-2025-00108');
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+
+    // Editing panel opens → dispatch t_po_confirm with the confirmedQuantities payload.
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm order' }));
+
+    // Success surface renders (driven by the non-failed command outcome).
+    expect(await screen.findByText('Order confirmed')).toBeInTheDocument();
+
+    // 3.6: the store mutated (Sent → Confirmed) — no page-local seeded copy.
+    expect(purchaseOrderStore.get('po-008')?.status).toBe('Confirmed');
+    expect(purchaseOrderStore.get('po-008')?.lineItems[0].confirmedQty).toBe(150000);
+
+    // 3.8: exactly one done event was emitted, actor-scoped to sup-007.
+    const done = commandAuditSink.byEvent('t_po_confirm').filter((e) => e.outcome === 'done');
+    expect(done).toHaveLength(1);
+    expect(done[0].actor).toBe('supplier:sup-007');
   });
 });
