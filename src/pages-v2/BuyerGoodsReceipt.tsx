@@ -28,15 +28,22 @@ import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
 import GRInspectionWizard from '../components/v2-features/GRInspectionWizard';
 import { useToast } from '../hooks/useToast';
+import { useTranslation } from 'react-i18next';
+import {
+  useGoodsReceiptPost,
+  useGoodsReceiptSettle,
+} from '../services/query/commandHooks';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
-import { useGoodsReceipts, useSuppliers } from '../services/query/hooks';
+import { useGoodsReceipts, useSuppliers, useShipments, useASNs } from '../services/query/hooks';
 import type {
   GoodsReceipt,
   GRStatus,
   InspectionResult,
   Supplier,
+  Shipment,
+  ASN,
 } from '../services/data/types';
 
 const TODAY = '2026-05-20';
@@ -72,6 +79,7 @@ const STATUS_VARIANT: Record<
   Approved: 'success',
   'Partially Approved': 'warning',
   Rejected: 'danger',
+  'Posting to SAP': 'info',
   'Posted to SAP': 'success',
 };
 
@@ -131,13 +139,20 @@ const totals = (results: InspectionResult[]) =>
 interface GoodsReceiptWorkspaceProps {
   goodsReceipts: GoodsReceipt[];
   suppliers: Supplier[];
+  shipments: Shipment[];
+  asns: ASN[];
 }
 
 const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   goodsReceipts,
   suppliers,
+  shipments,
+  asns,
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const postMutation = useGoodsReceiptPost();
+  const settleMutation = useGoodsReceiptSettle();
   const supplierById = useMemo(
     () => new Map(suppliers.map((s) => [s.id, s])),
     [suppliers],
@@ -146,11 +161,12 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const [search, setSearch] = useState('');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [localGRs, setLocalGRs] = useState<GoodsReceipt[]>(goodsReceipts);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardAsnId, setWizardAsnId] = useState<string | undefined>(undefined);
 
-  const allGRs = localGRs;
+  // No local seeded copy — the list re-derives from the invalidated query after
+  // each command (the standardized mutation pattern).
+  const allGRs = goodsReceipts;
 
   const counts = useMemo(() => {
     let pending = 0;
@@ -350,15 +366,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         return (
           <Button
             variant="primary"
-            onClick={() =>
-              toast({
-                variant: 'success',
-                title: 'Posted to SAP',
-                description: `${g.grNumber} forwarded to SAP MM.`,
-              })
-            }
+            disabled={postMutation.isPending}
+            onClick={() => handlePostToSap(g)}
           >
-            Post to SAP
+            {t('gr.post.action')}
           </Button>
         );
       case 'Posted to SAP':
@@ -400,12 +411,50 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
     setWizardOpen(true);
   };
 
-  const nextSeqNumber = localGRs.length + 1;
-
-  const handleWizardComplete = (gr: GoodsReceipt) => {
-    setLocalGRs((prev) => [gr, ...prev]);
-    setWizardOpen(false);
+  // Post to SAP (Option B): dispatch t_gr_post → the GR shows the interim
+  // 'Posting to SAP' with NO material document; the async SAP callback settles
+  // ~a moment later → 'Posted to SAP' + the real material document. Both phases
+  // are observable because each command invalidates the scoped read.
+  const handlePostToSap = (g: GoodsReceipt) => {
+    postMutation.mutate(
+      { grId: g.id },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('gr.post.failed.title', { grNumber: g.grNumber }),
+              description: t('gr.post.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          toast({
+            variant: 'info',
+            title: t('gr.post.posting.title', { grNumber: g.grNumber }),
+            description: t('gr.post.posting.desc'),
+          });
+          const { correlationId } = res;
+          window.setTimeout(() => {
+            settleMutation.mutate(
+              { correlationId },
+              {
+                onSuccess: () =>
+                  toast({
+                    variant: 'success',
+                    title: t('gr.post.posted.title', { grNumber: g.grNumber }),
+                    description: t('gr.post.posted.desc'),
+                  }),
+              },
+            );
+          }, 1200);
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('gr.denied.title'), description: t('gr.denied.desc') }),
+      },
+    );
   };
+
+  const handleWizardComplete = () => setWizardOpen(false);
 
   return (
     <AppShellV2>
@@ -796,7 +845,8 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           onClose={() => setWizardOpen(false)}
           onComplete={handleWizardComplete}
           initialAsnId={wizardAsnId}
-          nextSeqNumber={nextSeqNumber}
+          shipments={shipments}
+          asns={asns}
         />
       )}
     </AppShellV2>
@@ -811,17 +861,26 @@ const GR_CRUMB = ['TRANSACT', 'GOODS RECEIPT & QC'];
 const BuyerGoodsReceipt: React.FC = () => {
   const grQuery = useGoodsReceipts();
   const suppliersQuery = useSuppliers();
+  const shipmentsQuery = useShipments();
+  const asnsQuery = useASNs();
 
-  if (grQuery.isPending || suppliersQuery.isPending)
+  if (
+    grQuery.isPending ||
+    suppliersQuery.isPending ||
+    shipmentsQuery.isPending ||
+    asnsQuery.isPending
+  )
     return <LoadingState breadcrumb={GR_CRUMB} />;
-  if (grQuery.isError || suppliersQuery.isError)
+  if (grQuery.isError || suppliersQuery.isError || shipmentsQuery.isError || asnsQuery.isError)
     return (
       <ErrorState
         breadcrumb={GR_CRUMB}
-        error={grQuery.error ?? suppliersQuery.error}
+        error={grQuery.error ?? suppliersQuery.error ?? shipmentsQuery.error ?? asnsQuery.error}
         onRetry={() => {
           grQuery.refetch();
           suppliersQuery.refetch();
+          shipmentsQuery.refetch();
+          asnsQuery.refetch();
         }}
       />
     );
@@ -841,6 +900,8 @@ const BuyerGoodsReceipt: React.FC = () => {
     <GoodsReceiptWorkspace
       goodsReceipts={goodsReceipts}
       suppliers={suppliersQuery.data?.items ?? []}
+      shipments={shipmentsQuery.data?.items ?? []}
+      asns={asnsQuery.data?.items ?? []}
     />
   );
 };

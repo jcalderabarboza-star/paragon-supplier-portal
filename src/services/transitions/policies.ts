@@ -6,8 +6,10 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { PurchaseOrder } from '../data/types';
+import type { GoodsReceipt } from '../../data/mockGoodsReceipts';
 import type { PolicyHookFn } from './dispatcher';
 import { POLICY_HOOKS } from './policyHooks';
+import { deriveHeaderDisposition, type GrHeaderDisposition } from './grRollup';
 
 const BINDINGS = new Map<string, PolicyHookFn>();
 
@@ -39,3 +41,20 @@ const poConfirmQtyWithinOrdered: PolicyHookFn = ({ entityId, payload, target }) 
 };
 
 bindPolicyHook(POLICY_HOOKS.PO_CONFIRM_QTY_WITHIN_ORDERED, poConfirmQtyWithinOrdered);
+
+// — GR header disposition = ROLLUP of the per-line sub-flow (census G2). Each
+//   disposition verb is legal ONLY when the lines roll up to its terminal, so
+//   the header is provably derived, never asserted. Reads the GR's own lines
+//   (same-entity), so it binds here rather than in the cross-entity mock layer. —
+const grRollup = (want: GrHeaderDisposition): PolicyHookFn => ({ entityId, target }) => {
+  const gr = target.readEntity(entityId) as GoodsReceipt | null;
+  if (!gr) return { ok: false, reason: 'entity missing' };
+  const got = deriveHeaderDisposition(gr.inspectionResults);
+  return got === want
+    ? { ok: true }
+    : { ok: false, reason: `line rollup is '${got}', not '${want}'` };
+};
+
+bindPolicyHook(POLICY_HOOKS.GR_ROLLUP_APPROVED, grRollup('Approved'));
+bindPolicyHook(POLICY_HOOKS.GR_ROLLUP_PARTIAL, grRollup('Partially Approved'));
+bindPolicyHook(POLICY_HOOKS.GR_ROLLUP_REJECTED, grRollup('Rejected'));
