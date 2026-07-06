@@ -17,9 +17,12 @@ export * from './dispatcher';
 // Importing ./policies binds the policy-hook implementations (side effect).
 export * from './policies';
 export { purchaseOrderFlow } from './flows/purchaseOrder.flow';
+export { advanceShipNoticeFlow } from './flows/advanceShipNotice.flow';
 
 import { flowRegistry } from './registry';
 import { purchaseOrderFlow } from './flows/purchaseOrder.flow';
+import { advanceShipNoticeFlow } from './flows/advanceShipNotice.flow';
 
-// Seed the shipped flows onto the singleton (Step 3.1: one machine — PO).
-flowRegistry.register(purchaseOrderFlow);
+// Seed the shipped flows onto the singleton.
+flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
+flowRegistry.register(advanceShipNoticeFlow); // Step 4 (i) — ASN

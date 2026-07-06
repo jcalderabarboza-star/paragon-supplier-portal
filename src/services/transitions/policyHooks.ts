@@ -30,6 +30,8 @@ export function getRegisteredPolicyHooks(): readonly string[] {
 export const POLICY_HOOKS = {
   /** PO confirm: each confirmed line qty must be > 0 and ≤ the ordered qty. */
   PO_CONFIRM_QTY_WITHIN_ORDERED: 'po_confirm_qty_within_ordered',
+  /** ASN create: the parent PO (payload.poReference) must be Confirmed. */
+  ASN_CREATE_PO_CONFIRMED: 'asn_create_po_confirmed',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);
