@@ -73,6 +73,19 @@ Investigation-first. Deliverables in order:
 
 ## STEP 4 — PHASE 2.2′ VERB BATCHES (per v2.1 order, amendments)
 
+**Batch (i) — ASN verbs — ✅ BUILT (2026-07-06, floor 250→253).** ASN flow
+authored (5 states; the `t_asn_create` `creation` verb is the CANONICAL creation
+pattern — optional `CommandInput.entityId`, store-assigned number on
+`CommandResult.entityId`, creation scope derived from the payload's parent PO
+(`poReference` → supplierId, cross-supplier ⇒ SCOPE_DENIED), legality via the
+`asn_create_po_confirmed` hook). Dispatcher creation path added. `t_asn_submit`
+wired. Mutable `asnStore` (immutable-update). SupplierShipments create/submit
+wired; the fabricated `ASN-2026-007` + false "Paragon WMS notified" toast are
+retired (honest store-assigned number + "transmission pending live channel"; a
+blank draft honestly fails). i18n `asn.*` (EN + ID). Riding fix: SupplierOrders
+drawer Key Facts live-derive. `t_asn_in_transit`/`deliver` (system) +
+`t_asn_discrepancy` (cascade ← GR) authored-unwired. Order next: (ii) GR verbs.
+
 - Lifecycle chain first: confirm PO → ASN → GR → invoice. GR verb REPLACES the fabricated MAT-DOC path: 'Posted to SAP' becomes a `submitted` async command; fabricated number → "pending SAP assignment" treatment (GR-FABRICATION-01 closes here).
 - Invoice verbs wait on DR-7 (Step 3.3).
 - RFQ Award = cascade-class verb; must use the schema cascade shape, not N hook calls.
