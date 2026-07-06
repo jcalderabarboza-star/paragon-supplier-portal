@@ -3,18 +3,26 @@ import Wizard, { WizardStep } from '../ui-v2/Wizard';
 import FormSection from '../ui-v2/FormSection';
 import Data from '../ui-v2/Data';
 import { useToast } from '../../hooks/useToast';
+import { useTranslation } from 'react-i18next';
 import type { Shipment } from '../../services/data/types';
 import {
   Disposition,
-  GoodsReceipt,
   InspectionResult,
 } from '../../data/mockGoodsReceipts';
+import {
+  useGoodsReceiptCreate,
+  useGoodsReceiptFinalize,
+  useGoodsReceiptPost,
+  useGoodsReceiptSettle,
+} from '../../services/query/commandHooks';
+import { deriveHeaderDisposition, headerVerbFor } from '../../services/transitions';
 
 interface GRInspectionWizardProps {
   onClose: () => void;
-  onComplete: (gr: GoodsReceipt) => void;
+  /** Called after the create/dispose/post commands resolve — the list re-derives
+   *  from the invalidated query, so no GR object is handed back. */
+  onComplete: () => void;
   initialAsnId?: string;
-  nextSeqNumber: number;
   /** Shipments resolved through the service seam (GR-LEGACY-READ-01) — the
    *  wizard no longer reads the raw fixture. */
   shipments: Shipment[];
@@ -92,10 +100,14 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   onClose,
   onComplete,
   initialAsnId,
-  nextSeqNumber,
   shipments,
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const createGR = useGoodsReceiptCreate();
+  const finalizeGR = useGoodsReceiptFinalize();
+  const postGR = useGoodsReceiptPost();
+  const settleGR = useGoodsReceiptSettle();
   const [step, setStep] = useState(0);
 
   // Step 1 state
@@ -118,6 +130,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const [dispositionReason, setDispositionReason] = useState('');
   const [autoPostSap, setAutoPostSap] = useState(true);
   const [finalNotes, setFinalNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const eligibleShipments = useMemo(
     () => shipments.filter((s) => ELIGIBLE_STATUSES.includes(s.status as 'At Dock' | 'Unloading')),
@@ -557,8 +570,6 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     );
   }, [lines]);
 
-  const previewSapDoc = `MAT-DOC-${500000 + nextSeqNumber}`;
-
   const stepFourContent = (
     <div className="flex flex-col gap-5">
       <FormSection title="Final Disposition">
@@ -638,10 +649,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           </div>
         </div>
         <div>
-          <div className="text-xs text-text-tertiary">Est. SAP Doc</div>
-          <Data as="div" className="text-text-primary">
-            {autoPostSap ? previewSapDoc : '—'}
-          </Data>
+          <div className="text-xs text-text-tertiary">SAP Doc</div>
+          <div className="text-xs text-text-secondary">
+            {autoPostSap ? 'Assigned by SAP on posting' : 'Not posted'}
+          </div>
         </div>
       </div>
     </div>
@@ -678,9 +689,14 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     },
   ];
 
-  const handleComplete = () => {
-    const grNumber = `GR-2026-${String(nextSeqNumber).padStart(3, '0')}`;
-    const sapDoc = autoPostSap ? previewSapDoc : undefined;
+  // Replaces the old client-side fabrication (GR-FABRICATION-01): the GR is
+  // created, disposed, and posted through the dispatcher. The store assigns the
+  // GR number; the header disposition is the ROLLUP the dispatcher re-derives
+  // from the recorded lines; the SAP material document is assigned by SAP on
+  // settlement — nothing is minted here.
+  const handleComplete = async () => {
+    if (submitting) return;
+    setSubmitting(true);
 
     const inspectionResults: InspectionResult[] = lines.map((l) => {
       const rejected = Math.max(0, l.qtyReceived - l.qtyAccepted);
@@ -702,31 +718,84 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       };
     });
 
-    const newGR: GoodsReceipt = {
-      id: `gr-new-${Date.now()}`,
-      grNumber,
-      asnId: selectedShipment?.id ?? '',
-      asnNumber: selectedShipment?.asnNumber ?? manualASN,
-      poNumber: selectedShipment?.poNumber ?? manualPO,
-      supplierId: selectedShipment?.supplierId ?? '',
-      supplierName: selectedShipment?.supplierName ?? '—',
-      receivedDate,
-      receivedBy,
-      status: autoPostSap && disposition === 'Accept' ? 'Posted to SAP' : 'Approved',
-      inspectionResults,
-      disposition,
-      sapMaterialDoc: sapDoc,
-      notes: finalNotes || notes || undefined,
-    };
+    const asnReference = selectedShipment?.asnNumber ?? manualASN;
 
-    onComplete(newGR);
-    toast({
-      variant: 'success',
-      title: `GR ${grNumber} created`,
-      description: `${totals.items} items accepted${
-        sapDoc ? ` · Posted to SAP as ${sapDoc}` : ''
-      }`,
-    });
+    try {
+      // 1) Create — the store assigns the number; lines are recorded at receipt.
+      const createRes = await createGR.mutateAsync({
+        asnReference,
+        inspectionResults,
+        receivedDate,
+        receivedBy,
+        notes: finalNotes || notes || undefined,
+      });
+      if (createRes.status === 'failed' || !createRes.entityId) {
+        toast({
+          variant: 'error',
+          title: t('gr.create.failed.title'),
+          description: t('gr.create.failed.desc', { reason: createRes.reason ?? '' }),
+        });
+        return;
+      }
+      const grNumber = createRes.entityId;
+
+      // 2) Finalize — dispatch the ROLLED-UP header verb (approve / partial /
+      //    reject). The dispatcher re-derives the disposition from the stored
+      //    lines, so the header is provably derived, not asserted.
+      const dispo = deriveHeaderDisposition(inspectionResults);
+      const headerVerb = headerVerbFor(dispo);
+      if (headerVerb) {
+        const finalizeRes = await finalizeGR.mutateAsync({
+          grId: grNumber,
+          headerVerb,
+          dispositionReason: dispositionReason || finalNotes || undefined,
+        });
+        if (finalizeRes.status === 'failed') {
+          const missing = (finalizeRes.reason ?? '').startsWith('MISSING_FIELDS');
+          toast({
+            variant: 'warning',
+            title: t('gr.dispose.failed.title', { grNumber }),
+            description: missing
+              ? t('gr.dispose.missingReason')
+              : t('gr.dispose.failed.desc', { reason: finalizeRes.reason ?? '' }),
+          });
+          onComplete();
+          return;
+        }
+      }
+
+      // 3) Post to SAP (Option B) — only for an accepting rollup, when opted in.
+      if (autoPostSap && (dispo === 'Approved' || dispo === 'Partially Approved')) {
+        const postRes = await postGR.mutateAsync({ grId: grNumber });
+        if (postRes.status === 'submitted') {
+          // The async SAP callback settles: Posting to SAP → Posted to SAP +
+          // the real material document (assigned on settle).
+          await settleGR.mutateAsync({ correlationId: postRes.correlationId });
+          toast({
+            variant: 'success',
+            title: t('gr.post.posted.title', { grNumber }),
+            description: t('gr.post.posted.desc'),
+          });
+        } else {
+          toast({
+            variant: 'warning',
+            title: t('gr.post.failed.title', { grNumber }),
+            description: t('gr.post.failed.desc', { reason: postRes.reason ?? '' }),
+          });
+        }
+      } else {
+        toast({
+          variant: 'success',
+          title: t('gr.dispose.success.title', { grNumber, disposition: dispo }),
+          description: t('gr.dispose.success.desc', { correlationId: createRes.correlationId }),
+        });
+      }
+      onComplete();
+    } catch {
+      toast({ variant: 'error', title: t('gr.denied.title'), description: t('gr.denied.desc') });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
