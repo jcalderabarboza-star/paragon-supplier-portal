@@ -5,6 +5,8 @@ import { MockRiskService } from './MockRiskService';
 import { MockDiscoveryService } from './MockDiscoveryService';
 import { MockAnalyticsService } from './MockAnalyticsService';
 import { MockEngagementService } from './MockEngagementService';
+import { MockCommandService } from './MockCommandService';
+import { capabilitiesFor } from '../../transitions';
 
 export const mockDataService: IDataService = {
   suppliers: new MockSupplierService(),
@@ -13,4 +15,6 @@ export const mockDataService: IDataService = {
   discovery: new MockDiscoveryService(),
   analytics: new MockAnalyticsService(),
   engagement: new MockEngagementService(),
+  commands: new MockCommandService(),
+  getCapabilities: async (scope) => capabilitiesFor(scope),
 };

@@ -21,8 +21,10 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
+import { usePurchaseOrderConfirm } from '../services/query/commandHooks';
 import { POStatus } from '../services/data/types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -72,9 +74,11 @@ const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 const ORDERS_CRUMB = ['TRANSACT', 'MY ORDERS'];
 
 const SupplierOrders: React.FC = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
+  const confirmMutation = usePurchaseOrderConfirm();
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [selected, setSelected] = useState<PurchaseOrder | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
@@ -169,19 +173,45 @@ const SupplierOrders: React.FC = () => {
 
   const startEditing = () => setPanelMode('editing');
 
+  // Step 3.10 proof: confirm dispatches t_po_confirm through the service seam
+  // (user trigger + confirmedQuantities payload + scope + status + event +
+  // invalidation). The store mutation drives the table re-derive on success.
   const confirmOrder = () => {
     if (!selected) return;
-    const time = new Date().toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-    setConfirmedAt(time);
-    setPanelMode('confirmed');
-    toast({
-      variant: 'success',
-      title: `${selected.poNumber} confirmed`,
-      description: 'Paragon procurement notified.',
-    });
+    const po = selected;
+    confirmMutation.mutate(
+      { poId: po.id, confirmedQuantities: confirmedQtys },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('po.confirm.failed.title', { poNumber: po.poNumber }),
+              description: t('po.confirm.failed.desc', { reason: result.reason ?? '' }),
+            });
+            return;
+          }
+          const time = new Date().toLocaleTimeString('en-GB', {
+            hour: '2-digit',
+            minute: '2-digit',
+          });
+          setConfirmedAt(time);
+          setPanelMode('confirmed');
+          toast({
+            variant: 'success',
+            title: t('po.confirm.success.title', { poNumber: po.poNumber }),
+            description: t('po.confirm.success.desc', { correlationId: result.correlationId }),
+          });
+        },
+        onError: () => {
+          toast({
+            variant: 'error',
+            title: t('po.confirm.denied.title'),
+            description: t('po.confirm.denied.desc'),
+          });
+        },
+      },
+    );
   };
 
   const submitChangeRequest = () => {
@@ -405,8 +435,11 @@ const SupplierOrders: React.FC = () => {
                     variant="primary"
                     icon={CheckCircle2}
                     onClick={confirmOrder}
+                    disabled={confirmMutation.isPending}
                   >
-                    Confirm order
+                    {confirmMutation.isPending
+                      ? t('po.confirm.submitting')
+                      : t('po.confirm.action')}
                   </Button>
                 </>
               )}

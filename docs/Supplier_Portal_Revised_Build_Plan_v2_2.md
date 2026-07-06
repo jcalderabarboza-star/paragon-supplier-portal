@@ -65,7 +65,9 @@ Investigation-first. Deliverables in order:
 - **3.8 Event taxonomy (ONE shape, coordinated with Track R):** dispatcher emits `{event: transitionId, actor, scope, correlationId, outcome, ts}`; CMVE AuditSink persists the same shape. Single decision prevents the Phase-5′ retrofit.
 - **3.9 DNA type seeds (types only, zero build):** reserve `getCapabilities(scope): Promise<CapabilitySet>` on the service interface (mock-backed); add optional `guidance` prop slot to STATE-PRIM-01/DEFER-ACTION-01 primitives when they land.
 - **3.10 PROOF: PO-confirm end-to-end** through 3.1–3.8 on SupplierOrders (user-trigger + requiredFields qty payload + scope enforcement + status + invalidation + event emission). Operator smoke → merge. **Proof gate = schema paper-fit accepted (3.2) + PO-confirm green. Both, not either.**
-- **3.11** Re-baseline Phase 2′ sizing: interface surface = 50 read methods (not ~31); update action-layer estimates. Report deltas to chat.
+- **3.11** Re-baseline Phase 2′ sizing: interface surface = 50 read methods (not ~31); update action-layer estimates. Report deltas to chat. — **CONFIRMED (2026-07-06):** read surface counted at **50** (suppliers 3 · procurement 22 · risk 6 · discovery 5 · analytics 7 · engagement 7). NEW write surface: `commands.dispatch` + `commands.getCommandStatus` + `getCapabilities` (3 methods). Action-layer estimate is now **per-transition verbs over ONE dispatcher**, not per-method actions: the ~15 census machines' verbs route through the single `dispatch` seam (schema-driven), so the action-layer count scales with *transitions authored*, not interface methods. Full deltas reported to chat.
+
+**Step 3 status (2026-07-06):** 3.1 schema + 3.2 census merged-pending (PR #35); **3.3 DR-7 RATIFIED** (Option A); **3.4–3.9 BUILT** (dispatcher + command status/settle + mutation store pattern + roles-as-data + one-shape event taxonomy + capabilities/DNA seed); **I18N-01** seam adopted (react-i18next, EN + ID stub); **3.10 PROOF GREEN** (PO-confirm end-to-end on SupplierOrders: user trigger + `confirmedQuantities` payload + scope enforcement + status + invalidation + event emission). Floor 224→241.
 
 ---
 
@@ -104,7 +106,14 @@ Investigation-first. Deliverables in order:
 ## DECISION REGISTER DELTAS
 
 - **DR-6 AMENDED:** dispatcher enforces QueryScope on all commands; scoping contract tests cover commands.
-- **DR-7 OPEN:** invoice vocabulary (unify+project vs two+mapping) — decided at Step 3.3.
+- **DR-7 RATIFIED (2026-07-06):** invoice = **one canonical machine + persona
+  projections** (Option A). Canonical lifecycle `Submitted → Matched → Approved →
+  Payment Released → Remittance Received` (+ `Disputed` branch). Buyer/supplier
+  vocabularies are projections via the Step 3.7 persona→role/label mapping; the
+  3-way-match is a registered sub-flow (census gap G2); `Overdue` is computed at
+  read time (census gap G1, law 0.5). Two-machines-plus-mapping rejected on the
+  HALAL-XPERSONA-01 drift precedent. Invoice verbs template against this shape
+  (Step 4). See `docs/transition-schema-census.md` §5.
 - **DR-8 ADOPTED:** clock-states computed-never-stored (law 0.5).
 - **DR-9 ADOPTED:** TMS-shape transition schema as the 2.1′ metadata format.
 - **DR-10 ADOPTED:** one audit/telemetry event taxonomy across dispatcher + AuditSink.
