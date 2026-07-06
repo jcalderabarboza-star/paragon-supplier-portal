@@ -8,12 +8,12 @@ import { mockQuotations } from '../../../data/mockQuotations';
 import { applySupplierScope } from '../scoping';
 import { asnStore } from './stores/asnStore';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
+import { invoiceStore } from './stores/invoiceStore';
+import { toBuyerInvoice, toSupplierInvoice } from '../invoiceProjection';
 import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
 import { DOCUMENTS } from './fixtures/supplierDocuments';
 import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
 import { REQUISITIONS } from './fixtures/buyerRequisitions';
-import { INVOICES as MOCK_SUPPLIER_INVOICES } from './fixtures/supplierInvoices';
-import { BUYER_INVOICES } from './fixtures/buyerInvoices';
 import {
   INITIAL_CATALOG,
   INITIAL_CERTS,
@@ -212,11 +212,22 @@ export class MockProcurementService implements IProcurementService {
 
   // ─── Finance ──────────────────────────────────────────────────────────────
 
+  // DR-7: both invoice reads project from the ONE canonical `invoiceStore`, so
+  // the two persona surfaces can never contradict. The buyer sees every invoice
+  // EXCEPT drafts (Draft is supplier-private); the supplier sees its own,
+  // drafts included. Labels + Overdue are computed at read (invoiceProjection).
   async getBuyerInvoices(
     scope: QueryScope,
     filter?: InvoiceFilter,
   ): Promise<Page<BuyerInvoice>> {
-    let rows = applySupplierScope(scope, BUYER_INVOICES);
+    const now = new Date().toISOString();
+    let rows = applySupplierScope(
+      scope,
+      invoiceStore
+        .all()
+        .filter((inv) => inv.status !== 'Draft')
+        .map((inv) => toBuyerInvoice(inv, now)),
+    );
     if (filter?.supplierId)
       rows = rows.filter((i) => i.supplierId === filter.supplierId);
     if (filter?.poNumber)
@@ -229,7 +240,11 @@ export class MockProcurementService implements IProcurementService {
     scope: QueryScope,
     filter?: InvoiceFilter,
   ): Promise<Page<SupplierInvoice>> {
-    let rows = applySupplierScope(scope, MOCK_SUPPLIER_INVOICES);
+    const now = new Date().toISOString();
+    let rows = applySupplierScope(
+      scope,
+      invoiceStore.all().map((inv) => toSupplierInvoice(inv, now)),
+    );
     if (filter?.supplierId)
       rows = rows.filter((i) => i.supplierId === filter.supplierId);
     if (filter?.poNumber)
