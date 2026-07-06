@@ -1,13 +1,13 @@
 import { purchaseOrderStore } from './stores/purchaseOrderStore';
 import { mockInventory } from '../../../data/mockInventory';
 import { mockShipments } from '../../../data/mockShipments';
-import { mockGoodsReceipts } from '../../../data/mockGoodsReceipts';
 import { mockContracts } from '../../../data/mockContracts';
 import { mockObligations } from '../../../data/mockObligations';
 import { mockRfqs } from '../../../data/mockRfqs';
 import { mockQuotations } from '../../../data/mockQuotations';
 import { applySupplierScope } from '../scoping';
 import { asnStore } from './stores/asnStore';
+import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
 import { DOCUMENTS } from './fixtures/supplierDocuments';
 import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
@@ -200,7 +200,10 @@ export class MockProcurementService implements IProcurementService {
     scope: QueryScope,
     filter?: GRFilter,
   ): Promise<Page<GoodsReceipt>> {
-    let rows = applySupplierScope(scope, mockGoodsReceipts);
+    // Reads resolve from the mutable GR store (Step 4 batch ii) so a created /
+    // inspected / posted GR is reflected after the command mutates it — mirrors
+    // getASNs. The store seeds from the fixtures, so initial reads are identical.
+    let rows = applySupplierScope(scope, goodsReceiptStore.all());
     if (filter?.supplierId)
       rows = rows.filter((g) => g.supplierId === filter.supplierId);
     if (filter?.status) rows = rows.filter((g) => matchesList(g.status, filter.status));
