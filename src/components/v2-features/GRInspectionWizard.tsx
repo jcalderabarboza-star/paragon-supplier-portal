@@ -3,7 +3,7 @@ import Wizard, { WizardStep } from '../ui-v2/Wizard';
 import FormSection from '../ui-v2/FormSection';
 import Data from '../ui-v2/Data';
 import { useToast } from '../../hooks/useToast';
-import { mockShipments, Shipment } from '../../data/mockShipments';
+import type { Shipment } from '../../services/data/types';
 import {
   Disposition,
   GoodsReceipt,
@@ -15,6 +15,9 @@ interface GRInspectionWizardProps {
   onComplete: (gr: GoodsReceipt) => void;
   initialAsnId?: string;
   nextSeqNumber: number;
+  /** Shipments resolved through the service seam (GR-LEGACY-READ-01) — the
+   *  wizard no longer reads the raw fixture. */
+  shipments: Shipment[];
 }
 
 type SourceMode = 'shipment' | 'manual';
@@ -90,6 +93,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   onComplete,
   initialAsnId,
   nextSeqNumber,
+  shipments,
 }) => {
   const { toast } = useToast();
   const [step, setStep] = useState(0);
@@ -116,12 +120,12 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const [finalNotes, setFinalNotes] = useState('');
 
   const eligibleShipments = useMemo(
-    () => mockShipments.filter((s) => ELIGIBLE_STATUSES.includes(s.status as 'At Dock' | 'Unloading')),
-    []
+    () => shipments.filter((s) => ELIGIBLE_STATUSES.includes(s.status as 'At Dock' | 'Unloading')),
+    [shipments]
   );
 
   const selectedShipment = selectedShipmentId
-    ? mockShipments.find((s) => s.id === selectedShipmentId)
+    ? shipments.find((s) => s.id === selectedShipmentId)
     : undefined;
 
   // Auto-populate lines when shipment is selected and we reach step 2

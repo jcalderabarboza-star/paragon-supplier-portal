@@ -31,12 +31,13 @@ import { useToast } from '../hooks/useToast';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
-import { useGoodsReceipts, useSuppliers } from '../services/query/hooks';
+import { useGoodsReceipts, useSuppliers, useShipments } from '../services/query/hooks';
 import type {
   GoodsReceipt,
   GRStatus,
   InspectionResult,
   Supplier,
+  Shipment,
 } from '../services/data/types';
 
 const TODAY = '2026-05-20';
@@ -132,11 +133,13 @@ const totals = (results: InspectionResult[]) =>
 interface GoodsReceiptWorkspaceProps {
   goodsReceipts: GoodsReceipt[];
   suppliers: Supplier[];
+  shipments: Shipment[];
 }
 
 const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   goodsReceipts,
   suppliers,
+  shipments,
 }) => {
   const { toast } = useToast();
   const supplierById = useMemo(
@@ -798,6 +801,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           onComplete={handleWizardComplete}
           initialAsnId={wizardAsnId}
           nextSeqNumber={nextSeqNumber}
+          shipments={shipments}
         />
       )}
     </AppShellV2>
@@ -812,17 +816,19 @@ const GR_CRUMB = ['TRANSACT', 'GOODS RECEIPT & QC'];
 const BuyerGoodsReceipt: React.FC = () => {
   const grQuery = useGoodsReceipts();
   const suppliersQuery = useSuppliers();
+  const shipmentsQuery = useShipments();
 
-  if (grQuery.isPending || suppliersQuery.isPending)
+  if (grQuery.isPending || suppliersQuery.isPending || shipmentsQuery.isPending)
     return <LoadingState breadcrumb={GR_CRUMB} />;
-  if (grQuery.isError || suppliersQuery.isError)
+  if (grQuery.isError || suppliersQuery.isError || shipmentsQuery.isError)
     return (
       <ErrorState
         breadcrumb={GR_CRUMB}
-        error={grQuery.error ?? suppliersQuery.error}
+        error={grQuery.error ?? suppliersQuery.error ?? shipmentsQuery.error}
         onRetry={() => {
           grQuery.refetch();
           suppliersQuery.refetch();
+          shipmentsQuery.refetch();
         }}
       />
     );
@@ -842,6 +848,7 @@ const BuyerGoodsReceipt: React.FC = () => {
     <GoodsReceiptWorkspace
       goodsReceipts={goodsReceipts}
       suppliers={suppliersQuery.data?.items ?? []}
+      shipments={shipmentsQuery.data?.items ?? []}
     />
   );
 };
