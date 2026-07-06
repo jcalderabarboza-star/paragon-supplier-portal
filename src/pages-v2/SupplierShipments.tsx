@@ -27,6 +27,7 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
+import SidePanel from '../components/ui-v2/SidePanel';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
@@ -480,6 +481,8 @@ const SupplierShipments: React.FC = () => {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<AsnForm>(DEFAULT_FORM);
+  const [submitTarget, setSubmitTarget] = useState<ASN | null>(null);
+  const [submitForm, setSubmitForm] = useState({ carrier: 'JNE', trackingNumber: '', eta: '' });
 
   const supplierQuery = useCurrentSupplier();
   const asnsQuery = useASNs();
@@ -521,23 +524,43 @@ const SupplierShipments: React.FC = () => {
     setTab('shipments');
   };
 
-  // t_asn_submit (Draft → Submitted) through the service seam. Submits with the
-  // draft's own carrier/tracking/eta; a blank draft honestly fails MISSING_FIELDS.
-  const submitAsn = (asnNumber: string) => {
+  // Open the submit drawer for a Draft ASN — the required fields (carrier,
+  // tracking, ETA) are collected here before dispatch. Fixture drafts store '—'
+  // placeholders; normalize those to empty so the form starts genuinely blank.
+  const openSubmitForm = (asnNumber: string) => {
     const asn = asns.find((a) => a.asnNumber === asnNumber);
     if (!asn) return;
+    const real = (v: string) => (v && v !== '—' ? v : '');
+    setSubmitTarget(asn);
+    setSubmitForm({
+      carrier: real(asn.carrier) || 'JNE',
+      trackingNumber: real(asn.trackingNumber),
+      eta: real(asn.eta),
+    });
+  };
+
+  // t_asn_submit (Draft → Submitted) with the collected fields. The dispatcher
+  // is the source of truth: an incomplete form is honestly rejected (the
+  // requiredFields enforcement), surfaced as a human-readable message.
+  const doSubmitAsn = () => {
+    if (!submitTarget) return;
+    const asnNumber = submitTarget.asnNumber;
     submitAsnMutation.mutate(
-      { asnNumber, carrier: asn.carrier, trackingNumber: asn.trackingNumber, eta: asn.eta },
+      { asnNumber, ...submitForm },
       {
         onSuccess: (res) => {
           if (res.status === 'failed') {
+            const missing = (res.reason ?? '').startsWith('MISSING_FIELDS');
             toast({
               variant: 'warning',
               title: t('asn.submit.failed.title', { asnNumber }),
-              description: t('asn.submit.failed.desc', { reason: res.reason ?? '' }),
+              description: missing
+                ? t('asn.submit.missingFields', { code: res.reason })
+                : t('asn.submit.failed.desc', { reason: res.reason ?? '' }),
             });
             return;
           }
+          setSubmitTarget(null);
           toast({
             variant: 'success',
             title: t('asn.submit.success.title', { asnNumber }),
@@ -1049,7 +1072,7 @@ const SupplierShipments: React.FC = () => {
           statusFilter={statusFilter}
           expanded={expanded}
           onToggleExpand={toggleExpand}
-          onSubmitAsn={submitAsn}
+          onSubmitAsn={openSubmitForm}
           onResolveDiscrepancy={resolveDiscrepancy}
           onCreateAsnForPO={createAsnForPO}
           confirmedPOs={CONFIRMED_POS}
@@ -1073,6 +1096,68 @@ const SupplierShipments: React.FC = () => {
       )}
 
       {tab === 'dock' && <DockAppointments />}
+
+      <SidePanel
+        open={submitTarget !== null}
+        onClose={() => setSubmitTarget(null)}
+        title={submitTarget ? `Submit ${submitTarget.asnNumber}` : ''}
+        footerActions={
+          submitTarget && (
+            <>
+              <Button variant="secondary" onClick={() => setSubmitTarget(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                icon={Send}
+                onClick={doSubmitAsn}
+                disabled={submitAsnMutation.isPending}
+              >
+                {t('asn.submit.confirm')}
+              </Button>
+            </>
+          )
+        }
+      >
+        {submitTarget && (
+          <div className="space-y-4">
+            <p className="text-sm text-text-secondary">
+              {t('asn.submit.form.intro', { poNumber: submitTarget.poReference })}
+            </p>
+            <label className="block">
+              <span className={labelClass}>{t('asn.submit.form.carrier')}</span>
+              <select
+                value={submitForm.carrier}
+                onChange={(e) => setSubmitForm((f) => ({ ...f, carrier: e.target.value }))}
+                className={inputClass}
+              >
+                {CARRIER_OPTIONS.map((c) => (
+                  <option key={c}>{c}</option>
+                ))}
+              </select>
+            </label>
+            <label className="block">
+              <span className={labelClass}>{t('asn.submit.form.tracking')}</span>
+              <input
+                type="text"
+                value={submitForm.trackingNumber}
+                onChange={(e) => setSubmitForm((f) => ({ ...f, trackingNumber: e.target.value }))}
+                className={inputClass}
+                placeholder="e.g. JNE2026001234"
+              />
+            </label>
+            <label className="block">
+              <span className={labelClass}>{t('asn.submit.form.eta')}</span>
+              <input
+                type="date"
+                value={submitForm.eta}
+                onChange={(e) => setSubmitForm((f) => ({ ...f, eta: e.target.value }))}
+                className={inputClass}
+              />
+            </label>
+          </div>
+        )}
+      </SidePanel>
     </AppShellV2>
   );
 };
