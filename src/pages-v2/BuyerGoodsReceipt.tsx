@@ -36,13 +36,14 @@ import {
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
-import { useGoodsReceipts, useSuppliers, useShipments } from '../services/query/hooks';
+import { useGoodsReceipts, useSuppliers, useShipments, useASNs } from '../services/query/hooks';
 import type {
   GoodsReceipt,
   GRStatus,
   InspectionResult,
   Supplier,
   Shipment,
+  ASN,
 } from '../services/data/types';
 
 const TODAY = '2026-05-20';
@@ -139,12 +140,14 @@ interface GoodsReceiptWorkspaceProps {
   goodsReceipts: GoodsReceipt[];
   suppliers: Supplier[];
   shipments: Shipment[];
+  asns: ASN[];
 }
 
 const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   goodsReceipts,
   suppliers,
   shipments,
+  asns,
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -843,6 +846,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           onComplete={handleWizardComplete}
           initialAsnId={wizardAsnId}
           shipments={shipments}
+          asns={asns}
         />
       )}
     </AppShellV2>
@@ -858,18 +862,25 @@ const BuyerGoodsReceipt: React.FC = () => {
   const grQuery = useGoodsReceipts();
   const suppliersQuery = useSuppliers();
   const shipmentsQuery = useShipments();
+  const asnsQuery = useASNs();
 
-  if (grQuery.isPending || suppliersQuery.isPending || shipmentsQuery.isPending)
+  if (
+    grQuery.isPending ||
+    suppliersQuery.isPending ||
+    shipmentsQuery.isPending ||
+    asnsQuery.isPending
+  )
     return <LoadingState breadcrumb={GR_CRUMB} />;
-  if (grQuery.isError || suppliersQuery.isError || shipmentsQuery.isError)
+  if (grQuery.isError || suppliersQuery.isError || shipmentsQuery.isError || asnsQuery.isError)
     return (
       <ErrorState
         breadcrumb={GR_CRUMB}
-        error={grQuery.error ?? suppliersQuery.error ?? shipmentsQuery.error}
+        error={grQuery.error ?? suppliersQuery.error ?? shipmentsQuery.error ?? asnsQuery.error}
         onRetry={() => {
           grQuery.refetch();
           suppliersQuery.refetch();
           shipmentsQuery.refetch();
+          asnsQuery.refetch();
         }}
       />
     );
@@ -890,6 +901,7 @@ const BuyerGoodsReceipt: React.FC = () => {
       goodsReceipts={goodsReceipts}
       suppliers={suppliersQuery.data?.items ?? []}
       shipments={shipmentsQuery.data?.items ?? []}
+      asns={asnsQuery.data?.items ?? []}
     />
   );
 };
