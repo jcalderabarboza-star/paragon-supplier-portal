@@ -74,6 +74,13 @@ export interface TransitionDef {
   readonly requiredFields: readonly string[];
   /** Policy hooks by REGISTERED NAME (never closures). Validated vs the registry. */
   readonly policyHooks: readonly PolicyHookName[];
+  /**
+   * True when this transition crosses the SAP integration boundary (e.g. GR
+   * "Posted to SAP"). Such commands settle asynchronously: the dispatcher
+   * returns `submitted` (not `done`) and the real system reference lands on
+   * settlement (Step 3.5). Optional; absent ⇒ synchronous (`done`).
+   */
+  readonly sapBoundary?: boolean;
   /** Schema version of this transition definition. Positive integer. */
   readonly version: number;
 }

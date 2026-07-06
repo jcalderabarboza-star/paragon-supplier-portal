@@ -11,6 +11,11 @@ export * from './schema';
 export * from './validate';
 export * from './registry';
 export * from './policyHooks';
+export * from './roles';
+export * from './events';
+export * from './dispatcher';
+// Importing ./policies binds the policy-hook implementations (side effect).
+export * from './policies';
 export { purchaseOrderFlow } from './flows/purchaseOrder.flow';
 
 import { flowRegistry } from './registry';

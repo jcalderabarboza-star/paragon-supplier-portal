@@ -179,3 +179,35 @@ describe('service scoping contract — SCOPE_DENIED on record lookup', () => {
     }
   });
 });
+
+// DR-6 amended: the dispatcher enforces QueryScope on every COMMAND exactly as
+// reads. These assertions never reach the apply stage (all fail/deny before it),
+// so they do not mutate the shared PO store.
+describe('service scoping contract — commands (DR-6 amended)', () => {
+  const confirmOf = (id: string) => ({
+    transitionId: 't_po_confirm',
+    entity: 'purchaseOrder',
+    entityId: id,
+  });
+
+  it('a supplier commanding another supplier’s PO is denied (SCOPE_DENIED)', async () => {
+    const bPOs = (await svc.procurement.getPurchaseOrders(bScope)).items as { id: string }[];
+    expect(bPOs.length).toBeGreaterThan(0);
+    await expect(svc.commands.dispatch(aScope, confirmOf(bPOs[0].id))).rejects.toMatchObject({
+      code: 'SCOPE_DENIED',
+    });
+  });
+
+  it('a supplier commanding a non-existent entity is denied (no existence leak)', async () => {
+    await expect(svc.commands.dispatch(aScope, confirmOf('po-does-not-exist'))).rejects.toMatchObject({
+      code: 'SCOPE_DENIED',
+    });
+  });
+
+  it('the buyer lacks the supplier-only po:confirm role (failed, not applied)', async () => {
+    const buyerPOs = (await svc.procurement.getPurchaseOrders(buyerScope)).items as { id: string }[];
+    const res = await svc.commands.dispatch(buyerScope, confirmOf(buyerPOs[0].id));
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/ROLE_NOT_PERMITTED/);
+  });
+});

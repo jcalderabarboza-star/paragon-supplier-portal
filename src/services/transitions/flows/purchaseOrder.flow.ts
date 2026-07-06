@@ -62,9 +62,11 @@ export const purchaseOrderFlow: FlowDefinition = {
       version: 1,
     },
     {
-      // The Step 3.10 proof transition.
+      // The Step 3.10 proof transition. A supplier confirms an actionable PO —
+      // legal from any pre-confirm state the "needs action" workspace surfaces
+      // (Sent / Viewed / Acknowledged), landing it in Confirmed.
       id: 't_po_confirm',
-      from: [POStatus.ACKNOWLEDGED],
+      from: [POStatus.SENT, POStatus.VIEWED, POStatus.ACKNOWLEDGED],
       to: POStatus.CONFIRMED,
       trigger: 'user',
       requiredRole: 'po:confirm',

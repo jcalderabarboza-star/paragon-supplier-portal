@@ -1,4 +1,4 @@
-import { mockPurchaseOrders } from '../../../data/mockPurchaseOrders';
+import { purchaseOrderStore } from './stores/purchaseOrderStore';
 import { mockInventory } from '../../../data/mockInventory';
 import { mockShipments } from '../../../data/mockShipments';
 import { mockGoodsReceipts } from '../../../data/mockGoodsReceipts';
@@ -107,9 +107,9 @@ export class MockProcurementService implements IProcurementService {
     scope: QueryScope,
     filter?: POFilter,
   ): Promise<Page<PurchaseOrder>> {
-    // mockPurchaseOrders is already the canonical drift-resolved shape (the DTO
-    // bridge was retired in Batch 1.4 once the fixture went single-field).
-    let rows = applySupplierScope(scope, mockPurchaseOrders);
+    // Reads resolve from the mutable store (Step 3.6) so a confirmed PO is
+    // reflected after the command mutates it — no page-local seeded copy.
+    let rows = applySupplierScope(scope, purchaseOrderStore.all());
     if (filter?.supplierId)
       rows = rows.filter((p) => p.supplierId === filter.supplierId);
     if (filter?.status) rows = rows.filter((p) => matchesList(p.status, filter.status));

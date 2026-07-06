@@ -53,7 +53,7 @@ describe('seeded registry (getKnownFlows)', () => {
   it('the PO-confirm proof transition carries the qty payload + a registered hook', () => {
     const confirm = getTransition('t_po_confirm')!;
     expect(confirm.trigger).toBe('user');
-    expect(confirm.from).toEqual(['Acknowledged']);
+    expect(confirm.from).toEqual(['Sent', 'Viewed', 'Acknowledged']);
     expect(confirm.requiredFields).toContain('confirmedQuantities');
     expect(confirm.policyHooks).toContain(POLICY_HOOKS.PO_CONFIRM_QTY_WITHIN_ORDERED);
     for (const hook of confirm.policyHooks) expect(isRegisteredPolicyHook(hook)).toBe(true);

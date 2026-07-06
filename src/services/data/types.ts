@@ -894,6 +894,61 @@ export interface PRFilter {
   status?: PRStatus | PRStatus[];
 }
 
+// ─── Command layer (v2.2 Step 3.4–3.9) — the write contract ─────────────────
+//
+// Reads throw DataError; commands report their outcome as a status. Hard
+// authorization failures (NOT_FOUND / SCOPE_DENIED) still throw DataError — the
+// dispatcher enforces QueryScope on EVERY command exactly as reads (DR-6
+// amended). Domain rejections (illegal transition, missing fields, role,
+// policy) resolve as `status: 'failed'` with a reason and an emitted event.
+
+export type CommandOutcome = 'done' | 'submitted' | 'failed';
+
+/** A command to fire one transition on one entity. */
+export interface CommandInput {
+  /** The transition id to fire (e.g. `t_po_confirm`). */
+  transitionId: string;
+  /** The entity/flow key (e.g. `purchaseOrder`). */
+  entity: string;
+  /** The target entity's id. */
+  entityId: string;
+  /** requiredFields live here; validated by the dispatcher. */
+  payload?: Record<string, unknown>;
+}
+
+/** The synchronous result of dispatching a command. */
+export interface CommandResult {
+  correlationId: string;
+  transitionId: string;
+  status: CommandOutcome;
+  /** Set when `status === 'failed'` — the machine-readable rejection reason. */
+  reason?: string;
+}
+
+/** A command's recorded status, read back via `getCommandStatus`. */
+export interface CommandStatus {
+  correlationId: string;
+  transitionId: string;
+  status: CommandOutcome;
+  ts: string;
+}
+
+/** The single dispatcher seam. The Phase-3 real adapter implements the same. */
+export interface ICommandService {
+  /** Validate (legality + role + fields + scope + policy) then apply. */
+  dispatch(scope: QueryScope, input: CommandInput): Promise<CommandResult>;
+  /** Read a command's settled/pending status by correlation id. */
+  getCommandStatus(scope: QueryScope, correlationId: string): Promise<CommandStatus | null>;
+}
+
+/** What a scope may do (Step 3.9). Mock-backed; DNA-registry-backed in Phase 3′. */
+export interface CapabilitySet {
+  /** Transition-roles the scope holds. */
+  roles: readonly string[];
+  /** Transition ids the scope may initiate. */
+  transitions: readonly string[];
+}
+
 // ─── Service interfaces — the contract Phase 3 implements ───────────────────
 
 export interface ISupplierService {
@@ -1000,4 +1055,8 @@ export interface IDataService {
   discovery: IDiscoveryService;
   analytics: IAnalyticsService;
   engagement: IEngagementService;
+  /** Write seam — the single dispatcher (Step 3.4). */
+  commands: ICommandService;
+  /** What the current scope may do (Step 3.9 DNA seed; mock-backed today). */
+  getCapabilities(scope: QueryScope): Promise<CapabilitySet>;
 }

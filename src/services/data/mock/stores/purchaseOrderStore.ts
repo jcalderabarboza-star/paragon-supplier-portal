@@ -1,0 +1,34 @@
+// ────────────────────────────────────────────────────────────────────────────
+// Mutable purchase-order store (v2.2 Step 3.6).
+//
+// The canonical mutation pattern: commands mutate THIS in-memory store; reads
+// (MockProcurementService.getPurchaseOrders) resolve FROM it; the page re-derives
+// after a targeted invalidateQueries. No page holds a seeded local copy.
+//
+// Seeded from the fixture on load; `reset()` restores the seed for test
+// isolation (the store is a process singleton).
+// ────────────────────────────────────────────────────────────────────────────
+
+import { mockPurchaseOrders } from '../../../../data/mockPurchaseOrders';
+import type { PurchaseOrder } from '../../types';
+
+function clone(po: PurchaseOrder): PurchaseOrder {
+  return { ...po, lineItems: po.lineItems.map((li) => ({ ...li })) };
+}
+
+let rows: PurchaseOrder[] = mockPurchaseOrders.map(clone);
+
+export const purchaseOrderStore = {
+  /** All POs (the mutable source reads resolve from). */
+  all(): readonly PurchaseOrder[] {
+    return rows;
+  },
+  /** One PO by id, or undefined. */
+  get(id: string): PurchaseOrder | undefined {
+    return rows.find((p) => p.id === id);
+  },
+  /** Restore the fixture seed (test isolation). */
+  reset(): void {
+    rows = mockPurchaseOrders.map(clone);
+  },
+};
