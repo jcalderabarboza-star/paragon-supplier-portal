@@ -14,9 +14,11 @@ import type { QueryScope } from './types';
 
 const A = 'sup-007';
 const B = 'sup-002';
+const C = 'sup-005';
 const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null };
 const aScope: QueryScope = { personaType: 'supplier', supplierId: A };
 const bScope: QueryScope = { personaType: 'supplier', supplierId: B };
+const cScope: QueryScope = { personaType: 'supplier', supplierId: C };
 
 type Scoped = (s: QueryScope) => Promise<{ items: { supplierId: string }[] }>;
 
@@ -41,14 +43,23 @@ describe('service scoping contract — supplierId-scoped reads', () => {
   it.each(SCOPED_READS)(
     '$name: supplier scope is isolated and buyer is the superset',
     async ({ run }) => {
-      const [a, b, buyer] = await Promise.all([run(aScope), run(bScope), run(buyerScope)]);
-      // Isolation: a supplier scope only ever returns its own rows.
+      const [a, b, c, buyer] = await Promise.all([
+        run(aScope),
+        run(bScope),
+        run(cScope),
+        run(buyerScope),
+      ]);
+      // Isolation: a supplier scope only ever returns its own rows. Three
+      // distinct tenants (sup-007 / sup-002 / sup-005) prove it is not a
+      // two-party coincidence.
       expect(a.items.every((r) => r.supplierId === A)).toBe(true);
       expect(b.items.every((r) => r.supplierId === B)).toBe(true);
+      expect(c.items.every((r) => r.supplierId === C)).toBe(true);
       // Buyer is the cross-supplier superset: its per-supplier slice matches
       // exactly what each supplier scope returns.
       expect(buyer.items.filter((r) => r.supplierId === A).length).toBe(a.items.length);
       expect(buyer.items.filter((r) => r.supplierId === B).length).toBe(b.items.length);
+      expect(buyer.items.filter((r) => r.supplierId === C).length).toBe(c.items.length);
     },
   );
 
