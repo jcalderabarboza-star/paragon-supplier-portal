@@ -19,6 +19,12 @@ import type {
   ASN,
   AsnStatus,
 } from '../types';
+import type {
+  GoodsReceipt,
+  GRStatus,
+  Disposition,
+  InspectionResult,
+} from '../../../data/mockGoodsReceipts';
 import {
   createDispatcher,
   InMemoryAuditSink,
@@ -26,10 +32,16 @@ import {
   resolvePolicyHook,
   bindPolicyHook,
   POLICY_HOOKS,
+  cascadesFor,
   type CommandTarget,
+  type CascadeCommand,
+  type CascadeContext,
+  type SettleContext,
 } from '../../transitions';
 import { purchaseOrderStore } from './stores/purchaseOrderStore';
 import { asnStore } from './stores/asnStore';
+import { goodsReceiptStore } from './stores/goodsReceiptStore';
+import { mockShipments } from '../../../data/mockShipments';
 
 // — Purchase-order command target — reads/writes the mutable PO store. ————————
 const purchaseOrderTarget: CommandTarget = {
@@ -116,9 +128,129 @@ bindPolicyHook(POLICY_HOOKS.ASN_CREATE_PO_CONFIRMED, ({ payload }) => {
   return { ok: true };
 });
 
+// — Goods-receipt target (Step 4 batch ii) — buyer-side receiving, inspection,
+//   disposition, and the FIRST real sapBoundary verb (Post to SAP, Option B). ——
+const shipmentByRef = (asnReference: string) =>
+  mockShipments.find((s) => s.asnNumber === asnReference);
+
+// GR header disposition → the GR.disposition field it implies. Line-level
+// Quarantine / Return live on the per-line sub-axis; the HEADER only accepts or
+// rejects. Interim/receiving states keep the existing disposition.
+const dispositionForState = (state: string): Disposition | null => {
+  if (state === 'Approved' || state === 'Partially Approved') return 'Accept';
+  if (state === 'Rejected') return 'Reject';
+  return null;
+};
+
+// Shipment states in which the goods are physically present to receive.
+const RECEIVABLE_SHIPMENT_STATUSES = new Set(['At Dock', 'Unloading', 'Delivered']);
+
+const goodsReceiptTarget: CommandTarget = {
+  readState: (id) => goodsReceiptStore.get(id)?.status ?? null,
+  readScopeOwner: (id) => goodsReceiptStore.get(id)?.supplierId ?? null,
+  readEntity: (id) => goodsReceiptStore.get(id) ?? null,
+  applyTransition: (id, toState, payload) => {
+    const reason =
+      (typeof payload.dispositionReason === 'string' && payload.dispositionReason) ||
+      (typeof payload.holdReason === 'string' && payload.holdReason) ||
+      '';
+    goodsReceiptStore.update(id, (g) => ({
+      ...g,
+      status: toState as GRStatus,
+      disposition: dispositionForState(toState) ?? g.disposition,
+      notes: reason || g.notes,
+    }));
+  },
+  // GR is a buyer/warehouse document: the buyer receives ANY supplier's inbound
+  // (no cross-supplier SCOPE_DENIED on create). The GR still carries the shipping
+  // supplier's id — derived from the parent shipment — so per-supplier READ
+  // scoping holds.
+  creationOwner: (payload) => {
+    const ref = String(payload.asnReference);
+    return shipmentByRef(ref)?.supplierId ?? asnStore.get(ref)?.supplierId ?? null;
+  },
+  create: (payload, toState) => {
+    const ref = String(payload.asnReference);
+    const shp = shipmentByRef(ref);
+    // Manual-ref path (no shipment): derive owner/refs from the ASN document.
+    const asn = shp ? undefined : asnStore.get(ref);
+    const grNumber = goodsReceiptStore.nextNumber();
+    // Inspection results are recorded AT create (the batch-ii proof drives the
+    // header rollup from these). The server derives ownership/refs from the
+    // shipment (or ASN); only the inspection payload is trusted from the caller.
+    const inspectionResults = Array.isArray(payload.inspectionResults)
+      ? (payload.inspectionResults as InspectionResult[])
+      : [];
+    const gr: GoodsReceipt = {
+      id: grNumber, // store is keyed by id; the assigned number doubles as the id
+      grNumber,
+      asnId: shp?.id ?? '',
+      asnNumber: shp?.asnNumber ?? asn?.asnNumber ?? ref,
+      poNumber:
+        shp?.poNumber ??
+        asn?.poReference ??
+        (typeof payload.poReference === 'string' ? payload.poReference : ''),
+      supplierId: shp?.supplierId ?? asn?.supplierId ?? '',
+      supplierName: shp?.supplierName ?? '—',
+      receivedDate: typeof payload.receivedDate === 'string' ? payload.receivedDate : '',
+      receivedBy: typeof payload.receivedBy === 'string' ? payload.receivedBy : '',
+      status: toState as GRStatus,
+      inspectionResults,
+      disposition: 'Pending',
+      notes: typeof payload.notes === 'string' && payload.notes ? payload.notes : undefined,
+    };
+    goodsReceiptStore.add(gr);
+    return { entityId: grNumber };
+  },
+};
+
+// GR create legality (mock layer — cross-entity read): the parent shipment must
+// have physically arrived, or (for a manual ref) an existing ASN document exists.
+bindPolicyHook(POLICY_HOOKS.GR_CREATE_SHIPMENT_RECEIVED, ({ payload }) => {
+  const ref = String(payload.asnReference);
+  const shp = shipmentByRef(ref);
+  if (shp) {
+    return RECEIVABLE_SHIPMENT_STATUSES.has(shp.status)
+      ? { ok: true }
+      : { ok: false, reason: `shipment ${ref} has not arrived (${shp.status})` };
+  }
+  if (asnStore.get(ref)) return { ok: true };
+  return { ok: false, reason: `no arrived shipment or ASN found for ${ref}` };
+});
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
+  goodsReceipt: goodsReceiptTarget,
+};
+
+// Cross-entity cascade (census G4): a GR mismatch disposition (reject / partial
+// approve) raises a discrepancy on the linked ASN. The registry (cascades.ts)
+// declares WHICH verb; the mock resolves WHICH ASN id (the GR's own asnNumber).
+// Best-effort — a GR whose ASN is absent or not in a cascadable state no-ops.
+const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
+  if (ctx.entity !== 'goodsReceipt') return [];
+  const gr = goodsReceiptStore.get(ctx.entityId);
+  if (!gr) return [];
+  return cascadesFor(ctx.transitionId).map((link) => ({
+    entity: link.targetEntity,
+    entityId: gr.asnNumber,
+    transitionId: link.targetTransitionId,
+  }));
+};
+
+// SAP-boundary settlement finalize (Step 3.5, Option B): when a submitted
+// `t_gr_post` settles, advance interim 'Posting to SAP' → 'Posted to SAP' and
+// assign the REAL material document — minted HERE, on settle only, never
+// fabricated client-side (closes GR-FABRICATION-01).
+const settleFinalize = (ctx: SettleContext): void => {
+  if (ctx.entity === 'goodsReceipt' && ctx.transitionId === 't_gr_post') {
+    goodsReceiptStore.update(ctx.entityId, (g) => ({
+      ...g,
+      status: 'Posted to SAP',
+      sapMaterialDoc: goodsReceiptStore.nextMatDoc(),
+    }));
+  }
 };
 
 // Process-wide audit sink + monotonic correlation ids (deterministic for tests).
@@ -132,6 +264,8 @@ const dispatcher = createDispatcher({
   sink: commandAuditSink,
   nextCorrelationId: () => `cmd_${(++seq).toString(36).padStart(4, '0')}`,
   now: () => new Date().toISOString(),
+  cascade: resolveCascades,
+  settleFinalize,
 });
 
 /** Settle a `submitted` command to `done` (Step 3.5 SAP settlement hook). */
