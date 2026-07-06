@@ -7,7 +7,7 @@ import { mockObligations } from '../../../data/mockObligations';
 import { mockRfqs } from '../../../data/mockRfqs';
 import { mockQuotations } from '../../../data/mockQuotations';
 import { applySupplierScope } from '../scoping';
-import { MOCK_ASNS } from './fixtures/supplierShipments';
+import { asnStore } from './stores/asnStore';
 import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
 import { DOCUMENTS } from './fixtures/supplierDocuments';
 import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
@@ -189,7 +189,9 @@ export class MockProcurementService implements IProcurementService {
   }
 
   async getASNs(scope: QueryScope, filter?: ASNFilter): Promise<Page<ASN>> {
-    let rows = applySupplierScope(scope, MOCK_ASNS);
+    // Reads resolve from the mutable ASN store (Step 4 batch i) so a created /
+    // submitted ASN is reflected after the command mutates it.
+    let rows = applySupplierScope(scope, asnStore.all());
     if (filter?.status) rows = rows.filter((a) => matchesList(a.status, filter.status));
     return { items: rows };
   }

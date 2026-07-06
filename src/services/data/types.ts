@@ -910,8 +910,12 @@ export interface CommandInput {
   transitionId: string;
   /** The entity/flow key (e.g. `purchaseOrder`). */
   entity: string;
-  /** The target entity's id. */
-  entityId: string;
+  /**
+   * The target entity's id. OMITTED for `creation` transitions — the entity
+   * does not exist yet and the store assigns its id (returned on the result).
+   * Required for every non-creation transition.
+   */
+  entityId?: string;
   /** requiredFields live here; validated by the dispatcher. */
   payload?: Record<string, unknown>;
 }
@@ -923,6 +927,11 @@ export interface CommandResult {
   status: CommandOutcome;
   /** Set when `status === 'failed'` — the machine-readable rejection reason. */
   reason?: string;
+  /**
+   * The target entity's id. For a `creation` command this is the id the store
+   * ASSIGNED (e.g. the new ASN number); for others it echoes the input id.
+   */
+  entityId?: string;
 }
 
 /** A command's recorded status, read back via `getCommandStatus`. */

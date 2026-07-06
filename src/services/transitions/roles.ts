@@ -16,10 +16,12 @@ import { getKnownFlows } from './registry';
 
 /** Persona → the transition-roles that persona may initiate. */
 export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
-  // Paragon side: PO issuance + system-driven fulfilment/close.
-  buyer: ['po:issue', 'po:fulfil', 'po:close'],
-  // Supplier side: view / acknowledge / confirm an incoming PO.
-  supplier: ['po:view', 'po:acknowledge', 'po:confirm'],
+  // Paragon side: PO issuance + system-driven fulfilment/close; ASN logistics
+  // (carry) + discrepancy flag (cascade ← GR).
+  buyer: ['po:issue', 'po:fulfil', 'po:close', 'asn:carry', 'asn:flag'],
+  // Supplier side: view / acknowledge / confirm an incoming PO; create + submit
+  // an advance ship notice.
+  supplier: ['po:view', 'po:acknowledge', 'po:confirm', 'asn:create', 'asn:submit'],
 };
 
 /** The transition-roles a persona may initiate. */
