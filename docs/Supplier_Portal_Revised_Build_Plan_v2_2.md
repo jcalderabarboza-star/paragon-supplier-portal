@@ -11,7 +11,7 @@
 ## 0 · EXECUTION PROTOCOL (read first, binding)
 
 1. Four-actor model: Chat (strategist) plans and adjudicates; CLI seat implements; the operator approves and merges via GitHub UI (Squash + delete branch); investigation ALWAYS precedes build.
-2. Gates on every commit: `tsc --noEmit` green · `npm run build` green · full `npx vitest run` green · floor ≥167 (never regresses) · identity-clean (no attribution lines in commits/PR bodies).
+2. Gates on every commit: `tsc --noEmit` green · `npm run build` green · full `npx vitest run` green · floor ≥203 (ratcheted at Phase 1′ close; never regresses) · identity-clean (no attribution lines in commits/PR bodies).
 3. Atomic commits; one concern per commit; one batch per PR unless this plan says otherwise.
 4. Findings flip to CLOSED only in a docs commit that follows merge evidence (F2-07 rule — now law).
 5. Clock-derived states (Expiring/Expired/Overdue/Upcoming) are COMPUTED AT READ TIME from dates. Never stored, never commanded, never in a transition table (F2-09 — now law).
@@ -40,12 +40,14 @@
 
 ---
 
-## STEP 2 — BATCH 1.4 + PHASE 1′ CLOSE (as per v2.1, amended)
+## STEP 2 — BATCH 1.4 + PHASE 1′ CLOSE (as per v2.1, amended) — ✅ CLOSED (PRs #33, #34)
 
-- **2.1** Investigation dispatch: legacy PO dual-field aliases, dto.ts fallback collapse, retire purchaseOrder.types.ts. Report before build (>25 files = report count).
-- **2.2** Build on GO. Exit criterion per COMPLIANCE-CARVEOUT-01.
-- **2.3** Exit audit per v2.1 (sp-001 all-routes + sp-002 scoping incl. cross-persona compliance-consistency invariant; Playwright backstop; harness carries SEC-GATE creds, .env chmod 600).
-- **2.4** D-5 docs true-up + Phase 1′ marked CLOSED with PR refs. **Phase 1′ ends here.**
+- **2.1** Investigation dispatch: legacy PO dual-field aliases, dto.ts fallback collapse, retire purchaseOrder.types.ts. Report before build (>25 files = report count). — ✅ **DONE** (12-file footprint; LOW-risk de-alias verified).
+- **2.2** Build on GO. Exit criterion per COMPLIANCE-CARVEOUT-01. — ✅ **DONE (PR #33 `2b0be05`).** One canonical `PurchaseOrder`/`POLineItem` shape; `dto.ts` + `hooks/useSupplierPortal.ts` + `types/purchaseOrder.types.ts` retired. **Census MET:** every data-bearing page on `useDataService()` except the registered carve-out.
+- **2.3** Exit audit. — ✅ **DONE (PR #34).** sp-001 all-routes smoke (32 routes), sp-002 scoping across 3 tenants (sup-007/002/005), **HALAL-XPERSONA-01** supplierId-keyed cross-persona invariant (KNOWN whitelist sup-007/sup-003 by finding-id; new contradiction fails; reads through `svc` so it survives R2.2). Floor 167→**203**. Playwright backstop: **operator ruling A** — rely on the in-floor vitest guarantee (3-tenant scoping contract + per-page `withChaos` states); committed suite deferred (E2E-SUITE-01). `.env` gate-creds hygiene confirmed (owner/SYSTEM-only ACL; `.gitignore` blocks `.env`).
+- **2.4** D-5 docs true-up + Phase 1′ marked CLOSED with PR refs. **Phase 1′ ends here.** — ✅ **DONE (PR #34).** findings.md dispositions current (DP3-FONT-02, E2E-SUITE-01 registered; HALAL-XPERSONA-01 guard noted); CLAUDE.md current-state → floor 203 / PRs #32–#34; this plan Step 2 + Phase 1′ marked CLOSED.
+
+**PHASE 1′ CLOSED** on the PR #34 merge. Exit criterion met: all pages consume `useDataService()` except the registered COMPLIANCE-CARVEOUT-01 (lands R2.2). Test floor 203.
 
 ---
 

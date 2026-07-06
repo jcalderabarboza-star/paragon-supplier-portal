@@ -24,17 +24,24 @@ model). Changes reach `main` only through a reviewed PR: the operator directs
 and approves, and the CLI merges via the GitHub UI (Squash + delete branch).
 Direct pushes to `main` are not used.
 
-## Current state (as-built: main @ 99db9be — Phase 1′ in progress)
-- Phase 0 (0.1–0.7) closed via PRs #11–#17. Test floor: 167 (never regresses).
+## Current state (as-built: main @ 2b0be05 — Phase 1′ CLOSED on PR #34 merge)
+- Phase 0 (0.1–0.7) closed via PRs #11–#17. Test floor: **203** (never regresses).
 - Phase 1′ page/read migrations merged — Batches 1.1a–1.3 (PRs #18–#24): buyer +
   supplier pages consume `useDataService()` via scoped TanStack Query hooks;
   DP-1/DP-2 restyle applied opportunistically per touched page.
 - SEC-GATE-01 (PR #25) + ENV-BADGE-01 hardening (PRs #27–#28) merged; DP-3
   Odyssey/TMS theme + typography merged (PRs #29–#31).
-- Batch 1.4 (legacy PO alias collapse) + Phase 1′ close are pending (v2.2 Step 2).
-  BuyerCompliance is a registered fixture carve-out (COMPLIANCE-CARVEOUT-01, see
-  `docs/findings.md`) that lands at R2.2 — the Phase 1′ exit criterion is "all
-  pages on `useDataService()` EXCEPT this registered carve-out".
+- **v2.2 Step 1** — Canon True-Up (docs + honest-now compliance fixes) merged
+  (PR #32). **Step 2** — Batch 1.4 legacy-PO-alias collapse (PR #33: one
+  canonical `PurchaseOrder` shape, `dto.ts` + `purchaseOrder.types.ts` retired)
+  + Phase 1′ exit audit (PR #34: HALAL-XPERSONA-01 supplierId-keyed invariant,
+  sp-001 all-routes smoke, sp-002 3-tenant scoping; floor 167→203). **Phase 1′
+  CLOSES on the PR #34 merge.**
+- BuyerCompliance is a registered fixture carve-out (COMPLIANCE-CARVEOUT-01, see
+  `docs/findings.md`) that lands at R2.2 — the Phase 1′ exit criterion (MET) is
+  "all pages on `useDataService()` EXCEPT this registered carve-out".
+- Next: **Step 3 — Phase 2.1′** (transition schema + census paper-fit + command
+  layer), order 3.1→3.11. DR-7 (invoice vocabulary) is decided CLI-side at 3.3.
 - Consumption pattern is standardized: TanStack Query v5 over `useDataService()`,
   scoped query hooks (per-supplier cache isolation via `scopeKey`), a typed
   `DataError` contract, the `Page<T>` list envelope (shape frozen; no pagination
