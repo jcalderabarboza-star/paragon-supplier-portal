@@ -30,8 +30,13 @@ import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
+import {
+  useAdvanceShipNoticeCreate,
+  useAdvanceShipNoticeSubmit,
+} from '../services/query/commandHooks';
 import { POStatus } from '../services/data/types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -190,6 +195,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
   onCreateAsnForPO,
   confirmedPOs,
 }) => {
+  const { t } = useTranslation();
   const filtered = useMemo(
     () =>
       statusFilter === 'All'
@@ -237,7 +243,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                       icon={Plus}
                       onClick={() => onCreateAsnForPO(po.id)}
                     >
-                      Create ASN
+                      {t('asn.create.action')}
                     </Button>
                   </div>
                 </div>
@@ -319,7 +325,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                           variant="primary"
                           onClick={() => onSubmitAsn(asn.asnNumber)}
                         >
-                          Submit
+                          {t('asn.submit.action')}
                         </Button>
                       )}
                       {asn.status === 'Discrepancy' && (
@@ -463,9 +469,12 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
 };
 
 const SupplierShipments: React.FC = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
+  const createAsnMutation = useAdvanceShipNoticeCreate();
+  const submitAsnMutation = useAdvanceShipNoticeSubmit();
   const [tab, setTab] = useState<TabKey>('shipments');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -512,26 +521,77 @@ const SupplierShipments: React.FC = () => {
     setTab('shipments');
   };
 
+  // t_asn_submit (Draft → Submitted) through the service seam. Submits with the
+  // draft's own carrier/tracking/eta; a blank draft honestly fails MISSING_FIELDS.
   const submitAsn = (asnNumber: string) => {
+    const asn = asns.find((a) => a.asnNumber === asnNumber);
+    if (!asn) return;
+    submitAsnMutation.mutate(
+      { asnNumber, carrier: asn.carrier, trackingNumber: asn.trackingNumber, eta: asn.eta },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('asn.submit.failed.title', { asnNumber }),
+              description: t('asn.submit.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('asn.submit.success.title', { asnNumber }),
+            description: t('asn.submit.success.desc', { correlationId: res.correlationId }),
+          });
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('asn.denied.title'), description: t('asn.denied.desc') }),
+      },
+    );
+  };
+
+  // Discrepancy resolution is not a wired verb yet — the Discrepancy state
+  // arrives via the GR cascade (batch ii). Honest deferred notice, no false claim.
+  const resolveDiscrepancy = () => {
     toast({
-      variant: 'success',
-      title: `${asnNumber} submitted`,
-      description: 'Paragon WMS notified · EDI 856 transmission queued.',
+      variant: 'info',
+      title: t('asn.discrepancy.deferred.title'),
+      description: t('asn.discrepancy.deferred.desc'),
     });
   };
 
-  const resolveDiscrepancy = (asnNumber: string) => {
-    toast({
-      variant: 'warning',
-      title: `Resolving discrepancy on ${asnNumber}`,
-      description: 'Credit note workflow opened with Paragon Finance.',
-    });
-  };
-
+  // t_asn_create (creation) from a confirmed PO. Store assigns the number; the
+  // list + "awaiting ASN" panel re-derive from the invalidated query.
   const createAsnForPO = (poId: string) => {
-    setForm({ ...DEFAULT_FORM, poId });
-    setStep(0);
-    setTab('create');
+    const po = CONFIRMED_POS.find((p) => p.id === poId);
+    if (!po) return;
+    createAsnMutation.mutate(
+      { poReference: po.poNumber },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('asn.create.failed.title'),
+              description: t('asn.create.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('asn.create.success.title', { asnNumber: res.entityId ?? '' }),
+            description: t('asn.create.success.desc', {
+              poNumber: po.poNumber,
+              correlationId: res.correlationId,
+            }),
+          });
+          setStatusFilter('All');
+          setTab('shipments');
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('asn.denied.title'), description: t('asn.denied.desc') }),
+      },
+    );
   };
 
   if (!supplierId) return <NoSupplierIdentity />;
@@ -572,16 +632,53 @@ const SupplierShipments: React.FC = () => {
   const isStepValid = (s: number): boolean =>
     s === 0 ? step1Valid : s === 1 ? step2Valid : step3Valid;
 
-  const completeWizard = () => {
-    toast({
-      variant: 'success',
-      title: 'ASN-2026-007 submitted',
-      description:
-        'Paragon NDC Jatake 6 notified. Dock scheduling confirmation via WhatsApp within 2 hours.',
-    });
-    setStep(0);
-    setForm(DEFAULT_FORM);
-    setTab('shipments');
+  // The wizard drafts a DETAILED ASN then submits it — create (t_asn_create,
+  // store-assigned number) → submit (t_asn_submit). No fabricated document id;
+  // honest outcome from the real command result.
+  const completeWizard = async () => {
+    if (!selectedPO) return;
+    const detail = {
+      carrier: form.carrier,
+      trackingNumber: form.trackingNumber,
+      eta: form.eta,
+    };
+    try {
+      const createRes = await createAsnMutation.mutateAsync({
+        poReference: selectedPO.poNumber,
+        ...detail,
+      });
+      if (createRes.status === 'failed' || !createRes.entityId) {
+        toast({
+          variant: 'error',
+          title: t('asn.create.failed.title'),
+          description: t('asn.create.failed.desc', { reason: createRes.reason ?? '' }),
+        });
+        return;
+      }
+      const submitRes = await submitAsnMutation.mutateAsync({
+        asnNumber: createRes.entityId,
+        ...detail,
+      });
+      if (submitRes.status === 'failed') {
+        toast({
+          variant: 'warning',
+          title: t('asn.submit.failed.title', { asnNumber: createRes.entityId }),
+          description: t('asn.submit.failed.desc', { reason: submitRes.reason ?? '' }),
+        });
+      } else {
+        toast({
+          variant: 'success',
+          title: t('asn.submit.success.title', { asnNumber: createRes.entityId }),
+          description: t('asn.submit.success.desc', { correlationId: submitRes.correlationId }),
+        });
+      }
+    } catch {
+      toast({ variant: 'error', title: t('asn.denied.title'), description: t('asn.denied.desc') });
+    } finally {
+      setStep(0);
+      setForm(DEFAULT_FORM);
+      setTab('shipments');
+    }
   };
 
   const wizardSteps: WizardStep[] = [

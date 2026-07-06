@@ -156,6 +156,13 @@ const SupplierOrders: React.FC = () => {
       />
     );
 
+  // Riding fix: the drawer reads a LIVE PO from the invalidated query (not the
+  // frozen open-time snapshot), so Key Facts reflects a post-command status —
+  // same class as the KPI staleness. Falls back to the snapshot if the row left
+  // the current view.
+  const selectedLive =
+    selected ? MY_POS.find((p) => p.id === selected.id) ?? selected : null;
+
   const openOrderPanel = (po: PurchaseOrder, mode: PanelMode = 'detail') => {
     setSelected(po);
     setConfirmedQtys(po.lineItems.map((li) => li.quantity));
@@ -412,11 +419,11 @@ const SupplierOrders: React.FC = () => {
                   <Button variant="secondary" onClick={closePanel}>
                     Close
                   </Button>
-                  {ACTION_STATUSES.includes(selected.status) ? (
+                  {ACTION_STATUSES.includes((selectedLive ?? selected).status) ? (
                     <Button variant="primary" onClick={startEditing}>
                       Confirm order
                     </Button>
-                  ) : selected.status === POStatus.CONFIRMED ? (
+                  ) : (selectedLive ?? selected).status === POStatus.CONFIRMED ? (
                     <Button variant="primary" onClick={goToASN}>
                       Create ASN
                     </Button>
@@ -504,8 +511,8 @@ const SupplierOrders: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">Status</dt>
                   <dd>
-                    <StatusPill variant={statusTone(selected.status)}>
-                      {selected.status}
+                    <StatusPill variant={statusTone((selectedLive ?? selected).status)}>
+                      {(selectedLive ?? selected).status}
                     </StatusPill>
                   </dd>
                 </div>

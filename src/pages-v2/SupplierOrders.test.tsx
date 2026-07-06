@@ -95,6 +95,11 @@ describe('SupplierOrders — PO-confirm end-to-end proof (Step 3.10)', () => {
     expect(screen.queryByText(/need your confirmation/i)).not.toBeInTheDocument();
     const inProgressTab = screen.getByRole('tab', { name: /In progress/ });
     expect(within(inProgressTab).getByText('2')).toBeInTheDocument();
+
+    // Riding fix: the drawer Key Facts derives from the live query, not the
+    // frozen open-time snapshot. po-008 is now Confirmed, so no 'Sent' status
+    // lingers anywhere — neither the table row nor the drawer.
+    expect(screen.queryByText('Sent')).not.toBeInTheDocument();
   });
 
   it('confirm toast is honest (F2-24): correlationId surfaced, no false delivery claim', () => {
