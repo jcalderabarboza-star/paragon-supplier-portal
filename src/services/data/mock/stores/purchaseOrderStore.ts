@@ -27,6 +27,17 @@ export const purchaseOrderStore = {
   get(id: string): PurchaseOrder | undefined {
     return rows.find((p) => p.id === id);
   },
+  /**
+   * IMMUTABLE update: swap in a NEW PO object (and a new rows array). Never
+   * mutate a PO in place — doing so retroactively corrupts the snapshot a prior
+   * read already handed to TanStack Query, so structural sharing sees "no
+   * change" on refetch and keeps the stale reference (memoized derivations then
+   * never recompute). Returning new references is what lets EVERY consumer of
+   * the invalidated query — table, KPI counts, banner — re-derive together.
+   */
+  update(id: string, next: (po: PurchaseOrder) => PurchaseOrder): void {
+    rows = rows.map((p) => (p.id === id ? next(p) : p));
+  },
   /** Restore the fixture seed (test isolation). */
   reset(): void {
     rows = mockPurchaseOrders.map(clone);

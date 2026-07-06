@@ -32,15 +32,18 @@ const purchaseOrderTarget: CommandTarget = {
   readScopeOwner: (id) => purchaseOrderStore.get(id)?.supplierId ?? null,
   readEntity: (id) => purchaseOrderStore.get(id) ?? null,
   applyTransition: (id, toState, payload) => {
-    const po = purchaseOrderStore.get(id);
-    if (!po) return;
-    po.status = toState as POStatus;
+    // Immutable swap (new PO + new line items) so the invalidated query yields
+    // genuinely-new references and all derivations recompute (see the store).
     const qtys = payload.confirmedQuantities;
-    if (Array.isArray(qtys)) {
-      po.lineItems.forEach((li, i) => {
-        if (typeof qtys[i] === 'number') li.confirmedQty = qtys[i] as number;
-      });
-    }
+    purchaseOrderStore.update(id, (po) => ({
+      ...po,
+      status: toState as POStatus,
+      lineItems: Array.isArray(qtys)
+        ? po.lineItems.map((li, i) =>
+            typeof qtys[i] === 'number' ? { ...li, confirmedQty: qtys[i] as number } : li,
+          )
+        : po.lineItems,
+    }));
   },
 };
 

@@ -1,4 +1,4 @@
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, within } from '@testing-library/react';
 import { beforeEach } from 'vitest';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
@@ -6,6 +6,7 @@ import { withChaos } from '../services/data/mock/withChaos';
 import { purchaseOrderStore } from '../services/data/mock/stores/purchaseOrderStore';
 import { commandAuditSink } from '../services/data/mock/MockCommandService';
 import type { IDataService } from '../services/data/types';
+import i18n from '../lib/i18n';
 import SupplierOrders from './SupplierOrders';
 
 // The command layer mutates a shared store + audit sink — reset between tests.
@@ -86,5 +87,19 @@ describe('SupplierOrders — PO-confirm end-to-end proof (Step 3.10)', () => {
     const done = commandAuditSink.byEvent('t_po_confirm').filter((e) => e.outcome === 'done');
     expect(done).toHaveLength(1);
     expect(done[0].actor).toBe('supplier:sup-007');
+
+    // KPI cards, tab counts, and the banner must re-derive from the SAME
+    // invalidated query as the table — no parallel/local derivation, no stale
+    // memo. Both sup-007 POs are now Confirmed → needsAction 0, inProgress 2.
+    expect(await screen.findByText('All actions cleared')).toBeInTheDocument();
+    expect(screen.queryByText(/need your confirmation/i)).not.toBeInTheDocument();
+    const inProgressTab = screen.getByRole('tab', { name: /In progress/ });
+    expect(within(inProgressTab).getByText('2')).toBeInTheDocument();
+  });
+
+  it('confirm toast is honest (F2-24): correlationId surfaced, no false delivery claim', () => {
+    const desc = i18n.t('po.confirm.success.desc', { correlationId: 'cmd_0001' });
+    expect(desc).toBe('cmd_0001 recorded. Procurement notification pending live channel.');
+    expect(desc).not.toMatch(/notified/i);
   });
 });
