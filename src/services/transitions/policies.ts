@@ -5,11 +5,12 @@
 // Kept separate so flow metadata stays serialisable (names, never closures).
 // ────────────────────────────────────────────────────────────────────────────
 
-import type { PurchaseOrder } from '../data/types';
+import type { PurchaseOrder, Invoice } from '../data/types';
 import type { GoodsReceipt } from '../../data/mockGoodsReceipts';
 import type { PolicyHookFn } from './dispatcher';
 import { POLICY_HOOKS } from './policyHooks';
 import { deriveHeaderDisposition, type GrHeaderDisposition } from './grRollup';
+import { isMatched } from './invoiceRollup';
 
 const BINDINGS = new Map<string, PolicyHookFn>();
 
@@ -58,3 +59,17 @@ const grRollup = (want: GrHeaderDisposition): PolicyHookFn => ({ entityId, targe
 bindPolicyHook(POLICY_HOOKS.GR_ROLLUP_APPROVED, grRollup('Approved'));
 bindPolicyHook(POLICY_HOOKS.GR_ROLLUP_PARTIAL, grRollup('Partially Approved'));
 bindPolicyHook(POLICY_HOOKS.GR_ROLLUP_REJECTED, grRollup('Rejected'));
+
+// — Invoice match = ROLLUP of the match sub-flow (census G2). The header advance
+//   `Submitted → Matched` is legal ONLY when the invoice's match axis has rolled
+//   up to a clean Matched — so the header is derived, never asserted. Reads the
+//   invoice's own matchStatus (same-entity), so it binds here. ————————————————
+const invoiceRollupMatched: PolicyHookFn = ({ entityId, target }) => {
+  const inv = target.readEntity(entityId) as Invoice | null;
+  if (!inv) return { ok: false, reason: 'entity missing' };
+  return isMatched(inv)
+    ? { ok: true }
+    : { ok: false, reason: `match axis is '${inv.matchStatus}', not 'Matched'` };
+};
+
+bindPolicyHook(POLICY_HOOKS.INVOICE_ROLLUP_MATCHED, invoiceRollupMatched);

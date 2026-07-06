@@ -43,6 +43,11 @@ export const POLICY_HOOKS = {
   GR_ROLLUP_PARTIAL: 'gr_rollup_mixed',
   /** GR reject: every line rolls up Rejected. */
   GR_ROLLUP_REJECTED: 'gr_rollup_all_rejected',
+  /** Invoice create: the parent PO (payload.poReference) must be Confirmed. */
+  INVOICE_CREATE_PO_CONFIRMED: 'invoice_create_po_confirmed',
+  /** Invoice match: the match sub-flow must have rolled up to a clean Matched
+   *  before the header can advance Submitted → Matched (census G2). */
+  INVOICE_ROLLUP_MATCHED: 'invoice_rollup_matched',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);
