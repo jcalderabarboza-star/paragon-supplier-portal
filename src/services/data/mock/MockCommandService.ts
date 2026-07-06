@@ -172,8 +172,10 @@ const goodsReceiptTarget: CommandTarget = {
   create: (payload, toState) => {
     const ref = String(payload.asnReference);
     const shp = shipmentByRef(ref);
-    // Manual-ref path (no shipment): derive owner/refs from the ASN document.
+    // Manual/ASN-ref path (no shipment): derive owner/refs from the ASN document
+    // and its parent PO (the ASN carries no supplierName — the PO does).
     const asn = shp ? undefined : asnStore.get(ref);
+    const asnPo = asn ? findPoByNumber(asn.poReference) : undefined;
     const grNumber = goodsReceiptStore.nextNumber();
     // Inspection results are recorded AT create (the batch-ii proof drives the
     // header rollup from these). The server derives ownership/refs from the
@@ -190,8 +192,8 @@ const goodsReceiptTarget: CommandTarget = {
         shp?.poNumber ??
         asn?.poReference ??
         (typeof payload.poReference === 'string' ? payload.poReference : ''),
-      supplierId: shp?.supplierId ?? asn?.supplierId ?? '',
-      supplierName: shp?.supplierName ?? '—',
+      supplierId: shp?.supplierId ?? asn?.supplierId ?? asnPo?.supplierId ?? '',
+      supplierName: shp?.supplierName ?? asnPo?.supplierName ?? '—',
       receivedDate: typeof payload.receivedDate === 'string' ? payload.receivedDate : '',
       receivedBy: typeof payload.receivedBy === 'string' ? payload.receivedBy : '',
       status: toState as GRStatus,

@@ -5,17 +5,18 @@ import Data from '../ui-v2/Data';
 import { useToast } from '../../hooks/useToast';
 import { useTranslation } from 'react-i18next';
 import type { Shipment, ASN, AsnStatus } from '../../services/data/types';
-import {
-  Disposition,
-  InspectionResult,
-} from '../../data/mockGoodsReceipts';
+import type { InspectionResult } from '../../data/mockGoodsReceipts';
 import {
   useGoodsReceiptCreate,
   useGoodsReceiptFinalize,
   useGoodsReceiptPost,
   useGoodsReceiptSettle,
 } from '../../services/query/commandHooks';
-import { deriveHeaderDisposition, headerVerbFor } from '../../services/transitions';
+import {
+  deriveHeaderDisposition,
+  headerVerbFor,
+  type GrHeaderDisposition,
+} from '../../services/transitions';
 
 interface GRInspectionWizardProps {
   onClose: () => void;
@@ -187,8 +188,8 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<LineDraft[]>([]);
 
-  // Step 4 state
-  const [disposition, setDisposition] = useState<Disposition>('Accept');
+  // Step 4 state — NO free-choice disposition: the header is DERIVED from the
+  // lines (see derivedDisposition below), never asserted.
   const [dispositionReason, setDispositionReason] = useState('');
   const [autoPostSap, setAutoPostSap] = useState(true);
   const [finalNotes, setFinalNotes] = useState('');
@@ -237,6 +238,38 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 
   const sourceValid = !!activeSource;
 
+  // Finalized inspection lines + the header disposition ROLLED UP from them. The
+  // header is DERIVED, never a free-choice assertion (law 0.6) — the same rollup
+  // the dispatcher's gr_rollup_* hooks re-check, so the UI cannot present an
+  // Accept the lines contradict.
+  const inspectionResults = useMemo<InspectionResult[]>(
+    () =>
+      lines.map((l) => {
+        const rejected = Math.max(0, l.qtyReceived - l.qtyAccepted);
+        const packaging: 'Pass' | 'Fail' | 'Pending' =
+          l.packagingCheck === 'N/A' ? 'Pass' : l.packagingCheck;
+        return {
+          materialCode: l.materialCode,
+          description: l.description,
+          qtyExpected: l.qtyExpected,
+          qtyReceived: l.qtyReceived,
+          qtyAccepted: l.qtyAccepted,
+          qtyRejected: rejected,
+          rejectionReason: rejected > 0 ? l.rejectionReason : undefined,
+          labResultId: l.labRequestId,
+          visualCheck: l.visualCheck,
+          packagingCheck: packaging,
+          halalSealCheck: l.halalSealCheck,
+          bpomLotCheck: l.bpomLotCheck,
+        };
+      }),
+    [lines],
+  );
+  const derivedDisposition = useMemo<GrHeaderDisposition>(
+    () => deriveHeaderDisposition(inspectionResults),
+    [inspectionResults],
+  );
+
   const receiptValid = lines.length > 0 && lines.every((l) => {
     if (l.qtyReceived < 0 || l.qtyAccepted < 0) return false;
     if (l.qtyAccepted > l.qtyReceived) return false;
@@ -253,12 +286,12 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     return true;
   });
 
+  // A fully-Rejected rollup needs a reason (t_gr_reject requiredField); Approved
+  // / Partially Approved don't. 'Pending' can't be finalized (uninspected line).
   const dispositionValid =
-    !!disposition &&
-    !(
-      (disposition === 'Reject' || disposition === 'Return to Supplier') &&
-      !dispositionReason.trim()
-    );
+    derivedDisposition === 'Rejected'
+      ? dispositionReason.trim().length > 0
+      : derivedDisposition !== 'Pending';
 
   const isStepValid = (i: number): boolean => {
     if (i === 0) return sourceValid;
@@ -463,6 +496,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                       <input
                         type="number"
                         min={0}
+                        aria-label={`Received quantity for ${l.materialCode}`}
                         value={l.qtyReceived}
                         onChange={(e) =>
                           updateLine(i, {
@@ -478,6 +512,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         type="number"
                         min={0}
                         max={l.qtyReceived}
+                        aria-label={`Accepted quantity for ${l.materialCode}`}
                         value={l.qtyAccepted}
                         onChange={(e) =>
                           updateLine(i, {
@@ -499,6 +534,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                           {labelFor('Rejection Reason')}
                           <textarea
                             rows={2}
+                            aria-label={`Rejection reason for ${l.materialCode}`}
                             value={l.rejectionReason}
                             onChange={(e) =>
                               updateLine(i, {
@@ -657,50 +693,53 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     <div className="flex flex-col gap-5">
       <FormSection title="Final Disposition">
         <div>
-          {labelFor('Overall Disposition')}
-          <div className="flex flex-wrap gap-4">
-            {(
-              ['Accept', 'Reject', 'Quarantine', 'Return to Supplier'] as const
-            ).map((d) => (
-              <label key={d} className={radioCls}>
-                <input
-                  type="radio"
-                  name="disposition"
-                  value={d}
-                  checked={disposition === d}
-                  onChange={() => {
-                    setDisposition(d);
-                    setAutoPostSap(d === 'Accept');
-                  }}
-                />
-                {d}
-              </label>
-            ))}
+          {labelFor('Header Disposition (derived from lines)')}
+          <div
+            className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${
+              derivedDisposition === 'Approved'
+                ? 'border-success/40 bg-success-soft text-success'
+                : derivedDisposition === 'Partially Approved'
+                  ? 'border-warning/40 bg-warning-soft text-warning'
+                  : derivedDisposition === 'Rejected'
+                    ? 'border-danger/40 bg-danger-soft text-danger'
+                    : 'border-border-input bg-bg-hover text-text-secondary'
+            }`}
+          >
+            {derivedDisposition}
           </div>
+          <p className="mt-1.5 text-xs text-text-tertiary">
+            Rolled up from {totals.items} line{totals.items === 1 ? '' : 's'} —{' '}
+            <Data>{formatNumber(totals.accepted)}</Data> accepted,{' '}
+            <Data>{formatNumber(totals.rejected)}</Data> rejected. Not editable — the
+            header follows the inspected quantities.
+          </p>
         </div>
 
-        {(disposition === 'Reject' ||
-          disposition === 'Return to Supplier') && (
+        {derivedDisposition === 'Rejected' && (
           <div>
-            {labelFor('Reason')}
+            {labelFor('Rejection Reason (required)')}
             <textarea
               rows={2}
+              aria-label="Header rejection reason"
               value={dispositionReason}
               onChange={(e) => setDispositionReason(e.target.value)}
               className={inputCls}
-              placeholder="Explain rejection or return rationale"
+              placeholder="Explain the full-lot rejection"
             />
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-          <input
-            type="checkbox"
-            checked={autoPostSap}
-            onChange={(e) => setAutoPostSap(e.target.checked)}
-          />
-          Auto-post to SAP
-        </label>
+        {(derivedDisposition === 'Approved' ||
+          derivedDisposition === 'Partially Approved') && (
+          <label className="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoPostSap}
+              onChange={(e) => setAutoPostSap(e.target.checked)}
+            />
+            Auto-post to SAP
+          </label>
+        )}
 
         <div>
           {labelFor('Final Notes')}
@@ -781,26 +820,6 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     if (submitting) return;
     setSubmitting(true);
 
-    const inspectionResults: InspectionResult[] = lines.map((l) => {
-      const rejected = Math.max(0, l.qtyReceived - l.qtyAccepted);
-      const packaging: 'Pass' | 'Fail' | 'Pending' =
-        l.packagingCheck === 'N/A' ? 'Pass' : l.packagingCheck;
-      return {
-        materialCode: l.materialCode,
-        description: l.description,
-        qtyExpected: l.qtyExpected,
-        qtyReceived: l.qtyReceived,
-        qtyAccepted: l.qtyAccepted,
-        qtyRejected: rejected,
-        rejectionReason: rejected > 0 ? l.rejectionReason : undefined,
-        labResultId: l.labRequestId,
-        visualCheck: l.visualCheck,
-        packagingCheck: packaging,
-        halalSealCheck: l.halalSealCheck,
-        bpomLotCheck: l.bpomLotCheck,
-      };
-    });
-
     const asnReference = activeSource?.asnNumber ?? manualASN.trim();
 
     try {
@@ -825,7 +844,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       // 2) Finalize — dispatch the ROLLED-UP header verb (approve / partial /
       //    reject). The dispatcher re-derives the disposition from the stored
       //    lines, so the header is provably derived, not asserted.
-      const dispo = deriveHeaderDisposition(inspectionResults);
+      const dispo = derivedDisposition;
       const headerVerb = headerVerbFor(dispo);
       if (headerVerb) {
         const finalizeRes = await finalizeGR.mutateAsync({

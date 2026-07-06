@@ -96,11 +96,53 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' })); // → disposition
     fireEvent.click(screen.getByRole('button', { name: 'Create GR' }));
 
-    // A real GR was created for the store ASN — through the command seam.
-    await waitFor(() =>
-      expect(
-        goodsReceiptStore.all().some((g) => g.asnNumber === 'ASN-UITEST-1'),
-      ).toBe(true),
+    // A real GR was created for the store ASN — through the command seam — and
+    // the supplier is derived from the ASN's PO (not left blank).
+    await waitFor(() => {
+      const gr = goodsReceiptStore.all().find((g) => g.asnNumber === 'ASN-UITEST-1');
+      expect(gr).toBeTruthy();
+      expect(gr!.supplierName).not.toBe('—');
+      expect(gr!.supplierName.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('mixed quantities → derived Partially Approved → posted → ASN discrepancy cascade', async () => {
+    goodsReceiptStore.reset();
+    asnStore.reset();
+    asnStore.add(uiTestAsn());
+
+    renderWithProviders(<BuyerGoodsReceipt />);
+    await screen.findByText('Rejection Rate (30d)');
+
+    fireEvent.click(screen.getByRole('button', { name: /New GR/i }));
+    fireEvent.click(await screen.findByText('ASN-UITEST-1'));
+
+    // Step 1 → Details, then accept 60 of 100 received (40 rejected → mixed line).
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.change(
+      screen.getByLabelText('Accepted quantity for PK-UITEST-1'),
+      { target: { value: '60' } },
     );
+    fireEvent.change(
+      await screen.findByLabelText('Rejection reason for PK-UITEST-1'),
+      { target: { value: '40 cartons crushed in transit' } },
+    );
+
+    // Details → Quality → Disposition.
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    // The header disposition is DERIVED and displayed (no free-choice radio).
+    expect(screen.getByText(/Header Disposition/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create GR' }));
+
+    // Partial-approve is the only path that both POSTS and cascades: the GR posts
+    // to SAP and the linked ASN flips to Discrepancy.
+    await waitFor(() => {
+      const gr = goodsReceiptStore.all().find((g) => g.asnNumber === 'ASN-UITEST-1');
+      expect(gr?.status).toBe('Posted to SAP');
+    });
+    expect(asnStore.get('ASN-UITEST-1')!.status).toBe('Discrepancy');
   });
 });
