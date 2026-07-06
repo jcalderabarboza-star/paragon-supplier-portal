@@ -34,11 +34,18 @@ import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import { useTranslation } from 'react-i18next';
+import { POStatus } from '../services/data/types';
 import type {
   SupplierInvoice,
   SupplierInvoiceStatus as InvStatus,
 } from '../services/data/types';
-import { useSupplierInvoices, useCurrentSupplier } from '../services/query/hooks';
+import {
+  useSupplierInvoices,
+  useCurrentSupplier,
+  usePurchaseOrders,
+} from '../services/query/hooks';
+import { useInvoiceCreate, useInvoiceSubmit } from '../services/query/commandHooks';
 
 const INV_CRUMB = ['SETTLE', 'MY INVOICES'];
 
@@ -139,14 +146,86 @@ const buildTimeline = (inv: SupplierInvoice): TimelineEvent[] => {
 
 const SupplierInvoices: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
   const invoicesQuery = useSupplierInvoices();
   const supplierQuery = useCurrentSupplier();
+  const posQuery = usePurchaseOrders();
+  const createMutation = useInvoiceCreate();
+  const submitMutation = useInvoiceSubmit();
   const INVOICES = invoicesQuery.data?.items ?? [];
   const mySupplier = supplierQuery.data ?? null;
   const [selected, setSelected] = useState<SupplierInvoice | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
+  // New-invoice draft form (creation-shape against one of the supplier's own
+  // confirmed POs — the store assigns the invoice number).
+  const [newOpen, setNewOpen] = useState(false);
+  const [newPoRef, setNewPoRef] = useState('');
+  const [newAmount, setNewAmount] = useState('');
+
+  // The supplier's confirmed POs are the legal parents for a new invoice.
+  const confirmablePos = (posQuery.data?.items ?? []).filter(
+    (po) => po.status === POStatus.CONFIRMED,
+  );
+
+  const submitDraft = (inv: SupplierInvoice) => {
+    submitMutation.mutate(
+      { invoiceId: inv.id, amount: inv.amount },
+      {
+        onSuccess: (res) => {
+          toast(
+            res.status === 'failed'
+              ? {
+                  variant: 'warning',
+                  title: t('invoice.submit.failed.title', { invoiceNumber: inv.invoiceNumber }),
+                  description: t('invoice.submit.failed.desc', { reason: res.reason ?? '' }),
+                }
+              : {
+                  variant: 'success',
+                  title: t('invoice.submit.success.title', { invoiceNumber: inv.invoiceNumber }),
+                  description: t('invoice.submit.success.desc', { correlationId: res.correlationId }),
+                },
+          );
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('invoice.denied.title'), description: t('invoice.denied.desc') }),
+      },
+    );
+  };
+
+  const submitNewInvoice = () => {
+    const amount = Number(newAmount);
+    if (!newPoRef || !Number.isFinite(amount) || amount <= 0) {
+      toast({ variant: 'warning', title: t('invoice.create.failed.title'), description: t('invoice.create.failed.desc', { reason: 'PO and a positive amount are required' }) });
+      return;
+    }
+    createMutation.mutate(
+      { poReference: newPoRef, amount },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('invoice.create.failed.title'),
+              description: t('invoice.create.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          setNewOpen(false);
+          setNewPoRef('');
+          setNewAmount('');
+          toast({
+            variant: 'success',
+            title: t('invoice.create.success.title', { invoiceNumber: res.entityId ?? '' }),
+            description: t('invoice.create.success.desc', { poNumber: newPoRef, correlationId: res.correlationId }),
+          });
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('invoice.denied.title'), description: t('invoice.denied.desc') }),
+      },
+    );
+  };
 
   const sums = useMemo(() => {
     const sum = (filter: (i: SupplierInvoice) => boolean) =>
@@ -236,14 +315,9 @@ const SupplierInvoices: React.FC = () => {
               },
             ]}
             primary={{
-              label: 'New invoice',
+              label: t('invoice.create.action'),
               icon: Plus,
-              onClick: () =>
-                toast({
-                  title: 'New invoice submission',
-                  description:
-                    'Submission flow coming in Phase 2A — currently a stub.',
-                }),
+              onClick: () => setNewOpen(true),
             }}
           />
         }
@@ -374,14 +448,10 @@ const SupplierInvoices: React.FC = () => {
                     ) : inv.status === 'Draft' ? (
                       <Button
                         variant="primary"
-                        onClick={() =>
-                          toast({
-                            variant: 'success',
-                            title: `${inv.invoiceNumber} submitted for approval`,
-                          })
-                        }
+                        disabled={submitMutation.isPending}
+                        onClick={() => submitDraft(inv)}
                       >
-                        Submit
+                        {t('invoice.submit.action')}
                       </Button>
                     ) : inv.status === 'Disputed' ? (
                       <Button
@@ -610,6 +680,71 @@ const SupplierInvoices: React.FC = () => {
             )}
           </div>
         )}
+      </SidePanel>
+
+      <SidePanel
+        open={newOpen}
+        onClose={() => setNewOpen(false)}
+        title="New invoice"
+        footerActions={
+          <>
+            <Button variant="secondary" onClick={() => setNewOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              disabled={createMutation.isPending}
+              onClick={submitNewInvoice}
+            >
+              Create draft
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <p className="text-sm text-text-secondary">
+            Draft an invoice against one of your confirmed purchase orders. The
+            invoice number is assigned on creation; you submit it for approval
+            from the list.
+          </p>
+          <div>
+            <label htmlFor="new-po" className="text-label text-text-tertiary uppercase block mb-1">
+              Purchase order
+            </label>
+            <select
+              id="new-po"
+              className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
+              value={newPoRef}
+              onChange={(e) => setNewPoRef(e.target.value)}
+            >
+              <option value="">Select a confirmed PO…</option>
+              {confirmablePos.map((po) => (
+                <option key={po.id} value={po.poNumber}>
+                  {po.poNumber}
+                </option>
+              ))}
+            </select>
+            {confirmablePos.length === 0 && (
+              <div className="mt-1 text-xs text-text-tertiary">
+                No confirmed POs available to invoice.
+              </div>
+            )}
+          </div>
+          <div>
+            <label htmlFor="new-amount" className="text-label text-text-tertiary uppercase block mb-1">
+              Amount (IDR)
+            </label>
+            <input
+              id="new-amount"
+              type="number"
+              min={0}
+              className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
+              placeholder="e.g. 250000000"
+              value={newAmount}
+              onChange={(e) => setNewAmount(e.target.value)}
+            />
+          </div>
+        </div>
       </SidePanel>
     </AppShellV2>
   );

@@ -47,7 +47,14 @@ import type {
   BuyerInvoiceStatus as InvStatus,
   InvoiceMatchStatus as MatchStatus,
 } from '../services/data/types';
+import { useTranslation } from 'react-i18next';
 import { useBuyerInvoices } from '../services/query/hooks';
+import {
+  useInvoiceReleasePayment,
+  useInvoiceSettlePayment,
+  useInvoiceDispute,
+  useInvoiceResolve,
+} from '../services/query/commandHooks';
 import { formatIDR, formatDate } from '../lib/format';
 
 const INV_CRUMB = ['TRANSACT', 'INVOICES & PAYMENT'];
@@ -131,7 +138,7 @@ const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, label, suf
 
 type TabKey = 'queue' | 'analytics' | 'aging';
 type StatusFilter = InvStatus | 'all';
-type PanelMode = 'detail' | 'confirming' | 'remittance';
+type PanelMode = 'detail' | 'confirming' | 'remittance' | 'disputing';
 
 const STATUS_OPTIONS: { id: StatusFilter; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -150,46 +157,26 @@ const FOOTER_ACTION_BY_STATUS: Record<InvStatus, string> = {
   Overdue: 'Escalate',
 };
 
-const loadGRPosted = (): string[] => {
-  try {
-    const raw = localStorage.getItem('paragon_gr_posted');
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
-  } catch {
-    return [];
-  }
-};
-
-// Local overlay applied to the server list: GRs posted this session (tracked
-// in localStorage by the Goods Receipt page) auto-advance a Pending-Match
-// invoice to Approved/Matched. Applied to the query result, not a fixture.
-const applyGrOverlay = (source: BuyerInvoice[]): BuyerInvoice[] => {
-  const posted = loadGRPosted();
-  return source.map((inv) =>
-    posted.includes(inv.poNumber) &&
-    inv.status === 'Pending Match' &&
-    inv.matchStatus === 'Pending GR'
-      ? {
-          ...inv,
-          status: 'Approved' as InvStatus,
-          matchStatus: 'Matched' as MatchStatus,
-          sapGrDoc: `GR-490000${Math.floor(1000 + Math.random() * 9000)}`,
-        }
-      : inv,
-  );
-};
-
-const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
-  initialInvoices,
-}) => {
+// The buyer invoice list re-derives from the ONE canonical store via the query
+// layer (3.6 pattern) — NO local seeded copy, NO GR-post localStorage overlay
+// (INV-SEED-01 retired; the GR-post → invoice-match auto-advance returns as a
+// real cascade under INV-GR-OVERLAY-01, next batch). The selected invoice is
+// tracked by id so a background refetch never strands a stale object.
+const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices }) => {
   const { toast } = useToast();
-  const [invoices, setInvoices] = useState<BuyerInvoice[]>(() =>
-    applyGrOverlay(initialInvoices),
-  );
+  const { t } = useTranslation();
+  const releaseMutation = useInvoiceReleasePayment();
+  const settleMutation = useInvoiceSettlePayment();
+  const disputeMutation = useInvoiceDispute();
+  const resolveMutation = useInvoiceResolve();
   const [tab, setTab] = useState<TabKey>('queue');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [selected, setSelected] = useState<BuyerInvoice | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [disputeReason, setDisputeReason] = useState('');
+  const selected = useMemo(
+    () => invoices.find((i) => i.id === selectedId) ?? null,
+    [invoices, selectedId],
+  );
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
 
   const counts = useMemo(() => {
@@ -253,12 +240,13 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
   }, [invoices]);
 
   const closePanel = () => {
-    setSelected(null);
+    setSelectedId(null);
     setPanelMode('detail');
+    setDisputeReason('');
   };
 
   const openInvoice = (inv: BuyerInvoice) => {
-    setSelected(inv);
+    setSelectedId(inv.id);
     setPanelMode('detail');
   };
 
@@ -273,9 +261,11 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
       return;
     }
     if (selected.status === 'Pending Match') {
+      // Honest: match completes on the GR post (INV-GR-OVERLAY-01) — no fabrication.
       toast({
-        title: `${selected.invoiceNumber}`,
-        description: 'Awaiting GR confirmation in SAP before approval.',
+        variant: 'info',
+        title: t('invoice.match.deferred.title'),
+        description: t('invoice.match.deferred.desc'),
       });
       return;
     }
@@ -288,40 +278,125 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
       return;
     }
     if (selected.status === 'Disputed') {
-      toast({
-        variant: 'info',
-        title: `Opening dispute thread for ${selected.invoiceNumber}`,
-        description: 'Credit note required before payment release.',
-      });
+      handleResolve();
     }
   };
 
-  const confirmRelease = () => {
+  // Option B (canonical SAP-boundary pattern): release resolves `submitted` and
+  // moves the invoice to the interim 'Releasing Payment' with NO FI document; the
+  // async callback SETTLES to 'Payment Released' + a real FI doc. No "paid" claim
+  // is shown before it is true (law 0.6 — this replaces the old client-side
+  // fabrication that asserted payment immediately).
+  const handleReleasePayment = () => {
     if (!selected) return;
-    const today = new Date().toISOString().slice(0, 10);
-    const released: BuyerInvoice = {
-      ...selected,
-      status: 'Payment Released',
-      paymentDate: today,
-    };
-    setInvoices((prev) =>
-      prev.map((i) => (i.id === selected.id ? released : i)),
+    const inv = selected;
+    releaseMutation.mutate(
+      { invoiceId: inv.id },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('invoice.pay.failed.title', { invoiceNumber: inv.invoiceNumber }),
+              description: t('invoice.pay.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          setPanelMode('detail');
+          toast({
+            variant: 'info',
+            title: t('invoice.pay.releasing.title', { invoiceNumber: inv.invoiceNumber }),
+            description: t('invoice.pay.releasing.desc'),
+          });
+          const { correlationId } = res;
+          window.setTimeout(() => {
+            settleMutation.mutate(
+              { correlationId },
+              {
+                onSuccess: () =>
+                  toast({
+                    variant: 'success',
+                    title: t('invoice.pay.released.title', { invoiceNumber: inv.invoiceNumber }),
+                    description: t('invoice.pay.released.desc'),
+                  }),
+              },
+            );
+          }, 1200);
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('invoice.denied.title'), description: t('invoice.denied.desc') }),
+      },
     );
-    setSelected(released);
-    setPanelMode('detail');
-    toast({
-      variant: 'success',
-      title: 'Payment released',
-      description: `${released.invoiceNumber} — SAP FI document will post within 24 hours.`,
-    });
+  };
+
+  const confirmDispute = () => {
+    if (!selected) return;
+    const inv = selected;
+    if (!disputeReason.trim()) {
+      toast({ variant: 'warning', title: t('invoice.dispute.missingReason') });
+      return;
+    }
+    disputeMutation.mutate(
+      { invoiceId: inv.id, disputeReason: disputeReason.trim() },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('invoice.dispute.failed.title', { invoiceNumber: inv.invoiceNumber }),
+              description: t('invoice.dispute.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          setPanelMode('detail');
+          setDisputeReason('');
+          toast({
+            variant: 'success',
+            title: t('invoice.dispute.success.title', { invoiceNumber: inv.invoiceNumber }),
+            description: t('invoice.dispute.success.desc', { correlationId: res.correlationId }),
+          });
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('invoice.denied.title'), description: t('invoice.denied.desc') }),
+      },
+    );
+  };
+
+  const handleResolve = () => {
+    if (!selected) return;
+    const inv = selected;
+    resolveMutation.mutate(
+      { invoiceId: inv.id },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('invoice.resolve.failed.title', { invoiceNumber: inv.invoiceNumber }),
+              description: t('invoice.resolve.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('invoice.resolve.success.title', { invoiceNumber: inv.invoiceNumber }),
+            description: t('invoice.resolve.success.desc', { correlationId: res.correlationId }),
+          });
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('invoice.denied.title'), description: t('invoice.denied.desc') }),
+      },
+    );
   };
 
   const sendRemittance = () => {
     if (!selected) return;
+    // Honest: the advice is generated for the supplier to retrieve — not a live
+    // external send we cannot verify (law 0.6).
     toast({
       variant: 'success',
-      title: `Remittance advice sent to ${selected.supplierName}`,
-      description: `Delivered via ${selected.channel}.`,
+      title: t('invoice.remittance.generated.title'),
+      description: t('invoice.remittance.generated.desc', { channel: selected.channel }),
     });
     setPanelMode('detail');
   };
@@ -725,6 +800,12 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                   <Button variant="secondary" onClick={closePanel}>
                     Close
                   </Button>
+                  {(selected.status === 'Pending Match' ||
+                    selected.status === 'Approved') && (
+                    <Button variant="secondary" onClick={() => setPanelMode('disputing')}>
+                      Dispute
+                    </Button>
+                  )}
                   <Button variant="primary" onClick={handleFooterAction}>
                     {FOOTER_ACTION_BY_STATUS[selected.status]}
                   </Button>
@@ -738,8 +819,32 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
                   >
                     Cancel
                   </Button>
-                  <Button variant="primary" onClick={confirmRelease}>
+                  <Button
+                    variant="primary"
+                    disabled={releaseMutation.isPending}
+                    onClick={handleReleasePayment}
+                  >
                     Confirm release — {fmtCompact(selected.amount)}
+                  </Button>
+                </>
+              )}
+              {panelMode === 'disputing' && (
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setPanelMode('detail');
+                      setDisputeReason('');
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    disabled={disputeMutation.isPending}
+                    onClick={confirmDispute}
+                  >
+                    Raise dispute
                   </Button>
                 </>
               )}
@@ -922,6 +1027,28 @@ const BuyerInvoicesView: React.FC<{ initialInvoices: BuyerInvoice[] }> = ({
               </section>
             )}
 
+            {panelMode === 'disputing' && (
+              <section>
+                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                  Raise a dispute
+                </h3>
+                <label htmlFor="dispute-reason" className="sr-only">
+                  Dispute reason for {selected.invoiceNumber}
+                </label>
+                <textarea
+                  id="dispute-reason"
+                  className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
+                  rows={3}
+                  placeholder="Reason (e.g. quantity mismatch vs GR, price variance)…"
+                  value={disputeReason}
+                  onChange={(e) => setDisputeReason(e.target.value)}
+                />
+                <div className="mt-2 text-xs text-text-tertiary">
+                  A credit note will be required before payment can be released.
+                </div>
+              </section>
+            )}
+
             {panelMode === 'remittance' && (
               <section>
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
@@ -1019,7 +1146,7 @@ const BuyerInvoices: React.FC = () => {
         subtitle="There are no invoices to match or pay for this view."
       />
     );
-  return <BuyerInvoicesView initialInvoices={invoicesQuery.data.items} />;
+  return <BuyerInvoicesView invoices={invoicesQuery.data.items} />;
 };
 
 export default BuyerInvoices;
