@@ -148,4 +148,11 @@ export class MockCommandService implements ICommandService {
   ): Promise<CommandStatus | null> {
     return dispatcher.getCommandStatus(correlationId);
   }
+
+  async settle(
+    _scope: QueryScope,
+    correlationId: string,
+  ): Promise<CommandStatus | null> {
+    return dispatcher.settle(correlationId);
+  }
 }

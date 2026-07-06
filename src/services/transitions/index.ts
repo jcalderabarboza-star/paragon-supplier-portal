@@ -16,13 +16,21 @@ export * from './events';
 export * from './dispatcher';
 // Importing ./policies binds the policy-hook implementations (side effect).
 export * from './policies';
+export * from './grRollup';
+export * from './cascades';
 export { purchaseOrderFlow } from './flows/purchaseOrder.flow';
 export { advanceShipNoticeFlow } from './flows/advanceShipNotice.flow';
+export { goodsReceiptFlow } from './flows/goodsReceipt.flow';
+export { goodsReceiptLineFlow } from './flows/goodsReceiptLine.flow';
 
 import { flowRegistry } from './registry';
 import { purchaseOrderFlow } from './flows/purchaseOrder.flow';
 import { advanceShipNoticeFlow } from './flows/advanceShipNotice.flow';
+import { goodsReceiptFlow } from './flows/goodsReceipt.flow';
+import { goodsReceiptLineFlow } from './flows/goodsReceiptLine.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
 flowRegistry.register(advanceShipNoticeFlow); // Step 4 (i) — ASN
+flowRegistry.register(goodsReceiptFlow); // Step 4 (ii) — GR header
+flowRegistry.register(goodsReceiptLineFlow); // Step 4 (ii) — GR line sub-flow (census G2)

@@ -948,6 +948,13 @@ export interface ICommandService {
   dispatch(scope: QueryScope, input: CommandInput): Promise<CommandResult>;
   /** Read a command's settled/pending status by correlation id. */
   getCommandStatus(scope: QueryScope, correlationId: string): Promise<CommandStatus | null>;
+  /**
+   * Settle a `submitted` (SAP-boundary) command — the async settlement
+   * callback (Step 3.5). In the mock this represents SAP returning the material
+   * document; Phase-3 implements it as the integration webhook. Idempotent:
+   * settling an already-`done` command returns it unchanged.
+   */
+  settle(scope: QueryScope, correlationId: string): Promise<CommandStatus | null>;
 }
 
 /** What a scope may do (Step 3.9). Mock-backed; DNA-registry-backed in Phase 3′. */

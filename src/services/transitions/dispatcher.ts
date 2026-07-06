@@ -75,6 +75,31 @@ export type PolicyHookFn = (ctx: {
   target: CommandTarget;
 }) => PolicyDecision;
 
+/** A command the dispatcher should fan out after a source transition (G4). */
+export interface CascadeCommand {
+  entity: string;
+  entityId: string;
+  transitionId: string;
+  payload?: Record<string, unknown>;
+}
+
+/** Context handed to the cascade resolver after a successful source apply. */
+export interface CascadeContext {
+  transitionId: string;
+  entity: string;
+  entityId: string;
+  payload: Record<string, unknown>;
+  scope: QueryScope;
+}
+
+/** Context handed to the settle finalize (Step 3.5, Option B) on settlement. */
+export interface SettleContext {
+  entity: string;
+  transitionId: string;
+  entityId: string;
+  payload: Record<string, unknown>;
+}
+
 export interface DispatcherDeps {
   resolveRoles: (scope: QueryScope) => readonly string[];
   target: (entity: string) => CommandTarget | undefined;
@@ -82,6 +107,19 @@ export interface DispatcherDeps {
   sink: AuditSink;
   nextCorrelationId: () => string;
   now: () => string;
+  /**
+   * Cross-entity cascade resolver (census G4). Given a successfully-applied
+   * source transition, returns the cascade commands to fire (adapter resolves
+   * WHICH target ids via cross-entity lookups). Absent ⇒ no cascades.
+   */
+  cascade?: (ctx: CascadeContext) => readonly CascadeCommand[];
+  /**
+   * SAP-boundary settlement finalize (Step 3.5, Option B). Runs when a
+   * `submitted` command settles: advances the interim→terminal state and
+   * assigns the real system reference, under the SAME correlationId. Absent ⇒
+   * settlement only flips the command status (the pre-Option-B behaviour).
+   */
+  settleFinalize?: (ctx: SettleContext) => void;
 }
 
 export interface Dispatcher {
@@ -99,6 +137,8 @@ function isEmpty(value: unknown): boolean {
 
 export function createDispatcher(deps: DispatcherDeps): Dispatcher {
   const statuses = new Map<string, CommandStatus>();
+  // Submitted commands awaiting settlement: correlationId → what to finalize.
+  const pending = new Map<string, SettleContext>();
 
   function finish(
     scope: QueryScope,
@@ -191,13 +231,52 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     // Apply + emit. Creation mints a new entity (store-assigned id); others
     // mutate in place. SAP-boundary verbs settle asynchronously (Step 3.5).
     const outcome: CommandOutcome = transition.sapBoundary ? 'submitted' : 'done';
+    let result: CommandResult;
     if (isCreation) {
       if (!target.create) return finish(scope, transition.id, 'failed', `UNSUPPORTED_CREATION:${input.entity}`);
       const { entityId } = target.create(payload, transition.to);
-      return finish(scope, transition.id, outcome, undefined, entityId);
+      result = finish(scope, transition.id, outcome, undefined, entityId);
+    } else {
+      target.applyTransition(input.entityId!, transition.to, payload);
+      result = finish(scope, transition.id, outcome, undefined, input.entityId);
     }
-    target.applyTransition(input.entityId!, transition.to, payload);
-    return finish(scope, transition.id, outcome, undefined, input.entityId);
+
+    const resolvedId = result.entityId ?? input.entityId ?? '';
+
+    // Record submitted-pending context so settlement can finalize it later
+    // (Step 3.5, Option B): the interim→terminal advance + real-ref assignment.
+    if (outcome === 'submitted') {
+      pending.set(result.correlationId, {
+        entity: input.entity,
+        transitionId: transition.id,
+        entityId: resolvedId,
+        payload,
+      });
+    }
+
+    // Cross-entity cascade fan-out (census G4) — post-apply, best-effort. A
+    // denied or illegal cascade NEVER breaks the source command (a fixture GR
+    // whose ASN is absent, or an ASN not in a cascadable state, simply no-ops).
+    if (deps.cascade) {
+      for (const c of deps.cascade({
+        transitionId: transition.id,
+        entity: input.entity,
+        entityId: resolvedId,
+        payload,
+        scope,
+      })) {
+        try {
+          dispatch(
+            { personaType: 'buyer', supplierId: null },
+            { transitionId: c.transitionId, entity: c.entity, entityId: c.entityId, payload: c.payload },
+          );
+        } catch {
+          /* best-effort cross-entity cascade */
+        }
+      }
+    }
+
+    return result;
   }
 
   function getCommandStatus(correlationId: string): CommandStatus | null {
@@ -209,6 +288,11 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     if (current && current.status === 'submitted') {
       const settled: CommandStatus = { ...current, status: 'done', ts: deps.now() };
       statuses.set(correlationId, settled);
+      // Option B: run the registered finalize (advance interim→terminal +
+      // assign the real system reference) under the SAME correlationId.
+      const ctx = pending.get(correlationId);
+      if (ctx && deps.settleFinalize) deps.settleFinalize(ctx);
+      pending.delete(correlationId);
       return settled;
     }
     return current ?? null;

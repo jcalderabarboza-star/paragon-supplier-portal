@@ -5,6 +5,11 @@ export type GRStatus =
   | 'Approved'
   | 'Partially Approved'
   | 'Rejected'
+  // Submitted-interim SAP-boundary state (v2.2 Step 4 batch ii): the GR posting
+  // has been submitted to SAP and awaits the async material-document callback.
+  // A GR reads 'Posting to SAP' with NO sapMaterialDoc yet; the settlement
+  // advances it to 'Posted to SAP' and assigns the real reference (Option B).
+  | 'Posting to SAP'
   | 'Posted to SAP';
 
 export type Disposition =

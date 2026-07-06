@@ -22,6 +22,19 @@ flowRegistry.register({
   ],
 });
 
+// A gadget flow with an explicit submitted-INTERIM state (Option B): the post
+// moves to 'Posting', and settle finalizes it to 'Posted' + assigns a ref. This
+// is the canonical shape the real GR "Posted to SAP" verb uses.
+flowRegistry.register({
+  entity: 'gadget',
+  version: 1,
+  states: ['Ready', 'Posting', 'Posted'],
+  initial: 'Ready',
+  transitions: [
+    { id: 't_gadget_post', from: ['Ready'], to: 'Posting', trigger: 'system', requiredRole: 'gadget:post', requiredFields: [], policyHooks: [], sapBoundary: true, version: 1 },
+  ],
+});
+
 describe('dispatcher — SAP-boundary submitted→settle (Step 3.5)', () => {
   it('a sapBoundary command holds submitted, then settles to done', () => {
     const rows = new Map([['w-1', { status: 'New' }]]);
@@ -53,5 +66,42 @@ describe('dispatcher — SAP-boundary submitted→settle (Step 3.5)', () => {
     const settled = d.settle(res.correlationId);
     expect(settled?.status).toBe('done');
     expect(d.getCommandStatus(res.correlationId)?.status).toBe('done');
+  });
+
+  it('Option B: settle runs the registered finalize — interim→terminal + real ref', () => {
+    const rows = new Map([['g-1', { status: 'Ready', ref: null as string | null }]]);
+    const target: CommandTarget = {
+      readState: (id) => rows.get(id)?.status ?? null,
+      readScopeOwner: () => null,
+      readEntity: (id) => rows.get(id) ?? null,
+      applyTransition: (id, to) => { const e = rows.get(id); if (e) e.status = to; },
+    };
+    let n = 0;
+    const d = createDispatcher({
+      resolveRoles: () => ['gadget:post'],
+      target: () => target,
+      resolvePolicyHook,
+      sink: new InMemoryAuditSink(),
+      nextCorrelationId: () => `cmd_${++n}`,
+      now: () => '2026-07-06T00:00:00.000Z',
+      settleFinalize: ({ transitionId, entityId }) => {
+        if (transitionId === 't_gadget_post') {
+          const e = rows.get(entityId);
+          if (e) { e.status = 'Posted'; e.ref = 'REF-1'; }
+        }
+      },
+    });
+
+    const res = d.dispatch(
+      { personaType: 'buyer', supplierId: null },
+      { transitionId: 't_gadget_post', entity: 'gadget', entityId: 'g-1' },
+    );
+    expect(res.status).toBe('submitted');
+    expect(rows.get('g-1')!.status).toBe('Posting'); // interim — not yet Posted
+    expect(rows.get('g-1')!.ref).toBeNull(); // ref pending
+
+    d.settle(res.correlationId);
+    expect(rows.get('g-1')!.status).toBe('Posted'); // finalize advanced it
+    expect(rows.get('g-1')!.ref).toBe('REF-1'); // real ref assigned on settle
   });
 });

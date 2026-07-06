@@ -72,6 +72,7 @@ const STATUS_VARIANT: Record<
   Approved: 'success',
   'Partially Approved': 'warning',
   Rejected: 'danger',
+  'Posting to SAP': 'info',
   'Posted to SAP': 'success',
 };
 
