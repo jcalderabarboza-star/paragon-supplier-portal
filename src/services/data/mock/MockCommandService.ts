@@ -9,22 +9,27 @@
 // hook bindings are populated before any dispatch.
 // ────────────────────────────────────────────────────────────────────────────
 
-import type { POStatus } from '../types';
+import { POStatus } from '../types';
 import type {
   ICommandService,
   QueryScope,
   CommandInput,
   CommandResult,
   CommandStatus,
+  ASN,
+  AsnStatus,
 } from '../types';
 import {
   createDispatcher,
   InMemoryAuditSink,
   rolesForPersona,
   resolvePolicyHook,
+  bindPolicyHook,
+  POLICY_HOOKS,
   type CommandTarget,
 } from '../../transitions';
 import { purchaseOrderStore } from './stores/purchaseOrderStore';
+import { asnStore } from './stores/asnStore';
 
 // — Purchase-order command target — reads/writes the mutable PO store. ————————
 const purchaseOrderTarget: CommandTarget = {
@@ -47,8 +52,73 @@ const purchaseOrderTarget: CommandTarget = {
   },
 };
 
+// — Advance ship notice target — creation-shape (canonical, Step 4 batch i). ——
+const findPoByNumber = (poNumber: string) =>
+  purchaseOrderStore.all().find((p) => p.poNumber === poNumber);
+
+const advanceShipNoticeTarget: CommandTarget = {
+  readState: (id) => asnStore.get(id)?.status ?? null,
+  readScopeOwner: (id) => asnStore.get(id)?.supplierId ?? null,
+  readEntity: (id) => asnStore.get(id) ?? null,
+  applyTransition: (id, toState, payload) => {
+    asnStore.update(id, (a) => ({
+      ...a,
+      status: toState as AsnStatus,
+      carrier: typeof payload.carrier === 'string' && payload.carrier ? payload.carrier : a.carrier,
+      trackingNumber:
+        typeof payload.trackingNumber === 'string' && payload.trackingNumber
+          ? payload.trackingNumber
+          : a.trackingNumber,
+      eta: typeof payload.eta === 'string' && payload.eta ? payload.eta : a.eta,
+    }));
+  },
+  // Creation scope: a supplier may draft an ASN only against its OWN PO.
+  creationOwner: (payload) => findPoByNumber(String(payload.poReference))?.supplierId ?? null,
+  create: (payload, toState) => {
+    const po = findPoByNumber(String(payload.poReference));
+    const asnNumber = asnStore.nextNumber();
+    const asn: ASN = {
+      asnNumber,
+      supplierId: po?.supplierId ?? '',
+      poReference: String(payload.poReference),
+      status: toState as AsnStatus,
+      carrier: typeof payload.carrier === 'string' ? payload.carrier : '',
+      trackingNumber: typeof payload.trackingNumber === 'string' ? payload.trackingNumber : '',
+      eta: typeof payload.eta === 'string' ? payload.eta : '',
+      details: {
+        originCity: po?.supplierName ?? '',
+        destinationWarehouse: 'NDC Jatake 6, Tangerang',
+        totalCartons: 0,
+        grossWeightKg: 0,
+        temperatureRequirement: 'Ambient',
+      },
+      lineItems: po
+        ? po.lineItems.map((li) => ({
+            materialCode: li.materialCode,
+            description: li.description,
+            orderedQty: li.quantity,
+            shippedQty: li.quantity,
+            lotNumber: '',
+          }))
+        : [],
+    };
+    asnStore.add(asn);
+    return { entityId: asnNumber };
+  },
+};
+
+// Cross-entity creation legality (mock layer — reads the PO store): the parent
+// PO must be Confirmed before its ASN can be drafted.
+bindPolicyHook(POLICY_HOOKS.ASN_CREATE_PO_CONFIRMED, ({ payload }) => {
+  const po = findPoByNumber(String(payload.poReference));
+  if (!po) return { ok: false, reason: 'parent PO not found' };
+  if (po.status !== POStatus.CONFIRMED) return { ok: false, reason: `PO ${po.poNumber} is not Confirmed` };
+  return { ok: true };
+});
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
+  advanceShipNotice: advanceShipNoticeTarget,
 };
 
 // Process-wide audit sink + monotonic correlation ids (deterministic for tests).

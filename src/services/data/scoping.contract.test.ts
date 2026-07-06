@@ -210,4 +210,29 @@ describe('service scoping contract — commands (DR-6 amended)', () => {
     expect(res.status).toBe('failed');
     expect(res.reason).toMatch(/ROLE_NOT_PERMITTED/);
   });
+
+  // Creation-shape scope (Step 4 batch i): scoped by the payload's PARENT PO.
+  it('a supplier drafting an ASN against another supplier’s PO is denied (creation scope)', async () => {
+    // PO-2025-00107 is owned by sup-007; sup-002 cannot draft its ASN.
+    await expect(
+      svc.commands.dispatch(bScope, {
+        transitionId: 't_asn_create',
+        entity: 'advanceShipNotice',
+        payload: { poReference: 'PO-2025-00107' },
+      }),
+    ).rejects.toMatchObject({ code: 'SCOPE_DENIED' });
+  });
+
+  it('a supplier submitting another supplier’s ASN is denied', async () => {
+    const bAsns = (await svc.procurement.getASNs(bScope)).items as { asnNumber: string }[];
+    expect(bAsns.length).toBeGreaterThan(0);
+    await expect(
+      svc.commands.dispatch(aScope, {
+        transitionId: 't_asn_submit',
+        entity: 'advanceShipNotice',
+        entityId: bAsns[0].asnNumber,
+        payload: { carrier: 'JNE', trackingNumber: 'X1', eta: '2026-05-01' },
+      }),
+    ).rejects.toMatchObject({ code: 'SCOPE_DENIED' });
+  });
 });
