@@ -24,10 +24,23 @@ import type {
   InventoryRecord,
 } from '../../types/supplier.types';
 
-import type {
-  POStatus,
-  ChannelType,
-} from '../../types/purchaseOrder.types';
+// ─── PO enums (canonical home; relocated from types/purchaseOrder.types.ts) ──
+export enum POStatus {
+  SENT = 'Sent',
+  VIEWED = 'Viewed',
+  ACKNOWLEDGED = 'Acknowledged',
+  CONFIRMED = 'Confirmed',
+  PARTIALLY_DELIVERED = 'Partially Delivered',
+  DELIVERED = 'Delivered',
+  CLOSED = 'Closed',
+}
+
+export enum ChannelType {
+  WHATSAPP = 'WhatsApp',
+  EMAIL = 'Email',
+  WEB = 'Web',
+  API = 'API',
+}
 
 import type {
   Shipment,
@@ -72,8 +85,6 @@ export type {
   ScorecardGrade,
   StockStatus,
   InventoryRecord,
-  POStatus,
-  ChannelType,
   Shipment,
   ShipmentLineItem,
   ShipmentStatus,

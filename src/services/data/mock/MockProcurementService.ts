@@ -6,7 +6,6 @@ import { mockContracts } from '../../../data/mockContracts';
 import { mockObligations } from '../../../data/mockObligations';
 import { mockRfqs } from '../../../data/mockRfqs';
 import { mockQuotations } from '../../../data/mockQuotations';
-import { toCanonicalPOs } from '../dto';
 import { applySupplierScope } from '../scoping';
 import { MOCK_ASNS } from './fixtures/supplierShipments';
 import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
@@ -108,8 +107,9 @@ export class MockProcurementService implements IProcurementService {
     scope: QueryScope,
     filter?: POFilter,
   ): Promise<Page<PurchaseOrder>> {
-    const canonical = toCanonicalPOs(mockPurchaseOrders);
-    let rows = applySupplierScope(scope, canonical);
+    // mockPurchaseOrders is already the canonical drift-resolved shape (the DTO
+    // bridge was retired in Batch 1.4 once the fixture went single-field).
+    let rows = applySupplierScope(scope, mockPurchaseOrders);
     if (filter?.supplierId)
       rows = rows.filter((p) => p.supplierId === filter.supplierId);
     if (filter?.status) rows = rows.filter((p) => matchesList(p.status, filter.status));

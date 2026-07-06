@@ -47,7 +47,7 @@ import { formatIDR, formatNumber, formatDate } from '../lib/format';
 // POStatus / ChannelType are runtime enums (used as values) — they stay sourced
 // from the enum module; the canonical drift-resolved PurchaseOrder type comes
 // from the data layer.
-import { ChannelType, POStatus } from '../types/purchaseOrder.types';
+import { ChannelType, POStatus } from '../services/data/types';
 import type { PurchaseOrder } from '../services/data/types';
 
 const ORDERS_CRUMB = ['TRANSACT', 'PURCHASE ORDERS'];
