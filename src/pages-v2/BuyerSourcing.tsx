@@ -1383,7 +1383,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                               }`}
                             >
                               {q.aiRecommended && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal uppercase tracking-wider mb-1">
+                                <span className="inline-flex items-center gap-1 text-label text-teal uppercase mb-1">
                                   <Sparkles size={10} /> AI recommended
                                 </span>
                               )}

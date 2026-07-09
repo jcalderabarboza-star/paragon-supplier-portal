@@ -436,7 +436,7 @@ const SummaryStat: React.FC<{
   <div className="text-center py-2 border-r border-border-subtle last:border-r-0">
     <Data
       as="div"
-      className={`text-2xl font-bold ${
+      className={`text-kpi ${
         tone === 'danger'
           ? 'text-danger'
           : tone === 'warning'
@@ -782,7 +782,7 @@ const CommodityTab: React.FC<{ commodities: Commodity[] }> = ({
               <div className="text-right shrink-0">
                 <Data
                   as="div"
-                  className="text-xl font-semibold"
+                  className="text-kpi"
                   style={{ color: c.color }}
                 >
                   {c.current > 1000 ? c.current.toLocaleString() : c.current}

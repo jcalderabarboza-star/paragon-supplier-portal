@@ -688,7 +688,7 @@ const BuyerShipments: React.FC = () => {
                             className="w-full rounded-md px-2 py-2 text-xs font-semibold bg-teal-soft text-teal hover:bg-teal/20 transition-colors text-left"
                           >
                             <Data as="div" className="truncate">{cell.asnNumber}</Data>
-                            <div className="text-[10px] text-teal/80 truncate">
+                            <div className="text-label text-teal/80 truncate">
                               {cell.supplierName}
                             </div>
                           </button>

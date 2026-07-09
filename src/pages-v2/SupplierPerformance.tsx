@@ -27,6 +27,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import { CHART_SERIES, CHART_SEMANTIC, CHART_MID, CHART_GRID } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
+import Data from '../components/ui-v2/Data';
 import Tabs from '../components/ui-v2/Tabs';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
@@ -126,10 +127,10 @@ const KpiProgressTile: React.FC<{ k: Kpi }> = ({ k }) => {
         <div className="text-label text-text-tertiary uppercase">{k.name}</div>
         <TrendIcon trend={k.trend} />
       </div>
-      <div className="text-xl font-bold" style={{ color: k.color }}>
+      <Data as="div" className="text-kpi" style={{ color: k.color }}>
         {k.value}
-      </div>
-      <div className="text-[10px] text-text-tertiary mb-2">
+      </Data>
+      <div className="text-label text-text-tertiary mb-2">
         Target: {k.target}
       </div>
       <div className="h-1.5 bg-bg-surface rounded-full overflow-hidden">
@@ -252,7 +253,7 @@ const SupplierPerformance: React.FC = () => {
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="min-w-0 flex-1">
-            <div className="text-xl font-bold text-text-primary mb-2">
+            <div className="text-section text-text-primary mb-2">
               <span className="mr-2">{COUNTRY_FLAGS[mySupplier.country] ?? '●'}</span>
               {mySupplier.name}
             </div>
@@ -404,9 +405,9 @@ const SupplierPerformance: React.FC = () => {
                   <div className="text-label text-text-tertiary uppercase mb-1">
                     {m.label}
                   </div>
-                  <div className="text-xl font-bold" style={{ color: m.color }}>
+                  <Data as="div" className="text-kpi" style={{ color: m.color }}>
                     {m.value}
-                  </div>
+                  </Data>
                 </div>
               ))}
             </div>

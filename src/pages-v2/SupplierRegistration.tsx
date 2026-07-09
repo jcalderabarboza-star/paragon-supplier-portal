@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
+import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
 
@@ -216,7 +217,7 @@ const RequestTypeSelector: React.FC<{
   onContinue: () => void;
 }> = ({ value, onChange, onContinue }) => (
   <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-md p-6 sm:p-8">
-    <h1 className="text-lg sm:text-xl font-bold text-text-primary mb-1">
+    <h1 className="text-title text-text-primary mb-1">
       Select registration type
     </h1>
     <p className="text-sm text-text-tertiary mb-6">
@@ -1100,7 +1101,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ appNumber }) => (
     <div className="inline-flex w-14 h-14 rounded-full bg-success-soft items-center justify-center mb-4">
       <CheckCircle2 size={32} className="text-success" />
     </div>
-    <h1 className="text-xl font-bold text-text-primary mb-1">
+    <h1 className="text-title text-text-primary mb-1">
       Registration submitted
     </h1>
     <p className="text-sm text-text-tertiary mb-6">
@@ -1110,9 +1111,9 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ appNumber }) => (
       <div className="text-xs text-text-tertiary font-medium">
         Application number
       </div>
-      <div className="text-2xl font-bold text-teal tracking-wider mt-1">
+      <Data as="div" className="text-kpi text-text-primary mt-1">
         APP-2026-{appNumber}
-      </div>
+      </Data>
     </div>
     <div className="bg-bg-hover border border-border-subtle rounded-md p-5 text-left mb-6 max-w-xl mx-auto">
       <div className="text-sm font-bold text-text-primary mb-3">

@@ -120,7 +120,7 @@ const GradeBadge: React.FC<{ grade: Grade; size?: 'sm' | 'md' }> = ({
   const px = size === 'sm' ? 'w-10 h-10 text-base' : 'w-16 h-16 text-3xl';
   return (
     <div
-      className={`rounded-md flex items-center justify-center font-black ${px}`}
+      className={`rounded-md flex items-center justify-center font-semibold ${px}`}
       style={{
         background: tone.soft,
         color: tone.stroke,
@@ -364,7 +364,7 @@ const SupplierDashboard: React.FC = () => {
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between gap-6 flex-wrap">
           <div className="min-w-0">
-            <div className="text-xl font-bold text-text-primary mb-1">
+            <div className="text-section text-text-primary mb-1">
               {mySupplier.name}
             </div>
             <div className="text-sm text-text-secondary">

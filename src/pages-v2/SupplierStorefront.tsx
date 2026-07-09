@@ -210,7 +210,7 @@ const SupplierStorefront: React.FC = () => {
       {/* Hero banner */}
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
         <div className="p-8 flex items-center gap-6">
-          <div className="w-20 h-20 shrink-0 rounded-lg bg-teal-soft text-teal flex items-center justify-center text-2xl font-bold">
+          <div className="w-20 h-20 shrink-0 rounded-lg bg-teal-soft text-teal flex items-center justify-center text-title">
             {supp.name
               .split(/\s+/)
               .map((w) => w[0])
@@ -232,7 +232,7 @@ const SupplierStorefront: React.FC = () => {
                 </>
               )}
             </div>
-            <h2 className="text-2xl font-semibold text-text-primary mt-1">
+            <h2 className="text-title text-text-primary mt-1">
               {supp.name}
             </h2>
             <p className="text-sm text-text-secondary mt-1.5 max-w-2xl">

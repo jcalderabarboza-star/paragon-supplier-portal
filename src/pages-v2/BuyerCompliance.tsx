@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
+import Data from '../components/ui-v2/Data';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -176,13 +177,14 @@ const BuyerCompliance: React.FC = () => {
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div
-              className={`text-3xl font-extrabold leading-none ${
+            <Data
+              as="div"
+              className={`text-kpi leading-none ${
                 deadline.daysLeft <= 90 ? 'text-danger' : 'text-warning'
               }`}
             >
               {deadline.daysLeft}
-            </div>
+            </Data>
             <div className="text-xs text-text-tertiary mt-1">
               days remaining
             </div>
