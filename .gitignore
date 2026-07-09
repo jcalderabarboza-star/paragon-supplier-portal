@@ -8,3 +8,6 @@ dist-ssr
 
 # Playwright MCP scratch snapshots
 .playwright-mcp/
+
+# Local visual-QA screenshots (loose sign-off captures, not committed)
+qa*.png
