@@ -37,8 +37,9 @@ import {
   useRFQs,
   useQuotations,
 } from '../services/query/hooks';
-import type { RFQ, Supplier } from '../services/data/types';
+import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
+import { formatIDR, formatDate } from '../lib/format';
 
 interface OpenRFQ {
   id: string;
@@ -101,35 +102,31 @@ interface AwardRow {
   notes: string;
 }
 
-const AWARD_HISTORY: AwardRow[] = [
-  {
-    rfqNumber: 'RFQ-2025-089',
-    material: 'PET Bottle 200ml Pump Emina',
-    result: 'Awarded',
-    awardDate: '2025-11-15',
-    contractValue: 'Rp 245jT',
-    poIssued: 'PO-2025-00098',
-    notes: 'Awarded — lowest price + halal compliant',
-  },
-  {
-    rfqNumber: 'RFQ-2025-071',
-    material: 'Folding Carton Wardah Hijab Series',
-    result: 'Not Awarded',
-    awardDate: '2025-09-20',
-    contractValue: '—',
-    poIssued: '—',
-    notes: 'Not awarded — competitor offered 8% lower unit price',
-  },
-  {
-    rfqNumber: 'RFQ-2025-055',
-    material: 'Shrink Sleeve Label Emina',
-    result: 'Awarded',
-    awardDate: '2025-07-10',
-    contractValue: 'Rp 67jT',
-    poIssued: 'PO-2025-00071',
-    notes: 'Awarded — best sustainability score + fastest lead time',
-  },
-];
+// Award outcome is a REAL read (batch iv): the supplier's own quotations that
+// reached a terminal award decision (Awarded / Rejected via the RFQ-award
+// cascade), joined to their RFQ for display. `poIssued` is honestly always '—' —
+// award mints NO PO (PO issuance is a separate buyer verb, a future batch).
+const buildAwardRows = (
+  quotations: Quotation[],
+  rfqById: Map<string, RFQ>,
+): AwardRow[] =>
+  quotations
+    .filter((q) => q.status === 'Awarded' || q.status === 'Rejected')
+    .map((q) => {
+      const rfq = rfqById.get(q.rfqId);
+      const won = q.status === 'Awarded';
+      return {
+        rfqNumber: rfq?.rfqNumber ?? q.rfqId,
+        material: rfq?.title ?? '—',
+        result: won ? 'Awarded' : 'Not Awarded',
+        awardDate: rfq ? formatDate(rfq.awardDeadline) : '—',
+        contractValue: won ? formatIDR(q.totalPrice) : '—',
+        poIssued: '—',
+        notes: won
+          ? 'Awarded — your quotation was selected'
+          : 'Not awarded — another quotation was selected',
+      };
+    });
 
 type TabKey = 'open' | 'quotes' | 'history';
 
@@ -493,17 +490,29 @@ const MyQuotesTab: React.FC<{
   );
 };
 
-const AwardsTab: React.FC = () => {
-  const awarded = AWARD_HISTORY.filter((r) => r.result === 'Awarded').length;
-  const total = AWARD_HISTORY.length;
-  const pct = Math.round((awarded / total) * 100);
+const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
+  const awarded = rows.filter((r) => r.result === 'Awarded').length;
+  const total = rows.length;
+  const pct = total > 0 ? Math.round((awarded / total) * 100) : 0;
+
+  if (total === 0) {
+    return (
+      <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+        <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
+          <Trophy size={20} className="text-text-tertiary" />
+        </div>
+        <div className="text-base font-semibold text-text-primary mb-1">
+          No award decisions yet
+        </div>
+        <div className="text-sm text-text-tertiary">
+          Award outcomes appear here once Paragon awards an RFQ you quoted on.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 text-xs text-text-tertiary">
-        <StatusPill variant="neutral">Sample data</StatusPill>
-        Award history is illustrative — no supplier award-outcome read exists yet.
-      </div>
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
@@ -516,7 +525,7 @@ const AwardsTab: React.FC = () => {
             <TableHeaderCell>Notes</TableHeaderCell>
           </TableHeader>
           <tbody>
-            {AWARD_HISTORY.map((row, i) => (
+            {rows.map((row, i) => (
               <TableRow key={i}>
                 <TableCell>
                   <Data className="text-xs font-bold text-text-primary">
@@ -567,9 +576,8 @@ const AwardsTab: React.FC = () => {
           <div className="text-sm text-text-primary mb-2">
             Your win rate:{' '}
             <strong>
-              {awarded} of {total} RFQs awarded ({pct}%)
-            </strong>{' '}
-            — above average for Packaging Primary category.
+              {awarded} of {total} decided RFQ{total === 1 ? '' : 's'} awarded ({pct}%)
+            </strong>
           </div>
           <div className="h-2 bg-bg-hover rounded-full overflow-hidden">
             <div
@@ -632,12 +640,14 @@ interface RfqWorkspaceProps {
   mySupplier: Supplier;
   initialRfqs: OpenRFQ[];
   quoteCount: number;
+  awardRows: AwardRow[];
 }
 
 const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   mySupplier,
   initialRfqs,
   quoteCount,
+  awardRows,
 }) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<TabKey>('open');
@@ -756,7 +766,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
         options={[
           { id: 'open', label: 'Open events', count: openCount },
           { id: 'quotes', label: 'My responses', count: submittedCount },
-          { id: 'history', label: 'Awards & history', count: AWARD_HISTORY.length },
+          { id: 'history', label: 'Awards & history', count: awardRows.length },
         ]}
         value={activeTab}
         onChange={setActiveTab}
@@ -774,7 +784,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       {activeTab === 'quotes' && (
         <MyQuotesTab extra={submittedNums} onWithdraw={handleWithdraw} />
       )}
-      {activeTab === 'history' && <AwardsTab />}
+      {activeTab === 'history' && <AwardsTab rows={awardRows} />}
 
       <SidePanel
         open={quotePanelRFQ !== null}
@@ -1064,7 +1074,8 @@ const SupplierRFQs: React.FC = () => {
   if (!mySupplier) return <NoSupplierIdentity />;
 
   const rfqs = rfqsQuery.data?.items ?? [];
-  const quoteCount = quotationsQuery.data?.items.length ?? 0;
+  const quotations = quotationsQuery.data?.items ?? [];
+  const quoteCount = quotations.length;
   if (rfqs.length === 0 && quoteCount === 0)
     return (
       <EmptyState
@@ -1079,11 +1090,18 @@ const SupplierRFQs: React.FC = () => {
     .filter((r) => r.status === 'Open')
     .map(toOpenRfq);
 
+  // Award outcome is a real read: the supplier's terminal quotations joined to
+  // their RFQ. Awarding an RFQ (buyer) flips this supplier's quote to Awarded /
+  // Rejected via the cascade, so this re-derives after the buyer's award.
+  const rfqById = new Map(rfqs.map((r) => [r.id, r]));
+  const awardRows = buildAwardRows(quotations, rfqById);
+
   return (
     <RfqWorkspace
       mySupplier={mySupplier}
       initialRfqs={initialRfqs}
       quoteCount={quoteCount}
+      awardRows={awardRows}
     />
   );
 };

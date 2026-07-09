@@ -40,6 +40,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useRFQs, useQuotations, useSuppliers } from '../services/query/hooks';
+import { useRfqAward } from '../services/query/commandHooks';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
 import type { Quotation } from '../data/mockQuotations';
 import type { Supplier } from '../services/data/types';
@@ -348,10 +349,52 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const [draft, setDraft] = useState<DraftRfq>(EMPTY_DRAFT);
   const [supplierSearch, setSupplierSearch] = useState('');
   const { toast } = useToast();
+  const awardMutation = useRfqAward();
 
   const openRfq = (r: RFQ) => {
     setSelectedRfq(r);
     setSelectedQuoteId(null);
+  };
+
+  // Award the selected quotation (fires the cascade source t_rfq_award): the
+  // winner is awarded, every other quotation on the RFQ is rejected, and the
+  // reads re-derive. Honest toast; a failed dispatch surfaces its reason.
+  const handleAward = () => {
+    if (!selectedRfq || !selectedQuoteId) return;
+    const quote = quotesForSelected.find((q) => q.id === selectedQuoteId);
+    if (!quote) return;
+    const rfqNumber = selectedRfq.rfqNumber;
+    awardMutation.mutate(
+      {
+        rfqId: selectedRfq.id,
+        awardedQuotationId: quote.id,
+        awardedSupplierId: quote.supplierId,
+      },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: 'Award failed',
+              description: result.reason ?? 'The award could not be completed.',
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: `${rfqNumber} awarded`,
+            description: `${supplierNameById.get(quote.supplierId) ?? 'Selected supplier'} awarded — other quotations rejected.`,
+          });
+          closePanel();
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: 'Award failed',
+            description: 'The award could not be dispatched.',
+          }),
+      },
+    );
   };
 
   const closePanel = () => {
@@ -1524,9 +1567,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <Button
                       variant="primary"
                       icon={Trophy}
-                      disabled={!selectedQuoteId}
+                      disabled={!selectedQuoteId || awardMutation.isPending}
+                      onClick={handleAward}
                     >
-                      Award to selected
+                      {awardMutation.isPending ? 'Awarding…' : 'Award to selected'}
                     </Button>
                     <Button variant="secondary">Reject all & resource</Button>
                   </div>
