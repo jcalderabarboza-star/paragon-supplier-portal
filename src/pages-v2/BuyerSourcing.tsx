@@ -407,6 +407,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     return quotations.filter((q) => q.rfqId === selectedRfq.id);
   }, [selectedRfq, quotations]);
 
+  // The actually-awarded quotation (Awarded RFQs only), resolved from the real
+  // award metadata — NOT the AI-recommended pick, which may differ. Drives the
+  // award-summary block so the panel names the true winner at a glance.
+  const awardedQuote = useMemo(() => {
+    if (!selectedRfq || selectedRfq.status !== 'Awarded') return null;
+    return quotesForSelected.find((q) => q.id === selectedRfq.awardedQuotationId) ?? null;
+  }, [selectedRfq, quotesForSelected]);
+
   const rfqs = useMemo(() => [...extraRfqs, ...baseRfqs], [extraRfqs, baseRfqs]);
 
   const openWizard = () => {
@@ -1313,6 +1321,45 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       >
         {selectedRfq && (
           <div className="space-y-6">
+            {selectedRfq.status === 'Awarded' && (
+              <section className="bg-success-soft border border-success/30 rounded-md p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Trophy size={16} className="text-success" />
+                  <h3 className="text-section text-text-primary">
+                    Award summary
+                  </h3>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  <div>
+                    <dt className="text-text-tertiary">Awarded to</dt>
+                    <dd className="text-text-primary font-semibold">
+                      {selectedRfq.awardedSupplierId
+                        ? (supplierNameById.get(selectedRfq.awardedSupplierId) ??
+                          selectedRfq.awardedSupplierId)
+                        : '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-text-tertiary">Awarded value</dt>
+                    <Data as="dd" className="text-text-primary font-semibold">
+                      {awardedQuote ? formatIDR(awardedQuote.totalPrice) : '—'}
+                    </Data>
+                  </div>
+                  <div>
+                    <dt className="text-text-tertiary">Award date</dt>
+                    <Data as="dd" className="text-text-primary font-medium">
+                      {formatDate(selectedRfq.awardDeadline)}
+                    </Data>
+                  </div>
+                  <div>
+                    <dt className="text-text-tertiary">PO issued</dt>
+                    {/* Award mints no PO — issuance is a separate buyer verb. */}
+                    <dd className="text-text-tertiary font-medium">—</dd>
+                  </div>
+                </dl>
+              </section>
+            )}
+
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
                 Summary
@@ -1526,25 +1573,51 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label="Select">
-                        {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
-                            <label className="inline-flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="award-select"
-                                value={q.id}
-                                checked={selectedQuoteId === q.id}
-                                onChange={() => setSelectedQuoteId(q.id)}
-                                className="accent-teal"
-                              />
-                              <span className="text-xs text-text-secondary">
-                                Award
-                              </span>
-                            </label>
-                          </ComparisonCell>
-                        ))}
-                      </ComparisonRow>
+                      {selectedRfq.status === 'Awarded' ? (
+                        // Awarded: the picker is moot — show the ACTUAL outcome
+                        // per quote (winner Awarded, others Rejected), winner
+                        // column highlighted. No re-award affordance.
+                        <ComparisonRow label="Result">
+                          {quotesForSelected.map((q) => (
+                            <ComparisonCell
+                              key={q.id}
+                              highlight={q.id === selectedRfq.awardedQuotationId}
+                            >
+                              <StatusPill
+                                variant={
+                                  q.status === 'Awarded'
+                                    ? 'success'
+                                    : q.status === 'Rejected'
+                                      ? 'danger'
+                                      : 'neutral'
+                                }
+                              >
+                                {q.status}
+                              </StatusPill>
+                            </ComparisonCell>
+                          ))}
+                        </ComparisonRow>
+                      ) : (
+                        <ComparisonRow label="Select">
+                          {quotesForSelected.map((q) => (
+                            <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                              <label className="inline-flex items-center gap-2 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name="award-select"
+                                  value={q.id}
+                                  checked={selectedQuoteId === q.id}
+                                  onChange={() => setSelectedQuoteId(q.id)}
+                                  className="accent-teal"
+                                />
+                                <span className="text-xs text-text-secondary">
+                                  Award
+                                </span>
+                              </label>
+                            </ComparisonCell>
+                          ))}
+                        </ComparisonRow>
+                      )}
                     </tbody>
                   </table>
                 </div>
