@@ -6,6 +6,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
+import { CHART_SERIES, CHART_SEMANTIC } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -22,10 +23,12 @@ const WHATSAPP_GREEN_DOT = '#107E3E';
 const WECHAT_GREEN = '#07C160';
 const WECHAT_BG = '#EDEDED';
 
-const TOKEN_NAVY = '#0D1B2A';
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_SUCCESS = '#107E3E';
-const TOKEN_WARNING = '#B45309';
+// DP2-PALETTE-01: sourced from the central palette (SSoT), not page-local hex.
+// Values unchanged — pure de-dup. (Messenger chrome above stays exempt, D-2.)
+const TOKEN_NAVY = CHART_SERIES[1];
+const TOKEN_TEAL = CHART_SERIES[0];
+const TOKEN_SUCCESS = CHART_SEMANTIC.success;
+const TOKEN_WARNING = CHART_SEMANTIC.warning;
 
 const PULSE_CSS = `
 @keyframes wa-fade-slide-in {

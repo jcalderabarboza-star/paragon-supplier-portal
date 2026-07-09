@@ -27,6 +27,7 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
+import { CHART_SERIES, CHART_SEMANTIC, CHART_MID, CHART_GRID } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import StatusPill from '../components/ui-v2/StatusPill';
@@ -82,12 +83,14 @@ const COMM_STATUS_VARIANT: Record<CommLogEntry['status'], 'success' | 'warning' 
   Open: 'warning',
 };
 
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_MID = '#354A5F';
-const TOKEN_SUCCESS = '#107E3E';
-const TOKEN_DANGER = '#BB0000';
-const TOKEN_MUTED = '#6B7785';
-const TOKEN_BORDER = '#E5E9EE';
+// DP2-PALETTE-01: chart/UI colour sourced from the central palette (SSoT),
+// not page-local hex. Values unchanged — pure de-dup.
+const TOKEN_TEAL = CHART_SERIES[0];
+const TOKEN_MID = CHART_MID;
+const TOKEN_SUCCESS = CHART_SEMANTIC.success;
+const TOKEN_DANGER = CHART_SEMANTIC.danger;
+const TOKEN_MUTED = CHART_SEMANTIC.neutral;
+const TOKEN_BORDER = CHART_GRID;
 
 interface ChartTooltipPayload {
   name: string;

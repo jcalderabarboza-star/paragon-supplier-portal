@@ -42,7 +42,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
-import { CHART_SERIES } from '../lib/chartPalette';
+import { CHART_SERIES, CHART_SEMANTIC, CHART_MID, CHART_GRID } from '../lib/chartPalette';
 import {
   useAnalyticsSummary,
   useSpendByCategory,
@@ -69,13 +69,16 @@ const PERIOD_OPTIONS: { id: Period; label: string }[] = [
   { id: 'ytd', label: 'YTD' },
 ];
 
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_NAVY = '#0D1B2A';
-const TOKEN_MID = '#354A5F';
-const TOKEN_WARNING = '#B45309';
-const TOKEN_DANGER = '#BB0000';
-const TOKEN_MUTED = '#6B7785';
-const TOKEN_BORDER = '#E5E9EE';
+// DP2-PALETTE-01: chart/UI colour sourced from the central palette (SSoT),
+// not page-local hex. Values unchanged — pure de-dup. This completes the
+// BuyerAnalytics migration flagged in Commit 1 (non-channel charts now central).
+const TOKEN_TEAL = CHART_SERIES[0];
+const TOKEN_NAVY = CHART_SERIES[1];
+const TOKEN_MID = CHART_MID;
+const TOKEN_WARNING = CHART_SEMANTIC.warning;
+const TOKEN_DANGER = CHART_SEMANTIC.danger;
+const TOKEN_MUTED = CHART_SEMANTIC.neutral;
+const TOKEN_BORDER = CHART_GRID;
 
 const GRADE_VARIANT: Record<Grade, 'success' | 'info' | 'warning' | 'danger'> = {
   A: 'success',

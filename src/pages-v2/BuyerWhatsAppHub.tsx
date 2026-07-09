@@ -22,6 +22,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
+import { CHART_SERIES, CHART_SEMANTIC, CHART_GRID } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
@@ -64,12 +65,14 @@ type WhatsAppTab = 'conversations' | 'automation' | 'analytics';
 
 const ENGAGEMENT_CRUMB = ['INTELLIGENCE', 'COMMUNICATIONS HUB'];
 
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_NAVY = '#0D1B2A';
-const TOKEN_SUCCESS = '#107E3E';
-const TOKEN_WARNING = '#B45309';
-const TOKEN_MUTED = '#6B7785';
-const TOKEN_BORDER = '#E5E9EE';
+// DP2-PALETTE-01: sourced from the central palette (SSoT), not page-local hex.
+// Values unchanged — pure de-dup. (Messenger chrome below stays exempt, D-2.)
+const TOKEN_TEAL = CHART_SERIES[0];
+const TOKEN_NAVY = CHART_SERIES[1];
+const TOKEN_SUCCESS = CHART_SEMANTIC.success;
+const TOKEN_WARNING = CHART_SEMANTIC.warning;
+const TOKEN_MUTED = CHART_SEMANTIC.neutral;
+const TOKEN_BORDER = CHART_GRID;
 
 // Messenger-chrome brand colors are intentionally exempt from DP-1 (D-2):
 // WhatsApp / WeChat headers stay on-brand so the channel is recognizable.

@@ -24,6 +24,13 @@ export const CHART_SERIES = [
   '#9BA8B5', // neutral grey
 ] as const;
 
+/**
+ * Brand mid / secondary-text hue (#354A5F, per the DP-2 token noted above).
+ * Used on some chart axes and secondary series strokes; deliberately distinct
+ * from the navy-tint series slot (CHART_SERIES[3]) and from CHART_AXIS.
+ */
+export const CHART_MID = '#354A5F';
+
 /** Semantic state colours — use ONLY where the colour informs a decision. */
 export const CHART_SEMANTIC = {
   success: '#107E3E',

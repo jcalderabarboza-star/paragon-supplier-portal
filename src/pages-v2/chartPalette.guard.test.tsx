@@ -25,3 +25,31 @@ describe('DP2-PALETTE-01 — no raw hex in chart paint props', () => {
     });
   }
 });
+
+// DP2-PALETTE-01 (Commit 2, full-palette-sourcing): files that carried the
+// page-local TOKEN_* mirror consts now source them from chartPalette. This is
+// the stronger invariant Commit 1 couldn't enforce — a TOKEN_* colour const
+// must derive from the central palette, never a raw hex literal. Messenger
+// chrome (WHATSAPP_*/WECHAT_*, D-2 exemption) is deliberately NOT matched: the
+// pattern is anchored to the TOKEN_ prefix only.
+const PALETTE_SOURCED = [
+  'BuyerInvoices.tsx',
+  'SupplierPerformance.tsx',
+  'BuyerScorecard.tsx',
+  'BuyerAnalytics.tsx',
+  'SupplierWhatsApp.tsx',
+  'BuyerWhatsAppHub.tsx',
+];
+
+// A TOKEN_* const declared as a raw hex literal (what Commit 2 eliminated).
+const RAW_HEX_TOKEN_CONST = /const\s+TOKEN_[A-Z_]+\s*=\s*['"]#[0-9A-Fa-f]{3,6}/g;
+
+describe('DP2-PALETTE-01 — TOKEN_* consts derive from the central palette', () => {
+  for (const file of PALETTE_SOURCED) {
+    it(`${file} declares no raw-hex TOKEN_* const (sourced from chartPalette)`, () => {
+      const src = readFileSync(join(here, file), 'utf8');
+      const hits = src.match(RAW_HEX_TOKEN_CONST) ?? [];
+      expect(hits).toEqual([]);
+    });
+  }
+});
