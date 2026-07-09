@@ -25,6 +25,8 @@ export { goodsReceiptFlow } from './flows/goodsReceipt.flow';
 export { goodsReceiptLineFlow } from './flows/goodsReceiptLine.flow';
 export { invoiceFlow } from './flows/invoice.flow';
 export { invoiceMatchFlow } from './flows/invoiceMatch.flow';
+export { rfqFlow } from './flows/rfq.flow';
+export { quotationFlow } from './flows/quotation.flow';
 
 import { flowRegistry } from './registry';
 import { purchaseOrderFlow } from './flows/purchaseOrder.flow';
@@ -33,6 +35,8 @@ import { goodsReceiptFlow } from './flows/goodsReceipt.flow';
 import { goodsReceiptLineFlow } from './flows/goodsReceiptLine.flow';
 import { invoiceFlow } from './flows/invoice.flow';
 import { invoiceMatchFlow } from './flows/invoiceMatch.flow';
+import { rfqFlow } from './flows/rfq.flow';
+import { quotationFlow } from './flows/quotation.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -41,3 +45,5 @@ flowRegistry.register(goodsReceiptFlow); // Step 4 (ii) — GR header
 flowRegistry.register(goodsReceiptLineFlow); // Step 4 (ii) — GR line sub-flow (census G2)
 flowRegistry.register(invoiceFlow); // Step 4 (iii) — Invoice (DR-7 canonical)
 flowRegistry.register(invoiceMatchFlow); // Step 4 (iii) — Invoice match sub-flow (census G2)
+flowRegistry.register(rfqFlow); // Step 4 (iv) — RFQ (cascade source: t_rfq_award)
+flowRegistry.register(quotationFlow); // Step 4 (iv) — Quotation (cascade targets: award/reject)

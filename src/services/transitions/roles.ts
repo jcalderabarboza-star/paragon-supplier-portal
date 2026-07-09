@@ -25,13 +25,19 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     'asn:carry', 'asn:flag',
     'gr:receive', 'gr:inspect', 'gr:disposition', 'gr:post',
     'invoice:match', 'invoice:approve', 'invoice:pay', 'invoice:dispute',
+    // Sourcing: publish/close/cancel/reopen an RFQ, award it (cascade source),
+    // move a quote into review, and the cascade targets award/reject a quote.
+    'rfq:publish', 'rfq:close', 'rfq:award', 'rfq:cancel', 'rfq:reopen',
+    'quotation:review', 'quotation:award', 'quotation:reject',
   ],
   // Supplier side: view / acknowledge / confirm an incoming PO; create + submit
-  // an advance ship notice; draft + submit an invoice against its own PO.
+  // an advance ship notice; draft + submit an invoice against its own PO; submit
+  // a quotation against an invited RFQ (authored-unwired until the quote batch).
   supplier: [
     'po:view', 'po:acknowledge', 'po:confirm',
     'asn:create', 'asn:submit',
     'invoice:submit',
+    'quotation:submit',
   ],
 };
 

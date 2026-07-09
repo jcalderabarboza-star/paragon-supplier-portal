@@ -1,0 +1,70 @@
+// ────────────────────────────────────────────────────────────────────────────
+// Quotation flow — v2.2 Step 4 batch (iv).
+//
+// The supplier's response to an RFQ. Its two terminal transitions are the
+// CASCADE TARGETS of `t_rfq_award` (build plan line 91): on award, the winning
+// quotation fires `t_quotation_award` and every other fires `t_quotation_reject`
+// — driven by the dispatcher cascade, one event per transition (each correlatable
+// to the source award via `causationId`, DR-10).
+//
+// `t_quotation_submit` (creation, supplier) + `t_quotation_review` (buyer) are
+// AUTHORED-UNWIRED this batch — the supplier quote-submit verb lands in its own
+// batch; here we wire only the award-path (award + reject). `states` lists
+// transition-states only.
+// ────────────────────────────────────────────────────────────────────────────
+
+import type { FlowDefinition } from '../schema';
+
+export const quotationFlow: FlowDefinition = {
+  entity: 'quotation',
+  version: 1,
+  states: ['Submitted', 'Under Review', 'Awarded', 'Rejected'],
+  initial: 'Submitted',
+  transitions: [
+    {
+      // Supplier submits a quotation against an invited RFQ. Creation-shape
+      // (store-assigned number). Authored-unwired — lands in the quote-submit batch.
+      id: 't_quotation_submit',
+      from: [],
+      to: 'Submitted',
+      trigger: 'creation',
+      requiredRole: 'quotation:submit',
+      requiredFields: ['rfqId'],
+      policyHooks: [],
+      version: 1,
+    },
+    {
+      // Buyer moves a submitted quote into evaluation. Authored-unwired.
+      id: 't_quotation_review',
+      from: ['Submitted'],
+      to: 'Under Review',
+      trigger: 'user',
+      requiredRole: 'quotation:review',
+      requiredFields: [],
+      policyHooks: [],
+      version: 1,
+    },
+    {
+      // CASCADE TARGET (this batch, WIRED) — the winning quote on RFQ award.
+      id: 't_quotation_award',
+      from: ['Submitted', 'Under Review'],
+      to: 'Awarded',
+      trigger: 'cascade',
+      requiredRole: 'quotation:award',
+      requiredFields: [],
+      policyHooks: [],
+      version: 1,
+    },
+    {
+      // CASCADE TARGET (this batch, WIRED) — every non-winning quote on RFQ award.
+      id: 't_quotation_reject',
+      from: ['Submitted', 'Under Review'],
+      to: 'Rejected',
+      trigger: 'cascade',
+      requiredRole: 'quotation:reject',
+      requiredFields: [],
+      policyHooks: [],
+      version: 1,
+    },
+  ],
+};
