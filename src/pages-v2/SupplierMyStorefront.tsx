@@ -638,7 +638,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         >
           <div className="flex justify-end mb-3">
             <Button
-              variant="secondary"
+              variant="primary"
               icon={Upload}
               onClick={() => toast({ title: 'File browser opened (mock)' })}
             >

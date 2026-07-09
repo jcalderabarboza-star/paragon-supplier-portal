@@ -6,6 +6,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
+import { CHART_SERIES, CHART_SEMANTIC } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -22,10 +23,12 @@ const WHATSAPP_GREEN_DOT = '#107E3E';
 const WECHAT_GREEN = '#07C160';
 const WECHAT_BG = '#EDEDED';
 
-const TOKEN_NAVY = '#0D1B2A';
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_SUCCESS = '#107E3E';
-const TOKEN_WARNING = '#B45309';
+// DP2-PALETTE-01: sourced from the central palette (SSoT), not page-local hex.
+// Values unchanged — pure de-dup. (Messenger chrome above stays exempt, D-2.)
+const TOKEN_NAVY = CHART_SERIES[1];
+const TOKEN_TEAL = CHART_SERIES[0];
+const TOKEN_SUCCESS = CHART_SEMANTIC.success;
+const TOKEN_WARNING = CHART_SEMANTIC.warning;
 
 const PULSE_CSS = `
 @keyframes wa-fade-slide-in {
@@ -788,7 +791,7 @@ const EmailBody: React.FC<{
         </p>
         <div className={cardCls}>
           <div className={labelCls}>Current Stock Level</div>
-          <div className="text-kpi font-mono tabular-nums text-teal mt-1">24 days</div>
+          <div className="text-kpi font-mono tabular-nums text-text-primary mt-1">24 days</div>
           <div className="text-sm text-text-tertiary mt-0.5">
             2,400 KG · Material MAT-10234
           </div>
@@ -828,7 +831,7 @@ const EmailBody: React.FC<{
                 <div
                   className={`w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center mx-auto mb-1 ${
                     s.done
-                      ? 'bg-teal text-white'
+                      ? 'bg-action text-white'
                       : 'bg-bg-hover text-text-tertiary'
                   }`}
                 >
@@ -845,7 +848,7 @@ const EmailBody: React.FC<{
               {i < steps.length - 1 && (
                 <div
                   className={`h-0.5 flex-1 mb-4 ${
-                    steps[i + 1].done ? 'bg-teal' : 'bg-bg-hover'
+                    steps[i + 1].done ? 'bg-action' : 'bg-bg-hover'
                   }`}
                 />
               )}
@@ -967,7 +970,7 @@ const EmailPanel: React.FC = () => {
             </div>
           </div>
           <div className="bg-navy px-4 py-3 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-teal flex items-center justify-center text-xs font-bold text-white">
+            <div className="w-8 h-8 rounded-md bg-action-muted flex items-center justify-center text-xs font-bold text-white">
               PC
             </div>
             <div>

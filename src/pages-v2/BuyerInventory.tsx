@@ -49,6 +49,7 @@ import {
   usePurchaseOrders,
 } from '../services/query/hooks';
 import { formatNumber } from '../lib/format';
+import { CHART_SERIES, CHART_GRID, CHART_AXIS } from '../lib/chartPalette';
 import { InventoryRecord } from '../types/supplier.types';
 import { POStatus } from '../services/data/types';
 
@@ -375,8 +376,8 @@ const BuyerInventory: React.FC = () => {
           <BulkActionsBar
             actions={[
               { label: 'Export', icon: FileSpreadsheet, onClick: handleExport },
-              { label: 'Sync now', icon: RefreshCw, onClick: handleSync },
             ]}
+            primary={{ label: 'Sync now', icon: RefreshCw, onClick: handleSync }}
           />
         }
       />
@@ -712,20 +713,20 @@ const BuyerInventory: React.FC = () => {
                   <LineChart data={dosTrend}>
                     <CartesianGrid
                       strokeDasharray="3 3"
-                      stroke="#E5E9F2"
+                      stroke={CHART_GRID}
                       vertical={false}
                     />
                     <XAxis
                       dataKey="day"
-                      tick={{ fontSize: 10, fill: '#6B7280' }}
+                      tick={{ fontSize: 10, fill: CHART_AXIS }}
                       interval={5}
                     />
-                    <YAxis tick={{ fontSize: 10, fill: '#6B7280' }} />
+                    <YAxis tick={{ fontSize: 10, fill: CHART_AXIS }} />
                     <Tooltip />
                     <Line
                       type="monotone"
                       dataKey="dos"
-                      stroke="#0F766E"
+                      stroke={CHART_SERIES[0]}
                       strokeWidth={2}
                       dot={false}
                     />

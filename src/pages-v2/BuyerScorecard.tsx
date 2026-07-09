@@ -27,7 +27,9 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
+import { CHART_SERIES, CHART_SEMANTIC, CHART_MID, CHART_GRID } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
+import Data from '../components/ui-v2/Data';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
@@ -82,12 +84,14 @@ const COMM_STATUS_VARIANT: Record<CommLogEntry['status'], 'success' | 'warning' 
   Open: 'warning',
 };
 
-const TOKEN_TEAL = '#0097A7';
-const TOKEN_MID = '#354A5F';
-const TOKEN_SUCCESS = '#107E3E';
-const TOKEN_DANGER = '#BB0000';
-const TOKEN_MUTED = '#6B7785';
-const TOKEN_BORDER = '#E5E9EE';
+// DP2-PALETTE-01: chart/UI colour sourced from the central palette (SSoT),
+// not page-local hex. Values unchanged — pure de-dup.
+const TOKEN_TEAL = CHART_SERIES[0];
+const TOKEN_MID = CHART_MID;
+const TOKEN_SUCCESS = CHART_SEMANTIC.success;
+const TOKEN_DANGER = CHART_SEMANTIC.danger;
+const TOKEN_MUTED = CHART_SEMANTIC.neutral;
+const TOKEN_BORDER = CHART_GRID;
 
 interface ChartTooltipPayload {
   name: string;
@@ -150,10 +154,10 @@ const KpiProgressTile: React.FC<{ k: ScorecardKpi }> = ({ k }) => {
         <div className="text-label text-text-tertiary uppercase">{k.name}</div>
         <TrendIcon trend={k.trend} />
       </div>
-      <div className="text-xl font-bold" style={{ color: k.color }}>
+      <Data as="div" className="text-kpi" style={{ color: k.color }}>
         {k.value}
-      </div>
-      <div className="text-[10px] text-text-tertiary mb-2">
+      </Data>
+      <div className="text-label text-text-tertiary mb-2">
         Target: {k.target}
       </div>
       <div className="h-1.5 bg-bg-surface rounded-full overflow-hidden">
@@ -255,7 +259,7 @@ const BuyerScorecard: React.FC = () => {
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-start justify-between gap-6 flex-wrap">
           <div className="min-w-0 flex-1">
-            <div className="text-xl font-bold text-text-primary mb-2">
+            <div className="text-section text-text-primary mb-2">
               <span className="mr-2">{COUNTRY_FLAGS[supp.country] ?? '●'}</span>
               {supp.name}
             </div>

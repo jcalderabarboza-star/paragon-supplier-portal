@@ -728,7 +728,7 @@ const SupplierShipments: React.FC = () => {
                   aria-pressed={selected}
                   className={`text-left rounded-md p-4 border transition-colors ${
                     selected
-                      ? 'border-teal bg-teal-soft'
+                      ? 'border-action bg-action-soft'
                       : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
                   }`}
                 >
@@ -998,16 +998,18 @@ const SupplierShipments: React.FC = () => {
         subtitle={`Advance Ship Notices · Paragon WMS integration · EDI 856 — ${mySupplier.name}.`}
         actions={
           <BulkActionsBar
-            primary={{
-              label: 'Export EDI 856',
-              icon: Download,
-              onClick: () =>
-                toast({
-                  variant: 'info',
-                  title: 'EDI 856 export generated',
-                  description: 'Download will start shortly.',
-                }),
-            }}
+            actions={[
+              {
+                label: 'Export EDI 856',
+                icon: Download,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: 'EDI 856 export generated',
+                    description: 'Download will start shortly.',
+                  }),
+              },
+            ]}
           />
         }
       />

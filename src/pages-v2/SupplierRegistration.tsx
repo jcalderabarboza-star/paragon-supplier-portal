@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
+import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
 
@@ -216,7 +217,7 @@ const RequestTypeSelector: React.FC<{
   onContinue: () => void;
 }> = ({ value, onChange, onContinue }) => (
   <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-md p-6 sm:p-8">
-    <h1 className="text-lg sm:text-xl font-bold text-text-primary mb-1">
+    <h1 className="text-title text-text-primary mb-1">
       Select registration type
     </h1>
     <p className="text-sm text-text-tertiary mb-6">
@@ -614,7 +615,7 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
                 key={cat}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer border-2 text-sm transition-colors ${
                   checked
-                    ? 'border-teal bg-teal-soft text-text-primary font-semibold'
+                    ? 'border-action bg-action-soft text-text-primary font-semibold'
                     : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
                 }`}
               >
@@ -622,7 +623,7 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
                   type="checkbox"
                   checked={checked}
                   onChange={() => toggleCat(cat)}
-                  className="accent-teal"
+                  className="accent-action"
                 />
                 {cat}
               </label>
@@ -646,7 +647,7 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
                 key={ch.value}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md cursor-pointer border-2 transition-colors ${
                   active
-                    ? 'border-teal bg-teal-soft'
+                    ? 'border-action bg-action-soft'
                     : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
                 }`}
               >
@@ -655,15 +656,15 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
                   name="channel"
                   checked={active}
                   onChange={() => setForm((f) => ({ ...f, channel: ch.value }))}
-                  className="accent-teal"
+                  className="accent-action"
                 />
                 <Icon
                   size={18}
-                  className={active ? 'text-teal' : 'text-text-tertiary'}
+                  className={active ? 'text-action' : 'text-text-tertiary'}
                 />
                 <div className="min-w-0">
                   <div
-                    className={`text-sm font-bold ${active ? 'text-teal' : 'text-text-primary'}`}
+                    className={`text-sm font-bold ${active ? 'text-action' : 'text-text-primary'}`}
                   >
                     {ch.label}
                   </div>
@@ -893,7 +894,7 @@ const InternalSRCategoryStep: React.FC<StepProps & { catError: string }> = ({
             key={cat}
             className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer border-2 text-sm transition-colors ${
               form.selCats.includes(cat)
-                ? 'border-teal bg-teal-soft text-text-primary font-semibold'
+                ? 'border-action bg-action-soft text-text-primary font-semibold'
                 : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
             }`}
           >
@@ -1100,7 +1101,7 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ appNumber }) => (
     <div className="inline-flex w-14 h-14 rounded-full bg-success-soft items-center justify-center mb-4">
       <CheckCircle2 size={32} className="text-success" />
     </div>
-    <h1 className="text-xl font-bold text-text-primary mb-1">
+    <h1 className="text-title text-text-primary mb-1">
       Registration submitted
     </h1>
     <p className="text-sm text-text-tertiary mb-6">
@@ -1110,9 +1111,9 @@ const SuccessScreen: React.FC<SuccessScreenProps> = ({ appNumber }) => (
       <div className="text-xs text-text-tertiary font-medium">
         Application number
       </div>
-      <div className="text-2xl font-bold text-teal tracking-wider mt-1">
+      <Data as="div" className="text-kpi text-text-primary mt-1">
         APP-2026-{appNumber}
-      </div>
+      </Data>
     </div>
     <div className="bg-bg-hover border border-border-subtle rounded-md p-5 text-left mb-6 max-w-xl mx-auto">
       <div className="text-sm font-bold text-text-primary mb-3">

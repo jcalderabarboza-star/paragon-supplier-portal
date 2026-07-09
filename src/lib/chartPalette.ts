@@ -24,6 +24,13 @@ export const CHART_SERIES = [
   '#9BA8B5', // neutral grey
 ] as const;
 
+/**
+ * Brand mid / secondary-text hue (#354A5F, per the DP-2 token noted above).
+ * Used on some chart axes and secondary series strokes; deliberately distinct
+ * from the navy-tint series slot (CHART_SERIES[3]) and from CHART_AXIS.
+ */
+export const CHART_MID = '#354A5F';
+
 /** Semantic state colours — use ONLY where the colour informs a decision. */
 export const CHART_SEMANTIC = {
   success: '#107E3E',
@@ -32,8 +39,38 @@ export const CHART_SEMANTIC = {
   neutral: '#6B7785',
 } as const;
 
+/**
+ * Ordered good→bad state ramp for GRADE / health encodings (A→D, RAG-style).
+ * Green (healthy) → muted green → amber (caution) → red (at-risk). Distinct
+ * from CHART_SERIES (categorical accent) and CHART_SEMANTIC (discrete state):
+ * this is the CONTINUOUS health ordering. Deliberately NO blue — blue reads as
+ * a category, not a health level, which is what made grade bars look like a
+ * rainbow. Use where a grade/score bar encodes true health state.
+ */
+export const SEMANTIC_STATE = {
+  good: '#107E3E', // success — grade A (healthy)
+  fair: '#5B9D6B', // muted green — grade B (positive, lower emphasis)
+  caution: '#B45309', // warning — grade C
+  poor: '#BB0000', // danger — grade D (at-risk)
+} as const;
+
+/**
+ * Identity / infrastructure marker on data surfaces (e.g. the buyer's own
+ * DC / hub dots on the supplier risk map) — the design system's sanctioned
+ * non-clickable identity blue (`action.muted` #2A6FBF, AA on white). Distinct
+ * from a risk/health state: it marks "ours", not a severity. Replaces the stray
+ * categorical blue (#1E5BAE) dropped from the grade dial in the palette census.
+ */
+export const CHART_IDENTITY = '#2A6FBF';
+
 /** Grid / axis hairline on light surfaces. */
 export const CHART_GRID = '#E5E9EE';
+
+/** Axis tick / label text on light surfaces (mirrors the text-tertiary token). */
+export const CHART_AXIS = '#6B7785';
+
+/** Hover-cursor band fill behind bars/points (mirrors the bg-hover token). */
+export const CHART_CURSOR = '#F4F6F8';
 
 /** Pick a series colour by index, wrapping when there are more series than slots. */
 export const seriesColor = (i: number): string =>

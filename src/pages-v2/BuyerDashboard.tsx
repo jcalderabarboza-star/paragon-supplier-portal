@@ -23,6 +23,12 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
+import {
+  SEMANTIC_STATE,
+  CHART_GRID,
+  CHART_AXIS,
+  CHART_CURSOR,
+} from '../lib/chartPalette';
 import type {
   ProductionLineRow,
   SupplierHealthRow,
@@ -37,11 +43,14 @@ const RANGES: { id: RangeId; label: string }[] = [
   { id: 'month', label: 'This month' },
 ];
 
+// Grade IS health state (A healthy → D at-risk), so it stays semantic — but
+// sourced from the centralized good→bad ramp, not ad-hoc hex. No blue: it read
+// as a category and made the bars look like a rainbow.
 const GRADE_COLOR: Record<SupplierHealthRow['grade'], string> = {
-  A: '#107E3E',
-  B: '#1E5BAE',
-  C: '#B45309',
-  D: '#BB0000',
+  A: SEMANTIC_STATE.good,
+  B: SEMANTIC_STATE.fair,
+  C: SEMANTIC_STATE.caution,
+  D: SEMANTIC_STATE.poor,
 };
 
 const RISK_VARIANT: Record<ProductionLineRow['risk'], 'success' | 'warning' | 'danger'> = {
@@ -180,20 +189,20 @@ const BuyerDashboard: React.FC = () => {
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={supplierHealth} margin={{ top: 8, right: 12, left: -16, bottom: 8 }}>
-                <CartesianGrid stroke="#E5E9EE" vertical={false} />
+                <CartesianGrid stroke={CHART_GRID} vertical={false} />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 11, fill: '#6B7785' }}
+                  tick={{ fontSize: 11, fill: CHART_AXIS }}
                   interval={0}
                   angle={-20}
                   textAnchor="end"
                   height={60}
                 />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: '#6B7785' }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: CHART_AXIS }} />
                 <Tooltip
-                  cursor={{ fill: '#F4F6F8' }}
+                  cursor={{ fill: CHART_CURSOR }}
                   contentStyle={{
-                    border: '1px solid #E5E9EE',
+                    border: `1px solid ${CHART_GRID}`,
                     borderRadius: 10,
                     fontSize: 12,
                   }}

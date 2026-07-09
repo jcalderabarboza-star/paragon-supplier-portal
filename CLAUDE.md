@@ -63,7 +63,8 @@ home redirect points to `/buyer/dashboard`; unknown routes render a real 404
 ### DP-1 — Fiori-aligned visual language
 - No dark solid backgrounds as content surfaces. Hero/identity cards restyle to
   light surfaces: white / light-neutral card, subtle border, navy (`#0D1B2A`)
-  text, teal (`#0097A7`) accents/interactive, mid (`#354A5F`) secondary text.
+  text, teal (`#0097A7`) decorative accents, action (`#0070F2`) interactive,
+  mid (`#354A5F`) secondary text.
 - Odyssey colors are accents, not fills. Semantic color (green/amber/red) is
   reserved for state (as the KPI tiles already do).
 - Reference grammar: light shell, white cards, thin borders, high information
@@ -74,10 +75,17 @@ home redirect points to `/buyer/dashboard`; unknown routes render a real 404
   propose it in that batch's investigation rather than patching per-page.
 
 ### DP-2 — Restrained beauty-tech palette (extends DP-1)
-- ONE brand accent: teal (`#0097A7`) for interactive / active / highlights.
-  Navy (`#0D1B2A`) is text/headings only — never a decorative fill. Mid
-  (`#354A5F`) is secondary text. Surfaces stay white / light-neutral with
-  subtle borders.
+- TWO distinct roles — do NOT conflate: **action** (`#0070F2`) is the ONE
+  primary-interactive color — primary CTAs, selected / active states, the blue
+  a user acts on. **teal** (`#0097A7`) is decorative / accent ONLY — charts,
+  score dials, cert highlights, low-emphasis view-links — never a selected/active
+  affordance or a primary action. Navy (`#0D1B2A`) is text/headings only — never
+  a decorative fill. Mid (`#354A5F`) is secondary text. Surfaces stay white /
+  light-neutral with subtle borders.
+- BUTTON HIERARCHY: primary action = action-blue **solid** (`Button
+  variant="primary"` / the `BulkActionsBar` primary slot); Export / Cancel /
+  Close / secondary paths = **outline** (`variant="secondary"`). One primary per
+  surface — an Export never occupies the primary slot (guard DP2-BUTTON-01).
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.

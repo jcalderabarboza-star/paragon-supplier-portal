@@ -183,23 +183,23 @@ const SupplierInventory: React.FC = () => {
           <BulkActionsBar
             actions={[
               {
-                label: 'Sync now',
-                icon: RefreshCcw,
+                label: 'Export EDI 846',
+                icon: Download,
                 onClick: () =>
                   toast({
-                    variant: 'info',
-                    title: 'Syncing inventory from supplier API feeds',
+                    variant: 'success',
+                    title: 'Export preparing',
+                    description: 'EDI 846 format download starting.',
                   }),
               },
             ]}
             primary={{
-              label: 'Export EDI 846',
-              icon: Download,
+              label: 'Sync now',
+              icon: RefreshCcw,
               onClick: () =>
                 toast({
-                  variant: 'success',
-                  title: 'Export preparing',
-                  description: 'EDI 846 format download starting.',
+                  variant: 'info',
+                  title: 'Syncing inventory from supplier API feeds',
                 }),
             }}
           />
