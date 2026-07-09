@@ -28,6 +28,7 @@ import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import { CHART_SEMANTIC, CHART_IDENTITY } from '../lib/chartPalette';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -73,11 +74,14 @@ const SCENARIO_LIBRARY: { id: string; label: string }[] = [
   { id: 'pa', label: 'Pandemic resurgence' },
 ];
 
-const TOKEN_SUCCESS = '#107E3E';
-const TOKEN_WARNING = '#B45309';
-const TOKEN_DANGER = '#BB0000';
-const TOKEN_INFO = '#1E5BAE';
-const TOKEN_MUTED = '#6B7785';
+// DP2-PALETTE-01 (Commit 4): chart/map colour sourced from the central palette
+// (SSoT), not page-local hex. Values unchanged except the stray categorical blue
+// (#1E5BAE) — that TOKEN_INFO is removed; DC/hub markers now use the sanctioned
+// identity blue CHART_IDENTITY (#2A6FBF).
+const TOKEN_SUCCESS = CHART_SEMANTIC.success;
+const TOKEN_WARNING = CHART_SEMANTIC.warning;
+const TOKEN_DANGER = CHART_SEMANTIC.danger;
+const TOKEN_MUTED = CHART_SEMANTIC.neutral;
 
 
 const FEASIBILITY_VARIANT: Record<Feasibility, 'success' | 'warning' | 'danger'> = {
@@ -163,7 +167,7 @@ const WorldMap: React.FC = () => {
     { label: 'Saudi Arabia', cx: 600, cy: 220, color: TOKEN_WARNING, size: 5 },
     { label: 'Germany', cx: 510, cy: 135, color: TOKEN_SUCCESS, size: 4 },
     { label: 'Mexico', cx: 195, cy: 225, color: TOKEN_SUCCESS, size: 4 },
-    { label: 'Dallas (DC)', cx: 190, cy: 215, color: TOKEN_INFO, size: 5 },
+    { label: 'Dallas (DC)', cx: 190, cy: 215, color: CHART_IDENTITY, size: 5 },
   ];
   const continent = '#F4F6F8';
   const continentStroke = '#D1D8E0';
@@ -235,7 +239,7 @@ const WorldMap: React.FC = () => {
           { color: TOKEN_DANGER, label: 'Critical risk' },
           { color: TOKEN_WARNING, label: 'High / medium risk' },
           { color: TOKEN_SUCCESS, label: 'Low risk' },
-          { color: TOKEN_INFO, label: 'DC / hub' },
+          { color: CHART_IDENTITY, label: 'DC / hub' },
         ].map((l, i) => (
           <g key={l.label} transform={`translate(20, ${360 + i * 16})`}>
             <circle r={4} cx={6} cy={0} fill={l.color} />
@@ -523,7 +527,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
               <div
                 key={alt.id}
                 className={`bg-bg-surface border rounded-lg shadow-sm overflow-hidden transition-colors ${
-                  open ? 'border-teal' : 'border-border-subtle'
+                  open ? 'border-action' : 'border-border-subtle'
                 }`}
               >
                 <button
@@ -593,7 +597,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
         <div className="flex items-center gap-2 mb-3">
           <Sparkles size={16} className="text-teal" />
           <span className="text-sm font-bold text-teal">ARIA Recommendation</span>
-          <StatusPill variant="info" className="!bg-teal-soft !text-teal">
+          <StatusPill variant="info">
             AI-Powered
           </StatusPill>
         </div>

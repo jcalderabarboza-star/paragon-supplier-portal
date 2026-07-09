@@ -232,7 +232,7 @@ const SupplierStorefront: React.FC = () => {
                 </>
               )}
             </div>
-            <h2 className="text-title text-text-primary mt-1">
+            <h2 className="text-section text-text-primary mt-1">
               {supp.name}
             </h2>
             <p className="text-sm text-text-secondary mt-1.5 max-w-2xl">

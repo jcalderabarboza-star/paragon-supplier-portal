@@ -54,6 +54,15 @@ export const SEMANTIC_STATE = {
   poor: '#BB0000', // danger — grade D (at-risk)
 } as const;
 
+/**
+ * Identity / infrastructure marker on data surfaces (e.g. the buyer's own
+ * DC / hub dots on the supplier risk map) — the design system's sanctioned
+ * non-clickable identity blue (`action.muted` #2A6FBF, AA on white). Distinct
+ * from a risk/health state: it marks "ours", not a severity. Replaces the stray
+ * categorical blue (#1E5BAE) dropped from the grade dial in the palette census.
+ */
+export const CHART_IDENTITY = '#2A6FBF';
+
 /** Grid / axis hairline on light surfaces. */
 export const CHART_GRID = '#E5E9EE';
 

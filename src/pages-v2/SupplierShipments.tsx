@@ -728,7 +728,7 @@ const SupplierShipments: React.FC = () => {
                   aria-pressed={selected}
                   className={`text-left rounded-md p-4 border transition-colors ${
                     selected
-                      ? 'border-teal bg-teal-soft'
+                      ? 'border-action bg-action-soft'
                       : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
                   }`}
                 >

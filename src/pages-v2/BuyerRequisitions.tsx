@@ -77,7 +77,7 @@ const ProcurementFlow: React.FC = () => {
     { label: 'Sourcing Event', sub: 'No source', tone: 'warning' },
   ];
   const TONE: Record<string, string> = {
-    teal: 'bg-teal text-white',
+    teal: 'bg-action text-white',
     mid: 'bg-mid text-white',
     purple: 'bg-info text-white',
     success: 'bg-success text-white',

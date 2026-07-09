@@ -545,7 +545,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
                         selected
                           ? 'bg-action text-white border border-action'
-                          : 'bg-bg-surface text-text-secondary border border-border-input hover:border-teal'
+                          : 'bg-bg-surface text-text-secondary border border-border-input hover:border-action'
                       }`}
                     >
                       {m}
@@ -624,8 +624,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       key={s.id}
                       className={`flex items-start gap-3 p-3 rounded-md border cursor-pointer transition-colors ${
                         selected
-                          ? 'bg-bg-surface border-teal'
-                          : 'bg-bg-surface border-border-subtle hover:border-teal'
+                          ? 'bg-bg-surface border-action'
+                          : 'bg-bg-surface border-border-subtle hover:border-action'
                       }`}
                     >
                       <input

@@ -831,7 +831,7 @@ const EmailBody: React.FC<{
                 <div
                   className={`w-6 h-6 rounded-full text-[11px] font-bold flex items-center justify-center mx-auto mb-1 ${
                     s.done
-                      ? 'bg-teal text-white'
+                      ? 'bg-action text-white'
                       : 'bg-bg-hover text-text-tertiary'
                   }`}
                 >
@@ -848,7 +848,7 @@ const EmailBody: React.FC<{
               {i < steps.length - 1 && (
                 <div
                   className={`h-0.5 flex-1 mb-4 ${
-                    steps[i + 1].done ? 'bg-teal' : 'bg-bg-hover'
+                    steps[i + 1].done ? 'bg-action' : 'bg-bg-hover'
                   }`}
                 />
               )}
@@ -970,7 +970,7 @@ const EmailPanel: React.FC = () => {
             </div>
           </div>
           <div className="bg-navy px-4 py-3 flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-teal flex items-center justify-center text-xs font-bold text-white">
+            <div className="w-8 h-8 rounded-md bg-action-muted flex items-center justify-center text-xs font-bold text-white">
               PC
             </div>
             <div>

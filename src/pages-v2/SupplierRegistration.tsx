@@ -615,7 +615,7 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
                 key={cat}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer border-2 text-sm transition-colors ${
                   checked
-                    ? 'border-teal bg-teal-soft text-text-primary font-semibold'
+                    ? 'border-action bg-action-soft text-text-primary font-semibold'
                     : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
                 }`}
               >
@@ -623,7 +623,7 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
                   type="checkbox"
                   checked={checked}
                   onChange={() => toggleCat(cat)}
-                  className="accent-teal"
+                  className="accent-action"
                 />
                 {cat}
               </label>
@@ -647,7 +647,7 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
                 key={ch.value}
                 className={`flex items-center gap-3 px-4 py-3 rounded-md cursor-pointer border-2 transition-colors ${
                   active
-                    ? 'border-teal bg-teal-soft'
+                    ? 'border-action bg-action-soft'
                     : 'border-border-subtle bg-bg-surface hover:bg-bg-hover'
                 }`}
               >
@@ -656,15 +656,15 @@ const CategoriesStep: React.FC<StepProps & { catError: string }> = ({
                   name="channel"
                   checked={active}
                   onChange={() => setForm((f) => ({ ...f, channel: ch.value }))}
-                  className="accent-teal"
+                  className="accent-action"
                 />
                 <Icon
                   size={18}
-                  className={active ? 'text-teal' : 'text-text-tertiary'}
+                  className={active ? 'text-action' : 'text-text-tertiary'}
                 />
                 <div className="min-w-0">
                   <div
-                    className={`text-sm font-bold ${active ? 'text-teal' : 'text-text-primary'}`}
+                    className={`text-sm font-bold ${active ? 'text-action' : 'text-text-primary'}`}
                   >
                     {ch.label}
                   </div>
@@ -894,7 +894,7 @@ const InternalSRCategoryStep: React.FC<StepProps & { catError: string }> = ({
             key={cat}
             className={`flex items-center gap-2 px-3 py-2 rounded-md cursor-pointer border-2 text-sm transition-colors ${
               form.selCats.includes(cat)
-                ? 'border-teal bg-teal-soft text-text-primary font-semibold'
+                ? 'border-action bg-action-soft text-text-primary font-semibold'
                 : 'border-border-subtle bg-bg-surface text-text-secondary hover:bg-bg-hover'
             }`}
           >

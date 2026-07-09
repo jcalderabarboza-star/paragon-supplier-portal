@@ -39,6 +39,7 @@ const PALETTE_SOURCED = [
   'BuyerAnalytics.tsx',
   'SupplierWhatsApp.tsx',
   'BuyerWhatsAppHub.tsx',
+  'BuyerRisk.tsx',
 ];
 
 // A TOKEN_* const declared as a raw hex literal (what Commit 2 eliminated).

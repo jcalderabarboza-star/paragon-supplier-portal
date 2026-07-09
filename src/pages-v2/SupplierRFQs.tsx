@@ -981,7 +981,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                       onClick={() => setForm({ ...form, canSample: v })}
                       className={`px-4 py-1.5 rounded-md text-sm font-semibold border transition-colors ${
                         form.canSample === v
-                          ? 'bg-teal-soft border-teal text-teal'
+                          ? 'bg-action-soft border-action text-action-hover'
                           : 'bg-bg-surface border-border-input text-text-tertiary hover:text-text-secondary'
                       }`}
                     >
