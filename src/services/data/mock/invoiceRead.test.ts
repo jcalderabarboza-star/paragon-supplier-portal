@@ -12,6 +12,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { MockProcurementService } from './MockProcurementService';
 import { MockCommandService } from './MockCommandService';
 import { invoiceStore } from './stores/invoiceStore';
+import { INVOICES } from './fixtures/invoices';
 import type { QueryScope } from '../types';
 
 const reads = new MockProcurementService();
@@ -75,5 +76,23 @@ describe('invoice reads — one canonical store, two truthful persona views', ()
     )!;
     expect(buy.status).toBe('Overdue');
     expect(buy.daysOutstanding).toBeGreaterThan(0);
+  });
+});
+
+describe('invoice fixture integrity — FI document only exists post-settle (F-1)', () => {
+  // The FI (financial) document mints ONLY on payment settlement (invoiceStore
+  // invariant, Option B). So NO pre-settle fixture may carry an sapFiDoc — that
+  // was the INV-GIV-0892 contradiction, and inv-msm-0224 / inv-evo-0188 shared it.
+  // (sapGrDoc is a separate goods-receipt doc and may legitimately precede payment.)
+  const SETTLED = new Set(['Payment Released', 'Remittance Received']);
+
+  it('every seeded invoice with an FI doc is settled AND carries a payment ref + date', () => {
+    for (const inv of INVOICES) {
+      if (inv.sapFiDoc !== null) {
+        expect(SETTLED.has(inv.status), `${inv.invoiceNumber} holds an FI doc while ${inv.status}`).toBe(true);
+        expect(inv.paymentRef, `${inv.invoiceNumber} has an FI doc but no payment ref`).not.toBeNull();
+        expect(inv.paymentDate, `${inv.invoiceNumber} has an FI doc but no payment date`).not.toBeNull();
+      }
+    }
   });
 });

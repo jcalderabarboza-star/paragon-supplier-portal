@@ -78,7 +78,9 @@ export const INVOICES: Invoice[] = [
     supplierName: 'PT Musim Mas Specialty Fats', poNumber: 'PO-2026-00011', poId: 'po-2026-011',
     amount: 480_000_000, currency: 'IDR', status: 'Submitted', matchStatus: 'Pending GR',
     submittedDate: '2026-06-10', dueDate: '2026-07-10', paymentDate: null,
-    paymentRef: null, sapFiDoc: 'FI-5100010088', sapGrDoc: null,
+    // Pre-settle (Submitted): no FI document — it mints only on payment settle
+    // (invoiceStore invariant; F-1). sapGrDoc is the separate goods-receipt doc.
+    paymentRef: null, sapFiDoc: null, sapGrDoc: null,
     bankAccount: 'Mandiri 137-000-998877', channel: 'Web', approver: 'Procurement Officer',
     paymentTerms: 'Net 30', buyerContact: 'Procurement Officer', remittanceNote: null,
   },
@@ -98,7 +100,9 @@ export const INVOICES: Invoice[] = [
     supplierName: 'Givaudan Indonesia Fragrances', poNumber: 'PO-2025-00103', poId: 'po-003',
     amount: 2_000_000_000, currency: 'IDR', status: 'Approved', matchStatus: 'Matched',
     submittedDate: '2026-06-01', dueDate: '2026-08-01', paymentDate: null,
-    paymentRef: null, sapFiDoc: 'FI-5100009312', sapGrDoc: 'GR-4900009344',
+    // Pre-settle (Approved, unpaid): no FI document — it mints on payment settle
+    // (invoiceStore invariant; F-1). sapGrDoc is the separate goods-receipt doc.
+    paymentRef: null, sapFiDoc: null, sapGrDoc: 'GR-4900009344',
     bankAccount: 'Mandiri 123-456-7890', channel: 'API', approver: 'VP SCM',
     paymentTerms: 'Net 30', buyerContact: 'VP SCM', remittanceNote: null,
   },
@@ -127,7 +131,9 @@ export const INVOICES: Invoice[] = [
     supplierName: 'Evonik Specialty Chemicals France', poNumber: 'PO-2025-00014', poId: 'po-014',
     amount: 410_000_000, currency: 'IDR', status: 'Approved', matchStatus: 'Matched',
     submittedDate: '2026-05-25', dueDate: '2026-06-04', paymentDate: null,
-    paymentRef: null, sapFiDoc: 'FI-5100009288', sapGrDoc: 'GR-4900009302',
+    // Pre-settle (Approved, unpaid, past-due Overdue demo): no FI document — it
+    // mints on payment settle (invoiceStore invariant; F-1). sapGrDoc stands.
+    paymentRef: null, sapFiDoc: null, sapGrDoc: 'GR-4900009302',
     bankAccount: 'Société Générale FR76-3000', channel: 'Email', approver: 'Finance Controller',
     paymentTerms: 'Net 10', buyerContact: 'Finance Controller', remittanceNote: null,
   },
