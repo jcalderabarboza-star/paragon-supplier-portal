@@ -1,6 +1,6 @@
 # 🏭 Paragon Supplier Portal
 
-A multi-channel procurement collaboration platform for **Paragon Corp** — Indonesia's leading beauty conglomerate behind brands including **Wardah**, **Emina**, **Make Over**, **BLP**, and **Scarlett by Wardah**.
+A multi-channel procurement collaboration platform for **Paragon Corp** — Indonesia's leading beauty conglomerate behind brands including **Wardah**, **Emina**, **Make Over**, **Instaperfect**, and **Kahf**.
 
 The portal enables Paragon's procurement team (buyers) and their suppliers to collaborate on purchase orders, inventory, compliance documents, invoices, and ship notices — all through a single, responsive web application.
 

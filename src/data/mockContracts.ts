@@ -141,7 +141,7 @@ export const mockContracts: Contract[] = [
     obligationsMet: 3,
     daysUntilExpiry: 164,
     category: 'Active Ingredient',
-    brands: ['Wardah', 'Scarlett'],
+    brands: ['Wardah', 'Kahf'],
     performanceScore: 90,
   },
 
@@ -193,7 +193,7 @@ export const mockContracts: Contract[] = [
     obligationsMet: 2,
     daysUntilExpiry: 66,
     category: 'Packaging',
-    brands: ['Emina', 'BLP'],
+    brands: ['Emina', 'Instaperfect'],
     performanceScore: 80,
   },
 
@@ -245,7 +245,7 @@ export const mockContracts: Contract[] = [
     obligationsMet: 4,
     daysUntilExpiry: 16,
     category: 'Active Ingredient',
-    brands: ['Wardah', 'Scarlett'],
+    brands: ['Wardah', 'Kahf'],
     performanceScore: 84,
   },
 
@@ -326,7 +326,7 @@ export const mockContracts: Contract[] = [
     obligationsMet: 0,
     daysUntilExpiry: 590,
     category: 'Active Ingredient',
-    brands: ['Wardah', 'Scarlett'],
+    brands: ['Wardah', 'Kahf'],
     performanceScore: 0,
   },
 
