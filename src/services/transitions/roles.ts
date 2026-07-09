@@ -18,15 +18,21 @@ import { getKnownFlows } from './registry';
 export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
   // Paragon side: PO issuance + system-driven fulfilment/close; ASN logistics
   // (carry) + discrepancy flag (cascade ← GR); goods-receipt receiving,
-  // inspection, disposition, and the SAP post (GR is a buyer/warehouse document).
+  // inspection, disposition, and the SAP post (GR is a buyer/warehouse document);
+  // invoice match (system rollup), approve, pay (SAP release), and dispute.
   buyer: [
     'po:issue', 'po:fulfil', 'po:close',
     'asn:carry', 'asn:flag',
     'gr:receive', 'gr:inspect', 'gr:disposition', 'gr:post',
+    'invoice:match', 'invoice:approve', 'invoice:pay', 'invoice:dispute',
   ],
   // Supplier side: view / acknowledge / confirm an incoming PO; create + submit
-  // an advance ship notice.
-  supplier: ['po:view', 'po:acknowledge', 'po:confirm', 'asn:create', 'asn:submit'],
+  // an advance ship notice; draft + submit an invoice against its own PO.
+  supplier: [
+    'po:view', 'po:acknowledge', 'po:confirm',
+    'asn:create', 'asn:submit',
+    'invoice:submit',
+  ],
 };
 
 /** The transition-roles a persona may initiate. */

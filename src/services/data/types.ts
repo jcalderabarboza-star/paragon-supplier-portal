@@ -235,6 +235,28 @@ export interface SupplierDocument {
   notes?: string;
 }
 
+// ─── Invoice — DR-7: ONE canonical machine + persona projections ──────────────
+// The invoice is ONE economic document. `InvoiceStatus` is the single canonical
+// lifecycle stored on the entity; the two persona vocabularies below
+// (`SupplierInvoiceStatus`, `BuyerInvoiceStatus`) are PROJECTION LABELS derived
+// at read time (see `invoiceProjection.ts`), never independently stored. This is
+// DR-7 (ratified 2026-07-06): two-machines-plus-mapping was rejected on the
+// HALAL-XPERSONA-01 drift precedent. `Overdue` is computed (DR-8, law 0.5); the
+// 3-way `matchStatus` is the match sub-flow's rolled-up terminal (census G2).
+
+/** Canonical invoice lifecycle (the stored truth). `Releasing Payment` is the
+ *  Option-B SAP interim; the real FI document is minted only on settlement. */
+export type InvoiceStatus =
+  | 'Draft'
+  | 'Submitted'
+  | 'Matched'
+  | 'Approved'
+  | 'Releasing Payment'
+  | 'Payment Released'
+  | 'Remittance Received'
+  | 'Disputed';
+
+/** SUPPLIER-persona projection labels of `InvoiceStatus` (+ computed Overdue). */
 export type SupplierInvoiceStatus =
   | 'Draft'
   | 'Pending Approval'
@@ -245,6 +267,35 @@ export type SupplierInvoiceStatus =
   | 'Disputed';
 
 export type InvoiceChannel = 'WhatsApp' | 'Web' | 'Email' | 'API';
+
+/** The canonical invoice entity — the ONE row the store holds and both persona
+ *  reads project from (`toSupplierInvoice` / `toBuyerInvoice`). Fields are the
+ *  union of what each surface needs; persona reads select + relabel. */
+export interface Invoice {
+  id: string;
+  invoiceNumber: string;
+  supplierId: string;
+  supplierName: string;
+  poNumber: string;
+  poId: string;
+  amount: number;
+  currency: string;
+  status: InvoiceStatus;
+  /** Match sub-flow rolled-up terminal (census G2); surfaced on the buyer read. */
+  matchStatus: InvoiceMatchStatus;
+  submittedDate: string;
+  dueDate: string;
+  paymentDate: string | null;
+  paymentRef: string | null;
+  sapFiDoc: string | null;
+  sapGrDoc: string | null;
+  bankAccount: string;
+  channel: InvoiceChannel;
+  approver: string;
+  paymentTerms: string;
+  buyerContact: string;
+  remittanceNote: string | null;
+}
 
 export interface SupplierInvoice {
   id: string;
@@ -264,6 +315,7 @@ export interface SupplierInvoice {
   remittanceNote: string | null;
 }
 
+/** BUYER-persona projection labels of `InvoiceStatus` (+ computed Overdue). */
 export type BuyerInvoiceStatus =
   | 'Pending Match'
   | 'Approved'

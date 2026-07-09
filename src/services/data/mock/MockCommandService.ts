@@ -18,6 +18,8 @@ import type {
   CommandStatus,
   ASN,
   AsnStatus,
+  Invoice,
+  InvoiceStatus,
 } from '../types';
 import type {
   GoodsReceipt,
@@ -41,6 +43,7 @@ import {
 import { purchaseOrderStore } from './stores/purchaseOrderStore';
 import { asnStore } from './stores/asnStore';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
+import { invoiceStore } from './stores/invoiceStore';
 import { mockShipments } from '../../../data/mockShipments';
 
 // — Purchase-order command target — reads/writes the mutable PO store. ————————
@@ -220,10 +223,88 @@ bindPolicyHook(POLICY_HOOKS.GR_CREATE_SHIPMENT_RECEIVED, ({ payload }) => {
   return { ok: false, reason: `no arrived shipment or ASN found for ${ref}` };
 });
 
+// — Invoice target (Step 4 batch iii, DR-7) — supplier-scoped creation-shape
+//   (draft against its OWN PO) + buyer lifecycle (match/approve/dispute) + the
+//   second sapBoundary verb (release payment, Option B). Reads/writes the ONE
+//   canonical invoice store; both persona reads project from it. ————————————————
+const invoiceTarget: CommandTarget = {
+  readState: (id) => invoiceStore.get(id)?.status ?? null,
+  readScopeOwner: (id) => invoiceStore.get(id)?.supplierId ?? null,
+  readEntity: (id) => invoiceStore.get(id) ?? null,
+  applyTransition: (id, toState, payload) => {
+    invoiceStore.update(id, (inv) => ({
+      ...inv,
+      status: toState as InvoiceStatus,
+      // Submit carries the finalized amount; other verbs leave it untouched.
+      amount:
+        toState === 'Submitted' && typeof payload.amount === 'number'
+          ? payload.amount
+          : inv.amount,
+    }));
+  },
+  // Creation scope: a supplier may draft an invoice only against its OWN PO
+  // (cross-supplier ⇒ SCOPE_DENIED, exactly as reads). Derived from the parent PO.
+  creationOwner: (payload) => findPoByNumber(String(payload.poReference))?.supplierId ?? null,
+  create: (payload, toState) => {
+    const po = findPoByNumber(String(payload.poReference));
+    const invoiceNumber = invoiceStore.nextNumber();
+    // Honest dates by construction: a creation that omits the dates (the form
+    // carries only PO + amount) defaults submittedDate to today and dueDate to
+    // Net-30 — so the invoice is never BORN overdue and aging is a real number,
+    // not NaN on an empty date (F-2). An explicit payload date still wins.
+    const submittedDate =
+      typeof payload.submittedDate === 'string' && payload.submittedDate
+        ? payload.submittedDate
+        : new Date().toISOString().slice(0, 10);
+    const dueDate =
+      typeof payload.dueDate === 'string' && payload.dueDate
+        ? payload.dueDate
+        : new Date(Date.parse(submittedDate) + 30 * 86_400_000)
+            .toISOString()
+            .slice(0, 10);
+    const invoice: Invoice = {
+      id: invoiceNumber, // store keyed by id; the assigned number doubles as id
+      invoiceNumber,
+      supplierId: po?.supplierId ?? '',
+      supplierName: po?.supplierName ?? '—',
+      poNumber: String(payload.poReference),
+      poId: po?.id ?? '',
+      amount: typeof payload.amount === 'number' ? payload.amount : 0,
+      currency: 'IDR',
+      status: toState as InvoiceStatus,
+      matchStatus: 'Pending',
+      submittedDate,
+      dueDate,
+      paymentDate: null,
+      paymentRef: null,
+      sapFiDoc: null,
+      sapGrDoc: null,
+      bankAccount: typeof payload.bankAccount === 'string' ? payload.bankAccount : '',
+      channel: 'Web',
+      approver: '',
+      paymentTerms: 'Net 30',
+      buyerContact: '',
+      remittanceNote: null,
+    };
+    invoiceStore.add(invoice);
+    return { entityId: invoiceNumber };
+  },
+};
+
+// Invoice create legality (mock layer — cross-entity read): the parent PO must
+// be Confirmed before its invoice can be drafted (same shape as ASN create).
+bindPolicyHook(POLICY_HOOKS.INVOICE_CREATE_PO_CONFIRMED, ({ payload }) => {
+  const po = findPoByNumber(String(payload.poReference));
+  if (!po) return { ok: false, reason: 'parent PO not found' };
+  if (po.status !== POStatus.CONFIRMED) return { ok: false, reason: `PO ${po.poNumber} is not Confirmed` };
+  return { ok: true };
+});
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
   goodsReceipt: goodsReceiptTarget,
+  invoice: invoiceTarget,
 };
 
 // Cross-entity cascade (census G4): a GR mismatch disposition (reject / partial
@@ -251,6 +332,19 @@ const settleFinalize = (ctx: SettleContext): void => {
       ...g,
       status: 'Posted to SAP',
       sapMaterialDoc: goodsReceiptStore.nextMatDoc(),
+    }));
+  }
+  // Invoice payment (Option B): a settled `t_invoice_release_payment` advances
+  // the interim 'Releasing Payment' → 'Payment Released' and assigns the REAL FI
+  // document + payment reference + date — minted HERE, on settle only, never
+  // fabricated client-side (no "paid" claim before it is true, law 0.6).
+  if (ctx.entity === 'invoice' && ctx.transitionId === 't_invoice_release_payment') {
+    invoiceStore.update(ctx.entityId, (inv) => ({
+      ...inv,
+      status: 'Payment Released',
+      sapFiDoc: inv.sapFiDoc ?? invoiceStore.nextFiDoc(),
+      paymentRef: inv.paymentRef ?? invoiceStore.nextPaymentRef(),
+      paymentDate: inv.paymentDate ?? new Date().toISOString().slice(0, 10),
     }));
   }
 };

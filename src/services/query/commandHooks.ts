@@ -239,3 +239,156 @@ export function useGoodsReceiptSettle() {
     onSuccess: () => invalidate(scope),
   });
 }
+
+// ─── Invoice (Step 4 batch iii, DR-7) ───────────────────────────────────────
+// ONE canonical machine; both persona surfaces re-derive from one store. The
+// supplier drafts + submits against its own PO (creation-shape); the buyer
+// approves, disputes/resolves, and releases payment — the release is the second
+// sapBoundary verb (Option B: no "paid" claim until settlement mints the FI doc).
+
+export interface InvoiceCreateVars {
+  /** The parent PO the invoice bills against (must be the supplier's own, Confirmed). */
+  poReference: string;
+  amount: number;
+  dueDate?: string;
+  submittedDate?: string;
+  bankAccount?: string;
+}
+
+/** Draft an invoice against a confirmed PO (fires the `creation` verb
+ *  `t_invoice_create`). No entityId — the store assigns the invoice number. */
+export function useInvoiceCreate() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, InvoiceCreateVars>({
+    mutationFn: (vars) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_invoice_create',
+        entity: 'invoice',
+        payload: { ...vars },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Submit a Draft invoice (fires `t_invoice_submit`, Draft → Submitted). */
+export function useInvoiceSubmit() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { invoiceId: string; amount: number }>({
+    mutationFn: ({ invoiceId, amount }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_invoice_submit',
+        entity: 'invoice',
+        entityId: invoiceId,
+        payload: { amount },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Approve a Matched invoice (fires `t_invoice_approve`, Matched → Approved). */
+export function useInvoiceApprove() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { invoiceId: string }>({
+    mutationFn: ({ invoiceId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_invoice_approve',
+        entity: 'invoice',
+        entityId: invoiceId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Dispute a pre-payment invoice (fires `t_invoice_dispute`). Requires a reason. */
+export function useInvoiceDispute() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { invoiceId: string; disputeReason: string }>({
+    mutationFn: ({ invoiceId, disputeReason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_invoice_dispute',
+        entity: 'invoice',
+        entityId: invoiceId,
+        payload: { disputeReason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Resolve a disputed invoice (fires `t_invoice_resolve`, Disputed → Submitted). */
+export function useInvoiceResolve() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { invoiceId: string }>({
+    mutationFn: ({ invoiceId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_invoice_resolve',
+        entity: 'invoice',
+        entityId: invoiceId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Release payment on an Approved invoice (fires the sapBoundary verb
+ * `t_invoice_release_payment`). Resolves `submitted`: the invoice moves to the
+ * interim 'Releasing Payment' with NO FI document yet — the caller settles to
+ * finalize. NO "paid" claim is truthful until then.
+ */
+export function useInvoiceReleasePayment() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { invoiceId: string }>({
+    mutationFn: ({ invoiceId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_invoice_release_payment',
+        entity: 'invoice',
+        entityId: invoiceId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Settle a submitted `t_invoice_release_payment` (the async SAP callback):
+ * advances 'Releasing Payment' → 'Payment Released' and assigns the real FI
+ * document + payment reference under the same correlationId. Idempotent.
+ */
+export function useInvoiceSettlePayment() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandStatus | null, Error, { correlationId: string }>({
+    mutationFn: ({ correlationId }) => svc.commands.settle(scope, correlationId),
+    onSuccess: () => invalidate(scope),
+  });
+}
