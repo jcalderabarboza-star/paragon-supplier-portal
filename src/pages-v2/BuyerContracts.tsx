@@ -270,7 +270,7 @@ const ReviewSection: React.FC<{
   </section>
 );
 
-const BRAND_OPTIONS = ['Wardah', 'Emina', 'Make Over', 'BLP', 'Scarlett'];
+const BRAND_OPTIONS = ['Wardah', 'Emina', 'Make Over', 'Instaperfect', 'Kahf'];
 
 const CATEGORY_OPTIONS = [
   'Raw Material',

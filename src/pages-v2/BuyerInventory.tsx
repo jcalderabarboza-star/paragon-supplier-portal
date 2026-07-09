@@ -57,8 +57,8 @@ const INVENTORY_CRUMB = ['TRANSACT', 'INVENTORY VISIBILITY'];
 
 type GroupTab = 'all' | 'critical' | 'warning' | 'healthy' | 'excess';
 
-type BrandKey = 'Wardah' | 'Emina' | 'Make Over' | 'BLP' | 'Scarlett';
-const BRANDS: BrandKey[] = ['Wardah', 'Emina', 'Make Over', 'BLP', 'Scarlett'];
+type BrandKey = 'Wardah' | 'Emina' | 'Make Over' | 'Instaperfect' | 'Kahf';
+const BRANDS: BrandKey[] = ['Wardah', 'Emina', 'Make Over', 'Instaperfect', 'Kahf'];
 
 const COUNTRY_FLAG: Record<string, string> = {
   ID: 'ID',
