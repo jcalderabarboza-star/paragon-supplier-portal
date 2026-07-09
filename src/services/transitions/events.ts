@@ -20,6 +20,15 @@ export interface TransitionEvent {
   readonly scope: QueryScope;
   /** Correlates the event with the command result / status. */
   readonly correlationId: string;
+  /**
+   * The correlationId of the SOURCE command that caused this one, present only
+   * when this transition was fired by a cascade fan-out (DR-10). Absent on a
+   * directly-initiated command. Lets a 1→N cascade (RFQ award → the winning +
+   * losing quotations) be reassembled as ONE correlatable group WITHOUT
+   * collapsing the per-transition correlationId — `getCommandStatus` stays 1:1,
+   * so each cascaded transition remains individually queryable / settleable.
+   */
+  readonly causationId?: string;
   /** How it resolved. */
   readonly outcome: CommandOutcome;
   /** ISO timestamp (supplied by the caller — no clock reads inside pure code). */

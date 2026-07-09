@@ -146,6 +146,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     outcome: CommandOutcome,
     reason?: string,
     entityId?: string,
+    causationId?: string,
   ): CommandResult {
     const correlationId = deps.nextCorrelationId();
     const ts = deps.now();
@@ -154,6 +155,9 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       actor: actorKey(scope),
       scope,
       correlationId,
+      // Present only on a cascaded transition — groups the fan-out under the
+      // source command's correlationId (DR-10) without sharing correlationId.
+      ...(causationId ? { causationId } : {}),
       outcome,
       ts,
     });
@@ -161,12 +165,24 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     return { correlationId, transitionId, status: outcome, reason, entityId };
   }
 
-  function dispatch(scope: QueryScope, input: CommandInput): CommandResult {
+  // `causationId` is set ONLY for a cascaded (fanned-out) command — the source
+  // command's correlationId — so every event it emits is tagged to the group.
+  function dispatch(scope: QueryScope, input: CommandInput, causationId?: string): CommandResult {
+    // Tag every event this dispatch emits with the causationId (undefined for a
+    // directly-initiated command; the source correlationId for a cascaded one).
+    const fin = (
+      s: QueryScope,
+      tid: string,
+      outcome: CommandOutcome,
+      reason?: string,
+      entityId?: string,
+    ): CommandResult => finish(s, tid, outcome, reason, entityId, causationId);
+
     const transition = getTransition(input.transitionId);
-    if (!transition) return finish(scope, input.transitionId, 'failed', 'UNKNOWN_TRANSITION');
+    if (!transition) return fin(scope, input.transitionId, 'failed', 'UNKNOWN_TRANSITION');
 
     const target = deps.target(input.entity);
-    if (!target) return finish(scope, input.transitionId, 'failed', `UNKNOWN_ENTITY:${input.entity}`);
+    if (!target) return fin(scope, input.transitionId, 'failed', `UNKNOWN_ENTITY:${input.entity}`);
 
     const isCreation = transition.trigger === 'creation';
     const payload = input.payload ?? {};
@@ -182,7 +198,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         }
       }
     } else {
-      if (!input.entityId) return finish(scope, transition.id, 'failed', 'MISSING_ENTITY_ID');
+      if (!input.entityId) return fin(scope, transition.id, 'failed', 'MISSING_ENTITY_ID');
       currentState = target.readState(input.entityId);
       const owner = target.readScopeOwner(input.entityId);
       if (scope.personaType === 'supplier') {
@@ -198,24 +214,24 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
 
     // (3) requiredRole ∈ scope roles.
     if (!deps.resolveRoles(scope).includes(transition.requiredRole)) {
-      return finish(scope, transition.id, 'failed', `ROLE_NOT_PERMITTED:${transition.requiredRole}`);
+      return fin(scope, transition.id, 'failed', `ROLE_NOT_PERMITTED:${transition.requiredRole}`);
     }
 
     // (4) transition legality (creation has no from-state to check).
     if (!isCreation && !transition.from.includes(currentState!)) {
-      return finish(scope, transition.id, 'failed', `ILLEGAL_TRANSITION:${currentState}->${transition.to}`);
+      return fin(scope, transition.id, 'failed', `ILLEGAL_TRANSITION:${currentState}->${transition.to}`);
     }
 
     // (5) requiredFields.
     const missing = transition.requiredFields.filter((f) => isEmpty(payload[f]));
     if (missing.length > 0) {
-      return finish(scope, transition.id, 'failed', `MISSING_FIELDS:${missing.join(',')}`);
+      return fin(scope, transition.id, 'failed', `MISSING_FIELDS:${missing.join(',')}`);
     }
 
     // (6) policy hooks (by registered name).
     for (const name of transition.policyHooks) {
       const hook = deps.resolvePolicyHook(name);
-      if (!hook) return finish(scope, transition.id, 'failed', `UNBOUND_HOOK:${name}`);
+      if (!hook) return fin(scope, transition.id, 'failed', `UNBOUND_HOOK:${name}`);
       const decision = hook({
         entityId: input.entityId ?? '',
         currentState: currentState ?? '',
@@ -224,7 +240,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         target,
       });
       if (!decision.ok) {
-        return finish(scope, transition.id, 'failed', `POLICY_REJECTED:${name}:${decision.reason ?? ''}`);
+        return fin(scope, transition.id, 'failed', `POLICY_REJECTED:${name}:${decision.reason ?? ''}`);
       }
     }
 
@@ -233,12 +249,12 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     const outcome: CommandOutcome = transition.sapBoundary ? 'submitted' : 'done';
     let result: CommandResult;
     if (isCreation) {
-      if (!target.create) return finish(scope, transition.id, 'failed', `UNSUPPORTED_CREATION:${input.entity}`);
+      if (!target.create) return fin(scope, transition.id, 'failed', `UNSUPPORTED_CREATION:${input.entity}`);
       const { entityId } = target.create(payload, transition.to);
-      result = finish(scope, transition.id, outcome, undefined, entityId);
+      result = fin(scope, transition.id, outcome, undefined, entityId);
     } else {
       target.applyTransition(input.entityId!, transition.to, payload);
-      result = finish(scope, transition.id, outcome, undefined, input.entityId);
+      result = fin(scope, transition.id, outcome, undefined, input.entityId);
     }
 
     const resolvedId = result.entityId ?? input.entityId ?? '';
@@ -266,9 +282,13 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         scope,
       })) {
         try {
+          // Cascaded command carries the source's correlationId as causationId,
+          // so its events group with the source WITHOUT sharing correlationId
+          // (each cascaded transition keeps its own 1:1 status — DR-10, Option A).
           dispatch(
             { personaType: 'buyer', supplierId: null },
             { transitionId: c.transitionId, entity: c.entity, entityId: c.entityId, payload: c.payload },
+            result.correlationId,
           );
         } catch {
           /* best-effort cross-entity cascade */
