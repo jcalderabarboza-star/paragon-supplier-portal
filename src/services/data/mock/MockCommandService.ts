@@ -248,6 +248,20 @@ const invoiceTarget: CommandTarget = {
   create: (payload, toState) => {
     const po = findPoByNumber(String(payload.poReference));
     const invoiceNumber = invoiceStore.nextNumber();
+    // Honest dates by construction: a creation that omits the dates (the form
+    // carries only PO + amount) defaults submittedDate to today and dueDate to
+    // Net-30 — so the invoice is never BORN overdue and aging is a real number,
+    // not NaN on an empty date (F-2). An explicit payload date still wins.
+    const submittedDate =
+      typeof payload.submittedDate === 'string' && payload.submittedDate
+        ? payload.submittedDate
+        : new Date().toISOString().slice(0, 10);
+    const dueDate =
+      typeof payload.dueDate === 'string' && payload.dueDate
+        ? payload.dueDate
+        : new Date(Date.parse(submittedDate) + 30 * 86_400_000)
+            .toISOString()
+            .slice(0, 10);
     const invoice: Invoice = {
       id: invoiceNumber, // store keyed by id; the assigned number doubles as id
       invoiceNumber,
@@ -259,8 +273,8 @@ const invoiceTarget: CommandTarget = {
       currency: 'IDR',
       status: toState as InvoiceStatus,
       matchStatus: 'Pending',
-      submittedDate: typeof payload.submittedDate === 'string' ? payload.submittedDate : '',
-      dueDate: typeof payload.dueDate === 'string' ? payload.dueDate : '',
+      submittedDate,
+      dueDate,
       paymentDate: null,
       paymentRef: null,
       sapFiDoc: null,

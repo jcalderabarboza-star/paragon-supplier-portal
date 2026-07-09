@@ -11,6 +11,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import { MockCommandService } from './MockCommandService';
 import { invoiceStore } from './stores/invoiceStore';
+import { isOverdue, daysOutstanding } from '../invoiceProjection';
 import { DataError } from '../types';
 import type { QueryScope } from '../types';
 
@@ -64,6 +65,30 @@ describe('Invoice command integration — supplier creation-shape', () => {
     const res = await fire(sup007, 't_invoice_submit', id, { amount: 250_000_000 });
     expect(res.status).toBe('done');
     expect(invoiceStore.get(id)!.status).toBe('Submitted');
+  });
+
+  it('defaults honest dates so a freshly-created invoice is never born overdue (F-2)', async () => {
+    // Creation WITHOUT a dueDate — the form only carries PO + amount. The command
+    // layer must default the dates (submittedDate today, dueDate = Net-30) so the
+    // invoice is not computed Overdue on submit and aging is a real number, not NaN.
+    const id = (
+      await svc.dispatch(sup007, {
+        transitionId: 't_invoice_create',
+        entity: 'invoice',
+        payload: { poReference: 'PO-2025-00107', amount: 250_000_000 },
+      })
+    ).entityId!;
+    await fire(sup007, 't_invoice_submit', id, { amount: 250_000_000 });
+
+    const inv = invoiceStore.get(id)!;
+    const now = new Date().toISOString();
+    expect(inv.status).toBe('Submitted'); // overdue-eligible — the failing case
+    expect(inv.submittedDate).not.toBe('');
+    expect(inv.dueDate).not.toBe('');
+    expect(isOverdue(inv, now)).toBe(false);
+    const days = daysOutstanding(inv, now);
+    expect(Number.isNaN(days)).toBe(false);
+    expect(days).toBe(0);
   });
 });
 
