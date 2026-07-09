@@ -42,6 +42,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
+import { CHART_SERIES } from '../lib/chartPalette';
 import {
   useAnalyticsSummary,
   useSpendByCategory,
@@ -71,7 +72,6 @@ const PERIOD_OPTIONS: { id: Period; label: string }[] = [
 const TOKEN_TEAL = '#0097A7';
 const TOKEN_NAVY = '#0D1B2A';
 const TOKEN_MID = '#354A5F';
-const TOKEN_SUCCESS = '#107E3E';
 const TOKEN_WARNING = '#B45309';
 const TOKEN_DANGER = '#BB0000';
 const TOKEN_MUTED = '#6B7785';
@@ -560,13 +560,15 @@ const BuyerAnalytics: React.FC = () => {
               }}
             />
             <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="whatsapp" stackId="a" fill={TOKEN_SUCCESS} name="WhatsApp" />
-            <Bar dataKey="web" stackId="a" fill={TOKEN_TEAL} name="Web Portal" />
-            <Bar dataKey="email" stackId="a" fill={TOKEN_DANGER} name="Email" />
+            {/* Channels are CATEGORIES, not state — one ordered accent ramp,
+                never semantic green/red (that read as good/bad here). */}
+            <Bar dataKey="whatsapp" stackId="a" fill={CHART_SERIES[0]} name="WhatsApp" />
+            <Bar dataKey="web" stackId="a" fill={CHART_SERIES[1]} name="Web Portal" />
+            <Bar dataKey="email" stackId="a" fill={CHART_SERIES[2]} name="Email" />
             <Bar
               dataKey="api"
               stackId="a"
-              fill={TOKEN_MID}
+              fill={CHART_SERIES[3]}
               name="API/EDI"
               radius={[4, 4, 0, 0]}
             />

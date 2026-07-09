@@ -32,8 +32,29 @@ export const CHART_SEMANTIC = {
   neutral: '#6B7785',
 } as const;
 
+/**
+ * Ordered good→bad state ramp for GRADE / health encodings (A→D, RAG-style).
+ * Green (healthy) → muted green → amber (caution) → red (at-risk). Distinct
+ * from CHART_SERIES (categorical accent) and CHART_SEMANTIC (discrete state):
+ * this is the CONTINUOUS health ordering. Deliberately NO blue — blue reads as
+ * a category, not a health level, which is what made grade bars look like a
+ * rainbow. Use where a grade/score bar encodes true health state.
+ */
+export const SEMANTIC_STATE = {
+  good: '#107E3E', // success — grade A (healthy)
+  fair: '#5B9D6B', // muted green — grade B (positive, lower emphasis)
+  caution: '#B45309', // warning — grade C
+  poor: '#BB0000', // danger — grade D (at-risk)
+} as const;
+
 /** Grid / axis hairline on light surfaces. */
 export const CHART_GRID = '#E5E9EE';
+
+/** Axis tick / label text on light surfaces (mirrors the text-tertiary token). */
+export const CHART_AXIS = '#6B7785';
+
+/** Hover-cursor band fill behind bars/points (mirrors the bg-hover token). */
+export const CHART_CURSOR = '#F4F6F8';
 
 /** Pick a series colour by index, wrapping when there are more series than slots. */
 export const seriesColor = (i: number): string =>
