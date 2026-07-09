@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -50,6 +50,35 @@ describe('DP2-PALETTE-01 — TOKEN_* consts derive from the central palette', ()
     it(`${file} declares no raw-hex TOKEN_* const (sourced from chartPalette)`, () => {
       const src = readFileSync(join(here, file), 'utf8');
       const hits = src.match(RAW_HEX_TOKEN_CONST) ?? [];
+      expect(hits).toEqual([]);
+    });
+  }
+});
+
+// DP2-BUTTON-01 (Ops #11 SEAT 2, Commit 5): an Export is a secondary / alternative
+// action per DP-2 — it must never occupy the BulkActionsBar `primary` slot, which
+// renders action-blue solid and is reserved for the surface's main call-to-action
+// (Sync / Save / Submit / Create / Post). This locks the Commit-5 header flips so
+// an Export can't reclaim primary emphasis. Scans every page automatically so new
+// pages are covered without a maintenance list.
+//
+// CARVE-OUT: BuyerCompliance.tsx is the registered fixture carve-out
+// (COMPLIANCE-CARVEOUT-01, docs/findings.md) landing at R2.2; its Export-in-primary
+// header is knowingly deferred out of Commit 5 and excluded here until that lands.
+const EXPORT_CARVE_OUT = new Set(['BuyerCompliance.tsx']);
+const PAGE_FILES = readdirSync(here).filter(
+  (f) => f.endsWith('.tsx') && !f.endsWith('.test.tsx') && !EXPORT_CARVE_OUT.has(f),
+);
+
+// A BulkActionsBar `primary` slot whose label is an Export action (label is the
+// first key of the primary object across the codebase).
+const EXPORT_IN_PRIMARY = /primary=\{\{\s*label:\s*['"][^'"]*Export/gi;
+
+describe('DP2-BUTTON-01 — Export never occupies the primary (action-blue) slot', () => {
+  for (const file of PAGE_FILES) {
+    it(`${file} places no Export action in a BulkActionsBar primary slot`, () => {
+      const src = readFileSync(join(here, file), 'utf8');
+      const hits = src.match(EXPORT_IN_PRIMARY) ?? [];
       expect(hits).toEqual([]);
     });
   }

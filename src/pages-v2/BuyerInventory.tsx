@@ -376,8 +376,8 @@ const BuyerInventory: React.FC = () => {
           <BulkActionsBar
             actions={[
               { label: 'Export', icon: FileSpreadsheet, onClick: handleExport },
-              { label: 'Sync now', icon: RefreshCw, onClick: handleSync },
             ]}
+            primary={{ label: 'Sync now', icon: RefreshCw, onClick: handleSync }}
           />
         }
       />

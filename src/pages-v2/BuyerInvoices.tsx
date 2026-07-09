@@ -430,16 +430,16 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     title: 'Exporting to SAP AP batch',
                   }),
               },
+              {
+                label: 'Export Report',
+                icon: FileSpreadsheet,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: 'Downloading aging report',
+                  }),
+              },
             ]}
-            primary={{
-              label: 'Export Report',
-              icon: FileSpreadsheet,
-              onClick: () =>
-                toast({
-                  variant: 'info',
-                  title: 'Downloading aging report',
-                }),
-            }}
           />
         }
       />

@@ -245,15 +245,17 @@ const BuyerAnalytics: React.FC = () => {
         subtitle="YTD performance metrics and procurement insights."
         actions={
           <BulkActionsBar
-            primary={{
-              label: 'Export Report',
-              icon: FileSpreadsheet,
-              onClick: () =>
-                toast({
-                  variant: 'info',
-                  title: 'Report export starting',
-                }),
-            }}
+            actions={[
+              {
+                label: 'Export Report',
+                icon: FileSpreadsheet,
+                onClick: () =>
+                  toast({
+                    variant: 'info',
+                    title: 'Report export starting',
+                  }),
+              },
+            ]}
           />
         }
       />
