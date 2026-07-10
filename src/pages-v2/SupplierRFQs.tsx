@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Inbox,
   Send,
@@ -99,7 +100,6 @@ interface AwardRow {
   awardDate: string;
   contractValue: string;
   poIssued: string;
-  notes: string;
 }
 
 // Award outcome is a REAL read (batch iv): the supplier's own quotations that
@@ -122,9 +122,6 @@ const buildAwardRows = (
         awardDate: rfq ? formatDate(rfq.awardDeadline) : '—',
         contractValue: won ? formatIDR(q.totalPrice) : '—',
         poIssued: '—',
-        notes: won
-          ? 'Awarded — your quotation was selected'
-          : 'Not awarded — another quotation was selected',
       };
     });
 
@@ -132,15 +129,15 @@ type TabKey = 'open' | 'quotes' | 'history';
 
 const EVAL_SEGMENTS: {
   key: keyof OpenRFQ['evaluationCriteria'];
-  label: string;
+  labelKey: string;
   color: string;
 }[] = [
   // DP-2: single teal→navy ramp (chartPalette CHART_SERIES), not a rainbow.
-  { key: 'price', label: 'Price', color: CHART_SERIES[0] },
-  { key: 'quality', label: 'Quality', color: CHART_SERIES[1] },
-  { key: 'leadTime', label: 'Lead Time', color: CHART_SERIES[2] },
-  { key: 'sustainability', label: 'Sustainability', color: CHART_SERIES[3] },
-  { key: 'risk', label: 'Risk', color: CHART_SERIES[4] },
+  { key: 'price', labelKey: 'rfqs.eval.price', color: CHART_SERIES[0] },
+  { key: 'quality', labelKey: 'rfqs.eval.quality', color: CHART_SERIES[1] },
+  { key: 'leadTime', labelKey: 'rfqs.eval.leadTime', color: CHART_SERIES[2] },
+  { key: 'sustainability', labelKey: 'rfqs.eval.sustainability', color: CHART_SERIES[3] },
+  { key: 'risk', labelKey: 'rfqs.eval.risk', color: CHART_SERIES[4] },
 ];
 
 const CHANNEL_ICON: Record<string, LucideIcon> = {
@@ -154,8 +151,6 @@ const CHANNEL_ICON: Record<string, LucideIcon> = {
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
-
-const RFQS_CRUMB = ['ACQUIRE', 'MY RFQS & QUOTES'];
 
 interface QuoteForm {
   unitPrice: string;
@@ -183,33 +178,36 @@ const emptyQuoteForm: QuoteForm = {
 
 const EvalBar: React.FC<{ criteria: OpenRFQ['evaluationCriteria'] }> = ({
   criteria,
-}) => (
-  <div>
-    <div className="flex h-2 rounded-full overflow-hidden mb-2">
-      {EVAL_SEGMENTS.map((seg) => (
-        <div
-          key={seg.key}
-          style={{ width: `${criteria[seg.key]}%`, background: seg.color }}
-          title={`${seg.label}: ${criteria[seg.key]}%`}
-        />
-      ))}
-    </div>
-    <div className="flex flex-wrap gap-3">
-      {EVAL_SEGMENTS.map((seg) => (
-        <span
-          key={seg.key}
-          className="inline-flex items-center gap-1.5 text-[10px] text-text-tertiary"
-        >
-          <span
-            className="inline-block w-2 h-2 rounded-full"
-            style={{ background: seg.color }}
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div>
+      <div className="flex h-2 rounded-full overflow-hidden mb-2">
+        {EVAL_SEGMENTS.map((seg) => (
+          <div
+            key={seg.key}
+            style={{ width: `${criteria[seg.key]}%`, background: seg.color }}
+            title={`${t(seg.labelKey)}: ${criteria[seg.key]}%`}
           />
-          {seg.label} {criteria[seg.key]}%
-        </span>
-      ))}
+        ))}
+      </div>
+      <div className="flex flex-wrap gap-3">
+        {EVAL_SEGMENTS.map((seg) => (
+          <span
+            key={seg.key}
+            className="inline-flex items-center gap-1.5 text-[10px] text-text-tertiary"
+          >
+            <span
+              className="inline-block w-2 h-2 rounded-full"
+              style={{ background: seg.color }}
+            />
+            {t(seg.labelKey)} {criteria[seg.key]}%
+          </span>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface RFQCardProps {
   rfq: OpenRFQ;
@@ -224,6 +222,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
   onDecline,
   onAskQuestion,
 }) => {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const urgent = rfq.daysRemaining <= 7;
   const Icon = CHANNEL_ICON[rfq.receivedVia] ?? Inbox;
@@ -240,16 +239,16 @@ const RFQCard: React.FC<RFQCardProps> = ({
         </Data>
         <StatusPill variant={urgent ? 'warning' : 'info'}>
           {urgent
-            ? `${rfq.daysRemaining} days remaining`
-            : `${rfq.daysRemaining} days to deadline`}
+            ? t('rfqs.card.daysRemaining', { count: rfq.daysRemaining })
+            : t('rfqs.card.daysToDeadline', { count: rfq.daysRemaining })}
         </StatusPill>
-        <StatusPill variant="neutral">Sample detail</StatusPill>
+        <StatusPill variant="neutral">{t('rfqs.card.sampleDetail')}</StatusPill>
         <span className="ml-auto inline-flex items-center gap-1 text-xs text-text-tertiary">
           <Icon size={12} />
-          via {rfq.receivedVia}
+          {t('rfqs.card.via', { channel: rfq.receivedVia })}
         </span>
         <span className="text-xs text-text-tertiary">
-          Received {rfq.receivedDate}
+          {t('rfqs.card.received', { date: rfq.receivedDate })}
         </span>
       </div>
 
@@ -263,23 +262,23 @@ const RFQCard: React.FC<RFQCardProps> = ({
 
         <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-text-tertiary mb-3">
           <span>
-            Qty:{' '}
+            {t('rfqs.card.qty')}{' '}
             <strong className="text-text-primary">{rfq.qty}</strong>
           </span>
           <span>
-            Location:{' '}
+            {t('rfqs.card.location')}{' '}
             <strong className="text-text-primary">
               {rfq.deliveryLocation}
             </strong>
           </span>
           <span>
-            Req. Delivery:{' '}
+            {t('rfqs.card.reqDelivery')}{' '}
             <strong className="text-text-primary">
               {rfq.requestedDelivery}
             </strong>
           </span>
           <span>
-            Deadline:{' '}
+            {t('rfqs.card.deadline')}{' '}
             <strong className={urgent ? 'text-danger' : 'text-text-primary'}>
               {rfq.deadline}
             </strong>
@@ -288,7 +287,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
 
         <div className="bg-bg-hover rounded-md px-3 py-2 mb-3">
           <div className="text-label text-text-tertiary uppercase mb-1">
-            Special requirements
+            {t('rfqs.card.specialReqs')}
           </div>
           <div className="text-xs text-text-secondary leading-relaxed">
             {expanded || !showLongReqs
@@ -303,11 +302,11 @@ const RFQCard: React.FC<RFQCardProps> = ({
             >
               {expanded ? (
                 <>
-                  Show less <ChevronUp size={11} />
+                  {t('rfqs.card.showLess')} <ChevronUp size={11} />
                 </>
               ) : (
                 <>
-                  Show more <ChevronDown size={11} />
+                  {t('rfqs.card.showMore')} <ChevronDown size={11} />
                 </>
               )}
             </button>
@@ -316,28 +315,28 @@ const RFQCard: React.FC<RFQCardProps> = ({
 
         <div className="mb-4">
           <div className="text-label text-text-tertiary uppercase mb-2">
-            Evaluation criteria
+            {t('rfqs.card.evalCriteria')}
           </div>
           <EvalBar criteria={rfq.evaluationCriteria} />
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
           <Button variant="outline" onClick={() => onSubmitQuote(rfq)}>
-            Submit quote
+            {t('rfqs.card.submitQuote')}
           </Button>
           <Button
             variant="secondary"
             icon={MessageSquare}
             onClick={() => onAskQuestion(rfq.rfqNumber)}
           >
-            Ask question
+            {t('rfqs.card.askQuestion')}
           </Button>
           <button
             type="button"
             onClick={() => onDecline(rfq.rfqNumber)}
             className="ml-auto text-xs text-danger hover:underline font-semibold"
           >
-            Decline RFQ
+            {t('rfqs.card.decline')}
           </button>
         </div>
       </div>
@@ -351,6 +350,7 @@ const OpenRFQsTab: React.FC<{
   onDecline: (rfqNumber: string) => void;
   onAskQuestion: (rfqNumber: string) => void;
 }> = ({ rfqs, onSubmitQuote, onDecline, onAskQuestion }) => {
+  const { t } = useTranslation();
   if (rfqs.length === 0) {
     return (
       <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
@@ -358,10 +358,10 @@ const OpenRFQsTab: React.FC<{
           <Inbox size={20} className="text-text-tertiary" />
         </div>
         <div className="text-base font-semibold text-text-primary mb-1">
-          No open RFQs at this time
+          {t('rfqs.open.emptyTitle')}
         </div>
         <div className="text-sm text-text-tertiary">
-          New RFQs from Paragon will appear here.
+          {t('rfqs.open.emptyBody')}
         </div>
       </div>
     );
@@ -385,12 +385,13 @@ const MyQuotesTab: React.FC<{
   extra: string[];
   onWithdraw: (rfqNumber: string) => void;
 }> = ({ extra, onWithdraw }) => {
+  const { t } = useTranslation();
   const today = new Date().toISOString().slice(0, 10);
   const allQuotes: SubmittedQuote[] = [
-    SUBMITTED_QUOTE,
+    { ...SUBMITTED_QUOTE, rankPosition: t('rfqs.quotes.rankValue') },
     ...extra.map((num) => ({
       rfqNumber: num,
-      material: 'Recently submitted quote',
+      material: t('rfqs.quotes.recentlySubmitted'),
       submittedDate: today,
       unitPrice: '—',
       totalPrice: '—',
@@ -405,9 +406,8 @@ const MyQuotesTab: React.FC<{
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2 text-xs text-text-tertiary">
-        <StatusPill variant="neutral">Sample data</StatusPill>
-        Quote detail (score, rank, line items) is illustrative pending the
-        supplier quotation read.
+        <StatusPill variant="neutral">{t('rfqs.quotes.sampleData')}</StatusPill>
+        {t('rfqs.quotes.illustrative')}
       </div>
       {allQuotes.map((q, i) => (
         <div
@@ -440,12 +440,12 @@ const MyQuotesTab: React.FC<{
 
           <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
             {[
-              { label: 'Quote #', value: q.quoteNumber ?? 'Auto-assigned' },
-              { label: 'Submitted', value: q.submittedDate },
-              { label: 'Unit price', value: q.unitPrice },
-              { label: 'Total price', value: q.totalPrice },
-              { label: 'Lead time', value: q.leadTime },
-              { label: 'Valid until', value: q.validUntil },
+              { label: t('rfqs.quotes.col.quoteNo'), value: q.quoteNumber ?? t('rfqs.quotes.autoAssigned') },
+              { label: t('rfqs.quotes.col.submitted'), value: q.submittedDate },
+              { label: t('rfqs.quotes.col.unitPrice'), value: q.unitPrice },
+              { label: t('rfqs.quotes.col.totalPrice'), value: q.totalPrice },
+              { label: t('rfqs.quotes.col.leadTime'), value: q.leadTime },
+              { label: t('rfqs.quotes.col.validUntil'), value: q.validUntil },
             ].map((d) => (
               <div key={d.label} className="bg-bg-hover rounded-md px-3 py-2">
                 <dt className="text-label text-text-tertiary uppercase mb-0.5">
@@ -461,13 +461,13 @@ const MyQuotesTab: React.FC<{
           {q.rankPosition && (
             <div className="bg-success-soft border-l-2 border-success rounded px-3 py-2 mb-3 text-sm font-semibold text-success">
               <Trophy size={14} className="inline-block mr-1.5" />
-              Ranked {q.rankPosition} received
+              {t('rfqs.quotes.ranked', { rank: q.rankPosition })}
             </div>
           )}
 
           <div className="mb-3">
             <div className="text-label text-text-tertiary uppercase mb-2">
-              Compliance documents submitted with this quote
+              {t('rfqs.quotes.docsTitle')}
             </div>
             <div className="flex flex-wrap gap-2">
               {['Halal Certificate', 'BPOM Registration', 'ISO 9001'].map((d) => (
@@ -482,7 +482,7 @@ const MyQuotesTab: React.FC<{
             variant="secondary"
             onClick={() => onWithdraw(q.rfqNumber)}
           >
-            Withdraw quote
+            {t('rfqs.quotes.withdraw')}
           </Button>
         </div>
       ))}
@@ -491,6 +491,7 @@ const MyQuotesTab: React.FC<{
 };
 
 const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
+  const { t } = useTranslation();
   const awarded = rows.filter((r) => r.result === 'Awarded').length;
   const total = rows.length;
   const pct = total > 0 ? Math.round((awarded / total) * 100) : 0;
@@ -502,10 +503,10 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
           <Trophy size={20} className="text-text-tertiary" />
         </div>
         <div className="text-base font-semibold text-text-primary mb-1">
-          No award decisions yet
+          {t('rfqs.awards.emptyTitle')}
         </div>
         <div className="text-sm text-text-tertiary">
-          Award outcomes appear here once Paragon awards an RFQ you quoted on.
+          {t('rfqs.awards.emptyBody')}
         </div>
       </div>
     );
@@ -516,13 +517,13 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableHeaderCell>RFQ #</TableHeaderCell>
-            <TableHeaderCell>Material</TableHeaderCell>
-            <TableHeaderCell>Result</TableHeaderCell>
-            <TableHeaderCell>Award date</TableHeaderCell>
-            <TableHeaderCell className="text-right">Contract value</TableHeaderCell>
-            <TableHeaderCell>PO issued</TableHeaderCell>
-            <TableHeaderCell>Notes</TableHeaderCell>
+            <TableHeaderCell>{t('rfqs.awards.col.rfq')}</TableHeaderCell>
+            <TableHeaderCell>{t('rfqs.awards.col.material')}</TableHeaderCell>
+            <TableHeaderCell>{t('rfqs.awards.col.result')}</TableHeaderCell>
+            <TableHeaderCell>{t('rfqs.awards.col.awardDate')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('rfqs.awards.col.contractValue')}</TableHeaderCell>
+            <TableHeaderCell>{t('rfqs.awards.col.poIssued')}</TableHeaderCell>
+            <TableHeaderCell>{t('rfqs.awards.col.notes')}</TableHeaderCell>
           </TableHeader>
           <tbody>
             {rows.map((row, i) => (
@@ -539,7 +540,6 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
                   <StatusPill
                     variant={row.result === 'Awarded' ? 'success' : 'neutral'}
                   >
-                    {row.result === 'Awarded' ? '✓ ' : '✗ '}
                     {row.result}
                   </StatusPill>
                 </TableCell>
@@ -563,7 +563,7 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
                   <Data>{row.poIssued}</Data>
                 </TableCell>
                 <TableCell className="text-xs text-text-secondary max-w-[16rem]">
-                  {row.notes}
+                  {t(row.result === 'Awarded' ? 'rfqs.awards.note.won' : 'rfqs.awards.note.lost')}
                 </TableCell>
               </TableRow>
             ))}
@@ -574,9 +574,12 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm px-5 py-4 flex items-center gap-5 flex-wrap">
         <div className="flex-1 min-w-[16rem]">
           <div className="text-sm text-text-primary mb-2">
-            Your win rate:{' '}
             <strong>
-              {awarded} of {total} decided RFQ{total === 1 ? '' : 's'} awarded ({pct}%)
+              {t(total === 1 ? 'rfqs.awards.winRate.one' : 'rfqs.awards.winRate.other', {
+                awarded,
+                total,
+                pct,
+              })}
             </strong>
           </div>
           <div className="h-2 bg-bg-hover rounded-full overflow-hidden">
@@ -588,7 +591,7 @@ const AwardsTab: React.FC<{ rows: AwardRow[] }> = ({ rows }) => {
         </div>
         <div className="text-center shrink-0">
           <div className="text-kpi font-mono tabular-nums text-success">{pct}%</div>
-          <div className="text-xs text-text-tertiary">Win rate</div>
+          <div className="text-xs text-text-tertiary">{t('rfqs.awards.winRateLabel')}</div>
         </div>
       </div>
     </div>
@@ -650,6 +653,8 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   awardRows,
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const crumb = [t('rfqs.crumb.section'), t('rfqs.crumb.page')];
   const [activeTab, setActiveTab] = useState<TabKey>('open');
   const [openRFQs, setOpenRFQs] = useState<OpenRFQ[]>(initialRfqs);
   const [quotePanelRFQ, setQuotePanelRFQ] = useState<OpenRFQ | null>(null);
@@ -670,23 +675,23 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   const handleDecline = (rfqNumber: string) => {
     toast({
       variant: 'info',
-      title: `RFQ ${rfqNumber} declined`,
-      description: 'Paragon team has been notified.',
+      title: t('rfqs.toast.declined.title', { rfq: rfqNumber }),
+      description: t('rfqs.toast.notified'),
     });
   };
 
   const handleAskQuestion = (rfqNumber: string) => {
     toast({
-      title: `Message sent for ${rfqNumber}`,
-      description: 'Paragon procurement team will respond via Web Portal.',
+      title: t('rfqs.toast.question.title', { rfq: rfqNumber }),
+      description: t('rfqs.toast.question.body'),
     });
   };
 
   const handleWithdraw = (rfqNumber: string) => {
     toast({
       variant: 'info',
-      title: `Withdrawal request sent for ${rfqNumber}`,
-      description: 'Paragon team has been notified.',
+      title: t('rfqs.toast.withdraw.title', { rfq: rfqNumber }),
+      description: t('rfqs.toast.notified'),
     });
   };
 
@@ -701,22 +706,22 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   const submitQuote = () => {
     if (!quotePanelRFQ) return;
     const missing: string[] = [];
-    if (!form.unitPrice.trim() || !(parseFloat(form.unitPrice) > 0)) missing.push('Unit price');
-    if (!form.leadTimeNum.trim() || !(parseFloat(form.leadTimeNum) > 0)) missing.push('Lead time');
-    if (!form.validUntil.trim()) missing.push('Quote valid until');
+    if (!form.unitPrice.trim() || !(parseFloat(form.unitPrice) > 0)) missing.push(t('rfqs.field.unitPrice'));
+    if (!form.leadTimeNum.trim() || !(parseFloat(form.leadTimeNum) > 0)) missing.push(t('rfqs.field.leadTime'));
+    if (!form.validUntil.trim()) missing.push(t('rfqs.field.validUntil'));
     if (missing.length > 0) {
       toast({
         variant: 'error',
-        title: 'Required fields missing',
-        description: `Please fill: ${missing.join(', ')}.`,
+        title: t('rfqs.toast.missing.title'),
+        description: t('rfqs.toast.missing.body', { fields: missing.join(', ') }),
       });
       return;
     }
     setSubmitting(true);
     toast({
       variant: 'success',
-      title: `Quotation submitted for ${quotePanelRFQ.rfqNumber}`,
-      description: `Paragon procurement team will review by ${quotePanelRFQ.deadline}.`,
+      title: t('rfqs.toast.submitted.title', { rfq: quotePanelRFQ.rfqNumber }),
+      description: t('rfqs.toast.submitted.body', { date: quotePanelRFQ.deadline }),
     });
     setTimeout(() => {
       const rfq = quotePanelRFQ;
@@ -731,42 +736,44 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={RFQS_CRUMB}
-        title="My Sourcing Events"
-        subtitle={`RFQs received from Paragon Corp procurement team — ${mySupplier.name}.`}
+        breadcrumb={crumb}
+        title={t('rfqs.header.title')}
+        subtitle={t('rfqs.header.subtitle', { supplier: mySupplier.name })}
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {openCount} open event{openCount !== 1 ? 's' : ''} · {submittedCount}{' '}
-        quote{submittedCount !== 1 ? 's' : ''} pending evaluation
+        {openCount}{' '}
+        {t(openCount !== 1 ? 'rfqs.meta.event.other' : 'rfqs.meta.event.one')} ·{' '}
+        {submittedCount}{' '}
+        {t(submittedCount !== 1 ? 'rfqs.meta.quote.other' : 'rfqs.meta.quote.one')}
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
         <KpiCard
-          eyebrow="Open Events"
+          eyebrow={t('rfqs.kpi.open.eyebrow')}
           value={openCount.toString()}
-          subtitle="Awaiting your quotation"
+          subtitle={t('rfqs.kpi.open.subtitle')}
           icon={Inbox}
         />
         <KpiCard
-          eyebrow="Quotes Submitted"
+          eyebrow={t('rfqs.kpi.submitted.eyebrow')}
           value={submittedCount.toString()}
-          subtitle="Pending evaluation"
+          subtitle={t('rfqs.kpi.submitted.subtitle')}
           icon={Send}
         />
         <KpiCard
-          eyebrow="Awaiting Award"
+          eyebrow={t('rfqs.kpi.award.eyebrow')}
           value={awaitingCount.toString()}
-          subtitle={<span className="text-warning-hover">Decision pending</span>}
+          subtitle={<span className="text-warning-hover">{t('rfqs.kpi.award.subtitle')}</span>}
           icon={Trophy}
         />
       </div>
 
       <SubTabs<TabKey>
         options={[
-          { id: 'open', label: 'Open events', count: openCount },
-          { id: 'quotes', label: 'My responses', count: submittedCount },
-          { id: 'history', label: 'Awards & history', count: awardRows.length },
+          { id: 'open', label: t('rfqs.tab.open'), count: openCount },
+          { id: 'quotes', label: t('rfqs.tab.quotes'), count: submittedCount },
+          { id: 'history', label: t('rfqs.tab.history'), count: awardRows.length },
         ]}
         value={activeTab}
         onChange={setActiveTab}
@@ -790,7 +797,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
         open={quotePanelRFQ !== null}
         onClose={() => setQuotePanelRFQ(null)}
         title={
-          quotePanelRFQ ? `Submit quotation — ${quotePanelRFQ.rfqNumber}` : ''
+          quotePanelRFQ ? t('rfqs.panel.title', { rfq: quotePanelRFQ.rfqNumber }) : ''
         }
         footerActions={
           <>
@@ -798,7 +805,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               variant="secondary"
               onClick={() => setQuotePanelRFQ(null)}
             >
-              Cancel
+              {t('rfqs.panel.cancel')}
             </Button>
             <Button
               variant="outline"
@@ -806,7 +813,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               disabled={submitting}
               onClick={submitQuote}
             >
-              {submitting ? 'Submitting…' : 'Submit quotation'}
+              {submitting ? t('rfqs.panel.submitting') : t('rfqs.panel.submit')}
             </Button>
           </>
         }
@@ -819,13 +826,13 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               </div>
               <div className="flex flex-wrap gap-4 mt-2 text-xs text-text-tertiary">
                 <span>
-                  Qty:{' '}
+                  {t('rfqs.card.qty')}{' '}
                   <strong className="text-text-primary">
                     {quotePanelRFQ.qty}
                   </strong>
                 </span>
                 <span>
-                  Deadline:{' '}
+                  {t('rfqs.card.deadline')}{' '}
                   <strong
                     className={
                       quotePanelRFQ.daysRemaining <= 7
@@ -840,12 +847,12 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
             </section>
 
             <FormSection
-              eyebrow="Step 1"
-              title="Pricing"
-              description="Unit price drives total. Currency defaults to IDR."
+              eyebrow={t('rfqs.panel.step1.eyebrow')}
+              title={t('rfqs.panel.step1.title')}
+              description={t('rfqs.panel.step1.desc')}
             >
               <div>
-                <label className={labelClass}>Unit price *</label>
+                <label className={labelClass}>{t('rfqs.panel.unitPrice')}</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -872,7 +879,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               </div>
               <div>
                 <label className={labelClass}>
-                  Total price (auto-calculated)
+                  {t('rfqs.panel.totalPrice')}
                 </label>
                 <div
                   className={`px-3 py-2 bg-bg-hover border border-border-subtle rounded-md text-sm font-semibold ${
@@ -885,12 +892,12 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
             </FormSection>
 
             <FormSection
-              eyebrow="Step 2"
-              title="Timing & quantity"
-              description="Lead time and validity window."
+              eyebrow={t('rfqs.panel.step2.eyebrow')}
+              title={t('rfqs.panel.step2.title')}
+              description={t('rfqs.panel.step2.desc')}
             >
               <div>
-                <label className={labelClass}>Lead time *</label>
+                <label className={labelClass}>{t('rfqs.panel.leadTime')}</label>
                 <div className="flex gap-2">
                   <input
                     type="number"
@@ -909,13 +916,13 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     className={inputClass}
                     style={{ width: 100 }}
                   >
-                    <option>days</option>
-                    <option>weeks</option>
+                    <option value="days">{t('rfqs.unit.days')}</option>
+                    <option value="weeks">{t('rfqs.unit.weeks')}</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className={labelClass}>Quote valid until *</label>
+                <label className={labelClass}>{t('rfqs.panel.validUntil')}</label>
                 <input
                   type="date"
                   value={form.validUntil}
@@ -927,11 +934,11 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               </div>
               <div>
                 <label className={labelClass}>
-                  Minimum order quantity (optional)
+                  {t('rfqs.panel.moq')}
                 </label>
                 <input
                   type="number"
-                  placeholder="Leave blank if same as RFQ qty"
+                  placeholder={t('rfqs.panel.moqPlaceholder')}
                   value={form.moq}
                   onChange={(e) => setForm({ ...form, moq: e.target.value })}
                   className={inputClass}
@@ -940,9 +947,9 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
             </FormSection>
 
             <FormSection
-              eyebrow="Step 3"
-              title="Compliance documents"
-              description="Documents already on file will be submitted with this quote."
+              eyebrow={t('rfqs.panel.step3.eyebrow')}
+              title={t('rfqs.panel.step3.title')}
+              description={t('rfqs.panel.step3.desc')}
             >
               <div className="bg-success-soft border-l-2 border-success rounded px-3 py-2 text-xs text-text-secondary flex flex-col gap-1">
                 {['Halal Certificate', 'ISO 9001', 'BPOM Registration'].map(
@@ -955,7 +962,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                       <span className="font-semibold text-text-primary">
                         {d}
                       </span>
-                      <span className="text-text-tertiary">— On file</span>
+                      <span className="text-text-tertiary">{t('rfqs.panel.onFile')}</span>
                     </div>
                   ),
                 )}
@@ -963,25 +970,25 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
             </FormSection>
 
             <FormSection
-              eyebrow="Step 4"
-              title="Notes & samples"
-              description="Optional context and sample availability."
+              eyebrow={t('rfqs.panel.step4.eyebrow')}
+              title={t('rfqs.panel.step4.title')}
+              description={t('rfqs.panel.step4.desc')}
             >
               <div>
-                <label className={labelClass}>Comments / notes</label>
+                <label className={labelClass}>{t('rfqs.panel.notes')}</label>
                 <textarea
                   value={form.notes}
                   onChange={(e) =>
                     setForm({ ...form, notes: e.target.value })
                   }
                   rows={3}
-                  placeholder="Add any notes, conditions, or alternative options for Paragon procurement team…"
+                  placeholder={t('rfqs.panel.notesPlaceholder')}
                   className={`${inputClass} resize-y`}
                 />
               </div>
               <div>
                 <label className={labelClass}>
-                  Can provide sample batch?
+                  {t('rfqs.panel.canSample')}
                 </label>
                 <div className="flex gap-2">
                   {(['yes', 'no'] as const).map((v) => (
@@ -995,16 +1002,16 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                           : 'bg-bg-surface border-border-input text-text-tertiary hover:text-text-secondary'
                       }`}
                     >
-                      {v.charAt(0).toUpperCase() + v.slice(1)}
+                      {v === 'yes' ? t('rfqs.panel.yes') : t('rfqs.panel.no')}
                     </button>
                   ))}
                 </div>
                 {form.canSample === 'yes' && (
                   <div className="mt-2">
-                    <label className={labelClass}>Sample lead time</label>
+                    <label className={labelClass}>{t('rfqs.panel.sampleLeadTime')}</label>
                     <input
                       type="text"
-                      placeholder="e.g. 5 days"
+                      placeholder={t('rfqs.panel.sampleLeadPlaceholder')}
                       value={form.sampleLeadTime}
                       onChange={(e) =>
                         setForm({
@@ -1020,11 +1027,11 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               </div>
               <div>
                 <label className={labelClass}>
-                  Quotation PDF (optional)
+                  {t('rfqs.panel.pdf')}
                 </label>
                 <div className="border-2 border-dashed border-border-input rounded-md p-4 text-center text-xs text-text-tertiary bg-bg-hover">
                   <Upload size={20} className="text-teal mx-auto mb-1" />
-                  Click to attach quotation PDF or drag &amp; drop
+                  {t('rfqs.panel.pdfDrop')}
                 </div>
               </div>
             </FormSection>
@@ -1042,6 +1049,8 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
 // entity's missing supplier-facing detail is sampled and pilled per card, and
 // the quote/award tabs stay illustrative (pilled).
 const SupplierRFQs: React.FC = () => {
+  const { t } = useTranslation();
+  const crumb = [t('rfqs.crumb.section'), t('rfqs.crumb.page')];
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
   const supplierQuery = useCurrentSupplier();
@@ -1054,11 +1063,11 @@ const SupplierRFQs: React.FC = () => {
     rfqsQuery.isPending ||
     quotationsQuery.isPending
   )
-    return <LoadingState breadcrumb={RFQS_CRUMB} />;
+    return <LoadingState breadcrumb={crumb} />;
   if (supplierQuery.isError || rfqsQuery.isError || quotationsQuery.isError)
     return (
       <ErrorState
-        breadcrumb={RFQS_CRUMB}
+        breadcrumb={crumb}
         error={
           supplierQuery.error ?? rfqsQuery.error ?? quotationsQuery.error
         }
@@ -1079,10 +1088,10 @@ const SupplierRFQs: React.FC = () => {
   if (rfqs.length === 0 && quoteCount === 0)
     return (
       <EmptyState
-        breadcrumb={RFQS_CRUMB}
-        title="No sourcing events yet"
-        subtitle={`No RFQ invitations on file for ${mySupplier.name}.`}
-        message="RFQ invitations from Paragon Corp appear here."
+        breadcrumb={crumb}
+        title={t('rfqs.empty.title')}
+        subtitle={t('rfqs.empty.subtitle', { supplier: mySupplier.name })}
+        message={t('rfqs.empty.message')}
       />
     );
 

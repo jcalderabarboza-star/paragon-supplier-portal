@@ -41,11 +41,27 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useRFQs, useQuotations, useSuppliers } from '../services/query/hooks';
 import { useRfqAward } from '../services/query/commandHooks';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
 import type { Quotation } from '../data/mockQuotations';
 import type { Supplier } from '../services/data/types';
 
 type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed';
+
+// Category label keys — the RFQCategory enum stays the logic value; only the
+// rendered label is localized (mirrors the type-label precedent in contracts.ts).
+const CATEGORY_LABEL_KEY: Record<RFQCategory, string> = {
+  Fragrance: 'sourcing.category.fragrance',
+  'Active Ingredients': 'sourcing.category.activeIngredients',
+  Packaging: 'sourcing.category.packaging',
+  Emulsifiers: 'sourcing.category.emulsifiers',
+  Botanical: 'sourcing.category.botanical',
+  Other: 'sourcing.category.other',
+};
+
+const categoryLabel = (t: TFunction, c: RFQCategory): string =>
+  t(CATEGORY_LABEL_KEY[c]);
 
 const CATEGORY_OPTIONS: RFQCategory[] = [
   'Fragrance',
@@ -154,7 +170,7 @@ const formatDate = (iso: string): string => {
   });
 };
 
-const buildTimeline = (r: RFQ): TimelineEvent[] => {
+const buildTimeline = (r: RFQ, t: TFunction): TimelineEvent[] => {
   const totalInvited = r.invitedSupplierIds.length;
   const responded = r.respondedSupplierIds.length;
   const allResponded = isAllResponded(r);
@@ -167,23 +183,35 @@ const buildTimeline = (r: RFQ): TimelineEvent[] => {
   return [
     {
       id: 'drafted',
-      title: 'RFQ Drafted',
+      title: t('sourcing.timeline.drafted'),
       timestamp: formatDate(r.createdAt),
       status: 'completed',
       icon: FileText,
     },
     {
       id: 'sent',
-      title: `Sent to ${totalInvited} supplier${totalInvited === 1 ? '' : 's'}`,
+      title: t(
+        totalInvited === 1
+          ? 'sourcing.timeline.sentTo.one'
+          : 'sourcing.timeline.sentTo.other',
+        { count: totalInvited },
+      ),
       timestamp: isDraft ? undefined : formatDate(r.createdAt),
       status: isDraft ? 'pending' : 'completed',
       icon: Send,
     },
     {
       id: 'responses',
-      title: `Responses Received (${responded}/${totalInvited})`,
+      title: t('sourcing.timeline.responses', {
+        responded,
+        total: totalInvited,
+      }),
       timestamp:
-        responded > 0 ? `Latest: ${formatDate(r.responseDeadline)}` : undefined,
+        responded > 0
+          ? t('sourcing.timeline.latest', {
+              date: formatDate(r.responseDeadline),
+            })
+          : undefined,
       status: isDraft
         ? 'pending'
         : allResponded || isAwarded || isClosed
@@ -193,7 +221,7 @@ const buildTimeline = (r: RFQ): TimelineEvent[] => {
     },
     {
       id: 'evaluation',
-      title: 'Evaluation',
+      title: t('sourcing.timeline.evaluation'),
       status: isAwarded || isClosed
         ? 'completed'
         : allResponded && isOpen
@@ -203,35 +231,39 @@ const buildTimeline = (r: RFQ): TimelineEvent[] => {
     },
     {
       id: 'awarded',
-      title: 'Awarded',
+      title: t('sourcing.timeline.awarded'),
       timestamp: isAwarded ? formatDate(r.awardDeadline) : undefined,
       status: isAwarded ? 'completed' : isClosed ? 'pending' : 'pending',
       icon: Trophy,
     },
     {
       id: 'closed',
-      title: 'Closed',
+      title: t('sourcing.timeline.closed'),
       status: isClosed ? 'completed' : 'pending',
       icon: Archive,
     },
   ];
 };
 
-const FOOTER_LABEL = (r: RFQ): string => {
+const FOOTER_LABEL = (r: RFQ, t: TFunction): string => {
   if (r.status === 'Open') {
-    return isAllResponded(r) ? 'Award RFQ' : 'Send reminder';
+    return isAllResponded(r)
+      ? t('sourcing.footer.awardRfq')
+      : t('sourcing.footer.sendReminder');
   }
-  if (r.status === 'Awarded') return 'View award details';
+  if (r.status === 'Awarded') return t('sourcing.footer.viewAward');
   if (r.status === 'Closed' || r.status === 'Cancelled')
-    return 'View final report';
-  return 'Continue draft';
+    return t('sourcing.footer.viewReport');
+  return t('sourcing.footer.continueDraft');
 };
 
 const ReviewSection: React.FC<{
   label: string;
   rows: [string, React.ReactNode][];
   onEdit: () => void;
-}> = ({ label, rows, onEdit }) => (
+}> = ({ label, rows, onEdit }) => {
+  const { t } = useTranslation();
+  return (
   <section className="border border-border-subtle rounded-md">
     <header className="flex items-center justify-between px-4 py-2 bg-bg-hover">
       <span className="text-label text-text-tertiary uppercase">{label}</span>
@@ -240,7 +272,7 @@ const ReviewSection: React.FC<{
         onClick={onEdit}
         className="text-xs font-medium text-teal hover:text-teal-hover"
       >
-        Edit
+        {t('sourcing.wizard.review.edit')}
       </button>
     </header>
     <dl className="px-4 py-3 divide-y divide-border-subtle">
@@ -252,7 +284,8 @@ const ReviewSection: React.FC<{
       ))}
     </dl>
   </section>
-);
+  );
+};
 
 const ComparisonRow: React.FC<{
   label: string;
@@ -349,6 +382,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const [draft, setDraft] = useState<DraftRfq>(EMPTY_DRAFT);
   const [supplierSearch, setSupplierSearch] = useState('');
   const { toast } = useToast();
+  const { t } = useTranslation();
   const awardMutation = useRfqAward();
 
   const openRfq = (r: RFQ) => {
@@ -375,23 +409,28 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           if (result.status === 'failed') {
             toast({
               variant: 'error',
-              title: 'Award failed',
-              description: result.reason ?? 'The award could not be completed.',
+              title: t('sourcing.toast.awardFailed.title'),
+              description:
+                result.reason ?? t('sourcing.toast.awardFailed.default'),
             });
             return;
           }
           toast({
             variant: 'success',
-            title: `${rfqNumber} awarded`,
-            description: `${supplierNameById.get(quote.supplierId) ?? 'Selected supplier'} awarded — other quotations rejected.`,
+            title: t('sourcing.toast.awarded.title', { rfqNumber }),
+            description: t('sourcing.toast.awarded.desc', {
+              supplier:
+                supplierNameById.get(quote.supplierId) ??
+                t('sourcing.toast.awarded.fallbackSupplier'),
+            }),
           });
           closePanel();
         },
         onError: () =>
           toast({
             variant: 'error',
-            title: 'Award failed',
-            description: 'The award could not be dispatched.',
+            title: t('sourcing.toast.awardFailed.title'),
+            description: t('sourcing.toast.awardFailed.dispatch'),
           }),
       },
     );
@@ -497,8 +536,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     setWizardOpen(false);
     toast({
       variant: 'success',
-      title: `${newRfq.rfqNumber} created`,
-      description: `Sent to ${newRfq.invitedSupplierIds.length} supplier${newRfq.invitedSupplierIds.length === 1 ? '' : 's'}`,
+      title: t('sourcing.toast.created.title', { rfqNumber: newRfq.rfqNumber }),
+      description: t(
+        newRfq.invitedSupplierIds.length === 1
+          ? 'sourcing.toast.created.desc.one'
+          : 'sourcing.toast.created.desc.other',
+        { count: newRfq.invitedSupplierIds.length },
+      ),
     });
   };
 
@@ -529,27 +573,29 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const wizardSteps: WizardStep[] = [
     {
       id: 'scope',
-      title: 'Define Scope',
-      shortTitle: 'Scope',
-      description: 'What are you sourcing and how much?',
+      title: t('sourcing.wizard.step.scope.title'),
+      shortTitle: t('sourcing.wizard.step.scope.short'),
+      description: t('sourcing.wizard.step.scope.desc'),
       content: (
         <div className="space-y-5">
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              RFQ title <span className="text-danger">*</span>
+              {t('sourcing.wizard.field.title')}{' '}
+              <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               value={draft.title}
               onChange={(e) => updateDraft('title', e.target.value)}
-              placeholder="e.g. Q3 2026 Fragrance Sourcing — Floral Compounds"
+              placeholder={t('sourcing.wizard.placeholder.title')}
               className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Material category <span className="text-danger">*</span>
+                {t('sourcing.wizard.field.category')}{' '}
+                <span className="text-danger">*</span>
               </label>
               <select
                 value={draft.category}
@@ -559,30 +605,31 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 }}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
-                <option value="">Select a category…</option>
+                <option value="">{t('sourcing.wizard.select.category')}</option>
                 {CATEGORY_OPTIONS.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    {categoryLabel(t, c)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Estimated budget (IDR)
+                {t('sourcing.wizard.field.budget')}
               </label>
               <input
                 type="number"
                 value={draft.budget}
                 onChange={(e) => updateDraft('budget', e.target.value)}
-                placeholder="Optional"
+                placeholder={t('sourcing.wizard.placeholder.budget')}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
             </div>
           </div>
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              Specific material(s) <span className="text-danger">*</span>
+              {t('sourcing.wizard.field.materials')}{' '}
+              <span className="text-danger">*</span>
             </label>
             {draft.category ? (
               <div className="flex flex-wrap gap-2">
@@ -606,27 +653,28 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               </div>
             ) : (
               <p className="text-sm text-text-tertiary">
-                Select a category first to see available materials.
+                {t('sourcing.wizard.materials.selectFirst')}
               </p>
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Total quantity <span className="text-danger">*</span>
+                {t('sourcing.wizard.field.totalQty')}{' '}
+                <span className="text-danger">*</span>
               </label>
               <input
                 type="number"
                 min="0"
                 value={draft.totalQty}
                 onChange={(e) => updateDraft('totalQty', e.target.value)}
-                placeholder="0"
+                placeholder={t('sourcing.wizard.placeholder.qty')}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                UoM
+                {t('sourcing.wizard.field.uom')}
               </label>
               <select
                 value={draft.uom}
@@ -651,9 +699,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     },
     {
       id: 'suppliers',
-      title: 'Invite Suppliers',
-      shortTitle: 'Suppliers',
-      description: 'Pick suppliers to request quotes from.',
+      title: t('sourcing.wizard.step.suppliers.title'),
+      shortTitle: t('sourcing.wizard.step.suppliers.short'),
+      description: t('sourcing.wizard.step.suppliers.desc'),
       content: (
         <div className="space-y-5">
           {aiRecommendedSuppliers.length > 0 && (
@@ -661,10 +709,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               <div className="flex items-center gap-2 mb-3">
                 <Sparkles size={16} className="text-teal" />
                 <h4 className="text-sm font-semibold text-text-primary">
-                  AI recommendation
+                  {t('sourcing.wizard.ai.title')}
                 </h4>
                 <span className="text-xs text-text-tertiary">
-                  · Based on category, tier, and OTIF
+                  {t('sourcing.wizard.ai.basis')}
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -690,8 +738,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           {s.name}
                         </div>
                         <div className="text-xs text-text-tertiary">
-                          {s.country} · OTIF {s.otif}% · Grade{' '}
-                          {s.scorecardGrade}
+                          {t('sourcing.wizard.supplierMeta', {
+                            country: s.country,
+                            otif: s.otif,
+                            grade: s.scorecardGrade,
+                          })}
                         </div>
                       </div>
                     </label>
@@ -705,7 +756,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             <SearchBar
               value={supplierSearch}
               onChange={setSupplierSearch}
-              placeholder="Search suppliers by name or country…"
+              placeholder={t('sourcing.wizard.search.supplier')}
             />
           </div>
 
@@ -715,12 +766,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 <tr>
                   <th className="px-3 py-2 text-left font-semibold w-10"></th>
                   <th className="px-3 py-2 text-left font-semibold">
-                    Supplier
+                    {t('sourcing.wizard.col.supplier')}
                   </th>
                   <th className="px-3 py-2 text-left font-semibold">
-                    Country
+                    {t('sourcing.wizard.col.country')}
                   </th>
-                  <th className="px-3 py-2 text-right font-semibold">OTIF</th>
+                  <th className="px-3 py-2 text-right font-semibold">
+                    {t('sourcing.wizard.col.otif')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -760,8 +813,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       className="text-center text-sm text-text-tertiary py-6"
                     >
                       {draft.category
-                        ? 'No suppliers match the current search.'
-                        : 'Select a category in step 1.'}
+                        ? t('sourcing.wizard.supplier.noMatch')
+                        : t('sourcing.wizard.supplier.selectCategory')}
                     </td>
                   </tr>
                 )}
@@ -771,8 +824,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
 
           <div className="text-sm text-text-secondary">
             <span className="inline-flex items-center gap-1.5 bg-teal-soft text-teal rounded-full px-3 py-1 text-xs font-semibold">
-              {draft.invitedSupplierIds.length} supplier
-              {draft.invitedSupplierIds.length === 1 ? '' : 's'} selected
+              {t(
+                draft.invitedSupplierIds.length === 1
+                  ? 'sourcing.wizard.selectedCount.one'
+                  : 'sourcing.wizard.selectedCount.other',
+                { count: draft.invitedSupplierIds.length },
+              )}
             </span>
           </div>
         </div>
@@ -780,15 +837,16 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     },
     {
       id: 'terms',
-      title: 'Terms & Deadlines',
-      shortTitle: 'Terms',
-      description: 'When are responses due and on what commercial terms?',
+      title: t('sourcing.wizard.step.terms.title'),
+      shortTitle: t('sourcing.wizard.step.terms.short'),
+      description: t('sourcing.wizard.step.terms.desc'),
       content: (
         <div className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Response deadline <span className="text-danger">*</span>
+                {t('sourcing.wizard.field.responseDeadline')}{' '}
+                <span className="text-danger">*</span>
               </label>
               <input
                 type="date"
@@ -801,7 +859,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Award deadline <span className="text-danger">*</span>
+                {t('sourcing.wizard.field.awardDeadline')}{' '}
+                <span className="text-danger">*</span>
               </label>
               <input
                 type="date"
@@ -814,13 +873,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 new Date(draft.awardDeadline) <=
                   new Date(draft.responseDeadline) && (
                   <p className="text-xs text-danger mt-1">
-                    Award deadline must be after response deadline.
+                    {t('sourcing.wizard.awardAfterResponse')}
                   </p>
                 )}
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Incoterms
+                {t('sourcing.wizard.field.incoterms')}
               </label>
               <select
                 value={draft.incoterms}
@@ -836,7 +895,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Payment terms
+                {t('sourcing.wizard.field.paymentTerms')}
               </label>
               <select
                 value={draft.paymentTerms}
@@ -853,7 +912,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           </div>
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              Currency
+              {t('sourcing.wizard.field.currency')}
             </label>
             <div className="flex gap-4">
               {(['IDR', 'USD'] as const).map((cur) => (
@@ -879,42 +938,55 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     },
     {
       id: 'review',
-      title: 'Review & Submit',
-      shortTitle: 'Review',
-      description: 'Check the details before sending to suppliers.',
+      title: t('sourcing.wizard.step.review.title'),
+      shortTitle: t('sourcing.wizard.step.review.short'),
+      description: t('sourcing.wizard.step.review.desc'),
       content: (
         <div className="space-y-5 text-sm">
           <ReviewSection
-            label="Scope"
+            label={t('sourcing.wizard.review.section.scope')}
             onEdit={() => setWizardStep(0)}
             rows={[
-              ['Title', draft.title || '—'],
-              ['Category', draft.category || '—'],
-              ['Materials', draft.materials.join(', ') || '—'],
+              [t('sourcing.wizard.review.row.title'), draft.title || '—'],
               [
-                'Quantity',
+                t('sourcing.wizard.review.row.category'),
+                draft.category ? categoryLabel(t, draft.category) : '—',
+              ],
+              [
+                t('sourcing.wizard.review.row.materials'),
+                draft.materials.join(', ') || '—',
+              ],
+              [
+                t('sourcing.wizard.review.row.quantity'),
                 draft.totalQty
                   ? `${formatNumber(Number(draft.totalQty))} ${draft.uom}`
                   : '—',
               ],
               [
-                'Budget',
-                draft.budget ? formatIDR(Number(draft.budget)) : 'Not specified',
+                t('sourcing.wizard.review.row.budget'),
+                draft.budget
+                  ? formatIDR(Number(draft.budget))
+                  : t('sourcing.wizard.review.budgetUnspecified'),
               ],
             ]}
           />
           <ReviewSection
-            label="Suppliers"
+            label={t('sourcing.wizard.review.section.suppliers')}
             onEdit={() => setWizardStep(1)}
             rows={[
               [
-                'Invited',
+                t('sourcing.wizard.review.row.invited'),
                 draft.invitedSupplierIds.length > 0
-                  ? `${draft.invitedSupplierIds.length} supplier${draft.invitedSupplierIds.length === 1 ? '' : 's'}`
+                  ? t(
+                      draft.invitedSupplierIds.length === 1
+                        ? 'sourcing.wizard.review.invited.one'
+                        : 'sourcing.wizard.review.invited.other',
+                      { count: draft.invitedSupplierIds.length },
+                    )
                   : '—',
               ],
               [
-                'Names',
+                t('sourcing.wizard.review.row.names'),
                 draft.invitedSupplierIds
                   .map((id) => supplierNameById.get(id) ?? id)
                   .join(', ') || '—',
@@ -922,14 +994,20 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             ]}
           />
           <ReviewSection
-            label="Terms & Deadlines"
+            label={t('sourcing.wizard.review.section.terms')}
             onEdit={() => setWizardStep(2)}
             rows={[
-              ['Response deadline', draft.responseDeadline || '—'],
-              ['Award deadline', draft.awardDeadline || '—'],
-              ['Incoterms', draft.incoterms],
-              ['Payment terms', draft.paymentTerms],
-              ['Currency', draft.currency],
+              [
+                t('sourcing.wizard.review.row.responseDeadline'),
+                draft.responseDeadline || '—',
+              ],
+              [
+                t('sourcing.wizard.review.row.awardDeadline'),
+                draft.awardDeadline || '—',
+              ],
+              [t('sourcing.wizard.review.row.incoterms'), draft.incoterms],
+              [t('sourcing.wizard.review.row.paymentTerms'), draft.paymentTerms],
+              [t('sourcing.wizard.review.row.currency'), draft.currency],
             ]}
           />
         </div>
@@ -1017,58 +1095,79 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['ACQUIRE', 'SOURCING & RFQ']}
-        title="Sourcing & RFQ"
-        subtitle="Active sourcing events, quote evaluation, and award history."
+        breadcrumb={[t('sourcing.crumb.acquire'), t('sourcing.crumb.sourcing')]}
+        title={t('sourcing.header.title')}
+        subtitle={t('sourcing.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
-              { label: 'Export', icon: FileSpreadsheet },
-              { label: 'Templates', icon: FileText },
+              { label: t('sourcing.action.export'), icon: FileSpreadsheet },
+              { label: t('sourcing.action.templates'), icon: FileText },
             ]}
-            primary={{ label: 'New RFQ', icon: Plus, onClick: openWizard }}
+            primary={{
+              label: t('sourcing.action.newRfq'),
+              icon: Plus,
+              onClick: openWizard,
+            }}
           />
         }
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {kpis.active} active RFQs · last updated {formatDate(lastUpdated)}
+        {t(
+          kpis.active === 1
+            ? 'sourcing.meta.summary.one'
+            : 'sourcing.meta.summary.other',
+          { count: kpis.active, date: formatDate(lastUpdated) },
+        )}
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
         <KpiCard
-          eyebrow="Active RFQs"
+          eyebrow={t('sourcing.kpi.active.eyebrow')}
           value={kpis.active.toString()}
-          subtitle="Open for response"
+          subtitle={t('sourcing.kpi.active.subtitle')}
           icon={FileText}
         />
         <KpiCard
-          eyebrow="Awaiting Response"
+          eyebrow={t('sourcing.kpi.awaiting.eyebrow')}
           value={kpis.awaiting.toString()}
-          subtitle="Deadline within 7 days"
+          subtitle={t('sourcing.kpi.awaiting.subtitle')}
           icon={Clock}
         />
         <KpiCard
-          eyebrow="Ready to Award"
+          eyebrow={t('sourcing.kpi.ready.eyebrow')}
           value={kpis.readyToAward.toString()}
-          subtitle="All suppliers responded"
+          subtitle={t('sourcing.kpi.ready.subtitle')}
           icon={CheckCircle2}
         />
         <KpiCard
-          eyebrow="Awarded (Quarter)"
+          eyebrow={t('sourcing.kpi.awarded.eyebrow')}
           value={kpis.awardedQuarter.toString()}
-          subtitle="Last 90 days"
+          subtitle={t('sourcing.kpi.awarded.subtitle')}
           icon={Award}
         />
       </div>
 
       <SubTabs
         options={[
-          { id: 'all', label: 'All', count: counts.all },
-          { id: 'open', label: 'Open', count: counts.open },
-          { id: 'pending', label: 'Pending Award', count: counts.pending },
-          { id: 'awarded', label: 'Awarded', count: counts.awarded },
-          { id: 'closed', label: 'Closed', count: counts.closed },
+          { id: 'all', label: t('sourcing.tab.all'), count: counts.all },
+          { id: 'open', label: t('sourcing.tab.open'), count: counts.open },
+          {
+            id: 'pending',
+            label: t('sourcing.tab.pending'),
+            count: counts.pending,
+          },
+          {
+            id: 'awarded',
+            label: t('sourcing.tab.awarded'),
+            count: counts.awarded,
+          },
+          {
+            id: 'closed',
+            label: t('sourcing.tab.closed'),
+            count: counts.closed,
+          },
         ]}
         value={group}
         onChange={setGroup}
@@ -1078,10 +1177,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <div>
           <div className="text-label text-text-tertiary uppercase mb-2">
-            Filter by category
+            {t('sourcing.filter.byCategory')}
           </div>
           <FilterChipsBar
-            options={CATEGORY_OPTIONS.map((c) => ({ id: c, label: c }))}
+            options={CATEGORY_OPTIONS.map((c) => ({
+              id: c,
+              label: categoryLabel(t, c),
+            }))}
             value={selectedCats}
             onChange={toggleCategory}
             multiSelect
@@ -1093,23 +1195,33 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search by RFQ number, title, or material…"
+          placeholder={t('sourcing.search.placeholder')}
         />
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-8">
         <Table>
           <TableHeader>
-            <TableHeaderCell>RFQ #</TableHeaderCell>
-            <TableHeaderCell>Category</TableHeaderCell>
-            <TableHeaderCell>Responses</TableHeaderCell>
-            <TableHeaderCell className="text-right">Qty</TableHeaderCell>
-            <TableHeaderCell className="text-right">
-              Est. Value
+            <TableHeaderCell>{t('sourcing.table.col.rfq')}</TableHeaderCell>
+            <TableHeaderCell>
+              {t('sourcing.table.col.category')}
             </TableHeaderCell>
-            <TableHeaderCell>Response deadline</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            <TableHeaderCell>
+              {t('sourcing.table.col.responses')}
+            </TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('sourcing.table.col.qty')}
+            </TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('sourcing.table.col.estValue')}
+            </TableHeaderCell>
+            <TableHeaderCell>
+              {t('sourcing.table.col.responseDeadline')}
+            </TableHeaderCell>
+            <TableHeaderCell>{t('sourcing.table.col.status')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('sourcing.table.col.actions')}
+            </TableHeaderCell>
           </TableHeader>
           <tbody>
             {activeFiltered.map((r) => {
@@ -1140,7 +1252,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     </div>
                   </TableCell>
                   <TableCell className="text-sm text-text-secondary">
-                    {r.materialCategory}
+                    {categoryLabel(t, r.materialCategory)}
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-text-primary font-medium">
@@ -1176,10 +1288,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         }`}
                       >
                         {days < 0
-                          ? `${Math.abs(days)}d overdue`
+                          ? t('sourcing.deadline.overdue', {
+                              count: Math.abs(days),
+                            })
                           : days === 0
-                            ? 'Due today'
-                            : `${days}d remaining`}
+                            ? t('sourcing.deadline.dueToday')
+                            : t('sourcing.deadline.remaining', { count: days })}
                       </div>
                     )}
                   </TableCell>
@@ -1203,7 +1317,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   colSpan={8}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No RFQs match the current filters.
+                  {t('sourcing.table.empty')}
                 </td>
               </tr>
             )}
@@ -1220,10 +1334,15 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         >
           <div className="text-left">
             <h2 className="text-section text-text-primary">
-              Awards History
+              {t('sourcing.awards.title')}
             </h2>
             <p className="text-meta text-text-tertiary">
-              {awarded.length} awarded RFQ{awarded.length === 1 ? '' : 's'}
+              {t(
+                awarded.length === 1
+                  ? 'sourcing.awards.count.one'
+                  : 'sourcing.awards.count.other',
+                { count: awarded.length },
+              )}
             </p>
           </div>
           {awardsOpen ? (
@@ -1235,14 +1354,22 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         {awardsOpen && (
           <Table>
             <TableHeader>
-              <TableHeaderCell>RFQ #</TableHeaderCell>
-              <TableHeaderCell>Title</TableHeaderCell>
-              <TableHeaderCell>Awarded supplier</TableHeaderCell>
-              <TableHeaderCell>Award date</TableHeaderCell>
-              <TableHeaderCell className="text-right">
-                Award value
+              <TableHeaderCell>{t('sourcing.awards.col.rfq')}</TableHeaderCell>
+              <TableHeaderCell>
+                {t('sourcing.awards.col.title')}
               </TableHeaderCell>
-              <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+              <TableHeaderCell>
+                {t('sourcing.awards.col.supplier')}
+              </TableHeaderCell>
+              <TableHeaderCell>
+                {t('sourcing.awards.col.date')}
+              </TableHeaderCell>
+              <TableHeaderCell className="text-right">
+                {t('sourcing.awards.col.value')}
+              </TableHeaderCell>
+              <TableHeaderCell className="text-right">
+                {t('sourcing.awards.col.actions')}
+              </TableHeaderCell>
             </TableHeader>
             <tbody>
               {awarded.map((r) => (
@@ -1282,7 +1409,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     colSpan={6}
                     className="text-center text-sm text-text-tertiary py-10"
                   >
-                    No awarded RFQs yet.
+                    {t('sourcing.awards.empty')}
                   </td>
                 </tr>
               )}
@@ -1296,14 +1423,17 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         onClose={closePanel}
         title={
           selectedRfq
-            ? `RFQ ${selectedRfq.rfqNumber} — ${selectedRfq.title}`
+            ? t('sourcing.panel.title', {
+                number: selectedRfq.rfqNumber,
+                title: selectedRfq.title,
+              })
             : ''
         }
         footerActions={
           selectedRfq && (
             <>
               <Button variant="secondary" icon={Download}>
-                Export comparison
+                {t('sourcing.panel.exportComparison')}
               </Button>
               <Button
                 variant="primary"
@@ -1313,7 +1443,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   !selectedQuoteId
                 }
               >
-                {FOOTER_LABEL(selectedRfq)}
+                {FOOTER_LABEL(selectedRfq, t)}
               </Button>
             </>
           )
@@ -1326,12 +1456,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy size={16} className="text-success" />
                   <h3 className="text-section text-text-primary">
-                    Award summary
+                    {t('sourcing.panel.awardSummary')}
                   </h3>
                 </div>
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                   <div>
-                    <dt className="text-text-tertiary">Awarded to</dt>
+                    <dt className="text-text-tertiary">
+                      {t('sourcing.panel.awardedTo')}
+                    </dt>
                     <dd className="text-text-primary font-semibold">
                       {selectedRfq.awardedSupplierId
                         ? (supplierNameById.get(selectedRfq.awardedSupplierId) ??
@@ -1340,19 +1472,25 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-text-tertiary">Awarded value</dt>
+                    <dt className="text-text-tertiary">
+                      {t('sourcing.panel.awardedValue')}
+                    </dt>
                     <Data as="dd" className="text-text-primary font-semibold">
                       {awardedQuote ? formatIDR(awardedQuote.totalPrice) : '—'}
                     </Data>
                   </div>
                   <div>
-                    <dt className="text-text-tertiary">Award date</dt>
+                    <dt className="text-text-tertiary">
+                      {t('sourcing.panel.awardDate')}
+                    </dt>
                     <Data as="dd" className="text-text-primary font-medium">
                       {formatDate(selectedRfq.awardDeadline)}
                     </Data>
                   </div>
                   <div>
-                    <dt className="text-text-tertiary">PO issued</dt>
+                    <dt className="text-text-tertiary">
+                      {t('sourcing.panel.poIssued')}
+                    </dt>
                     {/* Award mints no PO — issuance is a separate buyer verb. */}
                     <dd className="text-text-tertiary font-medium">—</dd>
                   </div>
@@ -1362,17 +1500,21 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Summary
+                {t('sourcing.panel.summary')}
               </h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="text-text-tertiary">Category</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.category')}
+                  </dt>
                   <dd className="text-text-primary font-medium">
-                    {selectedRfq.materialCategory}
+                    {categoryLabel(t, selectedRfq.materialCategory)}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Status</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.status')}
+                  </dt>
                   <dd>
                     <StatusPill variant={STATUS_VARIANT[selectedRfq.status]}>
                       {selectedRfq.status}
@@ -1380,49 +1522,65 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Created</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.created')}
+                  </dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedRfq.createdAt)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Response deadline</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.responseDeadline')}
+                  </dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedRfq.responseDeadline)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Award deadline</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.awardDeadline')}
+                  </dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedRfq.awardDeadline)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Total qty</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.totalQty')}
+                  </dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatNumber(selectedRfq.totalQty)} {selectedRfq.uom}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Est. value</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.estValue')}
+                  </dt>
                   <Data as="dd" className="text-text-primary font-semibold">
                     {formatIDR(selectedRfq.estimatedValue)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Currency</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.currency')}
+                  </dt>
                   <dd className="text-text-primary font-medium">
                     {selectedRfq.currency}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Incoterms</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.incoterms')}
+                  </dt>
                   <dd className="text-text-primary font-medium">
                     {selectedRfq.incoterms}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Payment terms</dt>
+                  <dt className="text-text-tertiary">
+                    {t('sourcing.panel.field.paymentTerms')}
+                  </dt>
                   <dd className="text-text-primary font-medium">
                     {selectedRfq.paymentTerms}
                   </dd>
@@ -1432,19 +1590,23 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Lifecycle
+                {t('sourcing.panel.lifecycle')}
               </h3>
-              <Timeline events={buildTimeline(selectedRfq)} />
+              <Timeline events={buildTimeline(selectedRfq, t)} />
             </section>
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Quote comparison ({quotesForSelected.length} quote
-                {quotesForSelected.length === 1 ? '' : 's'})
+                {t(
+                  quotesForSelected.length === 1
+                    ? 'sourcing.cmp.title.one'
+                    : 'sourcing.cmp.title.other',
+                  { count: quotesForSelected.length },
+                )}
               </h3>
               {quotesForSelected.length === 0 ? (
                 <div className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
-                  No quotes received yet.
+                  {t('sourcing.cmp.empty')}
                 </div>
               ) : (
                 <div className="overflow-x-auto -mx-6 px-6">
@@ -1458,7 +1620,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <thead>
                       <tr>
                         <th className="text-left px-2 py-2 font-semibold text-text-tertiary uppercase tracking-wider align-bottom w-36 min-w-[9rem]">
-                          Criterion
+                          {t('sourcing.cmp.criterion')}
                         </th>
                         {quotesForSelected.map((q) => {
                           const supplier =
@@ -1474,7 +1636,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                             >
                               {q.aiRecommended && (
                                 <span className="inline-flex items-center gap-1 text-label text-teal uppercase mb-1">
-                                  <Sparkles size={10} /> AI recommended
+                                  <Sparkles size={10} />{' '}
+                                  {t('sourcing.cmp.aiRecommended')}
                                 </span>
                               )}
                               <div className="text-sm">{supplier}</div>
@@ -1484,7 +1647,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </tr>
                     </thead>
                     <tbody className="text-text-secondary">
-                      <ComparisonRow label="Unit Price">
+                      <ComparisonRow label={t('sourcing.cmp.row.unitPrice')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
@@ -1493,7 +1656,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label="Total Price">
+                      <ComparisonRow label={t('sourcing.cmp.row.totalPrice')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
@@ -1502,23 +1665,25 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label="Lead Time">
+                      <ComparisonRow label={t('sourcing.cmp.row.leadTime')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                             <Data as="span" className="whitespace-nowrap">
-                              {q.leadTimeDays} days
+                              {t('sourcing.cmp.leadTimeDays', {
+                                count: q.leadTimeDays,
+                              })}
                             </Data>
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label="Payment Terms">
+                      <ComparisonRow label={t('sourcing.cmp.row.paymentTerms')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                             {q.paymentTermsOffered}
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label="Compliance">
+                      <ComparisonRow label={t('sourcing.cmp.row.compliance')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                             <ScoreBadge
@@ -1529,7 +1694,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label="Price Score">
+                      <ComparisonRow label={t('sourcing.cmp.row.priceScore')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                             <ScoreBadge
@@ -1540,7 +1705,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label="Lead Time Score">
+                      <ComparisonRow label={t('sourcing.cmp.row.leadTimeScore')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                             <ScoreBadge
@@ -1551,7 +1716,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label="Reliability">
+                      <ComparisonRow label={t('sourcing.cmp.row.reliability')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                             <ScoreBadge
@@ -1562,7 +1727,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label="AI Composite">
+                      <ComparisonRow label={t('sourcing.cmp.row.aiComposite')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                             <ScoreBadge
@@ -1577,7 +1742,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         // Awarded: the picker is moot — show the ACTUAL outcome
                         // per quote (winner Awarded, others Rejected), winner
                         // column highlighted. No re-award affordance.
-                        <ComparisonRow label="Result">
+                        <ComparisonRow label={t('sourcing.cmp.row.result')}>
                           {quotesForSelected.map((q) => (
                             <ComparisonCell
                               key={q.id}
@@ -1598,7 +1763,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           ))}
                         </ComparisonRow>
                       ) : (
-                        <ComparisonRow label="Select">
+                        <ComparisonRow label={t('sourcing.cmp.row.select')}>
                           {quotesForSelected.map((q) => (
                             <ComparisonCell key={q.id} highlight={q.aiRecommended}>
                               <label className="inline-flex items-center gap-2 cursor-pointer">
@@ -1611,7 +1776,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                   className="accent-teal"
                                 />
                                 <span className="text-xs text-text-secondary">
-                                  Award
+                                  {t('sourcing.cmp.award')}
                                 </span>
                               </label>
                             </ComparisonCell>
@@ -1629,12 +1794,19 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               quotesForSelected.length > 0 && (
                 <section className="bg-teal-soft border border-teal/20 rounded-md p-4">
                   <h3 className="text-section text-text-primary mb-2">
-                    Award action
+                    {t('sourcing.award.title')}
                   </h3>
                   <p className="text-sm text-text-secondary mb-3">
                     {selectedQuoteId
-                      ? `Selected: ${supplierNameById.get(quotesForSelected.find((q) => q.id === selectedQuoteId)?.supplierId ?? '') ?? '—'}`
-                      : 'Select a quote above to enable the award action.'}
+                      ? t('sourcing.award.selected', {
+                          name:
+                            supplierNameById.get(
+                              quotesForSelected.find(
+                                (q) => q.id === selectedQuoteId,
+                              )?.supplierId ?? '',
+                            ) ?? '—',
+                        })
+                      : t('sourcing.award.selectPrompt')}
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button
@@ -1643,9 +1815,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       disabled={!selectedQuoteId || awardMutation.isPending}
                       onClick={handleAward}
                     >
-                      {awardMutation.isPending ? 'Awarding…' : 'Award to selected'}
+                      {awardMutation.isPending
+                        ? t('sourcing.award.submitting')
+                        : t('sourcing.award.submit')}
                     </Button>
-                    <Button variant="secondary">Reject all & resource</Button>
+                    <Button variant="secondary">
+                      {t('sourcing.award.rejectAll')}
+                    </Button>
                   </div>
                 </section>
               )}
@@ -1662,7 +1838,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             onCancel={closeWizard}
             onComplete={submitWizard}
             isStepValid={isStepValid}
-            completeLabel="Create & Send RFQ"
+            completeLabel={t('sourcing.wizard.complete')}
           />
         </div>
       )}
@@ -1670,12 +1846,15 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   );
 };
 
-const SOURCING_CRUMB = ['ACQUIRE', 'SOURCING & RFQ'];
-
 // Wrapper: reads the buyer-side sourcing aggregates through the scoped hooks and
 // renders the four honest states; the workspace inner keeps its local (Phase-2′,
 // non-persisting) RFQ-creation wizard state seeded from the resolved reads.
 const BuyerSourcing: React.FC = () => {
+  const { t } = useTranslation();
+  const sourcingCrumb = [
+    t('sourcing.crumb.acquire'),
+    t('sourcing.crumb.sourcing'),
+  ];
   const rfqsQuery = useRFQs();
   const quotationsQuery = useQuotations();
   const suppliersQuery = useSuppliers();
@@ -1685,11 +1864,11 @@ const BuyerSourcing: React.FC = () => {
     quotationsQuery.isPending ||
     suppliersQuery.isPending
   )
-    return <LoadingState breadcrumb={SOURCING_CRUMB} />;
+    return <LoadingState breadcrumb={sourcingCrumb} />;
   if (rfqsQuery.isError || quotationsQuery.isError || suppliersQuery.isError)
     return (
       <ErrorState
-        breadcrumb={SOURCING_CRUMB}
+        breadcrumb={sourcingCrumb}
         error={
           rfqsQuery.error ?? quotationsQuery.error ?? suppliersQuery.error
         }
@@ -1705,10 +1884,10 @@ const BuyerSourcing: React.FC = () => {
   if (baseRfqs.length === 0)
     return (
       <EmptyState
-        breadcrumb={SOURCING_CRUMB}
-        title="No sourcing events yet"
-        subtitle="No RFQs are on file."
-        message="Sourcing events and quote evaluations appear here once RFQs are raised."
+        breadcrumb={sourcingCrumb}
+        title={t('sourcing.state.empty.title')}
+        subtitle={t('sourcing.state.empty.subtitle')}
+        message={t('sourcing.state.empty.message')}
       />
     );
 

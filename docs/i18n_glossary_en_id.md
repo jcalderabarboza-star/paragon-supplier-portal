@@ -110,3 +110,35 @@ Terms introduced during page extraction, consistent with the conventions above.
 NDA, Incoterms (FOB/CIF/EXW/DDP/FCA), payment-term codes (Net 30/45/60, Letter of
 Credit, Advance Payment). `Active/Renewed/Terminated/Expiring/Expired/Draft` reuse
 the status glossary (`Aktif/Diperbarui/Dihentikan/Akan Kedaluwarsa/Kedaluwarsa/Draf`).
+
+## Batch 2 additions (WhatsApp hubs + Sourcing + RFQs)
+Chrome terms; authentic channel message templates were NOT translated (D-2).
+
+| EN | ID | EN | ID |
+|---|---|---|---|
+| Communications Hub | Pusat Komunikasi | Award (verb/CTA) | Menangkan |
+| Communication Tools | Alat Komunikasi | Awarding (in progress) | Memenangkan |
+| Conversation | Percakapan | Award / awarding (noun) | Pemenangan |
+| Response | Respons | Awards History | Riwayat Pemenangan |
+| Automation / Automated | Otomatisasi / Otomatis | Sourcing event | Acara Sourcing |
+| Trigger | Pemicu | Quote / Quotation | Penawaran |
+| Escalate | Eskalasi | Unit Price | Harga Satuan |
+| Auto-Execute | Eksekusi Otomatis | Lead Time | Waktu Tunggu |
+| Simulator / Simulated | Simulator / Simulasi | Reliability | Keandalan |
+| Scenario | Skenario | Criterion | Kriteria |
+| Inbox | Kotak Masuk | Deadline | Tenggat |
+| Reply / Forward / Archive | Balas / Teruskan / Arsipkan | Estimated budget | Anggaran perkiraan |
+| Deviation | Deviasi | UoM | Satuan |
+| Bilingual | Dwibahasa | Quantity | Kuantitas |
+| Official Account | Akun Resmi | Win rate | Tingkat kemenangan |
+| Parser / Engine / Template | Pengurai / Mesin / Templat | Sustainability | Keberlanjutan |
+| Read receipts | Tanda terima baca | Special requirements | Persyaratan khusus |
+| Real-time | Waktu nyata | Evaluation criteria | Kriteria evaluasi |
+| Free text | Teks bebas | Satisfaction | Kepuasan |
+| Fastest / Slowest | Tercepat / Terlama | AI Composite | Komposit AI |
+| Emulsifiers / Botanical | Pengemulsi / Botani | Auto-assigned | Otomatis |
+
+**Language names:** English→Inggris, German→Jerman, Arabic→Arab, Portuguese→Portugis
+(Mandarin, Bahasa Indonesia unchanged). **Kept as loanwords/codes:** Online, Bot,
+Manual, Email, WhatsApp, WeChat, RFQ, PO, ASN, IBP, SAP, OTIF, Grade, Incoterms,
+HTML, PDF, Mini Program, "Order Confirmation Key" (SAP field).

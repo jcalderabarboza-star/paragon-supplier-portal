@@ -38,6 +38,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
+import { useTranslation } from 'react-i18next';
 import {
   useEngagementSummary,
   useConversations,
@@ -62,8 +63,6 @@ import type {
 
 type Channel = 'whatsapp' | 'email' | 'wechat';
 type WhatsAppTab = 'conversations' | 'automation' | 'analytics';
-
-const ENGAGEMENT_CRUMB = ['INTELLIGENCE', 'COMMUNICATIONS HUB'];
 
 // DP2-PALETTE-01: sourced from the central palette (SSoT), not page-local hex.
 // Values unchanged — pure de-dup. (Messenger chrome below stays exempt, D-2.)
@@ -131,12 +130,15 @@ const formatMsg = (text: string): React.ReactNode => {
 
 // Small inline marker for the static channel panels (WeChat / Email) that are
 // not yet wired to the engagement service (D-2 / Marketplace precedent).
-const SampleDataNote: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex items-center gap-2 mb-1">
-    <StatusPill variant="neutral">Sample data</StatusPill>
-    <span className="text-xs text-text-tertiary">{children}</span>
-  </div>
-);
+const SampleDataNote: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-2 mb-1">
+      <StatusPill variant="neutral">{t('buyerWhatsApp.sample.pill')}</StatusPill>
+      <span className="text-xs text-text-tertiary">{children}</span>
+    </div>
+  );
+};
 
 interface ConvItemProps {
   conv: Conversation;
@@ -210,13 +212,6 @@ const Bubble: React.FC<{ msg: ChatMessage }> = ({ msg }) => {
   );
 };
 
-const BOT_ACTIONS = [
-  'Send PO reminder',
-  'Request ASN',
-  'Request inventory update',
-  'Send payment notification',
-];
-
 const ChatThread: React.FC<{
   conv: Conversation;
   messages: ChatMessage[];
@@ -225,7 +220,14 @@ const ChatThread: React.FC<{
   onRetry: () => void;
 }> = ({ conv, messages, loading, error, onRetry }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [showBotMenu, setShowBotMenu] = useState(false);
+  const botActions = [
+    t('buyerWhatsApp.bot.action.poReminder'),
+    t('buyerWhatsApp.bot.action.requestAsn'),
+    t('buyerWhatsApp.bot.action.requestInventory'),
+    t('buyerWhatsApp.bot.action.paymentNotification'),
+  ];
 
   return (
     <div className="flex flex-col h-full">
@@ -244,7 +246,7 @@ const ChatThread: React.FC<{
             {conv.supplier}
           </div>
           <div className="text-[11px] text-white/70">
-            +62 812 XXXX XXXX · 🟢 Online
+            +62 812 XXXX XXXX · 🟢 {t('buyerWhatsApp.chat.online')}
           </div>
         </div>
         <span className="text-[11px] text-white/80 bg-white/10 rounded-full px-2 py-1 shrink-0">
@@ -260,20 +262,20 @@ const ChatThread: React.FC<{
           <div className="flex-1 flex flex-col items-center justify-center text-center gap-2 px-6">
             <AlertTriangle size={20} className="text-danger" aria-hidden="true" />
             <div className="text-sm text-text-secondary">
-              Couldn't load this conversation.
+              {t('buyerWhatsApp.chat.error')}
             </div>
             <button
               type="button"
               onClick={onRetry}
               className="text-xs text-teal font-semibold hover:underline"
             >
-              Try again
+              {t('buyerWhatsApp.chat.retry')}
             </button>
           </div>
         ) : loading && messages.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-text-tertiary text-sm gap-2">
             <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-            Loading conversation…
+            {t('buyerWhatsApp.chat.loading')}
           </div>
         ) : (
           <>
@@ -281,9 +283,9 @@ const ChatThread: React.FC<{
               <Bubble key={m.id} msg={m} />
             ))}
             <div className="bg-teal-soft border border-teal/30 rounded-md px-3 py-2 mt-2 text-xs text-text-primary">
-              ℹ️ This conversation was handled{' '}
-              <strong>100% automatically</strong> by Paragon's WhatsApp AI. No
-              human intervention required. All SAP updates completed in real-time.
+              ℹ️ {t('buyerWhatsApp.chat.autoNote.pre')}
+              <strong>{t('buyerWhatsApp.chat.autoNote.bold')}</strong>
+              {t('buyerWhatsApp.chat.autoNote.post')}
             </div>
           </>
         )}
@@ -292,7 +294,7 @@ const ChatThread: React.FC<{
       <div className="bg-bg-hover px-4 py-3 border-t border-border-subtle flex gap-2 items-center">
         <input
           className="flex-1 px-3 py-2 rounded-full border-0 text-sm bg-white outline-none text-text-tertiary"
-          value="Type a message..."
+          value={t('buyerWhatsApp.chat.inputPlaceholder')}
           readOnly
         />
         <div className="relative">
@@ -302,20 +304,22 @@ const ChatThread: React.FC<{
             onClick={() => setShowBotMenu((v) => !v)}
             className="!rounded-full !px-4 !py-2 !bg-success !border-success hover:!bg-success/90"
           >
-            Bot message
+            {t('buyerWhatsApp.chat.botMessage')}
             <ChevronDown size={14} className="ml-1" />
           </Button>
           {showBotMenu && (
             <div className="absolute bottom-full right-0 mb-2 bg-bg-surface border border-border-subtle rounded-md shadow-md min-w-[220px] z-10">
-              {BOT_ACTIONS.map((a) => (
+              {botActions.map((a) => (
                 <button
                   key={a}
                   type="button"
                   onClick={() => {
                     toast({
                       variant: 'success',
-                      title: `Bot message sent to ${conv.supplier}`,
-                      description: `${a} dispatched via WhatsApp.`,
+                      title: t('buyerWhatsApp.bot.toast.title', {
+                        supplier: conv.supplier,
+                      }),
+                      description: t('buyerWhatsApp.bot.toast.desc', { action: a }),
                     });
                     setShowBotMenu(false);
                   }}
@@ -335,6 +339,7 @@ const ChatThread: React.FC<{
 const ConversationsTab: React.FC<{ conversations: Conversation[] }> = ({
   conversations,
 }) => {
+  const { t } = useTranslation();
   const [selectedId, setSelectedId] = useState<string>(conversations[0]?.id ?? '');
   const selected =
     conversations.find((c) => c.id === selectedId) ?? conversations[0];
@@ -349,7 +354,7 @@ const ConversationsTab: React.FC<{ conversations: Conversation[] }> = ({
             <Search size={14} className="text-text-tertiary" />
             <input
               className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary outline-none"
-              placeholder="Search suppliers…"
+              placeholder={t('buyerWhatsApp.search.placeholder')}
             />
           </div>
         </div>
@@ -377,6 +382,7 @@ const ConversationsTab: React.FC<{ conversations: Conversation[] }> = ({
 
 const AutomationTab: React.FC<{ rules: AutomationRule[] }> = ({ rules }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   // Toggle state stays page-local — real mutation lands in Phase 2′.
   const [toggles, setToggles] = useState<Record<string, boolean>>(
     Object.fromEntries(rules.map((r) => [r.rule, r.autoHandle])),
@@ -386,11 +392,10 @@ const AutomationTab: React.FC<{ rules: AutomationRule[] }> = ({ rules }) => {
     <div className="flex flex-col gap-4">
       <div>
         <h3 className="text-section text-text-primary">
-          WhatsApp automation rules
+          {t('buyerWhatsApp.auto.title')}
         </h3>
         <p className="text-sm text-text-tertiary mt-1">
-          Configure what Paragon AI handles automatically vs. escalates to
-          humans.
+          {t('buyerWhatsApp.auto.subtitle')}
         </p>
       </div>
 
@@ -413,18 +418,19 @@ const AutomationTab: React.FC<{ rules: AutomationRule[] }> = ({ rules }) => {
                 </div>
                 <div className="text-xs text-text-secondary mb-1">
                   <span className="font-semibold text-text-primary">
-                    Trigger:{' '}
+                    {t('buyerWhatsApp.auto.trigger')}
                   </span>
                   {rule.trigger}
                 </div>
                 <div className="text-xs text-text-secondary mb-2">
                   <span className="font-semibold text-text-primary">
-                    Action:{' '}
+                    {t('buyerWhatsApp.auto.action')}
                   </span>
                   {rule.action}
                 </div>
                 <div className="inline-block bg-warning-soft rounded px-2 py-1 text-[11px] text-warning-hover">
-                  ⚡ Escalate if: {rule.escalateIf}
+                  {t('buyerWhatsApp.auto.escalateIf')}
+                  {rule.escalateIf}
                 </div>
               </div>
               <div className="flex flex-col items-center gap-2 shrink-0">
@@ -432,7 +438,9 @@ const AutomationTab: React.FC<{ rules: AutomationRule[] }> = ({ rules }) => {
                   size="md"
                   onColor="success"
                   checked={on}
-                  ariaLabel={`${on ? 'Disable' : 'Enable'} ${rule.rule}`}
+                  ariaLabel={`${
+                    on ? t('buyerWhatsApp.auto.disable') : t('buyerWhatsApp.auto.enable')
+                  } ${rule.rule}`}
                   onChange={() =>
                     setToggles((t) => ({ ...t, [rule.rule]: !t[rule.rule] }))
                   }
@@ -442,18 +450,18 @@ const AutomationTab: React.FC<{ rules: AutomationRule[] }> = ({ rules }) => {
                     on ? 'text-success' : 'text-text-tertiary'
                   }`}
                 >
-                  {on ? '🤖 Auto' : '👤 Manual'}
+                  {on ? t('buyerWhatsApp.auto.autoLabel') : t('buyerWhatsApp.auto.manualLabel')}
                 </span>
                 <button
                   type="button"
                   onClick={() =>
                     toast({
-                      title: 'Rule editor coming in Phase 2A',
+                      title: t('buyerWhatsApp.auto.toast.editComing'),
                     })
                   }
                   className="text-xs text-text-secondary hover:text-text-primary border border-border-input rounded px-2 py-1 bg-bg-hover"
                 >
-                  Edit rule
+                  {t('buyerWhatsApp.auto.editRule')}
                 </button>
               </div>
             </div>
@@ -492,29 +500,31 @@ const AnalyticsTab: React.FC<{
   dailyMsgs: DailyMessageRow[];
   ruleRates: RuleRate[];
   responseTable: ResponseRow[];
-}> = ({ summary, dailyMsgs, ruleRates, responseTable }) => (
+}> = ({ summary, dailyMsgs, ruleRates, responseTable }) => {
+  const { t } = useTranslation();
+  return (
   <div className="flex flex-col gap-5">
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
       <KpiCard
-        eyebrow="Messages Sent (Month)"
+        eyebrow={t('buyerWhatsApp.an.kpi.messages.eyebrow')}
         value={summary.messagesThisMonth.value}
         subtitle={kpiSubtitle(summary.messagesThisMonth)}
         icon={Send}
       />
       <KpiCard
-        eyebrow="Automated Actions"
+        eyebrow={t('buyerWhatsApp.an.kpi.automated.eyebrow')}
         value={summary.automatedActions.value}
         subtitle={kpiSubtitle(summary.automatedActions)}
         icon={Bot}
       />
       <KpiCard
-        eyebrow="Avg Response Time"
+        eyebrow={t('buyerWhatsApp.an.kpi.avgResponse.eyebrow')}
         value={summary.analyticsAvgResponse.value}
         subtitle={kpiSubtitle(summary.analyticsAvgResponse)}
         icon={Clock}
       />
       <KpiCard
-        eyebrow="Supplier Satisfaction"
+        eyebrow={t('buyerWhatsApp.an.kpi.satisfaction.eyebrow')}
         value={summary.satisfaction.value}
         subtitle={kpiSubtitle(summary.satisfaction)}
         icon={Sparkles}
@@ -524,7 +534,7 @@ const AnalyticsTab: React.FC<{
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
         <h3 className="text-section text-text-primary mb-4">
-          Daily message volume (last 14 days)
+          {t('buyerWhatsApp.an.daily.title')}
         </h3>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={dailyMsgs} barSize={10}>
@@ -538,13 +548,13 @@ const AnalyticsTab: React.FC<{
             <Tooltip content={<ChartTooltip />} />
             <Bar
               dataKey="outbound"
-              name="Outbound"
+              name={t('buyerWhatsApp.an.series.outbound')}
               fill={TOKEN_TEAL}
               radius={[2, 2, 0, 0]}
             />
             <Bar
               dataKey="inbound"
-              name="Inbound"
+              name={t('buyerWhatsApp.an.series.inbound')}
               fill={TOKEN_NAVY}
               radius={[2, 2, 0, 0]}
             />
@@ -554,7 +564,7 @@ const AnalyticsTab: React.FC<{
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
         <h3 className="text-section text-text-primary mb-4">
-          Automation success rate by rule
+          {t('buyerWhatsApp.an.rate.title')}
         </h3>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={ruleRates} layout="vertical" barSize={14}>
@@ -572,7 +582,7 @@ const AnalyticsTab: React.FC<{
               tick={{ fontSize: 11, fill: TOKEN_MUTED }}
             />
             <Tooltip content={<ChartTooltip />} />
-            <Bar dataKey="rate" name="Success rate" radius={[0, 4, 4, 0]}>
+            <Bar dataKey="rate" name={t('buyerWhatsApp.an.series.successRate')} radius={[0, 4, 4, 0]}>
               {ruleRates.map((r) => (
                 <Cell key={r.rule} fill={rateColor(r.rate)} />
               ))}
@@ -585,16 +595,16 @@ const AnalyticsTab: React.FC<{
     <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
       <div className="px-5 py-3 border-b border-border-subtle">
         <h3 className="text-section text-text-primary">
-          Supplier response times
+          {t('buyerWhatsApp.an.response.title')}
         </h3>
       </div>
       <Table>
         <TableHeader>
-          <TableHeaderCell>Supplier</TableHeaderCell>
-          <TableHeaderCell>Avg response</TableHeaderCell>
-          <TableHeaderCell>Fastest</TableHeaderCell>
-          <TableHeaderCell>Slowest</TableHeaderCell>
-          <TableHeaderCell>Automation rate</TableHeaderCell>
+          <TableHeaderCell>{t('buyerWhatsApp.an.table.supplier')}</TableHeaderCell>
+          <TableHeaderCell>{t('buyerWhatsApp.an.table.avg')}</TableHeaderCell>
+          <TableHeaderCell>{t('buyerWhatsApp.an.table.fastest')}</TableHeaderCell>
+          <TableHeaderCell>{t('buyerWhatsApp.an.table.slowest')}</TableHeaderCell>
+          <TableHeaderCell>{t('buyerWhatsApp.an.table.automation')}</TableHeaderCell>
         </TableHeader>
         <tbody>
           {responseTable.map((r) => {
@@ -624,10 +634,12 @@ const AnalyticsTab: React.FC<{
       </Table>
     </section>
   </div>
-);
+  );
+};
 
 const WeChatPanel: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [selected, setSelected] = useState('wc-001');
 
   const convs = [
@@ -645,20 +657,16 @@ const WeChatPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <SampleDataNote>
-        WeChat channel wires to the engagement service in a later batch.
-      </SampleDataNote>
+      <SampleDataNote>{t('buyerWhatsApp.wechat.sample')}</SampleDataNote>
       <div className="bg-success-soft border-l-2 border-success rounded px-4 py-3 text-sm text-text-secondary">
-        <strong className="text-success">WeChat channel</strong> targets
-        Chinese suppliers — packaging components, active ingredients,
-        fragrance compounds. Messages delivered via WeChat Official Account
-        with bilingual CN/EN content.
+        <strong className="text-success">{t('buyerWhatsApp.wechat.banner.bold')}</strong>
+        {t('buyerWhatsApp.wechat.banner.rest')}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[35%_65%] gap-4">
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="px-4 py-3 bg-bg-hover border-b border-border-subtle text-label text-text-tertiary uppercase">
-            Conversations ({convs.length})
+            {t('buyerWhatsApp.wechat.convHeader', { count: convs.length })}
           </div>
           {convs.map((c) => (
             <button
@@ -776,31 +784,35 @@ const WeChatPanel: React.FC = () => {
               onClick={() =>
                 toast({
                   variant: 'success',
-                  title: 'WeChat message dispatched',
-                  description: 'Delivered to Zhejiang NHU Vitamins.',
+                  title: t('buyerWhatsApp.wechat.toast.sent.title'),
+                  description: t('buyerWhatsApp.wechat.toast.sent.desc', {
+                    supplier: 'Zhejiang NHU Vitamins',
+                  }),
                 })
               }
             >
-              Send message
+              {t('buyerWhatsApp.wechat.send')}
             </Button>
             <Button
               variant="secondary"
               onClick={() =>
                 toast({
                   variant: 'info',
-                  title: 'Exporting WeChat conversation to SAP',
+                  title: t('buyerWhatsApp.wechat.toast.export'),
                 })
               }
             >
-              Export to SAP
+              {t('buyerWhatsApp.wechat.export')}
             </Button>
           </div>
 
           <div className="bg-success-soft px-4 py-3 text-xs text-text-secondary flex items-center gap-2 border-t border-success/30">
             <strong className="text-success">SAP</strong>
             <span>
-              IBP inventory auto-updated from WeChat reply · MAT-10234 stock:
-              2,400 KG
+              {t('buyerWhatsApp.wechat.sap.note', {
+                material: 'MAT-10234',
+                qty: '2,400 KG',
+              })}
             </span>
           </div>
         </div>
@@ -811,6 +823,7 @@ const WeChatPanel: React.FC = () => {
 
 const EmailPanel: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [selected, setSelected] = useState('em-001');
 
   const emails = [
@@ -839,18 +852,15 @@ const EmailPanel: React.FC = () => {
     ] as const,
     outro: 'We will submit the ASN 3 days before the delivery date. Please confirm dock slot availability.',
     sig: 'Best regards,\nPT Berlina Packaging Indonesia',
-    sapNote: 'SAP auto-updated — PO-2025-00108 confirmed at 09:03 · Order Confirmation Key updated',
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <SampleDataNote>
-        Email channel wires to the engagement service in a later batch.
-      </SampleDataNote>
+      <SampleDataNote>{t('buyerWhatsApp.email.sample')}</SampleDataNote>
       <div className="grid grid-cols-1 lg:grid-cols-[35%_65%] gap-4">
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="px-4 py-3 bg-bg-hover border-b border-border-subtle text-label text-text-tertiary uppercase">
-            Inbox ({emails.length})
+            {t('buyerWhatsApp.email.inboxHeader', { count: emails.length })}
           </div>
           {emails.map((em) => (
             <button
@@ -895,17 +905,17 @@ const EmailPanel: React.FC = () => {
           </div>
           <div className="px-5 py-4 border-b border-border-subtle bg-bg-hover">
             {[
-              ['From', email.from],
-              ['To', email.to],
-              ['Subject', email.subject],
-              ['Date', email.date],
-            ].map(([k, v]) => (
-              <div key={k} className="flex gap-3 mb-1 text-xs">
-                <span className="text-text-tertiary w-14 shrink-0">{k}</span>
+              { label: t('buyerWhatsApp.email.field.from'), value: email.from, bold: false },
+              { label: t('buyerWhatsApp.email.field.to'), value: email.to, bold: false },
+              { label: t('buyerWhatsApp.email.field.subject'), value: email.subject, bold: true },
+              { label: t('buyerWhatsApp.email.field.date'), value: email.date, bold: false },
+            ].map(({ label, value, bold }) => (
+              <div key={label} className="flex gap-3 mb-1 text-xs">
+                <span className="text-text-tertiary w-14 shrink-0">{label}</span>
                 <span
-                  className={`text-text-primary ${k === 'Subject' ? 'font-semibold' : ''}`}
+                  className={`text-text-primary ${bold ? 'font-semibold' : ''}`}
                 >
-                  {v}
+                  {value}
                 </span>
               </div>
             ))}
@@ -943,37 +953,48 @@ const EmailPanel: React.FC = () => {
                 onClick={() =>
                   toast({
                     variant: 'info',
-                    title: `Replying to ${email.subject}`,
+                    title: t('buyerWhatsApp.email.toast.replying', {
+                      subject: email.subject,
+                    }),
                   })
                 }
               >
-                Reply
+                {t('buyerWhatsApp.email.reply')}
               </Button>
               <Button
                 variant="secondary"
                 onClick={() =>
                   toast({
-                    title: `Forwarded ${email.subject}`,
+                    title: t('buyerWhatsApp.email.toast.forwarded', {
+                      subject: email.subject,
+                    }),
                   })
                 }
               >
-                Forward
+                {t('buyerWhatsApp.email.forward')}
               </Button>
               <Button
                 variant="secondary"
                 onClick={() =>
                   toast({
-                    title: `Archived ${email.subject}`,
+                    title: t('buyerWhatsApp.email.toast.archived', {
+                      subject: email.subject,
+                    }),
                   })
                 }
               >
-                Archive
+                {t('buyerWhatsApp.email.archive')}
               </Button>
             </div>
           </div>
           <div className="bg-info-soft px-5 py-3 border-t border-info/30 text-xs text-text-secondary flex items-center gap-2">
             <strong className="text-info">SAP</strong>
-            <span>{email.sapNote}</span>
+            <span>
+              {t('buyerWhatsApp.email.sap.note', {
+                po: 'PO-2025-00108',
+                time: '09:03',
+              })}
+            </span>
           </div>
         </div>
       </div>
@@ -982,6 +1003,11 @@ const EmailPanel: React.FC = () => {
 };
 
 const BuyerWhatsAppHub: React.FC = () => {
+  const { t } = useTranslation();
+  const crumb = [
+    t('buyerWhatsApp.crumb.intelligence'),
+    t('buyerWhatsApp.crumb.hub'),
+  ];
   const [channel, setChannel] = useState<Channel>('whatsapp');
   const [waTab, setWaTab] = useState<WhatsAppTab>('conversations');
 
@@ -1025,11 +1051,11 @@ const BuyerWhatsAppHub: React.FC = () => {
     minute: '2-digit',
   });
 
-  if (anyPending) return <LoadingState breadcrumb={ENGAGEMENT_CRUMB} />;
+  if (anyPending) return <LoadingState breadcrumb={crumb} />;
   if (anyError)
     return (
       <ErrorState
-        breadcrumb={ENGAGEMENT_CRUMB}
+        breadcrumb={crumb}
         error={queries.find((q) => q.isError)?.error}
         onRetry={() => queries.forEach((q) => q.refetch())}
       />
@@ -1037,30 +1063,30 @@ const BuyerWhatsAppHub: React.FC = () => {
   if (allEmpty || !summary)
     return (
       <EmptyState
-        breadcrumb={ENGAGEMENT_CRUMB}
-        title="No conversations yet"
-        subtitle="The communications hub is a buyer-side view."
-        message="Supplier WhatsApp, Email, and WeChat threads appear here for buyer accounts."
+        breadcrumb={crumb}
+        title={t('buyerWhatsApp.state.empty.title')}
+        subtitle={t('buyerWhatsApp.state.empty.subtitle')}
+        message={t('buyerWhatsApp.state.empty.message')}
       />
     );
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={ENGAGEMENT_CRUMB}
-        title="Communications Hub"
-        subtitle="WhatsApp · Email · WeChat — all supplier conversations in one place."
+        breadcrumb={crumb}
+        title={t('buyerWhatsApp.header.title')}
+        subtitle={t('buyerWhatsApp.header.subtitle')}
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        Multi-channel supplier comms · last refreshed {lastUpdated}
+        {t('buyerWhatsApp.meta.line', { date: lastUpdated })}
       </PageMetaLine>
 
       <SubTabs<Channel>
         options={[
-          { id: 'whatsapp', label: 'WhatsApp' },
-          { id: 'email', label: 'Email' },
-          { id: 'wechat', label: 'WeChat' },
+          { id: 'whatsapp', label: t('buyerWhatsApp.tab.whatsapp') },
+          { id: 'email', label: t('buyerWhatsApp.tab.email') },
+          { id: 'wechat', label: t('buyerWhatsApp.tab.wechat') },
         ]}
         value={channel}
         onChange={setChannel}
@@ -1071,8 +1097,7 @@ const BuyerWhatsAppHub: React.FC = () => {
         <>
           <div className="flex items-center justify-between gap-3 mb-6 flex-wrap">
             <div className="text-sm text-text-secondary">
-              All supplier WhatsApp conversations — powered by 360dialog +
-              Paragon AI.
+              {t('buyerWhatsApp.wa.intro')}
             </div>
             {/* WA-CONNECT-01: no live 360dialog BSP connection exists yet, so
                 this is an honest "simulated" marker (amber, static) rather than
@@ -1083,32 +1108,32 @@ const BuyerWhatsAppHub: React.FC = () => {
                 aria-hidden="true"
               />
               <span className="text-xs font-semibold text-text-secondary">
-                Simulated — 360dialog (Phase 4′)
+                {t('buyerWhatsApp.wa.simulated')}
               </span>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
             <KpiCard
-              eyebrow="Active Conversations"
+              eyebrow={t('buyerWhatsApp.kpi.active.eyebrow')}
               value={summary.activeConversations.value}
               subtitle={kpiSubtitle(summary.activeConversations)}
               icon={MessageCircle}
             />
             <KpiCard
-              eyebrow="Pending Responses"
+              eyebrow={t('buyerWhatsApp.kpi.pending.eyebrow')}
               value={summary.pendingResponses.value}
               subtitle={kpiSubtitle(summary.pendingResponses)}
               icon={Clock}
             />
             <KpiCard
-              eyebrow="Automated Today"
+              eyebrow={t('buyerWhatsApp.kpi.automatedToday.eyebrow')}
               value={summary.automatedToday.value}
               subtitle={kpiSubtitle(summary.automatedToday)}
               icon={Bot}
             />
             <KpiCard
-              eyebrow="Avg Response Time"
+              eyebrow={t('buyerWhatsApp.kpi.avgResponse.eyebrow')}
               value={summary.hubAvgResponse.value}
               subtitle={kpiSubtitle(summary.hubAvgResponse)}
               icon={Activity}
@@ -1116,17 +1141,15 @@ const BuyerWhatsAppHub: React.FC = () => {
           </div>
 
           <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 mb-6 text-sm text-text-primary">
-            💡 <strong>Paragon's WhatsApp procurement bot</strong> handles PO
-            confirmations, ASN submissions, inventory updates, and delivery
-            notifications automatically. Human intervention only required for
-            disputes, deviations &gt;5%, or halal compliance issues.
+            💡 <strong>{t('buyerWhatsApp.wa.banner.bold')}</strong>
+            {t('buyerWhatsApp.wa.banner.rest')}
           </div>
 
           <SubTabs<WhatsAppTab>
             options={[
-              { id: 'conversations', label: 'Active Conversations' },
-              { id: 'automation', label: 'Automation Rules' },
-              { id: 'analytics', label: 'Channel Analytics' },
+              { id: 'conversations', label: t('buyerWhatsApp.watab.conversations') },
+              { id: 'automation', label: t('buyerWhatsApp.watab.automation') },
+              { id: 'analytics', label: t('buyerWhatsApp.watab.analytics') },
             ]}
             value={waTab}
             onChange={setWaTab}
@@ -1138,7 +1161,7 @@ const BuyerWhatsAppHub: React.FC = () => {
               <ConversationsTab conversations={conversations} />
             ) : (
               <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm px-6 py-10 text-center text-sm text-text-tertiary">
-                No active conversations.
+                {t('buyerWhatsApp.conv.none')}
               </div>
             ))}
           {waTab === 'automation' && <AutomationTab rules={rules} />}
