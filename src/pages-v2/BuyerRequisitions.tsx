@@ -32,11 +32,10 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
+import { useTranslation } from 'react-i18next';
 import { useRequisitions } from '../services/query/hooks';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
-
-const REQUISITIONS_CRUMB = ['ACQUIRE', 'REQUISITIONS'];
 
 const STATUS_VARIANT: Record<
   PRStatus,
@@ -69,17 +68,18 @@ const UOM_OPTIONS = ['KG', 'L', 'PCS', 'MT', 'BOX'];
 const PRIORITY_OPTIONS = ['High', 'Medium', 'Low'];
 
 const ProcurementFlow: React.FC = () => {
+  const { t } = useTranslation();
   // Calm outline register (DP-2/DP-3): the pipeline STAGES carry no state, so
   // they go neutral — the diagram's only real decision is the source-check fork,
   // so semantic colour is reserved for its two outcomes (PO = source found;
   // Sourcing Event = the no-source branch). Quiet soft-tint + hue-border chips,
   // no solid saturated fills, mirroring the StatusPill grammar.
   const steps: { label: string; sub: string; tone: 'neutral' | 'success' | 'warning' }[] = [
-    { label: 'Create PR', sub: 'Requestor', tone: 'neutral' },
-    { label: 'Approval', sub: 'Section Head / VP', tone: 'neutral' },
-    { label: 'Source Check', sub: 'PIR or OA?', tone: 'neutral' },
-    { label: 'Create PO', sub: 'Source found', tone: 'success' },
-    { label: 'Sourcing Event', sub: 'No source', tone: 'warning' },
+    { label: t('requisitions.flow.createPr.label'), sub: t('requisitions.flow.createPr.sub'), tone: 'neutral' },
+    { label: t('requisitions.flow.approval.label'), sub: t('requisitions.flow.approval.sub'), tone: 'neutral' },
+    { label: t('requisitions.flow.sourceCheck.label'), sub: t('requisitions.flow.sourceCheck.sub'), tone: 'neutral' },
+    { label: t('requisitions.flow.createPo.label'), sub: t('requisitions.flow.createPo.sub'), tone: 'success' },
+    { label: t('requisitions.flow.sourcingEvent.label'), sub: t('requisitions.flow.sourcingEvent.sub'), tone: 'warning' },
   ];
   const TONE: Record<string, string> = {
     neutral: 'bg-bg-hover text-text-secondary border-border-subtle',
@@ -89,7 +89,7 @@ const ProcurementFlow: React.FC = () => {
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg px-5 py-4 mb-6">
       <div className="text-label text-text-tertiary uppercase mb-3">
-        Procurement flow
+        {t('requisitions.flow.label')}
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         {steps.map((s, i) => (
@@ -136,6 +136,11 @@ const emptyForm: NewPRForm = {
 
 const BuyerRequisitions: React.FC = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const REQUISITIONS_CRUMB = [
+    t('requisitions.crumb.acquire'),
+    t('requisitions.crumb.requisitions'),
+  ];
   const [group, setGroup] = useState<GroupTab>('all');
   const [search, setSearch] = useState('');
   const [selectedPR, setSelectedPR] = useState<PurchaseRequisition | null>(null);
@@ -193,9 +198,9 @@ const BuyerRequisitions: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={REQUISITIONS_CRUMB}
-        title="No requisitions yet"
-        subtitle="Purchase requisitions are a buyer-side view."
-        message="PRs and their sourcing status appear here for buyer accounts."
+        title={t('requisitions.empty.title')}
+        subtitle={t('requisitions.empty.subtitle')}
+        message={t('requisitions.empty.message')}
       />
     );
 
@@ -207,8 +212,8 @@ const BuyerRequisitions: React.FC = () => {
     const prNum = `PR-2026-00${Math.floor(346 + Math.random() * 10)}`;
     toast({
       variant: 'success',
-      title: `${prNum} submitted`,
-      description: 'Routed to Section Head for approval.',
+      title: t('requisitions.toast.submitted.title', { prNumber: prNum }),
+      description: t('requisitions.toast.submitted.desc'),
     });
     setForm(emptyForm);
     setNewOpen(false);
@@ -218,16 +223,16 @@ const BuyerRequisitions: React.FC = () => {
     <AppShellV2>
       <PageHeader
         breadcrumb={REQUISITIONS_CRUMB}
-        title="Purchase Requisitions"
-        subtitle="Starting point of procurement · PR → Approval → Source check → PO or Sourcing Event."
+        title={t('requisitions.header.title')}
+        subtitle={t('requisitions.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
-              { label: 'Export', icon: FileSpreadsheet },
-              { label: 'Bulk download', icon: Download },
+              { label: t('requisitions.action.export'), icon: FileSpreadsheet },
+              { label: t('requisitions.action.bulkDownload'), icon: Download },
             ]}
             primary={{
-              label: 'New PR',
+              label: t('requisitions.action.newPr'),
               icon: Plus,
               onClick: () => setNewOpen(true),
             }}
@@ -236,52 +241,57 @@ const BuyerRequisitions: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {prs.length} requisitions · last updated {formatDate(maxCreatedDate)}
+        {t(
+          prs.length === 1
+            ? 'requisitions.meta.summary.one'
+            : 'requisitions.meta.summary.other',
+          { count: prs.length, date: formatDate(maxCreatedDate) },
+        )}
       </PageMetaLine>
 
       <ProcurementFlow />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-5 mb-8">
         <KpiCard
-          eyebrow="Draft"
+          eyebrow={t('requisitions.kpi.draft.eyebrow')}
           value={counts.draft.toString()}
-          subtitle="Not yet submitted"
+          subtitle={t('requisitions.kpi.draft.subtitle')}
           icon={FileText}
         />
         <KpiCard
-          eyebrow="Pending Approval"
+          eyebrow={t('requisitions.kpi.pending.eyebrow')}
           value={counts.pending.toString()}
-          subtitle="Awaiting reviewer"
+          subtitle={t('requisitions.kpi.pending.subtitle')}
           icon={Clock}
         />
         <KpiCard
-          eyebrow="Approved"
+          eyebrow={t('requisitions.kpi.approved.eyebrow')}
           value={counts.approved.toString()}
-          subtitle="Cleared for sourcing"
+          subtitle={t('requisitions.kpi.approved.subtitle')}
           icon={CheckCircle2}
         />
         <KpiCard
-          eyebrow="Sourcing Event"
+          eyebrow={t('requisitions.kpi.sourcing.eyebrow')}
           value={counts.sourcing.toString()}
-          subtitle="RFQ in progress"
+          subtitle={t('requisitions.kpi.sourcing.subtitle')}
           icon={AlertTriangle}
         />
         <KpiCard
-          eyebrow="PO Created"
+          eyebrow={t('requisitions.kpi.po.eyebrow')}
           value={counts.po.toString()}
-          subtitle="Converted to order"
+          subtitle={t('requisitions.kpi.po.subtitle')}
           icon={ShoppingCart}
         />
       </div>
 
       <SubTabs<GroupTab>
         options={[
-          { id: 'all', label: 'All', count: counts.all },
-          { id: 'Draft', label: 'Draft', count: counts.draft },
-          { id: 'Pending Approval', label: 'Pending', count: counts.pending },
-          { id: 'Approved', label: 'Approved', count: counts.approved },
-          { id: 'Sourcing Event', label: 'Sourcing', count: counts.sourcing },
-          { id: 'PO Created', label: 'PO Created', count: counts.po },
+          { id: 'all', label: t('requisitions.tab.all'), count: counts.all },
+          { id: 'Draft', label: t('requisitions.tab.draft'), count: counts.draft },
+          { id: 'Pending Approval', label: t('requisitions.tab.pending'), count: counts.pending },
+          { id: 'Approved', label: t('requisitions.tab.approved'), count: counts.approved },
+          { id: 'Sourcing Event', label: t('requisitions.tab.sourcing'), count: counts.sourcing },
+          { id: 'PO Created', label: t('requisitions.tab.po'), count: counts.po },
         ]}
         value={group}
         onChange={setGroup}
@@ -292,24 +302,24 @@ const BuyerRequisitions: React.FC = () => {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search by PR number, material, requestor, or linked doc…"
+          placeholder={t('requisitions.search.placeholder')}
         />
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableHeaderCell>PR #</TableHeaderCell>
-            <TableHeaderCell>Material</TableHeaderCell>
-            <TableHeaderCell>Category</TableHeaderCell>
-            <TableHeaderCell className="text-right">Qty</TableHeaderCell>
-            <TableHeaderCell>Required</TableHeaderCell>
-            <TableHeaderCell className="text-right">Est. value</TableHeaderCell>
-            <TableHeaderCell>Requestor</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Source</TableHeaderCell>
-            <TableHeaderCell>Linked doc</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.pr')}</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.material')}</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.category')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('requisitions.table.col.qty')}</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.required')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('requisitions.table.col.estValue')}</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.requestor')}</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.status')}</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.source')}</TableHeaderCell>
+            <TableHeaderCell>{t('requisitions.table.col.linkedDoc')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('requisitions.table.col.actions')}</TableHeaderCell>
           </TableHeader>
           <tbody>
             {filtered.map((pr) => {
@@ -356,7 +366,7 @@ const BuyerRequisitions: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <StatusPill variant={hasPIR ? 'success' : 'warning'}>
-                      {hasPIR ? 'PIR' : 'None'}
+                      {hasPIR ? 'PIR' : t('requisitions.source.none')}
                     </StatusPill>
                   </TableCell>
                   <TableCell>
@@ -383,7 +393,7 @@ const BuyerRequisitions: React.FC = () => {
                   colSpan={11}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No requisitions match the current filters.
+                  {t('requisitions.table.empty')}
                 </td>
               </tr>
             )}
@@ -394,17 +404,15 @@ const BuyerRequisitions: React.FC = () => {
       <div className="mt-6 bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
         <ClipboardList size={14} className="text-info shrink-0 mt-0.5" />
         <span>
-          <strong className="text-info">S/4HANA Integration (Phase 2):</strong>{' '}
-          PRs will be created in S/4HANA MM. Source check queries live PIRs and
-          Outline Agreements. Approved PRs with source auto-trigger PO via
-          ME21N.
+          <strong className="text-info">{t('requisitions.footnote.title')}</strong>{' '}
+          {t('requisitions.footnote.body')}
         </span>
       </div>
 
       <SidePanel
         open={selectedPR !== null}
         onClose={() => setSelectedPR(null)}
-        title={selectedPR ? `PR ${selectedPR.prNumber}` : ''}
+        title={selectedPR ? t('requisitions.panel.title', { number: selectedPR.prNumber }) : ''}
         footerActions={
           selectedPR && (
             <>
@@ -412,7 +420,7 @@ const BuyerRequisitions: React.FC = () => {
                 variant="secondary"
                 onClick={() => setSelectedPR(null)}
               >
-                Close
+                {t('requisitions.panel.close')}
               </Button>
               {selectedPR.status === 'Approved' && (
                 <Button
@@ -422,15 +430,15 @@ const BuyerRequisitions: React.FC = () => {
                     toast({
                       variant: hasPIR ? 'success' : 'info',
                       title: hasPIR
-                        ? `PO creation initiated for ${selectedPR.prNumber}`
-                        : `Sourcing Event initiated for ${selectedPR.prNumber}`,
+                        ? t('requisitions.toast.poInitiated.title', { prNumber: selectedPR.prNumber })
+                        : t('requisitions.toast.sourcingInitiated.title', { prNumber: selectedPR.prNumber }),
                     });
                     setSelectedPR(null);
                   }}
                 >
                   {selectedPR.sourceOfSupply === 'PIR exists'
-                    ? 'Create PO directly'
-                    : 'Create Sourcing Event'}
+                    ? t('requisitions.panel.createPoDirectly')
+                    : t('requisitions.panel.createSourcingEvent')}
                 </Button>
               )}
               {selectedPR.status === 'Draft' && (
@@ -439,12 +447,12 @@ const BuyerRequisitions: React.FC = () => {
                   onClick={() => {
                     toast({
                       variant: 'success',
-                      title: `${selectedPR.prNumber} submitted for approval`,
+                      title: t('requisitions.toast.submittedApproval.title', { prNumber: selectedPR.prNumber }),
                     });
                     setSelectedPR(null);
                   }}
                 >
-                  Submit for approval
+                  {t('requisitions.panel.submitForApproval')}
                 </Button>
               )}
             </>
@@ -455,65 +463,65 @@ const BuyerRequisitions: React.FC = () => {
           <div className="space-y-6">
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Key facts
+                {t('requisitions.panel.keyFacts')}
               </h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="text-text-tertiary">Material</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.material')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedPR.material}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Category</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.category')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedPR.category}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Quantity</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.quantity')}</dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatNumber(selectedPR.quantity)} {selectedPR.uom}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Required date</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.requiredDate')}</dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedPR.requiredDate)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Estimated value</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.estValue')}</dt>
                   <Data as="dd" className="text-text-primary font-semibold">
                     {formatIDR(selectedPR.estimatedValue, { compact: true })}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Priority</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.priority')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedPR.priority}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Requestor</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.requestor')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedPR.requestor}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Cost center</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.costCenter')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedPR.costCenter}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Approver</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.approver')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedPR.approver}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Status</dt>
+                  <dt className="text-text-tertiary">{t('requisitions.panel.field.status')}</dt>
                   <dd>
                     <StatusPill variant={STATUS_VARIANT[selectedPR.status]}>
                       {selectedPR.status}
@@ -525,7 +533,7 @@ const BuyerRequisitions: React.FC = () => {
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Source of supply
+                {t('requisitions.panel.source.title')}
               </h3>
               <div
                 className={`border-l-2 rounded px-3 py-3 text-sm ${
@@ -536,18 +544,18 @@ const BuyerRequisitions: React.FC = () => {
               >
                 <div className="font-semibold">
                   {selectedPR.sourceOfSupply === 'PIR exists'
-                    ? 'Source found'
-                    : 'No source'}
+                    ? t('requisitions.panel.source.found')
+                    : t('requisitions.panel.source.none')}
                 </div>
                 <div className="text-text-secondary mt-1">
                   {selectedPR.sourceOfSupply === 'PIR exists'
-                    ? `PIR exists for ${selectedPR.material}.`
-                    : `No PIR found for ${selectedPR.material}. A Sourcing Event will be required.`}
+                    ? t('requisitions.panel.source.pirExists', { material: selectedPR.material })
+                    : t('requisitions.panel.source.noPir', { material: selectedPR.material })}
                 </div>
               </div>
               {selectedPR.linkedDoc && (
                 <div className="mt-3 text-sm text-text-secondary">
-                  Linked document:{' '}
+                  {t('requisitions.panel.linkedDocument')}{' '}
                   <Data className="text-text-primary">
                     {selectedPR.linkedDoc}
                   </Data>
@@ -557,7 +565,7 @@ const BuyerRequisitions: React.FC = () => {
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-2">
-                Justification
+                {t('requisitions.panel.justification')}
               </h3>
               <p className="text-sm text-text-secondary leading-relaxed">
                 {selectedPR.justification}
@@ -570,33 +578,33 @@ const BuyerRequisitions: React.FC = () => {
       <SidePanel
         open={newOpen}
         onClose={() => setNewOpen(false)}
-        title="New Purchase Requisition"
+        title={t('requisitions.new.title')}
         footerActions={
           <>
             <Button variant="secondary" onClick={() => setNewOpen(false)}>
-              Cancel
+              {t('requisitions.new.cancel')}
             </Button>
             <Button
               variant="outline"
               disabled={!canSubmit}
               onClick={submitNewPR}
             >
-              Submit for approval
+              {t('requisitions.new.submit')}
             </Button>
           </>
         }
       >
         <div className="space-y-5">
           <FormSection
-            eyebrow="Step 1"
-            title="Material & quantity"
-            description="What's being requested?"
+            eyebrow={t('requisitions.new.step1.eyebrow')}
+            title={t('requisitions.new.step1.title')}
+            description={t('requisitions.new.step1.desc')}
           >
             <div>
-              <label className={labelClass}>Material / service *</label>
+              <label className={labelClass}>{t('requisitions.new.field.material')}</label>
               <input
                 className={inputClass}
-                placeholder="e.g. Niacinamide B3 USP Grade"
+                placeholder={t('requisitions.new.placeholder.material')}
                 value={form.material}
                 onChange={(e) =>
                   setForm({ ...form, material: e.target.value })
@@ -605,17 +613,17 @@ const BuyerRequisitions: React.FC = () => {
             </div>
             <div className="grid grid-cols-[1fr_100px] gap-3">
               <div>
-                <label className={labelClass}>Quantity *</label>
+                <label className={labelClass}>{t('requisitions.new.field.quantity')}</label>
                 <input
                   type="number"
                   className={inputClass}
-                  placeholder="0"
+                  placeholder={t('requisitions.new.placeholder.quantity')}
                   value={form.qty}
                   onChange={(e) => setForm({ ...form, qty: e.target.value })}
                 />
               </div>
               <div>
-                <label className={labelClass}>UoM</label>
+                <label className={labelClass}>{t('requisitions.new.field.uom')}</label>
                 <select
                   className={inputClass}
                   value={form.uom}
@@ -630,13 +638,13 @@ const BuyerRequisitions: React.FC = () => {
           </FormSection>
 
           <FormSection
-            eyebrow="Step 2"
-            title="Timing & cost center"
-            description="When is it needed and who pays?"
+            eyebrow={t('requisitions.new.step2.eyebrow')}
+            title={t('requisitions.new.step2.title')}
+            description={t('requisitions.new.step2.desc')}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>Required date *</label>
+                <label className={labelClass}>{t('requisitions.new.field.requiredDate')}</label>
                 <input
                   type="date"
                   className={inputClass}
@@ -645,7 +653,7 @@ const BuyerRequisitions: React.FC = () => {
                 />
               </div>
               <div>
-                <label className={labelClass}>Cost center *</label>
+                <label className={labelClass}>{t('requisitions.new.field.costCenter')}</label>
                 <select
                   className={inputClass}
                   value={form.costCenter}
@@ -653,7 +661,7 @@ const BuyerRequisitions: React.FC = () => {
                     setForm({ ...form, costCenter: e.target.value })
                   }
                 >
-                  <option value="">Select…</option>
+                  <option value="">{t('requisitions.new.select.placeholder')}</option>
                   {COST_CENTERS.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -663,7 +671,7 @@ const BuyerRequisitions: React.FC = () => {
               </div>
             </div>
             <div>
-              <label className={labelClass}>Priority</label>
+              <label className={labelClass}>{t('requisitions.new.field.priority')}</label>
               <select
                 className={inputClass}
                 value={form.priority}
@@ -679,22 +687,20 @@ const BuyerRequisitions: React.FC = () => {
           </FormSection>
 
           <FormSection
-            eyebrow="Step 3"
-            title="Business justification"
-            description="Why is this needed?"
+            eyebrow={t('requisitions.new.step3.eyebrow')}
+            title={t('requisitions.new.step3.title')}
+            description={t('requisitions.new.step3.desc')}
           >
             <textarea
               className={`${inputClass} min-h-[72px] resize-y`}
-              placeholder="Business reason…"
+              placeholder={t('requisitions.new.placeholder.justification')}
               value={form.justification}
               onChange={(e) =>
                 setForm({ ...form, justification: e.target.value })
               }
             />
             <div className="bg-info-soft border-l-2 border-info rounded px-3 py-2 text-xs text-text-primary">
-              After submission this PR routes to Section Head. If a PIR or
-              Outline Agreement exists, a PO is created directly. Otherwise, a
-              Sourcing Event is initiated.
+              {t('requisitions.new.info')}
             </div>
           </FormSection>
         </div>

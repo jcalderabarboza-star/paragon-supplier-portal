@@ -270,32 +270,32 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
     return [
       {
         id: 't1',
-        title: 'Received',
+        title: t('goodsReceipt.timeline.received'),
         timestamp: formatDate(g.receivedDate),
         status: 'completed',
       },
       {
         id: 't2',
-        title: 'Inspection Started',
+        title: t('goodsReceipt.timeline.inspectionStarted'),
         status: at(2),
       },
       {
         id: 't3',
-        title: 'Lab Results Received',
+        title: t('goodsReceipt.timeline.labResultsReceived'),
         timestamp: hasLab
           ? g.inspectionResults.find((r) => r.labResultId)?.labResultId
-          : 'No lab required',
+          : t('goodsReceipt.timeline.noLabRequired'),
         status: hasLab ? (cur >= 3 ? 'completed' : 'current') : 'pending',
       },
       {
         id: 't4',
-        title: 'Disposition Decision',
+        title: t('goodsReceipt.timeline.dispositionDecision'),
         timestamp: g.disposition !== 'Pending' ? g.disposition : undefined,
         status: at(4),
       },
       {
         id: 't5',
-        title: 'Posted to SAP',
+        title: t('goodsReceipt.timeline.postedToSap'),
         timestamp: g.sapMaterialDoc,
         status: g.status === 'Posted to SAP' ? 'completed' : 'pending',
       },
@@ -314,7 +314,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
               setWizardOpen(true);
             }}
           >
-            Start inspection
+            {t('goodsReceipt.footer.startInspection')}
           </Button>
         );
       case 'Under Inspection':
@@ -324,12 +324,12 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
             onClick={() =>
               toast({
                 variant: 'info',
-                title: 'Inspection results',
-                description: 'Submit form will open in a future release.',
+                title: t('goodsReceipt.toast.submitResults.title'),
+                description: t('goodsReceipt.toast.submitResults.desc'),
               })
             }
           >
-            Submit inspection results
+            {t('goodsReceipt.footer.submitResults')}
           </Button>
         );
       case 'Quality Hold':
@@ -340,24 +340,24 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
               onClick={() =>
                 toast({
                   variant: 'info',
-                  title: 'Retest requested',
-                  description: 'Lab retest queued.',
+                  title: t('goodsReceipt.toast.retest.title'),
+                  description: t('goodsReceipt.toast.retest.desc'),
                 })
               }
             >
-              Request lab retest
+              {t('goodsReceipt.footer.requestRetest')}
             </Button>
             <Button
               variant="primary"
               onClick={() =>
                 toast({
                   variant: 'warning',
-                  title: 'Hold override requested',
-                  description: 'Awaiting QC manager approval.',
+                  title: t('goodsReceipt.toast.overrideHold.title'),
+                  description: t('goodsReceipt.toast.overrideHold.desc'),
                 })
               }
             >
-              Override hold
+              {t('goodsReceipt.footer.overrideHold')}
             </Button>
           </div>
         );
@@ -379,12 +379,12 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
             onClick={() =>
               toast({
                 variant: 'info',
-                title: 'Opening SAP',
-                description: g.sapMaterialDoc ?? 'Material document',
+                title: t('goodsReceipt.toast.openingSap.title'),
+                description: g.sapMaterialDoc ?? t('goodsReceipt.toast.openingSap.fallbackDoc'),
               })
             }
           >
-            View in SAP
+            {t('goodsReceipt.footer.viewInSap')}
           </Button>
         );
       default:
@@ -395,15 +395,15 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const handleExport = () =>
     toast({
       variant: 'info',
-      title: 'Export queued',
-      description: 'Goods receipts export will download shortly.',
+      title: t('goodsReceipt.toast.export.title'),
+      description: t('goodsReceipt.toast.export.desc'),
     });
 
   const handleLabResults = () =>
     toast({
       variant: 'info',
-      title: 'Lab results overview',
-      description: 'Lab dashboard will open in a future release.',
+      title: t('goodsReceipt.toast.labOverview.title'),
+      description: t('goodsReceipt.toast.labOverview.desc'),
     });
 
   const handleNewGR = () => {
@@ -459,74 +459,77 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['TRANSACT', 'GOODS RECEIPT & QC']}
-        title="Goods Receipt & Quality Control"
-        subtitle="Receipt posting, inspection workflows, lab results, and disposition decisions."
+        breadcrumb={[t('goodsReceipt.crumb.transact'), t('goodsReceipt.crumb.gr')]}
+        title={t('goodsReceipt.header.title')}
+        subtitle={t('goodsReceipt.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
               {
-                label: 'Export',
+                label: t('goodsReceipt.action.export'),
                 icon: FileSpreadsheet,
                 onClick: handleExport,
               },
               {
-                label: 'Lab Results',
+                label: t('goodsReceipt.action.labResults'),
                 icon: FlaskConical,
                 onClick: handleLabResults,
               },
             ]}
-            primary={{ label: 'New GR', icon: Plus, onClick: handleNewGR }}
+            primary={{ label: t('gr.create.action'), icon: Plus, onClick: handleNewGR }}
           />
         }
       />
 
       <PageMetaLine className="mb-6">
-        {counts.all} GRs this month · last posted <Data>{formatDate(TODAY)}</Data>
+        {counts.all === 1
+          ? t('goodsReceipt.meta.count.one', { count: counts.all })
+          : t('goodsReceipt.meta.count.other', { count: counts.all })}{' '}
+        · {t('goodsReceipt.meta.lastPosted')} <Data>{formatDate(TODAY)}</Data>
       </PageMetaLine>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard
-          eyebrow="Pending Inspection"
+          eyebrow={t('goodsReceipt.kpi.pending.eyebrow')}
           value={formatNumber(counts.pending)}
           icon={ClipboardCheck}
-          subtitle="Awaiting QC start"
+          subtitle={t('goodsReceipt.kpi.pending.subtitle')}
         />
         <KpiCard
-          eyebrow="On Quality Hold"
+          eyebrow={t('goodsReceipt.kpi.hold.eyebrow')}
           value={
             <span className="text-danger">{formatNumber(counts.hold)}</span>
           }
           icon={AlertTriangle}
-          subtitle="Quarantined / retest"
+          subtitle={t('goodsReceipt.kpi.hold.subtitle')}
         />
         <KpiCard
-          eyebrow="Approved Today"
+          eyebrow={t('goodsReceipt.kpi.approvedToday.eyebrow')}
           value={formatNumber(approvedToday)}
           icon={CheckCircle2}
           subtitle={formatDate(TODAY)}
         />
         <KpiCard
-          eyebrow="Rejection Rate (30d)"
+          eyebrow={t('goodsReceipt.kpi.rejectionRate.eyebrow')}
           value={`${rejectionRate.toFixed(1)}%`}
           icon={TrendingDown}
-          subtitle="Qty rejected / received"
+          subtitle={t('goodsReceipt.kpi.rejectionRate.subtitle')}
         />
       </div>
 
       <SubTabs<GroupTab>
         options={[
-          { id: 'all', label: 'All', count: counts.all },
-          { id: 'pending', label: 'Pending', count: counts.pending },
+          { id: 'all', label: t('goodsReceipt.tab.all'), count: counts.all },
+          { id: 'pending', label: t('goodsReceipt.tab.pending'), count: counts.pending },
           {
             id: 'under-inspection',
-            label: 'Under Inspection',
+            label: t('goodsReceipt.tab.underInspection'),
             count: counts.underInspection,
           },
-          { id: 'approved', label: 'Approved', count: counts.approved },
-          { id: 'hold', label: 'Quality Hold', count: counts.hold },
-          { id: 'rejected', label: 'Rejected', count: counts.rejected },
-          { id: 'posted', label: 'Posted', count: counts.posted },
+          { id: 'approved', label: t('goodsReceipt.tab.approved'), count: counts.approved },
+          { id: 'hold', label: t('goodsReceipt.tab.hold'), count: counts.hold },
+          { id: 'rejected', label: t('goodsReceipt.tab.rejected'), count: counts.rejected },
+          { id: 'posted', label: t('goodsReceipt.tab.posted'), count: counts.posted },
         ]}
         value={tab}
         onChange={setTab}
@@ -538,16 +541,16 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search by GR, ASN, PO, or supplier..."
+            placeholder={t('goodsReceipt.search.placeholder')}
           />
         </div>
         <FilterChipsBar<DateFilter>
           options={[
-            { id: 'today', label: 'Today' },
-            { id: 'week', label: 'This week' },
-            { id: 'month', label: 'This month' },
-            { id: '30d', label: 'Last 30 days' },
-            { id: 'all', label: 'All time' },
+            { id: 'today', label: t('goodsReceipt.filter.today') },
+            { id: 'week', label: t('goodsReceipt.filter.week') },
+            { id: 'month', label: t('goodsReceipt.filter.month') },
+            { id: '30d', label: t('goodsReceipt.filter.30d') },
+            { id: 'all', label: t('goodsReceipt.filter.all') },
           ]}
           value={dateFilter}
           onChange={setDateFilter}
@@ -557,14 +560,14 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       <div className="border border-border-subtle rounded-lg bg-white overflow-hidden">
         <Table>
           <TableHeader>
-            <TableHeaderCell>GR / Refs</TableHeaderCell>
-            <TableHeaderCell>Supplier</TableHeaderCell>
-            <TableHeaderCell>Received</TableHeaderCell>
-            <TableHeaderCell>Received By</TableHeaderCell>
-            <TableHeaderCell>Items</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Disposition</TableHeaderCell>
-            <TableHeaderCell>SAP Doc</TableHeaderCell>
+            <TableHeaderCell>{t('goodsReceipt.table.col.grRefs')}</TableHeaderCell>
+            <TableHeaderCell>{t('goodsReceipt.table.col.supplier')}</TableHeaderCell>
+            <TableHeaderCell>{t('goodsReceipt.table.col.received')}</TableHeaderCell>
+            <TableHeaderCell>{t('goodsReceipt.table.col.receivedBy')}</TableHeaderCell>
+            <TableHeaderCell>{t('goodsReceipt.table.col.items')}</TableHeaderCell>
+            <TableHeaderCell>{t('goodsReceipt.table.col.status')}</TableHeaderCell>
+            <TableHeaderCell>{t('goodsReceipt.table.col.disposition')}</TableHeaderCell>
+            <TableHeaderCell>{t('goodsReceipt.table.col.sapDoc')}</TableHeaderCell>
             <TableHeaderCell> </TableHeaderCell>
           </TableHeader>
           <tbody>
@@ -606,8 +609,9 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-primary">
-                      {g.inspectionResults.length} item
-                      {g.inspectionResults.length === 1 ? '' : 's'}
+                      {g.inspectionResults.length === 1
+                        ? t('goodsReceipt.items.count.one', { count: g.inspectionResults.length })
+                        : t('goodsReceipt.items.count.other', { count: g.inspectionResults.length })}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -640,7 +644,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                   colSpan={9}
                   className="py-10 text-center text-sm text-text-tertiary"
                 >
-                  No goods receipts match the current filters.
+                  {t('goodsReceipt.table.empty')}
                 </td>
               </tr>
             )}
@@ -658,37 +662,37 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           <div className="flex flex-col gap-6">
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                Key facts
+                {t('goodsReceipt.panel.keyFacts')}
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <div className="text-xs text-text-tertiary">GR #</div>
+                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.gr')}</div>
                   <div className="font-semibold text-text-primary">
                     <Data>{selected.grNumber}</Data>
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">ASN #</div>
+                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.asn')}</div>
                   <Data as="div" className="text-text-primary">
                     {selected.asnNumber}
                   </Data>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">PO #</div>
+                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.po')}</div>
                   <Data as="div" className="text-text-primary">
                     {selected.poNumber}
                   </Data>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">
-                    SAP Material Doc
+                    {t('goodsReceipt.panel.field.sapMaterialDoc')}
                   </div>
                   <Data as="div" className="text-text-primary">
                     {selected.sapMaterialDoc ?? '—'}
                   </Data>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-xs text-text-tertiary">Supplier</div>
+                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.supplier')}</div>
                   <div className="text-text-primary">
                     {selected.supplierName}{' '}
                     {selectedSupplier && (
@@ -702,24 +706,24 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">
-                    Received Date
+                    {t('goodsReceipt.panel.field.receivedDate')}
                   </div>
                   <div className="text-text-primary">
                     <Data>{formatDate(selected.receivedDate)}</Data>
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Received By</div>
+                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.receivedBy')}</div>
                   <div className="text-text-primary">{selected.receivedBy}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Status</div>
+                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.status')}</div>
                   <StatusPill variant={STATUS_VARIANT[selected.status]}>
                     {selected.status}
                   </StatusPill>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Disposition</div>
+                  <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.disposition')}</div>
                   <div className="text-text-primary">{selected.disposition}</div>
                 </div>
               </div>
@@ -727,25 +731,25 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
 
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                Line items
+                {t('goodsReceipt.panel.lineItems')}
               </div>
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableHeaderCell>Material</TableHeaderCell>
+                    <TableHeaderCell>{t('goodsReceipt.panel.col.material')}</TableHeaderCell>
                     <TableHeaderCell className="text-right">
-                      Exp
+                      {t('goodsReceipt.panel.col.exp')}
                     </TableHeaderCell>
                     <TableHeaderCell className="text-right">
-                      Recv
+                      {t('goodsReceipt.panel.col.recv')}
                     </TableHeaderCell>
                     <TableHeaderCell className="text-right">
-                      Acc
+                      {t('goodsReceipt.panel.col.acc')}
                     </TableHeaderCell>
                     <TableHeaderCell className="text-right">
-                      Rej
+                      {t('goodsReceipt.panel.col.rej')}
                     </TableHeaderCell>
-                    <TableHeaderCell>Checks</TableHeaderCell>
+                    <TableHeaderCell>{t('goodsReceipt.panel.col.checks')}</TableHeaderCell>
                   </TableHeader>
                   <tbody>
                     {selected.inspectionResults.map((r, i) => (
@@ -815,14 +819,14 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 </Table>
               </div>
               <div className="text-xs text-text-tertiary mt-2">
-                V = Visual · P = Packaging · H = Halal Seal · B = BPOM Lot
+                {t('goodsReceipt.panel.legend')}
               </div>
             </section>
 
             {selected.notes && (
               <section>
                 <div className="text-label text-text-tertiary uppercase mb-2">
-                  Inspection notes
+                  {t('goodsReceipt.panel.inspectionNotes')}
                 </div>
                 <p className="text-sm text-text-secondary border border-border-subtle rounded-md p-3 bg-bg-hover">
                   {selected.notes}
@@ -832,7 +836,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
 
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                Disposition workflow
+                {t('goodsReceipt.panel.dispositionWorkflow')}
               </div>
               <Timeline events={buildTimeline(selected)} />
             </section>
@@ -853,12 +857,12 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   );
 };
 
-const GR_CRUMB = ['TRANSACT', 'GOODS RECEIPT & QC'];
-
 // Wrapper: reads the QC command-center data through the scoped hooks and renders
 // the four honest states; the workspace inner holds the local (Phase-2′,
 // non-persisting) inspection-wizard state seeded from the resolved reads.
 const BuyerGoodsReceipt: React.FC = () => {
+  const { t } = useTranslation();
+  const GR_CRUMB = [t('goodsReceipt.crumb.transact'), t('goodsReceipt.crumb.gr')];
   const grQuery = useGoodsReceipts();
   const suppliersQuery = useSuppliers();
   const shipmentsQuery = useShipments();
@@ -890,9 +894,9 @@ const BuyerGoodsReceipt: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={GR_CRUMB}
-        title="No goods receipts yet"
-        subtitle="No goods receipts have been posted."
-        message="Goods receipts and QC inspections appear here as deliveries arrive."
+        title={t('goodsReceipt.empty.title')}
+        subtitle={t('goodsReceipt.empty.subtitle')}
+        message={t('goodsReceipt.empty.message')}
       />
     );
 

@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   ShoppingCart,
   Clock,
@@ -49,8 +51,6 @@ import { formatIDR, formatNumber, formatDate } from '../lib/format';
 // from the data layer.
 import { ChannelType, POStatus } from '../services/data/types';
 import type { PurchaseOrder } from '../services/data/types';
-
-const ORDERS_CRUMB = ['TRANSACT', 'PURCHASE ORDERS'];
 
 type GroupTab =
   | 'all'
@@ -106,14 +106,14 @@ const COUNTRY_FLAG: Record<string, string> = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-const FOOTER_ACTION_LABEL: Record<POStatus, string> = {
-  [POStatus.SENT]: 'Send reminder',
-  [POStatus.VIEWED]: 'Send reminder',
-  [POStatus.ACKNOWLEDGED]: 'Request ASN',
-  [POStatus.CONFIRMED]: 'Request ASN',
-  [POStatus.PARTIALLY_DELIVERED]: 'Track shipment',
-  [POStatus.DELIVERED]: 'View GR',
-  [POStatus.CLOSED]: 'View GR',
+const FOOTER_ACTION_KEY: Record<POStatus, string> = {
+  [POStatus.SENT]: 'buyerOrders.footer.sendReminder',
+  [POStatus.VIEWED]: 'buyerOrders.footer.sendReminder',
+  [POStatus.ACKNOWLEDGED]: 'buyerOrders.footer.requestAsn',
+  [POStatus.CONFIRMED]: 'buyerOrders.footer.requestAsn',
+  [POStatus.PARTIALLY_DELIVERED]: 'buyerOrders.footer.trackShipment',
+  [POStatus.DELIVERED]: 'buyerOrders.footer.viewGr',
+  [POStatus.CLOSED]: 'buyerOrders.footer.viewGr',
 };
 
 const STATUS_RANK: Record<POStatus, number> = {
@@ -126,7 +126,7 @@ const STATUS_RANK: Record<POStatus, number> = {
   [POStatus.CLOSED]: 7,
 };
 
-const buildTimeline = (po: PurchaseOrder): TimelineEvent[] => {
+const buildTimeline = (po: PurchaseOrder, t: TFunction): TimelineEvent[] => {
   const r = STATUS_RANK[po.status];
   const stateFor = (
     requiredRank: number,
@@ -139,36 +139,40 @@ const buildTimeline = (po: PurchaseOrder): TimelineEvent[] => {
   return [
     {
       id: 'created',
-      title: 'PO Created',
+      title: t('buyerOrders.timeline.created'),
       timestamp: formatDate(po.orderDate),
       status: 'completed',
       icon: FileText,
     },
     {
       id: 'sent',
-      title: 'Sent to Supplier',
+      title: t('buyerOrders.timeline.sent'),
       timestamp: `${formatDate(po.orderDate)} · ${po.channel}`,
       status: 'completed',
       icon: Send,
     },
     {
       id: 'ack',
-      title: 'Acknowledged by Supplier',
+      title: t('buyerOrders.timeline.acknowledged'),
       timestamp:
-        r >= 3 ? `${po.acknowledgmentTimeHours}h after send` : undefined,
+        r >= 3
+          ? t('buyerOrders.timeline.ackAfter', {
+              hours: po.acknowledgmentTimeHours,
+            })
+          : undefined,
       status: r >= 3 ? 'completed' : 'current',
       icon: CheckCircle2,
     },
     {
       id: 'asn',
-      title: 'ASN Received',
+      title: t('buyerOrders.timeline.asn'),
       timestamp: r >= 5 ? formatDate(po.confirmedDeliveryDate) : undefined,
       status: stateFor(4),
       icon: Truck,
     },
     {
       id: 'gr',
-      title: 'Goods Received',
+      title: t('buyerOrders.timeline.goodsReceived'),
       // Canonical dropped `deliveryDate`; goods-receipt aligns with the
       // confirmed (actual) delivery date, so map to confirmedDeliveryDate.
       timestamp: r >= 6 ? formatDate(po.confirmedDeliveryDate) : undefined,
@@ -177,19 +181,21 @@ const buildTimeline = (po: PurchaseOrder): TimelineEvent[] => {
     },
     {
       id: 'invoice',
-      title: 'Invoice Submitted',
+      title: t('buyerOrders.timeline.invoiceSubmitted'),
       status: stateFor(6),
       icon: Receipt,
     },
     {
       id: 'payment',
-      title: 'Payment Posted',
+      title: t('buyerOrders.timeline.paymentPosted'),
       status: stateFor(7),
       icon: Wallet,
     },
   ];
 };
 
+// i18n-defer: buildComms fabricates sample conversation previews (mock data);
+// sender label and message previews are left in EN and not translated (D — mock).
 const buildComms = (po: PurchaseOrder) => [
   {
     ts: `${po.orderDate} 09:00`,
@@ -218,6 +224,11 @@ const lineTotal = (li: PurchaseOrder['lineItems'][number]): number =>
   li.quantity * li.unitPrice;
 
 const BuyerOrders: React.FC = () => {
+  const { t } = useTranslation();
+  const ORDERS_CRUMB = [
+    t('buyerOrders.crumb.transact'),
+    t('buyerOrders.crumb.purchaseOrders'),
+  ];
   const [group, setGroup] = useState<GroupTab>('all');
   const [range, setRange] = useState<RangeFilter>('all');
   const [search, setSearch] = useState('');
@@ -313,9 +324,9 @@ const BuyerOrders: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={ORDERS_CRUMB}
-        title="No purchase orders yet"
-        subtitle="Purchase orders across your supplier network appear here."
-        message="When POs are issued they show up here with their lifecycle and line items."
+        title={t('buyerOrders.empty.title')}
+        subtitle={t('buyerOrders.empty.subtitle')}
+        message={t('buyerOrders.empty.message')}
       />
     );
 
@@ -325,65 +336,77 @@ const BuyerOrders: React.FC = () => {
   };
 
   const panelTitle = selectedPO
-    ? `PO ${selectedPO.poNumber} — ${selectedPO.supplierName}`
+    ? t('buyerOrders.panel.title', {
+        poNumber: selectedPO.poNumber,
+        supplier: selectedPO.supplierName,
+      })
     : '';
 
   return (
     <AppShellV2>
       <PageHeader
         breadcrumb={ORDERS_CRUMB}
-        title="Purchase Orders"
-        subtitle="Active and historical purchase orders across your supplier network."
+        title={t('buyerOrders.header.title')}
+        subtitle={t('buyerOrders.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
-              { label: 'Export', icon: FileSpreadsheet },
-              { label: 'Bulk download', icon: Download },
+              { label: t('buyerOrders.action.export'), icon: FileSpreadsheet },
+              { label: t('buyerOrders.action.bulkDownload'), icon: Download },
             ]}
-            primary={{ label: 'New PO', icon: Plus }}
+            primary={{ label: t('buyerOrders.action.newPo'), icon: Plus }}
           />
         }
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {orders.length} records · last updated {formatDate(maxOrderDate)}
+        {t(
+          orders.length === 1
+            ? 'buyerOrders.meta.summary.one'
+            : 'buyerOrders.meta.summary.other',
+          { count: orders.length, date: formatDate(maxOrderDate) },
+        )}
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
         <KpiCard
-          eyebrow="Total Open POs"
+          eyebrow={t('buyerOrders.kpi.open.eyebrow')}
           value={kpis.open.toString()}
-          subtitle="Across all suppliers"
+          subtitle={t('buyerOrders.kpi.open.subtitle')}
           icon={ShoppingCart}
         />
         <KpiCard
-          eyebrow="Pending Confirmation"
+          eyebrow={t('buyerOrders.kpi.pending.eyebrow')}
           value={kpis.pendingConfirmation.toString()}
-          subtitle="Awaiting supplier ack"
+          subtitle={t('buyerOrders.kpi.pending.subtitle')}
           icon={Clock}
         />
         <KpiCard
-          eyebrow="In Transit"
+          eyebrow={t('buyerOrders.kpi.transit.eyebrow')}
           value={kpis.inTransit.toString()}
-          subtitle="Confirmed + shipping"
+          subtitle={t('buyerOrders.kpi.transit.subtitle')}
           icon={Truck}
         />
         <KpiCard
-          eyebrow="Overdue"
+          eyebrow={t('buyerOrders.kpi.overdue.eyebrow')}
           value={kpis.overdue.toString()}
-          subtitle={kpis.overdue > 0 ? 'Past requested delivery' : 'On schedule'}
+          subtitle={
+            kpis.overdue > 0
+              ? t('buyerOrders.kpi.overdue.subtitle.past')
+              : t('buyerOrders.kpi.overdue.subtitle.onSchedule')
+          }
           icon={AlertTriangle}
         />
       </div>
 
       <SubTabs
         options={[
-          { id: 'all', label: 'All', count: counts.all },
-          { id: 'pending', label: 'Pending', count: counts.pending },
-          { id: 'confirmed', label: 'Confirmed', count: counts.confirmed },
-          { id: 'transit', label: 'In Transit', count: counts.transit },
-          { id: 'delivered', label: 'Delivered', count: counts.delivered },
-          { id: 'closed', label: 'Closed', count: counts.closed },
+          { id: 'all', label: t('buyerOrders.tab.all'), count: counts.all },
+          { id: 'pending', label: t('buyerOrders.tab.pending'), count: counts.pending },
+          { id: 'confirmed', label: t('buyerOrders.tab.confirmed'), count: counts.confirmed },
+          { id: 'transit', label: t('buyerOrders.tab.transit'), count: counts.transit },
+          { id: 'delivered', label: t('buyerOrders.tab.delivered'), count: counts.delivered },
+          { id: 'closed', label: t('buyerOrders.tab.closed'), count: counts.closed },
         ]}
         value={group}
         onChange={setGroup}
@@ -393,10 +416,10 @@ const BuyerOrders: React.FC = () => {
       <div className="flex items-center justify-between gap-4 mb-4">
         <FilterChipsBar
           options={[
-            { id: '7d', label: 'Last 7 days' },
-            { id: '30d', label: 'Last 30 days' },
-            { id: '90d', label: 'Last 90 days' },
-            { id: 'all', label: 'All time' },
+            { id: '7d', label: t('buyerOrders.range.7d') },
+            { id: '30d', label: t('buyerOrders.range.30d') },
+            { id: '90d', label: t('buyerOrders.range.90d') },
+            { id: 'all', label: t('buyerOrders.range.all') },
           ]}
           value={range}
           onChange={setRange}
@@ -407,22 +430,22 @@ const BuyerOrders: React.FC = () => {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search by PO number, supplier, or material…"
+          placeholder={t('buyerOrders.search.placeholder')}
         />
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableHeaderCell>PO #</TableHeaderCell>
-            <TableHeaderCell>Supplier</TableHeaderCell>
-            <TableHeaderCell>Material / Category</TableHeaderCell>
-            <TableHeaderCell>Order date</TableHeaderCell>
-            <TableHeaderCell>Delivery</TableHeaderCell>
-            <TableHeaderCell className="text-right">Value</TableHeaderCell>
-            <TableHeaderCell>Channel</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            <TableHeaderCell>{t('buyerOrders.table.col.po')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerOrders.table.col.supplier')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerOrders.table.col.material')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerOrders.table.col.orderDate')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerOrders.table.col.delivery')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('buyerOrders.table.col.value')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerOrders.table.col.channel')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerOrders.table.col.status')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('buyerOrders.table.col.actions')}</TableHeaderCell>
           </TableHeader>
           <tbody>
             {filtered.map((po) => {
@@ -463,7 +486,12 @@ const BuyerOrders: React.FC = () => {
                     </div>
                     {moreLines > 0 && (
                       <div className="text-xs text-text-tertiary mt-0.5">
-                        +{moreLines} more line{moreLines > 1 ? 's' : ''}
+                        {t(
+                          moreLines === 1
+                            ? 'buyerOrders.table.moreLines.one'
+                            : 'buyerOrders.table.moreLines.other',
+                          { count: moreLines },
+                        )}
                       </div>
                     )}
                   </TableCell>
@@ -482,7 +510,7 @@ const BuyerOrders: React.FC = () => {
                     </div>
                     {overdue && (
                       <div className="text-xs text-danger mt-0.5">
-                        +{po.daysOverdue}d overdue
+                        {t('buyerOrders.table.overdue', { count: po.daysOverdue })}
                       </div>
                     )}
                   </TableCell>
@@ -515,7 +543,7 @@ const BuyerOrders: React.FC = () => {
                   colSpan={9}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No purchase orders match the current filters.
+                  {t('buyerOrders.table.empty')}
                 </td>
               </tr>
             )}
@@ -530,9 +558,9 @@ const BuyerOrders: React.FC = () => {
         footerActions={
           selectedPO && (
             <>
-              <Button variant="secondary">View Full Details</Button>
+              <Button variant="secondary">{t('buyerOrders.footer.viewFullDetails')}</Button>
               <Button variant="outline">
-                {FOOTER_ACTION_LABEL[selectedPO.status]}
+                {t(FOOTER_ACTION_KEY[selectedPO.status])}
               </Button>
             </>
           )
@@ -542,17 +570,17 @@ const BuyerOrders: React.FC = () => {
           <div className="space-y-6">
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Key facts
+                {t('buyerOrders.panel.keyFacts')}
               </h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="text-text-tertiary">Order date</dt>
+                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.orderDate')}</dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedPO.orderDate)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Delivery date</dt>
+                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.deliveryDate')}</dt>
                   <Data
                     as="dd"
                     className={`font-medium ${
@@ -565,19 +593,19 @@ const BuyerOrders: React.FC = () => {
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Total value</dt>
+                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.totalValue')}</dt>
                   <Data as="dd" className="text-text-primary font-semibold">
                     {formatIDR(selectedPO.totalValue)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Channel</dt>
+                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.channel')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedPO.channel}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Status</dt>
+                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.status')}</dt>
                   <dd>
                     <StatusPill variant={statusTone(selectedPO.status)}>
                       {selectedPO.status}
@@ -585,17 +613,18 @@ const BuyerOrders: React.FC = () => {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Currency</dt>
+                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.currency')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedPO.currency}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Incoterms</dt>
+                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.incoterms')}</dt>
+                  {/* i18n-defer: hardcoded sample terms — Incoterms/payment-term codes kept verbatim (glossary: loanwords/codes) */}
                   <dd className="text-text-primary font-medium">CIF Jakarta</dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Payment terms</dt>
+                  <dt className="text-text-tertiary">{t('buyerOrders.panel.field.paymentTerms')}</dt>
                   <dd className="text-text-primary font-medium">Net 30</dd>
                 </div>
               </dl>
@@ -603,23 +632,23 @@ const BuyerOrders: React.FC = () => {
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Line items
+                {t('buyerOrders.panel.lineItems')}
               </h3>
               <div className="border border-border-subtle rounded-md overflow-hidden">
                 <table className="w-full text-xs">
                   <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
                     <tr>
                       <th className="text-left px-3 py-2 font-semibold">
-                        Material
+                        {t('buyerOrders.lines.col.material')}
                       </th>
                       <th className="text-right px-3 py-2 font-semibold">
-                        Qty
+                        {t('buyerOrders.lines.col.qty')}
                       </th>
                       <th className="text-right px-3 py-2 font-semibold">
-                        Unit
+                        {t('buyerOrders.lines.col.unit')}
                       </th>
                       <th className="text-right px-3 py-2 font-semibold">
-                        Line total
+                        {t('buyerOrders.lines.col.lineTotal')}
                       </th>
                     </tr>
                   </thead>
@@ -655,7 +684,7 @@ const BuyerOrders: React.FC = () => {
                         className="px-3 py-2 text-right font-semibold text-text-tertiary uppercase tracking-wider"
                         colSpan={3}
                       >
-                        Total
+                        {t('buyerOrders.lines.total')}
                       </td>
                       <td className="px-3 py-2 text-right font-semibold text-text-primary whitespace-nowrap">
                         <Data>{formatIDR(selectedPO.totalValue)}</Data>
@@ -668,9 +697,9 @@ const BuyerOrders: React.FC = () => {
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Lifecycle
+                {t('buyerOrders.panel.lifecycle')}
               </h3>
-              <Timeline events={buildTimeline(selectedPO)} />
+              <Timeline events={buildTimeline(selectedPO, t)} />
             </section>
 
             <section>
@@ -684,8 +713,15 @@ const BuyerOrders: React.FC = () => {
                 ) : (
                   <ChevronDown size={14} />
                 )}
-                {commsOpen ? 'Hide' : 'Show'} communication history (
-                {buildComms(selectedPO).length} messages)
+                {commsOpen
+                  ? t('buyerOrders.comms.hide')
+                  : t('buyerOrders.comms.show')}{' '}
+                {t(
+                  buildComms(selectedPO).length === 1
+                    ? 'buyerOrders.comms.history.one'
+                    : 'buyerOrders.comms.history.other',
+                  { count: buildComms(selectedPO).length },
+                )}
               </button>
               {commsOpen && (
                 <ul className="mt-3 space-y-3">
