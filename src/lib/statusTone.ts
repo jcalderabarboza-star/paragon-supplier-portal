@@ -104,6 +104,12 @@ const STATUS_TONE: Record<string, StatusTone> = {
   Outbound: 'neutral',
 };
 
+// The canonical status vocabulary, in declaration order. Consumed by the
+// i18n status-label map (src/lib/statusLabel.ts) so tone and label share one
+// source — a status added here is caught by the statusLabel guard test until
+// it also carries an ID translation.
+export const CANONICAL_STATUSES = Object.keys(STATUS_TONE);
+
 // Resolve a status label to its canonical tone. Exact match first, then a
 // single-word case-normalised fallback (covers lowercase enum values like the
 // Risk page's severity). Unknown labels fall back to neutral.

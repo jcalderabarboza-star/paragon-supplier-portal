@@ -2,9 +2,18 @@ import React from 'react';
 import { Menu, Search, Bell, ChevronDown, Languages } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { resolveEnvBadge } from '../../lib/envBadge';
+import { LANG_STORAGE_KEY, type AppLang } from '../../lib/i18n';
 
 const TopBarV2: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const currentLang: AppLang = i18n.language?.toLowerCase().startsWith('id') ? 'id' : 'en';
+  const toggleLang = () => {
+    const next: AppLang = currentLang === 'id' ? 'en' : 'id';
+    i18n.changeLanguage(next);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(LANG_STORAGE_KEY, next);
+    }
+  };
   const badge = resolveEnvBadge(
     import.meta.env.DEV,
     __DEPLOY_ENV__,
@@ -16,7 +25,7 @@ const TopBarV2: React.FC = () => {
       <div className="flex items-center gap-3 min-w-0">
         <button
           type="button"
-          aria-label="Toggle navigation"
+          aria-label={t('topbar.toggleNav')}
           className="p-2 rounded-md text-text-secondary hover:bg-bg-hover"
         >
           <Menu size={18} />
@@ -46,7 +55,7 @@ const TopBarV2: React.FC = () => {
           />
           <input
             type="search"
-            placeholder="Search... (Ctrl K)"
+            placeholder={t('topbar.search')}
             className="w-full h-9 pl-9 pr-3 rounded-md bg-bg-hover text-sm text-text-primary placeholder:text-text-tertiary border border-transparent focus:outline-none focus:border-border-input focus:bg-bg-surface"
           />
         </div>
@@ -56,15 +65,18 @@ const TopBarV2: React.FC = () => {
       <div className="flex items-center gap-3">
         <button
           type="button"
+          onClick={toggleLang}
+          aria-label={t('topbar.language')}
+          title={t('topbar.language')}
           className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary px-2 py-1.5 rounded-md hover:bg-bg-hover"
         >
           <Languages size={16} className="text-text-tertiary" />
-          <span className="font-medium">EN</span>
+          <span className="font-medium">{currentLang.toUpperCase()}</span>
           <ChevronDown size={14} />
         </button>
         <button
           type="button"
-          aria-label="Notifications"
+          aria-label={t('topbar.notifications')}
           className="relative p-2 rounded-md text-text-secondary hover:bg-bg-hover"
         >
           <Bell size={18} />
@@ -73,7 +85,7 @@ const TopBarV2: React.FC = () => {
           </span>
         </button>
         <div
-          aria-label="User avatar"
+          aria-label={t('topbar.userAvatar')}
           className="w-8 h-8 rounded-full bg-action-muted text-white text-xs font-semibold flex items-center justify-center"
         >
           JJ
