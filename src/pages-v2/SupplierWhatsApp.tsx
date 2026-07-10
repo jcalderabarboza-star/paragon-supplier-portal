@@ -6,7 +6,6 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
-import { CHART_SERIES, CHART_SEMANTIC } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -22,13 +21,11 @@ const WHATSAPP_BUBBLE = '#DCF8C6';
 const WHATSAPP_GREEN_DOT = '#107E3E';
 const WECHAT_GREEN = '#07C160';
 const WECHAT_BG = '#EDEDED';
-
-// DP2-PALETTE-01: sourced from the central palette (SSoT), not page-local hex.
-// Values unchanged — pure de-dup. (Messenger chrome above stays exempt, D-2.)
-const TOKEN_NAVY = CHART_SERIES[1];
-const TOKEN_TEAL = CHART_SERIES[0];
-const TOKEN_SUCCESS = CHART_SEMANTIC.success;
-const TOKEN_WARNING = CHART_SEMANTIC.warning;
+// NOTE: the messenger-chrome consts above are used ONLY by the LEFT channel
+// mockups (PhoneMockup / WeChat frame) — the D-2 authentic-channel exemption.
+// The RIGHT-side process-flow bands no longer consume them: they use DP2-FLAG-01
+// accent-edge classes (border-l-navy/teal/text-tertiary/success/warning) instead,
+// so the mockups stay pixel-identical while the bands calm to the portal register.
 
 const PULSE_CSS = `
 @keyframes wa-fade-slide-in {
@@ -397,17 +394,21 @@ const PhoneMockup: React.FC<PhoneMockupProps> = ({
   );
 };
 
+// DP2-FLAG-01 accent-edge — exactly the dashboard-widget signature: a light card,
+// thin border, and a 3px LEFT edge keyed to the stage's role (navy = SAP source,
+// teal = engine/parser, neutral = channel, success/warning = the fork). Replaces
+// the saturated solid fills; the messenger-chrome greens/reds are now used ONLY
+// by the LEFT channel mockups (D-2), never by these right-side bands.
 const FlowBox: React.FC<{
-  bg: string;
-  textClass: string;
+  accent: string;
   title: string;
   sub: string;
-}> = ({ bg, textClass, title, sub }) => (
-  <div className="rounded-lg px-4 py-3 shadow-sm" style={{ background: bg }}>
-    <div className={`text-sm font-bold ${textClass}`}>{title}</div>
-    <div className={`text-xs leading-snug mt-0.5 ${textClass} opacity-80`}>
-      {sub}
-    </div>
+}> = ({ accent, title, sub }) => (
+  <div
+    className={`bg-bg-surface border border-border-subtle border-l-[3px] ${accent} rounded-lg px-4 py-3`}
+  >
+    <div className="text-sm font-bold text-text-primary">{title}</div>
+    <div className="text-xs leading-snug mt-0.5 text-text-secondary">{sub}</div>
   </div>
 );
 
@@ -434,42 +435,36 @@ const FlowArrow: React.FC<{ label?: string }> = ({ label }) => (
 const WhatsAppFlow: React.FC = () => (
   <div>
     <FlowBox
-      bg={TOKEN_NAVY}
-      textClass="text-white"
+      accent="border-l-navy"
       title="SAP S/4HANA Event"
       sub="PO created, delivery approaching, invoice overdue…"
     />
     <FlowArrow label="Triggers" />
     <FlowBox
-      bg={TOKEN_TEAL}
-      textClass="text-white"
+      accent="border-l-teal"
       title="Paragon AI Engine"
       sub="Selects language, formats message, chooses template"
     />
     <FlowArrow label="Sends via" />
     <FlowBox
-      bg={WHATSAPP_GREEN_HEADER}
-      textClass="text-white"
+      accent="border-l-text-tertiary"
       title="360dialog WhatsApp API"
       sub="Delivers to supplier's WhatsApp. Interactive buttons. Read receipts."
     />
     <FlowArrow label="Supplier replies" />
     <FlowBox
-      bg={TOKEN_TEAL}
-      textClass="text-white"
+      accent="border-l-teal"
       title="AI Response Parser"
       sub="Understands: KONFIRMASI, ASN format, STOK update, free text"
     />
     <div className="grid grid-cols-2 gap-3 mt-3">
       <FlowBox
-        bg={TOKEN_SUCCESS}
-        textClass="text-white"
+        accent="border-l-success"
         title="Auto-Execute"
         sub="Updates SAP, creates ASN, logs in portal, sends confirmation"
       />
       <FlowBox
-        bg={TOKEN_WARNING}
-        textClass="text-white"
+        accent="border-l-warning"
         title="Escalate to Buyer"
         sub="Disputes, deviations >5%, halal issues, no response 24h"
       />
@@ -884,42 +879,36 @@ const EmailBody: React.FC<{
 const EmailFlow: React.FC = () => (
   <div>
     <FlowBox
-      bg={TOKEN_NAVY}
-      textClass="text-white"
+      accent="border-l-navy"
       title="SAP S/4HANA Event"
       sub="PO created, delivery alert, invoice scheduled…"
     />
     <FlowArrow label="Triggers" />
     <FlowBox
-      bg={TOKEN_TEAL}
-      textClass="text-white"
+      accent="border-l-teal"
       title="Email Template Engine"
       sub="Selects template, formats HTML, attaches PDF"
     />
     <FlowArrow label="Sends via" />
     <FlowBox
-      bg="#BB0000"
-      textClass="text-white"
+      accent="border-l-text-tertiary"
       title="SendGrid / SMTP Gateway"
       sub="Delivers to supplier inbox. HTML + plain text fallback."
     />
     <FlowArrow label="Supplier replies" />
     <FlowBox
-      bg={TOKEN_TEAL}
-      textClass="text-white"
+      accent="border-l-teal"
       title="Email Reply Parser"
       sub="Supplier replies via email — or clicks action button"
     />
     <div className="grid grid-cols-2 gap-3 mt-3">
       <FlowBox
-        bg={TOKEN_SUCCESS}
-        textClass="text-white"
+        accent="border-l-success"
         title="Auto-Execute"
         sub="Parses structured reply, updates SAP, logs action"
       />
       <FlowBox
-        bg={TOKEN_WARNING}
-        textClass="text-white"
+        accent="border-l-warning"
         title="Escalate to Buyer"
         sub="Unstructured reply, dispute, no response 48h"
       />
@@ -1080,42 +1069,36 @@ const WECHAT_SCENARIO_OPTIONS: { id: ScenarioId; label: string }[] = [
 const WeChatFlow: React.FC = () => (
   <div>
     <FlowBox
-      bg={TOKEN_NAVY}
-      textClass="text-white"
+      accent="border-l-navy"
       title="SAP S/4HANA Event"
       sub="PO created, delivery approaching, invoice overdue…"
     />
     <FlowArrow label="Triggers" />
     <FlowBox
-      bg={TOKEN_TEAL}
-      textClass="text-white"
+      accent="border-l-teal"
       title="WeChat Template Engine"
       sub="Formats message, selects language (CN/EN/ID)"
     />
     <FlowArrow label="Sends via" />
     <FlowBox
-      bg={WECHAT_GREEN}
-      textClass="text-white"
+      accent="border-l-text-tertiary"
       title="WeChat Official Account API"
       sub="Delivers via Official Account. Mini Program cards. Read receipts."
     />
     <FlowArrow label="Supplier replies" />
     <FlowBox
-      bg={TOKEN_TEAL}
-      textClass="text-white"
+      accent="border-l-teal"
       title="Reply Parser"
       sub="Text reply or Mini Program button tap"
     />
     <div className="grid grid-cols-2 gap-3 mt-3">
       <FlowBox
-        bg={TOKEN_SUCCESS}
-        textClass="text-white"
+        accent="border-l-success"
         title="Auto-Execute"
         sub="Parses reply, updates SAP, sends confirmation · 自动执行"
       />
       <FlowBox
-        bg={TOKEN_WARNING}
-        textClass="text-white"
+        accent="border-l-warning"
         title="Escalate to Buyer"
         sub="Dispute, no response 24h, complex query · 升级处理"
       />
