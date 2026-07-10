@@ -32,6 +32,8 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import OrdersToConfirmWidget from './widgets/OrdersToConfirmWidget';
+import SupplierInvoicePaymentWidget from './widgets/SupplierInvoicePaymentWidget';
+import SupplierRfqToRespondWidget from './widgets/SupplierRfqToRespondWidget';
 import {
   useCurrentSupplier,
   usePurchaseOrders,
@@ -393,7 +395,7 @@ const SupplierDashboard: React.FC = () => {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-5 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
         <KpiCard
           eyebrow="Open Orders"
           value={openOrders.toString()}
@@ -419,12 +421,6 @@ const SupplierDashboard: React.FC = () => {
           icon={CreditCard}
         />
         <KpiCard
-          eyebrow="Open Sourcing"
-          value="2"
-          subtitle="Awaiting your response"
-          icon={ClipboardList}
-        />
-        <KpiCard
           eyebrow="My OTIF Score"
           value={`${mySupplier.otif}%`}
           subtitle="Last 6 months"
@@ -432,10 +428,12 @@ const SupplierDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Proving-pair widget (ExpandableWidget shell + live adapter) — mounted
-          alongside the existing panels; the widget grid fans out from here. */}
+      {/* Supplier module-summary widget grid — live adapters over real stores,
+          alongside the existing panels (briefing serves as the alerts bar). */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
         <OrdersToConfirmWidget />
+        <SupplierInvoicePaymentWidget />
+        <SupplierRfqToRespondWidget />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-5">
