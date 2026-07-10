@@ -69,19 +69,22 @@ const UOM_OPTIONS = ['KG', 'L', 'PCS', 'MT', 'BOX'];
 const PRIORITY_OPTIONS = ['High', 'Medium', 'Low'];
 
 const ProcurementFlow: React.FC = () => {
-  const steps: { label: string; sub: string; tone: 'teal' | 'mid' | 'purple' | 'success' | 'warning' }[] = [
-    { label: 'Create PR', sub: 'Requestor', tone: 'teal' },
-    { label: 'Approval', sub: 'Section Head / VP', tone: 'mid' },
-    { label: 'Source Check', sub: 'PIR or OA?', tone: 'purple' },
+  // Calm outline register (DP-2/DP-3): the pipeline STAGES carry no state, so
+  // they go neutral — the diagram's only real decision is the source-check fork,
+  // so semantic colour is reserved for its two outcomes (PO = source found;
+  // Sourcing Event = the no-source branch). Quiet soft-tint + hue-border chips,
+  // no solid saturated fills, mirroring the StatusPill grammar.
+  const steps: { label: string; sub: string; tone: 'neutral' | 'success' | 'warning' }[] = [
+    { label: 'Create PR', sub: 'Requestor', tone: 'neutral' },
+    { label: 'Approval', sub: 'Section Head / VP', tone: 'neutral' },
+    { label: 'Source Check', sub: 'PIR or OA?', tone: 'neutral' },
     { label: 'Create PO', sub: 'Source found', tone: 'success' },
     { label: 'Sourcing Event', sub: 'No source', tone: 'warning' },
   ];
   const TONE: Record<string, string> = {
-    teal: 'bg-action text-white',
-    mid: 'bg-mid text-white',
-    purple: 'bg-info text-white',
-    success: 'bg-success text-white',
-    warning: 'bg-warning text-white',
+    neutral: 'bg-bg-hover text-text-secondary border-border-subtle',
+    success: 'bg-success-soft text-success border-success/30',
+    warning: 'bg-warning-soft text-warning border-warning/30',
   };
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg px-5 py-4 mb-6">
@@ -93,7 +96,7 @@ const ProcurementFlow: React.FC = () => {
           <React.Fragment key={s.label}>
             <div className="flex flex-col items-center min-w-[90px]">
               <span
-                className={`px-3 py-1.5 rounded-md text-[11px] font-bold text-center ${TONE[s.tone]}`}
+                className={`px-3 py-1.5 rounded-sm border text-[11px] font-semibold text-center ${TONE[s.tone]}`}
               >
                 {s.label}
               </span>
