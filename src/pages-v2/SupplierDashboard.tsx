@@ -17,6 +17,12 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { statusTone } from '../lib/statusTone';
+import {
+  targetStatus,
+  TARGET_STATUS,
+  TargetStatus,
+} from '../lib/chartPalette';
+import TargetBar from '../components/ui-v2/TargetBar';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -60,11 +66,16 @@ const fmtDate = (s: string): string => {
   });
 };
 
-const perfVariant = (v: number): 'success' | 'warning' | 'danger' => {
-  if (v >= 90) return 'success';
-  if (v >= 80) return 'warning';
-  return 'danger';
+// DP2-TARGET-01: perf thresholds come from the central target-status system
+// (target 90 → meeting ≥90, near ≥80, else missing) so the StatusPill and the
+// KPI bars can't disagree. Kept returning StatusPill variants for the pill site.
+const STATUS_TO_VARIANT: Record<TargetStatus, 'success' | 'warning' | 'danger'> = {
+  meeting: 'success',
+  near: 'warning',
+  missing: 'danger',
 };
+const perfVariant = (v: number): 'success' | 'warning' | 'danger' =>
+  STATUS_TO_VARIANT[targetStatus(v, 90)];
 
 const CHANNEL_LABEL: Record<PreferredChannel, string> = {
   [PreferredChannel.WHATSAPP]: 'WhatsApp',
@@ -153,25 +164,6 @@ const GradeBadge: React.FC<{ grade: Grade; size?: 'sm' | 'md' }> = ({
   );
 };
 
-const ProgressBar: React.FC<{ value: number; variant: 'success' | 'warning' | 'danger' }> = ({
-  value,
-  variant,
-}) => {
-  const colorClass =
-    variant === 'success'
-      ? 'bg-success'
-      : variant === 'warning'
-        ? 'bg-warning'
-        : 'bg-danger';
-  return (
-    <div className="h-1.5 bg-bg-hover rounded-full overflow-hidden">
-      <div
-        className={`h-full rounded-full transition-all duration-300 ${colorClass}`}
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-      />
-    </div>
-  );
-};
 
 const SupplierDashboard: React.FC = () => {
   const { toast } = useToast();
@@ -643,24 +635,21 @@ const SupplierDashboard: React.FC = () => {
                   value: mySupplier.invoiceAccuracy,
                 },
               ].map((m) => {
-                const v = perfVariant(m.value);
-                const textClass =
-                  v === 'success'
-                    ? 'text-success'
-                    : v === 'warning'
-                      ? 'text-warning-hover'
-                      : 'text-danger';
+                const status = targetStatus(m.value, 90);
                 return (
                   <div key={m.label}>
                     <div className="flex justify-between mb-1.5">
                       <span className="text-sm text-text-secondary">
                         {m.label}
                       </span>
-                      <span className={`text-sm font-bold ${textClass}`}>
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: TARGET_STATUS[status].text }}
+                      >
                         {m.value}%
                       </span>
                     </div>
-                    <ProgressBar value={m.value} variant={v} />
+                    <TargetBar pct={m.value} target={90} status={status} />
                   </div>
                 );
               })}

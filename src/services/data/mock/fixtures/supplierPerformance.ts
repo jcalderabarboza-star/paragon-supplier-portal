@@ -15,17 +15,20 @@ import type {
 
 export const SUP_007_SUPPLIER_ID = 'sup-007';
 
-const TOKEN_SUCCESS = '#107E3E';
-const TOKEN_WARNING = '#B45309';
-const TOKEN_DANGER = '#BB0000';
+// KPI bar colour is derived centrally now (DP2-TARGET-01): the tile reads
+// targetStatus(pct, targetPct) — no more hand-assigned per-row hex.
 
+// pct = attainment on a 0–100 axis; targetPct = the target tick on the same axis
+// (DP2-TARGET-01). For ≥-metrics targetPct is the raw target; for the attainment-
+// encoded ones (Lead Time Variance / POA) it's the pass line that reproduces the
+// intended meeting/near/missing read via targetStatus(pct, targetPct, 10).
 export const KPIS: KpiPoint[] = [
-  { name: 'OTIF Rate',            value: '87%',      target: '≥ 95%',       pct: 87, color: TOKEN_WARNING, trend: '↑' },
-  { name: 'ASN Accuracy',         value: '97.8%',    target: '≥ 95%',       pct: 98, color: TOKEN_SUCCESS, trend: '→' },
-  { name: 'Lead Time Variance',   value: '1.4 days', target: '≤ 0.5 days',  pct: 35, color: TOKEN_WARNING, trend: '↓' },
-  { name: 'POA Response Time',    value: '42 hrs',   target: '≤ 24 hrs',    pct: 40, color: TOKEN_DANGER,  trend: '↓' },
-  { name: 'Defect / Reject Rate', value: '0.8%',     target: '≤ 2%',        pct: 90, color: TOKEN_SUCCESS, trend: '↑' },
-  { name: 'Invoice Accuracy',     value: '91%',      target: '≥ 98%',       pct: 91, color: TOKEN_WARNING, trend: '↓' },
+  { name: 'OTIF Rate',            value: '87%',      target: '≥ 95%',       pct: 87, targetPct: 95, trend: '↑' },
+  { name: 'ASN Accuracy',         value: '97.8%',    target: '≥ 95%',       pct: 98, targetPct: 95, trend: '→' },
+  { name: 'Lead Time Variance',   value: '1.4 days', target: '≤ 0.5 days',  pct: 35, targetPct: 42, trend: '↓' },
+  { name: 'POA Response Time',    value: '42 hrs',   target: '≤ 24 hrs',    pct: 40, targetPct: 52, trend: '↓' },
+  { name: 'Defect / Reject Rate', value: '0.8%',     target: '≤ 2%',        pct: 90, targetPct: 80, trend: '↑' },
+  { name: 'Invoice Accuracy',     value: '91%',      target: '≥ 98%',       pct: 91, targetPct: 98, trend: '↓' },
 ];
 
 export const RADAR_DATA: RadarPoint[] = [

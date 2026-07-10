@@ -103,6 +103,17 @@ home redirect points to `/buyer/dashboard`; unknown routes render a real 404
   DEFAULT fails AA as text. `warning.soft` (#FEF3D6 chip/banner tint) unchanged.
   The old burnt `#B45309` is retired from the token; `CHART_SEMANTIC.warning`
   (chart strokes / flow-band fills with white text) is a separate concern.
+- TARGET/KPI bars are ONE system (DP2-TARGET-01), centralized in
+  `chartPalette.ts`: `targetStatus(pct, target, nearBand=10)` →
+  meeting | near | missing, and `TARGET_STATUS` gives the fill/text colour
+  (meeting = success, near = the DP2-WARN-01 amber split, missing = danger).
+  Every target bar renders via the shared `<TargetBar>` primitive — fill +
+  a navy target-tick — so attainment is colourblind-safe (position vs tick,
+  not colour alone). KPI fixtures carry a numeric `targetPct` (the tick, on the
+  same 0–100 axis as `pct`); the old hand-assigned per-row hex + the duplicated
+  KPI colour consts are gone. Pass-warn-fail cells (Analytics) and the supplier
+  dashboard perf bars derive from the same helper (target 90). Grade A–D ramps
+  are a separate axis, not yet unified here.
 - Charts consume ONE ordered series ramp from `src/lib/chartPalette.ts`
   (`CHART_SERIES`: teal → navy → teal-tint → navy-tint → neutral grey). No
   rainbow donuts, no per-page ad-hoc hex. Migrate chart colors opportunistically

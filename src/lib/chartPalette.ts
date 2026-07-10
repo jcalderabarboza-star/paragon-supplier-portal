@@ -54,6 +54,43 @@ export const SEMANTIC_STATE = {
   poor: '#BB0000', // danger — grade D (at-risk)
 } as const;
 
+// ────────────────────────────────────────────────────────────────────────────
+// TARGET-STATUS system (DP2-TARGET-01) — the ONE standard for "meeting / near /
+// missing target" on KPI/target bars, pass-warn-fail cells and progress meters.
+// Before this, seven scattered systems drew the same idea (fixture hex, three
+// duplicated GRADE_TONE maps, tailwind classes, StatusPill variants…). Now every
+// target bar derives its colour from `targetStatus()` and renders a target-tick,
+// so the encoding is colourblind-safe (position vs the tick, not colour alone).
+//
+// The "near" state consumes the DP2-WARN-01 amber split: bright #D97706 for the
+// bar FILL / tick-adjacent graphic, dark #8A5606 for the value TEXT on light.
+// meeting = success green, missing = danger red (both fine as fill AND text).
+// ────────────────────────────────────────────────────────────────────────────
+
+export type TargetStatus = 'meeting' | 'near' | 'missing';
+
+/** Fill (graphical) + text (AA on light) colour per target state. */
+export const TARGET_STATUS: Record<TargetStatus, { fill: string; text: string }> = {
+  meeting: { fill: '#107E3E', text: '#107E3E' }, // success
+  near: { fill: '#D97706', text: '#8A5606' }, // DP2-WARN-01 amber split
+  missing: { fill: '#BB0000', text: '#BB0000' }, // danger
+} as const;
+
+/**
+ * Attainment vs target on a shared 0–100 axis (pct = bar fill, target = tick).
+ * `nearBand` is how far below target still counts as "near" (default 10, matching
+ * the ≥90 meeting / ≥80 near thresholds the pass-warn-fail cells already used).
+ */
+export const targetStatus = (
+  pct: number,
+  target: number,
+  nearBand = 10,
+): TargetStatus => {
+  if (pct >= target) return 'meeting';
+  if (pct >= target - nearBand) return 'near';
+  return 'missing';
+};
+
 /**
  * Identity / infrastructure marker on data surfaces (e.g. the buyer's own
  * DC / hub dots on the supplier risk map) — the design system's sanctioned
