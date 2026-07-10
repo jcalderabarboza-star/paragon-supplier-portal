@@ -11,11 +11,65 @@
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { statusResourcesEn, statusResourcesId } from './statusLabel';
+
+// Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
+export const LANG_STORAGE_KEY = 'paragon.lang';
+export type AppLang = 'en' | 'id';
+
+function initialLng(): AppLang {
+  if (typeof localStorage !== 'undefined') {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY);
+    if (saved === 'en' || saved === 'id') return saved;
+  }
+  return 'en';
+}
 
 export const resources = {
   en: {
     translation: {
+      ...statusResourcesEn,
       'app.title': 'Paragon Supplier Portal',
+      // — Shared chrome: sidebar nav (Batch 0, translate-once) —
+      'nav.section.acquire': 'Acquire',
+      'nav.section.transact': 'Transact',
+      'nav.section.settle': 'Settle',
+      'nav.section.intelligence': 'Intelligence',
+      'nav.persona.buyer': 'Buyer',
+      'nav.persona.supplier': 'Supplier',
+      'nav.buyer.dashboard': 'Dashboard',
+      'nav.buyer.discovery': 'Discovery',
+      'nav.buyer.marketplace': 'Marketplace',
+      'nav.buyer.suppliers': 'Suppliers',
+      'nav.buyer.sourcing': 'Sourcing & RFQ',
+      'nav.buyer.requisitions': 'Requisitions',
+      'nav.buyer.purchaseOrders': 'Purchase Orders',
+      'nav.buyer.inventory': 'Inventory Visibility',
+      'nav.buyer.shipments': 'Shipments',
+      'nav.buyer.goodsReceipt': 'Goods Receipt',
+      'nav.buyer.invoices': 'Invoices',
+      'nav.buyer.contracts': 'Contracts',
+      'nav.buyer.analytics': 'Analytics',
+      'nav.buyer.scorecard': 'Scorecard',
+      'nav.buyer.risk': 'Risk',
+      'nav.buyer.compliance': 'Compliance',
+      'nav.buyer.whatsapp': 'WhatsApp Hub',
+      'nav.supplier.dashboard': 'Dashboard',
+      'nav.supplier.rfqs': 'RFQs',
+      'nav.supplier.storefront': 'My Storefront',
+      'nav.supplier.orders': 'My Orders',
+      'nav.supplier.shipments': 'Shipments & ASN',
+      'nav.supplier.inventory': 'My Inventory',
+      'nav.supplier.invoices': 'Invoices',
+      'nav.supplier.documents': 'Documents',
+      'nav.supplier.performance': 'Performance',
+      'nav.supplier.whatsapp': 'WhatsApp Hub',
+      // — Shared chrome: top bar —
+      'topbar.search': 'Search... (Ctrl K)',
+      'topbar.toggleNav': 'Toggle navigation',
+      'topbar.notifications': 'Notifications',
+      'topbar.userAvatar': 'User avatar',
+      'topbar.language': 'Language',
       // — PO confirm (Step 3.10 proof surface) —
       'po.confirm.action': 'Confirm order',
       'po.confirm.submitting': 'Confirming…',
@@ -104,7 +158,48 @@ export const resources = {
   },
   id: {
     translation: {
+      ...statusResourcesId,
       'app.title': 'Portal Pemasok Paragon',
+      // — Shared chrome: sidebar nav (Batch 0, translate-once) —
+      'nav.section.acquire': 'Pengadaan',
+      'nav.section.transact': 'Transaksi',
+      'nav.section.settle': 'Penyelesaian',
+      'nav.section.intelligence': 'Intelijen',
+      'nav.persona.buyer': 'Pembeli',
+      'nav.persona.supplier': 'Pemasok',
+      'nav.buyer.dashboard': 'Dasbor',
+      'nav.buyer.discovery': 'Penemuan',
+      'nav.buyer.marketplace': 'Pasar',
+      'nav.buyer.suppliers': 'Pemasok',
+      'nav.buyer.sourcing': 'Sumber & RFQ',
+      'nav.buyer.requisitions': 'Permintaan Pembelian',
+      'nav.buyer.purchaseOrders': 'Pesanan Pembelian',
+      'nav.buyer.inventory': 'Visibilitas Inventaris',
+      'nav.buyer.shipments': 'Pengiriman',
+      'nav.buyer.goodsReceipt': 'Penerimaan Barang',
+      'nav.buyer.invoices': 'Faktur',
+      'nav.buyer.contracts': 'Kontrak',
+      'nav.buyer.analytics': 'Analitik',
+      'nav.buyer.scorecard': 'Kartu Skor',
+      'nav.buyer.risk': 'Risiko',
+      'nav.buyer.compliance': 'Kepatuhan',
+      'nav.buyer.whatsapp': 'Pusat WhatsApp',
+      'nav.supplier.dashboard': 'Dasbor',
+      'nav.supplier.rfqs': 'RFQ',
+      'nav.supplier.storefront': 'Etalase Saya',
+      'nav.supplier.orders': 'Pesanan Saya',
+      'nav.supplier.shipments': 'Pengiriman & ASN',
+      'nav.supplier.inventory': 'Inventaris Saya',
+      'nav.supplier.invoices': 'Faktur',
+      'nav.supplier.documents': 'Dokumen',
+      'nav.supplier.performance': 'Kinerja',
+      'nav.supplier.whatsapp': 'Pusat WhatsApp',
+      // — Shared chrome: top bar —
+      'topbar.search': 'Cari... (Ctrl K)',
+      'topbar.toggleNav': 'Alihkan navigasi',
+      'topbar.notifications': 'Notifikasi',
+      'topbar.userAvatar': 'Avatar pengguna',
+      'topbar.language': 'Bahasa',
       // — PO confirm (ID stub — refined in the Phase 3′ ID-first sweep) —
       'po.confirm.action': 'Konfirmasi pesanan',
       'po.confirm.submitting': 'Mengonfirmasi…',
@@ -190,11 +285,11 @@ export const resources = {
       'invoice.denied.desc': 'Anda tidak berwenang menindaklanjuti faktur ini.',
     },
   },
-} as const;
+};
 
 i18n.use(initReactI18next).init({
   resources,
-  lng: 'en',
+  lng: initialLng(),
   fallbackLng: 'en',
   interpolation: { escapeValue: false }, // React already escapes
   returnNull: false,

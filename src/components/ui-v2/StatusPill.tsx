@@ -1,4 +1,6 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { statusLabelKey } from '../../lib/statusLabel';
 
 type Variant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
@@ -32,11 +34,17 @@ const StatusPill: React.FC<StatusPillProps> = ({
   children,
   className = '',
 }) => {
+  const { t } = useTranslation();
+  // Localize known canonical status labels from the central map; anything else
+  // (domain-specific labels, non-string children) renders verbatim. In EN the
+  // resolved value equals the canonical string, so output is unchanged.
+  const key = typeof children === 'string' ? statusLabelKey(children) : null;
+  const label = key ? t(key) : children;
   return (
     <span
       className={`inline-flex items-center rounded-sm border px-2 py-0.5 text-xs font-medium ${VARIANT_CLASS[variant]} ${className}`}
     >
-      {children}
+      {label}
     </span>
   );
 };

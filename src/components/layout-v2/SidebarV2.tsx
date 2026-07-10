@@ -19,6 +19,7 @@ import {
   MessageCircle,
   LucideIcon,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { mockSuppliers } from '../../data/mockSuppliers';
 
@@ -27,85 +28,85 @@ const SEED_SUPPLIER_NAME =
   mockSuppliers.find((s) => s.id === SEED_SUPPLIER_ID)?.name ?? null;
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
   path: string;
 }
 
 interface NavGroup {
-  label: string;
+  labelKey: string;
   items: NavItem[];
 }
 
 const BUYER_NAV: NavGroup[] = [
   {
-    label: 'ACQUIRE',
+    labelKey: 'nav.section.acquire',
     items: [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/buyer/dashboard' },
-      { label: 'Discovery', icon: Search, path: '/buyer/discovery' },
-      { label: 'Marketplace', icon: Store, path: '/marketplace' },
-      { label: 'Suppliers', icon: Users, path: '/buyer/suppliers' },
-      { label: 'Sourcing & RFQ', icon: FileText, path: '/buyer/sourcing' },
+      { labelKey: 'nav.buyer.dashboard', icon: LayoutDashboard, path: '/buyer/dashboard' },
+      { labelKey: 'nav.buyer.discovery', icon: Search, path: '/buyer/discovery' },
+      { labelKey: 'nav.buyer.marketplace', icon: Store, path: '/marketplace' },
+      { labelKey: 'nav.buyer.suppliers', icon: Users, path: '/buyer/suppliers' },
+      { labelKey: 'nav.buyer.sourcing', icon: FileText, path: '/buyer/sourcing' },
     ],
   },
   {
-    label: 'TRANSACT',
+    labelKey: 'nav.section.transact',
     items: [
-      { label: 'Requisitions', icon: FileText, path: '/buyer/purchase-requisition' },
-      { label: 'Purchase Orders', icon: ShoppingCart, path: '/buyer/orders' },
-      { label: 'Inventory Visibility', icon: Boxes, path: '/buyer/inventory' },
-      { label: 'Shipments', icon: Truck, path: '/buyer/shipments' },
-      { label: 'Goods Receipt', icon: ClipboardCheck, path: '/buyer/goods-receipt' },
+      { labelKey: 'nav.buyer.requisitions', icon: FileText, path: '/buyer/purchase-requisition' },
+      { labelKey: 'nav.buyer.purchaseOrders', icon: ShoppingCart, path: '/buyer/orders' },
+      { labelKey: 'nav.buyer.inventory', icon: Boxes, path: '/buyer/inventory' },
+      { labelKey: 'nav.buyer.shipments', icon: Truck, path: '/buyer/shipments' },
+      { labelKey: 'nav.buyer.goodsReceipt', icon: ClipboardCheck, path: '/buyer/goods-receipt' },
     ],
   },
   {
-    label: 'SETTLE',
+    labelKey: 'nav.section.settle',
     items: [
-      { label: 'Invoices', icon: Receipt, path: '/buyer/invoices' },
-      { label: 'Contracts', icon: ScrollText, path: '/buyer/contracts' },
+      { labelKey: 'nav.buyer.invoices', icon: Receipt, path: '/buyer/invoices' },
+      { labelKey: 'nav.buyer.contracts', icon: ScrollText, path: '/buyer/contracts' },
     ],
   },
   {
-    label: 'INTELLIGENCE',
+    labelKey: 'nav.section.intelligence',
     items: [
-      { label: 'Analytics', icon: BarChart2, path: '/buyer/analytics' },
-      { label: 'Scorecard', icon: Award, path: '/buyer/scorecard' },
-      { label: 'Risk', icon: AlertTriangle, path: '/buyer/risk' },
-      { label: 'Compliance', icon: ShieldCheck, path: '/buyer/compliance' },
-      { label: 'WhatsApp Hub', icon: MessageCircle, path: '/buyer/whatsapp' },
+      { labelKey: 'nav.buyer.analytics', icon: BarChart2, path: '/buyer/analytics' },
+      { labelKey: 'nav.buyer.scorecard', icon: Award, path: '/buyer/scorecard' },
+      { labelKey: 'nav.buyer.risk', icon: AlertTriangle, path: '/buyer/risk' },
+      { labelKey: 'nav.buyer.compliance', icon: ShieldCheck, path: '/buyer/compliance' },
+      { labelKey: 'nav.buyer.whatsapp', icon: MessageCircle, path: '/buyer/whatsapp' },
     ],
   },
 ];
 
 const SUPPLIER_NAV: NavGroup[] = [
   {
-    label: 'ACQUIRE',
+    labelKey: 'nav.section.acquire',
     items: [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/supplier/dashboard' },
-      { label: 'RFQs', icon: Search, path: '/supplier/rfqs' },
-      { label: 'My Storefront', icon: Store, path: '/supplier/storefront' },
+      { labelKey: 'nav.supplier.dashboard', icon: LayoutDashboard, path: '/supplier/dashboard' },
+      { labelKey: 'nav.supplier.rfqs', icon: Search, path: '/supplier/rfqs' },
+      { labelKey: 'nav.supplier.storefront', icon: Store, path: '/supplier/storefront' },
     ],
   },
   {
-    label: 'TRANSACT',
+    labelKey: 'nav.section.transact',
     items: [
-      { label: 'My Orders', icon: ShoppingCart, path: '/supplier/orders' },
-      { label: 'Shipments & ASN', icon: Truck, path: '/supplier/shipments' },
-      { label: 'My Inventory', icon: Boxes, path: '/supplier/inventory' },
+      { labelKey: 'nav.supplier.orders', icon: ShoppingCart, path: '/supplier/orders' },
+      { labelKey: 'nav.supplier.shipments', icon: Truck, path: '/supplier/shipments' },
+      { labelKey: 'nav.supplier.inventory', icon: Boxes, path: '/supplier/inventory' },
     ],
   },
   {
-    label: 'SETTLE',
+    labelKey: 'nav.section.settle',
     items: [
-      { label: 'Invoices', icon: Receipt, path: '/supplier/invoices' },
-      { label: 'Documents', icon: FileText, path: '/supplier/documents' },
+      { labelKey: 'nav.supplier.invoices', icon: Receipt, path: '/supplier/invoices' },
+      { labelKey: 'nav.supplier.documents', icon: FileText, path: '/supplier/documents' },
     ],
   },
   {
-    label: 'INTELLIGENCE',
+    labelKey: 'nav.section.intelligence',
     items: [
-      { label: 'Performance', icon: BarChart2, path: '/supplier/performance' },
-      { label: 'WhatsApp Hub', icon: MessageCircle, path: '/supplier/whatsapp' },
+      { labelKey: 'nav.supplier.performance', icon: BarChart2, path: '/supplier/performance' },
+      { labelKey: 'nav.supplier.whatsapp', icon: MessageCircle, path: '/supplier/whatsapp' },
     ],
   },
 ];
@@ -113,6 +114,7 @@ const SUPPLIER_NAV: NavGroup[] = [
 const SidebarV2: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const currentPath = `${location.pathname}`;
   const { identity, setIdentity } = useCurrentIdentity();
   const persona = identity.personaType;
@@ -140,7 +142,7 @@ const SidebarV2: React.FC = () => {
                 : 'text-text-tertiary'
             }`}
           >
-            Buyer
+            {t('nav.persona.buyer')}
           </button>
           <button
             type="button"
@@ -158,7 +160,7 @@ const SidebarV2: React.FC = () => {
                 : 'text-text-tertiary'
             }`}
           >
-            Supplier
+            {t('nav.persona.supplier')}
           </button>
         </div>
       </div>
@@ -166,9 +168,9 @@ const SidebarV2: React.FC = () => {
       {/* Nav groups */}
       <nav className="flex-1 overflow-y-auto px-3 pb-4 space-y-4">
         {groups.map((group) => (
-          <div key={group.label}>
+          <div key={group.labelKey}>
             <div className="text-label text-text-tertiary px-3 py-2 uppercase">
-              {group.label}
+              {t(group.labelKey)}
             </div>
             <ul className="space-y-0.5">
               {group.items.map((item) => {
@@ -189,7 +191,7 @@ const SidebarV2: React.FC = () => {
                         <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] bg-action rounded-r" />
                       )}
                       <Icon size={18} />
-                      <span>{item.label}</span>
+                      <span>{t(item.labelKey)}</span>
                     </button>
                   </li>
                 );
