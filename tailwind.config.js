@@ -37,6 +37,13 @@ export default {
           soft: '#E6F4F7',
         },
         'navy': '#0D1B2A',
+        // DP2-DATA-NAVY-01: the mono DATA-token colour. A recognizably-blue navy
+        // (reuses the dormant --paragon-navy-light) that lifts data values off
+        // near-black #0D1B2A while staying a full lightness tier darker than
+        // action #0070F2 (11.5:1 vs 4.6:1 on white) — a value can never read as
+        // clickable. AAA as text on white. Distinct from `action` by design;
+        // never an interactive affordance.
+        'data-navy': '#1E3A5F',
         'mid': '#354A5F',
         // Status
         'success': { DEFAULT: '#107E3E', soft: '#E8F5EC' },
