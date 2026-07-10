@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { resources } from '../i18n';
 import { registrationEn, registrationId } from './registration';
 import { contractsEn, contractsId } from './contracts';
+import { buyerWhatsAppEn, buyerWhatsAppId } from './buyerWhatsApp';
+import { supplierWhatsAppEn, supplierWhatsAppId } from './supplierWhatsApp';
+import { sourcingEn, sourcingId } from './sourcing';
+import { rfqsEn, rfqsId } from './rfqs';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -9,6 +13,10 @@ import { contractsEn, contractsId } from './contracts';
 const FRAGMENTS = [
   { name: 'registration', en: registrationEn, id: registrationId },
   { name: 'contracts', en: contractsEn, id: contractsId },
+  { name: 'buyerWhatsApp', en: buyerWhatsAppEn, id: buyerWhatsAppId },
+  { name: 'supplierWhatsApp', en: supplierWhatsAppEn, id: supplierWhatsAppId },
+  { name: 'sourcing', en: sourcingEn, id: sourcingId },
+  { name: 'rfqs', en: rfqsEn, id: rfqsId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {

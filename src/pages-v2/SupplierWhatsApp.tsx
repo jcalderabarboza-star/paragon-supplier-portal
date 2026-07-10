@@ -13,6 +13,7 @@ import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import Button from '../components/ui-v2/Button';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import Data from '../components/ui-v2/Data';
+import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 
 const WHATSAPP_GREEN_HEADER = '#075E54';
@@ -155,55 +156,28 @@ const FOLLOW_UP_REPLIES: Record<string, string[]> = {
   UBAH: ['TANGGAL', 'QTY', 'HARGA'],
 };
 
-const SCENARIO_OPTIONS: { id: ScenarioId; label: string }[] = [
-  { id: 'po', label: 'Confirm a PO' },
-  { id: 'asn', label: 'Submit ASN' },
-  { id: 'inventory', label: 'Update Inventory' },
-  { id: 'invoice', label: 'Invoice Query' },
-];
+// Chrome selector + capability + language labels are i18n keys resolved in-
+// component via t(); the enum ids / flags stay as data. Scenario command tokens
+// inside the capability descriptions (KONFIRMASI, STOK, …) live in the fragment
+// values verbatim.
+const CAP_KEYS = [
+  'confirmPo',
+  'submitAsn',
+  'updateInventory',
+  'requestDocs',
+  'checkPayment',
+  'reportDelays',
+  'submitRfq',
+  'getHelp',
+] as const;
 
-const CAPABILITIES: { title: string; desc: string }[] = [
-  {
-    title: 'Confirm Purchase Orders',
-    desc: 'Reply KONFIRMASI to any PO notification',
-  },
-  {
-    title: 'Submit ASN',
-    desc: 'Send structured message: ASN PO-XXXXX date carrier tracking',
-  },
-  {
-    title: 'Update Inventory',
-    desc: 'STOK [code] [qty] [unit] — updates IBP automatically',
-  },
-  {
-    title: 'Request Documents',
-    desc: 'DOKUMEN [PO number] — bot sends PDF instantly',
-  },
-  {
-    title: 'Check Payment Status',
-    desc: 'BAYAR [invoice number] — get real-time payment info',
-  },
-  {
-    title: 'Report Delays',
-    desc: 'DELAY [PO] [new date] [reason] — auto-notifies buyer',
-  },
-  {
-    title: 'Submit RFQ Response',
-    desc: 'QUOTE [RFQ] [price] [leadtime] — logs in portal',
-  },
-  {
-    title: 'Get Help',
-    desc: 'BANTUAN — bot sends command list in Bahasa Indonesia',
-  },
-];
-
-const LANGUAGES: { flag: string; label: string }[] = [
-  { flag: '🇮🇩', label: 'Bahasa Indonesia' },
-  { flag: '🇺🇸', label: 'English' },
-  { flag: '🇨🇳', label: 'Mandarin' },
-  { flag: '🇩🇪', label: 'German' },
-  { flag: '🇸🇦', label: 'Arabic' },
-  { flag: '🇧🇷', label: 'Portuguese' },
+const LANGUAGES: { flag: string; key: string }[] = [
+  { flag: '🇮🇩', key: 'id' },
+  { flag: '🇺🇸', key: 'en' },
+  { flag: '🇨🇳', key: 'zh' },
+  { flag: '🇩🇪', key: 'de' },
+  { flag: '🇸🇦', key: 'ar' },
+  { flag: '🇧🇷', key: 'pt' },
 ];
 
 const getTime = (): string =>
@@ -432,47 +406,57 @@ const FlowArrow: React.FC<{ label?: string }> = ({ label }) => (
   </div>
 );
 
-const WhatsAppFlow: React.FC = () => (
-  <div>
-    <FlowBox
-      accent="border-l-navy"
-      title="SAP S/4HANA Event"
-      sub="PO created, delivery approaching, invoice overdue…"
-    />
-    <FlowArrow label="Triggers" />
-    <FlowBox
-      accent="border-l-teal"
-      title="Paragon AI Engine"
-      sub="Selects language, formats message, chooses template"
-    />
-    <FlowArrow label="Sends via" />
-    <FlowBox
-      accent="border-l-text-tertiary"
-      title="360dialog WhatsApp API"
-      sub="Delivers to supplier's WhatsApp. Interactive buttons. Read receipts."
-    />
-    <FlowArrow label="Supplier replies" />
-    <FlowBox
-      accent="border-l-teal"
-      title="AI Response Parser"
-      sub="Understands: KONFIRMASI, ASN format, STOK update, free text"
-    />
-    <div className="grid grid-cols-2 gap-3 mt-3">
+const WhatsAppFlow: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <div>
       <FlowBox
-        accent="border-l-success"
-        title="Auto-Execute"
-        sub="Updates SAP, creates ASN, logs in portal, sends confirmation"
+        accent="border-l-navy"
+        title={t('supplierWhatsApp.wa.flow.sap.title')}
+        sub={t('supplierWhatsApp.wa.flow.sap.sub')}
       />
+      <FlowArrow label={t('supplierWhatsApp.flow.arrow.triggers')} />
       <FlowBox
-        accent="border-l-warning"
-        title="Escalate to Buyer"
-        sub="Disputes, deviations >5%, halal issues, no response 24h"
+        accent="border-l-teal"
+        title={t('supplierWhatsApp.wa.flow.engine.title')}
+        sub={t('supplierWhatsApp.wa.flow.engine.sub')}
       />
+      <FlowArrow label={t('supplierWhatsApp.flow.arrow.sendsVia')} />
+      <FlowBox
+        accent="border-l-text-tertiary"
+        title={t('supplierWhatsApp.wa.flow.api.title')}
+        sub={t('supplierWhatsApp.wa.flow.api.sub')}
+      />
+      <FlowArrow label={t('supplierWhatsApp.flow.arrow.supplierReplies')} />
+      <FlowBox
+        accent="border-l-teal"
+        title={t('supplierWhatsApp.wa.flow.parser.title')}
+        sub={t('supplierWhatsApp.wa.flow.parser.sub')}
+      />
+      <div className="grid grid-cols-2 gap-3 mt-3">
+        <FlowBox
+          accent="border-l-success"
+          title={t('supplierWhatsApp.wa.flow.autoExecute.title')}
+          sub={t('supplierWhatsApp.wa.flow.autoExecute.sub')}
+        />
+        <FlowBox
+          accent="border-l-warning"
+          title={t('supplierWhatsApp.wa.flow.escalate.title')}
+          sub={t('supplierWhatsApp.wa.flow.escalate.sub')}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const WhatsAppPanel: React.FC = () => {
+  const { t } = useTranslation();
+  const scenarioOptions: { id: ScenarioId; label: string }[] = [
+    { id: 'po', label: t('supplierWhatsApp.wa.scenario.po') },
+    { id: 'asn', label: t('supplierWhatsApp.wa.scenario.asn') },
+    { id: 'inventory', label: t('supplierWhatsApp.wa.scenario.inventory') },
+    { id: 'invoice', label: t('supplierWhatsApp.wa.scenario.invoice') },
+  ];
   const [scenario, setScenario] = useState<ScenarioId>('po');
   const [messages, setMessages] = useState<SimMessage[]>(SCENARIOS.po.initial);
   const [quickReplies, setQuickReplies] = useState<string[]>(
@@ -530,19 +514,18 @@ const WhatsAppPanel: React.FC = () => {
     <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6">
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
         <h3 className="text-section text-text-primary mb-1">
-          WhatsApp Procurement Simulator
+          {t('supplierWhatsApp.wa.simulator.title')}
         </h3>
         <p className="text-xs text-text-tertiary mb-4">
-          Experience how suppliers interact with Paragon without logging into
-          any portal.
+          {t('supplierWhatsApp.wa.simulator.subtitle')}
         </p>
 
         <div className="mb-4">
           <div className="text-xs font-semibold text-text-secondary mb-2">
-            Choose a scenario:
+            {t('supplierWhatsApp.common.chooseScenario')}
           </div>
           <FilterChipsBar<ScenarioId>
-            options={SCENARIO_OPTIONS}
+            options={scenarioOptions}
             value={scenario}
             onChange={switchScenario}
           />
@@ -566,7 +549,7 @@ const WhatsAppPanel: React.FC = () => {
             icon={RotateCcw}
             onClick={() => switchScenario(scenario)}
           >
-            Reset conversation
+            {t('supplierWhatsApp.action.resetConversation')}
           </Button>
         </div>
       </div>
@@ -574,22 +557,22 @@ const WhatsAppPanel: React.FC = () => {
       <div className="flex flex-col gap-5">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
           <h3 className="text-section text-text-primary mb-4">
-            How Paragon's WhatsApp Commerce Engine works
+            {t('supplierWhatsApp.wa.flow.title')}
           </h3>
           <WhatsAppFlow />
         </section>
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
           <h3 className="text-section text-text-primary">
-            What suppliers can do via WhatsApp
+            {t('supplierWhatsApp.wa.capabilities.title')}
           </h3>
           <p className="text-xs text-text-tertiary mb-4">
-            No app download, no portal login required:
+            {t('supplierWhatsApp.wa.capabilities.subtitle')}
           </p>
           <div className="flex flex-col gap-2">
-            {CAPABILITIES.map((c) => (
+            {CAP_KEYS.map((k) => (
               <div
-                key={c.title}
+                key={k}
                 className="flex gap-3 items-start py-1.5 border-b border-border-subtle last:border-b-0"
               >
                 <CheckCircle2
@@ -598,9 +581,11 @@ const WhatsAppPanel: React.FC = () => {
                 />
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-text-primary">
-                    {c.title}
+                    {t(`supplierWhatsApp.cap.${k}.title`)}
                   </div>
-                  <div className="text-xs text-text-secondary">{c.desc}</div>
+                  <div className="text-xs text-text-secondary">
+                    {t(`supplierWhatsApp.cap.${k}.desc`)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -609,20 +594,20 @@ const WhatsAppPanel: React.FC = () => {
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
           <h3 className="text-section text-text-primary">
-            Languages supported
+            {t('supplierWhatsApp.wa.languages.title')}
           </h3>
           <p className="text-xs text-text-tertiary mb-3">
-            Language auto-detected from supplier's country profile.
+            {t('supplierWhatsApp.wa.languages.subtitle')}
           </p>
           <div className="flex flex-wrap gap-2">
             {LANGUAGES.map((l) => (
               <div
-                key={l.label}
+                key={l.key}
                 className="flex items-center gap-1.5 bg-bg-hover border border-border-subtle rounded-full px-3 py-1"
               >
                 <span className="text-base">{l.flag}</span>
                 <span className="text-xs font-medium text-text-primary">
-                  {l.label}
+                  {t(`supplierWhatsApp.lang.${l.key}`)}
                 </span>
               </div>
             ))}
@@ -661,13 +646,6 @@ const EMAIL_SCENARIOS: Record<ScenarioId, EmailScenarioMeta> = {
     preheader: 'Payment timeline update',
   },
 };
-
-const EMAIL_SCENARIO_OPTIONS: { id: ScenarioId; label: string }[] = [
-  { id: 'po', label: 'PO Notification' },
-  { id: 'asn', label: 'ASN Reminder' },
-  { id: 'inventory', label: 'Inventory Alert' },
-  { id: 'invoice', label: 'Invoice Status' },
-];
 
 const EmailBody: React.FC<{
   scenario: ScenarioId;
@@ -876,47 +854,57 @@ const EmailBody: React.FC<{
   );
 };
 
-const EmailFlow: React.FC = () => (
-  <div>
-    <FlowBox
-      accent="border-l-navy"
-      title="SAP S/4HANA Event"
-      sub="PO created, delivery alert, invoice scheduled…"
-    />
-    <FlowArrow label="Triggers" />
-    <FlowBox
-      accent="border-l-teal"
-      title="Email Template Engine"
-      sub="Selects template, formats HTML, attaches PDF"
-    />
-    <FlowArrow label="Sends via" />
-    <FlowBox
-      accent="border-l-text-tertiary"
-      title="SendGrid / SMTP Gateway"
-      sub="Delivers to supplier inbox. HTML + plain text fallback."
-    />
-    <FlowArrow label="Supplier replies" />
-    <FlowBox
-      accent="border-l-teal"
-      title="Email Reply Parser"
-      sub="Supplier replies via email — or clicks action button"
-    />
-    <div className="grid grid-cols-2 gap-3 mt-3">
+const EmailFlow: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <div>
       <FlowBox
-        accent="border-l-success"
-        title="Auto-Execute"
-        sub="Parses structured reply, updates SAP, logs action"
+        accent="border-l-navy"
+        title={t('supplierWhatsApp.email.flow.sap.title')}
+        sub={t('supplierWhatsApp.email.flow.sap.sub')}
       />
+      <FlowArrow label={t('supplierWhatsApp.flow.arrow.triggers')} />
       <FlowBox
-        accent="border-l-warning"
-        title="Escalate to Buyer"
-        sub="Unstructured reply, dispute, no response 48h"
+        accent="border-l-teal"
+        title={t('supplierWhatsApp.email.flow.engine.title')}
+        sub={t('supplierWhatsApp.email.flow.engine.sub')}
       />
+      <FlowArrow label={t('supplierWhatsApp.flow.arrow.sendsVia')} />
+      <FlowBox
+        accent="border-l-text-tertiary"
+        title={t('supplierWhatsApp.email.flow.gateway.title')}
+        sub={t('supplierWhatsApp.email.flow.gateway.sub')}
+      />
+      <FlowArrow label={t('supplierWhatsApp.flow.arrow.supplierReplies')} />
+      <FlowBox
+        accent="border-l-teal"
+        title={t('supplierWhatsApp.email.flow.parser.title')}
+        sub={t('supplierWhatsApp.email.flow.parser.sub')}
+      />
+      <div className="grid grid-cols-2 gap-3 mt-3">
+        <FlowBox
+          accent="border-l-success"
+          title={t('supplierWhatsApp.email.flow.autoExecute.title')}
+          sub={t('supplierWhatsApp.email.flow.autoExecute.sub')}
+        />
+        <FlowBox
+          accent="border-l-warning"
+          title={t('supplierWhatsApp.email.flow.escalate.title')}
+          sub={t('supplierWhatsApp.email.flow.escalate.sub')}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const EmailPanel: React.FC = () => {
+  const { t } = useTranslation();
+  const scenarioOptions: { id: ScenarioId; label: string }[] = [
+    { id: 'po', label: t('supplierWhatsApp.email.scenario.po') },
+    { id: 'asn', label: t('supplierWhatsApp.email.scenario.asn') },
+    { id: 'inventory', label: t('supplierWhatsApp.email.scenario.inventory') },
+    { id: 'invoice', label: t('supplierWhatsApp.email.scenario.invoice') },
+  ];
   const [scenario, setScenario] = useState<ScenarioId>('po');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -931,19 +919,18 @@ const EmailPanel: React.FC = () => {
     <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6">
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
         <h3 className="text-section text-text-primary mb-1">
-          Email Procurement Simulator
+          {t('supplierWhatsApp.email.simulator.title')}
         </h3>
         <p className="text-xs text-text-tertiary mb-4">
-          Experience how suppliers respond to procurement notifications via
-          email.
+          {t('supplierWhatsApp.email.simulator.subtitle')}
         </p>
 
         <div className="mb-4">
           <div className="text-xs font-semibold text-text-secondary mb-2">
-            Choose a scenario:
+            {t('supplierWhatsApp.common.chooseScenario')}
           </div>
           <FilterChipsBar<ScenarioId>
-            options={EMAIL_SCENARIO_OPTIONS}
+            options={scenarioOptions}
             value={scenario}
             onChange={switchScenario}
           />
@@ -1002,14 +989,14 @@ const EmailPanel: React.FC = () => {
             icon={RotateCcw}
             onClick={() => switchScenario(scenario)}
           >
-            Reset email
+            {t('supplierWhatsApp.email.reset')}
           </Button>
         </div>
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
         <h3 className="text-section text-text-primary mb-4">
-          How Paragon's Email Commerce Engine works
+          {t('supplierWhatsApp.email.flow.title')}
         </h3>
         <EmailFlow />
       </div>
@@ -1059,54 +1046,57 @@ const WECHAT_SCENARIOS: Record<ScenarioId, WeChatScenario> = {
   },
 };
 
-const WECHAT_SCENARIO_OPTIONS: { id: ScenarioId; label: string }[] = [
-  { id: 'po', label: 'Confirm PO' },
-  { id: 'asn', label: 'Submit ASN' },
-  { id: 'inventory', label: 'Inventory Alert' },
-  { id: 'invoice', label: 'Invoice Status' },
-];
-
-const WeChatFlow: React.FC = () => (
-  <div>
-    <FlowBox
-      accent="border-l-navy"
-      title="SAP S/4HANA Event"
-      sub="PO created, delivery approaching, invoice overdue…"
-    />
-    <FlowArrow label="Triggers" />
-    <FlowBox
-      accent="border-l-teal"
-      title="WeChat Template Engine"
-      sub="Formats message, selects language (CN/EN/ID)"
-    />
-    <FlowArrow label="Sends via" />
-    <FlowBox
-      accent="border-l-text-tertiary"
-      title="WeChat Official Account API"
-      sub="Delivers via Official Account. Mini Program cards. Read receipts."
-    />
-    <FlowArrow label="Supplier replies" />
-    <FlowBox
-      accent="border-l-teal"
-      title="Reply Parser"
-      sub="Text reply or Mini Program button tap"
-    />
-    <div className="grid grid-cols-2 gap-3 mt-3">
+const WeChatFlow: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <div>
       <FlowBox
-        accent="border-l-success"
-        title="Auto-Execute"
-        sub="Parses reply, updates SAP, sends confirmation · 自动执行"
+        accent="border-l-navy"
+        title={t('supplierWhatsApp.wc.flow.sap.title')}
+        sub={t('supplierWhatsApp.wc.flow.sap.sub')}
       />
+      <FlowArrow label={t('supplierWhatsApp.flow.arrow.triggers')} />
       <FlowBox
-        accent="border-l-warning"
-        title="Escalate to Buyer"
-        sub="Dispute, no response 24h, complex query · 升级处理"
+        accent="border-l-teal"
+        title={t('supplierWhatsApp.wc.flow.engine.title')}
+        sub={t('supplierWhatsApp.wc.flow.engine.sub')}
       />
+      <FlowArrow label={t('supplierWhatsApp.flow.arrow.sendsVia')} />
+      <FlowBox
+        accent="border-l-text-tertiary"
+        title={t('supplierWhatsApp.wc.flow.api.title')}
+        sub={t('supplierWhatsApp.wc.flow.api.sub')}
+      />
+      <FlowArrow label={t('supplierWhatsApp.flow.arrow.supplierReplies')} />
+      <FlowBox
+        accent="border-l-teal"
+        title={t('supplierWhatsApp.wc.flow.parser.title')}
+        sub={t('supplierWhatsApp.wc.flow.parser.sub')}
+      />
+      <div className="grid grid-cols-2 gap-3 mt-3">
+        <FlowBox
+          accent="border-l-success"
+          title={t('supplierWhatsApp.wc.flow.autoExecute.title')}
+          sub={t('supplierWhatsApp.wc.flow.autoExecute.sub')}
+        />
+        <FlowBox
+          accent="border-l-warning"
+          title={t('supplierWhatsApp.wc.flow.escalate.title')}
+          sub={t('supplierWhatsApp.wc.flow.escalate.sub')}
+        />
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const WeChatPanel: React.FC = () => {
+  const { t } = useTranslation();
+  const scenarioOptions: { id: ScenarioId; label: string }[] = [
+    { id: 'po', label: t('supplierWhatsApp.wc.scenario.po') },
+    { id: 'asn', label: t('supplierWhatsApp.wc.scenario.asn') },
+    { id: 'inventory', label: t('supplierWhatsApp.wc.scenario.inventory') },
+    { id: 'invoice', label: t('supplierWhatsApp.wc.scenario.invoice') },
+  ];
   const [scenario, setScenario] = useState<ScenarioId>('po');
   const [replied, setReplied] = useState(false);
 
@@ -1121,17 +1111,18 @@ const WeChatPanel: React.FC = () => {
     <div className="grid grid-cols-1 lg:grid-cols-[42%_1fr] gap-6">
       <div className="flex flex-col">
         <div className="bg-success-soft border-l-2 border-success rounded px-4 py-3 mb-4 text-xs text-text-secondary">
-          <strong className="text-success">WeChat channel</strong> targets
-          Chinese suppliers — packaging components, active ingredients,
-          fragrance compounds. Supports CN / EN / ID.
+          <strong className="text-success">
+            {t('supplierWhatsApp.wc.banner.label')}
+          </strong>
+          {t('supplierWhatsApp.wc.banner.text')}
         </div>
 
         <div className="mb-4">
           <div className="text-xs font-semibold text-text-secondary mb-2">
-            Choose a scenario:
+            {t('supplierWhatsApp.common.chooseScenario')}
           </div>
           <FilterChipsBar<ScenarioId>
-            options={WECHAT_SCENARIO_OPTIONS}
+            options={scenarioOptions}
             value={scenario}
             onChange={switchScenario}
           />
@@ -1231,14 +1222,14 @@ const WeChatPanel: React.FC = () => {
             icon={RotateCcw}
             onClick={() => switchScenario(scenario)}
           >
-            Reset conversation
+            {t('supplierWhatsApp.action.resetConversation')}
           </Button>
         </div>
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
         <h3 className="text-section text-text-primary mb-4">
-          How Paragon's WeChat Engine works
+          {t('supplierWhatsApp.wc.flow.title')}
         </h3>
         <WeChatFlow />
       </div>
@@ -1247,6 +1238,7 @@ const WeChatPanel: React.FC = () => {
 };
 
 const SupplierWhatsApp: React.FC = () => {
+  const { t } = useTranslation();
   const { identity } = useCurrentIdentity();
   const { supplierId, supplierName } = identity;
   const [channel, setChannel] = useState<Channel>('whatsapp');
@@ -1269,20 +1261,25 @@ const SupplierWhatsApp: React.FC = () => {
     <AppShellV2>
       <style>{PULSE_CSS}</style>
       <PageHeader
-        breadcrumb={['INTELLIGENCE', 'WHATSAPP HUB']}
-        title="Communication Tools"
-        subtitle={`Conversational commerce channels — WhatsApp, Email, and WeChat — ${supplierName ?? 'Supplier'}.`}
+        breadcrumb={[
+          t('supplierWhatsApp.crumb.intelligence'),
+          t('supplierWhatsApp.crumb.whatsappHub'),
+        ]}
+        title={t('supplierWhatsApp.header.title')}
+        subtitle={t('supplierWhatsApp.header.subtitle', {
+          supplier: supplierName ?? t('supplierWhatsApp.fallback.supplier'),
+        })}
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        Interactive simulator · session opened <Data>{lastUpdated}</Data>
+        {t('supplierWhatsApp.meta.sessionOpened')} <Data>{lastUpdated}</Data>
       </PageMetaLine>
 
       <SubTabs<Channel>
         options={[
-          { id: 'whatsapp', label: 'WhatsApp' },
-          { id: 'email', label: 'Email' },
-          { id: 'wechat', label: 'WeChat' },
+          { id: 'whatsapp', label: t('supplierWhatsApp.tab.whatsapp') },
+          { id: 'email', label: t('supplierWhatsApp.tab.email') },
+          { id: 'wechat', label: t('supplierWhatsApp.tab.wechat') },
         ]}
         value={channel}
         onChange={setChannel}

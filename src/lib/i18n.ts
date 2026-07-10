@@ -14,6 +14,10 @@ import { initReactI18next } from 'react-i18next';
 import { statusResourcesEn, statusResourcesId } from './statusLabel';
 import { registrationEn, registrationId } from './i18n/registration';
 import { contractsEn, contractsId } from './i18n/contracts';
+import { buyerWhatsAppEn, buyerWhatsAppId } from './i18n/buyerWhatsApp';
+import { supplierWhatsAppEn, supplierWhatsAppId } from './i18n/supplierWhatsApp';
+import { sourcingEn, sourcingId } from './i18n/sourcing';
+import { rfqsEn, rfqsId } from './i18n/rfqs';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -33,6 +37,10 @@ export const resources = {
       ...statusResourcesEn,
       ...registrationEn,
       ...contractsEn,
+      ...buyerWhatsAppEn,
+      ...supplierWhatsAppEn,
+      ...sourcingEn,
+      ...rfqsEn,
       'app.title': 'Paragon Supplier Portal',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Acquire',
@@ -165,6 +173,10 @@ export const resources = {
       ...statusResourcesId,
       ...registrationId,
       ...contractsId,
+      ...buyerWhatsAppId,
+      ...supplierWhatsAppId,
+      ...sourcingId,
+      ...rfqsId,
       'app.title': 'Portal Pemasok Paragon',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Pengadaan',
