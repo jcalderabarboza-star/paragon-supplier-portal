@@ -55,12 +55,13 @@ describe('DP2-PALETTE-01 — TOKEN_* consts derive from the central palette', ()
   }
 });
 
-// DP2-BUTTON-01 (Ops #11 SEAT 2, Commit 5): an Export is a secondary / alternative
-// action per DP-2 — it must never occupy the BulkActionsBar `primary` slot, which
-// renders action-blue solid and is reserved for the surface's main call-to-action
-// (Sync / Save / Submit / Create / Post). This locks the Commit-5 header flips so
-// an Export can't reclaim primary emphasis. Scans every page automatically so new
-// pages are covered without a maintenance list.
+// DP2-BUTTON-01 (Ops #11 SEAT 2): an Export is a secondary / alternative action
+// per DP-2 — it must never occupy the BulkActionsBar `primary` slot, which is the
+// surface's main call-to-action (Sync / Save / Submit / Create / New). Under the
+// portal-wide button restyle the primary slot now renders action-blue OUTLINE by
+// default (solid is reserved for consequential commits via `primary.solid`), but
+// the convention stands: an Export belongs in `actions[]`, not the primary slot.
+// Scans every page automatically so new pages are covered without a maintenance list.
 //
 // CARVE-OUT: BuyerCompliance.tsx is the registered fixture carve-out
 // (COMPLIANCE-CARVEOUT-01, docs/findings.md) landing at R2.2; its Export-in-primary

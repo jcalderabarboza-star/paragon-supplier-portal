@@ -12,6 +12,12 @@ export interface PrimaryAction {
   label: string;
   icon?: LucideIcon;
   onClick?: () => void;
+  /**
+   * DP2-BUTTON-01: the slot renders OUTLINE by default (the calm register). Set
+   * `solid` only when the action is a consequential/irreversible commit (Award,
+   * Release payment, Post-to-SAP, Reject) — solid is now that signal.
+   */
+  solid?: boolean;
 }
 
 interface BulkActionsBarProps {
@@ -38,7 +44,11 @@ const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
         </Button>
       ))}
       {primary && (
-        <Button variant="primary" icon={primary.icon} onClick={primary.onClick}>
+        <Button
+          variant={primary.solid ? 'primary' : 'outline'}
+          icon={primary.icon}
+          onClick={primary.onClick}
+        >
           {primary.label}
         </Button>
       )}

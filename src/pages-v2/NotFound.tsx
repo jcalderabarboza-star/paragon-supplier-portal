@@ -28,7 +28,7 @@ const NotFound: React.FC = () => {
           This route does not match any page. It may have moved, or the link may
           be wrong.
         </div>
-        <Button variant="primary" onClick={() => navigate('/buyer/dashboard')}>
+        <Button variant="outline" onClick={() => navigate('/buyer/dashboard')}>
           Back to dashboard
         </Button>
       </div>

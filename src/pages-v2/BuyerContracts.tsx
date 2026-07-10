@@ -1413,7 +1413,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               >
                 Export PDF
               </Button>
-              <Button variant="primary">
+              <Button variant="outline">
                 {FOOTER_PRIMARY_LABEL(selectedContract)}
               </Button>
             </>

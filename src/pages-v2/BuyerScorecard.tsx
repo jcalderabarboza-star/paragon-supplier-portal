@@ -479,7 +479,7 @@ const BuyerScorecard: React.FC = () => {
             ))}
           </div>
           <Button
-            variant="primary"
+            variant="outline"
             icon={Mail}
             onClick={() =>
               toast({

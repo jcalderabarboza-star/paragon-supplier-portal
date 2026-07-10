@@ -281,7 +281,7 @@ const RequestTypeSelector: React.FC<{
     )}
     <div className="flex justify-end">
       <Button
-        variant="primary"
+        variant="outline"
         disabled={value === null}
         onClick={onContinue}
       >

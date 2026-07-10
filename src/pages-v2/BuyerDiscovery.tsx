@@ -208,7 +208,7 @@ const GlobalSupplierCard: React.FC<{
 
       <div className="flex flex-wrap gap-2 pt-3 border-t border-border-subtle">
         {!supplier.alreadyInNetwork ? (
-          <Button variant="primary" icon={Mail} onClick={onInvite}>
+          <Button variant="outline" icon={Mail} onClick={onInvite}>
             Invite to Marketplace
           </Button>
         ) : (
@@ -337,7 +337,7 @@ const RecommendationCard: React.FC<{
         </div>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" icon={ChevronRight} onClick={onViewStorefront}>
+        <Button variant="outline" icon={ChevronRight} onClick={onViewStorefront}>
           View storefront
         </Button>
         <Button variant="secondary" onClick={onQualify}>
@@ -528,7 +528,7 @@ const BuyerDiscovery: React.FC = () => {
         subtitle="Find and qualify new suppliers globally — market-validated by L'Oréal, Unilever, P&G, Shiseido and more."
         actions={
           <Button
-            variant="primary"
+            variant="outline"
             icon={Globe2}
             onClick={() => navigate('/marketplace')}
           >
@@ -641,7 +641,7 @@ const BuyerDiscovery: React.FC = () => {
                     No suppliers match your current search. Try different keywords,
                     remove filters, or browse all regions.
                   </div>
-                  <Button variant="primary" onClick={resetSearch}>
+                  <Button variant="outline" onClick={resetSearch}>
                     Clear all filters
                   </Button>
                 </div>
@@ -776,7 +776,7 @@ const BuyerDiscovery: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
-                        variant="primary"
+                        variant="outline"
                         onClick={() =>
                           toast({
                             variant: 'info',

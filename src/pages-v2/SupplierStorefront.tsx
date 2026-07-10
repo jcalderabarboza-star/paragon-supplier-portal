@@ -200,7 +200,7 @@ const SupplierStorefront: React.FC = () => {
             <Button variant="secondary" icon={MessageCircle}>
               Connect
             </Button>
-            <Button variant="primary" icon={Send}>
+            <Button variant="outline" icon={Send}>
               Request RFQ
             </Button>
           </div>
@@ -417,7 +417,7 @@ const SupplierStorefront: React.FC = () => {
             />
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="secondary">Save draft</Button>
-              <Button variant="primary" icon={Send}>
+              <Button variant="outline" icon={Send}>
                 Send message
               </Button>
             </div>

@@ -82,10 +82,15 @@ home redirect points to `/buyer/dashboard`; unknown routes render a real 404
   affordance or a primary action. Navy (`#0D1B2A`) is text/headings only — never
   a decorative fill. Mid (`#354A5F`) is secondary text. Surfaces stay white /
   light-neutral with subtle borders.
-- BUTTON HIERARCHY: primary action = action-blue **solid** (`Button
-  variant="primary"` / the `BulkActionsBar` primary slot); Export / Cancel /
-  Close / secondary paths = **outline** (`variant="secondary"`). One primary per
-  surface — an Export never occupies the primary slot (guard DP2-BUTTON-01).
+- BUTTON HIERARCHY (DP2-BUTTON-01): primary action = action-blue **OUTLINE** by
+  default (`Button variant="outline"`) — the calm portal-wide register. **SOLID**
+  action-blue (`variant="primary"`) is RESERVED for consequential / irreversible
+  commits — Award (RFQ), Release payment, Post-to-SAP, Reject / Dispute,
+  Override-hold. Principle: **solid = the irreversible-commit signal**; at most
+  ONE meaningful solid per surface. Export / Cancel / Close / secondary paths stay
+  outline / `variant="secondary"`; an Export never occupies the primary slot. The
+  `BulkActionsBar` primary slot renders outline by default — set `primary.solid`
+  only for a reserved commit verb. WhatsApp / messenger chrome is exempt (D-2).
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.

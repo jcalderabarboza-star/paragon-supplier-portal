@@ -378,7 +378,7 @@ const SupplierDocuments: React.FC = () => {
                     <div className="inline-flex gap-1.5">
                       {doc.status === 'Awaiting Upload' ? (
                         <Button
-                          variant="primary"
+                          variant="outline"
                           icon={Upload}
                           onClick={() => openUploadFor(doc)}
                         >
@@ -462,7 +462,7 @@ const SupplierDocuments: React.FC = () => {
             </Button>
             {!uploaded && (
               <Button
-                variant="primary"
+                variant="outline"
                 icon={Upload}
                 onClick={submitUpload}
               >

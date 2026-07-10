@@ -240,7 +240,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                   </span>
                   <div className="justify-self-end">
                     <Button
-                      variant="primary"
+                      variant="outline"
                       icon={Plus}
                       onClick={() => onCreateAsnForPO(po.id)}
                     >
@@ -323,7 +323,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                     <TableCell className="text-right whitespace-nowrap">
                       {asn.status === 'Draft' && (
                         <Button
-                          variant="primary"
+                          variant="outline"
                           onClick={() => onSubmitAsn(asn.asnNumber)}
                         >
                           {t('asn.submit.action')}
@@ -1110,7 +1110,7 @@ const SupplierShipments: React.FC = () => {
                 Cancel
               </Button>
               <Button
-                variant="primary"
+                variant="outline"
                 icon={Send}
                 onClick={doSubmitAsn}
                 disabled={submitAsnMutation.isPending}

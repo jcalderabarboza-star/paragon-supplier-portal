@@ -383,7 +383,7 @@ const SupplierOrders: React.FC = () => {
                   <Button
                     variant={
                       ACTION_STATUSES.includes(po.status)
-                        ? 'primary'
+                        ? 'outline'
                         : 'secondary'
                     }
                     onClick={(e) => handleRowAction(po, e)}
@@ -420,11 +420,11 @@ const SupplierOrders: React.FC = () => {
                     Close
                   </Button>
                   {ACTION_STATUSES.includes((selectedLive ?? selected).status) ? (
-                    <Button variant="primary" onClick={startEditing}>
+                    <Button variant="outline" onClick={startEditing}>
                       Confirm order
                     </Button>
                   ) : (selectedLive ?? selected).status === POStatus.CONFIRMED ? (
-                    <Button variant="primary" onClick={goToASN}>
+                    <Button variant="outline" onClick={goToASN}>
                       Create ASN
                     </Button>
                   ) : null}
@@ -439,7 +439,7 @@ const SupplierOrders: React.FC = () => {
                     Request change instead
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="outline"
                     icon={CheckCircle2}
                     onClick={confirmOrder}
                     disabled={confirmMutation.isPending}
@@ -458,7 +458,7 @@ const SupplierOrders: React.FC = () => {
                   >
                     Back to confirm
                   </Button>
-                  <Button variant="primary" onClick={submitChangeRequest}>
+                  <Button variant="outline" onClick={submitChangeRequest}>
                     Submit change request
                   </Button>
                 </>
@@ -468,7 +468,7 @@ const SupplierOrders: React.FC = () => {
                   <Button variant="secondary" onClick={closePanel}>
                     Close
                   </Button>
-                  <Button variant="primary" icon={Truck} onClick={goToASN}>
+                  <Button variant="outline" icon={Truck} onClick={goToASN}>
                     Create ASN now
                   </Button>
                 </>

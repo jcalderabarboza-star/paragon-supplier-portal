@@ -527,7 +527,7 @@ const SupplierPerformance: React.FC = () => {
                   {item.action}
                 </div>
                 <Button
-                  variant="primary"
+                  variant="outline"
                   icon={CheckCircle2}
                   onClick={() =>
                     toast({

@@ -244,7 +244,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         subtitle={`Your public profile in the Paragon Supplier Marketplace — ${supp.name}.`}
         actions={
           <Button
-            variant="primary"
+            variant="outline"
             icon={ExternalLink}
             onClick={() => navigate(`/marketplace/supplier/${supplierId}`)}
           >
@@ -338,7 +338,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               </div>
               <div className="flex gap-2">
                 <Button
-                  variant="primary"
+                  variant="outline"
                   onClick={() => {
                     setEditProfile(false);
                     toast({
@@ -398,7 +398,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         >
           <div className="flex justify-end mb-3">
             <Button
-              variant="primary"
+              variant="outline"
               icon={Plus}
               onClick={() => setShowAddForm(!showAddForm)}
             >
@@ -620,7 +620,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="primary" onClick={submitNewMaterial}>
+                <Button variant="outline" onClick={submitNewMaterial}>
                   Submit for review
                 </Button>
                 <Button variant="secondary" onClick={() => setShowAddForm(false)}>
@@ -638,7 +638,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         >
           <div className="flex justify-end mb-3">
             <Button
-              variant="primary"
+              variant="outline"
               icon={Upload}
               onClick={() => toast({ title: 'File browser opened (mock)' })}
             >
@@ -693,7 +693,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         >
           <div className="flex justify-end mb-3">
             <Button
-              variant="primary"
+              variant="outline"
               onClick={() =>
                 toast({
                   variant: 'success',
@@ -743,7 +743,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         >
           <div className="flex justify-end mb-3">
             <Button
-              variant="primary"
+              variant="outline"
               onClick={() =>
                 toast({
                   variant: 'success',

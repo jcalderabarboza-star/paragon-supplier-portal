@@ -413,7 +413,7 @@ const BuyerRequisitions: React.FC = () => {
               </Button>
               {selectedPR.status === 'Approved' && (
                 <Button
-                  variant="primary"
+                  variant="outline"
                   onClick={() => {
                     const hasPIR = selectedPR.sourceOfSupply === 'PIR exists';
                     toast({
@@ -432,7 +432,7 @@ const BuyerRequisitions: React.FC = () => {
               )}
               {selectedPR.status === 'Draft' && (
                 <Button
-                  variant="primary"
+                  variant="outline"
                   onClick={() => {
                     toast({
                       variant: 'success',
@@ -574,7 +574,7 @@ const BuyerRequisitions: React.FC = () => {
               Cancel
             </Button>
             <Button
-              variant="primary"
+              variant="outline"
               disabled={!canSubmit}
               onClick={submitNewPR}
             >

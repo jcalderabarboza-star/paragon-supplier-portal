@@ -505,7 +505,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
             </div>
           </div>
           <Button
-            variant="primary"
+            variant="outline"
             icon={Send}
             onClick={sendToWarRoom}
             className="shrink-0"
@@ -564,7 +564,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
                     </div>
                     <div className="mt-3 flex gap-2">
                       <Button
-                        variant="primary"
+                        variant="outline"
                         onClick={() =>
                           toast({
                             variant: 'info',
@@ -715,7 +715,7 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
                       </span>
                     ) : (
                       <Button
-                        variant="primary"
+                        variant="outline"
                         onClick={() =>
                           toast({
                             variant: row.status === 'expired' ? 'warning' : 'info',

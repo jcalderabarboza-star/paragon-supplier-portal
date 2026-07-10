@@ -346,7 +346,7 @@ const BuyerShipments: React.FC = () => {
       case 'Pending ASN':
         return (
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() =>
               toast({
                 variant: 'success',
@@ -363,7 +363,7 @@ const BuyerShipments: React.FC = () => {
       case 'Customs Clearance':
         return (
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() =>
               toast({
                 variant: 'info',
@@ -379,7 +379,7 @@ const BuyerShipments: React.FC = () => {
       case 'Unloading':
         return (
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() => navigate('/buyer/goods-receipt')}
           >
             Begin GR process
@@ -388,7 +388,7 @@ const BuyerShipments: React.FC = () => {
       case 'Delivered':
         return (
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() => navigate('/buyer/goods-receipt')}
           >
             View GR
@@ -397,7 +397,7 @@ const BuyerShipments: React.FC = () => {
       case 'Delayed':
         return (
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() =>
               toast({
                 variant: 'warning',

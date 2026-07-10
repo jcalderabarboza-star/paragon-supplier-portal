@@ -322,7 +322,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="primary" onClick={() => onSubmitQuote(rfq)}>
+          <Button variant="outline" onClick={() => onSubmitQuote(rfq)}>
             Submit quote
           </Button>
           <Button
@@ -801,7 +801,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               Cancel
             </Button>
             <Button
-              variant="primary"
+              variant="outline"
               icon={Send}
               disabled={submitting}
               onClick={submitQuote}

@@ -809,7 +809,10 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                       Dispute
                     </Button>
                   )}
-                  <Button variant="primary" onClick={handleFooterAction}>
+                  <Button
+                    variant={selected.status === 'Approved' ? 'primary' : 'outline'}
+                    onClick={handleFooterAction}
+                  >
                     {FOOTER_ACTION_BY_STATUS[selected.status]}
                   </Button>
                 </>
@@ -859,7 +862,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   >
                     Back
                   </Button>
-                  <Button variant="primary" icon={Send} onClick={sendRemittance}>
+                  <Button variant="outline" icon={Send} onClick={sendRemittance}>
                     Send to supplier
                   </Button>
                 </>

@@ -335,7 +335,7 @@ const BuyerCompliance: React.FC = () => {
                     {showRemind && (
                       <Button
                         variant={
-                          item.priority === 'Critical' ? 'primary' : 'secondary'
+                          item.priority === 'Critical' ? 'outline' : 'secondary'
                         }
                         icon={Bell}
                         onClick={() =>

@@ -599,7 +599,7 @@ const SupplierDashboard: React.FC = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
-                          variant={isActionable ? 'primary' : 'secondary'}
+                          variant={isActionable ? 'outline' : 'secondary'}
                           onClick={() =>
                             toast({
                               variant: 'info',
