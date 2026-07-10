@@ -40,6 +40,9 @@ import BuyerRfqAwaitingAwardWidget from './widgets/BuyerRfqAwaitingAwardWidget';
 import BuyerOpenPoWidget from './widgets/BuyerOpenPoWidget';
 import BuyerGoodsReceiptWidget from './widgets/BuyerGoodsReceiptWidget';
 import BuyerAsnInboundWidget from './widgets/BuyerAsnInboundWidget';
+import BuyerInventoryWidget from './widgets/BuyerInventoryWidget';
+import BuyerRiskWidget from './widgets/BuyerRiskWidget';
+import BuyerComplianceWidget from './widgets/BuyerComplianceWidget';
 
 type RangeId = 'today' | 'week' | 'month';
 
@@ -148,6 +151,11 @@ const BuyerDashboard: React.FC = () => {
         <BuyerOpenPoWidget />
         <BuyerGoodsReceiptWidget />
         <BuyerAsnInboundWidget />
+        {/* Sample-data widgets (live=false, amber pill) — fixture-backed domains
+            with no store yet: honest by construction, never faked green. */}
+        <BuyerInventoryWidget />
+        <BuyerRiskWidget />
+        <BuyerComplianceWidget />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

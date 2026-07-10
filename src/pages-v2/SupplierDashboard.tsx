@@ -34,6 +34,7 @@ import EmptyState from '../components/ui-v2/EmptyState';
 import OrdersToConfirmWidget from './widgets/OrdersToConfirmWidget';
 import SupplierInvoicePaymentWidget from './widgets/SupplierInvoicePaymentWidget';
 import SupplierRfqToRespondWidget from './widgets/SupplierRfqToRespondWidget';
+import SupplierCertsExpiringWidget from './widgets/SupplierCertsExpiringWidget';
 import {
   useCurrentSupplier,
   usePurchaseOrders,
@@ -434,6 +435,9 @@ const SupplierDashboard: React.FC = () => {
         <OrdersToConfirmWidget />
         <SupplierInvoicePaymentWidget />
         <SupplierRfqToRespondWidget />
+        {/* Sample-data widget (live=false, amber pill) — document fixture, no
+            upload command yet: honest by construction, never faked green. */}
+        <SupplierCertsExpiringWidget />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-5">
