@@ -867,7 +867,7 @@ const KOLBankStep: React.FC<StepProps> = ({ form, setForm, errors }) => (
         </Field>
       </div>
     </div>
-    <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 mt-3 text-xs text-warning">
+    <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 mt-3 text-xs text-warning-hover">
       <strong>KOL vendor:</strong> Created directly in S/4HANA at DC level. No
       Ariba qualification required.
     </div>
@@ -958,7 +958,7 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning">
+      <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning-hover">
         Please review all information below before submitting. Go back to make
         any changes.
       </div>

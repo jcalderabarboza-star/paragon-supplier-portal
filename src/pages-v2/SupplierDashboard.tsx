@@ -310,7 +310,7 @@ const SupplierDashboard: React.FC = () => {
     {
       id: 'iso-upload',
       Icon: Clock,
-      iconClass: 'text-warning',
+      iconClass: 'text-warning-hover',
       iconBg: 'bg-warning-soft',
       title: 'Upload ISO 9001:2015 certificate',
       badge: '45 days left',
@@ -648,7 +648,7 @@ const SupplierDashboard: React.FC = () => {
                   v === 'success'
                     ? 'text-success'
                     : v === 'warning'
-                      ? 'text-warning'
+                      ? 'text-warning-hover'
                       : 'text-danger';
                 return (
                   <div key={m.label}>

@@ -21,7 +21,7 @@ interface StatusPillProps {
 // canonical table in src/lib/statusTone.ts — StatusPill never string-matches.
 const VARIANT_CLASS: Record<Variant, string> = {
   success: 'bg-success-soft text-success border-success/30',
-  warning: 'bg-warning-soft text-warning border-warning/30',
+  warning: 'bg-warning-soft text-warning-hover border-warning/30',
   danger: 'bg-danger-soft text-danger border-danger/30',
   info: 'bg-action-soft text-action-hover border-action/40',
   neutral: 'bg-bg-hover text-text-secondary border-border-subtle',

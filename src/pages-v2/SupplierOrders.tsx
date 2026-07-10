@@ -287,7 +287,7 @@ const SupplierOrders: React.FC = () => {
           value={counts.action.toString()}
           subtitle={
             counts.action > 0 ? (
-              <span className="text-warning">Needs your action</span>
+              <span className="text-warning-hover">Needs your action</span>
             ) : (
               'All actions cleared'
             )
@@ -327,7 +327,7 @@ const SupplierOrders: React.FC = () => {
       />
 
       {counts.action > 0 && activeTab !== 'completed' && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-2 text-sm text-warning">
+        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-2 text-sm text-warning-hover">
           <AlertCircle size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>
@@ -621,7 +621,7 @@ const SupplierOrders: React.FC = () => {
                   </div>
                 </div>
                 {(hasQtyChange || hasDateChange) && (
-                  <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning">
+                  <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover">
                     Confirmed values differ from the original PO. Paragon will
                     review your changes.
                   </div>

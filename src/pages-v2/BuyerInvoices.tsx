@@ -494,7 +494,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       )}
 
       {disputedInvoices.length > 0 && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-6 text-sm text-warning flex items-start gap-2">
+        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-6 text-sm text-warning-hover flex items-start gap-2">
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>Invoice dispute: </strong>
@@ -1017,7 +1017,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             </section>
 
             {panelMode === 'confirming' && (
-              <section className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning">
+              <section className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning-hover">
                 <div className="font-semibold mb-1">Confirm payment release</div>
                 <div className="text-text-secondary">
                   This action cannot be undone. Payment of{' '}
@@ -1116,7 +1116,7 @@ interface MatchTileProps {
 
 const MATCH_TILE_CLASS: Record<MatchTileProps['variant'], string> = {
   success: 'bg-success-soft text-success',
-  warning: 'bg-warning-soft text-warning',
+  warning: 'bg-warning-soft text-warning-hover',
   danger: 'bg-danger-soft text-danger',
   neutral: 'bg-bg-hover text-text-secondary',
 };

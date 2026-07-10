@@ -89,7 +89,7 @@ const GRADE_VARIANT: Record<Grade, 'success' | 'info' | 'warning' | 'danger'> = 
 
 const TONE_CLASS: Record<KpiTone, string> = {
   success: 'text-success',
-  warning: 'text-warning',
+  warning: 'text-warning-hover',
   danger: 'text-danger',
   neutral: 'text-text-tertiary',
 };

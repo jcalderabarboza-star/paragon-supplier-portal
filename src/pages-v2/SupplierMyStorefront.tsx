@@ -269,7 +269,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 className={`text-sm font-bold ${
                   completenessVariant === 'success'
                     ? 'text-success'
-                    : 'text-warning'
+                    : 'text-warning-hover'
                 }`}
               >
                 {completeness}%
@@ -301,7 +301,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               className={`text-kpi font-mono tabular-nums ${
                 completenessVariant === 'success'
                   ? 'text-success'
-                  : 'text-warning'
+                  : 'text-warning-hover'
               }`}
             >
               {completeness}%
@@ -802,7 +802,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               { label: 'Profile views (month)', value: '24', tone: 'text-teal' },
               { label: 'RFQ invitations', value: '3', tone: 'text-info' },
               { label: 'Win rate', value: '67%', tone: 'text-success' },
-              { label: 'Category rank', value: '#3 / 31', tone: 'text-warning' },
+              { label: 'Category rank', value: '#3 / 31', tone: 'text-warning-hover' },
             ].map((s) => (
               <div
                 key={s.label}

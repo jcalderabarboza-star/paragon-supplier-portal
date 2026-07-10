@@ -757,7 +757,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
         <KpiCard
           eyebrow="Awaiting Award"
           value={awaitingCount.toString()}
-          subtitle={<span className="text-warning">Decision pending</span>}
+          subtitle={<span className="text-warning-hover">Decision pending</span>}
           icon={Trophy}
         />
       </div>

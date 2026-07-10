@@ -100,7 +100,7 @@ const BuyerAlertsBar: React.FC = () => {
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-5 py-3 shadow-sm mb-6">
       <div className="flex items-center gap-2 shrink-0">
-        <AlertTriangle size={16} className="text-warning" />
+        <AlertTriangle size={16} className="text-warning-hover" />
         <span className="text-sm font-semibold text-text-primary">
           <Data>{total}</Data> open exception{total === 1 ? '' : 's'}
         </span>

@@ -65,7 +65,7 @@ const EDGE_CLASS: Record<FlagSeverity, string> = {
 const HonestyDot: React.FC<{ live: boolean }> = ({ live }) => (
   <span
     className={`inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${
-      live ? 'text-success' : 'text-warning'
+      live ? 'text-success' : 'text-warning-hover'
     }`}
   >
     <span

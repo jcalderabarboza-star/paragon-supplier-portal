@@ -84,7 +84,7 @@ const ProcurementFlow: React.FC = () => {
   const TONE: Record<string, string> = {
     neutral: 'bg-bg-hover text-text-secondary border-border-subtle',
     success: 'bg-success-soft text-success border-success/30',
-    warning: 'bg-warning-soft text-warning border-warning/30',
+    warning: 'bg-warning-soft text-warning-hover border-warning/30',
   };
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg px-5 py-4 mb-6">
@@ -531,7 +531,7 @@ const BuyerRequisitions: React.FC = () => {
                 className={`border-l-2 rounded px-3 py-3 text-sm ${
                   selectedPR.sourceOfSupply === 'PIR exists'
                     ? 'bg-success-soft border-success text-success'
-                    : 'bg-warning-soft border-warning text-warning'
+                    : 'bg-warning-soft border-warning text-warning-hover'
                 }`}
               >
                 <div className="font-semibold">

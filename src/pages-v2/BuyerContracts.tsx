@@ -121,7 +121,7 @@ const formatMonth = (iso: string): string => {
 const expiryTone = (days: number): string => {
   if (days < 0) return 'text-danger font-semibold';
   if (days < 30) return 'text-danger font-semibold';
-  if (days < 90) return 'text-warning font-semibold';
+  if (days < 90) return 'text-warning-hover font-semibold';
   return 'text-success';
 };
 
@@ -1359,7 +1359,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             c.daysUntilExpiry < 30
                               ? 'bg-danger-soft text-danger'
                               : c.daysUntilExpiry < 90
-                                ? 'bg-warning-soft text-warning'
+                                ? 'bg-warning-soft text-warning-hover'
                                 : 'bg-info-soft text-info'
                           }`}
                         >

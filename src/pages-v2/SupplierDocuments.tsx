@@ -210,7 +210,7 @@ const SupplierDocuments: React.FC = () => {
         </div>
       )}
       {expiringSoon.length > 0 && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-3 text-sm text-warning flex items-start gap-2">
+        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-3 text-sm text-warning-hover flex items-start gap-2">
           <Clock size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>
@@ -250,7 +250,7 @@ const SupplierDocuments: React.FC = () => {
         <KpiCard
           eyebrow="Expiring ≤180d"
           value={expiringSoon.length.toString()}
-          subtitle={<span className="text-warning">Renewal window open</span>}
+          subtitle={<span className="text-warning-hover">Renewal window open</span>}
           icon={Clock}
         />
         <KpiCard
@@ -306,7 +306,7 @@ const SupplierDocuments: React.FC = () => {
                   : days <= 0
                     ? 'text-danger'
                     : days <= 90
-                      ? 'text-warning'
+                      ? 'text-warning-hover'
                       : 'text-text-tertiary';
               return (
                 <TableRow key={doc.id}>
@@ -315,7 +315,7 @@ const SupplierDocuments: React.FC = () => {
                       {doc.name}
                     </div>
                     {doc.notes && (
-                      <div className="text-xs text-warning mt-0.5 max-w-[18rem]">
+                      <div className="text-xs text-warning-hover mt-0.5 max-w-[18rem]">
                         ⚠ {doc.notes}
                       </div>
                     )}
@@ -339,7 +339,7 @@ const SupplierDocuments: React.FC = () => {
                           as="div"
                           className={`text-xs ${
                             days !== null && days <= 90
-                              ? 'text-warning'
+                              ? 'text-warning-hover'
                               : 'text-text-tertiary'
                           }`}
                         >
@@ -430,9 +430,9 @@ const SupplierDocuments: React.FC = () => {
       </div>
 
       <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-        <FileText size={14} className="text-warning shrink-0 mt-0.5" />
+        <FileText size={14} className="text-warning-hover shrink-0 mt-0.5" />
         <div>
-          <strong className="text-warning">
+          <strong className="text-warning-hover">
             BPJPH Halal Mandatory Transition — October 2026:
           </strong>{' '}
           All cosmetics and personal care products distributed in Indonesia must
@@ -443,7 +443,7 @@ const SupplierDocuments: React.FC = () => {
             href="https://halal.go.id"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-warning font-semibold inline-flex items-center gap-1 hover:underline"
+            className="text-warning-hover font-semibold inline-flex items-center gap-1 hover:underline"
           >
             halal.go.id
             <ExternalLink size={11} />
@@ -485,7 +485,7 @@ const SupplierDocuments: React.FC = () => {
                 Linked: {activeDoc.linkedTo}
               </div>
               {activeDoc.notes && (
-                <div className="mt-2 bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning">
+                <div className="mt-2 bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover">
                   {activeDoc.notes}
                 </div>
               )}

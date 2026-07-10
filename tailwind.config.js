@@ -40,7 +40,14 @@ export default {
         'mid': '#354A5F',
         // Status
         'success': { DEFAULT: '#107E3E', soft: '#E8F5EC' },
-        'warning': { DEFAULT: '#B45309', soft: '#FEF3D6' },
+        // Warning is a FILL/TEXT split (same shape as `action`): the burnt
+        // #B45309 read brown, so DEFAULT is a truer, brighter amber for every
+        // GRAPHICAL use — accent-edges, dots, bar fills, dials, chip fills,
+        // borders (3.19:1 on white, meets the 3:1 non-text floor). `hover` is a
+        // dark amber reserved for TEXT on light — text-warning-hover labels clear
+        // AA on both white (6.2:1) and warning-soft (5.6:1), where the bright
+        // DEFAULT as text would fail. soft (chip/banner tint) is unchanged.
+        'warning': { DEFAULT: '#D97706', hover: '#8A5606', soft: '#FEF3D6' },
         'danger': { DEFAULT: '#BB0000', soft: '#FCE4E4' },
         'info': { DEFAULT: '#1E5BAE', soft: '#E5F0FF' },
         // Borders

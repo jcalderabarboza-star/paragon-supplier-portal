@@ -73,7 +73,7 @@ const OTIF_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 const GRADE_TONE: Record<Grade, { stroke: string; soft: string; text: string }> = {
   A: { stroke: '#107E3E', soft: '#E8F5EC', text: 'text-success' },
   B: { stroke: '#1E5BAE', soft: '#E5F0FF', text: 'text-info' },
-  C: { stroke: '#B45309', soft: '#FEF3D6', text: 'text-warning' },
+  C: { stroke: '#B45309', soft: '#FEF3D6', text: 'text-warning-hover' },
   D: { stroke: '#BB0000', soft: '#FCE4E4', text: 'text-danger' },
 };
 
@@ -285,7 +285,7 @@ const BuyerScorecard: React.FC = () => {
               <div
                 className={`mt-4 inline-flex items-center gap-2 rounded px-3 py-2 text-xs font-medium ${
                   compliance.level === 'expiring'
-                    ? 'bg-warning-soft text-warning'
+                    ? 'bg-warning-soft text-warning-hover'
                     : 'bg-danger-soft text-danger'
                 }`}
               >

@@ -127,7 +127,7 @@ const PULSE_CSS = `
 
 const ALERT_VARIANT: Record<AlertLevel, { bg: string; border: string; text: string; Icon: LucideIcon }> = {
   critical: { bg: 'bg-danger-soft', border: 'border-danger', text: 'text-danger', Icon: AlertOctagon },
-  warning: { bg: 'bg-warning-soft', border: 'border-warning', text: 'text-warning', Icon: AlertTriangle },
+  warning: { bg: 'bg-warning-soft', border: 'border-warning', text: 'text-warning-hover', Icon: AlertTriangle },
   info: { bg: 'bg-info-soft', border: 'border-info', text: 'text-info', Icon: Info },
 };
 
@@ -294,7 +294,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => (
                   sevVariant === 'danger'
                     ? 'text-danger'
                     : sevVariant === 'warning'
-                      ? 'text-warning'
+                      ? 'text-warning-hover'
                       : 'text-success'
                 }`}
               >
@@ -311,7 +311,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => (
               <div className="text-sm text-text-secondary">{r.impact}</div>
               <div
                 className={`text-sm font-semibold mt-2 ${
-                  sevVariant === 'danger' ? 'text-danger' : 'text-warning'
+                  sevVariant === 'danger' ? 'text-danger' : 'text-warning-hover'
                 }`}
               >
                 {r.exposure}
@@ -444,7 +444,7 @@ const SummaryStat: React.FC<{
         tone === 'danger'
           ? 'text-danger'
           : tone === 'warning'
-            ? 'text-warning'
+            ? 'text-warning-hover'
             : 'text-success'
       }`}
     >
@@ -544,7 +544,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
                     </StatusPill>
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
-                    <span className="text-xs font-semibold text-warning">
+                    <span className="text-xs font-semibold text-warning-hover">
                       {alt.cost}
                     </span>
                     <span className="text-xs font-semibold text-info">
@@ -632,14 +632,14 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
     <div className="flex flex-col gap-4">
       {!bannerDismissed && halalItem && (
         <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 flex items-start gap-3">
-          <AlertTriangle size={16} className="text-warning shrink-0 mt-0.5" />
+          <AlertTriangle size={16} className="text-warning-hover shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <span className="text-sm font-bold text-text-primary">
               Action required:{' '}
             </span>
             <span className="text-sm text-text-secondary">
               {halalItem.supplier}'s {halalItem.type} expires in{' '}
-              <strong className="text-warning">
+              <strong className="text-warning-hover">
                 {halalItem.daysLeft} days
               </strong>{' '}
               ({halalItem.expires}). Renew immediately to maintain export
@@ -694,7 +694,7 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
                         row.status === 'expired'
                           ? 'text-danger'
                           : row.status === 'expiring'
-                            ? 'text-warning'
+                            ? 'text-warning-hover'
                             : 'text-success'
                       }`}
                     >

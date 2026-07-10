@@ -476,7 +476,7 @@ const BuyerShipments: React.FC = () => {
         <KpiCard
           eyebrow="At Dock / Unloading"
           value={
-            <span className="text-warning">{formatNumber(counts.dock)}</span>
+            <span className="text-warning-hover">{formatNumber(counts.dock)}</span>
           }
           icon={Truck}
           subtitle="Currently at NDC J6"

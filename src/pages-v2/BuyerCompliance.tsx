@@ -150,9 +150,9 @@ const BuyerCompliance: React.FC = () => {
       </PageMetaLine>
 
       <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-3">
-        <Shield size={16} className="text-warning shrink-0 mt-0.5" />
+        <Shield size={16} className="text-warning-hover shrink-0 mt-0.5" />
         <div className="text-sm text-text-secondary">
-          <strong className="text-warning">
+          <strong className="text-warning-hover">
             BPJPH Mandatory Transition — October 2026:
           </strong>{' '}
           All cosmetics and personal care products distributed in Indonesia
@@ -180,7 +180,7 @@ const BuyerCompliance: React.FC = () => {
             <Data
               as="div"
               className={`text-kpi leading-none ${
-                deadline.daysLeft <= 90 ? 'text-danger' : 'text-warning'
+                deadline.daysLeft <= 90 ? 'text-danger' : 'text-warning-hover'
               }`}
             >
               {deadline.daysLeft}
@@ -210,7 +210,7 @@ const BuyerCompliance: React.FC = () => {
         <KpiCard
           eyebrow="Expiring ≤90d"
           value={counts.expiring.toString()}
-          subtitle={<span className="text-warning">Renewal window open</span>}
+          subtitle={<span className="text-warning-hover">Renewal window open</span>}
           icon={Clock}
         />
         <KpiCard
@@ -291,7 +291,7 @@ const BuyerCompliance: React.FC = () => {
                           item.daysRemaining <= 0
                             ? 'text-danger'
                             : item.daysRemaining <= 90
-                              ? 'text-warning'
+                              ? 'text-warning-hover'
                               : 'text-text-tertiary'
                         }`}
                       >
@@ -324,7 +324,7 @@ const BuyerCompliance: React.FC = () => {
                         item.priority === 'Critical'
                           ? 'text-danger'
                           : item.priority === 'High'
-                            ? 'text-warning'
+                            ? 'text-warning-hover'
                             : 'text-text-tertiary'
                       }`}
                     >

@@ -62,7 +62,7 @@ const TRACK_RECORD = [
 
 const TONE_CLASS: Record<'success' | 'warning' | 'info', string> = {
   success: 'bg-success-soft text-success',
-  warning: 'bg-warning-soft text-warning',
+  warning: 'bg-warning-soft text-warning-hover',
   info: 'bg-info-soft text-info',
 };
 

@@ -28,7 +28,7 @@ const TopBarV2: React.FC = () => {
           <span
             className={`text-label px-2 py-0.5 rounded-full uppercase ${
               badge === 'PREVIEW'
-                ? 'bg-warning-soft text-warning'
+                ? 'bg-warning-soft text-warning-hover'
                 : 'bg-bg-hover text-text-tertiary'
             }`}
           >

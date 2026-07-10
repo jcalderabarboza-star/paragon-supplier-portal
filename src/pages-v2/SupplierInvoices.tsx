@@ -343,7 +343,7 @@ const SupplierInvoices: React.FC = () => {
           eyebrow="Pending Payment"
           value={fmtIDR(sums.pending)}
           subtitle={
-            <span className="text-warning">
+            <span className="text-warning-hover">
               {counts.pending} invoice{counts.pending !== 1 ? 's' : ''}
             </span>
           }
@@ -362,7 +362,7 @@ const SupplierInvoices: React.FC = () => {
       </div>
 
       {disputed.length > 0 && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-6 flex items-start gap-2 text-sm text-warning">
+        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-6 flex items-start gap-2 text-sm text-warning-hover">
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>Invoice dispute: </strong>

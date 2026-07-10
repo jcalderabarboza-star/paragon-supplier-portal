@@ -1123,7 +1123,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   : days < 3
                     ? 'text-danger font-semibold'
                     : days < 7
-                      ? 'text-warning font-semibold'
+                      ? 'text-warning-hover font-semibold'
                       : 'text-text-secondary';
               return (
                 <TableRow
@@ -1171,7 +1171,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                             : days < 3
                               ? 'text-danger'
                               : days < 7
-                                ? 'text-warning'
+                                ? 'text-warning-hover'
                                 : 'text-text-tertiary'
                         }`}
                       >

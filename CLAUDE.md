@@ -94,6 +94,15 @@ home redirect points to `/buyer/dashboard`; unknown routes render a real 404
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.
+- WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
+  `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
+  (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,
+  meets the 3:1 non-text floor); `warning.hover` = dark amber `#8A5606` is the
+  ONLY warning color for TEXT on light (`text-warning-hover`, AA on white 6.2:1
+  and on warning-soft 5.6:1). `text-warning` must never be used — the bright
+  DEFAULT fails AA as text. `warning.soft` (#FEF3D6 chip/banner tint) unchanged.
+  The old burnt `#B45309` is retired from the token; `CHART_SEMANTIC.warning`
+  (chart strokes / flow-band fills with white text) is a separate concern.
 - Charts consume ONE ordered series ramp from `src/lib/chartPalette.ts`
   (`CHART_SERIES`: teal → navy → teal-tint → navy-tint → neutral grey). No
   rainbow donuts, no per-page ad-hoc hex. Migrate chart colors opportunistically
