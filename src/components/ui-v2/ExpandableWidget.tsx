@@ -6,8 +6,6 @@ import {
   X,
   LucideIcon,
 } from 'lucide-react';
-import StatusPill from './StatusPill';
-import Button from './Button';
 import Data from './Data';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -16,30 +14,32 @@ import Data from './Data';
 // adapter that feeds this contract. The per-widget work is just: hook →
 // { count, live, flagSeverity, flagLabel, actionLabel, onAction, expandedRows }.
 //
-// Honest-by-construction lock: the honesty pill is STRUCTURAL. `live === true`
-// renders the green "Live" pill; `live === false` renders the amber "Sample
-// data" pill. The green pill is UNREACHABLE without live===true — a widget
-// cannot claim live derived data it doesn't have (guard test enforces this).
+// Honest-by-construction lock: the honesty marker is STRUCTURAL. `live === true`
+// renders the green "● Live" dot-label; `live === false` renders the amber
+// "○ Sample" dot-label. The green ● Live is UNREACHABLE without live===true — a
+// widget cannot claim live derived data it doesn't have (guard test enforces it).
 //
-// COMPACT state: headline count + urgency flag (StatusPill by severity) + one
-// 1-click action (DP2-BUTTON-01: the action is the surface's single primary).
+// COMPACT state — "Ledger Line" (DP2-FLAG-01): the severity signal is the CARD's
+// own 3px LEFT EDGE (critical=red, warning=amber, info=slate, none=no edge), so
+// triage reads by scanning the grid's left margin. The big mono <Data> number is
+// the hero; the flag detail is a quiet line beneath it (colored only when
+// critical); the CTA is an action-blue TEXT LINK; honesty is a micro dot-label.
+// No count badge, no chip, no bordered button — color only where it earns meaning.
+//
 // EXPANDED state: a fullscreen scrim (adapts SidePanel's overlay / Esc-close /
-// role="dialog" / focus-trap mechanics, fullscreen geometry not the 480px
-// drawer) showing the real rows behind the flag; every other widget is hidden.
-// The collapse chevron toggles the compact body to a header-only height.
+// role="dialog" / focus-trap mechanics, fullscreen geometry not the 480px drawer)
+// showing the real rows behind the flag; every other widget is hidden.
 //
-// DP-1/DP-2/DP-3 canon: white surface + thin border, action-blue primary CTA,
-// semantic pills only for true state, JetBrains-Mono <Data> for every count.
+// DP-1/DP-2/DP-3 canon: white surface + thin border, action-blue link, teal
+// decorative only, semantic color for STATE only, JetBrains-Mono <Data> for data.
 // ────────────────────────────────────────────────────────────────────────────
 
-// DP2-FLAG-01 severity ladder. critical/warning/info are calm soft-tint chips
-// distinguished by a 2px LEFT ACCENT EDGE; 'none' renders a neutral "All clear".
 export type FlagSeverity = 'critical' | 'warning' | 'info' | 'none';
 
 export interface ExpandableWidgetProps {
   title: string;
   count: number;
-  /** Honest-by-construction: true → green "Live"; false → amber "Sample data". */
+  /** Honest-by-construction: true → green "● Live"; false → amber "○ Sample". */
   live: boolean;
   flagSeverity?: FlagSeverity;
   flagLabel?: string;
@@ -52,35 +52,31 @@ export interface ExpandableWidgetProps {
   icon?: LucideIcon;
 }
 
-const HonestyPill: React.FC<{ live: boolean }> = ({ live }) => (
-  <StatusPill variant={live ? 'success' : 'warning'}>
-    {live ? 'Live' : 'Sample data'}
-  </StatusPill>
-);
-
-// DP2-FLAG-01 — the calibrated severity ladder. Each flag chip carries a 2px
-// LEFT ACCENT EDGE colored by severity (critical=red, warning=amber, info=slate)
-// over a calm soft-tint body and NO full border: triage reads by scanning left
-// edges, not by alarm fill. This is the elegant, unique differentiator.
-const FLAG_CLASS: Record<Exclude<FlagSeverity, 'none'>, string> = {
-  critical: 'bg-danger-soft text-danger border-danger',
-  warning: 'bg-warning-soft text-warning border-warning',
-  info: 'bg-bg-hover text-text-secondary border-text-tertiary',
+// DP2-FLAG-01 (card scale): the severity accent is the card's own 3px left edge.
+const EDGE_CLASS: Record<FlagSeverity, string> = {
+  critical: 'border-l-[3px] border-l-danger',
+  warning: 'border-l-[3px] border-l-warning',
+  info: 'border-l-[3px] border-l-text-tertiary',
+  none: '',
 };
 
-const FlagChip: React.FC<{ severity: FlagSeverity; label: string }> = ({
-  severity,
-  label,
-}) =>
-  severity === 'none' ? (
-    <StatusPill variant="neutral">All clear</StatusPill>
-  ) : (
+// Honest-by-construction marker: a micro dot-label, quiet in the header corner.
+// live → filled green dot + "Live"; sample → hollow amber ring + "Sample".
+const HonestyDot: React.FC<{ live: boolean }> = ({ live }) => (
+  <span
+    className={`inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${
+      live ? 'text-success' : 'text-warning'
+    }`}
+  >
     <span
-      className={`inline-flex items-center rounded-sm border-l-2 py-0.5 pl-2 pr-2 text-xs font-medium ${FLAG_CLASS[severity]}`}
-    >
-      {label}
-    </span>
-  );
+      aria-hidden="true"
+      className={`h-1.5 w-1.5 rounded-full ${
+        live ? 'bg-success' : 'border border-warning'
+      }`}
+    />
+    {live ? 'Live' : 'Sample'}
+  </span>
+);
 
 const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
   title,
@@ -135,63 +131,69 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
     };
   }, [expanded]);
 
-  const flag = (
-    <FlagChip severity={flagSeverity} label={flagLabel ?? `${count}`} />
-  );
+  // The flag's information moves to a quiet detail line under the number —
+  // colored only when critical; "All clear" when there is nothing to flag.
+  const detailText =
+    flagLabel ?? (flagSeverity === 'none' ? 'All clear' : `${count}`);
+  const detailClass =
+    flagSeverity === 'critical' ? 'text-danger' : 'text-text-tertiary';
 
   return (
     <>
-      <section className="bg-bg-surface rounded-lg shadow-sm border border-border-subtle overflow-hidden">
-        <header className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border-subtle">
+      <section
+        className={`bg-bg-surface rounded-lg shadow-sm border border-border-subtle overflow-hidden ${EDGE_CLASS[flagSeverity]}`}
+      >
+        <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-3">
           <div className="flex items-center gap-2 min-w-0">
             {Icon ? (
-              <Icon size={16} className="text-text-tertiary shrink-0" />
+              <Icon size={15} className="text-text-tertiary shrink-0" />
             ) : null}
-            <h2 className="text-section text-text-primary truncate">{title}</h2>
-            <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-md bg-bg-hover text-text-secondary text-xs font-semibold shrink-0">
-              <Data>{count}</Data>
-            </span>
-            <HonestyPill live={live} />
+            <h2 className="text-sm font-medium text-text-secondary truncate">
+              {title}
+            </h2>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              type="button"
-              aria-label={`Expand ${title}`}
-              onClick={() => setExpanded(true)}
-              className="p-1.5 rounded-md text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors"
-            >
-              <Maximize2 size={16} />
-            </button>
-            <button
-              type="button"
-              aria-label={collapsed ? `Show ${title}` : `Collapse ${title}`}
-              aria-expanded={!collapsed}
-              onClick={() => setCollapsed((c) => !c)}
-              className="p-1.5 rounded-md text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors"
-            >
-              {collapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
-            </button>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <HonestyDot live={live} />
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                aria-label={`Expand ${title}`}
+                onClick={() => setExpanded(true)}
+                className="p-1.5 rounded-md text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors"
+              >
+                <Maximize2 size={15} />
+              </button>
+              <button
+                type="button"
+                aria-label={collapsed ? `Show ${title}` : `Collapse ${title}`}
+                aria-expanded={!collapsed}
+                onClick={() => setCollapsed((c) => !c)}
+                className="p-1.5 rounded-md text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors"
+              >
+                {collapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
+              </button>
+            </div>
           </div>
         </header>
 
         {!collapsed && (
-          <div className="px-5 py-4">
-            <div className="flex items-end justify-between gap-4">
-              <Data as="div" className="text-kpi text-text-primary">
-                {count}
-              </Data>
-              {flag}
-            </div>
+          <div className="px-5 pb-4 pt-1">
+            <Data as="div" className="text-kpi leading-none text-text-primary">
+              {count}
+            </Data>
+            <Data as="div" className={`mt-2 text-meta ${detailClass}`}>
+              {detailText}
+            </Data>
             {actionLabel && onAction ? (
-              <div className="mt-4">
-                <Button
-                  variant="outline"
-                  onClick={onAction}
-                  disabled={actionDisabled}
-                >
-                  {actionLabel}
-                </Button>
-              </div>
+              <button
+                type="button"
+                onClick={onAction}
+                disabled={actionDisabled}
+                className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-action hover:underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50"
+              >
+                {actionLabel}
+                <span aria-hidden="true">→</span>
+              </button>
             ) : null}
           </div>
         )}
@@ -219,7 +221,7 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
                 <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-md bg-bg-hover text-text-secondary text-xs font-semibold shrink-0">
                   <Data>{count}</Data>
                 </span>
-                <HonestyPill live={live} />
+                <HonestyDot live={live} />
               </div>
               <button
                 ref={closeBtnRef}

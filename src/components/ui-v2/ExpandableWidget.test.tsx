@@ -1,9 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import ExpandableWidget from './ExpandableWidget';
 
-// The reusable dashboard widget shell. The load-bearing guarantee is the
-// honest-by-construction lock: the green "Live" pill is UNREACHABLE without
-// live===true — a widget can never claim live derived data it doesn't have.
+// The reusable dashboard widget shell (Ledger Line). The load-bearing guarantee
+// is the honest-by-construction lock: the green "● Live" dot-label is UNREACHABLE
+// without live===true — a widget can never claim live derived data it lacks.
 
 const baseProps = {
   title: 'Invoices',
@@ -12,21 +12,21 @@ const baseProps = {
 };
 
 describe('ExpandableWidget — honesty lock', () => {
-  it('live=false renders the amber "Sample data" pill, NEVER "Live"', () => {
+  it('live=false renders the amber "Sample" dot-label, NEVER "Live"', () => {
     render(<ExpandableWidget {...baseProps} live={false} />);
-    expect(screen.getByText('Sample data')).toBeInTheDocument();
+    expect(screen.getByText('Sample')).toBeInTheDocument();
     expect(screen.queryByText('Live')).not.toBeInTheDocument();
   });
 
-  it('live=true renders the green "Live" pill, NEVER "Sample data"', () => {
+  it('live=true renders the green "Live" dot-label, NEVER "Sample"', () => {
     render(<ExpandableWidget {...baseProps} live />);
     expect(screen.getByText('Live')).toBeInTheDocument();
-    expect(screen.queryByText('Sample data')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sample')).not.toBeInTheDocument();
   });
 });
 
-describe('ExpandableWidget — compact state', () => {
-  it('renders the title, a count badge, and the urgency flag', () => {
+describe('ExpandableWidget — compact state (Ledger Line)', () => {
+  it('renders the title, the hero count, and the flag detail line', () => {
     render(
       <ExpandableWidget
         {...baseProps}
@@ -36,9 +36,8 @@ describe('ExpandableWidget — compact state', () => {
       />,
     );
     expect(screen.getByText('Invoices')).toBeInTheDocument();
-    // count appears in both the header badge and the compact headline.
-    expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('3 overdue')).toBeInTheDocument();
+    expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1); // hero
   });
 
   it('shows "All clear" when flagSeverity is none', () => {
@@ -46,7 +45,7 @@ describe('ExpandableWidget — compact state', () => {
     expect(screen.getByText('All clear')).toBeInTheDocument();
   });
 
-  it('fires the 1-click action', () => {
+  it('fires the 1-click action (text-link CTA)', () => {
     const onAction = vi.fn();
     render(
       <ExpandableWidget
@@ -79,20 +78,22 @@ describe('ExpandableWidget — compact state', () => {
   });
 });
 
-describe('ExpandableWidget — DP2-FLAG-01 accent-edge signature', () => {
-  it('flag chip carries a 2px left accent edge, not a full border', () => {
-    render(
-      <ExpandableWidget
-        {...baseProps}
-        live
-        flagSeverity="critical"
-        flagLabel="3 overdue"
-      />,
+describe('ExpandableWidget — DP2-FLAG-01 card-edge signature', () => {
+  it('the CARD carries a 3px left severity edge (critical=red)', () => {
+    const { container } = render(
+      <ExpandableWidget {...baseProps} live flagSeverity="critical" />,
     );
-    const classes = screen.getByText('3 overdue').className.split(/\s+/);
-    expect(classes).toContain('border-l-2');
-    expect(classes).toContain('border-danger'); // edge color by severity
-    expect(classes).not.toContain('border'); // never a full border
+    const classes = container.querySelector('section')!.className.split(/\s+/);
+    expect(classes).toContain('border-l-[3px]');
+    expect(classes).toContain('border-l-danger');
+  });
+
+  it('no severity edge when flagSeverity is none', () => {
+    const { container } = render(
+      <ExpandableWidget {...baseProps} count={0} live flagSeverity="none" />,
+    );
+    const classes = container.querySelector('section')!.className.split(/\s+/);
+    expect(classes).not.toContain('border-l-[3px]');
   });
 });
 
@@ -110,11 +111,11 @@ describe('ExpandableWidget — expanded (fullscreen) state', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('the expanded view carries the same honesty pill (cannot fake live)', () => {
+  it('the expanded view carries the same honesty marker (cannot fake live)', () => {
     render(<ExpandableWidget {...baseProps} live={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Expand Invoices' }));
-    // two amber pills now (compact header + dialog header), still never "Live".
-    expect(screen.getAllByText('Sample data').length).toBe(2);
+    // two amber markers now (compact header + dialog header), still never "Live".
+    expect(screen.getAllByText('Sample').length).toBe(2);
     expect(screen.queryByText('Live')).not.toBeInTheDocument();
   });
 });

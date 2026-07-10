@@ -17,7 +17,7 @@ describe('Sample-data widgets — amber pill by construction (never green)', () 
     async (title, Widget) => {
       renderWithProviders(<Widget />); // defaults to the buyer identity
       expect(await screen.findByText(title)).toBeInTheDocument();
-      expect(screen.getByText('Sample data')).toBeInTheDocument();
+      expect(screen.getByText('Sample')).toBeInTheDocument();
       expect(screen.queryByText('Live')).not.toBeInTheDocument();
     },
   );
@@ -27,7 +27,7 @@ describe('Sample-data widgets — amber pill by construction (never green)', () 
     expect(
       await screen.findByText('Certificates — expiring'),
     ).toBeInTheDocument();
-    expect(screen.getByText('Sample data')).toBeInTheDocument();
+    expect(screen.getByText('Sample')).toBeInTheDocument();
     expect(screen.queryByText('Live')).not.toBeInTheDocument();
   });
 });

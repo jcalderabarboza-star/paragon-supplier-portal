@@ -25,12 +25,12 @@ interface Flag {
   to: string;
 }
 
-// DP2-FLAG-01: the same calibrated ladder + 2px left-accent-edge as the widget
-// flags — the triage line reads calm, not a row of red.
-const CHIP_CLASS: Record<Exclude<FlagSeverity, 'none'>, string> = {
-  critical: 'bg-danger-soft text-danger border-danger',
-  warning: 'bg-warning-soft text-warning border-warning',
-  info: 'bg-bg-hover text-text-secondary border-text-tertiary',
+// DP2-FLAG-01 (Ledger register): severity reads as a small leading DOT on a calm
+// neutral chip — consistent with the widget cards, never a colored fill.
+const DOT_CLASS: Record<Exclude<FlagSeverity, 'none'>, string> = {
+  critical: 'bg-danger',
+  warning: 'bg-warning',
+  info: 'bg-text-tertiary',
 };
 
 const BuyerAlertsBar: React.FC = () => {
@@ -111,13 +111,17 @@ const BuyerAlertsBar: React.FC = () => {
             key={f.label}
             type="button"
             onClick={() => navigate(f.to)}
-            className={`inline-flex items-center gap-1.5 rounded-sm border-l-2 pl-2 pr-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80 ${
-              CHIP_CLASS[f.severity === 'none' ? 'info' : f.severity]
-            }`}
+            className="inline-flex items-center gap-2 rounded-md border border-border-subtle bg-bg-surface pl-2 pr-2.5 py-1 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover"
           >
-            <Data>{f.count}</Data>
+            <span
+              aria-hidden="true"
+              className={`h-1.5 w-1.5 rounded-full ${
+                DOT_CLASS[f.severity === 'none' ? 'info' : f.severity]
+              }`}
+            />
+            <Data className="font-semibold text-text-primary">{f.count}</Data>
             <span>{f.label}</span>
-            <ChevronRight size={12} />
+            <ChevronRight size={12} className="text-text-tertiary" />
           </button>
         ))}
       </div>

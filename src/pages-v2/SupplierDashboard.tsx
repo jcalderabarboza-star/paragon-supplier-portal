@@ -95,6 +95,23 @@ interface ActionItem {
   time: string;
 }
 
+// Ledger register (DP2-FLAG-01) for the briefing rows: severity reads as a 3px
+// left edge + a small dot, not a colored chip — consistent with the widget cards.
+const BRIEF_EDGE: Record<ActionItem['badgeVariant'], string> = {
+  danger: 'border-l-danger',
+  warning: 'border-l-warning',
+  info: 'border-l-text-tertiary',
+  success: 'border-l-success',
+  neutral: 'border-l-border-subtle',
+};
+const BRIEF_DOT: Record<ActionItem['badgeVariant'], string> = {
+  danger: 'bg-danger',
+  warning: 'bg-warning',
+  info: 'bg-text-tertiary',
+  success: 'bg-success',
+  neutral: 'bg-text-tertiary',
+};
+
 const DASH_CRUMB = ['ACQUIRE', 'DASHBOARD'];
 
 const DOC_STATUS_TONE: Record<
@@ -453,7 +470,7 @@ const SupplierDashboard: React.FC = () => {
                 </div>
                 <div className="text-xs text-text-tertiary mt-0.5">{today}</div>
               </div>
-              <StatusPill variant={remaining > 0 ? 'danger' : 'success'}>
+              <StatusPill variant={remaining > 0 ? 'warning' : 'success'}>
                 {remaining > 0
                   ? `${remaining} action${remaining !== 1 ? 's' : ''}`
                   : 'All clear'}
@@ -478,32 +495,36 @@ const SupplierDashboard: React.FC = () => {
                   return (
                     <div
                       key={action.id}
-                      className={`px-5 py-4 flex gap-4 items-start ${
+                      className={`px-5 py-4 flex gap-4 items-start border-l-[3px] ${
+                        BRIEF_EDGE[action.badgeVariant]
+                      } ${
                         idx < activeActions.length - 1
                           ? 'border-b border-border-subtle'
                           : ''
                       }`}
                     >
-                      <div
-                        className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 ${action.iconBg}`}
-                      >
-                        <Icon size={16} className={action.iconClass} />
+                      <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-bg-hover">
+                        <Icon size={16} className="text-text-tertiary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-sm font-bold text-text-primary">
+                        <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+                          <span className="text-sm font-semibold text-text-primary">
                             {action.title}
                           </span>
-                          <StatusPill variant={action.badgeVariant}>
+                          <span className="inline-flex items-center gap-1.5 text-xs text-text-tertiary">
+                            <span
+                              aria-hidden="true"
+                              className={`h-1.5 w-1.5 rounded-full ${BRIEF_DOT[action.badgeVariant]}`}
+                            />
                             {action.badge}
-                          </StatusPill>
+                          </span>
                         </div>
                         <div className="text-xs text-text-secondary mb-2">
                           {action.desc}
                         </div>
                         <div className="flex items-center gap-3">
-                          <Button
-                            variant={action.primary ? 'primary' : 'secondary'}
+                          <button
+                            type="button"
                             onClick={() => {
                               toast({
                                 variant: 'info',
@@ -512,9 +533,11 @@ const SupplierDashboard: React.FC = () => {
                               });
                               dismiss(action.id);
                             }}
+                            className="inline-flex items-center gap-1 text-sm font-medium text-action hover:underline"
                           >
                             {action.btnLabel}
-                          </Button>
+                            <span aria-hidden="true">→</span>
+                          </button>
                           <span className="text-xs text-text-tertiary inline-flex items-center gap-1">
                             <Clock size={11} /> {action.time}
                           </span>
