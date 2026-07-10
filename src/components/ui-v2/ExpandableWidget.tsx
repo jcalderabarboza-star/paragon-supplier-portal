@@ -32,7 +32,9 @@ import Data from './Data';
 // semantic pills only for true state, JetBrains-Mono <Data> for every count.
 // ────────────────────────────────────────────────────────────────────────────
 
-export type FlagSeverity = 'none' | 'success' | 'warning' | 'danger';
+// DP2-FLAG-01 severity ladder. critical/warning/info are calm soft-tint chips
+// distinguished by a 2px LEFT ACCENT EDGE; 'none' renders a neutral "All clear".
+export type FlagSeverity = 'critical' | 'warning' | 'info' | 'none';
 
 export interface ExpandableWidgetProps {
   title: string;
@@ -55,6 +57,30 @@ const HonestyPill: React.FC<{ live: boolean }> = ({ live }) => (
     {live ? 'Live' : 'Sample data'}
   </StatusPill>
 );
+
+// DP2-FLAG-01 — the calibrated severity ladder. Each flag chip carries a 2px
+// LEFT ACCENT EDGE colored by severity (critical=red, warning=amber, info=slate)
+// over a calm soft-tint body and NO full border: triage reads by scanning left
+// edges, not by alarm fill. This is the elegant, unique differentiator.
+const FLAG_CLASS: Record<Exclude<FlagSeverity, 'none'>, string> = {
+  critical: 'bg-danger-soft text-danger border-danger',
+  warning: 'bg-warning-soft text-warning border-warning',
+  info: 'bg-bg-hover text-text-secondary border-text-tertiary',
+};
+
+const FlagChip: React.FC<{ severity: FlagSeverity; label: string }> = ({
+  severity,
+  label,
+}) =>
+  severity === 'none' ? (
+    <StatusPill variant="neutral">All clear</StatusPill>
+  ) : (
+    <span
+      className={`inline-flex items-center rounded-sm border-l-2 py-0.5 pl-2 pr-2 text-xs font-medium ${FLAG_CLASS[severity]}`}
+    >
+      {label}
+    </span>
+  );
 
 const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
   title,
@@ -109,12 +135,9 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
     };
   }, [expanded]);
 
-  const flag =
-    flagSeverity !== 'none' ? (
-      <StatusPill variant={flagSeverity}>{flagLabel ?? `${count}`}</StatusPill>
-    ) : (
-      <StatusPill variant="neutral">All clear</StatusPill>
-    );
+  const flag = (
+    <FlagChip severity={flagSeverity} label={flagLabel ?? `${count}`} />
+  );
 
   return (
     <>
@@ -162,7 +185,7 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
             {actionLabel && onAction ? (
               <div className="mt-4">
                 <Button
-                  variant="primary"
+                  variant="outline"
                   onClick={onAction}
                   disabled={actionDisabled}
                 >

@@ -25,10 +25,12 @@ interface Flag {
   to: string;
 }
 
+// DP2-FLAG-01: the same calibrated ladder + 2px left-accent-edge as the widget
+// flags — the triage line reads calm, not a row of red.
 const CHIP_CLASS: Record<Exclude<FlagSeverity, 'none'>, string> = {
-  danger: 'bg-danger-soft text-danger border-danger/30',
-  warning: 'bg-warning-soft text-warning border-warning/30',
-  success: 'bg-success-soft text-success border-success/30',
+  critical: 'bg-danger-soft text-danger border-danger',
+  warning: 'bg-warning-soft text-warning border-warning',
+  info: 'bg-bg-hover text-text-secondary border-text-tertiary',
 };
 
 const BuyerAlertsBar: React.FC = () => {
@@ -42,47 +44,42 @@ const BuyerAlertsBar: React.FC = () => {
 
   const flags = useMemo<Flag[]>(() => {
     const now = new Date();
-    const inv = d.overdueInvoices(invoices.data?.items ?? []);
-    const unack = d.unacknowledgedOver48h(pos.data?.items ?? [], now);
-    const award = d.pendingAwardRfqs(
-      rfqs.data?.items ?? [],
-      quotes.data?.items ?? [],
-    );
-    const awardLate = d.awardOverdue(award, now).length;
-    const gr = d.grNeedingAction(grs.data?.items ?? []);
-    const grVar = d.grVariance(grs.data?.items ?? []).length;
-    const asn = d.pendingAsns(asns.data?.items ?? []);
-    const asnDisc = d.discrepancyAsns(asns.data?.items ?? []).length;
+    const invItems = invoices.data?.items ?? [];
+    const poItems = pos.data?.items ?? [];
+    const rfqItems = rfqs.data?.items ?? [];
+    const quoteItems = quotes.data?.items ?? [];
+    const grItems = grs.data?.items ?? [];
+    const asnItems = asns.data?.items ?? [];
 
     return [
       {
         label: 'Overdue invoices',
-        count: inv.length,
-        severity: d.band(d.maxDaysOutstanding(inv) >= 30, inv.length > 0),
+        count: d.overdueInvoices(invItems).length,
+        severity: d.invoiceTier(invItems),
         to: '/buyer/invoices',
       },
       {
         label: 'Unacknowledged POs >48h',
-        count: unack.length,
-        severity: d.band(unack.length > 0, false),
+        count: d.unacknowledgedOver48h(poItems, now).length,
+        severity: d.poTier(poItems, now),
         to: '/buyer/orders',
       },
       {
         label: 'RFQs awaiting award',
-        count: award.length,
-        severity: d.band(awardLate > 0, award.length > 0),
+        count: d.pendingAwardRfqs(rfqItems, quoteItems).length,
+        severity: d.rfqAwardTier(rfqItems, quoteItems, now),
         to: '/buyer/sourcing',
       },
       {
         label: 'Receipts to review',
-        count: gr.length,
-        severity: d.band(grVar > 0, gr.length > 0),
+        count: d.grNeedingAction(grItems).length,
+        severity: d.grTier(grItems),
         to: '/buyer/goods-receipt',
       },
       {
         label: 'Inbound ASNs',
-        count: asn.length,
-        severity: d.band(asnDisc > 0, asn.length > 0),
+        count: d.pendingAsns(asnItems).length,
+        severity: d.asnTier(asnItems),
         to: '/buyer/shipments',
       },
     ].filter((f) => f.count > 0);
@@ -114,8 +111,8 @@ const BuyerAlertsBar: React.FC = () => {
             key={f.label}
             type="button"
             onClick={() => navigate(f.to)}
-            className={`inline-flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80 ${
-              CHIP_CLASS[f.severity === 'none' ? 'warning' : f.severity]
+            className={`inline-flex items-center gap-1.5 rounded-sm border-l-2 pl-2 pr-2 py-0.5 text-xs font-medium transition-opacity hover:opacity-80 ${
+              CHIP_CLASS[f.severity === 'none' ? 'info' : f.severity]
             }`}
           >
             <Data>{f.count}</Data>

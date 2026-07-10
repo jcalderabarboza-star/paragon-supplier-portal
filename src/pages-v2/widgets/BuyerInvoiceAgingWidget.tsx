@@ -11,7 +11,7 @@ import StatusPill from '../../components/ui-v2/StatusPill';
 import { statusTone } from '../../lib/statusTone';
 import { formatIDR } from '../../lib/format';
 import { useBuyerInvoices } from '../../services/query/hooks';
-import { overdueInvoices, maxDaysOutstanding, band } from './buyerDerivations';
+import { overdueInvoices, maxDaysOutstanding, invoiceTier } from './buyerDerivations';
 
 // Buyer AP aging — LIVE: overdue is computed at read (invoiceProjection: an open,
 // unpaid invoice past its due date), so nothing here fabricates a payment state.
@@ -72,7 +72,7 @@ const BuyerInvoiceAgingWidget: React.FC = () => {
       icon={CreditCard}
       count={count}
       live
-      flagSeverity={band(maxDays >= 30, count > 0)}
+      flagSeverity={invoiceTier(query.data?.items ?? [])}
       flagLabel={count > 0 ? `${count} overdue · ${maxDays}d max` : undefined}
       actionLabel={count > 0 ? 'Open AP queue' : undefined}
       onAction={count > 0 ? () => navigate('/buyer/invoices') : undefined}

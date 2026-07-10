@@ -34,7 +34,7 @@ const SupplierInvoicePaymentWidget: React.FC = () => {
     [unpaid],
   );
   const severity: FlagSeverity =
-    overdue > 0 ? 'danger' : count > 0 ? 'warning' : 'none';
+    overdue > 0 ? 'critical' : count > 0 ? 'info' : 'none';
 
   const expandedRows =
     count === 0 ? (

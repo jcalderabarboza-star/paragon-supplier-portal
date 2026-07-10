@@ -34,7 +34,7 @@ const orderedQuantities = (po: PurchaseOrder): number[] =>
   po.lineItems.map((li) => li.quantity);
 
 const severityFor = (n: number): FlagSeverity =>
-  n === 0 ? 'none' : n >= 3 ? 'danger' : 'warning';
+  n === 0 ? 'none' : n >= 3 ? 'warning' : 'info';
 
 const OrdersToConfirmWidget: React.FC = () => {
   const posQuery = usePurchaseOrders();
@@ -91,7 +91,7 @@ const OrdersToConfirmWidget: React.FC = () => {
               </TableCell>
               <TableCell className="text-right">
                 <Button
-                  variant="primary"
+                  variant="outline"
                   onClick={() => confirm(po)}
                   disabled={confirmMutation.isPending}
                 >

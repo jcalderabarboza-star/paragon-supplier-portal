@@ -38,7 +38,7 @@ const BuyerRiskWidget: React.FC = () => {
     [active],
   );
   const severity: FlagSeverity =
-    critical > 0 ? 'danger' : count > 0 ? 'warning' : 'none';
+    critical > 0 ? 'critical' : count > 0 ? 'warning' : 'none';
 
   const expandedRows =
     count === 0 ? (

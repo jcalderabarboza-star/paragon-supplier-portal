@@ -11,7 +11,7 @@ import StatusPill from '../../components/ui-v2/StatusPill';
 import { statusTone } from '../../lib/statusTone';
 import { formatDate } from '../../lib/format';
 import { useASNs } from '../../services/query/hooks';
-import { pendingAsns, discrepancyAsns, band } from './buyerDerivations';
+import { pendingAsns, discrepancyAsns, asnTier } from './buyerDerivations';
 
 // Buyer inbound — LIVE from the ASN store. Count is in-flight ASNs (submitted /
 // in transit); a Discrepancy is the red exception that needs reconciliation.
@@ -68,7 +68,7 @@ const BuyerAsnInboundWidget: React.FC = () => {
       icon={Truck}
       count={count}
       live
-      flagSeverity={band(discrepancy > 0, count > 0)}
+      flagSeverity={asnTier(items)}
       flagLabel={
         count > 0
           ? discrepancy > 0

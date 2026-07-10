@@ -35,7 +35,7 @@ const SupplierCertsExpiringWidget: React.FC = () => {
     [expiring],
   );
   const severity: FlagSeverity =
-    expired > 0 ? 'danger' : count > 0 ? 'warning' : 'none';
+    expired > 0 ? 'critical' : count > 0 ? 'warning' : 'none';
 
   const expandedRows =
     count === 0 ? (

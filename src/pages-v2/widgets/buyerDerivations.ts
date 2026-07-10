@@ -16,10 +16,6 @@ import type {
 } from '../../services/data/types';
 import type { FlagSeverity } from '../../components/ui-v2/ExpandableWidget';
 
-/** Urgency band: danger wins over warning wins over none. */
-export const band = (danger: boolean, warning: boolean): FlagSeverity =>
-  danger ? 'danger' : warning ? 'warning' : 'none';
-
 const HOUR_MS = 3_600_000;
 
 // ── Invoices (AP aging) ──────────────────────────────────────────────────────
@@ -89,3 +85,33 @@ export const pendingAsns = (rows: ASN[]): ASN[] =>
 
 export const discrepancyAsns = (rows: ASN[]): ASN[] =>
   rows.filter((a) => a.status === 'Discrepancy');
+
+// ── Severity tiers (DP2-FLAG-01) ─────────────────────────────────────────────
+// The single source of each category's tier, so a widget's flag and its alerts-
+// bar chip can never disagree. Calm ladder: money/overdue = critical, variance/
+// deadline = warning, plain in-flight counts = info.
+export const invoiceTier = (rows: BuyerInvoice[]): FlagSeverity =>
+  overdueInvoices(rows).length > 0 ? 'critical' : 'none';
+
+export const poTier = (rows: PurchaseOrder[], now: Date): FlagSeverity =>
+  unacknowledgedOver48h(rows, now).length > 0 ? 'critical' : 'none';
+
+export const rfqAwardTier = (
+  rfqs: RFQ[],
+  quotations: Quotation[],
+  now: Date,
+): FlagSeverity => {
+  const pending = pendingAwardRfqs(rfqs, quotations);
+  if (pending.length === 0) return 'none';
+  return awardOverdue(pending, now).length > 0 ? 'warning' : 'info';
+};
+
+export const grTier = (rows: GoodsReceipt[]): FlagSeverity => {
+  if (grVariance(rows).length > 0) return 'warning';
+  return grNeedingAction(rows).length > 0 ? 'info' : 'none';
+};
+
+export const asnTier = (rows: ASN[]): FlagSeverity => {
+  if (discrepancyAsns(rows).length > 0) return 'warning';
+  return pendingAsns(rows).length > 0 ? 'info' : 'none';
+};

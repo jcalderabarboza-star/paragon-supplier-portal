@@ -33,7 +33,17 @@ import type {
   ProductionLineRow,
   SupplierHealthRow,
 } from '../services/data/types';
-import { useProductionLines, useSupplierHealth } from '../services/query/hooks';
+import {
+  useProductionLines,
+  useSupplierHealth,
+  useSuppliers,
+  usePurchaseOrders,
+} from '../services/query/hooks';
+import { SupplierStatus } from '../types/supplier.types';
+import {
+  openPurchaseOrders,
+  unacknowledgedOver48h,
+} from './widgets/buyerDerivations';
 import BuyerAlertsBar from './widgets/BuyerAlertsBar';
 import BuyerInvoiceAgingWidget from './widgets/BuyerInvoiceAgingWidget';
 import BuyerRfqAwaitingAwardWidget from './widgets/BuyerRfqAwaitingAwardWidget';
@@ -74,23 +84,58 @@ const BuyerDashboard: React.FC = () => {
   const [range, setRange] = useState<RangeId>('today');
   const linesQuery = useProductionLines();
   const healthQuery = useSupplierHealth();
+  // KPI-strip honesty: Active Suppliers + Open POs derive from the same stores
+  // the widgets below read, so the strip can never disagree with them.
+  const suppliersQuery = useSuppliers();
+  const posQuery = usePurchaseOrders();
 
-  if (linesQuery.isPending || healthQuery.isPending)
+  if (
+    linesQuery.isPending ||
+    healthQuery.isPending ||
+    suppliersQuery.isPending ||
+    posQuery.isPending
+  )
     return <LoadingState breadcrumb={DASH_CRUMB} />;
-  if (linesQuery.isError || healthQuery.isError)
+  if (
+    linesQuery.isError ||
+    healthQuery.isError ||
+    suppliersQuery.isError ||
+    posQuery.isError
+  )
     return (
       <ErrorState
         breadcrumb={DASH_CRUMB}
-        error={linesQuery.error ?? healthQuery.error}
+        error={
+          linesQuery.error ??
+          healthQuery.error ??
+          suppliersQuery.error ??
+          posQuery.error
+        }
         onRetry={() => {
           linesQuery.refetch();
           healthQuery.refetch();
+          suppliersQuery.refetch();
+          posQuery.refetch();
         }}
       />
     );
 
   const productionLines = linesQuery.data.items;
   const supplierHealth = healthQuery.data.items;
+
+  // Real KPI derivations (honest-by-construction — same stores as the widgets).
+  const suppliers = suppliersQuery.data.items;
+  const activeSuppliers = suppliers.filter(
+    (s) => s.status === SupplierStatus.ACTIVE,
+  ).length;
+  const onboardingSuppliers = suppliers.filter(
+    (s) => s.status === SupplierStatus.ONBOARDING,
+  ).length;
+  const openPoCount = openPurchaseOrders(posQuery.data.items).length;
+  const unackPoCount = unacknowledgedOver48h(
+    posQuery.data.items,
+    new Date(),
+  ).length;
 
   if (productionLines.length === 0 && supplierHealth.length === 0)
     return (
@@ -116,25 +161,33 @@ const BuyerDashboard: React.FC = () => {
         <KpiCard
           eyebrow="Total Spend YTD"
           value="Rp 14.0B"
-          subtitle={<span className="text-success font-medium">+8.4% vs last year</span>}
+          subtitle={
+            <span className="text-text-tertiary">Illustrative — no live source</span>
+          }
           icon={Wallet}
         />
         <KpiCard
           eyebrow="Portfolio OTIF"
           value="75%"
-          subtitle="Target ≥ 95% · 8pp gap"
+          subtitle={
+            <span className="text-text-tertiary">Illustrative — no live source</span>
+          }
           icon={Activity}
         />
         <KpiCard
           eyebrow="Active Suppliers"
-          value="9"
-          subtitle="/ 12 total · 2 onboarding"
+          value={activeSuppliers.toString()}
+          subtitle={`/ ${suppliers.length} total · ${onboardingSuppliers} onboarding`}
           icon={Users}
         />
         <KpiCard
           eyebrow="Open POs"
-          value="14"
-          subtitle="1 unacknowledged >48h"
+          value={openPoCount.toString()}
+          subtitle={
+            unackPoCount > 0
+              ? `${unackPoCount} unacknowledged >48h`
+              : 'All acknowledged'
+          }
           icon={ShoppingCart}
         />
       </div>

@@ -15,7 +15,7 @@ import {
   pendingAwardRfqs,
   awardOverdue,
   quoteCountByRfq,
-  band,
+  rfqAwardTier,
 } from './buyerDerivations';
 
 // Buyer sourcing — LIVE: RFQs with quotations in but not yet Awarded, read from
@@ -84,7 +84,11 @@ const BuyerRfqAwaitingAwardWidget: React.FC = () => {
       icon={Gavel}
       count={count}
       live
-      flagSeverity={band(overdue > 0, count > 0)}
+      flagSeverity={rfqAwardTier(
+        rfqQuery.data?.items ?? [],
+        quoteQuery.data?.items ?? [],
+        now,
+      )}
       flagLabel={
         count > 0
           ? overdue > 0

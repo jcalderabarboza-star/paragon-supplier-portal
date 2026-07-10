@@ -42,7 +42,7 @@ const SupplierRfqToRespondWidget: React.FC = () => {
     [open],
   );
   const severity: FlagSeverity =
-    late > 0 ? 'danger' : count > 0 ? 'warning' : 'none';
+    late > 0 ? 'warning' : count > 0 ? 'info' : 'none';
 
   const expandedRows =
     count === 0 ? (

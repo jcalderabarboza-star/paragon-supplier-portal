@@ -11,7 +11,7 @@ import StatusPill from '../../components/ui-v2/StatusPill';
 import { statusTone } from '../../lib/statusTone';
 import { formatDate } from '../../lib/format';
 import { useGoodsReceipts } from '../../services/query/hooks';
-import { grNeedingAction, grVariance, band } from './buyerDerivations';
+import { grNeedingAction, grVariance, grTier } from './buyerDerivations';
 
 // Buyer 3-way match — LIVE from the GR store. Count is receipts needing action
 // (pending inspection or a match variance); variance (hold/reject/partial) is red.
@@ -72,7 +72,7 @@ const BuyerGoodsReceiptWidget: React.FC = () => {
       icon={PackageCheck}
       count={count}
       live
-      flagSeverity={band(variance > 0, count > 0)}
+      flagSeverity={grTier(items)}
       flagLabel={
         count > 0
           ? variance > 0

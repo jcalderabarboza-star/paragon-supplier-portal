@@ -31,7 +31,7 @@ describe('ExpandableWidget — compact state', () => {
       <ExpandableWidget
         {...baseProps}
         live
-        flagSeverity="danger"
+        flagSeverity="critical"
         flagLabel="3 overdue"
       />,
     );
@@ -76,6 +76,23 @@ describe('ExpandableWidget — compact state', () => {
     expect(
       screen.queryByRole('button', { name: 'Confirm orders' }),
     ).not.toBeInTheDocument();
+  });
+});
+
+describe('ExpandableWidget — DP2-FLAG-01 accent-edge signature', () => {
+  it('flag chip carries a 2px left accent edge, not a full border', () => {
+    render(
+      <ExpandableWidget
+        {...baseProps}
+        live
+        flagSeverity="critical"
+        flagLabel="3 overdue"
+      />,
+    );
+    const classes = screen.getByText('3 overdue').className.split(/\s+/);
+    expect(classes).toContain('border-l-2');
+    expect(classes).toContain('border-danger'); // edge color by severity
+    expect(classes).not.toContain('border'); // never a full border
   });
 });
 

@@ -14,7 +14,7 @@ import { usePurchaseOrders } from '../../services/query/hooks';
 import {
   openPurchaseOrders,
   unacknowledgedOver48h,
-  band,
+  poTier,
 } from './buyerDerivations';
 
 // Buyer PO board — LIVE from the PO store. Count is open POs; the urgency flag is
@@ -80,7 +80,7 @@ const BuyerOpenPoWidget: React.FC = () => {
       icon={ShoppingCart}
       count={count}
       live
-      flagSeverity={band(unack > 0, false)}
+      flagSeverity={poTier(items, now)}
       flagLabel={unack > 0 ? `${unack} unacknowledged >48h` : undefined}
       actionLabel={count > 0 ? 'View open POs' : undefined}
       onAction={count > 0 ? () => navigate('/buyer/orders') : undefined}
