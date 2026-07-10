@@ -31,6 +31,7 @@ import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import OrdersToConfirmWidget from './widgets/OrdersToConfirmWidget';
 import {
   useCurrentSupplier,
   usePurchaseOrders,
@@ -429,6 +430,12 @@ const SupplierDashboard: React.FC = () => {
           subtitle="Last 6 months"
           icon={Target}
         />
+      </div>
+
+      {/* Proving-pair widget (ExpandableWidget shell + live adapter) — mounted
+          alongside the existing panels; the widget grid fans out from here. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
+        <OrdersToConfirmWidget />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-5">
