@@ -439,7 +439,9 @@ export interface KpiPoint {
   value: string;
   target: string;
   pct: number;
-  color: string;
+  /** Target position on the same 0–100 axis as `pct` (DP2-TARGET-01 tick +
+   *  derived meeting/near/missing colour). Replaces the hand-assigned hex. */
+  targetPct: number;
   trend: KpiTrend;
 }
 
@@ -488,7 +490,8 @@ export interface ScorecardKpi {
   value: string;
   target: string;
   pct: number;
-  color: string;
+  /** Target position on the same 0–100 axis as `pct` (DP2-TARGET-01). */
+  targetPct: number;
   trend: KpiTrend;
 }
 

@@ -699,7 +699,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               derivedDisposition === 'Approved'
                 ? 'border-success/40 bg-success-soft text-success'
                 : derivedDisposition === 'Partially Approved'
-                  ? 'border-warning/40 bg-warning-soft text-warning'
+                  ? 'border-warning/40 bg-warning-soft text-warning-hover'
                   : derivedDisposition === 'Rejected'
                     ? 'border-danger/40 bg-danger-soft text-danger'
                     : 'border-border-input bg-bg-hover text-text-secondary'

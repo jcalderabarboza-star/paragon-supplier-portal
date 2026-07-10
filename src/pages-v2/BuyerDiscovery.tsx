@@ -104,7 +104,7 @@ const TOGGLE_OPTIONS: { id: ToggleId; label: string }[] = [
 const scoreColorClass = (score: number): string => {
   if (score >= 90) return 'text-success';
   if (score >= 80) return 'text-teal';
-  return 'text-warning';
+  return 'text-warning-hover';
 };
 
 const SuggestionChip: React.FC<{ label: string; onClick: () => void }> = ({
@@ -208,7 +208,7 @@ const GlobalSupplierCard: React.FC<{
 
       <div className="flex flex-wrap gap-2 pt-3 border-t border-border-subtle">
         {!supplier.alreadyInNetwork ? (
-          <Button variant="primary" icon={Mail} onClick={onInvite}>
+          <Button variant="outline" icon={Mail} onClick={onInvite}>
             Invite to Marketplace
           </Button>
         ) : (
@@ -332,12 +332,12 @@ const RecommendationCard: React.FC<{
         <StatusPill variant="info">{supplier.covers}</StatusPill>
       </div>
       {supplier.riskNote && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 mb-3 text-xs text-warning">
+        <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 mb-3 text-xs text-warning-hover">
           {supplier.riskNote}
         </div>
       )}
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" icon={ChevronRight} onClick={onViewStorefront}>
+        <Button variant="outline" icon={ChevronRight} onClick={onViewStorefront}>
           View storefront
         </Button>
         <Button variant="secondary" onClick={onQualify}>
@@ -356,13 +356,13 @@ const TrendIcon: React.FC<{ dir: MarketIntelCard['priceDir'] }> = ({ dir }) => {
     return <TrendingUp size={18} className="text-danger" aria-hidden="true" />;
   if (dir === 'down')
     return <TrendingDown size={18} className="text-success" aria-hidden="true" />;
-  return <Minus size={18} className="text-warning" aria-hidden="true" />;
+  return <Minus size={18} className="text-warning-hover" aria-hidden="true" />;
 };
 
 const trendColorClass = (dir: MarketIntelCard['priceDir']): string => {
   if (dir === 'up') return 'text-danger';
   if (dir === 'down') return 'text-success';
-  return 'text-warning';
+  return 'text-warning-hover';
 };
 
 const BuyerDiscovery: React.FC = () => {
@@ -528,7 +528,7 @@ const BuyerDiscovery: React.FC = () => {
         subtitle="Find and qualify new suppliers globally — market-validated by L'Oréal, Unilever, P&G, Shiseido and more."
         actions={
           <Button
-            variant="primary"
+            variant="outline"
             icon={Globe2}
             onClick={() => navigate('/marketplace')}
           >
@@ -641,7 +641,7 @@ const BuyerDiscovery: React.FC = () => {
                     No suppliers match your current search. Try different keywords,
                     remove filters, or browse all regions.
                   </div>
-                  <Button variant="primary" onClick={resetSearch}>
+                  <Button variant="outline" onClick={resetSearch}>
                     Clear all filters
                   </Button>
                 </div>
@@ -776,7 +776,7 @@ const BuyerDiscovery: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
-                        variant="primary"
+                        variant="outline"
                         onClick={() =>
                           toast({
                             variant: 'info',

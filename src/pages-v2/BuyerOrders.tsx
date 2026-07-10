@@ -531,7 +531,7 @@ const BuyerOrders: React.FC = () => {
           selectedPO && (
             <>
               <Button variant="secondary">View Full Details</Button>
-              <Button variant="primary">
+              <Button variant="outline">
                 {FOOTER_ACTION_LABEL[selectedPO.status]}
               </Button>
             </>

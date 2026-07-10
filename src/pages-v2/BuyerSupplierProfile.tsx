@@ -202,7 +202,7 @@ const BuyerSupplierProfile: React.FC = () => {
             <Button variant="secondary" icon={MessageSquare}>
               Message
             </Button>
-            <Button variant="primary" icon={ShoppingCart}>
+            <Button variant="outline" icon={ShoppingCart}>
               Create RFQ
             </Button>
           </div>
@@ -380,7 +380,7 @@ const BuyerSupplierProfile: React.FC = () => {
           </dl>
           <div className="mt-5 flex justify-end gap-2">
             <Button variant="secondary">Reset to defaults</Button>
-            <Button variant="primary">Save profile</Button>
+            <Button variant="outline">Save profile</Button>
           </div>
         </section>
       )}

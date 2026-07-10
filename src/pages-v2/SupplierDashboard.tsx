@@ -17,6 +17,12 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { statusTone } from '../lib/statusTone';
+import {
+  targetStatus,
+  TARGET_STATUS,
+  TargetStatus,
+} from '../lib/chartPalette';
+import TargetBar from '../components/ui-v2/TargetBar';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -31,6 +37,10 @@ import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import OrdersToConfirmWidget from './widgets/OrdersToConfirmWidget';
+import SupplierInvoicePaymentWidget from './widgets/SupplierInvoicePaymentWidget';
+import SupplierRfqToRespondWidget from './widgets/SupplierRfqToRespondWidget';
+import SupplierCertsExpiringWidget from './widgets/SupplierCertsExpiringWidget';
 import {
   useCurrentSupplier,
   usePurchaseOrders,
@@ -56,11 +66,16 @@ const fmtDate = (s: string): string => {
   });
 };
 
-const perfVariant = (v: number): 'success' | 'warning' | 'danger' => {
-  if (v >= 90) return 'success';
-  if (v >= 80) return 'warning';
-  return 'danger';
+// DP2-TARGET-01: perf thresholds come from the central target-status system
+// (target 90 → meeting ≥90, near ≥80, else missing) so the StatusPill and the
+// KPI bars can't disagree. Kept returning StatusPill variants for the pill site.
+const STATUS_TO_VARIANT: Record<TargetStatus, 'success' | 'warning' | 'danger'> = {
+  meeting: 'success',
+  near: 'warning',
+  missing: 'danger',
 };
+const perfVariant = (v: number): 'success' | 'warning' | 'danger' =>
+  STATUS_TO_VARIANT[targetStatus(v, 90)];
 
 const CHANNEL_LABEL: Record<PreferredChannel, string> = {
   [PreferredChannel.WHATSAPP]: 'WhatsApp',
@@ -90,6 +105,23 @@ interface ActionItem {
   btnLabel: string;
   time: string;
 }
+
+// Ledger register (DP2-FLAG-01) for the briefing rows: severity reads as a 3px
+// left edge + a small dot, not a colored chip — consistent with the widget cards.
+const BRIEF_EDGE: Record<ActionItem['badgeVariant'], string> = {
+  danger: 'border-l-danger',
+  warning: 'border-l-warning',
+  info: 'border-l-text-tertiary',
+  success: 'border-l-success',
+  neutral: 'border-l-border-subtle',
+};
+const BRIEF_DOT: Record<ActionItem['badgeVariant'], string> = {
+  danger: 'bg-danger',
+  warning: 'bg-warning',
+  info: 'bg-text-tertiary',
+  success: 'bg-success',
+  neutral: 'bg-text-tertiary',
+};
 
 const DASH_CRUMB = ['ACQUIRE', 'DASHBOARD'];
 
@@ -132,25 +164,6 @@ const GradeBadge: React.FC<{ grade: Grade; size?: 'sm' | 'md' }> = ({
   );
 };
 
-const ProgressBar: React.FC<{ value: number; variant: 'success' | 'warning' | 'danger' }> = ({
-  value,
-  variant,
-}) => {
-  const colorClass =
-    variant === 'success'
-      ? 'bg-success'
-      : variant === 'warning'
-        ? 'bg-warning'
-        : 'bg-danger';
-  return (
-    <div className="h-1.5 bg-bg-hover rounded-full overflow-hidden">
-      <div
-        className={`h-full rounded-full transition-all duration-300 ${colorClass}`}
-        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-      />
-    </div>
-  );
-};
 
 const SupplierDashboard: React.FC = () => {
   const { toast } = useToast();
@@ -289,7 +302,7 @@ const SupplierDashboard: React.FC = () => {
     {
       id: 'iso-upload',
       Icon: Clock,
-      iconClass: 'text-warning',
+      iconClass: 'text-warning-hover',
       iconBg: 'bg-warning-soft',
       title: 'Upload ISO 9001:2015 certificate',
       badge: '45 days left',
@@ -392,7 +405,7 @@ const SupplierDashboard: React.FC = () => {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-5 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
         <KpiCard
           eyebrow="Open Orders"
           value={openOrders.toString()}
@@ -418,17 +431,22 @@ const SupplierDashboard: React.FC = () => {
           icon={CreditCard}
         />
         <KpiCard
-          eyebrow="Open Sourcing"
-          value="2"
-          subtitle="Awaiting your response"
-          icon={ClipboardList}
-        />
-        <KpiCard
           eyebrow="My OTIF Score"
           value={`${mySupplier.otif}%`}
           subtitle="Last 6 months"
           icon={Target}
         />
+      </div>
+
+      {/* Supplier module-summary widget grid — live adapters over real stores,
+          alongside the existing panels (briefing serves as the alerts bar). */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
+        <OrdersToConfirmWidget />
+        <SupplierInvoicePaymentWidget />
+        <SupplierRfqToRespondWidget />
+        {/* Sample-data widget (live=false, amber pill) — document fixture, no
+            upload command yet: honest by construction, never faked green. */}
+        <SupplierCertsExpiringWidget />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-5">
@@ -444,7 +462,7 @@ const SupplierDashboard: React.FC = () => {
                 </div>
                 <div className="text-xs text-text-tertiary mt-0.5">{today}</div>
               </div>
-              <StatusPill variant={remaining > 0 ? 'danger' : 'success'}>
+              <StatusPill variant={remaining > 0 ? 'warning' : 'success'}>
                 {remaining > 0
                   ? `${remaining} action${remaining !== 1 ? 's' : ''}`
                   : 'All clear'}
@@ -469,32 +487,36 @@ const SupplierDashboard: React.FC = () => {
                   return (
                     <div
                       key={action.id}
-                      className={`px-5 py-4 flex gap-4 items-start ${
+                      className={`px-5 py-4 flex gap-4 items-start border-l-[3px] ${
+                        BRIEF_EDGE[action.badgeVariant]
+                      } ${
                         idx < activeActions.length - 1
                           ? 'border-b border-border-subtle'
                           : ''
                       }`}
                     >
-                      <div
-                        className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 ${action.iconBg}`}
-                      >
-                        <Icon size={16} className={action.iconClass} />
+                      <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-bg-hover">
+                        <Icon size={16} className="text-text-tertiary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                          <span className="text-sm font-bold text-text-primary">
+                        <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+                          <span className="text-sm font-semibold text-text-primary">
                             {action.title}
                           </span>
-                          <StatusPill variant={action.badgeVariant}>
+                          <span className="inline-flex items-center gap-1.5 text-xs text-text-tertiary">
+                            <span
+                              aria-hidden="true"
+                              className={`h-1.5 w-1.5 rounded-full ${BRIEF_DOT[action.badgeVariant]}`}
+                            />
                             {action.badge}
-                          </StatusPill>
+                          </span>
                         </div>
                         <div className="text-xs text-text-secondary mb-2">
                           {action.desc}
                         </div>
                         <div className="flex items-center gap-3">
-                          <Button
-                            variant={action.primary ? 'primary' : 'secondary'}
+                          <button
+                            type="button"
                             onClick={() => {
                               toast({
                                 variant: 'info',
@@ -503,9 +525,11 @@ const SupplierDashboard: React.FC = () => {
                               });
                               dismiss(action.id);
                             }}
+                            className="inline-flex items-center gap-1 text-sm font-medium text-action hover:underline"
                           >
                             {action.btnLabel}
-                          </Button>
+                            <span aria-hidden="true">→</span>
+                          </button>
                           <span className="text-xs text-text-tertiary inline-flex items-center gap-1">
                             <Clock size={11} /> {action.time}
                           </span>
@@ -567,7 +591,7 @@ const SupplierDashboard: React.FC = () => {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button
-                          variant={isActionable ? 'primary' : 'secondary'}
+                          variant={isActionable ? 'outline' : 'secondary'}
                           onClick={() =>
                             toast({
                               variant: 'info',
@@ -611,24 +635,21 @@ const SupplierDashboard: React.FC = () => {
                   value: mySupplier.invoiceAccuracy,
                 },
               ].map((m) => {
-                const v = perfVariant(m.value);
-                const textClass =
-                  v === 'success'
-                    ? 'text-success'
-                    : v === 'warning'
-                      ? 'text-warning'
-                      : 'text-danger';
+                const status = targetStatus(m.value, 90);
                 return (
                   <div key={m.label}>
                     <div className="flex justify-between mb-1.5">
                       <span className="text-sm text-text-secondary">
                         {m.label}
                       </span>
-                      <span className={`text-sm font-bold ${textClass}`}>
+                      <span
+                        className="text-sm font-bold"
+                        style={{ color: TARGET_STATUS[status].text }}
+                      >
                         {m.value}%
                       </span>
                     </div>
-                    <ProgressBar value={m.value} variant={v} />
+                    <TargetBar pct={m.value} target={90} status={status} />
                   </div>
                 );
               })}

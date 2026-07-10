@@ -1,7 +1,7 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
-type Variant = 'primary' | 'secondary';
+type Variant = 'primary' | 'secondary' | 'outline';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -13,6 +13,11 @@ const VARIANT_CLASS: Record<Variant, string> = {
     'bg-action text-white border border-action hover:bg-action-hover hover:border-action-hover',
   secondary:
     'bg-bg-surface text-text-primary border border-border-input hover:bg-bg-hover',
+  // DP2-BUTTON-01: action-blue OUTLINE — transparent fill, blue border + text.
+  // The calm triage CTA weight; solid-fill primary stays reserved for one hero
+  // action per view.
+  outline:
+    'bg-transparent text-action border border-action hover:bg-action-soft',
 };
 
 const Button: React.FC<ButtonProps> = ({

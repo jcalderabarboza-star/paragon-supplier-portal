@@ -36,7 +36,7 @@ const VARIANT_ICON_COLOR: Record<ToastVariant, string> = {
   success: 'text-teal',
   error: 'text-danger',
   info: 'text-info',
-  warning: 'text-warning',
+  warning: 'text-warning-hover',
 };
 
 const Toast: React.FC<ToastProps> = ({

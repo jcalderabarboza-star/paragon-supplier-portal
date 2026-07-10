@@ -42,7 +42,13 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
-import { CHART_SERIES, CHART_SEMANTIC, CHART_MID, CHART_GRID } from '../lib/chartPalette';
+import {
+  CHART_SERIES,
+  CHART_SEMANTIC,
+  CHART_MID,
+  CHART_GRID,
+  targetStatus,
+} from '../lib/chartPalette';
 import {
   useAnalyticsSummary,
   useSpendByCategory,
@@ -89,7 +95,7 @@ const GRADE_VARIANT: Record<Grade, 'success' | 'info' | 'warning' | 'danger'> = 
 
 const TONE_CLASS: Record<KpiTone, string> = {
   success: 'text-success',
-  warning: 'text-warning',
+  warning: 'text-warning-hover',
   danger: 'text-danger',
   neutral: 'text-text-tertiary',
 };
@@ -113,10 +119,11 @@ const SUMMARY_CARDS: {
   { key: 'avgCycleTime', eyebrow: 'Avg PO Cycle Time', icon: Clock },
 ];
 
+// DP2-TARGET-01: pass-warn-fail cells derive from the central target-status
+// system (target 90 → meeting ≥90 / near ≥80 / missing) — one threshold source.
 const rateVariant = (v: number): 'success' | 'warning' | 'danger' => {
-  if (v >= 90) return 'success';
-  if (v >= 80) return 'warning';
-  return 'danger';
+  const s = targetStatus(v, 90);
+  return s === 'meeting' ? 'success' : s === 'near' ? 'warning' : 'danger';
 };
 
 const TrendIcon: React.FC<{ trend: Trend }> = ({ trend }) => {

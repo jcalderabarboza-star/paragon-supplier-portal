@@ -91,7 +91,7 @@ const STATUS_VARIANT: Record<ConvStatus, 'success' | 'warning' | 'neutral'> = {
 
 const TONE_CLASS: Record<KpiTone, string> = {
   success: 'text-success',
-  warning: 'text-warning',
+  warning: 'text-warning-hover',
   danger: 'text-danger',
   neutral: '',
 };
@@ -423,7 +423,7 @@ const AutomationTab: React.FC<{ rules: AutomationRule[] }> = ({ rules }) => {
                   </span>
                   {rule.action}
                 </div>
-                <div className="inline-block bg-warning-soft rounded px-2 py-1 text-[11px] text-warning">
+                <div className="inline-block bg-warning-soft rounded px-2 py-1 text-[11px] text-warning-hover">
                   ⚡ Escalate if: {rule.escalateIf}
                 </div>
               </div>
@@ -611,7 +611,7 @@ const AnalyticsTab: React.FC<{
                   {r.avg}
                 </TableCell>
                 <TableCell className="text-success">{r.fastest}</TableCell>
-                <TableCell className="text-warning">{r.slowest}</TableCell>
+                <TableCell className="text-warning-hover">{r.slowest}</TableCell>
                 <TableCell>
                   <StatusPill variant={automationVariant}>
                     {r.automation}

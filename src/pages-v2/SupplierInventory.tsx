@@ -76,7 +76,7 @@ const DaysBar: React.FC<{ days: number; status: StockStatus }> = ({
     textVariant === 'danger'
       ? 'text-danger'
       : textVariant === 'warning'
-        ? 'text-warning'
+        ? 'text-warning-hover'
         : textVariant === 'success'
           ? 'text-success'
           : 'text-text-secondary';
@@ -228,7 +228,7 @@ const SupplierInventory: React.FC = () => {
           eyebrow="Low stock"
           value={counts.low.toString()}
           subtitle={
-            <span className="text-warning">
+            <span className="text-warning-hover">
               {((counts.low / myInventory.length) * 100).toFixed(0)}% of
               materials
             </span>
@@ -392,9 +392,9 @@ const SupplierInventory: React.FC = () => {
           </span>
         </div>
         <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-          <Mail size={14} className="text-warning shrink-0 mt-0.5" />
+          <Mail size={14} className="text-warning-hover shrink-0 mt-0.5" />
           <span>
-            <strong className="text-warning">Thresholds:</strong> Critical &lt;7
+            <strong className="text-warning-hover">Thresholds:</strong> Critical &lt;7
             days · Low 7–14 days · Normal 14–30 days · Excess &gt;30 days.
             Paragon minimum stock requirements enforced at category level.
           </span>

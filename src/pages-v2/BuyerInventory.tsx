@@ -123,7 +123,7 @@ const dosBucket = (
       tab: 'warning',
       label: `${dos}d`,
       variant: 'warning',
-      cellCls: 'bg-warning-soft text-warning',
+      cellCls: 'bg-warning-soft text-warning-hover',
     };
   if (dos <= 60)
     return {
@@ -404,7 +404,7 @@ const BuyerInventory: React.FC = () => {
         <KpiCard
           eyebrow="Warning (14–30 days)"
           value={
-            <span className="text-warning">{formatNumber(counts.warning)}</span>
+            <span className="text-warning-hover">{formatNumber(counts.warning)}</span>
           }
           icon={AlertCircle}
           subtitle="Monitor closely"

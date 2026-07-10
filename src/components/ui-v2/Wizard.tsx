@@ -132,7 +132,7 @@ const Wizard: React.FC<WizardProps> = ({
           >
             Back
           </Button>
-          <Button variant="primary" onClick={goNext} disabled={!nextValid}>
+          <Button variant="outline" onClick={goNext} disabled={!nextValid}>
             {isLast ? completeLabel : 'Next'}
           </Button>
         </div>

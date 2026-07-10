@@ -343,7 +343,7 @@ const SupplierInvoices: React.FC = () => {
           eyebrow="Pending Payment"
           value={fmtIDR(sums.pending)}
           subtitle={
-            <span className="text-warning">
+            <span className="text-warning-hover">
               {counts.pending} invoice{counts.pending !== 1 ? 's' : ''}
             </span>
           }
@@ -362,7 +362,7 @@ const SupplierInvoices: React.FC = () => {
       </div>
 
       {disputed.length > 0 && (
-        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-6 flex items-start gap-2 text-sm text-warning">
+        <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-6 flex items-start gap-2 text-sm text-warning-hover">
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>Invoice dispute: </strong>
@@ -436,7 +436,7 @@ const SupplierInvoices: React.FC = () => {
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     {isPaid ? (
                       <Button
-                        variant="primary"
+                        variant="outline"
                         icon={Receipt}
                         onClick={() => {
                           setSelected(inv);
@@ -447,7 +447,7 @@ const SupplierInvoices: React.FC = () => {
                       </Button>
                     ) : inv.status === 'Draft' ? (
                       <Button
-                        variant="primary"
+                        variant="outline"
                         disabled={submitMutation.isPending}
                         onClick={() => submitDraft(inv)}
                       >
@@ -455,7 +455,7 @@ const SupplierInvoices: React.FC = () => {
                       </Button>
                     ) : inv.status === 'Disputed' ? (
                       <Button
-                        variant="primary"
+                        variant="outline"
                         onClick={() =>
                           toast({
                             variant: 'warning',
@@ -501,7 +501,7 @@ const SupplierInvoices: React.FC = () => {
               </Button>
               {panelMode === 'detail' && isPaidStatus(selected.status) && (
                 <Button
-                  variant="primary"
+                  variant="outline"
                   icon={Receipt}
                   onClick={() => setPanelMode('remittance')}
                 >
@@ -510,7 +510,7 @@ const SupplierInvoices: React.FC = () => {
               )}
               {panelMode === 'remittance' && (
                 <Button
-                  variant="primary"
+                  variant="outline"
                   icon={Download}
                   onClick={() =>
                     toast({
@@ -692,7 +692,7 @@ const SupplierInvoices: React.FC = () => {
               Cancel
             </Button>
             <Button
-              variant="primary"
+              variant="outline"
               disabled={createMutation.isPending}
               onClick={submitNewInvoice}
             >

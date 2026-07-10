@@ -62,7 +62,7 @@ const TRACK_RECORD = [
 
 const TONE_CLASS: Record<'success' | 'warning' | 'info', string> = {
   success: 'bg-success-soft text-success',
-  warning: 'bg-warning-soft text-warning',
+  warning: 'bg-warning-soft text-warning-hover',
   info: 'bg-info-soft text-info',
 };
 
@@ -200,7 +200,7 @@ const SupplierStorefront: React.FC = () => {
             <Button variant="secondary" icon={MessageCircle}>
               Connect
             </Button>
-            <Button variant="primary" icon={Send}>
+            <Button variant="outline" icon={Send}>
               Request RFQ
             </Button>
           </div>
@@ -417,7 +417,7 @@ const SupplierStorefront: React.FC = () => {
             />
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="secondary">Save draft</Button>
-              <Button variant="primary" icon={Send}>
+              <Button variant="outline" icon={Send}>
                 Send message
               </Button>
             </div>

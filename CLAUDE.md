@@ -82,13 +82,38 @@ home redirect points to `/buyer/dashboard`; unknown routes render a real 404
   affordance or a primary action. Navy (`#0D1B2A`) is text/headings only — never
   a decorative fill. Mid (`#354A5F`) is secondary text. Surfaces stay white /
   light-neutral with subtle borders.
-- BUTTON HIERARCHY: primary action = action-blue **solid** (`Button
-  variant="primary"` / the `BulkActionsBar` primary slot); Export / Cancel /
-  Close / secondary paths = **outline** (`variant="secondary"`). One primary per
-  surface — an Export never occupies the primary slot (guard DP2-BUTTON-01).
+- BUTTON HIERARCHY (DP2-BUTTON-01): primary action = action-blue **OUTLINE** by
+  default (`Button variant="outline"`) — the calm portal-wide register. **SOLID**
+  action-blue (`variant="primary"`) is RESERVED for consequential / irreversible
+  commits — Award (RFQ), Release payment, Post-to-SAP, Reject / Dispute,
+  Override-hold. Principle: **solid = the irreversible-commit signal**; at most
+  ONE meaningful solid per surface. Export / Cancel / Close / secondary paths stay
+  outline / `variant="secondary"`; an Export never occupies the primary slot. The
+  `BulkActionsBar` primary slot renders outline by default — set `primary.solid`
+  only for a reserved commit verb. WhatsApp / messenger chrome is exempt (D-2).
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.
+- WARNING token is a FILL/TEXT split (DP2-WARN-01), same shape as `action`:
+  `warning.DEFAULT` = bright amber `#D97706` for every GRAPHICAL warning use
+  (accent-edges, dots, bar fills, dials, chip fills, borders — 3.19:1 on white,
+  meets the 3:1 non-text floor); `warning.hover` = dark amber `#8A5606` is the
+  ONLY warning color for TEXT on light (`text-warning-hover`, AA on white 6.2:1
+  and on warning-soft 5.6:1). `text-warning` must never be used — the bright
+  DEFAULT fails AA as text. `warning.soft` (#FEF3D6 chip/banner tint) unchanged.
+  The old burnt `#B45309` is retired from the token; `CHART_SEMANTIC.warning`
+  (chart strokes / flow-band fills with white text) is a separate concern.
+- TARGET/KPI bars are ONE system (DP2-TARGET-01), centralized in
+  `chartPalette.ts`: `targetStatus(pct, target, nearBand=10)` →
+  meeting | near | missing, and `TARGET_STATUS` gives the fill/text colour
+  (meeting = success, near = the DP2-WARN-01 amber split, missing = danger).
+  Every target bar renders via the shared `<TargetBar>` primitive — fill +
+  a navy target-tick — so attainment is colourblind-safe (position vs tick,
+  not colour alone). KPI fixtures carry a numeric `targetPct` (the tick, on the
+  same 0–100 axis as `pct`); the old hand-assigned per-row hex + the duplicated
+  KPI colour consts are gone. Pass-warn-fail cells (Analytics) and the supplier
+  dashboard perf bars derive from the same helper (target 90). Grade A–D ramps
+  are a separate axis, not yet unified here.
 - Charts consume ONE ordered series ramp from `src/lib/chartPalette.ts`
   (`CHART_SERIES`: teal → navy → teal-tint → navy-tint → neutral grey). No
   rainbow donuts, no per-page ad-hoc hex. Migrate chart colors opportunistically

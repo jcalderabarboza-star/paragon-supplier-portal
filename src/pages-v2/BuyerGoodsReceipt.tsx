@@ -307,7 +307,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       case 'Pending Inspection':
         return (
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() => {
               setWizardAsnId(g.asnId);
               setSelectedId(null);
@@ -320,7 +320,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       case 'Under Inspection':
         return (
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() =>
               toast({
                 variant: 'info',

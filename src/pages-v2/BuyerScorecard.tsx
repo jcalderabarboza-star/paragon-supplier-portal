@@ -27,9 +27,17 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
-import { CHART_SERIES, CHART_SEMANTIC, CHART_MID, CHART_GRID } from '../lib/chartPalette';
+import {
+  CHART_SERIES,
+  CHART_SEMANTIC,
+  CHART_MID,
+  CHART_GRID,
+  targetStatus,
+  TARGET_STATUS,
+} from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
 import Data from '../components/ui-v2/Data';
+import TargetBar from '../components/ui-v2/TargetBar';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
@@ -73,7 +81,7 @@ const OTIF_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Se
 const GRADE_TONE: Record<Grade, { stroke: string; soft: string; text: string }> = {
   A: { stroke: '#107E3E', soft: '#E8F5EC', text: 'text-success' },
   B: { stroke: '#1E5BAE', soft: '#E5F0FF', text: 'text-info' },
-  C: { stroke: '#B45309', soft: '#FEF3D6', text: 'text-warning' },
+  C: { stroke: '#B45309', soft: '#FEF3D6', text: 'text-warning-hover' },
   D: { stroke: '#BB0000', soft: '#FCE4E4', text: 'text-danger' },
 };
 
@@ -147,25 +155,20 @@ const TrendIcon: React.FC<{ trend: Trend }> = ({ trend }) => {
 };
 
 const KpiProgressTile: React.FC<{ k: ScorecardKpi }> = ({ k }) => {
-  const width = Math.min(Math.max(k.pct, 0), 100);
+  const status = targetStatus(k.pct, k.targetPct);
   return (
     <div className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
       <div className="flex items-start justify-between gap-2 mb-1">
         <div className="text-label text-text-tertiary uppercase">{k.name}</div>
         <TrendIcon trend={k.trend} />
       </div>
-      <Data as="div" className="text-kpi" style={{ color: k.color }}>
+      <Data as="div" className="text-kpi" style={{ color: TARGET_STATUS[status].text }}>
         {k.value}
       </Data>
       <div className="text-label text-text-tertiary mb-2">
         Target: {k.target}
       </div>
-      <div className="h-1.5 bg-bg-surface rounded-full overflow-hidden">
-        <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${width}%`, backgroundColor: k.color }}
-        />
-      </div>
+      <TargetBar pct={k.pct} target={k.targetPct} trackClass="bg-bg-surface" />
     </div>
   );
 };
@@ -285,7 +288,7 @@ const BuyerScorecard: React.FC = () => {
               <div
                 className={`mt-4 inline-flex items-center gap-2 rounded px-3 py-2 text-xs font-medium ${
                   compliance.level === 'expiring'
-                    ? 'bg-warning-soft text-warning'
+                    ? 'bg-warning-soft text-warning-hover'
                     : 'bg-danger-soft text-danger'
                 }`}
               >
@@ -479,7 +482,7 @@ const BuyerScorecard: React.FC = () => {
             ))}
           </div>
           <Button
-            variant="primary"
+            variant="outline"
             icon={Mail}
             onClick={() =>
               toast({

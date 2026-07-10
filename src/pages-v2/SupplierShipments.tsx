@@ -154,10 +154,10 @@ const DockAppointments: React.FC = () => (
     </div>
 
     <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-      <Clock size={14} className="text-warning shrink-0 mt-0.5" />
+      <Clock size={14} className="text-warning-hover shrink-0 mt-0.5" />
       <span>
         Please arrive{' '}
-        <strong className="text-warning">15 minutes before your slot</strong>.
+        <strong className="text-warning-hover">15 minutes before your slot</strong>.
         Bring a printed copy of your ASN and packing list. Contact the
         receiving team at <strong>+62-21-5595-xxxx</strong> if you anticipate
         delays.
@@ -240,7 +240,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                   </span>
                   <div className="justify-self-end">
                     <Button
-                      variant="primary"
+                      variant="outline"
                       icon={Plus}
                       onClick={() => onCreateAsnForPO(po.id)}
                     >
@@ -323,7 +323,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                     <TableCell className="text-right whitespace-nowrap">
                       {asn.status === 'Draft' && (
                         <Button
-                          variant="primary"
+                          variant="outline"
                           onClick={() => onSubmitAsn(asn.asnNumber)}
                         >
                           {t('asn.submit.action')}
@@ -431,7 +431,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                                           <Data>{li.orderedQty.toLocaleString()}</Data>
                                         </td>
                                         <td
-                                          className={`py-1.5 text-right font-semibold ${short ? 'text-warning' : 'text-text-primary'}`}
+                                          className={`py-1.5 text-right font-semibold ${short ? 'text-warning-hover' : 'text-text-primary'}`}
                                         >
                                           <Data>{li.shippedQty.toLocaleString()}</Data>
                                         </td>
@@ -1110,7 +1110,7 @@ const SupplierShipments: React.FC = () => {
                 Cancel
               </Button>
               <Button
-                variant="primary"
+                variant="outline"
                 icon={Send}
                 onClick={doSubmitAsn}
                 disabled={submitAsnMutation.isPending}
