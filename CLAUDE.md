@@ -132,6 +132,19 @@ family reads as one product line.
   font-family token (tailwind.config) + a data-cell convention; exact mono face
   (JetBrains Mono / IBM Plex Mono, checked for IDR digit legibility) confirmed in
   the DP-3 seam investigation.
+- DATA-TOKEN COLOUR (DP2-DATA-NAVY-01): mono data tokens render in `data-navy`
+  (`#1E3A5F`, reusing the dormant `--paragon-navy-light`), NOT near-black. Applied
+  centrally in the `<Data>` primitive + `KpiCard` hero number — every doc number,
+  currency value, quantity, date, and KPI figure lifts from `#0D1B2A` to
+  data-navy; an explicit muted (secondary/tertiary) or semantic
+  (success/danger/warning/info) colour on a token is preserved. This is the
+  mono/sans grammar as colour: **mono = data = data-navy · sans = names/prose =
+  `text-primary` black** (supplier company names stay black by design). data-navy
+  is deliberately DISTINCT from action `#0070F2` — a full lightness tier darker
+  (11.5:1 vs 4.6:1 on white, AAA as text) and desaturated, so a data value can
+  never read as clickable. DP-3 "identifiers, not links" holds: mono face, no
+  underline, no hover — recolouring to a NON-action navy reinforces it. The
+  `action` token is untouched.
 - STATUS CHIPS: quiet outlined style — soft tint background, thin border, small
   radius, no solid saturated fills. DP-2 semantic-color rules unchanged.
 - TABLES: light grey header band, thin row borders, generous row height.
