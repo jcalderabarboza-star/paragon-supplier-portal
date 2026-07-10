@@ -34,6 +34,12 @@ import type {
   SupplierHealthRow,
 } from '../services/data/types';
 import { useProductionLines, useSupplierHealth } from '../services/query/hooks';
+import BuyerAlertsBar from './widgets/BuyerAlertsBar';
+import BuyerInvoiceAgingWidget from './widgets/BuyerInvoiceAgingWidget';
+import BuyerRfqAwaitingAwardWidget from './widgets/BuyerRfqAwaitingAwardWidget';
+import BuyerOpenPoWidget from './widgets/BuyerOpenPoWidget';
+import BuyerGoodsReceiptWidget from './widgets/BuyerGoodsReceiptWidget';
+import BuyerAsnInboundWidget from './widgets/BuyerAsnInboundWidget';
 
 type RangeId = 'today' | 'week' | 'month';
 
@@ -128,6 +134,20 @@ const BuyerDashboard: React.FC = () => {
           subtitle="1 unacknowledged >48h"
           icon={ShoppingCart}
         />
+      </div>
+
+      {/* Triage line — aggregated live exception count (buyer alerts bar). */}
+      <BuyerAlertsBar />
+
+      {/* Expandable module-summary widget grid (live adapters over real stores).
+          The fixed panels below cover domains no widget models (production
+          lines, cross-supplier health) and are kept. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-6">
+        <BuyerInvoiceAgingWidget />
+        <BuyerRfqAwaitingAwardWidget />
+        <BuyerOpenPoWidget />
+        <BuyerGoodsReceiptWidget />
+        <BuyerAsnInboundWidget />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
