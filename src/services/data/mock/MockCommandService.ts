@@ -27,6 +27,8 @@ import type {
   Disposition,
   InspectionResult,
 } from '../../../data/mockGoodsReceipts';
+import type { RFQStatus } from '../../../data/mockRfqs';
+import type { QuotationStatus } from '../../../data/mockQuotations';
 import {
   createDispatcher,
   InMemoryAuditSink,
@@ -44,6 +46,8 @@ import { purchaseOrderStore } from './stores/purchaseOrderStore';
 import { asnStore } from './stores/asnStore';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { invoiceStore } from './stores/invoiceStore';
+import { rfqStore } from './stores/rfqStore';
+import { quotationStore } from './stores/quotationStore';
 import { mockShipments } from '../../../data/mockShipments';
 
 // — Purchase-order command target — reads/writes the mutable PO store. ————————
@@ -300,11 +304,48 @@ bindPolicyHook(POLICY_HOOKS.INVOICE_CREATE_PO_CONFIRMED, ({ payload }) => {
   return { ok: true };
 });
 
+// — RFQ target (Step 4 batch iv) — buyer-side sourcing. `t_rfq_award` is the
+//   CASCADE SOURCE: it flips the RFQ to Awarded and records the award metadata
+//   (awardedSupplierId / awardedQuotationId) — NO PO, NO contract minted
+//   (honest-by-construction). The buyer owns the RFQ, so readScopeOwner is null
+//   (buyer passes; a supplier is blocked at requiredRole — rfq:award ∉ supplier).
+const rfqTarget: CommandTarget = {
+  readState: (id) => rfqStore.get(id)?.status ?? null,
+  readScopeOwner: () => null,
+  readEntity: (id) => rfqStore.get(id) ?? null,
+  applyTransition: (id, toState, payload) => {
+    rfqStore.update(id, (r) => ({
+      ...r,
+      status: toState as RFQStatus,
+      // Award records the chosen quote + supplier ONLY. Nothing downstream is
+      // fabricated here — PO issuance is a separate buyer verb (future batch).
+      awardedQuotationId:
+        typeof payload.awardedQuotationId === 'string' ? payload.awardedQuotationId : r.awardedQuotationId,
+      awardedSupplierId:
+        typeof payload.awardedSupplierId === 'string' ? payload.awardedSupplierId : r.awardedSupplierId,
+    }));
+  },
+};
+
+// — Quotation target (Step 4 batch iv) — the CASCADE TARGETS of RFQ award. The
+//   winner fires t_quotation_award (→ Awarded), every other fires
+//   t_quotation_reject (→ Rejected). Supplier-owned (per-supplier read scoping).
+const quotationTarget: CommandTarget = {
+  readState: (id) => quotationStore.get(id)?.status ?? null,
+  readScopeOwner: (id) => quotationStore.get(id)?.supplierId ?? null,
+  readEntity: (id) => quotationStore.get(id) ?? null,
+  applyTransition: (id, toState) => {
+    quotationStore.update(id, (q) => ({ ...q, status: toState as QuotationStatus }));
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
   goodsReceipt: goodsReceiptTarget,
   invoice: invoiceTarget,
+  rfq: rfqTarget,
+  quotation: quotationTarget,
 };
 
 // Cross-entity cascade (census G4): a GR mismatch disposition (reject / partial
@@ -312,14 +353,41 @@ const TARGETS: Record<string, CommandTarget> = {
 // declares WHICH verb; the mock resolves WHICH ASN id (the GR's own asnNumber).
 // Best-effort — a GR whose ASN is absent or not in a cascadable state no-ops.
 const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
-  if (ctx.entity !== 'goodsReceipt') return [];
-  const gr = goodsReceiptStore.get(ctx.entityId);
-  if (!gr) return [];
-  return cascadesFor(ctx.transitionId).map((link) => ({
-    entity: link.targetEntity,
-    entityId: gr.asnNumber,
-    transitionId: link.targetTransitionId,
-  }));
+  if (ctx.entity === 'goodsReceipt') {
+    const gr = goodsReceiptStore.get(ctx.entityId);
+    if (!gr) return [];
+    return cascadesFor(ctx.transitionId).map((link) => ({
+      entity: link.targetEntity,
+      entityId: gr.asnNumber,
+      transitionId: link.targetTransitionId,
+    }));
+  }
+  // RFQ award fan-out (batch iv): split the RFQ's quotation siblings across the
+  // two declared links — the winner (from the award payload) is awarded, every
+  // OTHER sibling is rejected. Best-effort: a sibling already terminal simply
+  // no-ops (illegal transition), never breaking the source award.
+  if (ctx.entity === 'rfq') {
+    const winnerId =
+      typeof ctx.payload.awardedQuotationId === 'string' ? ctx.payload.awardedQuotationId : '';
+    const siblings = quotationStore.forRfq(ctx.entityId);
+    const cmds: CascadeCommand[] = [];
+    for (const link of cascadesFor(ctx.transitionId)) {
+      if (link.targetTransitionId === 't_quotation_award') {
+        const winner = siblings.find((q) => q.id === winnerId);
+        if (winner) {
+          cmds.push({ entity: link.targetEntity, entityId: winner.id, transitionId: link.targetTransitionId });
+        }
+      } else {
+        for (const q of siblings) {
+          if (q.id !== winnerId) {
+            cmds.push({ entity: link.targetEntity, entityId: q.id, transitionId: link.targetTransitionId });
+          }
+        }
+      }
+    }
+    return cmds;
+  }
+  return [];
 };
 
 // SAP-boundary settlement finalize (Step 3.5, Option B): when a submitted

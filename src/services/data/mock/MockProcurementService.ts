@@ -3,9 +3,9 @@ import { mockInventory } from '../../../data/mockInventory';
 import { mockShipments } from '../../../data/mockShipments';
 import { mockContracts } from '../../../data/mockContracts';
 import { mockObligations } from '../../../data/mockObligations';
-import { mockRfqs } from '../../../data/mockRfqs';
-import { mockQuotations } from '../../../data/mockQuotations';
 import { applySupplierScope } from '../scoping';
+import { rfqStore } from './stores/rfqStore';
+import { quotationStore } from './stores/quotationStore';
 import { asnStore } from './stores/asnStore';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { invoiceStore } from './stores/invoiceStore';
@@ -145,9 +145,11 @@ export class MockProcurementService implements IProcurementService {
   // ─── Sourcing ─────────────────────────────────────────────────────────────
 
   async getRFQs(scope: QueryScope, filter?: RFQFilter): Promise<Page<RFQ>> {
-    // RFQ scoping is not supplierId-based: an RFQ is visible to suppliers
-    // whose id appears in invitedSupplierIds.
-    let rows: RFQ[] = [...mockRfqs];
+    // Reads resolve from the mutable RFQ store (Step 4 batch iv) so an awarded
+    // RFQ is reflected after the command mutates it. The store seeds from the
+    // fixtures, so initial reads are identical. RFQ scoping is not supplierId-
+    // based: an RFQ is visible to suppliers whose id ∈ invitedSupplierIds.
+    let rows: RFQ[] = [...rfqStore.all()];
     if (scope.personaType === 'supplier') {
       if (!scope.supplierId) return { items: [] };
       rows = rows.filter((r) => r.invitedSupplierIds.includes(scope.supplierId!));
@@ -166,7 +168,9 @@ export class MockProcurementService implements IProcurementService {
     scope: QueryScope,
     filter?: QuotationFilter,
   ): Promise<Page<Quotation>> {
-    let rows = applySupplierScope(scope, mockQuotations);
+    // Reads resolve from the mutable quotation store (Step 4 batch iv) so an
+    // awarded/rejected quote is reflected after the award cascade mutates it.
+    let rows = applySupplierScope(scope, [...quotationStore.all()]);
     if (filter?.rfqId) rows = rows.filter((q) => q.rfqId === filter.rfqId);
     if (filter?.supplierId)
       rows = rows.filter((q) => q.supplierId === filter.supplierId);

@@ -123,6 +123,38 @@ export function useAdvanceShipNoticeSubmit() {
   });
 }
 
+// ─── RFQ award (Step 4 batch iv) — the cascade-class verb ────────────────────
+// Buyer awards an RFQ to a chosen quotation. The dispatcher fans out (winner →
+// Awarded, every other → Rejected) under one causation group; a non-failed
+// outcome invalidates the buyer's procurement reads so the sourcing board, the
+// awards history, and the quotation statuses all re-derive together.
+
+export interface RfqAwardVars {
+  rfqId: string;
+  awardedQuotationId: string;
+  awardedSupplierId: string;
+}
+
+/** Award an Open/Closed RFQ to a quotation (fires the cascade source `t_rfq_award`). */
+export function useRfqAward() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqAwardVars>({
+    mutationFn: ({ rfqId, awardedQuotationId, awardedSupplierId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_award',
+        entity: 'rfq',
+        entityId: rfqId,
+        payload: { awardedQuotationId, awardedSupplierId },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 // ─── Goods receipt (Step 4 batch ii) ────────────────────────────────────────
 // The GR is a buyer/warehouse document, so these dispatch under the buyer scope.
 // Create records the finalized inspection results; the header disposition is a

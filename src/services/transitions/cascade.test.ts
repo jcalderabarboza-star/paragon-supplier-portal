@@ -71,6 +71,21 @@ describe('dispatcher — cross-entity cascade fan-out (census G4)', () => {
     expect(sink.byEvent('t_dstx_alert')).toHaveLength(1); // its own event
   });
 
+  it('a cascaded transition carries causationId = the source correlationId, keeping its own (DR-10, Option A)', () => {
+    const { d, sink } = wire('Live');
+    const res = d.dispatch(
+      { personaType: 'buyer', supplierId: null },
+      { transitionId: 't_srcx_flag', entity: 'srcx', entityId: 's-1' },
+    );
+    const srcEvent = sink.byEvent('t_srcx_flag')[0];
+    const dstEvent = sink.byEvent('t_dstx_alert')[0];
+    // Top-level command: no causation. Cascaded command: grouped to the source's
+    // correlationId — yet still its OWN correlationId (getCommandStatus stays 1:1).
+    expect(srcEvent.causationId).toBeUndefined();
+    expect(dstEvent.causationId).toBe(res.correlationId);
+    expect(dstEvent.correlationId).not.toBe(res.correlationId);
+  });
+
   it('an illegal cascade is best-effort — the source still succeeds', () => {
     const { d, src, dst } = wire('Alerted'); // already alerted → cascade illegal
     const res = d.dispatch(

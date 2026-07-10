@@ -28,6 +28,14 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
   t_gr_partial_approve: [
     { targetEntity: 'advanceShipNotice', targetTransitionId: 't_asn_discrepancy' },
   ],
+  // RFQ award fans out onto its quotations (batch iv): the winner is awarded,
+  // every other is rejected. Both target the `quotation` machine; the adapter
+  // resolver splits the sibling set (winner ← payload, losers ← the store) across
+  // these two links.
+  t_rfq_award: [
+    { targetEntity: 'quotation', targetTransitionId: 't_quotation_award' },
+    { targetEntity: 'quotation', targetTransitionId: 't_quotation_reject' },
+  ],
 };
 
 /** The cascade links declared for a source transition (empty if none). */
