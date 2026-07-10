@@ -1,4 +1,6 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   FileText,
   ScrollText,
@@ -96,6 +98,37 @@ const COUNTRY_FLAG: Record<string, string> = {
 };
 
 
+// Display-label maps: the underlying value stays the English enum literal
+// (used for logic / storage / round-trip); only the visible label localizes.
+const TYPE_LABEL_KEY: Record<ContractType, string> = {
+  Supply: 'contracts.type.supply',
+  Service: 'contracts.type.service',
+  Framework: 'contracts.type.framework',
+  NDA: 'contracts.type.nda',
+  Quality: 'contracts.type.quality',
+  Pricing: 'contracts.type.pricing',
+};
+const typeLabel = (t: TFunction, v: ContractType | string): string =>
+  TYPE_LABEL_KEY[v as ContractType] ? t(TYPE_LABEL_KEY[v as ContractType]) : String(v);
+
+const OWNER_LABEL_KEY: Record<string, string> = {
+  Buyer: 'contracts.owner.buyer',
+  Supplier: 'contracts.owner.supplier',
+  Both: 'contracts.owner.both',
+};
+const ownerLabel = (t: TFunction, v: string): string =>
+  OWNER_LABEL_KEY[v] ? t(OWNER_LABEL_KEY[v]) : v;
+
+const CATEGORY_LABEL_KEY: Record<string, string> = {
+  'Raw Material': 'contracts.category.rawMaterial',
+  'Active Ingredient': 'contracts.category.activeIngredient',
+  Fragrance: 'contracts.category.fragrance',
+  Packaging: 'contracts.category.packaging',
+  Other: 'contracts.category.other',
+};
+const catLabel = (t: TFunction, v: string): string =>
+  CATEGORY_LABEL_KEY[v] ? t(CATEGORY_LABEL_KEY[v]) : v;
+
 const formatIDR = (value: number): string =>
   new Intl.NumberFormat('id-ID', {
     style: 'currency',
@@ -155,7 +188,7 @@ const shiftDays = (iso: string, days: number): string => {
   return d.toISOString().slice(0, 10);
 };
 
-const buildContractTimeline = (c: Contract): TimelineEvent[] => {
+const buildContractTimeline = (c: Contract, t: TFunction): TimelineEvent[] => {
   const isDraft = c.status === 'Draft';
   const isActive = c.status === 'Active';
   const isExpiring = c.status === 'Expiring';
@@ -164,39 +197,39 @@ const buildContractTimeline = (c: Contract): TimelineEvent[] => {
   const isTerminated = c.status === 'Terminated';
 
   const finalLabel = isExpired
-    ? 'Expired'
+    ? t('contracts.timeline.expired')
     : isRenewed
-      ? 'Renewed'
+      ? t('contracts.timeline.renewed')
       : isTerminated
-        ? 'Terminated'
-        : 'Expiry / Renewal';
+        ? t('contracts.timeline.terminated')
+        : t('contracts.timeline.expiryRenewal');
   const finalIcon = isTerminated ? Archive : isRenewed ? RefreshCw : Archive;
 
   return [
     {
       id: 'drafted',
-      title: 'Drafted',
+      title: t('contracts.timeline.drafted'),
       timestamp: c.signedDate ? formatDate(shiftDays(c.signedDate, -14)) : undefined,
       status: 'completed',
       icon: PenSquare,
     },
     {
       id: 'negotiated',
-      title: 'Negotiated',
+      title: t('contracts.timeline.negotiated'),
       timestamp: c.signedDate ? formatDate(shiftDays(c.signedDate, -7)) : undefined,
       status: isDraft ? 'current' : 'completed',
       icon: Handshake,
     },
     {
       id: 'signed',
-      title: 'Signed',
+      title: t('contracts.timeline.signed'),
       timestamp: c.signedDate ? formatDate(c.signedDate) : undefined,
       status: isDraft ? 'pending' : 'completed',
       icon: CheckCircle2,
     },
     {
       id: 'active',
-      title: 'Active Period',
+      title: t('contracts.timeline.activePeriod'),
       timestamp: `${formatDate(c.startDate)} → ${formatDate(c.endDate)}`,
       status: isActive || isExpiring
         ? 'current'
@@ -207,10 +240,12 @@ const buildContractTimeline = (c: Contract): TimelineEvent[] => {
     },
     {
       id: 'renewal-decision',
-      title: 'Renewal Decision',
+      title: t('contracts.timeline.renewalDecision'),
       timestamp:
         c.endDate && c.noticeRequiredDays
-          ? `Notice by ${formatDate(shiftDays(c.endDate, -c.noticeRequiredDays))}`
+          ? t('contracts.timeline.noticeBy', {
+              date: formatDate(shiftDays(c.endDate, -c.noticeRequiredDays)),
+            })
           : undefined,
       status: isExpiring
         ? 'current'
@@ -231,23 +266,25 @@ const buildContractTimeline = (c: Contract): TimelineEvent[] => {
   ];
 };
 
-const FOOTER_PRIMARY_LABEL = (c: Contract): string => {
+const FOOTER_PRIMARY_LABEL = (c: Contract, t: TFunction): string => {
   if (c.status === 'Active' && c.daysUntilExpiry <= 90)
-    return 'Initiate renewal';
-  if (c.status === 'Active') return 'View full contract';
-  if (c.status === 'Expiring') return 'Initiate renewal';
-  if (c.status === 'Expired') return 'View renewal options';
-  if (c.status === 'Draft') return 'Continue editing';
-  if (c.status === 'Renewed') return 'View previous contract';
-  if (c.status === 'Terminated') return 'View termination notice';
-  return 'View full contract';
+    return t('contracts.footer.initiateRenewal');
+  if (c.status === 'Active') return t('contracts.footer.viewFull');
+  if (c.status === 'Expiring') return t('contracts.footer.initiateRenewal');
+  if (c.status === 'Expired') return t('contracts.footer.viewRenewalOptions');
+  if (c.status === 'Draft') return t('contracts.footer.continueEditing');
+  if (c.status === 'Renewed') return t('contracts.footer.viewPrevious');
+  if (c.status === 'Terminated') return t('contracts.footer.viewTermination');
+  return t('contracts.footer.viewFull');
 };
 
 const ReviewSection: React.FC<{
   label: string;
   rows: [string, React.ReactNode][];
   onEdit: () => void;
-}> = ({ label, rows, onEdit }) => (
+}> = ({ label, rows, onEdit }) => {
+  const { t } = useTranslation();
+  return (
   <section className="border border-border-subtle rounded-md">
     <header className="flex items-center justify-between px-4 py-2 bg-bg-hover">
       <span className="text-label text-text-tertiary uppercase">{label}</span>
@@ -256,7 +293,7 @@ const ReviewSection: React.FC<{
         onClick={onEdit}
         className="text-xs font-medium text-teal hover:text-teal-hover"
       >
-        Edit
+        {t('contracts.wizard.review.edit')}
       </button>
     </header>
     <dl className="px-4 py-3 divide-y divide-border-subtle">
@@ -268,7 +305,8 @@ const ReviewSection: React.FC<{
       ))}
     </dl>
   </section>
-);
+  );
+};
 
 const BRAND_OPTIONS = ['Wardah', 'Emina', 'Make Over', 'Instaperfect', 'Kahf'];
 
@@ -290,6 +328,12 @@ const PAYMENT_TERMS_OPTIONS = [
 
 const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
 
+// i18n-defer: obligation-template seed titles. These strings are not just
+// displayed — the selected title is stored verbatim as the obligation's
+// `title` (and flows into the created contract / the Review + Selected tables),
+// so they are seed DATA, not static scaffolding. Translating only the suggestion
+// label would desync it from the stored/echoed value. Localize when obligations
+// gain stable keys (real persistence), not in this string-sweep batch.
 const OBLIGATION_SUGGESTIONS: Record<
   ContractType,
   { title: string; owner: 'Buyer' | 'Supplier' | 'Both' }[]
@@ -419,6 +463,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   const [supplierSearch, setSupplierSearch] = useState('');
   const [customObligationTitle, setCustomObligationTitle] = useState('');
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const contracts = useMemo(
     () => [...extraContracts, ...baseContracts],
@@ -558,35 +603,37 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     setWizardOpen(false);
     toast({
       variant: 'success',
-      title: `Contract ${newContract.contractNumber} created`,
-      description: 'Saved as Draft. Sign workflow coming in Phase 2A.',
+      title: t('contracts.toast.created.title', {
+        number: newContract.contractNumber,
+      }),
+      description: t('contracts.toast.created.desc'),
     });
   };
 
   const wizardSteps: WizardStep[] = [
     {
       id: 'basics',
-      title: 'Basics',
-      shortTitle: 'Basics',
-      description: 'Set the contract type, supplier, and brand scope.',
+      title: t('contracts.wizard.step.basics.title'),
+      shortTitle: t('contracts.wizard.step.basics.title'),
+      description: t('contracts.wizard.step.basics.desc'),
       content: (
         <div className="space-y-5">
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              Contract title <span className="text-danger">*</span>
+              {t('contracts.wizard.field.title')} <span className="text-danger">*</span>
             </label>
             <input
               type="text"
               value={draft.title}
               onChange={(e) => updateDraft('title', e.target.value)}
-              placeholder="e.g. Halal Emulsifier Master Supply Agreement 2027"
+              placeholder={t('contracts.wizard.placeholder.title')}
               className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Contract type <span className="text-danger">*</span>
+                {t('contracts.wizard.field.type')} <span className="text-danger">*</span>
               </label>
               <select
                 value={draft.type}
@@ -595,27 +642,27 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 }
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
-                <option value="">Select a type…</option>
-                {TYPE_OPTIONS.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
+                <option value="">{t('contracts.wizard.select.type')}</option>
+                {TYPE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {typeLabel(t, opt)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Category <span className="text-danger">*</span>
+                {t('contracts.wizard.field.category')} <span className="text-danger">*</span>
               </label>
               <select
                 value={draft.category}
                 onChange={(e) => updateDraft('category', e.target.value)}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               >
-                <option value="">Select a category…</option>
+                <option value="">{t('contracts.wizard.select.category')}</option>
                 {CATEGORY_OPTIONS.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    {catLabel(t, c)}
                   </option>
                 ))}
               </select>
@@ -623,13 +670,13 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           </div>
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              Supplier <span className="text-danger">*</span>
+              {t('contracts.wizard.field.supplier')} <span className="text-danger">*</span>
             </label>
             <div className="mb-2">
               <SearchBar
                 value={supplierSearch}
                 onChange={setSupplierSearch}
-                placeholder="Search suppliers by name or country…"
+                placeholder={t('contracts.wizard.search.supplier')}
               />
             </div>
             <div className="border border-border-subtle rounded-md overflow-hidden max-h-56 overflow-y-auto">
@@ -665,7 +712,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                         colSpan={3}
                         className="text-center text-sm text-text-tertiary py-6"
                       >
-                        No suppliers match the current search.
+                        {t('contracts.wizard.supplier.noMatch')}
                       </td>
                     </tr>
                   )}
@@ -675,7 +722,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           </div>
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              Brands
+              {t('contracts.wizard.field.brands')}
             </label>
             <div className="flex flex-wrap gap-2">
               {BRAND_OPTIONS.map((b) => {
@@ -702,15 +749,15 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     },
     {
       id: 'terms',
-      title: 'Terms & Duration',
-      shortTitle: 'Terms',
-      description: 'Set the term, value, and commercial terms.',
+      title: t('contracts.wizard.step.terms.title'),
+      shortTitle: t('contracts.wizard.step.terms.short'),
+      description: t('contracts.wizard.step.terms.desc'),
       content: (
         <div className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Start date <span className="text-danger">*</span>
+                {t('contracts.wizard.field.startDate')} <span className="text-danger">*</span>
               </label>
               <input
                 type="date"
@@ -721,7 +768,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                End date <span className="text-danger">*</span>
+                {t('contracts.wizard.field.endDate')} <span className="text-danger">*</span>
               </label>
               <input
                 type="date"
@@ -733,7 +780,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 draft.endDate &&
                 new Date(draft.endDate) <= new Date(draft.startDate) && (
                   <p className="text-xs text-danger mt-1">
-                    End date must be after start date.
+                    {t('contracts.wizard.endBeforeStart')}
                   </p>
                 )}
             </div>
@@ -747,16 +794,16 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 className="accent-teal w-4 h-4"
               />
               <span className="text-sm text-text-primary font-medium">
-                Auto-renewal
+                {t('contracts.wizard.field.autoRenewal')}
               </span>
               <span className="text-xs text-text-tertiary">
-                Contract renews unless notice is given.
+                {t('contracts.wizard.autoRenewalHint')}
               </span>
             </label>
             {draft.autoRenewal && (
               <div className="mt-3 max-w-xs">
                 <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                  Notice required (days)
+                  {t('contracts.wizard.field.noticeDays')}
                 </label>
                 <input
                   type="number"
@@ -772,7 +819,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           </div>
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
-              Total contract value (IDR) <span className="text-danger">*</span>
+              {t('contracts.wizard.field.value')} <span className="text-danger">*</span>
             </label>
             <input
               type="number"
@@ -786,7 +833,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Payment terms
+                {t('contracts.wizard.field.paymentTerms')}
               </label>
               <select
                 value={draft.paymentTerms}
@@ -802,7 +849,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                Incoterms
+                {t('contracts.wizard.field.incoterms')}
               </label>
               <select
                 value={draft.incoterms}
@@ -822,15 +869,17 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     },
     {
       id: 'obligations',
-      title: 'Obligations',
-      shortTitle: 'Obligations',
-      description: 'Pick suggested obligations or add custom ones.',
+      title: t('contracts.wizard.step.obligations.title'),
+      shortTitle: t('contracts.wizard.step.obligations.title'),
+      description: t('contracts.wizard.step.obligations.desc'),
       content: (
         <div className="space-y-5">
           {draft.type && (
             <div>
               <h4 className="text-sm font-semibold text-text-primary mb-2">
-                Suggested for {draft.type} contracts
+                {t('contracts.wizard.obl.suggestedFor', {
+                  type: typeLabel(t, draft.type),
+                })}
               </h4>
               <div className="space-y-2">
                 {OBLIGATION_SUGGESTIONS[draft.type as ContractType].map(
@@ -860,7 +909,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             {s.title}
                           </div>
                           <div className="text-xs text-text-tertiary">
-                            Owner: {s.owner}
+                            {t('contracts.wizard.obl.ownerLabel', {
+                              owner: ownerLabel(t, s.owner),
+                            })}
                           </div>
                         </div>
                       </label>
@@ -873,14 +924,14 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
 
           <div>
             <h4 className="text-sm font-semibold text-text-primary mb-2">
-              Add custom obligation
+              {t('contracts.wizard.obl.addCustom')}
             </h4>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={customObligationTitle}
                 onChange={(e) => setCustomObligationTitle(e.target.value)}
-                placeholder="e.g. Submit annual sustainability report"
+                placeholder={t('contracts.wizard.obl.customPlaceholder')}
                 className="flex-1 bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
               <Button
@@ -889,7 +940,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 onClick={addCustomObligation}
                 disabled={!customObligationTitle.trim()}
               >
-                Add
+                {t('contracts.wizard.obl.add')}
               </Button>
             </div>
           </div>
@@ -897,16 +948,18 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           {draft.obligations.length > 0 && (
             <div>
               <h4 className="text-sm font-semibold text-text-primary mb-2">
-                Selected obligations ({draft.obligations.length})
+                {t('contracts.wizard.obl.selected', {
+                  count: draft.obligations.length,
+                })}
               </h4>
               <div className="border border-border-subtle rounded-md overflow-hidden">
                 <table className="w-full text-sm">
                   <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider text-xs">
                     <tr>
-                      <th className="text-left px-3 py-2">Title</th>
-                      <th className="text-left px-3 py-2">Owner</th>
+                      <th className="text-left px-3 py-2">{t('contracts.wizard.obl.col.title')}</th>
+                      <th className="text-left px-3 py-2">{t('contracts.wizard.obl.col.owner')}</th>
                       <th className="text-left px-3 py-2 whitespace-nowrap">
-                        Due date
+                        {t('contracts.wizard.obl.col.dueDate')}
                       </th>
                       <th className="text-right px-3 py-2 w-10"></th>
                     </tr>
@@ -929,9 +982,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             }
                             className="bg-white border border-border-input rounded-md px-2 h-8 text-xs focus:outline-none focus:border-action"
                           >
-                            <option value="Buyer">Buyer</option>
-                            <option value="Supplier">Supplier</option>
-                            <option value="Both">Both</option>
+                            <option value="Buyer">{t('contracts.owner.buyer')}</option>
+                            <option value="Supplier">{t('contracts.owner.supplier')}</option>
+                            <option value="Both">{t('contracts.owner.both')}</option>
                           </select>
                         </td>
                         <td className="px-3 py-2">
@@ -949,9 +1002,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             type="button"
                             onClick={() => removeObligation(i)}
                             className="text-text-tertiary hover:text-danger text-xs"
-                            aria-label="Remove obligation"
+                            aria-label={t('contracts.wizard.obl.removeAria')}
                           >
-                            Remove
+                            {t('contracts.wizard.obl.remove')}
                           </button>
                         </td>
                       </tr>
@@ -966,59 +1019,80 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     },
     {
       id: 'review',
-      title: 'Review & Submit',
-      shortTitle: 'Review',
-      description: 'Check the details before creating the contract draft.',
+      title: t('contracts.wizard.step.review.title'),
+      shortTitle: t('contracts.wizard.step.review.short'),
+      description: t('contracts.wizard.step.review.desc'),
       content: (
         <div className="space-y-5 text-sm">
           <ReviewSection
-            label="Basics"
+            label={t('contracts.wizard.review.section.basics')}
             onEdit={() => setWizardStep(0)}
             rows={[
-              ['Title', draft.title || '—'],
-              ['Type', draft.type || '—'],
+              [t('contracts.wizard.review.row.title'), draft.title || '—'],
               [
-                'Supplier',
+                t('contracts.wizard.review.row.type'),
+                draft.type ? typeLabel(t, draft.type) : '—',
+              ],
+              [
+                t('contracts.wizard.review.row.supplier'),
                 draft.supplierId
                   ? (supplierById.get(draft.supplierId)?.name ??
                     draft.supplierId)
                   : '—',
               ],
-              ['Category', draft.category || '—'],
-              ['Brands', draft.brands.join(', ') || '—'],
+              [
+                t('contracts.wizard.review.row.category'),
+                draft.category ? catLabel(t, draft.category) : '—',
+              ],
+              [t('contracts.wizard.review.row.brands'), draft.brands.join(', ') || '—'],
             ]}
           />
           <ReviewSection
-            label="Terms & Duration"
+            label={t('contracts.wizard.review.section.terms')}
             onEdit={() => setWizardStep(1)}
             rows={[
-              ['Start date', draft.startDate || '—'],
-              ['End date', draft.endDate || '—'],
-              ['Auto-renewal', draft.autoRenewal ? 'Yes' : 'No'],
+              [t('contracts.wizard.review.row.startDate'), draft.startDate || '—'],
+              [t('contracts.wizard.review.row.endDate'), draft.endDate || '—'],
+              [
+                t('contracts.wizard.review.row.autoRenewal'),
+                draft.autoRenewal ? t('contracts.common.yes') : t('contracts.common.no'),
+              ],
               ...(draft.autoRenewal
-                ? ([['Notice required', `${draft.noticeRequiredDays} days`]] as [
-                    string,
-                    React.ReactNode,
-                  ][])
+                ? ([
+                    [
+                      t('contracts.wizard.review.row.noticeRequired'),
+                      t(
+                        Number(draft.noticeRequiredDays) === 1
+                          ? 'contracts.panel.noticeDays.one'
+                          : 'contracts.panel.noticeDays.other',
+                        { count: Number(draft.noticeRequiredDays) },
+                      ),
+                    ],
+                  ] as [string, React.ReactNode][])
                 : []),
               [
-                'Value',
+                t('contracts.wizard.review.row.value'),
                 draft.value ? formatIDR(Number(draft.value)) : '—',
               ],
-              ['Payment terms', draft.paymentTerms],
-              ['Incoterms', draft.incoterms],
+              [t('contracts.wizard.review.row.paymentTerms'), draft.paymentTerms],
+              [t('contracts.wizard.review.row.incoterms'), draft.incoterms],
             ]}
           />
           <ReviewSection
-            label="Obligations"
+            label={t('contracts.wizard.review.section.obligations')}
             onEdit={() => setWizardStep(2)}
             rows={[
               [
-                'Count',
-                `${draft.obligations.length} obligation${draft.obligations.length === 1 ? '' : 's'}`,
+                t('contracts.wizard.review.row.count'),
+                t(
+                  draft.obligations.length === 1
+                    ? 'contracts.wizard.review.oblCount.one'
+                    : 'contracts.wizard.review.oblCount.other',
+                  { count: draft.obligations.length },
+                ),
               ],
               [
-                'Titles',
+                t('contracts.wizard.review.row.titles'),
                 draft.obligations.map((o) => o.title).join(', ') || '—',
               ],
             ]}
@@ -1125,60 +1199,65 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['ACQUIRE', 'CONTRACTS']}
-        title="Contract Management"
-        subtitle="Active contracts, renewal pipeline, and obligation tracking across your supplier network."
+        breadcrumb={[t('contracts.crumb.acquire'), t('contracts.crumb.contracts')]}
+        title={t('contracts.header.title')}
+        subtitle={t('contracts.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
-              { label: 'Export', icon: FileSpreadsheet },
-              { label: 'Templates', icon: ScrollText },
+              { label: t('contracts.action.export'), icon: FileSpreadsheet },
+              { label: t('contracts.action.templates'), icon: ScrollText },
             ]}
-            primary={{ label: 'New Contract', icon: Plus, onClick: openWizard }}
+            primary={{ label: t('contracts.action.newContract'), icon: Plus, onClick: openWizard }}
           />
         }
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {contracts.length} contracts · last updated {formatDate(lastUpdated)}
+        {t(
+          contracts.length === 1
+            ? 'contracts.meta.summary.one'
+            : 'contracts.meta.summary.other',
+          { count: contracts.length, date: formatDate(lastUpdated) },
+        )}
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
         <KpiCard
-          eyebrow="Active Contracts"
+          eyebrow={t('contracts.kpi.active.eyebrow')}
           value={kpis.active.toString()}
-          subtitle="Currently in force"
+          subtitle={t('contracts.kpi.active.subtitle')}
           icon={ScrollText}
         />
         <KpiCard
-          eyebrow="Expiring Soon"
+          eyebrow={t('contracts.kpi.expiring.eyebrow')}
           value={kpis.expiringSoon.toString()}
-          subtitle="Within next 90 days"
+          subtitle={t('contracts.kpi.expiring.subtitle')}
           icon={AlertTriangle}
         />
         <KpiCard
-          eyebrow="Overdue Obligations"
+          eyebrow={t('contracts.kpi.overdue.eyebrow')}
           value={overdueObligations.toString()}
-          subtitle="Across all contracts"
+          subtitle={t('contracts.kpi.overdue.subtitle')}
           icon={FileText}
         />
         <KpiCard
-          eyebrow="Total Active Value"
+          eyebrow={t('contracts.kpi.value.eyebrow')}
           value={formatIDR(kpis.totalValue)}
-          subtitle="Sum of active contracts"
+          subtitle={t('contracts.kpi.value.subtitle')}
           icon={Wallet}
         />
       </div>
 
       <SubTabs
         options={[
-          { id: 'all', label: 'All', count: counts.all },
-          { id: 'active', label: 'Active', count: counts.active },
-          { id: 'expiring', label: 'Expiring', count: counts.expiring },
-          { id: 'expired', label: 'Expired', count: counts.expired },
-          { id: 'renewed', label: 'Renewed', count: counts.renewed },
-          { id: 'draft', label: 'Draft', count: counts.draft },
-          { id: 'terminated', label: 'Terminated', count: counts.terminated },
+          { id: 'all', label: t('contracts.tab.all'), count: counts.all },
+          { id: 'active', label: t('contracts.tab.active'), count: counts.active },
+          { id: 'expiring', label: t('contracts.tab.expiring'), count: counts.expiring },
+          { id: 'expired', label: t('contracts.tab.expired'), count: counts.expired },
+          { id: 'renewed', label: t('contracts.tab.renewed'), count: counts.renewed },
+          { id: 'draft', label: t('contracts.tab.draft'), count: counts.draft },
+          { id: 'terminated', label: t('contracts.tab.terminated'), count: counts.terminated },
         ]}
         value={group}
         onChange={setGroup}
@@ -1188,10 +1267,10 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <div>
           <div className="text-label text-text-tertiary uppercase mb-2">
-            Filter by type
+            {t('contracts.filter.byType')}
           </div>
           <FilterChipsBar
-            options={TYPE_OPTIONS.map((t) => ({ id: t, label: t }))}
+            options={TYPE_OPTIONS.map((opt) => ({ id: opt, label: typeLabel(t, opt) }))}
             value={selectedTypes}
             onChange={toggleType}
             multiSelect
@@ -1203,22 +1282,22 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search by contract number, supplier, or title…"
+          placeholder={t('contracts.search.placeholder')}
         />
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-8">
         <Table>
           <TableHeader>
-            <TableHeaderCell>Contract #</TableHeaderCell>
-            <TableHeaderCell>Supplier</TableHeaderCell>
-            <TableHeaderCell>Type</TableHeaderCell>
-            <TableHeaderCell>Period</TableHeaderCell>
-            <TableHeaderCell>Expiry</TableHeaderCell>
-            <TableHeaderCell className="text-right">Value</TableHeaderCell>
-            <TableHeaderCell>Performance</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            <TableHeaderCell>{t('contracts.table.col.number')}</TableHeaderCell>
+            <TableHeaderCell>{t('contracts.table.col.supplier')}</TableHeaderCell>
+            <TableHeaderCell>{t('contracts.table.col.type')}</TableHeaderCell>
+            <TableHeaderCell>{t('contracts.table.col.period')}</TableHeaderCell>
+            <TableHeaderCell>{t('contracts.table.col.expiry')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('contracts.table.col.value')}</TableHeaderCell>
+            <TableHeaderCell>{t('contracts.table.col.performance')}</TableHeaderCell>
+            <TableHeaderCell>{t('contracts.table.col.status')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('contracts.table.col.actions')}</TableHeaderCell>
           </TableHeader>
           <tbody>
             {filtered.map((c) => {
@@ -1248,7 +1327,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    <StatusPill variant="neutral">{c.type}</StatusPill>
+                    <StatusPill variant="neutral">{typeLabel(t, c.type)}</StatusPill>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm text-text-secondary whitespace-nowrap">
@@ -1257,17 +1336,21 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     </div>
                     {c.autoRenewal && (
                       <div className="text-xs text-info mt-0.5 inline-flex items-center gap-1">
-                        <RefreshCw size={10} /> Auto-renew
+                        <RefreshCw size={10} /> {t('contracts.table.autoRenew')}
                       </div>
                     )}
                   </TableCell>
                   <TableCell>
                     <div className={`text-sm whitespace-nowrap ${expiryTone(c.daysUntilExpiry)}`}>
                       {c.daysUntilExpiry < 0
-                        ? `${Math.abs(c.daysUntilExpiry)}d ago`
+                        ? t('contracts.expiry.daysAgo', {
+                            count: Math.abs(c.daysUntilExpiry),
+                          })
                         : c.daysUntilExpiry === 0
-                          ? 'Today'
-                          : `${c.daysUntilExpiry}d left`}
+                          ? t('contracts.expiry.today')
+                          : t('contracts.expiry.daysLeft', {
+                              count: c.daysUntilExpiry,
+                            })}
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
@@ -1306,7 +1389,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   colSpan={9}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No contracts match the current filters.
+                  {t('contracts.table.empty')}
                 </td>
               </tr>
             )}
@@ -1318,18 +1401,18 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-border-subtle">
           <div className="text-label text-text-tertiary uppercase">
-            Intelligence
+            {t('contracts.pipeline.eyebrow')}
           </div>
           <h2 className="text-section text-text-primary mt-1">
-            Renewal Pipeline
+            {t('contracts.pipeline.title')}
           </h2>
           <p className="text-meta text-text-tertiary">
-            Contracts expiring in the next 6 months, grouped by month.
+            {t('contracts.pipeline.subtitle')}
           </p>
         </div>
         {renewalPipeline.length === 0 ? (
           <div className="px-6 py-10 text-center text-sm text-text-tertiary">
-            No renewals due in the next 6 months.
+            {t('contracts.pipeline.empty')}
           </div>
         ) : (
           <ul className="divide-y divide-border-subtle">
@@ -1341,7 +1424,12 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     {month}
                   </h3>
                   <span className="text-xs text-text-tertiary">
-                    · {items.length} contract{items.length === 1 ? '' : 's'}
+                    {t(
+                      items.length === 1
+                        ? 'contracts.pipeline.count.one'
+                        : 'contracts.pipeline.count.other',
+                      { count: items.length },
+                    )}
                   </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1370,7 +1458,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             {supplier?.name ?? c.supplierId}
                           </div>
                           <div className="text-xs text-text-tertiary mt-0.5">
-                            <Data>{c.contractNumber}</Data> · {c.type}
+                            <Data>{c.contractNumber}</Data> · {typeLabel(t, c.type)}
                           </div>
                         </div>
                         {c.autoRenewal && (
@@ -1394,7 +1482,10 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
         onClose={closePanel}
         title={
           selectedContract
-            ? `Contract ${selectedContract.contractNumber} — ${selectedContract.title}`
+            ? t('contracts.panel.title', {
+                number: selectedContract.contractNumber,
+                title: selectedContract.title,
+              })
             : ''
         }
         footerActions={
@@ -1406,15 +1497,15 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 onClick={() =>
                   toast({
                     variant: 'info',
-                    title: 'PDF export queued',
-                    description: 'PDF export coming in Phase 2A.',
+                    title: t('contracts.toast.pdfQueued.title'),
+                    description: t('contracts.toast.pdfQueued.desc'),
                   })
                 }
               >
-                Export PDF
+                {t('contracts.panel.exportPdf')}
               </Button>
               <Button variant="outline">
-                {FOOTER_PRIMARY_LABEL(selectedContract)}
+                {FOOTER_PRIMARY_LABEL(selectedContract, t)}
               </Button>
             </>
           )
@@ -1424,26 +1515,26 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           <div className="space-y-6">
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Key facts
+                {t('contracts.panel.keyFacts')}
               </h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="text-text-tertiary">Supplier</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.supplier')}</dt>
                   <dd className="text-text-primary font-medium">
                     {supplierById.get(selectedContract.supplierId)?.name ??
                       selectedContract.supplierId}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Type</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.type')}</dt>
                   <dd>
                     <StatusPill variant="neutral">
-                      {selectedContract.type}
+                      {typeLabel(t, selectedContract.type)}
                     </StatusPill>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Status</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.status')}</dt>
                   <dd>
                     <StatusPill
                       variant={STATUS_VARIANT[selectedContract.status]}
@@ -1453,41 +1544,52 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Auto-renewal</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.autoRenewal')}</dt>
                   <dd className="text-text-primary font-medium">
-                    {selectedContract.autoRenewal ? 'Yes' : 'No'}
+                    {selectedContract.autoRenewal
+                      ? t('contracts.common.yes')
+                      : t('contracts.common.no')}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Start date</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.startDate')}</dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedContract.startDate)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">End date</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.endDate')}</dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selectedContract.endDate)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Notice required</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.noticeRequired')}</dt>
                   <Data as="dd" className="text-text-primary font-medium">
-                    {selectedContract.noticeRequiredDays} days
+                    {t(
+                      selectedContract.noticeRequiredDays === 1
+                        ? 'contracts.panel.noticeDays.one'
+                        : 'contracts.panel.noticeDays.other',
+                      { count: selectedContract.noticeRequiredDays },
+                    )}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Days until expiry</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.daysUntilExpiry')}</dt>
                   <dd
                     className={`font-semibold ${expiryTone(selectedContract.daysUntilExpiry)}`}
                   >
                     {selectedContract.daysUntilExpiry < 0
-                      ? `${Math.abs(selectedContract.daysUntilExpiry)}d ago`
-                      : `${selectedContract.daysUntilExpiry}d`}
+                      ? t('contracts.expiry.daysAgo', {
+                          count: Math.abs(selectedContract.daysUntilExpiry),
+                        })
+                      : t('contracts.expiry.days', {
+                          count: selectedContract.daysUntilExpiry,
+                        })}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Value</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.value')}</dt>
                   <Data as="dd" className="text-text-primary font-semibold">
                     {selectedContract.value > 0
                       ? formatIDR(selectedContract.value)
@@ -1495,37 +1597,37 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Currency</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.currency')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedContract.currency}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Payment terms</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.paymentTerms')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedContract.paymentTerms}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Incoterms</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.incoterms')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedContract.incoterms}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Signed by buyer</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.signedByBuyer')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedContract.signedByBuyer}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Signed by supplier</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.signedBySupplier')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selectedContract.signedBySupplier}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Signed date</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.signedDate')}</dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {selectedContract.signedDate
                       ? formatDate(selectedContract.signedDate)
@@ -1533,13 +1635,13 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Category</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.category')}</dt>
                   <dd className="text-text-primary font-medium">
-                    {selectedContract.category}
+                    {catLabel(t, selectedContract.category)}
                   </dd>
                 </div>
                 <div className="col-span-2">
-                  <dt className="text-text-tertiary">Brands</dt>
+                  <dt className="text-text-tertiary">{t('contracts.panel.field.brands')}</dt>
                   <dd className="mt-1 flex flex-wrap gap-1.5">
                     {selectedContract.brands.length === 0 ? (
                       <span className="text-text-tertiary text-sm">—</span>
@@ -1557,7 +1659,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 </div>
                 <div className="col-span-2 pt-2 flex items-center gap-3">
                   <dt className="text-text-tertiary text-sm">
-                    Performance score
+                    {t('contracts.panel.field.performanceScore')}
                   </dt>
                   <dd>
                     {selectedContract.performanceScore > 0 ? (
@@ -1568,7 +1670,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                       />
                     ) : (
                       <span className="text-text-tertiary text-sm">
-                        Not yet rated
+                        {t('contracts.panel.notRated')}
                       </span>
                     )}
                   </dd>
@@ -1578,11 +1680,13 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Obligations ({obligationsForSelected.length})
+                {t('contracts.panel.obligations', {
+                  count: obligationsForSelected.length,
+                })}
               </h3>
               {obligationsForSelected.length === 0 ? (
                 <p className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
-                  No obligations defined for this contract.
+                  {t('contracts.panel.noObligations')}
                 </p>
               ) : (
                 <div className="border border-border-subtle rounded-md overflow-hidden">
@@ -1590,16 +1694,16 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
                       <tr>
                         <th className="text-left px-3 py-2 font-semibold">
-                          Title
+                          {t('contracts.panel.obl.col.title')}
                         </th>
                         <th className="text-left px-3 py-2 font-semibold">
-                          Owner
+                          {t('contracts.panel.obl.col.owner')}
                         </th>
                         <th className="text-left px-3 py-2 font-semibold whitespace-nowrap">
-                          Due
+                          {t('contracts.panel.obl.col.due')}
                         </th>
                         <th className="text-left px-3 py-2 font-semibold">
-                          Status
+                          {t('contracts.panel.obl.col.status')}
                         </th>
                       </tr>
                     </thead>
@@ -1619,7 +1723,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                             </div>
                           </td>
                           <td className="px-3 py-2 text-text-secondary">
-                            {o.owner}
+                            {ownerLabel(t, o.owner)}
                           </td>
                           <td className="px-3 py-2 text-text-secondary whitespace-nowrap">
                             <Data>{formatDate(o.dueDate)}</Data>
@@ -1641,9 +1745,9 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Lifecycle
+                {t('contracts.panel.lifecycle')}
               </h3>
-              <Timeline events={buildContractTimeline(selectedContract)} />
+              <Timeline events={buildContractTimeline(selectedContract, t)} />
             </section>
 
             <section>
@@ -1657,8 +1761,10 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 ) : (
                   <ChevronDown size={14} />
                 )}
-                {docsOpen ? 'Hide' : 'Show'} linked compliance documents (
-                {PLACEHOLDER_DOCS(selectedContract).length})
+                {t(
+                  docsOpen ? 'contracts.panel.docsHide' : 'contracts.panel.docsShow',
+                  { count: PLACEHOLDER_DOCS(selectedContract).length },
+                )}
               </button>
               {docsOpen && (
                 <ul className="mt-3 space-y-2">
@@ -1709,7 +1815,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             onCancel={closeWizard}
             onComplete={submitWizard}
             isStepValid={isStepValid}
-            completeLabel="Create Contract"
+            completeLabel={t('contracts.wizard.complete')}
           />
         </div>
       )}
@@ -1717,16 +1823,19 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   );
 };
 
-const CONTRACTS_CRUMB = ['ACQUIRE', 'CONTRACTS'];
-
 // Wrapper: reads the buyer-side contract portfolio (contracts + obligations
 // scoped via parent contract) through the scoped hooks and renders the four
 // honest states; the workspace inner keeps its local (Phase-2′, non-persisting)
 // contract-creation wizard state seeded from the resolved reads.
 const BuyerContracts: React.FC = () => {
+  const { t } = useTranslation();
   const contractsQuery = useContracts();
   const obligationsQuery = useObligations();
   const suppliersQuery = useSuppliers();
+  const CONTRACTS_CRUMB = [
+    t('contracts.crumb.acquire'),
+    t('contracts.crumb.contracts'),
+  ];
 
   if (
     contractsQuery.isPending ||
@@ -1760,9 +1869,9 @@ const BuyerContracts: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={CONTRACTS_CRUMB}
-        title="No contracts yet"
-        subtitle="No contracts are on file across your supplier network."
-        message="Contracts, obligations, and the renewal pipeline appear here once agreements are signed."
+        title={t('contracts.state.empty.title')}
+        subtitle={t('contracts.state.empty.subtitle')}
+        message={t('contracts.state.empty.message')}
       />
     );
 

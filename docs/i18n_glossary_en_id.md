@@ -86,3 +86,27 @@ against `statusTone.ts`). Representative entries:
 - **Dates:** `dd MMM yyyy`, id-ID months (`Jan Feb Mar Apr Mei Jun Jul Agu Sep
   Okt Nov Des`), Asia/Jakarta.
 - **Document numbers / codes / SAP refs stay verbatim** — never translated.
+
+## Batch 1 additions (SupplierRegistration + BuyerContracts)
+Terms introduced during page extraction, consistent with the conventions above.
+
+| EN | ID | EN | ID |
+|---|---|---|---|
+| Contact person | Narahubung | Supply | Pasokan |
+| Channel | Kanal | Service | Layanan |
+| SME | UKM | Framework | Kerangka Kerja |
+| Self-service | Swalayan | Quality | Kualitas |
+| Supplier Code of Conduct | Kode Etik Pemasok | Pricing | Harga |
+| Terms & Conditions | Syarat & Ketentuan | Both | Keduanya |
+| Qualification | Kualifikasi | Raw Material | Bahan Baku |
+| Category expansion | Perluasan kategori | Active Ingredient | Bahan Aktif |
+| Other | Lainnya | Fragrance | Pewangi |
+| All | Semua | Packaging | Kemasan |
+| Renewal Pipeline | Alur Pembaruan | Obligation | Kewajiban |
+| Auto-renewal | Perpanjangan otomatis | Performance score | Skor kinerja |
+| Notice required | Pemberitahuan diperlukan | Lifecycle | Siklus hidup |
+
+**Kept as loanwords / codes:** Onboarding, Vendor (where distinct from Pemasok),
+NDA, Incoterms (FOB/CIF/EXW/DDP/FCA), payment-term codes (Net 30/45/60, Letter of
+Credit, Advance Payment). `Active/Renewed/Terminated/Expiring/Expired/Draft` reuse
+the status glossary (`Aktif/Diperbarui/Dihentikan/Akan Kedaluwarsa/Kedaluwarsa/Draf`).
