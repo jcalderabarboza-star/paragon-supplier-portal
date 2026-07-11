@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import ExpandableWidget, {
@@ -25,6 +26,7 @@ const isActionable = (a: RiskAlert): boolean =>
   a.level === 'critical' || a.level === 'warning';
 
 const BuyerRiskWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = useRiskAlerts();
 
@@ -68,7 +70,7 @@ const BuyerRiskWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Risk alerts"
+      title={t('widget.risk.title')}
       icon={ShieldAlert}
       count={count}
       live={false}
@@ -76,11 +78,11 @@ const BuyerRiskWidget: React.FC = () => {
       flagLabel={
         count > 0
           ? critical > 0
-            ? `${count} active · ${critical} critical`
-            : `${count} active`
+            ? t('widget.risk.flag.withCritical', { count, critical })
+            : t('widget.risk.flag.active', { count })
           : undefined
       }
-      actionLabel={count > 0 ? 'View risk' : undefined}
+      actionLabel={count > 0 ? t('widget.risk.action') : undefined}
       onAction={count > 0 ? () => navigate('/buyer/risk') : undefined}
       expandedRows={expandedRows}
     />

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Gavel } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
@@ -22,6 +23,7 @@ import {
 // the RFQ + quotation stores (award verb, PR #41). The award is a decision, so
 // the action routes to the sourcing board rather than auto-awarding.
 const BuyerRfqAwaitingAwardWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const rfqQuery = useRFQs();
   const quoteQuery = useQuotations();
@@ -80,7 +82,7 @@ const BuyerRfqAwaitingAwardWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="RFQs awaiting award"
+      title={t('widget.rfqAward.title')}
       icon={Gavel}
       count={count}
       live
@@ -92,11 +94,11 @@ const BuyerRfqAwaitingAwardWidget: React.FC = () => {
       flagLabel={
         count > 0
           ? overdue > 0
-            ? `${count} pending · ${overdue} past deadline`
-            : `${count} to award`
+            ? t('widget.rfqAward.flag.withOverdue', { count, overdue })
+            : t('widget.rfqAward.flag.toAward', { count })
           : undefined
       }
-      actionLabel={count > 0 ? 'Go to sourcing' : undefined}
+      actionLabel={count > 0 ? t('widget.rfqAward.action') : undefined}
       onAction={count > 0 ? () => navigate('/buyer/sourcing') : undefined}
       expandedRows={expandedRows}
     />

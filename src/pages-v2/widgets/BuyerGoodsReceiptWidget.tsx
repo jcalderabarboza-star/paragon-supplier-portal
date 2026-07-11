@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { PackageCheck } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
@@ -16,6 +17,7 @@ import { grNeedingAction, grVariance, grTier } from './buyerDerivations';
 // Buyer 3-way match — LIVE from the GR store. Count is receipts needing action
 // (pending inspection or a match variance); variance (hold/reject/partial) is red.
 const BuyerGoodsReceiptWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = useGoodsReceipts();
 
@@ -68,7 +70,7 @@ const BuyerGoodsReceiptWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Goods receipts — 3-way match"
+      title={t('widget.goodsReceipt.title')}
       icon={PackageCheck}
       count={count}
       live
@@ -76,11 +78,11 @@ const BuyerGoodsReceiptWidget: React.FC = () => {
       flagLabel={
         count > 0
           ? variance > 0
-            ? `${count} to review · ${variance} variance`
-            : `${count} to review`
+            ? t('widget.goodsReceipt.flag.withVariance', { count, variance })
+            : t('widget.goodsReceipt.flag.plain', { count })
           : undefined
       }
-      actionLabel={count > 0 ? 'Review receipts' : undefined}
+      actionLabel={count > 0 ? t('widget.goodsReceipt.action') : undefined}
       onAction={count > 0 ? () => navigate('/buyer/goods-receipt') : undefined}
       expandedRows={expandedRows}
     />

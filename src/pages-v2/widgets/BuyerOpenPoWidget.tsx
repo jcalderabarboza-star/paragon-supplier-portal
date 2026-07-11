@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
@@ -20,6 +21,7 @@ import {
 // Buyer PO board — LIVE from the PO store. Count is open POs; the urgency flag is
 // the honest exception: orders still unacknowledged more than 48h after placing.
 const BuyerOpenPoWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = usePurchaseOrders();
 
@@ -76,13 +78,13 @@ const BuyerOpenPoWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Open purchase orders"
+      title={t('widget.openPo.title')}
       icon={ShoppingCart}
       count={count}
       live
       flagSeverity={poTier(items, now)}
-      flagLabel={unack > 0 ? `${unack} unacknowledged >48h` : undefined}
-      actionLabel={count > 0 ? 'View open POs' : undefined}
+      flagLabel={unack > 0 ? t('widget.openPo.flag', { count: unack }) : undefined}
+      actionLabel={count > 0 ? t('widget.openPo.action') : undefined}
       onAction={count > 0 ? () => navigate('/buyer/orders') : undefined}
       expandedRows={expandedRows}
     />

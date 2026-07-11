@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard } from 'lucide-react';
 import ExpandableWidget, {
@@ -21,6 +22,7 @@ const isUnpaid = (i: SupplierInvoice): boolean =>
   i.status !== 'Payment Released' && i.status !== 'Remittance Received';
 
 const SupplierInvoicePaymentWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = useSupplierInvoices();
 
@@ -80,7 +82,7 @@ const SupplierInvoicePaymentWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Invoice payment"
+      title={t('widget.invoicePayment.title')}
       icon={CreditCard}
       count={count}
       live
@@ -88,11 +90,11 @@ const SupplierInvoicePaymentWidget: React.FC = () => {
       flagLabel={
         count > 0
           ? overdue > 0
-            ? `${count} unpaid · ${overdue} overdue`
-            : `${count} awaiting payment`
+            ? t('widget.invoicePayment.flag.withOverdue', { count, overdue })
+            : t('widget.invoicePayment.flag.awaiting', { count })
           : undefined
       }
-      actionLabel={count > 0 ? 'View invoices' : undefined}
+      actionLabel={count > 0 ? t('widget.invoicePayment.action') : undefined}
       onAction={count > 0 ? () => navigate('/supplier/invoices') : undefined}
       expandedRows={expandedRows}
     />

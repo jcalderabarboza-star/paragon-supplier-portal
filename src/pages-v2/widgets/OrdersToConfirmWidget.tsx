@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ClipboardList } from 'lucide-react';
 import ExpandableWidget, {
   type FlagSeverity,
@@ -37,6 +38,7 @@ const severityFor = (n: number): FlagSeverity =>
   n === 0 ? 'none' : n >= 3 ? 'warning' : 'info';
 
 const OrdersToConfirmWidget: React.FC = () => {
+  const { t } = useTranslation();
   const posQuery = usePurchaseOrders();
   const confirmMutation = usePurchaseOrderConfirm();
 
@@ -106,13 +108,13 @@ const OrdersToConfirmWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Orders to confirm"
+      title={t('widget.ordersToConfirm.title')}
       icon={ClipboardList}
       count={count}
       live
       flagSeverity={severityFor(count)}
-      flagLabel={count > 0 ? `${count} awaiting confirmation` : undefined}
-      actionLabel={count > 0 ? 'Confirm orders' : undefined}
+      flagLabel={count > 0 ? t('widget.ordersToConfirm.flag', { count }) : undefined}
+      actionLabel={count > 0 ? t('widget.ordersToConfirm.action') : undefined}
       onAction={count > 0 ? () => confirm(confirmable[0]) : undefined}
       actionDisabled={confirmMutation.isPending}
       expandedRows={expandedRows}

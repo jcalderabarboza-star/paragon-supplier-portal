@@ -13,6 +13,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { statusResourcesEn, statusResourcesId } from './statusLabel';
 import { enumResourcesEn, enumResourcesId } from './priorityLabel';
+import { modeResourcesEn, modeResourcesId } from './modeLabel';
 import { registrationEn, registrationId } from './i18n/registration';
 import { contractsEn, contractsId } from './i18n/contracts';
 import { buyerWhatsAppEn, buyerWhatsAppId } from './i18n/buyerWhatsApp';
@@ -27,6 +28,11 @@ import { riskEn, riskId } from './i18n/risk';
 import { shipmentsEn, shipmentsId } from './i18n/shipments';
 import { complianceEn, complianceId } from './i18n/compliance';
 import { supplierDashboardEn, supplierDashboardId } from './i18n/supplierDashboard';
+import { widgetEn, widgetId } from './i18n/widget';
+import { supplierOrdersEn, supplierOrdersId } from './i18n/supplierOrders';
+import { supplierShipmentsEn, supplierShipmentsId } from './i18n/supplierShipments';
+import { supplierInvoicesEn, supplierInvoicesId } from './i18n/supplierInvoices';
+import { supplierDocumentsEn, supplierDocumentsId } from './i18n/supplierDocuments';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -45,6 +51,7 @@ export const resources = {
     translation: {
       ...statusResourcesEn,
       ...enumResourcesEn,
+      ...modeResourcesEn,
       ...registrationEn,
       ...contractsEn,
       ...buyerWhatsAppEn,
@@ -59,6 +66,11 @@ export const resources = {
       ...shipmentsEn,
       ...complianceEn,
       ...supplierDashboardEn,
+      ...widgetEn,
+      ...supplierOrdersEn,
+      ...supplierShipmentsEn,
+      ...supplierInvoicesEn,
+      ...supplierDocumentsEn,
       'app.title': 'Paragon Supplier Portal',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Acquire',
@@ -190,6 +202,7 @@ export const resources = {
     translation: {
       ...statusResourcesId,
       ...enumResourcesId,
+      ...modeResourcesId,
       ...registrationId,
       ...contractsId,
       ...buyerWhatsAppId,
@@ -204,6 +217,11 @@ export const resources = {
       ...shipmentsId,
       ...complianceId,
       ...supplierDashboardId,
+      ...widgetId,
+      ...supplierOrdersId,
+      ...supplierShipmentsId,
+      ...supplierInvoicesId,
+      ...supplierDocumentsId,
       'app.title': 'Portal Pemasok Paragon',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Pengadaan',

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ClipboardList } from 'lucide-react';
 import ExpandableWidget, {
@@ -20,6 +21,7 @@ import type { RFQ } from '../../services/data/types';
 // scopes the read to RFQs this supplier was invited to; we surface the Open ones
 // it hasn't responded to yet. Replaces the old hardcoded "Open Sourcing 2" KPI.
 const SupplierRfqToRespondWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { identity } = useCurrentIdentity();
   const supplierId = identity.supplierId;
@@ -86,7 +88,7 @@ const SupplierRfqToRespondWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="RFQs to respond"
+      title={t('widget.rfqRespond.title')}
       icon={ClipboardList}
       count={count}
       live
@@ -94,11 +96,11 @@ const SupplierRfqToRespondWidget: React.FC = () => {
       flagLabel={
         count > 0
           ? late > 0
-            ? `${count} open · ${late} past deadline`
-            : `${count} to respond`
+            ? t('widget.rfqRespond.flag.withLate', { count, late })
+            : t('widget.rfqRespond.flag.toRespond', { count })
           : undefined
       }
-      actionLabel={count > 0 ? 'Respond' : undefined}
+      actionLabel={count > 0 ? t('widget.rfqRespond.action') : undefined}
       onAction={count > 0 ? () => navigate('/supplier/rfqs') : undefined}
       expandedRows={expandedRows}
     />

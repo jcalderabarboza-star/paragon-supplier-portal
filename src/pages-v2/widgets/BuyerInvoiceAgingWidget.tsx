@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
@@ -16,6 +17,7 @@ import { overdueInvoices, maxDaysOutstanding, invoiceTier } from './buyerDerivat
 // Buyer AP aging — LIVE: overdue is computed at read (invoiceProjection: an open,
 // unpaid invoice past its due date), so nothing here fabricates a payment state.
 const BuyerInvoiceAgingWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = useBuyerInvoices();
 
@@ -68,13 +70,13 @@ const BuyerInvoiceAgingWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Invoices — AP aging"
+      title={t('widget.invoiceAging.title')}
       icon={CreditCard}
       count={count}
       live
       flagSeverity={invoiceTier(query.data?.items ?? [])}
-      flagLabel={count > 0 ? `${count} overdue · ${maxDays}d max` : undefined}
-      actionLabel={count > 0 ? 'Open AP queue' : undefined}
+      flagLabel={count > 0 ? t('widget.invoiceAging.flag', { count, maxDays }) : undefined}
+      actionLabel={count > 0 ? t('widget.invoiceAging.action') : undefined}
       onAction={count > 0 ? () => navigate('/buyer/invoices') : undefined}
       expandedRows={expandedRows}
     />

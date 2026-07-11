@@ -1,9 +1,18 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../../lib/i18n';
 import ExpandableWidget from './ExpandableWidget';
 
 // The reusable dashboard widget shell (Ledger Line). The load-bearing guarantee
 // is the honest-by-construction lock: the green "● Live" dot-label is UNREACHABLE
 // without live===true — a widget can never claim live derived data it lacks.
+//
+// i18n is now active in the shell; renders wrap in the i18n provider (default-EN,
+// per StatusPill.test precedent), so t('widget.honesty.live') → "Live",
+// t('widget.allClear') → "All clear" — byte-identical to the pre-i18n literals,
+// keeping every assertion below green.
+const renderWidget = (node: React.ReactNode) =>
+  render(<I18nextProvider i18n={i18n}>{node}</I18nextProvider>);
 
 const baseProps = {
   title: 'Invoices',
@@ -13,13 +22,13 @@ const baseProps = {
 
 describe('ExpandableWidget — honesty lock', () => {
   it('live=false renders the amber "Sample" dot-label, NEVER "Live"', () => {
-    render(<ExpandableWidget {...baseProps} live={false} />);
+    renderWidget(<ExpandableWidget {...baseProps} live={false} />);
     expect(screen.getByText('Sample')).toBeInTheDocument();
     expect(screen.queryByText('Live')).not.toBeInTheDocument();
   });
 
   it('live=true renders the green "Live" dot-label, NEVER "Sample"', () => {
-    render(<ExpandableWidget {...baseProps} live />);
+    renderWidget(<ExpandableWidget {...baseProps} live />);
     expect(screen.getByText('Live')).toBeInTheDocument();
     expect(screen.queryByText('Sample')).not.toBeInTheDocument();
   });
@@ -27,7 +36,7 @@ describe('ExpandableWidget — honesty lock', () => {
 
 describe('ExpandableWidget — compact state (Ledger Line)', () => {
   it('renders the title, the hero count, and the flag detail line', () => {
-    render(
+    renderWidget(
       <ExpandableWidget
         {...baseProps}
         live
@@ -41,13 +50,13 @@ describe('ExpandableWidget — compact state (Ledger Line)', () => {
   });
 
   it('shows "All clear" when flagSeverity is none', () => {
-    render(<ExpandableWidget {...baseProps} count={0} live flagSeverity="none" />);
+    renderWidget(<ExpandableWidget {...baseProps} count={0} live flagSeverity="none" />);
     expect(screen.getByText('All clear')).toBeInTheDocument();
   });
 
   it('fires the 1-click action (text-link CTA)', () => {
     const onAction = vi.fn();
-    render(
+    renderWidget(
       <ExpandableWidget
         {...baseProps}
         live
@@ -60,7 +69,7 @@ describe('ExpandableWidget — compact state (Ledger Line)', () => {
   });
 
   it('the collapse chevron toggles the compact body', () => {
-    render(
+    renderWidget(
       <ExpandableWidget
         {...baseProps}
         live
@@ -80,7 +89,7 @@ describe('ExpandableWidget — compact state (Ledger Line)', () => {
 
 describe('ExpandableWidget — DP2-FLAG-01 card-edge signature', () => {
   it('the CARD carries a 3px left severity edge (critical=red)', () => {
-    const { container } = render(
+    const { container } = renderWidget(
       <ExpandableWidget {...baseProps} live flagSeverity="critical" />,
     );
     const classes = container.querySelector('section')!.className.split(/\s+/);
@@ -89,7 +98,7 @@ describe('ExpandableWidget — DP2-FLAG-01 card-edge signature', () => {
   });
 
   it('no severity edge when flagSeverity is none', () => {
-    const { container } = render(
+    const { container } = renderWidget(
       <ExpandableWidget {...baseProps} count={0} live flagSeverity="none" />,
     );
     const classes = container.querySelector('section')!.className.split(/\s+/);
@@ -99,7 +108,7 @@ describe('ExpandableWidget — DP2-FLAG-01 card-edge signature', () => {
 
 describe('ExpandableWidget — expanded (fullscreen) state', () => {
   it('expands to a dialog showing the real rows, then Esc closes it', () => {
-    render(<ExpandableWidget {...baseProps} live />);
+    renderWidget(<ExpandableWidget {...baseProps} live />);
     expect(screen.queryByText('the real overdue rows')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand Invoices' }));
@@ -112,7 +121,7 @@ describe('ExpandableWidget — expanded (fullscreen) state', () => {
   });
 
   it('the expanded view carries the same honesty marker (cannot fake live)', () => {
-    render(<ExpandableWidget {...baseProps} live={false} />);
+    renderWidget(<ExpandableWidget {...baseProps} live={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Expand Invoices' }));
     // two amber markers now (compact header + dialog header), still never "Live".
     expect(screen.getAllByText('Sample').length).toBe(2);

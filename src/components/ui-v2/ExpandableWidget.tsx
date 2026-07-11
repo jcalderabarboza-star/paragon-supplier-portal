@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Maximize2,
   ChevronDown,
@@ -61,8 +63,11 @@ const EDGE_CLASS: Record<FlagSeverity, string> = {
 };
 
 // Honest-by-construction marker: a micro dot-label, quiet in the header corner.
-// live → filled green dot + "Live"; sample → hollow amber ring + "Sample".
-const HonestyDot: React.FC<{ live: boolean }> = ({ live }) => (
+// live → filled green dot + "Live"; sample → hollow amber ring + "Sample". The
+// `live` boolean still STRUCTURALLY gates which token renders — only the display
+// text is keyed (t threaded in so the green-Live path stays unreachable without
+// live===true).
+const HonestyDot: React.FC<{ live: boolean; t: TFunction }> = ({ live, t }) => (
   <span
     className={`inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${
       live ? 'text-success' : 'text-warning-hover'
@@ -74,7 +79,7 @@ const HonestyDot: React.FC<{ live: boolean }> = ({ live }) => (
         live ? 'bg-success' : 'border border-warning'
       }`}
     />
-    {live ? 'Live' : 'Sample'}
+    {live ? t('widget.honesty.live') : t('widget.honesty.sample')}
   </span>
 );
 
@@ -90,6 +95,7 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
   expandedRows,
   icon: Icon,
 }) => {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -134,7 +140,7 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
   // The flag's information moves to a quiet detail line under the number —
   // colored only when critical; "All clear" when there is nothing to flag.
   const detailText =
-    flagLabel ?? (flagSeverity === 'none' ? 'All clear' : `${count}`);
+    flagLabel ?? (flagSeverity === 'none' ? t('widget.allClear') : `${count}`);
   const detailClass =
     flagSeverity === 'critical' ? 'text-danger' : 'text-text-tertiary';
 
@@ -153,11 +159,11 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
             </h2>
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
-            <HonestyDot live={live} />
+            <HonestyDot live={live} t={t} />
             <div className="flex items-center gap-0.5">
               <button
                 type="button"
-                aria-label={`Expand ${title}`}
+                aria-label={t('widget.aria.expand', { title })}
                 onClick={() => setExpanded(true)}
                 className="p-1.5 rounded-md text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors"
               >
@@ -165,7 +171,11 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
               </button>
               <button
                 type="button"
-                aria-label={collapsed ? `Show ${title}` : `Collapse ${title}`}
+                aria-label={
+                  collapsed
+                    ? t('widget.aria.show', { title })
+                    : t('widget.aria.collapse', { title })
+                }
                 aria-expanded={!collapsed}
                 onClick={() => setCollapsed((c) => !c)}
                 className="p-1.5 rounded-md text-text-tertiary hover:text-text-secondary hover:bg-bg-hover transition-colors"
@@ -221,12 +231,12 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
                 <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 rounded-md bg-bg-hover text-text-secondary text-xs font-semibold shrink-0">
                   <Data>{count}</Data>
                 </span>
-                <HonestyDot live={live} />
+                <HonestyDot live={live} t={t} />
               </div>
               <button
                 ref={closeBtnRef}
                 type="button"
-                aria-label="Close fullscreen"
+                aria-label={t('widget.aria.closeFullscreen')}
                 onClick={() => setExpanded(false)}
                 className="shrink-0 text-text-tertiary hover:text-text-secondary transition-colors"
               >
