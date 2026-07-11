@@ -142,3 +142,41 @@ Chrome terms; authentic channel message templates were NOT translated (D-2).
 (Mandarin, Bahasa Indonesia unchanged). **Kept as loanwords/codes:** Online, Bot,
 Manual, Email, WhatsApp, WeChat, RFQ, PO, ASN, IBP, SAP, OTIF, Grade, Incoterms,
 HTML, PDF, Mini Program, "Order Confirmation Key" (SAP field).
+
+## Batch 3 additions (Requisitions + Orders + Goods Receipt + Discovery)
+
+| EN | ID | EN | ID |
+|---|---|---|---|
+| Requestor | Pemohon | Quality Control | Kontrol Kualitas |
+| Approver | Penyetuju | Rejection Rate | Tingkat Penolakan |
+| Cost center | Pusat biaya | Disposition | Disposisi |
+| Justification | Justifikasi | Warehouse | Gudang |
+| Source of supply | Sumber pasokan | Visual Inspection | Inspeksi Visual |
+| Procurement flow | Alur pengadaan | Packaging Integrity | Integritas Kemasan |
+| Section Head | Kepala Seksi | Halal Seal Check | Pemeriksaan Segel Halal |
+| Linked document | Dokumen tertaut | BPOM Lot Tracking | Pelacakan Lot BPOM |
+| Cleared for sourcing | Siap untuk sourcing | Lab sample | Sampel lab |
+| Converted to order | Dikonversi ke pesanan | Retest | Uji ulang |
+| Bulk download | Unduh massal | Override hold | Timpa penahanan |
+| Key facts | Fakta utama | Dock | Dermaga |
+| Line items / Line total | Item baris / Total baris | Accepted | Disetujui |
+| Track shipment | Lacak pengiriman | Region | Wilayah |
+| Show / Hide | Tampilkan / Sembunyikan | Match Score | Skor Kecocokan |
+| Communication history | Riwayat komunikasi | Dual-source | Sumber ganda |
+| PO Created | PO Dibuat | Market validated by | Divalidasi pasar oleh |
+| Acknowledged by Supplier | Diakui oleh Pemasok | Capability | Kapabilitas |
+| Goods Received | Barang Diterima | Relevance | Relevansi |
+| Payment Posted | Pembayaran Diposting | Covers | Mencakup |
+
+**Regions:** Asia Pacific→Asia Pasifik, Europe→Eropa, Americas→Amerika, Middle
+East→Timur Tengah. **Kept as codes/loanwords:** PR, PIR, OA, ME21N, S/4HANA (Phase
+→Fase), cost-center codes (CC-…), UoM codes (KG/L/PCS/MT/BOX), warehouse/role codes.
+
+### Known gap — priority/severity enums (cross-cutting, needs central map)
+`High / Medium / Low / Critical` (priority, risk-level, qualification-status) render
+untranslated in ID. They are a shared semantic vocabulary — like status labels but
+excluded from `statusTone.ts` because their *tone* is context-dependent (severity vs
+priority vs stock). Their *label* is not context-dependent, so the fix is a small
+central priority/severity-label map (analogous to `statusLabel.ts`) resolved wherever
+these chips render, rather than inconsistent per-page keys. Recommended as a dedicated
+follow-up (touches Requisitions, Risk, Scorecard, Discovery, Inventory).

@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Users,
   ClipboardCheck,
@@ -47,9 +49,14 @@ import {
   useSingleSourceItems,
 } from '../services/query/hooks';
 
-const DISCOVERY_CRUMB = ['ACQUIRE', 'DISCOVERY'];
-
-const STAGE_LABELS = ['Initial Contact', 'Document Review', 'Technical Eval', 'Commercial', 'Approved'];
+// Breadcrumb is built from t() inside the component (see `crumb`).
+const STAGE_LABEL_KEYS = [
+  'discovery.qual.stage.contact',
+  'discovery.qual.stage.docReview',
+  'discovery.qual.stage.techEval',
+  'discovery.qual.stage.commercial',
+  'discovery.qual.stage.approved',
+] as const;
 
 const RISK_VARIANT: Record<SingleSourceItem['riskLevel'], 'danger' | 'warning'> = {
   Critical: 'danger',
@@ -71,34 +78,36 @@ type Category = 'All' | 'Fragrance' | 'Active Ingredient' | 'Raw Material' | 'Pa
 type SortKey = 'relevance' | 'grade' | 'otif' | 'compliance';
 type ToggleId = 'halal' | 'major';
 
-const REGION_OPTIONS: { id: Region; label: string }[] = [
-  { id: 'All', label: 'All regions' },
-  { id: 'Asia Pacific', label: 'Asia Pacific' },
-  { id: 'Europe', label: 'Europe' },
-  { id: 'Americas', label: 'Americas' },
-  { id: 'Middle East', label: 'Middle East' },
+// Filter/sort option labels are built from t() inside the component so they
+// re-render on locale change. The `id` values stay enum literals for logic.
+const buildRegionOptions = (t: TFunction): { id: Region; label: string }[] => [
+  { id: 'All', label: t('discovery.region.all') },
+  { id: 'Asia Pacific', label: t('discovery.region.apac') },
+  { id: 'Europe', label: t('discovery.region.europe') },
+  { id: 'Americas', label: t('discovery.region.americas') },
+  { id: 'Middle East', label: t('discovery.region.middleEast') },
 ];
 
-const CATEGORY_OPTIONS: { id: Category; label: string }[] = [
-  { id: 'All', label: 'All categories' },
-  { id: 'Fragrance', label: 'Fragrance' },
-  { id: 'Active Ingredient', label: 'Active Ingredient' },
-  { id: 'Raw Material', label: 'Raw Material' },
-  { id: 'Packaging', label: 'Packaging' },
-  { id: 'Vitamin', label: 'Vitamin' },
-  { id: 'Emollient', label: 'Emollient' },
+const buildCategoryOptions = (t: TFunction): { id: Category; label: string }[] => [
+  { id: 'All', label: t('discovery.category.all') },
+  { id: 'Fragrance', label: t('discovery.category.fragrance') },
+  { id: 'Active Ingredient', label: t('discovery.category.activeIngredient') },
+  { id: 'Raw Material', label: t('discovery.category.rawMaterial') },
+  { id: 'Packaging', label: t('discovery.category.packaging') },
+  { id: 'Vitamin', label: t('discovery.category.vitamin') },
+  { id: 'Emollient', label: t('discovery.category.emollient') },
 ];
 
-const SORT_OPTIONS: { id: SortKey; label: string }[] = [
-  { id: 'relevance', label: 'Relevance' },
-  { id: 'grade', label: 'Grade' },
-  { id: 'otif', label: 'OTIF' },
-  { id: 'compliance', label: 'Compliance' },
+const buildSortOptions = (t: TFunction): { id: SortKey; label: string }[] => [
+  { id: 'relevance', label: t('discovery.sort.relevance') },
+  { id: 'grade', label: t('discovery.sort.grade') },
+  { id: 'otif', label: t('discovery.sort.otif') },
+  { id: 'compliance', label: t('discovery.sort.compliance') },
 ];
 
-const TOGGLE_OPTIONS: { id: ToggleId; label: string }[] = [
-  { id: 'halal', label: 'Halal certified only' },
-  { id: 'major', label: 'Major brand validated' },
+const buildToggleOptions = (t: TFunction): { id: ToggleId; label: string }[] => [
+  { id: 'halal', label: t('discovery.toggle.halal') },
+  { id: 'major', label: t('discovery.toggle.major') },
 ];
 
 const scoreColorClass = (score: number): string => {
@@ -127,6 +136,7 @@ const GlobalSupplierCard: React.FC<{
   onQualify: () => void;
   onInNetwork: () => void;
 }> = ({ supplier, onInvite, onAria, onQualify, onInNetwork }) => {
+  const { t } = useTranslation();
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg p-5 shadow-sm flex flex-col gap-4">
       <div className="flex items-start justify-between gap-4">
@@ -141,8 +151,12 @@ const GlobalSupplierCard: React.FC<{
             )}
           </div>
           <div className="text-xs text-text-tertiary mt-1">
-            {supplier.country} · {supplier.region} · Est. {supplier.founded} ·{' '}
-            {supplier.employees} employees
+            {t('discovery.card.meta', {
+              country: supplier.country,
+              region: supplier.region,
+              founded: supplier.founded,
+              employees: supplier.employees,
+            })}
           </div>
         </div>
         <div className="text-right shrink-0">
@@ -151,7 +165,7 @@ const GlobalSupplierCard: React.FC<{
             <span className="text-xs font-medium">/100</span>
           </div>
           <div className={`text-[10px] font-semibold ${scoreColorClass(supplier.matchScore)}`}>
-            AI Match Score
+            {t('discovery.card.matchScore')}
           </div>
         </div>
       </div>
@@ -162,12 +176,12 @@ const GlobalSupplierCard: React.FC<{
 
       <div>
         <div className="text-label text-text-tertiary uppercase mb-2">
-          Market validated by
+          {t('discovery.card.validatedBy')}
         </div>
         <div className="flex flex-wrap gap-1.5">
           {supplier.validatedBy.map((brand) => (
             <StatusPill key={brand} variant="neutral">
-              ✓ {brand}
+              {`✓ ${brand}`}
             </StatusPill>
           ))}
         </div>
@@ -176,7 +190,7 @@ const GlobalSupplierCard: React.FC<{
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <div className="text-label text-text-tertiary uppercase mb-2">
-            Categories
+            {t('discovery.card.categories')}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {supplier.categories.map((c) => (
@@ -188,11 +202,11 @@ const GlobalSupplierCard: React.FC<{
         </div>
         <div>
           <div className="text-label text-text-tertiary uppercase mb-2">
-            Certifications
+            {t('discovery.card.certifications')}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {supplier.halalCertified && (
-              <StatusPill variant="success">Halal</StatusPill>
+              <StatusPill variant="success">{t('discovery.card.halal')}</StatusPill>
             )}
             {supplier.certifications
               .filter((c) => !c.toLowerCase().includes('halal'))
@@ -209,18 +223,18 @@ const GlobalSupplierCard: React.FC<{
       <div className="flex flex-wrap gap-2 pt-3 border-t border-border-subtle">
         {!supplier.alreadyInNetwork ? (
           <Button variant="outline" icon={Mail} onClick={onInvite}>
-            Invite to Marketplace
+            {t('discovery.card.invite')}
           </Button>
         ) : (
           <Button variant="secondary" icon={CheckCircle2} onClick={onInNetwork}>
-            Already in Network
+            {t('discovery.card.inNetwork')}
           </Button>
         )}
         <Button variant="secondary" icon={Bot} onClick={onAria}>
-          Contact via ARIA
+          {t('discovery.card.contactAria')}
         </Button>
         <Button variant="secondary" icon={ArrowRight} onClick={onQualify}>
-          Start qualification
+          {t('discovery.action.startQualification')}
         </Button>
       </div>
     </div>
@@ -231,6 +245,7 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
   item,
   onUpdate,
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg p-5 shadow-sm">
       <div className="flex items-center justify-between gap-3 mb-4">
@@ -242,7 +257,8 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
       </div>
 
       <div className="flex items-start gap-1 mb-4">
-        {STAGE_LABELS.map((label, i) => {
+        {STAGE_LABEL_KEYS.map((labelKey, i) => {
+          const label = t(labelKey);
           const stepNum = i + 1;
           const isDone = stepNum < item.stage;
           const isActive = stepNum === item.stage;
@@ -255,7 +271,7 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
             ? 'text-teal font-semibold'
             : 'text-text-tertiary';
           return (
-            <React.Fragment key={label}>
+            <React.Fragment key={labelKey}>
               <div className="flex flex-col items-center text-center flex-1 min-w-0">
                 <div
                   className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${dotClass}`}
@@ -266,7 +282,7 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
                   {label}
                 </div>
               </div>
-              {i < STAGE_LABELS.length - 1 && (
+              {i < STAGE_LABEL_KEYS.length - 1 && (
                 <div
                   className={`h-0.5 flex-1 mt-3 ${
                     isDone ? 'bg-success' : 'bg-border-subtle'
@@ -279,19 +295,19 @@ const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => voi
       </div>
 
       <div className="text-xs text-text-tertiary mb-1">
-        <span className="font-semibold text-text-primary">Next: </span>
+        <span className="font-semibold text-text-primary">{t('discovery.qual.next')} </span>
         {item.nextAction}
       </div>
       <div className="flex items-center justify-between">
         <span className="text-xs text-text-tertiary">
-          Due: {item.dueDate} · {item.owner}
+          {t('discovery.qual.due', { date: item.dueDate, owner: item.owner })}
         </span>
         <button
           type="button"
           onClick={onUpdate}
           className="inline-flex items-center gap-1 text-xs font-medium text-teal hover:text-teal-hover"
         >
-          Update status <ArrowRight size={12} />
+          {t('discovery.qual.updateStatus')} <ArrowRight size={12} />
         </button>
       </div>
     </div>
@@ -304,6 +320,7 @@ const RecommendationCard: React.FC<{
   onQualify: () => void;
   onInviteRfq: () => void;
 }> = ({ supplier, onViewStorefront, onQualify, onInviteRfq }) => {
+  const { t } = useTranslation();
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg p-5 shadow-sm">
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -320,7 +337,7 @@ const RecommendationCard: React.FC<{
             <span className="text-xs font-medium">/100</span>
           </div>
           <div className={`text-[10px] font-semibold ${scoreColorClass(supplier.matchScore)}`}>
-            AI Match Score
+            {t('discovery.card.matchScore')}
           </div>
         </div>
       </div>
@@ -328,7 +345,7 @@ const RecommendationCard: React.FC<{
         {supplier.whyRecommended}
       </p>
       <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs text-text-tertiary font-semibold">Covers:</span>
+        <span className="text-xs text-text-tertiary font-semibold">{t('discovery.rec.covers')}</span>
         <StatusPill variant="info">{supplier.covers}</StatusPill>
       </div>
       {supplier.riskNote && (
@@ -338,13 +355,13 @@ const RecommendationCard: React.FC<{
       )}
       <div className="flex flex-wrap gap-2">
         <Button variant="outline" icon={ChevronRight} onClick={onViewStorefront}>
-          View storefront
+          {t('discovery.rec.viewStorefront')}
         </Button>
         <Button variant="secondary" onClick={onQualify}>
-          Start qualification
+          {t('discovery.action.startQualification')}
         </Button>
         <Button variant="secondary" onClick={onInviteRfq}>
-          Invite to RFQ
+          {t('discovery.rec.inviteRfq')}
         </Button>
       </div>
     </div>
@@ -368,6 +385,13 @@ const trendColorClass = (dir: MarketIntelCard['priceDir']): string => {
 const BuyerDiscovery: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
+  const crumb = [t('discovery.crumb.acquire'), t('discovery.crumb.discovery')];
+
+  const REGION_OPTIONS = buildRegionOptions(t);
+  const CATEGORY_OPTIONS = buildCategoryOptions(t);
+  const SORT_OPTIONS = buildSortOptions(t);
+  const TOGGLE_OPTIONS = buildToggleOptions(t);
 
   const globalQ = useGlobalSuppliers();
   const recommendedQ = useRecommended();
@@ -489,11 +513,11 @@ const BuyerDiscovery: React.FC = () => {
     MARKET_INTEL.length === 0 &&
     SINGLE_SOURCE.length === 0;
 
-  if (anyPending) return <LoadingState breadcrumb={DISCOVERY_CRUMB} />;
+  if (anyPending) return <LoadingState breadcrumb={crumb} />;
   if (anyError)
     return (
       <ErrorState
-        breadcrumb={DISCOVERY_CRUMB}
+        breadcrumb={crumb}
         error={
           globalQ.error ??
           recommendedQ.error ??
@@ -513,67 +537,67 @@ const BuyerDiscovery: React.FC = () => {
   if (allEmpty)
     return (
       <EmptyState
-        breadcrumb={DISCOVERY_CRUMB}
-        title="No discovery data yet"
-        subtitle="Supplier discovery is a buyer-side surface."
-        message="Global candidates, recommendations, and market intelligence will appear here."
+        breadcrumb={crumb}
+        title={t('discovery.empty.title')}
+        subtitle={t('discovery.empty.subtitle')}
+        message={t('discovery.empty.message')}
       />
     );
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={DISCOVERY_CRUMB}
-        title="Supplier Discovery"
-        subtitle="Find and qualify new suppliers globally — market-validated by L'Oréal, Unilever, P&G, Shiseido and more."
+        breadcrumb={crumb}
+        title={t('discovery.header.title')}
+        subtitle={t('discovery.header.subtitle')}
         actions={
           <Button
             variant="outline"
             icon={Globe2}
             onClick={() => navigate('/marketplace')}
           >
-            Open Marketplace
+            {t('discovery.action.openMarketplace')}
           </Button>
         }
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {counts.candidates} candidates · last updated {lastUpdated}
+        {t('discovery.meta.summary', { count: counts.candidates, date: lastUpdated })}
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
         <KpiCard
-          eyebrow="Candidates Identified"
+          eyebrow={t('discovery.kpi.candidates.eyebrow')}
           value={counts.candidates.toString()}
-          subtitle="Across global beauty market"
+          subtitle={t('discovery.kpi.candidates.subtitle')}
           icon={Users}
         />
         <KpiCard
-          eyebrow="In Qualification"
+          eyebrow={t('discovery.kpi.qualifying.eyebrow')}
           value={counts.qualifying.toString()}
-          subtitle="Active onboarding pipeline"
+          subtitle={t('discovery.kpi.qualifying.subtitle')}
           icon={ClipboardCheck}
         />
         <KpiCard
-          eyebrow="Approved This Month"
+          eyebrow={t('discovery.kpi.approved.eyebrow')}
           value={counts.approved.toString()}
-          subtitle="Net-new qualified suppliers"
+          subtitle={t('discovery.kpi.approved.subtitle')}
           icon={CheckCircle2}
         />
         <KpiCard
-          eyebrow="Dual-Source Gaps"
+          eyebrow={t('discovery.kpi.gaps.eyebrow')}
           value={counts.gaps.toString()}
-          subtitle="Materials with single source"
+          subtitle={t('discovery.kpi.gaps.subtitle')}
           icon={AlertTriangle}
         />
       </div>
 
       <SubTabs<TabKey>
         options={[
-          { id: 'search', label: 'Global Search' },
-          { id: 'recommendations', label: 'AI Recommendations' },
-          { id: 'qualification', label: 'Qualification Pipeline', count: counts.qualifying },
-          { id: 'intelligence', label: 'Market Intelligence' },
+          { id: 'search', label: t('discovery.tab.search') },
+          { id: 'recommendations', label: t('discovery.tab.recommendations') },
+          { id: 'qualification', label: t('discovery.tab.qualification'), count: counts.qualifying },
+          { id: 'intelligence', label: t('discovery.tab.intelligence') },
         ]}
         value={tab}
         onChange={setTab}
@@ -585,7 +609,7 @@ const BuyerDiscovery: React.FC = () => {
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search by material, category, country, or capability…"
+            placeholder={t('discovery.search.placeholder')}
           />
 
           <div className="flex flex-wrap items-center gap-3">
@@ -611,7 +635,7 @@ const BuyerDiscovery: React.FC = () => {
                 onClick={resetSearch}
                 className="text-sm text-teal hover:text-teal-hover font-medium"
               >
-                Clear filters
+                {t('discovery.filter.clear')}
               </button>
             )}
           </div>
@@ -620,10 +644,12 @@ const BuyerDiscovery: React.FC = () => {
             <>
               <div className="flex items-center justify-between gap-4">
                 <div className="text-meta text-text-tertiary">
-                  {sorted.length} supplier{sorted.length !== 1 ? 's' : ''} found
+                  {sorted.length === 1
+                    ? t('discovery.results.count.one', { count: sorted.length })
+                    : t('discovery.results.count.other', { count: sorted.length })}
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-meta text-text-tertiary">Sort by</span>
+                  <span className="text-meta text-text-tertiary">{t('discovery.sort.label')}</span>
                   <FilterChipsBar<SortKey>
                     options={SORT_OPTIONS}
                     value={sortBy}
@@ -635,14 +661,13 @@ const BuyerDiscovery: React.FC = () => {
               {sorted.length === 0 ? (
                 <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
                   <div className="text-base font-semibold text-text-primary mb-1">
-                    No suppliers found
+                    {t('discovery.results.empty.title')}
                   </div>
                   <div className="text-sm text-text-tertiary max-w-md mx-auto mb-4">
-                    No suppliers match your current search. Try different keywords,
-                    remove filters, or browse all regions.
+                    {t('discovery.results.empty.body')}
                   </div>
                   <Button variant="outline" onClick={resetSearch}>
-                    Clear all filters
+                    {t('discovery.results.empty.clear')}
                   </Button>
                 </div>
               ) : (
@@ -654,26 +679,25 @@ const BuyerDiscovery: React.FC = () => {
                       onInvite={() =>
                         toast({
                           variant: 'success',
-                          title: `Invitation sent to ${s.name}`,
-                          description:
-                            'ARIA will follow up via WhatsApp within 24 hours.',
+                          title: t('discovery.toast.invited.title', { name: s.name }),
+                          description: t('discovery.toast.invited.desc'),
                         })
                       }
                       onInNetwork={() =>
                         toast({
-                          title: `${s.name} is already in your supplier network`,
+                          title: t('discovery.toast.inNetwork.title', { name: s.name }),
                         })
                       }
                       onAria={() =>
                         toast({
-                          title: 'ARIA outreach drafted',
-                          description: `Personalized message to ${s.name} ready for review.`,
+                          title: t('discovery.toast.aria.title'),
+                          description: t('discovery.toast.aria.desc', { name: s.name }),
                         })
                       }
                       onQualify={() =>
                         toast({
                           variant: 'info',
-                          title: `Qualification started for ${s.name}`,
+                          title: t('discovery.toast.qualStarted.title', { name: s.name }),
                         })
                       }
                     />
@@ -687,15 +711,16 @@ const BuyerDiscovery: React.FC = () => {
                 <Globe2 size={24} className="text-teal" />
               </div>
               <div className="text-base font-semibold text-text-primary mb-2">
-                Search the global supplier market
+                {t('discovery.hero.title')}
               </div>
               <div className="text-sm text-text-tertiary max-w-xl mx-auto mb-5 leading-relaxed">
-                Find suppliers already validated by L'Oréal, Unilever, P&G, Shiseido,
-                and LVMH. Filter by halal certification, region, and category. Invite
-                directly to Paragon Marketplace or contact via ARIA AI agent.
+                {t('discovery.hero.body')}
               </div>
               <div className="flex flex-wrap gap-2 justify-center">
                 {[
+                  // i18n-defer: example search seeds — the chip label IS the query
+                  // fed to setSearch() and matched against EN supplier data, so
+                  // translating it would break search. Left EN by design.
                   'Fragrance Indonesia',
                   'Niacinamide China',
                   'Halal emulsifier',
@@ -717,24 +742,23 @@ const BuyerDiscovery: React.FC = () => {
       {tab === 'recommendations' && (
         <div className="flex flex-col gap-6">
           <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 text-sm text-danger font-medium">
-            5 critical materials have only one qualified supplier — dual sourcing
-            strongly recommended.
+            {t('discovery.rec.dualSourceBanner')}
           </div>
 
           <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle">
               <div className="text-sm font-semibold text-text-primary">
-                Materials requiring a second source
+                {t('discovery.rec.secondSourceTitle')}
               </div>
             </div>
             <Table>
               <TableHeader>
-                <TableHeaderCell>Material</TableHeaderCell>
-                <TableHeaderCell>Category</TableHeaderCell>
-                <TableHeaderCell>Current supplier</TableHeaderCell>
-                <TableHeaderCell>Risk level</TableHeaderCell>
-                <TableHeaderCell>Suggested alternatives</TableHeaderCell>
-                <TableHeaderCell className="text-right">Action</TableHeaderCell>
+                <TableHeaderCell>{t('discovery.rec.col.material')}</TableHeaderCell>
+                <TableHeaderCell>{t('discovery.rec.col.category')}</TableHeaderCell>
+                <TableHeaderCell>{t('discovery.rec.col.currentSupplier')}</TableHeaderCell>
+                <TableHeaderCell>{t('discovery.rec.col.riskLevel')}</TableHeaderCell>
+                <TableHeaderCell>{t('discovery.rec.col.alternatives')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">{t('discovery.rec.col.action')}</TableHeaderCell>
               </TableHeader>
               <tbody>
                 {SINGLE_SOURCE.map((row) => (
@@ -780,11 +804,13 @@ const BuyerDiscovery: React.FC = () => {
                         onClick={() =>
                           toast({
                             variant: 'info',
-                            title: `Qualification started for ${row.suggestedAlternatives[0]}`,
+                            title: t('discovery.toast.qualStarted.title', {
+                              name: row.suggestedAlternatives[0],
+                            }),
                           })
                         }
                       >
-                        Start qualification
+                        {t('discovery.action.startQualification')}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -797,12 +823,11 @@ const BuyerDiscovery: React.FC = () => {
             <div className="flex items-center gap-2 mb-1">
               <Sparkles size={16} className="text-teal" />
               <h3 className="text-section text-text-primary">
-                AI supplier matches — recommended for Paragon
+                {t('discovery.rec.matchesTitle')}
               </h3>
             </div>
             <p className="text-sm text-text-tertiary mb-4">
-              Based on your category requirements, compliance standards, and halal
-              certification needs.
+              {t('discovery.rec.matchesSubtitle')}
             </p>
             <div className="flex flex-col gap-4">
               {RECOMMENDED.map((s) => (
@@ -813,14 +838,14 @@ const BuyerDiscovery: React.FC = () => {
                   onQualify={() =>
                     toast({
                       variant: 'info',
-                      title: `Qualification started for ${s.name}`,
+                      title: t('discovery.toast.qualStarted.title', { name: s.name }),
                     })
                   }
                   onInviteRfq={() =>
                     toast({
                       variant: 'success',
-                      title: `${s.name} invited to RFQ`,
-                      description: 'Invitation sent via email.',
+                      title: t('discovery.toast.rfqInvited.title', { name: s.name }),
+                      description: t('discovery.toast.rfqInvited.desc'),
                     })
                   }
                 />
@@ -833,7 +858,7 @@ const BuyerDiscovery: React.FC = () => {
       {tab === 'qualification' && (
         <div>
           <h3 className="text-section text-text-primary mb-4">
-            Active qualification processes
+            {t('discovery.qualTab.title')}
           </h3>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             {QUALIFICATIONS.map((q) => (
@@ -843,7 +868,7 @@ const BuyerDiscovery: React.FC = () => {
                 onUpdate={() =>
                   toast({
                     variant: 'success',
-                    title: `Status updated for ${q.supplier}`,
+                    title: t('discovery.toast.statusUpdated.title', { name: q.supplier }),
                   })
                 }
               />
@@ -855,10 +880,10 @@ const BuyerDiscovery: React.FC = () => {
       {tab === 'intelligence' && (
         <div>
           <h3 className="text-section text-text-primary mb-1">
-            Category market intelligence
+            {t('discovery.intel.title')}
           </h3>
           <p className="text-sm text-text-tertiary mb-4">
-            Current market conditions for Paragon's key procurement categories.
+            {t('discovery.intel.subtitle')}
           </p>
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             {MARKET_INTEL.map((card) => (
@@ -887,13 +912,13 @@ const BuyerDiscovery: React.FC = () => {
                     <div className="text-lg font-bold text-text-primary">
                       {card.suppliersGlobal}
                     </div>
-                    <div className="text-[11px] text-text-tertiary">Global</div>
+                    <div className="text-[11px] text-text-tertiary">{t('discovery.intel.global')}</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-teal">
                       {card.suppliersParagon}
                     </div>
-                    <div className="text-[11px] text-text-tertiary">In network</div>
+                    <div className="text-[11px] text-text-tertiary">{t('discovery.intel.inNetwork')}</div>
                   </div>
                 </div>
                 <div className="bg-teal-soft border-l-2 border-teal rounded px-3 py-2 text-xs text-text-primary">

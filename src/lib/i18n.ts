@@ -18,6 +18,10 @@ import { buyerWhatsAppEn, buyerWhatsAppId } from './i18n/buyerWhatsApp';
 import { supplierWhatsAppEn, supplierWhatsAppId } from './i18n/supplierWhatsApp';
 import { sourcingEn, sourcingId } from './i18n/sourcing';
 import { rfqsEn, rfqsId } from './i18n/rfqs';
+import { requisitionsEn, requisitionsId } from './i18n/requisitions';
+import { buyerOrdersEn, buyerOrdersId } from './i18n/buyerOrders';
+import { goodsReceiptEn, goodsReceiptId } from './i18n/goodsReceipt';
+import { discoveryEn, discoveryId } from './i18n/discovery';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -41,6 +45,10 @@ export const resources = {
       ...supplierWhatsAppEn,
       ...sourcingEn,
       ...rfqsEn,
+      ...requisitionsEn,
+      ...buyerOrdersEn,
+      ...goodsReceiptEn,
+      ...discoveryEn,
       'app.title': 'Paragon Supplier Portal',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Acquire',
@@ -177,6 +185,10 @@ export const resources = {
       ...supplierWhatsAppId,
       ...sourcingId,
       ...rfqsId,
+      ...requisitionsId,
+      ...buyerOrdersId,
+      ...goodsReceiptId,
+      ...discoveryId,
       'app.title': 'Portal Pemasok Paragon',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Pengadaan',

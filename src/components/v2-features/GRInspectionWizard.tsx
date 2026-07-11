@@ -51,12 +51,18 @@ interface LineDraft {
   labRequestId?: string;
 }
 
+// i18n-defer: ROLES is submitted verbatim as the `receivedBy` field on
+// t_gr_create — the option label IS the stored data value, so translating the
+// display would corrupt the recorded receiver. Defer until receivedBy carries a
+// stable role code separate from its display label.
 const ROLES = [
   'Warehouse Supervisor',
   'QC Inspector',
   'Operations Manager',
 ];
 
+// i18n-defer: warehouse facility names / codes (proper nouns) — out of scope
+// like material/brand data.
 const LOCATIONS = ['NDC J6 Jakarta', 'RM Warehouse', 'PM Warehouse'];
 
 const ELIGIBLE_STATUSES = ['At Dock', 'Unloading'] as const;
@@ -329,7 +335,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               : 'border-border-input text-text-secondary hover:bg-bg-hover'
           }`}
         >
-          Select inbound at dock
+          {t('goodsReceipt.wizard.source.selectDock')}
         </button>
         <button
           type="button"
@@ -340,7 +346,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               : 'border-border-input text-text-secondary hover:bg-bg-hover'
           }`}
         >
-          Enter ASN number
+          {t('goodsReceipt.wizard.source.enterAsn')}
         </button>
       </div>
 
@@ -348,7 +354,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         <div className="border border-border-subtle rounded-lg divide-y divide-border-subtle">
           {sources.length === 0 && (
             <div className="p-4 text-sm text-text-tertiary">
-              No shipments at dock and no submitted ASNs to receive.
+              {t('goodsReceipt.wizard.source.empty')}
             </div>
           )}
           {sources.map((s) => (
@@ -381,7 +387,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       ) : (
         <div className="flex flex-col gap-2">
           <div>
-            {labelFor('ASN Number')}
+            {labelFor(t('goodsReceipt.wizard.field.asnNumber'))}
             <input
               type="text"
               value={manualASN}
@@ -392,13 +398,12 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           </div>
           {manualNotFound && (
             <p className="text-xs text-danger">
-              ASN not found among receivable shipments. Enter a submitted ASN
-              (status Submitted, In Transit, or Delivered).
+              {t('goodsReceipt.wizard.source.notFound')}
             </p>
           )}
           {manualAsnMatch && (
             <p className="text-xs text-success">
-              {manualAsnMatch.asnNumber} · {manualAsnMatch.poReference} — {manualAsnMatch.status}. Ready to receive.
+              {manualAsnMatch.asnNumber} · {manualAsnMatch.poReference} — {manualAsnMatch.status}. {t('goodsReceipt.wizard.source.readyToReceive')}
             </p>
           )}
         </div>
@@ -408,10 +413,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 
   const stepTwoContent = (
     <div className="flex flex-col gap-5">
-      <FormSection title="Receipt Info">
+      <FormSection title={t('goodsReceipt.wizard.section.receiptInfo')}>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            {labelFor('Received Date')}
+            {labelFor(t('goodsReceipt.wizard.field.receivedDate'))}
             <input
               type="date"
               value={receivedDate}
@@ -420,7 +425,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             />
           </div>
           <div>
-            {labelFor('Received By')}
+            {labelFor(t('goodsReceipt.wizard.field.receivedBy'))}
             <select
               value={receivedBy}
               onChange={(e) => setReceivedBy(e.target.value)}
@@ -434,7 +439,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             </select>
           </div>
           <div>
-            {labelFor('Warehouse Location')}
+            {labelFor(t('goodsReceipt.wizard.field.warehouseLocation'))}
             <select
               value={warehouse}
               onChange={(e) => setWarehouse(e.target.value)}
@@ -448,22 +453,22 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             </select>
           </div>
           <div className="col-span-2">
-            {labelFor('Notes')}
+            {labelFor(t('goodsReceipt.wizard.field.notes'))}
             <textarea
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional receipt context..."
+              placeholder={t('goodsReceipt.wizard.placeholder.notes')}
               className={inputCls}
             />
           </div>
         </div>
       </FormSection>
 
-      <FormSection title="Line Items">
+      <FormSection title={t('goodsReceipt.wizard.section.lineItems')}>
         {lines.length === 0 ? (
           <p className="text-sm text-text-tertiary">
-            No line items yet. Select a source on Step 1.
+            {t('goodsReceipt.wizard.lines.empty')}
           </p>
         ) : (
           <div className="flex flex-col gap-4">
@@ -484,7 +489,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                       </div>
                     </div>
                     <div className="text-xs text-text-tertiary text-right">
-                      Expected
+                      {t('goodsReceipt.wizard.field.expected')}
                       <div className="font-semibold text-text-primary">
                         <Data>{formatNumber(l.qtyExpected)}</Data>
                       </div>
@@ -492,11 +497,11 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   </div>
                   <div className="grid grid-cols-4 gap-3">
                     <div>
-                      {labelFor('Received')}
+                      {labelFor(t('goodsReceipt.wizard.field.received'))}
                       <input
                         type="number"
                         min={0}
-                        aria-label={`Received quantity for ${l.materialCode}`}
+                        aria-label={t('goodsReceipt.wizard.aria.received', { code: l.materialCode })}
                         value={l.qtyReceived}
                         onChange={(e) =>
                           updateLine(i, {
@@ -507,12 +512,12 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                       />
                     </div>
                     <div>
-                      {labelFor('Accepted')}
+                      {labelFor(t('goodsReceipt.wizard.field.accepted'))}
                       <input
                         type="number"
                         min={0}
                         max={l.qtyReceived}
-                        aria-label={`Accepted quantity for ${l.materialCode}`}
+                        aria-label={t('goodsReceipt.wizard.aria.accepted', { code: l.materialCode })}
                         value={l.qtyAccepted}
                         onChange={(e) =>
                           updateLine(i, {
@@ -523,7 +528,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                       />
                     </div>
                     <div>
-                      {labelFor('Rejected')}
+                      {labelFor(t('goodsReceipt.wizard.field.rejected'))}
                       <div className="rounded-md border border-border-input bg-bg-hover px-3 py-2 text-sm text-text-secondary">
                         <Data>{formatNumber(rejected)}</Data>
                       </div>
@@ -531,17 +536,17 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                     <div className="col-span-4">
                       {rejected > 0 && (
                         <>
-                          {labelFor('Rejection Reason')}
+                          {labelFor(t('goodsReceipt.wizard.field.rejectionReason'))}
                           <textarea
                             rows={2}
-                            aria-label={`Rejection reason for ${l.materialCode}`}
+                            aria-label={t('goodsReceipt.wizard.aria.rejectionReason', { code: l.materialCode })}
                             value={l.rejectionReason}
                             onChange={(e) =>
                               updateLine(i, {
                                 rejectionReason: e.target.value,
                               })
                             }
-                            placeholder="Required when any qty is rejected"
+                            placeholder={t('goodsReceipt.wizard.placeholder.rejectionReason')}
                             className={inputCls}
                           />
                         </>
@@ -558,7 +563,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   );
 
   const stepThreeContent = (
-    <FormSection eyebrow="QUALITY CHECKS" title="Per-line inspection">
+    <FormSection eyebrow={t('goodsReceipt.wizard.section.qualityEyebrow')} title={t('goodsReceipt.wizard.section.perLineInspection')}>
       <div className="flex flex-col gap-4">
         {lines.map((l, i) => (
           <div
@@ -575,13 +580,13 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 </div>
               </div>
               <div className="text-xs text-text-tertiary">
-                <Data>{formatNumber(l.qtyReceived)}</Data> received
+                <Data>{formatNumber(l.qtyReceived)}</Data> {t('goodsReceipt.wizard.receivedSuffix')}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                {labelFor('Visual Inspection')}
+                {labelFor(t('goodsReceipt.wizard.field.visualInspection'))}
                 <div className="flex gap-4">
                   {(['Pass', 'Fail'] as const).map((v) => (
                     <label key={v} className={radioCls}>
@@ -598,7 +603,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 </div>
               </div>
               <div>
-                {labelFor('Packaging Integrity')}
+                {labelFor(t('goodsReceipt.wizard.field.packagingIntegrity'))}
                 <div className="flex gap-4">
                   {(['Pass', 'Fail', 'N/A'] as const).map((v) => (
                     <label key={v} className={radioCls}>
@@ -616,7 +621,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               </div>
               {l.halalRequired && (
                 <div>
-                  {labelFor('Halal Seal Check')}
+                  {labelFor(t('goodsReceipt.wizard.field.halalSealCheck'))}
                   <div className="flex gap-4">
                     {(['Pass', 'Fail'] as const).map((v) => (
                       <label key={v} className={radioCls}>
@@ -635,7 +640,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               )}
               {l.bpomRequired && (
                 <div>
-                  {labelFor('BPOM Lot Tracking')}
+                  {labelFor(t('goodsReceipt.wizard.field.bpomLotTracking'))}
                   <div className="flex gap-4">
                     {(['Pass', 'Fail'] as const).map((v) => (
                       <label key={v} className={radioCls}>
@@ -663,11 +668,11 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                     updateLine(i, { labSampleRequired: e.target.checked })
                   }
                 />
-                Lab sample required
+                {t('goodsReceipt.wizard.labSampleRequired')}
               </label>
               {l.labSampleRequired && (
                 <div className="text-xs text-text-secondary">
-                  Lab Request ID:{' '}
+                  {t('goodsReceipt.wizard.labRequestId')}{' '}
                   <Data>{l.labRequestId}</Data>
                 </div>
               )}
@@ -691,9 +696,9 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 
   const stepFourContent = (
     <div className="flex flex-col gap-5">
-      <FormSection title="Final Disposition">
+      <FormSection title={t('goodsReceipt.wizard.section.finalDisposition')}>
         <div>
-          {labelFor('Header Disposition (derived from lines)')}
+          {labelFor(t('goodsReceipt.wizard.field.headerDisposition'))}
           <div
             className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold ${
               derivedDisposition === 'Approved'
@@ -708,23 +713,25 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             {derivedDisposition}
           </div>
           <p className="mt-1.5 text-xs text-text-tertiary">
-            Rolled up from {totals.items} line{totals.items === 1 ? '' : 's'} —{' '}
-            <Data>{formatNumber(totals.accepted)}</Data> accepted,{' '}
-            <Data>{formatNumber(totals.rejected)}</Data> rejected. Not editable — the
-            header follows the inspected quantities.
+            {totals.items === 1
+              ? t('goodsReceipt.wizard.rollup.prefix.one', { count: totals.items })
+              : t('goodsReceipt.wizard.rollup.prefix.other', { count: totals.items })}{' '}
+            <Data>{formatNumber(totals.accepted)}</Data> {t('goodsReceipt.wizard.rollup.acceptedWord')}{' '}
+            <Data>{formatNumber(totals.rejected)}</Data> {t('goodsReceipt.wizard.rollup.rejectedWord')}{' '}
+            {t('goodsReceipt.wizard.rollup.notEditable')}
           </p>
         </div>
 
         {derivedDisposition === 'Rejected' && (
           <div>
-            {labelFor('Rejection Reason (required)')}
+            {labelFor(t('goodsReceipt.wizard.field.rejectionReasonRequired'))}
             <textarea
               rows={2}
-              aria-label="Header rejection reason"
+              aria-label={t('goodsReceipt.wizard.aria.headerRejectionReason')}
               value={dispositionReason}
               onChange={(e) => setDispositionReason(e.target.value)}
               className={inputCls}
-              placeholder="Explain the full-lot rejection"
+              placeholder={t('goodsReceipt.wizard.placeholder.fullLotRejection')}
             />
           </div>
         )}
@@ -737,43 +744,43 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
               checked={autoPostSap}
               onChange={(e) => setAutoPostSap(e.target.checked)}
             />
-            Auto-post to SAP
+            {t('goodsReceipt.wizard.autoPostSap')}
           </label>
         )}
 
         <div>
-          {labelFor('Final Notes')}
+          {labelFor(t('goodsReceipt.wizard.field.finalNotes'))}
           <textarea
             rows={2}
             value={finalNotes}
             onChange={(e) => setFinalNotes(e.target.value)}
             className={inputCls}
-            placeholder="Optional"
+            placeholder={t('goodsReceipt.wizard.placeholder.optional')}
           />
         </div>
       </FormSection>
 
       <div className="border border-border-subtle rounded-lg p-4 bg-bg-hover grid grid-cols-4 gap-3 text-sm">
         <div>
-          <div className="text-xs text-text-tertiary">Total items</div>
+          <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.totalItems')}</div>
           <div className="font-semibold text-text-primary"><Data>{totals.items}</Data></div>
         </div>
         <div>
-          <div className="text-xs text-text-tertiary">Total accepted</div>
+          <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.totalAccepted')}</div>
           <div className="font-semibold text-success">
             <Data>{formatNumber(totals.accepted)}</Data>
           </div>
         </div>
         <div>
-          <div className="text-xs text-text-tertiary">Total rejected</div>
+          <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.totalRejected')}</div>
           <div className="font-semibold text-danger">
             <Data>{formatNumber(totals.rejected)}</Data>
           </div>
         </div>
         <div>
-          <div className="text-xs text-text-tertiary">SAP Doc</div>
+          <div className="text-xs text-text-tertiary">{t('goodsReceipt.wizard.summary.sapDoc')}</div>
           <div className="text-xs text-text-secondary">
-            {autoPostSap ? 'Assigned by SAP on posting' : 'Not posted'}
+            {autoPostSap ? t('goodsReceipt.wizard.summary.assignedBySap') : t('goodsReceipt.wizard.summary.notPosted')}
           </div>
         </div>
       </div>
@@ -783,30 +790,30 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const steps: WizardStep[] = [
     {
       id: 'source',
-      title: 'Source selection',
-      shortTitle: 'Source',
-      description: 'Pick a shipment at the dock or enter PO/ASN manually.',
+      title: t('goodsReceipt.wizard.step.source.title'),
+      shortTitle: t('goodsReceipt.wizard.step.source.short'),
+      description: t('goodsReceipt.wizard.step.source.desc'),
       content: stepOneContent,
     },
     {
       id: 'details',
-      title: 'Receipt details',
-      shortTitle: 'Details',
-      description: 'Record receipt info and per-line quantities.',
+      title: t('goodsReceipt.wizard.step.details.title'),
+      shortTitle: t('goodsReceipt.wizard.step.details.short'),
+      description: t('goodsReceipt.wizard.step.details.desc'),
       content: stepTwoContent,
     },
     {
       id: 'quality',
-      title: 'Quality checks',
-      shortTitle: 'Quality',
-      description: 'Visual, packaging, halal, BPOM, and lab sampling.',
+      title: t('goodsReceipt.wizard.step.quality.title'),
+      shortTitle: t('goodsReceipt.wizard.step.quality.short'),
+      description: t('goodsReceipt.wizard.step.quality.desc'),
       content: stepThreeContent,
     },
     {
       id: 'disposition',
-      title: 'Disposition & submit',
-      shortTitle: 'Submit',
-      description: 'Confirm overall disposition and post to SAP.',
+      title: t('goodsReceipt.wizard.step.disposition.title'),
+      shortTitle: t('goodsReceipt.wizard.step.disposition.short'),
+      description: t('goodsReceipt.wizard.step.disposition.desc'),
       content: stepFourContent,
     },
   ];
@@ -909,7 +916,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         onCancel={onClose}
         onComplete={handleComplete}
         isStepValid={isStepValid}
-        completeLabel="Create GR"
+        completeLabel={t('goodsReceipt.wizard.complete')}
       />
     </div>
   );

@@ -6,6 +6,10 @@ import { buyerWhatsAppEn, buyerWhatsAppId } from './buyerWhatsApp';
 import { supplierWhatsAppEn, supplierWhatsAppId } from './supplierWhatsApp';
 import { sourcingEn, sourcingId } from './sourcing';
 import { rfqsEn, rfqsId } from './rfqs';
+import { requisitionsEn, requisitionsId } from './requisitions';
+import { buyerOrdersEn, buyerOrdersId } from './buyerOrders';
+import { goodsReceiptEn, goodsReceiptId } from './goodsReceipt';
+import { discoveryEn, discoveryId } from './discovery';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -17,6 +21,10 @@ const FRAGMENTS = [
   { name: 'supplierWhatsApp', en: supplierWhatsAppEn, id: supplierWhatsAppId },
   { name: 'sourcing', en: sourcingEn, id: sourcingId },
   { name: 'rfqs', en: rfqsEn, id: rfqsId },
+  { name: 'requisitions', en: requisitionsEn, id: requisitionsId },
+  { name: 'buyerOrders', en: buyerOrdersEn, id: buyerOrdersId },
+  { name: 'goodsReceipt', en: goodsReceiptEn, id: goodsReceiptId },
+  { name: 'discovery', en: discoveryEn, id: discoveryId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {
