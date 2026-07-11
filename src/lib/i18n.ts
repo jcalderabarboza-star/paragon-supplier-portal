@@ -14,6 +14,8 @@ import { initReactI18next } from 'react-i18next';
 import { statusResourcesEn, statusResourcesId } from './statusLabel';
 import { enumResourcesEn, enumResourcesId } from './priorityLabel';
 import { modeResourcesEn, modeResourcesId } from './modeLabel';
+import { categoryResourcesEn, categoryResourcesId } from './categoryLabel';
+import { channelResourcesEn, channelResourcesId } from './channelLabel';
 import { registrationEn, registrationId } from './i18n/registration';
 import { contractsEn, contractsId } from './i18n/contracts';
 import { buyerWhatsAppEn, buyerWhatsAppId } from './i18n/buyerWhatsApp';
@@ -33,6 +35,18 @@ import { supplierOrdersEn, supplierOrdersId } from './i18n/supplierOrders';
 import { supplierShipmentsEn, supplierShipmentsId } from './i18n/supplierShipments';
 import { supplierInvoicesEn, supplierInvoicesId } from './i18n/supplierInvoices';
 import { supplierDocumentsEn, supplierDocumentsId } from './i18n/supplierDocuments';
+// — Batch 6 (tail sweep) —
+import { buyerSuppliersEn, buyerSuppliersId } from './i18n/buyerSuppliers';
+import { buyerSupplierProfileEn, buyerSupplierProfileId } from './i18n/buyerSupplierProfile';
+import { buyerAnalyticsEn, buyerAnalyticsId } from './i18n/buyerAnalytics';
+import { buyerScorecardEn, buyerScorecardId } from './i18n/buyerScorecard';
+import { buyerInventoryEn, buyerInventoryId } from './i18n/buyerInventory';
+import { marketplaceEn, marketplaceId } from './i18n/marketplace';
+import { buyerDashboardEn, buyerDashboardId } from './i18n/buyerDashboard';
+import { supplierMyStorefrontEn, supplierMyStorefrontId } from './i18n/supplierMyStorefront';
+import { supplierStorefrontEn, supplierStorefrontId } from './i18n/supplierStorefront';
+import { supplierInventoryEn, supplierInventoryId } from './i18n/supplierInventory';
+import { supplierPerformanceEn, supplierPerformanceId } from './i18n/supplierPerformance';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -52,6 +66,8 @@ export const resources = {
       ...statusResourcesEn,
       ...enumResourcesEn,
       ...modeResourcesEn,
+      ...categoryResourcesEn,
+      ...channelResourcesEn,
       ...registrationEn,
       ...contractsEn,
       ...buyerWhatsAppEn,
@@ -71,6 +87,18 @@ export const resources = {
       ...supplierShipmentsEn,
       ...supplierInvoicesEn,
       ...supplierDocumentsEn,
+      // — Batch 6 (tail sweep) —
+      ...buyerSuppliersEn,
+      ...buyerSupplierProfileEn,
+      ...buyerAnalyticsEn,
+      ...buyerScorecardEn,
+      ...buyerInventoryEn,
+      ...marketplaceEn,
+      ...buyerDashboardEn,
+      ...supplierMyStorefrontEn,
+      ...supplierStorefrontEn,
+      ...supplierInventoryEn,
+      ...supplierPerformanceEn,
       'app.title': 'Paragon Supplier Portal',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Acquire',
@@ -203,6 +231,8 @@ export const resources = {
       ...statusResourcesId,
       ...enumResourcesId,
       ...modeResourcesId,
+      ...categoryResourcesId,
+      ...channelResourcesId,
       ...registrationId,
       ...contractsId,
       ...buyerWhatsAppId,
@@ -222,6 +252,18 @@ export const resources = {
       ...supplierShipmentsId,
       ...supplierInvoicesId,
       ...supplierDocumentsId,
+      // — Batch 6 (tail sweep) —
+      ...buyerSuppliersId,
+      ...buyerSupplierProfileId,
+      ...buyerAnalyticsId,
+      ...buyerScorecardId,
+      ...buyerInventoryId,
+      ...marketplaceId,
+      ...buyerDashboardId,
+      ...supplierMyStorefrontId,
+      ...supplierStorefrontId,
+      ...supplierInventoryId,
+      ...supplierPerformanceId,
       'app.title': 'Portal Pemasok Paragon',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Pengadaan',

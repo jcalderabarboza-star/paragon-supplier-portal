@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Upload,
   Download,
@@ -25,21 +26,14 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useSuppliers } from '../services/query/hooks';
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import {
   SupplierStatus,
   SupplierTier,
 } from '../types/supplier.types';
 
-const SUPPLIERS_CRUMB = ['ACQUIRE', 'SUPPLIER DIRECTORY'];
-
 const COUNTRY_FLAG: Record<string, string> = {
   ID: 'ID', MY: 'MY', DE: 'DE', FR: 'FR', CN: 'CN', SG: 'SG', IN: 'IN',
-};
-
-const TIER_LABEL: Record<SupplierTier, string> = {
-  [SupplierTier.WHATSAPP]: 'Tier 1 · WhatsApp',
-  [SupplierTier.WEB]: 'Tier 2 · Web Portal',
-  [SupplierTier.API]: 'Tier 3 · API/EDI',
 };
 
 const formatDate = (iso: string): string => {
@@ -56,11 +50,26 @@ type StatusFilter = 'active' | 'inactive' | 'all';
 
 const BuyerSuppliers: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const cl = useCategoryLabel();
   const suppliersQuery = useSuppliers();
   const suppliers = suppliersQuery.data?.items ?? [];
   const [group, setGroup] = useState<GroupTab>('suppliers');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [search, setSearch] = useState('');
+
+  const SUPPLIERS_CRUMB = [
+    t('buyerSuppliers.crumb.acquire'),
+    t('buyerSuppliers.crumb.directory'),
+  ];
+
+  // Connectivity-tier display labels (WhatsApp/Web Portal/API are proper
+  // nouns/protocols; only the "Tier N" word localizes).
+  const TIER_LABEL: Record<SupplierTier, string> = {
+    [SupplierTier.WHATSAPP]: t('buyerSuppliers.tier.whatsapp'),
+    [SupplierTier.WEB]: t('buyerSuppliers.tier.web'),
+    [SupplierTier.API]: t('buyerSuppliers.tier.api'),
+  };
 
   const lastUpdated = useMemo(() => {
     const latest = suppliers.reduce((acc, s) => {
@@ -107,9 +116,9 @@ const BuyerSuppliers: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={SUPPLIERS_CRUMB}
-        title="No suppliers yet"
-        subtitle="The supplier directory is empty."
-        message="Suppliers will appear here once they are onboarded to the network."
+        title={t('buyerSuppliers.empty.title')}
+        subtitle={t('buyerSuppliers.empty.subtitle')}
+        message={t('buyerSuppliers.empty.message')}
       />
     );
 
@@ -117,28 +126,39 @@ const BuyerSuppliers: React.FC = () => {
     <AppShellV2>
       <PageHeader
         breadcrumb={SUPPLIERS_CRUMB}
-        title="Supplier Directory"
-        subtitle="Manage your global supplier network across 12 countries."
+        title={t('buyerSuppliers.header.title')}
+        subtitle={t('buyerSuppliers.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
-              { label: 'Bulk upload', icon: Upload },
-              { label: 'Bulk download', icon: Download },
-              { label: 'Export', icon: FileSpreadsheet },
+              { label: t('buyerSuppliers.actions.bulkUpload'), icon: Upload },
+              { label: t('buyerSuppliers.actions.bulkDownload'), icon: Download },
+              { label: t('buyerSuppliers.actions.export'), icon: FileSpreadsheet },
             ]}
-            primary={{ label: 'Invite supplier', icon: UserPlus }}
+            primary={{ label: t('buyerSuppliers.actions.invite'), icon: UserPlus }}
           />
         }
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {counts.total} records · last updated <Data>{lastUpdated}</Data>
+        {counts.total === 1
+          ? t('buyerSuppliers.meta.records.one', { count: counts.total })
+          : t('buyerSuppliers.meta.records.other', { count: counts.total })}{' '}
+        · {t('buyerSuppliers.meta.lastUpdated')} <Data>{lastUpdated}</Data>
       </PageMetaLine>
 
       <SubTabs
         options={[
-          { id: 'suppliers', label: 'Suppliers', count: counts.total },
-          { id: 'invitations', label: 'Pending Invitations', count: 3 },
+          {
+            id: 'suppliers',
+            label: t('buyerSuppliers.tab.suppliers'),
+            count: counts.total,
+          },
+          {
+            id: 'invitations',
+            label: t('buyerSuppliers.tab.invitations'),
+            count: 3,
+          },
         ]}
         value={group}
         onChange={setGroup}
@@ -148,9 +168,17 @@ const BuyerSuppliers: React.FC = () => {
       <div className="flex items-center justify-between gap-4 mb-4">
         <FilterChipsBar
           options={[
-            { id: 'active', label: 'Active', count: counts.active },
-            { id: 'inactive', label: 'Inactive', count: counts.inactive },
-            { id: 'all', label: 'All', count: counts.total },
+            {
+              id: 'active',
+              label: t('buyerSuppliers.filter.active'),
+              count: counts.active,
+            },
+            {
+              id: 'inactive',
+              label: t('buyerSuppliers.filter.inactive'),
+              count: counts.inactive,
+            },
+            { id: 'all', label: t('buyerSuppliers.filter.all'), count: counts.total },
           ]}
           value={statusFilter}
           onChange={setStatusFilter}
@@ -161,21 +189,25 @@ const BuyerSuppliers: React.FC = () => {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search by name, SAP BP, country, or category…"
+          placeholder={t('buyerSuppliers.search.placeholder')}
         />
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableHeaderCell>Supplier</TableHeaderCell>
-            <TableHeaderCell>Country</TableHeaderCell>
-            <TableHeaderCell>Tier</TableHeaderCell>
-            <TableHeaderCell>Category</TableHeaderCell>
-            <TableHeaderCell>Compliance</TableHeaderCell>
-            <TableHeaderCell className="text-right">OTIF</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            <TableHeaderCell>{t('buyerSuppliers.col.supplier')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerSuppliers.col.country')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerSuppliers.col.tier')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerSuppliers.col.category')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerSuppliers.col.compliance')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('buyerSuppliers.col.otif')}
+            </TableHeaderCell>
+            <TableHeaderCell>{t('buyerSuppliers.col.status')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('buyerSuppliers.col.actions')}
+            </TableHeaderCell>
           </TableHeader>
           <tbody>
             {filtered.map((s) => (
@@ -204,7 +236,7 @@ const BuyerSuppliers: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <span className="text-sm text-text-secondary">
-                    {s.category}
+                    {cl(s.category)}
                   </span>
                 </TableCell>
                 <TableCell>
@@ -242,7 +274,7 @@ const BuyerSuppliers: React.FC = () => {
                   colSpan={8}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No suppliers match the current filters.
+                  {t('buyerSuppliers.table.noMatch')}
                 </td>
               </tr>
             )}

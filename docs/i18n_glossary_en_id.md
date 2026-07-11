@@ -355,3 +355,82 @@ narratives, dock-appointment values, proper nouns, line-item descriptions.
 Regulatory / Tax & Legal / Quality / Contract / Quality-Regulatory-Environmental) to
 close the filter-chip-vs-table-pill split flagged on BuyerCompliance + SupplierDocuments;
 a `channelLabel.ts` for the WhatsApp/Email/Web/API display axis.
+
+---
+
+## Batch 6 — full tail sweep + categoryLabel / channelLabel central maps
+
+The final page batch. Two central SSoT maps were added (closing the follow-up
+recommended at the end of Batch 5), plus the 11 remaining tail pages.
+
+### Part A — central maps (SEAT2-I18N-CATEGORY-01 / CHANNEL-01)
+
+`categoryLabel.ts` — material + compliance category tokens, resolved centrally
+(display-only; stored `category` value + filter `id` stay canonical EN). Consumed
+via `useCategoryLabel()` and the extended `StatusPill` resolver chain
+(`status ?? enum ?? category ?? channel`). Generic-industrial demo residue
+(Semiconductors / PCB Assemblies / Steel Components / Rare Earth Metals / Machined
+Parts / Plastics-Resin) is intentionally UNMAPPED → renders verbatim.
+
+| EN | ID | EN | ID |
+|---|---|---|---|
+| Fragrance | Pewangi | Halal Compliance | Kepatuhan Halal |
+| Fragrance Compounds | Senyawa Pewangi | Compliance | Kepatuhan |
+| Active Ingredient(s) | Bahan Aktif | BPOM Regulatory | Regulasi BPOM |
+| Vitamin(s) | Vitamin | Regulatory | Regulasi |
+| Emulsifier(s) | Pengemulsi | Tax & Legal | Pajak & Hukum |
+| Halal Emulsifier(s) | Pengemulsi Halal | Quality | Kualitas |
+| Botanical | Botani | Contract | Kontrak |
+| Raw Material | Bahan Baku | Documentation | Dokumentasi |
+| Packaging | Kemasan | Audit | Audit |
+| Packaging Primary | Kemasan Primer | Delivery | Pengiriman |
+| Packaging Secondary | Kemasan Sekunder | Environmental | Lingkungan |
+| Packaging (PET) | Kemasan (PET) | Pricing Review | Tinjauan Harga |
+| Other | Lainnya | Freight/Logistics | Angkutan/Logistik |
+
+`channelLabel.ts` — communication-channel enum. PROPER-NOUN / PROTOCOL DECISION
+(per token): WhatsApp, WeChat, Email, API, API Push, EDI, Web are kept canonical
+(identical EN/ID — brand proper nouns / protocol names / universal loanwords);
+only **Web Portal → Portal Web** carries a distinct ID display. The map also
+NORMALIZES casing (lowercase fixture variants `whatsapp`/`api`/`email` → canonical
+`WhatsApp`/`API`/`Email`).
+
+### Part B — 11 tail pages (532 keys total across the batch)
+
+`buyerSuppliers.*` (32), `buyerSupplierProfile.*` (78), `buyerAnalytics.*` (45),
+`buyerScorecard.*` (34), `buyerInventory.*` (65), `marketplace.*` (26),
+`buyerDashboard.*` (27, shell chrome only — widget cards already localize via
+`widget.*`), `supplierMyStorefront.*` (97), `supplierStorefront.*` (38),
+`supplierInventory.*` (41), `supplierPerformance.*` (49).
+
+| EN | ID | EN | ID |
+|---|---|---|---|
+| Supplier Directory | Direktori Pemasok | My Catalog | Katalog Saya |
+| Analytics & Procurement Intelligence | Analitik & Intelijen Pengadaan | My Inventory | Inventaris Saya |
+| Supplier Scorecard | Kartu Skor Pemasok | My Performance | Kinerja Saya |
+| Inventory Visibility | Visibilitas Inventaris | Storefront | Etalase |
+| Global Supplier Marketplace | Pasar Pemasok Global | Marketplace | Pasar |
+| Procurement Command Center | Pusat Komando Pengadaan | Days supply | Hari pasokan |
+| Live operational view | Tampilan operasional langsung | On hand | Stok fisik |
+| Benchmark | Tolok ukur | Your score | Skor Anda |
+| Cycle Time | Waktu Siklus | Improvement Actions | Tindakan Peningkatan |
+| Score breakdown | Rincian skor | Gap | Selisih |
+| Connectivity tier | Tingkat konektivitas | Sample data | Data sampel |
+| Overview | Ikhtisar | Trends | Tren |
+
+**Composed-phrase `<Trans>` (SupplierPerformance):** `{priority} priority` →
+EN `"{{priority}} priority"` / ID `"prioritas {{priority}}"` — the priority value
+localizes via `useEnumLabel` and the word order flips as one grammatical unit; the
+`item.priority === 'High'` comparison stays on the canonical stored value.
+
+**Stored-as-data kept canonical EN (flagged):** filter-chip / `<option value>` ids
+(category, StockStatus, period), StatusPill children (auto-localize centrally),
+mono DATA (doc numbers, currency, quantities, dates, SKU/material/cert codes),
+chart fixture-bound labels (pie category slices, supplier-name bars, month ticks),
+proper nouns (supplier/company names, addresses, cert issuers), and shared
+`CHANNEL_CONFIG` protocol copy (OAuth / DKIM / EDIFACT).
+
+**Known limitation (not re-keyed):** icon-wrapped StatusPill children (e.g. the
+BuyerSupplierProfile Compliance-tab cert chips render `<span>{icon}{text}</span>`)
+do not localize because StatusPill only resolves string children — a `StatusPill`
+enhancement, not a per-page fix. Flagged for the coverage sweep.
