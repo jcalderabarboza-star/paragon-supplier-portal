@@ -29,6 +29,7 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import Data from '../components/ui-v2/Data';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { PreferredChannel } from '../types/supplier.types';
@@ -77,11 +78,12 @@ const STATUS_TO_VARIANT: Record<TargetStatus, 'success' | 'warning' | 'danger'> 
 const perfVariant = (v: number): 'success' | 'warning' | 'danger' =>
   STATUS_TO_VARIANT[targetStatus(v, 90)];
 
-const CHANNEL_LABEL: Record<PreferredChannel, string> = {
-  [PreferredChannel.WHATSAPP]: 'WhatsApp',
-  [PreferredChannel.WEB]: 'Web Portal',
-  [PreferredChannel.EMAIL]: 'Email',
-  [PreferredChannel.API]: 'API/EDI',
+// Channel labels map to i18n keys; resolved with t() at the call site.
+const CHANNEL_KEY: Record<PreferredChannel, string> = {
+  [PreferredChannel.WHATSAPP]: 'supplierDashboard.channel.whatsapp',
+  [PreferredChannel.WEB]: 'supplierDashboard.channel.web',
+  [PreferredChannel.EMAIL]: 'supplierDashboard.channel.email',
+  [PreferredChannel.API]: 'supplierDashboard.channel.api',
 };
 
 const GRADE_TONE: Record<Grade, { stroke: string; soft: string }> = {
@@ -123,7 +125,6 @@ const BRIEF_DOT: Record<ActionItem['badgeVariant'], string> = {
   neutral: 'bg-text-tertiary',
 };
 
-const DASH_CRUMB = ['ACQUIRE', 'DASHBOARD'];
 
 const DOC_STATUS_TONE: Record<
   SupplierDocumentStatus,
@@ -136,12 +137,13 @@ const DOC_STATUS_TONE: Record<
   'Under Review': 'neutral',
 };
 
-const DOC_STATUS_ACTION: Record<SupplierDocumentStatus, string> = {
-  Valid: 'View',
-  'Expiring Soon': 'Renew',
-  Expired: 'Renew',
-  'Awaiting Upload': 'Upload',
-  'Under Review': 'View',
+// Per-status document action maps to an i18n key; resolved with t() in render.
+const DOC_STATUS_ACTION_KEY: Record<SupplierDocumentStatus, string> = {
+  Valid: 'supplierDashboard.docs.action.view',
+  'Expiring Soon': 'supplierDashboard.docs.action.renew',
+  Expired: 'supplierDashboard.docs.action.renew',
+  'Awaiting Upload': 'supplierDashboard.docs.action.upload',
+  'Under Review': 'supplierDashboard.docs.action.view',
 };
 
 const GradeBadge: React.FC<{ grade: Grade; size?: 'sm' | 'md' }> = ({
@@ -166,9 +168,14 @@ const GradeBadge: React.FC<{ grade: Grade; size?: 'sm' | 'md' }> = ({
 
 
 const SupplierDashboard: React.FC = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
+  const dashCrumb = [
+    t('supplierDashboard.crumb.acquire'),
+    t('supplierDashboard.crumb.dashboard'),
+  ];
   const [dismissedActions, setDismissedActions] = useState<string[]>([]);
 
   const supplierQuery = useCurrentSupplier();
@@ -241,7 +248,7 @@ const SupplierDashboard: React.FC = () => {
     invoicesQuery.isPending ||
     documentsQuery.isPending
   )
-    return <LoadingState breadcrumb={DASH_CRUMB} />;
+    return <LoadingState breadcrumb={dashCrumb} />;
   if (
     supplierQuery.isError ||
     posQuery.isError ||
@@ -250,7 +257,7 @@ const SupplierDashboard: React.FC = () => {
   )
     return (
       <ErrorState
-        breadcrumb={DASH_CRUMB}
+        breadcrumb={dashCrumb}
         error={
           supplierQuery.error ??
           posQuery.error ??
@@ -268,15 +275,15 @@ const SupplierDashboard: React.FC = () => {
   if (!mySupplier)
     return (
       <EmptyState
-        breadcrumb={DASH_CRUMB}
-        title="No supplier profile yet"
-        subtitle="Your Paragon supplier record is not available."
-        message="Your dashboard appears here once Paragon links your supplier profile."
+        breadcrumb={dashCrumb}
+        title={t('supplierDashboard.empty.title')}
+        subtitle={t('supplierDashboard.empty.subtitle')}
+        message={t('supplierDashboard.empty.message')}
       />
     );
 
   const grade = mySupplier.scorecardGrade as Grade;
-  const channelLabel = CHANNEL_LABEL[mySupplier.preferredChannel];
+  const channelLabel = t(CHANNEL_KEY[mySupplier.preferredChannel]);
   const otifVariant = perfVariant(mySupplier.otif);
   const otifStatusLabel =
     mySupplier.otif >= 90
@@ -285,6 +292,8 @@ const SupplierDashboard: React.FC = () => {
         ? 'Needs Attention'
         : 'At Risk';
 
+  // i18n-defer: mock/sample data — the briefing is badged "Sample data"; these
+  // action titles/descs/badges/labels are fixture narratives, kept EN by design.
   const allActions: ActionItem[] = [
     {
       id: 'po-confirm',
@@ -365,13 +374,20 @@ const SupplierDashboard: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['ACQUIRE', 'DASHBOARD']}
-        title={`Welcome back, ${mySupplier.name}`}
-        subtitle={`Paragon Corp Supplier Portal · Last login: 5 April 2026 · Channel: ${channelLabel}`}
+        breadcrumb={dashCrumb}
+        title={t('supplierDashboard.header.title', { name: mySupplier.name })}
+        subtitle={t('supplierDashboard.header.subtitle', {
+          // i18n-defer: mock/sample data — hardcoded last-login date.
+          date: '5 April 2026',
+          channel: channelLabel,
+        })}
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        Supplier identity · {mySupplier.country} · {mySupplier.category}
+        {t('supplierDashboard.meta.identity', {
+          country: mySupplier.country,
+          category: mySupplier.category,
+        })}
       </PageMetaLine>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
@@ -381,13 +397,16 @@ const SupplierDashboard: React.FC = () => {
               {mySupplier.name}
             </div>
             <div className="text-sm text-text-secondary">
-              SAP BP: {mySupplier.sapBpNumber} · Channel: {channelLabel}
+              {t('supplierDashboard.identity.sapBp', {
+                bp: mySupplier.sapBpNumber,
+                channel: channelLabel,
+              })}
             </div>
           </div>
           <div className="flex items-center gap-6 shrink-0">
             <div className="text-center">
               <div className="text-[10px] text-text-tertiary uppercase tracking-wider mb-2">
-                Paragon Grade
+                {t('supplierDashboard.identity.grade')}
               </div>
               <GradeBadge grade={grade} />
               <div className="text-xs text-text-secondary mt-1">
@@ -397,9 +416,11 @@ const SupplierDashboard: React.FC = () => {
             <div className="flex flex-col gap-1">
               <StatusPill variant={otifVariant}>{otifStatusLabel}</StatusPill>
               <div className="text-xs text-text-secondary">
-                OTIF: {mySupplier.otif}%
+                {t('supplierDashboard.identity.otif', { value: mySupplier.otif })}
               </div>
-              <div className="text-xs text-text-tertiary">Target: ≥ 95%</div>
+              <div className="text-xs text-text-tertiary">
+                {t('supplierDashboard.identity.target')}
+              </div>
             </div>
           </div>
         </div>
@@ -407,33 +428,35 @@ const SupplierDashboard: React.FC = () => {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
         <KpiCard
-          eyebrow="Open Orders"
+          eyebrow={t('supplierDashboard.kpi.openOrders.eyebrow')}
           value={openOrders.toString()}
-          subtitle="Awaiting action"
+          subtitle={t('supplierDashboard.kpi.openOrders.subtitle')}
           icon={ClipboardList}
         />
         <KpiCard
-          eyebrow="Pending ASNs"
+          eyebrow={t('supplierDashboard.kpi.pendingAsns.eyebrow')}
           value={pendingASNs.toString()}
-          subtitle="Need shipment notice"
+          subtitle={t('supplierDashboard.kpi.pendingAsns.subtitle')}
           icon={Truck}
         />
         <KpiCard
-          eyebrow="Unpaid Invoices"
+          eyebrow={t('supplierDashboard.kpi.unpaidInvoices.eyebrow')}
           value={unpaidInvoices.toString()}
           subtitle={
             unpaidInvoices > 0 ? (
-              <span className="text-danger">Pending payment</span>
+              <span className="text-danger">
+                {t('supplierDashboard.kpi.unpaidInvoices.pending')}
+              </span>
             ) : (
-              'All settled'
+              t('supplierDashboard.kpi.unpaidInvoices.settled')
             )
           }
           icon={CreditCard}
         />
         <KpiCard
-          eyebrow="My OTIF Score"
+          eyebrow={t('supplierDashboard.kpi.otif.eyebrow')}
           value={`${mySupplier.otif}%`}
-          subtitle="Last 6 months"
+          subtitle={t('supplierDashboard.kpi.otif.subtitle')}
           icon={Target}
         />
       </div>
@@ -456,16 +479,20 @@ const SupplierDashboard: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <div className="text-sm font-bold text-text-primary">
-                    Today's briefing
+                    {t('supplierDashboard.briefing.title')}
                   </div>
-                  <StatusPill variant="neutral">Sample data</StatusPill>
+                  <StatusPill variant="neutral">
+                    {t('supplierDashboard.briefing.sampleData')}
+                  </StatusPill>
                 </div>
                 <div className="text-xs text-text-tertiary mt-0.5">{today}</div>
               </div>
               <StatusPill variant={remaining > 0 ? 'warning' : 'success'}>
                 {remaining > 0
-                  ? `${remaining} action${remaining !== 1 ? 's' : ''}`
-                  : 'All clear'}
+                  ? remaining === 1
+                    ? t('supplierDashboard.briefing.actions.one', { count: remaining })
+                    : t('supplierDashboard.briefing.actions.other', { count: remaining })
+                  : t('supplierDashboard.briefing.allClear')}
               </StatusPill>
             </div>
             {remaining === 0 ? (
@@ -474,10 +501,10 @@ const SupplierDashboard: React.FC = () => {
                   <CheckCircle2 size={24} className="text-success" />
                 </div>
                 <div className="text-base font-semibold text-success mb-1">
-                  All done for today
+                  {t('supplierDashboard.briefing.done.title')}
                 </div>
                 <div className="text-sm text-text-tertiary">
-                  No pending actions. Check back tomorrow.
+                  {t('supplierDashboard.briefing.done.body')}
                 </div>
               </div>
             ) : (
@@ -518,6 +545,8 @@ const SupplierDashboard: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => {
+                              // i18n-defer: mock/sample data — toast echoes the
+                              // sample-briefing action title/label (EN by design).
                               toast({
                                 variant: 'info',
                                 title: action.title,
@@ -545,17 +574,17 @@ const SupplierDashboard: React.FC = () => {
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-border-subtle">
               <h2 className="text-section text-text-primary">
-                My recent purchase orders
+                {t('supplierDashboard.orders.title')}
               </h2>
             </div>
             <Table>
               <TableHeader>
-                <TableHeaderCell>PO #</TableHeaderCell>
-                <TableHeaderCell>Order date</TableHeaderCell>
-                <TableHeaderCell className="text-right">Items</TableHeaderCell>
-                <TableHeaderCell className="text-right">Value</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell className="text-right">Action</TableHeaderCell>
+                <TableHeaderCell>{t('supplierDashboard.orders.col.po')}</TableHeaderCell>
+                <TableHeaderCell>{t('supplierDashboard.orders.col.orderDate')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">{t('supplierDashboard.orders.col.items')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">{t('supplierDashboard.orders.col.value')}</TableHeaderCell>
+                <TableHeaderCell>{t('supplierDashboard.orders.col.status')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">{t('supplierDashboard.orders.col.action')}</TableHeaderCell>
               </TableHeader>
               <tbody>
                 {sortedPOs.map((po) => {
@@ -564,10 +593,10 @@ const SupplierDashboard: React.FC = () => {
                     po.status === POStatus.ACKNOWLEDGED;
                   const isConfirmed = po.status === POStatus.CONFIRMED;
                   const btnLabel = isActionable
-                    ? 'Confirm'
+                    ? t('supplierDashboard.orders.action.confirm')
                     : isConfirmed
-                      ? 'Create ASN'
-                      : 'View';
+                      ? t('supplierDashboard.orders.action.createAsn')
+                      : t('supplierDashboard.orders.action.view');
                   return (
                     <TableRow key={po.id}>
                       <TableCell>
@@ -595,12 +624,11 @@ const SupplierDashboard: React.FC = () => {
                           onClick={() =>
                             toast({
                               variant: 'info',
-                              title:
-                                isActionable
-                                  ? `Opening ${po.poNumber} for confirmation`
-                                  : isConfirmed
-                                    ? `Creating ASN for ${po.poNumber}`
-                                    : `Viewing ${po.poNumber}`,
+                              title: isActionable
+                                ? t('supplierDashboard.orders.toast.opening', { po: po.poNumber })
+                                : isConfirmed
+                                  ? t('supplierDashboard.orders.toast.creatingAsn', { po: po.poNumber })
+                                  : t('supplierDashboard.orders.toast.viewing', { po: po.poNumber }),
                             })
                           }
                         >
@@ -619,19 +647,19 @@ const SupplierDashboard: React.FC = () => {
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-section text-text-primary">
-                My performance score
+                {t('supplierDashboard.perf.title')}
               </h2>
               <GradeBadge grade={grade} size="sm" />
             </div>
             <div className="flex flex-col gap-4">
               {[
-                { label: 'OTIF', value: mySupplier.otif },
+                { label: t('supplierDashboard.perf.otif'), value: mySupplier.otif },
                 {
-                  label: 'Lead Time Adherence',
+                  label: t('supplierDashboard.perf.leadTime'),
                   value: mySupplier.leadTimeAdherence,
                 },
                 {
-                  label: 'Invoice Accuracy',
+                  label: t('supplierDashboard.perf.invoiceAccuracy'),
                   value: mySupplier.invoiceAccuracy,
                 },
               ].map((m) => {
@@ -655,17 +683,17 @@ const SupplierDashboard: React.FC = () => {
               })}
             </div>
             <div className="mt-4 pt-3 border-t border-border-subtle text-xs text-text-tertiary italic">
-              Performance reviewed monthly by Paragon procurement team
+              {t('supplierDashboard.perf.footnote')}
             </div>
           </section>
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5">
             <h2 className="text-section text-text-primary mb-4">
-              My documents
+              {t('supplierDashboard.docs.title')}
             </h2>
             <div className="flex flex-col">
               {documents.map((doc, idx) => {
-                const action = DOC_STATUS_ACTION[doc.status];
+                const action = t(DOC_STATUS_ACTION_KEY[doc.status]);
                 return (
                   <div
                     key={doc.id}
@@ -688,8 +716,10 @@ const SupplierDashboard: React.FC = () => {
                         </StatusPill>
                         <span className="text-xs text-text-tertiary">
                           {doc.expiryDate
-                            ? `Exp: ${fmtDate(doc.expiryDate)}`
-                            : 'No expiry'}
+                            ? t('supplierDashboard.docs.exp', {
+                                date: fmtDate(doc.expiryDate),
+                              })
+                            : t('supplierDashboard.docs.noExpiry')}
                         </span>
                       </div>
                     </div>
@@ -697,9 +727,11 @@ const SupplierDashboard: React.FC = () => {
                       variant="secondary"
                       onClick={() =>
                         toast({
-                          title: `${action} — ${doc.name}`,
-                          description:
-                            'Document management workflow coming in Phase 2.',
+                          title: t('supplierDashboard.docs.toast.title', {
+                            action,
+                            name: doc.name,
+                          }),
+                          description: t('supplierDashboard.docs.toast.desc'),
                         })
                       }
                     >

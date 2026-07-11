@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Truck,
   Ship,
@@ -41,8 +42,6 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useShipments, useSuppliers } from '../services/query/hooks';
-
-const SHIPMENTS_CRUMB = ['TRANSACT', 'SHIPMENTS & ASN'];
 
 const TODAY = '2026-05-20';
 
@@ -124,7 +123,13 @@ const TIME_SLOTS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00
 
 const BuyerShipments: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { toast } = useToast();
+  // Breadcrumb is built from t() inside the component (mirrors BuyerDiscovery).
+  const SHIPMENTS_CRUMB = [
+    t('shipments.crumb.transact'),
+    t('shipments.crumb.shipments'),
+  ];
   const shipmentsQuery = useShipments();
   const suppliersQuery = useSuppliers();
   const shipments = shipmentsQuery.data?.items ?? [];
@@ -209,44 +214,51 @@ const BuyerShipments: React.FC = () => {
     return [
       {
         id: 'e1',
-        title: 'PO Created',
+        title: t('shipments.timeline.poCreated'),
         timestamp: s.poNumber,
         status: 'completed',
       },
       {
         id: 'e2',
-        title: 'ASN Submitted',
-        timestamp: s.status === 'Pending ASN' ? 'Pending' : s.asnNumber,
+        title: t('shipments.timeline.asnSubmitted'),
+        timestamp:
+          s.status === 'Pending ASN'
+            ? t('shipments.timeline.pending')
+            : s.asnNumber,
         status: s.status === 'Pending ASN' ? 'current' : 'completed',
       },
       {
         id: 'e3',
-        title: 'Shipped from Origin',
+        title: t('shipments.timeline.shippedFromOrigin'),
         timestamp: s.shipDate ? formatDate(s.shipDate) : undefined,
         status: completed(2),
       },
       {
         id: 'e4',
-        title: 'In Transit',
-        timestamp: s.daysInTransit ? `${s.daysInTransit} days` : undefined,
+        title: t('shipments.timeline.inTransit'),
+        timestamp: s.daysInTransit
+          ? s.daysInTransit === 1
+            ? t('shipments.timeline.daysInTransit.one', { count: s.daysInTransit })
+            : t('shipments.timeline.daysInTransit.other', { count: s.daysInTransit })
+          : undefined,
         status: s.status === 'In Transit' ? 'current' : completed(3),
       },
       {
         id: 'e5',
-        title: 'Arrived at Port',
+        title: t('shipments.timeline.arrivedAtPort'),
         timestamp: s.actualArrival ? formatDate(s.actualArrival) : undefined,
         status:
           s.status === 'Arrived at Port' ? 'current' : completed(4),
       },
       {
         id: 'e6',
-        title: 'Customs Cleared',
+        title: t('shipments.timeline.customsCleared'),
         timestamp:
           s.customsStatus === 'Cleared'
-            ? 'Cleared'
+            ? t('shipments.timeline.cleared')
             : s.customsStatus === 'Held'
-              ? 'On hold'
-              : 'Pending',
+              ? t('shipments.timeline.onHold')
+              : t('shipments.timeline.pending'),
         status:
           s.customsStatus === 'Cleared'
             ? 'completed'
@@ -258,7 +270,7 @@ const BuyerShipments: React.FC = () => {
       },
       {
         id: 'e7',
-        title: 'Docked at NDC',
+        title: t('shipments.timeline.dockedAtNdc'),
         timestamp: s.dockAssignment
           ? `${s.dockAssignment}${s.dockTime ? ` · ${s.dockTime}` : ''}`
           : undefined,
@@ -270,8 +282,10 @@ const BuyerShipments: React.FC = () => {
       },
       {
         id: 'e8',
-        title: 'Unloaded & GR Posted',
-        timestamp: s.status === 'Delivered' ? 'Complete' : undefined,
+        title: t('shipments.timeline.unloadedGrPosted'),
+        timestamp: s.status === 'Delivered'
+          ? t('shipments.timeline.complete')
+          : undefined,
         status: s.status === 'Delivered' ? 'completed' : 'pending',
       },
     ];
@@ -321,23 +335,23 @@ const BuyerShipments: React.FC = () => {
   const handleExport = () =>
     toast({
       variant: 'info',
-      title: 'Export queued',
-      description: 'Shipments export will download shortly.',
+      title: t('shipments.toast.export.title'),
+      description: t('shipments.toast.export.desc'),
     });
 
   const handleManualASN = () =>
     toast({
       variant: 'info',
-      title: 'Manual ASN entry',
-      description: 'Form will open in a future release.',
+      title: t('shipments.toast.manualAsn.title'),
+      description: t('shipments.toast.manualAsn.desc'),
     });
 
   const handleDockSchedule = () => {
     setShowSchedule(true);
     toast({
       variant: 'info',
-      title: 'Dock schedule expanded',
-      description: 'Scroll down to view assignments.',
+      title: t('shipments.toast.dockSchedule.title'),
+      description: t('shipments.toast.dockSchedule.desc'),
     });
   };
 
@@ -350,12 +364,15 @@ const BuyerShipments: React.FC = () => {
             onClick={() =>
               toast({
                 variant: 'success',
-                title: 'Reminder sent',
-                description: `Notified ${s.supplierName} for ${s.asnNumber}`,
+                title: t('shipments.toast.reminder.title'),
+                description: t('shipments.toast.reminder.desc', {
+                  supplier: s.supplierName,
+                  asn: s.asnNumber,
+                }),
               })
             }
           >
-            Send reminder to supplier
+            {t('shipments.footer.sendReminder')}
           </Button>
         );
       case 'In Transit':
@@ -367,12 +384,15 @@ const BuyerShipments: React.FC = () => {
             onClick={() =>
               toast({
                 variant: 'info',
-                title: 'Tracking opened',
-                description: `Carrier: ${s.carrier} · ${s.trackingNumber}`,
+                title: t('shipments.toast.tracking.title'),
+                description: t('shipments.toast.tracking.desc', {
+                  carrier: s.carrier,
+                  tracking: s.trackingNumber,
+                }),
               })
             }
           >
-            Track shipment
+            {t('shipments.footer.trackShipment')}
           </Button>
         );
       case 'At Dock':
@@ -382,7 +402,7 @@ const BuyerShipments: React.FC = () => {
             variant="outline"
             onClick={() => navigate('/buyer/goods-receipt')}
           >
-            Begin GR process
+            {t('shipments.footer.beginGr')}
           </Button>
         );
       case 'Delivered':
@@ -391,7 +411,7 @@ const BuyerShipments: React.FC = () => {
             variant="outline"
             onClick={() => navigate('/buyer/goods-receipt')}
           >
-            View GR
+            {t('shipments.footer.viewGr')}
           </Button>
         );
       case 'Delayed':
@@ -401,12 +421,14 @@ const BuyerShipments: React.FC = () => {
             onClick={() =>
               toast({
                 variant: 'warning',
-                title: 'Carrier alerted',
-                description: `Escalation ticket opened for ${s.asnNumber}`,
+                title: t('shipments.toast.carrierAlerted.title'),
+                description: t('shipments.toast.carrierAlerted.desc', {
+                  asn: s.asnNumber,
+                }),
               })
             }
           >
-            Contact carrier
+            {t('shipments.footer.contactCarrier')}
           </Button>
         );
       default:
@@ -431,9 +453,9 @@ const BuyerShipments: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={SHIPMENTS_CRUMB}
-        title="No shipments yet"
-        subtitle="No inbound shipments or ASNs to track."
-        message="Shipments and advance ship notices will appear here as suppliers dispatch orders."
+        title={t('shipments.empty.title')}
+        subtitle={t('shipments.empty.subtitle')}
+        message={t('shipments.empty.message')}
       />
     );
 
@@ -441,20 +463,24 @@ const BuyerShipments: React.FC = () => {
     <AppShellV2>
       <PageHeader
         breadcrumb={SHIPMENTS_CRUMB}
-        title="Shipments & ASN"
-        subtitle="Inbound shipment tracking, advance shipment notices, and dock scheduling."
+        title={t('shipments.header.title')}
+        subtitle={t('shipments.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
-              { label: 'Export', icon: FileSpreadsheet, onClick: handleExport },
               {
-                label: 'Dock Schedule',
+                label: t('shipments.action.export'),
+                icon: FileSpreadsheet,
+                onClick: handleExport,
+              },
+              {
+                label: t('shipments.action.dockSchedule'),
                 icon: CalendarClock,
                 onClick: handleDockSchedule,
               },
             ]}
             primary={{
-              label: 'Manual ASN Entry',
+              label: t('shipments.action.manualAsn'),
               icon: Plus,
               onClick: handleManualASN,
             }}
@@ -463,34 +489,42 @@ const BuyerShipments: React.FC = () => {
       />
 
       <PageMetaLine className="mb-6">
-        {counts.all} active shipments · last updated {formatDate(TODAY)}
+        {counts.all === 1
+          ? t('shipments.meta.summary.one', {
+              count: counts.all,
+              date: formatDate(TODAY),
+            })
+          : t('shipments.meta.summary.other', {
+              count: counts.all,
+              date: formatDate(TODAY),
+            })}
       </PageMetaLine>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard
-          eyebrow="In Transit"
+          eyebrow={t('shipments.kpi.inTransit.eyebrow')}
           value={formatNumber(counts.transit)}
           icon={Anchor}
-          subtitle="At sea, in air, or on road"
+          subtitle={t('shipments.kpi.inTransit.subtitle')}
         />
         <KpiCard
-          eyebrow="At Dock / Unloading"
+          eyebrow={t('shipments.kpi.atDock.eyebrow')}
           value={
             <span className="text-warning-hover">{formatNumber(counts.dock)}</span>
           }
           icon={Truck}
-          subtitle="Currently at NDC J6"
+          subtitle={t('shipments.kpi.atDock.subtitle')}
         />
         <KpiCard
-          eyebrow="Delayed"
+          eyebrow={t('shipments.kpi.delayed.eyebrow')}
           value={
             <span className="text-danger">{formatNumber(counts.delayed)}</span>
           }
           icon={AlertTriangle}
-          subtitle="Past ETA"
+          subtitle={t('shipments.kpi.delayed.subtitle')}
         />
         <KpiCard
-          eyebrow="Arriving Today"
+          eyebrow={t('shipments.kpi.arrivingToday.eyebrow')}
           value={formatNumber(arrivingToday)}
           icon={Clock}
           subtitle={formatDate(TODAY)}
@@ -499,12 +533,12 @@ const BuyerShipments: React.FC = () => {
 
       <SubTabs<GroupTab>
         options={[
-          { id: 'all', label: 'All', count: counts.all },
-          { id: 'pending', label: 'Pending ASN', count: counts.pending },
-          { id: 'in-transit', label: 'In Transit', count: counts.transit },
-          { id: 'at-dock', label: 'At Dock', count: counts.dock },
-          { id: 'delivered', label: 'Delivered', count: counts.delivered },
-          { id: 'delayed', label: 'Delayed', count: counts.delayed },
+          { id: 'all', label: t('shipments.tab.all'), count: counts.all },
+          { id: 'pending', label: t('shipments.tab.pending'), count: counts.pending },
+          { id: 'in-transit', label: t('shipments.tab.inTransit'), count: counts.transit },
+          { id: 'at-dock', label: t('shipments.tab.atDock'), count: counts.dock },
+          { id: 'delivered', label: t('shipments.tab.delivered'), count: counts.delivered },
+          { id: 'delayed', label: t('shipments.tab.delayed'), count: counts.delayed },
         ]}
         value={tab}
         onChange={setTab}
@@ -516,9 +550,13 @@ const BuyerShipments: React.FC = () => {
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search by ASN, PO, supplier, or tracking number..."
+            placeholder={t('shipments.search.placeholder')}
           />
         </div>
+        {/* i18n-defer: ShipmentMode enum (Sea/Air/Road) has no central label map;
+            the chip `id` is matched against `s.mode` (data) and the same tokens
+            render as data in the table/panel, so labels stay canonical EN until a
+            shared mode-label map exists (cf. statusLabel.ts). */}
         <FilterChipsBar<ShipmentMode>
           options={[
             { id: 'Sea', label: 'Sea' },
@@ -534,15 +572,15 @@ const BuyerShipments: React.FC = () => {
       <div className="border border-border-subtle rounded-lg bg-white overflow-hidden mb-6">
         <Table>
           <TableHeader>
-            <TableHeaderCell>ASN / PO</TableHeaderCell>
-            <TableHeaderCell>Supplier</TableHeaderCell>
-            <TableHeaderCell>Mode</TableHeaderCell>
-            <TableHeaderCell>Route</TableHeaderCell>
-            <TableHeaderCell>Ship Date</TableHeaderCell>
-            <TableHeaderCell>ETA</TableHeaderCell>
-            <TableHeaderCell>Packages</TableHeaderCell>
-            <TableHeaderCell>Dock</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
+            <TableHeaderCell>{t('shipments.table.col.asnPo')}</TableHeaderCell>
+            <TableHeaderCell>{t('shipments.table.col.supplier')}</TableHeaderCell>
+            <TableHeaderCell>{t('shipments.table.col.mode')}</TableHeaderCell>
+            <TableHeaderCell>{t('shipments.table.col.route')}</TableHeaderCell>
+            <TableHeaderCell>{t('shipments.table.col.shipDate')}</TableHeaderCell>
+            <TableHeaderCell>{t('shipments.table.col.eta')}</TableHeaderCell>
+            <TableHeaderCell>{t('shipments.table.col.packages')}</TableHeaderCell>
+            <TableHeaderCell>{t('shipments.table.col.dock')}</TableHeaderCell>
+            <TableHeaderCell>{t('shipments.table.col.status')}</TableHeaderCell>
             <TableHeaderCell> </TableHeaderCell>
           </TableHeader>
           <tbody>
@@ -565,6 +603,7 @@ const BuyerShipments: React.FC = () => {
                     </Data>
                   </TableCell>
                   <TableCell>
+                    {/* i18n-defer: mock/sample data — supplier proper nouns */}
                     <div className="text-sm text-text-primary">
                       {s.supplierName}
                     </div>
@@ -602,7 +641,7 @@ const BuyerShipments: React.FC = () => {
                     </Data>
                     {overdue && (
                       <div className="text-xs text-danger">
-                        +{s.delayDays}d late
+                        {t('shipments.table.daysLate', { days: s.delayDays })}
                       </div>
                     )}
                   </TableCell>
@@ -639,7 +678,7 @@ const BuyerShipments: React.FC = () => {
                   colSpan={10}
                   className="py-10 text-center text-sm text-text-tertiary"
                 >
-                  No shipments match the current filters.
+                  {t('shipments.table.empty')}
                 </td>
               </tr>
             )}
@@ -648,9 +687,9 @@ const BuyerShipments: React.FC = () => {
       </div>
 
       <FormSection
-        eyebrow="OPERATIONS"
-        title="Today's Dock Schedule"
-        description="Live view of dock assignments for inbound shipments at NDC J6."
+        eyebrow={t('shipments.dock.eyebrow')}
+        title={t('shipments.dock.title')}
+        description={t('shipments.dock.description')}
         collapsible
         defaultOpen={showSchedule}
       >
@@ -659,7 +698,7 @@ const BuyerShipments: React.FC = () => {
             <thead>
               <tr>
                 <th className="text-left text-label text-text-tertiary uppercase py-2 pr-3">
-                  Dock
+                  {t('shipments.dock.col.dock')}
                 </th>
                 {TIME_SLOTS.map((t) => (
                   <th
@@ -717,23 +756,24 @@ const BuyerShipments: React.FC = () => {
           <div className="flex flex-col gap-6">
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                Key facts
+                {t('shipments.panel.keyFacts')}
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <div className="text-xs text-text-tertiary">ASN #</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.asnNumber')}</div>
                   <Data as="div" className="font-semibold text-text-primary">
                     {selected.asnNumber}
                   </Data>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">PO #</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.poNumber')}</div>
                   <Data as="div" className="text-text-primary">
                     {selected.poNumber}
                   </Data>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-xs text-text-tertiary">Supplier</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.supplier')}</div>
+                  {/* i18n-defer: mock/sample data — supplier proper noun */}
                   <div className="text-text-primary">
                     {selected.supplierName}{' '}
                     {selectedSupplier && (
@@ -746,45 +786,48 @@ const BuyerShipments: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Carrier</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.carrier')}</div>
+                  {/* i18n-defer: mock/sample data — carrier proper noun */}
                   <div className="text-text-primary">{selected.carrier}</div>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">
-                    Tracking #
+                    {t('shipments.panel.trackingNumber')}
                   </div>
                   <Data as="div" className="text-text-primary">
                     {selected.trackingNumber}
                   </Data>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Mode</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.mode')}</div>
+                  {/* i18n-defer: ShipmentMode enum (see FilterChipsBar note) */}
                   <div className="text-text-primary">{selected.mode}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Container #</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.containerNumber')}</div>
                   <Data as="div" className="text-text-primary">
                     {selected.containerNumber ?? '—'}
                   </Data>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Origin</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.origin')}</div>
+                  {/* i18n-defer: mock/sample data — city proper noun */}
                   <div className="text-text-primary">{selected.origin}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Destination</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.destination')}</div>
                   <div className="text-text-primary">
                     {selected.destination}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Ship Date</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.shipDate')}</div>
                   <Data as="div" className="text-text-primary">
                     {formatDate(selected.shipDate)}
                   </Data>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">ETA</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.eta')}</div>
                   <Data
                     as="div"
                     className={
@@ -798,28 +841,28 @@ const BuyerShipments: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">
-                    Actual Arrival
+                    {t('shipments.panel.actualArrival')}
                   </div>
                   <Data as="div" className="text-text-primary">
                     {formatDate(selected.actualArrival)}
                   </Data>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Packages</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.packages')}</div>
                   <Data as="div" className="text-text-primary">
                     {formatNumber(selected.packageCount)}
                   </Data>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Total Weight</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.totalWeight')}</div>
                   <Data as="div" className="text-text-primary">
                     {formatNumber(selected.totalWeight)} kg
                   </Data>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-xs text-text-tertiary">Dock</div>
+                  <div className="text-xs text-text-tertiary">{t('shipments.panel.dock')}</div>
                   <div className="text-text-primary">
-                    {selected.dockAssignment ?? 'Not scheduled'}
+                    {selected.dockAssignment ?? t('shipments.panel.notScheduled')}
                     {selected.dockTime ? ` · ${selected.dockTime}` : ''}
                   </div>
                 </div>
@@ -828,15 +871,15 @@ const BuyerShipments: React.FC = () => {
 
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                Line items
+                {t('shipments.panel.lineItems')}
               </div>
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-text-tertiary uppercase">
-                    <th className="text-left py-1">Material</th>
-                    <th className="text-left py-1">Description</th>
-                    <th className="text-right py-1">Qty</th>
-                    <th className="text-left py-1 pl-2">UoM</th>
+                    <th className="text-left py-1">{t('shipments.panel.col.material')}</th>
+                    <th className="text-left py-1">{t('shipments.panel.col.description')}</th>
+                    <th className="text-right py-1">{t('shipments.panel.col.qty')}</th>
+                    <th className="text-left py-1 pl-2">{t('shipments.panel.col.uom')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -860,36 +903,36 @@ const BuyerShipments: React.FC = () => {
 
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                Shipment lifecycle
+                {t('shipments.panel.lifecycle')}
               </div>
               <Timeline events={buildTimeline(selected)} />
             </section>
 
             <section className="border border-border-subtle rounded-lg p-4 bg-bg-hover">
               <div className="text-label text-text-tertiary uppercase mb-1">
-                Dock Assignment
+                {t('shipments.panel.dockAssignment')}
               </div>
               {selected.dockAssignment ? (
                 <div className="text-sm text-text-primary">
-                  {selected.dockAssignment} · Scheduled {selected.dockTime}{' '}
-                  today
+                  {selected.dockAssignment} ·{' '}
+                  {t('shipments.panel.dockScheduled', { time: selected.dockTime })}
                 </div>
               ) : (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-text-secondary">
-                    Not yet scheduled
+                    {t('shipments.panel.notYetScheduled')}
                   </span>
                   <Button
                     variant="secondary"
                     onClick={() =>
                       toast({
                         variant: 'info',
-                        title: 'Dock scheduler',
-                        description: 'Schedule UI will open in a future release.',
+                        title: t('shipments.toast.dockScheduler.title'),
+                        description: t('shipments.toast.dockScheduler.desc'),
                       })
                     }
                   >
-                    Schedule dock
+                    {t('shipments.panel.scheduleDock')}
                   </Button>
                 </div>
               )}
