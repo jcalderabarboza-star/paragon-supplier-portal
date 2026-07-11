@@ -4,6 +4,9 @@ import FormSection from '../ui-v2/FormSection';
 import Data from '../ui-v2/Data';
 import { useToast } from '../../hooks/useToast';
 import { useTranslation } from 'react-i18next';
+import { useEnumLabel } from '../../hooks/useEnumLabel';
+import { statusLabelKey } from '../../lib/statusLabel';
+import { enumLabelKey } from '../../lib/priorityLabel';
 import type { Shipment, ASN, AsnStatus } from '../../services/data/types';
 import type { InspectionResult } from '../../data/mockGoodsReceipts';
 import {
@@ -174,6 +177,17 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  // Display resolver for the shared inspection tokens (Pass/Fail/N/A). The radio
+  // state value stays canonical EN (checked/onChange use `v`); only the visible
+  // label localizes — the recorded visualCheck/packagingCheck are never touched.
+  const el = useEnumLabel();
+  // The header disposition is DERIVED (never a submitted literal — headerVerbFor
+  // maps it to a verb), so its badge/toast text localizes freely. Its tokens are
+  // status-rollup vocab (Approved / Partially Approved), so try statusLabel first.
+  const dispositionLabel = (d: string) => {
+    const k = statusLabelKey(d) ?? enumLabelKey(d);
+    return k ? t(k) : d;
+  };
   const createGR = useGoodsReceiptCreate();
   const finalizeGR = useGoodsReceiptFinalize();
   const postGR = useGoodsReceiptPost();
@@ -597,7 +611,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         checked={l.visualCheck === v}
                         onChange={() => updateLine(i, { visualCheck: v })}
                       />
-                      {v}
+                      {el(v)}
                     </label>
                   ))}
                 </div>
@@ -614,7 +628,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                         checked={l.packagingCheck === v}
                         onChange={() => updateLine(i, { packagingCheck: v })}
                       />
-                      {v}
+                      {el(v)}
                     </label>
                   ))}
                 </div>
@@ -632,7 +646,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                           checked={l.halalSealCheck === v}
                           onChange={() => updateLine(i, { halalSealCheck: v })}
                         />
-                        {v}
+                        {el(v)}
                       </label>
                     ))}
                   </div>
@@ -651,7 +665,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                           checked={l.bpomLotCheck === v}
                           onChange={() => updateLine(i, { bpomLotCheck: v })}
                         />
-                        {v}
+                        {el(v)}
                       </label>
                     ))}
                   </div>
@@ -710,7 +724,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                     : 'border-border-input bg-bg-hover text-text-secondary'
             }`}
           >
-            {derivedDisposition}
+            {dispositionLabel(derivedDisposition)}
           </div>
           <p className="mt-1.5 text-xs text-text-tertiary">
             {totals.items === 1
@@ -895,7 +909,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
       } else {
         toast({
           variant: 'success',
-          title: t('gr.dispose.success.title', { grNumber, disposition: dispo }),
+          title: t('gr.dispose.success.title', { grNumber, disposition: dispositionLabel(dispo) }),
           description: t('gr.dispose.success.desc', { correlationId: createRes.correlationId }),
         });
       }

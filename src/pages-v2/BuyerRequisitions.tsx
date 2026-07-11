@@ -33,6 +33,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
 import { useTranslation } from 'react-i18next';
+import { useEnumLabel } from '../hooks/useEnumLabel';
 import { useRequisitions } from '../services/query/hooks';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
@@ -137,6 +138,7 @@ const emptyForm: NewPRForm = {
 const BuyerRequisitions: React.FC = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const el = useEnumLabel();
   const REQUISITIONS_CRUMB = [
     t('requisitions.crumb.acquire'),
     t('requisitions.crumb.requisitions'),
@@ -499,7 +501,7 @@ const BuyerRequisitions: React.FC = () => {
                 <div>
                   <dt className="text-text-tertiary">{t('requisitions.panel.field.priority')}</dt>
                   <dd className="text-text-primary font-medium">
-                    {selectedPR.priority}
+                    {el(selectedPR.priority)}
                   </dd>
                 </div>
                 <div>
@@ -680,7 +682,9 @@ const BuyerRequisitions: React.FC = () => {
                 }
               >
                 {PRIORITY_OPTIONS.map((p) => (
-                  <option key={p}>{p}</option>
+                  <option key={p} value={p}>
+                    {el(p)}
+                  </option>
                 ))}
               </select>
             </div>
