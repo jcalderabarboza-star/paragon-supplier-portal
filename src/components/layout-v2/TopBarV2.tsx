@@ -1,19 +1,11 @@
 import React from 'react';
-import { Menu, Search, Bell, ChevronDown, Languages } from 'lucide-react';
+import { Menu, Search, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { resolveEnvBadge } from '../../lib/envBadge';
-import { LANG_STORAGE_KEY, type AppLang } from '../../lib/i18n';
+import LanguageMenu from './LanguageMenu';
 
 const TopBarV2: React.FC = () => {
-  const { t, i18n } = useTranslation();
-  const currentLang: AppLang = i18n.language?.toLowerCase().startsWith('id') ? 'id' : 'en';
-  const toggleLang = () => {
-    const next: AppLang = currentLang === 'id' ? 'en' : 'id';
-    i18n.changeLanguage(next);
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(LANG_STORAGE_KEY, next);
-    }
-  };
+  const { t } = useTranslation();
   const badge = resolveEnvBadge(
     import.meta.env.DEV,
     __DEPLOY_ENV__,
@@ -63,17 +55,7 @@ const TopBarV2: React.FC = () => {
 
       {/* Right cluster */}
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={toggleLang}
-          aria-label={t('topbar.language')}
-          title={t('topbar.language')}
-          className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary px-2 py-1.5 rounded-md hover:bg-bg-hover"
-        >
-          <Languages size={16} className="text-text-tertiary" />
-          <span className="font-medium">{currentLang.toUpperCase()}</span>
-          <ChevronDown size={14} />
-        </button>
+        <LanguageMenu />
         <button
           type="button"
           aria-label={t('topbar.notifications')}
