@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Boxes } from 'lucide-react';
 import ExpandableWidget, {
@@ -22,6 +23,7 @@ const isLow = (r: InventoryRecord): boolean =>
   r.stockStatus === StockStatus.CRITICAL || r.stockStatus === StockStatus.LOW;
 
 const BuyerInventoryWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = useInventory();
 
@@ -81,7 +83,7 @@ const BuyerInventoryWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Inventory — low stock"
+      title={t('widget.inventory.title')}
       icon={Boxes}
       count={count}
       live={false}
@@ -89,11 +91,11 @@ const BuyerInventoryWidget: React.FC = () => {
       flagLabel={
         count > 0
           ? critical > 0
-            ? `${count} low · ${critical} critical`
-            : `${count} low`
+            ? t('widget.inventory.flag.withCritical', { count, critical })
+            : t('widget.inventory.flag.plain', { count })
           : undefined
       }
-      actionLabel={count > 0 ? 'View inventory' : undefined}
+      actionLabel={count > 0 ? t('widget.inventory.action') : undefined}
       onAction={count > 0 ? () => navigate('/buyer/inventory') : undefined}
       expandedRows={expandedRows}
     />

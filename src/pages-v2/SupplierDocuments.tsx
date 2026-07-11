@@ -39,8 +39,7 @@ import type {
 } from '../services/data/types';
 import { useDocuments } from '../services/query/hooks';
 import { formatDate } from '../lib/format';
-
-const DOCS_CRUMB = ['SETTLE', 'MY DOCUMENTS'];
+import { useTranslation } from 'react-i18next';
 
 type CategoryFilter = 'All' | DocCategory;
 
@@ -52,13 +51,16 @@ const STATUS_VARIANT: Record<DocStatus, 'success' | 'warning' | 'danger' | 'neut
   'Under Review': 'neutral',
 };
 
-const CATEGORIES: { id: CategoryFilter; label: string }[] = [
-  { id: 'All', label: 'All' },
-  { id: 'Halal Compliance', label: 'Halal' },
-  { id: 'BPOM Regulatory', label: 'BPOM' },
-  { id: 'Tax & Legal', label: 'Tax & Legal' },
-  { id: 'Quality', label: 'Quality' },
-  { id: 'Contract', label: 'Contract' },
+// Filter chip ids are the CANONICAL EN category values matched against
+// `d.category` (stored-as-data) — never translate the `id`. Only the display
+// label localizes; the option list is built in-component so `t` is available.
+const CATEGORY_FILTERS: { id: CategoryFilter; labelKey: string }[] = [
+  { id: 'All', labelKey: 'supplierDocuments.category.all' },
+  { id: 'Halal Compliance', labelKey: 'supplierDocuments.category.halal' },
+  { id: 'BPOM Regulatory', labelKey: 'supplierDocuments.category.bpom' },
+  { id: 'Tax & Legal', labelKey: 'supplierDocuments.category.taxLegal' },
+  { id: 'Quality', labelKey: 'supplierDocuments.category.quality' },
+  { id: 'Contract', labelKey: 'supplierDocuments.category.contract' },
 ];
 
 const daysUntil = (dateStr: string | null): number | null => {
@@ -70,9 +72,18 @@ const daysUntil = (dateStr: string | null): number | null => {
 type PanelMode = 'closed' | 'new' | 'upload-existing' | 'view';
 
 const SupplierDocuments: React.FC = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId, supplierName } = identity;
+  const docsCrumb = [
+    t('supplierDocuments.crumb.settle'),
+    t('supplierDocuments.crumb.myDocuments'),
+  ];
+  const categoryOptions = CATEGORY_FILTERS.map((c) => ({
+    id: c.id,
+    label: t(c.labelKey),
+  }));
   const docsQuery = useDocuments();
   const docs = docsQuery.data?.items ?? [];
   const [filterCat, setFilterCat] = useState<CategoryFilter>('All');
@@ -144,24 +155,26 @@ const SupplierDocuments: React.FC = () => {
     setUploaded(true);
     toast({
       variant: 'success',
-      title: 'Document uploaded',
-      description: 'Pending Paragon review.',
+      title: t('supplierDocuments.toast.uploaded.title'),
+      description: t('supplierDocuments.toast.uploaded.desc'),
     });
   };
 
   const panelTitle =
     panelMode === 'new'
-      ? 'Upload new document'
+      ? t('supplierDocuments.panel.newTitle')
       : panelMode === 'upload-existing' && activeDoc
-        ? `Upload — ${activeDoc.name.split('—')[0].trim()}`
+        ? t('supplierDocuments.panel.uploadTitle', {
+            name: activeDoc.name.split('—')[0].trim(),
+          })
         : '';
 
   if (!supplierId) return <NoSupplierIdentity />;
-  if (docsQuery.isPending) return <LoadingState breadcrumb={DOCS_CRUMB} />;
+  if (docsQuery.isPending) return <LoadingState breadcrumb={docsCrumb} />;
   if (docsQuery.isError)
     return (
       <ErrorState
-        breadcrumb={DOCS_CRUMB}
+        breadcrumb={docsCrumb}
         error={docsQuery.error}
         onRetry={() => docsQuery.refetch()}
       />
@@ -169,23 +182,27 @@ const SupplierDocuments: React.FC = () => {
   if (docs.length === 0)
     return (
       <EmptyState
-        breadcrumb={DOCS_CRUMB}
-        title="No documents yet"
-        subtitle={`No documents on file for ${supplierName ?? 'this supplier'}.`}
-        message="Uploaded certifications, COAs, and contracts will appear here."
+        breadcrumb={docsCrumb}
+        title={t('supplierDocuments.empty.title')}
+        subtitle={t('supplierDocuments.empty.subtitle', {
+          name: supplierName ?? t('supplierDocuments.empty.supplierFallback'),
+        })}
+        message={t('supplierDocuments.empty.message')}
       />
     );
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['SETTLE', 'MY DOCUMENTS']}
-        title="My Documents"
-        subtitle={`Certifications, compliance documents, COAs, and contracts · Halal & BPOM tracking — ${supplierName ?? 'Supplier'}.`}
+        breadcrumb={docsCrumb}
+        title={t('supplierDocuments.header.title')}
+        subtitle={t('supplierDocuments.header.subtitle', {
+          name: supplierName ?? t('supplierDocuments.common.supplierFallback'),
+        })}
         actions={
           <BulkActionsBar
             primary={{
-              label: 'Upload document',
+              label: t('supplierDocuments.action.uploadDoc'),
               icon: Upload,
               onClick: openNewUpload,
             }}
@@ -194,7 +211,9 @@ const SupplierDocuments: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {docs.length} documents · last refreshed {today}
+        {docs.length === 1
+          ? t('supplierDocuments.meta.summary.one', { count: docs.length, date: today })
+          : t('supplierDocuments.meta.summary.other', { count: docs.length, date: today })}
       </PageMetaLine>
 
       {expired.length > 0 && (
@@ -202,9 +221,11 @@ const SupplierDocuments: React.FC = () => {
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>
-              {expired.length} expired document
-              {expired.length > 1 ? 's' : ''} — immediate renewal required:{' '}
+              {expired.length === 1
+                ? t('supplierDocuments.alert.expired.one', { count: expired.length })
+                : t('supplierDocuments.alert.expired.other', { count: expired.length })}{' '}
             </strong>
+            {/* i18n-defer: mock/sample data (fixture document names) */}
             {expired.map((d) => d.name.split('—')[0].trim()).join(' · ')}
           </div>
         </div>
@@ -214,9 +235,11 @@ const SupplierDocuments: React.FC = () => {
           <Clock size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>
-              {expiringSoon.length} document
-              {expiringSoon.length > 1 ? 's' : ''} expiring within 6 months:{' '}
+              {expiringSoon.length === 1
+                ? t('supplierDocuments.alert.expiring.one', { count: expiringSoon.length })
+                : t('supplierDocuments.alert.expiring.other', { count: expiringSoon.length })}{' '}
             </strong>
+            {/* i18n-defer: mock/sample data (fixture document names) */}
             {expiringSoon.map((d) => d.name.split('—')[0].trim()).join(' · ')}
           </div>
         </div>
@@ -226,9 +249,11 @@ const SupplierDocuments: React.FC = () => {
           <UploadCloud size={14} className="shrink-0 mt-0.5 text-text-tertiary" />
           <div>
             <strong className="text-text-primary">
-              {awaitingUpload.length} document
-              {awaitingUpload.length > 1 ? 's' : ''} awaiting upload:{' '}
+              {awaitingUpload.length === 1
+                ? t('supplierDocuments.alert.awaiting.one', { count: awaitingUpload.length })
+                : t('supplierDocuments.alert.awaiting.other', { count: awaitingUpload.length })}{' '}
             </strong>
+            {/* i18n-defer: mock/sample data (fixture linked-to refs) */}
             {awaitingUpload.map((d) => d.linkedTo).join(' · ')}
           </div>
         </div>
@@ -236,33 +261,41 @@ const SupplierDocuments: React.FC = () => {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-5 mb-6">
         <KpiCard
-          eyebrow="Total Documents"
+          eyebrow={t('supplierDocuments.kpi.total.eyebrow')}
           value={docs.length.toString()}
-          subtitle="In document vault"
+          subtitle={t('supplierDocuments.kpi.total.subtitle')}
           icon={Files}
         />
         <KpiCard
-          eyebrow="Valid"
+          eyebrow={t('supplierDocuments.kpi.valid.eyebrow')}
           value={validCount.toString()}
-          subtitle="In good standing"
+          subtitle={t('supplierDocuments.kpi.valid.subtitle')}
           icon={CheckCircle2}
         />
         <KpiCard
-          eyebrow="Expiring ≤180d"
+          eyebrow={t('supplierDocuments.kpi.expiring.eyebrow')}
           value={expiringSoon.length.toString()}
-          subtitle={<span className="text-warning-hover">Renewal window open</span>}
+          subtitle={
+            <span className="text-warning-hover">
+              {t('supplierDocuments.kpi.expiring.subtitle')}
+            </span>
+          }
           icon={Clock}
         />
         <KpiCard
-          eyebrow="Expired"
+          eyebrow={t('supplierDocuments.kpi.expired.eyebrow')}
           value={expired.length.toString()}
-          subtitle={<span className="text-danger">Blocks new POs</span>}
+          subtitle={
+            <span className="text-danger">
+              {t('supplierDocuments.kpi.expired.subtitle')}
+            </span>
+          }
           icon={AlertTriangle}
         />
         <KpiCard
-          eyebrow="Needs Action"
+          eyebrow={t('supplierDocuments.kpi.needsAction.eyebrow')}
           value={awaitingUpload.length.toString()}
-          subtitle="Upload required"
+          subtitle={t('supplierDocuments.kpi.needsAction.subtitle')}
           icon={UploadCloud}
         />
       </div>
@@ -271,16 +304,19 @@ const SupplierDocuments: React.FC = () => {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search documents by name or issuer…"
+          placeholder={t('supplierDocuments.search.placeholder')}
         />
         <div className="flex flex-wrap items-center gap-3">
           <FilterChipsBar<CategoryFilter>
-            options={CATEGORIES}
+            options={categoryOptions}
             value={filterCat}
             onChange={setFilterCat}
           />
           <span className="text-meta text-text-tertiary">
-            {filtered.length} of {docs.length} documents
+            {t('supplierDocuments.filter.count', {
+              shown: filtered.length,
+              total: docs.length,
+            })}
           </span>
         </div>
       </div>
@@ -288,14 +324,16 @@ const SupplierDocuments: React.FC = () => {
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
         <Table>
           <TableHeader>
-            <TableHeaderCell>Document</TableHeaderCell>
-            <TableHeaderCell>Category</TableHeaderCell>
-            <TableHeaderCell>Issued by</TableHeaderCell>
-            <TableHeaderCell>Issued</TableHeaderCell>
-            <TableHeaderCell>Expiry</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Ver.</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            <TableHeaderCell>{t('supplierDocuments.table.document')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierDocuments.table.category')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierDocuments.table.issuedBy')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierDocuments.table.issued')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierDocuments.table.expiry')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierDocuments.table.status')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierDocuments.table.version')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('supplierDocuments.table.actions')}
+            </TableHeaderCell>
           </TableHeader>
           <tbody>
             {filtered.map((doc) => {
@@ -320,10 +358,12 @@ const SupplierDocuments: React.FC = () => {
                       </div>
                     )}
                     <div className="text-xs text-text-tertiary mt-0.5">
-                      Linked: {doc.linkedTo}
+                      {t('supplierDocuments.row.linked', { value: doc.linkedTo })}
                     </div>
                   </TableCell>
                   <TableCell>
+                    {/* Category pill renders the canonical EN token: no central
+                        category-label map yet (filter-vs-pill split, see fragment header). */}
                     <StatusPill variant="neutral">{doc.category}</StatusPill>
                   </TableCell>
                   <TableCell className="text-text-tertiary text-xs max-w-[12rem]">
@@ -348,14 +388,16 @@ const SupplierDocuments: React.FC = () => {
                         {days !== null && (
                           <div className={`text-xs ${expiryColor}`}>
                             {days > 0
-                              ? `${days}d remaining`
-                              : `Expired ${Math.abs(days)}d ago`}
+                              ? t('supplierDocuments.expiry.remaining', { count: days })
+                              : t('supplierDocuments.expiry.expiredAgo', {
+                                  count: Math.abs(days),
+                                })}
                           </div>
                         )}
                       </div>
                     ) : (
                       <span className="text-text-tertiary text-xs">
-                        No expiry
+                        {t('supplierDocuments.expiry.none')}
                       </span>
                     )}
                   </TableCell>
@@ -382,17 +424,21 @@ const SupplierDocuments: React.FC = () => {
                           icon={Upload}
                           onClick={() => openUploadFor(doc)}
                         >
-                          Upload
+                          {t('supplierDocuments.action.upload')}
                         </Button>
                       ) : (
                         <Button
                           variant="secondary"
                           icon={Eye}
                           onClick={() =>
-                            toast({ title: `Downloading ${doc.name}` })
+                            toast({
+                              title: t('supplierDocuments.toast.downloading', {
+                                name: doc.name,
+                              }),
+                            })
                           }
                         >
-                          View
+                          {t('supplierDocuments.action.view')}
                         </Button>
                       )}
                       {doc.expiryDate && days !== null && days <= 180 && (
@@ -401,13 +447,13 @@ const SupplierDocuments: React.FC = () => {
                           onClick={() =>
                             toast({
                               variant: 'info',
-                              title: `Renewal workflow started for ${doc.name
-                                .split('—')[0]
-                                .trim()}`,
+                              title: t('supplierDocuments.toast.renewStarted', {
+                                name: doc.name.split('—')[0].trim(),
+                              }),
                             })
                           }
                         >
-                          Renew
+                          {t('supplierDocuments.action.renew')}
                         </Button>
                       )}
                     </div>
@@ -421,7 +467,7 @@ const SupplierDocuments: React.FC = () => {
                   colSpan={8}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No documents match the current filters.
+                  {t('supplierDocuments.table.empty')}
                 </td>
               </tr>
             )}
@@ -433,12 +479,9 @@ const SupplierDocuments: React.FC = () => {
         <FileText size={14} className="text-warning-hover shrink-0 mt-0.5" />
         <div>
           <strong className="text-warning-hover">
-            BPJPH Halal Mandatory Transition — October 2026:
+            {t('supplierDocuments.bpjph.title')}
           </strong>{' '}
-          All cosmetics and personal care products distributed in Indonesia must
-          carry BPJPH-issued halal certification. MUI certificates issued before
-          the transition remain valid until expiry but cannot be renewed — new
-          BPJPH certification must be obtained.{' '}
+          {t('supplierDocuments.bpjph.body')}{' '}
           <a
             href="https://halal.go.id"
             target="_blank"
@@ -458,7 +501,9 @@ const SupplierDocuments: React.FC = () => {
         footerActions={
           <>
             <Button variant="secondary" onClick={closePanel}>
-              {uploaded ? 'Close' : 'Cancel'}
+              {uploaded
+                ? t('supplierDocuments.action.close')
+                : t('supplierDocuments.action.cancel')}
             </Button>
             {!uploaded && (
               <Button
@@ -466,7 +511,7 @@ const SupplierDocuments: React.FC = () => {
                 icon={Upload}
                 onClick={submitUpload}
               >
-                Submit
+                {t('supplierDocuments.action.submit')}
               </Button>
             )}
           </>
@@ -476,13 +521,14 @@ const SupplierDocuments: React.FC = () => {
           {activeDoc && (
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-2">
-                Document
+                {t('supplierDocuments.panel.document')}
               </h3>
+              {/* i18n-defer: mock/sample data (fixture document name) */}
               <div className="text-sm font-semibold text-text-primary">
                 {activeDoc.name}
               </div>
               <div className="text-xs text-text-tertiary mt-0.5">
-                Linked: {activeDoc.linkedTo}
+                {t('supplierDocuments.row.linked', { value: activeDoc.linkedTo })}
               </div>
               {activeDoc.notes && (
                 <div className="mt-2 bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover">
@@ -495,7 +541,7 @@ const SupplierDocuments: React.FC = () => {
           {!uploaded ? (
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-2">
-                Upload file
+                {t('supplierDocuments.panel.uploadFile')}
               </h3>
               <div
                 onDragOver={(e) => e.preventDefault()}
@@ -511,17 +557,17 @@ const SupplierDocuments: React.FC = () => {
                   aria-hidden="true"
                 />
                 <div className="text-sm font-semibold text-text-primary">
-                  Drop file here or click to browse
+                  {t('supplierDocuments.panel.dropzone.title')}
                 </div>
                 <div className="text-xs text-text-tertiary mt-1">
-                  PDF, JPG, PNG · Max 20 MB
+                  {t('supplierDocuments.panel.dropzone.hint')}
                 </div>
               </div>
             </section>
           ) : (
             <section className="bg-success-soft border-l-2 border-success rounded px-4 py-3 text-sm text-success font-semibold flex items-center gap-2">
               <CheckCircle2 size={16} />
-              Document uploaded — pending Paragon review.
+              {t('supplierDocuments.panel.uploadedMsg')}
             </section>
           )}
         </div>

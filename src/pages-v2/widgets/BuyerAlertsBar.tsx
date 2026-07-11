@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, ChevronRight } from 'lucide-react';
 import Data from '../../components/ui-v2/Data';
@@ -34,6 +35,7 @@ const DOT_CLASS: Record<Exclude<FlagSeverity, 'none'>, string> = {
 };
 
 const BuyerAlertsBar: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const invoices = useBuyerInvoices();
   const pos = usePurchaseOrders();
@@ -53,37 +55,37 @@ const BuyerAlertsBar: React.FC = () => {
 
     return [
       {
-        label: 'Overdue invoices',
+        label: t('widget.alertsBar.flag.overdueInvoices'),
         count: d.overdueInvoices(invItems).length,
         severity: d.invoiceTier(invItems),
         to: '/buyer/invoices',
       },
       {
-        label: 'Unacknowledged POs >48h',
+        label: t('widget.alertsBar.flag.unackPo'),
         count: d.unacknowledgedOver48h(poItems, now).length,
         severity: d.poTier(poItems, now),
         to: '/buyer/orders',
       },
       {
-        label: 'RFQs awaiting award',
+        label: t('widget.alertsBar.flag.rfqAward'),
         count: d.pendingAwardRfqs(rfqItems, quoteItems).length,
         severity: d.rfqAwardTier(rfqItems, quoteItems, now),
         to: '/buyer/sourcing',
       },
       {
-        label: 'Receipts to review',
+        label: t('widget.alertsBar.flag.receiptsReview'),
         count: d.grNeedingAction(grItems).length,
         severity: d.grTier(grItems),
         to: '/buyer/goods-receipt',
       },
       {
-        label: 'Inbound ASNs',
+        label: t('widget.alertsBar.flag.inboundAsn'),
         count: d.pendingAsns(asnItems).length,
         severity: d.asnTier(asnItems),
         to: '/buyer/shipments',
       },
     ].filter((f) => f.count > 0);
-  }, [invoices.data, pos.data, rfqs.data, quotes.data, grs.data, asns.data]);
+  }, [invoices.data, pos.data, rfqs.data, quotes.data, grs.data, asns.data, t]);
 
   const total = flags.reduce((s, f) => s + f.count, 0);
 
@@ -92,7 +94,7 @@ const BuyerAlertsBar: React.FC = () => {
       <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success-soft px-5 py-3 mb-6">
         <CheckCircle2 size={16} className="text-success shrink-0" />
         <span className="text-sm font-medium text-success">
-          All clear — no open exceptions
+          {t('widget.alertsBar.allClear')}
         </span>
       </div>
     );
@@ -102,7 +104,12 @@ const BuyerAlertsBar: React.FC = () => {
       <div className="flex items-center gap-2 shrink-0">
         <AlertTriangle size={16} className="text-warning-hover" />
         <span className="text-sm font-semibold text-text-primary">
-          <Data>{total}</Data> open exception{total === 1 ? '' : 's'}
+          <Data>{total}</Data>{' '}
+          {t(
+            total === 1
+              ? 'widget.alertsBar.exception.one'
+              : 'widget.alertsBar.exception.other',
+          )}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-2">

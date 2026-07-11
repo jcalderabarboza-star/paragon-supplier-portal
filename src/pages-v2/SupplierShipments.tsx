@@ -32,6 +32,7 @@ import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
 import { useTranslation } from 'react-i18next';
+import { statusLabelKey } from '../lib/statusLabel';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import {
@@ -74,8 +75,6 @@ const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
-const SHIPMENTS_CRUMB = ['TRANSACT', 'SHIPMENTS & ASN'];
-
 interface AsnForm {
   poId: string;
   carrier: string;
@@ -108,72 +107,83 @@ const DEFAULT_FORM: AsnForm = {
 
 const CARRIER_OPTIONS = ['JNE', 'SiCepat', 'J&T', 'Wahana', 'DHL', 'FedEx', 'Other'];
 
-const DockAppointments: React.FC = () => (
-  <div className="flex flex-col gap-4">
-    <h3 className="text-section text-text-primary">
-      Your scheduled dock appointments
-    </h3>
+const DockAppointments: React.FC = () => {
+  const { t } = useTranslation();
+  // i18n-defer: dock-appointment fixture is sample data — the field VALUES
+  // (dates, times, dock/location proper nouns) stay canonical EN; only the field
+  // LABELS localize.
+  const dockFields = [
+    { Icon: Calendar, label: t('supplierShipments.dock.field.date'), value: 'Monday, 7 April 2026' },
+    { Icon: Clock, label: t('supplierShipments.dock.field.time'), value: '10:00 WIB' },
+    { Icon: Package, label: t('supplierShipments.dock.field.dock'), value: 'Dock 3' },
+    {
+      Icon: MapPin,
+      label: t('supplierShipments.dock.field.location'),
+      value: 'NDC Jatake 6, Tangerang Selatan',
+    },
+  ];
+  return (
+    <div className="flex flex-col gap-4">
+      <h3 className="text-section text-text-primary">
+        {t('supplierShipments.dock.heading')}
+      </h3>
 
-    <div className="bg-bg-surface border-2 border-success rounded-lg shadow-sm p-5">
-      <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
-        <div>
-          <Data as="div" className="text-base font-bold text-text-primary">
-            ASN-2026-001
-          </Data>
-          <div className="text-xs text-text-tertiary mt-0.5">
-            <Data>PO-2025-00107</Data> · PET Bottle 100ml Airless Pump
-          </div>
-        </div>
-        <StatusPill variant="success">Confirmed</StatusPill>
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-        {[
-          { Icon: Calendar, label: 'Date', value: 'Monday, 7 April 2026' },
-          { Icon: Clock, label: 'Time', value: '10:00 WIB' },
-          { Icon: Package, label: 'Dock', value: 'Dock 3' },
-          {
-            Icon: MapPin,
-            label: 'Location',
-            value: 'NDC Jatake 6, Tangerang Selatan',
-          },
-        ].map(({ Icon, label, value }) => (
-          <div
-            key={label}
-            className="px-3 py-2 bg-bg-hover rounded-md flex items-start gap-2"
-          >
-            <Icon size={14} className="text-text-tertiary mt-0.5 shrink-0" />
-            <div>
-              <div className="text-label text-text-tertiary uppercase">
-                {label}
-              </div>
-              <div className="text-sm text-text-primary mt-0.5">{value}</div>
+      <div className="bg-bg-surface border-2 border-success rounded-lg shadow-sm p-5">
+        <div className="flex items-start justify-between mb-4 gap-3 flex-wrap">
+          <div>
+            <Data as="div" className="text-base font-bold text-text-primary">
+              ASN-2026-001
+            </Data>
+            <div className="text-xs text-text-tertiary mt-0.5">
+              {/* i18n-defer: mock/sample data (material proper noun) */}
+              <Data>PO-2025-00107</Data> · PET Bottle 100ml Airless Pump
             </div>
           </div>
-        ))}
+          <StatusPill variant="success">Confirmed</StatusPill>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          {dockFields.map(({ Icon, label, value }) => (
+            <div
+              key={label}
+              className="px-3 py-2 bg-bg-hover rounded-md flex items-start gap-2"
+            >
+              <Icon size={14} className="text-text-tertiary mt-0.5 shrink-0" />
+              <div>
+                <div className="text-label text-text-tertiary uppercase">
+                  {label}
+                </div>
+                <div className="text-sm text-text-primary mt-0.5">{value}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
+        <Clock size={14} className="text-warning-hover shrink-0 mt-0.5" />
+        <span>
+          {t('supplierShipments.dock.notice.arrivePre')}{' '}
+          <strong className="text-warning-hover">
+            {t('supplierShipments.dock.notice.arriveEmphasis')}
+          </strong>
+          . {t('supplierShipments.dock.notice.arrivePost')}{' '}
+          {/* i18n-defer: mock/sample data (receiving-team phone number) */}
+          <strong>+62-21-5595-xxxx</strong>{' '}
+          {t('supplierShipments.dock.notice.arriveTail')}
+        </span>
+      </div>
+
+      <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
+        <CheckCircle2 size={14} className="text-info shrink-0 mt-0.5" />
+        <span>
+          {t('supplierShipments.dock.info.pre')}{' '}
+          <strong>WhatsApp</strong>{' '}
+          {t('supplierShipments.dock.info.post')}
+        </span>
       </div>
     </div>
-
-    <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-      <Clock size={14} className="text-warning-hover shrink-0 mt-0.5" />
-      <span>
-        Please arrive{' '}
-        <strong className="text-warning-hover">15 minutes before your slot</strong>.
-        Bring a printed copy of your ASN and packing list. Contact the
-        receiving team at <strong>+62-21-5595-xxxx</strong> if you anticipate
-        delays.
-      </span>
-    </div>
-
-    <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
-      <CheckCircle2 size={14} className="text-info shrink-0 mt-0.5" />
-      <span>
-        Dock appointment requests for new ASNs are processed by the Paragon
-        Inbound Team. Confirmation is sent via <strong>WhatsApp</strong>{' '}
-        within 2 hours of ASN submission.
-      </span>
-    </div>
-  </div>
-);
+  );
+};
 
 interface ShipmentsListProps {
   asns: ASN[];
@@ -215,8 +225,12 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
       {pendingPOs.length > 0 && (
         <section className="bg-warning-soft border-l-2 border-warning rounded-md px-4 py-3">
           <div className="text-sm font-semibold text-text-primary mb-3">
-            {pendingPOs.length} confirmed purchase order
-            {pendingPOs.length === 1 ? '' : 's'} awaiting ASN
+            {t(
+              pendingPOs.length === 1
+                ? 'supplierShipments.pending.awaiting.one'
+                : 'supplierShipments.pending.awaiting.other',
+              { count: pendingPOs.length },
+            )}
           </div>
           <div className="flex flex-col gap-2">
             {pendingPOs.map((po) => {
@@ -236,7 +250,8 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                     {first?.description ?? '—'}
                   </span>
                   <span className="text-text-tertiary text-xs whitespace-nowrap">
-                    Req. <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
+                    {t('supplierShipments.pending.req')}{' '}
+                    <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
                   </span>
                   <div className="justify-self-end">
                     <Button
@@ -257,10 +272,13 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <div className="px-5 py-3 border-b border-border-subtle flex items-center justify-between flex-wrap gap-2">
           <h3 className="text-section text-text-primary">
-            Advance Ship Notices
+            {t('supplierShipments.list.heading')}
             {statusFilter !== 'All' && (
               <span className="text-text-tertiary font-normal ml-2 text-xs">
-                · filtered by {statusFilter}
+                ·{' '}
+                {t('supplierShipments.list.filteredBy', {
+                  status: t(statusLabelKey(statusFilter) ?? statusFilter),
+                })}
               </span>
             )}
           </h3>
@@ -268,15 +286,17 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
         <Table>
           <TableHeader>
             <TableHeaderCell className="w-8">
-              <span className="sr-only">Expand</span>
+              <span className="sr-only">{t('supplierShipments.aria.expand')}</span>
             </TableHeaderCell>
-            <TableHeaderCell>ASN #</TableHeaderCell>
-            <TableHeaderCell>PO ref</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Carrier</TableHeaderCell>
-            <TableHeaderCell>Tracking</TableHeaderCell>
-            <TableHeaderCell>ETA</TableHeaderCell>
-            <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+            <TableHeaderCell>{t('supplierShipments.col.asn')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierShipments.col.poRef')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierShipments.col.status')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierShipments.col.carrier')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierShipments.col.tracking')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierShipments.col.eta')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('supplierShipments.col.actions')}
+            </TableHeaderCell>
           </TableHeader>
           <tbody>
             {filtered.map((asn) => {
@@ -288,7 +308,11 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                       <button
                         type="button"
                         onClick={() => onToggleExpand(asn.asnNumber)}
-                        aria-label={isOpen ? 'Collapse' : 'Expand'}
+                        aria-label={
+                          isOpen
+                            ? t('supplierShipments.aria.collapse')
+                            : t('supplierShipments.aria.expand')
+                        }
                         className="text-text-tertiary hover:text-text-primary"
                       >
                         {isOpen ? (
@@ -334,7 +358,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                           variant="secondary"
                           onClick={() => onResolveDiscrepancy(asn.asnNumber)}
                         >
-                          Resolve
+                          {t('supplierShipments.action.resolve')}
                         </Button>
                       )}
                       {asn.status !== 'Draft' &&
@@ -352,21 +376,25 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] gap-5">
                           <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
                             <div className="text-label text-text-tertiary uppercase mb-3">
-                              Shipment details
+                              {t('supplierShipments.detail.heading')}
                             </div>
                             <dl className="grid grid-cols-[160px_1fr] gap-y-1.5 text-xs">
-                              <dt className="text-text-tertiary">Origin</dt>
+                              <dt className="text-text-tertiary">
+                                {t('supplierShipments.detail.origin')}
+                              </dt>
+                              {/* i18n-defer: mock/sample data (origin city) */}
                               <dd className="text-text-primary">
                                 {asn.details.originCity}
                               </dd>
                               <dt className="text-text-tertiary">
-                                Destination warehouse
+                                {t('supplierShipments.detail.destinationWarehouse')}
                               </dt>
+                              {/* i18n-defer: mock/sample data (warehouse name) */}
                               <dd className="text-text-primary">
                                 {asn.details.destinationWarehouse}
                               </dd>
                               <dt className="text-text-tertiary">
-                                Total cartons
+                                {t('supplierShipments.detail.totalCartons')}
                               </dt>
                               <dd className="text-text-primary">
                                 <Data>
@@ -376,7 +404,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                                 </Data>
                               </dd>
                               <dt className="text-text-tertiary">
-                                Gross weight
+                                {t('supplierShipments.detail.grossWeight')}
                               </dt>
                               <dd className="text-text-primary">
                                 <Data>
@@ -386,8 +414,9 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                                 </Data>
                               </dd>
                               <dt className="text-text-tertiary">
-                                Temperature
+                                {t('supplierShipments.detail.temperature')}
                               </dt>
+                              {/* i18n-defer: mock/sample data (temperature requirement) */}
                               <dd className="text-text-primary">
                                 {asn.details.temperatureRequirement}
                               </dd>
@@ -395,20 +424,30 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                           </div>
                           <div className="bg-bg-surface border border-border-subtle rounded-md p-4">
                             <div className="text-label text-text-tertiary uppercase mb-3">
-                              Line items ({asn.lineItems.length})
+                              {t('supplierShipments.detail.lineItems', {
+                                count: asn.lineItems.length,
+                              })}
                             </div>
                             {asn.lineItems.length === 0 ? (
                               <div className="text-xs text-text-tertiary">
-                                No line items in this draft.
+                                {t('supplierShipments.detail.noLineItems')}
                               </div>
                             ) : (
                               <table className="w-full text-xs">
                                 <thead>
                                   <tr className="text-text-tertiary uppercase">
-                                    <th className="text-left py-1">Material</th>
-                                    <th className="text-right py-1">Ordered</th>
-                                    <th className="text-right py-1">Shipped</th>
-                                    <th className="text-right py-1">Lot</th>
+                                    <th className="text-left py-1">
+                                      {t('supplierShipments.lineItems.col.material')}
+                                    </th>
+                                    <th className="text-right py-1">
+                                      {t('supplierShipments.lineItems.col.ordered')}
+                                    </th>
+                                    <th className="text-right py-1">
+                                      {t('supplierShipments.lineItems.col.shipped')}
+                                    </th>
+                                    <th className="text-right py-1">
+                                      {t('supplierShipments.lineItems.col.lot')}
+                                    </th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -423,6 +462,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                                           <Data as="div" className="text-[10px] text-text-tertiary">
                                             {li.materialCode}
                                           </Data>
+                                          {/* i18n-defer: mock/sample data (material description) */}
                                           <div className="text-text-primary">
                                             {li.description}
                                           </div>
@@ -458,7 +498,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                   colSpan={8}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No ASNs match the selected filter.
+                  {t('supplierShipments.list.empty')}
                 </td>
               </tr>
             )}
@@ -471,6 +511,10 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
 
 const SupplierShipments: React.FC = () => {
   const { t } = useTranslation();
+  const SHIPMENTS_CRUMB = [
+    t('supplierShipments.crumb.transact'),
+    t('supplierShipments.crumb.shipments'),
+  ];
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
@@ -637,9 +681,9 @@ const SupplierShipments: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={SHIPMENTS_CRUMB}
-        title="No shipments yet"
-        subtitle="No advance ship notices or confirmed purchase orders to ship."
-        message="ASNs and shippable confirmed POs will appear here."
+        title={t('supplierShipments.empty.title')}
+        subtitle={t('supplierShipments.empty.subtitle')}
+        message={t('supplierShipments.empty.message')}
       />
     );
 
@@ -707,14 +751,14 @@ const SupplierShipments: React.FC = () => {
   const wizardSteps: WizardStep[] = [
     {
       id: 'select',
-      title: 'Select PO',
-      shortTitle: 'Select PO',
-      description: 'Choose a confirmed purchase order to ship.',
+      title: t('supplierShipments.wizard.select.title'),
+      shortTitle: t('supplierShipments.wizard.select.short'),
+      description: t('supplierShipments.wizard.select.desc'),
       content: (
         <div className="flex flex-col gap-3">
           {CONFIRMED_POS.length === 0 ? (
             <div className="bg-bg-hover border border-border-subtle rounded-md py-8 px-4 text-center text-sm text-text-tertiary">
-              No confirmed POs pending ASN submission.
+              {t('supplierShipments.wizard.select.empty')}
             </div>
           ) : (
             CONFIRMED_POS.map((po) => {
@@ -743,34 +787,40 @@ const SupplierShipments: React.FC = () => {
                     </div>
                     <div className="text-right shrink-0">
                       <div className="text-xs text-text-tertiary">
-                        Qty:{' '}
+                        {t('supplierShipments.wizard.select.qty')}{' '}
                         <Data>{mat ? `${mat.quantity.toLocaleString()} ${mat.uom}` : '—'}</Data>
                       </div>
                       <div className="text-xs text-text-tertiary">
-                        Delivery: <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
+                        {t('supplierShipments.wizard.select.delivery')}{' '}
+                        <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
                       </div>
                     </div>
                   </div>
                   {selected && (
                     <div className="mt-3 pt-3 border-t border-teal/30 grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs text-text-secondary">
                       <div>
-                        <strong className="text-text-primary">Supplier:</strong>{' '}
+                        <strong className="text-text-primary">
+                          {t('supplierShipments.wizard.select.supplier')}
+                        </strong>{' '}
                         {po.supplierName}
                       </div>
                       <div>
                         <strong className="text-text-primary">
-                          Requested Delivery:
+                          {t('supplierShipments.wizard.select.requestedDelivery')}
                         </strong>{' '}
                         <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
                       </div>
                       <div>
                         <strong className="text-text-primary">
-                          Delivery Address:
+                          {t('supplierShipments.wizard.select.deliveryAddress')}
                         </strong>{' '}
+                        {/* i18n-defer: mock/sample data (delivery address) */}
                         NDC Jatake 6, Tangerang
                       </div>
                       <div>
-                        <strong className="text-text-primary">Channel:</strong>{' '}
+                        <strong className="text-text-primary">
+                          {t('supplierShipments.wizard.select.channel')}
+                        </strong>{' '}
                         {po.channel}
                       </div>
                     </div>
@@ -784,19 +834,21 @@ const SupplierShipments: React.FC = () => {
     },
     {
       id: 'details',
-      title: 'Shipment details',
-      shortTitle: 'Details',
-      description: 'Carrier, tracking, dates, and batch info.',
+      title: t('supplierShipments.wizard.details.title'),
+      shortTitle: t('supplierShipments.wizard.details.short'),
+      description: t('supplierShipments.wizard.details.desc'),
       content: (
         <div className="flex flex-col gap-5">
           <FormSection
-            eyebrow="Carrier & tracking"
-            title="Logistics"
-            description="Provided by the carrier upon pickup."
+            eyebrow={t('supplierShipments.wizard.details.logistics.eyebrow')}
+            title={t('supplierShipments.wizard.details.logistics.title')}
+            description={t('supplierShipments.wizard.details.logistics.desc')}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>Carrier *</label>
+                <label className={labelClass}>
+                  {t('supplierShipments.wizard.details.field.carrier')}
+                </label>
                 <select
                   value={form.carrier}
                   onChange={(e) => updateForm({ carrier: e.target.value })}
@@ -808,10 +860,12 @@ const SupplierShipments: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className={labelClass}>Tracking number *</label>
+                <label className={labelClass}>
+                  {t('supplierShipments.wizard.details.field.tracking')}
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. JNE2026001234"
+                  placeholder={t('supplierShipments.placeholder.tracking')}
                   value={form.trackingNumber}
                   onChange={(e) =>
                     updateForm({ trackingNumber: e.target.value })
@@ -820,7 +874,9 @@ const SupplierShipments: React.FC = () => {
                 />
               </div>
               <div>
-                <label className={labelClass}>Ship date *</label>
+                <label className={labelClass}>
+                  {t('supplierShipments.wizard.details.field.shipDate')}
+                </label>
                 <input
                   type="date"
                   value={form.shipDate}
@@ -829,7 +885,9 @@ const SupplierShipments: React.FC = () => {
                 />
               </div>
               <div>
-                <label className={labelClass}>Estimated arrival *</label>
+                <label className={labelClass}>
+                  {t('supplierShipments.wizard.details.field.eta')}
+                </label>
                 <input
                   type="date"
                   value={form.eta}
@@ -841,13 +899,15 @@ const SupplierShipments: React.FC = () => {
           </FormSection>
 
           <FormSection
-            eyebrow="Packaging"
-            title="Cargo & batch"
-            description="Optional — fill what you have."
+            eyebrow={t('supplierShipments.wizard.details.packaging.eyebrow')}
+            title={t('supplierShipments.wizard.details.packaging.title')}
+            description={t('supplierShipments.wizard.details.packaging.desc')}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>Number of packages</label>
+                <label className={labelClass}>
+                  {t('supplierShipments.wizard.details.field.packages')}
+                </label>
                 <input
                   type="number"
                   min={1}
@@ -858,7 +918,9 @@ const SupplierShipments: React.FC = () => {
                 />
               </div>
               <div>
-                <label className={labelClass}>Total weight (KG)</label>
+                <label className={labelClass}>
+                  {t('supplierShipments.wizard.details.field.weight')}
+                </label>
                 <input
                   type="number"
                   min={0}
@@ -869,20 +931,24 @@ const SupplierShipments: React.FC = () => {
                 />
               </div>
               <div>
-                <label className={labelClass}>Batch number *</label>
+                <label className={labelClass}>
+                  {t('supplierShipments.wizard.details.field.batch')}
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. PKG-2026-441"
+                  placeholder={t('supplierShipments.placeholder.batch')}
                   value={form.batchNumber}
                   onChange={(e) => updateForm({ batchNumber: e.target.value })}
                   className={inputClass}
                 />
               </div>
               <div>
-                <label className={labelClass}>Lot number</label>
+                <label className={labelClass}>
+                  {t('supplierShipments.wizard.details.field.lot')}
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. LOT-2026-001"
+                  placeholder={t('supplierShipments.placeholder.lot')}
                   value={form.lotNumber}
                   onChange={(e) => updateForm({ lotNumber: e.target.value })}
                   className={inputClass}
@@ -892,12 +958,14 @@ const SupplierShipments: React.FC = () => {
           </FormSection>
 
           <FormSection
-            eyebrow="Documents & notes"
-            title="Supporting documents"
-            description="Packing list and special handling instructions."
+            eyebrow={t('supplierShipments.wizard.details.docs.eyebrow')}
+            title={t('supplierShipments.wizard.details.docs.title')}
+            description={t('supplierShipments.wizard.details.docs.desc')}
           >
             <div>
-              <label className={labelClass}>Packing list</label>
+              <label className={labelClass}>
+                {t('supplierShipments.wizard.details.field.packingList')}
+              </label>
               <label className="inline-flex items-center gap-2 cursor-pointer">
                 <input
                   type="file"
@@ -910,22 +978,24 @@ const SupplierShipments: React.FC = () => {
                 />
                 <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-border-input rounded-md text-sm text-teal font-semibold bg-bg-surface">
                   <Upload size={14} />
-                  Choose file
+                  {t('supplierShipments.wizard.details.chooseFile')}
                 </span>
                 <span
                   className={`text-xs ${form.packingList ? 'text-success' : 'text-text-tertiary'}`}
                 >
-                  {form.packingList || 'No file chosen'}
+                  {form.packingList || t('supplierShipments.wizard.details.noFile')}
                 </span>
               </label>
             </div>
             <div>
-              <label className={labelClass}>Special handling notes</label>
+              <label className={labelClass}>
+                {t('supplierShipments.wizard.details.field.notes')}
+              </label>
               <textarea
                 value={form.notes}
                 onChange={(e) => updateForm({ notes: e.target.value })}
                 rows={3}
-                placeholder="Temperature controlled, fragile, hazmat info…"
+                placeholder={t('supplierShipments.placeholder.notes')}
                 className={`${inputClass} resize-y`}
               />
             </div>
@@ -935,33 +1005,33 @@ const SupplierShipments: React.FC = () => {
     },
     {
       id: 'review',
-      title: 'Confirm & submit',
-      shortTitle: 'Review',
-      description: 'Verify before transmitting EDI 856.',
+      title: t('supplierShipments.wizard.review.title'),
+      shortTitle: t('supplierShipments.wizard.review.short'),
+      description: t('supplierShipments.wizard.review.desc'),
       content: (
         <div className="flex flex-col gap-5">
           <FormSection
-            eyebrow="Review"
-            title="ASN summary"
-            description="All values shown will be transmitted to Paragon."
+            eyebrow={t('supplierShipments.wizard.review.summary.eyebrow')}
+            title={t('supplierShipments.wizard.review.summary.title')}
+            description={t('supplierShipments.wizard.review.summary.desc')}
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                ['PO number', selectedPO?.poNumber ?? '—'],
-                ['Material', selectedPO?.lineItems[0]?.description ?? '—'],
+                [t('supplierShipments.wizard.review.field.poNumber'), selectedPO?.poNumber ?? '—'],
+                [t('supplierShipments.wizard.review.field.material'), selectedPO?.lineItems[0]?.description ?? '—'],
                 [
-                  'Quantity',
+                  t('supplierShipments.wizard.review.field.quantity'),
                   selectedPO?.lineItems[0]
                     ? `${selectedPO.lineItems[0].quantity.toLocaleString()} ${selectedPO.lineItems[0].uom}`
                     : '—',
                 ],
-                ['Carrier', form.carrier],
-                ['Tracking', form.trackingNumber || '—'],
-                ['Ship date', fmtDate(form.shipDate)],
-                ['ETA', form.eta ? fmtDate(form.eta) : '—'],
-                ['Packages', form.packages || '—'],
-                ['Batch number', form.batchNumber || '—'],
-                ['Lot number', form.lotNumber || '—'],
+                [t('supplierShipments.wizard.review.field.carrier'), form.carrier],
+                [t('supplierShipments.wizard.review.field.tracking'), form.trackingNumber || '—'],
+                [t('supplierShipments.wizard.review.field.shipDate'), fmtDate(form.shipDate)],
+                [t('supplierShipments.wizard.review.field.eta'), form.eta ? fmtDate(form.eta) : '—'],
+                [t('supplierShipments.wizard.review.field.packages'), form.packages || '—'],
+                [t('supplierShipments.wizard.review.field.batch'), form.batchNumber || '—'],
+                [t('supplierShipments.wizard.review.field.lot'), form.lotNumber || '—'],
               ].map(([k, v]) => (
                 <div key={k} className="bg-bg-hover rounded-md px-3 py-2">
                   <div className="text-label text-text-tertiary uppercase mb-0.5">
@@ -982,8 +1052,7 @@ const SupplierShipments: React.FC = () => {
               onChange={(e) => updateForm({ confirmed: e.target.checked })}
               className="mt-0.5 accent-teal"
             />
-            I confirm all shipment details are accurate and the goods match
-            the purchase order specifications.
+            {t('supplierShipments.wizard.review.confirm')}
           </label>
         </div>
       ),
@@ -994,19 +1063,19 @@ const SupplierShipments: React.FC = () => {
     <AppShellV2>
       <PageHeader
         breadcrumb={SHIPMENTS_CRUMB}
-        title="Shipments & ASN"
-        subtitle={`Advance Ship Notices · Paragon WMS integration · EDI 856 — ${mySupplier.name}.`}
+        title={t('supplierShipments.header.title')}
+        subtitle={t('supplierShipments.header.subtitle', { name: mySupplier.name })}
         actions={
           <BulkActionsBar
             actions={[
               {
-                label: 'Export EDI 856',
+                label: t('supplierShipments.action.exportEdi'),
                 icon: Download,
                 onClick: () =>
                   toast({
                     variant: 'info',
-                    title: 'EDI 856 export generated',
-                    description: 'Download will start shortly.',
+                    title: t('supplierShipments.toast.export.title'),
+                    description: t('supplierShipments.toast.export.desc'),
                   }),
               },
             ]}
@@ -1015,41 +1084,43 @@ const SupplierShipments: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {asns.length} shipments · {CONFIRMED_POS.length} confirmed POs
-        ready to ship
+        {t('supplierShipments.meta.summary', {
+          shipments: asns.length,
+          pos: CONFIRMED_POS.length,
+        })}
       </PageMetaLine>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
         <KpiCard
-          eyebrow="Draft"
+          eyebrow={t('supplierShipments.kpi.draft.eyebrow')}
           value={counts.Draft.toString()}
           icon={FileText}
           onClick={() => setKpiFilter('Draft')}
           active={statusFilter === 'Draft'}
         />
         <KpiCard
-          eyebrow="Submitted"
+          eyebrow={t('supplierShipments.kpi.submitted.eyebrow')}
           value={counts.Submitted.toString()}
           icon={Send}
           onClick={() => setKpiFilter('Submitted')}
           active={statusFilter === 'Submitted'}
         />
         <KpiCard
-          eyebrow="In Transit"
+          eyebrow={t('supplierShipments.kpi.inTransit.eyebrow')}
           value={counts['In Transit'].toString()}
           icon={Truck}
           onClick={() => setKpiFilter('In Transit')}
           active={statusFilter === 'In Transit'}
         />
         <KpiCard
-          eyebrow="Delivered"
+          eyebrow={t('supplierShipments.kpi.delivered.eyebrow')}
           value={counts.Delivered.toString()}
           icon={CheckCircle2}
           onClick={() => setKpiFilter('Delivered')}
           active={statusFilter === 'Delivered'}
         />
         <KpiCard
-          eyebrow="Discrepancy"
+          eyebrow={t('supplierShipments.kpi.discrepancy.eyebrow')}
           value={counts.Discrepancy.toString()}
           icon={AlertTriangle}
           onClick={() => setKpiFilter('Discrepancy')}
@@ -1059,9 +1130,9 @@ const SupplierShipments: React.FC = () => {
 
       <SubTabs<TabKey>
         options={[
-          { id: 'shipments', label: 'My Shipments', count: asns.length },
-          { id: 'create', label: 'Create ASN' },
-          { id: 'dock', label: 'Dock Appointments', count: 1 },
+          { id: 'shipments', label: t('supplierShipments.tab.myShipments'), count: asns.length },
+          { id: 'create', label: t('supplierShipments.tab.createAsn') },
+          { id: 'dock', label: t('supplierShipments.tab.dock'), count: 1 },
         ]}
         value={tab}
         onChange={setTab}
@@ -1093,7 +1164,7 @@ const SupplierShipments: React.FC = () => {
           }}
           onComplete={completeWizard}
           isStepValid={isStepValid}
-          completeLabel="Submit ASN"
+          completeLabel={t('asn.submit.confirm')}
         />
       )}
 
@@ -1102,12 +1173,18 @@ const SupplierShipments: React.FC = () => {
       <SidePanel
         open={submitTarget !== null}
         onClose={() => setSubmitTarget(null)}
-        title={submitTarget ? `Submit ${submitTarget.asnNumber}` : ''}
+        title={
+          submitTarget
+            ? t('supplierShipments.submitPanel.title', {
+                asnNumber: submitTarget.asnNumber,
+              })
+            : ''
+        }
         footerActions={
           submitTarget && (
             <>
               <Button variant="secondary" onClick={() => setSubmitTarget(null)}>
-                Cancel
+                {t('supplierShipments.action.cancel')}
               </Button>
               <Button
                 variant="outline"
@@ -1145,7 +1222,7 @@ const SupplierShipments: React.FC = () => {
                 value={submitForm.trackingNumber}
                 onChange={(e) => setSubmitForm((f) => ({ ...f, trackingNumber: e.target.value }))}
                 className={inputClass}
-                placeholder="e.g. JNE2026001234"
+                placeholder={t('supplierShipments.placeholder.tracking')}
               />
             </label>
             <label className="block">

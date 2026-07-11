@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { FileWarning } from 'lucide-react';
 import ExpandableWidget, {
@@ -26,6 +27,7 @@ const isFlagged = (c: ComplianceRow): boolean =>
   c.status === 'expiring' || c.status === 'expired';
 
 const BuyerComplianceWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = useCompliance();
 
@@ -81,7 +83,7 @@ const BuyerComplianceWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Compliance — expiring certs"
+      title={t('widget.compliance.title')}
       icon={FileWarning}
       count={count}
       live={false}
@@ -89,11 +91,11 @@ const BuyerComplianceWidget: React.FC = () => {
       flagLabel={
         count > 0
           ? expired > 0
-            ? `${count} flagged · ${expired} expired`
-            : `${count} expiring`
+            ? t('widget.compliance.flag.withExpired', { count, expired })
+            : t('widget.compliance.flag.expiring', { count })
           : undefined
       }
-      actionLabel={count > 0 ? 'View compliance' : undefined}
+      actionLabel={count > 0 ? t('widget.compliance.action') : undefined}
       onAction={count > 0 ? () => navigate('/buyer/compliance') : undefined}
       expandedRows={expandedRows}
     />

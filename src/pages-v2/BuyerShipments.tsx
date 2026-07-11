@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useModeLabel } from '../hooks/useModeLabel';
 import {
   Truck,
   Ship,
@@ -124,6 +125,7 @@ const TIME_SLOTS = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00
 const BuyerShipments: React.FC = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const ml = useModeLabel();
   const { toast } = useToast();
   // Breadcrumb is built from t() inside the component (mirrors BuyerDiscovery).
   const SHIPMENTS_CRUMB = [
@@ -553,15 +555,14 @@ const BuyerShipments: React.FC = () => {
             placeholder={t('shipments.search.placeholder')}
           />
         </div>
-        {/* i18n-defer: ShipmentMode enum (Sea/Air/Road) has no central label map;
-            the chip `id` is matched against `s.mode` (data) and the same tokens
-            render as data in the table/panel, so labels stay canonical EN until a
-            shared mode-label map exists (cf. statusLabel.ts). */}
+        {/* SEAT2-I18N-MODE-01: the chip `id` stays canonical EN (it is matched
+            against `s.mode` data); only the display label localizes via the
+            central modeLabel map. Same display-vs-data split as statusLabel. */}
         <FilterChipsBar<ShipmentMode>
           options={[
-            { id: 'Sea', label: 'Sea' },
-            { id: 'Air', label: 'Air' },
-            { id: 'Road', label: 'Road' },
+            { id: 'Sea', label: ml('Sea') },
+            { id: 'Air', label: ml('Air') },
+            { id: 'Road', label: ml('Road') },
           ]}
           value={selectedModes}
           onChange={toggleMode}
@@ -616,7 +617,7 @@ const BuyerShipments: React.FC = () => {
                   <TableCell>
                     <span className="inline-flex items-center gap-1.5 text-sm text-text-secondary">
                       <Icon size={14} />
-                      {s.mode}
+                      {ml(s.mode)}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -800,8 +801,7 @@ const BuyerShipments: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">{t('shipments.panel.mode')}</div>
-                  {/* i18n-defer: ShipmentMode enum (see FilterChipsBar note) */}
-                  <div className="text-text-primary">{selected.mode}</div>
+                  <div className="text-text-primary">{ml(selected.mode)}</div>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">{t('shipments.panel.containerNumber')}</div>

@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Truck } from 'lucide-react';
 import ExpandableWidget from '../../components/ui-v2/ExpandableWidget';
@@ -16,6 +17,7 @@ import { pendingAsns, discrepancyAsns, asnTier } from './buyerDerivations';
 // Buyer inbound — LIVE from the ASN store. Count is in-flight ASNs (submitted /
 // in transit); a Discrepancy is the red exception that needs reconciliation.
 const BuyerAsnInboundWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = useASNs();
 
@@ -64,7 +66,7 @@ const BuyerAsnInboundWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Inbound shipments (ASN)"
+      title={t('widget.asnInbound.title')}
       icon={Truck}
       count={count}
       live
@@ -72,11 +74,11 @@ const BuyerAsnInboundWidget: React.FC = () => {
       flagLabel={
         count > 0
           ? discrepancy > 0
-            ? `${count} inbound · ${discrepancy} discrepancy`
-            : `${count} inbound`
+            ? t('widget.asnInbound.flag.withDiscrepancy', { count, discrepancy })
+            : t('widget.asnInbound.flag.plain', { count })
           : undefined
       }
-      actionLabel={count > 0 ? 'View inbound' : undefined}
+      actionLabel={count > 0 ? t('widget.asnInbound.action') : undefined}
       onAction={count > 0 ? () => navigate('/buyer/shipments') : undefined}
       expandedRows={expandedRows}
     />

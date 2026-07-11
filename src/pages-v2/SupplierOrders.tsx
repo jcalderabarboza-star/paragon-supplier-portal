@@ -71,10 +71,12 @@ const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
-const ORDERS_CRUMB = ['TRANSACT', 'MY ORDERS'];
-
 const SupplierOrders: React.FC = () => {
   const { t } = useTranslation();
+  const ORDERS_CRUMB = [
+    t('supplierOrders.crumb.transact'),
+    t('supplierOrders.crumb.myOrders'),
+  ];
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
@@ -150,9 +152,9 @@ const SupplierOrders: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={ORDERS_CRUMB}
-        title="No purchase orders yet"
-        subtitle={`No purchase orders on file for ${mySupplier.name}.`}
-        message="Purchase orders issued by Paragon Corp will appear here."
+        title={t('supplierOrders.empty.title')}
+        subtitle={t('supplierOrders.empty.subtitle', { supplier: mySupplier.name })}
+        message={t('supplierOrders.empty.message')}
       />
     );
 
@@ -225,8 +227,10 @@ const SupplierOrders: React.FC = () => {
     if (!selected) return;
     toast({
       variant: 'info',
-      title: `Change request for ${selected.poNumber} submitted`,
-      description: 'Paragon team will review.',
+      title: t('supplierOrders.toast.changeSubmitted.title', {
+        poNumber: selected.poNumber,
+      }),
+      description: t('supplierOrders.toast.changeSubmitted.desc'),
     });
     closePanel();
   };
@@ -234,8 +238,10 @@ const SupplierOrders: React.FC = () => {
   const goToASN = () => {
     if (!selected) return;
     toast({
-      title: `ASN creation for ${selected.poNumber}`,
-      description: 'Open My Shipments & ASN to continue.',
+      title: t('supplierOrders.toast.asnCreation.title', {
+        poNumber: selected.poNumber,
+      }),
+      description: t('supplierOrders.toast.asnContinue'),
     });
     closePanel();
   };
@@ -246,8 +252,10 @@ const SupplierOrders: React.FC = () => {
       openOrderPanel(po, 'editing');
     } else if (po.status === POStatus.CONFIRMED) {
       toast({
-        title: `Creating ASN for ${po.poNumber}`,
-        description: 'Open My Shipments & ASN to continue.',
+        title: t('supplierOrders.toast.creatingAsn.title', {
+          poNumber: po.poNumber,
+        }),
+        description: t('supplierOrders.toast.asnContinue'),
       });
     } else {
       openOrderPanel(po, 'detail');
@@ -264,62 +272,72 @@ const SupplierOrders: React.FC = () => {
 
   const panelTitle = selected ? `PO ${selected.poNumber}` : '';
   const panelActionLabel = (po: PurchaseOrder): string => {
-    if (ACTION_STATUSES.includes(po.status)) return 'Confirm';
-    if (po.status === POStatus.CONFIRMED) return 'Create ASN';
-    return 'View';
+    if (ACTION_STATUSES.includes(po.status)) return t('supplierOrders.action.confirm');
+    if (po.status === POStatus.CONFIRMED) return t('supplierOrders.action.createAsn');
+    return t('supplierOrders.action.view');
   };
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['TRANSACT', 'MY ORDERS']}
-        title="My Orders"
-        subtitle={`Purchase orders received from Paragon Corp — ${mySupplier.name}.`}
+        breadcrumb={ORDERS_CRUMB}
+        title={t('supplierOrders.header.title')}
+        subtitle={t('supplierOrders.header.subtitle', { supplier: mySupplier.name })}
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {MY_POS.length} orders · last updated <Data>{fmtDate(maxOrderDate)}</Data>
+        {MY_POS.length === 1
+          ? t('supplierOrders.meta.orders.one', { count: MY_POS.length })
+          : t('supplierOrders.meta.orders.other', { count: MY_POS.length })}{' '}
+        · {t('supplierOrders.meta.lastUpdated')}{' '}
+        <Data>{fmtDate(maxOrderDate)}</Data>
       </PageMetaLine>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
         <KpiCard
-          eyebrow="Open Orders"
+          eyebrow={t('supplierOrders.kpi.openOrders.eyebrow')}
           value={counts.action.toString()}
           subtitle={
             counts.action > 0 ? (
-              <span className="text-warning-hover">Needs your action</span>
+              <span className="text-warning-hover">
+                {t('supplierOrders.kpi.openOrders.needsAction')}
+              </span>
             ) : (
-              'All actions cleared'
+              t('supplierOrders.kpi.openOrders.cleared')
             )
           }
           icon={Clock}
         />
         <KpiCard
-          eyebrow="In Progress"
+          eyebrow={t('supplierOrders.kpi.inProgress.eyebrow')}
           value={counts.progress.toString()}
-          subtitle="Confirmed · awaiting delivery"
+          subtitle={t('supplierOrders.kpi.inProgress.subtitle')}
           icon={Truck}
         />
         <KpiCard
-          eyebrow="Total Value Pending"
+          eyebrow={t('supplierOrders.kpi.totalValue.eyebrow')}
           value={fmtIDR(totalValuePending)}
-          subtitle="Not yet delivered"
+          subtitle={t('supplierOrders.kpi.totalValue.subtitle')}
           icon={Wallet}
         />
         <KpiCard
-          eyebrow="Delivered"
+          eyebrow={t('supplierOrders.kpi.delivered.eyebrow')}
           value={counts.completed.toString()}
-          subtitle={<span className="text-success">Completed POs</span>}
+          subtitle={
+            <span className="text-success">
+              {t('supplierOrders.kpi.delivered.subtitle')}
+            </span>
+          }
           icon={CheckCircle2}
         />
       </div>
 
       <SubTabs<TabKey>
         options={[
-          { id: 'all', label: 'All orders', count: counts.all },
-          { id: 'action', label: 'Needs action', count: counts.action },
-          { id: 'progress', label: 'In progress', count: counts.progress },
-          { id: 'completed', label: 'Completed', count: counts.completed },
+          { id: 'all', label: t('supplierOrders.tab.all'), count: counts.all },
+          { id: 'action', label: t('supplierOrders.tab.action'), count: counts.action },
+          { id: 'progress', label: t('supplierOrders.tab.progress'), count: counts.progress },
+          { id: 'completed', label: t('supplierOrders.tab.completed'), count: counts.completed },
         ]}
         value={activeTab}
         onChange={setActiveTab}
@@ -331,10 +349,15 @@ const SupplierOrders: React.FC = () => {
           <AlertCircle size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>
-              {counts.action} order{counts.action !== 1 ? 's' : ''} need your
-              confirmation:{' '}
+              {counts.action === 1
+                ? t('supplierOrders.banner.needConfirmation.one', {
+                    count: counts.action,
+                  })
+                : t('supplierOrders.banner.needConfirmation.other', {
+                    count: counts.action,
+                  })}{' '}
             </strong>
-            click a row to confirm quantities and delivery date.
+            {t('supplierOrders.banner.instruction')}
           </div>
         </div>
       )}
@@ -342,13 +365,13 @@ const SupplierOrders: React.FC = () => {
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableHeaderCell>PO #</TableHeaderCell>
-            <TableHeaderCell>Order date</TableHeaderCell>
-            <TableHeaderCell>Requested delivery</TableHeaderCell>
-            <TableHeaderCell className="text-right">Items</TableHeaderCell>
-            <TableHeaderCell className="text-right">Value</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell className="text-right">Action</TableHeaderCell>
+            <TableHeaderCell>{t('supplierOrders.col.po')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierOrders.col.orderDate')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierOrders.col.requestedDelivery')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('supplierOrders.col.items')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('supplierOrders.col.value')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierOrders.col.status')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('supplierOrders.col.action')}</TableHeaderCell>
           </TableHeader>
           <tbody>
             {displayPOs.map((po) => (
@@ -399,7 +422,7 @@ const SupplierOrders: React.FC = () => {
                   colSpan={7}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No orders in this category.
+                  {t('supplierOrders.table.empty')}
                 </td>
               </tr>
             )}
@@ -417,15 +440,15 @@ const SupplierOrders: React.FC = () => {
               {panelMode === 'detail' && (
                 <>
                   <Button variant="secondary" onClick={closePanel}>
-                    Close
+                    {t('supplierOrders.action.close')}
                   </Button>
                   {ACTION_STATUSES.includes((selectedLive ?? selected).status) ? (
                     <Button variant="outline" onClick={startEditing}>
-                      Confirm order
+                      {t('po.confirm.action')}
                     </Button>
                   ) : (selectedLive ?? selected).status === POStatus.CONFIRMED ? (
                     <Button variant="outline" onClick={goToASN}>
-                      Create ASN
+                      {t('supplierOrders.action.createAsn')}
                     </Button>
                   ) : null}
                 </>
@@ -436,7 +459,7 @@ const SupplierOrders: React.FC = () => {
                     variant="secondary"
                     onClick={() => setPanelMode('change-request')}
                   >
-                    Request change instead
+                    {t('supplierOrders.action.requestChange')}
                   </Button>
                   <Button
                     variant="outline"
@@ -456,20 +479,20 @@ const SupplierOrders: React.FC = () => {
                     variant="secondary"
                     onClick={() => setPanelMode('editing')}
                   >
-                    Back to confirm
+                    {t('supplierOrders.action.backToConfirm')}
                   </Button>
                   <Button variant="outline" onClick={submitChangeRequest}>
-                    Submit change request
+                    {t('supplierOrders.action.submitChange')}
                   </Button>
                 </>
               )}
               {panelMode === 'confirmed' && (
                 <>
                   <Button variant="secondary" onClick={closePanel}>
-                    Close
+                    {t('supplierOrders.action.close')}
                   </Button>
                   <Button variant="outline" icon={Truck} onClick={goToASN}>
-                    Create ASN now
+                    {t('supplierOrders.action.createAsnNow')}
                   </Button>
                 </>
               )}
@@ -481,35 +504,35 @@ const SupplierOrders: React.FC = () => {
           <div className="space-y-6">
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Key facts
+                {t('supplierOrders.panel.keyFacts')}
               </h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="text-text-tertiary">Order date</dt>
+                  <dt className="text-text-tertiary">{t('supplierOrders.col.orderDate')}</dt>
                   <dd className="text-text-primary font-medium">
                     <Data>{fmtDate(selected.orderDate)}</Data>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Requested delivery</dt>
+                  <dt className="text-text-tertiary">{t('supplierOrders.col.requestedDelivery')}</dt>
                   <dd className="text-text-primary font-medium">
                     <Data>{fmtDate(selected.requestedDeliveryDate)}</Data>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Line items</dt>
+                  <dt className="text-text-tertiary">{t('supplierOrders.panel.lineItems')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selected.lineItems.length}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Total value</dt>
+                  <dt className="text-text-tertiary">{t('supplierOrders.panel.totalValue')}</dt>
                   <dd className="text-text-primary font-semibold">
                     <Data>{fmtIDR(selected.totalValue)}</Data>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Status</dt>
+                  <dt className="text-text-tertiary">{t('supplierOrders.col.status')}</dt>
                   <dd>
                     <StatusPill variant={statusTone((selectedLive ?? selected).status)}>
                       {(selectedLive ?? selected).status}
@@ -517,8 +540,9 @@ const SupplierOrders: React.FC = () => {
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Channel</dt>
+                  <dt className="text-text-tertiary">{t('supplierOrders.panel.channel')}</dt>
                   <dd className="text-text-primary font-medium">
+                    {/* i18n-defer: mock/sample data (fixture-derived channel value) */}
                     {selected.channel}
                   </dd>
                 </div>
@@ -528,22 +552,22 @@ const SupplierOrders: React.FC = () => {
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
                 {panelMode === 'editing'
-                  ? 'Line items — confirm quantities'
-                  : 'Line items'}
+                  ? t('supplierOrders.panel.lineItemsConfirm')
+                  : t('supplierOrders.panel.lineItems')}
               </h3>
               <div className="border border-border-subtle rounded-md overflow-hidden">
                 <table className="w-full text-xs">
                   <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
                     <tr>
                       <th className="text-left px-3 py-2 font-semibold">
-                        Material
+                        {t('supplierOrders.panel.col.material')}
                       </th>
                       <th className="text-right px-3 py-2 font-semibold">
-                        Ordered
+                        {t('supplierOrders.panel.col.ordered')}
                       </th>
                       {panelMode === 'editing' && (
                         <th className="text-right px-3 py-2 font-semibold">
-                          Confirmed
+                          {t('supplierOrders.panel.col.confirmed')}
                         </th>
                       )}
                     </tr>
@@ -559,6 +583,7 @@ const SupplierOrders: React.FC = () => {
                             {li.materialCode}
                           </Data>
                           <div className="text-text-primary mt-0.5">
+                            {/* i18n-defer: mock/sample data (fixture line-item description) */}
                             {li.description}
                           </div>
                         </td>
@@ -595,12 +620,12 @@ const SupplierOrders: React.FC = () => {
             {panelMode === 'editing' && (
               <section>
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
-                  Delivery & notes
+                  {t('supplierOrders.panel.deliveryNotes')}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                   <div>
                     <label className={labelClass}>
-                      Confirmed delivery date
+                      {t('supplierOrders.panel.confirmedDeliveryDate')}
                     </label>
                     <input
                       type="date"
@@ -610,20 +635,19 @@ const SupplierOrders: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Notes for Paragon</label>
+                    <label className={labelClass}>{t('supplierOrders.panel.notesLabel')}</label>
                     <input
                       type="text"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="Optional message…"
+                      placeholder={t('supplierOrders.panel.notesPlaceholder')}
                       className={inputClass}
                     />
                   </div>
                 </div>
                 {(hasQtyChange || hasDateChange) && (
                   <div className="bg-warning-soft border-l-2 border-warning rounded px-3 py-2 text-xs text-warning-hover">
-                    Confirmed values differ from the original PO. Paragon will
-                    review your changes.
+                    {t('supplierOrders.panel.diffWarning')}
                   </div>
                 )}
               </section>
@@ -632,17 +656,16 @@ const SupplierOrders: React.FC = () => {
             {panelMode === 'change-request' && (
               <section>
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
-                  Change request
+                  {t('supplierOrders.panel.changeRequest')}
                 </h3>
                 <p className="text-xs text-text-secondary mb-2">
-                  Describe the change needed (e.g. reduced quantity,
-                  alternative delivery date).
+                  {t('supplierOrders.panel.changeRequestHint')}
                 </p>
                 <textarea
                   className={`${inputClass} min-h-[96px] resize-y`}
                   value={changeText}
                   onChange={(e) => setChangeText(e.target.value)}
-                  placeholder="What needs to change?"
+                  placeholder={t('supplierOrders.panel.changeRequestPlaceholder')}
                 />
               </section>
             )}
@@ -653,10 +676,11 @@ const SupplierOrders: React.FC = () => {
                   <CheckCircle2 size={16} className="text-success" />
                   <div>
                     <div className="text-sm font-bold text-success">
-                      Order confirmed
+                      {t('supplierOrders.panel.orderConfirmed')}
                     </div>
                     <div className="text-xs text-text-secondary">
-                      <Data>{selected.poNumber}</Data> · Confirmed at{' '}
+                      <Data>{selected.poNumber}</Data> ·{' '}
+                      {t('supplierOrders.panel.confirmedAt')}{' '}
                       <Data>{confirmedAt}</Data>
                     </div>
                   </div>
@@ -664,7 +688,7 @@ const SupplierOrders: React.FC = () => {
                 <dl className="grid grid-cols-3 gap-3 mt-3">
                   <div className="bg-white rounded px-3 py-2 border border-border-subtle">
                     <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                      Delivery
+                      {t('supplierOrders.panel.deliveryShort')}
                     </dt>
                     <dd className="text-sm font-bold text-text-primary">
                       <Data>{fmtDate(deliveryDate)}</Data>
@@ -672,7 +696,7 @@ const SupplierOrders: React.FC = () => {
                   </div>
                   <div className="bg-white rounded px-3 py-2 border border-border-subtle">
                     <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                      Total qty
+                      {t('supplierOrders.panel.totalQty')}
                     </dt>
                     <dd className="text-sm font-bold text-text-primary">
                       <Data>{totalConfirmedQty.toLocaleString()} units</Data>
@@ -680,16 +704,16 @@ const SupplierOrders: React.FC = () => {
                   </div>
                   <div className="bg-white rounded px-3 py-2 border border-border-subtle">
                     <dt className="text-label text-text-tertiary uppercase mb-0.5">
-                      Next
+                      {t('supplierOrders.panel.next')}
                     </dt>
                     <dd className="text-sm font-bold text-teal inline-flex items-center gap-1">
-                      Create ASN <ChevronRight size={12} />
+                      {t('supplierOrders.action.createAsn')} <ChevronRight size={12} />
                     </dd>
                   </div>
                 </dl>
                 {notes && (
                   <div className="mt-3 text-xs text-text-secondary bg-white rounded px-3 py-2 border border-border-subtle">
-                    Notes: {notes}
+                    {t('supplierOrders.panel.notesPrefix')} {notes}
                   </div>
                 )}
               </section>

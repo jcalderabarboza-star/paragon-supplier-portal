@@ -285,3 +285,73 @@ BuyerRisk `Probability: {n}%`, `AI-Powered`, `{alt.feasibility} feasibility` —
 words (Quality/Regulatory/Environmental) localize in the *filter* chips but the table
 category pill renders EN (no central category map yet) — a minor filter-vs-pill
 inconsistency, resolvable by a future category map.
+
+## Batch 5 additions (modeLabel + dashboard widgets + supplier spine)
+
+### Part A — central ShipmentMode map (SEAT2-I18N-MODE-01) → closes the Batch 4 gap
+`src/lib/modeLabel.ts` (`modeLabelKey` + `mode*Resources` + `useModeLabel` hook),
+sibling of statusLabel/priorityLabel. Slugs namespaced `mode.*`.
+
+| EN | ID |
+|---|---|
+| Sea | Laut |
+| Air | Udara |
+| Road | Darat |
+
+Display-only: the stored `s.mode` value and the `FilterChipsBar` `id` stay canonical
+EN (the id drives `s.mode` filtering); only the label localizes. Wired on BuyerShipments
+(table cell + filter chips + panel). SupplierShipments does NOT render mode (the ASN type
+has no `mode` field), so no integration there — the map still delivers on BuyerShipments
+and any future ShipmentMode render.
+
+### Part B — shared dashboard widget subsystem (`widget.*`, 46 keys)
+ONE fragment covers the shared `ExpandableWidget` shell + all 13 adapter widgets, so
+translating once flips every widget on BOTH the Buyer and Supplier dashboards. Shell
+chrome (Live/Sample honesty dots, All clear, aria labels) localizes centrally; each
+adapter's title/CTA/flag localizes at its source.
+
+| EN | ID | EN | ID |
+|---|---|---|---|
+| Live / Sample | Langsung / Sampel | Orders to confirm | Pesanan untuk dikonfirmasi |
+| All clear | Semua beres | Confirm orders | Konfirmasi pesanan |
+| Inbound shipments (ASN) | Pengiriman masuk (ASN) | Invoice payment | Pembayaran faktur |
+| Compliance — expiring certs | Kepatuhan — sertifikat akan kedaluwarsa | Certificates — expiring | Sertifikat — akan kedaluwarsa |
+| Goods receipts — 3-way match | Penerimaan barang — pencocokan tiga arah | RFQs to respond | RFQ untuk direspons |
+| Inventory — low stock | Inventaris — stok rendah | RFQs awaiting award | RFQ menunggu pemenangan |
+| Open purchase orders | Pesanan pembelian terbuka | Risk alerts | Peringatan risiko |
+| Invoices — AP aging | Faktur — umur AP | open exception(s) | pengecualian terbuka |
+
+Honest-by-construction: the Live/Sample tokens are **display-translation only** — the
+`live` boolean still structurally gates which token renders (guard test preserved).
+Count-dependent flag phrases use `{{count}}`/`{{overdue}}`/`{{maxDays}}` interpolation;
+BuyerAlertsBar's "exception(s)" uses `.one`/`.other`. `d`→`h`, `>48h`→`>48j` abbrevs.
+
+### Part C — supplier spine pages
+`supplierOrders.*` (69), `supplierShipments.*` (115), `supplierInvoices.*` (80),
+`supplierDocuments.*` (68). Chips resolve via central status/priority/mode maps.
+
+| EN | ID | EN | ID |
+|---|---|---|---|
+| My Orders | Pesanan Saya | Payment lifecycle | Siklus hidup pembayaran |
+| My Invoices | Faktur Saya | Bank credited | Bank dikreditkan |
+| My Documents | Dokumen Saya | Amount paid | Jumlah dibayar |
+| Change request | Permintaan perubahan | Buyer contact | Narahubung pembeli |
+| Requested delivery | Pengiriman diminta | Credit note | Nota kredit |
+| Gross weight | Berat kotor | Quantity mismatch | Ketidaksesuaian kuantitas |
+| Cartons | Karton | Upload file | Unggah berkas (berkas = file) |
+| Temperature | Suhu | Tax & Legal | Pajak & Hukum |
+| Dock appointment | Janji temu dermaga | Issuer | Penerbit |
+| Estimated arrival | Perkiraan tiba | No expiry | Tanpa kedaluwarsa |
+| Filtered by | Disaring menurut | In good standing | Dalam kondisi baik |
+
+**Kept as loanwords/codes:** ASN, PO, RFQ, SAP, WIB, WhatsApp, Email, e-invoicing.
+**Stored-as-data kept canonical EN (flagged):** filter-chip ids (Compliance category,
+Documents category, SupplierShipments AsnStatus) drive fixture filtering — id canonical,
+label localized; PO `<option value>` (mono PO number); Channel enum (WhatsApp/Email/Web/
+API — no central channel map, rendered as data). **Deferred (i18n-defer):** fixture
+narratives, dock-appointment values, proper nouns, line-item descriptions.
+
+**Recommended follow-up:** a central `categoryLabel.ts` (Halal Compliance / BPOM
+Regulatory / Tax & Legal / Quality / Contract / Quality-Regulatory-Environmental) to
+close the filter-chip-vs-table-pill split flagged on BuyerCompliance + SupplierDocuments;
+a `channelLabel.ts` for the WhatsApp/Email/Web/API display axis.

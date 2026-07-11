@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { FileWarning } from 'lucide-react';
 import ExpandableWidget, {
@@ -22,6 +23,7 @@ const isExpiring = (d: SupplierDocument): boolean =>
   d.status === 'Expiring Soon' || d.status === 'Expired';
 
 const SupplierCertsExpiringWidget: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const query = useDocuments();
 
@@ -71,7 +73,7 @@ const SupplierCertsExpiringWidget: React.FC = () => {
 
   return (
     <ExpandableWidget
-      title="Certificates — expiring"
+      title={t('widget.certsExpiring.title')}
       icon={FileWarning}
       count={count}
       live={false}
@@ -79,11 +81,11 @@ const SupplierCertsExpiringWidget: React.FC = () => {
       flagLabel={
         count > 0
           ? expired > 0
-            ? `${count} flagged · ${expired} expired`
-            : `${count} expiring`
+            ? t('widget.certsExpiring.flag.withExpired', { count, expired })
+            : t('widget.certsExpiring.flag.expiring', { count })
           : undefined
       }
-      actionLabel={count > 0 ? 'View documents' : undefined}
+      actionLabel={count > 0 ? t('widget.certsExpiring.action') : undefined}
       onAction={count > 0 ? () => navigate('/supplier/documents') : undefined}
       expandedRows={expandedRows}
     />
