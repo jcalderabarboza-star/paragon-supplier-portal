@@ -29,6 +29,7 @@ import Button from '../components/ui-v2/Button';
 import GRInspectionWizard from '../components/v2-features/GRInspectionWizard';
 import { useToast } from '../hooks/useToast';
 import { useTranslation } from 'react-i18next';
+import { useEnumLabel } from '../hooks/useEnumLabel';
 import {
   useGoodsReceiptPost,
   useGoodsReceiptSettle,
@@ -151,6 +152,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const el = useEnumLabel();
   const postMutation = useGoodsReceiptPost();
   const settleMutation = useGoodsReceiptSettle();
   const supplierById = useMemo(
@@ -290,7 +292,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       {
         id: 't4',
         title: t('goodsReceipt.timeline.dispositionDecision'),
-        timestamp: g.disposition !== 'Pending' ? g.disposition : undefined,
+        timestamp: g.disposition !== 'Pending' ? el(g.disposition) : undefined,
         status: at(4),
       },
       {
@@ -621,7 +623,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
-                      {g.disposition}
+                      {el(g.disposition)}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -724,7 +726,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.disposition')}</div>
-                  <div className="text-text-primary">{selected.disposition}</div>
+                  <div className="text-text-primary">{el(selected.disposition)}</div>
                 </div>
               </div>
             </section>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { statusLabelKey } from '../../lib/statusLabel';
+import { enumLabelKey } from '../../lib/priorityLabel';
 
 type Variant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
@@ -35,10 +36,16 @@ const StatusPill: React.FC<StatusPillProps> = ({
   className = '',
 }) => {
   const { t } = useTranslation();
-  // Localize known canonical status labels from the central map; anything else
+  // Localize known canonical labels from the central maps; anything else
   // (domain-specific labels, non-string children) renders verbatim. In EN the
   // resolved value equals the canonical string, so output is unchanged.
-  const key = typeof children === 'string' ? statusLabelKey(children) : null;
+  // statusLabel wins for overlapping tokens; priority/risk/enum vocab is the
+  // fallback (SEAT2-I18N-ENUM-01) — a pill is display-only, so this is always
+  // an honest display translation.
+  const key =
+    typeof children === 'string'
+      ? statusLabelKey(children) ?? enumLabelKey(children)
+      : null;
   const label = key ? t(key) : children;
   return (
     <span

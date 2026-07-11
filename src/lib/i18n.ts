@@ -12,6 +12,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import { statusResourcesEn, statusResourcesId } from './statusLabel';
+import { enumResourcesEn, enumResourcesId } from './priorityLabel';
 import { registrationEn, registrationId } from './i18n/registration';
 import { contractsEn, contractsId } from './i18n/contracts';
 import { buyerWhatsAppEn, buyerWhatsAppId } from './i18n/buyerWhatsApp';
@@ -39,6 +40,7 @@ export const resources = {
   en: {
     translation: {
       ...statusResourcesEn,
+      ...enumResourcesEn,
       ...registrationEn,
       ...contractsEn,
       ...buyerWhatsAppEn,
@@ -179,6 +181,7 @@ export const resources = {
   id: {
     translation: {
       ...statusResourcesId,
+      ...enumResourcesId,
       ...registrationId,
       ...contractsId,
       ...buyerWhatsAppId,

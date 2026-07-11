@@ -172,11 +172,56 @@ HTML, PDF, Mini Program, "Order Confirmation Key" (SAP field).
 East→Timur Tengah. **Kept as codes/loanwords:** PR, PIR, OA, ME21N, S/4HANA (Phase
 →Fase), cost-center codes (CC-…), UoM codes (KG/L/PCS/MT/BOX), warehouse/role codes.
 
-### Known gap — priority/severity enums (cross-cutting, needs central map)
-`High / Medium / Low / Critical` (priority, risk-level, qualification-status) render
-untranslated in ID. They are a shared semantic vocabulary — like status labels but
-excluded from `statusTone.ts` because their *tone* is context-dependent (severity vs
-priority vs stock). Their *label* is not context-dependent, so the fix is a small
-central priority/severity-label map (analogous to `statusLabel.ts`) resolved wherever
-these chips render, rather than inconsistent per-page keys. Recommended as a dedicated
-follow-up (touches Requisitions, Risk, Scorecard, Discovery, Inventory).
+### Known gap — priority/severity enums → RESOLVED (enum-label mini-batch)
+~~`High / Medium / Low / Critical` render untranslated in ID.~~ **CLOSED** by the
+central enum-label map `src/lib/priorityLabel.ts` (SEAT2-I18N-ENUM-01), the
+priority/severity sibling of `statusLabel.ts`. See the section below.
+
+## Enum-label mini-batch (SEAT2-I18N-ENUM-01) — priority / severity / disposition
+
+Central map: `src/lib/priorityLabel.ts` (`enumLabelKey` + `enum*Resources`), consumed
+two ways — `StatusPill` falls back to it after `statusLabel` (so every pill-rendered
+priority/risk/qualification chip localizes with **zero page edits**), and the
+`useEnumLabel()` hook covers non-pill display sites. Slugs are namespaced `enum.*` so
+they never collide with `status.*`; `statusLabel` wins for overlapping tokens, keeping
+existing status pills byte-identical.
+
+| EN | ID | Axis |
+|---|---|---|
+| Critical | Kritis | priority / risk severity |
+| High | Tinggi | priority / risk severity |
+| Medium | Sedang | priority / risk severity |
+| Low | Rendah | priority / risk severity |
+| Accept | Terima | GR disposition |
+| Reject | Tolak | GR disposition |
+| Quarantine | Karantina | GR disposition |
+| Return to Supplier | Kembalikan ke Pemasok | GR disposition |
+| Pending | Menunggu | GR disposition |
+| Pass | Lulus | inspection check |
+| Fail | Gagal | inspection check |
+| N/A | T/A | inspection check |
+
+Resolution is **case-insensitive**: `RiskSeverity` is stored lowercase (`'high'`),
+`PRPriority` is capitalized (`'High'`) — both resolve to the same label. One EN-output
+change: BuyerRisk's severity chips previously printed the raw lowercase enum
+(`critical`) verbatim; they now render the canonical capitalized token (`Critical` /
+`Kritis`), aligning with every other chip's grammar.
+
+**Kept canonical EN (stored-as-data — display/data cannot cleanly separate):**
+- GR wizard `receivedBy` **ROLES** (`Warehouse Supervisor` / `QC Inspector` /
+  `Operations Manager`) — the `<option>` label *is* the value submitted on
+  `t_gr_create`; translating it would corrupt the recorded receiver. Already
+  `i18n-defer`; unchanged.
+- GR wizard `warehouse` **LOCATIONS** — proper-noun facility names, out of scope.
+- Inspection **Pass/Fail/N/A** radios ARE stored (`inspectionResults[].*Check` on
+  `createGR`), but display and data *do* separate cleanly (state/`value`/`checked`
+  stay canonical `v`; only the sibling label text localizes) — so the label is
+  translated while the submitted value stays English.
+- Requisitions new-PR priority `<option>` — `value={p}` pinned canonical so
+  `form.priority` stays English even as the label localizes (the form is
+  non-persisting today regardless).
+
+**Out of scope (flagged):** `SupplierPerformance` renders `{item.priority} priority`
+as a composed phrase (mixed string+text node — StatusPill can't localize it, and the
+page is not in this batch's charter). Needs a `<Trans>`-style split when that page is
+extracted.
