@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -48,21 +49,23 @@ const PRIORITY_VARIANT: Record<Priority, 'success' | 'warning' | 'danger' | 'inf
   Low: 'neutral',
 };
 
-const STATUS_OPTIONS: { id: StatusFilter; label: string }[] = [
-  { id: 'All', label: 'All' },
-  { id: 'Expired', label: 'Expired' },
-  { id: 'Expiring', label: 'Expiring' },
-  { id: 'Missing', label: 'Missing' },
-  { id: 'Under Review', label: 'Under Review' },
-  { id: 'Valid', label: 'Valid' },
+// Option ids stay canonical EN (they drive filtering against fixture values);
+// only the display `label` localizes, via the labelKey resolved at render.
+const STATUS_OPTIONS: { id: StatusFilter; labelKey: string }[] = [
+  { id: 'All', labelKey: 'compliance.filter.status.all' },
+  { id: 'Expired', labelKey: 'compliance.filter.status.expired' },
+  { id: 'Expiring', labelKey: 'compliance.filter.status.expiring' },
+  { id: 'Missing', labelKey: 'compliance.filter.status.missing' },
+  { id: 'Under Review', labelKey: 'compliance.filter.status.underReview' },
+  { id: 'Valid', labelKey: 'compliance.filter.status.valid' },
 ];
 
-const CATEGORY_OPTIONS: { id: CategoryFilter; label: string }[] = [
-  { id: 'All', label: 'All' },
-  { id: 'Halal', label: 'Halal' },
-  { id: 'Quality', label: 'Quality' },
-  { id: 'Regulatory', label: 'Regulatory' },
-  { id: 'Environmental', label: 'Environmental' },
+const CATEGORY_OPTIONS: { id: CategoryFilter; labelKey: string }[] = [
+  { id: 'All', labelKey: 'compliance.filter.category.all' },
+  { id: 'Halal', labelKey: 'compliance.filter.category.halal' },
+  { id: 'Quality', labelKey: 'compliance.filter.category.quality' },
+  { id: 'Regulatory', labelKey: 'compliance.filter.category.regulatory' },
+  { id: 'Environmental', labelKey: 'compliance.filter.category.environmental' },
 ];
 
 const fmtDate = (s: string | null): string => {
@@ -75,6 +78,7 @@ const fmtDate = (s: string | null): string => {
 };
 
 const BuyerCompliance: React.FC = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('All');
@@ -127,18 +131,18 @@ const BuyerCompliance: React.FC = () => {
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['INTELLIGENCE', 'COMPLIANCE TRACKER']}
-        title="Compliance Tracker"
-        subtitle="Halal · BPOM · ISO · REACH · GMP — October 2026 BPJPH mandatory transition."
+        breadcrumb={[t('compliance.crumb.intelligence'), t('compliance.crumb.tracker')]}
+        title={t('compliance.header.title')}
+        subtitle={t('compliance.header.subtitle')}
         actions={
           <BulkActionsBar
             primary={{
-              label: 'Export Report',
+              label: t('compliance.action.exportReport'),
               icon: Download,
               onClick: () =>
                 toast({
                   variant: 'info',
-                  title: 'Generating compliance report PDF',
+                  title: t('compliance.toast.exporting'),
                 }),
             }}
           />
@@ -146,22 +150,23 @@ const BuyerCompliance: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {COMPLIANCE_ITEMS.length} certificates · last refreshed {today}
+        {t('compliance.meta.summary', { count: COMPLIANCE_ITEMS.length, date: today })}
       </PageMetaLine>
 
       <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-3">
         <Shield size={16} className="text-warning-hover shrink-0 mt-0.5" />
         <div className="text-sm text-text-secondary">
           <strong className="text-warning-hover">
-            BPJPH Mandatory Transition — October 2026:
+            {t('compliance.bpjph.banner.title')}
           </strong>{' '}
-          All cosmetics and personal care products distributed in Indonesia
-          must carry BPJPH-issued halal certification. Suppliers with MUI-only
-          certificates must initiate BPJPH applications now.{' '}
+          {t('compliance.bpjph.banner.body')}{' '}
           <strong className="text-text-primary">
-            {bpjph.compliant} of {bpjph.total} halal certs
+            {t('compliance.bpjph.banner.certs', {
+              compliant: bpjph.compliant,
+              total: bpjph.total,
+            })}
           </strong>{' '}
-          are BPJPH-compliant.
+          {t('compliance.bpjph.banner.compliantSuffix')}
         </div>
       </div>
 
@@ -169,11 +174,10 @@ const BuyerCompliance: React.FC = () => {
         <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
           <div>
             <div className="text-sm font-bold text-text-primary">
-              BPJPH mandatory deadline
+              {t('compliance.deadline.title')}
             </div>
             <div className="text-xs text-text-tertiary mt-0.5">
-              All Indonesian cosmetics must carry BPJPH halal cert by 17 Oct
-              2026.
+              {t('compliance.deadline.subtitle')}
             </div>
           </div>
           <div className="text-right shrink-0">
@@ -186,7 +190,7 @@ const BuyerCompliance: React.FC = () => {
               {deadline.daysLeft}
             </Data>
             <div className="text-xs text-text-tertiary mt-1">
-              days remaining
+              {t('compliance.deadline.daysRemaining')}
             </div>
           </div>
         </div>
@@ -202,59 +206,62 @@ const BuyerCompliance: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
         <KpiCard
-          eyebrow="Expired"
+          eyebrow={t('compliance.kpi.expired.eyebrow')}
           value={counts.expired.toString()}
-          subtitle={<span className="text-danger">Blocks new POs</span>}
+          subtitle={<span className="text-danger">{t('compliance.kpi.expired.subtitle')}</span>}
           icon={AlertTriangle}
         />
         <KpiCard
-          eyebrow="Expiring ≤90d"
+          eyebrow={t('compliance.kpi.expiring.eyebrow')}
           value={counts.expiring.toString()}
-          subtitle={<span className="text-warning-hover">Renewal window open</span>}
+          subtitle={<span className="text-warning-hover">{t('compliance.kpi.expiring.subtitle')}</span>}
           icon={Clock}
         />
         <KpiCard
-          eyebrow="Missing"
+          eyebrow={t('compliance.kpi.missing.eyebrow')}
           value={counts.missing.toString()}
-          subtitle={<span className="text-danger">Application not started</span>}
+          subtitle={<span className="text-danger">{t('compliance.kpi.missing.subtitle')}</span>}
           icon={FileQuestion}
         />
         <KpiCard
-          eyebrow="Valid"
+          eyebrow={t('compliance.kpi.valid.eyebrow')}
           value={counts.valid.toString()}
-          subtitle="In good standing"
+          subtitle={t('compliance.kpi.valid.subtitle')}
           icon={CheckCircle2}
         />
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <FilterChipsBar<StatusFilter>
-          options={STATUS_OPTIONS}
+          options={STATUS_OPTIONS.map((o) => ({ id: o.id, label: t(o.labelKey) }))}
           value={statusFilter}
           onChange={setStatusFilter}
         />
         <FilterChipsBar<CategoryFilter>
-          options={CATEGORY_OPTIONS}
+          options={CATEGORY_OPTIONS.map((o) => ({ id: o.id, label: t(o.labelKey) }))}
           value={categoryFilter}
           onChange={setCategoryFilter}
         />
         <span className="text-meta text-text-tertiary">
-          {filtered.length} of {COMPLIANCE_ITEMS.length} items
+          {t('compliance.filter.summary', {
+            filtered: filtered.length,
+            total: COMPLIANCE_ITEMS.length,
+          })}
         </span>
       </div>
 
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
         <Table>
           <TableHeader>
-            <TableHeaderCell>Supplier</TableHeaderCell>
-            <TableHeaderCell>Certificate</TableHeaderCell>
-            <TableHeaderCell>Category</TableHeaderCell>
-            <TableHeaderCell>Issued by</TableHeaderCell>
-            <TableHeaderCell>Expiry</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Priority</TableHeaderCell>
-            <TableHeaderCell>Action required</TableHeaderCell>
-            <TableHeaderCell className="text-right">Remind</TableHeaderCell>
+            <TableHeaderCell>{t('compliance.table.supplier')}</TableHeaderCell>
+            <TableHeaderCell>{t('compliance.table.certificate')}</TableHeaderCell>
+            <TableHeaderCell>{t('compliance.table.category')}</TableHeaderCell>
+            <TableHeaderCell>{t('compliance.table.issuedBy')}</TableHeaderCell>
+            <TableHeaderCell>{t('compliance.table.expiry')}</TableHeaderCell>
+            <TableHeaderCell>{t('compliance.table.status')}</TableHeaderCell>
+            <TableHeaderCell>{t('compliance.table.priority')}</TableHeaderCell>
+            <TableHeaderCell>{t('compliance.table.actionRequired')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('compliance.table.remind')}</TableHeaderCell>
           </TableHeader>
           <tbody>
             {filtered.map((item) => {
@@ -296,8 +303,12 @@ const BuyerCompliance: React.FC = () => {
                         }`}
                       >
                         {item.daysRemaining <= 0
-                          ? `Expired ${Math.abs(item.daysRemaining)}d ago`
-                          : `${item.daysRemaining}d remaining`}
+                          ? t('compliance.expiry.expiredAgo', {
+                              days: Math.abs(item.daysRemaining),
+                            })
+                          : t('compliance.expiry.remaining', {
+                              days: item.daysRemaining,
+                            })}
                       </div>
                     )}
                   </TableCell>
@@ -328,6 +339,7 @@ const BuyerCompliance: React.FC = () => {
                             : 'text-text-tertiary'
                       }`}
                     >
+                      {/* i18n-defer: mock/sample data (fixture-derived per-row action) */}
                       {item.action}
                     </span>
                   </TableCell>
@@ -342,13 +354,14 @@ const BuyerCompliance: React.FC = () => {
                           toast({
                             variant:
                               item.priority === 'Critical' ? 'warning' : 'info',
-                            title: `Reminder queued for ${item.supplier}`,
-                            description:
-                              'Simulated — delivery pending live channel.',
+                            title: t('compliance.toast.reminderQueued', {
+                              supplier: item.supplier,
+                            }),
+                            description: t('compliance.toast.reminderDesc'),
                           })
                         }
                       >
-                        Remind
+                        {t('compliance.action.remind')}
                       </Button>
                     )}
                   </TableCell>
@@ -361,7 +374,7 @@ const BuyerCompliance: React.FC = () => {
                   colSpan={9}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No certificates match the current filters.
+                  {t('compliance.table.empty')}
                 </td>
               </tr>
             )}
@@ -372,10 +385,8 @@ const BuyerCompliance: React.FC = () => {
       <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
         <Shield size={14} className="text-info shrink-0 mt-0.5" />
         <span>
-          <strong className="text-info">Phase 2 — Live Integration:</strong>{' '}
-          Compliance tracking will connect to SAP S/4HANA vendor master, BPJPH
-          API, and supplier document vault. Automated renewal reminders via
-          WhatsApp 90 days before expiry.
+          <strong className="text-info">{t('compliance.phase2.title')}</strong>{' '}
+          {t('compliance.phase2.body')}
         </span>
       </div>
     </AppShellV2>

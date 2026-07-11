@@ -225,3 +225,63 @@ change: BuyerRisk's severity chips previously printed the raw lowercase enum
 as a composed phrase (mixed string+text node — StatusPill can't localize it, and the
 page is not in this batch's charter). Needs a `<Trans>`-style split when that page is
 extracted.
+
+## Batch 4 additions (BuyerRisk + BuyerShipments + BuyerCompliance + SupplierDashboard)
+Fragments: `risk.*` (97), `shipments.*` (101), `compliance.*` (51), `supplierDashboard.*`
+(58). Chips (status / priority / risk-severity / disposition) resolve via the central
+`statusLabel` + `priorityLabel` maps — NOT re-keyed per page.
+
+| EN | ID | EN | ID |
+|---|---|---|---|
+| Geopolitical | Geopolitik | Ship Date | Tanggal Kirim |
+| Supply Exposure | Eksposur Pasokan | Origin / Destination | Asal / Tujuan |
+| Scenario Modeling | Pemodelan Skenario | Actual Arrival | Kedatangan Aktual |
+| Commodity Prices | Harga Komoditas | Total Weight | Total Berat |
+| Mitigation / Impact | Mitigasi / Dampak | Container / Packages | Kontainer / Paket |
+| Risk score | Skor risiko | Docked | Merapat |
+| Threshold (breached) | Ambang batas (terlampaui) | Route / Mode | Rute / Moda |
+| Single-source | Sumber tunggal | Compliance Tracker | Pelacak Kepatuhan |
+| Days of stock | Hari stok | Certificate | Sertifikat |
+| Response alternatives | Alternatif respons | Issued by | Diterbitkan oleh |
+| Backup supplier | Pemasok cadangan | Mandatory transition | Transisi wajib |
+| Real-time monitoring | Pemantauan waktu nyata | Mandatory deadline | Tenggat wajib |
+| Send reminder | Kirim pengingat | Blocks new POs | Memblokir PO baru |
+| Urgent renewal | Pembaruan mendesak | Vendor master | Master vendor |
+| Today's briefing | Ringkasan hari ini | Document vault | Brankas dokumen |
+| Sample data | Data sampel | Open Orders | Pesanan Terbuka |
+| All clear / All done | Semua beres / Semua selesai | Unpaid Invoices | Faktur Belum Dibayar |
+| Welcome back | Selamat datang kembali | Lead Time Adherence | Kepatuhan Waktu Tunggu |
+| Last login | Login terakhir | Invoice Accuracy | Akurasi Faktur |
+
+**Regions/proper nouns:** Red Sea→Laut Merah, China→Tiongkok, Ukraine→Ukraina, Saudi
+Arabia→Arab Saudi, Mexico→Meksiko. **Kept as loanwords/codes:** War Room, ARIA, OTIF,
+SAP, PO, ASN, EDI, Grade, GCC, YTD, Halal, BPOM, BPJPH.
+
+**BPJPH mandatory-transition banner — TRANSLATED** (`compliance.bpjph.banner.*` +
+`compliance.deadline.*`), preserving the interleaved `<strong>` structure and
+`{{compliant}}/{{total}}` interpolation. The Oct halal-deadline story renders fully in
+ID (presentation-relevant) — NOT deferred.
+
+**Deferred (`// i18n-defer`, EN kept with honesty markers):** fixture-seeded narratives
+on every page — BuyerRisk alert/geo-card/scenario/ARIA-recommendation copy + the
+`3 critical · 4 high` demo count; SupplierDashboard "Today's briefing" `allActions`
+list (badged "Sample data") + last-login literal; BuyerCompliance per-row `item.action`;
+BuyerShipments supplier/carrier/city proper nouns + line-item material data.
+
+**Stored-as-data kept canonical EN (flagged):**
+- **ShipmentMode** (`Sea` / `Air` / `Road`) — the `FilterChipsBar` chip `id` is matched
+  against `s.mode` (data) and the same tokens render in table/panel cells. No central
+  mode-label map exists, so translating only the chip would desync it from the data.
+  Left canonical; **recommend a future `modeLabel.ts`** central map (à la `statusLabel`).
+- **Compliance filter option ids** (`Valid`/`Halal`/…) drive fixture filtering — the id
+  stays canonical EN, only the display `label` localizes (reusing `statusLabel` ID values
+  so filter chips read consistently with the table pills).
+- **BuyerRisk `SCENARIO_LIBRARY_IDS`** (`me`/`tw`/`pa`) + `alertDir` (`above`/`below`) —
+  the raw value drives the filter/comparison; only the display word is translated.
+
+**Out of scope (flagged):** composed mixed-node phrases that StatusPill can't localize —
+BuyerRisk `Probability: {n}%`, `AI-Powered`, `{alt.feasibility} feasibility` — same
+`<Trans>`-split pattern already flagged for SupplierPerformance. BuyerCompliance category
+words (Quality/Regulatory/Environmental) localize in the *filter* chips but the table
+category pill renders EN (no central category map yet) — a minor filter-vs-pill
+inconsistency, resolvable by a future category map.
