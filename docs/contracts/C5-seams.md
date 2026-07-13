@@ -39,12 +39,13 @@ scoped query hooks — per-supplier cache isolation via `scopeKey`). The impleme
 for the real adapter is a **one-line prop change**; pages do not change
 (`DataServiceContext.tsx:1–10`, 22–38).
 
-**Carve-out:** `BuyerCompliance` does **not** consume `useDataService()` — it imports the
-`COMPLIANCE_ITEMS` fixture directly. Registered as `COMPLIANCE-CARVEOUT-01`; re-points at Stage-2
-I3 off the R2.2 DTO-v2 harvest (its data model is superseded by `ComplianceRegistryEntry`, so
-re-pointing to the current service would be throwaway work). **I3.1 landed the target read**
-(`risk.getComplianceRegistry` → `ComplianceRegistryEntry`, fixture-first/SIMULATED); the page
-re-point to `useComplianceRegistry()` is the **I3.2** surface batch, when the carve-out closes.
+**Carve-out — CLOSED (I3.2).** `BuyerCompliance` (+ `BuyerComplianceWidget`) formerly imported the
+`COMPLIANCE_ITEMS` fixture directly (`COMPLIANCE-CARVEOUT-01`). I3.1 landed the target read
+(`risk.getComplianceRegistry` → `ComplianceRegistryEntry`, fixture-first/SIMULATED); **I3.2
+re-pointed both surfaces to `useComplianceRegistry()`** — status/daysRemaining computed-at-read,
+scheme-aware BPJPH KPI, SIMULATED rendered via `<LivenessPill capability="compliance">`. Every
+portal page is now on `useDataService()`. (The `halalXpersona.invariant.test.ts` retains its own
+independent `COMPLIANCE_ITEMS` read as a deliberate name-vs-id guard — not a page carve-out.)
 
 ---
 

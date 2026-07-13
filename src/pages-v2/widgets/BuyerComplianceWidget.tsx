@@ -12,33 +12,40 @@ import TableCell from '../../components/ui-v2/TableCell';
 import Data from '../../components/ui-v2/Data';
 import StatusPill from '../../components/ui-v2/StatusPill';
 import { formatDate } from '../../lib/format';
-import { useCompliance } from '../../services/query/hooks';
-import type { ComplianceRow, ComplianceState } from '../../services/data/types';
+import { useComplianceRegistry } from '../../services/query/hooks';
+import { computeStatus, daysRemaining } from '../../services/data/complianceProjection';
+import { certTypeLabelKey } from '../../lib/complianceView';
+import { statusTone } from '../../lib/statusTone';
 
-// Capability "compliance": supplier compliance is a buyer-side fixture (no wired
-// CommandTarget) → the LivenessRegistry derives SIMULATED → amber "Sample" pill.
-// Flag severity still derives honestly from the real expiry state.
-const STATE_TONE: Record<ComplianceState, 'success' | 'warning' | 'danger'> = {
-  ok: 'success',
-  expiring: 'warning',
-  expired: 'danger',
-};
-
-const isFlagged = (c: ComplianceRow): boolean =>
-  c.status === 'expiring' || c.status === 'expired';
+// Capability "compliance": the canonical registry is a buyer-side fixture (no
+// wired CommandTarget) → the LivenessRegistry derives SIMULATED → amber "Sample"
+// pill. Flag severity still derives honestly from the COMPUTED expiry state.
+// I3.2: re-pointed from the 8-row `ComplianceRow` read (`risk.getCompliance`) to
+// the canonical `getComplianceRegistry` — page + widget now read ONE dataset (the
+// two-unlinked-datasets divergence is retired for these two surfaces).
 
 const BuyerComplianceWidget: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const query = useCompliance();
+  const now = useMemo(() => new Date().toISOString(), []);
+  const query = useComplianceRegistry();
 
+  // Flagged = a computed Expiring/Expired status (law 0.5 — derived, not stored).
   const flagged = useMemo(
-    () => (query.data?.items ?? []).filter(isFlagged),
-    [query.data],
+    () =>
+      (query.data?.items ?? [])
+        .map((entry) => ({
+          entry,
+          status: computeStatus(entry, now),
+          days: daysRemaining(entry, now),
+        }))
+        .filter((r) => r.status === 'Expiring' || r.status === 'Expired'),
+    [query.data, now],
   );
+
   const count = flagged.length;
   const expired = useMemo(
-    () => flagged.filter((c) => c.status === 'expired').length,
+    () => flagged.filter((r) => r.status === 'Expired').length,
     [flagged],
   );
   const severity: FlagSeverity =
@@ -59,22 +66,22 @@ const BuyerComplianceWidget: React.FC = () => {
           <TableHeaderCell>Status</TableHeaderCell>
         </TableHeader>
         <tbody>
-          {flagged.map((c, i) => (
-            <TableRow key={`${c.supplier}-${c.type}-${i}`}>
-              <TableCell className="text-text-secondary">{c.supplier}</TableCell>
+          {flagged.map(({ entry, status, days }) => (
+            <TableRow key={entry.id}>
+              <TableCell className="text-text-secondary">
+                {entry.supplierName}
+              </TableCell>
               <TableCell className="font-medium text-text-primary">
-                {c.type}
+                {t(certTypeLabelKey(entry.certType))}
               </TableCell>
               <TableCell className="whitespace-nowrap text-text-secondary">
-                <Data>{formatDate(c.expires)}</Data>
+                <Data>{formatDate(entry.expiryDate)}</Data>
               </TableCell>
               <TableCell className="text-right text-text-secondary">
-                <Data>{c.daysLeft}d</Data>
+                <Data>{days ?? '—'}d</Data>
               </TableCell>
               <TableCell>
-                <StatusPill variant={STATE_TONE[c.status]}>
-                  {c.status}
-                </StatusPill>
+                <StatusPill variant={statusTone(status)}>{status}</StatusPill>
               </TableCell>
             </TableRow>
           ))}

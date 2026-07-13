@@ -18,38 +18,48 @@ import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import LivenessPill from '../components/ui-v2/LivenessPill';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
+import { useComplianceRegistry } from '../services/query/hooks';
 import {
-  COMPLIANCE_ITEMS,
-  type ComplianceItem,
-  type ComplianceItemStatus as ComplianceStatus,
-  type CompliancePriority as Priority,
-} from '../services/data/mock/fixtures/buyerCompliance';
+  computeStatus,
+  daysRemaining,
+  schemeValid,
+  remindEligible,
+} from '../services/data/complianceProjection';
+import {
+  certCategory,
+  certTypeLabelKey,
+  actionLabelKey,
+  type CertCategory,
+} from '../lib/complianceView';
+import { statusTone } from '../lib/statusTone';
+import type {
+  ComplianceRegistryEntry,
+  ComplianceDisplayStatus,
+} from '../services/data/types';
 
-type CategoryFilter = 'All' | 'Halal' | 'Quality' | 'Regulatory' | 'Environmental';
-type StatusFilter = 'All' | ComplianceStatus;
+type CategoryFilter = 'All' | CertCategory;
+type StatusFilter = 'All' | ComplianceDisplayStatus;
 
-const STATUS_VARIANT: Record<ComplianceStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
-  Valid: 'success',
-  Expiring: 'warning',
-  Expired: 'danger',
-  Missing: 'danger',
-  'Under Review': 'neutral',
-};
+// A row = the stored entry + its computed-at-read projections (law 0.5). The page
+// never reads a stored clock/scheme value — every display fact below is derived
+// from the entry vs the reference clock (HALAL-CLOCK-STATE mechanism, I3.1).
+interface Row {
+  entry: ComplianceRegistryEntry;
+  status: ComplianceDisplayStatus;
+  days: number | null;
+  category: CertCategory;
+  remind: boolean;
+  schemeOk: boolean;
+}
 
-const PRIORITY_VARIANT: Record<Priority, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
-  Critical: 'danger',
-  High: 'warning',
-  Medium: 'info',
-  Low: 'neutral',
-};
-
-// Option ids stay canonical EN (they drive filtering against fixture values);
+// Option ids stay canonical EN (they drive filtering against computed values);
 // only the display `label` localizes, via the labelKey resolved at render.
 const STATUS_OPTIONS: { id: StatusFilter; labelKey: string }[] = [
   { id: 'All', labelKey: 'compliance.filter.status.all' },
@@ -65,7 +75,7 @@ const CATEGORY_OPTIONS: { id: CategoryFilter; labelKey: string }[] = [
   { id: 'Halal', labelKey: 'compliance.filter.category.halal' },
   { id: 'Quality', labelKey: 'compliance.filter.category.quality' },
   { id: 'Regulatory', labelKey: 'compliance.filter.category.regulatory' },
-  { id: 'Environmental', labelKey: 'compliance.filter.category.environmental' },
+  { id: 'Other', labelKey: 'compliance.filter.category.other' },
 ];
 
 const fmtDate = (s: string | null): string => {
@@ -83,20 +93,38 @@ const BuyerCompliance: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('All');
 
+  // Now injected once per mount — the projection is pure & deterministic (no
+  // clock read inside pure code); rows recompute only if the read changes.
+  const now = useMemo(() => new Date().toISOString(), []);
+  const query = useComplianceRegistry();
+  const items = query.data?.items ?? [];
+
+  const rows: Row[] = useMemo(
+    () =>
+      items.map((entry) => ({
+        entry,
+        status: computeStatus(entry, now),
+        days: daysRemaining(entry, now),
+        category: certCategory(entry.certType),
+        remind: remindEligible(entry),
+        schemeOk: schemeValid(entry, now),
+      })),
+    [items, now],
+  );
+
   const filtered = useMemo(
     () =>
-      COMPLIANCE_ITEMS.filter((item) => {
-        if (statusFilter !== 'All' && item.status !== statusFilter) return false;
-        if (categoryFilter !== 'All' && item.category !== categoryFilter)
-          return false;
+      rows.filter((r) => {
+        if (statusFilter !== 'All' && r.status !== statusFilter) return false;
+        if (categoryFilter !== 'All' && r.category !== categoryFilter) return false;
         return true;
       }),
-    [statusFilter, categoryFilter],
+    [rows, statusFilter, categoryFilter],
   );
 
   const counts = useMemo(() => {
-    const by = (s: ComplianceStatus) =>
-      COMPLIANCE_ITEMS.filter((i) => i.status === s).length;
+    const by = (s: ComplianceDisplayStatus) =>
+      rows.filter((r) => r.status === s).length;
     return {
       expired: by('Expired'),
       expiring: by('Expiring'),
@@ -104,20 +132,22 @@ const BuyerCompliance: React.FC = () => {
       valid: by('Valid'),
       underReview: by('Under Review'),
     };
-  }, []);
+  }, [rows]);
 
+  // BPJPH compliance is SCHEME-AWARE (HALAL-ISSUER-BLIND mechanism): a halal cert
+  // counts as compliant only when `schemeValid` holds — a MUI-legacy cert whose
+  // dates say Valid is NON-compliant from the mandate date. The mechanism renders
+  // here; the finding stays DOWNGRADED (SIMULATED, not closed) until real issuer
+  // data backs it — the surface is honestly marked Sample via <LivenessPill>.
   const bpjph = useMemo(() => {
-    const halalAll = COMPLIANCE_ITEMS.filter((i) => i.category === 'Halal');
-    const halalCompliant = halalAll.filter((i) => i.status === 'Valid');
-    return { compliant: halalCompliant.length, total: halalAll.length };
-  }, []);
+    const halal = rows.filter((r) => r.category === 'Halal');
+    return { compliant: halal.filter((r) => r.schemeOk).length, total: halal.length };
+  }, [rows]);
 
   const deadline = useMemo(() => {
     const target = new Date('2026-10-17');
     const today = new Date();
-    const daysLeft = Math.ceil(
-      (target.getTime() - today.getTime()) / 86_400_000,
-    );
+    const daysLeft = Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
     const pct = Math.max(0, Math.min(100, (daysLeft / 365) * 100));
     return { daysLeft, pct };
   }, []);
@@ -149,8 +179,11 @@ const BuyerCompliance: React.FC = () => {
         }
       />
 
-      <PageMetaLine className="-mt-6 mb-6">
-        {t('compliance.meta.summary', { count: COMPLIANCE_ITEMS.length, date: today })}
+      <PageMetaLine className="-mt-6 mb-6 flex items-center gap-3">
+        <span>{t('compliance.meta.summary', { count: rows.length, date: today })}</span>
+        {/* Honest-render: capability="compliance" derives SIMULATED (no wired
+            CommandTarget) → amber "Sample". Green is structurally unreachable. */}
+        <LivenessPill capability="compliance" />
       </PageMetaLine>
 
       <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-3">
@@ -204,7 +237,7 @@ const BuyerCompliance: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-5 mb-6">
         <KpiCard
           eyebrow={t('compliance.kpi.expired.eyebrow')}
           value={counts.expired.toString()}
@@ -222,6 +255,14 @@ const BuyerCompliance: React.FC = () => {
           value={counts.missing.toString()}
           subtitle={<span className="text-danger">{t('compliance.kpi.missing.subtitle')}</span>}
           icon={FileQuestion}
+        />
+        {/* HALAL-UNDERREVIEW: Under Review now has its own visible KPI home —
+            first-class, not a silent second-class state. */}
+        <KpiCard
+          eyebrow={t('compliance.kpi.underReview.eyebrow')}
+          value={counts.underReview.toString()}
+          subtitle={t('compliance.kpi.underReview.subtitle')}
+          icon={RefreshCw}
         />
         <KpiCard
           eyebrow={t('compliance.kpi.valid.eyebrow')}
@@ -245,7 +286,7 @@ const BuyerCompliance: React.FC = () => {
         <span className="text-meta text-text-tertiary">
           {t('compliance.filter.summary', {
             filtered: filtered.length,
-            total: COMPLIANCE_ITEMS.length,
+            total: rows.length,
           })}
         </span>
       </div>
@@ -259,119 +300,107 @@ const BuyerCompliance: React.FC = () => {
             <TableHeaderCell>{t('compliance.table.issuedBy')}</TableHeaderCell>
             <TableHeaderCell>{t('compliance.table.expiry')}</TableHeaderCell>
             <TableHeaderCell>{t('compliance.table.status')}</TableHeaderCell>
-            <TableHeaderCell>{t('compliance.table.priority')}</TableHeaderCell>
             <TableHeaderCell>{t('compliance.table.actionRequired')}</TableHeaderCell>
             <TableHeaderCell className="text-right">{t('compliance.table.remind')}</TableHeaderCell>
           </TableHeader>
           <tbody>
-            {filtered.map((item) => {
-              const showRemind =
-                item.priority === 'Critical' ||
-                item.priority === 'High' ||
-                item.priority === 'Medium';
-              return (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <div className="font-semibold text-text-primary">
-                      {item.supplier}
-                    </div>
-                    <div className="text-xs text-text-tertiary mt-0.5">
-                      {item.country}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-text-secondary">
-                    {item.type}
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant="neutral">{item.category}</StatusPill>
-                  </TableCell>
-                  <TableCell className="text-text-tertiary">
-                    {item.issuedBy}
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-text-secondary whitespace-nowrap">
-                      {fmtDate(item.expiryDate)}
-                    </div>
-                    {item.daysRemaining !== null && (
-                      <div
-                        className={`text-xs mt-0.5 ${
-                          item.daysRemaining <= 0
-                            ? 'text-danger'
-                            : item.daysRemaining <= 90
-                              ? 'text-warning-hover'
-                              : 'text-text-tertiary'
-                        }`}
-                      >
-                        {item.daysRemaining <= 0
-                          ? t('compliance.expiry.expiredAgo', {
-                              days: Math.abs(item.daysRemaining),
-                            })
-                          : t('compliance.expiry.remaining', {
-                              days: item.daysRemaining,
-                            })}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[item.status]}>
-                      {item.status === 'Under Review' ? (
-                        <span className="inline-flex items-center gap-1">
-                          <RefreshCw size={10} />
-                          {item.status}
-                        </span>
-                      ) : (
-                        item.status
-                      )}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={PRIORITY_VARIANT[item.priority]}>
-                      {item.priority}
-                    </StatusPill>
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`text-xs ${
-                        item.priority === 'Critical'
+            {filtered.map(({ entry, status, days, category, remind }) => (
+              <TableRow key={entry.id}>
+                <TableCell>
+                  <div className="font-semibold text-text-primary">
+                    {entry.supplierName}
+                  </div>
+                </TableCell>
+                <TableCell className="text-text-secondary">
+                  <div>{t(certTypeLabelKey(entry.certType))}</div>
+                  {entry.certNumber && (
+                    <Data as="div" className="text-xs text-text-tertiary mt-0.5">
+                      {entry.certNumber}
+                    </Data>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <StatusPill variant="neutral">{category}</StatusPill>
+                </TableCell>
+                <TableCell className="text-text-tertiary">
+                  {entry.issuer || '—'}
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm text-text-secondary whitespace-nowrap">
+                    {fmtDate(entry.expiryDate)}
+                  </div>
+                  {days !== null && (
+                    <div
+                      className={`text-xs mt-0.5 ${
+                        days <= 0
                           ? 'text-danger'
-                          : item.priority === 'High'
+                          : days <= 90
                             ? 'text-warning-hover'
                             : 'text-text-tertiary'
                       }`}
                     >
-                      {/* i18n-defer: mock/sample data (fixture-derived per-row action) */}
-                      {item.action}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {showRemind && (
-                      <Button
-                        variant={
-                          item.priority === 'Critical' ? 'outline' : 'secondary'
-                        }
-                        icon={Bell}
-                        onClick={() =>
-                          toast({
-                            variant:
-                              item.priority === 'Critical' ? 'warning' : 'info',
-                            title: t('compliance.toast.reminderQueued', {
-                              supplier: item.supplier,
-                            }),
-                            description: t('compliance.toast.reminderDesc'),
-                          })
-                        }
-                      >
-                        {t('compliance.action.remind')}
-                      </Button>
+                      {days <= 0
+                        ? t('compliance.expiry.expiredAgo', { days: Math.abs(days) })
+                        : t('compliance.expiry.remaining', { days })}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <StatusPill variant={statusTone(status)}>
+                    {status === 'Under Review' ? (
+                      <span className="inline-flex items-center gap-1">
+                        <RefreshCw size={10} />
+                        {status}
+                      </span>
+                    ) : (
+                      status
                     )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                  </StatusPill>
+                </TableCell>
+                <TableCell>
+                  {/* Descriptive of state, never imperative (D4): the label names
+                      the state; it does not offer an action the SIMULATED cert
+                      cannot back. */}
+                  <span
+                    className={`text-xs ${
+                      status === 'Expired' || status === 'Missing'
+                        ? 'text-danger'
+                        : status === 'Expiring'
+                          ? 'text-warning-hover'
+                          : 'text-text-tertiary'
+                    }`}
+                  >
+                    {t(actionLabelKey(status))}
+                  </span>
+                </TableCell>
+                <TableCell className="text-right">
+                  {/* Remind is gated on remindEligible (lifecycleState Valid) —
+                      the honest projection. Under Review / Missing certs are NOT
+                      remind-eligible (HALAL-UNDERREVIEW mechanism, I3.1). */}
+                  {remind && (
+                    <Button
+                      variant="outline"
+                      icon={Bell}
+                      onClick={() =>
+                        toast({
+                          variant: 'info',
+                          title: t('compliance.toast.reminderQueued', {
+                            supplier: entry.supplierName,
+                          }),
+                          description: t('compliance.toast.reminderDesc'),
+                        })
+                      }
+                    >
+                      {t('compliance.action.remind')}
+                    </Button>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={9}
+                  colSpan={8}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
                   {t('compliance.table.empty')}

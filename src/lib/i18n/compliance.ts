@@ -3,13 +3,17 @@
 // Count-dependent phrases interpolate a `{{count}}`/`{{days}}` value; no plural
 // resolver is used (flat-key convention already shipped in i18n.ts).
 // Canonical StatusPill children — the status chips (Valid/Expiring/Expired/
-// Missing/Under Review) and priority tokens (Critical/High/Medium/Low) — are
-// localized centrally via statusLabel.ts + priorityLabel.ts and are NOT
+// Missing/Under Review) — are localized centrally via statusLabel.ts and are NOT
 // re-declared here. Filter-chip option labels (which are plain text, not pills)
 // ARE declared, and their status labels deliberately match statusLabel's ID so
-// the filter reads consistently with the table pills. Fixture-derived content
-// (supplier names, countries, cert types, issuers, the per-row `action` string)
-// is mock/sample data and stays EN literal in the page (i18n-defer).
+// the filter reads consistently with the table pills.
+//
+// I3.2 (surface re-point): the page now reads the canonical `ComplianceRegistry
+// Entry` via `useComplianceRegistry`. The certificate SCHEME (certType) and the
+// per-row action label are DERIVED (complianceView.ts) and localized here
+// (compliance.certType.* / compliance.action.state.*) — action labels are
+// state-descriptive, never imperative (D4). The legacy `priority` column and
+// per-row free-text `action`/`country` are dropped (not on the DTO).
 export const complianceEn: Record<string, string> = {
   // — Breadcrumb —
   'compliance.crumb.intelligence': 'INTELLIGENCE',
@@ -42,6 +46,8 @@ export const complianceEn: Record<string, string> = {
   'compliance.kpi.missing.subtitle': 'Application not started',
   'compliance.kpi.valid.eyebrow': 'Valid',
   'compliance.kpi.valid.subtitle': 'In good standing',
+  'compliance.kpi.underReview.eyebrow': 'Under Review',
+  'compliance.kpi.underReview.subtitle': 'Awaiting verification',
   // — Status filter chips —
   'compliance.filter.status.all': 'All',
   'compliance.filter.status.expired': 'Expired',
@@ -54,7 +60,7 @@ export const complianceEn: Record<string, string> = {
   'compliance.filter.category.halal': 'Halal',
   'compliance.filter.category.quality': 'Quality',
   'compliance.filter.category.regulatory': 'Regulatory',
-  'compliance.filter.category.environmental': 'Environmental',
+  'compliance.filter.category.other': 'Other',
   // — Filter result summary —
   'compliance.filter.summary': '{{filtered}} of {{total}} items',
   // — Table columns —
@@ -64,10 +70,22 @@ export const complianceEn: Record<string, string> = {
   'compliance.table.issuedBy': 'Issued by',
   'compliance.table.expiry': 'Expiry',
   'compliance.table.status': 'Status',
-  'compliance.table.priority': 'Priority',
   'compliance.table.actionRequired': 'Action required',
   'compliance.table.remind': 'Remind',
   'compliance.table.empty': 'No certificates match the current filters.',
+  // — Certificate scheme labels (derived from certType) —
+  'compliance.certType.HALAL_BPJPH': 'Halal (BPJPH)',
+  'compliance.certType.HALAL_MUI_LEGACY': 'Halal (MUI, legacy)',
+  'compliance.certType.HALAL_FOREIGN': 'Halal (foreign scheme)',
+  'compliance.certType.BPOM': 'BPOM',
+  'compliance.certType.ISO': 'ISO',
+  'compliance.certType.OTHER': 'Other',
+  // — Descriptive action labels (state-descriptive, never imperative) —
+  'compliance.action.state.expired': 'Renewal overdue',
+  'compliance.action.state.expiring': 'Renewal due',
+  'compliance.action.state.missing': 'Certificate not on file',
+  'compliance.action.state.underReview': 'Under review',
+  'compliance.action.state.valid': 'Current',
   // — Expiry cell relative days —
   'compliance.expiry.expiredAgo': 'Expired {{days}}d ago',
   'compliance.expiry.remaining': '{{days}}d remaining',
@@ -113,6 +131,8 @@ export const complianceId: Record<string, string> = {
   'compliance.kpi.missing.subtitle': 'Permohonan belum dimulai',
   'compliance.kpi.valid.eyebrow': 'Berlaku',
   'compliance.kpi.valid.subtitle': 'Dalam keadaan baik',
+  'compliance.kpi.underReview.eyebrow': 'Sedang Ditinjau',
+  'compliance.kpi.underReview.subtitle': 'Menunggu verifikasi',
   // — Status filter chips —
   'compliance.filter.status.all': 'Semua',
   'compliance.filter.status.expired': 'Kedaluwarsa',
@@ -125,7 +145,7 @@ export const complianceId: Record<string, string> = {
   'compliance.filter.category.halal': 'Halal',
   'compliance.filter.category.quality': 'Kualitas',
   'compliance.filter.category.regulatory': 'Regulasi',
-  'compliance.filter.category.environmental': 'Lingkungan',
+  'compliance.filter.category.other': 'Lainnya',
   // — Filter result summary —
   'compliance.filter.summary': '{{filtered}} dari {{total}} item',
   // — Table columns —
@@ -135,10 +155,22 @@ export const complianceId: Record<string, string> = {
   'compliance.table.issuedBy': 'Diterbitkan oleh',
   'compliance.table.expiry': 'Kedaluwarsa',
   'compliance.table.status': 'Status',
-  'compliance.table.priority': 'Prioritas',
   'compliance.table.actionRequired': 'Tindakan diperlukan',
   'compliance.table.remind': 'Ingatkan',
   'compliance.table.empty': 'Tidak ada sertifikat yang cocok dengan filter saat ini.',
+  // — Certificate scheme labels (derived from certType) —
+  'compliance.certType.HALAL_BPJPH': 'Halal (BPJPH)',
+  'compliance.certType.HALAL_MUI_LEGACY': 'Halal (MUI, warisan)',
+  'compliance.certType.HALAL_FOREIGN': 'Halal (skema asing)',
+  'compliance.certType.BPOM': 'BPOM',
+  'compliance.certType.ISO': 'ISO',
+  'compliance.certType.OTHER': 'Lainnya',
+  // — Descriptive action labels (state-descriptive, never imperative) —
+  'compliance.action.state.expired': 'Pembaruan terlambat',
+  'compliance.action.state.expiring': 'Pembaruan jatuh tempo',
+  'compliance.action.state.missing': 'Sertifikat belum ada',
+  'compliance.action.state.underReview': 'Sedang ditinjau',
+  'compliance.action.state.valid': 'Terkini',
   // — Expiry cell relative days —
   'compliance.expiry.expiredAgo': 'Kedaluwarsa {{days}} hari lalu',
   'compliance.expiry.remaining': '{{days}} hari tersisa',
