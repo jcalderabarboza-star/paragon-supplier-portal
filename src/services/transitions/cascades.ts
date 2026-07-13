@@ -28,6 +28,14 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
   t_gr_partial_approve: [
     { targetEntity: 'advanceShipNotice', targetTransitionId: 't_asn_discrepancy' },
   ],
+  // GR-post fans out the 3-way match onto the invoice(s) sharing its PO (F0.2,
+  // INV-GR-OVERLAY-01 — the honest replacement for the deleted `paragon_gr_posted`
+  // localStorage overlay). The adapter computes the verdict from real PO×GR×invoice
+  // data, writes the invoice's matchStatus, and fires this header verb ONLY when
+  // the verdict is a genuine 'Matched' (a variance verdict honestly no-ops).
+  t_gr_post: [
+    { targetEntity: 'invoice', targetTransitionId: 't_invoice_match' },
+  ],
   // RFQ award fans out onto its quotations (batch iv): the winner is awarded,
   // every other is rejected. Both target the `quotation` machine; the adapter
   // resolver splits the sibling set (winner ← payload, losers ← the store) across
