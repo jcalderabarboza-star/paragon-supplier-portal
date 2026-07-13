@@ -24,34 +24,65 @@ model). Changes reach `main` only through a reviewed PR: the operator directs
 and approves, and the CLI merges via the GitHub UI (Squash + delete branch).
 Direct pushes to `main` are not used.
 
-## Current state (as-built: main @ 2b0be05 — Phase 1′ CLOSED on PR #34 merge)
-- Phase 0 (0.1–0.7) closed via PRs #11–#17. Test floor: **203** (never regresses).
-- Phase 1′ page/read migrations merged — Batches 1.1a–1.3 (PRs #18–#24): buyer +
-  supplier pages consume `useDataService()` via scoped TanStack Query hooks;
-  DP-1/DP-2 restyle applied opportunistically per touched page.
-- SEC-GATE-01 (PR #25) + ENV-BADGE-01 hardening (PRs #27–#28) merged; DP-3
-  Odyssey/TMS theme + typography merged (PRs #29–#31).
-- **v2.2 Step 1** — Canon True-Up (docs + honest-now compliance fixes) merged
-  (PR #32). **Step 2** — Batch 1.4 legacy-PO-alias collapse (PR #33: one
-  canonical `PurchaseOrder` shape, `dto.ts` + `purchaseOrder.types.ts` retired)
-  + Phase 1′ exit audit (PR #34: HALAL-XPERSONA-01 supplierId-keyed invariant,
-  sp-001 all-routes smoke, sp-002 3-tenant scoping; floor 167→203). **Phase 1′
-  CLOSES on the PR #34 merge.**
-- BuyerCompliance is a registered fixture carve-out (COMPLIANCE-CARVEOUT-01, see
-  `docs/findings.md`) that lands at R2.2 — the Phase 1′ exit criterion (MET) is
-  "all pages on `useDataService()` EXCEPT this registered carve-out".
-- Next: **Step 3 — Phase 2.1′** (transition schema + census paper-fit + command
-  layer), order 3.1→3.11. DR-7 (invoice vocabulary) is decided CLI-side at 3.3.
+## Current state (as-built: main @ #53 — command spine complete; Stage F opening)
+Re-baselined by Batch **F0.1** (2026-07-13). The prior "Next: Step 3" pointer was
+stale by ~19 commits; the transition schema + command spine it named are BUILT.
+
+- **Phases 0 → 2′ (historical, all merged).** Phase 0 (PRs #11–#17); Phase 1′
+  page/read migrations + gates + DP-1/2/3 theme (PRs #18–#31); v2.2 Step 1 Canon
+  True-Up (#32) + Step 2 Batch 1.4 canonical `PurchaseOrder` + Phase 1′ exit audit
+  (#33–#34). **Phase 2.1′ transition schema + dispatcher + PO-confirm proof
+  (3.1–3.11) BUILT** (PR #35). **Phase 2.2′ verb batches BUILT** — ASN (#36),
+  GR (#37), Invoice/DR-7 (#38), RFQ-award cascade (#41). Design polish (#39–#43)
+  + full EN/ID i18n Batches 0–6 + coverage sweep (#44–#53).
+- **Command spine is complete and wired end-to-end:** canonical state-machine
+  schema + dispatcher (legality + role + fields + `QueryScope` + policy),
+  `CommandResult`/`getCommandStatus`/`settle` (Option-B SAP boundary), DR-10 event
+  taxonomy (`TransitionEvent` + `AuditSink`, in-memory), cascades (RFQ→quotation,
+  GR→ASN). PO/ASN/GR/Invoice/RFQ-award verbs run against in-memory stores.
+- **Phase 2′ exit** is contract-complete as of F0.4 (all 15 machines authored;
+  5 lifecycle machines wired only where a surface already has the verb; the
+  compliance machine rides R2.2 DTO-v2). It is deliberately NOT behavior-complete
+  — remaining verb wiring rides each Stage-2 surface (FORK-2 hybrid).
+- **Backend is greenfield.** Zero server code / datastore clients; data is
+  in-memory fixtures behind `mockDataService` (`src/main.tsx`); tenant scoping is
+  enforced client-side. `httpDataService` is the designed Phase-F1 swap
+  (`DataServiceContext.tsx`) — pages do not change when it lands.
+- BuyerCompliance stays a registered fixture carve-out (COMPLIANCE-CARVEOUT-01,
+  `docs/findings.md`) until Stage-2 **I3** re-points it to `useDataService()` off
+  the R2.2 DTO-v2 / Track-R harvest.
 - Consumption pattern is standardized: TanStack Query v5 over `useDataService()`,
   scoped query hooks (per-supplier cache isolation via `scopeKey`), a typed
   `DataError` contract, the `Page<T>` list envelope (shape frozen; no pagination
   machinery), and a dev-only, env-gated chaos mock.
 - Fixtures are multi-tenant (sup-002 / sup-005 / sup-007); a service-level
   scoping contract guards buyer-superset / per-supplier-isolation / SCOPE_DENIED.
-- Locale + i18n: `formatIDR / formatDate / formatNumber` (Asia/Jakarta) and an
-  i18next primitive are installed.
-- Canonical build plan: `docs/Supplier_Portal_Revised_Build_Plan_v2_2.md`
-  (supersedes v2.1, which remains valid where not amended).
+- Locale + i18n: `formatIDR / formatDate / formatNumber` (Asia/Jakarta) and a full
+  EN/ID react-i18next layer (per-page fragments + central label maps) are live.
+  Test floor: **557** (never regresses).
+
+### Forward plan vocabulary (Stage F / I / A)
+- **Canonical forward plan:** `Paragon_World_Class_Build_Plan_v1.md` (executes
+  `docs/Paragon_Platform_Strategic_Spine_v1.md`). It supersedes the *sequencing*
+  of `docs/Supplier_Portal_Revised_Build_Plan_v2_2.md` from Stage 1 onward; v2.2
+  remains the Phase 0–2′ record + ratified-decision register (DR-6/7/9/10, DP).
+- **Stage F — Foundation** (governed data + integration backbone): **F0**
+  contract-freeze & ledger truth (F0.1–F0.6, in progress) → **F1** real backend
+  core (`httpDataService`, OIDC, durable audit; SE Team) → **F2** S/4HANA event
+  seam (Event Mesh + OData; INT-TMS-01 is a sub-case) → **F3** Snowflake +
+  data-quality prerequisites.
+- **Stage I — Intelligence:** I1 spend classification · I2 should-cost/commodity-FX
+  · I3 risk + halal/BPOM compliance (hard date 17 Oct 2026) · I4 3-way match +
+  e-Faktur · I5 guided-buying intake · I6 BOM-linked sourcing. Each ships
+  fixture-first behind honest markers, flips Live when its Stage-F prerequisite lands.
+- **Stage A — Agentic** (disciplined/bounded): A1 copilot · A2 document
+  intelligence · A3 bounded task agents · A4 advanced levers (buy-vs-build).
+- **Track R** (halal) runs as a PARALLEL operator lane with its own clock
+  (17 Oct 2026); it feeds the Stage-2 I3 compliance primitive. Four operator
+  decisions OPEN: D-CAL / D-STAFF / D-SAP / D-DPO.
+- Adjudicated forks: **FORK-1 = (c)** (minimal scripted halal-renewal walkthrough
+  at I3; full Learn absorbed into the A1 copilot). **FORK-2 = hybrid** (author all
+  remaining flows; wire opportunistically per Stage-2 surface).
 
 ## Routing
 Routing is HashRouter (`src/router/AppRouter.tsx`) — not BrowserRouter. The `/`
