@@ -196,7 +196,7 @@ const Marketplace: React.FC = () => {
             name={s.name}
             country={s.country}
             countryFlag={s.city}
-            tier={`Grade ${s.scorecardGrade}`}
+            tier={t('marketplace.grade', { grade: s.scorecardGrade })}
             categories={[cl(s.category)]}
             otif={s.otif}
             compliance={[

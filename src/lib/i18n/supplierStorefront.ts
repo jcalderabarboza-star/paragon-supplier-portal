@@ -8,8 +8,9 @@
 //  • Category (supp.category) renders through useCategoryLabel(); channel
 //    (supp.preferredChannel — the PreferredChannel enum WhatsApp/Email/Web/API)
 //    through useChannelLabel(). Stored values stay canonical EN.
-//  • Cert status pills (Valid/Expiring/Expired) + the "Sample data" chip
-//    auto-localize via StatusPill → statusLabel; NOT re-keyed here.
+//  • Cert status pills (Valid/Expiring/Expired) auto-localize via StatusPill →
+//    statusLabel; NOT re-keyed here. The "Sample data" chip is NOT a canonical
+//    status token, so it is keyed explicitly (supplierStorefront.sampleData).
 //  • The channelHint.* keys are keyed by the exact PreferredChannel enum value
 //    (WhatsApp/Email/Web/API) so the page selects them by `preferredChannel`.
 //  • Mono DATA (doc numbers, MOQ/lead time, dates, OTIF %, years, email/phone/
@@ -74,6 +75,8 @@ export const supplierStorefrontEn: Record<string, string> = {
     'This supplier prefers portal messaging. Replies routed through the SAP Ariba inbox.',
   'supplierStorefront.channelHint.API':
     'This supplier is API-integrated. Requests are auto-submitted to their ERP.',
+  // — Track tab sample-data chip (not a canonical status token) —
+  'supplierStorefront.sampleData': 'Sample data',
 };
 
 export const supplierStorefrontId: Record<string, string> = {
@@ -134,4 +137,6 @@ export const supplierStorefrontId: Record<string, string> = {
     'Pemasok ini lebih menyukai perpesanan portal. Balasan dirutekan melalui kotak masuk SAP Ariba.',
   'supplierStorefront.channelHint.API':
     'Pemasok ini terintegrasi API. Permintaan dikirim otomatis ke ERP mereka.',
+  // — Track tab sample-data chip (not a canonical status token) —
+  'supplierStorefront.sampleData': 'Data contoh',
 };

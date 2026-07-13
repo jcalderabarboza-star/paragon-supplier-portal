@@ -31,6 +31,8 @@ export const marketplaceEn: Record<string, string> = {
     'Search by name, category, country, or capability…',
   // — Supplier cards —
   'marketplace.cards.empty': 'No suppliers match the current filters.',
+  'marketplace.grade': 'Grade {{grade}}',
+  'marketplace.card.viewProfile': 'View profile',
   // — Open-RFQ teaser section —
   'marketplace.rfq.title': 'Open RFQ Opportunities',
   'marketplace.rfq.subtitle':
@@ -73,6 +75,8 @@ export const marketplaceId: Record<string, string> = {
     'Cari berdasarkan nama, kategori, negara, atau kapabilitas…',
   // — Supplier cards —
   'marketplace.cards.empty': 'Tidak ada pemasok yang cocok dengan filter saat ini.',
+  'marketplace.grade': 'Kelas {{grade}}',
+  'marketplace.card.viewProfile': 'Lihat profil',
   // — Open-RFQ teaser section —
   'marketplace.rfq.title': 'Peluang RFQ Terbuka',
   'marketplace.rfq.subtitle':

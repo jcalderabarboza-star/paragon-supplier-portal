@@ -458,13 +458,13 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                       <Data>{item.moq} {item.uom}</Data>
                     </TableCell>
                     <TableCell className="text-text-secondary">
-                      <Data>{item.leadTime} days</Data>
+                      <Data>{item.leadTime} {t('supplierMyStorefront.days')}</Data>
                     </TableCell>
                     <TableCell className="font-semibold text-teal">
                       <Data>{item.currency} {item.unitPrice}/{item.uom}</Data>
                     </TableCell>
                     <TableCell className="text-text-secondary">
-                      <Data>{item.capacity}/mo</Data>
+                      <Data>{item.capacity}{t('supplierMyStorefront.perMonth')}</Data>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">

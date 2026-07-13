@@ -63,6 +63,9 @@ export const riskEn: Record<string, string> = {
   'risk.geo.impact': 'Impact',
   'risk.geo.affectedSuppliers': 'Affected suppliers',
   'risk.geo.mitigation': 'Mitigation',
+  // — Alternative / scenario StatusPill labels —
+  'risk.alt.probability': 'Probability',
+  'risk.alt.feasibility': 'feasibility',
   // — Supply Exposure tab —
   'risk.exposure.totalExposed': 'Total exposed spend',
   'risk.exposure.singleSourceCritical': 'Single-source critical',
@@ -185,6 +188,9 @@ export const riskId: Record<string, string> = {
   'risk.geo.impact': 'Dampak',
   'risk.geo.affectedSuppliers': 'Pemasok terdampak',
   'risk.geo.mitigation': 'Mitigasi',
+  // — Alternative / scenario StatusPill labels —
+  'risk.alt.probability': 'Probabilitas',
+  'risk.alt.feasibility': 'kelayakan',
   // — Supply Exposure tab —
   'risk.exposure.totalExposed': 'Total belanja terekspos',
   'risk.exposure.singleSourceCritical': 'Sumber tunggal kritis',

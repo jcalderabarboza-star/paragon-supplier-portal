@@ -36,6 +36,7 @@ const STATUS_ID: Record<string, string> = {
   'On Time': 'Tepat Waktu',
   'In Network': 'Dalam Jaringan',
   'EDI 846': 'EDI 846',
+  'Halal Certified': 'Bersertifikat Halal',
   // caution
   Expiring: 'Akan Kedaluwarsa',
   'Expiring Soon': 'Segera Kedaluwarsa',
@@ -79,6 +80,7 @@ const STATUS_ID: Record<string, string> = {
   Open: 'Terbuka',
   'API Push': 'Kiriman API',
   Inbound: 'Masuk',
+  'BPOM Registered': 'Terdaftar BPOM',
   // neutral
   Draft: 'Draf',
   Sent: 'Dikirim',

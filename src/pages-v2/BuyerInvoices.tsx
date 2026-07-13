@@ -49,6 +49,7 @@ import type {
   InvoiceMatchStatus as MatchStatus,
 } from '../services/data/types';
 import { useTranslation } from 'react-i18next';
+import { statusLabelKey } from '../lib/statusLabel';
 import { useBuyerInvoices } from '../services/query/hooks';
 import {
   useInvoiceReleasePayment,
@@ -57,8 +58,6 @@ import {
   useInvoiceResolve,
 } from '../services/query/commandHooks';
 import { formatIDR, formatDate } from '../lib/format';
-
-const INV_CRUMB = ['TRANSACT', 'INVOICES & PAYMENT'];
 
 const STATUS_VARIANT: Record<InvStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
   'Pending Match': 'neutral',
@@ -99,6 +98,34 @@ const MONTHLY_SPEND = [
   { month: 'Mar 25', paid: 3100, pending: 380 },
   { month: 'Apr 25', paid: 890, pending: 3195 },
 ];
+
+// i18n keys for the status filter chips + the footer commit verb per status.
+// The status/match CHIPS themselves localize centrally via StatusPill; these
+// are the separate scaffolding literals (filter labels, footer buttons).
+const STATUS_FILTER_KEY: Record<StatusFilter, string> = {
+  all: 'buyerInvoices.filter.all',
+  'Pending Match': 'buyerInvoices.filter.pendingMatch',
+  Approved: 'buyerInvoices.filter.approved',
+  'Payment Released': 'buyerInvoices.filter.released',
+  Disputed: 'buyerInvoices.filter.disputed',
+  Overdue: 'buyerInvoices.filter.overdue',
+};
+
+const FOOTER_ACTION_KEY: Record<InvStatus, string> = {
+  'Pending Match': 'buyerInvoices.footer.reviewMatch',
+  Approved: 'buyerInvoices.footer.releasePayment',
+  Disputed: 'buyerInvoices.footer.resolveDispute',
+  'Payment Released': 'buyerInvoices.footer.sendRemittance',
+  Overdue: 'buyerInvoices.footer.escalate',
+};
+
+const MATCH_DESC_KEY: Record<MatchStatus, string> = {
+  Matched: 'buyerInvoices.match.matched',
+  'Pending GR': 'buyerInvoices.match.pendingGr',
+  Pending: 'buyerInvoices.match.pending',
+  'Qty Mismatch': 'buyerInvoices.match.qtyMismatch',
+  'Price Variance': 'buyerInvoices.match.priceVariance',
+};
 
 // Compact tiles use the shared jt/B/T scale; full amounts and dates delegate
 // to the locale utility directly (see call sites).
@@ -143,22 +170,14 @@ type TabKey = 'queue' | 'analytics' | 'aging';
 type StatusFilter = InvStatus | 'all';
 type PanelMode = 'detail' | 'confirming' | 'remittance' | 'disputing';
 
-const STATUS_OPTIONS: { id: StatusFilter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'Pending Match', label: 'Pending Match' },
-  { id: 'Approved', label: 'Approved' },
-  { id: 'Payment Released', label: 'Released' },
-  { id: 'Disputed', label: 'Disputed' },
-  { id: 'Overdue', label: 'Overdue' },
+const STATUS_OPTIONS: StatusFilter[] = [
+  'all',
+  'Pending Match',
+  'Approved',
+  'Payment Released',
+  'Disputed',
+  'Overdue',
 ];
-
-const FOOTER_ACTION_BY_STATUS: Record<InvStatus, string> = {
-  'Pending Match': 'Review match',
-  Approved: 'Release payment',
-  Disputed: 'Resolve dispute',
-  'Payment Released': 'Send remittance',
-  Overdue: 'Escalate',
-};
 
 // The buyer invoice list re-derives from the ONE canonical store via the query
 // layer (3.6 pattern) — NO local seeded copy, NO GR-post localStorage overlay
@@ -168,6 +187,7 @@ const FOOTER_ACTION_BY_STATUS: Record<InvStatus, string> = {
 const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const crumb = [t('buyerInvoices.crumb.transact'), t('buyerInvoices.crumb.invoices')];
   const releaseMutation = useInvoiceReleasePayment();
   const settleMutation = useInvoiceSettlePayment();
   const disputeMutation = useInvoiceDispute();
@@ -181,6 +201,11 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     [invoices, selectedId],
   );
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
+
+  // Aging bucket display label — only the 'Current' token localizes; the numeric
+  // ranges (1–30d …) are stable data used as chart X-axis keys + React keys.
+  const agingBucketLabel = (bucket: string) =>
+    bucket === 'Current' ? t('buyerInvoices.aging.current') : bucket;
 
   const counts = useMemo(() => {
     const by = (s: InvStatus) => invoices.filter((i) => i.status === s).length;
@@ -206,6 +231,11 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   }, [invoices]);
 
   const pendingApprovalCount = counts.pendingMatch + counts.approved;
+
+  const invoiceCount = (n: number) =>
+    t(n === 1 ? 'buyerInvoices.kpi.invoiceCount.one' : 'buyerInvoices.kpi.invoiceCount.other', {
+      count: n,
+    });
 
   const matchCounts = useMemo(() => {
     const by = (m: MatchStatus) => invoices.filter((i) => i.matchStatus === m).length;
@@ -275,8 +305,8 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     if (selected.status === 'Overdue') {
       toast({
         variant: 'warning',
-        title: `${selected.invoiceNumber} escalated`,
-        description: 'Routed to Finance Controller for urgent action.',
+        title: t('buyerInvoices.toast.escalate.title', { invoiceNumber: selected.invoiceNumber }),
+        description: t('buyerInvoices.toast.escalate.desc'),
       });
       return;
     }
@@ -406,37 +436,39 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
   const downloadPdf = () => {
     toast({
-      title: 'Downloading remittance PDF',
-      description: 'File will be available in a moment.',
+      title: t('buyerInvoices.toast.downloadPdf.title'),
+      description: t('buyerInvoices.toast.downloadPdf.desc'),
     });
   };
 
-  const panelTitle = selected ? `Invoice ${selected.invoiceNumber}` : '';
+  const panelTitle = selected
+    ? t('buyerInvoices.panel.title', { invoiceNumber: selected.invoiceNumber })
+    : '';
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['TRANSACT', 'INVOICES & PAYMENT']}
-        title="Invoices & Payment"
-        subtitle="3-way match · approval queue · payment release · SAP FI integration."
+        breadcrumb={crumb}
+        title={t('buyerInvoices.header.title')}
+        subtitle={t('buyerInvoices.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
               {
-                label: 'SAP AP Export',
+                label: t('buyerInvoices.action.sapApExport'),
                 icon: Database,
                 onClick: () =>
                   toast({
-                    title: 'Exporting to SAP AP batch',
+                    title: t('buyerInvoices.toast.sapExport.title'),
                   }),
               },
               {
-                label: 'Export Report',
+                label: t('buyerInvoices.action.exportReport'),
                 icon: FileSpreadsheet,
                 onClick: () =>
                   toast({
                     variant: 'info',
-                    title: 'Downloading aging report',
+                    title: t('buyerInvoices.toast.agingReport.title'),
                   }),
               },
             ]}
@@ -445,32 +477,38 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {invoices.length} invoices · last updated {lastUpdated}
+        {t(
+          invoices.length === 1
+            ? 'buyerInvoices.meta.summary.one'
+            : 'buyerInvoices.meta.summary.other',
+          { count: invoices.length },
+        )}{' '}
+        {lastUpdated}
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
         <KpiCard
-          eyebrow="Pending Approval"
+          eyebrow={t('buyerInvoices.kpi.pendingApproval.eyebrow')}
           value={fmtCompact(sums.pendingApproval)}
-          subtitle={`${pendingApprovalCount} invoice${pendingApprovalCount === 1 ? '' : 's'}`}
+          subtitle={invoiceCount(pendingApprovalCount)}
           icon={Clock}
         />
         <KpiCard
-          eyebrow="Payments Released"
+          eyebrow={t('buyerInvoices.kpi.released.eyebrow')}
           value={fmtCompact(sums.released)}
-          subtitle={`${counts.released} invoice${counts.released === 1 ? '' : 's'}`}
+          subtitle={invoiceCount(counts.released)}
           icon={CheckCircle2}
         />
         <KpiCard
-          eyebrow="Disputed"
+          eyebrow={t('buyerInvoices.kpi.disputed.eyebrow')}
           value={fmtCompact(sums.disputed)}
-          subtitle={`${counts.disputed} invoice${counts.disputed === 1 ? '' : 's'}`}
+          subtitle={invoiceCount(counts.disputed)}
           icon={AlertTriangle}
         />
         <KpiCard
-          eyebrow="Overdue"
+          eyebrow={t('buyerInvoices.kpi.overdue.eyebrow')}
           value={fmtCompact(sums.overdue)}
-          subtitle={`${counts.overdue} invoice${counts.overdue === 1 ? '' : 's'}`}
+          subtitle={invoiceCount(counts.overdue)}
           icon={AlertOctagon}
         />
       </div>
@@ -480,13 +518,19 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           <AlertOctagon size={14} className="shrink-0 mt-0.5" />
           <div>
             <strong>
-              {overdueInvoices.length} overdue invoice
-              {overdueInvoices.length > 1 ? 's' : ''}:{' '}
+              {t(
+                overdueInvoices.length === 1
+                  ? 'buyerInvoices.banner.overdue.label.one'
+                  : 'buyerInvoices.banner.overdue.label.other',
+                { count: overdueInvoices.length },
+              )}
             </strong>
             {overdueInvoices
-              .map(
-                (i) =>
-                  `${i.invoiceNumber} (${i.daysOutstanding}d overdue)`,
+              .map((i) =>
+                t('buyerInvoices.banner.overdue.item', {
+                  invoice: i.invoiceNumber,
+                  days: i.daysOutstanding,
+                }),
               )
               .join(' · ')}
           </div>
@@ -497,19 +541,18 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
         <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-6 text-sm text-warning-hover flex items-start gap-2">
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
           <div>
-            <strong>Invoice dispute: </strong>
-            {disputedInvoices.map((i) => i.invoiceNumber).join(', ')} —
-            Quantity mismatch on PT Berlina Packaging. Credit note required
-            before payment.
+            <strong>{t('buyerInvoices.banner.dispute.label')}</strong>
+            {disputedInvoices.map((i) => i.invoiceNumber).join(', ')}
+            {t('buyerInvoices.banner.dispute.body')}
           </div>
         </div>
       )}
 
       <SubTabs<TabKey>
         options={[
-          { id: 'queue', label: 'Invoice Queue' },
-          { id: 'analytics', label: 'Spend Analytics' },
-          { id: 'aging', label: 'Aging Analysis' },
+          { id: 'queue', label: t('buyerInvoices.tab.queue') },
+          { id: 'analytics', label: t('buyerInvoices.tab.analytics') },
+          { id: 'aging', label: t('buyerInvoices.tab.aging') },
         ]}
         value={tab}
         onChange={setTab}
@@ -520,12 +563,13 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
         <>
           <div className="mb-4">
             <FilterChipsBar<StatusFilter>
-              options={STATUS_OPTIONS.map((o) => ({
-                ...o,
+              options={STATUS_OPTIONS.map((id) => ({
+                id,
+                label: t(STATUS_FILTER_KEY[id]),
                 count:
-                  o.id === 'all'
+                  id === 'all'
                     ? counts.all
-                    : invoices.filter((i) => i.status === o.id).length,
+                    : invoices.filter((i) => i.status === id).length,
               }))}
               value={statusFilter}
               onChange={setStatusFilter}
@@ -535,15 +579,15 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
             <Table>
               <TableHeader>
-                <TableHeaderCell>Invoice #</TableHeaderCell>
-                <TableHeaderCell>Supplier</TableHeaderCell>
-                <TableHeaderCell>PO ref</TableHeaderCell>
-                <TableHeaderCell className="text-right">Amount</TableHeaderCell>
-                <TableHeaderCell>3-way match</TableHeaderCell>
-                <TableHeaderCell>Status</TableHeaderCell>
-                <TableHeaderCell>Due date</TableHeaderCell>
-                <TableHeaderCell>SAP FI</TableHeaderCell>
-                <TableHeaderCell className="text-right">Actions</TableHeaderCell>
+                <TableHeaderCell>{t('buyerInvoices.table.invoiceNo')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerInvoices.table.supplier')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerInvoices.table.poRef')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">{t('buyerInvoices.table.amount')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerInvoices.table.match')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerInvoices.table.status')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerInvoices.table.dueDate')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerInvoices.table.sapFi')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">{t('buyerInvoices.table.actions')}</TableHeaderCell>
               </TableHeader>
               <tbody>
                 {filtered.map((inv) => {
@@ -565,7 +609,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                         </div>
                         <div className="inline-flex items-center gap-1 text-xs text-text-tertiary mt-0.5">
                           <Channel size={12} />
-                          via {inv.channel}
+                          {t('buyerInvoices.table.via', { channel: inv.channel })}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -592,7 +636,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                         </StatusPill>
                         {inv.status === 'Overdue' && (
                           <div className="text-xs text-danger mt-1">
-                            {inv.daysOutstanding}d overdue
+                            {t('buyerInvoices.table.daysOverdue', { days: inv.daysOutstanding })}
                           </div>
                         )}
                       </TableCell>
@@ -602,7 +646,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                         </Data>
                         {inv.paymentDate && (
                           <div className="text-xs text-success">
-                            Paid <Data>{formatDate(inv.paymentDate)}</Data>
+                            {t('buyerInvoices.table.paid')} <Data>{formatDate(inv.paymentDate)}</Data>
                           </div>
                         )}
                       </TableCell>
@@ -630,7 +674,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                       colSpan={9}
                       className="text-center text-sm text-text-tertiary py-10"
                     >
-                      No invoices match the current filters.
+                      {t('buyerInvoices.table.empty')}
                     </td>
                   </tr>
                 )}
@@ -644,7 +688,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
             <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-              Monthly Invoice Flow (Rp jT)
+              {t('buyerInvoices.analytics.monthlyFlow')}
             </h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart
@@ -658,14 +702,14 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 <Bar
                   dataKey="paid"
                   fill={TOKEN_SUCCESS}
-                  name="Released"
+                  name={t('buyerInvoices.chart.released')}
                   radius={[4, 4, 0, 0]}
                   stackId="a"
                 />
                 <Bar
                   dataKey="pending"
                   fill={TOKEN_TEAL}
-                  name="Pending"
+                  name={t('buyerInvoices.chart.pending')}
                   radius={[4, 4, 0, 0]}
                   stackId="a"
                 />
@@ -675,26 +719,26 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
             <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-              3-Way Match Summary
+              {t('buyerInvoices.analytics.matchSummary')}
             </h3>
             <div className="grid grid-cols-2 gap-3">
               <MatchTile
-                label="Auto-Matched"
+                label={t('buyerInvoices.matchTile.autoMatched')}
                 count={matchCounts.matched}
                 variant="success"
               />
               <MatchTile
-                label="Pending GR"
+                label={t('buyerInvoices.matchTile.pendingGr')}
                 count={matchCounts.pendingGr}
                 variant="neutral"
               />
               <MatchTile
-                label="Qty Mismatch"
+                label={t('buyerInvoices.matchTile.qtyMismatch')}
                 count={matchCounts.qtyMismatch}
                 variant="danger"
               />
               <MatchTile
-                label="Price Variance"
+                label={t('buyerInvoices.matchTile.priceVariance')}
                 count={matchCounts.priceVariance}
                 variant="danger"
               />
@@ -707,7 +751,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
         <div className="flex flex-col gap-5">
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
             <h3 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-              Invoice Aging Report (Rp jT)
+              {t('buyerInvoices.aging.reportTitle')}
             </h3>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart
@@ -715,13 +759,17 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 margin={{ top: 10, right: 20, bottom: 0, left: -10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E9EE" />
-                <XAxis dataKey="bucket" tick={{ fontSize: 11, fill: TOKEN_MUTED }} />
+                <XAxis
+                  dataKey="bucket"
+                  tickFormatter={agingBucketLabel}
+                  tick={{ fontSize: 11, fill: TOKEN_MUTED }}
+                />
                 <YAxis tick={{ fontSize: 11, fill: TOKEN_MUTED }} />
                 <Tooltip content={<ChartTooltip />} />
                 <Bar
                   dataKey="amount"
                   fill={TOKEN_TEAL}
-                  name="Amount"
+                  name={t('buyerInvoices.chart.amount')}
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
@@ -731,11 +779,11 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
             <Table>
               <TableHeader>
-                <TableHeaderCell>Aging bucket</TableHeaderCell>
-                <TableHeaderCell className="text-right">Count</TableHeaderCell>
-                <TableHeaderCell className="text-right">Amount</TableHeaderCell>
-                <TableHeaderCell className="text-right">% of AP</TableHeaderCell>
-                <TableHeaderCell>Risk</TableHeaderCell>
+                <TableHeaderCell>{t('buyerInvoices.aging.bucket')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">{t('buyerInvoices.aging.count')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">{t('buyerInvoices.aging.amount')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">{t('buyerInvoices.aging.pctAp')}</TableHeaderCell>
+                <TableHeaderCell>{t('buyerInvoices.aging.risk')}</TableHeaderCell>
               </TableHeader>
               <tbody>
                 {AGING_DATA.map((row) => {
@@ -746,7 +794,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     <TableRow key={row.bucket}>
                       <TableCell>
                         <span className="font-semibold text-text-primary">
-                          {row.bucket}
+                          {agingBucketLabel(row.bucket)}
                         </span>
                       </TableCell>
                       <TableCell className="text-right text-text-secondary">
@@ -783,9 +831,8 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-primary flex items-start gap-2">
             <Database size={14} className="text-info shrink-0 mt-0.5" />
             <span>
-              <strong className="text-info">Phase 2 — SAP FI Integration:</strong>{' '}
-              Aging will pull from SAP AP open items. Payment runs triggered via
-              SAP F110.
+              <strong className="text-info">{t('buyerInvoices.aging.phase2.label')}</strong>{' '}
+              {t('buyerInvoices.aging.phase2.body')}
             </span>
           </div>
         </div>
@@ -801,19 +848,19 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
               {panelMode === 'detail' && (
                 <>
                   <Button variant="secondary" onClick={closePanel}>
-                    Close
+                    {t('buyerInvoices.action.close')}
                   </Button>
                   {(selected.status === 'Pending Match' ||
                     selected.status === 'Approved') && (
                     <Button variant="secondary" onClick={() => setPanelMode('disputing')}>
-                      Dispute
+                      {t('buyerInvoices.action.dispute')}
                     </Button>
                   )}
                   <Button
                     variant={selected.status === 'Approved' ? 'primary' : 'outline'}
                     onClick={handleFooterAction}
                   >
-                    {FOOTER_ACTION_BY_STATUS[selected.status]}
+                    {t(FOOTER_ACTION_KEY[selected.status])}
                   </Button>
                 </>
               )}
@@ -823,14 +870,14 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     variant="secondary"
                     onClick={() => setPanelMode('detail')}
                   >
-                    Cancel
+                    {t('buyerInvoices.action.cancel')}
                   </Button>
                   <Button
                     variant="primary"
                     disabled={releaseMutation.isPending}
                     onClick={handleReleasePayment}
                   >
-                    Confirm release — {fmtCompact(selected.amount)}
+                    {t('buyerInvoices.action.confirmRelease', { amount: fmtCompact(selected.amount) })}
                   </Button>
                 </>
               )}
@@ -843,14 +890,14 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                       setDisputeReason('');
                     }}
                   >
-                    Cancel
+                    {t('buyerInvoices.action.cancel')}
                   </Button>
                   <Button
                     variant="primary"
                     disabled={disputeMutation.isPending}
                     onClick={confirmDispute}
                   >
-                    Raise dispute
+                    {t('buyerInvoices.action.raiseDispute')}
                   </Button>
                 </>
               )}
@@ -860,10 +907,10 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     variant="secondary"
                     onClick={() => setPanelMode('detail')}
                   >
-                    Back
+                    {t('buyerInvoices.action.back')}
                   </Button>
                   <Button variant="outline" icon={Send} onClick={sendRemittance}>
-                    Send to supplier
+                    {t('buyerInvoices.action.sendToSupplier')}
                   </Button>
                 </>
               )}
@@ -875,35 +922,35 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           <div className="space-y-6">
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Key facts
+                {t('buyerInvoices.section.keyFacts')}
               </h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="text-text-tertiary">Supplier</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.supplier')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selected.supplierName}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">PO reference</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.poReference')}</dt>
                   <Data as="dd" className="text-text-primary">
                     {selected.poNumber}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Amount</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.amount')}</dt>
                   <Data as="dd" className="text-text-primary font-semibold">
                     {formatIDR(selected.amount)}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Payment terms</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.paymentTerms')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selected.paymentTerms}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Due date</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.dueDate')}</dt>
                   <Data
                     as="dd"
                     className={`font-medium ${
@@ -916,13 +963,13 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Approver</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.approver')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selected.approver}
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Status</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.status')}</dt>
                   <dd>
                     <StatusPill variant={STATUS_VARIANT[selected.status]}>
                       {selected.status}
@@ -930,7 +977,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Channel</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.channel')}</dt>
                   <dd className="text-text-primary font-medium">
                     {selected.channel}
                   </dd>
@@ -940,7 +987,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                3-way match
+                {t('buyerInvoices.section.match')}
               </h3>
               <div
                 className={`border-l-2 rounded px-3 py-3 text-sm ${
@@ -951,46 +998,43 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                       : 'bg-bg-hover border-border-subtle text-text-secondary'
                 }`}
               >
-                <div className="font-semibold">{selected.matchStatus}</div>
+                <div className="font-semibold">
+                  {(() => {
+                    const k = statusLabelKey(selected.matchStatus);
+                    return k ? t(k) : selected.matchStatus;
+                  })()}
+                </div>
                 <div className="text-text-secondary mt-1">
-                  {selected.matchStatus === 'Matched' &&
-                    'PO, GR and invoice quantities + prices all reconcile.'}
-                  {selected.matchStatus === 'Pending GR' &&
-                    'Awaiting goods receipt posting in SAP before match can complete.'}
-                  {selected.matchStatus === 'Pending' && 'Match not yet started.'}
-                  {selected.matchStatus === 'Qty Mismatch' &&
-                    'Delivered quantity does not match invoiced quantity. Credit note required.'}
-                  {selected.matchStatus === 'Price Variance' &&
-                    'Invoice unit price exceeds PO price by more than tolerance.'}
+                  {t(MATCH_DESC_KEY[selected.matchStatus])}
                 </div>
               </div>
             </section>
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                SAP documents
+                {t('buyerInvoices.section.sapDocs')}
               </h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="text-text-tertiary">FI document</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.fiDocument')}</dt>
                   <Data
                     as="dd"
                     className={`${
                       selected.sapFiDoc ? 'text-success' : 'text-text-tertiary'
                     }`}
                   >
-                    {selected.sapFiDoc ?? '— pending —'}
+                    {selected.sapFiDoc ?? t('buyerInvoices.field.pending')}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">GR document</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.grDocument')}</dt>
                   <Data
                     as="dd"
                     className={`${
                       selected.sapGrDoc ? 'text-success' : 'text-text-tertiary'
                     }`}
                   >
-                    {selected.sapGrDoc ?? '— pending —'}
+                    {selected.sapGrDoc ?? t('buyerInvoices.field.pending')}
                   </Data>
                 </div>
               </dl>
@@ -998,17 +1042,17 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                Payment
+                {t('buyerInvoices.section.payment')}
               </h3>
               <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div>
-                  <dt className="text-text-tertiary">Bank account</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.bankAccount')}</dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {selected.bankAccount}
                   </Data>
                 </div>
                 <div>
-                  <dt className="text-text-tertiary">Payment date</dt>
+                  <dt className="text-text-tertiary">{t('buyerInvoices.field.paymentDate')}</dt>
                   <Data as="dd" className="text-text-primary font-medium">
                     {formatDate(selected.paymentDate)}
                   </Data>
@@ -1018,17 +1062,17 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
 
             {panelMode === 'confirming' && (
               <section className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-warning-hover">
-                <div className="font-semibold mb-1">Confirm payment release</div>
+                <div className="font-semibold mb-1">{t('buyerInvoices.confirm.title')}</div>
                 <div className="text-text-secondary">
-                  This action cannot be undone. Payment of{' '}
+                  {t('buyerInvoices.confirm.body.pre')}
                   <Data as="strong" className="text-text-primary">
                     {formatIDR(selected.amount)}
-                  </Data>{' '}
-                  will be transferred to{' '}
+                  </Data>
+                  {t('buyerInvoices.confirm.body.mid')}
                   <Data as="strong" className="text-text-primary">
                     {selected.bankAccount}
                   </Data>
-                  . Verify bank details before confirming.
+                  {t('buyerInvoices.confirm.body.post')}
                 </div>
               </section>
             )}
@@ -1036,21 +1080,21 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             {panelMode === 'disputing' && (
               <section>
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
-                  Raise a dispute
+                  {t('buyerInvoices.section.raiseDispute')}
                 </h3>
                 <label htmlFor="dispute-reason" className="sr-only">
-                  Dispute reason for {selected.invoiceNumber}
+                  {t('buyerInvoices.dispute.srLabel', { invoiceNumber: selected.invoiceNumber })}
                 </label>
                 <textarea
                   id="dispute-reason"
                   className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
                   rows={3}
-                  placeholder="Reason (e.g. quantity mismatch vs GR, price variance)…"
+                  placeholder={t('buyerInvoices.dispute.placeholder')}
                   value={disputeReason}
                   onChange={(e) => setDisputeReason(e.target.value)}
                 />
                 <div className="mt-2 text-xs text-text-tertiary">
-                  A credit note will be required before payment can be released.
+                  {t('buyerInvoices.dispute.note')}
                 </div>
               </section>
             )}
@@ -1058,17 +1102,17 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             {panelMode === 'remittance' && (
               <section>
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
-                  Remittance advice
+                  {t('buyerInvoices.section.remittance')}
                 </h3>
                 <div className="border border-border-subtle rounded-md overflow-hidden">
                   <table className="w-full text-xs">
                     <tbody>
                       {[
-                        ['Invoice no', selected.invoiceNumber],
-                        ['PO reference', selected.poNumber],
-                        ['Amount', formatIDR(selected.amount)],
-                        ['Payment date', formatDate(selected.paymentDate)],
-                        ['Bank account', selected.bankAccount],
+                        [t('buyerInvoices.remit.invoiceNo'), selected.invoiceNumber],
+                        [t('buyerInvoices.field.poReference'), selected.poNumber],
+                        [t('buyerInvoices.field.amount'), formatIDR(selected.amount)],
+                        [t('buyerInvoices.field.paymentDate'), formatDate(selected.paymentDate)],
+                        [t('buyerInvoices.field.bankAccount'), selected.bankAccount],
                       ].map(([label, value]) => (
                         <tr
                           key={label}
@@ -1091,13 +1135,11 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     icon={Download}
                     onClick={downloadPdf}
                   >
-                    Download PDF
+                    {t('buyerInvoices.remit.downloadPdf')}
                   </Button>
                 </div>
                 <div className="mt-3 bg-success-soft border-l-2 border-success rounded px-3 py-2 text-xs text-text-secondary">
-                  This remittance advice confirms payment has been processed.
-                  The supplier will receive notification via their preferred
-                  communication channel.
+                  {t('buyerInvoices.remit.note')}
                 </div>
               </section>
             )}
@@ -1134,12 +1176,14 @@ const MatchTile: React.FC<MatchTileProps> = ({ label, count, variant }) => (
 // states. The presentational view (which owns local mutable state seeded from
 // the server list) only mounts once real data has resolved.
 const BuyerInvoices: React.FC = () => {
+  const { t } = useTranslation();
+  const crumb = [t('buyerInvoices.crumb.transact'), t('buyerInvoices.crumb.invoices')];
   const invoicesQuery = useBuyerInvoices();
-  if (invoicesQuery.isPending) return <LoadingState breadcrumb={INV_CRUMB} />;
+  if (invoicesQuery.isPending) return <LoadingState breadcrumb={crumb} />;
   if (invoicesQuery.isError)
     return (
       <ErrorState
-        breadcrumb={INV_CRUMB}
+        breadcrumb={crumb}
         error={invoicesQuery.error}
         onRetry={() => invoicesQuery.refetch()}
       />
@@ -1147,9 +1191,9 @@ const BuyerInvoices: React.FC = () => {
   if (invoicesQuery.data.items.length === 0)
     return (
       <EmptyState
-        breadcrumb={INV_CRUMB}
-        title="No invoices"
-        subtitle="There are no invoices to match or pay for this view."
+        breadcrumb={crumb}
+        title={t('buyerInvoices.empty.title')}
+        subtitle={t('buyerInvoices.empty.subtitle')}
       />
     );
   return <BuyerInvoicesView invoices={invoicesQuery.data.items} />;

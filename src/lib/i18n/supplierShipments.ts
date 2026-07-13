@@ -172,6 +172,8 @@ export const supplierShipmentsEn: Record<string, string> = {
   // — Export toast —
   'supplierShipments.toast.export.title': 'EDI 856 export generated',
   'supplierShipments.toast.export.desc': 'Download will start shortly.',
+  // — Carrier <select> generic option (proper-noun carriers stay EN) —
+  'supplierShipments.option.other': 'Other',
 };
 
 export const supplierShipmentsId: Record<string, string> = {
@@ -330,4 +332,6 @@ export const supplierShipmentsId: Record<string, string> = {
   // — Export toast —
   'supplierShipments.toast.export.title': 'Ekspor EDI 856 dibuat',
   'supplierShipments.toast.export.desc': 'Unduhan akan segera dimulai.',
+  // — Carrier <select> generic option (proper-noun carriers stay EN) —
+  'supplierShipments.option.other': 'Lainnya',
 };

@@ -339,7 +339,7 @@ const GeopoliticalTab: React.FC<{ geoRisks: GeoRisk[] }> = ({ geoRisks }) => {
               </div>
               <div className="flex flex-wrap gap-2">
                 <StatusPill variant="neutral">
-                  Probability: {r.probability}%
+                  {t('risk.alt.probability')}: {r.probability}%
                 </StatusPill>
                 <StatusPill variant="neutral">{r.timeline}</StatusPill>
               </div>
@@ -553,7 +553,7 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
                       {alt.name}
                     </span>
                     <StatusPill variant={feasVariant}>
-                      {alt.feasibility} feasibility
+                      {alt.feasibility} {t('risk.alt.feasibility')}
                     </StatusPill>
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
