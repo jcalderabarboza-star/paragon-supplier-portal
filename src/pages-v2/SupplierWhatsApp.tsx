@@ -257,6 +257,7 @@ const PhoneMockup: React.FC<PhoneMockupProps> = ({
   isTyping,
   newMsgIds,
 }) => {
+  const { t } = useTranslation();
   const chatRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -350,7 +351,7 @@ const PhoneMockup: React.FC<PhoneMockupProps> = ({
                   onClick={() => onSend(inputValue)}
                   className="w-8 h-8 rounded-full flex items-center justify-center text-white shrink-0"
                   style={{ background: WHATSAPP_GREEN_DOT }}
-                  aria-label="Send"
+                  aria-label={t('supplierWhatsApp.aria.send')}
                 >
                   <Send size={13} />
                 </button>

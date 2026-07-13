@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { ArrowUpRight } from 'lucide-react';
 import StatusPill from './StatusPill';
 
@@ -32,6 +33,7 @@ const SupplierCard: React.FC<SupplierCardProps> = ({
   onView,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const initials = name
     .split(/\s+/)
     .map((w) => w[0])
@@ -113,7 +115,7 @@ const SupplierCard: React.FC<SupplierCardProps> = ({
           onClick={onView}
           className="inline-flex items-center gap-1 text-sm font-medium text-teal hover:text-teal-hover transition-colors"
         >
-          View profile
+          {t('marketplace.card.viewProfile')}
           <ArrowUpRight size={14} />
         </button>
       </div>

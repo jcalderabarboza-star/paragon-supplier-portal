@@ -139,6 +139,9 @@ export const supplierMyStorefrontEn: Record<string, string> = {
     'Add 2 more materials to catalog (+5 points)',
   'supplierMyStorefront.advisor.item.references':
     'Add key client references (+5 points)',
+  // — Catalog table inline units —
+  'supplierMyStorefront.days': 'days',
+  'supplierMyStorefront.perMonth': '/mo',
 };
 
 export const supplierMyStorefrontId: Record<string, string> = {
@@ -267,4 +270,7 @@ export const supplierMyStorefrontId: Record<string, string> = {
     'Tambahkan 2 material lagi ke katalog (+5 poin)',
   'supplierMyStorefront.advisor.item.references':
     'Tambahkan referensi klien utama (+5 poin)',
+  // — Catalog table inline units —
+  'supplierMyStorefront.days': 'hari',
+  'supplierMyStorefront.perMonth': '/bln',
 };

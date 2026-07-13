@@ -91,6 +91,8 @@ export const supplierOrdersEn: Record<string, string> = {
   'supplierOrders.panel.totalQty': 'Total qty',
   'supplierOrders.panel.next': 'Next',
   'supplierOrders.panel.notesPrefix': 'Notes:',
+  'supplierOrders.panel.title': 'PO {{poNumber}}',
+  'supplierOrders.units': 'units',
   // — Toasts (page-local; PO-confirm toasts reuse shared po.confirm.*) —
   'supplierOrders.toast.changeSubmitted.title':
     'Change request for {{poNumber}} submitted',
@@ -187,6 +189,8 @@ export const supplierOrdersId: Record<string, string> = {
   'supplierOrders.panel.totalQty': 'Total kuantitas',
   'supplierOrders.panel.next': 'Berikutnya',
   'supplierOrders.panel.notesPrefix': 'Catatan:',
+  'supplierOrders.panel.title': 'PO {{poNumber}}',
+  'supplierOrders.units': 'unit',
   // — Toasts (page-local; PO-confirm toasts reuse shared po.confirm.*) —
   'supplierOrders.toast.changeSubmitted.title':
     'Permintaan perubahan untuk {{poNumber}} dikirim',

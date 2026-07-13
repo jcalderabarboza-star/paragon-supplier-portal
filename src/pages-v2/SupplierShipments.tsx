@@ -855,7 +855,9 @@ const SupplierShipments: React.FC = () => {
                   className={inputClass}
                 >
                   {CARRIER_OPTIONS.map((c) => (
-                    <option key={c}>{c}</option>
+                    <option key={c} value={c}>
+                      {c === 'Other' ? t('supplierShipments.option.other') : c}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1211,7 +1213,9 @@ const SupplierShipments: React.FC = () => {
                 className={inputClass}
               >
                 {CARRIER_OPTIONS.map((c) => (
-                  <option key={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c === 'Other' ? t('supplierShipments.option.other') : c}
+                  </option>
                 ))}
               </select>
             </label>

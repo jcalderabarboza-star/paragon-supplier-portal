@@ -33,6 +33,7 @@ export const supplierWhatsAppEn: Record<string, string> = {
   // — Shared chrome —
   'supplierWhatsApp.common.chooseScenario': 'Choose a scenario:',
   'supplierWhatsApp.action.resetConversation': 'Reset conversation',
+  'supplierWhatsApp.aria.send': 'Send',
   // — Flow arrow labels (shared across all three channel flows) —
   'supplierWhatsApp.flow.arrow.triggers': 'Triggers',
   'supplierWhatsApp.flow.arrow.sendsVia': 'Sends via',
@@ -151,6 +152,7 @@ export const supplierWhatsAppId: Record<string, string> = {
   // — Shared chrome —
   'supplierWhatsApp.common.chooseScenario': 'Pilih skenario:',
   'supplierWhatsApp.action.resetConversation': 'Atur ulang percakapan',
+  'supplierWhatsApp.aria.send': 'Kirim',
   // — Flow arrow labels (shared across all three channel flows) —
   'supplierWhatsApp.flow.arrow.triggers': 'Memicu',
   'supplierWhatsApp.flow.arrow.sendsVia': 'Mengirim via',

@@ -47,6 +47,8 @@ import { supplierMyStorefrontEn, supplierMyStorefrontId } from './i18n/supplierM
 import { supplierStorefrontEn, supplierStorefrontId } from './i18n/supplierStorefront';
 import { supplierInventoryEn, supplierInventoryId } from './i18n/supplierInventory';
 import { supplierPerformanceEn, supplierPerformanceId } from './i18n/supplierPerformance';
+// — Coverage sweep (sprint close) —
+import { buyerInvoicesEn, buyerInvoicesId } from './i18n/buyerInvoices';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -99,6 +101,8 @@ export const resources = {
       ...supplierStorefrontEn,
       ...supplierInventoryEn,
       ...supplierPerformanceEn,
+      // — Coverage sweep (sprint close) —
+      ...buyerInvoicesEn,
       'app.title': 'Paragon Supplier Portal',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Acquire',
@@ -264,6 +268,8 @@ export const resources = {
       ...supplierStorefrontId,
       ...supplierInventoryId,
       ...supplierPerformanceId,
+      // — Coverage sweep (sprint close) —
+      ...buyerInvoicesId,
       'app.title': 'Portal Pemasok Paragon',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Pengadaan',

@@ -270,7 +270,7 @@ const SupplierOrders: React.FC = () => {
   const hasDateChange =
     selected !== null && deliveryDate !== selected.requestedDeliveryDate;
 
-  const panelTitle = selected ? `PO ${selected.poNumber}` : '';
+  const panelTitle = selected ? t('supplierOrders.panel.title', { poNumber: selected.poNumber }) : '';
   const panelActionLabel = (po: PurchaseOrder): string => {
     if (ACTION_STATUSES.includes(po.status)) return t('supplierOrders.action.confirm');
     if (po.status === POStatus.CONFIRMED) return t('supplierOrders.action.createAsn');
@@ -699,7 +699,7 @@ const SupplierOrders: React.FC = () => {
                       {t('supplierOrders.panel.totalQty')}
                     </dt>
                     <dd className="text-sm font-bold text-text-primary">
-                      <Data>{totalConfirmedQty.toLocaleString()} units</Data>
+                      <Data>{totalConfirmedQty.toLocaleString()} {t('supplierOrders.units')}</Data>
                     </dd>
                   </div>
                   <div className="bg-white rounded px-3 py-2 border border-border-subtle">

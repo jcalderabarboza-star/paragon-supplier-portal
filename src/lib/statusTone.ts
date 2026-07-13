@@ -43,6 +43,7 @@ const STATUS_TONE: Record<string, StatusTone> = {
   'On Time': 'success',
   'In Network': 'success',
   'EDI 846': 'success',
+  'Halal Certified': 'success',
   // caution
   Expiring: 'warning',
   'Expiring Soon': 'warning',
@@ -86,6 +87,7 @@ const STATUS_TONE: Record<string, StatusTone> = {
   Open: 'info',
   'API Push': 'info',
   Inbound: 'info',
+  'BPOM Registered': 'info',
   // neutral
   Draft: 'neutral',
   Sent: 'neutral',

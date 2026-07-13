@@ -39,20 +39,42 @@ const StatusPill: React.FC<StatusPillProps> = ({
 }) => {
   const { t } = useTranslation();
   // Localize known canonical labels from the central maps; anything else
-  // (domain-specific labels, non-string children) renders verbatim. In EN the
-  // resolved value equals the canonical string, so output is unchanged.
-  // statusLabel wins for overlapping tokens; priority/risk/enum vocab, then
-  // category, then channel are fallbacks (SEAT2-I18N-ENUM/CATEGORY/CHANNEL-01) —
-  // disjoint namespaces, so first-match order is immaterial to correctness. A
-  // pill is display-only, so this is always an honest display translation.
-  const key =
-    typeof children === 'string'
-      ? statusLabelKey(children) ??
-        enumLabelKey(children) ??
-        categoryLabelKey(children) ??
-        channelLabelKey(children)
-      : null;
-  const label = key ? t(key) : children;
+  // (domain-specific labels) renders verbatim. In EN the resolved value equals
+  // the canonical string, so output is unchanged. statusLabel wins for
+  // overlapping tokens; priority/risk/enum vocab, then category, then channel
+  // are fallbacks (SEAT2-I18N-ENUM/CATEGORY/CHANNEL-01) — disjoint namespaces,
+  // so first-match order is immaterial to correctness. A pill is display-only,
+  // so this is always an honest display translation.
+  //
+  // SEAT2-I18N-PILL-CHILDREN-01: a canonical token wrapped alongside an icon
+  // (e.g. <span><RefreshCw/>{status}</span>) arrives as a NON-string child, so a
+  // plain `typeof children === 'string'` check would leave it in EN. We instead
+  // walk the child tree and localize every string LEAF in place, preserving the
+  // surrounding icon/markup. Non-canonical strings pass through unchanged, so
+  // the plain-string case stays byte-identical.
+  const translateLeaf = (s: string): string => {
+    const key =
+      statusLabelKey(s) ??
+      enumLabelKey(s) ??
+      categoryLabelKey(s) ??
+      channelLabelKey(s);
+    return key ? t(key) : s;
+  };
+  const localize = (node: React.ReactNode): React.ReactNode => {
+    if (typeof node === 'string') return translateLeaf(node);
+    if (Array.isArray(node))
+      return node.map((n, i) => (
+        <React.Fragment key={i}>{localize(n)}</React.Fragment>
+      ));
+    if (React.isValidElement(node) && node.props.children != null)
+      return React.cloneElement(
+        node,
+        node.props,
+        localize(node.props.children),
+      );
+    return node;
+  };
+  const label = localize(children);
   return (
     <span
       className={`inline-flex items-center rounded-sm border px-2 py-0.5 text-xs font-medium ${VARIANT_CLASS[variant]} ${className}`}

@@ -373,8 +373,7 @@ const SupplierStorefront: React.FC = () => {
             <h2 className="text-section text-text-primary">
               {t('supplierStorefront.track.title')}
             </h2>
-            {/* "Sample data" auto-localizes via StatusPill → statusLabel; not re-keyed */}
-            <StatusPill variant="neutral">Sample data</StatusPill>
+            <StatusPill variant="neutral">{t('supplierStorefront.sampleData')}</StatusPill>
           </div>
           <ol className="relative space-y-5">
             {TRACK_RECORD.map((e, i) => {
