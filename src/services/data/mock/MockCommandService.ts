@@ -37,6 +37,7 @@ import {
   bindPolicyHook,
   POLICY_HOOKS,
   cascadesFor,
+  deriveMatchVerdict,
   type CommandTarget,
   type CascadeCommand,
   type CascadeContext,
@@ -356,6 +357,41 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
   if (ctx.entity === 'goodsReceipt') {
     const gr = goodsReceiptStore.get(ctx.entityId);
     if (!gr) return [];
+    // GR-post → invoice-match (F0.2, census G4 — closes INV-GR-OVERLAY-01). Fires
+    // at the `submitted` moment (B), reusing this one dispatch-time cascade path.
+    // For each Submitted invoice sharing the GR's PO, compute the honest 3-way
+    // verdict from real PO×GR×invoice data, WRITE the computed matchStatus, and
+    // fan out the header t_invoice_match ONLY when the verdict is a genuine
+    // 'Matched'. A Qty Mismatch / Price Variance writes that truthful verdict and
+    // does NOT advance the header — the invoice stays Submitted (an honest no-op,
+    // not a defect). The matchStatus WRITE here is a resolver side-effect and a
+    // KNOWN DEFERRAL: its true home is a computed read-projection (DR-7 ruling 1)
+    // at A2, where this same `deriveMatchVerdict` is called from the read layer.
+    if (ctx.transitionId === 't_gr_post') {
+      const [link] = cascadesFor(ctx.transitionId);
+      const po = findPoByNumber(gr.poNumber);
+      if (!link || !po) return [];
+      const expectedValue = po.lineItems.reduce(
+        (sum, li) => sum + li.confirmedQty * li.unitPrice,
+        0,
+      );
+      const grHasRejects = gr.inspectionResults.some((r) => r.qtyRejected > 0);
+      const cmds: CascadeCommand[] = [];
+      for (const inv of invoiceStore.all()) {
+        if (inv.poNumber !== gr.poNumber || inv.status !== 'Submitted') continue;
+        const verdict = deriveMatchVerdict(expectedValue, inv.amount, grHasRejects);
+        invoiceStore.update(inv.id, (i) => ({ ...i, matchStatus: verdict }));
+        if (verdict === 'Matched') {
+          cmds.push({
+            entity: link.targetEntity,
+            entityId: inv.id,
+            transitionId: link.targetTransitionId,
+          });
+        }
+      }
+      return cmds;
+    }
+    // GR mismatch disposition (reject / partial approve) → ASN discrepancy (batch ii).
     return cascadesFor(ctx.transitionId).map((link) => ({
       entity: link.targetEntity,
       entityId: gr.asnNumber,
