@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Mail,
   Phone,
@@ -41,16 +42,10 @@ import {
   usePurchaseOrders,
 } from '../services/query/hooks';
 import { formatIDR, formatNumber, formatDate } from '../lib/format';
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
+import { useChannelLabel } from '../hooks/useChannelLabel';
 import { SupplierStatus, SupplierTier } from '../types/supplier.types';
 import type { ProfileCertStatus, PurchaseOrder } from '../services/data/types';
-
-const PROFILE_CRUMB = ['ACQUIRE', 'SUPPLIER DIRECTORY'];
-
-const TIER_LABEL: Record<SupplierTier, string> = {
-  [SupplierTier.WHATSAPP]: 'Tier 1 · WhatsApp',
-  [SupplierTier.WEB]: 'Tier 2 · Web Portal',
-  [SupplierTier.API]: 'Tier 3 · API/EDI',
-};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -110,19 +105,35 @@ type TabId =
   | 'performance'
   | 'msglog';
 
-const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
-  { id: 'overview', label: 'Overview', icon: ShieldCheck },
-  { id: 'comm', label: 'Communication Setup', icon: Settings },
-  { id: 'compliance', label: 'Compliance', icon: ShieldCheck },
-  { id: 'catalog', label: 'Catalog', icon: Package },
-  { id: 'performance', label: 'Performance', icon: BarChart3 },
-  { id: 'msglog', label: 'Message Log', icon: MessageSquare },
-];
-
 const BuyerSupplierProfile: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const cl = useCategoryLabel();
+  const chl = useChannelLabel();
   const [activeTab, setActiveTab] = useState<TabId>('overview');
+
+  const PROFILE_CRUMB = [
+    t('buyerSupplierProfile.crumb.acquire'),
+    t('buyerSupplierProfile.crumb.directory'),
+  ];
+
+  // Connectivity-tier display labels (WhatsApp/Web Portal/API are proper
+  // nouns/protocols; only the "Tier N" word localizes).
+  const TIER_LABEL: Record<SupplierTier, string> = {
+    [SupplierTier.WHATSAPP]: t('buyerSupplierProfile.tier.whatsapp'),
+    [SupplierTier.WEB]: t('buyerSupplierProfile.tier.web'),
+    [SupplierTier.API]: t('buyerSupplierProfile.tier.api'),
+  };
+
+  const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
+    { id: 'overview', label: t('buyerSupplierProfile.tab.overview'), icon: ShieldCheck },
+    { id: 'comm', label: t('buyerSupplierProfile.tab.comm'), icon: Settings },
+    { id: 'compliance', label: t('buyerSupplierProfile.tab.compliance'), icon: ShieldCheck },
+    { id: 'catalog', label: t('buyerSupplierProfile.tab.catalog'), icon: Package },
+    { id: 'performance', label: t('buyerSupplierProfile.tab.performance'), icon: BarChart3 },
+    { id: 'msglog', label: t('buyerSupplierProfile.tab.msglog'), icon: MessageSquare },
+  ];
 
   const supplierQuery = useSupplier(id ?? '');
   const supp = supplierQuery.data ?? null;
@@ -154,14 +165,14 @@ const BuyerSupplierProfile: React.FC = () => {
       <AppShellV2>
         <div className="py-20 text-center">
           <div className="text-lg font-semibold text-text-primary mb-2">
-            Supplier not found
+            {t('buyerSupplierProfile.notFound.title')}
           </div>
           <Button
             variant="secondary"
             icon={ArrowLeft}
             onClick={() => navigate('/buyer/suppliers')}
           >
-            Back to Directory
+            {t('buyerSupplierProfile.notFound.back')}
           </Button>
         </div>
       </AppShellV2>
@@ -189,21 +200,25 @@ const BuyerSupplierProfile: React.FC = () => {
           className="inline-flex items-center gap-1 text-sm text-teal hover:text-teal-hover font-medium"
         >
           <ArrowLeft size={14} />
-          Supplier Directory
+          {t('buyerSupplierProfile.back.directory')}
         </button>
       </div>
 
       <PageHeader
-        breadcrumb={['ACQUIRE', 'SUPPLIER DIRECTORY', supp.name.toUpperCase()]}
+        breadcrumb={[
+          t('buyerSupplierProfile.crumb.acquire'),
+          t('buyerSupplierProfile.crumb.directory'),
+          supp.name.toUpperCase(),
+        ]}
         title={supp.name}
-        subtitle={`${supp.category} · ${supp.city}, ${supp.country} · ${TIER_LABEL[supp.tier]}`}
+        subtitle={`${cl(supp.category)} · ${supp.city}, ${supp.country} · ${TIER_LABEL[supp.tier]}`}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="secondary" icon={MessageSquare}>
-              Message
+              {t('buyerSupplierProfile.actions.message')}
             </Button>
             <Button variant="outline" icon={ShoppingCart}>
-              Create RFQ
+              {t('buyerSupplierProfile.actions.createRfq')}
             </Button>
           </div>
         }
@@ -259,27 +274,29 @@ const BuyerSupplierProfile: React.FC = () => {
       {/* KPI strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
         <KpiCard
-          eyebrow="OTIF"
+          eyebrow={t('buyerSupplierProfile.kpi.otif.eyebrow')}
           value={`${supp.otif}%`}
-          subtitle="On-time, in-full"
+          subtitle={t('buyerSupplierProfile.kpi.otif.subtitle')}
           icon={Activity}
         />
         <KpiCard
-          eyebrow="Lead Time Adherence"
+          eyebrow={t('buyerSupplierProfile.kpi.leadTime.eyebrow')}
           value={`${supp.leadTimeAdherence}%`}
-          subtitle="Last 12 months"
+          subtitle={t('buyerSupplierProfile.kpi.leadTime.subtitle')}
           icon={Clock}
         />
         <KpiCard
-          eyebrow="Invoice Accuracy"
+          eyebrow={t('buyerSupplierProfile.kpi.invoiceAccuracy.eyebrow')}
           value={`${supp.invoiceAccuracy}%`}
-          subtitle="Match rate"
+          subtitle={t('buyerSupplierProfile.kpi.invoiceAccuracy.subtitle')}
           icon={ShieldCheck}
         />
         <KpiCard
-          eyebrow="Scorecard Grade"
+          eyebrow={t('buyerSupplierProfile.kpi.scorecard.eyebrow')}
           value={supp.scorecardGrade}
-          subtitle={`Rating ${supp.rating.toFixed(1)} / 5`}
+          subtitle={t('buyerSupplierProfile.kpi.scorecard.subtitle', {
+            rating: supp.rating.toFixed(1),
+          })}
           icon={Wallet}
         />
       </div>
@@ -294,53 +311,53 @@ const BuyerSupplierProfile: React.FC = () => {
       {activeTab === 'overview' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-4">
-            Company overview
+            {t('buyerSupplierProfile.overview.heading')}
           </h2>
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Legal name</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.legalName')}</dt>
               <dd className="text-text-primary">{supp.legalName ?? supp.name}</dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Tax ID</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.taxId')}</dt>
               <dd className="text-text-primary"><Data>{supp.taxId ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Business reg.</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.businessReg')}</dt>
               <dd className="text-text-primary"><Data>{supp.businessRegNo ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Founded</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.founded')}</dt>
               <dd className="text-text-primary"><Data>{supp.founded ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Employees</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.employees')}</dt>
               <dd className="text-text-primary"><Data>{supp.employees ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Annual revenue</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.annualRevenue')}</dt>
               <dd className="text-text-primary"><Data>{supp.annualRevenue ?? '—'}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Payment terms</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.paymentTerms')}</dt>
               <dd className="text-text-primary">{supp.paymentTerms ?? '—'}</dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Incoterms</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.incoterms')}</dt>
               <dd className="text-text-primary">{supp.incoterms ?? '—'}</dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Onboarded</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.onboarded')}</dt>
               <dd className="text-text-primary"><Data>{supp.onboardedDate}</Data></dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Last activity</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.overview.lastActivity')}</dt>
               <dd className="text-text-primary"><Data>{supp.lastActivityDate}</Data></dd>
             </div>
           </dl>
           {supp.intelligenceNote && (
             <div className="mt-5 p-4 bg-teal-soft border border-teal/20 rounded-md text-sm text-text-secondary">
-              <strong className="text-text-primary">Intelligence note:</strong>{' '}
+              <strong className="text-text-primary">{t('buyerSupplierProfile.overview.intelNote')}</strong>{' '}
               {supp.intelligenceNote}
             </div>
           )}
@@ -350,37 +367,37 @@ const BuyerSupplierProfile: React.FC = () => {
       {activeTab === 'comm' && (
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-4">
-            Communication setup
+            {t('buyerSupplierProfile.comm.heading')}
           </h2>
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Preferred channel</dt>
-              <dd className="text-text-primary">{supp.preferredChannel}</dd>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.preferredChannel')}</dt>
+              <dd className="text-text-primary">{chl(supp.preferredChannel)}</dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Connectivity tier</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.connectivityTier')}</dt>
               <dd className="text-text-primary">{TIER_LABEL[supp.tier]}</dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Primary contact</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.primaryContact')}</dt>
               <dd className="text-text-primary">{supp.contactName}</dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Phone</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.phone')}</dt>
               <dd className="text-text-primary">{supp.phone}</dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Email</dt>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.email')}</dt>
               <dd className="text-text-primary">{supp.email}</dd>
             </div>
             <div className="flex justify-between border-b border-border-subtle py-2">
-              <dt className="text-text-tertiary">Business-hours only</dt>
-              <dd className="text-text-primary">Yes</dd>
+              <dt className="text-text-tertiary">{t('buyerSupplierProfile.comm.businessHours')}</dt>
+              <dd className="text-text-primary">{t('buyerSupplierProfile.comm.yes')}</dd>
             </div>
           </dl>
           <div className="mt-5 flex justify-end gap-2">
-            <Button variant="secondary">Reset to defaults</Button>
-            <Button variant="outline">Save profile</Button>
+            <Button variant="secondary">{t('buyerSupplierProfile.comm.reset')}</Button>
+            <Button variant="outline">{t('buyerSupplierProfile.comm.save')}</Button>
           </div>
         </section>
       )}
@@ -389,15 +406,15 @@ const BuyerSupplierProfile: React.FC = () => {
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
             <span className="text-sm font-semibold text-text-primary">
-              Compliance documents
+              {t('buyerSupplierProfile.compliance.heading')}
             </span>
           </div>
           <Table>
             <TableHeader>
-              <TableHeaderCell>Document</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
-              <TableHeaderCell>Uploaded</TableHeaderCell>
-              <TableHeaderCell>Expires</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.compliance.col.document')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.compliance.col.status')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.compliance.col.uploaded')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.compliance.col.expires')}</TableHeaderCell>
             </TableHeader>
             <tbody>
               {certs.map((doc) => (
@@ -429,7 +446,7 @@ const BuyerSupplierProfile: React.FC = () => {
                     colSpan={4}
                     className="text-center text-sm text-text-tertiary py-8"
                   >
-                    No compliance documents on file.
+                    {t('buyerSupplierProfile.compliance.empty')}
                   </td>
                 </tr>
               )}
@@ -442,17 +459,17 @@ const BuyerSupplierProfile: React.FC = () => {
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
             <span className="text-sm font-semibold text-text-primary">
-              Catalog
+              {t('buyerSupplierProfile.catalog.heading')}
             </span>
           </div>
           <Table>
             <TableHeader>
-              <TableHeaderCell>Material</TableHeaderCell>
-              <TableHeaderCell>SAP Code</TableHeaderCell>
-              <TableHeaderCell>MOQ</TableHeaderCell>
-              <TableHeaderCell>Lead time</TableHeaderCell>
-              <TableHeaderCell className="text-right">Unit price</TableHeaderCell>
-              <TableHeaderCell>Capacity</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.material')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.sapCode')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.moq')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.leadTime')}</TableHeaderCell>
+              <TableHeaderCell className="text-right">{t('buyerSupplierProfile.catalog.col.unitPrice')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.catalog.col.capacity')}</TableHeaderCell>
             </TableHeader>
             <tbody>
               {catalog.map((m) => (
@@ -485,7 +502,7 @@ const BuyerSupplierProfile: React.FC = () => {
                     colSpan={6}
                     className="text-center text-sm text-text-tertiary py-8"
                   >
-                    No catalog items published.
+                    {t('buyerSupplierProfile.catalog.empty')}
                   </td>
                 </tr>
               )}
@@ -498,22 +515,22 @@ const BuyerSupplierProfile: React.FC = () => {
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="p-6 border-b border-border-subtle">
             <h2 className="text-section text-text-primary mb-1">
-              Recent purchase orders
+              {t('buyerSupplierProfile.performance.heading')}
             </h2>
             <p className="text-meta text-text-tertiary">
-              This supplier's most recent purchase orders with derived OTIF.
+              {t('buyerSupplierProfile.performance.subtitle')}
             </p>
           </div>
           <Table>
             <TableHeader>
-              <TableHeaderCell>PO #</TableHeaderCell>
-              <TableHeaderCell>Material</TableHeaderCell>
-              <TableHeaderCell>Qty</TableHeaderCell>
-              <TableHeaderCell className="text-right">Value</TableHeaderCell>
-              <TableHeaderCell>Ordered</TableHeaderCell>
-              <TableHeaderCell>Delivery</TableHeaderCell>
-              <TableHeaderCell>OTIF</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.po')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.material')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.qty')}</TableHeaderCell>
+              <TableHeaderCell className="text-right">{t('buyerSupplierProfile.performance.col.value')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.ordered')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.delivery')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.otif')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.performance.col.status')}</TableHeaderCell>
             </TableHeader>
             <tbody>
               {recentPOs.map((po) => {
@@ -556,7 +573,7 @@ const BuyerSupplierProfile: React.FC = () => {
                     colSpan={8}
                     className="text-center text-sm text-text-tertiary py-8"
                   >
-                    No purchase orders for this supplier.
+                    {t('buyerSupplierProfile.performance.empty')}
                   </td>
                 </tr>
               )}
@@ -569,18 +586,18 @@ const BuyerSupplierProfile: React.FC = () => {
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 p-4 border-b border-border-subtle">
             <span className="text-sm font-semibold text-text-primary">
-              Message log
+              {t('buyerSupplierProfile.msglog.heading')}
             </span>
             <StatusPill variant="neutral">Sample data</StatusPill>
           </div>
           <Table>
             <TableHeader>
-              <TableHeaderCell>Timestamp</TableHeaderCell>
-              <TableHeaderCell>Direction</TableHeaderCell>
-              <TableHeaderCell>Channel</TableHeaderCell>
-              <TableHeaderCell>Type</TableHeaderCell>
-              <TableHeaderCell>Preview</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.timestamp')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.direction')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.channel')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.type')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.preview')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerSupplierProfile.msglog.col.status')}</TableHeaderCell>
             </TableHeader>
             <tbody>
               {MSG_LOG.map((m, i) => (
@@ -594,7 +611,7 @@ const BuyerSupplierProfile: React.FC = () => {
                     </StatusPill>
                   </TableCell>
                   <TableCell className="text-text-secondary capitalize">
-                    {m.channel}
+                    {chl(m.channel)}
                   </TableCell>
                   <TableCell className="text-text-secondary">
                     {m.docType}

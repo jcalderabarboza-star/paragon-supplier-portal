@@ -22,6 +22,9 @@ import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Data from '../components/ui-v2/Data';
+import { useTranslation, Trans } from 'react-i18next';
+import { statusLabelKey } from '../lib/statusLabel';
+import { enumLabelKey } from '../lib/priorityLabel';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { StockStatus } from '../types/supplier.types';
@@ -30,8 +33,6 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useInventory } from '../services/query/hooks';
-
-const INVENTORY_CRUMB = ['TRANSACT', 'MY INVENTORY'];
 
 const STATUS_VARIANT: Record<StockStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   [StockStatus.CRITICAL]: 'danger',
@@ -95,15 +96,33 @@ const DaysBar: React.FC<{ days: number; status: StockStatus }> = ({
   );
 };
 
-const STATUS_OPTIONS: { id: StatusFilter; label: string }[] = [
-  { id: 'All', label: 'All' },
-  { id: StockStatus.CRITICAL, label: 'Critical' },
-  { id: StockStatus.LOW, label: 'Low' },
-  { id: StockStatus.NORMAL, label: 'Normal' },
-  { id: StockStatus.EXCESS, label: 'Excess' },
+// Filter-chip `id`s stay canonical StockStatus values (data); the visible label
+// resolves through the SAME central maps the stock-status StatusPill uses, so the
+// chip reads byte-identical to the pill (Critical/Low → priorityLabel enum map,
+// Normal/Excess → statusLabel). 'All' is page-specific vocab.
+const STATUS_FILTER_IDS: StatusFilter[] = [
+  'All',
+  StockStatus.CRITICAL,
+  StockStatus.LOW,
+  StockStatus.NORMAL,
+  StockStatus.EXCESS,
 ];
 
 const SupplierInventory: React.FC = () => {
+  const { t } = useTranslation();
+  const INVENTORY_CRUMB = [
+    t('supplierInventory.crumb.transact'),
+    t('supplierInventory.crumb.myInventory'),
+  ];
+  const stockFilterLabel = (id: StatusFilter): string => {
+    if (id === 'All') return t('supplierInventory.filter.all');
+    const key = statusLabelKey(id) ?? enumLabelKey(id);
+    return key ? t(key) : id;
+  };
+  const statusOptions = STATUS_FILTER_IDS.map((id) => ({
+    id,
+    label: stockFilterLabel(id),
+  }));
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
@@ -164,9 +183,12 @@ const SupplierInventory: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={INVENTORY_CRUMB}
-        title="No inventory yet"
-        subtitle={`No stock records on file for ${identity.supplierName ?? 'this supplier'}.`}
-        message="Live stock positions will appear here once inventory is reported."
+        title={t('supplierInventory.empty.title')}
+        subtitle={t('supplierInventory.empty.subtitle', {
+          supplier:
+            identity.supplierName ?? t('supplierInventory.empty.thisSupplier'),
+        })}
+        message={t('supplierInventory.empty.message')}
       />
     );
 
@@ -177,29 +199,31 @@ const SupplierInventory: React.FC = () => {
     <AppShellV2>
       <PageHeader
         breadcrumb={INVENTORY_CRUMB}
-        title="My Inventory"
-        subtitle="Live stock visibility · days-of-supply tracking · Paragon minimum thresholds."
+        title={t('supplierInventory.header.title')}
+        subtitle={t('supplierInventory.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
               {
-                label: 'Export EDI 846',
+                label: t('supplierInventory.action.exportEdi'),
                 icon: Download,
                 onClick: () =>
                   toast({
                     variant: 'success',
-                    title: 'Export preparing',
-                    description: 'EDI 846 format download starting.',
+                    title: t('supplierInventory.toast.exportPreparing.title'),
+                    description: t(
+                      'supplierInventory.toast.exportPreparing.desc',
+                    ),
                   }),
               },
             ]}
             primary={{
-              label: 'Sync now',
+              label: t('supplierInventory.action.syncNow'),
               icon: RefreshCcw,
               onClick: () =>
                 toast({
                   variant: 'info',
-                  title: 'Syncing inventory from supplier API feeds',
+                  title: t('supplierInventory.toast.syncing.title'),
                 }),
             }}
           />
@@ -207,17 +231,26 @@ const SupplierInventory: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {myInventory.length} materials · last sync <Data>{fmtDate(maxLastUpdated)}</Data>
+        {myInventory.length === 1
+          ? t('supplierInventory.meta.materials.one', {
+              count: myInventory.length,
+            })
+          : t('supplierInventory.meta.materials.other', {
+              count: myInventory.length,
+            })}{' '}
+        · {t('supplierInventory.meta.lastSync')}{' '}
+        <Data>{fmtDate(maxLastUpdated)}</Data>
       </PageMetaLine>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">
         <KpiCard
-          eyebrow="Critical stock"
+          eyebrow={t('supplierInventory.kpi.critical.eyebrow')}
           value={counts.critical.toString()}
           subtitle={
             <span className="text-danger">
-              {((counts.critical / myInventory.length) * 100).toFixed(0)}% of
-              materials
+              {t('supplierInventory.kpi.pctOfMaterials', {
+                pct: ((counts.critical / myInventory.length) * 100).toFixed(0),
+              })}
             </span>
           }
           icon={AlertOctagon}
@@ -225,12 +258,13 @@ const SupplierInventory: React.FC = () => {
           active={filterStatus === StockStatus.CRITICAL}
         />
         <KpiCard
-          eyebrow="Low stock"
+          eyebrow={t('supplierInventory.kpi.low.eyebrow')}
           value={counts.low.toString()}
           subtitle={
             <span className="text-warning-hover">
-              {((counts.low / myInventory.length) * 100).toFixed(0)}% of
-              materials
+              {t('supplierInventory.kpi.pctOfMaterials', {
+                pct: ((counts.low / myInventory.length) * 100).toFixed(0),
+              })}
             </span>
           }
           icon={AlertTriangle}
@@ -238,12 +272,13 @@ const SupplierInventory: React.FC = () => {
           active={filterStatus === StockStatus.LOW}
         />
         <KpiCard
-          eyebrow="Normal"
+          eyebrow={t('supplierInventory.kpi.normal.eyebrow')}
           value={counts.normal.toString()}
           subtitle={
             <span className="text-success">
-              {((counts.normal / myInventory.length) * 100).toFixed(0)}% of
-              materials
+              {t('supplierInventory.kpi.pctOfMaterials', {
+                pct: ((counts.normal / myInventory.length) * 100).toFixed(0),
+              })}
             </span>
           }
           icon={CheckCircle2}
@@ -251,12 +286,13 @@ const SupplierInventory: React.FC = () => {
           active={filterStatus === StockStatus.NORMAL}
         />
         <KpiCard
-          eyebrow="Excess"
+          eyebrow={t('supplierInventory.kpi.excess.eyebrow')}
           value={counts.excess.toString()}
           subtitle={
             <span className="text-text-secondary">
-              {((counts.excess / myInventory.length) * 100).toFixed(0)}% of
-              materials
+              {t('supplierInventory.kpi.pctOfMaterials', {
+                pct: ((counts.excess / myInventory.length) * 100).toFixed(0),
+              })}
             </span>
           }
           icon={Layers}
@@ -269,11 +305,15 @@ const SupplierInventory: React.FC = () => {
         <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 mb-6 flex items-start gap-2 text-sm text-danger">
           <AlertOctagon size={14} className="shrink-0 mt-0.5" />
           <div>
-            <strong>
-              {counts.critical} material{counts.critical > 1 ? 's' : ''}
-            </strong>{' '}
-            at critical stock level. Paragon procurement team has been
-            automatically notified.
+            <Trans
+              i18nKey={
+                counts.critical === 1
+                  ? 'supplierInventory.banner.critical.one'
+                  : 'supplierInventory.banner.critical.other'
+              }
+              values={{ count: counts.critical }}
+              components={{ strong: <strong /> }}
+            />
           </div>
         </div>
       )}
@@ -282,16 +322,19 @@ const SupplierInventory: React.FC = () => {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search material, code, or supplier…"
+          placeholder={t('supplierInventory.search.placeholder')}
         />
         <div className="flex flex-wrap items-center gap-3">
           <FilterChipsBar<StatusFilter>
-            options={STATUS_OPTIONS}
+            options={statusOptions}
             value={filterStatus}
             onChange={setFilterStatus}
           />
           <span className="text-meta text-text-tertiary">
-            {filtered.length} of {myInventory.length} materials
+            {t('supplierInventory.filter.countOf', {
+              shown: filtered.length,
+              total: myInventory.length,
+            })}
           </span>
         </div>
       </div>
@@ -299,16 +342,22 @@ const SupplierInventory: React.FC = () => {
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
         <Table>
           <TableHeader>
-            <TableHeaderCell>Material</TableHeaderCell>
-            <TableHeaderCell>Supplier</TableHeaderCell>
-            <TableHeaderCell className="text-right">On hand</TableHeaderCell>
-            <TableHeaderCell className="text-right">Available</TableHeaderCell>
-            <TableHeaderCell className="text-right">In transit</TableHeaderCell>
-            <TableHeaderCell>UoM</TableHeaderCell>
-            <TableHeaderCell>Days supply</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Source</TableHeaderCell>
-            <TableHeaderCell>Last updated</TableHeaderCell>
+            <TableHeaderCell>{t('supplierInventory.col.material')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierInventory.col.supplier')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('supplierInventory.col.onHand')}
+            </TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('supplierInventory.col.available')}
+            </TableHeaderCell>
+            <TableHeaderCell className="text-right">
+              {t('supplierInventory.col.inTransit')}
+            </TableHeaderCell>
+            <TableHeaderCell>{t('supplierInventory.col.uom')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierInventory.col.daysSupply')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierInventory.col.status')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierInventory.col.source')}</TableHeaderCell>
+            <TableHeaderCell>{t('supplierInventory.col.lastUpdated')}</TableHeaderCell>
           </TableHeader>
           <tbody>
             {filtered.map((row) => {
@@ -374,7 +423,7 @@ const SupplierInventory: React.FC = () => {
                   colSpan={10}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
-                  No materials match the current filter.
+                  {t('supplierInventory.table.empty')}
                 </td>
               </tr>
             )}
@@ -386,17 +435,19 @@ const SupplierInventory: React.FC = () => {
         <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
           <Database size={14} className="text-info shrink-0 mt-0.5" />
           <span>
-            <strong className="text-info">Data sources:</strong> API Push
-            (real-time), EDI 846 (daily), Manual (supplier-updated). Phase 2
-            will add SAP MM stock pull and VMI signal integration.
+            <strong className="text-info">
+              {t('supplierInventory.info.dataSources.label')}
+            </strong>{' '}
+            {t('supplierInventory.info.dataSources.body')}
           </span>
         </div>
         <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 text-sm text-text-secondary flex items-start gap-2">
           <Mail size={14} className="text-warning-hover shrink-0 mt-0.5" />
           <span>
-            <strong className="text-warning-hover">Thresholds:</strong> Critical &lt;7
-            days · Low 7–14 days · Normal 14–30 days · Excess &gt;30 days.
-            Paragon minimum stock requirements enforced at category level.
+            <strong className="text-warning-hover">
+              {t('supplierInventory.info.thresholds.label')}
+            </strong>{' '}
+            {t('supplierInventory.info.thresholds.body')}
           </span>
         </div>
       </div>

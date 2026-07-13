@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Globe2, Users, FileText, Clock, ArrowUpRight } from 'lucide-react';
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import KpiCard from '../components/ui-v2/KpiCard';
@@ -16,8 +18,6 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
 import { useSuppliers } from '../services/query/hooks';
-
-const MARKETPLACE_CRUMB = ['ACQUIRE', 'MARKETPLACE'];
 
 const CATEGORIES = [
   'Active Ingredients',
@@ -57,6 +57,12 @@ const OPEN_RFQS = [
 
 const Marketplace: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const cl = useCategoryLabel();
+  const MARKETPLACE_CRUMB = [
+    t('marketplace.crumb.acquire'),
+    t('marketplace.crumb.marketplace'),
+  ];
   const suppliersQuery = useSuppliers();
   const suppliers = suppliersQuery.data?.items ?? [];
   const [selectedCats, setSelectedCats] = useState<string[]>([]);
@@ -108,9 +114,9 @@ const Marketplace: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={MARKETPLACE_CRUMB}
-        title="No suppliers in the marketplace"
-        subtitle="The marketplace directory is empty for this view."
-        message="Vetted suppliers will appear here once they join the network."
+        title={t('marketplace.empty.title')}
+        subtitle={t('marketplace.empty.subtitle')}
+        message={t('marketplace.empty.message')}
       />
     );
 
@@ -118,40 +124,40 @@ const Marketplace: React.FC = () => {
     <AppShellV2>
       <PageHeader
         breadcrumb={MARKETPLACE_CRUMB}
-        title="Global Supplier Marketplace"
-        subtitle="Discover and connect with vetted suppliers worldwide."
+        title={t('marketplace.header.title')}
+        subtitle={t('marketplace.header.subtitle')}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
         <KpiCard
-          eyebrow="Total Suppliers"
+          eyebrow={t('marketplace.kpi.totalSuppliers.eyebrow')}
           value={stats.total.toString()}
-          subtitle="Vetted on the network"
+          subtitle={t('marketplace.kpi.totalSuppliers.subtitle')}
           icon={Users}
         />
         <KpiCard
-          eyebrow="Countries Covered"
+          eyebrow={t('marketplace.kpi.countries.eyebrow')}
           value={stats.countries.toString()}
-          subtitle="Across APAC + EMEA"
+          subtitle={t('marketplace.kpi.countries.subtitle')}
           icon={Globe2}
         />
         <KpiCard
-          eyebrow="Active RFQs"
+          eyebrow={t('marketplace.kpi.activeRfqs.eyebrow')}
           value={stats.activeRfqs.toString()}
-          subtitle="Open for response"
+          subtitle={t('marketplace.kpi.activeRfqs.subtitle')}
           icon={FileText}
         />
         <KpiCard
-          eyebrow="Avg Onboarding"
+          eyebrow={t('marketplace.kpi.onboarding.eyebrow')}
           value="12d"
-          subtitle="From invite to first PO"
+          subtitle={t('marketplace.kpi.onboarding.subtitle')}
           icon={Clock}
         />
       </div>
 
       <div className="mb-5">
         <div className="text-label text-text-tertiary uppercase mb-2">
-          Filter by category
+          {t('marketplace.filter.byCategory')}
         </div>
         <div className="inline-flex flex-wrap items-center gap-1 bg-bg-hover border border-border-subtle rounded-md p-1">
           {CATEGORIES.map((cat) => {
@@ -168,7 +174,7 @@ const Marketplace: React.FC = () => {
                     : 'bg-transparent text-text-tertiary hover:text-text-secondary'
                 }`}
               >
-                {cat}
+                {cl(cat)}
               </button>
             );
           })}
@@ -179,7 +185,7 @@ const Marketplace: React.FC = () => {
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search by name, category, country, or capability…"
+          placeholder={t('marketplace.search.placeholder')}
         />
       </div>
 
@@ -191,7 +197,7 @@ const Marketplace: React.FC = () => {
             country={s.country}
             countryFlag={s.city}
             tier={`Grade ${s.scorecardGrade}`}
-            categories={[s.category]}
+            categories={[cl(s.category)]}
             otif={s.otif}
             compliance={[
               ...(s.halalCertified
@@ -206,7 +212,7 @@ const Marketplace: React.FC = () => {
         ))}
         {filtered.length === 0 && (
           <div className="col-span-full text-center text-sm text-text-tertiary py-10">
-            No suppliers match the current filters.
+            {t('marketplace.cards.empty')}
           </div>
         )}
       </div>
@@ -215,27 +221,27 @@ const Marketplace: React.FC = () => {
         <div className="px-6 py-4 border-b border-border-subtle flex items-center justify-between">
           <div>
             <h2 className="text-section text-text-primary flex items-center gap-2">
-              Open RFQ Opportunities
+              {t('marketplace.rfq.title')}
               <StatusPill variant="neutral">Sample data</StatusPill>
             </h2>
             <p className="text-meta text-text-tertiary">
-              Illustrative open-RFQ teaser — not yet wired to live sourcing data.
+              {t('marketplace.rfq.subtitle')}
             </p>
           </div>
           <button
             type="button"
             className="inline-flex items-center gap-1 text-sm font-medium text-teal hover:text-teal-hover"
           >
-            View all <ArrowUpRight size={14} />
+            {t('marketplace.rfq.viewAll')} <ArrowUpRight size={14} />
           </button>
         </div>
         <Table>
           <TableHeader>
-            <TableHeaderCell>RFQ #</TableHeaderCell>
-            <TableHeaderCell>Material</TableHeaderCell>
-            <TableHeaderCell>Quantity</TableHeaderCell>
-            <TableHeaderCell>Deadline</TableHeaderCell>
-            <TableHeaderCell>Status</TableHeaderCell>
+            <TableHeaderCell>{t('marketplace.rfq.col.rfq')}</TableHeaderCell>
+            <TableHeaderCell>{t('marketplace.rfq.col.material')}</TableHeaderCell>
+            <TableHeaderCell>{t('marketplace.rfq.col.quantity')}</TableHeaderCell>
+            <TableHeaderCell>{t('marketplace.rfq.col.deadline')}</TableHeaderCell>
+            <TableHeaderCell>{t('marketplace.rfq.col.status')}</TableHeaderCell>
           </TableHeader>
           <tbody>
             {OPEN_RFQS.map((r) => (

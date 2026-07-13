@@ -2,6 +2,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { statusLabelKey } from '../../lib/statusLabel';
 import { enumLabelKey } from '../../lib/priorityLabel';
+import { categoryLabelKey } from '../../lib/categoryLabel';
+import { channelLabelKey } from '../../lib/channelLabel';
 
 type Variant = 'success' | 'warning' | 'danger' | 'info' | 'neutral';
 
@@ -39,12 +41,16 @@ const StatusPill: React.FC<StatusPillProps> = ({
   // Localize known canonical labels from the central maps; anything else
   // (domain-specific labels, non-string children) renders verbatim. In EN the
   // resolved value equals the canonical string, so output is unchanged.
-  // statusLabel wins for overlapping tokens; priority/risk/enum vocab is the
-  // fallback (SEAT2-I18N-ENUM-01) — a pill is display-only, so this is always
-  // an honest display translation.
+  // statusLabel wins for overlapping tokens; priority/risk/enum vocab, then
+  // category, then channel are fallbacks (SEAT2-I18N-ENUM/CATEGORY/CHANNEL-01) —
+  // disjoint namespaces, so first-match order is immaterial to correctness. A
+  // pill is display-only, so this is always an honest display translation.
   const key =
     typeof children === 'string'
-      ? statusLabelKey(children) ?? enumLabelKey(children)
+      ? statusLabelKey(children) ??
+        enumLabelKey(children) ??
+        categoryLabelKey(children) ??
+        channelLabelKey(children)
       : null;
   const label = key ? t(key) : children;
   return (

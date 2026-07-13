@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Package,
   AlertTriangle,
@@ -49,11 +50,10 @@ import {
   usePurchaseOrders,
 } from '../services/query/hooks';
 import { formatNumber } from '../lib/format';
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import { CHART_SERIES, CHART_GRID, CHART_AXIS } from '../lib/chartPalette';
 import { InventoryRecord } from '../types/supplier.types';
 import { POStatus } from '../services/data/types';
-
-const INVENTORY_CRUMB = ['TRANSACT', 'INVENTORY VISIBILITY'];
 
 type GroupTab = 'all' | 'critical' | 'warning' | 'healthy' | 'excess';
 
@@ -160,6 +160,12 @@ const buildDosTrend = (current: number): { day: string; dos: number }[] => {
 };
 
 const BuyerInventory: React.FC = () => {
+  const { t } = useTranslation();
+  const cl = useCategoryLabel();
+  const INVENTORY_CRUMB = [
+    t('buyerInventory.crumb.transact'),
+    t('buyerInventory.crumb.inventory'),
+  ];
   const { toast } = useToast();
   const [tab, setTab] = useState<GroupTab>('all');
   const [search, setSearch] = useState('');
@@ -284,9 +290,9 @@ const BuyerInventory: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={INVENTORY_CRUMB}
-        title="No inventory positions yet"
-        subtitle="Upstream supplier inventory positions appear here."
-        message="When suppliers report stock, their days-of-supply positions show up here."
+        title={t('buyerInventory.empty.title')}
+        subtitle={t('buyerInventory.empty.subtitle')}
+        message={t('buyerInventory.empty.message')}
       />
     );
 
@@ -299,19 +305,21 @@ const BuyerInventory: React.FC = () => {
   const handleSync = () => {
     toast({
       variant: 'success',
-      title: 'Sync queued',
-      description: `Last update: ${new Date().toLocaleTimeString('en-GB', {
-        hour: '2-digit',
-        minute: '2-digit',
-      })}`,
+      title: t('buyerInventory.toast.syncQueued.title'),
+      description: t('buyerInventory.toast.syncQueued.desc', {
+        time: new Date().toLocaleTimeString('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      }),
     });
   };
 
   const handleExport = () => {
     toast({
       variant: 'info',
-      title: 'Export started',
-      description: 'Inventory snapshot will be ready shortly.',
+      title: t('buyerInventory.toast.exportStarted.title'),
+      description: t('buyerInventory.toast.exportStarted.desc'),
     });
   };
 
@@ -334,24 +342,32 @@ const BuyerInventory: React.FC = () => {
     ? [
         {
           id: 't1',
-          title: `Stock update from ${selected.dataSource}`,
+          title: t('buyerInventory.timeline.stockUpdate.title', {
+            source: selected.dataSource,
+          }),
           timestamp: formatRelativeTime(selected.lastUpdated),
           status: 'completed',
-          description: `On-hand ${formatNumber(selected.qtyOnHand)} ${selected.uom}`,
+          description: t('buyerInventory.timeline.stockUpdate.desc', {
+            qty: formatNumber(selected.qtyOnHand),
+            uom: selected.uom,
+          }),
         },
         {
           id: 't2',
-          title: 'Reservation posted',
+          title: t('buyerInventory.timeline.reservation.title'),
           timestamp: '1d ago',
           status: 'completed',
-          description: `${formatNumber(selected.qtyReserved)} ${selected.uom} reserved for open POs`,
+          description: t('buyerInventory.timeline.reservation.desc', {
+            qty: formatNumber(selected.qtyReserved),
+            uom: selected.uom,
+          }),
         },
         {
           id: 't3',
-          title: 'Previous reconciliation',
+          title: t('buyerInventory.timeline.reconciliation.title'),
           timestamp: '3d ago',
           status: 'completed',
-          description: 'Cycle count complete · no variance',
+          description: t('buyerInventory.timeline.reconciliation.desc'),
         },
       ]
     : [];
@@ -370,60 +386,89 @@ const BuyerInventory: React.FC = () => {
     <AppShellV2>
       <PageHeader
         breadcrumb={INVENTORY_CRUMB}
-        title="Inventory Visibility"
-        subtitle="Real-time upstream supplier inventory positions, days of supply, and critical material alerts."
+        title={t('buyerInventory.header.title')}
+        subtitle={t('buyerInventory.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
-              { label: 'Export', icon: FileSpreadsheet, onClick: handleExport },
+              {
+                label: t('buyerInventory.action.export'),
+                icon: FileSpreadsheet,
+                onClick: handleExport,
+              },
             ]}
-            primary={{ label: 'Sync now', icon: RefreshCw, onClick: handleSync }}
+            primary={{
+              label: t('buyerInventory.action.syncNow'),
+              icon: RefreshCw,
+              onClick: handleSync,
+            }}
           />
         }
       />
 
       <PageMetaLine className="mb-6">
-        {inventory.length} materials tracked · last sync {lastSync}
+        {t(
+          inventory.length === 1
+            ? 'buyerInventory.meta.materials.one'
+            : 'buyerInventory.meta.materials.other',
+          { count: inventory.length, sync: lastSync },
+        )}
       </PageMetaLine>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <KpiCard
-          eyebrow="Total Materials Tracked"
+          eyebrow={t('buyerInventory.kpi.totalMaterials.eyebrow')}
           value={formatNumber(counts.all)}
           icon={Package}
-          subtitle="Across all upstream suppliers"
+          subtitle={t('buyerInventory.kpi.totalMaterials.subtitle')}
         />
         <KpiCard
-          eyebrow="Critical (<14 days DOS)"
+          eyebrow={t('buyerInventory.kpi.critical.eyebrow')}
           value={
             <span className="text-danger">{formatNumber(counts.critical)}</span>
           }
           icon={AlertTriangle}
-          subtitle="Immediate replenishment needed"
+          subtitle={t('buyerInventory.kpi.critical.subtitle')}
         />
         <KpiCard
-          eyebrow="Warning (14–30 days)"
+          eyebrow={t('buyerInventory.kpi.warning.eyebrow')}
           value={
             <span className="text-warning-hover">{formatNumber(counts.warning)}</span>
           }
           icon={AlertCircle}
-          subtitle="Monitor closely"
+          subtitle={t('buyerInventory.kpi.warning.subtitle')}
         />
         <KpiCard
-          eyebrow="Avg Days of Supply"
-          value={`${avgDos} days`}
+          eyebrow={t('buyerInventory.kpi.avgDos.eyebrow')}
+          value={t('buyerInventory.kpi.avgDos.value', { n: avgDos })}
           icon={Gauge}
-          subtitle="Portfolio mean"
+          subtitle={t('buyerInventory.kpi.avgDos.subtitle')}
         />
       </div>
 
       <SubTabs<GroupTab>
         options={[
-          { id: 'all', label: 'All', count: counts.all },
-          { id: 'critical', label: 'Critical', count: counts.critical },
-          { id: 'warning', label: 'Warning', count: counts.warning },
-          { id: 'healthy', label: 'Healthy', count: counts.healthy },
-          { id: 'excess', label: 'Excess', count: counts.excess },
+          { id: 'all', label: t('buyerInventory.tab.all'), count: counts.all },
+          {
+            id: 'critical',
+            label: t('buyerInventory.tab.critical'),
+            count: counts.critical,
+          },
+          {
+            id: 'warning',
+            label: t('buyerInventory.tab.warning'),
+            count: counts.warning,
+          },
+          {
+            id: 'healthy',
+            label: t('buyerInventory.tab.healthy'),
+            count: counts.healthy,
+          },
+          {
+            id: 'excess',
+            label: t('buyerInventory.tab.excess'),
+            count: counts.excess,
+          },
         ]}
         value={tab}
         onChange={setTab}
@@ -435,7 +480,7 @@ const BuyerInventory: React.FC = () => {
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search by material code, name, or supplier..."
+            placeholder={t('buyerInventory.search.placeholder')}
           />
         </div>
         <FilterChipsBar<BrandKey>
@@ -451,10 +496,10 @@ const BuyerInventory: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <div className="text-label text-text-tertiary uppercase mb-1">
-              Coverage Overview
+              {t('buyerInventory.heatmap.eyebrow')}
             </div>
             <h3 className="text-section text-text-primary">
-              DOS heatmap by category × brand
+              {t('buyerInventory.heatmap.title')}
             </h3>
           </div>
           <div className="flex items-center gap-3 text-xs text-text-tertiary">
@@ -481,7 +526,7 @@ const BuyerInventory: React.FC = () => {
             <thead>
               <tr>
                 <th className="text-left text-label text-text-tertiary uppercase py-2 pr-4">
-                  Category
+                  {t('buyerInventory.heatmap.col.category')}
                 </th>
                 {BRANDS.map((b) => (
                   <th
@@ -497,7 +542,7 @@ const BuyerInventory: React.FC = () => {
               {categories.map((cat) => (
                 <tr key={cat}>
                   <td className="py-2 pr-4 text-text-primary font-medium">
-                    {cat}
+                    {cl(cat)}
                   </td>
                   {BRANDS.map((b) => {
                     const cell = heatmap[cat]?.[b];
@@ -527,14 +572,14 @@ const BuyerInventory: React.FC = () => {
       <div className="border border-border-subtle rounded-lg bg-white overflow-hidden">
         <Table>
           <TableHeader>
-            <TableHeaderCell>Material</TableHeaderCell>
-            <TableHeaderCell>Supplier</TableHeaderCell>
-            <TableHeaderCell>Category</TableHeaderCell>
-            <TableHeaderCell className="text-right">On-Hand</TableHeaderCell>
-            <TableHeaderCell className="text-right">Available</TableHeaderCell>
-            <TableHeaderCell>DOS</TableHeaderCell>
-            <TableHeaderCell>Last Updated</TableHeaderCell>
-            <TableHeaderCell>Source</TableHeaderCell>
+            <TableHeaderCell>{t('buyerInventory.table.col.material')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerInventory.table.col.supplier')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerInventory.table.col.category')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('buyerInventory.table.col.onHand')}</TableHeaderCell>
+            <TableHeaderCell className="text-right">{t('buyerInventory.table.col.available')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerInventory.table.col.dos')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerInventory.table.col.lastUpdated')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerInventory.table.col.source')}</TableHeaderCell>
             <TableHeaderCell> </TableHeaderCell>
           </TableHeader>
           <tbody>
@@ -568,7 +613,7 @@ const BuyerInventory: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-text-secondary">
-                      {sup?.category ?? '—'}
+                      {sup?.category ? cl(sup.category) : '—'}
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
@@ -614,7 +659,7 @@ const BuyerInventory: React.FC = () => {
                   colSpan={9}
                   className="py-10 text-center text-sm text-text-tertiary"
                 >
-                  No materials match the current filters.
+                  {t('buyerInventory.table.empty')}
                 </td>
               </tr>
             )}
@@ -631,35 +676,35 @@ const BuyerInventory: React.FC = () => {
           <div className="flex flex-col gap-6">
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                Key facts
+                {t('buyerInventory.panel.keyFacts')}
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <div className="text-xs text-text-tertiary">Material</div>
+                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.material')}</div>
                   <Data as="div" className="text-text-primary">
                     {selected.materialCode}
                   </Data>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Category</div>
+                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.category')}</div>
                   <div className="text-text-primary">
-                    {selectedSupplier?.category ?? '—'}
+                    {selectedSupplier?.category ? cl(selectedSupplier.category) : '—'}
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-xs text-text-tertiary">Description</div>
+                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.description')}</div>
                   <div className="text-text-primary">
                     {selected.materialDescription}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Supplier</div>
+                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.supplier')}</div>
                   <div className="text-text-primary">
                     {selected.supplierName}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">OTIF</div>
+                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.otif')}</div>
                   <div className="text-text-primary">
                     <Data>
                       {selectedSupplier
@@ -669,11 +714,11 @@ const BuyerInventory: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">Lead Time</div>
+                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.leadTime')}</div>
                   <div className="text-text-primary"><Data>14 days</Data></div>
                 </div>
                 <div>
-                  <div className="text-xs text-text-tertiary">MOQ</div>
+                  <div className="text-xs text-text-tertiary">{t('buyerInventory.panel.moq')}</div>
                   <div className="text-text-primary">
                     <Data>
                       {formatNumber(Math.max(500, selected.avgDailyDemand * 7))}{' '}
@@ -683,7 +728,7 @@ const BuyerInventory: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">
-                    Safety Stock
+                    {t('buyerInventory.panel.safetyStock')}
                   </div>
                   <div className="text-text-primary">
                     <Data>
@@ -693,7 +738,7 @@ const BuyerInventory: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">
-                    Reorder Point
+                    {t('buyerInventory.panel.reorderPoint')}
                   </div>
                   <div className="text-text-primary">
                     <Data>
@@ -706,7 +751,7 @@ const BuyerInventory: React.FC = () => {
 
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                DOS trend · last 30 days
+                {t('buyerInventory.panel.dosTrend')}
               </div>
               <div className="h-40 border border-border-subtle rounded-lg p-2 bg-white">
                 <ResponsiveContainer width="100%" height="100%">
@@ -737,26 +782,26 @@ const BuyerInventory: React.FC = () => {
 
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                Recent inventory updates
+                {t('buyerInventory.panel.recentUpdates')}
               </div>
               <Timeline events={inventoryTimeline} />
             </section>
 
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
-                Active POs
+                {t('buyerInventory.panel.activePos')}
               </div>
               {activePOs.length === 0 ? (
                 <div className="text-sm text-text-tertiary">
-                  No open purchase orders for this material.
+                  {t('buyerInventory.panel.noActivePos')}
                 </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-xs text-text-tertiary uppercase">
-                      <th className="text-left py-1">PO #</th>
-                      <th className="text-right py-1">Qty</th>
-                      <th className="text-left py-1 pl-3">ETA</th>
+                      <th className="text-left py-1">{t('buyerInventory.panel.col.po')}</th>
+                      <th className="text-right py-1">{t('buyerInventory.panel.col.qty')}</th>
+                      <th className="text-left py-1 pl-3">{t('buyerInventory.panel.col.eta')}</th>
                     </tr>
                   </thead>
                   <tbody>

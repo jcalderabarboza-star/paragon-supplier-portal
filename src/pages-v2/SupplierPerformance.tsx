@@ -39,6 +39,10 @@ import TargetBar from '../components/ui-v2/TargetBar';
 import Tabs from '../components/ui-v2/Tabs';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import { useTranslation, Trans } from 'react-i18next';
+import { useEnumLabel } from '../hooks/useEnumLabel';
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
+import { useChannelLabel } from '../hooks/useChannelLabel';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -53,8 +57,6 @@ import {
 import type { KpiPoint as Kpi, KpiTrend as Trend } from '../services/data/types';
 
 type Grade = 'A' | 'B' | 'C' | 'D';
-
-const PERF_CRUMB = ['INTELLIGENCE', 'MY PERFORMANCE'];
 
 // DP2-PALETTE-01: chart/UI colour sourced from the central palette (SSoT),
 // not page-local hex. Values unchanged — pure de-dup.
@@ -128,6 +130,7 @@ const TrendIcon: React.FC<{ trend: Trend }> = ({ trend }) => {
 };
 
 const KpiProgressTile: React.FC<{ k: Kpi }> = ({ k }) => {
+  const { t } = useTranslation();
   const status = targetStatus(k.pct, k.targetPct);
   return (
     <div className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
@@ -139,7 +142,7 @@ const KpiProgressTile: React.FC<{ k: Kpi }> = ({ k }) => {
         {k.value}
       </Data>
       <div className="text-label text-text-tertiary mb-2">
-        Target: {k.target}
+        {t('supplierPerformance.kpi.targetLabel')}: {k.target}
       </div>
       <TargetBar pct={k.pct} target={k.targetPct} trackClass="bg-bg-surface" />
     </div>
@@ -147,6 +150,7 @@ const KpiProgressTile: React.FC<{ k: Kpi }> = ({ k }) => {
 };
 
 const GradeBadge: React.FC<{ grade: Grade; score: number }> = ({ grade, score }) => {
+  const { t } = useTranslation();
   const tone = GRADE_TONE[grade];
   return (
     <div className="flex flex-col items-center gap-2 shrink-0">
@@ -167,23 +171,30 @@ const GradeBadge: React.FC<{ grade: Grade; score: number }> = ({ grade, score })
           border: `1px solid ${tone.stroke}55`,
         }}
       >
-        Paragon Grade
+        {t('supplierPerformance.grade.paragonGrade')}
       </span>
     </div>
   );
 };
 
-const TABS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'trends', label: 'Trends' },
-  { id: 'actions', label: 'Improvement Actions' },
-];
-
 const SupplierPerformance: React.FC = () => {
+  const { t } = useTranslation();
+  const el = useEnumLabel();
+  const cl = useCategoryLabel();
+  const channelLabel = useChannelLabel();
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
   const [activeTab, setActiveTab] = useState<string>('overview');
+  const PERF_CRUMB = [
+    t('supplierPerformance.crumb.intelligence'),
+    t('supplierPerformance.crumb.myPerformance'),
+  ];
+  const TABS = [
+    { id: 'overview', label: t('supplierPerformance.tab.overview') },
+    { id: 'trends', label: t('supplierPerformance.tab.trends') },
+    { id: 'actions', label: t('supplierPerformance.tab.actions') },
+  ];
 
   const supplierQuery = useCurrentSupplier();
   const kpisQuery = useKpis();
@@ -210,8 +221,8 @@ const SupplierPerformance: React.FC = () => {
   const exportReport = () =>
     toast({
       variant: 'success',
-      title: 'Performance report queued',
-      description: 'Downloading performance report PDF...',
+      title: t('supplierPerformance.toast.exportQueued.title'),
+      description: t('supplierPerformance.toast.exportQueued.desc'),
     });
 
   // Identity-gated (Pattern B): "My Performance" is supplier-only.
@@ -234,21 +245,21 @@ const SupplierPerformance: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={PERF_CRUMB}
-        title="No performance data yet"
-        subtitle="Your Paragon scorecard is not available."
-        message="KPI scorecards, trends, and improvement actions appear here once Paragon publishes your performance data."
+        title={t('supplierPerformance.empty.title')}
+        subtitle={t('supplierPerformance.empty.subtitle')}
+        message={t('supplierPerformance.empty.message')}
       />
     );
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['INTELLIGENCE', 'MY PERFORMANCE']}
-        title="My Performance"
-        subtitle="Paragon scorecard · Rolling 12-week KPIs · Improvement tracking"
+        breadcrumb={PERF_CRUMB}
+        title={t('supplierPerformance.header.title')}
+        subtitle={t('supplierPerformance.header.subtitle')}
         actions={
           <Button variant="secondary" icon={Download} onClick={exportReport}>
-            Export Report
+            {t('supplierPerformance.action.exportReport')}
           </Button>
         }
       />
@@ -262,24 +273,30 @@ const SupplierPerformance: React.FC = () => {
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
               <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-bg-hover text-text-secondary">
-                {mySupplier.category}
+                {cl(mySupplier.category)}
               </span>
               <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal">
-                Tier 1 — WhatsApp
+                {t('supplierPerformance.card.tierChannel')}
               </span>
             </div>
             <div className="flex flex-wrap gap-5 text-xs text-text-secondary">
               <span>
-                <span className="text-text-tertiary font-semibold">SAP BP: </span>
+                <span className="text-text-tertiary font-semibold">
+                  {t('supplierPerformance.card.sapBp')}{' '}
+                </span>
                 {mySupplier.sapBpNumber}
               </span>
               <span>
-                <span className="text-text-tertiary font-semibold">Channel: </span>
-                WhatsApp
+                <span className="text-text-tertiary font-semibold">
+                  {t('supplierPerformance.card.channel')}{' '}
+                </span>
+                {channelLabel('WhatsApp')}
               </span>
               <span>
-                <span className="text-text-tertiary font-semibold">Reporting period: </span>
-                Rolling 12 weeks
+                <span className="text-text-tertiary font-semibold">
+                  {t('supplierPerformance.card.reportingPeriod')}{' '}
+                </span>
+                {t('supplierPerformance.card.reportingValue')}
               </span>
             </div>
           </div>
@@ -293,7 +310,13 @@ const SupplierPerformance: React.FC = () => {
         <>
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-              KPI Scorecard — 6 metrics
+              {kpis.length === 1
+                ? t('supplierPerformance.overview.scorecardTitle.one', {
+                    count: kpis.length,
+                  })
+                : t('supplierPerformance.overview.scorecardTitle.other', {
+                    count: kpis.length,
+                  })}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
               {kpis.map((k) => (
@@ -305,7 +328,7 @@ const SupplierPerformance: React.FC = () => {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
               <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-                Performance radar — vs Paragon targets
+                {t('supplierPerformance.overview.radarTitle')}
               </h2>
               <ResponsiveContainer width="100%" height={280}>
                 <RadarChart
@@ -324,14 +347,14 @@ const SupplierPerformance: React.FC = () => {
                     tickCount={6}
                   />
                   <Radar
-                    name="Benchmark"
+                    name={t('supplierPerformance.chart.benchmark')}
                     dataKey="target"
                     stroke={TOKEN_MID}
                     fill="transparent"
                     strokeDasharray="4 2"
                   />
                   <Radar
-                    name="Your score"
+                    name={t('supplierPerformance.chart.yourScore')}
                     dataKey="value"
                     stroke={TOKEN_TEAL}
                     fill={TOKEN_TEAL}
@@ -346,8 +369,10 @@ const SupplierPerformance: React.FC = () => {
 
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
               <h2 className="flex items-center gap-2 text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-                Grade history — monthly score
-                <StatusPill variant="neutral">Sample data</StatusPill>
+                {t('supplierPerformance.overview.gradeHistoryTitle')}
+                <StatusPill variant="neutral">
+                  {t('supplierPerformance.sampleData')}
+                </StatusPill>
               </h2>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart
@@ -358,7 +383,7 @@ const SupplierPerformance: React.FC = () => {
                   <XAxis dataKey="month" tick={{ fontSize: 10, fill: TOKEN_MUTED }} />
                   <YAxis domain={[60, 100]} tick={{ fontSize: 10, fill: TOKEN_MUTED }} />
                   <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="score" fill={TOKEN_TEAL} radius={[4, 4, 0, 0]} name="Score" />
+                  <Bar dataKey="score" fill={TOKEN_TEAL} radius={[4, 4, 0, 0]} name={t('supplierPerformance.chart.score')} />
                 </BarChart>
               </ResponsiveContainer>
               <div className="flex gap-2 mt-3 flex-wrap">
@@ -391,14 +416,32 @@ const SupplierPerformance: React.FC = () => {
 
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
             <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-              Purchase order performance — {mySupplier.name}
+              {t('supplierPerformance.overview.poPerfTitle', {
+                name: mySupplier.name,
+              })}
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               {[
-                { label: 'Total POs', value: myPOs.length, color: TOKEN_TEAL },
-                { label: 'On Time', value: onTimeCount, color: TOKEN_SUCCESS },
-                { label: 'Late', value: lateCount, color: TOKEN_DANGER },
-                { label: 'Avg Overdue', value: avgOverdue, color: TOKEN_WARNING },
+                {
+                  label: t('supplierPerformance.poMetric.totalPos'),
+                  value: myPOs.length,
+                  color: TOKEN_TEAL,
+                },
+                {
+                  label: t('supplierPerformance.poMetric.onTime'),
+                  value: onTimeCount,
+                  color: TOKEN_SUCCESS,
+                },
+                {
+                  label: t('supplierPerformance.poMetric.late'),
+                  value: lateCount,
+                  color: TOKEN_DANGER,
+                },
+                {
+                  label: t('supplierPerformance.poMetric.avgOverdue'),
+                  value: avgOverdue,
+                  color: TOKEN_WARNING,
+                },
               ].map((m) => (
                 <div
                   key={m.label}
@@ -422,7 +465,7 @@ const SupplierPerformance: React.FC = () => {
         <>
           <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
             <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-              OTIF rate — 12-week rolling (%)
+              {t('supplierPerformance.trends.otifTitle')}
             </h2>
             <ResponsiveContainer width="100%" height={240}>
               <LineChart
@@ -439,7 +482,7 @@ const SupplierPerformance: React.FC = () => {
                   stroke={TOKEN_TEAL}
                   strokeWidth={2.5}
                   dot={{ r: 3 }}
-                  name="OTIF %"
+                  name={t('supplierPerformance.chart.otifPct')}
                   activeDot={{ r: 5 }}
                 />
               </LineChart>
@@ -448,7 +491,7 @@ const SupplierPerformance: React.FC = () => {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
               <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-                ASN accuracy (%)
+                {t('supplierPerformance.trends.asnTitle')}
               </h2>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
@@ -465,14 +508,14 @@ const SupplierPerformance: React.FC = () => {
                     stroke={TOKEN_SUCCESS}
                     strokeWidth={2}
                     dot={{ r: 2 }}
-                    name="ASN Accuracy %"
+                    name={t('supplierPerformance.chart.asnAccuracyPct')}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </section>
             <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
               <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-                POA response time (hours)
+                {t('supplierPerformance.trends.poaTitle')}
               </h2>
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart
@@ -489,7 +532,7 @@ const SupplierPerformance: React.FC = () => {
                     stroke={TOKEN_WARNING}
                     strokeWidth={2}
                     dot={{ r: 2 }}
-                    name="Ack Time (hrs)"
+                    name={t('supplierPerformance.chart.ackTimeHrs')}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -501,7 +544,7 @@ const SupplierPerformance: React.FC = () => {
       {activeTab === 'actions' && (
         <div className="flex flex-col gap-4">
           <div className="text-sm text-text-tertiary">
-            Below-target KPIs and recommended corrective actions to improve your Paragon supplier grade.
+            {t('supplierPerformance.actions.intro')}
           </div>
           {improvementActions.map((item) => {
             const isHigh = item.priority === 'High';
@@ -517,13 +560,24 @@ const SupplierPerformance: React.FC = () => {
                       {item.kpi}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      <StatusPill variant="neutral">Current: {item.current}</StatusPill>
-                      <StatusPill variant="success">Target: {item.target}</StatusPill>
-                      <StatusPill variant="danger">Gap: {item.gap}</StatusPill>
+                      <StatusPill variant="neutral">
+                        {t('supplierPerformance.actions.currentLabel')}:{' '}
+                        {item.current}
+                      </StatusPill>
+                      <StatusPill variant="success">
+                        {t('supplierPerformance.actions.targetLabel')}:{' '}
+                        {item.target}
+                      </StatusPill>
+                      <StatusPill variant="danger">
+                        {t('supplierPerformance.actions.gapLabel')}: {item.gap}
+                      </StatusPill>
                     </div>
                   </div>
                   <StatusPill variant={isHigh ? 'danger' : 'warning'}>
-                    {item.priority} priority
+                    <Trans
+                      i18nKey="supplierPerformance.actions.priorityChip"
+                      values={{ priority: el(item.priority) }}
+                    />
                   </StatusPill>
                 </div>
                 <div className="text-sm text-text-secondary leading-relaxed mb-4">
@@ -535,12 +589,16 @@ const SupplierPerformance: React.FC = () => {
                   onClick={() =>
                     toast({
                       variant: 'success',
-                      title: `Action plan submitted — ${item.kpi}`,
-                      description: 'Paragon team notified.',
+                      title: t('supplierPerformance.toast.actionSubmitted.title', {
+                        kpi: item.kpi,
+                      }),
+                      description: t(
+                        'supplierPerformance.toast.actionSubmitted.desc',
+                      ),
                     })
                   }
                 >
-                  Acknowledge & plan
+                  {t('supplierPerformance.actions.acknowledge')}
                 </Button>
               </section>
             );
@@ -548,10 +606,10 @@ const SupplierPerformance: React.FC = () => {
           <section className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3 flex items-start gap-3">
             <Info size={16} className="text-info mt-0.5 shrink-0" />
             <div className="text-xs text-text-secondary leading-relaxed">
-              <span className="font-semibold text-text-primary">Paragon Supplier Tier System:</span>{' '}
-              Achieve Grade A (≥ 90/100) for 3 consecutive months to qualify for Tier 1 status —
-              faster payment terms (Net 30 → Net 15), priority capacity allocation, and inclusion
-              in Paragon strategic supplier development program.
+              <span className="font-semibold text-text-primary">
+                {t('supplierPerformance.actions.tierSystem.label')}
+              </span>{' '}
+              {t('supplierPerformance.actions.tierSystem.body')}
             </div>
           </section>
         </div>

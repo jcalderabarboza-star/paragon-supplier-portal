@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ExternalLink,
   Plus,
@@ -23,6 +24,7 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Switch from '../components/ui-v2/Switch';
 import { useToast } from '../hooks/useToast';
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { useAdaptive } from '../context/AdaptiveContext';
 import { CHANNEL_CONFIG } from '../data/communicationProfiles';
@@ -43,19 +45,21 @@ import type {
 } from '../services/data/types';
 
 interface CompletenessItem {
-  label: string;
+  // `labelKey` is an i18n key (namespace supplierMyStorefront.completeness.*),
+  // resolved to a localized label at render; `done` is the demo completeness flag.
+  labelKey: string;
   done: boolean;
 }
 
 const COMPLETENESS_ITEMS: CompletenessItem[] = [
-  { label: 'Company description', done: true },
-  { label: 'Materials catalog (3 items)', done: true },
-  { label: 'BPOM Registration', done: true },
-  { label: 'ISO 9001 Certificate', done: true },
-  { label: 'BPJPH Halal Certificate', done: false },
-  { label: 'Annual manufacturing capacity', done: false },
-  { label: 'Key clients / references', done: false },
-  { label: 'Profile photo / facility image', done: false },
+  { labelKey: 'supplierMyStorefront.completeness.companyDescription', done: true },
+  { labelKey: 'supplierMyStorefront.completeness.materialsCatalog', done: true },
+  { labelKey: 'supplierMyStorefront.completeness.bpomRegistration', done: true },
+  { labelKey: 'supplierMyStorefront.completeness.iso9001', done: true },
+  { labelKey: 'supplierMyStorefront.completeness.bpjphHalal', done: false },
+  { labelKey: 'supplierMyStorefront.completeness.capacity', done: false },
+  { labelKey: 'supplierMyStorefront.completeness.references', done: false },
+  { labelKey: 'supplierMyStorefront.completeness.profilePhoto', done: false },
 ];
 
 const CERT_VARIANT: Record<ProfileCertStatus, 'success' | 'warning' | 'danger'> = {
@@ -77,8 +81,6 @@ const CERT_LABEL: Record<ProfileCertStatus, string> = {
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
-
-const STOREFRONT_CRUMB = ['ACQUIRE', 'MY STOREFRONT'];
 
 interface NewMaterial {
   material: string;
@@ -117,6 +119,7 @@ const CURRENCY_OPTIONS = ['IDR', 'USD', 'EUR'];
 const CERT_OPTIONS = ['Halal BPJPH', 'ISO 9001', 'BPOM', 'SNI', 'RSPO'];
 
 const AdvisorPanel: React.FC<{ completeness: number }> = ({ completeness }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <div className="bg-teal-soft border border-teal/30 rounded-md overflow-hidden">
@@ -125,20 +128,20 @@ const AdvisorPanel: React.FC<{ completeness: number }> = ({ completeness }) => {
         onClick={() => setOpen(!open)}
         className="w-full px-4 py-3 flex items-center justify-between text-sm font-semibold text-teal"
       >
-        <span>How to improve your ranking</span>
+        <span>{t('supplierMyStorefront.advisor.title')}</span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </button>
       {open && (
         <div className="px-4 pb-4 border-t border-teal/20 text-sm text-text-secondary leading-relaxed">
           <div className="mt-3 mb-1 font-semibold text-text-primary">
-            Complete your profile ({completeness}% → 100%):
+            {t('supplierMyStorefront.advisor.heading', { pct: completeness })}
           </div>
           <ul className="list-disc list-inside flex flex-col gap-1 mt-2">
-            <li>Upload BPJPH Halal Certificate (+12 points)</li>
-            <li>Add annual manufacturing capacity data (+8 points)</li>
-            <li>Upload facility/product images (+5 points)</li>
-            <li>Add 2 more materials to catalog (+5 points)</li>
-            <li>Add key client references (+5 points)</li>
+            <li>{t('supplierMyStorefront.advisor.item.halal')}</li>
+            <li>{t('supplierMyStorefront.advisor.item.capacity')}</li>
+            <li>{t('supplierMyStorefront.advisor.item.images')}</li>
+            <li>{t('supplierMyStorefront.advisor.item.materials')}</li>
+            <li>{t('supplierMyStorefront.advisor.item.references')}</li>
           </ul>
         </div>
       )}
@@ -160,6 +163,8 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
   initialCerts,
 }) => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const cl = useCategoryLabel();
   const { toast } = useToast();
   const { getSupplierProfile, isBusinessHours, getLocalTime } = useAdaptive();
 
@@ -197,7 +202,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
 
   const removeCatalogItem = (id: string) => {
     setCatalog((prev) => prev.filter((x) => x.id !== id));
-    toast({ title: 'Material removed from catalog' });
+    toast({ title: t('supplierMyStorefront.toast.materialRemoved') });
   };
 
   const toggleNewCert = (c: string) => {
@@ -211,7 +216,10 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
 
   const submitNewMaterial = () => {
     if (!newMaterial.material) {
-      toast({ variant: 'error', title: 'Material name is required' });
+      toast({
+        variant: 'error',
+        title: t('supplierMyStorefront.toast.materialNameRequired'),
+      });
       return;
     }
     setCatalog((prev) => [
@@ -222,9 +230,8 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
     setShowAddForm(false);
     toast({
       variant: 'success',
-      title: 'New material submitted for review',
-      description:
-        'Paragon procurement will notify you within 3 business days.',
+      title: t('supplierMyStorefront.toast.materialSubmitted.title'),
+      description: t('supplierMyStorefront.toast.materialSubmitted.desc'),
     });
   };
 
@@ -239,23 +246,29 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['ACQUIRE', 'MY STOREFRONT']}
-        title="My Catalog"
-        subtitle={`Your public profile in the Paragon Supplier Marketplace — ${supp.name}.`}
+        breadcrumb={[
+          t('supplierMyStorefront.crumb.acquire'),
+          t('supplierMyStorefront.crumb.myStorefront'),
+        ]}
+        title={t('supplierMyStorefront.header.title')}
+        subtitle={t('supplierMyStorefront.header.subtitle', { supplier: supp.name })}
         actions={
           <Button
             variant="outline"
             icon={ExternalLink}
             onClick={() => navigate(`/marketplace/supplier/${supplierId}`)}
           >
-            Preview public profile
+            {t('supplierMyStorefront.header.preview')}
           </Button>
         }
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {catalog.length} materials · {certs.filter((c) => c.visible).length}{' '}
-        certifications shown · profile {completeness}% complete
+        {t('supplierMyStorefront.meta.summary', {
+          materials: catalog.length,
+          certs: certs.filter((c) => c.visible).length,
+          pct: completeness,
+        })}
       </PageMetaLine>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5 mb-6">
@@ -263,7 +276,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-text-primary">
-                Profile completeness
+                {t('supplierMyStorefront.completeness.title')}
               </span>
               <span
                 className={`text-sm font-bold ${
@@ -286,12 +299,12 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
             <div className="flex flex-wrap gap-3 mt-3">
               {COMPLETENESS_ITEMS.map((item) => (
                 <span
-                  key={item.label}
+                  key={item.labelKey}
                   className={`text-xs ${
                     item.done ? 'text-success' : 'text-danger'
                   }`}
                 >
-                  {item.done ? '✓' : '✗'} {item.label}
+                  {item.done ? '✓' : '✗'} {t(item.labelKey)}
                 </span>
               ))}
             </div>
@@ -306,16 +319,18 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
             >
               {completeness}%
             </div>
-            <div className="text-xs text-text-tertiary mt-1">Complete</div>
+            <div className="text-xs text-text-tertiary mt-1">
+              {t('supplierMyStorefront.completeness.complete')}
+            </div>
           </div>
         </div>
       </section>
 
       <div className="flex flex-col gap-5">
         <FormSection
-          eyebrow="Step 1"
-          title="Company profile"
-          description="Public-facing information shown to buyers in the marketplace."
+          eyebrow={t('supplierMyStorefront.step', { n: 1 })}
+          title={t('supplierMyStorefront.step1.title')}
+          description={t('supplierMyStorefront.step1.description')}
         >
           <div className="flex justify-end mb-3">
             <Button
@@ -323,13 +338,17 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               icon={Edit3}
               onClick={() => setEditProfile(!editProfile)}
             >
-              {editProfile ? 'Cancel' : 'Edit'}
+              {editProfile
+                ? t('supplierMyStorefront.action.cancel')
+                : t('supplierMyStorefront.action.edit')}
             </Button>
           </div>
           {editProfile ? (
             <div>
               <div className="mb-3">
-                <label className={labelClass}>Company description</label>
+                <label className={labelClass}>
+                  {t('supplierMyStorefront.field.companyDescription')}
+                </label>
                 <textarea
                   className={`${inputClass} min-h-[96px] resize-y`}
                   value={description}
@@ -343,29 +362,33 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                     setEditProfile(false);
                     toast({
                       variant: 'success',
-                      title: 'Company profile updated',
+                      title: t('supplierMyStorefront.toast.profileUpdated'),
                     });
                   }}
                 >
-                  Save
+                  {t('supplierMyStorefront.action.save')}
                 </Button>
                 <Button variant="secondary" onClick={() => setEditProfile(false)}>
-                  Cancel
+                  {t('supplierMyStorefront.action.cancel')}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {[
-                { label: 'Legal name', value: supp.legalName ?? supp.name },
-                { label: 'Country', value: `${cp.flag} ${cp.name}` },
-                { label: 'Category', value: supp.category },
                 {
-                  label: 'Established',
+                  label: t('supplierMyStorefront.field.legalName'),
+                  value: supp.legalName ?? supp.name,
+                },
+                { label: t('supplierMyStorefront.field.country'), value: `${cp.flag} ${cp.name}` },
+                // Category token → localized display via cl(); stored value stays canonical EN.
+                { label: t('supplierMyStorefront.field.category'), value: cl(supp.category) },
+                {
+                  label: t('supplierMyStorefront.field.established'),
                   value: supp.founded ? `${supp.founded}` : '—',
                 },
-                { label: 'Employees', value: supp.employees ?? '—' },
-                { label: 'Revenue', value: supp.annualRevenue ?? '—' },
+                { label: t('supplierMyStorefront.field.employees'), value: supp.employees ?? '—' },
+                { label: t('supplierMyStorefront.field.revenue'), value: supp.annualRevenue ?? '—' },
               ].map((r) => (
                 <div
                   key={r.label}
@@ -381,7 +404,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               ))}
               <div className="md:col-span-2 px-3 py-2 bg-bg-hover rounded-md">
                 <div className="text-label text-text-tertiary uppercase mb-0.5">
-                  Description
+                  {t('supplierMyStorefront.field.description')}
                 </div>
                 <div className="text-sm text-text-secondary leading-relaxed">
                   {description}
@@ -392,9 +415,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         </FormSection>
 
         <FormSection
-          eyebrow="Step 2"
-          title="Materials I supply"
-          description="Materials you can quote on. Toggle visibility per item to control marketplace listings."
+          eyebrow={t('supplierMyStorefront.step', { n: 2 })}
+          title={t('supplierMyStorefront.step2.title')}
+          description={t('supplierMyStorefront.step2.description')}
         >
           <div className="flex justify-end mb-3">
             <Button
@@ -402,21 +425,23 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               icon={Plus}
               onClick={() => setShowAddForm(!showAddForm)}
             >
-              Add material
+              {t('supplierMyStorefront.action.addMaterial')}
             </Button>
           </div>
           <div className="bg-bg-surface border border-border-subtle rounded-md overflow-hidden">
             <Table>
               <TableHeader>
-                <TableHeaderCell>Material</TableHeaderCell>
-                <TableHeaderCell>Category</TableHeaderCell>
-                <TableHeaderCell>MOQ</TableHeaderCell>
-                <TableHeaderCell>Lead time</TableHeaderCell>
-                <TableHeaderCell>Unit price</TableHeaderCell>
-                <TableHeaderCell>Capacity/mo</TableHeaderCell>
-                <TableHeaderCell>Certs</TableHeaderCell>
-                <TableHeaderCell>Visible</TableHeaderCell>
-                <TableHeaderCell className="text-right">Remove</TableHeaderCell>
+                <TableHeaderCell>{t('supplierMyStorefront.col.material')}</TableHeaderCell>
+                <TableHeaderCell>{t('supplierMyStorefront.col.category')}</TableHeaderCell>
+                <TableHeaderCell>{t('supplierMyStorefront.col.moq')}</TableHeaderCell>
+                <TableHeaderCell>{t('supplierMyStorefront.col.leadTime')}</TableHeaderCell>
+                <TableHeaderCell>{t('supplierMyStorefront.col.unitPrice')}</TableHeaderCell>
+                <TableHeaderCell>{t('supplierMyStorefront.col.capacity')}</TableHeaderCell>
+                <TableHeaderCell>{t('supplierMyStorefront.col.certs')}</TableHeaderCell>
+                <TableHeaderCell>{t('supplierMyStorefront.col.visible')}</TableHeaderCell>
+                <TableHeaderCell className="text-right">
+                  {t('supplierMyStorefront.col.remove')}
+                </TableHeaderCell>
               </TableHeader>
               <tbody>
                 {catalog.map((item) => (
@@ -427,7 +452,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                       </span>
                     </TableCell>
                     <TableCell className="text-text-tertiary text-xs">
-                      {item.category}
+                      {cl(item.category)}
                     </TableCell>
                     <TableCell className="text-text-secondary">
                       <Data>{item.moq} {item.uom}</Data>
@@ -454,7 +479,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                       <Switch
                         checked={item.visible}
                         onChange={() => toggleCatalogVisibility(item.id)}
-                        ariaLabel={`Toggle visibility for ${item.material}`}
+                        ariaLabel={t('supplierMyStorefront.aria.toggleVisibility', {
+                          name: item.material,
+                        })}
                       />
                     </TableCell>
                     <TableCell className="text-right">
@@ -462,7 +489,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                         type="button"
                         onClick={() => removeCatalogItem(item.id)}
                         className="text-text-tertiary hover:text-danger"
-                        aria-label={`Remove ${item.material}`}
+                        aria-label={t('supplierMyStorefront.aria.removeMaterial', {
+                          name: item.material,
+                        })}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -475,14 +504,16 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
           {showAddForm && (
             <div className="mt-4 bg-bg-hover border border-teal/30 rounded-md p-4">
               <div className="text-sm font-semibold text-text-primary mb-3">
-                Add new material
+                {t('supplierMyStorefront.addForm.title')}
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                 <div>
-                  <label className={labelClass}>Material name *</label>
+                  <label className={labelClass}>
+                    {t('supplierMyStorefront.addForm.materialName')}
+                  </label>
                   <input
                     className={inputClass}
-                    placeholder="e.g. PET Bottle 250ml"
+                    placeholder={t('supplierMyStorefront.addForm.materialNamePlaceholder')}
                     value={newMaterial.material}
                     onChange={(e) =>
                       setNewMaterial({ ...newMaterial, material: e.target.value })
@@ -490,10 +521,12 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>SAP code (optional)</label>
+                  <label className={labelClass}>
+                    {t('supplierMyStorefront.addForm.sapCode')}
+                  </label>
                   <input
                     className={inputClass}
-                    placeholder="e.g. MAT-10099"
+                    placeholder={t('supplierMyStorefront.addForm.sapCodePlaceholder')}
                     value={newMaterial.sapCode}
                     onChange={(e) =>
                       setNewMaterial({ ...newMaterial, sapCode: e.target.value })
@@ -501,7 +534,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   />
                 </div>
                 <div>
-                  <label className={labelClass}>Category</label>
+                  <label className={labelClass}>
+                    {t('supplierMyStorefront.addForm.category')}
+                  </label>
                   <select
                     className={inputClass}
                     value={newMaterial.category}
@@ -509,14 +544,19 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                       setNewMaterial({ ...newMaterial, category: e.target.value })
                     }
                   >
+                    {/* value stays canonical EN (stored form data); label localizes via cl() */}
                     {CATEGORY_OPTIONS.map((c) => (
-                      <option key={c}>{c}</option>
+                      <option key={c} value={c}>
+                        {cl(c)}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="grid grid-cols-[1fr_80px] gap-2">
                   <div>
-                    <label className={labelClass}>MOQ *</label>
+                    <label className={labelClass}>
+                      {t('supplierMyStorefront.addForm.moq')}
+                    </label>
                     <input
                       type="number"
                       className={inputClass}
@@ -527,7 +567,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>UoM</label>
+                    <label className={labelClass}>
+                      {t('supplierMyStorefront.addForm.uom')}
+                    </label>
                     <select
                       className={inputClass}
                       value={newMaterial.uom}
@@ -542,7 +584,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className={labelClass}>Lead time (days)</label>
+                  <label className={labelClass}>
+                    {t('supplierMyStorefront.addForm.leadTime')}
+                  </label>
                   <input
                     type="number"
                     className={inputClass}
@@ -554,7 +598,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 </div>
                 <div className="grid grid-cols-[1fr_80px] gap-2">
                   <div>
-                    <label className={labelClass}>Unit price</label>
+                    <label className={labelClass}>
+                      {t('supplierMyStorefront.addForm.unitPrice')}
+                    </label>
                     <input
                       type="number"
                       className={inputClass}
@@ -568,7 +614,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>CCY</label>
+                    <label className={labelClass}>
+                      {t('supplierMyStorefront.addForm.ccy')}
+                    </label>
                     <select
                       className={inputClass}
                       value={newMaterial.currency}
@@ -586,7 +634,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   </div>
                 </div>
                 <div>
-                  <label className={labelClass}>Capacity/month</label>
+                  <label className={labelClass}>
+                    {t('supplierMyStorefront.addForm.capacity')}
+                  </label>
                   <input
                     type="number"
                     className={inputClass}
@@ -601,7 +651,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 </div>
               </div>
               <div className="mb-3">
-                <label className={labelClass}>Certifications</label>
+                <label className={labelClass}>
+                  {t('supplierMyStorefront.addForm.certifications')}
+                </label>
                 <div className="flex flex-wrap gap-3">
                   {CERT_OPTIONS.map((c) => (
                     <label
@@ -621,10 +673,10 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={submitNewMaterial}>
-                  Submit for review
+                  {t('supplierMyStorefront.action.submitReview')}
                 </Button>
                 <Button variant="secondary" onClick={() => setShowAddForm(false)}>
-                  Cancel
+                  {t('supplierMyStorefront.action.cancel')}
                 </Button>
               </div>
             </div>
@@ -632,17 +684,17 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         </FormSection>
 
         <FormSection
-          eyebrow="Step 3"
-          title="Certifications on display"
-          description="Toggle which certifications appear on your public storefront."
+          eyebrow={t('supplierMyStorefront.step', { n: 3 })}
+          title={t('supplierMyStorefront.step3.title')}
+          description={t('supplierMyStorefront.step3.description')}
         >
           <div className="flex justify-end mb-3">
             <Button
               variant="outline"
               icon={Upload}
-              onClick={() => toast({ title: 'File browser opened (mock)' })}
+              onClick={() => toast({ title: t('supplierMyStorefront.toast.fileBrowser') })}
             >
-              Upload new
+              {t('supplierMyStorefront.action.uploadNew')}
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -661,7 +713,8 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                     </StatusPill>
                     {cert.expiry && (
                       <span className="text-xs text-text-tertiary">
-                        Exp: <Data>{cert.expiry}</Data>
+                        {t('supplierMyStorefront.cert.expPrefix')}{' '}
+                        <Data>{cert.expiry}</Data>
                       </span>
                     )}
                   </div>
@@ -673,12 +726,16 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                     }`}
                   >
                     {cert.visible ? <Eye size={12} /> : <EyeOff size={12} />}
-                    {cert.visible ? 'Shown' : 'Hidden'}
+                    {cert.visible
+                      ? t('supplierMyStorefront.cert.shown')
+                      : t('supplierMyStorefront.cert.hidden')}
                   </span>
                   <Switch
                     checked={cert.visible}
                     onChange={() => toggleCertVisibility(i)}
-                    ariaLabel={`Toggle visibility for ${cert.name}`}
+                    ariaLabel={t('supplierMyStorefront.aria.toggleVisibility', {
+                      name: cert.name,
+                    })}
                   />
                 </div>
               </div>
@@ -687,9 +744,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         </FormSection>
 
         <FormSection
-          eyebrow="Step 4"
-          title="Preferred communication channels"
-          description="Primary channel is used for time-sensitive notifications; fallback only when primary fails."
+          eyebrow={t('supplierMyStorefront.step', { n: 4 })}
+          title={t('supplierMyStorefront.step4.title')}
+          description={t('supplierMyStorefront.step4.description')}
         >
           <div className="flex justify-end mb-3">
             <Button
@@ -697,21 +754,31 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               onClick={() =>
                 toast({
                   variant: 'success',
-                  title: 'Channel preferences updated',
+                  title: t('supplierMyStorefront.toast.channelUpdated'),
                 })
               }
             >
-              Save
+              {t('supplierMyStorefront.action.save')}
             </Button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {[
-              { cfg: primaryCfg, label: 'PRIMARY', variant: 'info' as const, accent: true },
-              { cfg: fallbackCfg, label: 'FALLBACK', variant: 'neutral' as const, accent: false },
-            ].map(({ cfg, label, variant, accent }, i) =>
+              {
+                cfg: primaryCfg,
+                labelKey: 'supplierMyStorefront.channel.primary',
+                variant: 'info' as const,
+                accent: true,
+              },
+              {
+                cfg: fallbackCfg,
+                labelKey: 'supplierMyStorefront.channel.fallback',
+                variant: 'neutral' as const,
+                accent: false,
+              },
+            ].map(({ cfg, labelKey, variant, accent }, i) =>
               cfg ? (
                 <div
-                  key={label}
+                  key={labelKey}
                   className={`flex items-center gap-3 px-4 py-3 rounded-md border ${
                     accent
                       ? 'bg-teal-soft border-teal/30'
@@ -720,6 +787,8 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                 >
                   <span className="text-2xl shrink-0">{cfg.icon}</span>
                   <div className="flex-1 min-w-0">
+                    {/* cfg.label / cfg.description are shared CHANNEL_CONFIG data
+                        (proper-noun channel names + technical protocol copy) — i18n-defer */}
                     <div className="text-sm font-semibold text-text-primary">
                       {cfg.label}
                     </div>
@@ -727,7 +796,7 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                       {cfg.description}
                     </div>
                   </div>
-                  <StatusPill variant={variant}>{label}</StatusPill>
+                  <StatusPill variant={variant}>{t(labelKey)}</StatusPill>
                 </div>
               ) : (
                 <div key={i} />
@@ -737,9 +806,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
         </FormSection>
 
         <FormSection
-          eyebrow="Step 5"
-          title="Business hours & timezone"
-          description="When you're available to respond. Drives bot escalation timing."
+          eyebrow={t('supplierMyStorefront.step', { n: 5 })}
+          title={t('supplierMyStorefront.step5.title')}
+          description={t('supplierMyStorefront.step5.description')}
         >
           <div className="flex justify-end mb-3">
             <Button
@@ -747,16 +816,18 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               onClick={() =>
                 toast({
                   variant: 'success',
-                  title: 'Business hours updated',
+                  title: t('supplierMyStorefront.toast.hoursUpdated'),
                 })
               }
             >
-              Save
+              {t('supplierMyStorefront.action.save')}
             </Button>
           </div>
           <div className="flex flex-wrap items-end gap-5">
             <div>
-              <label className={labelClass}>Business hours</label>
+              <label className={labelClass}>
+                {t('supplierMyStorefront.field.businessHours')}
+              </label>
               <div className="flex items-center gap-2">
                 <input
                   type="time"
@@ -765,7 +836,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
                   value={bizHoursStart}
                   onChange={(e) => setBizHoursStart(e.target.value)}
                 />
-                <span className="text-text-tertiary">to</span>
+                <span className="text-text-tertiary">
+                  {t('supplierMyStorefront.field.to')}
+                </span>
                 <input
                   type="time"
                   className={inputClass}
@@ -776,33 +849,38 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
               </div>
             </div>
             <div>
-              <label className={labelClass}>Timezone</label>
+              <label className={labelClass}>
+                {t('supplierMyStorefront.field.timezone')}
+              </label>
               <div className="px-3 py-2 bg-bg-hover border border-border-subtle rounded-md text-sm text-text-primary">
                 {cp.timezone}
               </div>
             </div>
             <div>
-              <div className={labelClass}>Current status</div>
+              <div className={labelClass}>
+                {t('supplierMyStorefront.field.currentStatus')}
+              </div>
               <StatusPill variant={bizHours ? 'success' : 'neutral'}>
                 {bizHours
-                  ? `Open — ${localTime}`
-                  : `Closed — ${localTime}`}
+                  ? t('supplierMyStorefront.status.open', { time: localTime })
+                  : t('supplierMyStorefront.status.closed', { time: localTime })}
               </StatusPill>
             </div>
           </div>
         </FormSection>
 
         <FormSection
-          eyebrow="Step 6"
-          title="Marketplace statistics"
-          description="How buyers are finding and engaging with your storefront."
+          eyebrow={t('supplierMyStorefront.step', { n: 6 })}
+          title={t('supplierMyStorefront.step6.title')}
+          description={t('supplierMyStorefront.step6.description')}
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            {/* value figures are demo marketplace stats (mono DATA) — kept EN */}
             {[
-              { label: 'Profile views (month)', value: '24', tone: 'text-teal' },
-              { label: 'RFQ invitations', value: '3', tone: 'text-info' },
-              { label: 'Win rate', value: '67%', tone: 'text-success' },
-              { label: 'Category rank', value: '#3 / 31', tone: 'text-warning-hover' },
+              { label: t('supplierMyStorefront.stat.profileViews'), value: '24', tone: 'text-teal' },
+              { label: t('supplierMyStorefront.stat.rfqInvitations'), value: '3', tone: 'text-info' },
+              { label: t('supplierMyStorefront.stat.winRate'), value: '67%', tone: 'text-success' },
+              { label: t('supplierMyStorefront.stat.categoryRank'), value: '#3 / 31', tone: 'text-warning-hover' },
             ].map((s) => (
               <div
                 key={s.label}
@@ -829,19 +907,24 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
 // local (Phase-2′, non-persisting) catalog/cert/profile edit state seeded from
 // the resolved reads.
 const SupplierMyStorefront: React.FC = () => {
+  const { t } = useTranslation();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
   const supplierQuery = useCurrentSupplier();
   const catalogQuery = useStorefrontCatalog();
   const certsQuery = useStorefrontCerts();
+  const crumb = [
+    t('supplierMyStorefront.crumb.acquire'),
+    t('supplierMyStorefront.crumb.myStorefront'),
+  ];
 
   if (!supplierId) return <NoSupplierIdentity />;
   if (supplierQuery.isPending || catalogQuery.isPending || certsQuery.isPending)
-    return <LoadingState breadcrumb={STOREFRONT_CRUMB} />;
+    return <LoadingState breadcrumb={crumb} />;
   if (supplierQuery.isError || catalogQuery.isError || certsQuery.isError)
     return (
       <ErrorState
-        breadcrumb={STOREFRONT_CRUMB}
+        breadcrumb={crumb}
         error={supplierQuery.error ?? catalogQuery.error ?? certsQuery.error}
         onRetry={() => {
           supplierQuery.refetch();
