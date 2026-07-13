@@ -155,6 +155,59 @@ export function useRfqAward() {
   });
 }
 
+// ─── RFQ lifecycle (F0.3) — the non-award, non-cascade sourcing verbs ─────────
+// Buyer-only, payload-free state moves. Neither mints a downstream artifact nor
+// fans out (no cascade): cancel is a terminal abandon, reopen returns a closed
+// event to the response window. The dispatcher enforces the legal from-states
+// (cancel: Draft/Open/Closed; reopen: Closed only) and the buyer role, so an
+// illegal-from-here or wrong-persona attempt fails without mutating. On a
+// non-failed outcome the sourcing board + awards history re-derive from the store.
+// (t_rfq_publish stays authored-unwired — the only Draft fixture has no invited
+// suppliers, so publish would yield a hollow 0/0 event; t_quotation_submit /
+// t_quotation_review are deferred, F0.3-FIND-01.)
+
+export interface RfqLifecycleVars {
+  rfqId: string;
+}
+
+/** Cancel an RFQ before award (fires `t_rfq_cancel`, Draft/Open/Closed → Cancelled). */
+export function useRfqCancel() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqLifecycleVars>({
+    mutationFn: ({ rfqId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_cancel',
+        entity: 'rfq',
+        entityId: rfqId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Reopen a closed RFQ for further responses (fires `t_rfq_reopen`, Closed → Open). */
+export function useRfqReopen() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqLifecycleVars>({
+    mutationFn: ({ rfqId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_reopen',
+        entity: 'rfq',
+        entityId: rfqId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 // ─── Goods receipt (Step 4 batch ii) ────────────────────────────────────────
 // The GR is a buyer/warehouse document, so these dispatch under the buyer scope.
 // Create records the finalized inspection results; the header disposition is a
