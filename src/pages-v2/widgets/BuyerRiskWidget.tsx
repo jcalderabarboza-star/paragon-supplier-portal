@@ -13,9 +13,9 @@ import StatusPill from '../../components/ui-v2/StatusPill';
 import { useRiskAlerts } from '../../services/query/hooks';
 import type { RiskAlert, RiskAlertLevel } from '../../services/data/types';
 
-// SAMPLE (live=false): risk alerts are a buyer-side fixture (no risk engine in
-// the spine yet) → amber "Sample data" pill. Flag severity derives honestly from
-// the fixture's real alert levels.
+// Capability "risk": a buyer-side fixture (no risk engine in the spine yet, so no
+// wired CommandTarget) → the LivenessRegistry derives SIMULATED → amber "Sample"
+// pill. Flag severity still derives honestly from the fixture's real alert levels.
 const LEVEL_TONE: Record<RiskAlertLevel, 'danger' | 'warning' | 'info'> = {
   critical: 'danger',
   warning: 'warning',
@@ -73,7 +73,7 @@ const BuyerRiskWidget: React.FC = () => {
       title={t('widget.risk.title')}
       icon={ShieldAlert}
       count={count}
-      live={false}
+      capability="risk"
       flagSeverity={severity}
       flagLabel={
         count > 0

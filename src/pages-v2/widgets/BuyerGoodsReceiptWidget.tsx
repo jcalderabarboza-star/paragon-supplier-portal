@@ -73,7 +73,7 @@ const BuyerGoodsReceiptWidget: React.FC = () => {
       title={t('widget.goodsReceipt.title')}
       icon={PackageCheck}
       count={count}
-      live
+      capability="goodsReceipts"
       flagSeverity={grTier(items)}
       flagLabel={
         count > 0

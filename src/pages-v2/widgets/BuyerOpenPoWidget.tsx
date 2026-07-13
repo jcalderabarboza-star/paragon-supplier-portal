@@ -81,7 +81,7 @@ const BuyerOpenPoWidget: React.FC = () => {
       title={t('widget.openPo.title')}
       icon={ShoppingCart}
       count={count}
-      live
+      capability="purchaseOrders"
       flagSeverity={poTier(items, now)}
       flagLabel={unack > 0 ? t('widget.openPo.flag', { count: unack }) : undefined}
       actionLabel={count > 0 ? t('widget.openPo.action') : undefined}

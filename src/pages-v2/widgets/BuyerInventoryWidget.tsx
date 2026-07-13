@@ -16,9 +16,9 @@ import { useInventory } from '../../services/query/hooks';
 import { StockStatus } from '../../types/supplier.types';
 import type { InventoryRecord } from '../../types/supplier.types';
 
-// SAMPLE (live=false): inventory is a static fixture (no command mutates it), so
-// the widget wears the amber "Sample data" pill by construction. The urgency flag
-// is still honestly derived from the fixture's real stockStatus values.
+// Capability "inventory": a static fixture (no command mutates it, so no wired
+// CommandTarget) → the LivenessRegistry derives SIMULATED → amber "Sample" pill.
+// The urgency flag is still honestly derived from the fixture's real stockStatus.
 const isLow = (r: InventoryRecord): boolean =>
   r.stockStatus === StockStatus.CRITICAL || r.stockStatus === StockStatus.LOW;
 
@@ -86,7 +86,7 @@ const BuyerInventoryWidget: React.FC = () => {
       title={t('widget.inventory.title')}
       icon={Boxes}
       count={count}
-      live={false}
+      capability="inventory"
       flagSeverity={severity}
       flagLabel={
         count > 0

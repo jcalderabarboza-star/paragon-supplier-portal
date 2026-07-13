@@ -91,7 +91,7 @@ const SupplierRfqToRespondWidget: React.FC = () => {
       title={t('widget.rfqRespond.title')}
       icon={ClipboardList}
       count={count}
-      live
+      capability="rfqs"
       flagSeverity={severity}
       flagLabel={
         count > 0

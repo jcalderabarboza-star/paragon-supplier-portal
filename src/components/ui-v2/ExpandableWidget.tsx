@@ -9,17 +9,21 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import Data from './Data';
+import { isLive, type Capability } from '../../services/liveness';
 
 // ────────────────────────────────────────────────────────────────────────────
 // ExpandableWidget — the reusable dashboard module-summary shell (Paragon house
 // pattern, SOMO/Brain-Engine + TMS). ONE shell; every dashboard module is a thin
 // adapter that feeds this contract. The per-widget work is just: hook →
-// { count, live, flagSeverity, flagLabel, actionLabel, onAction, expandedRows }.
+// { count, capability, flagSeverity, flagLabel, actionLabel, onAction, expandedRows }.
 //
-// Honest-by-construction lock: the honesty marker is STRUCTURAL. `live === true`
-// renders the green "● Live" dot-label; `live === false` renders the amber
-// "○ Sample" dot-label. The green ● Live is UNREACHABLE without live===true — a
-// widget cannot claim live derived data it doesn't have (guard test enforces it).
+// Honest-by-construction lock: the honesty marker is STRUCTURAL and reads the ONE
+// authority — the LivenessRegistry (F0.6). The adapter passes a `capability`, NOT
+// a boolean; the shell derives `live = isLive(capability)`, so the green "● Live"
+// dot-label is reachable ONLY when the registry resolves that capability to the
+// LIVE tier. A SIMULATED capability renders the amber "○ Sample" dot-label and can
+// never render green — there is no boolean a caller could pass to override it
+// (the per-widget `live={…}` discipline is subsumed; guard tests enforce it).
 //
 // COMPACT state — "Ledger Line" (DP2-FLAG-01): the severity signal is the CARD's
 // own 3px LEFT EDGE (critical=red, warning=amber, info=slate, none=no edge), so
@@ -41,8 +45,13 @@ export type FlagSeverity = 'critical' | 'warning' | 'info' | 'none';
 export interface ExpandableWidgetProps {
   title: string;
   count: number;
-  /** Honest-by-construction: true → green "● Live"; false → amber "○ Sample". */
-  live: boolean;
+  /**
+   * The honest-render capability this module reads. The shell derives its
+   * liveness from the LivenessRegistry (`isLive`) — a LIVE capability wears the
+   * green "● Live" dot-label, any other wears amber "○ Sample". No boolean can
+   * override this: green is structurally reachable only through a LIVE tier.
+   */
+  capability: Capability;
   flagSeverity?: FlagSeverity;
   flagLabel?: string;
   actionLabel?: string;
@@ -86,7 +95,7 @@ const HonestyDot: React.FC<{ live: boolean; t: TFunction }> = ({ live, t }) => (
 const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
   title,
   count,
-  live,
+  capability,
   flagSeverity = 'none',
   flagLabel,
   actionLabel,
@@ -96,6 +105,8 @@ const ExpandableWidget: React.FC<ExpandableWidgetProps> = ({
   icon: Icon,
 }) => {
   const { t } = useTranslation();
+  // Honesty is DERIVED from the ONE authority — never a caller-supplied boolean.
+  const live = isLive(capability);
   const [collapsed, setCollapsed] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);

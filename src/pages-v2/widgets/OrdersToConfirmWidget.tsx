@@ -111,7 +111,7 @@ const OrdersToConfirmWidget: React.FC = () => {
       title={t('widget.ordersToConfirm.title')}
       icon={ClipboardList}
       count={count}
-      live
+      capability="purchaseOrders"
       flagSeverity={severityFor(count)}
       flagLabel={count > 0 ? t('widget.ordersToConfirm.flag', { count }) : undefined}
       actionLabel={count > 0 ? t('widget.ordersToConfirm.action') : undefined}

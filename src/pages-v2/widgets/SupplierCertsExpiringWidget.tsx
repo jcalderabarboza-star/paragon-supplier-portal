@@ -16,9 +16,10 @@ import { formatDate } from '../../lib/format';
 import { useDocuments } from '../../services/query/hooks';
 import type { SupplierDocument } from '../../services/data/types';
 
-// SAMPLE (live=false): the document set is a fixture (no upload command mutates
-// it yet) → amber "Sample data" pill. The expiry flag derives honestly from the
-// fixture's real document status.
+// Capability "supplierDocuments": backed by the supplierDocument flow, which is
+// registered but author-unwired (F0.4 inert — no CommandTarget) → the
+// LivenessRegistry derives SIMULATED → amber "Sample" pill. The expiry flag still
+// derives honestly from the fixture's real document status.
 const isExpiring = (d: SupplierDocument): boolean =>
   d.status === 'Expiring Soon' || d.status === 'Expired';
 
@@ -76,7 +77,7 @@ const SupplierCertsExpiringWidget: React.FC = () => {
       title={t('widget.certsExpiring.title')}
       icon={FileWarning}
       count={count}
-      live={false}
+      capability="supplierDocuments"
       flagSeverity={severity}
       flagLabel={
         count > 0

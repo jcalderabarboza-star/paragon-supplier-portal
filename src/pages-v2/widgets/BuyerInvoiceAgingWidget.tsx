@@ -73,7 +73,7 @@ const BuyerInvoiceAgingWidget: React.FC = () => {
       title={t('widget.invoiceAging.title')}
       icon={CreditCard}
       count={count}
-      live
+      capability="invoices"
       flagSeverity={invoiceTier(query.data?.items ?? [])}
       flagLabel={count > 0 ? t('widget.invoiceAging.flag', { count, maxDays }) : undefined}
       actionLabel={count > 0 ? t('widget.invoiceAging.action') : undefined}
