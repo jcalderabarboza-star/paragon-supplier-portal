@@ -29,15 +29,25 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     // move a quote into review, and the cascade targets award/reject a quote.
     'rfq:publish', 'rfq:close', 'rfq:award', 'rfq:cancel', 'rfq:reopen',
     'quotation:review', 'quotation:award', 'quotation:reject',
+    // F0.4 — the 5 remaining lifecycle machines (author-unwired, no surface yet;
+    // mapped so the catalog-coverage invariant holds — a contract-level
+    // permission surface, DNA-SEED-01; no UI consumer, no CommandTarget).
+    'contract:draft', 'contract:activate', 'contract:renew', 'contract:terminate',
+    'obligation:track', 'obligation:complete',
+    'pr:create', 'pr:submit', 'pr:approve', 'pr:reject', 'pr:source', 'pr:convert',
+    'shipment:create', 'shipment:advance', // system/cascade (TMS-owned, INT-TMS-01)
+    'supplierdoc:request', 'supplierdoc:verify', 'supplierdoc:reject', // verify/reject = system
   ],
   // Supplier side: view / acknowledge / confirm an incoming PO; create + submit
   // an advance ship notice; draft + submit an invoice against its own PO; submit
-  // a quotation against an invited RFQ (authored-unwired until the quote batch).
+  // a quotation against an invited RFQ (authored-unwired until the quote batch);
+  // upload a requested compliance document (F0.4, author-unwired).
   supplier: [
     'po:view', 'po:acknowledge', 'po:confirm',
     'asn:create', 'asn:submit',
     'invoice:submit',
     'quotation:submit',
+    'supplierdoc:submit',
   ],
 };
 
