@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   MessageCircle,
@@ -28,8 +29,8 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import Data from '../components/ui-v2/Data';
 import { PreferredChannel } from '../types/supplier.types';
 import { useSupplier, useStorefrontProducts } from '../services/query/hooks';
-
-const STOREFRONT_CRUMB = ['ACQUIRE', 'MARKETPLACE'];
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
+import { useChannelLabel } from '../hooks/useChannelLabel';
 
 type CertStatus = 'valid' | 'expiring' | 'expired';
 
@@ -52,6 +53,8 @@ const CERT_LABEL: Record<CertStatus, string> = {
   expired: 'Expired',
 };
 
+// TRACK_RECORD is fixture/sample-data (labelled "Sample data" in the UI) — the
+// delivery-history labels/details are demo content and stay EN (i18n-defer).
 const TRACK_RECORD = [
   { ts: '2026-03-24', label: 'Delivered PO-2026-00421', detail: '50,000 PCS · OTIF on time', icon: CheckCircle2, tone: 'success' as const },
   { ts: '2026-03-05', label: 'Delivered PO-2026-00389', detail: '30,000 PCS · OTIF on time', icon: CheckCircle2, tone: 'success' as const },
@@ -68,23 +71,13 @@ const TONE_CLASS: Record<'success' | 'warning' | 'info', string> = {
 
 type TabId = 'catalog' | 'certs' | 'track' | 'contact';
 
-const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
-  { id: 'catalog', label: 'Catalog', icon: Package },
-  { id: 'certs', label: 'Certifications', icon: ShieldCheck },
-  { id: 'track', label: 'Track Record', icon: History },
-  { id: 'contact', label: 'Contact', icon: MessageCircle },
+// Tab labels resolve at render via t() on these keys (namespace supplierStorefront.tab.*).
+const TABS: { id: TabId; labelKey: string; icon: LucideIcon }[] = [
+  { id: 'catalog', labelKey: 'supplierStorefront.tab.catalog', icon: Package },
+  { id: 'certs', labelKey: 'supplierStorefront.tab.certifications', icon: ShieldCheck },
+  { id: 'track', labelKey: 'supplierStorefront.tab.trackRecord', icon: History },
+  { id: 'contact', labelKey: 'supplierStorefront.tab.contact', icon: MessageCircle },
 ];
-
-const CHANNEL_HINT: Record<PreferredChannel, string> = {
-  [PreferredChannel.WHATSAPP]:
-    'This supplier prefers WhatsApp. Replies typically within a few hours during business hours.',
-  [PreferredChannel.EMAIL]:
-    'This supplier prefers email. Expect a response within one business day.',
-  [PreferredChannel.WEB]:
-    'This supplier prefers portal messaging. Replies routed through the SAP Ariba inbox.',
-  [PreferredChannel.API]:
-    'This supplier is API-integrated. Requests are auto-submitted to their ERP.',
-};
 
 const CHANNEL_ICON: Record<PreferredChannel, LucideIcon> = {
   [PreferredChannel.WHATSAPP]: MessageCircle,
@@ -94,6 +87,9 @@ const CHANNEL_ICON: Record<PreferredChannel, LucideIcon> = {
 };
 
 const SupplierStorefront: React.FC = () => {
+  const { t } = useTranslation();
+  const cl = useCategoryLabel();
+  const chl = useChannelLabel();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabId>('catalog');
@@ -103,13 +99,17 @@ const SupplierStorefront: React.FC = () => {
   const productsQuery = useStorefrontProducts(id);
   const supp = supplierQuery.data ?? null;
   const products = productsQuery.data?.items ?? [];
+  const crumb = [
+    t('supplierStorefront.crumb.acquire'),
+    t('supplierStorefront.crumb.marketplace'),
+  ];
 
   if (supplierQuery.isPending || productsQuery.isPending)
-    return <LoadingState breadcrumb={STOREFRONT_CRUMB} />;
+    return <LoadingState breadcrumb={crumb} />;
   if (supplierQuery.isError || productsQuery.isError)
     return (
       <ErrorState
-        breadcrumb={STOREFRONT_CRUMB}
+        breadcrumb={crumb}
         error={supplierQuery.error ?? productsQuery.error}
         onRetry={() => {
           supplierQuery.refetch();
@@ -123,14 +123,14 @@ const SupplierStorefront: React.FC = () => {
       <AppShellV2>
         <div className="py-20 text-center">
           <div className="text-lg font-semibold text-text-primary mb-2">
-            Supplier storefront not found
+            {t('supplierStorefront.notFound.title')}
           </div>
           <Button
             variant="secondary"
             icon={ArrowLeft}
             onClick={() => navigate('/marketplace')}
           >
-            Back to Marketplace
+            {t('supplierStorefront.notFound.back')}
           </Button>
         </div>
       </AppShellV2>
@@ -187,21 +187,25 @@ const SupplierStorefront: React.FC = () => {
           className="inline-flex items-center gap-1 text-sm text-teal hover:text-teal-hover font-medium"
         >
           <ArrowLeft size={14} />
-          Marketplace
+          {t('supplierStorefront.nav.marketplace')}
         </button>
       </div>
 
       <PageHeader
-        breadcrumb={['ACQUIRE', 'MARKETPLACE', supp.name.toUpperCase()]}
+        breadcrumb={[
+          t('supplierStorefront.crumb.acquire'),
+          t('supplierStorefront.crumb.marketplace'),
+          supp.name.toUpperCase(),
+        ]}
         title={supp.name}
-        subtitle={`${supp.category} · ${supp.city}, ${supp.country}`}
+        subtitle={`${cl(supp.category)} · ${supp.city}, ${supp.country}`}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="secondary" icon={MessageCircle}>
-              Connect
+              {t('supplierStorefront.header.connect')}
             </Button>
             <Button variant="outline" icon={Send}>
-              Request RFQ
+              {t('supplierStorefront.header.requestRfq')}
             </Button>
           </div>
         }
@@ -228,7 +232,7 @@ const SupplierStorefront: React.FC = () => {
               {supp.founded && (
                 <>
                   <span>·</span>
-                  <span>Est. {supp.founded}</span>
+                  <span>{t('supplierStorefront.hero.est', { year: supp.founded })}</span>
                 </>
               )}
             </div>
@@ -236,8 +240,14 @@ const SupplierStorefront: React.FC = () => {
               {supp.name}
             </h2>
             <p className="text-sm text-text-secondary mt-1.5 max-w-2xl">
+              {/* intelligenceNote is fixture data (i18n-defer); the fallback sentence
+                  is composed via interpolation — category via cl(), channel via chl() */}
               {supp.intelligenceNote ??
-                `${supp.category} specialist serving ${supp.country} and regional markets. Preferred channel: ${supp.preferredChannel}.`}
+                t('supplierStorefront.hero.fallbackNote', {
+                  category: cl(supp.category),
+                  country: supp.country,
+                  channel: chl(supp.preferredChannel),
+                })}
             </p>
           </div>
         </div>
@@ -246,33 +256,39 @@ const SupplierStorefront: React.FC = () => {
       {/* KPI strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
         <KpiCard
-          eyebrow="Years in Business"
+          eyebrow={t('supplierStorefront.kpi.years.eyebrow')}
           value={yearsInBusiness ? `${yearsInBusiness}` : '—'}
-          subtitle={supp.founded ? `Since ${supp.founded}` : 'Founding date n/a'}
+          subtitle={
+            supp.founded
+              ? t('supplierStorefront.kpi.years.since', { year: supp.founded })
+              : t('supplierStorefront.kpi.years.na')
+          }
           icon={Award}
         />
         <KpiCard
-          eyebrow="OTIF"
+          eyebrow={t('supplierStorefront.kpi.otif.eyebrow')}
           value={`${supp.otif}%`}
-          subtitle="On-time, in-full"
+          subtitle={t('supplierStorefront.kpi.otif.subtitle')}
           icon={Activity}
         />
         <KpiCard
-          eyebrow="Categories Served"
+          eyebrow={t('supplierStorefront.kpi.categories.eyebrow')}
           value="1"
-          subtitle={supp.category}
+          subtitle={cl(supp.category)}
           icon={Package}
         />
         <KpiCard
-          eyebrow="Certifications"
+          eyebrow={t('supplierStorefront.kpi.certs.eyebrow')}
           value={certifications.length.toString()}
-          subtitle={`${certifications.filter((c) => c.status === 'valid').length} currently valid`}
+          subtitle={t('supplierStorefront.kpi.certs.subtitle', {
+            count: certifications.filter((c) => c.status === 'valid').length,
+          })}
           icon={ShieldCheck}
         />
       </div>
 
       <Tabs
-        tabs={TABS}
+        tabs={TABS.map((tab) => ({ id: tab.id, icon: tab.icon, label: t(tab.labelKey) }))}
         active={activeTab}
         onChange={(id) => setActiveTab(id as TabId)}
         className="mb-6"
@@ -280,7 +296,7 @@ const SupplierStorefront: React.FC = () => {
 
       {activeTab === 'catalog' && products.length === 0 && (
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-8 text-center text-sm text-text-tertiary">
-          This supplier has not published a public catalog yet.
+          {t('supplierStorefront.catalog.empty')}
         </div>
       )}
 
@@ -300,7 +316,7 @@ const SupplierStorefront: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 mt-4 text-meta">
                 <div>
                   <div className="text-label text-text-tertiary uppercase">
-                    MOQ
+                    {t('supplierStorefront.catalog.moq')}
                   </div>
                   <div className="text-text-primary font-medium">
                     <Data>{p.moq}</Data>
@@ -308,7 +324,7 @@ const SupplierStorefront: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-label text-text-tertiary uppercase">
-                    Lead time
+                    {t('supplierStorefront.catalog.leadTime')}
                   </div>
                   <div className="text-text-primary font-medium">
                     <Data>{p.leadTime}</Data>
@@ -317,7 +333,7 @@ const SupplierStorefront: React.FC = () => {
               </div>
               <div className="mt-4">
                 <Button variant="secondary" className="w-full">
-                  Request quote
+                  {t('supplierStorefront.catalog.requestQuote')}
                 </Button>
               </div>
             </div>
@@ -340,7 +356,7 @@ const SupplierStorefront: React.FC = () => {
                   {c.issuer}
                 </div>
                 <div className="text-meta text-text-secondary mt-1">
-                  Expires <Data>{c.expiry}</Data>
+                  {t('supplierStorefront.certs.expires')} <Data>{c.expiry}</Data>
                 </div>
               </div>
               <StatusPill variant={CERT_VARIANT[c.status]}>
@@ -355,8 +371,9 @@ const SupplierStorefront: React.FC = () => {
         <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <div className="flex items-center gap-2 mb-5">
             <h2 className="text-section text-text-primary">
-              Delivery track record
+              {t('supplierStorefront.track.title')}
             </h2>
+            {/* "Sample data" auto-localizes via StatusPill → statusLabel; not re-keyed */}
             <StatusPill variant="neutral">Sample data</StatusPill>
           </div>
           <ol className="relative space-y-5">
@@ -395,44 +412,52 @@ const SupplierStorefront: React.FC = () => {
             <div className="flex items-center gap-2 mb-4">
               <ChannelIcon size={18} className="text-teal" />
               <h2 className="text-section text-text-primary">
-                Send via {supp.preferredChannel}
+                {t('supplierStorefront.contact.sendVia', {
+                  channel: chl(supp.preferredChannel),
+                })}
               </h2>
             </div>
             <p className="text-meta text-text-tertiary mb-4">
-              {CHANNEL_HINT[supp.preferredChannel]}
+              {t(`supplierStorefront.channelHint.${supp.preferredChannel}`)}
             </p>
             <label
               htmlFor="storefront-message"
               className="text-label text-text-tertiary uppercase block mb-1.5"
             >
-              Message
+              {t('supplierStorefront.contact.message')}
             </label>
             <textarea
               id="storefront-message"
               rows={6}
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={`Hi ${supp.contactName.split(' ')[0]}, we'd like to discuss…`}
+              placeholder={t('supplierStorefront.contact.messagePlaceholder', {
+                name: supp.contactName.split(' ')[0],
+              })}
               className="w-full bg-white border border-border-input rounded-md p-3 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-action transition-colors"
             />
             <div className="mt-4 flex justify-end gap-2">
-              <Button variant="secondary">Save draft</Button>
+              <Button variant="secondary">
+                {t('supplierStorefront.contact.saveDraft')}
+              </Button>
               <Button variant="outline" icon={Send}>
-                Send message
+                {t('supplierStorefront.contact.send')}
               </Button>
             </div>
           </div>
 
           <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 space-y-4">
             <h3 className="text-section text-text-primary">
-              Primary contact
+              {t('supplierStorefront.contact.primaryContact')}
             </h3>
             <div className="text-sm">
               <div className="text-text-primary font-medium">
                 {supp.contactName}
               </div>
               <div className="text-text-tertiary text-meta">
-                {supp.preferredChannel} preferred
+                {t('supplierStorefront.contact.preferred', {
+                  channel: chl(supp.preferredChannel),
+                })}
               </div>
             </div>
             <div className="space-y-2 text-sm">

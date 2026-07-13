@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   RadarChart,
   Radar,
@@ -45,6 +46,8 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useToast } from '../hooks/useToast';
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
+import { useChannelLabel } from '../hooks/useChannelLabel';
 import { useSupplierScorecards } from '../services/query/hooks';
 import type {
   ScorecardKpi,
@@ -56,8 +59,6 @@ import type {
 
 type Grade = ScorecardGradeLetter;
 type Trend = KpiTrend;
-
-const SCORECARD_CRUMB = ['INTELLIGENCE', 'SUPPLIER SCORECARD'];
 
 const COUNTRY_FLAGS: Record<string, string> = {
   ID: '🇮🇩',
@@ -155,10 +156,12 @@ const TrendIcon: React.FC<{ trend: Trend }> = ({ trend }) => {
 };
 
 const KpiProgressTile: React.FC<{ k: ScorecardKpi }> = ({ k }) => {
+  const { t } = useTranslation();
   const status = targetStatus(k.pct, k.targetPct);
   return (
     <div className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
       <div className="flex items-start justify-between gap-2 mb-1">
+        {/* i18n-defer: k.name is a fixture-seeded KPI metric name (data) */}
         <div className="text-label text-text-tertiary uppercase">{k.name}</div>
         <TrendIcon trend={k.trend} />
       </div>
@@ -166,7 +169,7 @@ const KpiProgressTile: React.FC<{ k: ScorecardKpi }> = ({ k }) => {
         {k.value}
       </Data>
       <div className="text-label text-text-tertiary mb-2">
-        Target: {k.target}
+        {t('buyerScorecard.kpi.target')}: {k.target}
       </div>
       <TargetBar pct={k.pct} target={k.targetPct} trackClass="bg-bg-surface" />
     </div>
@@ -186,8 +189,16 @@ const channelIcon = (channel: string): LucideIcon =>
   CHANNEL_ICON_MAP[channel] ?? Send;
 
 const BuyerScorecard: React.FC = () => {
+  const { t } = useTranslation();
+  const cl = useCategoryLabel();
+  const chl = useChannelLabel();
   const { toast } = useToast();
   const [selectedId, setSelectedId] = useState<string>('zhejiang');
+
+  const SCORECARD_CRUMB = [
+    t('buyerScorecard.crumb.intelligence'),
+    t('buyerScorecard.crumb.scorecard'),
+  ];
 
   const scorecardsQuery = useSupplierScorecards();
   const suppliers = scorecardsQuery.data?.items ?? [];
@@ -206,9 +217,9 @@ const BuyerScorecard: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={SCORECARD_CRUMB}
-        title="No scorecards yet"
-        subtitle="Supplier scoring is a buyer-side view."
-        message="Portfolio performance grading across active suppliers appears here for buyer accounts."
+        title={t('buyerScorecard.empty.title')}
+        subtitle={t('buyerScorecard.empty.subtitle')}
+        message={t('buyerScorecard.empty.message')}
       />
     );
 
@@ -235,14 +246,14 @@ const BuyerScorecard: React.FC = () => {
     <AppShellV2>
       <PageHeader
         breadcrumb={SCORECARD_CRUMB}
-        title="Supplier Scorecard"
-        subtitle="Real-time performance scoring across all active suppliers."
+        title={t('buyerScorecard.header.title')}
+        subtitle={t('buyerScorecard.header.subtitle')}
         actions={
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
             className="h-10 min-w-[260px] px-3 text-sm text-text-primary bg-bg-surface border border-border-input rounded-md focus:outline-none focus:border-action cursor-pointer"
-            aria-label="Select supplier"
+            aria-label={t('buyerScorecard.header.selectSupplier')}
           >
             {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
@@ -254,7 +265,13 @@ const BuyerScorecard: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {suppliers.length} suppliers · last activity {latestCommDate}
+        {t(
+          suppliers.length === 1
+            ? 'buyerScorecard.meta.suppliers.one'
+            : 'buyerScorecard.meta.suppliers.other',
+          { count: suppliers.length },
+        )}{' '}
+        · {t('buyerScorecard.meta.lastActivity')} {latestCommDate}
       </PageMetaLine>
 
       {/* DP-1: the supplier identity hero restyles from a solid navy fill to a
@@ -268,20 +285,26 @@ const BuyerScorecard: React.FC = () => {
             </div>
             <div className="flex flex-wrap gap-2 mb-3">
               <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-bg-hover text-text-secondary border border-border-subtle">
-                {supp.category}
+                {cl(supp.category)}
               </span>
+              {/* i18n-defer: supp.tier is a composite fixture string
+                  ("Tier 3 — API" …) — data, no central map; kept canonical EN. */}
               <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-teal-soft text-teal">
                 {supp.tier}
               </span>
             </div>
             <div className="flex flex-wrap gap-5 text-xs text-text-secondary">
               <span>
-                <span className="text-text-tertiary font-semibold">SAP BP: </span>
+                <span className="text-text-tertiary font-semibold">
+                  {t('buyerScorecard.hero.sapBp')}:{' '}
+                </span>
                 {supp.sapBp}
               </span>
               <span>
-                <span className="text-text-tertiary font-semibold">Channel: </span>
-                {supp.channel}
+                <span className="text-text-tertiary font-semibold">
+                  {t('buyerScorecard.hero.channel')}:{' '}
+                </span>
+                {chl(supp.channel)}
               </span>
             </div>
             {compliance && (
@@ -293,9 +316,11 @@ const BuyerScorecard: React.FC = () => {
                 }`}
               >
                 <AlertTriangle size={14} />
-                <span>Compliance alert: {compliance.label}</span>
+                <span>
+                  {t('buyerScorecard.hero.complianceAlert')}: {compliance.label}
+                </span>
                 <span className="ml-2 text-text-tertiary font-normal">
-                  See Compliance Tracker →
+                  {t('buyerScorecard.hero.seeComplianceTracker')}
                 </span>
               </div>
             )}
@@ -314,6 +339,9 @@ const BuyerScorecard: React.FC = () => {
                 border: `1px solid ${tone.stroke}55`,
               }}
             >
+              {/* i18n-defer: supp.status is a fixture relationship-status string
+                  (Preferred/Approved/Conditional…) with no central map — the
+                  string is the data; kept canonical EN. */}
               {supp.status}
             </span>
           </div>
@@ -322,7 +350,7 @@ const BuyerScorecard: React.FC = () => {
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-          KPI Scorecard — 12 metrics
+          {t('buyerScorecard.kpi.title')}
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
           {supp.kpis.map((k) => (
@@ -334,7 +362,7 @@ const BuyerScorecard: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-            Score breakdown — radar
+            {t('buyerScorecard.radar.title')}
           </h2>
           <ResponsiveContainer width="100%" height={280}>
             <RadarChart
@@ -353,7 +381,7 @@ const BuyerScorecard: React.FC = () => {
                 tickCount={6}
               />
               <Radar
-                name="Benchmark"
+                name={t('buyerScorecard.radar.benchmark')}
                 dataKey="target"
                 stroke={TOKEN_MID}
                 fill="transparent"
@@ -375,10 +403,10 @@ const BuyerScorecard: React.FC = () => {
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-1 pb-3 border-b border-border-subtle">
-            Performance trends — 12 months
+            {t('buyerScorecard.trends.title')}
           </h2>
           <div className="text-meta text-text-tertiary mb-3 mt-3">
-            OTIF % (left axis) · Ack Speed in hours · Defect Rate %
+            {t('buyerScorecard.trends.caption')}
           </div>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart
@@ -406,7 +434,7 @@ const BuyerScorecard: React.FC = () => {
                 stroke={TOKEN_SUCCESS}
                 strokeDasharray="4 2"
                 label={{
-                  value: 'OTIF target',
+                  value: t('buyerScorecard.trends.otifTarget'),
                   fill: TOKEN_SUCCESS,
                   fontSize: 9,
                   position: 'insideTopRight',
@@ -419,7 +447,7 @@ const BuyerScorecard: React.FC = () => {
                 stroke={TOKEN_TEAL}
                 strokeWidth={2.5}
                 dot={{ r: 3 }}
-                name="OTIF %"
+                name={t('buyerScorecard.series.otif')}
                 activeDot={{ r: 5 }}
               />
               <Line
@@ -429,7 +457,7 @@ const BuyerScorecard: React.FC = () => {
                 stroke={TOKEN_MID}
                 strokeWidth={1.5}
                 dot={{ r: 2 }}
-                name="Ack Speed (h)"
+                name={t('buyerScorecard.series.ackSpeed')}
                 strokeDasharray="4 2"
               />
               <Line
@@ -439,7 +467,7 @@ const BuyerScorecard: React.FC = () => {
                 stroke={TOKEN_DANGER}
                 strokeWidth={1.5}
                 dot={{ r: 2 }}
-                name="Defect Rate %"
+                name={t('buyerScorecard.series.defectRate')}
                 strokeDasharray="2 2"
               />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
@@ -452,11 +480,10 @@ const BuyerScorecard: React.FC = () => {
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
           <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 mb-4 text-sm text-danger font-semibold flex items-center gap-2">
             <AlertTriangle size={14} />
-            This supplier is on a Conditional rating — improvement plan
-            active. 30-day review period.
+            {t('buyerScorecard.imp.banner')}
           </div>
           <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-            Improvement plan — action items
+            {t('buyerScorecard.imp.title')}
           </h2>
           <div className="flex flex-col gap-2 mb-4">
             {improvementActions.map((a) => (
@@ -465,16 +492,17 @@ const BuyerScorecard: React.FC = () => {
                 className="flex items-center justify-between gap-3 px-4 py-3 bg-danger-soft/40 border border-danger-soft rounded-md"
               >
                 <div className="min-w-0">
+                  {/* i18n-defer: a.item is fixture action-item narrative (data) */}
                   <div className="text-sm font-semibold text-text-primary">
                     {a.item}
                   </div>
                   <div className="text-xs text-text-tertiary mt-0.5">
-                    Owner: {a.owner}
+                    {t('buyerScorecard.imp.owner')}: {a.owner}
                   </div>
                 </div>
                 <div className="text-right shrink-0 flex flex-col items-end gap-1">
                   <div className="text-xs text-text-tertiary">
-                    Due: {a.due}
+                    {t('buyerScorecard.imp.due')}: {a.due}
                   </div>
                   <StatusPill variant="neutral">{a.status}</StatusPill>
                 </div>
@@ -487,23 +515,23 @@ const BuyerScorecard: React.FC = () => {
             onClick={() =>
               toast({
                 variant: 'success',
-                title: `Improvement plan sent to ${supp.name}`,
-                description: 'Delivered via email.',
+                title: t('buyerScorecard.imp.toast.title', { name: supp.name }),
+                description: t('buyerScorecard.imp.toast.desc'),
               })
             }
           >
-            Send improvement plan
+            {t('buyerScorecard.imp.send')}
           </Button>
         </section>
       )}
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
         <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-          Communication log — last 5 interactions
+          {t('buyerScorecard.comm.title')}
         </h2>
         {supp.commLog.length === 0 ? (
           <div className="text-sm text-text-tertiary text-center py-6">
-            No communication log entries.
+            {t('buyerScorecard.comm.empty')}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -520,10 +548,12 @@ const BuyerScorecard: React.FC = () => {
                     </div>
                     <div className="inline-flex items-center gap-1 text-xs text-teal font-semibold mt-1">
                       <Icon size={12} />
-                      {log.channel}
+                      {chl(log.channel)}
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
+                    {/* i18n-defer: log.type + log.message are fixture comm-log
+                        narrative (data) — kept canonical EN. */}
                     <div className="text-xs font-bold text-text-secondary mb-0.5">
                       {log.type}
                     </div>

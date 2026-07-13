@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   PieChart,
   Pie,
@@ -67,13 +68,9 @@ import type {
 
 type Period = '30d' | '90d' | 'ytd';
 
-const ANALYTICS_CRUMB = ['INTELLIGENCE', 'ANALYTICS'];
-
-const PERIOD_OPTIONS: { id: Period; label: string }[] = [
-  { id: '30d', label: 'Last 30 days' },
-  { id: '90d', label: 'Last 90 days' },
-  { id: 'ytd', label: 'YTD' },
-];
+// Canonical period ids (drive filter state / comparison — stay EN). The visible
+// label localizes at render via t('buyerAnalytics.period.<id>').
+const PERIOD_IDS: Period[] = ['30d', '90d', 'ytd'];
 
 // DP2-PALETTE-01: chart/UI colour sourced from the central palette (SSoT),
 // not page-local hex. Values unchanged — pure de-dup. This completes the
@@ -108,15 +105,15 @@ const ToneIcon: React.FC<{ tone: KpiTone }> = ({ tone }) => {
   return <Minus size={12} className="inline-block mr-1" aria-hidden="true" />;
 };
 
+// Eyebrow localizes at render via t('buyerAnalytics.summary.<key>').
 const SUMMARY_CARDS: {
   key: keyof AnalyticsSummary;
-  eyebrow: string;
   icon: LucideIcon;
 }[] = [
-  { key: 'totalSpend', eyebrow: 'Total Spend YTD', icon: Wallet },
-  { key: 'activeSuppliers', eyebrow: 'Active Suppliers', icon: Users },
-  { key: 'portfolioOtif', eyebrow: 'Portfolio OTIF', icon: Activity },
-  { key: 'avgCycleTime', eyebrow: 'Avg PO Cycle Time', icon: Clock },
+  { key: 'totalSpend', icon: Wallet },
+  { key: 'activeSuppliers', icon: Users },
+  { key: 'portfolioOtif', icon: Activity },
+  { key: 'avgCycleTime', icon: Clock },
 ];
 
 // DP2-TARGET-01: pass-warn-fail cells derive from the central target-status
@@ -182,8 +179,17 @@ const PieTooltip: React.FC<ChartTooltipProps & { total?: number }> = ({
 };
 
 const BuyerAnalytics: React.FC = () => {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const [period, setPeriod] = useState<Period>('ytd');
+
+  const ANALYTICS_CRUMB = [
+    t('buyerAnalytics.crumb.intelligence'),
+    t('buyerAnalytics.crumb.analytics'),
+  ];
+  const PERIOD_OPTIONS: { id: Period; label: string }[] = PERIOD_IDS.map(
+    (id) => ({ id, label: t(`buyerAnalytics.period.${id}`) }),
+  );
 
   const summaryQuery = useAnalyticsSummary();
   const spendQuery = useSpendByCategory();
@@ -223,7 +229,8 @@ const BuyerAnalytics: React.FC = () => {
 
   const totalSpend = spendCat.reduce((a, b) => a + b.value, 0);
   const periodLabel =
-    PERIOD_OPTIONS.find((o) => o.id === period)?.label ?? 'YTD';
+    PERIOD_OPTIONS.find((o) => o.id === period)?.label ??
+    t('buyerAnalytics.period.ytd');
 
   if (anyPending) return <LoadingState breadcrumb={ANALYTICS_CRUMB} />;
   if (anyError)
@@ -238,9 +245,9 @@ const BuyerAnalytics: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={ANALYTICS_CRUMB}
-        title="No analytics yet"
-        subtitle="Procurement intelligence is a buyer-side view."
-        message="Spend, performance, and channel-adoption insights appear here for buyer accounts."
+        title={t('buyerAnalytics.empty.title')}
+        subtitle={t('buyerAnalytics.empty.subtitle')}
+        message={t('buyerAnalytics.empty.message')}
       />
     );
 
@@ -248,18 +255,18 @@ const BuyerAnalytics: React.FC = () => {
     <AppShellV2>
       <PageHeader
         breadcrumb={ANALYTICS_CRUMB}
-        title="Analytics & Procurement Intelligence"
-        subtitle="YTD performance metrics and procurement insights."
+        title={t('buyerAnalytics.header.title')}
+        subtitle={t('buyerAnalytics.header.subtitle')}
         actions={
           <BulkActionsBar
             actions={[
               {
-                label: 'Export Report',
+                label: t('buyerAnalytics.action.export'),
                 icon: FileSpreadsheet,
                 onClick: () =>
                   toast({
                     variant: 'info',
-                    title: 'Report export starting',
+                    title: t('buyerAnalytics.toast.exportStarting'),
                   }),
               },
             ]}
@@ -268,7 +275,13 @@ const BuyerAnalytics: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {perfTable.length} suppliers · period: {periodLabel}
+        {t(
+          perfTable.length === 1
+            ? 'buyerAnalytics.meta.suppliers.one'
+            : 'buyerAnalytics.meta.suppliers.other',
+          { count: perfTable.length },
+        )}{' '}
+        · {t('buyerAnalytics.meta.period')}: {periodLabel}
       </PageMetaLine>
 
       <div className="mb-6">
@@ -286,7 +299,7 @@ const BuyerAnalytics: React.FC = () => {
             return (
               <KpiCard
                 key={card.key}
-                eyebrow={card.eyebrow}
+                eyebrow={t(`buyerAnalytics.summary.${card.key}`)}
                 value={kpi.value}
                 subtitle={
                   <span className={`${TONE_CLASS[kpi.tone]} font-medium`}>
@@ -303,12 +316,12 @@ const BuyerAnalytics: React.FC = () => {
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-          Spend Analytics
+          {t('buyerAnalytics.spend.title')}
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-[6fr_4fr] gap-6">
           <div>
             <div className="text-meta text-text-secondary mb-2">
-              Spend by category (Rp jT)
+              {t('buyerAnalytics.spend.byCategory')}
             </div>
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
@@ -339,7 +352,7 @@ const BuyerAnalytics: React.FC = () => {
 
           <div>
             <div className="text-meta text-text-secondary mb-2">
-              Top 5 suppliers by spend (Rp jT)
+              {t('buyerAnalytics.spend.topSuppliers')}
             </div>
             <ResponsiveContainer width="100%" height={260}>
               <BarChart
@@ -380,7 +393,7 @@ const BuyerAnalytics: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-6">
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-            Monthly OTIF & OTDR trend (%)
+            {t('buyerAnalytics.otif.title')}
           </h2>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart
@@ -403,7 +416,7 @@ const BuyerAnalytics: React.FC = () => {
                 stroke={TOKEN_DANGER}
                 strokeDasharray="4 2"
                 label={{
-                  value: 'Target 90%',
+                  value: t('buyerAnalytics.otif.target'),
                   fill: TOKEN_DANGER,
                   fontSize: 9,
                   position: 'insideTopRight',
@@ -415,7 +428,7 @@ const BuyerAnalytics: React.FC = () => {
                 stroke={TOKEN_TEAL}
                 strokeWidth={2}
                 dot={{ r: 2 }}
-                name="OTIF"
+                name={t('buyerAnalytics.series.otif')}
               />
               <Line
                 type="monotone"
@@ -423,7 +436,7 @@ const BuyerAnalytics: React.FC = () => {
                 stroke={TOKEN_NAVY}
                 strokeWidth={2}
                 dot={{ r: 2 }}
-                name="OTDR"
+                name={t('buyerAnalytics.series.otdr')}
               />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
             </LineChart>
@@ -432,7 +445,7 @@ const BuyerAnalytics: React.FC = () => {
 
         <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
           <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-            PO volume & avg cycle time
+            {t('buyerAnalytics.poVolume.title')}
           </h2>
           <ResponsiveContainer width="100%" height={240}>
             <ComposedChart
@@ -449,7 +462,7 @@ const BuyerAnalytics: React.FC = () => {
                 yAxisId="left"
                 tick={{ fontSize: 10, fill: TOKEN_MUTED }}
                 label={{
-                  value: 'POs',
+                  value: t('buyerAnalytics.poVolume.axisPos'),
                   angle: -90,
                   position: 'insideLeft',
                   fontSize: 9,
@@ -461,7 +474,7 @@ const BuyerAnalytics: React.FC = () => {
                 orientation="right"
                 tick={{ fontSize: 10, fill: TOKEN_MUTED }}
                 label={{
-                  value: 'Hours',
+                  value: t('buyerAnalytics.poVolume.axisHours'),
                   angle: 90,
                   position: 'insideRight',
                   fontSize: 9,
@@ -474,7 +487,7 @@ const BuyerAnalytics: React.FC = () => {
                 dataKey="pos"
                 fill={TOKEN_TEAL}
                 opacity={0.85}
-                name="POs"
+                name={t('buyerAnalytics.series.pos')}
               />
               <Line
                 yAxisId="right"
@@ -482,7 +495,7 @@ const BuyerAnalytics: React.FC = () => {
                 stroke={TOKEN_WARNING}
                 strokeWidth={2}
                 dot={{ r: 2 }}
-                name="Cycle Time (h)"
+                name={t('buyerAnalytics.series.cycleTime')}
               />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
             </ComposedChart>
@@ -493,19 +506,19 @@ const BuyerAnalytics: React.FC = () => {
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
         <div className="px-6 py-4 border-b border-border-subtle">
           <h2 className="text-section text-text-primary">
-            Supplier performance summary — YTD
+            {t('buyerAnalytics.perf.title')}
           </h2>
         </div>
         <Table>
           <TableHeader>
-            <TableHeaderCell>Supplier</TableHeaderCell>
-            <TableHeaderCell>Category</TableHeaderCell>
-            <TableHeaderCell>OTIF</TableHeaderCell>
-            <TableHeaderCell>OTDR</TableHeaderCell>
-            <TableHeaderCell>Ack speed</TableHeaderCell>
-            <TableHeaderCell>Invoice match</TableHeaderCell>
-            <TableHeaderCell>Grade</TableHeaderCell>
-            <TableHeaderCell>Trend</TableHeaderCell>
+            <TableHeaderCell>{t('buyerAnalytics.perf.col.supplier')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerAnalytics.perf.col.category')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerAnalytics.perf.col.otif')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerAnalytics.perf.col.otdr')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerAnalytics.perf.col.ackSpeed')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerAnalytics.perf.col.invoiceMatch')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerAnalytics.perf.col.grade')}</TableHeaderCell>
+            <TableHeaderCell>{t('buyerAnalytics.perf.col.trend')}</TableHeaderCell>
           </TableHeader>
           <tbody>
             {perfTable.map((row) => (
@@ -550,7 +563,7 @@ const BuyerAnalytics: React.FC = () => {
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6">
         <h2 className="text-section text-text-primary mb-4 pb-3 border-b border-border-subtle">
-          Digital channel adoption — PO confirmations (%)
+          {t('buyerAnalytics.channel.title')}
         </h2>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart
@@ -574,14 +587,14 @@ const BuyerAnalytics: React.FC = () => {
             <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
             {/* Channels are CATEGORIES, not state — one ordered accent ramp,
                 never semantic green/red (that read as good/bad here). */}
-            <Bar dataKey="whatsapp" stackId="a" fill={CHART_SERIES[0]} name="WhatsApp" />
-            <Bar dataKey="web" stackId="a" fill={CHART_SERIES[1]} name="Web Portal" />
-            <Bar dataKey="email" stackId="a" fill={CHART_SERIES[2]} name="Email" />
+            <Bar dataKey="whatsapp" stackId="a" fill={CHART_SERIES[0]} name={t('buyerAnalytics.series.whatsapp')} />
+            <Bar dataKey="web" stackId="a" fill={CHART_SERIES[1]} name={t('buyerAnalytics.series.webPortal')} />
+            <Bar dataKey="email" stackId="a" fill={CHART_SERIES[2]} name={t('buyerAnalytics.series.email')} />
             <Bar
               dataKey="api"
               stackId="a"
               fill={CHART_SERIES[3]}
-              name="API/EDI"
+              name={t('buyerAnalytics.series.apiEdi')}
               radius={[4, 4, 0, 0]}
             />
           </BarChart>

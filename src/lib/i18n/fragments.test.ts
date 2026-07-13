@@ -19,6 +19,18 @@ import { supplierOrdersEn, supplierOrdersId } from './supplierOrders';
 import { supplierShipmentsEn, supplierShipmentsId } from './supplierShipments';
 import { supplierInvoicesEn, supplierInvoicesId } from './supplierInvoices';
 import { supplierDocumentsEn, supplierDocumentsId } from './supplierDocuments';
+// — Batch 6 (tail sweep) —
+import { buyerSuppliersEn, buyerSuppliersId } from './buyerSuppliers';
+import { buyerSupplierProfileEn, buyerSupplierProfileId } from './buyerSupplierProfile';
+import { buyerAnalyticsEn, buyerAnalyticsId } from './buyerAnalytics';
+import { buyerScorecardEn, buyerScorecardId } from './buyerScorecard';
+import { buyerInventoryEn, buyerInventoryId } from './buyerInventory';
+import { marketplaceEn, marketplaceId } from './marketplace';
+import { buyerDashboardEn, buyerDashboardId } from './buyerDashboard';
+import { supplierMyStorefrontEn, supplierMyStorefrontId } from './supplierMyStorefront';
+import { supplierStorefrontEn, supplierStorefrontId } from './supplierStorefront';
+import { supplierInventoryEn, supplierInventoryId } from './supplierInventory';
+import { supplierPerformanceEn, supplierPerformanceId } from './supplierPerformance';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -43,6 +55,18 @@ const FRAGMENTS = [
   { name: 'supplierShipments', en: supplierShipmentsEn, id: supplierShipmentsId },
   { name: 'supplierInvoices', en: supplierInvoicesEn, id: supplierInvoicesId },
   { name: 'supplierDocuments', en: supplierDocumentsEn, id: supplierDocumentsId },
+  // — Batch 6 (tail sweep) —
+  { name: 'buyerSuppliers', en: buyerSuppliersEn, id: buyerSuppliersId },
+  { name: 'buyerSupplierProfile', en: buyerSupplierProfileEn, id: buyerSupplierProfileId },
+  { name: 'buyerAnalytics', en: buyerAnalyticsEn, id: buyerAnalyticsId },
+  { name: 'buyerScorecard', en: buyerScorecardEn, id: buyerScorecardId },
+  { name: 'buyerInventory', en: buyerInventoryEn, id: buyerInventoryId },
+  { name: 'marketplace', en: marketplaceEn, id: marketplaceId },
+  { name: 'buyerDashboard', en: buyerDashboardEn, id: buyerDashboardId },
+  { name: 'supplierMyStorefront', en: supplierMyStorefrontEn, id: supplierMyStorefrontId },
+  { name: 'supplierStorefront', en: supplierStorefrontEn, id: supplierStorefrontId },
+  { name: 'supplierInventory', en: supplierInventoryEn, id: supplierInventoryId },
+  { name: 'supplierPerformance', en: supplierPerformanceEn, id: supplierPerformanceId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {

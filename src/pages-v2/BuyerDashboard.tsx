@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   BarChart,
   Bar,
@@ -40,6 +41,7 @@ import {
   usePurchaseOrders,
 } from '../services/query/hooks';
 import { SupplierStatus } from '../types/supplier.types';
+import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import {
   openPurchaseOrders,
   unacknowledgedOver48h,
@@ -55,12 +57,6 @@ import BuyerRiskWidget from './widgets/BuyerRiskWidget';
 import BuyerComplianceWidget from './widgets/BuyerComplianceWidget';
 
 type RangeId = 'today' | 'week' | 'month';
-
-const RANGES: { id: RangeId; label: string }[] = [
-  { id: 'today', label: 'Today' },
-  { id: 'week', label: 'This week' },
-  { id: 'month', label: 'This month' },
-];
 
 // Grade IS health state (A healthy → D at-risk), so it stays semantic — but
 // sourced from the centralized good→bad ramp, not ad-hoc hex. No blue: it read
@@ -78,9 +74,18 @@ const RISK_VARIANT: Record<ProductionLineRow['risk'], 'success' | 'warning' | 'd
   high: 'danger',
 };
 
-const DASH_CRUMB = ['DASHBOARDS', 'PROCUREMENT COMMAND CENTER'];
-
 const BuyerDashboard: React.FC = () => {
+  const { t } = useTranslation();
+  const cl = useCategoryLabel();
+  const DASH_CRUMB = [
+    t('buyerDashboard.crumb.dashboards'),
+    t('buyerDashboard.crumb.commandCenter'),
+  ];
+  const RANGES: { id: RangeId; label: string }[] = [
+    { id: 'today', label: t('buyerDashboard.range.today') },
+    { id: 'week', label: t('buyerDashboard.range.week') },
+    { id: 'month', label: t('buyerDashboard.range.month') },
+  ];
   const [range, setRange] = useState<RangeId>('today');
   const linesQuery = useProductionLines();
   const healthQuery = useSupplierHealth();
@@ -141,17 +146,17 @@ const BuyerDashboard: React.FC = () => {
     return (
       <EmptyState
         breadcrumb={DASH_CRUMB}
-        title="No command-center data"
-        subtitle="Production-line and supplier-health data is available to buyer accounts."
+        title={t('buyerDashboard.empty.title')}
+        subtitle={t('buyerDashboard.empty.subtitle')}
       />
     );
 
   return (
     <AppShellV2>
       <PageHeader
-        breadcrumb={['DASHBOARDS', 'PROCUREMENT COMMAND CENTER']}
-        title="Procurement Command Center"
-        subtitle="Paragon Corp · Odyssey Program · Live operational view"
+        breadcrumb={DASH_CRUMB}
+        title={t('buyerDashboard.header.title')}
+        subtitle={t('buyerDashboard.header.subtitle')}
         actions={
           <TimeRangeToggle options={RANGES} value={range} onChange={setRange} />
         }
@@ -159,34 +164,37 @@ const BuyerDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
         <KpiCard
-          eyebrow="Total Spend YTD"
+          eyebrow={t('buyerDashboard.kpi.spend.eyebrow')}
           value="Rp 14.0B"
           subtitle={
-            <span className="text-text-tertiary">Illustrative — no live source</span>
+            <span className="text-text-tertiary">{t('buyerDashboard.kpi.illustrative')}</span>
           }
           icon={Wallet}
         />
         <KpiCard
-          eyebrow="Portfolio OTIF"
+          eyebrow={t('buyerDashboard.kpi.otif.eyebrow')}
           value="75%"
           subtitle={
-            <span className="text-text-tertiary">Illustrative — no live source</span>
+            <span className="text-text-tertiary">{t('buyerDashboard.kpi.illustrative')}</span>
           }
           icon={Activity}
         />
         <KpiCard
-          eyebrow="Active Suppliers"
+          eyebrow={t('buyerDashboard.kpi.activeSuppliers.eyebrow')}
           value={activeSuppliers.toString()}
-          subtitle={`/ ${suppliers.length} total · ${onboardingSuppliers} onboarding`}
+          subtitle={t('buyerDashboard.kpi.activeSuppliers.subtitle', {
+            total: suppliers.length,
+            onboarding: onboardingSuppliers,
+          })}
           icon={Users}
         />
         <KpiCard
-          eyebrow="Open POs"
+          eyebrow={t('buyerDashboard.kpi.openPo.eyebrow')}
           value={openPoCount.toString()}
           subtitle={
             unackPoCount > 0
-              ? `${unackPoCount} unacknowledged >48h`
-              : 'All acknowledged'
+              ? t('buyerDashboard.kpi.openPo.unack', { count: unackPoCount })
+              : t('buyerDashboard.kpi.openPo.allAck')
           }
           icon={ShoppingCart}
         />
@@ -215,19 +223,19 @@ const BuyerDashboard: React.FC = () => {
         <section className="bg-bg-surface rounded-lg shadow-sm border border-border-subtle p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-eyebrow text-text-tertiary uppercase">Operations</div>
+              <div className="text-eyebrow text-text-tertiary uppercase">{t('buyerDashboard.lines.eyebrow')}</div>
               <h2 className="text-section text-text-primary mt-1">
-                Production Line Risk
+                {t('buyerDashboard.lines.title')}
               </h2>
             </div>
             <StatusPill variant="warning">2 lines at risk</StatusPill>
           </div>
           <Table>
             <TableHeader>
-              <TableHeaderCell>Line</TableHeaderCell>
-              <TableHeaderCell>Category</TableHeaderCell>
-              <TableHeaderCell>Cover (days)</TableHeaderCell>
-              <TableHeaderCell>Risk</TableHeaderCell>
+              <TableHeaderCell>{t('buyerDashboard.lines.col.line')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerDashboard.lines.col.category')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerDashboard.lines.col.cover')}</TableHeaderCell>
+              <TableHeaderCell>{t('buyerDashboard.lines.col.risk')}</TableHeaderCell>
             </TableHeader>
             <tbody>
               {productionLines.map((row) => (
@@ -236,11 +244,16 @@ const BuyerDashboard: React.FC = () => {
                     <div className="font-medium text-text-primary">{row.line}</div>
                     {row.blockedSkus > 0 ? (
                       <div className="text-meta text-text-tertiary">
-                        {row.blockedSkus} blocked SKU{row.blockedSkus === 1 ? '' : 's'}
+                        {t(
+                          row.blockedSkus === 1
+                            ? 'buyerDashboard.lines.blockedSku.one'
+                            : 'buyerDashboard.lines.blockedSku.other',
+                          { count: row.blockedSkus },
+                        )}
                       </div>
                     ) : null}
                   </TableCell>
-                  <TableCell className="text-text-secondary">{row.category}</TableCell>
+                  <TableCell className="text-text-secondary">{cl(row.category)}</TableCell>
                   <TableCell className="text-text-primary"><Data>{row.coverDays}d</Data></TableCell>
                   <TableCell>
                     <StatusPill variant={RISK_VARIANT[row.risk]}>{row.riskLabel}</StatusPill>
@@ -252,9 +265,9 @@ const BuyerDashboard: React.FC = () => {
         </section>
 
         <section className="bg-bg-surface rounded-lg shadow-sm border border-border-subtle p-6">
-          <div className="text-eyebrow text-text-tertiary uppercase">Intelligence</div>
+          <div className="text-eyebrow text-text-tertiary uppercase">{t('buyerDashboard.health.eyebrow')}</div>
           <h2 className="text-section text-text-primary mt-1">
-            Supplier Health Index
+            {t('buyerDashboard.health.title')}
           </h2>
           <div className="flex items-center gap-4 mt-1 mb-4 text-meta text-text-tertiary">
             {(['A', 'B', 'C', 'D'] as const).map((g) => (
