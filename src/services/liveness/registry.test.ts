@@ -67,8 +67,18 @@ describe('LivenessRegistry — honesty invariant (non-LIVE can never be green)',
     expect(isLive('supplierDocuments')).toBe(false);
   });
 
+  it('the canonical compliance flow (I3.1 inert) is SIMULATED until Track-R harvest', () => {
+    // I3.1 repointed compliance from a null backing to the now-authored flow. It
+    // is registered but NOT a wired CommandTarget, so it derives SIMULATED — the
+    // structural honesty guarantee: no wired target ⇒ can never render green.
+    expect(capabilityBacking.compliance).toBe('compliance');
+    expect(WIRED_COMMAND_TARGETS).not.toContain('compliance');
+    expect(liveness('compliance')).toBe('SIMULATED');
+    expect(isLive('compliance')).toBe(false);
+  });
+
   it('a pure-fixture capability (no backing entity) is SIMULATED, never green', () => {
-    for (const cap of ['inventory', 'risk', 'compliance'] as Capability[]) {
+    for (const cap of ['inventory', 'risk'] as Capability[]) {
       expect(capabilityBacking[cap]).toBeNull();
       expect(liveness(cap)).toBe('SIMULATED');
       expect(isLive(cap)).toBe(false);

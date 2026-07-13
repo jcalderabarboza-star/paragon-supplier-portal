@@ -166,6 +166,13 @@ export const useScenarios = () =>
 export const useCompliance = () =>
   useServiceQuery(['risk', 'compliance'], (svc, scope) => svc.risk.getCompliance(scope));
 
+// I3.1 — the canonical compliance registry (census #11–15). supplierId-keyed;
+// consumed by the I3.2 surface re-point (BuyerCompliance → useDataService()).
+export const useComplianceRegistry = () =>
+  useServiceQuery(['risk', 'complianceRegistry'], (svc, scope) =>
+    svc.risk.getComplianceRegistry(scope),
+  );
+
 export const useCommodities = () =>
   useServiceQuery(['risk', 'commodities'], (svc, scope) => svc.risk.getCommodities(scope));
 

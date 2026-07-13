@@ -63,7 +63,12 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   rfqs: 'rfq',
   inventory: null,
   risk: null,
-  compliance: null,
+  // I3.1 — repointed from `null` to the now-authored canonical compliance flow.
+  // The flow is REGISTERED but NOT a wired CommandTarget → still derives
+  // SIMULATED. This is STRONGER honesty than a null backing: unwire-to-honest is
+  // structural — a CommandTarget wires it LIVE only post Track-R harvest, and
+  // removing that target flips it back to SIMULATED with no edit here.
+  compliance: 'compliance',
   // A registered F0.4 flow, but NOT a wired CommandTarget → derives SIMULATED,
   // the same honest result as a pure fixture. (Demonstrates the inert-flow path.)
   supplierDocuments: 'supplierDocument',

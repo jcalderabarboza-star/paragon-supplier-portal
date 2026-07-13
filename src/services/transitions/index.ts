@@ -32,6 +32,7 @@ export { contractFlow } from './flows/contract.flow';
 export { obligationFlow } from './flows/obligation.flow';
 export { purchaseRequisitionFlow } from './flows/purchaseRequisition.flow';
 export { supplierDocumentFlow } from './flows/supplierDocument.flow';
+export { complianceFlow } from './flows/compliance.flow';
 
 import { flowRegistry } from './registry';
 import { purchaseOrderFlow } from './flows/purchaseOrder.flow';
@@ -47,6 +48,7 @@ import { contractFlow } from './flows/contract.flow';
 import { obligationFlow } from './flows/obligation.flow';
 import { purchaseRequisitionFlow } from './flows/purchaseRequisition.flow';
 import { supplierDocumentFlow } from './flows/supplierDocument.flow';
+import { complianceFlow } from './flows/compliance.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -65,3 +67,8 @@ flowRegistry.register(contractFlow); // census #7 — Contract
 flowRegistry.register(obligationFlow); // census #8 — Obligation
 flowRegistry.register(purchaseRequisitionFlow); // census #9 — Purchase requisition
 flowRegistry.register(supplierDocumentFlow); // census #10 — Supplier document
+// I3.1 — the ONE canonical compliance machine (census #11–15, the 5 fragmented
+// vocabularies collapsed). Author-unwired: inert registry data, NO CommandTarget
+// (LivenessRegistry derives SIMULATED); wires against the real cert registry post
+// Track-R harvest. NO creation edge — `Missing` is the natural born-state.
+flowRegistry.register(complianceFlow); // census #11–15 — Compliance (canonical)

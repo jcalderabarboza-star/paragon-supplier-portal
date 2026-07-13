@@ -55,14 +55,19 @@ number seen three ways.
 
 | Count | What it measures | Where |
 |---|---|---|
-| **54** | The `IDataService` **service surface** — every method taking `QueryScope` first (50 reads + `dispatch`/`getCommandStatus`/`settle` + `getCapabilities`). Confirmed two ways: manual enumeration + a `\w+(scope` signature grep (exactly 54). | `src/services/data/types.ts` |
-| **69** | The **transition catalog** — every authored state-machine edge (`id: 't_…'`) across the 13 registered flows. This is the *verb* surface, distinct from the service surface. | `src/services/transitions/flows/*.ts` |
+| **55** | The `IDataService` **service surface** — every method taking `QueryScope` first (51 reads + `dispatch`/`getCommandStatus`/`settle` + `getCapabilities`). Confirmed two ways: manual enumeration + a `\w+(scope` signature grep (exactly 55). | `src/services/data/types.ts` |
+| **72** | The **transition catalog** — every authored state-machine edge (`id: 't_…'`) across the 14 registered flows. This is the *verb* surface, distinct from the service surface. | `src/services/transitions/flows/*.ts` |
 | **6** | The **wired CommandTargets** — entities with a live per-entity adapter the dispatcher writes through (`purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`). | `src/services/data/mock/MockCommandService.ts` |
 
-**54 ≠ 69 ≠ 6.** 54 is the read/write API a page calls. 69 is how many transitions exist in the
-schema. 6 is how many of the 13 flows are behavior-wired today (the other 7: 2 rolled-up
-sub-flows — `goodsReceiptLine`, `invoiceMatch` — and the 5 inert F0.4 machines — `shipment`,
-`contract`, `obligation`, `purchaseRequisition`, `supplierDocument`). See C1 for the full census.
+**55 ≠ 72 ≠ 6.** 55 is the read/write API a page calls. 72 is how many transitions exist in the
+schema. 6 is how many of the 14 flows are behavior-wired today (the other 8: 2 rolled-up
+sub-flows — `goodsReceiptLine`, `invoiceMatch` — and the 6 inert machines — the 5 F0.4
+(`shipment`, `contract`, `obligation`, `purchaseRequisition`, `supplierDocument`) plus the I3.1
+canonical `compliance` machine). See C1 for the full census.
+
+> **I3.1 delta.** Service surface 54 → **55** (`risk.getComplianceRegistry`), transition catalog
+> 69 → **72** / 13 → **14** flows (`compliance.flow.ts`), wired targets unchanged at **6** — the
+> compliance machine is inert (SIMULATED via the LivenessRegistry until the Track-R harvest).
 
 ---
 
@@ -77,7 +82,7 @@ imply they are closed.
 | **F0.3-FIND-01** | `t_quotation_submit` / `t_quotation_review` authored-unwired — blocked on a quote-scoring primitive (the score axes the canonical `Quotation` requires). Do not fabricate scores. |
 | **SUPPLIER-SOURCING-01** | Read half **CLOSED** (`SupplierRFQs` — invited-membership + supplier-scoped quotations + award-history re-derive). Write half **OPEN** — gated behind F0.3-FIND-01. |
 | **F0.4-FIND-01** | Fixtures store clock-projected status as literals (`Expiring`/`Expired`/`Upcoming`/`Overdue`/`Expiring Soon`/`Renewed`) — violates law 0.5 (computed-never-stored). Home: read / DTO-v2 layer. |
-| **Compliance → R2.2** | `COMPLIANCE-CARVEOUT-01` + the HALAL-* set (XPERSONA / CLOCK-STATE / ISSUER-BLIND / UNDERREVIEW / REMIND). The ONE canonical compliance machine (census #11–15, the 5 fragmented vocabularies) rides the `ComplianceRegistryEntry` DTO-v2 at R2.2 — it is **not** in the 13 shipped flows. |
+| **Compliance (I3.1 — partial)** | The ONE canonical compliance machine (census #11–15) is now **authored** (`compliance.flow.ts`, 14th flow, inert/SIMULATED) with the `ComplianceRegistryEntry` DTO-v2 read + `complianceProjection.ts`. **CLOSED fixture-first (mechanism):** `HALAL-CLOCK-STATE-01`, `HALAL-UNDERREVIEW-01`, `HALAL-XPERSONA-01` (reconciliation), `F0.4-FIND-01` (cert literals). **Still OPEN:** `HALAL-ISSUER-BLIND-01` (downgraded — mechanism built, needs REAL issuer data), `COMPLIANCE-CARVEOUT-01` (page re-point rides I3.2), `HALAL-REMIND-01` (real channel). Whole surface stays **SIMULATED-until-harvest**. |
 | **DNA-SEED-01** | **PARTIAL** — `getCapabilities` LIVE; `guidance?` prop slot unbuilt (see legend). |
 | **E2E-SUITE-01** | No committed Playwright suite. The two crown invariants (no cross-supplier leak · four honest states) are backstopped **in-floor by vitest** (`scoping.contract.test.ts` + `withChaos` suites). |
 
