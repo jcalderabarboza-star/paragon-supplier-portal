@@ -40,10 +40,19 @@ stale by ~19 commits; the transition schema + command spine it named are BUILT.
   `CommandResult`/`getCommandStatus`/`settle` (Option-B SAP boundary), DR-10 event
   taxonomy (`TransitionEvent` + `AuditSink`, in-memory), cascades (RFQ→quotation,
   GR→ASN). PO/ASN/GR/Invoice/RFQ-award verbs run against in-memory stores.
-- **Phase 2′ exit** is contract-complete as of F0.4 (all 15 machines authored;
-  5 lifecycle machines wired only where a surface already has the verb; the
-  compliance machine rides R2.2 DTO-v2). It is deliberately NOT behavior-complete
-  — remaining verb wiring rides each Stage-2 surface (FORK-2 hybrid).
+- **Phase 2′ exit is STAMPED contract-complete as of F0.4 (PR #58).** All 10
+  lifecycle machines are authored across 13 flow files (`src/services/transitions/
+  flows/`): PO · ASN · GR (+ line) · Invoice (+ match) · RFQ · Quotation · Shipment ·
+  Contract · Obligation · PurchaseRequisition · SupplierDocument. The sole remaining
+  census machine — the ONE canonical compliance machine that collapses the 5
+  fragmented vocabularies (census #11–15) — rides R2.2 DTO-v2. The F0.4 five
+  (Shipment/Contract/Obligation/PR/SupplierDocument) are **author-unwired inert
+  registry data**: no CommandTarget, no cascade link, roles mapped for
+  catalog-coverage only (DNA-SEED-01 contract surface, no UI consumer). It is
+  deliberately **contract-complete, NOT behavior-complete** — remaining verb
+  wiring (and each machine's CommandTarget) rides its Stage-2 surface (FORK-2
+  hybrid). Clock-projected states stay out of every transition table (law 0.5);
+  the fixtures that still store them as literals are F0.4-FIND-01 (read/DTO-v2).
 - **Backend is greenfield.** Zero server code / datastore clients; data is
   in-memory fixtures behind `mockDataService` (`src/main.tsx`); tenant scoping is
   enforced client-side. `httpDataService` is the designed Phase-F1 swap

@@ -27,6 +27,11 @@ export { invoiceFlow } from './flows/invoice.flow';
 export { invoiceMatchFlow } from './flows/invoiceMatch.flow';
 export { rfqFlow } from './flows/rfq.flow';
 export { quotationFlow } from './flows/quotation.flow';
+export { shipmentFlow } from './flows/shipment.flow';
+export { contractFlow } from './flows/contract.flow';
+export { obligationFlow } from './flows/obligation.flow';
+export { purchaseRequisitionFlow } from './flows/purchaseRequisition.flow';
+export { supplierDocumentFlow } from './flows/supplierDocument.flow';
 
 import { flowRegistry } from './registry';
 import { purchaseOrderFlow } from './flows/purchaseOrder.flow';
@@ -37,6 +42,11 @@ import { invoiceFlow } from './flows/invoice.flow';
 import { invoiceMatchFlow } from './flows/invoiceMatch.flow';
 import { rfqFlow } from './flows/rfq.flow';
 import { quotationFlow } from './flows/quotation.flow';
+import { shipmentFlow } from './flows/shipment.flow';
+import { contractFlow } from './flows/contract.flow';
+import { obligationFlow } from './flows/obligation.flow';
+import { purchaseRequisitionFlow } from './flows/purchaseRequisition.flow';
+import { supplierDocumentFlow } from './flows/supplierDocument.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -47,3 +57,11 @@ flowRegistry.register(invoiceFlow); // Step 4 (iii) — Invoice (DR-7 canonical)
 flowRegistry.register(invoiceMatchFlow); // Step 4 (iii) — Invoice match sub-flow (census G2)
 flowRegistry.register(rfqFlow); // Step 4 (iv) — RFQ (cascade source: t_rfq_award)
 flowRegistry.register(quotationFlow); // Step 4 (iv) — Quotation (cascade targets: award/reject)
+// F0.4 — the 5 remaining lifecycle machines (census #2/#7/#8/#9/#10). Author-
+// unwired: inert registry data, NO CommandTarget, wired per Stage-2 surface
+// (FORK-2 hybrid). Phase 2′ exit: contract-complete, not behavior-complete.
+flowRegistry.register(shipmentFlow); // census #2 — Shipment (TMS-owned, INT-TMS-01)
+flowRegistry.register(contractFlow); // census #7 — Contract
+flowRegistry.register(obligationFlow); // census #8 — Obligation
+flowRegistry.register(purchaseRequisitionFlow); // census #9 — Purchase requisition
+flowRegistry.register(supplierDocumentFlow); // census #10 — Supplier document
