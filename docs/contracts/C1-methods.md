@@ -1,20 +1,25 @@
 # C1 — Method Surface
 
-Three distinct axes. **54** (service surface) · **69** (transition catalog) · **6** (wired
+Three distinct axes. **55** (service surface) · **72** (transition catalog) · **6** (wired
 targets). They measure different things; this file keeps them separate.
+
+> **I3.1 delta (compliance contract extension).** The canonical compliance machine
+> (census #11–15) landed: service surface 54 → **55** (`risk.getComplianceRegistry`),
+> transition catalog 69 → **72** / 13 → **14** flows (`compliance.flow.ts`, 3 edges),
+> wired targets unchanged at **6** (the flow is inert — SIMULATED until Track-R harvest).
 
 Source of truth: `src/services/data/types.ts` (service + command types),
 `src/services/transitions/` (schema, dispatcher, flows).
 
 ---
 
-## Axis 1 — the 54-method service surface (`IDataService`)
+## Axis 1 — the 55-method service surface (`IDataService`)
 
 The single interface the Phase-F1 real adapter implements; pages call it through
 `useDataService()` and do not change when the mock is swapped for `httpDataService`. Every method
 takes `QueryScope` as its first argument (the scoping contract — a supplier only ever sees its
-own data; the buyer sees the superset). Confirmed **54** two independent ways: manual enumeration
-and a `\w+(scope` signature grep over `types.ts` (exactly 54 matches).
+own data; the buyer sees the superset). Confirmed **55** two independent ways: manual enumeration
+and a `\w+(scope` signature grep over `types.ts` (exactly 55 matches).
 
 `IDataService` is six read sub-services + one command sub-service + one top-level method:
 
@@ -22,7 +27,7 @@ and a `\w+(scope` signature grep over `types.ts` (exactly 54 matches).
 interface IDataService {
   suppliers:   ISupplierService;      // 3 methods
   procurement: IProcurementService;   // 22 methods
-  risk:        IRiskService;          // 6 methods
+  risk:        IRiskService;          // 7 methods
   discovery:   IDiscoveryService;     // 5 methods
   analytics:   IAnalyticsService;     // 7 methods
   engagement:  IEngagementService;    // 7 methods
@@ -35,14 +40,14 @@ interface IDataService {
 |---|---|---|
 | `ISupplierService` | 3 | `list`, `getById`, `getCurrent` |
 | `IProcurementService` | 22 | `getPurchaseOrders`, `getPurchaseOrder`, `getInventory`, `getRFQs`, `getQuotations`, `getShipments`, `getASNs`, `getGoodsReceipts`, `getBuyerInvoices`, `getSupplierInvoices`, `getContracts`, `getObligations`, `getDocuments`, `getStorefrontCatalog`, `getStorefrontCerts`, `getStorefrontProducts`, `getKpis`, `getPerformanceTrend`, `getSupplierScorecards`, `getRequisitions`, `getProductionLines`, `getSupplierHealth` |
-| `IRiskService` | 6 | `getRiskAlerts`, `getGeoRisks`, `getExposure`, `getScenarios`, `getCompliance`, `getCommodities` |
+| `IRiskService` | 7 | `getRiskAlerts`, `getGeoRisks`, `getExposure`, `getScenarios`, `getCompliance`, `getComplianceRegistry`, `getCommodities` |
 | `IDiscoveryService` | 5 | `getGlobalSuppliers`, `getRecommended`, `getQualifications`, `getMarketIntel`, `getSingleSourceItems` |
 | `IAnalyticsService` | 7 | `getSummary`, `getSpendByCategory`, `getTopSuppliers`, `getOtifTrend`, `getPoVolumeTrend`, `getChannelMix`, `getSupplierPerformance` |
 | `IEngagementService` | 7 | `getSummary`, `getConversations`, `getConversationThread`, `getAutomationRules`, `getDailyMessages`, `getRuleRates`, `getResponseTimes` |
-| **read subtotal** | **50** | |
+| **read subtotal** | **51** | |
 | `ICommandService` | 3 | `dispatch`, `getCommandStatus`, `settle` |
 | top-level | 1 | `getCapabilities` |
-| **TOTAL** | **54** | |
+| **TOTAL** | **55** | |
 
 **Return contract:** list reads return `Page<T>` (DR-5 — see C2); single reads return `T | null`;
 `getSummary` returns a summary object or `null` (buyer-populated, supplier-null). Failure is
@@ -56,7 +61,7 @@ C5).
 
 ---
 
-## Axis 2 — the 69-transition catalog (13 flows)
+## Axis 2 — the 72-transition catalog (14 flows)
 
 Every authored state-machine edge across the registered flows (`id: 't_<entity>_<verb>'`).
 Grep-counted over `src/services/transitions/flows/*.ts`. This is the *verb* surface — how many
@@ -77,7 +82,8 @@ transitions the schema defines — and is **not** the service-method count.
 | `obligation.flow.ts` | `obligation` | 2 (`track`, `complete`) | inert (F0.4) |
 | `purchaseRequisition.flow.ts` | `purchaseRequisition` | 6 (`create`, `submit`, `approve`, `reject`, `source`, `convert`) | inert (F0.4) |
 | `supplierDocument.flow.ts` | `supplierDocument` | 4 (`request`, `submit`, `verify`, `reject`) | inert (F0.4) |
-| **TOTAL** | | **69** | |
+| `compliance.flow.ts` | `compliance` | 3 (`submit`, `verify`, `reject`) | inert (I3.1) |
+| **TOTAL** | | **72** | |
 
 **Flow shape** (`schema.ts`, `FlowDefinition` / `TransitionDef`): each transition declares
 `from[]` / `to` / `trigger` / `requiredRole` / `requiredFields[]` / `policyHooks[]` /
@@ -115,18 +121,21 @@ transitions — scope is derived from the payload's **parent** (`creationOwner`,
 `poReference → PO.supplierId`) and `create` mints the entity + returns its store-assigned id
 (canonical creation pattern: ASN drafted against its own PO).
 
-### Wiring census (13 flows → 3 states)
+### Wiring census (14 flows → 3 states)
 
 - **6 behavior-wired** — have a `CommandTarget`, dispatch runs against in-memory stores:
   `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`.
 - **2 rolled-up sub-flows** (census G2) — authored, participate via terminal rollup
   (`grRollup.ts` / `invoiceRollup.ts`), **no standalone target**: `goodsReceiptLine`,
   `invoiceMatch`.
-- **5 inert F0.4** — registry data only: **no CommandTarget, no cascade link**, roles mapped for
-  catalog-coverage only (DNA-SEED-01 contract surface, no UI consumer): `shipment`, `contract`,
-  `obligation`, `purchaseRequisition`, `supplierDocument`. Phase 2′ exit is **contract-complete,
-  NOT behavior-complete** (FORK-2 hybrid — each machine's `CommandTarget` + verb wiring rides its
-  Stage-2 surface).
+- **6 inert** — registry data only: **no CommandTarget, no cascade link**, roles mapped for
+  catalog-coverage only (DNA-SEED-01 contract surface, no UI consumer). The 5 F0.4 machines
+  (`shipment`, `contract`, `obligation`, `purchaseRequisition`, `supplierDocument`) plus the I3.1
+  canonical `compliance` machine (census #11–15 — the 5 fragmented vocabularies collapsed; note it
+  has NO creation edge, `Missing` being its natural born-state). Contract-complete, NOT
+  behavior-complete (FORK-2 hybrid — each machine's `CommandTarget` + verb wiring rides its
+  Stage-2 surface; `compliance` wires against the real cert registry post Track-R harvest, which
+  flips its LivenessRegistry tier SIMULATED → LIVE).
 
 ---
 

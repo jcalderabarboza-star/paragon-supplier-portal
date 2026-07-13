@@ -37,6 +37,10 @@ const SCOPED_READS: { name: string; run: Scoped }[] = [
   { name: 'getStorefrontCerts', run: (s) => svc.procurement.getStorefrontCerts(s) },
   { name: 'getStorefrontProducts', run: (s) => svc.procurement.getStorefrontProducts(s) },
   { name: 'getQuotations', run: (s) => svc.procurement.getQuotations(s) },
+  // I3.1 — the canonical compliance registry: supplierId-keyed, so a supplier
+  // reads only its own certs and the buyer sees the superset (the FK that closes
+  // the name-vs-id split, HALAL-XPERSONA-01).
+  { name: 'getComplianceRegistry', run: (s) => svc.risk.getComplianceRegistry(s) },
 ];
 
 describe('service scoping contract — supplierId-scoped reads', () => {

@@ -52,7 +52,7 @@ share the reads' failure channel (`types.ts:120–147`).
 
 ## Identity scope — `QueryScope` · **LIVE**
 
-Derived from `CurrentIdentity` at the page boundary; first argument to all 54 methods.
+Derived from `CurrentIdentity` at the page boundary; first argument to all 55 methods.
 
 ```ts
 interface QueryScope {
@@ -152,9 +152,16 @@ entity that carries a clock-derived display state. It is the home for:
 
 - **F0.4-FIND-01** — obligation / contract / supplier-document clock projections.
 - **The ONE canonical compliance machine** (census #11–15 — the 5 fragmented compliance
-  vocabularies collapsed) — rides the `ComplianceRegistryEntry` DTO-v2 at **R2.2**. This machine
-  is **not** among the 13 shipped flows; `BuyerCompliance` stays a registered fixture carve-out
-  (`COMPLIANCE-CARVEOUT-01`) until Stage-2 I3 re-points it. See README open-findings.
+  vocabularies collapsed) — **LANDED at I3.1** as the 14th flow (`compliance.flow.ts`, inert) +
+  the `ComplianceRegistryEntry` type + `getComplianceRegistry` read + `complianceProjection.ts`.
+  The projection computes `status`/`daysRemaining` (clock, law 0.5), `schemeValid` (issuer axis),
+  and `remindEligible` at read time — the generalization of `invoiceProjection`. **Fixture-first +
+  SIMULATED** (LivenessRegistry derives `compliance` → SIMULATED; the fixture is honestly
+  synthetic): the read flips SIMULATED → LIVE only when the Track-R harvest lands the real cert
+  registry. `BuyerCompliance` still reads the legacy `COMPLIANCE_ITEMS` fixture directly — its
+  re-point to `getComplianceRegistry` rides **I3.2** (`COMPLIANCE-CARVEOUT-01` stays open until
+  then). See README open-findings.
 
-DTO-v2 itself is **RESERVED / SPEC** (the projection pattern is LIVE for invoice; the entity-wide
-DTO-v2 harvest is a Stage-2 build target). Do not read it as shipped for non-invoice entities.
+DTO-v2 is **LIVE (fixture-backed, SIMULATED) for invoice + compliance**; for the remaining
+clock-derived entities (F0.4-FIND-01: obligation / contract / supplier-document) it is still
+**RESERVED / SPEC** — a Stage-2 build target. Do not read it as shipped for those entities.

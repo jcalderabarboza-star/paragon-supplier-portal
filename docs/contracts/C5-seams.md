@@ -42,14 +42,16 @@ for the real adapter is a **one-line prop change**; pages do not change
 **Carve-out:** `BuyerCompliance` does **not** consume `useDataService()` — it imports the
 `COMPLIANCE_ITEMS` fixture directly. Registered as `COMPLIANCE-CARVEOUT-01`; re-points at Stage-2
 I3 off the R2.2 DTO-v2 harvest (its data model is superseded by `ComplianceRegistryEntry`, so
-re-pointing to the current service would be throwaway work).
+re-pointing to the current service would be throwaway work). **I3.1 landed the target read**
+(`risk.getComplianceRegistry` → `ComplianceRegistryEntry`, fixture-first/SIMULATED); the page
+re-point to `useComplianceRegistry()` is the **I3.2** surface batch, when the carve-out closes.
 
 ---
 
 ## `httpDataService` — the Phase-F1 swap · **RESERVED**
 
 The designed real adapter. **No file exists** (glob-confirmed). It implements the **same**
-`IDataService` (all 54 methods, C1) against the real backend core (NestJS/SAP per the Stage-F1
+`IDataService` (all 55 methods, C1) against the real backend core (NestJS/SAP per the Stage-F1
 plan: `httpDataService`, OIDC, durable audit). Named as the intended swap in
 `DataServiceContext.tsx:5`. Because the interface is frozen, landing it is additive.
 

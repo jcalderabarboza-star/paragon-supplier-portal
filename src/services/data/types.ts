@@ -635,6 +635,83 @@ export interface ComplianceRow {
   status: ComplianceState;
 }
 
+// ── Compliance registry — census #11–15 → ONE canonical machine (I3.1) ─────────
+// The 5 fragmented compliance vocabularies (SupplierDocumentStatus /
+// ProfileCertStatus / ScorecardComplianceLevel / ComplianceState /
+// ComplianceItemStatus) collapse to ONE machine. `ComplianceRegistryEntry` is the
+// DTO-v2 shape that canonical machine reads through — grain = supplier × raw-
+// material × certificate (the Spine). It SUPERSEDES the thin `ComplianceRow`
+// above (deprecated-at-birth): supplierId-keyed (not name-keyed), and every
+// clock/scheme value is COMPUTED at read time (`complianceProjection.ts`), never
+// stored (law 0.5). Fixture-backed + SIMULATED until the Track-R harvest lands.
+
+/** Certificate scheme/type. Distinguishes BPJPH (mandate-satisfying) from the
+ *  MUI-legacy scheme (non-compliant after 17 Oct 2026) — the issuer axis the old
+ *  `status === 'Valid'` check was blind to (HALAL-ISSUER-BLIND-01). */
+export type CertType =
+  | 'HALAL_BPJPH'
+  | 'HALAL_MUI_LEGACY'
+  | 'HALAL_FOREIGN'
+  | 'BPOM'
+  | 'ISO'
+  | 'OTHER';
+
+/** GR 42/2024 made BPJPH certs permanent-validity; legacy GR-39 certs kept a
+ *  4-year expiry clock. `certBasis` disambiguates the two clock models. */
+export type CertBasis = 'permanent' | 'legacy-4yr';
+
+/** Raw-material grouping (Spine: cert grain is supplier AND raw-material level). */
+export type MaterialCategory =
+  | 'fragrance'
+  | 'actives'
+  | 'emulsifiers'
+  | 'botanicals'
+  | 'contract-mfg'
+  | 'other';
+
+/** The canonical compliance lifecycle — TRANSITION-states only (census §4). Clock
+ *  decay (Expiring/Expired) is NOT here — it is a read projection (law 0.5). */
+export type ComplianceLifecycleState = 'Missing' | 'Under Review' | 'Valid';
+
+/** The COMPUTED-at-read display status: the lifecycle state plus clock decay
+ *  (law 0.5). Never stored; derived in `complianceProjection.ts`. */
+export type ComplianceDisplayStatus =
+  | 'Missing'
+  | 'Under Review'
+  | 'Valid'
+  | 'Expiring'
+  | 'Expired';
+
+/** One row of the compliance registry — grain: supplier × material × certificate.
+ *  The DTO-v2 the canonical compliance machine reads. STORED fields only; every
+ *  clock/scheme-derived value is computed by `complianceProjection.ts`. */
+export interface ComplianceRegistryEntry {
+  id: string;
+  /** The FK that reconciles the name-vs-id split across personas
+   *  (HALAL-XPERSONA-01) and scopes the read per-supplier. */
+  supplierId: string;
+  supplierName: string;
+  /** SAP material codes this certificate covers (raw-material grain). */
+  materialCodes: readonly string[];
+  materialCategory: MaterialCategory;
+  certType: CertType;
+  certNumber: string;
+  issuer: string;
+  issueDate: string | null;
+  /** `null` = unknown, NEVER guessed (a blank expiry on a required cert is itself
+   *  a finding) — also `null` for a permanent-basis BPJPH cert. */
+  expiryDate: string | null;
+  certBasis: CertBasis;
+  /** The STORED transition-state (Missing/Under Review/Valid). The display status
+   *  is computed from this + the clock, never stored. */
+  lifecycleState: ComplianceLifecycleState;
+  /** Whether this cert is required for the supplier's halal-brand supply — gates
+   *  the BPJPH KPI and remind-eligibility. */
+  requiredForHalalBrands: boolean;
+  scopeText: string;
+  notes: string;
+}
+
 export interface Commodity {
   name: string;
   unit: string;
@@ -1083,6 +1160,12 @@ export interface IRiskService {
   getExposure(scope: QueryScope): Promise<Page<ExposureRow>>;
   getScenarios(scope: QueryScope): Promise<Page<Scenario>>;
   getCompliance(scope: QueryScope): Promise<Page<ComplianceRow>>;
+  /** Canonical compliance registry (census #11–15 → ONE machine · I3.1). Grain:
+   *  supplier × material × certificate. SUPERSEDES `getCompliance`/`ComplianceRow`
+   *  (deprecated-at-birth). supplierId-keyed → scope-isolated per supplier (buyer
+   *  sees the superset). Fixture-backed + SIMULATED (LivenessRegistry) until the
+   *  Track-R harvest lands the real cert registry. */
+  getComplianceRegistry(scope: QueryScope): Promise<Page<ComplianceRegistryEntry>>;
   getCommodities(scope: QueryScope): Promise<Page<Commodity>>;
 }
 

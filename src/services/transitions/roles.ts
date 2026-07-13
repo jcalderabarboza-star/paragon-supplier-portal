@@ -37,6 +37,9 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     'pr:create', 'pr:submit', 'pr:approve', 'pr:reject', 'pr:source', 'pr:convert',
     'shipment:create', 'shipment:advance', // system/cascade (TMS-owned, INT-TMS-01)
     'supplierdoc:request', 'supplierdoc:verify', 'supplierdoc:reject', // verify/reject = system
+    // I3.1 — canonical compliance machine (census #11–15). verify/reject = system
+    // (verification pipeline). Author-unwired; catalog-coverage only.
+    'compliance:verify', 'compliance:reject',
   ],
   // Supplier side: view / acknowledge / confirm an incoming PO; create + submit
   // an advance ship notice; draft + submit an invoice against its own PO; submit
@@ -48,6 +51,7 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     'invoice:submit',
     'quotation:submit',
     'supplierdoc:submit',
+    'compliance:submit', // I3.1 — supplier submits a cert for a required cell
   ],
 };
 
