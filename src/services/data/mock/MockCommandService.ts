@@ -349,6 +349,16 @@ const TARGETS: Record<string, CommandTarget> = {
   quotation: quotationTarget,
 };
 
+// The behavior-wiring census (the contract package's "6") — the entity keys that
+// actually dispatch through a wired CommandTarget. Exported as the ONE runtime
+// source of truth the LivenessRegistry (F0.6) reads: it derives liveness from
+// THESE keys, so an honest-render marker cannot drift from what the command spine
+// really wires. Unwire a target here and its capability flips to SIMULATED with
+// no edit in the registry (honest-by-construction). Frozen: read-only census.
+export const WIRED_COMMAND_TARGETS: readonly string[] = Object.freeze(
+  Object.keys(TARGETS),
+);
+
 // Cross-entity cascade (census G4): a GR mismatch disposition (reject / partial
 // approve) raises a discrepancy on the linked ASN. The registry (cascades.ts)
 // declares WHICH verb; the mock resolves WHICH ASN id (the GR's own asnNumber).

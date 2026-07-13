@@ -15,8 +15,9 @@ import { formatDate } from '../../lib/format';
 import { useCompliance } from '../../services/query/hooks';
 import type { ComplianceRow, ComplianceState } from '../../services/data/types';
 
-// SAMPLE (live=false): supplier compliance is a buyer-side fixture → amber
-// "Sample data" pill. Flag severity derives honestly from the real expiry state.
+// Capability "compliance": supplier compliance is a buyer-side fixture (no wired
+// CommandTarget) → the LivenessRegistry derives SIMULATED → amber "Sample" pill.
+// Flag severity still derives honestly from the real expiry state.
 const STATE_TONE: Record<ComplianceState, 'success' | 'warning' | 'danger'> = {
   ok: 'success',
   expiring: 'warning',
@@ -86,7 +87,7 @@ const BuyerComplianceWidget: React.FC = () => {
       title={t('widget.compliance.title')}
       icon={FileWarning}
       count={count}
-      live={false}
+      capability="compliance"
       flagSeverity={severity}
       flagLabel={
         count > 0

@@ -69,7 +69,7 @@ const BuyerAsnInboundWidget: React.FC = () => {
       title={t('widget.asnInbound.title')}
       icon={Truck}
       count={count}
-      live
+      capability="advanceShipNotices"
       flagSeverity={asnTier(items)}
       flagLabel={
         count > 0

@@ -85,7 +85,7 @@ const SupplierInvoicePaymentWidget: React.FC = () => {
       title={t('widget.invoicePayment.title')}
       icon={CreditCard}
       count={count}
-      live
+      capability="invoices"
       flagSeverity={severity}
       flagLabel={
         count > 0

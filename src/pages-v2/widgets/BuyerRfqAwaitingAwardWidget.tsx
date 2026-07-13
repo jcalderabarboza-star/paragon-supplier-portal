@@ -85,7 +85,7 @@ const BuyerRfqAwaitingAwardWidget: React.FC = () => {
       title={t('widget.rfqAward.title')}
       icon={Gavel}
       count={count}
-      live
+      capability="rfqs"
       flagSeverity={rfqAwardTier(
         rfqQuery.data?.items ?? [],
         quoteQuery.data?.items ?? [],
