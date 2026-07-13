@@ -15,6 +15,8 @@ import {
   ClipboardCheck,
   Trophy,
   Archive,
+  Ban,
+  RotateCcw,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -40,7 +42,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useRFQs, useQuotations, useSuppliers } from '../services/query/hooks';
-import { useRfqAward } from '../services/query/commandHooks';
+import { useRfqAward, useRfqCancel, useRfqReopen } from '../services/query/commandHooks';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
@@ -384,6 +386,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const { toast } = useToast();
   const { t } = useTranslation();
   const awardMutation = useRfqAward();
+  const cancelMutation = useRfqCancel();
+  const reopenMutation = useRfqReopen();
 
   const openRfq = (r: RFQ) => {
     setSelectedRfq(r);
@@ -431,6 +435,76 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             variant: 'error',
             title: t('sourcing.toast.awardFailed.title'),
             description: t('sourcing.toast.awardFailed.dispatch'),
+          }),
+      },
+    );
+  };
+
+  // Cancel the RFQ (fires t_rfq_cancel, Draft/Open/Closed → Cancelled). Terminal
+  // abandon — no cascade, no artifact. On success the board re-derives and the
+  // panel closes (its local snapshot would otherwise show the stale prior status).
+  const handleCancel = () => {
+    if (!selectedRfq) return;
+    const rfqNumber = selectedRfq.rfqNumber;
+    cancelMutation.mutate(
+      { rfqId: selectedRfq.id },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('sourcing.toast.cancelFailed.title'),
+              description:
+                result.reason ?? t('sourcing.toast.cancelFailed.default'),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('sourcing.toast.cancelled.title', { rfqNumber }),
+            description: t('sourcing.toast.cancelled.desc'),
+          });
+          closePanel();
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('sourcing.toast.cancelFailed.title'),
+            description: t('sourcing.toast.cancelFailed.dispatch'),
+          }),
+      },
+    );
+  };
+
+  // Reopen a closed RFQ (fires t_rfq_reopen, Closed → Open) for further responses.
+  const handleReopen = () => {
+    if (!selectedRfq) return;
+    const rfqNumber = selectedRfq.rfqNumber;
+    reopenMutation.mutate(
+      { rfqId: selectedRfq.id },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('sourcing.toast.reopenFailed.title'),
+              description:
+                result.reason ?? t('sourcing.toast.reopenFailed.default'),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('sourcing.toast.reopened.title', { rfqNumber }),
+            description: t('sourcing.toast.reopened.desc'),
+          });
+          closePanel();
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('sourcing.toast.reopenFailed.title'),
+            description: t('sourcing.toast.reopenFailed.dispatch'),
           }),
       },
     );
@@ -1587,6 +1661,44 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 </div>
               </dl>
             </section>
+
+            {/* Lifecycle actions (F0.3): the non-award sourcing verbs, gated on
+                the machine's legal from-states — cancel from Draft/Open/Closed
+                (not a terminal Awarded/Cancelled), reopen from Closed only. */}
+            {(selectedRfq.status === 'Draft' ||
+              selectedRfq.status === 'Open' ||
+              selectedRfq.status === 'Closed') && (
+              <section>
+                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                  {t('sourcing.lifecycle.actions')}
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedRfq.status === 'Closed' && (
+                    <Button
+                      variant="outline"
+                      icon={RotateCcw}
+                      disabled={reopenMutation.isPending}
+                      onClick={handleReopen}
+                    >
+                      {reopenMutation.isPending
+                        ? t('sourcing.reopen.submitting')
+                        : t('sourcing.reopen.submit')}
+                    </Button>
+                  )}
+                  <Button
+                    variant="secondary"
+                    icon={Ban}
+                    className="text-danger"
+                    disabled={cancelMutation.isPending}
+                    onClick={handleCancel}
+                  >
+                    {cancelMutation.isPending
+                      ? t('sourcing.cancel.submitting')
+                      : t('sourcing.cancel.submit')}
+                  </Button>
+                </div>
+              </section>
+            )}
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
