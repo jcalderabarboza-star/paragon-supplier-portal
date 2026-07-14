@@ -10,6 +10,7 @@ import {
   Eye,
   ExternalLink,
   RefreshCw,
+  BookOpen,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -25,7 +26,12 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
+import GuidedLesson from '../components/ui-v2/GuidedLesson';
 import Data from '../components/ui-v2/Data';
+import {
+  HALAL_RENEWAL_STEPS,
+  HALAL_RENEWAL_SOURCE,
+} from '../lib/learn/halalRenewalWalkthrough';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -91,6 +97,20 @@ const SupplierDocuments: React.FC = () => {
   const [panelMode, setPanelMode] = useState<PanelMode>('closed');
   const [activeDoc, setActiveDoc] = useState<SupplierDocument | null>(null);
   const [uploaded, setUploaded] = useState(false);
+  // I3.4 (FORK-1=(c)) — the halal-renewal walkthrough. Read-only guidance; a
+  // shared SIHALAL path (no per-document/certBasis branching). Opened from the
+  // per-document "Renew" action AND the standalone "How to renew" entry.
+  const [lessonOpen, setLessonOpen] = useState(false);
+  const lessonSteps = useMemo(
+    () =>
+      HALAL_RENEWAL_STEPS.map((s) => ({
+        id: s.id,
+        icon: s.icon,
+        title: t(s.titleKey),
+        body: t(s.bodyKey),
+      })),
+    [t],
+  );
 
   const filtered = useMemo(
     () =>
@@ -444,14 +464,7 @@ const SupplierDocuments: React.FC = () => {
                       {doc.expiryDate && days !== null && days <= 180 && (
                         <Button
                           variant="secondary"
-                          onClick={() =>
-                            toast({
-                              variant: 'info',
-                              title: t('supplierDocuments.toast.renewStarted', {
-                                name: doc.name.split('—')[0].trim(),
-                              }),
-                            })
-                          }
+                          onClick={() => setLessonOpen(true)}
                         >
                           {t('supplierDocuments.action.renew')}
                         </Button>
@@ -491,8 +504,46 @@ const SupplierDocuments: React.FC = () => {
             halal.go.id
             <ExternalLink size={11} />
           </a>
+          {/* Deadline-floor discoverable entry (I3.4): findable without being
+              mid-action on a specific document. Opens the read-only walkthrough. */}
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={() => setLessonOpen(true)}
+              className="inline-flex items-center gap-1.5 text-action-hover font-semibold hover:underline"
+            >
+              <BookOpen size={14} aria-hidden="true" />
+              {t('learn.halalRenewal.entry')}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* I3.4 — the halal-renewal walkthrough, in a read-only SidePanel. No footer
+          actions here: GuidedLesson owns its own Back/Next/Done nav and has NO
+          submit path, so it can never look like a live renewal submission. */}
+      <SidePanel
+        open={lessonOpen}
+        onClose={() => setLessonOpen(false)}
+        title={t('learn.halalRenewal.title')}
+      >
+        <GuidedLesson
+          steps={lessonSteps}
+          labels={{
+            back: t('learn.halalRenewal.nav.back'),
+            next: t('learn.halalRenewal.nav.next'),
+            done: t('learn.halalRenewal.nav.done'),
+            step: (current, total) =>
+              t('learn.halalRenewal.nav.step', { current, total }),
+          }}
+          disclaimer={t('learn.halalRenewal.disclaimer')}
+          source={{
+            href: HALAL_RENEWAL_SOURCE.href,
+            label: t(HALAL_RENEWAL_SOURCE.labelKey),
+          }}
+          onDone={() => setLessonOpen(false)}
+        />
+      </SidePanel>
 
       <SidePanel
         open={panelMode !== 'closed'}

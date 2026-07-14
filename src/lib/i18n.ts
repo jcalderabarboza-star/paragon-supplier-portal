@@ -35,6 +35,7 @@ import { supplierOrdersEn, supplierOrdersId } from './i18n/supplierOrders';
 import { supplierShipmentsEn, supplierShipmentsId } from './i18n/supplierShipments';
 import { supplierInvoicesEn, supplierInvoicesId } from './i18n/supplierInvoices';
 import { supplierDocumentsEn, supplierDocumentsId } from './i18n/supplierDocuments';
+import { learnEn, learnId } from './i18n/learn';
 // — Batch 6 (tail sweep) —
 import { buyerSuppliersEn, buyerSuppliersId } from './i18n/buyerSuppliers';
 import { buyerSupplierProfileEn, buyerSupplierProfileId } from './i18n/buyerSupplierProfile';
@@ -103,6 +104,8 @@ export const resources = {
       ...supplierPerformanceEn,
       // — Coverage sweep (sprint close) —
       ...buyerInvoicesEn,
+      // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
+      ...learnEn,
       'app.title': 'Paragon Supplier Portal',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Acquire',
@@ -270,6 +273,8 @@ export const resources = {
       ...supplierPerformanceId,
       // — Coverage sweep (sprint close) —
       ...buyerInvoicesId,
+      // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
+      ...learnId,
       'app.title': 'Portal Pemasok Paragon',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Pengadaan',
