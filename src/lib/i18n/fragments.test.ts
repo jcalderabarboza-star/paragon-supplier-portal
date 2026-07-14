@@ -33,6 +33,8 @@ import { supplierInventoryEn, supplierInventoryId } from './supplierInventory';
 import { supplierPerformanceEn, supplierPerformanceId } from './supplierPerformance';
 // — Coverage sweep (sprint close) —
 import { buyerInvoicesEn, buyerInvoicesId } from './buyerInvoices';
+// — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
+import { learnEn, learnId } from './learn';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -71,6 +73,8 @@ const FRAGMENTS = [
   { name: 'supplierPerformance', en: supplierPerformanceEn, id: supplierPerformanceId },
   // — Coverage sweep (sprint close) —
   { name: 'buyerInvoices', en: buyerInvoicesEn, id: buyerInvoicesId },
+  // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
+  { name: 'learn', en: learnEn, id: learnId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {
