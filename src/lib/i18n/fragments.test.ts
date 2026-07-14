@@ -35,6 +35,8 @@ import { supplierPerformanceEn, supplierPerformanceId } from './supplierPerforma
 import { buyerInvoicesEn, buyerInvoicesId } from './buyerInvoices';
 // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
 import { learnEn, learnId } from './learn';
+// — Stage G · G1.2a plan grid —
+import { planGridEn, planGridId } from './planGrid';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -75,6 +77,8 @@ const FRAGMENTS = [
   { name: 'buyerInvoices', en: buyerInvoicesEn, id: buyerInvoicesId },
   // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
   { name: 'learn', en: learnEn, id: learnId },
+  // — Stage G · G1.2a plan grid —
+  { name: 'planGrid', en: planGridEn, id: planGridId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {

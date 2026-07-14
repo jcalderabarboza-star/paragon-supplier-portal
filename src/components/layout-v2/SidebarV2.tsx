@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   ScrollText,
   MessageCircle,
+  Table2,
   LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -47,6 +48,7 @@ const BUYER_NAV: NavGroup[] = [
       { labelKey: 'nav.buyer.marketplace', icon: Store, path: '/marketplace' },
       { labelKey: 'nav.buyer.suppliers', icon: Users, path: '/buyer/suppliers' },
       { labelKey: 'nav.buyer.sourcing', icon: FileText, path: '/buyer/sourcing' },
+      { labelKey: 'nav.buyer.planGrid', icon: Table2, path: '/buyer/plan-grid' },
     ],
   },
   {
