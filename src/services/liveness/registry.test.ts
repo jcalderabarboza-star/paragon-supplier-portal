@@ -3,6 +3,8 @@ import { WIRED_COMMAND_TARGETS } from '../data/mock/MockCommandService';
 import {
   liveness,
   isLive,
+  awaitsHarvest,
+  readinessNote,
   capabilityBacking,
   ALL_CAPABILITIES,
   type Capability,
@@ -82,6 +84,33 @@ describe('LivenessRegistry — honesty invariant (non-LIVE can never be green)',
       expect(capabilityBacking[cap]).toBeNull();
       expect(liveness(cap)).toBe('SIMULATED');
       expect(isLive(cap)).toBe(false);
+    }
+  });
+});
+
+describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', () => {
+  it('compliance is harvest-gated and carries a Track-R readiness note', () => {
+    expect(awaitsHarvest('compliance')).toBe(true);
+    const note = readinessNote('compliance');
+    expect(note?.readinessNoteKey).toBe('widget.honesty.awaitingHarvest');
+    expect(note?.source).toBe('Track-R');
+  });
+
+  it('no other capability is harvest-gated (note is null, gate-2 trivially open)', () => {
+    for (const cap of ALL_CAPABILITIES) {
+      if (cap === 'compliance') continue;
+      expect(awaitsHarvest(cap)).toBe(false);
+      expect(readinessNote(cap)).toBeNull();
+    }
+  });
+
+  it('gate-2 does not disturb the wired-LIVE capabilities (their source is real)', () => {
+    // The 5 wired capabilities are not harvest-gated, so isLive still tracks tier.
+    for (const cap of ALL_CAPABILITIES) {
+      if (liveness(cap) === 'LIVE') {
+        expect(awaitsHarvest(cap)).toBe(false);
+        expect(isLive(cap)).toBe(true);
+      }
     }
   });
 });

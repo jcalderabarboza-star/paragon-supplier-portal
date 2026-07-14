@@ -12,24 +12,29 @@ import { isLive, type Capability } from '../../services/liveness';
 const renderPill = (node: React.ReactNode) =>
   render(<I18nextProvider i18n={i18n}>{node}</I18nextProvider>);
 
-const SIMULATED_CAPS: Capability[] = [
+// Generic SIMULATED caps render the plain "Sample". `compliance` is harvest-gated
+// (I3.3) so it renders the SPECIFIC waiting-state text instead — asserted separately.
+const GENERIC_SIMULATED_CAPS: Capability[] = [
   'risk',
   'inventory',
-  'compliance',
   'supplierDocuments',
 ];
 
 describe('LivenessPill — honest-render (reads the LivenessRegistry)', () => {
-  it('compliance is SIMULATED → renders "Sample", never "Live"', () => {
-    // Guard the premise: compliance derives SIMULATED (I3.1 repoint).
+  it('compliance is harvest-gated → renders the specific waiting-state, never "Live"', () => {
+    // Guard the premise: compliance derives SIMULATED (I3.1) + harvest-gated (I3.3).
     expect(isLive('compliance')).toBe(false);
-    renderPill(<LivenessPill capability="compliance" />);
-    expect(screen.getByText('Sample')).toBeInTheDocument();
+    const { container } = renderPill(<LivenessPill capability="compliance" />);
+    // The SPECIFIC waiting-state text — not the generic "Sample" — names the harvest.
+    expect(screen.getByText('Sample — awaiting Track-R harvest')).toBeInTheDocument();
     expect(screen.queryByText('Live')).not.toBeInTheDocument();
+    // Still amber / SIMULATED — green tokens structurally absent.
+    expect(container.querySelector('.text-success')).toBeNull();
+    expect(container.querySelector('.bg-success')).toBeNull();
   });
 
-  it('every SIMULATED capability renders amber "Sample" — green is unreachable', () => {
-    for (const cap of SIMULATED_CAPS) {
+  it('every generic SIMULATED capability renders amber "Sample" — green is unreachable', () => {
+    for (const cap of GENERIC_SIMULATED_CAPS) {
       const { unmount, container } = renderPill(<LivenessPill capability={cap} />);
       expect(screen.getByText('Sample')).toBeInTheDocument();
       expect(screen.queryByText('Live')).not.toBeInTheDocument();

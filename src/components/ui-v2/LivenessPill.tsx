@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { isLive, type Capability } from '../../services/liveness';
+import { isLive, readinessNote, type Capability } from '../../services/liveness';
 
 // ────────────────────────────────────────────────────────────────────────────
 // LivenessPill — the shared honest-render marker for FULL PAGES.
@@ -15,6 +15,11 @@ import { isLive, type Capability } from '../../services/liveness';
 // This seeds the F0.6-FIND-01 sweep: the hand-rolled `<StatusPill>Sample data</…>`
 // literals scattered across pages (Marketplace, SupplierPerformance, …) migrate
 // onto this primitive so every page marker reads the registry, not a JSX literal.
+//
+// WAITING-STATE (I3.3): for a harvest-gated capability the registry supplies a
+// readiness note (the ONE authority), so the marker reads the SPECIFIC honest text
+// "Sample — awaiting Track-R harvest" rather than the generic "Sample". Still
+// SIMULATED, still amber — green stays structurally unreachable.
 // ────────────────────────────────────────────────────────────────────────────
 
 const LivenessPill: React.FC<{ capability: Capability; className?: string }> = ({
@@ -23,6 +28,14 @@ const LivenessPill: React.FC<{ capability: Capability; className?: string }> = (
 }) => {
   const { t } = useTranslation();
   const live = isLive(capability);
+  // A non-live, harvest-gated capability names its specific waiting-state; every
+  // other SIMULATED capability keeps the generic "Sample". (Never shown when live.)
+  const note = live ? null : readinessNote(capability);
+  const label = live
+    ? t('widget.honesty.live')
+    : note
+      ? t(note.readinessNoteKey)
+      : t('widget.honesty.sample');
   return (
     <span
       className={`inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider ${
@@ -35,7 +48,7 @@ const LivenessPill: React.FC<{ capability: Capability; className?: string }> = (
           live ? 'bg-success' : 'border border-warning'
         }`}
       />
-      {live ? t('widget.honesty.live') : t('widget.honesty.sample')}
+      {label}
     </span>
   );
 };

@@ -9,6 +9,7 @@ import {
   Shield,
   RefreshCw,
   Bell,
+  Database,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -19,6 +20,7 @@ import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import LivenessPill from '../components/ui-v2/LivenessPill';
+import { isLive, readinessNote } from '../services/liveness';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -182,9 +184,28 @@ const BuyerCompliance: React.FC = () => {
       <PageMetaLine className="-mt-6 mb-6 flex items-center gap-3">
         <span>{t('compliance.meta.summary', { count: rows.length, date: today })}</span>
         {/* Honest-render: capability="compliance" derives SIMULATED (no wired
-            CommandTarget) → amber "Sample". Green is structurally unreachable. */}
+            CommandTarget) AND is harvest-gated (I3.3) → amber "Sample — awaiting
+            Track-R harvest". Green is structurally unreachable (two-gate guard). */}
         <LivenessPill capability="compliance" />
       </PageMetaLine>
+
+      {/* Waiting-state banner (I3.3, second form) — the SPECIFIC readiness message:
+          this surface is proven and wired to the seam, waiting for the Track-R
+          certificate harvest to land the real registry. Rendered only while the
+          capability is harvest-gated; it disappears the moment the two-gate flip
+          lands (LIVENESS-DATASOURCE-01). Distinct from the legal-deadline banner
+          below (that is about the mandate; this is about data liveness). */}
+      {!isLive('compliance') && readinessNote('compliance') && (
+        <div className="bg-bg-hover border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-3">
+          <Database size={16} className="text-warning-hover shrink-0 mt-0.5" />
+          <div className="text-sm text-text-secondary">
+            <strong className="text-text-primary">
+              {t('compliance.readiness.title')}
+            </strong>{' '}
+            {t('compliance.readiness.body')}
+          </div>
+        </div>
+      )}
 
       <div className="bg-warning-soft border-l-2 border-warning rounded px-4 py-3 mb-4 flex items-start gap-3">
         <Shield size={16} className="text-warning-hover shrink-0 mt-0.5" />

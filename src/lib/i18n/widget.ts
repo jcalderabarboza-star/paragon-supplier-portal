@@ -17,6 +17,9 @@ export const widgetEn: Record<string, string> = {
   // — Shared shell (ExpandableWidget) —
   'widget.honesty.live': 'Live',
   'widget.honesty.sample': 'Sample',
+  // Harvest-gated waiting-state (I3.3): a capability whose real data source has not
+  // yet landed. Specific, not generic — names the Track-R certificate harvest.
+  'widget.honesty.awaitingHarvest': 'Sample — awaiting Track-R harvest',
   'widget.allClear': 'All clear',
   'widget.aria.expand': 'Expand {{title}}',
   'widget.aria.show': 'Show {{title}}',
@@ -94,6 +97,7 @@ export const widgetId: Record<string, string> = {
   // — Shared shell (ExpandableWidget) —
   'widget.honesty.live': 'Langsung',
   'widget.honesty.sample': 'Sampel',
+  'widget.honesty.awaitingHarvest': 'Sampel — menunggu panen data Track-R',
   'widget.allClear': 'Semua beres',
   'widget.aria.expand': 'Perluas {{title}}',
   'widget.aria.show': 'Tampilkan {{title}}',
