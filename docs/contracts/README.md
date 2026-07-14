@@ -18,6 +18,7 @@ zero code yet — so the backend work is additive against a frozen contract, nev
 | [C3 — Events](./C3-events.md) | The single `TransitionEvent` taxonomy (DR-10), correlation/causation grouping |
 | [C4 — Snowflake](./C4-snowflake.md) | The clean-data-layer seam — **SPEC / target architecture, zero code today** |
 | [C5 — Seams](./C5-seams.md) | `IDataService` / `getCapabilities` (DNA-SEED-01) / SAP boundary (Option B) / INT-TMS-01 / LivenessRegistry |
+| [C6 — Planning](./C6-planning.md) | PLANNED-as-axis doctrine (Stage G): PlanDraft shape · overlay rule · push pipeline · causation-grouped audit · source-tier × plan-state honesty matrix |
 
 ---
 
@@ -85,6 +86,7 @@ imply they are closed.
 | **Compliance (I3.1 + I3.2)** | The ONE canonical compliance machine (census #11–15) is **authored** (`compliance.flow.ts`, 14th flow, inert/SIMULATED) with the `ComplianceRegistryEntry` DTO-v2 read + `complianceProjection.ts`; **I3.2 re-pointed `BuyerCompliance` + widget onto it** (`useComplianceRegistry`, SIMULATED via `<LivenessPill>`). **CLOSED:** `HALAL-CLOCK-STATE-01`, `HALAL-UNDERREVIEW-01`, `HALAL-XPERSONA-01` (reconciliation), `F0.4-FIND-01` (cert literals) — all fixture-first mechanism; **`COMPLIANCE-CARVEOUT-01`** (page now on the seam). **Still OPEN:** `HALAL-ISSUER-BLIND-01` (downgraded — scheme-aware KPI renders, needs REAL issuer data), `HALAL-REMIND-01` (real channel), the `BuyerRisk` compliance re-point (rides the F0.6 risk-page sweep). Whole surface stays **SIMULATED-until-harvest**. |
 | **DNA-SEED-01** | **PARTIAL** — `getCapabilities` LIVE; `guidance?` prop slot unbuilt (see legend). |
 | **E2E-SUITE-01** | No committed Playwright suite. The two crown invariants (no cross-supplier leak · four honest states) are backstopped **in-floor by vitest** (`scoping.contract.test.ts` + `withChaos` suites). |
+| **G0.1-FIND-01** | One-`causationId`-per-plan-push is INTENT, not a present capability: the public `ICommandService.dispatch(scope, input)` seam (`types.ts:1080`) accepts no caller-supplied correlation, so N push-dispatches cannot be grouped today. Seam extension (caller-supplied correlation OR model-push-as-cascade-source) is a **G1/G2 dependency** (C6 §4). Do not read the grouping as existing. |
 
 **Out of scope (non-contract, design-debt):** `DP3-FONT-02`, `DP2-PALETTE-01`, `DP3-CHIP-01` are
 visual-conformance sweeps, not data-contract items. Noted here only so they are not mistaken for
