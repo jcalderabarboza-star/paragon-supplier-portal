@@ -4,10 +4,18 @@
 (`768b863`, floor 662). **Status:** SPIKE COMPLETE — throwaway harnesses built, measured,
 retired; this scorecard is the only artifact that lands on `main`.
 
+> **FORK-G1 — RULED (operator, 2026-07-14):** the Grid is built on **`react-datasheet-grid`
+> v4.11.6 (MIT), formulas OUT, no licence.** **AG Grid Enterprise** — this bake-off's
+> structural-honesty winner — is recorded as the **firm SE-Team migration target** for
+> enterprise scale. See **§6** for the ruling and rationale, and **§6.3** for the criteria-based
+> upgrade recommendation. The two-engine measurements below (§2–§5) stand as the evidence that
+> (a) proved the honesty doctrine is engine-portable and (b) qualified AG Grid as that target.
+
 **What this is.** The bake-off mandated by `docs/Stage_G_Grid_Planning_Layer_Plan_v1.md` §3:
 **AG Grid Enterprise vs Handsontable + HyperFormula**, each bound to ONE identical harness, scored
 on 8 axes with four disqualifying hard gates. It produces the evidence that lets the operator rule
-**FORK-G1** (which engine the Grid is built on). It does **not** rule it — FORK-G1 stays OPEN.
+**FORK-G1** (which engine the Grid is built on). The spike itself did not pre-decide it; the operator
+has since ruled it (recorded in the box above and in §6): **`react-datasheet-grid` (MIT), formulas OUT.**
 
 **Honesty of this measurement (read first).** Applying the portal's own honest-render discipline
 to the spike itself: not every axis could be *empirically exercised* in a headless Linux/Windows
@@ -57,11 +65,18 @@ watermark; Handsontable on `licenseKey="non-commercial-and-evaluation"`.
 | List price | **$999/dev perpetual** (incl. 1 yr support+updates); subscription ≈ $995–1,995/dev/yr; Grid+Charts bundle $1,598/dev | ≈ **$979/dev** standard annual (1 app, unlimited end-users); perpetual available; HyperFormula proprietary priced separately by end-user tier |
 | Transitive weight | none notable | hard-deps **`moment@2.30.1`**, `numbro@2.5.0`, `dompurify` — bundled regardless of formulas |
 
-> **⚠️ OPERATOR DECISION WITH LEAD TIME (FORK-5-class).** Both frontrunners are **commercial,
-> per-developer** buys. The spike needs no purchase; a production `main` wiring of either does. The
-> licence commitment — and, for Handsontable, the **GPLv3-vs-proprietary HyperFormula** question if
-> formulas are ever wanted — is the operator's post-scorecard call, not a spike cost. Procurement lead
-> time applies.
+> **⚠️ OPERATOR DECISION WITH LEAD TIME (FORK-5-class) — now RULED.** Both engines measured here are
+> **commercial, per-developer** buys. The operator's FORK-G1 ruling (§6.1) **resolves this to no
+> licence at the spec stage** by choosing the MIT `react-datasheet-grid`. The commercial commitment —
+> and, for Handsontable, the **GPLv3-vs-proprietary HyperFormula** question — re-enters **only** at the
+> §6.3 enterprise-scale triggers, where **AG Grid Enterprise** is the pre-qualified paid target and
+> procurement lead time would then apply.
+
+**The ruled engine (for reference, not measured here):** `react-datasheet-grid` **v4.11.6** — **MIT**,
+an already-virtualized Excel-like React datasheet (handles large client-side row counts) with **no
+built-in formula engine** (formulas-OUT is its natural state). It was **not** one of the two harnessed
+engines, so it carries no MEASURED row below; the ruling rests on doctrine-portability + SOMO-engine
+match + spec-stage economics (§6.1–§6.2).
 
 ---
 
@@ -160,19 +175,66 @@ discipline.** Under a formulas-OUT, honest-render-first doctrine, default-honest
 
 ---
 
-## 6. Recorded lean — CONFIRMED
+## 6. FORK-G1 ruling + the engine upgrade path
 
-The plan's pre-registered lean was **AG Grid Enterprise, formulas-OUT — to be confirmed or refuted by
-the spike, not pre-decided.**
+### 6.1 The ruling (operator, 2026-07-14)
 
-**Verdict: CONFIRMED.** The evidence favors **AG Grid Enterprise, formulas-OUT.** It wins or ties every
-axis, is strong (not merely adequate) on the two that matter most here — **honesty containment** and
-**test-floor compatibility** — and it is the only one of the two whose honest configuration is also its
-*best* configuration. Handsontable is a viable fallback, not a disqualified one: if a future
-requirement demands true in-cell spreadsheet formulas *and* the operator accepts the HyperFormula
-licence + bundle cost, it re-enters contention. Absent that, AG Grid is the recommendation.
+**FORK-G1 = `react-datasheet-grid` v4.11.6 (MIT), formulas OUT, no licence.**
 
-**This is a recommendation. FORK-G1 remains OPEN — the operator rules it, after this scorecard.**
+Rationale (operator decision):
+
+- **The engine is a reversible frontend implementation detail; the doctrine is the permanent
+  contract.** At the frontend-as-spec stage, what must be right is the *honesty behavior* — liveness
+  badges, the PLANNED overlay, fill-stages-one, governed writes — and that is **app-logic + the C6/C7
+  contracts**, which are engine-agnostic. Choosing a rendering substrate is not choosing the doctrine.
+- **A commercial licence is premature cost on a reversible decision.** `react-datasheet-grid` is MIT
+  (zero licence, zero procurement, no lead-time blocker) and is an already-virtualized Excel-like React
+  datasheet with **no built-in formula engine** — so formulas-OUT is the library's natural state, not a
+  configuration to police.
+- **It matches SOMO's engine.** SOMO proved the cell-honesty behavior on *this exact engine*; using the
+  same substrate gives cross-platform cell-honesty consistency and enables genuine component/pattern
+  sharing across the C7 seam — and removes the "different-engine" objection entirely.
+
+### 6.2 What the spike actually established (unchanged, and load-bearing)
+
+The bake-off compared **two commercial engines** (AG Grid Enterprise, Handsontable). `react-datasheet-grid`
+was **not** one of the two harnessed engines, so it carries **no MEASURED row** in §2–§4 — the ruling
+rests on the doctrine-portability + SOMO-match + spec-stage-economics reasoning above, not on an 8-axis
+measurement of DSG. What the spike *did* establish remains fully valid and is exactly what makes the
+ruling safe:
+
+- **The honesty doctrine is engine-portable — proven, not asserted.** The same C6/C7 behavior (editable
+  what-if → pure-TS PLANNED overlay → seam value held; SIMULATED × PLANNED rendered honestly) was built
+  identically on two very different engines. Nothing honest lived *in* an engine; it all lived in
+  `harnessModel.ts` + the contracts. Porting to a third engine (DSG) preserves it by construction.
+- **AG Grid was qualified as the migration target.** Among commercial engines it is the
+  structural-honesty winner (data-in/data-out; the seam value is structurally unwritable by the overlay;
+  formulas a separate unregistered module), passed all four hard gates, and its measured bundle/theming/
+  test profile is on record. The spike therefore already performed the **migration due-diligence** for
+  the named upgrade path in §6.3.
+
+### 6.3 SE-Team scalability recommendation — grid engine upgrade path (FIRM)
+
+This is a **firm, criteria-based scalability decision**, not a soft option. It belongs in the
+**SE-Handoff / backend build doc** as a named upgrade path, cross-referenced from here.
+
+- **Default (correct now):** `react-datasheet-grid` (MIT) is the right engine for the spec stage **and
+  for moderate production scale.** It is virtualized (comfortably handles large client-side row counts),
+  MIT, formulas-free by nature, and SOMO-consistent. Ship on it.
+- **FIRM RECOMMENDATION — migrate to AG Grid Enterprise** (~$999/dev perpetual, **formulas still OFF**
+  for honesty) **if and when production crosses enterprise-scale thresholds.** Named triggers:
+  1. **Datasets that outgrow client-side virtualization** — needing a server-side/remote row model for
+     truly massive or remote-paged data (beyond what DSG's client-side virtualization serves).
+  2. **Complex grouping / pivoting / aggregation** — row grouping, pivot tables, tree/master-detail —
+     features DSG does not provide and that are first-class in AG Grid Enterprise.
+  3. **Heavy concurrent editing** at a scale that strains a lightweight datasheet's edit/render model.
+  4. **Enterprise support-SLA requirements** — a vendor SLA an MIT community project cannot offer.
+- **Why the migration is LOW-RISK:** the honesty doctrine (liveness badges, PLANNED overlay,
+  fill-stages-one, governed writes) is **app-logic layered on top of the engine, not an engine feature**;
+  the **C6/C7 contracts are engine-agnostic**; and this scorecard already proved **AG Grid meets the
+  honesty bar structurally** (data-in/out; overlay structurally unwritable; formulas a separate
+  unregistered module). Swapping the rendering substrate preserves every honesty behavior — the
+  substrate is the *only* thing that changes. The due-diligence is done; the trigger is a scale event.
 
 ---
 
@@ -211,11 +273,12 @@ Edit proof — identical result (weight 100 → 50, score 93 → **47**, seam he
 
 | ID | Item | State |
 |---|---|---|
-| G0.2-LEAN | Engine lean **AG Grid Enterprise formulas-OUT** | **CONFIRMED** by the spike (§5–§6) |
-| **FORK-G1** | Which engine the Grid is built on | **OPEN** — ruled by the operator, informed by this scorecard |
-| **G0.2-FORK5** | Commercial per-dev licence commitment (both engines); HyperFormula GPLv3-vs-proprietary if HOT+formulas ever chosen | **OPEN** — operator decision with procurement lead time (§1) |
+| **FORK-G1** | Which engine the Grid is built on | **RULED** (operator, 2026-07-14) — **`react-datasheet-grid` v4.11.6 (MIT), formulas OUT, no licence** (§6.1) |
+| G0.2-SPIKE-WINNER | Structural-honesty winner **among the two commercial engines spiked** | **AG Grid Enterprise formulas-OUT** — recorded as the **firm SE-Team migration target** (§6.2–§6.3), not the spec-stage engine |
+| **G0.2-UPGRADE** | SE-Team scalability upgrade path (spec → enterprise scale) | **FIRM** — migrate DSG → AG Grid Enterprise on named triggers (server-side row model / grouping-pivot-aggregation / heavy concurrent edit / support-SLA); low-risk (doctrine is engine-agnostic app-logic). Belongs in the **SE-Handoff / backend build doc** (§6.3) |
+| **G0.2-FORK5** | Commercial per-dev licence commitment | **RESOLVED at spec stage — no licence** (MIT engine chosen). Re-opens **only** at the §6.3 scale triggers, where AG Grid (~$999/dev perpetual) is the pre-qualified target |
 | G0.2-SPIKE | Two throwaway harness branches (`spike/g0-2-aggrid`, `spike/g0-2-handsontable`) | Built, measured, retired — **never merged; no commercial dep on `main`** |
-| G0.2-MEASURE-NOTE | Real-Excel clipboard round-trip + real screen-reader announcement | **DOCUMENTED, not exercised** — headless env lacks desktop Excel + AT bridge (§0) |
+| G0.2-MEASURE-NOTE | Real-Excel clipboard round-trip + real screen-reader announcement; `react-datasheet-grid` 8-axis measurement | **DOCUMENTED, not exercised** — headless env lacks desktop Excel + AT bridge; DSG was not one of the two harnessed engines (§0, §6.2) |
 
 ---
 
