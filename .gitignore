@@ -11,3 +11,6 @@ dist-ssr
 
 # Local visual-QA screenshots (loose sign-off captures, not committed)
 qa*.png
+# Any loose root-level QA capture (batch/feature-prefixed, e.g. b6-*, i3-*, lang-*);
+# committed images live under app/ and src/, never repo root.
+/*.png
