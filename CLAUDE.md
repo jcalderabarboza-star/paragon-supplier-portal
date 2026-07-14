@@ -24,9 +24,10 @@ model). Changes reach `main` only through a reviewed PR: the operator directs
 and approves, and the CLI merges via the GitHub UI (Squash + delete branch).
 Direct pushes to `main` are not used.
 
-## Current state (as-built: main @ #53 — command spine complete; Stage F opening)
-Re-baselined by Batch **F0.1** (2026-07-13). The prior "Next: Step 3" pointer was
-stale by ~19 commits; the transition schema + command spine it named are BUILT.
+## Current state (as-built: main @ #65 — F0 + I3 complete; Stage G planning canon on main)
+Re-baselined by the **Canon True-Up** (2026-07-14). The prior "main @ #53" pointer
+was stale by ~12 commits; F0 (contract-freeze) and the I3 compliance phase are DONE,
+and the Stage G planning canon + World-Class Build Plan are now on main.
 
 - **Phases 0 → 2′ (historical, all merged).** Phase 0 (PRs #11–#17); Phase 1′
   page/read migrations + gates + DP-1/2/3 theme (PRs #18–#31); v2.2 Step 1 Canon
@@ -57,9 +58,13 @@ stale by ~19 commits; the transition schema + command spine it named are BUILT.
   in-memory fixtures behind `mockDataService` (`src/main.tsx`); tenant scoping is
   enforced client-side. `httpDataService` is the designed Phase-F1 swap
   (`DataServiceContext.tsx`) — pages do not change when it lands.
-- BuyerCompliance stays a registered fixture carve-out (COMPLIANCE-CARVEOUT-01,
-  `docs/findings.md`) until Stage-2 **I3** re-points it to `useDataService()` off
-  the R2.2 DTO-v2 / Track-R harvest.
+- **I3 compliance phase COMPLETE** (PRs #61–#64): I3.1 canonical compliance
+  machine + DTO-v2 read (fixture-first, SIMULATED); I3.2 re-pointed BuyerCompliance
+  + widget onto the seam and **closed COMPLIANCE-CARVEOUT-01**; I3.3 simulation
+  depth + SIMULATED→LIVE flip harness (LIVENESS-DATASOURCE-01, two-gate honest
+  render); I3.4 minimal scripted halal-renewal walkthrough (FORK-1=(c)). The
+  17-Oct-2026 SIMULATED→LIVE flip is proven; it flips when its Track-R prerequisite
+  lands. BuyerCompliance now reads via `useDataService()` (carve-out retired).
 - Consumption pattern is standardized: TanStack Query v5 over `useDataService()`,
   scoped query hooks (per-supplier cache isolation via `scopeKey`), a typed
   `DataError` contract, the `Page<T>` list envelope (shape frozen; no pagination
@@ -68,15 +73,21 @@ stale by ~19 commits; the transition schema + command spine it named are BUILT.
   scoping contract guards buyer-superset / per-supplier-isolation / SCOPE_DENIED.
 - Locale + i18n: `formatIDR / formatDate / formatNumber` (Asia/Jakarta) and a full
   EN/ID react-i18next layer (per-page fragments + central label maps) are live.
-  Test floor: **557** (never regresses).
+  Test floor: **662** (never regresses).
 
 ### Forward plan vocabulary (Stage F / I / A)
-- **Canonical forward plan:** `Paragon_World_Class_Build_Plan_v1.md` (executes
-  `docs/Paragon_Platform_Strategic_Spine_v1.md`). It supersedes the *sequencing*
-  of `docs/Supplier_Portal_Revised_Build_Plan_v2_2.md` from Stage 1 onward; v2.2
-  remains the Phase 0–2′ record + ratified-decision register (DR-6/7/9/10, DP).
+- **Canonical forward plan:** `Paragon_World_Class_Build_Plan_v1.md` (on main at
+  repo root, merged #65; executes `docs/Paragon_Platform_Strategic_Spine_v1.md`).
+  It supersedes the *sequencing* of `docs/Supplier_Portal_Revised_Build_Plan_v2_2.md`
+  from Stage 1 onward; v2.2 remains the Phase 0–2′ record + ratified-decision
+  register (DR-6/7/9/10, DP).
+- **Stage G planning canon is on main:** `docs/Stage_G_Grid_Planning_Layer_Plan_v1.md`
+  + `docs/Grid_Planning_Layer_Investigation_2026-07-14.md` (ratified; PLANNED-as-axis
+  doctrine, I6 anchor). G0.1 (the C6 planning-doctrine contract) is the next Stage-G
+  batch, gated on G-PRECOND (this true-up is the last precondition item).
 - **Stage F — Foundation** (governed data + integration backbone): **F0**
-  contract-freeze & ledger truth (F0.1–F0.6, in progress) → **F1** real backend
+  contract-freeze & ledger truth (F0.1–F0.6 COMPLETE; F0.6 = LivenessRegistry,
+  PR #60 closed F0) → **F1** real backend
   core (`httpDataService`, OIDC, durable audit; SE Team) → **F2** S/4HANA event
   seam (Event Mesh + OData; INT-TMS-01 is a sub-case) → **F3** Snowflake +
   data-quality prerequisites.
