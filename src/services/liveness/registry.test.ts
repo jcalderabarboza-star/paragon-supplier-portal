@@ -30,7 +30,10 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
     }
   });
 
-  it('the LIVE set is exactly the wired-backed capabilities', () => {
+  it('the LIVE set (gate-1) is exactly the wired-backed capabilities', () => {
+    // gate-1 (liveness) tracks wiring alone. purchaseRequisitions is wired as of
+    // G1.1, so it joins the gate-1 LIVE set — but gate-2 holds isLive() false
+    // (see the harvest-gate suite): wiring ≠ green (LIVENESS-DATASOURCE-01).
     const live = ALL_CAPABILITIES.filter((c) => liveness(c) === 'LIVE');
     expect(new Set(live)).toEqual(
       new Set<Capability>([
@@ -39,6 +42,7 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
         'goodsReceipts',
         'invoices',
         'rfqs',
+        'purchaseRequisitions',
       ]),
     );
   });
@@ -53,9 +57,12 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
 });
 
 describe('LivenessRegistry — honesty invariant (non-LIVE can never be green)', () => {
-  it('isLive() is true ONLY for tier LIVE — no non-LIVE capability yields green', () => {
+  it('isLive() requires BOTH gates — tier LIVE AND real data source (not harvest-gated)', () => {
+    // The two-gate predicate in the LIVE registry: green iff gate-1 (wired ⇒ LIVE)
+    // AND gate-2 (source landed ⇒ not awaiting harvest). A non-LIVE capability is
+    // never green; a wired-but-harvest-gated one (purchaseRequisitions) is not either.
     for (const cap of ALL_CAPABILITIES) {
-      expect(isLive(cap)).toBe(liveness(cap) === 'LIVE');
+      expect(isLive(cap)).toBe(liveness(cap) === 'LIVE' && !awaitsHarvest(cap));
       if (liveness(cap) !== 'LIVE') expect(isLive(cap)).toBe(false);
     }
   });
@@ -96,19 +103,34 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
     expect(note?.source).toBe('Track-R');
   });
 
-  it('no other capability is harvest-gated (note is null, gate-2 trivially open)', () => {
+  it('only compliance + purchaseRequisitions are harvest-gated (others: note null)', () => {
+    const gated = new Set<Capability>(['compliance', 'purchaseRequisitions']);
     for (const cap of ALL_CAPABILITIES) {
-      if (cap === 'compliance') continue;
+      if (gated.has(cap)) continue;
       expect(awaitsHarvest(cap)).toBe(false);
       expect(readinessNote(cap)).toBeNull();
     }
   });
 
-  it('gate-2 does not disturb the wired-LIVE capabilities (their source is real)', () => {
-    // The 5 wired capabilities are not harvest-gated, so isLive still tracks tier.
+  it('purchaseRequisitions is wired (gate-1 LIVE) yet harvest-gated → never green', () => {
+    // C7-FIND-01a (G1.1) + DECISION-2. The PR CommandTarget is wired, so gate-1
+    // derives LIVE — but no live PRODUCER exists yet (SOMO = F2/SPEC, Grid = G1.2),
+    // so gate-2 holds it guarded. Wiring ALONE must never flip green
+    // (LIVENESS-DATASOURCE-01); this is that guarantee proven in the LIVE registry.
+    expect(capabilityBacking.purchaseRequisitions).toBe('purchaseRequisition');
+    expect(WIRED_COMMAND_TARGETS).toContain('purchaseRequisition');
+    expect(liveness('purchaseRequisitions')).toBe('LIVE'); // gate-1 open (wired)
+    expect(awaitsHarvest('purchaseRequisitions')).toBe(true); // gate-2 shut (no producer)
+    const note = readinessNote('purchaseRequisitions');
+    expect(note?.readinessNoteKey).toBe('widget.honesty.awaitingProducer');
+    expect(note?.source).toBe('SOMO / Grid');
+    expect(isLive('purchaseRequisitions')).toBe(false); // guarded → SIMULATED render
+  });
+
+  it('gate-2 does not disturb the UNGATED wired-LIVE capabilities (real source)', () => {
+    // The 5 pre-G1.1 wired capabilities are not harvest-gated, so isLive tracks tier.
     for (const cap of ALL_CAPABILITIES) {
-      if (liveness(cap) === 'LIVE') {
-        expect(awaitsHarvest(cap)).toBe(false);
+      if (liveness(cap) === 'LIVE' && !awaitsHarvest(cap)) {
         expect(isLive(cap)).toBe(true);
       }
     }

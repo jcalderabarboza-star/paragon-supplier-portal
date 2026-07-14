@@ -566,6 +566,13 @@ export type PRStatus =
 
 export type PRPriority = 'High' | 'Medium' | 'Low';
 
+// C7 §4 producer provenance — WHICH producer emitted this intake line. The ONE
+// provenance that belongs on the entity: it is a producer FACT, not liveness
+// (registry-derived) and not plan-state (the C6 PLANNED overlay, never merged into
+// a committed seam row). Optional/nullable — existing fixtures and manual PRs omit
+// it; a Grid- or SOMO-produced line carries it (G1.1).
+export type PrSource = 'INTERNAL_GRID' | 'SOMO';
+
 export interface PurchaseRequisition {
   id: string;
   prNumber: string;
@@ -584,6 +591,7 @@ export interface PurchaseRequisition {
   linkedDoc: string;
   priority: PRPriority;
   justification: string;
+  source?: PrSource;
 }
 
 // ─── Risk / Compliance entities (buyer-side, inline today) ──────────────────
