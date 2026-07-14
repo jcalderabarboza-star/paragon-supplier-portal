@@ -6,7 +6,13 @@ import {
   buildWhatIfOverlay,
   awardScenarioRows,
   SAMPLE_INTAKE_LINES,
+  isQtyAdjusted,
+  overrideBlocked,
+  buildQtyDecision,
+  buildPrCreatePayload,
+  applyPushResult,
   type WhatIfWeights,
+  type PrIntakeLine,
 } from './planGridModel';
 import { mockQuotations } from '../../data/mockQuotations';
 
@@ -134,5 +140,102 @@ describe('SAMPLE_INTAKE_LINES — the C7 §2 intake shape, two producers', () =>
     // state is the C6 overlay axis (per row); the SIMULATED source tier is the
     // registry authority (asserted in the page test, not fabricated here).
     for (const l of SAMPLE_INTAKE_LINES) expect(l.planState).toBe('PLANNED');
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// C6-LOCK — the locked-override rule (G1.2b). The reason-gate, the decision
+// provenance, the push payload, and the plan-state fold are pure functions so
+// the governance is headless-provable regardless of the virtualized grid.
+// ────────────────────────────────────────────────────────────────────────────
+
+const suggestedLine: PrIntakeLine = {
+  id: 'pil-test-001',
+  material: 'Test Material',
+  suggestedSource: null,
+  segment: null,
+  suggestedQty: 5_000,
+  acceptedQty: 5_000,
+  wasAdjusted: false,
+  uom: 'KG',
+  period: '2026-Q3',
+  estimatedValue: 100_000_000,
+  source: 'SOMO',
+  planState: 'PLANNED',
+};
+
+describe('C6-LOCK — the reason-gate (§8.3): an override needs a reason to commit', () => {
+  it('accept-as-suggested is not an override and is never blocked (no reason needed)', () => {
+    expect(isQtyAdjusted(suggestedLine, 5_000)).toBe(false);
+    expect(overrideBlocked(suggestedLine, 5_000, '')).toBe(false);
+  });
+
+  it('an override WITHOUT a reason is BLOCKED — the load-bearing no-dispatch gate', () => {
+    expect(isQtyAdjusted(suggestedLine, 4_500)).toBe(true);
+    expect(overrideBlocked(suggestedLine, 4_500, '')).toBe(true);
+    expect(overrideBlocked(suggestedLine, 4_500, '   ')).toBe(true); // whitespace ≠ reason
+  });
+
+  it('an override WITH a reason is permitted (gate opens)', () => {
+    expect(overrideBlocked(suggestedLine, 4_500, 'MRP net-req revised down')).toBe(false);
+  });
+});
+
+describe('C6-LOCK — the decision provenance is the opaque DR-10 audit carrier', () => {
+  it('captures field + suggested→accepted (from→to) + trimmed reason + wasAdjusted', () => {
+    const d = buildQtyDecision(suggestedLine, 4_500, '  net requirement revised  ');
+    expect(d).toEqual({
+      field: 'acceptedQty',
+      from: 5_000,
+      to: 4_500,
+      reason: 'net requirement revised',
+      wasAdjusted: true,
+    });
+  });
+
+  it('an accept-as-suggested decision reads wasAdjusted:false (from === to)', () => {
+    const d = buildQtyDecision(suggestedLine, 5_000, '');
+    expect(d.wasAdjusted).toBe(false);
+    expect(d.from).toBe(d.to);
+  });
+});
+
+describe('C6-LOCK — the push payload (C7 §2.1: acceptedQty → the required quantity)', () => {
+  it('maps accepted qty to `quantity`, period to requiredDate, and carries source', () => {
+    const payload = buildPrCreatePayload(suggestedLine, 4_500, 'revised');
+    expect(payload.quantity).toBe(4_500); // NOT the suggested 5,000 — the accepted value
+    expect(payload.material).toBe('Test Material');
+    expect(payload.uom).toBe('KG');
+    expect(payload.requiredDate).toBe('2026-Q3');
+    expect(payload.source).toBe('SOMO');
+    expect(payload.reason).toBe('revised'); // an override persists its reason in the payload
+  });
+
+  it('an accept-as-suggested push carries NO reason (nothing was overridden)', () => {
+    const payload = buildPrCreatePayload(suggestedLine, 5_000, '');
+    expect(payload.quantity).toBe(5_000);
+    expect('reason' in payload).toBe(false);
+  });
+});
+
+describe('C6-LOCK — plan-state fold (C6 §6 invariants 2-3)', () => {
+  it('push-only-exit: a row commits ONLY on a successful outcome', () => {
+    const committed = applyPushResult({ ok: true, entityId: 'PR-2026-901' });
+    expect(committed.planState).toBe('committed');
+    expect(committed.prNumber).toBe('PR-2026-901');
+    expect(committed.failureReason).toBeUndefined();
+  });
+
+  it('both-failure-channels-stay-PLANNED: any ok:false leaves the row PLANNED-with-reason', () => {
+    // A thrown DataError (SCOPE_DENIED) and a status:'failed' (MISSING_FIELDS)
+    // both normalize to ok:false — both keep the row PLANNED.
+    const thrown = applyPushResult({ ok: false, reason: 'SCOPE_DENIED' });
+    const failed = applyPushResult({ ok: false, reason: 'MISSING_FIELDS:material' });
+    for (const s of [thrown, failed]) {
+      expect(s.planState).toBe('PLANNED');
+      expect(s.prNumber).toBeUndefined();
+    }
+    expect(thrown.failureReason).toBe('SCOPE_DENIED');
+    expect(failed.failureReason).toBe('MISSING_FIELDS:material');
   });
 });

@@ -16,6 +16,7 @@ import type {
   CommandStatus,
   QueryScope,
   InspectionResult,
+  CommandDecision,
 } from '../data/types';
 
 function useScope(): QueryScope {
@@ -475,5 +476,43 @@ export function useInvoiceSettlePayment() {
   return useMutation<CommandStatus | null, Error, { correlationId: string }>({
     mutationFn: ({ correlationId }) => svc.commands.settle(scope, correlationId),
     onSuccess: () => invalidate(scope),
+  });
+}
+
+// ─── Purchase requisition (G1.2b — C7 intake push, C6-LOCK) ──────────────────
+// The plan grid's ONE mutation: push a single planned intake line to a Draft PR
+// through the wired purchaseRequisition target (G1.1). A creation-shape verb, an
+// exact near-clone of useAdvanceShipNoticeCreate — buyer-only (a supplier scope
+// is SCOPE_DENIED before the role gate; PRs are buyer-internal). SINGLE-ROW: the
+// public seam still cannot group causation (G0.1-FIND-01), so each push is one
+// dispatch. When the line carries a governed quantity override (C6-LOCK), the
+// opaque `decision` rides through to the DR-10 audit — the dispatcher forwards it
+// verbatim. This is the ONLY exit from PLANNED (C6 §3); on a non-failed outcome
+// the PR list re-derives and the pushed Draft is list-visible.
+
+export interface PrCreateVars {
+  /** The t_pr_create payload (material + quantity required; C7 §2.1). */
+  payload: Record<string, unknown>;
+  /** Governed-decision provenance, present only on a genuine quantity override. */
+  decision?: CommandDecision;
+}
+
+/** Push a planned intake line to a Draft PR (fires the `creation` verb `t_pr_create`). */
+export function usePurchaseRequisitionCreate() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, PrCreateVars>({
+    mutationFn: ({ payload, decision }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_pr_create',
+        entity: 'purchaseRequisition',
+        payload,
+        ...(decision ? { decision } : {}),
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
   });
 }

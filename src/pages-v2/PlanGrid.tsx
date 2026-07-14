@@ -16,6 +16,7 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import PlanCellMarker from './plan-grid/PlanCellMarker';
+import IntakePushPanel from './plan-grid/IntakePushPanel';
 import { useQuotations } from '../services/query/hooks';
 import { formatIDR, formatNumber } from '../lib/format';
 import { mockSuppliers } from '../data/mockSuppliers';
@@ -361,6 +362,9 @@ const PlanGrid: React.FC = () => {
           />
         </div>
       </section>
+
+      {/* ── Adjust & push — the ONE governed mutation (C6-LOCK, plain DOM) ── */}
+      <IntakePushPanel lines={SAMPLE_INTAKE_LINES} />
     </AppShellV2>
   );
 };

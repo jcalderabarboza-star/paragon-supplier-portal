@@ -29,6 +29,7 @@ import type {
   CommandStatus,
   CommandOutcome,
 } from '../data/types';
+import type { CommandDecision } from '../data/types';
 import type { AuditSink } from './events';
 import { actorKey } from './events';
 import { getTransition } from './registry';
@@ -147,6 +148,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     reason?: string,
     entityId?: string,
     causationId?: string,
+    decision?: CommandDecision,
   ): CommandResult {
     const correlationId = deps.nextCorrelationId();
     const ts = deps.now();
@@ -160,6 +162,9 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       ...(causationId ? { causationId } : {}),
       outcome,
       ts,
+      // Governed-decision provenance (C6-LOCK) — forwarded VERBATIM from the
+      // caller's input; the dispatcher neither reads nor validates it.
+      ...(decision ? { decision } : {}),
     });
     statuses.set(correlationId, { correlationId, transitionId, status: outcome, ts });
     return { correlationId, transitionId, status: outcome, reason, entityId };
@@ -176,7 +181,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       outcome: CommandOutcome,
       reason?: string,
       entityId?: string,
-    ): CommandResult => finish(s, tid, outcome, reason, entityId, causationId);
+    ): CommandResult => finish(s, tid, outcome, reason, entityId, causationId, input.decision);
 
     const transition = getTransition(input.transitionId);
     if (!transition) return fin(scope, input.transitionId, 'failed', 'UNKNOWN_TRANSITION');

@@ -35,6 +35,8 @@ import { useToast } from '../hooks/useToast';
 import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../hooks/useEnumLabel';
 import { useRequisitions } from '../services/query/hooks';
+import { usePurchaseRequisitionCreate } from '../services/query/commandHooks';
+import { DataError } from '../services/data/types';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
 
@@ -151,6 +153,7 @@ const BuyerRequisitions: React.FC = () => {
 
   const reqQuery = useRequisitions();
   const prs = reqQuery.data?.items ?? [];
+  const createPr = usePurchaseRequisitionCreate();
 
   const counts = useMemo(() => {
     const by = (s: PRStatus) => prs.filter((p) => p.status === s).length;
@@ -209,16 +212,47 @@ const BuyerRequisitions: React.FC = () => {
   const canSubmit =
     !!form.material && !!form.qty && !!form.date && !!form.costCenter;
 
-  const submitNewPR = () => {
-    if (!canSubmit) return;
-    const prNum = `PR-2026-00${Math.floor(346 + Math.random() * 10)}`;
-    toast({
-      variant: 'success',
-      title: t('requisitions.toast.submitted.title', { prNumber: prNum }),
-      description: t('requisitions.toast.submitted.desc'),
-    });
-    setForm(emptyForm);
-    setNewOpen(false);
+  // G1.2b — the fabricated `PR-2026-00${random}` toast is retired onto the real
+  // t_pr_create push (usePurchaseRequisitionCreate). The number now comes from
+  // the store (store-assigned PR-2026-9xx), invalidation makes the real Draft
+  // list-visible, and both failure channels surface honestly. Fresh authoring —
+  // not a quantity override, so no C6-LOCK reason-gate here.
+  const submitNewPR = async () => {
+    if (!canSubmit || createPr.isPending) return;
+    try {
+      const result = await createPr.mutateAsync({
+        payload: {
+          material: form.material,
+          quantity: Number(form.qty),
+          uom: form.uom,
+          requiredDate: form.date,
+          costCenter: form.costCenter,
+          priority: form.priority,
+          justification: form.justification,
+        },
+      });
+      if (result.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('requisitions.toast.submitFailed.title'),
+          description: result.reason ?? t('requisitions.toast.submitFailed.desc'),
+        });
+        return;
+      }
+      toast({
+        variant: 'success',
+        title: t('requisitions.toast.submitted.title', { prNumber: result.entityId }),
+        description: t('requisitions.toast.submitted.desc'),
+      });
+      setForm(emptyForm);
+      setNewOpen(false);
+    } catch (e) {
+      toast({
+        variant: 'error',
+        title: t('requisitions.toast.submitFailed.title'),
+        description: e instanceof DataError ? e.message : t('requisitions.toast.submitFailed.desc'),
+      });
+    }
   };
 
   return (

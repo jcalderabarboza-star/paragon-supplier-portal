@@ -9,10 +9,10 @@ export const planGridEn: Record<string, string> = {
   'planGrid.header.subtitle': 'Award what-if & requisition intake review',
   'planGrid.meta.summary': 'Sample planning surface — {{quotations}} quotations, {{lines}} intake lines',
 
-  // — Honesty banner (read-only, SIMULATED, no push in 1.2a) —
+  // — Honesty banner (SIMULATED; the ONE governed push in 1.2b) —
   'planGrid.honesty.title': 'Planning sandbox',
   'planGrid.honesty.body':
-    'This grid is read-only. What-if weights recompute a proposed score in your browser; the committed AI composite is never changed. Requisition intake is sample data awaiting a live producer — nothing here is pushed to procurement.',
+    'The award what-if recomputes a proposed score in your browser; the committed AI composite is never changed. In the intake panel you may adjust an accepted quantity — a governed decision that requires a reason and is audited. Pushing creates a Draft requisition, but with no live producer yet it stays simulated, never a live procurement instruction.',
 
   // — Award what-if grid —
   'planGrid.award.title': 'Award scenario — RFQ-2026-003 (Halal Glycerin)',
@@ -54,6 +54,25 @@ export const planGridEn: Record<string, string> = {
   'planGrid.adjusted.yes': 'Adjusted',
   'planGrid.adjusted.no': 'As suggested',
 
+  // — Adjust & push panel (G1.2b — C6-LOCK governed override) —
+  'planGrid.push.title': 'Adjust & push to requisition',
+  'planGrid.push.subtitle':
+    'Accepted quantity is the only editable field. Any change from the suggested quantity requires a reason before it can be pushed. Pushing creates a Draft PR — simulated, awaiting a live producer.',
+  'planGrid.push.lockedNote':
+    'Computed columns (scores, what-if, estimated value) are locked — only accepted quantity is editable.',
+  'planGrid.push.col.material': 'Material',
+  'planGrid.push.col.suggested': 'Suggested',
+  'planGrid.push.col.accepted': 'Accepted',
+  'planGrid.push.col.reason': 'Reason',
+  'planGrid.push.col.state': 'State',
+  'planGrid.push.col.action': 'Action',
+  'planGrid.push.reasonRequired': 'Reason required to push an override',
+  'planGrid.push.reasonPlaceholder': 'Why the accepted quantity differs…',
+  'planGrid.push.button': 'Push to PR',
+  'planGrid.push.pushing': 'Pushing…',
+  'planGrid.push.committed': 'Pushed → {{pr}}',
+  'planGrid.push.failed': 'Push failed: {{reason}}',
+
   // — Honest-render markers (source tier × plan state) —
   'planGrid.tier.live': 'Live',
   'planGrid.tier.simulated': 'Simulated',
@@ -75,7 +94,7 @@ export const planGridId: Record<string, string> = {
   // — Honesty banner —
   'planGrid.honesty.title': 'Kotak-pasir perencanaan',
   'planGrid.honesty.body':
-    'Grid ini hanya-baca. Bobot simulasi menghitung ulang skor usulan di peramban Anda; komposit AI yang telah dikomit tidak pernah diubah. Asupan permintaan adalah data sampel yang menunggu produsen live — tidak ada yang dikirim ke pengadaan.',
+    'Simulasi penghargaan menghitung ulang skor usulan di peramban Anda; komposit AI yang telah dikomit tidak pernah diubah. Pada panel asupan Anda dapat menyesuaikan jumlah yang diterima — sebuah keputusan terkelola yang memerlukan alasan dan diaudit. Mengirim membuat permintaan Draft, tetapi tanpa produsen live jumlahnya tetap simulasi, bukan instruksi pengadaan langsung.',
 
   // — Award what-if grid —
   'planGrid.award.title': 'Skenario penghargaan — RFQ-2026-003 (Gliserin Halal)',
@@ -116,6 +135,25 @@ export const planGridId: Record<string, string> = {
   // — Adjustment —
   'planGrid.adjusted.yes': 'Disesuaikan',
   'planGrid.adjusted.no': 'Sesuai saran',
+
+  // — Panel sesuaikan & kirim (G1.2b — override terkelola C6-LOCK) —
+  'planGrid.push.title': 'Sesuaikan & kirim ke permintaan',
+  'planGrid.push.subtitle':
+    'Jumlah yang diterima adalah satu-satunya bidang yang dapat diubah. Perubahan apa pun dari jumlah yang disarankan memerlukan alasan sebelum dapat dikirim. Mengirim membuat PR Draft — simulasi, menunggu produsen live.',
+  'planGrid.push.lockedNote':
+    'Kolom terhitung (skor, simulasi, nilai estimasi) terkunci — hanya jumlah yang diterima yang dapat diubah.',
+  'planGrid.push.col.material': 'Material',
+  'planGrid.push.col.suggested': 'Disarankan',
+  'planGrid.push.col.accepted': 'Diterima',
+  'planGrid.push.col.reason': 'Alasan',
+  'planGrid.push.col.state': 'Status',
+  'planGrid.push.col.action': 'Aksi',
+  'planGrid.push.reasonRequired': 'Alasan diperlukan untuk mengirim override',
+  'planGrid.push.reasonPlaceholder': 'Mengapa jumlah yang diterima berbeda…',
+  'planGrid.push.button': 'Kirim ke PR',
+  'planGrid.push.pushing': 'Mengirim…',
+  'planGrid.push.committed': 'Terkirim → {{pr}}',
+  'planGrid.push.failed': 'Pengiriman gagal: {{reason}}',
 
   // — Honest-render markers —
   'planGrid.tier.live': 'Langsung',

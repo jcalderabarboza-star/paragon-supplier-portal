@@ -33,10 +33,12 @@ describe('PlanGrid — honest render (page-level)', () => {
     expect(screen.queryByText(/^Live$/)).not.toBeInTheDocument();
   });
 
-  it('renders the read-only planning-sandbox banner (honest framing)', () => {
+  it('renders the planning-sandbox banner (honest framing — governed push stays simulated)', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
-    expect(screen.getByText(/This grid is read-only/i)).toBeInTheDocument();
-    expect(screen.getByText(/nothing here is pushed to procurement/i)).toBeInTheDocument();
+    expect(screen.getByText(/Planning sandbox/i)).toBeInTheDocument();
+    // The committed AI composite is never changed; a push stays simulated.
+    expect(screen.getByText(/the committed AI composite is never changed/i)).toBeInTheDocument();
+    expect(screen.getByText(/never a live procurement instruction/i)).toBeInTheDocument();
   });
 
   it('renders both grid sections — award scenario and requisition intake', () => {
@@ -58,6 +60,17 @@ describe('PlanGrid — honest render (page-level)', () => {
     const region = screen.getByTestId('whatif-weights');
     expect(within(region).getByText(/Compliance/i)).toBeInTheDocument();
     expect(within(region).getByText(/Reliability/i)).toBeInTheDocument();
+  });
+});
+
+describe('PlanGrid — governed adjust & push panel (C6-LOCK)', () => {
+  it('renders the plain-DOM adjust & push panel with the locked-columns note', () => {
+    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    expect(
+      screen.getByRole('heading', { name: /adjust & push to requisition/i }),
+    ).toBeInTheDocument();
+    // The locked-columns doctrine is stated on the surface.
+    expect(screen.getByText(/only accepted quantity is editable/i)).toBeInTheDocument();
   });
 });
 
