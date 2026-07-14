@@ -26,6 +26,10 @@ export const complianceEn: Record<string, string> = {
   'compliance.toast.exporting': 'Generating compliance report PDF',
   // — Meta line —
   'compliance.meta.summary': '{{count}} certificates · last refreshed {{date}}',
+  // — Data-readiness (waiting-state) banner (I3.3) —
+  'compliance.readiness.title': 'Illustrative data — proven surface, awaiting Track-R harvest.',
+  'compliance.readiness.body':
+    'These certificates are synthetic samples. The tracker is wired to the data seam and proven end-to-end; it flips to live records when the Track-R certificate harvest (R0.1) lands the real registry. No figure here reflects a real certificate.',
   // — BPJPH mandatory-transition banner —
   'compliance.bpjph.banner.title': 'BPJPH Mandatory Transition — October 2026:',
   'compliance.bpjph.banner.body':
@@ -111,6 +115,10 @@ export const complianceId: Record<string, string> = {
   'compliance.toast.exporting': 'Membuat PDF laporan kepatuhan',
   // — Meta line —
   'compliance.meta.summary': '{{count}} sertifikat · terakhir diperbarui {{date}}',
+  // — Data-readiness (waiting-state) banner (I3.3) —
+  'compliance.readiness.title': 'Data ilustratif — antarmuka terbukti, menunggu panen data Track-R.',
+  'compliance.readiness.body':
+    'Sertifikat ini adalah sampel sintetis. Pelacak telah terhubung ke lapisan data dan terbukti secara menyeluruh; ia beralih ke catatan langsung saat panen data sertifikat Track-R (R0.1) menghadirkan registri sebenarnya. Tidak ada angka di sini yang mencerminkan sertifikat nyata.',
   // — BPJPH mandatory-transition banner —
   'compliance.bpjph.banner.title': 'Transisi Wajib BPJPH — Oktober 2026:',
   'compliance.bpjph.banner.body':
