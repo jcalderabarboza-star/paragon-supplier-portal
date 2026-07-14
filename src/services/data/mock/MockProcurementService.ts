@@ -13,7 +13,7 @@ import { toBuyerInvoice, toSupplierInvoice } from '../invoiceProjection';
 import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
 import { DOCUMENTS } from './fixtures/supplierDocuments';
 import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
-import { REQUISITIONS } from './fixtures/buyerRequisitions';
+import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import {
   INITIAL_CATALOG,
   INITIAL_CERTS,
@@ -351,7 +351,9 @@ export class MockProcurementService implements IProcurementService {
     filter?: PRFilter,
   ): Promise<Page<PurchaseRequisition>> {
     if (scope.personaType !== 'buyer') return { items: [] };
-    let rows = [...REQUISITIONS];
+    // G1.1 — reads the mutable store (seeded from the fixture), so a PR pushed
+    // through t_pr_create is list-visible, exactly as PO/ASN/invoice reads work.
+    let rows = [...purchaseRequisitionStore.all()];
     if (filter?.status) rows = rows.filter((r) => matchesList(r.status, filter.status));
     return { items: rows };
   }

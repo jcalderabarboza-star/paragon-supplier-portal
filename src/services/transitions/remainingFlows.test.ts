@@ -136,10 +136,12 @@ describe('F0.4 remaining flows — inert (author-unwired, no CommandTarget)', ()
 
   // A representative user verb per flow; each must fail at target-resolution
   // because no CommandTarget is registered for the entity (nothing is wired).
+  // NOTE: purchaseRequisition GRADUATED out of this inert set at G1.1 — its PR
+  // intake CommandTarget is now wired (C7-FIND-01), covered by
+  // purchaseRequisitionCommand.test.ts. The other four stay author-unwired.
   const probes: { entity: string; transitionId: string }[] = [
     { entity: 'contract', transitionId: 't_contract_activate' },
     { entity: 'obligation', transitionId: 't_obligation_complete' },
-    { entity: 'purchaseRequisition', transitionId: 't_pr_approve' },
     { entity: 'shipment', transitionId: 't_shipment_asn_received' },
     { entity: 'supplierDocument', transitionId: 't_supplierdoc_verify' },
   ];

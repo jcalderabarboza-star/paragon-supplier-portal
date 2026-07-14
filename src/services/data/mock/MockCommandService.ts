@@ -20,6 +20,10 @@ import type {
   AsnStatus,
   Invoice,
   InvoiceStatus,
+  PurchaseRequisition,
+  PRStatus,
+  PRPriority,
+  PrSource,
 } from '../types';
 import type {
   GoodsReceipt,
@@ -49,6 +53,7 @@ import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { invoiceStore } from './stores/invoiceStore';
 import { rfqStore } from './stores/rfqStore';
 import { quotationStore } from './stores/quotationStore';
+import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { mockShipments } from '../../../data/mockShipments';
 
 // — Purchase-order command target — reads/writes the mutable PO store. ————————
@@ -340,6 +345,65 @@ const quotationTarget: CommandTarget = {
   },
 };
 
+// — Purchase-requisition target (G1.1 — the C7 PR intake) — buyer-only creation.
+//   `t_pr_create` is the ONE intake verb both producers target: the internal Grid
+//   (G1.2) and external SOMO (F2). Wiring it here closes C7-FIND-01 — the intake
+//   maps onto the SAME dispatcher creation mechanism as ASN/invoice, no second path.
+//   `creationOwner: () => null` ⇒ a buyer passes creation-scope (dispatcher only
+//   scopes suppliers) then the `pr:create` role; a supplier resolves owner=null →
+//   SCOPE_DENIED before the role gate (PR is buyer-internal — suppliers never see
+//   PRs). `create` mints a Draft PR from the PrIntakeLine payload; omitted fields
+//   default honestly. Provenance: `source` (INTERNAL_GRID | SOMO) persists on the
+//   entity (C7 §4) — liveness stays registry-derived, plan-state stays the C6
+//   overlay; neither is a row field.
+const purchaseRequisitionTarget: CommandTarget = {
+  readState: (id) => purchaseRequisitionStore.get(id)?.status ?? null,
+  readScopeOwner: () => null,
+  readEntity: (id) => purchaseRequisitionStore.get(id) ?? null,
+  applyTransition: (id, toState) => {
+    purchaseRequisitionStore.update(id, (pr) => ({ ...pr, status: toState as PRStatus }));
+  },
+  creationOwner: () => null,
+  create: (payload, toState) => {
+    const prNumber = purchaseRequisitionStore.nextNumber();
+    const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
+    const num = (k: string) => (typeof payload[k] === 'number' ? (payload[k] as number) : 0);
+    // `source` persists ONLY when it is a recognised producer token — an unknown
+    // or absent value leaves the PR without a producer mark (honest, not guessed).
+    const source: PrSource | undefined =
+      payload.source === 'INTERNAL_GRID' || payload.source === 'SOMO'
+        ? (payload.source as PrSource)
+        : undefined;
+    const priority: PRPriority =
+      payload.priority === 'High' || payload.priority === 'Low' ? payload.priority : 'Medium';
+    const pr: PurchaseRequisition = {
+      id: prNumber, // store keyed by id; the assigned number doubles as the id
+      prNumber,
+      material: str('material'),
+      category: str('category'),
+      // C7 §2.1 — the intake's `acceptedQty` maps to `quantity` (the required field).
+      quantity: num('quantity'),
+      uom: str('uom'),
+      // C7 §2 GG-3 — `period` (planning bucket) maps to requiredDate today; a
+      // single date until the bucket representation is pinned by IBP co-design.
+      requiredDate: str('requiredDate') || str('period'),
+      estimatedValue: num('estimatedValue'),
+      requestor: str('requestor'),
+      costCenter: str('costCenter'),
+      status: toState as PRStatus,
+      createdDate: new Date().toISOString().slice(0, 10),
+      approver: '',
+      sourceOfSupply: '',
+      linkedDoc: '',
+      priority,
+      justification: str('justification'),
+      ...(source ? { source } : {}),
+    };
+    purchaseRequisitionStore.add(pr);
+    return { entityId: prNumber };
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -347,10 +411,12 @@ const TARGETS: Record<string, CommandTarget> = {
   invoice: invoiceTarget,
   rfq: rfqTarget,
   quotation: quotationTarget,
+  purchaseRequisition: purchaseRequisitionTarget,
 };
 
-// The behavior-wiring census (the contract package's "6") — the entity keys that
-// actually dispatch through a wired CommandTarget. Exported as the ONE runtime
+// The behavior-wiring census (was the contract package's "6"; now 7 with the G1.1
+// PR intake target) — the entity keys that actually dispatch through a wired
+// CommandTarget. Exported as the ONE runtime
 // source of truth the LivenessRegistry (F0.6) reads: it derives liveness from
 // THESE keys, so an honest-render marker cannot drift from what the command spine
 // really wires. Unwire a target here and its capability flips to SIMULATED with

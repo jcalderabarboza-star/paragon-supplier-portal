@@ -2,7 +2,7 @@
 // LivenessRegistry (F0.6) — the ONE runtime authority for honest-render.
 //
 // A single map from capability → liveness tier, DERIVED from the behavior-wiring
-// census (`WIRED_COMMAND_TARGETS`, the contract package's "6"). A capability is
+// census (`WIRED_COMMAND_TARGETS`, the wired-target set — 7 as of G1.1). A capability is
 // LIVE iff the entity it reads actually dispatches through a wired CommandTarget;
 // anything else is SIMULATED. Because the tier is COMPUTED from the live TARGETS
 // set — never hand-authored — the registry cannot drift from what the command
@@ -56,6 +56,7 @@ export type Capability =
   | 'goodsReceipts'
   | 'invoices'
   | 'rfqs'
+  | 'purchaseRequisitions'
   | 'inventory'
   | 'risk'
   | 'compliance'
@@ -70,6 +71,13 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   goodsReceipts: 'goodsReceipt',
   invoices: 'invoice',
   rfqs: 'rfq',
+  // C7-FIND-01a (G1.1) — backed STRUCTURALLY to the now-wired PR CommandTarget, so
+  // gate-1 derives LIVE (the intake genuinely dispatches). But there is NO live
+  // PRODUCER yet (SOMO = F2/SPEC, internal Grid = G1.2), so it is HARVEST-GATED
+  // below → isLive() = false → renders SIMULATED. Wiring alone must NEVER flip green
+  // (LIVENESS-DATASOURCE-01). The flip to LIVE is the proven two-edit op: land a
+  // producer + drop the harvest entry — exactly compliance's flip shape.
+  purchaseRequisitions: 'purchaseRequisition',
   inventory: null,
   risk: null,
   // I3.1 — repointed from `null` to the now-authored canonical compliance flow.
@@ -102,6 +110,15 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
   compliance: {
     readinessNoteKey: 'widget.honesty.awaitingHarvest',
     source: 'Track-R',
+  },
+  // C7-FIND-01a (G1.1) — the PR CommandTarget is wired (gate-1 LIVE), but the real
+  // intake PRODUCER has not landed: SOMO's order_creation emission is F2/SPEC and
+  // the internal Grid producer is G1.2. Until one lands, the intake dispatches over
+  // seed data → gate-2 holds it SIMULATED (never green). This is the two-gate model
+  // proving its point in the LIVE registry, not just the harness.
+  purchaseRequisitions: {
+    readinessNoteKey: 'widget.honesty.awaitingProducer',
+    source: 'SOMO / Grid',
   },
 };
 

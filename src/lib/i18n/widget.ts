@@ -20,6 +20,9 @@ export const widgetEn: Record<string, string> = {
   // Harvest-gated waiting-state (I3.3): a capability whose real data source has not
   // yet landed. Specific, not generic — names the Track-R certificate harvest.
   'widget.honesty.awaitingHarvest': 'Sample — awaiting Track-R harvest',
+  // Harvest-gated (G1.1): the PR intake is wired but has no live producer yet
+  // (SOMO F2 / internal Grid) — names the missing producer, not a generic sample.
+  'widget.honesty.awaitingProducer': 'Sample — awaiting live PR producer (SOMO / Grid)',
   'widget.allClear': 'All clear',
   'widget.aria.expand': 'Expand {{title}}',
   'widget.aria.show': 'Show {{title}}',
@@ -98,6 +101,7 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.live': 'Langsung',
   'widget.honesty.sample': 'Sampel',
   'widget.honesty.awaitingHarvest': 'Sampel — menunggu panen data Track-R',
+  'widget.honesty.awaitingProducer': 'Sampel — menunggu produsen PR live (SOMO / Grid)',
   'widget.allClear': 'Semua beres',
   'widget.aria.expand': 'Perluas {{title}}',
   'widget.aria.show': 'Tampilkan {{title}}',
