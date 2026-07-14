@@ -50,6 +50,8 @@ import { supplierInventoryEn, supplierInventoryId } from './i18n/supplierInvento
 import { supplierPerformanceEn, supplierPerformanceId } from './i18n/supplierPerformance';
 // — Coverage sweep (sprint close) —
 import { buyerInvoicesEn, buyerInvoicesId } from './i18n/buyerInvoices';
+// — Stage G · G1.2a plan grid —
+import { planGridEn, planGridId } from './i18n/planGrid';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -104,6 +106,8 @@ export const resources = {
       ...supplierPerformanceEn,
       // — Coverage sweep (sprint close) —
       ...buyerInvoicesEn,
+      // — Stage G · G1.2a plan grid —
+      ...planGridEn,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
@@ -119,6 +123,7 @@ export const resources = {
       'nav.buyer.marketplace': 'Marketplace',
       'nav.buyer.suppliers': 'Suppliers',
       'nav.buyer.sourcing': 'Sourcing & RFQ',
+      'nav.buyer.planGrid': 'Plan Grid',
       'nav.buyer.requisitions': 'Requisitions',
       'nav.buyer.purchaseOrders': 'Purchase Orders',
       'nav.buyer.inventory': 'Inventory Visibility',
@@ -273,6 +278,8 @@ export const resources = {
       ...supplierPerformanceId,
       // — Coverage sweep (sprint close) —
       ...buyerInvoicesId,
+      // — Stage G · G1.2a plan grid —
+      ...planGridId,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',
@@ -288,6 +295,7 @@ export const resources = {
       'nav.buyer.marketplace': 'Pasar',
       'nav.buyer.suppliers': 'Pemasok',
       'nav.buyer.sourcing': 'Sumber & RFQ',
+      'nav.buyer.planGrid': 'Grid Perencanaan',
       'nav.buyer.requisitions': 'Permintaan Pembelian',
       'nav.buyer.purchaseOrders': 'Pesanan Pembelian',
       'nav.buyer.inventory': 'Visibilitas Inventaris',

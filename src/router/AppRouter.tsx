@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CurrentIdentityProvider } from '../context/CurrentIdentityContext';
 import { mockIdentitySource } from '../context/identitySources';
+import LoadingState from '../components/ui-v2/LoadingState';
 import Login from '../pages/auth/Login';
 
 // V2 pages (canonical)
@@ -37,6 +38,11 @@ import SupplierRegistrationV2 from '../pages-v2/SupplierRegistration';
 import SupplierPerformance from '../pages-v2/SupplierPerformance';
 import NotFound from '../pages-v2/NotFound';
 
+// Stage G · G1.2a — the FIRST route-split on main. The react-datasheet-grid
+// engine ships in this page's own async chunk (lazy import), so it never enters
+// the main entry chunk; first paint stays flat.
+const PlanGrid = lazy(() => import('../pages-v2/PlanGrid'));
+
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
 
@@ -56,6 +62,14 @@ const AppRouter: React.FC = () => {
           <Route path="/marketplace/supplier/:id" element={<SupplierStorefrontV2 />} />
           <Route path="/buyer/orders" element={<BuyerOrders />} />
           <Route path="/buyer/sourcing" element={<BuyerSourcing />} />
+          <Route
+            path="/buyer/plan-grid"
+            element={
+              <Suspense fallback={<LoadingState />}>
+                <PlanGrid />
+              </Suspense>
+            }
+          />
           <Route path="/buyer/contracts" element={<BuyerContracts />} />
           <Route path="/buyer/inventory" element={<BuyerInventory />} />
           <Route path="/buyer/shipments" element={<BuyerShipments />} />
