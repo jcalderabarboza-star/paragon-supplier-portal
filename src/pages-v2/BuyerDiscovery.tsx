@@ -25,6 +25,7 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import LivenessPill from '../components/ui-v2/LivenessPill';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -879,9 +880,15 @@ const BuyerDiscovery: React.FC = () => {
 
       {tab === 'intelligence' && (
         <div>
-          <h3 className="text-section text-text-primary mb-1">
-            {t('discovery.intel.title')}
-          </h3>
+          <div className="flex items-center gap-3 mb-1">
+            <h3 className="text-section text-text-primary">
+              {t('discovery.intel.title')}
+            </h3>
+            {/* CI-0 — the whole tab reads invented category stats; the shared
+                honest-render pill (registry-derived, can only show "Sample")
+                declares that up front. */}
+            <LivenessPill capability="commodityIntel" />
+          </div>
           <p className="text-sm text-text-tertiary mb-4">
             {t('discovery.intel.subtitle')}
           </p>

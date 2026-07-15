@@ -87,7 +87,11 @@ describe('LivenessRegistry — honesty invariant (non-LIVE can never be green)',
   });
 
   it('a pure-fixture capability (no backing entity) is SIMULATED, never green', () => {
-    for (const cap of ['inventory', 'risk'] as Capability[]) {
+    // commodityIntel (CI-0) joins the pure-fixture set: the Market Intelligence
+    // tab reads invented category stats with no lifecycle entity behind them, so
+    // backing is null → derives SIMULATED → the shared LivenessPill can only ever
+    // render amber "Sample". Green is structurally unreachable.
+    for (const cap of ['inventory', 'risk', 'commodityIntel'] as Capability[]) {
       expect(capabilityBacking[cap]).toBeNull();
       expect(liveness(cap)).toBe('SIMULATED');
       expect(isLive(cap)).toBe(false);
