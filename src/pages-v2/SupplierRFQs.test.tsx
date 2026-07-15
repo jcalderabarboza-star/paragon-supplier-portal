@@ -30,7 +30,7 @@ describe('SupplierRFQs — four honest states + wired reads', () => {
     // it (qt-002a) — so it is HONESTLY pruned from Open (no longer awaiting a
     // quote) and surfaces in My-Quotes instead. This proves both wired reads.
     expect(screen.queryByText('RFQ-2026-002')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: /My responses/ }));
+    fireEvent.click(screen.getByRole('tab', { name: /My Quotes/ }));
     expect(await screen.findByText('RFQ-2026-002')).toBeInTheDocument();
     // Own facts + status only — never a fabricated competitive score/rank (3b-C).
     expect(screen.queryByText(/of 4 quotes/)).not.toBeInTheDocument();
