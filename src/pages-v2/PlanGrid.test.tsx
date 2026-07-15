@@ -77,14 +77,24 @@ describe('PlanGrid — DSG containers are height-pinned (anti-trembling, G1.2b)'
   });
 });
 
-describe('PlanGrid — governed adjust & push panel (C6-LOCK)', () => {
-  it('renders the plain-DOM adjust & push panel with the locked-columns note', () => {
+describe('PlanGrid — working-set adjust & push drawer (C6-LOCK, G1.3.2)', () => {
+  it('renders the plain-DOM drawer section; with nothing selected it prompts to select', () => {
     renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    // The un-virtualized full panel is retired; the governed write is now the
+    // working-set drawer, which starts empty until a DSG row is selected.
     expect(
-      screen.getByRole('heading', { name: /adjust & push to requisition/i }),
+      screen.getByRole('heading', { name: /adjust & push — selected line/i }),
     ).toBeInTheDocument();
-    // The locked-columns doctrine is stated on the surface.
-    expect(screen.getByText(/only accepted quantity is editable/i)).toBeInTheDocument();
+    expect(screen.getByText(/select a requisition line/i)).toBeInTheDocument();
+    // No push control until a line is selected (the working set is empty).
+    expect(screen.queryByRole('button', { name: /push to pr/i })).not.toBeInTheDocument();
+  });
+});
+
+describe('PlanGrid — full-screen wrapper per section (G1.3.2)', () => {
+  it('each section (award / intake / drawer) exposes a full-screen expand control', () => {
+    renderWithProviders(<PlanGrid />, { route: '/buyer/plan-grid' });
+    expect(screen.getAllByRole('button', { name: /full screen/i })).toHaveLength(3);
   });
 });
 

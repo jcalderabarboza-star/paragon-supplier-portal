@@ -11,6 +11,7 @@ import {
   buildQtyDecision,
   buildPrCreatePayload,
   applyPushResult,
+  selectedLine,
   type WhatIfWeights,
   type PrIntakeLine,
 } from './planGridModel';
@@ -237,5 +238,21 @@ describe('C6-LOCK — plan-state fold (C6 §6 invariants 2-3)', () => {
     }
     expect(thrown.failureReason).toBe('SCOPE_DENIED');
     expect(failed.failureReason).toBe('MISSING_FIELDS:material');
+  });
+});
+
+// ── G1.3.2 — working-set selection resolver ──────────────────────────────────
+describe('selectedLine — resolve the working-set line the drawer edits', () => {
+  it('returns the line whose id matches the selection', () => {
+    const target = SAMPLE_INTAKE_LINES[1];
+    expect(selectedLine(SAMPLE_INTAKE_LINES, target.id)).toBe(target);
+  });
+
+  it('returns null when nothing is selected (null id)', () => {
+    expect(selectedLine(SAMPLE_INTAKE_LINES, null)).toBeNull();
+  });
+
+  it('returns null when the selected id is not in the set (stale selection)', () => {
+    expect(selectedLine(SAMPLE_INTAKE_LINES, 'no-such-id')).toBeNull();
   });
 });
