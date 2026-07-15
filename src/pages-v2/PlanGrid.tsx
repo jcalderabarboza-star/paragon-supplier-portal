@@ -17,7 +17,8 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import PlanCellMarker from './plan-grid/PlanCellMarker';
-import IntakePushPanel from './plan-grid/IntakePushPanel';
+import IntakeAdjustDrawer from './plan-grid/IntakeAdjustDrawer';
+import FullScreenSection from './plan-grid/FullScreenSection';
 import { useQuotations } from '../services/query/hooks';
 import { formatIDR, formatNumber } from '../lib/format';
 import { mockSuppliers } from '../data/mockSuppliers';
@@ -27,6 +28,7 @@ import {
   awardScenarioRows,
   buildWhatIfOverlay,
   SAMPLE_INTAKE_LINES,
+  selectedLine,
   type AwardCriterionKey,
   type AwardScenarioRow,
   type PrIntakeLine,
@@ -93,6 +95,11 @@ const PlanGrid: React.FC = () => {
   // The editable what-if weights (client state). Editing a weight cell in the
   // weights grid updates this; the award what-if column recomputes in pure TS.
   const [weights, setWeights] = useState<WhatIfWeights>(DEFAULT_WEIGHTS);
+
+  // G1.3.2 — the working-set selection: which intake line the drawer edits. The
+  // intake DSG's "Adjust" action column sets this; the drawer reads it via the
+  // pure `selectedLine` resolver. One line at a time — the working set of one.
+  const [selectedLineId, setSelectedLineId] = useState<string | null>(null);
 
   const awardRows = useMemo(
     () => awardScenarioRows(quotations, AWARD_RFQ),
@@ -182,6 +189,31 @@ const PlanGrid: React.FC = () => {
 
   const intakeColumns = useMemo<Column<PrIntakeLine>[]>(
     () => [
+      {
+        // G1.3.2 — the working-set selection affordance: an explicit per-row
+        // "Adjust" button that lifts the row id into `selectedLineId`. It reads
+        // selection from the virtualized DSG (browse scales) without moving the
+        // reason-gate into the grid body (it stays in the plain-DOM drawer). The
+        // button stops propagation so the DSG's own cell selection is untouched.
+        title: t('planGrid.intake.col.select'),
+        disabled: true,
+        minWidth: 96,
+        component: ({ rowData }: CellProps<PrIntakeLine>) => (
+          <div className="w-full px-2">
+            <button
+              type="button"
+              aria-label={t('planGrid.intake.select.action', { material: rowData.material })}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedLineId(rowData.id);
+              }}
+              className="inline-flex items-center rounded-md border border-action/40 bg-action-soft px-2 py-0.5 text-xs text-action hover:border-action"
+            >
+              {t('planGrid.intake.col.select')}
+            </button>
+          </div>
+        ),
+      },
       {
         title: t('planGrid.intake.col.material'),
         disabled: true,
@@ -301,84 +333,100 @@ const PlanGrid: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Award scenario — what-if overlay ─────────────────────────────── */}
+      {/* ── Award scenario — what-if overlay (full-screen-capable) ───────── */}
       <section className="mb-8">
-        <h2 className="text-base font-semibold text-text-primary">
-          {t('planGrid.award.title')}
-        </h2>
-        <p className="mb-1 text-sm text-text-secondary">{t('planGrid.award.subtitle')}</p>
-        <p className="mb-3 text-xs text-text-tertiary">
-          {t('planGrid.award.col.whatIfScore')} — {t('planGrid.clientComputed')}. {t('planGrid.whatif.hint')}
-        </p>
+        <FullScreenSection title={t('planGrid.award.title')} normalHeight={DSG_H.award}>
+          {({ dsgHeight }) => (
+            <>
+              <p className="mb-1 text-sm text-text-secondary">{t('planGrid.award.subtitle')}</p>
+              <p className="mb-3 text-xs text-text-tertiary">
+                {t('planGrid.award.col.whatIfScore')} — {t('planGrid.clientComputed')}. {t('planGrid.whatif.hint')}
+              </p>
 
-        {/* Editable what-if weights (the ONE editable engine surface in 1.2a) */}
-        <div
-          data-testid="whatif-weights"
-          className="mb-4 rounded-lg border border-border-subtle bg-bg-surface p-4"
-        >
-          <div className="mb-2 text-label uppercase text-text-tertiary">
-            {t('planGrid.whatif.label')}
-          </div>
-          {/* jsdom-reliable readout of the current weights (also the accessible
-              text alternative to the virtualized grid header) */}
-          <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-secondary">
-            {AWARD_CRITERIA.map((c) => (
-              <span key={c.key}>
-                {t(c.labelKey)}: <Data className="text-data-navy">{weights[c.key]}</Data>
-              </span>
-            ))}
-          </div>
-          <div className="plan-dsg max-w-md" style={dsgVar(DSG_H.weights)}>
-            <DataSheetGrid<WeightRow>
-              value={weightsRow}
-              columns={weightColumns}
-              onChange={onWeightsChange}
-              gutterColumn={false}
-              lockRows
-              disableContextMenu
-              height={DSG_H.weights}
-            />
-          </div>
-        </div>
+              {/* Editable what-if weights (the ONE editable engine surface) */}
+              <div
+                data-testid="whatif-weights"
+                className="mb-4 rounded-lg border border-border-subtle bg-bg-surface p-4"
+              >
+                <div className="mb-2 text-label uppercase text-text-tertiary">
+                  {t('planGrid.whatif.label')}
+                </div>
+                {/* jsdom-reliable readout of the current weights (also the accessible
+                    text alternative to the virtualized grid header) */}
+                <div className="mb-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-secondary">
+                  {AWARD_CRITERIA.map((c) => (
+                    <span key={c.key}>
+                      {t(c.labelKey)}: <Data className="text-data-navy">{weights[c.key]}</Data>
+                    </span>
+                  ))}
+                </div>
+                <div className="plan-dsg max-w-md" style={dsgVar(DSG_H.weights)}>
+                  <DataSheetGrid<WeightRow>
+                    value={weightsRow}
+                    columns={weightColumns}
+                    onChange={onWeightsChange}
+                    gutterColumn={false}
+                    lockRows
+                    disableContextMenu
+                    height={DSG_H.weights}
+                  />
+                </div>
+              </div>
 
-        <div
-          className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
-          style={dsgVar(DSG_H.award)}
-        >
-          <DataSheetGrid<AwardDisplayRow>
-            value={awardDisplay}
-            columns={awardColumns}
-            gutterColumn={false}
-            lockRows
-            rowKey="id"
-            height={DSG_H.award}
-          />
-        </div>
+              <div
+                className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
+                style={dsgVar(dsgHeight)}
+              >
+                <DataSheetGrid<AwardDisplayRow>
+                  value={awardDisplay}
+                  columns={awardColumns}
+                  gutterColumn={false}
+                  lockRows
+                  rowKey="id"
+                  height={dsgHeight}
+                />
+              </div>
+            </>
+          )}
+        </FullScreenSection>
       </section>
 
-      {/* ── Requisition intake — review (C7 §2) ──────────────────────────── */}
+      {/* ── Requisition intake — review (C7 §2, full-screen-capable) ──────── */}
       <section className="mb-8">
-        <h2 className="text-base font-semibold text-text-primary">
-          {t('planGrid.intake.title')}
-        </h2>
-        <p className="mb-3 text-sm text-text-secondary">{t('planGrid.intake.subtitle')}</p>
-        <div
-          className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
-          style={dsgVar(DSG_H.intake)}
-        >
-          <DataSheetGrid<PrIntakeLine>
-            value={SAMPLE_INTAKE_LINES as PrIntakeLine[]}
-            columns={intakeColumns}
-            gutterColumn={false}
-            lockRows
-            rowKey="id"
-            height={DSG_H.intake}
-          />
-        </div>
+        <FullScreenSection title={t('planGrid.intake.title')} normalHeight={DSG_H.intake}>
+          {({ dsgHeight }) => (
+            <>
+              <p className="mb-3 text-sm text-text-secondary">{t('planGrid.intake.subtitle')}</p>
+              <div
+                className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
+                style={dsgVar(dsgHeight)}
+              >
+                <DataSheetGrid<PrIntakeLine>
+                  value={SAMPLE_INTAKE_LINES as PrIntakeLine[]}
+                  columns={intakeColumns}
+                  gutterColumn={false}
+                  lockRows
+                  rowKey="id"
+                  height={dsgHeight}
+                />
+              </div>
+            </>
+          )}
+        </FullScreenSection>
       </section>
 
-      {/* ── Adjust & push — the ONE governed mutation (C6-LOCK, plain DOM) ── */}
-      <IntakePushPanel lines={SAMPLE_INTAKE_LINES} />
+      {/* ── Adjust & push — the ONE governed mutation on the SELECTED line ── */}
+      {/* (C6-LOCK, plain-DOM working-set drawer; full-screen-capable) */}
+      <section className="mb-8">
+        <FullScreenSection title={t('planGrid.drawer.title')} normalHeight={DSG_H.intake}>
+          {() => (
+            <>
+              <p className="mb-3 text-sm text-text-secondary">{t('planGrid.drawer.subtitle')}</p>
+              <IntakeAdjustDrawer line={selectedLine(SAMPLE_INTAKE_LINES, selectedLineId)} />
+            </>
+          )}
+        </FullScreenSection>
+      </section>
     </AppShellV2>
   );
 };

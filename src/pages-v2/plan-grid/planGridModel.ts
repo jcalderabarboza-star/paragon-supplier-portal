@@ -320,3 +320,19 @@ export function applyPushResult(outcome: PushOutcome): PushRowState {
     ? { planState: 'committed', prNumber: outcome.entityId }
     : { planState: 'PLANNED', failureReason: outcome.reason };
 }
+
+// ── G1.3.2 — working-set selection ───────────────────────────────────────────
+// At scale (2,500+ rows) the edit surface is a working-set drawer: the user
+// selects ONE line in the virtualized intake DSG and the plain-DOM drawer edits
+// exactly that line (the reason-gate never leaves plain DOM — headless-provable).
+// This pure resolver is the selection contract: id → the line, or null when
+// nothing (or a stale id) is selected. The drawer renders `selectedLine(...)`.
+
+/** Resolve the selected working-set line, or null if none / the id is stale. */
+export function selectedLine(
+  lines: readonly PrIntakeLine[],
+  selectedId: string | null,
+): PrIntakeLine | null {
+  if (selectedId === null) return null;
+  return lines.find((l) => l.id === selectedId) ?? null;
+}

@@ -73,6 +73,16 @@ export const planGridEn: Record<string, string> = {
   'planGrid.push.committed': 'Pushed → {{pr}}',
   'planGrid.push.failed': 'Push failed: {{reason}}',
 
+  // — Working-set drawer + full-screen (G1.3.2) —
+  'planGrid.drawer.title': 'Adjust & push — selected line',
+  'planGrid.drawer.subtitle':
+    'Select a line above to adjust its accepted quantity. An override requires a reason and is audited; pushing creates a Draft PR — simulated.',
+  'planGrid.drawer.empty': 'Select a requisition line above to adjust and push it.',
+  'planGrid.intake.col.select': 'Adjust',
+  'planGrid.intake.select.action': 'Adjust {{material}}',
+  'planGrid.fullscreen.expand': 'Full screen',
+  'planGrid.fullscreen.collapse': 'Exit full screen',
+
   // — Honest-render markers (source tier × plan state) —
   'planGrid.tier.live': 'Live',
   'planGrid.tier.simulated': 'Simulated',
@@ -154,6 +164,16 @@ export const planGridId: Record<string, string> = {
   'planGrid.push.pushing': 'Mengirim…',
   'planGrid.push.committed': 'Terkirim → {{pr}}',
   'planGrid.push.failed': 'Pengiriman gagal: {{reason}}',
+
+  // — Laci set-kerja + layar-penuh (G1.3.2) —
+  'planGrid.drawer.title': 'Sesuaikan & kirim — baris terpilih',
+  'planGrid.drawer.subtitle':
+    'Pilih baris di atas untuk menyesuaikan jumlah yang diterima. Override memerlukan alasan dan diaudit; mengirim membuat PR Draft — simulasi.',
+  'planGrid.drawer.empty': 'Pilih baris permintaan di atas untuk disesuaikan dan dikirim.',
+  'planGrid.intake.col.select': 'Sesuaikan',
+  'planGrid.intake.select.action': 'Sesuaikan {{material}}',
+  'planGrid.fullscreen.expand': 'Layar penuh',
+  'planGrid.fullscreen.collapse': 'Keluar layar penuh',
 
   // — Honest-render markers —
   'planGrid.tier.live': 'Langsung',
