@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
@@ -28,5 +28,18 @@ describe('BuyerDiscovery — four honest states', () => {
   it('empty: shows EmptyState for a supplier persona (buyer-only surface)', async () => {
     renderWithProviders(<BuyerDiscovery />, { identity: SUPPLIER });
     expect(await screen.findByText('No discovery data yet')).toBeInTheDocument();
+  });
+
+  it('honesty (CI-0): Market Intelligence declares SIMULATED and carries no fabricated source names', async () => {
+    renderWithProviders(<BuyerDiscovery />);
+    fireEvent.click(await screen.findByRole('tab', { name: /Market Intelligence/ }));
+    // The tab declares its data simulated via the shared honest-render pill.
+    expect(await screen.findByText('Sample')).toBeInTheDocument();
+    // The invented source attributions are deleted (not relabelled) …
+    expect(screen.queryByText(/IFRA index/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Niacinamide spot/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ICIS PET index/)).not.toBeInTheDocument();
+    // … while the SIMULATED trend figure itself remains.
+    expect(screen.getByText('+2.1% this month')).toBeInTheDocument();
   });
 });

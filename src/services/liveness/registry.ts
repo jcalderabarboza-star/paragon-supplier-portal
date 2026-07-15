@@ -60,7 +60,8 @@ export type Capability =
   | 'inventory'
   | 'risk'
   | 'compliance'
-  | 'supplierDocuments';
+  | 'supplierDocuments'
+  | 'commodityIntel';
 
 // The ONLY hand-authored fact here: which command entity/flow each capability
 // reads from (`null` = pure fixture, no lifecycle entity). The TIER is never
@@ -89,6 +90,11 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // A registered F0.4 flow, but NOT a wired CommandTarget → derives SIMULATED,
   // the same honest result as a pure fixture. (Demonstrates the inert-flow path.)
   supplierDocuments: 'supplierDocument',
+  // CI-0 — the Market Intelligence tab reads invented category trend stats with NO
+  // lifecycle entity behind them. Null backing → derives SIMULATED → the shared
+  // LivenessPill renders amber "Sample"; green is structurally unreachable. When a
+  // real should-cost feed lands (Stage-CI), this flips through the same two gates.
+  commodityIntel: null,
 };
 
 // — Gate-2: harvest gating (LIVENESS-DATASOURCE-01) —————————————————————————————
