@@ -31,7 +31,7 @@ Census ground truth (verified against git + code, 2026-07-13):
 | Phase 2′ exit ("SPINE COMPLETE ★") | — | **Unstamped.** 5 of 15 machines (Contract, Obligation, PurchaseRequisition, Shipment, SupplierDocument) have census paper-fits but no authored flows; mutation-chain audit + F2-16 sizing recalibration not run |
 | Phase 3′ | not started | **Already in it, unannounced:** i18n Batches 0–6 + coverage sweep (PRs #44–#53) *are* the plan's "existing-page key sweep = Phase 3′"; DP-2/DP-3 polish (#39–#43) landed |
 | Backend | — | **Greenfield.** Zero server code, zero datastore clients; data = in-memory fixtures behind `mockDataService` (`src/main.tsx:18-21`); scoping enforced client-side |
-| Track R (halal lane) | — | **Cold.** R0.1–R1.5 NOT STARTED; harvest tripwire (12 Jul 2026) **passed**; D-CAL / D-STAFF / D-SAP / D-DPO all OPEN |
+| Track R (halal lane) | — | **Normal capability, operator-paced.** R0.1–R1.5 NOT STARTED (operational, not a build blocker); D-CAL / D-STAFF / D-SAP / D-DPO OPEN as non-blocking operator inputs. No external deadline gates the build |
 
 **Re-baseline actions (Batch F0.1, first PR of this plan):**
 1. Rewrite CLAUDE.md "Current state" to the table above; retire the "Next: Step 3" pointer.
@@ -68,7 +68,7 @@ honest markers so nothing waits idle on the backend.
  F3 Snowflake + data QA ──┘          I4 3-way match + e-Faktur ─┤        A4 Advanced levers (buy)
         ▲                            I5 Guided-buying intake ───┤
         │                            I6 BOM-linked sourcing ────┘
- TRACK R (operator lane, own clock: 17 Oct 2026) ──► feeds I3 ──────────────────────►
+ TRACK R (operator lane, normal capability — no build-gating clock) ──► feeds I3 ─────►
 ```
 
 Frontend surfaces for I1–I6 may be built fixture-first **in parallel with F1–F3** (they are
@@ -149,7 +149,7 @@ Live when its Stage-1 prerequisite lands. Sequenced by Paragon-specific value:
 |---|---|---|---|
 | I1 | AI spend analytics & classification (L3+, continuously learning, Paragon taxonomy) | `IAnalyticsService` (7 reads live today, fixture-backed); F3 warehouse | **Classification engine + taxonomy** — every downstream analysis reuses it |
 | I2 | Should-cost & commodity/FX intelligence (95% imported inputs — highest Paragon-specific value) | `IRiskService.getCommodities` already exists (`types.ts:1086`) — grows into the feed surface | **External-data-feed + should-cost engine** — later powers finance + risk |
-| I3 | Supplier risk + compliance intelligence (supplier 360; halal/BPOM/ISO lifecycle at supplier *and raw-material* level). **Hard date: 17 Oct 2026** | Compliance machine + DTO-v2 at R2.2; resolves COMPLIANCE-CARVEOUT-01 + HALAL-XPERSONA/CLOCK/UNDERREVIEW/REMIND/ISSUER-BLIND-01; Track R harvest feeds it | **Risk-scoring + certificate-lifecycle engine** |
+| I3 | Supplier risk + compliance intelligence (supplier 360; halal/BPOM/ISO lifecycle at supplier *and raw-material* level). **Platform capability — modeled fully; no external deadline gates the build (certification handled manually by the compliance team)** | Compliance machine + DTO-v2 at R2.2; resolves COMPLIANCE-CARVEOUT-01 + HALAL-XPERSONA/CLOCK/UNDERREVIEW/REMIND/ISSUER-BLIND-01; Track R harvest feeds it | **Risk-scoring + certificate-lifecycle engine** |
 | I4 | 3-way match automation + e-Faktur/e-invoicing | GR→invoice-match cascade (wired at F0.2); invoice machine (DR-7) + match sub-flow + rollup already authored | **Match/exception engine** — foundation for finance intelligence (dynamic discounting later) |
 | I5 | Guided-buying intake layer — the opinionated surface (Axiom 2) made real: one front door, preferred/contracted/halal-certified routing, positive nudging, "advanced" escape hatch | `getCapabilities`/`CapabilitySet` DNA seed (`types.ts:1016-1021`); PurchaseRequisition machine (authored F0.4); Marketplace/Discovery reads | **Intake/orchestration router** — the surface Stage-3 agents plug into |
 | I6 | Direct-materials / BOM-linked sourcing + award-scenario view | RFQ/quotation machines (wired F0.3); F3 BOM linkage | **Award-scenario seam** (solver itself: buy-vs-build, §8) |
@@ -352,8 +352,9 @@ authored-unwired, the estimate is small *because the census proved the hard part
 
 **Long poles, ranked:** (1) F1 real backend — greenfield, SE Team, everything Live depends on
 it; (2) F3 data quality — organizational, not code; starts the moment F2 events flow, needs
-operator sponsorship; (3) **Track R harvest — already late** (tripwire passed), blocks I3
-which carries the only hard legal date; (4) D-SAP decision — blocks F2 provisioning lead time.
+operator sponsorship; (3) **Track R harvest — operator-paced** (a normal capability; feeds the
+I3 compliance surface whenever it lands — no external deadline gates the build); (4) D-SAP
+decision — informs F2 provisioning lead time.
 
 **Frontend-seat throughput reality:** at the demonstrated cadence (~1–2 green batches/day on
 this codebase), F0 completes in roughly one working week. Stage-2 fixture-first surfaces are
@@ -394,35 +395,38 @@ registry makes this structural (the marker component reads the registry; pages c
 
 ---
 
-## 7. TRACK R — THE PARALLEL OPERATOR LANE (its own clock)
+## 7. TRACK R — THE PARALLEL OPERATOR LANE (a normal capability)
 
-**Hard legal deadline: 17 Oct 2026** (Gov't Reg. 42/2024, BPJPH — mandatory halal certification
-for cosmetics). **96 days from today (2026-07-13).** The census found the lane cold: R0.1–R1.5
-NOT STARTED; the harvest tripwire (12 Jul 2026) has **already passed**. This is the
-highest-urgency item on the entire board, and it is not a code item.
+**Track R is a NORMAL capability — de-pressurized, on equal footing with every other lane.**
+The GR 42/2024 halal regime (BPJPH — mandatory halal certification for cosmetics) is real-world
+regulatory context, but **no external deadline gates the platform build**: certification is
+handled manually by the compliance team, and our job is only that the platform MODELS the full
+compliance process well, switchable on whenever (this year or next). Switch-on timing is
+operational, not a build gate. The census found the lane cold (R0.1–R1.5 NOT STARTED); that is
+an operational state on the operator side, not a code blocker.
 
 Firewalled from the code spine (law 0.7) but **feeding the Stage-2 I3 primitive**: the
 certificate-lifecycle engine is only as real as the harvested registry behind it. Sequence:
 Track R harvest (operator) → CMVE/registry (R1–R2.2, SE-adjacent) → DTO-v2 serves
 `getCompliance`/compliance surfaces → I3 flips Live → the 7 registered HALAL-* findings close.
 
-**The four OPEN decisions the operator must make NOW (each blocks the lane):**
+**Four operator inputs remain OPEN (informational — they shape switch-on timing on the operator side; they do NOT gate the build):**
 
 | Decision | What it decides | What it blocks while open |
 |---|---|---|
 | **D-CAL** | The renewal-calendar ownership + the certification calendar of record | The reminder ladder (R1.2) and every expiry clock downstream (HALAL-CLOCK-STATE-01) |
-| **D-STAFF** | Who runs the harvest + registry upkeep (named owner, not a role) | R0.1 certificate harvest — **the long pole of the whole lane**, already past its tripwire |
+| **D-STAFF** | Who runs the harvest + registry upkeep (named owner, not a role) | R0.1 certificate harvest — **the long pole of the lane** (operator-paced) |
 | **D-SAP** | SAP BASIS/integration session — event/OData access, vendor-master extract | F2 provisioning lead time; the vendor-master feed into F3; SAP-side cert custody questions |
 | **D-DPO** | Data-protection sign-off for supplier document/cert storage | The registry itself (CMVE persistence) and WhatsApp reminder dispatch (HALAL-REMIND-01) |
 
 Interim mitigation already honest in-product: reminder toasts are truthfully labeled, the
 "Phase 2" banners state what isn't built (HALAL-REMIND-01/UNDERREVIEW-01 registered). R0.3
-static how-to-renew content remains **operator-authored, zero platform build** (the deadline-safe
+static how-to-renew content remains **operator-authored, zero platform build** (the operator-authored
 Learn substitute — untouched by FORK-1).
 
-**Recommended cadence:** a standing weekly Track-R checkpoint on the operator's side with the
-four decisions as the standing agenda until all four close; the build plan's I3 phase re-plans
-against whatever the harvest yields by end of August 2026 (T-50 days).
+**Recommended cadence:** a standing Track-R checkpoint on the operator's side with the four
+inputs as the agenda until they close; the build plan's I3 phase consumes whatever the harvest
+yields whenever it lands — the phase is not scheduled against an external date.
 
 ---
 

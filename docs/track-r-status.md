@@ -1,10 +1,10 @@
-# Track R — Status Register (Halal Compliance, hard deadline 17 Oct 2026)
+# Track R — Status Register (Halal Compliance — a normal, de-pressurized capability)
 
-**Purpose:** dated, verifiable log of Track R mobilization (R0) and execution (R1–R3). Addresses Review v2 BLOCKER F2-17: canon must distinguish "proceeding" from "not started." The operator updates entries with dates; stale entries ARE the signal.
+**Purpose:** dated, verifiable log of Track R mobilization (R0) and execution (R1–R3). Addresses Review v2 BLOCKER F2-17: canon must distinguish "proceeding" from "not started." The operator updates entries with dates; stale entries signal operational pace.
 
-**Rule (from Build Plan v2.2 Step 5.1):** if the certificate harvest (R0.1) has not OPENED by **12 Jul 2026**, the R-schedule slips week-per-week — re-plan R3 buffer immediately, not in September.
+**Framing (realigned 2026-07-15):** Track R is a **NORMAL capability — de-pressurized, on equal footing with every other lane**. **No external deadline gates the platform build.** The platform's job is to MODEL the full compliance flow well, switchable on whenever (this year or next); certification is handled manually by the compliance team, and switch-on timing is operational, not a build gate. The register below tracks operator-side mobilization state — stale entries signal operational pace, not a missed deadline. The compliance DESIGN (I3 machine, honest SIMULATED surface, two-gate flip harness) STANDS in full.
 
-**Days to deadline at last update:** 103 (updated 2026-07-06)
+**Last update:** 2026-07-06 (register); framing de-pressurized 2026-07-15.
 
 ---
 
@@ -22,8 +22,8 @@
 
 | ID | Question | Status | Last update | Answer / owner role |
 |----|----------|--------|-------------|---------------------|
-| D-CAL | Does a 180/90 renewal ladder run today? Who owns it? Who operates the portal's Remind loop + escalation chain? | OPEN — this week's hard gate | 2026-07-06 | — |
-| D-STAFF | Who staffs the harvest + manual SIHALAL verification (no public API)? | OPEN — this week's hard gate | 2026-07-06 | — |
+| D-CAL | Does a 180/90 renewal ladder run today? Who owns it? Who operates the portal's Remind loop + escalation chain? | OPEN — operator input (non-blocking) | 2026-07-06 | — |
+| D-STAFF | Who staffs the harvest + manual SIHALAL verification (no public API)? | OPEN — operator input (non-blocking) | 2026-07-06 | — |
 | D-SAP | BASIS session booked: "can an MM PO-create change land before the deadline at all?" | OPEN | 2026-07-06 | — |
 | D-DPO | DPO process clock (~10 weeks) opened? | OPEN | 2026-07-06 | — |
 | D-SSO / D-SEC | IT security thread — SSO + security questions carried in operator reply | OPEN | 2026-07-06 | — |
@@ -43,4 +43,5 @@
 
 ## Log (append-only, newest first)
 
-- **2026-07-06** — Register created per Build Plan v2.2 Step 5.1. All items initialized. D-CAL + D-STAFF flagged as this week's hard gate. Tripwire 12 Jul active.
+- **2026-07-15** — **Strategic realignment: Track R de-pressurized to a NORMAL capability.** No external deadline gates the platform build; certification is handled manually by the compliance team; the platform's job is to model the full compliance flow, switch-on timing operational. Deadline/urgency/tripwire framing retired from the standing canon (this register + CLAUDE.md + World-Class Build Plan §7). The compliance DESIGN is untouched and STANDS. The register remains a useful operator-side mobilization log.
+- **2026-07-06** — Register created per Build Plan v2.2 Step 5.1. All items initialized. D-CAL + D-STAFF flagged as that week's priority. (Historical entry — see the 2026-07-15 de-pressurization above.)

@@ -92,14 +92,19 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   seam (Event Mesh + OData; INT-TMS-01 is a sub-case) → **F3** Snowflake +
   data-quality prerequisites.
 - **Stage I — Intelligence:** I1 spend classification · I2 should-cost/commodity-FX
-  · I3 risk + halal/BPOM compliance (hard date 17 Oct 2026) · I4 3-way match +
-  e-Faktur · I5 guided-buying intake · I6 BOM-linked sourcing. Each ships
-  fixture-first behind honest markers, flips Live when its Stage-F prerequisite lands.
+  · I3 risk + halal/BPOM compliance (a platform capability modeled fully; NO
+  external deadline gates the build — certification is handled manually by the
+  compliance team) · I4 3-way match + e-Faktur · I5 guided-buying intake · I6
+  BOM-linked sourcing. Each ships fixture-first behind honest markers, flips Live
+  when its Stage-F prerequisite lands.
 - **Stage A — Agentic** (disciplined/bounded): A1 copilot · A2 document
   intelligence · A3 bounded task agents · A4 advanced levers (buy-vs-build).
-- **Track R** (halal) runs as a PARALLEL operator lane with its own clock
-  (17 Oct 2026); it feeds the Stage-2 I3 compliance primitive. Four operator
-  decisions OPEN: D-CAL / D-STAFF / D-SAP / D-DPO.
+- **Track R** (halal) is a NORMAL operator-lane capability — on equal footing
+  with every other lane, NOT a deadline-driven track. The platform models the
+  full compliance flow; no external deadline gates the build, and certification
+  is handled manually by the compliance team. Switch-on timing is operational,
+  not a build gate. It feeds the Stage-2 I3 compliance primitive. Four operator
+  inputs remain OPEN (informational, non-blocking): D-CAL / D-STAFF / D-SAP / D-DPO.
 - Adjudicated forks: **FORK-1 = (c)** (minimal scripted halal-renewal walkthrough
   at I3; full Learn absorbed into the A1 copilot). **FORK-2 = hybrid** (author all
   remaining flows; wire opportunistically per Stage-2 surface).
