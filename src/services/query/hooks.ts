@@ -139,6 +139,11 @@ export const useRequisitions = (filter?: PRFilter) =>
     svc.procurement.getRequisitions(scope, filter),
   );
 
+export const useIntakeReview = () =>
+  useServiceQuery(['procurement', 'prIntake'], (svc, scope) =>
+    svc.procurement.getPrIntake(scope),
+  );
+
 export const useProductionLines = () =>
   useServiceQuery(['procurement', 'productionLines'], (svc, scope) =>
     svc.procurement.getProductionLines(scope),

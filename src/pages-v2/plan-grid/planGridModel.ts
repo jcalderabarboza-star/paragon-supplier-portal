@@ -15,7 +15,18 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { Quotation } from '../../data/mockQuotations';
-import type { CommandDecision } from '../../services/data/types';
+import type {
+  CommandDecision,
+  PrIntakeLine,
+  IntakePlanState,
+} from '../../services/data/types';
+import { PR_INTAKE_LINES } from '../../services/data/mock/fixtures/prIntake';
+
+// C7 §2 — the intake line + plan-state axis are PROMOTED to the service seam
+// (types.ts) at Phase A/1 and re-exported here so plan-grid consumers keep their
+// existing imports unchanged. The intake SAMPLE data lives in the seam fixture
+// (fixtures/prIntake.ts); SAMPLE_INTAKE_LINES aliases it — one source of truth.
+export type { PrIntakeLine, IntakePlanState } from '../../services/data/types';
 
 // ── Award what-if ───────────────────────────────────────────────────────────
 
@@ -123,101 +134,12 @@ export function buildWhatIfOverlay(
 }
 
 // ── C7 §2 intake line (sample; two producers) ───────────────────────────────
+// The `PrIntakeLine` + `IntakePlanState` types are re-exported above from the
+// service seam (types.ts). The sample rows are the seam fixture; SAMPLE_INTAKE_LINES
+// aliases it so PlanGrid renders exactly the same rows without a seam repoint.
 
-/** The producer of an intake line (C7 §4 provenance). */
-export type IntakeSource = 'INTERNAL_GRID' | 'SOMO';
-
-/** The C6 plan-state axis (per row) — orthogonal to the registry source tier. */
-export type IntakePlanState = 'PLANNED' | 'committed';
-
-/**
- * The C7 §2 `PrIntakeLine` — one shape, two producers. SOMO-authored fields
- * (`suggestedSource` = lane, `segment`) are read-only + nullable for the
- * internal Grid producer. Quantity carries three values (§2.1):
- * suggested / accepted / wasAdjusted — the fact of human adjustment is the
- * audit signal, stored not derived-and-discarded.
- *
- * Liveness is NOT a field here — it is registry-derived (`purchaseRequisitions`
- * → SIMULATED). Plan-state IS a per-row field (the C6 overlay axis).
- */
-export interface PrIntakeLine {
-  readonly id: string;
-  readonly material: string;
-  /** SOMO-authored source/destination lane; null for an internal-Grid line. */
-  readonly suggestedSource: string | null;
-  /** SOMO-authored ABC-XYZ policy class; null for an internal-Grid line. */
-  readonly segment: string | null;
-  readonly suggestedQty: number;
-  readonly acceptedQty: number;
-  readonly wasAdjusted: boolean;
-  readonly uom: string;
-  readonly period: string;
-  readonly estimatedValue: number;
-  readonly source: IntakeSource;
-  readonly planState: IntakePlanState;
-}
-
-// All lines are pre-commit PLANNED — 1.2a is READ-ONLY (no push exists yet, so
-// nothing can be committed). SOMO lines carry lane + segment; internal-Grid
-// lines omit them (null). `wasAdjusted` === (acceptedQty !== suggestedQty).
-export const SAMPLE_INTAKE_LINES: readonly PrIntakeLine[] = [
-  {
-    id: 'pil-somo-001',
-    material: 'Glycerin USP (Halal)',
-    suggestedSource: 'Cikarang DC → Karawang Plant',
-    segment: 'AX',
-    suggestedQty: 12_000,
-    acceptedQty: 12_000,
-    wasAdjusted: false,
-    uom: 'KG',
-    period: '2026-Q3',
-    estimatedValue: 534_000_000,
-    source: 'SOMO',
-    planState: 'PLANNED',
-  },
-  {
-    id: 'pil-somo-002',
-    material: 'Niacinamide USP',
-    suggestedSource: 'Surabaya DC → Karawang Plant',
-    segment: 'BY',
-    suggestedQty: 5_000,
-    acceptedQty: 4_500,
-    wasAdjusted: true,
-    uom: 'KG',
-    period: '2026-08',
-    estimatedValue: 990_000_000,
-    source: 'SOMO',
-    planState: 'PLANNED',
-  },
-  {
-    id: 'pil-grid-001',
-    material: 'PET Bottle 200ml',
-    suggestedSource: null,
-    segment: null,
-    suggestedQty: 200_000,
-    acceptedQty: 200_000,
-    wasAdjusted: false,
-    uom: 'PCS',
-    period: '2026-08',
-    estimatedValue: 256_000_000,
-    source: 'INTERNAL_GRID',
-    planState: 'PLANNED',
-  },
-  {
-    id: 'pil-grid-002',
-    material: 'Folding Carton',
-    suggestedSource: null,
-    segment: null,
-    suggestedQty: 80_000,
-    acceptedQty: 90_000,
-    wasAdjusted: true,
-    uom: 'PCS',
-    period: '2026-Q3',
-    estimatedValue: 81_000_000,
-    source: 'INTERNAL_GRID',
-    planState: 'PLANNED',
-  },
-];
+/** Alias of the promoted seam fixture — one source of truth for the intake rows. */
+export const SAMPLE_INTAKE_LINES: readonly PrIntakeLine[] = PR_INTAKE_LINES;
 
 // ── C6-LOCK — the locked-override rule (G1.2b) ───────────────────────────────
 // Accepted quantity is the SINGLE editable field on an intake line; every other
