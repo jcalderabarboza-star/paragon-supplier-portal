@@ -31,7 +31,7 @@ import type {
   Disposition,
   InspectionResult,
 } from '../../../data/mockGoodsReceipts';
-import type { RFQStatus } from '../../../data/mockRfqs';
+import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
 import type { QuotationStatus } from '../../../data/mockQuotations';
 import {
   createDispatcher,
@@ -315,6 +315,11 @@ bindPolicyHook(POLICY_HOOKS.INVOICE_CREATE_PO_CONFIRMED, ({ payload }) => {
 //   (awardedSupplierId / awardedQuotationId) — NO PO, NO contract minted
 //   (honest-by-construction). The buyer owns the RFQ, so readScopeOwner is null
 //   (buyer passes; a supplier is blocked at requiredRole — rfq:award ∉ supplier).
+const RFQ_CATEGORIES: readonly RFQCategory[] = [
+  'Fragrance', 'Active Ingredients', 'Packaging', 'Emulsifiers', 'Botanical', 'Other',
+];
+const RFQ_UOMS: readonly RFQ['uom'][] = ['KG', 'PCS', 'L', 'MT'];
+
 const rfqTarget: CommandTarget = {
   readState: (id) => rfqStore.get(id)?.status ?? null,
   readScopeOwner: () => null,
@@ -330,6 +335,47 @@ const rfqTarget: CommandTarget = {
       awardedSupplierId:
         typeof payload.awardedSupplierId === 'string' ? payload.awardedSupplierId : r.awardedSupplierId,
     }));
+  },
+  // Creation (Phase A/2 — retires extraRfqs). Buyer-only: `creationOwner: () =>
+  // null` ⇒ a buyer passes creation-scope (the dispatcher only scopes suppliers)
+  // then the `rfq:create` role; a supplier resolves owner=null → SCOPE_DENIED
+  // before the role gate (RFQ creation is a buyer verb). `create` mints an Open
+  // RFQ (FORK-2B) from the wizard payload with a store-assigned number; omitted
+  // or unrecognised fields default honestly (category/uom fall back rather than
+  // guess). NO award metadata and NO downstream artifact on a fresh event.
+  creationOwner: () => null,
+  create: (payload, toState) => {
+    const rfqNumber = rfqStore.nextNumber();
+    const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
+    const num = (k: string) => (typeof payload[k] === 'number' ? (payload[k] as number) : 0);
+    const strArr = (k: string) =>
+      Array.isArray(payload[k]) ? (payload[k] as unknown[]).filter((x): x is string => typeof x === 'string') : [];
+    const materialCategory = RFQ_CATEGORIES.includes(payload.materialCategory as RFQCategory)
+      ? (payload.materialCategory as RFQCategory)
+      : 'Other';
+    const uom = RFQ_UOMS.includes(payload.uom as RFQ['uom']) ? (payload.uom as RFQ['uom']) : 'KG';
+    const rfq: RFQ = {
+      id: rfqNumber, // store keyed by id; the assigned number doubles as the id
+      rfqNumber,
+      title: str('title'),
+      materialCategory,
+      materialIds: strArr('materialIds'),
+      buyerId: 'buyer-001',
+      status: toState as RFQStatus, // 'Open' (FORK-2B)
+      createdAt: new Date().toISOString().slice(0, 10),
+      responseDeadline: str('responseDeadline'),
+      awardDeadline: str('awardDeadline'),
+      invitedSupplierIds: strArr('invitedSupplierIds'),
+      respondedSupplierIds: [],
+      totalQty: num('totalQty'),
+      uom,
+      estimatedValue: num('estimatedValue'),
+      currency: 'IDR',
+      incoterms: str('incoterms'),
+      paymentTerms: str('paymentTerms'),
+    };
+    rfqStore.add(rfq);
+    return { entityId: rfqNumber };
   },
 };
 

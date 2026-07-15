@@ -42,7 +42,8 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useRFQs, useQuotations, useSuppliers } from '../services/query/hooks';
-import { useRfqAward, useRfqCancel, useRfqReopen } from '../services/query/commandHooks';
+import { useRfqCreate, useRfqAward, useRfqCancel, useRfqReopen } from '../services/query/commandHooks';
+import { buildRfqCreatePayload } from './sourcing/rfqCreateModel';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
@@ -378,13 +379,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
   const [awardsOpen, setAwardsOpen] = useState(true);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
-  const [extraRfqs, setExtraRfqs] = useState<RFQ[]>([]);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
   const [draft, setDraft] = useState<DraftRfq>(EMPTY_DRAFT);
   const [supplierSearch, setSupplierSearch] = useState('');
   const { toast } = useToast();
   const { t } = useTranslation();
+  const createMutation = useRfqCreate();
   const awardMutation = useRfqAward();
   const cancelMutation = useRfqCancel();
   const reopenMutation = useRfqReopen();
@@ -528,7 +529,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     return quotesForSelected.find((q) => q.id === selectedRfq.awardedQuotationId) ?? null;
   }, [selectedRfq, quotesForSelected]);
 
-  const rfqs = useMemo(() => [...extraRfqs, ...baseRfqs], [extraRfqs, baseRfqs]);
+  // The board reads the seam list ALONE. A created RFQ arrives here through
+  // getRFQs after the create dispatch invalidates — never a client-fabricated
+  // peer spread in (the retired `extraRfqs` anti-pattern, C6 §1).
+  const rfqs = baseRfqs;
 
   const openWizard = () => {
     setDraft(EMPTY_DRAFT);
@@ -583,41 +587,45 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     return true;
   };
 
+  // Raise the RFQ through the dispatcher (t_rfq_create) — the SAME governed path
+  // the award/cancel/reopen verbs use, NOT a client-fabricated peer. The number is
+  // store-assigned (honest); a non-failed outcome invalidates the reads so the new
+  // Open RFQ arrives on the board via getRFQs. Both failure channels leave the
+  // board unchanged and surface an honest toast.
   const submitWizard = () => {
-    const yr = new Date().getFullYear();
-    const nextNum = baseRfqs.length + extraRfqs.length + 1;
-    const newRfq: RFQ = {
-      id: `rfq-new-${Date.now()}`,
-      rfqNumber: `RFQ-${yr}-${String(nextNum).padStart(3, '0')}`,
-      title: draft.title.trim(),
-      materialCategory: draft.category as RFQCategory,
-      materialIds: draft.materials,
-      buyerId: 'buyer-001',
-      status: 'Open',
-      createdAt: new Date().toISOString().slice(0, 10),
-      responseDeadline: draft.responseDeadline,
-      awardDeadline: draft.awardDeadline,
-      invitedSupplierIds: draft.invitedSupplierIds,
-      respondedSupplierIds: [],
-      totalQty: Number(draft.totalQty),
-      uom: draft.uom,
-      estimatedValue: Number(draft.budget) || 0,
-      currency: 'IDR',
-      incoterms: draft.incoterms,
-      paymentTerms: draft.paymentTerms,
-    };
-    setExtraRfqs((prev) => [newRfq, ...prev]);
-    setWizardOpen(false);
-    toast({
-      variant: 'success',
-      title: t('sourcing.toast.created.title', { rfqNumber: newRfq.rfqNumber }),
-      description: t(
-        newRfq.invitedSupplierIds.length === 1
-          ? 'sourcing.toast.created.desc.one'
-          : 'sourcing.toast.created.desc.other',
-        { count: newRfq.invitedSupplierIds.length },
-      ),
-    });
+    const invitedCount = draft.invitedSupplierIds.length;
+    createMutation.mutate(
+      { payload: buildRfqCreatePayload(draft) },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('sourcing.toast.createFailed.title'),
+              description: result.reason ?? t('sourcing.toast.createFailed.default'),
+            });
+            return;
+          }
+          setWizardOpen(false);
+          toast({
+            variant: 'success',
+            title: t('sourcing.toast.created.title', { rfqNumber: result.entityId }),
+            description: t(
+              invitedCount === 1
+                ? 'sourcing.toast.created.desc.one'
+                : 'sourcing.toast.created.desc.other',
+              { count: invitedCount },
+            ),
+          });
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('sourcing.toast.createFailed.title'),
+            description: t('sourcing.toast.createFailed.dispatch'),
+          }),
+      },
+    );
   };
 
   const aiRecommendedSuppliers = useMemo(() => {

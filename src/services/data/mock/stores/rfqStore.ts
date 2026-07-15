@@ -6,6 +6,9 @@
 // invalidated query yields new references and every derivation re-derives. The
 // award verb (`t_rfq_award`) flips status → Awarded and records the award
 // metadata (awardedSupplierId / awardedQuotationId) — no PO/contract minted.
+// Creation (`t_rfq_create` — Phase A/2, retires extraRfqs) ADDS a new Open RFQ
+// with a store-assigned number (distinct 9xx range, as asnStore/PR): a real
+// push-to-execute target, so getRFQs reflects it — never a fabricated peer.
 // Keyed by id. Seeded from the fixture; `reset()` restores it (test isolation).
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -17,6 +20,7 @@ function clone(r: RFQ): RFQ {
 }
 
 let rows: RFQ[] = mockRfqs.map(clone);
+let seq = 0;
 
 export const rfqStore = {
   /** All RFQs (the mutable source reads resolve from). */
@@ -31,8 +35,18 @@ export const rfqStore = {
   update(id: string, next: (r: RFQ) => RFQ): void {
     rows = rows.map((r) => (r.id === id ? next(r) : r));
   },
+  /** Add a newly-created RFQ (creation). New array reference. */
+  add(rfq: RFQ): void {
+    rows = [rfq, ...rows];
+  },
+  /** Store-assigned RFQ number for a creation (distinct 9xx range, as asnStore). */
+  nextNumber(): string {
+    seq += 1;
+    return `RFQ-2026-${900 + seq}`;
+  },
   /** Restore the fixture seed (test isolation). */
   reset(): void {
     rows = mockRfqs.map(clone);
+    seq = 0;
   },
 };

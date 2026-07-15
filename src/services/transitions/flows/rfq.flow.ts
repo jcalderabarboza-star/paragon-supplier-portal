@@ -23,6 +23,23 @@ export const rfqFlow: FlowDefinition = {
   initial: 'Draft',
   transitions: [
     {
+      // CREATION verb (Phase A/2, WIRED). Buyer raises a sourcing event. Mirrors
+      // t_pr_create's creation shape (creation-class member, not a new event
+      // category). FORK-2B: mints directly into Open — create+publish as ONE
+      // buyer action, matching the prior wizard's Open output — so t_rfq_publish
+      // (Draft→Open) stays authored-unwired. This is the dispatcher path that
+      // RETIRES the `extraRfqs` client-fabrication anti-pattern (C6 §1): the RFQ
+      // is store-minted with a store-assigned number, never a fabricated peer.
+      id: 't_rfq_create',
+      from: [],
+      to: 'Open',
+      trigger: 'creation',
+      requiredRole: 'rfq:create',
+      requiredFields: ['title', 'materialCategory'],
+      policyHooks: [],
+      version: 1,
+    },
+    {
       // Buyer publishes a drafted RFQ to its invited suppliers. Authored-unwired.
       id: 't_rfq_publish',
       from: ['Draft'],

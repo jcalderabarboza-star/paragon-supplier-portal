@@ -25,9 +25,10 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     'asn:carry', 'asn:flag',
     'gr:receive', 'gr:inspect', 'gr:disposition', 'gr:post',
     'invoice:match', 'invoice:approve', 'invoice:pay', 'invoice:dispute',
-    // Sourcing: publish/close/cancel/reopen an RFQ, award it (cascade source),
-    // move a quote into review, and the cascade targets award/reject a quote.
-    'rfq:publish', 'rfq:close', 'rfq:award', 'rfq:cancel', 'rfq:reopen',
+    // Sourcing: create (Phase A/2 — retires extraRfqs), publish/close/cancel/
+    // reopen an RFQ, award it (cascade source), move a quote into review, and
+    // the cascade targets award/reject a quote.
+    'rfq:create', 'rfq:publish', 'rfq:close', 'rfq:award', 'rfq:cancel', 'rfq:reopen',
     'quotation:review', 'quotation:award', 'quotation:reject',
     // F0.4 — the 5 remaining lifecycle machines (author-unwired, no surface yet;
     // mapped so the catalog-coverage invariant holds — a contract-level
