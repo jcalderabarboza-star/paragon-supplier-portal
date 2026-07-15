@@ -253,7 +253,7 @@ const buildTimeline = (r: RFQ, t: TFunction): TimelineEvent[] => {
   ];
 };
 
-const FOOTER_LABEL = (r: RFQ, t: TFunction): string => {
+export const FOOTER_LABEL = (r: RFQ, t: TFunction): string => {
   if (r.status === 'Open') {
     return isAllResponded(r)
       ? t('sourcing.footer.awardRfq')
@@ -264,6 +264,14 @@ const FOOTER_LABEL = (r: RFQ, t: TFunction): string => {
     return t('sourcing.footer.viewReport');
   return t('sourcing.footer.continueDraft');
 };
+
+// DP2-BUTTON-01: solid action-blue is the single reserved irreversible-commit
+// signal — at most one per surface. The footer button is polymorphic (see
+// FOOTER_LABEL); ONLY the Award state (an Open RFQ whose invitees have all
+// responded) is that commit. Every other state — Send reminder / View award /
+// View report / Continue draft — is a calm action-blue OUTLINE CTA.
+export const FOOTER_VARIANT = (r: RFQ): 'primary' | 'outline' =>
+  r.status === 'Open' && isAllResponded(r) ? 'primary' : 'outline';
 
 const ReviewSection: React.FC<{
   label: string;
@@ -1553,7 +1561,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 {t('sourcing.panel.exportComparison')}
               </Button>
               <Button
-                variant="primary"
+                variant={FOOTER_VARIANT(selectedRfq)}
                 disabled={
                   selectedRfq.status === 'Open' &&
                   isAllResponded(selectedRfq) &&

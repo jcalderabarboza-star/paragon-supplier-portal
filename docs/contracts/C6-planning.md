@@ -74,19 +74,21 @@ PlanDraftRow {
 convention: **a PlanDraft entry cannot exist without anchoring to a seam row**, so it can
 never be minted as a standalone fabricated peer and spread into a seam-backed list.
 
-This structurally outlaws the named anti-pattern (`src/pages-v2/BuyerSourcing.tsx`):
+This structurally outlaws the named anti-pattern — the now-**RETIRED** `extraRfqs`
+client-fabrication that once lived in `src/pages-v2/BuyerSourcing.tsx`:
 
 ```ts
-const [extraRfqs, setExtraRfqs] = useState<RFQ[]>([]);              // :381  client-fabricated rows
-// submitWizard mints a peer with no seam identity:
-id: `rfq-new-${Date.now()}`, …                                     // :590
-const rfqs = useMemo(() => [...extraRfqs, ...baseRfqs], …);        // :531  spread INTO the seam list
+// HISTORICAL — retired in PR #77; kept here only to name the shape the invariant bans.
+const [extraRfqs, setExtraRfqs] = useState<RFQ[]>([]);   // client-fabricated rows
+id: `rfq-new-${Date.now()}`, …                           // a peer minted with no seam identity
+const rfqs = useMemo(() => [...extraRfqs, ...baseRfqs], …); // spread INTO the seam list
 ```
 
-`extraRfqs` are programmatically indistinguishable from seam-backed `baseRfqs` once spread.
+`extraRfqs` were programmatically indistinguishable from seam-backed `baseRfqs` once spread.
 A PlanDraft row cannot do this: it has no independent identity of its own — only a `seamRef`
-pointer plus overlay fields — so there is nothing to spread into the seam list. RFQ creation
-moves onto the dispatcher at G1, retiring `extraRfqs`.
+pointer plus overlay fields — so there is nothing to spread into the seam list. **This is
+resolved:** RFQ creation now rides `t_rfq_create` on the dispatcher (PR #77), the board reads
+the seam alone, and `extraRfqs` is deleted. The `seamRef` mechanism keeps the door shut.
 
 ---
 
@@ -103,7 +105,7 @@ The grid renders **`seamRow + plannedOverlay`**. A planned value is ALWAYS both:
 (`useServiceQuery` output, `useServiceQuery.ts:33-37`) is never mutated to carry planned
 values; a planned value is only ever reachable by looking up `plannedOverlay[seamRef]`. If a
 planned value can be found *inside* a seam array, the invariant is broken. This is the
-inverse of `BuyerSourcing.tsx:531`'s `[...extraRfqs, ...baseRfqs]` merge.
+inverse of the retired `extraRfqs` `[...extraRfqs, ...baseRfqs]` merge (BuyerSourcing, PR #77).
 
 ---
 
@@ -234,7 +236,7 @@ Each is written so a G1 vitest can bind to it directly.
 
 1. **overlay-never-merged (seamRef-keyed).** A planned value is reachable only via
    `plannedOverlay[seamRef]`; it is never present inside the seam array returned by the read
-   hook. (Inverse of `BuyerSourcing.tsx:531`.)
+   hook. (Inverse of the retired `extraRfqs` merge in BuyerSourcing, PR #77.)
 2. **push-only-exit.** A row leaves PLANNED **only** via a successful `svc.commands.dispatch`
    + invalidation re-read (§3). No code path clears PLANNED without a non-failed command
    outcome for that row.
@@ -332,7 +334,8 @@ Every seam cited traces to a `file:line` in the shipped tree:
 `src/services/query/useServiceQuery.ts` (`scopeKey` read pattern :19-38),
 `src/services/liveness/registry.ts` (`liveness`/`isLive`/`Tier` :45-184),
 `src/context/CurrentIdentityContext.tsx` (client-state provider pattern :35-65),
-`src/pages-v2/BuyerSourcing.tsx` (the `extraRfqs` anti-pattern :381, :531, :590). §1-7 were
+`src/pages-v2/BuyerSourcing.tsx` (the `extraRfqs` anti-pattern — RETIRED in PR #77; RFQ
+creation now rides `t_rfq_create` on the dispatcher). §1-7 were
 authored pre-grid (FORK-3 harvest); §8 (C6-LOCK) is recorded at **G1.2b** alongside its first
 implementation — the grid product code now exists (`src/pages-v2/PlanGrid.tsx` +
 `plan-grid/*`, G1.2a/b), and §8's as-built block cites it directly.
