@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
@@ -22,14 +22,18 @@ const nothing: IDataService = {
 };
 
 describe('SupplierRFQs — four honest states + wired reads', () => {
-  it('data: open-RFQ list is driven by the scoped useRFQs read', async () => {
+  it('data: real quotations drive My-Quotes and prune already-quoted RFQs from Open (Task 3b)', async () => {
     renderWithProviders(<SupplierRFQs />, { identity: SUPPLIER });
     // KPI strip only renders in the data branch.
     expect(await screen.findByText('Open Events')).toBeInTheDocument();
-    // sup-007 is invited to the Open RFQ-2026-002 — proves the wired read.
+    // sup-007 is invited to the Open RFQ-2026-002 AND already has a real quote on
+    // it (qt-002a) — so it is HONESTLY pruned from Open (no longer awaiting a
+    // quote) and surfaces in My-Quotes instead. This proves both wired reads.
+    expect(screen.queryByText('RFQ-2026-002')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: /My responses/ }));
     expect(await screen.findByText('RFQ-2026-002')).toBeInTheDocument();
-    // Partial migration: the sampled per-card detail is honestly flagged.
-    expect(await screen.findAllByText('Sample detail')).toHaveLength(1);
+    // Own facts + status only — never a fabricated competitive score/rank (3b-C).
+    expect(screen.queryByText(/of 4 quotes/)).not.toBeInTheDocument();
   });
 
   it('loading: shows LoadingState while the reads are pending', () => {

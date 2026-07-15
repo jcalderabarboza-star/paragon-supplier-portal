@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Inbox,
   Send,
@@ -38,6 +39,8 @@ import {
   useRFQs,
   useQuotations,
 } from '../services/query/hooks';
+import { useQuotationSubmit } from '../services/query/commandHooks';
+import { buildQuotationSubmitPayload } from './rfqs/quotationSubmitModel';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
 import { formatIDR, formatDate } from '../lib/format';
@@ -67,7 +70,7 @@ interface OpenRFQ {
 
 interface SubmittedQuote {
   rfqNumber: string;
-  quoteNumber?: string;
+  quoteNumber: string;
   material: string;
   submittedDate: string;
   unitPrice: string;
@@ -75,23 +78,33 @@ interface SubmittedQuote {
   leadTime: string;
   validUntil: string;
   status: string;
-  score: number | null;
-  rankPosition: string | null;
 }
 
-const SUBMITTED_QUOTE: SubmittedQuote = {
-  rfqNumber: 'RFQ-2026-005',
-  quoteNumber: 'QT-2026-0897',
-  material: 'Folding Carton 150gsm Wardah',
-  submittedDate: '2026-03-27',
-  unitPrice: 'Rp 420/PCS',
-  totalPrice: 'Rp 84jT',
-  leadTime: '10 days',
-  validUntil: '2026-04-27',
-  status: 'Under Review',
-  score: 92,
-  rankPosition: '1 of 4 quotes',
-};
+// The supplier's OWN submitted quotations (Task 3b), joined to their RFQ for
+// display. HONEST-BY-CONSTRUCTION (3b-C): own quote facts + status ONLY — NO
+// score, NO competitive rank. A score/rank would need the sibling set (rival
+// suppliers' quotes), which per-supplier scoping hides; surfacing it would be
+// fabrication or a data leak. The BUYER sees scores (engine, at read, #78); the
+// supplier sees its own facts. Replaces the retired SUBMITTED_QUOTE fixture.
+const buildSubmittedQuotes = (
+  quotations: Quotation[],
+  rfqById: Map<string, RFQ>,
+  t: TFunction,
+): SubmittedQuote[] =>
+  quotations.map((q) => {
+    const rfq = rfqById.get(q.rfqId);
+    return {
+      rfqNumber: rfq?.rfqNumber ?? q.rfqId,
+      quoteNumber: q.id,
+      material: rfq?.title ?? '—',
+      submittedDate: formatDate(q.submittedAt),
+      unitPrice: formatIDR(q.unitPrice),
+      totalPrice: formatIDR(q.totalPrice),
+      leadTime: `${q.leadTimeDays} ${t('rfqs.unit.days')}`,
+      validUntil: formatDate(q.validUntil),
+      status: q.status,
+    };
+  });
 
 interface AwardRow {
   rfqNumber: string;
@@ -381,37 +394,30 @@ const OpenRFQsTab: React.FC<{
   );
 };
 
-const MyQuotesTab: React.FC<{
-  extra: string[];
-  onWithdraw: (rfqNumber: string) => void;
-}> = ({ extra, onWithdraw }) => {
+const MyQuotesTab: React.FC<{ quotes: SubmittedQuote[] }> = ({ quotes }) => {
   const { t } = useTranslation();
-  const today = new Date().toISOString().slice(0, 10);
-  const allQuotes: SubmittedQuote[] = [
-    { ...SUBMITTED_QUOTE, rankPosition: t('rfqs.quotes.rankValue') },
-    ...extra.map((num) => ({
-      rfqNumber: num,
-      material: t('rfqs.quotes.recentlySubmitted'),
-      submittedDate: today,
-      unitPrice: '—',
-      totalPrice: '—',
-      leadTime: '—',
-      validUntil: '—',
-      status: 'Under Review',
-      score: null,
-      rankPosition: null,
-    })),
-  ];
+
+  if (quotes.length === 0) {
+    return (
+      <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+        <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
+          <Send size={20} className="text-text-tertiary" />
+        </div>
+        <div className="text-base font-semibold text-text-primary mb-1">
+          {t('rfqs.quotes.emptyTitle')}
+        </div>
+        <div className="text-sm text-text-tertiary">
+          {t('rfqs.quotes.emptyBody')}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 text-xs text-text-tertiary">
-        <StatusPill variant="neutral">{t('rfqs.quotes.sampleData')}</StatusPill>
-        {t('rfqs.quotes.illustrative')}
-      </div>
-      {allQuotes.map((q, i) => (
+      {quotes.map((q) => (
         <div
-          key={i}
+          key={q.quoteNumber}
           className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5"
         >
           <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
@@ -420,27 +426,22 @@ const MyQuotesTab: React.FC<{
                 <Data className="text-sm font-bold text-text-primary">
                   {q.rfqNumber}
                 </Data>
-                {q.quoteNumber && (
-                  <Data className="text-xs bg-bg-hover text-text-secondary rounded-full px-2 py-0.5 font-semibold">
-                    {q.quoteNumber}
-                  </Data>
-                )}
+                <Data className="text-xs bg-bg-hover text-text-secondary rounded-full px-2 py-0.5 font-semibold">
+                  {q.quoteNumber}
+                </Data>
               </div>
               <div className="text-base font-semibold text-text-primary mt-1">
                 {q.material}
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <StatusPill variant="neutral">{q.status}</StatusPill>
-              {q.score !== null && (
-                <StatusPill variant="success">{q.score}/100</StatusPill>
-              )}
-            </div>
+            {/* Status only — a competitive score/rank needs the sibling set that
+                per-supplier scoping hides (3b-C); the supplier never sees it. */}
+            <StatusPill variant="neutral">{q.status}</StatusPill>
           </div>
 
-          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3">
+          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
-              { label: t('rfqs.quotes.col.quoteNo'), value: q.quoteNumber ?? t('rfqs.quotes.autoAssigned') },
+              { label: t('rfqs.quotes.col.quoteNo'), value: q.quoteNumber },
               { label: t('rfqs.quotes.col.submitted'), value: q.submittedDate },
               { label: t('rfqs.quotes.col.unitPrice'), value: q.unitPrice },
               { label: t('rfqs.quotes.col.totalPrice'), value: q.totalPrice },
@@ -457,33 +458,6 @@ const MyQuotesTab: React.FC<{
               </div>
             ))}
           </dl>
-
-          {q.rankPosition && (
-            <div className="bg-success-soft border-l-2 border-success rounded px-3 py-2 mb-3 text-sm font-semibold text-success">
-              <Trophy size={14} className="inline-block mr-1.5" />
-              {t('rfqs.quotes.ranked', { rank: q.rankPosition })}
-            </div>
-          )}
-
-          <div className="mb-3">
-            <div className="text-label text-text-tertiary uppercase mb-2">
-              {t('rfqs.quotes.docsTitle')}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {['Halal Certificate', 'BPOM Registration', 'ISO 9001'].map((d) => (
-                <StatusPill key={d} variant="success">
-                  ✓ {d}
-                </StatusPill>
-              ))}
-            </div>
-          </div>
-
-          <Button
-            variant="secondary"
-            onClick={() => onWithdraw(q.rfqNumber)}
-          >
-            {t('rfqs.quotes.withdraw')}
-          </Button>
         </div>
       ))}
     </div>
@@ -641,35 +615,55 @@ const toOpenRfq = (r: RFQ): OpenRFQ => {
 
 interface RfqWorkspaceProps {
   mySupplier: Supplier;
+  supplierId: string;
   initialRfqs: OpenRFQ[];
-  quoteCount: number;
+  quotations: Quotation[];
+  rfqById: Map<string, RFQ>;
   awardRows: AwardRow[];
 }
 
 const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   mySupplier,
+  supplierId,
   initialRfqs,
-  quoteCount,
+  quotations,
+  rfqById,
   awardRows,
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
   const crumb = [t('rfqs.crumb.section'), t('rfqs.crumb.page')];
+  const submitMutation = useQuotationSubmit();
   const [activeTab, setActiveTab] = useState<TabKey>('open');
-  const [openRFQs, setOpenRFQs] = useState<OpenRFQ[]>(initialRfqs);
   const [quotePanelRFQ, setQuotePanelRFQ] = useState<OpenRFQ | null>(null);
-  const [submittedNums, setSubmittedNums] = useState<string[]>([]);
   const [form, setForm] = useState<QuoteForm>(emptyQuoteForm);
-  const [submitting, setSubmitting] = useState(false);
+
+  // The supplier's OWN submitted quotations (real read) drive My-Quotes AND prune
+  // the open list — an RFQ this supplier has already quoted drops from "Open" (the
+  // honest replacement for the retired local-state fake; after a real submit the
+  // invalidated useQuotations re-read re-derives both). respondedSupplierIds on
+  // the RFQ is NOT synced this batch (3b-D, registered finding) — the open-list
+  // prune reads the supplier's own quotes, not the RFQ roster.
+  const submittedQuotes = useMemo(
+    () => buildSubmittedQuotes(quotations, rfqById, t),
+    [quotations, rfqById, t],
+  );
+  const quotedRfqIds = useMemo(
+    () => new Set(quotations.map((q) => q.rfqId)),
+    [quotations],
+  );
+  const openRFQs = useMemo(
+    () => initialRfqs.filter((r) => !quotedRfqIds.has(r.id)),
+    [initialRfqs, quotedRfqIds],
+  );
 
   const openCount = openRFQs.length;
-  const submittedCount = quoteCount + submittedNums.length;
+  const submittedCount = submittedQuotes.length;
   const awaitingCount = 1;
 
   const handleSubmitQuote = (rfq: OpenRFQ) => {
     setQuotePanelRFQ(rfq);
     setForm(emptyQuoteForm);
-    setSubmitting(false);
   };
 
   const handleDecline = (rfqNumber: string) => {
@@ -687,14 +681,6 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
     });
   };
 
-  const handleWithdraw = (rfqNumber: string) => {
-    toast({
-      variant: 'info',
-      title: t('rfqs.toast.withdraw.title', { rfq: rfqNumber }),
-      description: t('rfqs.toast.notified'),
-    });
-  };
-
   const totalPrice = useMemo(() => {
     if (!quotePanelRFQ) return '—';
     const up = parseFloat(form.unitPrice.replace(/,/g, ''));
@@ -703,7 +689,12 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
     return '—';
   }, [form.unitPrice, quotePanelRFQ]);
 
-  const submitQuote = () => {
+  // REAL submit — dispatches t_quotation_submit through the command spine (the
+  // ONE supplier-owned creation verb). Persists RAW FACTS only; the engine scores
+  // at read (#78). On a non-failed outcome the hook invalidates → the supplier's
+  // quotations re-read, the quote lands in My-Quotes, and its RFQ leaves the open
+  // list. Replaces the retired local-state masquerade.
+  const submitQuote = async () => {
     if (!quotePanelRFQ) return;
     const missing: string[] = [];
     if (!form.unitPrice.trim() || !(parseFloat(form.unitPrice) > 0)) missing.push(t('rfqs.field.unitPrice'));
@@ -717,20 +708,43 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       });
       return;
     }
-    setSubmitting(true);
-    toast({
-      variant: 'success',
-      title: t('rfqs.toast.submitted.title', { rfq: quotePanelRFQ.rfqNumber }),
-      description: t('rfqs.toast.submitted.body', { date: quotePanelRFQ.deadline }),
+    const payload = buildQuotationSubmitPayload({
+      rfqId: quotePanelRFQ.id,
+      supplierId,
+      unitPrice: form.unitPrice,
+      // The form offers days | weeks; the entity stores days.
+      leadTimeDays:
+        form.leadTimeUnit === 'weeks'
+          ? String(Number(form.leadTimeNum) * 7)
+          : form.leadTimeNum,
+      validUntil: form.validUntil,
+      notes: form.notes,
     });
-    setTimeout(() => {
-      const rfq = quotePanelRFQ;
-      setSubmittedNums((prev) => [...prev, rfq.rfqNumber]);
-      setOpenRFQs((prev) => prev.filter((r) => r.id !== rfq.id));
+    try {
+      const res = await submitMutation.mutateAsync({ payload });
+      if (res.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('rfqs.toast.submitFailed.title'),
+          description: res.reason ?? t('rfqs.toast.submitFailed.body'),
+        });
+        return;
+      }
+      toast({
+        variant: 'success',
+        title: t('rfqs.toast.submitted.title', { rfq: quotePanelRFQ.rfqNumber }),
+        description: t('rfqs.toast.submitted.body', { date: quotePanelRFQ.deadline }),
+      });
       setQuotePanelRFQ(null);
-      setSubmitting(false);
+      setForm(emptyQuoteForm);
       setActiveTab('quotes');
-    }, 600);
+    } catch {
+      toast({
+        variant: 'error',
+        title: t('rfqs.toast.submitFailed.title'),
+        description: t('rfqs.toast.submitFailed.body'),
+      });
+    }
   };
 
   return (
@@ -789,7 +803,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
         />
       )}
       {activeTab === 'quotes' && (
-        <MyQuotesTab extra={submittedNums} onWithdraw={handleWithdraw} />
+        <MyQuotesTab quotes={submittedQuotes} />
       )}
       {activeTab === 'history' && <AwardsTab rows={awardRows} />}
 
@@ -810,10 +824,10 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
             <Button
               variant="outline"
               icon={Send}
-              disabled={submitting}
+              disabled={submitMutation.isPending}
               onClick={submitQuote}
             >
-              {submitting ? t('rfqs.panel.submitting') : t('rfqs.panel.submit')}
+              {submitMutation.isPending ? t('rfqs.panel.submitting') : t('rfqs.panel.submit')}
             </Button>
           </>
         }
@@ -1108,8 +1122,10 @@ const SupplierRFQs: React.FC = () => {
   return (
     <RfqWorkspace
       mySupplier={mySupplier}
+      supplierId={supplierId}
       initialRfqs={initialRfqs}
-      quoteCount={quoteCount}
+      quotations={quotations}
+      rfqById={rfqById}
       awardRows={awardRows}
     />
   );

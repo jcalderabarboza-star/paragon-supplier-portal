@@ -50,22 +50,16 @@ export const rfqsEn: Record<string, string> = {
   // open tab empty
   'rfqs.open.emptyTitle': 'No open RFQs at this time',
   'rfqs.open.emptyBody': 'New RFQs from Paragon will appear here.',
-  // my quotes tab
-  'rfqs.quotes.sampleData': 'Sample data',
-  'rfqs.quotes.illustrative':
-    'Quote detail (score, rank, line items) is illustrative pending the supplier quotation read.',
-  'rfqs.quotes.recentlySubmitted': 'Recently submitted quote',
-  'rfqs.quotes.rankValue': '1 of 4 quotes',
+  // my quotes tab — the supplier's OWN submitted quotes (real read); own facts +
+  // status only (no competitive score/rank — that needs the hidden sibling set)
+  'rfqs.quotes.emptyTitle': 'No quotes submitted yet',
+  'rfqs.quotes.emptyBody': 'Quotes you submit against open RFQs appear here.',
   'rfqs.quotes.col.quoteNo': 'Quote #',
   'rfqs.quotes.col.submitted': 'Submitted',
   'rfqs.quotes.col.unitPrice': 'Unit price',
   'rfqs.quotes.col.totalPrice': 'Total price',
   'rfqs.quotes.col.leadTime': 'Lead time',
   'rfqs.quotes.col.validUntil': 'Valid until',
-  'rfqs.quotes.autoAssigned': 'Auto-assigned',
-  'rfqs.quotes.ranked': 'Ranked {{rank}} received',
-  'rfqs.quotes.docsTitle': 'Compliance documents submitted with this quote',
-  'rfqs.quotes.withdraw': 'Withdraw quote',
   // awards tab
   'rfqs.awards.emptyTitle': 'No award decisions yet',
   'rfqs.awards.emptyBody': 'Award outcomes appear here once Paragon awards an RFQ you quoted on.',
@@ -126,11 +120,12 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.toast.notified': 'Paragon team has been notified.',
   'rfqs.toast.question.title': 'Message sent for {{rfq}}',
   'rfqs.toast.question.body': 'Paragon procurement team will respond via Web Portal.',
-  'rfqs.toast.withdraw.title': 'Withdrawal request sent for {{rfq}}',
   'rfqs.toast.missing.title': 'Required fields missing',
   'rfqs.toast.missing.body': 'Please fill: {{fields}}.',
   'rfqs.toast.submitted.title': 'Quotation submitted for {{rfq}}',
   'rfqs.toast.submitted.body': 'Paragon procurement team will review by {{date}}.',
+  'rfqs.toast.submitFailed.title': 'Quotation could not be submitted',
+  'rfqs.toast.submitFailed.body': 'Please try again, or contact Paragon procurement.',
   'rfqs.field.unitPrice': 'Unit price',
   'rfqs.field.leadTime': 'Lead time',
   'rfqs.field.validUntil': 'Quote valid until',
@@ -184,22 +179,16 @@ export const rfqsId: Record<string, string> = {
   // open tab empty
   'rfqs.open.emptyTitle': 'Tidak ada RFQ terbuka saat ini',
   'rfqs.open.emptyBody': 'RFQ baru dari Paragon akan muncul di sini.',
-  // my quotes tab
-  'rfqs.quotes.sampleData': 'Data contoh',
-  'rfqs.quotes.illustrative':
-    'Detail penawaran (skor, peringkat, item baris) bersifat ilustratif sampai pembacaan penawaran pemasok tersedia.',
-  'rfqs.quotes.recentlySubmitted': 'Penawaran yang baru dikirim',
-  'rfqs.quotes.rankValue': '1 dari 4 penawaran',
+  // my quotes tab — penawaran milik pemasok sendiri (pembacaan nyata); hanya
+  // fakta + status sendiri (tanpa skor/peringkat kompetitif — butuh set saingan)
+  'rfqs.quotes.emptyTitle': 'Belum ada penawaran dikirim',
+  'rfqs.quotes.emptyBody': 'Penawaran yang Anda kirim untuk RFQ terbuka muncul di sini.',
   'rfqs.quotes.col.quoteNo': 'No. Penawaran',
   'rfqs.quotes.col.submitted': 'Dikirim',
   'rfqs.quotes.col.unitPrice': 'Harga satuan',
   'rfqs.quotes.col.totalPrice': 'Harga total',
   'rfqs.quotes.col.leadTime': 'Waktu tunggu',
   'rfqs.quotes.col.validUntil': 'Berlaku hingga',
-  'rfqs.quotes.autoAssigned': 'Otomatis',
-  'rfqs.quotes.ranked': 'Peringkat {{rank}} diterima',
-  'rfqs.quotes.docsTitle': 'Dokumen kepatuhan yang dikirim bersama penawaran ini',
-  'rfqs.quotes.withdraw': 'Tarik penawaran',
   // awards tab
   'rfqs.awards.emptyTitle': 'Belum ada keputusan pemenangan',
   'rfqs.awards.emptyBody': 'Hasil pemenangan muncul di sini setelah Paragon memenangkan RFQ yang Anda tawar.',
@@ -260,11 +249,12 @@ export const rfqsId: Record<string, string> = {
   'rfqs.toast.notified': 'Tim Paragon telah diberi tahu.',
   'rfqs.toast.question.title': 'Pesan terkirim untuk {{rfq}}',
   'rfqs.toast.question.body': 'Tim pengadaan Paragon akan merespons melalui Portal Web.',
-  'rfqs.toast.withdraw.title': 'Permintaan penarikan terkirim untuk {{rfq}}',
   'rfqs.toast.missing.title': 'Kolom wajib belum diisi',
   'rfqs.toast.missing.body': 'Harap isi: {{fields}}.',
   'rfqs.toast.submitted.title': 'Penawaran dikirim untuk {{rfq}}',
   'rfqs.toast.submitted.body': 'Tim pengadaan Paragon akan meninjau paling lambat {{date}}.',
+  'rfqs.toast.submitFailed.title': 'Penawaran tidak dapat dikirim',
+  'rfqs.toast.submitFailed.body': 'Silakan coba lagi, atau hubungi pengadaan Paragon.',
   'rfqs.field.unitPrice': 'Harga satuan',
   'rfqs.field.leadTime': 'Waktu tunggu',
   'rfqs.field.validUntil': 'Penawaran berlaku hingga',

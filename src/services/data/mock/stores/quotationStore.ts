@@ -17,6 +17,7 @@ function clone(q: Quotation): Quotation {
 }
 
 let rows: Quotation[] = mockQuotations.map(clone);
+let seq = 0;
 
 export const quotationStore = {
   /** All quotations (the mutable source reads resolve from). */
@@ -35,8 +36,18 @@ export const quotationStore = {
   update(id: string, next: (q: Quotation) => Quotation): void {
     rows = rows.map((q) => (q.id === id ? next(q) : q));
   },
+  /** Add a newly-submitted quotation (creation). New array reference. */
+  add(quotation: Quotation): void {
+    rows = [quotation, ...rows];
+  },
+  /** Store-assigned quotation number for a submit (distinct 9xx range, as rfqStore). */
+  nextNumber(): string {
+    seq += 1;
+    return `QUO-2026-${900 + seq}`;
+  },
   /** Restore the fixture seed (test isolation). */
   reset(): void {
     rows = mockQuotations.map(clone);
+    seq = 0;
   },
 };

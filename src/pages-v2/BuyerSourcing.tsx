@@ -42,7 +42,13 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useRFQs, useQuotations, useSuppliers } from '../services/query/hooks';
-import { useRfqCreate, useRfqAward, useRfqCancel, useRfqReopen } from '../services/query/commandHooks';
+import {
+  useRfqCreate,
+  useRfqAward,
+  useRfqCancel,
+  useRfqReopen,
+  useQuotationReview,
+} from '../services/query/commandHooks';
 import { buildRfqCreatePayload } from './sourcing/rfqCreateModel';
 import {
   scoreQuotations,
@@ -416,6 +422,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const awardMutation = useRfqAward();
   const cancelMutation = useRfqCancel();
   const reopenMutation = useRfqReopen();
+  const reviewMutation = useQuotationReview();
 
   const openRfq = (r: RFQ) => {
     setSelectedRfq(r);
@@ -463,6 +470,39 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             variant: 'error',
             title: t('sourcing.toast.awardFailed.title'),
             description: t('sourcing.toast.awardFailed.dispatch'),
+          }),
+      },
+    );
+  };
+
+  // Move a submitted quote into evaluation (fires t_quotation_review, Submitted →
+  // Under Review). No cascade, no artifact — a buyer-side lifecycle advance. On a
+  // non-failed outcome the quotation reads re-derive and the pill flips in place.
+  const handleReview = (quotationId: string) => {
+    reviewMutation.mutate(
+      { quotationId },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('sourcing.toast.reviewFailed.title'),
+              description:
+                result.reason ?? t('sourcing.toast.reviewFailed.default'),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('sourcing.toast.reviewed.title'),
+            description: t('sourcing.toast.reviewed.desc'),
+          });
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('sourcing.toast.reviewFailed.title'),
+            description: t('sourcing.toast.reviewFailed.default'),
           }),
       },
     );
@@ -1955,6 +1995,34 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           ))}
                         </ComparisonRow>
                       ) : (
+                        <>
+                        {/* Per-quote lifecycle status + the buyer's review move.
+                            A freshly-submitted quote (t_quotation_submit) reads
+                            'Submitted'; "Move to review" fires t_quotation_review
+                            (Submitted → Under Review) in place. */}
+                        <ComparisonRow label={t('sourcing.cmp.row.status')}>
+                          {quotesForSelected.map((q) => (
+                            <ComparisonCell key={q.id}>
+                              <div className="flex flex-col items-center gap-1.5">
+                                <StatusPill
+                                  variant={q.status === 'Under Review' ? 'info' : 'neutral'}
+                                >
+                                  {q.status}
+                                </StatusPill>
+                                {q.status === 'Submitted' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReview(q.id)}
+                                    disabled={reviewMutation.isPending}
+                                    className="text-xs font-semibold text-action hover:text-action-hover disabled:opacity-50"
+                                  >
+                                    {t('sourcing.cmp.moveToReview')}
+                                  </button>
+                                )}
+                              </div>
+                            </ComparisonCell>
+                          ))}
+                        </ComparisonRow>
                         <ComparisonRow label={t('sourcing.cmp.row.select')}>
                           {quotesForSelected.map((q) => (
                             <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
@@ -1974,6 +2042,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                             </ComparisonCell>
                           ))}
                         </ComparisonRow>
+                        </>
                       )}
                     </tbody>
                   </table>

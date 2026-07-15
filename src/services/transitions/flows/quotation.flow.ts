@@ -23,18 +23,20 @@ export const quotationFlow: FlowDefinition = {
   transitions: [
     {
       // Supplier submits a quotation against an invited RFQ. Creation-shape
-      // (store-assigned number). Authored-unwired — lands in the quote-submit batch.
+      // (store-assigned number). WIRED in Task 3b. The required floor is the
+      // LIVE-scored facts — rfqId + unitPrice + leadTimeDays (mirrors rfq:create's
+      // ['title','materialCategory'] floor) — so no hollow quote mints server-side.
       id: 't_quotation_submit',
       from: [],
       to: 'Submitted',
       trigger: 'creation',
       requiredRole: 'quotation:submit',
-      requiredFields: ['rfqId'],
+      requiredFields: ['rfqId', 'unitPrice', 'leadTimeDays'],
       policyHooks: [],
       version: 1,
     },
     {
-      // Buyer moves a submitted quote into evaluation. Authored-unwired.
+      // Buyer moves a submitted quote into evaluation. WIRED in Task 3b.
       id: 't_quotation_review',
       from: ['Submitted'],
       to: 'Under Review',
