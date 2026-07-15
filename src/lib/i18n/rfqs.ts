@@ -22,7 +22,7 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.kpi.award.subtitle': 'Decision pending',
   // tabs
   'rfqs.tab.open': 'Open events',
-  'rfqs.tab.quotes': 'My responses',
+  'rfqs.tab.quotes': 'My Quotes',
   'rfqs.tab.history': 'Awards & history',
   // evaluation segments
   'rfqs.eval.price': 'Price',
@@ -151,7 +151,7 @@ export const rfqsId: Record<string, string> = {
   'rfqs.kpi.award.subtitle': 'Keputusan tertunda',
   // tabs
   'rfqs.tab.open': 'Acara terbuka',
-  'rfqs.tab.quotes': 'Tanggapan saya',
+  'rfqs.tab.quotes': 'Penawaran Saya',
   'rfqs.tab.history': 'Pemenangan & riwayat',
   // evaluation segments
   'rfqs.eval.price': 'Harga',
