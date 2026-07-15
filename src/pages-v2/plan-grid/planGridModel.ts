@@ -15,6 +15,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { Quotation } from '../../data/mockQuotations';
+import type { CommandDecision } from '../../services/data/types';
 
 // ── Award what-if ───────────────────────────────────────────────────────────
 
@@ -217,3 +218,105 @@ export const SAMPLE_INTAKE_LINES: readonly PrIntakeLine[] = [
     planState: 'PLANNED',
   },
 ];
+
+// ── C6-LOCK — the locked-override rule (G1.2b) ───────────────────────────────
+// Accepted quantity is the SINGLE editable field on an intake line; every other
+// value (material, lane, segment, estimated value, the what-if composite) is
+// platform-authored and read-only. An override (accepted ≠ suggested) is a
+// GOVERNED DECISION: it requires a reason before it can commit, and it commits
+// ONLY by pushing (t_pr_create) — there is no "adjust" verb (§8). These pure
+// helpers express the gate + the push payload + the decision provenance so the
+// governance is headless-provable, independent of the (virtualized) grid.
+
+/** True when the human accepted a quantity different from the suggested one. */
+export function isQtyAdjusted(line: PrIntakeLine, acceptedQty: number): boolean {
+  return acceptedQty !== line.suggestedQty;
+}
+
+/**
+ * The reason-gate (C6-LOCK §8.3): an override MUST carry a non-empty reason
+ * before it can commit. Returns true when the push is BLOCKED — i.e. the qty was
+ * adjusted but no reason was given. Accept-as-suggested is never blocked (it is
+ * not an override, so it needs no reason). This is the load-bearing guarantee:
+ * `overrideBlocked` true ⇒ no dispatch.
+ */
+export function overrideBlocked(
+  line: PrIntakeLine,
+  acceptedQty: number,
+  reason: string,
+): boolean {
+  return isQtyAdjusted(line, acceptedQty) && reason.trim() === '';
+}
+
+/**
+ * The DR-10 decision provenance for a quantity override (C6-LOCK). Opaque audit
+ * carrier — `from`/`to` are the suggested/accepted quantities; the dispatcher
+ * forwards this verbatim onto the TransitionEvent, never interpreting it.
+ */
+export function buildQtyDecision(
+  line: PrIntakeLine,
+  acceptedQty: number,
+  reason: string,
+): CommandDecision {
+  return {
+    field: 'acceptedQty',
+    from: line.suggestedQty,
+    to: acceptedQty,
+    reason: reason.trim(),
+    wasAdjusted: isQtyAdjusted(line, acceptedQty),
+  };
+}
+
+/**
+ * The `t_pr_create` payload a pushed intake line dispatches. C7 §2.1: the
+ * accepted qty maps to the required `quantity` field. C7 §2 GG-3: the planning
+ * `period` maps to `requiredDate`. Producer `source` (C7 §4) rides through; a
+ * genuine override also carries its `reason` in the payload (persisted-intent).
+ */
+export function buildPrCreatePayload(
+  line: PrIntakeLine,
+  acceptedQty: number,
+  reason: string,
+): Record<string, unknown> {
+  return {
+    material: line.material,
+    quantity: acceptedQty,
+    uom: line.uom,
+    estimatedValue: line.estimatedValue,
+    requiredDate: line.period,
+    source: line.source,
+    ...(isQtyAdjusted(line, acceptedQty) ? { reason: reason.trim() } : {}),
+  };
+}
+
+/**
+ * The per-row push state on the plain-DOM adjust-and-push panel. PLANNED until a
+ * successful push flips it to committed (C6 §3 — the ONLY exit); a failure via
+ * EITHER channel leaves it PLANNED with `failureReason` (C6 §6 invariant 3).
+ */
+export interface PushRowState {
+  readonly planState: IntakePlanState;
+  /** The store-assigned PR number, set only on a committed row. */
+  readonly prNumber?: string;
+  /** Set when a push left the row PLANNED (either failure channel). */
+  readonly failureReason?: string;
+}
+
+export const PLANNED_ROW: PushRowState = { planState: 'PLANNED' };
+
+/** A normalized dispatch outcome the panel folds into a row's push state. */
+export type PushOutcome =
+  | { readonly ok: true; readonly entityId: string }
+  | { readonly ok: false; readonly reason: string };
+
+/**
+ * Fold a push outcome into the row's plan-state (C6 §3 + §6 invariants 2-3):
+ * push-only-exit (committed ONLY on ok) and both-failure-channels-stay-PLANNED
+ * (a thrown DataError and a status:'failed' both arrive here as `ok:false` and
+ * leave the row PLANNED with the reason attached).
+ */
+export function applyPushResult(outcome: PushOutcome): PushRowState {
+  return outcome.ok
+    ? { planState: 'committed', prNumber: outcome.entityId }
+    : { planState: 'PLANNED', failureReason: outcome.reason };
+}

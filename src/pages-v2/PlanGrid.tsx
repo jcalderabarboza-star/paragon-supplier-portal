@@ -9,6 +9,7 @@ import {
   type CellProps,
 } from 'react-datasheet-grid';
 import 'react-datasheet-grid/dist/style.css';
+import './plan-grid/planGrid.css';
 import { useTranslation } from 'react-i18next';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -16,6 +17,7 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import PlanCellMarker from './plan-grid/PlanCellMarker';
+import IntakePushPanel from './plan-grid/IntakePushPanel';
 import { useQuotations } from '../services/query/hooks';
 import { formatIDR, formatNumber } from '../lib/format';
 import { mockSuppliers } from '../data/mockSuppliers';
@@ -48,6 +50,13 @@ type WeightRow = Record<AwardCriterionKey, number | null>;
 // ────────────────────────────────────────────────────────────────────────────
 
 const AWARD_RFQ = 'rfq-003';
+
+// Fixed DSG heights (px). Each DSG's container is PINNED to its height via
+// `--plan-dsg-h` + planGrid.css so it cannot auto-shrink to few-row content —
+// the react-resize-detector feedback loop that pinning removes (see planGrid.css).
+// These are the ONE source of truth for both the `height` prop and the pin.
+const DSG_H = { weights: 88, award: 176, intake: 216 } as const;
+const dsgVar = (h: number) => ({ '--plan-dsg-h': `${h}px` }) as React.CSSProperties;
 
 const supplierName = (id: string): string =>
   mockSuppliers.find((s) => s.id === id)?.name ?? id;
@@ -319,7 +328,7 @@ const PlanGrid: React.FC = () => {
               </span>
             ))}
           </div>
-          <div className="max-w-md">
+          <div className="plan-dsg max-w-md" style={dsgVar(DSG_H.weights)}>
             <DataSheetGrid<WeightRow>
               value={weightsRow}
               columns={weightColumns}
@@ -327,19 +336,22 @@ const PlanGrid: React.FC = () => {
               gutterColumn={false}
               lockRows
               disableContextMenu
-              height={88}
+              height={DSG_H.weights}
             />
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-lg border border-border-subtle bg-bg-surface">
+        <div
+          className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
+          style={dsgVar(DSG_H.award)}
+        >
           <DataSheetGrid<AwardDisplayRow>
             value={awardDisplay}
             columns={awardColumns}
             gutterColumn={false}
             lockRows
             rowKey="id"
-            height={280}
+            height={DSG_H.award}
           />
         </div>
       </section>
@@ -350,17 +362,23 @@ const PlanGrid: React.FC = () => {
           {t('planGrid.intake.title')}
         </h2>
         <p className="mb-3 text-sm text-text-secondary">{t('planGrid.intake.subtitle')}</p>
-        <div className="overflow-hidden rounded-lg border border-border-subtle bg-bg-surface">
+        <div
+          className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
+          style={dsgVar(DSG_H.intake)}
+        >
           <DataSheetGrid<PrIntakeLine>
             value={SAMPLE_INTAKE_LINES as PrIntakeLine[]}
             columns={intakeColumns}
             gutterColumn={false}
             lockRows
             rowKey="id"
-            height={320}
+            height={DSG_H.intake}
           />
         </div>
       </section>
+
+      {/* ── Adjust & push — the ONE governed mutation (C6-LOCK, plain DOM) ── */}
+      <IntakePushPanel lines={SAMPLE_INTAKE_LINES} />
     </AppShellV2>
   );
 };

@@ -246,6 +246,15 @@ Each is written so a G1 vitest can bind to it directly.
 5. **two-gate-holds.** A cell's source-tier marker is the registry's `liveness()`/`isLive`
    value (`registry.ts:137, :178`) — never a value derived from the fact that a command
    dispatched. Real command over SIMULATED data still renders SIMULATED.
+6. **reason-gated-override (C6-LOCK §8.3).** An override (accepted ≠ suggested) with an empty
+   reason CANNOT dispatch — `overrideBlocked` true ⇒ no push. A test drives an empty-reason
+   override and asserts no command fires (the load-bearing gate).
+7. **computed-columns-locked (C6-LOCK §8.1-8.2).** No computed / derived value (score,
+   what-if, estimated value) is editable; the accepted quantity is the sole editable field.
+   A test asserts the governed surface exposes exactly one editable field per row.
+8. **override-decision-audited (C6-LOCK §8.3).** A committed override's `t_pr_create` DR-10
+   event carries the opaque `decision` (suggestedQty→acceptedQty + reason + wasAdjusted)
+   VERBATIM, alongside the actor + ts already on the event.
 
 ---
 
@@ -259,6 +268,56 @@ Each is written so a G1 vitest can bind to it directly.
 | C6-HONESTY | Three source tiers × two plan states; SPEC×PLANNED explicit; real-command-over-SIMULATED renders SIMULATED | CONTRACT (§5) |
 | **G0.1-FIND-01** | One-`causationId`-per-push is INTENT; the public `ICommandService` seam accepts no caller correlation today. Seam extension (caller-supplied correlation OR model-push-as-cascade-source) is a **G1/G2 dependency**. | **OPEN** (§4) |
 | FORK-G1 | Grid engine + license posture + formulas IN/OUT | OPEN — resolved by the G0.2 scorecard (lean: AG Grid Enterprise, formulas OUT) |
+| **C6-LOCK** | Formulas locked; accepted qty the single editable field; every override reason-gated + authored, commits via `t_pr_create`, DR-10 `decision` opaque/verbatim | **CONTRACT** (§8, G1.2b) |
+
+---
+
+## 8. Locked-override rule (C6-LOCK)
+
+Recorded and first-implemented together at G1.2b (doctrine + code land in one PR, provably
+consistent). The plan grid lets a human touch exactly ONE value; everything else the platform
+authored is read-only, and the one editable value is a GOVERNED decision. Three sub-rules, which
+the SE Team inherits as a **HARD rule** (not a preference). Roles, not names.
+
+**8.1 Formulas are locked.** Every computed / derived value — the AI composite, a what-if
+scenario score, any platform-computed total — is READ-ONLY, always, by every path. No user
+edits a formula or a computed result. The what-if overlay re-weights for VIEWING only and never
+merges (§2). This forecloses the "user-authored math presented as platform truth" failure: there
+is no writable computed value to author.
+
+**8.2 Accepted quantity is the single editable field.** On an intake line a human may adjust the
+accepted quantity up or down from the suggested quantity. That is the ONLY write a human makes to
+a requirement's substance. Producer-authored context (material, lane, segment, estimated value)
+stays read-only.
+
+**8.3 Every override is reason-gated and authored.** An override (accepted ≠ suggested) is a
+GOVERNED DECISION:
+
+- a non-empty **reason** is required BEFORE it can commit — no reason, no dispatch
+  (`overrideBlocked` true ⇒ no push; the load-bearing gate, invariant 6);
+- it commits by dispatching **`t_pr_create`** — there is **no "adjust" verb**, so the override
+  rides the single push (one mutation path; the push is the only exit from PLANNED, §3). An
+  independent adjust-event would need a forbidden new verb;
+- the DR-10 **`TransitionEvent`** records **actor + timestamp** (already on the event) **+
+  suggestedQty→acceptedQty + reason + wasAdjusted**, carried in an optional **`decision`** field
+  the dispatcher forwards **VERBATIM** — opaque, never interpreted or validated, exactly as
+  `causationId` is (`events.ts:23-31`). This is **reuse of the DR-10 audit, NOT a new event
+  type**, and it is orthogonal to G0.1-FIND-01 (that clause is about causation *grouping*; this
+  is one event's provenance).
+
+Accept-as-suggested is not an override (accepted === suggested): it needs no reason and carries
+no `decision`. A `source:'SOMO'` line whose accepted qty a human adjusts is still a SIMULATED ×
+PLANNED render (LIVENESS-DATASOURCE-01) — the human adjusted a **sample** requirement; pushing it
+mints a Draft that stays simulated, **never a live procurement instruction**.
+
+**As-built (G1.2b):** the gate + payload + decision are pure functions
+(`src/pages-v2/plan-grid/planGridModel.ts` — `overrideBlocked` / `buildQtyDecision` /
+`buildPrCreatePayload` / `applyPushResult`); the governed surface is **plain DOM** so the
+reason-gate is headless-provable (`plan-grid/IntakePushPanel.tsx`); the push is
+`usePurchaseRequisitionCreate` (`services/query/commandHooks.ts`) through the G1.1
+`purchaseRequisition` target; and the opaque carrier is `CommandDecision`
+(`services/data/types.ts`) forwarded by `dispatcher.ts:143-166` onto the `TransitionEvent`
+(`transitions/events.ts`).
 
 ---
 
@@ -273,5 +332,7 @@ Every seam cited traces to a `file:line` in the shipped tree:
 `src/services/query/useServiceQuery.ts` (`scopeKey` read pattern :19-38),
 `src/services/liveness/registry.ts` (`liveness`/`isLive`/`Tier` :45-184),
 `src/context/CurrentIdentityContext.tsx` (client-state provider pattern :35-65),
-`src/pages-v2/BuyerSourcing.tsx` (the `extraRfqs` anti-pattern :381, :531, :590). No product
-code exists for the grid; it is authored post-FORK-G1 (G1). This contract binds that work.
+`src/pages-v2/BuyerSourcing.tsx` (the `extraRfqs` anti-pattern :381, :531, :590). §1-7 were
+authored pre-grid (FORK-3 harvest); §8 (C6-LOCK) is recorded at **G1.2b** alongside its first
+implementation — the grid product code now exists (`src/pages-v2/PlanGrid.tsx` +
+`plan-grid/*`, G1.2a/b), and §8's as-built block cites it directly.

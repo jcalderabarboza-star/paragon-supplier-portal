@@ -101,6 +101,8 @@ export const requisitionsEn: Record<string, string> = {
   // — Toasts —
   'requisitions.toast.submitted.title': '{{prNumber}} submitted',
   'requisitions.toast.submitted.desc': 'Routed to Section Head for approval.',
+  'requisitions.toast.submitFailed.title': 'Requisition could not be created',
+  'requisitions.toast.submitFailed.desc': 'The requisition was rejected — nothing was created.',
   'requisitions.toast.poInitiated.title': 'PO creation initiated for {{prNumber}}',
   'requisitions.toast.sourcingInitiated.title': 'Sourcing Event initiated for {{prNumber}}',
   'requisitions.toast.submittedApproval.title': '{{prNumber}} submitted for approval',
@@ -224,6 +226,8 @@ export const requisitionsId: Record<string, string> = {
   // — Toasts —
   'requisitions.toast.submitted.title': '{{prNumber}} diajukan',
   'requisitions.toast.submitted.desc': 'Diarahkan ke Kepala Seksi untuk persetujuan.',
+  'requisitions.toast.submitFailed.title': 'Permintaan tidak dapat dibuat',
+  'requisitions.toast.submitFailed.desc': 'Permintaan ditolak — tidak ada yang dibuat.',
   'requisitions.toast.poInitiated.title': 'Pembuatan PO dimulai untuk {{prNumber}}',
   'requisitions.toast.sourcingInitiated.title': 'Acara Sourcing dimulai untuk {{prNumber}}',
   'requisitions.toast.submittedApproval.title': '{{prNumber}} diajukan untuk persetujuan',

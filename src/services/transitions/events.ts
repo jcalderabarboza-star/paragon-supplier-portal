@@ -8,7 +8,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { QueryScope } from '../data/types';
-import type { CommandOutcome } from '../data/types';
+import type { CommandOutcome, CommandDecision } from '../data/types';
 
 /** The single audit/telemetry event shape (DR-10). */
 export interface TransitionEvent {
@@ -33,6 +33,14 @@ export interface TransitionEvent {
   readonly outcome: CommandOutcome;
   /** ISO timestamp (supplied by the caller — no clock reads inside pure code). */
   readonly ts: string;
+  /**
+   * Governed-decision provenance (C6-LOCK — G1.2b). Present only when the
+   * command carried a human override; the dispatcher forwards `CommandInput.
+   * decision` here VERBATIM (opaque — never interpreted, exactly as `causationId`
+   * is). This is how the DR-10 audit records suggestedQty→acceptedQty + reason +
+   * wasAdjusted alongside the actor + ts it already carries.
+   */
+  readonly decision?: CommandDecision;
 }
 
 /** Stable actor key for an event. Mirrors the query-layer scopeKey format. */

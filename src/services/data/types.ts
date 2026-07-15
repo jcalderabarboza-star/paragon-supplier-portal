@@ -1045,6 +1045,28 @@ export interface PRFilter {
 export type CommandOutcome = 'done' | 'submitted' | 'failed';
 
 /** A command to fire one transition on one entity. */
+/**
+ * A governed-decision record (C6-LOCK, the locked-override rule — G1.2b). Opaque
+ * to the dispatcher: it is forwarded VERBATIM onto the DR-10 `TransitionEvent` so
+ * the audit itself captures WHY a human overrode a platform value (actor + `ts`
+ * are already on the event). The one human-authored substance write in the plan
+ * grid is a quantity override; a computed/derived value is never writable, so a
+ * `decision` never annotates one. Mirrors the optional `causationId` passthrough
+ * — additive to the seam, not a new event type.
+ */
+export interface CommandDecision {
+  /** The field the human adjusted (e.g. `acceptedQty`). */
+  field: string;
+  /** The platform-suggested value. */
+  from: number;
+  /** The human-accepted value. */
+  to: number;
+  /** The required justification — a silent override is forbidden (C6-LOCK §8.3). */
+  reason: string;
+  /** True when `to !== from` (a genuine override); false for accept-as-suggested. */
+  wasAdjusted: boolean;
+}
+
 export interface CommandInput {
   /** The transition id to fire (e.g. `t_po_confirm`). */
   transitionId: string;
@@ -1058,6 +1080,12 @@ export interface CommandInput {
   entityId?: string;
   /** requiredFields live here; validated by the dispatcher. */
   payload?: Record<string, unknown>;
+  /**
+   * The governed-decision provenance (C6-LOCK). Present only when this dispatch
+   * carries a human override — the dispatcher forwards it verbatim to the audit
+   * event; it participates in NO validation (opaque).
+   */
+  decision?: CommandDecision;
 }
 
 /** The synchronous result of dispatching a command. */

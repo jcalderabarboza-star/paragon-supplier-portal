@@ -11,11 +11,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 
-import { MockCommandService } from './MockCommandService';
+import { MockCommandService, commandAuditSink } from './MockCommandService';
 import { MockProcurementService } from './MockProcurementService';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { DataError } from '../types';
-import type { QueryScope } from '../types';
+import type { QueryScope, CommandDecision } from '../types';
 import {
   isLive,
   liveness,
@@ -102,6 +102,70 @@ describe('PR intake — producer provenance persists (C7 §4, DECISION-3)', () =
     expect(purchaseRequisitionStore.get(idNone)!.source).toBeUndefined();
     const idBad = (await svc.dispatch(buyer, intake({ source: 'MADE_UP' }))).entityId!;
     expect(purchaseRequisitionStore.get(idBad)!.source).toBeUndefined();
+  });
+});
+
+describe('C6-LOCK — the governed override rides the DR-10 audit (G1.2b)', () => {
+  const decision: CommandDecision = {
+    field: 'acceptedQty',
+    from: 5_000,
+    to: 4_500,
+    reason: 'MRP net requirement revised down',
+    wasAdjusted: true,
+  };
+
+  it('forwards the opaque decision VERBATIM onto the t_pr_create event (actor + ts already there)', async () => {
+    const res = await svc.dispatch(buyer, {
+      transitionId: 't_pr_create',
+      entity: 'purchaseRequisition',
+      payload: { material: 'Niacinamide USP', quantity: 4_500, source: 'SOMO' },
+      decision,
+    });
+    expect(res.status).toBe('done');
+
+    const event = commandAuditSink.all().find((e) => e.correlationId === res.correlationId)!;
+    expect(event.event).toBe('t_pr_create');
+    // actor + timestamp are already on the DR-10 event…
+    expect(event.actor).toBe('buyer:all');
+    expect(event.ts).toBeTruthy();
+    // …and the governed decision is captured VERBATIM (deep-equal, not reshaped).
+    expect(event.decision).toEqual(decision);
+    // The persisted quantity is the ACCEPTED value (C7 §2.1), not the suggested.
+    expect(purchaseRequisitionStore.get(res.entityId!)!.quantity).toBe(4_500);
+  });
+
+  it('the decision is opaque — it is NOT validated and never gates the outcome', async () => {
+    // A decision whose numbers are internally inconsistent still forwards verbatim
+    // and does not fail the command: the dispatcher treats it as pure provenance.
+    const nonsense: CommandDecision = { field: 'acceptedQty', from: 1, to: 1, reason: '', wasAdjusted: true };
+    const res = await svc.dispatch(buyer, {
+      transitionId: 't_pr_create',
+      entity: 'purchaseRequisition',
+      payload: { material: 'PET Bottle', quantity: 200_000 },
+      decision: nonsense,
+    });
+    expect(res.status).toBe('done'); // decision did not affect validation
+    const event = commandAuditSink.all().find((e) => e.correlationId === res.correlationId)!;
+    expect(event.decision).toEqual(nonsense); // forwarded as-is
+  });
+
+  it('a push WITHOUT a decision emits an event with no decision field (accept-as-suggested)', async () => {
+    const res = await svc.dispatch(buyer, intake());
+    const event = commandAuditSink.all().find((e) => e.correlationId === res.correlationId)!;
+    expect(event.decision).toBeUndefined();
+  });
+});
+
+describe('C6 §6 invariants 2-3 — push-only-exit + both-failure-channels mint nothing', () => {
+  it('neither failure channel commits a PR (thrown DataError AND status:failed)', async () => {
+    const before = purchaseRequisitionStore.all().length;
+    // Channel 1 — hard authz failure surfaces as a THROWN DataError.
+    await expect(svc.dispatch(sup007, intake())).rejects.toBeInstanceOf(DataError);
+    // Channel 2 — domain rejection surfaces as a resolved status:'failed'.
+    const failed = await svc.dispatch(buyer, intake({ material: '' }));
+    expect(failed.status).toBe('failed');
+    // Push-only-exit: nothing left PLANNED via either channel — no PR minted.
+    expect(purchaseRequisitionStore.all().length).toBe(before);
   });
 });
 

@@ -1,0 +1,16 @@
+/* G1.2b fix — pin each plan-grid DSG container to a fixed height.
+ *
+ * react-datasheet-grid's `.dsg-container` auto-shrinks to content when the rows
+ * are few (content height < the `height` prop). At a width where the columns sit
+ * exactly at the horizontal-scrollbar boundary, that scrollbar toggles the
+ * auto-height by its own height (~6px) every frame; the grid's react-resize-
+ * detector observes the height change and re-renders, which re-toggles the
+ * scrollbar — a measurement feedback loop, visible as cells "trembling" (worst in
+ * EN, whose text lengths land on the boundary). Pinning the container to a fixed
+ * height removes the feedback: the height can no longer change, so nothing re-
+ * fires. This also matches the at-scale behaviour — with many rows the container
+ * is already pinned to its `height`, so the loop only ever afflicted the few-rows
+ * case. The height is supplied per grid via the `--plan-dsg-h` custom property. */
+.plan-dsg .dsg-container {
+  height: var(--plan-dsg-h) !important;
+}
