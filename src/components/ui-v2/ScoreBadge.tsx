@@ -19,7 +19,7 @@ interface ToneStyle {
 
 // DP-2: a score bar/dial is single-accent teal — the number conveys the value,
 // the colour is not a decision signal (ranking is carried by the number and, in
-// comparisons, the aiRecommended column highlight). Semantic red/amber/green is
+// comparisons, the top-ranked column highlight). Semantic red/amber/green is
 // reserved for true state elsewhere, not for decorating a 0–100 score.
 const TONE: ToneStyle = {
   text: 'text-teal',

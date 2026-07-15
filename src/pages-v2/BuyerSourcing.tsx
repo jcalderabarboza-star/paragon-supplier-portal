@@ -44,6 +44,11 @@ import EmptyState from '../components/ui-v2/EmptyState';
 import { useRFQs, useQuotations, useSuppliers } from '../services/query/hooks';
 import { useRfqCreate, useRfqAward, useRfqCancel, useRfqReopen } from '../services/query/commandHooks';
 import { buildRfqCreatePayload } from './sourcing/rfqCreateModel';
+import {
+  scoreQuotations,
+  AXIS_LIVENESS,
+  COMPOSITE_LIVENESS,
+} from '../lib/quoteScore';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
@@ -292,14 +297,28 @@ const ReviewSection: React.FC<{
 
 const ComparisonRow: React.FC<{
   label: string;
+  // A declared-SIMULATED axis (compliance/reliability/composite): the value is
+  // shown but honestly marked as a rehearsal awaiting a live source. LIVE axes
+  // (price/leadTime) render plain.
+  sim?: boolean;
+  simLabel?: string;
+  simTitle?: string;
   children: React.ReactNode;
-}> = ({ label, children }) => (
+}> = ({ label, sim, simLabel, simTitle, children }) => (
   <tr className="border-t border-border-subtle">
     <th
       scope="row"
       className="text-left px-2 py-2 font-medium text-text-tertiary uppercase tracking-wider text-[10px] w-36 min-w-[9rem] align-middle"
     >
       {label}
+      {sim && (
+        <span
+          title={simTitle}
+          className="ml-1.5 inline-block normal-case tracking-normal text-[9px] font-medium text-text-tertiary border border-border-subtle rounded px-1 py-px align-middle"
+        >
+          {simLabel}
+        </span>
+      )}
     </th>
     {children}
   </tr>
@@ -528,6 +547,22 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     if (!selectedRfq || selectedRfq.status !== 'Awarded') return null;
     return quotesForSelected.find((q) => q.id === selectedRfq.awardedQuotationId) ?? null;
   }, [selectedRfq, quotesForSelected]);
+
+  // Governed derived scores (F0.3 quote-scoring primitive): the drawer COMPUTES
+  // the comparison axes via `scoreQuotations` instead of reading the hand-authored
+  // fixture literals (the fabricated-score root cause). price/leadTime are LIVE
+  // (ratio-to-best over this RFQ's set), compliance/reliability are declared
+  // SIMULATED, the composite carries weakest-link liveness, and topRanked =
+  // argmax(composite) — replacing the old fixture `aiRecommended` flag.
+  const quoteScores = useMemo(
+    () => scoreQuotations(quotesForSelected),
+    [quotesForSelected],
+  );
+  const scoreById = useMemo(
+    () => new Map(quoteScores.map((s) => [s.quoteId, s])),
+    [quoteScores],
+  );
+  const topRankedId = quoteScores.find((s) => s.topRanked)?.quoteId ?? null;
 
   // The board reads the seam list ALONE. A created RFQ arrives here through
   // getRFQs after the create dispatch invalidates — never a client-fabricated
@@ -1749,15 +1784,25 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                             <th
                               key={q.id}
                               className={`align-bottom px-2 pt-2 pb-2 font-semibold text-text-primary text-left min-w-[10rem] ${
-                                q.aiRecommended
+                                q.id === topRankedId
                                   ? 'border-2 border-action rounded-t-md bg-action-soft/40'
                                   : ''
                               }`}
                             >
-                              {q.aiRecommended && (
-                                <span className="inline-flex items-center gap-1 text-label text-teal uppercase mb-1">
-                                  <Sparkles size={10} />{' '}
-                                  {t('sourcing.cmp.aiRecommended')}
+                              {q.id === topRankedId && (
+                                <span className="flex flex-col items-start gap-0.5 mb-1">
+                                  <span className="inline-flex items-center gap-1 text-label text-teal uppercase">
+                                    <Trophy size={10} />{' '}
+                                    {t('sourcing.cmp.topRanked')}
+                                  </span>
+                                  {COMPOSITE_LIVENESS === 'simulated' && (
+                                    <span
+                                      title={t('sourcing.cmp.simulatedTitle')}
+                                      className="inline-block normal-case text-[9px] font-medium text-text-tertiary border border-border-subtle rounded px-1 py-px"
+                                    >
+                                      {t('sourcing.cmp.simulated')}
+                                    </span>
+                                  )}
                                 </span>
                               )}
                               <div className="text-sm">{supplier}</div>
@@ -1769,7 +1814,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <tbody className="text-text-secondary">
                       <ComparisonRow label={t('sourcing.cmp.row.unitPrice')}>
                         {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
                               {formatIDR(q.unitPrice)}/{selectedRfq.uom}
                             </Data>
@@ -1778,7 +1823,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </ComparisonRow>
                       <ComparisonRow label={t('sourcing.cmp.row.totalPrice')}>
                         {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
                               {formatIDR(q.totalPrice)}
                             </Data>
@@ -1787,7 +1832,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </ComparisonRow>
                       <ComparisonRow label={t('sourcing.cmp.row.leadTime')}>
                         {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="whitespace-nowrap">
                               {t('sourcing.cmp.leadTimeDays', {
                                 count: q.leadTimeDays,
@@ -1798,60 +1843,79 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </ComparisonRow>
                       <ComparisonRow label={t('sourcing.cmp.row.paymentTerms')}>
                         {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             {q.paymentTermsOffered}
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label={t('sourcing.cmp.row.compliance')}>
+                      <ComparisonRow
+                        label={t('sourcing.cmp.row.priceScore')}
+                      >
                         {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <ScoreBadge
-                              score={q.complianceScore}
+                              score={scoreById.get(q.id)?.priceScore ?? 0}
                               size="sm"
                               variant="bar"
                             />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label={t('sourcing.cmp.row.priceScore')}>
+                      <ComparisonRow
+                        label={t('sourcing.cmp.row.leadTimeScore')}
+                      >
                         {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <ScoreBadge
-                              score={q.priceScore}
+                              score={scoreById.get(q.id)?.leadTimeScore ?? 0}
                               size="sm"
                               variant="bar"
                             />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label={t('sourcing.cmp.row.leadTimeScore')}>
+                      <ComparisonRow
+                        label={t('sourcing.cmp.row.compliance')}
+                        sim={AXIS_LIVENESS.compliance === 'simulated'}
+                        simLabel={t('sourcing.cmp.simulated')}
+                        simTitle={t('sourcing.cmp.simulatedTitle')}
+                      >
                         {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <ScoreBadge
-                              score={q.leadTimeScore}
+                              score={scoreById.get(q.id)?.complianceScore ?? 0}
                               size="sm"
                               variant="bar"
                             />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label={t('sourcing.cmp.row.reliability')}>
+                      <ComparisonRow
+                        label={t('sourcing.cmp.row.reliability')}
+                        sim={AXIS_LIVENESS.reliability === 'simulated'}
+                        simLabel={t('sourcing.cmp.simulated')}
+                        simTitle={t('sourcing.cmp.simulatedTitle')}
+                      >
                         {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <ScoreBadge
-                              score={q.reliabilityScore}
+                              score={scoreById.get(q.id)?.reliabilityScore ?? 0}
                               size="sm"
                               variant="bar"
                             />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label={t('sourcing.cmp.row.aiComposite')}>
+                      <ComparisonRow
+                        label={t('sourcing.cmp.row.composite')}
+                        sim={COMPOSITE_LIVENESS === 'simulated'}
+                        simLabel={t('sourcing.cmp.simulated')}
+                        simTitle={t('sourcing.cmp.simulatedTitle')}
+                      >
                         {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <ScoreBadge
-                              score={q.aiCompositeScore}
+                              score={scoreById.get(q.id)?.composite ?? 0}
                               size="md"
                               variant="circular"
                             />
@@ -1885,7 +1949,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       ) : (
                         <ComparisonRow label={t('sourcing.cmp.row.select')}>
                           {quotesForSelected.map((q) => (
-                            <ComparisonCell key={q.id} highlight={q.aiRecommended}>
+                            <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                               <label className="inline-flex items-center gap-2 cursor-pointer">
                                 <input
                                   type="radio"
