@@ -19,6 +19,7 @@ import BuyerShipments from '../pages-v2/BuyerShipments';
 import BuyerGoodsReceipt from '../pages-v2/BuyerGoodsReceipt';
 import BuyerDiscovery from '../pages-v2/BuyerDiscovery';
 import BuyerRequisitions from '../pages-v2/BuyerRequisitions';
+import IntakeReview from '../pages-v2/IntakeReview';
 import BuyerInvoices from '../pages-v2/BuyerInvoices';
 import BuyerScorecard from '../pages-v2/BuyerScorecard';
 import BuyerAnalytics from '../pages-v2/BuyerAnalytics';
@@ -62,6 +63,9 @@ const AppRouter: React.FC = () => {
           <Route path="/marketplace/supplier/:id" element={<SupplierStorefrontV2 />} />
           <Route path="/buyer/orders" element={<BuyerOrders />} />
           <Route path="/buyer/sourcing" element={<BuyerSourcing />} />
+          {/* Phase A/1 — the recommend-first triage that precedes the plan-grid
+              push. Plain DOM (no grid engine) — stays in the entry chunk. */}
+          <Route path="/buyer/intake-review" element={<IntakeReview />} />
           <Route
             path="/buyer/plan-grid"
             element={

@@ -11,6 +11,7 @@ import {
   Truck,
   ClipboardCheck,
   Receipt,
+  Inbox,
   BarChart2,
   Award,
   AlertTriangle,
@@ -48,6 +49,8 @@ const BUYER_NAV: NavGroup[] = [
       { labelKey: 'nav.buyer.marketplace', icon: Store, path: '/marketplace' },
       { labelKey: 'nav.buyer.suppliers', icon: Users, path: '/buyer/suppliers' },
       { labelKey: 'nav.buyer.sourcing', icon: FileText, path: '/buyer/sourcing' },
+      // Phase A/1 — review precedes the plan-grid push in the sourcing flow.
+      { labelKey: 'nav.buyer.intakeReview', icon: Inbox, path: '/buyer/intake-review' },
       { labelKey: 'nav.buyer.planGrid', icon: Table2, path: '/buyer/plan-grid' },
     ],
   },

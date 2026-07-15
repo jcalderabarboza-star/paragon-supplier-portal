@@ -63,7 +63,9 @@ import type {
   SupplierScorecard,
   PurchaseRequisition,
   PRFilter,
+  PrIntakeLine,
 } from '../types';
+import { PR_INTAKE_LINES } from './fixtures/prIntake';
 
 const matchesList = <T>(value: T, filter: T | T[] | undefined): boolean => {
   if (filter === undefined) return true;
@@ -356,6 +358,16 @@ export class MockProcurementService implements IProcurementService {
     let rows = [...purchaseRequisitionStore.all()];
     if (filter?.status) rows = rows.filter((r) => matchesList(r.status, filter.status));
     return { items: rows };
+  }
+
+  // ─── PR-intake review (buyer-only; C7 §2 — one shape, two producers) ──────
+  // FORK-B=(b2): the intake REVIEW surface's real read. Buyer-only, exactly like
+  // getRequisitions — suppliers never see PR intake. Reads the promoted intake
+  // fixture (both producers). Honest render (SIMULATED × PLANNED) is enforced at
+  // the page via the purchaseRequisitions capability, not here.
+  async getPrIntake(scope: QueryScope): Promise<Page<PrIntakeLine>> {
+    if (scope.personaType !== 'buyer') return { items: [] };
+    return { items: [...PR_INTAKE_LINES] };
   }
 
   // ─── Buyer command-center aggregates (buyer-only) ─────────────────────────

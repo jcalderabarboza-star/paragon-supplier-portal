@@ -594,6 +594,37 @@ export interface PurchaseRequisition {
   source?: PrSource;
 }
 
+// ─── PR-intake line (C7 §2 — one shape, two producers) ──────────────────────
+// Promoted to the service seam at Phase A/1 (getPrIntake) so the intake REVIEW
+// surface is a real consumer, not a page-local const reader (FORK-B=b2). SOMO-
+// authored fields (suggestedSource lane, segment) are read-only + nullable for a
+// Grid line. Quantity carries THREE values (C7 §2.1: suggested / accepted /
+// wasAdjusted — the fact of adjustment is itself the audit signal). Liveness is
+// NOT a field — it is registry-derived (purchaseRequisitions, gate-2 shut →
+// SIMULATED). Plan-state IS a per-row field (the C6 overlay axis). `deficit` is
+// the recommend-first "why" a review triages on (C7 §2; FORK-D — bomContext and
+// shortfall deferred: shortfall is structurally 0 until SOMO's Phase-4 solve).
+export type IntakePlanState = 'PLANNED' | 'committed';
+
+export interface PrIntakeLine {
+  readonly id: string;
+  readonly material: string;
+  /** SOMO-authored source/destination lane; null for an internal-Grid line. */
+  readonly suggestedSource: string | null;
+  /** SOMO-authored ABC-XYZ policy class; null for an internal-Grid line. */
+  readonly segment: string | null;
+  readonly suggestedQty: number;
+  readonly acceptedQty: number;
+  readonly wasAdjusted: boolean;
+  readonly uom: string;
+  readonly period: string;
+  readonly estimatedValue: number;
+  readonly source: PrSource;
+  readonly planState: IntakePlanState;
+  /** C7 §2 recommend-first rationale — the "why" a review triages on. Nullable. */
+  readonly deficit?: string;
+}
+
 // ─── Risk / Compliance entities (buyer-side, inline today) ──────────────────
 
 export type RiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'info';
@@ -1184,6 +1215,9 @@ export interface IProcurementService {
 
   // — Purchase requisitions (buyer-only ACQUIRE stage) —
   getRequisitions(scope: QueryScope, filter?: PRFilter): Promise<Page<PurchaseRequisition>>;
+
+  // — PR-intake review (buyer-only; C7 §2 — one shape, two producers) —
+  getPrIntake(scope: QueryScope): Promise<Page<PrIntakeLine>>;
 
   // — Buyer command-center aggregates (buyer-only) —
   getProductionLines(scope: QueryScope): Promise<Page<ProductionLineRow>>;
