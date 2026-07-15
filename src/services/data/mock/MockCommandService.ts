@@ -32,7 +32,7 @@ import type {
   InspectionResult,
 } from '../../../data/mockGoodsReceipts';
 import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
-import type { QuotationStatus } from '../../../data/mockQuotations';
+import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
 import {
   createDispatcher,
   InMemoryAuditSink,
@@ -379,15 +379,72 @@ const rfqTarget: CommandTarget = {
   },
 };
 
-// — Quotation target (Step 4 batch iv) — the CASCADE TARGETS of RFQ award. The
-//   winner fires t_quotation_award (→ Awarded), every other fires
-//   t_quotation_reject (→ Rejected). Supplier-owned (per-supplier read scoping).
+// A newly-submitted quote's compliance + reliability are DECLARED-SIMULATED
+// external axes (no real I3 / OTIF source yet). We seed a documented FLAT
+// SIMULATED BASELINE — NOT zero (a lying low) and NOT a supplier-profile lookup
+// (that would dress a placeholder as a real signal). The scoring engine passes
+// these through VERBATIM and marks them "Simulated"; they flip LIVE via the
+// two-gate the day real sources land. 50 = neutral midpoint on the 0–100 axis.
+const SIMULATED_AXIS_BASELINE = 50;
+
+// — Quotation target (Task 3b + Step 4 batch iv). Two roles:
+//   • CREATION (Task 3b) — `t_quotation_submit` is the ONE supplier-owned
+//     creation verb. `creationOwner` folds invited-membership AND scope into one
+//     ASN-faithful statement (mirrors advanceShipNotice's `findPoByNumber(...)
+//     .supplierId`): the owner is the submitting supplier, valid ONLY when it is
+//     invited to the referenced RFQ. A non-invited supplier resolves owner=null →
+//     SCOPE_DENIED; a supplier spoofing another invited id → owner≠scope →
+//     SCOPE_DENIED; a buyer skips scope then fails the `quotation:submit` role
+//     gate. `create` persists RAW FACTS only (unitPrice/leadTime/terms/validity)
+//     — the derived score axes are the 0/false SENTINEL (engine-owned AT READ,
+//     F0.3-FIND-01; storing them would re-fabricate the retired literals), and
+//     compliance/reliability seed from the SIMULATED baseline (never a lying 0).
+//   • CASCADE (Step 4) — the RFQ-award fan-out fires t_quotation_award (winner →
+//     Awarded) / t_quotation_reject (→ Rejected). Supplier-owned read scoping.
 const quotationTarget: CommandTarget = {
   readState: (id) => quotationStore.get(id)?.status ?? null,
   readScopeOwner: (id) => quotationStore.get(id)?.supplierId ?? null,
   readEntity: (id) => quotationStore.get(id) ?? null,
   applyTransition: (id, toState) => {
     quotationStore.update(id, (q) => ({ ...q, status: toState as QuotationStatus }));
+  },
+  creationOwner: (payload) => {
+    const rfq = rfqStore.get(String(payload.rfqId));
+    const sid = String(payload.supplierId);
+    return rfq && rfq.invitedSupplierIds.includes(sid) ? sid : null;
+  },
+  create: (payload, toState) => {
+    const quoteNumber = quotationStore.nextNumber();
+    const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
+    const num = (k: string) => (typeof payload[k] === 'number' ? (payload[k] as number) : 0);
+    const rfq = rfqStore.get(str('rfqId'));
+    const unitPrice = num('unitPrice');
+    const quotation: Quotation = {
+      id: quoteNumber, // store keyed by id; the assigned number doubles as the id
+      rfqId: str('rfqId'),
+      supplierId: str('supplierId'),
+      submittedAt: new Date().toISOString().slice(0, 10),
+      unitPrice,
+      // Honest arithmetic from raw facts (unit × the RFQ's quantity), NOT a score.
+      totalPrice: unitPrice * (rfq?.totalQty ?? 0),
+      leadTimeDays: num('leadTimeDays'),
+      paymentTermsOffered: str('paymentTermsOffered'),
+      validUntil: str('validUntil'),
+      // DECLARED-SIMULATED axes — documented baseline, passed through the engine
+      // and marked "Simulated" at read. Never zero, never a profile lookup.
+      complianceScore: SIMULATED_AXIS_BASELINE,
+      reliabilityScore: SIMULATED_AXIS_BASELINE,
+      // DERIVED axes — the engine owns these AT READ; the stored value is an inert
+      // sentinel (no consumer reads a fresh quote's stored derived field).
+      priceScore: 0,
+      leadTimeScore: 0,
+      aiCompositeScore: 0,
+      aiRecommended: false,
+      status: toState as QuotationStatus, // 'Submitted'
+      ...(str('notes') ? { notes: str('notes') } : {}),
+    };
+    quotationStore.add(quotation);
+    return { entityId: quoteNumber };
   },
 };
 

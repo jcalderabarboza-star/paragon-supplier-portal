@@ -196,8 +196,8 @@ export function useRfqAward() {
 // illegal-from-here or wrong-persona attempt fails without mutating. On a
 // non-failed outcome the sourcing board + awards history re-derive from the store.
 // (t_rfq_publish stays authored-unwired — the only Draft fixture has no invited
-// suppliers, so publish would yield a hollow 0/0 event; t_quotation_submit /
-// t_quotation_review are deferred, F0.3-FIND-01.)
+// suppliers, so publish would yield a hollow 0/0 event. t_quotation_submit /
+// t_quotation_review are WIRED below, Task 3b.)
 
 export interface RfqLifecycleVars {
   rfqId: string;
@@ -234,6 +234,61 @@ export function useRfqReopen() {
         transitionId: 't_rfq_reopen',
         entity: 'rfq',
         entityId: rfqId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+// ─── Quotation lifecycle (Task 3b — the last sourcing-spine piece) ───────────
+// t_quotation_submit is the ONE supplier-owned CREATION verb: the invited
+// supplier answers an RFQ through the SAME dispatcher creation mechanism as
+// t_rfq_create / t_pr_create (near-clone of useRfqCreate). Scope is ASN-faithful
+// — the target's creationOwner admits the caller only if it is invited to the
+// RFQ (else SCOPE_DENIED). The payload is RAW FACTS; the engine owns scoring at
+// read (#78). t_quotation_review is the buyer's Submitted → Under Review move.
+
+export interface QuotationSubmitVars {
+  /** The t_quotation_submit payload (rfqId + unitPrice + leadTimeDays required). */
+  payload: Record<string, unknown>;
+}
+
+/** Submit a quotation against an invited RFQ (fires the `creation` verb `t_quotation_submit`). */
+export function useQuotationSubmit() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, QuotationSubmitVars>({
+    mutationFn: ({ payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_quotation_submit',
+        entity: 'quotation',
+        payload,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+export interface QuotationReviewVars {
+  quotationId: string;
+}
+
+/** Move a submitted quote into evaluation (fires `t_quotation_review`, Submitted → Under Review). */
+export function useQuotationReview() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, QuotationReviewVars>({
+    mutationFn: ({ quotationId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_quotation_review',
+        entity: 'quotation',
+        entityId: quotationId,
       }),
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate(scope);
