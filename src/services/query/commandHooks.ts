@@ -124,6 +124,38 @@ export function useAdvanceShipNoticeSubmit() {
   });
 }
 
+// ─── RFQ create (Phase A/2 — retires extraRfqs) ──────────────────────────────
+// Buyer raises a sourcing event through the SAME dispatcher creation mechanism as
+// t_pr_create / t_asn_create (a creation-shape verb, near-clone of
+// usePurchaseRequisitionCreate). Buyer-only: a supplier scope is SCOPE_DENIED
+// before the role gate (RFQ creation is a buyer verb). This is the ONLY RFQ write
+// path for a new event — it replaces the `extraRfqs` client-fabrication; on a
+// non-failed outcome the sourcing board re-reads and the minted RFQ is list-visible.
+
+export interface RfqCreateVars {
+  /** The t_rfq_create payload (title + materialCategory required). */
+  payload: Record<string, unknown>;
+}
+
+/** Raise a new RFQ (fires the `creation` verb `t_rfq_create`). */
+export function useRfqCreate() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqCreateVars>({
+    mutationFn: ({ payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_create',
+        entity: 'rfq',
+        payload,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 // ─── RFQ award (Step 4 batch iv) — the cascade-class verb ────────────────────
 // Buyer awards an RFQ to a chosen quotation. The dispatcher fans out (winner →
 // Awarded, every other → Rejected) under one causation group; a non-failed

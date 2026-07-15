@@ -223,6 +223,9 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.toast.created.title': '{{rfqNumber}} created',
   'sourcing.toast.created.desc.one': 'Sent to {{count}} supplier',
   'sourcing.toast.created.desc.other': 'Sent to {{count}} suppliers',
+  'sourcing.toast.createFailed.title': 'Create failed',
+  'sourcing.toast.createFailed.default': 'The RFQ could not be created.',
+  'sourcing.toast.createFailed.dispatch': 'The RFQ could not be dispatched.',
   // — Empty state (wrapper) —
   'sourcing.state.empty.title': 'No sourcing events yet',
   'sourcing.state.empty.subtitle': 'No RFQs are on file.',
@@ -445,6 +448,9 @@ export const sourcingId: Record<string, string> = {
   'sourcing.toast.created.title': '{{rfqNumber}} dibuat',
   'sourcing.toast.created.desc.one': 'Dikirim ke {{count}} pemasok',
   'sourcing.toast.created.desc.other': 'Dikirim ke {{count}} pemasok',
+  'sourcing.toast.createFailed.title': 'Pembuatan gagal',
+  'sourcing.toast.createFailed.default': 'RFQ tidak dapat dibuat.',
+  'sourcing.toast.createFailed.dispatch': 'RFQ tidak dapat dikirim.',
   // — Empty state (wrapper) —
   'sourcing.state.empty.title': 'Belum ada acara sumber',
   'sourcing.state.empty.subtitle': 'Belum ada RFQ yang tercatat.',
