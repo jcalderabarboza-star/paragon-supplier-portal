@@ -37,6 +37,8 @@ import { buyerInvoicesEn, buyerInvoicesId } from './buyerInvoices';
 import { learnEn, learnId } from './learn';
 // — Stage G · G1.2a plan grid —
 import { planGridEn, planGridId } from './planGrid';
+// — Phase A/1 intake review (sourcing spine) —
+import { intakeReviewEn, intakeReviewId } from './intakeReview';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -79,6 +81,8 @@ const FRAGMENTS = [
   { name: 'learn', en: learnEn, id: learnId },
   // — Stage G · G1.2a plan grid —
   { name: 'planGrid', en: planGridEn, id: planGridId },
+  // — Phase A/1 intake review (sourcing spine) —
+  { name: 'intakeReview', en: intakeReviewEn, id: intakeReviewId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {
