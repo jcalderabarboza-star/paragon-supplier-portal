@@ -17,6 +17,7 @@ import {
   Archive,
   Ban,
   RotateCcw,
+  ArrowLeftRight,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -35,6 +36,8 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Data from '../components/ui-v2/Data';
+import LivenessPill from '../components/ui-v2/LivenessPill';
+import ModelMarker from '../components/ui-v2/ModelMarker';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
@@ -55,6 +58,17 @@ import {
   AXIS_LIVENESS,
   COMPOSITE_LIVENESS,
 } from '../lib/quoteScore';
+import {
+  spreadForQuote,
+  type QuoteSpread,
+  type SpreadDeps,
+} from '../lib/shouldCostSpread';
+import { MATERIAL_TO_BASKET } from '../services/data/mock/fixtures/commodityMaterialMap';
+import {
+  ROOT_BENCHMARKS,
+  SHOULD_COST_MATERIALS,
+  SIMULATED_SPOT_FX,
+} from '../services/data/mock/fixtures/commodityBaskets';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
@@ -169,6 +183,15 @@ const formatIDR = (value: number): string =>
     style: 'currency',
     currency: 'IDR',
     maximumFractionDigits: 0,
+  }).format(value);
+
+// Currency-aware money format (CI-2 currency leg): a quote may be priced in USD
+// (foreign supplier) or IDR (domestic). USD carries cents; IDR is whole-rupiah.
+const formatMoney = (value: number, currency: 'IDR' | 'USD' = 'IDR'): string =>
+  new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'id-ID', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: currency === 'USD' ? 2 : 0,
   }).format(value);
 
 const formatNumber = (value: number): string =>
@@ -337,6 +360,82 @@ const ComparisonRow: React.FC<{
     {children}
   </tr>
 );
+
+// CI-2 should-cost-vs-quote spread deps — the SIMULATED join + the commodity
+// fixtures the resolver reads. Module-level (static fixtures, no per-render cost);
+// `materials` is keyed by `sc-*` id for O(1) lookup inside `spreadForQuote`.
+const SPREAD_DEPS: SpreadDeps = {
+  join: MATERIAL_TO_BASKET,
+  materials: Object.fromEntries(SHOULD_COST_MATERIALS.map((m) => [m.id, m])),
+  roots: ROOT_BENCHMARKS,
+  fx: SIMULATED_SPOT_FX,
+};
+
+// A spread fraction as a signed percent (+8% / −3% / 0%), real minus for polish.
+const fmtSignedPct = (frac: number): string => {
+  const pct = Math.round(frac * 100);
+  const sign = pct > 0 ? '+' : pct < 0 ? '−' : '';
+  return `${sign}${Math.abs(pct)}%`;
+};
+
+// The CI-2 spread cell: a MODELED, banded reference the buyer READS beside the
+// quote — never a verdict, never into the score. A spread vs a SIMULATED basket
+// is a rehearsal, so it wears BOTH honesty axes (feed = LivenessPill "Sample",
+// epistemic = ModelMarker "Model") and honest silence when there is no reference.
+const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
+  result,
+  t,
+}) => {
+  if (result.kind === 'silent') {
+    // Honest silence — a specific reason, never a fabricated percentage.
+    return (
+      <span className="text-[10px] text-text-tertiary whitespace-normal">
+        {t(`sourcing.cmp.spread.silent.${result.reason}`)}
+      </span>
+    );
+  }
+  const { spread, shouldCost, currency, fxApplied } = result;
+  return (
+    <div className="flex flex-col items-start gap-1">
+      {/* The spread RANGE — deliberately plain sans, NOT <Data>: the DP-3
+          mono + data-navy grammar is reserved for OBSERVED data, and a modeled
+          figure must never wear it (build-plan §2). Neutral tone, no semantic
+          red/green — a spread vs a SIMULATED basket informs, it does not judge. */}
+      <span className="text-xs font-semibold text-text-primary tabular-nums whitespace-nowrap">
+        {t('sourcing.cmp.spread.range', {
+          low: fmtSignedPct(spread.lowPct),
+          high: fmtSignedPct(spread.highPct),
+        })}
+      </span>
+      {/* The modeled anchor renders in the QUOTE's own currency — IDR is never
+          shown as the basis for a USD deal (CI-2 currency-leg ruling). */}
+      <span className="text-[10px] text-text-tertiary whitespace-nowrap">
+        {t('sourcing.cmp.spread.vsModel', {
+          value: formatMoney(shouldCost.midPerKg, currency),
+        })}
+      </span>
+      <span className="inline-flex flex-wrap items-center gap-1.5">
+        <LivenessPill capability="commodityIntel" />
+        <ModelMarker
+          label={t('sourcing.cmp.model')}
+          title={t('sourcing.cmp.modelTitle')}
+        />
+        {/* FX-converted marker — ONLY the IDR branch, where the should-cost was
+            pushed through FX (the more-modeled path). The USD branch reads the
+            engine-native, FX-free basis and carries no FX marker. */}
+        {fxApplied && (
+          <span
+            title={t('sourcing.cmp.fxTitle')}
+            className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-text-secondary border border-dashed border-border-input rounded px-1 py-px"
+          >
+            <ArrowLeftRight size={9} aria-hidden="true" />
+            {t('sourcing.cmp.fx')}
+          </span>
+        )}
+      </span>
+    </div>
+  );
+};
 
 const ComparisonCell: React.FC<{
   highlight?: boolean;
@@ -1864,8 +1963,29 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
-                              {formatIDR(q.unitPrice)}/{selectedRfq.uom}
+                              {formatMoney(q.unitPrice, q.currency ?? 'IDR')}/{selectedRfq.uom}
                             </Data>
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      {/* CI-2 — the should-cost-vs-quote spread, read-only, right
+                          under unit price. Per quote: the resolver joins the RFQ
+                          material to a SIMULATED basket and returns a MODELED,
+                          banded spread — or honest silence (tail / unit-mismatch /
+                          unmapped). Never fed into the score; never a verdict. */}
+                      <ComparisonRow label={t('sourcing.cmp.row.spread')}>
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
+                            <SpreadCell
+                              result={spreadForQuote(
+                                selectedRfq.materialIds[0],
+                                selectedRfq.uom,
+                                q.unitPrice,
+                                q.currency ?? 'IDR',
+                                SPREAD_DEPS,
+                              )}
+                              t={t}
+                            />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
@@ -1873,7 +1993,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
-                              {formatIDR(q.totalPrice)}
+                              {formatMoney(q.totalPrice, q.currency ?? 'IDR')}
                             </Data>
                           </ComparisonCell>
                         ))}
