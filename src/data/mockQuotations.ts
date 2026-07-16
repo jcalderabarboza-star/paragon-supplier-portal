@@ -11,6 +11,10 @@ export interface Quotation {
   submittedAt: string;
   unitPrice: number;
   totalPrice: number;
+  // The currency `unitPrice`/`totalPrice` are quoted in. Additive (CI-2 currency
+  // leg): absent = 'IDR', the implicit legacy default every existing quote carries.
+  // A foreign supplier prices in 'USD' — the FX-free, engine-native spread branch.
+  currency?: 'IDR' | 'USD';
   leadTimeDays: number;
   paymentTermsOffered: string;
   validUntil: string;
@@ -366,5 +370,48 @@ export const mockQuotations: Quotation[] = [
     aiCompositeScore: 79,
     aiRecommended: false,
     status: 'Rejected',
+  },
+  // RFQ-2026-009 — Propylene Glycol (imported), quoted in USD by foreign suppliers.
+  // Both quotes share the currency, so ratio-to-best scoring stays internally
+  // consistent; the CI-2 spread renders in USD against the FX-free should-cost basis.
+  {
+    id: 'qt-009a',
+    rfqId: 'rfq-009',
+    supplierId: 'sup-006',
+    submittedAt: '2026-05-10',
+    unitPrice: 2.85,
+    totalPrice: 22_800,
+    currency: 'USD',
+    leadTimeDays: 30,
+    paymentTermsOffered: 'Net 30',
+    validUntil: '2026-06-20',
+    complianceScore: 90,
+    priceScore: 95,
+    leadTimeScore: 85,
+    reliabilityScore: 88,
+    aiCompositeScore: 90,
+    aiRecommended: false,
+    status: 'Under Review',
+    notes: 'FCA origin, USD-denominated.',
+  },
+  {
+    id: 'qt-009b',
+    rfqId: 'rfq-009',
+    supplierId: 'sup-005',
+    submittedAt: '2026-05-12',
+    unitPrice: 2.7,
+    totalPrice: 21_600,
+    currency: 'USD',
+    leadTimeDays: 38,
+    paymentTermsOffered: 'Net 45',
+    validUntil: '2026-06-18',
+    complianceScore: 93,
+    priceScore: 100,
+    leadTimeScore: 68,
+    reliabilityScore: 90,
+    aiCompositeScore: 89,
+    aiRecommended: false,
+    status: 'Under Review',
+    notes: 'CIF Jakarta, USD-denominated.',
   },
 ];

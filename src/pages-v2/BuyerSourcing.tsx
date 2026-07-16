@@ -17,6 +17,7 @@ import {
   Archive,
   Ban,
   RotateCcw,
+  ArrowLeftRight,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -182,6 +183,15 @@ const formatIDR = (value: number): string =>
     style: 'currency',
     currency: 'IDR',
     maximumFractionDigits: 0,
+  }).format(value);
+
+// Currency-aware money format (CI-2 currency leg): a quote may be priced in USD
+// (foreign supplier) or IDR (domestic). USD carries cents; IDR is whole-rupiah.
+const formatMoney = (value: number, currency: 'IDR' | 'USD' = 'IDR'): string =>
+  new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'id-ID', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: currency === 'USD' ? 2 : 0,
   }).format(value);
 
 const formatNumber = (value: number): string =>
@@ -384,7 +394,7 @@ const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
       </span>
     );
   }
-  const { spread, shouldCost } = result;
+  const { spread, shouldCost, currency, fxApplied } = result;
   return (
     <div className="flex flex-col items-start gap-1">
       {/* The spread RANGE — deliberately plain sans, NOT <Data>: the DP-3
@@ -397,17 +407,31 @@ const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
           high: fmtSignedPct(spread.highPct),
         })}
       </span>
+      {/* The modeled anchor renders in the QUOTE's own currency — IDR is never
+          shown as the basis for a USD deal (CI-2 currency-leg ruling). */}
       <span className="text-[10px] text-text-tertiary whitespace-nowrap">
         {t('sourcing.cmp.spread.vsModel', {
-          value: formatIDR(shouldCost.midIdrPerKg),
+          value: formatMoney(shouldCost.midPerKg, currency),
         })}
       </span>
-      <span className="inline-flex items-center gap-1.5">
+      <span className="inline-flex flex-wrap items-center gap-1.5">
         <LivenessPill capability="commodityIntel" />
         <ModelMarker
           label={t('sourcing.cmp.model')}
           title={t('sourcing.cmp.modelTitle')}
         />
+        {/* FX-converted marker — ONLY the IDR branch, where the should-cost was
+            pushed through FX (the more-modeled path). The USD branch reads the
+            engine-native, FX-free basis and carries no FX marker. */}
+        {fxApplied && (
+          <span
+            title={t('sourcing.cmp.fxTitle')}
+            className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-text-secondary border border-dashed border-border-input rounded px-1 py-px"
+          >
+            <ArrowLeftRight size={9} aria-hidden="true" />
+            {t('sourcing.cmp.fx')}
+          </span>
+        )}
       </span>
     </div>
   );
@@ -1939,7 +1963,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
-                              {formatIDR(q.unitPrice)}/{selectedRfq.uom}
+                              {formatMoney(q.unitPrice, q.currency ?? 'IDR')}/{selectedRfq.uom}
                             </Data>
                           </ComparisonCell>
                         ))}
@@ -1957,6 +1981,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                 selectedRfq.materialIds[0],
                                 selectedRfq.uom,
                                 q.unitPrice,
+                                q.currency ?? 'IDR',
                                 SPREAD_DEPS,
                               )}
                               t={t}
@@ -1968,7 +1993,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
-                              {formatIDR(q.totalPrice)}
+                              {formatMoney(q.totalPrice, q.currency ?? 'IDR')}
                             </Data>
                           </ComparisonCell>
                         ))}

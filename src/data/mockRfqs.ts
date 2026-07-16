@@ -201,4 +201,26 @@ export const mockRfqs: RFQ[] = [
     incoterms: 'FCA Surabaya',
     paymentTerms: 'Net 30',
   },
+  {
+    // Imported raw material — foreign suppliers price in USD. Exercises the CI-2
+    // engine-native, FX-free USD spread branch (propylene glycol, international basis).
+    id: 'rfq-009',
+    rfqNumber: 'RFQ-2026-009',
+    title: 'Propylene Glycol USP — imported, USD-quoted',
+    materialCategory: 'Emulsifiers',
+    materialIds: ['RM-HUMEC-3405'],
+    buyerId: 'buyer-001',
+    status: 'Open',
+    createdAt: '2026-05-06',
+    responseDeadline: '2026-05-21',
+    awardDeadline: '2026-05-28',
+    invitedSupplierIds: ['sup-006', 'sup-005'],
+    respondedSupplierIds: ['sup-006', 'sup-005'],
+    totalQty: 8_000,
+    uom: 'KG',
+    estimatedValue: 360_000_000,
+    currency: 'IDR',
+    incoterms: 'CIF Jakarta',
+    paymentTerms: 'Net 30',
+  },
 ];

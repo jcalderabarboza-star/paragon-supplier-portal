@@ -29,6 +29,9 @@ export const MATERIAL_TO_BASKET: Readonly<Record<string, string>> = Object.freez
   // Emulsifiers / humectants — modelable oleochemical core
   'RM-EMUL-3310': 'sc-glycerin', // Glycerin 99.5% — MODELABLE (RM_OLEO, domestic)
   'RM-EMUL-3320': 'sc-cetearyl', // Cetearyl alcohol — MODELABLE (RM_OLEO, domestic)
+  'RM-HUMEC-3405': 'sc-propylene-glycol', // Propylene glycol — MODELABLE (RM_PETRO,
+  // INTERNATIONAL basis) — the imported material a foreign supplier quotes in USD;
+  // exercises the engine-native, FX-free USD spread branch.
 
   // Fragrance — the opaque tail (no basket → 'tail')
   'FR-WARD-4430': 'sc-fragrance', // Perfumer blend — TAIL (PRA-assessed)
