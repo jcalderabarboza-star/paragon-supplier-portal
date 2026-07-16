@@ -35,6 +35,8 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Data from '../components/ui-v2/Data';
+import LivenessPill from '../components/ui-v2/LivenessPill';
+import ModelMarker from '../components/ui-v2/ModelMarker';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
@@ -55,6 +57,17 @@ import {
   AXIS_LIVENESS,
   COMPOSITE_LIVENESS,
 } from '../lib/quoteScore';
+import {
+  spreadForQuote,
+  type QuoteSpread,
+  type SpreadDeps,
+} from '../lib/shouldCostSpread';
+import { MATERIAL_TO_BASKET } from '../services/data/mock/fixtures/commodityMaterialMap';
+import {
+  ROOT_BENCHMARKS,
+  SHOULD_COST_MATERIALS,
+  SIMULATED_SPOT_FX,
+} from '../services/data/mock/fixtures/commodityBaskets';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
@@ -337,6 +350,68 @@ const ComparisonRow: React.FC<{
     {children}
   </tr>
 );
+
+// CI-2 should-cost-vs-quote spread deps — the SIMULATED join + the commodity
+// fixtures the resolver reads. Module-level (static fixtures, no per-render cost);
+// `materials` is keyed by `sc-*` id for O(1) lookup inside `spreadForQuote`.
+const SPREAD_DEPS: SpreadDeps = {
+  join: MATERIAL_TO_BASKET,
+  materials: Object.fromEntries(SHOULD_COST_MATERIALS.map((m) => [m.id, m])),
+  roots: ROOT_BENCHMARKS,
+  fx: SIMULATED_SPOT_FX,
+};
+
+// A spread fraction as a signed percent (+8% / −3% / 0%), real minus for polish.
+const fmtSignedPct = (frac: number): string => {
+  const pct = Math.round(frac * 100);
+  const sign = pct > 0 ? '+' : pct < 0 ? '−' : '';
+  return `${sign}${Math.abs(pct)}%`;
+};
+
+// The CI-2 spread cell: a MODELED, banded reference the buyer READS beside the
+// quote — never a verdict, never into the score. A spread vs a SIMULATED basket
+// is a rehearsal, so it wears BOTH honesty axes (feed = LivenessPill "Sample",
+// epistemic = ModelMarker "Model") and honest silence when there is no reference.
+const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
+  result,
+  t,
+}) => {
+  if (result.kind === 'silent') {
+    // Honest silence — a specific reason, never a fabricated percentage.
+    return (
+      <span className="text-[10px] text-text-tertiary whitespace-normal">
+        {t(`sourcing.cmp.spread.silent.${result.reason}`)}
+      </span>
+    );
+  }
+  const { spread, shouldCost } = result;
+  return (
+    <div className="flex flex-col items-start gap-1">
+      {/* The spread RANGE — deliberately plain sans, NOT <Data>: the DP-3
+          mono + data-navy grammar is reserved for OBSERVED data, and a modeled
+          figure must never wear it (build-plan §2). Neutral tone, no semantic
+          red/green — a spread vs a SIMULATED basket informs, it does not judge. */}
+      <span className="text-xs font-semibold text-text-primary tabular-nums whitespace-nowrap">
+        {t('sourcing.cmp.spread.range', {
+          low: fmtSignedPct(spread.lowPct),
+          high: fmtSignedPct(spread.highPct),
+        })}
+      </span>
+      <span className="text-[10px] text-text-tertiary whitespace-nowrap">
+        {t('sourcing.cmp.spread.vsModel', {
+          value: formatIDR(shouldCost.midIdrPerKg),
+        })}
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <LivenessPill capability="commodityIntel" />
+        <ModelMarker
+          label={t('sourcing.cmp.model')}
+          title={t('sourcing.cmp.modelTitle')}
+        />
+      </span>
+    </div>
+  );
+};
 
 const ComparisonCell: React.FC<{
   highlight?: boolean;
@@ -1866,6 +1941,26 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
                               {formatIDR(q.unitPrice)}/{selectedRfq.uom}
                             </Data>
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
+                      {/* CI-2 — the should-cost-vs-quote spread, read-only, right
+                          under unit price. Per quote: the resolver joins the RFQ
+                          material to a SIMULATED basket and returns a MODELED,
+                          banded spread — or honest silence (tail / unit-mismatch /
+                          unmapped). Never fed into the score; never a verdict. */}
+                      <ComparisonRow label={t('sourcing.cmp.row.spread')}>
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
+                            <SpreadCell
+                              result={spreadForQuote(
+                                selectedRfq.materialIds[0],
+                                selectedRfq.uom,
+                                q.unitPrice,
+                                SPREAD_DEPS,
+                              )}
+                              t={t}
+                            />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
