@@ -16,3 +16,5 @@ export * from './inventory';
 export * from './objectSubmitModels';
 export * from './supplierMaterials';
 export * from './shipment';
+// SDC-3c-a — the shared ingestion adapter (rows → dispatch units; pure core):
+export * from './ingest';
