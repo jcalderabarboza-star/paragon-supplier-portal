@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ArrowLeft, Info, Send } from 'lucide-react';
+import { ArrowLeft, Info, Send, Upload } from 'lucide-react';
 import {
   DataSheetGrid,
   keyColumn,
@@ -28,6 +28,8 @@ import {
 } from '../services/sdc';
 import type { CommandResult } from '../services/data/types';
 import { formatNumber } from '../lib/format';
+import XlsxImportPanel from './XlsxImportPanel';
+import type { BatchGridRow } from './xlsxImportMap';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SDC-3c-b — the EDITABLE bulk stock-entry grid (DEC-MAGIC-LINK-GRID, visible).
@@ -57,14 +59,9 @@ import { formatNumber } from '../lib/format';
 // token/delivery/identity is Comm Hub / F1+ (stamped in the header note).
 // ────────────────────────────────────────────────────────────────────────────
 
-// One editable grid row — the engine clears a cell to null; the adapter reads
-// the source-agnostic string shape, so we coerce null→'' at the boundary.
-interface BatchGridRow {
-  batchNumber: string | null;
-  qty: number | null;
-  expiryDate: string | null;
-}
-
+// BatchGridRow is shared with the import panel + mapping helpers (xlsxImportMap):
+// the engine clears a cell to null; the adapter reads the source-agnostic string
+// shape, so we coerce null→'' at the boundary.
 const blankRow = (): BatchGridRow => ({ batchNumber: null, qty: null, expiryDate: null });
 
 // Fixed DSG height (px) — pinned via `--plan-dsg-h` (planGrid.css) so the
@@ -124,6 +121,7 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
   const [materialCode, setMaterialCode] = useState('');
   const [totalQty, setTotalQty] = useState('');
   const [rows, setRows] = useState<BatchGridRow[]>([blankRow()]);
+  const [importOpen, setImportOpen] = useState(false);
 
   const selectedMaterial = materials.find((m) => m.materialCode === materialCode) ?? null;
   const uom = selectedMaterial?.uom ?? '';
@@ -204,6 +202,20 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
     badRows.has(rowIndex) ? 'sdc-bulk-cell-danger' : undefined;
 
   const canSubmit = materialCode !== '' && !!liveUnit && liveUnit.ok && !declareMutation.isPending;
+
+  // Import is a PRE-FILL source: it fills batch rows UNDER an already-picked
+  // material + total (both header fields, never mapped from the file). The
+  // imported rows land in this same grid for review — never a dispatch path.
+  const importReady = materialCode !== '' && totalQty.trim() !== '';
+  const handleImport = (imported: BatchGridRow[]) => {
+    setRows(imported.length > 0 ? imported : [blankRow()]);
+    setImportOpen(false);
+    toast({
+      variant: 'success',
+      title: t('sdcSup.bulk.import.toast.title'),
+      description: t('sdcSup.bulk.import.toast.body', { count: imported.length }),
+    });
+  };
 
   const submit = async () => {
     if (!materialCode) {
@@ -310,6 +322,28 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
           />
         </div>
       </div>
+
+      {/* Import from Excel — a pre-fill SOURCE for the grid (SDC-3c-c-b). Gated
+          on an already-picked material + total; the file only fills batch rows
+          under them. When open, the confirmable import flow replaces this row. */}
+      {importOpen ? (
+        <XlsxImportPanel onImport={handleImport} onCancel={() => setImportOpen(false)} />
+      ) : (
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <span className="text-label text-text-tertiary">
+            {importReady ? '' : t('sdcSup.bulk.import.needMaterial')}
+          </span>
+          <Button
+            variant="outline"
+            icon={Upload}
+            disabled={!importReady}
+            onClick={() => setImportOpen(true)}
+            data-testid="sdcsup-import-open"
+          >
+            {t('sdcSup.bulk.import.open')}
+          </Button>
+        </div>
+      )}
 
       {/* The editable batch grid (full-screen-capable). REUSE the engine — the
           columns are the library editable types; nothing forks. */}
