@@ -61,9 +61,13 @@ describe('SubmissionSession envelope helper (addendum §5)', () => {
       'RequirementResponse',
       'InventoryDeclaration',
     ]);
-    // First command's correlationId anchors (the 3-command mechanic is the
-    // NAMED SDC-3 seam — causationId passthrough; flagged, not built).
+    // First command's correlationId anchors. SDC-3a BUILT this seam (anchor-
+    // correlationId mechanic): `causationAnchor()` hands the page that id, and
+    // commands 2..n pass it as their dispatch causationId — the envelope's
+    // anchor and the event grouping are the SAME id by construction. The live
+    // 3-command grouping is proven in sdcObjectsCommand.test.ts.
     expect(env.auditCorrelationId).toBe('cmd_0002');
+    expect(session.causationAnchor()).toBe('cmd_0002');
   });
 
   it('the envelope is structurally status-less (integrity invariant #9)', () => {

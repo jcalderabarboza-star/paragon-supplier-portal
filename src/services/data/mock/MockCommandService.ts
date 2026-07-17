@@ -55,14 +55,26 @@ import { rfqStore } from './stores/rfqStore';
 import { quotationStore } from './stores/quotationStore';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { requirementResponseStore } from './stores/requirementResponseStore';
+import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
+import { incomingShipmentStore } from './stores/incomingShipmentStore';
 import { mockShipments } from '../../../data/mockShipments';
-import { FORECAST_PUBLICATIONS, MATERIAL_MASTER } from '../../sdc';
+import {
+  FORECAST_PUBLICATIONS,
+  MATERIAL_MASTER,
+  SUPPLIER_MATERIAL_RELATIONSHIPS,
+} from '../../sdc';
 import type {
   Acknowledgment,
+  IncomingShipment,
+  InventoryBatch,
+  InventoryDeclaration,
   Provenance,
   RequirementResponse,
   RequirementResponseStatus,
   RootCause,
+  ShipmentDirection,
+  ShipmentLifecycle,
+  Uom,
 } from '../../sdc';
 
 // — Purchase-order command target — reads/writes the mutable PO store. ————————
@@ -699,6 +711,182 @@ bindPolicyHook(POLICY_HOOKS.RR_ACKNOWLEDGE_VISIBILITY_CLASS, ({ payload }) => {
       };
 });
 
+// — SDC-3a — the two additional supplier-submission objects ——————————————————
+//   Both mirror the requirementResponse spine EXACTLY: creation-shape,
+//   supplierId from identity (folded into creationOwner), raw facts persisted,
+//   uom NEVER trusted from the payload (copied from the material master,
+//   invariant #2). Membership ((i)∪(ii) ruling): "a material Paragon
+//   collaborates with you on" — a relationship exists OR any publication ever
+//   fanned this supplier × material. A material outside that set → owner=null →
+//   SCOPE_DENIED; a spoofed supplierId → owner ≠ scope → SCOPE_DENIED.
+
+/** (i)∪(ii): does Paragon collaborate with this supplier on this material? */
+const collaboratedMaterial = (supplierId: string, materialCode: string): boolean =>
+  SUPPLIER_MATERIAL_RELATIONSHIPS.some(
+    (r) => r.supplierId === supplierId && r.materialCode === materialCode,
+  ) ||
+  FORECAST_PUBLICATIONS.some((p) =>
+    p.lines.some((l) => l.supplierId === supplierId && l.materialCode === materialCode),
+  );
+
+/** The supplier's relationship for a material (distributor ⇒ has principals). */
+const relationshipFor = (supplierId: string, materialCode: string) =>
+  SUPPLIER_MATERIAL_RELATIONSHIPS.find(
+    (r) => r.supplierId === supplierId && r.materialCode === materialCode,
+  );
+
+const inventoryDeclarationTarget: CommandTarget = {
+  // Degenerate single-state snapshot: 'Declared' for any existing id, no-op
+  // apply (the SDC-0 type carries no status; this flow adds none).
+  readState: (id) => (inventoryDeclarationStore.get(id) ? 'Declared' : null),
+  readScopeOwner: (id) => inventoryDeclarationStore.get(id)?.supplierId ?? null,
+  readEntity: (id) => inventoryDeclarationStore.get(id) ?? null,
+  applyTransition: () => {
+    /* no-op — a declaration is an immutable snapshot; a new count is a new
+       declaration (append), never a state change on a prior record. */
+  },
+  creationOwner: (payload) => {
+    const sid = String(payload.supplierId);
+    return collaboratedMaterial(sid, String(payload.materialCode)) ? sid : null;
+  },
+  create: (payload, _toState) => {
+    const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
+    const materialCode = str('materialCode');
+    const supplierId = str('supplierId');
+    // invariant #2 — uom is master-owned, never the caller's.
+    const uom: Uom = MATERIAL_MASTER[materialCode]?.canonicalUom ?? 'KG';
+    const totalQty = typeof payload.totalQty === 'number' ? payload.totalQty : 0;
+    // Optional batch-grain detail — each batch's uom is master-copied too
+    // (the caller can no more pick a batch unit than the total's). Malformed
+    // batches (no batchNumber) are dropped, never guessed. The Σ = totalQty
+    // check is the policy hook's job (fails BEFORE create runs).
+    const rawBatches = Array.isArray(payload.batches) ? payload.batches : [];
+    const batches: InventoryBatch[] = rawBatches
+      .filter(
+        (b): b is Record<string, unknown> =>
+          !!b && typeof b === 'object' && typeof (b as Record<string, unknown>).batchNumber === 'string',
+      )
+      .map((b) => ({
+        batchNumber: String(b.batchNumber),
+        qty: typeof b.qty === 'number' ? b.qty : 0,
+        uom,
+        ...(typeof b.expiryDate === 'string' && b.expiryDate ? { expiryDate: b.expiryDate } : {}),
+      }));
+    const id = inventoryDeclarationStore.nextNumber();
+    const declaration: InventoryDeclaration = {
+      id,
+      supplierId,
+      materialCode,
+      declaredAt: new Date().toISOString(),
+      totalQty,
+      uom,
+      ...(batches.length > 0 ? { batches } : {}),
+      provenance: PROV_SUPPLIER_SUBMIT,
+    };
+    inventoryDeclarationStore.add(declaration);
+    return { entityId: id };
+  },
+};
+
+// INV declare — batch/total agreement (SDC-3a total-first). Only fires when
+// batch detail is present; a total-only declaration is honest by construction.
+bindPolicyHook(POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL, ({ payload }) => {
+  if (!Array.isArray(payload.batches) || payload.batches.length === 0) return { ok: true };
+  const total = typeof payload.totalQty === 'number' ? payload.totalQty : 0;
+  const sum = payload.batches.reduce(
+    (s: number, b: unknown) =>
+      s + (b && typeof b === 'object' && typeof (b as Record<string, unknown>).qty === 'number'
+        ? ((b as Record<string, unknown>).qty as number)
+        : 0),
+    0,
+  );
+  return sum === total
+    ? { ok: true }
+    : {
+        ok: false,
+        reason: `batch total ${sum} does not equal declared totalQty ${total} — a total that disagrees with its own detail is fabricated`,
+      };
+});
+
+const incomingShipmentTarget: CommandTarget = {
+  readState: (id) => incomingShipmentStore.get(id)?.lifecycle ?? null,
+  readScopeOwner: (id) => incomingShipmentStore.get(id)?.supplierId ?? null,
+  readEntity: (id) => incomingShipmentStore.get(id) ?? null,
+  applyTransition: (id, toState) => {
+    incomingShipmentStore.update(id, (s) => ({
+      ...s,
+      lifecycle: toState as ShipmentLifecycle,
+    }));
+  },
+  // Membership = a collaborated material. The to-paragon ASN-ownership check is
+  // the ISH_TOPARAGON_ASN_LINKED policy hook (it needs the ASN store); scope
+  // here is the supplier × collaborated-material statement (spoof → owner≠scope).
+  creationOwner: (payload) => {
+    const sid = String(payload.supplierId);
+    return collaboratedMaterial(sid, String(payload.materialCode)) ? sid : null;
+  },
+  create: (payload, toState) => {
+    const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
+    const materialCode = str('materialCode');
+    const uom: Uom = MATERIAL_MASTER[materialCode]?.canonicalUom ?? 'KG';
+    const id = incomingShipmentStore.nextNumber();
+    const shipment: IncomingShipment = {
+      id,
+      supplierId: str('supplierId'),
+      materialCode,
+      direction: str('direction') as ShipmentDirection,
+      lifecycle: toState as ShipmentLifecycle, // 'Booked'
+      qty: typeof payload.qty === 'number' ? payload.qty : 0,
+      uom,
+      ...(str('etd') ? { etd: str('etd') } : {}),
+      ...(str('eta') ? { eta: str('eta') } : {}),
+      ...(str('awb') ? { awb: str('awb') } : {}),
+      ...(str('asnRef') ? { asnRef: str('asnRef') } : {}),
+      provenance: PROV_SUPPLIER_SUBMIT,
+    };
+    incomingShipmentStore.add(shipment);
+    return { entityId: id };
+  },
+};
+
+// SDC-3a — the symmetric direction guards (direction ⟺ ASN linkage, 1:1).
+// to-paragon MUST link a resolvable ASN that is the SUPPLIER'S OWN — converges
+// on the ASN machine (link, never duplicate; design §2.3). A foreign ASN is a
+// spoof; an unresolvable one is a dangling claim.
+bindPolicyHook(POLICY_HOOKS.ISH_TOPARAGON_ASN_LINKED, ({ payload }) => {
+  if (payload.direction !== 'to-paragon') return { ok: true };
+  const ref = typeof payload.asnRef === 'string' ? payload.asnRef : '';
+  if (!ref) return { ok: false, reason: 'to-paragon shipment must link an ASN (asnRef)' };
+  const asn = asnStore.get(ref);
+  if (!asn) return { ok: false, reason: `asnRef '${ref}' does not resolve to a known ASN` };
+  if (asn.supplierId !== String(payload.supplierId)) {
+    return { ok: false, reason: `asnRef '${ref}' belongs to another supplier` };
+  }
+  return { ok: true };
+});
+
+// principal-to-distributor must NOT carry an asnRef — Paragon is not the
+// consignee, so no ASN exists for that leg (the symmetric half).
+bindPolicyHook(POLICY_HOOKS.ISH_P2D_NO_ASN, ({ payload }) => {
+  if (payload.direction !== 'principal-to-distributor') return { ok: true };
+  return typeof payload.asnRef === 'string' && payload.asnRef
+    ? { ok: false, reason: 'principal-to-distributor is not a Paragon-inbound leg — it carries no asnRef' }
+    : { ok: true };
+});
+
+// principal-to-distributor is legal ONLY for a distributor relationship — a
+// manufacturer has no principal leg to report (design §7).
+bindPolicyHook(POLICY_HOOKS.ISH_P2D_DISTRIBUTOR_ONLY, ({ payload }) => {
+  if (payload.direction !== 'principal-to-distributor') return { ok: true };
+  const rel = relationshipFor(String(payload.supplierId), String(payload.materialCode));
+  return rel?.supplierType === 'distributor'
+    ? { ok: true }
+    : {
+        ok: false,
+        reason: 'principal-to-distributor requires a distributor relationship — a manufacturer has no principal leg',
+      };
+});
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -708,10 +896,13 @@ const TARGETS: Record<string, CommandTarget> = {
   quotation: quotationTarget,
   purchaseRequisition: purchaseRequisitionTarget,
   requirementResponse: requirementResponseTarget,
+  inventoryDeclaration: inventoryDeclarationTarget,
+  incomingShipment: incomingShipmentTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1
-// PR intake target; now 8 with the SDC-2a RequirementResponse spine) — the
+// PR intake target; 8 with the SDC-2a RequirementResponse spine; now 10 with
+// the SDC-3a InventoryDeclaration + IncomingShipment targets) — the
 // entity keys that actually dispatch through a wired
 // CommandTarget. Exported as the ONE runtime
 // source of truth the LivenessRegistry (F0.6) reads: it derives liveness from
@@ -845,8 +1036,16 @@ const dispatcher = createDispatcher({
 export const settleCommand = dispatcher.settle;
 
 export class MockCommandService implements ICommandService {
-  async dispatch(scope: QueryScope, input: CommandInput): Promise<CommandResult> {
-    return dispatcher.dispatch(scope, input);
+  async dispatch(
+    scope: QueryScope,
+    input: CommandInput,
+    causationId?: string,
+  ): Promise<CommandResult> {
+    // SDC-3a — forward the session anchor (commands 2..n of a SubmissionSession)
+    // so every event this dispatch emits groups to the first command's
+    // correlationId (DR-10). The dispatcher has always accepted this third arg
+    // (cascades use it); this exposes it on the public seam.
+    return dispatcher.dispatch(scope, input, causationId);
   }
 
   async getCommandStatus(

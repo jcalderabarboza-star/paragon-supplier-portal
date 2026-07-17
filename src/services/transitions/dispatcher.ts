@@ -124,7 +124,13 @@ export interface DispatcherDeps {
 }
 
 export interface Dispatcher {
-  dispatch(scope: QueryScope, input: CommandInput): CommandResult;
+  /**
+   * `causationId` groups this command's DR-10 events with an earlier command
+   * (the SubmissionSession anchor, SDC-3a; the cascade source, census G4)
+   * without collapsing its own correlationId. Absent ⇒ a directly-initiated
+   * command. Long the internal contract (cascades pass it); now on the type.
+   */
+  dispatch(scope: QueryScope, input: CommandInput, causationId?: string): CommandResult;
   getCommandStatus(correlationId: string): CommandStatus | null;
   /** Settle a `submitted` command to `done` (Step 3.5 SAP settlement). */
   settle(correlationId: string): CommandStatus | null;

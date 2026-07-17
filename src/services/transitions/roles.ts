@@ -62,6 +62,13 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     // SDC-2b-EXT — acknowledge a visibility-only line (the no-commitment
     // response verb; class-guarded 1:1 with the visibility class).
     'requirementresponse:acknowledge',
+    // SDC-3a — the two additional supplier-submission objects on the session.
+    // declare + report are WIRED creation verbs; the shipment advance verbs
+    // (ship/arrive/cancel) are authored-unwired, mapped for catalog coverage
+    // (a supplier updates its OWN report — supplier-owned when they wire).
+    'inventorydeclaration:declare',
+    'incomingshipment:report',
+    'incomingshipment:ship', 'incomingshipment:arrive', 'incomingshipment:cancel',
   ],
 };
 

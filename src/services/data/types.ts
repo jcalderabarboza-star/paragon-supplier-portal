@@ -1143,8 +1143,22 @@ export interface CommandStatus {
 
 /** The single dispatcher seam. The Phase-3 real adapter implements the same. */
 export interface ICommandService {
-  /** Validate (legality + role + fields + scope + policy) then apply. */
-  dispatch(scope: QueryScope, input: CommandInput): Promise<CommandResult>;
+  /**
+   * Validate (legality + role + fields + scope + policy) then apply.
+   *
+   * `causationId` (SDC-3a — the SubmissionSession seam) groups this command's
+   * DR-10 events with an earlier command WITHOUT collapsing its own
+   * correlationId (`getCommandStatus` stays 1:1) — the exact DR-10 semantics
+   * cascades already use. In a multi-object SubmissionSession the FIRST
+   * command's correlationId is the anchor; commands 2..n pass it here so the
+   * whole visit shares one audit group. Absent ⇒ a directly-initiated command
+   * (the common case). Never a sessionId — that would overload DR-10.
+   */
+  dispatch(
+    scope: QueryScope,
+    input: CommandInput,
+    causationId?: string,
+  ): Promise<CommandResult>;
   /** Read a command's settled/pending status by correlation id. */
   getCommandStatus(scope: QueryScope, correlationId: string): Promise<CommandStatus | null>;
   /**

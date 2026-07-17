@@ -428,7 +428,9 @@ export function supplierCoverageEntries(
       return { supplierId, materialCode, committedDemandQty: demand, uom, status: { kind: 'no-declaration' } as const };
     }
 
-    const soh = latestDecl.batches.reduce((s, b) => s + b.qty, 0);
+    // SDC-3a total-first: totalQty IS the SOH floor (Σ batches when detail is
+    // present — invariant #6′ keeps them equal, so no second sum here).
+    const soh = latestDecl.totalQty;
     const incoming = shipments.reduce(
       (s, sh) =>
         sh.supplierId === supplierId &&

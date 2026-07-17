@@ -12,11 +12,17 @@
 // SubmissionSession. SDC-3's additional objects (InventoryDeclaration,
 // IncomingShipment) join by calling `attempt` more times — nothing re-couples.
 //
-// NAMED SDC-3 SEAM (flagged, not built): with 3 commands there are 3
-// dispatcher-minted correlationIds but ONE `auditCorrelationId` field; the
-// candidate mechanic is the dispatcher's causationId passthrough carrying the
-// sessionId. Until then the FIRST attempt's correlationId is the envelope's
-// audit anchor (exact for the single-command case).
+// SDC-3a — THE SEAM, BUILT (adjudication ③, ANCHOR-CORRELATIONID mechanic):
+// a multi-object visit dispatches N commands, each with its OWN minted
+// correlationId. The FIRST command's correlationId is the session's audit
+// ANCHOR; commands 2..n pass it as their `causationId` (via the now-public
+// ICommandService.dispatch third arg) so their DR-10 events group with the
+// first WITHOUT collapsing their own correlationId — the exact DR-10 meaning
+// cascades already use. `causationAnchor()` hands the page that id after the
+// first attempt; `auditCorrelationId` on the envelope is the SAME id, so the
+// envelope's anchor and the event-stream grouping are one id by construction.
+// A sessionId NEVER enters the event stream (it lives on the SubmissionSession
+// object) — that would overload DR-10's causation semantics.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { SdcObjectKind, SubmissionObjectRef, SubmissionSession } from './types';
@@ -25,6 +31,13 @@ export interface SubmissionSessionRecorder {
   readonly sessionId: string;
   /** Record one attempted object dispatch (kind + minted id + correlationId). */
   attempt(kind: SdcObjectKind, objectId: string, correlationId: string): void;
+  /**
+   * The session's audit anchor — the FIRST attempted command's correlationId,
+   * or null before any attempt. Commands 2..n pass this as their `causationId`
+   * so the whole visit shares one DR-10 event group. Equals the envelope's
+   * `auditCorrelationId` by construction.
+   */
+  causationAnchor(): string | null;
   /** The immutable SDC-0 envelope for what was attempted together. */
   envelope(): SubmissionSession;
 }
@@ -46,9 +59,13 @@ export function openSubmissionSession(
     sessionId,
     attempt(kind, objectId, correlationId) {
       attempted.push({ kind, objectId });
-      // The first command's correlationId anchors the envelope's audit trail
-      // (single-command exact; the 3-command mechanic is the named SDC-3 seam).
+      // The first command's correlationId anchors the whole visit: it is the
+      // envelope's audit id AND the causationId every later command passes
+      // (SDC-3a seam — one id by construction).
       if (!auditCorrelationId) auditCorrelationId = correlationId;
+    },
+    causationAnchor() {
+      return auditCorrelationId || null;
     },
     envelope(): SubmissionSession {
       return Object.freeze({

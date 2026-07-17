@@ -119,6 +119,19 @@ export const SUPPLIER_MATERIAL_RELATIONSHIPS: readonly SupplierMaterialRelations
         Object.freeze({ principalId: 'PRIN-OLEO-01', principalLeadTimeDays: 45 }),
       ]),
     }),
+    // SDC-3a — sup-007 (PT Berlina Packaging) makes its own packaging: two
+    // manufacturer relationships so the seeded persona passes the declare verb's
+    // collaborated-material membership ((i)∪(ii) ruling) on its own materials.
+    Object.freeze({
+      supplierId: 'sup-007',
+      materialCode: 'PK-PETB-8810',
+      supplierType: 'manufacturer',
+    }),
+    Object.freeze({
+      supplierId: 'sup-007',
+      materialCode: 'PK-CAPF-8820',
+      supplierType: 'manufacturer',
+    }),
   ]);
 
 // ─── The C8 forecast publication (one governed snapshot) ──────────────────────
@@ -481,7 +494,10 @@ export const REQUIREMENT_RESPONSES: readonly RequirementResponse[] = Object.free
   }),
 ]);
 
-// ─── Object 2 — InventoryDeclarations (SOH state; batches[] PLURAL) ────────────
+// ─── Object 2 — InventoryDeclarations (SOH state; TOTAL-FIRST, SDC-3a) ─────────
+// The floor is totalQty; batches[] is OPTIONAL detail (R-4 Finding 1 ruling (a)).
+// Both seed declarations carry batch-grain detail with Σ batch qty = totalQty
+// (invariant #6′); a total-only declaration is exercised by the command tests.
 
 export const INVENTORY_DECLARATIONS: readonly InventoryDeclaration[] = Object.freeze([
   Object.freeze({
@@ -489,6 +505,8 @@ export const INVENTORY_DECLARATIONS: readonly InventoryDeclaration[] = Object.fr
     supplierId: 'sup-002',
     materialCode: 'RM-EMUL-3310',
     declaredAt: '2026-08-03T08:15:00.000Z',
+    totalQty: 4000,
+    uom: 'KG',
     batches: Object.freeze([
       Object.freeze({ batchNumber: 'GLY-24A', qty: 1800, uom: 'KG', expiryDate: '2027-06-30' }),
       Object.freeze({ batchNumber: 'GLY-24B', qty: 2200, uom: 'KG', expiryDate: '2027-09-30' }),
@@ -501,6 +519,8 @@ export const INVENTORY_DECLARATIONS: readonly InventoryDeclaration[] = Object.fr
     supplierId: 'sup-005',
     materialCode: 'RM-EMUL-3310',
     declaredAt: '2026-08-03T10:40:00.000Z',
+    totalQty: 1500,
+    uom: 'KG',
     batches: Object.freeze([
       Object.freeze({ batchNumber: 'DST-1180', qty: 1500, uom: 'KG', expiryDate: '2027-03-31' }),
     ]),
@@ -512,7 +532,11 @@ export const INVENTORY_DECLARATIONS: readonly InventoryDeclaration[] = Object.fr
 
 export const INCOMING_SHIPMENTS: readonly IncomingShipment[] = Object.freeze([
   // to-paragon → converges on the ASN machine; LINKS by asnRef (asnNumber),
-  // never duplicating the tracker.
+  // never duplicating the tracker. SDC-3a: the ref RESOLVES against the real
+  // ASN store (ASN-2025-00301 is sup-002's own In-Transit ASN) — invariant #8
+  // now asserts resolution + same-supplier ownership, not mere presence. (The
+  // ASN fixture lineage predates the RM/PM taxonomy, so material codes differ
+  // across the two fixture universes by design — ownership is the honest join.)
   Object.freeze({
     id: 'ish-0001',
     supplierId: 'sup-002',
@@ -524,7 +548,7 @@ export const INCOMING_SHIPMENTS: readonly IncomingShipment[] = Object.freeze([
     etd: '2026-08-10',
     eta: '2026-08-19',
     awb: 'AWB-77120043',
-    asnRef: 'ASN-2026-0451',
+    asnRef: 'ASN-2025-00301',
     provenance: PROV_SUPPLIER_SEED,
   }),
   // principal-to-distributor → the distributor's supply-assurance leg. Paragon is

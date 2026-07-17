@@ -11,3 +11,4 @@ export * from './consolidation';
 export * from './visibility';
 export * from './session';
 export * from './submitModel';
+export * from './inventory';
