@@ -83,6 +83,9 @@ function syntheticDeclaration(qty: number): InventoryDeclaration {
     supplierId: 'sup-X',
     materialCode: 'RM-T',
     declaredAt: '2026-08-12T00:00:00.000Z',
+    // SDC-3a total-first: totalQty is the SOH floor; batch detail agrees with it.
+    totalQty: qty,
+    uom: 'KG',
     batches: [{ batchNumber: 'SYN-1', qty, uom: 'KG' }],
     provenance: PROV_SUP,
   };

@@ -231,6 +231,14 @@ export interface RequirementResponse {
 }
 
 // ─── Object 2 — InventoryDeclaration (SOH state, design §2.2) ──────────────────
+// SDC-3a — TOTAL-FIRST (R-4 Finding 1, adjudicated (a)): the declaration FLOOR
+// is `totalQty` (uom from master); `batches[]` is OPTIONAL detail. This gives
+// the chat channel an honest minimal reply (token + total) — under the old
+// batches-mandatory floor the degraded reply "total SOH, detail to follow" was
+// inexpressible without fabricating a batch number. Granularity (total-only vs
+// batch-grain) is DERIVED AT READ (`declarationGranularity`), never stored.
+// The batch-grain path is the MAGIC-LINK GRID (DEC-MAGIC-LINK-GRID): chat
+// carries the total, the grid carries batches, the portal carries both.
 
 /** A single stock batch. `batches` is PLURAL (v1's singular was a spec bug). */
 export interface InventoryBatch {
@@ -245,13 +253,24 @@ export interface InventoryBatch {
  * SOH keyed by material + as-of (`declaredAt`), NOT against a requirement
  * version — it changes when stock moves, not when demand publishes. One true SOH
  * per material, with a clear as-of.
+ *
+ * `totalQty` is the floor; when `batches` is present, Σ batch qty MUST equal
+ * `totalQty` (integrity invariant #6′ — a total that disagrees with its own
+ * detail is a fabricated number). A total-only declaration is EXPIRY-BLIND:
+ * P2's supplier-coverage indicator must mark that it cannot assess expiry
+ * bridgeability — never assume no-expiry-risk.
  */
 export interface InventoryDeclaration {
   readonly id: string;
   readonly supplierId: string;
   readonly materialCode: string;
   readonly declaredAt: string;
-  readonly batches: readonly InventoryBatch[];
+  /** The SOH floor. Keys off MaterialMaster.canonicalUom (invariant #2). */
+  readonly totalQty: number;
+  readonly uom: Uom;
+  /** OPTIONAL batch-grain detail (portal / magic-link grid; never required by
+   *  the chat channel). When present, Σ qty must equal `totalQty`. */
+  readonly batches?: readonly InventoryBatch[];
   /** source = SUPPLIER. */
   readonly provenance: Provenance;
 }

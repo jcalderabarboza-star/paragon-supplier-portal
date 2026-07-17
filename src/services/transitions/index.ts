@@ -34,6 +34,8 @@ export { purchaseRequisitionFlow } from './flows/purchaseRequisition.flow';
 export { supplierDocumentFlow } from './flows/supplierDocument.flow';
 export { complianceFlow } from './flows/compliance.flow';
 export { requirementResponseFlow } from './flows/requirementResponse.flow';
+export { inventoryDeclarationFlow } from './flows/inventoryDeclaration.flow';
+export { incomingShipmentFlow } from './flows/incomingShipment.flow';
 
 import { flowRegistry } from './registry';
 import { purchaseOrderFlow } from './flows/purchaseOrder.flow';
@@ -51,6 +53,8 @@ import { purchaseRequisitionFlow } from './flows/purchaseRequisition.flow';
 import { supplierDocumentFlow } from './flows/supplierDocument.flow';
 import { complianceFlow } from './flows/compliance.flow';
 import { requirementResponseFlow } from './flows/requirementResponse.flow';
+import { inventoryDeclarationFlow } from './flows/inventoryDeclaration.flow';
+import { incomingShipmentFlow } from './flows/incomingShipment.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -78,3 +82,8 @@ flowRegistry.register(complianceFlow); // census #11–15 — Compliance (canoni
 // supplier-owned creation verb, mirroring t_quotation_submit); the buyer
 // lifecycle (review/accept/dispute) + draft promotion are authored-unwired.
 flowRegistry.register(requirementResponseFlow); // SDC-2a — RequirementResponse
+// SDC-3a — the two additional supplier-submission objects on the SubmissionSession.
+// declare = degenerate single-state snapshot (WIRED); report births Booked (WIRED),
+// ship/arrive/cancel authored-unwired (FORK-2). ETA revision named-deferred (④).
+flowRegistry.register(inventoryDeclarationFlow); // SDC-3a — InventoryDeclaration
+flowRegistry.register(incomingShipmentFlow); // SDC-3a — IncomingShipment

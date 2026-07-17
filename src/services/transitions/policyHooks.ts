@@ -61,6 +61,22 @@ export const POLICY_HOOKS = {
   /** RR acknowledge: the fanned line MUST be visibility-only (an acknowledge
    *  can never dodge the commitment floor on a firm/semi-firm line). */
   RR_ACKNOWLEDGE_VISIBILITY_CLASS: 'rr_acknowledge_visibility_class',
+  /** Inventory declare (SDC-3a, total-first): when batch detail is present,
+   *  Σ batch qty must equal totalQty — a total that disagrees with its own
+   *  detail is a fabricated number. */
+  INV_DECLARE_BATCH_TOTAL: 'inv_declare_batch_total',
+  // SDC-3a — the symmetric direction guards (the SDC-2b-EXT class-guard
+  // discipline applied to shipment direction ⟺ ASN linkage, exactly 1:1).
+  /** Shipment report: to-paragon MUST link a resolvable ASN (converges on the
+   *  ASN machine — link, never duplicate; design §2.3). */
+  ISH_TOPARAGON_ASN_LINKED: 'ish_toparagon_asn_linked',
+  /** Shipment report: principal-to-distributor must NOT carry an asnRef
+   *  (Paragon is not the consignee — no ASN exists for that leg). */
+  ISH_P2D_NO_ASN: 'ish_p2d_no_asn',
+  /** Shipment report: principal-to-distributor is legal ONLY for a supplier
+   *  whose relationship for the material is distributor — a manufacturer has
+   *  no principal leg (design §7). */
+  ISH_P2D_DISTRIBUTOR_ONLY: 'ish_p2d_distributor_only',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

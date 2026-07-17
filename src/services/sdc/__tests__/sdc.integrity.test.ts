@@ -24,6 +24,8 @@ import type {
   ShipmentLifecycle,
   Uom,
 } from '../types';
+// SDC-3a — invariant #8 now asserts asnRef RESOLUTION against the real ASN store.
+import { asnStore } from '../../data/mock/stores/asnStore';
 
 // Flatten every forecast line once for the line-level invariants.
 const ALL_LINES: readonly ForecastLine[] = FORECAST_PUBLICATIONS.flatMap((p) => p.lines);
@@ -34,7 +36,9 @@ const ALL_LINES: readonly ForecastLine[] = FORECAST_PUBLICATIONS.flatMap((p) => 
 const QTY_BEARING: ReadonlyArray<{ where: string; materialCode: string; uom: Uom }> = [
   ...ALL_LINES.map((l) => ({ where: `ForecastLine ${l.materialCode}/${l.periodBucket}`, materialCode: l.materialCode, uom: l.uom })),
   ...REQUIREMENT_RESPONSES.filter((r) => r.forecastConfirmation).map((r) => ({ where: `RequirementResponse ${r.id}`, materialCode: r.materialCode, uom: r.forecastConfirmation!.uom })),
-  ...INVENTORY_DECLARATIONS.flatMap((d) => d.batches.map((b) => ({ where: `InventoryDeclaration ${d.id}/${b.batchNumber}`, materialCode: d.materialCode, uom: b.uom }))),
+  // SDC-3a total-first: the declaration's own totalQty uom + any batch uoms.
+  ...INVENTORY_DECLARATIONS.map((d) => ({ where: `InventoryDeclaration ${d.id} (total)`, materialCode: d.materialCode, uom: d.uom })),
+  ...INVENTORY_DECLARATIONS.flatMap((d) => (d.batches ?? []).map((b) => ({ where: `InventoryDeclaration ${d.id}/${b.batchNumber}`, materialCode: d.materialCode, uom: b.uom }))),
   ...INCOMING_SHIPMENTS.map((s) => ({ where: `IncomingShipment ${s.id}`, materialCode: s.materialCode, uom: s.uom })),
 ];
 
@@ -132,9 +136,17 @@ describe('Invariant #5 — IncomingShipment lifecycle is linear + Cancelled (no 
   });
 });
 
-describe('Invariant #6 — InventoryDeclaration batches[] plural + well-formed', () => {
-  it('batches is an array with complete batch records', () => {
+describe('Invariant #6 — InventoryDeclaration total-first + well-formed (SDC-3a)', () => {
+  it('every declaration carries a totalQty floor + master-keyed uom', () => {
     for (const d of INVENTORY_DECLARATIONS) {
+      expect(d.totalQty, `${d.id}`).toBeGreaterThan(0);
+      expect(UOMS).toContain(d.uom);
+    }
+  });
+
+  it('batches[] is OPTIONAL detail; when present, records are complete and PLURAL-capable', () => {
+    for (const d of INVENTORY_DECLARATIONS) {
+      if (d.batches === undefined) continue; // total-only is legal (R-4 Finding 1(a))
       expect(Array.isArray(d.batches)).toBe(true);
       expect(d.batches.length).toBeGreaterThan(0);
       for (const b of d.batches) {
@@ -142,6 +154,14 @@ describe('Invariant #6 — InventoryDeclaration batches[] plural + well-formed',
         expect(b.qty).toBeGreaterThan(0);
         expect(UOMS).toContain(b.uom);
       }
+    }
+  });
+
+  it("invariant #6′ — when batch detail is present, Σ batch qty === totalQty (no fabricated total)", () => {
+    for (const d of INVENTORY_DECLARATIONS) {
+      if (!d.batches || d.batches.length === 0) continue;
+      const sum = d.batches.reduce((s, b) => s + b.qty, 0);
+      expect(sum, `${d.id}: batch sum disagrees with declared total`).toBe(d.totalQty);
     }
   });
 });
@@ -196,11 +216,16 @@ describe('Invariant #11 — commitment XOR acknowledgment (SDC-2b-EXT)', () => {
 });
 
 describe('Invariant #8 — IncomingShipment direction ↔ ASN linkage', () => {
-  it('to-paragon LINKS an ASN; principal-to-distributor carries none', () => {
+  it('to-paragon RESOLVES a same-supplier ASN; principal-to-distributor carries none', () => {
     for (const s of INCOMING_SHIPMENTS) {
       expect(DIRECTIONS).toContain(s.direction);
       if (s.direction === 'to-paragon') {
-        expect(s.asnRef, `${s.id}: to-paragon must link an ASN, not duplicate it`).toBeTruthy();
+        // SDC-3a: not mere presence — the ref must RESOLVE against the real ASN
+        // store, and the ASN must be this supplier's own (link, don't duplicate).
+        expect(s.asnRef, `${s.id}: to-paragon must link an ASN`).toBeTruthy();
+        const asn = asnStore.get(s.asnRef!);
+        expect(asn, `${s.id}: asnRef '${s.asnRef}' does not resolve`).toBeDefined();
+        expect(asn!.supplierId, `${s.id}: asnRef belongs to another supplier`).toBe(s.supplierId);
       } else {
         expect(s.asnRef, `${s.id}: principal-to-distributor is not a Paragon-inbound leg`).toBeUndefined();
       }
