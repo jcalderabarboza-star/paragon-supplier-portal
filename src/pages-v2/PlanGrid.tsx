@@ -5,7 +5,6 @@ import {
   keyColumn,
   intColumn,
   type Column,
-  type CellComponent,
   type CellProps,
 } from 'react-datasheet-grid';
 import 'react-datasheet-grid/dist/style.css';
@@ -17,6 +16,7 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import Data from '../components/ui-v2/Data';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import PlanCellMarker from './plan-grid/PlanCellMarker';
+import { dataCell, textCell } from './plan-grid/cells';
 import IntakeAdjustDrawer from './plan-grid/IntakeAdjustDrawer';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import { useQuotations } from '../services/query/hooks';
@@ -63,24 +63,9 @@ const dsgVar = (h: number) => ({ '--plan-dsg-h': `${h}px` }) as React.CSSPropert
 const supplierName = (id: string): string =>
   mockSuppliers.find((s) => s.id === id)?.name ?? id;
 
-// A read-only mono data cell (DP-3: mono + data-navy). The engine passes
-// rowData; we render — it computes nothing.
-function dataCell<T>(get: (r: T) => React.ReactNode): CellComponent<T> {
-  return ({ rowData }) => (
-    <div className="w-full px-2 text-right">
-      <Data className="text-xs">{get(rowData)}</Data>
-    </div>
-  );
-}
-
-function textCell<T>(
-  get: (r: T) => React.ReactNode,
-  className = 'text-text-primary',
-): CellComponent<T> {
-  return ({ rowData }) => (
-    <div className={`w-full px-2 truncate text-sm ${className}`}>{get(rowData)}</div>
-  );
-}
+// dataCell/textCell (the read-only mono/sans cell helpers) moved to the shared
+// ./plan-grid/cells module when the SDC consolidation grid became the second
+// DSG consumer (SDC-1b).
 
 interface AwardDisplayRow extends AwardScenarioRow {
   supplierName: string;

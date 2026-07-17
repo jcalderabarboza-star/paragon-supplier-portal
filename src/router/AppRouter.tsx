@@ -43,6 +43,9 @@ import NotFound from '../pages-v2/NotFound';
 // engine ships in this page's own async chunk (lazy import), so it never enters
 // the main entry chunk; first paint stays flat.
 const PlanGrid = lazy(() => import('../pages-v2/PlanGrid'));
+// SDC-1b — the second DSG consumer. Also lazy, so Vite hoists the shared
+// engine into one common async chunk; the entry chunk stays flat.
+const BuyerCollaboration = lazy(() => import('../pages-v2/BuyerCollaboration'));
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -71,6 +74,14 @@ const AppRouter: React.FC = () => {
             element={
               <Suspense fallback={<LoadingState />}>
                 <PlanGrid />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/buyer/collaboration"
+            element={
+              <Suspense fallback={<LoadingState />}>
+                <BuyerCollaboration />
               </Suspense>
             }
           />

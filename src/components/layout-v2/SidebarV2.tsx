@@ -19,6 +19,7 @@ import {
   ScrollText,
   MessageCircle,
   Table2,
+  Handshake,
   LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +53,8 @@ const BUYER_NAV: NavGroup[] = [
       // Phase A/1 — review precedes the plan-grid push in the sourcing flow.
       { labelKey: 'nav.buyer.intakeReview', icon: Inbox, path: '/buyer/intake-review' },
       { labelKey: 'nav.buyer.planGrid', icon: Table2, path: '/buyer/plan-grid' },
+      // SDC-1b — the P2 planner consolidation view (Supplier Data Collaboration).
+      { labelKey: 'nav.buyer.collaboration', icon: Handshake, path: '/buyer/collaboration' },
     ],
   },
   {
