@@ -54,6 +54,8 @@ import { buyerInvoicesEn, buyerInvoicesId } from './i18n/buyerInvoices';
 import { planGridEn, planGridId } from './i18n/planGrid';
 // — Phase A/1 intake review (sourcing spine) —
 import { intakeReviewEn, intakeReviewId } from './i18n/intakeReview';
+// — SDC-1b planner consolidation (Supplier Data Collaboration) —
+import { sdcConsolidationEn, sdcConsolidationId } from './i18n/sdcConsolidation';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -112,6 +114,8 @@ export const resources = {
       ...planGridEn,
       // — Phase A/1 intake review (sourcing spine) —
       ...intakeReviewEn,
+      // — SDC-1b planner consolidation —
+      ...sdcConsolidationEn,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
@@ -129,6 +133,7 @@ export const resources = {
       'nav.buyer.sourcing': 'Sourcing & RFQ',
       'nav.buyer.intakeReview': 'Intake Review',
       'nav.buyer.planGrid': 'Plan Grid',
+      'nav.buyer.collaboration': 'Supplier Collaboration',
       'nav.buyer.requisitions': 'Requisitions',
       'nav.buyer.purchaseOrders': 'Purchase Orders',
       'nav.buyer.inventory': 'Inventory Visibility',
@@ -287,6 +292,8 @@ export const resources = {
       ...planGridId,
       // — Phase A/1 intake review (sourcing spine) —
       ...intakeReviewId,
+      // — SDC-1b planner consolidation —
+      ...sdcConsolidationId,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',
@@ -304,6 +311,7 @@ export const resources = {
       'nav.buyer.sourcing': 'Sumber & RFQ',
       'nav.buyer.intakeReview': 'Tinjauan Asupan',
       'nav.buyer.planGrid': 'Grid Perencanaan',
+      'nav.buyer.collaboration': 'Kolaborasi Pemasok',
       'nav.buyer.requisitions': 'Permintaan Pembelian',
       'nav.buyer.purchaseOrders': 'Pesanan Pembelian',
       'nav.buyer.inventory': 'Visibilitas Inventaris',

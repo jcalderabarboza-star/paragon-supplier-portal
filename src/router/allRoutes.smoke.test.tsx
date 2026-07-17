@@ -26,6 +26,7 @@ import SupplierStorefrontV2 from '../pages-v2/SupplierStorefront';
 import BuyerOrders from '../pages-v2/BuyerOrders';
 import BuyerSourcing from '../pages-v2/BuyerSourcing';
 import PlanGrid from '../pages-v2/PlanGrid';
+import BuyerCollaboration from '../pages-v2/BuyerCollaboration';
 import BuyerContracts from '../pages-v2/BuyerContracts';
 import BuyerInventory from '../pages-v2/BuyerInventory';
 import BuyerShipments from '../pages-v2/BuyerShipments';
@@ -73,6 +74,7 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/orders', pattern: '/buyer/orders', at: '/buyer/orders', element: <BuyerOrders />, identity: BUYER },
   { name: 'buyer/sourcing', pattern: '/buyer/sourcing', at: '/buyer/sourcing', element: <BuyerSourcing />, identity: BUYER },
   { name: 'buyer/plan-grid', pattern: '/buyer/plan-grid', at: '/buyer/plan-grid', element: <PlanGrid />, identity: BUYER },
+  { name: 'buyer/collaboration', pattern: '/buyer/collaboration', at: '/buyer/collaboration', element: <BuyerCollaboration />, identity: BUYER },
   { name: 'buyer/contracts', pattern: '/buyer/contracts', at: '/buyer/contracts', element: <BuyerContracts />, identity: BUYER },
   { name: 'buyer/inventory', pattern: '/buyer/inventory', at: '/buyer/inventory', element: <BuyerInventory />, identity: BUYER },
   { name: 'buyer/shipments', pattern: '/buyer/shipments', at: '/buyer/shipments', element: <BuyerShipments />, identity: BUYER },
@@ -99,9 +101,9 @@ const ROUTES: RouteCase[] = [
 ];
 
 describe('sp-001 — every route mounts without crashing', () => {
-  it('route table covers all of AppRouter (32 elements + redirect)', () => {
+  it('route table covers all of AppRouter (33 elements + redirect)', () => {
     // Guards against a route being added to AppRouter but not the smoke.
-    expect(ROUTES.length).toBe(33);
+    expect(ROUTES.length).toBe(34);
   });
 
   it.each(ROUTES)('$name renders and paints content', async ({ pattern, at, element, identity }) => {
