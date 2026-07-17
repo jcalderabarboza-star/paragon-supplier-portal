@@ -2,7 +2,7 @@
 // LivenessRegistry (F0.6) — the ONE runtime authority for honest-render.
 //
 // A single map from capability → liveness tier, DERIVED from the behavior-wiring
-// census (`WIRED_COMMAND_TARGETS`, the wired-target set — 7 as of G1.1). A capability is
+// census (`WIRED_COMMAND_TARGETS`, the wired-target set — 8 as of SDC-2a). A capability is
 // LIVE iff the entity it reads actually dispatches through a wired CommandTarget;
 // anything else is SIMULATED. Because the tier is COMPUTED from the live TARGETS
 // set — never hand-authored — the registry cannot drift from what the command
@@ -96,14 +96,15 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // LivenessPill renders amber "Sample"; green is structurally unreachable. When a
   // real should-cost feed lands (Stage-CI), this flips through the same two gates.
   commodityIntel: null,
-  // SDC-1 — the publication-anchored collaboration state the P2 planner
-  // consolidation reads (ONE capability for the lane's read surface, not four).
-  // No lifecycle entity dispatches yet (SDC-2 wires the response verbs), so the
-  // backing is null → derives SIMULATED → green structurally unreachable. The
-  // harvest-gate entry below pre-encodes the two-gate flip
-  // (LIVENESS-DATASOURCE-01): even once SDC-2 wires gate-1, the pill stays
-  // guarded until the real SOMO C8 feed lands (F-timeline).
-  forecastPublications: null,
+  // SDC-1 → SDC-2a — the publication-anchored collaboration state (ONE
+  // capability for the lane, not four). SDC-2a wired the RequirementResponse
+  // CommandTarget (t_requirementresponse_submit), flipping this backing from
+  // null to the wired entity: gate-1 now derives LIVE. Gate-2 (the harvest
+  // entry below) STAYS SHUT — the publications answered are SIMULATED fixtures
+  // until the real SOMO C8 feed lands (F-timeline), so the pill keeps reading
+  // "Sample — awaiting SOMO C8 feed" and green stays structurally unreachable
+  // (LIVENESS-DATASOURCE-01: wiring alone must never flip green).
+  forecastPublications: 'requirementResponse',
 };
 
 // — Gate-2: harvest gating (LIVENESS-DATASOURCE-01) —————————————————————————————

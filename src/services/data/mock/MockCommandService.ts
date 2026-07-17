@@ -54,7 +54,15 @@ import { invoiceStore } from './stores/invoiceStore';
 import { rfqStore } from './stores/rfqStore';
 import { quotationStore } from './stores/quotationStore';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
+import { requirementResponseStore } from './stores/requirementResponseStore';
 import { mockShipments } from '../../../data/mockShipments';
+import { FORECAST_PUBLICATIONS, MATERIAL_MASTER } from '../../sdc';
+import type {
+  Provenance,
+  RequirementResponse,
+  RequirementResponseStatus,
+  RootCause,
+} from '../../sdc';
 
 // — Purchase-order command target — reads/writes the mutable PO store. ————————
 const purchaseOrderTarget: CommandTarget = {
@@ -507,6 +515,138 @@ const purchaseRequisitionTarget: CommandTarget = {
   },
 };
 
+// — RequirementResponse target (SDC-2a — the P1 supplier-submission spine). ————
+//   `t_requirementresponse_submit` mirrors t_quotation_submit EXACTLY, with the
+//   membership check strengthened to LINE-GRAIN by design: the fan-out is OURS
+//   (SDC-0 ⭐allocation), so ownership = "this exact supplier × material ×
+//   period line was fanned to you" — a supplier can never answer a line
+//   published to someone else, nor invent a material×period the publication
+//   never fanned. Non-fanned → owner=null → SCOPE_DENIED; spoofed id → owner ≠
+//   scope → SCOPE_DENIED; a buyer skips scope then fails the
+//   `requirementresponse:submit` role gate.
+//   `create` persists RAW FACTS only (confirmedQty / committedDate / capacity
+//   constraint / root-cause); response state is derived AT READ by the SDC-1a
+//   consolidation selectors (confirmed-full / short / stale are never stored).
+//   `uom` is NEVER trusted from the payload — copied from the material master
+//   (invariant #2). `submissionVersion` is DERIVED (prior max + 1 over the
+//   response thread). confirmedQty: 0 is a LEGAL short confirmation (F-2).
+//   Publications are the frozen SDC fixtures until the SOMO C8 feed lands —
+//   read-only here (responses mutate; publications never do).
+const publicationById = (publicationId: string) =>
+  FORECAST_PUBLICATIONS.find((p) => p.publicationId === publicationId);
+
+/** F-4 ruling: a store-minted response is SUPPLIER-authored, committed, and
+ *  SIMULATED — the backing store is a mock; liveness flips at F1, not here. */
+const PROV_SUPPLIER_SUBMIT: Provenance = Object.freeze({
+  source: 'SUPPLIER',
+  liveness: 'SIMULATED',
+  planState: 'committed',
+});
+
+const requirementResponseTarget: CommandTarget = {
+  readState: (id) => requirementResponseStore.get(id)?.status ?? null,
+  readScopeOwner: (id) => requirementResponseStore.get(id)?.supplierId ?? null,
+  readEntity: (id) => requirementResponseStore.get(id) ?? null,
+  applyTransition: (id, toState) => {
+    requirementResponseStore.update(id, (r) => ({
+      ...r,
+      status: toState as RequirementResponseStatus,
+    }));
+  },
+  // Line-grain membership folded into creation scope (the quotation pattern,
+  // strengthened): the owner is the submitting supplier, valid ONLY when the
+  // referenced publication fanned this exact material × period line to it.
+  creationOwner: (payload) => {
+    const pub = publicationById(String(payload.publicationId));
+    const sid = String(payload.supplierId);
+    const fanned = pub?.lines.some(
+      (l) =>
+        l.supplierId === sid &&
+        l.materialCode === String(payload.materialCode) &&
+        l.periodBucket === String(payload.periodBucket),
+    );
+    return fanned ? sid : null;
+  },
+  create: (payload, toState) => {
+    const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
+    const materialCode = str('materialCode');
+    const periodBucket = str('periodBucket');
+    const publicationId = str('publicationId');
+    const supplierId = str('supplierId');
+    // creationOwner proved a fanned line exists; resolve it for the honest uom.
+    const line = publicationById(publicationId)?.lines.find(
+      (l) =>
+        l.supplierId === supplierId &&
+        l.materialCode === materialCode &&
+        l.periodBucket === periodBucket,
+    );
+    // invariant #2 — uom comes from the material master (fall back to the
+    // fanned line's own uom, which the SDC-0 integrity suite keys to the same
+    // master), NEVER from the caller.
+    const uom = MATERIAL_MASTER[materialCode]?.canonicalUom ?? line?.uom ?? 'KG';
+    // Root cause persists only when it carries a level1 (a shapeless object is
+    // dropped, not guessed) — the supplier's explanation for a deviation.
+    const rc = payload.rootCause as Partial<RootCause> | undefined;
+    const rootCause: RootCause | undefined =
+      rc && typeof rc.level1 === 'string' && rc.level1
+        ? {
+            level1: rc.level1,
+            ...(typeof rc.level2 === 'string' && rc.level2 ? { level2: rc.level2 } : {}),
+            ...(typeof rc.note === 'string' && rc.note ? { note: rc.note } : {}),
+          }
+        : undefined;
+    const id = requirementResponseStore.nextNumber();
+    const prior = requirementResponseStore.forResponseKey(
+      supplierId,
+      materialCode,
+      periodBucket,
+      publicationId,
+    );
+    const response: RequirementResponse = {
+      id, // store keyed by id; the assigned number doubles as the id
+      supplierId,
+      materialCode,
+      periodBucket,
+      publicationId,
+      planVersion: str('planVersion'),
+      submittedAt: new Date().toISOString(),
+      // Versioned, never overwritten: prior max + 1 over the response thread.
+      submissionVersion: prior.reduce((m, r) => Math.max(m, r.submissionVersion), 0) + 1,
+      status: toState as RequirementResponseStatus, // 'Submitted'
+      forecastConfirmation: {
+        // 0 is a legal confirmation ("cannot supply") — dispatcher isEmpty(0)
+        // already admits it; NaN/absent coerces to 0 with the root cause telling why.
+        confirmedQty: typeof payload.confirmedQty === 'number' ? payload.confirmedQty : 0,
+        uom,
+        ...(str('committedDate') ? { committedDate: str('committedDate') } : {}),
+        ...(str('capacityConstraint')
+          ? { capacityConstraint: str('capacityConstraint') }
+          : {}),
+      },
+      ...(rootCause ? { rootCause } : {}),
+      provenance: PROV_SUPPLIER_SUBMIT,
+    };
+    requirementResponseStore.add(response);
+    return { entityId: id };
+  },
+};
+
+// RR submit snapshot binding (mock layer — cross-entity read): the payload's
+// planVersion must be the referenced publication's OWN planVersion, so a
+// response can never claim to answer a snapshot other than the one published.
+// (Membership/existence is creationOwner's job and fails FIRST, as scope.)
+bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND, ({ payload }) => {
+  const pub = publicationById(String(payload.publicationId));
+  if (!pub) return { ok: false, reason: 'referenced publication not found' };
+  if (pub.planVersion !== String(payload.planVersion)) {
+    return {
+      ok: false,
+      reason: `planVersion '${String(payload.planVersion)}' does not match publication '${pub.publicationId}' (${pub.planVersion})`,
+    };
+  }
+  return { ok: true };
+});
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -515,10 +655,12 @@ const TARGETS: Record<string, CommandTarget> = {
   rfq: rfqTarget,
   quotation: quotationTarget,
   purchaseRequisition: purchaseRequisitionTarget,
+  requirementResponse: requirementResponseTarget,
 };
 
-// The behavior-wiring census (was the contract package's "6"; now 7 with the G1.1
-// PR intake target) — the entity keys that actually dispatch through a wired
+// The behavior-wiring census (was the contract package's "6"; 7 with the G1.1
+// PR intake target; now 8 with the SDC-2a RequirementResponse spine) — the
+// entity keys that actually dispatch through a wired
 // CommandTarget. Exported as the ONE runtime
 // source of truth the LivenessRegistry (F0.6) reads: it derives liveness from
 // THESE keys, so an honest-render marker cannot drift from what the command spine

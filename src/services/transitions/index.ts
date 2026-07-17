@@ -33,6 +33,7 @@ export { obligationFlow } from './flows/obligation.flow';
 export { purchaseRequisitionFlow } from './flows/purchaseRequisition.flow';
 export { supplierDocumentFlow } from './flows/supplierDocument.flow';
 export { complianceFlow } from './flows/compliance.flow';
+export { requirementResponseFlow } from './flows/requirementResponse.flow';
 
 import { flowRegistry } from './registry';
 import { purchaseOrderFlow } from './flows/purchaseOrder.flow';
@@ -49,6 +50,7 @@ import { obligationFlow } from './flows/obligation.flow';
 import { purchaseRequisitionFlow } from './flows/purchaseRequisition.flow';
 import { supplierDocumentFlow } from './flows/supplierDocument.flow';
 import { complianceFlow } from './flows/compliance.flow';
+import { requirementResponseFlow } from './flows/requirementResponse.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -72,3 +74,7 @@ flowRegistry.register(supplierDocumentFlow); // census #10 — Supplier document
 // (LivenessRegistry derives SIMULATED); wires against the real cert registry post
 // Track-R harvest. NO creation edge — `Missing` is the natural born-state.
 flowRegistry.register(complianceFlow); // census #11–15 — Compliance (canonical)
+// SDC-2a — the P1 supplier-submission spine. The submit is WIRED (the ONE
+// supplier-owned creation verb, mirroring t_quotation_submit); the buyer
+// lifecycle (review/accept/dispute) + draft promotion are authored-unwired.
+flowRegistry.register(requirementResponseFlow); // SDC-2a — RequirementResponse
