@@ -45,6 +45,9 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
         'rfqs',
         'purchaseRequisitions',
         'forecastPublications',
+        // SDC-3b — the InventoryDeclaration target is wired (gate-1 LIVE); gate-2
+        // still holds isLive() false (see the harvest-gate suite).
+        'inventory',
       ]),
     );
   });
@@ -93,7 +96,9 @@ describe('LivenessRegistry — honesty invariant (non-LIVE can never be green)',
     // tab reads invented category stats with no lifecycle entity behind them, so
     // backing is null → derives SIMULATED → the shared LivenessPill can only ever
     // render amber "Sample". Green is structurally unreachable.
-    for (const cap of ['inventory', 'risk', 'commodityIntel'] as Capability[]) {
+    // (inventory left this set at SDC-3b — it is now wired-but-harvest-gated,
+    // proven in the harvest-gate suite; risk + commodityIntel stay pure-fixture.)
+    for (const cap of ['risk', 'commodityIntel'] as Capability[]) {
       expect(capabilityBacking[cap]).toBeNull();
       expect(liveness(cap)).toBe('SIMULATED');
       expect(isLive(cap)).toBe(false);
@@ -109,11 +114,12 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
     expect(note?.source).toBe('Track-R');
   });
 
-  it('only compliance + purchaseRequisitions + forecastPublications are harvest-gated (others: note null)', () => {
+  it('only compliance + purchaseRequisitions + forecastPublications + inventory are harvest-gated (others: note null)', () => {
     const gated = new Set<Capability>([
       'compliance',
       'purchaseRequisitions',
       'forecastPublications',
+      'inventory',
     ]);
     for (const cap of ALL_CAPABILITIES) {
       if (gated.has(cap)) continue;
@@ -152,6 +158,22 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
     expect(note?.readinessNoteKey).toBe('widget.honesty.awaitingC8Feed');
     expect(note?.source).toBe('SOMO C8');
     expect(isLive('forecastPublications')).toBe(false); // guarded → Sample render
+  });
+
+  it('⭐ inventory after the SDC-3b backing flip: wired (gate-1 LIVE) yet STILL never green', () => {
+    // SDC-3b repointed inventory null → 'inventoryDeclaration' (the target the
+    // declare verb dispatches through), so gate-1 derives LIVE — but the SOH is
+    // SIMULATED fixtures / demo submissions until real supplier identities land
+    // (F1), so gate-2 stays shut. The pill MUST keep reading "Sample — awaiting
+    // live supplier feed"; wiring alone can never flip green (LIVENESS-DATASOURCE-01).
+    expect(capabilityBacking.inventory).toBe('inventoryDeclaration');
+    expect(WIRED_COMMAND_TARGETS).toContain('inventoryDeclaration');
+    expect(liveness('inventory')).toBe('LIVE'); // gate-1 open (wired)
+    expect(awaitsHarvest('inventory')).toBe(true); // gate-2 shut (no live supplier feed)
+    const note = readinessNote('inventory');
+    expect(note?.readinessNoteKey).toBe('widget.honesty.awaitingSupplierFeed');
+    expect(note?.source).toBe('Supplier feed (F1)');
+    expect(isLive('inventory')).toBe(false); // guarded → Sample render
   });
 
   it('gate-2 does not disturb the UNGATED wired-LIVE capabilities (real source)', () => {

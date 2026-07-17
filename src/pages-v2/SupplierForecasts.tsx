@@ -1,6 +1,17 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarRange, Info, Lock, Send } from 'lucide-react';
+import {
+  Boxes,
+  CalendarRange,
+  Info,
+  Layers,
+  Lock,
+  Plus,
+  Send,
+  Ship,
+  Trash2,
+  Truck,
+} from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
@@ -23,48 +34,71 @@ import {
   useOwnRequirementResponses,
   useRequirementResponseSubmit,
   useRequirementResponseAcknowledge,
+  useOwnCollaboratedMaterials,
+  useOwnInventoryDeclarations,
+  useOwnIncomingShipments,
+  useOwnSupplierAsns,
+  useInventoryDeclare,
+  useIncomingShipmentReport,
+  type CollaboratedMaterialView,
+  type IncomingShipmentView,
 } from '../services/query/sdcSupplierHooks';
 import {
   MATERIAL_MASTER,
   buildRequirementResponsePayload,
   buildRequirementAcknowledgePayload,
+  buildInventoryDeclarationPayload,
+  buildIncomingShipmentPayload,
+  declarationGranularity,
   openSubmissionSession,
   type CommitmentClass,
   type ForecastLine,
   type ForecastPublication,
+  type InventoryDeclaration,
   type RequirementResponse,
+  type SdcObjectKind,
+  type ShipmentDirection,
   type SubmissionSessionRecorder,
 } from '../services/sdc';
+import type { ASN, CommandResult } from '../services/data/types';
 import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
 
 // ────────────────────────────────────────────────────────────────────────────
-// SupplierForecasts (SDC-2b) — the P1 supplier submission surface: an invited
-// supplier sees ITS OWN published forecast lines (fanned to it) and confirms
-// them through t_requirementresponse_submit (the SHARED channel-agnostic
-// write-path, DEC-COMMS-PRIMARY — the portal is the reference front door).
+// SupplierForecasts (SDC-2b → SDC-3b) — the P1 supplier SUBMISSION HUB. One
+// supplier visit, three declarable object kinds, all riding ONE
+// SubmissionSession envelope (addendum §5) with PER-OBJECT partial success:
+//   · Forecast lines   — confirm / acknowledge a published line
+//                        (t_requirementresponse_submit / _acknowledge, SDC-2b).
+//   · Stock (SOH)      — declare current stock, TOTAL-FIRST + optional batch
+//                        detail (t_inventorydeclaration_declare, SDC-3a).
+//   · Shipments        — report an incoming leg, direction-guarded
+//                        (t_incomingshipment_report, SDC-3a).
 //
-// HONESTY (FLAG-2, all three layers):
-//   1+2 (structural) — the read comes through `supplierVisiblePublications()`
-//       (see useOwnForecastLines): the governed LIVE lane is EMPTY today, so
-//       the page renders the SIMULATED sample ONLY under the explicit sample
-//       banner + the registry-derived LivenessPill ("Sample — awaiting SOMO C8
-//       feed", green structurally unreachable).
+// SESSION + causationId (SDC-3a seam, now DRIVEN): the FIRST dispatch of a visit
+// becomes the audit anchor; every later dispatch passes `causationAnchor()` as
+// its causationId, so a visit's DR-10 events group WITHOUT collapsing their own
+// correlationIds. Each object validates independently — a forecast confirm can
+// land while a SOH declare fails, each reporting its own toast.
+//
+// HONESTY (FLAG-2, all three layers) — unchanged from SDC-2b:
+//   1+2 (structural) — the forecast read comes through supplierVisiblePublications()
+//       (LIVE-only); the governed lane is empty, so the page renders the SIMULATED
+//       sample ONLY under the explicit sample banner + registry LivenessPill.
 //   3   (vocabulary) — the supplier-facing class vocabulary is commitmentClass
-//       ONLY. NO PlanCellMarker here: the SIMULATED×PLANNED provenance grammar
-//       is P2-internal (BuyerCollaboration) and never reaches a supplier.
+//       ONLY; no internal liveness / plan-state grammar reaches a supplier.
+//   The Stock tab carries its OWN registry pill (`inventory`) — wired (gate-1)
+//   but harvest-gated → "Sample — awaiting live supplier feed", green unreachable.
 //
-// OWN-FACTS-ONLY (FORK-3b-C): own lines + own submissions with STATUS only —
-// no rank, no score, no other suppliers' lines/responses, no rollup/chase/
-// coverage (those are P2 buyer-only). Page-level own-filtering is today's
-// enforcement; service-level scoping is the named SDC-4 deferral.
+// OWN-FACTS-ONLY (FORK-3b-C): own lines / own submissions / own declarations /
+// own shipments, STATUS-or-STATE only — never another supplier's data, never a
+// rank or score. Page-level own-filtering today; service-level scoping = SDC-4.
 //
-// F-2: confirmedQty 0 + a root cause is a LEGAL short confirmation ("cannot
-// supply at all"). F-3: "Submit confirmation" is the ONE solid primary — the
-// governed commit (DP2-BUTTON-01); openers/cancel stay outline/secondary.
+// uom is NEVER typed — every qty field inherits its material's canonical uom
+// from the master (invariant #2); the surface shows it read-only.
 // ────────────────────────────────────────────────────────────────────────────
 
-type TabKey = 'lines' | 'responses';
+type TabKey = 'lines' | 'stock' | 'shipments' | 'responses';
 
 const CLASS_LABEL_KEY: Record<CommitmentClass, string> = {
   firm: 'sdcSup.class.firm',
@@ -100,7 +134,43 @@ const emptyForm: ConfirmForm = {
   rootCauseNote: '',
 };
 
+// — SOH declare form (total-first + optional batch detail) —
+interface SohBatchForm {
+  batchNumber: string;
+  qty: string;
+  expiryDate: string;
+}
+interface SohForm {
+  materialCode: string;
+  totalQty: string;
+  batches: SohBatchForm[];
+}
+const emptySohForm: SohForm = { materialCode: '', totalQty: '', batches: [] };
+
+// — Shipment report form (direction-guarded) —
+interface ShipmentForm {
+  materialCode: string;
+  direction: ShipmentDirection | '';
+  qty: string;
+  etd: string;
+  eta: string;
+  awb: string;
+  /** to-paragon ONLY — the SELECTED own-ASN number (never free-typed). */
+  asnRef: string;
+}
+const emptyShipmentForm: ShipmentForm = {
+  materialCode: '',
+  direction: '',
+  qty: '',
+  etd: '',
+  eta: '',
+  awb: '',
+  asnRef: '',
+};
+
 const materialLabel = (code: string): string => MATERIAL_MASTER[code]?.label ?? code;
+const materialUom = (code: string) => MATERIAL_MASTER[code]?.canonicalUom ?? 'KG';
+const numberFromField = (v: string): number => Number(v.replace(/,/g, ''));
 
 /** The latest own response answering this exact published line (this
  *  publication), for the inline "your latest response" echo. */
@@ -298,6 +368,205 @@ const ResponsesTab: React.FC<{ responses: readonly RequirementResponse[] }> = ({
   );
 };
 
+// ── SDC-3b — My current stock (SOH) tab ──────────────────────────────────────
+const DeclarationsTab: React.FC<{
+  declarations: readonly InventoryDeclaration[];
+  onDeclare: () => void;
+}> = ({ declarations, onDeclare }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-4" data-testid="sdcsup-declarations">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm text-text-secondary">{t('sdcSup.stock.subtitle')}</p>
+        {/* OUTLINE — a SOH declaration is a routine data submission, not the
+            page's ONE commitment (that stays the solid forecast confirm). */}
+        <Button variant="outline" icon={Plus} onClick={onDeclare}>
+          {t('sdcSup.stock.declare')}
+        </Button>
+      </div>
+      {declarations.length === 0 ? (
+        <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+          <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
+            <Boxes size={20} className="text-text-tertiary" />
+          </div>
+          <div className="text-base font-semibold text-text-primary mb-1">
+            {t('sdcSup.stock.emptyTitle')}
+          </div>
+          <div className="text-sm text-text-tertiary">{t('sdcSup.stock.emptyBody')}</div>
+        </div>
+      ) : (
+        declarations.map((d) => {
+          const grain = declarationGranularity(d);
+          return (
+            <div
+              key={d.id}
+              className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5"
+            >
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Data className="text-sm font-bold text-text-primary">{d.materialCode}</Data>
+                    <span className={CHIP}>
+                      {grain === 'batch-grain'
+                        ? t('sdcSup.stock.grain.batch')
+                        : t('sdcSup.stock.grain.total')}
+                    </span>
+                  </div>
+                  <div className="text-base font-semibold text-text-primary mt-1">
+                    {materialLabel(d.materialCode)}
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Data className="text-lg font-bold text-text-primary">
+                    {formatNumber(d.totalQty)} {d.uom}
+                  </Data>
+                  <div className="text-xs text-text-tertiary mt-0.5">
+                    {t('sdcSup.stock.asOf', { date: formatDate(d.declaredAt) })}
+                  </div>
+                </div>
+              </div>
+
+              {grain === 'batch-grain' && d.batches ? (
+                <ul className="mt-4 divide-y divide-border-subtle rounded-md border border-border-subtle overflow-hidden">
+                  {d.batches.map((b) => (
+                    <li
+                      key={b.batchNumber}
+                      className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 text-sm bg-bg-hover"
+                    >
+                      <Data className="font-semibold text-text-primary">{b.batchNumber}</Data>
+                      <Data className="text-text-secondary">
+                        {formatNumber(b.qty)} {b.uom}
+                      </Data>
+                      <span className="ml-auto text-xs text-text-tertiary">
+                        {b.expiryDate
+                          ? t('sdcSup.stock.expiry', { date: formatDate(b.expiryDate) })
+                          : t('sdcSup.stock.noExpiry')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                // Total-only: honest about the missing detail — never presented
+                // as "no expiry risk" (the EXPIRY-BLIND rule, supplier-side).
+                <p className="mt-3 text-xs italic text-text-tertiary">
+                  {t('sdcSup.stock.totalOnlyHint')}
+                </p>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+};
+
+// ── SDC-3b — My reported shipments tab ───────────────────────────────────────
+const LIFECYCLE_LABEL_KEY: Record<string, string> = {
+  Booked: 'sdcSup.ship.state.booked',
+  Shipped: 'sdcSup.ship.state.shipped',
+  Arrived: 'sdcSup.ship.state.arrived',
+  Cancelled: 'sdcSup.ship.state.cancelled',
+};
+const DIRECTION_LABEL_KEY: Record<ShipmentDirection, string> = {
+  'to-paragon': 'sdcSup.ship.dir.toParagon',
+  'principal-to-distributor': 'sdcSup.ship.dir.p2d',
+};
+
+const ShipmentsTab: React.FC<{
+  shipments: readonly IncomingShipmentView[];
+  onReport: () => void;
+}> = ({ shipments, onReport }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-4" data-testid="sdcsup-shipments">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <p className="text-sm text-text-secondary">{t('sdcSup.ship.subtitle')}</p>
+        <Button variant="outline" icon={Plus} onClick={onReport}>
+          {t('sdcSup.ship.report')}
+        </Button>
+      </div>
+      {shipments.length === 0 ? (
+        <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+          <div className="inline-flex w-12 h-12 rounded-full bg-bg-hover items-center justify-center mb-3">
+            <Truck size={20} className="text-text-tertiary" />
+          </div>
+          <div className="text-base font-semibold text-text-primary mb-1">
+            {t('sdcSup.ship.emptyTitle')}
+          </div>
+          <div className="text-sm text-text-tertiary">{t('sdcSup.ship.emptyBody')}</div>
+        </div>
+      ) : (
+        shipments.map(({ shipment: s, display }) => (
+          <div
+            key={s.id}
+            className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5"
+          >
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Data className="text-sm font-bold text-text-primary">{s.materialCode}</Data>
+                  <span className={CHIP}>{t(DIRECTION_LABEL_KEY[s.direction])}</span>
+                </div>
+                <div className="text-base font-semibold text-text-primary mt-1">
+                  {materialLabel(s.materialCode)}
+                </div>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <StatusPill variant="neutral">
+                  {t(LIFECYCLE_LABEL_KEY[display.lifecycle] ?? 'sdcSup.ship.state.booked')}
+                </StatusPill>
+                {display.derivedFromAsn && (
+                  // Drift-honesty: a to-paragon leg's state is the LINKED ASN's,
+                  // not a stored supplier claim — labelled so it can't be mistaken.
+                  <span className="text-[10px] italic text-text-tertiary">
+                    {t('sdcSup.ship.trackedViaAsn', { asn: s.asnRef })}
+                  </span>
+                )}
+              </div>
+            </div>
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+              <div className="bg-bg-hover rounded-md px-3 py-2">
+                <dt className="text-label text-text-tertiary uppercase mb-0.5">
+                  {t('sdcSup.ship.col.qty')}
+                </dt>
+                <Data as="dd" className="text-sm font-semibold">
+                  {formatNumber(s.qty)} {s.uom}
+                </Data>
+              </div>
+              <div className="bg-bg-hover rounded-md px-3 py-2">
+                <dt className="text-label text-text-tertiary uppercase mb-0.5">
+                  {t('sdcSup.ship.col.eta')}
+                </dt>
+                <Data as="dd" className="text-sm font-semibold">
+                  {s.eta ? formatDate(s.eta) : '—'}
+                </Data>
+              </div>
+              <div className="bg-bg-hover rounded-md px-3 py-2">
+                <dt className="text-label text-text-tertiary uppercase mb-0.5">
+                  {t('sdcSup.ship.col.etd')}
+                </dt>
+                <Data as="dd" className="text-sm font-semibold">
+                  {s.etd ? formatDate(s.etd) : '—'}
+                </Data>
+              </div>
+              <div className="bg-bg-hover rounded-md px-3 py-2">
+                <dt className="text-label text-text-tertiary uppercase mb-0.5">
+                  {s.direction === 'to-paragon'
+                    ? t('sdcSup.ship.col.asn')
+                    : t('sdcSup.ship.col.awb')}
+                </dt>
+                <Data as="dd" className="text-sm font-semibold">
+                  {s.direction === 'to-paragon' ? (s.asnRef ?? '—') : (s.awb ?? '—')}
+                </Data>
+              </div>
+            </dl>
+          </div>
+        ))
+      )}
+    </div>
+  );
+};
+
 interface WorkspaceProps {
   supplierId: string;
   supplierName: string;
@@ -305,6 +574,10 @@ interface WorkspaceProps {
   lines: readonly ForecastLine[];
   liveFeed: boolean;
   responses: readonly RequirementResponse[];
+  materials: readonly CollaboratedMaterialView[];
+  declarations: readonly InventoryDeclaration[];
+  shipments: readonly IncomingShipmentView[];
+  asns: readonly ASN[];
 }
 
 const ForecastWorkspace: React.FC<WorkspaceProps> = ({
@@ -314,39 +587,80 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   lines,
   liveFeed,
   responses,
+  materials,
+  declarations,
+  shipments,
+  asns,
 }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
   const crumb = [t('sdcSup.crumb.section'), t('sdcSup.crumb.page')];
   const submitMutation = useRequirementResponseSubmit();
   const acknowledgeMutation = useRequirementResponseAcknowledge();
+  const declareMutation = useInventoryDeclare();
+  const reportMutation = useIncomingShipmentReport();
   const [activeTab, setActiveTab] = useState<TabKey>('lines');
   const [panelLine, setPanelLine] = useState<ForecastLine | null>(null);
   const [form, setForm] = useState<ConfirmForm>(emptyForm);
   // SDC-2b-EXT — the visibility-response panel (acknowledge + optional note).
   const [ackPanelLine, setAckPanelLine] = useState<ForecastLine | null>(null);
   const [ackNote, setAckNote] = useState('');
-  // One SubmissionSession envelope per supplier visit (addendum §5): each
-  // dispatched object is recorded on it; SDC-3's extra objects join the same
-  // recorder. Degenerate today (one object kind) but shape-correct.
+  // SDC-3b — the two additional object panels.
+  const [sohOpen, setSohOpen] = useState(false);
+  const [sohForm, setSohForm] = useState<SohForm>(emptySohForm);
+  const [shipOpen, setShipOpen] = useState(false);
+  const [shipForm, setShipForm] = useState<ShipmentForm>(emptyShipmentForm);
+
+  // ONE SubmissionSession envelope per supplier visit (addendum §5): each
+  // dispatched object records an attempt on it, and every dispatch AFTER the
+  // first passes the anchor correlationId as its causationId (the SDC-3a seam,
+  // now driven). Degenerate no longer — three object kinds share this recorder.
   const sessionRef = useRef<SubmissionSessionRecorder | null>(null);
+  /** The visit's audit anchor for the NEXT dispatch — undefined for the first
+   *  (which becomes the anchor once recorded). */
+  const causationId = (): string | undefined => sessionRef.current?.causationAnchor() ?? undefined;
+  /** Record a settled dispatch on the visit envelope (opening it on first use). */
+  const recordAttempt = (kind: SdcObjectKind, res: CommandResult) => {
+    if (!sessionRef.current) {
+      sessionRef.current = openSubmissionSession(
+        `ss-p1-${Date.now().toString(36)}`,
+        supplierId,
+        new Date().toISOString(),
+      );
+    }
+    sessionRef.current.attempt(kind, res.entityId ?? '', res.correlationId);
+  };
 
   const openConfirm = (line: ForecastLine) => {
     setPanelLine(line);
     setForm(emptyForm);
   };
-
   const openAcknowledge = (line: ForecastLine) => {
     setAckPanelLine(line);
     setAckNote('');
   };
+  const openSoh = () => {
+    setSohForm(emptySohForm);
+    setSohOpen(true);
+  };
+  const openShip = () => {
+    setShipForm(emptyShipmentForm);
+    setShipOpen(true);
+  };
 
-  const qtyNumber = Number(form.confirmedQty.replace(/,/g, ''));
+  const qtyNumber = numberFromField(form.confirmedQty);
   const isShort =
     panelLine !== null &&
     form.confirmedQty.trim() !== '' &&
     !Number.isNaN(qtyNumber) &&
     qtyNumber < panelLine.forecastQty;
+
+  const failToast = () =>
+    toast({
+      variant: 'error',
+      title: t('sdcSup.toast.failed.title'),
+      description: t('sdcSup.toast.failed.body'),
+    });
 
   const submitConfirmation = async () => {
     if (!panelLine) return;
@@ -384,7 +698,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         : {}),
     });
     try {
-      const res = await submitMutation.mutateAsync({ payload });
+      const res = await submitMutation.mutateAsync({ payload, causationId: causationId() });
       if (res.status === 'failed') {
         toast({
           variant: 'error',
@@ -393,15 +707,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         });
         return;
       }
-      // Record the dispatch on the visit's session envelope (audit grouping).
-      if (!sessionRef.current) {
-        sessionRef.current = openSubmissionSession(
-          `ss-p1-${Date.now().toString(36)}`,
-          supplierId,
-          new Date().toISOString(),
-        );
-      }
-      sessionRef.current.attempt('RequirementResponse', res.entityId ?? '', res.correlationId);
+      recordAttempt('RequirementResponse', res);
       toast({
         variant: 'success',
         title: t('sdcSup.toast.submitted.title', {
@@ -413,16 +719,11 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       setForm(emptyForm);
       setActiveTab('responses');
     } catch {
-      toast({
-        variant: 'error',
-        title: t('sdcSup.toast.failed.title'),
-        description: t('sdcSup.toast.failed.body'),
-      });
+      failToast();
     }
   };
 
   // SDC-2b-EXT — the visibility response: acknowledge + optional signal.
-  // Same snapshot binding + identity discipline + session envelope; NO qty.
   const submitAcknowledgment = async () => {
     if (!ackPanelLine) return;
     const payload = buildRequirementAcknowledgePayload(
@@ -432,7 +733,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       ackNote,
     );
     try {
-      const res = await acknowledgeMutation.mutateAsync({ payload });
+      const res = await acknowledgeMutation.mutateAsync({ payload, causationId: causationId() });
       if (res.status === 'failed') {
         toast({
           variant: 'error',
@@ -441,14 +742,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         });
         return;
       }
-      if (!sessionRef.current) {
-        sessionRef.current = openSubmissionSession(
-          `ss-p1-${Date.now().toString(36)}`,
-          supplierId,
-          new Date().toISOString(),
-        );
-      }
-      sessionRef.current.attempt('RequirementResponse', res.entityId ?? '', res.correlationId);
+      recordAttempt('RequirementResponse', res);
       toast({
         variant: 'success',
         title: t('sdcSup.toast.acknowledged.title', {
@@ -460,13 +754,187 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       setAckNote('');
       setActiveTab('responses');
     } catch {
-      toast({
-        variant: 'error',
-        title: t('sdcSup.toast.failed.title'),
-        description: t('sdcSup.toast.failed.body'),
-      });
+      failToast();
     }
   };
+
+  // ── SDC-3b — SOH declare ───────────────────────────────────────────────────
+  const sohBatches = sohForm.batches.filter((b) => b.batchNumber.trim() !== '');
+  const sohBatchSum = sohBatches.reduce((s, b) => s + (numberFromField(b.qty) || 0), 0);
+  const sohTotal = numberFromField(sohForm.totalQty);
+  // Client-side pre-check (the INV_DECLARE_BATCH_TOTAL hook is the real gate):
+  // when batch detail is present, Σ must equal the declared total.
+  const sohBatchMismatch = sohBatches.length > 0 && !Number.isNaN(sohTotal) && sohBatchSum !== sohTotal;
+
+  const submitSoh = async () => {
+    if (!sohForm.materialCode) {
+      toast({
+        variant: 'error',
+        title: t('sdcSup.stock.toast.missingMaterial.title'),
+        description: t('sdcSup.stock.toast.missingMaterial.body'),
+      });
+      return;
+    }
+    if (sohForm.totalQty.trim() === '' || Number.isNaN(sohTotal)) {
+      toast({
+        variant: 'error',
+        title: t('sdcSup.stock.toast.missingTotal.title'),
+        description: t('sdcSup.stock.toast.missingTotal.body'),
+      });
+      return;
+    }
+    if (sohBatchMismatch) {
+      toast({
+        variant: 'error',
+        title: t('sdcSup.stock.toast.batchMismatch.title'),
+        description: t('sdcSup.stock.toast.batchMismatch.body', {
+          sum: formatNumber(sohBatchSum),
+          total: formatNumber(sohTotal),
+        }),
+      });
+      return;
+    }
+    const payload = buildInventoryDeclarationPayload(supplierId, sohForm.materialCode, {
+      totalQty: sohForm.totalQty,
+      ...(sohBatches.length > 0
+        ? {
+            batches: sohBatches.map((b) => ({
+              batchNumber: b.batchNumber,
+              qty: b.qty,
+              ...(b.expiryDate ? { expiryDate: b.expiryDate } : {}),
+            })),
+          }
+        : {}),
+    });
+    try {
+      const res = await declareMutation.mutateAsync({ payload, causationId: causationId() });
+      if (res.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('sdcSup.stock.toast.failed.title'),
+          description: res.reason ?? t('sdcSup.toast.failed.body'),
+        });
+        return;
+      }
+      recordAttempt('InventoryDeclaration', res);
+      toast({
+        variant: 'success',
+        title: t('sdcSup.stock.toast.declared.title', {
+          material: materialLabel(sohForm.materialCode),
+        }),
+        description: t('sdcSup.stock.toast.declared.body'),
+      });
+      setSohOpen(false);
+      setSohForm(emptySohForm);
+      setActiveTab('stock');
+    } catch {
+      failToast();
+    }
+  };
+
+  // ── SDC-3b — shipment report ───────────────────────────────────────────────
+  const shipMaterial = materials.find((m) => m.materialCode === shipForm.materialCode) ?? null;
+  // Direction legality (the surface never offers an illegal pairing):
+  // to-paragon is always legal; principal-to-distributor ONLY for a distributor.
+  const p2dLegal = shipMaterial?.supplierType === 'distributor';
+  // The supplier's own ASNs are the to-paragon link source (asnRef is SELECTED,
+  // never free-typed — it resolves server-side, per the R-4 note).
+  const ownAsns = asns;
+
+  const setShipMaterial = (materialCode: string) => {
+    const m = materials.find((x) => x.materialCode === materialCode) ?? null;
+    setShipForm((f) => ({
+      ...f,
+      materialCode,
+      // Reset a now-illegal direction (p2d on a non-distributor material).
+      direction:
+        f.direction === 'principal-to-distributor' && m?.supplierType !== 'distributor'
+          ? ''
+          : f.direction,
+    }));
+  };
+  const setShipAsn = (asnNumber: string) => {
+    const asn = ownAsns.find((a) => a.asnNumber === asnNumber);
+    // Auto-fill the AWB from the linked ASN's tracking number (read-only echo).
+    setShipForm((f) => ({ ...f, asnRef: asnNumber, awb: asn?.trackingNumber ?? '' }));
+  };
+
+  const submitShipment = async () => {
+    if (!shipForm.materialCode) {
+      toast({
+        variant: 'error',
+        title: t('sdcSup.ship.toast.missingMaterial.title'),
+        description: t('sdcSup.ship.toast.missingMaterial.body'),
+      });
+      return;
+    }
+    if (!shipForm.direction) {
+      toast({
+        variant: 'error',
+        title: t('sdcSup.ship.toast.missingDirection.title'),
+        description: t('sdcSup.ship.toast.missingDirection.body'),
+      });
+      return;
+    }
+    if (shipForm.qty.trim() === '' || Number.isNaN(numberFromField(shipForm.qty))) {
+      toast({
+        variant: 'error',
+        title: t('sdcSup.ship.toast.missingQty.title'),
+        description: t('sdcSup.ship.toast.missingQty.body'),
+      });
+      return;
+    }
+    // to-paragon MUST link an own ASN (the guard enforces; the surface requires it).
+    if (shipForm.direction === 'to-paragon' && !shipForm.asnRef) {
+      toast({
+        variant: 'error',
+        title: t('sdcSup.ship.toast.missingAsn.title'),
+        description: t('sdcSup.ship.toast.missingAsn.body'),
+      });
+      return;
+    }
+    const payload = buildIncomingShipmentPayload(
+      supplierId,
+      shipForm.materialCode,
+      shipForm.direction,
+      {
+        qty: shipForm.qty,
+        ...(shipForm.etd ? { etd: shipForm.etd } : {}),
+        ...(shipForm.eta ? { eta: shipForm.eta } : {}),
+        ...(shipForm.awb ? { awb: shipForm.awb } : {}),
+        ...(shipForm.direction === 'to-paragon' && shipForm.asnRef
+          ? { asnRef: shipForm.asnRef }
+          : {}),
+      },
+    );
+    try {
+      const res = await reportMutation.mutateAsync({ payload, causationId: causationId() });
+      if (res.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('sdcSup.ship.toast.failed.title'),
+          description: res.reason ?? t('sdcSup.toast.failed.body'),
+        });
+        return;
+      }
+      recordAttempt('IncomingShipment', res);
+      toast({
+        variant: 'success',
+        title: t('sdcSup.ship.toast.reported.title', {
+          material: materialLabel(shipForm.materialCode),
+        }),
+        description: t('sdcSup.ship.toast.reported.body'),
+      });
+      setShipOpen(false);
+      setShipForm(emptyShipmentForm);
+      setActiveTab('shipments');
+    } catch {
+      failToast();
+    }
+  };
+
+  const sohUom = sohForm.materialCode ? materialUom(sohForm.materialCode) : '';
+  const shipUom = shipForm.materialCode ? materialUom(shipForm.materialCode) : '';
 
   return (
     <AppShellV2>
@@ -500,6 +968,8 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       <SubTabs<TabKey>
         options={[
           { id: 'lines', label: t('sdcSup.tab.lines'), count: lines.length },
+          { id: 'stock', label: t('sdcSup.tab.stock'), count: declarations.length },
+          { id: 'shipments', label: t('sdcSup.tab.shipments'), count: shipments.length },
           { id: 'responses', label: t('sdcSup.tab.responses'), count: responses.length },
         ]}
         value={activeTab}
@@ -531,8 +1001,22 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
             ))}
           </div>
         ))}
+      {activeTab === 'stock' && (
+        <>
+          {/* The Stock tab carries its OWN registry marker — inventory is wired
+              (gate-1) but harvest-gated → "Sample — awaiting live supplier feed". */}
+          <div className="mb-4">
+            <LivenessPill capability="inventory" />
+          </div>
+          <DeclarationsTab declarations={declarations} onDeclare={openSoh} />
+        </>
+      )}
+      {activeTab === 'shipments' && (
+        <ShipmentsTab shipments={shipments} onReport={openShip} />
+      )}
       {activeTab === 'responses' && <ResponsesTab responses={responses} />}
 
+      {/* ── Forecast confirm panel (SDC-2b) ─────────────────────────────────── */}
       <SidePanel
         open={panelLine !== null}
         onClose={() => setPanelLine(null)}
@@ -683,9 +1167,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         )}
       </SidePanel>
 
-      {/* SDC-2b-EXT — the LIGHT visibility-response panel: acknowledge +
-          optional signal. The commit stays OUTLINE — solid is reserved for
-          real commitments (DP2-BUTTON-01); an acknowledgment commits nothing. */}
+      {/* ── Acknowledge panel (SDC-2b-EXT — the visibility response) ─────────── */}
       <SidePanel
         open={ackPanelLine !== null}
         onClose={() => setAckPanelLine(null)}
@@ -753,12 +1235,369 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
           </div>
         )}
       </SidePanel>
+
+      {/* ── SDC-3b — SOH declare panel (total-first + optional batch detail) ─── */}
+      <SidePanel
+        open={sohOpen}
+        onClose={() => setSohOpen(false)}
+        title={t('sdcSup.stock.panel.title')}
+        footerActions={
+          <>
+            <Button variant="secondary" onClick={() => setSohOpen(false)}>
+              {t('sdcSup.panel.cancel')}
+            </Button>
+            <Button
+              variant="outline"
+              icon={Send}
+              disabled={declareMutation.isPending}
+              onClick={submitSoh}
+            >
+              {declareMutation.isPending
+                ? t('sdcSup.stock.panel.submitting')
+                : t('sdcSup.stock.panel.submit')}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <FormSection
+            eyebrow={t('sdcSup.stock.panel.material.eyebrow')}
+            title={t('sdcSup.stock.panel.material.title')}
+            description={t('sdcSup.stock.panel.material.desc')}
+          >
+            <div>
+              <label className={labelClass} htmlFor="sdcsup-soh-material">
+                {t('sdcSup.stock.panel.materialLabel')}
+              </label>
+              <select
+                id="sdcsup-soh-material"
+                value={sohForm.materialCode}
+                onChange={(e) => setSohForm({ ...sohForm, materialCode: e.target.value })}
+                className={inputClass}
+              >
+                <option value="">{t('sdcSup.stock.panel.materialSelect')}</option>
+                {materials.map((m) => (
+                  <option key={m.materialCode} value={m.materialCode}>
+                    {m.materialCode} — {m.label} ({m.uom})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </FormSection>
+
+          <FormSection
+            eyebrow={t('sdcSup.stock.panel.total.eyebrow')}
+            title={t('sdcSup.stock.panel.total.title')}
+            description={t('sdcSup.stock.panel.total.desc')}
+          >
+            <div>
+              <label className={labelClass} htmlFor="sdcsup-soh-total">
+                {t('sdcSup.stock.panel.totalLabel', { uom: sohUom || '—' })}
+              </label>
+              <input
+                id="sdcsup-soh-total"
+                type="number"
+                min={0}
+                placeholder="0"
+                value={sohForm.totalQty}
+                onChange={(e) => setSohForm({ ...sohForm, totalQty: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+          </FormSection>
+
+          <FormSection
+            eyebrow={t('sdcSup.stock.panel.batches.eyebrow')}
+            title={t('sdcSup.stock.panel.batches.title')}
+            description={t('sdcSup.stock.panel.batches.desc')}
+          >
+            <div className="space-y-3">
+              {sohForm.batches.map((b, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end rounded-md border border-border-subtle bg-bg-hover p-3"
+                >
+                  <div>
+                    <label className={labelClass}>{t('sdcSup.stock.panel.batchNumber')}</label>
+                    <input
+                      type="text"
+                      value={b.batchNumber}
+                      placeholder="e.g. GLY-24A"
+                      onChange={(e) => {
+                        const batches = sohForm.batches.slice();
+                        batches[i] = { ...b, batchNumber: e.target.value };
+                        setSohForm({ ...sohForm, batches });
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      {t('sdcSup.stock.panel.batchQty', { uom: sohUom || '—' })}
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={b.qty}
+                      onChange={(e) => {
+                        const batches = sohForm.batches.slice();
+                        batches[i] = { ...b, qty: e.target.value };
+                        setSohForm({ ...sohForm, batches });
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className={labelClass}>{t('sdcSup.stock.panel.batchExpiry')}</label>
+                    <input
+                      type="date"
+                      value={b.expiryDate}
+                      onChange={(e) => {
+                        const batches = sohForm.batches.slice();
+                        batches[i] = { ...b, expiryDate: e.target.value };
+                        setSohForm({ ...sohForm, batches });
+                      }}
+                      className={inputClass}
+                    />
+                  </div>
+                  <Button
+                    variant="secondary"
+                    icon={Trash2}
+                    aria-label={t('sdcSup.stock.panel.removeBatch')}
+                    onClick={() =>
+                      setSohForm({
+                        ...sohForm,
+                        batches: sohForm.batches.filter((_, j) => j !== i),
+                      })
+                    }
+                  />
+                </div>
+              ))}
+              <Button
+                variant="secondary"
+                icon={Layers}
+                onClick={() =>
+                  setSohForm({
+                    ...sohForm,
+                    batches: [...sohForm.batches, { batchNumber: '', qty: '', expiryDate: '' }],
+                  })
+                }
+              >
+                {t('sdcSup.stock.panel.addBatch')}
+              </Button>
+              {sohBatches.length > 0 && (
+                <div
+                  className={`text-xs ${sohBatchMismatch ? 'text-danger' : 'text-text-secondary'}`}
+                >
+                  {t('sdcSup.stock.panel.batchSum', {
+                    sum: formatNumber(sohBatchSum),
+                    total: formatNumber(Number.isNaN(sohTotal) ? 0 : sohTotal),
+                    uom: sohUom || '—',
+                  })}
+                  {sohBatchMismatch && ` — ${t('sdcSup.stock.panel.batchMismatch')}`}
+                </div>
+              )}
+            </div>
+          </FormSection>
+        </div>
+      </SidePanel>
+
+      {/* ── SDC-3b — shipment report panel (direction-guarded) ──────────────── */}
+      <SidePanel
+        open={shipOpen}
+        onClose={() => setShipOpen(false)}
+        title={t('sdcSup.ship.panel.title')}
+        footerActions={
+          <>
+            <Button variant="secondary" onClick={() => setShipOpen(false)}>
+              {t('sdcSup.panel.cancel')}
+            </Button>
+            <Button
+              variant="outline"
+              icon={Ship}
+              disabled={reportMutation.isPending}
+              onClick={submitShipment}
+            >
+              {reportMutation.isPending
+                ? t('sdcSup.ship.panel.submitting')
+                : t('sdcSup.ship.panel.submit')}
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <FormSection
+            eyebrow={t('sdcSup.ship.panel.material.eyebrow')}
+            title={t('sdcSup.ship.panel.material.title')}
+            description={t('sdcSup.ship.panel.material.desc')}
+          >
+            <div>
+              <label className={labelClass} htmlFor="sdcsup-ship-material">
+                {t('sdcSup.stock.panel.materialLabel')}
+              </label>
+              <select
+                id="sdcsup-ship-material"
+                value={shipForm.materialCode}
+                onChange={(e) => setShipMaterial(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">{t('sdcSup.stock.panel.materialSelect')}</option>
+                {materials.map((m) => (
+                  <option key={m.materialCode} value={m.materialCode}>
+                    {m.materialCode} — {m.label} ({m.uom})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass} htmlFor="sdcsup-ship-direction">
+                {t('sdcSup.ship.panel.directionLabel')}
+              </label>
+              <select
+                id="sdcsup-ship-direction"
+                value={shipForm.direction}
+                disabled={!shipForm.materialCode}
+                onChange={(e) =>
+                  setShipForm({ ...shipForm, direction: e.target.value as ShipmentDirection | '' })
+                }
+                className={inputClass}
+              >
+                <option value="">{t('sdcSup.ship.panel.directionSelect')}</option>
+                <option value="to-paragon">{t('sdcSup.ship.dir.toParagon')}</option>
+                {/* p2d offered ONLY for a distributor material — the surface never
+                    presents an illegal pairing (ISH_P2D_DISTRIBUTOR_ONLY). */}
+                {p2dLegal && (
+                  <option value="principal-to-distributor">{t('sdcSup.ship.dir.p2d')}</option>
+                )}
+              </select>
+              {shipForm.materialCode && !p2dLegal && (
+                <p className="mt-1 text-xs italic text-text-tertiary">
+                  {t('sdcSup.ship.panel.p2dHint')}
+                </p>
+              )}
+            </div>
+          </FormSection>
+
+          <FormSection
+            eyebrow={t('sdcSup.ship.panel.detail.eyebrow')}
+            title={t('sdcSup.ship.panel.detail.title')}
+            description={t('sdcSup.ship.panel.detail.desc')}
+          >
+            <div>
+              <label className={labelClass} htmlFor="sdcsup-ship-qty">
+                {t('sdcSup.ship.panel.qtyLabel', { uom: shipUom || '—' })}
+              </label>
+              <input
+                id="sdcsup-ship-qty"
+                type="number"
+                min={0}
+                placeholder="0"
+                value={shipForm.qty}
+                onChange={(e) => setShipForm({ ...shipForm, qty: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass} htmlFor="sdcsup-ship-etd">
+                  {t('sdcSup.ship.panel.etd')}
+                </label>
+                <input
+                  id="sdcsup-ship-etd"
+                  type="date"
+                  value={shipForm.etd}
+                  onChange={(e) => setShipForm({ ...shipForm, etd: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass} htmlFor="sdcsup-ship-eta">
+                  {t('sdcSup.ship.panel.eta')}
+                </label>
+                <input
+                  id="sdcsup-ship-eta"
+                  type="date"
+                  value={shipForm.eta}
+                  onChange={(e) => setShipForm({ ...shipForm, eta: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </FormSection>
+
+          {/* to-paragon: link an OWN ASN (asnRef resolves server-side, never
+              free-typed). p2d: an optional carrier AWB, no ASN. */}
+          {shipForm.direction === 'to-paragon' && (
+            <FormSection
+              eyebrow={t('sdcSup.ship.panel.link.eyebrow')}
+              title={t('sdcSup.ship.panel.link.title')}
+              description={t('sdcSup.ship.panel.link.desc')}
+            >
+              <div>
+                <label className={labelClass} htmlFor="sdcsup-ship-asn">
+                  {t('sdcSup.ship.panel.asnLabel')}
+                </label>
+                {ownAsns.length === 0 ? (
+                  <p className="text-xs italic text-text-tertiary">
+                    {t('sdcSup.ship.panel.noAsns')}
+                  </p>
+                ) : (
+                  <select
+                    id="sdcsup-ship-asn"
+                    value={shipForm.asnRef}
+                    onChange={(e) => setShipAsn(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="">{t('sdcSup.ship.panel.asnSelect')}</option>
+                    {ownAsns.map((a) => (
+                      <option key={a.asnNumber} value={a.asnNumber}>
+                        {a.asnNumber} · {a.status} · {a.trackingNumber}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              {shipForm.awb && (
+                <div className="text-xs text-text-secondary">
+                  {t('sdcSup.ship.panel.awbEcho')}{' '}
+                  <Data as="strong" className="text-text-primary">
+                    {shipForm.awb}
+                  </Data>
+                </div>
+              )}
+            </FormSection>
+          )}
+          {shipForm.direction === 'principal-to-distributor' && (
+            <FormSection
+              eyebrow={t('sdcSup.ship.panel.link.eyebrow')}
+              title={t('sdcSup.ship.panel.awbTitle')}
+              description={t('sdcSup.ship.panel.awbDesc')}
+            >
+              <div>
+                <label className={labelClass} htmlFor="sdcsup-ship-awb">
+                  {t('sdcSup.ship.panel.awbLabel')}
+                </label>
+                <input
+                  id="sdcsup-ship-awb"
+                  type="text"
+                  placeholder="e.g. AWB-88231145"
+                  value={shipForm.awb}
+                  onChange={(e) => setShipForm({ ...shipForm, awb: e.target.value })}
+                  className={inputClass}
+                />
+              </div>
+            </FormSection>
+          )}
+        </div>
+      </SidePanel>
     </AppShellV2>
   );
 };
 
-// Wrapper: identity gate + the scoped reads + the four honest states, exactly
-// the SupplierRFQs shape.
+// Wrapper: identity gate + the scoped reads + the honest states, exactly the
+// SupplierRFQs shape. The four SDC-3b reads carry own-facts-only data into the
+// hub; they resolve fast (store reads), so they pass through with [] fallbacks
+// rather than gating the whole page.
 const SupplierForecasts: React.FC = () => {
   const { t } = useTranslation();
   const crumb = [t('sdcSup.crumb.section'), t('sdcSup.crumb.page')];
@@ -767,6 +1606,10 @@ const SupplierForecasts: React.FC = () => {
   const supplierQuery = useCurrentSupplier();
   const linesQuery = useOwnForecastLines();
   const responsesQuery = useOwnRequirementResponses();
+  const materialsQuery = useOwnCollaboratedMaterials();
+  const declarationsQuery = useOwnInventoryDeclarations();
+  const shipmentsQuery = useOwnIncomingShipments();
+  const asnsQuery = useOwnSupplierAsns();
 
   if (!supplierId) return <NoSupplierIdentity />;
   if (supplierQuery.isPending || linesQuery.isPending || responsesQuery.isPending)
@@ -807,6 +1650,10 @@ const SupplierForecasts: React.FC = () => {
       lines={read.lines}
       liveFeed={read.liveFeed}
       responses={responses}
+      materials={materialsQuery.data ?? []}
+      declarations={declarationsQuery.data ?? []}
+      shipments={shipmentsQuery.data ?? []}
+      asns={asnsQuery.data ?? []}
     />
   );
 };

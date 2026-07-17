@@ -302,9 +302,15 @@ describe('supplier-coverage indicator (the ONE projection that is ours)', () => 
     expect(entries).toHaveLength(6);
     // sup-002 has declared no cetearyl stock → honest blank there too.
     expect(byPair.get('sup-002|RM-EMUL-3320')!.status).toEqual({ kind: 'no-declaration' });
-    // The F-1a sup-007 pairs carry no declaration either → honest blanks, never
-    // fabricated zeros (sup-007 is the seeded silent supplier).
-    expect(byPair.get('sup-007|PK-PETB-8810')!.status).toEqual({ kind: 'no-declaration' });
+    // SDC-3b — sup-007's PET line carries a TOTAL-ONLY declaration (inv-0003):
+    // it covers demand (45 000 ≥ 40 000) so reads "covered", BUT expiryBlind is
+    // true (no batch/expiry detail — the EXPIRY-BLIND marker's fixture).
+    expect(byPair.get('sup-007|PK-PETB-8810')!.status).toEqual({
+      kind: 'covered',
+      ratio: 45000 / 40000,
+      expiryBlind: true,
+    });
+    // The cap line still carries no declaration → honest blank, never a zero.
     expect(byPair.get('sup-007|PK-CAPF-8820')!.status).toEqual({ kind: 'no-declaration' });
   });
 
@@ -335,7 +341,8 @@ describe('supplier-coverage indicator (the ONE projection that is ours)', () => 
       [SYNTHETIC_DISTRIBUTOR],
       NOW_BEFORE_DUE,
     );
-    expect(e.status).toEqual({ kind: 'at-risk', ratio: 0.85, unbridgeable: true });
+    // Batch-grain synthetic declaration → expiry-aware (expiryBlind false).
+    expect(e.status).toEqual({ kind: 'at-risk', ratio: 0.85, unbridgeable: true, expiryBlind: false });
   });
 
   it('bands uncovered below the floor; a short-enough principal lead is bridgeable', () => {
@@ -351,7 +358,7 @@ describe('supplier-coverage indicator (the ONE projection that is ours)', () => 
       ],
       NOW_BEFORE_DUE,
     );
-    expect(e.status).toEqual({ kind: 'uncovered', ratio: 0.5, unbridgeable: false });
+    expect(e.status).toEqual({ kind: 'uncovered', ratio: 0.5, unbridgeable: false, expiryBlind: false });
     expect(COVERAGE_AT_RISK_FLOOR).toBe(0.8);
   });
 
@@ -363,7 +370,7 @@ describe('supplier-coverage indicator (the ONE projection that is ours)', () => 
       [{ supplierId: 'sup-X', materialCode: 'RM-T', supplierType: 'manufacturer' }],
       NOW_BEFORE_DUE,
     );
-    expect(e.status).toEqual({ kind: 'uncovered', ratio: 0.5, unbridgeable: false });
+    expect(e.status).toEqual({ kind: 'uncovered', ratio: 0.5, unbridgeable: false, expiryBlind: false });
   });
 
   it('Arrived / Cancelled legs never count as incoming', () => {

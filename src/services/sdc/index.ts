@@ -12,3 +12,7 @@ export * from './visibility';
 export * from './session';
 export * from './submitModel';
 export * from './inventory';
+// SDC-3b — the two additional supplier objects' surfaces (pure layer):
+export * from './objectSubmitModels';
+export * from './supplierMaterials';
+export * from './shipment';

@@ -16,8 +16,10 @@ import { useInventory } from '../../services/query/hooks';
 import { StockStatus } from '../../types/supplier.types';
 import type { InventoryRecord } from '../../types/supplier.types';
 
-// Capability "inventory": a static fixture (no command mutates it, so no wired
-// CommandTarget) → the LivenessRegistry derives SIMULATED → amber "Sample" pill.
+// Capability "inventory": SDC-3b repointed it at the wired InventoryDeclaration
+// target (gate-1 LIVE), but it stays harvest-gated on a live supplier feed
+// (gate-2) → the LivenessRegistry keeps isLive() false → still an amber pill,
+// now reading the specific "Sample — awaiting live supplier feed" waiting-state.
 // The urgency flag is still honestly derived from the fixture's real stockStatus.
 const isLow = (r: InventoryRecord): boolean =>
   r.stockStatus === StockStatus.CRITICAL || r.stockStatus === StockStatus.LOW;

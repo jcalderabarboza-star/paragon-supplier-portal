@@ -496,8 +496,10 @@ export const REQUIREMENT_RESPONSES: readonly RequirementResponse[] = Object.free
 
 // ─── Object 2 — InventoryDeclarations (SOH state; TOTAL-FIRST, SDC-3a) ─────────
 // The floor is totalQty; batches[] is OPTIONAL detail (R-4 Finding 1 ruling (a)).
-// Both seed declarations carry batch-grain detail with Σ batch qty = totalQty
-// (invariant #6′); a total-only declaration is exercised by the command tests.
+// Two seed declarations carry batch-grain detail with Σ batch qty = totalQty
+// (invariant #6′) — the full expiry-aware coverage read; one is TOTAL-ONLY
+// (SDC-3b) — exercising the EXPIRY-BLIND coverage marker in P2 (a total that is
+// honest about its SOH floor but cannot answer expiry bridgeability).
 
 export const INVENTORY_DECLARATIONS: readonly InventoryDeclaration[] = Object.freeze([
   Object.freeze({
@@ -524,6 +526,20 @@ export const INVENTORY_DECLARATIONS: readonly InventoryDeclaration[] = Object.fr
     batches: Object.freeze([
       Object.freeze({ batchNumber: 'DST-1180', qty: 1500, uom: 'KG', expiryDate: '2027-03-31' }),
     ]),
+    provenance: PROV_SUPPLIER_SEED,
+  }),
+  // SDC-3b — a TOTAL-ONLY declaration (the honest minimal form): sup-007 states
+  // its PET-bottle SOH floor for the firm 2026-08 line but declares no batch /
+  // expiry detail. Covers demand (45 000 ≥ 40 000 PCS) so it reads "covered",
+  // BUT it is EXPIRY-BLIND — P2's coverage marks that expiry bridgeability is
+  // unknown, never assuming no-expiry-risk (contrast inv-0001's batch-grain).
+  Object.freeze({
+    id: 'inv-0003',
+    supplierId: 'sup-007',
+    materialCode: 'PK-PETB-8810',
+    declaredAt: '2026-08-05T09:20:00.000Z',
+    totalQty: 45000,
+    uom: 'PCS',
     provenance: PROV_SUPPLIER_SEED,
   }),
 ]);
