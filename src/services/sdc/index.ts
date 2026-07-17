@@ -18,3 +18,5 @@ export * from './supplierMaterials';
 export * from './shipment';
 // SDC-3c-a — the shared ingestion adapter (rows → dispatch units; pure core):
 export * from './ingest';
+// SDC-3c-c-a — the headless XLSX parse layer (file → rows; lazy IO, pure edge):
+export * from './parseWorkbook';

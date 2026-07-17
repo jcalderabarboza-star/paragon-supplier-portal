@@ -174,6 +174,35 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.bulk.reason.batchMismatch': 'batches must sum to the total',
   'sdcSup.bulk.reason.noRows': 'Enter a total, or one or more batches.',
 
+  // ── SDC-3c-c-b — XLSX import (upload + confirmable column mapping) ───────────
+  'sdcSup.bulk.import.open': 'Import from Excel',
+  'sdcSup.bulk.import.needMaterial':
+    'Pick a material and total first — the file fills batch rows under them.',
+  'sdcSup.bulk.import.title': 'Import batches from a spreadsheet',
+  'sdcSup.bulk.import.drop': 'Drop an .xlsx file here, or',
+  'sdcSup.bulk.import.browse': 'Choose file',
+  'sdcSup.bulk.import.parsing': 'Reading the file…',
+  'sdcSup.bulk.import.sheetLabel': 'Sheet',
+  'sdcSup.bulk.import.mapTitle': 'Match your columns',
+  'sdcSup.bulk.import.mapHint': 'We guessed from your headers — check each field before importing.',
+  'sdcSup.bulk.import.field.batchNumber': 'Batch number ← your column',
+  'sdcSup.bulk.import.field.qty': 'Quantity ← your column',
+  'sdcSup.bulk.import.field.expiry': 'Expiry date ← your column (optional)',
+  'sdcSup.bulk.import.selectPlaceholder': 'Select a column…',
+  'sdcSup.bulk.import.none': '— none —',
+  'sdcSup.bulk.import.incomplete': 'Map both Batch number and Quantity to distinct columns.',
+  'sdcSup.bulk.import.confirm': 'Import {{count}} rows',
+  'sdcSup.bulk.import.cancel': 'Cancel',
+  'sdcSup.bulk.import.another': 'Try another file',
+  'sdcSup.bulk.import.toast.title': 'Batches imported',
+  'sdcSup.bulk.import.toast.body': '{{count}} rows added — review and Declare when ready.',
+  'sdcSup.bulk.import.fail.notWorkbook':
+    'That file isn’t a readable .xlsx workbook. Nothing was imported.',
+  'sdcSup.bulk.import.fail.noSheets': 'That workbook has no usable sheet. Nothing was imported.',
+  'sdcSup.bulk.import.fail.emptySheet': 'That sheet has no data rows. Nothing was imported.',
+  'sdcSup.bulk.import.fail.noHeaderRow':
+    'That sheet has no header row to match columns against. Nothing was imported.',
+
   // ── SDC-3b — Shipments tab ──────────────────────────────────────────────────
   'sdcSup.ship.subtitle': 'Incoming shipments you have reported for your collaborated materials.',
   'sdcSup.ship.report': 'Report shipment',
@@ -406,6 +435,35 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.bulk.reason.invalidQty': 'Sebuah kuantitas batch bukan angka yang valid.',
   'sdcSup.bulk.reason.batchMismatch': 'batch harus berjumlah sama dengan total',
   'sdcSup.bulk.reason.noRows': 'Masukkan total, atau satu batch atau lebih.',
+
+  // ── SDC-3c-c-b — Impor XLSX (unggah + pemetaan kolom yang dikonfirmasi) ──────
+  'sdcSup.bulk.import.open': 'Impor dari Excel',
+  'sdcSup.bulk.import.needMaterial':
+    'Pilih material dan total dulu — file hanya mengisi baris batch di bawahnya.',
+  'sdcSup.bulk.import.title': 'Impor batch dari spreadsheet',
+  'sdcSup.bulk.import.drop': 'Letakkan file .xlsx di sini, atau',
+  'sdcSup.bulk.import.browse': 'Pilih file',
+  'sdcSup.bulk.import.parsing': 'Membaca file…',
+  'sdcSup.bulk.import.sheetLabel': 'Lembar',
+  'sdcSup.bulk.import.mapTitle': 'Cocokkan kolom Anda',
+  'sdcSup.bulk.import.mapHint': 'Kami menebak dari header Anda — periksa setiap kolom sebelum mengimpor.',
+  'sdcSup.bulk.import.field.batchNumber': 'Nomor batch ← kolom Anda',
+  'sdcSup.bulk.import.field.qty': 'Kuantitas ← kolom Anda',
+  'sdcSup.bulk.import.field.expiry': 'Tanggal kedaluwarsa ← kolom Anda (opsional)',
+  'sdcSup.bulk.import.selectPlaceholder': 'Pilih kolom…',
+  'sdcSup.bulk.import.none': '— tidak ada —',
+  'sdcSup.bulk.import.incomplete': 'Petakan Nomor batch dan Kuantitas ke kolom yang berbeda.',
+  'sdcSup.bulk.import.confirm': 'Impor {{count}} baris',
+  'sdcSup.bulk.import.cancel': 'Batal',
+  'sdcSup.bulk.import.another': 'Coba file lain',
+  'sdcSup.bulk.import.toast.title': 'Batch diimpor',
+  'sdcSup.bulk.import.toast.body': '{{count}} baris ditambahkan — tinjau dan Deklarasikan bila siap.',
+  'sdcSup.bulk.import.fail.notWorkbook':
+    'File itu bukan workbook .xlsx yang bisa dibaca. Tidak ada yang diimpor.',
+  'sdcSup.bulk.import.fail.noSheets': 'Workbook itu tidak punya lembar yang bisa dipakai. Tidak ada yang diimpor.',
+  'sdcSup.bulk.import.fail.emptySheet': 'Lembar itu tidak punya baris data. Tidak ada yang diimpor.',
+  'sdcSup.bulk.import.fail.noHeaderRow':
+    'Lembar itu tidak punya baris header untuk mencocokkan kolom. Tidak ada yang diimpor.',
 
   // ── SDC-3b — Tab Pengiriman ─────────────────────────────────────────────────
   'sdcSup.ship.subtitle': 'Pengiriman masuk yang telah Anda laporkan untuk material kolaborasi Anda.',
