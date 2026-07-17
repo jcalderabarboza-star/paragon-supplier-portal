@@ -204,6 +204,100 @@ export const FORECAST_PUBLICATIONS: readonly ForecastPublication[] = Object.free
       }),
     ]),
   }),
+  // ── SDC-1 fixture depth — the MID-CYCLE REPUBLICATION (design §3.2) ─────────
+  // The CURRENT publication (latest publishedAt): same horizon, plan version
+  // bumped. It exercises the stale-carry-forward split the read-model derives:
+  //  · 2026-08 firm glycerin lines UNCHANGED → rr-0001 / rr-0002 (answered
+  //    PV-2026-08.1) carry forward presumed-valid (full / short, flagged carried).
+  //  · 2026-09 lines MOVED → rr-0004 (answered the superseded 120 000 PCS line)
+  //    is STALE-against-current; sup-002's 3320 line stays a Draft → awaiting.
+  //  · 2026-10 visibility-only line unchanged → sup-007 stays silent.
+  Object.freeze({
+    publicationId: 'PUB-2026-08-RM-R2',
+    planVersion: 'PV-2026-08.2',
+    publishedAt: '2026-08-15T00:00:00.000Z',
+    horizon: Object.freeze(['2026-08', '2026-09', '2026-10']),
+    provenance: PROV_SOMO_SEED,
+    lines: Object.freeze([
+      // 2026-08 still LOCKED → firm; the approved split republishes unchanged.
+      Object.freeze({
+        materialCode: 'RM-EMUL-3310',
+        supplierId: 'sup-002',
+        periodBucket: '2026-08',
+        forecastQty: 6000,
+        uom: 'KG',
+        commitmentClass: 'firm',
+        allocation: Object.freeze({
+          materialPeriodTotal: 10000,
+          basis: 'planner-split',
+          approvedBy: 'planner',
+          approvedAt: '2026-07-30T09:00:00.000Z',
+        }),
+        segment: 'AX',
+        suggestedSource: 'sup-002',
+        provenance: PROV_SOMO_SEED,
+      }),
+      Object.freeze({
+        materialCode: 'RM-EMUL-3310',
+        supplierId: 'sup-005',
+        periodBucket: '2026-08',
+        forecastQty: 3500,
+        uom: 'KG',
+        commitmentClass: 'firm',
+        allocation: Object.freeze({
+          materialPeriodTotal: 10000,
+          basis: 'planner-split',
+          approvedBy: 'planner',
+          approvedAt: '2026-07-30T09:00:00.000Z',
+        }),
+        segment: 'AX',
+        provenance: PROV_SOMO_SEED,
+      }),
+      // 2026-09 MOVED: cetearyl demand up 2 000 → 2 600 (total 2 500 → 3 000).
+      Object.freeze({
+        materialCode: 'RM-EMUL-3320',
+        supplierId: 'sup-002',
+        periodBucket: '2026-09',
+        forecastQty: 2600,
+        uom: 'KG',
+        commitmentClass: 'semi-firm',
+        allocation: Object.freeze({
+          materialPeriodTotal: 3000,
+          basis: 'quota',
+        }),
+        provenance: PROV_SOMO_SEED,
+      }),
+      // 2026-09 MOVED: PET bottles up 120 000 → 150 000 (the stale trigger —
+      // rr-0004 answered the superseded PV-2026-08.1 line).
+      Object.freeze({
+        materialCode: 'PK-PETB-8810',
+        supplierId: 'sup-005',
+        periodBucket: '2026-09',
+        forecastQty: 150000,
+        uom: 'PCS',
+        commitmentClass: 'semi-firm',
+        allocation: Object.freeze({
+          materialPeriodTotal: 150000,
+          basis: 'award-history',
+        }),
+        provenance: PROV_SOMO_SEED,
+      }),
+      // 2026-10 unchanged — sup-007 remains the silent supplier.
+      Object.freeze({
+        materialCode: 'AI-NIAC-6601',
+        supplierId: 'sup-007',
+        periodBucket: '2026-10',
+        forecastQty: 800,
+        uom: 'KG',
+        commitmentClass: 'visibility-only',
+        allocation: Object.freeze({
+          materialPeriodTotal: 1000,
+          basis: 'quota',
+        }),
+        provenance: PROV_SOMO_SEED,
+      }),
+    ]),
+  }),
 ]);
 
 // ─── Object 1 — RequirementResponses (the spine) ──────────────────────────────
@@ -268,6 +362,26 @@ export const REQUIREMENT_RESPONSES: readonly RequirementResponse[] = Object.free
       uom: 'KG',
     }),
     provenance: PROV_SUPPLIER_DRAFT,
+  }),
+  // SDC-1 depth — sup-005 confirmed its PET line against PV-2026-08.1; the
+  // mid-cycle republication then MOVED that line (120 000 → 150 000), so this
+  // recorded submission is the stale-against-current case (design §3.2).
+  Object.freeze({
+    id: 'rr-0004',
+    supplierId: 'sup-005',
+    materialCode: 'PK-PETB-8810',
+    periodBucket: '2026-09',
+    publicationId: 'PUB-2026-08-RM',
+    planVersion: 'PV-2026-08.1',
+    submittedAt: '2026-08-04T09:20:00.000Z',
+    submissionVersion: 1,
+    status: 'Submitted',
+    forecastConfirmation: Object.freeze({
+      confirmedQty: 120000,
+      uom: 'PCS',
+      committedDate: '2026-09-10',
+    }),
+    provenance: PROV_SUPPLIER_SEED,
   }),
 ]);
 
@@ -360,6 +474,17 @@ export const SUBMISSION_SESSIONS: readonly SubmissionSession[] = Object.freeze([
       Object.freeze({ kind: 'RequirementResponse', objectId: 'rr-0002' }),
       Object.freeze({ kind: 'InventoryDeclaration', objectId: 'inv-0002' }),
       Object.freeze({ kind: 'IncomingShipment', objectId: 'ish-0002' }),
+    ]),
+  }),
+  // SDC-1 depth — sup-005's later visit submitting the PET confirmation
+  // (rr-0004, addendum §7: a recorded submission through the session envelope).
+  Object.freeze({
+    sessionId: 'ss-0003',
+    supplierId: 'sup-005',
+    openedAt: '2026-08-04T09:18:00.000Z',
+    auditCorrelationId: 'corr-ss-0003',
+    attempted: Object.freeze([
+      Object.freeze({ kind: 'RequirementResponse', objectId: 'rr-0004' }),
     ]),
   }),
 ]);

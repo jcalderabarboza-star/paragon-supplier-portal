@@ -107,8 +107,12 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
     expect(note?.source).toBe('Track-R');
   });
 
-  it('only compliance + purchaseRequisitions are harvest-gated (others: note null)', () => {
-    const gated = new Set<Capability>(['compliance', 'purchaseRequisitions']);
+  it('only compliance + purchaseRequisitions + forecastPublications are harvest-gated (others: note null)', () => {
+    const gated = new Set<Capability>([
+      'compliance',
+      'purchaseRequisitions',
+      'forecastPublications',
+    ]);
     for (const cap of ALL_CAPABILITIES) {
       if (gated.has(cap)) continue;
       expect(awaitsHarvest(cap)).toBe(false);
@@ -129,6 +133,21 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
     expect(note?.readinessNoteKey).toBe('widget.honesty.awaitingProducer');
     expect(note?.source).toBe('SOMO / Grid');
     expect(isLive('purchaseRequisitions')).toBe(false); // guarded → SIMULATED render
+  });
+
+  it('forecastPublications (SDC-1) is a null-backed, harvest-gated capability → never green', () => {
+    // The CI-0 shape + a harvest note: the P2 consolidation reads SIMULATED
+    // fixture publications on the C8 grain (no lifecycle entity dispatches —
+    // the response verbs are SDC-2), so backing is null → derives SIMULATED.
+    // The gate-2 entry pre-encodes LIVENESS-DATASOURCE-01: even once SDC-2
+    // wires a target, green additionally requires the REAL SOMO C8 feed.
+    expect(capabilityBacking.forecastPublications).toBeNull();
+    expect(liveness('forecastPublications')).toBe('SIMULATED');
+    expect(awaitsHarvest('forecastPublications')).toBe(true);
+    const note = readinessNote('forecastPublications');
+    expect(note?.readinessNoteKey).toBe('widget.honesty.awaitingC8Feed');
+    expect(note?.source).toBe('SOMO C8');
+    expect(isLive('forecastPublications')).toBe(false);
   });
 
   it('gate-2 does not disturb the UNGATED wired-LIVE capabilities (real source)', () => {
