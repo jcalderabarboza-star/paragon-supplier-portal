@@ -80,7 +80,15 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // (LIVENESS-DATASOURCE-01). The flip to LIVE is the proven two-edit op: land a
   // producer + drop the harvest entry — exactly compliance's flip shape.
   purchaseRequisitions: 'purchaseRequisition',
-  inventory: null,
+  // SDC-3b — repointed from `null` to the now-wired InventoryDeclaration
+  // CommandTarget (t_inventorydeclaration_declare): gate-1 now derives LIVE (a
+  // declare genuinely dispatches + mutates the store). Gate-2 (the harvest entry
+  // below) STAYS SHUT — the SOH shown is SIMULATED fixtures / demo submissions
+  // until real supplier identities submit over a live portal (F1), so the pill
+  // keeps reading "Sample" and green stays structurally unreachable
+  // (LIVENESS-DATASOURCE-01: wiring alone must never flip green). Same two-edit
+  // flip shape as compliance / forecastPublications.
+  inventory: 'inventoryDeclaration',
   risk: null,
   // I3.1 — repointed from `null` to the now-authored canonical compliance flow.
   // The flow is REGISTERED but NOT a wired CommandTarget → still derives
@@ -143,6 +151,15 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
   forecastPublications: {
     readinessNoteKey: 'widget.honesty.awaitingC8Feed',
     source: 'SOMO C8',
+  },
+  // SDC-3b — the InventoryDeclaration CommandTarget is wired (gate-1 LIVE), but
+  // the SOH declarations are SIMULATED fixtures / demo submissions until real
+  // supplier identities land (F1). Until a live supplier feed exists, gate-2
+  // holds inventory SIMULATED (never green) — the same point forecastPublications
+  // makes, applied to the SOH object.
+  inventory: {
+    readinessNoteKey: 'widget.honesty.awaitingSupplierFeed',
+    source: 'Supplier feed (F1)',
   },
 };
 

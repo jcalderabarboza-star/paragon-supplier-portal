@@ -29,13 +29,29 @@ import { useDataService } from '../data/DataServiceContext';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { useServiceQuery, scopeKey } from './useServiceQuery';
 import { requirementResponseStore } from '../data/mock/stores/requirementResponseStore';
+import { inventoryDeclarationStore } from '../data/mock/stores/inventoryDeclarationStore';
+import { incomingShipmentStore } from '../data/mock/stores/incomingShipmentStore';
+import { asnStore } from '../data/mock/stores/asnStore';
 import {
   FORECAST_PUBLICATIONS,
+  MATERIAL_MASTER,
+  SUPPLIER_MATERIAL_RELATIONSHIPS,
   currentPublication,
   supplierVisiblePublications,
+  ownCollaboratedMaterials,
+  shipmentDisplayLifecycle,
+  type CollaboratedMaterial,
+  type ShipmentDisplayLifecycle,
 } from '../sdc';
-import type { ForecastLine, ForecastPublication, RequirementResponse } from '../sdc';
-import type { CommandResult, QueryScope } from '../data/types';
+import type {
+  ForecastLine,
+  ForecastPublication,
+  IncomingShipment,
+  InventoryDeclaration,
+  RequirementResponse,
+  Uom,
+} from '../sdc';
+import type { ASN, CommandResult, QueryScope } from '../data/types';
 
 export interface OwnForecastLinesRead {
   /** The current governed snapshot rendered (null when nothing to show). */
@@ -108,6 +124,10 @@ export interface RequirementResponseSubmitVars {
   /** The t_requirementresponse_submit payload (built by
    *  `buildRequirementResponsePayload` — never hand-assembled in a page). */
   payload: Record<string, unknown>;
+  /** SDC-3b — the SubmissionSession audit anchor (`causationAnchor()`), passed
+   *  by commands 2..n of a multi-object visit so their DR-10 events group with
+   *  the first. Absent for the visit's FIRST dispatch (it becomes the anchor). */
+  causationId?: string;
 }
 
 /** Confirm a published forecast line (fires the `creation` verb
@@ -122,12 +142,16 @@ export function useRequirementResponseSubmit() {
   const invalidate = useInvalidateSdc();
 
   return useMutation<CommandResult, Error, RequirementResponseSubmitVars>({
-    mutationFn: ({ payload }) =>
-      svc.commands.dispatch(scope, {
-        transitionId: 't_requirementresponse_submit',
-        entity: 'requirementResponse',
-        payload,
-      }),
+    mutationFn: ({ payload, causationId }) =>
+      svc.commands.dispatch(
+        scope,
+        {
+          transitionId: 't_requirementresponse_submit',
+          entity: 'requirementResponse',
+          payload,
+        },
+        causationId,
+      ),
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate(scope);
     },
@@ -146,12 +170,173 @@ export function useRequirementResponseAcknowledge() {
   const invalidate = useInvalidateSdc();
 
   return useMutation<CommandResult, Error, RequirementResponseSubmitVars>({
-    mutationFn: ({ payload }) =>
-      svc.commands.dispatch(scope, {
-        transitionId: 't_requirementresponse_acknowledge',
-        entity: 'requirementResponse',
-        payload,
-      }),
+    mutationFn: ({ payload, causationId }) =>
+      svc.commands.dispatch(
+        scope,
+        {
+          transitionId: 't_requirementresponse_acknowledge',
+          entity: 'requirementResponse',
+          payload,
+        },
+        causationId,
+      ),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+// ─── SDC-3b — the two additional supplier objects (reads + governed writes) ───
+
+/** One collaborated material, joined with the master for display + the uom the
+ *  target will assign (shown read-only — the supplier never picks a unit). */
+export interface CollaboratedMaterialView extends CollaboratedMaterial {
+  readonly label: string;
+  readonly uom: Uom;
+}
+
+/** The supplier's collaborated materials (the (i)∪(ii) set the declare/report
+ *  commands authorise), joined with the master. Page-level own-scope (SDC-4
+ *  moves this behind a service read). */
+export function useOwnCollaboratedMaterials() {
+  return useServiceQuery<readonly CollaboratedMaterialView[]>(
+    ['sdc', 'ownCollaboratedMaterials'],
+    async (_svc, scope) => {
+      if (!scope.supplierId) return [];
+      return ownCollaboratedMaterials(
+        SUPPLIER_MATERIAL_RELATIONSHIPS,
+        FORECAST_PUBLICATIONS,
+        scope.supplierId,
+      ).map((m) => ({
+        ...m,
+        label: MATERIAL_MASTER[m.materialCode]?.label ?? m.materialCode,
+        uom: MATERIAL_MASTER[m.materialCode]?.canonicalUom ?? 'KG',
+      }));
+    },
+  );
+}
+
+/** The supplier's CURRENT SOH per material — the latest declaration by
+ *  `declaredAt` for each material (own-facts-only; a snapshot, not a running
+ *  total). Sorted by material code. */
+export function useOwnInventoryDeclarations() {
+  return useServiceQuery<readonly InventoryDeclaration[]>(
+    ['sdc', 'ownInventoryDeclarations'],
+    async (_svc, scope) => {
+      const own = inventoryDeclarationStore
+        .all()
+        .filter((d) => d.supplierId === scope.supplierId);
+      // Latest per material (current SOH) — the store keeps every snapshot.
+      const currentByMaterial = new Map<string, InventoryDeclaration>();
+      for (const d of own) {
+        const prev = currentByMaterial.get(d.materialCode);
+        if (!prev || Date.parse(d.declaredAt) > Date.parse(prev.declaredAt)) {
+          currentByMaterial.set(d.materialCode, d);
+        }
+      }
+      return [...currentByMaterial.values()].sort((a, b) =>
+        a.materialCode.localeCompare(b.materialCode),
+      );
+    },
+  );
+}
+
+/** One reported leg + its DISPLAY lifecycle (derived-from-ASN for to-paragon —
+ *  the drift-honesty rule; stored for p2d). */
+export interface IncomingShipmentView {
+  readonly shipment: IncomingShipment;
+  readonly display: ShipmentDisplayLifecycle;
+}
+
+/** The supplier's OWN reported shipments (own-facts-only), newest first, each
+ *  with its display lifecycle resolved. A to-paragon leg's lifecycle is DERIVED
+ *  from the linked ASN's live status (the ASN machine is the SoR for that leg). */
+export function useOwnIncomingShipments() {
+  return useServiceQuery<readonly IncomingShipmentView[]>(
+    ['sdc', 'ownIncomingShipments'],
+    async (_svc, scope) =>
+      incomingShipmentStore
+        .all()
+        .filter((s) => s.supplierId === scope.supplierId)
+        .map((shipment) => {
+          const asnStatus =
+            shipment.direction === 'to-paragon' && shipment.asnRef
+              ? (asnStore.get(shipment.asnRef)?.status ?? null)
+              : null;
+          return { shipment, display: shipmentDisplayLifecycle(shipment, asnStatus) };
+        })
+        .slice()
+        .sort((a, b) => b.shipment.id.localeCompare(a.shipment.id)),
+  );
+}
+
+/** The supplier's OWN ASNs — the to-paragon link picker source (the leg links an
+ *  own ASN, never a free-typed ref; asnRef resolves server-side). */
+export function useOwnSupplierAsns() {
+  return useServiceQuery<readonly ASN[]>(
+    ['sdc', 'ownSupplierAsns'],
+    async (_svc, scope) =>
+      asnStore.all().filter((a) => a.supplierId === scope.supplierId),
+  );
+}
+
+export interface SdcObjectDispatchVars {
+  /** The command payload (built by an `objectSubmitModels` builder). */
+  payload: Record<string, unknown>;
+  /** SDC-3b — the SubmissionSession audit anchor (see RequirementResponseSubmitVars). */
+  causationId?: string;
+}
+
+/** Declare current SOH (fires the `creation` verb `t_inventorydeclaration_declare`
+ *  — supplier-owned, collaborated-material scoped, total-first). */
+export function useInventoryDeclare() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+  };
+  const invalidate = useInvalidateSdc();
+
+  return useMutation<CommandResult, Error, SdcObjectDispatchVars>({
+    mutationFn: ({ payload, causationId }) =>
+      svc.commands.dispatch(
+        scope,
+        {
+          transitionId: 't_inventorydeclaration_declare',
+          entity: 'inventoryDeclaration',
+          payload,
+        },
+        causationId,
+      ),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Report an incoming shipment (fires the `creation` verb
+ *  `t_incomingshipment_report`; direction-guarded). */
+export function useIncomingShipmentReport() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+  };
+  const invalidate = useInvalidateSdc();
+
+  return useMutation<CommandResult, Error, SdcObjectDispatchVars>({
+    mutationFn: ({ payload, causationId }) =>
+      svc.commands.dispatch(
+        scope,
+        {
+          transitionId: 't_incomingshipment_report',
+          entity: 'incomingShipment',
+          payload,
+        },
+        causationId,
+      ),
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate(scope);
     },

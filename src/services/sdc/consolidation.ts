@@ -31,6 +31,7 @@ import type {
   SupplierMaterialRelationship,
   Uom,
 } from './types';
+import { declarationGranularity } from './inventory';
 
 // ─── Policy constants (P2 display layer — NOT schema) ─────────────────────────
 
@@ -352,14 +353,33 @@ export function chaseList(
  *    lead time yet (CapacityProfile is build-deferred), and we flag only what
  *    we can interpret.
  *
+ * EXPIRY-BLINDNESS (SDC-3a total-first → SDC-3b): every banded status carries
+ * `expiryBlind`, true when the SOH it read was a TOTAL-ONLY declaration (no
+ * batch/expiry detail — `declarationGranularity` = 'total-only'). The ratio is
+ * still honest (totalQty is the SOH floor), but the indicator CANNOT assess
+ * whether stock expires before the committed horizon — so the surface must MARK
+ * "batch/expiry detail not declared" and NEVER silently assume no-expiry-risk.
+ * A batch-grain declaration feeds the full (expiry-aware) read (expiryBlind
+ * false). `no-declaration` carries no flag — there is nothing to be blind about.
+ *
  * MODELED, permanently: this is a computed sufficiency heuristic, not a
  * measured fact — the surface marks it Σ (ModelMarker), never DP-3 observed.
  */
 export type CoverageStatus =
   | { readonly kind: 'no-declaration' }
-  | { readonly kind: 'covered'; readonly ratio: number }
-  | { readonly kind: 'at-risk'; readonly ratio: number; readonly unbridgeable: boolean }
-  | { readonly kind: 'uncovered'; readonly ratio: number; readonly unbridgeable: boolean };
+  | { readonly kind: 'covered'; readonly ratio: number; readonly expiryBlind: boolean }
+  | {
+      readonly kind: 'at-risk';
+      readonly ratio: number;
+      readonly unbridgeable: boolean;
+      readonly expiryBlind: boolean;
+    }
+  | {
+      readonly kind: 'uncovered';
+      readonly ratio: number;
+      readonly unbridgeable: boolean;
+      readonly expiryBlind: boolean;
+    };
 
 export interface SupplierCoverageEntry {
   readonly supplierId: string;
@@ -431,6 +451,10 @@ export function supplierCoverageEntries(
     // SDC-3a total-first: totalQty IS the SOH floor (Σ batches when detail is
     // present — invariant #6′ keeps them equal, so no second sum here).
     const soh = latestDecl.totalQty;
+    // SDC-3b: a total-only declaration is EXPIRY-BLIND — the coverage read
+    // cannot assess expiry bridgeability, so the surface must mark it (never
+    // assume no-expiry-risk). Batch-grain feeds the full expiry-aware read.
+    const expiryBlind = declarationGranularity(latestDecl) === 'total-only';
     const incoming = shipments.reduce(
       (s, sh) =>
         sh.supplierId === supplierId &&
@@ -443,7 +467,13 @@ export function supplierCoverageEntries(
     const ratio = demand > 0 ? (soh + incoming) / demand : Infinity;
 
     if (ratio >= 1) {
-      return { supplierId, materialCode, committedDemandQty: demand, uom, status: { kind: 'covered', ratio } as const };
+      return {
+        supplierId,
+        materialCode,
+        committedDemandQty: demand,
+        uom,
+        status: { kind: 'covered', ratio, expiryBlind } as const,
+      };
     }
 
     // Shortfall: can a principal replenishment ordered NOW still arrive inside
@@ -458,6 +488,12 @@ export function supplierCoverageEntries(
       leadTimes.length > 0 && Math.min(...leadTimes) > daysUntil(now, bucketEndMs(lastBucket));
 
     const kind = ratio >= COVERAGE_AT_RISK_FLOOR ? ('at-risk' as const) : ('uncovered' as const);
-    return { supplierId, materialCode, committedDemandQty: demand, uom, status: { kind, ratio, unbridgeable } };
+    return {
+      supplierId,
+      materialCode,
+      committedDemandQty: demand,
+      uom,
+      status: { kind, ratio, unbridgeable, expiryBlind },
+    };
   });
 }

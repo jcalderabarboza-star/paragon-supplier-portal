@@ -166,15 +166,16 @@ describe('t_inventorydeclaration_declare — total-first, own-facts (SDC-3a)', (
   });
 
   it('a snapshot APPENDS — a second declaration never mutates the first (latestFor picks the newest)', async () => {
-    // sup-007 / PK-PETB-8810 has NO seed declaration, so latestFor over the two
-    // appended snapshots is unambiguous (the seed fixtures are future-dated).
-    const p = { materialCode: 'PK-PETB-8810', supplierId: 'sup-007' };
+    // sup-007 / PK-CAPF-8820 has NO seed declaration (PK-PETB-8810 gained the
+    // SDC-3b total-only fixture inv-0003), so latestFor over the two appended
+    // snapshots is unambiguous (the seed fixtures are future-dated).
+    const p = { materialCode: 'PK-CAPF-8820', supplierId: 'sup-007' };
     const first = await svc.dispatch(sup007, declare({ ...p, totalQty: 4000 }));
     const second = await svc.dispatch(sup007, declare({ ...p, totalQty: 3500 }));
     expect(first.entityId).not.toBe(second.entityId);
     expect(inventoryDeclarationStore.get(first.entityId!)!.totalQty).toBe(4000); // untouched
     // latestFor resolves the newest by declaredAt (the appended one).
-    const latest = inventoryDeclarationStore.latestFor('sup-007', 'PK-PETB-8810');
+    const latest = inventoryDeclarationStore.latestFor('sup-007', 'PK-CAPF-8820');
     expect(latest!.id).toBe(second.entityId);
   });
 

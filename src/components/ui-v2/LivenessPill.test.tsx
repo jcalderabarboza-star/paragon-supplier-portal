@@ -12,11 +12,11 @@ import { isLive, type Capability } from '../../services/liveness';
 const renderPill = (node: React.ReactNode) =>
   render(<I18nextProvider i18n={i18n}>{node}</I18nextProvider>);
 
-// Generic SIMULATED caps render the plain "Sample". `compliance` is harvest-gated
-// (I3.3) so it renders the SPECIFIC waiting-state text instead — asserted separately.
+// Generic SIMULATED caps render the plain "Sample". `compliance` (I3.3) and
+// `inventory` (SDC-3b) are harvest-gated, so they render the SPECIFIC
+// waiting-state text instead — asserted separately.
 const GENERIC_SIMULATED_CAPS: Capability[] = [
   'risk',
-  'inventory',
   'supplierDocuments',
 ];
 
@@ -29,6 +29,17 @@ describe('LivenessPill — honest-render (reads the LivenessRegistry)', () => {
     expect(screen.getByText('Sample — awaiting Track-R harvest')).toBeInTheDocument();
     expect(screen.queryByText('Live')).not.toBeInTheDocument();
     // Still amber / SIMULATED — green tokens structurally absent.
+    expect(container.querySelector('.text-success')).toBeNull();
+    expect(container.querySelector('.bg-success')).toBeNull();
+  });
+
+  it('inventory is harvest-gated (SDC-3b) → renders the specific supplier-feed waiting-state, never "Live"', () => {
+    // SDC-3b flipped the backing to the wired InventoryDeclaration target (gate-1
+    // LIVE) but gate-2 holds until a live supplier feed lands (F1) → still amber.
+    expect(isLive('inventory')).toBe(false);
+    const { container } = renderPill(<LivenessPill capability="inventory" />);
+    expect(screen.getByText('Sample — awaiting live supplier feed')).toBeInTheDocument();
+    expect(screen.queryByText('Live')).not.toBeInTheDocument();
     expect(container.querySelector('.text-success')).toBeNull();
     expect(container.querySelector('.bg-success')).toBeNull();
   });

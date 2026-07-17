@@ -317,6 +317,16 @@ const BuyerCollaboration: React.FC = () => {
                 label={t('sdc.coverage.model')}
                 title={t('sdc.coverage.modelTitle')}
               />
+              {/* SDC-3b — a total-only declaration: the ratio is honest but expiry
+                  bridgeability is UNKNOWN. Marked, never assumed no-risk. */}
+              {st.expiryBlind && (
+                <span
+                  className="text-[10px] italic text-text-tertiary"
+                  title={t('sdc.coverage.expiryBlindTitle')}
+                >
+                  {t('sdc.coverage.expiryBlind')}
+                </span>
+              )}
             </div>
           );
         },

@@ -61,6 +61,11 @@ export const sdcConsolidationEn: Record<string, string> = {
   'sdc.coverage.model': 'Model',
   'sdc.coverage.modelTitle':
     'Computed sufficiency heuristic — declared stock + incoming vs committed demand. Modeled, not measured.',
+  // SDC-3b — the total-only (EXPIRY-BLIND) marker: the SOH floor is honest but
+  // no batch/expiry detail was declared, so expiry bridgeability is unknown.
+  'sdc.coverage.expiryBlind': 'expiry-blind',
+  'sdc.coverage.expiryBlindTitle':
+    'Total-only declaration — SOH floor is known but batch/expiry detail was not declared, so expiry bridgeability cannot be assessed (never assumed no-risk).',
   'sdc.coverage.legend':
     'Coverage is a modeled per-supplier sufficiency read (Σ) — declared stock + incoming vs committed demand. No declaration renders blank, never a fabricated zero.',
 
@@ -142,6 +147,9 @@ export const sdcConsolidationId: Record<string, string> = {
   'sdc.coverage.noDeclaration': 'Tanpa deklarasi',
   'sdc.coverage.unbridgeable': 'waktu tunggu tak terjembatani',
   'sdc.coverage.model': 'Model',
+  'sdc.coverage.expiryBlind': 'buta-kedaluwarsa',
+  'sdc.coverage.expiryBlindTitle':
+    'Deklarasi total-saja — dasar SOH diketahui tetapi rincian batch/kedaluwarsa tidak dideklarasikan, sehingga keterjembatanan kedaluwarsa tidak dapat dinilai (tidak pernah diasumsikan tanpa risiko).',
   'sdc.coverage.modelTitle':
     'Heuristik kecukupan terhitung — stok terdeklarasi + kedatangan vs permintaan berkomitmen. Model, bukan pengukuran.',
   'sdc.coverage.legend':
