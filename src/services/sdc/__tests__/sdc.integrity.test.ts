@@ -97,10 +97,17 @@ describe('Invariant #3 — firm ⇒ approved split (the ⭐ allocation fix)', ()
 
 describe('Invariant #4 — fan-out never over-allocates the frozen total', () => {
   it('Σ fanned forecastQty ≤ materialPeriodTotal, and the total is shared per group', () => {
+    // SDC-1 grain correction: the frozen total is a PER-PUBLICATION fact — each
+    // governed snapshot freezes its own material×period total, and across
+    // versions a total legitimately MOVES (net-change, design §3.2). The
+    // original grouping omitted publicationId, which held only while exactly
+    // one publication existed; the invariant itself is unchanged.
     const groups = new Map<string, ForecastLine[]>();
-    for (const l of ALL_LINES) {
-      const k = `${l.materialCode}|${l.periodBucket}`;
-      (groups.get(k) ?? groups.set(k, []).get(k)!).push(l);
+    for (const p of FORECAST_PUBLICATIONS) {
+      for (const l of p.lines) {
+        const k = `${p.publicationId}|${l.materialCode}|${l.periodBucket}`;
+        (groups.get(k) ?? groups.set(k, []).get(k)!).push(l);
+      }
     }
     for (const [k, lines] of groups) {
       const totals = new Set(lines.map((l) => l.allocation.materialPeriodTotal));

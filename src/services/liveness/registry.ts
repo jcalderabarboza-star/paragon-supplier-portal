@@ -61,7 +61,8 @@ export type Capability =
   | 'risk'
   | 'compliance'
   | 'supplierDocuments'
-  | 'commodityIntel';
+  | 'commodityIntel'
+  | 'forecastPublications';
 
 // The ONLY hand-authored fact here: which command entity/flow each capability
 // reads from (`null` = pure fixture, no lifecycle entity). The TIER is never
@@ -95,6 +96,14 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // LivenessPill renders amber "Sample"; green is structurally unreachable. When a
   // real should-cost feed lands (Stage-CI), this flips through the same two gates.
   commodityIntel: null,
+  // SDC-1 — the publication-anchored collaboration state the P2 planner
+  // consolidation reads (ONE capability for the lane's read surface, not four).
+  // No lifecycle entity dispatches yet (SDC-2 wires the response verbs), so the
+  // backing is null → derives SIMULATED → green structurally unreachable. The
+  // harvest-gate entry below pre-encodes the two-gate flip
+  // (LIVENESS-DATASOURCE-01): even once SDC-2 wires gate-1, the pill stays
+  // guarded until the real SOMO C8 feed lands (F-timeline).
+  forecastPublications: null,
 };
 
 // — Gate-2: harvest gating (LIVENESS-DATASOURCE-01) —————————————————————————————
@@ -125,6 +134,14 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
   purchaseRequisitions: {
     readinessNoteKey: 'widget.honesty.awaitingProducer',
     source: 'SOMO / Grid',
+  },
+  // SDC-1 — the forecast publications the planner consolidates are SIMULATED
+  // fixtures on the C8 grain; the real producer is the SOMO C8 feed (deferred
+  // sibling seam, F-timeline). Named so the pill reads the SPECIFIC waiting
+  // state, not a generic "Sample" — and so wiring alone can never flip green.
+  forecastPublications: {
+    readinessNoteKey: 'widget.honesty.awaitingC8Feed',
+    source: 'SOMO C8',
   },
 };
 

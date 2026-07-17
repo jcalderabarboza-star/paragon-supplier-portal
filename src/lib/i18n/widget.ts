@@ -23,6 +23,9 @@ export const widgetEn: Record<string, string> = {
   // Harvest-gated (G1.1): the PR intake is wired but has no live producer yet
   // (SOMO F2 / internal Grid) — names the missing producer, not a generic sample.
   'widget.honesty.awaitingProducer': 'Sample — awaiting live PR producer (SOMO / Grid)',
+  // Harvest-gated (SDC-1): the forecast publications the planner consolidates
+  // are SIMULATED fixtures on the C8 grain until the real SOMO C8 feed lands.
+  'widget.honesty.awaitingC8Feed': 'Sample — awaiting SOMO C8 feed',
   'widget.allClear': 'All clear',
   'widget.aria.expand': 'Expand {{title}}',
   'widget.aria.show': 'Show {{title}}',
@@ -102,6 +105,7 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.sample': 'Sampel',
   'widget.honesty.awaitingHarvest': 'Sampel — menunggu panen data Track-R',
   'widget.honesty.awaitingProducer': 'Sampel — menunggu produsen PR live (SOMO / Grid)',
+  'widget.honesty.awaitingC8Feed': 'Sampel — menunggu feed data C8 SOMO',
   'widget.allClear': 'Semua beres',
   'widget.aria.expand': 'Perluas {{title}}',
   'widget.aria.show': 'Tampilkan {{title}}',
