@@ -1,0 +1,348 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// SDC-0 — Supplier Data Collaboration: the data model (types).
+//
+// The RFP's #1 lane (SCH matrix v2). This module is the SPINE ONLY — pure typed
+// definitions, no flows, no CommandTargets, no UI, no registry touch. It mirrors
+// CI-1a's engine-first discipline: the model first, the surfaces (SDC-1 P2,
+// SDC-2 P1) later. Verification is tsc + fixtures-typecheck + the integrity
+// suite (see __tests__/sdc.integrity.test.ts) — no browser.
+//
+// Design canon:
+//   docs/Supplier_Data_Collaboration_Design_v2.md      (the converged design)
+//   docs/SDC-0_Build_Freeze_Addendum.md §10            (the schema this file freezes)
+//   docs/C8_Forecast_Publication_Seam_Proposal.md      (the seam grain)
+//   docs/contracts/C7-pr-intake.md                     (sibling seam — vocabulary reuse)
+//
+// THREE objects, ONE session (design §2): RequirementResponse (the spine, versioned
+// against a C8 publication) · InventoryDeclaration (SOH state) · IncomingShipment
+// (direction-named, ASN-converging). Unified at the SubmissionSession level (an
+// ENVELOPE — addendum §5), NOT at the object level.
+//
+// ── GOVERNANCE FLAGS (addendum §8) — see FLAGS.md; non-blocking for these
+//    SIMULATED fixtures, gating real-supplier visibility later ──────────────────
+//   FLAG-1  commitmentClass `lock → firm` mapping is a POLICY DEFAULT pending
+//           procurement + finance ratification. Build on SIMULATED now; gate
+//           real-supplier visibility on the sign-off.
+//   FLAG-2  a SIMULATED publication is NEVER supplier-visible; the supplier-facing
+//           vocabulary is `commitmentClass` (firm/semi-firm/visibility-only) — a
+//           supplier must never see internal liveness terms (SIMULATED×PLANNED).
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Plan-state axis (C6 doctrine), REUSED from the C7 intake vocabulary — never
+// forked. Kept strictly SEPARATE from liveness (never merged into `Tier`):
+// 'PLANNED' = recommend-first / pre-commit; 'committed' = the fact's owner has
+// committed it. (C7-PROV: "recommend-first is NOT a liveness property.")
+import type { IntakePlanState } from '../data/types';
+// The honest-render liveness tier (F0.6 registry) — type-only import, so SDC-0
+// takes NO runtime dependency on the registry and does not touch it. All seed
+// data below is `SIMULATED`; the flip to LIVE rides SDC-1's capability
+// registration + a live producer (the proven two-gate op), not this module.
+import type { Tier } from '../liveness/registry';
+
+// ─── Shared vocabulary ───────────────────────────────────────────────────────
+
+/** The C6 plan-state axis, reused verbatim ('PLANNED' | 'committed'). */
+export type PlanState = IntakePlanState;
+
+/**
+ * The SDC producer axis — who authored the record. Analogous to C7's `PrSource`
+ * (the PR-intake producers), for THIS lane: SOMO publishes the forecast; the
+ * SUPPLIER authors the three response objects. This names producers; it does not
+ * fork the honesty vocabulary (liveness stays `Tier`).
+ */
+export type ProvenanceSource = 'SOMO' | 'SUPPLIER';
+
+/**
+ * The two-axis honesty marker every SDC record carries: producer identity ×
+ * runtime liveness × plan-state. `liveness` reuses the registry `Tier`
+ * (SIMULATED for all seed data); `planState` is the SEPARATE C6 axis.
+ */
+export interface Provenance {
+  readonly source: ProvenanceSource;
+  readonly liveness: Tier;
+  readonly planState: PlanState;
+}
+
+/**
+ * Canonical unit of measure. RM/PM materials mix kg / pcs / litres / rolls
+ * (addendum §3). SIMULATED starter set; the real material master extends it. A
+ * qty field never picks a unit — it inherits its material's `canonicalUom`.
+ */
+export type Uom = 'KG' | 'PCS' | 'L' | 'ROLL';
+
+// ─── Material master (addendum §3/§10 — ruling (b)-minimal) ───────────────────
+// The small SIMULATED master C7's GG-4 anticipated but never built: the ONE home
+// for a material's canonical UoM, keyed by S/4 code. Every qty-bearing field in
+// this lane keys its `uom` off this master (integrity invariant #2), so a
+// supplier can never declare a unit that conflicts with the material's canonical
+// UoM. Leans on the RM/PM taxonomy (ROH/VERP + MG-xx groups).
+
+/** SAP material type: ROH = raw material (RM), VERP = packaging material (PM). */
+export type MaterialType = 'ROH' | 'VERP';
+
+export interface MaterialMasterEntry {
+  /** The S/4 material code — the shared join key (C7 GG-4). */
+  readonly materialCode: string;
+  readonly label: string;
+  readonly materialType: MaterialType;
+  /** The RM/PM-taxonomy material group (MG-xx). */
+  readonly materialGroup: string;
+  /** The one canonical unit; every qty field for this material must match it. */
+  readonly canonicalUom: Uom;
+}
+
+/** The material master, keyed by S/4 material code. */
+export type MaterialMaster = Readonly<Record<string, MaterialMasterEntry>>;
+
+// ─── The C8 forecast-publication object (design §3, addendum §1) ──────────────
+
+/** The supplier's first question answered (design §3.1). Firm carries commercial-
+ *  liability weight, hence the allocation-approval governance below. */
+export type CommitmentClass = 'firm' | 'semi-firm' | 'visibility-only';
+
+/** How a material×period TOTAL was split across suppliers (addendum §1a). */
+export type AllocationBasis = 'planner-split' | 'quota' | 'award-history';
+
+/**
+ * ⭐ Allocation provenance (addendum §1 — the top schema-affecting fix). The
+ * supplier fan-out is OURS: SOMO freezes a material×period TOTAL, we split it
+ * across suppliers. So a `firm` badge on an allocated line claims more than
+ * SOMO's lock supports UNLESS it carries HOW the split derived and WHO approved
+ * it. `approvedBy`/`approvedAt` are REQUIRED for firm-period lines (invariant #3).
+ */
+export interface Allocation {
+  /** The SOMO-committed total this line was split from. */
+  readonly materialPeriodTotal: number;
+  readonly basis: AllocationBasis;
+  /** Firm-period splits require the human (role) who approved the fan-out. */
+  readonly approvedBy?: string;
+  readonly approvedAt?: string;
+}
+
+/**
+ * One supplier × material × periodBucket — fanned out on OUR side from SOMO's
+ * material×period total. `periodBucket` is the planning grain (a bucket, e.g.
+ * '2026-08'), NOT a resolved date (C8 GG-3′: bucket-native on this seam).
+ */
+export interface ForecastLine {
+  readonly materialCode: string;
+  readonly supplierId: string;
+  readonly periodBucket: string;
+  readonly forecastQty: number;
+  /** Keys off MaterialMaster.canonicalUom (invariant #2). */
+  readonly uom: Uom;
+  readonly commitmentClass: CommitmentClass;
+  readonly allocation: Allocation;
+  /** SOMO read-only planning annotations (C7 GG-1/GG-2 vocabulary). */
+  readonly segment?: string;
+  readonly suggestedSource?: string;
+  /** source = SOMO; SIMULATED × PLANNED for seed publications. */
+  readonly provenance: Provenance;
+}
+
+/**
+ * The governed, versioned snapshot of the rolling plan a supplier confirms
+ * AGAINST. FLAG-2: a SIMULATED publication (as all seed data here is) is NEVER
+ * supplier-visible — publishing to a real supplier requires LIVE plan data.
+ */
+export interface ForecastPublication {
+  readonly publicationId: string;
+  /** SOMO's plan version this snapshot came from (bound onto the response). */
+  readonly planVersion: string;
+  readonly publishedAt: string;
+  /** The rolling horizon of period buckets (C8 GG-8: 6-bucket window; trimmable). */
+  readonly horizon: readonly string[];
+  readonly lines: readonly ForecastLine[];
+  readonly provenance: Provenance;
+}
+
+// ─── Object 1 — RequirementResponse (the spine, design §2.1) ──────────────────
+
+export type RequirementResponseStatus =
+  | 'Draft'
+  | 'Submitted'
+  | 'UnderReview'
+  | 'Accepted'
+  | 'Disputed';
+
+/** The confirmation against a published forecast line. */
+export interface ForecastConfirmation {
+  readonly confirmedQty: number;
+  /** Keys off MaterialMaster.canonicalUom (invariant #2). */
+  readonly uom: Uom;
+  readonly committedDate?: string;
+  readonly capacityConstraint?: string;
+}
+
+/** Child of the confirmation — explains a deviation from the forecast. */
+export interface RootCause {
+  readonly level1: string;
+  readonly level2?: string;
+  readonly note?: string;
+}
+
+/**
+ * The spine: a confirmation against a published forecast VERSION, with root-cause
+ * as its child. Keyed by publicationId + planVersion + periodBucket (+ supplier +
+ * material) — it binds the EXACT snapshot answered (own-facts-only, mirroring
+ * t_quotation_submit's proven pattern).
+ */
+export interface RequirementResponse {
+  readonly id: string;
+  readonly supplierId: string;
+  readonly materialCode: string;
+  readonly periodBucket: string;
+  /** Binds to the exact C8 publication + plan version answered. */
+  readonly publicationId: string;
+  readonly planVersion: string;
+  /** Absent while Draft; set on submit. */
+  readonly submittedAt?: string;
+  readonly submissionVersion: number;
+  readonly status: RequirementResponseStatus;
+  readonly forecastConfirmation: ForecastConfirmation;
+  readonly rootCause?: RootCause;
+  /** source = SUPPLIER; LIVE × committed once submitted (SIMULATED in seed). */
+  readonly provenance: Provenance;
+}
+
+// ─── Object 2 — InventoryDeclaration (SOH state, design §2.2) ──────────────────
+
+/** A single stock batch. `batches` is PLURAL (v1's singular was a spec bug). */
+export interface InventoryBatch {
+  readonly batchNumber: string;
+  readonly qty: number;
+  /** Keys off MaterialMaster.canonicalUom (invariant #2). */
+  readonly uom: Uom;
+  readonly expiryDate?: string;
+}
+
+/**
+ * SOH keyed by material + as-of (`declaredAt`), NOT against a requirement
+ * version — it changes when stock moves, not when demand publishes. One true SOH
+ * per material, with a clear as-of.
+ */
+export interface InventoryDeclaration {
+  readonly id: string;
+  readonly supplierId: string;
+  readonly materialCode: string;
+  readonly declaredAt: string;
+  readonly batches: readonly InventoryBatch[];
+  /** source = SUPPLIER. */
+  readonly provenance: Provenance;
+}
+
+// ─── Object 3 — IncomingShipment (long-lived, direction-named, design §2.3) ────
+
+/**
+ * `principal-to-distributor` = the distributor's supply-assurance leg (Paragon is
+ * NOT the consignee — pure RM supply visibility, carried natively here).
+ * `to-paragon` = a shipment TO Paragon, which is what the already-built ASN
+ * object is for — such a line LINKS to an ASN (`asnRef`), never duplicating the
+ * tracker (design §2.3 direction ruling).
+ */
+export type ShipmentDirection = 'principal-to-distributor' | 'to-paragon';
+
+/**
+ * Linear lifecycle + Cancelled (addendum §2). An ETA revision is NOT a lifecycle
+ * state — `eta` is a FIELD; revisions are DR-10 TransitionEvent-audited field
+ * updates that preserve the true state (still Booked / Shipped). There is
+ * deliberately NO `ETARevised` state.
+ */
+export type ShipmentLifecycle = 'Booked' | 'Shipped' | 'Arrived' | 'Cancelled';
+
+export interface IncomingShipment {
+  readonly id: string;
+  readonly supplierId: string;
+  readonly materialCode: string;
+  readonly direction: ShipmentDirection;
+  readonly lifecycle: ShipmentLifecycle;
+  readonly qty: number;
+  /** Keys off MaterialMaster.canonicalUom (invariant #2). */
+  readonly uom: Uom;
+  readonly etd?: string;
+  /** A FIELD, not a state — revisions are audited field updates (addendum §2). */
+  readonly eta?: string;
+  /** AWB is a TMS reference — link, don't track. */
+  readonly awb?: string;
+  /** For direction='to-paragon': the ASN this leg converges on (asnNumber). */
+  readonly asnRef?: string;
+  /** source = SUPPLIER. */
+  readonly provenance: Provenance;
+}
+
+// ─── The submission session — the ENVELOPE (design §2.4, addendum §5) ──────────
+
+/** The object kinds a session may touch (the three response objects). */
+export type SdcObjectKind =
+  | 'RequirementResponse'
+  | 'InventoryDeclaration'
+  | 'IncomingShipment';
+
+export interface SubmissionObjectRef {
+  readonly kind: SdcObjectKind;
+  readonly objectId: string;
+}
+
+/**
+ * A SubmissionSession is an ENVELOPE (addendum §5): a single visit's grouping id
+ * + shared audit correlation. Each referenced object dispatches its OWN command
+ * with INDEPENDENT validation; partial success is allowed and reported PER-OBJECT
+ * (a forecast confirmation can succeed while an inventory declaration fails). The
+ * session has NO lifecycle or status of its own beyond "what was attempted
+ * together" — enforced STRUCTURALLY by the absence of any status/state/lifecycle
+ * field here (integrity invariant #9). This keeps the "one visit" UX without
+ * re-coupling the objects the three-way split decoupled.
+ */
+export interface SubmissionSession {
+  readonly sessionId: string;
+  readonly supplierId: string;
+  readonly openedAt: string;
+  /** DR-10 correlation shared across the per-object commands (audit only). */
+  readonly auditCorrelationId: string;
+  readonly attempted: readonly SubmissionObjectRef[];
+}
+
+// ─── The distributor-principal model (design §7) ──────────────────────────────
+
+export type SupplierType = 'manufacturer' | 'distributor';
+
+/** For a distributor: who backs them, and the principal's lead time. */
+export interface Principal {
+  readonly principalId: string;
+  readonly principalLeadTimeDays: number;
+}
+
+/**
+ * The principal relationship, on the supplier-MATERIAL pairing (not the
+ * supplier). Without the principal lead time, distributor SOH + incoming is data
+ * you can display but not interpret. A distributor carries ≥1 principal; a
+ * manufacturer carries none (integrity: distributor-principal check).
+ */
+export interface SupplierMaterialRelationship {
+  readonly supplierId: string;
+  readonly materialCode: string;
+  readonly supplierType: SupplierType;
+  readonly principals?: readonly Principal[];
+}
+
+// ─── CapacityProfile — DECLARED, BUILD-DEFERRED (addendum §4, lean (a)) ────────
+// The schema carries it so RFP Functional #3 is visibly OWNED, not lost. NO
+// fixtures, NO surface in SDC-0 — a later SDC batch (SDC-3+) builds it on the
+// same SubmissionSession. The type exists now; the build defers.
+
+export interface CapacityCalendarEntry {
+  readonly periodBucket: string;
+  readonly availableQty: number;
+  readonly uom: Uom;
+}
+
+export interface CapacityProfile {
+  readonly supplierId: string;
+  readonly materialCode: string;
+  readonly moq: number;
+  readonly uom: Uom;
+  readonly leadTimeDays: number;
+  readonly capacityCalendar: readonly CapacityCalendarEntry[];
+  readonly wip?: number;
+  readonly constraints?: readonly string[];
+}
