@@ -185,11 +185,14 @@ const BuyerCollaboration: React.FC = () => {
         title: t('sdc.col.confirmed'),
         disabled: true,
         minWidth: 120,
-        component: dataCell<ConsolidationRow>((r) =>
-          r.state.kind === 'awaiting'
-            ? t('sdc.empty.dash')
-            : `${formatNumber(r.state.response.forecastConfirmation.confirmedQty)} ${r.line.uom}`,
-        ),
+        component: dataCell<ConsolidationRow>((r) => {
+          // Awaiting has nothing; an acknowledgment COMMITS nothing (SDC-2b-EXT
+          // invariant #11) — both render the honest dash, never a fabricated qty.
+          if (r.state.kind === 'awaiting' || r.state.kind === 'acknowledged')
+            return t('sdc.empty.dash');
+          const fc = r.state.response.forecastConfirmation;
+          return fc ? `${formatNumber(fc.confirmedQty)} ${r.line.uom}` : t('sdc.empty.dash');
+        }),
       },
       {
         title: t('sdc.col.deficit'),
@@ -225,6 +228,14 @@ const BuyerCollaboration: React.FC = () => {
                       {t('sdc.state.draftHint')}
                     </span>
                   )}
+                </>
+              )}
+              {s.kind === 'acknowledged' && (
+                <>
+                  {/* SDC-2b-EXT: a visibility response — honestly DISTINCT from
+                      the commitment states (neutral, never the success chip). */}
+                  <span className={CHIP_NEUTRAL}>{t('sdc.state.acknowledged')}</span>
+                  {s.carriedForward && carriedToken}
                 </>
               )}
               {s.kind === 'confirmed-full' && (

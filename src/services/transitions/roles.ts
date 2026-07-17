@@ -59,6 +59,9 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     // SDC-2a — confirm a published forecast line fanned to THIS supplier (the
     // wired creation verb; also names the authored-unwired draft promotion).
     'requirementresponse:submit',
+    // SDC-2b-EXT — acknowledge a visibility-only line (the no-commitment
+    // response verb; class-guarded 1:1 with the visibility class).
+    'requirementresponse:acknowledge',
   ],
 };
 

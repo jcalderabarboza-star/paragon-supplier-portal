@@ -29,9 +29,11 @@ import type {
 const ALL_LINES: readonly ForecastLine[] = FORECAST_PUBLICATIONS.flatMap((p) => p.lines);
 
 // Every qty-bearing record, normalised to { materialCode, uom } for invariant #2.
+// An acknowledgment response carries NO qty (that's its point — invariant #11),
+// so only commitment responses appear here.
 const QTY_BEARING: ReadonlyArray<{ where: string; materialCode: string; uom: Uom }> = [
   ...ALL_LINES.map((l) => ({ where: `ForecastLine ${l.materialCode}/${l.periodBucket}`, materialCode: l.materialCode, uom: l.uom })),
-  ...REQUIREMENT_RESPONSES.map((r) => ({ where: `RequirementResponse ${r.id}`, materialCode: r.materialCode, uom: r.forecastConfirmation.uom })),
+  ...REQUIREMENT_RESPONSES.filter((r) => r.forecastConfirmation).map((r) => ({ where: `RequirementResponse ${r.id}`, materialCode: r.materialCode, uom: r.forecastConfirmation!.uom })),
   ...INVENTORY_DECLARATIONS.flatMap((d) => d.batches.map((b) => ({ where: `InventoryDeclaration ${d.id}/${b.batchNumber}`, materialCode: d.materialCode, uom: b.uom }))),
   ...INCOMING_SHIPMENTS.map((s) => ({ where: `IncomingShipment ${s.id}`, materialCode: s.materialCode, uom: s.uom })),
 ];
@@ -167,6 +169,28 @@ describe('Invariant #7 — RequirementResponse binds + answers a real published 
     for (const r of REQUIREMENT_RESPONSES) {
       if (r.status === 'Draft') expect(r.submittedAt).toBeUndefined();
       if (r.status === 'Submitted') expect(r.submittedAt).toBeTruthy();
+    }
+  });
+});
+
+describe('Invariant #11 — commitment XOR acknowledgment (SDC-2b-EXT)', () => {
+  it('every response carries EXACTLY ONE of forecastConfirmation | acknowledgment', () => {
+    for (const r of REQUIREMENT_RESPONSES) {
+      const kinds = [r.forecastConfirmation, r.acknowledgment].filter(Boolean).length;
+      expect(kinds, `${r.id}: must be exactly one kind`).toBe(1);
+    }
+  });
+
+  it('an acknowledgment only ever answers a visibility-only line (never dodges a commitment)', () => {
+    for (const r of REQUIREMENT_RESPONSES.filter((x) => x.acknowledgment)) {
+      const pub = FORECAST_PUBLICATIONS.find((p) => p.publicationId === r.publicationId);
+      const line = pub?.lines.find(
+        (l) =>
+          l.supplierId === r.supplierId &&
+          l.materialCode === r.materialCode &&
+          l.periodBucket === r.periodBucket,
+      );
+      expect(line?.commitmentClass, `${r.id}`).toBe('visibility-only');
     }
   });
 });

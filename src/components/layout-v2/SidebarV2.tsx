@@ -92,6 +92,8 @@ const SUPPLIER_NAV: NavGroup[] = [
     items: [
       { labelKey: 'nav.supplier.dashboard', icon: LayoutDashboard, path: '/supplier/dashboard' },
       { labelKey: 'nav.supplier.rfqs', icon: Search, path: '/supplier/rfqs' },
+      // SDC-2b — the P1 forecast-confirmation surface (Supplier Data Collaboration).
+      { labelKey: 'nav.supplier.forecasts', icon: Handshake, path: '/supplier/forecasts' },
       { labelKey: 'nav.supplier.storefront', icon: Store, path: '/supplier/storefront' },
     ],
   },

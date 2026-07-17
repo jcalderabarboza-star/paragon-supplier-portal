@@ -51,6 +51,16 @@ export const POLICY_HOOKS = {
   /** RR submit (SDC-2a): payload.planVersion must be the referenced
    *  publication's own planVersion — the snapshot binding is un-falsifiable. */
   RR_SUBMIT_PLANVERSION_BOUND: 'rr_submit_planversion_bound',
+  // SDC-2b-EXT — the symmetric class guards (the honesty lock). Together they
+  // make commitmentClass ⟺ verb exactly 1:1, so the shared create can branch on
+  // the PUBLISHED class (authoritative our-side data) and never silently
+  // transmute a commitment into an acknowledgment or vice versa.
+  /** RR submit: the fanned line must NOT be visibility-only (a "confirmed
+   *  commitment" against a no-commitment class would be a fabricated claim). */
+  RR_SUBMIT_COMMITMENT_CLASS: 'rr_submit_commitment_class',
+  /** RR acknowledge: the fanned line MUST be visibility-only (an acknowledge
+   *  can never dodge the commitment floor on a firm/semi-firm line). */
+  RR_ACKNOWLEDGE_VISIBILITY_CLASS: 'rr_acknowledge_visibility_class',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

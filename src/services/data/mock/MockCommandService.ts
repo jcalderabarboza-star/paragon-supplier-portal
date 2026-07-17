@@ -58,6 +58,7 @@ import { requirementResponseStore } from './stores/requirementResponseStore';
 import { mockShipments } from '../../../data/mockShipments';
 import { FORECAST_PUBLICATIONS, MATERIAL_MASTER } from '../../sdc';
 import type {
+  Acknowledgment,
   Provenance,
   RequirementResponse,
   RequirementResponseStatus,
@@ -573,7 +574,8 @@ const requirementResponseTarget: CommandTarget = {
     const periodBucket = str('periodBucket');
     const publicationId = str('publicationId');
     const supplierId = str('supplierId');
-    // creationOwner proved a fanned line exists; resolve it for the honest uom.
+    // creationOwner proved a fanned line exists; resolve it for the honest uom
+    // AND the response-kind branch below.
     const line = publicationById(publicationId)?.lines.find(
       (l) =>
         l.supplierId === supplierId &&
@@ -602,6 +604,31 @@ const requirementResponseTarget: CommandTarget = {
       periodBucket,
       publicationId,
     );
+    // SDC-2b-EXT — the response KIND branches on the fanned line's PUBLISHED
+    // commitmentClass (authoritative our-side data, never caller input). The
+    // symmetric class guards make class ⟺ verb exactly 1:1, so this branch is
+    // equivalent to branching on the transition — a commitment can never
+    // silently become an acknowledgment or vice versa (invariant #11 XOR).
+    const isVisibility = line?.commitmentClass === 'visibility-only';
+    const ack = payload.acknowledgment as Partial<Acknowledgment> | undefined;
+    const kindFields: Partial<RequirementResponse> = isVisibility
+      ? {
+          acknowledgment: {
+            ...(ack && typeof ack.note === 'string' && ack.note ? { note: ack.note } : {}),
+          },
+        }
+      : {
+          forecastConfirmation: {
+            // 0 is a legal confirmation ("cannot supply") — dispatcher isEmpty(0)
+            // already admits it; NaN/absent coerces to 0 with the root cause telling why.
+            confirmedQty: typeof payload.confirmedQty === 'number' ? payload.confirmedQty : 0,
+            uom,
+            ...(str('committedDate') ? { committedDate: str('committedDate') } : {}),
+            ...(str('capacityConstraint')
+              ? { capacityConstraint: str('capacityConstraint') }
+              : {}),
+          },
+        };
     const response: RequirementResponse = {
       id, // store keyed by id; the assigned number doubles as the id
       supplierId,
@@ -613,16 +640,7 @@ const requirementResponseTarget: CommandTarget = {
       // Versioned, never overwritten: prior max + 1 over the response thread.
       submissionVersion: prior.reduce((m, r) => Math.max(m, r.submissionVersion), 0) + 1,
       status: toState as RequirementResponseStatus, // 'Submitted'
-      forecastConfirmation: {
-        // 0 is a legal confirmation ("cannot supply") — dispatcher isEmpty(0)
-        // already admits it; NaN/absent coerces to 0 with the root cause telling why.
-        confirmedQty: typeof payload.confirmedQty === 'number' ? payload.confirmedQty : 0,
-        uom,
-        ...(str('committedDate') ? { committedDate: str('committedDate') } : {}),
-        ...(str('capacityConstraint')
-          ? { capacityConstraint: str('capacityConstraint') }
-          : {}),
-      },
+      ...kindFields,
       ...(rootCause ? { rootCause } : {}),
       provenance: PROV_SUPPLIER_SUBMIT,
     };
@@ -645,6 +663,40 @@ bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND, ({ payload }) => {
     };
   }
   return { ok: true };
+});
+
+// SDC-2b-EXT — the symmetric class guards (the honesty lock). creationOwner
+// already proved the fanned line exists, so resolving it here cannot miss.
+const fannedLineClass = (payload: Record<string, unknown>) =>
+  publicationById(String(payload.publicationId))?.lines.find(
+    (l) =>
+      l.supplierId === String(payload.supplierId) &&
+      l.materialCode === String(payload.materialCode) &&
+      l.periodBucket === String(payload.periodBucket),
+  )?.commitmentClass;
+
+// Submit (a COMMITMENT) is illegal against a visibility-only line — nothing was
+// requested to commit; a "confirmed" record there would be a fabricated claim.
+bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_COMMITMENT_CLASS, ({ payload }) => {
+  return fannedLineClass(payload) === 'visibility-only'
+    ? {
+        ok: false,
+        reason:
+          'line is visibility-only — no commitment requested; use t_requirementresponse_acknowledge',
+      }
+    : { ok: true };
+});
+
+// Acknowledge (a VISIBILITY response) is legal ONLY against a visibility-only
+// line — it must never dodge the commitment floor on a firm/semi-firm line.
+bindPolicyHook(POLICY_HOOKS.RR_ACKNOWLEDGE_VISIBILITY_CLASS, ({ payload }) => {
+  return fannedLineClass(payload) === 'visibility-only'
+    ? { ok: true }
+    : {
+        ok: false,
+        reason:
+          'line is not visibility-only — a commitment is requested; use t_requirementresponse_submit',
+      };
 });
 
 const TARGETS: Record<string, CommandTarget> = {

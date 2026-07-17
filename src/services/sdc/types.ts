@@ -174,6 +174,19 @@ export interface ForecastConfirmation {
   readonly capacityConstraint?: string;
 }
 
+/**
+ * SDC-2b-EXT — the VISIBILITY response: an acknowledgment of a
+ * visibility-only line (the class where Paragon requests NO commitment but
+ * wants early supplier signal, DEC-COMMS-PRIMARY). Deliberately carries NO
+ * quantity — an acknowledgment must be structurally un-mistakable for a
+ * commitment (there is no number to misread). The optional note is the
+ * free-text SOH-sense / capacity signal; structured SOH stays
+ * `InventoryDeclaration` (SDC-3).
+ */
+export interface Acknowledgment {
+  readonly note?: string;
+}
+
 /** Child of the confirmation — explains a deviation from the forecast. */
 export interface RootCause {
   readonly level1: string;
@@ -182,10 +195,19 @@ export interface RootCause {
 }
 
 /**
- * The spine: a confirmation against a published forecast VERSION, with root-cause
+ * The spine: a response against a published forecast VERSION, with root-cause
  * as its child. Keyed by publicationId + planVersion + periodBucket (+ supplier +
  * material) — it binds the EXACT snapshot answered (own-facts-only, mirroring
  * t_quotation_submit's proven pattern).
+ *
+ * TWO response kinds, discriminated by WHICH payload field exists (SDC-2b-EXT,
+ * integrity invariant #11: EXACTLY ONE present — XOR):
+ *  · `forecastConfirmation` — a COMMITMENT against a firm/semi-firm line
+ *    (t_requirementresponse_submit).
+ *  · `acknowledgment` — a VISIBILITY response against a visibility-only line
+ *    (t_requirementresponse_acknowledge): seen + optional signal, NO qty.
+ * The kind is derived at read (never stored); P2/SOMO can never mistake an
+ * acknowledgment for a commitment because it carries no confirmedQty at all.
  */
 export interface RequirementResponse {
   readonly id: string;
@@ -199,7 +221,10 @@ export interface RequirementResponse {
   readonly submittedAt?: string;
   readonly submissionVersion: number;
   readonly status: RequirementResponseStatus;
-  readonly forecastConfirmation: ForecastConfirmation;
+  /** The commitment (firm/semi-firm lines). XOR with `acknowledgment`. */
+  readonly forecastConfirmation?: ForecastConfirmation;
+  /** The visibility response (visibility-only lines). XOR with `forecastConfirmation`. */
+  readonly acknowledgment?: Acknowledgment;
   readonly rootCause?: RootCause;
   /** source = SUPPLIER; LIVE × committed once submitted (SIMULATED in seed). */
   readonly provenance: Provenance;
