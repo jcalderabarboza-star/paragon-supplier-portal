@@ -1,0 +1,14 @@
+/* SDC-3c-b — invalid-row cell tint for the bulk stock-entry grid.
+ *
+ * parseGrid (the SDC-3c-a adapter) is the SOLE owner of validity: the surface
+ * runs it on the live rows and, when it rejects the fold, tints the offending
+ * rows so the supplier sees WHICH row blocks submit. The tint is a UX echo of
+ * the adapter's `{ ok:false, rowRefs }` — never a second validation path. The
+ * INV_DECLARE_BATCH_TOTAL hook remains the real server gate.
+ *
+ * The height pin (`.plan-dsg .dsg-container`) is reused verbatim from
+ * plan-grid/planGrid.css (imported alongside this file); this sheet adds only
+ * the danger tint, scoped to `.sdc-bulk-grid` so no other DSG is affected. */
+.sdc-bulk-grid .dsg-cell.sdc-bulk-cell-danger {
+  background-color: #fce4e4; /* danger.soft — the DP semantic danger tint */
+}

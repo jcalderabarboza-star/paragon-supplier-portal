@@ -151,6 +151,29 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.stock.toast.declared.title': 'Stock declared — {{material}}',
   'sdcSup.stock.toast.declared.body': 'Your current stock is recorded under Stock (SOH).',
 
+  // ── SDC-3c-b — Bulk stock-entry grid (batch-grain, DEC-MAGIC-LINK-GRID) ──────
+  'sdcSup.bulk.entry': 'Bulk stock entry',
+  'sdcSup.bulk.subtitle':
+    'Enter batch-grain stock as a grid — one row per batch, submitted as a single declaration.',
+  'sdcSup.bulk.back': 'Back to list',
+  'sdcSup.bulk.gridTitle': 'Batches',
+  'sdcSup.bulk.note.title': 'Fixture-first grid',
+  'sdcSup.bulk.note.body':
+    'This is the hosted magic-link stock grid (DEC-MAGIC-LINK-GRID). Real magic-link delivery, tokens, and supplier identity arrive with the Communication Hub / backend (F1+); here it runs on your own signed-in session.',
+  'sdcSup.bulk.col.batchNumber': 'Batch number',
+  'sdcSup.bulk.col.qty': 'Quantity ({{uom}})',
+  'sdcSup.bulk.col.expiry': 'Expiry date',
+  'sdcSup.bulk.submit': 'Declare stock',
+  'sdcSup.bulk.toast.blocked.title': 'Stock not declared',
+  'sdcSup.bulk.toast.declared.body': 'Your batch-grain stock is recorded under Stock (SOH).',
+  // Honest-silence reasons surfaced from the SDC-3c-a adapter's {ok:false}.
+  'sdcSup.bulk.reason.emptyTotal': 'Enter the total stock on hand — it is the floor the batches sit under.',
+  'sdcSup.bulk.reason.missingMaterial': 'Select a material.',
+  'sdcSup.bulk.reason.missingBatchNumber': 'A row has a quantity but no batch number — every batch needs a number.',
+  'sdcSup.bulk.reason.invalidQty': 'A batch quantity is not a valid number.',
+  'sdcSup.bulk.reason.batchMismatch': 'batches must sum to the total',
+  'sdcSup.bulk.reason.noRows': 'Enter a total, or one or more batches.',
+
   // ── SDC-3b — Shipments tab ──────────────────────────────────────────────────
   'sdcSup.ship.subtitle': 'Incoming shipments you have reported for your collaborated materials.',
   'sdcSup.ship.report': 'Report shipment',
@@ -360,6 +383,29 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.stock.toast.failed.title': 'Stok tidak dideklarasikan',
   'sdcSup.stock.toast.declared.title': 'Stok dideklarasikan — {{material}}',
   'sdcSup.stock.toast.declared.body': 'Stok Anda saat ini tercatat di Stok (SOH).',
+
+  // ── SDC-3c-b — Grid entri stok massal (grain batch, DEC-MAGIC-LINK-GRID) ─────
+  'sdcSup.bulk.entry': 'Entri stok massal',
+  'sdcSup.bulk.subtitle':
+    'Masukkan stok grain-batch sebagai grid — satu baris per batch, dikirim sebagai satu deklarasi.',
+  'sdcSup.bulk.back': 'Kembali ke daftar',
+  'sdcSup.bulk.gridTitle': 'Batch',
+  'sdcSup.bulk.note.title': 'Grid fixture-first',
+  'sdcSup.bulk.note.body':
+    'Ini adalah grid stok magic-link terhosting (DEC-MAGIC-LINK-GRID). Pengiriman magic-link, token, dan identitas pemasok yang sesungguhnya hadir bersama Communication Hub / backend (F1+); di sini berjalan pada sesi login Anda sendiri.',
+  'sdcSup.bulk.col.batchNumber': 'Nomor batch',
+  'sdcSup.bulk.col.qty': 'Kuantitas ({{uom}})',
+  'sdcSup.bulk.col.expiry': 'Tanggal kedaluwarsa',
+  'sdcSup.bulk.submit': 'Deklarasikan stok',
+  'sdcSup.bulk.toast.blocked.title': 'Stok tidak dideklarasikan',
+  'sdcSup.bulk.toast.declared.body': 'Stok grain-batch Anda tercatat di Stok (SOH).',
+  // Alasan honest-silence yang dipermukakan dari {ok:false} adapter SDC-3c-a.
+  'sdcSup.bulk.reason.emptyTotal': 'Masukkan total stok di tangan — itu adalah dasar bagi batch-batchnya.',
+  'sdcSup.bulk.reason.missingMaterial': 'Pilih material.',
+  'sdcSup.bulk.reason.missingBatchNumber': 'Sebuah baris memiliki kuantitas tetapi tanpa nomor batch — setiap batch memerlukan nomor.',
+  'sdcSup.bulk.reason.invalidQty': 'Sebuah kuantitas batch bukan angka yang valid.',
+  'sdcSup.bulk.reason.batchMismatch': 'batch harus berjumlah sama dengan total',
+  'sdcSup.bulk.reason.noRows': 'Masukkan total, atau satu batch atau lebih.',
 
   // ── SDC-3b — Tab Pengiriman ─────────────────────────────────────────────────
   'sdcSup.ship.subtitle': 'Pengiriman masuk yang telah Anda laporkan untuk material kolaborasi Anda.',

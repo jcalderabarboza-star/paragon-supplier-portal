@@ -9,6 +9,7 @@ import {
   Plus,
   Send,
   Ship,
+  Table2,
   Trash2,
   Truck,
 } from 'lucide-react';
@@ -63,6 +64,7 @@ import {
 import type { ASN, CommandResult } from '../services/data/types';
 import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
+import BulkStockEntryGrid from './BulkStockEntryGrid';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SupplierForecasts (SDC-2b → SDC-3b) — the P1 supplier SUBMISSION HUB. One
@@ -372,17 +374,24 @@ const ResponsesTab: React.FC<{ responses: readonly RequirementResponse[] }> = ({
 const DeclarationsTab: React.FC<{
   declarations: readonly InventoryDeclaration[];
   onDeclare: () => void;
-}> = ({ declarations, onDeclare }) => {
+  onBulkEntry: () => void;
+}> = ({ declarations, onDeclare, onBulkEntry }) => {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4" data-testid="sdcsup-declarations">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-text-secondary">{t('sdcSup.stock.subtitle')}</p>
-        {/* OUTLINE — a SOH declaration is a routine data submission, not the
-            page's ONE commitment (that stays the solid forecast confirm). */}
-        <Button variant="outline" icon={Plus} onClick={onDeclare}>
-          {t('sdcSup.stock.declare')}
-        </Button>
+        {/* Both OUTLINE — a SOH declaration is a routine submission, not the
+            page's ONE commitment (that stays the solid forecast confirm). The
+            bulk grid is the batch-grain path (DEC-MAGIC-LINK-GRID). */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" icon={Table2} onClick={onBulkEntry}>
+            {t('sdcSup.bulk.entry')}
+          </Button>
+          <Button variant="outline" icon={Plus} onClick={onDeclare}>
+            {t('sdcSup.stock.declare')}
+          </Button>
+        </div>
       </div>
       {declarations.length === 0 ? (
         <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
@@ -608,6 +617,8 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   // SDC-3b — the two additional object panels.
   const [sohOpen, setSohOpen] = useState(false);
   const [sohForm, setSohForm] = useState<SohForm>(emptySohForm);
+  // SDC-3c-b — the editable bulk stock-entry grid (batch-grain, on the Stock tab).
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [shipOpen, setShipOpen] = useState(false);
   const [shipForm, setShipForm] = useState<ShipmentForm>(emptyShipmentForm);
 
@@ -1008,7 +1019,23 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
           <div className="mb-4">
             <LivenessPill capability="inventory" />
           </div>
-          <DeclarationsTab declarations={declarations} onDeclare={openSoh} />
+          {bulkOpen ? (
+            <BulkStockEntryGrid
+              supplierId={supplierId}
+              materials={materials}
+              declarations={declarations}
+              causationId={causationId}
+              recordAttempt={recordAttempt}
+              onClose={() => setBulkOpen(false)}
+              onDeclared={() => setBulkOpen(false)}
+            />
+          ) : (
+            <DeclarationsTab
+              declarations={declarations}
+              onDeclare={openSoh}
+              onBulkEntry={() => setBulkOpen(true)}
+            />
+          )}
         </>
       )}
       {activeTab === 'shipments' && (
