@@ -41,6 +41,9 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     // I3.1 — canonical compliance machine (census #11–15). verify/reject = system
     // (verification pipeline). Author-unwired; catalog-coverage only.
     'compliance:verify', 'compliance:reject',
+    // SDC-2a — RequirementResponse buyer lifecycle (authored-unwired; the P2
+    // planner's evaluation lane, mapped for catalog-coverage).
+    'requirementresponse:review', 'requirementresponse:accept', 'requirementresponse:dispute',
   ],
   // Supplier side: view / acknowledge / confirm an incoming PO; create + submit
   // an advance ship notice; draft + submit an invoice against its own PO; submit
@@ -53,6 +56,9 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     'quotation:submit',
     'supplierdoc:submit',
     'compliance:submit', // I3.1 — supplier submits a cert for a required cell
+    // SDC-2a — confirm a published forecast line fanned to THIS supplier (the
+    // wired creation verb; also names the authored-unwired draft promotion).
+    'requirementresponse:submit',
   ],
 };
 

@@ -31,9 +31,10 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
   });
 
   it('the LIVE set (gate-1) is exactly the wired-backed capabilities', () => {
-    // gate-1 (liveness) tracks wiring alone. purchaseRequisitions is wired as of
-    // G1.1, so it joins the gate-1 LIVE set — but gate-2 holds isLive() false
-    // (see the harvest-gate suite): wiring ≠ green (LIVENESS-DATASOURCE-01).
+    // gate-1 (liveness) tracks wiring alone. purchaseRequisitions joined at
+    // G1.1 and forecastPublications at SDC-2a (the RequirementResponse target)
+    // — but gate-2 holds isLive() false for both (see the harvest-gate suite):
+    // wiring ≠ green (LIVENESS-DATASOURCE-01).
     const live = ALL_CAPABILITIES.filter((c) => liveness(c) === 'LIVE');
     expect(new Set(live)).toEqual(
       new Set<Capability>([
@@ -43,6 +44,7 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
         'invoices',
         'rfqs',
         'purchaseRequisitions',
+        'forecastPublications',
       ]),
     );
   });
@@ -135,19 +137,21 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
     expect(isLive('purchaseRequisitions')).toBe(false); // guarded → SIMULATED render
   });
 
-  it('forecastPublications (SDC-1) is a null-backed, harvest-gated capability → never green', () => {
-    // The CI-0 shape + a harvest note: the P2 consolidation reads SIMULATED
-    // fixture publications on the C8 grain (no lifecycle entity dispatches —
-    // the response verbs are SDC-2), so backing is null → derives SIMULATED.
-    // The gate-2 entry pre-encodes LIVENESS-DATASOURCE-01: even once SDC-2
-    // wires a target, green additionally requires the REAL SOMO C8 feed.
-    expect(capabilityBacking.forecastPublications).toBeNull();
-    expect(liveness('forecastPublications')).toBe('SIMULATED');
-    expect(awaitsHarvest('forecastPublications')).toBe(true);
+  it('⭐ forecastPublications after the SDC-2a backing flip: wired (gate-1 LIVE) yet STILL never green', () => {
+    // THE registry-honesty guard the SDC-1 entry pre-encoded, now proven live:
+    // SDC-2a wired the RequirementResponse CommandTarget and flipped this
+    // backing null → 'requirementResponse', so gate-1 derives LIVE — but the
+    // publications answered are SIMULATED fixtures (no real SOMO C8 feed), so
+    // gate-2 stays shut. The pill MUST keep reading "Sample — awaiting SOMO C8
+    // feed"; wiring alone can never flip green (LIVENESS-DATASOURCE-01).
+    expect(capabilityBacking.forecastPublications).toBe('requirementResponse');
+    expect(WIRED_COMMAND_TARGETS).toContain('requirementResponse');
+    expect(liveness('forecastPublications')).toBe('LIVE'); // gate-1 open (wired)
+    expect(awaitsHarvest('forecastPublications')).toBe(true); // gate-2 shut (no C8 feed)
     const note = readinessNote('forecastPublications');
     expect(note?.readinessNoteKey).toBe('widget.honesty.awaitingC8Feed');
     expect(note?.source).toBe('SOMO C8');
-    expect(isLive('forecastPublications')).toBe(false);
+    expect(isLive('forecastPublications')).toBe(false); // guarded → Sample render
   });
 
   it('gate-2 does not disturb the UNGATED wired-LIVE capabilities (real source)', () => {

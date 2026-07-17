@@ -48,6 +48,9 @@ export const POLICY_HOOKS = {
   /** Invoice match: the match sub-flow must have rolled up to a clean Matched
    *  before the header can advance Submitted → Matched (census G2). */
   INVOICE_ROLLUP_MATCHED: 'invoice_rollup_matched',
+  /** RR submit (SDC-2a): payload.planVersion must be the referenced
+   *  publication's own planVersion — the snapshot binding is un-falsifiable. */
+  RR_SUBMIT_PLANVERSION_BOUND: 'rr_submit_planversion_bound',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);
