@@ -56,6 +56,8 @@ import { planGridEn, planGridId } from './i18n/planGrid';
 import { intakeReviewEn, intakeReviewId } from './i18n/intakeReview';
 // — SDC-1b planner consolidation (Supplier Data Collaboration) —
 import { sdcConsolidationEn, sdcConsolidationId } from './i18n/sdcConsolidation';
+// — SDC-2b P1 supplier forecast-confirmation surface —
+import { sdcSupplierEn, sdcSupplierId } from './i18n/sdcSupplier';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -116,6 +118,8 @@ export const resources = {
       ...intakeReviewEn,
       // — SDC-1b planner consolidation —
       ...sdcConsolidationEn,
+      // — SDC-2b supplier forecast confirmations —
+      ...sdcSupplierEn,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
@@ -148,6 +152,7 @@ export const resources = {
       'nav.buyer.whatsapp': 'WhatsApp Hub',
       'nav.supplier.dashboard': 'Dashboard',
       'nav.supplier.rfqs': 'RFQs',
+      'nav.supplier.forecasts': 'Forecasts',
       'nav.supplier.storefront': 'My Storefront',
       'nav.supplier.orders': 'My Orders',
       'nav.supplier.shipments': 'Shipments & ASN',
@@ -294,6 +299,8 @@ export const resources = {
       ...intakeReviewId,
       // — SDC-1b planner consolidation —
       ...sdcConsolidationId,
+      // — SDC-2b supplier forecast confirmations —
+      ...sdcSupplierId,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',
@@ -326,6 +333,7 @@ export const resources = {
       'nav.buyer.whatsapp': 'Pusat WhatsApp',
       'nav.supplier.dashboard': 'Dasbor',
       'nav.supplier.rfqs': 'RFQ',
+      'nav.supplier.forecasts': 'Prakiraan',
       'nav.supplier.storefront': 'Etalase Saya',
       'nav.supplier.orders': 'Pesanan Saya',
       'nav.supplier.shipments': 'Pengiriman & ASN',

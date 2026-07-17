@@ -86,6 +86,17 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20', // rigid plastic packaging
     canonicalUom: 'PCS',
   },
+  // SDC-2b (F-1a) — second packaging material so the seeded persona (sup-007,
+  // PT Berlina Packaging) carries a semi-firm line on its own material×period
+  // combo (sharing sup-005's PET 2026-09 combo would over-allocate R2's frozen
+  // total, invariant #4).
+  'PK-CAPF-8820': {
+    materialCode: 'PK-CAPF-8820',
+    label: 'Flip-Top Cap 24mm',
+    materialType: 'VERP',
+    materialGroup: 'MG-21', // closures
+    canonicalUom: 'PCS',
+  },
 });
 
 // ─── Supplier-material relationships (design §7) ──────────────────────────────
@@ -202,6 +213,41 @@ export const FORECAST_PUBLICATIONS: readonly ForecastPublication[] = Object.free
         }),
         provenance: PROV_SOMO_SEED,
       }),
+      // ── SDC-2b (F-1a) — sup-007 depth for the P1 supplier surface ─────────
+      // The seeded persona confirms a FIRM and a SEMI-FIRM line in the browser.
+      // Both lines are IDENTICAL in R1 and R2 (carry-forward-neutral: no new
+      // stale case, no carry-forward split) and sit on their OWN material×period
+      // combos so no existing frozen total is disturbed (invariant #4).
+      // 2026-08 LOCKED → firm → carries the approved split (invariant #3).
+      Object.freeze({
+        materialCode: 'PK-PETB-8810',
+        supplierId: 'sup-007',
+        periodBucket: '2026-08',
+        forecastQty: 40000,
+        uom: 'PCS',
+        commitmentClass: 'firm',
+        allocation: Object.freeze({
+          materialPeriodTotal: 40000,
+          basis: 'award-history',
+          approvedBy: 'planner',
+          approvedAt: '2026-07-30T09:00:00.000Z',
+        }),
+        provenance: PROV_SOMO_SEED,
+      }),
+      // 2026-09 unlocked, APPROVED → semi-firm.
+      Object.freeze({
+        materialCode: 'PK-CAPF-8820',
+        supplierId: 'sup-007',
+        periodBucket: '2026-09',
+        forecastQty: 60000,
+        uom: 'PCS',
+        commitmentClass: 'semi-firm',
+        allocation: Object.freeze({
+          materialPeriodTotal: 75000,
+          basis: 'award-history',
+        }),
+        provenance: PROV_SOMO_SEED,
+      }),
     ]),
   }),
   // ── SDC-1 fixture depth — the MID-CYCLE REPUBLICATION (design §3.2) ─────────
@@ -293,6 +339,37 @@ export const FORECAST_PUBLICATIONS: readonly ForecastPublication[] = Object.free
         allocation: Object.freeze({
           materialPeriodTotal: 1000,
           basis: 'quota',
+        }),
+        provenance: PROV_SOMO_SEED,
+      }),
+      // ── SDC-2b (F-1a) — the sup-007 lines republish UNCHANGED (carry-
+      // forward-neutral: byte-identical to R1; sup-007 stays silent either way
+      // since it has no seeded response).
+      Object.freeze({
+        materialCode: 'PK-PETB-8810',
+        supplierId: 'sup-007',
+        periodBucket: '2026-08',
+        forecastQty: 40000,
+        uom: 'PCS',
+        commitmentClass: 'firm',
+        allocation: Object.freeze({
+          materialPeriodTotal: 40000,
+          basis: 'award-history',
+          approvedBy: 'planner',
+          approvedAt: '2026-07-30T09:00:00.000Z',
+        }),
+        provenance: PROV_SOMO_SEED,
+      }),
+      Object.freeze({
+        materialCode: 'PK-CAPF-8820',
+        supplierId: 'sup-007',
+        periodBucket: '2026-09',
+        forecastQty: 60000,
+        uom: 'PCS',
+        commitmentClass: 'semi-firm',
+        allocation: Object.freeze({
+          materialPeriodTotal: 75000,
+          basis: 'award-history',
         }),
         provenance: PROV_SOMO_SEED,
       }),

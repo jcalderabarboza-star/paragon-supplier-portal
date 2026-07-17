@@ -45,6 +45,7 @@ import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
 import SupplierWhatsApp from '../pages-v2/SupplierWhatsApp';
 import SupplierOrders from '../pages-v2/SupplierOrders';
 import SupplierRFQsV2 from '../pages-v2/SupplierRFQs';
+import SupplierForecasts from '../pages-v2/SupplierForecasts';
 import SupplierShipments from '../pages-v2/SupplierShipments';
 import SupplierInvoicesV2 from '../pages-v2/SupplierInvoices';
 import SupplierInventoryV2 from '../pages-v2/SupplierInventory';
@@ -93,6 +94,7 @@ const ROUTES: RouteCase[] = [
   { name: 'supplier/whatsapp', pattern: '/supplier/whatsapp', at: '/supplier/whatsapp', element: <SupplierWhatsApp />, identity: SUPPLIER },
   { name: 'supplier/orders', pattern: '/supplier/orders', at: '/supplier/orders', element: <SupplierOrders />, identity: SUPPLIER },
   { name: 'supplier/rfqs', pattern: '/supplier/rfqs', at: '/supplier/rfqs', element: <SupplierRFQsV2 />, identity: SUPPLIER },
+  { name: 'supplier/forecasts', pattern: '/supplier/forecasts', at: '/supplier/forecasts', element: <SupplierForecasts />, identity: SUPPLIER },
   { name: 'supplier/shipments', pattern: '/supplier/shipments', at: '/supplier/shipments', element: <SupplierShipments />, identity: SUPPLIER },
   { name: 'supplier/invoices', pattern: '/supplier/invoices', at: '/supplier/invoices', element: <SupplierInvoicesV2 />, identity: SUPPLIER },
   { name: 'supplier/inventory', pattern: '/supplier/inventory', at: '/supplier/inventory', element: <SupplierInventoryV2 />, identity: SUPPLIER },
@@ -101,9 +103,9 @@ const ROUTES: RouteCase[] = [
 ];
 
 describe('sp-001 — every route mounts without crashing', () => {
-  it('route table covers all of AppRouter (33 elements + redirect)', () => {
+  it('route table covers all of AppRouter (34 elements + redirect)', () => {
     // Guards against a route being added to AppRouter but not the smoke.
-    expect(ROUTES.length).toBe(34);
+    expect(ROUTES.length).toBe(35);
   });
 
   it.each(ROUTES)('$name renders and paints content', async ({ pattern, at, element, identity }) => {

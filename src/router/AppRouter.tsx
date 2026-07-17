@@ -46,6 +46,9 @@ const PlanGrid = lazy(() => import('../pages-v2/PlanGrid'));
 // SDC-1b — the second DSG consumer. Also lazy, so Vite hoists the shared
 // engine into one common async chunk; the entry chunk stays flat.
 const BuyerCollaboration = lazy(() => import('../pages-v2/BuyerCollaboration'));
+// SDC-2b — the P1 supplier submission surface (no DSG; lazy keeps the SDC
+// module out of the entry chunk).
+const SupplierForecasts = lazy(() => import('../pages-v2/SupplierForecasts'));
 
 import { ToastProvider } from '../hooks/useToast';
 import Toaster from '../components/ui-v2/Toaster';
@@ -103,6 +106,14 @@ const AppRouter: React.FC = () => {
           <Route path="/supplier/whatsapp" element={<SupplierWhatsApp />} />
           <Route path="/supplier/orders" element={<SupplierOrders />} />
           <Route path="/supplier/rfqs" element={<SupplierRFQsV2 />} />
+          <Route
+            path="/supplier/forecasts"
+            element={
+              <Suspense fallback={<LoadingState />}>
+                <SupplierForecasts />
+              </Suspense>
+            }
+          />
           <Route path="/supplier/shipments" element={<SupplierShipments />} />
           <Route path="/supplier/invoices" element={<SupplierInvoicesV2 />} />
           <Route path="/supplier/inventory" element={<SupplierInventoryV2 />} />

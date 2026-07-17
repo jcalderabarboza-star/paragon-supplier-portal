@@ -228,9 +228,11 @@ describe('chaseList (RESPONSE_DUE_DAYS interim policy)', () => {
 
   it('past the deadline: every supplier with awaiting lines is overdue', () => {
     const entries = chaseList(current, rows, NOW_AFTER_DUE);
+    // sup-007 leads: 3 awaiting lines (the F-1a packaging depth + niacinamide)
+    // vs sup-002's 1 — the list orders by how much is outstanding.
     expect(entries.map((e) => `${e.supplierId}:${e.reason}`)).toEqual([
-      'sup-002:overdue',
       'sup-007:overdue',
+      'sup-002:overdue',
     ]);
   });
 
@@ -255,10 +257,15 @@ describe('supplier-coverage indicator (the ONE projection that is ours)', () => 
 
   it('covers only firm/semi-firm pairs — visibility-only carries no sufficiency read', () => {
     expect(byPair.has('sup-007|AI-NIAC-6601')).toBe(false);
-    // 4 committed pairs: 2× glycerin (firm), cetearyl + PET (semi-firm).
-    expect(entries).toHaveLength(4);
+    // 6 committed pairs: 2× glycerin (firm), cetearyl + sup-005 PET (semi-firm),
+    // + the SDC-2b F-1a sup-007 packaging pair each class (PET firm, cap semi-firm).
+    expect(entries).toHaveLength(6);
     // sup-002 has declared no cetearyl stock → honest blank there too.
     expect(byPair.get('sup-002|RM-EMUL-3320')!.status).toEqual({ kind: 'no-declaration' });
+    // The F-1a sup-007 pairs carry no declaration either → honest blanks, never
+    // fabricated zeros (sup-007 is the seeded silent supplier).
+    expect(byPair.get('sup-007|PK-PETB-8810')!.status).toEqual({ kind: 'no-declaration' });
+    expect(byPair.get('sup-007|PK-CAPF-8820')!.status).toEqual({ kind: 'no-declaration' });
   });
 
   it('sup-002 glycerin: SOH 4 000 + shipped 6 000 over firm 6 000 → covered', () => {
