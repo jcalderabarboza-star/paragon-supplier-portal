@@ -11,6 +11,10 @@
 // the SDC-0 seed carries one (rr-0003) and the design names Draft → Submitted;
 // the wired creation verb births directly at 'Submitted' — drafts are
 // client-side form state, exactly as quotes (Task 3b precedent).
+//
+// CHANNEL-AGNOSTIC (DEC-COMMS-PRIMARY): t_requirementresponse_submit is the
+// SHARED write-path for BOTH the portal surface (SDC-2b) and the future
+// Communication Hub channel-ingestion — never bake in a portal-only assumption.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { FlowDefinition } from '../schema';
