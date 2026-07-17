@@ -50,8 +50,33 @@ export const requirementResponseFlow: FlowDefinition = {
       ],
       // The planVersion the payload claims must be the referenced publication's
       // own planVersion — a response can never bind a snapshot that isn't the
-      // one it answered (membership itself is folded into creationOwner).
-      policyHooks: [POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND],
+      // one it answered (membership itself is folded into creationOwner). The
+      // class guard (SDC-2b-EXT) rejects a visibility-only line: nothing was
+      // requested to commit there — the acknowledge verb is its channel.
+      policyHooks: [
+        POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND,
+        POLICY_HOOKS.RR_SUBMIT_COMMITMENT_CLASS,
+      ],
+      version: 1,
+    },
+    {
+      // SDC-2b-EXT — the VISIBILITY response (WIRED). Paragon constantly
+      // requests supplier updates to maintain visibility (DEC-COMMS-PRIMARY);
+      // a visibility-only line carries no commitment ask, so its response is
+      // an ACKNOWLEDGMENT (+ optional free-text signal) — deliberately NO
+      // confirmedQty on the floor (the commitment floor above stays
+      // byte-identical). Same snapshot binding; the class guard makes this
+      // verb legal ONLY against a visibility-only line (the symmetric lock).
+      id: 't_requirementresponse_acknowledge',
+      from: [],
+      to: 'Submitted',
+      trigger: 'creation',
+      requiredRole: 'requirementresponse:acknowledge',
+      requiredFields: ['publicationId', 'planVersion', 'materialCode', 'periodBucket'],
+      policyHooks: [
+        POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND,
+        POLICY_HOOKS.RR_ACKNOWLEDGE_VISIBILITY_CLASS,
+      ],
       version: 1,
     },
     {

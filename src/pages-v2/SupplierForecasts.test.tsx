@@ -107,13 +107,52 @@ describe('SupplierForecasts — FLAG-2 honest render', () => {
     expect(screen.queryByText(/PLANNED/)).not.toBeInTheDocument();
   });
 
-  it('a visibility-only line offers NO confirm affordance (nothing to commit)', async () => {
+  it('a visibility-only line offers ACKNOWLEDGE, never Confirm (nothing to commit)', async () => {
     renderPage();
     const lines = await screen.findByTestId('sdcsup-lines');
-    // 3 fanned lines but only 2 Confirm buttons — the visibility-only line
-    // renders the no-commitment hint instead.
+    // 3 fanned lines: 2 Confirm buttons (firm + semi-firm) and 1 Acknowledge
+    // (the visibility-only line — SDC-2b-EXT response affordance + the hint).
     expect(within(lines).getAllByRole('button', { name: /^Confirm$/ })).toHaveLength(2);
+    expect(within(lines).getAllByRole('button', { name: /^Acknowledge$/ })).toHaveLength(1);
     expect(within(lines).getByText(/no commitment requested/i)).toBeInTheDocument();
+  });
+});
+
+describe('SupplierForecasts — the visibility response (SDC-2b-EXT)', () => {
+  it('acknowledges the visibility line with a note → records honestly, never as a confirmation', async () => {
+    renderPage();
+    const lines = await screen.findByTestId('sdcsup-lines');
+    fireEvent.click(within(lines).getByRole('button', { name: /^Acknowledge$/ }));
+    fireEvent.change(await screen.findByLabelText(/Note \(optional signal\)/), {
+      target: { value: 'Current stock covers this horizon.' },
+    });
+    // The panel commit is OUTLINE "Acknowledge" — solid stays reserved for
+    // commitments. Two "Acknowledge" buttons exist (line card + panel commit);
+    // the panel's is the last in DOM order.
+    const ackButtons = screen.getAllByRole('button', { name: /^Acknowledge$/ });
+    fireEvent.click(ackButtons[ackButtons.length - 1]);
+    const panel = await screen.findByTestId('sdcsup-responses');
+    const minted = requirementResponseStore
+      .all()
+      .find((r) => r.supplierId === 'sup-007' && r.acknowledgment && r.id.startsWith('rr-9'));
+    expect(minted).toBeDefined();
+    expect(minted!.acknowledgment).toEqual({ note: 'Current stock covers this horizon.' });
+    expect(minted!.forecastConfirmation).toBeUndefined(); // no number to misread
+    expect(minted!.planVersion).toBe('PV-2026-08.2');
+    // The seed rr-0005 answered the same thread → this re-ack versions up to 2.
+    expect(minted!.submissionVersion).toBe(2);
+    // My responses renders "Acknowledged" — and no qty for this record.
+    expect(within(panel).getAllByText('Acknowledged').length).toBeGreaterThan(0);
+  });
+
+  it('the seeded acknowledgment (rr-0005) renders as Acknowledged with its note — no qty, no "confirmed"', async () => {
+    renderPage();
+    fireEvent.click(await screen.findByRole('tab', { name: /My responses/ }));
+    const panel = await screen.findByTestId('sdcsup-responses');
+    expect(within(panel).getByText('rr-0005')).toBeInTheDocument();
+    expect(within(panel).getByText('Acknowledged')).toBeInTheDocument();
+    expect(within(panel).getByText(/no concern yet/)).toBeInTheDocument();
+    expect(within(panel).queryByText(/confirmed/i)).not.toBeInTheDocument();
   });
 });
 

@@ -460,6 +460,25 @@ export const REQUIREMENT_RESPONSES: readonly RequirementResponse[] = Object.free
     }),
     provenance: PROV_SUPPLIER_SEED,
   }),
+  // SDC-2b-EXT depth — the VISIBILITY response: sup-007 acknowledges its
+  // visibility-only niacinamide line against the CURRENT publication (R2).
+  // Deliberately NO forecastConfirmation (invariant #11 XOR): an acknowledgment
+  // commits nothing — the note is the early supplier signal Paragon asked for.
+  Object.freeze({
+    id: 'rr-0005',
+    supplierId: 'sup-007',
+    materialCode: 'AI-NIAC-6601',
+    periodBucket: '2026-10',
+    publicationId: 'PUB-2026-08-RM-R2',
+    planVersion: 'PV-2026-08.2',
+    submittedAt: '2026-08-18T07:30:00.000Z',
+    submissionVersion: 1,
+    status: 'Submitted',
+    acknowledgment: Object.freeze({
+      note: 'Seen — current stock sense covers this horizon; no concern yet.',
+    }),
+    provenance: PROV_SUPPLIER_SEED,
+  }),
 ]);
 
 // ─── Object 2 — InventoryDeclarations (SOH state; batches[] PLURAL) ────────────

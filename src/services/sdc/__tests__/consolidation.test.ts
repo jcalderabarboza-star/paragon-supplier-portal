@@ -157,9 +157,37 @@ describe('consolidationRows — demand vs confirmation per line', () => {
     }
   });
 
-  it('a supplier with no record at all is awaiting without the draft hint (silent)', () => {
-    const state = rowById(rows, 'sup-007|AI-NIAC-6601|2026-10').state;
+  it('a supplier line with no record at all is awaiting without the draft hint', () => {
+    // sup-007's F-1a firm PET line has no response — the silent case.
+    const state = rowById(rows, 'sup-007|PK-PETB-8810|2026-08').state;
     expect(state).toEqual({ kind: 'awaiting', draftInProgress: false });
+  });
+
+  it('SDC-2b-EXT: a visibility response reads ACKNOWLEDGED — never a commitment state', () => {
+    // rr-0005 acknowledged the visibility-only niacinamide line against R2 (fresh).
+    const state = rowById(rows, 'sup-007|AI-NIAC-6601|2026-10').state;
+    expect(state.kind).toBe('acknowledged');
+    if (state.kind === 'acknowledged') {
+      expect(state.response.id).toBe('rr-0005');
+      expect(state.carriedForward).toBe(false);
+      // The honesty lock: an acknowledgment carries NO commitment fields.
+      expect(state.response.forecastConfirmation).toBeUndefined();
+      expect(state.response.acknowledgment?.note).toMatch(/no concern yet/);
+    }
+  });
+
+  it('SDC-2b-EXT: an ack against a superseded version carries forward when the line is unmoved', () => {
+    // Rebind rr-0005 to R1 (the niacinamide line republished IDENTICAL in R2).
+    const ackV1 = REQUIREMENT_RESPONSES.map((r) =>
+      r.id === 'rr-0005'
+        ? { ...r, publicationId: 'PUB-2026-08-RM', planVersion: 'PV-2026-08.1' }
+        : r,
+    );
+    const state = rowById(
+      consolidationRows(FORECAST_PUBLICATIONS, ackV1),
+      'sup-007|AI-NIAC-6601|2026-10',
+    ).state;
+    expect(state).toMatchObject({ kind: 'acknowledged', carriedForward: true });
   });
 
   it('flags stale (answeredQty null) when the answered snapshot cannot be located', () => {
@@ -203,8 +231,13 @@ describe('supplierRollups', () => {
     });
   });
 
-  it('sup-007 is silent', () => {
-    expect(bySupplier.get('sup-007')).toMatchObject({ rollup: 'silent', answeredLines: 0 });
+  it('sup-007 is partial — the rr-0005 acknowledgment COUNTS as answered (SDC-2b-EXT)', () => {
+    expect(bySupplier.get('sup-007')).toMatchObject({
+      rollup: 'partial',
+      totalLines: 3,
+      answeredLines: 1,
+      awaitingLines: 2,
+    });
   });
 });
 
@@ -219,9 +252,13 @@ describe('chaseList (RESPONSE_DUE_DAYS interim policy)', () => {
   });
 
   it('before the deadline: partial responders surface, silent ones are not chased yet', () => {
+    // sup-007's acknowledgment (SDC-2b-EXT) makes it a PARTIAL responder too —
+    // answered one line, two packaging lines still awaiting; it leads on count.
     const entries = chaseList(current, rows, NOW_BEFORE_DUE);
-    expect(entries).toHaveLength(1);
-    expect(entries[0]).toMatchObject({ supplierId: 'sup-002', reason: 'partial-response' });
+    expect(entries.map((e) => `${e.supplierId}:${e.reason}`)).toEqual([
+      'sup-007:partial-response',
+      'sup-002:partial-response',
+    ]);
     // The deadline derives from publishedAt + RESPONSE_DUE_DAYS.
     expect(entries[0].dueAt).toBe('2026-08-22T00:00:00.000Z');
   });

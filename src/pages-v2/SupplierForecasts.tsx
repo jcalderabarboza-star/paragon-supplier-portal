@@ -22,10 +22,12 @@ import {
   useOwnForecastLines,
   useOwnRequirementResponses,
   useRequirementResponseSubmit,
+  useRequirementResponseAcknowledge,
 } from '../services/query/sdcSupplierHooks';
 import {
   MATERIAL_MASTER,
   buildRequirementResponsePayload,
+  buildRequirementAcknowledgePayload,
   openSubmissionSession,
   type CommitmentClass,
   type ForecastLine,
@@ -123,7 +125,8 @@ const LineCard: React.FC<{
   line: ForecastLine;
   latest?: RequirementResponse;
   onConfirm: (line: ForecastLine) => void;
-}> = ({ line, latest, onConfirm }) => {
+  onAcknowledge: (line: ForecastLine) => void;
+}> = ({ line, latest, onConfirm, onAcknowledge }) => {
   const { t } = useTranslation();
   const confirmable = line.commitmentClass !== 'visibility-only';
   return (
@@ -147,9 +150,16 @@ const LineCard: React.FC<{
             {t('sdcSup.line.confirm')}
           </Button>
         ) : (
-          <span className="text-xs italic text-text-tertiary max-w-[14rem] text-right">
-            {t('sdcSup.line.visibilityHint')}
-          </span>
+          // SDC-2b-EXT: a visibility-only line takes a RESPONSE (acknowledge +
+          // optional signal), never a commitment — quieter affordance by design.
+          <div className="flex flex-col items-end gap-1.5 max-w-[14rem]">
+            <Button variant="outline" onClick={() => onAcknowledge(line)}>
+              {t('sdcSup.line.acknowledge')}
+            </Button>
+            <span className="text-xs italic text-text-tertiary text-right">
+              {t('sdcSup.line.visibilityHint')}
+            </span>
+          </div>
         )}
       </div>
 
@@ -174,15 +184,22 @@ const LineCard: React.FC<{
 
       {latest && (
         <div className="mt-3 text-xs text-text-secondary">
-          {t('sdcSup.line.lastResponse', {
-            qty: formatNumber(latest.forecastConfirmation.confirmedQty),
-            uom: latest.forecastConfirmation.uom,
-            version: latest.submissionVersion,
-            // Same central status map StatusPill localizes through.
-            status: statusLabelKey(latest.status)
-              ? t(statusLabelKey(latest.status)!)
-              : latest.status,
-          })}
+          {latest.acknowledgment
+            ? t('sdcSup.line.lastResponseAck', {
+                version: latest.submissionVersion,
+                status: statusLabelKey(latest.status)
+                  ? t(statusLabelKey(latest.status)!)
+                  : latest.status,
+              })
+            : t('sdcSup.line.lastResponse', {
+                qty: formatNumber(latest.forecastConfirmation!.confirmedQty),
+                uom: latest.forecastConfirmation!.uom,
+                version: latest.submissionVersion,
+                // Same central status map StatusPill localizes through.
+                status: statusLabelKey(latest.status)
+                  ? t(statusLabelKey(latest.status)!)
+                  : latest.status,
+              })}
         </div>
       )}
     </div>
@@ -228,12 +245,19 @@ const ResponsesTab: React.FC<{ responses: readonly RequirementResponse[] }> = ({
               { label: t('sdcSup.responses.col.material'), value: materialLabel(r.materialCode) },
               { label: t('sdcSup.responses.col.period'), value: r.periodBucket },
               {
-                label: t('sdcSup.responses.col.confirmed'),
-                value: `${formatNumber(r.forecastConfirmation.confirmedQty)} ${r.forecastConfirmation.uom}`,
+                // SDC-2b-EXT: an acknowledgment carries NO qty — the cell reads
+                // "Acknowledged" under a "Response" label; the word "confirmed"
+                // never appears on a visibility response.
+                label: r.acknowledgment
+                  ? t('sdcSup.responses.col.response')
+                  : t('sdcSup.responses.col.confirmed'),
+                value: r.acknowledgment
+                  ? t('sdcSup.responses.ack')
+                  : `${formatNumber(r.forecastConfirmation!.confirmedQty)} ${r.forecastConfirmation!.uom}`,
               },
               {
                 label: t('sdcSup.responses.col.committedDate'),
-                value: r.forecastConfirmation.committedDate
+                value: r.forecastConfirmation?.committedDate
                   ? formatDate(r.forecastConfirmation.committedDate)
                   : '—',
               },
@@ -251,6 +275,14 @@ const ResponsesTab: React.FC<{ responses: readonly RequirementResponse[] }> = ({
               </div>
             ))}
           </dl>
+          {r.acknowledgment?.note && (
+            <div className="mt-3 text-xs text-text-secondary">
+              <span className="text-label text-text-tertiary uppercase">
+                {t('sdcSup.responses.note')}
+              </span>{' '}
+              {r.acknowledgment.note}
+            </div>
+          )}
           {r.rootCause && (
             <div className="mt-3 text-xs text-text-secondary">
               <span className="text-label text-text-tertiary uppercase">
@@ -287,9 +319,13 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   const { toast } = useToast();
   const crumb = [t('sdcSup.crumb.section'), t('sdcSup.crumb.page')];
   const submitMutation = useRequirementResponseSubmit();
+  const acknowledgeMutation = useRequirementResponseAcknowledge();
   const [activeTab, setActiveTab] = useState<TabKey>('lines');
   const [panelLine, setPanelLine] = useState<ForecastLine | null>(null);
   const [form, setForm] = useState<ConfirmForm>(emptyForm);
+  // SDC-2b-EXT — the visibility-response panel (acknowledge + optional note).
+  const [ackPanelLine, setAckPanelLine] = useState<ForecastLine | null>(null);
+  const [ackNote, setAckNote] = useState('');
   // One SubmissionSession envelope per supplier visit (addendum §5): each
   // dispatched object is recorded on it; SDC-3's extra objects join the same
   // recorder. Degenerate today (one object kind) but shape-correct.
@@ -298,6 +334,11 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   const openConfirm = (line: ForecastLine) => {
     setPanelLine(line);
     setForm(emptyForm);
+  };
+
+  const openAcknowledge = (line: ForecastLine) => {
+    setAckPanelLine(line);
+    setAckNote('');
   };
 
   const qtyNumber = Number(form.confirmedQty.replace(/,/g, ''));
@@ -380,6 +421,53 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
     }
   };
 
+  // SDC-2b-EXT — the visibility response: acknowledge + optional signal.
+  // Same snapshot binding + identity discipline + session envelope; NO qty.
+  const submitAcknowledgment = async () => {
+    if (!ackPanelLine) return;
+    const payload = buildRequirementAcknowledgePayload(
+      publication,
+      ackPanelLine,
+      supplierId,
+      ackNote,
+    );
+    try {
+      const res = await acknowledgeMutation.mutateAsync({ payload });
+      if (res.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('sdcSup.toast.failed.title'),
+          description: res.reason ?? t('sdcSup.toast.failed.body'),
+        });
+        return;
+      }
+      if (!sessionRef.current) {
+        sessionRef.current = openSubmissionSession(
+          `ss-p1-${Date.now().toString(36)}`,
+          supplierId,
+          new Date().toISOString(),
+        );
+      }
+      sessionRef.current.attempt('RequirementResponse', res.entityId ?? '', res.correlationId);
+      toast({
+        variant: 'success',
+        title: t('sdcSup.toast.acknowledged.title', {
+          material: materialLabel(ackPanelLine.materialCode),
+        }),
+        description: t('sdcSup.toast.acknowledged.body'),
+      });
+      setAckPanelLine(null);
+      setAckNote('');
+      setActiveTab('responses');
+    } catch {
+      toast({
+        variant: 'error',
+        title: t('sdcSup.toast.failed.title'),
+        description: t('sdcSup.toast.failed.body'),
+      });
+    }
+  };
+
   return (
     <AppShellV2>
       <PageHeader
@@ -438,6 +526,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 line={line}
                 latest={latestResponseFor(responses, publication, line)}
                 onConfirm={openConfirm}
+                onAcknowledge={openAcknowledge}
               />
             ))}
           </div>
@@ -590,6 +679,77 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 />
               </div>
             </FormSection>
+          </div>
+        )}
+      </SidePanel>
+
+      {/* SDC-2b-EXT — the LIGHT visibility-response panel: acknowledge +
+          optional signal. The commit stays OUTLINE — solid is reserved for
+          real commitments (DP2-BUTTON-01); an acknowledgment commits nothing. */}
+      <SidePanel
+        open={ackPanelLine !== null}
+        onClose={() => setAckPanelLine(null)}
+        title={
+          ackPanelLine
+            ? t('sdcSup.ackPanel.title', { material: materialLabel(ackPanelLine.materialCode) })
+            : ''
+        }
+        footerActions={
+          <>
+            <Button variant="secondary" onClick={() => setAckPanelLine(null)}>
+              {t('sdcSup.panel.cancel')}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={acknowledgeMutation.isPending}
+              onClick={submitAcknowledgment}
+            >
+              {acknowledgeMutation.isPending
+                ? t('sdcSup.ackPanel.submitting')
+                : t('sdcSup.ackPanel.submit')}
+            </Button>
+          </>
+        }
+      >
+        {ackPanelLine && (
+          <div className="space-y-5">
+            <section className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Data className="text-sm font-bold text-text-primary">
+                  {ackPanelLine.materialCode}
+                </Data>
+                <span className={CHIP}>{t(CLASS_LABEL_KEY[ackPanelLine.commitmentClass])}</span>
+              </div>
+              <div className="flex flex-wrap gap-4 mt-2 text-xs text-text-tertiary">
+                <span>
+                  {t('sdcSup.panel.requested')}{' '}
+                  <Data as="strong" className="text-text-primary">
+                    {formatNumber(ackPanelLine.forecastQty)} {ackPanelLine.uom}
+                  </Data>
+                </span>
+                <span>
+                  {t('sdcSup.line.period')}{' '}
+                  <Data as="strong" className="text-text-primary">
+                    {ackPanelLine.periodBucket}
+                  </Data>
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-text-secondary">{t('sdcSup.ackPanel.desc')}</p>
+            </section>
+
+            <div>
+              <label className={labelClass} htmlFor="sdcsup-ack-note">
+                {t('sdcSup.ackPanel.note')}
+              </label>
+              <textarea
+                id="sdcsup-ack-note"
+                rows={3}
+                placeholder={t('sdcSup.ackPanel.notePlaceholder')}
+                value={ackNote}
+                onChange={(e) => setAckNote(e.target.value)}
+                className={`${inputClass} resize-y`}
+              />
+            </div>
           </div>
         )}
       </SidePanel>

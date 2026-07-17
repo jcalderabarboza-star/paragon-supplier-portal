@@ -133,3 +133,27 @@ export function useRequirementResponseSubmit() {
     },
   });
 }
+
+/** Acknowledge a visibility-only line (SDC-2b-EXT — fires the `creation` verb
+ *  `t_requirementresponse_acknowledge`; class-guarded, NO commitment qty). */
+export function useRequirementResponseAcknowledge() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+  };
+  const invalidate = useInvalidateSdc();
+
+  return useMutation<CommandResult, Error, RequirementResponseSubmitVars>({
+    mutationFn: ({ payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_requirementresponse_acknowledge',
+        entity: 'requirementResponse',
+        payload,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}

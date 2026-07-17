@@ -29,8 +29,11 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.line.demand': 'Requested',
   'sdcSup.line.period': 'Period',
   'sdcSup.line.confirm': 'Confirm',
+  // SDC-2b-EXT: the visibility-response verb — a response, never a commitment.
+  'sdcSup.line.acknowledge': 'Acknowledge',
   'sdcSup.line.visibilityHint': 'Forward visibility only — no commitment requested.',
   'sdcSup.line.lastResponse': 'Your latest response: {{qty}} {{uom}} · v{{version}} · {{status}}',
+  'sdcSup.line.lastResponseAck': 'Your latest response: Acknowledged · v{{version}} · {{status}}',
   'sdcSup.lines.emptyTitle': 'No published lines',
   'sdcSup.lines.emptyBody': 'No forecast lines have been published to your account.',
 
@@ -44,6 +47,11 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.responses.col.version': 'Version',
   'sdcSup.responses.col.submitted': 'Submitted',
   'sdcSup.responses.rootCause': 'Root cause',
+  // SDC-2b-EXT: how an acknowledgment renders — never a quantity, and the
+  // label reads "Response" (the word "confirmed" never touches an ack).
+  'sdcSup.responses.col.response': 'Response',
+  'sdcSup.responses.ack': 'Acknowledged',
+  'sdcSup.responses.note': 'Note',
 
   // — Confirm panel —
   'sdcSup.panel.title': 'Confirm {{material}}',
@@ -74,6 +82,15 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.panel.submit': 'Submit confirmation',
   'sdcSup.panel.submitting': 'Submitting…',
 
+  // — Acknowledge panel (SDC-2b-EXT — the visibility response) —
+  'sdcSup.ackPanel.title': 'Acknowledge {{material}}',
+  'sdcSup.ackPanel.desc':
+    'This line is forward visibility — no commitment is requested. Acknowledging tells Paragon you have seen it; the note is an optional early signal (stock sense, capacity outlook).',
+  'sdcSup.ackPanel.note': 'Note (optional signal)',
+  'sdcSup.ackPanel.notePlaceholder': 'e.g. current stock covers this horizon; no concern yet',
+  'sdcSup.ackPanel.submit': 'Acknowledge',
+  'sdcSup.ackPanel.submitting': 'Acknowledging…',
+
   // — Toasts —
   'sdcSup.toast.missingQty.title': 'Quantity required',
   'sdcSup.toast.missingQty.body': 'Enter the quantity you confirm (0 is valid when you cannot supply).',
@@ -81,6 +98,8 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.toast.missingRootCause.body': 'You are confirming below the requested quantity — select a root-cause category.',
   'sdcSup.toast.submitted.title': 'Confirmation submitted — {{material}}',
   'sdcSup.toast.submitted.body': 'Your response is recorded under My responses.',
+  'sdcSup.toast.acknowledged.title': 'Acknowledged — {{material}}',
+  'sdcSup.toast.acknowledged.body': 'Your visibility response is recorded under My responses.',
   'sdcSup.toast.failed.title': 'Confirmation not submitted',
   'sdcSup.toast.failed.body': 'The submission was rejected. Please try again.',
 
@@ -116,8 +135,13 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.line.demand': 'Diminta',
   'sdcSup.line.period': 'Periode',
   'sdcSup.line.confirm': 'Konfirmasi',
+  // SDC-2b-EXT: "Tanggapi/Ditanggapi" = INTERIM adjudicated word choice —
+  // deliberately a RESPONSE verb, not an approval verb; JJ's Indonesian team
+  // reviews the final wording later.
+  'sdcSup.line.acknowledge': 'Tanggapi',
   'sdcSup.line.visibilityHint': 'Visibilitas ke depan saja — tidak ada komitmen yang diminta.',
   'sdcSup.line.lastResponse': 'Respons terakhir Anda: {{qty}} {{uom}} · v{{version}} · {{status}}',
+  'sdcSup.line.lastResponseAck': 'Respons terakhir Anda: Ditanggapi · v{{version}} · {{status}}',
   'sdcSup.lines.emptyTitle': 'Tidak ada baris terbit',
   'sdcSup.lines.emptyBody': 'Belum ada baris prakiraan yang diterbitkan ke akun Anda.',
 
@@ -131,6 +155,9 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.responses.col.version': 'Versi',
   'sdcSup.responses.col.submitted': 'Dikirim',
   'sdcSup.responses.rootCause': 'Akar masalah',
+  'sdcSup.responses.col.response': 'Respons',
+  'sdcSup.responses.ack': 'Ditanggapi',
+  'sdcSup.responses.note': 'Catatan',
 
   // — Panel konfirmasi —
   'sdcSup.panel.title': 'Konfirmasi {{material}}',
@@ -161,6 +188,15 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.panel.submit': 'Kirim konfirmasi',
   'sdcSup.panel.submitting': 'Mengirim…',
 
+  // — Panel tanggapan visibilitas (SDC-2b-EXT) —
+  'sdcSup.ackPanel.title': 'Tanggapi {{material}}',
+  'sdcSup.ackPanel.desc':
+    'Baris ini visibilitas ke depan — tidak ada komitmen yang diminta. Menanggapi memberi tahu Paragon Anda telah melihatnya; catatan adalah sinyal dini opsional (perkiraan stok, pandangan kapasitas).',
+  'sdcSup.ackPanel.note': 'Catatan (sinyal opsional)',
+  'sdcSup.ackPanel.notePlaceholder': 'mis. stok saat ini mencukupi horizon ini; belum ada kekhawatiran',
+  'sdcSup.ackPanel.submit': 'Tanggapi',
+  'sdcSup.ackPanel.submitting': 'Menanggapi…',
+
   // — Toast —
   'sdcSup.toast.missingQty.title': 'Kuantitas wajib diisi',
   'sdcSup.toast.missingQty.body': 'Masukkan kuantitas yang Anda konfirmasi (0 sah bila tidak dapat memasok).',
@@ -168,6 +204,8 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.toast.missingRootCause.body': 'Anda mengonfirmasi di bawah kuantitas yang diminta — pilih kategori akar masalah.',
   'sdcSup.toast.submitted.title': 'Konfirmasi terkirim — {{material}}',
   'sdcSup.toast.submitted.body': 'Respons Anda tercatat di Respons Saya.',
+  'sdcSup.toast.acknowledged.title': 'Ditanggapi — {{material}}',
+  'sdcSup.toast.acknowledged.body': 'Respons visibilitas Anda tercatat di Respons Saya.',
   'sdcSup.toast.failed.title': 'Konfirmasi tidak terkirim',
   'sdcSup.toast.failed.body': 'Pengiriman ditolak. Silakan coba lagi.',
 

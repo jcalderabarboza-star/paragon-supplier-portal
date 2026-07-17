@@ -14,6 +14,26 @@
 
 import type { ForecastLine, ForecastPublication, RootCause } from './types';
 
+/** Build the `t_requirementresponse_acknowledge` payload (SDC-2b-EXT) from the
+ * rendered publication + visibility-only line + the supplier's optional note.
+ * Same structural snapshot binding as the submit builder; deliberately NO
+ * confirmedQty key — an acknowledgment commits nothing (invariant #11). */
+export function buildRequirementAcknowledgePayload(
+  publication: ForecastPublication,
+  line: ForecastLine,
+  supplierId: string,
+  note?: string,
+): Record<string, unknown> {
+  return {
+    publicationId: publication.publicationId,
+    planVersion: publication.planVersion,
+    materialCode: line.materialCode,
+    periodBucket: line.periodBucket,
+    supplierId,
+    acknowledgment: note && note.trim() ? { note: note.trim() } : {},
+  };
+}
+
 /** The confirm-form fields the submit payload is derived from (all strings —
  *  the form collects text; coercion happens here, comma-tolerant). */
 export interface RequirementResponseDraft {

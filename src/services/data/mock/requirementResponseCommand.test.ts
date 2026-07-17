@@ -197,6 +197,111 @@ describe('t_requirementresponse_submit — the snapshot binding is un-falsifiabl
   });
 });
 
+// ─── SDC-2b-EXT — t_requirementresponse_acknowledge + the symmetric guards ────
+
+const acknowledge = (overrides: Record<string, unknown> = {}) => ({
+  transitionId: 't_requirementresponse_acknowledge',
+  entity: 'requirementResponse',
+  payload: {
+    publicationId: 'PUB-2026-08-RM-R2',
+    planVersion: 'PV-2026-08.2',
+    materialCode: 'AI-NIAC-6601',
+    periodBucket: '2026-10',
+    supplierId: 'sup-007',
+    acknowledgment: { note: 'Stock sense covers the horizon.' },
+    ...overrides,
+  },
+});
+
+describe('t_requirementresponse_acknowledge — the visibility response (SDC-2b-EXT)', () => {
+  it('is authored with NO confirmedQty on the floor; supplier-owned', () => {
+    const t = getTransition('t_requirementresponse_acknowledge')!;
+    expect(t.from).toEqual([]);
+    expect(t.trigger).toBe('creation');
+    expect(t.requiredFields).toEqual([
+      'publicationId',
+      'planVersion',
+      'materialCode',
+      'periodBucket',
+    ]);
+    expect(personaCan('supplier', 'requirementresponse:acknowledge')).toBe(true);
+    expect(personaCan('buyer', 'requirementresponse:acknowledge')).toBe(false);
+    // The commitment floor on submit stays byte-identical (unrelaxed).
+    expect(getTransition('t_requirementresponse_submit')!.requiredFields).toContain(
+      'confirmedQty',
+    );
+  });
+
+  it('sup-007 acknowledges its visibility line → ack record, NO commitment fields, versioned over rr-0005', async () => {
+    const res = await svc.dispatch(sup007, acknowledge());
+    expect(res.status).toBe('done');
+    const r = requirementResponseStore.get(res.entityId!)!;
+    expect(r.acknowledgment).toEqual({ note: 'Stock sense covers the horizon.' });
+    expect(r.forecastConfirmation).toBeUndefined(); // invariant #11 — no number to misread
+    expect(r.planVersion).toBe('PV-2026-08.2');
+    // The seed rr-0005 already answered this exact thread → the re-ack is v2,
+    // and the prior acknowledgment is kept (versioned, never overwritten).
+    expect(r.submissionVersion).toBe(2);
+    expect(requirementResponseStore.get('rr-0005')).toBeDefined();
+  });
+
+  it('a noteless acknowledgment persists as an empty signal (nothing fabricated)', async () => {
+    const res = await svc.dispatch(sup007, acknowledge({ acknowledgment: {} }));
+    expect(requirementResponseStore.get(res.entityId!)!.acknowledgment).toEqual({});
+  });
+
+  it('⭐ symmetric guard: SUBMIT against a visibility-only line is rejected (no fabricated commitment)', async () => {
+    const before = requirementResponseStore.all().length;
+    const res = await svc.dispatch(
+      sup007,
+      submit({
+        supplierId: 'sup-007',
+        materialCode: 'AI-NIAC-6601',
+        periodBucket: '2026-10',
+        confirmedQty: 800,
+      }),
+    );
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/rr_submit_commitment_class/);
+    expect(res.reason).toMatch(/visibility-only/);
+    expect(requirementResponseStore.all().length).toBe(before); // nothing minted
+  });
+
+  it('⭐ symmetric guard: ACKNOWLEDGE against a firm line is rejected (no dodging the commitment floor)', async () => {
+    const before = requirementResponseStore.all().length;
+    const res = await svc.dispatch(
+      sup002,
+      acknowledge({
+        supplierId: 'sup-002',
+        materialCode: 'RM-EMUL-3310',
+        periodBucket: '2026-08',
+      }),
+    );
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/rr_acknowledge_visibility_class/);
+    expect(requirementResponseStore.all().length).toBe(before);
+  });
+
+  it('line-grain scope holds on the new verb: acknowledging ANOTHER supplier’s line is SCOPE_DENIED', async () => {
+    // AI-NIAC-6601 × 2026-10 is fanned to sup-007, not sup-002.
+    await expect(
+      svc.dispatch(sup002, acknowledge({ supplierId: 'sup-002' })),
+    ).rejects.toBeInstanceOf(DataError);
+  });
+
+  it('a buyer is denied — acknowledge is a supplier verb', async () => {
+    const res = await svc.dispatch(buyer, acknowledge());
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/ROLE_NOT_PERMITTED:requirementresponse:acknowledge/);
+  });
+
+  it('the snapshot binding holds on acknowledge too (wrong planVersion rejected)', async () => {
+    const res = await svc.dispatch(sup007, acknowledge({ planVersion: 'PV-2026-08.1' }));
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/does not match publication/);
+  });
+});
+
 describe('t_requirementresponse_submit — honest-by-construction facts', () => {
   it('uom comes from the MATERIAL MASTER, never the caller (invariant #2)', async () => {
     // PK-PETB-8810 is PCS in the master; a caller-supplied uom is IGNORED.

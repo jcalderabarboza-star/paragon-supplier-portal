@@ -102,6 +102,10 @@ export function currentPublication(
  *  · awaiting — no SUBMITTED response. SDC-1 ruling F-2: a Draft is NOT a
  *    response (the planner never acts on an uncommitted supplier draft —
  *    own-facts discipline); it only sets the muted `draftInProgress` hint.
+ *  · acknowledged — SDC-2b-EXT: a VISIBILITY response (the supplier saw the
+ *    visibility-only line and answered with an acknowledgment + optional
+ *    signal). Honestly DISTINCT from the commitment states: it never reads
+ *    confirmed-full/short because there is no commitment to measure.
  *  · confirmed-full / short — a submitted confirmation against the current
  *    version, OR one carried forward from a superseded version whose line did
  *    NOT move (`carriedForward: true` — design §3.2: presumed-valid, not
@@ -110,10 +114,16 @@ export function currentPublication(
  *    the line has MOVED since (or the answered snapshot can't be located, in
  *    which case `answeredQty` is null — flagged rather than presumed valid).
  *    Exact-match interim: the tolerance knob (re-confirm only beyond tolerance)
- *    is SDC-4's delta-on-read; until then any movement flags.
+ *    is SDC-4's delta-on-read; until then any movement flags. Applies to
+ *    acknowledgments the same way — "acknowledged 800, now 1 000" is flagged.
  */
 export type LineResponseState =
   | { readonly kind: 'awaiting'; readonly draftInProgress: boolean }
+  | {
+      readonly kind: 'acknowledged';
+      readonly response: RequirementResponse;
+      readonly carriedForward: boolean;
+    }
   | {
       readonly kind: 'confirmed-full';
       readonly response: RequirementResponse;
@@ -158,13 +168,18 @@ function latestSubmittedByLine(
   return byLine;
 }
 
-/** Fresh-or-carried: fold a confirmation into full/short against a demand qty. */
-function confirmationState(
+/**
+ * Fresh-or-carried: fold a response into its state against a demand qty.
+ * An ACKNOWLEDGMENT (invariant #11: no forecastConfirmation) discriminates
+ * FIRST — it is never measured as a commitment (SDC-2b-EXT honesty rule).
+ */
+function answeredState(
   response: RequirementResponse,
   demandQty: number,
   carriedForward: boolean,
 ): LineResponseState {
-  const confirmed = response.forecastConfirmation.confirmedQty;
+  if (response.acknowledgment) return { kind: 'acknowledged', response, carriedForward };
+  const confirmed = response.forecastConfirmation!.confirmedQty;
   return confirmed >= demandQty
     ? { kind: 'confirmed-full', response, carriedForward }
     : { kind: 'short', response, deficitQty: demandQty - confirmed, carriedForward };
@@ -200,7 +215,7 @@ export function consolidationRows(
       response.publicationId === current.publicationId &&
       response.planVersion === current.planVersion
     ) {
-      return { id: k, line, state: confirmationState(response, line.forecastQty, false) };
+      return { id: k, line, state: answeredState(response, line.forecastQty, false) };
     }
 
     // Answered a superseded snapshot: carry forward presumed-valid when the line
@@ -218,7 +233,7 @@ export function consolidationRows(
         l.periodBucket === line.periodBucket,
     );
     if (answeredLine && answeredLine.forecastQty === line.forecastQty) {
-      return { id: k, line, state: confirmationState(response, line.forecastQty, true) };
+      return { id: k, line, state: answeredState(response, line.forecastQty, true) };
     }
     return {
       id: k,

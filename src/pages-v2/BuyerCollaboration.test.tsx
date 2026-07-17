@@ -70,14 +70,15 @@ describe('BuyerCollaboration — chase list (pre-scheduler manual interim)', () 
     renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
     const chase = screen.getByTestId('sdc-chase');
     // As of 2026-08-25 (> dueAt 2026-08-22) the two suppliers with awaiting
-    // lines (sup-002 partial, sup-007 silent) are both OVERDUE; sup-005
-    // answered everything (short + stale still count as answered) — not chased.
+    // lines (sup-002 and sup-007, both partial) are OVERDUE; sup-005 answered
+    // everything (short + stale still count as answered) — not chased.
     expect(chase.querySelectorAll('li')).toHaveLength(2);
     expect(screen.getAllByText(/^Overdue$/)).toHaveLength(2);
-    // Rollup: 1 responded (sup-005) · 1 partial (sup-002) · 1 silent (sup-007).
+    // Rollup: 1 responded (sup-005) · 2 partial (sup-002; sup-007 whose
+    // SDC-2b-EXT acknowledgment counts as answered) · 0 silent.
     expect(chase).toHaveTextContent('Responded: 1');
-    expect(chase).toHaveTextContent('Partial: 1');
-    expect(chase).toHaveTextContent('Silent: 1');
+    expect(chase).toHaveTextContent('Partial: 2');
+    expect(chase).toHaveTextContent('Silent: 0');
   });
 });
 
