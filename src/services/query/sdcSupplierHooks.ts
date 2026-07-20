@@ -8,15 +8,17 @@
 //     fixture is SIMULATED) and the page falls back to the explicitly-marked
 //     sample path. When F1 real identities + a LIVE feed land, the gate is
 //     already in this read path — the demo exemption collapses by construction.
-//   · useOwnRequirementResponses — the supplier's OWN submissions from
-//     `requirementResponseStore` (own-facts-only, FORK-3b-C: status ONLY, no
-//     rank/score/consolidation — those need sibling data scoping hides).
+//   · useOwnRequirementResponses — the supplier's OWN submissions
+//     (own-facts-only, FORK-3b-C: status ONLY, no rank/score/consolidation —
+//     those need sibling data scoping hides).
 //
-// SCOPING NOTE (named deferral → SDC-4): the own-filter here is PAGE-LEVEL
-// enforcement — these hooks read the fixture/store modules directly, not a
-// service read. SDC-4 repoints P1+P2 onto useDataService() with SERVICE-LEVEL
-// per-supplier scoping (the scoping-contract guarantee the procurement reads
-// already have); the hook signatures don't change.
+// SCOPING (SDC-4c — DONE): the P1 own-reads now go through
+// `svc.collaboration.*` (SDC-4b), so per-supplier isolation is SERVICE-LEVEL —
+// the same scoping-contract guarantee the procurement reads already have. Hook
+// names + return shapes are unchanged, so callers (SupplierForecasts) are
+// untouched. The two NON-own reads that stay fixture-derived here — forecast
+// lines (through the FLAG-2 gate) and collaborated materials (master data) — are
+// not supplier-written, so they are not part of the collaboration read seam.
 //
 // WRITE: useRequirementResponseSubmit — dispatches t_requirementresponse_submit
 // (the SHARED channel-agnostic write-path, DEC-COMMS-PRIMARY) through the
@@ -28,10 +30,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDataService } from '../data/DataServiceContext';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { useServiceQuery, scopeKey } from './useServiceQuery';
-import { requirementResponseStore } from '../data/mock/stores/requirementResponseStore';
-import { inventoryDeclarationStore } from '../data/mock/stores/inventoryDeclarationStore';
-import { incomingShipmentStore } from '../data/mock/stores/incomingShipmentStore';
-import { asnStore } from '../data/mock/stores/asnStore';
 import {
   FORECAST_PUBLICATIONS,
   MATERIAL_MASTER,
@@ -39,15 +37,15 @@ import {
   currentPublication,
   supplierVisiblePublications,
   ownCollaboratedMaterials,
-  shipmentDisplayLifecycle,
-  currentDeclarations,
   type CollaboratedMaterial,
-  type ShipmentDisplayLifecycle,
 } from '../sdc';
+// SDC-4c — the P1 own-shipments view type is the shared SDC one (promoted in
+// SDC-4b); re-exported so callers keep importing it from this hooks module.
+export type { IncomingShipmentView } from '../sdc';
 import type {
   ForecastLine,
   ForecastPublication,
-  IncomingShipment,
+  IncomingShipmentView,
   InventoryDeclaration,
   RequirementResponse,
   Uom,
@@ -95,16 +93,13 @@ export function useOwnForecastLines() {
   );
 }
 
-/** The supplier's OWN requirement responses, latest first (own-facts-only). */
+/** The supplier's OWN requirement responses, latest first (own-facts-only,
+ *  status-only). Service-scoped (SDC-4c). */
 export function useOwnRequirementResponses() {
   return useServiceQuery<readonly RequirementResponse[]>(
     ['sdc', 'ownRequirementResponses'],
-    async (_svc, scope) =>
-      requirementResponseStore
-        .all()
-        .filter((r) => r.supplierId === scope.supplierId)
-        .slice()
-        .sort((a, b) => (b.submittedAt ?? '').localeCompare(a.submittedAt ?? '')),
+    async (svc, scope) =>
+      (await svc.collaboration.getOwnRequirementResponses(scope)).items,
   );
 }
 
@@ -220,59 +215,36 @@ export function useOwnCollaboratedMaterials() {
 /** The supplier's CURRENT SOH per material — the most-recently-declared snapshot
  *  for each material (own-facts-only; a snapshot, not a running total). "Latest"
  *  is by store-insertion recency, NOT `declaredAt` (SDC-4a ruling c: a fresh
- *  declare must win over a future-dated seed). Sorted by material code. */
+ *  declare wins over a future-dated seed). Service-scoped (SDC-4c); sorted by
+ *  material code by the service. */
 export function useOwnInventoryDeclarations() {
   return useServiceQuery<readonly InventoryDeclaration[]>(
     ['sdc', 'ownInventoryDeclarations'],
-    async (_svc, scope) => {
-      const own = inventoryDeclarationStore
-        .all()
-        .filter((d) => d.supplierId === scope.supplierId);
-      // Latest per material (current SOH) — the store keeps every snapshot;
-      // currentDeclarations folds to the most-recently-added per pair.
-      return currentDeclarations(own).sort((a, b) =>
-        a.materialCode.localeCompare(b.materialCode),
-      );
-    },
+    async (svc, scope) =>
+      (await svc.collaboration.getOwnInventoryDeclarations(scope)).items,
   );
-}
-
-/** One reported leg + its DISPLAY lifecycle (derived-from-ASN for to-paragon —
- *  the drift-honesty rule; stored for p2d). */
-export interface IncomingShipmentView {
-  readonly shipment: IncomingShipment;
-  readonly display: ShipmentDisplayLifecycle;
 }
 
 /** The supplier's OWN reported shipments (own-facts-only), newest first, each
  *  with its display lifecycle resolved. A to-paragon leg's lifecycle is DERIVED
- *  from the linked ASN's live status (the ASN machine is the SoR for that leg). */
+ *  from the linked ASN's live status (the ASN machine is the SoR for that leg).
+ *  Service-scoped + display-derived (SDC-4c). */
 export function useOwnIncomingShipments() {
   return useServiceQuery<readonly IncomingShipmentView[]>(
     ['sdc', 'ownIncomingShipments'],
-    async (_svc, scope) =>
-      incomingShipmentStore
-        .all()
-        .filter((s) => s.supplierId === scope.supplierId)
-        .map((shipment) => {
-          const asnStatus =
-            shipment.direction === 'to-paragon' && shipment.asnRef
-              ? (asnStore.get(shipment.asnRef)?.status ?? null)
-              : null;
-          return { shipment, display: shipmentDisplayLifecycle(shipment, asnStatus) };
-        })
-        .slice()
-        .sort((a, b) => b.shipment.id.localeCompare(a.shipment.id)),
+    async (svc, scope) =>
+      (await svc.collaboration.getOwnIncomingShipments(scope)).items,
   );
 }
 
 /** The supplier's OWN ASNs — the to-paragon link picker source (the leg links an
- *  own ASN, never a free-typed ref; asnRef resolves server-side). */
+ *  own ASN, never a free-typed ref; asnRef resolves server-side). Service-scoped
+ *  (SDC-4c). */
 export function useOwnSupplierAsns() {
   return useServiceQuery<readonly ASN[]>(
     ['sdc', 'ownSupplierAsns'],
-    async (_svc, scope) =>
-      asnStore.all().filter((a) => a.supplierId === scope.supplierId),
+    async (svc, scope) =>
+      (await svc.collaboration.getOwnSupplierAsns(scope)).items,
   );
 }
 
