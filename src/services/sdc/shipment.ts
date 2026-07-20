@@ -47,6 +47,17 @@ export interface ShipmentDisplayLifecycle {
 }
 
 /**
+ * One reported leg joined with its DISPLAY lifecycle — the shape the P1 own-
+ * shipments read returns (a to-paragon leg's lifecycle is DERIVED from the linked
+ * ASN's live status). Shared by the collaboration service (SDC-4b) and the
+ * supplier hook so both speak one type.
+ */
+export interface IncomingShipmentView {
+  readonly shipment: IncomingShipment;
+  readonly display: ShipmentDisplayLifecycle;
+}
+
+/**
  * The lifecycle to DISPLAY for a shipment leg. For a to-paragon leg with a
  * resolvable linked-ASN status, the ASN's mapped state wins (derivedFromAsn);
  * for a p2d leg — or a to-paragon leg whose ASN can't be resolved/mapped — the

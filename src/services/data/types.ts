@@ -24,6 +24,19 @@ import type {
   InventoryRecord,
 } from '../../types/supplier.types';
 
+// SDC-4b — the collaboration read seam's row types (type-only; the SDC layer
+// already imports IntakePlanState from here, so this reverse reference is a
+// type-only cycle TS resolves at erase-time — no runtime import is emitted).
+import type {
+  RequirementResponse,
+  InventoryDeclaration,
+  IncomingShipmentView,
+  ConsolidationRow,
+  SupplierCoverageEntry,
+  SupplierRollup,
+  ChaseEntry,
+} from '../sdc';
+
 // ─── PO enums (canonical home; relocated from types/purchaseOrder.types.ts) ──
 export enum POStatus {
   SENT = 'Sent',
@@ -1286,6 +1299,30 @@ export interface IEngagementService {
   getResponseTimes(scope: QueryScope): Promise<Page<ResponseRow>>;
 }
 
+// ─── Supplier Data Collaboration reads (SDC-4b) ───────────────────────────────
+//
+// The SDC read seam. Moves scope from the hooks INTO the service (mirrors
+// IProcurementService): P1 own-reads are per-supplier isolated; the P2
+// consolidation reads are the buyer-superset, BUYER-GATED — a supplier persona
+// hitting the consolidation path sees nothing (own-only degenerates to empty; a
+// supplier has no cross-supplier consolidation view). Reads resolve from the LIVE
+// stores (seeded from the SDC-0 fixtures) through the shared sdcClock, so P1
+// writes and P2 reads share one scoped source. NOT a new domain contract — a
+// read-service namespace over the existing SDC objects/selectors.
+export interface ICollaborationService {
+  // — P1 own-reads (per-supplier isolation) —
+  getOwnRequirementResponses(scope: QueryScope): Promise<Page<RequirementResponse>>;
+  getOwnInventoryDeclarations(scope: QueryScope): Promise<Page<InventoryDeclaration>>;
+  getOwnIncomingShipments(scope: QueryScope): Promise<Page<IncomingShipmentView>>;
+  getOwnSupplierAsns(scope: QueryScope): Promise<Page<ASN>>;
+
+  // — P2 consolidation reads (buyer-superset, BUYER-GATED) —
+  getConsolidation(scope: QueryScope): Promise<Page<ConsolidationRow>>;
+  getCoverage(scope: QueryScope): Promise<Page<SupplierCoverageEntry>>;
+  getChase(scope: QueryScope): Promise<Page<ChaseEntry>>;
+  getRollups(scope: QueryScope): Promise<Page<SupplierRollup>>;
+}
+
 export interface IDataService {
   suppliers: ISupplierService;
   procurement: IProcurementService;
@@ -1293,6 +1330,8 @@ export interface IDataService {
   discovery: IDiscoveryService;
   analytics: IAnalyticsService;
   engagement: IEngagementService;
+  /** SDC read seam — P1 own-reads + P2 consolidation, service-scoped (SDC-4b). */
+  collaboration: ICollaborationService;
   /** Write seam — the single dispatcher (Step 3.4). */
   commands: ICommandService;
   /** What the current scope may do (Step 3.9 DNA seed; mock-backed today). */
