@@ -103,15 +103,25 @@ export function useOwnRequirementResponses() {
   );
 }
 
-// Targeted invalidation, mirroring useInvalidateProcurement: only THIS scope's
-// 'sdc' reads re-derive; another supplier's cache is never disturbed.
+// The buyer-consolidation scopeKey — the P2 reads (SDC-4d) are keyed under it.
+const BUYER_SCOPE_KEY = scopeKey({ personaType: 'buyer', supplierId: null });
+
+// Invalidation on an SDC write: refresh the writer's OWN scope AND the
+// buyer-consolidation scope (SDC-4d cross-scope wiring). A supplier declare /
+// confirm must re-derive the buyer's P2 (a WARM buyer cache in the same session;
+// a persona switch already runs a fresh buyer query that reads the live store —
+// so this matters mainly for same-session staleness). Another SUPPLIER's cache
+// is still never disturbed — only the writer's own reads + the shared buyer view.
 function useInvalidateSdc() {
   const qc = useQueryClient();
   return (scope: QueryScope) => {
     const key = scopeKey(scope);
     qc.invalidateQueries({
-      predicate: (q) =>
-        q.queryKey[0] === 'sdc' && q.queryKey[q.queryKey.length - 1] === key,
+      predicate: (q) => {
+        if (q.queryKey[0] !== 'sdc') return false;
+        const last = q.queryKey[q.queryKey.length - 1];
+        return last === key || last === BUYER_SCOPE_KEY;
+      },
     });
   };
 }

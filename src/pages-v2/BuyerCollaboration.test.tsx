@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { screen } from '@testing-library/react';
-import { renderWithProviders } from '../test/test-utils';
+import { screen, waitFor } from '@testing-library/react';
+import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import BuyerCollaboration from './BuyerCollaboration';
 import { isLive } from '../services/liveness';
 import i18n from '../lib/i18n';
@@ -66,19 +66,37 @@ describe('BuyerCollaboration — period filter bar (the PERIOD owns the class)',
 });
 
 describe('BuyerCollaboration — chase list (pre-scheduler manual interim)', () => {
-  it('lists the overdue suppliers past the pinned due date and the supplier rollup', () => {
+  it('lists the overdue suppliers past the pinned due date and the supplier rollup', async () => {
     renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
-    const chase = screen.getByTestId('sdc-chase');
-    // As of 2026-08-25 (> dueAt 2026-08-22) the two suppliers with awaiting
-    // lines (sup-002 and sup-007, both partial) are OVERDUE; sup-005 answered
-    // everything (short + stale still count as answered) — not chased.
+    // SDC-4d — the consolidation reads are now async (live buyer-scoped via the
+    // service); wait for them to resolve. The NUMBERS stay deterministic under the
+    // shared SIMULATED clock (as of 2026-08-25 > dueAt 2026-08-22): the two
+    // suppliers with awaiting lines (sup-002 and sup-007, both partial) are
+    // OVERDUE; sup-005 answered everything (short + stale still count) — not chased.
+    const chase = await screen.findByTestId('sdc-chase');
+    await waitFor(() => expect(chase).toHaveTextContent('Responded: 1'));
     expect(chase.querySelectorAll('li')).toHaveLength(2);
     expect(screen.getAllByText(/^Overdue$/)).toHaveLength(2);
     // Rollup: 1 responded (sup-005) · 2 partial (sup-002; sup-007 whose
     // SDC-2b-EXT acknowledgment counts as answered) · 0 silent.
-    expect(chase).toHaveTextContent('Responded: 1');
     expect(chase).toHaveTextContent('Partial: 2');
     expect(chase).toHaveTextContent('Silent: 0');
+  });
+
+  it('honesty gate — a SUPPLIER persona on the buyer view sees NO chase (buyer-gated)', async () => {
+    // The buyer-scoped reads return [] for a supplier scope (SDC-4b), so a
+    // supplier can never see the cross-supplier consolidation. The rollup counts
+    // stay 0 and the chase list shows its empty state.
+    renderWithProviders(<BuyerCollaboration />, {
+      route: '/buyer/collaboration',
+      identity: SUPPLIER,
+    });
+    const chase = await screen.findByTestId('sdc-chase');
+    await waitFor(() => expect(chase).toHaveTextContent('Responded: 0'));
+    expect(chase).toHaveTextContent('Partial: 0');
+    expect(chase).toHaveTextContent('Silent: 0');
+    expect(chase.querySelectorAll('li')).toHaveLength(0);
+    expect(screen.queryByText(/^Overdue$/)).not.toBeInTheDocument();
   });
 });
 

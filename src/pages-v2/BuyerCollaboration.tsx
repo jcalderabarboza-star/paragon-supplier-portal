@@ -17,32 +17,34 @@ import { formatDate, formatNumber } from '../lib/format';
 import { mockSuppliers } from '../data/mockSuppliers';
 import {
   FORECAST_PUBLICATIONS,
-  REQUIREMENT_RESPONSES,
-  INVENTORY_DECLARATIONS,
-  INCOMING_SHIPMENTS,
-  SUPPLIER_MATERIAL_RELATIONSHIPS,
   MATERIAL_MASTER,
   currentPublication,
-  consolidationRows,
-  supplierRollups,
-  chaseList,
-  supplierCoverageEntries,
   SDC_SIMULATED_NOW,
   type ConsolidationRow,
   type SupplierCoverageEntry,
   type CommitmentClass,
 } from '../services/sdc';
+import {
+  useConsolidationRows,
+  useCoverageEntries,
+  useChaseEntries,
+  useSupplierRollups,
+} from '../services/query/sdcBuyerHooks';
 
 // ────────────────────────────────────────────────────────────────────────────
 // BuyerCollaboration (SDC-1b) — the P2 planner consolidation view: the
 // master-spreadsheet replacement (RFP p.13) on screen.
 //
-// READ-ONLY end-to-end: this page renders the SDC-1a pure selectors over the
-// SDC-0 fixtures — no mutation, no command, no dispatch (P1 supplier submission
-// is SDC-2). The DSG engine ships in this page's async chunk (lazy route, shared
-// with PlanGrid — see AppRouter); every honest marker derives from the registry
-// (`forecastPublications`: gate-2 shut on the SOMO C8 feed → green structurally
-// unreachable, the pill reads "Sample — awaiting SOMO C8 feed").
+// READ-ONLY end-to-end: this page renders no mutation, no command, no dispatch.
+// SDC-4d — the consolidation reads are now buyer-scoped `useServiceQuery` over
+// the LIVE stores (via svc.collaboration.*), fed by the shared sdcClock, so a P1
+// supplier declare / confirm is reflected here (the P1→P2 loop, closed on
+// fixtures). Buyer-gated: a supplier persona resolves []. The DSG engine ships in
+// this page's async chunk (lazy route, shared with PlanGrid — see AppRouter);
+// every honest marker still derives from the registry (`forecastPublications`:
+// gate-2 shut on the SOMO C8 feed → green structurally unreachable, the pill
+// reads "Sample — awaiting SOMO C8 feed" — this is live-on-fixtures, NOT a live
+// feed, so the registry / gate-2 / Sample pills are untouched).
 //
 // THE BOUNDARY (design §5, addendum §6): response tracking is OURS; network
 // coverage-projection stays SOMO's. The ONE projection rendered here is the
@@ -59,23 +61,11 @@ import {
 // the same instant the write stamps use, so display and writes never diverge.
 const SIMULATED_ASOF = SDC_SIMULATED_NOW;
 
-// The consolidation read — module-scope like the fixtures themselves (static
-// SIMULATED inputs → static derivation; the SDC-4 repoint moves these behind
-// useDataService without touching a selector).
+// The CURRENT publication stays module-scope: publications are frozen SOMO
+// fixtures (their producer is the F2 C8 feed, not a supplier write), and drive
+// the period bar + period-class only. The supplier-WRITTEN derivations
+// (rows / rollups / chase / coverage) are live buyer-scoped hooks in-component.
 const CURRENT = currentPublication(FORECAST_PUBLICATIONS);
-const ROWS = consolidationRows(FORECAST_PUBLICATIONS, REQUIREMENT_RESPONSES);
-const ROLLUPS = supplierRollups(ROWS);
-const CHASE = CURRENT ? chaseList(CURRENT, ROWS, SIMULATED_ASOF) : [];
-const COVERAGE = supplierCoverageEntries(
-  FORECAST_PUBLICATIONS,
-  INVENTORY_DECLARATIONS,
-  INCOMING_SHIPMENTS,
-  SUPPLIER_MATERIAL_RELATIONSHIPS,
-  SIMULATED_ASOF,
-);
-const COVERAGE_BY_PAIR = new Map<string, SupplierCoverageEntry>(
-  COVERAGE.map((c) => [`${c.supplierId}|${c.materialCode}`, c]),
-);
 
 // Fixed DSG height (px) — same one-source-of-truth pattern as PlanGrid: the
 // `height` prop AND the `--plan-dsg-h` pin (anti-trembling, planGrid.css).
@@ -110,15 +100,46 @@ const CHIP_WARNING = `${CHIP} border-warning/30 bg-warning-soft text-warning-hov
 const CHIP_DANGER = `${CHIP} border-danger/30 bg-danger-soft text-danger`;
 const CHIP_INFO = `${CHIP} border-info/30 bg-info-soft text-info`;
 
+// SDC-4d — the coverage entry is JOINED INTO the row (not read from a column
+// closure). The coverage reads resolve ASYNC now, and DSG re-renders cells on
+// `value` changes — not on a column-`component` closure change — so a coverage
+// map captured in the closure would render stale (all dashes) after the async
+// resolve. Carrying it in the row (like `state`) makes the grid reflect it.
+type CoverageRow = ConsolidationRow & {
+  readonly coverage: SupplierCoverageEntry | null;
+};
+
 const BuyerCollaboration: React.FC = () => {
   const { t } = useTranslation();
 
   // The period filter — 'all' or one horizon bucket of the current publication.
   const [period, setPeriod] = useState<string>('all');
 
+  // SDC-4d — the live buyer-scoped consolidation reads (over svc.collaboration.*,
+  // fed by the shared sdcClock). Buyer-gated: a supplier persona resolves [].
+  const { data: rows = [] } = useConsolidationRows();
+  const { data: coverage = [] } = useCoverageEntries();
+  const { data: chase = [] } = useChaseEntries();
+  const { data: rollups = [] } = useSupplierRollups();
+
+  // Join coverage INTO each row (SDC-4d) so the DSG reflects it after the async
+  // read resolves — a column-closure lookup would stay stale (all dashes).
+  const rowsWithCoverage = useMemo<CoverageRow[]>(() => {
+    const byPair = new Map<string, SupplierCoverageEntry>(
+      coverage.map((c) => [`${c.supplierId}|${c.materialCode}`, c]),
+    );
+    return rows.map((r) => ({
+      ...r,
+      coverage: byPair.get(`${r.line.supplierId}|${r.line.materialCode}`) ?? null,
+    }));
+  }, [rows, coverage]);
+
   const visibleRows = useMemo(
-    () => (period === 'all' ? ROWS : ROWS.filter((r) => r.line.periodBucket === period)),
-    [period],
+    () =>
+      period === 'all'
+        ? rowsWithCoverage
+        : rowsWithCoverage.filter((r) => r.line.periodBucket === period),
+    [period, rowsWithCoverage],
   );
 
   // The carried-forward token: presumed valid (design §3.2), a muted note —
@@ -132,21 +153,21 @@ const BuyerCollaboration: React.FC = () => {
     [t],
   );
 
-  const columns = useMemo<Column<ConsolidationRow>[]>(
+  const columns = useMemo<Column<CoverageRow>[]>(
     () => [
       {
         title: t('sdc.col.supplier'),
         disabled: true,
         grow: 2,
         minWidth: 160,
-        component: textCell<ConsolidationRow>((r) => supplierName(r.line.supplierId)),
+        component: textCell<CoverageRow>((r) => supplierName(r.line.supplierId)),
       },
       {
         title: t('sdc.col.material'),
         disabled: true,
         grow: 2,
         minWidth: 230,
-        component: ({ rowData }: CellProps<ConsolidationRow>) => (
+        component: ({ rowData }: CellProps<CoverageRow>) => (
           <div className="w-full truncate px-2 text-sm">
             <Data className="text-xs">{rowData.line.materialCode}</Data>{' '}
             <span className="text-xs text-text-secondary">
@@ -159,7 +180,7 @@ const BuyerCollaboration: React.FC = () => {
         title: t('sdc.col.period'),
         disabled: true,
         minWidth: 90,
-        component: dataCell<ConsolidationRow>((r) => r.line.periodBucket),
+        component: dataCell<CoverageRow>((r) => r.line.periodBucket),
       },
       {
         // Per-line class chip: an ECHO of the period-level class (the filter bar
@@ -167,7 +188,7 @@ const BuyerCollaboration: React.FC = () => {
         title: t('sdc.col.class'),
         disabled: true,
         minWidth: 110,
-        component: ({ rowData }: CellProps<ConsolidationRow>) => (
+        component: ({ rowData }: CellProps<CoverageRow>) => (
           <div className="w-full px-2">
             <span className={CHIP_NEUTRAL}>
               {t(CLASS_LABEL_KEY[rowData.line.commitmentClass])}
@@ -179,7 +200,7 @@ const BuyerCollaboration: React.FC = () => {
         title: t('sdc.col.demand'),
         disabled: true,
         minWidth: 120,
-        component: dataCell<ConsolidationRow>(
+        component: dataCell<CoverageRow>(
           (r) => `${formatNumber(r.line.forecastQty)} ${r.line.uom}`,
         ),
       },
@@ -187,7 +208,7 @@ const BuyerCollaboration: React.FC = () => {
         title: t('sdc.col.confirmed'),
         disabled: true,
         minWidth: 120,
-        component: dataCell<ConsolidationRow>((r) => {
+        component: dataCell<CoverageRow>((r) => {
           // Awaiting has nothing; an acknowledgment COMMITS nothing (SDC-2b-EXT
           // invariant #11) — both render the honest dash, never a fabricated qty.
           if (r.state.kind === 'awaiting' || r.state.kind === 'acknowledged')
@@ -200,7 +221,7 @@ const BuyerCollaboration: React.FC = () => {
         title: t('sdc.col.deficit'),
         disabled: true,
         minWidth: 110,
-        component: ({ rowData }: CellProps<ConsolidationRow>) => (
+        component: ({ rowData }: CellProps<CoverageRow>) => (
           <div className="w-full px-2 text-right">
             {rowData.state.kind === 'short' ? (
               <Data className="text-xs text-danger">
@@ -217,7 +238,7 @@ const BuyerCollaboration: React.FC = () => {
         disabled: true,
         grow: 2,
         minWidth: 240,
-        component: ({ rowData }: CellProps<ConsolidationRow>) => {
+        component: ({ rowData }: CellProps<CoverageRow>) => {
           const s = rowData.state;
           return (
             <div className="flex w-full flex-wrap items-center gap-1.5 px-2">
@@ -275,10 +296,8 @@ const BuyerCollaboration: React.FC = () => {
         disabled: true,
         grow: 2,
         minWidth: 190,
-        component: ({ rowData }: CellProps<ConsolidationRow>) => {
-          const cov = COVERAGE_BY_PAIR.get(
-            `${rowData.line.supplierId}|${rowData.line.materialCode}`,
-          );
+        component: ({ rowData }: CellProps<CoverageRow>) => {
+          const cov = rowData.coverage;
           // Visibility-only pair: no committed demand → no sufficiency read.
           if (!cov) {
             return (
@@ -338,7 +357,7 @@ const BuyerCollaboration: React.FC = () => {
         disabled: true,
         grow: 2,
         minWidth: 170,
-        component: ({ rowData }: CellProps<ConsolidationRow>) => (
+        component: ({ rowData }: CellProps<CoverageRow>) => (
           <div className="w-full px-2">
             <PlanCellMarker
               capability="forecastPublications"
@@ -365,8 +384,8 @@ const BuyerCollaboration: React.FC = () => {
 
       <PageMetaLine className="-mt-6 mb-6">
         {t('sdc.meta.summary', {
-          lines: ROWS.length,
-          suppliers: ROLLUPS.length,
+          lines: rows.length,
+          suppliers: rollups.length,
           planVersion: CURRENT?.planVersion ?? t('sdc.empty.dash'),
           asOf: formatDate(SIMULATED_ASOF),
         })}
@@ -444,8 +463,8 @@ const BuyerCollaboration: React.FC = () => {
                 className="plan-dsg overflow-hidden rounded-lg border border-border-subtle bg-bg-surface"
                 style={dsgVar(dsgHeight)}
               >
-                <DataSheetGrid<ConsolidationRow>
-                  value={visibleRows as ConsolidationRow[]}
+                <DataSheetGrid<CoverageRow>
+                  value={visibleRows}
                   columns={columns}
                   gutterColumn={false}
                   lockRows
@@ -469,23 +488,23 @@ const BuyerCollaboration: React.FC = () => {
         <div className="mb-3 flex flex-wrap gap-2">
           <span className={CHIP_SUCCESS}>
             {t('sdc.rollup.responded')}:{' '}
-            {ROLLUPS.filter((r) => r.rollup === 'responded').length}
+            {rollups.filter((r) => r.rollup === 'responded').length}
           </span>
           <span className={CHIP_INFO}>
-            {t('sdc.rollup.partial')}: {ROLLUPS.filter((r) => r.rollup === 'partial').length}
+            {t('sdc.rollup.partial')}: {rollups.filter((r) => r.rollup === 'partial').length}
           </span>
           <span className={CHIP_NEUTRAL}>
-            {t('sdc.rollup.silent')}: {ROLLUPS.filter((r) => r.rollup === 'silent').length}
+            {t('sdc.rollup.silent')}: {rollups.filter((r) => r.rollup === 'silent').length}
           </span>
         </div>
 
-        {CHASE.length === 0 ? (
+        {chase.length === 0 ? (
           <p className="rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm text-text-secondary">
             {t('sdc.chase.empty')}
           </p>
         ) : (
           <ul className="divide-y divide-border-subtle overflow-hidden rounded-lg border border-border-subtle bg-bg-surface">
-            {CHASE.map((entry) => (
+            {chase.map((entry) => (
               <li
                 key={entry.supplierId}
                 className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-sm"
