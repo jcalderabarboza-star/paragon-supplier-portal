@@ -25,6 +25,9 @@ import {
   MATERIAL_MASTER,
   declarationGranularity,
   openSubmissionSession,
+  currentDeclarations,
+  sdcClock,
+  SDC_SIMULATED_NOW,
 } from '../../sdc';
 import {
   getFlow,
@@ -51,6 +54,7 @@ beforeEach(() => {
   inventoryDeclarationStore.reset();
   incomingShipmentStore.reset();
   requirementResponseStore.reset();
+  sdcClock.reset(); // SDC-4a — restore the default simulated now between tests
 });
 
 // ─── The authored machines ────────────────────────────────────────────────────
@@ -166,17 +170,62 @@ describe('t_inventorydeclaration_declare — total-first, own-facts (SDC-3a)', (
   });
 
   it('a snapshot APPENDS — a second declaration never mutates the first (latestFor picks the newest)', async () => {
-    // sup-007 / PK-CAPF-8820 has NO seed declaration (PK-PETB-8810 gained the
-    // SDC-3b total-only fixture inv-0003), so latestFor over the two appended
-    // snapshots is unambiguous (the seed fixtures are future-dated).
+    // sup-007 / PK-CAPF-8820 has NO seed declaration. Both declares are stamped
+    // with the SAME shared simulated clock (SDC-4a), so declaredAt is identical —
+    // latestFor resolves the newest by INSERTION RECENCY (the appended one has the
+    // higher id-seq), never by the clock.
     const p = { materialCode: 'PK-CAPF-8820', supplierId: 'sup-007' };
     const first = await svc.dispatch(sup007, declare({ ...p, totalQty: 4000 }));
     const second = await svc.dispatch(sup007, declare({ ...p, totalQty: 3500 }));
     expect(first.entityId).not.toBe(second.entityId);
     expect(inventoryDeclarationStore.get(first.entityId!)!.totalQty).toBe(4000); // untouched
-    // latestFor resolves the newest by declaredAt (the appended one).
+    // latestFor resolves the newest by insertion recency (the appended one).
     const latest = inventoryDeclarationStore.latestFor('sup-007', 'PK-CAPF-8820');
     expect(latest!.id).toBe(second.entityId);
+  });
+
+  // ─── SDC-4a — the clock/ordering collision, dispatched end-to-end ───────────
+  it('a fresh declare becomes the CURRENT SOH over a FUTURE-DATED seed (seq beats the clock)', async () => {
+    // sup-007 / PK-PETB-8810 has the SDC-3b seed inv-0003 (declaredAt 2026-08-05,
+    // totalQty 45 000) — dated in the SIMULATED FUTURE. This is the exact collision:
+    // a live write stamped at the real wall-clock (2026-07-20) sits BEFORE that seed.
+    const seed = inventoryDeclarationStore.latestFor('sup-007', 'PK-PETB-8810');
+    expect(seed!.id).toBe('inv-0003'); // the future-dated seed, pre-declare
+    expect(seed!.totalQty).toBe(45000);
+
+    // Stamp the write EARLIER than the seed (reproduce the wall-clock collision).
+    sdcClock.set('2026-07-20T00:00:00.000Z');
+    const res = await svc.dispatch(
+      sup007,
+      declare({ materialCode: 'PK-PETB-8810', supplierId: 'sup-007', totalQty: 50000 }),
+    );
+    const created = inventoryDeclarationStore.get(res.entityId!)!;
+    // The stamp read the SHARED clock (the override), never real new Date().
+    expect(created.declaredAt).toBe('2026-07-20T00:00:00.000Z');
+    // …and it is EARLIER than the seed's stamp — yet it is the CURRENT SOH,
+    // because insertion recency (inv-9xxx > inv-0003) wins, not the timestamp.
+    expect(Date.parse(created.declaredAt)).toBeLessThan(Date.parse(seed!.declaredAt));
+    const current = currentDeclarations(
+      inventoryDeclarationStore
+        .all()
+        .filter((d) => d.supplierId === 'sup-007' && d.materialCode === 'PK-PETB-8810'),
+    );
+    expect(current).toHaveLength(1);
+    expect(current[0].id).toBe(res.entityId);
+    expect(current[0].totalQty).toBe(50000); // the fresh declare, not the 45 000 seed
+    // The store's own resolver agrees.
+    expect(inventoryDeclarationStore.latestFor('sup-007', 'PK-PETB-8810')!.totalQty).toBe(50000);
+  });
+
+  it('the DEFAULT shared clock stamps a live declare within the simulated timeline (past the seed)', async () => {
+    const res = await svc.dispatch(
+      sup007,
+      declare({ materialCode: 'PK-CAPF-8820', supplierId: 'sup-007', totalQty: 1000 }),
+    );
+    const created = inventoryDeclarationStore.get(res.entityId!)!;
+    expect(created.declaredAt).toBe(SDC_SIMULATED_NOW); // the shared "now", not real time
+    // Past every seed stamp (latest seed 2026-08-05), so even max-by-declaredAt agrees.
+    expect(Date.parse(created.declaredAt)).toBeGreaterThan(Date.parse('2026-08-05T09:20:00.000Z'));
   });
 
   it('a NON-collaborated material is denied (owner=null → SCOPE_DENIED)', async () => {

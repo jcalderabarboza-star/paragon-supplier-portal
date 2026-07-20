@@ -395,19 +395,29 @@ describe('supplier-coverage indicator (the ONE projection that is ours)', () => 
     expect(e.status.kind).toBe('uncovered');
   });
 
-  it('uses only the LATEST declaration (one true SOH per material, clear as-of)', () => {
-    const older: InventoryDeclaration = {
+  it('uses only the LATEST declaration by insertion recency, NOT declaredAt (SDC-4a ruling c)', () => {
+    // The stale 9 000 was declared LATER on the clock (08-20) but inserted EARLIER
+    // (lower id-seq); the current 850 is a fresh declare — an EARLIER stamp (08-01)
+    // but a LATER insertion (inv-9001). Recency, not declaredAt, must decide.
+    const stale: InventoryDeclaration = {
       ...syntheticDeclaration(9000),
-      id: 'inv-syn-old',
-      declaredAt: '2026-08-01T00:00:00.000Z',
+      id: 'inv-0001', // earlier insertion
+      declaredAt: '2026-08-20T00:00:00.000Z', // …but a LATER stamp
+    };
+    const current: InventoryDeclaration = {
+      ...syntheticDeclaration(850),
+      id: 'inv-9001', // later insertion (a live declare) → the current SOH
+      declaredAt: '2026-08-01T00:00:00.000Z', // …but an EARLIER stamp
     };
     const [e] = supplierCoverageEntries(
       [syntheticPublication(1000)],
-      [older, syntheticDeclaration(850)], // latest (08-12) declares 850
+      [stale, current],
       [],
       [SYNTHETIC_DISTRIBUTOR],
       NOW_BEFORE_DUE,
     );
-    expect(e.status.kind).toBe('at-risk'); // 850/1000 — not the stale 9 000
+    // 850/1000 → at-risk. Max-by-declaredAt would have chosen the stale 9 000
+    // (covered) — the at-risk verdict proves recency beat the clock.
+    expect(e.status.kind).toBe('at-risk');
   });
 });

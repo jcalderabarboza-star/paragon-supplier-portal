@@ -20,3 +20,5 @@ export * from './shipment';
 export * from './ingest';
 // SDC-3c-c-a — the headless XLSX parse layer (file → rows; lazy IO, pure edge):
 export * from './parseWorkbook';
+// SDC-4a — the shared SIMULATED clock (single "now" for display + write stamps):
+export * from './clock';

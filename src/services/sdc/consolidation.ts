@@ -31,7 +31,7 @@ import type {
   SupplierMaterialRelationship,
   Uom,
 } from './types';
-import { declarationGranularity } from './inventory';
+import { declarationGranularity, declarationRecency } from './inventory';
 
 // ─── Policy constants (P2 display layer — NOT schema) ─────────────────────────
 
@@ -436,11 +436,13 @@ export function supplierCoverageEntries(
   }
 
   return [...pairs.values()].map(({ supplierId, materialCode, demand, uom, lastBucket }) => {
-    // Latest SOH declaration for the pair — absent ⇒ honest blank.
+    // Latest SOH declaration for the pair — absent ⇒ honest blank. "Latest" is
+    // by store-insertion recency (SDC-4a ruling c), NOT declaredAt: a fresh
+    // declare stamped with the simulated clock must win over a future-dated seed.
     let latestDecl: InventoryDeclaration | null = null;
     for (const d of declarations) {
       if (d.supplierId !== supplierId || d.materialCode !== materialCode) continue;
-      if (latestDecl === null || Date.parse(d.declaredAt) > Date.parse(latestDecl.declaredAt)) {
+      if (latestDecl === null || declarationRecency(d) > declarationRecency(latestDecl)) {
         latestDecl = d;
       }
     }

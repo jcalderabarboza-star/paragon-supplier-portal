@@ -62,6 +62,7 @@ import {
   FORECAST_PUBLICATIONS,
   MATERIAL_MASTER,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
+  sdcClock,
 } from '../../sdc';
 import type {
   Acknowledgment,
@@ -648,7 +649,10 @@ const requirementResponseTarget: CommandTarget = {
       periodBucket,
       publicationId,
       planVersion: str('planVersion'),
-      submittedAt: new Date().toISOString(),
+      // SDC-4a — the SHARED simulated clock, not the real wall-clock: a fresh
+      // submission is stamped WITHIN the simulated timeline (after the seed), so
+      // the newest-first "My responses" sort surfaces it correctly.
+      submittedAt: sdcClock.now(),
       // Versioned, never overwritten: prior max + 1 over the response thread.
       submissionVersion: prior.reduce((m, r) => Math.max(m, r.submissionVersion), 0) + 1,
       status: toState as RequirementResponseStatus, // 'Submitted'
@@ -777,7 +781,11 @@ const inventoryDeclarationTarget: CommandTarget = {
       id,
       supplierId,
       materialCode,
-      declaredAt: new Date().toISOString(),
+      // SDC-4a — the SHARED simulated clock, not the real wall-clock: a live
+      // declare is stamped within the simulated timeline (after the seed), and
+      // the store's insertion recency (declarationRecency) is what makes it the
+      // CURRENT SOH regardless of the stamp.
+      declaredAt: sdcClock.now(),
       totalQty,
       uom,
       ...(batches.length > 0 ? { batches } : {}),

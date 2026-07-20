@@ -40,6 +40,7 @@ import {
   supplierVisiblePublications,
   ownCollaboratedMaterials,
   shipmentDisplayLifecycle,
+  currentDeclarations,
   type CollaboratedMaterial,
   type ShipmentDisplayLifecycle,
 } from '../sdc';
@@ -216,9 +217,10 @@ export function useOwnCollaboratedMaterials() {
   );
 }
 
-/** The supplier's CURRENT SOH per material — the latest declaration by
- *  `declaredAt` for each material (own-facts-only; a snapshot, not a running
- *  total). Sorted by material code. */
+/** The supplier's CURRENT SOH per material — the most-recently-declared snapshot
+ *  for each material (own-facts-only; a snapshot, not a running total). "Latest"
+ *  is by store-insertion recency, NOT `declaredAt` (SDC-4a ruling c: a fresh
+ *  declare must win over a future-dated seed). Sorted by material code. */
 export function useOwnInventoryDeclarations() {
   return useServiceQuery<readonly InventoryDeclaration[]>(
     ['sdc', 'ownInventoryDeclarations'],
@@ -226,15 +228,9 @@ export function useOwnInventoryDeclarations() {
       const own = inventoryDeclarationStore
         .all()
         .filter((d) => d.supplierId === scope.supplierId);
-      // Latest per material (current SOH) — the store keeps every snapshot.
-      const currentByMaterial = new Map<string, InventoryDeclaration>();
-      for (const d of own) {
-        const prev = currentByMaterial.get(d.materialCode);
-        if (!prev || Date.parse(d.declaredAt) > Date.parse(prev.declaredAt)) {
-          currentByMaterial.set(d.materialCode, d);
-        }
-      }
-      return [...currentByMaterial.values()].sort((a, b) =>
+      // Latest per material (current SOH) — the store keeps every snapshot;
+      // currentDeclarations folds to the most-recently-added per pair.
+      return currentDeclarations(own).sort((a, b) =>
         a.materialCode.localeCompare(b.materialCode),
       );
     },

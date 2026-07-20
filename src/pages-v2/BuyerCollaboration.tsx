@@ -27,6 +27,7 @@ import {
   supplierRollups,
   chaseList,
   supplierCoverageEntries,
+  SDC_SIMULATED_NOW,
   type ConsolidationRow,
   type SupplierCoverageEntry,
   type CommitmentClass,
@@ -54,8 +55,9 @@ import {
 // SDC-1a purity). The fixture cycle lives in Aug–Oct 2026; this as-of sits past
 // the R2 response deadline (2026-08-22) so the chase list shows its overdue
 // state deterministically. Declared on the meta line — never presented as the
-// real clock. Swapped for the live clock when the feed flips (SDC-4).
-const SIMULATED_ASOF = '2026-08-25T12:00:00.000Z';
+// real clock. SDC-4a: this is now the ONE shared SDC clock (SDC_SIMULATED_NOW) —
+// the same instant the write stamps use, so display and writes never diverge.
+const SIMULATED_ASOF = SDC_SIMULATED_NOW;
 
 // The consolidation read — module-scope like the fixtures themselves (static
 // SIMULATED inputs → static derivation; the SDC-4 repoint moves these behind
