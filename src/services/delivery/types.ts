@@ -74,7 +74,21 @@ export type ReleaseFulfillment = 'pending' | 'fulfilled' | 'late' | 'missed';
 
 // ─── Drawdown policy (spec Decision D4) ───────────────────────────────────────
 
-/** How a tolerance breach is treated. */
+/**
+ * How a tolerance breach is treated.
+ *
+ * ⚠️ KNOWN-UNIMPLEMENTED ARM (Batch-2 Decision D): `'block'` is DECLARED but NOT
+ * ENFORCED anywhere. Neither seeded preset uses it (Case B = 'flag', Case C =
+ * 'ignore'), `deriveDrawdownLedger` only distinguishes ignore-vs-not
+ * (`enforced`), and `releaseScheduleLines` does NOT refuse a release that would
+ * breach the envelope. Release is the natural moment 'block' would apply; wiring
+ * it is the enforcement seam, its own later batch. Recorded here so the arm is
+ * visibly pending rather than silently dead.
+ *
+ * NOTE: under the generator invariant (Σ plannedQty === agreedTotalQty) releasing
+ * generated lines can never breach the envelope — a breach requires an ADJUSTED or
+ * added line. Over-envelope therefore guards amendment, not release.
+ */
 export type DrawdownEnforcement = 'block' | 'flag' | 'ignore';
 
 /**
@@ -123,6 +137,27 @@ export interface ScheduleLine {
   readonly plannedQty: number;
   /** The generator always emits 'draft'. */
   readonly state: ReleaseLifecycle;
+  // ── Release record (Batch 2) — the minimal honest "what was transmitted when" ──
+  /**
+   * ISO stamp of the explicit release (Batch-2 `releaseScheduleLines`), INJECTED
+   * by the caller — never a clock read inside pure code. INVARIANT:
+   * `releasedAt` present ⟺ `state === 'released'`. Absent on every generated and
+   * seeded line, because the generator only ever emits 'draft'.
+   */
+  readonly releasedAt?: string;
+  /**
+   * ISO stamp of the last draft-side adjustment (Batch-2 `adjustDraftLine`).
+   * Only ever set on a 'draft' line — a released line is frozen, so it can never
+   * acquire one after release.
+   */
+  readonly adjustedAt?: string;
+  /**
+   * The SAP-assigned release-document number (Decision C). DECLARED, NEVER SEEDED
+   * and never written by this module — SAP assigns it on transmission (Pattern B),
+   * exactly like `sapAgreementNumber`. The portal must never mint a competing
+   * identity (honesty guard 6). Absent ⇒ not yet bound by SAP.
+   */
+  readonly sapReleaseNumber?: string;
   // ── Fulfillment fields — never seeded in Batch 1 (honesty guard 1) ──────────
   readonly actualQty?: number;
   readonly fulfilledDate?: string;

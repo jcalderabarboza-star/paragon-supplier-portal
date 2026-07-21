@@ -71,6 +71,17 @@ describe('SCHEDULING_AGREEMENT_CTR003 — line-level honesty', () => {
     }
   });
 
+  it('no release record on any seeded line — and NO minted sapReleaseNumber (Decision C)', () => {
+    // The seed is all-draft, so the releasedAt ⟺ 'released' invariant means no
+    // line may carry one. sapReleaseNumber is DECLARED but SAP-assigned: the
+    // portal never mints a competing identity (honesty guard 6).
+    for (const l of allLines) {
+      expect(l.releasedAt).toBeUndefined();
+      expect(l.adjustedAt).toBeUndefined();
+      expect(l.sapReleaseNumber).toBeUndefined();
+    }
+  });
+
   it('releaseRef is unique across the whole agreement', () => {
     const refs = allLines.map((l) => l.releaseRef);
     expect(new Set(refs).size).toBe(refs.length);
