@@ -203,6 +203,7 @@ export const resources = {
       'delivery.fulfillment.late': 'Late',
       'delivery.fulfillment.missed': 'Missed',
       'delivery.match.proposed': 'proposed — matched by proximity',
+      'delivery.rollup.hint': 'Open a contract to see its full delivery agreement.',
       // — Shared chrome: top bar —
       'topbar.search': 'Search... (Ctrl K)',
       'topbar.toggleNav': 'Toggle navigation',
@@ -426,6 +427,7 @@ export const resources = {
       'delivery.fulfillment.late': 'Terlambat',
       'delivery.fulfillment.missed': 'Terlewat',
       'delivery.match.proposed': 'usulan — dicocokkan berdasarkan kedekatan',
+      'delivery.rollup.hint': 'Buka kontrak untuk melihat perjanjian pengirimannya secara lengkap.',
       // — Shared chrome: top bar —
       'topbar.search': 'Cari... (Ctrl K)',
       'topbar.toggleNav': 'Alihkan navigasi',

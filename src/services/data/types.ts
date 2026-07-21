@@ -1335,8 +1335,16 @@ export interface ICollaborationService {
 // ICollaborationService's buyer-superset scoping). SchedulingAgreement carries
 // `supplierId`, so buyer = superset / supplier = own via applySupplierScope. Not a
 // new domain contract — a read seam over the existing delivery objects/derivations.
+/** Optional narrowing for the delivery read. `contractId` scopes the result to a
+ *  single contract's agreements — the nested contract-detail DA tab passes it; the
+ *  cross-contract roll-up omits it (buyer superset). Supplier scoping is applied
+ *  first regardless, so a supplier still only ever sees its own. */
+export interface DeliveryQuery {
+  contractId?: string;
+}
+
 export interface IDeliveryService {
-  getAgreements(scope: QueryScope): Promise<Page<DeliveryAgreementView>>;
+  getAgreements(scope: QueryScope, query?: DeliveryQuery): Promise<Page<DeliveryAgreementView>>;
 }
 
 export interface IDataService {

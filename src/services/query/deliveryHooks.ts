@@ -12,10 +12,15 @@ import { useServiceQuery } from './useServiceQuery';
 import type { DeliveryAgreementView } from '../delivery';
 
 /** The scoped delivery-agreement views (drawdown ledger + per-line fulfillment).
- *  Buyer-scoped superset; a supplier persona resolves only its own. */
-export function useDeliveryAgreements() {
+ *  Buyer-scoped superset; a supplier persona resolves only its own. Pass a
+ *  `contractId` to scope to one contract's agreements (the nested contract-detail
+ *  DA tab) — the id enters the query key so per-contract reads cache in isolation
+ *  from the cross-contract roll-up. */
+export function useDeliveryAgreements(contractId?: string) {
   return useServiceQuery<readonly DeliveryAgreementView[]>(
-    ['delivery', 'agreements'],
-    async (svc, scope) => (await svc.delivery.getAgreements(scope)).items,
+    ['delivery', 'agreements', contractId ?? 'all'],
+    async (svc, scope) =>
+      (await svc.delivery.getAgreements(scope, contractId ? { contractId } : undefined))
+        .items,
   );
 }

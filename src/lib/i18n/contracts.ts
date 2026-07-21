@@ -210,6 +210,12 @@ export const contractsEn: Record<string, string> = {
   'contracts.state.empty.subtitle': 'No contracts are on file across your supplier network.',
   'contracts.state.empty.message':
     'Contracts, obligations, and the renewal pipeline appear here once agreements are signed.',
+  // — Nested contract detail (/buyer/contracts/:id) —
+  'contracts.detail.back': 'Back to contracts',
+  'contracts.detail.tab.overview': 'Overview',
+  'contracts.detail.tab.delivery': 'Delivery Agreements',
+  'contracts.detail.tab.docs': 'Documents',
+  'contracts.detail.deliveryEmpty': 'No delivery agreements for this contract yet.',
 };
 
 export const contractsId: Record<string, string> = {
@@ -420,4 +426,10 @@ export const contractsId: Record<string, string> = {
   'contracts.state.empty.subtitle': 'Belum ada kontrak yang tercatat di seluruh jaringan pemasok Anda.',
   'contracts.state.empty.message':
     'Kontrak, kewajiban, dan alur pembaruan muncul di sini setelah perjanjian ditandatangani.',
+  // — Nested contract detail (/buyer/contracts/:id) —
+  'contracts.detail.back': 'Kembali ke kontrak',
+  'contracts.detail.tab.overview': 'Ringkasan',
+  'contracts.detail.tab.delivery': 'Perjanjian Pengiriman',
+  'contracts.detail.tab.docs': 'Dokumen',
+  'contracts.detail.deliveryEmpty': 'Belum ada perjanjian pengiriman untuk kontrak ini.',
 };

@@ -14,6 +14,7 @@ import SupplierStorefrontV2 from '../pages-v2/SupplierStorefront';
 import BuyerOrders from '../pages-v2/BuyerOrders';
 import BuyerSourcing from '../pages-v2/BuyerSourcing';
 import BuyerContracts from '../pages-v2/BuyerContracts';
+import BuyerContractDetail from '../pages-v2/BuyerContractDetail';
 import BuyerDeliveryAgreements from '../pages-v2/BuyerDeliveryAgreements';
 import BuyerInventory from '../pages-v2/BuyerInventory';
 import BuyerShipments from '../pages-v2/BuyerShipments';
@@ -90,6 +91,9 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route path="/buyer/contracts" element={<BuyerContracts />} />
+          {/* Nested contract detail — the traceability spine's leaf (Overview |
+              Delivery Agreements | Docs). Must sit AFTER the list route. */}
+          <Route path="/buyer/contracts/:id" element={<BuyerContractDetail />} />
           <Route path="/buyer/delivery-agreements" element={<BuyerDeliveryAgreements />} />
           <Route path="/buyer/inventory" element={<BuyerInventory />} />
           <Route path="/buyer/shipments" element={<BuyerShipments />} />

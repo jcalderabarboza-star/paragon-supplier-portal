@@ -27,7 +27,7 @@ import {
   deriveAgreementView,
 } from '../../delivery';
 import type { DeliveryAgreementView } from '../../delivery';
-import type { IDeliveryService, Page, QueryScope } from '../types';
+import type { DeliveryQuery, IDeliveryService, Page, QueryScope } from '../types';
 
 // The pristine ctr-003 anchor + the SIMULATED demo scenario. Kept as one list so
 // the buyer superset shows both the "freshly-drafted" zero-state and the "active
@@ -42,9 +42,17 @@ function supplierNameOf(supplierId: string): string | null {
 export class MockDeliveryService implements IDeliveryService {
   /** The scoped delivery-agreement views (drawdown ledger + per-line fulfillment,
    *  derived internally as of the shared SDC clock). Buyer = superset; supplier =
-   *  own agreements only. */
-  async getAgreements(scope: QueryScope): Promise<Page<DeliveryAgreementView>> {
-    const scoped = applySupplierScope(scope, ALL_AGREEMENTS);
+   *  own agreements only. `query.contractId` narrows to one contract's agreements
+   *  (the nested contract-detail DA tab) — applied AFTER supplier scoping, so it
+   *  never widens what a supplier can see. */
+  async getAgreements(
+    scope: QueryScope,
+    query?: DeliveryQuery,
+  ): Promise<Page<DeliveryAgreementView>> {
+    const supplierScoped = applySupplierScope(scope, ALL_AGREEMENTS);
+    const scoped = query?.contractId
+      ? supplierScoped.filter((a) => a.contractId === query.contractId)
+      : supplierScoped;
     const now = sdcClock.now();
     const pool = [...incomingShipmentStore.all(), ...DELIVERY_DEMO_SHIPMENTS];
     return {

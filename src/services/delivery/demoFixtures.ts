@@ -21,8 +21,10 @@
 // (fulfilledBy + a CONFIRMED actualQty) — the "operator confirmed this drawdown"
 // correction the model stores; its status is still derived from the bound shipment.
 //
-// The agreement carries `liveness: 'SIMULATED'` like every fixture. The contract
-// ref is a SIMULATED scenario ref (SAP assigns the real number under Pattern B).
+// The agreement carries `liveness: 'SIMULATED'` like every fixture. Its contractId
+// now points at a REAL fixture contract (ctr-013, PT Berlina) so the nested
+// contract-detail surface can open it; the agreement and its drawdown stay
+// SIMULATED (the SAP agreement number is assigned for real under Pattern B).
 // Read against the shared SDC clock (2026-08-25): the calendar straddles it, so
 // the past releases resolve fulfilled/late/missed and the future one stays pending.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,7 +36,10 @@ import { releaseScheduleLines } from './release';
 import { DRAWDOWN_PRESET_CASE_B, DRAWDOWN_PRESET_CASE_C } from './ledger';
 import type { SchedulingAgreement, SchedulingAgreementItem } from './types';
 
-const CONTRACT_ID = 'ctr-berlina-jit-demo'; // SIMULATED scenario ref (SAP-assigned later)
+// A REAL, openable PT Berlina (sup-007) contract — so the nested contract-detail
+// Delivery Agreements tab (/buyer/contracts/ctr-013) actually renders this demo.
+// ctr-003 stays the pristine all-draft anchor; this is its active-drawdown sibling.
+const CONTRACT_ID = 'ctr-013';
 const AGREEMENT_ID = 'sa-0002';
 const SUPPLIER_ID = 'sup-007'; // PT Berlina — the genuine PET-bottle + cap supplier
 /** Injected release stamp — a fixed simulated instant, never a wall-clock read. */

@@ -28,6 +28,7 @@ import BuyerSourcing from '../pages-v2/BuyerSourcing';
 import PlanGrid from '../pages-v2/PlanGrid';
 import BuyerCollaboration from '../pages-v2/BuyerCollaboration';
 import BuyerContracts from '../pages-v2/BuyerContracts';
+import BuyerContractDetail from '../pages-v2/BuyerContractDetail';
 import BuyerDeliveryAgreements from '../pages-v2/BuyerDeliveryAgreements';
 import BuyerInventory from '../pages-v2/BuyerInventory';
 import BuyerShipments from '../pages-v2/BuyerShipments';
@@ -78,6 +79,7 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/plan-grid', pattern: '/buyer/plan-grid', at: '/buyer/plan-grid', element: <PlanGrid />, identity: BUYER },
   { name: 'buyer/collaboration', pattern: '/buyer/collaboration', at: '/buyer/collaboration', element: <BuyerCollaboration />, identity: BUYER },
   { name: 'buyer/contracts', pattern: '/buyer/contracts', at: '/buyer/contracts', element: <BuyerContracts />, identity: BUYER },
+  { name: 'buyer/contracts/:id', pattern: '/buyer/contracts/:id', at: '/buyer/contracts/ctr-013', element: <BuyerContractDetail />, identity: BUYER },
   { name: 'buyer/delivery-agreements', pattern: '/buyer/delivery-agreements', at: '/buyer/delivery-agreements', element: <BuyerDeliveryAgreements />, identity: BUYER },
   { name: 'buyer/inventory', pattern: '/buyer/inventory', at: '/buyer/inventory', element: <BuyerInventory />, identity: BUYER },
   { name: 'buyer/shipments', pattern: '/buyer/shipments', at: '/buyer/shipments', element: <BuyerShipments />, identity: BUYER },
@@ -105,9 +107,9 @@ const ROUTES: RouteCase[] = [
 ];
 
 describe('sp-001 — every route mounts without crashing', () => {
-  it('route table covers all of AppRouter (35 elements + redirect)', () => {
+  it('route table covers all of AppRouter (36 elements + redirect)', () => {
     // Guards against a route being added to AppRouter but not the smoke.
-    expect(ROUTES.length).toBe(36);
+    expect(ROUTES.length).toBe(37);
   });
 
   it.each(ROUTES)('$name renders and paints content', async ({ pattern, at, element, identity }) => {
