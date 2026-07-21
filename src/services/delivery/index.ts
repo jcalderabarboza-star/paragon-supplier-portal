@@ -4,8 +4,12 @@
 // flows, no CommandTargets, no UI, no registry touch. See types.ts.
 // Batch 2 adds the release step: the pure draft→released transition (the honesty
 // boundary) + the enforced draft-only freeze guard. See release.ts.
+// Batch 3 adds the fulfillment-match derivation: match an SDC IncomingShipment to
+// the released line it draws down, derive ReleaseFulfillment at read (hybrid:
+// inferred + explicit-binding override). See fulfillment.ts.
 export * from './types';
 export * from './generator';
 export * from './ledger';
 export * from './release';
+export * from './fulfillment';
 export * from './fixtures';
