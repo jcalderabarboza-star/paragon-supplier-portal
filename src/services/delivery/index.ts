@@ -7,9 +7,14 @@
 // Batch 3 adds the fulfillment-match derivation: match an SDC IncomingShipment to
 // the released line it draws down, derive ReleaseFulfillment at read (hybrid:
 // inferred + explicit-binding override). See fulfillment.ts.
+// The surface batch adds the read view-model (deriveAgreementView — ledger +
+// fulfillment per agreement) and the SIMULATED demo scenario the buyer surface
+// renders (ctr-003 stays pristine). See views.ts / demoFixtures.ts.
 export * from './types';
 export * from './generator';
 export * from './ledger';
 export * from './release';
 export * from './fulfillment';
+export * from './views';
 export * from './fixtures';
+export * from './demoFixtures';

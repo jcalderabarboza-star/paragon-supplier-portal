@@ -36,6 +36,9 @@ import type {
   SupplierRollup,
   ChaseEntry,
 } from '../sdc';
+// Delivery Agreement read seam — the view-model row type (type-only; erased at
+// build, so no runtime import into the data layer).
+import type { DeliveryAgreementView } from '../delivery/views';
 
 // ─── PO enums (canonical home; relocated from types/purchaseOrder.types.ts) ──
 export enum POStatus {
@@ -1323,6 +1326,27 @@ export interface ICollaborationService {
   getRollups(scope: QueryScope): Promise<Page<SupplierRollup>>;
 }
 
+// ─── Delivery Agreement reads (the drawdown/compliance surface seam) ──────────
+//
+// A read-only namespace over the headless delivery domain (SchedulingAgreement +
+// the pure derivations). `getAgreements` returns the scoped view-model — per
+// agreement, per item, the drawdown ledger + per-released-line fulfillment,
+// computed INSIDE the service against the shared SDC clock (mirrors
+// ICollaborationService's buyer-superset scoping). SchedulingAgreement carries
+// `supplierId`, so buyer = superset / supplier = own via applySupplierScope. Not a
+// new domain contract — a read seam over the existing delivery objects/derivations.
+/** Optional narrowing for the delivery read. `contractId` scopes the result to a
+ *  single contract's agreements — the nested contract-detail DA tab passes it; the
+ *  cross-contract roll-up omits it (buyer superset). Supplier scoping is applied
+ *  first regardless, so a supplier still only ever sees its own. */
+export interface DeliveryQuery {
+  contractId?: string;
+}
+
+export interface IDeliveryService {
+  getAgreements(scope: QueryScope, query?: DeliveryQuery): Promise<Page<DeliveryAgreementView>>;
+}
+
 export interface IDataService {
   suppliers: ISupplierService;
   procurement: IProcurementService;
@@ -1332,6 +1356,8 @@ export interface IDataService {
   engagement: IEngagementService;
   /** SDC read seam — P1 own-reads + P2 consolidation, service-scoped (SDC-4b). */
   collaboration: ICollaborationService;
+  /** Delivery Agreement read seam — scoped drawdown + fulfillment view-model. */
+  delivery: IDeliveryService;
   /** Write seam — the single dispatcher (Step 3.4). */
   commands: ICommandService;
   /** What the current scope may do (Step 3.9 DNA seed; mock-backed today). */

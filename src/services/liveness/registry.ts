@@ -62,7 +62,8 @@ export type Capability =
   | 'compliance'
   | 'supplierDocuments'
   | 'commodityIntel'
-  | 'forecastPublications';
+  | 'forecastPublications'
+  | 'deliveryAgreements';
 
 // The ONLY hand-authored fact here: which command entity/flow each capability
 // reads from (`null` = pure fixture, no lifecycle entity). The TIER is never
@@ -113,6 +114,13 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // "Sample — awaiting SOMO C8 feed" and green stays structurally unreachable
   // (LIVENESS-DATASOURCE-01: wiring alone must never flip green).
   forecastPublications: 'requirementResponse',
+  // The delivery drawdown/compliance surface reads the headless delivery domain
+  // (SchedulingAgreement + the pure derivations) off SIMULATED fixtures — no
+  // lifecycle CommandTarget behind it. Null backing → derives SIMULATED → the
+  // shared LivenessPill renders amber "Sample"; green is structurally unreachable.
+  // When the real S/4HANA scheduling-agreement feed lands (Pattern B, Stage F), it
+  // flips through the same two gates.
+  deliveryAgreements: null,
 };
 
 // — Gate-2: harvest gating (LIVENESS-DATASOURCE-01) —————————————————————————————

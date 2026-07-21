@@ -356,4 +356,37 @@ export const mockContracts: Contract[] = [
     brands: ['Wardah'],
     performanceScore: 52,
   },
+
+  // ── Active — the Delivery-Agreement demo anchor ──────────────────────────
+  // A SECOND real PT Berlina (sup-007) supply contract. The pristine ctr-003
+  // above stays the all-draft zero-state; this contract is the openable home
+  // for the SIMULATED scheduling-agreement demo (sa-0002), so its Delivery
+  // Agreements tab renders the active drawdown/fulfillment states. sup-007 is
+  // kept because the demo shipments are PT Berlina's own (deriveAgreementView
+  // filters the shipment pool to the agreement supplier).
+  {
+    id: 'ctr-013',
+    contractNumber: 'CTR-2026-021',
+    supplierId: 'sup-007',
+    title: 'PT Berlina Packaging Scheduling Agreement 2026',
+    type: 'Supply',
+    status: 'Active',
+    startDate: '2026-03-01',
+    endDate: '2027-06-30',
+    autoRenewal: true,
+    noticeRequiredDays: 60,
+    value: 6_100_000_000,
+    currency: 'IDR',
+    paymentTerms: 'Net 30',
+    incoterms: 'FCA Tangerang',
+    signedByBuyer: 'Director of Procurement',
+    signedBySupplier: 'COO',
+    signedDate: '2026-02-18',
+    obligationCount: 3,
+    obligationsMet: 2,
+    daysUntilExpiry: 344,
+    category: 'Packaging',
+    brands: ['Wardah', 'Emina'],
+    performanceScore: 88,
+  },
 ];

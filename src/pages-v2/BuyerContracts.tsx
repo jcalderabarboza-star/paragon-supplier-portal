@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import {
@@ -9,18 +10,8 @@ import {
   Plus,
   FileSpreadsheet,
   ChevronRight,
-  ChevronDown,
-  ChevronUp,
   RefreshCw,
   CalendarDays,
-  PenSquare,
-  Handshake,
-  CheckCircle2,
-  Activity,
-  Bell,
-  Archive,
-  Download,
-  ShieldCheck,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -35,10 +26,8 @@ import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
-import SidePanel from '../components/ui-v2/SidePanel';
 import ScoreBadge from '../components/ui-v2/ScoreBadge';
 import Data from '../components/ui-v2/Data';
-import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import { useToast } from '../hooks/useToast';
@@ -46,10 +35,7 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useContracts, useObligations, useSuppliers } from '../services/query/hooks';
-import type {
-  ContractObligation,
-  ObligationStatus,
-} from '../data/mockObligations';
+import type { ContractObligation } from '../data/mockObligations';
 import type {
   Contract,
   ContractStatus,
@@ -156,126 +142,6 @@ const expiryTone = (days: number): string => {
   if (days < 30) return 'text-danger font-semibold';
   if (days < 90) return 'text-warning-hover font-semibold';
   return 'text-success';
-};
-
-const OBLIGATION_VARIANT: Record<
-  ObligationStatus,
-  'success' | 'warning' | 'danger' | 'info' | 'neutral'
-> = {
-  Upcoming: 'info',
-  'In Progress': 'warning',
-  Completed: 'success',
-  Overdue: 'danger',
-};
-
-const OBLIGATION_RANK: Record<ObligationStatus, number> = {
-  Overdue: 0,
-  'In Progress': 1,
-  Upcoming: 2,
-  Completed: 3,
-};
-
-const sortObligations = (a: ContractObligation, b: ContractObligation) => {
-  const r = OBLIGATION_RANK[a.status] - OBLIGATION_RANK[b.status];
-  if (r !== 0) return r;
-  return a.dueDate.localeCompare(b.dueDate);
-};
-
-const shiftDays = (iso: string, days: number): string => {
-  if (!iso) return iso;
-  const d = new Date(iso);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-};
-
-const buildContractTimeline = (c: Contract, t: TFunction): TimelineEvent[] => {
-  const isDraft = c.status === 'Draft';
-  const isActive = c.status === 'Active';
-  const isExpiring = c.status === 'Expiring';
-  const isExpired = c.status === 'Expired';
-  const isRenewed = c.status === 'Renewed';
-  const isTerminated = c.status === 'Terminated';
-
-  const finalLabel = isExpired
-    ? t('contracts.timeline.expired')
-    : isRenewed
-      ? t('contracts.timeline.renewed')
-      : isTerminated
-        ? t('contracts.timeline.terminated')
-        : t('contracts.timeline.expiryRenewal');
-  const finalIcon = isTerminated ? Archive : isRenewed ? RefreshCw : Archive;
-
-  return [
-    {
-      id: 'drafted',
-      title: t('contracts.timeline.drafted'),
-      timestamp: c.signedDate ? formatDate(shiftDays(c.signedDate, -14)) : undefined,
-      status: 'completed',
-      icon: PenSquare,
-    },
-    {
-      id: 'negotiated',
-      title: t('contracts.timeline.negotiated'),
-      timestamp: c.signedDate ? formatDate(shiftDays(c.signedDate, -7)) : undefined,
-      status: isDraft ? 'current' : 'completed',
-      icon: Handshake,
-    },
-    {
-      id: 'signed',
-      title: t('contracts.timeline.signed'),
-      timestamp: c.signedDate ? formatDate(c.signedDate) : undefined,
-      status: isDraft ? 'pending' : 'completed',
-      icon: CheckCircle2,
-    },
-    {
-      id: 'active',
-      title: t('contracts.timeline.activePeriod'),
-      timestamp: `${formatDate(c.startDate)} → ${formatDate(c.endDate)}`,
-      status: isActive || isExpiring
-        ? 'current'
-        : isExpired || isRenewed || isTerminated
-          ? 'completed'
-          : 'pending',
-      icon: Activity,
-    },
-    {
-      id: 'renewal-decision',
-      title: t('contracts.timeline.renewalDecision'),
-      timestamp:
-        c.endDate && c.noticeRequiredDays
-          ? t('contracts.timeline.noticeBy', {
-              date: formatDate(shiftDays(c.endDate, -c.noticeRequiredDays)),
-            })
-          : undefined,
-      status: isExpiring
-        ? 'current'
-        : isExpired || isRenewed || isTerminated
-          ? 'completed'
-          : 'pending',
-      icon: Bell,
-    },
-    {
-      id: 'final',
-      title: finalLabel,
-      timestamp: isExpired || isRenewed || isTerminated
-        ? formatDate(c.endDate)
-        : undefined,
-      status: isExpired || isRenewed || isTerminated ? 'completed' : 'pending',
-      icon: finalIcon,
-    },
-  ];
-};
-
-const FOOTER_PRIMARY_LABEL = (c: Contract, t: TFunction): string => {
-  if (c.status === 'Active' && c.daysUntilExpiry <= 90)
-    return t('contracts.footer.initiateRenewal');
-  if (c.status === 'Active') return t('contracts.footer.viewFull');
-  if (c.status === 'Expiring') return t('contracts.footer.initiateRenewal');
-  if (c.status === 'Expired') return t('contracts.footer.viewRenewalOptions');
-  if (c.status === 'Draft') return t('contracts.footer.continueEditing');
-  if (c.status === 'Renewed') return t('contracts.footer.viewPrevious');
-  if (c.status === 'Terminated') return t('contracts.footer.viewTermination');
-  return t('contracts.footer.viewFull');
 };
 
 const ReviewSection: React.FC<{
@@ -407,21 +273,6 @@ const EMPTY_DRAFT: DraftContract = {
   obligations: [],
 };
 
-const PLACEHOLDER_DOCS = (c: Contract): {
-  name: string;
-  status: 'valid' | 'expiring' | 'expired';
-}[] => {
-  const docs: { name: string; status: 'valid' | 'expiring' | 'expired' }[] = [];
-  if (c.category.toLowerCase().includes('raw') || c.category.toLowerCase().includes('fragrance')) {
-    docs.push({ name: 'BPJPH Halal Certificate', status: 'valid' });
-  }
-  docs.push({ name: 'ISO 9001:2015', status: 'valid' });
-  if (c.type === 'Quality' || c.type === 'Supply') {
-    docs.push({ name: 'BPOM Registration', status: 'expiring' });
-  }
-  return docs;
-};
-
 const matchesGroup = (c: Contract, g: GroupTab): boolean => {
   if (g === 'all') return true;
   if (g === 'active') return c.status === 'Active';
@@ -452,10 +303,6 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   const [group, setGroup] = useState<GroupTab>('all');
   const [selectedTypes, setSelectedTypes] = useState<ContractType[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(
-    null,
-  );
-  const [docsOpen, setDocsOpen] = useState(false);
   const [extraContracts, setExtraContracts] = useState<Contract[]>([]);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
@@ -464,6 +311,11 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   const [customObligationTitle, setCustomObligationTitle] = useState('');
   const { toast } = useToast();
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // Open a contract → the nested full-page detail (/buyer/contracts/:id), where
+  // the Delivery Agreements tab lives. Replaces the old in-page SidePanel drawer.
+  const openContract = (c: Contract) => navigate(`/buyer/contracts/${c.id}`);
 
   const contracts = useMemo(
     () => [...extraContracts, ...baseContracts],
@@ -1102,18 +954,6 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     },
   ];
 
-  const obligationsForSelected = useMemo<ContractObligation[]>(() => {
-    if (!selectedContract) return [];
-    return obligations
-      .filter((o) => o.contractId === selectedContract.id)
-      .sort(sortObligations);
-  }, [selectedContract, obligations]);
-
-  const closePanel = () => {
-    setSelectedContract(null);
-    setDocsOpen(false);
-  };
-
   const lastUpdated = useMemo(() => {
     return contracts.reduce(
       (acc, c) => (c.signedDate && c.signedDate > acc ? c.signedDate : acc),
@@ -1306,7 +1146,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 <TableRow
                   key={c.id}
                   className="cursor-pointer"
-                  onClick={() => setSelectedContract(c)}
+                  onClick={() => openContract(c)}
                 >
                   <TableCell>
                     <Data as="div" className="font-semibold text-text-primary">
@@ -1439,7 +1279,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                       <button
                         key={c.id}
                         type="button"
-                        onClick={() => setSelectedContract(c)}
+                        onClick={() => openContract(c)}
                         className="text-left flex items-start gap-3 p-3 rounded-md border border-border-subtle hover:border-teal hover:shadow-sm transition-all"
                       >
                         <span
@@ -1476,335 +1316,6 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
           </ul>
         )}
       </section>
-
-      <SidePanel
-        open={selectedContract !== null}
-        onClose={closePanel}
-        title={
-          selectedContract
-            ? t('contracts.panel.title', {
-                number: selectedContract.contractNumber,
-                title: selectedContract.title,
-              })
-            : ''
-        }
-        footerActions={
-          selectedContract && (
-            <>
-              <Button
-                variant="secondary"
-                icon={Download}
-                onClick={() =>
-                  toast({
-                    variant: 'info',
-                    title: t('contracts.toast.pdfQueued.title'),
-                    description: t('contracts.toast.pdfQueued.desc'),
-                  })
-                }
-              >
-                {t('contracts.panel.exportPdf')}
-              </Button>
-              <Button variant="outline">
-                {FOOTER_PRIMARY_LABEL(selectedContract, t)}
-              </Button>
-            </>
-          )
-        }
-      >
-        {selectedContract && (
-          <div className="space-y-6">
-            <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
-                {t('contracts.panel.keyFacts')}
-              </h3>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.supplier')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {supplierById.get(selectedContract.supplierId)?.name ??
-                      selectedContract.supplierId}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.type')}</dt>
-                  <dd>
-                    <StatusPill variant="neutral">
-                      {typeLabel(t, selectedContract.type)}
-                    </StatusPill>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.status')}</dt>
-                  <dd>
-                    <StatusPill
-                      variant={STATUS_VARIANT[selectedContract.status]}
-                    >
-                      {selectedContract.status}
-                    </StatusPill>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.autoRenewal')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedContract.autoRenewal
-                      ? t('contracts.common.yes')
-                      : t('contracts.common.no')}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.startDate')}</dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatDate(selectedContract.startDate)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.endDate')}</dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {formatDate(selectedContract.endDate)}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.noticeRequired')}</dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {t(
-                      selectedContract.noticeRequiredDays === 1
-                        ? 'contracts.panel.noticeDays.one'
-                        : 'contracts.panel.noticeDays.other',
-                      { count: selectedContract.noticeRequiredDays },
-                    )}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.daysUntilExpiry')}</dt>
-                  <dd
-                    className={`font-semibold ${expiryTone(selectedContract.daysUntilExpiry)}`}
-                  >
-                    {selectedContract.daysUntilExpiry < 0
-                      ? t('contracts.expiry.daysAgo', {
-                          count: Math.abs(selectedContract.daysUntilExpiry),
-                        })
-                      : t('contracts.expiry.days', {
-                          count: selectedContract.daysUntilExpiry,
-                        })}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.value')}</dt>
-                  <Data as="dd" className="text-text-primary font-semibold">
-                    {selectedContract.value > 0
-                      ? formatIDR(selectedContract.value)
-                      : '—'}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.currency')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedContract.currency}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.paymentTerms')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedContract.paymentTerms}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.incoterms')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedContract.incoterms}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.signedByBuyer')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedContract.signedByBuyer}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.signedBySupplier')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedContract.signedBySupplier}
-                  </dd>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.signedDate')}</dt>
-                  <Data as="dd" className="text-text-primary font-medium">
-                    {selectedContract.signedDate
-                      ? formatDate(selectedContract.signedDate)
-                      : '—'}
-                  </Data>
-                </div>
-                <div>
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.category')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {catLabel(t, selectedContract.category)}
-                  </dd>
-                </div>
-                <div className="col-span-2">
-                  <dt className="text-text-tertiary">{t('contracts.panel.field.brands')}</dt>
-                  <dd className="mt-1 flex flex-wrap gap-1.5">
-                    {selectedContract.brands.length === 0 ? (
-                      <span className="text-text-tertiary text-sm">—</span>
-                    ) : (
-                      selectedContract.brands.map((b) => (
-                        <span
-                          key={b}
-                          className="inline-flex items-center rounded-full bg-bg-hover text-text-secondary text-xs px-2 py-0.5"
-                        >
-                          {b}
-                        </span>
-                      ))
-                    )}
-                  </dd>
-                </div>
-                <div className="col-span-2 pt-2 flex items-center gap-3">
-                  <dt className="text-text-tertiary text-sm">
-                    {t('contracts.panel.field.performanceScore')}
-                  </dt>
-                  <dd>
-                    {selectedContract.performanceScore > 0 ? (
-                      <ScoreBadge
-                        score={selectedContract.performanceScore}
-                        size="md"
-                        variant="circular"
-                      />
-                    ) : (
-                      <span className="text-text-tertiary text-sm">
-                        {t('contracts.panel.notRated')}
-                      </span>
-                    )}
-                  </dd>
-                </div>
-              </dl>
-            </section>
-
-            <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
-                {t('contracts.panel.obligations', {
-                  count: obligationsForSelected.length,
-                })}
-              </h3>
-              {obligationsForSelected.length === 0 ? (
-                <p className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
-                  {t('contracts.panel.noObligations')}
-                </p>
-              ) : (
-                <div className="border border-border-subtle rounded-md overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead className="bg-bg-hover text-text-tertiary uppercase tracking-wider">
-                      <tr>
-                        <th className="text-left px-3 py-2 font-semibold">
-                          {t('contracts.panel.obl.col.title')}
-                        </th>
-                        <th className="text-left px-3 py-2 font-semibold">
-                          {t('contracts.panel.obl.col.owner')}
-                        </th>
-                        <th className="text-left px-3 py-2 font-semibold whitespace-nowrap">
-                          {t('contracts.panel.obl.col.due')}
-                        </th>
-                        <th className="text-left px-3 py-2 font-semibold">
-                          {t('contracts.panel.obl.col.status')}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {obligationsForSelected.map((o) => (
-                        <tr
-                          key={o.id}
-                          className="border-t border-border-subtle"
-                        >
-                          <td className="px-3 py-2">
-                            <div className="text-text-primary font-medium">
-                              {o.title}
-                            </div>
-                            <div className="text-text-tertiary text-[10px] uppercase tracking-wider mt-0.5">
-                              {o.category}
-                              {o.recurrence ? ` · ${o.recurrence}` : ''}
-                            </div>
-                          </td>
-                          <td className="px-3 py-2 text-text-secondary">
-                            {ownerLabel(t, o.owner)}
-                          </td>
-                          <td className="px-3 py-2 text-text-secondary whitespace-nowrap">
-                            <Data>{formatDate(o.dueDate)}</Data>
-                          </td>
-                          <td className="px-3 py-2">
-                            <StatusPill
-                              variant={OBLIGATION_VARIANT[o.status]}
-                            >
-                              {o.status}
-                            </StatusPill>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </section>
-
-            <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-3">
-                {t('contracts.panel.lifecycle')}
-              </h3>
-              <Timeline events={buildContractTimeline(selectedContract, t)} />
-            </section>
-
-            <section>
-              <button
-                type="button"
-                onClick={() => setDocsOpen((v) => !v)}
-                className="flex items-center gap-2 text-sm font-medium text-teal hover:text-teal-hover"
-              >
-                {docsOpen ? (
-                  <ChevronUp size={14} />
-                ) : (
-                  <ChevronDown size={14} />
-                )}
-                {t(
-                  docsOpen ? 'contracts.panel.docsHide' : 'contracts.panel.docsShow',
-                  { count: PLACEHOLDER_DOCS(selectedContract).length },
-                )}
-              </button>
-              {docsOpen && (
-                <ul className="mt-3 space-y-2">
-                  {PLACEHOLDER_DOCS(selectedContract).map((d) => (
-                    <li
-                      key={d.name}
-                      className="flex items-center justify-between gap-3 p-3 border border-border-subtle rounded-md"
-                    >
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck
-                          size={14}
-                          className="text-text-tertiary"
-                        />
-                        <span className="text-sm text-text-primary">
-                          {d.name}
-                        </span>
-                      </div>
-                      <StatusPill
-                        variant={
-                          d.status === 'valid'
-                            ? 'success'
-                            : d.status === 'expiring'
-                              ? 'warning'
-                              : 'danger'
-                        }
-                      >
-                        {d.status === 'valid'
-                          ? 'Valid'
-                          : d.status === 'expiring'
-                            ? 'Expiring'
-                            : 'Expired'}
-                      </StatusPill>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          </div>
-        )}
-      </SidePanel>
 
       {wizardOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.4)]">
