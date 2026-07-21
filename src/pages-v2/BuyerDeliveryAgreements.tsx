@@ -53,13 +53,16 @@ const BuyerDeliveryAgreements: React.FC = () => {
         <LivenessPill capability="deliveryAgreements" />
       </PageMetaLine>
 
-      {/* Honest framing — read-only, simulated, nothing dispatches. The card's
-          contract ref deep-links into the contract's own Delivery Agreements tab. */}
+      {/* Honest framing — this OVERVIEW is read-only + simulated; releasing lives
+          in each contract's own DA tab (the callout points there). The shared
+          delivery.honesty.* is deliberately NOT reused here: it says "nothing
+          releases", which is now false product-wide. The card's contract ref
+          deep-links into the contract's own Delivery Agreements tab. */}
       <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 mb-6 text-sm text-text-primary flex items-start gap-2">
         <Info size={14} className="text-info shrink-0 mt-0.5" />
         <span>
-          <strong className="text-info">{t('delivery.honesty.title')}</strong>{' '}
-          {t('delivery.honesty.body')} {t('delivery.rollup.hint')}
+          <strong className="text-info">{t('delivery.rollup.honestyTitle')}</strong>{' '}
+          {t('delivery.rollup.honestyBody')} {t('delivery.rollup.hint')}
         </span>
       </div>
 
