@@ -145,7 +145,7 @@ export const resources = {
       'nav.buyer.goodsReceipt': 'Goods Receipt',
       'nav.buyer.invoices': 'Invoices',
       'nav.buyer.contracts': 'Contracts',
-      'nav.buyer.deliveryAgreements': 'Delivery Agreements',
+      'nav.buyer.deliveryAgreements': 'Delivery Overview',
       'nav.buyer.analytics': 'Analytics',
       'nav.buyer.scorecard': 'Scorecard',
       'nav.buyer.risk': 'Risk',
@@ -165,7 +165,7 @@ export const resources = {
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Settle',
       'delivery.crumb.title': 'Delivery Agreements',
-      'delivery.header.title': 'Delivery Agreements',
+      'delivery.header.title': 'Delivery Overview',
       'delivery.header.subtitle':
         'Scheduling-agreement drawdown and release fulfillment across suppliers — read-only.',
       'delivery.empty': 'No delivery agreements in scope.',
@@ -369,7 +369,7 @@ export const resources = {
       'nav.buyer.goodsReceipt': 'Penerimaan Barang',
       'nav.buyer.invoices': 'Faktur',
       'nav.buyer.contracts': 'Kontrak',
-      'nav.buyer.deliveryAgreements': 'Perjanjian Pengiriman',
+      'nav.buyer.deliveryAgreements': 'Ikhtisar Pengiriman',
       'nav.buyer.analytics': 'Analitik',
       'nav.buyer.scorecard': 'Kartu Skor',
       'nav.buyer.risk': 'Risiko',
@@ -389,7 +389,7 @@ export const resources = {
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Penyelesaian',
       'delivery.crumb.title': 'Perjanjian Pengiriman',
-      'delivery.header.title': 'Perjanjian Pengiriman',
+      'delivery.header.title': 'Ikhtisar Pengiriman',
       'delivery.header.subtitle':
         'Penarikan perjanjian penjadwalan dan pemenuhan rilis lintas pemasok — hanya-baca.',
       'delivery.empty': 'Tidak ada perjanjian pengiriman dalam cakupan.',
