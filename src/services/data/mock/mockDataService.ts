@@ -6,6 +6,7 @@ import { MockDiscoveryService } from './MockDiscoveryService';
 import { MockAnalyticsService } from './MockAnalyticsService';
 import { MockEngagementService } from './MockEngagementService';
 import { MockCollaborationService } from './MockCollaborationService';
+import { MockDeliveryService } from './MockDeliveryService';
 import { MockCommandService } from './MockCommandService';
 import { capabilitiesFor } from '../../transitions';
 
@@ -17,6 +18,7 @@ export const mockDataService: IDataService = {
   analytics: new MockAnalyticsService(),
   engagement: new MockEngagementService(),
   collaboration: new MockCollaborationService(),
+  delivery: new MockDeliveryService(),
   commands: new MockCommandService(),
   getCapabilities: async (scope) => capabilitiesFor(scope),
 };

@@ -17,6 +17,7 @@ import {
   AlertTriangle,
   ShieldCheck,
   ScrollText,
+  CalendarClock,
   MessageCircle,
   Table2,
   Handshake,
@@ -72,6 +73,7 @@ const BUYER_NAV: NavGroup[] = [
     items: [
       { labelKey: 'nav.buyer.invoices', icon: Receipt, path: '/buyer/invoices' },
       { labelKey: 'nav.buyer.contracts', icon: ScrollText, path: '/buyer/contracts' },
+      { labelKey: 'nav.buyer.deliveryAgreements', icon: CalendarClock, path: '/buyer/delivery-agreements' },
     ],
   },
   {

@@ -41,6 +41,18 @@ const SCOPED_READS: { name: string; run: Scoped }[] = [
   // reads only its own certs and the buyer sees the superset (the FK that closes
   // the name-vs-id split, HALAL-XPERSONA-01).
   { name: 'getComplianceRegistry', run: (s) => svc.risk.getComplianceRegistry(s) },
+  // Delivery Agreement surface seam: SchedulingAgreement carries supplierId, so the
+  // scoped view-model is isolated per supplier and the buyer sees the superset. The
+  // view nests the agreement, so expose its supplierId for the shared assertions.
+  // (Both seeded agreements are sup-007: buyer + sup-007 see both, sup-002/sup-005 →[].)
+  {
+    name: 'getDeliveryAgreements',
+    run: async (s) => ({
+      items: (await svc.delivery.getAgreements(s)).items.map((v) => ({
+        supplierId: v.agreement.supplierId,
+      })),
+    }),
+  },
 ];
 
 describe('service scoping contract — supplierId-scoped reads', () => {

@@ -14,6 +14,7 @@ import SupplierStorefrontV2 from '../pages-v2/SupplierStorefront';
 import BuyerOrders from '../pages-v2/BuyerOrders';
 import BuyerSourcing from '../pages-v2/BuyerSourcing';
 import BuyerContracts from '../pages-v2/BuyerContracts';
+import BuyerDeliveryAgreements from '../pages-v2/BuyerDeliveryAgreements';
 import BuyerInventory from '../pages-v2/BuyerInventory';
 import BuyerShipments from '../pages-v2/BuyerShipments';
 import BuyerGoodsReceipt from '../pages-v2/BuyerGoodsReceipt';
@@ -89,6 +90,7 @@ const AppRouter: React.FC = () => {
             }
           />
           <Route path="/buyer/contracts" element={<BuyerContracts />} />
+          <Route path="/buyer/delivery-agreements" element={<BuyerDeliveryAgreements />} />
           <Route path="/buyer/inventory" element={<BuyerInventory />} />
           <Route path="/buyer/shipments" element={<BuyerShipments />} />
           <Route path="/buyer/goods-receipt" element={<BuyerGoodsReceipt />} />
