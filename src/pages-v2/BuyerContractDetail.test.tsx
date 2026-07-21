@@ -1,11 +1,17 @@
+import { afterEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { renderWithProviders } from '../test/test-utils';
+import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
+import { schedulingAgreementStore } from '../services/delivery/stores/schedulingAgreementStore';
 import BuyerContractDetail from './BuyerContractDetail';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
+
+// The DA tab now writes (release) — reset the shared store between tests so a
+// release in one test never leaks into another's read.
+afterEach(() => schedulingAgreementStore.reset());
 
 const at = (path: string) =>
   renderWithProviders(
@@ -29,10 +35,43 @@ describe('BuyerContractDetail — nested contract detail route', () => {
     at('/buyer/contracts/ctr-013');
     await screen.findByText(/CTR-2026-021/);
     fireEvent.click(screen.getByRole('tab', { name: /Delivery Agreements/ }));
-    // The SIMULATED honesty marker + the demo material + a derived exception state.
-    expect(await screen.findByText(/Read-only, simulated feed\./)).toBeInTheDocument();
+    // A buyer CAN release → the honest "portal release, simulated" marker (not the
+    // read-only one) + the demo material + a derived exception state.
+    expect(await screen.findByText(/Portal release — simulated\./)).toBeInTheDocument();
     expect(await screen.findAllByText('PK-PETB-8810')).not.toHaveLength(0);
     expect(await screen.findByText('Missed')).toBeInTheDocument();
+  });
+
+  it('a buyer can release a draft line — it flips to Released (portal, not SAP)', async () => {
+    at('/buyer/contracts/ctr-013');
+    await screen.findByText(/CTR-2026-021/);
+    fireEvent.click(screen.getByRole('tab', { name: /Delivery Agreements/ }));
+    // sa-0002 item A has two DRAFT lines (seqs 1–2) → two per-line Release buttons.
+    const before = await screen.findAllByRole('button', { name: 'Release' });
+    expect(before).toHaveLength(2);
+    fireEvent.click(before[0]);
+    // The write invalidates the read → re-derive → one draft became Released, so
+    // one fewer per-line Release button remains.
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: 'Release' })).toHaveLength(1),
+    );
+    // The honest per-line marker is present on released rows.
+    expect(screen.getAllByText(/Portal release — not yet in S\/4HANA/).length).toBeGreaterThan(0);
+  });
+
+  it('a supplier persona sees the DA tab read-only — no release control', async () => {
+    // sup-007 owns ctr-013's agreement; viewing this buyer route as a supplier
+    // must NOT expose the write (the read-only honesty marker shows instead).
+    renderWithProviders(
+      <Routes>
+        <Route path="/buyer/contracts/:id" element={<BuyerContractDetail />} />
+      </Routes>,
+      { route: '/buyer/contracts/ctr-013', identity: SUPPLIER },
+    );
+    await screen.findByText(/CTR-2026-021/);
+    fireEvent.click(screen.getByRole('tab', { name: /Delivery Agreements/ }));
+    expect(await screen.findByText(/Read-only, simulated feed\./)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Release' })).not.toBeInTheDocument();
   });
 
   it('ctr-003 stays the pristine all-draft zero-state', async () => {

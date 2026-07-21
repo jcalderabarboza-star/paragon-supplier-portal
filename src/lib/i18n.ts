@@ -164,7 +164,7 @@ export const resources = {
       'nav.supplier.whatsapp': 'WhatsApp Hub',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Settle',
-      'delivery.crumb.title': 'Delivery Agreements',
+      'delivery.crumb.title': 'Delivery Overview',
       'delivery.header.title': 'Delivery Overview',
       'delivery.header.subtitle':
         'Scheduling-agreement drawdown and release fulfillment across suppliers — read-only.',
@@ -173,6 +173,9 @@ export const resources = {
       'delivery.honesty.title': 'Read-only, simulated feed.',
       'delivery.honesty.body':
         'This view derives drawdown and fulfillment from fixture data. Nothing here dispatches, releases, or posts to SAP.',
+      'delivery.honesty.writeTitle': 'Portal release — simulated.',
+      'delivery.honesty.writeBody':
+        'Releasing a draft line transmits it to the vendor here and updates the drawdown — recorded in the portal only, not yet posted to S/4HANA. The SAP release number is assigned when the S/4HANA feed lands.',
       'delivery.agreement.sapNumber': 'SAP agreement',
       'delivery.agreement.contract': 'Contract',
       'delivery.agreement.draftNote': 'Drafted — no releases transmitted yet.',
@@ -203,6 +206,22 @@ export const resources = {
       'delivery.fulfillment.late': 'Late',
       'delivery.fulfillment.missed': 'Missed',
       'delivery.match.proposed': 'proposed — matched by proximity',
+      // — Release action (the first write) —
+      'delivery.release.section': 'Transmit releases',
+      'delivery.release.horizonLabel': 'Release through date',
+      'delivery.release.through': 'Release through {{date}}',
+      'delivery.release.line': 'Release',
+      'delivery.release.releasing': 'Releasing…',
+      'delivery.release.actionsCol': 'Release',
+      'delivery.release.portalNote': 'Portal release — not yet in S/4HANA',
+      'delivery.release.toastOk': 'Released in the portal (simulated) — not posted to SAP.',
+      'delivery.release.toastRefused': 'Release not applied',
+      'delivery.release.reason.ALREADY_RELEASED': 'That line is already released.',
+      'delivery.release.reason.NO_LINES_SELECTED': 'No draft lines in the selection to release.',
+      'delivery.release.reason.UNKNOWN_RELEASE_SEQ': 'That release line could not be found.',
+      'delivery.release.reason.RELEASE_TYPE_MISMATCH':
+        'One release cannot span both FRC and JIT lines.',
+      'delivery.release.reason.SCOPE_DENIED': 'Only a buyer can transmit a release.',
       'delivery.rollup.hint': 'Open a contract to see its full delivery agreement.',
       // — Shared chrome: top bar —
       'topbar.search': 'Search... (Ctrl K)',
@@ -388,7 +407,7 @@ export const resources = {
       'nav.supplier.whatsapp': 'Pusat WhatsApp',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Penyelesaian',
-      'delivery.crumb.title': 'Perjanjian Pengiriman',
+      'delivery.crumb.title': 'Ikhtisar Pengiriman',
       'delivery.header.title': 'Ikhtisar Pengiriman',
       'delivery.header.subtitle':
         'Penarikan perjanjian penjadwalan dan pemenuhan rilis lintas pemasok — hanya-baca.',
@@ -397,6 +416,9 @@ export const resources = {
       'delivery.honesty.title': 'Hanya-baca, umpan simulasi.',
       'delivery.honesty.body':
         'Tampilan ini menurunkan penarikan dan pemenuhan dari data contoh. Tidak ada yang dikirim, dirilis, atau diposkan ke SAP di sini.',
+      'delivery.honesty.writeTitle': 'Rilis portal — simulasi.',
+      'delivery.honesty.writeBody':
+        'Merilis baris draf mengirimkannya ke vendor di sini dan memperbarui penarikan — dicatat di portal saja, belum diposkan ke S/4HANA. Nomor rilis SAP diberikan saat umpan S/4HANA tiba.',
       'delivery.agreement.sapNumber': 'Perjanjian SAP',
       'delivery.agreement.contract': 'Kontrak',
       'delivery.agreement.draftNote': 'Draf — belum ada rilis yang dikirim.',
@@ -427,6 +449,22 @@ export const resources = {
       'delivery.fulfillment.late': 'Terlambat',
       'delivery.fulfillment.missed': 'Terlewat',
       'delivery.match.proposed': 'usulan — dicocokkan berdasarkan kedekatan',
+      // — Aksi rilis (penulisan pertama) —
+      'delivery.release.section': 'Kirim rilis',
+      'delivery.release.horizonLabel': 'Rilis hingga tanggal',
+      'delivery.release.through': 'Rilis hingga {{date}}',
+      'delivery.release.line': 'Rilis',
+      'delivery.release.releasing': 'Merilis…',
+      'delivery.release.actionsCol': 'Rilis',
+      'delivery.release.portalNote': 'Rilis portal — belum di S/4HANA',
+      'delivery.release.toastOk': 'Dirilis di portal (simulasi) — belum diposkan ke SAP.',
+      'delivery.release.toastRefused': 'Rilis tidak diterapkan',
+      'delivery.release.reason.ALREADY_RELEASED': 'Baris itu sudah dirilis.',
+      'delivery.release.reason.NO_LINES_SELECTED': 'Tidak ada baris draf dalam pilihan untuk dirilis.',
+      'delivery.release.reason.UNKNOWN_RELEASE_SEQ': 'Baris rilis itu tidak ditemukan.',
+      'delivery.release.reason.RELEASE_TYPE_MISMATCH':
+        'Satu rilis tidak bisa mencakup baris FRC dan JIT sekaligus.',
+      'delivery.release.reason.SCOPE_DENIED': 'Hanya pembeli yang dapat mengirim rilis.',
       'delivery.rollup.hint': 'Buka kontrak untuk melihat perjanjian pengirimannya secara lengkap.',
       // — Shared chrome: top bar —
       'topbar.search': 'Cari... (Ctrl K)',

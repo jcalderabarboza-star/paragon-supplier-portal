@@ -21,14 +21,16 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import NotFound from './NotFound';
 import { useContracts, useObligations, useSuppliers } from '../services/query/hooks';
-import { useDeliveryAgreements } from '../services/query/deliveryHooks';
+import { useDeliveryAgreements, useReleaseLines } from '../services/query/deliveryHooks';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
+import { useToast } from '../hooks/useToast';
 import {
   ContractDetailBody,
   ContractDocsList,
   docCount,
   typeLabel,
 } from './contracts/contractView';
-import AgreementCard from '../components/delivery/AgreementDrawdown';
+import AgreementCard, { type OnRelease } from '../components/delivery/AgreementDrawdown';
 import type { Contract } from '../data/mockContracts';
 import type { ContractObligation } from '../data/mockObligations';
 import type { Supplier } from '../services/data/types';
@@ -46,6 +48,29 @@ const ContractDetailView: React.FC<{
   const [tab, setTab] = useState<DetailTab>('overview');
   const daQuery = useDeliveryAgreements(contract.id);
   const agreements = daQuery.data ?? [];
+
+  // The release write (the delivery lane's first). BUYER-ONLY: a supplier persona
+  // viewing this buyer route gets a read-only card (no onRelease). The service
+  // refuses a supplier scope regardless — this just hides the affordance.
+  const { identity } = useCurrentIdentity();
+  const { toast } = useToast();
+  const release = useReleaseLines();
+  const canRelease = identity.personaType === 'buyer';
+
+  const handleRelease: OnRelease = async (agreementId, itemSeq, selection) => {
+    const result = await release.mutateAsync({ agreementId, itemSeq, selection });
+    if (result.ok) {
+      toast({ variant: 'success', title: t('delivery.release.toastOk') });
+    } else {
+      // An honest refusal is surfaced (never a silent no-op). ALREADY_RELEASED is
+      // an idempotent repeat (info), the rest are warnings.
+      toast({
+        variant: result.reason === 'ALREADY_RELEASED' ? 'info' : 'warning',
+        title: t('delivery.release.toastRefused'),
+        description: t(`delivery.release.reason.${result.reason}`),
+      });
+    }
+  };
 
   const supplierName = useMemo(
     () => suppliers.find((s) => s.id === contract.supplierId)?.name ?? contract.supplierId,
@@ -94,12 +119,17 @@ const ContractDetailView: React.FC<{
 
       {tab === 'delivery' && (
         <div>
-          {/* Honest framing — the DA read is read-only + SIMULATED. */}
+          {/* Honest framing. Read-only for a supplier view; for a buyer (who CAN
+              release) the truth changes: a release DOES write, but only to the
+              SIMULATED portal store — never posted to SAP. The LivenessPill stays
+              amber SIMULATED either way (no CommandTarget backs this capability). */}
           <div className="bg-info-soft border-l-2 border-info rounded px-4 py-3 mb-6 text-sm text-text-primary flex items-start gap-2">
             <Info size={14} className="text-info shrink-0 mt-0.5" />
             <span>
-              <strong className="text-info">{t('delivery.honesty.title')}</strong>{' '}
-              {t('delivery.honesty.body')}
+              <strong className="text-info">
+                {t(canRelease ? 'delivery.honesty.writeTitle' : 'delivery.honesty.title')}
+              </strong>{' '}
+              {t(canRelease ? 'delivery.honesty.writeBody' : 'delivery.honesty.body')}
             </span>
             <span className="ml-auto shrink-0">
               <LivenessPill capability="deliveryAgreements" />
@@ -115,7 +145,11 @@ const ContractDetailView: React.FC<{
           ) : (
             <div className="space-y-8">
               {agreements.map((view) => (
-                <AgreementCard key={view.agreement.id} view={view} />
+                <AgreementCard
+                  key={view.agreement.id}
+                  view={view}
+                  onRelease={canRelease ? handleRelease : undefined}
+                />
               ))}
             </div>
           )}

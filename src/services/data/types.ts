@@ -38,7 +38,8 @@ import type {
 } from '../sdc';
 // Delivery Agreement read seam — the view-model row type (type-only; erased at
 // build, so no runtime import into the data layer).
-import type { DeliveryAgreementView } from '../delivery/views';
+import type { DeliveryAgreementView, ReleaseCommandResult } from '../delivery/views';
+import type { ReleaseSelection } from '../delivery/release';
 
 // ─── PO enums (canonical home; relocated from types/purchaseOrder.types.ts) ──
 export enum POStatus {
@@ -1345,6 +1346,25 @@ export interface DeliveryQuery {
 
 export interface IDeliveryService {
   getAgreements(scope: QueryScope, query?: DeliveryQuery): Promise<Page<DeliveryAgreementView>>;
+  /**
+   * Release the selected DRAFT lines of ONE item (the delivery lane's first
+   * write — the draft→released transmit-to-vendor moment). BUYER-ONLY: a supplier
+   * scope is refused (release is a buyer action). Applies Batch-2's pure
+   * `releaseScheduleLines`, persists to the mutable store, and returns the
+   * RE-DERIVED agreement view — or an honest `ReleaseReason` on refusal.
+   *
+   * SIMULATED by construction: this write does NOT go through the command
+   * dispatcher and registers NO CommandTarget, so `deliveryAgreements` stays
+   * null-backed in the LivenessRegistry (the honest amber "Sample" marker holds).
+   * A released line is transmitted in the PORTAL, not posted to SAP —
+   * `sapReleaseNumber` stays absent until the Pattern-B feed binds it (Stage F).
+   */
+  releaseLines(
+    scope: QueryScope,
+    agreementId: string,
+    itemSeq: number,
+    selection: ReleaseSelection,
+  ): Promise<ReleaseCommandResult>;
 }
 
 export interface IDataService {
