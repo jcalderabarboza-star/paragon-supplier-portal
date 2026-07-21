@@ -222,6 +222,12 @@ export const resources = {
       'delivery.release.reason.RELEASE_TYPE_MISMATCH':
         'One release cannot span both FRC and JIT lines.',
       'delivery.release.reason.SCOPE_DENIED': 'Only a buyer can transmit a release.',
+      // The roll-up is a read-only scan/exception overview — releasing lives in
+      // each CONTRACT's DA tab, not here. Distinct from the shared
+      // delivery.honesty.* (which the contract tab's read-only case still uses).
+      'delivery.rollup.honestyTitle': 'Read-only overview.',
+      'delivery.rollup.honestyBody':
+        'Drawdown and fulfillment are derived from fixture data (simulated). Releasing happens inside a contract, not here.',
       'delivery.rollup.hint': 'Open a contract to see its full delivery agreement.',
       // — Shared chrome: top bar —
       'topbar.search': 'Search... (Ctrl K)',
@@ -465,6 +471,9 @@ export const resources = {
       'delivery.release.reason.RELEASE_TYPE_MISMATCH':
         'Satu rilis tidak bisa mencakup baris FRC dan JIT sekaligus.',
       'delivery.release.reason.SCOPE_DENIED': 'Hanya pembeli yang dapat mengirim rilis.',
+      'delivery.rollup.honestyTitle': 'Ikhtisar hanya-baca.',
+      'delivery.rollup.honestyBody':
+        'Penarikan dan pemenuhan diturunkan dari data contoh (simulasi). Perilisan dilakukan di dalam kontrak, bukan di sini.',
       'delivery.rollup.hint': 'Buka kontrak untuk melihat perjanjian pengirimannya secara lengkap.',
       // — Shared chrome: top bar —
       'topbar.search': 'Cari... (Ctrl K)',
