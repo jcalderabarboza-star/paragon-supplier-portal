@@ -23,17 +23,12 @@ import StatusPill from '../ui-v2/StatusPill';
 import KpiCard from '../ui-v2/KpiCard';
 import TargetBar from '../ui-v2/TargetBar';
 import Data from '../ui-v2/Data';
-import Table from '../ui-v2/Table';
-import TableHeader, { TableHeaderCell } from '../ui-v2/TableHeader';
-import TableRow from '../ui-v2/TableRow';
-import TableCell from '../ui-v2/TableCell';
 import Button from '../ui-v2/Button';
+import ReleaseCalendar from './ReleaseCalendar';
 import { formatNumber, formatDate } from '../../lib/format';
 import type {
   DeliveryAgreementView,
   DeliveryItemView,
-  ReleaseFulfillment,
-  ReleaseFulfillmentView,
   ReleaseSelection,
 } from '../../services/delivery';
 
@@ -46,25 +41,6 @@ export type OnRelease = (
   itemSeq: number,
   selection: ReleaseSelection,
 ) => Promise<void>;
-
-// Fulfillment → the quiet outlined StatusPill tone (DP-2 semantic, soft variants):
-// fulfilled = delivered on time, late = delivered but after, missed = a real gap,
-// pending = the honest default before the date arrives.
-const FULFILLMENT_VARIANT: Record<
-  ReleaseFulfillment,
-  'success' | 'warning' | 'danger' | 'neutral'
-> = {
-  fulfilled: 'success',
-  late: 'warning',
-  missed: 'danger',
-  pending: 'neutral',
-};
-
-/** Signed quantity for the variance caption — U+2212 minus, thousands-grouped. */
-const signedQty = (n: number): string => {
-  const abs = formatNumber(Math.abs(n));
-  return n > 0 ? `+${abs}` : n < 0 ? `−${abs}` : abs;
-};
 
 // ─── One agreement (header + per-item drawdown) ───────────────────────────────
 
@@ -144,11 +120,6 @@ const ItemBlock: React.FC<{
   const { t } = useTranslation();
   const { item, ledger } = iv;
   const uom = item.uom;
-
-  // Fulfillment keyed by releaseSeq — overlaid on the released calendar rows.
-  const fulfillmentBySeq = new Map<number, ReleaseFulfillmentView>(
-    iv.fulfillment.map((f) => [f.releaseSeq, f]),
-  );
 
   const drawdownPct =
     ledger.agreedTotalQty > 0 ? (ledger.releasedQty / ledger.agreedTotalQty) * 100 : 0;
@@ -257,124 +228,34 @@ const ItemBlock: React.FC<{
         </div>
       )}
 
-      <div className="text-label text-text-tertiary uppercase mb-2">
-        {t('delivery.calendar.title')}
-      </div>
-      <div className="border border-border-subtle rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHeaderCell>{t('delivery.calendar.seq')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.calendar.date')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.calendar.planned')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.calendar.state')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.calendar.fulfillment')}</TableHeaderCell>
-            <TableHeaderCell>{t('delivery.calendar.drawdownCol')}</TableHeaderCell>
-            {canRelease && <TableHeaderCell>{t('delivery.release.actionsCol')}</TableHeaderCell>}
-          </TableHeader>
-          <tbody>
-            {item.scheduleLines.map((line) => {
-              const fv = fulfillmentBySeq.get(line.releaseSeq);
-              return (
-                <TableRow key={line.releaseSeq}>
-                  <TableCell>
-                    <Data className="text-xs">{line.releaseSeq}</Data>
-                  </TableCell>
-                  <TableCell>
-                    <Data className="text-sm">{formatDate(line.releaseDate)}</Data>
-                  </TableCell>
-                  <TableCell>
-                    <Data className="text-sm">
-                      {formatNumber(line.plannedQty)} {uom}
-                    </Data>
-                  </TableCell>
-                  <TableCell>
-                    <StatusPill variant={line.state === 'released' ? 'info' : 'neutral'}>
-                      {t(`delivery.state.${line.state}`)}
-                    </StatusPill>
-                    {/* Honesty (first write): a released line is transmitted in
-                        the PORTAL, not posted to SAP. sapReleaseNumber stays
-                        absent until Pattern-B binds it — never claim a SAP release. */}
-                    {line.state === 'released' && (
-                      <div className="text-[10px] italic text-text-tertiary mt-0.5">
-                        {t('delivery.release.portalNote')}
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {fv ? (
-                      <div>
-                        <StatusPill variant={FULFILLMENT_VARIANT[fv.fulfillment]}>
-                          {t(`delivery.fulfillment.${fv.fulfillment}`)}
-                        </StatusPill>
-                        {fv.matchedRef && (
-                          <Data as="div" className="text-[10px] text-text-tertiary mt-0.5">
-                            {fv.matchedRef}
-                          </Data>
-                        )}
-                        {/* The inferred flag MUST be visible — a proposal, never
-                            authoritative (mirrors derivedFromAsn). Confirmed
-                            (explicit-binding) matches carry no such caption. */}
-                        {fv.inferred && (
-                          <div className="text-[10px] italic text-text-tertiary">
-                            {t('delivery.match.proposed')}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-text-tertiary">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {fv?.actualQty !== undefined ? (
-                      <div>
-                        <Data className="text-sm">
-                          {formatNumber(fv.actualQty)} {uom}
-                        </Data>
-                        {fv.qtyVariance !== undefined && fv.qtyVariance !== 0 && (
-                          <div
-                            className={`text-[10px] mt-0.5 ${
-                              fv.qtyVariance < 0 ? 'text-danger' : 'text-warning-hover'
-                            }`}
-                          >
-                            {signedQty(fv.qtyVariance)} {uom} {t('delivery.calendar.varianceSuffix')}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-text-tertiary">—</span>
-                    )}
-                  </TableCell>
-                  {canRelease && (
-                    <TableCell>
-                      {line.state === 'draft' ? (
-                        <Button
-                          variant="outline"
-                          className="px-3 py-1.5 text-xs"
-                          disabled={pending !== null}
-                          onClick={() =>
-                            doRelease({ releaseSeqs: [line.releaseSeq] }, line.releaseSeq)
-                          }
-                        >
-                          {pending === line.releaseSeq
-                            ? t('delivery.release.releasing')
-                            : t('delivery.release.line')}
-                        </Button>
-                      ) : (
-                        <span className="text-text-tertiary">—</span>
-                      )}
-                    </TableCell>
-                  )}
-                </TableRow>
-              );
-            })}
-          </tbody>
-        </Table>
-      </div>
-
-      {/* eta-proxy known-limitation — recorded, not papered over. */}
-      <div className="text-[10px] text-text-tertiary mt-2 italic">
-        {t('delivery.calendar.etaFootnote')}
-      </div>
+      {/* The calendar is the shared read-only ReleaseCalendar; the per-line
+          Release action column rides `renderLineAction` (buyer-only). The
+          roll-up SidePanel renders the SAME calendar without it. */}
+      <ReleaseCalendar
+        iv={iv}
+        actionsHeader={canRelease ? t('delivery.release.actionsCol') : undefined}
+        renderLineAction={
+          canRelease
+            ? (line) =>
+                line.state === 'draft' ? (
+                  <Button
+                    variant="outline"
+                    className="px-3 py-1.5 text-xs"
+                    disabled={pending !== null}
+                    onClick={() =>
+                      doRelease({ releaseSeqs: [line.releaseSeq] }, line.releaseSeq)
+                    }
+                  >
+                    {pending === line.releaseSeq
+                      ? t('delivery.release.releasing')
+                      : t('delivery.release.line')}
+                  </Button>
+                ) : (
+                  <span className="text-text-tertiary">—</span>
+                )
+            : undefined
+        }
+      />
     </div>
   );
 };

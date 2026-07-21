@@ -16,5 +16,7 @@ export * from './ledger';
 export * from './release';
 export * from './fulfillment';
 export * from './views';
+export * from './summary';
 export * from './fixtures';
 export * from './demoFixtures';
+export * from './demoFixturesScale';
