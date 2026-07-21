@@ -13,7 +13,11 @@
 //     the demo agreement. deriveAgreementView filters the pool to each agreement's
 //     supplier before matching. The pristine ctr-003 anchor is all-draft, so it
 //     matches nothing and reads deliveredQty 0 honestly.
-//   · Nothing here dispatches or mutates — read-only.
+//   · WRITE (the ONE mutation): `releaseLines` — the draft→released transmit
+//     moment. BUYER-ONLY. Applies Batch-2's pure `releaseScheduleLines` to the
+//     STORED item and persists it; the next read re-derives over the mutated
+//     store. NO command dispatcher, NO CommandTarget → deliveryAgreements stays
+//     SIMULATED by construction (a portal release, never a SAP posting).
 // ────────────────────────────────────────────────────────────────────────────
 
 import { applySupplierScope } from '../scoping';
@@ -21,23 +25,27 @@ import { incomingShipmentStore } from './stores/incomingShipmentStore';
 import { sdcClock } from '../../sdc';
 import { mockSuppliers } from '../../../data/mockSuppliers';
 import {
-  SCHEDULING_AGREEMENTS,
-  SCHEDULING_AGREEMENT_DEMO,
   DELIVERY_DEMO_SHIPMENTS,
   deriveAgreementView,
+  releaseScheduleLines,
 } from '../../delivery';
-import type { DeliveryAgreementView } from '../../delivery';
+import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
+import type {
+  DeliveryAgreementView,
+  ReleaseCommandResult,
+  ReleaseSelection,
+  SchedulingAgreement,
+} from '../../delivery';
 import type { DeliveryQuery, IDeliveryService, Page, QueryScope } from '../types';
-
-// The pristine ctr-003 anchor + the SIMULATED demo scenario. Kept as one list so
-// the buyer superset shows both the "freshly-drafted" zero-state and the "active
-// drawdown" demo; a supplier persona sees only its own via applySupplierScope.
-const ALL_AGREEMENTS = [...SCHEDULING_AGREEMENTS, SCHEDULING_AGREEMENT_DEMO];
 
 /** Display join — resolve the agreement supplier's name from reference data. */
 function supplierNameOf(supplierId: string): string | null {
   return mockSuppliers.find((s) => s.id === supplierId)?.name ?? null;
 }
+
+/** The buyer gate for the release write: release is a BUYER action (transmit to a
+ *  vendor) — a supplier (or a scopeless call) can never release. */
+const buyerOnly = (scope: QueryScope): boolean => scope.personaType === 'buyer';
 
 export class MockDeliveryService implements IDeliveryService {
   /** The scoped delivery-agreement views (drawdown ledger + per-line fulfillment,
@@ -49,16 +57,59 @@ export class MockDeliveryService implements IDeliveryService {
     scope: QueryScope,
     query?: DeliveryQuery,
   ): Promise<Page<DeliveryAgreementView>> {
-    const supplierScoped = applySupplierScope(scope, ALL_AGREEMENTS);
+    const supplierScoped = applySupplierScope(scope, schedulingAgreementStore.all());
     const scoped = query?.contractId
       ? supplierScoped.filter((a) => a.contractId === query.contractId)
       : supplierScoped;
-    const now = sdcClock.now();
+    return { items: scoped.map((agreement) => this.viewOf(agreement)) };
+  }
+
+  /** Release the selected DRAFT lines of ONE item. BUYER-ONLY. Applies the pure
+   *  `releaseScheduleLines` to the STORED item, persists the new agreement, and
+   *  returns the re-derived view (or an honest ReleaseReason on refusal). NO
+   *  dispatcher, NO CommandTarget — SIMULATED by construction. `now` is the shared
+   *  SIMULATED clock (keeps `releasedAt` in the fixture timeline). */
+  async releaseLines(
+    scope: QueryScope,
+    agreementId: string,
+    itemSeq: number,
+    selection: ReleaseSelection,
+  ): Promise<ReleaseCommandResult> {
+    // Buyer-only, and the agreement must be in this scope's superset (a supplier
+    // is refused before touching the store — release is a buyer verb).
+    if (!buyerOnly(scope)) {
+      return { ok: false, reason: 'SCOPE_DENIED', detail: 'release is a buyer action' };
+    }
+    const agreement = schedulingAgreementStore.get(agreementId);
+    if (!agreement) {
+      return { ok: false, reason: 'UNKNOWN_RELEASE_SEQ', detail: `no agreement ${agreementId}` };
+    }
+    const item = agreement.items.find((i) => i.lineSeq === itemSeq);
+    if (!item) {
+      return { ok: false, reason: 'UNKNOWN_RELEASE_SEQ', detail: `no item ${itemSeq}` };
+    }
+
+    const result = releaseScheduleLines(item, selection, sdcClock.now());
+    if (!result.ok) return { ok: false, reason: result.reason, detail: result.detail };
+
+    // Persist: swap the released item into a new agreement (immutable throughout).
+    schedulingAgreementStore.update(agreementId, (a) => ({
+      ...a,
+      items: a.items.map((i) => (i.lineSeq === itemSeq ? result.item : i)),
+    }));
+    const updated = schedulingAgreementStore.get(agreementId)!;
+    return { ok: true, view: this.viewOf(updated) };
+  }
+
+  /** Derive one agreement's view-model as of the shared SIMULATED clock, over the
+   *  live shipment pool (real store + the SIMULATED demo shipments). */
+  private viewOf(agreement: SchedulingAgreement): DeliveryAgreementView {
     const pool = [...incomingShipmentStore.all(), ...DELIVERY_DEMO_SHIPMENTS];
-    return {
-      items: scoped.map((agreement) =>
-        deriveAgreementView(agreement, pool, now, supplierNameOf(agreement.supplierId)),
-      ),
-    };
+    return deriveAgreementView(
+      agreement,
+      pool,
+      sdcClock.now(),
+      supplierNameOf(agreement.supplierId),
+    );
   }
 }

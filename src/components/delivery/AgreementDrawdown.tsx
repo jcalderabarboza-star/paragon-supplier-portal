@@ -15,10 +15,10 @@
 // counts an inferred line (the ledger already enforces the lock).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { PackageCheck } from 'lucide-react';
+import { PackageCheck, Send } from 'lucide-react';
 import StatusPill from '../ui-v2/StatusPill';
 import KpiCard from '../ui-v2/KpiCard';
 import TargetBar from '../ui-v2/TargetBar';
@@ -27,13 +27,25 @@ import Table from '../ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../ui-v2/TableHeader';
 import TableRow from '../ui-v2/TableRow';
 import TableCell from '../ui-v2/TableCell';
+import Button from '../ui-v2/Button';
 import { formatNumber, formatDate } from '../../lib/format';
 import type {
   DeliveryAgreementView,
   DeliveryItemView,
   ReleaseFulfillment,
   ReleaseFulfillmentView,
+  ReleaseSelection,
 } from '../../services/delivery';
+
+/** The release write, threaded from the page (BuyerContractDetail) when the
+ *  viewer is a buyer. Absent ⇒ the card is read-only (the roll-up, and any
+ *  supplier persona) — no release control renders. Resolves when the write
+ *  settles; the page owns the toast (success + honest refusal). */
+export type OnRelease = (
+  agreementId: string,
+  itemSeq: number,
+  selection: ReleaseSelection,
+) => Promise<void>;
 
 // Fulfillment → the quiet outlined StatusPill tone (DP-2 semantic, soft variants):
 // fulfilled = delivered on time, late = delivered but after, missed = a real gap,
@@ -62,7 +74,8 @@ const signedQty = (n: number): string => {
 const AgreementCard: React.FC<{
   view: DeliveryAgreementView;
   linkContract?: boolean;
-}> = ({ view, linkContract = false }) => {
+  onRelease?: OnRelease;
+}> = ({ view, linkContract = false, onRelease }) => {
   const { t } = useTranslation();
   const { agreement, supplierName } = view;
   // All-draft ⇒ no released line has fulfillment (the pristine "nothing
@@ -109,7 +122,12 @@ const AgreementCard: React.FC<{
 
       <div className="divide-y divide-border-subtle">
         {view.items.map((iv) => (
-          <ItemBlock key={iv.item.lineSeq} iv={iv} />
+          <ItemBlock
+            key={iv.item.lineSeq}
+            iv={iv}
+            agreementId={agreement.id}
+            onRelease={onRelease}
+          />
         ))}
       </div>
     </section>
@@ -118,7 +136,11 @@ const AgreementCard: React.FC<{
 
 // ─── One item (policy · KPIs · drawdown bar · release calendar) ───────────────
 
-const ItemBlock: React.FC<{ iv: DeliveryItemView }> = ({ iv }) => {
+const ItemBlock: React.FC<{
+  iv: DeliveryItemView;
+  agreementId: string;
+  onRelease?: OnRelease;
+}> = ({ iv, agreementId, onRelease }) => {
   const { t } = useTranslation();
   const { item, ledger } = iv;
   const uom = item.uom;
@@ -130,6 +152,30 @@ const ItemBlock: React.FC<{ iv: DeliveryItemView }> = ({ iv }) => {
 
   const drawdownPct =
     ledger.agreedTotalQty > 0 ? (ledger.releasedQty / ledger.agreedTotalQty) * 100 : 0;
+
+  // ── Release (the FIRST write) — buyer-only, over DRAFT lines ────────────────
+  // `onRelease` present ⇒ the viewer is a buyer; the horizon control + the
+  // per-line action column render only for an item that still has draft lines.
+  const draftDates = item.scheduleLines
+    .filter((l) => l.state === 'draft')
+    .map((l) => l.releaseDate);
+  const canRelease = !!onRelease && draftDates.length > 0;
+  const [horizon, setHorizon] = useState('');
+  const [pending, setPending] = useState<'horizon' | number | null>(null);
+  // Effective horizon: the chosen date, or the earliest draft date (release the
+  // next period). A stale pick (its lines already released) falls back to the
+  // earliest remaining — no effect needed.
+  const effectiveHorizon = draftDates.includes(horizon) ? horizon : draftDates[0] ?? '';
+
+  const doRelease = async (selection: ReleaseSelection, key: 'horizon' | number) => {
+    if (!onRelease) return;
+    setPending(key);
+    try {
+      await onRelease(agreementId, item.lineSeq, selection);
+    } finally {
+      setPending(null);
+    }
+  };
 
   return (
     <div className="px-5 py-5">
@@ -174,6 +220,43 @@ const ItemBlock: React.FC<{ iv: DeliveryItemView }> = ({ iv }) => {
         </div>
       </div>
 
+      {/* Release toolbar (buyer-only, draft lines remaining) — the FRC/JIT
+          "release the next N periods" motion. Solid primary = the reserved
+          consequential-commit signal (DP2-BUTTON-01): a release transmits to the
+          vendor. Portal-only + SIMULATED — the honesty banner above says so. */}
+      {canRelease && (
+        <div className="flex flex-wrap items-center gap-2 mb-5 rounded-lg border border-border-subtle bg-bg-hover px-4 py-3">
+          <span className="text-label text-text-tertiary uppercase">
+            {t('delivery.release.section')}
+          </span>
+          <label className="sr-only" htmlFor={`horizon-${agreementId}-${item.lineSeq}`}>
+            {t('delivery.release.horizonLabel')}
+          </label>
+          <select
+            id={`horizon-${agreementId}-${item.lineSeq}`}
+            value={effectiveHorizon}
+            onChange={(e) => setHorizon(e.target.value)}
+            className="rounded-md border border-border-input bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
+          >
+            {draftDates.map((d) => (
+              <option key={d} value={d}>
+                {formatDate(d)}
+              </option>
+            ))}
+          </select>
+          <Button
+            variant="primary"
+            icon={Send}
+            disabled={pending !== null || !effectiveHorizon}
+            onClick={() => doRelease({ horizonDate: effectiveHorizon }, 'horizon')}
+          >
+            {pending === 'horizon'
+              ? t('delivery.release.releasing')
+              : t('delivery.release.through', { date: formatDate(effectiveHorizon) })}
+          </Button>
+        </div>
+      )}
+
       <div className="text-label text-text-tertiary uppercase mb-2">
         {t('delivery.calendar.title')}
       </div>
@@ -186,6 +269,7 @@ const ItemBlock: React.FC<{ iv: DeliveryItemView }> = ({ iv }) => {
             <TableHeaderCell>{t('delivery.calendar.state')}</TableHeaderCell>
             <TableHeaderCell>{t('delivery.calendar.fulfillment')}</TableHeaderCell>
             <TableHeaderCell>{t('delivery.calendar.drawdownCol')}</TableHeaderCell>
+            {canRelease && <TableHeaderCell>{t('delivery.release.actionsCol')}</TableHeaderCell>}
           </TableHeader>
           <tbody>
             {item.scheduleLines.map((line) => {
@@ -207,6 +291,14 @@ const ItemBlock: React.FC<{ iv: DeliveryItemView }> = ({ iv }) => {
                     <StatusPill variant={line.state === 'released' ? 'info' : 'neutral'}>
                       {t(`delivery.state.${line.state}`)}
                     </StatusPill>
+                    {/* Honesty (first write): a released line is transmitted in
+                        the PORTAL, not posted to SAP. sapReleaseNumber stays
+                        absent until Pattern-B binds it — never claim a SAP release. */}
+                    {line.state === 'released' && (
+                      <div className="text-[10px] italic text-text-tertiary mt-0.5">
+                        {t('delivery.release.portalNote')}
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     {fv ? (
@@ -252,6 +344,26 @@ const ItemBlock: React.FC<{ iv: DeliveryItemView }> = ({ iv }) => {
                       <span className="text-text-tertiary">—</span>
                     )}
                   </TableCell>
+                  {canRelease && (
+                    <TableCell>
+                      {line.state === 'draft' ? (
+                        <Button
+                          variant="outline"
+                          className="px-3 py-1.5 text-xs"
+                          disabled={pending !== null}
+                          onClick={() =>
+                            doRelease({ releaseSeqs: [line.releaseSeq] }, line.releaseSeq)
+                          }
+                        >
+                          {pending === line.releaseSeq
+                            ? t('delivery.release.releasing')
+                            : t('delivery.release.line')}
+                        </Button>
+                      ) : (
+                        <span className="text-text-tertiary">—</span>
+                      )}
+                    </TableCell>
+                  )}
                 </TableRow>
               );
             })}

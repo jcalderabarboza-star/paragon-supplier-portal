@@ -16,6 +16,7 @@ import type { IncomingShipment } from '../sdc/types';
 import { deriveDrawdownLedger } from './ledger';
 import { deriveFulfillment } from './fulfillment';
 import type { ReleaseFulfillmentView } from './fulfillment';
+import type { ReleaseReason } from './release';
 import type {
   DrawdownLedger,
   SchedulingAgreement,
@@ -37,6 +38,22 @@ export interface DeliveryAgreementView {
   readonly supplierName: string | null;
   readonly items: readonly DeliveryItemView[];
 }
+
+/** Why a release was refused at the SERVICE seam: Batch-2's pure domain reasons
+ *  PLUS `SCOPE_DENIED` (the house scope-refusal term) — release is buyer-only, so
+ *  a supplier scope is denied here, a concern the pure domain never models. */
+export type ReleaseCommandReason = ReleaseReason | 'SCOPE_DENIED';
+
+/**
+ * The delivery lane's write result (the release action). `ok` returns the
+ * RE-DERIVED agreement view (so the caller renders the post-release state without
+ * a second read); `!ok` carries an honest reason so a refusal is surfaced, never
+ * a silent no-op. Mirrors the pure `ReleaseResult`, resolved to the view-model at
+ * the service seam and widened with the scope refusal.
+ */
+export type ReleaseCommandResult =
+  | { readonly ok: true; readonly view: DeliveryAgreementView }
+  | { readonly ok: false; readonly reason: ReleaseCommandReason; readonly detail?: string };
 
 /**
  * Derive the read view for ONE agreement. PURE — data in, view-model out, no
