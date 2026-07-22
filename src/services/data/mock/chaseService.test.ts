@@ -77,4 +77,20 @@ describe('MockChaseService — over the real wired service', () => {
     // The buyer gate (a supplier does not chase itself).
     expect((await mockDataService.chase.getUnifiedChase(supplierScope)).items).toEqual([]);
   });
+
+  it('surfaces a firm/HARD non-compliance-alert (sa-1007 / sup-006) sorted worst-first at the top', async () => {
+    const { items } = await mockDataService.chase.getUnifiedChase(buyerScope);
+    // sa-1007 is a JIT/firm agreement with two genuinely-missed released lines →
+    // firm/hard non-compliance-alerts (derived, not stamped). This proves the
+    // hard/soft split is demonstrable, not just unit-provable.
+    const sup006 = items.find((v) => v.supplierId === 'sup-006');
+    expect(sup006).toBeDefined();
+    expect(sup006!.overallSeverity).toBe('hard');
+    const hardAlert = sup006!.commitmentEntries.find(
+      (e) => e.mode === 'non-compliance-alert' && e.type === 'firm' && e.severity === 'hard',
+    );
+    expect(hardAlert).toBeDefined();
+    // Worst-first: a hard supplier sorts above every soft one — the top card is hard.
+    expect(items[0].overallSeverity).toBe('hard');
+  });
 });

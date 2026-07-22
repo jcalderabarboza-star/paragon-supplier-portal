@@ -24,7 +24,9 @@ describe('BuyerChase — the unified chase surface', () => {
     expect(screen.getAllByText(/Missed \/ late/).length).toBeGreaterThan(0);
     // The forecast-staleness family renders its section label too.
     expect(screen.getAllByText('Delivery commitments').length).toBeGreaterThan(0);
-    // The severity split reads as a badge (all real fixtures are semi-firm → Advisory).
+    // The severity split reads as a badge — a firm JIT miss (sa-1007) renders
+    // Urgent (hard), FRC/semi-firm + data staleness render Advisory (soft).
+    expect(screen.getAllByText(/Urgent/).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/Advisory/).length).toBeGreaterThan(0);
   });
 
