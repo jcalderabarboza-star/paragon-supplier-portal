@@ -152,16 +152,32 @@ export interface ScheduleLine {
    */
   readonly adjustedAt?: string;
   /**
+   * ISO stamp of the confirm-match write (`confirmFulfillment`) — the PORTAL audit
+   * stamp for "when the buyer accepted this delivery", INJECTED by the caller.
+   * Only ever set on a 'released' line (confirm is legal only there). Distinct from
+   * `fulfilledDate` (the SAP GR posting date, never portal-written): a confirm is a
+   * portal record, not a goods-receipt.
+   */
+  readonly confirmedAt?: string;
+  /**
    * The SAP-assigned release-document number (Decision C). DECLARED, NEVER SEEDED
    * and never written by this module — SAP assigns it on transmission (Pattern B),
    * exactly like `sapAgreementNumber`. The portal must never mint a competing
    * identity (honesty guard 6). Absent ⇒ not yet bound by SAP.
    */
   readonly sapReleaseNumber?: string;
-  // ── Fulfillment fields — never seeded in Batch 1 (honesty guard 1) ──────────
+  // ── Fulfillment fields — never SEEDED (honesty guard 1); `actualQty` +
+  //    `fulfilledBy` are written by the confirm-match write (`confirmFulfillment`),
+  //    which flips the derived match from inferred→authoritative and feeds
+  //    `deliveredQty`. `fulfilledDate` (the SAP GR posting date) is NEVER
+  //    portal-written — it rides the F2 feed (Pattern B). ───────────────────────
+  /** The ACCEPTED delivered qty (v1: the observed shipment qty). Absent ⇒ not yet
+   *  confirmed — the ledger counts 0 for this line (the honesty lock). */
   readonly actualQty?: number;
+  /** The SAP GR posting date — never written by the portal (reserved for F2). */
   readonly fulfilledDate?: string;
-  /** The ASN/GR ref this release drew down (hybrid match) — later batch. */
+  /** The ASN/GR ref this release drew down. Written by `confirmFulfillment`; read
+   *  by deriveFulfillment Pass 1 as an authoritative (inferred:false) binding. */
   readonly fulfilledBy?: string;
 }
 

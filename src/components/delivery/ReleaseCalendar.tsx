@@ -49,11 +49,13 @@ const signedQty = (n: number): string => {
 
 /** The release calendar for ONE item. `renderLineAction` (buyer-only, contract
  *  tab) adds a trailing action column; omitted ⇒ a read-only calendar (the
- *  roll-up SidePanel). */
+ *  roll-up SidePanel). It receives the line AND its derived fulfillment view (so
+ *  the caller can gate Release on a draft line vs Confirm on an inferred released
+ *  line). */
 const ReleaseCalendar: React.FC<{
   iv: DeliveryItemView;
   actionsHeader?: string;
-  renderLineAction?: (line: ScheduleLine) => React.ReactNode;
+  renderLineAction?: (line: ScheduleLine, fv?: ReleaseFulfillmentView) => React.ReactNode;
 }> = ({ iv, actionsHeader, renderLineAction }) => {
   const { t } = useTranslation();
   const { item } = iv;
@@ -155,7 +157,7 @@ const ReleaseCalendar: React.FC<{
                       <span className="text-text-tertiary">—</span>
                     )}
                   </TableCell>
-                  {withActions && <TableCell>{renderLineAction!(line)}</TableCell>}
+                  {withActions && <TableCell>{renderLineAction!(line, fv)}</TableCell>}
                 </TableRow>
               );
             })}

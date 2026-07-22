@@ -17,6 +17,7 @@ import { deriveDrawdownLedger } from './ledger';
 import { deriveFulfillment } from './fulfillment';
 import type { ReleaseFulfillmentView } from './fulfillment';
 import type { ReleaseReason } from './release';
+import type { ConfirmReason } from './confirm';
 import type {
   DrawdownLedger,
   SchedulingAgreement,
@@ -54,6 +55,22 @@ export type ReleaseCommandReason = ReleaseReason | 'SCOPE_DENIED';
 export type ReleaseCommandResult =
   | { readonly ok: true; readonly view: DeliveryAgreementView }
   | { readonly ok: false; readonly reason: ReleaseCommandReason; readonly detail?: string };
+
+/** Why a confirm-match was refused at the SERVICE seam: the pure `ConfirmReason`
+ *  arms PLUS `SCOPE_DENIED` (confirm is buyer-only) and `NOTHING_TO_CONFIRM` — the
+ *  latter needs the shipment pool (there is no INFERRED proposal to accept), so it
+ *  lives here, not in the pure domain. */
+export type ConfirmCommandReason = ConfirmReason | 'SCOPE_DENIED' | 'NOTHING_TO_CONFIRM';
+
+/**
+ * The confirm-match write result (the SECOND write). Same shape as
+ * `ReleaseCommandResult` — `ok` returns the RE-DERIVED view (the proposal now
+ * confirmed: inferred:false, `deliveredQty` climbed), `!ok` an honest reason so a
+ * refusal is surfaced, never a silent no-op.
+ */
+export type ConfirmCommandResult =
+  | { readonly ok: true; readonly view: DeliveryAgreementView }
+  | { readonly ok: false; readonly reason: ConfirmCommandReason; readonly detail?: string };
 
 /**
  * Derive the read view for ONE agreement. PURE — data in, view-model out, no

@@ -12,7 +12,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useServiceQuery, scopeKey } from './useServiceQuery';
 import { useDataService } from '../data/DataServiceContext';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
-import type { DeliveryAgreementView, ReleaseCommandResult, ReleaseSelection } from '../delivery';
+import type {
+  ConfirmCommandResult,
+  DeliveryAgreementView,
+  ReleaseCommandResult,
+  ReleaseSelection,
+} from '../delivery';
 import type { QueryScope } from '../data/types';
 
 /** The scoped delivery-agreement views (drawdown ledger + per-line fulfillment).
@@ -61,6 +66,49 @@ export function useReleaseLines() {
       svc.delivery.releaseLines(scope, agreementId, itemSeq, selection),
     onSuccess: (result) => {
       if (!result.ok) return; // an honest refusal changed nothing — no invalidation.
+      const supplierKey = scopeKey({
+        personaType: 'supplier',
+        supplierId: result.view.agreement.supplierId,
+      });
+      qc.invalidateQueries({
+        predicate: (q) => {
+          if (q.queryKey[0] !== 'delivery') return false;
+          const last = q.queryKey[q.queryKey.length - 1];
+          return last === BUYER_SCOPE_KEY || last === supplierKey;
+        },
+      });
+    },
+  });
+}
+
+/** The variables a confirm-match mutation carries — one released line of one item
+ *  of one agreement, accepted AS-OBSERVED (v1 writes no override qty). */
+export interface ConfirmMatchVars {
+  agreementId: string;
+  itemSeq: number;
+  releaseSeq: number;
+}
+
+/** Confirm an inferred fulfillment match (the delivery lane's SECOND write).
+ *  BUYER-ONLY at the service; on success it invalidates the ['delivery'] reads for
+ *  the buyer superset AND the affected supplier's own scope (the same SDC-4d
+ *  cross-scope shape release uses), so both the per-contract DA tab and the roll-up
+ *  re-derive with the now-confirmed match + climbed `deliveredQty`. An honest
+ *  refusal changes nothing → no invalidation. */
+export function useConfirmMatch() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+  };
+  const qc = useQueryClient();
+
+  return useMutation<ConfirmCommandResult, Error, ConfirmMatchVars>({
+    mutationFn: ({ agreementId, itemSeq, releaseSeq }) =>
+      svc.delivery.confirmMatch(scope, agreementId, itemSeq, releaseSeq),
+    onSuccess: (result) => {
+      if (!result.ok) return;
       const supplierKey = scopeKey({
         personaType: 'supplier',
         supplierId: result.view.agreement.supplierId,
