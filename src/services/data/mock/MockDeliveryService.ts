@@ -31,11 +31,14 @@ import {
   deriveAgreementView,
   deriveFulfillment,
   releaseScheduleLines,
+  setActivePolicy,
 } from '../../delivery';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
 import type {
   ConfirmCommandResult,
   DeliveryAgreementView,
+  EditPolicyCommandResult,
+  EditPolicyPatch,
   ReleaseCommandResult,
   ReleaseSelection,
   SchedulingAgreement,
@@ -154,6 +157,43 @@ export class MockDeliveryService implements IDeliveryService {
       actualQty: fv.actualQty, // ACCEPT-AS-OBSERVED — line.actualQty === s.qty (no split).
       now: sdcClock.now(),
     });
+    if (!result.ok) return { ok: false, reason: result.reason, detail: result.detail };
+
+    schedulingAgreementStore.update(agreementId, (a) => ({
+      ...a,
+      items: a.items.map((i) => (i.lineSeq === itemSeq ? result.item : i)),
+    }));
+    const updated = schedulingAgreementStore.get(agreementId)!;
+    return { ok: true, view: this.viewOf(updated) };
+  }
+
+  /** Re-point ONE item's ACTIVE drawdown tolerance (the delivery lane's THIRD
+   *  write — the governance write). BUYER-ONLY. Applies the pure `setActivePolicy`
+   *  (writes `active` + the who/when/why stamp; `contractDefault` immutable), persists,
+   *  and returns the re-derived view — the ledger now marks `policyDeviation` and
+   *  re-derives `enforced` / `exceptions` against the new `active`. NO dispatcher,
+   *  NO CommandTarget — SIMULATED by construction (a portal governance record). */
+  async editPolicy(
+    scope: QueryScope,
+    agreementId: string,
+    itemSeq: number,
+    patch: EditPolicyPatch,
+  ): Promise<EditPolicyCommandResult> {
+    // Buyer-only — a drawdown tolerance is a buyer governance decision (a supplier
+    // is refused before touching the store).
+    if (!buyerOnly(scope)) {
+      return { ok: false, reason: 'SCOPE_DENIED', detail: 'policy-edit is a buyer action' };
+    }
+    const agreement = schedulingAgreementStore.get(agreementId);
+    if (!agreement) {
+      return { ok: false, reason: 'UNKNOWN_ITEM', detail: `no agreement ${agreementId}` };
+    }
+    const item = agreement.items.find((i) => i.lineSeq === itemSeq);
+    if (!item) {
+      return { ok: false, reason: 'UNKNOWN_ITEM', detail: `no item ${itemSeq}` };
+    }
+
+    const result = setActivePolicy(item, { ...patch, now: sdcClock.now() });
     if (!result.ok) return { ok: false, reason: result.reason, detail: result.detail };
 
     schedulingAgreementStore.update(agreementId, (a) => ({

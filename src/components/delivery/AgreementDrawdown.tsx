@@ -18,18 +18,22 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { PackageCheck, Send } from 'lucide-react';
+import { PackageCheck, Send, SlidersHorizontal } from 'lucide-react';
 import StatusPill from '../ui-v2/StatusPill';
 import KpiCard from '../ui-v2/KpiCard';
 import TargetBar from '../ui-v2/TargetBar';
 import Data from '../ui-v2/Data';
 import Button from '../ui-v2/Button';
 import ReleaseCalendar from './ReleaseCalendar';
+import PolicyEditor from './PolicyEditor';
 import { formatNumber, formatDate } from '../../lib/format';
+import type { TFunction } from 'i18next';
 import type {
   DeliveryAgreementView,
   DeliveryItemView,
+  EditPolicyPatch,
   ReleaseSelection,
+  TolerancePolicy,
 } from '../../services/delivery';
 
 /** The release write, threaded from the page (BuyerContractDetail) when the
@@ -51,6 +55,27 @@ export type OnConfirm = (
   releaseSeq: number,
 ) => Promise<void>;
 
+/** The policy-edit write (the THIRD write) — re-point one item's active drawdown
+ *  tolerance. Threaded from the page alongside `onRelease` / `onConfirm` when the
+ *  viewer is a buyer; absent ⇒ read-only, no edit control renders. Resolves to
+ *  `true` when the edit was APPLIED (the editor closes) and `false` on an honest
+ *  refusal (the editor stays open so the buyer can correct it). The page owns the
+ *  toast. */
+export type OnEditPolicy = (
+  agreementId: string,
+  itemSeq: number,
+  patch: EditPolicyPatch,
+) => Promise<boolean>;
+
+/** Format a tolerance policy for display: "10% · Flag" or "Unlimited · Ignore". */
+function formatPolicy(t: TFunction, p: TolerancePolicy): string {
+  const knob =
+    p.tolerancePct === null
+      ? t('delivery.policy.edit.unlimited')
+      : `${p.tolerancePct * 100}%`;
+  return `${knob} · ${t(`delivery.policy.edit.enforcement.${p.enforcement}`)}`;
+}
+
 // ─── One agreement (header + per-item drawdown) ───────────────────────────────
 
 /** Render one agreement's drawdown. `linkContract` turns the contract ref into a
@@ -61,7 +86,8 @@ const AgreementCard: React.FC<{
   linkContract?: boolean;
   onRelease?: OnRelease;
   onConfirm?: OnConfirm;
-}> = ({ view, linkContract = false, onRelease, onConfirm }) => {
+  onEditPolicy?: OnEditPolicy;
+}> = ({ view, linkContract = false, onRelease, onConfirm, onEditPolicy }) => {
   const { t } = useTranslation();
   const { agreement, supplierName } = view;
   // All-draft ⇒ no released line has fulfillment (the pristine "nothing
@@ -114,6 +140,7 @@ const AgreementCard: React.FC<{
             agreementId={agreement.id}
             onRelease={onRelease}
             onConfirm={onConfirm}
+            onEditPolicy={onEditPolicy}
           />
         ))}
       </div>
@@ -128,10 +155,38 @@ const ItemBlock: React.FC<{
   agreementId: string;
   onRelease?: OnRelease;
   onConfirm?: OnConfirm;
-}> = ({ iv, agreementId, onRelease, onConfirm }) => {
+  onEditPolicy?: OnEditPolicy;
+}> = ({ iv, agreementId, onRelease, onConfirm, onEditPolicy }) => {
   const { t } = useTranslation();
   const { item, ledger } = iv;
   const uom = item.uom;
+  const policy = item.drawdownPolicy;
+
+  // ── Policy-edit (the THIRD write) — buyer-only governance. `onEditPolicy`
+  // present ⇒ the viewer is a buyer; the edit affordance renders on the policy
+  // chip. The editor closes on an APPLIED edit, stays open on an honest refusal. ──
+  const canEdit = !!onEditPolicy;
+  const [editing, setEditing] = useState(false);
+  const [savingPolicy, setSavingPolicy] = useState(false);
+
+  const doEditPolicy = async (patch: EditPolicyPatch) => {
+    if (!onEditPolicy) return;
+    setSavingPolicy(true);
+    try {
+      const applied = await onEditPolicy(agreementId, item.lineSeq, patch);
+      if (applied) setEditing(false);
+    } finally {
+      setSavingPolicy(false);
+    }
+  };
+  // Reset-to-default = re-point active back to the immutable contractDefault, with
+  // a fixed reason (the reset IS the reason). Only offered when active has deviated.
+  const doResetPolicy = () =>
+    doEditPolicy({
+      tolerancePct: policy.contractDefault.tolerancePct,
+      enforcement: policy.contractDefault.enforcement,
+      reason: t('delivery.policy.edit.resetReason'),
+    });
 
   const drawdownPct =
     ledger.agreedTotalQty > 0 ? (ledger.releasedQty / ledger.agreedTotalQty) * 100 : 0;
@@ -207,8 +262,45 @@ const ItemBlock: React.FC<{
               {t('delivery.policy.deviation')}
             </span>
           )}
+          {/* Edit tolerance (the THIRD write) — buyer-only, contract DA tab only. */}
+          {canEdit && (
+            <Button
+              variant="outline"
+              icon={SlidersHorizontal}
+              className="px-3 py-1 text-xs"
+              onClick={() => setEditing((v) => !v)}
+            >
+              {t('delivery.policy.edit.action')}
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* The deviation detail — active vs the IMMUTABLE contract default, with the
+          when/why stamp (who deferred to the dispatcher). Always attributable. */}
+      {ledger.policyDeviation && (
+        <div className="mb-4 text-[11px] text-text-tertiary">
+          {t('delivery.policy.deviation.detail', {
+            def: formatPolicy(t, policy.contractDefault),
+            date: policy.activeChangedAt ? formatDate(policy.activeChangedAt) : '—',
+            reason: policy.activeChangeReason ?? '—',
+          })}
+        </div>
+      )}
+
+      {/* The inline editor (buyer-only) — presets + custom two-knob + required
+          reason + reset-to-default. Portal-only + SIMULATED (the banner says so). */}
+      {canEdit && editing && (
+        <PolicyEditor
+          active={ledger.activePolicy}
+          contractDefault={policy.contractDefault}
+          deviation={ledger.policyDeviation}
+          pending={savingPolicy}
+          onSave={doEditPolicy}
+          onReset={doResetPolicy}
+          onCancel={() => setEditing(false)}
+        />
+      )}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
         <KpiCard eyebrow={t('delivery.kpi.agreed')} value={`${formatNumber(ledger.agreedTotalQty)} ${uom}`} />

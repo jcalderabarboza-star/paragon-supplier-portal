@@ -18,6 +18,7 @@ import { deriveFulfillment } from './fulfillment';
 import type { ReleaseFulfillmentView } from './fulfillment';
 import type { ReleaseReason } from './release';
 import type { ConfirmReason } from './confirm';
+import type { EditPolicyReason } from './policy';
 import type {
   DrawdownLedger,
   SchedulingAgreement,
@@ -71,6 +72,22 @@ export type ConfirmCommandReason = ConfirmReason | 'SCOPE_DENIED' | 'NOTHING_TO_
 export type ConfirmCommandResult =
   | { readonly ok: true; readonly view: DeliveryAgreementView }
   | { readonly ok: false; readonly reason: ConfirmCommandReason; readonly detail?: string };
+
+/** Why a policy-edit was refused at the SERVICE seam: the pure `EditPolicyReason`
+ *  arms PLUS `SCOPE_DENIED` (policy-edit is buyer-only governance) and
+ *  `UNKNOWN_ITEM` (no such agreement / item) — neither is a pure-domain concern
+ *  (the pure layer is handed a resolved item and never sees scope). */
+export type EditPolicyCommandReason = EditPolicyReason | 'SCOPE_DENIED' | 'UNKNOWN_ITEM';
+
+/**
+ * The policy-edit write result (the THIRD write). Same shape as the release /
+ * confirm pairs — `ok` returns the RE-DERIVED view (the ledger now marks
+ * `policyDeviation` and re-derives `enforced` / `exceptions` against the new
+ * `active`), `!ok` an honest reason so a refusal is surfaced, never a silent no-op.
+ */
+export type EditPolicyCommandResult =
+  | { readonly ok: true; readonly view: DeliveryAgreementView }
+  | { readonly ok: false; readonly reason: EditPolicyCommandReason; readonly detail?: string };
 
 /**
  * Derive the read view for ONE agreement. PURE — data in, view-model out, no

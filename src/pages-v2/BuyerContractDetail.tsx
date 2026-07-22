@@ -24,6 +24,7 @@ import { useContracts, useObligations, useSuppliers } from '../services/query/ho
 import {
   useConfirmMatch,
   useDeliveryAgreements,
+  useEditPolicy,
   useReleaseLines,
 } from '../services/query/deliveryHooks';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
@@ -36,6 +37,7 @@ import {
 } from './contracts/contractView';
 import AgreementCard, {
   type OnConfirm,
+  type OnEditPolicy,
   type OnRelease,
 } from '../components/delivery/AgreementDrawdown';
 import type { Contract } from '../data/mockContracts';
@@ -63,6 +65,7 @@ const ContractDetailView: React.FC<{
   const { toast } = useToast();
   const release = useReleaseLines();
   const confirm = useConfirmMatch();
+  const editPolicy = useEditPolicy();
   const canRelease = identity.personaType === 'buyer';
 
   const handleRelease: OnRelease = async (agreementId, itemSeq, selection) => {
@@ -96,6 +99,25 @@ const ContractDetailView: React.FC<{
         description: t(`delivery.confirm.reason.${result.reason}`),
       });
     }
+  };
+
+  // The policy-edit write (the delivery lane's THIRD — the governance write).
+  // Re-points an item's active drawdown tolerance with a required reason. Returns
+  // whether the edit was APPLIED, so the inline editor closes on success and stays
+  // open on a refusal. Portal-only + SIMULATED — a tolerance change is never posted
+  // to SAP. NO_CHANGE is an idempotent repeat (info); the rest are warnings.
+  const handleEditPolicy: OnEditPolicy = async (agreementId, itemSeq, patch) => {
+    const result = await editPolicy.mutateAsync({ agreementId, itemSeq, patch });
+    if (result.ok) {
+      toast({ variant: 'success', title: t('delivery.policy.edit.toastOk') });
+      return true;
+    }
+    toast({
+      variant: result.reason === 'NO_CHANGE' ? 'info' : 'warning',
+      title: t('delivery.policy.edit.toastRefused'),
+      description: t(`delivery.policy.edit.reason.${result.reason}`),
+    });
+    return false;
   };
 
   const supplierName = useMemo(
@@ -176,6 +198,7 @@ const ContractDetailView: React.FC<{
                   view={view}
                   onRelease={canRelease ? handleRelease : undefined}
                   onConfirm={canRelease ? handleConfirm : undefined}
+                  onEditPolicy={canRelease ? handleEditPolicy : undefined}
                 />
               ))}
             </div>

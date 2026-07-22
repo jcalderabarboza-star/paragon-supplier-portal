@@ -84,6 +84,8 @@ describe('BuyerDeliveryAgreements — at-scale exception-first roll-up', () => {
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getAllByText(/proposed — matched by proximity/).length).toBeGreaterThan(0);
     expect(within(dialog).queryByRole('button', { name: /Confirm match/ })).toBeNull();
+    // The governance write (edit tolerance) is likewise contract-DA-tab only.
+    expect(within(dialog).queryByRole('button', { name: /Edit tolerance/ })).toBeNull();
   });
 
   it('is READ-ONLY: no release toolbar or per-line release control anywhere', async () => {
