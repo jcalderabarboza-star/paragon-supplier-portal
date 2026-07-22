@@ -46,6 +46,10 @@ import type {
 } from '../delivery/views';
 import type { ReleaseSelection } from '../delivery/release';
 import type { EditPolicyPatch } from '../delivery/policy';
+// The unified chase read view (SDC-5c). TYPE-ONLY — the `chase` module composes
+// the collaboration + delivery reads one level up; the data layer only names the
+// shape it returns. Acyclic: chase reads sdc/delivery types, never data/types.
+import type { SupplierChaseView } from '../chase';
 
 // ─── PO enums (canonical home; relocated from types/purchaseOrder.types.ts) ──
 export enum POStatus {
@@ -1413,6 +1417,18 @@ export interface IDeliveryService {
   ): Promise<EditPolicyCommandResult>;
 }
 
+// ─── Unified chase read (SDC-5d — the buyer/planner chase surface seam) ───────
+//
+// The ONE composition point: reads the existing collaboration chase (data
+// staleness) + delivery agreements (→ commitment chase) and folds them into the
+// per-supplier `SupplierChaseView[]` via the pure 5c reducer. BUYER-GATED — the
+// planner chases suppliers; a supplier persona resolves to [] (a supplier does not
+// chase itself; its own-facts view is the delivery mirror, not this surface).
+// Depends on the collaboration + delivery reads; neither imports chase (acyclic).
+export interface IChaseService {
+  getUnifiedChase(scope: QueryScope): Promise<Page<SupplierChaseView>>;
+}
+
 export interface IDataService {
   suppliers: ISupplierService;
   procurement: IProcurementService;
@@ -1424,6 +1440,8 @@ export interface IDataService {
   collaboration: ICollaborationService;
   /** Delivery Agreement read seam — scoped drawdown + fulfillment view-model. */
   delivery: IDeliveryService;
+  /** Unified chase read seam (SDC-5d) — data + commitment chase, buyer-gated. */
+  chase: IChaseService;
   /** Write seam — the single dispatcher (Step 3.4). */
   commands: ICommandService;
   /** What the current scope may do (Step 3.9 DNA seed; mock-backed today). */
