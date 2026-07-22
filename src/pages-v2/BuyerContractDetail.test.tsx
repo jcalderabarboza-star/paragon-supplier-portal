@@ -35,9 +35,9 @@ describe('BuyerContractDetail — nested contract detail route', () => {
     at('/buyer/contracts/ctr-013');
     await screen.findByText(/CTR-2026-021/);
     fireEvent.click(screen.getByRole('tab', { name: /Delivery Agreements/ }));
-    // A buyer CAN release → the honest "portal release, simulated" marker (not the
-    // read-only one) + the demo material + a derived exception state.
-    expect(await screen.findByText(/Portal release — simulated\./)).toBeInTheDocument();
+    // A buyer CAN release/confirm → the honest "portal writes, simulated" marker
+    // (not the read-only one) + the demo material + a derived exception state.
+    expect(await screen.findByText(/Portal writes — simulated\./)).toBeInTheDocument();
     expect(await screen.findAllByText('PK-PETB-8810')).not.toHaveLength(0);
     expect(await screen.findByText('Missed')).toBeInTheDocument();
   });
@@ -59,6 +59,20 @@ describe('BuyerContractDetail — nested contract detail route', () => {
     expect(screen.getAllByText(/Portal release — not yet in S\/4HANA/).length).toBeGreaterThan(0);
   });
 
+  it('a buyer can confirm an inferred match — the proposal becomes authoritative', async () => {
+    // ctr-004 (sa-1002) has TWO inferred proximity matches (seq1 late, seq2 on
+    // time) → two "Confirm match" buttons. Confirming one binds it authoritatively,
+    // so one fewer proposal remains (deliveredQty climbs — proven at the service).
+    at('/buyer/contracts/ctr-004');
+    fireEvent.click(await screen.findByRole('tab', { name: /Delivery Agreements/ }));
+    const before = await screen.findAllByRole('button', { name: 'Confirm match' });
+    expect(before).toHaveLength(2);
+    fireEvent.click(before[0]);
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: 'Confirm match' })).toHaveLength(1),
+    );
+  });
+
   it('a supplier persona sees the DA tab read-only — no release control', async () => {
     // sup-007 owns ctr-013's agreement; viewing this buyer route as a supplier
     // must NOT expose the write (the read-only honesty marker shows instead).
@@ -72,6 +86,8 @@ describe('BuyerContractDetail — nested contract detail route', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Delivery Agreements/ }));
     expect(await screen.findByText(/Read-only, simulated feed\./)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Release' })).not.toBeInTheDocument();
+    // Neither write is exposed to a supplier — no confirm control either.
+    expect(screen.queryByRole('button', { name: 'Confirm match' })).not.toBeInTheDocument();
   });
 
   it('ctr-003 stays the pristine all-draft zero-state', async () => {

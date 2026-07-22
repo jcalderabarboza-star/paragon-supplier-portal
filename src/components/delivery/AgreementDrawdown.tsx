@@ -42,6 +42,15 @@ export type OnRelease = (
   selection: ReleaseSelection,
 ) => Promise<void>;
 
+/** The confirm-match write (the SECOND write) — accept an inferred proposal on a
+ *  released line. Threaded from the page alongside `onRelease` when the viewer is a
+ *  buyer; absent ⇒ read-only, no confirm control renders. The page owns the toast. */
+export type OnConfirm = (
+  agreementId: string,
+  itemSeq: number,
+  releaseSeq: number,
+) => Promise<void>;
+
 // ─── One agreement (header + per-item drawdown) ───────────────────────────────
 
 /** Render one agreement's drawdown. `linkContract` turns the contract ref into a
@@ -51,7 +60,8 @@ const AgreementCard: React.FC<{
   view: DeliveryAgreementView;
   linkContract?: boolean;
   onRelease?: OnRelease;
-}> = ({ view, linkContract = false, onRelease }) => {
+  onConfirm?: OnConfirm;
+}> = ({ view, linkContract = false, onRelease, onConfirm }) => {
   const { t } = useTranslation();
   const { agreement, supplierName } = view;
   // All-draft ⇒ no released line has fulfillment (the pristine "nothing
@@ -103,6 +113,7 @@ const AgreementCard: React.FC<{
             iv={iv}
             agreementId={agreement.id}
             onRelease={onRelease}
+            onConfirm={onConfirm}
           />
         ))}
       </div>
@@ -116,7 +127,8 @@ const ItemBlock: React.FC<{
   iv: DeliveryItemView;
   agreementId: string;
   onRelease?: OnRelease;
-}> = ({ iv, agreementId, onRelease }) => {
+  onConfirm?: OnConfirm;
+}> = ({ iv, agreementId, onRelease, onConfirm }) => {
   const { t } = useTranslation();
   const { item, ledger } = iv;
   const uom = item.uom;
@@ -125,24 +137,45 @@ const ItemBlock: React.FC<{
     ledger.agreedTotalQty > 0 ? (ledger.releasedQty / ledger.agreedTotalQty) * 100 : 0;
 
   // ── Release (the FIRST write) — buyer-only, over DRAFT lines ────────────────
-  // `onRelease` present ⇒ the viewer is a buyer; the horizon control + the
-  // per-line action column render only for an item that still has draft lines.
+  // `onRelease` present ⇒ the viewer is a buyer; the horizon control renders only
+  // for an item that still has draft lines to transmit.
   const draftDates = item.scheduleLines
     .filter((l) => l.state === 'draft')
     .map((l) => l.releaseDate);
   const canRelease = !!onRelease && draftDates.length > 0;
+
+  // ── Confirm-match (the SECOND write) — buyer-only, over INFERRED released
+  // lines. `onConfirm` present ⇒ buyer; a proposal to accept exists when any
+  // released line carries an inferred proximity match. ────────────────────────
+  const hasInferred = iv.fulfillment.some((f) => f.inferred);
+  const canConfirm = !!onConfirm && hasInferred;
+
+  // The per-line action column shows for a buyer with anything actionable — a
+  // draft to release OR an inferred match to confirm. `pending` is keyed by a
+  // string so release/confirm/horizon never collide.
+  const showActions = (!!onRelease && draftDates.length > 0) || canConfirm;
   const [horizon, setHorizon] = useState('');
-  const [pending, setPending] = useState<'horizon' | number | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
   // Effective horizon: the chosen date, or the earliest draft date (release the
   // next period). A stale pick (its lines already released) falls back to the
   // earliest remaining — no effect needed.
   const effectiveHorizon = draftDates.includes(horizon) ? horizon : draftDates[0] ?? '';
 
-  const doRelease = async (selection: ReleaseSelection, key: 'horizon' | number) => {
+  const doRelease = async (selection: ReleaseSelection, key: string) => {
     if (!onRelease) return;
     setPending(key);
     try {
       await onRelease(agreementId, item.lineSeq, selection);
+    } finally {
+      setPending(null);
+    }
+  };
+
+  const doConfirm = async (releaseSeq: number) => {
+    if (!onConfirm) return;
+    setPending(`conf-${releaseSeq}`);
+    try {
+      await onConfirm(agreementId, item.lineSeq, releaseSeq);
     } finally {
       setPending(null);
     }
@@ -228,31 +261,56 @@ const ItemBlock: React.FC<{
         </div>
       )}
 
-      {/* The calendar is the shared read-only ReleaseCalendar; the per-line
-          Release action column rides `renderLineAction` (buyer-only). The
-          roll-up SidePanel renders the SAME calendar without it. */}
+      {/* The calendar is the shared read-only ReleaseCalendar; the per-line action
+          column rides `renderLineAction` (buyer-only): Release on a draft line
+          (the FIRST write), Confirm on an inferred released line (the SECOND).
+          Both are OUTLINE — release keeps the ONE solid primary (the toolbar
+          above), DP2-BUTTON-01. The roll-up SidePanel renders the SAME calendar
+          without the slot → read-only. */}
       <ReleaseCalendar
         iv={iv}
-        actionsHeader={canRelease ? t('delivery.release.actionsCol') : undefined}
+        actionsHeader={showActions ? t('delivery.action.col') : undefined}
         renderLineAction={
-          canRelease
-            ? (line) =>
-                line.state === 'draft' ? (
-                  <Button
-                    variant="outline"
-                    className="px-3 py-1.5 text-xs"
-                    disabled={pending !== null}
-                    onClick={() =>
-                      doRelease({ releaseSeqs: [line.releaseSeq] }, line.releaseSeq)
-                    }
-                  >
-                    {pending === line.releaseSeq
-                      ? t('delivery.release.releasing')
-                      : t('delivery.release.line')}
-                  </Button>
-                ) : (
-                  <span className="text-text-tertiary">—</span>
-                )
+          showActions
+            ? (line, fv) => {
+                // Draft line → the Release action (buyer with a draft to transmit).
+                if (line.state === 'draft') {
+                  return onRelease ? (
+                    <Button
+                      variant="outline"
+                      className="px-3 py-1.5 text-xs"
+                      disabled={pending !== null}
+                      onClick={() =>
+                        doRelease({ releaseSeqs: [line.releaseSeq] }, `rel-${line.releaseSeq}`)
+                      }
+                    >
+                      {pending === `rel-${line.releaseSeq}`
+                        ? t('delivery.release.releasing')
+                        : t('delivery.release.line')}
+                    </Button>
+                  ) : (
+                    <span className="text-text-tertiary">—</span>
+                  );
+                }
+                // Released + INFERRED → the Confirm-match action (accept the
+                // proximity proposal as a confirmed delivery). A confirmed
+                // (inferred:false) or unmatched line shows no action.
+                if (fv?.inferred && onConfirm) {
+                  return (
+                    <Button
+                      variant="outline"
+                      className="px-3 py-1.5 text-xs"
+                      disabled={pending !== null}
+                      onClick={() => doConfirm(line.releaseSeq)}
+                    >
+                      {pending === `conf-${line.releaseSeq}`
+                        ? t('delivery.confirm.confirming')
+                        : t('delivery.confirm.action')}
+                    </Button>
+                  );
+                }
+                return <span className="text-text-tertiary">—</span>;
+              }
             : undefined
         }
       />

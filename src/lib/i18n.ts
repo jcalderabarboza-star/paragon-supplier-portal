@@ -173,9 +173,9 @@ export const resources = {
       'delivery.honesty.title': 'Read-only, simulated feed.',
       'delivery.honesty.body':
         'This view derives drawdown and fulfillment from fixture data. Nothing here dispatches, releases, or posts to SAP.',
-      'delivery.honesty.writeTitle': 'Portal release — simulated.',
+      'delivery.honesty.writeTitle': 'Portal writes — simulated.',
       'delivery.honesty.writeBody':
-        'Releasing a draft line transmits it to the vendor here and updates the drawdown — recorded in the portal only, not yet posted to S/4HANA. The SAP release number is assigned when the S/4HANA feed lands.',
+        'Releasing a draft line transmits it to the vendor and updates the drawdown; confirming a match records a delivery and moves the delivered total. Both are recorded in the portal only — never posted to S/4HANA. The SAP release and goods-receipt numbers are assigned when the S/4HANA feed lands.',
       'delivery.agreement.sapNumber': 'SAP agreement',
       'delivery.agreement.contract': 'Contract',
       'delivery.agreement.draftNote': 'Drafted — no releases transmitted yet.',
@@ -222,6 +222,18 @@ export const resources = {
       'delivery.release.reason.RELEASE_TYPE_MISMATCH':
         'One release cannot span both FRC and JIT lines.',
       'delivery.release.reason.SCOPE_DENIED': 'Only a buyer can transmit a release.',
+      // — The shared per-line action column header (Release or Confirm) —
+      'delivery.action.col': 'Action',
+      // — Confirm-match action (the second write) —
+      'delivery.confirm.action': 'Confirm match',
+      'delivery.confirm.confirming': 'Confirming…',
+      'delivery.confirm.toastOk': 'Delivery recorded in the portal (simulated) — not a SAP goods-receipt.',
+      'delivery.confirm.toastRefused': 'Match not confirmed',
+      'delivery.confirm.reason.ALREADY_CONFIRMED': 'That delivery is already confirmed.',
+      'delivery.confirm.reason.NOTHING_TO_CONFIRM': 'That line has no matched delivery to confirm.',
+      'delivery.confirm.reason.NOT_RELEASED': 'A draft line has no delivery to confirm — release it first.',
+      'delivery.confirm.reason.UNKNOWN_RELEASE_SEQ': 'That release line could not be found.',
+      'delivery.confirm.reason.SCOPE_DENIED': 'Only a buyer can confirm a delivery.',
       // The roll-up is a read-only scan/exception overview — releasing lives in
       // each CONTRACT's DA tab, not here. Distinct from the shared
       // delivery.honesty.* (which the contract tab's read-only case still uses).
@@ -447,9 +459,9 @@ export const resources = {
       'delivery.honesty.title': 'Hanya-baca, umpan simulasi.',
       'delivery.honesty.body':
         'Tampilan ini menurunkan penarikan dan pemenuhan dari data contoh. Tidak ada yang dikirim, dirilis, atau diposkan ke SAP di sini.',
-      'delivery.honesty.writeTitle': 'Rilis portal — simulasi.',
+      'delivery.honesty.writeTitle': 'Penulisan portal — simulasi.',
       'delivery.honesty.writeBody':
-        'Merilis baris draf mengirimkannya ke vendor di sini dan memperbarui penarikan — dicatat di portal saja, belum diposkan ke S/4HANA. Nomor rilis SAP diberikan saat umpan S/4HANA tiba.',
+        'Merilis baris draf mengirimkannya ke vendor dan memperbarui penarikan; mengonfirmasi kecocokan mencatat pengiriman dan menaikkan total terkirim. Keduanya dicatat di portal saja — tidak pernah diposkan ke S/4HANA. Nomor rilis dan penerimaan barang SAP diberikan saat umpan S/4HANA tiba.',
       'delivery.agreement.sapNumber': 'Perjanjian SAP',
       'delivery.agreement.contract': 'Kontrak',
       'delivery.agreement.draftNote': 'Draf — belum ada rilis yang dikirim.',
@@ -496,6 +508,21 @@ export const resources = {
       'delivery.release.reason.RELEASE_TYPE_MISMATCH':
         'Satu rilis tidak bisa mencakup baris FRC dan JIT sekaligus.',
       'delivery.release.reason.SCOPE_DENIED': 'Hanya pembeli yang dapat mengirim rilis.',
+      // — Header kolom aksi per-baris bersama (Rilis atau Konfirmasi) —
+      'delivery.action.col': 'Aksi',
+      // — Aksi konfirmasi kecocokan (penulisan kedua) —
+      'delivery.confirm.action': 'Konfirmasi kecocokan',
+      'delivery.confirm.confirming': 'Mengonfirmasi…',
+      'delivery.confirm.toastOk':
+        'Pengiriman dicatat di portal (simulasi) — bukan penerimaan barang SAP.',
+      'delivery.confirm.toastRefused': 'Kecocokan tidak dikonfirmasi',
+      'delivery.confirm.reason.ALREADY_CONFIRMED': 'Pengiriman itu sudah dikonfirmasi.',
+      'delivery.confirm.reason.NOTHING_TO_CONFIRM':
+        'Baris itu tidak punya pengiriman tercocok untuk dikonfirmasi.',
+      'delivery.confirm.reason.NOT_RELEASED':
+        'Baris draf tidak punya pengiriman untuk dikonfirmasi — rilis dulu.',
+      'delivery.confirm.reason.UNKNOWN_RELEASE_SEQ': 'Baris rilis itu tidak ditemukan.',
+      'delivery.confirm.reason.SCOPE_DENIED': 'Hanya pembeli yang dapat mengonfirmasi pengiriman.',
       'delivery.rollup.honestyTitle': 'Ikhtisar hanya-baca.',
       'delivery.rollup.honestyBody':
         'Penarikan dan pemenuhan diturunkan dari data contoh (simulasi). Perilisan dilakukan di dalam kontrak, bukan di sini.',

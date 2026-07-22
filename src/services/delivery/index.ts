@@ -14,6 +14,7 @@ export * from './types';
 export * from './generator';
 export * from './ledger';
 export * from './release';
+export * from './confirm';
 export * from './fulfillment';
 export * from './views';
 export * from './summary';

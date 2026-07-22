@@ -71,6 +71,21 @@ describe('BuyerDeliveryAgreements — at-scale exception-first roll-up', () => {
     expect(within(dialog).queryByRole('button', { name: /^Release$/ })).toBeNull();
   });
 
+  it('the roll-up SidePanel shows an inferred proposal but NO confirm control (read-only)', async () => {
+    renderWithProviders(<BuyerDeliveryAgreements />);
+    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));
+    // ctr-004 (sa-1002) carries inferred proximity matches — the proposal is
+    // VISIBLE in the read-only quick-look, but the confirm action lives only in
+    // the contract DA tab, never here.
+    const row = Array.from(document.querySelectorAll('tbody tr')).find((tr) =>
+      tr.textContent?.includes('ctr-004'),
+    )!;
+    fireEvent.click(row);
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getAllByText(/proposed — matched by proximity/).length).toBeGreaterThan(0);
+    expect(within(dialog).queryByRole('button', { name: /Confirm match/ })).toBeNull();
+  });
+
   it('is READ-ONLY: no release toolbar or per-line release control anywhere', async () => {
     renderWithProviders(<BuyerDeliveryAgreements />);
     await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));

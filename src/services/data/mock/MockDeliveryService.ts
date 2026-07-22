@@ -27,11 +27,14 @@ import { mockSuppliers } from '../../../data/mockSuppliers';
 import {
   DELIVERY_DEMO_SHIPMENTS,
   SCALE_DEMO_SHIPMENTS,
+  confirmFulfillment,
   deriveAgreementView,
+  deriveFulfillment,
   releaseScheduleLines,
 } from '../../delivery';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
 import type {
+  ConfirmCommandResult,
   DeliveryAgreementView,
   ReleaseCommandResult,
   ReleaseSelection,
@@ -102,17 +105,82 @@ export class MockDeliveryService implements IDeliveryService {
     return { ok: true, view: this.viewOf(updated) };
   }
 
-  /** Derive one agreement's view-model as of the shared SIMULATED clock, over the
-   *  live shipment pool (real store + the SIMULATED demo shipments). */
-  private viewOf(agreement: SchedulingAgreement): DeliveryAgreementView {
-    const pool = [
+  /** Confirm the fulfillment of ONE released line (the delivery lane's SECOND
+   *  write — accept an INFERRED proximity proposal as a confirmed fact). BUYER-ONLY.
+   *  Re-derives the observed match, ACCEPTS-AS-OBSERVED (writes `fulfilledBy` +
+   *  the observed `actualQty` via the pure `confirmFulfillment`), persists, and
+   *  returns the re-derived view — the proposal now binds authoritatively
+   *  (inferred:false) and `deliveredQty` has climbed. NO dispatcher, NO
+   *  CommandTarget — SIMULATED by construction (a portal confirm, never a SAP GR). */
+  async confirmMatch(
+    scope: QueryScope,
+    agreementId: string,
+    itemSeq: number,
+    releaseSeq: number,
+  ): Promise<ConfirmCommandResult> {
+    // Buyer-only — accepting a delivery against a released commitment is a buyer
+    // judgment (a supplier is refused before touching the store).
+    if (!buyerOnly(scope)) {
+      return { ok: false, reason: 'SCOPE_DENIED', detail: 'confirm is a buyer action' };
+    }
+    const agreement = schedulingAgreementStore.get(agreementId);
+    if (!agreement) {
+      return { ok: false, reason: 'UNKNOWN_RELEASE_SEQ', detail: `no agreement ${agreementId}` };
+    }
+    const item = agreement.items.find((i) => i.lineSeq === itemSeq);
+    if (!item) {
+      return { ok: false, reason: 'UNKNOWN_RELEASE_SEQ', detail: `no item ${itemSeq}` };
+    }
+
+    // Re-derive the observed match over the SAME supplier-scoped pool viewOf uses,
+    // so the accepted (ref, qty) is exactly what the surface proposed.
+    const ownShipments = this.shipmentPool().filter((s) => s.supplierId === agreement.supplierId);
+    const fv = deriveFulfillment(item, ownShipments, sdcClock.now()).find(
+      (f) => f.releaseSeq === releaseSeq,
+    );
+    // Nothing to accept unless there IS a match carrying an observed qty. An
+    // already-CONFIRMED line (inferred:false) is caught by the pure guard below;
+    // an unmatched line (no ref / no qty) is NOTHING_TO_CONFIRM here.
+    if (!fv || fv.matchedRef === undefined || fv.actualQty === undefined) {
+      return {
+        ok: false,
+        reason: 'NOTHING_TO_CONFIRM',
+        detail: `line ${releaseSeq} has no matched delivery to confirm`,
+      };
+    }
+
+    const result = confirmFulfillment(item, releaseSeq, {
+      fulfilledBy: fv.matchedRef,
+      actualQty: fv.actualQty, // ACCEPT-AS-OBSERVED — line.actualQty === s.qty (no split).
+      now: sdcClock.now(),
+    });
+    if (!result.ok) return { ok: false, reason: result.reason, detail: result.detail };
+
+    schedulingAgreementStore.update(agreementId, (a) => ({
+      ...a,
+      items: a.items.map((i) => (i.lineSeq === itemSeq ? result.item : i)),
+    }));
+    const updated = schedulingAgreementStore.get(agreementId)!;
+    return { ok: true, view: this.viewOf(updated) };
+  }
+
+  /** The live shipment pool: the real store + the SIMULATED demo shipments (the
+   *  demo + the at-scale fleet). Shared by `viewOf` and `confirmMatch` so a read
+   *  and a confirm resolve the identical match. */
+  private shipmentPool() {
+    return [
       ...incomingShipmentStore.all(),
       ...DELIVERY_DEMO_SHIPMENTS,
       ...SCALE_DEMO_SHIPMENTS,
     ];
+  }
+
+  /** Derive one agreement's view-model as of the shared SIMULATED clock, over the
+   *  live shipment pool (real store + the SIMULATED demo shipments). */
+  private viewOf(agreement: SchedulingAgreement): DeliveryAgreementView {
     return deriveAgreementView(
       agreement,
-      pool,
+      this.shipmentPool(),
       sdcClock.now(),
       supplierNameOf(agreement.supplierId),
     );

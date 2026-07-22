@@ -38,7 +38,11 @@ import type {
 } from '../sdc';
 // Delivery Agreement read seam — the view-model row type (type-only; erased at
 // build, so no runtime import into the data layer).
-import type { DeliveryAgreementView, ReleaseCommandResult } from '../delivery/views';
+import type {
+  ConfirmCommandResult,
+  DeliveryAgreementView,
+  ReleaseCommandResult,
+} from '../delivery/views';
 import type { ReleaseSelection } from '../delivery/release';
 
 // ─── PO enums (canonical home; relocated from types/purchaseOrder.types.ts) ──
@@ -1365,6 +1369,26 @@ export interface IDeliveryService {
     itemSeq: number,
     selection: ReleaseSelection,
   ): Promise<ReleaseCommandResult>;
+  /**
+   * Confirm the fulfillment of ONE released line (the delivery lane's SECOND
+   * write — accept an INFERRED proximity proposal as a confirmed fact). BUYER-ONLY.
+   * ACCEPT-AS-OBSERVED (v1): writes the observed shipment ref + qty via the pure
+   * `confirmFulfillment`, so the match binds authoritatively (inferred:false) and
+   * the governed `deliveredQty` climbs. Returns the RE-DERIVED view, or an honest
+   * reason (`NOTHING_TO_CONFIRM` / `ALREADY_CONFIRMED` / `NOT_RELEASED` /
+   * `SCOPE_DENIED` / `UNKNOWN_RELEASE_SEQ`).
+   *
+   * SIMULATED by construction, exactly like release: NO dispatcher, NO
+   * CommandTarget, so `deliveryAgreements` stays null-backed (amber marker holds).
+   * A confirm is a PORTAL record, not a SAP goods-receipt — `fulfilledDate` /
+   * `sapReleaseNumber` stay absent until the Pattern-B feed binds them (Stage F).
+   */
+  confirmMatch(
+    scope: QueryScope,
+    agreementId: string,
+    itemSeq: number,
+    releaseSeq: number,
+  ): Promise<ConfirmCommandResult>;
 }
 
 export interface IDataService {

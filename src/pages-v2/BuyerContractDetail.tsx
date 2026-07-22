@@ -21,7 +21,11 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import NotFound from './NotFound';
 import { useContracts, useObligations, useSuppliers } from '../services/query/hooks';
-import { useDeliveryAgreements, useReleaseLines } from '../services/query/deliveryHooks';
+import {
+  useConfirmMatch,
+  useDeliveryAgreements,
+  useReleaseLines,
+} from '../services/query/deliveryHooks';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { useToast } from '../hooks/useToast';
 import {
@@ -30,7 +34,10 @@ import {
   docCount,
   typeLabel,
 } from './contracts/contractView';
-import AgreementCard, { type OnRelease } from '../components/delivery/AgreementDrawdown';
+import AgreementCard, {
+  type OnConfirm,
+  type OnRelease,
+} from '../components/delivery/AgreementDrawdown';
 import type { Contract } from '../data/mockContracts';
 import type { ContractObligation } from '../data/mockObligations';
 import type { Supplier } from '../services/data/types';
@@ -55,6 +62,7 @@ const ContractDetailView: React.FC<{
   const { identity } = useCurrentIdentity();
   const { toast } = useToast();
   const release = useReleaseLines();
+  const confirm = useConfirmMatch();
   const canRelease = identity.personaType === 'buyer';
 
   const handleRelease: OnRelease = async (agreementId, itemSeq, selection) => {
@@ -68,6 +76,24 @@ const ContractDetailView: React.FC<{
         variant: result.reason === 'ALREADY_RELEASED' ? 'info' : 'warning',
         title: t('delivery.release.toastRefused'),
         description: t(`delivery.release.reason.${result.reason}`),
+      });
+    }
+  };
+
+  // The confirm-match write (the delivery lane's SECOND). Accept an inferred
+  // proposal → deliveredQty climbs, the proposal becomes authoritative. The toast
+  // is deliberately worded "delivery recorded (portal)" — a confirm is a PORTAL
+  // record, never a SAP goods-receipt.
+  const handleConfirm: OnConfirm = async (agreementId, itemSeq, releaseSeq) => {
+    const result = await confirm.mutateAsync({ agreementId, itemSeq, releaseSeq });
+    if (result.ok) {
+      toast({ variant: 'success', title: t('delivery.confirm.toastOk') });
+    } else {
+      // ALREADY_CONFIRMED is an idempotent repeat (info); the rest are warnings.
+      toast({
+        variant: result.reason === 'ALREADY_CONFIRMED' ? 'info' : 'warning',
+        title: t('delivery.confirm.toastRefused'),
+        description: t(`delivery.confirm.reason.${result.reason}`),
       });
     }
   };
@@ -149,6 +175,7 @@ const ContractDetailView: React.FC<{
                   key={view.agreement.id}
                   view={view}
                   onRelease={canRelease ? handleRelease : undefined}
+                  onConfirm={canRelease ? handleConfirm : undefined}
                 />
               ))}
             </div>
