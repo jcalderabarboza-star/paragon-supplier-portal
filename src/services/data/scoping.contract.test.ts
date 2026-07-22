@@ -44,7 +44,9 @@ const SCOPED_READS: { name: string; run: Scoped }[] = [
   // Delivery Agreement surface seam: SchedulingAgreement carries supplierId, so the
   // scoped view-model is isolated per supplier and the buyer sees the superset. The
   // view nests the agreement, so expose its supplierId for the shared assertions.
-  // (Both seeded agreements are sup-007: buyer + sup-007 see both, sup-002/sup-005 →[].)
+  // (8 agreements across 7 suppliers since the at-scale demo fleet: sup-007 owns
+  // sa-0001 + sa-0002, sup-005 owns sa-1002, sup-002 owns none → []. The delivery-
+  // specific describe below pins the exact ownership + the read-only write refusal.)
   {
     name: 'getDeliveryAgreements',
     run: async (s) => ({
@@ -168,6 +170,56 @@ describe('service scoping contract — non-supplierId scoping models', () => {
     expect((await svc.procurement.getKpis(buyerScope)).improvementActions.length).toBeGreaterThan(0);
     expect((await svc.procurement.getKpis(aScope)).improvementActions.length).toBeGreaterThan(0);
     expect((await svc.procurement.getKpis(bScope)).improvementActions.length).toBe(0);
+  });
+});
+
+// The delivery mirror's crux: a supplier persona reads its OWN scheduling
+// agreements and NOTHING else, and — because the whole delivery module is buyer
+// governance — cannot write ANY of the three verbs. Persona is hard-wired to
+// sup-007 (no UI to become another supplier), so isolation is a contract, not a
+// click: here we pin the exact per-supplier ownership + the read-only refusal.
+describe('service scoping contract — delivery agreement mirror (own-facts-only)', () => {
+  const idsFor = async (s: QueryScope): Promise<string[]> =>
+    (await svc.delivery.getAgreements(s)).items.map((v) => v.agreement.id).sort();
+
+  it('sup-007 sees EXACTLY its own two agreements, never another supplier’s', async () => {
+    const ids = await idsFor(aScope); // A = sup-007
+    expect(ids).toEqual(['sa-0001', 'sa-0002']);
+    expect(ids).not.toContain('sa-1002'); // sup-005's
+    expect(ids.some((id) => id.startsWith('sa-100'))).toBe(false); // none of the scale fleet
+  });
+
+  it('sup-005 sees EXACTLY its own agreement (sa-1002); sup-002 sees none', async () => {
+    expect(await idsFor(cScope)).toEqual(['sa-1002']); // C = sup-005
+    expect(await idsFor(bScope)).toEqual([]); // B = sup-002 owns no agreement — honest empty
+  });
+
+  it('the buyer superset contains every supplier’s agreements', async () => {
+    const buyerIds = await idsFor(buyerScope);
+    expect(buyerIds).toEqual(expect.arrayContaining(['sa-0001', 'sa-0002', 'sa-1002']));
+    expect(buyerIds.length).toBeGreaterThanOrEqual(8);
+  });
+
+  // Read-only for suppliers is an explicit CONTRACT, not merely a UI absence: every
+  // write verb refuses a supplier scope with SCOPE_DENIED — even the OWNER supplier
+  // (sup-007 on its own sa-0002) — because release / confirm / policy-edit are all
+  // buyer governance actions.
+  it('a supplier scope is refused ALL three delivery writes (SCOPE_DENIED)', async () => {
+    const rel = await svc.delivery.releaseLines(aScope, 'sa-0002', 10, { releaseSeqs: [1] });
+    expect(rel.ok).toBe(false);
+    if (!rel.ok) expect(rel.reason).toBe('SCOPE_DENIED');
+
+    const conf = await svc.delivery.confirmMatch(aScope, 'sa-0002', 20, 2);
+    expect(conf.ok).toBe(false);
+    if (!conf.ok) expect(conf.reason).toBe('SCOPE_DENIED');
+
+    const edit = await svc.delivery.editPolicy(aScope, 'sa-0002', 10, {
+      tolerancePct: 0.25,
+      enforcement: 'flag',
+      reason: 'supplier attempt',
+    });
+    expect(edit.ok).toBe(false);
+    if (!edit.ok) expect(edit.reason).toBe('SCOPE_DENIED');
   });
 });
 

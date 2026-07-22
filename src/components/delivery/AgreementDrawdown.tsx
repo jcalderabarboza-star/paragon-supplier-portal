@@ -87,7 +87,23 @@ const AgreementCard: React.FC<{
   onRelease?: OnRelease;
   onConfirm?: OnConfirm;
   onEditPolicy?: OnEditPolicy;
-}> = ({ view, linkContract = false, onRelease, onConfirm, onEditPolicy }) => {
+  /** Show the policy-deviation marker + its "changed {when} — {why}" detail. TRUE
+   *  for the buyer (governance history is theirs). FALSE for the supplier mirror —
+   *  the MODE chip (Governed / Reference) stays, but the contract-default, edit
+   *  date, and reason are buyer-internal and stay hidden. */
+  showPolicyHistory?: boolean;
+  /** i18n key for the inferred-match caption — the supplier mirror passes its
+   *  "awaiting Paragon confirmation" gloss; the buyer keeps the default. */
+  proposedCaptionKey?: string;
+}> = ({
+  view,
+  linkContract = false,
+  onRelease,
+  onConfirm,
+  onEditPolicy,
+  showPolicyHistory = true,
+  proposedCaptionKey,
+}) => {
   const { t } = useTranslation();
   const { agreement, supplierName } = view;
   // All-draft ⇒ no released line has fulfillment (the pristine "nothing
@@ -141,6 +157,8 @@ const AgreementCard: React.FC<{
             onRelease={onRelease}
             onConfirm={onConfirm}
             onEditPolicy={onEditPolicy}
+            showPolicyHistory={showPolicyHistory}
+            proposedCaptionKey={proposedCaptionKey}
           />
         ))}
       </div>
@@ -156,7 +174,17 @@ const ItemBlock: React.FC<{
   onRelease?: OnRelease;
   onConfirm?: OnConfirm;
   onEditPolicy?: OnEditPolicy;
-}> = ({ iv, agreementId, onRelease, onConfirm, onEditPolicy }) => {
+  showPolicyHistory?: boolean;
+  proposedCaptionKey?: string;
+}> = ({
+  iv,
+  agreementId,
+  onRelease,
+  onConfirm,
+  onEditPolicy,
+  showPolicyHistory = true,
+  proposedCaptionKey,
+}) => {
   const { t } = useTranslation();
   const { item, ledger } = iv;
   const uom = item.uom;
@@ -257,7 +285,7 @@ const ItemBlock: React.FC<{
           ) : (
             <StatusPill variant="neutral">{t('delivery.policy.reference')}</StatusPill>
           )}
-          {ledger.policyDeviation && (
+          {showPolicyHistory && ledger.policyDeviation && (
             <span className="text-[10px] italic text-warning-hover">
               {t('delivery.policy.deviation')}
             </span>
@@ -277,8 +305,10 @@ const ItemBlock: React.FC<{
       </div>
 
       {/* The deviation detail — active vs the IMMUTABLE contract default, with the
-          when/why stamp (who deferred to the dispatcher). Always attributable. */}
-      {ledger.policyDeviation && (
+          when/why stamp (who deferred to the dispatcher). Always attributable.
+          Buyer-only: the contract-default, edit date, and reason are buyer-internal
+          governance history — the supplier mirror passes showPolicyHistory=false. */}
+      {showPolicyHistory && ledger.policyDeviation && (
         <div className="mb-4 text-[11px] text-text-tertiary">
           {t('delivery.policy.deviation.detail', {
             def: formatPolicy(t, policy.contractDefault),
@@ -361,6 +391,7 @@ const ItemBlock: React.FC<{
           without the slot → read-only. */}
       <ReleaseCalendar
         iv={iv}
+        proposedCaptionKey={proposedCaptionKey}
         actionsHeader={showActions ? t('delivery.action.col') : undefined}
         renderLineAction={
           showActions
