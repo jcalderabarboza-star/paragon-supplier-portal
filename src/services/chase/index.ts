@@ -10,3 +10,4 @@
 
 export * from './deliveryChase';
 export * from './unifiedChase';
+export * from './unifiedReducer';
