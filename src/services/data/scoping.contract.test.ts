@@ -11,6 +11,8 @@ import { describe, it, expect } from 'vitest';
 import { mockDataService as svc } from './mock/mockDataService';
 import { DataError } from './types';
 import type { QueryScope } from './types';
+import { deriveDeliveryChase } from '../chase';
+import { SDC_SIMULATED_NOW } from '../sdc';
 
 const A = 'sup-007';
 const B = 'sup-002';
@@ -221,6 +223,17 @@ describe('service scoping contract — delivery agreement mirror (own-facts-only
     });
     expect(edit.ok).toBe(false);
     if (!edit.ok) expect(edit.reason).toBe('SCOPE_DENIED');
+  });
+
+  // SDC-5e — the supplier obligations view derives from the OWN-scoped views, so a
+  // supplier's obligations are its own by construction (never another's).
+  it('a supplier’s obligations derive ONLY from its own agreements', async () => {
+    const ownViews = (await svc.delivery.getAgreements(aScope)).items; // A = sup-007
+    const obligations = deriveDeliveryChase(ownViews, SDC_SIMULATED_NOW);
+    expect(obligations.length).toBeGreaterThan(0); // sa-0002 has real overdue/upcoming
+    expect(obligations.every((e) => e.supplierId === 'sup-007')).toBe(true);
+    // Never another supplier's commitment (sa-1002 sup-005, sa-1007 sup-006).
+    expect(obligations.some((e) => e.agreementId === 'sa-1002' || e.agreementId === 'sa-1007')).toBe(false);
   });
 });
 
