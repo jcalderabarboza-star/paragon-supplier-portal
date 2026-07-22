@@ -219,6 +219,16 @@ export const resources = {
       'delivery.supplier.readonlyTitle': 'Read-only.',
       'delivery.supplier.readonlyBody':
         "Your delivery agreements with Paragon — read-only. Releasing schedules and confirming deliveries are Paragon's actions.",
+      // SDC-5e — the supplier's own obligations ("what Paragon needs from you").
+      // Own-facing tone: NO chase/nudge/drift vocabulary (a supplier does not chase itself).
+      'delivery.supplier.obligations.title': 'Action needed — your upcoming and overdue deliveries',
+      'delivery.supplier.obligations.summary': '{{overdue}} overdue · {{upcoming}} upcoming',
+      'delivery.supplier.obligations.overdue': 'Overdue',
+      'delivery.supplier.obligations.upcoming': 'Upcoming',
+      'delivery.supplier.obligations.due': 'due {{date}}',
+      'delivery.supplier.obligations.overdueGloss': 'Paragon is waiting on this delivery.',
+      'delivery.supplier.obligations.upcomingGloss': 'Paragon is expecting this delivery.',
+      'delivery.supplier.obligations.empty': 'No upcoming or overdue deliveries.',
       // — Release action (the first write) —
       'delivery.release.section': 'Transmit releases',
       'delivery.release.horizonLabel': 'Release through date',
@@ -569,6 +579,15 @@ export const resources = {
       'delivery.supplier.readonlyTitle': 'Hanya-baca.',
       'delivery.supplier.readonlyBody':
         'Perjanjian pengiriman Anda dengan Paragon — hanya-baca. Merilis jadwal dan mengonfirmasi pengiriman adalah tindakan Paragon.',
+      // SDC-5e — kewajiban pemasok sendiri ("yang Paragon butuhkan dari Anda").
+      'delivery.supplier.obligations.title': 'Perlu tindakan — pengiriman Anda yang akan datang dan terlambat',
+      'delivery.supplier.obligations.summary': '{{overdue}} terlambat · {{upcoming}} akan datang',
+      'delivery.supplier.obligations.overdue': 'Terlambat',
+      'delivery.supplier.obligations.upcoming': 'Akan datang',
+      'delivery.supplier.obligations.due': 'jatuh tempo {{date}}',
+      'delivery.supplier.obligations.overdueGloss': 'Paragon menunggu pengiriman ini.',
+      'delivery.supplier.obligations.upcomingGloss': 'Paragon mengharapkan pengiriman ini.',
+      'delivery.supplier.obligations.empty': 'Tidak ada pengiriman yang akan datang atau terlambat.',
       // — Aksi rilis (penulisan pertama) —
       'delivery.release.section': 'Kirim rilis',
       'delivery.release.horizonLabel': 'Rilis hingga tanggal',
