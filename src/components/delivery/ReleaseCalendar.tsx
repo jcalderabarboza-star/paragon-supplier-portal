@@ -51,12 +51,16 @@ const signedQty = (n: number): string => {
  *  tab) adds a trailing action column; omitted ⇒ a read-only calendar (the
  *  roll-up SidePanel). It receives the line AND its derived fulfillment view (so
  *  the caller can gate Release on a draft line vs Confirm on an inferred released
- *  line). */
+ *  line). `proposedCaptionKey` glosses the inferred-match caption for the audience
+ *  — the buyer default ("matched by proximity") vs the supplier mirror's
+ *  ("awaiting Paragon confirmation"); the guarantee is identical either way (an
+ *  inferred match is never authoritative). */
 const ReleaseCalendar: React.FC<{
   iv: DeliveryItemView;
   actionsHeader?: string;
   renderLineAction?: (line: ScheduleLine, fv?: ReleaseFulfillmentView) => React.ReactNode;
-}> = ({ iv, actionsHeader, renderLineAction }) => {
+  proposedCaptionKey?: string;
+}> = ({ iv, actionsHeader, renderLineAction, proposedCaptionKey = 'delivery.match.proposed' }) => {
   const { t } = useTranslation();
   const { item } = iv;
   const uom = item.uom;
@@ -128,7 +132,7 @@ const ReleaseCalendar: React.FC<{
                             (explicit-binding) matches carry no such caption. */}
                         {fv.inferred && (
                           <div className="text-[10px] italic text-text-tertiary">
-                            {t('delivery.match.proposed')}
+                            {t(proposedCaptionKey)}
                           </div>
                         )}
                       </div>

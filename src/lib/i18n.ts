@@ -160,6 +160,7 @@ export const resources = {
       'nav.supplier.inventory': 'My Inventory',
       'nav.supplier.invoices': 'Invoices',
       'nav.supplier.documents': 'Documents',
+      'nav.supplier.deliveryAgreements': 'Delivery Agreements',
       'nav.supplier.performance': 'Performance',
       'nav.supplier.whatsapp': 'WhatsApp Hub',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
@@ -206,6 +207,17 @@ export const resources = {
       'delivery.fulfillment.late': 'Late',
       'delivery.fulfillment.missed': 'Missed',
       'delivery.match.proposed': 'proposed — matched by proximity',
+      // Supplier-facing gloss of the same inferred match — the guarantee is
+      // identical (never authoritative), the audience differs. Paragon confirms.
+      'delivery.match.proposed.supplier': 'proposed — awaiting Paragon confirmation',
+      // — Supplier delivery-agreement mirror (own-facts-only, read-only, SIMULATED) —
+      'delivery.supplier.title': 'Delivery Agreements',
+      'delivery.supplier.subtitle':
+        'Your scheduling agreements with Paragon — release calendar and delivery fulfillment.',
+      'delivery.supplier.empty': 'You have no delivery agreements with Paragon yet.',
+      'delivery.supplier.readonlyTitle': 'Read-only.',
+      'delivery.supplier.readonlyBody':
+        "Your delivery agreements with Paragon — read-only. Releasing schedules and confirming deliveries are Paragon's actions.",
       // — Release action (the first write) —
       'delivery.release.section': 'Transmit releases',
       'delivery.release.horizonLabel': 'Release through date',
@@ -474,6 +486,7 @@ export const resources = {
       'nav.supplier.inventory': 'Inventaris Saya',
       'nav.supplier.invoices': 'Faktur',
       'nav.supplier.documents': 'Dokumen',
+      'nav.supplier.deliveryAgreements': 'Perjanjian Pengiriman',
       'nav.supplier.performance': 'Kinerja',
       'nav.supplier.whatsapp': 'Pusat WhatsApp',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
@@ -520,6 +533,17 @@ export const resources = {
       'delivery.fulfillment.late': 'Terlambat',
       'delivery.fulfillment.missed': 'Terlewat',
       'delivery.match.proposed': 'usulan — dicocokkan berdasarkan kedekatan',
+      // Gloss menghadap-pemasok untuk kecocokan tersirat yang sama — jaminannya
+      // identik (tidak pernah otoritatif), audiensnya berbeda. Paragon mengonfirmasi.
+      'delivery.match.proposed.supplier': 'usulan — menunggu konfirmasi Paragon',
+      // — Cermin perjanjian pengiriman pemasok (fakta-sendiri, hanya-baca, SIMULASI) —
+      'delivery.supplier.title': 'Perjanjian Pengiriman',
+      'delivery.supplier.subtitle':
+        'Perjanjian penjadwalan Anda dengan Paragon — kalender rilis dan pemenuhan pengiriman.',
+      'delivery.supplier.empty': 'Anda belum memiliki perjanjian pengiriman dengan Paragon.',
+      'delivery.supplier.readonlyTitle': 'Hanya-baca.',
+      'delivery.supplier.readonlyBody':
+        'Perjanjian pengiriman Anda dengan Paragon — hanya-baca. Merilis jadwal dan mengonfirmasi pengiriman adalah tindakan Paragon.',
       // — Aksi rilis (penulisan pertama) —
       'delivery.release.section': 'Kirim rilis',
       'delivery.release.horizonLabel': 'Rilis hingga tanggal',

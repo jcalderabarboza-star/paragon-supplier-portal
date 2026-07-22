@@ -52,6 +52,7 @@ import SupplierShipments from '../pages-v2/SupplierShipments';
 import SupplierInvoicesV2 from '../pages-v2/SupplierInvoices';
 import SupplierInventoryV2 from '../pages-v2/SupplierInventory';
 import SupplierRegistrationV2 from '../pages-v2/SupplierRegistration';
+import SupplierDeliveryAgreements from '../pages-v2/SupplierDeliveryAgreements';
 import SupplierPerformance from '../pages-v2/SupplierPerformance';
 import NotFound from '../pages-v2/NotFound';
 
@@ -102,14 +103,15 @@ const ROUTES: RouteCase[] = [
   { name: 'supplier/shipments', pattern: '/supplier/shipments', at: '/supplier/shipments', element: <SupplierShipments />, identity: SUPPLIER },
   { name: 'supplier/invoices', pattern: '/supplier/invoices', at: '/supplier/invoices', element: <SupplierInvoicesV2 />, identity: SUPPLIER },
   { name: 'supplier/inventory', pattern: '/supplier/inventory', at: '/supplier/inventory', element: <SupplierInventoryV2 />, identity: SUPPLIER },
+  { name: 'supplier/delivery-agreements', pattern: '/supplier/delivery-agreements', at: '/supplier/delivery-agreements', element: <SupplierDeliveryAgreements />, identity: SUPPLIER },
   { name: 'supplier/performance', pattern: '/supplier/performance', at: '/supplier/performance', element: <SupplierPerformance />, identity: SUPPLIER },
   { name: '404 (unknown → NotFound)', pattern: '*', at: '/does/not/exist', element: <NotFound />, identity: BUYER },
 ];
 
 describe('sp-001 — every route mounts without crashing', () => {
-  it('route table covers all of AppRouter (36 elements + redirect)', () => {
+  it('route table covers all of AppRouter (37 elements + redirect)', () => {
     // Guards against a route being added to AppRouter but not the smoke.
-    expect(ROUTES.length).toBe(37);
+    expect(ROUTES.length).toBe(38);
   });
 
   it.each(ROUTES)('$name renders and paints content', async ({ pattern, at, element, identity }) => {

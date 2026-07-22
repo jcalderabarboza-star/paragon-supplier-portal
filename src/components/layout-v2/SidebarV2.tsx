@@ -112,6 +112,11 @@ const SUPPLIER_NAV: NavGroup[] = [
     items: [
       { labelKey: 'nav.supplier.invoices', icon: Receipt, path: '/supplier/invoices' },
       { labelKey: 'nav.supplier.documents', icon: FileText, path: '/supplier/documents' },
+      {
+        labelKey: 'nav.supplier.deliveryAgreements',
+        icon: CalendarClock,
+        path: '/supplier/delivery-agreements',
+      },
     ],
   },
   {

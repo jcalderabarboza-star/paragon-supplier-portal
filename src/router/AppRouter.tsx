@@ -38,6 +38,7 @@ import SupplierShipments from '../pages-v2/SupplierShipments';
 import SupplierInvoicesV2 from '../pages-v2/SupplierInvoices';
 import SupplierInventoryV2 from '../pages-v2/SupplierInventory';
 import SupplierRegistrationV2 from '../pages-v2/SupplierRegistration';
+import SupplierDeliveryAgreements from '../pages-v2/SupplierDeliveryAgreements';
 import SupplierPerformance from '../pages-v2/SupplierPerformance';
 import NotFound from '../pages-v2/NotFound';
 
@@ -123,6 +124,7 @@ const AppRouter: React.FC = () => {
           <Route path="/supplier/shipments" element={<SupplierShipments />} />
           <Route path="/supplier/invoices" element={<SupplierInvoicesV2 />} />
           <Route path="/supplier/inventory" element={<SupplierInventoryV2 />} />
+          <Route path="/supplier/delivery-agreements" element={<SupplierDeliveryAgreements />} />
           <Route path="/supplier/performance" element={<SupplierPerformance />} />
           <Route path="/" element={<Navigate to="/buyer/dashboard" replace />} />
           <Route path="*" element={<NotFound />} />
