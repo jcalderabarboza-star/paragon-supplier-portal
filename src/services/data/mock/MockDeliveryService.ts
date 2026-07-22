@@ -26,6 +26,7 @@ import { sdcClock } from '../../sdc';
 import { mockSuppliers } from '../../../data/mockSuppliers';
 import {
   DELIVERY_DEMO_SHIPMENTS,
+  SCALE_DEMO_SHIPMENTS,
   deriveAgreementView,
   releaseScheduleLines,
 } from '../../delivery';
@@ -104,7 +105,11 @@ export class MockDeliveryService implements IDeliveryService {
   /** Derive one agreement's view-model as of the shared SIMULATED clock, over the
    *  live shipment pool (real store + the SIMULATED demo shipments). */
   private viewOf(agreement: SchedulingAgreement): DeliveryAgreementView {
-    const pool = [...incomingShipmentStore.all(), ...DELIVERY_DEMO_SHIPMENTS];
+    const pool = [
+      ...incomingShipmentStore.all(),
+      ...DELIVERY_DEMO_SHIPMENTS,
+      ...SCALE_DEMO_SHIPMENTS,
+    ];
     return deriveAgreementView(
       agreement,
       pool,

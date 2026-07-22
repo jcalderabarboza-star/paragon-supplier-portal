@@ -7,7 +7,8 @@
 // `releaseScheduleLines`). `reset()` restores the seed (test isolation).
 //
 // SEED — the frozen ctr-003 anchor (all-draft) + the SIMULATED demo (sa-0002,
-// partly-released). No DEEP CLONE is taken, deliberately: `releaseScheduleLines`
+// partly-released) + the SIMULATED at-scale demo fleet (sa-1001…sa-1006, so the
+// dense roll-up has breadth to scan). No DEEP CLONE is taken, deliberately: `releaseScheduleLines`
 // is purely immutable (release.ts) and `update()` only ever SWAPS a whole fresh
 // agreement into a new rows array — nothing here mutates the frozen fixtures in
 // place, so seeding with the fixture references is safe. `reset()` restores the
@@ -20,13 +21,16 @@
 
 import { SCHEDULING_AGREEMENTS } from '../fixtures';
 import { SCHEDULING_AGREEMENT_DEMO } from '../demoFixtures';
+import { SCALE_DEMO_AGREEMENTS } from '../demoFixturesScale';
 import type { SchedulingAgreement } from '../types';
 
-/** The immutable seed — the anchor(s) + the demo. `reset()` restores these exact
- *  references (safe: nothing ever mutates them in place). */
+/** The immutable seed — the anchor(s) + the demo + the at-scale demo fleet.
+ *  `reset()` restores these exact references (safe: nothing ever mutates them in
+ *  place). ctr-003 / sa-0001 stays pristine (all-draft) structurally. */
 const SEED: readonly SchedulingAgreement[] = [
   ...SCHEDULING_AGREEMENTS,
   SCHEDULING_AGREEMENT_DEMO,
+  ...SCALE_DEMO_AGREEMENTS,
 ];
 
 let rows: SchedulingAgreement[] = [...SEED];
