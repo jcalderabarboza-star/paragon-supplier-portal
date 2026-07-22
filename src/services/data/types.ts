@@ -41,9 +41,11 @@ import type {
 import type {
   ConfirmCommandResult,
   DeliveryAgreementView,
+  EditPolicyCommandResult,
   ReleaseCommandResult,
 } from '../delivery/views';
 import type { ReleaseSelection } from '../delivery/release';
+import type { EditPolicyPatch } from '../delivery/policy';
 
 // ─── PO enums (canonical home; relocated from types/purchaseOrder.types.ts) ──
 export enum POStatus {
@@ -1389,6 +1391,26 @@ export interface IDeliveryService {
     itemSeq: number,
     releaseSeq: number,
   ): Promise<ConfirmCommandResult>;
+  /**
+   * Re-point ONE item's ACTIVE drawdown tolerance (the delivery lane's THIRD write
+   * — the GOVERNANCE write). BUYER-ONLY: adjusting a tolerance is a buyer decision.
+   * Applies the pure `setActivePolicy` (writes `active` + the who/when/why stamp;
+   * `contractDefault` is immutable, `activeChangedBy` deferred to the dispatcher),
+   * persists, and returns the RE-DERIVED view — the ledger now marks
+   * `policyDeviation` and re-derives `enforced` / `exceptions` against the new
+   * `active`. Or an honest reason (`REASON_REQUIRED` / `NO_CHANGE` / `SCOPE_DENIED`
+   * / `UNKNOWN_ITEM`).
+   *
+   * SIMULATED by construction, exactly like release / confirm: NO dispatcher, NO
+   * CommandTarget, so `deliveryAgreements` stays null-backed (the amber marker
+   * holds). A tolerance change is a PORTAL governance record, never posted to SAP.
+   */
+  editPolicy(
+    scope: QueryScope,
+    agreementId: string,
+    itemSeq: number,
+    patch: EditPolicyPatch,
+  ): Promise<EditPolicyCommandResult>;
 }
 
 export interface IDataService {

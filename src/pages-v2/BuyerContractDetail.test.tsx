@@ -73,6 +73,23 @@ describe('BuyerContractDetail — nested contract detail route', () => {
     );
   });
 
+  it('a buyer can edit an item drawdown tolerance — the deviation surfaces', async () => {
+    // ctr-004 (sa-1002) is a single Case-B item → one "Edit tolerance" control.
+    at('/buyer/contracts/ctr-004');
+    fireEvent.click(await screen.findByRole('tab', { name: /Delivery Agreements/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Edit tolerance/ }));
+    // The reference-only preset (Case C) + a required reason, then save.
+    fireEvent.click(screen.getByRole('button', { name: /Reference only/ }));
+    fireEvent.change(screen.getByPlaceholderText(/Why is this tolerance changing/), {
+      target: { value: 'switch to reference-only for Q3' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save tolerance' }));
+    // Re-derive: the deviation detail names the IMMUTABLE contract default, and the
+    // policy chip flips to the un-enforced "reference envelope" mode.
+    expect(await screen.findByText(/Deviates from contract default/)).toBeInTheDocument();
+    expect(screen.getByText(/Reference envelope — not enforced/)).toBeInTheDocument();
+  });
+
   it('a supplier persona sees the DA tab read-only — no release control', async () => {
     // sup-007 owns ctr-013's agreement; viewing this buyer route as a supplier
     // must NOT expose the write (the read-only honesty marker shows instead).
@@ -86,8 +103,9 @@ describe('BuyerContractDetail — nested contract detail route', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Delivery Agreements/ }));
     expect(await screen.findByText(/Read-only, simulated feed\./)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Release' })).not.toBeInTheDocument();
-    // Neither write is exposed to a supplier — no confirm control either.
+    // None of the three writes is exposed to a supplier — no confirm, no edit either.
     expect(screen.queryByRole('button', { name: 'Confirm match' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Edit tolerance/ })).not.toBeInTheDocument();
   });
 
   it('ctr-003 stays the pristine all-draft zero-state', async () => {

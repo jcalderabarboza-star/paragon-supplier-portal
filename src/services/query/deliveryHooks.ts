@@ -15,6 +15,8 @@ import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import type {
   ConfirmCommandResult,
   DeliveryAgreementView,
+  EditPolicyCommandResult,
+  EditPolicyPatch,
   ReleaseCommandResult,
   ReleaseSelection,
 } from '../delivery';
@@ -107,6 +109,50 @@ export function useConfirmMatch() {
   return useMutation<ConfirmCommandResult, Error, ConfirmMatchVars>({
     mutationFn: ({ agreementId, itemSeq, releaseSeq }) =>
       svc.delivery.confirmMatch(scope, agreementId, itemSeq, releaseSeq),
+    onSuccess: (result) => {
+      if (!result.ok) return;
+      const supplierKey = scopeKey({
+        personaType: 'supplier',
+        supplierId: result.view.agreement.supplierId,
+      });
+      qc.invalidateQueries({
+        predicate: (q) => {
+          if (q.queryKey[0] !== 'delivery') return false;
+          const last = q.queryKey[q.queryKey.length - 1];
+          return last === BUYER_SCOPE_KEY || last === supplierKey;
+        },
+      });
+    },
+  });
+}
+
+/** The variables a policy-edit mutation carries — one item of one agreement, and
+ *  the new tolerance patch (two knobs + the required reason). */
+export interface EditPolicyVars {
+  agreementId: string;
+  itemSeq: number;
+  patch: EditPolicyPatch;
+}
+
+/** Re-point an item's active drawdown tolerance (the delivery lane's THIRD write —
+ *  the governance write). BUYER-ONLY at the service; on success it invalidates the
+ *  ['delivery'] reads for the buyer superset AND the affected supplier's own scope
+ *  (the same SDC-4d cross-scope shape release / confirm use), so both the
+ *  per-contract DA tab and the roll-up re-derive with the new `active`
+ *  (the deviation marker + re-derived `enforced` / `exceptions`). An honest refusal
+ *  changes nothing → no invalidation. */
+export function useEditPolicy() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+  };
+  const qc = useQueryClient();
+
+  return useMutation<EditPolicyCommandResult, Error, EditPolicyVars>({
+    mutationFn: ({ agreementId, itemSeq, patch }) =>
+      svc.delivery.editPolicy(scope, agreementId, itemSeq, patch),
     onSuccess: (result) => {
       if (!result.ok) return;
       const supplierKey = scopeKey({

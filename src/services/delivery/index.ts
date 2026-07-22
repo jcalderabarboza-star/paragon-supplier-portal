@@ -15,6 +15,7 @@ export * from './generator';
 export * from './ledger';
 export * from './release';
 export * from './confirm';
+export * from './policy';
 export * from './fulfillment';
 export * from './views';
 export * from './summary';
