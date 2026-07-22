@@ -30,6 +30,7 @@ import BuyerCollaboration from '../pages-v2/BuyerCollaboration';
 import BuyerContracts from '../pages-v2/BuyerContracts';
 import BuyerContractDetail from '../pages-v2/BuyerContractDetail';
 import BuyerDeliveryAgreements from '../pages-v2/BuyerDeliveryAgreements';
+import BuyerChase from '../pages-v2/BuyerChase';
 import BuyerInventory from '../pages-v2/BuyerInventory';
 import BuyerShipments from '../pages-v2/BuyerShipments';
 import BuyerGoodsReceipt from '../pages-v2/BuyerGoodsReceipt';
@@ -82,6 +83,7 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/contracts', pattern: '/buyer/contracts', at: '/buyer/contracts', element: <BuyerContracts />, identity: BUYER },
   { name: 'buyer/contracts/:id', pattern: '/buyer/contracts/:id', at: '/buyer/contracts/ctr-013', element: <BuyerContractDetail />, identity: BUYER },
   { name: 'buyer/delivery-agreements', pattern: '/buyer/delivery-agreements', at: '/buyer/delivery-agreements', element: <BuyerDeliveryAgreements />, identity: BUYER },
+  { name: 'buyer/chase', pattern: '/buyer/chase', at: '/buyer/chase', element: <BuyerChase />, identity: BUYER },
   { name: 'buyer/inventory', pattern: '/buyer/inventory', at: '/buyer/inventory', element: <BuyerInventory />, identity: BUYER },
   { name: 'buyer/shipments', pattern: '/buyer/shipments', at: '/buyer/shipments', element: <BuyerShipments />, identity: BUYER },
   { name: 'buyer/goods-receipt', pattern: '/buyer/goods-receipt', at: '/buyer/goods-receipt', element: <BuyerGoodsReceipt />, identity: BUYER },
@@ -109,9 +111,9 @@ const ROUTES: RouteCase[] = [
 ];
 
 describe('sp-001 — every route mounts without crashing', () => {
-  it('route table covers all of AppRouter (37 elements + redirect)', () => {
+  it('route table covers all of AppRouter (38 elements + redirect)', () => {
     // Guards against a route being added to AppRouter but not the smoke.
-    expect(ROUTES.length).toBe(38);
+    expect(ROUTES.length).toBe(39);
   });
 
   it.each(ROUTES)('$name renders and paints content', async ({ pattern, at, element, identity }) => {

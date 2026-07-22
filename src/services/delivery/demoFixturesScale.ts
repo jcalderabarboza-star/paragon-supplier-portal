@@ -23,6 +23,7 @@
 //        sa-1004 → ctr-008 / sup-009 (Zhejiang NHU, Active Ingredient)
 //        sa-1005 → ctr-002 / sup-003 (Givaudan, Fragrance)
 //        sa-1006 → ctr-005 / sup-004 (Firmenich, Fragrance)
+//        sa-1007 → ctr-007 / sup-006 (Evonik, NDA) — the firm/hard missed anchor
 //     ctr-001 is deliberately left agreement-free (the scope test's "empty"
 //     example). ctr-003 / sa-0001 stays PRISTINE and UNTOUCHED.
 //   · All demo shipments are `to-paragon` + `Arrived` (the only drawdown
@@ -228,7 +229,29 @@ const SA_1006 = buildAgreement({
   releaseSeqs: [1, 2, 3],
 });
 
-/** The six SIMULATED at-scale demo agreements (added to the store SEED). */
+// ── sa-1007 — MISSED, FIRM. sup-006 (Evonik) / ctr-007, RM-EMUL-3310, JIT, Case B.
+//    3 monthly from 2026-05-01; seqs 1–2 released, NO shipments → both miss. Because
+//    the release type is JIT (→ commitmentClass 'firm'), the chase engine escalates
+//    these misses HARD (Urgent) — the one firm/hard chase the fleet needs so the
+//    hard/soft severity split is demonstrable on the buyer chase surface (all other
+//    exception fixtures are FRC/semi-firm → Advisory). sup-006 carries NO SDC
+//    incoming shipment, so both released lines genuinely miss (derived, not stamped).
+const SA_1007 = buildAgreement({
+  agreementId: 'sa-1007',
+  contractId: 'ctr-007',
+  supplierId: 'sup-006',
+  sapAgreementNumber: '5500000507',
+  materialCode: 'RM-EMUL-3310',
+  releaseType: 'JIT',
+  policy: DRAWDOWN_PRESET_CASE_B,
+  startDate: '2026-05-01',
+  cadence: 'monthly',
+  qtyPerRelease: 40_000,
+  agreedTotalQty: 120_000,
+  releaseSeqs: [1, 2],
+});
+
+/** The seven SIMULATED at-scale demo agreements (added to the store SEED). */
 export const SCALE_DEMO_AGREEMENTS: readonly SchedulingAgreement[] = [
   SA_1001,
   SA_1002,
@@ -236,6 +259,7 @@ export const SCALE_DEMO_AGREEMENTS: readonly SchedulingAgreement[] = [
   SA_1004,
   SA_1005,
   SA_1006,
+  SA_1007,
 ];
 
 /** The SIMULATED shipments that draw down the released demo lines. Each carries its

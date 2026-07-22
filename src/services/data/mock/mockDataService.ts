@@ -7,8 +7,14 @@ import { MockAnalyticsService } from './MockAnalyticsService';
 import { MockEngagementService } from './MockEngagementService';
 import { MockCollaborationService } from './MockCollaborationService';
 import { MockDeliveryService } from './MockDeliveryService';
+import { MockChaseService } from './MockChaseService';
 import { MockCommandService } from './MockCommandService';
 import { capabilitiesFor } from '../../transitions';
+
+// Shared instances so the chase service composes the SAME collaboration + delivery
+// reads the rest of the app uses (the single SDC-5d composition point).
+const collaboration = new MockCollaborationService();
+const delivery = new MockDeliveryService();
 
 export const mockDataService: IDataService = {
   suppliers: new MockSupplierService(),
@@ -17,8 +23,9 @@ export const mockDataService: IDataService = {
   discovery: new MockDiscoveryService(),
   analytics: new MockAnalyticsService(),
   engagement: new MockEngagementService(),
-  collaboration: new MockCollaborationService(),
-  delivery: new MockDeliveryService(),
+  collaboration,
+  delivery,
+  chase: new MockChaseService(collaboration, delivery),
   commands: new MockCommandService(),
   getCapabilities: async (scope) => capabilitiesFor(scope),
 };

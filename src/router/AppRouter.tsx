@@ -16,6 +16,7 @@ import BuyerSourcing from '../pages-v2/BuyerSourcing';
 import BuyerContracts from '../pages-v2/BuyerContracts';
 import BuyerContractDetail from '../pages-v2/BuyerContractDetail';
 import BuyerDeliveryAgreements from '../pages-v2/BuyerDeliveryAgreements';
+import BuyerChase from '../pages-v2/BuyerChase';
 import BuyerInventory from '../pages-v2/BuyerInventory';
 import BuyerShipments from '../pages-v2/BuyerShipments';
 import BuyerGoodsReceipt from '../pages-v2/BuyerGoodsReceipt';
@@ -96,6 +97,7 @@ const AppRouter: React.FC = () => {
               Delivery Agreements | Docs). Must sit AFTER the list route. */}
           <Route path="/buyer/contracts/:id" element={<BuyerContractDetail />} />
           <Route path="/buyer/delivery-agreements" element={<BuyerDeliveryAgreements />} />
+          <Route path="/buyer/chase" element={<BuyerChase />} />
           <Route path="/buyer/inventory" element={<BuyerInventory />} />
           <Route path="/buyer/shipments" element={<BuyerShipments />} />
           <Route path="/buyer/goods-receipt" element={<BuyerGoodsReceipt />} />

@@ -54,6 +54,7 @@ export function withChaos(inner: IDataService, cfg: ChaosConfig): IDataService {
     engagement: chaosProxy(inner.engagement, cfg),
     collaboration: chaosProxy(inner.collaboration, cfg),
     delivery: chaosProxy(inner.delivery, cfg),
+    chase: chaosProxy(inner.chase, cfg),
     // Commands go through chaos too (reads-only chaos → commands too, Step 3.5).
     commands: chaosProxy(inner.commands, cfg),
     getCapabilities: (scope) => inner.getCapabilities(scope),

@@ -15,8 +15,8 @@ describe('BuyerDeliveryAgreements — at-scale exception-first roll-up', () => {
 
   it('renders one dense row per agreement-item across the whole superset', async () => {
     renderWithProviders(<BuyerDeliveryAgreements />);
-    // sa-0001 (2 items) + sa-0002 (2 items) + 6 single-item scale agreements = 10 rows.
-    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));
+    // sa-0001 (2 items) + sa-0002 (2 items) + 7 single-item scale agreements = 11 rows.
+    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(11));
     // A missed exception, an on-track, and the pristine draft anchor are all present.
     expect(screen.getAllByText('ctr-010').length).toBeGreaterThan(0); // sa-1001 missed
     expect(screen.getAllByText('ctr-006').length).toBeGreaterThan(0); // sa-1003 on-track
@@ -25,7 +25,7 @@ describe('BuyerDeliveryAgreements — at-scale exception-first roll-up', () => {
 
   it('defaults to worst-first: a missed row precedes an on-track row', async () => {
     renderWithProviders(<BuyerDeliveryAgreements />);
-    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));
+    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(11));
     const rows = rowsText();
     const missedIdx = rows.findIndex((r) => r.includes('ctr-010'));
     const onTrackIdx = rows.findIndex((r) => r.includes('ctr-006'));
@@ -37,7 +37,7 @@ describe('BuyerDeliveryAgreements — at-scale exception-first roll-up', () => {
 
   it('a state tab narrows to that bucket (Missed hides the on-track row)', async () => {
     renderWithProviders(<BuyerDeliveryAgreements />);
-    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));
+    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(11));
     fireEvent.click(screen.getByRole('tab', { name: /Missed/ }));
     await waitFor(() => expect(screen.queryByText('ctr-006')).toBeNull()); // on-track gone
     expect(screen.getAllByText('ctr-010').length).toBeGreaterThan(0); // missed stays
@@ -45,7 +45,7 @@ describe('BuyerDeliveryAgreements — at-scale exception-first roll-up', () => {
 
   it('search narrows by contract / material', async () => {
     renderWithProviders(<BuyerDeliveryAgreements />);
-    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));
+    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(11));
     fireEvent.change(screen.getByPlaceholderText(/Search supplier/), {
       target: { value: 'ctr-006' },
     });
@@ -56,7 +56,7 @@ describe('BuyerDeliveryAgreements — at-scale exception-first roll-up', () => {
 
   it('a row opens the read-only calendar SidePanel + a deep-link to the contract', async () => {
     renderWithProviders(<BuyerDeliveryAgreements />);
-    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));
+    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(11));
     // Click the missed row's <tr> (the contract Link stops propagation; the panel
     // opens from the row's own onClick).
     const row = Array.from(document.querySelectorAll('tbody tr')).find((tr) =>
@@ -73,7 +73,7 @@ describe('BuyerDeliveryAgreements — at-scale exception-first roll-up', () => {
 
   it('the roll-up SidePanel shows an inferred proposal but NO confirm control (read-only)', async () => {
     renderWithProviders(<BuyerDeliveryAgreements />);
-    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));
+    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(11));
     // ctr-004 (sa-1002) carries inferred proximity matches — the proposal is
     // VISIBLE in the read-only quick-look, but the confirm action lives only in
     // the contract DA tab, never here.
@@ -90,14 +90,14 @@ describe('BuyerDeliveryAgreements — at-scale exception-first roll-up', () => {
 
   it('is READ-ONLY: no release toolbar or per-line release control anywhere', async () => {
     renderWithProviders(<BuyerDeliveryAgreements />);
-    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));
+    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(11));
     expect(screen.queryByText(/Transmit releases/)).toBeNull();
     expect(screen.queryByText(/Release through/)).toBeNull();
   });
 
   it('the pristine ctr-003 anchor reads as Draft (never a fake performance status)', async () => {
     renderWithProviders(<BuyerDeliveryAgreements />);
-    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(10));
+    await waitFor(() => expect(document.querySelectorAll('tbody tr').length).toBe(11));
     const ctr003Rows = rowsText().filter((r) => r.includes('ctr-003'));
     expect(ctr003Rows.length).toBe(2); // both items of sa-0001
     for (const row of ctr003Rows) {

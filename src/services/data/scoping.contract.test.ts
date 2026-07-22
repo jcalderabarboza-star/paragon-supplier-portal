@@ -44,8 +44,9 @@ const SCOPED_READS: { name: string; run: Scoped }[] = [
   // Delivery Agreement surface seam: SchedulingAgreement carries supplierId, so the
   // scoped view-model is isolated per supplier and the buyer sees the superset. The
   // view nests the agreement, so expose its supplierId for the shared assertions.
-  // (8 agreements across 7 suppliers since the at-scale demo fleet: sup-007 owns
-  // sa-0001 + sa-0002, sup-005 owns sa-1002, sup-002 owns none → []. The delivery-
+  // (9 agreements across 8 suppliers since the at-scale demo fleet: sup-007 owns
+  // sa-0001 + sa-0002, sup-005 owns sa-1002, sup-006 owns sa-1007, sup-002 owns
+  // none → []. The delivery-
   // specific describe below pins the exact ownership + the read-only write refusal.)
   {
     name: 'getDeliveryAgreements',
