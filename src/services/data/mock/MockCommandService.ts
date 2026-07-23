@@ -749,6 +749,14 @@ const inventoryDeclarationTarget: CommandTarget = {
     /* no-op — a declaration is an immutable snapshot; a new count is a new
        declaration (append), never a state change on a prior record. */
   },
+  // C4c/C4b — the ONE target serves BOTH verbs (declare + record) since both use
+  // entity 'inventoryDeclaration' + this store. `requireCreationOwner` makes the
+  // relationship anchor enforceable for a BUYER scope too (the record path). It
+  // is INERT for declare: a supplier scope hits the supplier owner-match branch
+  // (which already requires a non-null owner) and never the buyer branch — so
+  // t_inventorydeclaration_declare is byte-for-byte unchanged. On the record path
+  // it blocks a buyer recording for a supplier × material the data never names.
+  requireCreationOwner: true,
   creationOwner: (payload) => {
     const sid = String(payload.supplierId);
     return collaboratedMaterial(sid, String(payload.materialCode)) ? sid : null;

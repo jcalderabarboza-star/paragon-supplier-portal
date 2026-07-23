@@ -44,6 +44,13 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     // SDC-2a — RequirementResponse buyer lifecycle (authored-unwired; the P2
     // planner's evaluation lane, mapped for catalog-coverage).
     'requirementresponse:review', 'requirementresponse:accept', 'requirementresponse:dispute',
+    // C4c — the buyer RECORDING verb (ruled option (d)): a planner records an SOH
+    // assertion a supplier made over an ungoverned channel. A DISTINCT buyer role,
+    // NOT the supplier's ':declare' (the b1 trap — widening ':declare' onto the
+    // buyer would make recorded-vs-self-submitted unrecoverable from the role
+    // layer). The target sets requireCreationOwner (C4b) so the subject supplier ×
+    // material is relationship-anchored even under a buyer scope.
+    'inventorydeclaration:record',
   ],
   // Supplier side: view / acknowledge / confirm an incoming PO; create + submit
   // an advance ship notice; draft + submit an invoice against its own PO; submit

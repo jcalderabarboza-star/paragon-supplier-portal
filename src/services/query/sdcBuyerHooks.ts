@@ -18,13 +18,18 @@
 // directly for the period bar; only the supplier-WRITTEN derivations live here.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { useServiceQuery } from './useServiceQuery';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useServiceQuery, scopeKey } from './useServiceQuery';
+import { useDataService } from '../data/DataServiceContext';
+import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import type {
   ConsolidationRow,
   SupplierCoverageEntry,
   SupplierRollup,
   ChaseEntry,
 } from '../sdc';
+import type { ChannelMessage } from '../channel/types';
+import type { CommandResult, QueryScope } from '../data/types';
 
 /** The consolidation rows (every current-publication line + its response state).
  *  Buyer-scoped; a supplier persona resolves to []. */
@@ -58,4 +63,92 @@ export function useSupplierRollups() {
     ['sdc', 'rollups'],
     async (svc, scope) => (await svc.collaboration.getRollups(scope)).items,
   );
+}
+
+// ─── C4c — the buyer RECORDING write (ruled option (d)) ───────────────────────
+// A planner records an SOH assertion a supplier made over an ungoverned channel,
+// firing the DISTINCT buyer verb `t_inventorydeclaration_record` under the BUYER
+// scope (so the DR-10 actor is honestly the buyer). Authored + WIRED here; its
+// in-place confirm SURFACE is the C4c follow-on (FORK-2). NB the SUPPLIER-side
+// self-submit stays `useInventoryDeclare` (sdcSupplierHooks) — a different verb,
+// a different actor, permanently distinguishable in the event stream.
+
+const BUYER_SCOPE_KEY = scopeKey({ personaType: 'buyer', supplierId: null });
+
+/**
+ * C4c INVALIDATION CARVE-OUT. A normal command never disturbs another supplier's
+ * cache (commandHooks / sdcSupplierHooks both say so). A buyer-recorded write is
+ * the deliberate exception: it is ABOUT a SUBJECT supplier, so it MUST invalidate
+ * (a) that subject supplier's OWN 'sdc' reads — else their portal SOH goes stale
+ * in-session — and (b) the buyer consolidation (the recorded SOH feeds the P2
+ * view). NO OTHER supplier is touched. Exported as a pure predicate so the
+ * carve-out is unit-tested without a render.
+ */
+export function isRecordedDeclarationInvalidation(
+  queryKey: readonly unknown[],
+  subjectSupplierId: string,
+): boolean {
+  if (queryKey[0] !== 'sdc') return false;
+  const last = queryKey[queryKey.length - 1];
+  return (
+    last === scopeKey({ personaType: 'supplier', supplierId: subjectSupplierId }) ||
+    last === BUYER_SCOPE_KEY
+  );
+}
+
+export interface InventoryRecordVars {
+  /**
+   * The captured inbound message. Its `supplierId` is the SUBJECT binding —
+   * app-resolved once at capture (C1a), NEVER parsed from the text — and the SOLE
+   * source of the recorded declaration's supplierId. The operator never
+   * free-picks a supplier at dispatch time (C4c point 2): everything derives from
+   * this single auditable ChannelMessage record.
+   */
+  message: ChannelMessage;
+  /**
+   * The confirmed declared facts (materialCode + totalQty, optional batches) — the
+   * operator's triaged reply. supplierId is intentionally NOT here: it is bound
+   * from `message`, and any supplierId a caller slips in is overridden.
+   */
+  facts: Record<string, unknown>;
+  /** SDC-3b — the SubmissionSession audit anchor (commands 2..n of one visit). */
+  causationId?: string;
+}
+
+/**
+ * Record a channel-asserted SOH declaration (fires the buyer `creation` verb
+ * `t_inventorydeclaration_record`). The subject supplierId is taken from the
+ * message binding, never the operator; on a non-failed outcome it invalidates the
+ * SUBJECT supplier's reads AND the buyer consolidation (the C4c carve-out).
+ */
+export function useInventoryRecord() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+  };
+  const qc = useQueryClient();
+
+  return useMutation<CommandResult, Error, InventoryRecordVars>({
+    mutationFn: ({ message, facts, causationId }) =>
+      svc.commands.dispatch(
+        scope,
+        {
+          transitionId: 't_inventorydeclaration_record',
+          entity: 'inventoryDeclaration',
+          // Subject supplierId is message-bound (C4c point 2) — placed LAST so a
+          // stray supplierId in `facts` can never override the conversation binding.
+          payload: { ...facts, supplierId: message.supplierId },
+        },
+        causationId,
+      ),
+    onSuccess: (result, { message }) => {
+      if (result.status !== 'failed') {
+        qc.invalidateQueries({
+          predicate: (q) => isRecordedDeclarationInvalidation(q.queryKey, message.supplierId),
+        });
+      }
+    },
+  });
 }
