@@ -34,7 +34,7 @@ export const buyerCommHubEn: Record<string, string> = {
   // — Channel-sourced provenance —
   'buyerCommHub.provenance.title': 'Channel-sourced submissions',
   'buyerCommHub.provenance.subtitle':
-    'Replies confirmed into the governed ledger, with their channel origin — the audit trail.',
+    'Replies recorded into the governed ledger from a channel message — an audit trail, never a portal self-submission.',
   'buyerCommHub.provenance.empty':
     'No channel-sourced submissions recorded yet. Confirmed replies appear here with their message origin.',
   'buyerCommHub.provenance.recorded': 'Recorded',
@@ -42,11 +42,37 @@ export const buyerCommHubEn: Record<string, string> = {
   'buyerCommHub.provenance.session': 'Session',
   'buyerCommHub.provenance.correlation': 'Correlation',
   'buyerCommHub.provenance.noCorrelation': 'No correlation yet',
-  // — Triage deep-link —
-  'buyerCommHub.inbound.title': 'Triage a new reply',
-  'buyerCommHub.inbound.body':
-    'No live inbound transport exists. Paste a supplier reply on the Channel Inbox to record it — the supplier is bound there, once. Cross-supplier buyer triage arrives with the recording verb.',
-  'buyerCommHub.inbound.cta': 'Open Channel Inbox',
+  // — Triage panel (C4d — in-place recording confirm) —
+  'buyerCommHub.triage.title': 'Triage a channel reply',
+  'buyerCommHub.triage.subtitle':
+    'Record a reply a supplier sent you over a channel. You confirm before anything is recorded, and it is recorded by Paragon — the supplier’s words, not their self-submission.',
+  'buyerCommHub.triage.supplierLabel': 'Whose conversation is this?',
+  'buyerCommHub.triage.supplierSelect': 'Select the supplier…',
+  'buyerCommHub.triage.supplierHint':
+    'Pick the supplier before pasting — this binds the message. It cannot be changed at confirm.',
+  'buyerCommHub.triage.pickSupplierFirst': 'Pick a supplier to begin — the reply is recorded against them.',
+  'buyerCommHub.triage.recordingFor': 'Recording for',
+  'buyerCommHub.triage.channelLabel': 'Channel',
+  'buyerCommHub.triage.messageLabel': 'Message text',
+  'buyerCommHub.triage.placeholder': 'e.g. STOK PK-PETB-8810 2.400 KG',
+  'buyerCommHub.triage.messageHint': 'Paste the supplier’s reply verbatim.',
+  'buyerCommHub.triage.parse': 'Parse reply',
+  'buyerCommHub.triage.reset': 'New message',
+  'buyerCommHub.triage.inferTitle': 'Parsed interpretation',
+  'buyerCommHub.triage.rawTitle': 'Message received',
+  'buyerCommHub.triage.rowTitle': 'Confirm what to record',
+  'buyerCommHub.triage.confirmHint': 'Nothing is recorded until you confirm.',
+  'buyerCommHub.triage.confirm': 'Confirm & record',
+  'buyerCommHub.triage.confirming': 'Recording…',
+  'buyerCommHub.triage.resultTitle': 'Result',
+  'buyerCommHub.triage.result.landed': 'Recorded by Paragon from {{channel}}: {{material}} — {{qty}}',
+  'buyerCommHub.triage.result.refused': 'Not recorded: {{reason}}',
+  'buyerCommHub.triage.honestyNote':
+    'Operator-fed — no live channel; nothing is sent or received here. Recorded by Paragon under the buyer’s identity, honestly distinct from a supplier’s own submission.',
+  'buyerCommHub.triage.toast.landed.title': 'Recorded from {{channel}}',
+  'buyerCommHub.triage.toast.landed.body': 'The supplier’s reply was recorded by Paragon as a governed declaration.',
+  'buyerCommHub.triage.toast.failed.title': 'Nothing recorded',
+  'buyerCommHub.triage.toast.failed.body': 'No confirmable update was recorded from this message.',
 };
 
 export const buyerCommHubId: Record<string, string> = {
@@ -82,7 +108,7 @@ export const buyerCommHubId: Record<string, string> = {
   // — Channel-sourced provenance —
   'buyerCommHub.provenance.title': 'Kiriman bersumber kanal',
   'buyerCommHub.provenance.subtitle':
-    'Balasan yang dikonfirmasi ke dalam buku besar terkelola, dengan asal kanalnya — jejak audit.',
+    'Balasan yang dicatat ke dalam buku besar terkelola dari pesan kanal — jejak audit, bukan kiriman mandiri lewat portal.',
   'buyerCommHub.provenance.empty':
     'Belum ada kiriman bersumber kanal yang tercatat. Balasan yang dikonfirmasi muncul di sini dengan asal pesannya.',
   'buyerCommHub.provenance.recorded': 'Tercatat',
@@ -90,9 +116,35 @@ export const buyerCommHubId: Record<string, string> = {
   'buyerCommHub.provenance.session': 'Sesi',
   'buyerCommHub.provenance.correlation': 'Korelasi',
   'buyerCommHub.provenance.noCorrelation': 'Belum ada korelasi',
-  // — Triage deep-link —
-  'buyerCommHub.inbound.title': 'Triase balasan baru',
-  'buyerCommHub.inbound.body':
-    'Tidak ada transport masuk langsung. Tempel balasan pemasok di Kotak Masuk Kanal untuk mencatatnya — pemasok diikat di sana, sekali. Triase lintas-pemasok untuk pembeli hadir bersama verba pencatatan.',
-  'buyerCommHub.inbound.cta': 'Buka Kotak Masuk Kanal',
+  // — Triage panel (C4d — konfirmasi pencatatan langsung) —
+  'buyerCommHub.triage.title': 'Triase balasan kanal',
+  'buyerCommHub.triage.subtitle':
+    'Catat balasan yang dikirim pemasok kepada Anda melalui kanal. Anda mengonfirmasi sebelum apa pun dicatat, dan ini dicatat oleh Paragon — kata-kata pemasok, bukan kiriman mandiri mereka.',
+  'buyerCommHub.triage.supplierLabel': 'Ini percakapan siapa?',
+  'buyerCommHub.triage.supplierSelect': 'Pilih pemasok…',
+  'buyerCommHub.triage.supplierHint':
+    'Pilih pemasok sebelum menempel — ini mengikat pesan. Tidak dapat diubah saat konfirmasi.',
+  'buyerCommHub.triage.pickSupplierFirst': 'Pilih pemasok untuk mulai — balasan dicatat atas nama mereka.',
+  'buyerCommHub.triage.recordingFor': 'Mencatat untuk',
+  'buyerCommHub.triage.channelLabel': 'Kanal',
+  'buyerCommHub.triage.messageLabel': 'Teks pesan',
+  'buyerCommHub.triage.placeholder': 'mis. STOK PK-PETB-8810 2.400 KG',
+  'buyerCommHub.triage.messageHint': 'Tempel balasan pemasok apa adanya.',
+  'buyerCommHub.triage.parse': 'Urai balasan',
+  'buyerCommHub.triage.reset': 'Pesan baru',
+  'buyerCommHub.triage.inferTitle': 'Interpretasi terurai',
+  'buyerCommHub.triage.rawTitle': 'Pesan diterima',
+  'buyerCommHub.triage.rowTitle': 'Konfirmasi yang akan dicatat',
+  'buyerCommHub.triage.confirmHint': 'Tidak ada yang dicatat sampai Anda mengonfirmasi.',
+  'buyerCommHub.triage.confirm': 'Konfirmasi & catat',
+  'buyerCommHub.triage.confirming': 'Mencatat…',
+  'buyerCommHub.triage.resultTitle': 'Hasil',
+  'buyerCommHub.triage.result.landed': 'Dicatat oleh Paragon dari {{channel}}: {{material}} — {{qty}}',
+  'buyerCommHub.triage.result.refused': 'Tidak tercatat: {{reason}}',
+  'buyerCommHub.triage.honestyNote':
+    'Diisi operator — tanpa kanal langsung; tidak ada yang dikirim atau diterima di sini. Dicatat oleh Paragon di bawah identitas pembeli, jujur berbeda dari kiriman mandiri pemasok.',
+  'buyerCommHub.triage.toast.landed.title': 'Tercatat dari {{channel}}',
+  'buyerCommHub.triage.toast.landed.body': 'Balasan pemasok dicatat oleh Paragon sebagai deklarasi terkelola.',
+  'buyerCommHub.triage.toast.failed.title': 'Tidak ada yang dicatat',
+  'buyerCommHub.triage.toast.failed.body': 'Tidak ada pembaruan yang dapat dikonfirmasi tercatat dari pesan ini.',
 };

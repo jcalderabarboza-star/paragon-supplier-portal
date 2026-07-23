@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-import { Info, Inbox, Send, Radio, ArrowRight } from 'lucide-react';
+import { Info, Send, Radio } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
+import BuyerChannelTriage from './BuyerChannelTriage';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import LivenessPill from '../components/ui-v2/LivenessPill';
@@ -99,7 +99,11 @@ const BuyerCommHub: React.FC = () => {
     () => deriveOutboundQueue(views, outboundRequestStore.all(), foldReplies(consolidation), now),
     [views, consolidation, now],
   );
-  const provenance = channelProvenanceStore.all();
+  // The in-place triage panel (C4d) appends to channelProvenanceStore on a
+  // successful record; `recordTick` bumps on its onRecorded so this render re-reads
+  // the append-only store and the new row shows in the audit trail immediately.
+  const [recordTick, setRecordTick] = useState(0);
+  const provenance = useMemo(() => channelProvenanceStore.all(), [recordTick]);
 
   const nameOf = useMemo(() => {
     const map = new Map<string, string>();
@@ -255,23 +259,8 @@ const BuyerCommHub: React.FC = () => {
         )}
       </section>
 
-      {/* ── Triage a new reply (honest deep-link — no live transport) ──────── */}
-      <section data-testid="commhub-triage">
-        <div className="border border-border-subtle rounded-lg bg-bg-subtle px-4 py-4 flex items-start gap-3">
-          <Inbox size={18} className="text-action shrink-0 mt-0.5" aria-hidden="true" />
-          <div className="flex-1">
-            <div className="text-sm font-semibold text-text-primary">{t('buyerCommHub.inbound.title')}</div>
-            <p className="mt-0.5 text-sm text-text-secondary">{t('buyerCommHub.inbound.body')}</p>
-            <Link
-              to="/supplier/comm-hub"
-              className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-action px-3 py-1.5 text-sm font-medium text-action hover:bg-action-soft transition-colors"
-            >
-              {t('buyerCommHub.inbound.cta')}
-              <ArrowRight size={14} aria-hidden="true" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* ── Triage a channel reply (C4d — in-place recording confirm) ──────── */}
+      <BuyerChannelTriage onRecorded={() => setRecordTick((n) => n + 1)} />
     </AppShellV2>
   );
 };
