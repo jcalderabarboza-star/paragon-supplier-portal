@@ -29,6 +29,31 @@
 //
 // CHANNEL-AGNOSTIC (DEC-COMMS-PRIMARY): t_inventorydeclaration_declare is the
 // shared write-path for portal, magic-link grid, and future channel ingestion.
+//
+// ── C4c — THE BUYER RECORDING VERB (ruled option (d)) ───────────────────────
+// t_inventorydeclaration_record is a DISTINCT, buyer-authored verb that records
+// an assertion the supplier made over an UNGOVERNED channel (a WhatsApp / email
+// reply a planner triages). It is NOT act-as-supplier and NOT role-widening:
+// "the supplier committed" (t_..._declare) and "Paragon recorded the supplier's
+// words" (t_..._record) stay two permanently-distinguishable facts.
+//
+// THE HONEST SEMANTIC: the supplier path (C2 / portal / grid) keeps its FULL
+// guarantee — supplierId from authenticated identity, the supplier's own act.
+// The buyer-recorded path carries a DIFFERENT, weaker, HONESTLY-LABELLED one:
+//   (i)   relationship-anchored — the target's creationOwner validates the
+//         subject supplier × material against governed relationships, and the
+//         target opts into `requireCreationOwner` (C4b) so this holds for the
+//         buyer too — a planner cannot record for a supplier the data never names;
+//   (ii)  actor-honest — the DR-10 actor is the BUYER, truthfully (from scope);
+//   (iii) provenance-linked — channelProvenanceStore ties the SubmissionSession
+//         (supplierId = the SUBJECT supplier) to the raw ChannelMessage;
+//   (iv)  permanently distinguishable — the distinct verb/role answers
+//         "recorded" vs "self-submitted" from the event stream forever, with NO
+//         stored flag on the declaration. Same store, same 'Declared' state, same
+//         create() — a declaration is a declaration; only the verb + role + actor
+//         differ. requiredRole is the NEW BUYER role `inventorydeclaration:record`
+//         (never the supplier's `:declare` — the b1 trap that would make
+//         recorded-vs-self-submitted unrecoverable from the role layer).
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { FlowDefinition } from '../schema';
@@ -55,6 +80,24 @@ export const inventoryDeclarationFlow: FlowDefinition = {
       requiredRole: 'inventorydeclaration:declare',
       requiredFields: ['materialCode', 'totalQty'],
       // Σ batch qty must equal totalQty when batch detail is present.
+      policyHooks: [POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL],
+      version: 1,
+    },
+    {
+      // C4c — the BUYER RECORDING verb (ruled option (d)). Same creation-shape,
+      // same store, same 'Declared' state, same required floor and batch/total
+      // policy as declare — a declaration is a declaration. It differs ONLY in
+      // the requiredRole (the BUYER role `inventorydeclaration:record`, never the
+      // supplier's `:declare`) and therefore in the DR-10 actor. The shared
+      // inventoryDeclaration target sets `requireCreationOwner: true` (C4b), so a
+      // buyer cannot record for a supplier the governed data never names. See the
+      // header's HONEST SEMANTIC block.
+      id: 't_inventorydeclaration_record',
+      from: [],
+      to: 'Declared',
+      trigger: 'creation',
+      requiredRole: 'inventorydeclaration:record',
+      requiredFields: ['materialCode', 'totalQty'],
       policyHooks: [POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL],
       version: 1,
     },
