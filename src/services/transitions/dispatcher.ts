@@ -59,6 +59,18 @@ export interface CommandTarget {
    * command, exactly as reads. Required on targets with creation transitions.
    */
   creationOwner?(payload: Record<string, unknown>): string | null;
+  /**
+   * Opt-in (C4b): when `true`, the dispatcher enforces `creationOwner(payload)
+   * !== null` for EVERY persona — a BUYER included — so a buyer creation is
+   * validated against a governed relationship anchor, not merely the caller's
+   * word. A buyer creation whose owner the governed data cannot name is denied
+   * (SCOPE_DENIED), which stops a planner minting an entity for a supplier the
+   * world never names. Absent/`false` ⇒ EXACTLY today's behaviour: a buyer
+   * passes creation-scope even with a null owner (the RFQ / PR buyer-verb
+   * pattern), while the supplier `owner === scope.supplierId` check is
+   * unaffected either way (it already requires a non-null owner).
+   */
+  requireCreationOwner?: boolean;
   /** Creation apply: mint the entity in `toState`; return its assigned id. */
   create?(payload: Record<string, unknown>, toState: string): { entityId: string };
 }
@@ -207,6 +219,13 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         if (!scope.supplierId || owner === null || owner !== scope.supplierId) {
           throw new DataError('SCOPE_DENIED', `creation of ${input.entity} denied for scope`);
         }
+      } else if (target.requireCreationOwner && owner === null) {
+        // C4b: this target opts into a validated relationship anchor for a BUYER
+        // scope too — a creation whose owner the governed data cannot name is
+        // denied, so a planner cannot mint an entity for a supplier the world
+        // never names. Targets that don't set the flag are unchanged (the buyer
+        // passes with a null owner — the RFQ / PR buyer-verb pattern).
+        throw new DataError('SCOPE_DENIED', `creation of ${input.entity} denied: unresolved owner`);
       }
     } else {
       if (!input.entityId) return fin(scope, transition.id, 'failed', 'MISSING_ENTITY_ID');
