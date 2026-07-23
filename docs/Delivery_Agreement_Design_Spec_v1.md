@@ -119,8 +119,11 @@ Contract (SAP, header — exists today)
 
 The delivery agreement upgrades the existing chase engine (P3) from chasing DATA
 to chasing COMMITMENTS. It reads release `state` + `releaseType`/`commitmentClass`
-and pushes across the existing channel-agnostic spine (DEC-COMMS-PRIMARY:
-WhatsApp / email / WeChat). It only ever pushes on **released** lines.
+and pushes across the channel-agnostic command spine (DEC-COMMS-PRIMARY). NOTE: the
+*command spine* exists (dispatcher + verbs + `SubmissionSession`); the *channel transport*
+(WhatsApp / email / WeChat send+receive) does not yet — outbound is modeled as
+"composed — not sent" (see `Communication_Hub_Design_Skeleton_v1.md`). It only ever pushes
+on **released** lines.
 
 | Mode | FRC (semi-firm) | JIT (firm) |
 |---|---|---|
