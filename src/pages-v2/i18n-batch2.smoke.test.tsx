@@ -2,7 +2,7 @@ import { describe, it, expect, afterAll } from 'vitest';
 import { screen, act } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import i18n from '../lib/i18n';
-import BuyerWhatsAppHub from './BuyerWhatsAppHub';
+import BuyerCommHub from './BuyerCommHub';
 import SupplierWhatsApp from './SupplierWhatsApp';
 import BuyerSourcing from './BuyerSourcing';
 import SupplierRFQs from './SupplierRFQs';
@@ -20,11 +20,11 @@ afterAll(async () => {
 });
 
 describe('Batch 2 — bilingual render (no EN leak in chrome)', () => {
-  it('BuyerWhatsAppHub: ID chrome header, English gone', async () => {
+  it('BuyerCommHub: ID chrome header, English gone', async () => {
     await setLang('id');
-    renderWithProviders(<BuyerWhatsAppHub />);
-    expect(await screen.findByText('Pusat Komunikasi')).toBeInTheDocument();
-    expect(screen.queryByText('Communications Hub')).not.toBeInTheDocument();
+    renderWithProviders(<BuyerCommHub />);
+    expect((await screen.findAllByText('Pusat Komunikasi')).length).toBeGreaterThan(0);
+    expect(screen.queryByText('Communication Hub')).not.toBeInTheDocument();
   });
 
   it('SupplierWhatsApp: ID chrome header, English gone', async () => {

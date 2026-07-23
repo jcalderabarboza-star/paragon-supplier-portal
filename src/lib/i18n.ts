@@ -18,7 +18,7 @@ import { categoryResourcesEn, categoryResourcesId } from './categoryLabel';
 import { channelResourcesEn, channelResourcesId } from './channelLabel';
 import { registrationEn, registrationId } from './i18n/registration';
 import { contractsEn, contractsId } from './i18n/contracts';
-import { buyerWhatsAppEn, buyerWhatsAppId } from './i18n/buyerWhatsApp';
+import { buyerCommHubEn, buyerCommHubId } from './i18n/buyerCommHub';
 import { supplierWhatsAppEn, supplierWhatsAppId } from './i18n/supplierWhatsApp';
 import { sourcingEn, sourcingId } from './i18n/sourcing';
 import { rfqsEn, rfqsId } from './i18n/rfqs';
@@ -83,7 +83,7 @@ export const resources = {
       ...channelResourcesEn,
       ...registrationEn,
       ...contractsEn,
-      ...buyerWhatsAppEn,
+      ...buyerCommHubEn,
       ...supplierWhatsAppEn,
       ...sourcingEn,
       ...rfqsEn,
@@ -155,7 +155,7 @@ export const resources = {
       'nav.buyer.scorecard': 'Scorecard',
       'nav.buyer.risk': 'Risk',
       'nav.buyer.compliance': 'Compliance',
-      'nav.buyer.whatsapp': 'WhatsApp Hub',
+      'nav.buyer.commHub': 'Communication Hub',
       'nav.supplier.dashboard': 'Dashboard',
       'nav.supplier.rfqs': 'RFQs',
       'nav.supplier.forecasts': 'Forecasts',
@@ -167,7 +167,7 @@ export const resources = {
       'nav.supplier.documents': 'Documents',
       'nav.supplier.deliveryAgreements': 'Delivery Agreements',
       'nav.supplier.performance': 'Performance',
-      'nav.supplier.whatsapp': 'WhatsApp Hub',
+      'nav.supplier.whatsapp': 'Communication Hub',
       'nav.supplier.commHub': 'Channel Inbox',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Settle',
@@ -446,7 +446,7 @@ export const resources = {
       ...channelResourcesId,
       ...registrationId,
       ...contractsId,
-      ...buyerWhatsAppId,
+      ...buyerCommHubId,
       ...supplierWhatsAppId,
       ...sourcingId,
       ...rfqsId,
@@ -518,7 +518,7 @@ export const resources = {
       'nav.buyer.scorecard': 'Kartu Skor',
       'nav.buyer.risk': 'Risiko',
       'nav.buyer.compliance': 'Kepatuhan',
-      'nav.buyer.whatsapp': 'Pusat WhatsApp',
+      'nav.buyer.commHub': 'Pusat Komunikasi',
       'nav.supplier.dashboard': 'Dasbor',
       'nav.supplier.rfqs': 'RFQ',
       'nav.supplier.forecasts': 'Prakiraan',
@@ -530,7 +530,7 @@ export const resources = {
       'nav.supplier.documents': 'Dokumen',
       'nav.supplier.deliveryAgreements': 'Perjanjian Pengiriman',
       'nav.supplier.performance': 'Kinerja',
-      'nav.supplier.whatsapp': 'Pusat WhatsApp',
+      'nav.supplier.whatsapp': 'Pusat Komunikasi',
       'nav.supplier.commHub': 'Kotak Masuk Kanal',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Penyelesaian',

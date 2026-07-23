@@ -40,7 +40,7 @@ import BuyerInvoices from '../pages-v2/BuyerInvoices';
 import BuyerScorecard from '../pages-v2/BuyerScorecard';
 import BuyerAnalytics from '../pages-v2/BuyerAnalytics';
 import BuyerRisk from '../pages-v2/BuyerRisk';
-import BuyerWhatsAppHub from '../pages-v2/BuyerWhatsAppHub';
+import BuyerCommHub from '../pages-v2/BuyerCommHub';
 import BuyerCompliance from '../pages-v2/BuyerCompliance';
 import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
@@ -94,7 +94,7 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/scorecard', pattern: '/buyer/scorecard', at: '/buyer/scorecard', element: <BuyerScorecard />, identity: BUYER },
   { name: 'buyer/analytics', pattern: '/buyer/analytics', at: '/buyer/analytics', element: <BuyerAnalytics />, identity: BUYER },
   { name: 'buyer/risk', pattern: '/buyer/risk', at: '/buyer/risk', element: <BuyerRisk />, identity: BUYER },
-  { name: 'buyer/whatsapp', pattern: '/buyer/whatsapp', at: '/buyer/whatsapp', element: <BuyerWhatsAppHub />, identity: BUYER },
+  { name: 'buyer/comm-hub', pattern: '/buyer/comm-hub', at: '/buyer/comm-hub', element: <BuyerCommHub />, identity: BUYER },
   { name: 'buyer/compliance', pattern: '/buyer/compliance', at: '/buyer/compliance', element: <BuyerCompliance />, identity: BUYER },
   { name: 'supplier/dashboard', pattern: '/supplier/dashboard', at: '/supplier/dashboard', element: <SupplierDashboardV2 />, identity: SUPPLIER },
   { name: 'supplier/storefront', pattern: '/supplier/storefront', at: '/supplier/storefront', element: <SupplierMyStorefront />, identity: SUPPLIER },

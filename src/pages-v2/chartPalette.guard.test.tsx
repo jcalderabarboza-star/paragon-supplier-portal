@@ -38,7 +38,6 @@ const PALETTE_SOURCED = [
   'BuyerScorecard.tsx',
   'BuyerAnalytics.tsx',
   'SupplierWhatsApp.tsx',
-  'BuyerWhatsAppHub.tsx',
   'BuyerRisk.tsx',
 ];
 

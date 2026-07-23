@@ -218,43 +218,6 @@ export const useSupplierPerformance = () =>
     svc.analytics.getSupplierPerformance(scope),
   );
 
-// ─── Engagement (buyer-side comms bus; discrete per-read) ─────────────────────
-
-export const useEngagementSummary = () =>
-  useServiceQuery(['engagement', 'summary'], (svc, scope) =>
-    svc.engagement.getSummary(scope),
-  );
-
-export const useConversations = () =>
-  useServiceQuery(['engagement', 'conversations'], (svc, scope) =>
-    svc.engagement.getConversations(scope),
-  );
-
-export const useConversationThread = (conversationId: string) =>
-  useServiceQuery(['engagement', 'thread', conversationId], (svc, scope) =>
-    svc.engagement.getConversationThread(scope, conversationId),
-  );
-
-export const useAutomationRules = () =>
-  useServiceQuery(['engagement', 'automationRules'], (svc, scope) =>
-    svc.engagement.getAutomationRules(scope),
-  );
-
-export const useDailyMessages = () =>
-  useServiceQuery(['engagement', 'dailyMessages'], (svc, scope) =>
-    svc.engagement.getDailyMessages(scope),
-  );
-
-export const useRuleRates = () =>
-  useServiceQuery(['engagement', 'ruleRates'], (svc, scope) =>
-    svc.engagement.getRuleRates(scope),
-  );
-
-export const useResponseTimes = () =>
-  useServiceQuery(['engagement', 'responseTimes'], (svc, scope) =>
-    svc.engagement.getResponseTimes(scope),
-  );
-
 // ─── Discovery ──────────────────────────────────────────────────────────────
 
 export const useGlobalSuppliers = () =>
