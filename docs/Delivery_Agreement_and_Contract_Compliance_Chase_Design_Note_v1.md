@@ -57,8 +57,11 @@ No new machinery — three existing systems pointed at one new child object:
 
 1. **Contract module** (exists) — owns the fixed cadence + envelope.
 2. **Reminder / chase engine (P3)** (exists) — enforces the calendar.
-3. **Channel-agnostic command spine (DEC-COMMS-PRIMARY: WhatsApp / email / WeChat)**
-   (exists) — carries the alerts.
+3. **Channel-agnostic command spine (DEC-COMMS-PRIMARY)** — the *command spine*
+   (dispatcher + verbs + `SubmissionSession` + source-agnostic `parseGrid`) **exists**
+   and carries the write-path; the *channel transport* (WhatsApp / email / WeChat
+   send+receive) does **not** yet exist (the current Hub surfaces are mockups). See
+   `Communication_Hub_Design_Skeleton_v1.md`.
 
 The delivery agreement becomes a **cadence generator**: a fixed calendar means the
 system knows, in advance and deterministically, *when* the next release is due,
