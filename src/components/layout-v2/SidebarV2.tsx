@@ -126,6 +126,7 @@ const SUPPLIER_NAV: NavGroup[] = [
     items: [
       { labelKey: 'nav.supplier.performance', icon: BarChart2, path: '/supplier/performance' },
       { labelKey: 'nav.supplier.whatsapp', icon: MessageCircle, path: '/supplier/whatsapp' },
+      { labelKey: 'nav.supplier.commHub', icon: Inbox, path: '/supplier/comm-hub' },
     ],
   },
 ];

@@ -11,3 +11,4 @@ export * from './replyParser';
 export * from './outbound';
 export * from './outboundFixtures';
 export * from './outboundStore';
+export * from './provenanceStore';
