@@ -33,6 +33,7 @@ import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
 import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
 import SupplierWhatsApp from '../pages-v2/SupplierWhatsApp';
+import CommHubInbound from '../pages-v2/CommHubInbound';
 import SupplierOrders from '../pages-v2/SupplierOrders';
 import SupplierRFQsV2 from '../pages-v2/SupplierRFQs';
 import SupplierShipments from '../pages-v2/SupplierShipments';
@@ -113,6 +114,8 @@ const AppRouter: React.FC = () => {
           <Route path="/supplier/storefront" element={<SupplierMyStorefront />} />
           <Route path="/supplier/documents" element={<SupplierDocumentsV2 />} />
           <Route path="/supplier/whatsapp" element={<SupplierWhatsApp />} />
+          {/* Comm Hub C2 — inbound reply triage (confirm-before-commit). */}
+          <Route path="/supplier/comm-hub" element={<CommHubInbound />} />
           <Route path="/supplier/orders" element={<SupplierOrders />} />
           <Route path="/supplier/rfqs" element={<SupplierRFQsV2 />} />
           <Route

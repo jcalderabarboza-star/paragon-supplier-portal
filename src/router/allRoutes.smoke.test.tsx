@@ -46,6 +46,7 @@ import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
 import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
 import SupplierWhatsApp from '../pages-v2/SupplierWhatsApp';
+import CommHubInbound from '../pages-v2/CommHubInbound';
 import SupplierOrders from '../pages-v2/SupplierOrders';
 import SupplierRFQsV2 from '../pages-v2/SupplierRFQs';
 import SupplierForecasts from '../pages-v2/SupplierForecasts';
@@ -99,6 +100,7 @@ const ROUTES: RouteCase[] = [
   { name: 'supplier/storefront', pattern: '/supplier/storefront', at: '/supplier/storefront', element: <SupplierMyStorefront />, identity: SUPPLIER },
   { name: 'supplier/documents', pattern: '/supplier/documents', at: '/supplier/documents', element: <SupplierDocumentsV2 />, identity: SUPPLIER },
   { name: 'supplier/whatsapp', pattern: '/supplier/whatsapp', at: '/supplier/whatsapp', element: <SupplierWhatsApp />, identity: SUPPLIER },
+  { name: 'supplier/comm-hub', pattern: '/supplier/comm-hub', at: '/supplier/comm-hub', element: <CommHubInbound />, identity: SUPPLIER },
   { name: 'supplier/orders', pattern: '/supplier/orders', at: '/supplier/orders', element: <SupplierOrders />, identity: SUPPLIER },
   { name: 'supplier/rfqs', pattern: '/supplier/rfqs', at: '/supplier/rfqs', element: <SupplierRFQsV2 />, identity: SUPPLIER },
   { name: 'supplier/forecasts', pattern: '/supplier/forecasts', at: '/supplier/forecasts', element: <SupplierForecasts />, identity: SUPPLIER },
@@ -111,9 +113,9 @@ const ROUTES: RouteCase[] = [
 ];
 
 describe('sp-001 — every route mounts without crashing', () => {
-  it('route table covers all of AppRouter (38 elements + redirect)', () => {
+  it('route table covers all of AppRouter (39 elements + redirect)', () => {
     // Guards against a route being added to AppRouter but not the smoke.
-    expect(ROUTES.length).toBe(39);
+    expect(ROUTES.length).toBe(40);
   });
 
   it.each(ROUTES)('$name renders and paints content', async ({ pattern, at, element, identity }) => {

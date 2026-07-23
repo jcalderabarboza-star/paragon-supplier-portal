@@ -58,6 +58,8 @@ import { intakeReviewEn, intakeReviewId } from './i18n/intakeReview';
 import { sdcConsolidationEn, sdcConsolidationId } from './i18n/sdcConsolidation';
 // — SDC-2b P1 supplier forecast-confirmation surface —
 import { sdcSupplierEn, sdcSupplierId } from './i18n/sdcSupplier';
+// — Comm Hub C2 inbound confirm-before-commit surface —
+import { commHubInboundEn, commHubInboundId } from './i18n/commHubInbound';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -120,6 +122,8 @@ export const resources = {
       ...sdcConsolidationEn,
       // — SDC-2b supplier forecast confirmations —
       ...sdcSupplierEn,
+      // — Comm Hub C2 inbound confirm-before-commit —
+      ...commHubInboundEn,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
@@ -164,6 +168,7 @@ export const resources = {
       'nav.supplier.deliveryAgreements': 'Delivery Agreements',
       'nav.supplier.performance': 'Performance',
       'nav.supplier.whatsapp': 'WhatsApp Hub',
+      'nav.supplier.commHub': 'Channel Inbox',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Settle',
       'delivery.crumb.title': 'Delivery Overview',
@@ -480,6 +485,8 @@ export const resources = {
       ...sdcConsolidationId,
       // — SDC-2b supplier forecast confirmations —
       ...sdcSupplierId,
+      // — Comm Hub C2 inbound confirm-before-commit —
+      ...commHubInboundId,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',
@@ -524,6 +531,7 @@ export const resources = {
       'nav.supplier.deliveryAgreements': 'Perjanjian Pengiriman',
       'nav.supplier.performance': 'Kinerja',
       'nav.supplier.whatsapp': 'Pusat WhatsApp',
+      'nav.supplier.commHub': 'Kotak Masuk Kanal',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Penyelesaian',
       'delivery.crumb.title': 'Ikhtisar Pengiriman',
