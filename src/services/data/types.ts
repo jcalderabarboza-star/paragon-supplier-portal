@@ -961,73 +961,6 @@ export interface AnalyticsSummary {
   avgCycleTime: AnalyticsKpi;
 }
 
-// ─── Engagement (buyer-side multi-channel comms) ────────────────────────────
-// Conversation bus spanning suppliers (WhatsApp today). Buyer-only aggregate;
-// not per-supplier-id scoped in the leak sense (threads span the network).
-
-export type ConvStatus = 'active' | 'awaiting' | 'resolved';
-
-export interface Conversation {
-  id: string;
-  supplier: string;
-  lastMsg: string;
-  time: string;
-  unread: number;
-  status: ConvStatus;
-}
-
-export interface ChatMessage {
-  id: string;
-  from: 'bot' | 'supplier';
-  content: string;
-  time: string;
-}
-
-export interface AutomationRule {
-  rule: string;
-  trigger: string;
-  action: string;
-  autoHandle: boolean;
-  escalateIf: string;
-  successRate: string;
-}
-
-export interface DailyMessageRow {
-  day: string;
-  outbound: number;
-  inbound: number;
-}
-
-export interface RuleRate {
-  rule: string;
-  rate: number;
-}
-
-export interface ResponseRow {
-  supplier: string;
-  avg: string;
-  fastest: string;
-  slowest: string;
-  automation: string;
-}
-
-export interface EngagementKpi {
-  value: string;
-  subtitle: string;
-  tone: KpiTone;
-}
-
-export interface EngagementSummary {
-  activeConversations: EngagementKpi;
-  pendingResponses: EngagementKpi;
-  automatedToday: EngagementKpi;
-  hubAvgResponse: EngagementKpi;
-  messagesThisMonth: EngagementKpi;
-  automatedActions: EngagementKpi;
-  analyticsAvgResponse: EngagementKpi;
-  satisfaction: EngagementKpi;
-}
-
 // ─── Filter inputs (lean shapes; expanded as pages migrate) ─────────────────
 
 export interface POFilter {
@@ -1302,17 +1235,6 @@ export interface IAnalyticsService {
   getSupplierPerformance(scope: QueryScope): Promise<Page<AnalyticsPerfRow>>;
 }
 
-export interface IEngagementService {
-  /** Channel KPI cards. Buyer: populated. Supplier: null. */
-  getSummary(scope: QueryScope): Promise<EngagementSummary | null>;
-  getConversations(scope: QueryScope): Promise<Page<Conversation>>;
-  getConversationThread(scope: QueryScope, conversationId: string): Promise<Page<ChatMessage>>;
-  getAutomationRules(scope: QueryScope): Promise<Page<AutomationRule>>;
-  getDailyMessages(scope: QueryScope): Promise<Page<DailyMessageRow>>;
-  getRuleRates(scope: QueryScope): Promise<Page<RuleRate>>;
-  getResponseTimes(scope: QueryScope): Promise<Page<ResponseRow>>;
-}
-
 // ─── Supplier Data Collaboration reads (SDC-4b) ───────────────────────────────
 //
 // The SDC read seam. Moves scope from the hooks INTO the service (mirrors
@@ -1435,7 +1357,6 @@ export interface IDataService {
   risk: IRiskService;
   discovery: IDiscoveryService;
   analytics: IAnalyticsService;
-  engagement: IEngagementService;
   /** SDC read seam — P1 own-reads + P2 consolidation, service-scoped (SDC-4b). */
   collaboration: ICollaborationService;
   /** Delivery Agreement read seam — scoped drawdown + fulfillment view-model. */

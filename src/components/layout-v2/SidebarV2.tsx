@@ -85,7 +85,7 @@ const BUYER_NAV: NavGroup[] = [
       { labelKey: 'nav.buyer.scorecard', icon: Award, path: '/buyer/scorecard' },
       { labelKey: 'nav.buyer.risk', icon: AlertTriangle, path: '/buyer/risk' },
       { labelKey: 'nav.buyer.compliance', icon: ShieldCheck, path: '/buyer/compliance' },
-      { labelKey: 'nav.buyer.whatsapp', icon: MessageCircle, path: '/buyer/whatsapp' },
+      { labelKey: 'nav.buyer.commHub', icon: MessageCircle, path: '/buyer/comm-hub' },
     ],
   },
 ];

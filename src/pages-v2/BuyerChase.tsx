@@ -163,7 +163,7 @@ const BuyerChase: React.FC = () => {
                   is built here (channel dispatch deferred). */}
               <div>
                 <Link
-                  to="/buyer/whatsapp"
+                  to="/buyer/comm-hub"
                   className="inline-flex items-center gap-1.5 rounded-md border border-action px-3 py-1.5 text-sm font-medium text-action hover:bg-action-soft transition-colors"
                 >
                   <MessageCircle size={14} />

@@ -27,7 +27,7 @@ import BuyerInvoices from '../pages-v2/BuyerInvoices';
 import BuyerScorecard from '../pages-v2/BuyerScorecard';
 import BuyerAnalytics from '../pages-v2/BuyerAnalytics';
 import BuyerRisk from '../pages-v2/BuyerRisk';
-import BuyerWhatsAppHub from '../pages-v2/BuyerWhatsAppHub';
+import BuyerCommHub from '../pages-v2/BuyerCommHub';
 import BuyerCompliance from '../pages-v2/BuyerCompliance';
 import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
@@ -108,7 +108,10 @@ const AppRouter: React.FC = () => {
           <Route path="/buyer/scorecard" element={<BuyerScorecard />} />
           <Route path="/buyer/analytics" element={<BuyerAnalytics />} />
           <Route path="/buyer/risk" element={<BuyerRisk />} />
-          <Route path="/buyer/whatsapp" element={<BuyerWhatsAppHub />} />
+          {/* Comm Hub C4a — the buyer/planner front door (chase-derived outbound
+              queue + channel-sourced provenance trail). Replaces the retired
+              WhatsApp-Hub engagement mock. */}
+          <Route path="/buyer/comm-hub" element={<BuyerCommHub />} />
           <Route path="/buyer/compliance" element={<BuyerCompliance />} />
           <Route path="/supplier/dashboard" element={<SupplierDashboardV2 />} />
           <Route path="/supplier/storefront" element={<SupplierMyStorefront />} />

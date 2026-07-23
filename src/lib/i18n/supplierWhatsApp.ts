@@ -18,7 +18,7 @@
 export const supplierWhatsAppEn: Record<string, string> = {
   // — Breadcrumb —
   'supplierWhatsApp.crumb.intelligence': 'INTELLIGENCE',
-  'supplierWhatsApp.crumb.whatsappHub': 'WHATSAPP HUB',
+  'supplierWhatsApp.crumb.whatsappHub': 'COMMUNICATION HUB',
   // — Page header —
   'supplierWhatsApp.header.title': 'Communication Tools',
   'supplierWhatsApp.header.subtitle':
@@ -137,7 +137,7 @@ export const supplierWhatsAppEn: Record<string, string> = {
 export const supplierWhatsAppId: Record<string, string> = {
   // — Breadcrumb —
   'supplierWhatsApp.crumb.intelligence': 'INTELIJEN',
-  'supplierWhatsApp.crumb.whatsappHub': 'PUSAT WHATSAPP',
+  'supplierWhatsApp.crumb.whatsappHub': 'PUSAT KOMUNIKASI',
   // — Page header —
   'supplierWhatsApp.header.title': 'Alat Komunikasi',
   'supplierWhatsApp.header.subtitle':

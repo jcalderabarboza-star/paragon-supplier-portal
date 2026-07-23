@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { resources } from '../i18n';
 import { registrationEn, registrationId } from './registration';
 import { contractsEn, contractsId } from './contracts';
-import { buyerWhatsAppEn, buyerWhatsAppId } from './buyerWhatsApp';
+import { buyerCommHubEn, buyerCommHubId } from './buyerCommHub';
 import { supplierWhatsAppEn, supplierWhatsAppId } from './supplierWhatsApp';
 import { sourcingEn, sourcingId } from './sourcing';
 import { rfqsEn, rfqsId } from './rfqs';
@@ -52,7 +52,7 @@ import { commHubInboundEn, commHubInboundId } from './commHubInbound';
 const FRAGMENTS = [
   { name: 'registration', en: registrationEn, id: registrationId },
   { name: 'contracts', en: contractsEn, id: contractsId },
-  { name: 'buyerWhatsApp', en: buyerWhatsAppEn, id: buyerWhatsAppId },
+  { name: 'buyerCommHub', en: buyerCommHubEn, id: buyerCommHubId },
   { name: 'supplierWhatsApp', en: supplierWhatsAppEn, id: supplierWhatsAppId },
   { name: 'sourcing', en: sourcingEn, id: sourcingId },
   { name: 'rfqs', en: rfqsEn, id: rfqsId },
