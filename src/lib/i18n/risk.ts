@@ -24,20 +24,17 @@ export const riskEn: Record<string, string> = {
   'risk.toast.exportStarting': 'Risk report export starting',
   'risk.toast.alertConfig.title': 'Alert configuration',
   'risk.toast.alertConfig.desc': 'Channel rules editor coming in Phase 2A.',
-  // — Live / meta line —
-  'risk.live': 'LIVE',
-  'risk.meta.realtime': 'Real-time risk monitoring · {{date}}',
+  // — Meta line (honest illustrative caption; the LivenessPill carries the SIMULATED marker) —
+  'risk.meta.illustrative': 'Illustrative risk intelligence — no live feed',
   'risk.meta.lastUpdated': 'Last updated {{date}}',
   // — Alert banner —
   'risk.alert.dismiss': 'Dismiss alert',
-  // — KPI cards (values are demo data, not keyed; events subtitle is i18n-defer) —
+  // — KPI cards (values are illustrative demo data; every card is marked illustrative) —
   'risk.kpi.events.eyebrow': 'Active Risk Events',
   'risk.kpi.exposed.eyebrow': 'Spend Exposed',
-  'risk.kpi.exposed.subtitle': '38% of total indirect spend',
   'risk.kpi.singleSource.eyebrow': 'Single-Source Critical',
-  'risk.kpi.singleSource.subtitle': 'No backup supplier',
   'risk.kpi.expiring.eyebrow': 'Compliance Expiring',
-  'risk.kpi.expiring.subtitle': 'Within 30 days',
+  'risk.kpi.illustrative': 'Illustrative — no live source',
   // — Risk map —
   'risk.map.title': 'Supplier risk map',
   'risk.map.region.taiwan': 'Taiwan',
@@ -149,20 +146,17 @@ export const riskId: Record<string, string> = {
   'risk.toast.exportStarting': 'Ekspor laporan risiko dimulai',
   'risk.toast.alertConfig.title': 'Konfigurasi peringatan',
   'risk.toast.alertConfig.desc': 'Editor aturan kanal hadir pada Fase 2A.',
-  // — Live / meta line —
-  'risk.live': 'LANGSUNG',
-  'risk.meta.realtime': 'Pemantauan risiko waktu nyata · {{date}}',
+  // — Meta line (honest illustrative caption; the LivenessPill carries the SIMULATED marker) —
+  'risk.meta.illustrative': 'Intelijen risiko ilustratif — tanpa umpan langsung',
   'risk.meta.lastUpdated': 'Terakhir diperbarui {{date}}',
   // — Alert banner —
   'risk.alert.dismiss': 'Tutup peringatan',
-  // — KPI cards —
+  // — KPI cards (nilai ilustratif; setiap kartu ditandai ilustratif) —
   'risk.kpi.events.eyebrow': 'Peristiwa Risiko Aktif',
   'risk.kpi.exposed.eyebrow': 'Belanja Terekspos',
-  'risk.kpi.exposed.subtitle': '38% dari total belanja tidak langsung',
   'risk.kpi.singleSource.eyebrow': 'Sumber Tunggal Kritis',
-  'risk.kpi.singleSource.subtitle': 'Tanpa pemasok cadangan',
   'risk.kpi.expiring.eyebrow': 'Kepatuhan Akan Kedaluwarsa',
-  'risk.kpi.expiring.subtitle': 'Dalam 30 hari',
+  'risk.kpi.illustrative': 'Ilustratif — tanpa sumber langsung',
   // — Risk map —
   'risk.map.title': 'Peta risiko pemasok',
   'risk.map.region.taiwan': 'Taiwan',

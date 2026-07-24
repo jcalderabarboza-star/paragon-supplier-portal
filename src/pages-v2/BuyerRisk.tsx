@@ -24,6 +24,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import LivenessPill from '../components/ui-v2/LivenessPill';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -106,21 +107,6 @@ const TAB_DEFS: { id: TabKey; labelKey: string }[] = [
   { id: 'compliance', labelKey: 'risk.tab.compliance' },
   { id: 'commodity', labelKey: 'risk.tab.commodity' },
 ];
-
-const PULSE_CSS = `
-@keyframes risk-pulse-ring {
-  0%   { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-.risk-live-pulse::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: #BB0000;
-  animation: risk-pulse-ring 1.4s ease-out infinite;
-}
-`;
 
 const ALERT_VARIANT: Record<AlertLevel, { bg: string; border: string; text: string; Icon: LucideIcon }> = {
   critical: { bg: 'bg-danger-soft', border: 'border-danger', text: 'text-danger', Icon: AlertOctagon },
@@ -992,7 +978,6 @@ const BuyerRisk: React.FC = () => {
 
   return (
     <AppShellV2>
-      <style>{PULSE_CSS}</style>
       <PageHeader
         breadcrumb={RISK_CRUMB}
         title={t('risk.header.title')}
@@ -1023,21 +1008,14 @@ const BuyerRisk: React.FC = () => {
         }
       />
 
-      <div className="-mt-6 mb-6 flex items-center gap-3 text-meta text-text-tertiary">
-        <div className="flex items-center gap-2">
-          <span className="relative inline-flex w-2.5 h-2.5">
-            <span
-              className="risk-live-pulse absolute inset-0 rounded-full"
-              aria-hidden="true"
-            />
-            <span className="relative inline-block w-2.5 h-2.5 rounded-full bg-danger" />
-          </span>
-          <span className="text-xs font-bold text-danger uppercase tracking-wider">
-            {t('risk.live')}
-          </span>
-        </div>
-        <span>{t('risk.meta.realtime', { date: lastUpdated })}</span>
-      </div>
+      <PageMetaLine className="-mt-6 mb-6 flex items-center gap-3">
+        <span>{t('risk.meta.illustrative')}</span>
+        {/* Honest-render: capability="risk" derives SIMULATED (null backing,
+            registry.ts) — the amber "Sample" marker. Green is structurally
+            unreachable (two-gate guard); this replaces the hand-rolled LIVE/
+            Real-time chrome that lied over static demo data (CP-0 · W2). */}
+        <LivenessPill capability="risk" />
+      </PageMetaLine>
 
       {visibleAlerts.length > 0 && (
         <div className="mb-6">
@@ -1054,29 +1032,31 @@ const BuyerRisk: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+        {/* Values are illustrative demo data (derivation from the risk hooks is a
+            later, separate batch — CP-0 W2 is honesty-only). Every card carries the
+            shared illustrative marker, mirroring BuyerDashboard's honest KPI pattern. */}
         <KpiCard
           eyebrow={t('risk.kpi.events.eyebrow')}
           value="9"
-          /* i18n-defer: mock/sample data — hardcoded demo counts + severity words */
-          subtitle={<span className="text-danger">3 critical · 4 high</span>}
+          subtitle={<span className="text-text-tertiary">{t('risk.kpi.illustrative')}</span>}
           icon={AlertOctagon}
         />
         <KpiCard
           eyebrow={t('risk.kpi.exposed.eyebrow')}
           value="$6.1M"
-          subtitle={t('risk.kpi.exposed.subtitle')}
+          subtitle={<span className="text-text-tertiary">{t('risk.kpi.illustrative')}</span>}
           icon={AlertTriangle}
         />
         <KpiCard
           eyebrow={t('risk.kpi.singleSource.eyebrow')}
           value="3"
-          subtitle={<span className="text-danger">{t('risk.kpi.singleSource.subtitle')}</span>}
+          subtitle={<span className="text-text-tertiary">{t('risk.kpi.illustrative')}</span>}
           icon={AlertOctagon}
         />
         <KpiCard
           eyebrow={t('risk.kpi.expiring.eyebrow')}
           value="2"
-          subtitle={t('risk.kpi.expiring.subtitle')}
+          subtitle={<span className="text-text-tertiary">{t('risk.kpi.illustrative')}</span>}
           icon={AlertTriangle}
         />
       </div>
