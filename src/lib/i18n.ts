@@ -167,7 +167,7 @@ export const resources = {
       'nav.supplier.documents': 'Documents',
       'nav.supplier.deliveryAgreements': 'Delivery Agreements',
       'nav.supplier.performance': 'Performance',
-      'nav.supplier.whatsapp': 'Communication Hub',
+      'nav.supplier.whatsapp': 'Channel Demo',
       'nav.supplier.commHub': 'Channel Inbox',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Settle',
@@ -530,7 +530,7 @@ export const resources = {
       'nav.supplier.documents': 'Dokumen',
       'nav.supplier.deliveryAgreements': 'Perjanjian Pengiriman',
       'nav.supplier.performance': 'Kinerja',
-      'nav.supplier.whatsapp': 'Pusat Komunikasi',
+      'nav.supplier.whatsapp': 'Demo Kanal',
       'nav.supplier.commHub': 'Kotak Masuk Kanal',
       // — Delivery Agreement drawdown/compliance surface (read-only, SIMULATED) —
       'delivery.crumb.settle': 'Penyelesaian',

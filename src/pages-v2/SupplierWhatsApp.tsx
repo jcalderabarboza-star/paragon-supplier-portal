@@ -4,6 +4,7 @@ import {
   Phone,
   Send,
   CheckCircle2,
+  Info,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -1275,6 +1276,17 @@ const SupplierWhatsApp: React.FC = () => {
       <PageMetaLine className="-mt-6 mb-6">
         {t('supplierWhatsApp.meta.sessionOpened')} <Data>{lastUpdated}</Data>
       </PageMetaLine>
+
+      {/* C5 — the demonstration honesty marker: a supplier can never mistake these
+          scripted example conversations for their real channel history. JJ's ruling
+          keeps the demonstrator; this label makes what it is unmistakable. */}
+      <div
+        className="mb-6 flex items-start gap-2 rounded-lg border border-warning/30 bg-warning-soft px-4 py-3 text-sm text-text-primary"
+        data-testid="supplier-whatsapp-demo-banner"
+      >
+        <Info size={16} className="mt-0.5 shrink-0 text-warning-hover" aria-hidden="true" />
+        <span className="text-text-secondary">{t('supplierWhatsApp.demo.banner')}</span>
+      </div>
 
       <SubTabs<Channel>
         options={[

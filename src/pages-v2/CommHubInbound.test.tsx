@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, waitFor, within, fireEvent } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import CommHubInbound from './CommHubInbound';
 import { inventoryDeclarationStore } from '../services/data/mock/stores/inventoryDeclarationStore';
 import { channelProvenanceStore } from '../services/channel/provenanceStore';
+import { outboundRequestStore } from '../services/channel';
 import i18n from '../lib/i18n';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -173,6 +174,81 @@ describe('CommHubInbound — i18n (ID)', () => {
       renderPage();
       expect(await screen.findByText(/Kotak Masuk Kanal — triase balasan/)).toBeInTheDocument();
       expect(screen.getByText(/Kotak masuk diisi operator/)).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});
+
+// ─── Comm Hub C5 — the "what Paragon needs from you" section + honest note ─────
+describe('CommHubInbound — C5 own obligations section', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('renders the supplier’s OWN overdue + upcoming deliveries in own-facing tone', async () => {
+    renderPage();
+    const section = await screen.findByTestId('commhub-needs');
+    expect(within(section).getByText('What Paragon needs from you')).toBeInTheDocument();
+    // sup-007's own obligations render (await the own-scoped read) with the own-facing
+    // gloss — never buyer wording.
+    await waitFor(() =>
+      expect(within(section).getAllByTestId('commhub-needs-row').length).toBeGreaterThan(0),
+    );
+    expect(within(section).getAllByText(/Overdue|Upcoming/).length).toBeGreaterThan(0);
+    expect(
+      within(section).getAllByText(/Paragon is (waiting on|expecting) this delivery/).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it('is own-only — never another supplier’s material (isolation)', async () => {
+    renderPage();
+    const section = await screen.findByTestId('commhub-needs');
+    // sup-007's own code appears (await the read); other suppliers' codes never do.
+    await waitFor(() => expect(within(section).getAllByText('PK-PETB-8810').length).toBeGreaterThan(0));
+    expect(within(section).queryByText('AI-NIAC-6601')).toBeNull();
+    expect(within(section).queryByText('RM-EMUL-3310')).toBeNull();
+  });
+
+  it('NO buyer chase vocabulary leaks into the C5 section', async () => {
+    renderPage();
+    const section = await screen.findByTestId('commhub-needs');
+    await waitFor(() =>
+      expect(within(section).getAllByTestId('commhub-needs-row').length).toBeGreaterThan(0),
+    );
+    for (const word of [/\bchase\b/i, /\bnudge\b/i, /non-compliance/i, /\bdrift\b/i, /\bUrgent\b/, /\bAdvisory\b/]) {
+      expect(within(section).queryByText(word)).toBeNull();
+    }
+  });
+
+  it('CONTRACT: the supplier surface reads NO global channel store (no leak, no fabricated ask)', async () => {
+    // The outbound ask store must never be surfaced to a supplier (every record is
+    // "composed — not sent"); the global provenance list must never be read own-side
+    // (its refs carry no supplierId — reading .all() would leak every supplier's).
+    const outAll = vi.spyOn(outboundRequestStore, 'all');
+    const outForSupplier = vi.spyOn(outboundRequestStore, 'forSupplier');
+    const provAll = vi.spyOn(channelProvenanceStore, 'all');
+    renderPage();
+    const section = await screen.findByTestId('commhub-needs');
+    await waitFor(() =>
+      expect(within(section).getAllByTestId('commhub-needs-row').length).toBeGreaterThan(0),
+    );
+    expect(outAll).not.toHaveBeenCalled();
+    expect(outForSupplier).not.toHaveBeenCalled();
+    expect(provAll).not.toHaveBeenCalled();
+  });
+
+  it('shows the honest "recorded here, never sent from here" note', async () => {
+    renderPage();
+    const note = await screen.findByTestId('commhub-note');
+    expect(within(note).getByText(/Recorded here, never sent from here/i)).toBeInTheDocument();
+    expect(within(note).getByText(/nothing is auto-sent or auto-received/i)).toBeInTheDocument();
+  });
+
+  it('localizes the C5 section title to Indonesian', async () => {
+    await i18n.changeLanguage('id');
+    try {
+      renderPage();
+      const section = await screen.findByTestId('commhub-needs');
+      expect(within(section).getByText('Yang Paragon butuhkan dari Anda')).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }
