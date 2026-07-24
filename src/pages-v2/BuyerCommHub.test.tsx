@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, within, fireEvent, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders } from '../test/test-utils';
 import BuyerCommHub from './BuyerCommHub';
@@ -15,7 +15,16 @@ import type { SupplierChaseView } from '../services/chase';
 // mount is covered by allRoutes.smoke. outboundRequestStore keeps its SIMULATED
 // seed (sup-005 whatsapp @ 08-18, sup-007 email @ 08-19).
 vi.mock('../services/query/chaseHooks', () => ({ useUnifiedChase: vi.fn() }));
-vi.mock('../services/query/sdcBuyerHooks', () => ({ useConsolidationRows: vi.fn() }));
+// useConsolidationRows drives the outbound fold; useInventoryRecord is the C4d
+// triage panel's write hook — stubbed here (its REAL dispatch is covered in
+// BuyerChannelTriage.test.tsx), so this page test stays focused on the reads.
+vi.mock('../services/query/sdcBuyerHooks', () => ({
+  useConsolidationRows: vi.fn(),
+  useInventoryRecord: vi.fn(() => ({
+    mutateAsync: vi.fn().mockResolvedValue({ status: 'done', entityId: 'inv-x', correlationId: 'c' }),
+    isPending: false,
+  })),
+}));
 vi.mock('../services/query/hooks', () => ({ useSuppliers: vi.fn() }));
 
 const view = (
@@ -144,13 +153,35 @@ describe('BuyerCommHub — the buyer/planner Communication Hub (C4a)', () => {
     expect(within(rows[0]).getByText('Recorded')).toBeInTheDocument();
   });
 
-  it('inbound triage is read-only: a deep-link to the Channel Inbox, no confirm action', () => {
+  it('the C4a deep-link is gone; the C4d in-place triage panel replaces it (supplier binding first)', () => {
     renderWithProviders(<BuyerCommHub />);
-    const link = screen.getByRole('link', { name: /Open Channel Inbox/i });
-    expect(link).toHaveAttribute('href', expect.stringContaining('/supplier/comm-hub'));
-    // No dispatch/confirm affordance exists on this surface (C4a is reads only).
-    expect(screen.queryByText(/Confirm & record/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /confirm/i })).not.toBeInTheDocument();
+    // The old honest deep-link to the supplier Channel Inbox is retired.
+    expect(screen.queryByRole('link', { name: /Open Channel Inbox/i })).not.toBeInTheDocument();
+    // The in-place triage panel is present, gated on picking a supplier FIRST.
+    const triage = screen.getByTestId('commhub-triage');
+    expect(within(triage).getByTestId('triage-supplier')).toBeInTheDocument();
+    // Before a supplier is picked there is no message field and no confirm action.
+    expect(within(triage).queryByTestId('triage-message')).not.toBeInTheDocument();
+    expect(within(triage).queryByTestId('triage-confirm')).not.toBeInTheDocument();
+    // And there is NEVER a free supplierId text field — the subject is picked.
+    expect(within(triage).queryByLabelText(/supplier id/i)).not.toBeInTheDocument();
+  });
+
+  it('recording via the in-place panel adds a row to the Channel-sourced submissions trail', async () => {
+    renderWithProviders(<BuyerCommHub />);
+    // Empty audit trail to begin.
+    expect(within(screen.getByTestId('commhub-provenance')).getByText(/No channel-sourced submissions/)).toBeInTheDocument();
+    // Bind the subject, paste, parse, map the material, confirm.
+    fireEvent.change(screen.getByTestId('triage-supplier'), { target: { value: 'sup-007' } });
+    fireEvent.change(screen.getByTestId('triage-message'), { target: { value: 'STOK PK-PETB-8810 2400 KG' } });
+    fireEvent.click(screen.getByTestId('triage-parse'));
+    const mat = (await screen.findByTestId('triage-mat-0')) as HTMLSelectElement;
+    await waitFor(() => expect(within(mat).getAllByRole('option').length).toBeGreaterThan(1));
+    fireEvent.change(mat, { target: { value: 'PK-PETB-8810' } });
+    fireEvent.click(screen.getByTestId('triage-confirm'));
+    // The onRecorded refresh re-reads the append-only store → a provenance row shows.
+    await waitFor(() => expect(screen.getAllByTestId('commhub-provenance-row').length).toBe(1));
+    expect(within(screen.getByTestId('commhub-provenance')).getByText('Recorded')).toBeInTheDocument();
   });
 
   it('renders the loading state while the chase read is pending', () => {
