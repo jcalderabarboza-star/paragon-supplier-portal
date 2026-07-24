@@ -1,6 +1,18 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Inbox, Info, MessageSquare, Send, RotateCcw, CheckCircle2, AlertTriangle } from 'lucide-react';
+import {
+  Inbox,
+  Info,
+  MessageSquare,
+  Send,
+  RotateCcw,
+  CheckCircle2,
+  AlertTriangle,
+  CalendarClock,
+  Clock,
+  ArrowRight,
+} from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
@@ -12,6 +24,8 @@ import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { useInventoryDeclare, useOwnCollaboratedMaterials } from '../services/query/sdcSupplierHooks';
+import { useDeliveryAgreements } from '../services/query/deliveryHooks';
+import { shapeObligations } from '../services/chase';
 import { parseChannelReply, type ChannelParseResult, type QtyRefusalReason } from '../services/channel/replyParser';
 import { makeProvenanceRef, type Channel, type ChannelMessage } from '../services/channel/types';
 import { channelProvenanceStore } from '../services/channel/provenanceStore';
@@ -19,6 +33,7 @@ import {
   parseGrid,
   openSubmissionSession,
   sdcClock,
+  SDC_SIMULATED_NOW,
   IMPORT_DECLARE_COLUMN,
   type GridRow,
   type GridContext,
@@ -27,7 +42,7 @@ import {
   type SubmissionSessionRecorder,
 } from '../services/sdc';
 import type { CommandResult } from '../services/data/types';
-import { formatNumber } from '../lib/format';
+import { formatNumber, formatDate } from '../lib/format';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Comm Hub C2 — the INBOUND CONFIRM-BEFORE-COMMIT surface (DEC-COMMS-PRIMARY).
@@ -52,6 +67,10 @@ import { formatNumber } from '../lib/format';
 // ────────────────────────────────────────────────────────────────────────────
 
 const CHANNELS: Channel[] = ['whatsapp', 'email', 'wechat'];
+
+// C5 — how many own obligations to preview inline before deferring the rest to the
+// full list on the delivery mirror (compact here, never a duplicate of the mirror).
+const NEEDS_CAP = 4;
 
 // parseGrid import-mode failure reason → the honest message key (honest silence).
 const REASON_KEY: Partial<Record<ParseReason, string>> = {
@@ -97,6 +116,15 @@ const CommHubInbound: React.FC = () => {
   const materialsQuery = useOwnCollaboratedMaterials();
   const materials = useMemo(() => materialsQuery.data ?? [], [materialsQuery.data]);
   const declareMutation = useInventoryDeclare();
+
+  // C5 — the supplier's OWN obligations ("what Paragon needs from you"), reusing the
+  // shared 5e derivation over the own-scoped delivery views (no ask-store read, no
+  // send implied — chase-derived facts, TRUE without any message having been sent).
+  const agreementsQuery = useDeliveryAgreements();
+  const obligations = useMemo(
+    () => shapeObligations(agreementsQuery.data ?? [], SDC_SIMULATED_NOW),
+    [agreementsQuery.data],
+  );
 
   const [channel, setChannel] = useState<Channel>('whatsapp');
   const [rawText, setRawText] = useState('');
@@ -256,6 +284,111 @@ const CommHubInbound: React.FC = () => {
         <div>
           <div className="font-semibold text-warning-hover">{t('commHub.honesty.title')}</div>
           <p className="mt-0.5 text-text-secondary">{t('commHub.honesty.body')}</p>
+        </div>
+      </div>
+
+      {/* ── Comm Hub C5 — "what Paragon needs from you" (own obligations) ──────
+          The supplier's OWN upcoming + overdue deliveries, chase-derived and
+          own-scoped — TRUE without any send. Own-facing tone (no chase vocabulary);
+          the OUTBOUND ASK STORE is deliberately never read here (every record is
+          "composed — not sent" — surfacing it would fabricate a receipt). */}
+      <section
+        className="border border-border-subtle rounded-lg bg-white overflow-hidden mb-6"
+        data-testid="commhub-needs"
+      >
+        <div className="px-4 py-3 border-b border-border-subtle bg-bg-subtle flex items-center gap-3">
+          <CalendarClock size={16} className="text-teal shrink-0" aria-hidden="true" />
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-text-primary">{t('commHub.needs.title')}</div>
+            <div className="text-xs text-text-tertiary">{t('commHub.needs.subtitle')}</div>
+          </div>
+          {obligations.length > 0 && (
+            <span className="ml-auto text-xs text-text-tertiary">
+              {t('delivery.supplier.obligations.summary', {
+                overdue: obligations.filter((o) => o.kind === 'overdue').length,
+                upcoming: obligations.filter((o) => o.kind === 'upcoming').length,
+              })}
+            </span>
+          )}
+        </div>
+
+        {agreementsQuery.isPending ? (
+          // Don't flash the "all-clear" before the read settles — that would assert
+          // "nothing due" for a moment even when obligations exist.
+          <div className="px-4 py-6 text-sm text-text-tertiary">{t('commHub.needs.loading')}</div>
+        ) : obligations.length === 0 ? (
+          <div className="px-4 py-6 text-sm text-text-tertiary flex items-center gap-2">
+            <CheckCircle2 size={16} className="text-success shrink-0" aria-hidden="true" />
+            {t('delivery.supplier.obligations.empty')}
+          </div>
+        ) : (
+          <>
+            <ul className="flex flex-col">
+              {obligations.slice(0, NEEDS_CAP).map((o, idx, shown) => (
+                <li
+                  key={o.key}
+                  className={`px-4 py-3 flex items-start gap-3 border-l-[3px] ${
+                    o.kind === 'overdue' ? 'border-l-danger' : 'border-l-warning'
+                  } ${idx < shown.length - 1 ? 'border-b border-border-subtle' : ''}`}
+                  data-testid="commhub-needs-row"
+                >
+                  <div className="w-8 h-8 rounded-md flex items-center justify-center shrink-0 bg-bg-hover">
+                    {o.kind === 'overdue' ? (
+                      <AlertTriangle size={15} className="text-danger" aria-hidden="true" />
+                    ) : (
+                      <Clock size={15} className="text-warning-hover" aria-hidden="true" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                      <span className="text-sm font-semibold text-text-primary">
+                        {t(
+                          o.kind === 'overdue'
+                            ? 'delivery.supplier.obligations.overdue'
+                            : 'delivery.supplier.obligations.upcoming',
+                        )}
+                      </span>
+                      <Data className="text-sm">{o.materialCode}</Data>
+                      <span className="text-xs text-text-tertiary">
+                        {t('delivery.supplier.obligations.due', { date: formatDate(o.dueDate) })}
+                      </span>
+                    </div>
+                    <div className="text-xs text-text-secondary">
+                      {t(
+                        o.kind === 'overdue'
+                          ? 'delivery.supplier.obligations.overdueGloss'
+                          : 'delivery.supplier.obligations.upcomingGloss',
+                      )}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {/* The full list lives on the delivery mirror — cross-link, never a
+                duplicate render of it. */}
+            <div className="px-4 py-2.5 border-t border-border-subtle bg-bg-subtle">
+              <Link
+                to="/supplier/delivery-agreements"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-action hover:text-action-hover"
+                data-testid="commhub-needs-viewall"
+              >
+                {t('commHub.needs.viewAll')}
+                <ArrowRight size={13} aria-hidden="true" />
+              </Link>
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* ── The honest note — recorded here, never sent from here (C5) ──────── */}
+      <div
+        className="mb-6 flex items-start gap-2 rounded-lg border border-info/30 bg-info-soft px-4 py-3 text-sm text-text-primary"
+        data-testid="commhub-note"
+      >
+        <Info size={16} className="mt-0.5 shrink-0 text-info" aria-hidden="true" />
+        <div>
+          <div className="font-semibold text-info">{t('commHub.note.title')}</div>
+          <p className="mt-0.5 text-text-secondary">{t('commHub.note.body')}</p>
         </div>
       </div>
 

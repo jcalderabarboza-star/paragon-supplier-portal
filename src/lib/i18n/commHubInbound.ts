@@ -62,6 +62,15 @@ export const commHubInboundEn: Record<string, string> = {
   'commHub.toast.failed.body': 'The update was rejected.',
   'commHub.gate.title': 'Supplier context',
   'commHub.gate.body': 'This inbound triage records updates for the supplier whose conversation you are in.',
+  // — C5: "what Paragon needs from you" (own obligations) + the honest note. The
+  //   row labels/glosses reuse the shared delivery.supplier.obligations.* keys. —
+  'commHub.needs.title': 'What Paragon needs from you',
+  'commHub.needs.subtitle': 'Your own upcoming and overdue deliveries.',
+  'commHub.needs.loading': 'Loading your deliveries…',
+  'commHub.needs.viewAll': 'View all in Delivery Agreements',
+  'commHub.note.title': 'Recorded here, never sent from here.',
+  'commHub.note.body':
+    'Replies you confirm here are recorded to the governed ledger. Paragon has no live channel, so nothing is auto-sent or auto-received.',
 };
 
 export const commHubInboundId: Record<string, string> = {
@@ -125,4 +134,13 @@ export const commHubInboundId: Record<string, string> = {
   'commHub.toast.failed.body': 'Pembaruan ditolak.',
   'commHub.gate.title': 'Konteks pemasok',
   'commHub.gate.body': 'Triase masuk ini mencatat pembaruan untuk pemasok yang percakapannya sedang Anda buka.',
+  // — C5: "yang Paragon butuhkan dari Anda" (kewajiban sendiri) + catatan jujur.
+  //   Label/gloss baris menggunakan kembali kunci delivery.supplier.obligations.*. —
+  'commHub.needs.title': 'Yang Paragon butuhkan dari Anda',
+  'commHub.needs.subtitle': 'Pengiriman Anda yang akan datang dan terlambat.',
+  'commHub.needs.loading': 'Memuat pengiriman Anda…',
+  'commHub.needs.viewAll': 'Lihat semua di Perjanjian Pengiriman',
+  'commHub.note.title': 'Dicatat di sini, tidak pernah dikirim dari sini.',
+  'commHub.note.body':
+    'Balasan yang Anda konfirmasi di sini dicatat ke buku besar terkelola. Paragon tidak memiliki kanal langsung, jadi tidak ada yang dikirim atau diterima secara otomatis.',
 };

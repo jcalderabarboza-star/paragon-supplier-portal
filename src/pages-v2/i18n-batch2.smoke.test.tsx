@@ -30,8 +30,8 @@ describe('Batch 2 — bilingual render (no EN leak in chrome)', () => {
   it('SupplierWhatsApp: ID chrome header, English gone', async () => {
     await setLang('id');
     renderWithProviders(<SupplierWhatsApp />, { identity: SUPPLIER });
-    expect(await screen.findByText('Alat Komunikasi')).toBeInTheDocument();
-    expect(screen.queryByText('Communication Tools')).not.toBeInTheDocument();
+    expect(await screen.findByText('Demo Kanal — cara Paragon menjangkau Anda')).toBeInTheDocument();
+    expect(screen.queryByText('Channel Demo — how Paragon reaches you')).not.toBeInTheDocument();
   });
 
   it('BuyerSourcing: ID chrome header, English gone', async () => {

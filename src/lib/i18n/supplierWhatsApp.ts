@@ -18,12 +18,16 @@
 export const supplierWhatsAppEn: Record<string, string> = {
   // — Breadcrumb —
   'supplierWhatsApp.crumb.intelligence': 'INTELLIGENCE',
-  'supplierWhatsApp.crumb.whatsappHub': 'COMMUNICATION HUB',
-  // — Page header —
-  'supplierWhatsApp.header.title': 'Communication Tools',
+  'supplierWhatsApp.crumb.whatsappHub': 'CHANNEL DEMO',
+  // — Page header (relabelled C5: unmistakably a demo, distinct from the real
+  //   "Channel Inbox" where recording actually happens) —
+  'supplierWhatsApp.header.title': 'Channel Demo — how Paragon reaches you',
   'supplierWhatsApp.header.subtitle':
     'Conversational commerce channels — WhatsApp, Email, and WeChat — {{supplier}}.',
   'supplierWhatsApp.fallback.supplier': 'Supplier',
+  // — Demonstration honesty marker (C5) —
+  'supplierWhatsApp.demo.banner':
+    'Demonstration — these are scripted example conversations, not your real messages.',
   // — Meta line —
   'supplierWhatsApp.meta.sessionOpened': 'Interactive simulator · session opened',
   // — Channel tabs —
@@ -137,12 +141,16 @@ export const supplierWhatsAppEn: Record<string, string> = {
 export const supplierWhatsAppId: Record<string, string> = {
   // — Breadcrumb —
   'supplierWhatsApp.crumb.intelligence': 'INTELIJEN',
-  'supplierWhatsApp.crumb.whatsappHub': 'PUSAT KOMUNIKASI',
-  // — Page header —
-  'supplierWhatsApp.header.title': 'Alat Komunikasi',
+  'supplierWhatsApp.crumb.whatsappHub': 'DEMO KANAL',
+  // — Page header (dilabeli ulang C5: jelas sebuah demo, berbeda dari "Kotak Masuk
+  //   Kanal" nyata tempat pencatatan sebenarnya terjadi) —
+  'supplierWhatsApp.header.title': 'Demo Kanal — cara Paragon menjangkau Anda',
   'supplierWhatsApp.header.subtitle':
     'Kanal perdagangan percakapan — WhatsApp, Email, dan WeChat — {{supplier}}.',
   'supplierWhatsApp.fallback.supplier': 'Pemasok',
+  // — Penanda kejujuran demonstrasi (C5) —
+  'supplierWhatsApp.demo.banner':
+    'Demonstrasi — ini adalah contoh percakapan tertulis, bukan pesan asli Anda.',
   // — Meta line —
   'supplierWhatsApp.meta.sessionOpened': 'Simulator interaktif · sesi dibuka',
   // — Channel tabs —
