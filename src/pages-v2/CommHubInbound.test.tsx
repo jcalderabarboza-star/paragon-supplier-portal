@@ -131,6 +131,24 @@ describe('CommHubInbound — the confirm gate (the honesty crux)', () => {
     expect(countFor(MAT)).toBe(before); // nothing dispatched
   });
 
+  // CP-0 · PR-2a — the operator-typed qty reaches parseGrid in IMPORT mode, whose
+  // origin is a supplier's own message, so an ambiguous number is never resolved
+  // by our locale. The load-bearing half of this test is the SECOND assertion: a
+  // refusal that renders no reason is not honest silence, it is just silence.
+  it('an AMBIGUOUS qty refuses AND says why — a reason is never blank', async () => {
+    renderPage();
+    typeMessage('STOK PK-PETB-8810 2400 KG');
+    clickParse();
+    await selectMaterial(MAT);
+    setQty('2.400'); // 2400 (id) or 2.4 (en) — refused, never guessed
+    const before = countFor(MAT);
+    fireEvent.click(screen.getByTestId('commhub-confirm'));
+    const result = await screen.findByTestId('commhub-result');
+    expect(within(result).getByText(/not recorded|tidak tercatat/i)).toBeInTheDocument();
+    expect(within(result).getByText(/could be read two ways/i)).toBeInTheDocument();
+    expect(countFor(MAT)).toBe(before); // nothing dispatched, nothing fabricated
+  });
+
   it('records provenance on the channel side after dispatch (never in the payload)', async () => {
     renderPage();
     const base = countFor(MAT);

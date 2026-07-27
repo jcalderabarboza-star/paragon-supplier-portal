@@ -73,10 +73,16 @@ const CHANNELS: Channel[] = ['whatsapp', 'email', 'wechat'];
 const NEEDS_CAP = 4;
 
 // parseGrid import-mode failure reason → the honest message key (honest silence).
-const REASON_KEY: Partial<Record<ParseReason, string>> = {
+// EXHAUSTIVE, not Partial: a refusal that states no reason is not honest
+// silence, it is just silence. Keying every ParseReason means widening the union
+// breaks the build here instead of rendering a blank reason to an operator.
+const REASON_KEY: Record<ParseReason, string> = {
   EMPTY_TOTAL: 'commHub.reason.EMPTY_TOTAL',
   MISSING_MATERIAL: 'commHub.reason.MISSING_MATERIAL',
   INVALID_QTY: 'commHub.reason.INVALID_QTY',
+  AMBIGUOUS_QTY: 'commHub.reason.AMBIGUOUS_QTY',
+  MISSING_BATCH_NUMBER: 'commHub.reason.MISSING_BATCH_NUMBER',
+  BATCH_TOTAL_MISMATCH: 'commHub.reason.BATCH_TOTAL_MISMATCH',
   NO_ROWS: 'commHub.reason.NO_ROWS',
 };
 const QTY_REASON_KEY: Record<QtyRefusalReason, string> = {
