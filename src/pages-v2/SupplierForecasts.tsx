@@ -176,13 +176,12 @@ const emptyShipmentForm: ShipmentForm = {
 const materialLabel = (code: string): string => MATERIAL_MASTER[code]?.label ?? code;
 const materialUom = (code: string) => MATERIAL_MASTER[code]?.canonicalUom ?? 'KG';
 
-// CP-0 · W1 · PR-2c — LAST CONSUMER: the shipment-qty gate (`submitShipment`).
-// This helper is the old blanket coercion (`Number(v.replace(/,/g,''))`), which
-// reads "2.400" as 2.4 and "2,400" as 2400 — one plausible reading of two,
-// picked silently. The confirm and SOH paths no longer use it; the shipment path
-// is 2d, where it is removed together with `buildIncomingShipmentPayload`'s own
-// `|| 0`. Do not add call sites.
-const numberFromField = (v: string): number => Number(v.replace(/,/g, ''));
+// CP-0 · W1 · PR-2d — `numberFromField` is GONE. It was the blanket coercion
+// `Number(v.replace(/,/g,''))`, which read "2.400" as 2.4 and "2,400" as 2400 —
+// one plausible reading of two, picked silently. 2a took the declaration path
+// off it, 2c the confirm path, and this batch takes the last consumer (the
+// shipment-qty gate). Every typed quantity on this page now goes through
+// `normalizeQty`, and nothing re-derives its own coercion.
 
 // ── CP-0 · W1 · PR-2c — the forecast commitment is PARSED, never coerced ─────
 //
@@ -217,6 +216,16 @@ const SOH_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
   EMPTY_QTY: 'sdcSup.stock.qty.refused.empty',
   NOT_NUMERIC: 'sdcSup.stock.qty.refused.notNumeric',
   AMBIGUOUS_QTY: 'sdcSup.stock.qty.refused.ambiguous',
+};
+
+// CP-0 · W1 · PR-2d — the shipment quantity. NO CONVENTION HINT, for exactly
+// the reasons written above the confirm map: this surface has no carrier, and
+// the supplier master's `country` is a jurisdiction, not the convention of
+// whoever is typing. Ambiguity refuses (CP-0 §5a).
+const SHIP_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'sdcSup.ship.qty.refused.empty',
+  NOT_NUMERIC: 'sdcSup.ship.qty.refused.notNumeric',
+  AMBIGUOUS_QTY: 'sdcSup.ship.qty.refused.ambiguous',
 };
 
 /** The latest own response answering this exact published line (this
@@ -933,6 +942,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   // The supplier's own ASNs are the to-paragon link source (asnRef is SELECTED,
   // never free-typed — it resolves server-side, per the R-4 note).
   const ownAsns = asns;
+  // THE ONE PARSE for this form: the gate below, the inline refusal, and the
+  // payload all read this single result, so no two of them can disagree.
+  const shipQty = normalizeQty(shipForm.qty);
 
   const setShipMaterial = (materialCode: string) => {
     const m = materials.find((x) => x.materialCode === materialCode) ?? null;
@@ -969,11 +981,14 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       });
       return;
     }
-    if (shipForm.qty.trim() === '' || Number.isNaN(numberFromField(shipForm.qty))) {
+    // The refusal renders inline on the field; this is the submit-time backstop
+    // (a keyboard commit can reach here without the operator reading the field).
+    // Same `shipQty` both places — one parse, one verdict.
+    if (!shipQty.ok) {
       toast({
         variant: 'error',
         title: t('sdcSup.ship.toast.missingQty.title'),
-        description: t('sdcSup.ship.toast.missingQty.body'),
+        description: t(SHIP_REFUSAL_KEY[shipQty.reason]),
       });
       return;
     }
@@ -991,7 +1006,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       shipForm.materialCode,
       shipForm.direction,
       {
-        qty: shipForm.qty,
+        qty: shipQty.value,
         ...(shipForm.etd ? { etd: shipForm.etd } : {}),
         ...(shipForm.eta ? { eta: shipForm.eta } : {}),
         ...(shipForm.awb ? { awb: shipForm.awb } : {}),
@@ -1560,10 +1575,14 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
             <Button variant="secondary" onClick={() => setShipOpen(false)}>
               {t('sdcSup.panel.cancel')}
             </Button>
+            {/* Disabled UNCONDITIONALLY on a refusal (D3, 2b): an unreadable
+                quantity is not a submittable form, so the commit is withdrawn
+                rather than left to fail at the toast. */}
             <Button
               variant="outline"
               icon={Ship}
-              disabled={reportMutation.isPending}
+              data-testid="sdcsup-ship-submit"
+              disabled={reportMutation.isPending || !shipQty.ok}
               onClick={submitShipment}
             >
               {reportMutation.isPending
@@ -1635,15 +1654,36 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               <label className={labelClass} htmlFor="sdcsup-ship-qty">
                 {t('sdcSup.ship.panel.qtyLabel', { uom: shipUom || '—' })}
               </label>
+              {/* CP-0 · 6.2 — text + inputmode, not type="number": a fix behind
+                  a number field cannot fire, because the browser filters the
+                  input space to what `Number` happens to accept. The widened
+                  space is safe ONLY because the parse landed in this same
+                  commit (the NaN-through-the-spine hazard). */}
               <input
                 id="sdcsup-ship-qty"
-                type="number"
-                min={0}
+                type="text"
+                inputMode="decimal"
                 placeholder="0"
+                aria-invalid={shipForm.qty.trim() !== '' && !shipQty.ok}
+                aria-describedby="sdcsup-ship-qty-hint"
                 value={shipForm.qty}
                 onChange={(e) => setShipForm({ ...shipForm, qty: e.target.value })}
                 className={inputClass}
               />
+              {shipForm.qty.trim() !== '' && !shipQty.ok ? (
+                <p
+                  id="sdcsup-ship-qty-hint"
+                  role="alert"
+                  data-testid="ship-qty-refusal"
+                  className="mt-1 text-xs text-danger"
+                >
+                  {t(SHIP_REFUSAL_KEY[shipQty.reason])}
+                </p>
+              ) : (
+                <p id="sdcsup-ship-qty-hint" className="mt-1 text-xs text-text-tertiary">
+                  {t('sdcSup.ship.qty.hint')}
+                </p>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>

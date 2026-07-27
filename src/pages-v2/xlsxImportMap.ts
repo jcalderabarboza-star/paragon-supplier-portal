@@ -13,6 +13,8 @@
 // Pure + framework-free so the coercion is unit-tested against fixture rows.
 // ────────────────────────────────────────────────────────────────────────────
 
+import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
+
 /**
  * One editable grid row — the shape BulkStockEntryGrid holds in state and the
  * SDC-3c-a adapter reads (via toGridRows). Defined here so the grid, the import
@@ -80,27 +82,73 @@ export function mappingComplete(m: ColumnMapping): boolean {
   return new Set(used).size === used.length;
 }
 
+// ── CP-0 · W1 · PR-2d — the import path parses through the ONE parser ────────
+//
+// `coerceRows` used to do its own `Number(raw.replace(/,/g,''))`, and its spec
+// blessed it: a row carrying "1,800" was asserted to import as 1800, under a
+// test titled "comma qty → number". But "1,800" is 1800 under en and 1.8 under
+// id, and THIS is the path with the least claim to know which — the file is a
+// spreadsheet of unknown authorship, so there is not even an ambient UI
+// language to lean on, let alone the typist's convention (CP-0 §5a: an import
+// refuses per row). The old code picked the en reading every time and said
+// nothing, and the test recorded that guess as the contract.
+//
+// Every qty now goes through `normalizeQty` with NO hint. A cell it cannot read
+// becomes `null` — the grid cell type is `number | null`, so it CANNOT carry
+// "1,800 (ambiguous)" — but the refusal is no longer thrown away: the reason
+// and the raw text ride back in `refused`, so the panel can say WHICH cells it
+// could not read and WHY. A silently blanked cell would tell the supplier they
+// left a field empty when they did not, which is the same blame-moving move the
+// fabricated Σ-mismatch made in 2c.
+//
+// EMPTY is deliberately NOT reported: a blank cell in the sheet is blank in the
+// grid, which is self-evident and not a misreading. Only NOT_NUMERIC and
+// AMBIGUOUS_QTY — the two "we could not read what you wrote" cases — surface.
+
+/** A qty cell the one parser refused: which row, what it said, and why. */
+export interface RefusedImportRow {
+  /** 0-based index into the sheet's data rows (the panel renders index + 1). */
+  readonly index: number;
+  /** The batch number on that row, when it has one — the operator's landmark. */
+  readonly batchNumber: string;
+  /** VERBATIM, untrimmed of meaning: what the cell actually said. */
+  readonly raw: string;
+  readonly reason: QtyRefusalReason;
+}
+
+/** Coerced rows PLUS the cells the parser refused — never rows alone, so a
+ *  caller cannot accidentally drop the refusals on the floor. */
+export interface CoercedImport {
+  readonly rows: BatchGridRow[];
+  readonly refused: readonly RefusedImportRow[];
+}
+
 /**
  * Coerce raw parsed rows (keyed by supplier headers) into grid rows under the
- * confirmed mapping. qty is comma-stripped to a finite number or null (an
- * unreadable/negative qty becomes a blank cell the supplier fixes — the adapter
- * then flags it honestly, never a silent 0). expiry passes through the ISO
- * string parseWorkbook already produced. Nothing is dispatched here — these rows
- * land in the grid for review.
+ * confirmed mapping, reporting every qty the one parser refused. An unreadable
+ * or ambiguous qty becomes a blank cell the supplier retypes — never a silent
+ * 0, and never one plausible reading of two. expiry passes through the ISO
+ * string parseWorkbook already produced. Nothing is dispatched here — these
+ * rows land in the grid for review.
  */
 export function coerceRows(
   rows: readonly Record<string, string>[],
   m: ColumnMapping,
-): BatchGridRow[] {
-  return rows.map((r) => {
+): CoercedImport {
+  const refused: RefusedImportRow[] = [];
+  const out = rows.map((r, index) => {
     const bn = (r[m.batchNumber] ?? '').trim();
-    const qtyRaw = (r[m.qty] ?? '').trim().replace(/,/g, '');
-    const qtyNum = qtyRaw === '' ? null : Number(qtyRaw);
+    const raw = (r[m.qty] ?? '').trim();
+    const parsed = normalizeQty(raw);
+    if (!parsed.ok && parsed.reason !== 'EMPTY_QTY') {
+      refused.push({ index, batchNumber: bn, raw, reason: parsed.reason });
+    }
     const exp = m.expiryDate ? (r[m.expiryDate] ?? '').trim() || null : null;
     return {
       batchNumber: bn === '' ? null : bn,
-      qty: qtyNum !== null && Number.isFinite(qtyNum) ? qtyNum : null,
+      qty: parsed.ok ? parsed.value : null,
       expiryDate: exp,
     };
   });
+  return { rows: out, refused };
 }

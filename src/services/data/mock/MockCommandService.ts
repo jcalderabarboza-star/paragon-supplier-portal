@@ -852,7 +852,14 @@ const incomingShipmentTarget: CommandTarget = {
       materialCode,
       direction: str('direction') as ShipmentDirection,
       lifecycle: toState as ShipmentLifecycle, // 'Booked'
-      qty: typeof payload.qty === 'number' ? payload.qty : 0,
+      // CP-0 · W1 · PR-2d — `Number.isFinite`, NOT `typeof === 'number'`.
+      // `typeof NaN === 'number'` is true and `isEmpty(NaN)` is false, so a NaN
+      // quantity passed `requiredFields` and was STORED — then rendered as a
+      // tidy em-dash by `formatNumber`, and silently poisoned the coverage sum
+      // and the fulfilment drawdown. Every surface upstream now refuses before
+      // it can produce one; this closes the hole at the boundary itself, where
+      // it cannot be reopened by a future caller.
+      qty: Number.isFinite(payload.qty) ? (payload.qty as number) : 0,
       uom,
       ...(str('etd') ? { etd: str('etd') } : {}),
       ...(str('eta') ? { eta: str('eta') } : {}),
