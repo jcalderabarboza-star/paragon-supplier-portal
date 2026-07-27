@@ -62,6 +62,22 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.panel.qty.title': 'Confirmed quantity',
   'sdcSup.panel.qty.desc': 'The quantity you commit to supply for this period. 0 is a valid answer when you cannot supply at all.',
   'sdcSup.panel.qtyLabel': 'Confirmed quantity ({{uom}})',
+  // — CP-0 · W1 · PR-2c — quantity refusals (the ONE parse, no convention hint) —
+  // Each refusal names what to type instead. The ambiguous copy spells both
+  // readings out in words, because the glyph is the trap.
+  'sdcSup.panel.qty.hint': 'Digits only — no thousands separators (e.g. 40000)',
+  'sdcSup.panel.qty.refused.empty':
+    'Enter the quantity you commit to — a blank field is not a zero. If you cannot supply any, type 0.',
+  'sdcSup.panel.qty.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 40000.',
+  'sdcSup.panel.qty.refused.ambiguous':
+    'This can be read two ways — "40.000" means forty thousand in Indonesian and forty in English. Type it without separators: 40000.',
+  'sdcSup.stock.qty.refused.empty':
+    'Enter your total stock on hand — a blank field is not a zero. If you hold none, type 0.',
+  'sdcSup.stock.qty.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 2400.',
+  'sdcSup.stock.qty.refused.ambiguous':
+    'This can be read two ways — "2.400" means two thousand four hundred in Indonesian and two-point-four in English. Type it without separators: 2400.',
   'sdcSup.panel.date.eyebrow': 'Step 2',
   'sdcSup.panel.date.title': 'Delivery commitment',
   'sdcSup.panel.date.desc': 'Optional: the date you commit to deliver by, and any capacity constraint worth flagging.',
@@ -135,6 +151,7 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.stock.panel.batches.desc': 'Optional: break the total into batches with expiry dates. When you add batches, they must sum to the total.',
   'sdcSup.stock.panel.batchNumber': 'Batch number',
   'sdcSup.stock.panel.batchQty': 'Quantity ({{uom}})',
+  'sdcSup.stock.panel.batchQtyLabel': 'Batch quantity',
   'sdcSup.stock.panel.batchExpiry': 'Expiry date',
   'sdcSup.stock.panel.removeBatch': 'Remove batch',
   'sdcSup.stock.panel.addBatch': 'Add batch',
@@ -326,6 +343,20 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.panel.qty.title': 'Kuantitas dikonfirmasi',
   'sdcSup.panel.qty.desc': 'Kuantitas yang Anda komitmenkan untuk periode ini. 0 adalah jawaban sah bila Anda sama sekali tidak dapat memasok.',
   'sdcSup.panel.qtyLabel': 'Kuantitas dikonfirmasi ({{uom}})',
+  // — CP-0 · W1 · PR-2c — penolakan kuantitas (satu parser, tanpa petunjuk konvensi) —
+  'sdcSup.panel.qty.hint': 'Angka saja — tanpa pemisah ribuan (misalnya 40000)',
+  'sdcSup.panel.qty.refused.empty':
+    'Masukkan kuantitas yang Anda komitmenkan — kolom kosong bukan berarti nol. Bila Anda tidak dapat memasok sama sekali, ketik 0.',
+  'sdcSup.panel.qty.refused.notNumeric':
+    'Itu bukan kuantitas — ketik angka saja, misalnya 40000.',
+  'sdcSup.panel.qty.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "40.000" berarti empat puluh ribu dalam bahasa Indonesia dan empat puluh dalam bahasa Inggris. Ketik tanpa pemisah: 40000.',
+  'sdcSup.stock.qty.refused.empty':
+    'Masukkan total stok di tangan — kolom kosong bukan berarti nol. Bila Anda tidak memiliki stok, ketik 0.',
+  'sdcSup.stock.qty.refused.notNumeric':
+    'Itu bukan kuantitas — ketik angka saja, misalnya 2400.',
+  'sdcSup.stock.qty.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "2.400" berarti dua ribu empat ratus dalam bahasa Indonesia dan dua koma empat dalam bahasa Inggris. Ketik tanpa pemisah: 2400.',
   'sdcSup.panel.date.eyebrow': 'Langkah 2',
   'sdcSup.panel.date.title': 'Komitmen pengiriman',
   'sdcSup.panel.date.desc': 'Opsional: tanggal komitmen pengiriman dan kendala kapasitas yang perlu ditandai.',
@@ -399,6 +430,7 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.stock.panel.batches.desc': 'Opsional: pecah total menjadi batch dengan tanggal kedaluwarsa. Bila Anda menambah batch, jumlahnya harus sama dengan total.',
   'sdcSup.stock.panel.batchNumber': 'Nomor batch',
   'sdcSup.stock.panel.batchQty': 'Kuantitas ({{uom}})',
+  'sdcSup.stock.panel.batchQtyLabel': 'Kuantitas batch',
   'sdcSup.stock.panel.batchExpiry': 'Tanggal kedaluwarsa',
   'sdcSup.stock.panel.removeBatch': 'Hapus batch',
   'sdcSup.stock.panel.addBatch': 'Tambah batch',
