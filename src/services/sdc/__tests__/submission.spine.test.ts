@@ -91,9 +91,15 @@ describe('buildRequirementResponsePayload — the snapshot binding is structural
     (l) => l.supplierId === 'sup-002' && l.materialCode === 'RM-EMUL-3310',
   )!;
 
+  // LEDGER (CP-0 · 6.1 · correction 1): the draft carried `confirmedQty: '6,000'`
+  // and expected 6000, annotated "comma-tolerant coercion". That token is the
+  // AMBIGUOUS class exactly — 6000 under en, 6 under id — so the test asserted
+  // one plausible reading of two as the correct answer, which is the guess this
+  // series exists to remove. The builder no longer coerces at all (CP-0 §4), so
+  // the draft now carries the number the caller already parsed.
   it('copies publicationId/planVersion/material/period from the rendered objects, supplierId from identity', () => {
     const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
-      confirmedQty: '6,000',
+      confirmedQty: 6000,
       committedDate: '2026-08-20',
     });
     expect(payload).toEqual({
@@ -102,30 +108,60 @@ describe('buildRequirementResponsePayload — the snapshot binding is structural
       materialCode: 'RM-EMUL-3310',
       periodBucket: '2026-08',
       supplierId: 'sup-002',
-      confirmedQty: 6000, // comma-tolerant coercion
+      confirmedQty: 6000,
       committedDate: '2026-08-20',
     });
   });
 
+  // LEDGER (CP-0 · 6.1 · correction 2): '10' → 10. Mechanical — the draft field
+  // is number-typed now; the assertion and its intent are untouched.
   it('never carries a uom — the master owns the unit (invariant #2)', () => {
     const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
-      confirmedQty: '10',
+      confirmedQty: 10,
     });
     expect('uom' in payload).toBe(false);
   });
 
-  it('an empty qty resolves to 0 — a legal "cannot supply" short confirmation (F-2), never NaN', () => {
+  // LEDGER (CP-0 · 6.1 · correction 3) — THE BUG NOTARIZED AS A PASSING TEST.
+  //
+  // old: 'an empty qty resolves to 0 — a legal "cannot supply" short
+  //       confirmation (F-2), never NaN'
+  //       → buildRequirementResponsePayload(..., { confirmedQty: '' })
+  //       → expect(payload.confirmedQty).toBe(0)
+  //
+  // why old was wrong: it conflated two different facts under one name. F-2 is
+  // real — a supplier who TYPES 0 is stating "I cannot supply any of this", and
+  // that binding answer must be recorded. But a supplier who typed NOTHING has
+  // stated nothing, and manufacturing the strongest possible commitment out of
+  // an untouched field is not F-2, it is fabrication. This test asserted the
+  // fabrication as the contract, which is why the `|| 0` survived four batches.
+  //
+  // REPLACED (not deleted) by the two contracts that are actually true: a typed
+  // zero is carried through intact, and the builder can no longer manufacture
+  // one because it never sees a string. Blank refuses upstream, at the surface.
+  it('a TYPED zero is carried through — the legal "cannot supply at all" short (F-2)', () => {
     const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
-      confirmedQty: '',
+      confirmedQty: 0,
       rootCause: { level1: 'capacity' },
     });
     expect(payload.confirmedQty).toBe(0);
     expect(payload.rootCause).toEqual({ level1: 'capacity' });
   });
 
+  it('is pure assembly — the number it is given is the number it ships', () => {
+    // The structural guarantee: no string input, so nothing to parse, so no
+    // second reading that could diverge from the gate the surface applied.
+    expect(
+      buildRequirementResponsePayload(pub, line, 'sup-002', { confirmedQty: 2400 }).confirmedQty,
+    ).toBe(2400);
+    expect(
+      buildRequirementResponsePayload(pub, line, 'sup-002', { confirmedQty: 2.4 }).confirmedQty,
+    ).toBe(2.4);
+  });
+
   it('omits absent optionals rather than sending empty markers', () => {
     const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
-      confirmedQty: '100',
+      confirmedQty: 100,
     });
     expect('committedDate' in payload).toBe(false);
     expect('capacityConstraint' in payload).toBe(false);

@@ -3,7 +3,11 @@ import { screen, waitFor, within, fireEvent } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import SupplierForecasts from './SupplierForecasts';
 import { requirementResponseStore } from '../services/data/mock/stores/requirementResponseStore';
-import { supplierVisiblePublications, FORECAST_PUBLICATIONS } from '../services/sdc';
+import {
+  supplierVisiblePublications,
+  FORECAST_PUBLICATIONS,
+  consolidationRows,
+} from '../services/sdc';
 import { isLive } from '../services/liveness';
 import i18n from '../lib/i18n';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
@@ -258,6 +262,178 @@ describe('SupplierForecasts — the governed submit (t_requirementresponse_submi
       expect(thread).toHaveLength(2);
       expect(thread.map((r) => r.submissionVersion).sort()).toEqual([1, 2]);
     });
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// CP-0 · W1 · PR-2c — the forecast commitment is PARSED, and the FALSE-DEFICIT
+// CHAIN is broken at its source.
+//
+// A misread here does not stay a bad number. "40.000" against the 40,000 PCS
+// firm line became 40, which tripped `isShort`, which forced the supplier to
+// pick a shortfall root cause for a quantity they had committed IN FULL, which
+// shipped a 39,960-unit deficit to the planner's collaboration board. These
+// tests lock BOTH halves: the false accusation is gone, and genuine shortfall
+// detection still works — a fix that simply stopped detecting shorts would pass
+// the first half and be worse than the bug.
+// ────────────────────────────────────────────────────────────────────────────
+
+// The root-cause requirement is rendered as a danger `*` appended to the
+// "Category" label when `isShort` holds — that marker IS the accusation the
+// false-deficit chain begins with, so it is what these tests assert. (Asserting
+// a literal "Root cause *" string would never match and would pass vacuously.)
+const categoryIsRequired = () =>
+  screen.getAllByText(/Category/).some((el) => /\*/.test(el.textContent ?? ''));
+
+describe('SupplierForecasts — the false-deficit chain (CP-0 · 2c)', () => {
+  it('an AMBIGUOUS quantity REFUSES — it is never read as a shortfall', async () => {
+    renderPage();
+    const before = requirementResponseStore.all().length;
+    await openConfirmFor('PK-PETB-8810'); // firm, 40 000 PCS
+    setQty('40.000'); // 40000 under id, 40 under en — one reading of two
+
+    // A quantity nobody can read is not a shortfall. The root-cause section must
+    // NOT demand an explanation for a deviation that has not been established.
+    const refusal = screen.getByTestId('confirm-qty-refusal');
+    expect(refusal.textContent?.trim()).not.toBe(''); // a reason is never blank
+    // THE FALSE ACCUSATION: this used to read 40, trip `isShort`, and demand a
+    // shortfall category for a quantity committed in full.
+    expect(categoryIsRequired()).toBe(false);
+
+    // Nothing reaches the spine.
+    submitPanel();
+    await waitFor(() => expect(requirementResponseStore.all()).toHaveLength(before));
+    expect(
+      requirementResponseStore.all().some((r) => r.forecastConfirmation?.confirmedQty === 40),
+    ).toBe(false);
+  });
+
+  it('a FULL quantity does not trip isShort, forces no root cause, and surfaces NO deficit', async () => {
+    renderPage();
+    await openConfirmFor('PK-PETB-8810');
+    setQty('40000'); // exactly the requested quantity
+    expect(screen.queryByTestId('confirm-qty-refusal')).not.toBeInTheDocument();
+    expect(categoryIsRequired()).toBe(false); // nothing to explain
+
+    // Submitted WITHOUT ever choosing a root cause — the whole chain's trigger.
+    submitPanel();
+    await waitFor(() =>
+      expect(
+        requirementResponseStore.all().some((r) => r.materialCode === 'PK-PETB-8810'),
+      ).toBe(true),
+    );
+    const minted = requirementResponseStore
+      .all()
+      .find((r) => r.materialCode === 'PK-PETB-8810' && r.supplierId === 'sup-007')!;
+    expect(minted.forecastConfirmation.confirmedQty).toBe(40000);
+    expect(minted.rootCause).toBeUndefined(); // no fabricated shortfall explanation
+
+    // The downstream link: consolidation derives the planner's deficit from this
+    // stored quantity. A full confirmation must derive `confirmed-full`, so
+    // BuyerCollaboration has no deficit to render.
+    const rows = consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all());
+    const row = rows.find(
+      (r) => r.line.supplierId === 'sup-007' && r.line.materialCode === 'PK-PETB-8810',
+    )!;
+    expect(row.state.kind).toBe('confirmed-full');
+    expect(row.state).not.toHaveProperty('deficitQty');
+  });
+
+  it('CONTROL — a GENUINELY short quantity still trips every guard (the fix did not disable detection)', async () => {
+    renderPage();
+    await openConfirmFor('PK-CAPF-8820'); // semi-firm, 60 000 PCS
+    setQty('50000'); // really short by 10 000
+
+    // The accusation is CORRECT here and must still be made.
+    expect(categoryIsRequired()).toBe(true);
+
+    // Blocked without a root cause, exactly as before.
+    submitPanel();
+    expect(
+      requirementResponseStore.all().some((r) => r.materialCode === 'PK-CAPF-8820'),
+    ).toBe(false);
+    fireEvent.change(screen.getByLabelText(/Category/), { target: { value: 'capacity' } });
+    submitPanel();
+    await waitFor(() =>
+      expect(
+        requirementResponseStore.all().some((r) => r.materialCode === 'PK-CAPF-8820'),
+      ).toBe(true),
+    );
+
+    // And the REAL deficit still reaches the planner.
+    const rows = consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all());
+    const row = rows.find(
+      (r) => r.line.supplierId === 'sup-007' && r.line.materialCode === 'PK-CAPF-8820',
+    )!;
+    expect(row.state.kind).toBe('short');
+    expect(row.state).toMatchObject({ deficitQty: 10000 });
+  });
+
+  it('a blank quantity is not a zero commitment — and a TYPED zero still is', async () => {
+    renderPage();
+    const before = requirementResponseStore.all().length;
+    await openConfirmFor('PK-PETB-8810');
+    submitPanel(); // nothing typed
+    expect(requirementResponseStore.all()).toHaveLength(before);
+
+    // The same field, now stating 0 — a binding "I cannot supply any of this".
+    setQty('0');
+    fireEvent.change(screen.getByLabelText(/Category/), { target: { value: 'capacity' } });
+    submitPanel();
+    await waitFor(() =>
+      expect(
+        requirementResponseStore
+          .all()
+          .some((r) => r.supplierId === 'sup-007' && r.forecastConfirmation?.confirmedQty === 0),
+      ).toBe(true),
+    );
+  });
+});
+
+describe('SupplierForecasts — the Σ-banner reads the SAME parse as the payload (CP-0 · 2c)', () => {
+  const openSoh = async () => {
+    renderPage();
+    // The declare CTA lives on the Stock (SOH) tab, not the default lines tab.
+    fireEvent.click(await screen.findByRole('tab', { name: /Stock \(SOH\)/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Declare stock/i }));
+    await screen.findByLabelText(/Total quantity/);
+  };
+  const setTotal = (v: string) =>
+    fireEvent.change(screen.getByLabelText(/Total quantity/), { target: { value: v } });
+
+  // Two batch rows of 1,200 each — Σ 2,400, matching the total under the ID
+  // reading of "2.400" and mismatching under the EN one. That is the whole point.
+  const addTwoBatches = () => {
+    fireEvent.click(screen.getByRole('button', { name: /Add batch/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Add batch/i }));
+    fireEvent.change(screen.getByLabelText('Batch number 1'), { target: { value: 'A' } });
+    fireEvent.change(screen.getByLabelText('Batch quantity 1'), { target: { value: '1200' } });
+    fireEvent.change(screen.getByLabelText('Batch number 2'), { target: { value: 'B' } });
+    fireEvent.change(screen.getByLabelText('Batch quantity 2'), { target: { value: '1200' } });
+  };
+
+  it('an AMBIGUOUS total states the refusal — never a fabricated Σ mismatch', async () => {
+    await openSoh();
+    setTotal('2.400'); // 2400 under id, 2.4 under en
+    addTwoBatches();
+
+    // The banner used to compute 2,4 from its OWN parse, declare the batches
+    // mismatched, and block — accusing the supplier of arithmetic they had not
+    // got wrong. The honest answer is that the total cannot be read at all.
+    const banner = screen.getByTestId('soh-batch-sum');
+    expect(banner.textContent).not.toMatch(/do not add up|2,4/);
+    expect(banner.textContent?.trim()).not.toBe('');
+  });
+
+  it('a READABLE total and matching batches agree — banner and payload derive from one parse', async () => {
+    await openSoh();
+    setTotal('2400');
+    addTwoBatches();
+
+    const banner = screen.getByTestId('soh-batch-sum');
+    // 2.400 is formatNumber(2400) — id-ID grouping, the display convention.
+    expect(banner.textContent).toContain('2.400');
+    expect(banner.textContent).not.toMatch(/do not add up/);
   });
 });
 

@@ -50,6 +50,7 @@ import {
   buildRequirementAcknowledgePayload,
   buildInventoryDeclarationPayload,
   normalizeInventoryDeclarationDraft,
+  type NormalizedInventoryDeclaration,
   buildIncomingShipmentPayload,
   declarationGranularity,
   openSubmissionSession,
@@ -63,6 +64,7 @@ import {
   type SubmissionSessionRecorder,
 } from '../services/sdc';
 import type { ASN, CommandResult } from '../services/data/types';
+import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
 import BulkStockEntryGrid from './BulkStockEntryGrid';
@@ -173,7 +175,49 @@ const emptyShipmentForm: ShipmentForm = {
 
 const materialLabel = (code: string): string => MATERIAL_MASTER[code]?.label ?? code;
 const materialUom = (code: string) => MATERIAL_MASTER[code]?.canonicalUom ?? 'KG';
+
+// CP-0 · W1 · PR-2c — LAST CONSUMER: the shipment-qty gate (`submitShipment`).
+// This helper is the old blanket coercion (`Number(v.replace(/,/g,''))`), which
+// reads "2.400" as 2.4 and "2,400" as 2400 — one plausible reading of two,
+// picked silently. The confirm and SOH paths no longer use it; the shipment path
+// is 2d, where it is removed together with `buildIncomingShipmentPayload`'s own
+// `|| 0`. Do not add call sites.
 const numberFromField = (v: string): number => Number(v.replace(/,/g, ''));
+
+// ── CP-0 · W1 · PR-2c — the forecast commitment is PARSED, never coerced ─────
+//
+// This is the supplier's binding answer to a published requirement, and a
+// misread here does not stay a bad number — it CASCADES. "40.000" against a
+// 40,000 PCS line became 40, which tripped `isShort`, which forced the supplier
+// to pick a shortfall root cause for a quantity they had committed IN FULL,
+// which shipped a 39,960-unit deficit to the planner's collaboration board. The
+// platform interrogated a supplier about a shortfall that did not exist, then
+// chased them for it.
+//
+// NO CONVENTION HINT. Unlike the channel surfaces (where the channel itself
+// carries a convention and hardcodes 'id'), this form has no carrier: the
+// identity holds only persona/supplierId/supplierName, no locale, and no
+// numeric-preference attribute exists anywhere in the model. The supplier
+// master's `country` is NOT that signal and inferring from it would be a
+// plausible-wrong guess of exactly the kind this batch exists to kill — DE and
+// FR use the same "1.234,56" convention as ID while MY and CN use the EN one,
+// and a jurisdiction is not the convention of whoever is typing. So an ambiguous
+// token refuses (CP-0 §5a) rather than being resolved from a signal we do not
+// actually have.
+//
+// EXHAUSTIVE, not Partial (the 2a discipline): the next refusal reason added to
+// the union must break the build here, not render a blank line to a supplier.
+const CONFIRM_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'sdcSup.panel.qty.refused.empty',
+  NOT_NUMERIC: 'sdcSup.panel.qty.refused.notNumeric',
+  AMBIGUOUS_QTY: 'sdcSup.panel.qty.refused.ambiguous',
+};
+
+const SOH_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'sdcSup.stock.qty.refused.empty',
+  NOT_NUMERIC: 'sdcSup.stock.qty.refused.notNumeric',
+  AMBIGUOUS_QTY: 'sdcSup.stock.qty.refused.ambiguous',
+};
 
 /** The latest own response answering this exact published line (this
  *  publication), for the inline "your latest response" echo. */
@@ -660,12 +704,15 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
     setShipOpen(true);
   };
 
-  const qtyNumber = numberFromField(form.confirmedQty);
+  // The ONE parse for the confirm form. Everything downstream — the short
+  // detection, the root-cause requirement, the submit gate, the payload — reads
+  // THIS result, so none of them can disagree about what the supplier typed.
+  const confirmQty = normalizeQty(form.confirmedQty);
+  // A quantity nobody can read is not a shortfall. `isShort` is only ASKABLE of
+  // a number that exists, so an unreadable entry never accuses the supplier of
+  // falling short — it says it cannot read them.
   const isShort =
-    panelLine !== null &&
-    form.confirmedQty.trim() !== '' &&
-    !Number.isNaN(qtyNumber) &&
-    qtyNumber < panelLine.forecastQty;
+    panelLine !== null && confirmQty.ok && confirmQty.value < panelLine.forecastQty;
 
   const failToast = () =>
     toast({
@@ -676,17 +723,21 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
 
   const submitConfirmation = async () => {
     if (!panelLine) return;
-    // Quantity must be STATED — 0 is legal (F-2), an empty field is not.
-    if (form.confirmedQty.trim() === '' || Number.isNaN(qtyNumber)) {
+    // Quantity must be STATED and READABLE — a typed 0 is legal (F-2), a blank
+    // field is not a zero, and an ambiguous token is not a number. The refusal
+    // reason is named rather than collapsed into one generic "missing quantity",
+    // because "you left this empty" and "we cannot tell which number you mean"
+    // ask the supplier for different things.
+    if (!confirmQty.ok) {
       toast({
         variant: 'error',
         title: t('sdcSup.toast.missingQty.title'),
-        description: t('sdcSup.toast.missingQty.body'),
+        description: t(CONFIRM_REFUSAL_KEY[confirmQty.reason]),
       });
       return;
     }
     // Short (including 0): the deviation needs its root cause (form-level rule).
-    if (qtyNumber < panelLine.forecastQty && !form.rootCauseLevel1) {
+    if (confirmQty.value < panelLine.forecastQty && !form.rootCauseLevel1) {
       toast({
         variant: 'error',
         title: t('sdcSup.toast.missingRootCause.title'),
@@ -697,7 +748,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
     // Snapshot keys come from the RENDERED publication + line; supplierId from
     // the IDENTITY — never the form (un-falsifiable binding, SDC-2a).
     const payload = buildRequirementResponsePayload(publication, panelLine, supplierId, {
-      confirmedQty: form.confirmedQty,
+      // The SAME parsed value the gate above judged — the builder can no longer
+      // re-read the string and reach a different number (CP-0 §4).
+      confirmedQty: confirmQty.value,
       ...(form.committedDate ? { committedDate: form.committedDate } : {}),
       ...(form.capacityConstraint ? { capacityConstraint: form.capacityConstraint } : {}),
       ...(form.rootCauseLevel1
@@ -771,12 +824,43 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   };
 
   // ── SDC-3b — SOH declare ───────────────────────────────────────────────────
+  //
+  // CP-0 · W1 · PR-2c — the Σ-banner deferred by 2a. 2a routed the PAYLOAD
+  // through `normalizeInventoryDeclarationDraft` but left the gate and the
+  // banner on the old `numberFromField`, so the panel derived its total TWICE
+  // from two different implementations — the same double-parse 2a closed inside
+  // the builder, reopened one layer up. The consequence was not merely a wrong
+  // figure: a total of "2.400" beside batches of 1200 + 1200 made the banner
+  // read 2,4, declare a Σ MISMATCH, and block the submit — the platform
+  // accusing the supplier of arithmetic they had not got wrong, when the honest
+  // answer was "we cannot read that number." A fabricated accusation is worse
+  // than a fabricated value; it moves the blame.
+  //
+  // Now there is ONE normalisation of the whole draft, and the gate, the banner
+  // and the payload all read it. They cannot disagree.
   const sohBatches = sohForm.batches.filter((b) => b.batchNumber.trim() !== '');
-  const sohBatchSum = sohBatches.reduce((s, b) => s + (numberFromField(b.qty) || 0), 0);
-  const sohTotal = numberFromField(sohForm.totalQty);
+  const sohNormalized = normalizeInventoryDeclarationDraft({
+    totalQty: sohForm.totalQty,
+    ...(sohBatches.length > 0
+      ? {
+          batches: sohBatches.map((b) => ({
+            batchNumber: b.batchNumber,
+            qty: b.qty,
+            ...(b.expiryDate ? { expiryDate: b.expiryDate } : {}),
+          })),
+        }
+      : {}),
+  });
+  // Σ and the total are only comparable when BOTH are readable. Under a refusal
+  // there is no arithmetic to check — the refusal is the whole story.
+  const sohValue: NormalizedInventoryDeclaration | null = sohNormalized.ok
+    ? sohNormalized.value
+    : null;
+  const sohBatchSum = sohValue?.batches?.reduce((s, b) => s + b.qty, 0) ?? null;
   // Client-side pre-check (the INV_DECLARE_BATCH_TOTAL hook is the real gate):
   // when batch detail is present, Σ must equal the declared total.
-  const sohBatchMismatch = sohBatches.length > 0 && !Number.isNaN(sohTotal) && sohBatchSum !== sohTotal;
+  const sohBatchMismatch =
+    sohValue !== null && sohBatchSum !== null && sohBatchSum !== sohValue.totalQty;
 
   const submitSoh = async () => {
     if (!sohForm.materialCode) {
@@ -787,11 +871,13 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       });
       return;
     }
-    if (sohForm.totalQty.trim() === '' || Number.isNaN(sohTotal)) {
+    // An unreadable quantity refuses BEFORE the Σ check: "we cannot read your
+    // total" must never be reported as "your batches do not add up".
+    if (!sohNormalized.ok) {
       toast({
         variant: 'error',
         title: t('sdcSup.stock.toast.missingTotal.title'),
-        description: t('sdcSup.stock.toast.missingTotal.body'),
+        description: t(SOH_REFUSAL_KEY[sohNormalized.reason]),
       });
       return;
     }
@@ -800,42 +886,18 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         variant: 'error',
         title: t('sdcSup.stock.toast.batchMismatch.title'),
         description: t('sdcSup.stock.toast.batchMismatch.body', {
-          sum: formatNumber(sohBatchSum),
-          total: formatNumber(sohTotal),
+          sum: formatNumber(sohBatchSum ?? 0),
+          total: formatNumber(sohNormalized.value.totalQty),
         }),
       });
       return;
     }
-    // CP-0 · PR-2a — the builder no longer coerces; the ONE legal parse happens
-    // here and its result is what ships. An unreadable or genuinely ambiguous
-    // quantity refuses honestly rather than being defaulted to 0 or guessed.
-    // The typed input-type change (6.2) and the inline convention declaration
-    // (§5a) land with this surface's own batch; this call site only stops the
-    // fabrication at the payload boundary.
-    const normalized = normalizeInventoryDeclarationDraft({
-      totalQty: sohForm.totalQty,
-      ...(sohBatches.length > 0
-        ? {
-            batches: sohBatches.map((b) => ({
-              batchNumber: b.batchNumber,
-              qty: b.qty,
-              ...(b.expiryDate ? { expiryDate: b.expiryDate } : {}),
-            })),
-          }
-        : {}),
-    });
-    if (!normalized.ok) {
-      toast({
-        variant: 'error',
-        title: t('sdcSup.stock.toast.missingTotal.title'),
-        description: t('sdcSup.stock.toast.missingTotal.body'),
-      });
-      return;
-    }
+    // CP-0 · PR-2a/2c — the builder no longer coerces, and the ONE parse above
+    // is what the gate, the banner AND this payload all read.
     const payload = buildInventoryDeclarationPayload(
       supplierId,
       sohForm.materialCode,
-      normalized.value,
+      sohNormalized.value,
     );
     try {
       const res = await declareMutation.mutateAsync({ payload, causationId: causationId() });
@@ -1128,15 +1190,32 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                 <label className={labelClass} htmlFor="sdcsup-qty">
                   {t('sdcSup.panel.qtyLabel', { uom: panelLine.uom })}
                 </label>
+                {/* type=text + inputmode=decimal (ruling 6.2): type=number
+                    rejects the separators this field exists to adjudicate, so
+                    the fix could never fire behind it. */}
                 <input
                   id="sdcsup-qty"
-                  type="number"
-                  min={0}
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0"
+                  aria-invalid={form.confirmedQty.trim() !== '' && !confirmQty.ok}
+                  aria-describedby="sdcsup-qty-hint"
                   value={form.confirmedQty}
                   onChange={(e) => setForm({ ...form, confirmedQty: e.target.value })}
                   className={inputClass}
                 />
+                {form.confirmedQty.trim() !== '' && !confirmQty.ok && (
+                  <div
+                    role="alert"
+                    data-testid="confirm-qty-refusal"
+                    className="mt-1 text-[11px] text-danger"
+                  >
+                    {t(CONFIRM_REFUSAL_KEY[confirmQty.reason])}
+                  </div>
+                )}
+                <div id="sdcsup-qty-hint" className="mt-1 text-[11px] text-text-tertiary">
+                  {t('sdcSup.panel.qty.hint')}
+                </div>
               </div>
             </FormSection>
 
@@ -1341,15 +1420,20 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               <label className={labelClass} htmlFor="sdcsup-soh-total">
                 {t('sdcSup.stock.panel.totalLabel', { uom: sohUom || '—' })}
               </label>
+              {/* 6.2 — see the confirm field: the separators are the point. */}
               <input
                 id="sdcsup-soh-total"
-                type="number"
-                min={0}
+                type="text"
+                inputMode="decimal"
                 placeholder="0"
+                aria-invalid={sohForm.totalQty.trim() !== '' && !sohNormalized.ok}
                 value={sohForm.totalQty}
                 onChange={(e) => setSohForm({ ...sohForm, totalQty: e.target.value })}
                 className={inputClass}
               />
+              <div className="mt-1 text-[11px] text-text-tertiary">
+                {t('sdcSup.panel.qty.hint')}
+              </div>
             </div>
           </FormSection>
 
@@ -1368,6 +1452,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                     <label className={labelClass}>{t('sdcSup.stock.panel.batchNumber')}</label>
                     <input
                       type="text"
+                      aria-label={`${t('sdcSup.stock.panel.batchNumber')} ${i + 1}`}
                       value={b.batchNumber}
                       placeholder="e.g. GLY-24A"
                       onChange={(e) => {
@@ -1383,8 +1468,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                       {t('sdcSup.stock.panel.batchQty', { uom: sohUom || '—' })}
                     </label>
                     <input
-                      type="number"
-                      min={0}
+                      type="text"
+                      inputMode="decimal"
+                      aria-label={`${t('sdcSup.stock.panel.batchQtyLabel')} ${i + 1}`}
                       value={b.qty}
                       onChange={(e) => {
                         const batches = sohForm.batches.slice();
@@ -1432,16 +1518,31 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
               >
                 {t('sdcSup.stock.panel.addBatch')}
               </Button>
+              {/* The Σ readout reports arithmetic ONLY when there is arithmetic
+                  to report. It used to render `isNaN(total) ? 0 : total`, so an
+                  unreadable total was displayed as a confident 0 and then
+                  accused of not matching the batches. Under a refusal the
+                  banner now states the refusal instead — the one honest thing
+                  it knows. */}
               {sohBatches.length > 0 && (
                 <div
-                  className={`text-xs ${sohBatchMismatch ? 'text-danger' : 'text-text-secondary'}`}
+                  data-testid="soh-batch-sum"
+                  className={`text-xs ${
+                    sohBatchMismatch || !sohNormalized.ok ? 'text-danger' : 'text-text-secondary'
+                  }`}
                 >
-                  {t('sdcSup.stock.panel.batchSum', {
-                    sum: formatNumber(sohBatchSum),
-                    total: formatNumber(Number.isNaN(sohTotal) ? 0 : sohTotal),
-                    uom: sohUom || '—',
-                  })}
-                  {sohBatchMismatch && ` — ${t('sdcSup.stock.panel.batchMismatch')}`}
+                  {sohNormalized.ok ? (
+                    <>
+                      {t('sdcSup.stock.panel.batchSum', {
+                        sum: formatNumber(sohBatchSum ?? 0),
+                        total: formatNumber(sohNormalized.value.totalQty),
+                        uom: sohUom || '—',
+                      })}
+                      {sohBatchMismatch && ` — ${t('sdcSup.stock.panel.batchMismatch')}`}
+                    </>
+                  ) : (
+                    t(SOH_REFUSAL_KEY[sohNormalized.reason])
+                  )}
                 </div>
               )}
             </div>
