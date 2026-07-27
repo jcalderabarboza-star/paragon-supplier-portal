@@ -53,6 +53,10 @@ export const commHubInboundEn: Record<string, string> = {
   'commHub.reason.EMPTY_TOTAL': 'no total quantity stated',
   'commHub.reason.MISSING_MATERIAL': 'no material selected',
   'commHub.reason.INVALID_QTY': 'the quantity is not a valid number',
+  'commHub.reason.AMBIGUOUS_QTY':
+    'the quantity could be read two ways (2.400 = 2,400 or 2.4) — confirm it with the supplier',
+  'commHub.reason.MISSING_BATCH_NUMBER': 'a batch quantity was given without a batch number',
+  'commHub.reason.BATCH_TOTAL_MISMATCH': 'the batches do not sum to the stated total',
   'commHub.reason.NO_ROWS': 'nothing to record',
   'commHub.toast.landed.title': 'Recorded from {{channel}}',
   'commHub.toast.landed.body': 'The supplier reply was recorded as a governed declaration.',
@@ -125,6 +129,10 @@ export const commHubInboundId: Record<string, string> = {
   'commHub.reason.EMPTY_TOTAL': 'total kuantitas tidak dinyatakan',
   'commHub.reason.MISSING_MATERIAL': 'material belum dipilih',
   'commHub.reason.INVALID_QTY': 'kuantitas bukan angka yang valid',
+  'commHub.reason.AMBIGUOUS_QTY':
+    'kuantitas dapat dibaca dua cara (2.400 = 2.400 atau 2,4) — konfirmasikan dengan pemasok',
+  'commHub.reason.MISSING_BATCH_NUMBER': 'kuantitas batch diberikan tanpa nomor batch',
+  'commHub.reason.BATCH_TOTAL_MISMATCH': 'batch tidak berjumlah sama dengan total yang dinyatakan',
   'commHub.reason.NO_ROWS': 'tidak ada yang dicatat',
   'commHub.toast.landed.title': 'Tercatat dari {{channel}}',
   'commHub.toast.landed.body': 'Balasan pemasok dicatat sebagai deklarasi terkelola.',

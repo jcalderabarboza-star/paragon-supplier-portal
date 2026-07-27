@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildInventoryDeclarationPayload,
+  normalizeInventoryDeclarationDraft,
   buildIncomingShipmentPayload,
   ownCollaboratedMaterials,
   shipmentDisplayLifecycle,
@@ -18,22 +19,105 @@ import type {
 // command's (i)∪(ii) membership; and a to-paragon leg's displayed lifecycle is
 // DERIVED from its linked ASN (never the stored value).
 
-describe('buildInventoryDeclarationPayload (total-first)', () => {
-  it('a total-only declaration carries totalQty, no batches, no uom', () => {
-    const p = buildInventoryDeclarationPayload('sup-002', 'RM-EMUL-3310', {
-      totalQty: '4,000',
+// CP-0 · PR-2a — the builder no longer parses. Coercion moved into
+// `normalizeInventoryDeclarationDraft` (the ONE parse, routing through
+// `normalizeQty`), so these split into two contracts: the normaliser owns
+// strings → numbers + honest refusal, and the builder is pure assembly that
+// CANNOT fabricate a value because it never sees a string.
+describe('normalizeInventoryDeclarationDraft (the ONE parse)', () => {
+  it('coerces unambiguous quantities and drops blank-numbered batch rows', () => {
+    const r = normalizeInventoryDeclarationDraft({
+      totalQty: '4000',
+      batches: [
+        { batchNumber: '  ', qty: '500' }, // an unfilled form row — dropped, not an error
+        { batchNumber: 'A', qty: '1800', expiryDate: '2027-06-30' },
+        { batchNumber: 'B', qty: '2200' },
+      ],
     });
+    expect(r).toEqual({
+      ok: true,
+      value: {
+        totalQty: 4000,
+        batches: [
+          { batchNumber: 'A', qty: 1800, expiryDate: '2027-06-30' },
+          { batchNumber: 'B', qty: 2200 },
+        ],
+      },
+    });
+  });
+
+  // FLOOR CORRECTION (CP-0 · 6.1): this input read '4,000' and expected 4000 —
+  // the EN reading, baked in by the old blanket `replace(/,/g,'')`. Under id the
+  // same token is 4. Both readings are plausible, so neither may be produced.
+  it('an AMBIGUOUS total REFUSES and names the field — never the EN reading', () => {
+    expect(normalizeInventoryDeclarationDraft({ totalQty: '4,000' })).toEqual({
+      ok: false,
+      reason: 'AMBIGUOUS_QTY',
+      field: { kind: 'totalQty' },
+    });
+  });
+
+  it('an AMBIGUOUS batch qty REFUSES and points at the offending row', () => {
+    expect(
+      normalizeInventoryDeclarationDraft({
+        totalQty: '4000',
+        batches: [
+          { batchNumber: 'A', qty: '2200' },
+          { batchNumber: 'B', qty: '1,800' },
+        ],
+      }),
+    ).toEqual({
+      ok: false,
+      reason: 'AMBIGUOUS_QTY',
+      field: { kind: 'batchQty', index: 1, batchNumber: 'B' },
+    });
+  });
+
+  it('a hint resolves a TYPED ambiguity — id reads "4.000" as 4000', () => {
+    expect(normalizeInventoryDeclarationDraft({ totalQty: '4.000' }, 'id')).toEqual({
+      ok: true,
+      value: { totalQty: 4000 },
+    });
+  });
+
+  // ZERO-COMMITMENT: a declared 0 means "I hold none of this" — a real, binding
+  // statement. It must be TYPED, never manufactured from a blank the supplier
+  // never filled in. The old `|| 0` did exactly that.
+  it('a blank total REFUSES — an unentered field is never a zero commitment', () => {
+    const r = normalizeInventoryDeclarationDraft({ totalQty: '' });
+    expect(r).toEqual({ ok: false, reason: 'EMPTY_QTY', field: { kind: 'totalQty' } });
+    expect(r.ok).toBe(false);
+  });
+
+  it('an ENTERED zero is still legal — the commitment survives, only the default dies', () => {
+    expect(normalizeInventoryDeclarationDraft({ totalQty: '0' })).toEqual({
+      ok: true,
+      value: { totalQty: 0 },
+    });
+  });
+
+  it('an unreadable quantity REFUSES rather than resolving to 0', () => {
+    expect(normalizeInventoryDeclarationDraft({ totalQty: 'plenty' })).toMatchObject({
+      ok: false,
+      reason: 'NOT_NUMERIC',
+    });
+  });
+});
+
+describe('buildInventoryDeclarationPayload (pure assembly, total-first)', () => {
+  it('a total-only declaration carries totalQty, no batches, no uom', () => {
+    const p = buildInventoryDeclarationPayload('sup-002', 'RM-EMUL-3310', { totalQty: 4000 });
     expect(p).toEqual({ supplierId: 'sup-002', materialCode: 'RM-EMUL-3310', totalQty: 4000 });
     expect('uom' in p).toBe(false); // master owns the unit (invariant #2)
     expect('batches' in p).toBe(false);
   });
 
-  it('batch detail is carried when present (qty coerced, uom absent)', () => {
+  it('batch detail is carried through verbatim (uom absent)', () => {
     const p = buildInventoryDeclarationPayload('sup-002', 'RM-EMUL-3310', {
-      totalQty: '4000',
+      totalQty: 4000,
       batches: [
-        { batchNumber: 'A', qty: '1,800', expiryDate: '2027-06-30' },
-        { batchNumber: 'B', qty: '2200' },
+        { batchNumber: 'A', qty: 1800, expiryDate: '2027-06-30' },
+        { batchNumber: 'B', qty: 2200 },
       ],
     });
     expect(p.batches).toEqual([
@@ -42,23 +126,19 @@ describe('buildInventoryDeclarationPayload (total-first)', () => {
     ]);
   });
 
-  it('blank-numbered batch rows are dropped (a form may carry empty rows)', () => {
+  it('an empty batch list ⇒ a total-only payload (no batches key)', () => {
     const p = buildInventoryDeclarationPayload('sup-002', 'RM-EMUL-3310', {
-      totalQty: '1000',
-      batches: [
-        { batchNumber: '  ', qty: '500' },
-        { batchNumber: 'REAL', qty: '1000' },
-      ],
-    });
-    expect(p.batches).toEqual([{ batchNumber: 'REAL', qty: 1000 }]);
-  });
-
-  it('all-blank batches ⇒ a total-only payload (no batches key)', () => {
-    const p = buildInventoryDeclarationPayload('sup-002', 'RM-EMUL-3310', {
-      totalQty: '1000',
-      batches: [{ batchNumber: '', qty: '' }],
+      totalQty: 1000,
+      batches: [],
     });
     expect('batches' in p).toBe(false);
+  });
+
+  // The structural guarantee behind §4: the builder has no string input, so it
+  // has nothing to parse and no second reading to diverge from the gate's.
+  it('is pure assembly — the number it is given is the number it ships', () => {
+    const p = buildInventoryDeclarationPayload('sup-002', 'RM-EMUL-3310', { totalQty: 1.8 });
+    expect(p.totalQty).toBe(1.8);
   });
 });
 

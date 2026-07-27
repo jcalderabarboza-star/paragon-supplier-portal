@@ -58,10 +58,15 @@ import { formatNumber } from '../lib/format';
 const CHANNELS: Channel[] = ['whatsapp', 'email', 'wechat'];
 
 // parseGrid import-mode failure reason → the honest message key (shared with C2).
-const REASON_KEY: Partial<Record<ParseReason, string>> = {
+// EXHAUSTIVE, not Partial — see CommHubInbound: a refused row must always be
+// able to say WHY, so widening ParseReason breaks the build rather than the copy.
+const REASON_KEY: Record<ParseReason, string> = {
   EMPTY_TOTAL: 'commHub.reason.EMPTY_TOTAL',
   MISSING_MATERIAL: 'commHub.reason.MISSING_MATERIAL',
   INVALID_QTY: 'commHub.reason.INVALID_QTY',
+  AMBIGUOUS_QTY: 'commHub.reason.AMBIGUOUS_QTY',
+  MISSING_BATCH_NUMBER: 'commHub.reason.MISSING_BATCH_NUMBER',
+  BATCH_TOTAL_MISMATCH: 'commHub.reason.BATCH_TOTAL_MISMATCH',
   NO_ROWS: 'commHub.reason.NO_ROWS',
 };
 const QTY_REASON_KEY: Record<QtyRefusalReason, string> = {

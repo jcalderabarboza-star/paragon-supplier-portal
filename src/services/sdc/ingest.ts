@@ -34,10 +34,15 @@
 // `ok:true` units and reports the rest.
 // ────────────────────────────────────────────────────────────────────────────
 
+import {
+  normalizeQty,
+  type NumberConvention,
+  type QtyRefusalReason,
+} from '../../lib/localeNumber';
 import type { SdcObjectKind } from './types';
 import {
   buildInventoryDeclarationPayload,
-  type InventoryBatchDraft,
+  type NormalizedInventoryBatch,
 } from './objectSubmitModels';
 
 // ─── Result vocabulary ────────────────────────────────────────────────────────
@@ -48,6 +53,7 @@ export type ParseReason =
   | 'MISSING_MATERIAL' // an import row carries a total but no material code
   | 'MISSING_BATCH_NUMBER' // a batch row carries qty/expiry but no batch number
   | 'INVALID_QTY' // a qty cell isn't a non-negative finite number
+  | 'AMBIGUOUS_QTY' // a qty cell reads differently under id vs en — refused, never guessed
   | 'BATCH_TOTAL_MISMATCH' // Σ batch qty ≠ the stated total (the reconciliation gate)
   | 'NO_ROWS'; // nothing to declare (an empty import grid)
 
@@ -105,6 +111,15 @@ export interface GridContext {
   /** The current supplier identity — the ONLY source of supplierId (never a cell). */
   readonly supplierId: string;
   readonly spec: GridParseSpec;
+  /**
+   * The numeric convention to assume when a cell reads differently under id vs
+   * en (CP-0 §5a). Honoured in BATCH-FOLD only — those cells are TYPED into the
+   * grid by a supplier whose locale we know. IMPORT mode deliberately ignores it:
+   * those rows arrive from a sheet or a message of unknown origin, so an
+   * ambiguous cell REFUSES per row rather than being resolved by a hint that
+   * describes the reader instead of the writer.
+   */
+  readonly numberFormatHint?: NumberConvention;
 }
 
 /** Canonical batch-row column keys (batch-fold mode). */
@@ -120,22 +135,23 @@ export const IMPORT_DECLARE_COLUMN = {
   totalQty: 'totalQty',
 } as const;
 
-// ─── Coercion helpers (comma-tolerant, mirroring the builders) ────────────────
+// ─── Coercion helpers (the ONE legal parser) ──────────────────────────────────
 
 const cell = (row: GridRow, key: string): string => (row[key] ?? '').trim();
 
 /**
- * Coerce a qty cell to a non-negative finite number, or null when blank/invalid.
- * Comma-tolerant (mirrors the builders' `replace(/,/g, '')`). A negative or
- * non-numeric value is INVALID (null) — the builders' `|| 0` silently swallows
- * those; the adapter must SEE them to fail honestly rather than declare 0.
+ * Map a `normalizeQty` refusal onto this adapter's row-level vocabulary. The
+ * old blanket `replace(/,/g,'')` read every comma as a thousands separator — an
+ * EN assumption on a product whose default convention is id, which silently
+ * turned "1,800" into 1800 for one supplier and should have been 1.8 for
+ * another. Cross-convention disagreement now REFUSES (AMBIGUOUS_QTY) instead of
+ * producing a plausible wrong number.
  */
-function parseQty(raw: string): number | null {
-  const s = raw.replace(/,/g, '').trim();
-  if (s === '') return null;
-  const n = Number(s);
-  return Number.isFinite(n) && n >= 0 ? n : null;
-}
+const QTY_REASON: Record<QtyRefusalReason, ParseReason> = {
+  EMPTY_QTY: 'INVALID_QTY',
+  NOT_NUMERIC: 'INVALID_QTY',
+  AMBIGUOUS_QTY: 'AMBIGUOUS_QTY',
+};
 
 /** A batch row is "empty" (an unfilled grid add-row) when every cell is blank. */
 function batchRowEmpty(row: GridRow): boolean {
@@ -156,8 +172,10 @@ function batchRowEmpty(row: GridRow): boolean {
 export function parseGrid(rows: readonly GridRow[], context: GridContext): DispatchUnit[] {
   switch (context.spec.mode) {
     case 'batch-fold':
-      return [parseBatchFold(rows, context.supplierId, context.spec)];
+      // Typed cells — the supplier's own convention may resolve an ambiguity.
+      return [parseBatchFold(rows, context.supplierId, context.spec, context.numberFormatHint)];
     case 'import':
+      // Unknown origin — deliberately hint-free, so ambiguity refuses per row.
       return parseImport(rows, context.supplierId);
   }
 }
@@ -172,36 +190,44 @@ function parseBatchFold(
   rows: readonly GridRow[],
   supplierId: string,
   spec: Extract<GridParseSpec, { mode: 'batch-fold' }>,
+  hint?: NumberConvention,
 ): DispatchUnit {
-  // TOTAL-FIRST: the total is the required, independently-stated floor.
-  const total = parseQty(spec.totalQty);
-  if (total === null) return { ok: false, rowRefs: [], reason: 'EMPTY_TOTAL' };
+  // TOTAL-FIRST: the total is the required, independently-stated floor. Parsed
+  // ONCE, here — the value that passes the Σ gate below is the SAME value the
+  // payload ships, because the builder no longer coerces anything.
+  const total = normalizeQty(spec.totalQty, hint);
+  if (!total.ok) {
+    // A blank floor is "no total stated"; anything else is a readability failure.
+    const reason = total.reason === 'EMPTY_QTY' ? 'EMPTY_TOTAL' : QTY_REASON[total.reason];
+    return { ok: false, rowRefs: [], reason };
+  }
 
   // Non-empty rows only — trailing add-rows are ignored, never errors.
   const filled = rows
     .map((row, i) => ({ row, i }))
     .filter(({ row }) => !batchRowEmpty(row));
 
-  // Per-row coercion: a row with data must have a batch number AND a valid qty.
-  const batches: InventoryBatchDraft[] = [];
+  // Per-row coercion: a row with data must have a batch number AND a readable
+  // qty. Every offending row is collected (so the grid can tint them all) while
+  // the FIRST reason names the failure.
+  const batches: NormalizedInventoryBatch[] = [];
   const bad: number[] = [];
   let reason: ParseReason | null = null;
   for (const { row, i } of filled) {
     const batchNumber = cell(row, BATCH_COLUMN.batchNumber);
-    const qty = parseQty(cell(row, BATCH_COLUMN.qty));
     if (batchNumber === '') {
       bad.push(i);
       if (reason === null) reason = 'MISSING_BATCH_NUMBER';
       continue;
     }
-    if (qty === null) {
+    const qty = normalizeQty(cell(row, BATCH_COLUMN.qty), hint);
+    if (!qty.ok) {
       bad.push(i);
-      if (reason === null) reason = 'INVALID_QTY';
+      if (reason === null) reason = QTY_REASON[qty.reason];
       continue;
     }
     const expiryDate = cell(row, BATCH_COLUMN.expiryDate);
-    // Pass the normalised numeric string; the builder owns final coercion.
-    batches.push({ batchNumber, qty: String(qty), ...(expiryDate ? { expiryDate } : {}) });
+    batches.push({ batchNumber, qty: qty.value, ...(expiryDate ? { expiryDate } : {}) });
   }
   if (bad.length > 0) return { ok: false, rowRefs: bad, reason: reason! };
 
@@ -210,16 +236,16 @@ function parseBatchFold(
   // the real server gate. We must NOT derive total = Σ: the total is the stated
   // floor, and the mismatch is the check that catches un-itemised stock.
   if (batches.length > 0) {
-    const sum = batches.reduce((s, b) => s + Number(b.qty), 0);
-    if (sum !== total) {
+    const sum = batches.reduce((s, b) => s + b.qty, 0);
+    if (sum !== total.value) {
       return { ok: false, rowRefs: filled.map(({ i }) => i), reason: 'BATCH_TOTAL_MISMATCH' };
     }
   }
 
-  // Reuse the proven builder — uom absent, supplierId from identity, batches
-  // dropped when empty (total-only).
+  // Pure assembly from the values the gate just cleared — uom absent, supplierId
+  // from identity, batches dropped when empty (total-only).
   const payload = buildInventoryDeclarationPayload(supplierId, spec.materialCode, {
-    totalQty: spec.totalQty,
+    totalQty: total.value,
     ...(batches.length > 0 ? { batches } : {}),
   });
   return { ok: true, kind: 'InventoryDeclaration', payload, rowRefs: filled.map(({ i }) => i) };
@@ -243,12 +269,17 @@ function parseImport(rows: readonly GridRow[], supplierId: string): DispatchUnit
       units.push({ ok: false, rowRefs: [i], reason: 'MISSING_MATERIAL' });
       return;
     }
-    const total = parseQty(totalRaw);
-    if (total === null) {
-      units.push({ ok: false, rowRefs: [i], reason: totalRaw === '' ? 'EMPTY_TOTAL' : 'INVALID_QTY' });
+    // Hint-free by construction (CP-0 §5a): an import row's convention is the
+    // WRITER's, and we do not know it — so ambiguity refuses on this row alone.
+    const total = normalizeQty(totalRaw);
+    if (!total.ok) {
+      const reason = total.reason === 'EMPTY_QTY' ? 'EMPTY_TOTAL' : QTY_REASON[total.reason];
+      units.push({ ok: false, rowRefs: [i], reason });
       return;
     }
-    const payload = buildInventoryDeclarationPayload(supplierId, materialCode, { totalQty: totalRaw });
+    const payload = buildInventoryDeclarationPayload(supplierId, materialCode, {
+      totalQty: total.value,
+    });
     units.push({ ok: true, kind: 'InventoryDeclaration', payload, rowRefs: [i] });
   });
   // Honest silence over a silent empty success: an all-blank import says so.

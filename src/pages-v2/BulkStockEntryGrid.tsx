@@ -75,6 +75,7 @@ const REASON_KEY: Record<ParseReason, string> = {
   MISSING_MATERIAL: 'sdcSup.bulk.reason.missingMaterial',
   MISSING_BATCH_NUMBER: 'sdcSup.bulk.reason.missingBatchNumber',
   INVALID_QTY: 'sdcSup.bulk.reason.invalidQty',
+  AMBIGUOUS_QTY: 'sdcSup.bulk.reason.ambiguousQty',
   BATCH_TOTAL_MISMATCH: 'sdcSup.bulk.reason.batchMismatch',
   NO_ROWS: 'sdcSup.bulk.reason.noRows',
 };
