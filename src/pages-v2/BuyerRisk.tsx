@@ -24,6 +24,8 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import LivenessPill from '../components/ui-v2/LivenessPill';
+import IllustrativeRegion from '../components/ui-v2/IllustrativeRegion';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -62,6 +64,29 @@ import type {
   ScenarioAlt,
   ScenarioFeasibility as Feasibility,
 } from '../services/data/types';
+
+// ────────────────────────────────────────────────────────────────────────────
+// SEAM NOTE — /buyer/risk is a REAL-LATER capability (source of record).
+//
+// Everything this page renders — the KPI band, the alert banners, the risk map,
+// and all five tab bodies (geopolitical scores/exposure/probability, supply
+// exposure rows, the scenario model + its ARIA recommendation, compliance-risk
+// records, commodity prices) — is AUTHORED FIXTURE DATA. It is not decoration
+// and it is not a placeholder to be deleted: it is the ILLUSTRATIVE
+// SPECIFICATION for supply-risk intelligence, the Stage-2 I3 capability (risk +
+// compliance), which will derive these same figures from real spend, supplier,
+// and commodity data once F1/F2/F3 land the sources.
+//
+// Registry status: capability `risk` is registered in the LivenessRegistry with a
+// `null` backing (services/liveness/registry.ts) → derives SIMULATED → every
+// marker on this page is amber "Sample" and green is structurally unreachable.
+// When the real derivation lands, `risk` flips through the two gates and the
+// IllustrativeRegion frames below come off on their own — no edit here.
+//
+// Breadcrumb for the CP-2 harvest: treat this file's fixture shape
+// (services/data/mock/fixtures/buyerRisk.ts) as the I3 read-model sketch. This
+// note is a source-of-record marker only — the contract package is CP-2, gated.
+// ────────────────────────────────────────────────────────────────────────────
 
 type TabKey = 'geo' | 'exposure' | 'scenario' | 'compliance' | 'commodity';
 
@@ -106,21 +131,6 @@ const TAB_DEFS: { id: TabKey; labelKey: string }[] = [
   { id: 'compliance', labelKey: 'risk.tab.compliance' },
   { id: 'commodity', labelKey: 'risk.tab.commodity' },
 ];
-
-const PULSE_CSS = `
-@keyframes risk-pulse-ring {
-  0%   { transform: scale(0.8); opacity: 1; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-.risk-live-pulse::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: #BB0000;
-  animation: risk-pulse-ring 1.4s ease-out infinite;
-}
-`;
 
 const ALERT_VARIANT: Record<AlertLevel, { bg: string; border: string; text: string; Icon: LucideIcon }> = {
   critical: { bg: 'bg-danger-soft', border: 'border-danger', text: 'text-danger', Icon: AlertOctagon },
@@ -631,9 +641,12 @@ const ScenarioTab: React.FC<{ scenarios: Scenario[] }> = ({ scenarios }) => {
           total cost: <strong className="text-teal">$1.06M</strong> vs. $3.2M
           revenue-at-risk if no action taken.
         </p>
+        {/* The trailing "Last updated 2 hours ago" clause is removed: it claimed a
+            refresh cadence for a static narrative. The confidence / prior-scenario
+            figures stay — they are illustrative content under the region frame,
+            not a freshness claim. */}
         <div className="text-xs text-text-tertiary mt-3">
-          Confidence: 84% · Based on 6 similar disruption scenarios · Last
-          updated 2 hours ago
+          Confidence: 84% · Based on 6 similar disruption scenarios
         </div>
       </section>
     </div>
@@ -963,14 +976,6 @@ const BuyerRisk: React.FC = () => {
 
   const visibleAlerts = alerts.filter((a) => !dismissedAlerts.includes(a.id));
 
-  const lastUpdated = new Date().toLocaleString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
   if (anyPending) return <LoadingState breadcrumb={RISK_CRUMB} />;
   if (anyError)
     return (
@@ -992,7 +997,6 @@ const BuyerRisk: React.FC = () => {
 
   return (
     <AppShellV2>
-      <style>{PULSE_CSS}</style>
       <PageHeader
         breadcrumb={RISK_CRUMB}
         title={t('risk.header.title')}
@@ -1023,24 +1027,21 @@ const BuyerRisk: React.FC = () => {
         }
       />
 
-      <div className="-mt-6 mb-6 flex items-center gap-3 text-meta text-text-tertiary">
-        <div className="flex items-center gap-2">
-          <span className="relative inline-flex w-2.5 h-2.5">
-            <span
-              className="risk-live-pulse absolute inset-0 rounded-full"
-              aria-hidden="true"
-            />
-            <span className="relative inline-block w-2.5 h-2.5 rounded-full bg-danger" />
-          </span>
-          <span className="text-xs font-bold text-danger uppercase tracking-wider">
-            {t('risk.live')}
-          </span>
-        </div>
-        <span>{t('risk.meta.realtime', { date: lastUpdated })}</span>
-      </div>
+      <PageMetaLine className="-mt-6 mb-6 flex items-center gap-3">
+        <span>{t('risk.meta.illustrative')}</span>
+        {/* Honest-render: capability="risk" derives SIMULATED (null backing,
+            registry.ts) — the amber "Sample" marker. Green is structurally
+            unreachable (two-gate guard); this replaces the hand-rolled LIVE/
+            Real-time chrome that lied over static demo data (CP-0 · W2). */}
+        <LivenessPill capability="risk" />
+      </PageMetaLine>
 
       {visibleAlerts.length > 0 && (
-        <div className="mb-6">
+        <IllustrativeRegion
+          capability="risk"
+          label={t('risk.illustrative.alerts')}
+          className="mb-6"
+        >
           {visibleAlerts.map((a) => (
             <AlertBanner
               key={a.id}
@@ -1050,40 +1051,46 @@ const BuyerRisk: React.FC = () => {
               }
             />
           ))}
-        </div>
+        </IllustrativeRegion>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
+        {/* Values are illustrative demo data (derivation from the risk hooks is a
+            later, separate batch — CP-0 W2 is honesty-only). Every card carries the
+            shared illustrative marker, mirroring BuyerDashboard's honest KPI pattern. */}
         <KpiCard
           eyebrow={t('risk.kpi.events.eyebrow')}
           value="9"
-          /* i18n-defer: mock/sample data — hardcoded demo counts + severity words */
-          subtitle={<span className="text-danger">3 critical · 4 high</span>}
+          subtitle={<span className="text-text-tertiary">{t('risk.kpi.illustrative')}</span>}
           icon={AlertOctagon}
         />
         <KpiCard
           eyebrow={t('risk.kpi.exposed.eyebrow')}
           value="$6.1M"
-          subtitle={t('risk.kpi.exposed.subtitle')}
+          subtitle={<span className="text-text-tertiary">{t('risk.kpi.illustrative')}</span>}
           icon={AlertTriangle}
         />
         <KpiCard
           eyebrow={t('risk.kpi.singleSource.eyebrow')}
           value="3"
-          subtitle={<span className="text-danger">{t('risk.kpi.singleSource.subtitle')}</span>}
+          subtitle={<span className="text-text-tertiary">{t('risk.kpi.illustrative')}</span>}
           icon={AlertOctagon}
         />
         <KpiCard
           eyebrow={t('risk.kpi.expiring.eyebrow')}
           value="2"
-          subtitle={t('risk.kpi.expiring.subtitle')}
+          subtitle={<span className="text-text-tertiary">{t('risk.kpi.illustrative')}</span>}
           icon={AlertTriangle}
         />
       </div>
 
-      <div className="mb-6">
+      <IllustrativeRegion
+        capability="risk"
+        label={t('risk.illustrative.map')}
+        className="mb-6"
+      >
         <WorldMap />
-      </div>
+      </IllustrativeRegion>
 
       <SubTabs<TabKey>
         options={TABS}
@@ -1092,14 +1099,41 @@ const BuyerRisk: React.FC = () => {
         className="mb-5"
       />
 
-      {tab === 'geo' && <GeopoliticalTab geoRisks={geoRisks} />}
-      {tab === 'exposure' && <ExposureTab exposure={exposure} />}
-      {tab === 'scenario' && <ScenarioTab scenarios={scenarios} />}
-      {tab === 'compliance' && <ComplianceRisksTab compliance={compliance} />}
-      {tab === 'commodity' && <CommodityTab commodities={commodities} />}
+      {/* Every tab body is authored fixture data (SEAM NOTE, page head), so each
+          renders inside the capability-derived illustrative enclosure. Wrapping
+          at the render site keeps the tab components themselves untouched — and
+          when `risk` flips LIVE the enclosures come off on their own. */}
+      {tab === 'geo' && (
+        <IllustrativeRegion capability="risk" label={t('risk.illustrative.geo')}>
+          <GeopoliticalTab geoRisks={geoRisks} />
+        </IllustrativeRegion>
+      )}
+      {tab === 'exposure' && (
+        <IllustrativeRegion capability="risk" label={t('risk.illustrative.exposure')}>
+          <ExposureTab exposure={exposure} />
+        </IllustrativeRegion>
+      )}
+      {tab === 'scenario' && (
+        <IllustrativeRegion capability="risk" label={t('risk.illustrative.scenario')}>
+          <ScenarioTab scenarios={scenarios} />
+        </IllustrativeRegion>
+      )}
+      {tab === 'compliance' && (
+        <IllustrativeRegion capability="risk" label={t('risk.illustrative.compliance')}>
+          <ComplianceRisksTab compliance={compliance} />
+        </IllustrativeRegion>
+      )}
+      {tab === 'commodity' && (
+        <IllustrativeRegion capability="risk" label={t('risk.illustrative.commodity')}>
+          <CommodityTab commodities={commodities} />
+        </IllustrativeRegion>
+      )}
 
+      {/* Replaces the former "Last updated <new Date()>" footer — a manufactured
+          freshness stamp over data that never changes. The honest footer names
+          the real-later capability instead of inventing a refresh time. */}
       <PageMetaLine className="mt-6">
-        {t('risk.meta.lastUpdated', { date: lastUpdated })}
+        {t('risk.meta.futureCapability')}
       </PageMetaLine>
     </AppShellV2>
   );
