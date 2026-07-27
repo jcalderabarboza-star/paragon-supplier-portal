@@ -6,6 +6,7 @@ import PlanCellMarker from './PlanCellMarker';
 import { usePurchaseRequisitionCreate } from '../../services/query/commandHooks';
 import { DataError } from '../../services/data/types';
 import { formatNumber } from '../../lib/format';
+import { normalizeQty, type QtyRefusalReason } from '../../lib/localeNumber';
 import {
   isQtyAdjusted,
   overrideBlocked,
@@ -36,15 +37,47 @@ import {
 // PLANNED with its reason (C6 §6 invariant 3). Every render stays SIMULATED — no
 // live producer (LIVENESS-DATASOURCE-01) — so a pushed line is honestly
 // non-committed, never a live procurement instruction.
+//
+// ── CP-0 · W1 · PR-2b — the accepted quantity is PARSED, never coerced ───────
+// This is the highest-consequence numeric entry in the product: the typed value
+// becomes an audited, store-minted PR. It used to run `Number(e.target.value)`
+// behind a `type="number"` field, which produced TWO wrong facts in silence:
+//   · a CLEARED field became `Number('') === 0` — a pushable zero, and a zero on
+//     a requisition is a COMMITMENT, not a blank; and
+//   · "4.500" is a legal `type="number"` value that `Number` reads as 4.5, so an
+//     Indonesian buyer's 4,500 KG was minted as 4.5 KG.
+// The field is now `type="text" inputmode="decimal"` (ruling 6.2 — a locale fix
+// cannot fire behind type=number, which rejects the very glyphs it must judge)
+// and every keystroke routes through the ONE legal parser, with NO convention
+// hint: an internal buyer form carries no origin signal, so a cross-convention
+// token REFUSES instead of being guessed (CP-0 §5a).
+//
+// A refusal does not merely warn — it short-circuits the governance entirely:
+// `isQtyAdjusted` / `overrideBlocked` are never evaluated on a value that does
+// not exist, and the push is disabled unconditionally. Nothing reaches the
+// command spine, so no ambiguous quantity can ever become an audited PR.
 // ────────────────────────────────────────────────────────────────────────────
+
+// EXHAUSTIVE, not Partial (the 2a discipline): a refusal that states no reason
+// is not honest silence, it is just silence. Keying every QtyRefusalReason means
+// widening the union breaks the build here rather than rendering a blank line to
+// a buyer about to commit a quantity.
+const QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'planGrid.push.qty.refused.empty',
+  NOT_NUMERIC: 'planGrid.push.qty.refused.notNumeric',
+  AMBIGUOUS_QTY: 'planGrid.push.qty.refused.ambiguous',
+};
 
 const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) => {
   const { t } = useTranslation();
   const createPr = usePurchaseRequisitionCreate();
 
   // Per-line editable state keyed by id, so switching the selected line keeps
-  // each line's in-progress edit (accepted qty + reason + push outcome).
-  const [accepted, setAccepted] = useState<Record<string, number>>({});
+  // each line's in-progress edit (accepted qty + reason + push outcome). The
+  // quantity is held as the RAW TYPED TEXT — the parse happens at render, so the
+  // field can hold a token the platform refuses to read without that refusal
+  // being silently rounded into a number on its way into state.
+  const [acceptedRaw, setAcceptedRaw] = useState<Record<string, string>>({});
   const [reason, setReason] = useState<Record<string, string>>({});
   const [pushState, setPushState] = useState<Record<string, PushRowState>>({});
 
@@ -56,18 +89,33 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
     );
   }
 
-  // The accepted qty defaults to the line's suggested-accepted value until the
-  // user edits it (then the per-id entry holds the working value).
-  const qty = accepted[line.id] ?? line.acceptedQty;
+  // The accepted qty defaults to the line's value as CANONICAL DIGITS ("4500"),
+  // not the display grouping ("4.500"): an edit field carries the machine value
+  // about to change, a display chip carries the human-formatted fact. Pre-filling
+  // the grouped form would mean the form refuses its own untouched default —
+  // "4.500" is exactly the token the parser cannot read without a convention.
+  const raw = acceptedRaw[line.id] ?? String(line.acceptedQty);
   const why = reason[line.id] ?? '';
-  const adjusted = isQtyAdjusted(line, qty);
-  const blocked = overrideBlocked(line, qty, why);
   const state = pushState[line.id] ?? PLANNED_ROW;
   const committed = state.planState === 'committed';
 
+  // The ONE parse. No hint: a buyer's own form carries no origin convention, so
+  // a token legal under both readings refuses rather than picking one.
+  const parsed = normalizeQty(raw);
+
+  // C6-LOCK is only ASKABLE of a quantity that exists. Under a refusal there is
+  // no number to compare against `suggestedQty`, so neither `isQtyAdjusted` nor
+  // `overrideBlocked` is evaluated at all — the push is disabled outright. That
+  // is strictly stronger than the reason-gate, never weaker.
+  const adjusted = parsed.ok && isQtyAdjusted(line, parsed.value);
+  const blocked = !parsed.ok || overrideBlocked(line, parsed.value, why);
+
   const push = async () => {
-    // The reason-gate, enforced a SECOND time at the click (belt-and-suspenders
-    // beside the disabled button): a blocked override never dispatches.
+    // Both gates enforced a SECOND time at the click (belt-and-suspenders beside
+    // the disabled button): an unreadable quantity and a blocked override each
+    // short-circuit here, so NOTHING reaches the dispatcher.
+    if (!parsed.ok) return;
+    const qty = parsed.value;
     if (overrideBlocked(line, qty, why)) return;
 
     const payload = buildPrCreatePayload(line, qty, why);
@@ -120,27 +168,51 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
           <div className="mb-1 text-label uppercase tracking-wider text-text-tertiary">
             {t('planGrid.push.col.accepted')}
           </div>
+          {/* type=text + inputmode=decimal (ruling 6.2): type=number silently
+              rejects the separators this field exists to adjudicate, so the fix
+              could never fire behind it. The mobile keypad is preserved. */}
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             aria-label={`${t('planGrid.push.col.accepted')} — ${line.material}`}
+            aria-describedby={`accepted-hint-${line.id}`}
+            aria-invalid={!parsed.ok}
             className="w-32 rounded-md border border-border-input bg-white px-2 py-1 text-right font-mono text-sm text-data-navy focus:border-action focus:outline-none disabled:bg-bg-hover disabled:text-text-tertiary"
-            value={Number.isFinite(qty) ? qty : ''}
+            value={raw}
             disabled={committed}
-            onChange={(e) => setAccepted((a) => ({ ...a, [line.id]: Number(e.target.value) }))}
+            onChange={(e) => setAcceptedRaw((a) => ({ ...a, [line.id]: e.target.value }))}
           />
           <span className="ml-2 text-xs text-text-tertiary">{line.uom}</span>
+          {/* Names the raw-editable convention, so canonical digits in a field
+              beside a grouped display chip reads as deliberate, not broken. */}
+          <div id={`accepted-hint-${line.id}`} className="mt-1 text-[11px] text-text-tertiary">
+            {t('planGrid.push.qty.hint')}
+          </div>
           <div className="mt-1.5 text-[11px]">
-            <span
-              className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 font-medium ${
-                adjusted
-                  ? 'border-warning/30 bg-warning-soft text-warning-hover'
-                  : 'border-border-subtle bg-bg-hover text-text-tertiary'
-              }`}
-            >
-              {adjusted
-                ? `${t('planGrid.adjusted.yes')} · ${formatNumber(line.suggestedQty)}→${formatNumber(qty)}`
-                : t('planGrid.adjusted.no')}
-            </span>
+            {parsed.ok ? (
+              <span
+                className={`inline-flex items-center rounded-sm border px-1.5 py-0.5 font-medium ${
+                  adjusted
+                    ? 'border-warning/30 bg-warning-soft text-warning-hover'
+                    : 'border-border-subtle bg-bg-hover text-text-tertiary'
+                }`}
+              >
+                {adjusted
+                  ? `${t('planGrid.adjusted.yes')} · ${formatNumber(line.suggestedQty)}→${formatNumber(parsed.value)}`
+                  : t('planGrid.adjusted.no')}
+              </span>
+            ) : (
+              // The refusal REPLACES the adjusted chip: with no readable
+              // quantity there is no adjustment to report, and reporting one
+              // anyway would be the fabrication this whole batch exists to kill.
+              <span
+                role="alert"
+                data-testid="accepted-qty-refusal"
+                className="inline-flex items-center rounded-sm border border-danger/30 bg-danger-soft px-1.5 py-0.5 font-medium text-danger"
+              >
+                {t(QTY_REFUSAL_KEY[parsed.reason])}
+              </span>
+            )}
           </div>
         </div>
 

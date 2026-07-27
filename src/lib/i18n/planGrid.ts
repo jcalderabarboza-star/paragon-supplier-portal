@@ -73,6 +73,18 @@ export const planGridEn: Record<string, string> = {
   'planGrid.push.committed': 'Pushed → {{pr}}',
   'planGrid.push.failed': 'Push failed: {{reason}}',
 
+  // — CP-0 · W1 · PR-2b — accepted-quantity refusals (the ONE parse) —
+  // Each refusal must tell the buyer exactly what to type. "Enter it again" is
+  // not help; "4500" is. The ambiguous copy spells both readings out in words
+  // where the glyph itself is the trap.
+  'planGrid.push.qty.hint': 'Digits only — no thousands separators (e.g. 4500)',
+  'planGrid.push.qty.refused.empty':
+    'Enter an accepted quantity — a blank field is not a zero. If the answer really is none, type 0.',
+  'planGrid.push.qty.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 4500.',
+  'planGrid.push.qty.refused.ambiguous':
+    'This can be read two ways — "4.500" means four thousand five hundred in Indonesian and four-point-five in English. Type it without separators: 4500.',
+
   // — Working-set drawer + full-screen (G1.3.2) —
   'planGrid.drawer.title': 'Adjust & push — selected line',
   'planGrid.drawer.subtitle':
@@ -164,6 +176,15 @@ export const planGridId: Record<string, string> = {
   'planGrid.push.pushing': 'Mengirim…',
   'planGrid.push.committed': 'Terkirim → {{pr}}',
   'planGrid.push.failed': 'Pengiriman gagal: {{reason}}',
+
+  // — CP-0 · W1 · PR-2b — penolakan jumlah diterima (satu-satunya parser) —
+  'planGrid.push.qty.hint': 'Angka saja — tanpa pemisah ribuan (misalnya 4500)',
+  'planGrid.push.qty.refused.empty':
+    'Masukkan jumlah yang diterima — kolom kosong bukan berarti nol. Jika memang tidak ada, ketik 0.',
+  'planGrid.push.qty.refused.notNumeric':
+    'Itu bukan jumlah — ketik angka saja, misalnya 4500.',
+  'planGrid.push.qty.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "4.500" berarti empat ribu lima ratus dalam bahasa Indonesia dan empat koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 4500.',
 
   // — Laci set-kerja + layar-penuh (G1.3.2) —
   'planGrid.drawer.title': 'Sesuaikan & kirim — baris terpilih',

@@ -38,7 +38,33 @@ import { useRequisitions } from '../services/query/hooks';
 import { usePurchaseRequisitionCreate } from '../services/query/commandHooks';
 import { DataError } from '../services/data/types';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
+import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
+
+// ── CP-0 · W1 · PR-2b — the New-PR quantity is PARSED, never coerced ─────────
+// `Number(form.qty)` behind a `type="number"` field read "4.500" as 4.5, so a
+// buyer authoring 4,500 KG minted a Draft PR for 4.5 KG — silently, and with a
+// real audited document number attached. The field is now
+// `type="text" inputmode="decimal"` (ruling 6.2) and routes through the ONE
+// legal parser with NO convention hint, so a token legal under both readings
+// refuses instead of being guessed.
+//
+// The type flip is what makes the parse non-optional rather than merely better:
+// `type="number"` filtered the input space to what `Number` happens to accept,
+// so a comma could never arrive. On a text field "4,500" reaches the handler,
+// `Number` yields NaN, and NaN survives the whole spine — the dispatcher's
+// requiredFields check tests emptiness (NaN is not empty), the command target
+// accepts it (`typeof NaN === 'number'`), and `formatNumber(NaN)` renders a
+// tidy em-dash. A corrupted quantity would look like a formatting nicety.
+// Hence: the flip and the parse ship in one commit, never staged.
+//
+// EXHAUSTIVE, not Partial (the 2a discipline): widening QtyRefusalReason must
+// break the build here, not render a blank refusal to a buyer.
+const QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'requisitions.new.qty.refused.empty',
+  NOT_NUMERIC: 'requisitions.new.qty.refused.notNumeric',
+  AMBIGUOUS_QTY: 'requisitions.new.qty.refused.ambiguous',
+};
 
 const STATUS_VARIANT: Record<
   PRStatus,
@@ -209,8 +235,12 @@ const BuyerRequisitions: React.FC = () => {
       />
     );
 
+  // The ONE parse. No hint: a buyer's own form carries no origin convention.
+  const parsedQty = normalizeQty(form.qty);
+  // A refused quantity is not a submittable form. `!!form.qty` used to be the
+  // whole gate — presence, not readability — which is how "4.500" got through.
   const canSubmit =
-    !!form.material && !!form.qty && !!form.date && !!form.costCenter;
+    !!form.material && parsedQty.ok && !!form.date && !!form.costCenter;
 
   // G1.2b — the fabricated `PR-2026-00${random}` toast is retired onto the real
   // t_pr_create push (usePurchaseRequisitionCreate). The number now comes from
@@ -218,12 +248,14 @@ const BuyerRequisitions: React.FC = () => {
   // list-visible, and both failure channels surface honestly. Fresh authoring —
   // not a quantity override, so no C6-LOCK reason-gate here.
   const submitNewPR = async () => {
-    if (!canSubmit || createPr.isPending) return;
+    // Re-checked at the click (belt-and-suspenders beside the disabled button):
+    // an unreadable quantity short-circuits here, so nothing reaches the spine.
+    if (!parsedQty.ok || !canSubmit || createPr.isPending) return;
     try {
       const result = await createPr.mutateAsync({
         payload: {
           material: form.material,
-          quantity: Number(form.qty),
+          quantity: parsedQty.value,
           uom: form.uom,
           requiredDate: form.date,
           costCenter: form.costCenter,
@@ -650,13 +682,32 @@ const BuyerRequisitions: React.FC = () => {
             <div className="grid grid-cols-[1fr_100px] gap-3">
               <div>
                 <label className={labelClass}>{t('requisitions.new.field.quantity')}</label>
+                {/* type=text + inputmode=decimal (ruling 6.2): type=number
+                    rejects the separators this field exists to adjudicate. */}
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   className={inputClass}
                   placeholder={t('requisitions.new.placeholder.quantity')}
+                  aria-label={t('requisitions.new.field.quantity')}
+                  aria-invalid={form.qty.trim() !== '' && !parsedQty.ok}
                   value={form.qty}
                   onChange={(e) => setForm({ ...form, qty: e.target.value })}
                 />
+                {/* An untouched blank does not nag; a TYPED token that cannot be
+                    read says so, and says what to type instead. */}
+                {form.qty.trim() !== '' && !parsedQty.ok && (
+                  <div
+                    role="alert"
+                    data-testid="new-pr-qty-refusal"
+                    className="mt-1 text-[11px] text-danger"
+                  >
+                    {t(QTY_REFUSAL_KEY[parsedQty.reason])}
+                  </div>
+                )}
+                <div className="mt-1 text-[11px] text-text-tertiary">
+                  {t('requisitions.new.qty.hint')}
+                </div>
               </div>
               <div>
                 <label className={labelClass}>{t('requisitions.new.field.uom')}</label>
