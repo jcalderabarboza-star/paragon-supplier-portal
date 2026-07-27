@@ -224,7 +224,7 @@ export const sdcSupplierEn: Record<string, string> = {
 
   // CP-0 · 2d — quantities the one parser refused. They import BLANK; saying so
   // BEFORE the import is what lets a wrong column mapping be corrected here.
-  'sdcSup.bulk.import.unreadable.title': '{{count}} quantities could not be read',
+  'sdcSup.bulk.import.unreadable.title': 'Quantities that could not be read: {{count}}',
   'sdcSup.bulk.import.unreadable.row': 'Row {{row}}: “{{raw}}” — {{reason}}',
   'sdcSup.bulk.import.unreadable.more': '…and {{count}} more.',
   'sdcSup.bulk.import.unreadable.body':
@@ -526,7 +526,7 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.bulk.import.toast.body': '{{count}} baris ditambahkan — tinjau dan Deklarasikan bila siap.',
 
   // CP-0 · 2d — kuantitas yang ditolak parser. Sel-sel itu diimpor kosong.
-  'sdcSup.bulk.import.unreadable.title': '{{count}} kuantitas tidak dapat dibaca',
+  'sdcSup.bulk.import.unreadable.title': 'Kuantitas yang tidak dapat dibaca: {{count}}',
   'sdcSup.bulk.import.unreadable.row': 'Baris {{row}}: “{{raw}}” — {{reason}}',
   'sdcSup.bulk.import.unreadable.more': '…dan {{count}} lagi.',
   'sdcSup.bulk.import.unreadable.body':
