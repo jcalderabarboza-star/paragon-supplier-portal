@@ -17,8 +17,10 @@ export const riskEn: Record<string, string> = {
   'risk.crumb.supplyRisk': 'SUPPLY RISK',
   // — Page header —
   'risk.header.title': 'Supply Risk & Scenario Intelligence',
+  // The old subtitle ended "· live alerts." — a liveness claim that contradicted
+  // the SIMULATED marker one line below it. Reworded to illustrative framing.
   'risk.header.subtitle':
-    'Geopolitical · single-source · compliance · financial risk · live alerts.',
+    'Geopolitical · single-source · compliance · financial risk — illustrative scenario intelligence.',
   'risk.action.exportReport': 'Export Report',
   'risk.action.configureAlerts': 'Configure Alerts',
   'risk.toast.exportStarting': 'Risk report export starting',
@@ -26,7 +28,19 @@ export const riskEn: Record<string, string> = {
   'risk.toast.alertConfig.desc': 'Channel rules editor coming in Phase 2A.',
   // — Meta line (honest illustrative caption; the LivenessPill carries the SIMULATED marker) —
   'risk.meta.illustrative': 'Illustrative risk intelligence — no live feed',
-  'risk.meta.lastUpdated': 'Last updated {{date}}',
+  // Replaces the former 'risk.meta.lastUpdated' footer, which stamped
+  // `new Date()` under static fixtures — a manufactured freshness claim. The
+  // honest footer names the real-later capability instead of a fake timestamp.
+  'risk.meta.futureCapability':
+    'Every figure on this page is illustrative. It is the specification for supply-risk intelligence (Stage-2 · I3) — to be derived from real spend, supplier, and commodity data when that capability lands.',
+  // — Region enclosures (IllustrativeRegion captions) —
+  'risk.illustrative.alerts': 'Illustrative scenario alerts — no live feed',
+  'risk.illustrative.geo': 'Illustrative geopolitical intelligence — no live feed',
+  'risk.illustrative.exposure': 'Illustrative supply-exposure figures — no live feed',
+  'risk.illustrative.scenario': 'Illustrative scenario model — no live feed',
+  'risk.illustrative.compliance': 'Illustrative compliance-risk records — no live feed',
+  'risk.illustrative.commodity': 'Illustrative commodity prices — no live feed',
+  'risk.illustrative.map': 'Illustrative supplier risk map — no live feed',
   // — Alert banner —
   'risk.alert.dismiss': 'Dismiss alert',
   // — KPI cards (values are illustrative demo data; every card is marked illustrative) —
@@ -140,7 +154,7 @@ export const riskId: Record<string, string> = {
   // — Page header —
   'risk.header.title': 'Intelijen Risiko Pasokan & Skenario',
   'risk.header.subtitle':
-    'Geopolitik · sumber tunggal · kepatuhan · risiko finansial · peringatan langsung.',
+    'Geopolitik · sumber tunggal · kepatuhan · risiko finansial — intelijen skenario ilustratif.',
   'risk.action.exportReport': 'Ekspor Laporan',
   'risk.action.configureAlerts': 'Konfigurasi Peringatan',
   'risk.toast.exportStarting': 'Ekspor laporan risiko dimulai',
@@ -148,7 +162,16 @@ export const riskId: Record<string, string> = {
   'risk.toast.alertConfig.desc': 'Editor aturan kanal hadir pada Fase 2A.',
   // — Meta line (honest illustrative caption; the LivenessPill carries the SIMULATED marker) —
   'risk.meta.illustrative': 'Intelijen risiko ilustratif — tanpa umpan langsung',
-  'risk.meta.lastUpdated': 'Terakhir diperbarui {{date}}',
+  'risk.meta.futureCapability':
+    'Setiap angka di halaman ini bersifat ilustratif. Ini adalah spesifikasi untuk intelijen risiko pasokan (Tahap-2 · I3) — akan diturunkan dari data belanja, pemasok, dan komoditas yang sebenarnya saat kapabilitas itu hadir.',
+  // — Penanda wilayah (caption IllustrativeRegion) —
+  'risk.illustrative.alerts': 'Peringatan skenario ilustratif — tanpa umpan langsung',
+  'risk.illustrative.geo': 'Intelijen geopolitik ilustratif — tanpa umpan langsung',
+  'risk.illustrative.exposure': 'Angka eksposur pasokan ilustratif — tanpa umpan langsung',
+  'risk.illustrative.scenario': 'Model skenario ilustratif — tanpa umpan langsung',
+  'risk.illustrative.compliance': 'Catatan risiko kepatuhan ilustratif — tanpa umpan langsung',
+  'risk.illustrative.commodity': 'Harga komoditas ilustratif — tanpa umpan langsung',
+  'risk.illustrative.map': 'Peta risiko pemasok ilustratif — tanpa umpan langsung',
   // — Alert banner —
   'risk.alert.dismiss': 'Tutup peringatan',
   // — KPI cards (nilai ilustratif; setiap kartu ditandai ilustratif) —
