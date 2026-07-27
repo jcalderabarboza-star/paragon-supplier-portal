@@ -117,6 +117,14 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.new.placeholder.material': 'e.g. Niacinamide B3 USP Grade',
   'requisitions.new.field.quantity': 'Quantity *',
   'requisitions.new.placeholder.quantity': '0',
+  // — CP-0 · W1 · PR-2b — New-PR quantity refusals (the ONE parse) —
+  'requisitions.new.qty.hint': 'Digits only — no thousands separators (e.g. 4500)',
+  'requisitions.new.qty.refused.empty':
+    'Enter a quantity — a blank field is not a zero. If the answer really is none, type 0.',
+  'requisitions.new.qty.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 4500.',
+  'requisitions.new.qty.refused.ambiguous':
+    'This can be read two ways — "4.500" means four thousand five hundred in Indonesian and four-point-five in English. Type it without separators: 4500.',
   'requisitions.new.field.uom': 'UoM',
   'requisitions.new.step2.eyebrow': 'Step 2',
   'requisitions.new.step2.title': 'Timing & cost center',
@@ -242,6 +250,14 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.new.placeholder.material': 'mis. Niacinamide B3 Grade USP',
   'requisitions.new.field.quantity': 'Kuantitas *',
   'requisitions.new.placeholder.quantity': '0',
+  // — CP-0 · W1 · PR-2b — penolakan kuantitas PR baru (satu-satunya parser) —
+  'requisitions.new.qty.hint': 'Angka saja — tanpa pemisah ribuan (misalnya 4500)',
+  'requisitions.new.qty.refused.empty':
+    'Masukkan kuantitas — kolom kosong bukan berarti nol. Jika memang tidak ada, ketik 0.',
+  'requisitions.new.qty.refused.notNumeric':
+    'Itu bukan kuantitas — ketik angka saja, misalnya 4500.',
+  'requisitions.new.qty.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "4.500" berarti empat ribu lima ratus dalam bahasa Indonesia dan empat koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 4500.',
   'requisitions.new.field.uom': 'Satuan',
   'requisitions.new.step2.eyebrow': 'Langkah 2',
   'requisitions.new.step2.title': 'Waktu & pusat biaya',
