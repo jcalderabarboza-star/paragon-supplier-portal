@@ -3,6 +3,7 @@ import { screen, waitFor, within, fireEvent } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import SupplierForecasts from './SupplierForecasts';
 import { requirementResponseStore } from '../services/data/mock/stores/requirementResponseStore';
+import { incomingShipmentStore } from '../services/data/mock/stores/incomingShipmentStore';
 import {
   supplierVisiblePublications,
   FORECAST_PUBLICATIONS,
@@ -31,6 +32,7 @@ const SUP002: CurrentIdentity = {
 
 beforeEach(() => {
   requirementResponseStore.reset();
+  incomingShipmentStore.reset();
 });
 
 const renderPage = (identity: CurrentIdentity = SUPPLIER) =>
@@ -434,6 +436,113 @@ describe('SupplierForecasts — the Σ-banner reads the SAME parse as the payloa
     // 2.400 is formatNumber(2400) — id-ID grouping, the display convention.
     expect(banner.textContent).toContain('2.400');
     expect(banner.textContent).not.toMatch(/do not add up/);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// CP-0 · W1 · PR-2d — the shipment quantity. This surface had NO tests before
+// this batch, so everything here is additive.
+//
+// A shipment quantity is not a leaf: it sums into the buyer's incoming-coverage
+// read and it drives the delivery drawdown, where the schedule line's variance
+// is `qty - plannedQty` AND the matching shipment is picked by the smallest
+// absolute variance. "6.000" read as 6 does not just report a wrong number — it
+// can match the wrong shipment to a released line. The parse is the guard.
+// ────────────────────────────────────────────────────────────────────────────
+describe('SupplierForecasts — the shipment quantity is parsed, never coerced (CP-0 · 2d)', () => {
+  // sup-007 (the seeded persona) owns PK-PETB-8810 and four own ASNs, so the
+  // material select, the direction and the ASN link are all reachable by hand
+  // on ONE form — the smoke path, exercised here.
+  // The SOH panel and the shipment panel are BOTH mounted, and both carry a
+  // "Material" label — so these address the shipment panel's fields by their
+  // own ids (the same ids the labels' htmlFor points at). A missing id throws
+  // rather than silently matching the wrong panel.
+  const field = <T extends HTMLElement>(id: string): T => {
+    const el = document.getElementById(id);
+    if (!el) throw new Error(`shipment panel field #${id} is not in the document`);
+    return el as T;
+  };
+
+  const openShipment = async (
+    tab: RegExp = /Shipments/,
+    report: RegExp = /^Report shipment$/,
+  ) => {
+    renderPage();
+    fireEvent.click(await screen.findByRole('tab', { name: tab }));
+    fireEvent.click(await screen.findByRole('button', { name: report }));
+    await waitFor(() => expect(document.getElementById('sdcsup-ship-material')).not.toBeNull());
+    fireEvent.change(field('sdcsup-ship-material'), { target: { value: 'PK-PETB-8810' } });
+    fireEvent.change(field('sdcsup-ship-direction'), { target: { value: 'to-paragon' } });
+    fireEvent.change(field('sdcsup-ship-asn'), { target: { value: 'ASN-2025-00211' } });
+  };
+  const setShipQty = (v: string) =>
+    fireEvent.change(field('sdcsup-ship-qty'), { target: { value: v } });
+  const reportBtn = () => screen.getByTestId('sdcsup-ship-submit');
+  const ownShipments = () =>
+    incomingShipmentStore.all().filter((s) => s.materialCode === 'PK-PETB-8810');
+
+  // POSITIVE — establishes that `ship-qty-refusal` is a selector that MATCHES.
+  // Every absence assertion below leans on this one having been seen to pass.
+  it('an AMBIGUOUS quantity renders the refusal and withdraws the commit', async () => {
+    await openShipment();
+    setShipQty('6.000'); // 6000 under id, 6 under en — one reading of two
+    const refusal = screen.getByTestId('ship-qty-refusal');
+    expect(refusal.textContent?.trim()).not.toBe(''); // a reason is never blank
+    expect(reportBtn()).toBeDisabled();
+  });
+
+  it('an AMBIGUOUS quantity reaches NEITHER the spine NOR the store', async () => {
+    await openShipment();
+    const before = ownShipments().length;
+    setShipQty('6.000');
+    fireEvent.click(reportBtn()); // disabled, but the backstop is asserted too
+    await waitFor(() => expect(ownShipments()).toHaveLength(before));
+    // Specifically: not the 6 the old blanket coercion would have shipped into
+    // the coverage sum and the drawdown match.
+    expect(ownShipments().some((s) => s.qty === 6)).toBe(false);
+  });
+
+  it('a READABLE quantity reports — and the number stored is the number typed', async () => {
+    await openShipment();
+    setShipQty('6000');
+    // The inverse of the positive above, now that the selector is known good.
+    expect(screen.queryByTestId('ship-qty-refusal')).not.toBeInTheDocument();
+    expect(reportBtn()).not.toBeDisabled();
+
+    fireEvent.click(reportBtn());
+    await waitFor(() => expect(ownShipments().some((s) => s.qty === 6000)).toBe(true));
+    const minted = ownShipments().find((s) => s.qty === 6000)!;
+    expect(minted.supplierId).toBe('sup-007');
+    expect(minted.asnRef).toBe('ASN-2025-00211');
+    expect(Number.isFinite(minted.qty)).toBe(true); // never a NaN through the spine
+  });
+
+  it('a blank quantity is not a zero shipment — and a TYPED zero still is', async () => {
+    await openShipment();
+    const before = ownShipments().length;
+    fireEvent.click(reportBtn()); // nothing typed
+    await waitFor(() => expect(ownShipments()).toHaveLength(before));
+    // THE `|| 0`: an untouched field used to become a reported shipment of 0,
+    // which posts a variance of minus the whole planned quantity downstream.
+    expect(ownShipments().some((s) => s.qty === 0)).toBe(false);
+
+    // The same field, now STATING zero — a real fact, and it must be recorded.
+    setShipQty('0');
+    fireEvent.click(reportBtn());
+    await waitFor(() => expect(ownShipments().some((s) => s.qty === 0)).toBe(true));
+  });
+
+  it('refuses in Indonesian too — the guard is not an English-only affordance', async () => {
+    await i18n.changeLanguage('id');
+    try {
+      await openShipment(/Pengiriman/, /^Laporkan pengiriman$/);
+      setShipQty('6.000');
+      const refusal = screen.getByTestId('ship-qty-refusal');
+      expect(refusal.textContent).toMatch(/dibaca dua cara/);
+      expect(reportBtn()).toBeDisabled();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });
 

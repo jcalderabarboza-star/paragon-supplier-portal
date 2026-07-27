@@ -3,6 +3,7 @@ import { Upload, X, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import Button from '../components/ui-v2/Button';
 import { parseWorkbook, type FileParseReason, type ParsedWorkbook } from '../services/sdc';
+import type { QtyRefusalReason } from '../lib/localeNumber';
 import {
   suggestMapping,
   mappingComplete,
@@ -36,6 +37,18 @@ const FILE_REASON_KEY: Record<FileParseReason, string> = {
   NO_SHEETS: 'sdcSup.bulk.import.fail.noSheets',
   EMPTY_SHEET: 'sdcSup.bulk.import.fail.emptySheet',
   NO_HEADER_ROW: 'sdcSup.bulk.import.fail.noHeaderRow',
+};
+
+// How many refused rows are listed individually before the rest are counted.
+const UNREADABLE_SHOWN = 5;
+
+// EXHAUSTIVE (the 2a discipline). EMPTY_QTY never reaches this map today —
+// `coerceRows` does not report a blank cell as unreadable — but the key exists
+// so that adding a refusal reason breaks the build rather than the copy.
+const UNREADABLE_REASON_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'sdcSup.bulk.import.unreadable.reason.empty',
+  NOT_NUMERIC: 'sdcSup.bulk.import.unreadable.reason.notNumeric',
+  AMBIGUOUS_QTY: 'sdcSup.bulk.import.unreadable.reason.ambiguous',
 };
 
 const FIELD_LABEL: Record<MapField, string> = {
@@ -99,9 +112,17 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
   const setField = (field: MapField, header: string) =>
     setMapping((m) => ({ ...m, [field]: header }));
 
+  // CP-0 · W1 · PR-2d — the coercion is run LIVE, not only at confirm, so the
+  // unreadable-quantity count is visible WHILE the mapping is still editable.
+  // That ordering is the point: an sheet full of unreadable quantities is very
+  // often the qty column mapped to the wrong header, and the supplier can fix
+  // that here. Reported after the fact it would look like their data was bad.
+  const preview =
+    book && mappingComplete(mapping) ? coerceRows(book.rows, mapping) : null;
+
   const confirm = () => {
-    if (!book || !mappingComplete(mapping)) return;
-    onImport(coerceRows(book.rows, mapping));
+    if (!preview) return;
+    onImport(preview.rows);
   };
 
   return (
@@ -230,6 +251,46 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
             <p className="text-sm text-warning-hover" data-testid="sdcsup-import-incomplete">
               {t('sdcSup.bulk.import.incomplete')}
             </p>
+          )}
+
+          {/* The refused-quantity report: WHICH cells could not be read and what
+              they said. These import BLANK — saying so here is the difference
+              between honest silence and letting the supplier believe they left
+              a field empty. The list is capped at 5 and the remainder is
+              COUNTED, never silently dropped. */}
+          {preview && preview.refused.length > 0 && (
+            <div
+              className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm"
+              data-testid="sdcsup-import-unreadable"
+            >
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning" />
+              <div className="text-text-primary">
+                <div className="font-semibold text-warning-hover">
+                  {t('sdcSup.bulk.import.unreadable.title', { count: preview.refused.length })}
+                </div>
+                <ul className="mt-1 space-y-0.5 text-text-secondary">
+                  {preview.refused.slice(0, UNREADABLE_SHOWN).map((r) => (
+                    <li key={r.index}>
+                      {t('sdcSup.bulk.import.unreadable.row', {
+                        row: r.index + 1,
+                        raw: r.raw,
+                        reason: t(UNREADABLE_REASON_KEY[r.reason]),
+                      })}
+                    </li>
+                  ))}
+                </ul>
+                {preview.refused.length > UNREADABLE_SHOWN && (
+                  <div className="mt-0.5 text-text-tertiary">
+                    {t('sdcSup.bulk.import.unreadable.more', {
+                      count: preview.refused.length - UNREADABLE_SHOWN,
+                    })}
+                  </div>
+                )}
+                <p className="mt-1 text-text-secondary">
+                  {t('sdcSup.bulk.import.unreadable.body')}
+                </p>
+              </div>
+            </div>
           )}
 
           <div className="flex items-center justify-between gap-3">

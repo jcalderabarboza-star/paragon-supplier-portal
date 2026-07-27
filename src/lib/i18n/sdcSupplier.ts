@@ -193,6 +193,12 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.bulk.reason.batchMismatch': 'batches must sum to the total',
   'sdcSup.bulk.reason.noRows': 'Enter a total, or one or more batches.',
 
+  // CP-0 · 2d — the header total's own refusal (the Σ-banner reads ONE parse).
+  'sdcSup.bulk.total.refused.empty': 'Enter the total stock on hand to see the batch total.',
+  'sdcSup.bulk.total.refused.notNumeric': 'That total is not a number — enter digits only, for example 4000.',
+  'sdcSup.bulk.total.refused.ambiguous':
+    'That total could be read two ways (4.000 = 4,000 or 4) — enter it without separators, for example 4000.',
+
   // ── SDC-3c-c-b — XLSX import (upload + confirmable column mapping) ───────────
   'sdcSup.bulk.import.open': 'Import from Excel',
   'sdcSup.bulk.import.needMaterial':
@@ -215,6 +221,17 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.bulk.import.another': 'Try another file',
   'sdcSup.bulk.import.toast.title': 'Batches imported',
   'sdcSup.bulk.import.toast.body': '{{count}} rows added — review and Declare when ready.',
+
+  // CP-0 · 2d — quantities the one parser refused. They import BLANK; saying so
+  // BEFORE the import is what lets a wrong column mapping be corrected here.
+  'sdcSup.bulk.import.unreadable.title': '{{count}} quantities could not be read',
+  'sdcSup.bulk.import.unreadable.row': 'Row {{row}}: “{{raw}}” — {{reason}}',
+  'sdcSup.bulk.import.unreadable.more': '…and {{count}} more.',
+  'sdcSup.bulk.import.unreadable.body':
+    'These cells import blank — retype them in the grid. If most rows are listed, check that Quantity is mapped to the right column.',
+  'sdcSup.bulk.import.unreadable.reason.empty': 'no quantity',
+  'sdcSup.bulk.import.unreadable.reason.notNumeric': 'not a number',
+  'sdcSup.bulk.import.unreadable.reason.ambiguous': 'could mean two different numbers',
   'sdcSup.bulk.import.fail.notWorkbook':
     'That file isn’t a readable .xlsx workbook. Nothing was imported.',
   'sdcSup.bulk.import.fail.noSheets': 'That workbook has no usable sheet. Nothing was imported.',
@@ -253,6 +270,13 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.ship.panel.detail.title': 'Shipment detail',
   'sdcSup.ship.panel.detail.desc': 'The quantity in transit and the shipment dates.',
   'sdcSup.ship.panel.qtyLabel': 'Quantity ({{uom}})',
+  // CP-0 · 2d — the shipment quantity: one parse, honest refusal, no hint.
+  'sdcSup.ship.qty.hint': 'Digits only — for example 6000.',
+  'sdcSup.ship.qty.refused.empty': 'Enter the quantity in transit.',
+  'sdcSup.ship.qty.refused.notNumeric':
+    'That quantity is not a number — enter digits only, for example 6000.',
+  'sdcSup.ship.qty.refused.ambiguous':
+    'That quantity could be read two ways (6.000 = 6,000 or 6) — enter it without separators, for example 6000.',
   'sdcSup.ship.panel.etd': 'ETD',
   'sdcSup.ship.panel.eta': 'ETA',
   'sdcSup.ship.panel.link.eyebrow': 'Step 3',
@@ -472,6 +496,12 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.bulk.reason.batchMismatch': 'batch harus berjumlah sama dengan total',
   'sdcSup.bulk.reason.noRows': 'Masukkan total, atau satu batch atau lebih.',
 
+  // CP-0 · 2d — penolakan total header (banner Σ membaca SATU parse).
+  'sdcSup.bulk.total.refused.empty': 'Masukkan total stok di tangan untuk melihat total batch.',
+  'sdcSup.bulk.total.refused.notNumeric': 'Total itu bukan angka — masukkan hanya digit, misalnya 4000.',
+  'sdcSup.bulk.total.refused.ambiguous':
+    'Total itu bisa dibaca dua cara (4.000 = 4.000 atau 4) — masukkan tanpa pemisah, misalnya 4000.',
+
   // ── SDC-3c-c-b — Impor XLSX (unggah + pemetaan kolom yang dikonfirmasi) ──────
   'sdcSup.bulk.import.open': 'Impor dari Excel',
   'sdcSup.bulk.import.needMaterial':
@@ -494,6 +524,16 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.bulk.import.another': 'Coba file lain',
   'sdcSup.bulk.import.toast.title': 'Batch diimpor',
   'sdcSup.bulk.import.toast.body': '{{count}} baris ditambahkan — tinjau dan Deklarasikan bila siap.',
+
+  // CP-0 · 2d — kuantitas yang ditolak parser. Sel-sel itu diimpor kosong.
+  'sdcSup.bulk.import.unreadable.title': '{{count}} kuantitas tidak dapat dibaca',
+  'sdcSup.bulk.import.unreadable.row': 'Baris {{row}}: “{{raw}}” — {{reason}}',
+  'sdcSup.bulk.import.unreadable.more': '…dan {{count}} lagi.',
+  'sdcSup.bulk.import.unreadable.body':
+    'Sel-sel ini diimpor kosong — ketik ulang di grid. Jika sebagian besar baris tercantum, periksa apakah Kuantitas dipetakan ke kolom yang benar.',
+  'sdcSup.bulk.import.unreadable.reason.empty': 'tidak ada kuantitas',
+  'sdcSup.bulk.import.unreadable.reason.notNumeric': 'bukan angka',
+  'sdcSup.bulk.import.unreadable.reason.ambiguous': 'bisa berarti dua angka berbeda',
   'sdcSup.bulk.import.fail.notWorkbook':
     'File itu bukan workbook .xlsx yang bisa dibaca. Tidak ada yang diimpor.',
   'sdcSup.bulk.import.fail.noSheets': 'Workbook itu tidak punya lembar yang bisa dipakai. Tidak ada yang diimpor.',
@@ -532,6 +572,13 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.ship.panel.detail.title': 'Rincian pengiriman',
   'sdcSup.ship.panel.detail.desc': 'Kuantitas dalam perjalanan dan tanggal pengiriman.',
   'sdcSup.ship.panel.qtyLabel': 'Kuantitas ({{uom}})',
+  // CP-0 · 2d — kuantitas pengiriman: satu parse, penolakan jujur, tanpa petunjuk.
+  'sdcSup.ship.qty.hint': 'Hanya digit — misalnya 6000.',
+  'sdcSup.ship.qty.refused.empty': 'Masukkan kuantitas dalam perjalanan.',
+  'sdcSup.ship.qty.refused.notNumeric':
+    'Kuantitas itu bukan angka — masukkan hanya digit, misalnya 6000.',
+  'sdcSup.ship.qty.refused.ambiguous':
+    'Kuantitas itu bisa dibaca dua cara (6.000 = 6.000 atau 6) — masukkan tanpa pemisah, misalnya 6000.',
   'sdcSup.ship.panel.etd': 'ETD',
   'sdcSup.ship.panel.eta': 'ETA',
   'sdcSup.ship.panel.link.eyebrow': 'Langkah 3',

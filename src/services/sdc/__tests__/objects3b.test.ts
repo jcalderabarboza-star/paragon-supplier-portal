@@ -142,10 +142,18 @@ describe('buildInventoryDeclarationPayload (pure assembly, total-first)', () => 
   });
 });
 
+// CP-0 · PR-2d — the shipment builder no longer parses either. `qty` arrives as
+// a NUMBER the caller already ran through `normalizeQty`, so the builder cannot
+// coerce, cannot fabricate a zero, and cannot disagree with the gate that let
+// the submit through. The three drafts below carried the strings '6000' /
+// '4000' / '10'; they now carry the numbers. See the ledger note on each.
 describe('buildIncomingShipmentPayload (direction-guarded)', () => {
+  // LEDGER (CP-0 · 6.1 · correction 1): `qty: '6000'` → `6000`. Mechanical —
+  // the draft field is number-typed now; the assertion and its intent are
+  // untouched. ('6000' was never ambiguous; only its TYPE changed.)
   it('a to-paragon leg carries the selected asnRef', () => {
     const p = buildIncomingShipmentPayload('sup-002', 'RM-EMUL-3310', 'to-paragon', {
-      qty: '6000',
+      qty: 6000,
       awb: 'AWB-1',
       asnRef: 'ASN-2025-00301',
     });
@@ -160,9 +168,10 @@ describe('buildIncomingShipmentPayload (direction-guarded)', () => {
     expect('uom' in p).toBe(false);
   });
 
+  // LEDGER (CP-0 · 6.1 · correction 2): `qty: '4000'` → `4000`. Mechanical.
   it('a principal-to-distributor leg NEVER carries an asnRef (even if one leaks in)', () => {
     const p = buildIncomingShipmentPayload('sup-005', 'RM-EMUL-3310', 'principal-to-distributor', {
-      qty: '4000',
+      qty: 4000,
       // A stray asnRef must be stripped by direction — the symmetric guard's mirror.
       asnRef: 'ASN-SHOULD-NOT-APPEAR',
     });
@@ -170,9 +179,10 @@ describe('buildIncomingShipmentPayload (direction-guarded)', () => {
     expect(p.direction).toBe('principal-to-distributor');
   });
 
+  // LEDGER (CP-0 · 6.1 · correction 3): `qty: '10'` → `10`. Mechanical.
   it('optional fields are omitted when blank', () => {
     const p = buildIncomingShipmentPayload('sup-002', 'RM-EMUL-3310', 'to-paragon', {
-      qty: '10',
+      qty: 10,
     });
     expect(p).toEqual({
       supplierId: 'sup-002',
@@ -180,6 +190,35 @@ describe('buildIncomingShipmentPayload (direction-guarded)', () => {
       direction: 'to-paragon',
       qty: 10,
     });
+  });
+
+  // The structural guarantee behind §4, stated for this builder: no string
+  // input ⇒ nothing to parse ⇒ no second reading that could diverge from the
+  // gate the surface applied. The two values below are the ambiguous pair
+  // ("6.000" reads as either) — the builder ships whichever ONE the caller's
+  // single parse produced, and can never choose between them itself.
+  it('is pure assembly — the number it is given is the number it ships', () => {
+    const big = buildIncomingShipmentPayload('sup-007', 'PK-PETB-8810', 'to-paragon', {
+      qty: 6000,
+      asnRef: 'ASN-2025-00211',
+    });
+    const small = buildIncomingShipmentPayload('sup-007', 'PK-PETB-8810', 'to-paragon', {
+      qty: 6,
+      asnRef: 'ASN-2025-00211',
+    });
+    expect(big.qty).toBe(6000);
+    expect(small.qty).toBe(6);
+  });
+
+  // ZERO-COMMITMENT, restated for shipments. A typed 0 is a real statement
+  // ("nothing is in transit") and survives; a blank is not a zero and cannot
+  // reach here at all, because the draft field no longer accepts a string for
+  // the `|| 0` to act on. This is the contract the old builder inverted.
+  it('a TYPED zero is carried through — "nothing is in transit" is a statement', () => {
+    const p = buildIncomingShipmentPayload('sup-005', 'RM-EMUL-3310', 'principal-to-distributor', {
+      qty: 0,
+    });
+    expect(p.qty).toBe(0);
   });
 });
 

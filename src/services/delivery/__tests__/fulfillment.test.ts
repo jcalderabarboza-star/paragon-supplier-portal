@@ -244,3 +244,62 @@ describe('deriveFulfillment — constants & pristine ctr-003 seed', () => {
     expect(deriveDrawdownLedger(ITEM10).deliveredQty).toBe(0);
   });
 });
+
+// ─── CP-0 · W1 · PR-2d — the shipment quantity's blast radius here ────────────
+//
+// `qty` is not display-only in this derivation. It becomes `actualQty` and
+// `qtyVariance` on a RELEASED schedule line, and — when two candidates arrive
+// equally close to the release date — the smallest absolute variance is the
+// TIE-BREAK that decides WHICH shipment is matched (`pickOrder`). So a misread
+// quantity does not merely report a wrong figure against a live commitment: on
+// a tie it can bind the wrong shipment to the line, and the wrong `matchedRef`
+// then travels onward as the identity of that delivery.
+//
+// These lock both halves: the corrected quantity leaves the derivation exactly
+// as it was, and the misparse is shown to change it.
+
+describe('fulfillment is unperturbed by the corrected shipment quantity (CP-0 · 2d)', () => {
+  // seq 3 → release date 2025-12-01, plannedQty 180 000.
+  const item = release([3]);
+  const view = (shipments: IncomingShipment[]) =>
+    deriveFulfillment(item, shipments, NOW).find((v) => v.releaseSeq === 3)!;
+
+  it('the READ quantity posts a true variance against the released line', () => {
+    const v = view([
+      ship({ id: 'shp-ok', materialCode: 'PK-PETB-8810', qty: 180_000, eta: '2025-11-28', asnRef: 'ASN-OK' }),
+    ]);
+    expect(v.actualQty).toBe(180_000);
+    expect(v.qtyVariance).toBe(0); // delivered in full
+    expect(v.fulfillment).toBe('fulfilled');
+  });
+
+  it('the fabricated ZERO would claim a total non-delivery against a live commitment', () => {
+    // This is the `|| 0` at its worst: an untouched field becomes a reported
+    // shipment of nothing, and the schedule line records minus the ENTIRE
+    // planned quantity as the supplier's variance.
+    const v = view([
+      ship({ id: 'shp-zero', materialCode: 'PK-PETB-8810', qty: 0, eta: '2025-11-28', asnRef: 'ASN-Z' }),
+    ]);
+    expect(v.qtyVariance).toBe(-180_000);
+  });
+
+  it('MIS-MATCH: on an equal-arrival tie the quantity decides which shipment binds', () => {
+    // Two candidates, identical eta ⇒ the date test ties and `pickOrder` falls
+    // through to the smallest |variance|.
+    const exact = { id: 'shp-a', materialCode: 'PK-PETB-8810', eta: '2025-11-28', asnRef: 'ASN-A' };
+    const other = { id: 'shp-b', materialCode: 'PK-PETB-8810', eta: '2025-11-28', asnRef: 'ASN-B' };
+
+    // READ correctly: A is exact (variance 0) and wins the tie.
+    const right = view([ship({ ...exact, qty: 180_000 }), ship({ ...other, qty: 170_000 })]);
+    expect(right.matchedRef).toBe('ASN-A');
+    expect(right.ambiguous).toBe(true); // >1 candidate is always disclosed
+
+    // MISREAD A's quantity — "180.000" taken as 180. Its variance is now the
+    // larger one, so B binds instead: the line is matched to the WRONG shipment
+    // and carries B's identity onward. Nothing in the output says a quantity
+    // was misread; it simply names a different delivery.
+    const wrong = view([ship({ ...exact, qty: 180 }), ship({ ...other, qty: 170_000 })]);
+    expect(wrong.matchedRef).toBe('ASN-B');
+    expect(wrong.matchedRef).not.toBe(right.matchedRef);
+  });
+});

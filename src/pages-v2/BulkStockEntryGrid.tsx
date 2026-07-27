@@ -28,6 +28,7 @@ import {
 } from '../services/sdc';
 import type { CommandResult } from '../services/data/types';
 import { formatNumber } from '../lib/format';
+import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import XlsxImportPanel from './XlsxImportPanel';
 import type { BatchGridRow } from './xlsxImportMap';
 
@@ -68,6 +69,14 @@ const blankRow = (): BatchGridRow => ({ batchNumber: null, qty: null, expiryDate
 // container cannot auto-shrink to few-row content (the trembling fix).
 const DSG_H = 264;
 const dsgVar = (h: number) => ({ '--plan-dsg-h': `${h}px` }) as React.CSSProperties;
+
+// The header total's own refusal copy — EXHAUSTIVE, so the next reason added to
+// the union breaks the build here rather than rendering a blank banner.
+const TOTAL_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'sdcSup.bulk.total.refused.empty',
+  NOT_NUMERIC: 'sdcSup.bulk.total.refused.notNumeric',
+  AMBIGUOUS_QTY: 'sdcSup.bulk.total.refused.ambiguous',
+};
 
 // The parse-failure reason → the summary message key (honest-silence surfaced).
 const REASON_KEY: Record<ParseReason, string> = {
@@ -173,9 +182,24 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
 
   // Σ-vs-total readout (display only; the adapter owns the gate). Sum the qty of
   // rows that carry a batch number — the batches the fold would itemise.
+  //
+  // CP-0 · W1 · PR-2d — THE BANNER READS THE SAME PARSE AS THE DISPATCH. It used
+  // to run its own `Number(totalQty.replace(/,/g,''))` and render
+  // `Number.isNaN(totalNum) ? 0 : totalNum` — a second coercion of the header
+  // total, plus a `|| 0` in another costume. So a total of "2.400" displayed as
+  // "2,4" (or an unreadable one as a confident "0") while the adapter, reading
+  // the same cell through `normalizeQty`, refused it. The banner then told the
+  // supplier their batches did not add up. That is worse than a wrong number:
+  // it is a fabricated accusation, and it moves the blame onto them. The total
+  // now comes from the one parse, and an unreadable total says so instead of
+  // arithmetic it cannot do.
+  //
+  // NOTE (2d′): the batch CELLS are still parsed upstream by the datasheet
+  // engine's `intColumn` (parseFloat + round), so `r.qty` is already a number
+  // here. Replacing that column is its own batch — this Σ is the header total.
   const filled = rows.filter((r) => (r.batchNumber ?? '').trim() !== '');
   const batchSum = filled.reduce((s, r) => s + (typeof r.qty === 'number' ? r.qty : 0), 0);
-  const totalNum = Number(totalQty.replace(/,/g, ''));
+  const total = normalizeQty(totalQty);
 
   const columns = useMemo<Column<BatchGridRow>[]>(
     () => [
@@ -312,11 +336,14 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
           <label className={labelClass} htmlFor="sdcsup-bulk-total">
             {t('sdcSup.stock.panel.totalLabel', { uom: uom || '—' })}
           </label>
+          {/* CP-0 · 6.2 — text + inputmode. Safe only because the parse landed
+              in this same commit (the banner + the adapter both read it). */}
           <input
             id="sdcsup-bulk-total"
-            type="number"
-            min={0}
+            type="text"
+            inputMode="decimal"
             placeholder="0"
+            aria-invalid={totalQty.trim() !== '' && !total.ok}
             value={totalQty}
             onChange={(e) => setTotalQty(e.target.value)}
             className={inputClass}
@@ -380,12 +407,14 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
           }`}
           data-testid="sdcsup-bulk-summary"
         >
-          {t('sdcSup.stock.panel.batchSum', {
-            sum: formatNumber(batchSum),
-            total: formatNumber(Number.isNaN(totalNum) ? 0 : totalNum),
-            uom: uom || '—',
-          })}
-          {liveUnit && !liveUnit.ok && ` — ${t(REASON_KEY[liveUnit.reason])}`}
+          {total.ok
+            ? t('sdcSup.stock.panel.batchSum', {
+                sum: formatNumber(batchSum),
+                total: formatNumber(total.value),
+                uom: uom || '—',
+              })
+            : t(TOTAL_REFUSAL_KEY[total.reason])}
+          {total.ok && liveUnit && !liveUnit.ok && ` — ${t(REASON_KEY[liveUnit.reason])}`}
         </div>
       )}
 

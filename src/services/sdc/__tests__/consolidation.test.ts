@@ -421,3 +421,79 @@ describe('supplier-coverage indicator (the ONE projection that is ours)', () => 
     expect(e.status.kind).toBe('at-risk');
   });
 });
+
+// ─── CP-0 · W1 · PR-2d — the shipment quantity's blast radius ─────────────────
+//
+// A shipment qty is not a leaf: it sums into `incoming` here and decides the
+// sufficiency band a planner acts on. The pair below is engineered so the
+// shipment is LOAD-BEARING — SOH alone does not cover demand, and the leg
+// closes the gap exactly. That makes the misparse visible as a VERDICT flip,
+// which is the thing a planner would actually have seen and chased.
+//
+// This is the coverage sibling of the 2c false-deficit chain: same shape (a
+// mis-read quantity fabricating a shortfall), one object over.
+
+describe('supplier coverage is unperturbed by the corrected shipment quantity (CP-0 · 2d)', () => {
+  const shipment = (qty: number): IncomingShipment => ({
+    id: 'ish-2d',
+    supplierId: 'sup-X',
+    materialCode: 'RM-T',
+    direction: 'to-paragon',
+    lifecycle: 'Booked', // a freshly reported leg enters the sum immediately
+    qty,
+    uom: 'KG',
+    asnRef: 'ASN-2D',
+    provenance: PROV_SUP,
+  });
+  const coverageFor = (qty: number) =>
+    supplierCoverageEntries(
+      [syntheticPublication(1000)],
+      [syntheticDeclaration(940)], // 60 short on SOH alone
+      [shipment(qty)],
+      [SYNTHETIC_DISTRIBUTOR],
+      NOW_BEFORE_DUE,
+    )[0];
+
+  it('the READ quantity covers the pair — 940 SOH + 60 in transit meets 1 000', () => {
+    const e = coverageFor(60);
+    expect(e.status.kind).toBe('covered');
+  });
+
+  it('the MISPARSE would have fabricated a shortfall out of a covered pair', () => {
+    // "60" typed under the id convention as "6.0"… or any of the collisions this
+    // series exists to refuse. The point is not which glyph: it is that ONE
+    // wrong reading moves the pair out of `covered` and onto the chase list.
+    expect(coverageFor(6).status.kind).not.toBe('covered');
+    // And the honest alternative is that nothing is reported at all — a refused
+    // quantity never reaches the store, so the pair keeps its real state rather
+    // than acquiring a false one.
+    const noLeg = supplierCoverageEntries(
+      [syntheticPublication(1000)],
+      [syntheticDeclaration(940)],
+      [],
+      [SYNTHETIC_DISTRIBUTOR],
+      NOW_BEFORE_DUE,
+    )[0];
+    expect(noLeg.status.kind).not.toBe('covered'); // honestly short, not falsely
+  });
+
+  it('a zero-quantity leg reads EXACTLY like no leg at all — why the `|| 0` hid', () => {
+    // The fabricated zero never announced itself here: a shipment of 0 sums to
+    // the same coverage as no shipment, so the read looked identical to "the
+    // supplier reported nothing". The defect produced no visibly wrong number
+    // on this surface — which is precisely how it survived four batches.
+    const zeroLeg = coverageFor(0);
+    const noLeg = supplierCoverageEntries(
+      [syntheticPublication(1000)],
+      [syntheticDeclaration(940)],
+      [],
+      [SYNTHETIC_DISTRIBUTOR],
+      NOW_BEFORE_DUE,
+    )[0];
+    expect(zeroLeg.status).toEqual(noLeg.status);
+    // Yet a shipment record EXISTS in the store claiming a reported delivery —
+    // the two reads agree while the ledger does not. That divergence is the
+    // real cost, and it is what the surface refusal now prevents.
+    expect(zeroLeg.status.kind).not.toBe('covered');
+  });
+});
