@@ -171,6 +171,8 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.bulk.reason.missingMaterial': 'Select a material.',
   'sdcSup.bulk.reason.missingBatchNumber': 'A row has a quantity but no batch number — every batch needs a number.',
   'sdcSup.bulk.reason.invalidQty': 'A batch quantity is not a valid number.',
+  'sdcSup.bulk.reason.ambiguousQty':
+    'A quantity could be read two ways (1.800 = 1,800 or 1.8) — rewrite it without separators so it can only mean one thing.',
   'sdcSup.bulk.reason.batchMismatch': 'batches must sum to the total',
   'sdcSup.bulk.reason.noRows': 'Enter a total, or one or more batches.',
 
@@ -433,6 +435,8 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.bulk.reason.missingMaterial': 'Pilih material.',
   'sdcSup.bulk.reason.missingBatchNumber': 'Sebuah baris memiliki kuantitas tetapi tanpa nomor batch — setiap batch memerlukan nomor.',
   'sdcSup.bulk.reason.invalidQty': 'Sebuah kuantitas batch bukan angka yang valid.',
+  'sdcSup.bulk.reason.ambiguousQty':
+    'Sebuah kuantitas dapat dibaca dua cara (1.800 = 1.800 atau 1,8) — tulis ulang tanpa pemisah agar hanya memiliki satu makna.',
   'sdcSup.bulk.reason.batchMismatch': 'batch harus berjumlah sama dengan total',
   'sdcSup.bulk.reason.noRows': 'Masukkan total, atau satu batch atau lebih.',
 

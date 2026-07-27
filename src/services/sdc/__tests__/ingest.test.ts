@@ -28,8 +28,12 @@ function okUnit(u: DispatchUnit): Extract<DispatchUnit, { ok: true }> {
 
 describe('parseGrid — batch-fold (N batch rows → ONE declaration)', () => {
   it('folds N valid batch rows into one declare payload; rowRefs aggregate', () => {
+    // CP-0 · PR-2a floor correction: this row read '1,800' and expected 1800 —
+    // the EN reading of a token that is 1.8 under id. An unambiguous cell keeps
+    // the fold property under test without baking a convention into it; the
+    // ambiguous form is asserted as a REFUSAL in its own case below.
     const rows: GridRow[] = [
-      { batchNumber: 'GLY-24A', qty: '1,800', expiryDate: '2027-06-30' },
+      { batchNumber: 'GLY-24A', qty: '1800', expiryDate: '2027-06-30' },
       { batchNumber: 'GLY-24B', qty: '2200' },
     ];
     const units = parseGrid(rows, batchFold('RM-EMUL-3310', '4000'));
@@ -105,6 +109,45 @@ describe('parseGrid — batch-fold (N batch rows → ONE declaration)', () => {
     });
   });
 
+  // CP-0 · W1 — the convention collision, asserted rather than assumed. "1,800"
+  // is 1800 under en and 1.8 under id: a plausible wrong number either way, so
+  // it refuses unless the caller states which convention the cell was typed in.
+  it('an AMBIGUOUS batch qty REFUSES — never the EN reading, never a guess', () => {
+    const rows: GridRow[] = [{ batchNumber: 'A', qty: '1,800' }];
+    expect(parseGrid(rows, batchFold('RM-EMUL-3310', '1800'))[0]).toEqual({
+      ok: false,
+      rowRefs: [0],
+      reason: 'AMBIGUOUS_QTY',
+    });
+  });
+
+  it('an AMBIGUOUS total REFUSES too — the floor is not guessed either', () => {
+    const [fail] = parseGrid([{ batchNumber: 'A', qty: '4000' }], batchFold('RM-EMUL-3310', '4.000'));
+    expect(fail).toEqual({ ok: false, rowRefs: [], reason: 'AMBIGUOUS_QTY' });
+  });
+
+  it('a numberFormatHint resolves a typed ambiguity — id reads "1.800" as 1800', () => {
+    const ctx: GridContext = {
+      ...batchFold('RM-EMUL-3310', '1.800'),
+      numberFormatHint: 'id',
+    };
+    const u = okUnit(parseGrid([{ batchNumber: 'A', qty: '1.800' }], ctx)[0]);
+    // Both the Σ gate and the payload used the SAME parse — 1800, not 1.8.
+    expect(u.payload).toMatchObject({ totalQty: 1800, batches: [{ batchNumber: 'A', qty: 1800 }] });
+  });
+
+  it('the gate and the payload can never disagree — one parse feeds both', () => {
+    // The Σ-reconciliation gate passes only because Σ batches equals the total;
+    // whatever number cleared that gate is exactly what the payload carries.
+    const rows: GridRow[] = [
+      { batchNumber: 'A', qty: '1500' },
+      { batchNumber: 'B', qty: '2500' },
+    ];
+    const u = okUnit(parseGrid(rows, batchFold('RM-EMUL-3310', '4000'))[0]);
+    const batches = (u.payload.batches as readonly { qty: number }[]).map((b) => b.qty);
+    expect(batches.reduce((s, q) => s + q, 0)).toBe(u.payload.totalQty);
+  });
+
   it('trailing blank add-rows are ignored, not errors', () => {
     const rows: GridRow[] = [
       { batchNumber: 'A', qty: '4000' },
@@ -126,9 +169,15 @@ describe('parseGrid — batch-fold (N batch rows → ONE declaration)', () => {
 });
 
 describe('parseGrid — import (each row → one declaration, 1:1)', () => {
+  // CP-0 · PR-2a floor REPLACEMENT: row 0 read '4,000' and expected 4000 — the
+  // EN reading of a token that is 4 under id. Under the one legal parser that
+  // row now REFUSES, which would have made it a second failure and destroyed
+  // the property this test exists for. The good row is restated unambiguously so
+  // partial success is still proven by a genuine ok/fail/ok mix; the ambiguous
+  // row gets its own case below, where the refusal is the point.
   it('maps N rows to N units with per-row partial success', () => {
     const rows: GridRow[] = [
-      { materialCode: 'RM-EMUL-3310', totalQty: '4,000' }, // ok
+      { materialCode: 'RM-EMUL-3310', totalQty: '4000' }, // ok
       { materialCode: '', totalQty: '900' }, // missing material → fails alone
       { materialCode: 'PK-PETB-8810', totalQty: '12000' }, // ok
     ];
@@ -141,6 +190,26 @@ describe('parseGrid — import (each row → one declaration, 1:1)', () => {
     });
     expect(units[1]).toEqual({ ok: false, rowRefs: [1], reason: 'MISSING_MATERIAL' });
     expect(units[2].ok).toBe(true); // a sibling failure never sinks the good rows
+  });
+
+  // §5a HARDENING — an import row's convention belongs to whoever WROTE the
+  // sheet, and we do not know them. So import mode is hint-free by construction:
+  // an ambiguous cell refuses on its own row and its siblings still land.
+  it('an AMBIGUOUS total refuses that row ALONE — import never hint-resolves', () => {
+    const rows: GridRow[] = [
+      { materialCode: 'RM-EMUL-3310', totalQty: '4.000' }, // 4000 (id) or 4 (en)
+      { materialCode: 'PK-PETB-8810', totalQty: '12000' }, // unambiguous → ok
+    ];
+    const units = parseGrid(rows, importCtx);
+    expect(units[0]).toEqual({ ok: false, rowRefs: [0], reason: 'AMBIGUOUS_QTY' });
+    expect(units[1].ok).toBe(true);
+  });
+
+  it('a numberFormatHint is IGNORED in import mode — unknown origin, no guessing', () => {
+    const hinted: GridContext = { ...importCtx, numberFormatHint: 'id' };
+    const [unit] = parseGrid([{ materialCode: 'RM-EMUL-3310', totalQty: '4.000' }], hinted);
+    // The same row that an id hint would resolve in a TYPED grid still refuses here.
+    expect(unit).toEqual({ ok: false, rowRefs: [0], reason: 'AMBIGUOUS_QTY' });
   });
 
   it('an import row with material but no total fails EMPTY_TOTAL', () => {

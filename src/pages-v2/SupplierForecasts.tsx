@@ -49,6 +49,7 @@ import {
   buildRequirementResponsePayload,
   buildRequirementAcknowledgePayload,
   buildInventoryDeclarationPayload,
+  normalizeInventoryDeclarationDraft,
   buildIncomingShipmentPayload,
   declarationGranularity,
   openSubmissionSession,
@@ -805,7 +806,13 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       });
       return;
     }
-    const payload = buildInventoryDeclarationPayload(supplierId, sohForm.materialCode, {
+    // CP-0 · PR-2a — the builder no longer coerces; the ONE legal parse happens
+    // here and its result is what ships. An unreadable or genuinely ambiguous
+    // quantity refuses honestly rather than being defaulted to 0 or guessed.
+    // The typed input-type change (6.2) and the inline convention declaration
+    // (§5a) land with this surface's own batch; this call site only stops the
+    // fabrication at the payload boundary.
+    const normalized = normalizeInventoryDeclarationDraft({
       totalQty: sohForm.totalQty,
       ...(sohBatches.length > 0
         ? {
@@ -817,6 +824,19 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
           }
         : {}),
     });
+    if (!normalized.ok) {
+      toast({
+        variant: 'error',
+        title: t('sdcSup.stock.toast.missingTotal.title'),
+        description: t('sdcSup.stock.toast.missingTotal.body'),
+      });
+      return;
+    }
+    const payload = buildInventoryDeclarationPayload(
+      supplierId,
+      sohForm.materialCode,
+      normalized.value,
+    );
     try {
       const res = await declareMutation.mutateAsync({ payload, causationId: causationId() });
       if (res.status === 'failed') {

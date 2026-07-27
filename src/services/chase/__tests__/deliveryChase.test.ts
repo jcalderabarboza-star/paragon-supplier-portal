@@ -280,6 +280,55 @@ describe('deriveDeliveryChase — over the SIMULATED fixtures', () => {
     expect(chase.some((e) => e.itemSeq === 20)).toBe(false);
   });
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // DOCUMENTING TEST — the Jakarta day-boundary defect, and why nobody has seen
+  // it (CP-0 · PR-2a; the fix is DEFERRED to its own batch — timezone, not
+  // locale-numeric).
+  //
+  // `dayOf(iso)` is `iso.slice(0, 10)`: it takes the UTC calendar day of the
+  // instant it is handed. This product's users are in Asia/Jakarta (UTC+7), so
+  // between 17:00Z and 24:00Z the UTC day is already BEHIND the Jakarta day —
+  // for seven hours of every day the anticipatory window is computed against
+  // yesterday, and a line one day outside the window is silently withheld.
+  //
+  // It has never fired because SDC_SIMULATED_NOW is pinned at 12:00Z (19:00
+  // Jakarta) — the one part of the day where both calendars agree. This test
+  // pins the MASKING so the defect cannot be lost when that constant moves: two
+  // instants on the SAME Jakarta day produce DIFFERENT chase output. A
+  // Jakarta-correct implementation would make these two assertions identical,
+  // and this test would then fail — which is exactly what should happen when the
+  // deferred fix lands.
+  // ───────────────────────────────────────────────────────────────────────────
+  it('DEFERRED DEFECT: the window is computed on the UTC day, so one Jakarta day splits in two', () => {
+    // 03:00 and 08:00 on 26 Aug 2026 in Jakarta — one calendar day for the user…
+    const earlyJakartaMorning = '2026-08-25T20:00:00.000Z'; // UTC day 08-25
+    const laterSameJakartaDay = '2026-08-26T01:00:00.000Z'; // UTC day 08-26
+    // …but two different UTC days, which is what `dayOf` actually reads.
+    expect(earlyJakartaMorning.slice(0, 10)).not.toBe(laterSameJakartaDay.slice(0, 10));
+
+    // A pending line exactly ANTICIPATION_DAYS out from the Jakarta day 08-26.
+    const item = patchDates(
+      buildItem({
+        lineSeq: 10, materialCode: MAT_JIT, releaseType: 'JIT',
+        startDate: '2026-09-01', qtyPerRelease: 100, count: 4, releaseSeqs: [1, 2, 3, 4],
+      }),
+      { 1: '2026-10-05', 2: '2026-09-02', 3: '2026-10-06', 4: '2026-10-07' },
+    );
+
+    const nudgesAt = (now: string) =>
+      deriveDeliveryChase([viewOf([item], [], now)], now).filter(
+        (e) => e.mode === 'anticipatory-nudge',
+      );
+
+    // Before 17:00Z the UTC day still reads 08-25 → the line measures 8 days out
+    // and the supplier is NOT nudged, though in Jakarta it is 7 days away.
+    expect(nudgesAt(earlyJakartaMorning)).toHaveLength(0);
+    // Five hours later — same Jakarta day, next UTC day — the nudge appears.
+    const later = nudgesAt(laterSameJakartaDay);
+    expect(later).toHaveLength(1);
+    expect(later[0].dueDate).toBe('2026-09-02');
+  });
+
   it('ctr-003 (sa-0001, all-draft) yields no chase — nothing is released', () => {
     // Sanity: the pristine anchor has an empty ledger drawdown (all draft).
     expect(SCHEDULING_AGREEMENT_CTR003.items.every((i) => deriveDrawdownLedger(i).releasedQty === 0)).toBe(true);
