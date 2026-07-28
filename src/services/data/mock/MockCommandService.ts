@@ -449,8 +449,13 @@ const quotationTarget: CommandTarget = {
       unitPrice,
       // Honest arithmetic from raw facts (unit × the RFQ's quantity), NOT a score.
       totalPrice: unitPrice * (rfq?.totalQty ?? 0),
-      leadTimeDays: num('leadTimeDays'),
       paymentTermsOffered: str('paymentTermsOffered'),
+      // Lead time persists ONLY when the supplier stated one (2e-b-1). `num()`
+      // would turn an omitted optional promise into a stored 0 — which on the
+      // new absolute axis is the BEST possible score. Absence stays absence.
+      ...(typeof payload.leadTimeDays === 'number'
+        ? { leadTimeDays: payload.leadTimeDays }
+        : {}),
       validUntil: str('validUntil'),
       // DECLARED-SIMULATED axes — documented baseline, passed through the engine
       // and marked "Simulated" at read. Never zero, never a profile lookup.

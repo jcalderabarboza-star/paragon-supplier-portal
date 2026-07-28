@@ -250,4 +250,39 @@ export const mockRfqs: RFQ[] = [
     incoterms: 'FCA Tangerang',
     paymentTerms: 'Net 30',
   },
+  {
+    // ── CP-0 · W1 · 2e-b-1 — THE NEUTRAL AWARD FIXTURE (FIND-05) ─────────────
+    // Built so the award recommendation is decided by the LEAD-TIME AXIS ALONE.
+    // Its one seeded quote (qt-011a, sup-005) carries exactly the values a fresh
+    // submit mints — unitPrice 15,000, and the SIMULATED 50/50 compliance and
+    // reliability baseline `quotationTarget.create` seeds — so a quotation
+    // submitted against it by sup-007 is identical on every other axis. Whoever
+    // the engine recommends, it recommends on lead time and nothing else.
+    //
+    // That is what makes the defect visible: a lead time the retired path
+    // fabricated (an unreadable token → `|| 0`, or "3.5" truncated to 3) beat a
+    // real 4-day promise and took the recommendation. It has to be an RFQ the
+    // smoke persona can actually quote on, because the artifact was created by
+    // the INPUT path — no seeded quote ever went through it.
+    // Purely additive, and ordered AFTER rfq-010 so the 2e-a smoke keeps its
+    // first-card position.
+    id: 'rfq-011',
+    rfqNumber: 'RFQ-2026-011',
+    title: 'Aluminium Cap 24/410 — Wardah serum line',
+    materialCategory: 'Packaging',
+    materialIds: ['PK-ALCP-2441'],
+    buyerId: 'buyer-001',
+    status: 'Open',
+    createdAt: '2026-04-22',
+    responseDeadline: '2026-05-20',
+    awardDeadline: '2026-05-30',
+    invitedSupplierIds: ['sup-005', 'sup-007'],
+    respondedSupplierIds: ['sup-005'],
+    totalQty: 80_000,
+    uom: 'PCS',
+    estimatedValue: 1_200_000_000,
+    currency: 'IDR',
+    incoterms: 'FCA Tangerang',
+    paymentTerms: 'Net 30',
+  },
 ];

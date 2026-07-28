@@ -94,16 +94,32 @@ describe('t_quotation_submit — supplier-owned creation (ASN-faithful scope)', 
     expect(res.reason).toMatch(/ROLE_NOT_PERMITTED:quotation:submit/);
   });
 
-  it('unitPrice / leadTimeDays are the required LIVE-scored floor — a hollow quote fails, mints nothing', async () => {
-    for (const field of ['unitPrice', 'leadTimeDays']) {
-      const before = quotationStore.all().length;
-      const payload = { ...submit().payload };
-      delete (payload as Record<string, unknown>)[field];
-      const res = await svc.dispatch(invited, { ...submit(), payload });
-      expect(res.status).toBe('failed');
-      expect(res.reason).toMatch(new RegExp(`MISSING_FIELDS:.*${field}`));
-      expect(quotationStore.all().length).toBe(before);
-    }
+  // ── CP-0 · W1 · 2e-b-1 — leadTimeDays LEFT the required floor ──────────────
+  // This spec looped over ['unitPrice', 'leadTimeDays'] and asserted BOTH were
+  // mandatory. That was the contract-level half of the defect: requiring a lead
+  // time meant a supplier who did not have one had to put *something* in the
+  // box, and the input path turned anything unreadable into `|| 0` — which, on
+  // the absolute axis, is the best possible lead-time score. The floor is now
+  // the one fact without which there is no offer.
+  it('unitPrice is the required floor — a hollow quote fails, mints nothing', async () => {
+    const before = quotationStore.all().length;
+    const payload = { ...submit().payload };
+    delete (payload as Record<string, unknown>).unitPrice;
+    const res = await svc.dispatch(invited, { ...submit(), payload });
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/MISSING_FIELDS:.*unitPrice/);
+    expect(quotationStore.all().length).toBe(before);
+  });
+
+  it('POSITIVE TWIN — a quote with NO lead time is legal, and stores an absence', async () => {
+    const payload = { ...submit().payload };
+    delete (payload as Record<string, unknown>).leadTimeDays;
+    const res = await svc.dispatch(invited, { ...submit(), payload });
+    expect(res.status).toBe('done');
+    const q = quotationStore.get(res.entityId!)!;
+    // THE LOCK: absence, not a 0 — `num()` would have minted a same-day promise.
+    expect(q.leadTimeDays).toBeUndefined();
+    expect('leadTimeDays' in q).toBe(false);
   });
 
   it('a missing rfqId cannot establish invited-membership → SCOPE_DENIED (scope gate precedes fields)', async () => {

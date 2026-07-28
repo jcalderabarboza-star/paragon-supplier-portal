@@ -8,7 +8,11 @@ const draft = {
   // and let this builder coerce it; the price now arrives as the number the ONE
   // upstream parse judged, so there is no second reading to disagree with.
   unitPrice: 190_000,
-  leadTimeDays: '30',
+  // ALSO ALREADY PARSED (CP-0 2e-b-1). It carried the raw string '30' and let
+  // the builder coerce it with `Number(...) || 0`; it now arrives as the whole
+  // number of DAYS the ONE upstream parse judged, unit conversion included — or
+  // as `null` when the supplier stated none.
+  leadTimeDays: 30,
   validUntil: '2026-08-31',
   paymentTermsOffered: 'Net 30',
 };
@@ -50,6 +54,37 @@ describe('buildQuotationSubmitPayload — raw facts only, engine owns scoring at
     // Not an endorsement of zero (readBidPrice refuses it); a proof that the
     // builder has no fabrication branch left of its own.
     expect(buildQuotationSubmitPayload({ ...draft, unitPrice: 0 }).unitPrice).toBe(0);
+  });
+
+  // ── CP-0 · W1 · 2e-b-1 — the lead time stops being coerced here too ────────
+  // The spec above asserted `'30'` → 30, which vouched for `Number(...) || 0` as
+  // CORRECT on the portal's other live-scored axis. On the absolute lead-time
+  // scale the `|| 0` half of that recipe did not merely lose information — it
+  // produced the MAXIMUM score, so anything unreadable outranked every honest
+  // delivery promise in the set.
+  describe('lead time — a mapping, and an absence that stays one', () => {
+    it('passes the already-parsed lead time through UNTOUCHED, in days', () => {
+      expect(buildQuotationSubmitPayload(draft).leadTimeDays).toBe(30);
+      // 3 weeks, converted upstream inside the parse — the builder never sees a
+      // unit, so it can neither apply nor forget the ×7 a second time.
+      expect(
+        buildQuotationSubmitPayload({ ...draft, leadTimeDays: 21 }).leadTimeDays,
+      ).toBe(21);
+    });
+
+    it('THE LOCK — an absent lead time is OMITTED, never flattened to 0', () => {
+      // A 0 here is the best possible lead-time score. Turning "the supplier
+      // said nothing" into it is the whole defect, stated at its narrowest.
+      expect('leadTimeDays' in buildQuotationSubmitPayload({ ...draft, leadTimeDays: null })).toBe(
+        false,
+      );
+    });
+
+    it('a deliberate 0 still passes through — absence and same-day are different facts', () => {
+      const p = buildQuotationSubmitPayload({ ...draft, leadTimeDays: 0 });
+      expect('leadTimeDays' in p).toBe(true);
+      expect(p.leadTimeDays).toBe(0);
+    });
   });
 
   it('carries NO score axis — the payload is raw facts, never a fabricated score', () => {

@@ -2002,9 +2002,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="whitespace-nowrap">
-                              {t('sourcing.cmp.leadTimeDays', {
-                                count: q.leadTimeDays,
-                              })}
+                              {/* Optional since 2e-b-1 — a quote that stated no
+                                  lead time shows the em dash, not "0 days". */}
+                              {q.leadTimeDays == null
+                                ? '—'
+                                : t('sourcing.cmp.leadTimeDays', {
+                                    count: q.leadTimeDays,
+                                  })}
                             </Data>
                           </ComparisonCell>
                         ))}
@@ -2032,15 +2036,23 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       <ComparisonRow
                         label={t('sourcing.cmp.row.leadTimeScore')}
                       >
-                        {quotesForSelected.map((q) => (
-                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
-                            <ScoreBadge
-                              score={scoreById.get(q.id)?.leadTimeScore ?? 0}
-                              size="sm"
-                              variant="bar"
-                            />
-                          </ComparisonCell>
-                        ))}
+                        {quotesForSelected.map((q) => {
+                          // `null` = the axis was dropped for this quote (no
+                          // lead time stated). `?? 0` would have drawn a real
+                          // zero-score bar for a supplier who was never scored
+                          // on this axis at all — the buyer must see the
+                          // absence, not a fabricated worst.
+                          const lts = scoreById.get(q.id)?.leadTimeScore ?? null;
+                          return (
+                            <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
+                              {lts === null ? (
+                                <span className="text-text-tertiary">—</span>
+                              ) : (
+                                <ScoreBadge score={lts} size="sm" variant="bar" />
+                              )}
+                            </ComparisonCell>
+                          );
+                        })}
                       </ComparisonRow>
                       <ComparisonRow
                         label={t('sourcing.cmp.row.compliance')}

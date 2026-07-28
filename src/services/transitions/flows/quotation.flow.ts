@@ -24,14 +24,19 @@ export const quotationFlow: FlowDefinition = {
     {
       // Supplier submits a quotation against an invited RFQ. Creation-shape
       // (store-assigned number). WIRED in Task 3b. The required floor is the
-      // LIVE-scored facts — rfqId + unitPrice + leadTimeDays (mirrors rfq:create's
-      // ['title','materialCategory'] floor) — so no hollow quote mints server-side.
+      // rfqId + the ONE fact without which there is no offer at all — unitPrice.
+      //
+      // `leadTimeDays` LEFT this floor in CP-0 2e-b-1 (operator ruling): a lead
+      // time is OPTIONAL, and an omitted one is an honest absence the scoring
+      // engine drops the axis for — not a hollow quote. Requiring it pushed
+      // suppliers toward putting *something* in the box, which is exactly how a
+      // parse artifact became a governed delivery promise.
       id: 't_quotation_submit',
       from: [],
       to: 'Submitted',
       trigger: 'creation',
       requiredRole: 'quotation:submit',
-      requiredFields: ['rfqId', 'unitPrice', 'leadTimeDays'],
+      requiredFields: ['rfqId', 'unitPrice'],
       policyHooks: [],
       version: 1,
     },

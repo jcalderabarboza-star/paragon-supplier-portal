@@ -146,3 +146,134 @@ describe('SupplierRFQs — the bid price is read once, and refused out loud', ()
     expect(screen.getByText(/1,800,060,000/)).toBeInTheDocument();
   });
 });
+
+// ── CP-0 · W1 · 2e-b-1 — the lead time's four states, at the surface ─────────
+// The refusal contract lives in rfqs/quotationLeadTime.test.ts and the award
+// consequence in rfqs/quotationLeadTimeRecommendation.test.ts. What these add is
+// the DOM-only part: that the supplier is TOLD which state they are in, that the
+// submit control is actually disabled when it should be, and that the same-day
+// acknowledgement is a real gate rather than a decoration.
+//
+// Testable only because the field is off `type="number"` — jsdom implements the
+// number-input sanitization algorithm faithfully, so "abc" arrives as "" and,
+// with blank now LEGAL, the browser would have silently converted an unreadable
+// lead time into an honest-looking absence.
+describe('SupplierRFQs — the lead time is read once, in four honest states', () => {
+  beforeEach(() => quotationStore.reset());
+
+  const openQuotePanel = async () => {
+    renderWithProviders(<SupplierRFQs />, { identity: SUPPLIER });
+    expect(await screen.findByText('RFQ-2026-010')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: /Submit Quote/i })[0]);
+    // A clean price and validity throughout — these tests are about the lead
+    // time, and the price gate fires first.
+    fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '15000' } });
+    fireEvent.change(screen.getByLabelText('Quote valid until'), {
+      target: { value: '2026-06-30' },
+    });
+    return screen.getByLabelText('Lead time');
+  };
+
+  const submitBtn = () => screen.getByRole('button', { name: 'Submit quotation' });
+  const setLead = (v: string) =>
+    fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: v } });
+
+  it('BLANK — says so plainly, does not refuse, and submits an ABSENCE not a zero', async () => {
+    await openQuotePanel();
+    expect(screen.getByTestId('quote-leadtime-absent')).toHaveTextContent(
+      /No lead time stated/i,
+    );
+    expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
+    expect(submitBtn()).toBeEnabled();
+
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(quotationStore.forRfq('rfq-010')).toHaveLength(1));
+    // THE LOCK: silence stored as silence. A 0 here is the best possible
+    // lead-time score, so this is the assertion the whole state exists for.
+    expect(quotationStore.forRfq('rfq-010')[0].leadTimeDays).toBeUndefined();
+  });
+
+  it('UNREADABLE — refused on the field, submit disabled, nothing minted', async () => {
+    const lead = await openQuotePanel();
+    setLead('abc');
+
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /not a lead time/i,
+    );
+    expect(lead).toHaveAttribute('aria-invalid', 'true');
+    expect(submitBtn()).toBeDisabled();
+
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(submitBtn()).toBeInTheDocument());
+    expect(quotationStore.forRfq('rfq-010')).toHaveLength(0);
+  });
+
+  it('UNREADABLE — a fractional day is refused rather than truncated (FIND-05)', async () => {
+    await openQuotePanel();
+    setLead('3.5');
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /whole number of days/i,
+    );
+    expect(submitBtn()).toBeDisabled();
+    expect(quotationStore.forRfq('rfq-010')).toHaveLength(0);
+  });
+
+  it('INTEGER — an ordinary promise shows no banner at all, and submits as typed', async () => {
+    await openQuotePanel();
+    setLead('2');
+    fireEvent.change(screen.getByDisplayValue('days'), { target: { value: 'weeks' } });
+
+    expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('quote-leadtime-absent')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('quote-leadtime-sameday')).not.toBeInTheDocument();
+    expect(submitBtn()).toBeEnabled();
+
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(quotationStore.forRfq('rfq-010')).toHaveLength(1));
+    expect(quotationStore.forRfq('rfq-010')[0].leadTimeDays).toBe(14); // 2 weeks
+  });
+
+  describe('ZERO — legal, best, and hard-gated behind a same-day acknowledgement', () => {
+    it('THE GATE — the note appears inline and submit is DISABLED until it is ticked', async () => {
+      await openQuotePanel();
+      setLead('0');
+
+      const gate = screen.getByTestId('quote-leadtime-sameday');
+      expect(gate).toHaveTextContent(/same-day delivery — confirm this is correct/i);
+      // Not a refusal — a 0 is legitimate. It is simply not sendable unaffirmed.
+      expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
+      expect(submitBtn()).toBeDisabled();
+
+      fireEvent.click(submitBtn());
+      await waitFor(() => expect(submitBtn()).toBeInTheDocument());
+      expect(quotationStore.forRfq('rfq-010')).toHaveLength(0);
+    });
+
+    it('POSITIVE TWIN — ticked, it submits, and a real same-day promise is stored', async () => {
+      await openQuotePanel();
+      setLead('0');
+      fireEvent.click(screen.getByLabelText(/I confirm this quotation offers same-day/i));
+      expect(submitBtn()).toBeEnabled();
+
+      fireEvent.click(submitBtn());
+      await waitFor(() => expect(quotationStore.forRfq('rfq-010')).toHaveLength(1));
+      expect(quotationStore.forRfq('rfq-010')[0].leadTimeDays).toBe(0);
+    });
+
+    it('the acknowledgement is RETRACTED when the number changes', async () => {
+      // An ack belongs to the value it was given for. Ticking 0, editing to 5,
+      // then back to 0 must not carry the old affirmation forward.
+      await openQuotePanel();
+      setLead('0');
+      fireEvent.click(screen.getByLabelText(/I confirm this quotation offers same-day/i));
+      expect(submitBtn()).toBeEnabled();
+
+      setLead('5');
+      expect(screen.queryByTestId('quote-leadtime-sameday')).not.toBeInTheDocument();
+
+      setLead('0');
+      expect(screen.getByTestId('quote-leadtime-sameday')).toBeInTheDocument();
+      expect(submitBtn()).toBeDisabled(); // owed again
+    });
+  });
+});

@@ -6,7 +6,8 @@
 // Honest-by-construction, on two rulings:
 //
 //  • AXIS-HONESTY SPLIT (FORK-3B). price + leadTime are LIVE — deterministic
-//    ratio-to-best rankings computed from the quote data in hand. compliance +
+//    rankings computed from the quote data in hand (price ratio-to-best;
+//    leadTime absolute-linear since 2e-b-1, see below). compliance +
 //    reliability are DECLARED-SIMULATED external-data axes (compliance = the I3
 //    surface, still SIMULATED; reliability = needs real OTIF history): their
 //    inputs are passed through VERBATIM, never recomputed from fixture
@@ -64,11 +65,43 @@ function livenessFor(weights: CriteriaWeights): Liveness {
 /** The composite's liveness under the default policy — SIMULATED today. */
 export const COMPOSITE_LIVENESS: Liveness = livenessFor(CRITERIA_WEIGHTS);
 
+/**
+ * LEAD-TIME AXIS POLICY (CP-0 · W1 · 2e-b-1, operator ruling — a DELIBERATE
+ * change to C6-LOCK, not a bug fix).
+ *
+ * The lead-time axis no longer uses ratio-to-best. It is now ABSOLUTE and
+ * LINEAR: `max(0, 100 - days × 2)`. Zero days scores 100.
+ *
+ * Why the axis had to change rather than just the input gate: the ruling is
+ * that a 0-day lead time is REAL (same-day supply) and therefore best. Under
+ * ratio-to-best that is not merely wrong, it is incoherent — `best/value` with
+ * `best = 0` scores every rival 0, so one same-day quote would zero the whole
+ * set. A linear scale is the coherent way to express "fewer days is better and
+ * zero is the floor", and it is what the ruling specifies.
+ *
+ * What this changes for existing data: lead-time scores are no longer relative
+ * to the RFQ's fastest bid. A 14-day quote scores 72 whether or not a 7-day
+ * rival exists. Price stays ratio-to-best (it is a competitive axis in a way an
+ * absolute delivery promise is not).
+ */
+export const LEAD_TIME_PENALTY_PER_DAY = 2;
+
+/**
+ * The lead-time axis for ONE quote. `null` in ⇒ `null` out: an omitted optional
+ * lead time is scored on NO axis at all (see `scoreQuotations`), never on a
+ * fabricated one — silence must not be readable as "same day".
+ */
+export function leadTimeScoreFor(days: number | null | undefined): number | null {
+  if (days == null || !Number.isFinite(days) || days < 0) return null;
+  return Math.max(0, 100 - days * LEAD_TIME_PENALTY_PER_DAY);
+}
+
 /** The minimal quote shape the engine needs (structurally a `Quotation` subset). */
 export interface ScorableQuote {
   id: string;
   unitPrice: number;
-  leadTimeDays: number;
+  /** OPTIONAL (2e-b-1). Absent = the supplier stated no lead time. */
+  leadTimeDays?: number | null;
   complianceScore: number;
   reliabilityScore: number;
 }
@@ -77,8 +110,14 @@ export interface QuoteScore {
   quoteId: string;
   /** LIVE — ratio-to-best over the RFQ's quote set (cheapest = 100). */
   priceScore: number;
-  /** LIVE — ratio-to-best over the RFQ's quote set (fastest = 100). */
-  leadTimeScore: number;
+  /**
+   * LIVE — absolute linear scale, `max(0, 100 - days×2)`; same-day = 100.
+   * `null` when the supplier stated no lead time: the axis is DROPPED from that
+   * quote's composite (weights renormalise over the axes actually stated), so
+   * an omitted lead time is neither rewarded nor punished. A number here would
+   * be one nobody offered.
+   */
+  leadTimeScore: number | null;
   /** SIMULATED — the input value, passed through untouched. */
   complianceScore: number;
   /** SIMULATED — the input value, passed through untouched. */
@@ -114,18 +153,29 @@ export function scoreQuotations(
 
   const positive = (xs: number[]) => xs.filter((x) => x > 0);
   const minPrice = Math.min(...positive(quotes.map((q) => q.unitPrice)));
-  const minLead = Math.min(...positive(quotes.map((q) => q.leadTimeDays)));
   const compositeLiveness = livenessFor(weights);
 
   const scored: QuoteScore[] = quotes.map((q) => {
     const priceScore = ratioToBest(q.unitPrice, minPrice);
-    const leadTimeScore = ratioToBest(q.leadTimeDays, minLead);
-    const composite = Math.round(
-      priceScore * weights.price +
-        leadTimeScore * weights.leadTime +
-        q.complianceScore * weights.compliance +
-        q.reliabilityScore * weights.reliability,
-    );
+    // Absolute, not ratio-to-best (2e-b-1) — and `null` when unstated.
+    const leadTimeScore = leadTimeScoreFor(q.leadTimeDays);
+    // The composite rolls up only the axes this quote actually HAS, renormalised
+    // over their weights. With all four present the divisor is 1 and this is the
+    // original arithmetic exactly; with the lead time unstated the quote is
+    // judged on price/compliance/reliability rather than on an invented number.
+    const axes: readonly (readonly [number, number])[] = [
+      [priceScore, weights.price],
+      ...(leadTimeScore === null
+        ? []
+        : ([[leadTimeScore, weights.leadTime]] as const)),
+      [q.complianceScore, weights.compliance],
+      [q.reliabilityScore, weights.reliability],
+    ];
+    const totalWeight = axes.reduce((sum, [, w]) => sum + w, 0);
+    const composite =
+      totalWeight === 0
+        ? 0
+        : Math.round(axes.reduce((sum, [v, w]) => sum + v * w, 0) / totalWeight);
     return {
       quoteId: q.id,
       priceScore,
