@@ -199,6 +199,12 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.bulk.total.refused.ambiguous':
     'That total could be read two ways (4.000 = 4,000 or 4) — enter it without separators, for example 4000.',
 
+  // CP-0 · 2d′-a — a batch row with no readable quantity is UNKNOWN, not zero,
+  // so no Σ is shown at all. Count is interpolated (not an i18next plural key)
+  // to keep the EN/ID key sets exactly parallel.
+  'sdcSup.bulk.batchSum.refused':
+    'Batch quantities that could not be read: {{count}} — enter or retype them, then the batch total will show.',
+
   // ── SDC-3c-c-b — XLSX import (upload + confirmable column mapping) ───────────
   'sdcSup.bulk.import.open': 'Import from Excel',
   'sdcSup.bulk.import.needMaterial':
@@ -501,6 +507,11 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.bulk.total.refused.notNumeric': 'Total itu bukan angka — masukkan hanya digit, misalnya 4000.',
   'sdcSup.bulk.total.refused.ambiguous':
     'Total itu bisa dibaca dua cara (4.000 = 4.000 atau 4) — masukkan tanpa pemisah, misalnya 4000.',
+
+  // CP-0 · 2d′-a — baris batch tanpa kuantitas yang terbaca berarti TIDAK
+  // DIKETAHUI, bukan nol, jadi tidak ada Σ yang ditampilkan sama sekali.
+  'sdcSup.bulk.batchSum.refused':
+    'Kuantitas batch yang tidak dapat dibaca: {{count}} — masukkan atau ketik ulang, lalu total batch akan tampil.',
 
   // ── SDC-3c-c-b — Impor XLSX (unggah + pemetaan kolom yang dikonfirmasi) ──────
   'sdcSup.bulk.import.open': 'Impor dari Excel',

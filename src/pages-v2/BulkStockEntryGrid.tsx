@@ -194,11 +194,39 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
   // now comes from the one parse, and an unreadable total says so instead of
   // arithmetic it cannot do.
   //
-  // NOTE (2d′): the batch CELLS are still parsed upstream by the datasheet
-  // engine's `intColumn` (parseFloat + round), so `r.qty` is already a number
-  // here. Replacing that column is its own batch — this Σ is the header total.
+  // ── CP-0 · 2d′-a — AND THE Σ ITSELF STOPS FABRICATING ────────────────────────
+  //
+  // 2d fixed the header TOTAL and left the sum beside it still reading
+  // `s + (typeof r.qty === 'number' ? r.qty : 0)`. That trailing `: 0` is the
+  // `|| 0` in costume, and it is the more dangerous half: a row that carries a
+  // batch NUMBER but no readable quantity contributed a silent zero, so the
+  // banner printed a confident Σ that simply omitted the row.
+  //
+  // The sharpest form of it is not a wrong number, it is a right-looking one.
+  // Import the repo's own `single-sheet.xlsx` under a stated total of 4000:
+  // GLY-24A 1800 + GLY-24B 2200 read cleanly, GLY-24C's "1,050" refuses (2d) and
+  // imports blank. The old banner summed 1800 + 2200 + 0 and announced
+  // "Batch total: 4.000 of 4.000 <uom>" — a PERFECT reconciliation, while one of
+  // the three batch quantities was unknown. It reconciled by counting the
+  // missing quantity as nothing. (That exact string is what the revert probe
+  // printed; the spec asserts its absence.)
+  //
+  // An unreadable quantity is UNKNOWN, not zero, and nothing can be summed
+  // across it. So the sum is taken over readable rows ONLY and is rendered ONLY
+  // when there are no unreadable ones — otherwise the banner says how many
+  // cells it could not read and asks for them. There is no `: 0` left to reach:
+  // the fallback is structural (a shorter list), not a fabricated addend.
+  //
+  // NOTE (2d′-b): the batch CELLS are still parsed upstream by the datasheet
+  // engine's `intColumn` (parseFloat + round, browser-locale reformat), so
+  // `r.qty` arrives here already coerced. Replacing that primitive with a raw-
+  // text column is the next batch; this one is the arithmetic beneath it.
   const filled = rows.filter((r) => (r.batchNumber ?? '').trim() !== '');
-  const batchSum = filled.reduce((s, r) => s + (typeof r.qty === 'number' ? r.qty : 0), 0);
+  const readable = filled.filter(
+    (r): r is BatchGridRow & { qty: number } => typeof r.qty === 'number',
+  );
+  const unreadable = filled.length - readable.length;
+  const batchSum = readable.reduce((s, r) => s + r.qty, 0);
   const total = normalizeQty(totalQty);
 
   const columns = useMemo<Column<BatchGridRow>[]>(
@@ -407,14 +435,21 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
           }`}
           data-testid="sdcsup-bulk-summary"
         >
-          {total.ok
-            ? t('sdcSup.stock.panel.batchSum', {
-                sum: formatNumber(batchSum),
-                total: formatNumber(total.value),
-                uom: uom || '—',
-              })
-            : t(TOTAL_REFUSAL_KEY[total.reason])}
-          {total.ok && liveUnit && !liveUnit.ok && ` — ${t(REASON_KEY[liveUnit.reason])}`}
+          {!total.ok
+            ? t(TOTAL_REFUSAL_KEY[total.reason])
+            : unreadable > 0
+              ? // No Σ is printed at all: a sum across an unknown is not a sum.
+                t('sdcSup.bulk.batchSum.refused', { count: unreadable })
+              : t('sdcSup.stock.panel.batchSum', {
+                  sum: formatNumber(batchSum),
+                  total: formatNumber(total.value),
+                  uom: uom || '—',
+                })}
+          {total.ok &&
+            unreadable === 0 &&
+            liveUnit &&
+            !liveUnit.ok &&
+            ` — ${t(REASON_KEY[liveUnit.reason])}`}
         </div>
       )}
 
