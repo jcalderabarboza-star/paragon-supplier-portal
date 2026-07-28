@@ -154,6 +154,8 @@ export function scoreQuotations(
   const positive = (xs: number[]) => xs.filter((x) => x > 0);
   const minPrice = Math.min(...positive(quotes.map((q) => q.unitPrice)));
   const compositeLiveness = livenessFor(weights);
+  /** Un-rounded composites, index-aligned with `scored` — ranking reads these. */
+  const exacts: number[] = [];
 
   const scored: QuoteScore[] = quotes.map((q) => {
     const priceScore = ratioToBest(q.unitPrice, minPrice);
@@ -172,10 +174,18 @@ export function scoreQuotations(
       [q.reliabilityScore, weights.reliability],
     ];
     const totalWeight = axes.reduce((sum, [, w]) => sum + w, 0);
-    const composite =
+    // The EXACT composite is kept for ranking and the rounded one for display.
+    // Rounding first was a real defect (found in 2e-b-1 live QA): at weight 0.2
+    // on a 2-points-per-day scale, one day of lead time is 0.4 of a composite
+    // point, so a 4-day and a 5-day supplier both rounded to 73 and `topRanked`
+    // fell through to the tie-break — insertion order, which the store fills
+    // newest-first. The buyer's recommendation was decided by who submitted last.
+    const exact =
       totalWeight === 0
         ? 0
-        : Math.round(axes.reduce((sum, [v, w]) => sum + v * w, 0) / totalWeight);
+        : axes.reduce((sum, [v, w]) => sum + v * w, 0) / totalWeight;
+    exacts.push(exact);
+    const composite = Math.round(exact);
     return {
       quoteId: q.id,
       priceScore,
@@ -188,10 +198,13 @@ export function scoreQuotations(
     };
   });
 
-  // argmax(composite); the first quote to reach the max wins a tie (stable).
+  // argmax over the EXACT composites — never the rounded ones (2e-b-1). The
+  // first quote to reach the max still wins a genuine tie (stable), but a
+  // difference the engine actually computed can no longer be rounded away into
+  // an insertion-order coin flip.
   let topIdx = 0;
   for (let i = 1; i < scored.length; i += 1) {
-    if (scored[i].composite > scored[topIdx].composite) topIdx = i;
+    if (exacts[i] > exacts[topIdx]) topIdx = i;
   }
   scored[topIdx].topRanked = true;
 

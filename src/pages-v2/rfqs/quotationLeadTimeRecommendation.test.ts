@@ -87,14 +87,27 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
 
   // ── POSITIVE TWIN FIRST (Correction-2) ────────────────────────────────────
   it('POSITIVE TWIN — a SLOWER honest promise leaves the recommendation where it belongs', async () => {
-    // 14 days, not 5: at weight 0.2 on a 2-points-per-day scale, a single day is
-    // 0.4 of a composite point and rounds away. The gap has to be bigger than
-    // the engine's resolution for "the incumbent keeps it" to mean anything.
     const res = await submitTypedLeadTime('14');
     expect(res!.status).toBe('done');
     expect(quotationStore.get(res!.entityId!)!.leadTimeDays).toBe(14);
     // 4 days beats 14 days, every other axis tied. The incumbent keeps it.
     expect(recommended()).toBe(INCUMBENT);
+  });
+
+  it('THE LOCK — a ONE-DAY difference still decides it; rounding cannot erase it', async () => {
+    // Found in live QA. At weight 0.2 on a 2-points-per-day scale one day is 0.4
+    // of a composite point, so 4 days and 5 days BOTH display 73. Ranking on the
+    // rounded value handed the tie to the tie-break — insertion order, and the
+    // store fills newest-first, so the recommendation went to whoever submitted
+    // LAST. `topRanked` now reads the un-rounded composite.
+    const res = await submitTypedLeadTime('5');
+    const scored = scoreQuotations(scorableSet());
+    const mine = scored.find((s) => s.quoteId === res!.entityId)!;
+    const incumbent = scored.find((s) => s.quoteId === INCUMBENT)!;
+    expect(mine.composite).toBe(incumbent.composite); // identical on the display
+    expect(mine.leadTimeScore).toBe(90);
+    expect(incumbent.leadTimeScore).toBe(92);
+    expect(recommended()).toBe(INCUMBENT); // and still decided correctly
   });
 
   it('POSITIVE TWIN — a genuinely FASTER honest promise DOES win it', async () => {
