@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import XlsxImportPanel from './XlsxImportPanel';
 import i18n from '../lib/i18n';
+import { parseGrid, BATCH_COLUMN, type GridRow } from '../services/sdc';
+import type { BatchGridRow } from './xlsxImportMap';
 
 // ────────────────────────────────────────────────────────────────────────────
 // CP-0 · W1 · PR-2d — the XLSX import's refusal REPORT (ruling D3, option b).
@@ -71,7 +73,12 @@ describe('XlsxImportPanel — unreadable quantities are named, not silently blan
     expect(screen.getByTestId('sdcsup-map-qty')).toBeInTheDocument();
   });
 
-  it('the refused cell imports BLANK — never a guessed 1050, never a silent 0', async () => {
+  // 2d′-b MIGRATION (not a correction — the old values were right under the old
+  // `qty: number|null` contract). The refused cell no longer imports BLANK: it
+  // imports its own text, so the supplier sees "1,050" sitting in a tinted row
+  // and can fix the cell they actually typed. It is still not dispatchable —
+  // the adapter refuses it exactly as before (asserted below).
+  it('the refused cell imports ITS TEXT — never a guessed 1050, never a silent 0', async () => {
     const onImport = renderPanel();
     await uploadSingleSheet();
     await screen.findByTestId('sdcsup-import-unreadable');
@@ -79,9 +86,38 @@ describe('XlsxImportPanel — unreadable quantities are named, not silently blan
     await waitFor(() => expect(onImport).toHaveBeenCalledTimes(1));
     const rows = onImport.mock.calls[0][0];
     expect(rows).toHaveLength(3);
-    expect(rows[0]).toMatchObject({ batchNumber: 'GLY-24A', qty: 1800 });
-    expect(rows[1]).toMatchObject({ batchNumber: 'GLY-24B', qty: 2200 });
-    expect(rows[2]).toMatchObject({ batchNumber: 'GLY-24C', qty: null }); // was 1050
+    expect(rows[0]).toMatchObject({ batchNumber: 'GLY-24A', qty: '1800' });
+    expect(rows[1]).toMatchObject({ batchNumber: 'GLY-24B', qty: '2200' });
+    expect(rows[2]).toMatchObject({ batchNumber: 'GLY-24C', qty: '1,050' }); // was blanked
+
+    // PAYLOAD-LEVEL: the two readable rows still dispatch as the same numbers,
+    // and the ambiguous one still blocks the declaration. The cell shape moved;
+    // the governed value did not.
+    const gridRows: GridRow[] = rows.map((r: BatchGridRow) => ({
+      [BATCH_COLUMN.batchNumber]: r.batchNumber ?? '',
+      [BATCH_COLUMN.qty]: r.qty,
+      [BATCH_COLUMN.expiryDate]: r.expiryDate ?? '',
+    }));
+    const ctx = (totalQty: string) => ({
+      supplierId: 'sup-007',
+      spec: {
+        kind: 'InventoryDeclaration' as const,
+        mode: 'batch-fold' as const,
+        materialCode: 'PK-PETB-8810',
+        totalQty,
+      },
+    });
+    expect(parseGrid(gridRows, ctx('5050'))[0]).toMatchObject({
+      ok: false,
+      reason: 'AMBIGUOUS_QTY',
+    });
+    // Drop the ambiguous row and the remaining two dispatch as 1800 + 2200.
+    const [unit] = parseGrid(gridRows.slice(0, 2), ctx('4000'));
+    if (!unit.ok) throw new Error(`expected a dispatchable declaration, got ${unit.reason}`);
+    expect(unit.payload.batches).toEqual([
+      { batchNumber: 'GLY-24A', qty: 1800, expiryDate: '2027-06-30' },
+      { batchNumber: 'GLY-24B', qty: 2200 },
+    ]);
   });
 
   it('reports in Indonesian too', async () => {
