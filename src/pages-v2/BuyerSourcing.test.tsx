@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
@@ -42,5 +42,58 @@ describe('BuyerSourcing — four honest states', () => {
   it('empty: shows EmptyState when there are no RFQs', async () => {
     renderWithProviders(<BuyerSourcing />, { service: noRfqs });
     expect(await screen.findByText('No sourcing events yet')).toBeInTheDocument();
+  });
+});
+
+// ── CP-0 · W1 · 2e-b-1a — the buyer is ranking on ESTIMATES, and is told so ──
+// The lead time is a REQUIRED ESTIMATE at quote stage: a supplier cannot firmly
+// commit before final quantity, PO date and capacity are known, so forcing
+// "firm" would buy false precision. It is still scored and still ranked on —
+// the tag exists so the buyer does not read it as firmer than it is. The firm
+// date is confirmed at PO (a separate arc).
+//
+// The tag reuses the existing honest-marker grammar on ComparisonRow rather
+// than inventing a rival one; "Simulated" (no live source) and "Estimated"
+// (real data, indicative at this stage) are DIFFERENT qualifiers sharing it.
+describe('BuyerSourcing — the lead-time axis is labelled an estimate', () => {
+  const openComparison = async () => {
+    renderWithProviders(<BuyerSourcing />);
+    // rfq-011 is the neutral award fixture — two quotes separable only on lead
+    // time, so the comparison drawer is where the label matters most.
+    fireEvent.click(await screen.findByText('RFQ-2026-011'));
+    return screen.findByText(/QUOTE COMPARISON/i);
+  };
+
+  it('POSITIVE TWIN — the lead-time value is still shown, and still scored', async () => {
+    await openComparison();
+    // The label does not hide the number or the score; qt-011a promises 4 days.
+    expect(screen.getByText(/4 days/)).toBeInTheDocument();
+    expect(screen.getByText('Lead Time Score')).toBeInTheDocument();
+  });
+
+  it('tags BOTH lead-time rows Estimated — the value and the score it drives', async () => {
+    await openComparison();
+    // Two rows carry it: the raw promise and the axis derived from it. A score
+    // presented bare would be the firmer-looking of the two.
+    expect(screen.getAllByText('Estimated')).toHaveLength(2);
+  });
+
+  it('explains the tag on hover — indicative now, firm at PO, still ranked on', async () => {
+    await openComparison();
+    const [tag] = screen.getAllByText('Estimated');
+    expect(tag).toHaveAttribute(
+      'title',
+      expect.stringMatching(/confirms a firm delivery date at PO/i),
+    );
+    // And says plainly that labelling did not weaken the math.
+    expect(tag.getAttribute('title')).toMatch(/Still scored and ranked on/i);
+  });
+
+  it('does NOT tag price — an offered price IS a commitment, and must not read as soft', async () => {
+    await openComparison();
+    // The negation that gives the tag meaning: if everything were "Estimated",
+    // nothing would be.
+    expect(screen.getByText('Unit Price')).toBeInTheDocument();
+    expect(screen.getAllByText('Estimated')).toHaveLength(2); // not 3, not 5
   });
 });

@@ -178,6 +178,36 @@ describe('SupplierRFQs — the lead time is read once, in four honest states', (
   const setLead = (v: string) =>
     fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: v } });
 
+  // ── 2e-b-1a — the value is a REQUIRED ESTIMATE, and says so ────────────────
+  // Required and labelled are not in tension: the estimate is required PRECISELY
+  // so the buyer can compare, and labelled because a supplier cannot firmly
+  // commit before final quantity, PO date and capacity are known. Forcing "firm"
+  // at quote stage would buy false precision. Asserted BEFORE the refusal specs
+  // (Correction-2) — the positive framing is the point, the refusal serves it.
+  it('POSITIVE TWIN — the field frames itself as an ESTIMATE, confirmed at PO', async () => {
+    await openQuotePanel();
+    // The framing appears on three distinct surfaces, deliberately: the section
+    // heading frames the step, the field label frames the value, and the hint
+    // says what happens next. A supplier who skims one still meets the others.
+    expect(screen.getByText('Estimated lead time *')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Paragon compares quotations on your estimate/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/confirm the firm delivery date if this quotation is awarded/i),
+    ).toBeInTheDocument();
+  });
+
+  it('POSITIVE TWIN — a stated estimate submits and is stored as the number given', async () => {
+    // Labelling changes the framing, never the math: the estimate is a real
+    // governed fact that the award engine scores.
+    await openQuotePanel();
+    setLead('4');
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(quotationStore.forRfq('rfq-010')).toHaveLength(1));
+    expect(quotationStore.forRfq('rfq-010')[0].leadTimeDays).toBe(4);
+  });
+
   // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
   // This spec asserted the opposite: that a blank showed a neutral "No lead time
   // stated…" note, left submit ENABLED, and minted a quotation storing an
@@ -185,7 +215,12 @@ describe('SupplierRFQs — the lead time is read once, in four honest states', (
   it('BLANK — refused as a required field, submit disabled, nothing minted', async () => {
     await openQuotePanel();
     expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
-      /State your lead time/i,
+      /Give your estimated lead time/i,
+    );
+    // The refusal itself carries the estimate framing — it asks for an estimate,
+    // not for a promise the supplier is not yet in a position to make.
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /An estimate is enough/i,
     );
     expect(screen.queryByTestId('quote-leadtime-absent')).not.toBeInTheDocument();
     expect(submitBtn()).toBeDisabled();

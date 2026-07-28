@@ -1072,6 +1072,13 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     <option value="weeks">{t('rfqs.unit.weeks')}</option>
                   </select>
                 </div>
+                {/* The estimate framing, stated once on the field itself
+                    (2e-b-1a): required so the bid is comparable, indicative
+                    because a firm date cannot honestly be given before final
+                    quantity, PO date and capacity are known. */}
+                <div className="mt-1 text-[11px] text-text-tertiary">
+                  {t('rfqs.panel.leadTime.hint')}
+                </div>
                 {/* An untouched blank does not nag on sight — it refuses at the
                     gate, and says so on the field once the supplier has engaged
                     with the form (the price precedent, 2e-a). */}

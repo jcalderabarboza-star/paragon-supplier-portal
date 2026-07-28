@@ -334,26 +334,31 @@ const ReviewSection: React.FC<{
 
 const ComparisonRow: React.FC<{
   label: string;
-  // A declared-SIMULATED axis (compliance/reliability/composite): the value is
-  // shown but honestly marked as a rehearsal awaiting a live source. LIVE axes
-  // (price/leadTime) render plain.
-  sim?: boolean;
-  simLabel?: string;
-  simTitle?: string;
+  // An honest-marker tag on the row label, with a tooltip explaining it. Two
+  // DIFFERENT qualifiers use it, and they must not be conflated:
+  //   · "Simulated" — the axis has no live data source yet (compliance /
+  //     reliability / the composite that inherits their weakest link);
+  //   · "Estimated" — the data is REAL supplier input, but it is indicative at
+  //     this stage rather than a commitment (lead time, 2e-b-1a).
+  // Generalised from the old `sim`/`simLabel`/`simTitle` triple so the second
+  // qualifier reuses the grammar instead of inventing a rival one. Rows with no
+  // qualifier render plain.
+  tag?: string;
+  tagTitle?: string;
   children: React.ReactNode;
-}> = ({ label, sim, simLabel, simTitle, children }) => (
+}> = ({ label, tag, tagTitle, children }) => (
   <tr className="border-t border-border-subtle">
     <th
       scope="row"
       className="text-left px-2 py-2 font-medium text-text-tertiary uppercase tracking-wider text-[10px] w-36 min-w-[9rem] align-middle"
     >
       {label}
-      {sim && (
+      {tag && (
         <span
-          title={simTitle}
+          title={tagTitle}
           className="ml-1.5 inline-block normal-case tracking-normal text-[9px] font-medium text-text-tertiary border border-border-subtle rounded px-1 py-px align-middle"
         >
-          {simLabel}
+          {tag}
         </span>
       )}
     </th>
@@ -1998,7 +2003,18 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
-                      <ComparisonRow label={t('sourcing.cmp.row.leadTime')}>
+                      {/* CP-0 2e-b-1a — the lead time is a REQUIRED ESTIMATE at
+                          quote stage, not a commitment: a supplier cannot firmly
+                          commit before final quantity, PO date and capacity are
+                          known, and forcing "firm" here would buy false
+                          precision. It is still scored and still ranked on — the
+                          buyer simply sees it for what it is. The firm date is
+                          confirmed at PO (a separate arc). */}
+                      <ComparisonRow
+                        label={t('sourcing.cmp.row.leadTime')}
+                        tag={t('sourcing.cmp.estimated')}
+                        tagTitle={t('sourcing.cmp.estimatedTitle')}
+                      >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="whitespace-nowrap">
@@ -2031,6 +2047,8 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </ComparisonRow>
                       <ComparisonRow
                         label={t('sourcing.cmp.row.leadTimeScore')}
+                        tag={t('sourcing.cmp.estimated')}
+                        tagTitle={t('sourcing.cmp.estimatedTitle')}
                       >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
@@ -2044,9 +2062,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </ComparisonRow>
                       <ComparisonRow
                         label={t('sourcing.cmp.row.compliance')}
-                        sim={AXIS_LIVENESS.compliance === 'simulated'}
-                        simLabel={t('sourcing.cmp.simulated')}
-                        simTitle={t('sourcing.cmp.simulatedTitle')}
+                        tag={
+                          AXIS_LIVENESS.compliance === 'simulated'
+                            ? t('sourcing.cmp.simulated')
+                            : undefined
+                        }
+                        tagTitle={t('sourcing.cmp.simulatedTitle')}
                       >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
@@ -2060,9 +2081,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </ComparisonRow>
                       <ComparisonRow
                         label={t('sourcing.cmp.row.reliability')}
-                        sim={AXIS_LIVENESS.reliability === 'simulated'}
-                        simLabel={t('sourcing.cmp.simulated')}
-                        simTitle={t('sourcing.cmp.simulatedTitle')}
+                        tag={
+                          AXIS_LIVENESS.reliability === 'simulated'
+                            ? t('sourcing.cmp.simulated')
+                            : undefined
+                        }
+                        tagTitle={t('sourcing.cmp.simulatedTitle')}
                       >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
@@ -2076,9 +2100,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       </ComparisonRow>
                       <ComparisonRow
                         label={t('sourcing.cmp.row.composite')}
-                        sim={COMPOSITE_LIVENESS === 'simulated'}
-                        simLabel={t('sourcing.cmp.simulated')}
-                        simTitle={t('sourcing.cmp.simulatedTitle')}
+                        tag={
+                          COMPOSITE_LIVENESS === 'simulated'
+                            ? t('sourcing.cmp.simulated')
+                            : undefined
+                        }
+                        tagTitle={t('sourcing.cmp.simulatedTitle')}
                       >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
