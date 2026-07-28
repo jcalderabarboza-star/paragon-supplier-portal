@@ -19,10 +19,31 @@ import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
  * One editable grid row — the shape BulkStockEntryGrid holds in state and the
  * SDC-3c-a adapter reads (via toGridRows). Defined here so the grid, the import
  * panel, and these helpers share ONE type. The engine clears a cell to null.
+ *
+ * ── CP-0 · 2d′-b — `qty` IS RAW TEXT, and that is the whole point ────────────
+ *
+ * It used to be `number | null`, which sounds safer and was the opposite. A
+ * numeric cell type forces SOMETHING to parse before the value can be stored,
+ * and the thing that did was react-datasheet-grid's `intColumn`
+ * (`parseFloat` → `Math.round`), running inside node_modules on every keystroke
+ * — upstream of, and invisible to, the one legal parser. `toGridRows` then did
+ * `String(r.qty)`, so `normalizeQty` received an already-canonical string and
+ * could not tell that a parse had happened, let alone that it was wrong.
+ *
+ * Typing "1.050" produced 1. Not a refusal, not an error — the digit 1, stored
+ * as a governed batch quantity. The ambiguity refusal this series built was
+ * unreachable by hand on this surface because the truncation happened first.
+ *
+ * So the cell now carries the supplier's TEXT, verbatim, and parses nothing.
+ * `normalizeQty` (in the adapter) is the sole parse, and the one-parse invariant
+ * is restored BY SUBTRACTION rather than by adding another check. A cell can
+ * hold "1.050" — which is exactly what a refusal needs in order to be shown,
+ * explained, and corrected in place.
  */
 export interface BatchGridRow {
   batchNumber: string | null;
-  qty: number | null;
+  /** VERBATIM supplier text. Never parsed here — see the note above. */
+  qty: string;
   expiryDate: string | null;
 }
 
@@ -93,13 +114,25 @@ export function mappingComplete(m: ColumnMapping): boolean {
 // refuses per row). The old code picked the en reading every time and said
 // nothing, and the test recorded that guess as the contract.
 //
-// Every qty now goes through `normalizeQty` with NO hint. A cell it cannot read
-// becomes `null` — the grid cell type is `number | null`, so it CANNOT carry
-// "1,800 (ambiguous)" — but the refusal is no longer thrown away: the reason
-// and the raw text ride back in `refused`, so the panel can say WHICH cells it
-// could not read and WHY. A silently blanked cell would tell the supplier they
-// left a field empty when they did not, which is the same blame-moving move the
-// fabricated Σ-mismatch made in 2c.
+// Every qty now goes through `normalizeQty` with NO hint, and the reason + raw
+// text ride back in `refused` so the panel can say WHICH cells it could not
+// read and WHY. A silently blanked cell would tell the supplier they left a
+// field empty when they did not — the same blame-moving move the fabricated
+// Σ-mismatch made in 2c.
+//
+// ── CP-0 · 2d′-b — the refused cell now KEEPS ITS TEXT ───────────────────────
+//
+// 2d ruled blank-and-report, because the cell type was `number | null` and
+// literally could not hold "1,800 (ambiguous)". That constraint is gone: `qty`
+// is raw text, so the cell imports EXACTLY what the sheet said. The row tints
+// (the adapter refuses it, so its index is in `rowRefs`) and the panel's
+// aggregate report now points at something the supplier can see and edit,
+// instead of at a blank they must reconstruct from memory. Strictly more
+// honest, and repairable in place.
+//
+// The `normalizeQty` call below no longer converts anything — it exists ONLY to
+// build the report. It cannot diverge from the gate, because it is the same
+// function applied to the same string that the adapter will later read.
 //
 // EMPTY is deliberately NOT reported: a blank cell in the sheet is blank in the
 // grid, which is self-evident and not a misreading. Only NOT_NUMERIC and
@@ -125,11 +158,14 @@ export interface CoercedImport {
 
 /**
  * Coerce raw parsed rows (keyed by supplier headers) into grid rows under the
- * confirmed mapping, reporting every qty the one parser refused. An unreadable
- * or ambiguous qty becomes a blank cell the supplier retypes — never a silent
- * 0, and never one plausible reading of two. expiry passes through the ISO
- * string parseWorkbook already produced. Nothing is dispatched here — these
- * rows land in the grid for review.
+ * confirmed mapping, reporting every qty the one parser refused. The qty cell
+ * carries the sheet's text VERBATIM — readable or not — so nothing is converted
+ * here and nothing is lost: a readable "2,4" reaches the adapter as "2,4" and
+ * dispatches as 2.4, while an ambiguous "1,050" reaches the grid as "1,050",
+ * tints, and is named in the report. Never a silent 0, never a blanked cell,
+ * never one plausible reading of two. expiry passes through the ISO string
+ * parseWorkbook already produced. Nothing is dispatched here — these rows land
+ * in the grid for review.
  */
 export function coerceRows(
   rows: readonly Record<string, string>[],
@@ -146,7 +182,8 @@ export function coerceRows(
     const exp = m.expiryDate ? (r[m.expiryDate] ?? '').trim() || null : null;
     return {
       batchNumber: bn === '' ? null : bn,
-      qty: parsed.ok ? parsed.value : null,
+      // VERBATIM — the cell shows what the sheet said, readable or not.
+      qty: raw,
       expiryDate: exp,
     };
   });

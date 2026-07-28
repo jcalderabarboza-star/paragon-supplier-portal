@@ -4,7 +4,7 @@ import {
   DataSheetGrid,
   keyColumn,
   textColumn,
-  intColumn,
+  createTextColumn,
   isoDateColumn,
   type Column,
 } from 'react-datasheet-grid';
@@ -28,7 +28,7 @@ import {
 } from '../services/sdc';
 import type { CommandResult } from '../services/data/types';
 import { formatNumber } from '../lib/format';
-import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
+import { normalizeQty, type QtyOutcome, type QtyRefusalReason } from '../lib/localeNumber';
 import XlsxImportPanel from './XlsxImportPanel';
 import type { BatchGridRow } from './xlsxImportMap';
 
@@ -63,7 +63,56 @@ import type { BatchGridRow } from './xlsxImportMap';
 // BatchGridRow is shared with the import panel + mapping helpers (xlsxImportMap):
 // the engine clears a cell to null; the adapter reads the source-agnostic string
 // shape, so we coerce null→'' at the boundary.
-const blankRow = (): BatchGridRow => ({ batchNumber: null, qty: null, expiryDate: null });
+const blankRow = (): BatchGridRow => ({ batchNumber: null, qty: '', expiryDate: null });
+
+// ── CP-0 · 2d′-b — THE QTY COLUMN STOPS BEING A PARSER ──────────────────────
+//
+// This column was `intColumn`. Read its source (it is eight lines, in
+// node_modules) and it has three independent defects, only one of which is
+// about locale:
+//
+//  (i)   `parseUserInput: parseFloat(v) → Math.round`, under the
+//        `continuousUpdates: true` default — so it re-parses on EVERY
+//        KEYSTROKE. Typing "1.050" walks 1 → 1 → 1 → 1 → 1: the row value is
+//        the digit 1 from the first character and never recovers. Reproduced
+//        by hand on the live build; it is not a blur-time rounding, it is
+//        destruction as you type.
+//  (ii)  `formatBlurredInput` uses a bare `new Intl.NumberFormat()` — the
+//        BROWSER's locale, not the app's. The grid rendered 1800 as "1,800"
+//        while the banner one line below rendered the same number as "1.800"
+//        via `formatNumber` (pinned id-ID). Same value, two conventions, one
+//        screen, and which one you saw depended on your OS.
+//  (iii) it ROUNDS. 2.4 KG became 2 — while `xlsxImportMap.test.ts` has
+//        asserted all along that "2,4" is a legal batch quantity of 2.4. The
+//        column was narrower than the contract it served, in a repo that
+//        stocks materials measured in KG.
+//
+// None of that was reachable by the test suite: the truncation lives in
+// node_modules, the reformat depends on the machine, and the datasheet body
+// lays out no editable cell under jsdom (asserted, not assumed — see the spec).
+//
+// The replacement parses NOTHING. `parseUserInput: v => v` stores the text as
+// typed; `formatBlurredInput: v => v` never reformats it, so the supplier's own
+// keystrokes stay on screen and (ii) disappears rather than being corrected.
+// The one legal parser runs once, later, in the adapter — which is what makes
+// a refusal possible at all: a cell that must hold a number cannot hold
+// "1.050 (ambiguous)", and a cell that holds text can.
+//
+// `isCellEmpty` is overridden because the library's default tests for `null`,
+// and our cleared value is `''` — without it, Delete over blank rows would stop
+// removing them.
+const rawQtyColumn = {
+  ...createTextColumn<string>({
+    alignRight: true,
+    deletedValue: '',
+    parseUserInput: (v) => v,
+    formatBlurredInput: (v) => v,
+    formatInputOnFocus: (v) => v,
+    formatForCopy: (v) => v,
+    parsePastedValue: (v) => v.replace(/[\n\r]+/g, ' ').trim(),
+  }),
+  isCellEmpty: ({ rowData }: { rowData: string }) => rowData.trim() === '',
+};
 
 // Fixed DSG height (px) — pinned via `--plan-dsg-h` (planGrid.css) so the
 // container cannot auto-shrink to few-row content (the trembling fix).
@@ -93,11 +142,19 @@ const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 
-/** DSG rows → the adapter's source-agnostic string rows (null→'', num→string). */
+/**
+ * DSG rows → the adapter's source-agnostic string rows.
+ *
+ * CP-0 · 2d′-b — `qty` now passes through UNTOUCHED. This line used to read
+ * `String(r.qty)`, and that cast was the seam the whole defect hid behind: by
+ * the time the adapter's `normalizeQty` saw the cell it was looking at the
+ * stringified output of `intColumn`'s parse, not at what the supplier typed —
+ * canonical, unambiguous, and wrong. There is nothing left to convert here.
+ */
 const toGridRows = (rows: readonly BatchGridRow[]): GridRow[] =>
   rows.map((r) => ({
     [BATCH_COLUMN.batchNumber]: r.batchNumber ?? '',
-    [BATCH_COLUMN.qty]: r.qty == null ? '' : String(r.qty),
+    [BATCH_COLUMN.qty]: r.qty,
     [BATCH_COLUMN.expiryDate]: r.expiryDate ?? '',
   }));
 
@@ -147,7 +204,11 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
       setRows(
         prior.batches.map((b) => ({
           batchNumber: b.batchNumber,
-          qty: b.qty,
+          // CP-0 · 2d′-b — seeded as a CANONICAL, UNGROUPED string ("1800", not
+          // "1.800"/"1,800"). A grouped seed would be ambiguous under the very
+          // parser it is about to be fed to, so the supplier would open a
+          // pre-filled grid whose own prefill refused.
+          qty: String(b.qty),
           expiryDate: b.expiryDate ?? null,
         })),
       );
@@ -217,16 +278,17 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
   // cells it could not read and asks for them. There is no `: 0` left to reach:
   // the fallback is structural (a shorter list), not a fabricated addend.
   //
-  // NOTE (2d′-b): the batch CELLS are still parsed upstream by the datasheet
-  // engine's `intColumn` (parseFloat + round, browser-locale reformat), so
-  // `r.qty` arrives here already coerced. Replacing that primitive with a raw-
-  // text column is the next batch; this one is the arithmetic beneath it.
+  // CP-0 · 2d′-b — and now the Σ reads the ONE parser directly. 2d′-a asked
+  // `typeof r.qty === 'number'`, which was only ever a proxy for "did the
+  // engine's parse succeed". The engine no longer parses, so the question is
+  // asked of `normalizeQty` itself — the same function, on the same text, that
+  // the adapter will use to gate the dispatch. The banner and the gate cannot
+  // disagree, because there is only one reading of the cell in the app.
   const filled = rows.filter((r) => (r.batchNumber ?? '').trim() !== '');
-  const readable = filled.filter(
-    (r): r is BatchGridRow & { qty: number } => typeof r.qty === 'number',
-  );
-  const unreadable = filled.length - readable.length;
-  const batchSum = readable.reduce((s, r) => s + r.qty, 0);
+  const parsedQtys = filled.map((r) => normalizeQty(r.qty));
+  const readable = parsedQtys.filter((p): p is Extract<QtyOutcome, { ok: true }> => p.ok);
+  const unreadable = parsedQtys.length - readable.length;
+  const batchSum = readable.reduce((s, p) => s + p.value, 0);
   const total = normalizeQty(totalQty);
 
   const columns = useMemo<Column<BatchGridRow>[]>(
@@ -238,7 +300,7 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
         minWidth: 160,
       },
       {
-        ...keyColumn<BatchGridRow, 'qty'>('qty', intColumn),
+        ...keyColumn<BatchGridRow, 'qty'>('qty', rawQtyColumn),
         title: t('sdcSup.bulk.col.qty', { uom: uom || '—' }),
         minWidth: 120,
       },
