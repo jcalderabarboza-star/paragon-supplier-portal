@@ -135,7 +135,10 @@ describe('SupplierRFQs — the bid price is read once, and refused out loud', ()
     expect(screen.queryByTestId('quote-price-refusal')).not.toBeInTheDocument();
     expect(price).toHaveAttribute('aria-invalid', 'false');
     // 1,500 × 120,000 (rfq-010 totalQty) — the honest product, not 1.5 × qty.
-    expect(screen.getByText(/180,000,000/)).toBeInTheDocument();
+    // Dot-grouped since 2e-b: the preview renders through `formatNumber` (pinned
+    // id-ID) like every other amount on the path, instead of `toLocaleString()`
+    // following whatever locale the reader's browser carries.
+    expect(screen.getByText(/180\.000\.000/)).toBeInTheDocument();
   });
 
   it('POSITIVE TWIN — a fully-formatted ID price is READ, not eaten', async () => {
@@ -143,6 +146,113 @@ describe('SupplierRFQs — the bid price is read once, and refused out loud', ()
     // The token the old number field deleted outright before anyone saw it.
     fireEvent.change(price, { target: { value: '15.000,50' } });
     expect(screen.queryByTestId('quote-price-refusal')).not.toBeInTheDocument();
-    expect(screen.getByText(/1,800,060,000/)).toBeInTheDocument();
+    expect(screen.getByText(/1\.800\.060\.000/)).toBeInTheDocument();
+  });
+});
+
+// ── CP-0 · W1 · 2e-b — the lead time and the MOQ, at the surface ─────────────
+// The refusal contracts live in rfqs/quotationCounts.test.ts and the scored-axis
+// blast radius in rfqs/quotationCountsBlastRadius.test.ts. What these add is the
+// DOM-only part: that the supplier is TOLD on the field, that submit does not
+// quietly send anyway, and that the MOQ they typed is actually on the fact that
+// gets stored.
+//
+// Testable only because ruling 6.2 flipped both fields off `type="number"` —
+// jsdom implements the number-input sanitization algorithm faithfully, so "2,5"
+// and "10.000" used to arrive as "" and the refusals under test were untypeable.
+describe('SupplierRFQs — the lead time and the MOQ are read once, and refused out loud', () => {
+  // The last test here MINTS a real quotation into the shared store; reset so
+  // each case starts from the fixture set regardless of order.
+  beforeEach(() => quotationStore.reset());
+
+  const openQuotePanel = async () => {
+    renderWithProviders(<SupplierRFQs />, { identity: SUPPLIER });
+    expect(await screen.findByText('RFQ-2026-010')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: /Submit Quote/i })[0]);
+    // A clean price throughout — these tests are about the OTHER two fields, and
+    // the price gate fires first, so it must be satisfied to reach them.
+    fireEvent.change(screen.getByLabelText('Unit price'), {
+      target: { value: '15000' },
+    });
+  };
+
+  const submit = () => fireEvent.click(screen.getByRole('button', { name: 'Submit quotation' }));
+
+  /** Submit, then assert the governed outcome: nothing minted, panel still open. */
+  const expectBlocked = async (before: number) => {
+    submit();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Submit quotation' })).toBeInTheDocument(),
+    );
+    expect(quotationStore.forRfq('rfq-010')).toHaveLength(before);
+  };
+
+  it('a fractional lead time is refused on the field and mints nothing', async () => {
+    await openQuotePanel();
+    const before = quotationStore.forRfq('rfq-010').length;
+    const lead = screen.getByLabelText('Lead time');
+    fireEvent.change(lead, { target: { value: '2,5' } });
+
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /whole number of days/i,
+    );
+    expect(lead).toHaveAttribute('aria-invalid', 'true');
+    await expectBlocked(before);
+  });
+
+  it('a zero lead time is refused BY NAME — not as "unreadable", not as "missing"', async () => {
+    await openQuotePanel();
+    const before = quotationStore.forRfq('rfq-010').length;
+    fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: '0' } });
+
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /Zero is not a lead time/i,
+    );
+    await expectBlocked(before);
+  });
+
+  it('an untouched blank lead time does not nag, but submitting one mints nothing', async () => {
+    await openQuotePanel();
+    const before = quotationStore.forRfq('rfq-010').length;
+    expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Lead time')).toHaveAttribute('aria-invalid', 'false');
+
+    await expectBlocked(before);
+  });
+
+  it('an ambiguous MOQ is refused — an OPTIONAL field is still not a droppable one', async () => {
+    await openQuotePanel();
+    const before = quotationStore.forRfq('rfq-010').length;
+    fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: '14' } });
+    fireEvent.change(screen.getByLabelText('Minimum order quantity'), {
+      target: { value: '10.000' },
+    });
+
+    expect(screen.getByTestId('quote-moq-refusal')).toHaveTextContent(/two ways/i);
+    await expectBlocked(before);
+  });
+
+  it('POSITIVE TWIN — a clean quote submits, and the MOQ the supplier typed is ON the stored fact', async () => {
+    await openQuotePanel();
+    fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Quote valid until'), {
+      target: { value: '2026-06-30' },
+    });
+    fireEvent.change(screen.getByLabelText('Minimum order quantity'), {
+      target: { value: '25000' },
+    });
+    // The unit select is half of what "2" means — 2 weeks, converted inside the
+    // one parse, must reach the store as 14 days and not as 2.
+    fireEvent.change(screen.getByDisplayValue('days'), { target: { value: 'weeks' } });
+    expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('quote-moq-refusal')).not.toBeInTheDocument();
+
+    submit();
+
+    await waitFor(() => expect(quotationStore.forRfq('rfq-010')).toHaveLength(1));
+    const [q] = quotationStore.forRfq('rfq-010');
+    expect(q.unitPrice).toBe(15_000);
+    expect(q.leadTimeDays).toBe(14); // 2 weeks, not 2
+    expect(q.moq).toBe(25_000); // 2e-FIND-02 closed — it used to arrive nowhere
   });
 });

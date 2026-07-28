@@ -8,7 +8,10 @@ const draft = {
   // and let this builder coerce it; the price now arrives as the number the ONE
   // upstream parse judged, so there is no second reading to disagree with.
   unitPrice: 190_000,
-  leadTimeDays: '30',
+  // ALSO ALREADY PARSED (CP-0 2e-b). It carried the raw string '30' and let the
+  // builder coerce it with `Number(...) || 0`; it now arrives as the whole
+  // number of DAYS the ONE upstream parse judged, unit conversion included.
+  leadTimeDays: 30,
   validUntil: '2026-08-31',
   paymentTermsOffered: 'Net 30',
 };
@@ -39,6 +42,45 @@ describe('buildQuotationSubmitPayload — raw facts only, engine owns scoring at
     // mapping. 1.5 is exactly what the retired recipe turned "1.500" into.
     expect(buildQuotationSubmitPayload({ ...draft, unitPrice: 1.5 }).unitPrice).toBe(1.5);
     expect(buildQuotationSubmitPayload({ ...draft, unitPrice: 1_500 }).unitPrice).toBe(1_500);
+  });
+
+  // ── CP-0 · W1 · 2e-b — the lead time stops being coerced here too ──────────
+  // The retired spec asserted `'30'` → 30, which vouched for `Number(...) || 0`
+  // as CORRECT on the portal's OTHER live-scored axis (weight 0.2). The `|| 0`
+  // half of that recipe is the one that mattered: a lead time it could not read
+  // became a stored 0, which `scoreQuotations` cannot score at all.
+  it('passes the already-parsed lead time through UNTOUCHED — in days', () => {
+    expect(buildQuotationSubmitPayload(draft).leadTimeDays).toBe(30);
+    // 3 weeks, converted upstream inside the parse — the builder never sees a
+    // unit, so it cannot apply (or forget) the ×7 a second time.
+    expect(
+      buildQuotationSubmitPayload({ ...draft, leadTimeDays: 21 }).leadTimeDays,
+    ).toBe(21);
+  });
+
+  it('no coercion of ANY kind survives — the builder is a mapping, end to end', () => {
+    // Not an endorsement of a zero lead time (readLeadTimeDays refuses it); a
+    // proof that the builder has no fabrication branch left of its own on any
+    // numeric field.
+    const p = buildQuotationSubmitPayload({ ...draft, unitPrice: 0, leadTimeDays: 0 });
+    expect(p.unitPrice).toBe(0);
+    expect(p.leadTimeDays).toBe(0);
+  });
+
+  // ── CP-0 · W1 · 2e-b — 2e-FIND-02: MOQ reaches the payload at last ─────────
+  describe('minimum order quantity — collected, and no longer dropped', () => {
+    it('carries a stated minimum through to the payload', () => {
+      expect(buildQuotationSubmitPayload({ ...draft, moq: 25_000 }).moq).toBe(25_000);
+      // Zero is a stated minimum ("no minimum at all"), not an absence — the
+      // `...(moq == null)` guard must not treat it as one.
+      expect('moq' in buildQuotationSubmitPayload({ ...draft, moq: 0 })).toBe(true);
+      expect(buildQuotationSubmitPayload({ ...draft, moq: 0 }).moq).toBe(0);
+    });
+
+    it('omits it entirely when the supplier stated none — absence, never a 0', () => {
+      expect('moq' in buildQuotationSubmitPayload(draft)).toBe(false);
+      expect('moq' in buildQuotationSubmitPayload({ ...draft, moq: null })).toBe(false);
+    });
   });
 
   // The retired spec here asserted that an empty price "resolves to 0, not NaN" —

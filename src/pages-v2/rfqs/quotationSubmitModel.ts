@@ -29,16 +29,33 @@ export interface QuotationSubmitDraft {
    * unreadable token reach it as `|| 0` → Rp 0.
    */
   unitPrice: number;
-  leadTimeDays: string;
+  /**
+   * ALREADY PARSED, IN DAYS (CP-0 · W1 · 2e-b). The caller reads the typed lead
+   * time ONCE through `readLeadTimeDays` — which also applies the days/weeks
+   * conversion — and passes the whole number of days it judged. It used to
+   * arrive as raw text and be coerced here with `Number(...) || 0`, on the
+   * portal's OTHER live-scored axis: an unreadable token became a zero lead
+   * time, which `scoreQuotations` cannot score and silently forfeits.
+   */
+  leadTimeDays: number;
   validUntil: string;
   paymentTermsOffered?: string;
+  /**
+   * The supplier's minimum order quantity, in the RFQ's unit of measure. It was
+   * collected by the form and then dropped here (2e-FIND-02) — a real bid
+   * CONSTRAINT the buyer never saw. `null`/absent = the supplier stated no
+   * minimum of their own (the field's documented blank default); interpreting
+   * or enforcing it against the RFQ quantity is a later batch's question.
+   */
+  moq?: number | null;
   notes?: string;
 }
 
-/** Build the `t_quotation_submit` payload from the quote draft. The price is
- * passed through UNTOUCHED — it was parsed and gated upstream, and a refusal
- * never gets this far, so there is no `|| 0` left to fabricate a bid nobody
- * made. No id, number, or status — those are STORE-assigned on create. */
+/** Build the `t_quotation_submit` payload from the quote draft. Every number
+ * is passed through UNTOUCHED — each was parsed and gated upstream, and a
+ * refusal never gets this far, so as of 2e-b this builder has NO coercion left
+ * at all: not one `Number(...)`, not one `|| 0` to fabricate a fact nobody
+ * stated. No id, number, or status — those are STORE-assigned on create. */
 export function buildQuotationSubmitPayload(
   draft: QuotationSubmitDraft,
 ): Record<string, unknown> {
@@ -46,12 +63,13 @@ export function buildQuotationSubmitPayload(
     rfqId: draft.rfqId,
     supplierId: draft.supplierId,
     unitPrice: draft.unitPrice,
-    // NOT yet cut over — lead time keeps its coercion until 2e-b carries it
-    // through the same parse (it is a LIVE-scored axis too, weight 0.2). Booked,
-    // not forgotten: 2e-a is scoped to the price, the ranking anchor.
-    leadTimeDays: Number(draft.leadTimeDays) || 0,
+    leadTimeDays: draft.leadTimeDays,
     validUntil: draft.validUntil,
     paymentTermsOffered: draft.paymentTermsOffered ?? '',
+    // Omitted when the supplier stated no minimum — an ABSENT constraint, which
+    // is a different fact from a stated minimum of 0 and must not be flattened
+    // into one. Same discipline as `notes`.
+    ...(draft.moq == null ? {} : { moq: draft.moq }),
     ...(draft.notes ? { notes: draft.notes } : {}),
   };
 }

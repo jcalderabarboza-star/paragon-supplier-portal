@@ -72,7 +72,9 @@ const submitTypedPrice = async (typed: string) => {
       rfqId: RFQ_ID,
       supplierId: 'sup-012',
       unitPrice: price.value,
-      leadTimeDays: '18',
+      // A number since 2e-b — the lead time is parsed upstream now too, so the
+      // builder no longer takes (or coerces) raw text on any numeric field.
+      leadTimeDays: 18,
       validUntil: '2026-06-30',
     }),
   });
@@ -156,7 +158,7 @@ describe('BLAST RADIUS — a refused bid price never enters the award ranking', 
         rfqId: RFQ_ID,
         supplierId: 'sup-012',
         unitPrice: 1.5, // ← the misparse
-        leadTimeDays: '18',
+        leadTimeDays: 18,
         validUntil: '2026-06-30',
       }),
     });

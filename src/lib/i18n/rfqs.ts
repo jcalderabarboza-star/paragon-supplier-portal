@@ -99,9 +99,25 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.panel.step2.title': 'Timing & quantity',
   'rfqs.panel.step2.desc': 'Lead time and validity window.',
   'rfqs.panel.leadTime': 'Lead time *',
+  'rfqs.panel.leadTime.refused.empty':
+    'Enter your lead time — a blank field is not a delivery promise.',
+  'rfqs.panel.leadTime.refused.notNumeric':
+    'That is not a lead time — type digits only, e.g. 14.',
+  'rfqs.panel.leadTime.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
+  'rfqs.panel.leadTime.refused.fractional':
+    'Lead time is a whole number of days — "2,5 weeks" is 17.5 days. Enter whole days (18) or whole weeks (3).',
+  'rfqs.panel.leadTime.refused.zero':
+    'Zero is not a lead time. Enter the number of days you need after the order is placed — a quote scored at zero days loses this criterion outright.',
   'rfqs.panel.validUntil': 'Quote valid until *',
   'rfqs.panel.moq': 'Minimum order quantity (optional)',
   'rfqs.panel.moqPlaceholder': 'Leave blank if same as RFQ qty',
+  'rfqs.panel.moq.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 10000, or leave it blank.',
+  'rfqs.panel.moq.refused.ambiguous':
+    'This can be read two ways — "10.000" means ten thousand in Indonesian and ten in English. Type it without separators: 10000.',
+  'rfqs.panel.moq.refused.fractional':
+    'A minimum order quantity is a whole number of units. Round to the whole quantity you can actually supply.',
   'rfqs.unit.days': 'days',
   'rfqs.unit.weeks': 'weeks',
   'rfqs.panel.step3.eyebrow': 'Step 3',
@@ -133,12 +149,15 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.toast.missing.title': 'Required fields missing',
   'rfqs.toast.missing.body': 'Please fill: {{fields}}.',
   'rfqs.toast.priceRefused.title': 'Quotation not submitted — check the unit price',
+  'rfqs.toast.leadTimeRefused.title': 'Quotation not submitted — check the lead time',
+  'rfqs.toast.moqRefused.title': 'Quotation not submitted — check the minimum order quantity',
   'rfqs.toast.submitted.title': 'Quotation submitted for {{rfq}}',
   'rfqs.toast.submitted.body': 'Paragon procurement team will review by {{date}}.',
   'rfqs.toast.submitFailed.title': 'Quotation could not be submitted',
   'rfqs.toast.submitFailed.body': 'Please try again, or contact Paragon procurement.',
   'rfqs.field.unitPrice': 'Unit price',
   'rfqs.field.leadTime': 'Lead time',
+  'rfqs.field.moq': 'Minimum order quantity',
   'rfqs.field.validUntil': 'Quote valid until',
 };
 
@@ -239,9 +258,25 @@ export const rfqsId: Record<string, string> = {
   'rfqs.panel.step2.title': 'Waktu & kuantitas',
   'rfqs.panel.step2.desc': 'Waktu tunggu dan jendela validitas.',
   'rfqs.panel.leadTime': 'Waktu tunggu *',
+  'rfqs.panel.leadTime.refused.empty':
+    'Masukkan waktu tunggu Anda — kolom kosong bukan janji pengiriman.',
+  'rfqs.panel.leadTime.refused.notNumeric':
+    'Itu bukan waktu tunggu — ketik angka saja, misalnya 14.',
+  'rfqs.panel.leadTime.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
+  'rfqs.panel.leadTime.refused.fractional':
+    'Waktu tunggu adalah bilangan bulat hari — "2,5 minggu" sama dengan 17,5 hari. Masukkan hari bulat (18) atau minggu bulat (3).',
+  'rfqs.panel.leadTime.refused.zero':
+    'Nol bukan waktu tunggu. Masukkan jumlah hari yang Anda perlukan setelah pesanan dibuat — penawaran dengan nol hari kehilangan kriteria ini sepenuhnya.',
   'rfqs.panel.validUntil': 'Penawaran berlaku hingga *',
   'rfqs.panel.moq': 'Kuantitas pesanan minimum (opsional)',
   'rfqs.panel.moqPlaceholder': 'Kosongkan jika sama dengan jml RFQ',
+  'rfqs.panel.moq.refused.notNumeric':
+    'Itu bukan kuantitas — ketik angka saja, misalnya 10000, atau kosongkan.',
+  'rfqs.panel.moq.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "10.000" berarti sepuluh ribu dalam bahasa Indonesia dan sepuluh dalam bahasa Inggris. Ketik tanpa pemisah: 10000.',
+  'rfqs.panel.moq.refused.fractional':
+    'Kuantitas pesanan minimum adalah bilangan bulat unit. Bulatkan ke kuantitas yang benar-benar dapat Anda pasok.',
   'rfqs.unit.days': 'hari',
   'rfqs.unit.weeks': 'minggu',
   'rfqs.panel.step3.eyebrow': 'Langkah 3',
@@ -273,11 +308,15 @@ export const rfqsId: Record<string, string> = {
   'rfqs.toast.missing.title': 'Kolom wajib belum diisi',
   'rfqs.toast.missing.body': 'Harap isi: {{fields}}.',
   'rfqs.toast.priceRefused.title': 'Penawaran tidak dikirim — periksa harga satuan',
+  'rfqs.toast.leadTimeRefused.title': 'Penawaran tidak dikirim — periksa waktu tunggu',
+  'rfqs.toast.moqRefused.title':
+    'Penawaran tidak dikirim — periksa kuantitas pesanan minimum',
   'rfqs.toast.submitted.title': 'Penawaran dikirim untuk {{rfq}}',
   'rfqs.toast.submitted.body': 'Tim pengadaan Paragon akan meninjau paling lambat {{date}}.',
   'rfqs.toast.submitFailed.title': 'Penawaran tidak dapat dikirim',
   'rfqs.toast.submitFailed.body': 'Silakan coba lagi, atau hubungi pengadaan Paragon.',
   'rfqs.field.unitPrice': 'Harga satuan',
   'rfqs.field.leadTime': 'Waktu tunggu',
+  'rfqs.field.moq': 'Kuantitas pesanan minimum',
   'rfqs.field.validUntil': 'Penawaran berlaku hingga',
 };

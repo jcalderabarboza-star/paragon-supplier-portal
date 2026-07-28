@@ -42,9 +42,16 @@ import {
 import { useQuotationSubmit } from '../services/query/commandHooks';
 import { buildQuotationSubmitPayload } from './rfqs/quotationSubmitModel';
 import { readBidPrice, type PriceRefusalReason } from './rfqs/quotationPrice';
+import {
+  readLeadTimeDays,
+  readMoq,
+  type LeadTimeRefusalReason,
+  type LeadTimeUnit,
+  type MoqRefusalReason,
+} from './rfqs/quotationCounts';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
-import { formatIDR, formatDate } from '../lib/format';
+import { formatIDR, formatDate, formatNumber } from '../lib/format';
 
 interface OpenRFQ {
   id: string;
@@ -175,6 +182,23 @@ const PRICE_REFUSAL_KEY: Record<PriceRefusalReason, string> = {
   ZERO_PRICE: 'rfqs.panel.price.refused.zero',
 };
 
+// CP-0 · W1 · 2e-b — the same discipline on the OTHER live-scored axis, and on
+// the constraint the buyer was never told about. Each refusal names its own rule
+// because each asks the supplier for something different.
+const LEAD_TIME_REFUSAL_KEY: Record<LeadTimeRefusalReason, string> = {
+  EMPTY_QTY: 'rfqs.panel.leadTime.refused.empty',
+  NOT_NUMERIC: 'rfqs.panel.leadTime.refused.notNumeric',
+  AMBIGUOUS_QTY: 'rfqs.panel.leadTime.refused.ambiguous',
+  FRACTIONAL_DAYS: 'rfqs.panel.leadTime.refused.fractional',
+  ZERO_LEAD_TIME: 'rfqs.panel.leadTime.refused.zero',
+};
+
+const MOQ_REFUSAL_KEY: Record<MoqRefusalReason, string> = {
+  NOT_NUMERIC: 'rfqs.panel.moq.refused.notNumeric',
+  AMBIGUOUS_QTY: 'rfqs.panel.moq.refused.ambiguous',
+  FRACTIONAL_UNITS: 'rfqs.panel.moq.refused.fractional',
+};
+
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
@@ -183,7 +207,9 @@ interface QuoteForm {
   unitPrice: string;
   currency: string;
   leadTimeNum: string;
-  leadTimeUnit: string;
+  // The unit is a CLOSED choice, not free text — it is half of what the typed
+  // lead-time number means, so the parse boundary takes it as a type.
+  leadTimeUnit: LeadTimeUnit;
   validUntil: string;
   moq: string;
   notes: string;
@@ -613,7 +639,10 @@ const toOpenRfq = (r: RFQ): OpenRFQ => {
     rfqNumber: r.rfqNumber,
     material: r.title,
     category: r.materialCategory,
-    qty: `${r.totalQty.toLocaleString()} ${r.uom}`,
+    // Grouped by the pinned id-ID formatter, not the browser's locale (2e-b) —
+    // the quantity the supplier multiplies their bid against reads the same way
+    // for everyone, and the same way as the total it produces.
+    qty: `${formatNumber(r.totalQty)} ${r.uom}`,
     // The quantity as the NUMBER it is, carried alongside its display form so
     // the total-price preview never has to parse `qty` back out of its own
     // formatting (CP-0 2e-a).
@@ -706,14 +735,28 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // the award engine ranked could be three different numbers.
   const bidPrice = readBidPrice(form.unitPrice);
 
+  // CP-0 · W1 · 2e-b — and the same, once, for the other two typed numbers. The
+  // lead time is read IN DAYS (the unit conversion lives inside the parse), so
+  // the number the supplier is judged on is the number that is stored.
+  const leadTime = readLeadTimeDays(form.leadTimeNum, form.leadTimeUnit);
+  const moq = readMoq(form.moq);
+
   // A price nobody can read has no total. The preview is only ASKABLE of a price
   // that exists — it never renders a product of a guessed value. The RFQ quantity
   // is the NUMBER it already is; it used to be re-parsed out of the formatted
   // display string ("200,000 PCS" → strip → 200000), a fact round-tripping
   // through its own presentation.
+  //
+  // Grouped by `formatNumber` (the pinned id-ID formatter every other money
+  // surface uses), NOT by `toLocaleString()`, whose separators follow whatever
+  // locale the supplier's BROWSER happens to carry. That was the last read
+  // inconsistency on this path: the preview could group with commas while the
+  // very same amount rendered with dots in My Quotes two seconds later — and
+  // comma-grouping is the exact token the price field above refuses as
+  // ambiguous, so the page was modelling a format it will not accept.
   const totalPrice =
     quotePanelRFQ && bidPrice.ok
-      ? (bidPrice.value * quotePanelRFQ.totalQty).toLocaleString()
+      ? formatNumber(bidPrice.value * quotePanelRFQ.totalQty)
       : '—';
 
   // REAL submit — dispatches t_quotation_submit through the command spine (the
@@ -738,8 +781,32 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       });
       return;
     }
+    // The lead-time gate, on the same footing (2e-b). It used to be a
+    // `parseFloat(...) > 0` presence check that only ever said "you left this
+    // blank" — so a lead time it could not read, and a lead time it read as
+    // something other than what the supplier meant, both fell through to a
+    // `Number(...) || 0` in the builder. Zero is not a lenient default on a
+    // scored axis: `scoreQuotations` cannot score it, and forfeits the axis.
+    if (!leadTime.ok) {
+      toast({
+        variant: 'error',
+        title: t('rfqs.toast.leadTimeRefused.title'),
+        description: t(LEAD_TIME_REFUSAL_KEY[leadTime.reason]),
+      });
+      return;
+    }
+    // MOQ is optional, so blank passes — but a typed minimum that cannot be read
+    // must not be silently dropped, which is precisely what used to happen to
+    // every MOQ, readable or not.
+    if (!moq.ok) {
+      toast({
+        variant: 'error',
+        title: t('rfqs.toast.moqRefused.title'),
+        description: t(MOQ_REFUSAL_KEY[moq.reason]),
+      });
+      return;
+    }
     const missing: string[] = [];
-    if (!form.leadTimeNum.trim() || !(parseFloat(form.leadTimeNum) > 0)) missing.push(t('rfqs.field.leadTime'));
     if (!form.validUntil.trim()) missing.push(t('rfqs.field.validUntil'));
     if (missing.length > 0) {
       toast({
@@ -755,11 +822,14 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       // The SAME parsed value the gate above judged — the builder can no longer
       // re-read the string and reach a different number (CP-0 §4).
       unitPrice: bidPrice.value,
-      // The form offers days | weeks; the entity stores days.
-      leadTimeDays:
-        form.leadTimeUnit === 'weeks'
-          ? String(Number(form.leadTimeNum) * 7)
-          : form.leadTimeNum,
+      // The form offers days | weeks; the entity stores days. The conversion
+      // already happened inside the ONE parse above, so the builder receives the
+      // whole number of days the gate judged — it can no longer re-read the raw
+      // text and reach a different promise (CP-0 §4).
+      leadTimeDays: leadTime.days,
+      // The constraint the buyer used to never receive (2e-FIND-02). `null` when
+      // the supplier stated no minimum — carried as absence, not as a 0.
+      moq: moq.units,
       validUntil: form.validUntil,
       notes: form.notes,
     });
@@ -981,9 +1051,14 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               <div>
                 <label className={labelClass}>{t('rfqs.panel.leadTime')}</label>
                 <div className="flex gap-2">
+                  {/* Ruling 6.2, second application. The placeholder was "0" —
+                      a field modelling the one value it must never store. */}
                   <input
-                    type="number"
-                    placeholder="0"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="14"
+                    aria-label={t('rfqs.field.leadTime')}
+                    aria-invalid={form.leadTimeNum.trim() !== '' && !leadTime.ok}
                     value={form.leadTimeNum}
                     onChange={(e) =>
                       setForm({ ...form, leadTimeNum: e.target.value })
@@ -993,7 +1068,10 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   <select
                     value={form.leadTimeUnit}
                     onChange={(e) =>
-                      setForm({ ...form, leadTimeUnit: e.target.value })
+                      setForm({
+                        ...form,
+                        leadTimeUnit: e.target.value as LeadTimeUnit,
+                      })
                     }
                     className={inputClass}
                     style={{ width: 100 }}
@@ -1002,11 +1080,21 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     <option value="weeks">{t('rfqs.unit.weeks')}</option>
                   </select>
                 </div>
+                {form.leadTimeNum.trim() !== '' && !leadTime.ok && (
+                  <div
+                    role="alert"
+                    data-testid="quote-leadtime-refusal"
+                    className="mt-1 text-[11px] text-danger"
+                  >
+                    {t(LEAD_TIME_REFUSAL_KEY[leadTime.reason])}
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>{t('rfqs.panel.validUntil')}</label>
                 <input
                   type="date"
+                  aria-label={t('rfqs.field.validUntil')}
                   value={form.validUntil}
                   onChange={(e) =>
                     setForm({ ...form, validUntil: e.target.value })
@@ -1019,12 +1107,24 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                   {t('rfqs.panel.moq')}
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder={t('rfqs.panel.moqPlaceholder')}
+                  aria-label={t('rfqs.field.moq')}
+                  aria-invalid={form.moq.trim() !== '' && !moq.ok}
                   value={form.moq}
                   onChange={(e) => setForm({ ...form, moq: e.target.value })}
                   className={inputClass}
                 />
+                {form.moq.trim() !== '' && !moq.ok && (
+                  <div
+                    role="alert"
+                    data-testid="quote-moq-refusal"
+                    className="mt-1 text-[11px] text-danger"
+                  >
+                    {t(MOQ_REFUSAL_KEY[moq.reason])}
+                  </div>
+                )}
               </div>
             </FormSection>
 

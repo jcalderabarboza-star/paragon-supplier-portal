@@ -16,6 +16,12 @@ export interface Quotation {
   // A foreign supplier prices in 'USD' — the FX-free, engine-native spread branch.
   currency?: 'IDR' | 'USD';
   leadTimeDays: number;
+  // The supplier's minimum order quantity, in the RFQ's unit of measure.
+  // Additive (CP-0 2e-b, closing 2e-FIND-02): ABSENT = the supplier stated no
+  // minimum of their own, which every pre-existing quote carries honestly — the
+  // form collected the field and dropped it before the payload was built, so
+  // there is no historical value to backfill and none is invented here.
+  moq?: number;
   paymentTermsOffered: string;
   validUntil: string;
   complianceScore: number;

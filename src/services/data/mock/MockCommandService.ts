@@ -451,6 +451,10 @@ const quotationTarget: CommandTarget = {
       totalPrice: unitPrice * (rfq?.totalQty ?? 0),
       leadTimeDays: num('leadTimeDays'),
       paymentTermsOffered: str('paymentTermsOffered'),
+      // MOQ persists ONLY when the supplier actually stated one (CP-0 2e-b).
+      // `num()` would turn an absent minimum into a stated 0 — a constraint
+      // nobody declared — so absence stays absence, as with `notes`.
+      ...(typeof payload.moq === 'number' ? { moq: payload.moq } : {}),
       validUntil: str('validUntil'),
       // DECLARED-SIMULATED axes — documented baseline, passed through the engine
       // and marked "Simulated" at read. Never zero, never a profile lookup.
