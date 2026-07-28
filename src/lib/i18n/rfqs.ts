@@ -106,7 +106,7 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.panel.leadTime.refused.ambiguous':
     'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
   'rfqs.panel.leadTime.refused.fractional':
-    'Lead time is a whole number of days — "2,5 weeks" is 17.5 days. Enter whole days (18) or whole weeks (3).',
+    'Lead time is a whole number of days — a part-day cannot be a delivery promise. Enter whole days (e.g. 18), or switch the unit and enter whole weeks (e.g. 3).',
   'rfqs.panel.leadTime.refused.zero':
     'Zero is not a lead time. Enter the number of days you need after the order is placed — a quote scored at zero days loses this criterion outright.',
   'rfqs.panel.validUntil': 'Quote valid until *',
@@ -265,7 +265,7 @@ export const rfqsId: Record<string, string> = {
   'rfqs.panel.leadTime.refused.ambiguous':
     'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
   'rfqs.panel.leadTime.refused.fractional':
-    'Waktu tunggu adalah bilangan bulat hari — "2,5 minggu" sama dengan 17,5 hari. Masukkan hari bulat (18) atau minggu bulat (3).',
+    'Waktu tunggu adalah bilangan bulat hari — sebagian hari bukan janji pengiriman. Masukkan hari bulat (mis. 18), atau ganti satuan dan masukkan minggu bulat (mis. 3).',
   'rfqs.panel.leadTime.refused.zero':
     'Nol bukan waktu tunggu. Masukkan jumlah hari yang Anda perlukan setelah pesanan dibuat — penawaran dengan nol hari kehilangan kriteria ini sepenuhnya.',
   'rfqs.panel.validUntil': 'Penawaran berlaku hingga *',
