@@ -41,6 +41,7 @@ import {
 } from '../services/query/hooks';
 import { useQuotationSubmit } from '../services/query/commandHooks';
 import { buildQuotationSubmitPayload } from './rfqs/quotationSubmitModel';
+import { readBidPrice, type PriceRefusalReason } from './rfqs/quotationPrice';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
 import { formatIDR, formatDate } from '../lib/format';
@@ -50,7 +51,10 @@ interface OpenRFQ {
   rfqNumber: string;
   material: string;
   category: string;
+  /** The RFQ quantity formatted for display ("200,000 PCS"). Presentation only. */
   qty: string;
+  /** The same quantity as a number — what the total-price preview multiplies. */
+  totalQty: number;
   deliveryLocation: string;
   requestedDelivery: string;
   deadline: string;
@@ -159,6 +163,16 @@ const CHANNEL_ICON: Record<string, LucideIcon> = {
   Email: Mail,
   WhatsApp: MessageCircle,
   API: Send,
+};
+
+// CP-0 · W1 · 2e-a — each bid-price refusal names its own rule. A supplier who
+// typed something unreadable, a supplier who typed nothing, and a supplier who
+// typed 0 have made three different mistakes and need three different answers.
+const PRICE_REFUSAL_KEY: Record<PriceRefusalReason, string> = {
+  EMPTY_QTY: 'rfqs.panel.price.refused.empty',
+  NOT_NUMERIC: 'rfqs.panel.price.refused.notNumeric',
+  AMBIGUOUS_QTY: 'rfqs.panel.price.refused.ambiguous',
+  ZERO_PRICE: 'rfqs.panel.price.refused.zero',
 };
 
 const inputClass =
@@ -600,6 +614,10 @@ const toOpenRfq = (r: RFQ): OpenRFQ => {
     material: r.title,
     category: r.materialCategory,
     qty: `${r.totalQty.toLocaleString()} ${r.uom}`,
+    // The quantity as the NUMBER it is, carried alongside its display form so
+    // the total-price preview never has to parse `qty` back out of its own
+    // formatting (CP-0 2e-a).
+    totalQty: r.totalQty,
     deliveryLocation: 'NDC Jatake 6',
     requestedDelivery: r.awardDeadline,
     deadline: r.responseDeadline,
@@ -681,13 +699,22 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
     });
   };
 
-  const totalPrice = useMemo(() => {
-    if (!quotePanelRFQ) return '—';
-    const up = parseFloat(form.unitPrice.replace(/,/g, ''));
-    const qty = parseFloat(quotePanelRFQ.qty.replace(/[^0-9]/g, ''));
-    if (!isNaN(up) && !isNaN(qty)) return (up * qty).toLocaleString();
-    return '—';
-  }, [form.unitPrice, quotePanelRFQ]);
+  // ── CP-0 · W1 · 2e-a — the ONE read of the bid price ──────────────────────
+  // The total preview, the submit gate, and the dispatched payload ALL read this
+  // one result. Before, each re-read `form.unitPrice` with its own recipe, so the
+  // number the supplier was shown, the number the gate approved, and the number
+  // the award engine ranked could be three different numbers.
+  const bidPrice = readBidPrice(form.unitPrice);
+
+  // A price nobody can read has no total. The preview is only ASKABLE of a price
+  // that exists — it never renders a product of a guessed value. The RFQ quantity
+  // is the NUMBER it already is; it used to be re-parsed out of the formatted
+  // display string ("200,000 PCS" → strip → 200000), a fact round-tripping
+  // through its own presentation.
+  const totalPrice =
+    quotePanelRFQ && bidPrice.ok
+      ? (bidPrice.value * quotePanelRFQ.totalQty).toLocaleString()
+      : '—';
 
   // REAL submit — dispatches t_quotation_submit through the command spine (the
   // ONE supplier-owned creation verb). Persists RAW FACTS only; the engine scores
@@ -696,8 +723,22 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // list. Replaces the retired local-state masquerade.
   const submitQuote = async () => {
     if (!quotePanelRFQ) return;
+    // The price gate fires FIRST and alone, and it BLOCKS: a price that cannot be
+    // read — or a zero, which reads fine but is not a bid — must never become a
+    // submitted quotation, because a submitted quotation is immediately a
+    // scoreable fact that re-anchors every rival's price score. The refusal is
+    // named rather than folded into the generic "required fields missing" list:
+    // "we cannot tell which number you mean" and "zero is not a price" ask the
+    // supplier for different things, and neither is "you left this blank".
+    if (!bidPrice.ok) {
+      toast({
+        variant: 'error',
+        title: t('rfqs.toast.priceRefused.title'),
+        description: t(PRICE_REFUSAL_KEY[bidPrice.reason]),
+      });
+      return;
+    }
     const missing: string[] = [];
-    if (!form.unitPrice.trim() || !(parseFloat(form.unitPrice) > 0)) missing.push(t('rfqs.field.unitPrice'));
     if (!form.leadTimeNum.trim() || !(parseFloat(form.leadTimeNum) > 0)) missing.push(t('rfqs.field.leadTime'));
     if (!form.validUntil.trim()) missing.push(t('rfqs.field.validUntil'));
     if (missing.length > 0) {
@@ -711,7 +752,9 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
     const payload = buildQuotationSubmitPayload({
       rfqId: quotePanelRFQ.id,
       supplierId,
-      unitPrice: form.unitPrice,
+      // The SAME parsed value the gate above judged — the builder can no longer
+      // re-read the string and reach a different number (CP-0 §4).
+      unitPrice: bidPrice.value,
       // The form offers days | weeks; the entity stores days.
       leadTimeDays:
         form.leadTimeUnit === 'weeks'
@@ -868,9 +911,20 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               <div>
                 <label className={labelClass}>{t('rfqs.panel.unitPrice')}</label>
                 <div className="flex gap-2">
+                  {/* Ruling 6.2 — `type="number"` filtered the input space to what
+                      `Number` happens to accept, which is what made the parse look
+                      optional: the browser silently ate "15.000,50" before any of
+                      our code could refuse it, and let the catastrophic "1.500"
+                      through untouched. Text + inputmode lets the supplier type
+                      what they actually type, and makes the parser load-bearing. */}
                   <input
-                    type="number"
-                    placeholder="0.00"
+                    type="text"
+                    inputMode="decimal"
+                    // Not "0" / "0.00": a placeholder must never model a value the
+                    // field refuses, and it must not model a separator either.
+                    placeholder="15000"
+                    aria-label={t('rfqs.field.unitPrice')}
+                    aria-invalid={form.unitPrice.trim() !== '' && !bidPrice.ok}
                     value={form.unitPrice}
                     onChange={(e) =>
                       setForm({ ...form, unitPrice: e.target.value })
@@ -890,6 +944,20 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     <option>EUR</option>
                   </select>
                 </div>
+                <div className="mt-1 text-[11px] text-text-tertiary">
+                  {t('rfqs.panel.price.hint')}
+                </div>
+                {/* An untouched blank does not nag; a TYPED price that cannot be
+                    read — or a zero, which can — says so, and says what to do. */}
+                {form.unitPrice.trim() !== '' && !bidPrice.ok && (
+                  <div
+                    role="alert"
+                    data-testid="quote-price-refusal"
+                    className="mt-1 text-[11px] text-danger"
+                  >
+                    {t(PRICE_REFUSAL_KEY[bidPrice.reason])}
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>

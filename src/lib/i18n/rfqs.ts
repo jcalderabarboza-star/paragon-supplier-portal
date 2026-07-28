@@ -85,6 +85,16 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.panel.step1.desc': 'Unit price drives total. Currency defaults to IDR.',
   'rfqs.panel.unitPrice': 'Unit price *',
   'rfqs.panel.totalPrice': 'Total price (auto-calculated)',
+  // — CP-0 · W1 · 2e-a — bid-price refusals (the ONE parse, on a ranking surface) —
+  'rfqs.panel.price.hint': 'Digits only — no thousands separators (e.g. 15000)',
+  'rfqs.panel.price.refused.empty':
+    'Enter your unit price — a blank field is not a price.',
+  'rfqs.panel.price.refused.notNumeric':
+    'That is not a price — type digits only, e.g. 15000.',
+  'rfqs.panel.price.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
+  'rfqs.panel.price.refused.zero':
+    'Zero is not a valid price. A quotation is an offer to sell — enter the price you are bidding.',
   'rfqs.panel.step2.eyebrow': 'Step 2',
   'rfqs.panel.step2.title': 'Timing & quantity',
   'rfqs.panel.step2.desc': 'Lead time and validity window.',
@@ -122,6 +132,7 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.toast.question.body': 'Paragon procurement team will respond via Web Portal.',
   'rfqs.toast.missing.title': 'Required fields missing',
   'rfqs.toast.missing.body': 'Please fill: {{fields}}.',
+  'rfqs.toast.priceRefused.title': 'Quotation not submitted — check the unit price',
   'rfqs.toast.submitted.title': 'Quotation submitted for {{rfq}}',
   'rfqs.toast.submitted.body': 'Paragon procurement team will review by {{date}}.',
   'rfqs.toast.submitFailed.title': 'Quotation could not be submitted',
@@ -214,6 +225,16 @@ export const rfqsId: Record<string, string> = {
   'rfqs.panel.step1.desc': 'Harga satuan menentukan total. Mata uang default IDR.',
   'rfqs.panel.unitPrice': 'Harga satuan *',
   'rfqs.panel.totalPrice': 'Harga total (dihitung otomatis)',
+  // — CP-0 · W1 · 2e-a — penolakan harga penawaran (satu-satunya parser) —
+  'rfqs.panel.price.hint': 'Angka saja — tanpa pemisah ribuan (misalnya 15000)',
+  'rfqs.panel.price.refused.empty':
+    'Masukkan harga satuan Anda — kolom kosong bukan berarti harga.',
+  'rfqs.panel.price.refused.notNumeric':
+    'Itu bukan harga — ketik angka saja, misalnya 15000.',
+  'rfqs.panel.price.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
+  'rfqs.panel.price.refused.zero':
+    'Nol bukan harga yang sah. Penawaran adalah tawaran untuk menjual — masukkan harga yang Anda tawarkan.',
   'rfqs.panel.step2.eyebrow': 'Langkah 2',
   'rfqs.panel.step2.title': 'Waktu & kuantitas',
   'rfqs.panel.step2.desc': 'Waktu tunggu dan jendela validitas.',
@@ -251,6 +272,7 @@ export const rfqsId: Record<string, string> = {
   'rfqs.toast.question.body': 'Tim pengadaan Paragon akan merespons melalui Portal Web.',
   'rfqs.toast.missing.title': 'Kolom wajib belum diisi',
   'rfqs.toast.missing.body': 'Harap isi: {{fields}}.',
+  'rfqs.toast.priceRefused.title': 'Penawaran tidak dikirim — periksa harga satuan',
   'rfqs.toast.submitted.title': 'Penawaran dikirim untuk {{rfq}}',
   'rfqs.toast.submitted.body': 'Tim pengadaan Paragon akan meninjau paling lambat {{date}}.',
   'rfqs.toast.submitFailed.title': 'Penawaran tidak dapat dikirim',

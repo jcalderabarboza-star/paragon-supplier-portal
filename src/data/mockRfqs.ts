@@ -223,4 +223,31 @@ export const mockRfqs: RFQ[] = [
     incoterms: 'CIF Jakarta',
     paymentTerms: 'Net 30',
   },
+  {
+    // CP-0 · W1 · 2e-a — the ONE Open RFQ the seeded supplier persona (sup-007)
+    // is invited to and has NOT yet quoted. Every other sup-007 invitation
+    // (rfq-002, rfq-005) already carries a quotation, so the open list pruned
+    // itself empty and the quote side-panel could not be opened by hand at all —
+    // the bid-price gate was unreachable and therefore unsmokeable. Purely
+    // additive: rfq-002 stays pruned, so the honest-read proof in
+    // SupplierRFQs.test.tsx is untouched.
+    id: 'rfq-010',
+    rfqNumber: 'RFQ-2026-010',
+    title: 'PET Bottle 250ml Flip-Top — Emina refill line',
+    materialCategory: 'Packaging',
+    materialIds: ['PK-PETB-8825'],
+    buyerId: 'buyer-001',
+    status: 'Open',
+    createdAt: '2026-04-20',
+    responseDeadline: '2026-05-15',
+    awardDeadline: '2026-05-25',
+    invitedSupplierIds: ['sup-007', 'sup-008'],
+    respondedSupplierIds: [],
+    totalQty: 120_000,
+    uom: 'PCS',
+    estimatedValue: 540_000_000,
+    currency: 'IDR',
+    incoterms: 'FCA Tangerang',
+    paymentTerms: 'Net 30',
+  },
 ];
