@@ -98,10 +98,10 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.panel.step2.eyebrow': 'Step 2',
   'rfqs.panel.step2.title': 'Timing & quantity',
   'rfqs.panel.step2.desc': 'Lead time and validity window.',
-  // — CP-0 · W1 · 2e-b-1 — the lead time: optional, four states, ack-gated 0 —
-  'rfqs.panel.leadTime': 'Lead time (optional)',
-  'rfqs.panel.leadTime.absent':
-    'No lead time stated — this quote will be compared on its other criteria, not scored on delivery speed.',
+  // — CP-0 · W1 · 2e-b-1a — the lead time: REQUIRED, three states, ack-gated 0 —
+  'rfqs.panel.leadTime': 'Lead time *',
+  'rfqs.panel.leadTime.refused.empty':
+    'State your lead time — a quotation without a delivery promise is an incomplete bid, and Paragon cannot compare it against one that has both.',
   'rfqs.panel.leadTime.refused.notNumeric':
     'That is not a lead time — type whole days as digits, e.g. 14, or leave it blank.',
   'rfqs.panel.leadTime.refused.ambiguous':
@@ -255,9 +255,9 @@ export const rfqsId: Record<string, string> = {
   'rfqs.panel.step2.eyebrow': 'Langkah 2',
   'rfqs.panel.step2.title': 'Waktu & kuantitas',
   'rfqs.panel.step2.desc': 'Waktu tunggu dan jendela validitas.',
-  'rfqs.panel.leadTime': 'Waktu tunggu (opsional)',
-  'rfqs.panel.leadTime.absent':
-    'Waktu tunggu tidak dinyatakan — penawaran ini akan dibandingkan berdasarkan kriteria lain, bukan dinilai pada kecepatan pengiriman.',
+  'rfqs.panel.leadTime': 'Waktu tunggu *',
+  'rfqs.panel.leadTime.refused.empty':
+    'Nyatakan waktu tunggu Anda — penawaran tanpa janji pengiriman adalah penawaran yang tidak lengkap, dan Paragon tidak dapat membandingkannya dengan penawaran yang memiliki keduanya.',
   'rfqs.panel.leadTime.refused.notNumeric':
     'Itu bukan waktu tunggu — ketik jumlah hari bulat sebagai angka, misalnya 14, atau kosongkan.',
   'rfqs.panel.leadTime.refused.ambiguous':

@@ -1,40 +1,53 @@
-// CP-0 · W1 · 2e-b-1 — the lead-time read, headlessly, in all four states.
+// CP-0 · W1 · 2e-b-1a — the lead-time read, headlessly, in all three states.
 //
 // At the PURE layer for the reason Correction-2 keeps insisting on: the live
 // field was `type="number"`, and jsdom implements the number-input
 // value-sanitization algorithm faithfully — so "abc" arrived as "" and the
 // refusal under test was not merely untested, it was UNTYPEABLE. Worse, with
-// blank now legal, a browser-erased "abc" would look exactly like an honest
-// absence. Testing the primitive proves each state regardless of the element,
+// blank refusing for its OWN reason, a browser-erased "abc" would be reported to
+// the supplier as "state a lead time" when what they need to fix is their
+// typing. Testing the primitive proves each state regardless of the element,
 // and every negation is paired with the positive twin that shows the refusal is
 // a rule rather than a broken field.
 
 import { describe, it, expect } from 'vitest';
 import { readLeadTimeDays } from './quotationLeadTime';
 
-const ok = (days: number | null, ack = false) => ({
+const ok = (days: number, ack = false) => ({
   ok: true,
   days,
   requiresSameDayAck: ack,
 });
 
-describe('readLeadTimeDays — four states, and no fabricated number in any of them', () => {
-  describe('BLANK → absent (legal, and NOT a score)', () => {
-    it('reads an empty field as an absence, never as a zero', () => {
-      // The whole batch in one assertion: `days` is null, not 0. On the
-      // absolute axis a 0 is 100 — the best possible lead-time score — so a
-      // blank that resolved to 0 would make silence the strongest promise on
-      // the form.
-      expect(readLeadTimeDays('', 'days')).toEqual(ok(null));
-      expect(readLeadTimeDays('   ', 'weeks')).toEqual(ok(null));
+describe('readLeadTimeDays — three states, and no fabricated number in any of them', () => {
+  // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
+  // 2e-b-1 asserted here that a blank read as `{ok: true, days: null}` — a legal
+  // absence the scoring engine dropped an axis for. That was arithmetically
+  // honest and, per JJ's commercial ruling, wrong: a price with no delivery
+  // promise is an INCOMPLETE bid, and ranking it on price alone hides the
+  // delivery risk that can make the cheapest quote the worst outcome. Those
+  // three specs are replaced below by their opposites. Nothing about them was
+  // buggy — the policy changed.
+  describe('BLANK → refused (the field is required again)', () => {
+    it('refuses an empty field by NAME — and still never as a zero', () => {
+      // The half that did NOT change: a blank must not become 0. On the
+      // absolute axis 0 is 100, so a defaulted blank would be the strongest
+      // promise on the form. It is now refused rather than made absent, but it
+      // is still not a number.
+      expect(readLeadTimeDays('', 'days')).toEqual({ ok: false, reason: 'EMPTY_QTY' });
+      expect(readLeadTimeDays('   ', 'weeks')).toEqual({ ok: false, reason: 'EMPTY_QTY' });
     });
 
-    it('is NOT a refusal — the field is optional', () => {
-      expect(readLeadTimeDays('', 'days').ok).toBe(true);
+    it('is a DIFFERENT refusal from an unreadable one — the supplier is told which rule', () => {
+      // "You must state a lead time" and "we cannot read what you typed" ask
+      // for different things.
+      expect(readLeadTimeDays('', 'days')).not.toEqual(readLeadTimeDays('abc', 'days'));
     });
 
-    it('is a DIFFERENT outcome from a stated 0', () => {
-      expect(readLeadTimeDays('', 'days')).not.toEqual(readLeadTimeDays('0', 'days'));
+    it('POSITIVE TWIN — the moment a lead time IS stated, it is accepted', () => {
+      expect(readLeadTimeDays('4', 'days')).toEqual(ok(4));
+      // Including the one value that used to be confusable with the blank.
+      expect(readLeadTimeDays('0', 'days')).toEqual(ok(0, true));
     });
   });
 
@@ -121,7 +134,8 @@ describe('readLeadTimeDays — four states, and no fabricated number in any of t
           requiresSameDayAck: false,
         });
       }
-      expect(readLeadTimeDays('', 'days')).toMatchObject({ requiresSameDayAck: false });
+      // A blank owes nothing either — it never gets far enough to.
+      expect(readLeadTimeDays('', 'days').ok).toBe(false);
     });
   });
 });

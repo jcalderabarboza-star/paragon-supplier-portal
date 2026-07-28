@@ -178,19 +178,31 @@ describe('SupplierRFQs — the lead time is read once, in four honest states', (
   const setLead = (v: string) =>
     fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: v } });
 
-  it('BLANK — says so plainly, does not refuse, and submits an ABSENCE not a zero', async () => {
+  // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
+  // This spec asserted the opposite: that a blank showed a neutral "No lead time
+  // stated…" note, left submit ENABLED, and minted a quotation storing an
+  // absence. JJ's commercial ruling makes an incomplete bid unsubmittable.
+  it('BLANK — refused as a required field, submit disabled, nothing minted', async () => {
     await openQuotePanel();
-    expect(screen.getByTestId('quote-leadtime-absent')).toHaveTextContent(
-      /No lead time stated/i,
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /State your lead time/i,
     );
-    expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
-    expect(submitBtn()).toBeEnabled();
+    expect(screen.queryByTestId('quote-leadtime-absent')).not.toBeInTheDocument();
+    expect(submitBtn()).toBeDisabled();
 
     fireEvent.click(submitBtn());
-    await waitFor(() => expect(quotationStore.forRfq('rfq-010')).toHaveLength(1));
-    // THE LOCK: silence stored as silence. A 0 here is the best possible
-    // lead-time score, so this is the assertion the whole state exists for.
-    expect(quotationStore.forRfq('rfq-010')[0].leadTimeDays).toBeUndefined();
+    await waitFor(() => expect(submitBtn()).toBeInTheDocument());
+    // THE LOCK: nothing minted — and in particular no 0, which on the absolute
+    // axis is the BEST possible lead-time score.
+    expect(quotationStore.forRfq('rfq-010')).toHaveLength(0);
+  });
+
+  it('POSITIVE TWIN — stating one clears the refusal and re-enables submit', async () => {
+    await openQuotePanel();
+    expect(submitBtn()).toBeDisabled();
+    setLead('4');
+    expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
+    expect(submitBtn()).toBeEnabled();
   });
 
   it('UNREADABLE — refused on the field, submit disabled, nothing minted', async () => {

@@ -69,38 +69,29 @@ describe('scoreQuotations — LIVE axes derive from the quote set', () => {
     expect(slow.leadTimeScore).toBe(0);
   });
 
-  describe('an UNSTATED lead time is absent, not zero (2e-b-1)', () => {
-    it('scores null — never a number nobody offered', () => {
-      const [none] = scoreQuotations([{ ...A, leadTimeDays: null }]);
-      expect(none.leadTimeScore).toBeNull();
-    });
+  // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
+  // 2e-b-1 had a whole describe block here — "an UNSTATED lead time is absent,
+  // not zero" — asserting that an omitted lead time scored `null` and had its
+  // axis dropped from the composite (weights renormalised). It was correct
+  // arithmetic for the policy of the time. JJ's commercial ruling removed the
+  // policy: a lead time is REQUIRED at quote stage, because a price with no
+  // delivery promise is an incomplete bid, so there is no unstated case left
+  // for the engine to be honest about. The block is retired rather than fixed;
+  // the guarantee it protected now lives at the input gate, where a blank is
+  // refused before it can become a quotation at all
+  // (`quotationLeadTime.test.ts` → "BLANK → refused").
+  it('a nonsense lead time scores the WORST value, never the best', () => {
+    // Nothing in the UI can produce one (the parser rejects the sign), but the
+    // engine is public and the axis is absolute — an unguarded negative would
+    // sail past `100 - days×2` into a score above 100.
+    const [neg] = scoreQuotations([{ ...A, leadTimeDays: -5 }]);
+    expect(neg.leadTimeScore).toBe(0);
+    expect(neg.leadTimeScore).not.toBe(100);
+  });
 
-    it('THE LOCK — silence is NOT the best score', () => {
-      // The defect this axis change would otherwise have created: on an
-      // absolute scale, a defaulted 0 is 100. An absent lead time must not be
-      // reachable as the maximum.
-      const [none] = scoreQuotations([{ ...A, leadTimeDays: null }]);
-      expect(none.leadTimeScore).not.toBe(100);
-      expect(none.leadTimeScore).not.toBe(0); // and not the worst either
-    });
-
-    it('drops the axis from the composite instead of inventing a value', () => {
-      // Weights renormalise over the axes actually stated, so the quote is
-      // judged on price/compliance/reliability — neither rewarded nor punished
-      // for the silence.
-      const [none] = scoreQuotations([{ ...A, leadTimeDays: null }]);
-      const w = CRITERIA_WEIGHTS;
-      const expected = Math.round(
-        (100 * w.price + 90 * w.compliance + 80 * w.reliability) /
-          (w.price + w.compliance + w.reliability),
-      );
-      expect(none.composite).toBe(expected);
-    });
-
-    it('POSITIVE TWIN — stating a lead time still scores it normally', () => {
-      const [stated] = scoreQuotations([A]);
-      expect(stated.leadTimeScore).toBe(80);
-    });
+  it('POSITIVE TWIN — a stated lead time scores normally', () => {
+    const [stated] = scoreQuotations([A]);
+    expect(stated.leadTimeScore).toBe(80);
   });
 
   // Retitled from "a single quote is trivially best in its own set
@@ -125,12 +116,6 @@ describe('scoreQuotations — LIVE axes derive from the quote set', () => {
     expect(Number.isFinite(z.composite)).toBe(true);
   });
 
-  it('a negative lead time is not a promise — it scores as absent, never as best', () => {
-    // Nothing in the UI can produce one (the parser rejects the sign), but the
-    // engine is public: a nonsense value must not fall through to 100.
-    const [neg] = scoreQuotations([{ ...A, leadTimeDays: -5 }]);
-    expect(neg.leadTimeScore).toBeNull();
-  });
 });
 
 describe('scoreQuotations — external axes are declared SIMULATED, passed through untouched', () => {

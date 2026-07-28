@@ -87,12 +87,16 @@ export const COMPOSITE_LIVENESS: Liveness = livenessFor(CRITERIA_WEIGHTS);
 export const LEAD_TIME_PENALTY_PER_DAY = 2;
 
 /**
- * The lead-time axis for ONE quote. `null` in ⇒ `null` out: an omitted optional
- * lead time is scored on NO axis at all (see `scoreQuotations`), never on a
- * fabricated one — silence must not be readable as "same day".
+ * The lead-time axis for ONE quote.
+ *
+ * There is no absent case (2e-b-1a): a lead time is required at quote stage, so
+ * every scorable quote states one. A non-finite or negative value cannot come
+ * from the UI (the parser rejects the sign) and is scored 0 — the WORST value —
+ * rather than falling through to the 100 that `100 - days×2` would otherwise
+ * hand it. Nonsense must never be the best score on a ranked axis.
  */
-export function leadTimeScoreFor(days: number | null | undefined): number | null {
-  if (days == null || !Number.isFinite(days) || days < 0) return null;
+export function leadTimeScoreFor(days: number): number {
+  if (!Number.isFinite(days) || days < 0) return 0;
   return Math.max(0, 100 - days * LEAD_TIME_PENALTY_PER_DAY);
 }
 
@@ -100,8 +104,8 @@ export function leadTimeScoreFor(days: number | null | undefined): number | null
 export interface ScorableQuote {
   id: string;
   unitPrice: number;
-  /** OPTIONAL (2e-b-1). Absent = the supplier stated no lead time. */
-  leadTimeDays?: number | null;
+  /** REQUIRED (2e-b-1a) — an incomplete bid never reaches the comparison. */
+  leadTimeDays: number;
   complianceScore: number;
   reliabilityScore: number;
 }
@@ -110,14 +114,8 @@ export interface QuoteScore {
   quoteId: string;
   /** LIVE — ratio-to-best over the RFQ's quote set (cheapest = 100). */
   priceScore: number;
-  /**
-   * LIVE — absolute linear scale, `max(0, 100 - days×2)`; same-day = 100.
-   * `null` when the supplier stated no lead time: the axis is DROPPED from that
-   * quote's composite (weights renormalise over the axes actually stated), so
-   * an omitted lead time is neither rewarded nor punished. A number here would
-   * be one nobody offered.
-   */
-  leadTimeScore: number | null;
+  /** LIVE — absolute linear scale, `max(0, 100 - days×2)`; same-day = 100. */
+  leadTimeScore: number;
   /** SIMULATED — the input value, passed through untouched. */
   complianceScore: number;
   /** SIMULATED — the input value, passed through untouched. */
@@ -159,17 +157,15 @@ export function scoreQuotations(
 
   const scored: QuoteScore[] = quotes.map((q) => {
     const priceScore = ratioToBest(q.unitPrice, minPrice);
-    // Absolute, not ratio-to-best (2e-b-1) — and `null` when unstated.
+    // Absolute, not ratio-to-best (2e-b-1). Every quote states a lead time
+    // (2e-b-1a), so all four axes are always present and `totalWeight` is 1 —
+    // the renormalising form is kept because it is what makes a custom `weights`
+    // policy that zeroes an axis behave sanely, not because an axis can be
+    // missing.
     const leadTimeScore = leadTimeScoreFor(q.leadTimeDays);
-    // The composite rolls up only the axes this quote actually HAS, renormalised
-    // over their weights. With all four present the divisor is 1 and this is the
-    // original arithmetic exactly; with the lead time unstated the quote is
-    // judged on price/compliance/reliability rather than on an invented number.
     const axes: readonly (readonly [number, number])[] = [
       [priceScore, weights.price],
-      ...(leadTimeScore === null
-        ? []
-        : ([[leadTimeScore, weights.leadTime]] as const)),
+      [leadTimeScore, weights.leadTime],
       [q.complianceScore, weights.compliance],
       [q.reliabilityScore, weights.reliability],
     ];

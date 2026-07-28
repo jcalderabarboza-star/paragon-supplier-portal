@@ -109,12 +109,7 @@ const buildSubmittedQuotes = (
       submittedDate: formatDate(q.submittedAt),
       unitPrice: formatIDR(q.unitPrice),
       totalPrice: formatIDR(q.totalPrice),
-      // Optional since 2e-b-1 — a quote that stated no lead time renders the
-      // em dash every other absent fact on this portal uses, never "0 days".
-      leadTime:
-        q.leadTimeDays == null
-          ? '—'
-          : `${q.leadTimeDays} ${t('rfqs.unit.days')}`,
+      leadTime: `${q.leadTimeDays} ${t('rfqs.unit.days')}`,
       validUntil: formatDate(q.validUntil),
       status: q.status,
     };
@@ -185,9 +180,10 @@ const PRICE_REFUSAL_KEY: Record<PriceRefusalReason, string> = {
   ZERO_PRICE: 'rfqs.panel.price.refused.zero',
 };
 
-// CP-0 · W1 · 2e-b-1 — the lead-time refusals. Blank is NOT among them: an
-// omitted optional field is an answer, not a mistake.
+// CP-0 · W1 · 2e-b-1a — the lead-time refusals. `EMPTY_QTY` is BACK: a blank is
+// a refusal again, because a bid with no delivery promise is incomplete.
 const LEAD_TIME_REFUSAL_KEY: Record<LeadTimeRefusalReason, string> = {
+  EMPTY_QTY: 'rfqs.panel.leadTime.refused.empty',
   NOT_NUMERIC: 'rfqs.panel.leadTime.refused.notNumeric',
   AMBIGUOUS_QTY: 'rfqs.panel.leadTime.refused.ambiguous',
   FRACTIONAL_DAYS: 'rfqs.panel.leadTime.refused.fractional',
@@ -1076,17 +1072,10 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     <option value="weeks">{t('rfqs.unit.weeks')}</option>
                   </select>
                 </div>
-                {/* BLANK — stated as the absence it is, so nobody reads silence
-                    as a promise. Not a refusal: no danger styling, no block. */}
-                {leadTime.ok && leadTime.days === null && (
-                  <div
-                    data-testid="quote-leadtime-absent"
-                    className="mt-1 text-[11px] text-text-tertiary"
-                  >
-                    {t('rfqs.panel.leadTime.absent')}
-                  </div>
-                )}
-                {!leadTime.ok && (
+                {/* An untouched blank does not nag on sight — it refuses at the
+                    gate, and says so on the field once the supplier has engaged
+                    with the form (the price precedent, 2e-a). */}
+                {!leadTime.ok && form.unitPrice.trim() !== '' && (
                   <div
                     role="alert"
                     data-testid="quote-leadtime-refusal"

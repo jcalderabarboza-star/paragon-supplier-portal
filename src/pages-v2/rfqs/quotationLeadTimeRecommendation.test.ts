@@ -147,20 +147,28 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
     expect(recommended()).toBe(INCUMBENT);
   });
 
-  it('THE LOCK — a BLANK lead time submits, but does NOT take the recommendation', async () => {
-    // The state the ruling is most precise about: blank is legal, and blank is
-    // not best. On an absolute axis where 0 = 100, a blank that defaulted to 0
-    // would hand the award to the supplier who said the least.
+  // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
+  // This spec asserted that a BLANK lead time SUBMITS (storing an absence,
+  // scoring `null`, and not taking the recommendation). Under JJ's commercial
+  // ruling a blank no longer submits at all: an incomplete bid does not enter
+  // the comparison. The guarantee it protected — that silence never wins — is
+  // strictly stronger now, because silence never gets a row.
+  it('THE LOCK — a BLANK lead time is REFUSED; an incomplete bid never enters the comparison', async () => {
+    const before = recommended();
     const res = await submitTypedLeadTime('');
+
+    expect(res).toBeNull(); // never dispatched
+    expect(quotationStore.forRfq(RFQ_ID)).toHaveLength(1); // nothing minted
+    expect(recommended()).toBe(before);
+    expect(recommended()).toBe(INCUMBENT); // and it is the RIGHT supplier
+  });
+
+  it('POSITIVE TWIN — the same bid WITH a lead time is compared normally', async () => {
+    // The refusal is about completeness, not about disliking the supplier.
+    const res = await submitTypedLeadTime('3');
     expect(res!.status).toBe('done');
-
-    const minted = quotationStore.get(res!.entityId!)!;
-    expect(minted.leadTimeDays).toBeUndefined(); // absence, not 0
-
-    const scored = scoreQuotations(scorableSet());
-    const mine = scored.find((s) => s.quoteId === res!.entityId)!;
-    expect(mine.leadTimeScore).toBeNull(); // scored on no lead-time axis at all
-    expect(recommended()).toBe(INCUMBENT); // silence did not win
+    expect(quotationStore.forRfq(RFQ_ID)).toHaveLength(2);
+    expect(recommended()).toBe(res!.entityId);
   });
 
   it('COUNTERFACTUAL — the retired truncation WOULD have taken the recommendation', async () => {

@@ -15,11 +15,10 @@ export interface Quotation {
   // leg): absent = 'IDR', the implicit legacy default every existing quote carries.
   // A foreign supplier prices in 'USD' — the FX-free, engine-native spread branch.
   currency?: 'IDR' | 'USD';
-  // OPTIONAL since CP-0 2e-b-1. Absent = the supplier stated no lead time; the
-  // scoring engine drops the axis for that quote rather than inventing a value
-  // (an absent promise must never read as "same day"). Every seeded quote states
-  // one, so nothing is backfilled.
-  leadTimeDays?: number;
+  // REQUIRED (2e-b-1a reversal). Briefly optional in 2e-b-1; a quotation with
+  // no delivery promise is an incomplete bid, so the dispatcher's requiredFields
+  // guarantees it is present on every quote that can ever be minted.
+  leadTimeDays: number;
   paymentTermsOffered: string;
   validUntil: string;
   complianceScore: number;

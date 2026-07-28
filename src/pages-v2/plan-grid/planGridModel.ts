@@ -92,8 +92,7 @@ export interface AwardScenarioRow extends SubScores {
   readonly aiRecommended: boolean;
   readonly unitPrice: number;
   readonly totalPrice: number;
-  /** Optional since 2e-b-1 — absent when the supplier stated no lead time. */
-  readonly leadTimeDays?: number;
+  readonly leadTimeDays: number;
 }
 
 /** Project the seam quotations for one RFQ into read-only award rows. */
