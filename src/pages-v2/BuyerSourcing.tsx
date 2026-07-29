@@ -55,6 +55,8 @@ import {
 import {
   buildRfqCreatePayload,
   normalizeRfqCreateDraft,
+  readRfqBudget,
+  readRfqTotalQty,
   type RfqDraftRefusal,
 } from './sourcing/rfqCreateModel';
 import type { QtyRefusalReason } from '../lib/localeNumber';
@@ -806,6 +808,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // numbers — and "2,400" could be all three at once as NaN.
   const rfqNumbers = useMemo(() => normalizeRfqCreateDraft(draft), [draft]);
 
+  // The two FIELD-LEVEL reads (2e-b-4b). Same parser, same strings — these
+  // cannot disagree with the composite above; they exist because the composite
+  // is sequential and so can only ever name one field at a time. On a fresh
+  // wizard the quantity is blank, so without these the budget input could never
+  // report its own refusal.
+  const qtyRead = useMemo(() => readRfqTotalQty(draft.totalQty), [draft.totalQty]);
+  const budgetRead = useMemo(() => readRfqBudget(draft.budget), [draft.budget]);
+
   const isStepValid = (step: number): boolean => {
     if (step === 0) {
       return (
@@ -960,13 +970,33 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
                 {t('sourcing.wizard.field.budget')}
               </label>
+              {/* Ruling 6.2 — and load-bearing here in the worst way, because a
+                  blank is LEGAL on this field. `type="number"` erases a token it
+                  cannot parse to "" before React sees it, so the browser would
+                  quietly convert a budget the buyer typed into the "not
+                  specified" default with nobody told — the same silent
+                  downgrade the MOQ field was rescued from in 2e-b-2. */}
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={draft.budget}
                 onChange={(e) => updateDraft('budget', e.target.value)}
                 placeholder={t('sourcing.wizard.placeholder.budget')}
+                aria-label={t('sourcing.wizard.field.budget')}
+                aria-invalid={!budgetRead.ok}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
+              {/* An untouched blank does not nag — it is this field's answer,
+                  so `readRfqBudget` never refuses one. */}
+              {!budgetRead.ok && (
+                <div
+                  role="alert"
+                  data-testid="rfq-budget-refusal"
+                  className="mt-1 text-[11px] text-danger"
+                >
+                  {t(RFQ_BUDGET_REFUSAL_KEY[budgetRead.reason])}
+                </div>
+              )}
             </div>
           </div>
           <div>
@@ -1006,14 +1036,37 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 {t('sourcing.wizard.field.totalQty')}{' '}
                 <span className="text-danger">*</span>
               </label>
+              {/* Ruling 6.2 — the parse CANNOT fire behind `type="number"`,
+                  which is what 2e-b-4a's smoke proved on a live id-ID browser:
+                  "2.400" reached Review as 2,4 because the number input had
+                  already rewritten the value per browser locale before React
+                  saw it. The gate cannot refuse what it never sees. `min="0"`
+                  goes with it — it was part of the number-input contract and
+                  the positivity rule now lives in `isStepValid`, where it is
+                  actually enforced. `type="text"` returns `.value` VERBATIM in
+                  every locale, which is what makes the parser load-bearing. */}
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={draft.totalQty}
                 onChange={(e) => updateDraft('totalQty', e.target.value)}
                 placeholder={t('sourcing.wizard.placeholder.qty')}
+                aria-label={t('sourcing.wizard.field.totalQty')}
+                aria-invalid={draft.totalQty.trim() !== '' && !qtyRead.ok}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
+              {/* An untouched blank does not nag on sight — it refuses at the
+                  gate (Next stays disabled) and says so on the field once the
+                  buyer has typed something (the 2e-a price precedent). */}
+              {draft.totalQty.trim() !== '' && !qtyRead.ok && (
+                <div
+                  role="alert"
+                  data-testid="rfq-qty-refusal"
+                  className="mt-1 text-[11px] text-danger"
+                >
+                  {t(RFQ_QTY_REFUSAL_KEY[qtyRead.reason])}
+                </div>
+              )}
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">

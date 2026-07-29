@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   buildRfqCreatePayload,
   normalizeRfqCreateDraft,
+  readRfqBudget,
+  readRfqTotalQty,
   type RfqCreateDraft,
 } from './rfqCreateModel';
 
@@ -215,5 +217,57 @@ describe('buildRfqCreatePayload — the draft becomes a t_rfq_create payload', (
     const payload = payloadFor(draft);
     expect(typeof payload.totalQty).toBe('number');
     expect(Number.isNaN(payload.totalQty)).toBe(false);
+  });
+});
+
+// ── CP-0 · W1 · 2e-b-4b — the per-field reads ────────────────────────────────
+//
+// The composite above is SEQUENTIAL: it names the first field that refuses,
+// which is right for the gate and the payload. It is wrong for field-level
+// display, and the gap was caught by a surface spec, not by inspection: on a
+// fresh wizard the quantity is blank, so a composite-only surface can NEVER
+// show a budget refusal — a buyer who typed an unreadable budget first would be
+// told nothing about it at all.
+//
+// These are the same parser on the same string, so they cannot disagree with
+// the composite. What 2e-a retired was three DIFFERENT recipes, not one recipe
+// asked per field.
+describe('readRfqTotalQty / readRfqBudget — each field answers for itself', () => {
+  it('the budget refuses INDEPENDENTLY of a blank quantity (the display gap)', () => {
+    // The composite, asked the same question, can only name the quantity.
+    const composite = normalizeRfqCreateDraft({ ...draft, totalQty: '', budget: 'TBC' });
+    expect(composite.ok).toBe(false);
+    if (!composite.ok) expect(composite.field).toBe('totalQty');
+
+    // The field read still reports the budget — which is what the input renders.
+    const budget = readRfqBudget('TBC');
+    expect(budget.ok).toBe(false);
+    if (!budget.ok) expect(budget.reason).toBe('NOT_NUMERIC');
+  });
+
+  it('the quantity read refuses a blank — the field is required', () => {
+    const out = readRfqTotalQty('');
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.reason).toBe('EMPTY_QTY');
+  });
+
+  it('the budget read ACCEPTS a blank as an absence — never a refusal, never a 0', () => {
+    const out = readRfqBudget('');
+    expect(out.ok).toBe(true);
+    if (out.ok) {
+      expect(out.value).toBeUndefined();
+      expect(out.value).not.toBe(0);
+    }
+  });
+
+  it('both reads agree with the composite on a readable draft', () => {
+    const composite = normalizeRfqCreateDraft(draft);
+    const qty = readRfqTotalQty(draft.totalQty);
+    const budget = readRfqBudget(draft.budget);
+    expect(composite.ok && qty.ok && budget.ok).toBe(true);
+    if (composite.ok && qty.ok && budget.ok) {
+      expect(qty.value).toBe(composite.value.totalQty);
+      expect(budget.value).toBe(composite.value.estimatedValue);
+    }
   });
 });

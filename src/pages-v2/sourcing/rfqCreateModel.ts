@@ -122,8 +122,22 @@ export interface NormalizedRfqNumbers {
   readonly estimatedValue?: number;
 }
 
+/** One field's read. Exported so a surface can report EACH input independently
+ *  — see the note on `readRfqBudget`. */
+export type TotalQtyOutcome =
+  | { readonly ok: true; readonly value: number }
+  | { readonly ok: false; readonly reason: QtyRefusalReason };
+
+export type BudgetOutcome =
+  /** `value: undefined` is the STATED ABSENCE — "not specified" — not a zero. */
+  | { readonly ok: true; readonly value?: number }
+  | { readonly ok: false; readonly reason: Exclude<QtyRefusalReason, 'EMPTY_QTY'> };
+
 /**
- * Normalise the wizard draft's numbers — THE single parse for this object.
+ * Read the total quantity. REQUIRED, so a blank arrives as `EMPTY_QTY` and is
+ * refused like any other unreadable quantity — emptiness is not an answer here.
+ * (Contrast `readRfqBudget`: the same emptiness, the opposite ruling, each
+ * stated where it applies.)
  *
  * No `hint`: a buyer's own form carries no origin convention, so a token legal
  * under both readings ("2.400" = 2400 or 2.4) refuses rather than picking one.
@@ -131,30 +145,67 @@ export interface NormalizedRfqNumbers {
  * Negative input needs no branch: `normalizeQty` rejects a leading `-` as
  * NOT_NUMERIC before any convention is considered.
  */
+export function readRfqTotalQty(raw: string): TotalQtyOutcome {
+  const parsed = normalizeQty(raw);
+  return parsed.ok
+    ? { ok: true, value: parsed.value }
+    : { ok: false, reason: parsed.reason };
+}
+
+/**
+ * Read the estimated budget. OPTIONAL: a blank is the field's own documented
+ * answer and resolves to an ABSENCE, never a fabricated Rp 0.
+ *
+ * WHY THE TWO FIELDS ARE READ SEPARATELY (2e-b-4b). The composite below is
+ * sequential — it reports the FIRST field that refuses — which is right for the
+ * gate and the payload, where the only question is "may this proceed". It is
+ * wrong for FIELD-LEVEL display: the quantity is blank on a fresh wizard, so a
+ * composite-only surface could never show a budget refusal at all, and a buyer
+ * who typed an unreadable budget first would be told nothing about it. These
+ * per-field reads exist so each input can answer for itself.
+ *
+ * This is not a second recipe: every read here and in the composite goes through
+ * the SAME `normalizeQty` on the SAME string, so no two of them can disagree.
+ * What 2e-a retired was three DIFFERENT parsers, not one parser asked twice.
+ */
+export function readRfqBudget(raw: string): BudgetOutcome {
+  const parsed = normalizeQty(raw);
+  if (parsed.ok) return { ok: true, value: parsed.value };
+  // The one refusal this field converts into a legal answer. A buyer who has
+  // not costed the event yet leaves the box alone, and the platform must not
+  // invent a budget of nothing for them.
+  if (parsed.reason === 'EMPTY_QTY') return { ok: true };
+  return { ok: false, reason: parsed.reason };
+}
+
+/**
+ * Normalise the wizard draft's numbers — the composite the GATE and the PAYLOAD
+ * read. Built from the two per-field reads above, so the field-level messages
+ * and the dispatch decision can never come from different judgements.
+ *
+ * Sequential by design: it names the FIRST field that refuses, because its
+ * caller only needs to know whether the draft may proceed.
+ */
 export function normalizeRfqCreateDraft(
   draft: RfqCreateDraft,
 ): RfqDraftOutcome<NormalizedRfqNumbers> {
-  const total = normalizeQty(draft.totalQty);
-  // A blank arrives as EMPTY_QTY and is refused like any other unreadable
-  // quantity — the field is required, so emptiness is a refusal here, not an
-  // answer. (Contrast the budget below: the same emptiness, the opposite
-  // ruling, each stated where it applies.)
+  const total = readRfqTotalQty(draft.totalQty);
   if (!total.ok) {
     return { ok: false, reason: total.reason, field: 'totalQty' };
   }
 
-  const budget = normalizeQty(draft.budget);
+  const budget = readRfqBudget(draft.budget);
   if (!budget.ok) {
-    // The one refusal this field converts into a legal answer. A buyer who has
-    // not costed the event yet leaves the box alone, and the platform must not
-    // invent a budget of nothing for them.
-    if (budget.reason === 'EMPTY_QTY') {
-      return { ok: true, value: { totalQty: total.value } };
-    }
     return { ok: false, reason: budget.reason, field: 'estimatedValue' };
   }
 
-  return { ok: true, value: { totalQty: total.value, estimatedValue: budget.value } };
+  return {
+    ok: true,
+    value: {
+      totalQty: total.value,
+      ...(budget.value === undefined ? {} : { estimatedValue: budget.value }),
+    },
+  };
 }
 
 /**
