@@ -59,6 +59,10 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.quotes.col.unitPrice': 'Unit price',
   'rfqs.quotes.col.totalPrice': 'Total price',
   'rfqs.quotes.col.leadTime': 'Lead time (est.)',
+  // 2e-b-2 — the supplier reads their own stated minimum back; absent renders
+  // the default it means, never a 0 and never a dash.
+  'rfqs.quotes.col.moq': 'Min. order qty',
+  'rfqs.quotes.moqNone': 'Same as RFQ qty',
   'rfqs.quotes.col.validUntil': 'Valid until',
   // awards tab
   'rfqs.awards.emptyTitle': 'No award decisions yet',
@@ -119,8 +123,20 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.panel.leadTime.sameDay.ack':
     'I confirm this quotation offers same-day delivery.',
   'rfqs.panel.validUntil': 'Quote valid until *',
+  // — CP-0 · W1 · 2e-b-2 — the minimum order quantity: OPTIONAL, blank means
+  //   "same as the RFQ quantity", and (as of this batch) a stated value is
+  //   actually kept. The "leave blank" sentence moved out of the placeholder and
+  //   into a hint, because a placeholder vanishes the moment anyone types.
   'rfqs.panel.moq': 'Minimum order quantity (optional)',
-  'rfqs.panel.moqPlaceholder': 'Leave blank if same as RFQ qty',
+  'rfqs.panel.moqPlaceholder': 'e.g. 10000',
+  'rfqs.panel.moq.hint':
+    'Leave blank if you can supply the RFQ quantity with no minimum. If you have one, Paragon shows it to the buyer with your quote.',
+  'rfqs.panel.moq.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 10000, or leave it blank if you have no minimum.',
+  'rfqs.panel.moq.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
+  'rfqs.panel.moq.refused.zero':
+    'A minimum of 0 is not a minimum — leave the field blank if you have none.',
   'rfqs.unit.days': 'days',
   'rfqs.unit.weeks': 'weeks',
   'rfqs.panel.step3.eyebrow': 'Step 3',
@@ -153,6 +169,8 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.toast.missing.body': 'Please fill: {{fields}}.',
   'rfqs.toast.priceRefused.title': 'Quotation not submitted — check the unit price',
   'rfqs.toast.leadTimeRefused.title': 'Quotation not submitted — check the lead time',
+  'rfqs.toast.moqRefused.title':
+    'Quotation not submitted — check the minimum order quantity',
   'rfqs.toast.sameDayAck.title': 'Confirm the same-day commitment',
   'rfqs.toast.sameDayAck.body':
     'A 0-day lead time is a same-day delivery offer. Tick the confirmation under the lead-time field to submit it.',
@@ -162,6 +180,7 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.toast.submitFailed.body': 'Please try again, or contact Paragon procurement.',
   'rfqs.field.unitPrice': 'Unit price',
   'rfqs.field.leadTime': 'Lead time',
+  'rfqs.field.moq': 'Minimum order quantity',
   'rfqs.field.validUntil': 'Quote valid until',
 };
 
@@ -222,6 +241,8 @@ export const rfqsId: Record<string, string> = {
   'rfqs.quotes.col.unitPrice': 'Harga satuan',
   'rfqs.quotes.col.totalPrice': 'Harga total',
   'rfqs.quotes.col.leadTime': 'Waktu tunggu (perk.)',
+  'rfqs.quotes.col.moq': 'Kuantitas pesanan min.',
+  'rfqs.quotes.moqNone': 'Sama dengan jml RFQ',
   'rfqs.quotes.col.validUntil': 'Berlaku hingga',
   // awards tab
   'rfqs.awards.emptyTitle': 'Belum ada keputusan pemenangan',
@@ -279,7 +300,15 @@ export const rfqsId: Record<string, string> = {
     'Saya konfirmasi penawaran ini menawarkan pengiriman di hari yang sama.',
   'rfqs.panel.validUntil': 'Penawaran berlaku hingga *',
   'rfqs.panel.moq': 'Kuantitas pesanan minimum (opsional)',
-  'rfqs.panel.moqPlaceholder': 'Kosongkan jika sama dengan jml RFQ',
+  'rfqs.panel.moqPlaceholder': 'mis. 10000',
+  'rfqs.panel.moq.hint':
+    'Kosongkan jika Anda dapat memasok kuantitas RFQ tanpa minimum. Jika ada, Paragon menampilkannya kepada pembeli bersama penawaran Anda.',
+  'rfqs.panel.moq.refused.notNumeric':
+    'Itu bukan kuantitas — ketik angka saja, misalnya 10000, atau kosongkan jika Anda tidak punya minimum.',
+  'rfqs.panel.moq.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
+  'rfqs.panel.moq.refused.zero':
+    'Minimum 0 bukan minimum — kosongkan kolom ini jika Anda tidak punya.',
   'rfqs.unit.days': 'hari',
   'rfqs.unit.weeks': 'minggu',
   'rfqs.panel.step3.eyebrow': 'Langkah 3',
@@ -312,6 +341,8 @@ export const rfqsId: Record<string, string> = {
   'rfqs.toast.missing.body': 'Harap isi: {{fields}}.',
   'rfqs.toast.priceRefused.title': 'Penawaran tidak dikirim — periksa harga satuan',
   'rfqs.toast.leadTimeRefused.title': 'Penawaran tidak dikirim — periksa waktu tunggu',
+  'rfqs.toast.moqRefused.title':
+    'Penawaran tidak dikirim — periksa kuantitas pesanan minimum',
   'rfqs.toast.sameDayAck.title': 'Konfirmasi komitmen hari yang sama',
   'rfqs.toast.sameDayAck.body':
     'Waktu tunggu 0 hari adalah tawaran pengiriman di hari yang sama. Centang konfirmasi di bawah kolom waktu tunggu untuk mengirim.',
@@ -321,5 +352,6 @@ export const rfqsId: Record<string, string> = {
   'rfqs.toast.submitFailed.body': 'Silakan coba lagi, atau hubungi pengadaan Paragon.',
   'rfqs.field.unitPrice': 'Harga satuan',
   'rfqs.field.leadTime': 'Waktu tunggu',
+  'rfqs.field.moq': 'Kuantitas pesanan minimum',
   'rfqs.field.validUntil': 'Penawaran berlaku hingga',
 };

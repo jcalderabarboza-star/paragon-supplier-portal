@@ -47,9 +47,10 @@ import {
   type LeadTimeRefusalReason,
   type LeadTimeUnit,
 } from './rfqs/quotationLeadTime';
+import { readMoq, type MoqRefusalReason } from './rfqs/quotationMoq';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
-import { formatIDR, formatDate } from '../lib/format';
+import { formatIDR, formatDate, formatNumber } from '../lib/format';
 
 interface OpenRFQ {
   id: string;
@@ -85,6 +86,8 @@ interface SubmittedQuote {
   unitPrice: string;
   totalPrice: string;
   leadTime: string;
+  /** The stated minimum order quantity, or the "same as RFQ qty" default (2e-b-2). */
+  moq: string;
   validUntil: string;
   status: string;
 }
@@ -110,6 +113,13 @@ const buildSubmittedQuotes = (
       unitPrice: formatIDR(q.unitPrice),
       totalPrice: formatIDR(q.totalPrice),
       leadTime: `${q.leadTimeDays} ${t('rfqs.unit.days')}`,
+      // 2e-b-2 — the minimum the supplier stated, read back to them. An ABSENT
+      // minimum renders the default it means ("same as RFQ qty"), never a 0 and
+      // never a dash: the supplier said something, and it was "no minimum".
+      moq:
+        q.moq === undefined
+          ? t('rfqs.quotes.moqNone')
+          : `${formatNumber(q.moq)} ${rfq?.uom ?? ''}`.trim(),
       validUntil: formatDate(q.validUntil),
       status: q.status,
     };
@@ -187,6 +197,15 @@ const LEAD_TIME_REFUSAL_KEY: Record<LeadTimeRefusalReason, string> = {
   NOT_NUMERIC: 'rfqs.panel.leadTime.refused.notNumeric',
   AMBIGUOUS_QTY: 'rfqs.panel.leadTime.refused.ambiguous',
   FRACTIONAL_DAYS: 'rfqs.panel.leadTime.refused.fractional',
+};
+
+// CP-0 · W1 · 2e-b-2 — the minimum-order-quantity refusals. There is no
+// `EMPTY_QTY` entry because the type has no such member: a blank is this field's
+// documented default ("same as RFQ qty"), so it is answered, not refused.
+const MOQ_REFUSAL_KEY: Record<MoqRefusalReason, string> = {
+  NOT_NUMERIC: 'rfqs.panel.moq.refused.notNumeric',
+  AMBIGUOUS_QTY: 'rfqs.panel.moq.refused.ambiguous',
+  ZERO_MOQ: 'rfqs.panel.moq.refused.zero',
 };
 
 const inputClass =
@@ -472,13 +491,18 @@ const MyQuotesTab: React.FC<{ quotes: SubmittedQuote[] }> = ({ quotes }) => {
             <StatusPill variant="neutral">{q.status}</StatusPill>
           </div>
 
-          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
             {[
               { label: t('rfqs.quotes.col.quoteNo'), value: q.quoteNumber },
               { label: t('rfqs.quotes.col.submitted'), value: q.submittedDate },
               { label: t('rfqs.quotes.col.unitPrice'), value: q.unitPrice },
               { label: t('rfqs.quotes.col.totalPrice'), value: q.totalPrice },
               { label: t('rfqs.quotes.col.leadTime'), value: q.leadTime },
+              // 2e-b-2 — the minimum order quantity appears here for the first
+              // time. It was collected on the form and dropped before this card
+              // existed, so the supplier's own record of their quote silently
+              // omitted a term they had stated.
+              { label: t('rfqs.quotes.col.moq'), value: q.moq },
               { label: t('rfqs.quotes.col.validUntil'), value: q.validUntil },
             ].map((d) => (
               <div key={d.label} className="bg-bg-hover rounded-md px-3 py-2">
@@ -730,7 +754,14 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // payload until the supplier affirms they meant same-day. Blank owes nothing.
   const leadTime = readLeadTimeDays(form.leadTimeNum, form.leadTimeUnit);
   const sameDayAckOwed = leadTime.ok && leadTime.requiresSameDayAck && !form.sameDayAck;
-  const submitBlocked = !leadTime.ok || sameDayAckOwed;
+
+  // CP-0 · W1 · 2e-b-2 — the ONE read of the minimum order quantity. Blank is
+  // LEGAL and resolves to an absence; only a stated-but-unreadable minimum
+  // blocks, because a constraint nobody can read is worse than the default it
+  // would otherwise fall back to.
+  const moq = readMoq(form.moq);
+
+  const submitBlocked = !leadTime.ok || sameDayAckOwed || !moq.ok;
 
   // A price nobody can read has no total. The preview is only ASKABLE of a price
   // that exists — it never renders a product of a guessed value. The RFQ quantity
@@ -787,6 +818,18 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       });
       return;
     }
+    // The minimum-order-quantity gate (2e-b-2). It fires ONLY on a stated value
+    // that cannot be read — a blank falls through, because blank is the field's
+    // answer, not its absence. Refusing rather than dropping is the whole point:
+    // the retired path discarded every value here, readable or not.
+    if (!moq.ok) {
+      toast({
+        variant: 'error',
+        title: t('rfqs.toast.moqRefused.title'),
+        description: t(MOQ_REFUSAL_KEY[moq.reason]),
+      });
+      return;
+    }
     const missing: string[] = [];
     if (!form.validUntil.trim()) missing.push(t('rfqs.field.validUntil'));
     if (missing.length > 0) {
@@ -807,6 +850,10 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       // so the builder receives the whole number of days the gate judged — or
       // `null`, which it omits rather than flattening to a 0-day promise.
       leadTimeDays: leadTime.days,
+      // The SAME parsed value the gate above judged (2e-b-2). This argument is
+      // the fix: the form has always had this number and the builder has never
+      // been given it, so the minimum a supplier stated died here.
+      moq: moq.moq,
       validUntil: form.validUntil,
       notes: form.notes,
     });
@@ -1132,13 +1179,37 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                 <label className={labelClass}>
                   {t('rfqs.panel.moq')}
                 </label>
+                {/* Ruling 6.2, and load-bearing here for the same reason as the
+                    lead time: `type="number"` erases an unreadable token to ""
+                    before React sees it, and "" is LEGAL on this field — so the
+                    browser would quietly convert a minimum the supplier typed
+                    into the "no minimum" default, and nobody would be told. */}
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder={t('rfqs.panel.moqPlaceholder')}
+                  aria-label={t('rfqs.field.moq')}
+                  aria-invalid={!moq.ok}
                   value={form.moq}
                   onChange={(e) => setForm({ ...form, moq: e.target.value })}
                   className={inputClass}
                 />
+                {/* The default, stated on the field rather than hidden in the
+                    placeholder — a placeholder disappears the moment anyone
+                    types, which is exactly when "blank means X" stops being
+                    readable. */}
+                <div className="mt-1 text-[11px] text-text-tertiary">
+                  {t('rfqs.panel.moq.hint')}
+                </div>
+                {!moq.ok && (
+                  <div
+                    role="alert"
+                    data-testid="quote-moq-refusal"
+                    className="mt-1 text-[11px] text-danger"
+                  >
+                    {t(MOQ_REFUSAL_KEY[moq.reason])}
+                  </div>
+                )}
               </div>
             </FormSection>
 

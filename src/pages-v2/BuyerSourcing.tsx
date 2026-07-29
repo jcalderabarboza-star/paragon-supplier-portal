@@ -2025,6 +2025,32 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
+                      {/* CP-0 2e-b-2 (FIND-02) — the supplier's minimum order
+                          quantity. It has always been collected on the quote
+                          form and dropped before the payload, so until now this
+                          comparison could not show it: a buyer weighing two
+                          quotes had no way to see that one of them cannot be
+                          ordered at the quantity being sourced. Rendered as the
+                          fact it is — no verdict, no comparison against
+                          `selectedRfq.totalQty`; that ruling is MOQ-FIND-01. */}
+                      <ComparisonRow label={t('sourcing.cmp.row.moq')}>
+                        {quotesForSelected.map((q) => (
+                          <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
+                            {q.moq === undefined ? (
+                              // An ABSENT minimum is a real answer ("same as the
+                              // RFQ quantity"), not missing data — so it reads as
+                              // a sentence, never as a 0 or a dash.
+                              <span className="text-text-tertiary">
+                                {t('sourcing.cmp.moqNone')}
+                              </span>
+                            ) : (
+                              <Data as="span" className="whitespace-nowrap">
+                                {formatNumber(q.moq)} {selectedRfq.uom}
+                              </Data>
+                            )}
+                          </ComparisonCell>
+                        ))}
+                      </ComparisonRow>
                       <ComparisonRow label={t('sourcing.cmp.row.paymentTerms')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>

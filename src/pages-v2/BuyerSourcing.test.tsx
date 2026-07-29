@@ -3,6 +3,9 @@ import { renderWithProviders } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
 import type { IDataService } from '../services/data/types';
+import { MockCommandService } from '../services/data/mock/MockCommandService';
+import { quotationStore } from '../services/data/mock/stores/quotationStore';
+import { rfqStore } from '../services/data/mock/stores/rfqStore';
 import BuyerSourcing from './BuyerSourcing';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
@@ -95,5 +98,71 @@ describe('BuyerSourcing — the lead-time axis is labelled an estimate', () => {
     // nothing would be.
     expect(screen.getByText('Unit Price')).toBeInTheDocument();
     expect(screen.getAllByText('Estimated')).toHaveLength(2); // not 3, not 5
+  });
+});
+
+// ── CP-0 · W1 · 2e-b-2 — the buyer can finally SEE the supplier's minimum ────
+// FIND-02's consequence on this surface: the quote form collected a minimum
+// order quantity and dropped it before the payload, so the comparison a buyer
+// awards from could not show it at all. Where a supplier's minimum EXCEEDS the
+// RFQ quantity that is a real constraint on the bid — a buyer without it can
+// award a quote that cannot be ordered at the quantity being sourced.
+//
+// Display only this batch, by dispatch. Whether a minimum above the RFQ
+// quantity should warn, flag or block the award is MOQ-FIND-01.
+describe('BuyerSourcing — the minimum order quantity reaches the comparison', () => {
+  beforeEach(() => {
+    quotationStore.reset();
+    rfqStore.reset();
+  });
+
+  const openComparison = async () => {
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText('RFQ-2026-011'));
+    return screen.findByText(/QUOTE COMPARISON/i);
+  };
+
+  it('THE LOCK — a minimum submitted through the real spine lands in the comparison', async () => {
+    // The whole chain, end to end: the dispatcher + store the supplier's submit
+    // goes through, then the buyer surface reading it back. A value preserved in
+    // the payload but invisible here would still be a dropped constraint.
+    await new MockCommandService().dispatch(
+      { personaType: 'supplier', supplierId: 'sup-007' },
+      {
+        transitionId: 't_quotation_submit',
+        entity: 'quotation',
+        payload: {
+          rfqId: 'rfq-011',
+          supplierId: 'sup-007',
+          unitPrice: 14_000,
+          leadTimeDays: 6,
+          moq: 100_000,
+          validUntil: '2026-06-30',
+        },
+      },
+    );
+    await openComparison();
+
+    expect(screen.getByText('Min. Order Qty')).toBeInTheDocument();
+    // 100,000 PCS against an RFQ for 80,000 — the case JJ named: a minimum that
+    // EXCEEDS what is being sourced. Shown as a fact, with no verdict attached.
+    expect(screen.getByText(/100\.000 PCS/)).toBeInTheDocument();
+  });
+
+  it('a quote with no stated minimum reads as an ANSWER, not as missing data', async () => {
+    // qt-011a (the incumbent) states none, like every quote minted before this
+    // batch. The cell says so in words — never a dash, and never a 0, which
+    // would be a commercial term nobody offered.
+    await openComparison();
+    expect(screen.getByText('No minimum stated')).toBeInTheDocument();
+    expect(screen.queryByText(/^0 PCS$/)).not.toBeInTheDocument();
+  });
+
+  it('the row carries NO honest-marker tag — this is stated supplier fact', async () => {
+    // The negation that keeps the tag vocabulary meaningful: "Estimated" belongs
+    // to the lead time (indicative until PO) and "Simulated" to the axes with no
+    // live source. A minimum order quantity is neither — the supplier typed it.
+    await openComparison();
+    expect(screen.getAllByText('Estimated')).toHaveLength(2); // lead time + its score
   });
 });

@@ -324,3 +324,145 @@ describe('SupplierRFQs — the lead time is read once, in four honest states', (
     });
   });
 });
+
+// ── CP-0 · W1 · 2e-b-2 — the minimum order quantity, at the surface ──────────
+// The pure read contract lives in rfqs/quotationMoq.test.ts and the spine
+// round-trip in services/data/mock/quotationLifecycleCommand.test.ts. What
+// these add is the DOM-only part, and it is the part FIND-02 was actually
+// about: that a value the supplier types into this field now LEAVES the page.
+//
+// Nothing here was previously red. The field wrote to form state, the state was
+// never read, and no spec ever asked whether it was — a defect no test suite
+// could report because there was nothing to disagree with.
+describe('SupplierRFQs — the minimum order quantity stops being dropped', () => {
+  beforeEach(() => quotationStore.reset());
+
+  const openQuotePanel = async () => {
+    renderWithProviders(<SupplierRFQs />, { identity: SUPPLIER });
+    expect(await screen.findByText('RFQ-2026-010')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: /Submit Quote/i })[0]);
+    // A complete, clean quote around the field under test — the price and
+    // lead-time gates both fire before this one.
+    fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '15000' } });
+    fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: '14' } });
+    fireEvent.change(screen.getByLabelText('Quote valid until'), {
+      target: { value: '2026-06-30' },
+    });
+    return screen.getByLabelText('Minimum order quantity');
+  };
+
+  const submitBtn = () => screen.getByRole('button', { name: 'Submit quotation' });
+  const minted = () => quotationStore.forRfq('rfq-010');
+
+  it('THE LOCK — a stated minimum survives the submit and lands on the quotation', async () => {
+    const moq = await openQuotePanel();
+    fireEvent.change(moq, { target: { value: '100000' } });
+    fireEvent.click(submitBtn());
+
+    await waitFor(() => expect(minted()).toHaveLength(1));
+    // The whole finding, in one assertion: what the supplier typed is on the
+    // governed fact. Before this batch it was `undefined` here no matter what
+    // they entered.
+    expect(minted()[0].moq).toBe(100_000);
+  });
+
+  it('POSITIVE TWIN — the supplier reads their own stated minimum back on My Quotes', async () => {
+    const moq = await openQuotePanel();
+    fireEvent.change(moq, { target: { value: '100000' } });
+    fireEvent.click(submitBtn());
+
+    await waitFor(() => expect(minted()).toHaveLength(1));
+    // Submitting switches to the My Quotes tab. The minimum appears on the
+    // supplier's own record of the quote — the surface that used to omit a term
+    // they had just stated.
+    // The tile exists on every quote card, so the LABEL is plural here; the
+    // VALUE is what identifies this quote, and it is the assertion that matters.
+    expect((await screen.findAllByText('Min. order qty')).length).toBeGreaterThan(0);
+    expect(await screen.findByText('100.000 PCS')).toBeInTheDocument();
+  });
+
+  it('BLANK is LEGAL — no refusal, submit enabled, and the quote mints without a minimum', async () => {
+    await openQuotePanel();
+    // An untouched blank is this field's documented default, so it must not nag
+    // and must not block. Contrast the lead time, where blank refuses.
+    expect(screen.queryByTestId('quote-moq-refusal')).not.toBeInTheDocument();
+    expect(submitBtn()).toBeEnabled();
+
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(minted()).toHaveLength(1));
+    // Absent, not zero — the distinction the whole `|| 0` arc exists to keep.
+    expect(minted()[0].moq).toBeUndefined();
+  });
+
+  it('BLANK renders as the default it MEANS, not as a dash or a 0', async () => {
+    await openQuotePanel();
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(minted()).toHaveLength(1));
+    // Every quote on this surface honestly lacks a minimum — the field was
+    // dropped for all of them until now — so the default sentence is plural.
+    expect((await screen.findAllByText('Same as RFQ qty')).length).toBeGreaterThan(0);
+    // And the shape this replaces: a fabricated quantity of zero.
+    expect(screen.queryByText(/^0 PCS$/)).not.toBeInTheDocument();
+  });
+
+  it('the field states its default where a placeholder cannot — while typing', async () => {
+    const moq = await openQuotePanel();
+    fireEvent.change(moq, { target: { value: '100000' } });
+    // A placeholder vanishes on the first keystroke; the hint is still there,
+    // which is when "blank means same as RFQ qty" becomes useful to read.
+    expect(
+      screen.getByText(/Leave blank if you can supply the RFQ quantity with no minimum/i),
+    ).toBeInTheDocument();
+  });
+
+  it('UNREADABLE — refused on the field, submit disabled, nothing minted', async () => {
+    const moq = await openQuotePanel();
+    fireEvent.change(moq, { target: { value: 'abc' } });
+
+    expect(screen.getByTestId('quote-moq-refusal')).toHaveTextContent(/not a quantity/i);
+    expect(moq).toHaveAttribute('aria-invalid', 'true');
+    expect(submitBtn()).toBeDisabled();
+
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(submitBtn()).toBeInTheDocument());
+    expect(minted()).toHaveLength(0);
+  });
+
+  it('UNREADABLE — "abc" is only typeable at all because the field left type="number"', async () => {
+    // Ruling 6.2, load-bearing here: a number input erases this token to "" —
+    // and "" is LEGAL on this field, so the browser would have converted an
+    // unreadable minimum into a silent "no minimum" with nobody told.
+    const moq = await openQuotePanel();
+    expect(moq).toHaveAttribute('type', 'text');
+    fireEvent.change(moq, { target: { value: 'abc' } });
+    expect(moq).toHaveValue('abc');
+  });
+
+  it('AMBIGUOUS — a separator-formatted minimum is refused, not read 1000× wrong', async () => {
+    const moq = await openQuotePanel();
+    fireEvent.change(moq, { target: { value: '1.500' } });
+    expect(screen.getByTestId('quote-moq-refusal')).toHaveTextContent(/can be read two ways/i);
+    expect(submitBtn()).toBeDisabled();
+  });
+
+  it('ZERO — refused BY NAME, and told to clear the field instead', async () => {
+    const moq = await openQuotePanel();
+    fireEvent.change(moq, { target: { value: '0' } });
+    expect(screen.getByTestId('quote-moq-refusal')).toHaveTextContent(
+      /A minimum of 0 is not a minimum/i,
+    );
+    expect(submitBtn()).toBeDisabled();
+    expect(minted()).toHaveLength(0);
+  });
+
+  it('POSITIVE TWIN — correcting a refused minimum clears it and re-enables submit', async () => {
+    const moq = await openQuotePanel();
+    fireEvent.change(moq, { target: { value: '1.500' } });
+    expect(submitBtn()).toBeDisabled();
+
+    fireEvent.change(moq, { target: { value: '1500' } });
+    expect(screen.queryByTestId('quote-moq-refusal')).not.toBeInTheDocument();
+    expect(moq).toHaveAttribute('aria-invalid', 'false');
+    expect(submitBtn()).toBeEnabled();
+  });
+});

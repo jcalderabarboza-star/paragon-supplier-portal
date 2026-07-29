@@ -135,6 +135,36 @@ describe('t_quotation_submit — supplier-owned creation (ASN-faithful scope)', 
     expect(quotationStore.get(res.entityId!)!.leadTimeDays).toBe(12);
   });
 
+  // ── CP-0 · W1 · 2e-b-2 — the minimum order quantity survives the spine ─────
+  // The read-side proof that FIND-02 is closed END TO END: `readMoq` →
+  // `buildQuotationSubmitPayload` → the REAL dispatcher → the REAL store. A
+  // value that is preserved by the builder but dropped by `create` is still
+  // dropped, and the create path is exactly where a `num()` fallback would have
+  // reintroduced a fabricated zero.
+  it('THE LOCK — a stated minimum order quantity is persisted on the minted quote', async () => {
+    const res = await svc.dispatch(invited, submit({ moq: 100_000 }));
+    expect(res.status).toBe('done');
+    expect(quotationStore.get(res.entityId!)!.moq).toBe(100_000);
+  });
+
+  it('an omitted minimum stays ABSENT on the entity — never minted as a 0', async () => {
+    // `create` reads this field with a `typeof === 'number'` test rather than
+    // the `num()` helper, whose 0 fallback would turn "the supplier stated no
+    // minimum" into "the supplier's minimum is zero" — a commercial term
+    // attributed to someone who never offered it.
+    const res = await svc.dispatch(invited, submit());
+    const q = quotationStore.get(res.entityId!)!;
+    expect(q.moq).toBeUndefined();
+    expect(q.moq === 0).toBe(false);
+  });
+
+  it('the minimum is NOT a required field — a quote without one still mints', async () => {
+    // Blank is the field's documented default ("same as the RFQ qty"), so it
+    // must never join the required floor the way `leadTimeDays` did.
+    const res = await svc.dispatch(invited, submit());
+    expect(res.status).toBe('done');
+  });
+
   it('a missing rfqId cannot establish invited-membership → SCOPE_DENIED (scope gate precedes fields)', async () => {
     const before = quotationStore.all().length;
     const payload = { ...submit().payload };
