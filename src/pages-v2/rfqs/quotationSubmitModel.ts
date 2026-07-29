@@ -41,6 +41,18 @@ export interface QuotationSubmitDraft {
    * promises. There is no coercion left to do it with.
    */
   leadTimeDays: number | null;
+  /**
+   * ALREADY PARSED and OPTIONAL (CP-0 · W1 · 2e-b-2). The caller reads the typed
+   * minimum order quantity ONCE through `readMoq` and passes the number it
+   * judged, or `null` when the supplier stated no minimum ("same as the RFQ
+   * quantity", the field's documented default).
+   *
+   * It used to arrive nowhere at all: the form collected it and this builder was
+   * never given it, so a stated minimum — the constraint that decides whether an
+   * awarded quote can be ordered at the quantity being sourced — was discarded
+   * between the supplier typing it and the quotation being minted (FIND-02).
+   */
+  moq: number | null;
   validUntil: string;
   paymentTermsOffered?: string;
   notes?: string;
@@ -61,6 +73,12 @@ export function buildQuotationSubmitPayload(
     // the engine drops the axis for. Flattening it into a 0 would make silence
     // the best possible lead-time score. Same discipline as `notes`.
     ...(draft.leadTimeDays == null ? {} : { leadTimeDays: draft.leadTimeDays }),
+    // Omitted when the supplier stated no minimum — an ABSENT constraint, which
+    // reads as "same as the RFQ quantity". A 0 here would be a different claim
+    // (a minimum of nothing), and it is not the one silence makes. Same
+    // discipline as `notes`; the difference from before is that a STATED
+    // minimum now survives this boundary at all (2e-b-2).
+    ...(draft.moq == null ? {} : { moq: draft.moq }),
     validUntil: draft.validUntil,
     paymentTermsOffered: draft.paymentTermsOffered ?? '',
     ...(draft.notes ? { notes: draft.notes } : {}),

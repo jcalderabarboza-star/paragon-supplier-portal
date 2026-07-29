@@ -453,6 +453,11 @@ const quotationTarget: CommandTarget = {
       // unreachable here — an absent lead time fails MISSING_FIELDS before
       // create is ever called, rather than being minted as a same-day promise.
       leadTimeDays: num('leadTimeDays'),
+      // The supplier's minimum order quantity (2e-b-2) — preserved ONLY when the
+      // payload actually carries one. Deliberately NOT `num('moq')`: that helper
+      // returns 0 for an absent field, which would mint "this supplier's minimum
+      // is zero" out of a supplier who said nothing. Absence stays absence.
+      ...(typeof payload.moq === 'number' ? { moq: payload.moq as number } : {}),
       paymentTermsOffered: str('paymentTermsOffered'),
       validUntil: str('validUntil'),
       // DECLARED-SIMULATED axes — documented baseline, passed through the engine

@@ -13,6 +13,11 @@ const draft = {
   // number of DAYS the ONE upstream parse judged, unit conversion included — or
   // as `null` when the supplier stated none.
   leadTimeDays: 30,
+  // ALSO ALREADY PARSED (CP-0 2e-b-2). This argument did not exist: the form
+  // collected a minimum order quantity and the builder was never handed it, so
+  // the value died between the two. `null` is the stated absence — "same as the
+  // RFQ quantity" — which is what this base draft means.
+  moq: null,
   validUntil: '2026-08-31',
   paymentTermsOffered: 'Net 30',
 };
@@ -84,6 +89,30 @@ describe('buildQuotationSubmitPayload — raw facts only, engine owns scoring at
       const p = buildQuotationSubmitPayload({ ...draft, leadTimeDays: 0 });
       expect('leadTimeDays' in p).toBe(true);
       expect(p.leadTimeDays).toBe(0);
+    });
+  });
+
+  // ── CP-0 · W1 · 2e-b-2 — the minimum order quantity STOPS BEING DROPPED ────
+  // There was no spec here to retire: the field was never represented in this
+  // model at all, which is precisely how a value the UI collects can vanish
+  // without a single test going red. The absence of an alibi is the finding.
+  describe('minimum order quantity — a stated constraint that survives (FIND-02)', () => {
+    it('THE LOCK — a stated minimum reaches the payload, exactly as given', () => {
+      const p = buildQuotationSubmitPayload({ ...draft, moq: 100_000 });
+      expect(p.moq).toBe(100_000);
+    });
+
+    it('an absent minimum is OMITTED — the key is not there, and is not a 0', () => {
+      // Absence and "a minimum of nothing" are different claims. Omitting says
+      // the supplier stated none; a 0 would say they stated one. Same discipline
+      // as the lead time above, for the same reason.
+      const p = buildQuotationSubmitPayload({ ...draft, moq: null });
+      expect('moq' in p).toBe(false);
+      expect(p.moq).toBeUndefined();
+    });
+
+    it('a fractional minimum passes through — the RFQ UOM may be KG or L', () => {
+      expect(buildQuotationSubmitPayload({ ...draft, moq: 2.5 }).moq).toBe(2.5);
     });
   });
 

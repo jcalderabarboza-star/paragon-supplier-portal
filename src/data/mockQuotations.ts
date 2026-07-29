@@ -19,6 +19,14 @@ export interface Quotation {
   // no delivery promise is an incomplete bid, so the dispatcher's requiredFields
   // guarantees it is present on every quote that can ever be minted.
   leadTimeDays: number;
+  // The supplier's minimum order quantity, in the RFQ's UOM (2e-b-2, FIND-02).
+  // OPTIONAL and additive: absent = the supplier stated no minimum, which the
+  // form's own default calls "same as the RFQ quantity". Absent is NOT zero —
+  // a stated 0 is refused at the input, so a `moq` that is present is always a
+  // quantity someone typed. Every pre-existing fixture quote is honestly absent:
+  // the field was collected and dropped, so there is no historical value to
+  // backfill and none is invented here.
+  moq?: number;
   paymentTermsOffered: string;
   validUntil: string;
   complianceScore: number;

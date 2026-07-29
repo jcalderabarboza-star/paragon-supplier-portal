@@ -108,6 +108,12 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.cmp.estimated': 'Estimated',
   'sourcing.cmp.estimatedTitle':
     'Indicative at quote stage — the supplier confirms a firm delivery date at PO. Still scored and ranked on.',
+  // CP-0 2e-b-2 — the supplier's stated minimum order quantity, surfaced to the
+  // buyer for the first time (it was collected on the quote form and dropped).
+  // Display only this batch: whether a minimum ABOVE the RFQ quantity should
+  // warn, flag or block the award is MOQ-FIND-01, not built here.
+  'sourcing.cmp.row.moq': 'Min. Order Qty',
+  'sourcing.cmp.moqNone': 'No minimum stated',
   'sourcing.cmp.row.paymentTerms': 'Payment Terms',
   'sourcing.cmp.row.compliance': 'Compliance',
   'sourcing.cmp.row.priceScore': 'Price Score',
@@ -355,6 +361,8 @@ export const sourcingId: Record<string, string> = {
   'sourcing.cmp.estimated': 'Perkiraan',
   'sourcing.cmp.estimatedTitle':
     'Bersifat indikatif pada tahap penawaran — pemasok mengonfirmasi tanggal pengiriman pasti saat PO. Tetap dinilai dan diperingkat.',
+  'sourcing.cmp.row.moq': 'Kuantitas Pesanan Min.',
+  'sourcing.cmp.moqNone': 'Tidak ada minimum',
   'sourcing.cmp.row.paymentTerms': 'Syarat Pembayaran',
   'sourcing.cmp.row.compliance': 'Kepatuhan',
   'sourcing.cmp.row.priceScore': 'Skor Harga',
