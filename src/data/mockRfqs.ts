@@ -28,7 +28,13 @@ export interface RFQ {
   respondedSupplierIds: string[];
   totalQty: number;
   uom: 'KG' | 'PCS' | 'L' | 'MT';
-  estimatedValue: number;
+  // The buyer's estimated budget. OPTIONAL and additive (CP-0 2e-b-4a): absent =
+  // the buyer specified no budget, which the wizard's own review calls "not
+  // specified". Absent is NOT Rp 0 — the retired `Number(budget) || 0` minted a
+  // stated zero out of an unstated field, and a budget of nothing is a different
+  // claim from no budget at all. Every seeded fixture states one, so nothing is
+  // backfilled; only a wizard-raised RFQ can be honestly absent.
+  estimatedValue?: number;
   currency: 'IDR';
   incoterms: string;
   paymentTerms: string;

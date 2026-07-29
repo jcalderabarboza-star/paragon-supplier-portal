@@ -389,9 +389,19 @@ const rfqTarget: CommandTarget = {
       awardDeadline: str('awardDeadline'),
       invitedSupplierIds: strArr('invitedSupplierIds'),
       respondedSupplierIds: [],
+      // Required by the flow's `requiredFields` since 2e-b-4a, so `num()`'s 0
+      // fallback is unreachable here — an absent quantity fails MISSING_FIELDS
+      // before create is ever called, rather than minting an RFQ for nothing.
       totalQty: num('totalQty'),
       uom,
-      estimatedValue: num('estimatedValue'),
+      // The buyer's estimated budget (2e-b-4a) — preserved ONLY when the payload
+      // actually carries one. Deliberately NOT `num('estimatedValue')`: that
+      // helper returns 0 for an absent field, which would mint "this event is
+      // budgeted at Rp 0" out of a buyer who specified nothing. Absence stays
+      // absence. Same reasoning, same shape, as `moq` on the quotation target.
+      ...(typeof payload.estimatedValue === 'number'
+        ? { estimatedValue: payload.estimatedValue as number }
+        : {}),
       currency: 'IDR',
       incoterms: str('incoterms'),
       paymentTerms: str('paymentTerms'),

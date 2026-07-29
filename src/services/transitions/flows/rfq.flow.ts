@@ -30,12 +30,23 @@ export const rfqFlow: FlowDefinition = {
       // (Draft→Open) stays authored-unwired. This is the dispatcher path that
       // RETIRES the `extraRfqs` client-fabrication anti-pattern (C6 §1): the RFQ
       // is store-minted with a store-assigned number, never a fabricated peer.
+      //
+      // `totalQty` joined the required floor in CP-0 2e-b-4a, mirroring
+      // `t_pr_create`'s `['material', 'quantity']` and
+      // `t_inventorydeclaration_declare`'s `['materialCode', 'totalQty']`: the
+      // quantity being sourced is what makes the event ANSWERABLE, and it is the
+      // multiplicand of every quotation's `totalPrice`. An absent quantity now
+      // fails MISSING_FIELDS instead of being minted as a silent 0 — the second
+      // lock behind `normalizeRfqCreateDraft`, so even a hand-crafted dispatch
+      // that skips the wizard cannot raise a quantity-less RFQ. `isEmpty` treats
+      // only undefined/null/'' as missing, so a TYPED zero still dispatches: this
+      // gate rules on absence, never on value.
       id: 't_rfq_create',
       from: [],
       to: 'Open',
       trigger: 'creation',
       requiredRole: 'rfq:create',
-      requiredFields: ['title', 'materialCategory'],
+      requiredFields: ['title', 'materialCategory', 'totalQty'],
       policyHooks: [],
       version: 1,
     },

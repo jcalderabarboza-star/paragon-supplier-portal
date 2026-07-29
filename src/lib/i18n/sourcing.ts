@@ -189,8 +189,21 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.wizard.field.materials': 'Specific material(s)',
   'sourcing.wizard.materials.selectFirst': 'Select a category first to see available materials.',
   'sourcing.wizard.field.totalQty': 'Total quantity',
-  'sourcing.wizard.placeholder.qty': '0',
+  // 2e-b-4a — was "0". A placeholder must never model a value the field treats
+  // specially: this one modelled the exact number a blank must NOT become.
+  'sourcing.wizard.placeholder.qty': 'e.g. 2400',
   'sourcing.wizard.field.uom': 'UoM',
+  // — Wizard: the numeric refusals (CP-0 · W1 · 2e-b-4a) —
+  'sourcing.wizard.qty.refused.empty':
+    'Enter the total quantity you are sourcing — suppliers quote a unit price against it, so an RFQ without it cannot be answered.',
+  'sourcing.wizard.qty.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 2400.',
+  'sourcing.wizard.qty.refused.ambiguous':
+    'This can be read two ways — "2.400" means two thousand four hundred in Indonesian and two-point-four in English. Type it without separators: 2400.',
+  'sourcing.wizard.budget.refused.notNumeric':
+    'That is not an amount — type digits only, e.g. 850000000, or leave it blank if the budget is not set.',
+  'sourcing.wizard.budget.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
   // — Wizard: suppliers —
   'sourcing.wizard.ai.title': 'AI recommendation',
   'sourcing.wizard.ai.basis': '· Based on category, tier, and OTIF',
@@ -257,6 +270,7 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.toast.createFailed.title': 'Create failed',
   'sourcing.toast.createFailed.default': 'The RFQ could not be created.',
   'sourcing.toast.createFailed.dispatch': 'The RFQ could not be dispatched.',
+  'sourcing.toast.numberRefused.title': 'RFQ not created — check the numbers',
   // — Empty state (wrapper) —
   'sourcing.state.empty.title': 'No sourcing events yet',
   'sourcing.state.empty.subtitle': 'No RFQs are on file.',
@@ -438,7 +452,18 @@ export const sourcingId: Record<string, string> = {
   'sourcing.wizard.field.materials': 'Material spesifik',
   'sourcing.wizard.materials.selectFirst': 'Pilih kategori terlebih dahulu untuk melihat material yang tersedia.',
   'sourcing.wizard.field.totalQty': 'Total kuantitas',
-  'sourcing.wizard.placeholder.qty': '0',
+  'sourcing.wizard.placeholder.qty': 'mis. 2400',
+  // — Wizard: penolakan numerik (CP-0 · W1 · 2e-b-4a) —
+  'sourcing.wizard.qty.refused.empty':
+    'Masukkan total kuantitas yang Anda cari — pemasok menawarkan harga satuan terhadap angka ini, jadi RFQ tanpa kuantitas tidak dapat dijawab.',
+  'sourcing.wizard.qty.refused.notNumeric':
+    'Itu bukan kuantitas — ketik angka saja, misalnya 2400.',
+  'sourcing.wizard.qty.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "2.400" berarti dua ribu empat ratus dalam bahasa Indonesia dan dua koma empat dalam bahasa Inggris. Ketik tanpa pemisah: 2400.',
+  'sourcing.wizard.budget.refused.notNumeric':
+    'Itu bukan nominal — ketik angka saja, misalnya 850000000, atau kosongkan jika anggaran belum ditetapkan.',
+  'sourcing.wizard.budget.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
   'sourcing.wizard.field.uom': 'Satuan',
   // — Wizard: suppliers —
   'sourcing.wizard.ai.title': 'Rekomendasi AI',
@@ -506,6 +531,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.toast.createFailed.title': 'Pembuatan gagal',
   'sourcing.toast.createFailed.default': 'RFQ tidak dapat dibuat.',
   'sourcing.toast.createFailed.dispatch': 'RFQ tidak dapat dikirim.',
+  'sourcing.toast.numberRefused.title': 'RFQ tidak dibuat — periksa angkanya',
   // — Empty state (wrapper) —
   'sourcing.state.empty.title': 'Belum ada acara sumber',
   'sourcing.state.empty.subtitle': 'Belum ada RFQ yang tercatat.',
