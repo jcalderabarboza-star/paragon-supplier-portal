@@ -15,6 +15,9 @@ export interface Quotation {
   // leg): absent = 'IDR', the implicit legacy default every existing quote carries.
   // A foreign supplier prices in 'USD' — the FX-free, engine-native spread branch.
   currency?: 'IDR' | 'USD';
+  // REQUIRED (2e-b-1a reversal). Briefly optional in 2e-b-1; a quotation with
+  // no delivery promise is an incomplete bid, so the dispatcher's requiredFields
+  // guarantees it is present on every quote that can ever be minted.
   leadTimeDays: number;
   paymentTermsOffered: string;
   validUntil: string;
@@ -413,5 +416,32 @@ export const mockQuotations: Quotation[] = [
     aiRecommended: false,
     status: 'Under Review',
     notes: 'CIF Jakarta, USD-denominated.',
+  },
+  {
+    // ── CP-0 · W1 · 2e-b-1 — the neutral award fixture's incumbent (FIND-05) ──
+    // Deliberately NEUTRAL against a freshly-submitted rival: the unit price and
+    // the SIMULATED 50/50 compliance/reliability baseline are exactly what
+    // `quotationTarget.create` mints, so the only axis that can separate this
+    // quote from a new one is the lead time. A HONEST 4-day promise — the value
+    // a fabricated 0 (or a "3.5" truncated to 3) used to beat.
+    // Derived score fields are the 0 sentinel: the engine owns them AT READ
+    // (F0.3-FIND-01), and seeding literals here is the very thing that batch
+    // retired.
+    id: 'qt-011a',
+    rfqId: 'rfq-011',
+    supplierId: 'sup-005',
+    submittedAt: '2026-04-28',
+    unitPrice: 15_000,
+    totalPrice: 1_200_000_000,
+    leadTimeDays: 4,
+    paymentTermsOffered: 'Net 30',
+    validUntil: '2026-06-30',
+    complianceScore: 50,
+    priceScore: 0,
+    leadTimeScore: 0,
+    reliabilityScore: 50,
+    aiCompositeScore: 0,
+    aiRecommended: false,
+    status: 'Submitted',
   },
 ];

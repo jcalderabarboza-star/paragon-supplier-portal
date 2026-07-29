@@ -146,3 +146,181 @@ describe('SupplierRFQs — the bid price is read once, and refused out loud', ()
     expect(screen.getByText(/1,800,060,000/)).toBeInTheDocument();
   });
 });
+
+// ── CP-0 · W1 · 2e-b-1 — the lead time's four states, at the surface ─────────
+// The refusal contract lives in rfqs/quotationLeadTime.test.ts and the award
+// consequence in rfqs/quotationLeadTimeRecommendation.test.ts. What these add is
+// the DOM-only part: that the supplier is TOLD which state they are in, that the
+// submit control is actually disabled when it should be, and that the same-day
+// acknowledgement is a real gate rather than a decoration.
+//
+// Testable only because the field is off `type="number"` — jsdom implements the
+// number-input sanitization algorithm faithfully, so "abc" arrives as "" and,
+// with blank now LEGAL, the browser would have silently converted an unreadable
+// lead time into an honest-looking absence.
+describe('SupplierRFQs — the lead time is read once, in four honest states', () => {
+  beforeEach(() => quotationStore.reset());
+
+  const openQuotePanel = async () => {
+    renderWithProviders(<SupplierRFQs />, { identity: SUPPLIER });
+    expect(await screen.findByText('RFQ-2026-010')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: /Submit Quote/i })[0]);
+    // A clean price and validity throughout — these tests are about the lead
+    // time, and the price gate fires first.
+    fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '15000' } });
+    fireEvent.change(screen.getByLabelText('Quote valid until'), {
+      target: { value: '2026-06-30' },
+    });
+    return screen.getByLabelText('Lead time');
+  };
+
+  const submitBtn = () => screen.getByRole('button', { name: 'Submit quotation' });
+  const setLead = (v: string) =>
+    fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: v } });
+
+  // ── 2e-b-1a — the value is a REQUIRED ESTIMATE, and says so ────────────────
+  // Required and labelled are not in tension: the estimate is required PRECISELY
+  // so the buyer can compare, and labelled because a supplier cannot firmly
+  // commit before final quantity, PO date and capacity are known. Forcing "firm"
+  // at quote stage would buy false precision. Asserted BEFORE the refusal specs
+  // (Correction-2) — the positive framing is the point, the refusal serves it.
+  it('POSITIVE TWIN — the field frames itself as an ESTIMATE, confirmed at PO', async () => {
+    await openQuotePanel();
+    // The framing appears on three distinct surfaces, deliberately: the section
+    // heading frames the step, the field label frames the value, and the hint
+    // says what happens next. A supplier who skims one still meets the others.
+    expect(screen.getByText('Estimated lead time *')).toBeInTheDocument();
+    expect(
+      screen.getByText(/Paragon compares quotations on your estimate/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/confirm the firm delivery date if this quotation is awarded/i),
+    ).toBeInTheDocument();
+  });
+
+  it('POSITIVE TWIN — a stated estimate submits and is stored as the number given', async () => {
+    // Labelling changes the framing, never the math: the estimate is a real
+    // governed fact that the award engine scores.
+    await openQuotePanel();
+    setLead('4');
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(quotationStore.forRfq('rfq-010')).toHaveLength(1));
+    expect(quotationStore.forRfq('rfq-010')[0].leadTimeDays).toBe(4);
+  });
+
+  // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
+  // This spec asserted the opposite: that a blank showed a neutral "No lead time
+  // stated…" note, left submit ENABLED, and minted a quotation storing an
+  // absence. JJ's commercial ruling makes an incomplete bid unsubmittable.
+  it('BLANK — refused as a required field, submit disabled, nothing minted', async () => {
+    await openQuotePanel();
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /Give your estimated lead time/i,
+    );
+    // The refusal itself carries the estimate framing — it asks for an estimate,
+    // not for a promise the supplier is not yet in a position to make.
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /An estimate is enough/i,
+    );
+    expect(screen.queryByTestId('quote-leadtime-absent')).not.toBeInTheDocument();
+    expect(submitBtn()).toBeDisabled();
+
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(submitBtn()).toBeInTheDocument());
+    // THE LOCK: nothing minted — and in particular no 0, which on the absolute
+    // axis is the BEST possible lead-time score.
+    expect(quotationStore.forRfq('rfq-010')).toHaveLength(0);
+  });
+
+  it('POSITIVE TWIN — stating one clears the refusal and re-enables submit', async () => {
+    await openQuotePanel();
+    expect(submitBtn()).toBeDisabled();
+    setLead('4');
+    expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
+    expect(submitBtn()).toBeEnabled();
+  });
+
+  it('UNREADABLE — refused on the field, submit disabled, nothing minted', async () => {
+    const lead = await openQuotePanel();
+    setLead('abc');
+
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /not a lead time/i,
+    );
+    expect(lead).toHaveAttribute('aria-invalid', 'true');
+    expect(submitBtn()).toBeDisabled();
+
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(submitBtn()).toBeInTheDocument());
+    expect(quotationStore.forRfq('rfq-010')).toHaveLength(0);
+  });
+
+  it('UNREADABLE — a fractional day is refused rather than truncated (FIND-05)', async () => {
+    await openQuotePanel();
+    setLead('3.5');
+    expect(screen.getByTestId('quote-leadtime-refusal')).toHaveTextContent(
+      /whole number of days/i,
+    );
+    expect(submitBtn()).toBeDisabled();
+    expect(quotationStore.forRfq('rfq-010')).toHaveLength(0);
+  });
+
+  it('INTEGER — an ordinary promise shows no banner at all, and submits as typed', async () => {
+    await openQuotePanel();
+    setLead('2');
+    fireEvent.change(screen.getByDisplayValue('days'), { target: { value: 'weeks' } });
+
+    expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('quote-leadtime-absent')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('quote-leadtime-sameday')).not.toBeInTheDocument();
+    expect(submitBtn()).toBeEnabled();
+
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(quotationStore.forRfq('rfq-010')).toHaveLength(1));
+    expect(quotationStore.forRfq('rfq-010')[0].leadTimeDays).toBe(14); // 2 weeks
+  });
+
+  describe('ZERO — legal, best, and hard-gated behind a same-day acknowledgement', () => {
+    it('THE GATE — the note appears inline and submit is DISABLED until it is ticked', async () => {
+      await openQuotePanel();
+      setLead('0');
+
+      const gate = screen.getByTestId('quote-leadtime-sameday');
+      expect(gate).toHaveTextContent(/same-day delivery — confirm this is correct/i);
+      // Not a refusal — a 0 is legitimate. It is simply not sendable unaffirmed.
+      expect(screen.queryByTestId('quote-leadtime-refusal')).not.toBeInTheDocument();
+      expect(submitBtn()).toBeDisabled();
+
+      fireEvent.click(submitBtn());
+      await waitFor(() => expect(submitBtn()).toBeInTheDocument());
+      expect(quotationStore.forRfq('rfq-010')).toHaveLength(0);
+    });
+
+    it('POSITIVE TWIN — ticked, it submits, and a real same-day promise is stored', async () => {
+      await openQuotePanel();
+      setLead('0');
+      fireEvent.click(screen.getByLabelText(/I confirm this quotation offers same-day/i));
+      expect(submitBtn()).toBeEnabled();
+
+      fireEvent.click(submitBtn());
+      await waitFor(() => expect(quotationStore.forRfq('rfq-010')).toHaveLength(1));
+      expect(quotationStore.forRfq('rfq-010')[0].leadTimeDays).toBe(0);
+    });
+
+    it('the acknowledgement is RETRACTED when the number changes', async () => {
+      // An ack belongs to the value it was given for. Ticking 0, editing to 5,
+      // then back to 0 must not carry the old affirmation forward.
+      await openQuotePanel();
+      setLead('0');
+      fireEvent.click(screen.getByLabelText(/I confirm this quotation offers same-day/i));
+      expect(submitBtn()).toBeEnabled();
+
+      setLead('5');
+      expect(screen.queryByTestId('quote-leadtime-sameday')).not.toBeInTheDocument();
+
+      setLead('0');
+      expect(screen.getByTestId('quote-leadtime-sameday')).toBeInTheDocument();
+      expect(submitBtn()).toBeDisabled(); // owed again
+    });
+  });
+});

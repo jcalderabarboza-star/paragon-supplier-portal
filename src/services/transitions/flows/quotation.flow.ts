@@ -24,8 +24,17 @@ export const quotationFlow: FlowDefinition = {
     {
       // Supplier submits a quotation against an invited RFQ. Creation-shape
       // (store-assigned number). WIRED in Task 3b. The required floor is the
-      // LIVE-scored facts — rfqId + unitPrice + leadTimeDays (mirrors rfq:create's
-      // ['title','materialCategory'] floor) — so no hollow quote mints server-side.
+      // rfqId + the two facts that make an offer COMPARABLE — what it costs and
+      // when it arrives.
+      //
+      // `leadTimeDays` briefly left this floor in 2e-b-1 and is RESTORED in
+      // 2e-b-1a (operator ruling, commercial): a price with no delivery promise
+      // is an INCOMPLETE bid, and ranking it on price alone hides the delivery
+      // risk that can make the cheapest quote the worst outcome. The reason it
+      // was removed — that requiring it pushed suppliers to put *something* in
+      // the box, which a `|| 0` then turned into a governed promise — is now
+      // answered at the input instead: the box refuses what it cannot read
+      // rather than defaulting it.
       id: 't_quotation_submit',
       from: [],
       to: 'Submitted',

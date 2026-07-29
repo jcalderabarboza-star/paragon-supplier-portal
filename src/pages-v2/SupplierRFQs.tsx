@@ -42,6 +42,11 @@ import {
 import { useQuotationSubmit } from '../services/query/commandHooks';
 import { buildQuotationSubmitPayload } from './rfqs/quotationSubmitModel';
 import { readBidPrice, type PriceRefusalReason } from './rfqs/quotationPrice';
+import {
+  readLeadTimeDays,
+  type LeadTimeRefusalReason,
+  type LeadTimeUnit,
+} from './rfqs/quotationLeadTime';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
 import { formatIDR, formatDate } from '../lib/format';
@@ -175,6 +180,15 @@ const PRICE_REFUSAL_KEY: Record<PriceRefusalReason, string> = {
   ZERO_PRICE: 'rfqs.panel.price.refused.zero',
 };
 
+// CP-0 · W1 · 2e-b-1a — the lead-time refusals. `EMPTY_QTY` is BACK: a blank is
+// a refusal again, because a bid with no delivery promise is incomplete.
+const LEAD_TIME_REFUSAL_KEY: Record<LeadTimeRefusalReason, string> = {
+  EMPTY_QTY: 'rfqs.panel.leadTime.refused.empty',
+  NOT_NUMERIC: 'rfqs.panel.leadTime.refused.notNumeric',
+  AMBIGUOUS_QTY: 'rfqs.panel.leadTime.refused.ambiguous',
+  FRACTIONAL_DAYS: 'rfqs.panel.leadTime.refused.fractional',
+};
+
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
@@ -183,7 +197,11 @@ interface QuoteForm {
   unitPrice: string;
   currency: string;
   leadTimeNum: string;
-  leadTimeUnit: string;
+  // The unit is half of what the typed lead-time number means, so the parse
+  // boundary takes it as a closed type rather than free text.
+  leadTimeUnit: LeadTimeUnit;
+  /** The same-day (0-day) acknowledgement — see `requiresSameDayAck`. */
+  sameDayAck: boolean;
   validUntil: string;
   moq: string;
   notes: string;
@@ -196,6 +214,7 @@ const emptyQuoteForm: QuoteForm = {
   currency: 'IDR',
   leadTimeNum: '',
   leadTimeUnit: 'days',
+  sameDayAck: false,
   validUntil: '',
   moq: '',
   notes: '',
@@ -706,6 +725,13 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // the award engine ranked could be three different numbers.
   const bidPrice = readBidPrice(form.unitPrice);
 
+  // CP-0 · W1 · 2e-b-1 — the ONE read of the lead time. Four states, and the
+  // hard gate: a stated 0 is legal and BEST on the axis, so it may not reach the
+  // payload until the supplier affirms they meant same-day. Blank owes nothing.
+  const leadTime = readLeadTimeDays(form.leadTimeNum, form.leadTimeUnit);
+  const sameDayAckOwed = leadTime.ok && leadTime.requiresSameDayAck && !form.sameDayAck;
+  const submitBlocked = !leadTime.ok || sameDayAckOwed;
+
   // A price nobody can read has no total. The preview is only ASKABLE of a price
   // that exists — it never renders a product of a guessed value. The RFQ quantity
   // is the NUMBER it already is; it used to be re-parsed out of the formatted
@@ -738,8 +764,30 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       });
       return;
     }
+    // The lead-time gate. It used to be a `parseFloat(...) > 0` presence check
+    // that only ever said "you left this blank" — so an unreadable lead time
+    // fell through to `Number(...) || 0` and became a 0-day promise, the best
+    // score on the axis. Blank is deliberately NOT gated here: it is legal.
+    if (!leadTime.ok) {
+      toast({
+        variant: 'error',
+        title: t('rfqs.toast.leadTimeRefused.title'),
+        description: t(LEAD_TIME_REFUSAL_KEY[leadTime.reason]),
+      });
+      return;
+    }
+    // The hard gate on a stated 0. The submit control is disabled while the ack
+    // is owed; this is the second lock, so a programmatic or race-y submit
+    // cannot slip a same-day commitment through unaffirmed.
+    if (sameDayAckOwed) {
+      toast({
+        variant: 'error',
+        title: t('rfqs.toast.sameDayAck.title'),
+        description: t('rfqs.toast.sameDayAck.body'),
+      });
+      return;
+    }
     const missing: string[] = [];
-    if (!form.leadTimeNum.trim() || !(parseFloat(form.leadTimeNum) > 0)) missing.push(t('rfqs.field.leadTime'));
     if (!form.validUntil.trim()) missing.push(t('rfqs.field.validUntil'));
     if (missing.length > 0) {
       toast({
@@ -755,11 +803,10 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       // The SAME parsed value the gate above judged — the builder can no longer
       // re-read the string and reach a different number (CP-0 §4).
       unitPrice: bidPrice.value,
-      // The form offers days | weeks; the entity stores days.
-      leadTimeDays:
-        form.leadTimeUnit === 'weeks'
-          ? String(Number(form.leadTimeNum) * 7)
-          : form.leadTimeNum,
+      // The days/weeks conversion already happened inside the ONE parse above,
+      // so the builder receives the whole number of days the gate judged — or
+      // `null`, which it omits rather than flattening to a 0-day promise.
+      leadTimeDays: leadTime.days,
       validUntil: form.validUntil,
       notes: form.notes,
     });
@@ -867,7 +914,10 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
             <Button
               variant="outline"
               icon={Send}
-              disabled={submitMutation.isPending}
+              // 2e-b-1 — disabled while an unreadable lead time stands, and
+              // while a same-day acknowledgement is owed. `submitQuote` re-checks
+              // both; this is the visible half of the same gate.
+              disabled={submitMutation.isPending || submitBlocked}
               onClick={submitQuote}
             >
               {submitMutation.isPending ? t('rfqs.panel.submitting') : t('rfqs.panel.submit')}
@@ -981,19 +1031,39 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
               <div>
                 <label className={labelClass}>{t('rfqs.panel.leadTime')}</label>
                 <div className="flex gap-2">
+                  {/* Ruling 6.2, carried into 2e-b-1 because the refusal DEPENDS
+                      on it: `type="number"` erases "abc" to "" before React sees
+                      it, and blank is now legal — so the browser would silently
+                      convert an unreadable lead time into an honest-looking
+                      absence, and the supplier would never be told. The
+                      placeholder was "0" — a field modelling the one value that
+                      now scores best and needs an explicit acknowledgement. */}
                   <input
-                    type="number"
-                    placeholder="0"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="14"
+                    aria-label={t('rfqs.field.leadTime')}
+                    aria-invalid={!leadTime.ok}
                     value={form.leadTimeNum}
                     onChange={(e) =>
-                      setForm({ ...form, leadTimeNum: e.target.value })
+                      setForm({
+                        ...form,
+                        leadTimeNum: e.target.value,
+                        // Editing the number retracts any same-day affirmation —
+                        // an ack belongs to the value it was given for.
+                        sameDayAck: false,
+                      })
                     }
                     className={inputClass}
                   />
                   <select
                     value={form.leadTimeUnit}
                     onChange={(e) =>
-                      setForm({ ...form, leadTimeUnit: e.target.value })
+                      setForm({
+                        ...form,
+                        leadTimeUnit: e.target.value as LeadTimeUnit,
+                        sameDayAck: false,
+                      })
                     }
                     className={inputClass}
                     style={{ width: 100 }}
@@ -1002,11 +1072,55 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     <option value="weeks">{t('rfqs.unit.weeks')}</option>
                   </select>
                 </div>
+                {/* The estimate framing, stated once on the field itself
+                    (2e-b-1a): required so the bid is comparable, indicative
+                    because a firm date cannot honestly be given before final
+                    quantity, PO date and capacity are known. */}
+                <div className="mt-1 text-[11px] text-text-tertiary">
+                  {t('rfqs.panel.leadTime.hint')}
+                </div>
+                {/* An untouched blank does not nag on sight — it refuses at the
+                    gate, and says so on the field once the supplier has engaged
+                    with the form (the price precedent, 2e-a). */}
+                {!leadTime.ok && form.unitPrice.trim() !== '' && (
+                  <div
+                    role="alert"
+                    data-testid="quote-leadtime-refusal"
+                    className="mt-1 text-[11px] text-danger"
+                  >
+                    {t(LEAD_TIME_REFUSAL_KEY[leadTime.reason])}
+                  </div>
+                )}
+                {/* THE HARD GATE — inline, in the flow of the form (no modal:
+                    every other guard on this surface is inline). Submit stays
+                    disabled until this is ticked. */}
+                {leadTime.ok && leadTime.requiresSameDayAck && (
+                  <div
+                    data-testid="quote-leadtime-sameday"
+                    className="mt-2 rounded border border-warning bg-warning-soft px-3 py-2"
+                  >
+                    <div className="text-[11px] text-warning-hover">
+                      {t('rfqs.panel.leadTime.sameDay.note')}
+                    </div>
+                    <label className="mt-2 flex items-center gap-2 text-[11px] text-text-secondary">
+                      <input
+                        type="checkbox"
+                        checked={form.sameDayAck}
+                        aria-label={t('rfqs.panel.leadTime.sameDay.ack')}
+                        onChange={(e) =>
+                          setForm({ ...form, sameDayAck: e.target.checked })
+                        }
+                      />
+                      {t('rfqs.panel.leadTime.sameDay.ack')}
+                    </label>
+                  </div>
+                )}
               </div>
               <div>
                 <label className={labelClass}>{t('rfqs.panel.validUntil')}</label>
                 <input
                   type="date"
+                  aria-label={t('rfqs.field.validUntil')}
                   value={form.validUntil}
                   onChange={(e) =>
                     setForm({ ...form, validUntil: e.target.value })

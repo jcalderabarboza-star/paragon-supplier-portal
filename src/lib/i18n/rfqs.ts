@@ -58,7 +58,7 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.quotes.col.submitted': 'Submitted',
   'rfqs.quotes.col.unitPrice': 'Unit price',
   'rfqs.quotes.col.totalPrice': 'Total price',
-  'rfqs.quotes.col.leadTime': 'Lead time',
+  'rfqs.quotes.col.leadTime': 'Lead time (est.)',
   'rfqs.quotes.col.validUntil': 'Valid until',
   // awards tab
   'rfqs.awards.emptyTitle': 'No award decisions yet',
@@ -97,8 +97,27 @@ export const rfqsEn: Record<string, string> = {
     'Zero is not a valid price. A quotation is an offer to sell — enter the price you are bidding.',
   'rfqs.panel.step2.eyebrow': 'Step 2',
   'rfqs.panel.step2.title': 'Timing & quantity',
-  'rfqs.panel.step2.desc': 'Lead time and validity window.',
-  'rfqs.panel.leadTime': 'Lead time *',
+  'rfqs.panel.step2.desc':
+    'Estimated lead time and validity window. Paragon compares quotations on your estimate; the firm delivery date is confirmed at PO.',
+  // — CP-0 · W1 · 2e-b-1a — the lead time: a REQUIRED ESTIMATE, three states,
+  //   ack-gated 0. Required so the bid is comparable; labelled an estimate
+  //   because a supplier cannot firmly commit before final quantity, PO date and
+  //   capacity are known. The firm date is confirmed at PO (a separate arc).
+  'rfqs.panel.leadTime': 'Estimated lead time *',
+  'rfqs.panel.leadTime.hint':
+    'Your best estimate — you will confirm the firm delivery date if this quotation is awarded.',
+  'rfqs.panel.leadTime.refused.empty':
+    'Give your estimated lead time — a price with no delivery estimate is an incomplete bid, and Paragon cannot compare it against one that has both. An estimate is enough; you will confirm the firm date if awarded.',
+  'rfqs.panel.leadTime.refused.notNumeric':
+    'That is not a lead time — type whole days as digits, e.g. 14, or leave it blank.',
+  'rfqs.panel.leadTime.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
+  'rfqs.panel.leadTime.refused.fractional':
+    'Lead time is a whole number of days — a part-day cannot be a delivery promise. Enter whole days (e.g. 4), or switch the unit and enter whole weeks.',
+  'rfqs.panel.leadTime.sameDay.note':
+    '0 days means same-day delivery — confirm this is correct. It is the strongest possible lead-time score, so Paragon will evaluate your quote against a same-day commitment.',
+  'rfqs.panel.leadTime.sameDay.ack':
+    'I confirm this quotation offers same-day delivery.',
   'rfqs.panel.validUntil': 'Quote valid until *',
   'rfqs.panel.moq': 'Minimum order quantity (optional)',
   'rfqs.panel.moqPlaceholder': 'Leave blank if same as RFQ qty',
@@ -133,6 +152,10 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.toast.missing.title': 'Required fields missing',
   'rfqs.toast.missing.body': 'Please fill: {{fields}}.',
   'rfqs.toast.priceRefused.title': 'Quotation not submitted — check the unit price',
+  'rfqs.toast.leadTimeRefused.title': 'Quotation not submitted — check the lead time',
+  'rfqs.toast.sameDayAck.title': 'Confirm the same-day commitment',
+  'rfqs.toast.sameDayAck.body':
+    'A 0-day lead time is a same-day delivery offer. Tick the confirmation under the lead-time field to submit it.',
   'rfqs.toast.submitted.title': 'Quotation submitted for {{rfq}}',
   'rfqs.toast.submitted.body': 'Paragon procurement team will review by {{date}}.',
   'rfqs.toast.submitFailed.title': 'Quotation could not be submitted',
@@ -198,7 +221,7 @@ export const rfqsId: Record<string, string> = {
   'rfqs.quotes.col.submitted': 'Dikirim',
   'rfqs.quotes.col.unitPrice': 'Harga satuan',
   'rfqs.quotes.col.totalPrice': 'Harga total',
-  'rfqs.quotes.col.leadTime': 'Waktu tunggu',
+  'rfqs.quotes.col.leadTime': 'Waktu tunggu (perk.)',
   'rfqs.quotes.col.validUntil': 'Berlaku hingga',
   // awards tab
   'rfqs.awards.emptyTitle': 'Belum ada keputusan pemenangan',
@@ -237,8 +260,23 @@ export const rfqsId: Record<string, string> = {
     'Nol bukan harga yang sah. Penawaran adalah tawaran untuk menjual — masukkan harga yang Anda tawarkan.',
   'rfqs.panel.step2.eyebrow': 'Langkah 2',
   'rfqs.panel.step2.title': 'Waktu & kuantitas',
-  'rfqs.panel.step2.desc': 'Waktu tunggu dan jendela validitas.',
-  'rfqs.panel.leadTime': 'Waktu tunggu *',
+  'rfqs.panel.step2.desc':
+    'Perkiraan waktu tunggu dan jendela validitas. Paragon membandingkan penawaran berdasarkan perkiraan Anda; tanggal pengiriman pasti dikonfirmasi saat PO.',
+  'rfqs.panel.leadTime': 'Perkiraan waktu tunggu *',
+  'rfqs.panel.leadTime.hint':
+    'Perkiraan terbaik Anda — Anda akan mengonfirmasi tanggal pengiriman pasti jika penawaran ini dimenangkan.',
+  'rfqs.panel.leadTime.refused.empty':
+    'Berikan perkiraan waktu tunggu Anda — harga tanpa perkiraan pengiriman adalah penawaran yang tidak lengkap, dan Paragon tidak dapat membandingkannya dengan penawaran yang memiliki keduanya. Perkiraan sudah cukup; Anda akan mengonfirmasi tanggal pastinya jika menang.',
+  'rfqs.panel.leadTime.refused.notNumeric':
+    'Itu bukan waktu tunggu — ketik jumlah hari bulat sebagai angka, misalnya 14, atau kosongkan.',
+  'rfqs.panel.leadTime.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
+  'rfqs.panel.leadTime.refused.fractional':
+    'Waktu tunggu adalah bilangan bulat hari — sebagian hari bukan janji pengiriman. Masukkan hari bulat (mis. 4), atau ganti satuan dan masukkan minggu bulat.',
+  'rfqs.panel.leadTime.sameDay.note':
+    '0 hari berarti pengiriman di hari yang sama — pastikan ini benar. Ini adalah skor waktu tunggu tertinggi, sehingga Paragon akan menilai penawaran Anda berdasarkan komitmen pengiriman hari yang sama.',
+  'rfqs.panel.leadTime.sameDay.ack':
+    'Saya konfirmasi penawaran ini menawarkan pengiriman di hari yang sama.',
   'rfqs.panel.validUntil': 'Penawaran berlaku hingga *',
   'rfqs.panel.moq': 'Kuantitas pesanan minimum (opsional)',
   'rfqs.panel.moqPlaceholder': 'Kosongkan jika sama dengan jml RFQ',
@@ -273,6 +311,10 @@ export const rfqsId: Record<string, string> = {
   'rfqs.toast.missing.title': 'Kolom wajib belum diisi',
   'rfqs.toast.missing.body': 'Harap isi: {{fields}}.',
   'rfqs.toast.priceRefused.title': 'Penawaran tidak dikirim — periksa harga satuan',
+  'rfqs.toast.leadTimeRefused.title': 'Penawaran tidak dikirim — periksa waktu tunggu',
+  'rfqs.toast.sameDayAck.title': 'Konfirmasi komitmen hari yang sama',
+  'rfqs.toast.sameDayAck.body':
+    'Waktu tunggu 0 hari adalah tawaran pengiriman di hari yang sama. Centang konfirmasi di bawah kolom waktu tunggu untuk mengirim.',
   'rfqs.toast.submitted.title': 'Penawaran dikirim untuk {{rfq}}',
   'rfqs.toast.submitted.body': 'Tim pengadaan Paragon akan meninjau paling lambat {{date}}.',
   'rfqs.toast.submitFailed.title': 'Penawaran tidak dapat dikirim',

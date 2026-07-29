@@ -35,22 +35,87 @@ describe('scoreQuotations — LIVE axes derive from the quote set', () => {
 
   it('leadTimeScore: the fastest quote anchors 100, others scale by ratio-to-best', () => {
     const [a, b] = scoreQuotations([A, B]);
-    expect(a.leadTimeScore).toBe(100); // 10 is the min → 100
-    expect(b.leadTimeScore).toBe(50); // 10/20 → 50
+    // ── CP-0 · W1 · 2e-b-1 — the lead-time axis is no longer ratio-to-best ──
+    // This spec asserted 10 → 100 / 20 → 50, i.e. that a lead time is scored
+    // RELATIVE to the fastest bid in the set. Under the 2e-b-1 ruling the axis
+    // is ABSOLUTE and linear — `max(0, 100 - days×2)` — because a 0-day lead
+    // time must be the best score, and ratio-to-best cannot express that (a
+    // `best` of 0 zeroes every rival). 10 → 80, 20 → 60: A still beats B, but
+    // it beats it by the size of the real difference rather than by a ratio.
+    expect(a.leadTimeScore).toBe(80); // 100 - 10×2
+    expect(b.leadTimeScore).toBe(60); // 100 - 20×2
   });
 
-  it('a single quote is trivially best in its own set (price/leadTime = 100)', () => {
+  it('the lead-time axis is ABSOLUTE — a quote scores the same with or without rivals', () => {
+    // The property ratio-to-best did not have, and the reason the axis changed:
+    // a delivery promise is a fact about the supplier, not about the field.
+    const [alone] = scoreQuotations([A]);
+    const [withRival] = scoreQuotations([A, { ...B, leadTimeDays: 1 }]);
+    expect(alone.leadTimeScore).toBe(80);
+    expect(withRival.leadTimeScore).toBe(80);
+  });
+
+  it('a same-day (0-day) lead time is the BEST score, and does not zero its rivals', () => {
+    // The ruling, and the thing ratio-to-best could not do: under it, a `best`
+    // of 0 made `best/value` 0 for everyone, so one same-day quote collapsed the
+    // whole set. Here 0 → 100 and B keeps the score its own promise earns.
+    const [sameDay, b] = scoreQuotations([{ ...A, leadTimeDays: 0 }, B]);
+    expect(sameDay.leadTimeScore).toBe(100);
+    expect(b.leadTimeScore).toBe(60);
+  });
+
+  it('a lead time past the 50-day floor bottoms out at 0 rather than going negative', () => {
+    const [slow] = scoreQuotations([{ ...A, leadTimeDays: 90 }]);
+    expect(slow.leadTimeScore).toBe(0);
+  });
+
+  // ── 2e-b-1a — a DELIBERATE POLICY REVERSAL, not a bug correction ───────────
+  // 2e-b-1 had a whole describe block here — "an UNSTATED lead time is absent,
+  // not zero" — asserting that an omitted lead time scored `null` and had its
+  // axis dropped from the composite (weights renormalised). It was correct
+  // arithmetic for the policy of the time. JJ's commercial ruling removed the
+  // policy: a lead time is REQUIRED at quote stage, because a price with no
+  // delivery promise is an incomplete bid, so there is no unstated case left
+  // for the engine to be honest about. The block is retired rather than fixed;
+  // the guarantee it protected now lives at the input gate, where a blank is
+  // refused before it can become a quotation at all
+  // (`quotationLeadTime.test.ts` → "BLANK → refused").
+  it('a nonsense lead time scores the WORST value, never the best', () => {
+    // Nothing in the UI can produce one (the parser rejects the sign), but the
+    // engine is public and the axis is absolute — an unguarded negative would
+    // sail past `100 - days×2` into a score above 100.
+    const [neg] = scoreQuotations([{ ...A, leadTimeDays: -5 }]);
+    expect(neg.leadTimeScore).toBe(0);
+    expect(neg.leadTimeScore).not.toBe(100);
+  });
+
+  it('POSITIVE TWIN — a stated lead time scores normally', () => {
+    const [stated] = scoreQuotations([A]);
+    expect(stated.leadTimeScore).toBe(80);
+  });
+
+  // Retitled from "a single quote is trivially best in its own set
+  // (price/leadTime = 100)". Only PRICE is trivially best alone now — the
+  // lead-time axis is absolute, so a lone 10-day quote scores the 80 its own
+  // promise earns rather than a 100 it earned only by having no rival.
+  it('a single quote anchors PRICE at 100; its lead time is scored on its own merits', () => {
     const [only] = scoreQuotations([A]);
     expect(only.priceScore).toBe(100);
-    expect(only.leadTimeScore).toBe(100);
+    expect(only.leadTimeScore).toBe(80);
   });
 
-  it('guards a non-positive price/lead value to 0 (no NaN/Infinity)', () => {
+  // Retitled from "guards a non-positive price/lead value to 0". The guard
+  // still holds for PRICE — a zero price is not an offer and cannot anchor a
+  // ratio. It is deliberately REVERSED for the lead time: 2e-b-1 rules that 0
+  // days is same-day supply and therefore the best possible score, which is why
+  // it is ack-gated at the input rather than guarded here.
+  it('guards a non-positive PRICE to 0; a 0-day lead time is the best score, not a guarded one', () => {
     const [z] = scoreQuotations([{ ...A, id: 'Z', unitPrice: 0, leadTimeDays: 0 }, B]);
     expect(z.priceScore).toBe(0);
-    expect(z.leadTimeScore).toBe(0);
+    expect(z.leadTimeScore).toBe(100);
     expect(Number.isFinite(z.composite)).toBe(true);
   });
+
 });
 
 describe('scoreQuotations — external axes are declared SIMULATED, passed through untouched', () => {
@@ -71,10 +136,12 @@ describe('scoreQuotations — external axes are declared SIMULATED, passed throu
 describe('scoreQuotations — composite is a weighted roll-up with weakest-link liveness', () => {
   it('composite = Σ(axis × weight), rounded', () => {
     const [a, b] = scoreQuotations([A, B]);
-    // A: 100*.3 + 100*.2 + 90*.25 + 80*.25 = 30+20+22.5+20 = 92.5 → 93
-    expect(a.composite).toBe(93);
-    // B: 50*.3 + 50*.2 + 70*.25 + 60*.25 = 15+10+17.5+15 = 57.5 → 58
-    expect(b.composite).toBe(58);
+    // The lead-time terms moved with the axis (2e-b-1): A's 10 days scores 80
+    // rather than a ratio-derived 100, and B's 20 days scores 60 rather than 50.
+    // A: 100*.3 + 80*.2 + 90*.25 + 80*.25 = 30+16+22.5+20 = 88.5 → 89
+    expect(a.composite).toBe(89);
+    // B: 50*.3 + 60*.2 + 70*.25 + 60*.25 = 15+12+17.5+15 = 59.5 → 60
+    expect(b.composite).toBe(60);
   });
 
   it('composite liveness is SIMULATED while any weighted axis is SIMULATED', () => {

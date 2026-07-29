@@ -94,6 +94,16 @@ describe('t_quotation_submit — supplier-owned creation (ASN-faithful scope)', 
     expect(res.reason).toMatch(/ROLE_NOT_PERMITTED:quotation:submit/);
   });
 
+  // ── CP-0 · W1 · 2e-b-1a — leadTimeDays is BACK on the required floor ───────
+  // 2e-b-1 briefly narrowed this spec to unitPrice alone and added a positive
+  // twin asserting that "a quote with NO lead time is legal, and stores an
+  // absence". Both are reversed here, DELIBERATELY and not as a bug fix: JJ
+  // ruled that a price with no delivery promise is an INCOMPLETE bid, so the
+  // floor is the two facts that make an offer comparable. The concern that
+  // originally motivated the removal — that requiring it pushed suppliers to
+  // put *something* in the box, which `|| 0` turned into a same-day promise —
+  // is answered at the input gate instead, which now refuses rather than
+  // defaults.
   it('unitPrice / leadTimeDays are the required LIVE-scored floor — a hollow quote fails, mints nothing', async () => {
     for (const field of ['unitPrice', 'leadTimeDays']) {
       const before = quotationStore.all().length;
@@ -104,6 +114,25 @@ describe('t_quotation_submit — supplier-owned creation (ASN-faithful scope)', 
       expect(res.reason).toMatch(new RegExp(`MISSING_FIELDS:.*${field}`));
       expect(quotationStore.all().length).toBe(before);
     }
+  });
+
+  it('THE LOCK — a lead-time-less quote is refused, NOT minted with a fabricated 0', async () => {
+    // The distinction that matters on an absolute axis: 0 days is the BEST
+    // score. "Rejected for an incomplete bid" and "minted as a same-day
+    // promise" are opposite outcomes, and `num()`'s fallback would produce the
+    // second if the field gate ever stopped producing the first.
+    const payload = { ...submit().payload };
+    delete (payload as Record<string, unknown>).leadTimeDays;
+    const res = await svc.dispatch(invited, { ...submit(), payload });
+    expect(res.status).toBe('failed');
+    expect(quotationStore.all().every((q) => q.leadTimeDays > 0 || q.leadTimeDays === 0)).toBe(true);
+    expect(quotationStore.all().some((q) => q.leadTimeDays === undefined)).toBe(false);
+  });
+
+  it('POSITIVE TWIN — the same quote WITH a lead time mints, and stores it', async () => {
+    const res = await svc.dispatch(invited, submit({ leadTimeDays: 12 }));
+    expect(res.status).toBe('done');
+    expect(quotationStore.get(res.entityId!)!.leadTimeDays).toBe(12);
   });
 
   it('a missing rfqId cannot establish invited-membership → SCOPE_DENIED (scope gate precedes fields)', async () => {

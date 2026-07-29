@@ -102,6 +102,12 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.cmp.row.unitPrice': 'Unit Price',
   'sourcing.cmp.row.totalPrice': 'Total Price',
   'sourcing.cmp.row.leadTime': 'Lead Time',
+  // CP-0 2e-b-1a — the quote-stage lead time is a required ESTIMATE, not a
+  // commitment. It is still scored and ranked on; the tag only stops the buyer
+  // reading it as firmer than it is. The firm date is confirmed at PO.
+  'sourcing.cmp.estimated': 'Estimated',
+  'sourcing.cmp.estimatedTitle':
+    'Indicative at quote stage — the supplier confirms a firm delivery date at PO. Still scored and ranked on.',
   'sourcing.cmp.row.paymentTerms': 'Payment Terms',
   'sourcing.cmp.row.compliance': 'Compliance',
   'sourcing.cmp.row.priceScore': 'Price Score',
@@ -346,6 +352,9 @@ export const sourcingId: Record<string, string> = {
   'sourcing.cmp.row.unitPrice': 'Harga Satuan',
   'sourcing.cmp.row.totalPrice': 'Harga Total',
   'sourcing.cmp.row.leadTime': 'Waktu Tunggu',
+  'sourcing.cmp.estimated': 'Perkiraan',
+  'sourcing.cmp.estimatedTitle':
+    'Bersifat indikatif pada tahap penawaran — pemasok mengonfirmasi tanggal pengiriman pasti saat PO. Tetap dinilai dan diperingkat.',
   'sourcing.cmp.row.paymentTerms': 'Syarat Pembayaran',
   'sourcing.cmp.row.compliance': 'Kepatuhan',
   'sourcing.cmp.row.priceScore': 'Skor Harga',

@@ -449,6 +449,9 @@ const quotationTarget: CommandTarget = {
       unitPrice,
       // Honest arithmetic from raw facts (unit × the RFQ's quantity), NOT a score.
       totalPrice: unitPrice * (rfq?.totalQty ?? 0),
+      // Required by the flow's `requiredFields`, so `num()`'s 0 fallback is
+      // unreachable here — an absent lead time fails MISSING_FIELDS before
+      // create is ever called, rather than being minted as a same-day promise.
       leadTimeDays: num('leadTimeDays'),
       paymentTermsOffered: str('paymentTermsOffered'),
       validUntil: str('validUntil'),

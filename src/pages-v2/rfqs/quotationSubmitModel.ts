@@ -29,7 +29,18 @@ export interface QuotationSubmitDraft {
    * unreadable token reach it as `|| 0` → Rp 0.
    */
   unitPrice: number;
-  leadTimeDays: string;
+  /**
+   * ALREADY PARSED, IN DAYS, and OPTIONAL (CP-0 · W1 · 2e-b-1). The caller reads
+   * the typed lead time ONCE through `readLeadTimeDays` — which also applies the
+   * days/weeks conversion — and passes the whole number of days it judged, or
+   * `null` when the supplier stated none.
+   *
+   * It used to arrive as raw text and be coerced here with `Number(...) || 0`.
+   * On an axis where 0 is the BEST score, that turned every unreadable token
+   * into a maximum lead-time score — a parse artifact outranking real delivery
+   * promises. There is no coercion left to do it with.
+   */
+  leadTimeDays: number | null;
   validUntil: string;
   paymentTermsOffered?: string;
   notes?: string;
@@ -46,10 +57,10 @@ export function buildQuotationSubmitPayload(
     rfqId: draft.rfqId,
     supplierId: draft.supplierId,
     unitPrice: draft.unitPrice,
-    // NOT yet cut over — lead time keeps its coercion until 2e-b carries it
-    // through the same parse (it is a LIVE-scored axis too, weight 0.2). Booked,
-    // not forgotten: 2e-a is scoped to the price, the ranking anchor.
-    leadTimeDays: Number(draft.leadTimeDays) || 0,
+    // Omitted when the supplier stated no lead time — an ABSENT promise, which
+    // the engine drops the axis for. Flattening it into a 0 would make silence
+    // the best possible lead-time score. Same discipline as `notes`.
+    ...(draft.leadTimeDays == null ? {} : { leadTimeDays: draft.leadTimeDays }),
     validUntil: draft.validUntil,
     paymentTermsOffered: draft.paymentTermsOffered ?? '',
     ...(draft.notes ? { notes: draft.notes } : {}),

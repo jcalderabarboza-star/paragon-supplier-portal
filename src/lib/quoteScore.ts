@@ -6,7 +6,8 @@
 // Honest-by-construction, on two rulings:
 //
 //  • AXIS-HONESTY SPLIT (FORK-3B). price + leadTime are LIVE — deterministic
-//    ratio-to-best rankings computed from the quote data in hand. compliance +
+//    rankings computed from the quote data in hand (price ratio-to-best;
+//    leadTime absolute-linear since 2e-b-1, see below). compliance +
 //    reliability are DECLARED-SIMULATED external-data axes (compliance = the I3
 //    surface, still SIMULATED; reliability = needs real OTIF history): their
 //    inputs are passed through VERBATIM, never recomputed from fixture
@@ -64,10 +65,46 @@ function livenessFor(weights: CriteriaWeights): Liveness {
 /** The composite's liveness under the default policy — SIMULATED today. */
 export const COMPOSITE_LIVENESS: Liveness = livenessFor(CRITERIA_WEIGHTS);
 
+/**
+ * LEAD-TIME AXIS POLICY (CP-0 · W1 · 2e-b-1, operator ruling — a DELIBERATE
+ * change to C6-LOCK, not a bug fix).
+ *
+ * The lead-time axis no longer uses ratio-to-best. It is now ABSOLUTE and
+ * LINEAR: `max(0, 100 - days × 2)`. Zero days scores 100.
+ *
+ * Why the axis had to change rather than just the input gate: the ruling is
+ * that a 0-day lead time is REAL (same-day supply) and therefore best. Under
+ * ratio-to-best that is not merely wrong, it is incoherent — `best/value` with
+ * `best = 0` scores every rival 0, so one same-day quote would zero the whole
+ * set. A linear scale is the coherent way to express "fewer days is better and
+ * zero is the floor", and it is what the ruling specifies.
+ *
+ * What this changes for existing data: lead-time scores are no longer relative
+ * to the RFQ's fastest bid. A 14-day quote scores 72 whether or not a 7-day
+ * rival exists. Price stays ratio-to-best (it is a competitive axis in a way an
+ * absolute delivery promise is not).
+ */
+export const LEAD_TIME_PENALTY_PER_DAY = 2;
+
+/**
+ * The lead-time axis for ONE quote.
+ *
+ * There is no absent case (2e-b-1a): a lead time is required at quote stage, so
+ * every scorable quote states one. A non-finite or negative value cannot come
+ * from the UI (the parser rejects the sign) and is scored 0 — the WORST value —
+ * rather than falling through to the 100 that `100 - days×2` would otherwise
+ * hand it. Nonsense must never be the best score on a ranked axis.
+ */
+export function leadTimeScoreFor(days: number): number {
+  if (!Number.isFinite(days) || days < 0) return 0;
+  return Math.max(0, 100 - days * LEAD_TIME_PENALTY_PER_DAY);
+}
+
 /** The minimal quote shape the engine needs (structurally a `Quotation` subset). */
 export interface ScorableQuote {
   id: string;
   unitPrice: number;
+  /** REQUIRED (2e-b-1a) — an incomplete bid never reaches the comparison. */
   leadTimeDays: number;
   complianceScore: number;
   reliabilityScore: number;
@@ -77,7 +114,7 @@ export interface QuoteScore {
   quoteId: string;
   /** LIVE — ratio-to-best over the RFQ's quote set (cheapest = 100). */
   priceScore: number;
-  /** LIVE — ratio-to-best over the RFQ's quote set (fastest = 100). */
+  /** LIVE — absolute linear scale, `max(0, 100 - days×2)`; same-day = 100. */
   leadTimeScore: number;
   /** SIMULATED — the input value, passed through untouched. */
   complianceScore: number;
@@ -114,18 +151,37 @@ export function scoreQuotations(
 
   const positive = (xs: number[]) => xs.filter((x) => x > 0);
   const minPrice = Math.min(...positive(quotes.map((q) => q.unitPrice)));
-  const minLead = Math.min(...positive(quotes.map((q) => q.leadTimeDays)));
   const compositeLiveness = livenessFor(weights);
+  /** Un-rounded composites, index-aligned with `scored` — ranking reads these. */
+  const exacts: number[] = [];
 
   const scored: QuoteScore[] = quotes.map((q) => {
     const priceScore = ratioToBest(q.unitPrice, minPrice);
-    const leadTimeScore = ratioToBest(q.leadTimeDays, minLead);
-    const composite = Math.round(
-      priceScore * weights.price +
-        leadTimeScore * weights.leadTime +
-        q.complianceScore * weights.compliance +
-        q.reliabilityScore * weights.reliability,
-    );
+    // Absolute, not ratio-to-best (2e-b-1). Every quote states a lead time
+    // (2e-b-1a), so all four axes are always present and `totalWeight` is 1 —
+    // the renormalising form is kept because it is what makes a custom `weights`
+    // policy that zeroes an axis behave sanely, not because an axis can be
+    // missing.
+    const leadTimeScore = leadTimeScoreFor(q.leadTimeDays);
+    const axes: readonly (readonly [number, number])[] = [
+      [priceScore, weights.price],
+      [leadTimeScore, weights.leadTime],
+      [q.complianceScore, weights.compliance],
+      [q.reliabilityScore, weights.reliability],
+    ];
+    const totalWeight = axes.reduce((sum, [, w]) => sum + w, 0);
+    // The EXACT composite is kept for ranking and the rounded one for display.
+    // Rounding first was a real defect (found in 2e-b-1 live QA): at weight 0.2
+    // on a 2-points-per-day scale, one day of lead time is 0.4 of a composite
+    // point, so a 4-day and a 5-day supplier both rounded to 73 and `topRanked`
+    // fell through to the tie-break — insertion order, which the store fills
+    // newest-first. The buyer's recommendation was decided by who submitted last.
+    const exact =
+      totalWeight === 0
+        ? 0
+        : axes.reduce((sum, [v, w]) => sum + v * w, 0) / totalWeight;
+    exacts.push(exact);
+    const composite = Math.round(exact);
     return {
       quoteId: q.id,
       priceScore,
@@ -138,10 +194,13 @@ export function scoreQuotations(
     };
   });
 
-  // argmax(composite); the first quote to reach the max wins a tie (stable).
+  // argmax over the EXACT composites — never the rounded ones (2e-b-1). The
+  // first quote to reach the max still wins a genuine tie (stable), but a
+  // difference the engine actually computed can no longer be rounded away into
+  // an insertion-order coin flip.
   let topIdx = 0;
   for (let i = 1; i < scored.length; i += 1) {
-    if (scored[i].composite > scored[topIdx].composite) topIdx = i;
+    if (exacts[i] > exacts[topIdx]) topIdx = i;
   }
   scored[topIdx].topRanked = true;
 
