@@ -108,3 +108,114 @@ describe('SupplierOrders — PO-confirm end-to-end proof (Step 3.10)', () => {
     expect(desc).not.toMatch(/notified/i);
   });
 });
+
+// ── CP-0 · W1 · 2f-c — the confirm cells, and why the TYPE is the test ───────
+//
+// 2f-FIND-03 (as amended). The cells were `type="number"` read with a bare
+// `Number()`, and that failure is invisible in this suite: en-US Chrome returns
+// "1.500" verbatim and jsdom does no locale parsing at all (4b-FIND-01). So the
+// durable lock is the INPUT CONTRACT — `type="text"` + `inputMode` — with the
+// behavioural specs stacked on top, honest about what they can prove.
+//
+// THE INVERTED LOCKS: 2f-b was one lock by necessity (no dispatcher). Here the
+// SECOND lock (`poConfirmQtyWithinOrdered`) exists and holds — these specs
+// guard the FIRST, and the policy's own first direct unit tests live in
+// `services/transitions/policies.test.ts`.
+describe('SupplierOrders — the confirm cells are text, so the parser is load-bearing', () => {
+  /** Open PO-2025-00108 (sup-007, Sent, one line: 150,000 PCS) in editing mode. */
+  const openEditing = async () => {
+    renderWithProviders(<SupplierOrders />, { identity: SUPPLIER });
+    await screen.findByText('PO-2025-00108');
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
+    return screen.findByLabelText('Confirmed PK-PETB-8810');
+  };
+
+  it('THE LOCK — the cell is not type="number" (Ruling 6.2)', async () => {
+    const cell = await openEditing();
+    expect(cell).toHaveAttribute('type', 'text');
+    expect(cell).toHaveAttribute('inputmode', 'decimal');
+    // min/max were number-input affordances that never bound anything; the
+    // bound is the policy's, mirrored on the surface from the SAME predicate.
+    expect(cell).not.toHaveAttribute('min');
+    expect(cell).not.toHaveAttribute('max');
+  });
+
+  it('SEEDS canonical ungrouped digits — 150000, not the "150.000" the parser refuses', async () => {
+    const cell = await openEditing();
+    expect(cell).toHaveValue('150000');
+    expect(screen.queryByTestId('po-confirm-refusal-0')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm order' })).not.toBeDisabled();
+  });
+
+  it('POSITIVE TWIN — an edited readable quantity DISPATCHES and stores the parsed number', async () => {
+    // A negative assertion alone proves nothing (the 2e-b-4a rule): a reduced
+    // confirmation must still go through, end to end, into the store.
+    const cell = await openEditing();
+    fireEvent.change(cell, { target: { value: '120000' } });
+    expect(screen.queryByTestId('po-confirm-refusal-0')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm order' }));
+    expect(await screen.findByText('Order confirmed')).toBeInTheDocument();
+    expect(purchaseOrderStore.get('po-008')?.lineItems[0].confirmedQty).toBe(120000);
+  });
+
+  it('a cross-convention "1.500" REFUSES at the cell and disables Confirm — the token the policy passes as 1.5', async () => {
+    // The live defect: 0 < 1.5 ≤ 150000 satisfies the bounds policy, so the
+    // misread was stamped onto the stored line and poisoned expectedValue,
+    // the 3-way match input. The FIRST lock is the only one that can catch it.
+    const cell = await openEditing();
+    fireEvent.change(cell, { target: { value: '1.500' } });
+    const refusal = screen.getByTestId('po-confirm-refusal-0');
+    expect(refusal).toHaveAttribute('role', 'alert');
+    expect(refusal.textContent).toMatch(/can be read two ways/i);
+    expect(cell).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('button', { name: 'Confirm order' })).toBeDisabled();
+    expect(purchaseOrderStore.get('po-008')?.status).toBe('Sent');
+  });
+
+  it('a CLEARED cell refuses by name — no fabricated zero, no dispatcher debug-string toast', async () => {
+    // Retired path: Number('') fabricated 0 into state, dispatched, and the
+    // policy bounced it with a raw English bounds string. Now the refusal is
+    // at the cell, translated, before any dispatch exists to fail.
+    const cell = await openEditing();
+    fireEvent.change(cell, { target: { value: '' } });
+    expect(screen.getByTestId('po-confirm-refusal-0').textContent).toMatch(
+      /not a confirmation of none/i,
+    );
+    expect(screen.getByRole('button', { name: 'Confirm order' })).toBeDisabled();
+  });
+
+  it('a typed ZERO parses and the BOUNDS MIRROR speaks — courtesy on the surface, law in the policy', async () => {
+    // The zero is READ (a real assertion); it is the policy's 0 < q that
+    // refuses it, and the mirror explains that bound pre-dispatch using the
+    // SAME shared predicate the policy runs. Confirm-disabled is UX; the
+    // policy refusal is the guarantee.
+    const cell = await openEditing();
+    fireEvent.change(cell, { target: { value: '0' } });
+    expect(screen.queryByTestId('po-confirm-refusal-0')).not.toBeInTheDocument();
+    expect(screen.getByTestId('po-confirm-bounds-0').textContent).toMatch(
+      /between 1 and 150,?000/i,
+    );
+    expect(screen.getByRole('button', { name: 'Confirm order' })).toBeDisabled();
+  });
+
+  it('an OVER-ORDERED quantity gets the same mirror, naming the line’s own bound', async () => {
+    const cell = await openEditing();
+    fireEvent.change(cell, { target: { value: '150001' } });
+    expect(screen.getByTestId('po-confirm-bounds-0')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Confirm order' })).toBeDisabled();
+  });
+
+  it('the diff warning derives from the PARSED read — suppressed under a refusal, never summed over a guess', async () => {
+    const cell = await openEditing();
+    // A readable short-confirmation raises the honest diff warning…
+    fireEvent.change(cell, { target: { value: '120000' } });
+    expect(
+      screen.getByText(/Confirmed values differ from the original PO/i),
+    ).toBeInTheDocument();
+    // …an unreadable token suppresses it: the refusal speaks instead.
+    fireEvent.change(cell, { target: { value: '1.500' } });
+    expect(
+      screen.queryByText(/Confirmed values differ from the original PO/i),
+    ).not.toBeInTheDocument();
+  });
+});
