@@ -10,6 +10,12 @@ import { enumLabelKey } from '../../lib/priorityLabel';
 import type { Shipment, ASN, AsnStatus } from '../../services/data/types';
 import type { InspectionResult } from '../../data/mockGoodsReceipts';
 import {
+  readGrLineQuantities,
+  seedQty,
+  type GrLineQtyOutcome,
+} from './grLineQuantities';
+import type { QtyRefusalReason } from '../../lib/localeNumber';
+import {
   useGoodsReceiptCreate,
   useGoodsReceiptFinalize,
   useGoodsReceiptPost,
@@ -35,14 +41,28 @@ interface GRInspectionWizardProps {
   asns: ASN[];
 }
 
+// CP-0 · W1 · 2f-a — each quantity refusal names its own rule. A blank, an
+// unreadable token and a cross-convention token are three different mistakes on
+// a value that becomes inventory, and the blank message says what to type
+// instead: 0 is a real receipt of none, blank is not a statement at all.
+const GR_QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'goodsReceipt.wizard.qty.refused.empty',
+  NOT_NUMERIC: 'goodsReceipt.wizard.qty.refused.notNumeric',
+  AMBIGUOUS_QTY: 'goodsReceipt.wizard.qty.refused.ambiguous',
+};
+
 type SourceMode = 'shipment' | 'manual';
 
 interface LineDraft {
   materialCode: string;
   description: string;
   qtyExpected: number;
-  qtyReceived: number;
-  qtyAccepted: number;
+  // RAW-BACKED (2f-a). `number` had no representation for "blank", so there was
+  // no string to parse and therefore no parse boundary to fix — converting the
+  // draft IS the fix, not a means to it. Same shape as QuoteForm.unitPrice,
+  // DraftRfq.totalQty and IntakeAdjustDrawer's acceptedRaw.
+  qtyReceivedRaw: string;
+  qtyAcceptedRaw: string;
   rejectionReason: string;
   visualCheck: 'Pass' | 'Fail';
   packagingCheck: 'Pass' | 'Fail' | 'N/A';
@@ -115,8 +135,8 @@ const buildDraftFromShipment = (s: Shipment): LineDraft[] =>
     materialCode: li.materialCode,
     description: li.description,
     qtyExpected: li.qty,
-    qtyReceived: li.qty,
-    qtyAccepted: li.qty,
+    qtyReceivedRaw: seedQty(li.qty),
+    qtyAcceptedRaw: seedQty(li.qty),
     rejectionReason: '',
     visualCheck: 'Pass',
     packagingCheck: 'Pass',
@@ -132,8 +152,8 @@ const buildDraftFromAsn = (a: ASN): LineDraft[] =>
     materialCode: li.materialCode,
     description: li.description,
     qtyExpected: li.orderedQty,
-    qtyReceived: li.shippedQty,
-    qtyAccepted: li.shippedQty,
+    qtyReceivedRaw: seedQty(li.shippedQty),
+    qtyAcceptedRaw: seedQty(li.shippedQty),
     rejectionReason: '',
     visualCheck: 'Pass',
     packagingCheck: 'Pass',
@@ -262,18 +282,35 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   // header is DERIVED, never a free-choice assertion (law 0.6) — the same rollup
   // the dispatcher's gr_rollup_* hooks re-check, so the UI cannot present an
   // Accept the lines contradict.
+  // ── CP-0 · W1 · 2f-a — the ONE read of every line's quantity pair ─────────
+  // Index-aligned with `lines`. The field messages, the receipt guard, the
+  // derived qtyRejected, the header rollup and the dispatched payload all read
+  // THIS, so none of them can disagree about what arrived.
+  const lineQtys = useMemo<GrLineQtyOutcome[]>(
+    () => lines.map((l) => readGrLineQuantities(l.qtyReceivedRaw, l.qtyAcceptedRaw)),
+    [lines],
+  );
+  const allQtysOk = lineQtys.every((q) => q.ok);
+
   const inspectionResults = useMemo<InspectionResult[]>(
     () =>
-      lines.map((l) => {
-        const rejected = Math.max(0, l.qtyReceived - l.qtyAccepted);
+      // A receipt with an unreadable line has no coherent description, so there
+      // is nothing to describe: the empty set rolls up to 'Pending'
+      // (`deriveHeaderDisposition`) and `headerVerbFor` returns null, so nothing
+      // is finalizable. Honest by existing construction — no new rule needed.
+      !allQtysOk
+        ? []
+        : lines.map((l, i) => {
+        const q = lineQtys[i] as Extract<GrLineQtyOutcome, { ok: true }>;
+        const rejected = Math.max(0, q.received - q.accepted);
         const packaging: 'Pass' | 'Fail' | 'Pending' =
           l.packagingCheck === 'N/A' ? 'Pass' : l.packagingCheck;
         return {
           materialCode: l.materialCode,
           description: l.description,
           qtyExpected: l.qtyExpected,
-          qtyReceived: l.qtyReceived,
-          qtyAccepted: l.qtyAccepted,
+          qtyReceived: q.received,
+          qtyAccepted: q.accepted,
           qtyRejected: rejected,
           rejectionReason: rejected > 0 ? l.rejectionReason : undefined,
           labResultId: l.labRequestId,
@@ -283,17 +320,29 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           bpomLotCheck: l.bpomLotCheck,
         };
       }),
-    [lines],
+    [lines, lineQtys, allQtysOk],
   );
   const derivedDisposition = useMemo<GrHeaderDisposition>(
     () => deriveHeaderDisposition(inspectionResults),
     [inspectionResults],
   );
 
-  const receiptValid = lines.length > 0 && lines.every((l) => {
-    if (l.qtyReceived < 0 || l.qtyAccepted < 0) return false;
-    if (l.qtyAccepted > l.qtyReceived) return false;
-    if (l.qtyReceived - l.qtyAccepted > 0 && !l.rejectionReason.trim())
+  // A GUARD IS ONLY ASKABLE OF A VALUE THAT EXISTS (2f-a) — the third named site
+  // of the IntakeAdjustDrawer C6-LOCK pattern, after rfqCreateModel.
+  //
+  // The three guards below are UNCHANGED and still individually correct. What
+  // changed is that they can no longer be reached with a fabricated value: the
+  // refusal short-circuits first, so a cleared field is refused rather than
+  // silently satisfying all three (not negative, accepted <= received, no
+  // rejection reason owed) and posting a receipt asserting nothing arrived.
+  // Strictly stronger than adding a fourth blank-check, and it leaves the
+  // existing rules alone.
+  const receiptValid = lines.length > 0 && lines.every((l, i) => {
+    const q = lineQtys[i];
+    if (!q.ok) return false;
+    if (q.received < 0 || q.accepted < 0) return false;
+    if (q.accepted > q.received) return false;
+    if (q.received - q.accepted > 0 && !l.rejectionReason.trim())
       return false;
     return true;
   });
@@ -487,7 +536,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         ) : (
           <div className="flex flex-col gap-4">
             {lines.map((l, i) => {
-              const rejected = Math.max(0, l.qtyReceived - l.qtyAccepted);
+              const qty = lineQtys[i];
+              // Only ASKABLE of a readable pair — an unreadable line shows no
+              // rejected figure rather than a product of a guessed value.
+              const rejected = qty.ok ? Math.max(0, qty.received - qty.accepted) : null;
               return (
                 <div
                   key={i}
@@ -512,43 +564,73 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   <div className="grid grid-cols-4 gap-3">
                     <div>
                       {labelFor(t('goodsReceipt.wizard.field.received'))}
+                      {/* Ruling 6.2, and load-bearing twice over here. A number
+                          input REJECTS a comma-grouped token outright — "1,500"
+                          leaves `.value` empty in en-US, no id-ID browser
+                          required — and the empty string then took the `Number`
+                          path to a silent zero that satisfied every guard.
+                          `min` goes with the type: `received >= 0` is enforced
+                          in `receiptValid`, where it is actually checked. */}
                       <input
-                        type="number"
-                        min={0}
+                        type="text"
+                        inputMode="decimal"
                         aria-label={t('goodsReceipt.wizard.aria.received', { code: l.materialCode })}
-                        value={l.qtyReceived}
+                        aria-invalid={!qty.ok && qty.field === 'received'}
+                        value={l.qtyReceivedRaw}
                         onChange={(e) =>
-                          updateLine(i, {
-                            qtyReceived: Number(e.target.value),
-                          })
+                          updateLine(i, { qtyReceivedRaw: e.target.value })
                         }
                         className={inputCls}
                       />
+                      {!qty.ok && qty.field === 'received' && (
+                        <div
+                          role="alert"
+                          data-testid={`gr-received-refusal-${i}`}
+                          className="mt-1 text-[11px] text-danger"
+                        >
+                          {t(GR_QTY_REFUSAL_KEY[qty.reason])}
+                        </div>
+                      )}
                     </div>
                     <div>
                       {labelFor(t('goodsReceipt.wizard.field.accepted'))}
+                      {/* `max` went with the type too — `accepted <= received`
+                          is enforced in `receiptValid`. An input attribute that
+                          vanishes with the type change was never the guarantee
+                          (the 2e-b-4b precedent). */}
                       <input
-                        type="number"
-                        min={0}
-                        max={l.qtyReceived}
+                        type="text"
+                        inputMode="decimal"
                         aria-label={t('goodsReceipt.wizard.aria.accepted', { code: l.materialCode })}
-                        value={l.qtyAccepted}
+                        aria-invalid={!qty.ok && qty.field === 'accepted'}
+                        value={l.qtyAcceptedRaw}
                         onChange={(e) =>
-                          updateLine(i, {
-                            qtyAccepted: Number(e.target.value),
-                          })
+                          updateLine(i, { qtyAcceptedRaw: e.target.value })
                         }
                         className={inputCls}
                       />
+                      {!qty.ok && qty.field === 'accepted' && (
+                        <div
+                          role="alert"
+                          data-testid={`gr-accepted-refusal-${i}`}
+                          className="mt-1 text-[11px] text-danger"
+                        >
+                          {t(GR_QTY_REFUSAL_KEY[qty.reason])}
+                        </div>
+                      )}
                     </div>
                     <div>
                       {labelFor(t('goodsReceipt.wizard.field.rejected'))}
                       <div className="rounded-md border border-border-input bg-bg-hover px-3 py-2 text-sm text-text-secondary">
-                        <Data>{formatNumber(rejected)}</Data>
+                        <Data>{rejected === null ? '—' : formatNumber(rejected)}</Data>
                       </div>
                     </div>
                     <div className="col-span-4">
-                      {rejected > 0 && (
+                      {/* The reason field is only ASKABLE of a readable pair —
+                          nobody can be asked to justify a rejection derived from
+                          a quantity that does not exist. Same principle as the
+                          receipt guard, applied to the surface. */}
+                      {rejected !== null && rejected > 0 && (
                         <>
                           {labelFor(t('goodsReceipt.wizard.field.rejectionReason'))}
                           <textarea
@@ -594,7 +676,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                 </div>
               </div>
               <div className="text-xs text-text-tertiary">
-                <Data>{formatNumber(l.qtyReceived)}</Data> {t('goodsReceipt.wizard.receivedSuffix')}
+                <Data>
+                  {lineQtys[i]?.ok ? formatNumber(lineQtys[i].received) : '—'}
+                </Data>{' '}
+                {t('goodsReceipt.wizard.receivedSuffix')}
               </div>
             </div>
 
@@ -697,16 +782,18 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     </FormSection>
   );
 
+  // Summed from the PARSED pairs, so the roll-up can never total a value the
+  // guard refused. An unreadable line contributes nothing rather than a zero.
   const totals = useMemo(() => {
-    return lines.reduce(
-      (acc, l) => ({
+    return lineQtys.reduce(
+      (acc, q) => ({
         items: acc.items + 1,
-        accepted: acc.accepted + l.qtyAccepted,
-        rejected: acc.rejected + Math.max(0, l.qtyReceived - l.qtyAccepted),
+        accepted: acc.accepted + (q.ok ? q.accepted : 0),
+        rejected: acc.rejected + (q.ok ? Math.max(0, q.received - q.accepted) : 0),
       }),
       { items: 0, accepted: 0, rejected: 0 }
     );
-  }, [lines]);
+  }, [lineQtys]);
 
   const stepFourContent = (
     <div className="flex flex-col gap-5">
