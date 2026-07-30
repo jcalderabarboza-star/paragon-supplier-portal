@@ -42,6 +42,14 @@ import type {
   ContractType,
 } from '../data/mockContracts';
 import type { Supplier } from '../services/data/types';
+import type { QtyRefusalReason } from '../lib/localeNumber';
+import {
+  normalizeContractNumbers,
+  readContractValue,
+  readNoticeRequiredDays,
+  seedContractNumber,
+  type ContractNumericField,
+} from './contracts/contractCreateModel';
 
 type GroupTab =
   | 'all'
@@ -257,6 +265,11 @@ interface DraftContract {
   obligations: DraftObligation[];
 }
 
+/** The wizard's default notice period. A NUMBER, seeded through
+ *  `seedContractNumber` — see that function's note on why a display formatter
+ *  must never seed a parsed field. */
+const DEFAULT_NOTICE_DAYS = 90;
+
 const EMPTY_DRAFT: DraftContract = {
   title: '',
   type: '',
@@ -266,12 +279,35 @@ const EMPTY_DRAFT: DraftContract = {
   startDate: '',
   endDate: '',
   autoRenewal: false,
-  noticeRequiredDays: '90',
+  noticeRequiredDays: seedContractNumber(DEFAULT_NOTICE_DAYS),
   value: '',
   paymentTerms: 'Net 30',
   incoterms: 'CIF Jakarta',
   obligations: [],
 };
+
+// CP-0 · W1 · 2f-b — each refusal names what to type instead. "Invalid input"
+// would leave an Indonesian buyer staring at a number that reads correctly to
+// them, which is exactly how "1.500" became Rp 1.5 in the first place.
+const CONTRACT_VALUE_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'contracts.wizard.value.refused.empty',
+  NOT_NUMERIC: 'contracts.wizard.value.refused.notNumeric',
+  AMBIGUOUS_QTY: 'contracts.wizard.value.refused.ambiguous',
+};
+
+const CONTRACT_NOTICE_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'contracts.wizard.noticeDays.refused.empty',
+  NOT_NUMERIC: 'contracts.wizard.noticeDays.refused.notNumeric',
+  AMBIGUOUS_QTY: 'contracts.wizard.noticeDays.refused.ambiguous',
+};
+
+const contractRefusalKey = (
+  field: ContractNumericField,
+  reason: QtyRefusalReason,
+): string =>
+  field === 'value'
+    ? CONTRACT_VALUE_REFUSAL_KEY[reason]
+    : CONTRACT_NOTICE_REFUSAL_KEY[reason];
 
 const matchesGroup = (c: Contract, g: GroupTab): boolean => {
   if (g === 'all') return true;
@@ -326,6 +362,26 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     key: K,
     value: DraftContract[K],
   ) => setDraft((d) => ({ ...d, [key]: value }));
+
+  // ── CP-0 · W1 · 2f-b — THE ONE READ of the wizard's two numbers ────────────
+  // The composite is what the step gate and the created entity read; the two
+  // per-field reads exist so each input can report ITSELF. All three go through
+  // the same `normalizeQty` on the same string, so the inline message, the gate
+  // and the stored value cannot disagree — which is precisely what the three
+  // separate `Number()` calls could not promise.
+  const contractNumbers = useMemo(
+    () =>
+      normalizeContractNumbers({
+        value: draft.value,
+        noticeRequiredDays: draft.noticeRequiredDays,
+      }),
+    [draft.value, draft.noticeRequiredDays],
+  );
+  const valueRead = useMemo(() => readContractValue(draft.value), [draft.value]);
+  const noticeRead = useMemo(
+    () => readNoticeRequiredDays(draft.noticeRequiredDays),
+    [draft.noticeRequiredDays],
+  );
 
   const openWizard = () => {
     setDraft(EMPTY_DRAFT);
@@ -412,12 +468,34 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     if (step === 1) {
       if (!draft.startDate || !draft.endDate) return false;
       if (new Date(draft.endDate) <= new Date(draft.startDate)) return false;
-      return Number(draft.value) > 0;
+      // Reads the ONE parse. A refusal on EITHER number holds the step — the
+      // notice period had no gate at all before, which is how `|| 0` turned a
+      // cleared field into a stated zero-day notice requirement.
+      if (!contractNumbers.ok) return false;
+      // The pre-existing `> 0` rule, PRESERVED VERBATIM. Whether a zero-value
+      // contract should be legal is a commercial question, not a parsing one;
+      // this batch only stops the value being misread on the way to it.
+      return contractNumbers.value.value > 0;
     }
     return true;
   };
 
   const submitWizard = () => {
+    // The gate above already holds the wizard on step 2 under a refusal, so this
+    // is unreachable through the UI. It is here because the alternative to an
+    // honest refusal is a fabricated number: there is no dispatcher behind this
+    // page to catch one (CTR-FABRICATION-01), so the check cannot be delegated.
+    if (!contractNumbers.ok) {
+      toast({
+        variant: 'error',
+        title: t('contracts.toast.numberRefused.title'),
+        description: t(
+          contractRefusalKey(contractNumbers.field, contractNumbers.reason),
+        ),
+      });
+      return;
+    }
+    const numbers = contractNumbers.value;
     const yr = new Date().getFullYear();
     const nextNum = baseContracts.length + extraContracts.length + 1;
     const todayIso = new Date().toISOString().slice(0, 10);
@@ -436,8 +514,16 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       startDate: draft.startDate,
       endDate: draft.endDate,
       autoRenewal: draft.autoRenewal,
-      noticeRequiredDays: Number(draft.noticeRequiredDays) || 0,
-      value: Number(draft.value) || 0,
+      // PRESERVED VERBATIM, deliberately: the notice period is written whether
+      // or not auto-renewal is on, so a contract created with auto-renewal OFF
+      // still carries the untouched 90-day default nobody saw. That is
+      // CTR-HIDDEN-SEED-01 — filed, not fixed here. It cannot be decided by a
+      // parse change: the fixtures carry `autoRenewal: false` WITH a real notice
+      // period (mockContracts ctr-002), so "don't write it" would be wrong, and
+      // what a hidden field should contribute to the terms is the operator's
+      // call. What changes here is only that the number is READ honestly.
+      noticeRequiredDays: numbers.noticeRequiredDays,
+      value: numbers.value,
       currency: 'IDR',
       paymentTerms: draft.paymentTerms,
       incoterms: draft.incoterms,
@@ -615,6 +701,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 type="date"
                 value={draft.startDate}
                 onChange={(e) => updateDraft('startDate', e.target.value)}
+                aria-label={t('contracts.wizard.field.startDate')}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
             </div>
@@ -626,6 +713,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 type="date"
                 value={draft.endDate}
                 onChange={(e) => updateDraft('endDate', e.target.value)}
+                aria-label={t('contracts.wizard.field.endDate')}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
               {draft.startDate &&
@@ -643,6 +731,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 type="checkbox"
                 checked={draft.autoRenewal}
                 onChange={(e) => updateDraft('autoRenewal', e.target.checked)}
+                aria-label={t('contracts.wizard.field.autoRenewal')}
                 className="accent-teal w-4 h-4"
               />
               <span className="text-sm text-text-primary font-medium">
@@ -652,20 +741,39 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 {t('contracts.wizard.autoRenewalHint')}
               </span>
             </label>
-            {draft.autoRenewal && (
+            {/* A REFUSAL MUST NEVER BE INVISIBLE. The input belongs to
+                auto-renewal, but the draft keeps its value when the box is
+                unchecked — so an operator who clears the field and then unchecks
+                the box would otherwise be held on this step by a field they
+                cannot see. Rendering it while it refuses keeps the gate
+                actionable without weakening it. */}
+            {(draft.autoRenewal || !noticeRead.ok) && (
               <div className="mt-3 max-w-xs">
                 <label className="text-label text-text-tertiary uppercase block mb-1.5">
-                  {t('contracts.wizard.field.noticeDays')}
+                  {t('contracts.wizard.field.noticeDays')}{' '}
+                  <span className="text-danger">*</span>
                 </label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
+                  inputMode="decimal"
                   value={draft.noticeRequiredDays}
                   onChange={(e) =>
                     updateDraft('noticeRequiredDays', e.target.value)
                   }
+                  placeholder={t('contracts.wizard.placeholder.noticeDays')}
+                  aria-label={t('contracts.wizard.field.noticeDays')}
+                  aria-invalid={!noticeRead.ok}
                   className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
                 />
+                {!noticeRead.ok && (
+                  <div
+                    role="alert"
+                    data-testid="contract-notice-refusal"
+                    className="mt-1 text-[11px] text-danger"
+                  >
+                    {t(CONTRACT_NOTICE_REFUSAL_KEY[noticeRead.reason])}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -674,13 +782,39 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
               {t('contracts.wizard.field.value')} <span className="text-danger">*</span>
             </label>
             <input
-              type="number"
-              min="0"
+              type="text"
+              inputMode="decimal"
               value={draft.value}
               onChange={(e) => updateDraft('value', e.target.value)}
-              placeholder="0"
+              placeholder={t('contracts.wizard.placeholder.value')}
+              aria-label={t('contracts.wizard.field.value')}
+              aria-invalid={draft.value.trim() !== '' && !valueRead.ok}
               className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
             />
+            {/* An untouched blank does not nag on sight — it refuses at the gate
+                (Next stays disabled) and says so on the field once the buyer has
+                typed something (the 2e-a price precedent). */}
+            {draft.value.trim() !== '' && !valueRead.ok && (
+              <div
+                role="alert"
+                data-testid="contract-value-refusal"
+                className="mt-1 text-[11px] text-danger"
+              >
+                {t(CONTRACT_VALUE_REFUSAL_KEY[valueRead.reason])}
+              </div>
+            )}
+            {/* The pre-existing `> 0` gate, finally SAYING SO. It has always
+                disabled Next on a typed zero; it did it in silence, which is the
+                same family of defect as a misread number. No rule changes. */}
+            {valueRead.ok && valueRead.value === 0 && (
+              <div
+                role="alert"
+                data-testid="contract-value-zero"
+                className="mt-1 text-[11px] text-danger"
+              >
+                {t('contracts.wizard.value.mustExceedZero')}
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -909,22 +1043,28 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 t('contracts.wizard.review.row.autoRenewal'),
                 draft.autoRenewal ? t('contracts.common.yes') : t('contracts.common.no'),
               ],
+              // Both rows read the ONE parse. A refusal renders an em dash rather
+              // than a number: the review step is the last place a buyer checks
+              // what they are about to commit to, so it must never be the place
+              // that shows a coerced reading the gate would not accept.
               ...(draft.autoRenewal
                 ? ([
                     [
                       t('contracts.wizard.review.row.noticeRequired'),
-                      t(
-                        Number(draft.noticeRequiredDays) === 1
-                          ? 'contracts.panel.noticeDays.one'
-                          : 'contracts.panel.noticeDays.other',
-                        { count: Number(draft.noticeRequiredDays) },
-                      ),
+                      noticeRead.ok
+                        ? t(
+                            noticeRead.value === 1
+                              ? 'contracts.panel.noticeDays.one'
+                              : 'contracts.panel.noticeDays.other',
+                            { count: noticeRead.value },
+                          )
+                        : '—',
                     ],
                   ] as [string, React.ReactNode][])
                 : []),
               [
                 t('contracts.wizard.review.row.value'),
-                draft.value ? formatIDR(Number(draft.value)) : '—',
+                valueRead.ok ? formatIDR(valueRead.value) : '—',
               ],
               [t('contracts.wizard.review.row.paymentTerms'), draft.paymentTerms],
               [t('contracts.wizard.review.row.incoterms'), draft.incoterms],
