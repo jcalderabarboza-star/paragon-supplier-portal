@@ -6,6 +6,7 @@ import type { IDataService } from '../services/data/types';
 import { MockCommandService } from '../services/data/mock/MockCommandService';
 import { quotationStore } from '../services/data/mock/stores/quotationStore';
 import { rfqStore } from '../services/data/mock/stores/rfqStore';
+import i18n from '../lib/i18n';
 import BuyerSourcing from './BuyerSourcing';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
@@ -244,5 +245,39 @@ describe('BuyerSourcing — the RFQ wizard numerics are text, so the parser is l
     const { budget } = await openWizard();
     expect(budget).toHaveValue('');
     expect(screen.queryByTestId('rfq-budget-refusal')).not.toBeInTheDocument();
+  });
+});
+
+// ── CP-0 · W1 · 2e-b-3 (COS-04) — the shadowing formatters are retired ───────
+//
+// This file carried its own `formatIDR`, `formatNumber` and `formatDate`, each a
+// near-copy of the `lib/format` primitive of the SAME NAME with DIFFERENT
+// behaviour. The consequential one was `formatDate`, which hardcoded `en-GB`:
+// the buyer's dates stayed English in Indonesian mode while every migrated page
+// localised, and it dropped the `Asia/Jakarta` pin so output depended on the
+// runner's timezone.
+//
+// Confirmed display-only before being touched: the formatters are file-private
+// (not exported), and only the default component is imported anywhere, so there
+// is no shared surface to widen. Nothing stored, ranked or dispatched reads them.
+describe('BuyerSourcing — dates localise (COS-04, the en-GB hardcode)', () => {
+  it('renders month abbreviations in Indonesian when the UI is Indonesian', async () => {
+    await i18n.changeLanguage('id');
+    try {
+      renderWithProviders(<BuyerSourcing />);
+      // rfq-001's response deadline is 2026-05-20. id-ID abbreviates May as
+      // "Mei"; the retired local formatter printed "May" in both languages.
+      expect((await screen.findAllByText(/20 Mei 2026/)).length).toBeGreaterThan(0);
+      // The retired output. Nothing on this surface may still say "May" in ID.
+      expect(screen.queryAllByText(/20 May 2026/)).toHaveLength(0);
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
+  it('POSITIVE TWIN — English output is unchanged (en-GB day-month-year kept)', async () => {
+    renderWithProviders(<BuyerSourcing />);
+    expect((await screen.findAllByText(/20 May 2026/)).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(/20 Mei 2026/)).toHaveLength(0);
   });
 });

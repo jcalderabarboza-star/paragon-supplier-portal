@@ -59,6 +59,12 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.quotes.col.unitPrice': 'Unit price',
   'rfqs.quotes.col.totalPrice': 'Total price',
   'rfqs.quotes.col.leadTime': 'Lead time (est.)',
+  // 2e-b-3 (COS-07) — a counted noun, so it takes the explicit one/other pair
+  // this codebase uses for pluralisation (`rfqs.meta.event.*`) rather than bare
+  // interpolation, which rendered "1 days". `days` is the value already through
+  // `formatNumber`, so a grouped count reads like every other quantity.
+  'rfqs.quotes.leadTimeDays.one': '{{days}} day',
+  'rfqs.quotes.leadTimeDays.other': '{{days}} days',
   // 2e-b-2 — the supplier reads their own stated minimum back; absent renders
   // the default it means, never a 0 and never a dash.
   'rfqs.quotes.col.moq': 'Min. order qty',
@@ -241,6 +247,10 @@ export const rfqsId: Record<string, string> = {
   'rfqs.quotes.col.unitPrice': 'Harga satuan',
   'rfqs.quotes.col.totalPrice': 'Harga total',
   'rfqs.quotes.col.leadTime': 'Waktu tunggu (perk.)',
+  // Indonesian does not inflect for number, so both forms are the same string —
+  // stated explicitly rather than collapsed, so the pair stays parallel to EN.
+  'rfqs.quotes.leadTimeDays.one': '{{days}} hari',
+  'rfqs.quotes.leadTimeDays.other': '{{days}} hari',
   'rfqs.quotes.col.moq': 'Kuantitas pesanan min.',
   'rfqs.quotes.moqNone': 'Sama dengan jml RFQ',
   'rfqs.quotes.col.validUntil': 'Berlaku hingga',

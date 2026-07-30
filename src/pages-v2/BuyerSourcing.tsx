@@ -60,6 +60,8 @@ import {
   type RfqDraftRefusal,
 } from './sourcing/rfqCreateModel';
 import type { QtyRefusalReason } from '../lib/localeNumber';
+// 2e-b-3 (COS-04) — the canonical formatters, replacing this file's own copies.
+import { formatDate, formatIDR, formatNumber } from '../lib/format';
 import {
   scoreQuotations,
   AXIS_LIVENESS,
@@ -185,31 +187,25 @@ const daysUntil = (iso: string): number => {
   return Math.round((d.getTime() - REFERENCE_TODAY.getTime()) / DAY_MS);
 };
 
-// Nullish-safe since 2e-b-4a: `RFQ.estimatedValue` is now optional (an absent
-// budget is a real answer, not a Rp 0), and `Intl.format(undefined)` renders the
-// string "NaN". An unstated budget reads as the em dash every other unstated
-// value on this page uses. (Consolidating this local onto `lib/format` is
-// COS-04, deferred to 2e-b-3 — this is the minimum the optional field requires.)
-const formatIDR = (value?: number | null): string =>
-  value == null || Number.isNaN(value)
-    ? '—'
-    : new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        maximumFractionDigits: 0,
-      }).format(value);
-
-// Currency-aware money format (CI-2 currency leg): a quote may be priced in USD
-// (foreign supplier) or IDR (domestic). USD carries cents; IDR is whole-rupiah.
+// ── 2e-b-3 (COS-04) — the shadowing locals are retired ───────────────────────
+//
+// This file carried its own `formatIDR`, `formatNumber` and `formatDate`, each a
+// near-copy of the `lib/format` primitive of the same name. Same names, different
+// behaviour — which is the whole problem: `formatDate` hardcoded `en-GB`, so the
+// buyer's dates stayed English in Indonesian mode while every migrated page
+// localised, and it dropped the `Asia/Jakarta` pin, so a date rendered by the
+// runner's timezone instead of the business one. All three now come from
+// `lib/format` (imported at the top), which is nullish-safe by contract.
+//
+// `formatMoney` STAYS: it is the currency-aware leg (CI-2) and `lib/format` has
+// no equivalent — a quote may be priced in USD. Consolidating it belongs to the
+// currency ruling (FIND-01 / 2e-c), not here.
 const formatMoney = (value: number, currency: 'IDR' | 'USD' = 'IDR'): string =>
   new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'id-ID', {
     style: 'currency',
     currency,
     maximumFractionDigits: currency === 'USD' ? 2 : 0,
   }).format(value);
-
-const formatNumber = (value: number): string =>
-  new Intl.NumberFormat('id-ID').format(value);
 
 // CP-0 · W1 · 2e-b-4a — each wizard-number refusal names its own rule. A buyer
 // who left the quantity blank, one who typed something unreadable, and one who
@@ -239,16 +235,6 @@ const rfqRefusalKey = (refusal: RfqDraftRefusal): string =>
   refusal.field === 'totalQty'
     ? RFQ_QTY_REFUSAL_KEY[refusal.reason]
     : RFQ_BUDGET_REFUSAL_KEY[refusal.reason];
-
-const formatDate = (iso: string): string => {
-  if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
 
 const buildTimeline = (r: RFQ, t: TFunction): TimelineEvent[] => {
   const totalInvited = r.invitedSupplierIds.length;
