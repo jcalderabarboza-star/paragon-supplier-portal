@@ -121,6 +121,9 @@ export const contractsEn: Record<string, string> = {
   'contracts.toast.pdfQueued.desc': 'PDF export coming in Phase 2A.',
   'contracts.toast.created.title': 'Contract {{number}} created',
   'contracts.toast.created.desc': 'Saved as Draft. Sign workflow coming in Phase 2A.',
+  // 2f-b — the create refuses rather than storing a coerced number. The step
+  // gate already prevents reaching this, so it is the honest floor, not a path.
+  'contracts.toast.numberRefused.title': 'Contract not created',
   // — Side-panel footer primary label (state-driven) —
   'contracts.footer.initiateRenewal': 'Initiate renewal',
   'contracts.footer.viewFull': 'View full contract',
@@ -170,6 +173,25 @@ export const contractsEn: Record<string, string> = {
   'contracts.wizard.autoRenewalHint': 'Contract renews unless notice is given.',
   'contracts.wizard.field.noticeDays': 'Notice required (days)',
   'contracts.wizard.field.value': 'Total contract value (IDR)',
+  'contracts.wizard.placeholder.noticeDays': 'e.g. 90',
+  // 2f-b — was "0". A placeholder must never model a value the field treats
+  // specially: this one modelled the exact number the `> 0` gate refuses.
+  'contracts.wizard.placeholder.value': 'e.g. 4500000000',
+  // — Wizard: the numeric refusals (CP-0 · W1 · 2f-b) —
+  'contracts.wizard.value.refused.empty':
+    'Enter the total contract value — it is the commitment the contract records, and a blank is not a value of nothing.',
+  'contracts.wizard.value.refused.notNumeric':
+    'That is not an amount — type digits only, e.g. 4500000000.',
+  'contracts.wizard.value.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
+  'contracts.wizard.value.mustExceedZero':
+    'A contract value must be greater than zero.',
+  'contracts.wizard.noticeDays.refused.empty':
+    'Enter the notice period in days — it is a term of the agreement, and a blank is not a notice period of zero days.',
+  'contracts.wizard.noticeDays.refused.notNumeric':
+    'That is not a number of days — type digits only, e.g. 90.',
+  'contracts.wizard.noticeDays.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
   'contracts.wizard.field.paymentTerms': 'Payment terms',
   'contracts.wizard.field.incoterms': 'Incoterms',
   // — Wizard: obligations —
@@ -337,6 +359,7 @@ export const contractsId: Record<string, string> = {
   'contracts.toast.pdfQueued.desc': 'Ekspor PDF hadir pada Fase 2A.',
   'contracts.toast.created.title': 'Kontrak {{number}} dibuat',
   'contracts.toast.created.desc': 'Disimpan sebagai Draf. Alur penandatanganan hadir pada Fase 2A.',
+  'contracts.toast.numberRefused.title': 'Kontrak tidak dibuat',
   // — Side-panel footer primary label —
   'contracts.footer.initiateRenewal': 'Mulai pembaruan',
   'contracts.footer.viewFull': 'Lihat kontrak lengkap',
@@ -386,6 +409,23 @@ export const contractsId: Record<string, string> = {
   'contracts.wizard.autoRenewalHint': 'Kontrak diperpanjang kecuali ada pemberitahuan.',
   'contracts.wizard.field.noticeDays': 'Pemberitahuan diperlukan (hari)',
   'contracts.wizard.field.value': 'Total nilai kontrak (IDR)',
+  'contracts.wizard.placeholder.noticeDays': 'mis. 90',
+  'contracts.wizard.placeholder.value': 'mis. 4500000000',
+  // — Wizard: penolakan numerik (CP-0 · W1 · 2f-b) —
+  'contracts.wizard.value.refused.empty':
+    'Masukkan total nilai kontrak — inilah komitmen yang dicatat kontrak, dan kolom kosong bukan berarti nilainya nol.',
+  'contracts.wizard.value.refused.notNumeric':
+    'Itu bukan nominal — ketik angka saja, misalnya 4500000000.',
+  'contracts.wizard.value.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
+  'contracts.wizard.value.mustExceedZero':
+    'Nilai kontrak harus lebih besar dari nol.',
+  'contracts.wizard.noticeDays.refused.empty':
+    'Masukkan jangka waktu pemberitahuan dalam hari — ini adalah salah satu ketentuan perjanjian, dan kolom kosong bukan berarti pemberitahuan nol hari.',
+  'contracts.wizard.noticeDays.refused.notNumeric':
+    'Itu bukan jumlah hari — ketik angka saja, misalnya 90.',
+  'contracts.wizard.noticeDays.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
   'contracts.wizard.field.paymentTerms': 'Syarat pembayaran',
   'contracts.wizard.field.incoterms': 'Incoterms',
   // — Wizard: obligations —
