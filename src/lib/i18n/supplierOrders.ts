@@ -72,6 +72,18 @@ export const supplierOrdersEn: Record<string, string> = {
   'supplierOrders.panel.col.material': 'Material',
   'supplierOrders.panel.col.ordered': 'Ordered',
   'supplierOrders.panel.col.confirmed': 'Confirmed',
+  // — Side panel: the confirm-quantity refusals (CP-0 · W1 · 2f-c) —
+  'supplierOrders.confirm.qty.refused.empty':
+    'Enter the quantity you are confirming — a cleared cell is not a confirmation of none. To short-confirm, type the reduced quantity.',
+  'supplierOrders.confirm.qty.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 5000.',
+  'supplierOrders.confirm.qty.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
+  // The courtesy mirror of the dispatcher policy (0 < qty ≤ ordered) — the
+  // policy remains the enforcement; this names the bound in the operator's
+  // language before a dispatch is attempted.
+  'supplierOrders.confirm.qty.outOfBounds':
+    'Confirm between 1 and {{ordered}} {{uom}} — the ordered quantity. To change the order itself, use Request change.',
   // — Side panel: delivery & notes (editing) —
   'supplierOrders.panel.deliveryNotes': 'Delivery & notes',
   'supplierOrders.panel.confirmedDeliveryDate': 'Confirmed delivery date',
@@ -170,6 +182,15 @@ export const supplierOrdersId: Record<string, string> = {
   'supplierOrders.panel.col.material': 'Material',
   'supplierOrders.panel.col.ordered': 'Dipesan',
   'supplierOrders.panel.col.confirmed': 'Dikonfirmasi',
+  // — Panel samping: penolakan kuantitas konfirmasi (CP-0 · W1 · 2f-c) —
+  'supplierOrders.confirm.qty.refused.empty':
+    'Masukkan kuantitas yang Anda konfirmasi — sel yang dikosongkan bukan konfirmasi nol. Untuk konfirmasi sebagian, ketik kuantitas yang dikurangi.',
+  'supplierOrders.confirm.qty.refused.notNumeric':
+    'Itu bukan kuantitas — ketik angka saja, misalnya 5000.',
+  'supplierOrders.confirm.qty.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
+  'supplierOrders.confirm.qty.outOfBounds':
+    'Konfirmasi antara 1 dan {{ordered}} {{uom}} — kuantitas yang dipesan. Untuk mengubah pesanan itu sendiri, gunakan Ajukan perubahan.',
   // — Side panel: delivery & notes (editing) —
   'supplierOrders.panel.deliveryNotes': 'Pengiriman & catatan',
   'supplierOrders.panel.confirmedDeliveryDate': 'Tanggal pengiriman dikonfirmasi',

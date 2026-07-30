@@ -24,6 +24,26 @@ export function resolvePolicyHook(name: string): PolicyHookFn | undefined {
 
 // — PO confirm: each confirmed line qty must be > 0 and ≤ the ordered qty, and
 //   the confirmation must cover every line (count matches). ————————————————————
+
+/**
+ * The ONE expression of the per-line confirm bound — shared between the policy
+ * hook below (the LAW) and the SupplierOrders surface (a courtesy mirror that
+ * disables Confirm and explains the bound in the operator's language). One
+ * expression, two consumers, so the mirror structurally cannot drift from the
+ * policy (CP-0 · 2f-c, operator constraint). The policy remains authoritative:
+ * a dispatch that bypasses the UI is still refused here, in this voice.
+ *
+ * `Number.isFinite` (2f-c, SE-Team spec edit): the previous
+ * `typeof q !== 'number'` admitted NaN — `typeof NaN === 'number'`, and NaN
+ * fails BOTH comparisons (`NaN <= 0` and `NaN > ordered` are false), so a
+ * hand-crafted dispatch could stamp `confirmedQty: NaN` into the store and
+ * poison `expectedValue` (Σ confirmedQty × unitPrice), the 3-way-match input.
+ * The 4a-FIND-01 `num()` class, closed here because this policy is the lock
+ * the 2f-c parse gate is built in front of.
+ */
+export const confirmedQtyWithinBounds = (q: number, ordered: number): boolean =>
+  Number.isFinite(q) && q > 0 && q <= ordered;
+
 const poConfirmQtyWithinOrdered: PolicyHookFn = ({ entityId, payload, target }) => {
   const po = target.readEntity(entityId) as PurchaseOrder | null;
   if (!po) return { ok: false, reason: 'entity missing' };
@@ -34,7 +54,7 @@ const poConfirmQtyWithinOrdered: PolicyHookFn = ({ entityId, payload, target }) 
   for (let i = 0; i < qtys.length; i++) {
     const q = qtys[i];
     const ordered = po.lineItems[i].quantity;
-    if (typeof q !== 'number' || q <= 0 || q > ordered) {
+    if (typeof q !== 'number' || !confirmedQtyWithinBounds(q, ordered)) {
       return { ok: false, reason: `line ${i + 1}: confirmed qty out of bounds (0 < q ≤ ${ordered})` };
     }
   }

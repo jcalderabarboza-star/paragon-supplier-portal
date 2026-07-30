@@ -32,6 +32,13 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useCurrentSupplier, usePurchaseOrders } from '../services/query/hooks';
 import type { PurchaseOrder } from '../services/data/types';
+import type { QtyRefusalReason } from '../lib/localeNumber';
+import { confirmedQtyWithinBounds } from '../services/transitions/policies';
+import {
+  readConfirmedQty,
+  readConfirmedQuantities,
+  seedConfirmQty,
+} from './orders/poConfirmModel';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
@@ -71,6 +78,15 @@ const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
 const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
+// CP-0 · W1 · 2f-c — each refusal names what to type instead (the arc-wide
+// copy discipline: "invalid input" teaches nothing to a buyer whose number
+// reads correctly to them).
+const PO_QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'supplierOrders.confirm.qty.refused.empty',
+  NOT_NUMERIC: 'supplierOrders.confirm.qty.refused.notNumeric',
+  AMBIGUOUS_QTY: 'supplierOrders.confirm.qty.refused.ambiguous',
+};
+
 const SupplierOrders: React.FC = () => {
   const { t } = useTranslation();
   const ORDERS_CRUMB = [
@@ -84,7 +100,10 @@ const SupplierOrders: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [selected, setSelected] = useState<PurchaseOrder | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
-  const [confirmedQtys, setConfirmedQtys] = useState<number[]>([]);
+  // CP-0 · W1 · 2f-c — RAW-BACKED (string[]), the 2f-a state-shape lesson:
+  // `number[]` had no representation for a cleared cell, so `Number('')`
+  // fabricated a 0 into state and left the policy to bounce it after the fact.
+  const [confirmedQtyRaws, setConfirmedQtyRaws] = useState<string[]>([]);
   const [deliveryDate, setDeliveryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [changeText, setChangeText] = useState('');
@@ -165,9 +184,31 @@ const SupplierOrders: React.FC = () => {
   const selectedLive =
     selected ? MY_POS.find((p) => p.id === selected.id) ?? selected : null;
 
+  // ── CP-0 · W1 · 2f-c — THE ONE READ of the confirm quantities ──────────────
+  // Per-line reads so each cell reports ITSELF; one composite for the dispatch.
+  // All go through the same `normalizeQty` on the same strings, so a cell's
+  // message, the button state and the dispatched payload cannot disagree.
+  const lineReads = confirmedQtyRaws.map(readConfirmedQty);
+  const qtysRead = readConfirmedQuantities(confirmedQtyRaws);
+  // COURTESY MIRROR of the policy bound, per line — same predicate the policy
+  // hook runs (`confirmedQtyWithinBounds`, ONE shared expression, so this
+  // display structurally cannot drift from the law). The mirror is UX only:
+  // it disables Confirm and explains the bound in the operator's language.
+  // The POLICY refusal remains the guarantee — a dispatch that bypasses this
+  // surface is still refused by the dispatcher, in its own voice.
+  const lineBounds = lineReads.map((r, i) =>
+    r.ok && selected
+      ? confirmedQtyWithinBounds(r.value, selected.lineItems[i]?.quantity ?? 0)
+      : true, // an unread cell shows its PARSE refusal; bounds wait for a number
+  );
+  const allBoundsOk = lineBounds.every(Boolean);
+  const allQtysOk = qtysRead.ok && allBoundsOk;
+
   const openOrderPanel = (po: PurchaseOrder, mode: PanelMode = 'detail') => {
     setSelected(po);
-    setConfirmedQtys(po.lineItems.map((li) => li.quantity));
+    // Seeded CANONICAL (ungrouped) — these orders run to 150,000+ units, so a
+    // display-formatter seed would open every line refusing its own default.
+    setConfirmedQtyRaws(po.lineItems.map((li) => seedConfirmQty(li.quantity)));
     setDeliveryDate(po.requestedDeliveryDate);
     setNotes('');
     setChangeText('');
@@ -188,8 +229,13 @@ const SupplierOrders: React.FC = () => {
   const confirmOrder = () => {
     if (!selected) return;
     const po = selected;
+    // THE FIRST LOCK. Only parsed, in-bounds numbers may dispatch — the button
+    // is disabled under any refusal, so this guard is belt-and-braces; the
+    // POLICY behind the dispatcher remains the enforcement for anything that
+    // does not come through this surface.
+    if (!qtysRead.ok || !allBoundsOk) return;
     confirmMutation.mutate(
-      { poId: po.id, confirmedQuantities: confirmedQtys },
+      { poId: po.id, confirmedQuantities: [...qtysRead.quantities] },
       {
         onSuccess: (result) => {
           if (result.status === 'failed') {
@@ -262,11 +308,19 @@ const SupplierOrders: React.FC = () => {
     }
   };
 
-  const totalConfirmedQty = confirmedQtys.reduce((a, b) => a + b, 0);
+  // Derived from the PARSED reads only — never summed over a guess. NULL under
+  // a refusal: the diff warning is suppressed (the refusals speak instead), and
+  // the confirmed-summary total — only reachable after a successful dispatch,
+  // which requires every line to have read — renders an em dash rather than a
+  // number nobody typed.
+  const totalConfirmedQty = qtysRead.ok
+    ? qtysRead.quantities.reduce((a, b) => a + b, 0)
+    : null;
   const orderedTotalQty = selected
     ? selected.lineItems.reduce((a, li) => a + li.quantity, 0)
     : 0;
-  const hasQtyChange = totalConfirmedQty !== orderedTotalQty;
+  const hasQtyChange =
+    totalConfirmedQty !== null && totalConfirmedQty !== orderedTotalQty;
   const hasDateChange =
     selected !== null && deliveryDate !== selected.requestedDeliveryDate;
 
@@ -461,11 +515,14 @@ const SupplierOrders: React.FC = () => {
                   >
                     {t('supplierOrders.action.requestChange')}
                   </Button>
+                  {/* Disabled-under-refusal is UX, not the lock: the parse gate
+                      in confirmOrder and the dispatcher policy behind it are
+                      what guarantee no unread or out-of-bounds number ships. */}
                   <Button
                     variant="outline"
                     icon={CheckCircle2}
                     onClick={confirmOrder}
-                    disabled={confirmMutation.isPending}
+                    disabled={confirmMutation.isPending || !allQtysOk}
                   >
                     {confirmMutation.isPending
                       ? t('po.confirm.submitting')
@@ -592,22 +649,65 @@ const SupplierOrders: React.FC = () => {
                         </td>
                         {panelMode === 'editing' && (
                           <td className="px-3 py-2 text-right">
+                            {/* Ruling 6.2: text + inputMode, never type="number" —
+                                the browser must not adjudicate the separators
+                                this cell's parser exists to adjudicate. min/max
+                                were number-input affordances that never bound
+                                anything; the bound is enforced by the policy and
+                                mirrored below. */}
                             <input
-                              type="number"
-                              min={0}
-                              max={li.quantity}
-                              value={confirmedQtys[idx] ?? li.quantity}
+                              type="text"
+                              inputMode="decimal"
+                              value={confirmedQtyRaws[idx] ?? ''}
                               onChange={(e) => {
-                                const v = Number(e.target.value);
-                                setConfirmedQtys((prev) => {
+                                const v = e.target.value;
+                                setConfirmedQtyRaws((prev) => {
                                   const next = [...prev];
                                   next[idx] = v;
                                   return next;
                                 });
                               }}
+                              aria-label={`${t('supplierOrders.panel.col.confirmed')} ${li.materialCode}`}
+                              aria-invalid={
+                                !(lineReads[idx]?.ok ?? true) || !lineBounds[idx]
+                              }
                               className={`${inputClass} text-right`}
                               style={{ width: 100, display: 'inline-block' }}
                             />
+                            {/* Seeded cells: every blank is operator-cleared, so
+                                a refusal shows whenever the cell does not read
+                                (the GR-wizard display rule, not the 2e-a
+                                untouched-blank rule). */}
+                            {lineReads[idx] && !lineReads[idx].ok && (
+                              <div
+                                role="alert"
+                                data-testid={`po-confirm-refusal-${idx}`}
+                                className="mt-1 text-[11px] text-danger text-right"
+                              >
+                                {t(
+                                  PO_QTY_REFUSAL_KEY[
+                                    (lineReads[idx] as { reason: QtyRefusalReason })
+                                      .reason
+                                  ],
+                                )}
+                              </div>
+                            )}
+                            {/* The bounds mirror — courtesy, not law (see the
+                                derivation block). Renders only for a READ number
+                                the policy would refuse, in the operator's
+                                language with the line's own bound. */}
+                            {lineReads[idx]?.ok && !lineBounds[idx] && (
+                              <div
+                                role="alert"
+                                data-testid={`po-confirm-bounds-${idx}`}
+                                className="mt-1 text-[11px] text-danger text-right"
+                              >
+                                {t('supplierOrders.confirm.qty.outOfBounds', {
+                                  ordered: li.quantity,
+                                  uom: li.uom,
+                                })}
+                              </div>
+                            )}
                           </td>
                         )}
                       </tr>
@@ -699,7 +799,11 @@ const SupplierOrders: React.FC = () => {
                       {t('supplierOrders.panel.totalQty')}
                     </dt>
                     <dd className="text-sm font-bold text-text-primary">
-                      <Data>{totalConfirmedQty.toLocaleString()} {t('supplierOrders.units')}</Data>
+                      <Data>
+                        {totalConfirmedQty !== null
+                          ? `${totalConfirmedQty.toLocaleString()} ${t('supplierOrders.units')}`
+                          : '—'}
+                      </Data>
                     </dd>
                   </div>
                   <div className="bg-white rounded px-3 py-2 border border-border-subtle">
