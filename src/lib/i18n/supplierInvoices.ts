@@ -113,6 +113,18 @@ export const supplierInvoicesEn: Record<string, string> = {
   'supplierInvoices.new.noPos': 'No confirmed POs available to invoice.',
   'supplierInvoices.new.amountLabel': 'Amount (IDR)',
   'supplierInvoices.new.amountPlaceholder': 'e.g. 250000000',
+  // — New invoice: the amount refusals (CP-0 · W1 · 2f-d). These replace a
+  // hard-coded English literal that covered three causes in one sentence.
+  'supplierInvoices.new.po.required':
+    'Select the purchase order this invoice is raised against.',
+  'supplierInvoices.new.amount.refused.empty':
+    'Enter the invoice amount — it is the sum being claimed, and a blank is not an amount of zero.',
+  'supplierInvoices.new.amount.refused.notNumeric':
+    'That is not an amount — type digits only, e.g. 250000000.',
+  'supplierInvoices.new.amount.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
+  'supplierInvoices.new.amount.mustExceedZero':
+    'An invoice amount must be greater than zero.',
   // — Empty state (all-empty early return) —
   'supplierInvoices.empty.title': 'No invoices yet',
   'supplierInvoices.empty.subtitle': 'No invoices on file for {{supplier}}.',
@@ -222,6 +234,17 @@ export const supplierInvoicesId: Record<string, string> = {
   'supplierInvoices.new.noPos': 'Tidak ada PO dikonfirmasi yang tersedia untuk difakturkan.',
   'supplierInvoices.new.amountLabel': 'Jumlah (IDR)',
   'supplierInvoices.new.amountPlaceholder': 'mis. 250000000',
+  // — Faktur baru: penolakan jumlah (CP-0 · W1 · 2f-d) —
+  'supplierInvoices.new.po.required':
+    'Pilih pesanan pembelian yang menjadi dasar faktur ini.',
+  'supplierInvoices.new.amount.refused.empty':
+    'Masukkan jumlah faktur — inilah nilai yang ditagihkan, dan kolom kosong bukan berarti jumlahnya nol.',
+  'supplierInvoices.new.amount.refused.notNumeric':
+    'Itu bukan nominal — ketik angka saja, misalnya 250000000.',
+  'supplierInvoices.new.amount.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
+  'supplierInvoices.new.amount.mustExceedZero':
+    'Jumlah faktur harus lebih besar dari nol.',
   // — Empty state (all-empty early return) —
   'supplierInvoices.empty.title': 'Belum ada faktur',
   'supplierInvoices.empty.subtitle': 'Tidak ada faktur untuk {{supplier}}.',

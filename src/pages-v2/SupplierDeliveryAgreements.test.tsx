@@ -79,6 +79,45 @@ describe('SupplierDeliveryAgreements — own-facts-only read-only mirror', () =>
     expect(screen.queryByText(/buyer Q3 widen/)).toBeNull();
   });
 
+  // ── CP-0 · W1 · 2f-d — the governed chip must state the ACTUAL threshold ────
+  //
+  // The chip was `Math.round(pct * 100)`, so a 2.5% tolerance rendered "3%" — a
+  // governed threshold that is not the governed threshold, on the supplier's own
+  // view of the rule that binds them. Pre-existing, but 2f-d is what made a
+  // fractional tolerance enterable in the platform's DEFAULT locale (the id-ID
+  // "2,5" that `type="number"` used to eat), so leaving it would have shipped
+  // this batch's capability gain alongside a wrong number on screen.
+  it('states a FRACTIONAL tolerance exactly — 2.5%, never rounded to 3%', async () => {
+    const res = await mockDataService.delivery.editPolicy(buyerScope, 'sa-0002', 10, {
+      tolerancePct: 0.025,
+      enforcement: 'flag',
+      reason: 'tighten to 2.5% for Q4',
+    });
+    expect(res.ok).toBe(true);
+
+    renderWithProviders(<SupplierDeliveryAgreements />, { identity: SUPPLIER });
+    await waitFor(() => expect(screen.getAllByText('PK-PETB-8810').length).toBeGreaterThan(0));
+    expect(screen.getAllByText(/Governed — flag over 2\.5%/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/Governed — flag over 3%/)).toBeNull();
+  });
+
+  it('states a float-artefact tolerance cleanly — 7%, never 7.000000000000001%', async () => {
+    // The other half of the same tidy: `0.07 * 100` is 7.000000000000001 in
+    // IEEE 754, so an unrounded `${frac * 100}` would leak the artefact onto the
+    // chip. Rounding fixed that and broke 2.5%; the 4-dp tidy fixes both.
+    const res = await mockDataService.delivery.editPolicy(buyerScope, 'sa-0002', 10, {
+      tolerancePct: 0.07,
+      enforcement: 'flag',
+      reason: 'seven percent',
+    });
+    expect(res.ok).toBe(true);
+
+    renderWithProviders(<SupplierDeliveryAgreements />, { identity: SUPPLIER });
+    await waitFor(() => expect(screen.getAllByText('PK-PETB-8810').length).toBeGreaterThan(0));
+    expect(screen.getAllByText(/Governed — flag over 7%/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/7\.0000/)).toBeNull();
+  });
+
   it('a buyer (no supplier identity) gets the NoSupplierIdentity guard', async () => {
     renderWithProviders(<SupplierDeliveryAgreements />); // default buyer identity
     await waitFor(() => expect(screen.getByText(/No supplier identity in session/)).toBeTruthy());

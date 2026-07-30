@@ -272,6 +272,15 @@ export const resources = {
       'delivery.policy.edit.presetC': 'Reference only (unlimited)',
       'delivery.policy.edit.tolerance': 'Tolerance',
       'delivery.policy.edit.unlimited': 'Unlimited',
+      // — The tolerance refusals (CP-0 · W1 · 2f-d) — previously `pctInvalid`
+      // disabled Save and said NOTHING, which is how the default locale's own
+      // decimal form ("2,5") became unenterable without anyone being told.
+      'delivery.policy.edit.pct.refused.empty':
+        'Enter a tolerance percentage, or tick Unlimited — a blank is not a tolerance of zero.',
+      'delivery.policy.edit.pct.refused.notNumeric':
+        'That is not a percentage — type digits only, e.g. 10 or 2,5.',
+      'delivery.policy.edit.pct.refused.ambiguous':
+        'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators.',
       'delivery.policy.edit.enforcement': 'Enforcement',
       'delivery.policy.edit.enforcement.flag': 'Flag',
       'delivery.policy.edit.enforcement.ignore': 'Ignore',
@@ -637,6 +646,13 @@ export const resources = {
       'delivery.policy.edit.presetC': 'Hanya referensi (tanpa batas)',
       'delivery.policy.edit.tolerance': 'Toleransi',
       'delivery.policy.edit.unlimited': 'Tanpa batas',
+      // — Penolakan toleransi (CP-0 · W1 · 2f-d) —
+      'delivery.policy.edit.pct.refused.empty':
+        'Masukkan persentase toleransi, atau centang Tanpa batas — kolom kosong bukan berarti toleransi nol.',
+      'delivery.policy.edit.pct.refused.notNumeric':
+        'Itu bukan persentase — ketik angka saja, misalnya 10 atau 2,5.',
+      'delivery.policy.edit.pct.refused.ambiguous':
+        'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah.',
       'delivery.policy.edit.enforcement': 'Penegakan',
       'delivery.policy.edit.enforcement.flag': 'Tandai',
       'delivery.policy.edit.enforcement.ignore': 'Abaikan',

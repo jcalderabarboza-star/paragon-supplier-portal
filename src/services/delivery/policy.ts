@@ -44,6 +44,23 @@ export type EditPolicyReason =
   /** A policy change carries no reason (blank / whitespace). A deviation must be
    *  attributable (honesty guard 4), so an unattributable edit is refused. */
   | 'REASON_REQUIRED'
+  /**
+   * `tolerancePct` is not a real number (NaN / ±Infinity) or is negative.
+   *
+   * CP-0 · W1 · 2f-d. This guard did not exist: the function checked the reason
+   * and the no-change case and never asked whether the number WAS one. NaN is
+   * the dangerous arm — it is the `num()` family hole (4a-FIND-01) in the ONLY
+   * second lock this surface has, since a policy edit is service-direct with no
+   * dispatcher behind it. And the `NO_CHANGE` check below structurally cannot
+   * catch it: `NaN === NaN` is false, so a NaN tolerance always reads as a
+   * change, is stamped onto `active`, and every later drawdown comparison
+   * against it is silently false — an enforcement policy that can never fire,
+   * with a who/when/why stamp asserting someone chose it.
+   *
+   * Negative is folded in here rather than left to the surface for the same
+   * reason: the pure layer must be answerable on its own.
+   */
+  | 'TOLERANCE_NOT_A_NUMBER'
   /** Both knobs already equal the current `active` — nothing to write. Surfaced
    *  rather than persisted as a no-op stamp (which would fabricate a change event). */
   | 'NO_CHANGE';
@@ -92,6 +109,22 @@ export function setActivePolicy(
       ok: false,
       reason: 'REASON_REQUIRED',
       detail: 'a drawdown-policy change must carry a reason (it is an attributable deviation)',
+    };
+  }
+
+  // CP-0 · W1 · 2f-d — the number must BE a number before it can be governed.
+  // `null` is the legal "unlimited" (Case C) and passes through untouched; every
+  // other non-finite or negative value is refused here, BEFORE the no-change
+  // check, which cannot see NaN (`NaN === NaN` is false).
+  if (
+    input.tolerancePct !== null &&
+    (!Number.isFinite(input.tolerancePct) || input.tolerancePct < 0)
+  ) {
+    return {
+      ok: false,
+      reason: 'TOLERANCE_NOT_A_NUMBER',
+      detail:
+        'tolerancePct must be a finite, non-negative number, or null for unlimited',
     };
   }
 
