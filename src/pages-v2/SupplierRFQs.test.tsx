@@ -134,8 +134,13 @@ describe('SupplierRFQs — the bid price is read once, and refused out loud', ()
     fireEvent.change(price, { target: { value: '1500' } });
     expect(screen.queryByTestId('quote-price-refusal')).not.toBeInTheDocument();
     expect(price).toHaveAttribute('aria-invalid', 'false');
-    // 1,500 × 120,000 (rfq-010 totalQty) — the honest product, not 1.5 × qty.
-    expect(screen.getByText(/180,000,000/)).toBeInTheDocument();
+    // 1500 × 120,000 (rfq-010 totalQty) — the honest product, not 1.5 × qty.
+    // GROUPING CORRECTED in 2e-b-3 (COS-01): was /180,000,000/ (comma), which
+    // was the RUNTIME locale's grouping leaking through `toLocaleString()`. The
+    // preview now uses `formatNumber`, pinned to id-ID like every other quantity
+    // on this page, so the separator is a dot and no longer depends on where the
+    // test happens to run.
+    expect(screen.getByText(/180\.000\.000/)).toBeInTheDocument();
   });
 
   it('POSITIVE TWIN — a fully-formatted ID price is READ, not eaten', async () => {
@@ -143,7 +148,10 @@ describe('SupplierRFQs — the bid price is read once, and refused out loud', ()
     // The token the old number field deleted outright before anyone saw it.
     fireEvent.change(price, { target: { value: '15.000,50' } });
     expect(screen.queryByTestId('quote-price-refusal')).not.toBeInTheDocument();
-    expect(screen.getByText(/1,800,060,000/)).toBeInTheDocument();
+    // GROUPING CORRECTED in 2e-b-3 (COS-01): was /1,800,060,000/. Same reason as
+    // above — and note the fractional price survives the product exactly
+    // (15000.5 × 120000), which is the point of the original spec.
+    expect(screen.getByText(/1\.800\.060\.000/)).toBeInTheDocument();
   });
 });
 
@@ -464,5 +472,81 @@ describe('SupplierRFQs — the minimum order quantity stops being dropped', () =
     expect(screen.queryByTestId('quote-moq-refusal')).not.toBeInTheDocument();
     expect(moq).toHaveAttribute('aria-invalid', 'false');
     expect(submitBtn()).toBeEnabled();
+  });
+});
+
+// ── CP-0 · W1 · 2e-b-3 — the display/read consistency pack ───────────────────
+//
+// Five small display defects, all confirmed display-only before being touched
+// (nothing here is stored, compared, ranked or dispatched — the triage gate was
+// run on each path). They are locked because "cosmetic" is not the same as
+// "unverified": a runtime-locale separator and a hardcoded KPI both misinform a
+// human, and both were invisible to the suite until now.
+describe('SupplierRFQs — display consistency (2e-b-3)', () => {
+  const render = () =>
+    renderWithProviders(<SupplierRFQs />, { identity: SUPPLIER });
+
+  // COS-03. `awaitingCount` was the literal `1`, rendered under "Awaiting
+  // Award · Decision pending" — the same figure for every supplier, including
+  // one with nothing outstanding. sup-007 holds exactly two quotations
+  // (qt-002a on rfq-002, qt-005a on rfq-005), BOTH 'Under Review', so the honest
+  // reading is 2. The old literal happened to be wrong for the seeded persona.
+  it('the Awaiting-Award KPI is DERIVED from the supplier\u2019s own open quotes, not a literal', async () => {
+    render();
+    const kpi = (await screen.findByText('Awaiting Award')).closest('div')!
+      .parentElement!;
+    expect(kpi.textContent).toMatch(/2/);
+    // The retired literal. If this ever reads 1 again for sup-007, the KPI has
+    // gone back to asserting a number nobody derived.
+    expect(kpi.textContent).not.toMatch(/\b1\b/);
+  });
+
+  // COS-02. The open-RFQ card grouped its quantity with bare `toLocaleString()`
+  // (runtime locale) while the minimum order quantity beside it used the pinned
+  // `formatNumber` — two quantities on one card, two conventions.
+  it('the open-RFQ quantity groups id-ID, matching every other quantity on the card', async () => {
+    render();
+    // rfq-010 — 120,000 PCS, the one Open RFQ sup-007 has not yet quoted.
+    expect(await screen.findByText('RFQ-2026-010')).toBeInTheDocument();
+    expect(screen.getByText(/120\.000 PCS/)).toBeInTheDocument();
+    // The comma form is what `toLocaleString()` produced under this runner.
+    expect(screen.queryByText(/120,000 PCS/)).not.toBeInTheDocument();
+  });
+
+  // COS-07. `${q.leadTimeDays} ${t('rfqs.unit.days')}` was raw interpolation, so
+  // a one-day promise read "1 days". No seeded quote states 1 day, so the
+  // singular is driven through a REAL submit rather than asserted on a fixture —
+  // otherwise the branch under test never executes.
+  it('a lead time of exactly one day reads "1 day", not "1 days"', async () => {
+    quotationStore.reset();
+    render();
+    expect(await screen.findByText('RFQ-2026-010')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: /Submit Quote/i })[0]);
+    fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '15000' } });
+    fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Quote valid until'), {
+      target: { value: '2026-06-30' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit quotation' }));
+
+    // Submitting switches to My Quotes, where the supplier reads their own quote.
+    await waitFor(() =>
+      expect(quotationStore.forRfq('rfq-010')).toHaveLength(1),
+    );
+    expect(await screen.findByText('1 day')).toBeInTheDocument();
+    // The retired output. Nothing on this surface may say "1 days".
+    expect(screen.queryByText('1 days')).not.toBeInTheDocument();
+  });
+
+  // The plural branch still renders through i18n, and a grouped day count is
+  // grouped — the other half of the same fix.
+  it('POSITIVE TWIN — a multi-day lead time still reads through the count form', async () => {
+    quotationStore.reset();
+    render();
+    fireEvent.click(await screen.findByRole('tab', { name: /My Quotes/ }));
+    // Both seeded sup-007 quotes state 14 days, so this is plural-safe by query
+    // rather than by assuming one match.
+    expect((await screen.findAllByText('14 days')).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/undefined/)).not.toBeInTheDocument();
   });
 });

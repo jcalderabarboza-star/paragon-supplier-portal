@@ -112,7 +112,18 @@ const buildSubmittedQuotes = (
       submittedDate: formatDate(q.submittedAt),
       unitPrice: formatIDR(q.unitPrice),
       totalPrice: formatIDR(q.totalPrice),
-      leadTime: `${q.leadTimeDays} ${t('rfqs.unit.days')}`,
+      // 2e-b-3 (COS-07) — the day count goes through i18n's plural selection
+      // like every other counted noun on this page (`rfqs.meta.event.*`), and
+      // through `formatNumber` like every other quantity. It was raw string
+      // interpolation: "1 days" in EN, and an ungrouped number for a lead time
+      // long enough to need grouping. The buyer side already reads this axis
+      // through a count form; the supplier's own record of the same quote did not.
+      leadTime: t(
+        q.leadTimeDays === 1
+          ? 'rfqs.quotes.leadTimeDays.one'
+          : 'rfqs.quotes.leadTimeDays.other',
+        { count: q.leadTimeDays, days: formatNumber(q.leadTimeDays) },
+      ),
       // 2e-b-2 — the minimum the supplier stated, read back to them. An ABSENT
       // minimum renders the default it means ("same as RFQ qty"), never a 0 and
       // never a dash: the supplier said something, and it was "no minimum".
@@ -656,7 +667,12 @@ const toOpenRfq = (r: RFQ): OpenRFQ => {
     rfqNumber: r.rfqNumber,
     material: r.title,
     category: r.materialCategory,
-    qty: `${r.totalQty.toLocaleString()} ${r.uom}`,
+    // 2e-b-3 (COS-02) — `formatNumber` (pinned id-ID), not bare
+    // `toLocaleString()`, whose grouping followed the RUNTIME locale. The same
+    // card rendered this quantity one way and the minimum order quantity
+    // another (`formatNumber`, 40 lines below), so two quantities side by side
+    // could disagree about what a thousands separator looks like.
+    qty: `${formatNumber(r.totalQty)} ${r.uom}`,
     // The quantity as the NUMBER it is, carried alongside its display form so
     // the total-price preview never has to parse `qty` back out of its own
     // formatting (CP-0 2e-a).
@@ -720,7 +736,25 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
 
   const openCount = openRFQs.length;
   const submittedCount = submittedQuotes.length;
-  const awaitingCount = 1;
+  // 2e-b-3 (COS-03) — DERIVED, not a literal. This was `= 1`: a hardcoded
+  // number rendered as a live KPI reading "Awaiting Award · Decision pending".
+  // It is display-only — nothing is stored, ranked or dispatched from it — but a
+  // fabricated figure on a KPI tile is the same honesty class as a fabricated
+  // score, just cheaper: it told every supplier the same thing regardless of
+  // what they had actually submitted, including a supplier with none.
+  //
+  // The honest reading is the supplier's own quotations that have been submitted
+  // and NOT yet decided. `Awarded` / `Rejected` are the terminal states (the
+  // pair `buildAwardRows` reads), so awaiting = the other two, filtered
+  // explicitly rather than by subtraction — a subtraction would silently absorb
+  // any future status that belongs in neither bucket.
+  const awaitingCount = useMemo(
+    () =>
+      quotations.filter(
+        (q) => q.status === 'Submitted' || q.status === 'Under Review',
+      ).length,
+    [quotations],
+  );
 
   const handleSubmitQuote = (rfq: OpenRFQ) => {
     setQuotePanelRFQ(rfq);
@@ -768,9 +802,19 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // is the NUMBER it already is; it used to be re-parsed out of the formatted
   // display string ("200,000 PCS" → strip → 200000), a fact round-tripping
   // through its own presentation.
+  //
+  // 2e-b-3 (COS-01) — the DISPLAY half of the :686 residue. The parse half
+  // closed at 2e-a; this `.toLocaleString()` is the retired expression's last
+  // surviving fragment, and its grouping followed the RUNTIME locale rather than
+  // the app's. `formatNumber` pins id-ID, as every other quantity on the page does.
+  //
+  // Deliberately NOT `formatIDR`: the value is labelled with `form.currency`,
+  // which the supplier can set to USD or EUR, so prefixing "Rp" here would make
+  // the platform contradict its own label. That entanglement is the currency
+  // ruling (FIND-01 / 2e-c), and this batch fixes only what it can fix honestly.
   const totalPrice =
     quotePanelRFQ && bidPrice.ok
-      ? (bidPrice.value * quotePanelRFQ.totalQty).toLocaleString()
+      ? formatNumber(bidPrice.value * quotePanelRFQ.totalQty)
       : '—';
 
   // REAL submit — dispatches t_quotation_submit through the command spine (the
