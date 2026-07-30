@@ -159,6 +159,17 @@ export const goodsReceiptEn: Record<string, string> = {
   'goodsReceipt.wizard.aria.received': 'Received quantity for {{code}}',
   'goodsReceipt.wizard.aria.accepted': 'Accepted quantity for {{code}}',
   'goodsReceipt.wizard.aria.rejectionReason': 'Rejection reason for {{code}}',
+  // — Wizard: the quantity refusals (CP-0 · W1 · 2f-a) —
+  // A blank is a REFUSAL here, not an absence: a receipt line with no quantity
+  // is an unfinished inspection, and the line lifecycle already models that.
+  // Enter 0 to state that nothing arrived — that is a real assertion and it is
+  // recorded as one.
+  'goodsReceipt.wizard.qty.refused.empty':
+    'Enter the quantity. If nothing arrived for this line, enter 0 — that is recorded as a real receipt of none, and leaving it blank is not.',
+  'goodsReceipt.wizard.qty.refused.notNumeric':
+    'That is not a quantity — type digits only, e.g. 1500.',
+  'goodsReceipt.wizard.qty.refused.ambiguous':
+    'This can be read two ways — "1.500" means one thousand five hundred in Indonesian and one-point-five in English. Type it without separators: 1500.',
   // — Wizard: quality checks (step 3) —
   'goodsReceipt.wizard.section.qualityEyebrow': 'QUALITY CHECKS',
   'goodsReceipt.wizard.section.perLineInspection': 'Per-line inspection',
@@ -333,6 +344,13 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.wizard.aria.received': 'Kuantitas diterima untuk {{code}}',
   'goodsReceipt.wizard.aria.accepted': 'Kuantitas disetujui untuk {{code}}',
   'goodsReceipt.wizard.aria.rejectionReason': 'Alasan penolakan untuk {{code}}',
+  // — Wizard: penolakan kuantitas (CP-0 · W1 · 2f-a) —
+  'goodsReceipt.wizard.qty.refused.empty':
+    'Masukkan kuantitas. Jika tidak ada yang tiba untuk baris ini, masukkan 0 — itu dicatat sebagai penerimaan nol yang sebenarnya, sedangkan membiarkannya kosong tidak.',
+  'goodsReceipt.wizard.qty.refused.notNumeric':
+    'Itu bukan kuantitas — ketik angka saja, misalnya 1500.',
+  'goodsReceipt.wizard.qty.refused.ambiguous':
+    'Ini bisa dibaca dua cara — "1.500" berarti seribu lima ratus dalam bahasa Indonesia dan satu koma lima dalam bahasa Inggris. Ketik tanpa pemisah: 1500.',
   // — Wizard: quality checks (step 3) —
   'goodsReceipt.wizard.section.qualityEyebrow': 'PEMERIKSAAN KUALITAS',
   'goodsReceipt.wizard.section.perLineInspection': 'Inspeksi per baris',
