@@ -98,6 +98,52 @@ describe('RFQ create — buyer-only creation dispatches (retires extraRfqs)', ()
     expect(rfqStore.all().length).toBe(before);
   });
 
+  // ── CP-0 · W1 · 2e-b-4a — totalQty joins the requiredFields floor ─────────
+  //
+  // THE POSITIVE TWIN FIRST. The negative specs below assert that an absent
+  // quantity CANNOT dispatch; on their own that proves nothing, because a gate
+  // that rejects everything would pass them too. The spec at the top of this
+  // file already proves the other half — `totalQty: 3000` dispatches `done` and
+  // lands as 3000 — and this restates it directly beside the refusals so the
+  // pair is read together.
+  it('POSITIVE TWIN: a stated quantity DOES dispatch and is stored verbatim', async () => {
+    const res = await svc.dispatch(buyer, create({ totalQty: 2400 }));
+    expect(res.status).toBe('done');
+    expect(rfqStore.get(res.entityId!)!.totalQty).toBe(2400);
+  });
+
+  it('rejects an ABSENT totalQty — no RFQ minted (an event with no quantity is unanswerable)', async () => {
+    const before = rfqStore.all().length;
+    const res = await svc.dispatch(buyer, create({ totalQty: undefined }));
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/MISSING_FIELDS:totalQty/);
+    expect(rfqStore.all().length).toBe(before);
+  });
+
+  it('a TYPED zero quantity still dispatches — requiredFields rules on absence, never on value', async () => {
+    // `isEmpty` treats only undefined/null/'' as missing. A zero is a statement
+    // the buyer made; the gate must not conflate it with one they did not make.
+    // (Whether a zero-quantity RFQ is commercially legal is 4a-FIND-02.)
+    const res = await svc.dispatch(buyer, create({ totalQty: 0 }));
+    expect(res.status).toBe('done');
+    expect(rfqStore.get(res.entityId!)!.totalQty).toBe(0);
+  });
+
+  it('an ABSENT estimatedValue is stored as an ABSENCE — never a fabricated Rp 0', async () => {
+    const res = await svc.dispatch(buyer, create({ estimatedValue: undefined }));
+    expect(res.status).toBe('done');
+    const rfq = rfqStore.get(res.entityId!)!;
+    // The retired `num('estimatedValue')` returned 0 here, minting a stated
+    // budget of nothing out of a buyer who stated none.
+    expect('estimatedValue' in rfq).toBe(false);
+    expect(rfq.estimatedValue).toBeUndefined();
+  });
+
+  it('a STATED estimatedValue survives verbatim — omission is for absence only', async () => {
+    const res = await svc.dispatch(buyer, create({ estimatedValue: 850_000_000 }));
+    expect(rfqStore.get(res.entityId!)!.estimatedValue).toBe(850_000_000);
+  });
+
   it('HONEST-BY-CONSTRUCTION: the created RFQ mints no downstream artifact (no PO/contract ref)', async () => {
     const res = await svc.dispatch(buyer, create());
     const rfq = rfqStore.get(res.entityId!)!;

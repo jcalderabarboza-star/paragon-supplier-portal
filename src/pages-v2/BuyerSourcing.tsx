@@ -52,7 +52,14 @@ import {
   useRfqReopen,
   useQuotationReview,
 } from '../services/query/commandHooks';
-import { buildRfqCreatePayload } from './sourcing/rfqCreateModel';
+import {
+  buildRfqCreatePayload,
+  normalizeRfqCreateDraft,
+  readRfqBudget,
+  readRfqTotalQty,
+  type RfqDraftRefusal,
+} from './sourcing/rfqCreateModel';
+import type { QtyRefusalReason } from '../lib/localeNumber';
 import {
   scoreQuotations,
   AXIS_LIVENESS,
@@ -178,12 +185,19 @@ const daysUntil = (iso: string): number => {
   return Math.round((d.getTime() - REFERENCE_TODAY.getTime()) / DAY_MS);
 };
 
-const formatIDR = (value: number): string =>
-  new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0,
-  }).format(value);
+// Nullish-safe since 2e-b-4a: `RFQ.estimatedValue` is now optional (an absent
+// budget is a real answer, not a Rp 0), and `Intl.format(undefined)` renders the
+// string "NaN". An unstated budget reads as the em dash every other unstated
+// value on this page uses. (Consolidating this local onto `lib/format` is
+// COS-04, deferred to 2e-b-3 — this is the minimum the optional field requires.)
+const formatIDR = (value?: number | null): string =>
+  value == null || Number.isNaN(value)
+    ? '—'
+    : new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        maximumFractionDigits: 0,
+      }).format(value);
 
 // Currency-aware money format (CI-2 currency leg): a quote may be priced in USD
 // (foreign supplier) or IDR (domestic). USD carries cents; IDR is whole-rupiah.
@@ -196,6 +210,35 @@ const formatMoney = (value: number, currency: 'IDR' | 'USD' = 'IDR'): string =>
 
 const formatNumber = (value: number): string =>
   new Intl.NumberFormat('id-ID').format(value);
+
+// CP-0 · W1 · 2e-b-4a — each wizard-number refusal names its own rule. A buyer
+// who left the quantity blank, one who typed something unreadable, and one who
+// typed a token legal under both conventions have made three different mistakes
+// and need three different answers — not one anonymous disabled button.
+//
+// The maps are EXACT because `RfqDraftRefusal` is discriminated by field:
+// `EMPTY_QTY` exists on the quantity (required) and is excluded from the budget
+// (optional — a blank there is the answer), so neither map carries an entry it
+// can never use.
+const RFQ_QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'sourcing.wizard.qty.refused.empty',
+  NOT_NUMERIC: 'sourcing.wizard.qty.refused.notNumeric',
+  AMBIGUOUS_QTY: 'sourcing.wizard.qty.refused.ambiguous',
+};
+
+const RFQ_BUDGET_REFUSAL_KEY: Record<
+  Exclude<QtyRefusalReason, 'EMPTY_QTY'>,
+  string
+> = {
+  NOT_NUMERIC: 'sourcing.wizard.budget.refused.notNumeric',
+  AMBIGUOUS_QTY: 'sourcing.wizard.budget.refused.ambiguous',
+};
+
+/** The i18n key for a refusal, chosen by the field it came from. */
+const rfqRefusalKey = (refusal: RfqDraftRefusal): string =>
+  refusal.field === 'totalQty'
+    ? RFQ_QTY_REFUSAL_KEY[refusal.reason]
+    : RFQ_BUDGET_REFUSAL_KEY[refusal.reason];
 
 const formatDate = (iso: string): string => {
   if (!iso) return '—';
@@ -757,13 +800,37 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     }));
   };
 
+  // ── CP-0 · W1 · 2e-b-4a — the ONE read of the wizard's two numbers ─────────
+  // The step gate, the review summary, and the dispatched payload ALL read this
+  // one result. Before, each re-read `draft.totalQty` with its own recipe, so
+  // the number that unlocked the wizard, the number the buyer confirmed on the
+  // review step, and the number the RFQ was minted with could be three different
+  // numbers — and "2,400" could be all three at once as NaN.
+  const rfqNumbers = useMemo(() => normalizeRfqCreateDraft(draft), [draft]);
+
+  // The two FIELD-LEVEL reads (2e-b-4b). Same parser, same strings — these
+  // cannot disagree with the composite above; they exist because the composite
+  // is sequential and so can only ever name one field at a time. On a fresh
+  // wizard the quantity is blank, so without these the budget input could never
+  // report its own refusal.
+  const qtyRead = useMemo(() => readRfqTotalQty(draft.totalQty), [draft.totalQty]);
+  const budgetRead = useMemo(() => readRfqBudget(draft.budget), [draft.budget]);
+
   const isStepValid = (step: number): boolean => {
     if (step === 0) {
       return (
         draft.title.trim().length > 0 &&
         draft.category !== '' &&
         draft.materials.length > 0 &&
-        Number(draft.totalQty) > 0
+        // The quantity must be READABLE and positive. The positivity half is the
+        // pre-existing `Number(draft.totalQty) > 0` guard, preserved verbatim in
+        // meaning: this batch makes the reading honest, it does not relax what
+        // the wizard already refused. Whether a zero-quantity RFQ deserves a
+        // NAMED refusal (the ZERO_PRICE / ZERO_MOQ precedent) instead of an
+        // anonymous disabled button is 4a-FIND-02 — a commercial ruling, not a
+        // parsing one, and not taken here.
+        rfqNumbers.ok &&
+        rfqNumbers.value.totalQty > 0
       );
     }
     if (step === 1) return draft.invitedSupplierIds.length > 0;
@@ -780,9 +847,26 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // Open RFQ arrives on the board via getRFQs. Both failure channels leave the
   // board unchanged and surface an honest toast.
   const submitWizard = () => {
+    // The parse gate fires FIRST and it BLOCKS. `isStepValid(0)` already keeps
+    // the wizard from reaching this step, so this is the SECOND lock: a
+    // programmatic or race-y submit cannot slip an unreadable quantity into a
+    // store-minted RFQ, where it would become the multiplicand of every
+    // quotation's total price. The refusal is NAMED rather than folded into the
+    // generic create-failed toast — "we cannot tell which number you mean" and
+    // "you left this blank" ask the buyer for different things.
+    if (!rfqNumbers.ok) {
+      toast({
+        variant: 'error',
+        title: t('sourcing.toast.numberRefused.title'),
+        description: t(rfqRefusalKey(rfqNumbers)),
+      });
+      return;
+    }
     const invitedCount = draft.invitedSupplierIds.length;
     createMutation.mutate(
-      { payload: buildRfqCreatePayload(draft) },
+      // The SAME parsed values the gate above judged — the builder can no longer
+      // re-read the strings and reach a different number (CP-0 §4).
+      { payload: buildRfqCreatePayload(draft, rfqNumbers.value) },
       {
         onSuccess: (result) => {
           if (result.status === 'failed') {
@@ -886,13 +970,33 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
                 {t('sourcing.wizard.field.budget')}
               </label>
+              {/* Ruling 6.2 — and load-bearing here in the worst way, because a
+                  blank is LEGAL on this field. `type="number"` erases a token it
+                  cannot parse to "" before React sees it, so the browser would
+                  quietly convert a budget the buyer typed into the "not
+                  specified" default with nobody told — the same silent
+                  downgrade the MOQ field was rescued from in 2e-b-2. */}
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={draft.budget}
                 onChange={(e) => updateDraft('budget', e.target.value)}
                 placeholder={t('sourcing.wizard.placeholder.budget')}
+                aria-label={t('sourcing.wizard.field.budget')}
+                aria-invalid={!budgetRead.ok}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
+              {/* An untouched blank does not nag — it is this field's answer,
+                  so `readRfqBudget` never refuses one. */}
+              {!budgetRead.ok && (
+                <div
+                  role="alert"
+                  data-testid="rfq-budget-refusal"
+                  className="mt-1 text-[11px] text-danger"
+                >
+                  {t(RFQ_BUDGET_REFUSAL_KEY[budgetRead.reason])}
+                </div>
+              )}
             </div>
           </div>
           <div>
@@ -932,14 +1036,37 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 {t('sourcing.wizard.field.totalQty')}{' '}
                 <span className="text-danger">*</span>
               </label>
+              {/* Ruling 6.2 — the parse CANNOT fire behind `type="number"`,
+                  which is what 2e-b-4a's smoke proved on a live id-ID browser:
+                  "2.400" reached Review as 2,4 because the number input had
+                  already rewritten the value per browser locale before React
+                  saw it. The gate cannot refuse what it never sees. `min="0"`
+                  goes with it — it was part of the number-input contract and
+                  the positivity rule now lives in `isStepValid`, where it is
+                  actually enforced. `type="text"` returns `.value` VERBATIM in
+                  every locale, which is what makes the parser load-bearing. */}
               <input
-                type="number"
-                min="0"
+                type="text"
+                inputMode="decimal"
                 value={draft.totalQty}
                 onChange={(e) => updateDraft('totalQty', e.target.value)}
                 placeholder={t('sourcing.wizard.placeholder.qty')}
+                aria-label={t('sourcing.wizard.field.totalQty')}
+                aria-invalid={draft.totalQty.trim() !== '' && !qtyRead.ok}
                 className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
               />
+              {/* An untouched blank does not nag on sight — it refuses at the
+                  gate (Next stays disabled) and says so on the field once the
+                  buyer has typed something (the 2e-a price precedent). */}
+              {draft.totalQty.trim() !== '' && !qtyRead.ok && (
+                <div
+                  role="alert"
+                  data-testid="rfq-qty-refusal"
+                  className="mt-1 text-[11px] text-danger"
+                >
+                  {t(RFQ_QTY_REFUSAL_KEY[qtyRead.reason])}
+                </div>
+              )}
             </div>
             <div>
               <label className="text-label text-text-tertiary uppercase block mb-1.5">
@@ -1225,17 +1352,28 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 t('sourcing.wizard.review.row.materials'),
                 draft.materials.join(', ') || '—',
               ],
+              // 2e-b-4a — the review reads the SAME parsed numbers the payload
+              // ships, so what the buyer confirms here is definitionally what
+              // gets minted. It used to re-run `Number(draft.totalQty)`, which
+              // is how a buyer could confirm "2.400 KG" on this very screen and
+              // raise an event for 2.4 KG.
               [
                 t('sourcing.wizard.review.row.quantity'),
-                draft.totalQty
-                  ? `${formatNumber(Number(draft.totalQty))} ${draft.uom}`
+                rfqNumbers.ok
+                  ? `${formatNumber(rfqNumbers.value.totalQty)} ${draft.uom}`
                   : '—',
               ],
               [
                 t('sourcing.wizard.review.row.budget'),
-                draft.budget
-                  ? formatIDR(Number(draft.budget))
-                  : t('sourcing.wizard.review.budgetUnspecified'),
+                // "Not specified" is reserved for a genuine blank — an
+                // unreadable budget is not an unstated one, so it reads as the
+                // em dash. (Unreachable in practice: the step-0 gate blocks a
+                // refusal from ever reaching this step.)
+                !rfqNumbers.ok
+                  ? '—'
+                  : rfqNumbers.value.estimatedValue === undefined
+                    ? t('sourcing.wizard.review.budgetUnspecified')
+                    : formatIDR(rfqNumbers.value.estimatedValue),
               ],
             ]}
           />

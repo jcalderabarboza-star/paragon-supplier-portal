@@ -58,6 +58,25 @@ describe('seeded registry (getKnownFlows)', () => {
     expect(confirm.policyHooks).toContain(POLICY_HOOKS.PO_CONFIRM_QTY_WITHIN_ORDERED);
     for (const hook of confirm.policyHooks) expect(isRegisteredPolicyHook(hook)).toBe(true);
   });
+
+  // CP-0 · W1 · 2e-b-4a — the transition schema is a SPEC ARTIFACT for the SE
+  // Team, so the required floor is locked here rather than left to the mock's
+  // integration specs. The RFQ-create floor mirrors the other two creation verbs
+  // that carry a quantity: an event nobody can quote against must not be
+  // raisable, by ANY producer, including one that skips the wizard entirely.
+  it('the creation verbs that carry a quantity all REQUIRE it (t_rfq_create joins the floor)', () => {
+    expect(getTransition('t_rfq_create')!.requiredFields).toEqual([
+      'title',
+      'materialCategory',
+      'totalQty',
+    ]);
+    // The two verbs it mirrors — same canon, stated together so a future edit to
+    // one is visibly out of step with the others.
+    expect(getTransition('t_pr_create')!.requiredFields).toContain('quantity');
+    expect(getTransition('t_inventorydeclaration_declare')!.requiredFields).toContain(
+      'totalQty',
+    );
+  });
 });
 
 describe('policy-hook registry', () => {

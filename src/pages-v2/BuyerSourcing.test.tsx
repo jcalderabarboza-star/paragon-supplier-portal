@@ -166,3 +166,83 @@ describe('BuyerSourcing — the minimum order quantity reaches the comparison', 
     expect(screen.getAllByText('Estimated')).toHaveLength(2); // lead time + its score
   });
 });
+
+// ── CP-0 · W1 · 2e-b-4b — the wizard's numeric inputs, and why the TYPE is the
+// test ─────────────────────────────────────────────────────────────────────────
+//
+// 4a shipped a correct parser that the surface never fed. `type="number"` lets
+// the BROWSER rewrite the value per its own locale before React sees it, so on
+// an id-ID browser "2.400" reached the review step as 2,4 — the parser was
+// bypassed, not wrong. The gate cannot refuse what it never sees.
+//
+// That failure is invisible in this suite's locale AND in jsdom: en-US Chrome
+// hands `.value` back as "2.400" verbatim, and jsdom does no locale parsing at
+// all. So a behavioural spec typing "2.400" would have passed on a surface that
+// was broken in production — a green test over a live defect, the exact trap
+// this arc keeps hitting.
+//
+// The durable lock is therefore the INPUT CONTRACT itself: assert `type="text"`
+// + `inputMode`, because that is the property whose absence caused the smoke to
+// fail, and it is locale-independent and jsdom-visible. The behavioural specs
+// below stack on top and are honest about what they can and cannot prove.
+describe('BuyerSourcing — the RFQ wizard numerics are text, so the parser is load-bearing', () => {
+  const openWizard = async () => {
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText('New RFQ'));
+    return {
+      qty: await screen.findByLabelText('Total quantity'),
+      budget: await screen.findByLabelText('Estimated budget (IDR)'),
+    };
+  };
+
+  it('THE LOCK — neither numeric input is type="number" (Ruling 6.2)', async () => {
+    const { qty, budget } = await openWizard();
+    // The regression that 2e-b-4a's smoke caught. A `type="number"` here means
+    // the browser adjudicates the separators this field exists to adjudicate.
+    expect(qty).toHaveAttribute('type', 'text');
+    expect(budget).toHaveAttribute('type', 'text');
+    expect(qty).toHaveAttribute('inputmode', 'decimal');
+    expect(budget).toHaveAttribute('inputmode', 'decimal');
+    // `min` was part of the number-input contract; positivity now lives in
+    // `isStepValid`, where it is actually enforced.
+    expect(qty).not.toHaveAttribute('min');
+  });
+
+  it('POSITIVE TWIN — a readable quantity is accepted and raises no refusal', async () => {
+    const { qty } = await openWizard();
+    fireEvent.change(qty, { target: { value: '2400' } });
+    expect(screen.queryByTestId('rfq-qty-refusal')).not.toBeInTheDocument();
+  });
+
+  it('a cross-convention quantity REFUSES on the field, naming the ambiguity', async () => {
+    const { qty } = await openWizard();
+    fireEvent.change(qty, { target: { value: '2.400' } });
+    const refusal = screen.getByTestId('rfq-qty-refusal');
+    expect(refusal).toHaveAttribute('role', 'alert');
+    expect(refusal.textContent).toMatch(/can be read two ways/i);
+    expect(qty).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('an untouched blank quantity does NOT nag — it refuses at the gate instead', async () => {
+    const { qty } = await openWizard();
+    expect(qty).toHaveValue('');
+    expect(screen.queryByTestId('rfq-qty-refusal')).not.toBeInTheDocument();
+  });
+
+  it('an unreadable BUDGET refuses rather than silently becoming "not specified"', async () => {
+    // The worst case of the retired input type: a blank is LEGAL here, so a
+    // browser that erased the token would have downgraded a stated budget to
+    // the unstated default with nobody told.
+    const { budget } = await openWizard();
+    fireEvent.change(budget, { target: { value: 'TBC' } });
+    expect(screen.getByTestId('rfq-budget-refusal').textContent).toMatch(
+      /not an amount/i,
+    );
+  });
+
+  it('a blank budget raises no refusal — absence is this field\u2019s answer', async () => {
+    const { budget } = await openWizard();
+    expect(budget).toHaveValue('');
+    expect(screen.queryByTestId('rfq-budget-refusal')).not.toBeInTheDocument();
+  });
+});
