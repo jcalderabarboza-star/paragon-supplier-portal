@@ -67,12 +67,25 @@ export type OnEditPolicy = (
   patch: EditPolicyPatch,
 ) => Promise<boolean>;
 
+/**
+ * A stored FRACTION as display percent — the ONE conversion for this surface.
+ *
+ * CP-0 · W1 · 2f-d: `${frac * 100}` alone leaks IEEE-754 artefacts (0.07 * 100
+ * is 7.000000000000001), and `Math.round` alone destroys a real fractional
+ * tolerance (2.5 → 3). The 4-dp tidy does both jobs, and is the same one
+ * `seedTolerancePct` applies when seeding the editor — so the chip, the
+ * deviation note and the input box cannot disagree about the policy.
+ */
+function formatPct(fraction: number): string {
+  return String(parseFloat((fraction * 100).toFixed(4)));
+}
+
 /** Format a tolerance policy for display: "10% · Flag" or "Unlimited · Ignore". */
 function formatPolicy(t: TFunction, p: TolerancePolicy): string {
   const knob =
     p.tolerancePct === null
       ? t('delivery.policy.edit.unlimited')
-      : `${p.tolerancePct * 100}%`;
+      : `${formatPct(p.tolerancePct)}%`;
   return `${knob} · ${t(`delivery.policy.edit.enforcement.${p.enforcement}`)}`;
 }
 
@@ -278,8 +291,16 @@ const ItemBlock: React.FC<{
               "reference envelope, not enforced", never a governed total. */}
           {ledger.enforced ? (
             <StatusPill variant="info">
+              {/* CP-0 · W1 · 2f-d — was `Math.round(pct * 100)`, which rendered a
+                  2,5% tolerance as "3%": the chip stated a governed threshold
+                  that was not the governed threshold. Pre-existing, but 2f-d is
+                  what made a fractional tolerance enterable in the DEFAULT
+                  locale, so shipping the parse fix without this would have made
+                  the batch's own capability gain produce a wrong number on
+                  screen. Same float-tidy as `seedTolerancePct` — 4 dp, then
+                  trimmed — so 0,07 reads "7%", not "7.000000000000001%". */}
               {t('delivery.policy.governed', {
-                pct: Math.round((ledger.activePolicy.tolerancePct ?? 0) * 100),
+                pct: formatPct(ledger.activePolicy.tolerancePct ?? 0),
               })}
             </StatusPill>
           ) : (

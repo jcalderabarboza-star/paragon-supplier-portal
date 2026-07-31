@@ -140,6 +140,105 @@ describe('setActivePolicy — the policy-edit write (pure)', () => {
     expect(after.exceptions[0].kind).toBe('over-envelope');
   });
 
+  // ── CP-0 · W1 · 2f-d — the number must BE a number (TOLERANCE_NOT_A_NUMBER) ──
+  //
+  // The pure layer's FIRST direct number specs. Until 2f-d this function checked
+  // the reason and the no-change case and never asked whether `tolerancePct` was
+  // a real number — and it is the ONLY second lock this surface has, since a
+  // policy edit is service-direct with no dispatcher behind it. The parse gate
+  // added to PolicyEditor in the same batch is built in front of THIS.
+  it('REFUSES NaN — the num() hole in the only lock this surface has', () => {
+    // The dangerous arm. NaN is not merely wrong, it is UNCATCHABLE downstream:
+    // the NO_CHANGE check below cannot see it (`NaN === NaN` is false), so it
+    // always reads as a real change, gets stamped onto `active` with a
+    // who/when/why triple asserting someone chose it, and every subsequent
+    // drawdown comparison against it is silently false — an enforcement policy
+    // that can never fire.
+    const item = itemWith(DRAWDOWN_PRESET_CASE_B);
+    const result = setActivePolicy(item, {
+      tolerancePct: NaN,
+      enforcement: 'flag',
+      reason: 'hand-crafted NaN',
+      now: NOW,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toBe('TOLERANCE_NOT_A_NUMBER');
+  });
+
+  it('REFUSES NaN even when the enforcement arm is unchanged — NO_CHANGE cannot catch it', () => {
+    // Pins the ORDER of the guards: the finiteness check must run BEFORE the
+    // no-change comparison, or NaN slips past on the `!==` that can never be false.
+    const item = itemWith(DRAWDOWN_PRESET_CASE_B);
+    const result = setActivePolicy(item, {
+      tolerancePct: NaN,
+      enforcement: DRAWDOWN_PRESET_CASE_B.enforcement,
+      reason: 'same enforcement, NaN tolerance',
+      now: NOW,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toBe('TOLERANCE_NOT_A_NUMBER');
+  });
+
+  it('REFUSES ±Infinity by the same finiteness rule', () => {
+    const item = itemWith(DRAWDOWN_PRESET_CASE_B);
+    for (const pct of [Infinity, -Infinity]) {
+      const result = setActivePolicy(item, {
+        tolerancePct: pct,
+        enforcement: 'flag',
+        reason: 'non-finite',
+        now: NOW,
+      });
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.reason).toBe('TOLERANCE_NOT_A_NUMBER');
+    }
+  });
+
+  it('REFUSES a negative tolerance — the pure layer answers for itself', () => {
+    const item = itemWith(DRAWDOWN_PRESET_CASE_B);
+    const result = setActivePolicy(item, {
+      tolerancePct: -0.1,
+      enforcement: 'flag',
+      reason: 'negative envelope',
+      now: NOW,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.reason).toBe('TOLERANCE_NOT_A_NUMBER');
+  });
+
+  it('PASSES null — "unlimited" (Case C) is a legal policy, not a missing number', () => {
+    // The one non-number the guard must let through. Belt-and-braces against a
+    // finiteness check written as `Number.isFinite(pct)` without the null arm.
+    const item = itemWith(DRAWDOWN_PRESET_CASE_B);
+    const result = setActivePolicy(item, {
+      tolerancePct: null,
+      enforcement: 'ignore',
+      reason: 'unlimited is legal',
+      now: NOW,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.item.drawdownPolicy.active.tolerancePct).toBeNull();
+  });
+
+  it('PASSES a typed zero — a zero-tolerance envelope is a real, strict policy', () => {
+    // Distinct from "unlimited" and from "unreadable": 0% means exactly on the
+    // agreed quantity, no slack. The guard must not confuse strictness with
+    // absence (the blank-is-not-zero discipline, from the other direction).
+    const item = itemWith(DRAWDOWN_PRESET_CASE_B);
+    const result = setActivePolicy(item, {
+      tolerancePct: 0,
+      enforcement: 'block',
+      reason: 'zero slack',
+      now: NOW,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.item.drawdownPolicy.active.tolerancePct).toBe(0);
+  });
+
   it('reset writes contractDefault back into active (deviation would clear)', () => {
     // Start deviated: active is Case C, contractDefault is Case B.
     const item = itemWith(DRAWDOWN_PRESET_CASE_C, DRAWDOWN_PRESET_CASE_B);

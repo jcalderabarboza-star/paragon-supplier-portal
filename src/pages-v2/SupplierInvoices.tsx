@@ -47,6 +47,17 @@ import {
   usePurchaseOrders,
 } from '../services/query/hooks';
 import { useInvoiceCreate, useInvoiceSubmit } from '../services/query/commandHooks';
+import type { QtyRefusalReason } from '../lib/localeNumber';
+import { readInvoiceAmount } from './invoices/invoiceAmountModel';
+
+// CP-0 · W1 · 2f-d — each refusal names what to type instead. Replaces a
+// hard-coded English literal ('PO and a positive amount are required') that
+// covered three distinct causes in one untranslated sentence.
+const INVOICE_AMOUNT_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
+  EMPTY_QTY: 'supplierInvoices.new.amount.refused.empty',
+  NOT_NUMERIC: 'supplierInvoices.new.amount.refused.notNumeric',
+  AMBIGUOUS_QTY: 'supplierInvoices.new.amount.refused.ambiguous',
+};
 
 const STATUS_VARIANT: Record<InvStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   Draft: 'neutral',
@@ -181,6 +192,12 @@ const SupplierInvoices: React.FC = () => {
     (po) => po.status === POStatus.CONFIRMED,
   );
 
+  // ── CP-0 · W1 · 2f-d — THE ONE READ of the new-invoice amount ──────────────
+  // The gate, the inline message and the dispatched payload all read this, so
+  // none of them can disagree about the amount being invoiced.
+  const amountRead = readInvoiceAmount(newAmount);
+  const amountPositive = amountRead.ok && amountRead.value > 0;
+
   const submitDraft = (inv: SupplierInvoice) => {
     submitMutation.mutate(
       { invoiceId: inv.id, amount: inv.amount },
@@ -207,11 +224,37 @@ const SupplierInvoices: React.FC = () => {
   };
 
   const submitNewInvoice = () => {
-    const amount = Number(newAmount);
-    if (!newPoRef || !Number.isFinite(amount) || amount <= 0) {
-      toast({ variant: 'warning', title: t('invoice.create.failed.title'), description: t('invoice.create.failed.desc', { reason: 'PO and a positive amount are required' }) });
+    // Each cause gets its OWN translated message. The retired guard collapsed
+    // three distinct failures — no PO, an unreadable amount, a non-positive
+    // amount — into one hard-coded English sentence, in both locales.
+    if (!newPoRef) {
+      toast({
+        variant: 'warning',
+        title: t('invoice.create.failed.title'),
+        description: t('supplierInvoices.new.po.required'),
+      });
       return;
     }
+    if (!amountRead.ok) {
+      toast({
+        variant: 'warning',
+        title: t('invoice.create.failed.title'),
+        description: t(INVOICE_AMOUNT_REFUSAL_KEY[amountRead.reason]),
+      });
+      return;
+    }
+    // The pre-existing `> 0` rule, PRESERVED VERBATIM — whether a zero-value
+    // invoice is legal is a commercial question, not a parsing one. What changed
+    // is that it now says which rule it is.
+    if (amountRead.value <= 0) {
+      toast({
+        variant: 'warning',
+        title: t('invoice.create.failed.title'),
+        description: t('supplierInvoices.new.amount.mustExceedZero'),
+      });
+      return;
+    }
+    const amount = amountRead.value;
     createMutation.mutate(
       { poReference: newPoRef, amount },
       {
@@ -733,9 +776,11 @@ const SupplierInvoices: React.FC = () => {
             <Button variant="secondary" onClick={() => setNewOpen(false)}>
               {t('supplierInvoices.new.cancel')}
             </Button>
+            {/* Disabled-under-refusal is UX; the gate in `submitNewInvoice` is
+                what guarantees no misread amount is dispatched. */}
             <Button
               variant="outline"
-              disabled={createMutation.isPending}
+              disabled={createMutation.isPending || !newPoRef || !amountPositive}
               onClick={submitNewInvoice}
             >
               {t('supplierInvoices.new.createDraft')}
@@ -774,15 +819,43 @@ const SupplierInvoices: React.FC = () => {
             <label htmlFor="new-amount" className="text-label text-text-tertiary uppercase block mb-1">
               {t('supplierInvoices.new.amountLabel')}
             </label>
+            {/* Ruling 6.2: text + inputMode. `min={0}` was a number-input
+                affordance that never bound the parse — a negative is refused by
+                `normalizeQty` as NOT_NUMERIC, where it is actually enforced. */}
             <input
               id="new-amount"
-              type="number"
-              min={0}
+              type="text"
+              inputMode="decimal"
               className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
               placeholder={t('supplierInvoices.new.amountPlaceholder')}
               value={newAmount}
+              aria-invalid={newAmount.trim() !== '' && !amountRead.ok}
               onChange={(e) => setNewAmount(e.target.value)}
             />
+            {/* UNSEEDED field, so the 2e-a rule applies: an untouched blank does
+                not nag on sight — it refuses at the gate and speaks once the
+                supplier has typed something. (Contrast the seeded 2f-a/2f-c
+                cells, where every blank is operator-cleared.) */}
+            {newAmount.trim() !== '' && !amountRead.ok && (
+              <div
+                role="alert"
+                data-testid="invoice-amount-refusal"
+                className="mt-1 text-[11px] text-danger"
+              >
+                {t(INVOICE_AMOUNT_REFUSAL_KEY[amountRead.reason])}
+              </div>
+            )}
+            {/* The pre-existing `> 0` rule, finally SAYING SO rather than
+                failing into a generic warning toast. No rule changed. */}
+            {amountRead.ok && amountRead.value <= 0 && (
+              <div
+                role="alert"
+                data-testid="invoice-amount-zero"
+                className="mt-1 text-[11px] text-danger"
+              >
+                {t('supplierInvoices.new.amount.mustExceedZero')}
+              </div>
+            )}
           </div>
         </div>
       </SidePanel>

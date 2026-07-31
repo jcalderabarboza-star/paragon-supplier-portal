@@ -62,3 +62,85 @@ describe('SupplierInvoices — Submit dispatches the real verb', () => {
     });
   });
 });
+
+// ── CP-0 · W1 · 2f-d — the new-invoice amount, the OTHER operand of 2f-c's
+// verdict ────────────────────────────────────────────────────────────────────
+//
+// `deriveMatchVerdict(expectedValue, inv.amount, …)`: 2f-c stopped a misread
+// confirmed quantity poisoning the first operand; this stops a misread amount
+// poisoning the second. Either produces the same false accusation against a
+// supplier — an honest invoice booked 'Price Variance'.
+//
+// 2f-FIND-04's guard was REAL (`!Number.isFinite(amount) || amount <= 0`) and
+// survived its body-read, so these specs guard only what a finiteness check
+// structurally cannot see. The durable lock is still the INPUT CONTRACT
+// (`type="text"` + `inputMode`), because the locale failure reproduces in
+// neither jsdom nor en-US (4b-FIND-01).
+describe('SupplierInvoices — the new-invoice amount is text, so the parser is load-bearing', () => {
+  const openNewInvoice = async () => {
+    renderWithProviders(<SupplierInvoices />, { identity: SUPPLIER });
+    await screen.findByText('My Invoices');
+    fireEvent.click(screen.getByRole('button', { name: 'New invoice' }));
+    return screen.findByLabelText('Amount (IDR)');
+  };
+
+  it('THE LOCK — the amount input is not type="number" (Ruling 6.2)', async () => {
+    const amount = await openNewInvoice();
+    expect(amount).toHaveAttribute('type', 'text');
+    expect(amount).toHaveAttribute('inputmode', 'decimal');
+    // `min={0}` was a number-input affordance that never bound the parse.
+    expect(amount).not.toHaveAttribute('min');
+  });
+
+  it('an untouched blank does NOT nag — the field is UNSEEDED, so the 2e-a rule applies', async () => {
+    // Contrast the seeded 2f-a/2f-c cells, where every blank is
+    // operator-cleared and therefore always speaks.
+    const amount = await openNewInvoice();
+    expect(amount).toHaveValue('');
+    expect(screen.queryByTestId('invoice-amount-refusal')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create draft' })).toBeDisabled();
+  });
+
+  it('a cross-convention "1.500" REFUSES — the token the finiteness guard waved past as 1.5', async () => {
+    const amount = await openNewInvoice();
+    fireEvent.change(amount, { target: { value: '1.500' } });
+    const refusal = screen.getByTestId('invoice-amount-refusal');
+    expect(refusal).toHaveAttribute('role', 'alert');
+    expect(refusal.textContent).toMatch(/can be read two ways/i);
+    expect(amount).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('button', { name: 'Create draft' })).toBeDisabled();
+  });
+
+  it('READS a fully grouped "185.000.000" — the way an Indonesian supplier types it', async () => {
+    // Under the retired `type="number"` this token was rejected outright
+    // (`.value === ''`), so the guard refused a perfectly real invoice: an
+    // expressibility failure hiding inside a working guard.
+    const amount = await openNewInvoice();
+    fireEvent.change(amount, { target: { value: '185.000.000' } });
+    expect(screen.queryByTestId('invoice-amount-refusal')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('invoice-amount-zero')).not.toBeInTheDocument();
+  });
+
+  it('the silent `> 0` rule finally SAYS SO on a typed zero', async () => {
+    // No rule changed — a non-positive amount was always refused. It was
+    // refused by a generic warning toast naming three causes at once.
+    const amount = await openNewInvoice();
+    fireEvent.change(amount, { target: { value: '0' } });
+    expect(screen.getByTestId('invoice-amount-zero').textContent).toMatch(
+      /greater than zero/i,
+    );
+    expect(screen.getByRole('button', { name: 'Create draft' })).toBeDisabled();
+  });
+
+  it('POSITIVE TWIN — a readable amount against a confirmed PO ENABLES the create', async () => {
+    // A negative assertion alone proves nothing: sup-007's PO-2025-00107 is
+    // Confirmed, so the dropdown has a legal parent and the gate must open.
+    const amount = await openNewInvoice();
+    fireEvent.change(screen.getByLabelText('Purchase order'), {
+      target: { value: 'PO-2025-00107' },
+    });
+    fireEvent.change(amount, { target: { value: '185000000' } });
+    expect(screen.queryByTestId('invoice-amount-refusal')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create draft' })).not.toBeDisabled();
+  });
+});
