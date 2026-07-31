@@ -71,7 +71,6 @@ import {
 import {
   spreadForQuote,
   type QuoteSpread,
-  type SpreadCurrency,
   type SpreadDeps,
 } from '../lib/shouldCostSpread';
 import {
@@ -350,15 +349,12 @@ const FxBasisPanel: React.FC<{
   </div>
 );
 
-// Does this bid currency have a should-cost branch to be priced against? POLICY
-// is wider than CAPABILITY by design (see currencyPolicy.ts): a supplier may
-// legally bid in a currency the engine holds no basket for. Narrowing here is
-// what keeps `SpreadCurrency` a 2-union — and a 2-union is the only thing
-// currently turning a wrong branch into a compile error rather than a wrong
-// number. Coercing an unpriceable currency into the IDR branch would measure a
-// foreign price against a rupiah should-cost; that is the failure this refuses.
-const isSpreadCurrency = (currency: BidCurrency): currency is SpreadCurrency =>
-  currency === 'IDR' || currency === 'USD';
+// 2e-c-5 — the `isSpreadCurrency` guard that lived here is GONE. Policy is still
+// wider than capability, but deciding that is the resolver's job now: it runs
+// the check as its first gate and returns the same honest silence. The guard was
+// only ever here because `SpreadCurrency` was a 2-union the surface had to
+// narrow to; with the union retired, a surface that kept its own copy would be a
+// second place for the rule to drift.
 
 // CP-0 · W1 · 2e-b-4a — each wizard-number refusal names its own rule. A buyer
 // who left the quantity blank, one who typed something unreadable, and one who
@@ -581,7 +577,7 @@ const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
       </span>
     );
   }
-  const { spread, shouldCost, currency, fxApplied } = result;
+  const { spread, shouldCost, currency, basis } = result;
   return (
     <div className="flex flex-col items-start gap-1">
       {/* The spread RANGE — deliberately plain sans, NOT <Data>: the DP-3
@@ -607,10 +603,13 @@ const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
           label={t('sourcing.cmp.model')}
           title={t('sourcing.cmp.modelTitle')}
         />
-        {/* FX-converted marker — ONLY the IDR branch, where the should-cost was
-            pushed through FX (the more-modeled path). The USD branch reads the
-            engine-native, FX-free basis and carries no FX marker. */}
-        {fxApplied && (
+        {/* FX-converted marker — ONLY the FX_CONVERTED branch, where the
+            should-cost was pushed through the FX pair (the more-modeled path).
+            ENGINE_NATIVE reads the FX-free basis and carries no FX marker.
+            2e-c-5: reads the BRANCH the engine took, not a boolean that meant
+            "not the other branch" and would have claimed an FX conversion for a
+            currency with no FX pair at all. */}
+        {basis === 'FX_CONVERTED' && (
           <span
             title={t('sourcing.cmp.fxTitle')}
             className="inline-flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wider text-text-secondary border border-dashed border-border-input rounded px-1 py-px"
@@ -2416,24 +2415,20 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           // missing reference gets, with its OWN reason: the
                           // material is mapped, is not tail, and is priced by
                           // weight, so none of the other three would be true.
-                          // Transitional by design — this moves inside
-                          // `spreadForQuote` as its first gate when
-                          // `SpreadCurrency` widens (2e-c batch 5).
-                          const currency = q.currency;
+                          //
+                          // 2e-c-5 — the currency now goes STRAIGHT to the
+                          // resolver, which owns the gate. The surface no longer
+                          // decides what the engine can price.
                           return (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <SpreadCell
-                              result={
-                                isSpreadCurrency(currency)
-                                  ? spreadForQuote(
-                                      selectedRfq.materialIds[0],
-                                      selectedRfq.uom,
-                                      q.unitPrice,
-                                      currency,
-                                      SPREAD_DEPS,
-                                    )
-                                  : { kind: 'silent', reason: 'currency-unsupported' }
-                              }
+                              result={spreadForQuote(
+                                selectedRfq.materialIds[0],
+                                selectedRfq.uom,
+                                q.unitPrice,
+                                q.currency,
+                                SPREAD_DEPS,
+                              )}
                               t={t}
                             />
                           </ComparisonCell>

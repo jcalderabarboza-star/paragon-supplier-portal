@@ -6,7 +6,7 @@ import {
   type BidCurrency,
 } from './currencyPolicy';
 import { sourcingEn, sourcingId } from './i18n/sourcing';
-import type { SilentReason } from './shouldCostSpread';
+import { SPREAD_BASIS, type SilentReason } from './shouldCostSpread';
 
 describe('currencyPolicy — the ruling itself', () => {
   it('permits exactly the three currencies the operator ruled on', () => {
@@ -52,9 +52,14 @@ describe('isBidCurrency — the string→policy boundary', () => {
 
 describe('policy is wider than capability, never narrower', () => {
   // The should-cost engine prices two of the three permitted currencies. That gap
-  // is deliberate — a currency being legal to bid in does not conjure a commodity
-  // basket to price it against — but it must only ever open in ONE direction.
-  const SPREAD_CURRENCIES = ['IDR', 'USD'] as const;
+  // is deliberate (D-4) — a currency being legal to bid in does not conjure a
+  // commodity basket or an FX pair to price it against — but it must only ever
+  // open in ONE direction.
+  //
+  // 2e-c-5 — read from the ENGINE'S OWN table rather than a local copy of it.
+  // This spec used to hand-list `['IDR','USD']`, which meant the guard against
+  // policy/capability drift could itself drift from the capability it guarded.
+  const SPREAD_CURRENCIES = Object.keys(SPREAD_BASIS) as readonly string[];
 
   it('permits every currency the should-cost engine can price', () => {
     // If this fails, an engine branch exists for a currency nobody may bid in:
@@ -70,7 +75,7 @@ describe('policy is wider than capability, never narrower', () => {
     // ever fails, the gap has closed and the honest-silence branch is dead —
     // which is a fine outcome, but it must be a decision, not a drift.
     const unpriceable = BID_CURRENCIES.filter(
-      (c) => !(SPREAD_CURRENCIES as readonly string[]).includes(c),
+      (c) => !SPREAD_CURRENCIES.includes(c),
     );
     expect(unpriceable).toEqual(['EUR']);
   });

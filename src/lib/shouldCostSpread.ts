@@ -42,13 +42,64 @@ import {
   type FxRate,
   type FeedLiveness,
 } from './shouldCost';
+import type { BidCurrency } from './currencyPolicy';
 
 /** The quote-side units the resolver accepts. Only mass units yield a spread. */
 export type QuoteUom = 'KG' | 'PCS' | 'L' | 'MT';
 
-/** The currency a quote is priced in. IDR = domestic (FX-applied should-cost);
- *  USD = foreign (the engine-native, FX-free should-cost basis). */
-export type SpreadCurrency = 'IDR' | 'USD';
+// ── The pricing basis, and the currencies that have one (CP-0 · 2e-c-5) ──────
+//
+// `SpreadCurrency = 'IDR' | 'USD'` is RETIRED. It was named for a currency and
+// was really an enumeration of ENGINE BRANCHES, and that conflation is what made
+// it load-bearing: it was the only thing turning a wrong branch into a compile
+// error, so it could not be widened without fixing the branches in the same
+// change. Both halves land here together.
+//
+// The replacement states the branch and DERIVES the type from it, so the two can
+// never disagree:
+//
+//   • `SpreadBasis` names what the engine actually does — price the quote in its
+//     own engine-native unit, or push the model through FX to reach the quote.
+//   • `SPREAD_BASIS` maps each priceable currency to its branch. It is the ONE
+//     place that says which currencies the engine can price at all.
+//   • `PriceableCurrency` is `keyof SPREAD_BASIS` — derived, never hand-listed.
+//
+// WHY ONLY TWO ENTRIES. The should-cost engine is USD-native (roots are
+// `valueUsdPerKg`) and carries exactly ONE FX pair (`FxRate.idrPerUsd`). So USD
+// needs no conversion and IDR has a pair; every other currency has neither, and
+// no amount of branching invents one.
+//
+// D-4 (operator ruling) — a EUR bid gets HONEST SILENCE, never a euro routed
+// through the rupiah band. A second rate pair means a second feed to keep honest
+// and a second thing to go stale, hand-maintained until API_EXHGRATE arrives at
+// F1+ and gives both legs at once. The accepted cost is stated plainly: a buyer
+// sees no should-cost signal on a EUR bid. Adding EUR later is ONE entry here
+// plus its feed — not a re-branching.
+
+/** How the engine reaches a comparable should-cost for a quote's currency. */
+export type SpreadBasis =
+  /** The quote is already in the engine's native unit — no FX involved at all. */
+  | 'ENGINE_NATIVE'
+  /** The modeled band was pushed through the FX pair to meet the quote. */
+  | 'FX_CONVERTED';
+
+/**
+ * The currencies this engine can price, and the branch each one takes. THE ONE
+ * place that decides; `PriceableCurrency` and the resolver's gate both read it.
+ */
+export const SPREAD_BASIS = {
+  USD: 'ENGINE_NATIVE',
+  IDR: 'FX_CONVERTED',
+} as const satisfies Partial<Record<BidCurrency, SpreadBasis>>;
+
+/** A bid currency the engine has a branch for. DERIVED from `SPREAD_BASIS`. */
+export type PriceableCurrency = keyof typeof SPREAD_BASIS;
+
+/** Can this engine price a quote in `currency` at all? The gate the resolver
+ *  runs first, and the one that keeps every branch below total. */
+export function isPriceableCurrency(currency: BidCurrency): currency is PriceableCurrency {
+  return currency in SPREAD_BASIS;
+}
 
 /** Kilograms per tonne — the MT→kg normalization so a per-MT quote compares to a
  *  per-kg should-cost. The only unit conversion CI-2 performs. */
@@ -61,11 +112,13 @@ export const KG_PER_MT = 1000;
  *  engine can price against, and the first is deliberately wider than the second.
  *  A bid in a currency with no engine branch has no reference — not a mapping
  *  failure, not a unit failure, so none of the other three reasons may stand in
- *  for it. NOTE: the resolver does not yet RAISE this reason (its `currency`
- *  parameter is still the narrow union, which is what keeps a wrong branch a
- *  compile error); the buyer surface raises it at the call site. The gate moves
- *  in here when `SpreadCurrency` widens — as the FIRST gate, ahead of every
- *  branch, so widening can never silently convert a refusal into a wrong price. */
+ *  for it.
+ *
+ *  2e-c-5 — the resolver now RAISES this itself, as its FIRST gate (2e-c-3-FIND-03
+ *  closed). It was briefly raised by the buyer surface instead, because the
+ *  resolver's `currency` parameter was a 2-union that made a wrong branch a
+ *  compile error; that union is retired and the gate has moved in, so a second
+ *  consumer cannot forget to make the same decision. */
 export type SilentReason =
   | 'unmapped'
   | 'tail'
@@ -92,7 +145,7 @@ export interface ModeledBand {
 export interface SpreadResult {
   readonly kind: 'spread';
   /** The currency the spread + modeled band are expressed in (the quote's own). */
-  readonly currency: SpreadCurrency;
+  readonly currency: PriceableCurrency;
   /** The spread range vs the modeled should-cost band. */
   readonly spread: SpreadBand;
   /** The modeled should-cost band (per kg, in `currency`). */
@@ -104,9 +157,22 @@ export interface SpreadResult {
   readonly liveness: FeedLiveness;
   /** Permanent — a spread off a model is still a model. */
   readonly epistemic: 'MODELED';
-  /** True only for the IDR branch (the should-cost was pushed through FX). Drives
-   *  the "FX-converted / more-modeled" marker; false for the FX-free USD branch. */
-  readonly fxApplied: boolean;
+  /**
+   * WHICH BRANCH produced this spread (2e-c-5). Replaces `fxApplied: boolean`.
+   *
+   * The boolean was computed `currency !== 'USD'` — which is "not the
+   * engine-native branch", not "FX was applied". The two coincided only while
+   * the engine had exactly one non-FX currency, and they came apart the moment a
+   * third currency existed: a EUR quote would have reported `fxApplied: true`,
+   * asserting a conversion that never happened, through a pair that does not
+   * exist.
+   *
+   * Naming the BRANCH rather than renaming the boolean is deliberate. A boolean
+   * whose meaning is "the other branch" is the same defect with a better label;
+   * the surface wants to know what the engine did, and now it is told.
+   * `basis === 'FX_CONVERTED'` drives the FX-converted marker.
+   */
+  readonly basis: SpreadBasis;
   readonly vintage: string;
   readonly coeffVersion: string;
 }
@@ -140,19 +206,38 @@ function toPerKg(unitPrice: number, uom: QuoteUom): number {
  * Resolve the should-cost-vs-quote spread for ONE quoted line. Pure & total:
  * every path returns a discriminated result, never throws for a business reason.
  *
- * Gate order (each a distinct honest-silence reason):
- *   1. join miss                → silent 'unmapped'
- *   2. mapped material is tail  → silent 'tail'         (no basket at all)
- *   3. non-mass quote unit      → silent 'unit-mismatch' (dimensional, any currency)
- *   4. otherwise                → spread in the quote's currency (banded, MODELED)
+ * Gate order (each a distinct honest-silence reason). Ordered by how FUNDAMENTAL
+ * the obstacle is, which is the same doctrine that already put 'tail' ahead of
+ * the unit gate:
+ *   1. no branch for the currency → silent 'currency-unsupported' (2e-c-5)
+ *   2. join miss                  → silent 'unmapped'
+ *   3. mapped material is tail    → silent 'tail'          (no basket at all)
+ *   4. non-mass quote unit        → silent 'unit-mismatch' (dimensional)
+ *   5. otherwise                  → spread in the quote's currency (banded, MODELED)
+ *
+ * The currency gate is FIRST because it is the most fundamental of the four: an
+ * unmapped material could be mapped and a tail material could gain a basket, but
+ * a currency with no branch cannot be priced for ANY material, so no amount of
+ * fixing the other three would produce a spread. It is also what makes every
+ * branch below total — after this line `currency` is a `PriceableCurrency`, so
+ * the basis lookup cannot miss.
  */
 export function spreadForQuote(
   materialId: string | undefined,
   uom: QuoteUom,
   unitPrice: number,
-  currency: SpreadCurrency,
+  currency: BidCurrency,
   deps: SpreadDeps,
 ): QuoteSpread {
+  // 2e-c-5 — THE GATE, moved in from the buyer surface (2e-c-3-FIND-03 closed).
+  // It sat at the one call site while `SpreadCurrency` was a 2-union, because the
+  // union itself refused a wrong currency at compile time. The union is retired,
+  // so the refusal has to live where it cannot be forgotten: a second consumer
+  // now inherits it instead of having to remember it.
+  if (!isPriceableCurrency(currency)) {
+    return { kind: 'silent', reason: 'currency-unsupported' };
+  }
+
   const scId = materialId ? deps.join[materialId] : undefined;
   const material = scId ? deps.materials[scId] : undefined;
   if (!material) return { kind: 'silent', reason: 'unmapped' };
@@ -170,19 +255,27 @@ export function spreadForQuote(
 
   const quotePerKg = toPerKg(unitPrice, uom);
 
-  // Basket-only feed liveness (FX-FREE) — the USD branch inherits THIS; the IDR
-  // branch inherits sc.liveness (which already weakest-links FX in). weakestLink
-  // over just the basket roots. (In CI-2 both are SIMULATED; this keeps the USD
-  // branch honest the day feeds diverge at CI-3 — no engine change needed.)
+  // ONE branch decision, read from the policy table, replacing three separate
+  // `currency === 'USD'` ternaries (band, liveness, fxApplied). Three tests of
+  // the same fact is three chances to disagree — and each of them silently
+  // treated "not USD" as "IDR", which is exactly how a EUR quote would have been
+  // measured against the rupiah band and rendered as a −99.99% spread.
+  const basis: SpreadBasis = SPREAD_BASIS[currency];
+
+  // Basket-only feed liveness (FX-FREE) — the ENGINE_NATIVE branch inherits THIS;
+  // FX_CONVERTED inherits sc.liveness (which already weakest-links FX in).
+  // weakestLink over just the basket roots. (In CI-2 both are SIMULATED; this
+  // keeps the native branch honest the day feeds diverge at CI-3 — no engine
+  // change needed.)
   const basketLiveness = weakestLink(
     material.basket.map((c) => deps.roots[c.rootId].liveness),
   );
 
-  // Engine-native branch (ruling A). USD: the pure FX-free basis ± the governed
-  // band pct. IDR: the FX-applied band the engine already produced.
+  // Ruling A. ENGINE_NATIVE: the pure FX-free basis ± the governed band pct.
+  // FX_CONVERTED: the FX-applied band the engine already produced.
   const pct = sc.band.pct;
   const band: ModeledBand =
-    currency === 'USD'
+    basis === 'ENGINE_NATIVE'
       ? {
           lowPerKg: sc.basisCostUsdPerKg * (1 - pct),
           midPerKg: sc.basisCostUsdPerKg,
@@ -209,9 +302,9 @@ export function spreadForQuote(
     spread,
     shouldCost: band,
     quotePerKg,
-    liveness: currency === 'USD' ? basketLiveness : sc.liveness,
+    liveness: basis === 'ENGINE_NATIVE' ? basketLiveness : sc.liveness,
     epistemic: 'MODELED',
-    fxApplied: currency !== 'USD',
+    basis,
     vintage: sc.vintage,
     coeffVersion: sc.coeffVersion,
   };
