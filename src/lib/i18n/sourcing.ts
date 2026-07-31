@@ -97,6 +97,12 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.cmp.empty': 'No quotes received yet.',
   'sourcing.cmp.criterion': 'Criterion',
   'sourcing.cmp.topRanked': 'Top-ranked',
+  // — 2e-c-3 FX refusals. Both name the currencies and both name the REMEDY:
+  //   a refusal a buyer cannot act on is only half a refusal.
+  'sourcing.cmp.fx.refused.FX_UNPINNED':
+    'Not ranked — quotes are priced in {{currencies}} and no exchange rate has been recorded for this RFQ. Record a rate to compare them; the bids below are shown as quoted.',
+  'sourcing.cmp.fx.refused.FX_STALE':
+    'Not ranked — the recorded exchange rate for {{currencies}} is older than this comparison allows. Record a current rate; the previous one is kept on the RFQ.',
   'sourcing.cmp.simulated': 'Simulated',
   'sourcing.cmp.simulatedTitle': 'Rehearsal — awaiting a live source (compliance & reliability data)',
   'sourcing.cmp.row.unitPrice': 'Unit Price',
@@ -368,6 +374,10 @@ export const sourcingId: Record<string, string> = {
   'sourcing.cmp.empty': 'Belum ada penawaran diterima.',
   'sourcing.cmp.criterion': 'Kriteria',
   'sourcing.cmp.topRanked': 'Peringkat teratas',
+  'sourcing.cmp.fx.refused.FX_UNPINNED':
+    'Tidak diperingkat — penawaran dihargai dalam {{currencies}} dan belum ada kurs yang dicatat untuk RFQ ini. Catat kurs untuk membandingkannya; penawaran di bawah ditampilkan sesuai yang diajukan.',
+  'sourcing.cmp.fx.refused.FX_STALE':
+    'Tidak diperingkat — kurs tercatat untuk {{currencies}} lebih lama daripada yang diizinkan perbandingan ini. Catat kurs terkini; kurs sebelumnya tetap tersimpan pada RFQ.',
   'sourcing.cmp.simulated': 'Simulasi',
   'sourcing.cmp.simulatedTitle': 'Latihan — menunggu sumber langsung (data kepatuhan & keandalan)',
   'sourcing.cmp.row.unitPrice': 'Harga Satuan',

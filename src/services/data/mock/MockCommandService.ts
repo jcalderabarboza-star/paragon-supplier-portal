@@ -33,7 +33,8 @@ import type {
 } from '../../../data/mockGoodsReceipts';
 import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
-import type { BidCurrency } from '../../../lib/currencyPolicy';
+import { BASE_CURRENCY, type BidCurrency } from '../../../lib/currencyPolicy';
+import type { FxPinSource } from '../../../lib/fxPin';
 import {
   createDispatcher,
   InMemoryAuditSink,
@@ -357,6 +358,40 @@ const rfqTarget: CommandTarget = {
         typeof payload.awardedQuotationId === 'string' ? payload.awardedQuotationId : r.awardedQuotationId,
       awardedSupplierId:
         typeof payload.awardedSupplierId === 'string' ? payload.awardedSupplierId : r.awardedSupplierId,
+      // 2e-c-3 — THE D-1 FREEZE, made structural. A pin is APPENDED; there is no
+      // branch here that finds an existing pin for the currency and replaces it,
+      // and there is deliberately never going to be one. Superseding a rate is
+      // appending a newer pin, so the basis a comparison was ranked on remains
+      // readable for as long as the RFQ does. The pin in force is DERIVED at
+      // read (`effectivePin`), so "current" cannot drift from the ledger.
+      //
+      // The payload is already gated by `rfq_fx_pin_well_formed` (permitted
+      // non-base currency, finite positive rate, readable vintage, known
+      // source), so the reads below cannot mint a malformed basis.
+      ...(payload.quote === undefined
+        ? {}
+        : {
+            fxPins: [
+              ...(r.fxPins ?? []),
+              {
+                quote: payload.quote as BidCurrency,
+                base: BASE_CURRENCY,
+                rate: payload.rate as number,
+                asOf: String(payload.asOf),
+                // Store-assigned, never payload-supplied: when a pin was
+                // recorded is a fact about the system, and a caller that could
+                // set it could backdate its own audit entry.
+                pinnedAt: new Date().toISOString(),
+                source: payload.source as FxPinSource,
+                ...(typeof payload.rateType === 'string' ? { rateType: payload.rateType } : {}),
+                // SIMULATED until a real rate feed lands (the Stage-F seam). A
+                // MANUAL pin is a real human decision but not a live feed, and
+                // dressing it as LIVE would be the two-gate violation this
+                // codebase marks everywhere else.
+                liveness: 'SIMULATED',
+              },
+            ],
+          }),
     }));
   },
   // Creation (Phase A/2 — retires extraRfqs). Buyer-only: `creationOwner: () =>

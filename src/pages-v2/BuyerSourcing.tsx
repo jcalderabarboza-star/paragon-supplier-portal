@@ -213,6 +213,19 @@ const daysUntil = (iso: string): number => {
 // 2e-c-1-FIND-01 (a EUR bid rendering "€3") is closed in the moved
 // implementation: EUR renders en-IE "€2.85" by operator ruling.
 
+// A score axis, or honest silence (2e-c-3). The score cells used to read
+// `scoreById.get(id)?.priceScore ?? 0`, which was harmless while the engine
+// always scored — the map was never missing an entry. Now that a comparison can
+// be REFUSED the map is legitimately empty, and `?? 0` would render every axis
+// as a real score of 0: the WORST value on each bar, for quotes the engine
+// explicitly declined to rank. An absent score is not a bad score.
+const ScoreOrSilence: React.FC<{ score: number | undefined }> = ({ score }) =>
+  score === undefined ? (
+    <span className="text-text-tertiary">—</span>
+  ) : (
+    <ScoreBadge score={score} size="sm" variant="bar" />
+  );
+
 // Does this bid currency have a should-cost branch to be priced against? POLICY
 // is wider than CAPABILITY by design (see currencyPolicy.ts): a supplier may
 // legally bid in a currency the engine holds no basket for. Narrowing here is
@@ -751,15 +764,37 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // (ratio-to-best over this RFQ's set), compliance/reliability are declared
   // SIMULATED, the composite carries weakest-link liveness, and topRanked =
   // argmax(composite) — replacing the old fixture `aiRecommended` flag.
-  const quoteScores = useMemo(
-    () => scoreQuotations(quotesForSelected),
-    [quotesForSelected],
+  //
+  // 2e-c-3 — the engine now returns a DISCRIMINATED OUTCOME. A multi-currency
+  // set with no recorded FX basis (or one too old to rank on) is REFUSED, not
+  // approximated: `scoreById` stays empty, `topRankedId` stays null, and the
+  // surface says why. This is the operator's ruling (b) on 2e-c-2-FIND-01 —
+  // withhold the ranking rather than publish one computed from bare numerals.
+  const scoring = useMemo(
+    () =>
+      scoreQuotations(
+        // The engine requires an explicit currency; `Quotation.currency` is
+        // optional with "absent means rupiah". That convention is resolved HERE,
+        // at the boundary that already owns it, so the engine never assumes.
+        quotesForSelected.map((q) => ({ ...q, currency: q.currency ?? BASE_CURRENCY })),
+        { pins: selectedRfq?.fxPins },
+      ),
+    [quotesForSelected, selectedRfq?.fxPins],
   );
   const scoreById = useMemo(
-    () => new Map(quoteScores.map((s) => [s.quoteId, s])),
-    [quoteScores],
+    () =>
+      new Map(
+        scoring.kind === 'scored' ? scoring.scores.map((s) => [s.quoteId, s] as const) : [],
+      ),
+    [scoring],
   );
-  const topRankedId = quoteScores.find((s) => s.topRanked)?.quoteId ?? null;
+  // A refused comparison has NO recommendation. Not a fallback to the first
+  // quote, not the previous winner — nothing, because there is no basis on
+  // which one bid beats another.
+  const topRankedId =
+    scoring.kind === 'scored'
+      ? (scoring.scores.find((s) => s.topRanked)?.quoteId ?? null)
+      : null;
 
   // The board reads the seam list ALONE. A created RFQ arrives here through
   // getRFQs after the create dispatch invalidates — never a client-fabricated
@@ -2051,6 +2086,23 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   { count: quotesForSelected.length },
                 )}
               </h3>
+              {/* 2e-c-3 — the refusal, stated ABOVE the table it applies to.
+                  The bids are still shown (they are facts the supplier stated);
+                  what is withheld is the RANKING, because ranking them would
+                  mean comparing prices in currencies with no recorded basis.
+                  Names the currencies, so the buyer knows exactly which pin to
+                  record rather than being told something is wrong. */}
+              {scoring.kind === 'refused' && (
+                <div
+                  role="status"
+                  data-testid="fx-refusal"
+                  className="mb-3 text-xs text-warning-hover bg-warning-soft border border-warning rounded-md px-3 py-2"
+                >
+                  {t(`sourcing.cmp.fx.refused.${scoring.reason}`, {
+                    currencies: scoring.currencies.join(', '),
+                  })}
+                </div>
+              )}
               {quotesForSelected.length === 0 ? (
                 <div className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
                   {t('sourcing.cmp.empty')}
@@ -2219,11 +2271,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
-                            <ScoreBadge
-                              score={scoreById.get(q.id)?.priceScore ?? 0}
-                              size="sm"
-                              variant="bar"
-                            />
+                            <ScoreOrSilence score={scoreById.get(q.id)?.priceScore} />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
@@ -2234,11 +2282,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
-                            <ScoreBadge
-                              score={scoreById.get(q.id)?.leadTimeScore ?? 0}
-                              size="sm"
-                              variant="bar"
-                            />
+                            <ScoreOrSilence score={scoreById.get(q.id)?.leadTimeScore} />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
@@ -2253,11 +2297,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
-                            <ScoreBadge
-                              score={scoreById.get(q.id)?.complianceScore ?? 0}
-                              size="sm"
-                              variant="bar"
-                            />
+                            <ScoreOrSilence score={scoreById.get(q.id)?.complianceScore} />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
@@ -2272,11 +2312,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
-                            <ScoreBadge
-                              score={scoreById.get(q.id)?.reliabilityScore ?? 0}
-                              size="sm"
-                              variant="bar"
-                            />
+                            <ScoreOrSilence score={scoreById.get(q.id)?.reliabilityScore} />
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>
@@ -2291,11 +2327,19 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       >
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
-                            <ScoreBadge
-                              score={scoreById.get(q.id)?.composite ?? 0}
-                              size="md"
-                              variant="circular"
-                            />
+                            {/* The composite is the number the recommendation is
+                                argmax'd over, so a refused comparison must be
+                                silent HERE above all — a 0 composite would read
+                                as "scored, and worst". */}
+                            {scoreById.get(q.id) === undefined ? (
+                              <span className="text-text-tertiary">—</span>
+                            ) : (
+                              <ScoreBadge
+                                score={scoreById.get(q.id)!.composite}
+                                size="md"
+                                variant="circular"
+                              />
+                            )}
                           </ComparisonCell>
                         ))}
                       </ComparisonRow>

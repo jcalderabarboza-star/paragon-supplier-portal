@@ -81,6 +81,25 @@ export interface TransitionDef {
    * settlement (Step 3.5). Optional; absent ⇒ synchronous (`done`).
    */
   readonly sapBoundary?: boolean;
+  /**
+   * True when this transition RECORDS A FACT without moving the entity (2e-c-3).
+   * The dispatcher applies it with the entity's CURRENT state, so `to` is never
+   * written; validation requires `to ∈ from` so the declaration stays truthful
+   * about where the entity ends up.
+   *
+   * Why the flag rather than `to: <the same state>`: such a verb is legal from
+   * SEVERAL resting states (an FX pin may be recorded on an Open or a Closed
+   * RFQ) and `to` is a single value, so any concrete choice would move the
+   * entity for the other from-states. Declaring `from: ['Open','Closed'], to:
+   * 'Open'` would quietly reopen a Closed RFQ every time a buyer pinned a rate.
+   *
+   * The alternative — routing metadata around the dispatcher — was rejected: it
+   * is the only path to the DR-10 audit trail, and a governed fact recorded
+   * outside the trail is exactly what the trail exists to prevent.
+   *
+   * Optional; absent ⇒ an ordinary state-moving transition.
+   */
+  readonly statePreserving?: boolean;
   /** Schema version of this transition definition. Positive integer. */
   readonly version: number;
 }

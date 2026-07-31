@@ -29,6 +29,9 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     // reopen an RFQ, award it (cascade source), move a quote into review, and
     // the cascade targets award/reject a quote.
     'rfq:create', 'rfq:publish', 'rfq:close', 'rfq:award', 'rfq:cancel', 'rfq:reopen',
+    // 2e-c-3 — recording the FX basis is a DISTINCT authority from awarding on
+    // it: comparing and choosing the winner are different acts.
+    'rfq:fx-pin',
     'quotation:review', 'quotation:award', 'quotation:reject',
     // F0.4 — the 5 remaining lifecycle machines (author-unwired, no surface yet;
     // mapped so the catalog-coverage invariant holds — a contract-level

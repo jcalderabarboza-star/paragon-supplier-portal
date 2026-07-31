@@ -55,3 +55,23 @@ export const BASE_CURRENCY = 'IDR' as const satisfies BidCurrency;
 export function isBidCurrency(value: string): value is BidCurrency {
   return (BID_CURRENCIES as readonly string[]).includes(value);
 }
+
+/**
+ * How old an FX rate may be and still be ranked on, in days, measured from the
+ * RATE's own vintage (`FxPin.asOf`) — not from when a buyer pinned it. The
+ * vintage is what decides whether a rate still describes the market; the pin
+ * date only records when someone decided to use it.
+ *
+ * ⚠ PLACEHOLDER — D-3 IS UNRULED. 7 days is the operator's stated lean going to
+ * JJ, used here so the mechanism is real and testable rather than deferred. It
+ * lives beside `BID_CURRENCIES` and is a plain editable constant BY DESIGN: the
+ * threshold is a procurement judgement about how fast a rate goes off, so it
+ * must be tunable by the people who hold that judgement without touching the
+ * scoring engine. Change this line, and every comparison follows.
+ *
+ * A stale pin does NOT undo the D-1 freeze. The freeze decides WHICH rate a
+ * comparison uses; this decides whether that rate is still fit to rank on. When
+ * it is not, the engine refuses by name and the buyer supersedes the pin — the
+ * deliberate, audited act D-1 already requires.
+ */
+export const FX_PIN_MAX_AGE_DAYS = 7;

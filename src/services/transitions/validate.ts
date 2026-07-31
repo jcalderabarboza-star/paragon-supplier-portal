@@ -76,6 +76,19 @@ export function validateFlow(flow: FlowDefinition): FlowValidationResult {
     if (!states.has(t.to)) {
       errors.push(`${at}: 'to' state '${t.to}' is not declared`);
     }
+
+    // 2e-c-3 — a state-preserving verb records a fact and leaves the entity
+    // where it is. Two structural requirements keep the declaration honest:
+    // it cannot be a creation (there is no prior state to preserve), and its
+    // declared `to` must be one of its own `from` states — so the metadata never
+    // claims a destination the dispatcher will not take the entity to.
+    if (t.statePreserving) {
+      if (t.trigger === 'creation') {
+        errors.push(`${at}: a creation transition cannot be statePreserving (there is no state to preserve)`);
+      } else if (!t.from.includes(t.to)) {
+        errors.push(`${at}: statePreserving requires 'to' ('${t.to}') to be one of its 'from' states`);
+      }
+    }
     if (!ROLE_RE.test(t.requiredRole)) {
       errors.push(`${at}: requiredRole '${t.requiredRole}' is not a namespaced transition-role (expected <namespace>:<role>)`);
     }

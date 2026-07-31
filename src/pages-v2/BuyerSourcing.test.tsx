@@ -392,3 +392,164 @@ describe('BuyerSourcing — the should-cost spread refuses an unpriceable curren
     }
   });
 });
+
+// ── CP-0 · 2e-c-3 — ruling (b): the ranking is WITHHELD, not approximated ────
+//
+// The operator's interim ruling on 2e-c-2-FIND-01. (a) — refusing a foreign
+// submit — would have the portal reject a legitimate commercial act to protect
+// an engine defect, inverting who is at fault. (c) — accept the exposure —
+// rests on persona reachability, and QA-PERSONA-01 is precisely the finding that
+// says reachability is a property of the fixture set, not a guarantee.
+//
+// So: honest silence. The bids are still shown, because a supplier stated them
+// and they are facts. What is withheld is the RANKING, because ranking them
+// would mean comparing prices in currencies with no recorded basis.
+//
+// RFQ-2026-009's two quotes are both USD (deliberately — the fixture says so),
+// which makes it the right probe: it ranks today, so a refusal can only come
+// from the currency mix this test introduces.
+describe('BuyerSourcing — a comparison with no FX basis withholds the ranking', () => {
+  beforeEach(() => {
+    quotationStore.reset();
+    rfqStore.reset();
+  });
+
+  const openComparison = async () => {
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText('RFQ-2026-009'));
+    return screen.findByText(/QUOTE COMPARISON/i);
+  };
+
+  const makeMixed = () =>
+    quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
+
+  it('BASELINE — the all-USD set still ranks, and names a top quote', async () => {
+    // Without this, every assertion below could pass for an unrelated reason.
+    // It is also the HOMOGENEOUS-SET EXEMPTION proved on the real surface: two
+    // USD quotes, no pin anywhere, a normal ranking.
+    await openComparison();
+    expect(screen.getByText('Top-ranked')).toBeInTheDocument();
+    expect(screen.queryByTestId('fx-refusal')).not.toBeInTheDocument();
+  });
+
+  it('THE LOCK — a mixed-currency set shows NO top-ranked quote', async () => {
+    makeMixed();
+    await openComparison();
+    // No recommendation at all. Not a fallback to the first quote, not the
+    // previous winner — there is no basis on which one bid beats another.
+    expect(screen.queryByText('Top-ranked')).not.toBeInTheDocument();
+  });
+
+  it('says WHY, and names EVERY currency that needs a rate', async () => {
+    makeMixed();
+    await openComparison();
+    const banner = screen.getByTestId('fx-refusal');
+    expect(banner).toHaveTextContent(/no exchange rate has been recorded/i);
+    // BOTH, because rfq-009 has no domestic bid at all: once its two USD quotes
+    // become one EUR and one USD, every price on the RFQ is foreign and each
+    // needs its own basis. A refusal naming only the first would send the buyer
+    // back for a second round.
+    expect(banner).toHaveTextContent('EUR');
+    expect(banner).toHaveTextContent('USD');
+  });
+
+  it('withholds the SCORES too — an absent score is not a score of 0', async () => {
+    // The subtle half of the ruling. The score cells read
+    // `scoreById.get(id)?.x ?? 0` before this batch, which was harmless while
+    // the engine always scored. With a refusal the map is legitimately empty,
+    // and `?? 0` would paint every axis as a real score of ZERO — the worst
+    // value on each bar, for quotes the engine explicitly declined to rank.
+    makeMixed();
+    await openComparison();
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
+    // Em dashes where the bars were.
+    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+  });
+
+  it('still shows the BIDS — what is withheld is the ranking, not the facts', async () => {
+    // A supplier stated these prices. Hiding them because the platform cannot
+    // rank them would withhold data to cover a modelling gap.
+    makeMixed();
+    await openComparison();
+    expect(screen.getByText('€2.85/KG')).toBeInTheDocument();
+    expect(screen.getByText('$2.70/KG')).toBeInTheDocument();
+  });
+
+  it('RECORDING A RATE RESTORES THE RANKING — end to end, through the real verb', async () => {
+    // The remedy the banner names, actually working: dispatch the pin, and the
+    // comparison the engine refused becomes one it can make.
+    makeMixed();
+    // BOTH currencies, because neither is the base — see the naming test above.
+    const today = new Date().toISOString().slice(0, 10);
+    const svc = new MockCommandService();
+    for (const quote of ['EUR', 'USD'] as const) {
+      const res = await svc.dispatch(
+        { personaType: 'buyer', supplierId: null },
+        {
+          transitionId: 't_rfq_fx_pin',
+          entity: 'rfq',
+          entityId: 'rfq-009',
+          // Today's vintage — an old one would refuse FX_STALE instead, which
+          // is the next test.
+          payload: { quote, rate: 18_000, asOf: today, source: 'MANUAL' },
+        },
+      );
+      expect(res.status).toBe('done');
+    }
+    await openComparison();
+    expect(screen.queryByTestId('fx-refusal')).not.toBeInTheDocument();
+    expect(screen.getByText('Top-ranked')).toBeInTheDocument();
+  });
+
+  it('a STALE rate refuses too, and says so differently', async () => {
+    makeMixed();
+    const svc = new MockCommandService();
+    // USD gets a CURRENT rate and EUR an old one, so the only thing left to
+    // refuse is staleness — not a missing pin wearing the wrong label.
+    await svc.dispatch(
+      { personaType: 'buyer', supplierId: null },
+      {
+        transitionId: 't_rfq_fx_pin',
+        entity: 'rfq',
+        entityId: 'rfq-009',
+        payload: {
+          quote: 'USD',
+          rate: 17_250,
+          asOf: new Date().toISOString().slice(0, 10),
+          source: 'MANUAL',
+        },
+      },
+    );
+    await svc.dispatch(
+      { personaType: 'buyer', supplierId: null },
+      {
+        transitionId: 't_rfq_fx_pin',
+        entity: 'rfq',
+        entityId: 'rfq-009',
+        payload: { quote: 'EUR', rate: 18_000, asOf: '2026-01-01', source: 'MANUAL' },
+      },
+    );
+    await openComparison();
+    const banner = screen.getByTestId('fx-refusal');
+    // Names EUR alone — the currency that is actually stale.
+    expect(banner).toHaveTextContent('EUR');
+    // A recorded-but-aged rate is a different situation from no rate at all,
+    // and the remedy differs (supersede vs record), so the copy must differ.
+    expect(banner).toHaveTextContent(/older than this comparison allows/i);
+    expect(screen.queryByText('Top-ranked')).not.toBeInTheDocument();
+  });
+
+  it('renders the refusal in Indonesian too', async () => {
+    makeMixed();
+    await i18n.changeLanguage('id');
+    try {
+      renderWithProviders(<BuyerSourcing />);
+      fireEvent.click(await screen.findByText('RFQ-2026-009'));
+      expect(await screen.findByTestId('fx-refusal')).toHaveTextContent(
+        /belum ada kurs yang dicatat/i,
+      );
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});

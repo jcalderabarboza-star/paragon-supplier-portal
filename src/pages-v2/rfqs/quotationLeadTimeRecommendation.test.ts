@@ -28,6 +28,18 @@ import { MockCommandService } from '../../services/data/mock/MockCommandService'
 import { quotationStore } from '../../services/data/mock/stores/quotationStore';
 import { rfqStore } from '../../services/data/mock/stores/rfqStore';
 import { scoreQuotations, type ScorableQuote } from '../../lib/quoteScore';
+import { BASE_CURRENCY } from '../../lib/currencyPolicy';
+
+/** Unwrap a scored outcome (2e-c-3). These specs all concern a single-currency
+ *  set, which the engine ranks without any pin — so a refusal here means the
+ *  spec's premise broke, and it says so by name rather than reading `undefined`
+ *  off something that is no longer an array. */
+const scoredSet = (quotes: readonly ScorableQuote[]) => {
+  const out = scoreQuotations(quotes);
+  if (out.kind !== 'scored') throw new Error(`expected scored, got ${out.reason}`);
+  return out.scores;
+};
+
 import type { QueryScope } from '../../services/data/types';
 import { readLeadTimeDays } from './quotationLeadTime';
 import { buildQuotationSubmitPayload } from './quotationSubmitModel';
@@ -48,13 +60,16 @@ const scorableSet = (): ScorableQuote[] =>
   quotationStore.forRfq(RFQ_ID).map((q) => ({
     id: q.id,
     unitPrice: q.unitPrice,
+    // The comparison drawer resolves "absent means rupiah" at the boundary
+    // (2e-c-3); the engine requires an explicit currency and never assumes one.
+    currency: q.currency ?? BASE_CURRENCY,
     leadTimeDays: q.leadTimeDays,
     complianceScore: q.complianceScore,
     reliabilityScore: q.reliabilityScore,
   }));
 
 /** Who the buyer is told to award — the fact this whole batch protects. */
-const recommended = () => scoreQuotations(scorableSet()).find((s) => s.topRanked)!.quoteId;
+const recommended = () => scoredSet(scorableSet()).find((s) => s.topRanked)!.quoteId;
 
 /** Submit the challenger's quote for a TYPED lead time, as the page runs it. */
 const submitTypedLeadTime = async (typed: string, unit: 'days' | 'weeks' = 'days') => {
@@ -102,7 +117,7 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
     // store fills newest-first, so the recommendation went to whoever submitted
     // LAST. `topRanked` now reads the un-rounded composite.
     const res = await submitTypedLeadTime('5');
-    const scored = scoreQuotations(scorableSet());
+    const scored = scoredSet(scorableSet());
     const mine = scored.find((s) => s.quoteId === res!.entityId)!;
     const incumbent = scored.find((s) => s.quoteId === INCUMBENT)!;
     expect(mine.composite).toBe(incumbent.composite); // identical on the display
@@ -120,7 +135,7 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
 
   it('POSITIVE TWIN — a same-day (0) promise wins it, and does not zero the incumbent', async () => {
     const res = await submitTypedLeadTime('0');
-    const scored = scoreQuotations(scorableSet());
+    const scored = scoredSet(scorableSet());
     expect(scored.find((s) => s.quoteId === res!.entityId)!.leadTimeScore).toBe(100);
     // Under the retired ratio-to-best axis a `best` of 0 scored EVERY rival 0.
     // The incumbent keeps the 92 its own 4-day promise earns.
@@ -212,7 +227,7 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
       }),
     });
 
-    const scored = scoreQuotations(scorableSet());
+    const scored = scoredSet(scorableSet());
     expect(scored.find((s) => s.quoteId === res.entityId)!.leadTimeScore).toBe(100);
     expect(recommended()).toBe(res.entityId);
     expect(readLeadTimeDays('abc', 'days').ok).toBe(false);

@@ -15,6 +15,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { FlowDefinition } from '../schema';
+import { POLICY_HOOKS } from '../policyHooks';
 
 export const rfqFlow: FlowDefinition = {
   entity: 'rfq',
@@ -85,6 +86,39 @@ export const rfqFlow: FlowDefinition = {
       requiredRole: 'rfq:award',
       requiredFields: ['awardedQuotationId', 'awardedSupplierId'],
       policyHooks: [],
+      version: 1,
+    },
+    {
+      // CP-0 · 2e-c-3 — the buyer RECORDS the FX basis a multi-currency
+      // comparison is ranked against. WIRED.
+      //
+      // STATE-PRESERVING: pinning a rate is not a step in the sourcing machine.
+      // It is legal from Open AND Closed — `t_rfq_award` is legal from both, so
+      // a comparison (and therefore a pin) must be too, and a Closed RFQ with
+      // foreign bids would otherwise be permanently unrankable.
+      //
+      // A DISPATCHED VERB rather than a store write, because D-1 requires every
+      // pin to land in the DR-10 trail: the basis a contract was awarded on is
+      // exactly the kind of fact an audit asks about later. It carries a role of
+      // its own (`rfq:fx-pin`, not `rfq:award`) — recording the basis and
+      // choosing the winner are different authorities, and collapsing them would
+      // let anyone who may compare also decide.
+      //
+      // The D-1 FREEZE is structural in the TARGET, not here: `applyTransition`
+      // APPENDS to `fxPins` and has no update path, so a superseding rate is a
+      // new entry and the prior basis is preserved by construction.
+      id: 't_rfq_fx_pin',
+      from: ['Open', 'Closed'],
+      to: 'Open',
+      statePreserving: true,
+      trigger: 'user',
+      requiredRole: 'rfq:fx-pin',
+      // `rate` and `asOf` are the fact; `quote` says what it converts; `source`
+      // says who says so. A rate without provenance is a number a buyer would
+      // have to take on faith, and MANUAL vs SAP_EXHGRATE is precisely the
+      // distinction an auditor cares about.
+      requiredFields: ['quote', 'rate', 'asOf', 'source'],
+      policyHooks: [POLICY_HOOKS.RFQ_FX_PIN_WELL_FORMED],
       version: 1,
     },
     {

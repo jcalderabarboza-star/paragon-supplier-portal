@@ -183,3 +183,79 @@ describe('FlowRegistry — admission + global uniqueness', () => {
     expect(() => reg.register(clash)).toThrow(/already registered by flow 'sample'/);
   });
 });
+
+// ── CP-0 · 2e-c-3 — statePreserving, the fact-recording transition ───────────
+//
+// Some governed facts are recorded ON an entity without moving it: an FX pin is
+// legal on an Open RFQ and on a Closed one, and must leave both where they are.
+// `to` is a single value, so any concrete choice would move the entity for the
+// other from-state — declaring `from: ['Open','Closed'], to: 'Open'` would
+// silently REOPEN a Closed RFQ every time a buyer recorded a rate.
+//
+// Routing such a fact around the dispatcher was the alternative, and it is
+// worse: the dispatcher is the only path to the DR-10 audit trail, and a
+// governed fact recorded outside the trail is what the trail exists to prevent.
+describe('validateFlow — statePreserving transitions', () => {
+  it('accepts a state-preserving transition whose `to` is one of its `from`s', () => {
+    const flow = withTransition(baseFlow(), {
+      from: ['A', 'B'],
+      to: 'A',
+      statePreserving: true,
+    });
+    expect(validateFlow(flow).ok).toBe(true);
+  });
+
+  it('REJECTS one whose `to` is not a from-state — the declaration would lie', () => {
+    // The metadata is read as executable spec. A declared destination the
+    // dispatcher will never take the entity to is a false statement about the
+    // machine, even though nothing would visibly break at runtime.
+    const flow = withTransition(baseFlow(), {
+      from: ['A'],
+      to: 'B',
+      statePreserving: true,
+    });
+    const r = validateFlow(flow);
+    expect(r.ok).toBe(false);
+    expect(r.errors.join()).toMatch(/statePreserving requires 'to'/);
+  });
+
+  it('REJECTS it on a creation — there is no prior state to preserve', () => {
+    const flow: FlowDefinition = {
+      ...baseFlow(),
+      transitions: [
+        {
+          id: 't_sample_create',
+          from: [],
+          to: 'A',
+          trigger: 'creation',
+          requiredRole: 'sample:create',
+          requiredFields: [],
+          policyHooks: [],
+          statePreserving: true,
+          version: 1,
+        },
+      ],
+    };
+    const r = validateFlow(flow);
+    expect(r.ok).toBe(false);
+    expect(r.errors.join()).toMatch(/creation transition cannot be statePreserving/);
+  });
+
+  it('is OPT-IN — an ordinary transition is unaffected', () => {
+    const t = baseFlow().transitions[1];
+    expect(t.statePreserving).toBeUndefined();
+    expect(validateFlow(baseFlow()).ok).toBe(true);
+  });
+
+  it('the shipped RFQ pin verb declares it, and validates', () => {
+    const rfq = getKnownFlows().find((f) => f.entity === 'rfq')!;
+    const pin = rfq.transitions.find((t) => t.id === 't_rfq_fx_pin')!;
+    expect(pin.statePreserving).toBe(true);
+    expect(pin.from).toEqual(['Open', 'Closed']);
+    expect(pin.to).toBe('Open');
+    expect(pin.requiredRole).toBe('rfq:fx-pin');
+    expect(pin.requiredFields).toEqual(['quote', 'rate', 'asOf', 'source']);
+    expect(pin.policyHooks).toContain(POLICY_HOOKS.RFQ_FX_PIN_WELL_FORMED);
+    expect(validateFlow(rfq)).toEqual({ ok: true, errors: [] });
+  });
+});

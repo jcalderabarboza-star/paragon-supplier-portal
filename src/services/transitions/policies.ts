@@ -11,7 +11,8 @@ import type { PolicyHookFn } from './dispatcher';
 import { POLICY_HOOKS } from './policyHooks';
 import { deriveHeaderDisposition, type GrHeaderDisposition } from './grRollup';
 import { isMatched } from './invoiceRollup';
-import { BID_CURRENCIES, isBidCurrency } from '../../lib/currencyPolicy';
+import { BASE_CURRENCY, BID_CURRENCIES, isBidCurrency } from '../../lib/currencyPolicy';
+import { isUsableRate } from '../../lib/fxPin';
 
 const BINDINGS = new Map<string, PolicyHookFn>();
 
@@ -135,3 +136,46 @@ bindPolicyHook(
   POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED,
   quotationSubmitCurrencyPermitted,
 );
+
+// — RFQ FX pin: the recorded basis must be WELL-FORMED (CP-0 · 2e-c-3) ————————
+//
+// An ABSENT pin is safe — the engine refuses `FX_UNPINNED` and says so. A
+// MALFORMED pin is not: it is a basis a comparison would happily be ranked on,
+// producing a plausible number and the wrong winner. So the gate sits here, at
+// the moment the fact is recorded, rather than being re-litigated by every
+// reader.
+//
+// Reads `payload` only — the RFQ's own state does not bear on whether a rate is
+// well-formed, and a pin is legal from every state the verb is legal from.
+//
+// It shares `isUsableRate` and `isBidCurrency` with the scoring engine, on the
+// `confirmedQtyWithinBounds` precedent: one expression of the rule, policy as
+// law, engine as the reader that must never see a value this refused.
+const rfqFxPinWellFormed: PolicyHookFn = ({ payload }) => {
+  const quote = payload.quote;
+  if (typeof quote !== 'string' || !isBidCurrency(quote)) {
+    return { ok: false, reason: `quote currency '${String(quote)}' is not permitted (${BID_CURRENCIES.join(', ')})` };
+  }
+  // Pinning the base to itself is not a harmless no-op: it would put a rate on
+  // the ledger for a currency whose rate is 1 BY DEFINITION, and any value other
+  // than 1 would silently re-denominate every domestic bid on the RFQ.
+  if (quote === BASE_CURRENCY) {
+    return { ok: false, reason: `${BASE_CURRENCY} is the comparison base — it has no rate to pin` };
+  }
+  if (!isUsableRate(payload.rate)) {
+    // Names the value: '0', 'NaN' and a missing rate are different mistakes.
+    return { ok: false, reason: `rate must be a finite number greater than 0, got ${String(payload.rate)}` };
+  }
+  const asOf = payload.asOf;
+  if (typeof asOf !== 'string' || !Number.isFinite(new Date(asOf).getTime())) {
+    return { ok: false, reason: `asOf must be a readable date, got ${String(asOf)}` };
+  }
+  if (payload.source !== 'MANUAL' && payload.source !== 'SAP_EXHGRATE') {
+    // Provenance is part of the fact. A pin whose source cannot be named is a
+    // number nobody is accountable for.
+    return { ok: false, reason: `source must be MANUAL or SAP_EXHGRATE, got ${String(payload.source)}` };
+  }
+  return { ok: true };
+};
+
+bindPolicyHook(POLICY_HOOKS.RFQ_FX_PIN_WELL_FORMED, rfqFxPinWellFormed);
