@@ -101,8 +101,64 @@ export const sourcingEn: Record<string, string> = {
   //   a refusal a buyer cannot act on is only half a refusal.
   'sourcing.cmp.fx.refused.FX_UNPINNED':
     'Not ranked — quotes are priced in {{currencies}} and no exchange rate has been recorded for this RFQ. Record a rate to compare them; the bids below are shown as quoted.',
+  // 2e-c-4 — a STALE refusal names the vintage it is judging. "Too old" without
+  // saying how old leaves a buyer unable to tell this morning's rate from
+  // January's.
   'sourcing.cmp.fx.refused.FX_STALE':
-    'Not ranked — the recorded exchange rate for {{currencies}} is older than this comparison allows. Record a current rate; the previous one is kept on the RFQ.',
+    'Not ranked — the recorded exchange rate for {{currencies}} (as of {{asOf}}) is older than this comparison allows. Record a current rate; the previous one is kept on the RFQ.',
+  // — 2e-c-4 · the recorded FX basis, on screen. A buyer must be able to answer
+  //   "what rate ranked this, and how old is it?" without an audit query.
+  'sourcing.cmp.fx.basis.title': 'Exchange rate basis',
+  'sourcing.cmp.fx.basis.asOf': 'as of {{date}}',
+  'sourcing.cmp.fx.basis.none': 'No rate recorded',
+  'sourcing.cmp.fx.basis.source.MANUAL': 'Entered manually',
+  'sourcing.cmp.fx.basis.source.SAP_EXHGRATE': 'SAP exchange rate',
+  // Superseded pins are KEPT (D-1) — saying so makes the preservation visible
+  // rather than a claim in a code comment.
+  'sourcing.cmp.fx.basis.superseded.one': '{{count}} earlier rate kept',
+  'sourcing.cmp.fx.basis.superseded.other': '{{count}} earlier rates kept',
+  'sourcing.cmp.fx.basis.record': 'Record {{currency}} rate',
+  // "Supersede", never "Edit": the prior rate is not replaced, it is outranked
+  // by a newer recorded act, and both stay on the RFQ.
+  'sourcing.cmp.fx.basis.supersede': 'Supersede {{currency}} rate',
+  // — the pin dialog (confirm-before-commit) —
+  'sourcing.fx.dialog.title.record': 'Record the {{currency}} exchange rate',
+  'sourcing.fx.dialog.title.supersede': 'Supersede the {{currency}} exchange rate',
+  'sourcing.fx.dialog.body.record':
+    'This rate is what Paragon will compare {{currency}} bids against. It is recorded on the RFQ and kept with the award decision.',
+  'sourcing.fx.dialog.body.supersede':
+    'This records a NEW {{currency}} rate. The existing one is not changed or deleted — it stays on the RFQ, so the basis every earlier comparison used remains on record.',
+  'sourcing.fx.dialog.prior': 'Currently in force:',
+  'sourcing.fx.dialog.rate': 'Rate — {{base}} per 1 {{currency}}',
+  'sourcing.fx.dialog.rateHint': 'Digits only — no thousands separators (e.g. 17250)',
+  'sourcing.fx.dialog.asOf': 'Rate date',
+  'sourcing.fx.dialog.asOfHint':
+    'The date this rate was true. Comparisons refuse to rank on a rate older than {{days}} days.',
+  'sourcing.fx.dialog.source': 'Source',
+  'sourcing.fx.dialog.rateType': 'SAP rate type (optional)',
+  'sourcing.fx.dialog.cancel': 'Cancel',
+  'sourcing.fx.dialog.confirm.record': 'Record rate',
+  'sourcing.fx.dialog.confirm.supersede': 'Record new rate',
+  'sourcing.fx.dialog.submitting': 'Recording…',
+  // — rate / vintage refusals: each names its own rule —
+  'sourcing.fx.refused.EMPTY_QTY': 'Enter the exchange rate — a blank field is not a rate.',
+  'sourcing.fx.refused.NOT_NUMERIC': 'That is not a rate — type digits only, e.g. 17250.',
+  'sourcing.fx.refused.AMBIGUOUS_QTY':
+    'This can be read two ways — "17.250" means seventeen thousand two hundred fifty in Indonesian and seventeen-point-two-five in English. Type it without separators: 17250.',
+  'sourcing.fx.refused.ZERO_RATE':
+    'Zero is not an exchange rate. It would value every foreign bid at nothing.',
+  'sourcing.fx.refused.EMPTY_VINTAGE': 'Give the date this rate was true.',
+  'sourcing.fx.refused.UNREADABLE_VINTAGE': 'That date cannot be read.',
+  'sourcing.fx.refused.FUTURE_VINTAGE':
+    'A rate cannot be true in the future. Enter the date it applied.',
+  // — toasts —
+  'sourcing.toast.fxPinned.title': '{{currency}} rate recorded',
+  'sourcing.toast.fxPinned.desc': 'The comparison now ranks against it.',
+  'sourcing.toast.fxSuperseded.title': 'New {{currency}} rate recorded',
+  'sourcing.toast.fxSuperseded.desc':
+    'The previous rate is kept on the RFQ; comparisons now use the new one.',
+  'sourcing.toast.fxPinFailed.title': 'Rate not recorded',
+  'sourcing.toast.fxPinFailed.default': 'Please try again.',
   'sourcing.cmp.simulated': 'Simulated',
   'sourcing.cmp.simulatedTitle': 'Rehearsal — awaiting a live source (compliance & reliability data)',
   'sourcing.cmp.row.unitPrice': 'Unit Price',
@@ -377,7 +433,55 @@ export const sourcingId: Record<string, string> = {
   'sourcing.cmp.fx.refused.FX_UNPINNED':
     'Tidak diperingkat — penawaran dihargai dalam {{currencies}} dan belum ada kurs yang dicatat untuk RFQ ini. Catat kurs untuk membandingkannya; penawaran di bawah ditampilkan sesuai yang diajukan.',
   'sourcing.cmp.fx.refused.FX_STALE':
-    'Tidak diperingkat — kurs tercatat untuk {{currencies}} lebih lama daripada yang diizinkan perbandingan ini. Catat kurs terkini; kurs sebelumnya tetap tersimpan pada RFQ.',
+    'Tidak diperingkat — kurs tercatat untuk {{currencies}} (per {{asOf}}) lebih lama daripada yang diizinkan perbandingan ini. Catat kurs terkini; kurs sebelumnya tetap tersimpan pada RFQ.',
+  // — 2e-c-4 · dasar kurs yang tercatat —
+  'sourcing.cmp.fx.basis.title': 'Dasar kurs',
+  'sourcing.cmp.fx.basis.asOf': 'per {{date}}',
+  'sourcing.cmp.fx.basis.none': 'Belum ada kurs tercatat',
+  'sourcing.cmp.fx.basis.source.MANUAL': 'Dimasukkan manual',
+  'sourcing.cmp.fx.basis.source.SAP_EXHGRATE': 'Kurs SAP',
+  'sourcing.cmp.fx.basis.superseded.one': '{{count}} kurs sebelumnya disimpan',
+  'sourcing.cmp.fx.basis.superseded.other': '{{count}} kurs sebelumnya disimpan',
+  'sourcing.cmp.fx.basis.record': 'Catat kurs {{currency}}',
+  'sourcing.cmp.fx.basis.supersede': 'Ganti kurs {{currency}}',
+  // — dialog pencatatan kurs —
+  'sourcing.fx.dialog.title.record': 'Catat kurs {{currency}}',
+  'sourcing.fx.dialog.title.supersede': 'Ganti kurs {{currency}}',
+  'sourcing.fx.dialog.body.record':
+    'Kurs ini yang dipakai Paragon untuk membandingkan penawaran {{currency}}. Kurs dicatat pada RFQ dan disimpan bersama keputusan pemenangan.',
+  'sourcing.fx.dialog.body.supersede':
+    'Ini mencatat kurs {{currency}} BARU. Kurs yang ada tidak diubah atau dihapus — kurs lama tetap tersimpan pada RFQ, sehingga dasar yang dipakai setiap perbandingan sebelumnya tetap tercatat.',
+  'sourcing.fx.dialog.prior': 'Yang berlaku saat ini:',
+  'sourcing.fx.dialog.rate': 'Kurs — {{base}} per 1 {{currency}}',
+  'sourcing.fx.dialog.rateHint': 'Angka saja — tanpa pemisah ribuan (mis. 17250)',
+  'sourcing.fx.dialog.asOf': 'Tanggal kurs',
+  'sourcing.fx.dialog.asOfHint':
+    'Tanggal kurs ini berlaku. Perbandingan menolak memberi peringkat pada kurs yang lebih lama dari {{days}} hari.',
+  'sourcing.fx.dialog.source': 'Sumber',
+  'sourcing.fx.dialog.rateType': 'Jenis kurs SAP (opsional)',
+  'sourcing.fx.dialog.cancel': 'Batal',
+  'sourcing.fx.dialog.confirm.record': 'Catat kurs',
+  'sourcing.fx.dialog.confirm.supersede': 'Catat kurs baru',
+  'sourcing.fx.dialog.submitting': 'Mencatat…',
+  // — penolakan kurs / tanggal —
+  'sourcing.fx.refused.EMPTY_QTY': 'Masukkan kurs — kolom kosong bukan kurs.',
+  'sourcing.fx.refused.NOT_NUMERIC': 'Itu bukan kurs — ketik angka saja, mis. 17250.',
+  'sourcing.fx.refused.AMBIGUOUS_QTY':
+    'Ini bisa dibaca dua cara — "17.250" berarti tujuh belas ribu dua ratus lima puluh dalam bahasa Indonesia dan tujuh belas koma dua lima dalam bahasa Inggris. Ketik tanpa pemisah: 17250.',
+  'sourcing.fx.refused.ZERO_RATE':
+    'Nol bukan kurs. Kurs nol membuat setiap penawaran mata uang asing bernilai nihil.',
+  'sourcing.fx.refused.EMPTY_VINTAGE': 'Isi tanggal kurs ini berlaku.',
+  'sourcing.fx.refused.UNREADABLE_VINTAGE': 'Tanggal itu tidak terbaca.',
+  'sourcing.fx.refused.FUTURE_VINTAGE':
+    'Kurs tidak bisa berlaku di masa depan. Masukkan tanggal kurs itu berlaku.',
+  // — toast —
+  'sourcing.toast.fxPinned.title': 'Kurs {{currency}} tercatat',
+  'sourcing.toast.fxPinned.desc': 'Perbandingan kini diperingkat berdasarkan kurs itu.',
+  'sourcing.toast.fxSuperseded.title': 'Kurs {{currency}} baru tercatat',
+  'sourcing.toast.fxSuperseded.desc':
+    'Kurs sebelumnya tetap tersimpan pada RFQ; perbandingan kini memakai kurs baru.',
+  'sourcing.toast.fxPinFailed.title': 'Kurs tidak tercatat',
+  'sourcing.toast.fxPinFailed.default': 'Silakan coba lagi.',
   'sourcing.cmp.simulated': 'Simulasi',
   'sourcing.cmp.simulatedTitle': 'Latihan — menunggu sumber langsung (data kepatuhan & keandalan)',
   'sourcing.cmp.row.unitPrice': 'Harga Satuan',

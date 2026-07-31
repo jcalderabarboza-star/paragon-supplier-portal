@@ -11,6 +11,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDataService } from '../data/DataServiceContext';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { scopeKey } from './useServiceQuery';
+import type { BidCurrency } from '../../lib/currencyPolicy';
+import type { FxPinSource } from '../../lib/fxPin';
 import type {
   CommandResult,
   CommandStatus,
@@ -181,6 +183,59 @@ export function useRfqAward() {
         entity: 'rfq',
         entityId: rfqId,
         payload: { awardedQuotationId, awardedSupplierId },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+// ─── FX basis (CP-0 · 2e-c-3/4) — the buyer records the rate a multi-currency
+//     comparison is ranked against ───────────────────────────────────────────
+//
+// STATE-PRESERVING: this records a fact ON the RFQ without moving it, so an Open
+// RFQ stays Open and a Closed one stays Closed. Invalidating on success is what
+// makes the comparison re-score — the refusal the buyer was looking at is
+// replaced by a ranking, in one round trip.
+//
+// There is deliberately NO `useRfqFxPinEdit`. A moved rate is recorded by
+// dispatching this verb AGAIN: the store appends, the prior basis survives, and
+// the D-1 freeze holds because no update path exists to break it.
+
+export interface RfqFxPinVars {
+  rfqId: string;
+  /** The bid currency being converted (never the base — its rate is 1). */
+  quote: BidCurrency;
+  /** Units of base per ONE unit of `quote`. */
+  rate: number;
+  /** The RATE's vintage (ISO date) — what staleness is measured from. */
+  asOf: string;
+  source: FxPinSource;
+  /** SAP rate type ('M'/'B'/'G'), when the source distinguishes them. */
+  rateType?: string;
+}
+
+/** Record (or supersede) the FX basis for one currency on one RFQ. */
+export function useRfqFxPin() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqFxPinVars>({
+    mutationFn: ({ rfqId, quote, rate, asOf, source, rateType }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_fx_pin',
+        entity: 'rfq',
+        entityId: rfqId,
+        payload: {
+          quote,
+          rate,
+          asOf,
+          source,
+          // Omitted rather than sent empty: a MANUAL pin has no rate type, and
+          // an empty string would be a stated blank rather than an absence.
+          ...(rateType ? { rateType } : {}),
+        },
       }),
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate(scope);
