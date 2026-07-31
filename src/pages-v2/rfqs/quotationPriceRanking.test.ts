@@ -72,6 +72,7 @@ const submitTypedPrice = async (typed: string) => {
       rfqId: RFQ_ID,
       supplierId: 'sup-012',
       unitPrice: price.value,
+      currency: 'IDR', // required since 2e-c-2; the whole set shares it, so ranking stays comparable
       leadTimeDays: '18',
       validUntil: '2026-06-30',
     }),
@@ -156,6 +157,7 @@ describe('BLAST RADIUS — a refused bid price never enters the award ranking', 
         rfqId: RFQ_ID,
         supplierId: 'sup-012',
         unitPrice: 1.5, // ← the misparse
+        currency: 'IDR',
         leadTimeDays: '18',
         validUntil: '2026-06-30',
       }),

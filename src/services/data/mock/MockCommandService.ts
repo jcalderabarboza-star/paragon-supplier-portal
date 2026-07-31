@@ -33,6 +33,7 @@ import type {
 } from '../../../data/mockGoodsReceipts';
 import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
+import type { BidCurrency } from '../../../lib/currencyPolicy';
 import {
   createDispatcher,
   InMemoryAuditSink,
@@ -457,7 +458,16 @@ const quotationTarget: CommandTarget = {
       supplierId: str('supplierId'),
       submittedAt: new Date().toISOString().slice(0, 10),
       unitPrice,
+      // The currency the price is denominated in (2e-c-2). The flow REQUIRES it
+      // and the `quotation_submit_currency_permitted` policy proves it is a
+      // permitted token, so both the empty case and the off-list case fail
+      // before create is ever called — there is no fallback here to write,
+      // because a fallback is precisely how an EUR bid used to become rupiah.
+      // Cast is safe on that pair of guards, not on optimism.
+      currency: str('currency') as BidCurrency,
       // Honest arithmetic from raw facts (unit × the RFQ's quantity), NOT a score.
+      // Denominated in the quote's OWN currency — the RFQ's quantity is a count,
+      // so it carries no currency of its own to disagree with.
       totalPrice: unitPrice * (rfq?.totalQty ?? 0),
       // Required by the flow's `requiredFields`, so `num()`'s 0 fallback is
       // unreachable here — an absent lead time fails MISSING_FIELDS before

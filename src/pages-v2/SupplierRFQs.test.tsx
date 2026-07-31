@@ -550,3 +550,90 @@ describe('SupplierRFQs — display consistency (2e-b-3)', () => {
     expect(screen.queryByText(/undefined/)).not.toBeInTheDocument();
   });
 });
+
+// ── CP-0 · 2e-c-2 — the currency survives the submit, and reads back honestly ─
+//
+// Two defects, one root, closed together. The form has offered a currency
+// selector since before the command spine existed and the builder was never
+// given it, so an EUR 3.00 bid was minted as a bare 3 (FIND-01's write half).
+// Then every supplier-facing read called `formatIDR` unconditionally, so that 3
+// was read back as "Rp 3" (COS-05) — the platform first discarding the
+// supplier's currency and then contradicting it.
+//
+// Latent until now only because `identitySources` seeds sup-007 alone. This
+// batch is what makes a foreign bid storable, so it is the batch that has to
+// make it readable.
+describe('SupplierRFQs — the bid currency survives, end to end (2e-c-2)', () => {
+  beforeEach(() => quotationStore.reset());
+
+  const openQuotePanel = async () => {
+    renderWithProviders(<SupplierRFQs />, { identity: SUPPLIER });
+    expect(await screen.findByText('RFQ-2026-010')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: /Submit Quote/i })[0]);
+    fireEvent.change(screen.getByLabelText('Unit price'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('Lead time'), { target: { value: '14' } });
+    fireEvent.change(screen.getByLabelText('Quote valid until'), {
+      target: { value: '2026-06-30' },
+    });
+  };
+
+  const minted = () => quotationStore.forRfq('rfq-010');
+  const submitBtn = () => screen.getByRole('button', { name: 'Submit quotation' });
+
+  it('THE LOCK — an EUR bid is minted as an EUR fact, not a bare number', async () => {
+    await openQuotePanel();
+    fireEvent.change(screen.getByLabelText('Bid currency'), { target: { value: 'EUR' } });
+    fireEvent.click(submitBtn());
+
+    await waitFor(() => expect(minted()).toHaveLength(1));
+    // The finding in one assertion. Before this batch: `undefined`, whatever the
+    // supplier chose — which every reader then resolves as rupiah.
+    expect(minted()[0].currency).toBe('EUR');
+    expect(minted()[0].unitPrice).toBe(3);
+  });
+
+  it('COS-05 — the supplier reads their EUR bid back as EUR, never as rupiah', async () => {
+    await openQuotePanel();
+    fireEvent.change(screen.getByLabelText('Bid currency'), { target: { value: 'EUR' } });
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(minted()).toHaveLength(1));
+
+    // Submitting switches to My Quotes — the supplier's own record of the bid
+    // they just made. "€3.00", per the en-IE ruling; the retired unconditional
+    // `formatIDR` rendered this exact quote as "Rp 3".
+    expect(await screen.findByText('€3.00')).toBeInTheDocument();
+    expect(screen.queryByText('Rp 3')).not.toBeInTheDocument();
+  });
+
+  it('the default is still rupiah, and still renders as rupiah', async () => {
+    // The negation that keeps the above meaningful: this is not "everything is
+    // EUR now". An untouched selector is BASE_CURRENCY and nothing changed for
+    // the domestic supplier who is every current persona.
+    await openQuotePanel();
+    fireEvent.click(submitBtn());
+    await waitFor(() => expect(minted()).toHaveLength(1));
+    expect(minted()[0].currency).toBe('IDR');
+    expect(await screen.findByText('Rp 3')).toBeInTheDocument();
+  });
+
+  it('offers exactly the permitted currencies — the options ARE the policy', async () => {
+    await openQuotePanel();
+    const options = Array.from(
+      (screen.getByLabelText('Bid currency') as HTMLSelectElement).options,
+    ).map((o) => o.value);
+    expect(options).toEqual(['IDR', 'USD', 'EUR']);
+  });
+
+  it('COS-01 — the total preview names the currency the payload now carries', async () => {
+    // 2e-b-3 fixed this preview's grouping and deliberately stopped short of a
+    // currency prefix, because the label named a field the payload discarded.
+    // It no longer does, so the preview renders through the same formatter as
+    // the stored quote: one rendering of a bid, from preview to award.
+    await openQuotePanel();
+    fireEvent.change(screen.getByLabelText('Bid currency'), { target: { value: 'USD' } });
+    // rfq-010's quantity × 3. The assertion that matters is the DENOMINATION.
+    expect(screen.getByText(/^\$/)).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Bid currency'), { target: { value: 'EUR' } });
+    expect(screen.getByText(/^€/)).toBeInTheDocument();
+  });
+});

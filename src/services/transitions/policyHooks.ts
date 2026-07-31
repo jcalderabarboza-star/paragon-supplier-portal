@@ -43,6 +43,11 @@ export const POLICY_HOOKS = {
   GR_ROLLUP_PARTIAL: 'gr_rollup_mixed',
   /** GR reject: every line rolls up Rejected. */
   GR_ROLLUP_REJECTED: 'gr_rollup_all_rejected',
+  /** Quotation submit (2e-c-2): payload.currency must be a PERMITTED bid
+   *  currency (`BID_CURRENCIES`). `requiredFields` proves presence only — this
+   *  proves membership, so an off-list token is refused BY NAME rather than
+   *  coerced to the base currency or stored as an unrecognised denomination. */
+  QUOTATION_SUBMIT_CURRENCY_PERMITTED: 'quotation_submit_currency_permitted',
   /** Invoice create: the parent PO (payload.poReference) must be Confirmed. */
   INVOICE_CREATE_PO_CONFIRMED: 'invoice_create_po_confirmed',
   /** Invoice match: the match sub-flow must have rolled up to a clean Matched

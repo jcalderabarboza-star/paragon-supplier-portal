@@ -19,6 +19,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import { MockCommandService } from './MockCommandService';
 import { quotationStore } from './stores/quotationStore';
+import { BID_CURRENCIES } from '../../../lib/currencyPolicy';
 import { rfqStore } from './stores/rfqStore';
 import { scoreQuotations } from '../../../lib/quoteScore';
 import { DataError } from '../types';
@@ -38,6 +39,9 @@ const submit = (overrides: Record<string, unknown> = {}) => ({
     rfqId: 'rfq-001',
     supplierId: 'sup-005',
     unitPrice: 190_000,
+    // REQUIRED since 2e-c-2 — a price without a currency no longer mints.
+    // Overridable, so the refusal cases below can hand it a bad one.
+    currency: 'IDR',
     leadTimeDays: 30,
     paymentTermsOffered: 'Net 30',
     validUntil: '2026-08-31',
@@ -250,5 +254,88 @@ describe('t_quotation_review — buyer moves a submitted quote into evaluation',
     });
     expect(res.status).toBe('failed');
     expect(res.reason).toMatch(/ILLEGAL_TRANSITION/);
+  });
+});
+
+// ── CP-0 · 2e-c-2 — the currency SURVIVES SUBMIT ─────────────────────────────
+//
+// The form has offered a currency selector since before the command spine
+// existed, and the builder was never given it. So a supplier who chose EUR and
+// typed 3.00 had a quotation minted at 3 — with no currency at all, which every
+// reader then resolves as rupiah. The bid was not merely dropped: it was
+// RESTATED as a different amount of money, and then scored, ranked and awarded
+// against rivals in that false denomination.
+//
+// Two guards, deliberately distinct. `requiredFields` proves the field is THERE.
+// The policy hook proves what is IN it. Neither substitutes for the other: a
+// present-but-arbitrary token clears the first and is caught by the second.
+describe('t_quotation_submit — the bid currency is a fact, not a decoration', () => {
+  it('THE LOCK — an EUR submit mints an EUR quotation', async () => {
+    const res = await svc.dispatch(invited, submit({ currency: 'EUR', unitPrice: 3 }));
+    expect(res.status).not.toBe('failed');
+    const minted = quotationStore.get(res.entityId!)!;
+    // The whole batch in one assertion: 3 EUR in, 3 EUR stored.
+    expect(minted.currency).toBe('EUR');
+    expect(minted.unitPrice).toBe(3);
+  });
+
+  it('the currency the supplier chose is the currency stored — for each permitted one', async () => {
+    for (const currency of BID_CURRENCIES) {
+      const res = await svc.dispatch(invited, submit({ currency }));
+      expect(quotationStore.get(res.entityId!)!.currency).toBe(currency);
+    }
+  });
+
+  it('a submit with NO currency is REFUSED — never defaulted to rupiah', async () => {
+    // The precise regression: defaulting is what made every foreign bid domestic.
+    // A missing currency must fail loudly rather than resolve to the base one.
+    const { currency: _dropped, ...noCurrency } = submit().payload;
+    const res = await svc.dispatch(invited, {
+      transitionId: 't_quotation_submit',
+      entity: 'quotation',
+      payload: noCurrency,
+    });
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('MISSING_FIELDS');
+    expect(res.reason).toContain('currency');
+  });
+
+  it('an empty-string currency is refused by the FIELD gate, not smuggled to the policy', async () => {
+    const res = await svc.dispatch(invited, submit({ currency: '' }));
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('MISSING_FIELDS');
+  });
+
+  it.each([
+    ['CNY', 'a real currency that is simply not permitted'],
+    ['usd', 'the right currency in the wrong case'],
+    ['Rp', 'a symbol rather than an ISO code'],
+    ['GOLD', 'not a currency at all'],
+  ])('REFUSES an off-list token BY NAME: %s (%s)', async (currency) => {
+    const res = await svc.dispatch(invited, submit({ currency }));
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('POLICY_REJECTED:quotation_submit_currency_permitted');
+    // BY NAME, both halves: the token that was rejected...
+    expect(res.reason).toContain(`'${currency}'`);
+    // ...and the set that would have been accepted. A refusal that names
+    // neither leaves a supplier guessing at what to type next.
+    expect(res.reason).toContain('IDR, USD, EUR');
+  });
+
+  it('a refused currency mints NOTHING — the refusal is not a partial write', async () => {
+    const before = quotationStore.all().length;
+    const res = await svc.dispatch(invited, submit({ currency: 'CNY' }));
+    expect(res.status).toBe('failed');
+    expect(res.entityId).toBeUndefined();
+    expect(quotationStore.all()).toHaveLength(before);
+  });
+
+  it('NOT COERCED — an off-list currency never quietly becomes the base currency', async () => {
+    // The tempting "helpful" behaviour, refused explicitly: coercing CNY to IDR
+    // would store a bid the supplier never made, which is the exact class of
+    // defect this batch closes. Nothing may exist afterwards carrying IDR.
+    const res = await svc.dispatch(invited, submit({ currency: 'CNY' }));
+    expect(res.status).toBe('failed');
+    expect(quotationStore.all().some((q) => q.id === res.entityId)).toBe(false);
   });
 });

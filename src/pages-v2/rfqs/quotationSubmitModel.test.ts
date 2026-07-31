@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { buildQuotationSubmitPayload } from './quotationSubmitModel';
+import { buildQuotationSubmitPayload, isCurrencyRefusal } from './quotationSubmitModel';
+import { BID_CURRENCIES } from '../../lib/currencyPolicy';
+import { POLICY_HOOKS } from '../../services/transitions/policyHooks';
 
 const draft = {
   rfqId: 'rfq-001',
@@ -18,6 +20,10 @@ const draft = {
   // the value died between the two. `null` is the stated absence — "same as the
   // RFQ quantity" — which is what this base draft means.
   moq: null,
+  // REQUIRED since 2e-c-2 — the form has always collected it and this builder
+  // was never given it, so every foreign bid was minted as an unmarked (and
+  // therefore rupiah) number.
+  currency: 'IDR' as const,
   validUntil: '2026-08-31',
   paymentTermsOffered: 'Net 30',
 };
@@ -126,5 +132,64 @@ describe('buildQuotationSubmitPayload — raw facts only, engine owns scoring at
   it('omits notes when absent, includes it when present', () => {
     expect('notes' in buildQuotationSubmitPayload(draft)).toBe(false);
     expect(buildQuotationSubmitPayload({ ...draft, notes: 'BPOM-registered' }).notes).toBe('BPOM-registered');
+  });
+});
+
+// ── CP-0 · 2e-c-2 — the currency crosses the boundary ────────────────────────
+describe('the bid currency', () => {
+  it('is ALWAYS emitted — unlike leadTimeDays / moq / notes, it is never omitted', () => {
+    // Those three are facts a supplier may honestly not state, so absence is a
+    // real answer and the builder omits them. A price has no such reading: it is
+    // always denominated in something, so a missing currency is a DROPPED fact
+    // rather than a stated silence. This asymmetry is deliberate.
+    const p = buildQuotationSubmitPayload(draft);
+    expect('currency' in p).toBe(true);
+    expect(p.currency).toBe('IDR');
+  });
+
+  it('passes each permitted currency through UNTOUCHED', () => {
+    for (const currency of BID_CURRENCIES) {
+      expect(buildQuotationSubmitPayload({ ...draft, currency }).currency).toBe(currency);
+    }
+  });
+
+  it('THE REGRESSION — an EUR draft does not arrive as IDR', () => {
+    // In one line: what an EUR 3.00 bid used to become.
+    const p = buildQuotationSubmitPayload({ ...draft, currency: 'EUR', unitPrice: 3 });
+    expect(p.currency).toBe('EUR');
+    expect(p.currency).not.toBe('IDR');
+    expect(p.unitPrice).toBe(3);
+  });
+});
+
+describe('isCurrencyRefusal — the surface can tell WHICH refusal this was', () => {
+  it('recognises the currency policy rejection', () => {
+    expect(
+      isCurrencyRefusal(
+        "POLICY_REJECTED:quotation_submit_currency_permitted:currency 'CNY' is not permitted (IDR, USD, EUR)",
+      ),
+    ).toBe(true);
+  });
+
+  it('does NOT claim unrelated failures — a mistranslated refusal is a lie', () => {
+    for (const reason of [
+      'MISSING_FIELDS:currency',
+      'ROLE_NOT_PERMITTED:quotation:submit',
+      'POLICY_REJECTED:po_confirm_qty_within_ordered:line 1: confirmed qty out of bounds',
+      'ILLEGAL_TRANSITION:Submitted->Submitted',
+      undefined,
+      '',
+    ]) {
+      expect(isCurrencyRefusal(reason)).toBe(false);
+    }
+  });
+
+  it('is derived from the hook NAME — a renamed hook cannot silently detach it', () => {
+    // The string it matches must contain the registered hook name verbatim. If
+    // someone renames the hook and this predicate keeps matching a stale
+    // literal, the supplier silently goes back to reading a dispatcher constant.
+    expect(
+      isCurrencyRefusal(`POLICY_REJECTED:${POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED}:anything`),
+    ).toBe(true);
   });
 });

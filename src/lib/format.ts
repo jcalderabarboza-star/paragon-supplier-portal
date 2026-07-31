@@ -9,6 +9,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import i18n from './i18n';
+import type { BidCurrency } from './currencyPolicy';
 
 const JAKARTA = 'Asia/Jakarta';
 const EMPTY = '—';
@@ -45,6 +46,51 @@ export function formatIDR(value?: number | null, opts?: { compact?: boolean }): 
     if (abs >= 1e3) return scaled(1e3, 'rb');
   }
   return `Rp ${idID.format(value)}`;
+}
+
+// — Currency-aware money (CP-0 · 2e-c-2) ─────────────────────────────────────
+//
+// Was a local const in `BuyerSourcing.tsx`, where a comment recorded that
+// consolidating it "belongs to the currency ruling (FIND-01 / 2e-c), not here".
+// This is that ruling, so it lands here beside `formatIDR` — the rest of the
+// app's money already comes from this file.
+//
+// It replaces a USD-vs-domestic BINARY (`currency === 'USD' ? … : …`, twice)
+// under which every non-USD currency inherited rupiah conventions, so a €2.85
+// bid rendered "€3" — a ~5% misstatement of a supplier's price (2e-c-1-FIND-01).
+// Each currency now states its own locale and its own precision.
+//
+// EUR = en-IE by operator ruling: "€2.85" — symbol leading, dot decimal, two
+// fraction digits. The users are Indonesian procurement staff; the symbol's job
+// is to say "this is not rupiah", not to reproduce a German invoice. It also
+// keeps EUR rows structurally parallel to USD rows ("$2.85") in a comparison
+// table whose entire purpose is comparison.
+//
+// IDR DELEGATES to `formatIDR`, so there is exactly ONE rupiah rendering in the
+// app. The retired binary built its own via `Intl` currency style, which emits a
+// NO-BREAK SPACE after "Rp" where `formatIDR` emits an ordinary space — two
+// renderings of the same currency, differing by an invisible character.
+const MONEY_LOCALE: Record<Exclude<BidCurrency, 'IDR'>, string> = {
+  USD: 'en-US',
+  EUR: 'en-IE',
+};
+
+/**
+ * An amount in the currency it is actually denominated in. The currency is
+ * REQUIRED — a defaulted currency is an assertion about money that the caller,
+ * not this function, is in a position to make. null/undefined/NaN → "—".
+ */
+export function formatMoney(value: number | null | undefined, currency: BidCurrency): string {
+  if (value == null || Number.isNaN(value)) return EMPTY;
+  if (currency === 'IDR') return formatIDR(value);
+  return new Intl.NumberFormat(MONEY_LOCALE[currency], {
+    style: 'currency',
+    currency,
+    // Both min and max: a price is quoted to the cent, and "€2.8" would be a
+    // different-looking number from "$2.80" in a table read across rows.
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 /**

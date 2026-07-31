@@ -61,7 +61,7 @@ import {
 } from './sourcing/rfqCreateModel';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 // 2e-b-3 (COS-04) — the canonical formatters, replacing this file's own copies.
-import { formatDate, formatIDR, formatNumber } from '../lib/format';
+import { formatDate, formatIDR, formatMoney, formatNumber } from '../lib/format';
 import {
   scoreQuotations,
   AXIS_LIVENESS,
@@ -206,23 +206,12 @@ const daysUntil = (iso: string): number => {
 // no equivalent — a quote may be priced in USD. Consolidating it belongs to the
 // currency ruling (FIND-01 / 2e-c), not here.
 //
-// 2e-c-1 — the parameter now derives from the currency policy rather than
-// re-listing a subset of it. KNOWN DEFECT, booked as 2e-c-1-FIND-01: the BODY is
-// still a USD-vs-domestic binary, so a EUR bid would render with rupiah
-// conventions (id-ID grouping, zero fraction digits). Unreachable today — no
-// fixture carries EUR and the currency does not survive submit — so widening the
-// signature changes nothing that renders. It MUST be fixed before 2e-c-2 makes a
-// EUR quote storable; picking EUR's locale is an operator ruling, not a
-// representation change, so it is deliberately not made here.
-const formatMoney = (
-  value: number,
-  currency: BidCurrency = BASE_CURRENCY,
-): string =>
-  new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'id-ID', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: currency === 'USD' ? 2 : 0,
-  }).format(value);
+// 2e-c-2 — `formatMoney` MOVED to `lib/format`, next to the rest of the app's
+// money, and its currency argument is now REQUIRED. It lived here because
+// `lib/format` had no currency-aware leg; the comment above recorded that
+// consolidating it belonged to the currency ruling. This is that ruling.
+// 2e-c-1-FIND-01 (a EUR bid rendering "€3") is closed in the moved
+// implementation: EUR renders en-IE "€2.85" by operator ruling.
 
 // Does this bid currency have a should-cost branch to be priced against? POLICY
 // is wider than CAPABILITY by design (see currencyPolicy.ts): a supplier may
