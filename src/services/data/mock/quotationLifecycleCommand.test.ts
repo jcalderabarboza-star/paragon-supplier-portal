@@ -19,7 +19,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 import { MockCommandService } from './MockCommandService';
 import { quotationStore } from './stores/quotationStore';
-import { BID_CURRENCIES } from '../../../lib/currencyPolicy';
+import { BASE_CURRENCY, BID_CURRENCIES } from '../../../lib/currencyPolicy';
 import { rfqStore } from './stores/rfqStore';
 import { scoreQuotations } from '../../../lib/quoteScore';
 import { DataError } from '../types';
@@ -207,12 +207,17 @@ describe('t_quotation_submit — honest-by-construction scores (score-at-READ)',
       .map((q) => ({
         id: q.id,
         unitPrice: q.unitPrice,
+        // The boundary resolves "absent means rupiah" (2e-c-3).
+        currency: q.currency ?? BASE_CURRENCY,
         leadTimeDays: q.leadTimeDays,
         complianceScore: q.complianceScore,
         reliabilityScore: q.reliabilityScore,
       }));
-    const scored = scoreQuotations(set);
-    const mine = scored.find((s) => s.quoteId === res.entityId)!;
+    const outcome = scoreQuotations(set);
+    // A single-currency set is ranked without any pin (the homogeneous-set
+    // exemption) — if this ever refuses, the fixture stopped being homogeneous.
+    if (outcome.kind !== 'scored') throw new Error(`expected scored, got ${outcome.reason}`);
+    const mine = outcome.scores.find((s) => s.quoteId === res.entityId)!;
     // Cheapest → priceScore anchors 100 (LIVE ratio-to-best), computed at read
     // even though the STORED priceScore is the 0 sentinel.
     expect(mine.priceScore).toBe(100);

@@ -21,6 +21,14 @@
 // C6-LOCK: CRITERIA_WEIGHTS are governed platform truth — a fixed scoring policy,
 // NOT a user-editable formula. This module is pure (no I/O, no clock, no store).
 // ────────────────────────────────────────────────────────────────────────────
+import { BASE_CURRENCY, type BidCurrency } from './currencyPolicy';
+import {
+  effectivePin,
+  isStalePin,
+  isUsableRate,
+  type FxPin,
+  type FxRefusalReason,
+} from './fxPin';
 
 export type Liveness = 'live' | 'simulated';
 
@@ -104,6 +112,20 @@ export function leadTimeScoreFor(days: number): number {
 export interface ScorableQuote {
   id: string;
   unitPrice: number;
+  /**
+   * The currency `unitPrice` is denominated in (2e-c-3). REQUIRED — the engine
+   * used to have no currency field at all, so `Math.min` over `unitPrice`
+   * compared bare numerals and an EUR 3.00 bid beside IDR 15,000 bids became
+   * the set minimum, collapsing every rupiah quote's price score toward zero
+   * (2e-c-2-FIND-01).
+   *
+   * Required rather than defaulted precisely because `Quotation.currency` is
+   * OPTIONAL: the caller resolves absence to `BASE_CURRENCY` at the boundary,
+   * where the "absent means rupiah" convention already lives. An engine that
+   * defaulted it would be making that assumption silently, one layer too deep
+   * to see.
+   */
+  currency: BidCurrency;
   /** REQUIRED (2e-b-1a) — an incomplete bid never reaches the comparison. */
   leadTimeDays: number;
   complianceScore: number;
@@ -140,23 +162,132 @@ function ratioToBest(value: number, best: number): number {
 }
 
 /**
+ * The comparison basis a scored set was ranked against — stated so a surface can
+ * show WHAT the ranking means, never inferred from the numbers.
+ */
+export interface ScoringBasis {
+  /** The currency every price was compared in. */
+  readonly currency: BidCurrency;
+  /** The pins actually used (empty for a homogeneous set, which needs none). */
+  readonly pins: readonly FxPin[];
+  /** True when the set was single-currency and no conversion happened at all. */
+  readonly homogeneous: boolean;
+}
+
+/**
+ * The engine's answer: a ranking, or a REFUSAL that names itself.
+ *
+ * Discriminated rather than "scores plus a warning" because a partial or
+ * best-effort ranking is the failure mode this whole batch exists to close. If
+ * the basis is missing or too old there is no honest number to show, and a
+ * caller must be unable to accidentally render one.
+ */
+export type ScoringOutcome =
+  | { readonly kind: 'scored'; readonly scores: QuoteScore[]; readonly basis: ScoringBasis }
+  | {
+      readonly kind: 'refused';
+      readonly reason: FxRefusalReason;
+      /** The currencies responsible — the refusal names them so a buyer knows
+       *  exactly which pin to record, rather than being told "something is
+       *  wrong with the currencies". */
+      readonly currencies: readonly BidCurrency[];
+    };
+
+/**
+ * The engine's optional inputs, as an OBJECT rather than positional arguments.
+ *
+ * 2e-c-3 added two (`pins`, `now`) beside the existing `weights`, and three
+ * optional positionals in a row is a defect waiting to happen: a caller passing
+ * weights second would silently have them read as pins, and the engine would
+ * score against an empty basis without complaining. Named fields make that
+ * unexpressible.
+ */
+export interface ScoringOptions {
+  /** The RFQ's recorded FX bases. Absent ⇒ none recorded, which refuses any
+   *  mixed-currency set rather than assuming a rate. */
+  readonly pins?: readonly FxPin[];
+  readonly weights?: CriteriaWeights;
+  /** The clock for the staleness read, injectable so specs are deterministic. */
+  readonly now?: Date;
+}
+
+/**
  * Score a set of quotes for ONE RFQ. Pure: order-preserving, input-immutable,
- * deterministic. Returns [] for an empty set.
+ * deterministic, and clock-free except for the staleness read it is handed.
+ *
+ * HOMOGENEOUS-SET EXEMPTION. A single-currency set needs no pin and no
+ * conversion. Ratio-to-best is scale-invariant — multiplying every price by the
+ * same rate leaves every ratio, and therefore every score, identical — and the
+ * other three axes never touch money. So an all-USD RFQ scores EXACTLY as it did
+ * before this batch existed. This is not a convenience shortcut: demanding a pin
+ * there would refuse a comparison the engine is provably able to make.
+ *
+ * MIXED SETS need a pin for every non-base currency present. The base needs none
+ * (its rate is 1 by definition), so an all-rupiah set and a rupiah-plus-foreign
+ * set differ by exactly the pins the foreign bids require.
  */
 export function scoreQuotations(
   quotes: readonly ScorableQuote[],
-  weights: CriteriaWeights = CRITERIA_WEIGHTS,
-): QuoteScore[] {
-  if (quotes.length === 0) return [];
+  opts: ScoringOptions = {},
+): ScoringOutcome {
+  const { pins = [], weights = CRITERIA_WEIGHTS, now = new Date() } = opts;
+  if (quotes.length === 0) {
+    return {
+      kind: 'scored',
+      scores: [],
+      basis: { currency: BASE_CURRENCY, pins: [], homogeneous: true },
+    };
+  }
+
+  // — The FX gate, ahead of every axis ————————————————————————————————————
+  // Deliberately first: a set that cannot be compared must not have a single
+  // number computed for it, because a computed number tends to get rendered.
+  const present = [...new Set(quotes.map((q) => q.currency))];
+  const homogeneous = present.length === 1;
+  // A homogeneous set is compared in its OWN currency — there is nothing to
+  // convert, so calling the basis "IDR" for an all-USD RFQ would be a lie about
+  // what the buyer is looking at.
+  const basisCurrency = homogeneous ? present[0] : BASE_CURRENCY;
+
+  const usedPins: FxPin[] = [];
+  if (!homogeneous) {
+    const needPin = present.filter((c) => c !== BASE_CURRENCY);
+    const unpinned = needPin.filter((c) => !effectivePin(pins, c));
+    if (unpinned.length > 0) {
+      return { kind: 'refused', reason: 'FX_UNPINNED', currencies: unpinned };
+    }
+    const resolved = needPin.map((c) => effectivePin(pins, c)!);
+    // An unusable rate is reported as UNPINNED, not as a third reason: from the
+    // buyer's side "there is no rate I can rank on" is one situation with one
+    // remedy — record a pin — and splitting it would only ask them to care
+    // about how the bad rate got there.
+    const unusable = resolved.filter((p) => !isUsableRate(p.rate));
+    if (unusable.length > 0) {
+      return { kind: 'refused', reason: 'FX_UNPINNED', currencies: unusable.map((p) => p.quote) };
+    }
+    const stale = resolved.filter((p) => isStalePin(p, now));
+    if (stale.length > 0) {
+      return { kind: 'refused', reason: 'FX_STALE', currencies: stale.map((p) => p.quote) };
+    }
+    usedPins.push(...resolved);
+  }
+
+  /** A quote's price IN THE BASIS CURRENCY — derived here, at read, and never
+   *  written back onto the quotation. The base currency and every price in a
+   *  homogeneous set convert at 1, which is not a special case so much as the
+   *  rate a currency has against itself. */
+  const inBasis = (q: ScorableQuote): number =>
+    q.currency === basisCurrency ? q.unitPrice : q.unitPrice * effectivePin(pins, q.currency)!.rate;
 
   const positive = (xs: number[]) => xs.filter((x) => x > 0);
-  const minPrice = Math.min(...positive(quotes.map((q) => q.unitPrice)));
+  const minPrice = Math.min(...positive(quotes.map(inBasis)));
   const compositeLiveness = livenessFor(weights);
   /** Un-rounded composites, index-aligned with `scored` — ranking reads these. */
   const exacts: number[] = [];
 
   const scored: QuoteScore[] = quotes.map((q) => {
-    const priceScore = ratioToBest(q.unitPrice, minPrice);
+    // Compared in the basis, never as a bare numeral (2e-c-3).
+    const priceScore = ratioToBest(inBasis(q), minPrice);
     // Absolute, not ratio-to-best (2e-b-1). Every quote states a lead time
     // (2e-b-1a), so all four axes are always present and `totalWeight` is 1 —
     // the renormalising form is kept because it is what makes a custom `weights`
@@ -204,5 +335,9 @@ export function scoreQuotations(
   }
   scored[topIdx].topRanked = true;
 
-  return scored;
+  return {
+    kind: 'scored',
+    scores: scored,
+    basis: { currency: basisCurrency, pins: usedPins, homogeneous },
+  };
 }

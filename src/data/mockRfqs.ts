@@ -1,3 +1,5 @@
+import type { FxPin } from '../lib/fxPin';
+
 export type RFQStatus =
   | 'Draft'
   | 'Open'
@@ -40,6 +42,19 @@ export interface RFQ {
   paymentTerms: string;
   awardedSupplierId?: string;
   awardedQuotationId?: string;
+  /**
+   * The recorded FX bases this RFQ's multi-currency comparison is ranked against
+   * (2e-c-3). An APPEND-ONLY LEDGER, not a map: superseding a rate appends a new
+   * pin and the prior one stays, which is how D-1's "prior basis preserved,
+   * never an in-place edit" is made structural rather than conventional. The pin
+   * in force is DERIVED (`effectivePin`), never stored.
+   *
+   * OPTIONAL and additive: absent = no pin has been recorded, which is the
+   * honest state of every RFQ until a buyer records one — and the state that
+   * makes a mixed-currency comparison refuse `FX_UNPINNED` rather than rank on a
+   * rate nobody chose. A single-currency RFQ never needs one.
+   */
+  fxPins?: readonly FxPin[];
 }
 
 export const mockRfqs: RFQ[] = [

@@ -48,6 +48,11 @@ export const POLICY_HOOKS = {
    *  proves membership, so an off-list token is refused BY NAME rather than
    *  coerced to the base currency or stored as an unrecognised denomination. */
   QUOTATION_SUBMIT_CURRENCY_PERMITTED: 'quotation_submit_currency_permitted',
+  /** RFQ FX pin (2e-c-3): the recorded basis must be WELL-FORMED — a permitted
+   *  non-base quote currency, a finite positive rate, a readable vintage and a
+   *  known source. A malformed pin is worse than no pin: an absent one refuses
+   *  loudly, a malformed one is a basis a comparison could be ranked on. */
+  RFQ_FX_PIN_WELL_FORMED: 'rfq_fx_pin_well_formed',
   /** Invoice create: the parent PO (payload.poReference) must be Confirmed. */
   INVOICE_CREATE_PO_CONFIRMED: 'invoice_create_po_confirmed',
   /** Invoice match: the match sub-flow must have rolled up to a clean Matched

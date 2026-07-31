@@ -265,7 +265,9 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       const decision = hook({
         entityId: input.entityId ?? '',
         currentState: currentState ?? '',
-        toState: transition.to,
+        // A state-preserving verb leaves the entity where it is, so a policy
+        // reading `toState` must see that — not the nominal `to` (2e-c-3).
+        toState: transition.statePreserving ? (currentState ?? '') : transition.to,
         payload,
         target,
       });
@@ -283,7 +285,15 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       const { entityId } = target.create(payload, transition.to);
       result = fin(scope, transition.id, outcome, undefined, entityId);
     } else {
-      target.applyTransition(input.entityId!, transition.to, payload);
+      // 2e-c-3 — a state-preserving verb applies with the CURRENT state, so a
+      // target that writes `status: toState` (as every target does) writes the
+      // state back unchanged. This is what lets one verb be legal from several
+      // resting states without moving the entity out of any of them.
+      target.applyTransition(
+        input.entityId!,
+        transition.statePreserving ? currentState! : transition.to,
+        payload,
+      );
       result = fin(scope, transition.id, outcome, undefined, input.entityId);
     }
 
