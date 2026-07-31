@@ -48,6 +48,7 @@ import { useRFQs, useQuotations, useSuppliers } from '../services/query/hooks';
 import {
   useRfqCreate,
   useRfqAward,
+  useRfqFxPin,
   useRfqCancel,
   useRfqReopen,
   useQuotationReview,
@@ -75,8 +76,17 @@ import {
 } from '../lib/shouldCostSpread';
 import {
   BASE_CURRENCY,
+  FX_PIN_MAX_AGE_DAYS,
   type BidCurrency,
 } from '../lib/currencyPolicy';
+import {
+  effectivePin,
+  isStalePin,
+  pinHistory,
+  type FxPin,
+  type FxPinSource,
+} from '../lib/fxPin';
+import { readFxRate, readFxVintage } from './sourcing/fxRateInput';
 import { MATERIAL_TO_BASKET } from '../services/data/mock/fixtures/commodityMaterialMap';
 import {
   ROOT_BENCHMARKS,
@@ -225,6 +235,120 @@ const ScoreOrSilence: React.FC<{ score: number | undefined }> = ({ score }) =>
   ) : (
     <ScoreBadge score={score} size="sm" variant="bar" />
   );
+
+// Field chrome for the FX-pin dialog — same tokens as the supplier quote form,
+// so the portal's two governed numeric-entry surfaces read identically.
+const inputClass =
+  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
+const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
+
+// ── CP-0 · 2e-c-4 — the recorded FX basis, made visible ─────────────────────
+//
+// D-1 requires a pin to be auditable. An audit trail nobody can read from the
+// screen is an audit trail only an engineer can consult, so this states, per
+// foreign currency: the rate IN FORCE, its VINTAGE, its SOURCE, and — when a
+// rate has been superseded — that earlier ones exist and are kept.
+//
+// The vintage is deliberately as prominent as the rate. A rate is not a fact on
+// its own; a rate AS OF a date is. Showing 17,250 without saying when it was
+// true is the same class of omission as showing a score without its liveness.
+
+/** The draft a buyer confirms before a rate is recorded. */
+interface PinDraft {
+  currency: BidCurrency;
+  rate: string;
+  asOf: string;
+  source: FxPinSource;
+  rateType: string;
+  /** The pin this one would supersede, if any — drives the confirm copy. */
+  superseding?: FxPin;
+}
+
+const blankPinDraft = (currency: BidCurrency, superseding?: FxPin): PinDraft => ({
+  currency,
+  // Deliberately EMPTY, never seeded from the pin being superseded: a
+  // pre-filled rate invites a buyer to accept the old number as if it were the
+  // new one, which is precisely the edit-in-place behaviour D-1 forbids.
+  rate: '',
+  asOf: '',
+  source: 'MANUAL',
+  rateType: '',
+  ...(superseding ? { superseding } : {}),
+});
+
+const FxBasisPanel: React.FC<{
+  currencies: readonly BidCurrency[];
+  pins: readonly FxPin[] | undefined;
+  onPin: (c: BidCurrency) => void;
+  t: TFunction;
+}> = ({ currencies, pins, onPin, t }) => (
+  <div className="mb-3 rounded-md border border-border-subtle bg-surface-subtle px-3 py-2">
+    <div className="flex items-center gap-2 mb-2">
+      <span className="text-label uppercase text-text-tertiary">
+        {t('sourcing.cmp.fx.basis.title')}
+      </span>
+      <LivenessPill capability="commodityIntel" />
+    </div>
+    <ul className="flex flex-col gap-1.5">
+      {currencies.map((c) => {
+        const pin = effectivePin(pins, c);
+        const history = pinHistory(pins, c);
+        const stale = pin ? isStalePin(pin) : false;
+        return (
+          <li key={c} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+            <Data as="span" className="font-semibold">
+              1 {c}
+            </Data>
+            {pin ? (
+              <>
+                <span className="text-text-tertiary">=</span>
+                <Data as="span" className="font-semibold">
+                  {formatMoney(pin.rate, pin.base)}
+                </Data>
+                {/* The vintage, never optional — see the block comment. */}
+                <span
+                  className={stale ? 'text-warning-hover font-medium' : 'text-text-secondary'}
+                  data-testid={`fx-vintage-${c}`}
+                >
+                  {t('sourcing.cmp.fx.basis.asOf', { date: formatDate(pin.asOf) })}
+                </span>
+                <span className="text-text-tertiary">
+                  {t(`sourcing.cmp.fx.basis.source.${pin.source}`)}
+                  {pin.rateType ? ` · ${pin.rateType}` : ''}
+                </span>
+                {/* Superseded pins are KEPT (D-1). Saying how many exist is what
+                    makes "the prior basis is preserved" a visible property
+                    rather than a claim in a comment. */}
+                {history.length > 1 && (
+                  <span className="text-text-tertiary" data-testid={`fx-history-${c}`}>
+                    {t(
+                      history.length === 2
+                        ? 'sourcing.cmp.fx.basis.superseded.one'
+                        : 'sourcing.cmp.fx.basis.superseded.other',
+                      { count: history.length - 1 },
+                    )}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-warning-hover" data-testid={`fx-missing-${c}`}>
+                {t('sourcing.cmp.fx.basis.none')}
+              </span>
+            )}
+            <Button variant="outline" onClick={() => onPin(c)}>
+              {/* A supersede is a NEW RECORDED ACT, not an edit, and the label
+                  says so — "Edit rate" would describe a mutation that cannot
+                  happen and would misrepresent what lands in the audit trail. */}
+              {t(pin ? 'sourcing.cmp.fx.basis.supersede' : 'sourcing.cmp.fx.basis.record', {
+                currency: c,
+              })}
+            </Button>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+);
 
 // Does this bid currency have a should-cost branch to be priced against? POLICY
 // is wider than CAPABILITY by design (see currencyPolicy.ts): a supplier may
@@ -571,9 +695,26 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const [group, setGroup] = useState<GroupTab>('all');
   const [selectedCats, setSelectedCats] = useState<RFQCategory[]>([]);
   const [search, setSearch] = useState('');
-  const [selectedRfq, setSelectedRfq] = useState<RFQ | null>(null);
+  // 2e-c-4 — the panel holds the selected RFQ's ID, and the RFQ itself is
+  // DERIVED from the live query result. It used to hold the RFQ OBJECT, which
+  // was a snapshot taken when the row was clicked: a command that mutated the
+  // RFQ invalidated the query and re-fetched, but the open panel kept rendering
+  // the stale copy. Award masked it (the panel closes on award), and the FX pin
+  // exposed it — a buyer recorded a rate and the comparison went on refusing,
+  // because the panel was still reading an RFQ with no `fxPins` on it.
+  const [selectedRfqId, setSelectedRfqId] = useState<string | null>(null);
   const [awardsOpen, setAwardsOpen] = useState(true);
   const [selectedQuoteId, setSelectedQuoteId] = useState<string | null>(null);
+  // DERIVED from the live list, so a command that mutates this RFQ is reflected
+  // in the OPEN panel — the whole point of holding the id rather than the row.
+  const selectedRfq = useMemo(
+    () => (selectedRfqId ? (baseRfqs.find((r) => r.id === selectedRfqId) ?? null) : null),
+    [baseRfqs, selectedRfqId],
+  );
+  // 2e-c-4 — the pin draft a buyer confirms before a rate is recorded. Null =
+  // no dialog. Recording the basis a contract will be awarded on is a governed
+  // act, so it is confirm-before-commit like every other one on this surface.
+  const [pinDraft, setPinDraft] = useState<PinDraft | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardStep, setWizardStep] = useState(0);
   const [draft, setDraft] = useState<DraftRfq>(EMPTY_DRAFT);
@@ -585,15 +726,73 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const cancelMutation = useRfqCancel();
   const reopenMutation = useRfqReopen();
   const reviewMutation = useQuotationReview();
+  const fxPinMutation = useRfqFxPin();
 
   const openRfq = (r: RFQ) => {
-    setSelectedRfq(r);
+    setSelectedRfqId(r.id);
     setSelectedQuoteId(null);
   };
 
   // Award the selected quotation (fires the cascade source t_rfq_award): the
   // winner is awarded, every other quotation on the RFQ is rejected, and the
   // reads re-derive. Honest toast; a failed dispatch surfaces its reason.
+  // 2e-c-4 — record (or supersede) the FX basis. The rate and the vintage are
+  // both read ONCE here, through the pure gates, and the parsed values are what
+  // the dispatch carries: the number the buyer confirmed is the number that
+  // lands on the ledger, with no second reading to disagree with it.
+  const handlePinConfirm = () => {
+    if (!selectedRfq || !pinDraft) return;
+    const rate = readFxRate(pinDraft.rate);
+    const vintage = readFxVintage(pinDraft.asOf);
+    // The dialog's own button is already disabled on a refusal; this is the
+    // structural twin, so a keyboard or a future caller cannot route around it.
+    if (!rate.ok || !vintage.ok) return;
+    const currency = pinDraft.currency;
+    const superseding = Boolean(pinDraft.superseding);
+    fxPinMutation.mutate(
+      {
+        rfqId: selectedRfq.id,
+        quote: currency,
+        rate: rate.value,
+        asOf: vintage.value,
+        source: pinDraft.source,
+        ...(pinDraft.rateType.trim() ? { rateType: pinDraft.rateType.trim() } : {}),
+      },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('sourcing.toast.fxPinFailed.title'),
+              description: result.reason ?? t('sourcing.toast.fxPinFailed.default'),
+            });
+            return;
+          }
+          setPinDraft(null);
+          // Two distinct messages, because they are two distinct acts. A
+          // supersede says the prior basis is KEPT — the buyer has not erased
+          // anything, and the trail will show both.
+          toast({
+            variant: 'success',
+            title: t(
+              superseding ? 'sourcing.toast.fxSuperseded.title' : 'sourcing.toast.fxPinned.title',
+              { currency },
+            ),
+            description: t(
+              superseding ? 'sourcing.toast.fxSuperseded.desc' : 'sourcing.toast.fxPinned.desc',
+            ),
+          });
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('sourcing.toast.fxPinFailed.title'),
+            description: t('sourcing.toast.fxPinFailed.default'),
+          }),
+      },
+    );
+  };
+
   const handleAward = () => {
     if (!selectedRfq || !selectedQuoteId) return;
     const quote = quotesForSelected.find((q) => q.id === selectedQuoteId);
@@ -741,7 +940,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   };
 
   const closePanel = () => {
-    setSelectedRfq(null);
+    setSelectedRfqId(null);
     setSelectedQuoteId(null);
   };
 
@@ -750,13 +949,23 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     return quotations.filter((q) => q.rfqId === selectedRfq.id);
   }, [selectedRfq, quotations]);
 
+  // 2e-c-4 — the currency is resolved ONCE, here, and every consumer reads the
+  // resolved value. It used to be re-derived per cell (`q.currency ??
+  // BASE_CURRENCY` at the unit-price, spread and total-price cells), which is
+  // the same convention restated three times: three places to forget it, and
+  // three places for the engine's view of a quote to drift from the surface's.
+  const pricedQuotes = useMemo(
+    () => quotesForSelected.map((q) => ({ ...q, currency: q.currency ?? BASE_CURRENCY })),
+    [quotesForSelected],
+  );
+
   // The actually-awarded quotation (Awarded RFQs only), resolved from the real
   // award metadata — NOT the AI-recommended pick, which may differ. Drives the
   // award-summary block so the panel names the true winner at a glance.
   const awardedQuote = useMemo(() => {
     if (!selectedRfq || selectedRfq.status !== 'Awarded') return null;
-    return quotesForSelected.find((q) => q.id === selectedRfq.awardedQuotationId) ?? null;
-  }, [selectedRfq, quotesForSelected]);
+    return pricedQuotes.find((q) => q.id === selectedRfq.awardedQuotationId) ?? null;
+  }, [selectedRfq, pricedQuotes]);
 
   // Governed derived scores (F0.3 quote-scoring primitive): the drawer COMPUTES
   // the comparison axes via `scoreQuotations` instead of reading the hand-authored
@@ -771,15 +980,13 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // surface says why. This is the operator's ruling (b) on 2e-c-2-FIND-01 —
   // withhold the ranking rather than publish one computed from bare numerals.
   const scoring = useMemo(
-    () =>
-      scoreQuotations(
-        // The engine requires an explicit currency; `Quotation.currency` is
-        // optional with "absent means rupiah". That convention is resolved HERE,
-        // at the boundary that already owns it, so the engine never assumes.
-        quotesForSelected.map((q) => ({ ...q, currency: q.currency ?? BASE_CURRENCY })),
-        { pins: selectedRfq?.fxPins },
-      ),
-    [quotesForSelected, selectedRfq?.fxPins],
+    () => scoreQuotations(pricedQuotes, { pins: selectedRfq?.fxPins }),
+    [pricedQuotes, selectedRfq?.fxPins],
+  );
+  /** The non-base currencies actually bid on this RFQ — what needs a basis. */
+  const foreignCurrencies = useMemo(
+    () => [...new Set(pricedQuotes.map((q) => q.currency))].filter((c) => c !== BASE_CURRENCY),
+    [pricedQuotes],
   );
   const scoreById = useMemo(
     () =>
@@ -1920,7 +2127,14 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       {t('sourcing.panel.awardedValue')}
                     </dt>
                     <Data as="dd" className="text-text-primary font-semibold">
-                      {awardedQuote ? formatIDR(awardedQuote.totalPrice) : '—'}
+                      {/* 2e-c-4 — was an unconditional `formatIDR`, so an awarded USD or
+                          EUR quote had its contract value restated in rupiah on
+                          the ONE row recording what Paragon actually committed
+                          to. The award summary is the last place a currency may
+                          be assumed. */}
+                      {awardedQuote
+                        ? formatMoney(awardedQuote.totalPrice, awardedQuote.currency)
+                        : '—'}
                     </Data>
                   </div>
                   <div>
@@ -2100,8 +2314,32 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 >
                   {t(`sourcing.cmp.fx.refused.${scoring.reason}`, {
                     currencies: scoring.currencies.join(', '),
+                    // 2e-c-4 — a STALE refusal names the vintage it is judging.
+                    // "Too old" without saying how old leaves the buyer unable
+                    // to tell a rate from this morning apart from one from
+                    // January. Empty for FX_UNPINNED, where no pin exists to
+                    // have a vintage; that message does not interpolate it.
+                    asOf: scoring.currencies
+                      .map((c) => effectivePin(selectedRfq.fxPins, c)?.asOf)
+                      .filter(Boolean)
+                      .map((d) => formatDate(d as string))
+                      .join(', '),
                   })}
                 </div>
+              )}
+              {/* 2e-c-4 — THE RECORDED BASIS, on screen. A buyer must be able to
+                  answer "what rate ranked this comparison, and how old is it?"
+                  from the surface, not from an audit query. Rendered whenever a
+                  foreign bid exists — including while the comparison is refused,
+                  because that is exactly when a buyer needs to see what is
+                  missing and act on it. */}
+              {foreignCurrencies.length > 0 && (
+                <FxBasisPanel
+                  currencies={foreignCurrencies}
+                  pins={selectedRfq.fxPins}
+                  onPin={(c) => setPinDraft(blankPinDraft(c, effectivePin(selectedRfq.fxPins, c)))}
+                  t={t}
+                />
               )}
               {quotesForSelected.length === 0 ? (
                 <div className="text-sm text-text-tertiary p-4 border border-border-subtle rounded-md text-center">
@@ -2157,10 +2395,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     </thead>
                     <tbody className="text-text-secondary">
                       <ComparisonRow label={t('sourcing.cmp.row.unitPrice')}>
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
-                              {formatMoney(q.unitPrice, q.currency ?? BASE_CURRENCY)}/{selectedRfq.uom}
+                              {formatMoney(q.unitPrice, q.currency)}/{selectedRfq.uom}
                             </Data>
                           </ComparisonCell>
                         ))}
@@ -2171,7 +2409,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           banded spread — or honest silence (tail / unit-mismatch /
                           unmapped). Never fed into the score; never a verdict. */}
                       <ComparisonRow label={t('sourcing.cmp.row.spread')}>
-                        {quotesForSelected.map((q) => {
+                        {pricedQuotes.map((q) => {
                           // 2e-c-1 — the policy/capability gate, ahead of the
                           // resolver. A bid in a currency the engine cannot
                           // price gets the same honest silence every other
@@ -2181,7 +2419,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           // Transitional by design — this moves inside
                           // `spreadForQuote` as its first gate when
                           // `SpreadCurrency` widens (2e-c batch 5).
-                          const currency = q.currency ?? BASE_CURRENCY;
+                          const currency = q.currency;
                           return (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <SpreadCell
@@ -2203,10 +2441,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         })}
                       </ComparisonRow>
                       <ComparisonRow label={t('sourcing.cmp.row.totalPrice')}>
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
-                              {formatMoney(q.totalPrice, q.currency ?? BASE_CURRENCY)}
+                              {formatMoney(q.totalPrice, q.currency)}
                             </Data>
                           </ComparisonCell>
                         ))}
@@ -2223,7 +2461,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         tag={t('sourcing.cmp.estimated')}
                         tagTitle={t('sourcing.cmp.estimatedTitle')}
                       >
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="whitespace-nowrap">
                               {t('sourcing.cmp.leadTimeDays', {
@@ -2242,7 +2480,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           fact it is — no verdict, no comparison against
                           `selectedRfq.totalQty`; that ruling is MOQ-FIND-01. */}
                       <ComparisonRow label={t('sourcing.cmp.row.moq')}>
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             {q.moq === undefined ? (
                               // An ABSENT minimum is a real answer ("same as the
@@ -2260,7 +2498,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         ))}
                       </ComparisonRow>
                       <ComparisonRow label={t('sourcing.cmp.row.paymentTerms')}>
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             {q.paymentTermsOffered}
                           </ComparisonCell>
@@ -2269,7 +2507,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       <ComparisonRow
                         label={t('sourcing.cmp.row.priceScore')}
                       >
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <ScoreOrSilence score={scoreById.get(q.id)?.priceScore} />
                           </ComparisonCell>
@@ -2280,7 +2518,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         tag={t('sourcing.cmp.estimated')}
                         tagTitle={t('sourcing.cmp.estimatedTitle')}
                       >
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <ScoreOrSilence score={scoreById.get(q.id)?.leadTimeScore} />
                           </ComparisonCell>
@@ -2295,7 +2533,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         }
                         tagTitle={t('sourcing.cmp.simulatedTitle')}
                       >
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <ScoreOrSilence score={scoreById.get(q.id)?.complianceScore} />
                           </ComparisonCell>
@@ -2310,7 +2548,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         }
                         tagTitle={t('sourcing.cmp.simulatedTitle')}
                       >
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <ScoreOrSilence score={scoreById.get(q.id)?.reliabilityScore} />
                           </ComparisonCell>
@@ -2325,7 +2563,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         }
                         tagTitle={t('sourcing.cmp.simulatedTitle')}
                       >
-                        {quotesForSelected.map((q) => (
+                        {pricedQuotes.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             {/* The composite is the number the recommendation is
                                 argmax'd over, so a refused comparison must be
@@ -2462,6 +2700,191 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
           </div>
         )}
       </SidePanel>
+
+
+      {/* CP-0 · 2e-c-4 — CONFIRM BEFORE COMMIT. Recording the basis a contract
+          will be awarded on is a governed act that lands in the DR-10 trail, so
+          it gets the same deliberate confirmation every other governed act on
+          this surface gets. A SUPERSEDE reads as a NEW RECORDED ACT throughout —
+          different title, different body, and an explicit statement that the
+          prior basis is kept — because "edit" would describe a mutation that
+          cannot happen and would misrepresent what the trail will show. */}
+      {pinDraft && selectedRfq && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.4)]">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={t(
+              pinDraft.superseding ? 'sourcing.fx.dialog.title.supersede' : 'sourcing.fx.dialog.title.record',
+              { currency: pinDraft.currency },
+            )}
+            data-testid="fx-pin-dialog"
+            className="w-full max-w-md bg-white rounded-lg border border-border-subtle p-5"
+          >
+            <h3 className="text-section text-text-primary mb-1">
+              {t(
+                pinDraft.superseding
+                  ? 'sourcing.fx.dialog.title.supersede'
+                  : 'sourcing.fx.dialog.title.record',
+                { currency: pinDraft.currency },
+              )}
+            </h3>
+            <p className="text-xs text-text-secondary mb-4">
+              {t(
+                pinDraft.superseding
+                  ? 'sourcing.fx.dialog.body.supersede'
+                  : 'sourcing.fx.dialog.body.record',
+                { currency: pinDraft.currency, base: BASE_CURRENCY },
+              )}
+            </p>
+
+            {/* What is being replaced, stated in full — a buyer superseding a
+                rate must see the one they are superseding, or they cannot tell
+                whether they are correcting a typo or reacting to a real move. */}
+            {pinDraft.superseding && (
+              <div
+                data-testid="fx-supersede-prior"
+                className="mb-4 rounded-md border border-border-subtle bg-surface-subtle px-3 py-2 text-xs"
+              >
+                <span className="text-text-tertiary">
+                  {t('sourcing.fx.dialog.prior')}{' '}
+                </span>
+                <Data as="span" className="font-semibold">
+                  {formatMoney(pinDraft.superseding.rate, pinDraft.superseding.base)}
+                </Data>
+                <span className="text-text-secondary">
+                  {' '}
+                  {t('sourcing.cmp.fx.basis.asOf', {
+                    date: formatDate(pinDraft.superseding.asOf),
+                  })}
+                </span>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className={labelClass} htmlFor="fx-rate">
+                  {t('sourcing.fx.dialog.rate', {
+                    currency: pinDraft.currency,
+                    base: BASE_CURRENCY,
+                  })}
+                </label>
+                {/* type="text", NOT number (Ruling 6.2): a number input lets the
+                    BROWSER rewrite the value per its own locale before React
+                    sees it, which is how a locale-ambiguous rate would bypass
+                    the one parse entirely. */}
+                <input
+                  id="fx-rate"
+                  type="text"
+                  inputMode="decimal"
+                  // Not "17.250": a placeholder must never model a token the
+                  // field would refuse as ambiguous.
+                  placeholder="17250"
+                  aria-invalid={pinDraft.rate.trim() !== '' && !readFxRate(pinDraft.rate).ok}
+                  value={pinDraft.rate}
+                  onChange={(e) => setPinDraft({ ...pinDraft, rate: e.target.value })}
+                  className={inputClass}
+                />
+                <div className="mt-1 text-[11px] text-text-tertiary">
+                  {t('sourcing.fx.dialog.rateHint')}
+                </div>
+                {/* An untouched blank does not nag; a TYPED rate that cannot be
+                    read says so, and says what to do about it. */}
+                {pinDraft.rate.trim() !== '' && !readFxRate(pinDraft.rate).ok && (
+                  <div role="alert" data-testid="fx-rate-refusal" className="mt-1 text-[11px] text-danger">
+                    {t(`sourcing.fx.refused.${(readFxRate(pinDraft.rate) as { reason: string }).reason}`)}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className={labelClass} htmlFor="fx-asof">
+                  {t('sourcing.fx.dialog.asOf')}
+                </label>
+                <input
+                  id="fx-asof"
+                  type="date"
+                  value={pinDraft.asOf}
+                  onChange={(e) => setPinDraft({ ...pinDraft, asOf: e.target.value })}
+                  className={inputClass}
+                />
+                <div className="mt-1 text-[11px] text-text-tertiary">
+                  {t('sourcing.fx.dialog.asOfHint', { days: FX_PIN_MAX_AGE_DAYS })}
+                </div>
+                {pinDraft.asOf.trim() !== '' && !readFxVintage(pinDraft.asOf).ok && (
+                  <div role="alert" data-testid="fx-asof-refusal" className="mt-1 text-[11px] text-danger">
+                    {t(`sourcing.fx.refused.${(readFxVintage(pinDraft.asOf) as { reason: string }).reason}`)}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className={labelClass} htmlFor="fx-source">
+                  {t('sourcing.fx.dialog.source')}
+                </label>
+                <select
+                  id="fx-source"
+                  value={pinDraft.source}
+                  onChange={(e) =>
+                    setPinDraft({ ...pinDraft, source: e.target.value as FxPinSource })
+                  }
+                  className={inputClass}
+                >
+                  <option value="MANUAL">{t('sourcing.cmp.fx.basis.source.MANUAL')}</option>
+                  <option value="SAP_EXHGRATE">
+                    {t('sourcing.cmp.fx.basis.source.SAP_EXHGRATE')}
+                  </option>
+                </select>
+              </div>
+
+              {/* Only meaningful for an SAP-sourced rate: a MANUAL pin has no
+                  rate type, and offering the field would invite a buyer to
+                  dress a typed number as an SAP-governed one. */}
+              {pinDraft.source === 'SAP_EXHGRATE' && (
+                <div>
+                  <label className={labelClass} htmlFor="fx-ratetype">
+                    {t('sourcing.fx.dialog.rateType')}
+                  </label>
+                  <input
+                    id="fx-ratetype"
+                    type="text"
+                    placeholder="M"
+                    value={pinDraft.rateType}
+                    onChange={(e) => setPinDraft({ ...pinDraft, rateType: e.target.value })}
+                    className={inputClass}
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 mt-5">
+              <Button variant="secondary" onClick={() => setPinDraft(null)}>
+                {t('sourcing.fx.dialog.cancel')}
+              </Button>
+              {/* DP2-BUTTON-01: SOLID is reserved for the irreversible commit,
+                  and this is one — an appended pin cannot be taken back, only
+                  superseded. */}
+              <Button
+                variant="primary"
+                onClick={handlePinConfirm}
+                disabled={
+                  !readFxRate(pinDraft.rate).ok ||
+                  !readFxVintage(pinDraft.asOf).ok ||
+                  fxPinMutation.isPending
+                }
+              >
+                {fxPinMutation.isPending
+                  ? t('sourcing.fx.dialog.submitting')
+                  : t(
+                      pinDraft.superseding
+                        ? 'sourcing.fx.dialog.confirm.supersede'
+                        : 'sourcing.fx.dialog.confirm.record',
+                    )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {wizardOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(13,27,42,0.4)]">

@@ -1,4 +1,4 @@
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
@@ -551,5 +551,342 @@ describe('BuyerSourcing — a comparison with no FX basis withholds the ranking'
     } finally {
       await i18n.changeLanguage('en');
     }
+  });
+});
+
+// ── CP-0 · 2e-c-4 — the arc becomes visible ─────────────────────────────────
+//
+// Batches 1-3 made the currency real, storable and scoreable. A refusal nobody
+// can witness is not a delivered refusal, so this is where a buyer can SEE the
+// basis, RECORD one, and SUPERSEDE it — and where a superseded rate visibly
+// survives, which is D-1's whole point.
+//
+// RFQ-2026-009 is the probe for the same reason as batch 3: its two quotes are
+// both USD, so it ranks today and any refusal can only come from the currency
+// mix the test introduces.
+describe('BuyerSourcing — the FX basis is visible, and recordable (2e-c-4)', () => {
+  beforeEach(() => {
+    quotationStore.reset();
+    rfqStore.reset();
+  });
+
+  const openComparison = async () => {
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText('RFQ-2026-009'));
+    return screen.findByText(/QUOTE COMPARISON/i);
+  };
+
+  const makeMixed = () =>
+    quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
+
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  const recordPin = async (quote: 'EUR' | 'USD', rate: number, asOf = today()) =>
+    new MockCommandService().dispatch(
+      { personaType: 'buyer', supplierId: null },
+      {
+        transitionId: 't_rfq_fx_pin',
+        entity: 'rfq',
+        entityId: 'rfq-009',
+        payload: { quote, rate, asOf, source: 'MANUAL' },
+      },
+    );
+
+  it('shows the basis panel whenever a foreign bid exists — including while refused', async () => {
+    // Rendered during the refusal ON PURPOSE: that is exactly when a buyer needs
+    // to see what is missing and act on it.
+    makeMixed();
+    await openComparison();
+    expect(screen.getByText('Exchange rate basis')).toBeInTheDocument();
+    expect(screen.getByTestId('fx-missing-EUR')).toHaveTextContent('No rate recorded');
+    expect(screen.getByTestId('fx-missing-USD')).toHaveTextContent('No rate recorded');
+  });
+
+  it('does NOT show it for an all-domestic RFQ — nothing to convert', async () => {
+    // RFQ-2026-011's only quote is currency-absent (= IDR), the homogeneous
+    // domestic case that is every current persona's reality.
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText('RFQ-2026-011'));
+    await screen.findByText(/QUOTE COMPARISON/i);
+    expect(screen.queryByText('Exchange rate basis')).not.toBeInTheDocument();
+  });
+
+  it('THE LOCK — the rate in force, its VINTAGE and its SOURCE are all on screen', async () => {
+    // The batch's stated intent: a buyer answers "what basis ranked this?" from
+    // the screen, not from an audit query.
+    makeMixed();
+    await recordPin('EUR', 18_000, '2026-07-30');
+    await recordPin('USD', 17_250, '2026-07-30');
+    await openComparison();
+
+    expect(screen.getByTestId('fx-vintage-EUR')).toHaveTextContent('as of 30 Jul 2026');
+    expect(screen.getAllByText('Entered manually').length).toBe(2);
+    // The rate itself, in the base currency, through the shared formatter.
+    expect(screen.getByText('Rp 18.000')).toBeInTheDocument();
+    expect(screen.getByText('Rp 17.250')).toBeInTheDocument();
+  });
+
+  it('a STALE refusal names the vintage it is judging', async () => {
+    // "Too old" without saying how old leaves a buyer unable to tell this
+    // morning's rate from January's.
+    makeMixed();
+    await recordPin('USD', 17_250);
+    await recordPin('EUR', 18_000, '2026-01-15');
+    await openComparison();
+    expect(screen.getByTestId('fx-refusal')).toHaveTextContent('15 Jan 2026');
+  });
+
+  it('THE FREEZE, VISIBLE — a superseded rate is shown to be KEPT', async () => {
+    makeMixed();
+    await recordPin('EUR', 16_000, '2026-07-20');
+    await recordPin('EUR', 18_000, '2026-07-30');
+    await openComparison();
+
+    // The newer rate is in force...
+    expect(screen.getByText('Rp 18.000')).toBeInTheDocument();
+    // ...and the older one is not gone, and the surface says so. This is what
+    // makes "the prior basis is preserved" a property a buyer can observe
+    // rather than a claim in a code comment.
+    expect(screen.getByTestId('fx-history-EUR')).toHaveTextContent('1 earlier rate kept');
+  });
+});
+
+describe('BuyerSourcing — recording a rate is confirm-before-commit (2e-c-4)', () => {
+  beforeEach(() => {
+    quotationStore.reset();
+    rfqStore.reset();
+  });
+
+  // rfq-009 has NO domestic bid — once one of its two USD quotes becomes EUR,
+  // every price on it is foreign and each currency needs its own basis. USD is
+  // pre-pinned through the command service so these specs isolate the EUR
+  // dialog flow rather than re-proving the engine's multi-currency arithmetic.
+  const openMixedComparison = async ({ prepinUsd = true } = {}) => {
+    quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
+    if (prepinUsd) {
+      await new MockCommandService().dispatch(
+        { personaType: 'buyer', supplierId: null },
+        {
+          transitionId: 't_rfq_fx_pin',
+          entity: 'rfq',
+          entityId: 'rfq-009',
+          payload: {
+            quote: 'USD',
+            rate: 17_250,
+            asOf: new Date().toISOString().slice(0, 10),
+            source: 'MANUAL',
+          },
+        },
+      );
+    }
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText('RFQ-2026-009'));
+    await screen.findByText(/QUOTE COMPARISON/i);
+  };
+
+  const eurPins = () =>
+    (rfqStore.get('rfq-009')!.fxPins ?? []).filter((p) => p.quote === 'EUR');
+
+  const openDialog = async (label: RegExp) => {
+    await openMixedComparison();
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    return screen.findByTestId('fx-pin-dialog');
+  };
+
+  it('the button reads RECORD when nothing is pinned', async () => {
+    await openMixedComparison({ prepinUsd: false });
+    expect(screen.getByRole('button', { name: /Record EUR rate/ })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Supersede EUR rate/ })).not.toBeInTheDocument();
+  });
+
+  it('nothing is written until CONFIRM — opening the dialog commits nothing', async () => {
+    await openDialog(/Record EUR rate/);
+    expect(eurPins()).toHaveLength(0);
+  });
+
+  it('cancelling writes nothing', async () => {
+    await openDialog(/Record EUR rate/);
+    fireEvent.change(screen.getByLabelText(/Rate — IDR per 1 EUR/), {
+      target: { value: '18000' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(eurPins()).toHaveLength(0);
+  });
+
+  it('THE LOCK — a confirmed rate lands, and the comparison re-ranks', async () => {
+    await openDialog(/Record EUR rate/);
+    fireEvent.change(screen.getByLabelText(/Rate — IDR per 1 EUR/), {
+      target: { value: '18000' },
+    });
+    fireEvent.change(screen.getByLabelText('Rate date'), {
+      target: { value: new Date().toISOString().slice(0, 10) },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Record rate' }));
+
+    await waitFor(() => expect(eurPins()).toHaveLength(1));
+    expect(eurPins()[0].rate).toBe(18_000);
+
+    // AND THE OPEN PANEL RE-RANKS. This half was missing when the batch was
+    // first written, and the operator smoke on the built bundle caught what the
+    // spec did not: the panel held the RFQ OBJECT it was opened with, so the
+    // mutation invalidated the query, the list re-fetched, and the panel went on
+    // rendering a snapshot with no `fxPins` — a buyer recorded a rate and the
+    // comparison kept refusing. Asserting the STORE alone passed throughout.
+    // The panel now holds the id and derives the row, so this is the assertion
+    // that would fail if it ever goes back to a snapshot.
+    await waitFor(() =>
+      expect(screen.queryByTestId('fx-refusal')).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('fx-vintage-EUR')).toBeInTheDocument();
+  });
+
+  it('the recorded rate appears in the basis panel WITHOUT reopening the panel', async () => {
+    // The same defect from the other side: the vintage a buyer just entered has
+    // to show up where they are already looking.
+    await openDialog(/Record EUR rate/);
+    fireEvent.change(screen.getByLabelText(/Rate — IDR per 1 EUR/), {
+      target: { value: '18000' },
+    });
+    fireEvent.change(screen.getByLabelText('Rate date'), {
+      target: { value: '2026-07-29' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Record rate' }));
+
+    expect(await screen.findByTestId('fx-vintage-EUR')).toHaveTextContent('as of 29 Jul 2026');
+    expect(screen.getByText('Rp 18.000')).toBeInTheDocument();
+  });
+
+  it('THE AMBIGUOUS RATE IS REFUSED AT THE FIELD — "17.250" never reaches the ledger', async () => {
+    // The defect this gate exists for, on the real surface: 17,250 in
+    // Indonesian, 17.25 in English, on the basis that ranks the whole set.
+    await openDialog(/Record EUR rate/);
+    fireEvent.change(screen.getByLabelText(/Rate — IDR per 1 EUR/), {
+      target: { value: '17.250' },
+    });
+    expect(screen.getByTestId('fx-rate-refusal')).toHaveTextContent(/can be read two ways/i);
+    expect(screen.getByRole('button', { name: 'Record rate' })).toBeDisabled();
+  });
+
+  it('a ZERO rate is refused by its own name, not as unreadable', async () => {
+    await openDialog(/Record EUR rate/);
+    fireEvent.change(screen.getByLabelText(/Rate — IDR per 1 EUR/), { target: { value: '0' } });
+    expect(screen.getByTestId('fx-rate-refusal')).toHaveTextContent(/Zero is not an exchange rate/i);
+  });
+
+  it('an untouched blank does NOT nag — it blocks at the button instead', async () => {
+    await openDialog(/Record EUR rate/);
+    expect(screen.queryByTestId('fx-rate-refusal')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Record rate' })).toBeDisabled();
+  });
+
+  it('a FUTURE vintage is refused — it would never age past the staleness gate', async () => {
+    await openDialog(/Record EUR rate/);
+    const future = new Date(Date.now() + 86_400_000 * 3).toISOString().slice(0, 10);
+    fireEvent.change(screen.getByLabelText('Rate date'), { target: { value: future } });
+    expect(screen.getByTestId('fx-asof-refusal')).toHaveTextContent(/cannot be true in the future/i);
+  });
+
+  it('the SAP rate type appears only for an SAP-sourced rate', async () => {
+    await openDialog(/Record EUR rate/);
+    expect(screen.queryByLabelText(/SAP rate type/)).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'SAP_EXHGRATE' } });
+    expect(screen.getByLabelText(/SAP rate type/)).toBeInTheDocument();
+  });
+});
+
+describe('BuyerSourcing — a supersede reads as a NEW RECORDED ACT (2e-c-4)', () => {
+  beforeEach(() => {
+    quotationStore.reset();
+    rfqStore.reset();
+  });
+
+  const withExistingPin = async () => {
+    quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
+    await new MockCommandService().dispatch(
+      { personaType: 'buyer', supplierId: null },
+      {
+        transitionId: 't_rfq_fx_pin',
+        entity: 'rfq',
+        entityId: 'rfq-009',
+        payload: { quote: 'EUR', rate: 16_000, asOf: '2026-07-20', source: 'MANUAL' },
+      },
+    );
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText('RFQ-2026-009'));
+    await screen.findByText(/QUOTE COMPARISON/i);
+    fireEvent.click(screen.getByRole('button', { name: /Supersede EUR rate/ }));
+    return screen.findByTestId('fx-pin-dialog');
+  };
+
+  it('the button says SUPERSEDE, never "edit" — an edit cannot happen', async () => {
+    await withExistingPin();
+    expect(screen.queryByRole('button', { name: /Edit/ })).not.toBeInTheDocument();
+  });
+
+  it('says the existing rate is KEPT, not replaced', async () => {
+    await withExistingPin();
+    expect(screen.getByTestId('fx-pin-dialog')).toHaveTextContent(
+      /is not changed or deleted — it stays on the RFQ/i,
+    );
+  });
+
+  it('SHOWS the rate being superseded — a buyer must see what they are moving from', async () => {
+    // Without it a buyer cannot tell whether they are correcting a typo or
+    // reacting to a real market move.
+    await withExistingPin();
+    const prior = screen.getByTestId('fx-supersede-prior');
+    expect(prior).toHaveTextContent('Rp 16.000');
+    expect(prior).toHaveTextContent('20 Jul 2026');
+  });
+
+  it('does NOT pre-fill the old rate — a prefilled value invites an accidental re-commit', async () => {
+    // Seeding the field would let a buyer confirm the OLD number as if it were
+    // the new one, which is edit-in-place behaviour wearing a supersede label.
+    await withExistingPin();
+    expect(screen.getByLabelText(/Rate — IDR per 1 EUR/)).toHaveValue('');
+  });
+
+  it('THE FREEZE — confirming APPENDS; the prior pin survives on the RFQ', async () => {
+    await withExistingPin();
+    fireEvent.change(screen.getByLabelText(/Rate — IDR per 1 EUR/), {
+      target: { value: '18000' },
+    });
+    fireEvent.change(screen.getByLabelText('Rate date'), {
+      target: { value: new Date().toISOString().slice(0, 10) },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Record new rate' }));
+
+    await waitFor(() => expect(rfqStore.get('rfq-009')!.fxPins).toHaveLength(2));
+    expect(rfqStore.get('rfq-009')!.fxPins!.map((p) => p.rate)).toEqual([16_000, 18_000]);
+  });
+});
+
+// ── CP-0 · 2e-c-4 — the last currency coercions on this surface ──────────────
+describe('BuyerSourcing — the award summary states the currency it was awarded in', () => {
+  beforeEach(() => {
+    quotationStore.reset();
+    rfqStore.reset();
+  });
+
+  it('THE LOCK — an awarded USD quote is NOT restated as rupiah', async () => {
+    // The award summary was an unconditional `formatIDR`, so the ONE row
+    // recording what Paragon actually committed to renamed a $22,800 contract
+    // as Rp 22.800. The last place a currency may be assumed.
+    await new MockCommandService().dispatch(
+      { personaType: 'buyer', supplierId: null },
+      {
+        transitionId: 't_rfq_award',
+        entity: 'rfq',
+        entityId: 'rfq-009',
+        payload: { awardedQuotationId: 'qt-009a', awardedSupplierId: 'sup-006' },
+      },
+    );
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText('RFQ-2026-009'));
+    // TWICE: the award-summary row AND the comparison's total-price cell. Both
+    // used to disagree — the cell said $22,800.00 while the summary directly
+    // above it said Rp 22.800, for the same quote on the same screen.
+    expect(await screen.findAllByText('$22,800.00')).toHaveLength(2);
+    expect(screen.queryByText('Rp 22.800')).not.toBeInTheDocument();
   });
 });

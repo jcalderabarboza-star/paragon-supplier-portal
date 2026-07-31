@@ -62,12 +62,15 @@ export function isBidCurrency(value: string): value is BidCurrency {
  * vintage is what decides whether a rate still describes the market; the pin
  * date only records when someone decided to use it.
  *
- * ⚠ PLACEHOLDER — D-3 IS UNRULED. 7 days is the operator's stated lean going to
- * JJ, used here so the mechanism is real and testable rather than deferred. It
- * lives beside `BID_CURRENCIES` and is a plain editable constant BY DESIGN: the
- * threshold is a procurement judgement about how fast a rate goes off, so it
+ * RULED — D-3 = 7 DAYS (operator, 2e-c-4). Reasoning on record: IDR/USD moves
+ * enough in a fortnight to flip a ranking between two close bids, and a week is
+ * the natural rhythm of a comparison window. Tunable if procurement disagrees.
+ *
+ * It lives beside `BID_CURRENCIES` and is a plain editable constant BY DESIGN:
+ * the threshold is a procurement judgement about how fast a rate goes off, so it
  * must be tunable by the people who hold that judgement without touching the
- * scoring engine. Change this line, and every comparison follows.
+ * scoring engine. Change this line, and every comparison follows — no spec
+ * hardcodes 7, every boundary case derives its dates FROM this value.
  *
  * A stale pin does NOT undo the D-1 freeze. The freeze decides WHICH rate a
  * comparison uses; this decides whether that rate is still fit to rank on. When
