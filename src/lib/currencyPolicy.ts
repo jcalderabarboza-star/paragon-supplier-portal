@@ -22,10 +22,11 @@
 //  SCOPE — this file states POLICY (which currencies are permissible), never
 //  CAPABILITY (which currencies a given engine can actually price in). Those are
 //  different facts and they are deliberately allowed to differ: the should-cost
-//  engine's `SpreadCurrency` is narrower than `BidCurrency` and stays narrower,
-//  because a currency being legal to bid in does not conjure a commodity basket
-//  to price it against. Where the two meet, the surface renders honest silence
-//  rather than pricing a bid against the wrong currency's model.
+//  should-cost engine prices only the currencies in its `SPREAD_BASIS` table,
+//  which is narrower than `BidCurrency` and stays narrower, because a currency
+//  being legal to bid in does not conjure a commodity basket or an FX pair to
+//  price it against. Where the two meet, the engine returns honest silence
+//  rather than pricing a bid against the wrong currency's model (D-4).
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
