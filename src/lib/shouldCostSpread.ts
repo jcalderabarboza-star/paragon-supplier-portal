@@ -54,8 +54,23 @@ export type SpreadCurrency = 'IDR' | 'USD';
  *  per-kg should-cost. The only unit conversion CI-2 performs. */
 export const KG_PER_MT = 1000;
 
-/** Why a quote has no should-cost spread — always explicit, never a fake number. */
-export type SilentReason = 'unmapped' | 'tail' | 'unit-mismatch';
+/** Why a quote has no should-cost spread — always explicit, never a fake number.
+ *
+ *  'currency-unsupported' (2e-c-1) is the POLICY-vs-CAPABILITY gap made visible:
+ *  `BidCurrency` says what a supplier may bid in, `SpreadCurrency` says what this
+ *  engine can price against, and the first is deliberately wider than the second.
+ *  A bid in a currency with no engine branch has no reference — not a mapping
+ *  failure, not a unit failure, so none of the other three reasons may stand in
+ *  for it. NOTE: the resolver does not yet RAISE this reason (its `currency`
+ *  parameter is still the narrow union, which is what keeps a wrong branch a
+ *  compile error); the buyer surface raises it at the call site. The gate moves
+ *  in here when `SpreadCurrency` widens — as the FIRST gate, ahead of every
+ *  branch, so widening can never silently convert a refusal into a wrong price. */
+export type SilentReason =
+  | 'unmapped'
+  | 'tail'
+  | 'unit-mismatch'
+  | 'currency-unsupported';
 
 /** The spread as a RANGE (fractions, e.g. 0.08 = +8%), inheriting the band width.
  *  low ≤ mid ≤ high: low measures the quote against the priciest should-cost (the

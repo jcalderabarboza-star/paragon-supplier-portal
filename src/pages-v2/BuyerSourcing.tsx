@@ -70,8 +70,13 @@ import {
 import {
   spreadForQuote,
   type QuoteSpread,
+  type SpreadCurrency,
   type SpreadDeps,
 } from '../lib/shouldCostSpread';
+import {
+  BASE_CURRENCY,
+  type BidCurrency,
+} from '../lib/currencyPolicy';
 import { MATERIAL_TO_BASKET } from '../services/data/mock/fixtures/commodityMaterialMap';
 import {
   ROOT_BENCHMARKS,
@@ -200,12 +205,34 @@ const daysUntil = (iso: string): number => {
 // `formatMoney` STAYS: it is the currency-aware leg (CI-2) and `lib/format` has
 // no equivalent — a quote may be priced in USD. Consolidating it belongs to the
 // currency ruling (FIND-01 / 2e-c), not here.
-const formatMoney = (value: number, currency: 'IDR' | 'USD' = 'IDR'): string =>
+//
+// 2e-c-1 — the parameter now derives from the currency policy rather than
+// re-listing a subset of it. KNOWN DEFECT, booked as 2e-c-1-FIND-01: the BODY is
+// still a USD-vs-domestic binary, so a EUR bid would render with rupiah
+// conventions (id-ID grouping, zero fraction digits). Unreachable today — no
+// fixture carries EUR and the currency does not survive submit — so widening the
+// signature changes nothing that renders. It MUST be fixed before 2e-c-2 makes a
+// EUR quote storable; picking EUR's locale is an operator ruling, not a
+// representation change, so it is deliberately not made here.
+const formatMoney = (
+  value: number,
+  currency: BidCurrency = BASE_CURRENCY,
+): string =>
   new Intl.NumberFormat(currency === 'USD' ? 'en-US' : 'id-ID', {
     style: 'currency',
     currency,
     maximumFractionDigits: currency === 'USD' ? 2 : 0,
   }).format(value);
+
+// Does this bid currency have a should-cost branch to be priced against? POLICY
+// is wider than CAPABILITY by design (see currencyPolicy.ts): a supplier may
+// legally bid in a currency the engine holds no basket for. Narrowing here is
+// what keeps `SpreadCurrency` a 2-union — and a 2-union is the only thing
+// currently turning a wrong branch into a compile error rather than a wrong
+// number. Coercing an unpriceable currency into the IDR branch would measure a
+// foreign price against a rupiah should-cost; that is the failure this refuses.
+const isSpreadCurrency = (currency: BidCurrency): currency is SpreadCurrency =>
+  currency === 'IDR' || currency === 'USD';
 
 // CP-0 · W1 · 2e-b-4a — each wizard-number refusal names its own rule. A buyer
 // who left the quantity blank, one who typed something unreadable, and one who
@@ -2092,7 +2119,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
-                              {formatMoney(q.unitPrice, q.currency ?? 'IDR')}/{selectedRfq.uom}
+                              {formatMoney(q.unitPrice, q.currency ?? BASE_CURRENCY)}/{selectedRfq.uom}
                             </Data>
                           </ComparisonCell>
                         ))}
@@ -2103,26 +2130,42 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                           banded spread — or honest silence (tail / unit-mismatch /
                           unmapped). Never fed into the score; never a verdict. */}
                       <ComparisonRow label={t('sourcing.cmp.row.spread')}>
-                        {quotesForSelected.map((q) => (
+                        {quotesForSelected.map((q) => {
+                          // 2e-c-1 — the policy/capability gate, ahead of the
+                          // resolver. A bid in a currency the engine cannot
+                          // price gets the same honest silence every other
+                          // missing reference gets, with its OWN reason: the
+                          // material is mapped, is not tail, and is priced by
+                          // weight, so none of the other three would be true.
+                          // Transitional by design — this moves inside
+                          // `spreadForQuote` as its first gate when
+                          // `SpreadCurrency` widens (2e-c batch 5).
+                          const currency = q.currency ?? BASE_CURRENCY;
+                          return (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <SpreadCell
-                              result={spreadForQuote(
-                                selectedRfq.materialIds[0],
-                                selectedRfq.uom,
-                                q.unitPrice,
-                                q.currency ?? 'IDR',
-                                SPREAD_DEPS,
-                              )}
+                              result={
+                                isSpreadCurrency(currency)
+                                  ? spreadForQuote(
+                                      selectedRfq.materialIds[0],
+                                      selectedRfq.uom,
+                                      q.unitPrice,
+                                      currency,
+                                      SPREAD_DEPS,
+                                    )
+                                  : { kind: 'silent', reason: 'currency-unsupported' }
+                              }
                               t={t}
                             />
                           </ComparisonCell>
-                        ))}
+                          );
+                        })}
                       </ComparisonRow>
                       <ComparisonRow label={t('sourcing.cmp.row.totalPrice')}>
                         {quotesForSelected.map((q) => (
                           <ComparisonCell key={q.id} highlight={q.id === topRankedId}>
                             <Data as="span" className="font-semibold text-text-primary whitespace-nowrap">
-                              {formatMoney(q.totalPrice, q.currency ?? 'IDR')}
+                              {formatMoney(q.totalPrice, q.currency ?? BASE_CURRENCY)}
                             </Data>
                           </ComparisonCell>
                         ))}
