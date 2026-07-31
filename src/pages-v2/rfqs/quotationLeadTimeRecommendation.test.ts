@@ -67,6 +67,7 @@ const submitTypedLeadTime = async (typed: string, unit: 'days' | 'weeks' = 'days
       rfqId: RFQ_ID,
       supplierId: 'sup-007',
       unitPrice: 15_000, // identical to the incumbent — neutral on price
+      currency: 'IDR', // required since 2e-c-2; neutral here, as every quote shares it
       leadTimeDays: lead.days,
       validUntil: '2026-06-30',
     }),
@@ -182,6 +183,7 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
         rfqId: RFQ_ID,
         supplierId: 'sup-007',
         unitPrice: 15_000,
+        currency: 'IDR',
         leadTimeDays: 3, // ← the truncation artifact
         validUntil: '2026-06-30',
       }),
@@ -204,6 +206,7 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
         rfqId: RFQ_ID,
         supplierId: 'sup-007',
         unitPrice: 15_000,
+        currency: 'IDR',
         leadTimeDays: 0, // ← what `Number("abc") || 0` produced
         validUntil: '2026-06-30',
       }),

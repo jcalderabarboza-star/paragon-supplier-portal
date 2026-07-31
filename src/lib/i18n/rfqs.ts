@@ -184,6 +184,11 @@ export const rfqsEn: Record<string, string> = {
   'rfqs.toast.submitted.body': 'Paragon procurement team will review by {{date}}.',
   'rfqs.toast.submitFailed.title': 'Quotation could not be submitted',
   'rfqs.toast.submitFailed.body': 'Please try again, or contact Paragon procurement.',
+  // Names the rejected currency AND the permitted set — "invalid currency" tells
+  // a supplier neither what they sent nor what they may send (2e-c-2).
+  'rfqs.toast.currencyRefused.body':
+    '“{{currency}}” is not a currency Paragon accepts for bids. Permitted: {{permitted}}. Your quote was not submitted.',
+  'rfqs.field.currency': 'Bid currency',
   'rfqs.field.unitPrice': 'Unit price',
   'rfqs.field.leadTime': 'Lead time',
   'rfqs.field.moq': 'Minimum order quantity',
@@ -360,6 +365,9 @@ export const rfqsId: Record<string, string> = {
   'rfqs.toast.submitted.body': 'Tim pengadaan Paragon akan meninjau paling lambat {{date}}.',
   'rfqs.toast.submitFailed.title': 'Penawaran tidak dapat dikirim',
   'rfqs.toast.submitFailed.body': 'Silakan coba lagi, atau hubungi pengadaan Paragon.',
+  'rfqs.toast.currencyRefused.body':
+    '“{{currency}}” bukan mata uang yang diterima Paragon untuk penawaran. Yang diizinkan: {{permitted}}. Penawaran Anda tidak dikirim.',
+  'rfqs.field.currency': 'Mata uang penawaran',
   'rfqs.field.unitPrice': 'Harga satuan',
   'rfqs.field.leadTime': 'Waktu tunggu',
   'rfqs.field.moq': 'Kuantitas pesanan minimum',

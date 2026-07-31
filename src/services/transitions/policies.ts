@@ -11,6 +11,7 @@ import type { PolicyHookFn } from './dispatcher';
 import { POLICY_HOOKS } from './policyHooks';
 import { deriveHeaderDisposition, type GrHeaderDisposition } from './grRollup';
 import { isMatched } from './invoiceRollup';
+import { BID_CURRENCIES, isBidCurrency } from '../../lib/currencyPolicy';
 
 const BINDINGS = new Map<string, PolicyHookFn>();
 
@@ -93,3 +94,44 @@ const invoiceRollupMatched: PolicyHookFn = ({ entityId, target }) => {
 };
 
 bindPolicyHook(POLICY_HOOKS.INVOICE_ROLLUP_MATCHED, invoiceRollupMatched);
+
+// — Quotation submit: the bid currency must be one the platform PERMITS
+//   (CP-0 · 2e-c-2). ————————————————————————————————————————————————————————
+//
+// `requiredFields` proves the field is non-empty; it says nothing about what is
+// IN it. Without this, 'CNY' / 'Rp' / 'usd' / 'gold' all clear the floor and get
+// stored as the denomination of a real bid.
+//
+// Reads `payload` only — no entity exists yet on a creation verb, and the answer
+// depends on nothing but the token and the policy list.
+//
+// It shares `isBidCurrency` with the supplier's quote form, on the
+// `confirmedQtyWithinBounds` precedent (2f-c): ONE expression of the rule, two
+// consumers — the policy is the LAW and refuses any dispatch that skips the UI,
+// while the form is a courtesy mirror that never offers an off-list option in
+// the first place. Sharing the expression is what stops the mirror from drifting
+// away from the law.
+//
+// REFUSES BY NAME. The rejected token is quoted back verbatim and the permitted
+// set is spelled out, because "invalid currency" tells a supplier neither what
+// they sent nor what they may send. Deliberately NOT a coercion to the base
+// currency: silently making a foreign bid domestic is the exact defect 2e-c-2
+// exists to close, and doing it in the policy layer would be the same lie with
+// better manners.
+const quotationSubmitCurrencyPermitted: PolicyHookFn = ({ payload }) => {
+  const currency = payload.currency;
+  if (typeof currency !== 'string') {
+    return { ok: false, reason: `currency must be a string, got ${typeof currency}` };
+  }
+  return isBidCurrency(currency)
+    ? { ok: true }
+    : {
+        ok: false,
+        reason: `currency '${currency}' is not permitted (${BID_CURRENCIES.join(', ')})`,
+      };
+};
+
+bindPolicyHook(
+  POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED,
+  quotationSubmitCurrencyPermitted,
+);

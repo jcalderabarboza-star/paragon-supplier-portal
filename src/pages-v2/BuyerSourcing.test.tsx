@@ -136,6 +136,7 @@ describe('BuyerSourcing — the minimum order quantity reaches the comparison', 
           rfqId: 'rfq-011',
           supplierId: 'sup-007',
           unitPrice: 14_000,
+          currency: 'IDR', // required since 2e-c-2
           leadTimeDays: 6,
           moq: 100_000,
           validUntil: '2026-06-30',
@@ -351,29 +352,28 @@ describe('BuyerSourcing — the should-cost spread refuses an unpriceable curren
     expect(screen.getAllByText(/€/).length).toBe(2);
   });
 
-  // ⚠ WITNESS TEST — 2e-c-1-FIND-01. This asserts a DEFECT, on purpose.
+  // 2e-c-1-FIND-01 — RESOLVED (2e-c-2). This test was a WITNESS: it asserted the
+  // defect on purpose so that making EUR storable could not ship the defect with
+  // it. It fired exactly as designed on this batch, and is resolved by fixing the
+  // rendering — not by relaxing the assertion.
   //
-  // `formatMoney` is a USD-vs-domestic binary, so EUR falls into the domestic
-  // branch and inherits `maximumFractionDigits: 0`. A €2.85/KG bid therefore
-  // renders as "€3" — not a formatting blemish but a ~5% misstatement of the
-  // supplier's price, on the very cell a buyer awards from.
+  //   was:  expect(screen.getByText('€3/KG'))      ← €2.85 rounded to the unit
+  //   now:  expect(screen.getByText('€2.85/KG'))   ← the price the supplier quoted
   //
-  // It is unreachable in production today: no fixture carries EUR and the
-  // currency does not survive submit, so this test has to reach into the store
-  // to construct the case at all. It is locked here so that the day someone
-  // makes EUR storable (2e-c-2) this test fails and forces the decision, rather
-  // than the rounding shipping quietly behind a green suite.
-  //
-  // TO FIX: give EUR its own locale and 2 fraction digits in `formatMoney`, then
-  // rewrite this test to assert "€2,85". The locale choice is an operator
-  // ruling — see docs/findings.md.
-  it('WITNESS (2e-c-1-FIND-01) — a EUR price is currently ROUNDED TO THE UNIT', async () => {
+  // WHY: `formatMoney` was a USD-vs-domestic binary, so EUR inherited rupiah
+  // conventions including `maximumFractionDigits: 0` — a ~5% misstatement of the
+  // bid, in the cell a buyer awards from. It now states each currency's locale
+  // and precision, EUR = en-IE by operator ruling.
+  it('a EUR price renders to the cent — en-IE, and PARALLEL to its USD sibling', async () => {
     quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
     await openComparison();
-    // €2.85 → "€3". The correct output is "€2,85".
-    expect(screen.getByText('€3/KG')).toBeInTheDocument();
-    // The USD sibling is unaffected — it has the branch with 2 decimals.
+    expect(screen.getByText('€2.85/KG')).toBeInTheDocument();
+    // The point of the en-IE ruling: symbol leading, dot decimal, two fraction
+    // digits — so a buyer reading DOWN this column compares like with like
+    // instead of re-parsing a different convention per row.
     expect(screen.getByText('$2.70/KG')).toBeInTheDocument();
+    // The rounding is gone, not hidden.
+    expect(screen.queryByText('€3/KG')).not.toBeInTheDocument();
   });
 
   it('renders the refusal in Indonesian too', async () => {

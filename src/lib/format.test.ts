@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import i18n from './i18n';
-import { formatIDR, formatDate, formatNumber } from './format';
+import { formatIDR, formatDate, formatMoney, formatNumber } from './format';
 
 // format.ts reads the i18n singleton; always restore EN so other suites in this
 // file (which assume EN) are unaffected by the ID cases below.
@@ -95,5 +95,67 @@ describe('locale-aware output (lang = id)', () => {
     expect(formatIDR(14_000_000_000, { compact: true })).toBe('Rp 14.0B');
     expect(formatDate('2026-08-02')).toBe('02 Aug 2026');
     expect(formatDate('2026-12-15')).toBe('15 Dec 2026');
+  });
+});
+
+// ── CP-0 · 2e-c-2 — formatMoney: each currency states its own conventions ────
+//
+// It replaced a USD-vs-domestic BINARY under which every non-USD currency
+// inherited rupiah conventions — including zero fraction digits, which rounded a
+// €2.85 bid to "€3" (2e-c-1-FIND-01). These tests exist so that a future
+// "simplification" back to a binary fails loudly rather than silently
+// re-rounding somebody's price.
+describe('formatMoney — the operator currency ruling, made executable', () => {
+  it('renders EUR as en-IE: symbol leading, dot decimal, two fraction digits', () => {
+    expect(formatMoney(2.85, 'EUR')).toBe('€2.85');
+    expect(formatMoney(22_800, 'EUR')).toBe('€22,800.00');
+  });
+
+  it('THE REGRESSION — a EUR price is NOT rounded to the unit', () => {
+    // The precise defect: "€3" is a ~5% misstatement of a €2.85 bid, on the
+    // cell a buyer awards from.
+    expect(formatMoney(2.85, 'EUR')).not.toBe('€3');
+    expect(formatMoney(2.85, 'EUR')).toContain('.85');
+  });
+
+  it('keeps EUR and USD STRUCTURALLY PARALLEL — the reason en-IE was chosen', () => {
+    // A comparison table's whole job is comparison. Same shape, different
+    // symbol, so a buyer reading down a column is not re-parsing conventions
+    // per row. This is the assertion that would fail under a de-DE ruling
+    // ("2,85 €"), and it is deliberately explicit about why.
+    const eur = formatMoney(1_234.5, 'EUR');
+    const usd = formatMoney(1_234.5, 'USD');
+    expect(eur).toBe('€1,234.50');
+    expect(usd).toBe('$1,234.50');
+    expect(eur.slice(1)).toBe(usd.slice(1)); // identical but for the symbol
+  });
+
+  it('renders IDR through formatIDR — ONE rupiah rendering in the app', () => {
+    // The retired binary built its own rupiah via Intl currency style, which
+    // emits a NO-BREAK SPACE after "Rp" where formatIDR emits an ordinary
+    // space: two renderings of one currency differing by an invisible
+    // character. Byte equality is the point of this assertion.
+    expect(formatMoney(22_800, 'IDR')).toBe(formatIDR(22_800));
+    expect(formatMoney(22_800, 'IDR')).toBe('Rp 22.800');
+    expect(formatMoney(22_800, 'IDR')).not.toContain('\u00a0');
+  });
+
+  it('does not round rupiah either — it defers, rather than imposing a precision', () => {
+    // The old binary forced maximumFractionDigits: 0 on the domestic branch.
+    // Delegating means IDR behaves exactly as every other rupiah on the page.
+    expect(formatMoney(2.85, 'IDR')).toBe(formatIDR(2.85));
+  });
+
+  it('returns the em dash for absent or unreadable amounts, like its siblings', () => {
+    for (const currency of ['IDR', 'USD', 'EUR'] as const) {
+      expect(formatMoney(null, currency)).toBe('—');
+      expect(formatMoney(undefined, currency)).toBe('—');
+      expect(formatMoney(NaN, currency)).toBe('—');
+    }
+  });
+
+  it('renders zero as a real amount — 0 is a price, not an absence', () => {
+    expect(formatMoney(0, 'EUR')).toBe('€0.00');
+    expect(formatMoney(0, 'IDR')).toBe('Rp 0');
   });
 });

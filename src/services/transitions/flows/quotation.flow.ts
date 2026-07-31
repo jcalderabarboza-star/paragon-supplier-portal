@@ -14,6 +14,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { FlowDefinition } from '../schema';
+import { POLICY_HOOKS } from '../policyHooks';
 
 export const quotationFlow: FlowDefinition = {
   entity: 'quotation',
@@ -40,8 +41,15 @@ export const quotationFlow: FlowDefinition = {
       to: 'Submitted',
       trigger: 'creation',
       requiredRole: 'quotation:submit',
-      requiredFields: ['rfqId', 'unitPrice', 'leadTimeDays'],
-      policyHooks: [],
+      // `currency` joins the floor in 2e-c-2. A price is a number AND a
+      // currency; requiring the number alone let an EUR 3.00 bid be minted as a
+      // rupiah 3. Required rather than defaulted, because defaulting is what
+      // silently made every foreign bid domestic in the first place.
+      requiredFields: ['rfqId', 'unitPrice', 'leadTimeDays', 'currency'],
+      // Membership, not merely presence: `requiredFields` only proves the field
+      // is non-empty, so without this an arbitrary token ('CNY', 'Rp', 'usd')
+      // would satisfy the floor and be stored as a currency nobody permits.
+      policyHooks: [POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED],
       version: 1,
     },
     {

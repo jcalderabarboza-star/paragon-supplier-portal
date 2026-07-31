@@ -40,7 +40,10 @@ import {
   useQuotations,
 } from '../services/query/hooks';
 import { useQuotationSubmit } from '../services/query/commandHooks';
-import { buildQuotationSubmitPayload } from './rfqs/quotationSubmitModel';
+import {
+  buildQuotationSubmitPayload,
+  isCurrencyRefusal,
+} from './rfqs/quotationSubmitModel';
 import { readBidPrice, type PriceRefusalReason } from './rfqs/quotationPrice';
 import {
   BASE_CURRENCY,
@@ -56,7 +59,7 @@ import {
 import { readMoq, type MoqRefusalReason } from './rfqs/quotationMoq';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
-import { formatIDR, formatDate, formatNumber } from '../lib/format';
+import { formatIDR, formatDate, formatMoney, formatNumber } from '../lib/format';
 
 interface OpenRFQ {
   id: string;
@@ -116,8 +119,18 @@ const buildSubmittedQuotes = (
       quoteNumber: q.id,
       material: rfq?.title ?? '—',
       submittedDate: formatDate(q.submittedAt),
-      unitPrice: formatIDR(q.unitPrice),
-      totalPrice: formatIDR(q.totalPrice),
+      // COS-05, CLOSED (2e-c-2). These were unconditional `formatIDR`, so a
+      // supplier who quoted USD 2.85 read their own bid back as "Rp 3" — the
+      // platform overruling the currency the supplier had just chosen. Latent
+      // until now only because `identitySources` seeds sup-007 alone; it goes
+      // live the moment a foreign supplier has a persona, and this batch is what
+      // makes foreign bids storable in the first place.
+      //
+      // A supplier must read their bid back in the SAME format the buyer scores
+      // it in — one ruling, both surfaces — so this is the shared `formatMoney`,
+      // not a second currency-aware formatter living on the supplier side.
+      unitPrice: formatMoney(q.unitPrice, q.currency ?? BASE_CURRENCY),
+      totalPrice: formatMoney(q.totalPrice, q.currency ?? BASE_CURRENCY),
       // 2e-b-3 (COS-07) — the day count goes through i18n's plural selection
       // like every other counted noun on this page (`rfqs.meta.event.*`), and
       // through `formatNumber` like every other quantity. It was raw string
@@ -169,7 +182,10 @@ const buildAwardRows = (
         material: rfq?.title ?? '—',
         result: won ? 'Awarded' : 'Not Awarded',
         awardDate: rfq ? formatDate(rfq.awardDeadline) : '—',
-        contractValue: won ? formatIDR(q.totalPrice) : '—',
+        // COS-05, same leg: an awarded foreign quote's contract value is stated
+        // in the currency it was awarded in. Rupiah here would misprice the
+        // award itself, which is the row a supplier is most likely to act on.
+        contractValue: won ? formatMoney(q.totalPrice, q.currency ?? BASE_CURRENCY) : '—',
         poIssued: '—',
       };
     });
@@ -819,13 +835,17 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // surviving fragment, and its grouping followed the RUNTIME locale rather than
   // the app's. `formatNumber` pins id-ID, as every other quantity on the page does.
   //
-  // Deliberately NOT `formatIDR`: the value is labelled with `form.currency`,
-  // which the supplier can set to USD or EUR, so prefixing "Rp" here would make
-  // the platform contradict its own label. That entanglement is the currency
-  // ruling (FIND-01 / 2e-c), and this batch fixes only what it can fix honestly.
+  // COS-01 (label half), CLOSED (2e-c-2). 2e-b-3 fixed the GROUPING half and
+  // deliberately stopped short of `formatIDR`, because the value was labelled
+  // with `form.currency` — a label the payload then discarded, so hardcoding
+  // "Rp" would have made the platform contradict itself. The register entry said
+  // it plainly: "the label cannot be made honest until the field it names
+  // survives the submit." It survives now, so the preview renders through the
+  // same currency-aware formatter as the stored quote and the buyer's
+  // comparison — one rendering of a bid, from preview to award.
   const totalPrice =
     quotePanelRFQ && bidPrice.ok
-      ? formatNumber(bidPrice.value * quotePanelRFQ.totalQty)
+      ? formatMoney(bidPrice.value * quotePanelRFQ.totalQty, form.currency)
       : '—';
 
   // REAL submit — dispatches t_quotation_submit through the command spine (the
@@ -901,6 +921,13 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       // The SAME parsed value the gate above judged — the builder can no longer
       // re-read the string and reach a different number (CP-0 §4).
       unitPrice: bidPrice.value,
+      // 2e-c-2 — the argument that makes the price a price. The form has offered
+      // this selector since before the spine existed and the builder was never
+      // given it, so the platform asked a supplier to name their currency and
+      // then stored every bid as rupiah. Same class as the moq drop (FIND-02),
+      // worse in consequence: a dropped minimum loses a constraint, a dropped
+      // currency RESTATES the number as a different amount of money.
+      currency: form.currency,
       // The days/weeks conversion already happened inside the ONE parse above,
       // so the builder receives the whole number of days the gate judged — or
       // `null`, which it omits rather than flattening to a 0-day promise.
@@ -918,7 +945,19 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
         toast({
           variant: 'error',
           title: t('rfqs.toast.submitFailed.title'),
-          description: res.reason ?? t('rfqs.toast.submitFailed.body'),
+          // 2e-c-2 — the currency refusal REFUSES BY NAME, in the supplier's
+          // language. Every other reason still falls through to the machine
+          // string, which is the pre-existing behaviour and its own finding
+          // (2e-c-2-FIND-01) — this batch translates the refusal it introduces
+          // rather than leaving a supplier to read a dispatcher constant.
+          description: isCurrencyRefusal(res.reason)
+            ? t('rfqs.toast.currencyRefused.body', {
+                // Named from the form's OWN state, not scraped back out of the
+                // error string: the token the supplier chose is already here.
+                currency: form.currency,
+                permitted: BID_CURRENCIES.join(', '),
+              })
+            : (res.reason ?? t('rfqs.toast.submitFailed.body')),
         });
         return;
       }
@@ -1088,6 +1127,9 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                       <option> tags, which is how the form came to offer a
                       currency the Quotation entity could not represent. */}
                   <select
+                    // The control had no accessible name at all: a screen reader
+                    // announced an unlabelled combobox next to the price.
+                    aria-label={t('rfqs.field.currency')}
                     value={form.currency}
                     onChange={(e) => {
                       // The DOM types a select's value as `string`, so the
@@ -1131,7 +1173,10 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     totalPrice === '—' ? 'text-text-tertiary' : 'text-text-primary'
                   }`}
                 >
-                  {totalPrice === '—' ? '—' : `${form.currency} ${totalPrice}`}
+                  {/* The currency is IN the formatted value now — the manual
+                      `${form.currency} ` prefix was the half of COS-01 that
+                      compensated for a formatter that could not say it. */}
+                  {totalPrice}
                 </div>
               </div>
             </FormSection>
