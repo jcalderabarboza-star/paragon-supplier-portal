@@ -120,6 +120,28 @@ describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {
     });
   }
 
+  // ── CP-0 · 2e-c-6 — the half a key-set comparison cannot see ──────────────
+  // Matching key sets prove a string EXISTS in Indonesian. They say nothing about
+  // whether it still says the same thing. A translation that drops an
+  // interpolation is the failure mode that matters here: the FX refusal names the
+  // currencies that need a rate and the vintage it is judging, and an Indonesian
+  // string missing `{{currencies}}` is not a slightly-worse refusal — it is a
+  // refusal that does not name its cause, which is the whole honesty claim, gone
+  // for half the userbase, with every existing guard still green.
+  //
+  // i18next silently renders a string with no placeholder rather than erroring,
+  // so nothing else in the suite would catch it.
+  const placeholders = (s: string): string[] =>
+    [...s.matchAll(/\{\{\s*([\w.]+)\s*(?:,[^}]*)?\}\}/g)].map((m) => m[1]).sort();
+
+  for (const { name, en, id } of FRAGMENTS) {
+    it(`${name}: EN and ID interpolate the SAME variables`, () => {
+      for (const [k, enValue] of Object.entries(en)) {
+        expect(placeholders(id[k] ?? ''), `${name} · ${k}`).toEqual(placeholders(enValue));
+      }
+    });
+  }
+
   it('ID differs from EN for a meaningful share (real translation, not copy)', () => {
     for (const { name, en, id } of FRAGMENTS) {
       const keys = Object.keys(en);

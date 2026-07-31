@@ -460,4 +460,119 @@ export const mockQuotations: Quotation[] = [
     aiRecommended: false,
     status: 'Submitted',
   },
+
+  // ── RFQ-2026-012 — CP-0 · 2e-c-6 · THE MIXED-CURRENCY NEUTRAL PAIR ─────────
+  // One rupiah bid, one dollar bid, IDENTICAL on every axis the engine scores
+  // except the money: same lead time, same SIMULATED compliance/reliability
+  // baseline, same payment terms, same validity, same submission date. Whatever
+  // the comparison does here, it does because of currency.
+  //
+  // ⚠ THE PRICES ARE NOT THE SAME NUMERAL, AND THAT IS THE POINT. `unitPrice`
+  // and `currency` are not two axes — they are ONE fact (a price) spread across
+  // two fields, and holding the numeral fixed does not hold the price fixed, it
+  // varies the price by the exchange rate. Equal numerals would demonstrate only
+  // that a 17,000× cheaper bid wins, which is true of any correct engine and
+  // needs no fixture. So the MONEY is held close instead — 27,500 IDR/kg against
+  // 1.65 USD/kg, about 3.5% apart at a ~17,250 rate, which is a real commercial
+  // call — and the NUMERALS are left to disagree by four orders of magnitude,
+  // which is precisely the gap the price axis used to fall into:
+  //
+  //   ranked on the recorded basis   IDR price 100 · USD 97  → the rupiah bid wins
+  //   ranked on bare numerals        IDR price   0 · USD 100 → the dollar bid wins
+  //
+  // The honest bid scores ZERO on price when currency is ignored (2e-c-2-FIND-01)
+  // — not a small distortion, the worst possible value on the axis — and the
+  // recommendation flips. The FX refusal is exactly what stands between those two
+  // rows. `quoteScore.test.ts` pins both halves.
+  {
+    id: 'qt-012a',
+    rfqId: 'rfq-012',
+    supplierId: 'sup-002',
+    submittedAt: '2026-05-14',
+    unitPrice: 27_500,
+    totalPrice: 165_000_000,
+    // Stated EXPLICITLY, not left to the absent ⇒ IDR default. On the one fixture
+    // whose subject IS the currency field, an implicit leg would make the
+    // variable under test invisible in the data.
+    currency: 'IDR',
+    leadTimeDays: 21,
+    paymentTermsOffered: 'Net 30',
+    validUntil: '2026-06-30',
+    // The SIMULATED 50/50 baseline, equal on both legs so neither axis can
+    // separate them. Derived scores stay the 0 sentinel — the engine owns them at
+    // read (F0.3-FIND-01), and seeding literals is what that batch retired.
+    complianceScore: 50,
+    priceScore: 0,
+    leadTimeScore: 0,
+    reliabilityScore: 50,
+    aiCompositeScore: 0,
+    aiRecommended: false,
+    status: 'Under Review',
+    notes: 'Domestic distributor stock, quoted in rupiah.',
+  },
+  {
+    id: 'qt-012b',
+    rfqId: 'rfq-012',
+    supplierId: 'sup-006',
+    submittedAt: '2026-05-14',
+    unitPrice: 1.65,
+    totalPrice: 9_900,
+    currency: 'USD',
+    leadTimeDays: 21,
+    paymentTermsOffered: 'Net 30',
+    validUntil: '2026-06-30',
+    complianceScore: 50,
+    priceScore: 0,
+    leadTimeScore: 0,
+    reliabilityScore: 50,
+    aiCompositeScore: 0,
+    aiRecommended: false,
+    status: 'Under Review',
+    notes: 'Imported ex-works, quoted in US dollars.',
+  },
+
+  // ── RFQ-2026-013 — the pinned twin's bids ──────────────────────────────────
+  // Byte-for-byte the same commercial offer as qt-012a / qt-012b. Deliberate
+  // duplication: the two RFQs must differ ONLY by the recorded FX ledger, so that
+  // whatever the screen shows differently is attributable to the pin alone.
+  {
+    id: 'qt-013a',
+    rfqId: 'rfq-013',
+    supplierId: 'sup-002',
+    submittedAt: '2026-05-14',
+    unitPrice: 27_500,
+    totalPrice: 165_000_000,
+    currency: 'IDR',
+    leadTimeDays: 21,
+    paymentTermsOffered: 'Net 30',
+    validUntil: '2026-06-30',
+    complianceScore: 50,
+    priceScore: 0,
+    leadTimeScore: 0,
+    reliabilityScore: 50,
+    aiCompositeScore: 0,
+    aiRecommended: false,
+    status: 'Under Review',
+    notes: 'Domestic distributor stock, quoted in rupiah.',
+  },
+  {
+    id: 'qt-013b',
+    rfqId: 'rfq-013',
+    supplierId: 'sup-006',
+    submittedAt: '2026-05-14',
+    unitPrice: 1.65,
+    totalPrice: 9_900,
+    currency: 'USD',
+    leadTimeDays: 21,
+    paymentTermsOffered: 'Net 30',
+    validUntil: '2026-06-30',
+    complianceScore: 50,
+    priceScore: 0,
+    leadTimeScore: 0,
+    reliabilityScore: 50,
+    aiCompositeScore: 0,
+    aiRecommended: false,
+    status: 'Under Review',
+    notes: 'Imported ex-works, quoted in US dollars.',
+  },
 ];
