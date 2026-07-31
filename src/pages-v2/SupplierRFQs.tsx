@@ -43,6 +43,12 @@ import { useQuotationSubmit } from '../services/query/commandHooks';
 import { buildQuotationSubmitPayload } from './rfqs/quotationSubmitModel';
 import { readBidPrice, type PriceRefusalReason } from './rfqs/quotationPrice';
 import {
+  BASE_CURRENCY,
+  BID_CURRENCIES,
+  isBidCurrency,
+  type BidCurrency,
+} from '../lib/currencyPolicy';
+import {
   readLeadTimeDays,
   type LeadTimeRefusalReason,
   type LeadTimeUnit,
@@ -225,7 +231,12 @@ const labelClass = 'block text-label text-text-tertiary uppercase mb-1';
 
 interface QuoteForm {
   unitPrice: string;
-  currency: string;
+  // 2e-c-1 — narrowed from `string`. It was wider than the three options the
+  // select actually renders, so the type permitted currencies the UI never
+  // offered and the entity could never hold. It is now the same `BidCurrency`
+  // the options are generated from and the Quotation field is typed as: one
+  // list, one type, three places that cannot disagree.
+  currency: BidCurrency;
   leadTimeNum: string;
   // The unit is half of what the typed lead-time number means, so the parse
   // boundary takes it as a closed type rather than free text.
@@ -241,7 +252,7 @@ interface QuoteForm {
 
 const emptyQuoteForm: QuoteForm = {
   unitPrice: '',
-  currency: 'IDR',
+  currency: BASE_CURRENCY,
   leadTimeNum: '',
   leadTimeUnit: 'days',
   sameDayAck: false,
@@ -1072,17 +1083,28 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                     }
                     className={inputClass}
                   />
+                  {/* 2e-c-1 — the options ARE the policy list, not a copy of it
+                      that drifted from it. They used to be three hand-written
+                      <option> tags, which is how the form came to offer a
+                      currency the Quotation entity could not represent. */}
                   <select
                     value={form.currency}
-                    onChange={(e) =>
-                      setForm({ ...form, currency: e.target.value })
-                    }
+                    onChange={(e) => {
+                      // The DOM types a select's value as `string`, so the
+                      // narrowing is stated rather than asserted. Total in
+                      // practice — every option came from BID_CURRENCIES — and
+                      // structural insurance if that ever stops being true.
+                      const next = e.target.value;
+                      if (isBidCurrency(next)) {
+                        setForm({ ...form, currency: next });
+                      }
+                    }}
                     className={inputClass}
                     style={{ width: 100 }}
                   >
-                    <option>IDR</option>
-                    <option>USD</option>
-                    <option>EUR</option>
+                    {BID_CURRENCIES.map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="mt-1 text-[11px] text-text-tertiary">

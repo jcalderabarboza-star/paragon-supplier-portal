@@ -281,3 +281,114 @@ describe('BuyerSourcing — dates localise (COS-04, the en-GB hardcode)', () => 
     expect(screen.queryAllByText(/20 Mei 2026/)).toHaveLength(0);
   });
 });
+
+// ── CP-0 · 2e-c-1 — a bid the model cannot price says so ─────────────────────
+//
+// The batch widened `Quotation.currency` to the three currencies the operator
+// permits, while the should-cost engine still prices two. That gap is deliberate
+// (policy is wider than capability — see currencyPolicy.ts), and this is the
+// surface where the two meet.
+//
+// The failure being prevented is NOT a missing label. It is the coercion these
+// tests make impossible: routing a euro price into the IDR branch, where it
+// would be measured against a rupiah should-cost band and rendered as a
+// perfectly confident percentage. RFQ-2026-009 is the right probe precisely
+// because it DOES produce a spread — mapped material, mass unit, priced
+// currency — so a silence here can only be the currency gate.
+describe('BuyerSourcing — the should-cost spread refuses an unpriceable currency', () => {
+  beforeEach(() => {
+    quotationStore.reset();
+    rfqStore.reset();
+  });
+
+  const openComparison = async () => {
+    renderWithProviders(<BuyerSourcing />);
+    fireEvent.click(await screen.findByText('RFQ-2026-009'));
+    return screen.findByText(/QUOTE COMPARISON/i);
+  };
+
+  it('BASELINE — a USD quote on this RFQ still renders a real spread', async () => {
+    // Without this, every assertion below could pass because the spread was
+    // silent for some unrelated reason and nobody noticed.
+    await openComparison();
+    expect(screen.getAllByText(/vs modeled ~/).length).toBeGreaterThan(0);
+    expect(
+      screen.queryByText(/currency the model does not price/),
+    ).not.toBeInTheDocument();
+  });
+
+  it('THE LOCK — a EUR quote gets honest silence, never a coerced percentage', async () => {
+    quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
+    await openComparison();
+
+    expect(
+      screen.getByText(/No should-cost reference — quoted in a currency the model does not price/),
+    ).toBeInTheDocument();
+    // Its USD sibling is untouched: the gate is per-quote, not per-comparison.
+    expect(screen.getAllByText(/vs modeled ~/).length).toBe(1);
+  });
+
+  it('names the CURRENCY as the reason, not one of the three that would be false', async () => {
+    // The material IS mapped, is NOT tail, and IS priced by weight. Reusing any
+    // existing silence here would have been a cheaper diff and a false statement
+    // about why the buyer has no reference.
+    quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
+    await openComparison();
+
+    expect(screen.queryByText(/not yet mapped to a basket/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/tail material/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/priced per unit, not by weight/)).not.toBeInTheDocument();
+  });
+
+  it('still shows the buyer the PRICE — only the modeled reference is withheld', async () => {
+    // Honest silence is scoped: the engine cannot price a euro against a basket,
+    // which says nothing about the supplier's own quoted number. Blanking the
+    // price too would hide a stated fact behind a modeling limitation.
+    quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
+    await openComparison();
+    // Both the unit price and the line total keep rendering in the bid's own
+    // currency — the euro sign is on the surface, not suppressed with the model.
+    expect(screen.getAllByText(/€/).length).toBe(2);
+  });
+
+  // ⚠ WITNESS TEST — 2e-c-1-FIND-01. This asserts a DEFECT, on purpose.
+  //
+  // `formatMoney` is a USD-vs-domestic binary, so EUR falls into the domestic
+  // branch and inherits `maximumFractionDigits: 0`. A €2.85/KG bid therefore
+  // renders as "€3" — not a formatting blemish but a ~5% misstatement of the
+  // supplier's price, on the very cell a buyer awards from.
+  //
+  // It is unreachable in production today: no fixture carries EUR and the
+  // currency does not survive submit, so this test has to reach into the store
+  // to construct the case at all. It is locked here so that the day someone
+  // makes EUR storable (2e-c-2) this test fails and forces the decision, rather
+  // than the rounding shipping quietly behind a green suite.
+  //
+  // TO FIX: give EUR its own locale and 2 fraction digits in `formatMoney`, then
+  // rewrite this test to assert "€2,85". The locale choice is an operator
+  // ruling — see docs/findings.md.
+  it('WITNESS (2e-c-1-FIND-01) — a EUR price is currently ROUNDED TO THE UNIT', async () => {
+    quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
+    await openComparison();
+    // €2.85 → "€3". The correct output is "€2,85".
+    expect(screen.getByText('€3/KG')).toBeInTheDocument();
+    // The USD sibling is unaffected — it has the branch with 2 decimals.
+    expect(screen.getByText('$2.70/KG')).toBeInTheDocument();
+  });
+
+  it('renders the refusal in Indonesian too', async () => {
+    quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
+    await i18n.changeLanguage('id');
+    try {
+      // Deliberately NOT reusing `openComparison` — its wait anchors on the
+      // English panel heading, which is exactly what changes under ID.
+      renderWithProviders(<BuyerSourcing />);
+      fireEvent.click(await screen.findByText('RFQ-2026-009'));
+      expect(
+        await screen.findByText(/mata uang yang tidak dihargai model/),
+      ).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});

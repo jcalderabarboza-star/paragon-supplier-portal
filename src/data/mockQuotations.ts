@@ -1,3 +1,5 @@
+import type { BidCurrency } from '../lib/currencyPolicy';
+
 export type QuotationStatus =
   | 'Submitted'
   | 'Under Review'
@@ -12,9 +14,15 @@ export interface Quotation {
   unitPrice: number;
   totalPrice: number;
   // The currency `unitPrice`/`totalPrice` are quoted in. Additive (CI-2 currency
-  // leg): absent = 'IDR', the implicit legacy default every existing quote carries.
-  // A foreign supplier prices in 'USD' — the FX-free, engine-native spread branch.
-  currency?: 'IDR' | 'USD';
+  // leg): absent = `BASE_CURRENCY`, the implicit legacy default every existing
+  // quote carries. A foreign supplier prices in 'USD' — the FX-free,
+  // engine-native spread branch.
+  //
+  // 2e-c-1 — DERIVED from `BID_CURRENCIES`, no longer a hand-written union. It
+  // used to read `'IDR' | 'USD'` while the supplier's form offered a third
+  // option, so the form could produce a currency this field could not hold. The
+  // entity now widens to whatever the policy permits, by construction.
+  currency?: BidCurrency;
   // REQUIRED (2e-b-1a reversal). Briefly optional in 2e-b-1; a quotation with
   // no delivery promise is an incomplete bid, so the dispatcher's requiredFields
   // guarantees it is present on every quote that can ever be minted.
