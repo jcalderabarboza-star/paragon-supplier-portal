@@ -462,9 +462,14 @@ material **code** (`sdc/types.ts:128`, keyed to `MATERIAL_MASTER`, `sdc/fixtures
 **The two seams do not join.** The same substance appears as `'Glycerin USP (Halal)'`
 (`fixtures/prIntake.ts:20`) and as `RM-EMUL-3310` labelled `'Glycerin USP 99.5%'`
 (`sdc/fixtures.ts:59-64`) — different key, different label, no crosswalk. There are in fact
-**four disconnected material-identity populations** in the tree: C7 display strings; the SDC
-master (5 codes); GR/inventory codes with no master (`mockGoodsReceipts.ts`, `mockInventory.ts`);
-and `MAT-20500` on a third convention (`channel/outboundFixtures.ts:29`).
+several material-identity spaces in the tree. **Operator ruling (binding) settles which is
+authoritative:** `src/services/sdc/fixtures.ts` (`MATERIAL_MASTER`, `:58-100`) **IS the portal's
+authoritative material master**; `src/data/mock*.ts` is a **parallel NON-MASTER dataset, booked
+for retirement rather than reconciliation** (`MOCK-RETIREMENT-01`), as is `MAT-20500` on its own
+convention (`channel/outboundFixtures.ts:29`). See [C8 §4.0](./C8-forecast-publication.md) — the
+declaration is load-bearing there, because SOMO cannot ratify a freeze against an undeclared
+master. So this is **not** four co-equal populations: it is **one master, one display-string
+space that should collapse into it, and non-master datasets awaiting retirement.**
 
 **The recommendation, adopting SOMO's own internal ruling on this exact class:**
 
