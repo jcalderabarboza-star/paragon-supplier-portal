@@ -225,6 +225,14 @@ export const mockRfqs: RFQ[] = [
   {
     // Imported raw material — foreign suppliers price in USD. Exercises the CI-2
     // engine-native, FX-free USD spread branch (propylene glycol, international basis).
+    //
+    // ⚠ 2e-c-6 — LEFT UNPINNED ON PURPOSE. This RFQ is the arc's TEST BENCH: the
+    // FX specs mutate its quotes to mint mixed sets and dispatch pins against it,
+    // so they are written against "an RFQ with no recorded basis". Seeding a
+    // ledger here was tried and re-premised three of those proofs. The cold-boot
+    // pin DISPLAY lives on rfq-013 instead, which is additive and disturbs
+    // nothing. Its homogeneous all-USD set also means a pin here would rank
+    // nothing anyway (quoteScore.ts:253 exempts a single-currency set).
     id: 'rfq-009',
     rfqNumber: 'RFQ-2026-009',
     title: 'Propylene Glycol USP — imported, USD-quoted',
@@ -305,5 +313,121 @@ export const mockRfqs: RFQ[] = [
     currency: 'IDR',
     incoterms: 'FCA Tangerang',
     paymentTerms: 'Net 30',
+  },
+  {
+    // ── CP-0 · 2e-c-6 — THE MIXED-CURRENCY NEUTRAL FIXTURE ───────────────────
+    // The whole 2e-c arc's honesty claim, made witnessable by hand. Until this
+    // fixture existed, a mixed-currency comparison was reachable only through an
+    // ACCIDENTAL pairing (sup-007 submitting against rfq-011's lone IDR quote) —
+    // and a refusal that can only be reached by accident is not a delivered
+    // refusal. That is QA-PERSONA-01, and it is why 2e-a had to seed rfq-010.
+    //
+    // NEUTRAL in the FIND-05 sense: its two quotes are identical on lead time,
+    // compliance, reliability, payment terms, validity and submission date, so
+    // the ONLY thing that can decide the recommendation is how the engine handles
+    // the money — which is exactly the behaviour under test.
+    //
+    // WHY AN IMPORTED MATERIAL. Propylene glycol is the codebase's one
+    // INTERNATIONAL-basis modelable material, so a domestic distributor bidding
+    // rupiah beside a foreign mill bidding dollars is the ordinary commercial
+    // shape of this problem rather than a contrivance. It also puts both
+    // should-cost branches in ONE table: the IDR row renders FX-converted, the
+    // USD row engine-native (2e-c-5).
+    //
+    // DELIBERATELY LEFT UNPINNED — no `fxPins`. On a cold boot this RFQ refuses
+    // FX_UNPINNED, by name, naming USD. The pinned half of the walk is reached by
+    // RECORDING a rate here, not by seeding one: `isStalePin` measures from the
+    // rate's vintage against the clock AT READ, so any literal `asOf` written
+    // here would be stale `FX_PIN_MAX_AGE_DAYS` (7) days later and would silently
+    // turn a scripted "the comparison now ranks" into "FX_STALE". A fixture whose
+    // meaning decays is the same unreachability defect wearing a fresher date.
+    id: 'rfq-012',
+    rfqNumber: 'RFQ-2026-012',
+    title: 'Propylene Glycol USP — dual-currency bid comparison',
+    materialCategory: 'Emulsifiers',
+    materialIds: ['RM-HUMEC-3405'],
+    buyerId: 'buyer-001',
+    status: 'Open',
+    createdAt: '2026-05-08',
+    responseDeadline: '2026-05-25',
+    awardDeadline: '2026-06-01',
+    invitedSupplierIds: ['sup-002', 'sup-006'],
+    respondedSupplierIds: ['sup-002', 'sup-006'],
+    totalQty: 6_000,
+    uom: 'KG',
+    estimatedValue: 165_000_000,
+    currency: 'IDR',
+    incoterms: 'CIF Jakarta',
+    paymentTerms: 'Net 30',
+  },
+  {
+    // ── CP-0 · 2e-c-6 — THE PINNED TWIN ──────────────────────────────────────
+    // rfq-012 with a recorded FX ledger and NOTHING else changed: same material,
+    // same two suppliers, same two bids, same every axis. The pin is the only
+    // variable, exactly as the currency is the only variable between rfq-012's
+    // two quotes — so anything that differs between these two RFQs on screen is
+    // caused by the recorded basis and by nothing else.
+    //
+    // WHAT IT MAKES REACHABLE ON A COLD BOOT:
+    //   · the pin DISPLAY — the rate in force, its vintage, its source;
+    //   · the D-1 FREEZE, visible — "1 earlier rate kept", proving a superseded
+    //     rate is preserved rather than overwritten, without a buyer having to
+    //     perform two acts first;
+    //   · FX_STALE — the arc's SECOND named refusal, which until now existed only
+    //     in specs and in a rate a buyer had to deliberately back-date.
+    //
+    // WHY THE VINTAGES ARE OLD, AND WHY THAT IS THE HONEST CHOICE. `isStalePin`
+    // measures from the rate's own `asOf` against the clock AT READ, with
+    // `FX_PIN_MAX_AGE_DAYS` = 7. A literal vintage seeded "fresh" is fresh for one
+    // week and stale ever after — so a fixture built to demonstrate a RANKED
+    // comparison would quietly start demonstrating a refusal instead, and the
+    // smoke script written against it would be wrong without anyone touching it.
+    // Staleness is the only pin state a literal date can hold FOREVER. So this
+    // fixture owns the refusal, and the ranked outcome is reached by a buyer
+    // recording a current rate — which is a real act, dated by the buyer's own
+    // clock, and therefore never decays. See docs/CP0_2e-c_FX_smoke.md.
+    id: 'rfq-013',
+    rfqNumber: 'RFQ-2026-013',
+    title: 'Propylene Glycol USP — dual-currency, rate on record',
+    materialCategory: 'Emulsifiers',
+    materialIds: ['RM-HUMEC-3405'],
+    buyerId: 'buyer-001',
+    status: 'Open',
+    createdAt: '2026-05-08',
+    responseDeadline: '2026-05-25',
+    awardDeadline: '2026-06-01',
+    invitedSupplierIds: ['sup-002', 'sup-006'],
+    respondedSupplierIds: ['sup-002', 'sup-006'],
+    totalQty: 6_000,
+    uom: 'KG',
+    estimatedValue: 165_000_000,
+    currency: 'IDR',
+    incoterms: 'CIF Jakarta',
+    paymentTerms: 'Net 30',
+    fxPins: [
+      // Oldest first. The ledger is APPEND-ONLY, so the order it is written in is
+      // the order the rates were recorded — but "which one is in force" is
+      // DERIVED (`effectivePin` by `pinnedAt`), never read off the position.
+      {
+        quote: 'USD',
+        base: 'IDR',
+        rate: 17_180,
+        asOf: '2026-05-09',
+        pinnedAt: '2026-05-09T04:12:00.000Z',
+        source: 'MANUAL',
+        liveness: 'SIMULATED',
+      },
+      {
+        // The rate in force — a week newer, and a superseding act rather than an
+        // edit of the one above, which is why the one above is still here.
+        quote: 'USD',
+        base: 'IDR',
+        rate: 17_310,
+        asOf: '2026-05-16',
+        pinnedAt: '2026-05-16T02:40:00.000Z',
+        source: 'MANUAL',
+        liveness: 'SIMULATED',
+      },
+    ],
   },
 ];

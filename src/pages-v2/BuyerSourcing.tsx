@@ -71,6 +71,7 @@ import {
 import {
   spreadForQuote,
   type QuoteSpread,
+  type SilentReason,
   type SpreadDeps,
 } from '../lib/shouldCostSpread';
 import {
@@ -84,8 +85,14 @@ import {
   pinHistory,
   type FxPin,
   type FxPinSource,
+  type FxRefusalReason,
 } from '../lib/fxPin';
-import { readFxRate, readFxVintage } from './sourcing/fxRateInput';
+import {
+  readFxRate,
+  readFxVintage,
+  type FxRateRefusalReason,
+  type FxVintageRefusalReason,
+} from './sourcing/fxRateInput';
 import { MATERIAL_TO_BASKET } from '../services/data/mock/fixtures/commodityMaterialMap';
 import {
   ROOT_BENCHMARKS,
@@ -275,6 +282,85 @@ const blankPinDraft = (currency: BidCurrency, superseding?: FxPin): PinDraft => 
   ...(superseding ? { superseding } : {}),
 });
 
+// ── CP-0 · 2e-c-6 — every named cause has a translation, by construction ─────
+//
+// The arc's five user-facing reason strings were all looked up by CONCATENATION
+// (`t(\`sourcing.fx.refused.${reason}\`)`), which means nothing could tell that a
+// reason had no key: a new refusal ships, and the buyer reads the raw key on
+// screen — in both languages equally. An i18n sweep that only checks today's
+// keys is a sweep that has to be run again every time a reason is added.
+//
+// These are EXACT maps, the same shape and for the same reason as
+// `RFQ_QTY_REFUSAL_KEY` below: `Record<Reason, string>` makes a reason with no
+// key a COMPILE error rather than a rendering defect. Widening any of these
+// unions now fails the build until the EN and ID strings exist. The parity guard
+// in `fragments.test.ts` then does the other half — that the ID key is really
+// there, and interpolates the same variables.
+export const FX_REFUSAL_KEY: Record<FxRefusalReason, string> = {
+  FX_UNPINNED: 'sourcing.cmp.fx.refused.FX_UNPINNED',
+  FX_STALE: 'sourcing.cmp.fx.refused.FX_STALE',
+};
+
+export const FX_RATE_REFUSAL_KEY: Record<FxRateRefusalReason, string> = {
+  EMPTY_QTY: 'sourcing.fx.refused.EMPTY_QTY',
+  NOT_NUMERIC: 'sourcing.fx.refused.NOT_NUMERIC',
+  AMBIGUOUS_QTY: 'sourcing.fx.refused.AMBIGUOUS_QTY',
+  ZERO_RATE: 'sourcing.fx.refused.ZERO_RATE',
+};
+
+export const FX_VINTAGE_REFUSAL_KEY: Record<FxVintageRefusalReason, string> = {
+  EMPTY_VINTAGE: 'sourcing.fx.refused.EMPTY_VINTAGE',
+  UNREADABLE_VINTAGE: 'sourcing.fx.refused.UNREADABLE_VINTAGE',
+  FUTURE_VINTAGE: 'sourcing.fx.refused.FUTURE_VINTAGE',
+};
+
+export const FX_PIN_SOURCE_KEY: Record<FxPinSource, string> = {
+  MANUAL: 'sourcing.cmp.fx.basis.source.MANUAL',
+  SAP_EXHGRATE: 'sourcing.cmp.fx.basis.source.SAP_EXHGRATE',
+};
+
+/** Honest silence on the should-cost cell — one key per named cause. The
+ *  `currency-unsupported` member is D-4's fourth reason (2e-c-5). */
+export const SPREAD_SILENT_KEY: Record<SilentReason, string> = {
+  unmapped: 'sourcing.cmp.spread.silent.unmapped',
+  tail: 'sourcing.cmp.spread.silent.tail',
+  'unit-mismatch': 'sourcing.cmp.spread.silent.unit-mismatch',
+  'currency-unsupported': 'sourcing.cmp.spread.silent.currency-unsupported',
+};
+
+/**
+ * The refusal key for a typed pin field, or `null` when it reads (and when it is
+ * still untouched — an empty field does not nag, it blocks at the button).
+ *
+ * One parser call, properly narrowed. The retired form called the parser TWICE
+ * per render and reached the reason through `as { reason: string }` — a cast
+ * that would have gone on compiling if the outcome shape changed underneath it.
+ */
+const fxRateRefusalKey = (raw: string): string | null => {
+  if (raw.trim() === '') return null;
+  const outcome = readFxRate(raw);
+  return outcome.ok ? null : FX_RATE_REFUSAL_KEY[outcome.reason];
+};
+
+const fxVintageRefusalKey = (raw: string): string | null => {
+  if (raw.trim() === '') return null;
+  const outcome = readFxVintage(raw);
+  return outcome.ok ? null : FX_VINTAGE_REFUSAL_KEY[outcome.reason];
+};
+
+/** A field-level refusal line in the pin dialog — same DOM as before, so the
+ *  `fx-rate-refusal` / `fx-asof-refusal` witnesses are untouched. */
+const FieldRefusal: React.FC<{ messageKey: string | null; testId: string; t: TFunction }> = ({
+  messageKey,
+  testId,
+  t,
+}) =>
+  messageKey === null ? null : (
+    <div role="alert" data-testid={testId} className="mt-1 text-[11px] text-danger">
+      {t(messageKey)}
+    </div>
+  );
+
 const FxBasisPanel: React.FC<{
   currencies: readonly BidCurrency[];
   pins: readonly FxPin[] | undefined;
@@ -312,7 +398,7 @@ const FxBasisPanel: React.FC<{
                   {t('sourcing.cmp.fx.basis.asOf', { date: formatDate(pin.asOf) })}
                 </span>
                 <span className="text-text-tertiary">
-                  {t(`sourcing.cmp.fx.basis.source.${pin.source}`)}
+                  {t(FX_PIN_SOURCE_KEY[pin.source])}
                   {pin.rateType ? ` · ${pin.rateType}` : ''}
                 </span>
                 {/* Superseded pins are KEPT (D-1). Saying how many exist is what
@@ -573,7 +659,7 @@ const SpreadCell: React.FC<{ result: QuoteSpread; t: TFunction }> = ({
     // Honest silence — a specific reason, never a fabricated percentage.
     return (
       <span className="text-[10px] text-text-tertiary whitespace-normal">
-        {t(`sourcing.cmp.spread.silent.${result.reason}`)}
+        {t(SPREAD_SILENT_KEY[result.reason])}
       </span>
     );
   }
@@ -2311,7 +2397,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   data-testid="fx-refusal"
                   className="mb-3 text-xs text-warning-hover bg-warning-soft border border-warning rounded-md px-3 py-2"
                 >
-                  {t(`sourcing.cmp.fx.refused.${scoring.reason}`, {
+                  {t(FX_REFUSAL_KEY[scoring.reason], {
                     currencies: scoring.currencies.join(', '),
                     // 2e-c-4 — a STALE refusal names the vintage it is judging.
                     // "Too old" without saying how old leaves the buyer unable
@@ -2785,11 +2871,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 </div>
                 {/* An untouched blank does not nag; a TYPED rate that cannot be
                     read says so, and says what to do about it. */}
-                {pinDraft.rate.trim() !== '' && !readFxRate(pinDraft.rate).ok && (
-                  <div role="alert" data-testid="fx-rate-refusal" className="mt-1 text-[11px] text-danger">
-                    {t(`sourcing.fx.refused.${(readFxRate(pinDraft.rate) as { reason: string }).reason}`)}
-                  </div>
-                )}
+                <FieldRefusal
+                  messageKey={fxRateRefusalKey(pinDraft.rate)}
+                  testId="fx-rate-refusal"
+                  t={t}
+                />
               </div>
 
               <div>
@@ -2806,11 +2892,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                 <div className="mt-1 text-[11px] text-text-tertiary">
                   {t('sourcing.fx.dialog.asOfHint', { days: FX_PIN_MAX_AGE_DAYS })}
                 </div>
-                {pinDraft.asOf.trim() !== '' && !readFxVintage(pinDraft.asOf).ok && (
-                  <div role="alert" data-testid="fx-asof-refusal" className="mt-1 text-[11px] text-danger">
-                    {t(`sourcing.fx.refused.${(readFxVintage(pinDraft.asOf) as { reason: string }).reason}`)}
-                  </div>
-                )}
+                <FieldRefusal
+                  messageKey={fxVintageRefusalKey(pinDraft.asOf)}
+                  testId="fx-asof-refusal"
+                  t={t}
+                />
               </div>
 
               <div>
