@@ -79,8 +79,10 @@ export const inventoryDeclarationFlow: FlowDefinition = {
       trigger: 'creation',
       requiredRole: 'inventorydeclaration:declare',
       requiredFields: ['materialCode', 'totalQty'],
-      // Σ batch qty must equal totalQty when batch detail is present.
-      policyHooks: [POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL],
+      // Σ batch qty must equal totalQty when batch detail is present; and
+      // (CP-2 · B1) the master must actually name the code, so the unit the
+      // target copies EXISTS rather than defaulting to a fabricated 'KG'.
+      policyHooks: [POLICY_HOOKS.SDC_MATERIAL_KNOWN, POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL],
       version: 1,
     },
     {
@@ -98,7 +100,7 @@ export const inventoryDeclarationFlow: FlowDefinition = {
       trigger: 'creation',
       requiredRole: 'inventorydeclaration:record',
       requiredFields: ['materialCode', 'totalQty'],
-      policyHooks: [POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL],
+      policyHooks: [POLICY_HOOKS.SDC_MATERIAL_KNOWN, POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL],
       version: 1,
     },
   ],

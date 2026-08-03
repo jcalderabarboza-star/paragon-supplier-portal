@@ -32,11 +32,13 @@ import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { useServiceQuery, scopeKey } from './useServiceQuery';
 import {
   FORECAST_PUBLICATIONS,
-  MATERIAL_MASTER,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
   currentPublication,
   supplierVisiblePublications,
   ownCollaboratedMaterials,
+  // CP-2 · B1 — the ONE master lookup; no page re-derives its own join.
+  labelOf,
+  uomOf,
   type CollaboratedMaterial,
 } from '../sdc';
 // SDC-4c — the P1 own-shipments view type is the shared SDC one (promoted in
@@ -195,10 +197,17 @@ export function useRequirementResponseAcknowledge() {
 // ─── SDC-3b — the two additional supplier objects (reads + governed writes) ───
 
 /** One collaborated material, joined with the master for display + the uom the
- *  target will assign (shown read-only — the supplier never picks a unit). */
+ *  target will assign (shown read-only — the supplier never picks a unit).
+ *
+ *  CP-2 · B1 — `uom` is NULLABLE. A collaborated pair comes from relationships ∪
+ *  publications, which the master does not gate, so the join CAN miss. It used
+ *  to default to 'KG'. A LABEL miss is honestly answered by echoing the code (a
+ *  reader sees the token the data carried); a UNIT miss is not — it fabricates a
+ *  claim with arithmetic consequences. `null` here renders as the em-dash, and
+ *  the write verb refuses UNKNOWN_MATERIAL rather than storing a guessed unit. */
 export interface CollaboratedMaterialView extends CollaboratedMaterial {
   readonly label: string;
-  readonly uom: Uom;
+  readonly uom: Uom | null;
 }
 
 /** The supplier's collaborated materials (the (i)∪(ii) set the declare/report
@@ -213,11 +222,14 @@ export function useOwnCollaboratedMaterials() {
         SUPPLIER_MATERIAL_RELATIONSHIPS,
         FORECAST_PUBLICATIONS,
         scope.supplierId,
-      ).map((m) => ({
-        ...m,
-        label: MATERIAL_MASTER[m.materialCode]?.label ?? m.materialCode,
-        uom: MATERIAL_MASTER[m.materialCode]?.canonicalUom ?? 'KG',
-      }));
+      ).map((m) => {
+        const unit = uomOf(m.materialCode);
+        return {
+          ...m,
+          label: labelOf(m.materialCode),
+          uom: unit.ok ? unit.uom : null,
+        };
+      });
     },
   );
 }

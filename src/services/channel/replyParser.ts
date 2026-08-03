@@ -41,6 +41,18 @@
 //
 // Alias / material resolution is NOT here — the material token is carried verbatim;
 // C2 shows it as a confirmable suggestion, never a silent resolution.
+//
+// ── MEMBERSHIP IS A CLASSIFIER INPUT, NOT A RESOLVER (CP-2 · B1) ─────────────
+//   `knownMaterials` does NOT resolve or rewrite anything: the token is still
+//   carried verbatim and C2 still confirms it. It only decides WHICH TOKEN is
+//   the material — which is a classification question, not a resolution one.
+//   The distinction matters because the previous classifier answered it by SHAPE
+//   ("has a letter and a digit"), and canonical S/4 MATNR is frequently NUMERIC,
+//   so it handed real material codes to the QUANTITY slot. That is a FABRICATION
+//   defect, not silence: it proposes a plausible wrong row. Membership-first
+//   fixes it with no policy decision about what a code may look like — and per
+//   Seat 3's ratified ruling, prefix-derived semantics are retired as a class:
+//   materialCode is OPAQUE, membership replaces shape.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { IMPORT_DECLARE_COLUMN, type GridParseSpec, type GridRow } from '../sdc';
@@ -68,9 +80,15 @@ const INVENTORY_COMMANDS = new Set(['STOK', 'STOCK', 'SOH']);
 const isQtyLike = (t: string): boolean => /^[\d.,]+$/.test(t) && /\d/.test(t);
 /** A short pure-letter token — a unit-of-measure candidate (diagnostic only). */
 const isUomLike = (t: string): boolean => /^[A-Za-z]{1,5}$/.test(t);
-/** A code-like token: has BOTH a letter and a digit (e.g. "MAT-10234"). Excludes
- *  pure-numeric qty and pure-letter command/uom by construction. */
-const isCodeLike = (t: string): boolean =>
+/**
+ * A MIXED-ALPHANUMERIC token (e.g. "MAT-10234") — renamed from `isCodeLike`
+ * (CP-2 · B1), because that name promised "code-like" and delivered
+ * "mixed-alphanumeric", EXCLUDING exactly the codes most likely to be canonical.
+ * Canonical S/4 MATNR is frequently PURE NUMERIC, and the old name hid that:
+ * a numeric code failed this test, fell through to `isQtyLike`, and was captured
+ * as the QUANTITY. This is now a FALLBACK HINT only — membership decides first.
+ */
+const isMixedAlnum = (t: string): boolean =>
   /[A-Za-z]/.test(t) && /\d/.test(t) && /^[A-Za-z0-9-]+$/.test(t);
 
 export interface ChannelReplyDiagnostics {
@@ -84,6 +102,14 @@ export interface ChannelReplyDiagnostics {
   readonly qtyReason?: QtyRefusalReason;
   /** A parsed unit-of-measure — DIAGNOSTIC ONLY, never a payload field. */
   readonly uom?: string;
+  /**
+   * HOW the material token was chosen (CP-2 · B1) — display/provenance only.
+   * 'membership' = the token IS a known material code, so shape was irrelevant.
+   * 'shape'      = no membership hit; a mixed-alphanumeric token was guessed.
+   * C2 shows a shape-guessed token as exactly that: a suggestion to confirm.
+   * Absent when no material token was found at all.
+   */
+  readonly materialMatch?: 'membership' | 'shape';
 }
 
 /**
@@ -101,6 +127,30 @@ export interface ParseChannelReplyOptions {
   /** The supplier/channel numeric convention, disambiguating both-valid qtys.
    *  Bahasa is the default channel language, so 'id' is the typical hint. */
   readonly numberFormatHint?: NumberConvention;
+  /**
+   * ⭐ CP-2 · B1 — THE MEMBERSHIP SET, and the fix for a FABRICATION defect.
+   *
+   * The material codes this reply could legitimately name — the material master,
+   * or (better) the SUBJECT SUPPLIER'S collaborated set, which the confirm
+   * surface already computes. Injected rather than imported: this parser is PURE
+   * and does not resolve materials (see the header), and the caller alone knows
+   * whose reply this is.
+   *
+   * WHY IT MATTERS. Before this, two independent first-match scans ran with NO
+   * PRECEDENCE, and the material classifier required at least one LETTER. So in
+   * "STOK 10234 500 KG" — with 10234 a perfectly canonical numeric MATNR — the
+   * code failed the shape test, fell through, and was captured as the QUANTITY.
+   * Add any other mixed-alphanumeric token and THAT became the material while
+   * 10234 stayed the quantity: a PLAUSIBLE WRONG ROW proposed into the hub,
+   * gated only by a human confirm. Not silence — FABRICATION.
+   *
+   * THE RULE: a token in this set is a material candidate REGARDLESS OF SHAPE,
+   * and can NEVER be consumed by `isQtyLike`. Shape drops to a fallback hint.
+   * This handles numeric MATNR with no policy decision at all.
+   *
+   * Omitted ⇒ shape-only, i.e. exactly the previous behaviour.
+   */
+  readonly knownMaterials?: Iterable<string>;
 }
 
 /**
@@ -130,20 +180,38 @@ export function parseChannelReply(
 
   // Recognised inventory intent. Scan the remaining tokens for the parts.
   const rest = tokens.slice(1);
+
+  // ── CP-2 · B1 — EXPLICIT PRECEDENCE (was: two racing first-match scans) ─────
+  //   1. MEMBERSHIP wins. The first token that IS a known material code is the
+  //      material, whatever its shape — this is what makes a numeric MATNR work.
+  //   2. SHAPE is the fallback hint, used only when membership found nothing.
+  //   3. QUANTITY is scanned LAST and skips the material index, so a token
+  //      matching the master can never be consumed by `isQtyLike`.
+  //  The old code ran (1)-less and scanned material and qty INDEPENDENTLY, so a
+  //  numeric code lost the race to the qty classifier and both were wrong.
+  const known = new Set(options.knownMaterials ?? []);
   let materialTok: string | null = null;
   let materialIdx = -1;
+  let materialMatch: 'membership' | 'shape' | undefined;
+
+  if (known.size > 0) {
+    materialIdx = rest.findIndex((tok) => known.has(tok));
+    if (materialIdx >= 0) {
+      materialTok = rest[materialIdx];
+      materialMatch = 'membership';
+    }
+  }
+  if (materialTok === null) {
+    materialIdx = rest.findIndex(isMixedAlnum);
+    if (materialIdx >= 0) {
+      materialTok = rest[materialIdx];
+      materialMatch = 'shape';
+    }
+  }
+
   let qtyTok: string | null = null;
-  let qtyIdx = -1;
-  rest.forEach((tok, i) => {
-    if (materialTok === null && isCodeLike(tok)) {
-      materialTok = tok;
-      materialIdx = i;
-    }
-    if (qtyTok === null && isQtyLike(tok)) {
-      qtyTok = tok;
-      qtyIdx = i;
-    }
-  });
+  const qtyIdx = rest.findIndex((tok, i) => i !== materialIdx && isQtyLike(tok));
+  if (qtyIdx >= 0) qtyTok = rest[qtyIdx];
   // uom: the first pure-letter token AFTER the qty (never the material/qty itself).
   let uomTok: string | null = null;
   let uomIdx = -1;
@@ -161,6 +229,11 @@ export function parseChannelReply(
   );
   const spec: GridParseSpec = { kind: 'InventoryDeclaration', mode: 'import' };
   const uomDiag = uomTok !== null ? { uom: uomTok } : {};
+  const matDiag = materialMatch !== undefined ? { materialMatch } : {};
+  // A MEMBERSHIP hit is strictly more certain than a shape guess: the token IS a
+  // material we know, not a token that looks like one. Shape-path confidences are
+  // unchanged. Still a DISPLAY signal, never a gate — C2 confirm is always required.
+  const membershipHit = materialMatch === 'membership';
 
   // Both parts present — try to normalise the quantity.
   if (materialTok !== null && qtyTok !== null) {
@@ -177,8 +250,9 @@ export function parseChannelReply(
         diagnostics: {
           matchedTokens,
           unparsedRemainder,
-          confidence: uomTok !== null ? 0.9 : 0.75,
+          confidence: membershipHit ? (uomTok !== null ? 0.95 : 0.85) : uomTok !== null ? 0.9 : 0.75,
           ...uomDiag,
+          ...matDiag,
         },
       };
     }
@@ -192,6 +266,7 @@ export function parseChannelReply(
         confidence: 0.3,
         qtyReason: qty.reason,
         ...uomDiag,
+        ...matDiag,
       },
     };
   }
@@ -200,6 +275,6 @@ export function parseChannelReply(
   return {
     proposedRows: [],
     specHint: spec,
-    diagnostics: { matchedTokens, unparsedRemainder, confidence: 0.2, ...uomDiag },
+    diagnostics: { matchedTokens, unparsedRemainder, confidence: 0.2, ...uomDiag, ...matDiag },
   };
 }

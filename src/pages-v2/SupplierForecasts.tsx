@@ -45,7 +45,10 @@ import {
   type IncomingShipmentView,
 } from '../services/query/sdcSupplierHooks';
 import {
-  MATERIAL_MASTER,
+  // CP-2 · B1 — the ONE master lookup; this page no longer indexes the master.
+  labelOf,
+  uomOf,
+  type Uom,
   buildRequirementResponsePayload,
   buildRequirementAcknowledgePayload,
   buildInventoryDeclarationPayload,
@@ -173,8 +176,17 @@ const emptyShipmentForm: ShipmentForm = {
   asnRef: '',
 };
 
-const materialLabel = (code: string): string => MATERIAL_MASTER[code]?.label ?? code;
-const materialUom = (code: string) => MATERIAL_MASTER[code]?.canonicalUom ?? 'KG';
+// CP-2 · B1 — the ASYMMETRY is the point. `materialLabel` echoing the raw code
+// on a miss was ALREADY right: the reader sees the token the data carried.
+// `materialUom` defaulting to 'KG' was its defective sibling — a unit is not a
+// label. A PCS material shown as KG is a fabricated claim with arithmetic
+// consequences, and nothing on the surface said a unit had been invented. It now
+// returns null, and every render site's existing `|| '—'` becomes honest absence.
+const materialLabel = (code: string): string => labelOf(code);
+const materialUom = (code: string): Uom | null => {
+  const unit = uomOf(code);
+  return unit.ok ? unit.uom : null;
+};
 
 // CP-0 · W1 · PR-2d — `numberFromField` is GONE. It was the blanket coercion
 // `Number(v.replace(/,/g,''))`, which read "2.400" as 2.4 and "2,400" as 2400 —

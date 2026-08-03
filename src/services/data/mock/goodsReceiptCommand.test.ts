@@ -34,7 +34,20 @@ const submittedAsn = (asnNumber: string): ASN => ({
     grossWeightKg: 100,
     temperatureRequirement: 'Ambient',
   },
-  lineItems: [],
+  // CP-2 · B1 — the ASN must DECLARE the material its receipt inspects. These
+  // fixtures carried `lineItems: []` while filing an inspection line, and the new
+  // GR_INSPECTION_MATERIALS_DECLARED gate refused them — correctly: a receipt
+  // cannot inspect goods its own parent document never says arrived. The gate
+  // found incoherent fixtures, so the fixtures are what changed.
+  lineItems: [
+    {
+      materialCode: 'PK-PET-1100',
+      description: 'PET Bottle 200ml Frosted',
+      orderedQty: 10_000,
+      shippedQty: 10_000,
+      lotNumber: 'LOT-1',
+    },
+  ],
 });
 
 const line = (acc: number, rej: number): InspectionResult => ({

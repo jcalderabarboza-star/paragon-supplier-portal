@@ -17,7 +17,8 @@ import { formatDate, formatNumber } from '../lib/format';
 import { mockSuppliers } from '../data/mockSuppliers';
 import {
   FORECAST_PUBLICATIONS,
-  MATERIAL_MASTER,
+  // CP-2 · B1 — the ONE master lookup; a label miss ECHOES the code.
+  labelOf,
   currentPublication,
   SDC_SIMULATED_NOW,
   type ConsolidationRow,
@@ -171,7 +172,7 @@ const BuyerCollaboration: React.FC = () => {
           <div className="w-full truncate px-2 text-sm">
             <Data className="text-xs">{rowData.line.materialCode}</Data>{' '}
             <span className="text-xs text-text-secondary">
-              {MATERIAL_MASTER[rowData.line.materialCode]?.label ?? ''}
+              {labelOf(rowData.line.materialCode)}
             </span>
           </div>
         ),

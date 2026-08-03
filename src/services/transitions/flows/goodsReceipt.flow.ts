@@ -60,7 +60,14 @@ export const goodsReceiptFlow: FlowDefinition = {
       trigger: 'creation',
       requiredRole: 'gr:receive',
       requiredFields: ['asnReference'],
-      policyHooks: [POLICY_HOOKS.GR_CREATE_SHIPMENT_RECEIVED],
+      // CP-2 · B1 — `inspectionResults` was the one payload branch trusted
+      // VERBATIM from the caller (the server derives ownership and every ref
+      // from the parent, but not the inspected lines). The second hook binds
+      // those lines to what the parent document actually declared.
+      policyHooks: [
+        POLICY_HOOKS.GR_CREATE_SHIPMENT_RECEIVED,
+        POLICY_HOOKS.GR_INSPECTION_MATERIALS_DECLARED,
+      ],
       version: 1,
     },
     {

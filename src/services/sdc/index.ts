@@ -7,6 +7,10 @@
 // layers.
 export * from './types';
 export * from './fixtures';
+// CP-2 · B1 — THE ONE material-master lookup (uomOf / requireUom / labelOf).
+// Ends the 12-site split where a master miss silently defaulted 'KG' at seven
+// sites and crashed unnamed at five. D-OPS-MASTERMISS: refuse outright.
+export * from './materialMaster';
 export * from './consolidation';
 export * from './visibility';
 export * from './session';
