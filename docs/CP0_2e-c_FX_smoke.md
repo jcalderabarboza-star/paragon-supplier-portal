@@ -48,7 +48,8 @@ a reload discards any rate you record and puts you back at step 2.
 
 ### 1. Go to the sourcing workspace.
 Route `#/buyer/sourcing`, persona **Buyer**, language **EN**.
-**Expect:** the RFQ board, tab **All (13)** selected.
+**Expect:** the RFQ board, tab **All** selected, carrying a **13** count badge
+beside the label (they are two elements, not the single string "All (13)").
 **Console:** clean.
 
 ### 2. Click the row **RFQ-2026-012** (row 10).
@@ -109,8 +110,9 @@ conventions is refused rather than guessed at.
 ### 10. In **Rate date**, enter **today's date**.
 **Expect:** no refusal. **Record rate** becomes **enabled**.
 *(Try a future date first if you like — it is refused with "A rate cannot be true
-in the future." A future-dated rate would never age past the 7-day staleness
-limit, so it would rank forever without ever asking to be replaced.)*
+in the future. Enter the date it applied." A future-dated rate would never age
+past the 7-day staleness limit, so it would rank forever without ever asking to
+be replaced.)*
 
 ### 11. Click **Record rate**.
 **Expect:** the dialog closes and a toast reads **USD rate recorded** — *The
@@ -148,8 +150,8 @@ whole distance between those two tables is the recorded rate.
 
 ### 13b. *(optional, +20 seconds — the freeze as a live behaviour)*
 Click **Supersede USD rate**, enter `17400` and today's date, confirm.
-**Expect** the toast **New USD rate recorded** — *The previous one is kept on the
-RFQ; the comparison now uses the new rate* — and the basis strip to become:
+**Expect** the toast **New USD rate recorded** — *The previous rate is kept on the
+RFQ; comparisons now use the new one.* — and the basis strip to become:
 
 > `1 USD` = `Rp 17.400` · as of *(today)* · Entered manually · **1 earlier rate
 > kept** · Supersede USD rate
