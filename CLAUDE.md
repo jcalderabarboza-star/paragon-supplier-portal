@@ -212,6 +212,14 @@ family reads as one product line.
   table primitives only) immediately after PR-B merges — investigation-first, no
   per-page sweep. Page-level cleanup stays opportunistic.
 
+## Gates — THIS PROJECT HAS NO LINT SCRIPT
+There is no `lint` script and no ESLint config. Do not invent one, and do not
+run `npx eslint` — it fails on missing config, which is not a code defect.
+The gates are exactly three:
+- `npm run build`  → `tsc && vite build` (typecheck + bundle)
+- `npx vitest run` → the test floor, which never regresses
+- `npm run test:gate` → the SEC-GATE-01 session/HMAC suite (`gate/`, outside `src/`)
+
 ## Deploy
 Vite root is app/ — never edit app/index.html directly.
 Deploy is Vercel-only: Vercel builds from source via vercel.json (npm run build → dist/).
