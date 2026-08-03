@@ -17,12 +17,16 @@ import {
   ownCollaboratedMaterials,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
   FORECAST_PUBLICATIONS,
-  MATERIAL_MASTER,
+  // CP-2 · B1 — the ONE master lookup; this page no longer indexes the master.
+  labelOf,
+  uomOf,
+  knownMaterialCodes,
   IMPORT_DECLARE_COLUMN,
   type GridRow,
   type GridContext,
   type ParseReason,
   type SubmissionSessionRecorder,
+  type Uom,
 } from '../services/sdc';
 import type { CommandResult } from '../services/data/types';
 import { formatNumber } from '../lib/format';
@@ -141,11 +145,17 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
       SUPPLIER_MATERIAL_RELATIONSHIPS,
       FORECAST_PUBLICATIONS,
       subjectSupplierId,
-    ).map((m) => ({
-      materialCode: m.materialCode,
-      label: MATERIAL_MASTER[m.materialCode]?.label ?? m.materialCode,
-      uom: MATERIAL_MASTER[m.materialCode]?.canonicalUom ?? 'KG',
-    }));
+    ).map((m) => {
+      // CP-2 · B1 — a LABEL miss echoes the code (honest); a UNIT miss is null,
+      // never the old fabricated 'KG'. The collaborated set is relationships ∪
+      // publications, which the master does not gate, so this join CAN miss.
+      const unit = uomOf(m.materialCode);
+      return {
+        materialCode: m.materialCode,
+        label: labelOf(m.materialCode),
+        uom: unit.ok ? unit.uom : null,
+      };
+    });
   }, [subjectSupplierId]);
 
   const subjectName = useMemo(
@@ -153,13 +163,26 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
     [suppliers, subjectSupplierId],
   );
 
-  const uomOf = (materialCode: string): string =>
-    subjectMaterials.find((m) => m.materialCode === materialCode)?.uom ?? '';
+  // The subject's canonical unit for a code, or null when the master cannot name
+  // one. Distinct from the shared `uomOf` import: this is scoped to the materials
+  // THIS supplier collaborates on, so a code outside that set is also null.
+  const subjectUom = (materialCode: string): Uom | null =>
+    subjectMaterials.find((m) => m.materialCode === materialCode)?.uom ?? null;
 
   // ── Gate 1 → parse (the reply is a SOURCE; nothing dispatches here) ──────────
   const runParse = () => {
     if (!subjectSupplierId) return; // binding first — cannot parse without a subject
-    const result = parseChannelReply(rawText, { numberFormatHint: 'id' });
+    // CP-2 · B1 — MEMBERSHIP-FIRST classification. The subject's collaborated
+    // set is EXACTLY what a legitimate reply could name, and it is what the
+    // record verb would accept; the master's remaining codes come second so a
+    // canonical code the subject does not collaborate on is still read as the
+    // MATERIAL (and then blocks at confirm as unmapped) rather than being
+    // silently captured as the QUANTITY. Without this, a numeric MATNR loses to
+    // `isQtyLike` and the row proposed into the hub is plausible and wrong.
+    const result = parseChannelReply(rawText, {
+      numberFormatHint: 'id',
+      knownMaterials: [...subjectMaterials.map((m) => m.materialCode), ...knownMaterialCodes()],
+    });
     // The ChannelMessage's supplierId is the SUBJECT binding — chosen at capture,
     // NEVER parsed from the text (C1a). receivedAt rides the shared simulated clock.
     msgSeq.current += 1;
@@ -243,7 +266,16 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
           causationId: causationId(),
         });
         if (res.status === 'failed') {
-          results.push({ ok: false, material, reasonText: res.reason ?? t('buyerCommHub.triage.toast.failed.body') });
+          // CP-2 · B1 — a NAMED dispatch refusal gets its own sentence rather
+          // than leaking the server string; anything else falls back as before.
+          const named = (res.reason ?? '').startsWith('UNKNOWN_MATERIAL')
+            ? t('commHub.refusal.UNKNOWN_MATERIAL')
+            : undefined;
+          results.push({
+            ok: false,
+            material,
+            reasonText: named ?? res.reason ?? t('buyerCommHub.triage.toast.failed.body'),
+          });
           continue;
         }
         recordAttempt(res);
@@ -451,10 +483,16 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                   <div className="flex flex-col gap-3" data-testid="triage-rows">
                     <div className="text-label text-text-tertiary uppercase">{t('buyerCommHub.triage.rowTitle')}</div>
                     {rows.map((row, i) => {
-                      const masterUom = uomOf(row.materialCode);
+                      const masterUom = subjectUom(row.materialCode);
+                      // CP-2 · B1 — an ABSENT master unit is not a mismatch. With
+                      // the old 'KG' default this comparison always had something
+                      // to disagree with, so an unknown material would have warned
+                      // "supplier said PCS, master says KG" — a fabricated claim
+                      // dressed as a warning. No unit known ⇒ nothing to contradict.
                       const mismatch =
                         !!parsed.diagnostics.uom &&
                         row.materialCode !== '' &&
+                        masterUom !== null &&
                         parsed.diagnostics.uom.toUpperCase() !== masterUom.toUpperCase();
                       return (
                         <div key={i} className="rounded-md border border-border-subtle bg-bg-hover p-3 flex flex-col gap-2">
@@ -477,7 +515,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                                 <option value="">{t('commHub.row.materialSelect')}</option>
                                 {subjectMaterials.map((m) => (
                                   <option key={m.materialCode} value={m.materialCode}>
-                                    {m.materialCode} — {m.label} ({m.uom})
+                                    {m.materialCode} — {m.label} ({m.uom ?? '—'})
                                   </option>
                                 ))}
                               </select>
@@ -538,7 +576,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
                             ? t('buyerCommHub.triage.result.landed', {
                                 channel: t(`buyerCommHub.channel.${channel}`),
                                 material: o.material,
-                                qty: `${formatNumber(Number(o.qty))} ${uomOf(o.material) || ''}`.trim(),
+                                qty: `${formatNumber(Number(o.qty))} ${subjectUom(o.material) ?? ''}`.trim(),
                               })
                             : t('buyerCommHub.triage.result.refused', {
                                 reason: o.reasonKey ? t(o.reasonKey) : (o.reasonText ?? ''),

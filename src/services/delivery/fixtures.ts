@@ -23,7 +23,10 @@
 // material (D4). contractDefault === active at seed (no deviation).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { MATERIAL_MASTER } from '../sdc/fixtures';
+// CP-2 · B1 — `requireUom`, not a raw index. Two more sites of the same
+// author-time crash class the batch census missed (it named demoFixtures /
+// demoFixturesScale only). Converted so the split cannot be reintroduced here.
+import { requireUom } from '../sdc/materialMaster';
 import { generateSchedule } from './generator';
 import { DRAWDOWN_PRESET_CASE_B, DRAWDOWN_PRESET_CASE_C } from './ledger';
 import type { SchedulingAgreement, SchedulingAgreementItem } from './types';
@@ -39,7 +42,7 @@ const ITEM_10: SchedulingAgreementItem = Object.freeze({
   lineSeq: 10,
   sapItemNumber: '10',
   materialCode: 'PK-PETB-8810',
-  uom: MATERIAL_MASTER['PK-PETB-8810'].canonicalUom,
+  uom: requireUom('PK-PETB-8810'),
   agreedTotalQty: 2_000_000,
   cadence: 'monthly',
   qtyPerRelease: 180_000,
@@ -68,7 +71,7 @@ const ITEM_20: SchedulingAgreementItem = Object.freeze({
   lineSeq: 20,
   sapItemNumber: '20',
   materialCode: 'PK-CAPF-8820',
-  uom: MATERIAL_MASTER['PK-CAPF-8820'].canonicalUom,
+  uom: requireUom('PK-CAPF-8820'),
   agreedTotalQty: 2_000_000,
   cadence: 'monthly',
   qtyPerRelease: 200_000,

@@ -29,7 +29,11 @@
 // the past releases resolve fulfilled/late/missed and the future one stays pending.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { MATERIAL_MASTER } from '../sdc/fixtures';
+// CP-2 · B1 — `requireUom`, not a raw index. An author typo here still fails
+// LOUD at module load (the correct class of behaviour for a fixture built from
+// known literals) — but it now NAMES the code that went missing instead of
+// surfacing as an incidental `TypeError: Cannot read properties of undefined`.
+import { requireUom } from '../sdc/materialMaster';
 import type { IncomingShipment } from '../sdc/types';
 import { generateSchedule } from './generator';
 import { releaseScheduleLines } from './release';
@@ -61,7 +65,7 @@ const ITEM_A: SchedulingAgreementItem = releaseOK(
     lineSeq: 10,
     sapItemNumber: '10',
     materialCode: 'PK-PETB-8810',
-    uom: MATERIAL_MASTER['PK-PETB-8810'].canonicalUom,
+    uom: requireUom('PK-PETB-8810'),
     agreedTotalQty: 600_000,
     cadence: 'monthly',
     qtyPerRelease: 100_000,
@@ -93,7 +97,7 @@ const ITEM_B_RELEASED = releaseOK(
     lineSeq: 20,
     sapItemNumber: '20',
     materialCode: 'PK-CAPF-8820',
-    uom: MATERIAL_MASTER['PK-CAPF-8820'].canonicalUom,
+    uom: requireUom('PK-CAPF-8820'),
     agreedTotalQty: 400_000,
     cadence: 'monthly',
     qtyPerRelease: 200_000,
@@ -149,7 +153,7 @@ function demoShip(
     supplierId: SUPPLIER_ID,
     direction: 'to-paragon',
     lifecycle: 'Arrived',
-    uom: MATERIAL_MASTER[p.materialCode].canonicalUom,
+    uom: requireUom(p.materialCode),
     provenance: { source: 'SUPPLIER', liveness: 'SIMULATED', planState: 'committed' },
     ...p,
   };

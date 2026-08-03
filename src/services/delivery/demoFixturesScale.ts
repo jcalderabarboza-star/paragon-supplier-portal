@@ -33,7 +33,9 @@
 //     principal-to-distributor), so nothing there collides.
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { MATERIAL_MASTER } from '../sdc/fixtures';
+// CP-2 · B1 — see demoFixtures.ts: a named author-time assertion, not an
+// unguarded index that crashes without saying which code is absent.
+import { requireUom } from '../sdc/materialMaster';
 import type { IncomingShipment } from '../sdc/types';
 import { generateSchedule } from './generator';
 import { releaseScheduleLines } from './release';
@@ -81,7 +83,7 @@ function buildAgreement(spec: AgreementSpec): SchedulingAgreement {
     lineSeq: 10,
     sapItemNumber: '10',
     materialCode: spec.materialCode,
-    uom: MATERIAL_MASTER[spec.materialCode].canonicalUom,
+    uom: requireUom(spec.materialCode),
     agreedTotalQty: spec.agreedTotalQty,
     cadence: spec.cadence,
     qtyPerRelease: spec.qtyPerRelease,
@@ -121,7 +123,7 @@ function demoShip(
     supplierId,
     direction: 'to-paragon',
     lifecycle: 'Arrived',
-    uom: MATERIAL_MASTER[p.materialCode].canonicalUom,
+    uom: requireUom(p.materialCode),
     provenance: { source: 'SUPPLIER', liveness: 'SIMULATED', planState: 'committed' },
     ...p,
   };

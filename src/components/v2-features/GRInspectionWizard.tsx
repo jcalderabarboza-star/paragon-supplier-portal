@@ -943,7 +943,12 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         toast({
           variant: 'error',
           title: t('gr.create.failed.title'),
-          description: t('gr.create.failed.desc', { reason: createRes.reason ?? '' }),
+          // CP-2 · B1 — the UNDECLARED_MATERIAL refusal gets its own sentence
+          // (the `MISSING_FIELDS` precedent below): "could not be created
+          // (UNDECLARED_MATERIAL: …)" names the code but not what to DO.
+          description: (createRes.reason ?? '').startsWith('UNDECLARED_MATERIAL')
+            ? t('gr.create.failed.undeclared', { reason: createRes.reason ?? '' })
+            : t('gr.create.failed.desc', { reason: createRes.reason ?? '' }),
         });
         return;
       }

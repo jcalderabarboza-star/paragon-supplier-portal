@@ -81,7 +81,23 @@ export type Uom = 'KG' | 'PCS' | 'L' | 'ROLL';
 export type MaterialType = 'ROH' | 'VERP';
 
 export interface MaterialMasterEntry {
-  /** The S/4 material code — the shared join key (C7 GG-4). */
+  /**
+   * The S/4 material code.
+   *
+   * ⚠️ CORRECTED (CP-2 · B1, SEAT3-FIND). This comment previously read "the
+   * shared join key (C7 GG-4)". Ratified C8 §4.1 says materialCode is NOT YET a
+   * join key between the platforms — the two sides do not provably agree on a
+   * code space (MASTER-STRADDLE-01: this master names five codes; the document
+   * lane names ~30). That made this SEAM-DOC-DRIFT-01 running in REVERSE —
+   * CODE-TRUTH OVERSTATING the contract — on the exact field CP-2 freezes.
+   * Corrected here BEFORE the harvest script runs, so the harvest cannot
+   * propagate the overstatement into the contract.
+   *
+   * What it IS today: the master's own primary key, and the identity CP-2 keys
+   * on (Seat 3: identity on SPECIFICATION, S/4 MATNR semantics). It is OPAQUE —
+   * no prefix stability is promised, and prefix-derived semantics are retired as
+   * a class. Becoming a cross-platform join key is a C8 deliverable, not a fact.
+   */
   readonly materialCode: string;
   readonly label: string;
   readonly materialType: MaterialType;

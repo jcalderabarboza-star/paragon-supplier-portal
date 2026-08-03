@@ -44,7 +44,20 @@ const asnOn = (asnNumber: string, poReference: string, supplierId = 'sup-002'): 
     grossWeightKg: 50,
     temperatureRequirement: 'Ambient',
   },
-  lineItems: [],
+  // CP-2 · B1 — the ASN must DECLARE the material its receipt inspects. These
+  // fixtures carried `lineItems: []` while filing an inspection line, and the new
+  // GR_INSPECTION_MATERIALS_DECLARED gate refused them — correctly: a receipt
+  // cannot inspect goods its own parent document never says arrived. The gate
+  // found incoherent fixtures, so the fixtures are what changed.
+  lineItems: [
+    {
+      materialCode: 'RM-EMUL-3310',
+      description: 'Glyceryl Stearate SE (Halal Emulsifier)',
+      orderedQty: 10_000,
+      shippedQty: 10_000,
+      lotNumber: 'LOT-X',
+    },
+  ],
 });
 
 const line = (acc: number, rej: number): InspectionResult => ({

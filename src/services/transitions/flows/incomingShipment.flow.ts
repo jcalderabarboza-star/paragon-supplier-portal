@@ -54,6 +54,8 @@ export const incomingShipmentFlow: FlowDefinition = {
       requiredRole: 'incomingshipment:report',
       requiredFields: ['materialCode', 'direction', 'qty'],
       policyHooks: [
+        // CP-2 · B1 — the master must name the code before a unit is stamped.
+        POLICY_HOOKS.SDC_MATERIAL_KNOWN,
         POLICY_HOOKS.ISH_TOPARAGON_ASN_LINKED,
         POLICY_HOOKS.ISH_P2D_NO_ASN,
         POLICY_HOOKS.ISH_P2D_DISTRIBUTOR_ONLY,

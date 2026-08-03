@@ -87,6 +87,26 @@ export const POLICY_HOOKS = {
    *  whose relationship for the material is distributor — a manufacturer has
    *  no principal leg (design §7). */
   ISH_P2D_DISTRIBUTOR_ONLY: 'ish_p2d_distributor_only',
+  // ── CP-2 · B1 — the MASTER-MISS refusals (operator ruling D-OPS-MASTERMISS) ──
+  /** Any SDC write verb: `payload.materialCode` must be a code the MATERIAL
+   *  MASTER names. Creation scope already proves the supplier COLLABORATES on
+   *  the material, but membership there is relationships ∪ publications — NOT
+   *  the master — so a relationship row naming a code the master lacks would
+   *  reach `create` and take a fabricated unit. This proves the unit EXISTS
+   *  before anything is stamped with one. Refused by name: UNKNOWN_MATERIAL. */
+  SDC_MATERIAL_KNOWN: 'sdc_material_known',
+  /** GR create: every `inspectionResults[].materialCode` must appear on the
+   *  PARENT shipment's / ASN's own line items.
+   *
+   *  NOT a material-master check — deliberately. The GR lane's documents live
+   *  in the mock*.ts identity space (~30 codes), of which the five-entry SDC
+   *  master names two (MASTER-STRADDLE-01), so a master gate here would refuse
+   *  nearly every legitimate receipt. This gate is the ratified collision
+   *  principle applied instead — identity settled by DECLARED OWNERSHIP, never
+   *  by content plausibility: a receipt may only inspect what its parent
+   *  document actually declared arrived. Strictly STRONGER than a master check
+   *  at this seam (it also refuses a master-valid code the ASN never named). */
+  GR_INSPECTION_MATERIALS_DECLARED: 'gr_inspection_materials_declared',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

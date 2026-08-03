@@ -131,3 +131,104 @@ describe('C1 — reply parser (inference wrapper)', () => {
     expect(res.proposedRows).toEqual([{ materialCode: 'MAT-10234', totalQty: '2400' }]);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CP-2 · B1 — PARSER PRECEDENCE. This is a FABRICATION defect, not silence.
+//
+// `isCodeLike` (now `isMixedAlnum`) required at least one LETTER, and canonical
+// S/4 MATNR is frequently NUMERIC. The material and quantity classifiers ran as
+// independent first-match scans with NO precedence, so a numeric code lost the
+// race to `isQtyLike` and was captured as the QUANTITY — proposing a plausible
+// WRONG ROW into the hub, gated only by a human confirm.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('C1 — membership-first material classification (CP-2 · B1)', () => {
+  const NUMERIC = ['10234'];
+
+  it('THE DEFECT: without membership, a numeric MATNR is read as the QUANTITY', () => {
+    // Pinned deliberately — this is the pre-fix behaviour, and it is what the
+    // membership set exists to prevent. Shape-only is still the documented
+    // fallback when no set is supplied.
+    const r = parseChannelReply('STOK 10234 500 KG');
+    // No mixed-alphanumeric token ⇒ no material at all, so no row is emitted.
+    // The quantity slot ate the material code.
+    expect(r.proposedRows).toEqual([]);
+    expect(r.diagnostics.matchedTokens).toContain('10234');
+    expect(r.diagnostics.materialMatch).toBeUndefined();
+  });
+
+  it('THE FIX: a numeric code in the membership set wins the material slot', () => {
+    const r = parseChannelReply('STOK 10234 500 KG', { knownMaterials: NUMERIC });
+    expect(r.proposedRows).toHaveLength(1);
+    expect(Object.values(r.proposedRows[0])).toEqual(['10234', '500']);
+    expect(r.diagnostics.materialMatch).toBe('membership');
+    expect(r.diagnostics.uom).toBe('KG');
+  });
+
+  it('THE WORSE CASE: a decoy mixed-alphanumeric token no longer steals the slot', () => {
+    // Pre-fix, "LOT-77" became the material while 10234 stayed the quantity —
+    // a row that is entirely plausible and entirely wrong.
+    const shapeOnly = parseChannelReply('STOK 10234 LOT-77 500');
+    expect(Object.values(shapeOnly.proposedRows[0])).toEqual(['LOT-77', '10234']);
+
+    const withMembership = parseChannelReply('STOK 10234 LOT-77 500', {
+      knownMaterials: NUMERIC,
+    });
+    expect(Object.values(withMembership.proposedRows[0])).toEqual(['10234', '500']);
+    expect(withMembership.diagnostics.materialMatch).toBe('membership');
+  });
+
+  it('EXPLICIT PRECEDENCE: a master token can NEVER be consumed by isQtyLike', () => {
+    // The material index is excluded from the quantity scan by construction, so
+    // the qty must come from a LATER token even when the code sorts first.
+    const r = parseChannelReply('STOK 8810 8810', { knownMaterials: ['8810'] });
+    expect(Object.values(r.proposedRows[0])).toEqual(['8810', '8810']);
+    // First occurrence is the material; the second supplies the quantity.
+    expect(r.diagnostics.matchedTokens).toEqual(['STOK', '8810', '8810']);
+  });
+
+  it('MEMBERSHIP BEATS SHAPE even when a shaped token comes first', () => {
+    const r = parseChannelReply('STOK AB-12 10234 500', { knownMaterials: NUMERIC });
+    expect(Object.values(r.proposedRows[0])).toEqual(['10234', '500']);
+    // The shaped decoy is honestly reported as unconsumed, not silently dropped.
+    expect(r.diagnostics.unparsedRemainder).toContain('AB-12');
+  });
+
+  it('SHAPE remains the fallback hint when membership finds nothing', () => {
+    const r = parseChannelReply('STOK MAT-10234 500 KG', { knownMaterials: NUMERIC });
+    expect(Object.values(r.proposedRows[0])).toEqual(['MAT-10234', '500']);
+    expect(r.diagnostics.materialMatch).toBe('shape');
+  });
+
+  it('an empty / omitted membership set is EXACTLY the previous behaviour', () => {
+    const omitted = parseChannelReply('STOK MAT-10234 2.400 KG', { numberFormatHint: 'id' });
+    const empty = parseChannelReply('STOK MAT-10234 2.400 KG', {
+      numberFormatHint: 'id',
+      knownMaterials: [],
+    });
+    expect(empty).toEqual(omitted);
+    expect(Object.values(omitted.proposedRows[0])).toEqual(['MAT-10234', '2400']);
+  });
+
+  it('membership does NOT resolve or rewrite — the token is carried verbatim', () => {
+    // A classifier input, not a resolver: C2 still confirms the token.
+    const r = parseChannelReply('STOK 10234 500', { knownMaterials: ['10234'] });
+    expect(Object.values(r.proposedRows[0])[0]).toBe('10234');
+  });
+
+  it('a membership hit reports HIGHER confidence than a shape guess', () => {
+    const member = parseChannelReply('STOK 10234 500 KG', { knownMaterials: NUMERIC });
+    const shaped = parseChannelReply('STOK MAT-10234 500 KG');
+    expect(member.diagnostics.confidence).toBeGreaterThan(shaped.diagnostics.confidence);
+    // Still a DISPLAY signal, never a gate.
+    expect(member.proposedRows).toHaveLength(1);
+  });
+
+  it('membership does not rescue an unreadable quantity — honest silence holds', () => {
+    // "2.400" with no convention hint is genuinely both-valid (2400 or 2.4) —
+    // refused rather than guessed. Winning the material slot must not soften that.
+    const r = parseChannelReply('STOK 10234 2.400', { knownMaterials: NUMERIC });
+    expect(r.proposedRows).toEqual([]);
+    expect(r.diagnostics.qtyReason).toBe('AMBIGUOUS_QTY');
+    expect(r.diagnostics.materialMatch).toBe('membership');
+  });
+});

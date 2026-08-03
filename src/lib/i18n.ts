@@ -396,6 +396,11 @@ export const resources = {
       'gr.create.success.desc': '{{correlationId}} recorded. Inspection recorded at receipt.',
       'gr.create.failed.title': 'Could not create goods receipt',
       'gr.create.failed.desc': 'The goods receipt could not be created ({{reason}}).',
+      // CP-2 · B1 — the named refusal, in the operator's own language. A receipt
+      // cannot inspect goods its own parent document never says arrived; the
+      // fix is to correct the line, not to accept it with a marker.
+      'gr.create.failed.undeclared':
+        'The goods receipt could not be created: it inspects a material the shipment or ASN never declared ({{reason}}). Check the line against the shipping document.',
       'gr.dispose.success.title': '{{grNumber}} — {{disposition}}',
       'gr.dispose.success.desc': '{{correlationId}} recorded. Header disposition derived from the inspected lines.',
       'gr.dispose.failed.title': 'Could not finalize {{grNumber}}',
@@ -765,6 +770,8 @@ export const resources = {
       'gr.create.success.desc': '{{correlationId}} tercatat. Inspeksi dicatat saat penerimaan.',
       'gr.create.failed.title': 'Tidak dapat membuat penerimaan barang',
       'gr.create.failed.desc': 'Penerimaan barang tidak dapat dibuat ({{reason}}).',
+      'gr.create.failed.undeclared':
+        'Penerimaan barang tidak dapat dibuat: memeriksa material yang tidak pernah dinyatakan oleh pengiriman atau ASN ({{reason}}). Periksa baris tersebut terhadap dokumen pengiriman.',
       'gr.dispose.success.title': '{{grNumber}} — {{disposition}}',
       'gr.dispose.success.desc': '{{correlationId}} tercatat. Disposisi header diturunkan dari baris yang diinspeksi.',
       'gr.dispose.failed.title': 'Tidak dapat menyelesaikan {{grNumber}}',

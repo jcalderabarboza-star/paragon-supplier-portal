@@ -62,8 +62,9 @@ import { incomingShipmentStore } from './stores/incomingShipmentStore';
 import { mockShipments } from '../../../data/mockShipments';
 import {
   FORECAST_PUBLICATIONS,
-  MATERIAL_MASTER,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
+  isKnownMaterial,
+  requireUom,
   sdcClock,
 } from '../../sdc';
 import type {
@@ -242,6 +243,55 @@ const goodsReceiptTarget: CommandTarget = {
     return { entityId: grNumber };
   },
 };
+
+// ── CP-2 · B1 — the GR inspected-lines gate (GR_INSPECTION_MATERIALS_DECLARED) ─
+//
+// `create` derives ownership and every reference from the parent document, but
+// `inspectionResults` was taken VERBATIM from the caller — the one payload
+// branch nobody checked. A peer calling `dispatch` directly could file a receipt
+// naming a material the shipment never carried, and it would be stored as a
+// buyer-authored inspection fact.
+//
+// The gate is DECLARED OWNERSHIP, not master membership. Deliberate: the GR
+// lane's documents live in the mock*.ts identity space, of which the five-entry
+// SDC `MATERIAL_MASTER` names two (MASTER-STRADDLE-01, docs/findings.md), so a
+// master gate would refuse nearly every legitimate receipt. The parent's own
+// line items are the authoritative statement of what arrived — and this is
+// STRICTLY STRONGER here than a master check, since it also refuses a
+// master-valid code the parent document never declared.
+//
+// A GR with NO inspection lines stays legal (it rolls up to 'Pending' and
+// nothing is finalizable — GRInspectionWizard's existing honest-by-construction
+// path for an unreadable line).
+const declaredMaterialsFor = (asnReference: string): ReadonlySet<string> | null => {
+  const shp = shipmentByRef(asnReference);
+  if (shp) return new Set(shp.lineItems.map((li) => li.materialCode));
+  const asn = asnStore.get(asnReference);
+  if (asn) return new Set(asn.lineItems.map((li) => li.materialCode));
+  return null; // GR_CREATE_SHIPMENT_RECEIVED already refuses this case by name.
+};
+
+bindPolicyHook(POLICY_HOOKS.GR_INSPECTION_MATERIALS_DECLARED, ({ payload }) => {
+  const results = Array.isArray(payload.inspectionResults) ? payload.inspectionResults : [];
+  if (results.length === 0) return { ok: true };
+  const declared = declaredMaterialsFor(String(payload.asnReference));
+  if (!declared) return { ok: true }; // the arrival hook owns the unresolvable-parent refusal
+  const undeclared = results
+    .map((r) =>
+      r && typeof r === 'object' && typeof (r as Record<string, unknown>).materialCode === 'string'
+        ? ((r as Record<string, unknown>).materialCode as string)
+        : '',
+    )
+    .filter((code) => !declared.has(code));
+  return undeclared.length === 0
+    ? { ok: true }
+    : {
+        ok: false,
+        reason: `UNDECLARED_MATERIAL: ${undeclared
+          .map((c) => `'${c || '(blank)'}'`)
+          .join(', ')} — the parent document never declared this material, and a receipt cannot inspect goods its own shipment does not name`,
+      };
+});
 
 // GR create legality (mock layer — cross-entity read): the parent shipment must
 // have physically arrived, or (for a manual ref) an existing ASN document exists.
@@ -658,10 +708,15 @@ const requirementResponseTarget: CommandTarget = {
         l.materialCode === materialCode &&
         l.periodBucket === periodBucket,
     );
-    // invariant #2 — uom comes from the material master (fall back to the
-    // fanned line's own uom, which the SDC-0 integrity suite keys to the same
-    // master), NEVER from the caller.
-    const uom = MATERIAL_MASTER[materialCode]?.canonicalUom ?? line?.uom ?? 'KG';
+    // invariant #2 — uom comes from the material master, NEVER from the caller.
+    // CP-2 · B1: the old `?? line?.uom ?? 'KG'` tail is GONE. The line fallback
+    // was only ever equal to the master (the SDC-0 integrity suite keys it
+    // there), and the 'KG' behind it was a fabricated unit with arithmetic
+    // consequences. `SDC_MATERIAL_KNOWN` refuses UNKNOWN_MATERIAL before this
+    // runs, so `requireUom` is an unreachable-by-construction assertion — and,
+    // unlike a `??` chain, it can never silently invent a unit if that hook is
+    // ever unwired.
+    const uom = requireUom(materialCode);
     // Root cause persists only when it carries a level1 (a shapeless object is
     // dropped, not guessed) — the supplier's explanation for a deviation.
     const rc = payload.rootCause as Partial<RootCause> | undefined;
@@ -796,6 +851,31 @@ const collaboratedMaterial = (supplierId: string, materialCode: string): boolean
     p.lines.some((l) => l.supplierId === supplierId && l.materialCode === materialCode),
   );
 
+// ── CP-2 · B1 — the MASTER-MISS refusal (operator ruling D-OPS-MASTERMISS) ────
+//
+// Shared by all four SDC creation verbs (RR submit + acknowledge, INV declare +
+// record, ISH report). Creation scope already proves the supplier COLLABORATES
+// on the material — but `collaboratedMaterial` above tests relationships ∪
+// publications, NOT the master. Nothing at RUNTIME forces those two sets to be
+// master-subsets; only the SDC-0 integrity suite does
+// (sdc.integrity.test.ts:81), and a suite is not a boundary. So the moment a
+// relationship row or a SOMO-fed publication line names a code the master
+// lacks, the old `?? 'KG'` tail fabricated a unit. This proves the unit exists
+// before anything is stamped with one.
+//
+// REFUSED OUTRIGHT — no quarantine, no accept-with-marker. At F2, an
+// unresolvable code in SOMO's live feed gets a loud error at WIRE TIME rather
+// than a silent backlog of facts that exist but are not trustworthy.
+bindPolicyHook(POLICY_HOOKS.SDC_MATERIAL_KNOWN, ({ payload }) => {
+  const materialCode = typeof payload.materialCode === 'string' ? payload.materialCode : '';
+  return isKnownMaterial(materialCode)
+    ? { ok: true }
+    : {
+        ok: false,
+        reason: `UNKNOWN_MATERIAL: '${materialCode || '(blank)'}' is not in the material master — no canonical unit exists for it, and a quantity without a trustworthy unit is not a fact this platform stores`,
+      };
+});
+
 /** The supplier's relationship for a material (distributor ⇒ has principals). */
 const relationshipFor = (supplierId: string, materialCode: string) =>
   SUPPLIER_MATERIAL_RELATIONSHIPS.find(
@@ -828,8 +908,10 @@ const inventoryDeclarationTarget: CommandTarget = {
     const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
     const materialCode = str('materialCode');
     const supplierId = str('supplierId');
-    // invariant #2 — uom is master-owned, never the caller's.
-    const uom: Uom = MATERIAL_MASTER[materialCode]?.canonicalUom ?? 'KG';
+    // invariant #2 — uom is master-owned, never the caller's. CP-2 · B1: the
+    // `?? 'KG'` default is gone; `SDC_MATERIAL_KNOWN` already refused an
+    // unresolvable code by name.
+    const uom: Uom = requireUom(materialCode);
     const totalQty = typeof payload.totalQty === 'number' ? payload.totalQty : 0;
     // Optional batch-grain detail — each batch's uom is master-copied too
     // (the caller can no more pick a batch unit than the total's). Malformed
@@ -907,7 +989,10 @@ const incomingShipmentTarget: CommandTarget = {
   create: (payload, toState) => {
     const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
     const materialCode = str('materialCode');
-    const uom: Uom = MATERIAL_MASTER[materialCode]?.canonicalUom ?? 'KG';
+    // CP-2 · B1 — master-owned, refused by name upstream (SDC_MATERIAL_KNOWN),
+    // never defaulted: a PCS material stamped 'KG' poisons the coverage sum and
+    // the fulfilment drawdown with no surface saying a unit was invented.
+    const uom: Uom = requireUom(materialCode);
     const id = incomingShipmentStore.nextNumber();
     const shipment: IncomingShipment = {
       id,

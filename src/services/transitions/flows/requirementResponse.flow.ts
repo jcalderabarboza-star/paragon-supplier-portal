@@ -54,6 +54,10 @@ export const requirementResponseFlow: FlowDefinition = {
       // class guard (SDC-2b-EXT) rejects a visibility-only line: nothing was
       // requested to commit there — the acknowledge verb is its channel.
       policyHooks: [
+        // CP-2 · B1 — the master must name the code (D-OPS-MASTERMISS). The
+        // confirmation this verb stores carries a UNIT; a unit the master
+        // cannot name is refused rather than defaulted.
+        POLICY_HOOKS.SDC_MATERIAL_KNOWN,
         POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND,
         POLICY_HOOKS.RR_SUBMIT_COMMITMENT_CLASS,
       ],
@@ -74,6 +78,10 @@ export const requirementResponseFlow: FlowDefinition = {
       requiredRole: 'requirementresponse:acknowledge',
       requiredFields: ['publicationId', 'planVersion', 'materialCode', 'periodBucket'],
       policyHooks: [
+        // Refused by NAME here too, though this branch stores no unit: the
+        // ruling is about the DISPATCH, not the field — a response filed
+        // against a material the master cannot resolve is not a fact we hold.
+        POLICY_HOOKS.SDC_MATERIAL_KNOWN,
         POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND,
         POLICY_HOOKS.RR_ACKNOWLEDGE_VISIBILITY_CLASS,
       ],
