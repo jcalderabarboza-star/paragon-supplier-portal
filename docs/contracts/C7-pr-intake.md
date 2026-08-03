@@ -8,9 +8,15 @@ This is the enterprise integration point where **planning meets procurement exec
 Frozen as CONTRACT ahead of G1 — so G1 builds the Grid against it, and SOMO conforms its
 `order_creation` emission to it, rather than either side inventing its own intake.
 
-**Status:** CONTRACT · authored C7 (FORK-3, machine-harvest from code-truth + thin prose)
-· additive, docs-only · generated at `main` (#67, C6 landed). No product code — the intake
-dispatch, the Grid, and the SOMO wire are all downstream (see C7-FIND-01, §3).
+**Status:** CONTRACT · **corrected 2026-08-03 against code-truth at `main` #157 (`063adca`)**
+· originally authored at `main` #67 (FORK-3, machine-harvest + thin prose) · additive, docs-only.
+
+**The intake is BUILT and dispatches today.** The prior status line on this document read *"No
+product code — the intake dispatch, the Grid, and the SOMO wire are all downstream"*. That was
+true at #67 and is **false now**: a wired `CommandTarget` (`MockCommandService.ts:547-593`,
+registered `:983`), a mutable store (`stores/purchaseRequisitionStore.ts`), a read seam
+(`types.ts:1194`), a liveness capability (`registry.ts:51`) and two consuming surfaces
+(`IntakeReview.tsx`, `PlanGrid.tsx`) have all landed since. The SOMO wire remains SPEC (§5).
 
 **Grounding (real sources):**
 - the shipped PR machine — `src/services/transitions/flows/purchaseRequisition.flow.ts` (cited `file:line`);
@@ -21,6 +27,47 @@ dispatch, the Grid, and the SOMO wire are all downstream (see C7-FIND-01, §3).
 
 The in-repo PR machine is cited `file:line`; the SOMO grain is cited by **doc § + field** from
 the two IBP documents above (the external producer's published contract).
+
+---
+
+## Correction record (2026-08-03) — read this before the contract
+
+A CP-1 code-truth audit found **eleven divergences between this document and the shipped code.
+Every one of them ran the same direction: the document understated the implementation.** Eleven
+errors sharing a direction are not eleven drafting mistakes; they are one process gap with a
+systematic cause, and naming the cause is more useful to you than the itemisation that follows.
+
+**The cause.** This contract was generated ONCE, by machine-harvest from code-truth at a fixed
+commit (#67), and then **never re-harvested** while the code it describes kept moving. The
+harvest had no re-run trigger, and nothing in the build fails when a contract statement stops
+being true — the documents are not on the floor, so they cannot regress a test. A document
+generated from an implementation and then frozen while the implementation continues can only
+drift one way: **toward understating what exists.** That is exactly the signature observed.
+The asymmetry is the diagnostic — a random drafting error is as likely to overstate as
+understate, and none of these overstated.
+
+**Why it matters to a peer platform.** A conformance conversation held against this document
+would have misreported our own position *in SOMO's favour*: further along on wiring, further
+behind on ratification, than the document said. A peer building to an understated contract
+builds to a seam that has already moved.
+
+**The correction.** The itemisation is below. Where the code and this document disagreed, the
+**code is truth and this document is corrected** — except where the divergence is a real defect
+(D-6, D-8), which is recorded as a defect and NOT documented as intended behaviour.
+
+| # | Divergence (doc said → code does) | Fixed in |
+|---|---|---|
+| D-1 | Status line: *"No product code"* → the intake dispatches (`MockCommandService.ts:547-593,983`) | Status, above |
+| D-2 | **C7-FIND-01 OPEN** → **CLOSED** in code; the PR `CommandTarget` is wired (`MockCommandService.ts:538`, `:983`) | §3, §7 |
+| D-3 | **C7-FIND-01a OPEN** → **CLOSED, and resolved DIFFERENTLY than this doc prescribed**: the doc specified a `null` backing → SIMULATED. Code backs it **structurally** to the wired entity (`registry.ts:78`) and holds it SIMULATED via **gate-2 harvest gating** instead. Stronger honesty: unwire-to-honest is structural. | §3, §4, §7 |
+| D-6 | `wasAdjusted` documented as **stored** (§2.1) → **never read by `create`**; nor is `suggestedQty` (`MockCommandService.ts:547-593`) | §2.1 — **DEFECT** |
+| D-7 | Field named `sourceDestinationLane` → code field is **`suggestedSource`** (`types.ts:640`) | §2 |
+| D-8 | §2 lists `bomContext?`, `decisionMetadata`, `liveness`, `shortfall` on the intake line → **none exist** on `PrIntakeLine` (`types.ts:636-653`). §2.2 promised `shortfall` was *"reserved so the shape does not change"* — it was **not reserved**. | §2, §2.2 — **DEFECT** |
+| D-9 | Five payload keys the code reads that **no doc states**: `category`, `requestor`, `costCenter`, `justification`, `priority` — the last **silently defaulting to `'Medium'`** (`MockCommandService.ts:565-566, 571, 579-580, 587`) | §3.1 (new) |
+| D-10 | `contracts/README.md:62` wired-target count **6** → **10** (`MockCommandService.ts:976-987`); README prose additionally lists `purchaseRequisition` among *"the 6 inert machines"* | `README.md` |
+| D-12 | Seam findings lived only inside contract docs, never in the findings register | `docs/findings.md` |
+
+D-4, D-5 and D-11 are C8 items — corrected in [C8](./C8-forecast-publication.md).
 
 ---
 
@@ -56,17 +103,23 @@ C7 uses the same two-axis honesty model C6 froze. It **invents no new vocabulary
 
 Seam tiers at a glance: **SOMO producer = SPEC** — Seam §0 is explicit: "every external seam is
 `deferred` — 30/30 … named-but-not-wired", SOMO is "a complete, honest, scaled *rehearsal* … not
-a live emitter". **F2 Event Mesh boundary = RESERVED** (Stage-F). **Internal-Grid intake =
-RESERVED** (until G1). **PR machine = authored-inert** (states/transitions authored, no
-`CommandTarget` — §1, §3).
+a live emitter". **F2 Event Mesh boundary = RESERVED** (Stage-F). **PR machine = WIRED** — a live
+`CommandTarget` the dispatcher writes through (`MockCommandService.ts:547-593`, registered `:983`);
+`t_pr_create` genuinely mints a Draft PR into a mutable store (§1, §3). **PR capability renders
+SIMULATED** — not because the machine is inert, but because **no live PRODUCER exists**: gate-1
+(wiring) is LIVE, gate-2 (harvest) is shut (`registry.ts:70-78`). Wiring alone must never flip
+green (LIVENESS-DATASOURCE-01).
 
 ---
 
 ## 1. The PR machine as-built (harvest)
 
 The buyer-internal intake machine — suppliers never see PRs (`purchaseRequisition.flow.ts:2-5`;
-read is buyer-only, `MockProcurementService.ts:353`). **F0.4, census #9, author-unwired**
-(`purchaseRequisition.flow.ts:1-2`).
+read is buyer-only, `MockProcurementService.ts:353`). **F0.4, census #9 — authored at F0.4 and
+since WIRED** (G1.1): `purchaseRequisition` is a registered `CommandTarget`
+(`MockCommandService.ts:547-593`, `:983`) backed by a mutable store
+(`stores/purchaseRequisitionStore.ts`). The "author-unwired / inert registry data" description
+this section previously carried is **superseded** (D-2).
 
 **States** (`:19-27`): `Draft → Pending Approval → Approved → Sourcing Event → PO Created`,
 plus `Rejected` (`PRStatus`, `types.ts:559-565`).
@@ -97,9 +150,10 @@ PurchaseRequisition {
 Numeric `quantity` / `estimatedValue` (D-3; render layer owns formatting, `types.ts:556-557`).
 
 **Read** is on the seam, LIVE(mock): `getRequisitions(scope, filter?): Promise<Page<PurchaseRequisition>>`
-(`types.ts:1150`; impl `MockProcurementService.ts:349-354`, reads the `REQUISITIONS` fixture,
+(`types.ts:1191`; impl `MockProcurementService.ts:349-354`, reads the `purchaseRequisitionStore`,
 supplier scope → empty). **Creating a PR today requires `material` + `quantity` and the
-`pr:create` role** — *if it could dispatch*, which it cannot yet (§3).
+`pr:create` role — and it genuinely dispatches** (§3). A pushed line is list-visible in
+`getRequisitions`, not honest-but-invisible (`stores/purchaseRequisitionStore.ts:11-13`).
 
 ---
 
@@ -110,22 +164,47 @@ producers target. The **`PrIntakeLine`** maps onto it from either producer. Its 
 **conforms to the IBP published seam shape** (Reply §1) — the external producer grain
 `material × sourceDestinationLane × segment × period → acceptedQty (+ provenance + liveness)`:
 
-| `PrIntakeLine` field (conforms to Reply §1) | Maps to / status in the PR machine | Producer semantics |
-|---|---|---|
-| `material` (S/4 code) | ~ `PurchaseRequisition.material` (`types.ts:572`) — today a **display string**, normalize to S/4 code (GG-4) | both; **required** by `t_pr_create` |
-| `acceptedQty` | `PurchaseRequisition.quantity` (`:574`) | both; **required** — the qty acted on (§2.1) |
-| `uom` | `PurchaseRequisition.uom` (`:575`) | both |
-| `period` | ⚠️ `requiredDate` today (`:576`) — a single date, **not** a period bucket (GG-3) | SOMO: planning bucket; Grid: due date |
-| `sourceDestinationLane` | ❌ no PR field (GG-1) | **SOMO-authored, recommend-first, read-only, NULLABLE internal** (Reply §1: SOMO *proposes*; RFQ may override) |
-| `segment` (ABC-XYZ policy class) | ❌ no PR field (GG-2) | **SOMO-authored planning annotation, read-only, NULLABLE internal** (Reply §1; Seam §4: annotates, not reconciled) |
-| `deficit` | ❌ new, read-only, optional | SOMO "the why" — guided-buying rationale (Reply §1) |
-| `bomContext?` | ❌ new, read-only, optional | upstream BOM provenance (§0) — consumed, never reconciled |
-| `decisionMetadata` (who accepted + reason + ts) | ~ partial (`requestor`/`approver`/`justification`, `:578,582,586`) | SOMO *accept*-metadata is new (Reply §1) |
-| `source` | ❌ new provenance (§4) | `INTERNAL_GRID \| SOMO \| …` (Reply §1: `"SOMO"`) |
-| `liveness` | ❌ new provenance (§4) | registry source-tier (§4); IBP emits `"seed" \| "live"` (Reply §1) → crosswalked |
+**`PrIntakeLine` AS SHIPPED** — `src/services/data/types.ts:636-653`. This is the authoritative
+field list; the prior version of this table described fields that were never built (D-8).
 
-SOMO-authored fields (`sourceDestinationLane`, `segment`, `deficit`, `bomContext`) are
-**read-only + nullable for the internal Grid producer** — a Grid-pushed line simply omits them.
+| Field | Type | Opt | `file:line` | Producer semantics |
+|---|---|---|---|---|
+| `id` | `string` | req | `types.ts:637` | line identity |
+| `material` | `string` | req | `:638` | ⚠️ a **display string**, NOT an S/4 code (GG-4, still open) |
+| `suggestedSource` | `string \| null` | nullable | `:640` | SOMO-authored lane, read-only; `null` for internal-Grid |
+| `segment` | `string \| null` | nullable | `:642` | SOMO-authored ABC-XYZ class, read-only; `null` for internal-Grid |
+| `suggestedQty` | `number` | req | `:643` | the machine recommendation (§2.1) |
+| `acceptedQty` | `number` | req | `:644` | the qty acted on → `quantity` (§2.1) |
+| `wasAdjusted` | `boolean` | req | `:645` | override flag (§2.1 — **see the defect**) |
+| `uom` | `string` | req | `:646` | ⚠️ free string, NOT a closed union (contrast C8's `Uom`) |
+| `period` | `string` | req | `:647` | planning bucket; **unparsed free string** (GG-3) |
+| `estimatedValue` | `number` | req | `:648` | ⚠️ **IDR assumed, nowhere declared** (§2.3) |
+| `source` | `PrSource` = `'INTERNAL_GRID' \| 'SOMO'` | req | `:649`, `:601` | the producer (§4) |
+| `planState` | `IntakePlanState` = `'PLANNED' \| 'committed'` | req | `:650`, `:634` | the C6 plan-state axis (§4) |
+| `deficit` | `string` | **optional** | `:652` | recommend-first rationale — "the why" |
+
+**FIELDS THIS DOCUMENT PREVIOUSLY LISTED THAT DO NOT EXIST (D-8).** `bomContext?`,
+`decisionMetadata`, `liveness` and `shortfall` are **not on `PrIntakeLine`** and never were.
+They are struck from the contract rather than silently carried:
+
+- `liveness` is **correctly absent** — it is derived at runtime from the registry
+  (`registry.ts:137`), never a row field. Carrying it per-line would fork the axis. Not a defect.
+- `decisionMetadata` is **partially served elsewhere**: an override's reason + from/to ride the
+  DR-10 `TransitionEvent` via `buildQtyDecision` (`planGridModel.ts:176-189`), not the line.
+- `bomContext?` was never built. It remains a legitimate future field (§0 provenance) but is
+  **not reserved** — adding it is a shape change.
+- `shortfall` — see §2.2. **This one is a defect**, because it was promised as reserved.
+
+SOMO-authored fields (`suggestedSource`, `segment`, `deficit`) are **read-only + nullable for the
+internal Grid producer** — a Grid-pushed line carries `null` (`fixtures/prIntake.ts:51-52,66-67`).
+
+> **Name drift (D-7), for SOMO's emitter.** This document previously called the lane field
+> `sourceDestinationLane`. The shipped field is **`suggestedSource`** (`types.ts:640`) and it
+> holds a **source→destination lane**, not a source — e.g. `'Cikarang DC → Karawang Plant'`
+> (`fixtures/prIntake.ts:21`). The UI labels it "Source lane" (`i18n/intakeReview.ts:25`). The
+> type name is the only place it reads as a single source; **the name is wrong, the body is
+> right.** Conform to the NAME `suggestedSource` carrying LANE semantics. C8 reuses the same
+> name for the same thing (`sdc/types.ts:138`), so the two seams are at least consistent.
 
 ### 2.1 Quantity provenance — three values, not one (Reply §2b)
 
@@ -137,8 +216,31 @@ as-is" are different governance records). An intake line carries **all three**:
 - **`acceptedQty`** — what we act on (maps to `PurchaseRequisition.quantity`, `:574`).
 - **`wasAdjusted`** — boolean: was `acceptedQty` overridden from `suggestedQty`?
 
-`wasAdjusted` is **stored, not derived-and-discarded** — the fact of human adjustment is itself
-the audit signal.
+All three exist on `PrIntakeLine` (`types.ts:643-645`) and survive on the READ side.
+
+### ⚠️ C7-FIND-02 (DEFECT, OPEN) — two of the three do not survive the WRITE
+
+This document previously asserted: *"`wasAdjusted` is **stored, not derived-and-discarded** — the
+fact of human adjustment is itself the audit signal."* **That guarantee is not delivered.**
+
+`purchaseRequisitionTarget.create` (`MockCommandService.ts:547-593`) reads `quantity`,
+`material`, `uom`, `requiredDate`/`period`, `estimatedValue`, `category`, `requestor`,
+`costCenter`, `justification`, `priority` and `source` — **and nothing else.** It never reads
+`suggestedQty` or `wasAdjusted`, and `PurchaseRequisition` (`types.ts:569-587`, plus optional
+`source?` at `:621`) has **no field to hold either**. `buildPrCreatePayload`
+(`planGridModel.ts:196-213`) does not even emit them.
+
+So at the moment of the governed push, the three-value provenance collapses to one:
+**`acceptedQty` survives as `quantity`; `suggestedQty` and `wasAdjusted` are discarded.**
+
+What *does* survive is narrower and lives elsewhere: an override's `reason` and its from/to ride
+the DR-10 `TransitionEvent` through `buildQtyDecision` (`planGridModel.ts:176-189`), and the
+reason-gate genuinely blocks an unexplained override before dispatch (`overrideBlocked`,
+`:165-172`). The audit signal exists **on the event**, not on the entity.
+
+**Recorded as a DEFECT, not as intended behaviour.** For SOMO: an emitter that carries all three
+values is conforming and correct — but be aware that today only the accepted value reaches our
+PR entity. Closing this is a code batch, not a doc change; registered §7 and in `docs/findings.md`.
 
 ### 2.2 Shortfall / constraint (Reply §2a, reserved)
 
@@ -151,8 +253,43 @@ Optional **`shortfall`** (unmet-portion) field, **reserved**:
   **unmet portion VISIBLE, never silently truncated** — a **sourcing signal** the Portal's RFQ
   process may resolve, not an error to hide.
 
-Reserved now so the shape does not change when the constrained solve lands (additive-landing
-discipline, C5 precedent; Reply §2: "cheap to reserve now; impossible to reconstruct later").
+### ⚠️ C7-FIND-03 (DEFECT, OPEN) — `shortfall` was promised as reserved and was not reserved
+
+This document previously closed §2.2 with: *"Reserved now so the shape does not change when the
+constrained solve lands (additive-landing discipline, C5 precedent; Reply §2: 'cheap to reserve
+now; impossible to reconstruct later')."*
+
+**`shortfall` does not exist on `PrIntakeLine`** (`types.ts:636-653`). It was never reserved —
+only described as reserved. The consequence is precisely the one the reservation was meant to
+prevent: **when SOMO's capacity-constrained solve lands, adding `shortfall` IS a shape change**,
+not an additive landing, and this document's promise that it would not be is void.
+
+Stated plainly to SOMO because it affects their sequencing: **do not build against `shortfall` as
+though our side has a slot for it.** The field's *semantics* above stand and are still the right
+design — an unmet portion must arrive VISIBLE, never silently truncated. Only the claim that the
+slot already exists is withdrawn. Registered §7 and in `docs/findings.md`.
+
+---
+
+### 2.3 Undeclared assumptions the code relies on (conformance-critical)
+
+None of these is declared anywhere in the type, the fixture, or the prior contract. They are
+stated here because each one is a place a conforming emitter can be wrong while passing.
+
+| Assumption | Evidence | Risk to a peer emitter |
+|---|---|---|
+| **`estimatedValue` is IDR** | no currency field on `PrIntakeLine` (`types.ts:648`) or `PurchaseRequisition`; denomination asserted only at render via `formatIDR` (`BuyerRequisitions.tsx:423,564`) | a non-IDR emitter is silently mis-rendered |
+| **`estimatedValue` is a LINE TOTAL, not a unit price** | implied only by magnitude — `pil-somo-002`: 5,000 KG / 990,000,000 (`fixtures/prIntake.ts:38-43`) | off by the quantity factor |
+| **`period` is an unparsed free string, in TWO formats** | `'2026-Q3'` and `'2026-08'` coexist in one fixture (`fixtures/prIntake.ts:27,42,57,72`); nothing parses or validates | a third format is accepted silently |
+| **`period` lands in a field named `requiredDate`** | `requiredDate: str('requiredDate') \|\| str('period')` (`MockCommandService.ts:577`) — so a date-typed, date-named field holds `"2026-Q3"` | GG-3 is not merely unresolved, it is actively mis-stored |
+| **`uom` is trusted verbatim from the payload** | `str('uom')` (`:574`), free string (`types.ts:646`) — the C8 sibling does the **opposite**, copying from the material master and never trusting the payload | `'kg'` / `'MT'` pass C7, fail C8 |
+| **No idempotency contract exists** | id === `prNumber` === store-assigned `PR-2026-9xx` (`stores/purchaseRequisitionStore.ts:42-45`); the payload accepts no external reference | **a redelivered SOMO event mints a DUPLICATE PR** |
+| **Unrecognised `source` is dropped, not rejected** | `:561-564` — `'somo'` or `'SOMO_V2'` yields a PR with **no producer mark** and no error | a casing slip silently destroys provenance |
+| **`createdDate` reads the wall clock** | `new Date()` (`:582`) against a fixture set anchored to an implicit 2026-07-06 present (`FIXTURE-PRESENT-01`) | pushed PRs are stamped out of era |
+
+The idempotency gap is the one we most want SOMO to note: **the F2 Event Mesh boundary is
+at-least-once by nature, and our intake has no dedupe key today.** That is ours to close before
+the wire lands, and it is registered §7.
 
 ---
 
@@ -168,23 +305,64 @@ invoice creation:
   its id (`dispatcher.ts:61-62, 251-254`; `creationOwner` derives scope from the payload,
   `:60, :193-199`).
 
-### C7-FIND-01 — PR create is author-INERT (OPEN, G1 dependency)
+### C7-FIND-01 — **CLOSED** (was: PR create is author-INERT)
 
-Harvested truth (`MockCommandService.ts:343-360`): **`purchaseRequisition` is not in `TARGETS`**
-(only `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`),
-therefore **not in `WIRED_COMMAND_TARGETS`**. No PR `CommandTarget` exists → **no
-`creationOwner`/`create` for PR → `t_pr_create` cannot dispatch today.**
+**Superseded by code (D-2).** The prior text read: *"`purchaseRequisition` is not in `TARGETS` …
+`t_pr_create` cannot dispatch today."* That is no longer true. `purchaseRequisition` **is** in
+`TARGETS` (`MockCommandService.ts:983`) and therefore in `WIRED_COMMAND_TARGETS` (`:998-1000`),
+with a full target: `readState` / `readScopeOwner` / `readEntity` / `applyTransition` /
+`creationOwner` / `create` (`:547-593`). The code records the closure itself at `:538`
+("Wiring it here closes C7-FIND-01"). **`t_pr_create` dispatches.**
 
-**This contract does NOT pretend intake dispatches now.** C7 specifies the *shape* the intake
-takes when wired; **wiring a PR `CommandTarget` (with `create` minting a `Draft` PR from a
-`PrIntakeLine`) is a G1 dependency.** Same honest-marking discipline as C6's G0.1-FIND-01: the
-contract names its own not-yet-buildable clause. Registered OPEN in §7.
+Scoping as built: `creationOwner: () => null` (`:554`) ⇒ a buyer passes creation-scope then the
+`pr:create` role gate; a **supplier resolves owner `null` → `SCOPE_DENIED` before the role gate**,
+so PR stays buyer-internal.
 
-**Sub-finding — C7-FIND-01a.** PR is **not** a registered liveness `Capability`
-(`registry.ts:53-62` — no `purchaseRequisitions`), so PR reads carry no source-tier marker
-today. C7's provenance (§4) requires adding a **`purchaseRequisitions`** capability to the
-registry, backed `null` → derives **SIMULATED** honestly until a PR `CommandTarget` wires it LIVE
-(`livenessFrom`, `registry.ts:125-130`). Also a G1 dependency; registered §7.
+### C7-FIND-01a — **CLOSED, resolved DIFFERENTLY than this document prescribed** (D-3)
+
+The prior text prescribed: add a `purchaseRequisitions` capability *"backed `null` → derives
+SIMULATED"*. The capability exists (`registry.ts:51`) but is **not** backed `null`. It is backed
+**structurally to the wired entity** — `purchaseRequisitions: 'purchaseRequisition'`
+(`registry.ts:78`) — so **gate-1 derives LIVE** (the intake genuinely dispatches), and the honest
+SIMULATED render comes from **gate-2 harvest gating** instead (`registry.ts:70-77`).
+
+**The shipped resolution is stronger than the one specified, and the difference matters.** A
+`null` backing is a hand-authored claim that stays SIMULATED even after a target is wired — it
+would have gone stale exactly the way this document did. The structural backing cannot: unwire
+the target and the capability flips to SIMULATED with no edit here. What holds it guarded today
+is the honest fact that **there is no live PRODUCER** — SOMO is SPEC (F2), the internal Grid is
+G1.2 — not a fiction about wiring. The flip to LIVE is the proven two-edit op: land a producer,
+drop the harvest entry. Wiring alone must never flip green (LIVENESS-DATASOURCE-01).
+
+### 3.1 The payload keys the code reads — including five no document stated (D-9)
+
+**This is the conformance surface.** `PrIntakeLine` (§2) is what the portal *displays*; the list
+below is what `create` actually *reads* (`MockCommandService.ts:555-592`). They are not the same
+set, and the difference has never been written down before.
+
+| Payload key | Read as | `file:line` | Doc status |
+|---|---|---|---|
+| `material` | `string` | `:570` | stated — **required** by `t_pr_create` |
+| `quantity` | `number` | `:573` | stated — **required**; this is `acceptedQty` renamed |
+| `uom` | `string` | `:574` | stated |
+| `requiredDate` \|\| `period` | `string` | `:577` | stated (GG-3) |
+| `estimatedValue` | `number` | `:578` | stated |
+| `source` | `'INTERNAL_GRID' \| 'SOMO'` | `:561-564` | stated |
+| **`category`** | `string` | `:571` | ⚠️ **undocumented** |
+| **`requestor`** | `string` | `:579` | ⚠️ **undocumented** |
+| **`costCenter`** | `string` | `:580` | ⚠️ **undocumented** |
+| **`justification`** | `string` | `:587` | ⚠️ **undocumented** |
+| **`priority`** | `'High' \| 'Low'`, **else `'Medium'`** | `:565-566` | ⚠️ **undocumented, and silently defaulting** |
+
+`priority` deserves its own line for SOMO. It is a **three-valued field with a silent default**:
+anything that is not exactly `'High'` or `'Low'` — including absent, `'HIGH'`, `'Urgent'`, or a
+typo — yields `'Medium'` with no error and no marker. An emitter that believes it is sending
+priority and gets the casing wrong will produce a PR queue that is uniformly `Medium` and looks
+entirely normal. Every other unstated key degrades to `''` or `0` via the `str`/`num` helpers
+(`:557-558`), which is at least visibly empty; `priority` degrades to a **plausible value**.
+
+Omitting any of the five is legal and produces an honest empty/default — but a conforming
+producer that *wants* to populate them could not have known they existed.
 
 ---
 
@@ -266,10 +444,46 @@ and offers to pin any load-bearing field type on request (Reply §83).
 | GG-3 | **`period` bucket** vs `requiredDate` | single date (`types.ts:576`) | IBP co-design — planning bucket ≠ a due date; pin representation (Reply §83) |
 | GG-4 | **`material` as S/4 code** | display string (`types.ts:572`) | IBP co-design — normalize to a real S/4 material code (shared key, Seam §4) |
 | GG-5 | **`shortfall`** (post-constraint) | no field | reserved (§2.2); real at SOMO Phase 4 (Reply §2a) |
-| GG-6 | **`suggestedQty` vs `acceptedQty` + `wasAdjusted`** | only `quantity` (`:574`) | resolved in §2.1 — carry all three (Reply §2b) |
+| GG-6 | **`suggestedQty` vs `acceptedQty` + `wasAdjusted`** | all three on the line (`types.ts:643-645`); **only `acceptedQty` reaches the entity** | **HALF-OPEN — DEFECT** (C7-FIND-02). Read-side closed, write-side drops two of three. |
 
-None is resolved unilaterally by the Portal; each is an entry for the IBP seat's co-design so the
-two published shapes converge (Reply "Agreed next joint step" §1–§3).
+**Verified 2026-08-03.** GG-1 and GG-2 are **CLOSED on the read line** — both were resolved by
+building, not by co-design, and this document simply failed to record it: `suggestedSource:
+string | null` (`types.ts:640`) and `segment: string | null` (`:642`), both read-only and
+nullable-internal exactly as specified. Neither is carried onto the PR entity, because `create`
+drops them (§3.1). GG-3 is not merely unresolved but **actively mis-storing** — the bucket is
+written into `requiredDate` (`MockCommandService.ts:577`), and C8 resolves the same gap the
+OPPOSITE way (bucket-native; see C8 GG-3′). GG-5 is a **defect** (§2.2). The GG-1/GG-2 rows above
+are superseded by this paragraph; they are left in place so the co-design history stays readable.
+
+### 6.1 GG-4 — the material join, and the recommendation (FINDING ONLY, NOT BUILT HERE)
+
+**The finding.** C7 carries material as a **display string** (`types.ts:638`); C8 carries a
+material **code** (`sdc/types.ts:128`, keyed to `MATERIAL_MASTER`, `sdc/fixtures.ts:58-100`).
+**The two seams do not join.** The same substance appears as `'Glycerin USP (Halal)'`
+(`fixtures/prIntake.ts:20`) and as `RM-EMUL-3310` labelled `'Glycerin USP 99.5%'`
+(`sdc/fixtures.ts:59-64`) — different key, different label, no crosswalk. There are in fact
+**four disconnected material-identity populations** in the tree: C7 display strings; the SDC
+master (5 codes); GR/inventory codes with no master (`mockGoodsReceipts.ts`, `mockInventory.ts`);
+and `MAT-20500` on a third convention (`channel/outboundFixtures.ts:29`).
+
+**The recommendation, adopting SOMO's own internal ruling on this exact class:**
+
+> **A crosswalk between two spaces you control carries no information.** The fix is to **delete
+> one space, not to bridge them.** A crosswalk earns its place only between spaces owned by
+> **different parties** — which is what `material_master_ref` is, and this is not.
+
+So C7's display-string space should be **collapsed into** the coded space, not mapped to it. Both
+spaces are ours; a C7↔C8 crosswalk would be ceremony, and a second thing to keep true.
+
+**DO NOT COLLAPSE THE SPACES IN THIS PR — and the reason is specific, not caution.**
+`inferBpom` (`components/v2-features/GRInspectionWizard.tsx:129-163`) **parses the material-code
+prefix** (`AI-` / `FR-`) to derive **BPOM applicability**. A code-format change therefore
+**silently changes regulatory-compliance behaviour**, with no test asserting that linkage as
+intentional. That earns its own investigation-first batch, ahead of any collapse. Registered §7
+and in `docs/findings.md`.
+
+None of GG-3/4/5/6 is resolved unilaterally by the Portal; each is an entry for the IBP seat's
+co-design so the two published shapes converge (Reply "Agreed next joint step" §1–§3).
 
 ---
 
@@ -280,16 +494,33 @@ two published shapes converge (Reply "Agreed next joint step" §1–§3).
 | C7-SCOPE | Seam carries RM/PM leaf only; BOM explosion + ownership stays SOMO's (their Phase 4); Portal consumes BOM context, never reconciles | CONTRACT (§0) |
 | C7-INTAKE | One `PrIntakeLine` → `t_pr_create` serves both producers; conforms to Reply §1; SOMO-authored fields read-only + nullable internal; qty carries suggested/accepted/wasAdjusted | CONTRACT (§2) |
 | C7-PROV | Provenance = `source` × registry `liveness` (LIVE/SIMULATED/SPEC); no SEED fork; IBP `seed` = SIMULATED×PLANNED per C6; crosswalk documented | CONTRACT (§4) |
-| **C7-FIND-01** | PR create is author-inert — no `CommandTarget` (`MockCommandService.ts:343-360`); intake maps onto the real creation shape, but wiring a PR `CommandTarget` is a **G1 dependency**. Not pretended. | **OPEN** (§3) |
-| **C7-FIND-01a** | Add a `purchaseRequisitions` liveness capability to the registry (backed `null` → SIMULATED) for intake provenance. | **OPEN** — G1 dep (§3) |
-| GG-1…GG-5 | Grain gaps (lane, segment, period-bucket, material-as-S/4-code, shortfall) | **OPEN** — IBP co-design (§6) |
+| **C7-FIND-01** | PR create is author-inert — no `CommandTarget`. | **CLOSED** — wired at G1.1 (`MockCommandService.ts:547-593, :983`; closure recorded `:538`). §3 |
+| **C7-FIND-01a** | Add a `purchaseRequisitions` liveness capability for intake provenance. | **CLOSED — resolved differently than prescribed**: structural backing + gate-2, not `null` (`registry.ts:51, :70-78`). §3 |
+| **C7-FIND-02** | **DEFECT** — `suggestedQty` + `wasAdjusted` documented as stored; `create` reads neither and `PurchaseRequisition` has no field for either (`MockCommandService.ts:547-593`; `types.ts:569-587`). Audit signal survives on the DR-10 event only. | **OPEN** — code batch (§2.1) |
+| **C7-FIND-03** | **DEFECT** — `shortfall` promised as RESERVED (§2.2) but never added to `PrIntakeLine` (`types.ts:636-653`); landing it is a shape change, not additive. | **OPEN** — code batch (§2.2) |
+| **C7-FIND-04** | Five payload keys read but undocumented (`category`, `requestor`, `costCenter`, `justification`, `priority`) — `priority` silently defaults to `'Medium'` on any unrecognised value (`MockCommandService.ts:565-566`). | **DOCUMENTED** here (§3.1); `priority`'s silent default is a **candidate defect** |
+| **C7-FIND-05** | **No idempotency contract at the intake.** id === store-assigned `prNumber` (`stores/purchaseRequisitionStore.ts:42-45`); no external reference accepted. F2 Event Mesh is at-least-once ⇒ a redelivered SOMO event mints a duplicate PR. | **OPEN** — must close before the F2 wire (§2.3) |
+| GG-1, GG-2 | lane + segment | **CLOSED by build** on the read line (`types.ts:640,642`); not carried to the entity (§6) |
+| GG-3, GG-4, GG-5, GG-6 | period-bucket · material-as-S/4-code · shortfall · qty provenance | **OPEN** — IBP co-design (§6); GG-4 recommendation at §6.1 |
+| **C7-MATERIAL-JOIN** | C7 (display string) and C8 (code) do not join. Recommendation: **collapse the spaces, do not crosswalk them** — a crosswalk between two spaces we control carries no information. **NOT built here**: `inferBpom` derives BPOM applicability from the code prefix (`GRInspectionWizard.tsx:129-163`), so a format change moves compliance behaviour. | **OPEN** — investigation-first batch (§6.1) |
 | SOMO-SEAM | SOMO producer tier | **SPEC** — `order_creation` deferred (Seam §0) |
 
 ---
 
 ## Provenance
 
-Generated FORK-3 (machine-harvest from code-truth + thin connecting prose) at `main` #67.
+**Corrected 2026-08-03 at `main` #157 (`063adca`), floor 1991/1991, docs-only.** Every claim in
+this revision was re-verified against the tree at that commit; the correction record above lists
+what changed and why. The `file:line` refs in the sections below that were NOT touched by the
+correction still date from the original #67 harvest and may have shifted — the corrected sections
+(Status, Tier table, §1, §2, §2.1, §2.2, §2.3, §3, §3.1, §6, §6.1, §7) carry re-verified refs.
+
+**Re-harvest trigger (the process fix).** This document drifted because the harvest ran once and
+had no re-run condition. It is now re-verified at each seam-touching batch and at each CP
+checkpoint; a contract statement that cannot be traced to a current `file:line` is treated as a
+finding, not as prose.
+
+Originally generated FORK-3 (machine-harvest from code-truth + thin connecting prose) at `main` #67.
 In-repo seams cited `file:line`: `purchaseRequisition.flow.ts` (machine :1-92),
 `types.ts` (`PurchaseRequisition` :569-587, `PRStatus` :559-565, `getRequisitions` :1150),
 `MockProcurementService.ts` (read :349-354), `MockCommandService.ts` (TARGETS / wiring census

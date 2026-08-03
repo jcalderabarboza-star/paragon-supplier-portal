@@ -2,6 +2,11 @@
 
 **Status:** SE-Team Stage-1 kickoff artifact · generated from code-truth at `main` (Phase 2′
 stamped contract-complete, F0.4/#58) · additive, docs-only.
+**Partially corrected 2026-08-03 at `main` #157 (`063adca`)** — C7 re-harvested, C8 issued, the
+wired-target count fixed (6 → 10). See the correction record at the top of
+[C7](./C7-pr-intake.md) for the systematic cause: **these documents are generated once and never
+re-harvested, so they drift in one direction — toward understating the implementation.** C1–C5
+have NOT been re-verified in this pass and should be assumed to carry the same class of drift.
 
 This package is the **contract the real backend implements**. Every count, shape, and seam
 below is harvested from the shipped code, not narrated from memory. The portal today runs
@@ -19,7 +24,8 @@ zero code yet — so the backend work is additive against a frozen contract, nev
 | [C4 — Snowflake](./C4-snowflake.md) | The clean-data-layer seam — **SPEC / target architecture, zero code today** |
 | [C5 — Seams](./C5-seams.md) | `IDataService` / `getCapabilities` (DNA-SEED-01) / SAP boundary (Option B) / INT-TMS-01 / LivenessRegistry |
 | [C6 — Planning](./C6-planning.md) | PLANNED-as-axis doctrine (Stage G): PlanDraft shape · overlay rule · push pipeline · causation-grouped audit · source-tier × plan-state honesty matrix |
-| [C7 — PR intake](./C7-pr-intake.md) | The shared PR-intake seam for two producers (internal Grid + external SOMO/IBP via F2 Event Mesh): `PrIntakeLine` → `t_pr_create` · source×liveness provenance (reuses C6) · RM/PM-leaf scope · grain-gap register |
+| [C7 — PR intake](./C7-pr-intake.md) | The shared PR-intake seam for two producers (internal Grid + external SOMO/IBP via F2 Event Mesh): `PrIntakeLine` → `t_pr_create` · source×liveness provenance (reuses C6) · RM/PM-leaf scope · grain-gap register. **Corrected 2026-08-03** |
+| [C8 — Forecast publication](./C8-forecast-publication.md) | The forecast-publication sibling to C7 (Supplier Data Collaboration lane): SOMO emits material×period totals, **the portal owns the supplier fan-out** · `commitmentClass` projected by us (**mapping UNRATIFIED**) · bucket-native grain · supplier-response feedback → Snowflake commons. **First issue 2026-08-03**; supersedes the unratified proposal |
 
 ---
 
@@ -59,13 +65,22 @@ number seen three ways.
 |---|---|---|
 | **55** | The `IDataService` **service surface** — every method taking `QueryScope` first (51 reads + `dispatch`/`getCommandStatus`/`settle` + `getCapabilities`). Confirmed two ways: manual enumeration + a `\w+(scope` signature grep (exactly 55). | `src/services/data/types.ts` |
 | **72** | The **transition catalog** — every authored state-machine edge (`id: 't_…'`) across the 14 registered flows. This is the *verb* surface, distinct from the service surface. | `src/services/transitions/flows/*.ts` |
-| **6** | The **wired CommandTargets** — entities with a live per-entity adapter the dispatcher writes through (`purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`). | `src/services/data/mock/MockCommandService.ts` |
+| **10** | The **wired CommandTargets** — entities with a live per-entity adapter the dispatcher writes through: `purchaseOrder`, `advanceShipNotice`, `goodsReceipt`, `invoice`, `rfq`, `quotation`, **`purchaseRequisition`**, **`requirementResponse`**, **`inventoryDeclaration`**, **`incomingShipment`**. | `MockCommandService.ts:976-987` |
 
-**55 ≠ 72 ≠ 6.** 55 is the read/write API a page calls. 72 is how many transitions exist in the
-schema. 6 is how many of the 14 flows are behavior-wired today (the other 8: 2 rolled-up
-sub-flows — `goodsReceiptLine`, `invoiceMatch` — and the 6 inert machines — the 5 F0.4
-(`shipment`, `contract`, `obligation`, `purchaseRequisition`, `supplierDocument`) plus the I3.1
-canonical `compliance` machine). See C1 for the full census.
+**55 ≠ 72 ≠ 10.** 55 is the read/write API a page calls. 72 is how many transitions exist in the
+schema. 10 is how many entities are behavior-wired today.
+
+> **⚠️ CORRECTED 2026-08-03 (C7 D-10) — this count read `6`, and its prose was wrong twice.**
+> The census has moved **6 → 7** (G1.1 PR intake) **→ 8** (SDC-2a RequirementResponse) **→ 10**
+> (SDC-3a InventoryDeclaration + IncomingShipment); the code tracks the evolution itself at
+> `MockCommandService.ts:989-991`. The prior prose additionally listed **`purchaseRequisition`
+> among "the 6 inert machines"** — it is wired (`:983`) and has been since G1.1. Both the number
+> and the classification were stale in the same direction: understating the implementation.
+> See the C7 correction record for the systematic cause.
+
+Still NOT behavior-wired: the 2 rolled-up sub-flows (`goodsReceiptLine`, `invoiceMatch`) and the
+inert machines — `shipment`, `contract`, `obligation`, `supplierDocument` (F0.4) plus the I3.1
+canonical `compliance` machine. See C1 for the full census.
 
 > **I3.1 delta.** Service surface 54 → **55** (`risk.getComplianceRegistry`), transition catalog
 > 69 → **72** / 13 → **14** flows (`compliance.flow.ts`), wired targets unchanged at **6** — the
@@ -88,7 +103,12 @@ imply they are closed.
 | **DNA-SEED-01** | **PARTIAL** — `getCapabilities` LIVE; `guidance?` prop slot unbuilt (see legend). |
 | **E2E-SUITE-01** | No committed Playwright suite. The two crown invariants (no cross-supplier leak · four honest states) are backstopped **in-floor by vitest** (`scoping.contract.test.ts` + `withChaos` suites). |
 | **G0.1-FIND-01** | One-`causationId`-per-plan-push is INTENT, not a present capability: the public `ICommandService.dispatch(scope, input)` seam (`types.ts:1080`) accepts no caller-supplied correlation, so N push-dispatches cannot be grouped today. Seam extension (caller-supplied correlation OR model-push-as-cascade-source) is a **G1/G2 dependency** (C6 §4). Do not read the grouping as existing. |
-| **C7-FIND-01** | PR create is author-inert — `purchaseRequisition` is not in `TARGETS` / `WIRED_COMMAND_TARGETS` (`MockCommandService.ts:343-360`), so `t_pr_create` cannot dispatch today. The C7 intake maps onto the real creation shape; wiring a PR `CommandTarget` is a **G1 dependency** (C7 §3). Sub-finding **C7-FIND-01a**: add a `purchaseRequisitions` liveness capability (backed `null` → SIMULATED) for intake provenance — also G1. |
+| **C7-FIND-01 / -01a** | **BOTH CLOSED (corrected 2026-08-03).** `purchaseRequisition` **is** a wired `CommandTarget` (`MockCommandService.ts:547-593, :983`) and `t_pr_create` dispatches. **-01a closed DIFFERENTLY than prescribed**: the capability is backed **structurally** to the wired entity (`registry.ts:78`) with gate-2 harvest gating holding it SIMULATED — not the `null` backing this package specified. The shipped resolution is stronger (unwire-to-honest is structural). See C7 §3. |
+| **C7-FIND-02** | **DEFECT, OPEN** — `suggestedQty` + `wasAdjusted` are documented as stored but `create` reads neither, and `PurchaseRequisition` has no field for either (`MockCommandService.ts:547-593`). The three-value qty provenance collapses to one at the write. Audit signal survives on the DR-10 event only (C7 §2.1). |
+| **C7-FIND-03** | **DEFECT, OPEN** — `shortfall` was promised RESERVED so the shape would not change; it was never added to `PrIntakeLine` (`types.ts:636-653`). Landing it IS a shape change (C7 §2.2). |
+| **C7-FIND-05** | **OPEN** — no idempotency contract at the intake; F2 Event Mesh is at-least-once, so a redelivered SOMO event mints a duplicate PR (`stores/purchaseRequisitionStore.ts:42-45`; C7 §2.3). |
+| **C8-FIND-03** | **OPEN** — the VOID `locked → firm` `commitmentClass` mapping remains in code (`sdc/types.ts:23`) until its booked code batch; the C8 contract is authority in the interim (C8 §2.1). |
+| **C7-MATERIAL-JOIN** | **OPEN** — C7 (display string) and C8 (code) material spaces do not join. Recommendation: collapse, do not crosswalk. **Not built**: `inferBpom` derives BPOM applicability from the code prefix (`GRInspectionWizard.tsx:129-163`), so a format change moves compliance behaviour (C7 §6.1). |
 
 **Out of scope (non-contract, design-debt):** `DP3-FONT-02`, `DP2-PALETTE-01`, `DP3-CHIP-01` are
 visual-conformance sweeps, not data-contract items. Noted here only so they are not mistaken for

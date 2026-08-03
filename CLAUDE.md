@@ -46,10 +46,14 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   flows/`): PO · ASN · GR (+ line) · Invoice (+ match) · RFQ · Quotation · Shipment ·
   Contract · Obligation · PurchaseRequisition · SupplierDocument. The sole remaining
   census machine — the ONE canonical compliance machine that collapses the 5
-  fragmented vocabularies (census #11–15) — rides R2.2 DTO-v2. The F0.4 five
-  (Shipment/Contract/Obligation/PR/SupplierDocument) are **author-unwired inert
-  registry data**: no CommandTarget, no cascade link, roles mapped for
-  catalog-coverage only (DNA-SEED-01 contract surface, no UI consumer). It is
+  fragmented vocabularies (census #11–15) — rides R2.2 DTO-v2. Of the F0.4 five,
+  **FOUR remain author-unwired inert registry data**
+  (Shipment/Contract/Obligation/SupplierDocument): no CommandTarget, no cascade
+  link, roles mapped for catalog-coverage only (DNA-SEED-01 contract surface, no
+  UI consumer). **PR is NO LONGER among them** — corrected 2026-08-03: it was
+  wired at G1.1 and dispatches (`MockCommandService.ts:547-593`, registered
+  `:983`). **Wired CommandTargets now number 10, not 6** (`:976-987`; census
+  evolution tracked at `:989-991`). It is
   deliberately **contract-complete, NOT behavior-complete** — remaining verb
   wiring (and each machine's CommandTarget) rides its Stage-2 surface (FORK-2
   hybrid). Clock-projected states stay out of every transition table (law 0.5);
