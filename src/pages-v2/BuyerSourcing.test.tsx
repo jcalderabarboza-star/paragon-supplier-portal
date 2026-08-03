@@ -704,6 +704,30 @@ describe('BuyerSourcing — recording a rate is confirm-before-commit (2e-c-4)',
     expect(eurPins()).toHaveLength(0);
   });
 
+  // FX-DIALOG-SOURCE-DEFAULT-01 — the dialog opens on "Entered manually", and the
+  // SAP rate type only exists once SAP is chosen. NOTHING in this build is wired
+  // to SAP, so a SAP default would stamp a provenance that never happened onto
+  // the one strip that answers "what basis ranked this" — and a default is
+  // invisible in the UI right up until it is wrong. Already the behaviour on main
+  // (`blankPinDraft`, since #154); locked here so it cannot regress in silence.
+  it('SOURCE defaults to Entered manually, and the SAP rate type appears only for SAP', async () => {
+    await openDialog(/Record EUR rate/);
+
+    const source = screen.getByLabelText('Source') as HTMLSelectElement;
+    expect(source.value).toBe('MANUAL');
+    expect(screen.queryByLabelText(/SAP rate type/)).not.toBeInTheDocument();
+
+    fireEvent.change(source, { target: { value: 'SAP_EXHGRATE' } });
+    expect(await screen.findByLabelText(/SAP rate type/)).toBeInTheDocument();
+
+    // …and switching away retires the field, so a rate type can never ride along
+    // on a manually-entered rate.
+    fireEvent.change(source, { target: { value: 'MANUAL' } });
+    await waitFor(() =>
+      expect(screen.queryByLabelText(/SAP rate type/)).not.toBeInTheDocument(),
+    );
+  });
+
   it('cancelling writes nothing', async () => {
     await openDialog(/Record EUR rate/);
     fireEvent.change(screen.getByLabelText(/Rate — IDR per 1 EUR/), {

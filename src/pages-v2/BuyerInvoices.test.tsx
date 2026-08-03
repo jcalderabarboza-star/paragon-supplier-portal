@@ -4,6 +4,7 @@ import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
 import { invoiceStore } from '../services/data/mock/stores/invoiceStore';
+import { usePinnedDemoClock } from '../test/demoClock';
 import BuyerInvoices from './BuyerInvoices';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
@@ -43,6 +44,12 @@ describe('BuyerInvoices — four honest states', () => {
 // the Option-B SAP boundary — interim 'Releasing Payment' with NO payment ref,
 // then settlement mints the real ref. No client-side "paid" fabrication.
 describe('BuyerInvoices — release payment is Option B (no fabrication)', () => {
+  // `Release payment` is offered on the computed BUYER label, which projects
+  // `Overdue` from the clock. inv-giv-0892 is due 2026-08-01, so from 2026-08-02
+  // it read Overdue instead of Approved and the button vanished — this spec broke
+  // with no commit involved (2e-c-6-FIND-01). Pinned to the demo present.
+  usePinnedDemoClock();
+
   it('release → Releasing Payment (no ref) → settle → Payment Released (real ref)', async () => {
     invoiceStore.reset();
     renderWithProviders(<BuyerInvoices />);

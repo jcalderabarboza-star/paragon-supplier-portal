@@ -13,12 +13,20 @@ import { MockProcurementService } from './MockProcurementService';
 import { MockCommandService } from './MockCommandService';
 import { invoiceStore } from './stores/invoiceStore';
 import { INVOICES } from './fixtures/invoices';
+import { usePinnedDemoClock } from '../../../test/demoClock';
 import type { QueryScope } from '../types';
 
 const reads = new MockProcurementService();
 const commands = new MockCommandService();
 const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
 const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
+
+// These reads project `Overdue` from the clock (`invoiceProjection`), and the
+// service seam supplies `now` from the wall clock. Without a pinned instant the
+// per-persona labels below are only true until a fixture's `dueDate` passes —
+// `inv-brl-0051` crossed on 2026-08-02 and broke this spec with no commit
+// involved (2e-c-6-FIND-01). Pinned to the instant the fixtures are coherent at.
+usePinnedDemoClock();
 
 beforeEach(() => {
   invoiceStore.reset();
