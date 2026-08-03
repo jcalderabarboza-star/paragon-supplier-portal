@@ -51,7 +51,7 @@ const asnOn = (asnNumber: string, poReference: string, supplierId = 'sup-002'): 
   // found incoherent fixtures, so the fixtures are what changed.
   lineItems: [
     {
-      materialCode: 'RM-EMUL-3310',
+      materialCode: 'RM-EMUL-9410',
       description: 'Glyceryl Stearate SE (Halal Emulsifier)',
       orderedQty: 10_000,
       shippedQty: 10_000,
@@ -61,7 +61,7 @@ const asnOn = (asnNumber: string, poReference: string, supplierId = 'sup-002'): 
 });
 
 const line = (acc: number, rej: number): InspectionResult => ({
-  materialCode: 'RM-EMUL-3310',
+  materialCode: 'RM-EMUL-9410',
   description: 'Glyceryl Stearate SE (Halal Emulsifier)',
   qtyExpected: acc + rej,
   qtyReceived: acc + rej,

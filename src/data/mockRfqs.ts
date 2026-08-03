@@ -83,7 +83,14 @@ export const mockRfqs: RFQ[] = [
     rfqNumber: 'RFQ-2026-002',
     title: 'PET Bottle 100ml Airless Pump — Wardah Q3 launch',
     materialCategory: 'Packaging',
-    materialIds: ['PK-PETB-8810'],
+    // CP-2 · B2a — this RFQ used to name `PK-PETB-8810`, which the material
+    // master owns and defines as the 250ml bottle. Every other trace of this
+    // RFQ's material says 100ml Airless Pump (the title, the sup-007 storefront
+    // line, PR-2026-00342, the PO-2025-00107 remittance note), so the CODE was
+    // the outlier, not the meaning. The master keeps 8810; this meaning takes a
+    // new non-master code. It is DISTINCT from `PK-PETB-8802` (the Emina 100ml
+    // Clear) — same volume, different closure and brand, different item.
+    materialIds: ['PK-PETB-8803'],
     buyerId: 'buyer-001',
     status: 'Open',
     createdAt: '2026-05-02',

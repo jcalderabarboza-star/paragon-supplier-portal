@@ -211,3 +211,78 @@ risk, so there is no correctness argument for rushing it.
 
 **The census does not recommend deleting any file.** `MOCK-RETIREMENT-SCOPE-01`
 is the reason, and it applies at every batch size.
+
+---
+
+## CP-2 · Batch 2a — collisions BROKEN (refs @ `1b85af3`)
+
+The census above was accepted and the split ratified. **2a executed the
+mechanical half: one code, one meaning, in BOTH directions, with no
+`MATERIAL_MASTER` edit and no adoption decision.** Floor 2028 → **2037**.
+The batch's deliverable is a property rather than a diff, so it is pinned
+executably in `src/data/materialIdentity.test.ts` rather than described here.
+
+| Finding | What it is | Disposition |
+| --- | --- | --- |
+| **MECHANISM-IS-COMPLIANCE-01** *(refs @ `1b85af3` — **operator ruling; the reason the batch looks the way it does**)* | **A regulatory check's behaviour decided the refactor's mechanism, not the other way round.** Two mechanisms could break the collisions: **re-point** the document lane's colliding codes onto master codes, or **mint new codes** and leave the master's untouched. `INFERBPOM-SWEEP-CONSEQUENCE-01` settled it and was ruled **not a preference**: `inferBpom` (`GRInspectionWizard.tsx:129-131`) derives BPOM applicability from the code's first segment and **fails open**, and **`MATERIAL_MASTER` holds no `FR-` code at all** — so re-pointing would have **silently switched the BPOM check OFF on every fragrance line**, as a side effect of a cleanup, with nothing on any surface saying so. New codes that preserve their first segment leave the firing set **byte-identical**. Every one of the nine re-codes below preserves it. | **RULED AND EXECUTED.** The general rule, worth more than this batch: **when a cleanup could change a regulatory check's behaviour, the compliance consequence chooses the mechanism — a refactor is never allowed to be the reason a check stops firing.** Pinned in `materialIdentity.test.ts` two ways: the firing set as a literal, and the before/after class-equality of every re-code as a rule that also governs the next sweep. `inferBpom` itself remains **untouched** (`D-COMP-BPOM`, with compliance). |
+| **CENSUS-REGEX-SHAPE-01** *(refs @ `1b85af3` — **THE FINDING OF THE BATCH; self-implicating, and elevated to a class below**)* | **THE CENSUS'S OWN SUBJECT WAS C8 §4.1's RULING THAT `materialCode` IS OPAQUE WITH NO SHAPE STABILITY PROMISED — AND THE CENSUS VIOLATED THAT RULING IN ITS METHOD WHILE DOCUMENTING IT IN ITS OUTPUT.** That is the substance of this finding, not a remark about it. The census enumerated material codes with a regex requiring a **2–6 character middle segment**. **`AI-PEPTIDE-8801`** (`mockShipments.ts:208,497`, `mockGoodsReceipts.ts:338`) has seven, so it was **invisible** to the census: it appears in neither the "34 distinct codes" figure nor the 30-code master-absent list. **The correct counts are 35 and 31.** A census that exists to establish what codes mean **silently under-counted the population it was reporting on**, and reported a complete-looking answer. The code itself is harmless — internally coherent (one meaning, one code, GR + Shipments only) and master-absent, so it changes no 2a conclusion and belongs to 2b. **What it changes is the confidence any hand-rolled census can carry.** | **CORRECTED in this batch** (counts restated; the pin includes it). **THE PIN IS WHAT CAUGHT IT, AND THAT IS WHY THE PRACTICE IS WORTH KEEPING:** `materialIdentity.test.ts` **derives** the BPOM firing set from the fixtures instead of hand-listing it, so it **failed on its first run** against the author's own literal and named the missing code. **Invariants derived from the fixtures turned a wrong census into a failing test in one run; a hand-listed pin would have inherited the census's blind spot exactly and passed.** The two directional invariants are computed for the same reason. **Elevated to a class — see `CENSUS-MUST-DERIVE-01` below.** |
+| **DOC-REF-CROSS-SUPPLIER-01** *(refs @ `1b85af3` — **found during 2a, deliberately NOT fixed**)* | **A supplier document points at another supplier's purchase order, and it is not an identity defect.** `supplierDocuments.ts:18` — `doc-007`, a **sup-007** (PT Berlina) COA for `PET Bottle Clear` — carries `linkedTo: 'PO-2025-00109 / …'`. **`PO-2025-00109` is a sup-008 (PT Indo Karton) carton PO** (`mockPurchaseOrders.ts:247-271`) containing no PET bottle at all; the bottle line lives on **`PO-2025-00108`** (sup-007). 2a corrected the **material code** in that string (`PK-PETB-8810` → `PK-PETB-8802`, in scope — it was a collision site) and **left the PO number alone**. The incoherence pre-dates this batch and is unchanged in kind by it: the old string was equally wrong, pointing at a PO that did not contain `PK-PETB-8810` either. | **NOT FIXED — outside 2a's remit, and recorded rather than quietly folded in.** 2a's warrant is "break the collisions"; a cross-supplier document reference is a **fixture coherence** defect on a free-text field, not a material-identity one, and fixing it would have been scope the operator did not authorise. **Books to whichever batch next touches supplier documents.** Worth noting the shape: `linkedTo` is an **untyped free-text join** — nothing checks that the PO exists, belongs to the same supplier, or contains the named material, so this class of error is undetectable by the build. |
+
+### Fixture re-codes — every one, old → new → why
+
+Nine re-codes, in three groups. **Every one preserves its first segment**, which
+is what makes the BPOM firing set provably unchanged (`MECHANISM-IS-COMPLIANCE-01`).
+
+**Group 1 — a master code was carrying a NON-master meaning. The master keeps the code; the meaning moves.**
+
+| Old | New | Why |
+| --- | --- | --- |
+| `RM-EMUL-3310` | `RM-EMUL-9410` | Master owns 3310 as **Glycerin USP 99.5%**. The document lane defined it as **Glyceryl Stearate SE** — a different substance, and one that is **operationally real**, so it is re-coded rather than deleted. |
+| `RM-EMUL-3320` | `RM-EMUL-9430` | Master owns 3320 as **Cetearyl Alcohol**. The document lane defined it as **Polysorbate 80** — different substance, operationally real, re-coded. |
+| `PK-PETB-8810` | `PK-PETB-8802` | Master owns 8810 as **PET Bottle 250ml**. The document lane defined it as **PET Bottle 100ml Clear — Emina** — a different purchasable item. |
+| `PK-PETB-8810` | `PK-PETB-8803` | The **same master code** was ALSO carrying a second non-master meaning: RFQ-2026-002's **PET Bottle 100ml Airless Pump — Wardah**. Distinct from the Emina 100ml Clear (different closure and brand), so it takes its own code. Corroborated by the sup-007 storefront line, `PR-2026-00342`, and the `PO-2025-00107` remittance note — **the code was the outlier, not the meaning**. |
+
+**Group 2 — one meaning was riding two codes (`ONE-MEANING-TWO-CODES-01`). The GR/Shipment code retires onto the PO/Inventory one, which is the master-aligned shape.**
+
+| Old | New | Why |
+| --- | --- | --- |
+| `RM-EMUL-9420` | `RM-EMUL-3320` | **BOTH HALVES OF THE PRINCIPLE IN ONE EDIT — recorded as the intent, not as a side effect.** Group 1 moved `Polysorbate 80` OFF 3320 because one code cannot hold two meanings; that freed 3320 for the meaning its master owner declares, and the document lane's own **Cetearyl Alcohol** — stranded on 9420 — converged onto it because one meaning cannot hold two codes. The same edit satisfies *one code, one meaning* and *one meaning, one code*. **It is only available in that order:** freeing the code is the precondition for converging onto it, which is why a sweep that runs the two directions as separate passes will find the second one blocked by its own first pass. |
+| `PK-PET-1100` | `PK-PETB-8801` | **PET Bottle 200ml Frosted** had one code in PO + Inventory and another in GR + Shipments. |
+| `PK-PET-1110` | `PK-PETB-8802` | **PET Bottle 100ml Clear** — same split; converges onto the code Group 1 minted. |
+| `FR-WARDA-2401` | `FR-WARD-4410` | **Wardah Signature Floral Compound — Lot A** — same split. `FR-` on both sides, so BPOM-neutral. |
+| `FR-EMINA-3550` | `FR-EMIN-4420` | **Emina Fresh Citrus Accord** — same split. `FR-` on both sides, so BPOM-neutral. |
+
+**Group 3 — verified NOT a collision; no change made.**
+
+`AI-NIAC-6601` was carried into the census on the dispatch's list, and the census
+proposed a **label reconciliation rather than a new code**. On execution it turns
+out to need **no change at all**: the master's `Niacinamide (Vitamin B3)` and the
+document line's `Niacinamide USP Grade 99.5% (Vitamin B3)` are the **same
+substance**, and a document line stating a grade the master leaves unspecified is
+ordinary, not contradictory. **The master's under-specification is a
+master-content question and is booked to 2b** — the fixture convention already
+distinguishes grades by code elsewhere (`AI-NIAC-6605`, Feed Grade 98%), so
+whether 6601 should say "USP 99.5%" is an adoption decision, not a cleanup.
+
+### Left to 2b, deliberately
+
+- **`PK-PETB-8825`** carries `PET Bottle 250ml Flip-Top` — which *looks like* the
+  master's 250ml meaning on a non-master code. **Not touched.** Deciding they are
+  the same item is an **adoption decision**, and the ratified rule is that
+  identity is settled by declared ownership, never by content plausibility. It is
+  not a collision (no code has two meanings), so 2a has no warrant.
+- **The 31 master-absent codes** (corrected from 30 — see
+  `CENSUS-REGEX-SHAPE-01`). Untouched, per ruling.
+- **`MATERIAL_BASKET_CLASSIFICATION`** was **renamed and re-documented, not
+  re-keyed** — seven of its eleven keys are master-absent, so re-keying would
+  settle 2b by implication.
+- **`AI-NIAC-6601`'s master under-specification** (the master states no grade).
+  Verified NOT a collision — a document line stating a grade the master leaves
+  unspecified is ordinary, not contradictory. **A small instance of D-1
+  (substance vs specification), and it belongs where the master gets edited.**
+
+### Elevated to a CLASS (operator ruling, CP-2 · B2a merge)
+
+| Class | The rule | Standing consequence |
+| --- | --- | --- |
+| **CENSUS-MUST-DERIVE-01** *(class; instance = `CENSUS-REGEX-SHAPE-01` above)* | **AN IDENTITY CENSUS MUST DERIVE ITS POPULATION, NEVER MATCH A SHAPE.** A census answers "what is in this space and what does it mean". If it finds its members by matching a PATTERN, it has quietly assumed the very thing identity work exists to deny — that identifiers have a stable, knowable form — and every member that does not fit is absent from a report that still reads as complete. **The failure is silent and it is asymmetric: a shape-matched census never reports "I may have missed some", it reports a clean all-clear.** The instance below the rule is the sharpest possible demonstration, because the census's own subject was the ruling it broke. | **ANY sweep, audit, or census that greps for identifiers by pattern is under-counting by an unknown amount.** Enumerate from the data — iterate the fixtures, read the field, collect what is actually there. **And pin the result with DERIVED invariants, not hand-listed ones:** the pin that computes its expectation from the same data will fail the moment the author's mental model is wrong, which is precisely when a hand-written literal agrees with the author and passes. This is not a testing preference; it is the only mechanism that caught the instance. Re-read before CP-2's schema freeze, which is a census of exactly this kind. |

@@ -44,8 +44,28 @@ describe('the straddle these gates sit on (MASTER-STRADDLE-01)', () => {
     // This is why the GR gate cannot be a master check. Recorded as an
     // executable fact so the divergence cannot drift silently.
     expect(Object.keys(MATERIAL_MASTER)).toHaveLength(5);
-    expect(isKnownMaterial('PK-PET-1100')).toBe(false); // a real GR-lane code
-    expect(isKnownMaterial('RM-EMUL-3310')).toBe(true); // one of the two overlaps
+    expect(isKnownMaterial('PK-PETB-8801')).toBe(false); // a real GR-lane code
+    expect(isKnownMaterial('RM-EMUL-3310')).toBe(true); // an overlap — see below
+  });
+
+  // CP-2 · B2a — the straddle is UNCHANGED in size, but its CHARACTER changed.
+  // Before B2a the overlapping codes carried DIFFERENT meanings on each side
+  // (`RM-EMUL-3310` was glycerin to the master and Glyceryl Stearate SE to the
+  // document lane). Now every code the two spaces share carries the MASTER'S
+  // meaning on both sides — the spaces are still separate, but they no longer
+  // CONTRADICT. That is the property B2a bought, and it is the one a schema
+  // freeze depends on, so it is pinned rather than described.
+  it('every shared code now carries the MASTER meaning on both sides', () => {
+    // The document lane's own use of each shared code, read from the fixtures.
+    const shared = ['RM-EMUL-3310', 'RM-EMUL-3320', 'AI-NIAC-6601'] as const;
+    for (const code of shared) expect(isKnownMaterial(code)).toBe(true);
+
+    // `PK-PETB-8810` is master-owned and NO LONGER APPEARS in the document lane
+    // at all: its two squatting meanings took `PK-PETB-8802` (Emina 100ml Clear)
+    // and `PK-PETB-8803` (Wardah 100ml Airless Pump). Neither is in the master.
+    expect(isKnownMaterial('PK-PETB-8802')).toBe(false);
+    expect(isKnownMaterial('PK-PETB-8803')).toBe(false);
+    expect(isKnownMaterial('PK-PETB-8810')).toBe(true);
   });
 });
 
@@ -205,7 +225,7 @@ const createGr = (asnReference: string, inspectionResults: InspectionResult[]) =
 
 describe('GR_INSPECTION_MATERIALS_DECLARED — identity by DECLARED OWNERSHIP', () => {
   beforeEach(() => {
-    asnStore.add(asnWith('ASN-CP2-OK', ['PK-PET-1100', 'PK-PET-1110']));
+    asnStore.add(asnWith('ASN-CP2-OK', ['PK-PETB-8801', 'PK-PETB-8802']));
   });
 
   it('THE HOLE THIS CLOSES: inspecting a material the parent never declared', async () => {
@@ -222,14 +242,14 @@ describe('GR_INSPECTION_MATERIALS_DECLARED — identity by DECLARED OWNERSHIP', 
   });
 
   it('accepts every line the parent DID declare', async () => {
-    const res = await createGr('ASN-CP2-OK', [inspect('PK-PET-1100'), inspect('PK-PET-1110')]);
+    const res = await createGr('ASN-CP2-OK', [inspect('PK-PETB-8801'), inspect('PK-PETB-8802')]);
     expect(res.status).not.toBe('failed');
   });
 
   it('refuses the WHOLE receipt when only one line is undeclared', async () => {
     // Partial acceptance would store a receipt whose line set silently differs
     // from what was submitted — a stored fact that is not trustworthy.
-    const res = await createGr('ASN-CP2-OK', [inspect('PK-PET-1100'), inspect('AI-RETA-6750')]);
+    const res = await createGr('ASN-CP2-OK', [inspect('PK-PETB-8801'), inspect('AI-RETA-6750')]);
     expect(res.status).toBe('failed');
     expect(res.reason).toMatch(/UNDECLARED_MATERIAL/);
   });
@@ -246,8 +266,8 @@ describe('GR_INSPECTION_MATERIALS_DECLARED — identity by DECLARED OWNERSHIP', 
   it('conversely, a NON-master code the ASN DID declare is accepted', async () => {
     // The straddle in one assertion: a master gate here would have refused this
     // perfectly legitimate receipt.
-    expect(isKnownMaterial('PK-PET-1100')).toBe(false);
-    const res = await createGr('ASN-CP2-OK', [inspect('PK-PET-1100')]);
+    expect(isKnownMaterial('PK-PETB-8801')).toBe(false);
+    const res = await createGr('ASN-CP2-OK', [inspect('PK-PETB-8801')]);
     expect(res.status).not.toBe('failed');
   });
 
@@ -259,7 +279,7 @@ describe('GR_INSPECTION_MATERIALS_DECLARED — identity by DECLARED OWNERSHIP', 
   });
 
   it('an unresolvable parent is still the ARRIVAL hook\'s refusal, not this one', async () => {
-    const res = await createGr('ASN-DOES-NOT-EXIST', [inspect('PK-PET-1100')]);
+    const res = await createGr('ASN-DOES-NOT-EXIST', [inspect('PK-PETB-8801')]);
     expect(res.status).toBe('failed');
     expect(res.reason).toMatch(/no arrived shipment or ASN found/);
   });

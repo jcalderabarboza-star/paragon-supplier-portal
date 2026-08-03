@@ -88,7 +88,7 @@ export const mockShipments: Shipment[] = [
     packageCount: 0,
     totalWeight: 0,
     lineItems: [
-      { materialCode: 'PK-PET-1100', description: 'PET Bottle 200ml Frosted — Wardah Series', qty: 80000, uom: 'PCS' },
+      { materialCode: 'PK-PETB-8801', description: 'PET Bottle 200ml Frosted — Wardah Series', qty: 80000, uom: 'PCS' },
     ],
   },
   {
@@ -135,7 +135,7 @@ export const mockShipments: Shipment[] = [
     daysInTransit: 5,
     customsStatus: 'Pending',
     lineItems: [
-      { materialCode: 'RM-EMUL-3310', description: 'Glyceryl Stearate SE (Halal Emulsifier)', qty: 8000, uom: 'KG' },
+      { materialCode: 'RM-EMUL-9410', description: 'Glyceryl Stearate SE (Halal Emulsifier)', qty: 8000, uom: 'KG' },
       { materialCode: 'RM-STEAR-7300', description: 'Stearic Acid — Double Pressed (Halal)', qty: 10000, uom: 'KG' },
     ],
   },
@@ -160,7 +160,7 @@ export const mockShipments: Shipment[] = [
     daysInTransit: 28,
     customsStatus: 'Pending',
     lineItems: [
-      { materialCode: 'RM-EMUL-9420', description: 'Cetearyl Alcohol — Vegetable Origin', qty: 9000, uom: 'KG' },
+      { materialCode: 'RM-EMUL-3320', description: 'Cetearyl Alcohol — Vegetable Origin', qty: 9000, uom: 'KG' },
     ],
   },
   {
@@ -182,7 +182,7 @@ export const mockShipments: Shipment[] = [
     totalWeight: 2400,
     daysInTransit: 1,
     lineItems: [
-      { materialCode: 'FR-WARDA-2401', description: 'Wardah Signature Floral Compound — Lot A', qty: 1200, uom: 'KG' },
+      { materialCode: 'FR-WARD-4410', description: 'Wardah Signature Floral Compound — Lot A', qty: 1200, uom: 'KG' },
     ],
   },
   {
@@ -229,7 +229,7 @@ export const mockShipments: Shipment[] = [
     daysInTransit: 7,
     customsStatus: 'Pending',
     lineItems: [
-      { materialCode: 'FR-EMINA-3550', description: 'Emina Fresh Citrus Accord', qty: 900, uom: 'KG' },
+      { materialCode: 'FR-EMIN-4420', description: 'Emina Fresh Citrus Accord', qty: 900, uom: 'KG' },
     ],
   },
 
@@ -281,7 +281,7 @@ export const mockShipments: Shipment[] = [
     daysInTransit: 33,
     customsStatus: 'Held',
     lineItems: [
-      { materialCode: 'RM-EMUL-9420', description: 'Cetearyl Alcohol — Vegetable Origin', qty: 11000, uom: 'KG' },
+      { materialCode: 'RM-EMUL-3320', description: 'Cetearyl Alcohol — Vegetable Origin', qty: 11000, uom: 'KG' },
     ],
   },
   {
@@ -305,7 +305,7 @@ export const mockShipments: Shipment[] = [
     daysInTransit: 1,
     customsStatus: 'Cleared',
     lineItems: [
-      { materialCode: 'RM-EMUL-3320', description: 'Polysorbate 80 — Halal, Food & Cosmetic Grade', qty: 3000, uom: 'KG' },
+      { materialCode: 'RM-EMUL-9430', description: 'Polysorbate 80 — Halal, Food & Cosmetic Grade', qty: 3000, uom: 'KG' },
     ],
   },
 
@@ -333,7 +333,7 @@ export const mockShipments: Shipment[] = [
     daysInTransit: 1,
     customsStatus: 'Cleared',
     lineItems: [
-      { materialCode: 'PK-PET-1100', description: 'PET Bottle 200ml Frosted — Wardah Series', qty: 120000, uom: 'PCS' },
+      { materialCode: 'PK-PETB-8801', description: 'PET Bottle 200ml Frosted — Wardah Series', qty: 120000, uom: 'PCS' },
     ],
   },
   {
@@ -359,7 +359,7 @@ export const mockShipments: Shipment[] = [
     daysInTransit: 1,
     customsStatus: 'Cleared',
     lineItems: [
-      { materialCode: 'PK-PET-1110', description: 'PET Bottle 100ml Clear — Emina Series', qty: 95000, uom: 'PCS' },
+      { materialCode: 'PK-PETB-8802', description: 'PET Bottle 100ml Clear — Emina Series', qty: 95000, uom: 'PCS' },
     ],
   },
   {
@@ -412,7 +412,7 @@ export const mockShipments: Shipment[] = [
     daysInTransit: 1,
     customsStatus: 'Cleared',
     lineItems: [
-      { materialCode: 'FR-WARDA-2401', description: 'Wardah Signature Floral Compound — Lot A', qty: 800, uom: 'KG' },
+      { materialCode: 'FR-WARD-4410', description: 'Wardah Signature Floral Compound — Lot A', qty: 800, uom: 'KG' },
     ],
   },
 
