@@ -54,7 +54,11 @@ export const buyerCommHubEn: Record<string, string> = {
   'buyerCommHub.triage.recordingFor': 'Recording for',
   'buyerCommHub.triage.channelLabel': 'Channel',
   'buyerCommHub.triage.messageLabel': 'Message text',
-  'buyerCommHub.triage.placeholder': 'e.g. STOK PK-PETB-8810 2.400 KG',
+  // CP-2 · B2a — the unit here is PCS, not KG. `PK-PETB-8810` is a PCS material
+  // in the master, and sup-007 (the seeded triage persona) collaborates on
+  // exactly this code — so the old `KG` example tripped the page's own
+  // unit-mismatch warning on the worked example a new operator reads first.
+  'buyerCommHub.triage.placeholder': 'e.g. STOK PK-PETB-8810 2.400 PCS',
   'buyerCommHub.triage.messageHint': 'Paste the supplier’s reply verbatim.',
   'buyerCommHub.triage.parse': 'Parse reply',
   'buyerCommHub.triage.reset': 'New message',
@@ -128,7 +132,7 @@ export const buyerCommHubId: Record<string, string> = {
   'buyerCommHub.triage.recordingFor': 'Mencatat untuk',
   'buyerCommHub.triage.channelLabel': 'Kanal',
   'buyerCommHub.triage.messageLabel': 'Teks pesan',
-  'buyerCommHub.triage.placeholder': 'mis. STOK PK-PETB-8810 2.400 KG',
+  'buyerCommHub.triage.placeholder': 'mis. STOK PK-PETB-8810 2.400 PCS',
   'buyerCommHub.triage.messageHint': 'Tempel balasan pemasok apa adanya.',
   'buyerCommHub.triage.parse': 'Urai balasan',
   'buyerCommHub.triage.reset': 'Pesan baru',

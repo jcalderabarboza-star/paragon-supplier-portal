@@ -41,7 +41,7 @@ const submittedAsn = (asnNumber: string): ASN => ({
   // found incoherent fixtures, so the fixtures are what changed.
   lineItems: [
     {
-      materialCode: 'PK-PET-1100',
+      materialCode: 'PK-PETB-8801',
       description: 'PET Bottle 200ml Frosted',
       orderedQty: 10_000,
       shippedQty: 10_000,
@@ -51,7 +51,7 @@ const submittedAsn = (asnNumber: string): ASN => ({
 });
 
 const line = (acc: number, rej: number): InspectionResult => ({
-  materialCode: 'PK-PET-1100',
+  materialCode: 'PK-PETB-8801',
   description: 'PET Bottle 200ml Frosted',
   qtyExpected: acc + rej,
   qtyReceived: acc + rej,

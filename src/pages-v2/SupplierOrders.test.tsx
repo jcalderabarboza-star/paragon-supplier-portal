@@ -127,7 +127,7 @@ describe('SupplierOrders — the confirm cells are text, so the parser is load-b
     renderWithProviders(<SupplierOrders />, { identity: SUPPLIER });
     await screen.findByText('PO-2025-00108');
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
-    return screen.findByLabelText('Confirmed PK-PETB-8810');
+    return screen.findByLabelText('Confirmed PK-PETB-8802');
   };
 
   it('THE LOCK — the cell is not type="number" (Ruling 6.2)', async () => {

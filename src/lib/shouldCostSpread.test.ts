@@ -19,7 +19,7 @@ import {
   SHOULD_COST_MATERIALS,
   SIMULATED_SPOT_FX,
 } from '../services/data/mock/fixtures/commodityBaskets';
-import { MATERIAL_TO_BASKET } from '../services/data/mock/fixtures/commodityMaterialMap';
+import { MATERIAL_BASKET_CLASSIFICATION } from '../services/data/mock/fixtures/commodityMaterialMap';
 
 // ─── Hand-verifiable inline scaffold (mirrors shouldCost.test.ts) ──────────────
 // Numbers chosen so the §5 formula lands on round figures and the spread math is
@@ -166,7 +166,7 @@ describe('spreadForQuote — currency (ruling A: engine-native USD, FX-applied I
 
 describe('spreadForQuote — against the real CI-2 fixtures (the smoke cases)', () => {
   const realDeps: SpreadDeps = {
-    join: MATERIAL_TO_BASKET,
+    join: MATERIAL_BASKET_CLASSIFICATION,
     materials: Object.fromEntries(SHOULD_COST_MATERIALS.map((m) => [m.id, m])),
     roots: ROOT_BENCHMARKS,
     fx: SIMULATED_SPOT_FX,

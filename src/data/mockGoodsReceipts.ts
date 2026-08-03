@@ -95,7 +95,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     status: 'Pending Inspection',
     inspectionResults: [
       {
-        materialCode: 'PK-PET-1100',
+        materialCode: 'PK-PETB-8801',
         description: 'PET Bottle 200ml Frosted — Wardah Series',
         qtyExpected: 120000,
         qtyReceived: 120000,
@@ -121,7 +121,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     status: 'Approved',
     inspectionResults: [
       {
-        materialCode: 'PK-PET-1110',
+        materialCode: 'PK-PETB-8802',
         description: 'PET Bottle 100ml Clear — Emina Series',
         qtyExpected: 95000,
         qtyReceived: 95000,
@@ -147,7 +147,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     status: 'Approved',
     inspectionResults: [
       {
-        materialCode: 'FR-WARDA-2401',
+        materialCode: 'FR-WARD-4410',
         description: 'Wardah Signature Floral Compound — Lot A',
         qtyExpected: 800,
         qtyReceived: 800,
@@ -229,7 +229,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     status: 'Quality Hold',
     inspectionResults: [
       {
-        materialCode: 'RM-EMUL-9420',
+        materialCode: 'RM-EMUL-3320',
         description: 'Cetearyl Alcohol — Vegetable Origin',
         qtyExpected: 11000,
         qtyReceived: 11000,
@@ -282,7 +282,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     status: 'Pending Inspection',
     inspectionResults: [
       {
-        materialCode: 'RM-EMUL-3320',
+        materialCode: 'RM-EMUL-9430',
         description: 'Polysorbate 80 — Halal, Food & Cosmetic Grade',
         qtyExpected: 3000,
         qtyReceived: 3000,
@@ -308,7 +308,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     status: 'Partially Approved',
     inspectionResults: [
       {
-        materialCode: 'RM-EMUL-9420',
+        materialCode: 'RM-EMUL-3320',
         description: 'Cetearyl Alcohol — Vegetable Origin',
         qtyExpected: 9000,
         qtyReceived: 9000,
@@ -363,7 +363,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     status: 'Approved',
     inspectionResults: [
       {
-        materialCode: 'FR-EMINA-3550',
+        materialCode: 'FR-EMIN-4420',
         description: 'Emina Fresh Citrus Accord',
         qtyExpected: 900,
         qtyReceived: 900,
@@ -389,7 +389,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     status: 'Approved',
     inspectionResults: [
       {
-        materialCode: 'FR-WARDA-2401',
+        materialCode: 'FR-WARD-4410',
         description: 'Wardah Signature Floral Compound — Lot A',
         qtyExpected: 1200,
         qtyReceived: 1200,
@@ -414,7 +414,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     status: 'Posted to SAP',
     inspectionResults: [
       {
-        materialCode: 'RM-EMUL-3310',
+        materialCode: 'RM-EMUL-9410',
         description: 'Glyceryl Stearate SE (Halal Emulsifier)',
         qtyExpected: 8000,
         qtyReceived: 8000,

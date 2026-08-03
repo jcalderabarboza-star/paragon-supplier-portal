@@ -1,10 +1,29 @@
 // ────────────────────────────────────────────────────────────────────────────
-// RFQ material → should-cost basket join (the CI-2 SIMULATED mapping).
+// Material → should-cost basket CLASSIFICATION (the CI-2 SIMULATED mapping).
 //
-// A quote is priced for an RFQ material (an opaque SAP-style code like
+// ── IT IS A CLASSIFICATION, NOT A CROSSWALK (CP-2 · B2a; Seat 3 §4.3) ────────
+//   This file used to call itself a JOIN between "two vocabularies authored
+//   independently", and the export was named `MATERIAL_TO_BASKET`. Both were
+//   wrong in the same way, and the misnomer is what earned the §4.3 indictment:
+//   a crosswalk reconciles two identity spaces that each name the SAME things,
+//   and a crosswalk between two spaces WE control carries no information. This
+//   map does something else entirely — it CLASSIFIES a material into a
+//   should-cost basket, the way a material group classifies it into a taxonomy.
+//   `sc-*` ids are not a second name for a material; they are a MODEL of one.
+//   A material with no basket is not "unmatched", it is UNCLASSIFIED, and that
+//   is a perfectly ordinary state the resolver reports as honest silence.
+//
+// ── OPEN: ITS DOMAIN IS NOT THE MASTER (booked to CP-2 · B2b) ───────────────
+//   SEVEN of the eleven keys below name codes `MATERIAL_MASTER` does not
+//   contain, and `PK-CAPF-8820` is in the master but absent here. So this is a
+//   classification keyed on the DOCUMENT LANE, not on the master — which is the
+//   real reason it read like a crosswalk. Re-keying it onto master codes is
+//   DELIBERATELY NOT DONE HERE: those seven are exactly the codes awaiting an
+//   adoption decision, so re-keying now would settle B2b by implication.
+//
+// A quote is priced for a material (an opaque SAP-style code like
 // `RM-EMUL-3310`); the should-cost engine models a `sc-*` material (a basket of
-// public root benchmarks). The two vocabularies were authored independently — so
-// CI-2 needs an explicit JOIN. This map is that join.
+// public root benchmarks). This map says which basket models which material.
 //
 // ⚠️ HONESTY MARKER — THIS IS A SIMULATED MAP, NOT PARAGON DATA. The material
 // codes on the left are the fixture RFQ materialIds; the `sc-*` ids on the right
@@ -19,8 +38,9 @@
 // Both are honest silence, decided by the resolver (shouldCostSpread.ts).
 // ────────────────────────────────────────────────────────────────────────────
 
-/** Fixture RFQ materialId → commodityBaskets `sc-*` material id (SIMULATED). */
-export const MATERIAL_TO_BASKET: Readonly<Record<string, string>> = Object.freeze({
+/** Material code → the commodityBaskets `sc-*` basket that MODELS it (SIMULATED).
+ *  Absent = unclassified, which the resolver reports as `silent: 'unmapped'`. */
+export const MATERIAL_BASKET_CLASSIFICATION: Readonly<Record<string, string>> = Object.freeze({
   // Active ingredients — the modelable tail (no basket → resolver returns 'tail')
   'AI-NIAC-6601': 'sc-niacinamide', // Niacinamide — TAIL (no modelable benchmark)
   'AI-HYALU-6610': 'sc-hyaluronic-acid', // Sodium hyaluronate — TAIL (fermentation)

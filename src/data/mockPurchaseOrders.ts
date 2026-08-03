@@ -57,7 +57,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     lineItems: [
       {
         id: 'li-002a',
-        materialCode: 'RM-EMUL-3310',
+        materialCode: 'RM-EMUL-9410',
         description: 'Glyceryl Stearate SE (Halal Emulsifier)',
         quantity: 8000,
         uom: 'KG',
@@ -235,7 +235,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     lineItems: [
       {
         id: 'li-008a',
-        materialCode: 'PK-PETB-8810',
+        materialCode: 'PK-PETB-8802',
         description: 'PET Bottle 100ml Clear — Emina Series',
         quantity: 150000,
         uom: 'PCS',
@@ -539,7 +539,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     lineItems: [
       {
         id: 'li-019a',
-        materialCode: 'RM-EMUL-3320',
+        materialCode: 'RM-EMUL-9430',
         description: 'Polysorbate 80 — Halal, Food & Cosmetic Grade',
         quantity: 3000,
         uom: 'KG',

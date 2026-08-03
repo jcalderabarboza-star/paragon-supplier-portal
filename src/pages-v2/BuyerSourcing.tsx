@@ -93,7 +93,7 @@ import {
   type FxRateRefusalReason,
   type FxVintageRefusalReason,
 } from './sourcing/fxRateInput';
-import { MATERIAL_TO_BASKET } from '../services/data/mock/fixtures/commodityMaterialMap';
+import { MATERIAL_BASKET_CLASSIFICATION } from '../services/data/mock/fixtures/commodityMaterialMap';
 import {
   ROOT_BENCHMARKS,
   SHOULD_COST_MATERIALS,
@@ -634,7 +634,7 @@ const ComparisonRow: React.FC<{
 // fixtures the resolver reads. Module-level (static fixtures, no per-render cost);
 // `materials` is keyed by `sc-*` id for O(1) lookup inside `spreadForQuote`.
 const SPREAD_DEPS: SpreadDeps = {
-  join: MATERIAL_TO_BASKET,
+  join: MATERIAL_BASKET_CLASSIFICATION,
   materials: Object.fromEntries(SHOULD_COST_MATERIALS.map((m) => [m.id, m])),
   roots: ROOT_BENCHMARKS,
   fx: SIMULATED_SPOT_FX,
