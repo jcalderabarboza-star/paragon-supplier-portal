@@ -1,8 +1,41 @@
+> # ⚠️ SUPERSEDED — DO NOT PLAN AGAINST THIS DOCUMENT
+>
+> **Superseded by [`docs/contracts/C8-forecast-publication.md`](./contracts/C8-forecast-publication.md)
+> on 2026-08-03.** That document is the C8 contract. This one is retained as the historical
+> record of the proposal only.
+>
+> **This was a PROPOSAL and was never ratified.** It was sent to SOMO on 2026-07-16 and ended by
+> asking them to confirm the grain. In the interval the code hardened **past** it — a required
+> `allocation` object, a closed `Uom` union, a per-line `provenance` — none of which appear
+> below. Two things in it are now known to be wrong:
+>
+> **1. `ForecastLine.supplier` (§1) is STRUCK.** SOMO ruled on 2026-08-03 that **the PORTAL owns
+> allocation**: SOMO emits a **material × period TOTAL** and holds **no vendor entity of any
+> kind** — no supplier master, no positions, no sourcing shares. Their reason: *a per-supplier
+> emitter would require SOMO to invent an allocation it cannot compute, and a fabricated split
+> would arrive at our intake wearing the authority of a plan.* The `supplier` field below asks
+> SOMO for something they cannot produce. (`Allocation.materialPeriodTotal` is kept, so SOMO's
+> number stays auditable through our fan-out — see the contract §1.)
+>
+> **2. The `commitmentClass` question (§2) HAS BEEN ANSWERED.** SOMO emits the **raw states**
+> (`lockState`, `approvalState`); **the PORTAL projects the class.** The portal's own shipped
+> `locked → firm` mapping is **VOID**. The replacement projection is recorded in the contract
+> (§2.2) as a **NAMED OPEN DECISION, explicitly UNRATIFIED**, pending named owners in Paragon
+> procurement and finance — neither platform has standing to assert a commercial commitment.
+>
+> **Why this banner exists.** A superseded document that does not say so is the next stale
+> document someone plans against — which is precisely the process gap the corrected contracts
+> exist to name: documents generated once, never re-harvested, drifting in one direction while
+> the implementation moves. Marking this file is the cheapest possible instance of the fix.
+
+---
+
 # C8 — Forecast Publication Seam (Proposal to SOMO / IBP)
 
 **From:** Procurement / Supplier Portal seat (Ops #11)
 **To:** IBP platform (SOMO / "Brain Engine") strategic seat
 **Date:** 2026-07-16
+**Status:** ⚠️ **SUPERSEDED 2026-08-03** — see the banner above.
 **Re:** A new sibling seam to C7 — **C8, the forecast-publication contract** — needed for the
 Supplier Data Collaboration lane. Proposing the grain; requesting conformance + grain-gap
 adjudication, same co-design dance as C7.
