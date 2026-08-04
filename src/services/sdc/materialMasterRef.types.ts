@@ -9,6 +9,15 @@
 //    fail the floor rather than accumulate silently (COMMENT-AS-CONTRACT-01 ran
 //    the other way: code comments quietly amending a ratified contract).
 //
+// ── THIS FILE IS THE ARTIFACT A PEER PLATFORM RATIFIES (C9 §7.11, A-9) ──────
+//   SOMO ratified C9's shape from OUR PROSE SUMMARY — C9 is not in their
+//   repository and their field list came from a description of this module, not
+//   from this module. A COUNTERPARTY RATIFYING A SUMMARY HAS NOT RATIFIED THE
+//   CONTRACT. `docs/contracts/C9-required-fields.md` is the fix: a COMPLETE
+//   required-field list DERIVED from this file (never transcribed —
+//   CENSUS-MUST-DERIVE-01), pinned to it, and sent alongside the document. If a
+//   field here is not in that list, the list is stale and the floor says so.
+//
 // ── DECLARED INERT ──────────────────────────────────────────────────────────
 //   Zero rows. Zero consumers. Nothing imports these types outside their own
 //   contract test. That is DELIBERATE, not unfinished: CP-2 freezes a shape for
@@ -55,25 +64,42 @@ export type MaterialRefParty = (typeof MATERIAL_REF_PARTIES)[number];
 /**
  * A named material code space and who owns it.
  *
- * `spaceId` is NOT decoration. Each party currently owns MORE THAN ONE space,
- * on both sides of this seam, and a row that cannot say which one it means is
- * ambiguous today rather than hypothetically:
- *   · Paragon — the authoritative master (`sdc/fixtures.ts` `MATERIAL_MASTER`)
- *     and the document lane (`src/data/mock*.ts`), which still names 30 codes
- *     the master does not (C9 §6.4).
- *   · SOMO — their BOM codes (declared ILLUSTRATIVE, never SKU-validated) and
- *     canonical S/4, whose crosswalk between them is NAMED, REGISTERED AND NOT
- *     BUILT — it waits on this schema (C8 §4.1).
+ * `spaceId` is NOT decoration. A row that cannot say which space it means is
+ * ambiguous today rather than hypothetically. The populations, as MEASURED by
+ * each party in its own tree (C9 §3.3 — every figure states how it was obtained):
+ *   · Paragon — the authoritative master (`sdc/fixtures.ts` `MATERIAL_MASTER`,
+ *     5 entries) and the document lane (`src/data/mock*.ts`), which still names
+ *     30 codes the master does not (C9 §6.4).
+ *   · SOMO — THREE self-authored populations under MATNR semantics (AMENDED,
+ *     A-7 — not two): 88 material (ROH+VERP), 17 bulk (HALB), 17 finished-good
+ *     (FERT). PAIRWISE DISJOINT BY MEASUREMENT BUT NOT ENFORCED — no
+ *     cross-contract uniqueness assertion exists, so THEY CAN DECLARE THE
+ *     COLLAPSE; THEY CANNOT PROMISE IT.
+ *   · Canonical S/4 — OURS (AMENDED, A-6: operator ruling). Our side of this
+ *     crosswalk IS S/4 material-master identity; that is what `material_master_ref`
+ *     exists for. SOMO hold ZERO codes in it and never need more than ONE
+ *     `spaceId` for their own populations. S/4 IS NOT A THIRD SPACE FOR THEM.
  *
- * ⚠️ RETIREMENT IS PER PARTY, AND THE SYMMETRY IS FALSE (C9 §5.2 — AMENDED, A-1).
- * The first issue said the field drops "when both sides hold one space each" —
- * a JOINT exit only ONE party can reach. OUR second space is the document lane;
- * we own it, and CP-2 · B2b collapses it — OUR OWN TIDYING, on our own schedule.
- * SOMO's second space is CANONICAL S/4: they do not own it and cannot collapse
- * it, so their half waits on THE S/4 WIRE. A REQUIRED FIELD WHOSE EXIT DEPENDS
- * ON A SYSTEM NEITHER PARTY CONTROLS IS A FIELD THAT NEVER RETIRES. Build
- * against `spaceId` as PERMANENT, not as scaffolding — and note that discharging
- * our half changes nothing: a row names both parties, and SOMO still holds two.
+ * ⚠️ RETIREMENT IS PER PARTY, AND THE SYMMETRY IS FALSE (C9 §5.2 — A-1). The
+ * first issue said the field drops "when both sides hold one space each" — a
+ * JOINT exit only ONE party can reach. OUR second space is the document lane; we
+ * own it, and CP-2 · B2b collapses it — OUR OWN TIDYING, on our own schedule.
+ * Theirs waits on THE S/4 WIRE. A REQUIRED FIELD WHOSE EXIT DEPENDS ON A SYSTEM
+ * NEITHER PARTY CONTROLS IS A FIELD THAT NEVER RETIRES.
+ *
+ * ⚠️ THE CONDITION IS AUTHORSHIP, NOT A COUNT (C9 §5.2 — AMENDED, A-5). SOMO's
+ * check 2: they satisfy "holds one space" TODAY ONLY VACUOUSLY, because the
+ * counterpart space is EMPTY. It holds precisely while the crosswalk has no S/4
+ * codes in it, and FAILS THE MOMENT THE WIRE LANDS AND THE CONTRACT DOES THE
+ * WORK IT EXISTS FOR. In their words: A RETIREMENT CONDITION THAT HOLDS ONLY
+ * BEFORE THE CONTRACT DOES ANY WORK IS NOT A RETIREMENT CONDITION.
+ *
+ * So the condition is restated: BOTH PARTIES AUTHOR EVERY SPACE THEY HOLD. A
+ * COUNT TREATS SPACE-HOLDING AS HOUSEKEEPING — for SOMO, one space is another
+ * organisation's master under Paragon MDG governance, WHICH THEY CAN NO MORE
+ * COLLAPSE THAN RENAME S/4. Build against `spaceId` as PERMANENT, not as
+ * scaffolding; discharging our half changes nothing, because a row names both
+ * parties.
  */
 export interface MaterialCodeSpace {
   readonly spaceId: string;
@@ -89,10 +115,13 @@ export interface MaterialCodeSpace {
  * ⚠️ `materialCode` IS OPAQUE. NO PREFIX STABILITY IS PROMISED, EVER (C9 §3).
  * This is the single most load-bearing clause in the contract.
  *
- * AMENDED — C9 §3.1 (A-3). The first issue said BOTH platforms violate it. SOMO
- * MEASURED their side and that was wrong: no material-code prefix is parsed in
- * their production, and `materialClass` is a declared ENUM read as a FIELD at
- * ~20 sites. We had carried a hazard they undertook to LOOK FOR as one they HAD.
+ * AMENDED — C9 §3.1 (A-3, extended by A-7). The first issue said BOTH platforms
+ * violate it. SOMO MEASURED their side and that was wrong: no material-code
+ * prefix is parsed in their production, and `materialClass` is a declared ENUM
+ * read as a FIELD at ~20 sites. A-7 widens the measurement to all THREE of their
+ * populations — THE OPACITY PASS IS CLEAN WITH EVIDENCE: zero prefix-reading on
+ * material, bulk or finished-good codes; PREFIXES ARE AUTHORING CONVENTION ONLY.
+ * We had carried a hazard they undertook to LOOK FOR as one they HAD.
  * So the clause is PREVENTATIVE on their side and CORRECTIVE on ours — `inferBpom`
  * derives BPOM applicability from `AI-`/`FR-` and FAILS OPEN
  * (`GRInspectionWizard.tsx:129-131`), live and unfixed. WE ARE THE ONLY PARTY
@@ -122,9 +151,50 @@ export interface MaterialRef {
 export const MATERIAL_GRAINS = ['substance', 'specification'] as const;
 export type MaterialGrain = (typeof MATERIAL_GRAINS)[number];
 
-/** What a row asserts at its grain. There is no `'UNKNOWN'` member BY DESIGN —
- *  see `MaterialMasterRefRow`: unknown is expressed by the ABSENCE of a row. */
-export const MATERIAL_REF_VERDICTS = ['EQUIVALENT', 'NOT_EQUIVALENT'] as const;
+/**
+ * What a row asserts at its grain.
+ *
+ *  · `'EQUIVALENT'`            — the two codes name the same thing, at this grain.
+ *  · `'NOT_EQUIVALENT'`        — they do not. Also an assertion, also adjudicated.
+ *  · `'ADJUDICATED_UNRESOLVED'` — AMENDED (C9 §5.3, A-4). SOMEBODY LOOKED, FORMED
+ *                                A CANDIDATE, AND COULD NOT CLOSE IT.
+ *
+ * ⚠️ THE COLLISION A-4 RESOLVES, because the shape reads as over-general without
+ * it. C9 §5 says ABSENCE IS UNKNOWN, so a doubtful row is simply not written.
+ * C9 §4.2 requires `routeToResolution` on EVERY WRITABLE ROW. A ROW THAT IS
+ * ABSENT CANNOT CARRY A ROUTE — so the two rules pulled against each other and
+ * the field added at SOMO's own request had NOWHERE TO LIVE. Raised by SOMO,
+ * ruled in their favour.
+ *
+ * SOMO's resolution, adopted: ABSENCE AND ADJUDICATED-UNRESOLVED ARE DIFFERENT
+ * FACTS. Absence means NOBODY LOOKED. An adjudicated-unresolved row means
+ * somebody looked, formed a candidate, and could not close it. A MAP THAT CANNOT
+ * DISTINGUISH THEM LOSES THE MORE EXPENSIVE ONE — the one that cost analysis.
+ *
+ * ⚠️ THIS DOES NOT WEAKEN THE NO-UNKNOWN RULE; IT SHARPENS IT. The rule was that
+ * SILENCE MUST ASSERT NOTHING, and it still does. The error was assuming absence
+ * was the only honest way to say "not settled". An `'ADJUDICATED_UNRESOLVED'` row
+ * ASSERTS NOTHING ABOUT THE CORRESPONDENCE; it asserts something about the WORK
+ * DONE — a different claim, and a true one. There is still NO `'UNKNOWN'` verdict
+ * and still no way to write one.
+ *
+ * ⚠️ INVARIANTS on the new member (C9 §5.3):
+ *   1. It carries CANDIDATE (the row), EVIDENCE (`sourceOfTruth` +
+ *      `evidenceLiveness` + `method`) and `routeToResolution` — the full
+ *      three-of-three. It is the row shape `routeToResolution` was built for.
+ *   2. It MUST NOT carry `'CERTAIN'`. Certainty about an unresolved
+ *      correspondence is a contradiction, not a strong opinion.
+ *   3. NO CONSUMER MAY EVER JOIN ON IT, at any grain and under any policy. It
+ *      asserts nothing about the correspondence, so there is nothing to join.
+ *   4. It is SUPERSEDED, NEVER ACCOMPANIED: when the route pays off, the row is
+ *      REPLACED by the resolved verdict. Two rows at one grain stay invalid
+ *      (C9 §5.1).
+ */
+export const MATERIAL_REF_VERDICTS = [
+  'EQUIVALENT',
+  'NOT_EQUIVALENT',
+  'ADJUDICATED_UNRESOLVED',
+] as const;
 export type MaterialRefVerdict = (typeof MATERIAL_REF_VERDICTS)[number];
 
 /**
@@ -135,6 +205,12 @@ export type MaterialRefVerdict = (typeof MATERIAL_REF_VERDICTS)[number];
  * ⚠️ INVARIANT (C9 §4, structural): a row whose `provenance.evidenceLiveness`
  * is not `'LIVE'` MUST NOT carry `'CERTAIN'`. Certainty against invented data is
  * the exact failure mode "adoption is not discovery" names.
+ *
+ * ⚠️ INVARIANT (C9 §5.3, A-4): a row whose verdict is `'ADJUDICATED_UNRESOLVED'`
+ * MUST NOT carry `'CERTAIN'` either — for a different reason, worth keeping
+ * separate. The first is about the EVIDENCE being invented; this one is about
+ * the CLAIM being absent. Certainty about an unresolved correspondence is a
+ * contradiction, not a strong opinion.
  */
 export const MATERIAL_REF_CONFIDENCES = ['CERTAIN', 'PROBABLE', 'TENTATIVE'] as const;
 export type MaterialRefConfidence = (typeof MATERIAL_REF_CONFIDENCES)[number];
@@ -227,8 +303,19 @@ export interface AdjudicationProvenance {
  * while D-1 is open, and it is why a sparse map is not an incomplete one
  * (C9 §5). Nothing in this shape rewards filling it in.
  *
+ * ⚠️ AND ABSENCE IS NOT THE ONLY HONEST WAY TO SAY "NOT SETTLED" (C9 §5.3, A-4).
+ * ABSENCE MEANS NOBODY LOOKED. An `'ADJUDICATED_UNRESOLVED'` verdict means
+ * somebody looked, formed a candidate, and could not close it — and A MAP THAT
+ * CANNOT DISTINGUISH THEM LOSES THE MORE EXPENSIVE ONE, the one that cost
+ * analysis. The generalisation SOMO drew from it, adopted here:
+ * A RECORD OF WORK DONE IS NOT A CLAIM ABOUT THE THING WORKED ON.
+ * Both are still true at once —
+ * silence asserts nothing, and an unresolved row asserts nothing about the
+ * CORRESPONDENCE.
+ *
  * A pair may therefore carry ZERO, ONE or TWO rows — never a contradictory pair
- * at the same grain (C9 §5.1).
+ * at the same grain (C9 §5.1), and an unresolved row is SUPERSEDED by its
+ * resolution, never accompanied by it.
  */
 export interface MaterialMasterRefRow {
   readonly paragon: MaterialRef;
@@ -259,10 +346,18 @@ export type MaterialMasterRef = readonly MaterialMasterRefRow[];
  * EITHER ANSWER LEAVES EVERY STORED ROW UNCHANGED. That is the precise sense in
  * which this schema does not foreclose D-1, and it is the claim C9 §6.1 makes to
  * procurement: ruling later costs a policy edit, not a re-adjudication.
+ *
+ * ⚠️ INVARIANT (C9 §5.3, A-4): NO POLICY MAY EVER MAKE AN `'ADJUDICATED_UNRESOLVED'`
+ * ROW JOINABLE, at any grain and at any confidence. There is no field to switch
+ * that on, deliberately — such a row asserts nothing about the correspondence, so
+ * there is nothing to join. It is a record of WORK DONE, not a claim about the
+ * thing worked on.
  */
 export interface MaterialRefJoinPolicy {
   readonly joinableGrains: readonly MaterialGrain[];
-  /** Rows below this confidence are not joinable. */
+  /** Rows below this confidence are not joinable. Note this is NOT what excludes
+   *  `'ADJUDICATED_UNRESOLVED'` — that exclusion is unconditional and is not a
+   *  confidence threshold, because raising confidence must never reach it. */
   readonly minimumConfidence: MaterialRefConfidence;
   /**
    * Whether rows backed by SIMULATED evidence may be joined at all.
