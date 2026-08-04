@@ -47,9 +47,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      # @v5 and not @v4: the v4 actions target node 20, which the runners have
+      # deprecated and now force onto 24 with a warning. A brand-new workflow
+      # should not ship carrying a deprecation notice.
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           # Pinned to the operator's local major (v24.x). CI must not be a
           # different runtime than the one the gates are green on.
