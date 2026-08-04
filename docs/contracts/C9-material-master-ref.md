@@ -4,10 +4,33 @@ The **material-identity crosswalk** between Paragon's material master and SOMO's
 the schema both platforms build against when they need to say *"our code X and your code Y name
 the same thing"* — and, more often and more importantly, when they need to say nothing at all.
 
-**Status:** CONTRACT · **third issue — CANON ADDENDUM, 2026-08-04** (second issue 2026-08-04,
-first issue 2026-08-03), generated from code-truth at `main` `6560fe6` · **schema + types only;
-ZERO ROWS, ZERO CONSUMERS.** The third issue changes **no schema and no types**; see the
-ADDENDUM block below.
+**Status:** CONTRACT · **fourth issue — AMENDMENT 2, 2026-08-04** (third issue = canon addendum,
+second issue = amendment 1, both 2026-08-04; first issue 2026-08-03), generated from code-truth at
+`main` `50f2858` · **schema + types only; ZERO ROWS, ZERO CONSUMERS.**
+
+**Companion artifact, new at this issue:** [`C9-required-fields.md`](./C9-required-fields.md) — the
+**complete required-field list, DERIVED from the types module and pinned to it** (A-9). **Send it
+alongside this document, never instead of it.**
+
+> ## ⚠️ HOW TO CITE THIS CONTRACT — **A WORKING TREE IS NOT A VERSION** (A-13)
+>
+> **This contract is ratifiable only at a COMMIT.** Cite all three paths at one SHA:
+>
+> | Artifact | Path |
+> |---|---|
+> | **The contract — the authority** | `docs/contracts/C9-material-master-ref.md` |
+> | **The types module — the shape** | `src/services/sdc/materialMasterRef.types.ts` |
+> | **The derived field list** | `docs/contracts/C9-required-fields.md` |
+>
+> **ANY LATER AMENDMENT IS A NEW SHA AND A NEW RATIFICATION.** That is a **feature, not friction**:
+> it makes ***"which C9 did you ratify?"* an answerable question**, which it has not been until now
+> — four issues have shipped under one filename. It adopts the precedent SOMO already set from the
+> other side, pinning C7 at a SHA rather than by name.
+>
+> **Why this block exists is unflattering and is stated at the top rather than buried in §7:** for
+> two exchanges **this document existed only in our working tree.** SOMO were reading a contract
+> **mid-edit** — modified between every reading — and our messages described it as *enclosed* while
+> carrying nothing. **Neither side noticed for two exchanges.** See §3.6.
 
 > **AMENDED BEFORE RATIFICATION.** SOMO ratified the SHAPE verbally and is running its own checks
 > before replying in writing. **Their check found a defect in our text and it is corrected here, so
@@ -37,6 +60,29 @@ ADDENDUM block below.
 > **Nothing here touches the types module, so the floor pin does not move** (§8). Floor **2057**,
 > unchanged. No rows, no master edit; **2B remains blocked on D-1 and D-COMP-BPOM** (§6).
 
+> **AMENDMENT 2 (fourth issue) — SOMO RAN BOTH CHECKS.** **Everything in C9 stands ratified on
+> their side except ONE COLLISION, which they raised correctly and which the operator has ruled in
+> their favour.** Written ratification follows. Six amendments and two canon rows; **A-4 changes the
+> schema, so the pin moves with it** (§8).
+>
+> | # | Clause | What changed |
+> |---|---|---|
+> | **A-4** | **§5.3** *(new)* — `ADJUDICATED_UNRESOLVED` | **THE COLLISION IS REAL, and it was ours.** §5 says absence IS unknown, so a doubtful row is simply not written. §4.2 requires `routeToResolution` on **every writable row**. **A ROW THAT IS ABSENT CANNOT CARRY A ROUTE** — the two rules pulled against each other and **the field we added at SOMO's request had nowhere to live.** A **new verdict**, distinct from absence. |
+> | **A-5** | **§5.2** — retirement condition | **RESTATED AS AUTHORSHIP, NOT A COUNT.** Their check 2: they satisfy *"holds one space"* **today only VACUOUSLY**, because the counterpart space is empty. |
+> | **A-6** | **§5.2, §6.3** — whose space S/4 is | **OPERATOR RULING: CANONICAL S/4 IS THE PORTAL'S SIDE OF C9.** So SOMO never need more than one `spaceId` for their own populations, and **S/4 is not a third space for them to carry.** |
+> | **A-7** | **§3.1, §5.2, §6.1a** — SOMO's measured shape | **THREE corrections, all theirs, all running AGAINST their own earlier position and all measured.** Discriminators **sparse, not absent**; **three** self-authored populations, not two; opacity pass **clean with evidence**. |
+> | **A-8** | **§6.1a** — the check-1 verdict | Recorded as a **DATA gap, not a schema gap**, in their words — including **their reason for not proposing the easy fix.** |
+> | **A-9** | **§7.11** *(new)* + companion artifact | **THE HAZARD POINTED AT US. C9 IS NOT IN SOMO'S REPOSITORY.** Their field list came from **our prose summary** — they have been ratifying a **description of the artifact, not the artifact.** |
+> | **A-10** | **§3.5** *(new)* — canon, theirs | **A STATED LIMIT DOES NOT DISCHARGE THE LIMIT.** The reader's half of A-9. |
+> | **A-11** | **§3.5** *(new)* — canon, theirs | **A RECORD OF WORK DONE IS NOT A CLAIM ABOUT THE THING WORKED ON.** The generalisation that resolved A-4; SOMO are adopting it platform-wide. |
+> | **A-12** | **§6.1b** *(new)* — OPEN | **The summary-delta measurement**, recorded as a **DISCLOSURE, not a finding** (§3.4). **Nobody has measured what a summary loses against its source.** |
+> | **A-13** | **§3.6** *(new)* + the citation block above | **A CONTRACT THAT IS NOT PINNED CANNOT BE RATIFIED — ONLY DESCRIBED.** C9 was **dirty in our working tree every time they read it**. The C7 SHA-pinning precedent is adopted. |
+> | **A-14** | **§3.6** *(new)*, **§7.12** *(new)* | **AN ARTIFACT DESCRIBED AS ENCLOSED IS NOT ENCLOSED.** **The enclosure never arrived**; the word did the work of the act and neither side noticed for two exchanges. |
+>
+> **SOMO have accepted the collision ruling, the retirement restatement and the S/4 ruling, and are
+> re-running check 1 AGAINST THE ARTIFACT and the derived field list. NOTHING IS REOPENED.** No
+> rows, no master edit; **2B remains blocked on D-1 and D-COMP-BPOM** (§6).
+
 **This document is the AUTHORITY.** `src/services/sdc/materialMasterRef.types.ts` expresses the
 same shape in a form a build can check; where the two disagree, **this document wins and the
 types are the defect.** `materialMasterRef.contract.test.ts` makes that disagreement fail the
@@ -56,13 +102,18 @@ This is that freeze.
 
 Read against your BOM shape and **reply in writing**; nothing here is frozen until you do.
 
+**As of the fourth issue: both your checks have run, R-1…R-6 stand ratified in shape on your side,
+and the one collision you raised is ruled in your favour (A-4).** What remains is the part A-9
+names — **the shape you ratified came to you as our prose, so the re-check is against the ARTIFACT
+and the derived field list, not against this table.**
+
 | # | Item | Where | Substance |
 |---|---|---|---|
 | **R-1** | **Identity keys on SPECIFICATION** | **§2** | S/4 MATNR semantics: a MATNR is a purchasable item, not a chemical. Accepted on an **irreversibility** argument, not a preference. |
 | **R-2** | **Every row carries a `grain` tag** | **§2.2** | `'substance' \| 'specification'`, with confidence and adjudication provenance. This is what survives D-1 either way. **ADDENDUM (ADD-4):** it now has a **first real-data justification** rather than only an argument from irreversibility — SOMO's preliminary reading of their own master is **SUBSTANCE-level where ours is SPECIFICATION-level** (§6.1a). |
 | **R-3** | **`materialCode` is OPAQUE — permanently** | **§3** | No prefix stability, ever. **AMENDED (A-3):** the first issue said *both* platforms violate this today. Measured, **only we do** — the clause is **preventative on your side, corrective on ours** (§3.1). It is still the reason the contract exists in writing. |
 | **R-4** | **Adoption is not discovery** | **§4** | Both masters self-declared SIMULATED ⇒ no row may claim a correspondence found against a real master. Enforced structurally, not by convention. **AMENDED (A-2):** provenance now also carries **`routeToResolution` — what would settle the row** (§4.1). |
-| **R-5** | **An empty map is an honest map** | **§5** | Absence means UNKNOWN. The schema has no way to write "unknown" and nothing in it rewards filling it in. |
+| **R-5** | **An empty map is an honest map** | **§5** | Absence means UNKNOWN. The schema has no way to write "unknown" and nothing in it rewards filling it in. **AMENDED (A-4):** absence is no longer the ONLY honest way to say *not settled* — `'ADJUDICATED_UNRESOLVED'` is a verdict distinct from absence (§5.3). **The no-UNKNOWN rule is sharpened by this, not weakened**, and there is still no way to write "unknown". |
 | **R-6** | **Your canonical-S/4 crosswalk's grain** | **§9** | The one thing we need FROM you that this document cannot decide. |
 
 ---
@@ -188,7 +239,7 @@ load-bearing sentence under R-3.
 
 | Platform | Prefix reader in production | Basis | Consequence of a code-space change |
 |---|---|---|---|
-| **SOMO** | **NONE — measured, not assumed.** No material-code prefix is parsed anywhere in their production code. `materialClass` is a **declared ENUM read as a FIELD** at ~20 sites — already the shape this clause requires | **A reciprocal sweep they ran and reported** | **None.** A Paragon code-format change does not reach their explosion behaviour |
+| **SOMO** | **NONE — measured, not assumed.** No material-code prefix is parsed anywhere in their production code. **Measured ACROSS ALL THREE POPULATIONS at check 2 (A-7): the opacity pass is CLEAN WITH EVIDENCE — zero prefix-reading on material, bulk or finished-good codes.** `materialClass` is a **declared ENUM read as a FIELD** at ~20 sites — already the shape this clause requires — and **their prefixes are AUTHORING CONVENTION ONLY**, carrying no read path | **A reciprocal sweep they ran and reported, widened at check 2** | **None.** A Paragon code-format change does not reach their explosion behaviour |
 | **Paragon** | `inferBpom` derives **BPOM regulatory applicability** from `AI-`/`FR-` (`src/components/v2-features/GRInspectionWizard.tsx:129-131`) and **FAILS OPEN** — an unrecognised prefix yields *"no check required"* | Read from our own shipped code | A SOMO code-format change silently switches a **compliance check OFF** |
 
 **What the first issue got wrong, and how.** C8 §4.6 (`C8-RECIPROCAL-HAZARD`) recorded SOMO
@@ -302,6 +353,92 @@ none of the three is about the underlying fact being wrong. **All three are abou
 writing does to a fact** — a shape-matched census loses the members it never looked for, a
 description reproduces its own subject, and a quotation strips a status. **The register's own
 hygiene is the failure surface in each.**
+
+### 3.5 **A-10 · A-11.** The reader's half — two canon rows, both SOMO's
+
+**Both point at the READER rather than the writer, which nothing in our canon covered.** Every rule
+in §3.3–§3.4 constrains the party *producing* a statement. These two constrain the party
+*consuming* one, and the gap they close is the one the counterparty had to find because it is
+invisible from the producing end.
+
+#### A-10 — **A STATED LIMIT DOES NOT DISCHARGE THE LIMIT**
+
+> **NAMING A GAP IS NOT CLOSING IT.** An investigation that states what it could not check has done
+> its job; **the seat consuming it has not, if it proceeds as though the check were complete.**
+
+**The instance is A-9, and it is theirs.** Their investigating seat **opened by naming exactly what
+it could not check** — that its field list came from prose, not from the artifact — and **the seat
+above it proceeded as though the check were complete.** The disclaimer was present, correct, and
+first. It changed nothing downstream.
+
+**File it beside §3.4's `A COMMITMENT TO CHECK IS NOT A FINDING` — same family, opposite end.** One
+governs how a **disclosure is recorded** by the party receiving it; this one governs how a
+**disclaimer is consumed** by the party acting on it. Between them they cover both directions of the
+same transaction, and **neither is any use without the other**: a status faithfully recorded is
+still discarded if the next reader treats a stated limit as a discharged one.
+
+**Both halves of the summary failure are now filed, one from each platform** — ours at §7.11 (*a
+counterparty ratifying a summary has not ratified the contract*) and theirs here. That symmetry is
+not decoration: **a class filed from only one side would have read as blame rather than as
+mechanism.**
+
+#### A-11 — **A RECORD OF WORK DONE IS NOT A CLAIM ABOUT THE THING WORKED ON**
+
+**The generalisation SOMO drew off our collision reframing (A-4), and are adopting platform-wide.**
+It is recorded here with its origin because **it is the sentence that resolved
+`ADJUDICATED_UNRESOLVED`**: once the two kinds of claim are separated, a row that says *"we looked
+and could not close it"* stops looking like a hedged assertion about the correspondence and becomes
+an exact assertion about something else.
+
+**And it states the cost of the opposite posture, which is the part worth carrying.** An
+honest-state discipline that refuses to write anything until it can write a confident answer
+**is itself a loss** — it discards the analysis. **The effort is a fact worth keeping**, and it is a
+fact the party that spent it is uniquely placed to record and uniquely likely to lose.
+
+### 3.6 **A-13 · A-14.** The shipping half — **the family's third face, and it was blocking them**
+
+§3.4–§3.5 cover **writing** a statement and **reading** one. Neither covers **shipping** one, and
+that is where this contract actually failed. **Both findings are SOMO's, both are procedural, and
+both are correct.**
+
+#### A-13 — **A CONTRACT THAT IS NOT PINNED CANNOT BE RATIFIED — ONLY DESCRIBED**
+
+> **COMMITTED-AND-CITED IS THE MINIMUM UNIT OF AGREEMENT BETWEEN TWO SYSTEMS, AND A WORKING TREE IS
+> NOT A VERSION.**
+
+**C9 was dirty every time they read it.** The contract, the types module and the field-list
+generator were all modified in the working tree across the readings — **so they were reading a
+document mid-edit, past the version our own prose described.** Every ratification they gave was
+therefore given against **a moving artifact**, which is a stronger version of the A-9 defect: not
+merely a summary instead of the artifact, but **no fixed artifact to summarise.**
+
+**The part that stings, and it is the useful half:** **OUR OWN GENERATOR ALREADY SAYS THE HARDER
+VERSION OF THIS.** [`C9-required-fields.md`](./C9-required-fields.md) opens by refusing to be
+ratified in place of the contract — we wrote that rule, generated it into an artifact, and **did not
+apply it one layer out.** **A DISCIPLINE STATED IN AN ARTIFACT DOES NOT PROPAGATE TO THE PROCESS
+THAT SHIPS THE ARTIFACT.** It has to be applied to the shipping, deliberately, by someone.
+
+#### A-14 — **AN ARTIFACT DESCRIBED AS ENCLOSED IS NOT ENCLOSED**
+
+> **DELIVERY IS A FACT TO BE CONFIRMED, NOT ASSERTED.**
+
+**THE ENCLOSURE NEVER ARRIVED.** C9 has only ever lived in our repository. Our message said
+*"enclosed"* and **carried nothing**. **"Enclosed" and "delivered" came apart silently, and neither
+side noticed for two exchanges** — the word did the work of the act, and nothing in either process
+checked.
+
+**Note the shape it shares with §3.4:** a disclosure and a measurement look identical in a document
+once quoted; **an asserted delivery and an actual one look identical in a message.** In both cases
+the failing artifact is *the sentence that stands in for the thing* — and in both cases the fix is
+the same shape: **name the status, and make the confirming party the one who can see it.**
+
+**The family now covers all three faces — WRITING, READING and SHIPPING:**
+
+| Face | Class | Where |
+|---|---|---|
+| **Writing** | A commitment to check is not a finding · a census must derive · describe don't render | §3.3, §3.4 |
+| **Reading** | A stated limit does not discharge the limit · a counterparty ratifying a summary has not ratified the contract | §3.5, §7.11 |
+| **Shipping** | **A contract that is not pinned cannot be ratified — only described** · **an artifact described as enclosed is not enclosed** | **§3.6** |
 
 ---
 
@@ -425,7 +562,7 @@ interface MaterialMasterRefRow {
   paragon:    MaterialRef;              // { spaceId, materialCode }
   somo:       MaterialRef;
   grain:      'substance' | 'specification';
-  verdict:    'EQUIVALENT' | 'NOT_EQUIVALENT';
+  verdict:    'EQUIVALENT' | 'NOT_EQUIVALENT' | 'ADJUDICATED_UNRESOLVED';   // AMENDED (A-4), §5.3
   confidence: 'CERTAIN' | 'PROBABLE' | 'TENTATIVE';
   provenance: AdjudicationProvenance;
 }
@@ -441,16 +578,26 @@ A row asserts something; silence asserts nothing. Consequences, all intended:
 - **An empty map asserts nothing at all** — which is the correct content of this crosswalk today.
 - **A sparse map is not an incomplete one.** Nothing in the shape rewards filling it in, and no
   consumer may treat absence as a gap to be closed.
+- **AMENDED (A-4): absence is not the only honest way to say *not settled*.** **ABSENCE MEANS
+  NOBODY LOOKED.** A row carrying `'ADJUDICATED_UNRESOLVED'` means somebody looked, formed a
+  candidate, and could not close it — a **different fact**, and one this map now keeps. See §5.3.
 
 **§5.1 — the one structural rule on the collection.** A pair may carry **zero, one or two** rows
 (one per grain). Two rows at the **same** grain with **different** verdicts is a contradiction and
 is invalid. This is the only well-formedness constraint the schema imposes, and it is deliberately
-the only one: every other question is an adjudication, not a shape.
+the only one: every other question is an adjudication, not a shape. **A-4 does not add a second
+constraint:** an `'ADJUDICATED_UNRESOLVED'` row is **SUPERSEDED by its resolution, never
+accompanied by it** — when the route pays off, the row is replaced, and the one-row-per-grain rule
+is what says so.
 
-**`spaceId` is required on both sides and is not decoration.** Each party owns more than one space
-*today*: Paragon has the authoritative master **and** the document lane (30 codes the master does
-not name, §6.4); SOMO has BOM codes **and** canonical S/4, with the crosswalk between them
-unbuilt. A row that cannot say which space it means is ambiguous now, not hypothetically.
+**`spaceId` is required on both sides and is not decoration.** The populations, each stated with how
+it was obtained (§3.3): **Paragon** holds the authoritative master **and** the document lane (30
+codes the master does not name, §6.4). **SOMO** hold **THREE self-authored populations** under MATNR
+semantics — **88 material (ROH+VERP), 17 bulk (HALB), 17 finished-good (FERT)** — **pairwise
+disjoint by measurement but NOT ENFORCED**: no cross-contract uniqueness assertion exists, so
+**THEY CAN DECLARE THE COLLAPSE; THEY CANNOT PROMISE IT** (A-7, their own correction, running
+against their earlier statement of two). **Canonical S/4 is OURS, not a third space of theirs** (A-6, §5.2b). A
+row that cannot say which space it means is ambiguous now, not hypothetically.
 
 ### 5.2 **AMENDED (A-1).** When the field retires — **STATED PER PARTY, because the symmetry is false**
 
@@ -480,10 +627,111 @@ as scaffolding due for removal; scaffolding gets designed around, and a field de
 field that becomes wrong before it becomes unnecessary.
 
 **And discharging Paragon's half changes nothing about the requirement.** Even with our document
-lane retired, a row still needs `spaceId` on **both** sides — because SOMO still holds two spaces
-and a row names both parties. **Per-party is the only correct grain for this condition:** each
-party can state when *its own* contribution to the ambiguity ends, and neither can state when the
-field goes away.
+lane retired, a row still needs `spaceId` on **both** sides — because a row names both parties.
+**Per-party is the only correct grain for this condition:** each party can state when *its own*
+contribution to the ambiguity ends, and neither can state when the field goes away.
+
+#### 5.2a **AMENDED (A-5).** The condition is **AUTHORSHIP, NOT A COUNT** — and A-1's conclusion survives by a better route
+
+**SOMO's check 2 found the remaining softness in the clause, and it is in the word "holds".** They
+satisfy *"holds one space"* **TODAY, and only VACUOUSLY — because the counterpart space is EMPTY.**
+They hold **zero codes in canonical S/4** (measured, A-7). **The condition holds precisely while the
+crosswalk has no S/4 codes in it, and FAILS THE MOMENT THE WIRE LANDS AND THE CONTRACT DOES THE WORK
+IT EXISTS FOR.** Their formulation, carried verbatim because it is the reason A-1's conclusion is
+right rather than merely correct:
+
+> **A RETIREMENT CONDITION THAT HOLDS ONLY BEFORE THE CONTRACT DOES ANY WORK IS NOT A RETIREMENT CONDITION.**
+
+**So the condition is restated, and the restatement is not a tightening of the same idea — it is a
+different idea:**
+
+> **BOTH PARTIES AUTHOR EVERY SPACE THEY HOLD.**
+
+**A COUNT TREATS SPACE-HOLDING AS HOUSEKEEPING** — something a tidy platform gets down to one and
+then the field drops. **For SOMO, one space is another organisation's master under Paragon MDG
+governance, WHICH THEY CAN NO MORE COLLAPSE THAN RENAME S/4.** No amount of tidying on their side
+reaches it, because the obstacle was never their untidiness.
+
+**Composed with §1, the conclusion becomes structural rather than circumstantial.** §1 says a
+crosswalk earns its place **only** between spaces owned by different parties. So the authorship
+condition can only be satisfied when the row's two sides share an author — **which is exactly the
+case in which this crosswalk should not exist at all.** `spaceId` therefore retires **only when the
+crosswalk is deleted**, which is the strongest possible form of "never retires", and it no longer
+depends on the S/4 programme's timing to be true.
+
+#### 5.2b **AMENDED (A-6).** OPERATOR RULING — **canonical S/4 is the PORTAL's side of C9**
+
+**Our side of this crosswalk IS S/4 material-master identity. That is what `material_master_ref`
+exists for**, and the 5-entry SIMULATED master is that space's stand-in, not a different space (§6.4
+is the honest statement of the distance between them).
+
+**The consequence, stated explicitly because it changes what SOMO must build:**
+
+> **SOMO NEVER NEED MORE THAN ONE `spaceId` FOR THEIR OWN POPULATIONS, AND S/4 IS NOT A THIRD SPACE
+> FOR THEM TO CARRY.**
+
+Their three self-authored populations (A-7) sit on **their** side of a row; canonical S/4 sits on
+**ours**. What they do not author, they reference — as the counterpart half of a row, which is the
+one place in this schema a foreign identity is supposed to appear.
+
+---
+
+## 5.3 **AMENDED (A-4).** `ADJUDICATED_UNRESOLVED` — **absence and adjudicated-unresolved are DIFFERENT FACTS**
+
+**Raised by SOMO, ruled in their favour, and the collision was real.** It is a collision between two
+of our own clauses, and neither was wrong on its own:
+
+| The clause | What it says | Where they meet |
+|---|---|---|
+| **§5** | **Absence is unknown.** A doubtful row is simply **not written** | A doubtful correspondence produces **no row** |
+| **§4.2** | **`routeToResolution` is REQUIRED** on every row | A route can only be carried **by a row** |
+
+> **A ROW THAT IS ABSENT CANNOT CARRY A ROUTE.** So the field added at SOMO's own request (A-2) had
+> **nowhere to live**: the only rows that could carry it were the rows §5 said not to write.
+
+**SOMO's resolution, adopted:**
+
+> **ABSENCE MEANS NOBODY LOOKED. AN ADJUDICATED-UNRESOLVED ROW MEANS SOMEBODY LOOKED, FORMED A
+> CANDIDATE, AND COULD NOT CLOSE IT.**
+>
+> **A MAP THAT CANNOT DISTINGUISH THEM LOSES THE MORE EXPENSIVE ONE — THE ONE THAT COST ANALYSIS.**
+
+### 5.3.1 Why this does NOT weaken the no-UNKNOWN rule — **it sharpens it**
+
+**The rule was that SILENCE MUST ASSERT NOTHING, and it still does.** Nothing about absence has
+changed: a pair with no row at a grain is unknown at that grain, an empty map asserts nothing at
+all, and no consumer may read absence as a gap to be closed.
+
+**The error was assuming absence was the only honest way to say "not settled".** That conflated two
+claims:
+
+- **An `'ADJUDICATED_UNRESOLVED'` row ASSERTS NOTHING ABOUT THE CORRESPONDENCE.** The no-UNKNOWN
+  property is untouched — the row does not say *maybe equivalent*, and there is no reading of it
+  that yields a hedged verdict.
+- **It ASSERTS SOMETHING ABOUT THE WORK DONE.** That is a **different claim, and a true one** — the
+  generalisation SOMO drew from it and are adopting platform-wide is §3.5's A-11: **a record of work
+  done is not a claim about the thing worked on.**
+
+**There is still NO `'unknown'` verdict and still no way to write one.** The vocabulary is pinned
+against it: no member of any closed vocabulary in this schema contains the string, and the pin
+checks that mechanically rather than trusting the prose above.
+
+### 5.3.2 What the new verdict obliges
+
+- **It carries the full three-of-three** (§4.2): **candidate** (the row), **evidence**
+  (`sourceOfTruth` + `evidenceLiveness` + `method`), and **`routeToResolution`**. **This is the row
+  shape that field was built for** — A-2 named the requirement and A-4 gave it somewhere to live.
+- **It MUST NOT carry `'CERTAIN'`** — a separate invariant from §4.1's, and worth keeping separate:
+  **§4.1's is about the EVIDENCE being invented; this one is about the CLAIM being absent.**
+  Certainty about an unresolved correspondence is a contradiction, not a strong opinion.
+- **NO CONSUMER MAY EVER JOIN ON IT**, at any grain, under any policy, at any confidence. **The
+  exclusion is unconditional and is deliberately not a confidence threshold** — raising confidence
+  must never reach it, and there is no field that switches it on.
+- **It is SUPERSEDED, never accompanied** (§5.1): when the route pays off, the row is **replaced**
+  by the resolved verdict.
+
+**Recorded as §7's second counterparty-found item** — the ledger's second entry that we did not find
+ourselves, and the second running the direction §7's preamble now says to look in.
 
 ---
 
@@ -523,52 +771,88 @@ grade-silent entry ambiguous about which grade it denotes. Two more of the same 
 and `RM-EMUL-3310`, whose master group `MG-03` (humectants) contradicts its own `EMUL` code
 segment — a live illustration of §3.
 
-### 6.1a **ADD-4.** ADVANCE SIGNAL on SOMO's check 1 — **A DISCLOSURE, NOT A MEASUREMENT (§3.4)**
+### 6.1a **AMENDED (A-7 · A-8).** SOMO's check 1 — **the measurement landed, and it corrected the disclosure**
 
-> **STATUS: OPEN.** What follows is **SOMO's preliminary reading of their own master**, given in
-> advance of their check-1 report. **Under §3.4 it is a disclosure, and it is not a finding until
-> their report lands.** It is recorded here rather than held in correspondence because a signal
-> this load-bearing should not reach the contract for the first time already promoted to fact — and
-> **§7.9 is what that looks like when it goes wrong.** Nothing in this document depends on it and
-> nothing may be built on it.
+> **STATUS: REPORTED-MEASURED (§3.4, tier 2).** The third issue carried this as **ADD-4, an ADVANCE
+> SIGNAL held OPEN** — their preliminary reading, explicitly not a finding. **Their report has now
+> landed and it corrected the preliminary reading in part.** The tier machinery is left visible
+> rather than tidied away, because **this is `A COMMITMENT TO CHECK IS NOT A FINDING` paying for
+> itself inside one cycle**: had the advance signal been recorded as a result, C9 would now carry a
+> generalisation from a sample of two as a measured fact about a peer platform's master — **which is
+> precisely §7.9, repeated.**
 
-**What they report, preliminarily.** **SOMO's master carries SUBSTANCE-LEVEL rows.** They hold
-`Glycerin` where we hold `Glycerin USP 99.5%`; `Flip-Top Cap` where we hold `Flip-Top Cap 24mm`.
-**Grade and size do not carry on their side.**
+**A-7 · WHAT THE PRELIMINARY READING GOT WRONG, in their words and against their own earlier
+position. THEIR DISCRIMINATORS ARE SPARSE AND UNSYSTEMATIC, NOT ABSENT:**
 
-**So the likely finding is a GRAIN MISMATCH, not a missing field.** That distinction is the whole
-of its significance: a missing field is a schema defect and would put this contract back into
-amendment. A grain mismatch is **a thing the schema was built to express.**
+| Discriminator | Present, of **88** material codes |
+|---|---|
+| **Grade token** | **1** |
+| **Concentration** | **5** |
+| **Packaging rows with structured capacity** | **12** |
 
-**What it would mean, if measured.** Their rows are **writable at `'substance'` grain and UNKNOWN
-at `'specification'` grain** — which is precisely §2.3's stated capability, and §5's *absence is
-unknown* doing the work: a row can assert substance-equivalence and **say nothing whatever** about
-grade or size, without denying a specification correspondence and without inventing one.
+**The earlier *"grade and size do not carry"* was generalised from a sample of two** —
+`Glycerin` / `Flip-Top Cap`, the two examples that reached us. **Anywhere our text said they carry
+none, it is corrected** (§5, §5.2b, and here). *Sparse and unsystematic* is a materially different
+finding from *absent*: it means the axis exists on their side and is **not reliable**, which is a
+harder problem than its absence and a much easier one to overstate in either direction.
 
-**Stated plainly, because it is the operator-relevant part:**
+**A-8 · THE VERDICT, RECORDED HONESTLY — a DATA gap, not a SCHEMA gap.** In their words:
 
-- **C9 ALREADY EXPRESSES THIS. NO SCHEMA CHANGE IS IMPLIED** — not by this signal, and not by its
-  confirmation. That is why this addendum is docs-only.
-- **It is the grain tag's FIRST REAL-DATA JUSTIFICATION.** Until now `grain` rested on the
-  irreversibility argument (§2.2) — sound, and entirely hypothetical: no actual pair of masters had
-  been shown to sit at different grains. A peer platform's master, read by its owner, is the first
-  evidence that the two grains are **where the data actually is**, not where the argument said it
-  might be.
-- **It sharpens D-1 for procurement** (§6.1), and with a different argument than D-1 has been
-  carrying. The substance rollup (§2.4) has been presented as an additive convenience we could
-  reach for later. **If our peer platform's master is substance-level and ours is
-  specification-level, the substance axis is not a convenience — it is the axis on which any row
-  sourced from their master can be written at all.** Procurement should have that before ruling.
+> **If Paragon buys `Glycerin USP 99.5%` and `Glycerin BP 99.0%`, their master holds ONE ROW AND HAS
+> NOWHERE TO PUT THE SECOND.**
 
-**The route, in the field's own terms** (§4.2): were a row written against their master today, its
-`routeToResolution` would read `'SOMO check-1 report, at a declared grain'` — and per §6.3 the same
-question is already the R-6 ask about their canonical-S/4 crosswalk. **They are one question, and
-their report is what answers it.**
+**And their reason for NOT proposing the easy fix belongs in this document**, because it is our own
+honest-silence discipline arriving from their side, unprompted:
 
-**The disposal condition, stated in advance so it cannot be quietly retained.** If their check
-reports otherwise, **this section is deleted and nothing else in C9 moves.** That the contract can
-absorb either outcome without a schema edit is not a consolation — **it is the property the grain
-tag was built for, tested against a real counterparty master for the first time.**
+> **Adding a grade column would give them a master that can EXPRESS the distinction while its data
+> still does not — WHICH IS A QUIETER KIND OF WRONG.**
+
+A schema that can express what the data does not hold **looks complete and reads as authoritative**;
+the gap stops being visible at exactly the moment it stops being fixable by inspection. That is
+§7's failure mode with the direction reversed, and they declined it on their own initiative.
+
+**Also recorded, because the absence is DEFENSIBLE and would otherwise read as a shortfall:**
+their master carries **no confidence and no adjudication provenance**. Those fields are authored
+**AT ADJUDICATION TIME, and no adjudication has occurred.** They are **a shape SOMO can build, not
+data they hold** — and **C9 does not relax for them**: the fields stay REQUIRED on every row this
+schema carries, whoever writes it.
+
+**What survives from ADD-4, now measured rather than disclosed:**
+
+- **The finding is still a GRAIN MISMATCH, not a missing field** — sparse discriminators put most
+  of their population at substance grain, not all of it. **C9 ALREADY EXPRESSES THIS; NO SCHEMA
+  CHANGE IS IMPLIED**, and none was made for it. (A-4's schema change came from the collision, not
+  from this.)
+- **It is still the grain tag's FIRST REAL-DATA JUSTIFICATION**, and now on a measured basis:
+  `grain` had rested on the irreversibility argument (§2.2), sound and entirely hypothetical.
+- **It still sharpens D-1** (§6.1). If our peer platform's master is substance-level **for most of
+  its population and inconsistently more precise for the rest**, the substance rollup (§2.4) is not
+  an additive convenience — **it is the axis on which any row sourced from their master can be
+  written at all**, and the sparse discriminators are exactly what makes per-row `grain` tagging
+  unavoidable rather than uniform. Procurement should have this before ruling.
+
+### 6.1b **A-12.** The SUMMARY-DELTA measurement — **OPEN, a DISCLOSURE not a finding (§3.4)**
+
+> **STATUS: OPEN.** SOMO have undertaken to report it; **per §3.4 it is recorded as a commitment,
+> not as a result.** Nothing in this document depends on it.
+
+**They are re-running check 1 against the ARTIFACT and the derived field list (A-9), and will report
+THE DELTA BETWEEN OUR PROSE SUMMARY AND THE ARTIFACT** — any required field the prose named that the
+artifact does not require, and **any the artifact requires that the prose never named.**
+
+**Why it is worth a section of its own: NOBODY HAS MEASURED WHAT A SUMMARY LOSES AGAINST ITS
+SOURCE.** A-9 establishes that ratifying a summary is not ratifying the contract; that is an
+argument. **The delta is the first number ever put on it**, in either direction, and it is available
+only because both platforms happen to hold the summary, the artifact and the ratification decision
+that ran on the wrong one.
+
+**The disposal condition, stated in advance:**
+
+- **EMPTY ⇒ our summary was faithful and their shape-ratification was sound.** The class at §7.11
+  stands as a process rule that cost nothing this time, and this section is deleted.
+- **NON-EMPTY ⇒ both platforms learn what a summary costs**, field by field. Every entry is a
+  ratification that ran on a shape the counterparty had not seen, and the delta becomes the register
+  of exactly which ones.
 
 ### 6.2 D-COMP-BPOM · with compliance — **BLOCKS the master-adoption batch**
 
@@ -598,6 +882,13 @@ Your BOM→canonical-S/4 crosswalk is named, registered and not built. **At whic
 assert?** If it asserts at substance grain while we key on specification, the two crosswalks
 compose into a substance-grain join and any specification claim built on it is unsound. This
 document cannot decide that, and we are not assuming it.
+
+**AMENDED (A-6) — what the ruling changes here, and what it does not.** **The SPACE is ours**:
+canonical S/4 is the portal's side of C9 (§5.2b), and you hold zero codes in it today (A-7). **The
+CROSSWALK TO IT is still yours to build, and its grain is still the open question** — the ruling
+moved the ownership of the target space, not the adjudication. **What it does remove is a
+distraction:** you are not being asked to carry S/4 as a third `spaceId`, and R-6 is a question
+about grain alone.
 
 ### 6.4 The 30 master-absent codes exist and are NOT in the master
 
@@ -651,8 +942,15 @@ ledger by rule, not by luck.
 | **7.8** | Both parties' spaces are named and addressable | **We cannot verify SOMO's side at all.** Their codes are illustrative and their canonical-S/4 crosswalk is unbuilt (§6.3). Every statement here about SOMO's space is *their* declaration, carried, not confirmed — **and that now cuts in the flattering direction too: §3.1's clearance of their prefix parsing is a sweep THEY ran and reported, which we can no more audit than we could the hazard it replaced.** The asymmetry to keep: a party's report about its own code is the best evidence available and is still not verification. |
 | **7.9** | **AMENDED (A-3).** The first issue's §3.1 stated as fact that SOMO's explosion engine parses `RM-`/`PM-` prefixes | **IT DID NOT.** We carried a hazard they had undertaken to *look for* (C8 §4.6) as a hazard they *had*, and published it in a contract document. **This is the first C9 divergence and it ran the opposite direction to the eleven C7/C8 ones** — not understating our own implementation, but **overstating a defect in the counterparty's.** Corrected in §3.1; recorded here because a ledger that only catches the familiar direction is not a ledger. |
 
+| **7.10** | **AMENDED (A-4).** The first three issues stated that absence was the ONLY way to express *not settled*, while §4.2 required a route on every writable row | **THE TWO CLAUSES COLLIDED AND A ROW COULD SATISFY BOTH ONLY BY NOT EXISTING.** A row that is absent cannot carry a route, so `routeToResolution` — added at SOMO's own request one issue earlier — **had nowhere to live.** **This is §7's SECOND counterparty-found item**, and the second running the direction the preamble now says to look in. Resolved in the shape (§5.3), not merely in the prose: the verdict vocabulary changed and **the pin moved with it.** |
+| **7.11** | **AMENDED (A-9).** *"SOMO builds against this"* (§8) — the reason a types module exists at all | **C9 IS NOT IN SOMO'S REPOSITORY. THEY HAVE BEEN RATIFYING A DESCRIPTION OF THE ARTIFACT, NOT THE ARTIFACT** — their field list came from **our prose summary** of `materialMasterRef.types.ts`. **This is `COMMENT-AS-CONTRACT-01` aimed at ourselves, one boundary out:** §8 claims the module inverts that class by making the document the authority and pinning the code to it, and **the inversion holds inside our repository and stops at its edge.** Two things follow, and only one of them is fixed here. **FIXED:** [`C9-required-fields.md`](./C9-required-fields.md) — the complete required-field list, **DERIVED from the module and pinned to it**, to be sent alongside this document. **NOT FIXED:** every ratification given before it existed was given against prose, and **A-12 is the measurement of what that cost.** |
+
+| **7.12** | **AMENDED (A-13/A-14).** This document has been described to SOMO across four issues as a contract they may ratify | **IT WAS NEVER DELIVERED AND NEVER PINNED.** C9 has only ever lived in our repository; our messages said *"enclosed"* and carried nothing, and the contract, the types module and the field-list generator were **modified in the working tree between their readings** — so they were reading **a document mid-edit, past the version our prose described.** **Two exchanges passed with neither side noticing.** This is the only entry in this ledger that made ratification **impossible rather than merely uninformed**, and it is fixed by the citation block at the head of this document: **all three paths, one SHA, and any later amendment is a new SHA and a new ratification.** |
+
 **None of the above blocks ratification of the SHAPE**, which is what R-1…R-6 ask for. All of it
-blocks any claim that the crosswalk is *operational*, and no such claim is made.
+blocks any claim that the crosswalk is *operational*, and no such claim is made. **§7.12 is the one
+exception and it is now discharged**: until this issue was committed and cited, there was no version
+of this contract to ratify at all.
 
 ---
 
@@ -670,7 +968,12 @@ author-unwired machines). The case for it:
    code it is exhaustiveness-checked, and a third grain cannot be added without the compiler
    objecting.
 3. **SOMO builds against this.** A type is the least ambiguous statement of a shape we can hand a
-   peer platform to mirror.
+   peer platform to mirror. **AMENDED (A-9) — and until this issue we never handed it to them.**
+   They mirrored our **prose about** the module (§7.11). The claim in this point was true about the
+   artifact and false about what crossed the boundary, which is the whole of A-9. The repair is
+   [`C9-required-fields.md`](./C9-required-fields.md): **generated from this module, pinned to it,
+   and explicitly not a summary** — it carries every field and refuses to carry the invariants,
+   pointing back here for them.
 4. **It inverts `COMMENT-AS-CONTRACT-01`.** That class named the hazard of code comments quietly
    amending a ratified contract with no review gate. Here the document is authority and the test
    pins the code to it — the same coupling, running the safe direction.
@@ -678,7 +981,9 @@ author-unwired machines). The case for it:
 **The honest cost, stated:** this adds an unused module. It is **declared inert in its own
 header**, it is one file with no importers outside its test, and **deleting it costs nothing but
 the anti-drift property**. If the operator prefers the document alone, that deletion is the whole
-reversal.
+reversal. **A-9 adds a generator and a generated document, not a second inert contract surface** —
+the renderer lives under `__tests__/` with the pin, so **the shipped inert surface is still exactly
+one file.**
 
 ---
 
@@ -690,8 +995,9 @@ reversal.
 | **R-6 — the grain of your canonical-S/4 crosswalk** (§6.3) | If it asserts at substance grain and we key at specification, the composition is unsound and neither side would see it from its own tree. |
 | ~~**Whether your explosion engine can stop reading `RM-`/`PM-` prefixes**~~ — **ANSWERED, and the premise was ours and wrong** (§3.1) | **Withdrawn.** Your sweep measured no material-code prefix parsing in production; `materialClass` is already a field. **The remaining half of this ask is ours alone**: `inferBpom` is live, unfixed, blocked on D-COMP-BPOM. |
 | **Confirm the `SEMANTIC-IN-A-STRING` cousin is out of the crosswalk's path** (§3.1a) | The echelon role carried only in a display string is yours to place; what we need is the narrower assurance that **no field this contract defines** — `materialCode`, `spaceId`, `sourceOfTruth`, `routeToResolution` — carries meaning either side is expected to parse. |
-| **Ratify A-1, A-2 and A-3 specifically** (§5.2, §4.2, §3.1) — **ACCEPTED VERBALLY; the written reply is what closes them** | They are your own corrections, but a correction adopted without written ratification is still one-sided — the exact failure §6's preamble names. **And by §3.4, a verbal acceptance is a disclosure: we hold all three as accepted-in-shape and not yet closed.** |
-| **Your check-1 report, as a MEASUREMENT** (§6.1a) | Your preliminary grain reading is held **OPEN** and nothing is built on it. Per §3.4 only the report converts it — and per §7.8 even then it is *your* measurement of *your* tree, carried and not confirmed, which is the best evidence this boundary admits. **It answers R-6 as well** (§6.3): they are one question. |
+| **Ratify A-1…A-8 — AGAINST THE ARTIFACT, not against this document's prose** (A-9, §7.11) | **This is the ask that changed.** A-1/A-2/A-3 were accepted verbally; A-4/A-5/A-6 you have accepted since. **All of it was accepted against descriptions.** [`C9-required-fields.md`](./C9-required-fields.md) ships with this issue for exactly that reason: **check the shape you are mirroring against the derived list, and this document for everything the list refuses to carry.** |
+| ~~**Your check-1 report, as a MEASUREMENT**~~ — **LANDED** (§6.1a) | **Closed.** It corrected the advance signal: your discriminators are **sparse and unsystematic, not absent**, and the verdict is a **DATA gap, not a schema gap**. Recorded with your reasoning for declining the grade-column fix, which we would have been glad to have written ourselves. |
+| **The SUMMARY-DELTA report** (§6.1b, A-12) | Held **OPEN** as a commitment, not a result. **Nobody has measured what a summary loses against its source**, and only you can — you hold our prose, and now the artifact, on the other side of the boundary it crossed. |
 | **Your `EA`/`PCS` normalization position** (§7.7) | Dormant on our side; it becomes load-bearing on the first packaging pair, which is likelier to arise from your BOM than our master. |
 
 **Roughly a two-week commitment on your side once frozen**, per the CP-2 schedule. Nothing here
@@ -702,13 +1008,16 @@ is frozen until you reply in writing.
 ## Provenance
 
 **First issue** grounded in shipped code at `main` `23eac6f`; **second issue (A-1/A-2/A-3)** at
-`main` `3860fe4`; **third issue — CANON ADDENDUM (ADD-1…ADD-4)** at `main` `6560fe6`, **docs only:
-no schema change and no edit to the types module, so the floor pin does not move** (§8). Every
+`main` `3860fe4`; **third issue — CANON ADDENDUM (ADD-1…ADD-4)** at `main` `6560fe6`, docs only;
+**fourth issue — AMENDMENT 2 (A-4…A-12)** at `main` `50f2858`, **which DOES change the schema
+(A-4), so the pin moved with it** (§8) and the derived field list ships with it (A-9). Every
 claim about our own tree carries a `file:line`; **every claim about SOMO's tree is now marked with
 how it was obtained** (§3.3) **and, as of ADD-1, with its STATUS — disclosed or reported-measured**
 (§3.4) — the one that carried neither is §7.9. Companion
 types: `src/services/sdc/materialMasterRef.types.ts` (inert, zero rows). Pinned by
-`src/services/sdc/__tests__/materialMasterRef.contract.test.ts`. Predecessors and their rulings:
+`src/services/sdc/__tests__/materialMasterRef.contract.test.ts`. Companion artifact:
+[`C9-required-fields.md`](./C9-required-fields.md), **generated** by
+`src/services/sdc/__tests__/deriveC9FieldList.ts` and pinned to the module in the same suite. Predecessors and their rulings:
 [C7](./C7-pr-intake.md) (PR intake), [C8](./C8-forecast-publication.md) (forecast publication —
 §4.0 master declaration, §4.1 the external clock, §4.3 adoption-not-discovery, §4.4 D-1, §4.6 the
 reciprocal prefix hazard). Batch record: `docs/findings.md`, CP-2 · Batch 2 census and Batch 2a.

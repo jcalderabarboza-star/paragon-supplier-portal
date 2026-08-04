@@ -27,6 +27,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { deriveC9FieldListDoc, deriveInterfaces } from './deriveC9FieldList';
 import {
   ADJUDICATION_METHODS,
   MATERIAL_GRAINS,
@@ -209,6 +210,147 @@ describe('C9 — AMENDMENT 2 (A-2): an unresolved row carries its ROUTE TO RESOL
     for (const f of fields) {
       expect(CONTRACT, `provenance field '${f}' is not documented in C9`).toContain(f);
     }
+  });
+});
+
+describe('C9 — AMENDMENT 2 (A-4): ADJUDICATED_UNRESOLVED is distinct from ABSENCE', () => {
+  // The collision SOMO raised and the operator ruled in their favour: "absence is
+  // unknown" says a doubtful row is not written; §4.2 requires a route on every
+  // WRITABLE row; a row that is ABSENT CANNOT CARRY A ROUTE. The field added at
+  // their request had nowhere to live. The resolution is that absence and
+  // adjudicated-unresolved are DIFFERENT FACTS.
+
+  it('the verdict exists in the vocabulary and is named in the contract', () => {
+    expect(MATERIAL_REF_VERDICTS).toContain('ADJUDICATED_UNRESOLVED');
+    expect(CONTRACT).toContain('ADJUDICATED_UNRESOLVED');
+  });
+
+  it('the no-UNKNOWN rule SURVIVES it — sharpened, not weakened', () => {
+    // The whole risk of A-4 is that it reads as a back-door 'unknown'. It is not
+    // one, and the property that says so is mechanical: no vocabulary member
+    // anywhere contains UNKNOWN, so unknown remains unwritable and silence
+    // remains the only way to express it.
+    const all = [
+      ...MATERIAL_GRAINS,
+      ...MATERIAL_REF_VERDICTS,
+      ...MATERIAL_REF_CONFIDENCES,
+      ...ADJUDICATION_METHODS,
+    ];
+    expect(all.filter((v) => /UNKNOWN/i.test(v))).toEqual([]);
+    // And the distinction that makes the new member honest has to be STATED, in
+    // both places, or a reader meets a third verdict with no account of it.
+    for (const src of [CONTRACT, TYPES_SRC]) {
+      expect(src).toContain('ABSENCE MEANS NOBODY LOOKED');
+      expect(src).toMatch(/LOSES THE MORE EXPENSIVE ONE/);
+    }
+  });
+
+  it('an unresolved row asserts about the WORK, never about the correspondence', () => {
+    // SOMO's generalisation off the reframing, adopted platform-wide on their
+    // side. It is the sentence that resolved the collision, so it is carried
+    // verbatim rather than paraphrased.
+    for (const src of [CONTRACT, TYPES_SRC]) {
+      expect(src).toContain('A RECORD OF WORK DONE IS NOT A CLAIM ABOUT THE THING WORKED ON');
+    }
+  });
+
+  it('it can NEVER be joined on — unconditionally, not by confidence threshold', () => {
+    // The failure this pin exists for: someone "fixes" joinability by lowering
+    // minimumConfidence. That must not reach an unresolved row, because the row
+    // asserts nothing to join.
+    for (const src of [CONTRACT, TYPES_SRC]) {
+      expect(src).toMatch(/NO (POLICY MAY EVER MAKE|CONSUMER MAY EVER JOIN)/);
+    }
+    expect(TYPES_SRC).toContain('unconditional');
+  });
+});
+
+describe('C9 — AMENDMENT 2 (A-5/A-6): retirement is AUTHORSHIP, not a count', () => {
+  // SOMO's check 2: they satisfy "holds one space" today ONLY VACUOUSLY, because
+  // the counterpart space is empty — it holds precisely while the crosswalk has
+  // no S/4 codes in it.
+
+  it('their formulation is carried verbatim, because it is the reason the conclusion holds', () => {
+    expect(CONTRACT).toContain(
+      'A RETIREMENT CONDITION THAT HOLDS ONLY BEFORE THE CONTRACT DOES ANY WORK IS NOT A RETIREMENT CONDITION',
+    );
+  });
+
+  it('the condition is stated as AUTHORSHIP in both places', () => {
+    for (const src of [CONTRACT, TYPES_SRC]) {
+      expect(src).toMatch(/AUTHOR EVERY SPACE THEY HOLD/);
+    }
+    // The count formulation is what A-5 replaced; if it comes back as the
+    // operative condition the clause has silently regressed to housekeeping.
+    expect(TYPES_SRC).toContain('NOT A COUNT');
+  });
+
+  it('A-6: canonical S/4 is OUR side, and is not a third space for SOMO', () => {
+    for (const src of [CONTRACT, TYPES_SRC]) {
+      expect(src).toMatch(/S\/4 IS NOT A THIRD SPACE/);
+    }
+  });
+});
+
+describe('C9 — AMENDMENT 2 (A-7/A-8): SOMO’s shape as MEASURED, not as generalised', () => {
+  it('all three of their self-authored populations are named', () => {
+    // Their earlier position said two. The correction runs AGAINST their earlier
+    // statement and is theirs — which is why it is recorded rather than absorbed.
+    for (const n of ['ROH+VERP', 'HALB', 'FERT']) {
+      expect(CONTRACT, `SOMO population '${n}' is not named in C9`).toContain(n);
+    }
+  });
+
+  it('disjointness is declared, not promised', () => {
+    expect(CONTRACT).toContain('THEY CAN DECLARE THE COLLAPSE; THEY CANNOT PROMISE IT');
+  });
+
+  it('the discriminators are SPARSE, not absent — the earlier claim is corrected', () => {
+    expect(CONTRACT).toMatch(/SPARSE AND UNSYSTEMATIC, NOT ABSENT/);
+  });
+});
+
+describe('C9 — AMENDMENT 2 (A-9): the required-field list is DERIVED from the module', () => {
+  // A counterparty ratifying a summary has not ratified the contract. The list is
+  // generated from the types source so it cannot become a second summary.
+
+  it('the committed list matches the rendering of the current shape', async () => {
+    // Regenerate with `npx vitest run -u` when the shape changes on purpose.
+    await expect(deriveC9FieldListDoc(TYPES_SRC)).toMatchFileSnapshot(
+      '../../../../docs/contracts/C9-required-fields.md',
+    );
+  });
+
+  it('EVERY field of EVERY interface reaches the list — derived on both sides', () => {
+    // The bidirectional check. Generation alone would pass trivially if the
+    // renderer dropped a field; this reads the interfaces independently and
+    // requires each name in the committed file.
+    const list = readFileSync(
+      join(process.cwd(), 'docs', 'contracts', 'C9-required-fields.md'),
+      'utf8',
+    );
+    const interfaces = deriveInterfaces(TYPES_SRC);
+    expect(interfaces.length).toBeGreaterThanOrEqual(5);
+    for (const iface of interfaces) {
+      expect(list, `interface '${iface.name}' is missing from the derived list`).toContain(
+        iface.name,
+      );
+      expect(iface.fields.length).toBeGreaterThan(0);
+      for (const f of iface.fields) {
+        expect(list, `${iface.name}.${f.name} is missing from the derived list`).toContain(
+          `\`${f.name}\``,
+        );
+      }
+    }
+  });
+
+  it('the list refuses to stand in for the contract', () => {
+    const list = readFileSync(
+      join(process.cwd(), 'docs', 'contracts', 'C9-required-fields.md'),
+      'utf8',
+    );
+    expect(list).toContain('A COUNTERPARTY RATIFYING A SUMMARY HAS NOT RATIFIED THE CONTRACT');
+    expect(list).toContain('C9-material-master-ref.md');
   });
 });
 
