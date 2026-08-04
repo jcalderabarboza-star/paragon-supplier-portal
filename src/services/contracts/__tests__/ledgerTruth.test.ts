@@ -35,10 +35,13 @@
 //      `docs/contracts/README.md` summarised C9 §7 as "(7.1–7.8) … eight
 //      non-conformances" while §7 carried TWELVE. Four rows added by amendment
 //      never reached the index, and the index is what a reader meets first.
-//      This is `A-9` one layer in — a summary standing in for the artifact —
-//      and it is the same failure the ledger exists to prevent, committed by
-//      the ledger's own table of contents. Found by this batch, red on arrival,
-//      fixed in the same PR.
+//      Filed as `SUMMARY-LOSS-IS-DIRECTIONAL-01` REPRODUCING ITSELF ONE LAYER
+//      IN — not as a separate README defect (operator ruling, CP-3b). The four
+//      dropped were 7.9–7.12: the summary kept every row that UNDERSTATED our
+//      implementation and lost the ones where we had OVERSTATED a defect in
+//      SOMO's. Same direction as the measured 71%, with no boundary crossed —
+//      A-9 committed by the ledger's own table of contents. Found by this
+//      batch, red on arrival, fixed in the same PR.
 //
 // ── WHY IT LIVES HERE AND NOT BESIDE THE C9 PIN ─────────────────────────────
 //   It spans C7, C8 and C9. `materialMasterRef.contract.test.ts` pins ONE

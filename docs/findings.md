@@ -746,31 +746,48 @@ is held to here.
 | **§7 is well-formed** — rows uniquely numbered, contiguous from 7.1, both cells populated. | A deleted row is a deleted disclosure. A one-celled row is a claim without its counter-claim. |
 | **A summary of the ledger names every row in it** (`docs/contracts/README.md`). | The finding below. |
 
-### `LEDGER-SUMMARY-DROPS-ROWS-01` — **found by this batch, RED ON ARRIVAL, fixed in this PR**
+### `SUMMARY-LOSS-IS-DIRECTIONAL-01` — **REPRODUCING ITSELF ONE LAYER IN, INSIDE THE ARTIFACT** (operator ruling, CP-3b)
+
+**Filed as the existing class recurring, NOT as a separate README defect.** That
+framing is the finding: the class was measured at the boundary to SOMO — 15 of
+21 required fields lost, and lost *in a direction* — and **it is filed here
+because the same mechanism ran again with no boundary to cross.**
 
 > **`docs/contracts/README.md` summarised C9 §7 as *"(7.1–7.8) … eight
 > non-conformances"* WHILE §7 CARRIED TWELVE.**
 
 **Four rows added by amendment never reached the index**, and the index is what a
-reader meets first. **Note which four went missing: 7.9, 7.10, 7.11, 7.12 — and
-THREE of them run the direction ADD-3 said the ledger was not being read in.**
-The summary kept every entry that understated our implementation and dropped the
-ones where we had overstated a defect in the counterparty's, mislaid a required
-field, ratified against prose, and **never delivered the contract at all.**
-Nobody selected for that; **the eight that stayed are simply the eight that were
-there when the sentence was written.** That is the whole mechanism — **a summary
-does not decay by being edited badly, it decays by not being edited at all.**
+reader meets first. **THE FOUR DROPPED WERE 7.9, 7.10, 7.11, 7.12 — and THREE of
+them run the direction ADD-3 said the ledger was not being read in.**
 
-**This is `A-9` committed by the ledger's own table of contents.** A-9 says a
-counterparty ratifying a summary has not ratified the contract; **here the
-summary is ours, in our own package, one file from the artifact — and it lost a
-third of the ledger.** `STATED-LIMIT-DOES-NOT-DISCHARGE-01` and
-`CONTRACT-NOT-PINNED-01` were both filed about the boundary to SOMO. **This one
-never crossed a boundary.**
+> **THE SUMMARY KEPT EVERY ROW THAT UNDERSTATED OUR IMPLEMENTATION AND LOST THE
+> ONES WHERE WE HAD OVERSTATED A DEFECT IN SOMO'S** — plus the mislaid required
+> field, the ratification against prose, and **the contract never delivered at
+> all.**
+
+**Nobody selected for that**, and that is exactly why it belongs to this class
+rather than beside it. The parent class found the loss falling on enumerations,
+nested structures and invariants — **the enforceable half — while the headline
+and the argument carried.** Here the loss falls on the rows recording *our own
+overstatements*, while the rows recording our understatements carried. **Same
+shape: prose keeps what a sentence was already about and silently drops what
+arrived later.** The eight that stayed are simply the eight that were there when
+the sentence was written. **A summary does not decay by being edited badly — it
+decays by not being edited at all.**
+
+**AND THE TWO LAYERS COMPOSE, WHICH IS THE PART THAT COSTS SOMETHING.** A-9
+established that SOMO ratified against our prose. **That prose was drawn from a
+package index which had ALREADY LOST A THIRD OF THE LEDGER** — so the summary
+delta they measured was taken against a source that was itself lossy in the same
+direction. **`COUNTERPARTY-RATIFYING-A-SUMMARY-01` was filed about the boundary
+to SOMO; `STATED-LIMIT-DOES-NOT-DISCHARGE-01` and `CONTRACT-NOT-PINNED-01` were
+too. THIS INSTANCE NEVER CROSSED A BOUNDARY — it is A-9 committed by the ledger's
+own table of contents, one file from the artifact, inside our own repository.**
 
 **The README is CORRECTED here and the assertion is on the floor**, so the next
-amendment cannot add a row without the index moving. **C9 itself is untouched** —
-the README is not the contract and not under the pin.
+amendment cannot add a §7 row without the index moving. **C9 itself is
+untouched** — the README is the package index, not a contract, and not under the
+pin.
 
 ### Mutation-verified — **the checks were confirmed to FAIL, not assumed to work**
 
