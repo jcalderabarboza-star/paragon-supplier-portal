@@ -13,8 +13,9 @@
 //   · a suite that collects fewer tests than yesterday and still exits 0;
 //   · a build that exits 0 having emitted no bundle;
 //   · a test-file glob that stops matching and reports zero tests, cleanly.
-// Each is checked below against `scripts/floor.json`. Counts are asserted in
-// BOTH directions: fewer is a regression, more is growth nobody recorded.
+// Each is checked below against `scripts/floor.json`, which is a FLOOR and not
+// an equality (operator ruling, CP-3a): below it fails, above it passes and
+// says so. See `assertCount` for the ruling's reasoning and the trade it makes.
 //
 // EXIT DISCIPLINE. The script fails by default. Every gate appends to
 // `failures`; the process exits 0 only at the very end, only if that list is
@@ -35,10 +36,15 @@ const PKG = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
 
 const CI = Boolean(process.env.GITHUB_ACTIONS);
 const failures = [];
+// What was actually observed, so the closing line reports the run and not the
+// floor. A summary that prints the recorded number back at you is a summary
+// that would read identically if nothing had run.
+const observed = { tests: null, files: null, gate: null };
 
 const group = (title) => console.log(CI ? `::group::${title}` : `\n──────── ${title} ────────`);
 const endGroup = () => console.log(CI ? '::endgroup::' : '');
 const ok = (msg) => console.log(`  ok   ${msg}`);
+const note = (msg) => console.log(CI ? `::notice::${msg}` : `  note ${msg}`);
 
 function fail(gate, msg) {
   failures.push(`${gate} — ${msg}`);
@@ -61,18 +67,33 @@ function run(gate, cmd, args, opts = {}) {
   return r.status ?? 1;
 }
 
-/** Assert an observed count against the floor, naming which direction it moved. */
+/**
+ * Assert an observed count against the recorded FLOOR.
+ *
+ * A floor, not an equality (operator ruling, CP-3a). Exact matching would make
+ * every legitimate test-adding PR red until somebody edited a number, which
+ * trains people to edit the number — and a floor that gets edited routinely is
+ * not a floor. Below it fails; above it passes and says so, loudly enough that
+ * the recorded figure does not quietly go stale.
+ *
+ * THE TRADE, RECORDED: a suite that shrinks but still exceeds the recorded
+ * floor is INVISIBLE to this check. The skipped/todo refusal below covers the
+ * common shape of that (a spec disabled rather than deleted); a spec file
+ * genuinely deleted while others grow past it does not.
+ */
 function assertCount(gate, label, actual, expected, floorPath) {
-  if (actual === expected) {
-    ok(`${label} = ${actual}`);
+  if (actual < expected) {
+    fail(gate, `${label} — REGRESSION: ${actual} < ${expected}. Something stopped being collected.`);
     return;
   }
-  const direction =
-    actual < expected
-      ? `REGRESSION: ${actual} < ${expected}. Something stopped being collected.`
-      : `UNRECORDED GROWTH: ${actual} > ${expected}. Bump \`${floorPath}\` in this PR ` +
-        `so the recorded floor and the collected count are one fact.`;
-  fail(gate, `${label} — ${direction}`);
+  if (actual > expected) {
+    note(
+      `${label} = ${actual}, above the recorded floor of ${expected}. Bump \`${floorPath}\` ` +
+        `so the floor keeps defending the current suite and not an older, smaller one.`,
+    );
+    return;
+  }
+  ok(`${label} = ${actual}`);
 }
 
 mkdirSync(OUT, { recursive: true });
@@ -127,6 +148,8 @@ group('gate 2/3 · npx vitest run  (the floor)');
   } else {
     const r = JSON.parse(readFileSync(report, 'utf8'));
     const files = Array.isArray(r.testResults) ? r.testResults.length : 0;
+    observed.tests = r.numTotalTests ?? 0;
+    observed.files = files;
 
     assertCount('vitest', 'tests collected', r.numTotalTests ?? 0, FLOOR.vitest.tests, 'scripts/floor.json');
     assertCount('vitest', 'test files collected', files, FLOOR.vitest.files, 'scripts/floor.json');
@@ -178,11 +201,37 @@ group('gate 3/3 · npm run test:gate  (SEC-GATE-01 session/HMAC)');
       if (pass === null || failed === null) {
         fail('test:gate', 'the TAP summary could not be parsed — the count is unverified');
       } else {
+        observed.gate = pass;
         assertCount('test:gate', 'gate tests passing', pass, FLOOR.gate.tests, 'scripts/floor.json');
         if (failed > 0) fail('test:gate', `${failed} gate test(s) failed`);
         if (skipped) fail('test:gate', `${skipped} gate test(s) skipped`);
       }
     }
+  }
+}
+endGroup();
+
+// ── The floor is named in ONE place, and CLAUDE.md must keep pointing at it ──
+// FLOOR-IN-PROSE-01: `CLAUDE.md` carried a floor of 662 against an actual 2070.
+// The fix was not to correct the figure but to REMOVE it — there is now no live
+// number in prose to drift, only a pointer. This asserts the pointer survives,
+// because deleting it is how the number comes back. Deliberately NOT a regex
+// hunting for stray digits in an English document: that would fire on the very
+// sentence recording this finding, and a gate that cries wolf over its own
+// prose is worse than no gate.
+group('floor provenance · CLAUDE.md points at the file, not at a number');
+{
+  const claude = join(ROOT, 'CLAUDE.md');
+  if (!existsSync(claude)) {
+    fail('floor provenance', 'CLAUDE.md is missing');
+  } else if (!readFileSync(claude, 'utf8').includes('scripts/floor.json')) {
+    fail(
+      'floor provenance',
+      'CLAUDE.md no longer points at `scripts/floor.json` — restore the pointer rather ' +
+        'than restating the number, which is FLOOR-IN-PROSE-01 all over again',
+    );
+  } else {
+    ok('CLAUDE.md points at scripts/floor.json');
   }
 }
 endGroup();
@@ -195,7 +244,8 @@ if (failures.length > 0) {
   process.exit(1);
 }
 console.log(
-  `GATES GREEN — build emitted a bundle · ${FLOOR.vitest.tests} tests across ` +
-    `${FLOOR.vitest.files} files · ${FLOOR.gate.tests} gate tests. Counts asserted, not merely run.`,
+  `GATES GREEN — build emitted a bundle · ${observed.tests} tests across ` +
+    `${observed.files} files · ${observed.gate} gate tests. Observed, and at or above ` +
+    `the recorded floor (${FLOOR.vitest.tests}/${FLOOR.vitest.files}/${FLOOR.gate.tests}).`,
 );
 process.exit(0);
