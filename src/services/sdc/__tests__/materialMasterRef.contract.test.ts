@@ -110,12 +110,18 @@ describe('C9 — the honesty invariants are stated in BOTH places', () => {
     expect(TYPES_SRC).toContain('sourceOfTruth');
   });
 
-  it('the opacity clause names BOTH platforms’ prefix readers', () => {
-    // The clause is worthless if it only binds the counterparty. Both violators
-    // must be named, including ours.
+  it('the opacity clause names OUR prefix reader, and marks the counterparty’s position as MEASURED', () => {
+    // The clause is worthless if it only binds the counterparty, so ours must be
+    // named — that part is unchanged from the first issue.
     expect(CONTRACT).toContain('OPAQUE');
     expect(CONTRACT).toContain('inferBpom');
-    expect(CONTRACT).toMatch(/explosion engine/);
+    // A-3. The first issue ALSO named theirs, and that claim was measured false:
+    // no material-code prefix is parsed in SOMO's production. The correction has
+    // to survive, because the convenient reading — "both of us do it" — is the
+    // one that makes the clause comfortable to propose.
+    expect(CONTRACT).toContain('No material-code prefix is parsed');
+    expect(CONTRACT).toContain('PREVENTATIVE');
+    expect(CONTRACT).toContain('CORRECTIVE');
   });
 
   it('the non-conformance ledger exists and is non-trivial', () => {
@@ -128,6 +134,80 @@ describe('C9 — the honesty invariants are stated in BOTH places', () => {
     // load-bearing rather than counting rows loosely.
     for (const claim of ['ZERO ROWS', 'WE PARSE IT', 'substanceRef', 'policy engine']) {
       expect(section, `non-conformance '${claim}' is missing`).toContain(claim);
+    }
+  });
+});
+
+describe('C9 — AMENDMENT 1 (A-1): spaceId retirement is stated PER PARTY', () => {
+  // The defect SOMO's own check found in OUR clause. The first issue said the
+  // field is dropped "when both sides hold one space each" — which reads as a
+  // shared tidying task and is not one: our second space is the document lane
+  // (ours to collapse, at B2b); theirs is canonical S/4, which THEY do not own
+  // either. A joint exit condition only one party can reach is not a condition.
+
+  it('the consequence is stated plainly, not implied away', () => {
+    expect(CONTRACT).toContain('EXIT DEPENDS ON A SYSTEM NEITHER PARTY CONTROLS');
+    expect(TYPES_SRC).toContain('NEVER RETIRES');
+  });
+
+  it('BOTH parties’ conditions are named, and they are different mechanisms', () => {
+    // If either half goes missing the clause silently re-acquires the false
+    // symmetry — the exact regression this pin exists for.
+    for (const src of [CONTRACT, TYPES_SRC]) {
+      expect(src).toMatch(/S\/4 WIRE/); // theirs — a programme neither party owns
+      expect(src).toMatch(/B2b/); // ours — our own tidying, on our own schedule
+    }
+    expect(TYPES_SRC).toContain('RETIREMENT IS PER PARTY');
+  });
+
+  it('the field is declared PERMANENT, so nobody builds around it as scaffolding', () => {
+    expect(CONTRACT).toMatch(/PERMANENT, not transitional/);
+  });
+});
+
+describe('C9 — AMENDMENT 2 (A-2): an unresolved row carries its ROUTE TO RESOLUTION', () => {
+  // SOMO's refinement, accepted: an unresolved row beats a confident wrong
+  // answer ONLY if it carries its candidate, its evidence, AND its route to
+  // resolution. The first issue carried two of three. Two of three is the shrug.
+
+  it('the refinement is quoted in both places, not paraphrased into a slogan', () => {
+    expect(CONTRACT).toContain('AN UNRESOLVED ROW BEATS A CONFIDENT WRONG ANSWER');
+    expect(CONTRACT).toContain('SHRUG WITH BETTER MANNERS');
+    expect(TYPES_SRC).toContain('SHRUG WITH BETTER MANNERS');
+  });
+
+  it('routeToResolution is REQUIRED — optionality is how the field would fail', () => {
+    // An optional route is omitted on exactly the doubtful rows it exists for
+    // and filled in on the confident ones. It follows `sourceOfTruth`: required,
+    // with a truthful value permitted to be an admission.
+    expect(TYPES_SRC).toMatch(/readonly routeToResolution: string;/);
+    expect(TYPES_SRC).not.toMatch(/routeToResolution\?/);
+    expect(CONTRACT).toContain('routeToResolution');
+  });
+
+  it('it is bounded to a resolution MECHANISM — not a second notes column', () => {
+    // The dispatch's explicit constraint on this amendment.
+    expect(CONTRACT).toContain('NOT A NOTES COLUMN');
+    expect(TYPES_SRC).toContain('NOT A NOTES COLUMN');
+    // `note` still exists and is still the optional free-text field, so the
+    // boundary has somewhere to point.
+    expect(TYPES_SRC).toMatch(/readonly note\?: string;/);
+  });
+
+  it('EVERY provenance field is documented in the contract — DERIVED, not hand-listed', () => {
+    // CENSUS-MUST-DERIVE-01 applied to the pin itself: read the field names out
+    // of the interface rather than restating them here, so a field added to the
+    // shape without reaching the document fails this test by construction. A
+    // hand-written list would have agreed with whoever wrote it.
+    const block = TYPES_SRC.slice(
+      TYPES_SRC.indexOf('export interface AdjudicationProvenance'),
+    ).split('}')[0];
+    const fields = [...block.matchAll(/readonly (\w+)\??:/g)].map((m) => m[1]);
+
+    expect(fields).toContain('routeToResolution');
+    expect(fields.length).toBeGreaterThanOrEqual(6);
+    for (const f of fields) {
+      expect(CONTRACT, `provenance field '${f}' is not documented in C9`).toContain(f);
     }
   });
 });

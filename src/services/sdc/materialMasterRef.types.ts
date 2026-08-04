@@ -64,6 +64,16 @@ export type MaterialRefParty = (typeof MATERIAL_REF_PARTIES)[number];
  *   · SOMO — their BOM codes (declared ILLUSTRATIVE, never SKU-validated) and
  *     canonical S/4, whose crosswalk between them is NAMED, REGISTERED AND NOT
  *     BUILT — it waits on this schema (C8 §4.1).
+ *
+ * ⚠️ RETIREMENT IS PER PARTY, AND THE SYMMETRY IS FALSE (C9 §5.2 — AMENDED, A-1).
+ * The first issue said the field drops "when both sides hold one space each" —
+ * a JOINT exit only ONE party can reach. OUR second space is the document lane;
+ * we own it, and CP-2 · B2b collapses it — OUR OWN TIDYING, on our own schedule.
+ * SOMO's second space is CANONICAL S/4: they do not own it and cannot collapse
+ * it, so their half waits on THE S/4 WIRE. A REQUIRED FIELD WHOSE EXIT DEPENDS
+ * ON A SYSTEM NEITHER PARTY CONTROLS IS A FIELD THAT NEVER RETIRES. Build
+ * against `spaceId` as PERMANENT, not as scaffolding — and note that discharging
+ * our half changes nothing: a row names both parties, and SOMO still holds two.
  */
 export interface MaterialCodeSpace {
   readonly spaceId: string;
@@ -77,12 +87,16 @@ export interface MaterialCodeSpace {
  * One party's material identity: a code, and the space it is a code IN.
  *
  * ⚠️ `materialCode` IS OPAQUE. NO PREFIX STABILITY IS PROMISED, EVER (C9 §3).
- * This is the single most load-bearing clause in the contract and it exists
- * because BOTH platforms currently violate it in shipped code: SOMO's explosion
- * engine reads `RM-`/`PM-` class semantics from the prefix, and our `inferBpom`
+ * This is the single most load-bearing clause in the contract.
+ *
+ * AMENDED — C9 §3.1 (A-3). The first issue said BOTH platforms violate it. SOMO
+ * MEASURED their side and that was wrong: no material-code prefix is parsed in
+ * their production, and `materialClass` is a declared ENUM read as a FIELD at
+ * ~20 sites. We had carried a hazard they undertook to LOOK FOR as one they HAD.
+ * So the clause is PREVENTATIVE on their side and CORRECTIVE on ours — `inferBpom`
  * derives BPOM applicability from `AI-`/`FR-` and FAILS OPEN
- * (`GRInspectionWizard.tsx:129-131`). Either side is one code-space change away
- * from a silent behaviour change in the other. Nothing may parse this string.
+ * (`GRInspectionWizard.tsx:129-131`), live and unfixed. WE ARE THE ONLY PARTY
+ * CURRENTLY IN BREACH OF A CLAUSE WE PROPOSED. Nothing may parse this string.
  */
 export interface MaterialRef {
   readonly spaceId: string;
@@ -168,6 +182,36 @@ export interface AdjudicationProvenance {
    * name its source of truth is not thereby exempt from stating that it has none.
    */
   readonly sourceOfTruth: string;
+  /**
+   * WHAT WOULD SETTLE THIS ROW. REQUIRED (C9 §4.2 — AMENDED, A-2).
+   *
+   * SOMO's refinement of "absence is unknown", accepted in their words: AN
+   * UNRESOLVED ROW BEATS A CONFIDENT WRONG ANSWER ONLY IF IT CARRIES ITS
+   * CANDIDATE, ITS EVIDENCE, AND ITS ROUTE TO RESOLUTION — OTHERWISE IT IS A
+   * SHRUG WITH BETTER MANNERS. The first issue carried two of the three: the
+   * candidate IS the row, the evidence is `sourceOfTruth` + `evidenceLiveness`,
+   * and NOTHING said what was still needed. `sourceOfTruth` is RETROSPECTIVE —
+   * it names what was consulted, never what would settle it.
+   *
+   * This field is what converts an unresolved row into an ANSWERABLE QUESTION.
+   *
+   * It names the ARTIFACT, RULING OR WIRE that would settle the row — a
+   * resolution MECHANISM, not a description of the doubt:
+   *   'D-1 ruling from Paragon procurement' · 'a LIVE Paragon master extract' ·
+   *   'SOMO BOM→canonical-S/4 crosswalk, at a declared grain' · 'D-COMP-BPOM'
+   *
+   * ⚠️ NOT A NOTES COLUMN. `note` below is the notes column and is optional;
+   * this is required and has exactly one job. Anything that is not a route to
+   * resolution belongs in `note`.
+   *
+   * ⚠️ INVARIANT (C9 §4.2): a row whose `confidence` is not `'CERTAIN'` MUST
+   * name a real route. `'NONE'` belongs only to a row with nothing left to
+   * settle — which, by the `evidenceLiveness` invariant above, means a row with
+   * LIVE evidence. COMPOSED, the consequence today is total: no row this schema
+   * could currently carry may be CERTAIN, so EVERY row writable today must name
+   * its route. The field cannot be dead on arrival.
+   */
+  readonly routeToResolution: string;
   readonly note?: string;
 }
 
