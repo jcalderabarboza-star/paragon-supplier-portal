@@ -667,3 +667,170 @@ carried with how it was obtained.
   across 175 files, unchanged**; `npm run gates` green end to end, and **CI runs
   the same command on this PR** (CP-3a) — a Linux-only failure would itself be a
   finding.
+
+---
+
+## CP-3b · §7 COMPOSITION CHECK — **investigated, MEASURED, and REFUSED in the form asked for** (refs @ `5a40ca4`)
+
+**THE CHECK THE DISPATCH ASKED FOR CANNOT BE BUILT HONESTLY TODAY, AND THE
+REASON IS NOT DIFFICULTY — IT IS THAT THE FAILURE IT EXISTS FOR IS INVISIBLE TO
+IT.** `LEDGER-UNCOMPOSED-01` asked for a guard that a §7 ledger row's subject is
+not simultaneously claimed as true in the body. It was **built as a probe, run
+against C9 at `f492b5c`, and measured before anything was written for keeps.**
+
+> **28 FIRINGS. 0 TRUE POSITIVES. AND THE ONE DEFECT IT WAS BUILT FOR IS NOT
+> AMONG THE 28.**
+
+**Why it misses:** §6.1a asserts the substance rollup *"is the axis on which any
+row sourced from their master can be written at all"* **without ever naming
+`substanceRef`** — it cites `(§2.4)` in prose. §7.4's only machine-readable
+subject is the symbol. **The contradicting sentence and the ledger row share no
+token a checker can join on.** The check would have run green through the exact
+failure that commissioned it.
+
+**Why the 28 are all false:** the symbol-bearing rows are 7.3 (`inferBpom`, 6
+body hits), 7.4 (`substanceRef` / `MaterialMasterEntry`, 4) and 7.6 / 7.10
+(`routeToResolution`, 9 each). **Every one of those sites is a correct
+disclosure** — §2.4 declaring the rollup RESERVED, §3.1 declaring our own
+opacity breach, §4.2 defining the required field. **A ledger row's subject MUST
+appear in the body; that is what a contract is.** Firing on the appearance is
+firing on the contract working.
+
+**This is our own argument against the CLAUDE.md floor regex
+(`FLOOR-IN-PROSE-01`, CP-3a), and it binds harder here.** A 28-to-0 check gets
+muted inside one batch, and a muted check is worse than none — it converts an
+open question into a closed one at no cost to anybody.
+
+### The structural finding underneath — **why the check had nothing to bind to**
+
+| # | The census | Measured on C9 @ `f492b5c` |
+| --- | --- | --- |
+| **1** | **§7 rows** | **12** (7.1–7.12) |
+| **2** | **Rows carrying a machine-readable subject** (a backticked symbol in the *"what we ship"* cell) | **5** — 7.3, 7.4, 7.6, 7.7, 7.10 |
+| **3** | **Rows carrying NO derivable subject at all** | **7** — counts (7.5), section references (7.6's invariants), a tree we cannot read (7.8), and four records of *retracted* claims (7.9–7.12) |
+| **4** | **§7 rows citing the section they contradict** | **8 of 12 — and NOT 7.4**, the row at the centre of the failure. **§7.4 does not cite §2.4, and §2.4 does not cite §7.4. The link is absent in both directions.** |
+
+### `LEDGER-SUBJECT-UNTYPED-01` — **the class, and it is the answer to the dispatch's hard question**
+
+| Class | The mechanism | Why it is not a drafting nit |
+| --- | --- | --- |
+| **`LEDGER-SUBJECT-UNTYPED-01`** | **A LEDGER ROW WRITTEN FOR A READER AND A LEDGER ROW WRITTEN FOR A CHECK ARE DIFFERENT ARTIFACTS, AND ONLY ONE OF THEM WAS EVER AUTHORED.** §7's rows are prose pairs — *what the contract states* against *what we ship*. They read perfectly and **join on nothing.** | **§7 IS NOT ONE KIND OF ROW.** The measurement above found **three**: live divergences (7.1–7.7), a permanently unverifiable statement (7.8), and **retraction records** (7.9–7.12). The intended check is coherent only over the first kind. **Applied to a retraction record it INVERTS: §7.11 says *"SOMO builds against this"* is false, and §8 point 3 STILL CARRIES that sentence — deliberately, annotated in place.** A checker sees a §7 subject asserted in the body and fires. **It would be correct by the letter and wrong about the document.** |
+
+### The C9 amendment this needs — **PROPOSED, NOT MADE** (a new SHA is a new ratification)
+
+**Do not read the items below as landed. C9's bytes are untouched at `f492b5c`,
+and the one `docs/contracts/` change in this batch is the README, not C9.**
+
+| # | The amendment | What it buys |
+| --- | --- | --- |
+| **P-1** | **Every §7 row carries a typed `kind`** — `DIVERGENCE` · `UNVERIFIABLE` · `RETRACTION`. | **The precondition for any check at all.** Without it the intended rule inverts on a third of the ledger. This is the cheap half and it is worth doing on its own. |
+| **P-2** | **Every `DIVERGENCE` row carries a machine-readable `subject:`** — the code symbol(s) **and** the § that defines the thing. §7.4's would be `substanceRef`, `MaterialMasterEntry`, `§2.4`. | Gives the check something to join on. **Costs the author one field per row; the alternative is inferring a subject from prose, and a subject stated for the reader is not a subject stated for the check.** |
+| **P-3** | **A required back-link: every § named as a `DIVERGENCE` subject carries `(§7.N)` at its head.** | **This is the one that would have caught it.** With `§2.4` back-linked, an author writing §6.1a's *"not an additive convenience"* while citing `(§2.4)` lands on a section headed *"⚠️ NOT BUILT — §7.4"*. **Measured cost on today's document: §2.4 has exactly 2 citation sites, both legitimate disclosure points.** |
+| **P-4 — COSTED AND NOT RECOMMENDED** | Extend P-3 to *all* §7 subject sections, not just the not-built ones. | **Measured: ~47 citation sites across §3.1 / §4.1 / §4.2 / §8 / §5.3 / §6.3 / §6.4.** That is the muted-check outcome by arithmetic. **Recorded so it is not re-proposed as an obvious improvement.** |
+
+**Sequencing, stated because it is the part that is easy to get backwards:
+P-1…P-3 ride the next C9 amendment WHEN ONE IS WARRANTED ON ITS OWN MERITS —
+they do not warrant one.** The composition check is built *after* they land, and
+**not one line of it is written on speculation that they will.**
+
+### BUILT INSTEAD — the half that IS derivable, with a zero false-positive rate by construction
+
+`src/services/contracts/__tests__/ledgerTruth.test.ts` — **10 tests, and it does
+not check prose.** The distinction the C9 pin already drew (*"prose is not
+mechanically checkable and pretending otherwise would be its own dishonesty"*)
+is held to here.
+
+| What it asserts | Direction it guards |
+| --- | --- |
+| **The code-anchored ledger rows are STILL TRUE** — C9 §7.1 (importer set), §7.2 (`MaterialRefJoinPolicy` has no consumer), §7.3 (`inferBpom` still parses the prefix), §7.4 (`substanceRef` ∉ `MaterialMasterEntry`), plus **C7-FIND-03** (`shortfall` ∉ `PrIntakeLine`) and **C8-FIND-03** (the VOID `lock → firm` mapping still in code). Each reads the CLAIM from the contract, then measures the TREE. | **BOTH.** Delete the disclosure and it fails; **repair the divergence and it also fails** — leaving a contract declaring a defect it no longer has. **That second direction is the C7/C8 eleven-divergence shape running backwards, and nothing in this repo caught it before.** |
+| **§7 is well-formed** — rows uniquely numbered, contiguous from 7.1, both cells populated. | A deleted row is a deleted disclosure. A one-celled row is a claim without its counter-claim. |
+| **A summary of the ledger names every row in it** (`docs/contracts/README.md`). | The finding below. |
+
+### `LEDGER-SUMMARY-DROPS-ROWS-01` — **found by this batch, RED ON ARRIVAL, fixed in this PR**
+
+> **`docs/contracts/README.md` summarised C9 §7 as *"(7.1–7.8) … eight
+> non-conformances"* WHILE §7 CARRIED TWELVE.**
+
+**Four rows added by amendment never reached the index**, and the index is what a
+reader meets first. **Note which four went missing: 7.9, 7.10, 7.11, 7.12 — and
+THREE of them run the direction ADD-3 said the ledger was not being read in.**
+The summary kept every entry that understated our implementation and dropped the
+ones where we had overstated a defect in the counterparty's, mislaid a required
+field, ratified against prose, and **never delivered the contract at all.**
+Nobody selected for that; **the eight that stayed are simply the eight that were
+there when the sentence was written.** That is the whole mechanism — **a summary
+does not decay by being edited badly, it decays by not being edited at all.**
+
+**This is `A-9` committed by the ledger's own table of contents.** A-9 says a
+counterparty ratifying a summary has not ratified the contract; **here the
+summary is ours, in our own package, one file from the artifact — and it lost a
+third of the ledger.** `STATED-LIMIT-DOES-NOT-DISCHARGE-01` and
+`CONTRACT-NOT-PINNED-01` were both filed about the boundary to SOMO. **This one
+never crossed a boundary.**
+
+**The README is CORRECTED here and the assertion is on the floor**, so the next
+amendment cannot add a row without the index moving. **C9 itself is untouched** —
+the README is not the contract and not under the pin.
+
+### Mutation-verified — **the checks were confirmed to FAIL, not assumed to work**
+
+`npm run gates` green is not evidence a new check does anything (CP-3a's own
+argument). Seven mutations, each applied to the working tree, run, and reverted:
+
+| # | Mutation | Result |
+| --- | --- | --- |
+| **M1** | `substanceRef` lands on `MaterialMasterEntry` | **DETECTED** (1 failed) |
+| **M2** | `inferBpom` stops parsing the prefix | **DETECTED** (1 failed) |
+| **M3** | `shortfall` lands on `PrIntakeLine` | **DETECTED** (1 failed) |
+| **M4** | a real consumer imports the inert module | **DETECTED** (2 failed) |
+| **M5** | C9 §7 row 7.12 is deleted | **DETECTED** (2 failed) |
+| **M6** | the README summary drops row 7.11 again | **DETECTED** (1 failed) |
+| **M7** | the VOID `lock → firm` mapping is cleaned up | **DETECTED** (1 failed) |
+
+### `DESCRIBE-DONT-RENDER-01`, live — **the check reported ITSELF as the defect**
+
+**On its first run the two *"nothing consumes this"* sweeps failed, and the extra
+consumer they found was the checking file.** It names `materialMasterRef.types`
+and `MaterialRefJoinPolicy` **in order to grep for them**, and thereby became a
+site. **The class says a description can recreate its subject; here the
+description was a grep and the subject was the grep's own text.**
+
+**Fixed by excluding one path, and the narrowness is deliberate:** excluding all
+`*.test.ts` would blind the sweep to a real consumer introduced in a test, which
+is **exactly where inert registry data acquires its first fake consumer.**
+
+### What this batch does NOT do — stated, not implied
+
+- **IT DOES NOT CATCH `LEDGER-UNCOMPOSED-01`.** The §7.4 / §6.1a contradiction
+  would still ship today. **That is the honest outcome and the finding stands
+  either way** — a named, costed, unbuilt guard beats a noisy one.
+- **It does not touch C9.** Verified by blob hash, not by inspection: the
+  contract and the types module are byte-identical at `f492b5c` and on this
+  branch, **including across the M5 mutation probe, which was reverted and
+  re-hashed.**
+- **It does not generalise to "§7" across the package, and the dispatch's premise
+  that it would is CORRECTED: C7 §7 and C8 §7 are DECISION REGISTERS, not
+  divergence ledgers.** Their non-conformances are `C7-FIND-0N` / `C8-FIND-0N`
+  rows mixed in among RATIFIED decisions and open co-design items. **A check
+  treating every C7 §7 row as a declared non-conformance would fire on
+  `C7-SCOPE`, `C7-INTAKE` and `C7-PROV` immediately.** What generalised was the
+  **code-truth** half, row by row, applied to the two C7/C8 rows that carry a
+  derivable subject — **not the section number.**
+- **It does not resolve D-1 or D-COMP-BPOM. 2B remains blocked on both.**
+
+### Constraints discharged, in writing
+
+- **C9'S BYTES ARE UNTOUCHED AND THE PIN STAYS `f492b5c`.** Blob hash
+  `f5c17be9…` before, during and after the mutation probe. **`docs/contracts/`
+  carries exactly one change and it is the README**, which is the package index,
+  not a contract, and not under the pin.
+- **NO SCHEMA, NO ROWS, NO MASTER EDIT.** `MATERIAL_MASTER` untouched.
+- **THE FALSE-POSITIVE RATE OF WHAT SHIPPED IS ZERO ON TODAY'S TREE, BY
+  CONSTRUCTION** — every assertion is a boolean about a file, derived, not a
+  prose match against a claim. **The one prose-adjacent assertion is the README
+  row-id enumeration, and it is DERIVED from C9 §7 rather than hand-listed** —
+  `CENSUS-MUST-DERIVE-01` applied to the checker's own population, because
+  hand-listing the ids would have reproduced the exact defect being caught.
+- **FLOOR BUMPED AS THE GATE ASKED: 2070/175 → 2080/176.** `npm run gates` green
+  end to end; **CI runs the same command on this PR** (CP-3a), and a Linux-only
+  failure would itself be a finding.
