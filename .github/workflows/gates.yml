@@ -1,0 +1,107 @@
+# ────────────────────────────────────────────────────────────────────────────
+# THE GATES, RUN WHERE NOBODY IS LOOKING — CP-3a.
+#
+# Two halves, one job, deliberately:
+#   · PR — every pull request to main runs the full floor before it can merge.
+#   · SCHEDULE — main is re-run daily with no commit involved. This is the half
+#     that matters. On 2026-08-01 the floor broke with nobody touching a file
+#     (two specs read the real wall clock past a fixture due-date) and was found
+#     the following Monday by a session looking at something else. No commit
+#     could have caught it, because no commit occurred.
+#
+# ONE job serves both triggers on purpose. A separate "scheduled" workflow would
+# be a second statement of what green means, free to drift from the first.
+#
+# NO PATH FILTERS, deliberately. A docs-only change is not a safe change here:
+# the C9 contract pin READS `docs/contracts/*.md` and fails when the prose and
+# the types module disagree. `paths-ignore: docs/**` would have skipped exactly
+# the gate that exists to catch that.
+# ────────────────────────────────────────────────────────────────────────────
+
+name: gates
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # 00:17 UTC daily. Just after the UTC date rolls over, so a clock-decay
+    # break is caught within the hour rather than at the weekend; off the hour
+    # because on-the-hour crons queue behind everyone else's.
+    - cron: '17 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  # Supersede an in-flight PR run when the branch is pushed again; never cancel
+  # a scheduled or post-merge run of main — those are the record.
+  group: gates-${{ github.event_name == 'pull_request' && github.head_ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  gates:
+    name: build · floor · test:gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      # @v5 and not @v4: the v4 actions target node 20, which the runners have
+      # deprecated and now force onto 24 with a warning. A brand-new workflow
+      # should not ship carrying a deprecation notice.
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          # Pinned to the operator's local major (v24.x). CI must not be a
+          # different runtime than the one the gates are green on.
+          node-version: '24'
+          cache: npm
+
+      # `npm ci` and not `npm install`: it fails on a lockfile that has drifted
+      # from package.json instead of quietly resolving something else.
+      - run: npm ci
+
+      # The same command the operator runs locally. It executes the three gates
+      # CLAUDE.md names and asserts the collected counts against
+      # scripts/floor.json, so a suite that silently collects less cannot pass.
+      - run: npm run gates
+
+  # ── The notification path ─────────────────────────────────────────────────
+  # A red badge is not a notification: nobody goes to look at a badge on a
+  # Saturday. GitHub's own failure email for a scheduled run goes only to the
+  # account that last touched the cron, and only if that account has Actions
+  # notifications enabled — a setting this repository cannot see or assert.
+  # So the scheduled half files an ISSUE, which is durable, visible without
+  # going to look, and independent of that setting.
+  report:
+    name: report a scheduled failure
+    needs: gates
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Open or update the failure issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          BODY="The scheduled \`gates\` run on \`main\` failed at \`${SHA}\` with no commit involved.
+
+          Run: ${RUN_URL}
+
+          Nothing was pushed. If this is the first failure after a green day, the
+          most likely cause is a clock-decaying assertion — a fixture date that
+          has crossed the wall clock — not a code change."
+          EXISTING=$(gh issue list --state open --label gates-failure --limit 1 --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --body "$BODY"
+          else
+            gh label create gates-failure --color B60205 --description "A scheduled gates run on main failed" 2>/dev/null || true
+            gh issue create --title "gates: the scheduled run on main is failing" --label gates-failure --body "$BODY"
+          fi

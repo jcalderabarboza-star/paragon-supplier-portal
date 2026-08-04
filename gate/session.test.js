@@ -1,6 +1,10 @@
-// Crypto unit tests for the gate session token. Run with `node --test gate/`.
-// Deliberately OUTSIDE the vitest surface (src/**) so the SPA's 165-test floor
-// is unaffected — this is the middleware's own, separate proof.
+// Crypto unit tests for the gate session token. Run with `npm run test:gate`
+// (`node --test gate/*.test.js`). NOT `node --test gate/` — that form is in the
+// node docs but errors on this runtime (v24.15), which is why the script names
+// a glob; CP-3a.
+// Deliberately OUTSIDE the vitest surface (src/**) so the SPA test floor is
+// unaffected — this is the middleware's own, separate proof. Its own count is
+// asserted separately, in `scripts/floor.json`.
 
 import test from 'node:test';
 import assert from 'node:assert/strict';

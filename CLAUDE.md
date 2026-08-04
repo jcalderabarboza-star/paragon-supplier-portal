@@ -77,7 +77,12 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   scoping contract guards buyer-superset / per-supplier-isolation / SCOPE_DENIED.
 - Locale + i18n: `formatIDR / formatDate / formatNumber` (Asia/Jakarta) and a full
   EN/ID react-i18next layer (per-page fragments + central label maps) are live.
-  Test floor: **662** (never regresses).
+  Test floor: **`scripts/floor.json` holds it** (never regresses; asserted by
+  `npm run gates` and by CI). **No floor number is restated here, deliberately**
+  — the figure that stood in this spot had drifted more than 1400 tests behind
+  the suite, uncorrected, because no build step failed when it stopped being
+  true (FLOOR-IN-PROSE-01, CP-3a). `npm run gates` fails if this pointer is
+  deleted, since deleting it is how a number comes back.
 
 ### Forward plan vocabulary (Stage F / I / A)
 - **Canonical forward plan:** `Paragon_World_Class_Build_Plan_v1.md` (on main at
@@ -219,6 +224,26 @@ The gates are exactly three:
 - `npm run build`  → `tsc && vite build` (typecheck + bundle)
 - `npx vitest run` → the test floor, which never regresses
 - `npm run test:gate` → the SEC-GATE-01 session/HMAC suite (`gate/`, outside `src/`)
+
+### `npm run gates` — the three, run and ASSERTED (CP-3a)
+`npm run gates` (`scripts/gates.mjs`) runs exactly those three, in that order,
+and then asserts that each one did something: the build emitted a bundle, the
+suite collected at least the recorded number of tests across at least the
+recorded number of files, and the gate suite passed at least its recorded count.
+The counts live in `scripts/floor.json` and are a **FLOOR, not an equality**
+(operator ruling, CP-3a): **below it fails; above it passes and prints a note
+asking you to bump the file.** Exact matching was rejected — it reddens every
+legitimate test-adding PR until somebody edits a number, which trains people to
+edit the number, and a floor that gets edited routinely is not a floor.
+**The trade, recorded: a suite that shrinks but still clears the floor is
+invisible to this gate** (the skipped/todo refusal covers the common shape).
+**Bump `scripts/floor.json` when the note asks.**
+It is not a fourth gate and adds no new notion of green; it is the same three
+plus the assertion that they ran. **CI runs this exact command** and nothing
+else (`.github/workflows/gates.yml`) — on every PR to `main`, on every push to
+`main`, and **daily at 00:17 UTC on `main` with no commit involved**, which is
+the half that catches a clock-decay break like 2026-08-01 (see `docs/findings.md`,
+CP-3a). A failing scheduled run opens/updates a `gates-failure` issue.
 
 ## Deploy
 Vite root is app/ — never edit app/index.html directly.
