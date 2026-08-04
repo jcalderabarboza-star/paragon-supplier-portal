@@ -77,7 +77,10 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   scoping contract guards buyer-superset / per-supplier-isolation / SCOPE_DENIED.
 - Locale + i18n: `formatIDR / formatDate / formatNumber` (Asia/Jakarta) and a full
   EN/ID react-i18next layer (per-page fragments + central label maps) are live.
-  Test floor: **662** (never regresses).
+  Test floor: **`scripts/floor.json` is the number** (never regresses; asserted
+  by `npm run gates` and by CI). The figure that stood here — 662 — had drifted
+  more than 1400 tests behind the suite, uncorrected, because no build step
+  failed when it stopped being true (FLOOR-IN-PROSE-01, CP-3a).
 
 ### Forward plan vocabulary (Stage F / I / A)
 - **Canonical forward plan:** `Paragon_World_Class_Build_Plan_v1.md` (on main at
@@ -219,6 +222,21 @@ The gates are exactly three:
 - `npm run build`  → `tsc && vite build` (typecheck + bundle)
 - `npx vitest run` → the test floor, which never regresses
 - `npm run test:gate` → the SEC-GATE-01 session/HMAC suite (`gate/`, outside `src/`)
+
+### `npm run gates` — the three, run and ASSERTED (CP-3a)
+`npm run gates` (`scripts/gates.mjs`) runs exactly those three, in that order,
+and then asserts that each one did something: the build emitted a bundle, the
+suite collected the recorded number of tests across the recorded number of
+files, and the gate suite passed its recorded count. The counts live in
+`scripts/floor.json` and are asserted in BOTH directions — fewer is a
+regression, more is growth nobody recorded, and either fails.
+**Bump `scripts/floor.json` in the same PR that changes the count.**
+It is not a fourth gate and adds no new notion of green; it is the same three
+plus the assertion that they ran. **CI runs this exact command** and nothing
+else (`.github/workflows/gates.yml`) — on every PR to `main`, on every push to
+`main`, and **daily at 00:17 UTC on `main` with no commit involved**, which is
+the half that catches a clock-decay break like 2026-08-01 (see `docs/findings.md`,
+CP-3a). A failing scheduled run opens/updates a `gates-failure` issue.
 
 ## Deploy
 Vite root is app/ — never edit app/index.html directly.

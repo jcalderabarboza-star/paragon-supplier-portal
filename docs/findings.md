@@ -478,3 +478,85 @@ below. **No rows, no master edit; 2B still blocked on D-1 and D-COMP-BPOM.**
   — the contract, the types module and the derived field list. Per
   `CONTRACT-NOT-PINNED-01`, that SHA is the citation, and the next amendment is a
   new one.
+
+---
+
+## CP-3a · CI — the gates, run where nobody is looking (refs @ `f492b5c`)
+
+**There was no `.github/` in this repository.** Every guarantee in the register
+above rode on operator discipline, and we already had the evidence that is not
+enough: **on Saturday 2026-08-01 the floor broke with NOBODY TOUCHING A FILE**
+(two specs read the real wall clock past a fixture due-date), and it was found
+the following **Monday, by a session looking at something else**. **No commit
+could have caught it, because no commit occurred.** That is the whole argument
+for the scheduled half, and it is a measurement, not a hypothesis.
+
+**One workflow, `.github/workflows/gates.yml`, one job, four triggers** — PR to
+`main`, push to `main`, **daily at 00:17 UTC**, and manual. It runs **one
+command, `npm run gates`**, which is the command the operator runs. There is
+deliberately **no gate CI can run that the operator cannot**.
+
+| Finding | What it is | Disposition |
+| --- | --- | --- |
+| **FLOOR-IN-PROSE-01** *(refs @ `f492b5c` — **`CONTRACT-OFF-THE-FLOOR-01` caught in our own root instruction file**)* | **`CLAUDE.md` said the test floor was 662. The suite collects 2070.** The prose had drifted **more than fourteen hundred tests** behind the thing it described, across dozens of merges, **and nothing failed** — because no build step fails when a sentence stops being true. Every findings entry in this register quotes the floor correctly; **the one place a fresh session reads first was the one place it was wrong.** | **THE NUMBER IS NOW A FILE THAT IS CHECKED: `scripts/floor.json`.** `npm run gates` asserts the collected count against it **in BOTH directions** — fewer is a regression the green tick would hide, **more is growth nobody recorded**, and either fails. Both directions **mutation-verified to bite** (floor set to 2071 → *"REGRESSION: 2070 < 2071"*; gate floor set to 6 → *"UNRECORDED GROWTH: 7 > 6"*; exit 1). **The file count is asserted too (175)** — a whole spec file silently dropped from collection changes the file count, and a suite can lose a file without losing a round number of tests. `CLAUDE.md` now points at the file instead of restating the number, **which is the only fix that does not recreate the defect.** |
+| **PASSWITHNOTESTS-01** *(refs @ `f492b5c`)* | **The repository shipped a script that is green precisely when it finds nothing to do:** `"test:run": "vitest run --passWithNoTests"`. **It is the exact failure mode this batch exists to prevent, pre-installed and one `npm run` away**, and it survived because **nothing calls it** — the only reference to `test:run` anywhere in the repository was its own definition. An unused trap is not a harmless trap; it is a trap that has not been stepped in **yet**, and the obvious thing for a future CI author to wire is the script with `test` in its name. | **THE FLAG IS REMOVED.** Verified that bare `vitest run` **fails** when its pattern matches nothing (probe: `vitest run src/does-not-exist-anywhere` → **exit 1**), so the documented gate `npx vitest run` was never at risk — only the unused script was. **Not a weakening of any gate: strictly the opposite.** |
+| **GATE-GLOB-01** *(refs @ `f492b5c` — **the file's own header documented an invocation that ERRORS**)* | Two defects in one line. **(1)** `test:gate` named **ONE FILE EXPLICITLY** (`node --test gate/session.test.js`), so a second gate test file would be **silently not run** — green, having found nothing to do, in the security suite. **(2)** The header comment of `gate/session.test.js` told the reader to run **`node --test gate/`**, which **does not work on this runtime**: node v24.15 resolves the directory as a *module* and dies `MODULE_NOT_FOUND`, then reports **`✖ gate` / `ℹ tests 1`** — a failure that looks like a failing test. **The documented form was broken and the working form was blind.** | **`test:gate` is now `node --test gate/*.test.js`** — verified 7/7 both as a direct argv and through `cmd.exe` (the Windows npm-script path, which does not expand globs, so node's own glob support carries it; `sh` expands it on Linux to the same single file today). **The comment is corrected in place** and now names the working invocation and why the documented one is not it. **The gate count (7) is asserted as well** — the glob fixes *new file not picked up*, the count assertion fixes *existing file stopped running*, and neither covers the other. |
+| **CI-LINUX-PARITY-01** *(refs @ `f492b5c` — **five probes run BEFORE writing any workflow YAML, per dispatch**)* | The operator's environment is **Windows / `Asia/Bangkok` (UTC+7) / node v24.15.0**; CI is **Linux / UTC**. Four axes could make CI disagree with a locally-green tree, and a CI that disagrees for an environmental reason **teaches the operator to ignore it**. | **ALL FOUR PROBED AND CLEAR; EVIDENCE, NOT ASSUMPTION.** **(1) TIMEZONE — the full suite re-run under `TZ=UTC` (verified applied: node reported `04:09 GMT+0000` against a 11:09 local wall clock): 2070/2070, 175 files.** The suite is timezone-invariant at this instant. **(2) LINE ENDINGS — `core.autocrlf=true` and NO `.gitattributes`, so every text file is CRLF in the operator's worktree and LF in CI.** That is not academic here: **the C9 pin reads committed markdown and compares it to a generated rendering.** Probed by rewriting `docs/contracts/C9-required-fields.md` to LF-only (0 CRLF pairs) and re-running the contract spec → **33/33 pass**; the pin is EOL-invariant and the file restored. **(3) LOCKFILE PLATFORM BINARIES — the classic `npm ci`-on-Linux failure.** `package-lock.json` (v3) carries **all 25 `@rollup/rollup-*` and all 26 `@esbuild/*` optional platform packages**, `linux-x64-gnu` included; `npm ci --dry-run` is clean, so the lock is in sync with `package.json`. **(4) RUNTIME — CI pinned to node major 24**, the operator's major. **Named and NOT fixed: nothing asserts these four stay true.** The daily run is what would surface a later divergence, and it will surface it as a failure on `main`, which is the correct place to see it. |
+| **NOTIFICATION-UNCONFIRMED-01** *(refs @ `f492b5c` — **⚠️ OPEN, and it is the operator's to close, not ours**)* | **A RED BADGE IS NOT A NOTIFICATION.** Nobody goes to look at a badge on a Saturday — that is the premise of the whole batch, so accepting one as the answer would be circular. GitHub's own path for a scheduled-run failure is **an email to the account that last modified the cron expression** — which, since squash-merges here are authored by `jcalderabarboza-star`, would be the operator — **but only if that account has Actions notifications enabled**, a per-account setting **this repository cannot read and we cannot assert on their behalf.** | **A SECOND, INDEPENDENT PATH IS BUILT, AND THE FIRST IS LEFT UNASSERTED.** A failing **scheduled** run (only scheduled — a PR failure is seen by the person merging) opens or comments on a `gates-failure` **issue**, using `GITHUB_TOKEN` and `gh` — durable, visible without going to look, and independent of the notification setting. **What is NOT claimed: that either path reaches a human.** Per `RECEIVER-CONFIRMS-01` below, **delivery is confirmed by the receiving side or it did not happen.** **Closes when the operator reports having actually RECEIVED something** from a failing scheduled run — not when the mechanism is observed to exist. |
+| **PATH-FILTER-TRAP-01** *(refs @ `f492b5c` — **filed as a decision taken, so it is not re-taken later as an optimisation**)* | The standard economy on a CI workflow is `paths-ignore: docs/**` — skip the suite when only prose changed. **In this repository that is precisely backwards.** The C9 contract pin **reads `docs/contracts/*.md`** and fails when the prose and the types module disagree; `CENSUS-MUST-DERIVE-01` and the derived field list are the same shape. **A docs-only change here is a change to a checked artifact.** | **NO PATH FILTERS, DELIBERATELY, AND THE REASON IS IN THE WORKFLOW FILE** rather than only here — a comment beside the trigger is what a future editor reads before adding the filter. **The economy would have skipped exactly the gate built to catch the drift it was skipping for.** |
+| **CI-PUBLIC-LOGS-01** *(refs @ `f492b5c` — **surfaced while checking Actions was enabled; not a defect, a constraint on everything built after this**)* | **The repository is PUBLIC** (`visibility: public`). Two standing consequences for CI: **Actions logs and run artifacts are world-readable**, and **Actions minutes are free**, which is why a daily full run costs nothing to keep. | **RECORDED AS A CONSTRAINT: NO SECRET MAY EVER ENTER A GATE LOG.** The gates need none — `npm run build`, the suite and `test:gate` all run without environment (`GATE_USER` / `GATE_PASSWORD` / `GATE_SECRET` are edge-runtime env for `middleware.js`, never referenced by the gate *tests*, which use their own literal `'unit-test-secret-do-not-ship'`). The workflow declares `permissions: contents: read`, with `issues: write` scoped to the reporting job alone. **Also recorded because it will matter later:** GitHub disables scheduled workflows on a public repository after **60 days of repository inactivity** — irrelevant at the present commit rate, and the reason a quiet quarter would silently end the daily run. |
+| **TSC-SKIPS-TESTS-01** *(refs @ `f492b5c` — **⚠️ OPEN, NAMED AND NOT FIXED, because fixing it needs an argument the dispatch requires be had first**)* | **`npm run build` never typechecks the test surface.** `tsconfig.json` excludes `src/**/*.test.ts`, `src/**/*.test.tsx` and `src/test`, and vitest transpiles without typechecking — so **no gate typechecks a spec file.** A spec can carry a type error indefinitely and all three gates stay green. `tsconfig.vitest.json` exists and includes them, and nothing runs it. | **CI INHERITS THE GAP EXACTLY, WHICH IS THE POINT: CI IS NOT A SECOND SOURCE OF TRUTH.** Closing it means `tsc -p tsconfig.vitest.json --noEmit` — **a gate the operator does not run today**, and the dispatch is explicit that such a gate is argued before it is added, not smuggled in beside a CI batch. **Filed so the next batch can rule on it with the cost known.** |
+
+### Elevated to CLASSES (operator ruling, CP-3a) — **SOMO's generalisation of our own filing, sharper than ours**
+
+| Class | The rule | Standing consequence |
+| --- | --- | --- |
+| **GOVERNANCE-INSIDE-THE-GOVERNED-01** *(class; **SOMO's generalisation of `CONTRACT-NOT-PINNED-01`'s stinging half — carried with attribution, and it is better than the form we filed**)* | We filed it as an instance: *"a discipline stated in an artifact does not propagate to the process that ships the artifact."* **They generalised it, and the general form is the load-bearing one: THIS IS THE FAILURE OF ANY GOVERNANCE THAT LIVES INSIDE THE THING BEING GOVERNED.** Their own case holds the identical shape — **contracts carrying honest-state rules that their dispatch process does not inherit.** A rule written inside the artifact **binds readers of the artifact and nothing else**; the shipping, the scheduling, the merging and the notifying are all outside it and inherit nothing. | **RECORDED WITH THE OBSERVATION THAT MAKES THIS BATCH WORTH MORE THAN ITS DIFF: CI IS THE FIRST MECHANISM THIS PROJECT HAS THAT LIVES *OUTSIDE* THE THING IT GOVERNS.** Every gate before it — the contract pins, the derived field list, the census-must-derive rule, the honest-state markers — **is enforced by code that only runs when somebody chooses to run it.** The scheduled half runs **when nobody chooses anything**, which is the only condition under which the 2026-08-01 break was ever going to be caught. **It is also why the batch is deliberately small: the value is in being outside, not in being clever.** Two instances filed in this batch alone — `FLOOR-IN-PROSE-01` (a number governed by prose inside the repository it describes) and `GATE-GLOB-01` (a run instruction governed by a comment inside the file it runs). |
+| **RECEIVER-CONFIRMS-01** *(class; **SOMO's, the half of `ENCLOSED-IS-NOT-DELIVERED-01` we did not file**)* | **THE SENDER ASSERTS; THE RECEIVER IS THE ONE WHO CAN CONFIRM.** Their instance, from their side: they received *"enclosed"*, **assumed delivery, and did not check for two exchanges.** We filed the sender's error (asserting an enclosure that was not there). **The receiver's error is separate and symmetrical — accepting an assertion of delivery from the only party who cannot verify it** — and neither half alone describes how the failure lasted two exchanges. | **APPLIED IMMEDIATELY, TO THIS BATCH, AGAINST OUR OWN INTEREST — `NOTIFICATION-UNCONFIRMED-01` IS THE INSTANCE.** We can build a notification path; **we cannot confirm one.** The temptation is to write *"a failing scheduled run notifies the operator"* in `CLAUDE.md` and be done — **an asserted delivery, by the only party that cannot see the inbox.** So it is filed **OPEN**, the claim made is only that the mechanism exists, and **it closes when the operator reports receiving something.** Standing practice, mirroring the SHA rule already adopted: **for a contract, the confirmation is a SHA the counterparty can fetch; for a notification, it is the receiving side saying it arrived.** |
+
+### Constraints discharged, in writing
+
+- **CI RUNS THE SAME GATES THE OPERATOR RUNS, and runs them by running the same
+  command.** The workflow's only gate step is `npm run gates`. `scripts/gates.mjs`
+  invokes `npm run build` literally, invokes the suite through the installed
+  `vitest` bin (identical execution to `npx vitest run`; two reporters added so
+  the run leaves a record to assert against), and **DERIVES the `test:gate`
+  invocation from `package.json` rather than restating it** — a second copy of
+  the command is a second thing that can drift (`CENSUS-MUST-DERIVE-01`). **No
+  gate exists that CI can run and the operator cannot**; the only new capability
+  is the assertion, and it runs in both places.
+- **NO EXISTING GATE WEAKENED.** Two gate-adjacent changes, both strictly
+  strengthening and both verified: `--passWithNoTests` removed from an unused
+  script, and `test:gate` widened from one hardcoded filename to a glob (7/7
+  before and after). **Nothing was relaxed to make CI pass**, because nothing
+  failed: the three gates are green on Linux-equivalent conditions by probe
+  before a line of YAML was written.
+- **NEVER GREEN ON A SKIPPED RUN — four independent guards.** The build's
+  `dist/` is **deleted before it runs** and `index.html` + at least one JS chunk
+  are required after, so a zero-output build cannot pass on a stale artifact;
+  the suite's JSON report must **exist** (no report = no evidence the run
+  happened) and its counts must match exactly; the gate suite's TAP summary must
+  **parse** and its pass count match; and `scripts/gates.mjs` **fails by
+  default** — every check appends to a failure list and the process exits 0 only
+  at the very end, only if that list is empty, with a spawn error or a
+  signal-killed child counted as a failure and never as a pass. **Skipped and
+  todo tests are refused outright** — they inflate a count while proving nothing.
+- **NO FIXTURE CHANGES. NO SCHEMA CHANGES. C9 NOT TOUCHED** — the pin stays at
+  `f492b5c`, and per `CONTRACT-NOT-PINNED-01` a new SHA would be a new
+  ratification. `docs/contracts/` is unmodified; `C9-required-fields.md` was
+  rewritten to LF *in the working tree only* for the EOL probe and restored
+  (`git status` clean before commit). **2B remains blocked on D-1 and
+  D-COMP-BPOM.**
+- **NO NEW TESTS, DELIBERATELY.** A test asserting the CI wiring would have
+  moved the floor in the same PR that first asserts the floor. **Floor 2070/2070
+  across 175 files, unchanged**; `npm run build` and `npm run test:gate` green;
+  `npm run gates` green end to end, and **mutation-verified to fail** when the
+  floor is wrong in either direction.
+- **`DEPLOY-PAGES-01` re-confirmed in passing, with one addendum.** Pages reads
+  `build_type: workflow` / `status: errored`, the URL 404s, and the last
+  `pages-build-deployment` run was 2026-07-03. **The addendum: that workflow is
+  still REGISTERED and carries 193 historical runs**, so `gh api .../workflows`
+  answers *"1 workflow"* and the Actions tab is already red — **"this repository
+  has run Actions" was true and misleading throughout, and is exactly what a
+  future session would read as *CI exists*.** It does not; `gates.yml` is the
+  first.

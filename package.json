@@ -10,8 +10,9 @@
     "build:vercel": "VERCEL=1 vite build",
     "preview:vercel": "vite preview",
     "test": "vitest",
-    "test:run": "vitest run --passWithNoTests",
-    "test:gate": "node --test gate/session.test.js"
+    "test:run": "vitest run",
+    "test:gate": "node --test gate/*.test.js",
+    "gates": "node scripts/gates.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.2",

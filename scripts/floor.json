@@ -1,0 +1,10 @@
+{
+  "//": "THE ASSERTED FLOOR. `npm run gates` fails if a count differs in EITHER direction: fewer is a regression the green tick would otherwise hide; more is growth that has not been recorded. Bump this file in the SAME PR that changes the count, so the number quoted in the PR body and the number the suite actually collects are one fact and not two. `vitest.files` is the collected test-FILE count (a whole file silently dropped from collection does not change nothing — it changes this).",
+  "vitest": {
+    "tests": 2070,
+    "files": 175
+  },
+  "gate": {
+    "tests": 7
+  }
+}
