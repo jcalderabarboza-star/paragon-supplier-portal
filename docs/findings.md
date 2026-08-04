@@ -574,3 +574,93 @@ deliberately **no gate CI can run that the operator cannot**.
   has run Actions" was true and misleading throughout, and is exactly what a
   future session would read as *CI exists*.** It does not; `gates.yml` is the
   first.
+
+---
+
+## CP-2 · C9 RATIFIED AT A SHA — the delta measured, and what a summary loses (refs @ `00aad61`)
+
+**C9 IS RATIFIED BY SOMO AT `f492b5c` — all three paths, checked against the
+BYTES rather than against our description of them.** That is the first
+ratification in this project given against an artifact instead of a summary of
+one, and the method they used to do it is recorded below because **it would have
+returned the right answer for the wrong reason if run the obvious way.**
+
+**REGISTER ONLY. C9's bytes are untouched and the pin does NOT move** — per
+`CONTRACT-NOT-PINNED-01` a new SHA is a new ratification, and nothing below is
+worth spending one. **Everything here that would otherwise amend the contract is
+filed and rides the next amendment.** No schema, no rows, no master edit; **2B
+still blocked on D-1 and D-COMP-BPOM.** Floor **2070/2070**, unchanged.
+
+**`C9-SUMMARY-DELTA-01` (A-12) CLOSES, AND IT CLOSES NON-EMPTY.** The disposal
+condition was stated in advance one issue ago: *empty ⇒ our summary was faithful
+and their shape-ratification was sound; non-empty ⇒ both platforms learn what a
+summary costs, field by field.* **It is non-empty. THE NUMBER IS NOT THE
+FINDING — THE SHAPE IS.**
+
+### Elevated to a CLASS (operator ruling, C9 ratification) — **the one with a number behind it**
+
+| Class | The rule | Standing consequence |
+| --- | --- | --- |
+| **SUMMARY-LOSS-IS-DIRECTIONAL-01** *(class; **the measurement is SOMO's, the class is the family's fourth member**)* | **A SUMMARY PRESERVES WHAT A SENTENCE CAN HOLD AND DROPS WHAT ONLY A STRUCTURE CAN.** Measured against the artifact: **15 of 21 required fields — 71% — were never named in our prose.** **THE LOSS WAS NOT UNIFORM, and that is the whole finding.** It fell hardest on **NESTED BLOCKS** — `AdjudicationProvenance` collapsed **six fields into one phrase**, *including `routeToResolution`, the field SOMO themselves had asked for one issue earlier* — and on **WHOLE INTERFACES WITH NO NATURAL HOOK IN A NARRATIVE SENTENCE**, which is how `MaterialCodeSpace` and **the ENTIRE `MaterialRefJoinPolicy` layer vanished. That policy layer is where D-1's answer lands** (§2.3, §6.1): the one structure whose existence is the claim we make to procurement, and a sentence about grain tags has nowhere to put it. **Closed vocabularies: 2 of 13 members conveyed — ZERO of 3 verdicts, 3 confidences, 3 methods, 2 parties.** *(Our own read of the module, since the artifact is ours: the two that survived are the two `MaterialGrain` members — i.e. exactly the two the narrative was ABOUT. Nothing else in a vocabulary has a sentence to ride in on.)* **Invariants: 0 of 6** — including **`allowSimulatedEvidence` MUST be false** and **no `'CERTAIN'` without LIVE evidence**, the two that stop a demo joining invented data. | **THE RISK IS NOT THAT A SUMMARY IS SHORT. IT IS THAT IT IS SHORT IN A PREDICTABLE DIRECTION, AND THAT DIRECTION RUNS EXACTLY OPPOSITE TO WHERE CONTRACTS CARRY THEIR WEIGHT.** Prose keeps the headline and the argument; it drops **enumerations, nested structures, and invariants** — which is to say it drops the enforceable half and keeps the persuadable one. **File beside `COUNTERPARTY-RATIFYING-A-SUMMARY-01`, `STATED-LIMIT-DOES-NOT-DISCHARGE-01` and `CONTRACT-NOT-PINNED-01`: the first says a summary is not the contract, the second says naming that gap does not close it, the third says an unpinned contract cannot be ratified at all — and THIS ONE IS THE ONE WITH A NUMBER BEHIND IT.** Standing practice, unchanged in kind and now evidenced: **the DERIVED field list (`C9-required-fields.md`) ships with the document and the SHA ships with both; a prose summary is a covering note and is never the thing ratified.** |
+
+### Filed in this batch
+
+| Finding | What it is | Disposition |
+| --- | --- | --- |
+| **ANSWER-ABOUT-NOTHING-01** *(refs @ `00aad61` — **Direction B of the delta, and the cleanest demonstration either platform has produced**)* | **THE OPTIONAL SUBSTANCE-ROLLUP FIELD DOES NOT EXIST, AND SOMO RETURNED A VERDICT ON IT** — *"present for RM, absent for PM"*. **That answer was ABOUT NOTHING.** Verified in our own tree, since the artifact is ours: `SubstanceRef` is a **BARE TYPE ALIAS** (`export type SubstanceRef = string`, `materialMasterRef.types.ts:389`) — reserved, not landed — and `MaterialMasterEntry` (`sdc/types.ts`) carries exactly five fields (`materialCode`, `label`, `materialType`, `materialGroup`, `canonicalUom`); **`substanceRef` is not one of them.** **Both platforms spent real analysis on a field that is not there, and only reading the artifact surfaced it.** The sharpest part: **C9's own §7.4 says so** — *"`substanceRef` is not on `MaterialMasterEntry`. RESERVED with a named swap-point; not built."* **The information was in the same document, in the ledger built for exactly this, and nobody composed the two clauses.** *(Which is `SUMMARY-LOSS-IS-DIRECTIONAL-01` again from the other end: a §7 ledger row is the least summarisable sentence in a contract.)* | **THE CONSEQUENCE FOR US, STATED PLAINLY: OUR D-1 ESCALATION TO PROCUREMENT ASSERTS THE SUBSTANCE ROLLUP IS THE AXIS ON WHICH ANY ROW SOURCED FROM SOMO'S MASTER CAN BE WRITTEN AT ALL** (C9 §6.1a's closing paragraph, and `C9-GRAIN-MISMATCH-01`'s disposition above). **THAT PREMISE IS CURRENTLY FALSE.** The axis is reserved, not built. **D-1 NOW ALSO DECIDES WHETHER THE FIELD IS BUILT, NOT ONLY HOW IT IS USED** — a materially larger question than the one escalated, and procurement should have it in that form. **NOT amended into C9 here** (register-only; §6.1a and §2.4 are byte-frozen at the pin) — **it rides the next amendment, which is a new SHA and a new ratification.** **SECOND DIRECTION-B ITEM, same shape:** our first issue was summarised as carrying *"`spaceId` with a stated retirement condition"* — **it stated NO exit condition at all.** Verified against the first issue at `53eac3b`: the clause reads *"Each party owns more than one space **today**"* and stops; the retirement was **implied by one adverb and never written.** **And the artifact now says the OPPOSITE — `spaceId` is PERMANENT, not scaffolding** (§5.2a, A-1 then A-5). **A third-order note, ours, against ourselves: the phantom clause reached THIS REGISTER.** `C9-FALSE-SYMMETRY-01` (A-1) quotes the first issue as saying the field drops *"when both sides hold one space each"* — **that sentence is in neither the first-issue contract nor the first-issue types module.** **A-1's CORRECTION STANDS and is pinned and mutation-verified;** what was wrong is the **provenance of the quotation** — we amended the artifact against a sentence that existed only in prose, and got a better artifact by luck rather than by reading. |
+| **CITED-SHA-MUST-BE-REACHABLE-01** *(refs @ `00aad61` — **ours, found while verifying THEIR method; a NEAR MISS, not a defect that occurred**)* | **A SHA IS ONLY A CITATION WHILE SOMETHING STILL REACHES IT.** Our HEAD, at the moment SOMO ran their verification, was **`977ce25`** — and `977ce25` is **the pre-squash tip of `ci/cp-3a-gates`, NOT an ancestor of `main`.** That branch was deleted at merge (`Squash + delete branch`, per project policy): **`git ls-remote origin` today returns 12 heads and NONE of them reaches `977ce25`**; the only ref naming it in this clone is a **stale remote-tracking ref**. **The pin itself was never at risk — `f492b5c` is the squash-merge commit and sits on `main`** — but the SHA a counterparty would have written down had they cited *"our HEAD"* is one that no remote ref now reaches. | **REFINEMENT TO `CONTRACT-NOT-PINNED-01`, recorded so the citation rule is not read as *"any SHA will do"*: A CITABLE SHA IS ONE ON `main`.** A branch SHA is a version of the artifact and a perfectly good thing to read; **it is not a durable citation**, because the workflow that produces `main` also destroys it. **What is NOT claimed:** that `977ce25` is gone — GitHub may still serve an unreachable commit by full SHA for some time, and we do not assert either way; the claim is exactly that **no ref reaches it**, which is the property a citation needs. **Filed as a near miss on purpose:** the correct thing happened (they pinned to the merge commit) and it happened because they hashed against the pinned tree rather than against whatever HEAD was. |
+
+### Recorded as shared canon — **SOMO's method, and it is better than the answer it produced**
+
+| Canon | What happened | Standing consequence |
+| --- | --- | --- |
+| **VERIFY-AGAINST-THE-PIN-01** *(theirs; **the method half of `CONTRACT-NOT-PINNED-01`**)* | **THE METHOD HAS TO BE RIGHT EVEN WHEN THE ANSWER WOULD HAVE BEEN.** They content-hashed all three C9 paths **against the PINNED TREE at `f492b5c`** rather than diffing against our HEAD. **Confirmed on our side, by blob hash:** the contract, the types module and the derived field list are **byte-identical at `f492b5c`, at `977ce25` (the HEAD they saw) and at `00aad61`** — `f5c17be…`, `e6ddd94…`, `7718f9e…` at all three. **SO A DIFF AGAINST HEAD WOULD HAVE RETURNED "NO DIFFERENCE" AND PROVEN NOTHING:** it would have been evidence about HEAD, not about the version that was ratified, and it returns the same clean answer whether or not the pin is the thing they read. | **STANDING PRACTICE, BOTH DIRECTIONS: A RATIFICATION IS CHECKED AGAINST THE CITED SHA'S TREE, NEVER AGAINST WHATEVER THE COUNTERPARTY'S DEFAULT BRANCH HOLDS TODAY.** The two agree most of the time, which is exactly what makes the shortcut attractive and what makes the one disagreement unfindable. **Also recorded, and it is the part that makes the delta legible: OUR DERIVED FIELD LIST WAS FAITHFUL.** Their hash-level read confirms **5 interfaces, 22 fields, 21 required, 1 optional, 5 closed vocabularies**, identical names, flags and types, **no drift** — re-derived here from the module and matching field for field. **THE ARTIFACT WAS RIGHT; THE PROSE WAS NOT.** That separation is what turns `SUMMARY-LOSS-IS-DIRECTIONAL-01` into a measurement of summarisation rather than a measurement of our carelessness — **the generated artifact did its job, and the covering note is where the 71% went.** |
+
+### SOMO's re-verified findings — **RECORDED AS `REPORTED-MEASURED` (§3.4, tier 2), NOT VERIFIED**
+
+**`VERIFIED` is permanently unavailable across this boundary in either direction
+(§7.8).** Everything in this table is their measurement of their own tree,
+carried with how it was obtained.
+
+| Reported | What they report | What it changes for us |
+| --- | --- | --- |
+| **GRAIN MISMATCH HOLDS — and is now PRECISELY LOCATED** | **Of 61 RM rows, 6 carry a grade or concentration token; 55 are BARE SUBSTANCE NAMES** that can never truthfully be tagged `'specification'` against C9's own definition (§2.1: same substance *and* everything else that makes it orderable). **PM is worse: capacity is documented BRIMFUL, diverging from nominal on every row checked** — 50→55, 40→44, 200→220 — **with no neck-finish, resin or colour column at all.** | **THEIR NUMBERS MATCH OUR §6.1a FIGURES NUMBER-FOR-NUMBER** — 1 grade token + 5 concentrations = the 6, now placed inside a 61-row RM population, and the 12 structured-capacity packaging rows now carry the brimful caveat. **The finding is unchanged in kind and much sharper in use: most of their master is writable ONLY at `'substance'` grain, and the PM half is not reliably writable at either** — a brimful capacity is not the item's nominal size, so a specification claim keyed on it would be **precise and wrong**. **Still no schema change implied**, and the register does not make one. |
+| **OF 21 REQUIRED FIELDS, EXACTLY ONE IS SOURCED FROM THEIR BOM** | The other 20 are **ours, or authored at adjudication time.** Their earlier prose-based read had assumed C9 demanded fields from their master; **it mostly does not.** | **RECORD IT, BECAUSE IT CHANGES WHAT THEIR SIDE OF THE WORK ACTUALLY IS.** The build in front of them is **an adjudication surface, not a master-data extension** — one join column out of their BOM and twenty fields that come into existence when a human rules. **That is a smaller data ask and a larger process ask than either platform had been assuming**, and it is the second time in this arc that reading the artifact made a task *different* rather than *bigger*. |
+| **ADJUDICATION FIELDS ABSENT — AND THEY ARE NOT ASKING FOR RELIEF** | Their master carries no confidence and no adjudication provenance. **They do not propose that C9 relax.** | **C9 KEEPING THEM REQUIRED ON EVERY ROW, WHOEVER WRITES IT, IS CORRECT — and it is now confirmed by the party it costs.** Consistent with A-8: those fields are **a shape they can build, not data they hold**, and the absence is defensible precisely because **no adjudication has occurred.** No change; recorded because a requirement the burdened party declines to contest is a requirement that has been tested. |
+| **OPACITY CLEAN AT A-7's WIDENED SCOPE** | All three populations — 88 material, 17 bulk, 17 finished-good — **zero hits.** Prefixes remain authoring convention only. | **NO CHANGE, AND THE ASYMMETRY STANDS: the clause is PREVENTATIVE on their side and CORRECTIVE on ours.** `inferBpom` still parses `AI-`/`FR-` and still fails open (§7.3), blocked on D-COMP-BPOM. **We remain the only party in breach of a clause we proposed**, now against a second clean sweep. |
+| **THEIR DECLARED LIMIT, per the canon we both adopted** | **Their prose-side census was HAND-COUNTED**, so **71% is SOUND IN DIRECTION AND APPROXIMATE IN PRECISION.** | **RECORDED AS THEY STATED IT — they would rather say so than quote it cleanly**, which is `CENSUS-DERIVE-BILATERAL-01` and `STATED-LIMIT-DOES-NOT-DISCHARGE-01` working in the same sentence: **the method is disclosed, and disclosing it does not discharge it.** Booked as an open question below rather than treated as closed by the disclosure. **The class above does not depend on the precision** — 15-of-21 could be 14 or 16 and the *direction* of the loss, which is the finding, is unaffected. |
+
+### Booked OPEN — four questions, **NOT answered in this batch**
+
+| # | The question | Why it is not answered here |
+| --- | --- | --- |
+| **Q-1 · LIVENESS VOCABULARY** | `MaterialCodeSpace.liveness` and `AdjudicationProvenance.evidenceLiveness` import **`Tier` from OUR registry** (`services/liveness/registry`); **SOMO speak `ContractState`.** **C7 established a ONE-LINE VOCABULARY MAP as the whole translation; C9 states none.** **Which tier does `seed-illustrative` map to, and is that map theirs to propose?** | **Answering it edits C9** — a mapping is a clause, and the pin does not move in a register batch. Also genuinely open on the merits: the map's author matters, since **whoever writes it decides whether their seed data can ever back a `'CERTAIN'` row.** |
+| **Q-2 · R-6, THE GRAIN OF THEIR CANONICAL-S/4 CROSSWALK** | **Unanswerable from either tree alone: their side does not exist yet**, and **when it does, its grain must be DECLARED or the composition is unsound.** A crosswalk composed with a crosswalk of unstated grain yields an assertion of unknown grain, which C9 has no way to write. | Unchanged and correctly open since A-6 narrowed it. **It is one question with `C9-GRAIN-MISMATCH-01`'s route** (*'SOMO check-1 report, at a declared grain'*) — the report landed, **the declared grain of the S/4 crosswalk did not, because the crosswalk does not exist.** |
+| **Q-3 · `EA`/`PCS` NORMALIZATION (§7.7)** | **Dormant for us** — every strong substance pair to date is `KG` — and **likelier to arise from their BOM first**, now that PM is known to be the half with structured capacity and no reliable discriminators. | Filed as an early-warning re-pointing, not a resolution: **§7.7 says this schema does not resolve it, and this batch does not either.** What changed is **who is likely to hit it first.** |
+| **Q-4 · THEIR HAND-COUNTED CENSUS** | The 71% is hand-counted **by their own declaration.** A derived count would settle the precision. | **Theirs to run or decline**, on their side of the boundary. **Recorded OPEN rather than closed by the disclosure** — that is exactly `STATED-LIMIT-DOES-NOT-DISCHARGE-01`, and it would be the fastest way to have this batch's own class come apart if it went unrecorded. |
+
+### Constraints discharged, in writing
+
+- **REGISTER ONLY. C9's BYTES ARE UNTOUCHED AND THE PIN STAYS `f492b5c`.**
+  Verified by blob hash, not by inspection: the contract, the types module and
+  the derived field list are byte-identical at `f492b5c` and at this branch's
+  base `00aad61`. **`docs/contracts/` is unmodified.** Every item above that
+  would amend C9 — the substance-rollup premise, the liveness map, §6.1a's
+  D-1 sentence — is **filed here and explicitly deferred to the next amendment**,
+  because a new SHA is a new ratification and this batch has nothing worth one.
+- **ONE FILE CHANGED: this register.** No schema, no rows, no master edit.
+  `MATERIAL_MASTER` untouched; **2B remains blocked on D-1 and D-COMP-BPOM**, and
+  nothing here pre-empts either.
+- **NOTHING RECORDED AS `VERIFIED` THAT WE DID NOT READ OURSELVES.** SOMO's five
+  re-verified items are `REPORTED-MEASURED` at the tier and marked as such
+  (§3.4). What IS ours and verified in this tree: the byte-identity across three
+  SHAs, `SubstanceRef` as a bare alias, `substanceRef`'s absence from
+  `MaterialMasterEntry`, the first issue's silence on `spaceId` retirement, the
+  A-1 quotation's absence from the first issue, and `977ce25`'s unreachability
+  from any remote ref.
+- **NO TESTS ADDED, DELIBERATELY.** There is nothing here to pin: the register
+  is not a checked artifact, and the two items that WOULD pin — the liveness map
+  and the substance field — are the ones being deferred. **Floor 2070/2070
+  across 175 files, unchanged**; `npm run gates` green end to end, and **CI runs
+  the same command on this PR** (CP-3a) — a Linux-only failure would itself be a
+  finding.
