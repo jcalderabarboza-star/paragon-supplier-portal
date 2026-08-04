@@ -4,8 +4,10 @@ The **material-identity crosswalk** between Paragon's material master and SOMO's
 the schema both platforms build against when they need to say *"our code X and your code Y name
 the same thing"* — and, more often and more importantly, when they need to say nothing at all.
 
-**Status:** CONTRACT · **second issue, 2026-08-04** (first issue 2026-08-03), generated from
-code-truth at `main` `3860fe4` · **schema + types only; ZERO ROWS, ZERO CONSUMERS.**
+**Status:** CONTRACT · **third issue — CANON ADDENDUM, 2026-08-04** (second issue 2026-08-04,
+first issue 2026-08-03), generated from code-truth at `main` `6560fe6` · **schema + types only;
+ZERO ROWS, ZERO CONSUMERS.** The third issue changes **no schema and no types**; see the
+ADDENDUM block below.
 
 > **AMENDED BEFORE RATIFICATION.** SOMO ratified the SHAPE verbally and is running its own checks
 > before replying in writing. **Their check found a defect in our text and it is corrected here, so
@@ -19,6 +21,21 @@ code-truth at `main` `3860fe4` · **schema + types only; ZERO ROWS, ZERO CONSUME
 > | **A-3** | **§3.1** — the reciprocal hazard | **A claim we made about SOMO's code is now MEASURED and it was WRONG.** Their sweep found **no material-code prefix parsed in production.** The clause is **preventative on their side and corrective on ours**, and the table said otherwise. |
 >
 > A-2 moves the types module, so the floor pin moves with it (§8).
+
+> **ADDENDUM (third issue) — CANON, A WORKED EXAMPLE, AND ONE ADVANCE SIGNAL. NO SCHEMA CHANGE.**
+> **SOMO has accepted all three amendments.** Written ratification follows their check 1, which is
+> running. **The shape is not in question.** Four additions, none of which reaches
+> `materialMasterRef.types.ts`:
+>
+> | # | Clause | What it adds |
+> |---|---|---|
+> | **ADD-1** | **§3.4** *(new)* | **Shared canon, and it is theirs: A COMMITMENT TO CHECK IS NOT A FINDING.** The general form of the error §7.9 records — A-3 corrected the instance; this states the class. |
+> | **ADD-2** | **§4.2a** *(new)* | **SOMO's worked example of `routeToResolution`**, carried with attribution. It shows the field working in prose rather than in schema, and it is better than anything we would have written. |
+> | **ADD-3** | **§7** preamble | **Their observation on the divergence ledger:** *a divergence log that only ever runs one direction is not being read hard enough.* |
+> | **ADD-4** | **§6.1a** *(new)* | **ADVANCE SIGNAL on their check 1 — recorded as a DISCLOSURE, NOT A MEASUREMENT** (per ADD-1). Held **OPEN**. |
+>
+> **Nothing here touches the types module, so the floor pin does not move** (§8). Floor **2057**,
+> unchanged. No rows, no master edit; **2B remains blocked on D-1 and D-COMP-BPOM** (§6).
 
 **This document is the AUTHORITY.** `src/services/sdc/materialMasterRef.types.ts` expresses the
 same shape in a form a build can check; where the two disagree, **this document wins and the
@@ -42,7 +59,7 @@ Read against your BOM shape and **reply in writing**; nothing here is frozen unt
 | # | Item | Where | Substance |
 |---|---|---|---|
 | **R-1** | **Identity keys on SPECIFICATION** | **§2** | S/4 MATNR semantics: a MATNR is a purchasable item, not a chemical. Accepted on an **irreversibility** argument, not a preference. |
-| **R-2** | **Every row carries a `grain` tag** | **§2.2** | `'substance' \| 'specification'`, with confidence and adjudication provenance. This is what survives D-1 either way. |
+| **R-2** | **Every row carries a `grain` tag** | **§2.2** | `'substance' \| 'specification'`, with confidence and adjudication provenance. This is what survives D-1 either way. **ADDENDUM (ADD-4):** it now has a **first real-data justification** rather than only an argument from irreversibility — SOMO's preliminary reading of their own master is **SUBSTANCE-level where ours is SPECIFICATION-level** (§6.1a). |
 | **R-3** | **`materialCode` is OPAQUE — permanently** | **§3** | No prefix stability, ever. **AMENDED (A-3):** the first issue said *both* platforms violate this today. Measured, **only we do** — the clause is **preventative on your side, corrective on ours** (§3.1). It is still the reason the contract exists in writing. |
 | **R-4** | **Adoption is not discovery** | **§4** | Both masters self-declared SIMULATED ⇒ no row may claim a correspondence found against a real master. Enforced structurally, not by convention. **AMENDED (A-2):** provenance now also carries **`routeToResolution` — what would settle the row** (§4.1). |
 | **R-5** | **An empty map is an honest map** | **§5** | Absence means UNKNOWN. The schema has no way to write "unknown" and nothing in it rewards filling it in. |
@@ -243,6 +260,49 @@ second half is the half a crosswalk actually runs on.**
 This is also the strongest live argument for `spaceId` (§5): the two errors above are both
 **space confusions**, and a row that names its space cannot make either of them.
 
+### 3.4 **ADD-1.** The second method rule — **A COMMITMENT TO CHECK IS NOT A FINDING**
+
+**Contributed by SOMO and adopted as shared canon.** It is recorded here rather than only in our
+register because it is **the general form of the error §7.9 already admits**: A-3 corrected the
+instance, and an instance corrected without its class is a defect waiting to recur under a
+different name.
+
+> **A COMMITMENT TO CHECK IS NOT A FINDING.** When one platform tells the other it will look at
+> something, the other records it as **OPEN**, not **CONFIRMED**, until the measurement comes back.
+
+**Their reasoning is the part that makes it stick, and it is why the rule is about documents rather
+than about care:**
+
+> **A DISCLOSURE AND A MEASUREMENT LOOK IDENTICAL IN A DOCUMENT ONCE QUOTED.**
+
+Once *"they are checking whether their explosion engine parses prefixes"* is carried forward one
+document, it reads exactly like *"their explosion engine parses prefixes"* — same sentence
+structure, same apparent authority, and **nothing in the later document records which of the two it
+started as.** That is the whole mechanism of §7.9. Nobody had to be careless: the transcription was
+faithful and the status was the thing that did not survive it.
+
+**Three tiers, and it is worth naming all three because only the middle one is available to us
+about SOMO** (§7.8):
+
+| Tier | What it is | How C9 marks it |
+|---|---|---|
+| **DISCLOSED** | The counterparty has undertaken to look, or has given a preliminary reading | **OPEN.** Named as a disclosure, at the clause. §6.1a is the live instance |
+| **REPORTED-MEASURED** | The counterparty ran the check and reported the result | Carried with **how it was obtained** (§3.3) and with the standing note that a party's report about its own code is the best evidence available and **is still not verification** (§7.8). §3.1's clearance of their prefix parsing sits here |
+| **VERIFIED** | We read it ourselves | **Unavailable across this boundary in either direction**, permanently. Neither platform can audit the other's tree |
+
+**The standing practice, binding on both platforms:** *every statement one platform makes about the
+other's tree carries its status, and a status never silently upgrades.* A row of a table, a clause,
+or a quoted sentence that has lost its status has lost the only thing that distinguished it from an
+assertion.
+
+**File it beside its two siblings.** `CENSUS-MUST-DERIVE-01` (a population obtained by an unstated
+method reports a clean all-clear rather than *"I may have missed some"*) and `DESCRIBE-DONT-RENDER-01`
+(**describing a defect can recreate it — name the mechanism, never render it**) are the same family:
+none of the three is about the underlying fact being wrong. **All three are about what the act of
+writing does to a fact** — a shape-matched census loses the members it never looked for, a
+description reproduces its own subject, and a quotation strips a status. **The register's own
+hygiene is the failure surface in each.**
+
 ---
 
 ## 4. ADOPTION IS NOT DISCOVERY
@@ -322,6 +382,39 @@ optional route is omitted on the doubtful rows and filled in on the confident on
 `sourceOfTruth`'s ratified precedent — required, with a truthful value permitted to be an
 admission — for the same reason: **a row that cannot say what would settle it is not thereby
 exempt from saying so.**
+
+### 4.2a **ADD-2.** The worked example — **SOMO's, carried with attribution**
+
+**The example below is theirs.** It is reproduced here because it demonstrates the field working in
+**prose rather than in schema**, on their own unresolved work, and it is better than anything we
+would have written. The identity of the row is theirs to publish; what this document carries is its
+**shape**, which is the part that is canon.
+
+**Their crosswalk resolved NOTHING — 0 confirmed of 5 — and was published as 0 of 5.** Its
+strongest unresolved row does four things in order:
+
+1. **Names its candidate.** Not "unclear" — the specific correspondence it believes is the answer.
+2. **States that the candidate was DELIBERATELY NOT TAKEN.** The row records a decision, not a gap:
+   somebody considered it and declined to assert it.
+3. **Gives both circumstantial supports.** What makes the candidate plausible, enumerated, so a
+   reader can weigh it instead of inheriting it.
+4. **Closes with the route:** *one sentence from the network team would settle it.*
+
+**The point, stated plainly:**
+
+> **WITHOUT THAT CLOSING CLAUSE THE ROW IS A BLANK. WITH IT, IT IS AN ANSWERABLE QUESTION WITH THE
+> ANSWERER IMPLIED.**
+
+The first three parts are the candidate and the evidence — the two-of-three the first issue of this
+document already carried, and the exact configuration §4.2 calls *the shrug*. The fourth part costs
+one sentence and changes what the row **is**: not a record of doubt, but **a piece of work with a
+named next step and a named owner.** A reader who cannot resolve it can still route it.
+
+**And the headline figure is not a failure — it is the ruling working.** A crosswalk that resolves
+zero of five and **publishes zero of five** is §5's no-`'UNKNOWN'`-verdict principle behaving
+exactly as designed: *absence is unknown*, silence asserts nothing, and **nothing in the shape
+rewards filling it in.** The failure mode was never an empty crosswalk. **The failure mode was five
+confident rows** — and every one of them would have looked like progress.
 
 ---
 
@@ -430,6 +523,53 @@ grade-silent entry ambiguous about which grade it denotes. Two more of the same 
 and `RM-EMUL-3310`, whose master group `MG-03` (humectants) contradicts its own `EMUL` code
 segment — a live illustration of §3.
 
+### 6.1a **ADD-4.** ADVANCE SIGNAL on SOMO's check 1 — **A DISCLOSURE, NOT A MEASUREMENT (§3.4)**
+
+> **STATUS: OPEN.** What follows is **SOMO's preliminary reading of their own master**, given in
+> advance of their check-1 report. **Under §3.4 it is a disclosure, and it is not a finding until
+> their report lands.** It is recorded here rather than held in correspondence because a signal
+> this load-bearing should not reach the contract for the first time already promoted to fact — and
+> **§7.9 is what that looks like when it goes wrong.** Nothing in this document depends on it and
+> nothing may be built on it.
+
+**What they report, preliminarily.** **SOMO's master carries SUBSTANCE-LEVEL rows.** They hold
+`Glycerin` where we hold `Glycerin USP 99.5%`; `Flip-Top Cap` where we hold `Flip-Top Cap 24mm`.
+**Grade and size do not carry on their side.**
+
+**So the likely finding is a GRAIN MISMATCH, not a missing field.** That distinction is the whole
+of its significance: a missing field is a schema defect and would put this contract back into
+amendment. A grain mismatch is **a thing the schema was built to express.**
+
+**What it would mean, if measured.** Their rows are **writable at `'substance'` grain and UNKNOWN
+at `'specification'` grain** — which is precisely §2.3's stated capability, and §5's *absence is
+unknown* doing the work: a row can assert substance-equivalence and **say nothing whatever** about
+grade or size, without denying a specification correspondence and without inventing one.
+
+**Stated plainly, because it is the operator-relevant part:**
+
+- **C9 ALREADY EXPRESSES THIS. NO SCHEMA CHANGE IS IMPLIED** — not by this signal, and not by its
+  confirmation. That is why this addendum is docs-only.
+- **It is the grain tag's FIRST REAL-DATA JUSTIFICATION.** Until now `grain` rested on the
+  irreversibility argument (§2.2) — sound, and entirely hypothetical: no actual pair of masters had
+  been shown to sit at different grains. A peer platform's master, read by its owner, is the first
+  evidence that the two grains are **where the data actually is**, not where the argument said it
+  might be.
+- **It sharpens D-1 for procurement** (§6.1), and with a different argument than D-1 has been
+  carrying. The substance rollup (§2.4) has been presented as an additive convenience we could
+  reach for later. **If our peer platform's master is substance-level and ours is
+  specification-level, the substance axis is not a convenience — it is the axis on which any row
+  sourced from their master can be written at all.** Procurement should have that before ruling.
+
+**The route, in the field's own terms** (§4.2): were a row written against their master today, its
+`routeToResolution` would read `'SOMO check-1 report, at a declared grain'` — and per §6.3 the same
+question is already the R-6 ask about their canonical-S/4 crosswalk. **They are one question, and
+their report is what answers it.**
+
+**The disposal condition, stated in advance so it cannot be quietly retained.** If their check
+reports otherwise, **this section is deleted and nothing else in C9 moves.** That the contract can
+absorb either outcome without a schema edit is not a consolation — **it is the property the grain
+tag was built for, tested against a real counterparty master for the first time.**
+
 ### 6.2 D-COMP-BPOM · with compliance — **BLOCKS the master-adoption batch**
 
 Stated plainly, in three parts that are commonly conflated:
@@ -486,6 +626,19 @@ divergences and every one ran the same direction — the documents understated t
 drafting mistakes. **This document is not permitted to start with a twelfth**, so its
 non-conformances are enumerated here rather than discovered later.
 
+**ADD-3 — SOMO's observation on this ledger, carried because it reads the eleven differently than
+we did:**
+
+> **A DIVERGENCE LOG THAT ONLY EVER RUNS ONE DIRECTION IS NOT BEING READ HARD ENOUGH.**
+
+We treated the uniform direction as evidence about the **writing** — one systematic cause in how
+contracts were harvested. **Their reading is that it is also evidence about the READING:** a ledger
+that keeps producing instances of exactly one kind is being kept by someone who already knows which
+kind to look for, and the instances of the other kind are not absent — **they are unsearched.**
+§7.9 below is the first entry that runs the other way, and it was found **by the counterparty, not
+by us**, which is the observation's own best support. Both directions are now in scope for this
+ledger by rule, not by luck.
+
 | # | The contract states | What we actually ship |
 |---|---|---|
 | **7.1** | A crosswalk exists with a defined shape | **ZERO ROWS, ZERO CONSUMERS.** Nothing in the tree reads a crosswalk. The types module is **declared inert** and imported only by its own contract test. |
@@ -537,7 +690,8 @@ reversal.
 | **R-6 — the grain of your canonical-S/4 crosswalk** (§6.3) | If it asserts at substance grain and we key at specification, the composition is unsound and neither side would see it from its own tree. |
 | ~~**Whether your explosion engine can stop reading `RM-`/`PM-` prefixes**~~ — **ANSWERED, and the premise was ours and wrong** (§3.1) | **Withdrawn.** Your sweep measured no material-code prefix parsing in production; `materialClass` is already a field. **The remaining half of this ask is ours alone**: `inferBpom` is live, unfixed, blocked on D-COMP-BPOM. |
 | **Confirm the `SEMANTIC-IN-A-STRING` cousin is out of the crosswalk's path** (§3.1a) | The echelon role carried only in a display string is yours to place; what we need is the narrower assurance that **no field this contract defines** — `materialCode`, `spaceId`, `sourceOfTruth`, `routeToResolution` — carries meaning either side is expected to parse. |
-| **Ratify A-1 and A-2 specifically** (§5.2, §4.2) | They are your own corrections, but a correction adopted without written ratification is still one-sided — the exact failure §6's preamble names. |
+| **Ratify A-1, A-2 and A-3 specifically** (§5.2, §4.2, §3.1) — **ACCEPTED VERBALLY; the written reply is what closes them** | They are your own corrections, but a correction adopted without written ratification is still one-sided — the exact failure §6's preamble names. **And by §3.4, a verbal acceptance is a disclosure: we hold all three as accepted-in-shape and not yet closed.** |
+| **Your check-1 report, as a MEASUREMENT** (§6.1a) | Your preliminary grain reading is held **OPEN** and nothing is built on it. Per §3.4 only the report converts it — and per §7.8 even then it is *your* measurement of *your* tree, carried and not confirmed, which is the best evidence this boundary admits. **It answers R-6 as well** (§6.3): they are one question. |
 | **Your `EA`/`PCS` normalization position** (§7.7) | Dormant on our side; it becomes load-bearing on the first packaging pair, which is likelier to arise from your BOM than our master. |
 
 **Roughly a two-week commitment on your side once frozen**, per the CP-2 schedule. Nothing here
@@ -548,8 +702,11 @@ is frozen until you reply in writing.
 ## Provenance
 
 **First issue** grounded in shipped code at `main` `23eac6f`; **second issue (A-1/A-2/A-3)** at
-`main` `3860fe4`. Every claim about our own tree carries a `file:line`; **every claim about SOMO's
-tree is now marked with how it was obtained** (§3.3), and the one that was not is §7.9. Companion
+`main` `3860fe4`; **third issue — CANON ADDENDUM (ADD-1…ADD-4)** at `main` `6560fe6`, **docs only:
+no schema change and no edit to the types module, so the floor pin does not move** (§8). Every
+claim about our own tree carries a `file:line`; **every claim about SOMO's tree is now marked with
+how it was obtained** (§3.3) **and, as of ADD-1, with its STATUS — disclosed or reported-measured**
+(§3.4) — the one that carried neither is §7.9. Companion
 types: `src/services/sdc/materialMasterRef.types.ts` (inert, zero rows). Pinned by
 `src/services/sdc/__tests__/materialMasterRef.contract.test.ts`. Predecessors and their rulings:
 [C7](./C7-pr-intake.md) (PR intake), [C8](./C8-forecast-publication.md) (forecast publication —

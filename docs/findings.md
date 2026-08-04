@@ -373,3 +373,50 @@ D-1 and D-COMP-BPOM.** Floor 2050 → **2057** across 175 files.
   document. **Both amendments mutation-verified to bite**, one failure each.
 - **Floor 2050 → 2057 across 175 files**; `npm run build` and `npm run test:gate`
   green.
+
+---
+
+## CP-2 · C9 CANON ADDENDUM — shared canon, a worked example, one advance signal (refs @ `6560fe6`)
+
+**SOMO has accepted all three amendments.** Written ratification follows their
+**check 1**, which is running now. **C9's SHAPE IS NOT IN QUESTION.** C9 is at
+**third issue**; the additions are **ADD-1…ADD-4**, all marked at the clause.
+
+**DOCS ONLY.** No schema change, no rows, no master edit, **no edit to
+`materialMasterRef.types.ts` — therefore the pin does not move.** Floor
+**2057/2057, unchanged**. **2B remains blocked on D-1 and D-COMP-BPOM.**
+
+### Elevated to a CLASS, and recorded as ratified shared canon — **SOMO's contribution**
+
+| Class | The rule | Standing consequence |
+| --- | --- | --- |
+| **COMMITMENT-IS-NOT-A-FINDING-01** *(class; theirs, adopted — **the general form of our own `C9-COUNTERPARTY-OVERSTATEMENT-01`, above**; siblings = `CENSUS-MUST-DERIVE-01` and `DESCRIBE-DONT-RENDER-01`)* | **A COMMITMENT TO CHECK IS NOT A FINDING.** When one platform tells the other it will look at something, the other records it as **OPEN**, not **CONFIRMED**, until the measurement comes back. **Their reasoning is the part that makes it stick, and it is why the rule is about documents rather than about care: A DISCLOSURE AND A MEASUREMENT LOOK IDENTICAL IN A DOCUMENT ONCE QUOTED.** Carry *"they are checking whether their explosion engine parses prefixes"* forward one document and it reads exactly like *"their explosion engine parses prefixes"* — same structure, same apparent authority, and **nothing in the later document records which of the two it started as.** That is the entire mechanism of C9 §7.9: the transcription was faithful and **the status was the thing that did not survive it.** A-3 corrected the instance; **an instance corrected without its class is a defect waiting to recur under another name.** | **EVERY STATEMENT ONE PLATFORM MAKES ABOUT THE OTHER'S TREE CARRIES ITS STATUS, AND A STATUS NEVER SILENTLY UPGRADES.** Three tiers, written into C9 §3.4: **DISCLOSED** (undertaken to look, or a preliminary reading) → held OPEN at the clause; **REPORTED-MEASURED** (they ran it and reported) → carried with how it was obtained, and still not verification (§7.8); **VERIFIED** (we read it ourselves) → **permanently unavailable across this boundary in either direction.** Applies immediately to `C9-GRAIN-MISMATCH-01` below, which is why that finding is OPEN and not filed as a result. **Sibling reading worth keeping: none of the three classes is about the underlying fact being wrong — all three are about what the ACT OF WRITING does to a fact.** A shape-matched census loses the members it never looked for; a description reproduces its own subject; **a quotation strips a status.** The register's own hygiene is the failure surface in each. |
+
+### Recorded as shared canon — their reading of our own ledger
+
+| Canon | What happened | Standing consequence |
+| --- | --- | --- |
+| **DIVERGENCE-LOG-ONE-DIRECTION-01** *(theirs; reads `CONTRACT-OFF-THE-FLOOR-01`'s eleven instances against us)* | **A DIVERGENCE LOG THAT ONLY EVER RUNS ONE DIRECTION IS NOT BEING READ HARD ENOUGH.** We treated the uniform direction of the eleven C7/C8 divergences — **documents understating our implementation, every time** — as evidence about the **WRITING**: one systematic cause in how contracts were harvested and never re-harvested. **Their reading is that it is ALSO evidence about the READING.** A ledger that keeps producing instances of exactly one kind is being kept by someone who already knows which kind to look for, and **the instances of the other kind are not absent — they are UNSEARCHED.** | **CARRIED INTO THE C9 §7 PREAMBLE, where the ledger lives.** The observation's own best support is sitting directly beneath it: **§7.9 is the first entry that runs the other way — overstating a defect in the counterparty's tree — and it was found BY THE COUNTERPARTY, NOT BY US.** Both directions are now in scope for this ledger **by rule, not by luck**: a non-conformance sweep that returns only the familiar shape is to be re-run against the unfamiliar one before it is believed. |
+
+### Filed in this addendum
+
+| Finding | What it is | Disposition |
+| --- | --- | --- |
+| **C9-ROUTE-WORKED-EXAMPLE-01** *(refs @ `6560fe6` — **SOMO's worked example, carried with attribution; the identity of the row is theirs to publish**)* | **`routeToResolution` demonstrated in prose rather than in schema, on their own unresolved work — and it is better than anything we would have written.** **Their crosswalk resolved NOTHING: 0 confirmed of 5, published as 0 of 5.** Its strongest unresolved row does four things in order — **names its candidate** (not "unclear"; the specific correspondence it believes is the answer), **states the candidate was DELIBERATELY NOT TAKEN** (a decision, not a gap: somebody considered it and declined to assert it), **gives both circumstantial supports** (enumerated, so a reader can weigh the candidate instead of inheriting it), and **closes with the route: one sentence from the network team would settle it.** The first three are the candidate and the evidence — **the exact two-of-three C9 §4.2 calls *the shrug*.** | **ADDED AS C9 §4.2a.** The point, stated plainly and now in the contract: **WITHOUT THAT CLOSING CLAUSE THE ROW IS A BLANK; WITH IT, IT IS AN ANSWERABLE QUESTION WITH THE ANSWERER IMPLIED.** The fourth part costs one sentence and changes what the row **is** — not a record of doubt but **a piece of work with a named next step and a named owner**; a reader who cannot resolve it can still route it. **Second half of the finding, and it is the load-bearing half: a crosswalk that resolves zero of five and publishes zero of five is the no-`'UNKNOWN'`-verdict ruling WORKING (C9 §5), not a failed crosswalk.** Absence is unknown, silence asserts nothing, nothing in the shape rewards filling it in. **The failure mode was never an empty crosswalk — it was FIVE CONFIDENT ROWS, and every one of them would have looked like progress.** |
+| **C9-GRAIN-MISMATCH-01** *(refs @ `6560fe6` — **⚠️ OPEN, NOT CONFIRMED. A DISCLOSURE, NOT A MEASUREMENT, per `COMMITMENT-IS-NOT-A-FINDING-01` above**)* | **SOMO's PRELIMINARY READING of their own master, given in advance of their check-1 report.** It is **not a finding until their report lands**, and it is filed under that status deliberately — the class above exists precisely because a signal this load-bearing, quoted once without its status, becomes a fact nobody decided to assert. **What they report preliminarily: their master carries SUBSTANCE-LEVEL rows.** They hold `Glycerin` where we hold `Glycerin USP 99.5%`, `Flip-Top Cap` where we hold `Flip-Top Cap 24mm`. **Grade and size do not carry on their side.** **So the likely finding is a GRAIN MISMATCH, not a missing field** — and that distinction is the whole of its significance: a missing field is a schema defect and would put C9 back into amendment; **a grain mismatch is a thing the schema was built to express.** Their rows would be **writable at `'substance'` grain and UNKNOWN at `'specification'` grain**, asserting substance-equivalence while saying nothing whatever about grade or size — neither denying a specification correspondence nor inventing one. | **RECORDED AS C9 §6.1a, HELD OPEN, AND NOTHING IS BUILT ON IT.** Three consequences, stated because they are the operator-relevant part: **(1) C9 ALREADY EXPRESSES THIS — no schema change is implied**, not by the signal and not by its confirmation, which is why this addendum is docs-only. **(2) It is the grain tag's FIRST REAL-DATA JUSTIFICATION.** Until now `grain` rested on the irreversibility argument (§2.2) — sound and entirely hypothetical; no actual pair of masters had been shown to sit at different grains. **A peer platform's master, read by its owner, is the first evidence that the two grains are where the data actually IS.** **(3) It sharpens D-1 for procurement, with a different argument than D-1 has been carrying:** the substance rollup (§2.4) has been presented as an additive convenience for later. **If our peer platform's master is substance-level and ours is specification-level, the substance axis is not a convenience — it is the axis on which any row sourced from their master can be written at all.** Procurement should have that before ruling. **Disposal condition, stated in advance so the section cannot be quietly retained: if their check reports otherwise, §6.1a is deleted and NOTHING ELSE IN C9 MOVES** — which is not a consolation but **the property the grain tag was built for, tested against a real counterparty master for the first time.** Its own route: `'SOMO check-1 report, at a declared grain'`, which is also R-6 (§6.3) — **they are one question.** |
+
+### Constraints discharged, in writing
+
+- **DOCS ONLY.** Two files: `docs/contracts/C9-material-master-ref.md` and this
+  register. **No schema change** — the closed vocabularies, the row shape and
+  `AdjudicationProvenance` are byte-identical to the second issue.
+- **No rows.** The crosswalk is still `EMPTY AT FREEZE, BY RULING`, and
+  `C9-GRAIN-MISMATCH-01` explicitly authorises none.
+- **No master edit.** `MATERIAL_MASTER` untouched; **2B remains blocked on D-1 and
+  D-COMP-BPOM**, and §6.1a — being a disclosure — pre-empts neither.
+- **The pin did NOT move, because nothing reached the types module.** The dispatch
+  condition was *"if any addition touches the C9 types module, the pin moves with
+  it"*; no addition did. `materialMasterRef.contract.test.ts` is unchanged and
+  still passes against the third issue — the DERIVED provenance-field pin
+  included, since no field was added.
+- **Floor 2057/2057**, `npm run build` and `npm run test:gate` green.
