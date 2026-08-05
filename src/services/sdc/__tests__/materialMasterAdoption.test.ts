@@ -296,17 +296,29 @@ describe('2B-2 — groups come from the 2B-1 registry, and TYPE follows the AXIS
   });
 });
 
-describe('2B-4 GATE — the mechanism is not authored, and that is deliberate', () => {
-  it('NO master entry carries a bpomApplicable field', () => {
-    // "Mechanism may be authored early, behaviour may not be wired early." The
-    // field is absent from all 30 entries — asserted rather than trusted,
-    // because the tempting version of this batch adds it as an inert column and
-    // calls it harmless. It is not harmless: a fail-closed rule keyed on it
-    // would refuse essentially every GR line while the ASN store still speaks a
-    // vocabulary the master cannot resolve.
-    const carriers = Object.values(MATERIAL_MASTER)
-      .filter((m) => 'bpomApplicable' in (m as Record<string, unknown>))
+describe('2B-4 GATE — the mechanism landed at 2B-4a; the BEHAVIOUR still has not', () => {
+  it('EVERY master entry carries bpomApplicable — and nothing reads it', () => {
+    // ⚠️ INVERTED AT 2B-4a, NOT DELETED. At 2B-2 this asserted the field was
+    // ABSENT from all 30 entries — the pin that stopped a five-row batch adding
+    // it as an inert column "while we are in here". 2B-4a is the batch that was
+    // dispatched to add it, so the pin now records the other half of the same
+    // rule: "MECHANISM MAY BE AUTHORED EARLY, BEHAVIOUR MAY NOT BE WIRED
+    // EARLY." A deleted assertion and a discharged one look identical in a
+    // diff; an inverted one does not.
+    const missing = Object.values(MATERIAL_MASTER)
+      .filter((m) => !('bpomApplicable' in (m as Record<string, unknown>)))
       .map((m) => m.materialCode);
-    expect(carriers).toEqual([]);
+    expect(missing).toEqual([]);
+    // The half that has NOT changed, and the reason the gate still stands: the
+    // GR wizard runs a prefix parse and has never heard of this field. Pinned
+    // in full by `bpomApplicability.test.ts`; asserted here too because this is
+    // the file a reader of the 2B-2 adoption reaches for.
+    const wizard = import.meta.glob('/src/components/v2-features/GRInspectionWizard.tsx', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    })['/src/components/v2-features/GRInspectionWizard.tsx'] as string;
+    expect(wizard).toContain("materialCode.startsWith('AI-')");
+    expect(wizard).not.toContain('bpomApplicable');
   });
 });

@@ -80,6 +80,47 @@ export type Uom = 'KG' | 'PCS' | 'L' | 'ROLL';
 /** SAP material type: ROH = raw material (RM), VERP = packaging material (PM). */
 export type MaterialType = 'ROH' | 'VERP';
 
+/**
+ * Whether a received lot of this material requires a **BPOM lot check** —
+ * `INFERBPOM-REGULATORY-01`'s named replacement for a prefix parse.
+ *
+ * ── THREE STATES, AND THE THIRD IS THE POINT (2B-4a) ────────────────────────
+ *   · `'APPLICABLE'`     — a determination: this material needs the check.
+ *   · `'NOT_APPLICABLE'` — a determination: it does not.
+ *   · `'UNDETERMINED'`   — **NOT a determination.** Nobody has ruled. It is an
+ *                          explicit record of an ABSENCE, and every consumer
+ *                          must REFUSE on it (`bpomOf`, `sdc/bpom.ts`).
+ *
+ * ⚠️ **`'UNDETERMINED'` IS NOT QUARANTINE, and the difference is the whole
+ * reason it exists.** Quarantine STORES AN UNTRUSTWORTHY FACT AND LETS WORK
+ * PROCEED ON IT. `'UNDETERMINED'` STORES AN EXPLICIT ABSENCE OF DETERMINATION
+ * AND REFUSES ON IT. `D-OPS-MASTERMISS` already ruled against quarantine for
+ * the master miss (`materialMaster.ts` header) for exactly this reason, and
+ * this field is that ruling applied one field in. **NOTHING DOWNSTREAM MAY
+ * TREAT IT AS A DETERMINATION** — it refuses IDENTICALLY to a code the master
+ * cannot resolve at all.
+ *
+ * ⚠️ **WHY THIS IS A THREE-MEMBER STRING UNION AND NOT `boolean |
+ * 'UNDETERMINED'`.** The 2B-4a dispatch specified the states as
+ * `true | false | UNDETERMINED`, and the semantics below ARE those states,
+ * unchanged. The ENCODING is deliberately different: in a
+ * `boolean | 'UNDETERMINED'` union the string member is **truthy**, so
+ * `if (entry.bpomApplicable)` compiles, reads as obviously correct, and
+ * silently converts an absence of determination into a determination — the one
+ * thing this field exists to forbid, in the one shape nobody re-reads. A string
+ * union makes that mistake uniformly wrong for EVERY value rather than
+ * silently wrong for the one that matters, so it fails on first contact instead
+ * of on the case it was built for. **Recorded as a builder's encoding decision
+ * over an operator's semantics — the states are the dispatch's; only their
+ * spelling is ours, and it is reversible.**
+ *
+ * ⚠️ **NEVER DERIVED FROM A CODE PREFIX.** `materialCode` is contractually
+ * OPAQUE (C9 §3) and a prefix rule contradicts our own ratified contract. This
+ * value is POPULATED AT SEED, per row, from a declared material class — see
+ * `PROVISIONAL_BPOM_BY_GROUP` (`sdc/bpom.ts`).
+ */
+export type BpomApplicability = 'APPLICABLE' | 'NOT_APPLICABLE' | 'UNDETERMINED';
+
 export interface MaterialMasterEntry {
   /**
    * The S/4 material code.
@@ -105,6 +146,24 @@ export interface MaterialMasterEntry {
   readonly materialGroup: string;
   /** The one canonical unit; every qty field for this material must match it. */
   readonly canonicalUom: Uom;
+  /**
+   * BPOM lot-check applicability. **REQUIRED on every row** — an entry that can
+   * omit it is an entry whose silence has to be interpreted, and the whole
+   * point of `'UNDETERMINED'` is that an absence of determination is WRITTEN
+   * DOWN rather than inferred from a missing key.
+   *
+   * ⚠️ **ALL 35 SEEDED VALUES ARE PROVISIONAL** — strategist-ruled on best
+   * practice at 2B-4a, PENDING TEAM RATIFICATION, and derived from the
+   * material's declared GROUP, never from its code. `D-COMP-BPOM` remains the
+   * open escalation; this field is the shape its answer lands in, not the
+   * answer. See `sdc/bpom.ts`.
+   *
+   * ⚠️ **AUTHORED, NOT WIRED (the 2B-4a gate).** `inferBpom`
+   * (`GRInspectionWizard.tsx:129-131`) is still what the receiving surface
+   * runs. It cannot be retired until every code the GR wizard can be fed is
+   * master-resolvable, and TWELVE are not.
+   */
+  readonly bpomApplicable: BpomApplicability;
 }
 
 /** The material master, keyed by S/4 material code. */

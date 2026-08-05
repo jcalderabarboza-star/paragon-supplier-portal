@@ -384,8 +384,12 @@ describe('2B-3 — PK-PETB-8825 is its OWN item (operator ruling), not an alias'
     for (const k of ['materialGroup', 'materialType', 'canonicalUom'] as const) {
       expect(MATERIAL_MASTER['PK-PETB-8825'][k]).toBe(MATERIAL_MASTER['PK-PETB-8810'][k]);
     }
-    // No alias field was invented to soften the split.
+    // No alias field was invented to soften the split. ⚠️ The key list is
+    // EXACT, so a field added to the entry shape lands here first — which is
+    // how `bpomApplicable` announced itself at 2B-4a rather than arriving
+    // unremarked.
     expect(Object.keys(MATERIAL_MASTER['PK-PETB-8825']).sort()).toEqual([
+      'bpomApplicable',
       'canonicalUom',
       'label',
       'materialCode',
@@ -395,15 +399,27 @@ describe('2B-3 — PK-PETB-8825 is its OWN item (operator ruling), not an alias'
   });
 });
 
-describe('2B-4 GATE — still not wired, now across 35 rows', () => {
-  it('NO master entry carries a bpomApplicable field', () => {
-    // Unchanged by this batch and asserted again over the wider set, because the
-    // tempting version of a five-row batch adds the column "while we are in
-    // here". The GR wizard is still fed `asnStore`, still seeded from the
-    // `MAT-*` space, and this batch did not touch that space at all.
-    const carriers = Object.values(MATERIAL_MASTER)
-      .filter((m) => 'bpomApplicable' in (m as Record<string, unknown>))
+describe('2B-4 GATE — the mechanism landed at 2B-4a; the BEHAVIOUR still has not', () => {
+  it('all 35 rows carry bpomApplicable, and the GR wizard has never heard of it', () => {
+    // ⚠️ INVERTED AT 2B-4a, NOT DELETED — see the twin in
+    // `materialMasterAdoption.test.ts`. At 2B-3 this asserted ABSENCE across
+    // the wider set; the field was dispatched at 2B-4a and the rule it was
+    // guarding is unchanged: mechanism early, behaviour late.
+    const missing = Object.values(MATERIAL_MASTER)
+      .filter((m) => !('bpomApplicable' in (m as Record<string, unknown>)))
       .map((m) => m.materialCode);
-    expect(carriers).toEqual([]);
+    expect(missing).toEqual([]);
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(35);
+    // The GR wizard is still fed `asnStore`, still seeded from the `MAT-*`
+    // space, and neither 2B-3 nor 2B-4a touched that space. The unresolvable
+    // population went 9 → 12 at 2B-4a (the census widening), so the gate this
+    // pin guards is WIDER than when it was written.
+    const wizard = import.meta.glob('/src/components/v2-features/GRInspectionWizard.tsx', {
+      query: '?raw',
+      import: 'default',
+      eager: true,
+    })['/src/components/v2-features/GRInspectionWizard.tsx'] as string;
+    expect(wizard).toContain("materialCode.startsWith('AI-')");
+    expect(wizard).not.toContain('bpomApplicable');
   });
 });
