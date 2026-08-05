@@ -574,4 +574,69 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
       } satisfies POLineItem,
     ],
   },
+
+  // ══ CP-2 · 2B-5b-i — `PO-2025-00131`, AUTHORED (operator ruling R-4) ═══════
+  //
+  // ── WHY IT EXISTS NOW ─────────────────────────────────────────────────────
+  //   Until this batch, THREE INDEPENDENT FIXTURES referenced this PO and no
+  //   fixture authored it:
+  //     · `invoices.ts`            — `inv-basf-1180`, poId `po-131`
+  //     · `supplierDocuments.ts`   — `doc-201`, `linkedTo: 'PO-2025-00131'`
+  //     · `supplierShipments.ts`   — `ASN-2025-00302`, `poReference`
+  //   The ruling: REPOINTING THREE REFERENCES TO HIDE A MISSING OBJECT IS
+  //   WORSE THAN THE GAP. The object should exist because three lanes already
+  //   act as though it does.
+  //
+  // ── WHAT THE THREE REFERENCES DETERMINE ───────────────────────────────────
+  //   Supplier (`sup-005`, BASF Personal Care Emulsifiers GmbH), currency
+  //   (IDR, from the invoice), and that the supply was DELIVERED — the ASN is
+  //   `Delivered` with an eta of 2025-04-18. `orderDate` is set before that
+  //   eta so the ASN's own selection rule (level 2) holds for the reference
+  //   that was already correct.
+  //
+  // ── ⚠️ WHAT THEY DO NOT DETERMINE, AND IS THEREFORE NOT INVENTED ──────────
+  //   **NO LINE ITEM.** None of the three references states a material for this
+  //   PO: the invoice carries no lines, `doc-201` carries no material, and the
+  //   ASN's lines are the ASN's. Authoring one would mean choosing between
+  //   `MAT-40220` — widening a space R-3 declared dead into this, the DECLARED
+  //   DOCUMENT LANE — and a master code, which is the retirement R-1 sent to
+  //   5b-ii. Both are forbidden here, so the line set is EMPTY AND PINNED
+  //   (`asnRefIntegrity.test.ts`), not silently plausible.
+  //   `totalValue` is 0 for the same reason: every other PO in this fixture
+  //   satisfies `totalValue === Σ(quantity × unitPrice)`, and 0 is that sum
+  //   over an empty line set. Picking a value would be picking a side in the
+  //   disagreement below.
+  //
+  // ── WHAT THE THREE REFERENCES DISAGREE ABOUT (reported, not resolved) ─────
+  //   1. MONEY. `inv-basf-1180` bills 1 120 000 000 IDR. The storefront's own
+  //      offer for what the ASN shipped (`c201`, 210 000 IDR/KG) against the
+  //      2 400 KG shipped is 504 000 000 — a 2.2× gap. The invoice ALREADY
+  //      states this: `matchStatus: 'Price Variance'`, `status: 'Disputed'`.
+  //      The tree asserts the invoice and its PO do not agree on money, so no
+  //      authored total can make them agree without erasing the dispute.
+  //   2. TIME. The ASN delivered 2025-04-18; the invoice was submitted
+  //      2026-05-14 — thirteen months later. Left as found.
+  //
+  // ── ⚠️ AND THE FINDING THAT MATTERS MOST HANGS OFF THIS ROW ───────────────
+  //   `doc-201` is a **BPOM Notification (TD.02.02.66.10.23.0311)**, category
+  //   `BPOM Regulatory`, linked to THIS PO — whose ASN carries `MAT-40220`,
+  //   for which `inferBpom` returns **false**. The tree already states that a
+  //   BPOM registration governs this supply. That `false` is ASSERTED AGAINST
+  //   IN-TREE EVIDENCE, NOT MERELY IN ITS ABSENCE. See `BPOM-OFF-BY-SPACE-01`.
+  {
+    id: 'po-131',
+    poNumber: 'PO-2025-00131',
+    supplierId: 'sup-005',
+    supplierName: 'BASF Personal Care Emulsifiers GmbH',
+    status: POStatus.DELIVERED,
+    channel: ChannelType.EMAIL,
+    currency: 'IDR',
+    totalValue: 0,
+    orderDate: '2025-03-12',
+    requestedDeliveryDate: '2025-04-18',
+    confirmedDeliveryDate: '2025-04-18',
+    daysOverdue: 0,
+    acknowledgmentTimeHours: 12,
+    lineItems: [],
+  },
 ];
