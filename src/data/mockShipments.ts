@@ -182,7 +182,7 @@ export const mockShipments: Shipment[] = [
     totalWeight: 2400,
     daysInTransit: 1,
     lineItems: [
-      { materialCode: 'FR-WARD-4410', description: 'Wardah Signature Floral Compound — Lot A', qty: 1200, uom: 'KG' },
+      { materialCode: 'FR-WARD-4410', description: 'Wardah Signature Floral Compound', qty: 1200, uom: 'KG' },
     ],
   },
   {
@@ -412,7 +412,7 @@ export const mockShipments: Shipment[] = [
     daysInTransit: 1,
     customsStatus: 'Cleared',
     lineItems: [
-      { materialCode: 'FR-WARD-4410', description: 'Wardah Signature Floral Compound — Lot A', qty: 800, uom: 'KG' },
+      { materialCode: 'FR-WARD-4410', description: 'Wardah Signature Floral Compound', qty: 800, uom: 'KG' },
     ],
   },
 

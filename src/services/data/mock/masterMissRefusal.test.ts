@@ -40,30 +40,54 @@ const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
 const BOGUS = 'RM-GHOST-0000';
 
 describe('the straddle these gates sit on (MASTER-STRADDLE-01)', () => {
-  it('the SDC master and the document lane are DIFFERENT identity spaces', () => {
-    // This is why the GR gate cannot be a master check. Recorded as an
-    // executable fact so the divergence cannot drift silently.
-    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(5);
-    expect(isKnownMaterial('PK-PETB-8801')).toBe(false); // a real GR-lane code
-    expect(isKnownMaterial('RM-EMUL-3310')).toBe(true); // an overlap — see below
+  it('⚠️ NARROWED at 2B-2 — the straddle is 5 codes wide now, not 30', () => {
+    // WHAT CHANGED, and it is the reason this assertion was inverted rather than
+    // bumped from 5 to 30: for two batches this pinned "the master and the
+    // document lane are DIFFERENT identity spaces", with `PK-PETB-8801` — a real
+    // GR-lane code — as the witness. 2B-2 ADOPTED that witness. The two spaces
+    // are still distinct, but they now overlap almost completely.
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(30);
+    expect(isKnownMaterial('PK-PETB-8801')).toBe(true); // ← was false until 2B-2
+    expect(isKnownMaterial('RM-EMUL-3310')).toBe(true); // the original overlap
   });
 
-  // CP-2 · B2a — the straddle is UNCHANGED in size, but its CHARACTER changed.
-  // Before B2a the overlapping codes carried DIFFERENT meanings on each side
-  // (`RM-EMUL-3310` was glycerin to the master and Glyceryl Stearate SE to the
-  // document lane). Now every code the two spaces share carries the MASTER'S
-  // meaning on both sides — the spaces are still separate, but they no longer
-  // CONTRADICT. That is the property B2a bought, and it is the one a schema
-  // freeze depends on, so it is pinned rather than described.
-  it('every shared code now carries the MASTER meaning on both sides', () => {
-    // The document lane's own use of each shared code, read from the fixtures.
+  it('but it is NARROWED, NOT CLOSED — and the remainder is what blocks the gate', () => {
+    // THE DISTINCTION THAT KEEPS THIS FILE HONEST. "Four of five document lanes
+    // are 100% master-resolvable" is true and it is NOT the same as "a master
+    // check is now a legal GR gate". Two populations still refuse:
+    //
+    //   · the RFQ lane's five mute codes — reached only through
+    //     `materialIds: string[]`, which states no meaning to ratify (2B-3);
+    //   · the nine `MAT-*` codes of `paragon.asn_chase_lane` — a DIFFERENT
+    //     space, declared at 2B-1 and booked for retirement.
+    //
+    // The second is the operative one: `MOCK_ASNS` seeds `asnStore`, which feeds
+    // the GR inspection wizard. So the code a receipt actually arrives carrying
+    // is still one the master cannot name.
+    for (const muteRfqCode of ['AI-CENT-6900', 'PK-ALCP-2441', 'PK-PETB-8825']) {
+      expect(isKnownMaterial(muteRfqCode), `${muteRfqCode} is 2B-3's row`).toBe(false);
+    }
+    for (const chaseLaneCode of ['MAT-88201', 'MAT-77014', 'MAT-55022']) {
+      expect(isKnownMaterial(chaseLaneCode), `${chaseLaneCode} is a third space`).toBe(false);
+    }
+  });
+
+  // CP-2 · B2a — the overlap's CHARACTER, unchanged by 2B-2 and now covering 28
+  // codes rather than 3. Before B2a the overlapping codes carried DIFFERENT
+  // meanings on each side (`RM-EMUL-3310` was glycerin to the master and
+  // Glyceryl Stearate SE to the document lane). Every shared code now carries
+  // the MASTER's meaning on both sides — which is precisely what made adoption
+  // a ratification rather than an authoring act.
+  it('every shared code carries the MASTER meaning on both sides', () => {
     const shared = ['RM-EMUL-3310', 'RM-EMUL-3320', 'AI-NIAC-6601'] as const;
     for (const code of shared) expect(isKnownMaterial(code)).toBe(true);
 
-    // `PK-PETB-8810` is master-owned and NO LONGER APPEARS in the document lane
-    // at all: its two squatting meanings took `PK-PETB-8802` (Emina 100ml Clear)
-    // and `PK-PETB-8803` (Wardah 100ml Airless Pump). Neither is in the master.
-    expect(isKnownMaterial('PK-PETB-8802')).toBe(false);
+    // `PK-PETB-8810` is master-owned and does not appear in the document lane at
+    // all: its two squatting meanings took `PK-PETB-8802` (Emina 100ml Clear,
+    // ADOPTED at 2B-2) and `PK-PETB-8803` (Wardah 100ml Airless Pump, still mute
+    // and therefore still 2B-3's). The pair is worth keeping side by side — it
+    // is the clearest case of adoption splitting on stated-meaning alone.
+    expect(isKnownMaterial('PK-PETB-8802')).toBe(true);
     expect(isKnownMaterial('PK-PETB-8803')).toBe(false);
     expect(isKnownMaterial('PK-PETB-8810')).toBe(true);
   });
@@ -264,10 +288,22 @@ describe('GR_INSPECTION_MATERIALS_DECLARED — identity by DECLARED OWNERSHIP', 
   });
 
   it('conversely, a NON-master code the ASN DID declare is accepted', async () => {
-    // The straddle in one assertion: a master gate here would have refused this
-    // perfectly legitimate receipt.
-    expect(isKnownMaterial('PK-PETB-8801')).toBe(false);
-    const res = await createGr('ASN-CP2-OK', [inspect('PK-PETB-8801')]);
+    // The straddle in one assertion: a master gate here would refuse a perfectly
+    // legitimate receipt.
+    //
+    // ⚠️ THE WITNESS CHANGED AT 2B-2, and the change is the point. This used to
+    // read `PK-PETB-8801` — a GR-lane code the master could not name. 2B-2
+    // ADOPTED it, so it can no longer witness anything. The replacement is the
+    // code a receipt actually arrives carrying at runtime: `asnStore` is seeded
+    // from `MOCK_ASNS`, whose vocabulary is the `MAT-*` space, and the master
+    // still cannot resolve a single one of those nine.
+    //
+    // So the assertion survives its own witness being fixed — which is exactly
+    // what "narrowed, not closed" means for the 2B-4 gate. Adopting the declared
+    // lane did not make a master check legal here; it moved the reason.
+    expect(isKnownMaterial('MAT-88201')).toBe(false);
+    asnStore.add(asnWith('ASN-CP2-CHASE', ['MAT-88201']));
+    const res = await createGr('ASN-CP2-CHASE', [inspect('MAT-88201')]);
     expect(res.status).not.toBe('failed');
   });
 

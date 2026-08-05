@@ -82,7 +82,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
     supplierId: 'sup-003',
     supplierName: 'Givaudan Indonesia Fragrances',
     materialCode: 'FR-WARD-4410',
-    materialDescription: 'Wardah Signature Floral Compound — Lot A',
+    materialDescription: 'Wardah Signature Floral Compound',
     qtyOnHand: 120,
     qtyAvailable: 90,
     qtyReserved: 30,

@@ -148,7 +148,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     inspectionResults: [
       {
         materialCode: 'FR-WARD-4410',
-        description: 'Wardah Signature Floral Compound — Lot A',
+        description: 'Wardah Signature Floral Compound',
         qtyExpected: 800,
         qtyReceived: 800,
         qtyAccepted: 800,
@@ -390,7 +390,7 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     inspectionResults: [
       {
         materialCode: 'FR-WARD-4410',
-        description: 'Wardah Signature Floral Compound — Lot A',
+        description: 'Wardah Signature Floral Compound',
         qtyExpected: 1200,
         qtyReceived: 1200,
         qtyAccepted: 1200,
