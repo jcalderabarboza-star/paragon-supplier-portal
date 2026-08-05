@@ -1302,7 +1302,7 @@ rows, as a property of the rows and not of the field.** A sixth code arriving as
 the second element of a `materialIds` array gets no unit from here and **must not
 be given one by analogy.**
 
-### `EVIDENCE-REPLICATION-NOT-CORROBORATION-01` *(new)*
+### `EVIDENCE-REPLICATION-NOT-CORROBORATION-01` *(new — **ELEVATED TO A CLASS at 2B-4a; see that section**)*
 
 | | |
 |---|---|
@@ -1457,4 +1457,243 @@ consulted.
   REFERENCE**, and both this file and the 2B-2 pin now guard the population **the
   assertions iterate**, not just the raw walk that feeds it. **A population guard
   that does not guard the derived set is decoration.**
+
+  ⚠️ **AMENDED AT 2B-4a — TWO THINGS THIS ENTRY UNDERSTATED, AND THE SECOND IS
+  THE SHARPER ONE.**
+
+  **(1) IT IS THE `--passWithNoTests` SHAPE, ONE LAYER IN.** That flag is the
+  canonical form of the failure: a runner told to be green when it finds nothing
+  to run, so an empty selector reports success. Nineteen assertions over an empty
+  derived population are the same object one level down — **green because they
+  found nothing to do**, and indistinguishable in the output from nineteen
+  assertions that examined thirty-five rows and were satisfied. Naming it that
+  way matters because the mitigation is not "be careful with globs": it is that
+  **every derived population needs a floor asserted on the set the assertions
+  actually iterate**, exactly as `--passWithNoTests` needs a minimum test count.
+  `scripts/floor.json` is the same instrument at the suite level, and CP-3a's
+  ruling about it applies here verbatim.
+
+  **(2) IT WAS CAUGHT BY THE SEAT, NOT BY A GATE — AND THE GATES WOULD HAVE
+  SHIPPED IT.** `npm run build` typechecks a vacuous loop happily. `npx vitest
+  run` reports nineteen passes. `npm run test:gate` never touches `src/`. **CP-3a
+  asserted that the three gates RAN and DID SOMETHING; nothing asserts that a
+  test did something.** The suite would have grown by nineteen green assertions,
+  cleared the floor, and gone to `main` — and the batch would have read as
+  *better* covered than before, because the count went up. **THE CATCH WAS A
+  HUMAN NOTICING THAT TWO COUNT ASSERTIONS DISAGREED WITH SEVENTEEN SILENT
+  ONES, WHICH IS NOT A MECHANISM.** Recorded in this register rather than as a
+  passing remark in a batch note, because "our gates would not have caught this"
+  is the single most load-bearing fact about the incident and the only one that
+  generalises to the next batch.
+
+  ⚠️ **THIS IS A LIVE HOLE IN CI, NOT A HISTORICAL NOTE (operator ruling, at the
+  #176 merge).** Nothing was fixed by finding it. `.github/workflows/gates.yml`
+  runs `npm run gates` and nothing else, on every PR and every push to `main` and
+  daily at 00:17 UTC — and **the next vacuous suite to arrive will pass all three
+  gates exactly as this one did.** `scripts/gates.mjs` asserts that the BUILD
+  emitted a bundle, that the SUITE collected at least the floor, and that the
+  GATE suite passed its count. **Not one of those three asks whether a test
+  examined anything.** A file of `.filter(...).toEqual([])` over an empty derived
+  set raises the collected-test count, clears the floor, prints the bump note,
+  and is indistinguishable from coverage. **CP-3a closed the "did the gates run"
+  hole and left the "did the tests do anything" hole open, one level in — which
+  is `SCOPE-DERIVATION-IS-RECURSIVE-01` on the gates themselves.**
+
+  ⚠️ **AND IT IS THE SECOND APPEARANCE OF THE SHAPE IN THIS REPOSITORY, WHICH IS
+  WHY IT IS A SHAPE AND NOT AN INCIDENT.** First `--passWithNoTests` — a runner
+  told to be green when its selector matches nothing. Now nineteen assertions
+  green because their population was empty. **GREEN BECAUSE IT FOUND NOTHING TO
+  DO, twice, at two different levels, and in both cases the output is
+  byte-identical to the output of having done the work.** A third appearance
+  should be assumed, not awaited: the standing question for any new check is
+  **what does this report when its input is empty**, and the answer must be
+  RED, not silence. **NOT FIXED HERE.** The candidate is a fourth assertion in
+  `scripts/gates.mjs` — a floor on assertions-executed rather than
+  tests-collected — and it is a batch of its own, argued and costed, not
+  smuggled in beside a register.
 - **FLOOR 2125/178 → 2147/179.** `npm run gates` green.
+
+---
+
+## CP-2 · 2B-4a — THE BPOM MECHANISM, AND THE FIELD SET THAT DERIVES (refs @ `5cca23d`)
+
+**`bpomApplicable` lands on all 35 master rows and NOTHING READS IT. The census
+widens from two hand-picked field names to a DERIVED field set, and the tree's
+master-absent population goes 9 → 12 without a single code being added.**
+
+Two halves, and the second one was the dispatch's real question. The mechanism
+half is small and was specified in full. The census half was an operator ruling
+executed as a derivation, and it surfaced a level nobody had looked at.
+
+### The three queued filings, discharged HERE and not in a register PR
+
+Nothing crossed the batch boundary as an IOU. The vacuous-19 amendment is in the
+2B-3 section above (`--passWithNoTests` one layer in; **the gates would have
+shipped it**); the two class elevations are immediately below.
+
+### Elevated to CLASSES (operator ruling, 2B-4a)
+
+| | |
+|---|---|
+| **`EVIDENCE-REPLICATION-NOT-CORROBORATION-01`** *(class; instance = `RM-HUMEC-3405`'s three RFQs, 2B-3 — **elevated because a rule buried in one batch's block gets read as being about that batch**)* | **A COUNT OF AGREEING SOURCES IS NOT A MEASURE OF EVIDENCE UNTIL THE SOURCES ARE KNOWN TO BE INDEPENDENT.** `RFQ-2026-013` is a DECLARED CLONE of `-012` — the fixture's own header says *"rfq-012 with a recorded FX ledger and NOTHING else changed"* — so the row that looked best-evidenced of 2B-3's five is **two sources and one replication.** A copy agrees with its original **by construction**, and nothing in the count says which agreements were free. | **BEFORE QUOTING A COUNT OF CORROBORATING SOURCES, ESTABLISH THAT THEY ARE INDEPENDENT — AND WHERE THE INDEPENDENCE IS CHECKABLE, CHECK IT EXECUTABLY.** The clone check is a real assertion, so if `rfq-013` ever diverges the claim goes red rather than quietly becoming true. **Why it belongs beside `CENSUS-MUST-DERIVE-01` and `DERIVED-OVER-A-CHOSEN-SCOPE-01` rather than under 2B-3:** all three are about A MEASUREMENT THAT LOOKS COMPLETE BECAUSE OF HOW IT WAS TAKEN. A shape-matched census misses what it never looked for; a scoped assertion is only as strong as the scope; **a replication count inflates without anybody overstating anything.** In each case the number is arrived at honestly and means less than it reads. ⚠️ **The bilateral half is live and NOT yet contracted:** C9 §3.3 already requires both platforms to state HOW a population was obtained. This adds the second question — **how many of the sources behind a figure are copies of each other** — and it is booked to the C9 next-SHA queue, PROPOSED, not made. |
+| **`SCOPE-DERIVATION-IS-RECURSIVE-01`** *(class; instances = **all four levels below, one per batch**)* | **DERIVE THE POPULATION. DERIVE THE LANE SET. DERIVE THE FIELD SET.** Three batches, three fixes, and **EACH TIME A LEVEL WAS FIXED THE NEXT LEVEL UP WAS STILL A HAND-PICK** — invisible each time, because the surviving literal was written in a form that reads as a fact. ① `CENSUS-MUST-DERIVE-01` (2a) fixed the POPULATION: stop matching a code shape, enumerate from the data. **The MODULE LIST stayed a hand-picked import list.** ② `DERIVED-OVER-A-CHOSEN-SCOPE-01` (2B-0) fixed the LANE SET: glob the tree, not four named modules. **The FIELD NAMES stayed a literal pair, written as a regex — which is why nobody re-read them.** ③ 2B-4a fixes the FIELD SET: close it over the tree from the master's own keys. ④ **AND THE MEANING SET IS STILL A LITERAL** — `/description/i` — filed below as `MEANING-SCOPE-IS-A-HAND-PICK-01` and **NOT closed.** | **WHEN YOU DERIVE A SCOPE, THE THING THAT CHOSE THAT SCOPE IS THE NEXT SCOPE — AND IT IS ALWAYS ONE LEVEL LESS VISIBLE THAN THE ONE YOU JUST FIXED.** A population reads as data; a module list reads as an import; a field-name regex reads as a definition; a meaning rule reads as a convention. **Each is a claim wearing the clothes of a fact, and the clothes get better as you go up.** Standing practice: after deriving any scope, WRITE DOWN what selected it and whether that selector is itself derived or chosen — **in the file, not in a batch note.** `materialIdentity.test.ts`'s header now carries the whole ladder, including the rung it has not climbed. ⚠️ **This class does NOT promise the ladder terminates.** Four levels are known; nobody has shown there is no fifth. The honest claim is that **each level is cheaper to find once the one below it is derived** — not that we are done. |
+
+### The operator ruling — `sapCode` COUNTS, and the census DERIVES it
+
+> **"A field holding `MAT-*` values that overlap the third space IS material
+> identity, whatever the field is named."**
+
+Executed as a mechanism, not as a third literal. The field set is **closed over
+the tree from `MATERIAL_MASTER`'s own key set**: a field is code-bearing if any
+of its values is a known code, and its values then become known codes.
+`sapCode` is admitted on the **second** round — it holds no master code, and two
+of its five values are already in the `MAT-*` space `materialCode` reaches.
+**A fourth code-bearing key arriving anywhere widens the census with nobody
+editing the file**, which is the only version of this fix that does not need
+making again.
+
+| | before (2B-3) | after (2B-4a) |
+|---|---|---|
+| code-bearing fields | 2, literal | **3, derived** |
+| tree population | 44 | **47** |
+| master-absent | 9 (two-field scope) · 12 (if `sapCode` counts) | **12, full stop** |
+| BPOM firing set | 16 | **16 — unchanged** |
+
+⚠️ **THE MASTER-ABSENT FIGURE WENT UP, AND THAT IS THE RESULT.** No code was
+added to the tree; the three arrivals have been sitting in
+`supplierStorefront.ts` all along. **A figure that improves every batch while its
+scope stays narrower than the tree is a figure improving about itself.** On the
+batch that widens the scope, the honest direction of that number is UP — and the
+pin says so in its own title rather than leaving a reader to notice.
+
+⚠️ **WHAT THE RULING DID NOT SETTLE, kept open on purpose.** The POPULATION
+question is answered; the SPACE question is not. Nine of the twelve are in the
+two modules `MAT-SPACE-UNDECLARED-01` names, three are in the storefront, and
+whether that is ONE space of twelve or TWO sharing two codes is still a
+declaration nobody has made. **Counting a code is not placing it.**
+
+### `FIELD-SET-CLOSURE-OVERRUNS-01` *(new — the derivation's own failure mode, found by building it)*
+
+| | |
+|---|---|
+| **Finding** | **A TRANSITIVE CLOSURE OVER FIELD NAMES IS UNSOUND, AND IT FAILS BIG.** Run as a bare closure the derivation admits `SupplierDocument.linkedTo` on the FIRST round — one of its thirteen values is `'PK-PETB-8801'`. Its other twelve then become "material codes", and two rounds later the census has swallowed `poNumber` and `poReference` and is reporting **26 purchase-order numbers as material identity: 83 codes and 48 master-absent, instead of 47 and 12.** |
+| **Why it happens** | `linkedTo` is a **free-text reference field** — its values include `'All materials'`, `'PK-PETB-8801, PK-PETB-8810'` and `'PO-2025-00107 / PK-PETB-8801'`. **ONE FREE-TEXT FIELD IS A BRIDGE BETWEEN TWO IDENTIFIER SPACES, and a closure walks across it without noticing.** The general form: **DERIVING A SCOPE TRANSITIVELY IS NOT THE SAME ACT AS DERIVING A POPULATION.** A population is closed under *is a member*; a scope is not closed under *mentions a member*. |
+| **The disqualifier, and it is not a shape rule** | A field is rejected if **any of its values PROPERLY CONTAINS a known code without BEING one.** That asserts nothing about what a code looks like — C9 §3 forbids that, and this rule does not need it. It asserts that a cell holding `'PO-2025-00107 / PK-PETB-8801'` is **not one identifier under any reading of what identifiers look like.** **A CELL THAT CONTAINS AN IDENTIFIER IS A REFERENCE; ONLY A CELL THAT IS ONE IS IDENTITY.** |
+| **Disposition** | **APPLIED, AND THE REJECTION IS PINNED BY NAME AND BY VALUE** rather than buried in a filter nobody reads — `linkedTo` and its three impure values are asserted, so a fourth one arriving is a red test rather than a silent narrowing. Also pinned: **no admitted code properly contains another**, so the rule is measured to be non-vacuous instead of assumed harmless. ⚠️ **The honest limit:** the disqualifier is all-or-nothing. A field that is 95% identity and 5% prose is rejected outright, and this tree has no such field to calibrate against. If one arrives, the rule needs re-arguing — **not a threshold**, which would be a magic number doing the deciding. |
+
+### `MEANING-SCOPE-IS-A-HAND-PICK-01` *(new — **the fourth level, and the dispatch asked for it now**)*
+
+| | |
+|---|---|
+| **Finding** | **THE POPULATION DERIVES, THE LANE SET DERIVES, THE FIELD SET NOW DERIVES — AND WHAT COUNTS AS A MEANING IS STILL `/description/i`.** That is a shape-match on a field NAME: the same defect as the code-field literal, one field over. The three codes 2B-4a admitted enter the census **MUTE**, because `supplierStorefront.ts` states its meaning under a key called `material`. So they are counted by the master-absent figure and are **structurally incapable of contradicting anything** — precisely what `DERIVED-OVER-A-CHOSEN-SCOPE-01` said about `materialIds` at 2B-0, on a new set of codes. |
+| **⚠️ AND IT IS NOT AN EMPTY BLIND SPOT — THREE LIVE VIOLATIONS, MEASURED** | Read `material` as a meaning too and the identity property breaks in **both** directions, on rows no batch has ever seen. **ONE MEANING, TWO CODES:** `'PET Bottle 100ml Airless Pump'` is the storefront's `MAT-10045` **and** the master's `PK-PETB-8803` — the label 2B-3 authored, having noticed this collision in prose while sourcing it. **ONE CODE, TWO MEANINGS, twice:** `MAT-30110` is *'Specialty fat blend — RBD stearin'* in the shipment lane and *'RBD Palm Stearin — Specialty Fat'* in the storefront; `MAT-40220` is *'Emulgade SE-PF emulsifier'* vs *'Emulgade SE-PF **E**mulsifier'* — **a case difference, which is worse rather than better, because it is exactly what a reader skims past.** |
+| **Disposition** | **MEASURED AND PINNED, NOT APPLIED** — the 2B-3 treatment of `sapCode`, for the same reason: applying it silently moves a headline result, and **whether a supplier catalogue's prose is a Paragon MEANING is the same class of declaration as whether its `sapCode` is Paragon identity.** The wider rule runs on every row and its output is asserted; only its effect on the identity property is withheld. Mutation-verified (**M7**: rename the storefront's `material` key and the pin goes red). **This is the operator's next ruling, and it is a bigger one than `sapCode` was — that one moved a count; this one turns a green property red.** |
+
+### `PREFIX-RULE-ASSERTS-A-NEGATIVE-01` *(new — the mechanism half's real result)*
+
+| | |
+|---|---|
+| **Finding** | **`inferBpom` FAILS OPEN IN TWO DIFFERENT WAYS AND ONLY ONE OF THEM WAS KNOWN.** `BPOM-OFF-BY-SPACE-01` is the known half — an entire undeclared vocabulary escapes, now **twelve** codes rather than nine. The half 2B-4a measures is **INSIDE the master's own population**: a prefix rule has no way to say *undetermined*, so every code it does not recognise comes back `false` — and **`false` IS AN ASSERTION**, "this lot needs no BPOM lot check". |
+| **The measurement** | On the master's 35 rows the two mechanisms **agree on 25 and disagree on TEN**: `RM-COCO-8200` · `RM-EMUL-3310` · `RM-EMUL-3320` · `RM-EMUL-9410` · `RM-EMUL-9430` · `RM-HUMEC-3405` · `RM-LAURIC-7200` · `RM-MYRST-7310` · `RM-PALM-7100` · `RM-STEAR-7300`. The master resolves every one; the prefix rule states a confident negative for every one; **nobody has ruled on any of them.** |
+| **⚠️ AND THE AGREEMENT ON THE OTHER 25 IS NOT EVIDENCE THE PREFIX RULE WAS RIGHT** | The sixteen the class rule marks `APPLICABLE` are **exactly** the sixteen the prefix rule fires on. That is not corroboration — it is `EVIDENCE-REPLICATION-NOT-CORROBORATION-01` surfacing somewhere new: these fixtures were **authored** with prefixes that track class (`AI-` actives, `FR-` fragrance, `PK-` packaging), so the two mechanisms are not independent witnesses. **A rule that is right about the data it was written against, wrong about the data it was not, and unable to say which is which, is a shape-matched census wearing regulatory clothes.** Stated the useful way round: **on every row the new mechanism can answer at all, it answers what the old one answers. THE ENTIRE VALUE OF THE SWAP IS IN THE ROWS IT REFUSES.** |
+| **Disposition** | **MEASURED AND PINNED. NOT ACTED ON — `inferBpom` is live and untouched**, which is the 2B-4 gate. Sharpens `INFERBPOM-REGULATORY-01` rather than replacing it: that finding said the mechanism was the retired class and failed open; this says **the fail-open has a second mouth, and it is pointed at material the master fully resolves.** |
+
+### The mechanism — built exactly as dispatched, with ONE encoding decision recorded
+
+- **`bpomApplicable` on `MaterialMasterEntry`, REQUIRED on all 35 rows.** An
+  entry that may omit it is an entry whose silence has to be interpreted, and
+  the whole point of `UNDETERMINED` is that an absence of determination is
+  **written down** rather than inferred from a missing key.
+- **`UNDETERMINED` REFUSES IDENTICALLY TO AN UNKNOWN CODE.** Same discriminant,
+  same absent `applicable`, same consequence: nothing to proceed on. The
+  `reason` differs so a refusal can NAME what is missing — the `uomOf`
+  precedent, *a refusal that cannot say WHICH is half a refusal* — **and no
+  caller may branch on it to proceed.** Pinned as a property over the whole
+  master: **not one of the ten undetermined rows yields an `ok` outcome.**
+- **IT IS NOT QUARANTINE, and the register keeps the two apart.** Quarantine
+  **stores an untrustworthy fact and lets work proceed on it**; `UNDETERMINED`
+  **stores an explicit absence of determination and refuses on it.**
+  `D-OPS-MASTERMISS` already ruled against quarantine for the master miss; this
+  is that ruling applied one field in.
+- **SEEDED FROM CLASS, NEVER FROM A PREFIX.** `materialCode` is contractually
+  opaque (C9 §3) and a prefix rule contradicts our own ratified contract. Values
+  come from the row's declared GROUP via `PROVISIONAL_BPOM_BY_GROUP` — and
+  **that rule DERIVES too**: packaging is `NOT_APPLICABLE` **by the 2B-1
+  registry's own `axis` field**, not by a typed `MG-20..24`. ⚠️ **Not pedantry —
+  `MG-25` (glass) was declared at 2B-1, AFTER the enumeration a dispatch would
+  carry, and it is covered without anyone editing a list.** Everything outside
+  the three ruled ingredient groups is `UNDETERMINED` **by default**, so a group
+  added tomorrow is fail-CLOSED without being remembered.
+- **ALL 35 VALUES ARE PROVISIONAL — STRATEGIST-RULED ON BEST PRACTICE, PENDING
+  TEAM RATIFICATION.** 16 `APPLICABLE` (MG-04/05/06) · 9 `NOT_APPLICABLE`
+  (packaging) · 10 `UNDETERMINED` (MG-02/03/10). `D-COMP-BPOM` stays open; this
+  field is the shape its answer lands in, **not the answer.**
+- ⚠️ **ONE BUILDER'S DECISION OVER AN OPERATOR'S SPELLING, RECORDED RATHER THAN
+  TAKEN QUIETLY.** The dispatch specified the states as `true | false |
+  UNDETERMINED`. **The semantics shipped are exactly those; the ENCODING is a
+  three-member string union.** In a `boolean | 'UNDETERMINED'` union the string
+  member is **truthy**, so `if (entry.bpomApplicable)` compiles, reads as
+  obviously correct, and **silently converts an absence of determination into a
+  determination** — the one thing the dispatch forbids, in the one shape nobody
+  re-reads. As three strings that mistake is wrong for **every** value and fails
+  on first contact instead of on the case it was built for. Pinned (`typeof` is
+  `'string'` on all 35). **Reversible in one edit if the operator prefers the
+  literal spelling.**
+
+### The gate — AUTHORED, NOT WIRED, and it got WIDER
+
+`inferBpom` (`GRInspectionWizard.tsx:129-131`) is **live and untouched**.
+Nothing in the tree imports `sdc/bpom.ts`. Both facts are asserted, not
+promised — a future batch that wires it must **delete an assertion
+deliberately**, which is the point.
+
+> ⚠️ **THE BATCH THAT AUTHORED THE MECHANISM ALSO ENLARGED THE POPULATION THAT
+> BLOCKS IT.** The unresolvable codes the GR wizard can be fed went **9 → 12**
+> when the census reached the field they were hiding in. **2B-4b inherits
+> twelve, not nine.**
+
+### `PROSE-COUNTS-AS-A-SITE-01` *(observation, filed not diagnosed)*
+
+`ledgerTruth.test.ts`'s C9 §7.1 pin ("zero consumers") greps the tree for the
+FILE NAME `materialMasterRef.types` and **cannot tell an import from a
+sentence.** Naming that module in a code COMMENT turned the assertion red during
+this batch. The comment was reworded and the batch moved on — but **a check that
+a comment can redden is a check that will eventually be "fixed" by deleting the
+comment rather than by tightening the check**, and that is a worse outcome than
+the false positive itself. Filed; not diagnosed here.
+
+### Mutation-verified — nine probes, EIGHT detected, and the ninth is reported
+
+| probe | result |
+|---|---|
+| **M1** drop the containment disqualifier | **13 red** — `linkedTo` admitted, PO numbers in the population |
+| **M2** change one `sapCode` literal | **1 red** — the raw guard now covers the derived field |
+| **M3** one master row disagrees with its group rule | **5 red** |
+| **M4** name `bpomApplicable` inside the GR wizard | **3 red**, across all three not-wired pins |
+| **M5** rule `MG-10` APPLICABLE | **2 red** — the firing-set equality breaks |
+| **M6** make `UNDETERMINED` return `ok: true` | **5 red** — the quarantine pin |
+| **M7** rename the storefront's `material` key | **1 red** — the fourth-level pin |
+| **M8b** collect nothing | **22 red** — the vacuity floor holds |
+| **M9** narrow the field set back to the 2B-0 pair | **8 red** |
+
+⚠️ **M8 — SEED THE CLOSURE FROM AN EMPTY SET — WAS *NOT* DETECTED, AND THE
+REASON IS REPORTED RATHER THAN THE PROBE QUIETLY REPLACED.** The derivation
+**re-seeds from the master every round**, so the initial seed is not
+load-bearing: an empty start recovers on round one and produces the identical
+field set. That is a robustness property, not a hole — **but a probe that passes
+is a probe that proved something other than what it set out to**, and saying so
+is cheaper than swapping in M8b and reporting nine of nine.
+
+### Constraints discharged, in writing
+
+- **NOTHING WAS WIRED.** `inferBpom` untouched, no GR-wizard change, no
+  `MaterialMasterRef` row, no fixture code added or removed. The only fixture
+  edit in the batch is **35 inserted lines, one per master row.**
+- **NO CHEMISTRY WAS INVENTED.** Every value came from a declared group. Where
+  the dispatch's enumeration and the registry disagreed (`MG-25`), **the
+  registry won and the divergence is stated** rather than resolved silently.
+- **THE FIRING SET MOVED BY ZERO** — asserted against the prefix predicate in
+  two files, with the three newly-admitted codes checked individually rather
+  than assumed from their shape.
+- **C9 BYTES UNTOUCHED, PIN STAYS `f492b5c`.**
+- **FLOOR 2147/179 → 2167/180.** `npm run gates` green.
