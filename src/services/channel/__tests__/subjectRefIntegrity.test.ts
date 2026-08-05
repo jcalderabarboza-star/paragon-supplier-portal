@@ -40,6 +40,7 @@ import { describe, expect, it } from 'vitest';
 
 import { OUTBOUND_REQUEST_SEED } from '../outboundFixtures';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
+import { axis } from '../../testing/referentialIntegrity';
 
 const AGREEMENTS = schedulingAgreementStore.all();
 
@@ -56,11 +57,24 @@ const REFS = OUTBOUND_REQUEST_SEED.flatMap((r) => r.subjectRefs.map((ref) => ({ 
  * check being written to catch it.
  *
  * So every axis states how many refs it EXAMINED, and the count is asserted.
+ *
+ * ⚠️ 2B-5b-i — AND A GUARD YOU HAVE TO REMEMBER TO WRITE IS THE GUARD THAT WAS
+ * MISSING. When the identical defect shape turned up in a SECOND lane (ASN →
+ * purchase order), the answer was not a second copy of this function: the count
+ * moved INTO the result type (`services/testing/referentialIntegrity.ts`), so
+ * an axis cannot report disagreements without also reporting how many
+ * references it resolved. `itemAxis` below is this lane's adoption of it; the
+ * hand-written `examinedItems` is kept beside it deliberately, as the thing the
+ * harness replaces, and the two are asserted to agree.
  */
 const examinedItems = () =>
   REFS.filter(({ ref }) =>
     AGREEMENTS.find((a) => a.id === ref.agreementId)?.items.some((i) => i.lineSeq === ref.itemSeq),
   ).length;
+
+/** Resolve a ref to the agreement ITEM it names — the step both open axes need. */
+const itemOf = ({ ref }: (typeof REFS)[number]) =>
+  AGREEMENTS.find((a) => a.id === ref.agreementId)?.items.find((i) => i.lineSeq === ref.itemSeq);
 
 describe('2B-5a — every outbound subject reference RESOLVES to the object it names', () => {
   it('the population is real (guards a vacuous pass)', () => {
@@ -165,6 +179,37 @@ describe('2B-5a — every outbound subject reference RESOLVES to the object it n
         }),
     );
     expect(wrong).toEqual([]);
+  });
+
+  it('2B-5b-i — both open axes re-run through the SHARED harness, and agree', () => {
+    // ⚠️ THE GENERALISATION, verified rather than declared. The same two axes
+    // that passed vacuously in 2B-5a now run through the module the ASN lane
+    // uses (`asnRefIntegrity.test.ts`), and `resolved` comes from inside the
+    // resolution rather than from a second traversal the caller wrote — which
+    // is precisely where the hand-written version drifted.
+    const material = axis(
+      REFS,
+      itemOf,
+      ({ ref }, item) => item.materialCode === ref.materialCode,
+      ({ r, ref }, item) =>
+        `${r.id} says ${ref.materialCode}; item carries ${item.materialCode}`,
+    );
+    const schedule = axis(
+      REFS,
+      itemOf,
+      ({ ref }, item) =>
+        item.scheduleLines.some(
+          (l) => l.releaseSeq === ref.releaseSeq && l.releaseDate === ref.dueAt,
+        ),
+      ({ r, ref }) => `${r.id} seq ${ref.releaseSeq} dueAt ${ref.dueAt} matches no schedule line`,
+    );
+    // The harness and the hand-written guard must see the same population.
+    expect(material.resolved).toBe(examinedItems());
+    expect(schedule.resolved).toBe(examinedItems());
+    // And nothing may be silently unresolved — the vacuity number, stated.
+    expect(material.resolved).toBe(material.total);
+    expect(material.wrong).toEqual([]);
+    expect(schedule.wrong).toEqual([]);
   });
 
   it('the material code a chase names is MASTER-RESOLVABLE — no third-space code survives here', () => {
