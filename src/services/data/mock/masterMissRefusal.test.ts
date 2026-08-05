@@ -40,32 +40,38 @@ const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
 const BOGUS = 'RM-GHOST-0000';
 
 describe('the straddle these gates sit on (MASTER-STRADDLE-01)', () => {
-  it('⚠️ NARROWED at 2B-2 — the straddle is 5 codes wide now, not 30', () => {
-    // WHAT CHANGED, and it is the reason this assertion was inverted rather than
-    // bumped from 5 to 30: for two batches this pinned "the master and the
-    // document lane are DIFFERENT identity spaces", with `PK-PETB-8801` — a real
-    // GR-lane code — as the witness. 2B-2 ADOPTED that witness. The two spaces
-    // are still distinct, but they now overlap almost completely.
-    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(30);
+  it('⚠️ NARROWED TO ZERO at 2B-3 — the declared lane no longer straddles at all', () => {
+    // WHAT CHANGED, and it is the reason this assertion keeps being inverted
+    // rather than bumped: for two batches it pinned "the master and the document
+    // lane are DIFFERENT identity spaces", with `PK-PETB-8801` — a real GR-lane
+    // code — as the witness. 2B-2 ADOPTED that witness and the straddle went
+    // 30 → 5. 2B-3 authored the remaining five, and it is now ZERO codes wide:
+    // every code the declared document lane names, the master resolves.
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(35);
     expect(isKnownMaterial('PK-PETB-8801')).toBe(true); // ← was false until 2B-2
     expect(isKnownMaterial('RM-EMUL-3310')).toBe(true); // the original overlap
+    expect(isKnownMaterial('PK-PETB-8803')).toBe(true); // ← was false until 2B-3
   });
 
-  it('but it is NARROWED, NOT CLOSED — and the remainder is what blocks the gate', () => {
-    // THE DISTINCTION THAT KEEPS THIS FILE HONEST. "Four of five document lanes
-    // are 100% master-resolvable" is true and it is NOT the same as "a master
-    // check is now a legal GR gate". Two populations still refuse:
+  it('but it is NOT CLOSED — ONE population still refuses, and it is the live one', () => {
+    // THE DISTINCTION THAT KEEPS THIS FILE HONEST, and 2B-3 sharpens it by
+    // removing the half that was never operative. Two populations used to
+    // refuse; one does now:
     //
-    //   · the RFQ lane's five mute codes — reached only through
-    //     `materialIds: string[]`, which states no meaning to ratify (2B-3);
+    //   · the RFQ lane's five mute codes — AUTHORED at 2B-3, so they resolve.
+    //     They were also the population that never mattered to this gate: an
+    //     RFQ material is not a received line, and the GR wizard never saw one.
     //   · the nine `MAT-*` codes of `paragon.asn_chase_lane` — a DIFFERENT
-    //     space, declared at 2B-1 and booked for retirement.
+    //     space, declared at 2B-1 and booked for retirement. UNTOUCHED.
     //
-    // The second is the operative one: `MOCK_ASNS` seeds `asnStore`, which feeds
-    // the GR inspection wizard. So the code a receipt actually arrives carrying
-    // is still one the master cannot name.
-    for (const muteRfqCode of ['AI-CENT-6900', 'PK-ALCP-2441', 'PK-PETB-8825']) {
-      expect(isKnownMaterial(muteRfqCode), `${muteRfqCode} is 2B-3's row`).toBe(false);
+    // The second was always the operative one, and it is now the ONLY one:
+    // `MOCK_ASNS` seeds `asnStore`, which feeds the GR inspection wizard. So the
+    // code a receipt actually arrives carrying is still one the master cannot
+    // name — after three adoption batches and 30 new master rows.
+    for (const authoredRfqCode of ['AI-CENT-6900', 'PK-ALCP-2441', 'PK-PETB-8825']) {
+      expect(isKnownMaterial(authoredRfqCode), `${authoredRfqCode} was authored at 2B-3`).toBe(
+        true,
+      );
     }
     for (const chaseLaneCode of ['MAT-88201', 'MAT-77014', 'MAT-55022']) {
       expect(isKnownMaterial(chaseLaneCode), `${chaseLaneCode} is a third space`).toBe(false);
@@ -84,12 +90,21 @@ describe('the straddle these gates sit on (MASTER-STRADDLE-01)', () => {
 
     // `PK-PETB-8810` is master-owned and does not appear in the document lane at
     // all: its two squatting meanings took `PK-PETB-8802` (Emina 100ml Clear,
-    // ADOPTED at 2B-2) and `PK-PETB-8803` (Wardah 100ml Airless Pump, still mute
-    // and therefore still 2B-3's). The pair is worth keeping side by side — it
-    // is the clearest case of adoption splitting on stated-meaning alone.
+    // ADOPTED at 2B-2) and `PK-PETB-8803` (Wardah 100ml Airless Pump, AUTHORED
+    // at 2B-3). The pair was the clearest case of adoption splitting on
+    // stated-meaning alone — and 2B-3 closed the split from the other side, by a
+    // DIFFERENT act. Both are resolvable now; only one of them was ratified.
     expect(isKnownMaterial('PK-PETB-8802')).toBe(true);
-    expect(isKnownMaterial('PK-PETB-8803')).toBe(false);
+    expect(isKnownMaterial('PK-PETB-8803')).toBe(true); // ← was false until 2B-3
     expect(isKnownMaterial('PK-PETB-8810')).toBe(true);
+    // ⚠️ AND `PK-PETB-8825`, which 2A deliberately withheld. It is NOT an alias
+    // of 8810: same substrate, same 250ml volume, different closure format, and
+    // under `D-IDENTITY-GRAIN = SPECIFICATION` that makes it a different
+    // purchasable item. Two master rows, not one row with two codes.
+    expect(isKnownMaterial('PK-PETB-8825')).toBe(true);
+    expect(MATERIAL_MASTER['PK-PETB-8825'].label).not.toBe(
+      MATERIAL_MASTER['PK-PETB-8810'].label,
+    );
   });
 });
 
