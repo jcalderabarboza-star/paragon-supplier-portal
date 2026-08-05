@@ -1485,6 +1485,32 @@ consulted.
   passing remark in a batch note, because "our gates would not have caught this"
   is the single most load-bearing fact about the incident and the only one that
   generalises to the next batch.
+
+  ⚠️ **THIS IS A LIVE HOLE IN CI, NOT A HISTORICAL NOTE (operator ruling, at the
+  #176 merge).** Nothing was fixed by finding it. `.github/workflows/gates.yml`
+  runs `npm run gates` and nothing else, on every PR and every push to `main` and
+  daily at 00:17 UTC — and **the next vacuous suite to arrive will pass all three
+  gates exactly as this one did.** `scripts/gates.mjs` asserts that the BUILD
+  emitted a bundle, that the SUITE collected at least the floor, and that the
+  GATE suite passed its count. **Not one of those three asks whether a test
+  examined anything.** A file of `.filter(...).toEqual([])` over an empty derived
+  set raises the collected-test count, clears the floor, prints the bump note,
+  and is indistinguishable from coverage. **CP-3a closed the "did the gates run"
+  hole and left the "did the tests do anything" hole open, one level in — which
+  is `SCOPE-DERIVATION-IS-RECURSIVE-01` on the gates themselves.**
+
+  ⚠️ **AND IT IS THE SECOND APPEARANCE OF THE SHAPE IN THIS REPOSITORY, WHICH IS
+  WHY IT IS A SHAPE AND NOT AN INCIDENT.** First `--passWithNoTests` — a runner
+  told to be green when its selector matches nothing. Now nineteen assertions
+  green because their population was empty. **GREEN BECAUSE IT FOUND NOTHING TO
+  DO, twice, at two different levels, and in both cases the output is
+  byte-identical to the output of having done the work.** A third appearance
+  should be assumed, not awaited: the standing question for any new check is
+  **what does this report when its input is empty**, and the answer must be
+  RED, not silence. **NOT FIXED HERE.** The candidate is a fourth assertion in
+  `scripts/gates.mjs` — a floor on assertions-executed rather than
+  tests-collected — and it is a batch of its own, argued and costed, not
+  smuggled in beside a register.
 - **FLOOR 2125/178 → 2147/179.** `npm run gates` green.
 
 ---
