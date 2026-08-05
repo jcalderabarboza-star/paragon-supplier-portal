@@ -882,7 +882,7 @@ of them is an identity collision.**
 | --- | --- | --- |
 | **DERIVED-OVER-A-CHOSEN-SCOPE-01** *(refs @ `a009db4` — **the class, and it is `CENSUS-MUST-DERIVE-01` turned on its author one level up**)* | **DERIVING A POPULATION FROM A HAND-PICKED SET OF SOURCES IS STILL A SHAPE ASSUMPTION, ONE LEVEL UP.** `materialIdentity.test.ts` built `REFS` by importing FOUR fixture modules **by name**. The population was derived; the LANE SET was a literal — and an import list reads like a fact rather than a claim, which is exactly why nobody re-read it. **What it cost, concretely: `mockRfqs.ts` was not in the list, so the file's own assertion that the B2a-freed codes were "no longer squatted on by the document lane" PASSED WHILE `RM-EMUL-3310` SAT AT `mockRfqs.ts:113`.** The general form: **AN ASSERTION THAT A THING IS ABSENT IS ONLY AS STRONG AS THE SCOPE IT SEARCHED.** **The second half is worse than the miss and is the part worth carrying:** `materialIds` is a bare `string[]` and carries NO meaning, so a code reached only through it **cannot contradict anything** — both directional checks were STRUCTURALLY BLIND to that lane. `RM-EMUL-3310` had not left the document lane; it had left the part of the lane capable of disagreeing. **A clean census is not evidence of a clean tree if the dirty half is mute by construction.** | **FIXED IN THIS BATCH.** The lane set now DERIVES: a glob over every non-test module in `src/`, walked generically for the code-bearing field names the TYPE SYSTEM declares. **And deliberately NOT a glob of `src/data/` — A GLOB OF ONE DIRECTORY IS THE SAME HAND-PICK ONE DIRECTORY UP**, which is how the third space stayed invisible. Backed by a RAW-SOURCE guard that does not depend on the walk reaching anything: every literal written under a code-bearing key in any non-test `.ts` **or `.tsx`** source must appear in the derived population. **The ONE exclusion — test modules — is named and argued in the file header rather than left in a regex** (spoof codes like `RM-SPOOF` / `PK-UITEST-1` exist to be unresolvable; folding them in would make every census report a tree that does not exist). Mutation-verified: narrowing the lane set back to the B2a four fails **11** tests; planting a code literal in a `.tsx` the walk never imports fails the raw-source guard. |
 | **MAT-SPACE-UNDECLARED-01** *(refs @ `a009db4` — **the headline finding of the batch**)* | **A THIRD PARAGON CODE SPACE EXISTS AND NO DECLARATION NAMES IT — SO IT IS COVERED BY NONE OF THE RULES WRITTEN ABOUT THE TWO THAT WERE.** Nine codes in two modules: `MAT-30110` · `MAT-40220` · `MAT-55022` · `MAT-55031` · `MAT-77014` · `MAT-88201` · `MAT-88207` (`services/data/mock/fixtures/supplierShipments.ts`) and `MAT-10234` · `MAT-20500` (`services/channel/outboundFixtures.ts`). It is **not** in `C8-MASTER-DECL`, which declared `src/data/mock*.ts` as THE non-master space; **not** in `MOCK-RETIREMENT-01`'s blast radius, which is scoped to the same glob; **not** in C9 §5, which builds the whole `spaceId` argument on Paragon holding exactly **TWO** spaces; and — until this batch — **not** in the pin. `MOCK_ASNS` there seeds `asnStore`, so these codes reach a rendered surface. **THE CONSEQUENCE FOR 2B, STATED PLAINLY: 30 IS THE DOCUMENT LANE'S ANSWER, NOT THE TREE'S. THE TREE'S MASTER-ABSENT POPULATION IS 39 (30 + 9).** | **FILED — a DECLARATION is owed before anything else touches it, and that is `2B-1`'s third question.** Retired, adopted, or named as a legitimate third space — each answer changes something different (`MOCK-RETIREMENT-01`'s scope, 2B's input list, C9 §5's per-party count and the `MaterialCodeSpace` seed). **NOT ANSWERED HERE**, per the dispatch. Pinned in `materialIdentity.test.ts` by MODULE, never by prefix — `materialCode` is contractually opaque, so membership of a space is decided by which file declares the code, and the shared `MAT-` prefix is authoring convention, not the test. |
-| **BPOM-OFF-BY-SPACE-01** *(refs @ `a009db4` — **LIVE, NOT LATENT; strictly worse than what [[INFERBPOM-REGULATORY-01]] filed**)* | **EVERY CODE IN THE UNDECLARED SPACE SILENTLY ESCAPES THE BPOM LOT CHECK TODAY, AND THE WIZARD RENDERS IT.** `MOCK_ASNS` seeds `asnStore`, which feeds `GRInspectionWizard.buildDraftFromAsn` (`:150-165`), which sets `bpomRequired: inferBpom(li.materialCode)` — and `inferBpom` (`:129-131`) fires on `AI-` / `FR-` only. **Not one of the nine fires.** The pair that makes it impossible to argue with: **`MAT-88201` "Fragrance concentrate – Rose Oud" → `bpomRequired: false`; `FR-WARD-4440` "Wardah EDP Parfum Concentrate — Rose & Oud" → `true`. Two fragrance concentrates, opposite regulatory treatment, decided entirely by WHICH FIXTURE SPACE THE CODE WAS AUTHORED IN.** `INFERBPOM-REGULATORY-01`'s disposition predicted that a code-space **CHANGE** would switch a compliance check off. **No change is required. It is already off across a whole live vocabulary.** THE SHARPENED RULE: **A PREFIX RULE DOES NOT FAIL OPEN ON UNKNOWN PREFIXES ONLY. IT FAILS OPEN ON ENTIRE VOCABULARIES.** | **FILED AT FULL WEIGHT; `INFERBPOM-REGULATORY-01` AMENDED IN PLACE to point here.** Pinned three ways in `materialIdentity.test.ts`: the firing set over the derived population (now 16 — `AI-CENT-6900` joins, not because anything changed but because the RFQ lane was invisible before), the assertion that no code in the undeclared space fires, and the two-concentrate pair rendered as the wizard renders it. **Its FIX is `D-COMP-BPOM` (ruled PROVISIONAL below) and it lands at `2B-4`, not here — see the `2B-4` GATE.** Sibling, already named inside `INFERBPOM-REGULATORY-01` and NOT re-opened: `inferHalal` reads the DESCRIPTION for the substring `halal`, so those same nine lines are `halalRequired: false` too. **⚠️ AMENDED IN PLACE at 2B-5a — THE BLAST RADIUS IS SEVEN, NOT NINE OR TWELVE**; the census population and the regulatory exposure are different quantities and were conflated. **⚠️ AMENDED IN PLACE AGAIN at 2B-5b-i — AND THIS ONE CHANGES THE KIND OF CLAIM, NOT THE COUNT. The `false` is ASSERTED AGAINST IN-TREE EVIDENCE, NOT MERELY IN ITS ABSENCE.** `doc-201` (`supplierDocuments.ts`) is a **BPOM Notification — TD.02.02.66.10.23.0311**, category `BPOM Regulatory`, issued by BPOM, for `sup-005`, carrying `linkedTo: 'PO-2025-00131'` — the PO whose ASN (`ASN-2025-00302`) carries **`MAT-40220`**, for which `inferBpom` returns **`false`**. **THE TREE ALREADY STATES THAT A BPOM REGISTRATION GOVERNS THIS SUPPLY.** As originally filed this finding was a SILENCE — a prefix rule failing open where nothing contradicted it; it is now a CONTRADICTION, which is materially worse. `doc-202` (*REACH Compliance / Safety Data Sheet — Emulgade*, BASF SE Regulatory Affairs, `linkedTo: 'All emulsifier grades'`) independently corroborates BASF ownership and a REACH-not-halal frame — the same datum that separates `MAT-40220` from `RM-EMUL-9410` *(Glyceryl Stearate SE (Halal Emulsifier))*. Pinned in `asnRefIntegrity.test.ts`. **Radius unchanged at SEVEN. Does not close until 2B-4b.** |
+| **BPOM-OFF-BY-SPACE-01** *(refs @ `a009db4` — **LIVE, NOT LATENT; strictly worse than what [[INFERBPOM-REGULATORY-01]] filed**)* | **EVERY CODE IN THE UNDECLARED SPACE SILENTLY ESCAPES THE BPOM LOT CHECK TODAY, AND THE WIZARD RENDERS IT.** `MOCK_ASNS` seeds `asnStore`, which feeds `GRInspectionWizard.buildDraftFromAsn` (`:150-165`), which sets `bpomRequired: inferBpom(li.materialCode)` — and `inferBpom` (`:129-131`) fires on `AI-` / `FR-` only. **Not one of the nine fires.** The pair that makes it impossible to argue with: **`MAT-88201` "Fragrance concentrate – Rose Oud" → `bpomRequired: false`; `FR-WARD-4440` "Wardah EDP Parfum Concentrate — Rose & Oud" → `true`. Two fragrance concentrates, opposite regulatory treatment, decided entirely by WHICH FIXTURE SPACE THE CODE WAS AUTHORED IN.** `INFERBPOM-REGULATORY-01`'s disposition predicted that a code-space **CHANGE** would switch a compliance check off. **No change is required. It is already off across a whole live vocabulary.** THE SHARPENED RULE: **A PREFIX RULE DOES NOT FAIL OPEN ON UNKNOWN PREFIXES ONLY. IT FAILS OPEN ON ENTIRE VOCABULARIES.** | **FILED AT FULL WEIGHT; `INFERBPOM-REGULATORY-01` AMENDED IN PLACE to point here.** Pinned three ways in `materialIdentity.test.ts`: the firing set over the derived population (now 16 — `AI-CENT-6900` joins, not because anything changed but because the RFQ lane was invisible before), the assertion that no code in the undeclared space fires, and the two-concentrate pair rendered as the wizard renders it. **Its FIX is `D-COMP-BPOM` (ruled PROVISIONAL below) and it lands at `2B-4`, not here — see the `2B-4` GATE.** Sibling, already named inside `INFERBPOM-REGULATORY-01` and NOT re-opened: `inferHalal` reads the DESCRIPTION for the substring `halal`, so those same nine lines are `halalRequired: false` too. **⚠️ AMENDED IN PLACE at 2B-5a — THE BLAST RADIUS IS SEVEN, NOT NINE OR TWELVE**; the census population and the regulatory exposure are different quantities and were conflated. **⚠️ AMENDED IN PLACE AGAIN at 2B-5b-i — AND THIS ONE CHANGES THE KIND OF CLAIM, NOT THE COUNT. The `false` is ASSERTED AGAINST IN-TREE EVIDENCE, NOT MERELY IN ITS ABSENCE.** `doc-201` (`supplierDocuments.ts`) is a **BPOM Notification — TD.02.02.66.10.23.0311**, category `BPOM Regulatory`, issued by BPOM, for `sup-005`, carrying `linkedTo: 'PO-2025-00131'` — the PO whose ASN (`ASN-2025-00302`) carries **`MAT-40220`**, for which `inferBpom` returns **`false`**. **THE TREE ALREADY STATES THAT A BPOM REGISTRATION GOVERNS THIS SUPPLY.** As originally filed this finding was a SILENCE — a prefix rule failing open where nothing contradicted it; it is now a CONTRADICTION, which is materially worse. `doc-202` (*REACH Compliance / Safety Data Sheet — Emulgade*, BASF SE Regulatory Affairs, `linkedTo: 'All emulsifier grades'`) independently corroborates BASF ownership and a REACH-not-halal frame — the same datum that separates `MAT-40220` from `RM-EMUL-9410` *(Glyceryl Stearate SE (Halal Emulsifier))*. Pinned in `asnRefIntegrity.test.ts`. **Radius unchanged at SEVEN. Does not close until 2B-4b.** **⚠️ AMENDED IN PLACE A THIRD TIME at 2B-5b-ii — THE SPACE THIS FINDING IS NAMED AFTER NO LONGER EXISTS, AND THE FINDING DOES.** The seven were authored as canonical master rows and the ASN lines retired onto them, so `UNDECLARED_SPACE` is empty and nothing escapes *by space* any more. **A FINDING NAMED AFTER ITS CAUSE OUTLIVES ITS CAUSE.** Four of the seven received lines still get `false` from the prefix rule — two correctly (packaging) and two not — and the two are now WORSE than before: `RM-EMUL-9440` has `bpomApplicable: 'APPLICABLE'` on `doc-201` while the wizard says no (**the first answerable row in the tree on which the two mechanisms disagree at all**), and `RM-PSTN-7150` records `UNDETERMINED` against the prefix rule's confident negative. The blast radius is still **SEVEN**. **2B-4b closes this, at seven, as a CONTRADICTION rather than a silence.** |
 | **MG-COLLISION-21-01** *(refs @ `a009db4` — **`ONE CODE, ONE MEANING` failing on the GROUP vocabulary, with one meaning in RATIFIED SEED DATA**)* | **`MG-21` MEANS TWO DIFFERENT THINGS.** The master assigns `PK-CAPF-8820` *Flip-Top Cap 24mm* to `materialGroup: 'MG-21'`, commented `// closures` (`sdc/fixtures.ts:93-99`). The should-cost taxonomy declares **`MG-21 · Glass packaging`**, sole member `sc-glass-bottle`, `materialClass: 'PM_GLASS'` (`commodityBaskets.ts:317`) — and puts caps/closures in **`MG-20`** (`sc-pp-cap`, `PM_PLASTIC`). So a plastic flip-top cap sits in the glass group, inside the ratified master. The two vocabularies agree on `MG-02` / `MG-03` / `MG-04` / `MG-20`; `MG-21` is the sole divergence, which is what makes it look like a typo rather than a reconciliation nobody performed. | **FILED — and it BLOCKS EVERY PACKAGING ADOPTION IN `2B-2` AND `2B-3`.** Adopting a packaging code means assigning a `materialGroup`; while `MG-21` carries two meanings, every such assignment encodes the contradiction again — seven packaging codes await adoption, so the cost of ruling late is seven wrong rows rather than one. **CLOSED AT 2B-1 (R-1): the TAXONOMY moved and the master stood — glass took `MG-25`, and `sc-pp-cap` moved to `MG-21` so the collision could not simply run in the other direction. The structural cause is filed separately as [[MG-REGISTRY-ABSENT-01]] and fixed by `sdc/materialGroups.ts`.** The original question was: If the master's does, the taxonomy moves; if the taxonomy's does, **a ratified seed row is edited**, which is not a refactor. Pinned in `materialIdentity.test.ts` so the block is visible from a test run and not only from a document — including an assertion that none of the seven is in the master yet. |
 | **INSTANCE-DATA-IN-A-TYPE-LABEL-01** *(refs @ `a009db4` — **its own class, not a note on two codes**)* | **A LOT AND A BATCH ARE INSTANCES, NOT TYPES.** Two document-lane meanings carry instance identifiers inside what a `2B-2` adoption would make a master label: `FR-WARD-4410` → *"Wardah Signature Floral Compound **— Lot A**"*, `FR-MKOV-5520` → *"Make Over Oud & Amber Accord **— Batch Q2-2025**"*. **Adopting these faithfully would make a batch number part of a material identity — permanently, in the master, on a code meant to outlive every batch of it.** It also sharpens under the PROVISIONAL `D-IDENTITY-GRAIN = SPECIFICATION`: a spec-grain key must name a purchasable item, and a lot is not a specification of one. **THE CAVEAT TO THE SPLIT'S OWN FRAMING, carried verbatim from the 2B pre-work report: "7a ratifies a stated meaning" is true for 23 of 25 — FOR THESE TWO, RATIFYING THE STATED MEANING IS EXACTLY THE WRONG ACT, AND ADOPTING IT FAITHFULLY IS HOW THE DEFECT BECOMES PERMANENT.** | **FILED — `2B-2` must TRIM before it adopts.** Both labels pinned, plus a DERIVED guard so the class cannot grow silently: any new fixture description carrying a lot/batch marker turns the pin red and names it. **Mutation-verified, and the probe taught something the finding did not say: trimming `— Lot A` in ONE lane fails BOTH the instance-data pin AND `ONE CODE, ONE MEANING` — because the other lanes still carry the untrimmed string. The trim must be COMPLETE, not partial, and the pin already enforces that.** **⚠️ CLOSED AT 2B-2.** Both labels trimmed at every site — seven across four modules — in one edit, master and lane together. The pin was **inverted rather than deleted**, and widened: it now asserts that **no stated meaning anywhere in the tree** carries a lot or batch marker, including the undeclared space. Re-verified from the failure side (**M3**): restoring `— Lot A` in ONE lane turns SIX tests red, the top-level identity property among them. Where the trimmed fact is operationally real, see [[INSTANCE-DATA-HAS-NO-HOME-01]]. |
 | **RECODE-ORPHANS-CLASSIFICATION-01** *(refs @ `a009db4`)* | **RE-CODING A MATERIAL MOVES ITS IDENTITY BUT NOT THE MAPS KEYED ON IT.** `commodityMaterialMap.ts:29-30` states *"The material codes on the left are the fixture RFQ materialIds"*. Measured against the RFQ lane today it is false: **`'PK-PETB-8810': 'sc-pet-bottle'` is a DEAD KEY** — B2a re-coded RFQ-2026-002 to `PK-PETB-8803`, and `PK-PETB-8810` is no longer any RFQ's materialId. The meaning that moved (`PK-PETB-8803`) has **no classification** and resolves `silent: 'unmapped'`; `PK-PETB-8825` and `PK-ALCP-2441` likewise. **Nothing failed, and that is the interesting part: the only consumer was already silent for an unrelated reason** — `PRICED-SURFACE-MASKED-01`'s PCS unit gate returns `unit-mismatch` for both the old key and the new one, so a capability regression hid behind a masking gate. | **FILED — NOT FIXED, and deliberately.** Re-keying the map is the thing `commodityMaterialMap.ts:16-22` already books to B2b, because seven of its eleven keys are master-absent and re-keying now would **settle 2B by implication**. The dead key is the same act on a code that is master-PRESENT, so it could be fixed here — it is not, because the header sentence and the key set should be corrected together by the batch that owns the map. **Whichever batch re-keys it must also true up that header sentence, which is `SEAM-DOC-DRIFT-01`'s shape inside a fixture header, introduced by the batch that was cleaning up identity.** **⚠️ AMENDED IN PLACE AT 2B-3 — ITS STATED BLOCKER IS GONE AND IT IS STILL NOT FIXED.** The header books the re-key to B2b because *"SEVEN of the eleven keys"* are master-absent; **after 2B-3 that number is ZERO.** The re-key is unblocked and deliberately still not done — the dead key and the false header sentence belong to the batch that owns the map, together. **Recorded because a blocker that quietly expires is how a booked item becomes a forgotten one.** |
@@ -2139,3 +2139,296 @@ Five codes with **no master row** (`MAT-88207`, `MAT-55022`, `MAT-55031`,
 `asnRefIntegrity.test.ts` is its acceptance test: **it is inverted today and must
 be rewritten when it goes green.** `PO-2025-00131`'s empty line set is the second
 thing it owns.
+
+---
+
+## CP-2 · 2B-5b-ii — AUTHORING THE SEVEN. **THE THIRD SPACE IS EMPTY.**
+
+`MAT-SPACE-UNDECLARED-01` opened at 2B-0 with nine codes in a Paragon space no
+declaration named. It closes here at seven, by authoring rather than by
+adjudication — and the four batches between it and this one are what made the
+authoring honest rather than a guess.
+
+### `MAT-SPACE-UNDECLARED-01` — **CLOSED**
+
+| | |
+|---|---|
+| **What closes it** | Seven canonical master rows authored from the ASN lane, and the ASN lines retired onto them. `UNDECLARED_SPACE` is `[]`, asserted **inverted rather than deleted** so re-introducing the vocabulary turns the pin red. |
+| **⚠️ The prefix survives and the SPACE does not, and the register must not blur them** | `MAT-10046` and `MAT-10089` remain — the two **unbacked storefront pointers**, on which no operator has ruled. Under R-D the storefront is a POINTER surface, not a code space: these are supplier CLAIMS about Paragon codes that do not exist. Pinned as two separate assertions (`UNDECLARED_SPACE === []` and `CODES.filter(startsWith('MAT-'))`) so neither can stand in for the other. |
+| **The arc, in one line each** | 2B-0 derived the lane set and found the space · 2B-1 declared it (R-3) and booked its retirement · 2B-2/2B-3 emptied the *declared* lanes around it · 2B-4a measured the regulatory exposure and built the mechanism · 2B-5a repaired the pointers into it · 2B-5b-i repaired the references and proved nothing could be retired onto · **2B-5b-ii authored what was missing.** |
+
+### The population, and how each row was tiered
+
+**Tiers are COMPUTED, never stamped** (2B-3's rule, unchanged — a stamp drifts
+from the thing it describes). `asnMasterAuthoring.test.ts` counts, per row,
+code-bound meanings · unit statements · reference-bound documents · contradicting
+sources, and asserts the whole table exactly.
+
+| code | was | rests on |
+|---|---|---|
+| `FR-ROUD-4470` | `MAT-88201` | **its own description, and nothing else — with TWO sources contradicting it** |
+| `PK-PETB-8804` | `MAT-88207` | its own description; supplier corroborates (sup-007 is a declared PET manufacturer) |
+| `PK-ALCP-2450` | `MAT-77014` | its own description |
+| `AI-NIAC-6612` | `MAT-55022` | its own description; cool-chain handling distinguishes it from the powders |
+| `AI-HYALU-6615` | `MAT-55031` | its own description |
+| `RM-PSTN-7150` | `MAT-30110` | description **+ a storefront row stating `uom: 'KG'`** |
+| `RM-EMUL-9440` | `MAT-40220` | description **+ a unit + `doc-201`**, and `doc-202` by name |
+
+⚠️ **`AsnLineItem` HAS NO `uom` FIELD** — asserted structurally, not by
+inspection. So **no ASN line states a unit for anything**, five rows take
+`canonicalUom` from their group's convention and say so, and the two that do
+better do it through a **pointer** (R-D), which is corroboration and not identity.
+
+### `EVIDENCE-STANDARD-SURVIVED-THE-REPAIR-01` *(new — the batch's own discipline, asserted)*
+
+| | |
+|---|---|
+| **The rule** | **A REPAIRED REFERENCE TELLS YOU WHO AND WHEN. IT DOES NOT TELL YOU WHAT.** 5b-i fixed the tenant axis of every `ASN.poReference`; the temptation this batch had to refuse was to read the now-resolving parent PO as material evidence. **NO LABEL IN THIS BATCH IS TAKEN FROM A PO LINE**, and the pin proves it the hard way: for `FR-ROUD-4470` it asserts that the repaired parent orders `PK-PETB-8801` and **not** this code. |
+| **Why it needed a rule** | The repair made the references *look* authoritative. A reference that resolves is not a reference that agrees — the material axis is still open at 7 of 7 — and the gap between "resolves" and "agrees" is exactly where a plausible-looking label would have come from. |
+
+### R-2 and R-3, recorded as DECISIONS and made executable
+
+**`PK-ALCP-2450` ≠ `PK-ALCP-2441`.** *Aluminium Closure 24/410* and *Aluminium
+Cap 24/410* — same substrate, same neck finish, same unit, and R-1's registry
+files both under **MG-21 closures**, so "closure" and "cap" are not even
+different categories in our vocabulary. **It will be re-proposed as an obvious
+tidy-up**, so the reasons are assertions rather than prose: the source ASN's
+`status` is `Delivered` and its `eta` **precedes `RFQ-2026-011`'s creation date**
+— *an open 2026 RFQ is not evidence about what was received thirteen months
+earlier* — and `PK-PETB-8810`/`PK-PETB-8825`'s labels are pinned beside them as
+the standing precedent that **24/410 fixes the neck finish only**. The code is
+deliberately **not** `2442`: an adjacent number invites the merge.
+
+**`FR-ROUD-4470` rests on its description alone.** Its supplier is a packaging
+converter; its repaired parent PO orders PET bottles; and `FR-WARD-4440` — the
+row R-3 refused to retire it onto — belongs to **sup-004 Firmenich**. All three
+asserted. **THE CONTRADICTION IS PART OF THE ROW'S PROVENANCE AND AUTHORING DOES
+NOT ERASE IT.** ⚠️ And the mnemonic is a signal, not a gap: every other `FR-*`
+mnemonic is a **brand**; this one is a scent, because no record attributes it to
+one. A code shaped unlike its siblings is the honest rendering of a row whose
+siblings have provenance it lacks.
+
+**`RM-PSTN-7150` — stearin is not stearic acid.** `RM-STEAR-7300` shares four
+letters and is a fatty acid; `RM-PALM-7100` shares the RBD process word and is a
+different feedstock. Two plausible merges, both wrong, both available to anyone
+reading labels. All three are MG-10, which makes the pin's point: **SHARING A
+GROUP IS NOT AN ARGUMENT FOR SHARING AN IDENTITY** — the same sentence the two
+aluminium closures need. The mnemonic `STEAR` was deliberately not reused.
+
+### Groups — the dispatch's question, answered by R-2's own criterion
+
+**No group was invented, and the refusal is the assertion.** MG-10 exists because
+2B-1 refused to force feedstocks into a formulation group, so this registry
+demonstrably *does* grow when a set needs it to.
+
+- **`RM-PSTN-7150` → MG-10**, by R-2's written test: members are *"INPUTS TO the
+  materials in MG-01..06, not members of them"*. A palm fraction is; `RM-PALM-7100`
+  is already there. **This is the first batch to APPLY a group declared ahead of
+  its members, and the test of such a declaration is whether a later batch can
+  apply it without re-arguing it.** It could.
+- **The two emulsions → MG-04.** A dosed active emulsion **enters** the
+  formulation grain, so it is not upstream of it; and the MG-01..06 axes are
+  **functional** — they separate surfactant from emollient from active, never
+  powder from emulsion. **THERE IS NO PHYSICAL-FORM AXIS AND THIS SET SUPPLIES NO
+  REASON TO ADD ONE**: they differ from `AI-NIAC-6605` in concentration and form,
+  which is ITEM grain under D-IDENTITY-GRAIN, not group grain.
+
+### ⚠️ `MG-NO-EMULSIFIER-GROUP-01` — now **THREE rows deep**, escalated not fixed
+
+`RM-EMUL-9440` goes to **MG-02 *(Emollients / oils / esters)*, and it is wrong
+for all three of MG-02's emulsifiers.** An emulsifier is not an emollient, an oil
+or an ester. Placed with its siblings rather than somewhere better because moving
+them is a **registry ruling** (the MG-10 shape: declare the group, then populate
+it) and inventing MG-07 inside an authoring diff is the decision-smuggling 2B-1
+named. **The finding grows by one and is put to the operator; the diff does not
+quietly resolve it.**
+
+### ⚠️ THE BPOM FIRING SET MOVED — 16 → 19, and the CAUSE is the finding
+
+Reported line by line as the dispatch required, and asserted rather than
+described.
+
+| was | → now | prefix rule | master says |
+|---|---|---|---|
+| `MAT-88201` | `FR-ROUD-4470` | **fires (new)** | APPLICABLE |
+| `MAT-55022` | `AI-NIAC-6612` | **fires (new)** | APPLICABLE |
+| `MAT-55031` | `AI-HYALU-6615` | **fires (new)** | APPLICABLE |
+| `MAT-88207` | `PK-PETB-8804` | no | NOT_APPLICABLE ✅ agree |
+| `MAT-77014` | `PK-ALCP-2450` | no | NOT_APPLICABLE ✅ agree |
+| `MAT-30110` | `RM-PSTN-7150` | no | **UNDETERMINED** ⚠️ |
+| `MAT-40220` | `RM-EMUL-9440` | no | **APPLICABLE** ⚠️ |
+
+> **NO COMPLIANCE RULE WAS CONSULTED. A NAMING CONVENTION MOVED THREE LOTS'
+> REGULATORY TREATMENT.** Three of the seven took `AI-`/`FR-` mnemonics because
+> of their material GROUP, and `inferBpom` parses the first three characters.
+
+Movement is in the direction of MORE checking, never less — asserted, because a
+batch that turned a BPOM check **off** would be a regression regardless of its
+reasons. And the standing "the firing set moved by zero" assertion **breaks here
+deliberately**: 2B-2 and 2B-3 made **thirty** codes resolvable and moved it by
+**zero**; 2B-5b-ii made **seven** resolvable and moved it by **three**. The
+difference is not evidence, or care, or lane — it is three characters.
+
+### ⚠️ `INFERBPOM-MUST-BE-RETIRED-01` — **THE CASE, DEMONSTRATED RATHER THAN ARGUED.** *(ratified at the #179 merge — THE ROW 2B-4b READS FIRST)*
+
+| | |
+|---|---|
+| **The demonstration** | **A REGULATORY CHECK CHANGED BECAUSE OF A NAMING CONVENTION.** The BPOM firing set moved **16 → 19** at 2B-5b-ii. Three of the seven authored rows took `AI-`/`FR-` mnemonics **because of their material GROUP**; `inferBpom` parses the first three characters of a code; **NO COMPLIANCE RULE WAS CONSULTED, AND NOBODY DECIDED THAT THREE LOTS NOW NEED A BPOM LOT CHECK.** Every prior argument for retiring this rule was a description of a hazard. This is the hazard happening, in a merged diff, measured. |
+| **Why the contrast is the proof, not the count** | 2B-2 and 2B-3 made **THIRTY** codes master-resolvable, on carefully ratified evidence, across two batches — and moved the firing set by **ZERO**. 2B-5b-ii made **SEVEN** resolvable and moved it by **THREE**. **THE DIFFERENCE IS NOT EVIDENCE, OR CARE, OR LANE. IT IS THREE CHARACTERS.** A mechanism that is unmoved by thirty ratifications and moved by one naming choice is not reading the thing it claims to read. |
+| **And it cuts both ways, which is worse** | `PREFIX-RULE-SUCCEEDS-BY-ACCIDENT-01` (below): the 2B-0 pair that proved the fail-open now **AGREES** — both fragrance concentrates fire — and that is also nobody's decision. **A RULE THAT CAN BE ACCIDENTALLY RIGHT CANNOT BE AUDITED**, because a correct output is not evidence the reasoning existed. |
+| **What 2B-4b inherits, stated so it does not have to re-derive it** | The gate is **DISCHARGED** — every code `asnStore` can hand the wizard is master-resolvable, so a fail-closed master rule refuses nothing legitimate. The master already carries the replacement (`bpomApplicable`, 2B-4a, three-valued, fail-closed) on all 42 rows. **TWO ROWS ALREADY DISAGREE WITH THE WIZARD IN WRITING**: `RM-EMUL-9440` (`APPLICABLE` on `doc-201`) and `RM-PSTN-7150` (`UNDETERMINED` against a confident negative). Retiring `inferBpom` is now a swap with a measured before-and-after, not a redesign. |
+| **The standing assertion was BROKEN DELIBERATELY, not relaxed** | *"The firing set moved by zero"* held through 2B-2, 2B-3 and 2B-4a and is the property this arc protected. 2B-5b-ii is the first batch that could move it, and it did — so the pin was **rewritten to assert the new set exactly, with the three new members annotated by cause**, rather than loosened to a count or a range. **A STANDING ASSERTION THAT STOPS BEING TRUE IS REWRITTEN WITH ITS REASON, NEVER WIDENED UNTIL IT PASSES AGAIN.** |
+
+### `PREFIX-RULE-SUCCEEDS-BY-ACCIDENT-01` *(new — the other half of the fail-open)*
+
+The 2B-0 pair that made `BPOM-OFF-BY-SPACE-01` impossible to argue with —
+`MAT-88201` false, `FR-WARD-4440` true, two fragrance concentrates with opposite
+regulatory treatment — **now agrees.** Both fire. **Nobody decided that.**
+
+> **A PREFIX RULE DOES NOT ONLY FAIL OPEN. IT ALSO SUCCEEDS BY ACCIDENT, AND THE
+> TWO ARE INDISTINGUISHABLE FROM THE OUTPUT.** The pin keeps both rows and adds
+> the master's own determination beside each, so the row is now correct twice
+> over and the wizard still cannot tell you why.
+
+### ⚠️ `BPOM-OFF-BY-SPACE-01` — the SPACE is gone, the FAIL-OPEN is not
+
+**It does not close here.** Its blast radius was corrected to **SEVEN** at 2B-5a,
+and those same seven lines still receive the wrong answer — they simply no longer
+receive it for the reason the finding is named after.
+
+> **A FINDING NAMED AFTER ITS CAUSE OUTLIVES ITS CAUSE.**
+
+Of the seven received lines, four still get `false` from the prefix rule: **two
+correctly** (packaging) and **two not**. And the two are now worse than before:
+
+- **`RM-EMUL-9440` — the master says `APPLICABLE` and the wizard says no.** It is
+  the **only row in 42** whose `bpomApplicable` rests on a **document** rather
+  than a class default (`doc-201`, BPOM Notification TD.02.02.66.10.23.0311,
+  linked to `PO-2025-00131`, this line's own parent). Until now the two
+  mechanisms had **never disagreed on an answerable row** — the fail-open was
+  always visible as a silence. **It is a contradiction in writing now**, pinned
+  as an exact set of one in `bpomApplicability.test.ts`.
+- **`RM-PSTN-7150` — the master records `UNDETERMINED` and the prefix rule
+  asserts a confident negative.** `PREFIX-RULE-ASSERTS-A-NEGATIVE-01`'s eleventh
+  row, and the first of them that **arrives on the receiving surface**.
+
+**The class-rule exception is recorded, not loosened.** `provisionalBpomForGroup('MG-02')`
+returns `UNDETERMINED`; this row is `APPLICABLE` on evidence. **A CLASS DEFAULT IS
+WHAT YOU USE WHEN NOBODY HAS DECIDED. IT IS NOT EVIDENCE, AND IT DOES NOT OUTRANK
+EVIDENCE.** The exception is an exact set of one so a second cannot arrive quietly
+and turn a recorded ratification into an undocumented second mechanism.
+
+### `DOCUMENT-NAMES-A-CATEGORY-NOT-A-THING-01` *(new — and it corrected my own count)*
+
+The tier table first claimed `RM-EMUL-9440` had **two** documents. It has **one**.
+`doc-202` (*REACH SDS — Emulgade*, BASF SE Regulatory Affairs) carries
+`linkedTo: 'All emulsifier grades'` — **prose, not a document reference** — so
+nothing RESOLVES it to this supply the way `doc-201` resolves through
+`PO-2025-00131`. It corroborates by NAME and by nothing structural.
+
+> **A DOCUMENT THAT NAMES A CATEGORY IS NOT A DOCUMENT THAT NAMES A THING.**
+
+The count was corrected rather than the predicate loosened, and doc-202 is
+asserted separately with its prose target spelled out. Cousin of
+`PROSE-COUNTS-AS-A-SITE-01`: a string that reads like a reference and resolves to
+nothing.
+
+### `PROSE-COUNTS-AS-A-SITE-01` — **THIRD APPEARANCE**, met while writing this batch
+
+`asnMasterAuthoring.test.ts` originally re-asserted that the GR wizard does not
+mention `bpomOf` — and **naming the mechanism in a string literal ADDED A SITE TO
+THE THING BEING COUNTED**, turning the canonical "no consumer" pin red. The fix
+was to **delete the duplicate**, not to widen the exact set: a second copy of one
+check is one check (`EVIDENCE-REPLICATION-NOT-CORROBORATION-01`), and this copy
+would have cost the original its accuracy.
+
+### `PROBE-NEEDS-PROBING-01` — the fix from #178 applied, and CONTROLLED
+
+Every probe in this batch **asserts its own edit landed before running anything**,
+and a ninth **control probe with a deliberately non-existent anchor** was run to
+confirm the guard fires. It reported **`PROBE FAILED TO APPLY — NOT A RESULT`**
+rather than a green suite. **A guard that has never been seen to fire is a guard
+you are trusting, not one you have tested.** **RATIFIED AS STANDING PRACTICE AT
+THE #179 MERGE**, in both halves and not just the first:
+
+1. **EVERY MUTATION PROBE ASSERTS ITS OWN EDIT LANDED** before running anything —
+   an occurrence count, or a diff that must be non-empty. One line per probe.
+2. **AND AT LEAST ONE CONTROL PROBE PER BATCH DELIBERATELY FAILS TO APPLY**, so
+   the guard is observed firing rather than assumed present.
+
+The second half is the one that is easy to skip and is the reason the practice
+exists: a guard that only ever runs on probes that work is indistinguishable
+from no guard at all. It is the same shape as
+`EMPTY-INPUT-REPORTS-CLEAN-01` one level up — **the apparatus that verifies the
+pins needs the same question asked of it that the pins ask of the code.**
+
+### The partition pin caught it first
+
+`materialMasterAdoption.test.ts`'s *"no master code arrived from a fourth route"*
+named all seven new rows, by code, before anything else in the suite noticed
+them. **The fix was a FOURTH BUCKET with its own derived definition** —
+`AUTHORED_ASN`, codes whose only non-master source is the ASN lane module — not a
+widened filter, and not adding them to `AUTHORED`, which would have made
+"authored from the RFQ lane" quietly untrue. `5 + 25 + 5 + 7 = 42` is asserted as
+arithmetic so a row cannot go missing between two counts that each look right.
+
+⚠️ And `ADOPTED` correctly excluded the seven **with no edit at all**: its
+`laneRefs` scope is `/src/data/mock*.ts`, the declared document lane, and the ASN
+fixtures are not in it. **A scope drawn carefully three batches ago prevented a
+batch authoring from an undeclared lane from being counted as ratifying the
+declared one.**
+
+### The 2B-4 gate — DISCHARGED
+
+Every code `asnStore` can hand the GR wizard is now in the master, so a
+fail-closed rule keyed on master membership would refuse **nothing** that is
+legitimately received. That was `2B-4b`'s one precondition.
+`masterMissRefusal.test.ts`'s *"it is NOT CLOSED"* assertion is **inverted**, and
+derived from the runtime input rather than from three codes typed by hand.
+**Mechanism early (2B-4a) · precondition discharged (here) · behaviour late
+(2B-4b)** — three separate facts, and 2B-4b changes only the third.
+
+### Violations B and C — DISSOLVED, and C's trap the right way round
+
+5b-i reported they could **not** dissolve because there was nothing to retire
+onto. Authoring supplied it. The master declares one meaning per code and both
+lanes read it, so the code→meaning offenders go **four → two** — what survives is
+exactly `IDENTITY-GRAIN-ASYMMETRY-01`'s seed pair, which no batch of this arc was
+chartered to touch.
+
+⚠️ **C's trap was pinned as two strings unequal as written and EQUAL under
+`toLowerCase`**, precisely so nobody could make it vanish by normalising a
+capital. **They were not made equal. A third record declared which one is the
+meaning, and the other two now quote it.** Normalisation hides a disagreement;
+declaration ends one. The difference is invisible in a diff and total in the
+reasoning, which is why it is asserted rather than described.
+
+### `RETIRE-THE-CODE-RETIRE-THE-MEANING-01` *(new — the step that was nearly missed)*
+
+Changing `materialCode` alone would have left all seven ASN lines stating a
+description that disagrees with their own new master row — **seven brand-new
+one-code-two-meanings violations, manufactured by the fix**, in the batch whose
+job was to remove two. Under R-1 the master's meaning wins, so the lane took it.
+
+> **A RETIREMENT THAT MOVES THE IDENTIFIER AND LEAVES THE MEANING BEHIND HAS
+> SPLIT ONE ROW INTO TWO CLAIMS.** Caught because the census asserts the property
+> generally rather than listing known offenders.
+
+### Constraints discharged, in writing
+
+- **`inferBpom` UNTOUCHED AND UNEDITED. NOTHING WIRED.** The wizard still runs
+  the prefix rule, asserted in the batch with the most reason to break it.
+  **`BPOM-OFF-BY-SPACE-01` does not close here** — 2B-4b closes it, at seven.
+- **NO GROUP INVENTED.** The registry is still 2B-1's thirteen, asserted.
+- **SEVEN WAS NOT A TARGET.** Every row that could not be authored honestly would
+  have been left; all seven could, and each says what it rests on.
+- **C9 BYTES UNTOUCHED, PIN STAYS `f492b5c`.**
+- **FLOOR 2192/183 → 2209/184.** `npm run gates` green.
+
+### What is left
+
+`MAT-10046` / `MAT-10089` — two unbacked storefront pointers, no ruling ·
+`IDENTITY-GRAIN-ASYMMETRY-01`'s seed pair, the operator's ·
+`MG-NO-EMULSIFIER-GROUP-01`, now three rows deep · the ASN→PO **material** axis,
+still open at 7 of 7 and now for a PO-lane reason rather than a master one ·
+`2B-4b`, which is reachable.

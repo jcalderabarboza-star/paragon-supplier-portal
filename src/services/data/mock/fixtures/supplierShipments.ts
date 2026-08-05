@@ -101,8 +101,8 @@ export const MOCK_ASNS: ASN[] = [
       temperatureRequirement: 'Ambient (15–25°C)',
     },
     lineItems: [
-      { materialCode: 'MAT-88201', description: 'Fragrance concentrate – Rose Oud', orderedQty: 1200, shippedQty: 1200, lotNumber: 'LOT-A4481' },
-      { materialCode: 'MAT-88207', description: 'PET bottle 50ml – clear', orderedQty: 15000, shippedQty: 14820, lotNumber: 'LOT-A4482' },
+      { materialCode: 'FR-ROUD-4470', description: 'Fragrance Concentrate — Rose Oud', orderedQty: 1200, shippedQty: 1200, lotNumber: 'LOT-A4481' },
+      { materialCode: 'PK-PETB-8804', description: 'PET Bottle 50ml Clear', orderedQty: 15000, shippedQty: 14820, lotNumber: 'LOT-A4482' },
     ],
   },
   {
@@ -125,7 +125,7 @@ export const MOCK_ASNS: ASN[] = [
       temperatureRequirement: 'Ambient (15–25°C)',
     },
     lineItems: [
-      { materialCode: 'MAT-77014', description: 'Aluminium closure 24/410', orderedQty: 48000, shippedQty: 48000, lotNumber: 'LOT-C9911' },
+      { materialCode: 'PK-ALCP-2450', description: 'Aluminium Closure 24/410', orderedQty: 48000, shippedQty: 48000, lotNumber: 'LOT-C9911' },
     ],
   },
   {
@@ -147,8 +147,8 @@ export const MOCK_ASNS: ASN[] = [
       temperatureRequirement: 'Cool chain (2–8°C)',
     },
     lineItems: [
-      { materialCode: 'MAT-55022', description: 'Active emulsion – Niacinamide 5%', orderedQty: 800, shippedQty: 720, lotNumber: 'LOT-E2203' },
-      { materialCode: 'MAT-55031', description: 'Active emulsion – Hyaluronic 2%', orderedQty: 600, shippedQty: 540, lotNumber: 'LOT-E2204' },
+      { materialCode: 'AI-NIAC-6612', description: 'Active Emulsion — Niacinamide 5%', orderedQty: 800, shippedQty: 720, lotNumber: 'LOT-E2203' },
+      { materialCode: 'AI-HYALU-6615', description: 'Active Emulsion — Hyaluronic 2%', orderedQty: 600, shippedQty: 540, lotNumber: 'LOT-E2204' },
     ],
   },
   {
@@ -196,7 +196,7 @@ export const MOCK_ASNS: ASN[] = [
       temperatureRequirement: 'Ambient (15–25°C)',
     },
     lineItems: [
-      { materialCode: 'MAT-30110', description: 'Specialty fat blend — RBD stearin', orderedQty: 8000, shippedQty: 8000, lotNumber: 'LOT-M7781' },
+      { materialCode: 'RM-PSTN-7150', description: 'RBD Palm Stearin — Specialty Fat', orderedQty: 8000, shippedQty: 8000, lotNumber: 'LOT-M7781' },
     ],
   },
   {
@@ -222,7 +222,7 @@ export const MOCK_ASNS: ASN[] = [
       temperatureRequirement: 'Ambient (15–25°C)',
     },
     lineItems: [
-      { materialCode: 'MAT-40220', description: 'Emulgade SE-PF emulsifier', orderedQty: 2400, shippedQty: 2400, lotNumber: 'LOT-B5540' },
+      { materialCode: 'RM-EMUL-9440', description: 'Emulgade SE-PF Emulsifier', orderedQty: 2400, shippedQty: 2400, lotNumber: 'LOT-B5540' },
     ],
   },
 ];

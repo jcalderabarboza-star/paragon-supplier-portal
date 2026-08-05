@@ -548,9 +548,231 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
   },
 
   // NOTE — `MG-22` (metal packaging) STILL gains no member, and that is the
-  // point of the row above: the tree's aluminium closure went to MG-21. The
-  // only other metal-substrate candidate is `MAT-77014`, in the undeclared
-  // third space, which no batch adopts.
+  // point of the row above: the tree's aluminium closure went to MG-21. ⚠️
+  // AMENDED at 2B-5b-ii: the sentence used to end *"the only other
+  // metal-substrate candidate is `MAT-77014`, in the undeclared third space,
+  // which no batch adopts."* That candidate is adopted below, as
+  // `PK-ALCP-2450`, and it went to **MG-21 as well** — so MG-22 is now
+  // member-less with TWO aluminium closures in the tree rather than one. R-1's
+  // functional axis is not a tie-breaker that happened to fire once.
+
+  // ══ CP-2 · 2B-5b-ii — AUTHORED FROM THE ASN LANE ════════════════════════════
+  //
+  // The seven codes of `paragon.asn_chase_lane` (R-3, declared and retired at
+  // 2B-1), authored here as canonical rows and retired off `MAT-*` in
+  // `supplierShipments.ts`. **THE THIRD SPACE IS EMPTY WHEN THIS LANDS.**
+  //
+  // ── WHAT 5b-i DID AND DID NOT MAKE READABLE ────────────────────────────────
+  //   5b-i repaired the TENANT axis: every ASN now names a PO its own addressee
+  //   owns. **THAT TELLS YOU WHO AND WHEN. IT DOES NOT TELL YOU WHAT.** The
+  //   material axis is still open at 7 of 7, and a repaired `poReference` is
+  //   NOT material evidence — for three of these rows the repaired parent
+  //   orders something else entirely. No label below is taken from a PO line.
+  //
+  // ── TIERS ARE COMPUTED, NEVER STAMPED (2B-3's rule, unchanged) ─────────────
+  //   No `evidenceTier` field exists and none is added. `asnMasterAuthoring.
+  //   test.ts` counts, per row, how many code-bound records state a meaning,
+  //   how many state a unit, how many documents corroborate, and how many
+  //   sources CONTRADICT. A row that gains evidence reads better automatically;
+  //   a row that loses it goes red.
+  //
+  // ── WHAT EVERY ROW HERE RESTS ON, IN ONE LINE ──────────────────────────────
+  //   All seven have exactly ONE code-bound record stating a meaning: their own
+  //   `AsnLineItem.description`. **`AsnLineItem` HAS NO `uom` FIELD**, so no ASN
+  //   line states a unit for anything. Five rows therefore take their unit from
+  //   the GROUP CONVENTION and say so; two take it from a storefront row that
+  //   states `uom` explicitly — bound by `sapCode`, which R-D ruled a POINTER,
+  //   so it is corroboration and not identity.
+
+  // ── MG-05 · fragrance ──────────────────────────────────────────────────────
+  'FR-ROUD-4470': {
+    materialCode: 'FR-ROUD-4470',
+    // ⚠️ THE WEAKEST ROW IN THE SET, AND THE PROVENANCE SAYS SO RATHER THAN
+    // DRESSING IT UP. Its own description is the ONLY NON-CONTRADICTED SOURCE.
+    // Both of the other things the tree says about `MAT-88201` point ELSEWHERE:
+    //   · its `poReference` (pre-5b-i `PO-2025-00112`) is Givaudan's, ordering
+    //     `FR-MKOV-5520` and `FR-WARD-4430`;
+    //   · its `supplierId` is sup-007, PT Berlina PACKAGING, whose only master
+    //     relationships are `PK-PETB-8810` and `PK-CAPF-8820`.
+    // Operator ruling R-3 refused to retire it onto `FR-WARD-4440` (*Wardah EDP
+    // Parfum Concentrate — Rose & Oud*, sup-004 Firmenich): doing so would
+    // assert that a packaging converter shipped a fragrance house's
+    // concentrate. **THE CONTRADICTION IS PART OF THIS ROW'S PROVENANCE AND
+    // AUTHORING DOES NOT ERASE IT** — it is asserted, not narrated, in
+    // `asnMasterAuthoring.test.ts`.
+    //
+    // ⚠️ AND THE MNEMONIC IS A SIGNAL, NOT A GAP. Every other `FR-*` mnemonic
+    // is a BRAND (EMIN / MKOV / WARD). This one is a scent, because no record
+    // in the tree attributes it to a brand. A code shaped unlike its siblings
+    // is the honest rendering of a row whose siblings have provenance it lacks.
+    label: 'Fragrance Concentrate — Rose Oud',
+    materialType: 'ROH',
+    materialGroup: 'MG-05',
+    // GROUP CONVENTION, not a measurement: all six existing MG-05 rows are KG
+    // and no ASN line states a unit. Recorded as the weaker basis it is.
+    canonicalUom: 'KG',
+    bpomApplicable: 'APPLICABLE',
+  },
+
+  // ── MG-04 · active ingredients — the two EMULSIONS ─────────────────────────
+  // ⚠️ THE GROUP QUESTION THE DISPATCH ASKED, ANSWERED BY R-2's OWN CRITERION
+  // RATHER THAN BY RESEMBLANCE. MG-10 exists because 2B-1 refused to force
+  // oleochemical feedstocks into a formulation group, and its test is written
+  // down: members of MG-10 are *"INPUTS TO the materials in MG-01..06, not
+  // members of them"*. A 5% niacinamide emulsion is DOSED INTO a formula — it
+  // ENTERS the formulation grain, so it is not upstream of it. And the
+  // MG-01..06 axes are FUNCTIONAL (`axis: 'formulation-ingredient'`), not
+  // physical: they separate surfactant from emollient from active, never powder
+  // from emulsion. An emulsion of an active FUNCTIONS as an active.
+  // **THE REGISTRY HAS NO PHYSICAL-FORM AXIS, AND THIS SET DOES NOT SUPPLY A
+  // REASON TO ADD ONE** — the two rows differ from `AI-NIAC-6605` in CONCENTRATION
+  // AND FORM, which is item-grain (D-IDENTITY-GRAIN = SPECIFICATION), not
+  // group-grain. No new group is declared, and the reasoning is recorded so the
+  // refusal is as visible as MG-10's creation was.
+  'AI-NIAC-6612': {
+    materialCode: 'AI-NIAC-6612',
+    // Third `AI-NIAC-*`, and deliberately NOT merged with either sibling:
+    // `AI-NIAC-6601` is *Niacinamide (Vitamin B3)*, `AI-NIAC-6605` is *Feed
+    // Grade 98% (Bulk)*. A 5% emulsion is neither — concentration and physical
+    // form are both specification, and `PK-PETB-8810` vs `PK-PETB-8825` is the
+    // standing precedent for treating a format difference as a distinct item.
+    // ⚠️ Its ASN ships COOL CHAIN (2–8 °C) while `AI-NIAC-6605`'s PO ships
+    // ambient — a handling attribute the tree states, and the only physical
+    // evidence in the set that these are not powders.
+    label: 'Active Emulsion — Niacinamide 5%',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG', // group convention; no ASN line states a unit
+    bpomApplicable: 'APPLICABLE',
+  },
+  'AI-HYALU-6615': {
+    materialCode: 'AI-HYALU-6615',
+    // Sibling of `AI-HYALU-6610` (*Sodium Hyaluronate (High MW, 1.5-2.0 MDa)*),
+    // which specifies a MOLECULAR WEIGHT — a raw-powder specification this row
+    // has no counterpart for. Same reasoning as `AI-NIAC-6612`.
+    label: 'Active Emulsion — Hyaluronic 2%',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG', // group convention; no ASN line states a unit
+    bpomApplicable: 'APPLICABLE',
+  },
+
+  // ── MG-10 · oleochemical feedstocks ────────────────────────────────────────
+  'RM-PSTN-7150': {
+    materialCode: 'RM-PSTN-7150',
+    // ⚠️ THE NEAR-MISS THAT WOULD HAVE BEEN WRONG BY NAME, RECORDED SO IT IS
+    // NOT RE-PROPOSED: **PALM STEARIN IS NOT STEARIC ACID.** `RM-STEAR-7300`
+    // (*Stearic Acid — Double Pressed (Halal)*) shares four letters and is a
+    // different class of substance — a fatty acid, where this is a
+    // triglyceride fraction of palm oil. `RM-PALM-7100` (*Palm Kernel Oil —
+    // Refined, Bleached, Deodorized*) shares the RBD process word and is a
+    // different feedstock — KERNEL oil, not a mesocarp-oil fraction. Two
+    // plausible merges, both wrong, both available to anyone reading labels.
+    //
+    // Group by R-2's stated criterion, not by resemblance: a palm fraction is
+    // an INPUT TO the materials in MG-01..06, and `RM-PALM-7100` is already
+    // MG-10. The mnemonic is `PSTN` and the number sits beside `RM-PALM-7100`
+    // because they are the same feedstock family; `STEAR` was NOT reused,
+    // deliberately.
+    //
+    // TWO SOURCES, and one of them states the unit: the ASN description, and
+    // the sup-002 storefront row `c101` (*RBD Palm Stearin — Specialty Fat*,
+    // `uom: 'KG'`). The storefront binds by `sapCode`, which R-D ruled a
+    // POINTER — so it CORROBORATES and does not identify.
+    label: 'RBD Palm Stearin — Specialty Fat',
+    materialType: 'ROH',
+    materialGroup: 'MG-10',
+    canonicalUom: 'KG', // STATED by `c101`, not inferred from the group
+    bpomApplicable: 'UNDETERMINED',
+  },
+
+  // ── MG-02 · where the emulsifiers live, and that is the finding ────────────
+  'RM-EMUL-9440': {
+    materialCode: 'RM-EMUL-9440',
+    // ⚠️ THE BEST-EVIDENCED ROW IN THE SET — FOUR SOURCES, TWO OF THEM
+    // DOCUMENTS, and the only row in the ENTIRE MASTER whose `bpomApplicable`
+    // rests on a document rather than on its group's class default:
+    //   · `ASN-2025-00302` line — *Emulgade SE-PF emulsifier*, 2 400 shipped;
+    //   · storefront `c201` — *Emulgade SE-PF Emulsifier*, `uom: 'KG'`,
+    //     certs REACH + ISO 9001 (⚠️ **NO halal cert**);
+    //   · `doc-201` — **BPOM Notification TD.02.02.66.10.23.0311**, category
+    //     `BPOM Regulatory`, issued by BPOM, linked to `PO-2025-00131`, which
+    //     is this ASN's parent;
+    //   · `doc-202` — *REACH Compliance / Safety Data Sheet — Emulgade*, issued
+    //     by **BASF SE Regulatory Affairs**, `linkedTo: 'All emulsifier grades'`.
+    //
+    // ⚠️ `bpomApplicable: 'APPLICABLE'` IS A DEVIATION FROM THE CLASS RULE AND
+    // IS MEANT TO BE. `provisionalBpomForGroup('MG-02')` returns `UNDETERMINED`
+    // — MG-02 is not in 2B-4a's provisionally-applicable set. This row is
+    // APPLICABLE **on `doc-201`**, which is a determination somebody actually
+    // made about this supply rather than a default we assigned. 2B-4a said the
+    // 35 seeded values were provisional pending team ratification; this one is
+    // the first that is not seeded from a class at all. The exception is an
+    // EXACT SET OF ONE in `bpomApplicability.test.ts`, with its evidence, so it
+    // cannot grow quietly into a second mechanism.
+    //
+    // AND THE SAME DOCUMENTS SEPARATE IT FROM `RM-EMUL-9410` (*Glyceryl
+    // Stearate SE (**Halal** Emulsifier)*): a BASF/REACH frame with no halal
+    // certification is not the Indonesian halal-certified emulsifier lane
+    // (`PT Halal Emulsifier Nusantara`, sup-010). Shared substrings — "SE",
+    // "emulsifier" — are not shared identity.
+    //
+    // ⚠️ GROUP: MG-02 *(Emollients / oils / esters)*, which is where the tree's
+    // other two emulsifiers already sit — and it is WRONG for all three.
+    // `MG-NO-EMULSIFIER-GROUP-01` is now THREE rows deep. Placed with its
+    // siblings rather than somewhere better, because moving them is a registry
+    // ruling (the MG-10 shape) and inventing MG-07 inside an authoring diff is
+    // the decision-smuggling 2B-1 named. **REPORTED FOR RULING, NOT FIXED HERE.**
+    label: 'Emulgade SE-PF Emulsifier',
+    materialType: 'ROH',
+    materialGroup: 'MG-02',
+    canonicalUom: 'KG', // STATED by `c201`, not inferred from the group
+    bpomApplicable: 'APPLICABLE',
+  },
+
+  // ── MG-20 · rigid plastic packaging ────────────────────────────────────────
+  'PK-PETB-8804': {
+    materialCode: 'PK-PETB-8804',
+    // The 50 ml the master did not have. Existing PET bottles are 200 ml
+    // frosted, 100 ml clear, 100 ml airless, 250 ml and 250 ml flip-top —
+    // **`50ml` appears NOWHERE ELSE IN THE TREE**, which is why nothing could
+    // be retired onto. Volume is specification under D-IDENTITY-GRAIN, the same
+    // axis that keeps `PK-PETB-8810` and `PK-PETB-8825` apart.
+    // Supplier corroborates for once: sup-007 (PT Berlina Packaging) is a
+    // declared MANUFACTURER of `PK-PETB-8810` and `PK-CAPF-8820`.
+    label: 'PET Bottle 50ml Clear',
+    materialType: 'VERP',
+    materialGroup: 'MG-20',
+    canonicalUom: 'PCS', // group convention; every MG-20 row is PCS
+    bpomApplicable: 'NOT_APPLICABLE',
+  },
+
+  // ── MG-21 · closures ───────────────────────────────────────────────────────
+  'PK-ALCP-2450': {
+    materialCode: 'PK-ALCP-2450',
+    // ⚠️ **NOT `PK-ALCP-2441`. OPERATOR RULING R-2, RECORDED HERE SO NOBODY
+    // MERGES THE TWO AS AN OBVIOUS TIDY-UP.** They look identical — same
+    // substrate, same 24/410 neck finish, same unit, and R-1's own registry
+    // files aluminium caps under MG-21 *closures*, so "closure" and "cap" are
+    // not even different categories in our vocabulary. The ruling stands on two
+    // things the labels do not show:
+    //   1. **AN OPEN 2026 RFQ IS NOT EVIDENCE ABOUT WHAT WAS RECEIVED THIRTEEN
+    //      MONTHS EARLIER.** `PK-ALCP-2441` rests on T2-only evidence from
+    //      `RFQ-2026-011` — created 2026-04-22, status **Open**, never awarded.
+    //      This row's source is `ASN-2025-00198`, **Delivered**, eta 2025-03-22.
+    //   2. **24/410 FIXES THE NECK FINISH ONLY** — not liner, colour or closure
+    //      format. That is precisely the axis `PK-PETB-8810` vs `PK-PETB-8825`
+    //      was split on by operator ruling. `RFQ-2026-011` also carries a
+    //      programme qualifier this line does not: *"— Wardah serum line"*.
+    // **UNDER SPECIFICATION-GRAIN IDENTITY, LOOKS THE SAME IS NOT THE SAME
+    // PURCHASABLE ITEM.** The code is deliberately NOT `2442`: an adjacent
+    // number invites the merge this ruling refuses.
+    label: 'Aluminium Closure 24/410',
+    materialType: 'VERP',
+    materialGroup: 'MG-21',
+    canonicalUom: 'PCS', // group convention; `PK-CAPF-8820`/`PK-ALCP-2441` are PCS
+    bpomApplicable: 'NOT_APPLICABLE',
+  },
 });
 
 // ─── Supplier-material relationships (design §7) ──────────────────────────────

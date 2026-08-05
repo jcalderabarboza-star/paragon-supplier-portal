@@ -52,12 +52,29 @@ describe('2B-5a — the storefront pointer, declared and MEASURED against its de
     expect(ASN_CODES.size).toBe(7);
   });
 
-  it('R-D — exactly ONE pointer resolves to the MASTER, and it is the corrected one', () => {
+  it('R-D — THREE of five pointers now resolve to the MASTER, and none of them moved', () => {
     // ⚠️ INVERTED FROM NOTHING — there was no such pin before, because before
     // R-D there was no declaration for a pointer to fail. `PK-PETB-8803` is the
     // 2B-3-authored row whose label this catalogue row states byte-for-byte.
+    //
+    // ⚠️ ONE → THREE AT 2B-5b-ii, **AND THE POINTERS THEMSELVES WERE NOT
+    // REPAIRED.** 2B-5a called `c101` and `c201` *"correct pointers into a
+    // retiring space"* and predicted they would repoint when the space retired.
+    // They did — by the space becoming the master, not by anybody rewriting a
+    // claim. THE SUPPLIERS WERE RIGHT ALL ALONG; the codes they named just had
+    // no master row behind them yet. That is the difference between a broken
+    // pointer and an unbacked one, and it is why 2B-5a refused to "fix" these.
     const resolving = POINTERS.filter((p) => p.sapCode in MATERIAL_MASTER);
-    expect(resolving.map((p) => `${p.id} → ${p.sapCode}`)).toEqual(['c1 → PK-PETB-8803']);
+    expect(resolving.map((p) => `${p.id} → ${p.sapCode}`)).toEqual([
+      'c1 → PK-PETB-8803',
+      'c101 → RM-PSTN-7150',
+      'c201 → RM-EMUL-9440',
+    ]);
+    // And each resolves to a row that MEANS what the catalogue row says — the
+    // separate defect a membership check alone would miss.
+    for (const p of resolving) {
+      expect(MATERIAL_MASTER[p.sapCode].label, `${p.id}`).toBe(p.material);
+    }
     // And it points at the row that means what the row says it means. A pointer
     // that resolves to the WRONG master row would satisfy the line above and is
     // a different defect, so it is checked separately.
@@ -66,7 +83,7 @@ describe('2B-5a — the storefront pointer, declared and MEASURED against its de
     );
   });
 
-  it('TWO pointers resolve into the ASN lane instead — correct pointers, retiring space', () => {
+  it('ZERO pointers resolve into the ASN lane now — the space they pointed into is gone', () => {
     // ⚠️ THESE ARE NOT BROKEN. They name a code that exists, in a Paragon space
     // that is declared (`paragon.asn_chase_lane`, R-3) — and they name it UNDER
     // THE MATCHING SUPPLIER ON BOTH SIDES, which is what a working pointer looks
@@ -74,19 +91,29 @@ describe('2B-5a — the storefront pointer, declared and MEASURED against its de
     // `sapCode` was always meant to point at a Paragon code rather than hold a
     // supplier's own. They fail R-D only because the space they point into is
     // booked for retirement, and they repoint when 2B-5b retires it.
+    // ⚠️ INVERTED AT 2B-5b-ii, NOT DELETED. The bucket is empty because the
+    // third space is empty, and this assertion now guards against it coming
+    // back: a pointer naming a code that exists in the ASN lane but NOT in the
+    // master would mean a new unbacked vocabulary had appeared.
     const intoAsn = POINTERS.filter(
       (p) => !(p.sapCode in MATERIAL_MASTER) && ASN_CODES.has(p.sapCode),
     );
-    expect(intoAsn.map((p) => `${p.id} → ${p.sapCode}`)).toEqual([
-      'c101 → MAT-30110',
-      'c201 → MAT-40220',
-    ]);
-    for (const p of intoAsn) {
+    expect(intoAsn).toEqual([]);
+    // ⚠️ AND THE SUPPLIER AGREEMENT THAT MADE THIS BUCKET EVIDENCE SURVIVES THE
+    // RETIREMENT — asserted over the NEW codes, because it was the strongest
+    // single piece of evidence that `sapCode` points at a Paragon code rather
+    // than holding a supplier's own, and a fact that disappears when its
+    // fixtures change was never the fact it looked like.
+    for (const p of POINTERS.filter((x) => ASN_CODES.has(x.sapCode))) {
       expect(
         [...ASN_CODES.get(p.sapCode)!],
         `${p.sapCode}: storefront says ${p.supplierId}`,
       ).toEqual([p.supplierId]);
     }
+    expect(POINTERS.filter((x) => ASN_CODES.has(x.sapCode)).map((x) => x.id)).toEqual([
+      'c101',
+      'c201',
+    ]);
   });
 
   it('TWO pointers resolve NOWHERE — unbacked claims, and no batch has ruled on them', () => {
@@ -123,7 +150,10 @@ describe('2B-5a — the storefront pointer, declared and MEASURED against its de
     const nowhere = POINTERS.filter(
       (p) => !(p.sapCode in MATERIAL_MASTER) && !ASN_CODES.has(p.sapCode),
     ).length;
-    expect([master, asn, nowhere]).toEqual([1, 2, 2]);
+    // 1/2/2 at 2B-5a → 3/0/2 at 2B-5b-ii. The PARTITION property is what this
+    // test is for, and it holds across the shift: nothing was counted twice and
+    // nothing was dropped while two rows moved between buckets.
+    expect([master, asn, nowhere]).toEqual([3, 0, 2]);
     expect(master + asn + nowhere).toBe(POINTERS.length);
   });
 

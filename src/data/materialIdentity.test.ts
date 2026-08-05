@@ -109,6 +109,11 @@ import { describe, expect, it } from 'vitest';
 import { SHOULD_COST_MATERIALS } from '../services/data/mock/fixtures/commodityBaskets';
 import { MATERIAL_MASTER } from '../services/sdc/fixtures';
 import { MATERIAL_SPACES, spaceOfModule } from '../services/sdc/materialSpaces';
+// 2B-5b-ii — the GR RUNTIME input, read directly. The census walks the tree and
+// answers "which codes exist"; the 2B-4 gate is about "which codes can reach the
+// wizard", and only `MOCK_ASNS` answers that. Kept as a separate import so the
+// two questions cannot be conflated the way population and exposure were.
+import { MOCK_ASNS } from '../services/data/mock/fixtures/supplierShipments';
 
 // ─── The derived population ──────────────────────────────────────────────────
 
@@ -717,8 +722,8 @@ describe('2B-0 — codes the lane names but gives NO meaning (2B-3 input)', () =
 });
 
 describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', () => {
-  it('the master names THIRTY-FIVE — 5 seeded, 25 adopted at 2B-2, 5 authored at 2B-3', () => {
-    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(35);
+  it('the master names FORTY-TWO — 5 seeded · 25 adopted 2B-2 · 5 authored 2B-3 · 7 authored 2B-5b-ii', () => {
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(42);
     // The five it was seeded with, still all present and still the only ones
     // this batch did not touch.
     for (const seed of [
@@ -764,31 +769,44 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
       ),
     ].sort();
     // ⚠️ `MAT-10045` IS GONE — R-D corrected the pointer to `PK-PETB-8803`.
+    // ⚠️ AND AT 2B-5b-ii THE TWO ASN-LANE POINTERS FOLLOWED THEIR TARGETS: the
+    // codes they named were authored as master rows and retired off `MAT-*`, so
+    // `c101` and `c201` now point at `RM-PSTN-7150` and `RM-EMUL-9440`. THE
+    // POINTERS WERE NEVER WRONG — 2B-5a called them *"correct pointers into a
+    // retiring space"*, and this is the space finishing its retirement.
     expect(sapCodes).toEqual([
       'MAT-10046',
       'MAT-10089',
-      'MAT-30110',
-      'MAT-40220',
       'PK-PETB-8803',
+      'RM-EMUL-9440',
+      'RM-PSTN-7150',
     ]);
 
     // ⚠️ NONE OF THE FIVE IS INVISIBLE NOW. The raw scan and the module walk
     // agree, which is the property the 2B-3 pin recorded the absence of.
     expect(sapCodes.filter((c) => !CODES.includes(c))).toEqual([]);
 
-    // The two that were already in the third space still are. The storefront
-    // field OVERLAPS `MAT-*` rather than holding an unrelated vocabulary — and
-    // that overlap is what the derivation admits the field ON.
-    expect(sapCodes.filter((c) => UNDECLARED_SPACE.includes(c))).toEqual([
-      'MAT-30110',
-      'MAT-40220',
-    ]);
+    // ⚠️ THE OVERLAP THAT ADMITTED THIS FIELD IS GONE — and the field stays in.
+    // 2B-4a admitted `sapCode` to the census because two of its values were IN
+    // the third space; that space is empty at 2B-5b-ii, so the overlap no longer
+    // exists. The field is not re-litigated: R-D declared what `sapCode` MEANS
+    // (a pointer to a Paragon master code), and a declaration does not lapse
+    // when the evidence that prompted it is repaired. **A SCOPE ADMITTED ON
+    // EVIDENCE IS KEPT ON A DECLARATION, OR IT SILENTLY NARROWS AGAIN THE DAY
+    // THE EVIDENCE IS FIXED** — which is how `MEANING-SCOPE-IS-A-HAND-PICK-01`
+    // stayed invisible for three batches.
+    expect(sapCodes.filter((c) => UNDECLARED_SPACE.includes(c))).toEqual([]);
+    expect(UNDECLARED_SPACE).toEqual([]);
 
     // THE SPACE QUESTION 2B-4a LEFT OPEN, ANSWERED AT 2B-5a (R-D): the storefront
     // is NOT a space. `sapCode` is a POINTER — a supplier's claim about which
     // Paragon master code its catalogue item is. The three buckets are pinned in
     // full by `storefrontPointer.test.ts`; only the census consequence is here.
-    expect(sapCodes.filter((c) => c in MATERIAL_MASTER)).toEqual(['PK-PETB-8803']);
+    expect(sapCodes.filter((c) => c in MATERIAL_MASTER)).toEqual([
+      'PK-PETB-8803',
+      'RM-EMUL-9440',
+      'RM-PSTN-7150',
+    ]);
 
     // ⚠️ WHAT THE RULING DID **NOT** SETTLE, kept open on purpose. The
     // population question is answered; the SPACE question is not. Nine of the
@@ -798,21 +816,34 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // requires a `MaterialRef` to name its space. Counting a code is not
     // placing it.
     //
-    // ⚠️ NINE AGAIN — AND IT IS A DIFFERENT NINE. 2B-4a measured twelve; 2B-5a
-    // corrected one storefront pointer and two chase references, and the count
-    // landed back where R-3 left it WHILE THE MEMBERSHIP CHANGED: the two chase
-    // codes left, the two unbacked storefront pointers arrived. A COUNT THAT
-    // RETURNS TO ITS OLD VALUE WHILE ITS MEMBERS CHANGE is the thing this arc
-    // keeps finding, so both halves are asserted rather than the number alone.
+    // ⚠️ NINE → TWO AT 2B-5b-ii, and what is LEFT is the whole story. 2B-4a
+    // measured twelve; 2B-5a corrected one pointer and two chase refs and the
+    // count landed back on nine WITH DIFFERENT MEMBERS; 2B-5b-ii authored the
+    // seven ASN codes and the third space emptied. The two survivors are
+    // `MAT-10046` and `MAT-10089` — the UNBACKED STOREFRONT POINTERS, on which
+    // no operator has ruled. **THEY ARE NOT A REMAINDER OF THE THIRD SPACE.**
+    // R-D established that the storefront is a pointer surface, not a code
+    // space: these are two supplier CLAIMS about Paragon codes that do not
+    // exist, and repairing them means authoring master rows from catalogue
+    // prose — an adoption, on evidence no batch has been given.
     const absent = CODES.filter((c) => !(c in MATERIAL_MASTER));
-    expect(absent).toHaveLength(9);
+    expect(absent).toEqual(['MAT-10046', 'MAT-10089']);
     expect(absent).not.toContain('MAT-10234');
     expect(absent).not.toContain('MAT-20500');
-    expect(absent.filter((c) => UNDECLARED_SPACE.includes(c))).toHaveLength(7);
-    expect(absent.filter((c) => !UNDECLARED_SPACE.includes(c))).toEqual([
-      'MAT-10046',
-      'MAT-10089',
-    ]);
+    expect(absent.filter((c) => UNDECLARED_SPACE.includes(c))).toEqual([]);
+    // …and every one of the seven is resolvable now, asserted by name so a
+    // regression names the row rather than moving a count.
+    for (const c of [
+      'FR-ROUD-4470',
+      'AI-NIAC-6612',
+      'AI-HYALU-6615',
+      'RM-PSTN-7150',
+      'RM-EMUL-9440',
+      'PK-PETB-8804',
+      'PK-ALCP-2450',
+    ]) {
+      expect(c in MATERIAL_MASTER, `${c} authored at 2B-5b-ii`).toBe(true);
+    }
   });
 
   it('MEANING-SCOPE-IS-A-HAND-PICK-01 — CLOSED at 2B-5a: the meaning set DERIVES', () => {
@@ -872,41 +903,60 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // `label` is an admitted meaning field it becomes an instance of the GENERAL
     // property — which is what a derived scope is for, and worth more than the
     // bespoke check it absorbs.
+    // ⚠️ FOUR → TWO AT 2B-5b-ii. **VIOLATIONS B AND C DISSOLVED BY DECLARED
+    // OWNERSHIP, WHICH IS WHAT R-1 SAID WOULD HAPPEN AND 5b-i COULD NOT DELIVER.**
+    // 5b-i reported that they could NOT dissolve because there was nothing to
+    // retire onto; authoring supplied it. The master now DECLARES one meaning
+    // per code, and both lanes read it:
+    //   · `RM-PSTN-7150` — the ASN said *'Specialty fat blend — RBD stearin'*
+    //     and `c101` said *'RBD Palm Stearin — Specialty Fat'*. The master
+    //     declares the latter and the ASN line took it.
+    //   · `RM-EMUL-9440` — *'Emulgade SE-PF emulsifier'* vs *'…Emulsifier'*.
+    // ⚠️ AND C's TRAP IS RESOLVED THE RIGHT WAY ROUND. It was pinned as two
+    // strings unequal as written and EQUAL under `toLowerCase`, precisely so
+    // nobody could make it vanish by normalising the capital — which would have
+    // decided by tidying that a shipped line and a catalogue offer are the same
+    // purchasable item. **THEY WERE NOT MADE EQUAL. A THIRD RECORD DECLARED
+    // WHICH ONE IS THE MEANING, AND THE OTHER TWO NOW QUOTE IT.** Normalisation
+    // hides a disagreement; declaration ends one.
     expect(twoMeanings).toEqual([
       {
         code: 'AI-NIAC-6601',
         meanings: ['Niacinamide (Vitamin B3)', 'Niacinamide USP Grade 99.5% (Vitamin B3)'],
       },
       {
-        code: 'MAT-30110',
-        meanings: ['RBD Palm Stearin — Specialty Fat', 'Specialty fat blend — RBD stearin'],
-      },
-      {
-        code: 'MAT-40220',
-        meanings: ['Emulgade SE-PF Emulsifier', 'Emulgade SE-PF emulsifier'],
-      },
-      {
         code: 'RM-EMUL-3320',
         meanings: ['Cetearyl Alcohol', 'Cetearyl Alcohol — Vegetable Origin'],
       },
     ]);
-    // PARTITIONED BY FINDING, so two dispositions cannot be read as one.
+    // PARTITIONED BY FINDING, so two dispositions cannot be read as one. What
+    // survives is EXACTLY the `IDENTITY-GRAIN-ASYMMETRY-01` seed pair — SDC-0
+    // data, the operator's, and untouched by every batch of this arc.
     for (const c of ['AI-NIAC-6601', 'RM-EMUL-3320']) {
       expect(c in MATERIAL_MASTER, c + ' is SDC-0 seed data, the operator\'s').toBe(true);
     }
-    for (const c of ['MAT-30110', 'MAT-40220']) {
-      expect(UNDECLARED_SPACE, c + ' is 2B-5b\'s').toContain(c);
+    for (const c of ['RM-PSTN-7150', 'RM-EMUL-9440']) {
+      expect(c in MATERIAL_MASTER, c + ' was authored, not adjudicated away').toBe(true);
     }
 
-    // ⚠️ C'S TRAP, PINNED AS A SENTENCE BECAUSE IT IS THE TRANSFERABLE PART:
-    // the two `MAT-40220` strings differ by ONE CAPITAL LETTER. NORMALISING CASE
-    // MAKES THIS DISAPPEAR WITHOUT ANYONE DECIDING WHETHER THE TWO LANES
-    // DESCRIBE THE SAME PURCHASABLE ITEM — a shipped line carrying lot
-    // `LOT-B5540` and a catalogue offer with a 45-day lead time. They probably
-    // do. "Probably" is an adoption, and the easiest fix is the wrong one.
-    const [a, b] = twoMeanings.find((r) => r.code === 'MAT-40220')!.meanings;
-    expect(a).not.toBe(b);
-    expect(a.toLowerCase()).toBe(b.toLowerCase());
+    // ⚠️ C'S TRAP, KEPT AS A SENTENCE BECAUSE IT IS THE TRANSFERABLE PART EVEN
+    // NOW THAT THE INSTANCE IS GONE: the two `MAT-40220` strings differed by ONE
+    // CAPITAL LETTER, and NORMALISING CASE WOULD HAVE MADE IT DISAPPEAR WITHOUT
+    // ANYONE DECIDING WHETHER THE TWO LANES DESCRIBED THE SAME PURCHASABLE ITEM
+    // — a shipped line carrying lot `LOT-B5540` and a catalogue offer with a
+    // 45-day lead time. They probably did. "Probably" is an adoption, and the
+    // easiest fix would have been the wrong one.
+    //
+    // ⚠️ THE DECISION WAS ACTUALLY MADE, at 2B-5b-ii, and the shape of the
+    // resolution is what the trap was protecting: the master authored ONE row,
+    // `RM-EMUL-9440`, on four sources including two documents, and BOTH lanes
+    // now quote its label. **THE STRINGS ARE EQUAL BECAUSE SOMETHING DECLARED
+    // WHICH ONE IS THE MEANING — NOT BECAUSE A COMPARISON WAS LOOSENED.** The
+    // difference is invisible in the diff and total in the reasoning, which is
+    // why it is asserted rather than described.
+    expect(new Set(REFS_DERIVED.filter((r) => r.code === 'RM-EMUL-9440').map((r) => r.meaning)))
+      .toEqual(new Set(['Emulgade SE-PF Emulsifier']));
+    expect(MATERIAL_MASTER['RM-EMUL-9440'].label).toBe('Emulgade SE-PF Emulsifier');
   });
 
   it('the NARROW and DERIVED scopes disagree on EXACTLY the deferred rows', () => {
@@ -920,15 +970,14 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
       [...distinctBy('code', 'meaning', REFS_DERIVED)].filter(([, i]) => i.size > 1).map(([c]) => c),
     );
     expect([...narrow]).toEqual([]);
-    expect([...derived].sort()).toEqual([
-      'AI-NIAC-6601',
-      'MAT-30110',
-      'MAT-40220',
-      'RM-EMUL-3320',
-    ]);
+    // ⚠️ TWO AT 2B-5b-ii, and the pair that leaves is the pair AUTHORING could
+    // reach. What the widening still finds that the narrow scope cannot is
+    // exactly `IDENTITY-GRAIN-ASYMMETRY-01`'s seed pair — which no batch of
+    // this arc was chartered to touch.
+    expect([...derived].sort()).toEqual(['AI-NIAC-6601', 'RM-EMUL-3320']);
   });
 
-  it('a THIRD Paragon space exists that no declaration names', () => {
+  it('the THIRD SPACE IS EMPTY — MAT-SPACE-UNDECLARED-01 CLOSES at 2B-5b-ii', () => {
     // ⚠️ `MAT-SPACE-UNDECLARED-01`. Nine codes, in two modules, owned by us, and
     // named by NOTHING: not `C8-MASTER-DECL`, not `MOCK-RETIREMENT-01`'s blast
     // radius (scoped to `src/data/mock*.ts`), not C9 §5's per-party space count
@@ -940,18 +989,25 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // were SUBJECT REFERENCES that contradicted the agreement they named on
     // supplier, item sequence AND material code. Corrected at 2B-5a, and the
     // chase lane now names the material its own subject carries.
-    // THE SEVEN THAT REMAIN ARE THE REAL POPULATION, and every one of them is
-    // an ASN LINE — which is why they, and only they, carry the BPOM blast
-    // radius. They are 2B-5b's.
-    expect(UNDECLARED_SPACE).toEqual([
-      'MAT-30110',
-      'MAT-40220',
-      'MAT-55022',
-      'MAT-55031',
-      'MAT-77014',
-      'MAT-88201',
-      'MAT-88207',
-    ]);
+    // THE SEVEN THAT REMAINED WERE THE REAL POPULATION, every one an ASN LINE —
+    // which is why they, and only they, carried the BPOM blast radius.
+    //
+    // ⚠️ **EMPTY AT 2B-5b-ii, AND THE ASSERTION IS INVERTED RATHER THAN
+    // DELETED.** The seven were authored as canonical master rows and the ASN
+    // lines took those codes; `MAT-*` names nothing in the tree. This pin now
+    // says the space is gone, so RE-INTRODUCING one turns it red — a deleted
+    // assertion would have let the vocabulary come back silently, which is the
+    // whole reason this arc inverts instead of deleting.
+    expect(UNDECLARED_SPACE).toEqual([]);
+    // No `MAT-*` code survives ANYWHERE in the census, stated separately: the
+    // space could be empty by the module rule while the prefix lived on
+    // somewhere the rule does not look.
+    expect(CODES.filter((c) => c.startsWith('MAT-'))).toEqual(['MAT-10046', 'MAT-10089']);
+    // …and those two are storefront POINTERS, not a code space (R-D). They are
+    // supplier claims about Paragon codes that do not exist, and no operator has
+    // ruled on them. **THE PREFIX SURVIVING IS NOT THE SPACE SURVIVING**, and
+    // the two facts are asserted apart so neither can stand in for the other.
+    expect(ASN_CHASE_CODES.filter((c) => c.startsWith('MAT-'))).toEqual([]);
     expect(ASN_CHASE_CODES).toContain('AI-NIAC-6601');
     expect(ASN_CHASE_CODES).toContain('PK-PETB-8810');
     // It is disjoint from the declared lane — which is precisely why every rule
@@ -959,7 +1015,7 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     expect(UNDECLARED_SPACE.filter((c) => DOCUMENT_LANE.includes(c))).toEqual([]);
   });
 
-  it("the TREE's master-absent population: 39 → 14 → 9 → 12, and the RISE is the finding", () => {
+  it("the TREE's master-absent population: 39 → 14 → 9 → 12 → 9 → 2, and BOTH directions are the finding", () => {
     // The number a 2B dispatch actually has to plan against: 30 + 9, then 5 + 9,
     // then 0 + 9 — and now 0 + 12. What NEVER moved is the second term through
     // three batches of adoption and authoring, because every one of them was
@@ -972,17 +1028,29 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // batch while the scope stays narrower than the tree is a figure improving
     // about itself. The honest direction of this number, on the batch that
     // widened the scope, is UP.
+    //
+    // ⚠️ AND NOW IT FALLS, TO **TWO** — the first honest DOWN in the series,
+    // because for the first time the scope did not move while the number did.
+    // Every earlier fall was adoption or authoring inside an already-declared
+    // lane; the rise at 2B-4a was the scope catching up. This fall is seven
+    // codes leaving the population by being authored, measured over the SAME
+    // derived scope that produced the rise. **A NUMBER IS ONLY COMPARABLE TO
+    // ITS PREDECESSOR WHEN THE SCOPE BEHIND IT DID NOT MOVE**, which is why the
+    // series is written out rather than reported as a delta.
     expect(CODES.length).toBe(44);
     const absent = CODES.filter((c) => !(c in MATERIAL_MASTER));
-    expect(absent).toHaveLength(9);
-    // ⚠️ NO LONGER HOMOGENEOUS, and 2B-3's phrasing has to go with it.
-    // "master-absent" and "third space" were the same set for exactly one
-    // batch. They are nine and twelve again, and the extra three are not in a
-    // space anybody has declared either.
-    expect(absent).not.toEqual(UNDECLARED_SPACE);
-    expect(UNDECLARED_SPACE.every((c) => absent.includes(c))).toBe(true);
-    expect(UNDECLARED_SPACE).toHaveLength(7);
-    // What DID hold across the widening: none of them is in the document lane.
+    expect(absent).toEqual(['MAT-10046', 'MAT-10089']);
+    // ⚠️ THE TWO SETS ARE NO LONGER RELATED AT ALL. "master-absent" and "third
+    // space" were the same set for exactly one batch, then nine-vs-seven, and
+    // now the third space is EMPTY while two codes remain master-absent. The
+    // survivors are storefront pointers, and a pointer is not a space.
+    expect(UNDECLARED_SPACE).toEqual([]);
+    expect(absent.filter((c) => UNDECLARED_SPACE.includes(c))).toEqual([]);
+    // The population itself did NOT shrink — 44 codes before and after. Nothing
+    // was deleted to reach two; seven became resolvable.
+    expect(CODES.length).toBe(44);
+    // What held across every widening and every fall: none of them is in the
+    // document lane.
     expect(absent.filter((c) => DOCUMENT_LANE.includes(c))).toEqual([]);
   });
 
@@ -1003,7 +1071,7 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     expect(unresolvedIn(/^\/src\/data\/mockRfqs\.ts$/)).toEqual([]);
   });
 
-  it('but the GR gate STILL cannot be a master check — the 2B-4 gate, measured', () => {
+  it('⚠️ THE 2B-4 GATE OPENS — the GR runtime input is now 100% master-resolvable', () => {
     // The distinction the capability headline hides, and the reason
     // `bpomApplicable` is authored-not-wired at 2B-4a. The GR FIXTURE lane
     // resolves completely (above). The GR RUNTIME INPUT does not: the wizard is
@@ -1011,19 +1079,37 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // one of those codes is in the master. A fail-closed rule keyed on master
     // membership would refuse essentially every received line today.
     //
-    // ⚠️ THE GATE GOT WIDER AT 2B-4a, NOT NARROWER. Nine unresolvable codes
-    // became twelve when the census reached the field they were hiding in — so
-    // the batch that authored the mechanism also enlarged the population that
-    // must be dealt with before the mechanism may be wired. 2B-4b inherits
-    // twelve.
-    expect(UNDECLARED_SPACE.filter((c) => c in MATERIAL_MASTER)).toEqual([]);
-    // ⚠️ CORRECTED AT 2B-5a — THE REGULATORY BLAST RADIUS IS **SEVEN**, and the
-    // register said nine and then twelve. The census POPULATION and the
-    // REGULATORY EXPOSURE are DIFFERENT QUANTITIES, and conflating them is what
-    // produced the error: the wizard is fed ASNs, so only ASN LINE codes can
-    // reach it. The chase two and the storefront pointers never could.
-    expect(UNDECLARED_SPACE).toHaveLength(7);
-    expect(CODES.filter((c) => !(c in MATERIAL_MASTER))).toHaveLength(9);
+    // ⚠️ INVERTED AT 2B-5b-ii. THE GATE WAS THE ONE PRECONDITION 2B-4b HAD, AND
+    // IT IS DISCHARGED: every code `asnStore` can hand the wizard is in the
+    // master, so a fail-closed rule keyed on master membership would refuse
+    // NOTHING that is legitimately received. The seven that would have been
+    // refused were authored, not exempted.
+    const grRuntimeCodes = [
+      ...new Set(MOCK_ASNS.flatMap((a) => a.lineItems.map((l) => l.materialCode))),
+    ].sort();
+    expect(grRuntimeCodes).toHaveLength(7);
+    expect(grRuntimeCodes.filter((c) => !(c in MATERIAL_MASTER))).toEqual([]);
+    expect(UNDECLARED_SPACE).toEqual([]);
+    //
+    // ⚠️ AND WHAT REMAINS OPEN IS A DIFFERENT DEFECT WEARING THE SAME NUMBER.
+    // `BPOM-OFF-BY-SPACE-01` does NOT close here. Its blast radius was SEVEN —
+    // corrected at 2B-5a from nine and twelve, because the census POPULATION
+    // and the REGULATORY EXPOSURE are different quantities. Those same seven
+    // lines still receive the wrong answer; they simply no longer receive it
+    // for the reason the finding is NAMED after. The space is gone; the
+    // fail-open is not. **A FINDING NAMED AFTER ITS CAUSE OUTLIVES ITS CAUSE**,
+    // and the two ASN lines below are the proof — measured, not narrated.
+    const master = (c: string) => MATERIAL_MASTER[c];
+    expect(master('RM-EMUL-9440').bpomApplicable).toBe('APPLICABLE');
+    expect(master('RM-PSTN-7150').bpomApplicable).toBe('UNDETERMINED');
+    // `inferBpom`'s prefix rule, restated: neither fires.
+    expect(['RM-EMUL-9440', 'RM-PSTN-7150'].filter(
+      (c) => c.startsWith('AI-') || c.startsWith('FR-'),
+    )).toEqual([]);
+    // So the master now DISAGREES WITH THE WIZARD IN WRITING on one row and
+    // records an explicit ABSENCE OF DETERMINATION on another, and the wizard
+    // reads neither field. That is what 2B-4b wires.
+    expect(CODES.filter((c) => !(c in MATERIAL_MASTER))).toEqual(['MAT-10046', 'MAT-10089']);
   });
 });
 
@@ -1038,11 +1124,21 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
     const firing = CODES.filter(wouldRequireBpom);
     // `AI-CENT-6900` is NEW to this pin — not because anything changed, but
     // because it lives in the RFQ lane the old scope could not see.
+    // ⚠️ SIXTEEN → NINETEEN AT 2B-5b-ii, and this is the ONE batch of the whole
+    // arc where the firing set MOVES. Three of the seven authored rows took
+    // `AI-`/`FR-` codes, so the prefix rule now fires on them. **THE MOVEMENT IS
+    // A CONSEQUENCE OF THE NAMING, NOT OF A REGULATORY DECISION** — nobody ruled
+    // that these three lots need a BPOM check; they were given codes whose first
+    // three characters the wizard happens to parse. That is the cleanest
+    // available statement of what is wrong with `inferBpom`: the same authoring
+    // act moved a compliance outcome by choosing a mnemonic.
     expect(firing).toEqual([
       'AI-CENT-6900',
       'AI-HYALU-6610',
+      'AI-HYALU-6615', // ← 2B-5b-ii (was MAT-55031, not firing)
       'AI-NIAC-6601',
       'AI-NIAC-6605',
+      'AI-NIAC-6612', // ← 2B-5b-ii (was MAT-55022, not firing)
       'AI-PANTO-6640',
       'AI-PEPTIDE-8801',
       'AI-RETA-6750',
@@ -1052,18 +1148,75 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
       'FR-EMIN-4420',
       'FR-MKOV-5510',
       'FR-MKOV-5520',
+      'FR-ROUD-4470', // ← 2B-5b-ii (was MAT-88201, not firing)
       'FR-WARD-4410',
       'FR-WARD-4430',
       'FR-WARD-4440',
     ]);
   });
 
-  it('EVERY code in the undeclared space silently escapes the check', () => {
-    // ⚠️ THE LIVE DEFECT. `MOCK_ASNS` (`supplierShipments.ts`) seeds `asnStore`,
-    // which feeds `GRInspectionWizard.buildDraftFromAsn` (`:150-165`), which sets
-    // `bpomRequired: inferBpom(li.materialCode)`. Not one of these nine fires.
-    // The wizard renders that today — no code-space change required.
-    expect(UNDECLARED_SPACE.filter(wouldRequireBpom)).toEqual([]);
+  it('⚠️ the firing set moved by THREE, and every one of the seven is accounted for', () => {
+    // The dispatch required the movement reported LINE BY LINE and stopped if it
+    // moved in a direction that could not be explained. Asserted here rather
+    // than described in a PR body, one row per authored code, with the master's
+    // own determination beside the prefix rule's guess.
+    const rows = [
+      // was          → now              prefix fires   master says
+      ['MAT-88201', 'FR-ROUD-4470', true, 'APPLICABLE'],
+      ['MAT-55022', 'AI-NIAC-6612', true, 'APPLICABLE'],
+      ['MAT-55031', 'AI-HYALU-6615', true, 'APPLICABLE'],
+      ['MAT-88207', 'PK-PETB-8804', false, 'NOT_APPLICABLE'],
+      ['MAT-77014', 'PK-ALCP-2450', false, 'NOT_APPLICABLE'],
+      ['MAT-30110', 'RM-PSTN-7150', false, 'UNDETERMINED'],
+      ['MAT-40220', 'RM-EMUL-9440', false, 'APPLICABLE'],
+    ] as const;
+    for (const [was, now, fires, says] of rows) {
+      expect(CODES, `${was} is retired`).not.toContain(was);
+      expect(wouldRequireBpom(was), `${was} never fired`).toBe(false);
+      expect(wouldRequireBpom(now), `${now} prefix`).toBe(fires);
+      expect(MATERIAL_MASTER[now].bpomApplicable, `${now} master`).toBe(says);
+    }
+    expect(rows.filter(([, , fires]) => fires)).toHaveLength(3);
+    expect(CODES.filter(wouldRequireBpom)).toHaveLength(19);
+
+    // ⚠️ THE FOUR ROWS WHERE THE TWO MECHANISMS NOW DISAGREE IN WRITING, which
+    // is the state 2B-4b inherits and strictly better than the state before:
+    //   · `PK-PETB-8804` / `PK-ALCP-2450` — prefix false, master NOT_APPLICABLE.
+    //     AGREE. Packaging genuinely needs no lot check.
+    //   · `RM-PSTN-7150` — prefix says false, master says UNDETERMINED. The
+    //     prefix ASSERTS A NEGATIVE where the master records that NOBODY RULED.
+    //   · `RM-EMUL-9440` — prefix says false, master says APPLICABLE, **on
+    //     `doc-201`, a BPOM Notification linked to this line's own parent PO.**
+    //     The wizard reads the prefix and not the field.
+    const disagree = rows.filter(
+      ([, now, fires]) =>
+        (MATERIAL_MASTER[now].bpomApplicable === 'APPLICABLE') !== fires ||
+        MATERIAL_MASTER[now].bpomApplicable === 'UNDETERMINED',
+    );
+    expect(disagree.map(([, now]) => now)).toEqual(['RM-PSTN-7150', 'RM-EMUL-9440']);
+  });
+
+  it('⚠️ the ESCAPE BY SPACE is over — and the fail-open is not', () => {
+    // ⚠️ INVERTED, NOT DELETED. This used to say: `MOCK_ASNS` seeds `asnStore`,
+    // which feeds `GRInspectionWizard.buildDraftFromAsn` (`:150-165`), which
+    // sets `bpomRequired: inferBpom(li.materialCode)`, and NOT ONE of the seven
+    // fired. The space is empty, so that sentence is no longer true.
+    expect(UNDECLARED_SPACE).toEqual([]);
+    // What IS still true, measured over the runtime input rather than the
+    // census: FOUR of the seven received lines still get `false`, and for two of
+    // them the master says otherwise IN WRITING.
+    const runtime = [...new Set(MOCK_ASNS.flatMap((a) => a.lineItems.map((l) => l.materialCode)))];
+    const silent = runtime.filter((c) => !wouldRequireBpom(c)).sort();
+    expect(silent).toEqual(['PK-ALCP-2450', 'PK-PETB-8804', 'RM-EMUL-9440', 'RM-PSTN-7150']);
+    // Of those four, two are correct (packaging) and two are not.
+    expect(silent.filter((c) => MATERIAL_MASTER[c].bpomApplicable === 'NOT_APPLICABLE')).toEqual([
+      'PK-ALCP-2450',
+      'PK-PETB-8804',
+    ]);
+    expect(silent.filter((c) => MATERIAL_MASTER[c].bpomApplicable !== 'NOT_APPLICABLE')).toEqual([
+      'RM-EMUL-9440',
+      'RM-PSTN-7150',
+    ]);
   });
 
   it('two fragrance concentrates, opposite regulatory treatment', () => {
@@ -1075,19 +1228,35 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
       meaning: meaningsOf(code)[0] ?? null,
       bpomRequired: wouldRequireBpom(code),
     });
-    expect(rendered('MAT-88201')).toEqual({
-      code: 'MAT-88201',
-      meaning: 'Fragrance concentrate – Rose Oud',
-      bpomRequired: false, // ← the fail-open
+    // ⚠️ THE PAIR NOW AGREES — AND THE REASON IS WORSE THAN THE DISAGREEMENT.
+    // `MAT-88201` was authored as `FR-ROUD-4470` at 2B-5b-ii, so the two
+    // fragrance concentrates finally receive the same regulatory treatment.
+    // **NOBODY DECIDED THAT.** No compliance rule was consulted, no
+    // determination was made about rose-oud concentrate; a mnemonic beginning
+    // `FR-` was chosen because its group is MG-05, and the wizard parses the
+    // first three characters. The 2B-0 pair proved a prefix rule fails open on
+    // whole vocabularies; the same pair now proves the other half:
+    // **A PREFIX RULE DOES NOT ONLY FAIL OPEN. IT ALSO SUCCEEDS BY ACCIDENT,
+    // AND THE TWO ARE INDISTINGUISHABLE FROM THE OUTPUT.**
+    expect(rendered('FR-ROUD-4470')).toEqual({
+      code: 'FR-ROUD-4470',
+      meaning: 'Fragrance Concentrate — Rose Oud',
+      bpomRequired: true, // ← right answer, no reasoning behind it
     });
     expect(rendered('FR-WARD-4440')).toEqual({
       code: 'FR-WARD-4440',
       meaning: 'Wardah EDP Parfum Concentrate — Rose & Oud',
       bpomRequired: true,
     });
-    // THE SHARPENED RULE, pinned as a sentence because it is the transferable
-    // part: A PREFIX RULE DOES NOT FAIL OPEN ON UNKNOWN PREFIXES ONLY. IT FAILS
-    // OPEN ON ENTIRE VOCABULARIES.
+    // The master, which DID have a rule, agrees on both — so this row is
+    // correct twice over and the wizard still cannot tell you why.
+    expect(MATERIAL_MASTER['FR-ROUD-4470'].bpomApplicable).toBe('APPLICABLE');
+    expect(MATERIAL_MASTER['FR-WARD-4440'].bpomApplicable).toBe('APPLICABLE');
+    // THE ORIGINAL SENTENCE STANDS AND IS STILL THE TRANSFERABLE PART: A PREFIX
+    // RULE DOES NOT FAIL OPEN ON UNKNOWN PREFIXES ONLY. IT FAILS OPEN ON ENTIRE
+    // VOCABULARIES. `RM-PSTN-7150` and `RM-EMUL-9440` are what is left of it.
+    expect(rendered('RM-EMUL-9440').bpomRequired).toBe(false);
+    expect(MATERIAL_MASTER['RM-EMUL-9440'].bpomApplicable).toBe('APPLICABLE');
   });
 
   it('2B-4a WIDENED THE CENSUS BY THREE CODES AND MOVED THE FIRING SET BY ZERO', () => {
@@ -1101,14 +1270,19 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
     //   · `bpomApplicable` is a MASTER FIELD and `inferBpom` reads a STRING.
     //     Disjoint mechanisms; see `bpomApplicability.test.ts` for the pin that
     //     the wizard still runs the prefix rule.
+    //
+    // ⚠️ AND THE STANDING ASSERTION FINALLY BREAKS AT 2B-5b-ii — DELIBERATELY,
+    // ON A BATCH THAT SAID IT WOULD. Four batches moved the firing set by zero
+    // because adoption and authoring write the MASTER while the predicate reads
+    // a PREFIX. 2B-5b-ii is the first to hand codes NEW PREFIXES, and the set
+    // moved 16 → 19. **THAT IS NOT A COUNTEREXAMPLE TO THE RULE; IT IS THE RULE
+    // AT ITS SHARPEST.** The mechanism that a regulatory outcome should depend
+    // on did not change. The mnemonic did.
     const firing = CODES.filter(wouldRequireBpom);
-    expect(firing).toHaveLength(16);
+    expect(firing).toHaveLength(19);
     expect(['MAT-10046', 'MAT-10089'].filter(wouldRequireBpom)).toEqual([]);
-    // ⚠️ AND THE FAIL-OPEN GOT BIGGER. `BPOM-OFF-BY-SPACE-01` was nine codes
-    // silently escaping the check; it is TWELVE. The widening did not create
-    // the defect — it measured three more of it.
     const absent = CODES.filter((c) => !(c in MATERIAL_MASTER));
-    expect(absent).toHaveLength(9);
+    expect(absent).toEqual(['MAT-10046', 'MAT-10089']);
     expect(absent.filter(wouldRequireBpom)).toEqual([]);
   });
 
@@ -1119,17 +1293,19 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
     // master-resolvable changed nothing regulatory — which is exactly why
     // `bpomApplicable` remains the 2B-4 gate's business and not theirs.
     const firing = CODES.filter(wouldRequireBpom);
-    expect(firing.filter((c) => c in MATERIAL_MASTER)).toHaveLength(16);
+    expect(firing.filter((c) => c in MATERIAL_MASTER)).toHaveLength(19);
     // ⚠️ EVERY FIRING CODE IS NOW MASTER-RESOLVABLE — `AI-CENT-6900` was the
-    // last one outside, and 2B-3 authored it. THE SET DID NOT MOVE; only what
-    // the master can say about its members did. That is the cleanest available
-    // statement of why the prefix rule is not a master rule: total coverage of
-    // the firing set changed nothing about which codes fire, because the master
-    // is not consulted at all.
+    // last one outside, and 2B-3 authored it. That property survives 2B-5b-ii's
+    // three new members, which arrived master-resolvable by construction.
     expect(firing.filter((c) => !(c in MATERIAL_MASTER))).toEqual([]);
-    // The fail-open that IS live remains the `MAT-*` one: none of those nine
-    // fires, and none of them is resolvable either.
-    expect(UNDECLARED_SPACE.filter(wouldRequireBpom)).toEqual([]);
+    // ⚠️ AND THE CONTRAST IS THE POINT OF KEEPING THIS TEST. 2B-2 and 2B-3 made
+    // THIRTY codes master-resolvable and moved the firing set by ZERO. 2B-5b-ii
+    // made SEVEN resolvable and moved it by THREE. The difference is not how
+    // many codes, or how much evidence, or which lane — **it is whether the
+    // authored code's first three characters happened to be `AI-` or `FR-`.**
+    // Two batches of careful adoption changed nothing regulatory; one naming
+    // decision changed three lots' treatment.
+    expect(UNDECLARED_SPACE).toEqual([]);
   });
 
   it('no code B2a introduced changes its regulatory class', () => {

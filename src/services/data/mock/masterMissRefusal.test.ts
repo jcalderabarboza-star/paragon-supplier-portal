@@ -29,6 +29,9 @@ import { resolvePolicyHook } from '../../transitions/policies';
 import { POLICY_HOOKS } from '../../transitions/policyHooks';
 import { getTransition } from '../../transitions';
 import type { ASN, QueryScope } from '../types';
+// 2B-5b-ii — the GR RUNTIME input, so the 'it resolves' claim is DERIVED from
+// what the wizard is actually fed rather than from three codes typed by hand.
+import { MOCK_ASNS } from './fixtures/supplierShipments';
 import type { InspectionResult } from '../../../data/mockGoodsReceipts';
 
 const svc = new MockCommandService();
@@ -47,13 +50,15 @@ describe('the straddle these gates sit on (MASTER-STRADDLE-01)', () => {
     // code — as the witness. 2B-2 ADOPTED that witness and the straddle went
     // 30 → 5. 2B-3 authored the remaining five, and it is now ZERO codes wide:
     // every code the declared document lane names, the master resolves.
-    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(35);
+    // ⚠️ 42 AT 2B-5b-ii — seven ASN codes authored. The straddle stays ZERO;
+    // what changed is that the UNDECLARED lane stopped straddling too.
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(42);
     expect(isKnownMaterial('PK-PETB-8801')).toBe(true); // ← was false until 2B-2
     expect(isKnownMaterial('RM-EMUL-3310')).toBe(true); // the original overlap
     expect(isKnownMaterial('PK-PETB-8803')).toBe(true); // ← was false until 2B-3
   });
 
-  it('but it is NOT CLOSED — ONE population still refuses, and it is the live one', () => {
+  it('⚠️ AND NOW IT IS CLOSED — the live population resolves at 2B-5b-ii', () => {
     // THE DISTINCTION THAT KEEPS THIS FILE HONEST, and 2B-3 sharpens it by
     // removing the half that was never operative. Two populations used to
     // refuse; one does now:
@@ -61,21 +66,34 @@ describe('the straddle these gates sit on (MASTER-STRADDLE-01)', () => {
     //   · the RFQ lane's five mute codes — AUTHORED at 2B-3, so they resolve.
     //     They were also the population that never mattered to this gate: an
     //     RFQ material is not a received line, and the GR wizard never saw one.
-    //   · the nine `MAT-*` codes of `paragon.asn_chase_lane` — a DIFFERENT
-    //     space, declared at 2B-1 and booked for retirement. UNTOUCHED.
+    //   · the `MAT-*` codes of `paragon.asn_chase_lane` — a DIFFERENT space,
+    //     declared at 2B-1 and booked for retirement.
     //
-    // The second was always the operative one, and it is now the ONLY one:
-    // `MOCK_ASNS` seeds `asnStore`, which feeds the GR inspection wizard. So the
-    // code a receipt actually arrives carrying is still one the master cannot
-    // name — after three adoption batches and 30 new master rows.
+    // The second was always the OPERATIVE one: `MOCK_ASNS` seeds `asnStore`,
+    // which feeds the GR inspection wizard, so the code a receipt actually
+    // arrives carrying was the one the master could not name — through three
+    // adoption batches and thirty new master rows.
+    //
+    // ⚠️ **INVERTED AT 2B-5b-ii. IT RESOLVES.** The seven were authored as
+    // canonical rows and the ASN lines took those codes. A fail-closed master
+    // gate on the GR path would now refuse NOTHING that is legitimately
+    // received — which was the ONE precondition `2B-4b` had.
     for (const authoredRfqCode of ['AI-CENT-6900', 'PK-ALCP-2441', 'PK-PETB-8825']) {
       expect(isKnownMaterial(authoredRfqCode), `${authoredRfqCode} was authored at 2B-3`).toBe(
         true,
       );
     }
-    for (const chaseLaneCode of ['MAT-88201', 'MAT-77014', 'MAT-55022']) {
-      expect(isKnownMaterial(chaseLaneCode), `${chaseLaneCode} is a third space`).toBe(false);
+    for (const retired of ['MAT-88201', 'MAT-77014', 'MAT-55022']) {
+      expect(isKnownMaterial(retired), `${retired} names nothing now`).toBe(false);
     }
+    for (const authored of ['FR-ROUD-4470', 'PK-ALCP-2450', 'AI-NIAC-6612']) {
+      expect(isKnownMaterial(authored), `${authored} authored at 2B-5b-ii`).toBe(true);
+    }
+    // Derived rather than listed, so a code re-entering the runtime input that
+    // the master cannot name turns this red wherever it comes from.
+    const runtime = [...new Set(MOCK_ASNS.flatMap((a) => a.lineItems.map((l) => l.materialCode)))];
+    expect(runtime).toHaveLength(7);
+    expect(runtime.filter((c) => !isKnownMaterial(c))).toEqual([]);
   });
 
   // CP-2 · B2a — the overlap's CHARACTER, unchanged by 2B-2 and now covering 28

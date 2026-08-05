@@ -179,16 +179,31 @@ describe('2B-5b-i — the ASN lane resolves', () => {
       const po = poOf(asn);
       return po !== undefined && !po.lineItems.some((l) => l.materialCode === line.materialCode);
     });
+    // ⚠️ THE INVERTED PIN 5b-i PROMISED WOULD GO RED, AND IT DID — BUT NOT THE
+    // WAY 5b-i EXPECTED, AND THAT IS WORTH MORE THAN IF IT HAD. 5b-i wrote:
+    // *"axis 4 is open for ONE reason — every failing line's code is
+    // master-absent."* 2B-5b-ii authored all seven, so **not one of them is
+    // master-absent any more** and the stated reason is FALSE. The axis is
+    // still open at 7 of 7.
+    //
+    // **AUTHORING A MASTER ROW MAKES A CODE RESOLVABLE. IT DOES NOT PUT THE
+    // CODE ON THE PARENT PURCHASE ORDER.** Those are different facts, and this
+    // pin conflated them for exactly one batch. The remaining gap is a PO-lane
+    // gap: no sup-007 order exists for a fragrance, a 50 ml bottle, an
+    // aluminium closure or an active emulsion, and authoring one is a
+    // procurement-document act neither 5b-i nor 5b-ii was chartered for.
     expect(failing.map(({ line }) => line.materialCode).sort()).toEqual([
-      'MAT-30110',
-      'MAT-40220',
-      'MAT-55022',
-      'MAT-55031',
-      'MAT-77014',
-      'MAT-88201',
-      'MAT-88207',
+      'AI-HYALU-6615',
+      'AI-NIAC-6612',
+      'FR-ROUD-4470',
+      'PK-ALCP-2450',
+      'PK-PETB-8804',
+      'RM-EMUL-9440',
+      'RM-PSTN-7150',
     ]);
-    expect(failing.filter(({ line }) => line.materialCode in MATERIAL_MASTER)).toEqual([]);
+    // The 5b-i reason, RE-ASSERTED IN THE NEGATIVE so the correction is a fact
+    // in the file rather than a note in a PR body.
+    expect(failing.filter(({ line }) => !(line.materialCode in MATERIAL_MASTER))).toEqual([]);
   });
 
   it('`PO-2025-00131` is authored WITHOUT a line, and that gap is deliberate', () => {
@@ -252,11 +267,18 @@ describe('2B-5b-i — the ASN lane resolves', () => {
     // that PO's ASN carries `MAT-40220`; `inferBpom('MAT-40220')` is false.
     // The tree ALREADY STATES that a BPOM registration governs this supply.
     const asn = MOCK_ASNS.find((a) => a.poReference === 'PO-2025-00131');
-    expect(asn?.lineItems.map((l) => l.materialCode)).toEqual(['MAT-40220']);
+    // ⚠️ `MAT-40220` WAS AUTHORED AS `RM-EMUL-9440` AT 2B-5b-ii, AND THE FINDING
+    // GOT STRONGER RATHER THAN CLOSING. At 5b-i the tree merely IMPLIED the
+    // wizard was wrong (a BPOM document governed a supply the wizard waved
+    // through). The master now SAYS SO: `bpomApplicable: 'APPLICABLE'`, the only
+    // row in 42 whose value rests on a document rather than a class default —
+    // and `inferBpom` still reads the prefix and returns false.
+    expect(asn?.lineItems.map((l) => l.materialCode)).toEqual(['RM-EMUL-9440']);
+    expect(MATERIAL_MASTER['RM-EMUL-9440'].bpomApplicable).toBe('APPLICABLE');
     // Restated, not imported — the same deliberate copy as the census pin, so
     // the day the predicate and this pin stop agreeing is detectable.
     const wouldRequireBpom = (code: string) => code.startsWith('AI-') || code.startsWith('FR-');
-    expect(wouldRequireBpom('MAT-40220')).toBe(false);
+    expect(wouldRequireBpom('RM-EMUL-9440')).toBe(false);
     // `BPOM-OFF-BY-SPACE-01` is amended in `docs/findings.md` to say so. This
     // batch has ZERO regulatory surface: `inferBpom` is untouched and nothing
     // is wired. 5b-ii and then 2B-4b close it, at seven.

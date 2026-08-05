@@ -121,9 +121,33 @@ describe('2B-1 · R-2 — the feedstock group, declared ahead of its members', (
     }
     // Derived the other way too, so the group cannot quietly collect a member a
     // later batch never argued for.
-    expect(
-      Object.values(MATERIAL_MASTER).filter((m) => m.materialGroup === 'MG-10'),
-    ).toHaveLength(5);
+    //
+    // ⚠️ SIX AT 2B-5b-ii, AND THE SIXTH WAS ARGUED FOR. `RM-PSTN-7150` (RBD Palm
+    // Stearin) joins by R-2's OWN STATED CRITERION rather than by resembling its
+    // neighbours: a palm fraction is *"an INPUT TO the materials in MG-01..06,
+    // not a member of them"*, and `RM-PALM-7100` is already here. **THE TEST OF
+    // A GROUP DECLARED AHEAD OF ITS MEMBERS IS WHETHER A LATER BATCH CAN APPLY
+    // IT WITHOUT RE-ARGUING IT**, and this is the first one to try. Named
+    // explicitly below so a seventh member still cannot arrive silently.
+    const mg10 = Object.values(MATERIAL_MASTER)
+      .filter((m) => m.materialGroup === 'MG-10')
+      .map((m) => m.materialCode)
+      .sort();
+    expect(mg10).toEqual([
+      'RM-COCO-8200',
+      'RM-LAURIC-7200',
+      'RM-MYRST-7310',
+      'RM-PALM-7100',
+      'RM-PSTN-7150',
+      'RM-STEAR-7300',
+    ]);
+    // ⚠️ AND THE NEAR-MISS THAT MG-10 DOES **NOT** ABSORB, pinned beside it:
+    // `RM-STEAR-7300` is *Stearic Acid*, a fatty acid; `RM-PSTN-7150` is a
+    // triglyceride fraction. Four shared letters, two substances. They are both
+    // in MG-10 because both are feedstocks — NOT because they are the same
+    // thing, and the labels are asserted so nobody later merges them.
+    expect(MATERIAL_MASTER['RM-STEAR-7300'].label).toBe('Stearic Acid — Double Pressed (Halal)');
+    expect(MATERIAL_MASTER['RM-PSTN-7150'].label).toBe('RBD Palm Stearin — Specialty Fat');
   });
 
   it('MG-10 sits in the band the numbering already implied', () => {
