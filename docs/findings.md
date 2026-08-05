@@ -883,7 +883,7 @@ of them is an identity collision.**
 | **DERIVED-OVER-A-CHOSEN-SCOPE-01** *(refs @ `a009db4` — **the class, and it is `CENSUS-MUST-DERIVE-01` turned on its author one level up**)* | **DERIVING A POPULATION FROM A HAND-PICKED SET OF SOURCES IS STILL A SHAPE ASSUMPTION, ONE LEVEL UP.** `materialIdentity.test.ts` built `REFS` by importing FOUR fixture modules **by name**. The population was derived; the LANE SET was a literal — and an import list reads like a fact rather than a claim, which is exactly why nobody re-read it. **What it cost, concretely: `mockRfqs.ts` was not in the list, so the file's own assertion that the B2a-freed codes were "no longer squatted on by the document lane" PASSED WHILE `RM-EMUL-3310` SAT AT `mockRfqs.ts:113`.** The general form: **AN ASSERTION THAT A THING IS ABSENT IS ONLY AS STRONG AS THE SCOPE IT SEARCHED.** **The second half is worse than the miss and is the part worth carrying:** `materialIds` is a bare `string[]` and carries NO meaning, so a code reached only through it **cannot contradict anything** — both directional checks were STRUCTURALLY BLIND to that lane. `RM-EMUL-3310` had not left the document lane; it had left the part of the lane capable of disagreeing. **A clean census is not evidence of a clean tree if the dirty half is mute by construction.** | **FIXED IN THIS BATCH.** The lane set now DERIVES: a glob over every non-test module in `src/`, walked generically for the code-bearing field names the TYPE SYSTEM declares. **And deliberately NOT a glob of `src/data/` — A GLOB OF ONE DIRECTORY IS THE SAME HAND-PICK ONE DIRECTORY UP**, which is how the third space stayed invisible. Backed by a RAW-SOURCE guard that does not depend on the walk reaching anything: every literal written under a code-bearing key in any non-test `.ts` **or `.tsx`** source must appear in the derived population. **The ONE exclusion — test modules — is named and argued in the file header rather than left in a regex** (spoof codes like `RM-SPOOF` / `PK-UITEST-1` exist to be unresolvable; folding them in would make every census report a tree that does not exist). Mutation-verified: narrowing the lane set back to the B2a four fails **11** tests; planting a code literal in a `.tsx` the walk never imports fails the raw-source guard. |
 | **MAT-SPACE-UNDECLARED-01** *(refs @ `a009db4` — **the headline finding of the batch**)* | **A THIRD PARAGON CODE SPACE EXISTS AND NO DECLARATION NAMES IT — SO IT IS COVERED BY NONE OF THE RULES WRITTEN ABOUT THE TWO THAT WERE.** Nine codes in two modules: `MAT-30110` · `MAT-40220` · `MAT-55022` · `MAT-55031` · `MAT-77014` · `MAT-88201` · `MAT-88207` (`services/data/mock/fixtures/supplierShipments.ts`) and `MAT-10234` · `MAT-20500` (`services/channel/outboundFixtures.ts`). It is **not** in `C8-MASTER-DECL`, which declared `src/data/mock*.ts` as THE non-master space; **not** in `MOCK-RETIREMENT-01`'s blast radius, which is scoped to the same glob; **not** in C9 §5, which builds the whole `spaceId` argument on Paragon holding exactly **TWO** spaces; and — until this batch — **not** in the pin. `MOCK_ASNS` there seeds `asnStore`, so these codes reach a rendered surface. **THE CONSEQUENCE FOR 2B, STATED PLAINLY: 30 IS THE DOCUMENT LANE'S ANSWER, NOT THE TREE'S. THE TREE'S MASTER-ABSENT POPULATION IS 39 (30 + 9).** | **FILED — a DECLARATION is owed before anything else touches it, and that is `2B-1`'s third question.** Retired, adopted, or named as a legitimate third space — each answer changes something different (`MOCK-RETIREMENT-01`'s scope, 2B's input list, C9 §5's per-party count and the `MaterialCodeSpace` seed). **NOT ANSWERED HERE**, per the dispatch. Pinned in `materialIdentity.test.ts` by MODULE, never by prefix — `materialCode` is contractually opaque, so membership of a space is decided by which file declares the code, and the shared `MAT-` prefix is authoring convention, not the test. |
 | **BPOM-OFF-BY-SPACE-01** *(refs @ `a009db4` — **LIVE, NOT LATENT; strictly worse than what [[INFERBPOM-REGULATORY-01]] filed**)* | **EVERY CODE IN THE UNDECLARED SPACE SILENTLY ESCAPES THE BPOM LOT CHECK TODAY, AND THE WIZARD RENDERS IT.** `MOCK_ASNS` seeds `asnStore`, which feeds `GRInspectionWizard.buildDraftFromAsn` (`:150-165`), which sets `bpomRequired: inferBpom(li.materialCode)` — and `inferBpom` (`:129-131`) fires on `AI-` / `FR-` only. **Not one of the nine fires.** The pair that makes it impossible to argue with: **`MAT-88201` "Fragrance concentrate – Rose Oud" → `bpomRequired: false`; `FR-WARD-4440` "Wardah EDP Parfum Concentrate — Rose & Oud" → `true`. Two fragrance concentrates, opposite regulatory treatment, decided entirely by WHICH FIXTURE SPACE THE CODE WAS AUTHORED IN.** `INFERBPOM-REGULATORY-01`'s disposition predicted that a code-space **CHANGE** would switch a compliance check off. **No change is required. It is already off across a whole live vocabulary.** THE SHARPENED RULE: **A PREFIX RULE DOES NOT FAIL OPEN ON UNKNOWN PREFIXES ONLY. IT FAILS OPEN ON ENTIRE VOCABULARIES.** | **FILED AT FULL WEIGHT; `INFERBPOM-REGULATORY-01` AMENDED IN PLACE to point here.** Pinned three ways in `materialIdentity.test.ts`: the firing set over the derived population (now 16 — `AI-CENT-6900` joins, not because anything changed but because the RFQ lane was invisible before), the assertion that no code in the undeclared space fires, and the two-concentrate pair rendered as the wizard renders it. **Its FIX is `D-COMP-BPOM` (ruled PROVISIONAL below) and it lands at `2B-4`, not here — see the `2B-4` GATE.** Sibling, already named inside `INFERBPOM-REGULATORY-01` and NOT re-opened: `inferHalal` reads the DESCRIPTION for the substring `halal`, so those same nine lines are `halalRequired: false` too. |
-| **MG-COLLISION-21-01** *(refs @ `a009db4` — **`ONE CODE, ONE MEANING` failing on the GROUP vocabulary, with one meaning in RATIFIED SEED DATA**)* | **`MG-21` MEANS TWO DIFFERENT THINGS.** The master assigns `PK-CAPF-8820` *Flip-Top Cap 24mm* to `materialGroup: 'MG-21'`, commented `// closures` (`sdc/fixtures.ts:93-99`). The should-cost taxonomy declares **`MG-21 · Glass packaging`**, sole member `sc-glass-bottle`, `materialClass: 'PM_GLASS'` (`commodityBaskets.ts:317`) — and puts caps/closures in **`MG-20`** (`sc-pp-cap`, `PM_PLASTIC`). So a plastic flip-top cap sits in the glass group, inside the ratified master. The two vocabularies agree on `MG-02` / `MG-03` / `MG-04` / `MG-20`; `MG-21` is the sole divergence, which is what makes it look like a typo rather than a reconciliation nobody performed. | **FILED — and it BLOCKS EVERY PACKAGING ADOPTION IN `2B-2` AND `2B-3`.** Adopting a packaging code means assigning a `materialGroup`; while `MG-21` carries two meanings, every such assignment encodes the contradiction again — seven packaging codes await adoption, so the cost of ruling late is seven wrong rows rather than one. **`2B-1`'s first question: which meaning survives.** If the master's does, the taxonomy moves; if the taxonomy's does, **a ratified seed row is edited**, which is not a refactor. Pinned in `materialIdentity.test.ts` so the block is visible from a test run and not only from a document — including an assertion that none of the seven is in the master yet. |
+| **MG-COLLISION-21-01** *(refs @ `a009db4` — **`ONE CODE, ONE MEANING` failing on the GROUP vocabulary, with one meaning in RATIFIED SEED DATA**)* | **`MG-21` MEANS TWO DIFFERENT THINGS.** The master assigns `PK-CAPF-8820` *Flip-Top Cap 24mm* to `materialGroup: 'MG-21'`, commented `// closures` (`sdc/fixtures.ts:93-99`). The should-cost taxonomy declares **`MG-21 · Glass packaging`**, sole member `sc-glass-bottle`, `materialClass: 'PM_GLASS'` (`commodityBaskets.ts:317`) — and puts caps/closures in **`MG-20`** (`sc-pp-cap`, `PM_PLASTIC`). So a plastic flip-top cap sits in the glass group, inside the ratified master. The two vocabularies agree on `MG-02` / `MG-03` / `MG-04` / `MG-20`; `MG-21` is the sole divergence, which is what makes it look like a typo rather than a reconciliation nobody performed. | **FILED — and it BLOCKS EVERY PACKAGING ADOPTION IN `2B-2` AND `2B-3`.** Adopting a packaging code means assigning a `materialGroup`; while `MG-21` carries two meanings, every such assignment encodes the contradiction again — seven packaging codes await adoption, so the cost of ruling late is seven wrong rows rather than one. **CLOSED AT 2B-1 (R-1): the TAXONOMY moved and the master stood — glass took `MG-25`, and `sc-pp-cap` moved to `MG-21` so the collision could not simply run in the other direction. The structural cause is filed separately as [[MG-REGISTRY-ABSENT-01]] and fixed by `sdc/materialGroups.ts`.** The original question was: If the master's does, the taxonomy moves; if the taxonomy's does, **a ratified seed row is edited**, which is not a refactor. Pinned in `materialIdentity.test.ts` so the block is visible from a test run and not only from a document — including an assertion that none of the seven is in the master yet. |
 | **INSTANCE-DATA-IN-A-TYPE-LABEL-01** *(refs @ `a009db4` — **its own class, not a note on two codes**)* | **A LOT AND A BATCH ARE INSTANCES, NOT TYPES.** Two document-lane meanings carry instance identifiers inside what a `2B-2` adoption would make a master label: `FR-WARD-4410` → *"Wardah Signature Floral Compound **— Lot A**"*, `FR-MKOV-5520` → *"Make Over Oud & Amber Accord **— Batch Q2-2025**"*. **Adopting these faithfully would make a batch number part of a material identity — permanently, in the master, on a code meant to outlive every batch of it.** It also sharpens under the PROVISIONAL `D-IDENTITY-GRAIN = SPECIFICATION`: a spec-grain key must name a purchasable item, and a lot is not a specification of one. **THE CAVEAT TO THE SPLIT'S OWN FRAMING, carried verbatim from the 2B pre-work report: "7a ratifies a stated meaning" is true for 23 of 25 — FOR THESE TWO, RATIFYING THE STATED MEANING IS EXACTLY THE WRONG ACT, AND ADOPTING IT FAITHFULLY IS HOW THE DEFECT BECOMES PERMANENT.** | **FILED — `2B-2` must TRIM before it adopts.** Both labels pinned, plus a DERIVED guard so the class cannot grow silently: any new fixture description carrying a lot/batch marker turns the pin red and names it. **Mutation-verified, and the probe taught something the finding did not say: trimming `— Lot A` in ONE lane fails BOTH the instance-data pin AND `ONE CODE, ONE MEANING` — because the other lanes still carry the untrimmed string. The trim must be COMPLETE, not partial, and the pin already enforces that.** |
 | **RECODE-ORPHANS-CLASSIFICATION-01** *(refs @ `a009db4`)* | **RE-CODING A MATERIAL MOVES ITS IDENTITY BUT NOT THE MAPS KEYED ON IT.** `commodityMaterialMap.ts:29-30` states *"The material codes on the left are the fixture RFQ materialIds"*. Measured against the RFQ lane today it is false: **`'PK-PETB-8810': 'sc-pet-bottle'` is a DEAD KEY** — B2a re-coded RFQ-2026-002 to `PK-PETB-8803`, and `PK-PETB-8810` is no longer any RFQ's materialId. The meaning that moved (`PK-PETB-8803`) has **no classification** and resolves `silent: 'unmapped'`; `PK-PETB-8825` and `PK-ALCP-2441` likewise. **Nothing failed, and that is the interesting part: the only consumer was already silent for an unrelated reason** — `PRICED-SURFACE-MASKED-01`'s PCS unit gate returns `unit-mismatch` for both the old key and the new one, so a capability regression hid behind a masking gate. | **FILED — NOT FIXED, and deliberately.** Re-keying the map is the thing `commodityMaterialMap.ts:16-22` already books to B2b, because seven of its eleven keys are master-absent and re-keying now would **settle 2B by implication**. The dead key is the same act on a code that is master-PRESENT, so it could be fixed here — it is not, because the header sentence and the key set should be corrected together by the batch that owns the map. **Whichever batch re-keys it must also true up that header sentence, which is `SEAM-DOC-DRIFT-01`'s shape inside a fixture header, introduced by the batch that was cleaning up identity.** |
 | **SCHEDULED-RUN-UNOBSERVED-01** *(refs @ `a009db4`; **sibling to [[NOTIFICATION-UNCONFIRMED-01]] — same shape, same rule: a mechanism is not proven by its own configuration**)* | **THE DAILY HALF OF CP-3a HAS NEVER BEEN OBSERVED TO FIRE.** `.github/workflows/gates.yml:28-32` declares `cron: '17 0 * * *'`. The workflow landed 2026-08-04 05:03 UTC, so the first scheduled opportunity was 2026-08-05 00:17 UTC. Checked at 01:00 UTC on 2026-08-05: the workflow's entire run history is **10 runs, every one of them `push` or `pull_request`. Zero `schedule`-event runs.** **Queueing delay and an unarmed schedule are INDISTINGUISHABLE from here** — GitHub delays cron under load and does not report that it did — so nothing is diagnosed and nothing is fixed. **The half of CP-3a that catches a clock-decay break with no commit involved is the half that has never run.** | **OPEN — closes ONLY when a run with `event: schedule` actually appears on `main`.** Not closable by re-reading the YAML: **a schedule that is correctly configured and a schedule that never fires produce identical evidence at the source**, which is precisely why `NOTIFICATION-UNCONFIRMED-01` refuses to accept a configured mechanism as a working one. Recorded against our own interest — CP-3a presented the daily run as a delivered capability, and it is delivered as *configuration*, not yet as *observed behaviour*. |
@@ -958,7 +958,7 @@ ride ONE next SHA and ONE new ratification. Nothing below is an amendment yet.
 | **P-2** | `D-COMP-BPOM` = master field, fails closed, `UNDETERMINED` admitted. Discharges **§7.3** once `inferBpom` retires. | §3 / §7.3 |
 | **P-3** | The §7.4 / §6.1a composition failure, carried forward from CP-3b. | §7 |
 | **D-2** | §6.4 states the document lane names **"34 distinct material codes"**. A derived measurement says **33**. **NOT CORRECTABLE IN PLACE — the number is inside ratified, pinned bytes**, so it is filed as a §7 ledger row for the next SHA rather than edited. | §7 ledger row |
-| **NEW-1** | **§5's per-party space count is factually wrong for Paragon: THREE spaces, not two** ([[MAT-SPACE-UNDECLARED-01]]). Note this **STRENGTHENS** the `spaceId`-is-permanent argument rather than weakening it — a party that cannot enumerate its own spaces is not a party about to collapse them to one. | §5 |
+| **NEW-1** | **§5's per-party space count is factually wrong for Paragon: THREE spaces, not two** ([[MAT-SPACE-UNDECLARED-01]]). Note this **STRENGTHENS** the `spaceId`-is-permanent argument rather than weakening it — a party that cannot enumerate its own spaces is not a party about to collapse them to one. **DECLARED AT 2B-1 (R-3) as `paragon.asn_chase_lane`, 9 codes, booked for retirement — so the §5 amendment now has a NAME to carry rather than a description.** | §5 |
 | **NEW-2** | §7.5 states *"the master holds 5 of the 35 codes that transact"*. That counts the document lane only; the tree's figure is **5 of 44**. | §7.5 |
 
 ### Constraints discharged, in writing
@@ -978,3 +978,140 @@ ride ONE next SHA and ONE new ratification. Nothing below is an amendment yet.
   red**).
 - **`2B-1`'s THREE QUESTIONS ARE NOT ANSWERED HERE**, per the dispatch. They are
   recorded above so the next dispatch inherits them stated, not re-derived.
+
+---
+
+## CP-2 · 2B-1 — THE VOCABULARY ADJUDICATION (refs @ `fe25a7b`)
+
+A ruling batch. **No code adoption — the 30 stay master-absent. No C9 byte.**
+**And no edit to `sdc/fixtures.ts`: R-1 as ruled required none**, which is
+recorded as a checked assertion rather than a claim (`materialGroups.test.ts`).
+
+### R-1 · `MG-21` — THE TAXONOMY MOVED, NOT THE MASTER
+
+**Ruled and built.** `MG-21` means **Closures** everywhere. `sc-glass-bottle`
+moved to a new **`MG-25 · Glass packaging`**. Reasoning on record, both halves
+operator-stated: **(a) the master is the DECLARED OWNER of material identity and
+material group is part of identity — declared ownership decides, the same rule
+that settled every code collision in B2a; (b) the taxonomy's `MG-21` had ONE
+member while the master's is assigned to a real adopted code, so this is one
+edit against one member rather than a change to RATIFIED SEED DATA.**
+
+**THE CHECK THAT WAS ASKED FOR — MERGE OR STAY SPLIT: STAY SPLIT.** The
+argument, and it turns on an axis clash rather than a preference:
+
+- `MG-20 / 22 / 23 / 24` classify packaging by **SUBSTRATE** — and by form, since
+  `MG-20` is rigid plastic and `MG-24` flexible plastic. They map one-to-one onto
+  the taxonomy's own `materialClass` (`PM_PLASTIC` / `PM_METAL` / `PM_PAPER`).
+- `MG-21 = Closures` classifies by **FUNCTION**. That is a genuinely different
+  axis in the same number series.
+- **Merging is not available.** Folding closures into `MG-20` (rigid *plastic*)
+  breaks on the first metal one — and the tree already holds two:
+  **`PK-ALCP-2441` *"Aluminium Cap 24/410"*** (2B-3 queue) and **`MAT-77014`
+  *"Aluminium closure 24/410"*** (the third space). Under a pure substrate axis
+  they land in `MG-22`, away from the plastic closures they are sourced
+  alongside. **This decides real rows in 2B-3, not a hypothetical.**
+- Split it is — **but the split had to be COMPLETED, and the ruling as written
+  named only the glass move.** Moving glass alone leaves `sc-pp-cap`
+  (*"PP caps/closures"*) at `MG-20` while the master's flip-top cap sits at
+  `MG-21`: **`MG-COLLISION-21-01` running in the other direction, reduced but not
+  closed.** *"`MG-21` means closures everywhere"* dictates the second move, so
+  `sc-pp-cap` moved with it. **Flagged rather than assumed** — it is the one step
+  beyond the literal words of R-1.
+
+**`sc-airless-pump` was NOT moved, and that is an open question, not a ruling —
+see [[MG-AIRLESS-AXIS-01]].**
+
+### R-2 · THE FIVE OLEOCHEMICAL FEEDSTOCKS — `MG-10`
+
+**Ruled and built. Exact label: `Oleochemical feedstocks (upstream of the
+formulation grain)`.** Declared, **member-less until 2B-2** — deliberately: a
+group declared ahead of its members is a decision recorded; a group invented
+during an adoption is a decision smuggled.
+
+Reasoning on record: **SOMO gave us the grain boundary from their side — their
+master is a COSMETIC FORMULATION BOM holding what ENTERS a formula, and these sit
+UPSTREAM of that grain.** Corroborated independently inside our own tree: several
+of them already appear in the taxonomy as **ROOT BENCHMARKS**
+(`fatty_acid_coconut`, `cpo`, `myristic_acid`) — inputs *to* should-cost models
+rather than modelled materials. **Two independent readings agreeing is the
+evidence**, and forcing a feedstock into *"emollients / oils / esters"* would
+encode a category error in five rows to make a batch tidy.
+
+**⚠️ ONE DEPARTURE FROM THE LITERAL DISPATCH, FLAGGED: the number is `MG-10`,
+not the next free integer `MG-07`.** The tens digit already encodes KIND —
+`MG-0x` formulation ingredients, `MG-2x` packaging, with `07..19` an existing
+gap. `MG-07` would place a feedstock as the **seventh sort of ingredient**, one
+number along, when R-2's whole point is that it is one **level** along. `MG-10`
+opens the band the numbering already implied and is pinned as a band invariant.
+**If strict next-free is preferred, it is a one-line change** — say so and it
+moves.
+
+### R-3 · THE `MAT-*` SPACE — DECLARED, THEN BOOKED FOR RETIREMENT
+
+| Declaration | Value |
+| --- | --- |
+| **Space id** | **`paragon.asn_chase_lane`** |
+| **Name** | The ASN + chase lane |
+| **Party** | Paragon |
+| **Modules** | `src/services/data/mock/fixtures/supplierShipments.ts` (`MOCK_ASNS` → `asnStore`) · `src/services/channel/outboundFixtures.ts` (`OUTBOUND_REQUEST_SEED`) |
+| **Population** | 9 codes — `MAT-10234` · `MAT-20500` · `MAT-30110` · `MAT-40220` · `MAT-55022` · `MAT-55031` · `MAT-77014` · `MAT-88201` · `MAT-88207` |
+| **Liveness** | SIMULATED, like both other Paragon spaces |
+| **Status** | **REAL THIRD SPACE — declared. BOOKED FOR RETIREMENT, not retired.** |
+
+**Why declare rather than absorb or delete.** Declaring is free and immediately
+true; **retiring is a batch with a LIVE REGULATORY BLAST RADIUS**
+([[BPOM-OFF-BY-SPACE-01]]) — all nine codes escape the BPOM lot check today, so a
+code-space change there is a compliance change until proven otherwise. Exactly
+the reasoning that keeps [[MOCK-RETIREMENT-01]] investigation-first, now
+inherited explicitly rather than by assumption. **With a name and a row, every
+rule written about the other two spaces can be extended to it deliberately:
+`C8-MASTER-DECL` (non-master status), `MOCK-RETIREMENT-01` (retire, do not
+reconcile — a crosswalk between two spaces WE control carries no information),
+and `C8-ADOPTION` (any match with the document lane would be an ADOPTION, not a
+DISCOVERY — `MAT-77014` *"Aluminium closure 24/410"* and `PK-ALCP-2441`
+*"Aluminium Cap 24/410"* are the live temptation, and the answer is no).**
+
+**IT STRENGTHENS C9'S `spaceId` ARGUMENT AND THAT GOES IN THE QUEUE.** We told
+SOMO the field is permanent because neither party can collapse to one space. **We
+now have a third of our own — discovered, not designed.** A party that cannot
+enumerate its own spaces is not a party about to reduce them to one. → §5.
+
+### The two reports the dispatch asked for
+
+| Question | Answer |
+| --- | --- |
+| **`MG-20` / `MG-21` — merge or stay split?** | **STAY SPLIT**, and the split had to be completed (`sc-pp-cap` moved too). Full argument above: the two groups sit on different axes, and merging breaks on the aluminium closures already in the tree. |
+| **`RM-EMUL-9430` (Polysorbate 80) — `MG-01` or `MG-02`?** | **`MG-02`, and it is NOT genuinely ambiguous — no ruling needed.** Three converging grounds. **(1) Function:** `MG-01` is *"Surfactants / **cleansing actives** (lauric-oleochemical core)"* and its four members are SLES / SLS / CAPB / decyl glucoside — cleansers, every basket built on `fatty_alcohol_c12_14` or `fatty_acid_coconut`. Polysorbate 80 is an emulsifier and solubiliser, not a cleanser, and is oleic-derived rather than lauric. **(2) Chemistry:** it is an ethoxylated sorbitan **ester**, and `MG-02` is literally *"emollients / oils / **esters**"*. **(3) Precedent in the tree:** emulsifiers already live at `MG-02` — the ratified master puts `RM-EMUL-3320` Cetearyl Alcohol there, the taxonomy puts `sc-cetearyl` there, and `RM-EMUL-9410` Glyceryl Stearate SE is the same functional class. **The honest caveat, since it is why the question felt open: `MG-02` fits by chemistry, not by function — there is NO EMULSIFIER GROUP in the vocabulary at all**, even though three of the master's five codes are emulsifier-adjacent and the document lane uses an `RM-EMUL-` authoring convention. That gap is real and is filed below; it does not change the answer for this code, and `MG-02` is where the tree already puts its emulsifiers. |
+
+### Filed in this batch
+
+| Finding | What it is | Disposition |
+| --- | --- | --- |
+| **MG-REGISTRY-ABSENT-01** *(refs @ `fe25a7b` — **the structural cause under `MG-COLLISION-21-01`, and duller than the collision**)* | **THE MG VOCABULARY HAD NO DECLARATION SITE.** It existed only as string literals on materials and as prose in two files' section comments. **A vocabulary with no declaration site cannot disagree with itself out loud — there is nothing for a second definition to contradict.** That is why `MG-21` carried two meanings for as long as both files existed, and why the collision was found by a human reading two files side by side rather than by a failing test. **A collision that only a careful reader can find is not caught; it is survived.** | **FIXED — `src/services/sdc/materialGroups.ts` is the missing site**, the ONE place an `MG-xx` acquires a meaning, with both consumers pinned against it (`materialGroups.test.ts`). Lives in `sdc/` on R-1's own reasoning (a): the master owns identity, group is part of identity. Every group set in the pin is **DERIVED from the consumers, never hand-listed** — a hand-listed set would pass while a new fixture quietly introduced `MG-31` (mutation-verified: it does not). `groupLabel()` returns `null` for an undeclared group — the `uomOf` refusal shape, never a fallback label. |
+| **MG-UNREAD-BY-ANYTHING-01** *(refs @ `fe25a7b`)* | **`materialGroup` IS READ BY NO CODE IN THE TREE.** The only references are the master's own five literals, the `MaterialMasterEntry` type declaration, and the taxonomy's `group` field — which `shouldCostSpread` never consults (it keys off `MATERIAL_BASKET_CLASSIFICATION` → `sc-*` id). **So the vocabulary is declarative-only today, and no behaviour test could ever have caught the collision.** It also means R-1's edit has **zero** behavioural consequence — which is a reason it was cheap now and expensive later. | **RECORDED, NOT "FIXED" — there is nothing to fix yet.** The point is the trajectory: **2B-2 takes stored `materialGroup` values from 5 to 30, all still read by nothing, so a wrong group would sit undetected indefinitely.** That is precisely why the vocabulary had to be settled BEFORE the adoptions rather than during them, and it is the strongest argument the `2B-1`-before-`2B-2` ordering has. |
+| **MG-AIRLESS-AXIS-01** *(refs @ `fe25a7b` — **an OPEN QUESTION, deliberately not answered**)* | **`sc-airless-pump` ("Airless pump systems, multi-component") has no clean home under R-1.** A dispensing pump is arguably a **closure** (`MG-21`, the functional group R-1 just created) and arguably a **multi-component rigid-plastic assembly** (`MG-20`); its own basket carries polypropylene AND spring steel, so it is not purely either. It is the first case where R-1's functional axis and the substrate axis both have a claim. | **LEFT AT `MG-20`, AND SAID SO IN THE FIXTURE.** The status quo is not an answer — **it is the absence of one, recorded so the next reader does not mistake silence for a ruling.** Not folded into R-1: R-1 ruled on glass and on what `MG-21` means, and extending it to a genuinely two-sided case would be picking rather than applying. **Operator's, whenever a batch next needs the answer** — nothing is blocked on it, because the pump is a taxonomy basket and not a code awaiting adoption. |
+| **MG-NO-EMULSIFIER-GROUP-01** *(refs @ `fe25a7b` — **surfaced by the `RM-EMUL-9430` question, and it is the reason that question felt open**)* | **THE VOCABULARY HAS NO EMULSIFIER GROUP**, though emulsifiers are a first-class procurement category here: `RM-EMUL-3320` (master, `MG-02`), `RM-EMUL-9410`, `RM-EMUL-9430`, and the document lane's whole `RM-EMUL-` authoring convention. They are currently classified by CHEMISTRY (esters → `MG-02`) rather than by function, which works for each of them individually and states nothing about the category. | **FILED, NOT ACTED ON.** It does not change `RM-EMUL-9430`'s answer — `MG-02` is where the tree already puts its emulsifiers, and consistency with the ratified master outranks a tidier taxonomy. **Raising it now, before 2B-2 assigns 30 groups, rather than after** — but a second new group inside a ruling batch that was scoped to three questions would be exactly the scope creep this arc keeps refusing. Whoever wants it should want it on its own evidence. |
+
+### Constraints discharged, in writing
+
+- **NO ADOPTION. `MATERIAL_MASTER` IS BYTE-IDENTICAL TO `fe25a7b`** — asserted in
+  the suite, not just claimed: `materialGroups.test.ts` pins `PK-CAPF-8820`'s
+  group and label, and both `materialIdentity.test.ts` and the new suite assert
+  that the five feedstocks and the seven packaging codes remain master-absent.
+  **The 30 stay master-absent after this batch.**
+- **R-1 REQUIRED NO EDIT TO `sdc/fixtures.ts`, so none was made.** The dispatch
+  said to stop and say so if it did; it did not, because R-1 ruled the master
+  stands and every group the master already carried was already correct.
+  Mutation-verified from the other side: changing the master's closure group
+  turns the suite red (**N6**).
+- **C9 BYTES UNTOUCHED, PIN STAYS `f492b5c`.** All three paths verified
+  blob-identical. R-3's consequence is QUEUED against §5, not applied.
+- **MUTATION-VERIFIED — six probes, six DETECTED:** glass reverted to `MG-21`
+  (**3 red**); `sc-pp-cap` reverted to `MG-20` (**2 red**); `MG-10` removed from
+  the registry; the taxonomy pointed at an undeclared `MG-31` (**2 red**); the
+  registry re-labelled `MG-21` as glass; the master's closure group changed
+  (**2 red**).
+- **2B-2 IS NEXT — the 25 adoptions.** Its packaging blocker is cleared; its
+  `MG-10` group exists; its two instance-data labels
+  ([[INSTANCE-DATA-IN-A-TYPE-LABEL-01]]) must be trimmed COMPLETELY or not at all.

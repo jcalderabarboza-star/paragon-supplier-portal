@@ -467,27 +467,32 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
   });
 });
 
-describe('MG-COLLISION-21-01 — one code, one meaning, failing on the GROUP vocabulary', () => {
+describe('MG-COLLISION-21-01 — CLOSED at 2B-1 (R-1: declared ownership decides)', () => {
   const groupMembers = (group: string) =>
     SHOULD_COST_MATERIALS.filter((m) => m.group === group).map((m) => m.name);
 
-  it('MG-21 means two different things, and one of them is in ratified seed data', () => {
-    // The master says MG-21 is where a plastic flip-top CAP goes.
+  it('MG-21 means CLOSURES in both vocabularies now', () => {
+    // ⚠️ THIS ASSERTION WAS INVERTED AT 2B-1, AND THAT IS WHAT IT WAS FOR. At
+    // 2B-0 it pinned the CONTRADICTION — master says closures, taxonomy says
+    // glass — so the vocabulary could not be changed by accident, only on
+    // purpose. R-1 is the purpose: the master owns material identity, material
+    // group is part of identity, so the TAXONOMY moved and the master stood.
+    // The deeper fix is `sdc/materialGroups.ts` — the registry the vocabulary
+    // never had — pinned in its own suite.
     expect(MATERIAL_MASTER['PK-CAPF-8820'].label).toBe('Flip-Top Cap 24mm');
     expect(MATERIAL_MASTER['PK-CAPF-8820'].materialGroup).toBe('MG-21');
-    // The should-cost taxonomy says MG-21 is GLASS.
-    expect(groupMembers('MG-21')).toEqual(['Glass bottles/jars']);
-    // …and puts caps/closures in MG-20.
-    expect(groupMembers('MG-20')).toEqual(
-      expect.arrayContaining(['PP caps/closures']),
-    );
+    expect(groupMembers('MG-21')).toEqual(['PP caps/closures']);
+    // Glass took a new number rather than the master taking a new group.
+    expect(groupMembers('MG-25')).toEqual(['Glass bottles/jars']);
+    expect(groupMembers('MG-20')).not.toContain('PP caps/closures');
   });
 
-  it('BLOCKS every packaging adoption in 2B-2 and 2B-3', () => {
-    // Pinned so the block is visible from the test run, not only from a doc.
-    // Adopting a packaging code means assigning a `materialGroup`; while MG-21
-    // carries two meanings, every such assignment encodes the contradiction
-    // again. 2B-1 rules which meaning survives.
+  it('STILL blocks every packaging adoption — the group fix is not an adoption', () => {
+    // 2B-1 removed the REASON for the block (MG-21 now carries one meaning) but
+    // not the block: resolving a vocabulary is not adopting a code, and the 30
+    // stay master-absent until 2B-2 says otherwise. Kept here so the two events
+    // cannot be conflated by a later reader — a cleared blocker looks a lot like
+    // a completed task if nothing distinguishes them.
     const packagingAwaitingAdoption = [
       'PK-ALCP-2441',
       'PK-CART-9901',

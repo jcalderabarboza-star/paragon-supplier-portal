@@ -276,7 +276,7 @@ export const SHOULD_COST_MATERIALS: readonly Material[] = [
     basket: [comp('phenol', 0.65, 'phenol/petro — direction-only proxy')],
   },
 
-  // MG-20 · Rigid plastic packaging
+  // MG-20 · Rigid plastic packaging  (closures live in MG-21, below)
   {
     id: 'sc-pet-bottle',
     name: 'PET bottles/jars',
@@ -289,7 +289,12 @@ export const SHOULD_COST_MATERIALS: readonly Material[] = [
   {
     id: 'sc-pp-cap',
     name: 'PP caps/closures',
-    group: 'MG-20',
+    // CP-2 · 2B-1 (R-1) — MOVED MG-20 -> MG-21. `MG-21` means CLOSURES
+    // everywhere now (registry: `sdc/materialGroups.ts`), and leaving the
+    // taxonomy's own closure basket in the rigid-plastic group would have left
+    // `MG-COLLISION-21-01` running in the other direction: a PP cap MG-20 here,
+    // a flip-top cap MG-21 in the master. Same functional class, two groups.
+    group: 'MG-21',
     sapType: 'VERP',
     materialClass: 'PM_PLASTIC',
     basis: 'international',
@@ -307,6 +312,12 @@ export const SHOULD_COST_MATERIALS: readonly Material[] = [
   {
     id: 'sc-airless-pump',
     name: 'Airless pump systems (multi-component)',
+    // CP-2 · 2B-1 — LEFT AT MG-20 ON PURPOSE, and it is an OPEN QUESTION rather
+    // than a settled one (`MG-AIRLESS-AXIS-01`). A dispensing pump is arguably a
+    // closure (MG-21) and arguably a multi-component rigid-plastic assembly
+    // (MG-20); its own basket carries spring steel, so it is not purely either.
+    // The status quo is not an answer — it is the absence of one, recorded so
+    // the next reader does not mistake silence for a ruling.
     group: 'MG-20',
     sapType: 'VERP',
     materialClass: 'PM_PLASTIC',
@@ -314,11 +325,16 @@ export const SHOULD_COST_MATERIALS: readonly Material[] = [
     basket: [comp('polypropylene', 0.5), comp('steel_lme', 0.2, 'spring steel; multi-material assembly')],
   },
 
-  // MG-21 · Glass packaging
+  // MG-25 · Glass packaging  (was MG-21 — see R-1 below)
   {
     id: 'sc-glass-bottle',
     name: 'Glass bottles/jars',
-    group: 'MG-21',
+    // CP-2 · 2B-1 (R-1) — MOVED MG-21 -> MG-25. The master declared MG-21 =
+    // closures; this file declared it = glass. DECLARED OWNERSHIP DECIDES (the
+    // rule that settled every B2a code collision), so glass moved rather than
+    // the master. One edit against ONE member here, versus a change to ratified
+    // seed data there.
+    group: 'MG-25',
     sapType: 'VERP',
     materialClass: 'PM_GLASS',
     basis: 'international',
