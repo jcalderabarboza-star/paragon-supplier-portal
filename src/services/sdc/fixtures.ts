@@ -54,6 +54,38 @@ const PROV_SUPPLIER_DRAFT: Provenance = Object.freeze({
 });
 
 // ─── Material master (ruling (b)-minimal; RM/PM taxonomy ROH/VERP + MG-xx) ─────
+//
+// ── CP-2 · 2B-2 — THE 25 ADOPTIONS (the capability boundary) ─────────────────
+//   Five entries below predate this batch (the SDC-0 seed). Twenty-five were
+//   ADOPTED at 2B-2 from the declared document lane (`src/data/mock*.ts`).
+//
+//   ADOPTION RATIFIES A MEANING THE LANE ALREADY STATES. It does not author one.
+//   Every label below is the lane's own `description` / `materialDescription`
+//   string, and every `canonicalUom` is the unit the lane's own qty rows already
+//   carried — MEASURED, not chosen: each of the 25 shows exactly ONE unit across
+//   every module that names it, zero conflicts. `materialMasterAdoption.test.ts`
+//   re-derives both from the tree on every run, so a label edited in one lane
+//   and not the master goes red rather than drifting.
+//
+//   THE FIVE CODES THAT ARE **NOT** HERE, and why (they are 2B-3, not an
+//   oversight): `AI-CENT-6900` · `PK-ALCP-2441` · `PK-PETB-8803` ·
+//   `PK-PETB-8825` · `RM-HUMEC-3405`. They are reached only through an RFQ's
+//   `materialIds: string[]`, which carries NO meaning at all. There is nothing
+//   to ratify, and the parent RFQ's TITLE is a sentence about a sourcing event,
+//   not a meaning on a code. 2B-3 AUTHORS a meaning for them; inventing one here
+//   to complete a set is precisely the act this arc refuses.
+//
+//   THE NINE `MAT-*` CODES ARE ALSO NOT HERE — they are a different space
+//   (`paragon.asn_chase_lane`, declared at 2B-1, booked for retirement).
+//
+//   ⚠️ TWO LABELS ARE **NOT** THE LANE'S STRING — see `FR-WARD-4410` and
+//   `FR-MKOV-5520` below. A lot and a batch are INSTANCES, not types.
+//
+//   ⚠️ `bpomApplicable` IS DELIBERATELY ABSENT from every entry. The 2B-4 gate
+//   stands: the mechanism may be authored early, the BEHAVIOUR may not be wired
+//   early. The GR wizard is fed the ASN store, which is seeded from the `MAT-*`
+//   space — nine codes this master still cannot resolve — so a fail-closed BPOM
+//   rule today would refuse essentially every received line.
 
 export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
   'RM-EMUL-3310': {
@@ -97,6 +129,223 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-21', // closures
     canonicalUom: 'PCS',
   },
+
+  // ══ CP-2 · 2B-2 — ADOPTED FROM THE DOCUMENT LANE ════════════════════════════
+  // Groups are taken from the 2B-1 registry (`materialGroups.ts`), not
+  // re-derived here. Units are the lane's measured value.
+
+  // ── MG-04 · active ingredients ─────────────────────────────────────────────
+  'AI-HYALU-6610': {
+    materialCode: 'AI-HYALU-6610',
+    label: 'Sodium Hyaluronate (High MW, 1.5-2.0 MDa)',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG',
+  },
+  // Sibling of the seed's `AI-NIAC-6601`, and the pair is worth reading
+  // together: this label STATES its grade, 6601's does not. See
+  // `IDENTITY-GRAIN-ASYMMETRY-01` — reported at 2B-2, not fixed here (6601 is
+  // seed data, outside this batch's scope).
+  'AI-NIAC-6605': {
+    materialCode: 'AI-NIAC-6605',
+    label: 'Niacinamide Feed Grade 98% (Bulk)',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG',
+  },
+  'AI-PANTO-6640': {
+    materialCode: 'AI-PANTO-6640',
+    label: 'D-Panthenol 75% (Provitamin B5)',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG',
+  },
+  'AI-PEPTIDE-8801': {
+    materialCode: 'AI-PEPTIDE-8801',
+    label: 'Peptide Complex Anti-Aging',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG',
+  },
+  'AI-RETA-6750': {
+    materialCode: 'AI-RETA-6750',
+    label: 'Retinyl Palmitate (Vitamin A Ester) — Cosmetic Grade',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG',
+  },
+  'AI-SALI-6800': {
+    materialCode: 'AI-SALI-6800',
+    label: 'Salicylic Acid 99.5% — BHA Cosmetic Grade',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG',
+  },
+  'AI-VITC-6720': {
+    materialCode: 'AI-VITC-6720',
+    label: 'Ascorbyl Glucoside (Vitamin C Derivative)',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG',
+  },
+  'AI-VITC-6730': {
+    materialCode: 'AI-VITC-6730',
+    label: 'L-Ascorbic Acid Powder 99% — Cosmetic Grade',
+    materialType: 'ROH',
+    materialGroup: 'MG-04',
+    canonicalUom: 'KG',
+  },
+
+  // ── MG-05 · fragrance & sensory ────────────────────────────────────────────
+  'FR-EMIN-4420': {
+    materialCode: 'FR-EMIN-4420',
+    label: 'Emina Fresh Citrus Accord',
+    materialType: 'ROH',
+    materialGroup: 'MG-05',
+    canonicalUom: 'KG',
+  },
+  'FR-MKOV-5510': {
+    materialCode: 'FR-MKOV-5510',
+    label: 'Make Over Long-Wear Musk Base',
+    materialType: 'ROH',
+    materialGroup: 'MG-05',
+    canonicalUom: 'KG',
+  },
+  // ⚠️ TRIMMED (`INSTANCE-DATA-IN-A-TYPE-LABEL-01`). The lane said
+  // "Make Over Oud & Amber Accord — Batch Q2-2025". A BATCH IS AN INSTANCE, NOT
+  // A TYPE: adopting it verbatim would weld one quarter's production run into
+  // the permanent identity of a code meant to outlive every batch of it. The
+  // trim was applied to the lane too, in the SAME edit — a partial trim fails
+  // BOTH pins, because the untrimmed string survives wherever it was missed.
+  'FR-MKOV-5520': {
+    materialCode: 'FR-MKOV-5520',
+    label: 'Make Over Oud & Amber Accord',
+    materialType: 'ROH',
+    materialGroup: 'MG-05',
+    canonicalUom: 'KG',
+  },
+  // ⚠️ TRIMMED, same rule. The lane said "… — Lot A" at SIX sites across four
+  // modules. Where that lot is operationally real it has nowhere to live in the
+  // DECLARED lane (`INSTANCE-DATA-HAS-NO-HOME-01`) — but the right shape already
+  // exists one space over: `ASNLineItem.lotNumber`, which the `MAT-*` fixtures
+  // use exactly as they should (type in the description, instance in its own
+  // field). Reported with that precedent named, not built.
+  'FR-WARD-4410': {
+    materialCode: 'FR-WARD-4410',
+    label: 'Wardah Signature Floral Compound',
+    materialType: 'ROH',
+    materialGroup: 'MG-05',
+    canonicalUom: 'KG',
+  },
+  'FR-WARD-4430': {
+    materialCode: 'FR-WARD-4430',
+    label: 'Wardah Hijab Refresh Spray Accord',
+    materialType: 'ROH',
+    materialGroup: 'MG-05',
+    canonicalUom: 'KG',
+  },
+  'FR-WARD-4440': {
+    materialCode: 'FR-WARD-4440',
+    label: 'Wardah EDP Parfum Concentrate — Rose & Oud',
+    materialType: 'ROH',
+    materialGroup: 'MG-05',
+    canonicalUom: 'KG',
+  },
+
+  // ── MG-02 · emollients / oils / esters ─────────────────────────────────────
+  // Both are EMULSIFIERS, sitting here by chemistry rather than by function —
+  // the vocabulary has no emulsifier group at all (`MG-NO-EMULSIFIER-GROUP-01`,
+  // still open). 2B-1 ruled `RM-EMUL-9430` explicitly; `RM-EMUL-9410` follows
+  // the same reasoning and the seed's own precedent (`RM-EMUL-3320`).
+  'RM-EMUL-9410': {
+    materialCode: 'RM-EMUL-9410',
+    label: 'Glyceryl Stearate SE (Halal Emulsifier)',
+    materialType: 'ROH',
+    materialGroup: 'MG-02',
+    canonicalUom: 'KG',
+  },
+  'RM-EMUL-9430': {
+    materialCode: 'RM-EMUL-9430',
+    label: 'Polysorbate 80 — Halal, Food & Cosmetic Grade',
+    materialType: 'ROH',
+    materialGroup: 'MG-02',
+    canonicalUom: 'KG',
+  },
+
+  // ── MG-10 · oleochemical feedstocks (upstream of the formulation grain) ────
+  // The five members R-2 declared the group for. It was authored MEMBER-LESS at
+  // 2B-1 precisely so this moment would be an adoption against a standing
+  // decision rather than a decision smuggled inside one.
+  'RM-COCO-8200': {
+    materialCode: 'RM-COCO-8200',
+    label: 'Coconut Fatty Acid Distillate (CFAD)',
+    materialType: 'ROH',
+    materialGroup: 'MG-10',
+    canonicalUom: 'KG',
+  },
+  'RM-LAURIC-7200': {
+    materialCode: 'RM-LAURIC-7200',
+    label: 'Lauric Acid 99% — Halal Certified',
+    materialType: 'ROH',
+    materialGroup: 'MG-10',
+    canonicalUom: 'KG',
+  },
+  'RM-MYRST-7310': {
+    materialCode: 'RM-MYRST-7310',
+    label: 'Myristic Acid 99% (Palm-Derived)',
+    materialType: 'ROH',
+    materialGroup: 'MG-10',
+    canonicalUom: 'KG',
+  },
+  'RM-PALM-7100': {
+    materialCode: 'RM-PALM-7100',
+    label: 'Palm Kernel Oil — Refined, Bleached, Deodorized',
+    materialType: 'ROH',
+    materialGroup: 'MG-10',
+    canonicalUom: 'KG',
+  },
+  'RM-STEAR-7300': {
+    materialCode: 'RM-STEAR-7300',
+    label: 'Stearic Acid — Double Pressed (Halal)',
+    materialType: 'ROH',
+    materialGroup: 'MG-10',
+    canonicalUom: 'KG',
+  },
+
+  // ── MG-20 · rigid plastic packaging ────────────────────────────────────────
+  'PK-PETB-8801': {
+    materialCode: 'PK-PETB-8801',
+    label: 'PET Bottle 200ml Frosted — Wardah Series',
+    materialType: 'VERP',
+    materialGroup: 'MG-20',
+    canonicalUom: 'PCS',
+  },
+  'PK-PETB-8802': {
+    materialCode: 'PK-PETB-8802',
+    label: 'PET Bottle 100ml Clear — Emina Series',
+    materialType: 'VERP',
+    materialGroup: 'MG-20',
+    canonicalUom: 'PCS',
+  },
+
+  // ── MG-23 · paper & board packaging ────────────────────────────────────────
+  'PK-CART-9901': {
+    materialCode: 'PK-CART-9901',
+    label: 'Mono-Carton Box 70x40x180mm — Wardah Moisturizing Lotion',
+    materialType: 'VERP',
+    materialGroup: 'MG-23',
+    canonicalUom: 'PCS',
+  },
+  'PK-CART-9910': {
+    materialCode: 'PK-CART-9910',
+    label: 'Shipper Box — Emina Bright Stuff Range (12-pack)',
+    materialType: 'VERP',
+    materialGroup: 'MG-23',
+    canonicalUom: 'PCS',
+  },
+  // NOTE — `MG-21` (closures) and `MG-22` (metal) gain NO members here. The
+  // tree's only unadopted closure is `PK-ALCP-2441` (RFQ-mute → 2B-3) and its
+  // `MAT-*` twin. R-1's split decided real rows; those rows are 2B-3's.
 });
 
 // ─── Supplier-material relationships (design §7) ──────────────────────────────

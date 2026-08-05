@@ -89,20 +89,26 @@ describe('MG-COLLISION-21-01 — RESOLVED per R-1 (declared ownership decides)',
   });
 });
 
-describe('2B-1 · R-2 — the feedstock group exists, ahead of its members', () => {
-  it('MG-10 is declared, on the upstream axis, and MEMBER-LESS', () => {
+describe('2B-1 · R-2 — the feedstock group, declared ahead of its members', () => {
+  it('MG-10 is declared, on the upstream axis, and 2B-2 SPENT the decision', () => {
     expect(groupLabel('MG-10')).toBe(
       'Oleochemical feedstocks (upstream of the formulation grain)',
     );
     expect(MATERIAL_GROUPS.find((g) => g.group === 'MG-10')?.axis).toBe('upstream-input');
-    // Member-less is the POINT, not an oversight: 2B-2 assigns the five, and a
-    // group declared ahead of its members is a decision recorded rather than one
-    // smuggled inside an adoption diff.
+    // ⚠️ INVERTED AT 2B-2, AND THE INVERSION IS THE WHOLE ARGUMENT. At 2B-1 this
+    // asserted MEMBER-LESS: a group declared ahead of its members is a decision
+    // RECORDED, one invented during an adoption is a decision SMUGGLED. 2B-2 is
+    // the adoption, and the standing decision was spent on exactly the
+    // population R-2 described — nothing was decided inside the diff.
+    expect(masterGroups).toContain('MG-10');
+    // The should-cost taxonomy still has no MG-10 member: its `sc-*` rows model
+    // FORMULATION materials, and a feedstock is upstream of that grain by
+    // definition. The two vocabularies disagreeing in POPULATION is fine; what
+    // 2B-1 fixed was them disagreeing in MEANING.
     expect(taxonomyMembers('MG-10')).toEqual([]);
-    expect(masterGroups).not.toContain('MG-10');
   });
 
-  it('the five feedstocks are still master-absent — no adoption happened here', () => {
+  it('the five feedstocks were adopted at 2B-2, and only those five', () => {
     for (const code of [
       'RM-COCO-8200',
       'RM-LAURIC-7200',
@@ -110,8 +116,14 @@ describe('2B-1 · R-2 — the feedstock group exists, ahead of its members', () 
       'RM-PALM-7100',
       'RM-STEAR-7300',
     ]) {
-      expect(code in MATERIAL_MASTER, `${code} must not be adopted before 2B-2`).toBe(false);
+      expect(code in MATERIAL_MASTER, `${code} was adopted at 2B-2`).toBe(true);
+      expect(MATERIAL_MASTER[code].materialGroup, `${code} is a feedstock`).toBe('MG-10');
     }
+    // Derived the other way too, so the group cannot quietly collect a member a
+    // later batch never argued for.
+    expect(
+      Object.values(MATERIAL_MASTER).filter((m) => m.materialGroup === 'MG-10'),
+    ).toHaveLength(5);
   });
 
   it('MG-10 sits in the band the numbering already implied', () => {

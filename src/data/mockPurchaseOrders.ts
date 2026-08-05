@@ -84,7 +84,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
       {
         id: 'li-003a',
         materialCode: 'FR-WARD-4410',
-        description: 'Wardah Signature Floral Compound — Lot A',
+        description: 'Wardah Signature Floral Compound',
         quantity: 500,
         uom: 'KG',
         unitPrice: 2_200_000,
@@ -340,7 +340,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
       {
         id: 'li-012a',
         materialCode: 'FR-MKOV-5520',
-        description: 'Make Over Oud & Amber Accord — Batch Q2-2025',
+        description: 'Make Over Oud & Amber Accord',
         quantity: 250,
         uom: 'KG',
         unitPrice: 2_400_000,
