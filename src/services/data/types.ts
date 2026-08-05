@@ -418,7 +418,45 @@ export interface ASN {
 export interface CatalogItem {
   id: string;
   supplierId: string;
+  /** The supplier's own name for the item. ⚠️ THIS IS A MEANING, and until
+   *  2B-5a the material census could not read it — `meaningOf` matched
+   *  `/description/i` and this key is called `material`
+   *  (`MEANING-SCOPE-IS-A-HAND-PICK-01`). */
   material: string;
+  /**
+   * ⚠️ **A POINTER, NOT AN IDENTITY — DECLARED AT 2B-5a (operator ruling R-D).**
+   *
+   * This field is **not** the catalogue item's identity (`id` is) and **not** a
+   * code space of its own. It is **the supplier's assertion of which PARAGON
+   * MASTER CODE their catalogue item corresponds to** — a claim about someone
+   * else's space, entered by the party that does not own it.
+   *
+   * The evidence for that reading, rather than an assertion of it: the field is
+   * named `sapCode` and not `materialCode`; the supplier's own storefront form
+   * labels it **"SAP code (optional)"** — Paragon runs the SAP, and an
+   * OPTIONAL field cannot be an identity; and of the five values authored, two
+   * pointed at codes in `paragon.asn_chase_lane` **under the matching supplier
+   * on both sides**, which is what a pointer looks like when it works.
+   *
+   * ⚠️ **CONSEQUENCES OF THE DECLARATION, and they are not tidy.**
+   *   · A value here **must resolve to `MATERIAL_MASTER`**. One of five does
+   *     (`PK-PETB-8803`, corrected at 2B-5a per R-D — it read `MAT-10045`, a
+   *     code no Paragon space contains, carrying the master's own label for
+   *     that material byte-for-byte).
+   *   · `MAT-30110` / `MAT-40220` point into the ASN lane and resolve **there**,
+   *     not in the master. They are correct pointers into a space booked for
+   *     retirement, and they repoint when **2B-5b** retires the seven.
+   *   · `MAT-10046` / `MAT-10089` resolve **nowhere**. They are unbacked claims
+   *     and no batch has ruled on them.
+   *   · **A SUPPLIER-ENTERED POINTER IS NEVER EVIDENCE OF A CORRESPONDENCE.**
+   *     C9 §4's rule applies unchanged: a claim entered by one party about
+   *     another party's space is an ADOPTION at best, and this one carries no
+   *     provenance at all — no method, no source of truth, no route to
+   *     resolution. It must not be joined on.
+   *
+   * Pinned by `storefrontPointer.test.ts`, which asserts the exact disposition
+   * of all five rather than a count.
+   */
   sapCode: string;
   category: string;
   moq: string;
