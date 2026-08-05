@@ -151,13 +151,25 @@ describe('2B-1 — the cost of R-1, inspectable rather than buried', () => {
     expect(functional.map((g) => g.group)).toEqual(['MG-21']);
   });
 
-  it('an aluminium closure is why the functional axis was chosen', () => {
+  it('an aluminium closure is why the functional axis was chosen — and 2B-3 SPENT it', () => {
     // The concrete case a pure-substrate axis would scatter: two codes in the
     // tree are closures made of metal. Under substrate they would land in MG-22
     // (metal packaging), away from the plastic closures they are sourced
-    // alongside. Both are pending adoption, so this decides real rows in 2B-3.
-    // Neither is adopted here.
-    expect('PK-ALCP-2441' in MATERIAL_MASTER).toBe(false);
+    // alongside.
+    //
+    // ⚠️ INVERTED AT 2B-3, which is what this assertion was FOR. At 2B-1 it
+    // pinned both as unadopted, so that R-1 could be read as a decision recorded
+    // ahead of its members rather than one invented to justify a row already
+    // written. 2B-3 authored `PK-ALCP-2441` and applied the standing decision:
+    // it is at MG-21, WITH the plastic closures, not at MG-22 with the metal.
+    expect('PK-ALCP-2441' in MATERIAL_MASTER).toBe(true);
+    expect(MATERIAL_MASTER['PK-ALCP-2441'].materialGroup).toBe('MG-21');
+    // MG-22 STILL has no member — the payout stated from the other side. If the
+    // substrate axis had won, this is the assertion that would have flipped.
+    expect(masterGroups).not.toContain('MG-22');
+    // The second aluminium closure is in the undeclared `MAT-*` third space,
+    // which no batch adopts. It stays out, and it is the reason MG-22 keeps a
+    // candidate without keeping a member.
     expect('MAT-77014' in MATERIAL_MASTER).toBe(false);
   });
 });

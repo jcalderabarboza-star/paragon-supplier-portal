@@ -68,6 +68,11 @@ const collect = (root: unknown, module: string) => {
   const seen = new WeakSet<object>();
   const walk = (node: unknown) => {
     if (node === null || typeof node !== 'object') return;
+    // Skip the master BY REFERENCE (2B-3). It is re-exported through several
+    // modules, so excluding it by path would attribute its codes to whichever
+    // file the walk reached them through — and the partition check below asks
+    // where a code came FROM, which the master cannot answer about itself.
+    if (node === (MATERIAL_MASTER as unknown as object)) return;
     if (seen.has(node as object)) return;
     seen.add(node as object);
     if (Array.isArray(node)) {
@@ -84,6 +89,14 @@ const collect = (root: unknown, module: string) => {
         unit: siblingMatching(o, /^uom$|unit/i),
         module,
       });
+    }
+    // Added at 2B-3: a bare `string[]` states no meaning, but it IS a source.
+    // Without this arm the RFQ lane is invisible here and the partition check
+    // below cannot tell an authored row from an unaccounted one.
+    if (Array.isArray(o.materialIds)) {
+      for (const c of o.materialIds) {
+        if (typeof c === 'string') REFS.push({ code: c, meaning: null, unit: null, module });
+      }
     }
     for (const k of Object.keys(o)) walk(o[k]);
   };
@@ -105,27 +118,60 @@ const laneUnits = (code: string) => [
   ...new Set(laneRefs.filter((r) => r.code === code && r.unit).map((r) => r.unit!)),
 ];
 
+/**
+ * ⚠️ NARROWED AT 2B-3, and the narrowing is the point. This used to be "every
+ * master code that is not seed". 2B-3 added five more non-seed rows — but they
+ * are a DIFFERENT KIND OF ROW: they AUTHOR a meaning rather than ratify one, so
+ * every assertion in this file (label IS the lane's string, unit IS the lane's
+ * measured value) is meaningless against them. There is no lane string to be.
+ *
+ * So the subject is stated by its defining property rather than by subtraction:
+ * an adoption is a master row whose meaning the document lane already carried.
+ */
 const ADOPTED = Object.keys(MATERIAL_MASTER)
-  .filter((c) => !(SEED as readonly string[]).includes(c))
+  .filter((c) => !(SEED as readonly string[]).includes(c) && laneMeanings(c).length > 0)
+  .sort();
+
+/** 2B-3's rows, derived the same way the 2B-3 pin derives them: sourced ONLY by
+ *  the RFQ lane, which carries codes in a bare `string[]` and states nothing. */
+const AUTHORED = Object.keys(MATERIAL_MASTER)
+  .filter((c) => {
+    const src = [...new Set(REFS.filter((r) => r.code === c).map((r) => r.module))];
+    return src.length === 1 && src[0] === '/src/data/mockRfqs.ts';
+  })
   .sort();
 
 describe('2B-2 — the adoption is exactly 25 codes, and they are the ones that STATED a meaning', () => {
   it('collected a real population (guards a vacuous pass)', () => {
     expect(REFS.length).toBeGreaterThan(80);
     expect(laneRefs.length).toBeGreaterThan(40);
+    // The 2B-3 lesson, applied here too: guard the population the assertions
+    // ITERATE, not just the walk that feeds it. An empty `ADOPTED` would pass
+    // every `filter(...).toEqual([])` below without asserting anything.
+    expect(ADOPTED.length).toBe(25);
   });
 
-  it('adopted 25, on top of the 5 seed entries', () => {
+  it('adopted 25 — on top of 5 seed entries and, since 2B-3, 5 authored ones', () => {
     expect(ADOPTED).toHaveLength(25);
-    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(30);
+    expect(AUTHORED).toHaveLength(5);
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(35);
   });
 
-  it('every adopted code came from the DECLARED document lane', () => {
-    // The rule that keeps `adoption is not discovery` executable: a code the
-    // master names must have been ratified from a space we declared owning.
-    // Adopt one from the `MAT-*` space and this names it.
-    const notFromTheLane = ADOPTED.filter((c) => laneMeanings(c).length === 0);
-    expect(notFromTheLane).toEqual([]);
+  it('⚠️ NO master code arrived from a fourth route', () => {
+    // The rule that keeps `adoption is not discovery` executable, RESTATED at
+    // 2B-3 rather than deleted. The old version asserted "every adopted code has
+    // a lane meaning", which became a tautology the moment `ADOPTED` was defined
+    // by that property. The invariant worth having is the partition itself:
+    // every master row is SEEDED, ADOPTED from a stated meaning in the declared
+    // document lane, or AUTHORED from the RFQ lane — and nothing else. Adopt a
+    // code out of the `MAT-*` space and it lands in no bucket and is named here.
+    const unaccounted = Object.keys(MATERIAL_MASTER).filter(
+      (c) =>
+        !(SEED as readonly string[]).includes(c) && !ADOPTED.includes(c) && !AUTHORED.includes(c),
+    );
+    expect(unaccounted).toEqual([]);
+    // …and the buckets do not overlap: a row cannot both ratify and author.
+    expect(ADOPTED.filter((c) => AUTHORED.includes(c))).toEqual([]);
   });
 });
 
@@ -221,23 +267,32 @@ describe('2B-2 — groups come from the 2B-1 registry, and TYPE follows the AXIS
     ]);
   });
 
-  it('MG-21 and MG-22 gained NO members — R-1 decided 2B-3 rows, not 2B-2 rows', () => {
-    // R-1's substrate-vs-function split was argued over the aluminium closures.
-    // Neither is adopted here (both are mute or in the third space), so the
-    // split's real consequence is still ahead of it. Pinned so a later reader
-    // does not conclude the argument was settled by this batch.
+  it('MG-21 and MG-22 gained NO members from THIS batch — R-1 decided 2B-3 rows', () => {
+    // R-1's substrate-vs-function split was argued over the aluminium closures,
+    // and neither was adoptable at 2B-2 (one mute, one in the third space). The
+    // prediction was that the split's real consequence was still ahead of it.
+    //
+    // ⚠️ 2B-3 IS THAT CONSEQUENCE — `PK-ALCP-2441` is now at MG-21. The scope of
+    // this assertion is narrowed to `ADOPTED` rather than the assertion being
+    // deleted, because "no 2B-2 row went to MG-21" is still true and is still
+    // the fact that stops a later reader concluding the argument was settled by
+    // the adoption batch. Where the split ACTUALLY paid out is pinned in
+    // `materialMasterAuthoring.test.ts`.
     for (const empty of ['MG-21', 'MG-22']) {
-      const members = Object.values(MATERIAL_MASTER).filter(
-        (m) => m.materialGroup === empty && !(SEED as readonly string[]).includes(m.materialCode),
-      );
+      const members = ADOPTED.filter((c) => MATERIAL_MASTER[c].materialGroup === empty);
       expect(members, `${empty} gained no members at 2B-2`).toEqual([]);
     }
-    // The seed's flip-top cap is still the only thing at MG-21.
+    // MG-21 now holds the seed's flip-top cap and 2B-3's aluminium cap — and
+    // nothing from the 25.
     expect(
       Object.values(MATERIAL_MASTER)
         .filter((m) => m.materialGroup === 'MG-21')
-        .map((m) => m.materialCode),
-    ).toEqual(['PK-CAPF-8820']);
+        .map((m) => m.materialCode)
+        .sort(),
+    ).toEqual(['PK-ALCP-2441', 'PK-CAPF-8820']);
+    // MG-22 is still empty outright, which is R-1's payout stated from the other
+    // side: the tree's one metal closure did not go to the metal group.
+    expect(Object.values(MATERIAL_MASTER).filter((m) => m.materialGroup === 'MG-22')).toEqual([]);
   });
 });
 

@@ -67,13 +67,14 @@ const PROV_SUPPLIER_DRAFT: Provenance = Object.freeze({
 //   re-derives both from the tree on every run, so a label edited in one lane
 //   and not the master goes red rather than drifting.
 //
-//   THE FIVE CODES THAT ARE **NOT** HERE, and why (they are 2B-3, not an
-//   oversight): `AI-CENT-6900` · `PK-ALCP-2441` · `PK-PETB-8803` ·
-//   `PK-PETB-8825` · `RM-HUMEC-3405`. They are reached only through an RFQ's
-//   `materialIds: string[]`, which carries NO meaning at all. There is nothing
+//   THE FIVE CODES THAT WERE NOT HERE ARE NOW — see the 2B-3 block below.
+//   `AI-CENT-6900` · `PK-ALCP-2441` · `PK-PETB-8803` · `PK-PETB-8825` ·
+//   `RM-HUMEC-3405`. They are reached only through an RFQ's
+//   `materialIds: string[]`, which carries NO meaning at all. There was nothing
 //   to ratify, and the parent RFQ's TITLE is a sentence about a sourcing event,
-//   not a meaning on a code. 2B-3 AUTHORS a meaning for them; inventing one here
-//   to complete a set is precisely the act this arc refuses.
+//   not a meaning on a code. 2B-3 AUTHORS a meaning for them — a DIFFERENT KIND
+//   OF ACT from the 25 above, and the header below keeps the two apart so a
+//   later reader does not read all thirty as equally well-evidenced.
 //
 //   THE NINE `MAT-*` CODES ARE ALSO NOT HERE — they are a different space
 //   (`paragon.asn_chase_lane`, declared at 2B-1, booked for retirement).
@@ -346,6 +347,161 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
   // NOTE — `MG-21` (closures) and `MG-22` (metal) gain NO members here. The
   // tree's only unadopted closure is `PK-ALCP-2441` (RFQ-mute → 2B-3) and its
   // `MAT-*` twin. R-1's split decided real rows; those rows are 2B-3's.
+
+  // ══ CP-2 · 2B-3 — AUTHORED FROM THE RFQ LANE ════════════════════════════════
+  //
+  // ⚠️ THESE FIVE ARE A DIFFERENT KIND OF ROW FROM THE 25 ABOVE, AND THE
+  //    DIFFERENCE IS NOT COSMETIC. An adoption RATIFIES a meaning the lane
+  //    already states. There was no meaning to ratify here: these codes are
+  //    reached ONLY through `RFQ.materialIds: string[]`, a bare array that
+  //    carries no description at all. `meaningsOf(code)` returns `[]` for every
+  //    one of them, today and after this batch — authoring makes a code
+  //    RESOLVABLE, it does not make the lane STATE anything. That distinction is
+  //    pinned in `materialMasterAuthoring.test.ts`, not left to this comment.
+  //
+  // ── THE EVIDENCE, AND ITS TIER (recorded, not smoothed) ─────────────────────
+  //   Three tiers exist in this tree, and every row below is TIER 2:
+  //
+  //     T1 · CODE-BOUND LINE — one record carrying the code, a description, and
+  //          a qty+unit on the same row. This is what all 25 adoptions had.
+  //          ZERO of the five have it.
+  //     T2 · CODE-BOUND HEADER — the RFQ. The code is in `materialIds`, the
+  //          meaning is in `title`, and the unit is the header's own `uom`.
+  //     T3 · NAME-ONLY CORROBORATION — a PR / storefront / marketplace /
+  //          remittance row stating the same meaning and unit but carrying NO
+  //          CODE. It cannot confirm a code; it can only confirm that the
+  //          meaning is operationally real somewhere.
+  //
+  //   ⚠️ WHY T2 IS GENUINELY WEAKER, stated structurally rather than as a
+  //      hedge: `RFQ.uom` IS NOT A PER-MATERIAL FIELD. Its arity is one; the
+  //      arity of `materialIds` is N. Three RFQs in this tree (rfq-003, -004,
+  //      -005) carry TWO codes under ONE `uom`, so for those the header unit is
+  //      not attributable to either code. All five below are the SOLE code on
+  //      their RFQ, which is what makes the mapping unambiguous HERE — a
+  //      property of these rows, NOT of the field. A sixth code arriving as the
+  //      second element of a `materialIds` array gets no unit from this route,
+  //      and must not be given one by analogy.
+  //
+  // ── THE LABELS: THE EM-DASH SPLIT IS DERIVED, NOT A STYLE CHOICE ────────────
+  //   Every RFQ title reads `<material> — <sourcing event>`. The tail is trimmed.
+  //   The PROOF is `RM-HUMEC-3405`, which appears on THREE RFQs:
+  //
+  //     'Propylene Glycol USP — imported, USD-quoted'          (rfq-009)
+  //     'Propylene Glycol USP — dual-currency bid comparison'  (rfq-012)
+  //     'Propylene Glycol USP — dual-currency, rate on record' (rfq-013)
+  //
+  //   ONE head, THREE tails. If the tail were part of the meaning, that code
+  //   would state three meanings and be unadoptable under ONE CODE, ONE MEANING.
+  //   It states one meaning and three sourcing contexts. The trim is therefore
+  //   forced by the data rather than chosen for tidiness, and the test derives
+  //   it that way. This is the same act as 2B-2's `— Lot A` trim (an INSTANCE in
+  //   a type label); here the intruder is an EVENT rather than an instance.
+  //
+  //   NOTE the brands are not treated inconsistently with 2B-2. `PET Bottle
+  //   200ml Frosted — Wardah Series` kept its brand because the LANE'S OWN
+  //   DESCRIPTION said so; `— Wardah Q3 launch` is trimmed because it is the
+  //   reason an RFQ was raised. Same word, different role.
+  //
+  // ── `bpomApplicable` IS STILL ABSENT. The 2B-4 gate stands unchanged: the GR
+  //    wizard is fed `asnStore`, seeded from the `MAT-*` space, and this batch
+  //    does not touch that space. Authoring five RFQ codes changes nothing the
+  //    receiving surface can see.
+
+  // ── MG-06 · botanical extracts (its FIRST master member) ───────────────────
+  'AI-CENT-6900': {
+    materialCode: 'AI-CENT-6900',
+    // T2 + T3. RFQ-2026-006 header (300 KG, sole code, Awarded), corroborated
+    // name-only by PR-2026-00340 (`Centella Asiatica Extract 10:1`, 300 KG —
+    // the SAME quantity and unit) and by the buyer-discovery fixture. The T3
+    // rows carry no code, so they raise confidence in the MEANING without
+    // raising the tier of the CODE binding.
+    label: 'Centella Asiatica Extract 10:1',
+    materialType: 'ROH',
+    materialGroup: 'MG-06', // botanical extracts & functional
+    canonicalUom: 'KG',
+  },
+
+  // ── MG-03 · humectants / glycols ───────────────────────────────────────────
+  'RM-HUMEC-3405': {
+    materialCode: 'RM-HUMEC-3405',
+    // T2 ×3 — and ⚠️ THREE RFQs IS NOT THREE WITNESSES. rfq-013 is a DECLARED
+    // CLONE of rfq-012 ("rfq-012 with a recorded FX ledger and NOTHING else
+    // changed", mockRfqs.ts). A copy agrees with its original by construction,
+    // so what looks like the best-evidenced row of the five is really two
+    // sources and one replication. All three agree on KG, which is worth
+    // something; it is REPLICATION, not CORROBORATION.
+    label: 'Propylene Glycol USP',
+    materialType: 'ROH',
+    // ⚠️ MG-03, NOT the 'Emulsifiers' its three RFQs all state. The RFQ's
+    // `materialCategory` is a SIX-VALUE UI FACET (`RFQCategory`) with no
+    // humectant or glycol member at all — so 'Emulsifiers' is a COERCED value,
+    // the nearest available bucket, not a competing declaration. The master
+    // already ruled this exact shape once: `RM-EMUL-3310` (Glycerin USP 99.5%)
+    // is a seed entry whose code says EMUL and whose group is MG-03, because
+    // glycerin is a glycol. Propylene Glycol USP sits beside it. `materialCode`
+    // is contractually OPAQUE, so the `RM-HUMEC` prefix decides nothing either —
+    // it agrees here by luck, and is not the reason. See
+    // `MG-NO-EMULSIFIER-GROUP-01`: the vocabulary has no emulsifier group, which
+    // is why this keeps looking like a question and is not one.
+    materialGroup: 'MG-03',
+    canonicalUom: 'KG',
+  },
+
+  // ── MG-20 · rigid plastic packaging ────────────────────────────────────────
+  'PK-PETB-8803': {
+    materialCode: 'PK-PETB-8803',
+    // T2 + T3 ×5 — the best-corroborated MEANING of the five. RFQ-2026-002
+    // header (200,000 PCS, sole code), and five name-only rows say the same
+    // thing: PR-2026-00342 (50,000 PCS), the sup-007 storefront line, the
+    // marketplace card, the PO-2025-00107 remittance note (50,000 PCS), and
+    // SupplierShipments. B2a re-coded this RFQ off `PK-PETB-8810` precisely
+    // because every one of those traces said 100ml Airless Pump.
+    label: 'PET Bottle 100ml Airless Pump',
+    materialType: 'VERP',
+    materialGroup: 'MG-20',
+    canonicalUom: 'PCS',
+  },
+  'PK-PETB-8825': {
+    materialCode: 'PK-PETB-8825',
+    // T2 only — RFQ-2026-010 header (120,000 PCS, sole code, Open). No other
+    // record in the tree states this meaning.
+    //
+    // ⚠️ A SEPARATE ITEM FROM `PK-PETB-8810` ('PET Bottle 250ml'), by operator
+    // ruling. Same substrate, same volume, DIFFERENT CLOSURE FORMAT — and under
+    // `D-IDENTITY-GRAIN = SPECIFICATION` a closure format is part of the
+    // purchasable item. Not merged, not aliased. 2A withheld this row on purpose:
+    // calling the two one item is an ADOPTION decision, not a collision fix, and
+    // 2A was not an adoption batch.
+    label: 'PET Bottle 250ml Flip-Top',
+    materialType: 'VERP',
+    materialGroup: 'MG-20',
+    canonicalUom: 'PCS',
+  },
+
+  // ── MG-21 · closures — where R-1's substrate-vs-function split PAYS OUT ─────
+  'PK-ALCP-2441': {
+    materialCode: 'PK-ALCP-2441',
+    // T2 only — RFQ-2026-011 header (80,000 PCS, sole code, Open).
+    //
+    // ⚠️ THIS IS THE ROW `MG-21` WAS ARGUED OVER. An ALUMINIUM cap: under a
+    // pure SUBSTRATE axis it lands in MG-22 (metal packaging), away from the
+    // plastic closures it is sourced alongside; under R-1's FUNCTIONAL axis it
+    // lands in MG-21 with them. R-1 chose function and kept the axes split
+    // explicitly so this row could be right, and `materialGroups.ts` records
+    // that cost in an `axis` field rather than in prose. Applying it here is
+    // what a standing decision is FOR — the ruling was made at 2B-1, ahead of
+    // its member, so that assigning this group today is an application and not
+    // a decision smuggled inside an adoption diff.
+    label: 'Aluminium Cap 24/410',
+    materialType: 'VERP',
+    materialGroup: 'MG-21',
+    canonicalUom: 'PCS',
+  },
+
+  // NOTE — `MG-22` (metal packaging) STILL gains no member, and that is the
+  // point of the row above: the tree's aluminium closure went to MG-21. The
+  // only other metal-substrate candidate is `MAT-77014`, in the undeclared
+  // third space, which no batch adopts.
 });
 
 // ─── Supplier-material relationships (design §7) ──────────────────────────────

@@ -35,6 +35,25 @@
 //   for the two code-bearing field names the TYPE SYSTEM declares, plus a
 //   raw-source guard (below) that does not depend on the walk reaching anything.
 //
+// ── ⚠️ THE SECOND HAND-PICK, FOUND AT 2B-3 AND NOT YET CLOSED ───────────────
+//   The header above says the walk covers "the two code-bearing field names the
+//   TYPE SYSTEM declares". THE MODULE SCOPE DERIVES; THE FIELD-NAME SCOPE DOES
+//   NOT — it is a literal pair, `materialCode` and `materialIds`, and the raw
+//   guard below greps for exactly those two. That is `DERIVED-OVER-A-CHOSEN-
+//   SCOPE-01` one level further in, and 2B-3 found the code it hides:
+//
+//     `CatalogItem.sapCode` (`services/data/types.ts:422`) is a THIRD declared
+//     code-bearing field, and `supplierStorefront.ts` puts five values in it.
+//
+//   Consequence, measured in `SAPCODE-INVISIBLE-TO-THE-CENSUS-01` below: three
+//   of those five appear NOWHERE else in the tree, so every "master-absent"
+//   figure this file reports is scoped to two field names rather than to the
+//   tree. It is NOT silently widened here — deciding whether a supplier
+//   catalogue's `sapCode` is Paragon identity at all is a SPACE DECLARATION,
+//   which 2B-1's R-3 established is the operator's act and not the builder's.
+//   So the blind spot is MEASURED and pinned, and the numbers above are stated
+//   with their scope attached rather than quietly restated as tree-wide.
+//
 // ── THE ONE EXCLUSION, STATED RATHER THAN HIDDEN ────────────────────────────
 //   Test files are excluded. This IS a hand-pick, so it is named and argued
 //   rather than left in a regex nobody reads: test fixtures deliberately carry
@@ -270,19 +289,14 @@ describe('CP-2 · B2a — the identity property, now over the WHOLE tree', () =>
 describe('CP-2 · B2a — the document lane no longer CONTRADICTS the master', () => {
   const shared = DOCUMENT_LANE.filter((c) => c in MATERIAL_MASTER);
 
-  it('the overlap went from THREE codes to TWENTY-EIGHT at 2B-2', () => {
+  it('the overlap is now TOTAL — 3 codes → 28 → all 33', () => {
     // CORRECTED at 2B-0 (the B2a version listed two — its scope excluded the RFQ
-    // lane where `RM-EMUL-3310` lives), and WIDENED at 2B-2 by the adoptions.
-    // Derived, not listed: what is pinned is the count and its complement, so a
-    // 2B-3 adoption moves this deliberately rather than by editing a literal.
-    expect(shared.length).toBe(28);
-    expect(DOCUMENT_LANE.filter((c) => !(c in MATERIAL_MASTER))).toEqual([
-      'AI-CENT-6900',
-      'PK-ALCP-2441',
-      'PK-PETB-8803',
-      'PK-PETB-8825',
-      'RM-HUMEC-3405',
-    ]);
+    // lane where `RM-EMUL-3310` lives), WIDENED at 2B-2 by the adoptions, and
+    // COMPLETED at 2B-3 by the five authored rows. Derived, not listed: what is
+    // pinned is the count and its complement, so the complement going empty is
+    // a measured result rather than an edited literal.
+    expect(shared.length).toBe(33);
+    expect(DOCUMENT_LANE.filter((c) => !(c in MATERIAL_MASTER))).toEqual([]);
   });
 
   it('the ONLY remaining label disagreements are the two SEED entries', () => {
@@ -363,8 +377,8 @@ describe('2B-0 — codes the lane names but gives NO meaning (2B-3 input)', () =
 });
 
 describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', () => {
-  it('the master names THIRTY codes — five seeded, twenty-five adopted at 2B-2', () => {
-    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(30);
+  it('the master names THIRTY-FIVE — 5 seeded, 25 adopted at 2B-2, 5 authored at 2B-3', () => {
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(35);
     // The five it was seeded with, still all present and still the only ones
     // this batch did not touch.
     for (const seed of [
@@ -378,12 +392,65 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     }
   });
 
-  it('the DECLARED document lane still holds 33 codes — 5 master-absent, not 30', () => {
+  it('the DECLARED document lane still holds 33 codes — and now ZERO are master-absent', () => {
     // The figure `C8-MASTER-DECL` and C9 §6.4 are about. THE LANE DID NOT SHRINK
-    // — adoption does not delete a document-lane code, it makes the master able
-    // to resolve it. Same 33 codes; 28 now resolve.
+    // — neither adoption nor authoring deletes a document-lane code, they make
+    // the master able to RESOLVE it. Same 33 codes across all three batches;
+    // 3 resolved, then 28, now all of them.
     expect(DOCUMENT_LANE.length).toBe(33);
-    expect(DOCUMENT_LANE.filter((c) => !(c in MATERIAL_MASTER)).length).toBe(5);
+    expect(DOCUMENT_LANE.filter((c) => !(c in MATERIAL_MASTER))).toEqual([]);
+  });
+
+  it('⚠️ SAPCODE-INVISIBLE-TO-THE-CENSUS-01 — a third code field the walk never reads', () => {
+    // FOUND AT 2B-3, while sourcing the label for `PK-PETB-8803`. The RFQ says
+    // that code; the sup-007 storefront says the same MEANING against
+    // `sapCode: 'MAT-10045'`. That sent this pin looking at the field, and the
+    // field is not in the census at all.
+    //
+    // The raw scan is deliberate — the module walk cannot see it either, so a
+    // walk-based check would report the blind spot as empty, which is the exact
+    // failure mode `CENSUS-MUST-DERIVE-01` is about.
+    const sapCodes = [
+      ...new Set(
+        Object.entries(sourceText)
+          .filter(([f]) => !IS_TEST_MODULE.test(f))
+          .flatMap(([, text]) => [...text.matchAll(/sapCode:\s*'([^']+)'/g)].map((m) => m[1])),
+      ),
+    ].sort();
+    expect(sapCodes).toEqual([
+      'MAT-10045',
+      'MAT-10046',
+      'MAT-10089',
+      'MAT-30110',
+      'MAT-40220',
+    ]);
+
+    // ⚠️ THREE OF THE FIVE ARE INVISIBLE TO EVERY OTHER ASSERTION IN THIS FILE.
+    // They are not in `CODES`, so they are not in the master-absent count, not
+    // in the identity property, and not in the BPOM firing pin.
+    const invisible = sapCodes.filter((c) => !CODES.includes(c));
+    expect(invisible).toEqual(['MAT-10045', 'MAT-10046', 'MAT-10089']);
+
+    // …and the OTHER two are already in the undeclared third space. That is the
+    // part that makes this a live question rather than a tidy-up: the storefront
+    // field is not holding some unrelated vocabulary, it OVERLAPS `MAT-*`. So
+    // either the third space is bigger than nine codes, or the storefront is a
+    // fourth space that happens to share two — and NOTHING IN THE TREE SAYS
+    // WHICH. C9 §5 requires a `MaterialRef` to name its space; this field names
+    // none, and its own name does not say whose SAP it means.
+    expect(sapCodes.filter((c) => UNDECLARED_SPACE.includes(c))).toEqual([
+      'MAT-30110',
+      'MAT-40220',
+    ]);
+
+    // Stated as the consequence rather than left for a reader to compute: every
+    // master-absent figure in this file is scoped to two field names. Nine is
+    // the two-field answer; twelve is the answer if these count. Which one is
+    // true is a DECLARATION, and no batch has made it.
+    expect(CODES.filter((c) => !(c in MATERIAL_MASTER))).toHaveLength(9);
+    expect(
+      [...new Set([...CODES, ...sapCodes])].filter((c) => !(c in MATERIAL_MASTER)),
+    ).toHaveLength(12);
   });
 
   it('a THIRD Paragon space exists that no declaration names', () => {
@@ -409,18 +476,25 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     expect(UNDECLARED_SPACE.filter((c) => DOCUMENT_LANE.includes(c))).toEqual([]);
   });
 
-  it("the TREE's master-absent population fell 39 → 14, and WHERE matters", () => {
-    // The number a 2B dispatch actually has to plan against — 30 + 9 before this
-    // batch, 5 + 9 after it. What did NOT move is the second term: the third
-    // space is untouched, because adoption is scoped to a DECLARED lane.
+  it("the TREE's master-absent population fell 39 → 14 → 9, and it is ALL third space", () => {
+    // The number a 2B dispatch actually has to plan against: 30 + 9, then 5 + 9,
+    // now 0 + 9. What NEVER moved is the second term — three batches, thirty new
+    // master rows, and the undeclared space is exactly where it started, because
+    // every one of them was scoped to a DECLARED lane.
+    //
+    // ⚠️ THE REMAINDER IS NOW HOMOGENEOUS, and that is the real 2B-3 result:
+    // "master-absent" and "third space" have become the same set. Until this
+    // batch the phrase covered two populations with different remedies (adopt /
+    // author vs retire), and a reader could take a statement about one as a
+    // statement about both.
     expect(CODES.length).toBe(44);
     const absent = CODES.filter((c) => !(c in MATERIAL_MASTER));
-    expect(absent).toHaveLength(14);
-    expect(absent.filter((c) => UNDECLARED_SPACE.includes(c))).toHaveLength(9);
-    expect(absent.filter((c) => DOCUMENT_LANE.includes(c))).toHaveLength(5);
+    expect(absent).toEqual(UNDECLARED_SPACE);
+    expect(absent).toHaveLength(9);
+    expect(absent.filter((c) => DOCUMENT_LANE.includes(c))).toEqual([]);
   });
 
-  it('FOUR of the five document lanes are now 100% master-resolvable', () => {
+  it('ALL FIVE document lanes are now 100% master-resolvable', () => {
     // ⚠️ THE CAPABILITY BOUNDARY, stated as a derived fact rather than a claim
     // in a PR body. Every remaining unresolvable document-lane code lives in ONE
     // module — the RFQ lane — and every one of them is a code that states no
@@ -431,13 +505,10 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     expect(unresolvedIn(/^\/src\/data\/mockGoodsReceipts\.ts$/)).toEqual([]);
     expect(unresolvedIn(/^\/src\/data\/mockInventory\.ts$/)).toEqual([]);
     expect(unresolvedIn(/^\/src\/data\/mockShipments\.ts$/)).toEqual([]);
-    expect(unresolvedIn(/^\/src\/data\/mockRfqs\.ts$/)).toEqual([
-      'AI-CENT-6900',
-      'PK-ALCP-2441',
-      'PK-PETB-8803',
-      'PK-PETB-8825',
-      'RM-HUMEC-3405',
-    ]);
+    // ⚠️ AND THE FIFTH, at 2B-3. The RFQ lane was the last holdout and it was
+    // the hardest one, because a `materialIds: string[]` states no meaning to
+    // ratify — its five codes had to be AUTHORED rather than adopted.
+    expect(unresolvedIn(/^\/src\/data\/mockRfqs\.ts$/)).toEqual([]);
   });
 
   it('but the GR gate STILL cannot be a master check — the 2B-4 gate, measured', () => {
@@ -515,17 +586,24 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
     // OPEN ON ENTIRE VOCABULARIES.
   });
 
-  it('2B-2 adopted 25 codes and moved the firing set by ZERO', () => {
+  it('2B-2 and 2B-3 added 30 codes and moved the firing set by ZERO', () => {
     // Worth asserting explicitly rather than inferring from the pin above. The
-    // predicate reads a PREFIX; adoption writes the MASTER. They are disjoint
-    // mechanisms, so a batch that made 25 codes master-resolvable changed
-    // nothing regulatory — which is exactly why `bpomApplicable` remains the
-    // 2B-4 gate's business and not this batch's.
+    // predicate reads a PREFIX; adoption and authoring write the MASTER. They
+    // are disjoint mechanisms, so two batches that made 30 codes
+    // master-resolvable changed nothing regulatory — which is exactly why
+    // `bpomApplicable` remains the 2B-4 gate's business and not theirs.
     const firing = CODES.filter(wouldRequireBpom);
-    expect(firing.filter((c) => c in MATERIAL_MASTER)).toHaveLength(15);
-    expect(firing.filter((c) => !(c in MATERIAL_MASTER))).toEqual(['AI-CENT-6900']);
-    // …and the one that is NOT master-resolvable is an RFQ-mute code, so the
-    // wizard never sees it. The fail-open that IS live remains the `MAT-*` one.
+    expect(firing.filter((c) => c in MATERIAL_MASTER)).toHaveLength(16);
+    // ⚠️ EVERY FIRING CODE IS NOW MASTER-RESOLVABLE — `AI-CENT-6900` was the
+    // last one outside, and 2B-3 authored it. THE SET DID NOT MOVE; only what
+    // the master can say about its members did. That is the cleanest available
+    // statement of why the prefix rule is not a master rule: total coverage of
+    // the firing set changed nothing about which codes fire, because the master
+    // is not consulted at all.
+    expect(firing.filter((c) => !(c in MATERIAL_MASTER))).toEqual([]);
+    // The fail-open that IS live remains the `MAT-*` one: none of those nine
+    // fires, and none of them is resolvable either.
+    expect(UNDECLARED_SPACE.filter(wouldRequireBpom)).toEqual([]);
   });
 
   it('no code B2a introduced changes its regulatory class', () => {
@@ -567,23 +645,30 @@ describe('MG-COLLISION-21-01 — CLOSED at 2B-1 (R-1: declared ownership decides
     expect(groupMembers('MG-20')).not.toContain('PP caps/closures');
   });
 
-  it('2B-2 adopted the FOUR packaging codes that stated a meaning, and no more', () => {
+  it('all SEVEN packaging codes resolve now — but by TWO different acts', () => {
     // At 2B-1 this listed seven codes and asserted every one was master-absent —
-    // the block that a resolved vocabulary is not an adoption. 2B-2 is the
-    // adoption, and it splits the seven exactly along the line 2B-1 predicted:
-    // a code that STATES a meaning gets ratified, a code that states none does
-    // not, and the group ruling is what made the first four safe to take.
-    const adopted = ['PK-CART-9901', 'PK-CART-9910', 'PK-PETB-8801', 'PK-PETB-8802'];
-    for (const code of adopted) {
+    // the block that a resolved vocabulary is not an adoption. 2B-2 split them
+    // exactly along the line 2B-1 predicted: a code that STATES a meaning gets
+    // ratified, a code that states none does not. 2B-3 took the other three.
+    //
+    // ⚠️ THE SPLIT IS PRESERVED HERE RATHER THAN COLLAPSED, because "all seven
+    // resolve" is the uninteresting half. Four were RATIFIED against a string
+    // the lane already carried; three were AUTHORED from an RFQ title. Both
+    // produce a master row, and only one of them can be checked against the
+    // lane. A later reader comparing the seven should be able to see which is
+    // which without going to the register.
+    const ratified = ['PK-CART-9901', 'PK-CART-9910', 'PK-PETB-8801', 'PK-PETB-8802'];
+    for (const code of ratified) {
       expect(code in MATERIAL_MASTER, `${code} was adopted at 2B-2`).toBe(true);
       expect(meaningsOf(code).length, `${code} stated a meaning to ratify`).toBe(1);
     }
-    // The three left behind are RFQ-mute, and `PK-ALCP-2441` is the one R-1's
-    // substrate-vs-function split was argued over. It is 2B-3's row, and this
-    // pin is what stops it being swept in with a packaging batch.
+    // `PK-ALCP-2441` is the one R-1's substrate-vs-function split was argued
+    // over, and it landed at MG-21 with the plastic closures.
     for (const code of ['PK-ALCP-2441', 'PK-PETB-8803', 'PK-PETB-8825']) {
-      expect(code in MATERIAL_MASTER, `${code} states no meaning — 2B-3, not 2B-2`).toBe(false);
-      expect(meaningsOf(code)).toEqual([]);
+      expect(code in MATERIAL_MASTER, `${code} was authored at 2B-3`).toBe(true);
+      // AND STILL STATES NOTHING. Authoring made the code RESOLVABLE; it did not
+      // make the lane describe it. `meaningsOf` is unchanged for all three.
+      expect(meaningsOf(code), `${code} still states no meaning`).toEqual([]);
     }
   });
 });
