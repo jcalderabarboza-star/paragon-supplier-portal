@@ -84,24 +84,46 @@ describe('2B-4a — the seed is a CLASS RULE, and the rule DERIVES', () => {
     expect(bpomOf('RM-SPOOF').ok).toBe(false);
   });
 
-  it('all 35 master rows carry the field, and each equals its GROUP rule', () => {
+  it('all 42 master rows carry the field, and each equals its GROUP rule — with ONE recorded exception', () => {
     // The pin that makes "seeded from class, all provisional" a MEASURED fact
     // rather than a claim in a header. ⚠️ WHEN A ROW IS RATIFIED INDIVIDUALLY,
     // THIS NARROWS AND THE RATIFICATION IS RECORDED — it must not be loosened
     // to let a per-row override slip in unannounced.
-    expect(ENTRIES).toHaveLength(35);
+    expect(ENTRIES).toHaveLength(42);
     const drifted = ENTRIES.filter(
       (e) => e.bpomApplicable !== provisionalBpomForGroup(e.materialGroup),
     ).map((e) => `${e.materialCode} (${e.materialGroup}) = ${e.bpomApplicable}`);
-    expect(drifted).toEqual([]);
+    // ⚠️ THIS IS THE NARROWING THE COMMENT ABOVE PROMISED, AND IT IS AN EXACT
+    // SET OF ONE — not a loosened predicate, not an "allow overrides" flag.
+    // `RM-EMUL-9440` is the first row in the master whose value rests on a
+    // DOCUMENT rather than on its group's class default: `doc-201`, a **BPOM
+    // Notification (TD.02.02.66.10.23.0311)** issued by BPOM and linked to
+    // `PO-2025-00131`, the parent of the ASN line this code was authored from.
+    // MG-02's class rule would say `UNDETERMINED` — nobody has ruled — but
+    // somebody DID rule, in a document, about this supply.
+    //
+    // **A CLASS DEFAULT IS WHAT YOU USE WHEN NOBODY HAS DECIDED. IT IS NOT
+    // EVIDENCE, AND IT DOES NOT OUTRANK EVIDENCE.** The exception is listed by
+    // name so a second one cannot arrive quietly and turn a recorded
+    // ratification into a second, undocumented mechanism.
+    expect(drifted).toEqual(['RM-EMUL-9440 (MG-02) = APPLICABLE']);
+    expect(provisionalBpomForGroup('MG-02')).toBe('UNDETERMINED');
+    // …and it is the ONLY row anywhere in the master that deviates.
+    expect(
+      ENTRIES.filter((e) => e.bpomApplicable !== provisionalBpomForGroup(e.materialGroup)),
+    ).toHaveLength(1);
   });
 
-  it('the three-way split is 16 / 9 / 10, and VERP implies NOT_APPLICABLE', () => {
+  it('the three-way split is 20 / 11 / 11, and VERP implies NOT_APPLICABLE', () => {
     const count = (v: BpomApplicability) =>
       ENTRIES.filter((e) => e.bpomApplicable === v).length;
-    expect(count('APPLICABLE')).toBe(16);
-    expect(count('NOT_APPLICABLE')).toBe(9);
-    expect(count('UNDETERMINED')).toBe(10);
+    // 2B-4a measured 16 / 9 / 10 over 35 rows. 2B-5b-ii authored seven:
+    // +4 APPLICABLE (`FR-ROUD-4470`, `AI-NIAC-6612`, `AI-HYALU-6615`,
+    // `RM-EMUL-9440`), +2 NOT_APPLICABLE (both packaging), +1 UNDETERMINED
+    // (`RM-PSTN-7150`, MG-10 — a group nobody has ruled on).
+    expect(count('APPLICABLE')).toBe(20);
+    expect(count('NOT_APPLICABLE')).toBe(11);
+    expect(count('UNDETERMINED')).toBe(11);
     // A CROSS-CHECK, not a second rule. Every packaging-material row also
     // carries `materialType: 'VERP'`, so the class rule and the SAP taxonomy
     // agree — asserted rather than encoded, because two rules for one fact is
@@ -170,7 +192,9 @@ describe('2B-4a — UNDETERMINED REFUSES IDENTICALLY TO AN UNKNOWN CODE', () => 
     const undetermined = CODES.filter(
       (c) => MATERIAL_MASTER[c].bpomApplicable === 'UNDETERMINED',
     );
-    expect(undetermined).toHaveLength(10);
+    // ELEVEN at 2B-5b-ii — `RM-PSTN-7150` joins, MG-10, a group nobody has
+    // ruled on. Note which authored row did NOT: `RM-EMUL-9440` had a document.
+    expect(undetermined).toHaveLength(11);
     expect(undetermined.filter((c) => bpomOf(c).ok)).toEqual([]);
   });
 
@@ -183,7 +207,7 @@ describe('2B-4a — UNDETERMINED REFUSES IDENTICALLY TO AN UNKNOWN CODE', () => 
 });
 
 describe('PREFIX-RULE-ASSERTS-A-NEGATIVE-01 — the two mechanisms, MEASURED', () => {
-  it('they agree on 25 of the 35 master rows — and the agreement is not evidence', () => {
+  it('they agree on 30 of the 42 master rows — and the agreement is STILL not evidence', () => {
     // ⚠️ THE AGREEMENT IS AN ARTEFACT OF HOW THESE FIXTURES WERE AUTHORED.
     // `AI-` codes are actives and `FR-` codes are fragrance BECAUSE SOMEBODY
     // TYPED THEM THAT WAY, not because a prefix carries meaning — C9 §3 says it
@@ -195,8 +219,24 @@ describe('PREFIX-RULE-ASSERTS-A-NEGATIVE-01 — the two mechanisms, MEASURED', (
       const o = bpomOf(c);
       return o.ok && o.applicable === prefixRuleSays(c);
     });
-    expect(answerable).toHaveLength(25);
-    expect(agree).toHaveLength(25);
+    // ⚠️ 25/25 AT 2B-4a, 31 ANSWERABLE AND 30 AGREEING AT 2B-5b-ii — AND THE
+    // ONE DISAGREEMENT IS WORTH MORE THAN THE THIRTY AGREEMENTS. `RM-EMUL-9440`
+    // is the first row where the master has a determination the prefix rule
+    // contradicts: master APPLICABLE (on `doc-201`), prefix `false`. Until now
+    // the two mechanisms had never actually disagreed on an ANSWERABLE row —
+    // the fail-open was always visible as silence (`UNDETERMINED`) or as a
+    // vocabulary the master could not resolve at all.
+    expect(answerable).toHaveLength(31);
+    expect(agree).toHaveLength(30);
+    const contradicted = answerable.filter((c) => {
+      const o = bpomOf(c);
+      return o.ok && o.applicable !== prefixRuleSays(c);
+    });
+    expect(contradicted).toEqual(['RM-EMUL-9440']);
+    // Stated as the two claims side by side, because this is the row 2B-4b
+    // exists to settle.
+    expect(bpomOf('RM-EMUL-9440')).toEqual({ ok: true, applicable: true });
+    expect(prefixRuleSays('RM-EMUL-9440')).toBe(false);
   });
 
   it('THE TEN: where the prefix rule states a confident NO and nobody has ruled', () => {
@@ -206,6 +246,10 @@ describe('PREFIX-RULE-ASSERTS-A-NEGATIVE-01 — the two mechanisms, MEASURED', (
     // and `false` IS AN ASSERTION — "this lot needs no BPOM lot check". A
     // prefix rule has no way to say "undetermined", so every code it does not
     // recognise becomes a negative it has no basis for.
+    // ⚠️ ELEVEN AT 2B-5b-ii. `RM-PSTN-7150` (RBD Palm Stearin, MG-10) joins the
+    // set — an ASN line that IS RECEIVED TODAY, where the prefix rule says "no
+    // check" and the master says "nobody ruled". The other ten were fixture
+    // rows; this one arrives on the receiving surface.
     const undetermined = CODES.filter((c) => !bpomOf(c).ok);
     expect(undetermined).toEqual([
       'RM-COCO-8200',
@@ -217,22 +261,28 @@ describe('PREFIX-RULE-ASSERTS-A-NEGATIVE-01 — the two mechanisms, MEASURED', (
       'RM-LAURIC-7200',
       'RM-MYRST-7310',
       'RM-PALM-7100',
+      'RM-PSTN-7150',
       'RM-STEAR-7300',
     ]);
     // Every one of them: prefix rule says NO CHECK, master says NO RULING.
     expect(undetermined.filter(prefixRuleSays)).toEqual([]);
   });
 
-  it('THE FIRING SET IS UNCHANGED BY THIS BATCH — asserted, not assumed', () => {
-    // The dispatch's standing requirement. 2B-2 and 2B-3 moved it by zero and
-    // so must this. The mechanisms are disjoint: `inferBpom` reads a PREFIX,
-    // this batch writes a MASTER FIELD nothing calls. Pinned against the
-    // predicate rather than inferred from "we did not edit a code".
+  it('⚠️ THE FIRING SET MOVED BY THREE — the first batch of the arc that could', () => {
+    // The dispatch's standing requirement, and 2B-5b-ii is the batch that
+    // breaks it ON PURPOSE. 2B-2, 2B-3 and 2B-4a moved it by ZERO because the
+    // mechanisms are disjoint: `inferBpom` reads a PREFIX, those batches wrote a
+    // MASTER FIELD nothing calls. **THIS BATCH IS THE FIRST TO ASSIGN CODES**,
+    // and three of the seven took `AI-`/`FR-` mnemonics. No compliance rule was
+    // consulted; a naming convention moved three lots' treatment. Pinned against
+    // the predicate rather than inferred from what the diff touched.
     expect(CODES.filter(prefixRuleSays)).toEqual([
       'AI-CENT-6900',
       'AI-HYALU-6610',
+      'AI-HYALU-6615',
       'AI-NIAC-6601',
       'AI-NIAC-6605',
+      'AI-NIAC-6612',
       'AI-PANTO-6640',
       'AI-PEPTIDE-8801',
       'AI-RETA-6750',
@@ -242,18 +292,34 @@ describe('PREFIX-RULE-ASSERTS-A-NEGATIVE-01 — the two mechanisms, MEASURED', (
       'FR-EMIN-4420',
       'FR-MKOV-5510',
       'FR-MKOV-5520',
+      'FR-ROUD-4470',
       'FR-WARD-4410',
       'FR-WARD-4430',
       'FR-WARD-4440',
     ]);
-    // …and the sixteen the class rule marks APPLICABLE are the SAME sixteen.
-    // Worth stating explicitly because it is the strongest form of "the
-    // behaviour did not move": on every row the new mechanism can answer at
-    // all, it answers what the old one answers. THE ENTIRE VALUE OF THE SWAP
-    // IS IN THE ROWS IT REFUSES.
-    expect(CODES.filter((c) => MATERIAL_MASTER[c].bpomApplicable === 'APPLICABLE')).toEqual(
-      CODES.filter(prefixRuleSays),
-    );
+    // ⚠️ INVERTED AT 2B-5b-ii, AND THIS IS THE SHARPEST ASSERTION IN THE FILE.
+    // At 2B-4a the two sets were IDENTICAL — sixteen and sixteen — and that was
+    // recorded as the strongest form of "the behaviour did not move": on every
+    // row the new mechanism could answer, it answered what the old one answered,
+    // and the entire value of the swap lay in the rows it REFUSED.
+    //
+    // **THEY ARE NO LONGER IDENTICAL. TWENTY VS NINETEEN, DIFFERING BY EXACTLY
+    // `RM-EMUL-9440`** — the row whose value rests on `doc-201` rather than on a
+    // class default. The master now says a received lot needs a BPOM check and
+    // the wizard says it does not, in writing, about a line that is delivered
+    // today. Until this batch the fail-open was always a SILENCE (an
+    // `UNDETERMINED`, or a vocabulary the master could not resolve). It is now a
+    // CONTRADICTION, which is what `BPOM-OFF-BY-SPACE-01`'s amendment says and
+    // what 2B-4b exists to settle.
+    const applicable = CODES.filter((c) => MATERIAL_MASTER[c].bpomApplicable === 'APPLICABLE');
+    const firing = CODES.filter(prefixRuleSays);
+    expect(applicable).toHaveLength(20);
+    expect(firing).toHaveLength(19);
+    expect(applicable.filter((c) => !firing.includes(c))).toEqual(['RM-EMUL-9440']);
+    // And nothing fires that the master does NOT mark applicable — the
+    // disagreement runs in one direction only, which is the direction that
+    // matters: the master is stricter than the wizard, never looser.
+    expect(firing.filter((c) => !applicable.includes(c))).toEqual([]);
   });
 });
 

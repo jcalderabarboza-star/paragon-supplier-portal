@@ -141,6 +141,25 @@ const AUTHORED = Object.keys(MATERIAL_MASTER)
   })
   .sort();
 
+/**
+ * 2B-5b-ii's rows, derived by THEIR defining property rather than listed: master
+ * codes whose only non-master source in the tree is the ASN lane module.
+ *
+ * ⚠️ THEY ARE NOT ADOPTIONS, AND `ADOPTED` CORRECTLY EXCLUDES THEM WITHOUT ANY
+ * EDIT — `laneRefs` is scoped to `/src/data/mock*.ts`, the DECLARED document
+ * lane, and `supplierShipments.ts` is not in it. That is the 2B-2 scope doing
+ * its job three batches later: a batch that authored rows from an UNDECLARED
+ * lane could not accidentally be counted as ratifying the declared one.
+ */
+const AUTHORED_ASN = Object.keys(MATERIAL_MASTER)
+  .filter((c) => {
+    const src = [...new Set(REFS.filter((r) => r.code === c).map((r) => r.module))];
+    return (
+      src.length === 1 && src[0] === '/src/services/data/mock/fixtures/supplierShipments.ts'
+    );
+  })
+  .sort();
+
 describe('2B-2 — the adoption is exactly 25 codes, and they are the ones that STATED a meaning', () => {
   it('collected a real population (guards a vacuous pass)', () => {
     expect(REFS.length).toBeGreaterThan(80);
@@ -151,10 +170,14 @@ describe('2B-2 — the adoption is exactly 25 codes, and they are the ones that 
     expect(ADOPTED.length).toBe(25);
   });
 
-  it('adopted 25 — on top of 5 seed entries and, since 2B-3, 5 authored ones', () => {
+  it('adopted 25 — on top of 5 seed, 5 authored at 2B-3 and 7 authored at 2B-5b-ii', () => {
     expect(ADOPTED).toHaveLength(25);
     expect(AUTHORED).toHaveLength(5);
-    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(35);
+    expect(AUTHORED_ASN).toHaveLength(7);
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(42);
+    // 5 + 25 + 5 + 7 = 42, stated as arithmetic so a row cannot go missing
+    // between two counts that each look right.
+    expect(SEED.length + ADOPTED.length + AUTHORED.length + AUTHORED_ASN.length).toBe(42);
   });
 
   it('⚠️ NO master code arrived from a fourth route', () => {
@@ -165,13 +188,33 @@ describe('2B-2 — the adoption is exactly 25 codes, and they are the ones that 
     // every master row is SEEDED, ADOPTED from a stated meaning in the declared
     // document lane, or AUTHORED from the RFQ lane — and nothing else. Adopt a
     // code out of the `MAT-*` space and it lands in no bucket and is named here.
+    //
+    // ⚠️ THIS PIN DID ITS JOB AT 2B-5b-ii AND IT IS WORTH RECORDING THAT IT WAS
+    // THE ONE THAT CAUGHT IT. Seven rows authored from the ASN lane landed in no
+    // bucket and were named here, by code, before anything else in the suite
+    // noticed them. The FIX WAS A FOURTH BUCKET WITH ITS OWN DERIVED DEFINITION
+    // — not a widened filter, and not adding the seven to `AUTHORED`, which
+    // would have made "authored from the RFQ lane" quietly untrue.
     const unaccounted = Object.keys(MATERIAL_MASTER).filter(
       (c) =>
-        !(SEED as readonly string[]).includes(c) && !ADOPTED.includes(c) && !AUTHORED.includes(c),
+        !(SEED as readonly string[]).includes(c) &&
+        !ADOPTED.includes(c) &&
+        !AUTHORED.includes(c) &&
+        !AUTHORED_ASN.includes(c),
     );
     expect(unaccounted).toEqual([]);
     // …and the buckets do not overlap: a row cannot both ratify and author.
     expect(ADOPTED.filter((c) => AUTHORED.includes(c))).toEqual([]);
+    expect(AUTHORED_ASN.filter((c) => ADOPTED.includes(c) || AUTHORED.includes(c))).toEqual([]);
+    expect(AUTHORED_ASN).toEqual([
+      'AI-HYALU-6615',
+      'AI-NIAC-6612',
+      'FR-ROUD-4470',
+      'PK-ALCP-2450',
+      'PK-PETB-8804',
+      'RM-EMUL-9440',
+      'RM-PSTN-7150',
+    ]);
   });
 });
 
@@ -249,7 +292,7 @@ describe('2B-2 — groups come from the 2B-1 registry, and TYPE follows the AXIS
     expect(mismatched).toEqual([]);
   });
 
-  it('MG-10 was declared member-less at 2B-1 and now has its five', () => {
+  it('MG-10 was declared member-less at 2B-1, took five at 2B-2 and a sixth at 2B-5b-ii', () => {
     // The ordering argument, made executable. A group declared ahead of its
     // members is a decision recorded; one invented during an adoption is a
     // decision smuggled — and this is the run where the recorded decision was
@@ -263,8 +306,13 @@ describe('2B-2 — groups come from the 2B-1 registry, and TYPE follows the AXIS
       'RM-LAURIC-7200',
       'RM-MYRST-7310',
       'RM-PALM-7100',
+      'RM-PSTN-7150',
       'RM-STEAR-7300',
     ]);
+    // ⚠️ AND THE 2B-2 SCOPE OF THIS CLAIM IS RESTATED RATHER THAN WIDENED: the
+    // FIVE this batch spent R-2's decision on are still exactly five. The sixth
+    // arrived three batches later, by the same criterion, from a different lane.
+    expect(ADOPTED.filter((c) => MATERIAL_MASTER[c].materialGroup === 'MG-10')).toHaveLength(5);
   });
 
   it('MG-21 and MG-22 gained NO members from THIS batch — R-1 decided 2B-3 rows', () => {
@@ -289,7 +337,10 @@ describe('2B-2 — groups come from the 2B-1 registry, and TYPE follows the AXIS
         .filter((m) => m.materialGroup === 'MG-21')
         .map((m) => m.materialCode)
         .sort(),
-    ).toEqual(['PK-ALCP-2441', 'PK-CAPF-8820']);
+    // ⚠️ THREE AT 2B-5b-ii — `PK-ALCP-2450` joins, and it is a SECOND aluminium
+    // closure filed by function rather than substrate. R-1's split is no longer
+    // a rule that fired once.
+    ).toEqual(['PK-ALCP-2441', 'PK-ALCP-2450', 'PK-CAPF-8820']);
     // MG-22 is still empty outright, which is R-1's payout stated from the other
     // side: the tree's one metal closure did not go to the metal group.
     expect(Object.values(MATERIAL_MASTER).filter((m) => m.materialGroup === 'MG-22')).toEqual([]);

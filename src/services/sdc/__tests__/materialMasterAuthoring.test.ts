@@ -159,8 +159,14 @@ describe('2B-3 — the population DERIVES, and it is five', () => {
     ]);
   });
 
-  it('the master is now 35 — 5 seeded, 25 adopted, 5 authored', () => {
-    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(35);
+  it('the master is now 42 — 5 seeded, 25 adopted, 5 authored 2B-3, 7 authored 2B-5b-ii', () => {
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(42);
+    // ⚠️ AND THE FIVE OF *THIS* BATCH ARE STILL FIVE. The derived population
+    // above is RFQ-only codes, and 2B-5b-ii's seven come from the ASN lane, so
+    // they cannot leak into it — asserted rather than assumed, because "the
+    // count went up and the batch's own set did not" is the exact shape that
+    // makes a derived population worth having.
+    expect(AUTHORED).toHaveLength(5);
   });
 });
 
@@ -329,7 +335,12 @@ describe('2B-3 — groups: two standing decisions PAY OUT, and one facet cannot 
         .filter((m) => m.materialGroup === g)
         .map((m) => m.materialCode)
         .sort();
-    expect(membersOf('MG-21')).toEqual(['PK-ALCP-2441', 'PK-CAPF-8820']);
+    // ⚠️ THREE AT 2B-5b-ii. `PK-ALCP-2450` (*Aluminium Closure 24/410*) is a
+    // SECOND aluminium closure filed by FUNCTION rather than substrate — and it
+    // is deliberately NOT the same row as `PK-ALCP-2441` (operator ruling R-2:
+    // an open 2026 RFQ is not evidence about a 2025 delivery, and 24/410 fixes
+    // the neck finish only). R-1's split is no longer a rule that fired once.
+    expect(membersOf('MG-21')).toEqual(['PK-ALCP-2441', 'PK-ALCP-2450', 'PK-CAPF-8820']);
     // …and MG-22 STILL has none. That is the payout, stated from the other
     // side: the tree's one metal closure did not go to the metal group.
     expect(membersOf('MG-22')).toEqual([]);
@@ -409,11 +420,15 @@ describe('2B-4 GATE — the mechanism landed at 2B-4a; the BEHAVIOUR still has n
       .filter((m) => !('bpomApplicable' in (m as Record<string, unknown>)))
       .map((m) => m.materialCode);
     expect(missing).toEqual([]);
-    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(35);
-    // The GR wizard is still fed `asnStore`, still seeded from the `MAT-*`
-    // space, and neither 2B-3 nor 2B-4a touched that space. The unresolvable
-    // population went 9 → 12 at 2B-4a (the census widening), so the gate this
-    // pin guards is WIDER than when it was written.
+    expect(Object.keys(MATERIAL_MASTER)).toHaveLength(42);
+    // ⚠️ THE GATE THIS PIN GUARDS IS DISCHARGED AT 2B-5b-ii — and the pin below
+    // still holds, which is the whole point of separating them. The GR wizard is
+    // fed `asnStore`; that space is retired and every code it can hand the
+    // wizard is now in the master, so a fail-closed master gate would refuse
+    // nothing legitimate. **THE BEHAVIOUR STILL HAS NOT MOVED**: the wizard has
+    // never heard of `bpomApplicable` and still runs the prefix rule. Mechanism
+    // early, precondition discharged, behaviour late — three separate facts,
+    // and 2B-4b changes only the third.
     const wizard = import.meta.glob('/src/components/v2-features/GRInspectionWizard.tsx', {
       query: '?raw',
       import: 'default',
