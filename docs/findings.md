@@ -1697,3 +1697,244 @@ is cheaper than swapping in M8b and reporting nine of nine.
   than assumed from their shape.
 - **C9 BYTES UNTOUCHED, PIN STAYS `f492b5c`.**
 - **FLOOR 2147/179 → 2167/180.** `npm run gates` green.
+
+---
+
+## CP-2 · 2B-5a — THE POINTER DECLARED, THE REFERENCES REPAIRED (refs @ `eb40656`)
+
+**`sapCode` is a POINTER, not a space. Six chase-reference mismatches are fixed.
+The meaning scope DERIVES. And the master-absent count is NINE again — a
+DIFFERENT nine.**
+
+⚠️ **CARRIED FROM THE 2B-5 INVESTIGATION, VERBATIM AND UNSOFTENED:**
+
+> **The census currently reports the third space as CLEAN on the identity
+> property, AND THAT IS AN ARTEFACT OF THE MEANING SCOPE, NOT A FACT ABOUT THE
+> SPACE. No statement of the form "the third space is internally consistent" is
+> supported today.**
+>
+> **NOR IS ANY STATEMENT THAT THE THIRD SPACE'S REFERENCES RESOLVE** — six of
+> six chase-reference axes were wrong, and three of five storefront pointers
+> dangled.
+
+Both were true when written. **2B-5a makes the second one false and leaves the
+first one true**, which is the honest state and is why B and C stay open.
+
+### ⚠️ CORRECTING OUR OWN REGULATORY FIGURE — `BPOM-OFF-BY-SPACE-01` IS **SEVEN**
+
+The register said NINE at 2B-0/2B-1 and TWELVE at 2B-4a. **Both are wrong.**
+The GR wizard's two draft builders read `Shipment` (master codes throughout) and
+`ASN`. The ASN lane is `MOCK_ASNS` — **seven line items, all `MAT-*`**. The two
+chase-lane codes and the storefront pointers **cannot reach a receiving surface
+at all**, and never could.
+
+| | |
+|---|---|
+| **Severity** | **UNCHANGED. Seven received lines silently skip a BPOM lot check, today, rendered.** |
+| **What was wrong** | The number, in a regulatory finding. |
+| **The error's mechanism, recorded because it generalises** | **THE CENSUS POPULATION AND THE REGULATORY EXPOSURE ARE DIFFERENT QUANTITIES, AND WE CONFLATED THEM.** The census counts every code the tree names; the exposure counts codes that can reach the receiving surface. They were the same set once, so one number served both — and it kept serving both after they diverged. 2B-4a's line *"the unresolvable codes the GR wizard can be fed went 9 → 12"* is the clearest instance: the widening was a CENSUS event and was reported as an EXPOSURE event. |
+| **Disposition** | **CORRECTED HERE, IN THE BATCH THAT FOUND IT.** The pin now asserts the two quantities separately (`UNDECLARED_SPACE` = 7, tree master-absent = 9) so they cannot be restated as one another. **A wrong number in a regulatory row is corrected by the seat that wrote it, not left for the batch that acts on it.** |
+
+### R-D — the storefront is a POINTER SPACE, and four of five pointers are wrong
+
+The 2B-4a ruling (`sapCode` counts) **stands**; what the values ARE is the
+2B-5a correction. The field is named `sapCode` not `materialCode`; the supplier's
+own form labels it **"SAP code (optional)"** — Paragon runs the SAP, and an
+OPTIONAL field cannot be an identity; and **two of the five pointed at codes in
+`paragon.asn_chase_lane` UNDER THE MATCHING SUPPLIER ON BOTH SIDES**, which is
+what a pointer looks like when it works.
+
+> **THE STOREFRONT DOES NOT ADD CODES TO A SPACE. IT ADDS FIVE CLAIMS ABOUT A
+> SPACE, AND THREE OF THEM ARE UNBACKED.**
+
+| pointer | resolves | disposition |
+|---|---|---|
+| `c1` → **`PK-PETB-8803`** | the MASTER | **REPAIRED at 2B-5a (R-D)** — read `MAT-10045`, a code no Paragon space contains |
+| `c101` → `MAT-30110` · `c201` → `MAT-40220` | the ASN lane | correct pointers into a space booked for retirement — **repoint at 2B-5b** |
+| `c2` → `MAT-10046` · `c3` → `MAT-10089` | **nowhere** | unbacked; repairing them means AUTHORING master rows from a supplier's catalogue prose, which is an adoption and not 2B-5a's |
+
+⚠️ **A DECLARATION THAT ONLY EVER ARRIVES WITH ITS OWN COMPLIANCE IS A
+DECLARATION WRITTEN TO FIT.** Four of five rows fail the rule they were just
+given, and the pin asserts each bucket as an **exact set** plus a **partition
+check**, so the three cannot overlap or leave a remainder.
+
+⚠️ **AND NO POINTER MAY BE JOINED ON.** C9 §4 unchanged: a claim entered by one
+party about another party's space is an adoption at best. This one has no
+`method`, no `sourceOfTruth`, no `evidenceLiveness`, no `routeToResolution` —
+asserted *structurally*, because the shape has nowhere to put them, and **a
+field that cannot record how it was decided must not be read as a decision.**
+
+### `T3-WAS-CODE-BOUND-01` *(new)* — 2B-3's evidence tier was computed over a blind scope
+
+| | |
+|---|---|
+| **Finding** | 2B-3 authored `PK-PETB-8803` and recorded its evidence as **T2 + T3 ×5** — "the best-corroborated MEANING of the five". All five T3 rows were checked at 2B-5a. Four (`PR-2026-00342`, the Marketplace card, the `PO-2025-00107` remittance note, `SupplierShipments`) carry **no code**. **The fifth — the sup-007 storefront line — carried `sapCode: 'MAT-10045'`, and was classified NAME-ONLY because the census could not read the field that made it CODE-BOUND.** |
+| **What it does and does not change** | **The label is unaffected** — five independent sources state that meaning and they agree. **The TIER is wrong**, and worse, the "no conflicting code" property was **never checked for any of the five**, because the check could not see codes in that field. |
+| **The transferable part** | **AN EVIDENCE TIER IS A MEASUREMENT OVER A SCOPE, AND INHERITS THAT SCOPE'S BLIND SPOTS SILENTLY.** 2B-3 derived its tiers rather than stamping them, precisely to avoid drift — and the derivation was correct over a field set that could not see the contradicting code. **Deriving a claim does not make it scope-independent.** |
+| **Disposition** | **RECORDED, NOT RE-TIERED.** Re-tiering would need the 2B-5b ruling on whether a supplier's catalogue claim is evidence about a Paragon code at all. |
+
+### The chase lane — six mismatches, and they are why R-A needed a second leg
+
+⚠️ **THE FOURTH VIOLATION CLASS, and R-A's proof could not have found it.** R-A
+folds the meaning derivation inside 2B-5 as the proof the space was resolved.
+**`MAT-10234` and `MAT-20500` STATE NO MEANING ANYWHERE**, under any field-name
+rule — so no widening of what counts as a meaning reaches them, and **a mute code
+cannot collide with anything.** Yet both contradicted the object they named:
+
+| chase | addressed to | named | itemSeq | material | real owner | real seqs | real material |
+|---|---|---|---|---|---|---|---|
+| `obr-0001` | sup-005 | `sa-0002` | 1 | `MAT-10234` | **sup-007** | **10, 20** | **`PK-PETB-8810`** |
+| `obr-0002` | sup-007 | `sa-1001` | 1 | `MAT-20500` | **sup-001** | **10** | **`RM-EMUL-3310`** |
+
+> **A REFERENCE THAT RESOLVES TO NOTHING ASSERTS NOTHING, AND IS THEREFORE
+> INVISIBLE TO EVERY CHECK THAT LOOKS FOR CONTRADICTIONS.**
+
+**FIXED — a defect fix, not an adoption.** `supplierId` is AUTHORITATIVE (scoping
+is enforced on it, so a chase addressed to one tenant about another tenant's
+commitment is wrong in the direction that matters), so the refs moved to match
+it. `subjectRefIntegrity.test.ts` re-derives all five axes from the agreement
+fixtures on every run. **The two `MAT-*` codes were never this space's
+vocabulary — they were two wrong answers to a question the agreement had already
+answered.**
+
+⚠️ **AND THE CHECK ITSELF MET THE SHAPE ON ITS FIRST RUN — THIRD APPEARANCE.**
+Axes 4 and 5 both filter on the referenced ITEM being found. On the broken
+fixture the item was NOT found, so **both examined ZERO refs and passed GREEN
+while the data was wrong** — in the batch whose subject is checks that pass
+because they found nothing to do. Every axis now states how many refs it
+examined and the count is asserted. (`--passWithNoTests`; the vacuous-19; this.)
+
+### The meaning scope DERIVES — `MEANING-SCOPE-IS-A-HAND-PICK-01` CLOSED
+
+Seeded from the master's own **labels**, exactly as the code closure is seeded
+from its keys. Building it falsified two things, and both are reported rather
+than smoothed.
+
+**(1) THE CONTAINMENT GATE IS SOUND FOR IDENTIFIERS AND UNSOUND FOR MEANINGS.**
+
+> `'PO-2025-00107 / PK-PETB-8801'` contains a code and **is not one**.
+> `'Cetearyl Alcohol — Vegetable Origin'` contains a label and **is one**.
+>
+> **MEANINGS COMPOSE BY REFINEMENT; IDENTIFIERS DO NOT.**
+
+Run over meanings, the identifier gate **rejects `description`** — the most
+load-bearing meaning field in the tree — because a more specific lane meaning
+properly contains the master's. That is `IDENTITY-GRAIN-ASYMMETRY-01`, a pinned
+deliberate state, not contamination. The gate is **OFF** for meanings, and what
+keeps `RFQ.title` out is **ARITY**, which is already canon (2B-3: a header field
+whose arity is ONE against `materialIds`'s N). It falls out of the shape: a bare
+`string[]` is not an object, so a code reached through one **has no siblings to
+read a meaning from**. The RFQ lane stays mute, and that is a fact about the
+shape rather than a gap in the scope.
+
+**(2) R-B DECLINED `material`, CORRECTLY, AND THE FIX WAS NOT TO DECLARE MORE.**
+The same key appears in `buyerRequisitions.ts`, which no declaration names. A
+purchase requisition carries a material NAME and no material CODE — **a meaning
+source with nothing to be a meaning OF.** So the meaning closure runs over the
+sibling values of **code-bearing objects only**: a meaning field is a field that
+states meanings **for codes**.
+
+### R-B implemented — and implementing it falsified half the story it was ratified on
+
+R-B shipped with the caveat that it was argued from ONE contaminant. It was, and
+here is what building it found:
+
+| | |
+|---|---|
+| **R-B does NOT catch `linkedTo`** | The PO numbers it leaks live in `mockPurchaseOrders.ts`, which **IS a declared space**, so a space-based boundary waves them straight through. What actually stops them is the **CONTAINMENT DISQUALIFIER — a property of CELLS, not of spaces.** `FIELD-SET-CLOSURE-OVERRUNS-01` credited R-B with work the containment rule was doing. **They are two INDEPENDENT gates: soundness on cells, authority on modules.** |
+| **R-B's strict form rejects `materialCode` ITSELF** | Applied to every module a field touches, the gate rejects the census's primary field, because it is re-exported through barrel modules (`channel/index.ts`) that declare nothing and own nothing. **A barrel is not a space.** The gate is on the **VALUE** — each NEW value must live in a declared space, reachable through at least one module a declaration names. |
+| ⚠️ **R-B, strictly applied, would have BLOCKED the operator's own 2B-4a ruling** | Admitting `sapCode` **necessarily enters `supplierStorefront.ts`**, which no declaration named at the time. The letter of R-B forbids it; the 2B-4a ruling requires it. **The resolution is the point: a closure may not enter a new space ON ITS OWN AUTHORITY — the operator may declare one, and the declaration is DATA the closure reads.** |
+| **AND THAT INDICTS 2B-4a** | **2B-4a's closure widened silently. It should have HALTED AND REPORTED, and the ruling should have arrived as a declaration.** The mechanism did not ask; the ruling happened to sanction it afterwards. **That is luck, not governance.** |
+
+**`materialSpaces.ts` is the missing declaration site** — the same shape
+`materialGroups.ts` was for MG codes, and for the same reason (*a vocabulary with
+no declaration site cannot disagree with itself out loud*). Four spaces, each
+carrying the ruling that authorised it. ⚠️ **The caveat is NOT discharged:** they
+are still hand-written module patterns, so **the boundary is one rung less
+derived than it looks** — named here rather than discovered in 2B-6.
+
+### The fourth level, measured — FOUR offenders, not two
+
+| code | meanings | disposition |
+|---|---|---|
+| `AI-NIAC-6601` | *Niacinamide (Vitamin B3)* / *Niacinamide USP Grade 99.5% (Vitamin B3)* | `IDENTITY-GRAIN-ASYMMETRY-01` — SDC-0 seed, **the operator's** |
+| `RM-EMUL-3320` | *Cetearyl Alcohol* / *Cetearyl Alcohol — Vegetable Origin* | same |
+| `MAT-30110` | *Specialty fat blend — RBD stearin* / *RBD Palm Stearin — Specialty Fat* | **R-E → 2B-5b** |
+| `MAT-40220` | *Emulgade SE-PF emulsifier* / *Emulgade SE-PF **E**mulsifier* | **R-E → 2B-5b** |
+
+**The extra pair is a finding the derived scope SUBSUMES rather than creates.**
+`IDENTITY-GRAIN-ASYMMETRY-01` was previously visible only through a bespoke
+master-vs-lane comparison; once `label` is an admitted meaning field it becomes an
+instance of the **general** property. **That is what a derived scope is for, and
+it is worth more than the bespoke check it absorbs.**
+
+⚠️ **THIS IS AN EXACT SET, NOT A WHITELIST, AND THE DIFFERENCE IS THE POINT.**
+A whitelist says *ignore these* and grows; this says *there are EXACTLY these
+four, here is what each says, and here is which finding owns it*. **A fifth
+offender is red. One of these four silently vanishing is ALSO red.**
+`ADOPTION-QUEUE-01`'s shape was a list that absorbed new members for three
+batches; this cannot absorb anything. **Direction A — ONE MEANING, ONE CODE — is
+GREEN over the derived scope**, because R-D repaired the only offender.
+
+⚠️ **C's TRAP IS PINNED AS AN EXECUTABLE ASSERTION**, not as advice: the two
+`MAT-40220` strings differ by ONE CAPITAL LETTER, and the test asserts they are
+unequal **and** equal under `toLowerCase`. **NORMALISING CASE MAKES THIS
+DISAPPEAR WITHOUT ANYONE DECIDING WHETHER THE TWO LANES DESCRIBE THE SAME
+PURCHASABLE ITEM** — a shipped line carrying lot `LOT-B5540` and a catalogue
+offer with a 45-day lead time. They probably do. **"Probably" is an adoption, and
+the easiest fix is the wrong one.**
+
+### The space is DEAD BY THE CODE, not by policy — R-3 now EVIDENCED
+
+`MockCommandService.ts:147-152` — the one ASN creation path — builds line items
+**from the parent PO**, and every PO line is master-resolvable since 2B-3.
+**NO DISPATCHED ASN CAN CARRY A `MAT-*` CODE.** The seven are a frozen legacy
+seed; the write path migrated before anybody ruled on it. R-3's *booked for
+retirement* is confirmed by the code rather than only by policy — recorded in the
+registry entry so 2B-5b inherits the evidence, not the assumption.
+
+### ⚠️ NINE AGAIN — AND IT IS A DIFFERENT NINE
+
+| | 2B-3 | 2B-4a | **2B-5a** |
+|---|---|---|---|
+| tree population | 44 | 47 | **44** |
+| master-absent | 9 | 12 | **9** |
+| ASN/chase third space | 9 | 9 | **7** |
+| storefront unbacked | — | 3 | **2** |
+
+**The count landed back where R-3 left it while the MEMBERSHIP changed** — the
+two chase codes left, the two unbacked pointers arrived, and one pointer was
+repaired. **A COUNT THAT RETURNS TO ITS OLD VALUE WHILE ITS MEMBERS CHANGE is
+the thing this arc keeps finding**, so the pin asserts both halves and names the
+two codes that left.
+
+### Behavioural change — measured on the BUILT bundle, EN + ID
+
+- **`BuyerSupplierProfile` → sup-007 → Catalog, row 1 SAP Code: `MAT-10045` → `PK-PETB-8803`.** The R-D render change, confirmed rendered. Rows 2 and 3 **still show `MAT-10046` / `MAT-10089`** — the declared-but-unrepaired state, visible rather than hidden.
+- **Comm Hub: ZERO `MAT-*` codes remain.** The chase subjects now render `AI-NIAC-6601` and `PK-PETB-8810` — the corrected references, and the one user-visible consequence of the six-axis fix.
+- **EN + ID both**: chrome translates (*SAP Code* → *Kode SAP*, *Lead time* → *Waktu tunggu*), material names correctly do NOT, no raw i18n keys.
+- **Console: 0 errors, 0 warnings across the session.**
+
+### Mutation-verified — five probes, five DETECTED
+
+| probe | result |
+|---|---|
+| **M1** revert R-D (`sapCode` → `MAT-10045`) | **8 red** |
+| **M2** revert one chase ref to `sa-0002`/`itemSeq 1` | **4 red** |
+| **M3** remove the storefront space declaration | **10 red** — R-B declines `sapCode`, exactly as it should have at 2B-4a |
+| **M4** turn the containment gate ON for meanings | **3 red** — `description` rejected |
+| **M5** case-normalise `MAT-40220` | **2 red** — C's trap holds |
+
+### Constraints discharged, in writing
+
+- **ZERO REGULATORY SURFACE.** `inferBpom` untouched. `MOCK_ASNS` untouched — all
+  seven ASN codes stand. Nothing imports `sdc/bpom.ts`. **2B-5a does NOT unblock
+  2B-4b**, and `BPOM-OFF-BY-SPACE-01` does not close until it does.
+- **NOTHING WAS ADOPTED.** One pointer repaired to a row that already existed;
+  two references moved onto values **read from** the agreement fixture. No master
+  row added, moved or relabelled; the master is byte-identical.
+- **NO RED PROPERTY WAS WHITELISTED TO CLOSE THE BATCH.** The four code→meaning
+  offenders are an exact set, partitioned by owning finding, and one direction of
+  the property is fully green.
+- **C9 BYTES UNTOUCHED, PIN STAYS `f492b5c`.**
+- **FLOOR 2167/180 → 2182/182.** `npm run gates` green.

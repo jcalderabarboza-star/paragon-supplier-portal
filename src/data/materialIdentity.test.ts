@@ -108,6 +108,7 @@ import { describe, expect, it } from 'vitest';
 
 import { SHOULD_COST_MATERIALS } from '../services/data/mock/fixtures/commodityBaskets';
 import { MATERIAL_MASTER } from '../services/sdc/fixtures';
+import { MATERIAL_SPACES, spaceOfModule } from '../services/sdc/materialSpaces';
 
 // ─── The derived population ──────────────────────────────────────────────────
 
@@ -127,10 +128,11 @@ interface Cell {
   readonly field: string;
   readonly value: string;
   readonly meaning: string | null;
-  /** The meaning under a DELIBERATELY WIDER key rule — see
-   *  `MEANING-SCOPE-IS-A-HAND-PICK-01`. Measured, never used by the identity
-   *  property; the widening is a declaration nobody has made. */
-  readonly meaningWide: string | null;
+  /** Every string value on the SAME OBJECT, by key. Carried so the MEANING field
+   *  set can be derived after the fact instead of being decided at walk time —
+   *  deciding it here is what made it a hand-pick (2B-4a). Shared by reference
+   *  across all cells of one object. */
+  readonly siblings: Readonly<Record<string, string>>;
   readonly module: string;
 }
 
@@ -187,20 +189,25 @@ const collect = (root: unknown, module: string, out: Cell[]) => {
     }
     const o = node as Record<string, unknown>;
     const meaning = meaningOf(o);
-    const meaningWide = meaningWideOf(o);
+    const siblings: Record<string, string> = {};
+    for (const k of Object.keys(o)) {
+      if (typeof o[k] === 'string' && o[k] !== '') siblings[k] = o[k] as string;
+    }
+    const NO_SIBLINGS: Readonly<Record<string, string>> = {};
     for (const k of Object.keys(o)) {
       const v = o[k];
       // A value identical to its own field name is a COLUMN-KEY MAP, not a code
       // (`sdc/ingest.ts:134` `IMPORT_DECLARE_COLUMN`). Stated as a general rule
       // rather than an exclusion of one literal, so it also covers the next one.
       if (typeof v === 'string' && v !== '' && v !== k) {
-        out.push({ field: k, value: v, meaning, meaningWide, module });
+        out.push({ field: k, value: v, meaning, siblings, module });
       } else if (Array.isArray(v)) {
-        // A bare `string[]` states no meaning of its own; the parent's is
-        // carried and the ONE-MEANING check discards it below if it is null.
+        // A bare `string[]` states no meaning of its own — the array is not an
+        // object, so there are no siblings to read. `RFQ.materialIds` is still
+        // mute after 2B-5a, and that is a fact about the shape, not a scope.
         for (const e of v) {
           if (typeof e === 'string' && e !== '' && e !== k) {
-            out.push({ field: k, value: e, meaning: null, meaningWide: null, module });
+            out.push({ field: k, value: e, meaning: null, siblings: NO_SIBLINGS, module });
           }
         }
       }
@@ -250,38 +257,185 @@ for (const c of CELLS) {
   VALUES_BY_FIELD.get(c.field)!.add(c.value);
 }
 
-const deriveFieldSet = () => {
-  let codes = new Set<string>(Object.keys(MATERIAL_MASTER));
+// ─── ⚠️ R-B's BOUNDARY (ratified at 2B-5a) — TWO GATES, DIFFERENT JOBS ──────
+//
+//   A CLOSURE MAY WIDEN A SPACE IT IS ALREADY IN. IT MAY NOT ENTER A NEW ONE.
+//
+// The two gates below are INDEPENDENT and it took building them to see that:
+//
+//   · CONTAINMENT (above) is a SOUNDNESS gate on CELLS. It is what actually
+//     stops `linkedTo`, and R-B does NOT — those PO numbers live in
+//     `mockPurchaseOrders.ts`, which is a DECLARED space, so a space-based
+//     boundary waves them through. `FIELD-SET-CLOSURE-OVERRUNS-01` credited R-B
+//     with work the containment rule was doing.
+//   · SPACE (here) is an AUTHORITY gate on MODULES. A field whose codes come
+//     from a module no declaration names is DECLINED AND REPORTED — never
+//     silently admitted, and never silently dropped either.
+//
+// ⚠️ AND THE SECOND GATE INDICTS 2B-4a. Admitting `sapCode` necessarily enters
+// `supplierStorefront.ts`, which no declaration named at the time. THE CLOSURE
+// SHOULD HAVE HALTED AND ASKED. It widened on its own authority instead, and the
+// operator's ruling happened to sanction it afterwards — luck, not governance.
+// The declaration now exists (`materialSpaces.ts`, R-D), so the same widening is
+// authorised rather than assumed.
+const spaceIdOf = (module: string) => spaceOfModule(module)?.spaceId ?? null;
+
+const MODULES_BY_VALUE = new Map<string, Set<string>>();
+for (const c of CELLS) {
+  if (!MODULES_BY_VALUE.has(c.value)) MODULES_BY_VALUE.set(c.value, new Set());
+  MODULES_BY_VALUE.get(c.value)!.add(c.module);
+}
+
+/**
+ * Is this value reachable inside a DECLARED space?
+ *
+ * ⚠️ THE GATE IS ON THE VALUE, NOT ON THE FIELD, AND THE FIRST BUILD GOT THAT
+ * WRONG. Applied to every module a field touches, R-B rejects `materialCode`
+ * ITSELF — that field is re-exported through barrel modules (`channel/index.ts`)
+ * which declare nothing and own nothing. A barrel is not a space. What R-B
+ * actually says is that a closure may widen a space it is ALREADY IN, so the
+ * question is whether each NEW value LIVES in a declared space — reachable
+ * through at least one module that a declaration names.
+ */
+const inDeclaredSpace = (value: string) =>
+  [...(MODULES_BY_VALUE.get(value) ?? [])].some((m) => spaceIdOf(m) !== null);
+
+/**
+ * ONE closure, run twice — once over CODES (seeded from the master's keys) and
+ * once over MEANINGS (seeded from the master's labels). Same three rules both
+ * times, which is the point: a meaning scope derived by a DIFFERENT rule from
+ * the code scope would just be a fourth hand-pick with extra steps.
+ */
+const derive = (seed: readonly string[], universe = VALUES_BY_FIELD, containmentGate = true) => {
+  let known = new Set<string>(seed);
   let fields: string[] = [];
-  let disqualified = new Map<string, string[]>();
+  let impureFields = new Map<string, string[]>();
+  let undeclaredFields = new Map<string, string[]>();
   for (let round = 0; round < 8; round += 1) {
     const admitted: string[] = [];
-    const rejected = new Map<string, string[]>();
-    for (const [field, values] of VALUES_BY_FIELD) {
-      if (![...values].some((v) => codes.has(v))) continue;
-      const impure = [...values]
-        .filter((v) => !codes.has(v) && [...codes].some((c) => v.includes(c)))
-        .sort();
-      if (impure.length > 0) rejected.set(field, impure);
-      else admitted.push(field);
+    const impure = new Map<string, string[]>();
+    const undeclared = new Map<string, string[]>();
+    for (const [field, values] of universe) {
+      if (![...values].some((v) => known.has(v))) continue;
+      // GATE 1 — soundness. A cell that CONTAINS a known value without BEING one
+      // is a REFERENCE, not identity.
+      const dirty = containmentGate
+        ? [...values].filter((v) => !known.has(v) && [...known].some((c) => v.includes(c))).sort()
+        : [];
+      if (dirty.length > 0) {
+        impure.set(field, dirty);
+        continue;
+      }
+      // GATE 2 — authority (R-B). Every value this field would ADD must live in
+      // a DECLARED space. A field that would carry the census into a module no
+      // declaration names is DECLINED AND REPORTED — the operator declares, the
+      // closure does not.
+      const unnamed = [...values].filter((v) => !known.has(v) && !inDeclaredSpace(v)).sort();
+      if (unnamed.length > 0) {
+        undeclared.set(field, unnamed);
+        continue;
+      }
+      admitted.push(field);
     }
     admitted.sort();
-    const next = new Set<string>(Object.keys(MATERIAL_MASTER));
-    for (const f of admitted) for (const v of VALUES_BY_FIELD.get(f)!) next.add(v);
-    const stable = admitted.join('|') === fields.join('|') && next.size === codes.size;
+    const next = new Set<string>(seed);
+    for (const f of admitted) for (const v of universe.get(f)!) next.add(v);
+    const stable = admitted.join('|') === fields.join('|') && next.size === known.size;
     fields = admitted;
-    codes = next;
-    disqualified = rejected;
+    known = next;
+    impureFields = impure;
+    undeclaredFields = undeclared;
     if (stable) break;
   }
-  return { fields, codes: [...codes].sort(), disqualified };
+  return { fields, values: [...known].sort(), impureFields, undeclaredFields };
 };
 
-const { fields: CODE_FIELDS, disqualified: DISQUALIFIED_FIELDS } = deriveFieldSet();
+const CODE_DERIVATION = derive(Object.keys(MATERIAL_MASTER));
+const CODE_FIELDS = CODE_DERIVATION.fields;
+const DISQUALIFIED_FIELDS = CODE_DERIVATION.impureFields;
+const UNDECLARED_FIELDS = CODE_DERIVATION.undeclaredFields;
 
-const REFS: MaterialRef[] = CELLS.filter((c) => CODE_FIELDS.includes(c.field)).map((c) => ({
+// ─── ⚠️ THE MEANING SCOPE DERIVES (2B-5a, closing MEANING-SCOPE-IS-A-HAND-PICK-01)
+//
+// Seeded from the master's own `label` values — the one declared statement of
+// what a Paragon material MEANS, exactly as the code closure is seeded from its
+// declared keys. `material` (the storefront's own word for the item) is admitted
+// on the first round because one catalogue row states a master label byte for
+// byte; `title` and `remittanceNote` are correctly REFUSED by the containment
+// gate, because an RFQ title and a payment note CONTAIN a meaning rather than
+// BEING one — the same distinction, in the other vocabulary.
+//
+// ⚠️ AND IT RUNS OVER A NARROWER UNIVERSE THAN THE CODE CLOSURE, FOR A REASON
+// THE FIRST BUILD DID NOT HAVE. Run over the whole tree, R-B correctly DECLINES
+// `material`: the same key appears in `buyerRequisitions.ts`, a module no
+// declaration names. That refusal is right and the fix is not to declare the PR
+// lane — a purchase requisition carries a material NAME and no material CODE, so
+// it is a meaning source with nothing to be a meaning OF. A MEANING FIELD IS A
+// FIELD THAT STATES MEANINGS **FOR CODES**, so the meaning closure runs over the
+// sibling values of code-bearing objects only. `title` is still a sibling of
+// `materialIds` and is still refused — by containment, on its own merits.
+const CODE_BEARING_SIBLINGS = new Set(CELLS.filter((c) => CODE_FIELDS.includes(c.field)).map((c) => c.siblings));
+const SIBLING_VALUES_BY_FIELD = new Map<string, Set<string>>();
+for (const sib of CODE_BEARING_SIBLINGS) {
+  for (const [k, v] of Object.entries(sib)) {
+    if (CODE_FIELDS.includes(k)) continue;
+    if (!SIBLING_VALUES_BY_FIELD.has(k)) SIBLING_VALUES_BY_FIELD.set(k, new Set());
+    SIBLING_VALUES_BY_FIELD.get(k)!.add(v);
+  }
+}
+
+//
+// ⚠️ AND THE CONTAINMENT GATE IS **OFF** FOR MEANINGS — a third thing building
+// this found, and it is not a convenience. Containment is sound for IDENTIFIERS
+// and unsound for MEANINGS, because the two compose differently:
+//
+//   'PO-2025-00107 / PK-PETB-8801' contains a code and IS NOT ONE.
+//   'Cetearyl Alcohol — Vegetable Origin' contains a label and IS ONE.
+//
+// MEANINGS COMPOSE BY REFINEMENT; IDENTIFIERS DO NOT. A more specific meaning
+// properly containing a less specific one is `IDENTITY-GRAIN-ASYMMETRY-01` —
+// a pinned, deliberate state of this tree, not a contamination — and running
+// the identifier gate over meanings REJECTS `description`, the single most
+// load-bearing meaning field in the tree.
+//
+// What keeps `RFQ.title` out is therefore NOT containment but ARITY, and that
+// argument is already canon (2B-3: `RFQ.uom` is a header field whose arity is
+// ONE while `materialIds`'s is N). It falls out of the shape: a bare `string[]`
+// is not an object, so a code reached through one has NO SIBLINGS to read a
+// meaning from. The RFQ lane stays mute after 2B-5a, and that is a fact about
+// the shape rather than a gap in the scope.
+const MEANING_DERIVATION = derive(
+  Object.values(MATERIAL_MASTER).map((m) => m.label),
+  SIBLING_VALUES_BY_FIELD,
+  false,
+);
+const MEANING_FIELDS = MEANING_DERIVATION.fields;
+
+/** The meaning an object states, read through the DERIVED meaning field set.
+ *  First admitted key wins, in the object's own key order — the same rule the
+ *  narrow `/description/i` version used, over a scope that is no longer typed
+ *  by hand. */
+const derivedMeaningOf = (siblings: Readonly<Record<string, string>>): string | null => {
+  for (const k of Object.keys(siblings)) if (MEANING_FIELDS.includes(k)) return siblings[k];
+  return null;
+};
+
+const CODE_CELLS = CELLS.filter((c) => CODE_FIELDS.includes(c.field));
+
+/** ⚠️ THE NARROW population — `/description/i` only. Kept ALIVE beside the
+ *  derived one, not replaced by it: the two disagree on exactly the rows 2B-5b
+ *  must rule on, and a reader has to be able to see the difference rather than
+ *  take the new number on trust. */
+const REFS: MaterialRef[] = CODE_CELLS.map((c) => ({
   code: c.value,
   meaning: c.meaning,
+  module: c.module,
+}));
+
+/** The DERIVED population — the meaning scope closed over the tree. */
+const REFS_DERIVED: MaterialRef[] = CODE_CELLS.map((c) => ({
+  code: c.value,
+  meaning: derivedMeaningOf(c.siblings),
   module: c.module,
 }));
 
@@ -295,10 +449,14 @@ const modulesOf = (code: string) => [
   ...new Set(REFS.filter((r) => r.code === code).map((r) => r.module)),
 ];
 
-/** Group `REFS` by one field, collecting the distinct values of the other. */
-const distinctBy = (key: 'code' | 'meaning', value: 'code' | 'meaning') => {
+/** Group a population by one field, collecting the distinct values of the other. */
+const distinctBy = (
+  key: 'code' | 'meaning',
+  value: 'code' | 'meaning',
+  population: readonly MaterialRef[] = REFS,
+) => {
   const out = new Map<string, Map<string, string[]>>();
-  for (const r of REFS) {
+  for (const r of population) {
     if (r.meaning === null) continue; // a null meaning cannot contradict one
     const k = r[key] as string;
     const v = r[value] as string;
@@ -332,10 +490,16 @@ const DOCUMENT_LANE = inModules(/^\/src\/data\/mock[^/]*\.ts$/);
 /** The master-governed lane — the master itself and the delivery fixtures that
  *  derive every unit from it via `requireUom`. */
 const MASTER_GOVERNED = inModules(/^\/src\/services\/(sdc\/fixtures|delivery\/)/);
-/** ⚠️ THE SPACE NO DECLARATION NAMES — `MAT-SPACE-UNDECLARED-01`. */
-const UNDECLARED_SPACE = inModules(
-  /^\/src\/services\/(data\/mock\/fixtures\/supplierShipments|channel\/outboundFixtures)\.ts$/,
-);
+/** The ASN + chase lane, DECLARED at 2B-1 (R-3) as `paragon.asn_chase_lane` and
+ *  booked for retirement at 2B-5b. Read from the REGISTRY rather than from a
+ *  regex in this file — `materialSpaces.ts` is the declaration site now. */
+const ASN_CHASE_MODULES = MATERIAL_SPACES.find(
+  (s) => s.spaceId === 'paragon.asn_chase_lane',
+)!.modules;
+const ASN_CHASE_CODES = inModules(ASN_CHASE_MODULES);
+/** ⚠️ The part of it that is still third-space vocabulary — `MAT-SPACE-UNDECLARED-01`.
+ *  SEVEN after 2B-5a, not nine: the two chase codes were never a vocabulary. */
+const UNDECLARED_SPACE = ASN_CHASE_CODES.filter((c) => !(c in MATERIAL_MASTER));
 
 describe('2B-0 — the lane set DERIVES (DERIVED-OVER-A-CHOSEN-SCOPE-01)', () => {
   it('actually collected a population (guards a vacuous pass)', () => {
@@ -599,12 +763,13 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
           .flatMap(([, text]) => [...text.matchAll(/sapCode:\s*'([^']+)'/g)].map((m) => m[1])),
       ),
     ].sort();
+    // ⚠️ `MAT-10045` IS GONE — R-D corrected the pointer to `PK-PETB-8803`.
     expect(sapCodes).toEqual([
-      'MAT-10045',
       'MAT-10046',
       'MAT-10089',
       'MAT-30110',
       'MAT-40220',
+      'PK-PETB-8803',
     ]);
 
     // ⚠️ NONE OF THE FIVE IS INVISIBLE NOW. The raw scan and the module walk
@@ -619,8 +784,11 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
       'MAT-40220',
     ]);
 
-    // NINE WAS THE TWO-FIELD ANSWER. TWELVE IS THE TREE'S.
-    expect(CODES.filter((c) => !(c in MATERIAL_MASTER))).toHaveLength(12);
+    // THE SPACE QUESTION 2B-4a LEFT OPEN, ANSWERED AT 2B-5a (R-D): the storefront
+    // is NOT a space. `sapCode` is a POINTER — a supplier's claim about which
+    // Paragon master code its catalogue item is. The three buckets are pinned in
+    // full by `storefrontPointer.test.ts`; only the census consequence is here.
+    expect(sapCodes.filter((c) => c in MATERIAL_MASTER)).toEqual(['PK-PETB-8803']);
 
     // ⚠️ WHAT THE RULING DID **NOT** SETTLE, kept open on purpose. The
     // population question is answered; the SPACE question is not. Nine of the
@@ -629,60 +797,135 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // sharing two codes is still a declaration nobody has made, and C9 §5 still
     // requires a `MaterialRef` to name its space. Counting a code is not
     // placing it.
+    //
+    // ⚠️ NINE AGAIN — AND IT IS A DIFFERENT NINE. 2B-4a measured twelve; 2B-5a
+    // corrected one storefront pointer and two chase references, and the count
+    // landed back where R-3 left it WHILE THE MEMBERSHIP CHANGED: the two chase
+    // codes left, the two unbacked storefront pointers arrived. A COUNT THAT
+    // RETURNS TO ITS OLD VALUE WHILE ITS MEMBERS CHANGE is the thing this arc
+    // keeps finding, so both halves are asserted rather than the number alone.
     const absent = CODES.filter((c) => !(c in MATERIAL_MASTER));
-    expect(absent.filter((c) => UNDECLARED_SPACE.includes(c))).toHaveLength(9);
+    expect(absent).toHaveLength(9);
+    expect(absent).not.toContain('MAT-10234');
+    expect(absent).not.toContain('MAT-20500');
+    expect(absent.filter((c) => UNDECLARED_SPACE.includes(c))).toHaveLength(7);
     expect(absent.filter((c) => !UNDECLARED_SPACE.includes(c))).toEqual([
-      'MAT-10045',
       'MAT-10046',
       'MAT-10089',
     ]);
   });
 
-  it('⚠️ MEANING-SCOPE-IS-A-HAND-PICK-01 — the FOURTH level, and it is not empty', () => {
-    // THE DERIVATION LADDER, one rung further, and the answer the 2B-4a dispatch
-    // asked for: `CENSUS-MUST-DERIVE-01` fixed the POPULATION, `DERIVED-OVER-A-
-    // CHOSEN-SCOPE-01` fixed the LANE SET, 2B-4a fixed the FIELD SET — and the
-    // MEANING SET is STILL A LITERAL. `meaningOf` accepts any sibling key
-    // matching `/description/i`, which is a shape-match on a field NAME: the
-    // same defect, one field over.
+  it('MEANING-SCOPE-IS-A-HAND-PICK-01 — CLOSED at 2B-5a: the meaning set DERIVES', () => {
+    // ⚠️ INVERTED, NOT DELETED. At 2B-4a this pinned the blind spot: the code
+    // field set derived and `/description/i` did not, so three admitted codes
+    // entered MUTE and could not contradict anything. The meaning set now closes
+    // over the tree from the master's own LABELS, by the same three rules the
+    // code closure uses — seed, containment, declared space.
+    expect(MEANING_FIELDS).toContain('material');
+    expect(MEANING_FIELDS).toContain('description');
+    // ⚠️ AND THE REFUSALS ARE THE PROOF THE RULE IS NOT JUST "ADMIT MORE".
+    // An RFQ `title` and a remittance `note` both CONTAIN a master label and are
+    // both refused by the containment gate — a sentence that mentions a meaning
+    // is not a meaning, exactly as a cell that mentions a code is not a code.
+    expect(MEANING_FIELDS).not.toContain('title');
+    expect(MEANING_FIELDS).not.toContain('remittanceNote');
+  });
+
+  it('⚠️ THE FOURTH LEVEL, RESOLVED AND DEFERRED — what the widening actually found', () => {
+    // At 2B-4a this measured three live identity violations behind the narrow
+    // meaning scope and applied none of them. 2B-5a applies the scope. Two of
+    // the three survive as REAL, and they are 2B-5b's by R-E.
     //
-    // The three codes this batch admitted enter the population MUTE, because the
-    // storefront states its meaning under a key called `material`. So they are
-    // counted by the master-absent figure and are STRUCTURALLY INCAPABLE of
-    // contradicting anything — which is exactly what `DERIVED-OVER-A-CHOSEN-
-    // SCOPE-01` said about `materialIds` at 2B-0. A clean census is not evidence
-    // of a clean tree if the new half is mute by construction.
-    for (const c of ['MAT-10045', 'MAT-10046', 'MAT-10089']) {
-      expect(meaningsOf(c), `${c} is in the census and states nothing`).toEqual([]);
+    // ── A · ONE MEANING, TWO CODES — RESOLVED HERE (R-D) ────────────────────
+    // `MAT-10045` and the master's `PK-PETB-8803` both said 'PET Bottle 100ml
+    // Airless Pump'. The storefront pointer was WRONG, not a second code: it
+    // named a code no Paragon space contains. Corrected to `PK-PETB-8803`, so
+    // the meaning now rides ONE code and the direction is clean.
+    expect(MATERIAL_MASTER['PK-PETB-8803'].label).toBe('PET Bottle 100ml Airless Pump');
+    expect(CODES).not.toContain('MAT-10045');
+    expect(
+      offenders(distinctBy('meaning', 'code', REFS_DERIVED)),
+      'ONE MEANING, ONE CODE holds over the DERIVED scope',
+    ).toEqual([]);
+
+    // ── B and C · ONE CODE, TWO MEANINGS — DEFERRED TO 2B-5b (R-E) ──────────
+    // ⚠️ THIS IS AN EXACT SET, NOT A WHITELIST, AND THE DIFFERENCE IS THE POINT.
+    // A whitelist says "ignore these" and grows; this says "there are EXACTLY
+    // these two, and here is what each says" — a third offender is red, and one
+    // of these two silently vanishing is ALSO red. `ADOPTION-QUEUE-01`'s shape
+    // was a list that absorbed new members for three batches; this cannot.
+    //
+    // Why they are not adjudicated here: both are lane-vs-lane INSIDE the space
+    // 2B-5b retires, and under R-1 DECLARED OWNERSHIP DECIDES. The storefront is
+    // a POINTER space (R-D), not an identity space, so it has no ownership to
+    // win with — and ruling for the ASN lane today would settle by implication
+    // what 2B-5b is chartered to settle.
+    const twoMeanings = [...distinctBy('code', 'meaning', REFS_DERIVED).entries()]
+      .filter(([, inner]) => inner.size > 1)
+      .map(([code, inner]) => ({ code, meanings: [...inner.keys()].sort() }))
+      .sort((x, y) => x.code.localeCompare(y.code));
+    // ⚠️ FOUR, NOT TWO — and the extra pair is a finding the derived scope
+    // SUBSUMES rather than creates. `AI-NIAC-6601` and `RM-EMUL-3320` are the two
+    // SDC-0 SEED entries of `IDENTITY-GRAIN-ASYMMETRY-01`, where the document lane
+    // is MORE SPECIFIC than the master. Already filed, already the operator's, and
+    // previously visible only through a bespoke master-vs-lane comparison. Once
+    // `label` is an admitted meaning field it becomes an instance of the GENERAL
+    // property — which is what a derived scope is for, and worth more than the
+    // bespoke check it absorbs.
+    expect(twoMeanings).toEqual([
+      {
+        code: 'AI-NIAC-6601',
+        meanings: ['Niacinamide (Vitamin B3)', 'Niacinamide USP Grade 99.5% (Vitamin B3)'],
+      },
+      {
+        code: 'MAT-30110',
+        meanings: ['RBD Palm Stearin — Specialty Fat', 'Specialty fat blend — RBD stearin'],
+      },
+      {
+        code: 'MAT-40220',
+        meanings: ['Emulgade SE-PF Emulsifier', 'Emulgade SE-PF emulsifier'],
+      },
+      {
+        code: 'RM-EMUL-3320',
+        meanings: ['Cetearyl Alcohol', 'Cetearyl Alcohol — Vegetable Origin'],
+      },
+    ]);
+    // PARTITIONED BY FINDING, so two dispositions cannot be read as one.
+    for (const c of ['AI-NIAC-6601', 'RM-EMUL-3320']) {
+      expect(c in MATERIAL_MASTER, c + ' is SDC-0 seed data, the operator\'s').toBe(true);
+    }
+    for (const c of ['MAT-30110', 'MAT-40220']) {
+      expect(UNDECLARED_SPACE, c + ' is 2B-5b\'s').toContain(c);
     }
 
-    // ⚠️ AND WIDENING BY ONE KEY IS NOT COSMETIC — MEASURED HERE, NOT APPLIED.
-    // Reading `material` as a meaning too produces THREE live violations of the
-    // identity property that no batch has ever seen. Pinned rather than fixed,
-    // for the 2B-3 reason: applying it silently moves a headline result, and
-    // whether a supplier catalogue's prose is a Paragon MEANING is the same
-    // class of declaration as whether its `sapCode` is Paragon identity.
-    const wideMeaning = (code: string) =>
-      [
-        ...new Set(
-          CELLS.filter(
-            (c) => CODE_FIELDS.includes(c.field) && c.value === code && c.meaningWide !== null,
-          ).map((c) => c.meaningWide!),
-        ),
-      ].sort();
-    // ONE MEANING, TWO CODES — the storefront's `MAT-10045` and the master's
-    // `PK-PETB-8803` are both 'PET Bottle 100ml Airless Pump'. 2B-3 noticed this
-    // in prose while sourcing that very label; here it is as data.
-    expect(wideMeaning('MAT-10045')).toContain('PET Bottle 100ml Airless Pump');
-    expect(MATERIAL_MASTER['PK-PETB-8803'].label).toBe('PET Bottle 100ml Airless Pump');
-    // ONE CODE, TWO MEANINGS — twice. `MAT-30110` is 'Specialty fat blend — RBD
-    // stearin' in the shipment lane and 'RBD Palm Stearin — Specialty Fat' in
-    // the storefront; `MAT-40220` differs only in case, which is worse, not
-    // better: a case difference is what a reader skims past.
-    expect(meaningsOf('MAT-30110')).toEqual(['Specialty fat blend — RBD stearin']);
-    expect(wideMeaning('MAT-30110')).toContain('RBD Palm Stearin — Specialty Fat');
-    expect(meaningsOf('MAT-40220')).toEqual(['Emulgade SE-PF emulsifier']);
-    expect(wideMeaning('MAT-40220')).toContain('Emulgade SE-PF Emulsifier');
+    // ⚠️ C'S TRAP, PINNED AS A SENTENCE BECAUSE IT IS THE TRANSFERABLE PART:
+    // the two `MAT-40220` strings differ by ONE CAPITAL LETTER. NORMALISING CASE
+    // MAKES THIS DISAPPEAR WITHOUT ANYONE DECIDING WHETHER THE TWO LANES
+    // DESCRIBE THE SAME PURCHASABLE ITEM — a shipped line carrying lot
+    // `LOT-B5540` and a catalogue offer with a 45-day lead time. They probably
+    // do. "Probably" is an adoption, and the easiest fix is the wrong one.
+    const [a, b] = twoMeanings.find((r) => r.code === 'MAT-40220')!.meanings;
+    expect(a).not.toBe(b);
+    expect(a.toLowerCase()).toBe(b.toLowerCase());
+  });
+
+  it('the NARROW and DERIVED scopes disagree on EXACTLY the deferred rows', () => {
+    // The reason both populations are kept alive rather than one replacing the
+    // other: a reader must be able to see what the widening changed, and the
+    // answer must be a short, checkable list rather than a new number to trust.
+    const narrow = new Set(
+      [...distinctBy('code', 'meaning')].filter(([, i]) => i.size > 1).map(([c]) => c),
+    );
+    const derived = new Set(
+      [...distinctBy('code', 'meaning', REFS_DERIVED)].filter(([, i]) => i.size > 1).map(([c]) => c),
+    );
+    expect([...narrow]).toEqual([]);
+    expect([...derived].sort()).toEqual([
+      'AI-NIAC-6601',
+      'MAT-30110',
+      'MAT-40220',
+      'RM-EMUL-3320',
+    ]);
   });
 
   it('a THIRD Paragon space exists that no declaration names', () => {
@@ -692,9 +935,15 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // (which says Paragon holds TWO), and — until this file — not the pin.
     // Membership is by MODULE, never by prefix: the codes happen to share one,
     // and `materialCode` is contractually opaque, so the shape is not the test.
+    // ⚠️ SEVEN AT 2B-5a, NOT NINE — AND NOTHING WAS RETIRED. `MAT-10234` and
+    // `MAT-20500` left because they were never this space's vocabulary: both
+    // were SUBJECT REFERENCES that contradicted the agreement they named on
+    // supplier, item sequence AND material code. Corrected at 2B-5a, and the
+    // chase lane now names the material its own subject carries.
+    // THE SEVEN THAT REMAIN ARE THE REAL POPULATION, and every one of them is
+    // an ASN LINE — which is why they, and only they, carry the BPOM blast
+    // radius. They are 2B-5b's.
     expect(UNDECLARED_SPACE).toEqual([
-      'MAT-10234',
-      'MAT-20500',
       'MAT-30110',
       'MAT-40220',
       'MAT-55022',
@@ -703,6 +952,8 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
       'MAT-88201',
       'MAT-88207',
     ]);
+    expect(ASN_CHASE_CODES).toContain('AI-NIAC-6601');
+    expect(ASN_CHASE_CODES).toContain('PK-PETB-8810');
     // It is disjoint from the declared lane — which is precisely why every rule
     // written about the declared lane leaves it untouched.
     expect(UNDECLARED_SPACE.filter((c) => DOCUMENT_LANE.includes(c))).toEqual([]);
@@ -721,15 +972,16 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // batch while the scope stays narrower than the tree is a figure improving
     // about itself. The honest direction of this number, on the batch that
     // widened the scope, is UP.
-    expect(CODES.length).toBe(47);
+    expect(CODES.length).toBe(44);
     const absent = CODES.filter((c) => !(c in MATERIAL_MASTER));
-    expect(absent).toHaveLength(12);
+    expect(absent).toHaveLength(9);
     // ⚠️ NO LONGER HOMOGENEOUS, and 2B-3's phrasing has to go with it.
     // "master-absent" and "third space" were the same set for exactly one
     // batch. They are nine and twelve again, and the extra three are not in a
     // space anybody has declared either.
     expect(absent).not.toEqual(UNDECLARED_SPACE);
     expect(UNDECLARED_SPACE.every((c) => absent.includes(c))).toBe(true);
+    expect(UNDECLARED_SPACE).toHaveLength(7);
     // What DID hold across the widening: none of them is in the document lane.
     expect(absent.filter((c) => DOCUMENT_LANE.includes(c))).toEqual([]);
   });
@@ -765,8 +1017,13 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // must be dealt with before the mechanism may be wired. 2B-4b inherits
     // twelve.
     expect(UNDECLARED_SPACE.filter((c) => c in MATERIAL_MASTER)).toEqual([]);
-    expect(UNDECLARED_SPACE).toHaveLength(9);
-    expect(CODES.filter((c) => !(c in MATERIAL_MASTER))).toHaveLength(12);
+    // ⚠️ CORRECTED AT 2B-5a — THE REGULATORY BLAST RADIUS IS **SEVEN**, and the
+    // register said nine and then twelve. The census POPULATION and the
+    // REGULATORY EXPOSURE are DIFFERENT QUANTITIES, and conflating them is what
+    // produced the error: the wizard is fed ASNs, so only ASN LINE codes can
+    // reach it. The chase two and the storefront pointers never could.
+    expect(UNDECLARED_SPACE).toHaveLength(7);
+    expect(CODES.filter((c) => !(c in MATERIAL_MASTER))).toHaveLength(9);
   });
 });
 
@@ -846,12 +1103,12 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
     //     the wizard still runs the prefix rule.
     const firing = CODES.filter(wouldRequireBpom);
     expect(firing).toHaveLength(16);
-    expect(['MAT-10045', 'MAT-10046', 'MAT-10089'].filter(wouldRequireBpom)).toEqual([]);
+    expect(['MAT-10046', 'MAT-10089'].filter(wouldRequireBpom)).toEqual([]);
     // ⚠️ AND THE FAIL-OPEN GOT BIGGER. `BPOM-OFF-BY-SPACE-01` was nine codes
     // silently escaping the check; it is TWELVE. The widening did not create
     // the defect — it measured three more of it.
     const absent = CODES.filter((c) => !(c in MATERIAL_MASTER));
-    expect(absent).toHaveLength(12);
+    expect(absent).toHaveLength(9);
     expect(absent.filter(wouldRequireBpom)).toEqual([]);
   });
 
