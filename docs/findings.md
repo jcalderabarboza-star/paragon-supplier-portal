@@ -2269,6 +2269,16 @@ deliberately**: 2B-2 and 2B-3 made **thirty** codes resolvable and moved it by
 **zero**; 2B-5b-ii made **seven** resolvable and moved it by **three**. The
 difference is not evidence, or care, or lane — it is three characters.
 
+### ⚠️ `INFERBPOM-MUST-BE-RETIRED-01` — **THE CASE, DEMONSTRATED RATHER THAN ARGUED.** *(ratified at the #179 merge — THE ROW 2B-4b READS FIRST)*
+
+| | |
+|---|---|
+| **The demonstration** | **A REGULATORY CHECK CHANGED BECAUSE OF A NAMING CONVENTION.** The BPOM firing set moved **16 → 19** at 2B-5b-ii. Three of the seven authored rows took `AI-`/`FR-` mnemonics **because of their material GROUP**; `inferBpom` parses the first three characters of a code; **NO COMPLIANCE RULE WAS CONSULTED, AND NOBODY DECIDED THAT THREE LOTS NOW NEED A BPOM LOT CHECK.** Every prior argument for retiring this rule was a description of a hazard. This is the hazard happening, in a merged diff, measured. |
+| **Why the contrast is the proof, not the count** | 2B-2 and 2B-3 made **THIRTY** codes master-resolvable, on carefully ratified evidence, across two batches — and moved the firing set by **ZERO**. 2B-5b-ii made **SEVEN** resolvable and moved it by **THREE**. **THE DIFFERENCE IS NOT EVIDENCE, OR CARE, OR LANE. IT IS THREE CHARACTERS.** A mechanism that is unmoved by thirty ratifications and moved by one naming choice is not reading the thing it claims to read. |
+| **And it cuts both ways, which is worse** | `PREFIX-RULE-SUCCEEDS-BY-ACCIDENT-01` (below): the 2B-0 pair that proved the fail-open now **AGREES** — both fragrance concentrates fire — and that is also nobody's decision. **A RULE THAT CAN BE ACCIDENTALLY RIGHT CANNOT BE AUDITED**, because a correct output is not evidence the reasoning existed. |
+| **What 2B-4b inherits, stated so it does not have to re-derive it** | The gate is **DISCHARGED** — every code `asnStore` can hand the wizard is master-resolvable, so a fail-closed master rule refuses nothing legitimate. The master already carries the replacement (`bpomApplicable`, 2B-4a, three-valued, fail-closed) on all 42 rows. **TWO ROWS ALREADY DISAGREE WITH THE WIZARD IN WRITING**: `RM-EMUL-9440` (`APPLICABLE` on `doc-201`) and `RM-PSTN-7150` (`UNDETERMINED` against a confident negative). Retiring `inferBpom` is now a swap with a measured before-and-after, not a redesign. |
+| **The standing assertion was BROKEN DELIBERATELY, not relaxed** | *"The firing set moved by zero"* held through 2B-2, 2B-3 and 2B-4a and is the property this arc protected. 2B-5b-ii is the first batch that could move it, and it did — so the pin was **rewritten to assert the new set exactly, with the three new members annotated by cause**, rather than loosened to a count or a range. **A STANDING ASSERTION THAT STOPS BEING TRUE IS REWRITTEN WITH ITS REASON, NEVER WIDENED UNTIL IT PASSES AGAIN.** |
+
 ### `PREFIX-RULE-SUCCEEDS-BY-ACCIDENT-01` *(new — the other half of the fail-open)*
 
 The 2B-0 pair that made `BPOM-OFF-BY-SPACE-01` impossible to argue with —
@@ -2338,7 +2348,19 @@ Every probe in this batch **asserts its own edit landed before running anything*
 and a ninth **control probe with a deliberately non-existent anchor** was run to
 confirm the guard fires. It reported **`PROBE FAILED TO APPLY — NOT A RESULT`**
 rather than a green suite. **A guard that has never been seen to fire is a guard
-you are trusting, not one you have tested.** Standing practice now, not ad-hoc.
+you are trusting, not one you have tested.** **RATIFIED AS STANDING PRACTICE AT
+THE #179 MERGE**, in both halves and not just the first:
+
+1. **EVERY MUTATION PROBE ASSERTS ITS OWN EDIT LANDED** before running anything —
+   an occurrence count, or a diff that must be non-empty. One line per probe.
+2. **AND AT LEAST ONE CONTROL PROBE PER BATCH DELIBERATELY FAILS TO APPLY**, so
+   the guard is observed firing rather than assumed present.
+
+The second half is the one that is easy to skip and is the reason the practice
+exists: a guard that only ever runs on probes that work is indistinguishable
+from no guard at all. It is the same shape as
+`EMPTY-INPUT-REPORTS-CLEAN-01` one level up — **the apparatus that verifies the
+pins needs the same question asked of it that the pins ask of the code.**
 
 ### The partition pin caught it first
 
