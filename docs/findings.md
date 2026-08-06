@@ -34,7 +34,7 @@ from CP-1 onward.
 | **DP-3** | Odyssey platform family theme (TMS alignment; extends DP-1/DP-2) — monospace for all data, quiet outlined status chips, TMS table grammar (grey header band, thin borders, generous rows). Full text in `CLAUDE.md` → Design principles. | Standing; see `CLAUDE.md`. **Central seams delivered in `feat/dp3-theme-tokens`:** StatusPill → quiet-outlined (110 sites inherit), TableHeader → grey band (25 files inherit; thin borders/generous rows already in place), `<Data>` mono data-cell primitive established. No per-page sweep — mono adoption + stragglers tracked in DP3-MIGRATE-01. |
 | **SUPPLIER-SOURCING-01** | `SupplierDashboard` "Open Sourcing" KPI is a static value — no supplier-facing sourcing read exists (buyer-side `useRFQs` is invited-membership, not a supplier sourcing feed). Left static (not pilled — a lone KPI tile can't carry a pill cleanly) during the Batch 1.2 dashboard migration. | **SPLIT (F0.3).** **Read half — CLOSED:** the supplier-facing sourcing read landed with `SupplierRFQs.tsx` — `useRFQs` (invited-membership) + `useQuotations` (supplier-scoped) resolve off the mutable stores; the award-history tab (`buildAwardRows`) re-derives from the RFQ-award cascade, verified in-floor. **Write half — CLOSED (Task 3b).** Supplier quote *submission* (`t_quotation_submit`) + buyer *review* (`t_quotation_review`) wired through the command spine ([[F0.3-FIND-01]] closed); SupplierRFQs submit dispatches real, My-Quotes reads real `useQuotations`. The lone remaining sub-item is the cross-entity roster sync [[QUOTATION-RESPONDED-01]] (deferred, 3b-D). |
 | **RFQ-DRAWER-01** | `BuyerSourcing` quote-comparison drawer has no responsive layout at compact width (criterion/quote column collision, clipped AI-composite circles) and uses multi-hue score bars (blue/orange/green) violating DP-2. | Resolved in Batch 1.3 PR-B — single-accent teal score bars (consume `CHART_SERIES`) + horizontal-scroll / stacked layout for 3+ quotes. |
-| **VITE-BASE-01** | `vite.config.ts` carried `base: '/paragon-supplier-portal/'` for local non-Vercel builds — a GitHub Pages relic that broke local `vite preview` mounting (asset 404s under the subpath) and served no purpose under Vercel root-domain serving (Vercel already builds with base `/` via `process.env.VERCEL`, behind the `vercel.json` SPA rewrite). | Resolved in Batch 1.3 PR-B (`4623881`) — collapsed to `base: '/'`; verified via flag-free `npm run build && npm run preview` Playwright smoke (mounts, 0 console errors). |
+| **VITE-BASE-01** | `vite.config.ts` carried `base: '/paragon-supplier-portal/'` for local non-Vercel builds — a GitHub Pages relic that broke local `vite preview` mounting (asset 404s under the subpath) and served no purpose under Vercel root-domain serving (Vercel already builds with base `/` via `process.env.VERCEL`, behind the `vercel.json` SPA rewrite). | Resolved in Batch 1.3 PR-B (`4623881` — ⚠️ **UNREACHABLE: not an object in this repository, presumably a pre-squash branch SHA. Left verbatim as the record; see `CITED-SHA-SWEEP-01`**) — collapsed to `base: '/'`; verified via flag-free `npm run build && npm run preview` Playwright smoke (mounts, 0 console errors). |
 | **VITE-DEV-ENTRY-01** | Plain `npm run dev` does not mount — `root: 'app'` + entry `../src/main.tsx` makes Vite dev serve `/src/main.tsx`, which 404s (file is above root). Distinct from VITE-BASE-01 (dev base was already `/`); the base fix does not resolve it. | Entry restructure deferred to the **polish batch** (Phase 5 hardening) — do not touch `root: 'app'` or the entry mid-migration. Local Playwright smoke path = `npm run build && npm run preview` (flag-free). **RECONFIRMED — PR #38 invoice-verb audit (2026-07-09):** a *fresh* `npm run dev` still serves blank (a `Sec-Fetch-Dest: script` request for `/src/main.tsx` 404s; curl without that header gets the HTML fallback → the false-200). This is the true root cause of the operator's "local dev is blank" and **supersedes the stale-server diagnosis** (killing stale 5173/5174 servers does not fix it). |
 | **SEC-GATE-01** | The prototype was fully public on Vercel (no access gate; `/` → `/buyer/dashboard`) with an orphaned, unenforced mock `Login.tsx` at `/login`. Threat model: keep unauthorized/casual eyes and search engines off a pre-release, all-mock prototype before it goes to IT. Client-side gates rejected as theater (a `VITE_` code ships in the bundle; a localStorage flag is bypassable). | **CLOSED (PR #25, `cef5706`) — real server-side gate (Option C).** Vercel Routing Middleware (`middleware.js`) runs before the SPA rewrite and requires a valid HMAC-SHA256 signed, HttpOnly, 7-day session cookie for the app shell and every `/assets/*` chunk — the bundle never ships to an unauthenticated client. Credentials validated at the edge against **NON-VITE** `GATE_USER`/`GATE_PASSWORD`/`GATE_SECRET` (never bundled); fails **closed** (503) if unprovisioned. Gate screen is a middleware-served standalone HTML page in `Login.tsx`'s brand language (DP-1) — the in-app persona/CurrentIdentity flow is untouched. Logic lives outside `src/` (gate/, middleware.js) so the vitest 165 floor is unaffected; own `node --test` crypto proof (7/7) + Playwright full-flow verify via a local Node harness (`scripts/gate-preview-server.mjs`). noindex shipped (meta + robots.txt + `X-Robots-Tag`). Env vars set by operator in Vercel; per-persona gate creds not built (identity stays in-app). **Live-verified on `paragon-supplier-portal.vercel.app` (prod deploy `dpl_CL4VPT5J5BPPx8h5zX34TLVXJm4S`, sha `cef5706`):** unauthed `/` → gate 200 (not the app), unauthed `/assets/*.js` → gate HTML (bundle not served), correct creds → 303 + `pgate` signed cookie → app `index.html` mounts, cookie persists (authed asset served). Confirmed independently by operator from a clean browser. Note: Vercel captures env at build time — the initial post-merge deploy fail-closed 503'd until a redeploy re-captured the Production env vars (expected; documents the ordering for future env changes). |
 | **DP3-MIGRATE-01** | DP-3 adjacent debt — surfaces the central theme seams do NOT cover, to migrate opportunistically per touched page (never a standalone sweep, per the DP-3 amendment): (a) **mono-for-data adoption** — the `<Data>` primitive + JetBrains Mono exist, but currency (`formatIDR`, 24 sites, 0 in mono), dates, and most table data still render as plain sans; wrap them in `<Data>` when a page is touched; (b) **9 files with raw `<table>`** bypassing the Table primitive — no grey header band until migrated: BuyerContracts, BuyerInventory, BuyerInvoices, BuyerOrders, BuyerShipments, BuyerSourcing, BuyerWhatsAppHub, SupplierOrders, SupplierShipments; (c) **≥3 files with inline status chips** duplicating StatusPill's class signature (won't inherit the quiet-outline): BuyerInventory, BuyerScorecard, SupplierPerformance. | Opportunistic per touched page (DP-1/DP-2 model). **(a) mono adoption CLOSED in DP3-FONT-01 (PR #31)** — the sweep is complete (every money/date/qty/doc token routes through `<Data>`). **(c) BuyerInventory inline chip CLOSED (PR #31 → StatusPill).** Remaining: raw-`<table>` → Table primitive (data cells migrated, but headers still raw); BuyerScorecard/SupplierPerformance inline chips are grade dials (grades excluded from StatusPill). Migrate remaining raw tables when a page is next edited. |
@@ -3135,11 +3135,46 @@ and it is load-bearing.
 
 ⚠️ **M5 FAILED TO APPLY TWICE BEFORE IT DETECTED** — the probe's regex anchored
 on `$` against CRLF line endings and silently matched nothing, so the run came
-back green and *looked* like a hole in the suite. `PROBE-NEEDS-PROBING-01`, a
-fourth appearance and a new variety: **a probe that does not mutate is
-indistinguishable from a suite that does not detect.** The same broken-grep run
-also made two passing probes print nothing at all, which is how it was caught.
-**Every probe here was re-confirmed to have actually changed the file.**
+back green and *looked* like a hole in the suite. **`PROBE-NEEDS-PROBING-01`'s
+THIRD VARIETY** (fourth appearance) — **and the first with an ENVIRONMENTAL
+cause**; see the dedicated entry below. The same broken-grep run also made two
+passing probes print nothing at all, which is how it was caught. **Every probe
+here was re-confirmed to have actually changed the file.**
+
+### ⚠️ `PROBE-NEEDS-PROBING-01` — **THIRD VARIETY, AND THE FIRST WITH AN ENVIRONMENTAL CAUSE** *(operator ruling, #182 merge)*
+
+The two earlier varieties were mistakes **in the probe** — a pattern that was
+wrong, a control that was missing. This one is neither. The pattern was correct
+**for the file the author believed they were editing**:
+
+```
+perl -pi -e "s/^(\s*)aria-required$//"     # matches nothing. CRLF.
+perl -pi -e "s/^(\s*)aria-required(\r?)$/$1$2/"   # matches.
+```
+
+**`$` sits before the `\r`, so the anchor never fires.** The substitution reports
+success, changes nothing, and the suite then correctly passes — **which reads
+exactly like a spec that failed to detect the mutation.**
+
+> **A PROBE THAT DOESN'T MUTATE LOOKS EXACTLY LIKE A SUITE THAT DOESN'T DETECT.**
+> *(operator, #182)*
+
+⚠️ **THIS WILL RECUR, AND THAT IS THE WHOLE REASON IT IS FILED SEPARATELY.** The
+first two varieties were errors a careful author stops making. This one is a
+property of the machine — **Windows line endings, `core.autocrlf = true`, every
+file in the tree** — so it is waiting for every future probe written with a `$`
+anchor, including ones written by someone who has read both earlier entries.
+
+**The standing practice, extended:** a probe must assert its own edit landed
+(#179) — **and the assertion must be on the FILE, not on the exit status of the
+tool that edited it.** `perl` exits 0 on a substitution that matched nothing.
+Diff against a backup, or `grep` the mutated site, before believing any probe
+result — green or red.
+
+**Its sibling, filed the same day:** `HASH-IS-PLATFORM-DEPENDENT-01`, where the
+same CRLF/LF split makes a `sha256` describe the checkout rather than the commit.
+**Both are the verification apparatus lying rather than the thing under
+verification**, and both come from the same two-line git config.
 
 ### Inverted, never deleted — the pin that carries the swap
 
@@ -3193,3 +3228,192 @@ single screenshot — **cache-bust or the result is a lie.**
   declared field, no master row, no schema.
 - **FLOOR 2219 → 2226/184.** `npm run gates` green; `scripts/floor.json` bumped
   as the gate's note asked.
+
+---
+
+## CP-3 · THE C9 HASHES, THE MIRROR SCOPE, AND THE CITED-SHA SWEEP
+
+Three items, dispatched together after `#182`. They turned out to compose: the
+first produced a number that only the second explains, and the third found the
+mechanism that makes both recur.
+
+### 1 · `C9-ISSUE-HASHES-01` — THE HASHES AT `af7f0b4`
+
+**Every C9 issue from now on ships all three hashes IN THE MESSAGE ITSELF.**
+
+SOMO could not run the diff we asked for. They hold **no byte-level mirror**, and
+their entire ratification record for `f492b5c` is one prose line reading
+*"3 files hashed"* — **with the hashes not written down.**
+
+> **A RATIFICATION RECORDED IN PROSE IS A PROMISE WITH NO VERIFIER.** *(theirs,
+> credited)* It is `SUMMARY-LOSS-IS-DIRECTIONAL-01` applied to the evidence
+> rather than to the claim: the hashing *happened*, and the record of it retained
+> the fact that it happened while discarding the only part that could be
+> re-checked. **A record that cannot be re-checked is indistinguishable from a
+> record that was never made.**
+
+**The hashes at `af7f0b4`** — verified byte-identical at `af7f0b4` and at
+`adc26e0` (today's main), so this pin is current, not historical:
+
+| Path | git blob (canonical) | sha256 (normalised bytes) | bytes |
+|---|---|---|---|
+| `docs/contracts/C9-material-master-ref.md` | `2b4f38ddd19c8e68d9bfa1525443d3a8fff4c65c` | `9b381dcadf32425e6b7cac5409759ed28cdc73d9f49bf02980d2b76beff605a0` | 93 276 |
+| `src/services/sdc/materialMasterRef.types.ts` | `7718f9e98b4f84a2045cb7fb9b7a234d0d3a8ce5` | `eb5a4e593e51370786db75d0c88c20b6f6deaf8ad5dedab1e95e4af18bb50084` | 21 882 |
+| `docs/contracts/C9-required-fields.md` | `e6ddd94aa24980a0eed9be7c1019d7934250f8ed` | `e6acfd772d52d2cce2da9f351407db26d43802818d04525905a38ed92e5eae8f` | 4 295 |
+
+Reproducible on any platform:
+`git rev-parse af7f0b4:<path>` · `git show af7f0b4:<path> | sha256sum`
+
+#### ⚠️ `HASH-IS-PLATFORM-DEPENDENT-01` *(new — and it would have wasted SOMO's next week)*
+
+**A BARE `sha256` OF A C9 FILE IS NOT A FACT ABOUT THE COMMIT.** This repo has
+`core.autocrlf = true` and **no `.gitattributes`**, so a Windows checkout holds
+CRLF while the stored blob holds LF. The same commit yields two different digests
+depending on who checks out:
+
+| Path | sha256 of the **blob** (LF) | sha256 of a **Windows checkout** (CRLF) |
+|---|---|---|
+| `C9-material-master-ref.md` | `9b381dca…` (93 276 B) | `becd68b5…` (94 489 B) |
+| `materialMasterRef.types.ts` | `eb5a4e59…` (21 882 B) | `2cd46f7e…` (22 271 B) |
+| `C9-required-fields.md` | `e6acfd77…` (4 295 B) | `2e993f0b…` (4 419 B) |
+
+Had we sent the working-tree digests, **SOMO would have hashed their own
+checkout, got a clean mismatch on all three, and correctly concluded the contract
+had drifted.** A false positive on a byte-identical file, generated entirely by
+the verification step.
+
+> **THE GIT BLOB ID IS THE ONLY PLATFORM-INDEPENDENT ANSWER**, because git
+> normalises before hashing. **Both columns are published above rather than
+> picking one**, with the reproduction command, so a mismatch tells SOMO
+> *which* mismatch they have instead of just that they have one.
+
+⚠️ It is worth naming what this shares with `PROBE-NEEDS-PROBING-01`, filed the
+same day two items down: **both are the verification apparatus lying, not the
+thing under verification.** A probe that never mutated and a hash that never
+described the bytes are the same failure wearing different clothes.
+
+#### ⚠️ THE FACT SOMO NEEDS MOST, AND IT ONLY APPEARS WHEN YOU LINE THE PINS UP
+
+Against `f492b5c` — the tree SOMO actually ratified:
+
+| Path | at `f492b5c` | at `af7f0b4` | |
+|---|---|---|---|
+| `C9-material-master-ref.md` | `f5c17be9…` | `2b4f38dd…` | ⚠️ **CHANGED** (Amendment 3, `#181`) |
+| `materialMasterRef.types.ts` | `7718f9e9…` | `7718f9e9…` | **IDENTICAL** |
+| `C9-required-fields.md` | `e6ddd94a…` | `e6ddd94a…` | **IDENTICAL** |
+
+**TWO OF THE THREE FILES ARE BYTE-IDENTICAL TO WHAT THEY RATIFIED. EXACTLY ONE
+MOVED — AND IT IS THE ONE THEY DO NOT HOLD.** See `MIRROR-SCOPE-GAP-01` below.
+That composition is not a coincidence and it is not rhetoric: the authority
+document is the one that carries amendments, so it is the one most likely to
+move, and it is the one that fell outside the mirror. **The gap was widest
+exactly where the drift was.**
+
+### 2 · `MIRROR-SCOPE-GAP-01` *(new class)* — RATIFYING THREE PATHS WHILE HOLDING TWO
+
+`docs/contracts/C9-material-master-ref.md` — **THE AUTHORITY** — is not in SOMO's
+mirror and never was. **Across five issues. Neither side noticed.**
+
+> **A RATIFICATION'S SCOPE AND A COUNTERPARTY'S CAPACITY TO HOLD IT ARE DIFFERENT
+> FACTS, AND ONLY ONE OF THEM WAS EVER STATED.**
+
+**OURS AS MUCH AS THEIRS, and the asymmetry runs our way.** We asked for a pin —
+five times — **without ever asking what they could hold.** We specified the
+scope of the obligation and never once checked the capacity to meet it, then
+read five clean ratifications as confirmation that all three paths had been
+checked. They had not been. Two had.
+
+This is a class, not an incident, and it generalises past C9:
+
+- **Every ratification protocol has two halves** — what is to be checked, and
+  what the checker can actually reach. **We have only ever written down the
+  first.** `C9-ISSUE-HASHES-01` above fixes the symptom (send the hashes) and
+  **does not fix this**: a counterparty can receive three hashes and still hold
+  only two files, and will then verify two and report three.
+- ⚠️ **A CLEAN RATIFICATION IS EVIDENCE ABOUT WHAT WAS CHECKED, NOT ABOUT WHAT
+  WAS ASKED.** Five clean returns looked like five confirmations of a
+  three-path pin. They were five confirmations of a two-path pin, and nothing in
+  the return distinguished the two — which is the same shape as
+  `EMPTY-INPUT-REPORTS-CLEAN-01`, one counterparty out: **a check that silently
+  skips its missing input reports success.**
+- **The remedy is a capacity statement, not a stricter ask.** The next C9 issue
+  must ask SOMO to **enumerate what their mirror holds** and return that list
+  with the ratification, so scope and capacity are stated in the same document.
+  **Booked, not built here** — it is an issue to be sent, and the operator sends
+  issues.
+
+### 3 · `CITED-SHA-SWEEP-01` — THE SWEEP, AND THE COUNT IS 2
+
+`CITED-SHA-MUST-BE-REACHABLE-01` was found **by accident** after `977ce25` turned
+out to be a deleted branch tip, and we had **never swept for others.** Now swept:
+every hex token in `docs/` and `CLAUDE.md`, resolved against `origin/main`.
+
+| | Count |
+|---|---|
+| hex candidates found | **57** |
+| resolve as **commits** | 52 — **51 reachable on `main`**, ⚠️ **1 NOT** |
+| resolve as **blobs** (the C9 pin convention) | 4 — **all 4 reachable** |
+| resolve as **nothing at all** | ⚠️ **1** |
+| **UNREACHABLE CITATIONS, TOTAL** | ⚠️ **2** |
+
+> **A CITATION IS A CLAIM ABOUT REACHABILITY, NOT ONLY ABOUT CONTENT** *(theirs,
+> and better than ours, credited)* — and **A DOC CITING AN UNREACHABLE SHA READS
+> AS MORE RIGOROUS THAN ONE CITING NOTHING**, which is §7.13's flattering
+> direction one layer out. **A SHA ON A BRANCH IS A PROMISE WITH A DELETION
+> DATE.** Their composition, also theirs: **A CITATION THAT CANNOT BE RE-CHECKED
+> IS THE SAME DEFECT AS ONE THAT CANNOT BE REACHED.**
+
+**The two, and they are not the same severity:**
+
+- **`977ce25`** *(findings.md — the known one)*. A deleted branch tip. Still in
+  the local object store, so `git show` works **here** and would fail on a fresh
+  clone. `git branch -a --contains` returns nothing. **Unreachable, recoverable
+  only by accident of local history.**
+- ⚠️ **`4623881`** *(findings.md, `VITE-BASE-01`: "Resolved in Batch 1.3 PR-B
+  (`4623881`)"). **NEW, AND WORSE.** It is not an unreachable object — **it is
+  not an object.** `git cat-file` does not know it, no prefix matches anything
+  reachable from any ref, and it has presumably never existed in this repository
+  since the day the branch was squashed. **A citation that was never true**,
+  reading for months as a precise provenance claim.
+
+#### ⚠️ THE MECHANISM, AND IT IS OUR OWN MERGE POLICY
+
+Both instances have the same cause, and it is not carelessness:
+
+> **THIS REPO SQUASH-MERGES AND DELETES THE BRANCH.** A squash merge **mints a
+> new commit**; the branch's own SHAs never appear on `main` and are collected.
+> **So a SHA copied off a pre-merge branch is unreachable BY CONSTRUCTION, not by
+> accident** — it is guaranteed wrong the moment the PR merges, and it looks
+> perfectly valid to whoever wrote it, because at the time they wrote it, it was.
+
+That upgrades the rule from hygiene to a mechanical one:
+
+**ONLY A POST-MERGE `main` SHA MAY BE CITED. A SHA READ OFF A BRANCH, A PR PAGE,
+OR A LOCAL COMMIT IS A CITATION WITH A KNOWN EXPIRY**, and under squash-merge the
+expiry is *the merge itself*.
+
+**Recorded, not fixed.** The two citations are historical prose about closed
+findings; **rewriting them would edit the record**, which this file does not do
+(`A CLOSED HAZARD IS UPDATED IN PLACE, NEVER DELETED`). They are annotated in
+place instead, and the rule above governs everything written from here.
+
+⚠️ **THE SWEEP IS NOT A GATE AND IS NOT CLAIMED AS ONE.** It is a one-off census
+run by hand; nothing re-runs it, so a bad SHA written tomorrow is invisible again.
+**A derived check belongs here** — resolve every cited SHA against `origin/main`
+and fail on a miss — and it is **booked, not built**: it needs a decision about
+false positives (`4623881` was found only because a 7-hex token in prose happened
+to be a real citation, and four legitimate blob hashes look identical to commit
+SHAs at a glance). Building it inside a docs batch would be the
+decision-smuggling this arc keeps refusing.
+
+### Constraints discharged, in writing
+
+- **DOCS ONLY.** No code, no schema, no fixture, no master row.
+- **C9's BYTES ARE UNTOUCHED.** The three pinned paths are byte-identical at
+  `af7f0b4` and at `adc26e0` — asserted above by blob hash, which is the point of
+  the item.
+- **THE COUNT IS REPORTED WHATEVER IT IS: 2.** One known, one new and worse. The
+  sweep's own limits are stated rather than implied.
+- **Both of SOMO's generalisations are credited to them**, and their
+  ratification-in-prose finding is credited as theirs.
+- **FLOOR 2226/184, unchanged.** `npm run gates` green.
