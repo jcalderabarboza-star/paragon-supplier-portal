@@ -3587,3 +3587,232 @@ but **"did we say so, and does the default claim to be an answer."**
   point is stated so the difference is legible.
 - **C9's bytes untouched**; pin `af7f0b4` unaffected.
 - **FLOOR 2226/184, unchanged.** `npm run gates` green.
+
+---
+
+## CP-3 · THE C7 FREEZE THAT WAS NEVER HASHED — and the sweep that passed it
+
+**Found by SOMO's sweep, not ours, and the reason ours could not have found it
+is the finding.** Docs only; no code, schema, fixture or contract byte changed.
+
+### `C7-FROZEN-CLAIM-IS-FALSE-01` — SOMO HAS READ HALF A DOCUMENT FOR THREE WEEKS
+
+SOMO's corpus has carried, since 2026-07-14, the claim that
+`docs/contracts/C7-pr-intake.md` is **"frozen on main @ `768b863`"**. They
+raised it because they cannot verify it — it is our repository.
+
+⚠️ **THE ANCHOR IS CORRECT. IT IS THE WORD "FROZEN" THAT IS FALSE.**
+
+`768b863bb243991aaf0c1b937c1fdcd343a03613` is an object, is an ancestor of
+`origin/main`, sits on main's **first-parent** line, has a **single parent**
+(`dc059fc`) — i.e. it **already is** the squash-merge commit — and it is the
+commit that **introduced** the C7 contract (PR **#68**, +304 lines).
+**There is nothing to re-anchor. SOMO cited the merge commit correctly the
+first time.**
+
+The contract has moved **TWICE** since, and neither move reached them:
+
+| Anchor | What landed | Bytes |
+|---|---|---|
+| `768b863` · #68 · 2026-07-14 | the contract, as SOMO cites it | **19 029** |
+| `f82c63a` · #159 · 2026-08-03 | CP-1 close — C7 + C8 corrected | 38 603 |
+| `af7f0b4` · #181 · 2026-08-06 | C9 Amendment 3 sync (= current main) | **40 329** |
+
+**+309 / −52 lines. THE CONTRACT HAS MORE THAN DOUBLED.**
+
+And the first thing added is the part that makes it unarguable:
+
+> `## Correction record (2026-08-03) — read this before the contract`
+
+**They have never seen the line instructing them to read it first.** Also
+unseen by the counterparty: **`C7-FIND-02` and `C7-FIND-03`, both carrying
+`(DEFECT, OPEN)` in their own headings**; §3.1's *"five payload keys no
+document stated"*; and §6.1 **GG-4**, the material-join finding.
+
+⚠️ This is `C9-STALE-BY-FIX-01` one contract over, and **worse in the way that
+matters**: C9 went stale while carrying an amendment ledger and a pin protocol,
+so the staleness was detectable and was detected. C7 carried **a citation with
+no hash**, so **nothing failed when the text changed** — and the text changed by
+109%.
+
+### THE HASHES, at every anchor — `docs/contracts/C7-pr-intake.md`
+
+| Anchor | git blob (canonical) | sha256 (normalised LF) | bytes |
+|---|---|---|---|
+| **`768b863`** *(SOMO's)* | `d826cb0dadd257b5ce2be6f82789c2f15d08c456` | `b68dad7572a0251ada87310d6822a35d3a8e1c230ba57adf345760acd5d49e77` | 19 029 |
+| `f82c63a` | `d74a5f604d7c58a2330a6a34791629d8a485783a` | `95e01422b156b9dd4261d4ce8dbd22932dff793ffeaa845317590c08ebe257d4` | 38 603 |
+| **`af7f0b4` = current main `47ad8cc`** | `c92b8f849feb71d3ae39411afc41aaf24c99a7d3` | `51c918bc229d575256bad536d23c82aa341a94f36189c24b6247b0dd7f5a668b` | 40 329 |
+
+Reproducible anywhere: `git rev-parse <sha>:docs/contracts/C7-pr-intake.md` ·
+`git show <sha>:docs/contracts/C7-pr-intake.md | sha256sum`.
+
+⚠️ **`HASH-IS-PLATFORM-DEPENDENT-01` APPLIED, AND BOTH COLUMNS PUBLISHED.** The
+figures above are the **git-normalised (LF)** bytes. A **Windows checkout** of
+current main yields `e25bf63c3caae8423e87229252893254e2ce08815c2f3ed2c0b9e4fb64cd5987`
+over **40 890 B** — a different digest over byte-identical content, because
+this repo runs `core.autocrlf = true` with no `.gitattributes`. **Both are
+published so that a mismatch tells the reader WHICH mismatch they have**, rather
+than handing a counterparty a clean false positive on an unchanged file.
+
+---
+
+### `SWEEP-TESTS-REACHABILITY-NOT-TRUTH-01` — THE CLASS, AND IT INDICTS THE SWEEP'S DESIGN
+
+The dispatch filed this as a coverage gap — *our sweep missed a citation of
+ours living in their corpus.* **MEASURED, AND THAT IS NOT WHAT HAPPENED.**
+
+**`768b863` IS in our corpus — twice** (`docs/g0-2-engine-scorecard.md:4` and
+`:287`). `CITED-SHA-SWEEP-01` saw it, tested it, and **PASSED IT CORRECTLY.**
+It is one of the 51 reachable commits that sweep reported as fine. It was never
+missed and it is not a coverage failure.
+
+> ⚠️ **A REACHABLE SHA CARRYING A FALSE CLAIM PASSES A REACHABILITY SWEEP
+> CLEANLY.** `768b863` is a live object on main, and *"frozen on main @
+> `768b863`"* is false anyway. **NO SWEEP OF SHAs CAN TEST A CLAIM ABOUT TEXT.
+> That needs a HASH, and the hash was never recorded.**
+
+It is `C9-ISSUE-HASHES-01` arriving from the opposite direction. There: a
+**ratification** recorded in prose, with the hashes discarded. Here: a **FREEZE**
+recorded in prose, with the hashes never taken. Same defect, same remedy, and
+the two together make the general form plain — **an assertion about bytes,
+recorded without bytes, is unverifiable by anyone on either side.**
+
+⚠️ **AND THE ANCHOR BEING PERFECTLY VALID IS WHAT LET IT SIT SINCE JULY.** A
+broken citation announces itself the first time somebody runs `git show`. A
+*correct* citation attached to a *false* claim survives every check either side
+possesses, indefinitely. **The half of the claim we could test was the half that
+was true.**
+
+**Consequence for the sweep, recorded not built:** `CITED-SHA-SWEEP-01`'s
+derived-check successor is scoped to reachability and would inherit this hole.
+A citation that asserts CONTENT ("frozen at", "ratified at", "unchanged since")
+is a different object from one that asserts PROVENANCE ("landed in"), and only
+the second is answerable by resolving a SHA.
+
+---
+
+### `SMOKE-ANCHOR-NAMES-THE-BATCH-NOT-THE-BYTES-01` — OUR INVERTED TWIN
+
+Exposure swept across the register: **6 real instances** (7 raw matches, one a
+false positive — `1f3e457` at `findings.md:87`, where *"stored as accepted"* is
+defect prose, not an acceptance record).
+
+| Anchor | Kind | Reachable? |
+|---|---|---|
+| `0a11733` | found on the 2f-b smoke | ✅ |
+| `32778e4` | found on the 2f-c smoke | ✅ |
+| `86ff895` | operator smoke on the BUILT BUNDLE | ✅ |
+| `f2eeed8` | 2e-c-6 ID smoke | ✅ |
+| `cf09e70` | on the documented smoke path | ✅ |
+| `3860fe4` | SOMO's refinement, *accepted and built* | ✅ |
+
+**All six reachable. All six post-merge main SHAs, first-parent on main. ZERO
+decay exposure.** ⚠️ **And that is not the good news it looks like.**
+
+Our smokes run against a **branch build, by construction** — the workflow smokes
+before the PR merges, because merging is what the smoke gates. But `refs @`
+cites the **merge commit of the batch the finding was filed in**. Therefore:
+
+> **THEIR ACCEPTANCE CITED THE RIGHT OBJECT AND IT WAS DELETED. OURS CITE AN
+> OBJECT THAT WAS NEVER THE ONE UNDER TEST.**
+>
+> Both fail the same practical test: **YOU CANNOT RE-RUN THE SMOKE AGAINST THE
+> CITED COMMIT AND GET WHAT WAS SMOKED.** Theirs because the commit is gone;
+> ours because the commit is not it.
+
+⚠️ **OURS IS THE MORE INSIDIOUS OF THE TWO, PRECISELY BECAUSE IT PASSES EVERY
+CHECK WE HAVE.** It is **not a false claim** — `refs @` honestly anchors *which
+batch*, and never claimed to anchor *which bytes were smoked*. It is **A CLAIM
+THAT CANNOT SUPPORT THE WEIGHT A READER WOULD PUT ON IT**, which a reachability
+sweep is structurally unable to distinguish from one that can. Same shape as
+`SWEEP-TESTS-REACHABILITY-NOT-TRUTH-01` above, turned on ourselves.
+
+**THE FIX — STATED, NOT BUILT:**
+
+> **AN ACCEPTANCE ANCHOR MUST NAME THE ARTIFACT TESTED, AND IF THAT ARTIFACT IS
+> A BRANCH BUILD IT NEEDS A HASH, BECAUSE THE SHA WILL NOT SURVIVE.**
+
+Not built here: it changes how every future smoke is recorded, and the shape of
+that record (bundle digest? blob ids of the touched files? both?) is a decision,
+not a detail. **Booked.**
+
+---
+
+### `ACCEPTANCE-ANCHOR-MUST-BE-REANCHORED-01` — FROM SOMO, WITH ATTRIBUTION
+
+> **A SHA CITED AT ACCEPTANCE MUST BE RE-ANCHORED TO ITS MERGE COMMIT WHEN IT
+> LANDS.** *(theirs)*
+
+Their reasoning indicts the workflow rather than the author, and it is the part
+worth keeping: **ACCEPTANCE HAPPENS AT A BRANCH TIP BY DEFINITION, BECAUSE THAT
+IS WHAT IS BEING ACCEPTED.** So our own standing rule — *only a post-merge main
+SHA may be cited* — is **UNFOLLOWABLE AT THE EXACT MOMENT CITATION MATTERS
+MOST.** A rule that cannot be obeyed when it counts is not a rule, it is a
+reprimand issued in advance.
+
+Their instance: an operator acceptance smoke for a major arc close, anchored to
+a commit deliberately reset away — **THE EVIDENCE FOR THE THING THAT MATTERED
+MOST IS THE EVIDENCE THAT DECAYED.**
+
+⚠️ **AND `768b863` IS NOT AN INSTANCE OF IT.** Recorded plainly so no later
+reader takes it as the worked example: `768b863` was never a branch tip, never
+decayed, and needs no re-anchoring — it is a squash-merge commit on main that
+has been correct since the day it was written. **The rule is real and we need
+it; this is simply not its case.** Filing a valid citation under a decay rule
+would teach the wrong lesson twice — that the anchor was the problem, and that
+hashing was optional.
+
+---
+
+### THE CROSS-CORPUS RULE — STANDS, WITH THE CREDIT CORRECTED
+
+> **NEITHER SIDE'S SWEEP IS COMPLETE ALONE.** A citation of ours living in a
+> counterparty's corpus is invisible to a sweep of ours, and the reverse.
+
+This holds on its own merits and is worth acting on independently. ⚠️ **But the
+credit for THIS find belongs elsewhere, and saying so is the point:
+THEY DID NOT FIND A CITATION WE LOST. THEY FOUND A CLAIM WE NEVER HASHED.**
+Attributing it to cross-corpus coverage would leave us building a bigger sweep
+against a defect no sweep of that kind can see — the `EMPTY-INPUT-REPORTS-CLEAN-01`
+trap one layer up, where the remedy is scoped to the wrong mechanism and
+therefore reports success.
+
+It also composes with `MIRROR-SCOPE-GAP-01`: there, a counterparty verified two
+files of three and reported three. Here, a counterparty read one version of one
+file and reported it frozen. **In both cases the returned verdict was clean, and
+in both cases what it actually covered had never been stated.** `SCOPE STATED
+WITH EVERY VERDICT` (`SEAM-BIDIRECTIONAL-01`) is the standing remedy for both,
+and this is its second independent justification in three batches.
+
+---
+
+### Constraints discharged, in writing
+
+- **DOCS ONLY.** No code, schema, fixture, contract byte or master row. The C7
+  contract itself is **NOT edited** — this entry records what it says at three
+  anchors, and correcting the counterparty's copy is an issue to send, which the
+  operator sends.
+- **The dispatched class was CORRECTED rather than filed as given** —
+  `768b863` was in our corpus and our sweep passed it correctly. Filing it as a
+  coverage miss would have been a false record in a register whose whole value
+  is that it isn't one.
+- **`ACCEPTANCE-ANCHOR-MUST-BE-REANCHORED-01` is credited to SOMO and
+  explicitly marked NOT instanced here.**
+- **`HASH-IS-PLATFORM-DEPENDENT-01` applied**: LF and Windows-checkout figures
+  both published, with the reproduction command and byte counts.
+- **C9's bytes untouched**; pin `af7f0b4` unaffected (blob
+  `2b4f38ddd19c8e68d9bfa1525443d3a8fff4c65c`).
+- **FLOOR 2226/184, unchanged.** `npm run gates` green.
+
+### Status pointer — `INFERHALAL-READS-PROSE-01`
+
+Recorded here as a **status line, not a finding** (the investigation was
+reported to the operator and accepted in full at this session's close):
+**ACCEPTED, and ROUTED TO SEAT 3 for a structural pass before any build.** Two
+facts at two grains on two clocks; the master's 42 codes and the compliance
+registry's 17 `RM-SAMPLE-*` codes have an **empty intersection**, so a GR check
+reading the registry today refuses **9 of 9** receivable lines — the `2B-4` gate
+shape with its precondition **unmet**, and R0.1 (the harvest) is the long pole
+with no technical mitigation. **`D-COMP-HALAL-4` is the blocker of record.**
+Nothing built, and the "easy half" deliberately not started: retiring the prose
+parse needs somewhere to read FROM, and there is nowhere yet.
