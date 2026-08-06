@@ -3587,3 +3587,455 @@ but **"did we say so, and does the default claim to be an answer."**
   point is stated so the difference is legible.
 - **C9's bytes untouched**; pin `af7f0b4` unaffected.
 - **FLOOR 2226/184, unchanged.** `npm run gates` green.
+
+---
+
+## CP-3 · THE C7 FREEZE THAT WAS NEVER HASHED — and the sweep that passed it
+
+**Found by SOMO's sweep, not ours, and the reason ours could not have found it
+is the finding.** Docs only; no code, schema, fixture or contract byte changed.
+
+### `C7-FROZEN-CLAIM-IS-FALSE-01` — SOMO HAS READ HALF A DOCUMENT FOR THREE WEEKS
+
+SOMO's corpus has carried, since 2026-07-14, the claim that
+`docs/contracts/C7-pr-intake.md` is **"frozen on main @ `768b863`"**. They
+raised it because they cannot verify it — it is our repository.
+
+⚠️ **THE ANCHOR IS CORRECT. IT IS THE WORD "FROZEN" THAT IS FALSE.**
+
+`768b863bb243991aaf0c1b937c1fdcd343a03613` is an object, is an ancestor of
+`origin/main`, sits on main's **first-parent** line, has a **single parent**
+(`dc059fc`) — i.e. it **already is** the squash-merge commit — and it is the
+commit that **introduced** the C7 contract (PR **#68**, +304 lines).
+**There is nothing to re-anchor. SOMO cited the merge commit correctly the
+first time.**
+
+The contract has moved **TWICE** since, and neither move reached them:
+
+| Anchor | What landed | Bytes |
+|---|---|---|
+| `768b863` · #68 · 2026-07-14 | the contract, as SOMO cites it | **19 029** |
+| `f82c63a` · #159 · 2026-08-03 | CP-1 close — C7 + C8 corrected | 38 603 |
+| `af7f0b4` · #181 · 2026-08-06 | C9 Amendment 3 sync (= current main) | **40 329** |
+
+**+309 / −52 lines. THE CONTRACT HAS MORE THAN DOUBLED.**
+
+And the first thing added is the part that makes it unarguable:
+
+> `## Correction record (2026-08-03) — read this before the contract`
+
+**They have never seen the line instructing them to read it first.** Also
+unseen by the counterparty: **`C7-FIND-02` and `C7-FIND-03`, both carrying
+`(DEFECT, OPEN)` in their own headings**; §3.1's *"five payload keys no
+document stated"*; and §6.1 **GG-4**, the material-join finding.
+
+⚠️ This is `C9-STALE-BY-FIX-01` one contract over, and **worse in the way that
+matters**: C9 went stale while carrying an amendment ledger and a pin protocol,
+so the staleness was detectable and was detected. C7 carried **a citation with
+no hash**, so **nothing failed when the text changed** — and the text changed by
+109%.
+
+### THE HASHES, at every anchor — `docs/contracts/C7-pr-intake.md`
+
+| Anchor | git blob (canonical) | sha256 (normalised LF) | bytes |
+|---|---|---|---|
+| **`768b863`** *(SOMO's)* | `d826cb0dadd257b5ce2be6f82789c2f15d08c456` | `b68dad7572a0251ada87310d6822a35d3a8e1c230ba57adf345760acd5d49e77` | 19 029 |
+| `f82c63a` | `d74a5f604d7c58a2330a6a34791629d8a485783a` | `95e01422b156b9dd4261d4ce8dbd22932dff793ffeaa845317590c08ebe257d4` | 38 603 |
+| **`af7f0b4` = current main `47ad8cc`** | `c92b8f849feb71d3ae39411afc41aaf24c99a7d3` | `51c918bc229d575256bad536d23c82aa341a94f36189c24b6247b0dd7f5a668b` | 40 329 |
+
+Reproducible anywhere: `git rev-parse <sha>:docs/contracts/C7-pr-intake.md` ·
+`git show <sha>:docs/contracts/C7-pr-intake.md | sha256sum`.
+
+⚠️ **`HASH-IS-PLATFORM-DEPENDENT-01` APPLIED, AND BOTH COLUMNS PUBLISHED.** The
+figures above are the **git-normalised (LF)** bytes. A **Windows checkout** of
+current main yields `e25bf63c3caae8423e87229252893254e2ce08815c2f3ed2c0b9e4fb64cd5987`
+over **40 890 B** — a different digest over byte-identical content, because
+this repo runs `core.autocrlf = true` with no `.gitattributes`. **Both are
+published so that a mismatch tells the reader WHICH mismatch they have**, rather
+than handing a counterparty a clean false positive on an unchanged file.
+
+---
+
+### `SWEEP-TESTS-REACHABILITY-NOT-TRUTH-01` — THE CLASS, AND IT INDICTS THE SWEEP'S DESIGN
+
+The dispatch filed this as a coverage gap — *our sweep missed a citation of
+ours living in their corpus.* **MEASURED, AND THAT IS NOT WHAT HAPPENED.**
+
+**`768b863` IS in our corpus — twice** (`docs/g0-2-engine-scorecard.md:4` and
+`:287`). `CITED-SHA-SWEEP-01` saw it, tested it, and **PASSED IT CORRECTLY.**
+It is one of the 51 reachable commits that sweep reported as fine. It was never
+missed and it is not a coverage failure.
+
+> ⚠️ **A REACHABLE SHA CARRYING A FALSE CLAIM PASSES A REACHABILITY SWEEP
+> CLEANLY.** `768b863` is a live object on main, and *"frozen on main @
+> `768b863`"* is false anyway. **NO SWEEP OF SHAs CAN TEST A CLAIM ABOUT TEXT.
+> That needs a HASH, and the hash was never recorded.**
+
+It is `C9-ISSUE-HASHES-01` arriving from the opposite direction. There: a
+**ratification** recorded in prose, with the hashes discarded. Here: a **FREEZE**
+recorded in prose, with the hashes never taken. Same defect, same remedy, and
+the two together make the general form plain — **an assertion about bytes,
+recorded without bytes, is unverifiable by anyone on either side.**
+
+⚠️ **AND THE ANCHOR BEING PERFECTLY VALID IS WHAT LET IT SIT SINCE JULY.** A
+broken citation announces itself the first time somebody runs `git show`. A
+*correct* citation attached to a *false* claim survives every check either side
+possesses, indefinitely. **The half of the claim we could test was the half that
+was true.**
+
+**Consequence for the sweep, recorded not built:** `CITED-SHA-SWEEP-01`'s
+derived-check successor is scoped to reachability and would inherit this hole.
+A citation that asserts CONTENT ("frozen at", "ratified at", "unchanged since")
+is a different object from one that asserts PROVENANCE ("landed in"), and only
+the second is answerable by resolving a SHA.
+
+---
+
+### `SMOKE-ANCHOR-NAMES-THE-BATCH-NOT-THE-BYTES-01` — OUR INVERTED TWIN
+
+Exposure swept across the register: **6 real instances** (7 raw matches, one a
+false positive — `1f3e457` at `findings.md:87`, where *"stored as accepted"* is
+defect prose, not an acceptance record).
+
+| Anchor | Kind | Reachable? |
+|---|---|---|
+| `0a11733` | found on the 2f-b smoke | ✅ |
+| `32778e4` | found on the 2f-c smoke | ✅ |
+| `86ff895` | operator smoke on the BUILT BUNDLE | ✅ |
+| `f2eeed8` | 2e-c-6 ID smoke | ✅ |
+| `cf09e70` | on the documented smoke path | ✅ |
+| `3860fe4` | SOMO's refinement, *accepted and built* | ✅ |
+
+**All six reachable. All six post-merge main SHAs, first-parent on main. ZERO
+decay exposure.** ⚠️ **And that is not the good news it looks like.**
+
+Our smokes run against a **branch build, by construction** — the workflow smokes
+before the PR merges, because merging is what the smoke gates. But `refs @`
+cites the **merge commit of the batch the finding was filed in**. Therefore:
+
+> **THEIR ACCEPTANCE CITED THE RIGHT OBJECT AND IT WAS DELETED. OURS CITE AN
+> OBJECT THAT WAS NEVER THE ONE UNDER TEST.**
+>
+> Both fail the same practical test: **YOU CANNOT RE-RUN THE SMOKE AGAINST THE
+> CITED COMMIT AND GET WHAT WAS SMOKED.** Theirs because the commit is gone;
+> ours because the commit is not it.
+
+⚠️ **OURS IS THE MORE INSIDIOUS OF THE TWO, PRECISELY BECAUSE IT PASSES EVERY
+CHECK WE HAVE.** It is **not a false claim** — `refs @` honestly anchors *which
+batch*, and never claimed to anchor *which bytes were smoked*. It is **A CLAIM
+THAT CANNOT SUPPORT THE WEIGHT A READER WOULD PUT ON IT**, which a reachability
+sweep is structurally unable to distinguish from one that can. Same shape as
+`SWEEP-TESTS-REACHABILITY-NOT-TRUTH-01` above, turned on ourselves.
+
+**THE FIX — STATED, NOT BUILT:**
+
+> **AN ACCEPTANCE ANCHOR MUST NAME THE ARTIFACT TESTED, AND IF THAT ARTIFACT IS
+> A BRANCH BUILD IT NEEDS A HASH, BECAUSE THE SHA WILL NOT SURVIVE.**
+
+Not built here: it changes how every future smoke is recorded, and the shape of
+that record (bundle digest? blob ids of the touched files? both?) is a decision,
+not a detail. **Booked.**
+
+---
+
+### `ACCEPTANCE-ANCHOR-MUST-BE-REANCHORED-01` — FROM SOMO, WITH ATTRIBUTION
+
+> **A SHA CITED AT ACCEPTANCE MUST BE RE-ANCHORED TO ITS MERGE COMMIT WHEN IT
+> LANDS.** *(theirs)*
+
+Their reasoning indicts the workflow rather than the author, and it is the part
+worth keeping: **ACCEPTANCE HAPPENS AT A BRANCH TIP BY DEFINITION, BECAUSE THAT
+IS WHAT IS BEING ACCEPTED.** So our own standing rule — *only a post-merge main
+SHA may be cited* — is **UNFOLLOWABLE AT THE EXACT MOMENT CITATION MATTERS
+MOST.** A rule that cannot be obeyed when it counts is not a rule, it is a
+reprimand issued in advance.
+
+Their instance: an operator acceptance smoke for a major arc close, anchored to
+a commit deliberately reset away — **THE EVIDENCE FOR THE THING THAT MATTERED
+MOST IS THE EVIDENCE THAT DECAYED.**
+
+⚠️ **AND `768b863` IS NOT AN INSTANCE OF IT.** Recorded plainly so no later
+reader takes it as the worked example: `768b863` was never a branch tip, never
+decayed, and needs no re-anchoring — it is a squash-merge commit on main that
+has been correct since the day it was written. **The rule is real and we need
+it; this is simply not its case.** Filing a valid citation under a decay rule
+would teach the wrong lesson twice — that the anchor was the problem, and that
+hashing was optional.
+
+---
+
+### THE CROSS-CORPUS RULE — STANDS, WITH THE CREDIT CORRECTED
+
+> **NEITHER SIDE'S SWEEP IS COMPLETE ALONE.** A citation of ours living in a
+> counterparty's corpus is invisible to a sweep of ours, and the reverse.
+
+This holds on its own merits and is worth acting on independently. ⚠️ **But the
+credit for THIS find belongs elsewhere, and saying so is the point:
+THEY DID NOT FIND A CITATION WE LOST. THEY FOUND A CLAIM WE NEVER HASHED.**
+Attributing it to cross-corpus coverage would leave us building a bigger sweep
+against a defect no sweep of that kind can see — the `EMPTY-INPUT-REPORTS-CLEAN-01`
+trap one layer up, where the remedy is scoped to the wrong mechanism and
+therefore reports success.
+
+It also composes with `MIRROR-SCOPE-GAP-01`: there, a counterparty verified two
+files of three and reported three. Here, a counterparty read one version of one
+file and reported it frozen. **In both cases the returned verdict was clean, and
+in both cases what it actually covered had never been stated.** `SCOPE STATED
+WITH EVERY VERDICT` (`SEAM-BIDIRECTIONAL-01`) is the standing remedy for both,
+and this is its second independent justification in three batches.
+
+---
+
+### Constraints discharged, in writing
+
+- **DOCS ONLY.** No code, schema, fixture, contract byte or master row. The C7
+  contract itself is **NOT edited** — this entry records what it says at three
+  anchors, and correcting the counterparty's copy is an issue to send, which the
+  operator sends.
+- **The dispatched class was CORRECTED rather than filed as given** —
+  `768b863` was in our corpus and our sweep passed it correctly. Filing it as a
+  coverage miss would have been a false record in a register whose whole value
+  is that it isn't one.
+- **`ACCEPTANCE-ANCHOR-MUST-BE-REANCHORED-01` is credited to SOMO and
+  explicitly marked NOT instanced here.**
+- **`HASH-IS-PLATFORM-DEPENDENT-01` applied**: LF and Windows-checkout figures
+  both published, with the reproduction command and byte counts.
+- **C9's bytes untouched**; pin `af7f0b4` unaffected (blob
+  `2b4f38ddd19c8e68d9bfa1525443d3a8fff4c65c`).
+- **FLOOR 2226/184, unchanged.** `npm run gates` green.
+
+### Status pointer — `INFERHALAL-READS-PROSE-01`
+
+**ACCEPTED, ROUTED TO SEAT 3, AND SEAT 3 HAS RULED.** Landed in full in the next
+entry, with two corrections against the investigation's own adjudication and the
+numbered `D-COMP-HALAL` register. ⚠️ **Read that entry, not this line** — the
+investigation's "two facts at two grains" and its reading of the empty
+intersection as a *precondition gap* are both **superseded there** (three facts,
+and the intersection is the honesty contract working). **`D-COMP-HALAL-4` is the
+one open gate; `H1 → H2 → H3` are buildable, `H4` is not.**
+
+---
+
+## CP-3 · `INFERHALAL-READS-PROSE-01` — THE INVESTIGATION LANDED, TWO CORRECTIONS, AND SEAT 3'S RULING
+
+**The investigation was reported, accepted in full, and routed to Seat 3.** Its
+findings lived only in the report until this entry — including a decision
+register that other documents were about to cite by number. **Landing it is the
+point: a numbered register that exists only in a conversation is
+`FLOOR-IN-PROSE-01` wearing a decision's clothes.**
+
+Nothing is built. `inferHalal` is untouched, the "easy half" deliberately not
+started.
+
+### THE DEFECT, in one line
+
+`inferHalal` (`GRInspectionWizard.tsx:272-275`) decides whether a received lot
+needs a halal check by testing `description.toLowerCase().includes('halal')` —
+a **regulatory determination made from free-text prose**. It is called at `:314`
+(shipment lane) and `:333` (ASN lane), the only two writers of `halalRequired`.
+**It fires on ZERO of the 9 receivable lines today**, and there is a **second,
+undiscovered prose parse** doing the same job on a different field:
+`AdaptiveContext.tsx:86-100`, where
+`isHalal = cat.includes('halal') || 'food' || 'raw' || 'packaging'` selects which
+halal certificate a supplier is told to provide (exposed at `:163`, no consumer
+today).
+
+**Both failure directions are live.** It fails OPEN silently — `false` is an
+assertion, the row does not render, and `qualityValid`'s clause can never
+engage. It fails CLOSED too: `.includes` has no word boundary and no negation
+handling, so **`"non-halal"`, `"not halal certified"` and `"halal audit failed"`
+all turn the check ON.**
+
+---
+
+### ⚠️ CORRECTION 1 — `sup-007` IS ON FIVE OF NINE, NOT THREE
+
+Reported as three. **Measured again: FIVE receivable lines across FOUR of the
+eight sources** — `shp-012` (`PK-PETB-8801`), `shp-013` (`PK-PETB-8802`),
+`ASN-2025-00211` (`FR-ROUD-4470` **and** `PK-PETB-8804` — two lines on one ASN),
+`ASN-2025-00198` (`PK-ALCP-2450`).
+
+**The undercount UNDERSTATED the finding, and that is the direction that
+matters.** `HALAL-XPERSONA-01`'s whitelisted contradiction does not sit on a
+corner of the receiving surface — **it sits on the MAJORITY of it.** Whichever
+surface is chosen as authoritative decides the halal answer for **more than half
+of every line a goods receipt can be fed.**
+
+Root cause, recorded because it will recur: **sources were counted where lines
+were owed.** `ASN-2025-00211` carries two lines and was counted once. The same
+conflation `BPOM-OFF-BY-SPACE-01` corrected when its blast radius went from nine
+to seven — **a census population and an exposure count are different quantities.**
+
+### ⚠️ CORRECTION 2 — `doc-001`, AND THE ADJUDICATION WAS WRONG, NOT JUST THE FACT
+
+**Recorded against the ruling, per operator instruction, and not merely as a
+data correction.**
+
+The investigation reported `doc-001` (`supplierDocuments.ts:12`) as evidence
+that *a halal certificate governs `PK-PETB-8801`, and the wizard asks nothing* —
+filed as a fail-open **contradiction**. **The evidentiary half stands. The
+adjudication of what the evidence MEANS was wrong.**
+
+| Fact | Value | Reading |
+|---|---|---|
+| `doc-001` `expiryDate` | **`2026-05-15`** | ⚠️ **EXPIRED — 83 days ago** (today 2026-08-06) |
+| `doc-001` `status` | `'Expiring Soon'` | ⚠️ **a decayed clock literal** — the exact `HALAL-CLOCK-STATE-01` shape (law 0.5), stored where it must be derived |
+| `doc-011` | *BPJPH Halal Certificate Application — In Progress*, `'Under Review'`, `expiryDate: null` | ⚠️ **AN APPLICATION, NOT A CERTIFICATE** |
+
+**The wizard asking nothing is still wrong. The correct verdict is not
+`REQUIRED AND SATISFIED` — it is `REQUIRED AND NOT SATISFIED`:** a halal
+certificate is required for this material, the only one ever held has expired,
+and its replacement is an application under review.
+
+⚠️ **AND THAT VERDICT IS ONLY EXPRESSIBLE IN THE REGISTRY'S VOCABULARY.**
+`ComplianceLifecycleState` + `computeStatus` distinguish
+`Missing / Under Review / Valid / Expiring / Expired`
+(`complianceProjection.ts:48-58`); `schemeValid` (`:66-71`) adds the issuer axis
+that would separately disqualify a MUI-legacy cert after 2026-10-17. **The GR
+wizard's `halalSealCheck: 'Pass' | 'Fail' | undefined` cannot say any of it.**
+
+**The correction is more damaging to the current design than the original
+finding was.** As first filed, the wizard's silence contradicted a valid
+certificate. As corrected, **the wizard has no vocabulary in which the true
+answer can be written at all** — it can ask an inspector to tick a box, and the
+real state is *the certificate expired in May and the replacement is in
+review*. `SUMMARY-LOSS-IS-DIRECTIONAL-01`: the mis-adjudication ran toward
+**tidier than the truth**, and a decayed status literal is precisely what made
+the tidy reading available.
+
+---
+
+### ⚠️ `D-COMP-HALAL` — THE DECISION REGISTER, NUMBERED AND ON MAIN
+
+**Landed here because other documents are about to cite these by number.**
+Modelled on `D-COMP-BPOM` (P-2), whose **content** half remains unanswered after
+CP-2. Items 1–3 and 5 are ruled below; **4 is the only one still open.**
+
+| ID | The decision |
+|---|---|
+| **D-COMP-HALAL-1** | **APPLICABILITY CONTENT** — which material groups require a halal check at receipt. ⚠️ **It will NOT mirror BPOM.** BPOM rules packaging `NOT_APPLICABLE` by registry axis (`bpom.ts:100-101`); `doc-001` links a halal certificate to PET bottles and `AdaptiveContext:89` puts `packaging` inside `isHalal`. **Packaging is where the two regimes visibly disagree in-tree — and it is 4 of the 9 receivable lines.** |
+| **D-COMP-HALAL-2** | **GRAIN** — material (master field) or supplier × material (registry). Decides whether the BPOM template is reusable at all. |
+| **D-COMP-HALAL-3** | **WHAT IS BEING ATTESTED** — "Halal Seal Check" names a physical seal on a drum. Seal verification, certificate confirmation, or both as separate checks? One Pass/Fail currently conflates them. |
+| **D-COMP-HALAL-4** | ⚠️ **THE DEAD-END RULING — THE ONLY ITEM STILL OPEN.** If applicability lands before the harvest, a required check has no certificate to verify against. Block · block with a recorded override · or stay unwired until R0.1. **Must be answered BEFORE any wire, not discovered during one.** **H4 is gated on this.** |
+| **D-COMP-HALAL-5** | **SOURCE OF TRUTH** — which of the seven halal vocabularies governs a receiving decision. **RULED below.** |
+| **D-OPS-PENDINGCAST** | The `'Pending' as OptionalCheck` cast (`mockGoodsReceipts.ts:79,293`) — legitimate fourth stored state (the display already renders it, `BuyerGoodsReceipt.tsx:90`) or fixture error? Mine to fix once ruled; not a compliance question. |
+
+---
+
+### SEAT 3'S RULING — ACCEPTED IN FULL
+
+#### 1 · THREE FACTS, NOT TWO — the refinement, and it is the load-bearing one
+
+The investigation decomposed the problem into two facts. **Seat 3 split the
+receipt-time half in two, and the split is not cosmetic:**
+
+| Fact | Grain | Clock | Who answers | How it fails |
+|---|---|---|---|---|
+| **APPLICABILITY** | material | **none** | compliance, once, per group | fails OPEN silently — no row renders |
+| **SEAL CHECK** | received lot | none | **a human, at the dock** | fails on attestation — a tick nobody earned |
+| **CERTIFICATE VERIFICATION** | supplier × material × cert | ⚠️ **yes** | a **lookup + projection** | fails on staleness, scheme, or absence |
+
+**Applicability governs BOTH receipt-time halves.** `halalSealCheck` already IS
+the second fact and is honestly shaped for it. **The third is performed nowhere
+in this product today.**
+
+> ⚠️ **NAME THEM SEPARATELY OR THE WIRING BATCH SMUGGLES ONE INSIDE THE OTHER.**
+
+That is exactly what `doc-001` demonstrates: an inspector ticking *Pass* on a
+physical seal would have recorded a satisfied halal check on a lot whose
+certificate **expired 83 days earlier**. **A human's tick and a certificate's
+validity are different facts with different answerers, and one Pass/Fail cannot
+hold both.**
+
+#### 2 · ⚠️ THE EMPTY INTERSECTION IS THE HONESTY CONTRACT WORKING, NOT A DATA BUG
+
+The investigation measured it and read it as a precondition gap. **Seat 3's
+reading is better and it reverses the conclusion.**
+
+The master's 42 codes and the registry's 17 `RM-SAMPLE-*` codes are disjoint
+**because the registry fixture's own header mandates placeholder codes as an
+honesty device** (`complianceRegistry.ts:1-38`: placeholder supplier names,
+`SAMPLE-` cert numbers, `RM-SAMPLE-` material codes, every issuer
+"(illustrative)", no real certifying body ever named — *"the single most
+sensitive fixture in the build"*). **The codes do not join because they are not
+allowed to look real.**
+
+> **So a wired gate today is NOT fail-closed honesty. IT IS AN OUTAGE WEARING
+> COMPLIANCE CLOTHES.** *(Seat 3)*
+
+And the consequence is the part that settles `H4`:
+
+> ⚠️ **IT FORCES R0.1'S SCHEDULE THROUGH THE RECEIVING DOCK — A SCHEDULE
+> DECISION SMUGGLED AS A GATE.** *(Seat 3)*
+
+R0.1 is `NOT STARTED`, "THE long pole. No technical mitigation."
+(`track-r-status.md:15`). Wiring the verification leg would make every receipt
+in the product wait on a certificate harvest — **an operational decision about
+Track R's pace, taken by a receiving-surface refactor, visible to nobody as
+such.** This is `SEED-IS-AN-ANSWER-01`'s class at organisational scale.
+**That is why H4 waits, and the reason is now written down rather than assumed.**
+
+#### 3 · SOURCE OF TRUTH — THE REGISTRY GOVERNS RECEIVING (`D-COMP-HALAL-5`, RULED)
+
+⚠️ **THE CONTRADICTION WAS NEVER A STALEMATE, AND TREATING IT AS ONE WAS THE
+ERROR.** Four surfaces, and they do not carry equal weight:
+
+| Surface | Keyed by | Says of sup-007 | Corroboration |
+|---|---|---|---|
+| Supplier master (`mockSuppliers.ts:219`) | **id** | `halalCertified: false` | — |
+| Storefront (`supplierStorefront.ts:34`) | **id** | *BPJPH Halal Cert — **missing*** | — |
+| Documents (`supplierDocuments.ts:12,22`) | **id** | MUI cert **EXPIRED**, BPJPH **application under review** | — |
+| ⚠️ `c-008` (`buyerCompliance.ts:41`) | ⚠️ **NAME** | *BPJPH Halal Certificate — **Valid** to 2027-09-01* | ⚠️ **NONE** |
+
+**THREE ID-KEYED SURFACES AGREE: not certified, remediation in flight.** The
+single outlier is **name-keyed** — the exact defect `HALAL-XPERSONA-01`
+registers — and it **stores `daysRemaining: 873` as a literal**, which is the
+`HALAL-CLOCK-STATE-01` violation the DTO-v2 read exists to end.
+
+**Measured: `873` was last true on 2025-04-11.** From today it should read
+**391**. ⚠️ **The outlier overstates by 482 days, and is corroborated by NO
+DOCUMENT ANYWHERE** — no `SupplierDocument`, no registry row, nothing.
+
+> **A name-keyed row storing a clock literal 482 days stale, backed by no
+> document, is not the other side of a contradiction. It is a stale surface,
+> and the registry governs receiving.**
+
+#### 4 · THE WHITELIST CONVERTS — IT DOES NOT CLOSE BY FIAT
+
+`halalXpersona.invariant.test.ts:36-39` whitelists sup-007 and sup-003 as KNOWN
+contradictions. **The ruling does not delete them.** It changes what they are:
+
+> **FROM "two contradictions we tolerate" TO "TWO STALE SURFACES WITH A NAMED
+> REPLACEMENT".** *(Seat 3)*
+
+⚠️ **The mechanism OUTLIVES the close, and that is the reason to convert rather
+than close.** The invariant's contract is `found ⊆ allowed` (`:19-23`) — a NEW
+contradiction, on a supplier not on the list, still FAILS the gate. Deleting the
+whitelist because the ruling settled these two would **retire the guard against
+the next split** at the moment its subject matter was proven live. Same shape as
+`BPOM-OFF-BY-SPACE-01`'s third amendment: **a finding named after its cause
+outlives its cause.**
+
+#### 5 · THE BATCHES
+
+**`H1 → H2 → H3` are buildable now with no further operator input. `H4` is the
+only WIRE, and it is gated on `D-COMP-HALAL-4`.** Their contents are Seat 3's
+and are not restated here — recorded so the dependency and the single open gate
+are on main before H1 is dispatched.
+
+---
+
+### Constraints discharged
+
+- ⚠️ **NOTHING BUILT.** `inferHalal` untouched; the "easy half" deliberately not
+  started — **retiring the prose parse needs somewhere to read FROM, and there
+  is nowhere yet.** That is `D-COMP-HALAL-4`.
+- **Both corrections recorded against the RULING, not only the fact** — the
+  `doc-001` adjudication was wrong in the direction of tidier-than-true, and the
+  sup-007 undercount understated its own finding.
+- **`D-COMP-HALAL-1..5` now exist on main** and may be cited by number.
+- **Seat 3's reasoning is attributed to Seat 3**, including the two formulations
+  that changed our conclusion: *an outage wearing compliance clothes*, and
+  *a schedule decision smuggled as a gate*.
+- **C9's bytes untouched**; pin `af7f0b4` unaffected.
+- **FLOOR 2226/184, unchanged.** `npm run gates` green.
