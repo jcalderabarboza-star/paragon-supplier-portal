@@ -3417,3 +3417,173 @@ decision-smuggling this arc keeps refusing.
 - **Both of SOMO's generalisations are credited to them**, and their
   ratification-in-prose finding is credited as theirs.
 - **FLOOR 2226/184, unchanged.** `npm run gates` green.
+
+---
+
+## CP-3 · BOOKED, NOT BUILT — `SEAM-BIDIRECTIONAL-01` + `ADAPTATION-COST-IS-A-FIELD-01`
+
+**Settled with SOMO and recorded here as an agreement, not a proposal.** Nothing
+below is implemented: no contract object, no schema, no field, no code. This
+entry exists so that the next batch to touch the seam is *agreeing with something
+written down* rather than discovering what a conversation assumed — the same
+reason `PROVISIONALLY_APPLICABLE_GROUPS` was written out at 2B-4a.
+
+### `SEAM-BIDIRECTIONAL-01` — THE SEAM IS TWO-DIRECTIONAL BY AGREEMENT
+
+**We define our master data, they consume it. THEY define their EMISSION, we
+build to it.**
+
+**BOTH DIRECTIONS GET THE SAME APPARATUS**, and it is the C9 apparatus by name:
+
+- a **contract**
+- a **pinned SHA**
+- **hashes in the message** (`C9-ISSUE-HASHES-01`, and with them the
+  which-bytes statement — `HASH-IS-PLATFORM-DEPENDENT-01`)
+- an **amendment ledger**
+- ⚠️ **SCOPE STATED WITH EVERY VERDICT** — `MIRROR-SCOPE-GAP-01`'s remedy,
+  promoted from a fix for one incident to a standing property of both
+  directions. A verdict that does not say what it covered is a verdict about an
+  unknown set.
+
+#### ⚠️ THE STRUCTURAL FACT: THE CONTRACT PACKAGE HAS NINE OBJECTS AND ALL NINE POINT ONE WAY
+
+C1–C9 are **ours**: things we declare and SOMO consumes. **There is no object in
+the package for a SOMO-DECLARED emission**, and there never has been. C7 and C8
+name SOMO as a *producer* — but they are still **our** documents describing what
+we will accept, which is not the same artifact as **their** document declaring
+what they will send.
+
+That asymmetry is why `C8-FIND-01` reads the way it does: a SOMO-emitted shape
+lived in an **unratified proposal of ours** while our code hardened past it.
+**A shape one party emits and the other documents has no owner**, and the
+document then drifts in whichever direction that party's code moves.
+
+⚠️ **THE OBJECT IDENTITY FOR THE INBOUND DIRECTION IS UNASSIGNED, AND IS NOT
+ASSIGNED HERE.** Whether the SOMO emission contract becomes `C10`, lives in
+their package, or is mirrored into ours is a decision with a ratification model
+attached, and picking one inside a booking entry would be exactly the
+decision-smuggling this arc keeps refusing. **Booked as open.**
+
+#### THE EMISSION CONTRACT AND THE SHARED SEAM DOC ARE DIFFERENT OBJECTS
+
+> **ONE IS DECLARED AND RATIFIED. THE OTHER IS NEGOTIATED.**
+
+They fail differently and must not be merged for convenience:
+
+| | Emission contract | Shared seam doc |
+|---|---|---|
+| Authored by | **the emitter**, unilaterally | **both**, jointly |
+| Changes by | declaration + ratification | negotiation |
+| A disagreement is | a **ratification failure** (below) | an **open item** |
+| Silence means | the declared shape stands | nothing is settled |
+
+Collapsing them would make every disagreement look like a negotiation — which is
+precisely how a shape nobody can build gets accepted by attrition, and how a
+shape nobody objected to gets read as agreed.
+
+⚠️ **WHICH FILE IS "THE SHARED SEAM DOC" IS ALSO UNASSIGNED ON OUR SIDE.**
+`C5-seams.md` is **not** it: C5 is our internal swap-point register (mock →
+real), not a negotiated bilateral document. Recorded so nobody later reads C5's
+title and assumes the slot is already filled.
+
+#### RATIFICATION CAN FAIL — RARELY, AND SPECIFICALLY
+
+**A ratification that can only succeed is not a ratification.** Every C9 return
+so far has been clean, which is exactly the condition under which a rubber stamp
+is indistinguishable from a check (`MIRROR-SCOPE-GAP-01` — five clean returns
+covering two files of three).
+
+A failure is **not** a rejection and **not** a negotiation. It carries two
+things, both mandatory:
+
+1. **THE FIELD, NAMED.** Not "the shape is wrong."
+2. **WHAT WOULD MAKE IT BUILDABLE.** A refusal that cannot say what would fix it
+   is half a refusal — the `uomOf` / `bpomOf` precedent, applied to a
+   counterparty instead of a lookup.
+
+**Rarely** is load-bearing. Tier 3 below is the only path that reaches here.
+
+---
+
+### `ADAPTATION-COST-IS-A-FIELD-01` — AND THE MIDDLE TIER IS THE ONE THAT DECAYS
+
+Our three-tier response to their emission shape:
+
+| Tier | Response | When |
+|---|---|---|
+| **1** | **Build to it.** | Default. |
+| **2** | ⚠️ **Buildable but awkward — TELL THEM BEFORE WE BUILD.** | The tier that decays. |
+| **3** | **Refuse**, with the specific field and what would fix it. | Genuinely unbuildable. |
+
+#### ⚠️ TIER 2 IS THE WHOLE FINDING
+
+> **TELL THEM BEFORE WE BUILD, NOT AFTER. THEY MAY SIMPLY CHANGE IT.**
+> **ADAPTING FIRST AND REPORTING LATER IS HOW A CORRECTABLE DESIGN ERROR BECOMES
+> PERMANENT.**
+
+Once the compensating transform exists, the cost is sunk on our side and the
+motivation to raise it is gone — so the conversation that would have fixed the
+emission never happens. The window in which a tier-2 finding is *cheap for both
+parties* closes at the moment we start building, not at the moment we ship.
+
+#### THE COST RECORD IS A FIELD OF THE RATIFICATION, NOT A COURTESY BESIDE IT
+
+> **"Built as specified" and "built with a compensating transform on field X"
+> ARE DIFFERENT VERDICTS AND MUST RENDER DIFFERENTLY.**
+
+A cost recorded in the covering prose is a cost that will be summarised away —
+`SUMMARY-LOSS-IS-DIRECTIONAL-01`, and the direction is toward *cleaner than the
+truth*. The same mechanism that turned *"3 files hashed"* into a ratification
+with no verifier turns *"we adapted field X"* into *"built as specified."*
+**A field survives summarisation. A sentence does not.**
+
+#### SOMO'S REASONING, CREDITED — WHY THIS IS THEIR PROBLEM AND NOT OUR ADMIN
+
+> **ADAPTATION COSTS ARE PAID ONCE AND THEN NORMALISE**, so the seam **LOOKS**
+> clean while the cost goes invisible — and **A PILE OF SILENT ADAPTATIONS ON
+> OUR SIDE IS EVIDENCE THEIR EMISSION SHAPE IS WRONG. IF THEY NEVER SEE THE
+> COST, THEY NEVER LEARN IT.** *(theirs)*
+
+This is the better argument and it belongs to them. Ours would have framed the
+cost record as fairness — *we did extra work, note it.* Theirs frames it as
+**instrumentation**: the count of compensating transforms is a **measurement of
+their emission design**, and suppressing it destroys the only signal that would
+have told them to change it. **It is a diagnostic we are currently discarding,
+not a favour we are declining to ask for.**
+
+⚠️ And it is the same shape as `FLOOR-IN-PROSE-01` one organisation out: **a
+number that nothing forces anybody to look at stops being true without anything
+failing.** An adaptation ledger that lives in prose decays exactly like a test
+floor that lived in prose.
+
+#### `plantCode` IS THE PRECEDENT — THE MIDDLE TIER WORKING OUT LOUD
+
+Absent field **flagged**, **MEDIUM** priority, **degraded-not-broken** default,
+**nothing fabricated**. Tier 2 executed correctly: the gap was named *before* it
+was worked around, the workaround did not invent a value, and the degradation was
+declared rather than hidden behind a plausible default.
+
+⚠️ **`plantCode` DOES NOT EXIST IN THIS TREE**, and is recorded here as a
+**seam-negotiation precedent**, not as a field of ours. A future reader grepping
+for it will find nothing, and that is not a defect — it is the point at which
+this entry stops describing our code and starts describing an agreement.
+
+**It is also the tier-2 default done right, which is worth stating alongside
+everything CP-3 just closed:** a degraded-not-broken default is legitimate
+*precisely because it was declared*. `REQUIRED-OPENS-PRE-ANSWERED-01` was the
+same mechanical act — supply a value nobody gave — and it was a defect **because
+it was silent and asserted an answer**. The dividing line is not "did we default"
+but **"did we say so, and does the default claim to be an answer."**
+
+### Constraints discharged, in writing
+
+- ⚠️ **BOOKED, NOT BUILT — and nothing was smuggled.** No contract object, no
+  schema, no field, no type, no code. The two object-identity questions (what
+  the inbound contract is called; which file is the shared seam doc) are
+  **recorded as OPEN rather than answered**.
+- **`plantCode` is disclosed as absent from this tree**, so the precedent cannot
+  be mistaken for an implemented field.
+- **SOMO's reasoning is credited to them**, and our weaker framing of the same
+  point is stated so the difference is legible.
+- **C9's bytes untouched**; pin `af7f0b4` unaffected.
+- **FLOOR 2226/184, unchanged.** `npm run gates` green.
