@@ -3806,13 +3806,236 @@ and this is its second independent justification in three batches.
 
 ### Status pointer — `INFERHALAL-READS-PROSE-01`
 
-Recorded here as a **status line, not a finding** (the investigation was
-reported to the operator and accepted in full at this session's close):
-**ACCEPTED, and ROUTED TO SEAT 3 for a structural pass before any build.** Two
-facts at two grains on two clocks; the master's 42 codes and the compliance
-registry's 17 `RM-SAMPLE-*` codes have an **empty intersection**, so a GR check
-reading the registry today refuses **9 of 9** receivable lines — the `2B-4` gate
-shape with its precondition **unmet**, and R0.1 (the harvest) is the long pole
-with no technical mitigation. **`D-COMP-HALAL-4` is the blocker of record.**
-Nothing built, and the "easy half" deliberately not started: retiring the prose
-parse needs somewhere to read FROM, and there is nowhere yet.
+**ACCEPTED, ROUTED TO SEAT 3, AND SEAT 3 HAS RULED.** Landed in full in the next
+entry, with two corrections against the investigation's own adjudication and the
+numbered `D-COMP-HALAL` register. ⚠️ **Read that entry, not this line** — the
+investigation's "two facts at two grains" and its reading of the empty
+intersection as a *precondition gap* are both **superseded there** (three facts,
+and the intersection is the honesty contract working). **`D-COMP-HALAL-4` is the
+one open gate; `H1 → H2 → H3` are buildable, `H4` is not.**
+
+---
+
+## CP-3 · `INFERHALAL-READS-PROSE-01` — THE INVESTIGATION LANDED, TWO CORRECTIONS, AND SEAT 3'S RULING
+
+**The investigation was reported, accepted in full, and routed to Seat 3.** Its
+findings lived only in the report until this entry — including a decision
+register that other documents were about to cite by number. **Landing it is the
+point: a numbered register that exists only in a conversation is
+`FLOOR-IN-PROSE-01` wearing a decision's clothes.**
+
+Nothing is built. `inferHalal` is untouched, the "easy half" deliberately not
+started.
+
+### THE DEFECT, in one line
+
+`inferHalal` (`GRInspectionWizard.tsx:272-275`) decides whether a received lot
+needs a halal check by testing `description.toLowerCase().includes('halal')` —
+a **regulatory determination made from free-text prose**. It is called at `:314`
+(shipment lane) and `:333` (ASN lane), the only two writers of `halalRequired`.
+**It fires on ZERO of the 9 receivable lines today**, and there is a **second,
+undiscovered prose parse** doing the same job on a different field:
+`AdaptiveContext.tsx:86-100`, where
+`isHalal = cat.includes('halal') || 'food' || 'raw' || 'packaging'` selects which
+halal certificate a supplier is told to provide (exposed at `:163`, no consumer
+today).
+
+**Both failure directions are live.** It fails OPEN silently — `false` is an
+assertion, the row does not render, and `qualityValid`'s clause can never
+engage. It fails CLOSED too: `.includes` has no word boundary and no negation
+handling, so **`"non-halal"`, `"not halal certified"` and `"halal audit failed"`
+all turn the check ON.**
+
+---
+
+### ⚠️ CORRECTION 1 — `sup-007` IS ON FIVE OF NINE, NOT THREE
+
+Reported as three. **Measured again: FIVE receivable lines across FOUR of the
+eight sources** — `shp-012` (`PK-PETB-8801`), `shp-013` (`PK-PETB-8802`),
+`ASN-2025-00211` (`FR-ROUD-4470` **and** `PK-PETB-8804` — two lines on one ASN),
+`ASN-2025-00198` (`PK-ALCP-2450`).
+
+**The undercount UNDERSTATED the finding, and that is the direction that
+matters.** `HALAL-XPERSONA-01`'s whitelisted contradiction does not sit on a
+corner of the receiving surface — **it sits on the MAJORITY of it.** Whichever
+surface is chosen as authoritative decides the halal answer for **more than half
+of every line a goods receipt can be fed.**
+
+Root cause, recorded because it will recur: **sources were counted where lines
+were owed.** `ASN-2025-00211` carries two lines and was counted once. The same
+conflation `BPOM-OFF-BY-SPACE-01` corrected when its blast radius went from nine
+to seven — **a census population and an exposure count are different quantities.**
+
+### ⚠️ CORRECTION 2 — `doc-001`, AND THE ADJUDICATION WAS WRONG, NOT JUST THE FACT
+
+**Recorded against the ruling, per operator instruction, and not merely as a
+data correction.**
+
+The investigation reported `doc-001` (`supplierDocuments.ts:12`) as evidence
+that *a halal certificate governs `PK-PETB-8801`, and the wizard asks nothing* —
+filed as a fail-open **contradiction**. **The evidentiary half stands. The
+adjudication of what the evidence MEANS was wrong.**
+
+| Fact | Value | Reading |
+|---|---|---|
+| `doc-001` `expiryDate` | **`2026-05-15`** | ⚠️ **EXPIRED — 83 days ago** (today 2026-08-06) |
+| `doc-001` `status` | `'Expiring Soon'` | ⚠️ **a decayed clock literal** — the exact `HALAL-CLOCK-STATE-01` shape (law 0.5), stored where it must be derived |
+| `doc-011` | *BPJPH Halal Certificate Application — In Progress*, `'Under Review'`, `expiryDate: null` | ⚠️ **AN APPLICATION, NOT A CERTIFICATE** |
+
+**The wizard asking nothing is still wrong. The correct verdict is not
+`REQUIRED AND SATISFIED` — it is `REQUIRED AND NOT SATISFIED`:** a halal
+certificate is required for this material, the only one ever held has expired,
+and its replacement is an application under review.
+
+⚠️ **AND THAT VERDICT IS ONLY EXPRESSIBLE IN THE REGISTRY'S VOCABULARY.**
+`ComplianceLifecycleState` + `computeStatus` distinguish
+`Missing / Under Review / Valid / Expiring / Expired`
+(`complianceProjection.ts:48-58`); `schemeValid` (`:66-71`) adds the issuer axis
+that would separately disqualify a MUI-legacy cert after 2026-10-17. **The GR
+wizard's `halalSealCheck: 'Pass' | 'Fail' | undefined` cannot say any of it.**
+
+**The correction is more damaging to the current design than the original
+finding was.** As first filed, the wizard's silence contradicted a valid
+certificate. As corrected, **the wizard has no vocabulary in which the true
+answer can be written at all** — it can ask an inspector to tick a box, and the
+real state is *the certificate expired in May and the replacement is in
+review*. `SUMMARY-LOSS-IS-DIRECTIONAL-01`: the mis-adjudication ran toward
+**tidier than the truth**, and a decayed status literal is precisely what made
+the tidy reading available.
+
+---
+
+### ⚠️ `D-COMP-HALAL` — THE DECISION REGISTER, NUMBERED AND ON MAIN
+
+**Landed here because other documents are about to cite these by number.**
+Modelled on `D-COMP-BPOM` (P-2), whose **content** half remains unanswered after
+CP-2. Items 1–3 and 5 are ruled below; **4 is the only one still open.**
+
+| ID | The decision |
+|---|---|
+| **D-COMP-HALAL-1** | **APPLICABILITY CONTENT** — which material groups require a halal check at receipt. ⚠️ **It will NOT mirror BPOM.** BPOM rules packaging `NOT_APPLICABLE` by registry axis (`bpom.ts:100-101`); `doc-001` links a halal certificate to PET bottles and `AdaptiveContext:89` puts `packaging` inside `isHalal`. **Packaging is where the two regimes visibly disagree in-tree — and it is 4 of the 9 receivable lines.** |
+| **D-COMP-HALAL-2** | **GRAIN** — material (master field) or supplier × material (registry). Decides whether the BPOM template is reusable at all. |
+| **D-COMP-HALAL-3** | **WHAT IS BEING ATTESTED** — "Halal Seal Check" names a physical seal on a drum. Seal verification, certificate confirmation, or both as separate checks? One Pass/Fail currently conflates them. |
+| **D-COMP-HALAL-4** | ⚠️ **THE DEAD-END RULING — THE ONLY ITEM STILL OPEN.** If applicability lands before the harvest, a required check has no certificate to verify against. Block · block with a recorded override · or stay unwired until R0.1. **Must be answered BEFORE any wire, not discovered during one.** **H4 is gated on this.** |
+| **D-COMP-HALAL-5** | **SOURCE OF TRUTH** — which of the seven halal vocabularies governs a receiving decision. **RULED below.** |
+| **D-OPS-PENDINGCAST** | The `'Pending' as OptionalCheck` cast (`mockGoodsReceipts.ts:79,293`) — legitimate fourth stored state (the display already renders it, `BuyerGoodsReceipt.tsx:90`) or fixture error? Mine to fix once ruled; not a compliance question. |
+
+---
+
+### SEAT 3'S RULING — ACCEPTED IN FULL
+
+#### 1 · THREE FACTS, NOT TWO — the refinement, and it is the load-bearing one
+
+The investigation decomposed the problem into two facts. **Seat 3 split the
+receipt-time half in two, and the split is not cosmetic:**
+
+| Fact | Grain | Clock | Who answers | How it fails |
+|---|---|---|---|---|
+| **APPLICABILITY** | material | **none** | compliance, once, per group | fails OPEN silently — no row renders |
+| **SEAL CHECK** | received lot | none | **a human, at the dock** | fails on attestation — a tick nobody earned |
+| **CERTIFICATE VERIFICATION** | supplier × material × cert | ⚠️ **yes** | a **lookup + projection** | fails on staleness, scheme, or absence |
+
+**Applicability governs BOTH receipt-time halves.** `halalSealCheck` already IS
+the second fact and is honestly shaped for it. **The third is performed nowhere
+in this product today.**
+
+> ⚠️ **NAME THEM SEPARATELY OR THE WIRING BATCH SMUGGLES ONE INSIDE THE OTHER.**
+
+That is exactly what `doc-001` demonstrates: an inspector ticking *Pass* on a
+physical seal would have recorded a satisfied halal check on a lot whose
+certificate **expired 83 days earlier**. **A human's tick and a certificate's
+validity are different facts with different answerers, and one Pass/Fail cannot
+hold both.**
+
+#### 2 · ⚠️ THE EMPTY INTERSECTION IS THE HONESTY CONTRACT WORKING, NOT A DATA BUG
+
+The investigation measured it and read it as a precondition gap. **Seat 3's
+reading is better and it reverses the conclusion.**
+
+The master's 42 codes and the registry's 17 `RM-SAMPLE-*` codes are disjoint
+**because the registry fixture's own header mandates placeholder codes as an
+honesty device** (`complianceRegistry.ts:1-38`: placeholder supplier names,
+`SAMPLE-` cert numbers, `RM-SAMPLE-` material codes, every issuer
+"(illustrative)", no real certifying body ever named — *"the single most
+sensitive fixture in the build"*). **The codes do not join because they are not
+allowed to look real.**
+
+> **So a wired gate today is NOT fail-closed honesty. IT IS AN OUTAGE WEARING
+> COMPLIANCE CLOTHES.** *(Seat 3)*
+
+And the consequence is the part that settles `H4`:
+
+> ⚠️ **IT FORCES R0.1'S SCHEDULE THROUGH THE RECEIVING DOCK — A SCHEDULE
+> DECISION SMUGGLED AS A GATE.** *(Seat 3)*
+
+R0.1 is `NOT STARTED`, "THE long pole. No technical mitigation."
+(`track-r-status.md:15`). Wiring the verification leg would make every receipt
+in the product wait on a certificate harvest — **an operational decision about
+Track R's pace, taken by a receiving-surface refactor, visible to nobody as
+such.** This is `SEED-IS-AN-ANSWER-01`'s class at organisational scale.
+**That is why H4 waits, and the reason is now written down rather than assumed.**
+
+#### 3 · SOURCE OF TRUTH — THE REGISTRY GOVERNS RECEIVING (`D-COMP-HALAL-5`, RULED)
+
+⚠️ **THE CONTRADICTION WAS NEVER A STALEMATE, AND TREATING IT AS ONE WAS THE
+ERROR.** Four surfaces, and they do not carry equal weight:
+
+| Surface | Keyed by | Says of sup-007 | Corroboration |
+|---|---|---|---|
+| Supplier master (`mockSuppliers.ts:219`) | **id** | `halalCertified: false` | — |
+| Storefront (`supplierStorefront.ts:34`) | **id** | *BPJPH Halal Cert — **missing*** | — |
+| Documents (`supplierDocuments.ts:12,22`) | **id** | MUI cert **EXPIRED**, BPJPH **application under review** | — |
+| ⚠️ `c-008` (`buyerCompliance.ts:41`) | ⚠️ **NAME** | *BPJPH Halal Certificate — **Valid** to 2027-09-01* | ⚠️ **NONE** |
+
+**THREE ID-KEYED SURFACES AGREE: not certified, remediation in flight.** The
+single outlier is **name-keyed** — the exact defect `HALAL-XPERSONA-01`
+registers — and it **stores `daysRemaining: 873` as a literal**, which is the
+`HALAL-CLOCK-STATE-01` violation the DTO-v2 read exists to end.
+
+**Measured: `873` was last true on 2025-04-11.** From today it should read
+**391**. ⚠️ **The outlier overstates by 482 days, and is corroborated by NO
+DOCUMENT ANYWHERE** — no `SupplierDocument`, no registry row, nothing.
+
+> **A name-keyed row storing a clock literal 482 days stale, backed by no
+> document, is not the other side of a contradiction. It is a stale surface,
+> and the registry governs receiving.**
+
+#### 4 · THE WHITELIST CONVERTS — IT DOES NOT CLOSE BY FIAT
+
+`halalXpersona.invariant.test.ts:36-39` whitelists sup-007 and sup-003 as KNOWN
+contradictions. **The ruling does not delete them.** It changes what they are:
+
+> **FROM "two contradictions we tolerate" TO "TWO STALE SURFACES WITH A NAMED
+> REPLACEMENT".** *(Seat 3)*
+
+⚠️ **The mechanism OUTLIVES the close, and that is the reason to convert rather
+than close.** The invariant's contract is `found ⊆ allowed` (`:19-23`) — a NEW
+contradiction, on a supplier not on the list, still FAILS the gate. Deleting the
+whitelist because the ruling settled these two would **retire the guard against
+the next split** at the moment its subject matter was proven live. Same shape as
+`BPOM-OFF-BY-SPACE-01`'s third amendment: **a finding named after its cause
+outlives its cause.**
+
+#### 5 · THE BATCHES
+
+**`H1 → H2 → H3` are buildable now with no further operator input. `H4` is the
+only WIRE, and it is gated on `D-COMP-HALAL-4`.** Their contents are Seat 3's
+and are not restated here — recorded so the dependency and the single open gate
+are on main before H1 is dispatched.
+
+---
+
+### Constraints discharged
+
+- ⚠️ **NOTHING BUILT.** `inferHalal` untouched; the "easy half" deliberately not
+  started — **retiring the prose parse needs somewhere to read FROM, and there
+  is nowhere yet.** That is `D-COMP-HALAL-4`.
+- **Both corrections recorded against the RULING, not only the fact** — the
+  `doc-001` adjudication was wrong in the direction of tidier-than-true, and the
+  sup-007 undercount understated its own finding.
+- **`D-COMP-HALAL-1..5` now exist on main** and may be cited by number.
+- **Seat 3's reasoning is attributed to Seat 3**, including the two formulations
+  that changed our conclusion: *an outage wearing compliance clothes*, and
+  *a schedule decision smuggled as a gate*.
+- **C9's bytes untouched**; pin `af7f0b4` unaffected.
+- **FLOOR 2226/184, unchanged.** `npm run gates` green.
