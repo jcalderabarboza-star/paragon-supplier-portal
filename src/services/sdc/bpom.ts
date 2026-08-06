@@ -7,15 +7,24 @@
 // ONE refusal-shaped lookup, exactly as `uomOf` replaced twelve ad-hoc unit
 // defaults (`materialMaster.ts`).
 //
-// ── ⚠️ AUTHORED, NOT WIRED. THE GATE STANDS, AND IT IS A MEASUREMENT ────────
-//   `inferBpom` (`GRInspectionWizard.tsx:129-131`) is LIVE and UNTOUCHED by
-//   this batch. Nothing below is called by the GR wizard, and wiring it is
-//   2B-4b's business. The reason is not caution, it is arithmetic: the wizard
-//   is fed `asnStore`, seeded from the `MAT-*` space, and TWELVE of the codes
-//   the census now reaches are not in the master at all. `bpomOf` refuses on an
-//   unresolvable code — correctly — so wiring it today would have the wizard
-//   refuse essentially every received line. The BEHAVIOUR waits on the twelve;
-//   the MECHANISM does not have to.
+// ── ✅ WIRED AT 2B-4b. `inferBpom` IS RETIRED ───────────────────────────────
+//   This header used to read AUTHORED, NOT WIRED: `inferBpom` was live, nothing
+//   below was called by the GR wizard, and the reason was arithmetic rather
+//   than caution — the wizard is fed `asnStore`, seeded from the `MAT-*` space,
+//   and twelve of the codes the census reached were not in the master at all.
+//   `bpomOf` refuses on an unresolvable code, correctly, so wiring it then
+//   would have had the wizard refuse essentially every received line.
+//
+//   2B-2/2B-3 adopted, 2B-5b-ii authored, and the gate discharged: every code
+//   the wizard can be fed — from BOTH shipment lanes, not only `asnStore` — is
+//   master-resolvable. `GRInspectionWizard` now calls `bpomOf` and blocks the
+//   Quality step on a refusal. The prefix parse no longer exists in the product.
+//
+//   ⚠️ WIRING IT CHANGED BEHAVIOUR ON THREE OF NINE RECEIVABLE LINES, and the
+//   direction is the point: `RM-EMUL-9440` moved from a silent "no check" to
+//   REQUIRED (the master had a document and the prefix had three characters),
+//   and `RM-COCO-8200` / `RM-PSTN-7150` moved from a silent "no check" to a
+//   REFUSAL. Nothing moved from checked to unchecked.
 //
 // ── THE TWO FAIL-OPENS, AND THEY ARE NOT THE SAME ONE ───────────────────────
 //   `BPOM-OFF-BY-SPACE-01` is the known half: an entire undeclared vocabulary
@@ -141,8 +150,10 @@ export type BpomOutcome =
  * THE lookup. Whether a received lot of this material requires a BPOM lot
  * check — or an honest refusal naming the code.
  *
- * ⚠️ **NOT WIRED.** The GR wizard still runs `inferBpom`. This is the mechanism
- * 2B-4b wires, once the twelve unresolvable codes are dealt with.
+ * ⚠️ **WIRED (2B-4b).** `GRInspectionWizard` calls this per received line and
+ * BLOCKS the Quality step on a refusal — so a caller that ignores `ok` is not a
+ * caller with a slightly worse default, it is a regulatory fail-open. A
+ * REGULATORY GATE THAT FAILS OPEN IS WORSE THAN ONE THAT FAILS LOUD.
  */
 export function bpomOf(
   materialCode: string,

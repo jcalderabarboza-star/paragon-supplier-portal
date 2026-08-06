@@ -391,9 +391,13 @@ describe('2B-5b-ii — the batch changed no BEHAVIOUR, and the firing set moved 
     expect(fires('RM-PSTN-7150')).toBe(false);
   });
 
-  it('nothing was wired — the wizard still runs the PREFIX rule', () => {
-    // The constraint, checked rather than promised, in the batch with the most
-    // reason to break it.
+  it('⚠️ INVERTED AT 2B-4b — the wizard runs the MASTER, and these seven rows are why', () => {
+    // WAS: "nothing was wired — the wizard still runs the PREFIX rule", the
+    // 2B-5b-ii constraint, checked rather than promised in the batch with the
+    // most reason to break it. 2B-4b is the batch that was allowed to break it,
+    // and the seven rows this file authors are the precondition that let it:
+    // until they existed, a fail-closed gate would have refused live receipts
+    // for a vocabulary problem rather than a compliance one.
     //
     // ⚠️ AND THE NEGATIVE HALF IS DELIBERATELY **NOT** RE-ASSERTED HERE. The
     // canonical "no consumer" pin lives in `bpomApplicability.test.ts` and works
@@ -411,7 +415,11 @@ describe('2B-5b-ii — the batch changed no BEHAVIOUR, and the firing set moved 
     }) as Record<string, string>;
     const src = Object.values(wizard)[0];
     expect(src).toBeTruthy();
-    expect(src).toContain('inferBpom');
-    expect(src).toContain("materialCode.startsWith('AI-')");
+    expect(src).not.toContain("materialCode.startsWith('AI-')");
+    // ⚠️ `inferBpom` SURVIVES IN THIS FILE ONLY AS PROSE, and that is checked
+    // rather than assumed: the wizard names it in a comment recording what was
+    // retired, so the naive "the name is gone" assertion would be wrong for the
+    // wrong reason. What must be gone is the PARSE, above.
+    expect(src).toContain('bpomOf(');
   });
 });

@@ -26,6 +26,8 @@ import {
   headerVerbFor,
   type GrHeaderDisposition,
 } from '../../services/transitions';
+import { bpomOf } from '../../services/sdc/bpom';
+import type { BpomOutcome, BpomRefusalReason } from '../../services/sdc/bpom';
 
 interface GRInspectionWizardProps {
   onClose: () => void;
@@ -51,6 +53,19 @@ const GR_QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
   AMBIGUOUS_QTY: 'goodsReceipt.wizard.qty.refused.ambiguous',
 };
 
+// CP-2 · 2B-4b — each BPOM refusal NAMES what is missing. Same shape as
+// GR_QTY_REFUSAL_KEY above, and for the same reason: a refusal that cannot say
+// which absence it hit is half a refusal (the `uomOf` precedent).
+//
+// ⚠️ THE TWO REASONS DIFFER ONLY IN THE SENTENCE. They refuse IDENTICALLY —
+// same `!ok`, same blocked step, same absent determination. `reason` exists so
+// the message can name the gap, NOT so a caller can pick which refusal to
+// ignore, and nothing here or in `qualityValid` branches on it to proceed.
+const GR_BPOM_REFUSAL_KEY: Record<BpomRefusalReason, string> = {
+  UNKNOWN_MATERIAL: 'goodsReceipt.wizard.bpom.refused.unknownMaterial',
+  UNDETERMINED_APPLICABILITY: 'goodsReceipt.wizard.bpom.refused.undetermined',
+};
+
 type SourceMode = 'shipment' | 'manual';
 
 interface LineDraft {
@@ -68,7 +83,17 @@ interface LineDraft {
   packagingCheck: 'Pass' | 'Fail' | 'N/A';
   halalRequired: boolean;
   halalSealCheck?: 'Pass' | 'Fail';
-  bpomRequired: boolean;
+  /**
+   * The BPOM gate, read ONCE from the material master (`bpomOf`).
+   *
+   * ⚠️ **NOT A BOOLEAN, and that is the whole of `INFERBPOM-REGULATORY-01`'s
+   * fix.** The field this replaces was `bpomRequired: boolean`, seeded from a
+   * code-prefix parse, and a boolean has no room for *nobody has ruled* — so
+   * every material the rule did not recognise came back `false`, and `false` is
+   * an ASSERTION ("this lot needs no BPOM check"). The outcome type can refuse,
+   * and `qualityValid` blocks on a refusal.
+   */
+  bpom: BpomOutcome;
   bpomLotCheck?: 'Pass' | 'Fail';
   labSampleRequired: boolean;
   labRequestId?: string;
@@ -121,13 +146,47 @@ const radioCls = 'flex items-center gap-1.5 text-sm text-text-primary cursor-poi
 
 const formatNumber = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
+// ── ⚠️ `inferHalal` SURVIVES THIS BATCH, AND IT IS THE SAME DEFECT ───────────
+// `INFERHALAL-READS-PROSE-01`. `inferBpom` is gone from this file; its twin is
+// not, and it is REPORTED rather than folded in silently (2B-4b dispatch).
+//
+// It is not left because it is safer. On two of the three axes it is WORSE:
+//   · `inferBpom` parsed a code WE control; this reads `description`, which on
+//     the ASN lane is a SUPPLIER-SUBMITTED free-text field. A regulatory check
+//     keyed on prose a counterparty types is a weaker thing than one keyed on a
+//     code space we author.
+//   · MEASURED, not argued: across both shipment lanes the halal check fires on
+//     `RM-EMUL-9410` and `RM-EMUL-9430` — and NOT on `RM-EMUL-9440`. Three
+//     emulsifiers, one material group, and the check fires on two of them
+//     because a fixture author happened to write "(Halal Emulsifier)" into a
+//     product name. That is `PREFIX-RULE-SUCCEEDS-BY-ACCIDENT-01` one field
+//     over. `RM-PSTN-7150` — palm stearin, the single most halal-load-bearing
+//     row in the master — does not fire either.
+//
+// It is left because RETIRING IT REQUIRES A FIELD THAT DOES NOT EXIST. There is
+// no `halalApplicable` on `MaterialMasterEntry`; authoring one (plus its class
+// rule, its provisional seed on all 42 rows and its `D-COMP-HALAL` escalation)
+// is a 2B-4a-shaped batch, and doing it inside a wiring batch would be exactly
+// the decision-smuggling `MG-NO-EMULSIFIER-GROUP-01` was held back from.
+// See `docs/findings.md` → `INFERHALAL-READS-PROSE-01`.
 const inferHalal = (description: string): boolean => {
   const d = description.toLowerCase();
   return d.includes('halal');
 };
 
-const inferBpom = (materialCode: string): boolean => {
-  return materialCode.startsWith('AI-') || materialCode.startsWith('FR-');
+/**
+ * The BPOM gate for one line, plus its seeded check value.
+ *
+ * ONE read, shared by both draft builders — the shipment lane and the ASN lane
+ * cannot disagree about whether a material needs a BPOM lot check, because
+ * neither of them decides it.
+ *
+ * ⚠️ The seeded `'Pass'` is PRE-EXISTING BEHAVIOUR, carried forward unchanged
+ * and deliberately not repaired here — see `REQUIRED-OPENS-PRE-ANSWERED-01`.
+ */
+const seedBpom = (materialCode: string): Pick<LineDraft, 'bpom' | 'bpomLotCheck'> => {
+  const bpom = bpomOf(materialCode);
+  return { bpom, bpomLotCheck: bpom.ok && bpom.applicable ? 'Pass' : undefined };
 };
 
 const buildDraftFromShipment = (s: Shipment): LineDraft[] =>
@@ -142,8 +201,7 @@ const buildDraftFromShipment = (s: Shipment): LineDraft[] =>
     packagingCheck: 'Pass',
     halalRequired: inferHalal(li.description),
     halalSealCheck: inferHalal(li.description) ? 'Pass' : undefined,
-    bpomRequired: inferBpom(li.materialCode),
-    bpomLotCheck: inferBpom(li.materialCode) ? 'Pass' : undefined,
+    ...seedBpom(li.materialCode),
     labSampleRequired: false,
   }));
 
@@ -159,8 +217,7 @@ const buildDraftFromAsn = (a: ASN): LineDraft[] =>
     packagingCheck: 'Pass',
     halalRequired: inferHalal(li.description),
     halalSealCheck: inferHalal(li.description) ? 'Pass' : undefined,
-    bpomRequired: inferBpom(li.materialCode),
-    bpomLotCheck: inferBpom(li.materialCode) ? 'Pass' : undefined,
+    ...seedBpom(li.materialCode),
     labSampleRequired: false,
   }));
 
@@ -347,10 +404,20 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     return true;
   });
 
+  // ── CP-2 · 2B-4b — THE REGULATORY GATE, AND IT FAILS CLOSED ───────────────
+  // A REGULATORY GATE THAT FAILS OPEN IS WORSE THAN ONE THAT FAILS LOUD. The
+  // line this replaces read `if (l.bpomRequired && !l.bpomLotCheck)` over a
+  // prefix-parsed boolean, so a material nobody had ruled on took the SAME path
+  // as one ruled not-applicable: no row rendered, no check owed, receipt posts.
+  //
+  // Now an absent determination BLOCKS. `!l.bpom.ok` covers both refusals —
+  // the master does not name the code, and the master names it and records no
+  // determination — with ONE branch, so neither can be given a way through.
   const qualityValid = lines.every((l) => {
     if (!l.visualCheck || !l.packagingCheck) return false;
     if (l.halalRequired && !l.halalSealCheck) return false;
-    if (l.bpomRequired && !l.bpomLotCheck) return false;
+    if (!l.bpom.ok) return false;
+    if (l.bpom.applicable && !l.bpomLotCheck) return false;
     if (l.labSampleRequired && !l.labRequestId) return false;
     return true;
   });
@@ -737,7 +804,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   </div>
                 </div>
               )}
-              {l.bpomRequired && (
+              {l.bpom.ok && l.bpom.applicable && (
                 <div>
                   {labelFor(t('goodsReceipt.wizard.field.bpomLotTracking'))}
                   <div className="flex gap-4">
@@ -754,6 +821,23 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                       </label>
                     ))}
                   </div>
+                </div>
+              )}
+              {/* THE REFUSAL, BY NAME. Not a hidden row and not a skipped check:
+                  the line says which material it cannot answer for and why, and
+                  `qualityValid` will not let the wizard past this step. */}
+              {!l.bpom.ok && (
+                <div
+                  data-testid={`gr-bpom-refusal-${i}`}
+                  role="alert"
+                  className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover"
+                >
+                  <span className="font-semibold">
+                    {t('goodsReceipt.wizard.bpom.refused.title')}
+                  </span>{' '}
+                  {t(GR_BPOM_REFUSAL_KEY[l.bpom.reason], {
+                    code: l.bpom.materialCode,
+                  })}
                 </div>
               )}
             </div>
