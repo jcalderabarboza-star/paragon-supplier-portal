@@ -2570,20 +2570,24 @@ exactly as designed and named its own cause.
 > DETECTS IT.** Both halves are now asserted — the code is clean AND the contract
 > still describes the breach — so the amendment closes this row deliberately.
 
-### `REQUIRED-OPENS-PRE-ANSWERED-01` *(new — filed, NOT fixed; needs a ruling)*
+### ⚠️ `REQUIRED-OPENS-PRE-ANSWERED-01` *(new — **RULED AT THE #180 MERGE. BOOKED AS ITS OWN DISPATCH.** Not a cosmetic default.)*
 
 **A BPOM check the system decides is REQUIRED opens with `Pass` already
 selected.** Observed in the browser on `ASN-2025-00302` / `RM-EMUL-9440`:
 `bpom-0` radio, value `Pass`, `checked: true`, before an inspector touches
 anything. Pre-existing behaviour (`inferBpom(...) ? 'Pass' : undefined`), carried
-forward verbatim rather than changed, because the dispatch scoped this batch to
-the *determination* and not the *inspection outcome*.
+forward verbatim.
 
-It is worth naming plainly: **`RM-EMUL-9440` now gets the BPOM row this batch
-fought for, pre-ticked Pass.** The gate decides *whether the question is asked*;
-it does not make anyone answer it. The same is true of the halal seal check.
-**Changing it would block every REQUIRED line until a human ticks a box — a real
-operational cost and an operator's decision, not a builder's.**
+> **A DERIVED FACT HAND-STAMPED, ON A REGULATORY CONTROL — THE THING THIS
+> PLATFORM REFUSES EVERYWHERE ELSE.** *(operator ruling, #180 merge)*
+
+| | |
+|---|---|
+| **The classification** | This is `MG-UNREAD-BY-ANYTHING-01`'s shape — a **stamped** value where a **derived** one belongs — on the one surface where the platform is least entitled to it. Every other axis of this arc refuses exactly this: tiers are computed and never stamped, header dispositions are rolled up and never asserted, the BPOM determination itself was just moved from a guess to a lookup. **The inspection OUTCOME is the one field left that arrives pre-filled with an answer nobody gave.** |
+| **The verdict** | ⚠️ **THE MECHANISM IS RIGHT; THE DEFAULT IS WRONG.** 2B-4b's gate correctly decides *whether the question is asked*. It does not, and was never scoped to, make anyone answer it. The two halves are separable and only the first shipped. |
+| **Why it did NOT ride this batch** | Fixing it **BLOCKS EVERY `REQUIRED` LINE UNTIL A HUMAN TICKS A BOX.** That is a workflow change with operational consequences for the receiving dock — not a default flipped in a diff. **It needs its own batch and its own smoke**, because the failure mode of getting it wrong is a warehouse that cannot post receipts. |
+| **Scope when it runs** | ⚠️ **`halalSealCheck` HAS THE IDENTICAL DEFECT** (`inferHalal(...) ? 'Pass' : undefined`) and must be in the same dispatch. Fixing one and not the other would leave a receiving form where one regulatory check demands an answer and its neighbour supplies one. |
+| **Status** | **BOOKED — its own dispatch** (operator, #180). Recorded at full weight so it is not later read as a cosmetic default and closed by someone changing a `useState` initialiser. |
 
 ### The wiring, and why the refusal is one branch and not two
 
@@ -2667,10 +2671,31 @@ neither earlier appearance had:
 > assertion on the edit — it is the reflex that **a probe returning zero is a
 > claim about the probe first and the suite second.**
 
-*(The same run's first M3 had the same shape for a different reason: it renamed
-the `materialCode` FIELD while `MATERIAL_MASTER` is keyed by its map KEY, so it
-tested a self-consistency pin rather than the regulatory path. Two of eight
-probes were inert on first writing. That ratio is the finding.)*
+The same run's first M3 had the same shape for a different reason: it renamed the
+`materialCode` FIELD while `MATERIAL_MASTER` is keyed by its map KEY, so it tested
+a self-consistency pin rather than the regulatory path.
+
+#### ⚠️ THE BASE RATE, RECORDED — **TWO OF EIGHT PROBES WERE INERT ON FIRST WRITING**
+
+*(operator instruction, #180 merge — record the rate, not just the instances.)*
+
+**25%.** Not a mistake made once and learned from: **a quarter of a carefully
+written probe set silently measured nothing**, in a batch whose author already
+knew about this class and had applied its fix. Both inert probes reported a
+**green suite**, which is byte-identical to *"this mutation is undetected"* — the
+most reassuring output the exercise can produce, and the one it produces when it
+has failed.
+
+> **THE RATE IS THE FINDING, NOT THE TWO INSTANCES.** A failure mode at 25% is not
+> caught by care. It is caught by treating **every zero-red probe as unproven
+> until the probe itself has been shown to bite** — which is what the control
+> probe does for the apply step, and what nothing yet does for the mutate step.
+
+**What earns its keep, measured on the other side of the same run:** M6 flipped a
+render condition, reddened nothing, and turned out to be a **real spec gap** — a
+refused line offering a Pass/Fail control. **THE PRACTICE PAID FOR ITSELF IN THE
+SAME BATCH IT COST 25% IN**, which is the honest reason to keep it standing rather
+than an appeal to rigour.
 
 ### The self-catch M6 found
 
@@ -2727,7 +2752,7 @@ is one a test invents.**
 
 `inferHalal` — its own batch, costed above · the **third ASN lane**, 3 of 18
 tenant-wrong, its own dispatch · `MAT-10046` / `MAT-10089`, two unbacked
-storefront pointers, no ruling · `REQUIRED-OPENS-PRE-ANSWERED-01`, needs an
-operator ruling · `MATERIALTYPE-CANNOT-SAY-HALB-01`, a recorded limit ·
+storefront pointers, no ruling · `REQUIRED-OPENS-PRE-ANSWERED-01`, RULED and BOOKED
+as its own dispatch (with `halalSealCheck`, the identical defect) · `MATERIALTYPE-CANNOT-SAY-HALB-01`, a recorded limit ·
 `C9-STALE-BY-FIX-01`, closes at the C9 amendment · `D-COMP-BPOM`, still
 unanswered — and now standing between an operator and two receivable lines.
