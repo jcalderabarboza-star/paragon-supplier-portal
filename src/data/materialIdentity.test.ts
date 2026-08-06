@@ -114,6 +114,11 @@ import { MATERIAL_SPACES, spaceOfModule } from '../services/sdc/materialSpaces';
 // wizard", and only `MOCK_ASNS` answers that. Kept as a separate import so the
 // two questions cannot be conflated the way population and exposure were.
 import { MOCK_ASNS } from '../services/data/mock/fixtures/supplierShipments';
+// 2B-4b — the mechanism the GR wizard now runs. Imported (not restated) on
+// purpose, and note the asymmetry with `wouldRequireBpom` below: the RETIRED
+// rule is a local copy so its record survives its deletion; the LIVE rule is an
+// import so this file cannot drift from what the product does.
+import { bpomOf } from '../services/sdc/bpom';
 
 // ─── The derived population ──────────────────────────────────────────────────
 
@@ -1109,15 +1114,31 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // So the master now DISAGREES WITH THE WIZARD IN WRITING on one row and
     // records an explicit ABSENCE OF DETERMINATION on another, and the wizard
     // reads neither field. That is what 2B-4b wires.
+    //
+    // ⚠️ AND 2B-4b WIRED IT. `BPOM-OFF-BY-SPACE-01` IS CLOSED — at seven, as a
+    // CONTRADICTION rather than a silence. The wizard now reads
+    // `bpomApplicable` through one refusal-shaped lookup: `RM-EMUL-9440`
+    // requires the check (the master won, which is the whole point) and
+    // `RM-PSTN-7150` REFUSES the line rather than passing it silently. The
+    // sentence above is kept verbatim because it is the state 2B-4b inherited,
+    // and a finding's history is not improved by editing out the part that made
+    // the fix necessary.
     expect(CODES.filter((c) => !(c in MATERIAL_MASTER))).toEqual(['MAT-10046', 'MAT-10089']);
   });
 });
 
-describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
-  // The predicate `inferBpom` applies, restated here over the derived
-  // population. Deliberately a COPY and not an import: importing it would couple
-  // a regulatory pin to a component's export surface, and the point is to detect
-  // the day the two stop agreeing.
+describe('BPOM-OFF-BY-SPACE-01 — CLOSED at 2B-4b, and the record of the fail-open is kept', () => {
+  // ⚠️ THE PREDICATE THIS BLOCK MEASURES NO LONGER EXISTS IN THE PRODUCT.
+  // `inferBpom` was deleted at 2B-4b; `wouldRequireBpom` is now a HISTORICAL
+  // RESTATEMENT, and every measurement below is what the retired rule WOULD have
+  // said. That is deliberate and it is the more useful half of the record: the
+  // before-and-after of a regulatory swap is worthless if the "before" is
+  // deleted along with the code.
+  //
+  // It was always a COPY and never an import — originally so that a regulatory
+  // pin was not coupled to a component's export surface. That choice is what
+  // makes these measurements survive the retirement at all; an imported
+  // predicate would have taken the whole record with it when the function went.
   const wouldRequireBpom = (code: string) => code.startsWith('AI-') || code.startsWith('FR-');
 
   it('pins the exact set of codes that trigger a BPOM lot check', () => {
@@ -1196,19 +1217,23 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
     expect(disagree.map(([, now]) => now)).toEqual(['RM-PSTN-7150', 'RM-EMUL-9440']);
   });
 
-  it('⚠️ the ESCAPE BY SPACE is over — and the fail-open is not', () => {
-    // ⚠️ INVERTED, NOT DELETED. This used to say: `MOCK_ASNS` seeds `asnStore`,
-    // which feeds `GRInspectionWizard.buildDraftFromAsn` (`:150-165`), which
-    // sets `bpomRequired: inferBpom(li.materialCode)`, and NOT ONE of the seven
-    // fired. The space is empty, so that sentence is no longer true.
+  it('⚠️ INVERTED AT 2B-4b — the two silent lines are no longer silent', () => {
+    // ⚠️ INVERTED TWICE, NEVER DELETED, and the two inversions are the arc.
+    //
+    //   · At 2B-5b-ii this said: the ESCAPE BY SPACE is over and the fail-open
+    //     is not. `MOCK_ASNS` seeds `asnStore`, which feeds
+    //     `GRInspectionWizard.buildDraftFromAsn`, which set the BPOM flag from
+    //     `inferBpom(li.materialCode)` — and four of the seven received lines
+    //     got a silent `false`, two of them wrongly.
+    //   · At 2B-4b the fail-open is over as well. The wizard reads the master.
+    //
+    // The historical measurement is kept FIRST and unchanged, because the fix is
+    // only legible next to what it replaced.
     expect(UNDECLARED_SPACE).toEqual([]);
-    // What IS still true, measured over the runtime input rather than the
-    // census: FOUR of the seven received lines still get `false`, and for two of
-    // them the master says otherwise IN WRITING.
     const runtime = [...new Set(MOCK_ASNS.flatMap((a) => a.lineItems.map((l) => l.materialCode)))];
     const silent = runtime.filter((c) => !wouldRequireBpom(c)).sort();
     expect(silent).toEqual(['PK-ALCP-2450', 'PK-PETB-8804', 'RM-EMUL-9440', 'RM-PSTN-7150']);
-    // Of those four, two are correct (packaging) and two are not.
+    // Of those four, two were correct (packaging) and two were not.
     expect(silent.filter((c) => MATERIAL_MASTER[c].bpomApplicable === 'NOT_APPLICABLE')).toEqual([
       'PK-ALCP-2450',
       'PK-PETB-8804',
@@ -1217,13 +1242,40 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
       'RM-EMUL-9440',
       'RM-PSTN-7150',
     ]);
+
+    // ── AND NOW THE LIVE ANSWER, from the mechanism the wizard actually runs ──
+    // Not "the master disagrees" — the master DECIDES. Every one of the four
+    // that used to take a silent `false` now takes an explicit outcome, and the
+    // two wrong ones are the two that changed.
+    expect(bpomOf('PK-ALCP-2450')).toEqual({ ok: true, applicable: false }); // unchanged, correctly
+    expect(bpomOf('PK-PETB-8804')).toEqual({ ok: true, applicable: false }); // unchanged, correctly
+    expect(bpomOf('RM-EMUL-9440')).toEqual({ ok: true, applicable: true }); // silent no → CHECK REQUIRED
+    expect(bpomOf('RM-PSTN-7150')).toEqual({
+      ok: false,
+      reason: 'UNDETERMINED_APPLICABILITY',
+      materialCode: 'RM-PSTN-7150',
+    }); // silent no → the LINE REFUSES
+
+    // THE PROPERTY, not the four examples: over the runtime input there is no
+    // longer any code on which the wizard returns a negative it has no basis
+    // for. Every answer is either a determination or a refusal.
+    expect(
+      runtime.filter((c) => {
+        const o = bpomOf(c);
+        return o.ok && !o.applicable && MATERIAL_MASTER[c].bpomApplicable !== 'NOT_APPLICABLE';
+      }),
+    ).toEqual([]);
   });
 
   it('two fragrance concentrates, opposite regulatory treatment', () => {
     // The pair that makes the defect impossible to argue with. Same class of
     // material; the ONLY thing that differs is which fixture space the code was
     // authored in.
-    const rendered = (code: string) => ({
+    // ⚠️ RENAMED AT 2B-4b, because the old name `rendered` claimed something
+    // that is no longer true: the wizard does not render this. It renders
+    // `bpomOf`. This models WHAT THE RETIRED RULE WOULD HAVE PRODUCED, which is
+    // exactly what a before-and-after needs and nothing more.
+    const prefixWouldHaveRendered = (code: string) => ({
       code,
       meaning: meaningsOf(code)[0] ?? null,
       bpomRequired: wouldRequireBpom(code),
@@ -1238,12 +1290,12 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
     // whole vocabularies; the same pair now proves the other half:
     // **A PREFIX RULE DOES NOT ONLY FAIL OPEN. IT ALSO SUCCEEDS BY ACCIDENT,
     // AND THE TWO ARE INDISTINGUISHABLE FROM THE OUTPUT.**
-    expect(rendered('FR-ROUD-4470')).toEqual({
+    expect(prefixWouldHaveRendered('FR-ROUD-4470')).toEqual({
       code: 'FR-ROUD-4470',
       meaning: 'Fragrance Concentrate — Rose Oud',
       bpomRequired: true, // ← right answer, no reasoning behind it
     });
-    expect(rendered('FR-WARD-4440')).toEqual({
+    expect(prefixWouldHaveRendered('FR-WARD-4440')).toEqual({
       code: 'FR-WARD-4440',
       meaning: 'Wardah EDP Parfum Concentrate — Rose & Oud',
       bpomRequired: true,
@@ -1254,9 +1306,16 @@ describe('BPOM-OFF-BY-SPACE-01 — the fail-open is LIVE, not latent', () => {
     expect(MATERIAL_MASTER['FR-WARD-4440'].bpomApplicable).toBe('APPLICABLE');
     // THE ORIGINAL SENTENCE STANDS AND IS STILL THE TRANSFERABLE PART: A PREFIX
     // RULE DOES NOT FAIL OPEN ON UNKNOWN PREFIXES ONLY. IT FAILS OPEN ON ENTIRE
-    // VOCABULARIES. `RM-PSTN-7150` and `RM-EMUL-9440` are what is left of it.
-    expect(rendered('RM-EMUL-9440').bpomRequired).toBe(false);
+    // VOCABULARIES. `RM-PSTN-7150` and `RM-EMUL-9440` were what was left of it.
+    expect(prefixWouldHaveRendered('RM-EMUL-9440').bpomRequired).toBe(false);
     expect(MATERIAL_MASTER['RM-EMUL-9440'].bpomApplicable).toBe('APPLICABLE');
+    // ⚠️ AND THE ACCIDENT IS OVER TOO — not because the mnemonics changed, but
+    // because nothing reads them. Both fragrance concentrates now require the
+    // check FOR A REASON: a determination recorded against each row. Same
+    // outcome as the accident produced, arrived at by a mechanism that can say
+    // why, which is the entire difference the swap buys.
+    expect(bpomOf('FR-ROUD-4470')).toEqual({ ok: true, applicable: true });
+    expect(bpomOf('FR-WARD-4440')).toEqual({ ok: true, applicable: true });
   });
 
   it('2B-4a WIDENED THE CENSUS BY THREE CODES AND MOVED THE FIRING SET BY ZERO', () => {

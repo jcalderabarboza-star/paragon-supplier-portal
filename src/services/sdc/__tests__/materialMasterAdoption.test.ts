@@ -360,16 +360,19 @@ describe('2B-4 GATE — the mechanism landed at 2B-4a; the BEHAVIOUR still has n
       .filter((m) => !('bpomApplicable' in (m as Record<string, unknown>)))
       .map((m) => m.materialCode);
     expect(missing).toEqual([]);
-    // The half that has NOT changed, and the reason the gate still stands: the
-    // GR wizard runs a prefix parse and has never heard of this field. Pinned
-    // in full by `bpomApplicability.test.ts`; asserted here too because this is
-    // the file a reader of the 2B-2 adoption reaches for.
+    // ⚠️ INVERTED AT 2B-4b. This used to read: "the half that has NOT changed,
+    // and the reason the gate still stands — the GR wizard runs a prefix parse
+    // and has never heard of this field." It has now heard of it. The 25 codes
+    // this file adopted became reachable-and-answerable material the moment the
+    // wizard started reading the master, which is what an adoption is FOR.
+    // Pinned in full by `bpomApplicability.test.ts`; asserted here too because
+    // this is the file a reader of the 2B-2 adoption reaches for.
     const wizard = import.meta.glob('/src/components/v2-features/GRInspectionWizard.tsx', {
       query: '?raw',
       import: 'default',
       eager: true,
     })['/src/components/v2-features/GRInspectionWizard.tsx'] as string;
-    expect(wizard).toContain("materialCode.startsWith('AI-')");
-    expect(wizard).not.toContain('bpomApplicable');
+    expect(wizard).not.toContain("materialCode.startsWith('AI-')");
+    expect(wizard).toContain('bpomOf(');
   });
 });

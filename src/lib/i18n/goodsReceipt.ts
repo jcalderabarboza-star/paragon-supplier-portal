@@ -178,6 +178,13 @@ export const goodsReceiptEn: Record<string, string> = {
   'goodsReceipt.wizard.field.packagingIntegrity': 'Packaging Integrity',
   'goodsReceipt.wizard.field.halalSealCheck': 'Halal Seal Check',
   'goodsReceipt.wizard.field.bpomLotTracking': 'BPOM Lot Tracking',
+  // CP-2 · 2B-4b — the BPOM refusal, by name. The two messages differ only in
+  // which absence they name; both block the step identically.
+  'goodsReceipt.wizard.bpom.refused.title': 'BPOM applicability cannot be determined.',
+  'goodsReceipt.wizard.bpom.refused.unknownMaterial':
+    'The material master does not name {{code}}, so whether this lot needs a BPOM lot check is unknown. This line cannot be inspected until the material is registered.',
+  'goodsReceipt.wizard.bpom.refused.undetermined':
+    'The material master names {{code}} but records no BPOM determination for it. This line cannot be inspected until someone rules on it.',
   'goodsReceipt.wizard.labSampleRequired': 'Lab sample required',
   'goodsReceipt.wizard.labRequestId': 'Lab Request ID:',
   // — Wizard: disposition & submit (step 4) —
@@ -359,6 +366,11 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.wizard.field.packagingIntegrity': 'Integritas Kemasan',
   'goodsReceipt.wizard.field.halalSealCheck': 'Pemeriksaan Segel Halal',
   'goodsReceipt.wizard.field.bpomLotTracking': 'Pelacakan Lot BPOM',
+  'goodsReceipt.wizard.bpom.refused.title': 'Penerapan BPOM tidak dapat ditentukan.',
+  'goodsReceipt.wizard.bpom.refused.unknownMaterial':
+    'Master material tidak memuat {{code}}, sehingga tidak diketahui apakah lot ini memerlukan pemeriksaan lot BPOM. Baris ini tidak dapat diinspeksi sampai material tersebut terdaftar.',
+  'goodsReceipt.wizard.bpom.refused.undetermined':
+    'Master material memuat {{code}} tetapi tidak mencatat penetapan BPOM untuknya. Baris ini tidak dapat diinspeksi sampai ada yang memutuskan.',
   'goodsReceipt.wizard.labSampleRequired': 'Sampel lab diperlukan',
   'goodsReceipt.wizard.labRequestId': 'ID Permintaan Lab:',
   // — Wizard: disposition & submit (step 4) —

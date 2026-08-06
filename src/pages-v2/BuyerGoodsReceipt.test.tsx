@@ -66,7 +66,20 @@ const uiTestAsn = (): ASN => ({
   },
   lineItems: [
     {
-      materialCode: 'PK-UITEST-1',
+      // ⚠️ WAS `PK-UITEST-1`, AND THE CHANGE IS THE 2B-4b GATE FIRING ON A TEST.
+      // The wizard's BPOM check now reads the material master and REFUSES a code
+      // the master cannot resolve, so this spec — whose subject is the ASN
+      // source seam, not compliance — could no longer reach step 4 with an
+      // invented code. It takes a REAL master row (`PK-PETB-8804`, VERP,
+      // NOT_APPLICABLE) so the receipt path it tests is unchanged.
+      //
+      // The invented code did not simply disappear: the UNKNOWN_MATERIAL
+      // refusal it now provokes is exercised deliberately in
+      // `GRInspectionWizard.test.tsx`, which is the only place in the tree that
+      // can reach that path at all — no fixture anywhere feeds the wizard an
+      // unresolvable code, which IS the discharged 2B-4 gate, observed rather
+      // than asserted.
+      materialCode: 'PK-PETB-8804',
       description: 'UI test carton',
       orderedQty: 100,
       shippedQty: 100,
@@ -120,11 +133,11 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
     // Step 1 → Details, then accept 60 of 100 received (40 rejected → mixed line).
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(
-      screen.getByLabelText('Accepted quantity for PK-UITEST-1'),
+      screen.getByLabelText('Accepted quantity for PK-PETB-8804'),
       { target: { value: '60' } },
     );
     fireEvent.change(
-      await screen.findByLabelText('Rejection reason for PK-UITEST-1'),
+      await screen.findByLabelText('Rejection reason for PK-PETB-8804'),
       { target: { value: '40 cartons crushed in transit' } },
     );
 

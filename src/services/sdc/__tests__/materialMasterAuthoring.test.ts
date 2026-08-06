@@ -434,7 +434,11 @@ describe('2B-4 GATE — the mechanism landed at 2B-4a; the BEHAVIOUR still has n
       import: 'default',
       eager: true,
     })['/src/components/v2-features/GRInspectionWizard.tsx'] as string;
-    expect(wizard).toContain("materialCode.startsWith('AI-')");
-    expect(wizard).not.toContain('bpomApplicable');
+    // ⚠️ INVERTED AT 2B-4b — the third fact moved, and only the third. The
+    // sentence above is left standing because it was true when written and it
+    // names what changed: mechanism early (2B-4a), precondition discharged
+    // (2B-5b-ii), behaviour late (here). The wizard now reads the master.
+    expect(wizard).not.toContain("materialCode.startsWith('AI-')");
+    expect(wizard).toContain('bpomOf(');
   });
 });

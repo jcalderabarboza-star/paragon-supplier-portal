@@ -158,10 +158,15 @@ export interface MaterialMasterEntry {
    * open escalation; this field is the shape its answer lands in, not the
    * answer. See `sdc/bpom.ts`.
    *
-   * ⚠️ **AUTHORED, NOT WIRED (the 2B-4a gate).** `inferBpom`
-   * (`GRInspectionWizard.tsx:129-131`) is still what the receiving surface
-   * runs. It cannot be retired until every code the GR wizard can be fed is
-   * master-resolvable, and TWELVE are not.
+   * ⚠️ **WIRED AT 2B-4b, AND THIS FIELD IS NOW A REGULATORY GATE.** It used to
+   * read AUTHORED, NOT WIRED: `inferBpom` was what the receiving surface ran,
+   * and it could not be retired until every code the GR wizard can be fed was
+   * master-resolvable. It is, and it was. The GR wizard reads this field
+   * through `bpomOf` and REFUSES a line it cannot answer for.
+   *
+   * ⚠️ So editing a row here now moves what an inspector is asked to check.
+   * `'UNDETERMINED' → 'NOT_APPLICABLE'` is not a tidy-up: it turns a refusal
+   * into a silent pass, which is the precise defect this field replaced.
    */
   readonly bpomApplicable: BpomApplicability;
 }

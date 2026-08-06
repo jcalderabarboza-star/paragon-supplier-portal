@@ -82,14 +82,18 @@ const PROV_SUPPLIER_DRAFT: Provenance = Object.freeze({
 //   ⚠️ TWO LABELS ARE **NOT** THE LANE'S STRING — see `FR-WARD-4410` and
 //   `FR-MKOV-5520` below. A lot and a batch are INSTANCES, not types.
 //
-//   ⚠️ `bpomApplicable` LANDED AT 2B-4a, ON ALL 35 ROWS — **AND IS NOT WIRED.**
-//   The 2B-4 gate stands exactly as written: the MECHANISM may be authored
-//   early, the BEHAVIOUR may not. `inferBpom` (`GRInspectionWizard.tsx:129-131`)
-//   is still what the receiving surface runs, untouched. The GR wizard is fed
-//   the ASN store, seeded from the `MAT-*` space — TWELVE codes this master
-//   cannot resolve (nine, plus the three the 2B-4a census widening reached) —
-//   so a fail-closed BPOM rule today would refuse essentially every received
-//   line. Retiring `inferBpom` and wiring the refusal is 2B-4b.
+//   ⚠️ `bpomApplicable` LANDED AT 2B-4a AND IS **WIRED AS OF 2B-4b.** The gate
+//   held exactly as written — mechanism early (2B-4a), precondition discharged
+//   (2B-2/2B-3 adoption, 2B-5b-ii authoring), behaviour late (2B-4b) — and the
+//   sentence it replaces is worth keeping in view: the GR wizard was fed a code
+//   space this master could not resolve, so a fail-closed rule would then have
+//   refused essentially every received line for a VOCABULARY reason rather than
+//   a compliance one. **A GATE IS A MEASUREMENT, NOT A MOOD**, and this one was
+//   discharged by making the measurement come out differently.
+//
+//   ⚠️ SO THESE VALUES ARE NOW LOAD-BEARING ON A RECEIVING SURFACE. The wizard
+//   reads them through `bpomOf` and refuses the line on `'UNDETERMINED'`.
+//   Changing a row here changes what an inspector is asked to check.
 //
 //   ⚠️ EVERY VALUE IS **PROVISIONAL** — strategist-ruled on best practice at
 //   2B-4a, PENDING TEAM RATIFICATION, and taken from the row's DECLARED GROUP
@@ -98,8 +102,13 @@ const PROV_SUPPLIER_DRAFT: Provenance = Object.freeze({
 //   contradicts our own ratified contract. Sixteen APPLICABLE (MG-04/05/06),
 //   nine NOT_APPLICABLE (packaging, decided by the registry's `axis`), TEN
 //   UNDETERMINED — and the ten are the finding, not the leftovers: they are
-//   the rows where `inferBpom` states a confident `false` and nobody has
+//   the rows where `inferBpom` stated a confident `false` and nobody has
 //   actually ruled (`PREFIX-RULE-ASSERTS-A-NEGATIVE-01`).
+//
+//   ⚠️ AND SINCE 2B-4b THOSE ROWS **REFUSE INSTEAD** — the confident `false`
+//   is gone, but the ruling still is not made. `D-COMP-BPOM` is now the thing
+//   standing between an operator and a receivable line, which is the correct
+//   place for an unanswered escalation to be felt.
 
 export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
   'RM-EMUL-3310': {

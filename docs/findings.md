@@ -2432,3 +2432,302 @@ job was to remove two. Under R-1 the master's meaning wins, so the lane took it.
 `MG-NO-EMULSIFIER-GROUP-01`, now three rows deep · the ASN→PO **material** axis,
 still open at 7 of 7 and now for a PO-lane reason rather than a master one ·
 `2B-4b`, which is reachable.
+
+---
+
+## CP-2 · 2B-4b — RETIRING `inferBpom`. **THE REGULATORY GATE FAILS CLOSED.**
+
+`inferBpom` is deleted. The GR wizard reads `bpomApplicable` from the material
+master through `bpomOf`, and a line the master cannot answer for **REFUSES BY
+NAME** rather than passing silently. **CP-2 closes here.**
+
+> **A REGULATORY GATE THAT FAILS OPEN IS WORSE THAN ONE THAT FAILS LOUD.**
+
+### ⚠️ `BPOM-OFF-BY-SPACE-01` — **CLOSED. At seven, as a CONTRADICTION.**
+
+Filed at 2B-0 as a vocabulary escaping a check. Corrected at 2B-5a from nine to
+seven (population ≠ exposure). Amended twice in place. Closed here, and the shape
+it closed in is not the shape it opened in:
+
+| | |
+|---|---|
+| **Opened as** | An entire code space (`MAT-*`) that no `AI-`/`FR-` test could ever match, so every line in it silently reported "no BPOM check required". |
+| **Closed as** | A **contradiction between two mechanisms on an answerable row** — `RM-EMUL-9440`, master `APPLICABLE` on `doc-201`, prefix `false` — plus two rows where the master records an explicit absence of determination against a confident negative. |
+| **Why the difference matters** | **A FINDING NAMED AFTER ITS CAUSE OUTLIVES ITS CAUSE.** 2B-5b-ii emptied the space and the finding did not close, because the seven lines still got the wrong answer for a different reason. Closing it required removing the MECHANISM, not the vocabulary. Had the finding been retired when its name stopped applying, the fail-open would have survived under a heading nobody read. |
+| **Radius** | **SEVEN**, unchanged from the 2B-5a correction. |
+
+### The before-and-after, line by line — every line the wizard can be fed
+
+Nine lines across eight receivable documents, from **both** shipment lanes.
+*(`inferBpom` = the retired prefix rule; `bpomOf` = the master lookup now wired.)*
+
+| lane | document | code | `inferBpom` | `bpomOf` | moved |
+|---|---|---|---|---|---|
+| shipment | `ASN-2026-012` | `PK-PETB-8801` | false | not required | — |
+| shipment | `ASN-2026-013` | `PK-PETB-8802` | false | not required | — |
+| shipment | `ASN-2026-014` | `RM-COCO-8200` | false | **REFUSES** (UNDETERMINED) | ⚠️ |
+| shipment | `ASN-2026-015` | `FR-WARD-4410` | **true** | **REQUIRED** | — |
+| ASN | `ASN-2025-00211` | `FR-ROUD-4470` | **true** | **REQUIRED** | — |
+| ASN | `ASN-2025-00211` | `PK-PETB-8804` | false | not required | — |
+| ASN | `ASN-2025-00198` | `PK-ALCP-2450` | false | not required | — |
+| ASN | `ASN-2025-00301` | `RM-PSTN-7150` | false | **REFUSES** (UNDETERMINED) | ⚠️ |
+| ASN | `ASN-2025-00302` | `RM-EMUL-9440` | false | **REQUIRED** | ⚠️ |
+
+**Three of nine moved, and all three in the same direction: toward more
+checking.** Nothing moved from checked to unchecked — asserted, not observed,
+because a batch that turned a BPOM check OFF would be a regulatory regression
+regardless of its reasons.
+
+**On the master's 42 rows the two mechanisms agree on 30 and differ on 12** —
+eleven where the prefix asserts a negative and the master records no ruling, and
+**one where they contradict each other outright** (`RM-EMUL-9440`).
+
+### `INFERBPOM-MUST-BE-RETIRED-01` — **DISCHARGED**
+
+The row 2B-4b was told to read first. Its case was *a regulatory check changed
+because of a naming convention* — the firing set moving 16 → 19 at 2B-5b-ii for
+reasons that had nothing to do with BPOM. **The mechanism that made that possible
+no longer exists.** `RM-EMUL-9440` was the settlement case, and it settled the
+way the row said it should: **where the master and the wizard disagreed, the
+master won**, and the disagreement was between a document and three characters.
+
+### ⚠️ `DERIVED-OVER-A-CHOSEN-SCOPE-01` — **FIFTH INSTANCE, AND IT IS MY OWN GATE**
+
+**The 2B-4 gate was discharged over the wrong population, and I am the one who
+discharged it.** The wording carried from 2B-5b-ii through the #179 close report
+was *"every code `asnStore` can hand the wizard is master-resolvable"* — measured
+honestly, asserted, true. **The GR wizard's source list is `shipments ∪ asns`.**
+`asnStore` is one of the two, and `mockShipments.ts` — the `ASN-2026-*` lane
+feeding four of the eight receivable documents — was never in the measurement.
+
+| | |
+|---|---|
+| **The scope was CHOSEN, not derived** | 5b-i scoped itself to `MOCK_ASNS` and nobody asked whether that was the only ASN lane. The gate then inherited that scope without re-deriving it from the consumer. **A GATE IS A MEASUREMENT, AND A MEASUREMENT INHERITS THE POPULATION OF WHOEVER TOOK IT LAST.** |
+| **⚠️ It held anyway — and that is the uncomfortable part** | Re-measured over the true population: **9 reachable lines · 9 distinct codes · ZERO unresolvable.** All four shipment-lane codes happen to be in the master. **The gate was RIGHT AND UNJUSTIFIED**, which is indistinguishable from right until it isn't — the same sentence `PREFIX-RULE-SUCCEEDS-BY-ACCIDENT-01` carries, applied to my own verification instead of to the code. |
+| **What the widened measurement DID find** | `RM-COCO-8200` on `ASN-2026-014` — a **second** UNDETERMINED refusal, on a dock arrival, invisible to the ASN-only scope. So the wiring blocks **two** receivable documents, not one. Reported before building, not discovered after. |
+| **Fix** | The gate is now asserted **over the wizard's own source rule** (`GRInspectionWizard.test.tsx` derives its eligible set from `mockShipments` by status, exactly as the component does) rather than over a lane somebody named. |
+
+### ⚠️ THE THIRD ASN LANE — 3 of 18 references point into another tenant's PO
+
+Filed, not fixed (dispatch: its own batch). Same defect as `ASN-REF-INTEGRITY-01`,
+same disclosure shape as `SCOPE-CANNOT-SEE-INSIDE-A-STRING-01`, and the same root
+cause as the gate above: **nobody asked whether `MOCK_ASNS` was the only ASN lane.**
+
+```
+mockShipments.ts — 18 rows · 15 tenant-correct · 3 WRONG
+  shp-002 (sup-007) → PO-2025-00114, owned by sup-006 (Evonik)      [ASN-2026-002]
+  shp-011 (sup-010) → PO-2025-00115, owned by sup-009 (Zhejiang)    [ASN-2026-011]
+  shp-018 (sup-006) → PO-2025-00118, owned by sup-004 (Firmenich)   [ASN-2026-018]
+```
+
+**Zero unresolved references** — every `poNumber` names a real PO. The failure is
+purely on the tenant axis, which is why `applySupplierScope` cannot see it: it
+filters ROWS, and this is a foreign tenant's identifier sitting INSIDE a string
+field on a row that is correctly scoped. None of the three is currently receivable
+(`Pending ASN` / `Customs Clearance` / `Delayed`), so this batch's surface is
+unaffected — that is a fact about fixture statuses, not a mitigation.
+
+### `INFERHALAL-READS-PROSE-01` *(new — reported, NOT folded in)*
+
+`inferHalal(description)` survives. It is the same defect and on two axes it is
+**worse**, and it is left standing for a reason that is not "it is safer".
+
+| | |
+|---|---|
+| **Worse, axis 1** | `inferBpom` parsed a code **we** author. This reads `description`, which on the ASN lane is a **supplier-submitted free-text field**. A regulatory check keyed on prose a counterparty types is weaker than one keyed on a code space we control. |
+| **Worse, axis 2 — MEASURED** | Across both lanes the halal check fires on `RM-EMUL-9410` (*"Glyceryl Stearate SE (Halal Emulsifier)"*) and `RM-EMUL-9430` (*"Polysorbate 80 — Halal, …"*) and **NOT on `RM-EMUL-9440`** (*"Emulgade SE-PF Emulsifier"*). **Three emulsifiers, one material group, and the check fires on two of them because a fixture author wrote a word into a product name.** `RM-PSTN-7150` — RBD palm stearin, the single most halal-load-bearing row in the master — does not fire either. |
+| **The one thing it does NOT do** | **No code gets two different halal answers**: 0 of 19 distinct codes carry descriptions that disagree with each other. And the 5b-ii description rewrite moved the halal firing set by **ZERO** — none of the seven old strings contained the word. Checked rather than assumed, because that rewrite is exactly the act that moved the BPOM set by three. |
+| **⚠️ WHY IT NEEDS ITS OWN BATCH** | **Retiring it requires a field that does not exist.** `MaterialMasterEntry` has no `halalApplicable`. Authoring one — plus its class rule, its provisional seed on all 42 rows, and a `D-COMP-HALAL` escalation — is a **2B-4a-shaped batch**. Doing it inside a wiring batch is the decision-smuggling `MG-NO-EMULSIFIER-GROUP-01` was held back from. **Cost: one authoring batch, the same shape as 2B-4a, plus a wiring batch the same shape as this one.** |
+
+### `MATERIALTYPE-CANNOT-SAY-HALB-01` *(new — the LIMIT filed, not a fix)*
+
+`MaterialType = 'ROH' | 'VERP'` has exactly two members. **The master's type
+vocabulary cannot express a semi-finished good at all** — SAP's `HALB` has no
+representation. Current split: 31 ROH · 11 VERP, because every row so far is
+bought in. The two active emulsions authored at 2B-5b-ii are `ROH` on the type's
+own stated procurement semantics and **that call stands**; what is recorded here
+is that the vocabulary had no third option to reject.
+
+### `C9-STALE-BY-FIX-01` *(new — and the pin that found it wrote its own report)*
+
+C9 §7.3 says **WE PARSE IT** and cites `GRInspectionWizard.tsx:129-131`. That is
+now false: the code is clean and the **contract document understates our
+conformance.** C9's bytes are frozen by this dispatch, so the divergence stands
+until the amendment.
+
+> `SEAM-DOC-DRIFT-01` **running in the direction that flatters us, which is the
+> direction nobody checks.** A doc that overstates conformance gets caught by
+> anyone who reads the code. One that understates it gets caught by nobody,
+> because the discrepancy is in our favour and reads as caution.
+
+**How it was caught is the transferable part.** `ledgerTruth.test.ts`'s §7.3 pin
+was written at 2B-4a to fail with the message: *"inferBpom no longer parses the
+prefix — C9 §7.3 and D-COMP-BPOM are now STALE and must be corrected at the next
+C9 amendment. **This is a contract-truth failure, not a code defect.**"* It fired
+exactly as designed and named its own cause.
+
+> **A PIN THAT EXPLAINS ITS OWN GREEN-TO-RED IS WORTH MORE THAN ONE THAT MERELY
+> DETECTS IT.** Both halves are now asserted — the code is clean AND the contract
+> still describes the breach — so the amendment closes this row deliberately.
+
+### `REQUIRED-OPENS-PRE-ANSWERED-01` *(new — filed, NOT fixed; needs a ruling)*
+
+**A BPOM check the system decides is REQUIRED opens with `Pass` already
+selected.** Observed in the browser on `ASN-2025-00302` / `RM-EMUL-9440`:
+`bpom-0` radio, value `Pass`, `checked: true`, before an inspector touches
+anything. Pre-existing behaviour (`inferBpom(...) ? 'Pass' : undefined`), carried
+forward verbatim rather than changed, because the dispatch scoped this batch to
+the *determination* and not the *inspection outcome*.
+
+It is worth naming plainly: **`RM-EMUL-9440` now gets the BPOM row this batch
+fought for, pre-ticked Pass.** The gate decides *whether the question is asked*;
+it does not make anyone answer it. The same is true of the halal seal check.
+**Changing it would block every REQUIRED line until a human ticks a box — a real
+operational cost and an operator's decision, not a builder's.**
+
+### The wiring, and why the refusal is one branch and not two
+
+`bpomOf` returns `UNKNOWN_MATERIAL` or `UNDETERMINED_APPLICABILITY`. The gate
+reads **`if (!l.bpom.ok) return false;`** — one branch, both reasons. `reason`
+reaches only the message, which names *which absence* was hit; nothing branches on
+it to proceed. Asserted at the surface: both produce the same `role="alert"`
+block, the same disabled Next, and no Pass/Fail control.
+
+**`'UNDETERMINED' IS NOT QUARANTINE` is a claim about EFFECT**, and this is the
+first batch where it is checked as one rather than as a property of a lookup.
+
+⚠️ **The `UNKNOWN_MATERIAL` half is unreachable from real data** — no fixture
+anywhere feeds the wizard an unresolvable code, which IS the discharged gate,
+observed rather than asserted. So the spec **constructs** one, and that is the
+only place in the tree that path is exercised at all.
+
+### Browser QA — built bundle, EN + ID, console 0/0
+
+| document · code | rendered |
+|---|---|
+| `ASN-2026-012` · `PK-PETB-8801` | Visual · Packaging · **nothing** — Next **enabled**. The positive twin: a determination, and it looks nothing like a refusal. |
+| `ASN-2026-015` · `FR-WARD-4410` | Visual · Packaging · **BPOM LOT TRACKING** — Next enabled. |
+| ⚠️ `ASN-2025-00302` · `RM-EMUL-9440` | Visual · Packaging · **BPOM LOT TRACKING**. **At 2B-5b-ii this exact line showed NO BPOM row, under a section headed *"Visual, kemasan, halal, BPOM"*.** The contradiction, resolved on screen. |
+| ⚠️ `ASN-2026-014` · `RM-COCO-8200` | *"BPOM applicability cannot be determined. The material master names RM-COCO-8200 but records no BPOM determination for it."* · `role="alert"` · **Next DISABLED**. |
+| ⚠️ `ASN-2025-00301` · `RM-PSTN-7150` | Same refusal, same block. In ID: *"Master material memuat RM-PSTN-7150 tetapi tidak mencatat penetapan BPOM untuknya."* |
+
+Both refusals were read in **Indonesian** as well as English; chrome translates,
+material names correctly do not, no raw keys. **Console: 0 errors, 0 warnings.**
+
+### ⚠️ THE REACHABILITY GAP, NAMED AND COSTED — `AI-NIAC-6612` / `AI-HYALU-6615`
+
+`ASN-2025-00201` carries status `Discrepancy`, which is not in
+`RECEIVABLE_ASN_STATUSES`, so it never reaches the wizard's source list. Its two
+active emulsions **cannot be witnessed in the browser.** That is the 2e-c-6
+reachability problem one lane over:
+
+> **A REFUSAL THAT CANNOT BE WITNESSED IS NOT A DELIVERED REFUSAL.**
+
+**What honestly narrows it:** both codes are `APPLICABLE`, and the **REQUIRED**
+state IS witnessed — three times, on `FR-WARD-4410`, `FR-ROUD-4470` and
+`RM-EMUL-9440`. The unwitnessable pair are additional **instances** of a rendered
+state, not an unrendered state. **No state of this gate is unwitnessed.**
+
+**Is a reachable fixture needed? NOT FOR THIS GATE, and it is not free.** Costs,
+so the operator can rule rather than re-derive: flipping `ASN-2025-00201` to a
+receivable status **destroys the Discrepancy fixture** other surfaces read;
+authoring a new ASN is **authoring a document**, which under R-4 needs evidence
+this batch does not have. **Neither is free, so neither was built.** The gap is a
+property of one fixture's status, and it is now written down.
+
+### Mutation-verified — eight probes, seven detected, **plus a control**
+
+| | probe | result |
+|---|---|---|
+| **M1** | the fail-closed guard REMOVED (a refusal becomes a skip) | **3 red** |
+| **M2** | the PREFIX RULE reinstated in place of the master lookup | **10 red**, across 6 files |
+| **M3** | `RM-EMUL-9440` loses its document-backed `APPLICABLE` | **13 red** |
+| **M3b** | `RM-PSTN-7150`'s `UNDETERMINED` silently becomes a NEGATIVE | **9 red** |
+| **M4** | the refusal MESSAGE deleted, the gate kept | **3 red** |
+| **M5** | the two refusal reasons made INDISTINGUISHABLE | **1 red** |
+| **M6** | the BPOM row renders for a REFUSED line too | **1 red** *(see below)* |
+| **M7** | **CONTROL** — a deliberately non-existent anchor | **PROBE FAILED TO APPLY — NOT A RESULT** |
+
+### ⚠️ `PROBE-NEEDS-PROBING-01` — **THIRD APPEARANCE, AND A NEW VARIETY**
+
+The standing practice from #179 — *every probe asserts its own edit landed, and at
+least one control probe deliberately fails to apply* — caught a failure mode
+neither earlier appearance had:
+
+- **#178: the edit did not land** (anchor absent) and reported a false all-clear.
+- **2B-5b-ii: the control worked**, reporting `PROBE FAILED TO APPLY`.
+- **Here: THE EDIT LANDED AND MUTATED NOTHING.** M3b's first form inserted
+  `bpomApplicable: 'NOT_APPLICABLE'` at the head of the `RM-PSTN-7150` object —
+  where the row's **existing later key overwrites it**. The assert-it-landed guard
+  passed (the file genuinely changed) and the suite went green, which reads
+  identically to *"this mutation is undetected"*.
+
+> **A PROBE THAT APPLIES IS NOT A PROBE THAT MUTATES.** Re-anchored on the actual
+> `bpomApplicable` line, M3b reddens **9**. The guard to add is not another
+> assertion on the edit — it is the reflex that **a probe returning zero is a
+> claim about the probe first and the suite second.**
+
+*(The same run's first M3 had the same shape for a different reason: it renamed
+the `materialCode` FIELD while `MATERIAL_MASTER` is keyed by its map KEY, so it
+tested a self-consistency pin rather than the regulatory path. Two of eight
+probes were inert on first writing. That ratio is the finding.)*
+
+### The self-catch M6 found
+
+M6 flipped the render condition so the Pass/Fail control appeared **beside** the
+refusal, and **nothing went red.** A refused line would have offered an inspector
+a box to tick Pass on an applicability the system had just said it could not
+determine — a determination with extra steps. The spec was tightened (a refused
+line must offer no check to record), not the code loosened; M6 now reddens 1.
+
+### Inverted, never deleted — the pins that carry the swap
+
+Six standing assertions were the exact negation of what is now true, and each was
+**rewritten to assert the opposite with its reason** rather than removed:
+`bpomApplicability.test.ts` (*"AUTHORED, NOT WIRED"* → *"WIRED, and the prefix
+rule is GONE"*, including *"nothing in the tree imports the mechanism"* →
+*"exactly one non-test importer, and it is the receiving surface"*),
+`ledgerTruth.test.ts` §7.3, `materialMasterAuthoring.test.ts`,
+`materialMasterAdoption.test.ts`, `asnMasterAuthoring.test.ts`, and
+`materialIdentity.test.ts`'s *"the fail-open is LIVE, not latent"*.
+
+⚠️ **The retired predicate is kept as a LOCAL RESTATEMENT in four test files, and
+that was a decision.** `wouldRequireBpom` was always a deliberate copy rather than
+an import — originally so a regulatory pin was not coupled to a component's export
+surface. **That choice is why the before-and-after survives the retirement at
+all**: an imported predicate would have taken the whole historical record with it
+when the function was deleted. The tree-wide pin therefore asserts a property
+rather than a list — **every remaining prefix parse is in a `.test.ts` file** —
+because a restatement that proves a rule is retired is the opposite of the defect.
+
+### One existing spec changed its fixture, and the reason is the gate
+
+`BuyerGoodsReceipt.test.tsx` seeded a live ASN carrying `PK-UITEST-1`, an invented
+code. **It can no longer reach step 4**, because the wizard now refuses a code the
+master cannot resolve. It takes a real master row (`PK-PETB-8804`) so the receipt
+path it tests is unchanged. **The fail-closed rule's first catch was a test
+fixture, and the only unresolvable code the wizard can be fed anywhere in the tree
+is one a test invents.**
+
+### Constraints discharged, in writing
+
+- **`inferBpom` RETIRED.** No prefix parse survives on any path a receipt can
+  travel; asserted as a derived tree-wide property, not a list of files.
+- **FAIL-CLOSED, AND UNDETERMINED REFUSES IDENTICALLY TO UNKNOWN.** One branch,
+  two messages, no way through either.
+- **`inferHalal` REPORTED, NOT FOLDED IN** — measured, filed, and costed above.
+- **THE FIRING SET REPORTED LINE BY LINE**, over the **widened** population, and
+  the widening is itself filed as a finding against my own gate.
+- **BROWSER QA DONE**, EN + ID, all three states, both refusals, console 0/0.
+- **C9 BYTES UNTOUCHED, PIN STAYS `f492b5c`** — and the staleness that creates is
+  filed rather than silently accepted.
+- **FLOOR 2209/184 → 2219/184.** `npm run gates` green.
+
+### What is left
+
+`inferHalal` — its own batch, costed above · the **third ASN lane**, 3 of 18
+tenant-wrong, its own dispatch · `MAT-10046` / `MAT-10089`, two unbacked
+storefront pointers, no ruling · `REQUIRED-OPENS-PRE-ANSWERED-01`, needs an
+operator ruling · `MATERIALTYPE-CANNOT-SAY-HALB-01`, a recorded limit ·
+`C9-STALE-BY-FIX-01`, closes at the C9 amendment · `D-COMP-BPOM`, still
+unanswered — and now standing between an operator and two receivable lines.

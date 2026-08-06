@@ -279,8 +279,10 @@ describe('2B-5b-i — the ASN lane resolves', () => {
     // the day the predicate and this pin stop agreeing is detectable.
     const wouldRequireBpom = (code: string) => code.startsWith('AI-') || code.startsWith('FR-');
     expect(wouldRequireBpom('RM-EMUL-9440')).toBe(false);
-    // `BPOM-OFF-BY-SPACE-01` is amended in `docs/findings.md` to say so. This
-    // batch has ZERO regulatory surface: `inferBpom` is untouched and nothing
-    // is wired. 5b-ii and then 2B-4b close it, at seven.
+    // `BPOM-OFF-BY-SPACE-01` was amended in `docs/findings.md` to say so, and
+    // ⚠️ CLOSED AT 2B-4b — at seven, as a CONTRADICTION rather than a silence.
+    // The document won: `doc-201` decides this line, the wizard asks the master,
+    // and the prefix restated above is now a historical record rather than a
+    // description of anything the product runs.
   });
 });

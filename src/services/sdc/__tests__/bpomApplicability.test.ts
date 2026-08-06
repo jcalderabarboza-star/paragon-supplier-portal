@@ -323,58 +323,82 @@ describe('PREFIX-RULE-ASSERTS-A-NEGATIVE-01 — the two mechanisms, MEASURED', (
   });
 });
 
-describe('2B-4a — the gate: AUTHORED, NOT WIRED', () => {
-  it('the GR wizard still runs the PREFIX rule, and this module has no consumer', async () => {
-    // ⚠️ THE CONSTRAINT THE DISPATCH IS BUILT AROUND, checked rather than
-    // promised. A future batch that wires `bpomOf` must delete this assertion
-    // deliberately — which is the point.
-    const sources = import.meta.glob('/src/**/*.{ts,tsx}', {
+describe('2B-4b — the gate: WIRED, and the prefix rule is GONE', () => {
+  // ⚠️ INVERTED, NOT DELETED — and this is the assertion the discipline was
+  // built for. At 2B-4a this block said the wizard still ran the prefix rule and
+  // `bpomOf` had no consumer, and its own comment said a future batch would have
+  // to delete it deliberately. 2B-4b is that batch. Every claim below is the
+  // exact negation of the claim it replaces, so the file records the swap rather
+  // than merely reflecting whatever is true today.
+  const sources = () =>
+    import.meta.glob('/src/**/*.{ts,tsx}', {
       query: '?raw',
       import: 'default',
       eager: true,
     }) as Record<string, string>;
 
-    const wizard = sources['/src/components/v2-features/GRInspectionWizard.tsx'];
+  it('the GR wizard runs the MASTER LOOKUP, and the prefix parse is not in the file', () => {
+    const src = sources();
+    const wizard = src['/src/components/v2-features/GRInspectionWizard.tsx'];
     expect(wizard).toBeDefined();
-    expect(wizard).toContain("materialCode.startsWith('AI-')");
-    expect(wizard).not.toContain('bpomOf');
-    expect(wizard).not.toContain('bpomApplicable');
 
-    // NOTHING IN THE TREE IMPORTS THE MECHANISM. `sdc/bpom.ts` is DECLARED
-    // INERT the same way the C9 crosswalk shape is: an artifact that exists so
-    // the wiring batch has something to wire, not dead code.
-    //
-    // ⚠️ NOTE FOR THE NEXT AUTHOR — the sibling module is deliberately NOT
-    // named here. `ledgerTruth.test.ts`'s C9 §7.1 pin greps the tree for that
-    // FILE NAME and cannot tell an import from a sentence, so writing it in a
-    // comment turns its "zero consumers" assertion red
-    // (`PROSE-COUNTS-AS-A-SITE-01`, filed at 2B-4a).
-    //
-    // ⚠️ TWO GUARDS AGAINST A VACUOUS PASS, because "nobody imports it" is the
-    // shape that passes when the search is broken (`--passWithNoTests` one
-    // layer in). The population is checked, and a file that DOES name the
-    // module is checked to be findable — `sdc/bpom.ts` names itself in its own
-    // header prose, so a scan returning literally nothing is a broken scan.
-    expect(Object.keys(sources).length).toBeGreaterThan(400);
-    expect(
-      Object.entries(sources)
-        .filter(([, t]) => t.includes('bpomOf'))
-        .map(([f]) => f)
-        .sort(),
-      // Both are PROSE-or-declaration sites, not calls: `bpom.ts` declares it,
-      // `types.ts` names it in the doc comment that sends a reader there.
-    ).toEqual(['/src/services/sdc/bpom.ts', '/src/services/sdc/types.ts']);
+    // WAS: `toContain("materialCode.startsWith('AI-')")` and `not.toContain('bpomOf')`.
+    expect(wizard).not.toContain("materialCode.startsWith('AI-')");
+    expect(wizard).not.toContain("materialCode.startsWith('FR-')");
+    expect(wizard).toContain('bpomOf(');
 
-    // ⚠️ AND THE LIMIT OF THIS CHECK, STATED: Vite's `import.meta.glob` EXCLUDES
-    // THE MODULE IT IS WRITTEN IN, so this scan is structurally unable to see
-    // its own file — which is the one file that DOES import `bpomOf`. Recorded
-    // rather than worked around: a check that cannot see itself must say so, or
-    // the next reader takes its silence for coverage.
-    expect(sources['/src/services/sdc/__tests__/bpomApplicability.test.ts']).toBeUndefined();
-    const importers = Object.entries(sources)
+    // NOT MERELY CALLED — LOAD-BEARING. The outcome is what the step gate reads,
+    // so a refusal cannot be reduced to a message beside a check that still
+    // passes. `GRInspectionWizard.test.tsx` proves the behaviour; this proves
+    // the wiring is the one the behaviour runs through.
+    expect(wizard).toContain('if (!l.bpom.ok) return false;');
+  });
+
+  it('NO PREFIX PARSE SURVIVES IN PRODUCTION CODE — derived, not enumerated', () => {
+    // The dispatch's constraint: `materialCode` is contractually opaque (C9 §3)
+    // and a prefix rule contradicts our own ratified contract. Stated as a
+    // property over the whole tree rather than as a list of files somebody has
+    // to remember to extend.
+    const src = sources();
+    expect(Object.keys(src).length).toBeGreaterThan(400);
+
+    const parsers = Object.entries(src)
+      .filter(([, t]) => /startsWith\('(AI|FR|RM|PK|MAT)-'\)/.test(t))
+      .map(([f]) => f)
+      .sort();
+
+    // ⚠️ THE SITES THAT REMAIN ARE ALL TESTS, AND THAT IS NOT A LOOPHOLE — IT IS
+    // THE RECORD. A retired rule has to be restated somewhere to prove it is
+    // retired and to hold the before-and-after of the swap; deleting those
+    // restatements would delete the evidence along with the defect. What must
+    // not survive is a parse on a path a receipt can travel.
+    expect(parsers.length).toBeGreaterThan(0); // else the regex is broken, not the tree
+    expect(parsers.filter((f) => !/\.test\.tsx?$/.test(f))).toEqual([]);
+  });
+
+  it('the module HAS a consumer now, and it is the receiving surface', () => {
+    // WAS: `expect(importers).toEqual([])` under the header "NOTHING IN THE TREE
+    // IMPORTS THE MECHANISM". `sdc/bpom.ts` was DECLARED INERT — an artifact
+    // that existed so the wiring batch had something to wire. It is not inert.
+    const src = sources();
+    const importers = Object.entries(src)
       .filter(([f]) => !f.endsWith('/sdc/bpom.ts'))
       .filter(([, text]) => text.includes("/bpom'"))
-      .map(([f]) => f);
-    expect(importers).toEqual([]);
+      .map(([f]) => f)
+      .sort();
+
+    // Derived rather than listed: exactly one NON-TEST importer, and it is the
+    // GR wizard. A second production importer means the lookup has spread to a
+    // surface nobody reviewed, which is worth failing over.
+    expect(importers.filter((f) => !/\.test\.tsx?$/.test(f))).toEqual([
+      '/src/components/v2-features/GRInspectionWizard.tsx',
+    ]);
+
+    // ⚠️ THE LIMIT OF THIS CHECK, STATED AND UNCHANGED FROM 2B-4a: Vite's
+    // `import.meta.glob` EXCLUDES THE MODULE IT IS WRITTEN IN, so this scan
+    // cannot see its own file — which is itself an importer. Recorded rather
+    // than worked around: a check that cannot see itself must say so, or the
+    // next reader takes its silence for coverage.
+    expect(src['/src/services/sdc/__tests__/bpomApplicability.test.ts']).toBeUndefined();
   });
 });
