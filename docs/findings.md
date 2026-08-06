@@ -2570,7 +2570,7 @@ exactly as designed and named its own cause.
 > DETECTS IT.** Both halves are now asserted — the code is clean AND the contract
 > still describes the breach — so the amendment closes this row deliberately.
 
-### ⚠️ `REQUIRED-OPENS-PRE-ANSWERED-01` *(new — **RULED AT THE #180 MERGE. BOOKED AS ITS OWN DISPATCH.** Not a cosmetic default.)*
+### ⚠️ `REQUIRED-OPENS-PRE-ANSWERED-01` — **CLOSED AT CP-3** *(booked here at the #180 merge; the batch that closed it is at the foot of this file)*
 
 **A BPOM check the system decides is REQUIRED opens with `Pass` already
 selected.** Observed in the browser on `ASN-2025-00302` / `RM-EMUL-9440`:
@@ -2587,7 +2587,7 @@ forward verbatim.
 | **The verdict** | ⚠️ **THE MECHANISM IS RIGHT; THE DEFAULT IS WRONG.** 2B-4b's gate correctly decides *whether the question is asked*. It does not, and was never scoped to, make anyone answer it. The two halves are separable and only the first shipped. |
 | **Why it did NOT ride this batch** | Fixing it **BLOCKS EVERY `REQUIRED` LINE UNTIL A HUMAN TICKS A BOX.** That is a workflow change with operational consequences for the receiving dock — not a default flipped in a diff. **It needs its own batch and its own smoke**, because the failure mode of getting it wrong is a warehouse that cannot post receipts. |
 | **Scope when it runs** | ⚠️ **`halalSealCheck` HAS THE IDENTICAL DEFECT** (`inferHalal(...) ? 'Pass' : undefined`) and must be in the same dispatch. Fixing one and not the other would leave a receiving form where one regulatory check demands an answer and its neighbour supplies one. |
-| **Status** | **BOOKED — its own dispatch** (operator, #180). Recorded at full weight so it is not later read as a cosmetic default and closed by someone changing a `useState` initialiser. |
+| **Status** | ✅ **CLOSED at CP-3** — its own dispatch, as ruled. Recorded at full weight so it would not later be read as a cosmetic default and closed by someone changing a `useState` initialiser; it was not. **Measured cost: 3 lines, 3 sources, one tick each — no dead end.** `halalSealCheck` went with it and blocked ZERO lines (`PRE-ANSWERED-HAS-NO-REACH-YET-01`). `visualCheck` / `packagingCheck` carry the same shape at a different size and are newly booked as `SEED-IS-AN-ANSWER-01`. |
 
 ### The wiring, and why the refusal is one branch and not two
 
@@ -2753,7 +2753,8 @@ is one a test invents.**
 `inferHalal` — its own batch, costed above · the **third ASN lane**, 3 of 18
 tenant-wrong, its own dispatch · `MAT-10046` / `MAT-10089`, two unbacked
 storefront pointers, no ruling · `REQUIRED-OPENS-PRE-ANSWERED-01`, RULED and BOOKED
-as its own dispatch (with `halalSealCheck`, the identical defect) · `MATERIALTYPE-CANNOT-SAY-HALB-01`, a recorded limit ·
+as its own dispatch (with `halalSealCheck`, the identical defect) — **✅ both CLOSED at CP-3** ·
+`MATERIALTYPE-CANNOT-SAY-HALB-01`, a recorded limit ·
 `C9-STALE-BY-FIX-01`, closes at the C9 amendment · `D-COMP-BPOM`, still
 unanswered — and now standing between an operator and two receivable lines.
 
@@ -2951,3 +2952,244 @@ README still said `7.1–7.12`.
 
 The **new SHA** and the **three paths** (§ the citation block): the contract, the types module, and
 the derived field list. **A-15…A-21 are a new ratification** even though the schema did not move.
+
+---
+
+## CP-3 · `REQUIRED-OPENS-PRE-ANSWERED-01` — **THE FORM ANSWERED THE QUESTION IT HAD JUST DECIDED TO ASK**
+
+2B-4b made the system read the material master and decide that a received lot
+**requires** a BPOM check. The same commit's form then **ticked `Pass` on it**
+before an inspector looked. `bpomOf` replaced `inferBpom`, correctly — and the
+line right underneath it kept the old seed verbatim:
+
+```ts
+bpomLotCheck: bpom.ok && bpom.applicable ? 'Pass' : undefined
+```
+
+> **A DERIVED FACT HAND-STAMPED, ON A REGULATORY CONTROL — THE THING THIS
+> PLATFORM REFUSES EVERYWHERE ELSE.** *(operator ruling, #180 merge)*
+
+**The mechanism was right and the default was wrong**, and the two were
+separable: 2B-4b shipped the half that decides *whether the question is asked*
+and left the half that makes someone *answer it*. This batch is that second half.
+
+### ⚠️ THE GATE WAS ALREADY WRITTEN. IT COULD NEVER FIRE.
+
+`qualityValid` is **byte-identical** to what #180 shipped:
+
+```ts
+if (l.halalRequired && !l.halalSealCheck) return false;
+if (l.bpom.applicable && !l.bpomLotCheck) return false;
+```
+
+Both clauses were present, both correct, and **neither could ever be reached**,
+because the draft builders stamped an answer into every line the clauses applied
+to. **A guard is only a guard over a value that can be absent** — the same
+sentence 2f-a wrote about quantities, one field over and wearing regulatory
+clothes. The fix is upstream, in the seed; what changed at the gate is that it
+can now say no.
+
+This is a distinct failure shape from the one 2B-4b closed, and it deserves its
+own name: **not a gate that fails open, but a gate that cannot fail at all**,
+because something upstream guarantees its condition is never met. A pin on
+`qualityValid` would have been green throughout. A pin on the *rendered form*
+would not have been — which is where the new specs sit.
+
+### THE BLAST RADIUS, MEASURED BEFORE THE FIX WAS WRITTEN
+
+The dispatch asked how many lines this blocks, on which fixtures, and whether
+any reachable path becomes a dead end. Derived from the wizard's own source
+rules (`ELIGIBLE_STATUSES` ∪ `RECEIVABLE_ASN_STATUSES`), not from a guess:
+
+**8 receivable GR sources · 9 lines.**
+
+| Source | Material | Before | After |
+|---|---|---|---|
+| SHIP `ASN-2026-012` | `PK-PETB-8801` | not applicable | unchanged |
+| SHIP `ASN-2026-013` | `PK-PETB-8802` | not applicable | unchanged |
+| SHIP `ASN-2026-014` | `RM-COCO-8200` | **refuses** (2B-4b) | unchanged |
+| SHIP `ASN-2026-015` | `FR-WARD-4410` | ⚠️ **pre-ticked `Pass`** | 1 tick |
+| ASN `ASN-2025-00211` | `FR-ROUD-4470` | ⚠️ **pre-ticked `Pass`** | 1 tick |
+| ASN `ASN-2025-00211` | `PK-PETB-8804` | not applicable | unchanged |
+| ASN `ASN-2025-00198` | `PK-ALCP-2450` | not applicable | unchanged |
+| ASN `ASN-2025-00301` | `RM-PSTN-7150` | **refuses** (2B-4b) | unchanged |
+| ASN `ASN-2025-00302` | `RM-EMUL-9440` | ⚠️ **pre-ticked `Pass`** | 1 tick |
+
+**THREE LINES, ON THREE SOURCES, ONE TICK EACH.** Including `RM-EMUL-9440` —
+the row this whole arc fought for, on the PO whose linked `doc-201` is a BPOM
+Notification, and the row the browser observation was recorded against.
+
+**NO REACHABLE PATH BECOMES A DEAD END.** Every newly-blocked line renders an
+answerable `Pass`/`Fail` control; five of the eight sources are untouched; three
+need one tick. **A gate nobody can pass is not a gate**, and this one is passed
+by doing the job — verified end to end in the browser below, not argued.
+
+⚠️ **THE TWO DEAD ENDS THAT DO EXIST ARE NOT OURS AND ARE NOT TOUCHED.**
+`ASN-2026-014` / `RM-COCO-8200` and `ASN-2025-00301` / `RM-PSTN-7150` cannot be
+received at all today. That is **2B-4b's fail-closed refusal working as
+designed** — an undetermined applicability, correctly blocking — and it is
+recorded here only so that nobody later reads "2 of 8 sources unreceivable" off
+this branch and bills it to this batch. It clears when `D-COMP-BPOM` is ratified.
+
+### `PRE-ANSWERED-HAS-NO-REACH-YET-01` *(new — the halal half, and it blocks ZERO lines)*
+
+`halalSealCheck` carried the identical seed and was in scope for the identical
+reason: fixing one would leave a receiving form where one regulatory check
+demands an answer and its neighbour supplies one.
+
+**It blocks nothing today, and that is measured rather than assumed.**
+`inferHalal` fires on **four** fixture lines — `shp-004` (×2, In Transit),
+`shp-011` (Customs Clearance), `shp-016` (Delivered) — and **not one of them is
+a receivable GR source**, since only `At Dock` / `Unloading` are eligible. The
+halal pre-tick was a live defect **with no reach**.
+
+> **THE CHEAPEST MOMENT TO CLOSE A DEFECT IS WHILE ITS BLAST RADIUS IS STILL
+> ZERO.** `INFERHALAL-READS-PROSE-01`'s arc exists to give this mechanism reach.
+> Had the seed still been there when it landed, the check would have started
+> answering real questions on real lots, and the batch that gave it reach would
+> have been blamed for a defect it merely exposed.
+
+The new spec pins this as a **pair**: zero receivable hits AND non-zero total
+hits. The first alone would also pass if `inferHalal` were simply broken. When
+it goes red nothing is wrong — a fixture line has become receivable with `halal`
+in its prose, the halal gate has acquired live reach for the first time, and it
+needs the operator smoke the BPOM gate just got.
+
+### THE MIDDLE STATE HAD NEVER RENDERED
+
+Three states have always existed. Only two had ever been on screen:
+
+| | Shape | Next |
+|---|---|---|
+| **NOT REQUIRED** | no row at all | enabled |
+| **REQUIRED, UNANSWERED** | row · nothing selected · marker | ⚠️ **disabled** |
+| **REQUIRED, ANSWERED** | row · a selection · no marker | enabled |
+| *(REFUSED — 2B-4b, unchanged)* | `role="alert"` block · **no control** | disabled |
+
+**NO FOURTH TOKEN WAS INVENTED.** No `'Pending'`, no third radio, no `null`
+sentinel — **absence is absence**, and the states are told apart by the SHAPE of
+the surface. A third radio option would have been the fastest way to make
+"nobody has answered" look like an answer again, which is the defect with an
+extra step.
+
+⚠️ **THE UNANSWERED MARKER IS `role="status"`, NOT `role="alert"` — and the BPOM
+refusal keeps `role="alert"`.** They are different facts. A refusal is a **fault
+in the data**: the master cannot answer, and someone must go fix a row. An
+unanswered check is an **outstanding obligation**: nothing is wrong, a clerk
+simply has not got there yet. Announcing the second as an error tells a warehouse
+supervisor they have done something wrong by opening a form. Two facts, two
+announcements — a mutation probe (M6) confirms conflating them goes red.
+
+### ONE CONTROL, BOTH CHECKS — so they cannot drift apart again
+
+The halal check and the BPOM check were two hand-rolled radio pairs with two
+hand-rolled seeds, **and that is exactly how one of them ended up demanding an
+answer while the other supplied one.** They now render through a single
+`RegulatoryCheck` component. "Unanswered looks like this" is one fact in one
+place, and the two checks share ONE i18n sentence rather than two — deliberately,
+because giving them separate wording is the first step back toward them behaving
+separately.
+
+The radios also gained `aria-label` (a line renders up to four `Pass`/`Fail`
+pairs; an accessible name of just "Pass" is ambiguous four times over) and
+`aria-required`. The row only renders when the check applies, so `aria-required`
+is never a lie: a check that does not apply has no control to be required.
+
+### ⚠️ REPORTED, NOT FIXED — `SEED-IS-AN-ANSWER-01` on the NON-regulatory checks
+
+`visualCheck` and `packagingCheck` **still open pre-ticked `Pass`**, on every one
+of the nine lines. Observed in the browser this batch: `vis-0`/`Pass`
+`checked: true`, `pkg-0`/`Pass` `checked: true`.
+
+It is **the same shape**, and it is left because it is **not the same size**.
+This dispatch scoped the regulatory pair — the controls where a stamped answer
+is a compliance claim nobody made. Removing these two seeds would block **all
+nine lines, two ticks each, 18 ticks across every receipt the dock posts**,
+against a defect that is a data-quality concern rather than a regulatory one.
+
+> **THAT IS AN OPERATOR'S CALL AND NOT A BUILDER'S.** It is filed at full weight
+> so it cannot later be read as an oversight, and costed so the decision can be
+> made from a number instead of a principle. **Recommendation: it should ride
+> its own batch, with its own dock smoke** — the failure mode of getting it
+> wrong is the same one that kept this batch off 2B-4b.
+
+### Mutation-verified — eight probes, seven detected, plus a control
+
+| Probe | What it restores or breaks | Detected |
+|---|---|---|
+| **M1** | the BPOM pre-tick — **THE defect** | ✅ 5 specs red |
+| **M2** | the halal pre-tick, both builders | ✅ 1 red |
+| **M3** | marker renders always, even when answered | ✅ 2 red |
+| **M4** | the gate accepts only `Pass` | ✅ 1 red |
+| **M5** | `aria-required` dropped | ✅ 1 red |
+| **M6** | marker becomes `role="alert"` | ✅ 2 red |
+| **M7** | the halal clause deleted from `qualityValid` | ✅ 1 red |
+| **M8 · CONTROL** | a comment reworded — behaviour untouched | ✅ **stayed green** |
+
+⚠️ **M4 IS THE PROBE THAT MATTERS MOST, AND IT IS NOT OBVIOUS.** A gate that
+clears only on `Pass` would be **the same fabrication wearing a workflow** —
+quietly redefining "record what you found" as "record that it was fine". An
+inspector who finds a bad lot must be able to say so and move on; the receipt
+then rolls up Rejected, which is the point. `FAIL UN-BLOCKS IT TOO` is the spec,
+and it is load-bearing.
+
+⚠️ **M5 FAILED TO APPLY TWICE BEFORE IT DETECTED** — the probe's regex anchored
+on `$` against CRLF line endings and silently matched nothing, so the run came
+back green and *looked* like a hole in the suite. `PROBE-NEEDS-PROBING-01`, a
+fourth appearance and a new variety: **a probe that does not mutate is
+indistinguishable from a suite that does not detect.** The same broken-grep run
+also made two passing probes print nothing at all, which is how it was caught.
+**Every probe here was re-confirmed to have actually changed the file.**
+
+### Inverted, never deleted — the pin that carries the swap
+
+`an APPLICABLE line asks for the check, and the wizard proceeds` ended
+`expect(next()).toBeEnabled()`. **It was green, and the behaviour it described
+was the defect** — the form had already answered the check. It now ends
+`toBeDisabled()`, **and the tick that un-blocks it is asserted in the same
+spec**, so the inversion cannot be read as "the gate blocks everything now".
+
+**+7 specs.** Six on the BPOM path (the defect directly — neither radio checked
+on open; the lock; `Fail` un-blocks; the three states; `aria-required`), one on
+the constructed halal path, plus the measured-reach pin.
+
+### Browser QA — built bundle, EN + ID, console 0/0
+
+Served from `dist/` on a **fresh port**: a stale preview server was already
+holding the usual one and answering `200` with older bytes. Bundle identity
+confirmed by grepping both new strings out of the served chunk before trusting a
+single screenshot — **cache-bust or the result is a lie.**
+
+- ⚠️ **THE OBSERVATION, INVERTED.** `ASN-2025-00302` / `RM-EMUL-9440`, the row
+  the finding was recorded against: `bpom-0`, value `Pass`, **`checked: false`**,
+  `aria-required="true"`, marker `role="status"`, **Next disabled**. The
+  original observation read `checked: true`.
+- **ID** — `PELACAKAN LOT BPOM`, both radios blank, marker reads *"Belum
+  dijawab… sampai inspektur memilih Lulus atau Gagal."* The sentence names
+  **Lulus / Gagal**, which is what the radios actually render in ID
+  (`priorityLabel.ENUM_ID`) — copy that names a button the user cannot find is
+  its own small lie.
+- **EN** — `ASN-2026-015` / `FR-WARD-4410`, the shipment lane: same shape, same
+  block.
+- **NOT REQUIRED, verified distinct** — `ASN-2026-012` / `PK-PETB-8801`: no row,
+  no marker, no refusal, Next **enabled**.
+- ✅ **OPERATOR SMOKE — THE DOCK CAN STILL POST.** Full clerk path in EN: select
+  → receipt → tick BPOM `Pass` → derived `Approved` → **Create GR**. Result:
+  **`GR-2026-901`, disposition Accept, Posted to SAP, `MAT-DOC-…` assigned.**
+  One tick between the old flow and the new one.
+- **Console: 0 errors, 0 warnings.**
+
+### Constraints discharged, in writing
+
+- **No fabricated default anywhere.** Both seeds are `undefined`; no replacement
+  token was invented.
+- **The three states are distinguishable**, and the middle one now renders —
+  verified in the browser in both languages, pinned by spec, probed by M3.
+- ⚠️ **`inferHalal`'s APPLICABILITY MECHANISM IS UNTOUCHED.** Its prose parse is
+  still wrong in the ways `INFERHALAL-READS-PROSE-01` measures; only the
+  fabricated ANSWER is gone. Whether the check is asked stays its own arc.
+- **Browser QA in EN and ID + an operator smoke** — above.
+- **C9 pinned at `af7f0b4`** — no contract byte touched; this batch changes no
+  declared field, no master row, no schema.
+- **FLOOR 2219 → 2226/184.** `npm run gates` green; `scripts/floor.json` bumped
+  as the gate's note asked.

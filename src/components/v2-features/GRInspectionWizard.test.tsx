@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, cleanup } from '@testing-library/react';
 import { renderWithProviders } from '../../test/test-utils';
 import { mockShipments } from '../../data/mockShipments';
 import { asnStore } from '../../services/data/mock/stores/asnStore';
@@ -209,10 +209,20 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
     expect(next()).toBeEnabled();
   });
 
-  it('an APPLICABLE line asks for the check, and the wizard proceeds', async () => {
+  // ⚠️ INVERTED AT CP-3 (`REQUIRED-OPENS-PRE-ANSWERED-01`), NOT DELETED. This
+  // spec used to end `expect(next()).toBeEnabled()` — and it was GREEN, because
+  // the form had already answered the check for the inspector. The assertion was
+  // true and the behaviour it described was the defect. It now ends disabled,
+  // and the tick that un-blocks it is asserted in the same spec so the inversion
+  // cannot be read as "the gate blocks everything now".
+  it('⚠️ an APPLICABLE line asks for the check — and the wizard STOPS until it is answered', async () => {
     const next = await openQuality(REQUIRES!.asnNumber);
     expect(screen.getByText('BPOM Lot Tracking')).toBeInTheDocument();
     expect(screen.queryByTestId('gr-bpom-refusal-0')).not.toBeInTheDocument();
+    // The question is asked, and NOT answered.
+    expect(next()).toBeDisabled();
+    // A human answers it, and only then does the wizard move.
+    fireEvent.click(screen.getByRole('radio', { name: /BPOM Lot Tracking.*Pass/ }));
     expect(next()).toBeEnabled();
   });
 
@@ -330,5 +340,195 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
     fireEvent.click(next());
     fireEvent.click(next());
     expect(screen.getAllByText('BPOM Lot Tracking').length).toBeGreaterThan(0);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// CP-3 · `REQUIRED-OPENS-PRE-ANSWERED-01` — A REQUIRED CHECK OPENS UNANSWERED.
+//
+// 2B-4b made the system decide, from the material master, that a lot needs a
+// BPOM check. The form then TICKED PASS ON IT before an inspector looked —
+// `inferBpom(...) ? 'Pass' : undefined`, carried forward verbatim into
+// `bpomOf(...)`. A derived fact hand-stamped, on a regulatory control.
+//
+// ⚠️ WHAT THESE SPECS ARE FOR IS THE MIDDLE STATE. There have always been three
+// — NOT REQUIRED, REQUIRED AND UNANSWERED, REQUIRED AND ANSWERED — and the
+// second one had never rendered in the product's life, so nothing could pin it.
+// The lock is not "a marker appears"; the lock is that the wizard STOPS.
+// ────────────────────────────────────────────────────────────────────────────
+
+/** The Pass radio of a named check, disambiguated by its own accessible name. */
+const radioFor = (check: string, v: 'Pass' | 'Fail') =>
+  screen.getByRole('radio', { name: new RegExp(`${check}.*${v}`) });
+
+describe('GRInspectionWizard — a required check opens UNANSWERED, and blocks', () => {
+  it('⚠️ THE DEFECT, DIRECTLY — neither BPOM radio is checked on open', async () => {
+    // The observed browser fact, inverted: `bpom-0`, value `Pass`,
+    // `checked: true`, before anyone touched anything. If a seed ever comes
+    // back, THIS is the spec that names it, without any reasoning about gates.
+    await openQuality(REQUIRES!.asnNumber);
+    expect(radioFor('BPOM Lot Tracking', 'Pass')).not.toBeChecked();
+    expect(radioFor('BPOM Lot Tracking', 'Fail')).not.toBeChecked();
+  });
+
+  it('⚠️ THE LOCK — an unanswered required check DISABLES Next, on the quality step', async () => {
+    // The load-bearing assertion. The marker below is chrome; this is the fact.
+    const next = await openQuality(REQUIRES!.asnNumber);
+    // Proof we are blocked HERE and not by some earlier step: the quality
+    // surface is on screen, and no refusal is in play (this line resolves fine).
+    expect(screen.getByText('BPOM Lot Tracking')).toBeInTheDocument();
+    expect(screen.queryByTestId('gr-bpom-refusal-0')).not.toBeInTheDocument();
+    expect(next()).toBeDisabled();
+  });
+
+  it('⚠️ FAIL UN-BLOCKS IT TOO — the gate demands an ANSWER, not a PASS', async () => {
+    // The failure mode this guards against is subtle and worse than the one it
+    // replaces: a gate that only clears on `Pass` would be the SAME fabrication
+    // wearing a workflow, quietly making "record what you found" mean "record
+    // that it was fine". An inspector who finds a bad lot must be able to say so
+    // and move on — the receipt then rolls up Rejected, which is the point.
+    const next = await openQuality(REQUIRES!.asnNumber);
+    expect(next()).toBeDisabled();
+    fireEvent.click(radioFor('BPOM Lot Tracking', 'Fail'));
+    expect(next()).toBeEnabled();
+  });
+
+  it('THE THREE STATES ARE TOLD APART BY SHAPE — not by a fourth token', async () => {
+    // NOT REQUIRED: no row, no marker, nothing owed. Distinguishable from
+    // REQUIRED-AND-UNANSWERED by the ABSENCE of the control, which is why no
+    // 'Pending' / 'N/A' token was invented for the middle state — a third radio
+    // option would have made the two look alike again.
+    const notRequired = await openQuality(NOT_REQUIRED!.asnNumber);
+    expect(screen.queryByText('BPOM Lot Tracking')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('gr-bpom-unanswered-0')).not.toBeInTheDocument();
+    expect(notRequired()).toBeEnabled();
+    cleanup();
+
+    // REQUIRED AND UNANSWERED: the control, nothing selected, a marker, blocked.
+    const required = await openQuality(REQUIRES!.asnNumber);
+    const marker = screen.getByTestId('gr-bpom-unanswered-0');
+    expect(marker).toBeInTheDocument();
+    // Polite, NOT an alert — an outstanding question is not a fault. The BPOM
+    // *refusal* keeps role="alert"; conflating them would tell a clerk they had
+    // done something wrong by opening the form.
+    expect(marker).toHaveAttribute('role', 'status');
+    expect(marker.textContent).toMatch(/not answered/i);
+    expect(required()).toBeDisabled();
+
+    // REQUIRED AND ANSWERED: the marker goes, the answer stays, the wizard moves.
+    fireEvent.click(radioFor('BPOM Lot Tracking', 'Pass'));
+    expect(screen.queryByTestId('gr-bpom-unanswered-0')).not.toBeInTheDocument();
+    expect(radioFor('BPOM Lot Tracking', 'Pass')).toBeChecked();
+    expect(required()).toBeEnabled();
+  });
+
+  it('the required control says so to a screen reader — aria-required, on both options', async () => {
+    await openQuality(REQUIRES!.asnNumber);
+    expect(radioFor('BPOM Lot Tracking', 'Pass')).toHaveAttribute('aria-required', 'true');
+    expect(radioFor('BPOM Lot Tracking', 'Fail')).toHaveAttribute('aria-required', 'true');
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// THE HALAL HALF — identical defect, identical fix, and NO NATURAL REACH.
+//
+// `halalSealCheck` carried the same fabricated seed (`inferHalal(...) ? 'Pass'
+// : undefined`). Fixing one and not the other would have left a receiving form
+// where one regulatory check demands an answer and its neighbour supplies one.
+//
+// ⚠️ IT BLOCKS ZERO LINES TODAY, AND THAT IS MEASURED BELOW RATHER THAN
+// ASSUMED. `inferHalal` reads `description` prose, and every fixture line whose
+// prose trips it sits on a shipment in a NON-receivable status. So these specs
+// must CONSTRUCT their subject — and the construction is honest, because
+// `INFERHALAL-READS-PROSE-01`'s arc will give the mechanism reach, at which
+// point the seed would have started answering real questions.
+// ────────────────────────────────────────────────────────────────────────────
+
+const inferHalal = (d: string) => d.toLowerCase().includes('halal');
+
+describe('GRInspectionWizard — the halal check carries the identical rule', () => {
+  it('⚠️ THE REACH, MEASURED — the halal check is LIVE but unreachable from a receivable line', () => {
+    // A pin that explains its own green-to-red. It is NOT asserting the halal
+    // check is dead: the second half proves the mechanism fires on real fixture
+    // prose. It asserts that no RECEIVABLE line reaches it today.
+    //
+    // WHEN THIS GOES RED, nothing is broken — a fixture line has become
+    // receivable with 'halal' in its description, the halal gate has just
+    // acquired live reach for the first time, and it needs the operator smoke
+    // the BPOM gate got. Update the count and record that the reach changed.
+    const eligible = mockShipments.filter(
+      (s) => s.status === 'At Dock' || s.status === 'Unloading',
+    );
+    const seen = new Set(eligible.map((s) => s.asnNumber));
+    const receivableAsns = [...asnStore.all()].filter(
+      (a) =>
+        ['Submitted', 'In Transit', 'Delivered'].includes(a.status) &&
+        !seen.has(a.asnNumber),
+    );
+    const receivableHits =
+      eligible.flatMap((s) => s.lineItems).filter((li) => inferHalal(li.description)).length +
+      receivableAsns.flatMap((a) => a.lineItems).filter((li) => inferHalal(li.description)).length;
+    expect(receivableHits, 'the halal gate has acquired reach — smoke it').toBe(0);
+
+    // ...and the mechanism is not dead, it is merely out of reach. Without this
+    // half, the assertion above would also pass if `inferHalal` were broken.
+    const anyHits = mockShipments
+      .flatMap((s) => s.lineItems)
+      .filter((li) => inferHalal(li.description)).length;
+    expect(anyHits, 'inferHalal matches nothing at all — the pin is vacuous').toBeGreaterThan(0);
+  });
+
+  it('⚠️ CONSTRUCTED — a halal-required line opens unanswered and BLOCKS, exactly like BPOM', async () => {
+    // The material is chosen so BPOM is determined NOT_APPLICABLE: the halal
+    // check is then the ONLY thing outstanding, and a disabled Next can mean
+    // nothing else.
+    const CODE = 'PK-ALCP-2450';
+    const b = bpomOf(CODE);
+    expect(b.ok && !b.applicable, `${CODE} must be BPOM-determined not-applicable`).toBe(true);
+
+    asnStore.reset();
+    asnStore.add({
+      ...[...asnStore.all()][0],
+      asnNumber: 'ASN-HALAL-ONLY',
+      status: 'Submitted',
+      lineItems: [
+        {
+          materialCode: CODE,
+          description: 'Aluminium Closure 24/410 — Halal certified line',
+          orderedQty: 10,
+          shippedQty: 10,
+          lotNumber: 'LOT-H',
+        },
+      ],
+    });
+
+    renderWithProviders(
+      <GRInspectionWizard
+        onClose={() => {}}
+        onComplete={() => {}}
+        shipments={[]}
+        asns={[...asnStore.all()]}
+      />,
+    );
+    fireEvent.click(await screen.findByText('ASN-HALAL-ONLY'));
+    const next = () => screen.getByRole('button', { name: /Next/i });
+    fireEvent.click(next());
+    fireEvent.click(next());
+
+    // Asked, unanswered, blocked — and no BPOM control in sight, so the block is
+    // unambiguously the halal one.
+    expect(screen.getByText('Halal Seal Check')).toBeInTheDocument();
+    expect(screen.queryByText('BPOM Lot Tracking')).not.toBeInTheDocument();
+    expect(radioFor('Halal Seal Check', 'Pass')).not.toBeChecked();
+    expect(next()).toBeDisabled();
+
+    // SAME marker, SAME sentence as the BPOM check — one rule, not two.
+    const marker = screen.getByTestId('gr-halal-unanswered-0');
+    expect(marker).toHaveAttribute('role', 'status');
+    expect(marker.textContent).toMatch(/not answered/i);
+
+    fireEvent.click(radioFor('Halal Seal Check', 'Pass'));
+    expect(screen.queryByTestId('gr-halal-unanswered-0')).not.toBeInTheDocument();
+    expect(next()).toBeEnabled();
   });
 });

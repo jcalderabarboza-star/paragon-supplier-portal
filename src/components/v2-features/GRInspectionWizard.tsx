@@ -82,6 +82,14 @@ interface LineDraft {
   visualCheck: 'Pass' | 'Fail';
   packagingCheck: 'Pass' | 'Fail' | 'N/A';
   halalRequired: boolean;
+  /**
+   * The halal seal answer, or ABSENT because nobody has given one.
+   *
+   * ⚠️ The `?` is the whole point and it always was — `'Pass' | 'Fail'` has no
+   * room for *unanswered*, so `undefined` IS the third state. What was wrong was
+   * never the type; it was that the builders never let `undefined` survive
+   * contact with a required line (`REQUIRED-OPENS-PRE-ANSWERED-01`).
+   */
   halalSealCheck?: 'Pass' | 'Fail';
   /**
    * The BPOM gate, read ONCE from the material master (`bpomOf`).
@@ -94,6 +102,8 @@ interface LineDraft {
    * and `qualityValid` blocks on a refusal.
    */
   bpom: BpomOutcome;
+  /** The BPOM lot answer, or ABSENT because nobody has given one — see
+   *  `halalSealCheck` above and `seedBpom` below. */
   bpomLotCheck?: 'Pass' | 'Fail';
   labSampleRequired: boolean;
   labRequestId?: string;
@@ -146,6 +156,82 @@ const radioCls = 'flex items-center gap-1.5 text-sm text-text-primary cursor-poi
 
 const formatNumber = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 
+// ── CP-3 · `REQUIRED-OPENS-PRE-ANSWERED-01` — ONE control, BOTH regulatory
+// checks ─────────────────────────────────────────────────────────────────────
+// The halal check and the BPOM check were two hand-rolled radio pairs with two
+// hand-rolled seeds, and that is precisely how one of them ended up demanding an
+// answer while its neighbour supplied one. They now render through a SINGLE
+// component, so "unanswered looks like this" is one fact in one place and a
+// future check cannot quietly re-acquire a default.
+//
+// ⚠️ **THE UNANSWERED MARKER IS NOT AN ERROR MESSAGE, and its role says so.**
+// `role="status"` (polite), not `role="alert"`: nobody has done anything wrong
+// on open — a required question is simply outstanding. The BPOM *refusal* below
+// keeps `role="alert"`, because that one IS a fault in the data. Two different
+// facts, two different announcements.
+//
+// The blocking is NOT here. `qualityValid` blocks, as it already did; this
+// component only makes the blocked state legible instead of a silently blank
+// pair of radios.
+interface RegulatoryCheckProps {
+  /** Radio group name — unique per line (`halal-3`, `bpom-3`). */
+  name: string;
+  label: string;
+  /** The recorded answer, or `undefined` for the honest absence of one. */
+  value?: 'Pass' | 'Fail';
+  onChange: (v: 'Pass' | 'Fail') => void;
+  /** Display resolver for the Pass/Fail tokens — the STORED value stays EN. */
+  el: (token: string) => string;
+  unansweredText: string;
+  testId: string;
+}
+
+const RegulatoryCheck: React.FC<RegulatoryCheckProps> = ({
+  name,
+  label,
+  value,
+  onChange,
+  el,
+  unansweredText,
+  testId,
+}) => (
+  <div>
+    {labelFor(label)}
+    <div className="flex gap-4">
+      {(['Pass', 'Fail'] as const).map((v) => (
+        <label key={v} className={radioCls}>
+          <input
+            type="radio"
+            name={name}
+            value={v}
+            // A line renders up to four Pass/Fail pairs, so an accessible name of
+            // just "Pass" is ambiguous four times over — to a screen reader and
+            // to a spec alike. Qualified by the check it belongs to; the visible
+            // word is still contained in it (WCAG 2.5.3).
+            aria-label={`${label} — ${el(v)}`}
+            // REQUIRED, and machine-readable as such. The row only renders when
+            // the check applies, so `aria-required` is never a lie: a check that
+            // does not apply has no control to be required.
+            aria-required
+            checked={value === v}
+            onChange={() => onChange(v)}
+          />
+          {el(v)}
+        </label>
+      ))}
+    </div>
+    {value === undefined && (
+      <div
+        data-testid={testId}
+        role="status"
+        className="mt-1 text-[11px] text-warning-hover"
+      >
+        {unansweredText}
+      </div>
+    )}
+  </div>
+);
+
 // ── ⚠️ `inferHalal` SURVIVES THIS BATCH, AND IT IS THE SAME DEFECT ───────────
 // `INFERHALAL-READS-PROSE-01`. `inferBpom` is gone from this file; its twin is
 // not, and it is REPORTED rather than folded in silently (2B-4b dispatch).
@@ -169,25 +255,51 @@ const formatNumber = (n: number) => new Intl.NumberFormat('id-ID').format(n);
 // is a 2B-4a-shaped batch, and doing it inside a wiring batch would be exactly
 // the decision-smuggling `MG-NO-EMULSIFIER-GROUP-01` was held back from.
 // See `docs/findings.md` → `INFERHALAL-READS-PROSE-01`.
+//
+// ── ⚠️ STILL TRUE AT CP-3, AND DELIBERATELY UNTOUCHED ───────────────────────
+// `REQUIRED-OPENS-PRE-ANSWERED-01` removed the fabricated `'Pass'` this function
+// used to hand its callers. It did NOT touch the function. WHETHER the halal
+// check is asked remains this prose parse's decision, wrong in the ways measured
+// above; WHAT the answer is is now nobody's decision but an inspector's. Two
+// separable defects, and only the second one was in scope.
+//
+// The consequence, measured and not assumed: `inferHalal` fires on FOUR fixture
+// lines and NONE of them is a receivable GR source (`shp-004` In Transit ×2,
+// `shp-011` Customs Clearance, `shp-016` Delivered — only 'At Dock' /
+// 'Unloading' are eligible). So the halal pre-tick blocked ZERO lines today.
+// Fixing it now costs nothing and closes the hole BEFORE the applicability arc
+// gives it reach — see `PRE-ANSWERED-HAS-NO-REACH-YET-01`.
 const inferHalal = (description: string): boolean => {
   const d = description.toLowerCase();
   return d.includes('halal');
 };
 
 /**
- * The BPOM gate for one line, plus its seeded check value.
+ * The BPOM gate for one line. **NO seeded check value — that is the fix.**
  *
  * ONE read, shared by both draft builders — the shipment lane and the ASN lane
  * cannot disagree about whether a material needs a BPOM lot check, because
  * neither of them decides it.
  *
- * ⚠️ The seeded `'Pass'` is PRE-EXISTING BEHAVIOUR, carried forward unchanged
- * and deliberately not repaired here — see `REQUIRED-OPENS-PRE-ANSWERED-01`.
+ * ⚠️ **`REQUIRED-OPENS-PRE-ANSWERED-01` CLOSED HERE.** This returned
+ * `bpomLotCheck: bpom.ok && bpom.applicable ? 'Pass' : undefined` — so the
+ * moment the master ruled a lot APPLICABLE, the form ANSWERED the question it
+ * had just decided to ask. A derived fact hand-stamped, on a regulatory
+ * control. `bpomLotCheck` now starts absent and STAYS absent until a human
+ * ticks it; `qualityValid` already blocked on `applicable && !bpomLotCheck`,
+ * so removing the stamp is what activates a gate that was written correctly
+ * and could never fire.
+ *
+ * **THE SEED IS NOT REPLACED BY A DIFFERENT SEED.** There is no `'Pending'`
+ * token, no third radio option, no `null` sentinel — absence is absence, and
+ * the three states are told apart by the SHAPE of the surface: no row (not
+ * required) · row with nothing selected + an unanswered marker (required,
+ * unanswered) · row with a selection (required, answered).
  */
-const seedBpom = (materialCode: string): Pick<LineDraft, 'bpom' | 'bpomLotCheck'> => {
-  const bpom = bpomOf(materialCode);
-  return { bpom, bpomLotCheck: bpom.ok && bpom.applicable ? 'Pass' : undefined };
-};
+const seedBpom = (materialCode: string): Pick<LineDraft, 'bpom' | 'bpomLotCheck'> => ({
+  bpom: bpomOf(materialCode),
+  bpomLotCheck: undefined,
+});
 
 const buildDraftFromShipment = (s: Shipment): LineDraft[] =>
   s.lineItems.map((li) => ({
@@ -200,7 +312,10 @@ const buildDraftFromShipment = (s: Shipment): LineDraft[] =>
     visualCheck: 'Pass',
     packagingCheck: 'Pass',
     halalRequired: inferHalal(li.description),
-    halalSealCheck: inferHalal(li.description) ? 'Pass' : undefined,
+    // `REQUIRED-OPENS-PRE-ANSWERED-01`, the halal half — see `seedBpom`. The
+    // applicability call (`inferHalal`) is UNCHANGED and still its own arc; only
+    // the fabricated ANSWER is gone.
+    halalSealCheck: undefined,
     ...seedBpom(li.materialCode),
     labSampleRequired: false,
   }));
@@ -216,7 +331,7 @@ const buildDraftFromAsn = (a: ASN): LineDraft[] =>
     visualCheck: 'Pass',
     packagingCheck: 'Pass',
     halalRequired: inferHalal(li.description),
-    halalSealCheck: inferHalal(li.description) ? 'Pass' : undefined,
+    halalSealCheck: undefined,
     ...seedBpom(li.materialCode),
     labSampleRequired: false,
   }));
@@ -413,6 +528,15 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   // Now an absent determination BLOCKS. `!l.bpom.ok` covers both refusals —
   // the master does not name the code, and the master names it and records no
   // determination — with ONE branch, so neither can be given a way through.
+  //
+  // ── CP-3 · `REQUIRED-OPENS-PRE-ANSWERED-01` — NOT A LINE CHANGED HERE ──────
+  // ⚠️ **THIS BLOCK IS BYTE-IDENTICAL TO WHAT 2B-4b SHIPPED, AND THAT IS THE
+  // FINDING.** The two clauses that make a required-and-unanswered check block
+  // — `halalRequired && !halalSealCheck`, `bpom.applicable && !bpomLotCheck` —
+  // were already here, already correct, and COULD NOT FIRE, because the draft
+  // builders stamped an answer into every line they applied to. A gate is only
+  // a gate over a value that can be absent. The fix was upstream, in the seed;
+  // what changed at this line is that it can now say no.
   const qualityValid = lines.every((l) => {
     if (!l.visualCheck || !l.packagingCheck) return false;
     if (l.halalRequired && !l.halalSealCheck) return false;
@@ -785,43 +909,33 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   ))}
                 </div>
               </div>
+              {/* THE THREE STATES, and they are told apart by SHAPE:
+                  · NOT REQUIRED           → no row at all
+                  · REQUIRED, UNANSWERED   → row, nothing selected, marker
+                  · REQUIRED, ANSWERED     → row, a selection, no marker
+                  Neither check opens with an answer (`REQUIRED-OPENS-PRE-
+                  ANSWERED-01`); both block `qualityValid` until ticked. */}
               {l.halalRequired && (
-                <div>
-                  {labelFor(t('goodsReceipt.wizard.field.halalSealCheck'))}
-                  <div className="flex gap-4">
-                    {(['Pass', 'Fail'] as const).map((v) => (
-                      <label key={v} className={radioCls}>
-                        <input
-                          type="radio"
-                          name={`halal-${i}`}
-                          value={v}
-                          checked={l.halalSealCheck === v}
-                          onChange={() => updateLine(i, { halalSealCheck: v })}
-                        />
-                        {el(v)}
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                <RegulatoryCheck
+                  name={`halal-${i}`}
+                  label={t('goodsReceipt.wizard.field.halalSealCheck')}
+                  value={l.halalSealCheck}
+                  onChange={(v) => updateLine(i, { halalSealCheck: v })}
+                  el={el}
+                  unansweredText={t('goodsReceipt.wizard.check.unanswered')}
+                  testId={`gr-halal-unanswered-${i}`}
+                />
               )}
               {l.bpom.ok && l.bpom.applicable && (
-                <div>
-                  {labelFor(t('goodsReceipt.wizard.field.bpomLotTracking'))}
-                  <div className="flex gap-4">
-                    {(['Pass', 'Fail'] as const).map((v) => (
-                      <label key={v} className={radioCls}>
-                        <input
-                          type="radio"
-                          name={`bpom-${i}`}
-                          value={v}
-                          checked={l.bpomLotCheck === v}
-                          onChange={() => updateLine(i, { bpomLotCheck: v })}
-                        />
-                        {el(v)}
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                <RegulatoryCheck
+                  name={`bpom-${i}`}
+                  label={t('goodsReceipt.wizard.field.bpomLotTracking')}
+                  value={l.bpomLotCheck}
+                  onChange={(v) => updateLine(i, { bpomLotCheck: v })}
+                  el={el}
+                  unansweredText={t('goodsReceipt.wizard.check.unanswered')}
+                  testId={`gr-bpom-unanswered-${i}`}
+                />
               )}
               {/* THE REFUSAL, BY NAME. Not a hidden row and not a skipped check:
                   the line says which material it cannot answer for and why, and
