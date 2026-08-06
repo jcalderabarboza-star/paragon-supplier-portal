@@ -481,11 +481,32 @@ So C7's display-string space should be **collapsed into** the coded space, not m
 spaces are ours; a C7↔C8 crosswalk would be ceremony, and a second thing to keep true.
 
 **DO NOT COLLAPSE THE SPACES IN THIS PR — and the reason is specific, not caution.**
-`inferBpom` (`components/v2-features/GRInspectionWizard.tsx:129-163`) **parses the material-code
+~~`inferBpom` (`components/v2-features/GRInspectionWizard.tsx:129-163`) **parses the material-code
 prefix** (`AI-` / `FR-`) to derive **BPOM applicability**. A code-format change therefore
 **silently changes regulatory-compliance behaviour**, with no test asserting that linkage as
-intentional. That earns its own investigation-first batch, ahead of any collapse. Registered §7
-and in `docs/findings.md`.
+intentional.~~
+
+> ⚠️ **CORRECTED 2026-08-06 — THE STATED REASON NO LONGER EXISTS, AND THIS DOCUMENT WENT ON GIVING
+> IT.** `inferBpom` is **deleted.** BPOM applicability is a **master field** read through one
+> refusal-shaped lookup, and **no prefix parse survives on any path a receipt can travel.** A
+> code-format change no longer moves compliance behaviour by this route.
+>
+> **This paragraph was stale from the moment the fix landed, and nothing failed** — the
+> `file:line` it cites had stopped holding a prefix parse and the sentence read exactly as
+> persuasive as before. Filed as **`C9-STALE-BY-FIX-01`** (C9 §7.13, and our register):
+> **A CONTRACT CAN GO STALE BY BEING FIXED, AND THAT DIRECTION IS THE UNCHECKED ONE** — a document
+> that overstates our conformance is caught by anyone who reads the code; one that **understates**
+> it is caught by nobody, because the discrepancy is in our favour and reads as caution.
+>
+> ⚠️ **NOT PINNED.** C9's ledger is asserted on the floor; this document is not. **Nothing will fail
+> if this paragraph goes stale again.**
+
+**THE RECOMMENDATION IS UNCHANGED, and its remaining reasons stand on their own.** A collapse is
+still an investigation-first batch: it rewrites identity across two spaces, it interacts with
+`MOCK-RETIREMENT-01`, and the regulatory linkage — while no longer a *prefix* linkage — is now a
+**master-membership** linkage, since an unresolvable code is **refused** at goods receipt rather
+than waved through. **The hazard changed shape; it did not evaporate.** Registered §7 and in
+`docs/findings.md`.
 
 None of GG-3/4/5/6 is resolved unilaterally by the Portal; each is an entry for the IBP seat's
 co-design so the two published shapes converge (Reply "Agreed next joint step" §1–§3).
@@ -507,7 +528,7 @@ co-design so the two published shapes converge (Reply "Agreed next joint step" �
 | **C7-FIND-05** | **No idempotency contract at the intake.** id === store-assigned `prNumber` (`stores/purchaseRequisitionStore.ts:42-45`); no external reference accepted. F2 Event Mesh is at-least-once ⇒ a redelivered SOMO event mints a duplicate PR. | **OPEN** — must close before the F2 wire (§2.3) |
 | GG-1, GG-2 | lane + segment | **CLOSED by build** on the read line (`types.ts:640,642`); not carried to the entity (§6) |
 | GG-3, GG-4, GG-5, GG-6 | period-bucket · material-as-S/4-code · shortfall · qty provenance | **OPEN** — IBP co-design (§6); GG-4 recommendation at §6.1 |
-| **C7-MATERIAL-JOIN** | C7 (display string) and C8 (code) do not join. Recommendation: **collapse the spaces, do not crosswalk them** — a crosswalk between two spaces we control carries no information. **NOT built here**: `inferBpom` derives BPOM applicability from the code prefix (`GRInspectionWizard.tsx:129-163`), so a format change moves compliance behaviour. | **OPEN** — investigation-first batch (§6.1) |
+| **C7-MATERIAL-JOIN** | C7 (display string) and C8 (code) do not join. Recommendation: **collapse the spaces, do not crosswalk them** — a crosswalk between two spaces we control carries no information. **NOT built here.** ⚠️ **CORRECTED 2026-08-06:** the reason this row gave — *`inferBpom` derives BPOM applicability from the code prefix, so a format change moves compliance behaviour* — **is no longer true.** `inferBpom` is deleted; applicability is a master field. The linkage is now **master-membership**, not prefix: an unresolvable code is **refused** at goods receipt. `C9-STALE-BY-FIX-01` (C9 §7.13). | **OPEN** — investigation-first batch (§6.1) |
 | SOMO-SEAM | SOMO producer tier | **SPEC** — `order_creation` deferred (Seam §0) |
 
 ---

@@ -2756,3 +2756,198 @@ storefront pointers, no ruling · `REQUIRED-OPENS-PRE-ANSWERED-01`, RULED and BO
 as its own dispatch (with `halalSealCheck`, the identical defect) · `MATERIALTYPE-CANNOT-SAY-HALB-01`, a recorded limit ·
 `C9-STALE-BY-FIX-01`, closes at the C9 amendment · `D-COMP-BPOM`, still
 unanswered — and now standing between an operator and two receivable lines.
+
+---
+
+## CP-2 · C9 AMENDMENT 3 — **`C9-STALE-BY-FIX-01`: THE CONTRACT WENT STALE BY BEING FIXED**
+
+Docs only. No schema change, no rows, no master edit, no code change. **C9's bytes move for the
+first time since `f492b5c`, so the pin moves and a new ratification is owed** (A-13).
+
+> **A CONTRACT CAN GO STALE BY BEING FIXED, AND THAT DIRECTION IS THE UNCHECKED ONE.**
+
+### `C9-STALE-BY-FIX-01` *(new class — filed at 2B-4b, discharged here)*
+
+| | |
+|---|---|
+| **What happened** | 2B-4b deleted `inferBpom`. **Four contract documents went on describing it as live** — C9 §7.3 (*"WE PARSE IT"*), C7 §6.1, C8 §4.6 / `MOCK-RETIREMENT-01`, and the package README's `C7-MATERIAL-JOIN` row. Three of them gave the deleted function as the **stated reason** for a live design position, citing a `file:line` that no longer holds a prefix parse. |
+| **Why it is the unchecked direction** | **A DOCUMENT THAT OVERSTATES OUR CONFORMANCE IS CAUGHT BY ANYONE WHO READS THE CODE. ONE THAT UNDERSTATES IT IS CAUGHT BY NOBODY** — the discrepancy is in our favour and reads as caution. Nothing about a stale *"we are still in breach"* looks wrong. |
+| **The ancestry, and it is uncomfortable** | This is **ADD-3 with the polarity reversed.** SOMO told us *a divergence log that only ever runs one direction is not being read hard enough*, and we recorded it as a lesson about finding defects we had **understated**. §7.9–§7.12 are all that shape. **The direction still unread was the one where a divergence CLOSES and the ledger keeps declaring it** — and it took a year-zero repair to surface it. |
+| **⚠️ The asymmetry — NAMED, NOT CLOSED, AND NOT PERMANENT** | Only **C9's** §7 is pinned to the floor. The other three were corrected by hand and **nothing will fail if they go stale again.** ⚠️ **DO NOT READ THIS AS CLOSED.** The pin that would close it is **buildable and booked** (`CITATION-CONVENTION-BLOCKS-THE-PIN-01`), blocked on a **documentation chore, not a design problem** — and it **would have caught all four stale sites.** The asymmetry holds until that chore runs, and the chore is not booked to a batch. |
+| **The provenance ratio** | ⚠️ **0 of 7 amendment items found by SOMO; 6 of 7 are corrections to statements WE MADE ABOUT OUR OWN TREE.** Every prior issue's corrections came from the counterparty. **And the ratio is evidence about the READING, not the writing:** most of the six had been true-and-uncorrected for four issues, nothing in the tree changed to reveal them, and what changed is that somebody looked in a direction the ledger had not been kept in. §7.9's lesson, turned into a measurement. |
+
+### The amendment — seven items, ALL ours, riding ONE re-ratification
+
+**Everything queued since `f492b5c` was folded into one amendment** so there is one SHA and one
+re-ratification rather than six.
+
+| # | Clause | What changed |
+|---|---|---|
+| **A-15** | §7.3 | ✅ **DISCHARGED.** The longest-standing row in the ledger, and the first to close. |
+| **A-16** | §7.13 *(new)* | The ledger row for the stale-by-fix direction. |
+| **A-17** | §6.2 | D-COMP-BPOM: **mechanism SHIPPED, content UNANSWERED.** |
+| **A-18** | §2.4 · §7.4 · §6.1a | `substanceRef` — **P-3 / `LEDGER-UNCOMPOSED-01` answered in the document that caused it.** |
+| **A-19** | §5 | Paragon's space count — **wrong when written AND changed since.** |
+| **A-20** | §6.4 | D-2 restated with today's measurement **and how it was obtained.** |
+| **A-21** | §7.5 | The master now holds 42 — restated, not deleted. |
+
+⚠️ **Not one of the seven was found by SOMO, and six correct statements we made about our own
+tree.** Recorded as such, because §7.9's lesson was that a ledger kept by one party about itself
+finds the kinds of thing that party looks for.
+
+### A-17 — the honest conformance statement is BETTER than the one it replaces
+
+`D-COMP-BPOM` splits cleanly and the split is the value: **part 2 (mechanism) is ours and is done;
+part 3 (content) is compliance's and is not.** All 42 values remain **PROVISIONAL** —
+**20 `APPLICABLE` · 11 `NOT_APPLICABLE` · 11 `UNDETERMINED`** — and **two of the eleven undetermined
+rows block a receivable line at goods receipt.**
+
+> **AN UNANSWERED ESCALATION THAT BLOCKS WORK IS IN BETTER SHAPE THAN ONE THAT SILENTLY DOES NOT.**
+> The ruling is no closer. What changed is that its absence is now visible to the person it
+> protects, instead of rendering as a confident *"no check required"*.
+
+### A-18 — P-3 answered **in prose**, because the check that would catch it was measured and refused
+
+C9 §7.4 says `substanceRef` is not built. C9 §6.1a calls the substance rollup *"the axis on which
+any row sourced from their master can be written at all"* and rests a live procurement escalation
+on it. **Same document, both shipped in every issue since the fourth, nothing composed them.**
+
+- **§6.1a now carries the contradiction inline**, and **§2.4 says plainly what the alias is**: `SubstanceRef` is `= string` — **a reserved NAME, not a shape** — so anything an adopter wrote would satisfy it. **Five master-authoring batches have run since the reservation and none approached it: it is not unscheduled, it is undecided.**
+- **D-1 is restated for procurement:** it decides **whether the field is BUILT**, not only how it is used. The answer *"substance carries no commercial meaning"* closes the escalation **and deletes the axis §6.1a depends on** — the two were never separable, only written apart.
+- **The guard was NOT built, and that is CP-3b's measured refusal standing:** 28 firings, 0 true positives, **and this defect not among them** — §6.1a never names `substanceRef`, it cites `(§2.4)` in prose, so the contradicting sentence and the ledger row **share no token a checker can join on.** Prose is the weaker fix and the honest one.
+
+### A-19 — the space count was wrong AND has since changed, and both belong in the record
+
+§5 said Paragon holds **two** spaces. There were **three**: the undeclared **ASN chase lane**, a
+`MAT-*` vocabulary no master row resolved — and the prefix rule then deciding BPOM applicability
+could match no code in it, so **an entire vocabulary silently escaped a compliance check**
+(`BPOM-OFF-BY-SPACE-01`). It is now **retired and empty**. A fourth surface, the
+**supplier-catalogue pointer**, is declared **NOT an identity space**: supplier *assertions* about
+our codes, on which nothing may join.
+
+> **Correcting only the present state would hide the error; correcting only the error would hide
+> the change.** Both are written.
+
+⚠️ **And the generalisable part: we did not find the third space by counting.** We found it because
+a **regulatory check behaved oddly**, and the count was a consequence. **A party can be wrong about
+how many spaces it holds while being confident about it** — which is precisely the condition a row
+without a `spaceId` cannot survive.
+
+### A-20 — the number was wrong because it had no method attached
+
+§6.4 said the document lane names **34** codes. **It was 33 when written.** It was taken by
+inspection, and inspection is why it was wrong; **a number in a contract carries an obligation to
+say how it was got** (§3.3), and this one carried none — which is why nobody could tell it was off
+by one for four issues. Today, by **derived census** (walks every non-test module, derives the
+code-bearing field set rather than naming it, one named exclusion):
+
+**master 42 · document lane 33 with ZERO master-absent · tree-wide 44 distinct, TWO unresolvable —
+and neither of the two is a Paragon code.**
+
+⚠️ **The population moved in BOTH directions and only one is flattering:** tree-wide master-absent
+went **39 → 14 → 9 → 12 → 9 → 2**, and the rise from 9 to 12 came from a batch that added no code —
+it **widened the census**. **A figure that only ever improves while its scope stays narrower than
+the tree is a figure improving about itself.**
+
+### The derived README check caught its own half
+
+Adding §7.13 turned `ledgerTruth.test.ts` red — the README summary row still said `7.1–7.12`.
+**That is the CP-3b mechanism working exactly as built**: the row-id enumeration is *derived* from
+C9 §7 rather than hand-listed, so a ledger row that never reaches the index fails the floor. The
+defect it was built for — `SUMMARY-LOSS-IS-DIRECTIONAL-01`, four rows silently dropped across two
+amendments — **could not recur here.**
+
+### ⚠️ REPORTED, NOT BUILT — can the `ledgerTruth` pin generalise to C7 and C8?
+
+**Answer: a SUBSET, and it is smaller than it looks and needs a documentation-convention change
+first. Measured before answering, per CP-3b.**
+
+**The two halves separate, and only one travels:**
+
+| half | generalises? | evidence |
+|---|---|---|
+| **Code-truth** — *does this symbol/file exist?* | ⚠️ **PARTLY** | Measured below. |
+| **Prose-composition** — *does the body contradict the ledger?* | ❌ **NO** | CP-3b: **28 firings, 0 true positives**, and the one defect it was built for not among them. Unchanged. |
+
+**And the structural blocker, which is not effort:** C9 §7 is an **enumerated ledger with row ids**,
+so its population **derives**. **C7 §7 and C8 §7 are DECISION REGISTERS** — `C7-FIND-0N` rows mixed
+in among RATIFIED decisions and open co-design items. A check treating every row as a declared
+non-conformance fires on `C7-SCOPE`, `C7-INTAKE` and `C7-PROV` immediately. **There is no derivable
+population to check, so any C7/C8 pin needs a HAND-PICKED list of claims — which is
+`MEANING-SCOPE-IS-A-HAND-PICK-01` rebuilt on purpose.**
+
+**⚠️ THE ONE DERIVABLE SUBSET, PROBED AND MEASURED.** These documents use a citation convention:
+`` `symbol` (`path`) ``. That pairing **is** machine-joinable, and a probe was written and run:
+
+```
+C7  — 13 pairs, 9 distinct  →  6 resolve, 3 DO NOT
+C8  —  6 pairs, 4 distinct  →  1 resolve, 3 DO NOT
+RDM —  2 pairs, 2 distinct  →  1 resolve, 1 DO NOT
+C9  —  1 pair,  1 distinct  →  1 resolve, 0 DO NOT
+```
+
+**Every single one of the seven non-resolving pairs is a FALSE POSITIVE.** All four symbols
+(`PrIntakeLine`, `purchaseRequisitionTarget.create`, `suggestedQty`, `acknowledgment`,
+`Allocation.materialPeriodTotal`, `ForecastLine.materialCode`) **exist in the tree.** They fail to
+resolve because **C7 and C8 cite BARE BASENAMES** — `types.ts`, `MockCommandService.ts` — and there
+are **four `types.ts` files in `src/`**. **C9 cites full repo-relative paths and scores 1 of 1.**
+
+> **A 47% FALSE-POSITIVE RATE, AND NOT ONE OF THEM IS A DOCUMENT ERROR.** The probe is measuring a
+> **citation convention**, not conformance. Shipping it would train a reader to ignore it — the
+> exact outcome `CI-LINUX-PARITY-01` warns about.
+
+**COSTED, in the order the work actually has to happen:**
+
+1. **Convention first — C7/C8/README adopt full repo-relative paths.** ~40 citations across three documents, mechanical, no judgement. **Without this, nothing downstream is worth building.**
+2. **Then the code-truth pin — ~1 spec file, the shape `ledgerTruth` already has.** It would assert that every `` `symbol` (`path`) `` pair in the contract package resolves. **This is the pin that would have caught all four stale sites**, because every one of them named `inferBpom` beside a path.
+3. **Not step 3: the ledger-row semantics.** C7/C8 §7 stay unpinnable as *ledgers* until they are restructured into enumerated non-conformance rows, and **that is a document redesign, not a test.**
+
+**So `C9-STALE-BY-FIX-01` does NOT stand as a permanent asymmetry — but it stands until step 1
+happens.** Recorded that way rather than as "generalises: yes", because the honest answer is *yes,
+after a chore that is invisible from the test's side.* **Booked below.**
+
+### `CITATION-CONVENTION-BLOCKS-THE-PIN-01` *(new — BOOKED as its own chore, operator ruling at the #181 merge)*
+
+> **THE PROBE MEASURED A CITATION CONVENTION, NOT CONFORMANCE — AND THAT IS THE WHOLE OF WHY THE
+> PIN CANNOT SHIP TODAY.**
+
+| | |
+|---|---|
+| **The blocker** | C7, C8 and the package README cite **bare basenames** — `` (`types.ts`) ``, `` (`MockCommandService.ts`) `` — where C9 cites **full repo-relative paths**. Our tree holds **four `types.ts` files**. A mechanical resolver therefore cannot join a citation to a file, and its failures are ambiguities rather than findings. |
+| **Measured, before deciding** | **15 distinct `` `symbol` (`path`) `` pairs across the three documents; 7 do not resolve; ALL SEVEN ARE FALSE POSITIVES** — every symbol exists in the tree. **47%, and not one of them is a document error.** C9, on its full-path convention, scores **1 of 1**. |
+| **⚠️ The payoff, and it is not hypothetical** | **THE CONVERTED PIN WOULD HAVE CAUGHT ALL FOUR STALE SITES.** Every one of them named `inferBpom` **beside a path** — C9 §7.3, C7 §6.1, C8 §4.6, the README's `C7-MATERIAL-JOIN`. A resolver asserting *this symbol still exists in this file* reddens on all four the moment the function is deleted. **The defect that took a manual re-read to find is exactly the shape this check is good at.** |
+| **Cost, in the order the work has to happen** | **1 · ~40 citations** in C7/C8/README converted to repo-relative paths — mechanical, no judgement, and worthless to skip. **2 · ~1 spec file**, the shape `ledgerTruth.test.ts` already has: every `` `symbol` (`path`) `` pair in `docs/contracts/` must resolve. |
+| **⚠️ WHAT DOES NOT FOLLOW, and it is the part most likely to be over-read** | **C7 §7 AND C8 §7 STAY UNPINNABLE *AS LEDGERS* REGARDLESS OF THIS CHORE.** They are **DECISION REGISTERS** — `C7-FIND-0N` rows mixed among RATIFIED decisions and open co-design items — so there is **no derivable population** of declared non-conformances to check. A pin there needs a **hand-picked list of claims**, which rebuilds `MEANING-SCOPE-IS-A-HAND-PICK-01` on purpose. Restructuring them into enumerated rows is a **document redesign, not a test**, and is not booked. |
+| **Status** | **BOOKED — its own chore.** Until it runs, `C9-STALE-BY-FIX-01`'s asymmetry stands: **only C9's ledger is on the floor, and the other three documents can go stale again with nothing failing.** |
+
+### `SUMMARY-LOSS-IS-DIRECTIONAL-01` — **CLOSED BY MECHANISM, and it proved it here**
+
+Filed at CP-3b: the README summarised C9 §7 as *"(7.1–7.8) … eight"* while §7 carried twelve, and
+**the four dropped rows were the ones running the direction we were not reading.** The fix was not
+a corrected number — it was a **derived** check: the range and the row-id list come from C9 §7
+itself, so an index that omits a ledger row fails the floor.
+
+**Amendment 3 was its first real test and it fired.** Adding §7.13 turned the pin red because the
+README still said `7.1–7.12`.
+
+> **A CLASS CLOSED BY MECHANISM RATHER THAN BY VIGILANCE IS THE ONLY DURABLE KIND.** Nobody had to
+> remember the index existed. The build refused, named the missing row, and the correction was
+> forced rather than noticed — which is the difference between a fix and a resolution.
+
+### Constraints discharged, in writing
+
+- **DOCS ONLY.** No code, no schema, no rows, no master edit. The types module and
+  `C9-required-fields.md` are **byte-identical** to the fourth issue.
+- **THE THREE UNPINNED DOCUMENTS CORRECTED** — C7 §6.1 + its §7 row, C8 §4.6 +
+  `MOCK-RETIREMENT-01` + `C8-RECIPROCAL-HAZARD`, README's `C7-MATERIAL-JOIN` + C9 §7 index.
+- ⚠️ **C8 §4.6's ORIGINAL DISCLOSURE IS LEFT VERBATIM AND UPDATED IN PLACE, NOT DELETED.** SOMO's
+  reciprocal disclosure exists *because we volunteered ours*; editing the original out would make
+  the exchange unreadable. **A CLOSED HAZARD IS UPDATED IN PLACE, NEVER DELETED.**
+- **NOT TOUCHED, all booked:** `inferHalal`, the third ASN lane, `REQUIRED-OPENS-PRE-ANSWERED-01`,
+  the ASN→PO material axis.
+- **FLOOR 2219/184, unchanged.** `npm run gates` green.
+
+### What the operator sends to SOMO
+
+The **new SHA** and the **three paths** (§ the citation block): the contract, the types module, and
+the derived field list. **A-15…A-21 are a new ratification** even though the schema did not move.

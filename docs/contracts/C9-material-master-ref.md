@@ -4,9 +4,9 @@ The **material-identity crosswalk** between Paragon's material master and SOMO's
 the schema both platforms build against when they need to say *"our code X and your code Y name
 the same thing"* — and, more often and more importantly, when they need to say nothing at all.
 
-**Status:** CONTRACT · **fourth issue — AMENDMENT 2, 2026-08-04** (third issue = canon addendum,
-second issue = amendment 1, both 2026-08-04; first issue 2026-08-03), generated from code-truth at
-`main` `50f2858` · **schema + types only; ZERO ROWS, ZERO CONSUMERS.**
+**Status:** CONTRACT · **fifth issue — AMENDMENT 3, 2026-08-06** (fourth issue = amendment 2,
+third issue = canon addendum, second issue = amendment 1, all 2026-08-04; first issue 2026-08-03),
+generated from code-truth at `main` `2dd7f7f` · **schema + types only; ZERO ROWS, ZERO CONSUMERS.**
 
 **Companion artifact, new at this issue:** [`C9-required-fields.md`](./C9-required-fields.md) — the
 **complete required-field list, DERIVED from the types module and pinned to it** (A-9). **Send it
@@ -82,6 +82,43 @@ alongside this document, never instead of it.**
 > **SOMO have accepted the collision ruling, the retirement restatement and the S/4 ruling, and are
 > re-running check 1 AGAINST THE ARTIFACT and the derived field list. NOTHING IS REOPENED.** No
 > rows, no master edit; **2B remains blocked on D-1 and D-COMP-BPOM** (§6).
+
+> ## AMENDMENT 3 (fifth issue) — **THE CONTRACT WENT STALE BY BEING FIXED**
+>
+> **NO SCHEMA CHANGE. NO ROWS. THE TYPES MODULE IS UNTOUCHED** — so §8's coupling is unaffected and
+> the field list is unchanged. **The pin moves anyway, because the contract's own text changed**
+> (A-13: any later amendment is a new SHA and a new ratification).
+>
+> **Why this amendment exists, stated first because it is the unflattering part.** Between the
+> fourth issue and this one, our implementation **improved** — and four documents, this one
+> included, went on describing the defect. C9 §7.3 said *WE PARSE IT* about a function that had
+> been deleted.
+>
+> > **A CONTRACT CAN GO STALE BY BEING FIXED, AND THAT DIRECTION IS THE UNCHECKED ONE.**
+>
+> This is ADD-3 landing on us with the polarity reversed. SOMO told us *a divergence log that only
+> ever runs one direction is not being read hard enough*, and we recorded it as a lesson about
+> **finding defects we had understated**. The direction we were still not reading is the one where
+> **a divergence closes and the ledger keeps declaring it.** A document that overstates our
+> conformance is caught by anyone who reads the code; **one that understates it is caught by nobody,
+> because the discrepancy is in our favour and reads as caution.** New §7.13.
+>
+> **Everything queued since `f492b5c` rides this one amendment**, so there is one re-ratification
+> rather than six.
+>
+> | # | Clause | What changed |
+> |---|---|---|
+> | **A-15** | **§7.3** — the opacity violation | **DISCHARGED.** `inferBpom` is **deleted**. No prefix parse survives on any path a receipt can travel, asserted as a **derived tree-wide property** rather than a file list. The single longest-standing non-conformance in this ledger is closed. |
+> | **A-16** | **§7.13** *(new)* — `C9-STALE-BY-FIX-01` | **The ledger row for the direction above.** Filed by us, about us, and it is the first entry in this ledger recording a divergence created **by a repair**. |
+> | **A-17** | **§6.2** — D-COMP-BPOM | **MECHANISM SHIPPED, CONTENT STILL UNANSWERED — and the honest conformance statement is now BETTER than the old one.** All 42 master values are **PROVISIONAL**; **eleven rows record that nobody has ruled**, and **two of them block a receivable line at the goods-receipt surface.** The escalation is now visible to an operator instead of hidden behind a false negative. |
+> | **A-18** | **§2.4, §7.4, §6.1a** — `substanceRef` | **P-3 / `LEDGER-UNCOMPOSED-01`, ANSWERED IN THE DOCUMENT THAT CAUSED IT.** §7.4 said the field is not built; §6.1a rested a live escalation on it being the axis any SOMO-sourced row is written on. **Same document, and nothing composed them.** §7.4 stays OPEN **with its reason stated**, §6.1a now carries the contradiction inline, and **D-1 is restated: it decides whether the field is BUILT, not only how it is used.** |
+> | **A-19** | **§5** — Paragon's space count | **TWO ERRORS IN ONE SENTENCE, and both belong here.** It said Paragon holds the master **and** the document lane. **We held THREE identity spaces** — the third (`paragon.asn_chase_lane`) was undeclared when that sentence was written. **The count was WRONG, and it has since CHANGED**: the third space is now **RETIRED AND EMPTY**. Correcting only the present state would hide the error; correcting only the error would hide the change. |
+> | **A-20** | **§6.4** — D-2, the master-absent codes | **RESTATED WITH TODAY'S MEASUREMENT AND WITH HOW IT WAS OBTAINED** (§3.3). It said *"34 distinct material codes"*; **it was 33 when written**, and the population has moved since. |
+> | **A-21** | **§7.5** — "5 of the 35 codes that transact" | **The master now holds 42, and ZERO document-lane codes are master-absent.** The row is not deleted — it is restated with what remains true, which is less than it was and not nothing. |
+>
+> **Nothing in this amendment was found by SOMO.** All seven are ours, and six of the seven are
+> corrections to statements we made about our own tree. Recorded as such, because §7.9's lesson was
+> that a ledger kept by one party about itself finds the kinds of thing that party looks for.
 
 **This document is the AUTHORITY.** `src/services/sdc/materialMasterRef.types.ts` expresses the
 same shape in a form a build can check; where the two disagree, **this document wins and the
@@ -222,6 +259,20 @@ later" property §2.2 relies on, stated as a concrete edit rather than a promise
 **It is NOT landed in this batch** (`SubstanceRef` is declared in the types module; the field is
 not on `MaterialMasterEntry`). A substance value is an adoption decision, and D-1 rules on
 whether it carries commercial meaning at all.
+
+**AMENDED (A-18) — STILL NOT BUILT, AND NOW SAID PLAINLY RATHER THAN LEFT AS AN ALIAS.**
+`SubstanceRef` is a **bare type alias** — `export type SubstanceRef = string`
+(`src/services/sdc/materialMasterRef.types.ts`) — and `MaterialMasterEntry`
+(`src/services/sdc/types.ts`) carries **six** fields: `materialCode`, `label`, `materialType`,
+`materialGroup`, `canonicalUom`, `bpomApplicable`. **`substanceRef` is not one of them.** Five
+master-authoring batches have run since the reservation was written and **not one of them
+approached it**, which is the honest signal that it is not merely unscheduled.
+
+⚠️ **AN ALIAS TO `string` RESERVES A NAME, NOT A SHAPE.** Anything an adopter writes into it would
+satisfy the type, so the reservation carries no discipline of its own — the discipline is D-1's,
+and D-1 has not answered. Stated because a named alias in a shipped module reads as *designed and
+pending* when it is *named and undesigned*, and both platforms have already spent analysis on this
+field on exactly that misreading (§7.4, and `ANSWER-ABOUT-NOTHING-01` in our register).
 
 ---
 
@@ -591,8 +642,34 @@ accompanied by it** — when the route pays off, the row is replaced, and the on
 is what says so.
 
 **`spaceId` is required on both sides and is not decoration.** The populations, each stated with how
-it was obtained (§3.3): **Paragon** holds the authoritative master **and** the document lane (30
-codes the master does not name, §6.4). **SOMO** hold **THREE self-authored populations** under MATNR
+it was obtained (§3.3):
+
+⚠️ **AMENDED (A-19) — PARAGON'S COUNT WAS WRONG WHEN WRITTEN, AND IT HAS SINCE CHANGED. BOTH
+FACTS ARE RECORDED, because correcting only the present state would hide the error and correcting
+only the error would hide the change.**
+
+This clause said Paragon holds the authoritative master **and** the document lane — **two.** There
+were **three.** A third identity space existed and was undeclared: the **ASN chase lane**, a
+vocabulary of `MAT-*` codes that no other lane named and no master row resolved. It was not a
+subtlety — it carried a live regulatory consequence, because the prefix rule then deciding BPOM
+applicability could not match any code in it, so **an entire vocabulary silently escaped a
+compliance check** (our register: `BPOM-OFF-BY-SPACE-01`).
+
+**Today, and this is the change rather than the correction:**
+
+| Space | `spaceId` | State |
+|---|---|---|
+| The authoritative master | `paragon.material_master` | **42 entries** (was 5 at the first issue). |
+| The document lane | `paragon.document_lane` | **33 codes, and ZERO are master-absent** (§6.4). Booked for retirement. |
+| The ASN chase lane | `paragon.asn_chase_lane` | ⚠️ **DECLARED, THEN RETIRED. EMPTY.** Its codes were adjudicated and given master rows; **no dispatched ASN can carry a code from it**, because the one ASN creation path builds its lines from the parent purchase order. |
+| The supplier-catalogue pointer | `paragon.supplier_catalogue_pointer` | ⚠️ **NOT AN IDENTITY SPACE.** A supplier's *assertion* of which Paragon code their catalogue item corresponds to — a claim about someone else's space, entered by the party that does not own it. **Nothing may join on it.** Two of its values name codes that do not exist, and no ruling has been taken on them. |
+
+**The generalisable part, and it is the reason `spaceId` is required rather than a count:** we did
+not discover a third space by counting. We discovered it because a **regulatory check behaved
+oddly**, and the count was a consequence. A party can be wrong about how many spaces it holds while
+being confident about it, which is exactly the condition a row without a `spaceId` cannot survive.
+
+**SOMO** hold **THREE self-authored populations** under MATNR
 semantics — **88 material (ROH+VERP), 17 bulk (HALB), 17 finished-good (FERT)** — **pairwise
 disjoint by measurement but NOT ENFORCED**: no cross-contract uniqueness assertion exists, so
 **THEY CAN DECLARE THE COLLAPSE; THEY CANNOT PROMISE IT** (A-7, their own correction, running
@@ -831,6 +908,39 @@ schema carries, whoever writes it.
   written at all**, and the sparse discriminators are exactly what makes per-row `grain` tagging
   unavoidable rather than uniform. Procurement should have this before ruling.
 
+> ### ⚠️ AMENDED (A-18) — **THE SENTENCE ABOVE IS CONTRADICTED BY §7.4 OF THIS DOCUMENT, AND NOTHING COMPOSED THEM**
+>
+> **`substanceRef` DOES NOT EXIST.** The paragraph above calls the substance rollup *"the axis on
+> which any row sourced from their master can be written at all"* and rests a live escalation to
+> our procurement team on it. **§7.4 of this same document declares that the field is not built.**
+> Both clauses have shipped in every issue since the fourth. Neither platform composed them.
+>
+> **This is worse than a missing field, and the reason is the shape rather than the size.** A
+> missing field is found by whoever reaches for it. **A CLAIM CONTRADICTED BY ITS OWN DOCUMENT'S
+> LEDGER IS FOUND BY NOBODY, BECAUSE BOTH HALVES READ AS DILIGENCE** — writing §7.4 down *was* the
+> disclosure working, and that is precisely what stopped anyone checking this paragraph against it.
+> §7 exists because a prior audit found eleven doc-vs-code divergences and ruled that a new contract
+> may not start with a twelfth; **the ledger did its job perfectly and then sat inert while the body
+> of the same document asserted the opposite.**
+>
+> **Both platforms have already paid for this once.** SOMO returned a verdict on the field —
+> *"present for RM, absent for PM"* — and **the answer was about nothing.** The information needed
+> to prevent that was in this document the whole time.
+>
+> **WHAT CHANGES FOR D-1, and procurement should receive it in this form:** the escalation as sent
+> asked *how* a substance value is used. **It must also ask whether the field is BUILT AT ALL** —
+> a materially larger question, because the answer *"substance carries no commercial meaning"*
+> closes the escalation **and** deletes the axis this paragraph depends on. The two were never
+> separable; they were only ever written apart.
+>
+> **NOT REPAIRED HERE, and the repair is named rather than guessed at.** We built the obvious guard
+> — a check that a §7 ledger row's subject is not simultaneously claimed true in the body — ran it
+> against C9, and **measured 28 firings, 0 true positives, and this defect not among them.** It
+> misses because the paragraph above never names `substanceRef`; it cites `(§2.4)` in prose, so
+> **the contradicting sentence and the ledger row share no token a checker can join on.** The guard
+> was refused rather than shipped noisy. **This clause carries the contradiction in writing instead,
+> which is the weaker fix and the honest one.**
+
 ### 6.1b **A-12.** The SUMMARY-DELTA measurement — **OPEN, a DISCLOSURE not a finding (§3.4)**
 
 > **STATUS: OPEN.** SOMO have undertaken to report it; **per §3.4 it is recorded as a commitment,
@@ -854,20 +964,47 @@ that ran on the wrong one.
   ratification that ran on a shape the counterparty had not seen, and the delta becomes the register
   of exactly which ones.
 
-### 6.2 D-COMP-BPOM · with compliance — **BLOCKS the master-adoption batch**
+### 6.2 D-COMP-BPOM · with compliance — **AMENDED (A-17): MECHANISM SHIPPED, CONTENT STILL UNANSWERED**
 
-Stated plainly, in three parts that are commonly conflated:
+Stated plainly, in three parts that are commonly conflated. **Part 2 is now done and part 3 is not,
+and separating them is the whole value of this clause.**
 
-1. **What happens today:** BPOM lot-check applicability is **derived from a string prefix**
-   (`AI-`/`FR-`) and **FAILS OPEN** — an unrecognised prefix yields *"no check required"*
-   (`GRInspectionWizard.tsx:129-131`).
-2. **The MECHANISM is ours to fix.** It is the retired prefix-parsing class, live on a regulatory
-   surface. It becomes a master FIELD (the `MaterialMasterEntry` extension point) and the
-   fail-open default becomes a **refusal**.
-3. **The RULE CONTENT is compliance's to state** — *which material groups require a BPOM lot
-   check* is not ours to invent. Converting the mechanism first would replace an unratified
-   PREFIX convention with an unratified FIELD convention: **the same unratified rule in better
-   clothes, and harder to dislodge once it looks principled.**
+1. ~~**What happens today:** BPOM lot-check applicability is **derived from a string prefix**
+   (`AI-`/`FR-`) and **FAILS OPEN** — an unrecognised prefix yields *"no check required"*.~~
+   **NO LONGER TRUE.** That function is deleted (§7.3).
+2. **The MECHANISM is ours to fix.** ✅ **DONE.** It is a master FIELD — `bpomApplicable` on
+   `MaterialMasterEntry`, three-valued — read through one refusal-shaped lookup, and the fail-open
+   default is now a **refusal by name** at the goods-receipt surface.
+3. **The RULE CONTENT is compliance's to state.** ⚠️ **STILL UNANSWERED.** *Which material groups
+   require a BPOM lot check* was never ours to invent, and we did not invent it.
+
+**⚠️ ALL 42 VALUES ARE PROVISIONAL** — proposed from the material's declared GROUP, **never from
+its code**, and pending compliance's ruling. Today's distribution:
+
+| | rows |
+|---|---|
+| `APPLICABLE` | **20** |
+| `NOT_APPLICABLE` | **11** |
+| ⚠️ `UNDETERMINED` — *nobody has ruled* | **11** |
+
+**THE HONEST CONFORMANCE STATEMENT, AND IT IS BETTER THAN THE ONE IT REPLACES.** `UNDETERMINED` is
+**not** quarantine: it stores an explicit **absence** of determination and **refuses** on it,
+identically to a code the master cannot resolve at all. **Two of those eleven rows are on shipments
+that are receivable today, and the goods-receipt surface will not let an inspector past them.** An
+operator meets this escalation as a blocked line naming the material, rather than not meeting it at
+all.
+
+> **AN UNANSWERED ESCALATION THAT BLOCKS WORK IS IN BETTER SHAPE THAN ONE THAT SILENTLY DOES NOT.**
+> Before this, the same absence of a compliance ruling rendered as a confident *"no check
+> required"*. The ruling is no closer; **what changed is that its absence is now visible to the
+> person it protects.**
+
+**Why the ordering mattered, recorded because it was nearly reversed.** Converting the mechanism
+*before* the master could resolve the codes would have replaced an unratified PREFIX convention
+with an unratified FIELD convention — **the same unratified rule in better clothes, and harder to
+dislodge once it looks principled** — or, wired earlier still, would have refused essentially every
+received line for a **vocabulary** reason wearing a **compliance** reason's clothes. The mechanism
+shipped only once every code the receiving surface can be fed was master-resolvable.
 
 **Why it blocks 2B specifically.** B2a could guarantee regulatory neutrality because **every
 re-code preserved its first segment** — the firing set is pinned byte-identical in
@@ -890,22 +1027,55 @@ moved the ownership of the target space, not the adjudication. **What it does re
 distraction:** you are not being asked to carry S/4 as a third `spaceId`, and R-6 is a question
 about grain alone.
 
-### 6.4 The 30 master-absent codes exist and are NOT in the master
+### 6.4 **AMENDED (A-20).** The master-absent codes — **restated with today's measurement, and with how it was obtained**
 
-**Not hidden behind a tidy schema.** Paragon's document lane names **34 distinct material codes**;
-the authoritative master names **5**; **30 are master-absent** (31 before B2a retired five codes
-and minted four). They are real in the sense that documents transact on them, and **absent** in
-the sense that the master does not declare them.
+⚠️ **THE FIGURE IN THIS CLAUSE WAS WRONG WHEN WRITTEN, AND THE POPULATION HAS MOVED SINCE.** Both
+are recorded, per §3.3: **a number in a contract carries an obligation to say how it was got**, and
+this one carried none — which is why nobody could tell it was off by one for four issues.
 
-**What makes this safe to leave open rather than urgent:** CP-2 · B1's `SDC_MATERIAL_KNOWN`
-refuses an unresolvable code **by name** on all five SDC creation transitions, `requireUom`
-cannot fabricate a unit behind it (`src/services/sdc/materialMaster.ts:101-109`), and `labelOf`
-echoes the raw code honestly on display. **A master-absent code is refused or honestly echoed
+~~*Paragon's document lane names 34 distinct material codes; the master names 5; 30 are
+master-absent.*~~
+
+**It was 33, not 34.** The count was taken by inspection, and inspection is why it was wrong. It is
+now taken by a **derived census** and the method is stated below rather than implied.
+
+**TODAY:**
+
+| | |
+|---|---|
+| The authoritative master | **42 entries** (5 seeded · 25 adopted · 5 authored · 7 authored). |
+| The declared document lane | **33 codes** — the same 33 throughout. **The lane never shrank**; the master became able to resolve it. |
+| ⚠️ Document-lane codes the master cannot resolve | **ZERO.** |
+| Distinct codes anywhere in our tree | **44**, across the four spaces in §5. |
+| ⚠️ Tree-wide codes the master cannot resolve | **TWO**, and **neither is a Paragon code**: both are supplier *assertions* in the catalogue-pointer surface, naming Paragon codes that do not exist. **No ruling has been taken on them.** |
+
+**HOW IT WAS OBTAINED (§3.3), because this is the half the old figure lacked.** A census walks
+**every non-test module** in `src/`, **derives** which fields carry material codes rather than
+naming them in advance, and **derives** the lane set from the modules it reaches. It is pinned to
+the floor, so the number cannot drift without a build failing. **One exclusion, named rather than
+buried:** test modules, which deliberately carry spoof codes whose purpose is to be unresolvable —
+folding them in would make every census report a tree that does not exist.
+
+⚠️ **The population moved in BOTH directions and only one direction is flattering.** Tree-wide
+master-absent went **39 → 14 → 9 → 12 → 9 → 2**. The rise from 9 to 12 came from a batch that added
+no code to the tree — it **widened the census** and found codes a narrower scope could not see. **A
+figure that only ever improves while its scope stays narrower than the tree is a figure improving
+about itself.**
+
+**What makes the remainder safe rather than urgent:** `SDC_MATERIAL_KNOWN` refuses an unresolvable
+code **by name** on all five SDC creation transitions, `requireUom`
+(`src/services/sdc/materialMaster.ts:101-109`) cannot fabricate a unit behind it, `labelOf` echoes
+the raw code honestly on display, and — new since the fourth issue — the goods-receipt surface
+refuses an unresolvable code outright (§6.2). **A master-absent code is refused or honestly echoed
 today — never silently wrong.**
 
-**Consequence for this contract, stated because it is unflattering:** most Paragon material
-identity in the tree is **not in the space this crosswalk points at.** A row naming
-`paragon.sdc.material_master` addresses 5 codes. This is why `spaceId` is required (§5).
+**Consequence for this contract, restated because the old one no longer holds and the new one is
+better:** the fourth issue said *most Paragon material identity in the tree is not in the space this
+crosswalk points at* — a row naming the master addressed **5** codes. **It now addresses 42, and
+every document-lane code resolves into it.** `spaceId` is still required (§5), and **the reason has
+changed**: not because the master is a minority of our identity, but because we hold a **pointer
+surface** carrying supplier assertions about our space, and a row that cannot say which space it
+means could join on one.
 
 ---
 
@@ -934,9 +1104,9 @@ ledger by rule, not by luck.
 |---|---|---|
 | **7.1** | A crosswalk exists with a defined shape | **ZERO ROWS, ZERO CONSUMERS.** Nothing in the tree reads a crosswalk. The types module is **declared inert** and imported only by its own contract test. |
 | **7.2** | `MaterialRefJoinPolicy` governs which rows a consumer may join on | **There is no policy engine.** The policy is a SHAPE, enforced by nothing at runtime. No code path consults it. |
-| **7.3** | `materialCode` is opaque; nothing may parse it (§3) | **WE PARSE IT.** `inferBpom` derives a REGULATORY flag from the prefix and fails open (`GRInspectionWizard.tsx:129-131`). This is a **live contradiction between what we contract and what we run**, it is blocked on D-COMP-BPOM (§6.2), and it is not fixed here. |
-| **7.4** | Identity keys on specification, with an optional substance rollup | **`substanceRef` is not on `MaterialMasterEntry`.** RESERVED with a named swap-point (`sdc/types.ts:83-110`); not built. |
-| **7.5** | The crosswalk points at Paragon's material master | **That master has 5 entries.** 30 further codes transact in the document lane and are not in it (§6.4). |
+| **7.3** | `materialCode` is opaque; nothing may parse it (§3) | ✅ **AMENDED (A-15) — DISCHARGED. WE NO LONGER PARSE IT.** This row read *WE PARSE IT* for four issues: `inferBpom` derived a REGULATORY flag from the prefix and failed open. **It is deleted.** No prefix parse survives on any path a receipt can travel, and that is asserted as a **derived tree-wide property**, not a list of files somebody has to remember to extend. The parse survives only as **restatements inside test files that exist to prove it is retired** — kept deliberately, because deleting them would delete the before-and-after along with the defect. **This is the longest-standing entry in this ledger and the first to close.** The replacement is §6.2's master field; its **content** half is still open there, which is a different non-conformance and is not this one. |
+| **7.4** | Identity keys on specification, with an optional substance rollup | ⚠️ **AMENDED (A-18) — STILL OPEN, AND NOW WITH ITS REASON STATED RATHER THAN LEFT AS A SILENT ALIAS.** `substanceRef` is not on `MaterialMasterEntry`; `SubstanceRef` is a **bare alias to `string`**, which reserves a name and no shape (§2.4). **Five master-authoring batches have run since the reservation and none approached it.** It is not unscheduled — **it is undecided**, and D-1 is what decides it. ⚠️ **AND THIS ROW IS CONTRADICTED BY §6.1a OF THIS DOCUMENT**, which rests a live escalation on the field being the axis any SOMO-sourced row is written on. Both clauses have shipped together since the fourth issue and **nothing composed them**; the contradiction is now carried inline at §6.1a. |
+| **7.5** | The crosswalk points at Paragon's material master | ⚠️ **AMENDED (A-21) — RESTATED, NOT DELETED, because what remains true is less than it was and is not nothing.** This row said *that master has 5 entries* and *30 further codes transact and are not in it*. **The master now holds 42, and ZERO document-lane codes are master-absent** (§6.4). **What is still a non-conformance:** the crosswalk this contract defines has **no rows and no consumers** (§7.1), so a master that resolves everything resolves it for **nothing that reads the crosswalk** — the growth changed our own tree's honesty, not this schema's. **And two tree-wide codes still fail to resolve**: both are supplier assertions in the catalogue-pointer surface, which is **not an identity space and may not be joined on** (§5). |
 | **7.6** | Confidence, provenance and liveness are recorded per row | **Never exercised.** No row has ever been written, so the invariants in §4.1–§4.2 are **asserted, not proven by use.** They are pinned as type-level facts only. **This now includes `routeToResolution` (A-2): a required field on a table with no rows is a promise, and it is recorded here as one.** |
 | **7.7** | `Uom` normalization (`EA` vs `PCS`) | **Unresolved and dormant** (C8 §3.2). Every strong substance pair to date is `KG`; the divergence goes live the moment a packaging pair enters a join. This schema does not resolve it. |
 | **7.8** | Both parties' spaces are named and addressable | **We cannot verify SOMO's side at all.** Their codes are illustrative and their canonical-S/4 crosswalk is unbuilt (§6.3). Every statement here about SOMO's space is *their* declaration, carried, not confirmed — **and that now cuts in the flattering direction too: §3.1's clearance of their prefix parsing is a sweep THEY ran and reported, which we can no more audit than we could the hazard it replaced.** The asymmetry to keep: a party's report about its own code is the best evidence available and is still not verification. |
@@ -946,6 +1116,8 @@ ledger by rule, not by luck.
 | **7.11** | **AMENDED (A-9).** *"SOMO builds against this"* (§8) — the reason a types module exists at all | **C9 IS NOT IN SOMO'S REPOSITORY. THEY HAVE BEEN RATIFYING A DESCRIPTION OF THE ARTIFACT, NOT THE ARTIFACT** — their field list came from **our prose summary** of `materialMasterRef.types.ts`. **This is `COMMENT-AS-CONTRACT-01` aimed at ourselves, one boundary out:** §8 claims the module inverts that class by making the document the authority and pinning the code to it, and **the inversion holds inside our repository and stops at its edge.** Two things follow, and only one of them is fixed here. **FIXED:** [`C9-required-fields.md`](./C9-required-fields.md) — the complete required-field list, **DERIVED from the module and pinned to it**, to be sent alongside this document. **NOT FIXED:** every ratification given before it existed was given against prose, and **A-12 is the measurement of what that cost.** |
 
 | **7.12** | **AMENDED (A-13/A-14).** This document has been described to SOMO across four issues as a contract they may ratify | **IT WAS NEVER DELIVERED AND NEVER PINNED.** C9 has only ever lived in our repository; our messages said *"enclosed"* and carried nothing, and the contract, the types module and the field-list generator were **modified in the working tree between their readings** — so they were reading **a document mid-edit, past the version our prose described.** **Two exchanges passed with neither side noticing.** This is the only entry in this ledger that made ratification **impossible rather than merely uninformed**, and it is fixed by the citation block at the head of this document: **all three paths, one SHA, and any later amendment is a new SHA and a new ratification.** |
+
+| **7.13** | **AMENDED (A-16).** This ledger records where our implementation falls short of this document | ⚠️ **IT DID NOT RECORD THE OPPOSITE, AND THE OPPOSITE HAPPENED.** `C9-STALE-BY-FIX-01`. Between the fourth issue and this one **we fixed §7.3** — and this document went on declaring the defect, citing a line range in a file that no longer holds one. **THREE OTHER CONTRACT DOCUMENTS DID THE SAME** (C7 §6.1, C8 §4.6, the package README), each giving the deleted function as a live reason for a design position. **A CONTRACT CAN GO STALE BY BEING FIXED.** This is ADD-3 with the polarity reversed: their observation was that a one-directional log is under-read, and we took it as a lesson about **understating our own implementation**. The direction still unread is the one where **a divergence CLOSES and the ledger keeps declaring it** — because a document that overstates our conformance is caught by anyone who reads the code, and **one that understates it is caught by nobody, since the discrepancy is in our favour and reads as caution.** ⚠️ **ASYMMETRY, NAMED AND NOT CLOSED — BUT NOT PERMANENT EITHER, AND THE DIFFERENCE MATTERS.** Only C9's §7 is pinned to the floor; the other three were corrected by hand and **nothing will fail if they go stale again.** **A pin that would close it is buildable and is BOOKED** — see `CITATION-CONVENTION-BLOCKS-THE-PIN-01` in our register. It is blocked on a documentation chore, not on a design problem: C7 and C8 cite **bare basenames** (`types.ts`, of which our tree holds four) where C9 cites **full repo-relative paths**, so a mechanical resolver measures the citation convention instead of conformance — probed at a **47% false-positive rate, with every false positive a path ambiguity and none a document error.** ⚠️ **DO NOT READ THIS ROW AS CLOSED. It holds until that chore runs, and the chore is not booked to a batch.** |
 
 **None of the above blocks ratification of the SHAPE**, which is what R-1…R-6 ask for. All of it
 blocks any claim that the crosswalk is *operational*, and no such claim is made. **§7.12 is the one
@@ -993,7 +1165,7 @@ one file.**
 |---|---|
 | **Ratify or amend R-1…R-5** | They are the shape; a shape ratified by one party is a draft. |
 | **R-6 — the grain of your canonical-S/4 crosswalk** (§6.3) | If it asserts at substance grain and we key at specification, the composition is unsound and neither side would see it from its own tree. |
-| ~~**Whether your explosion engine can stop reading `RM-`/`PM-` prefixes**~~ — **ANSWERED, and the premise was ours and wrong** (§3.1) | **Withdrawn.** Your sweep measured no material-code prefix parsing in production; `materialClass` is already a field. **The remaining half of this ask is ours alone**: `inferBpom` is live, unfixed, blocked on D-COMP-BPOM. |
+| ~~**Whether your explosion engine can stop reading `RM-`/`PM-` prefixes**~~ — **ANSWERED, and the premise was ours and wrong** (§3.1) | **Withdrawn.** Your sweep measured no material-code prefix parsing in production; `materialClass` is already a field. ✅ **AND THE REMAINING HALF — OURS ALONE — IS NOW DONE (A-15).** `inferBpom` is deleted; §7.3 is discharged. **Neither party parses a material code.** The clause you were asked to hold preventatively is now held on both sides by construction rather than by undertaking. |
 | **Confirm the `SEMANTIC-IN-A-STRING` cousin is out of the crosswalk's path** (§3.1a) | The echelon role carried only in a display string is yours to place; what we need is the narrower assurance that **no field this contract defines** — `materialCode`, `spaceId`, `sourceOfTruth`, `routeToResolution` — carries meaning either side is expected to parse. |
 | **Ratify A-1…A-8 — AGAINST THE ARTIFACT, not against this document's prose** (A-9, §7.11) | **This is the ask that changed.** A-1/A-2/A-3 were accepted verbally; A-4/A-5/A-6 you have accepted since. **All of it was accepted against descriptions.** [`C9-required-fields.md`](./C9-required-fields.md) ships with this issue for exactly that reason: **check the shape you are mirroring against the derived list, and this document for everything the list refuses to carry.** |
 | ~~**Your check-1 report, as a MEASUREMENT**~~ — **LANDED** (§6.1a) | **Closed.** It corrected the advance signal: your discriminators are **sparse and unsystematic, not absent**, and the verdict is a **DATA gap, not a schema gap**. Recorded with your reasoning for declining the grade-column fix, which we would have been glad to have written ourselves. |
@@ -1010,7 +1182,25 @@ is frozen until you reply in writing.
 **First issue** grounded in shipped code at `main` `23eac6f`; **second issue (A-1/A-2/A-3)** at
 `main` `3860fe4`; **third issue — CANON ADDENDUM (ADD-1…ADD-4)** at `main` `6560fe6`, docs only;
 **fourth issue — AMENDMENT 2 (A-4…A-12)** at `main` `50f2858`, **which DOES change the schema
-(A-4), so the pin moved with it** (§8) and the derived field list ships with it (A-9). Every
+(A-4), so the pin moved with it** (§8) and the derived field list ships with it (A-9);
+**fifth issue — AMENDMENT 3 (A-15…A-21)** at `main` `2dd7f7f`, **docs only — no schema change, so
+the types module and the derived field list are byte-identical to the fourth issue.** The pin moves
+regardless, because this document's own text changed and A-13 makes any amendment a new SHA and a
+new ratification.
+
+⚠️ **THE PROVENANCE RATIO, RECORDED AS A MEASUREMENT RATHER THAN AN IMPRESSION: 0 of 7 found by
+SOMO; 6 of 7 are corrections to statements WE MADE ABOUT OUR OWN TREE.** Every prior issue's
+corrections came from the counterparty's checks. This one came entirely from re-reading our own
+claims against our own code.
+
+**And the ratio is evidence about the READING, not about the writing.** The six were not new
+mistakes — a wrong space count, a number taken by inspection, a reservation nobody approached, a
+ledger row contradicted by its own body — **most of them had been true-and-uncorrected for four
+issues.** Nothing about the tree changed to reveal them; what changed is that somebody looked in a
+direction the ledger had not been kept in. That is ADD-3's observation applied to ourselves and
+then measured: **a log that keeps producing one kind of instance is being kept by someone who
+already knows which kind to look for, and the other kind is not absent — it is unsearched.** §7.13
+is the kind we had not been searching for. Every
 claim about our own tree carries a `file:line`; **every claim about SOMO's tree is now marked with
 how it was obtained** (§3.3) **and, as of ADD-1, with its STATUS — disclosed or reported-measured**
 (§3.4) — the one that carried neither is §7.9. Companion
