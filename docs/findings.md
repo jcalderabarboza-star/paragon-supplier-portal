@@ -2773,7 +2773,8 @@ first time since `f492b5c`, so the pin moves and a new ratification is owed** (A
 | **What happened** | 2B-4b deleted `inferBpom`. **Four contract documents went on describing it as live** — C9 §7.3 (*"WE PARSE IT"*), C7 §6.1, C8 §4.6 / `MOCK-RETIREMENT-01`, and the package README's `C7-MATERIAL-JOIN` row. Three of them gave the deleted function as the **stated reason** for a live design position, citing a `file:line` that no longer holds a prefix parse. |
 | **Why it is the unchecked direction** | **A DOCUMENT THAT OVERSTATES OUR CONFORMANCE IS CAUGHT BY ANYONE WHO READS THE CODE. ONE THAT UNDERSTATES IT IS CAUGHT BY NOBODY** — the discrepancy is in our favour and reads as caution. Nothing about a stale *"we are still in breach"* looks wrong. |
 | **The ancestry, and it is uncomfortable** | This is **ADD-3 with the polarity reversed.** SOMO told us *a divergence log that only ever runs one direction is not being read hard enough*, and we recorded it as a lesson about finding defects we had **understated**. §7.9–§7.12 are all that shape. **The direction still unread was the one where a divergence CLOSES and the ledger keeps declaring it** — and it took a year-zero repair to surface it. |
-| **⚠️ The asymmetry, NAMED AND NOT CLOSED** | Only **C9's** §7 is pinned to the floor. The other three were corrected by hand and **nothing will fail if they go stale again.** See the measured refusal below. |
+| **⚠️ The asymmetry — NAMED, NOT CLOSED, AND NOT PERMANENT** | Only **C9's** §7 is pinned to the floor. The other three were corrected by hand and **nothing will fail if they go stale again.** ⚠️ **DO NOT READ THIS AS CLOSED.** The pin that would close it is **buildable and booked** (`CITATION-CONVENTION-BLOCKS-THE-PIN-01`), blocked on a **documentation chore, not a design problem** — and it **would have caught all four stale sites.** The asymmetry holds until that chore runs, and the chore is not booked to a batch. |
+| **The provenance ratio** | ⚠️ **0 of 7 amendment items found by SOMO; 6 of 7 are corrections to statements WE MADE ABOUT OUR OWN TREE.** Every prior issue's corrections came from the counterparty. **And the ratio is evidence about the READING, not the writing:** most of the six had been true-and-uncorrected for four issues, nothing in the tree changed to reveal them, and what changed is that somebody looked in a direction the ledger had not been kept in. §7.9's lesson, turned into a measurement. |
 
 ### The amendment — seven items, ALL ours, riding ONE re-ratification
 
@@ -2902,9 +2903,36 @@ are **four `types.ts` files in `src/`**. **C9 cites full repo-relative paths and
 3. **Not step 3: the ledger-row semantics.** C7/C8 §7 stay unpinnable as *ledgers* until they are restructured into enumerated non-conformance rows, and **that is a document redesign, not a test.**
 
 **So `C9-STALE-BY-FIX-01` does NOT stand as a permanent asymmetry — but it stands until step 1
-happens, and step 1 is a prerequisite nobody has booked.** Recorded that way rather than as
-"generalises: yes", because the honest answer is *yes, after a chore that is invisible from the
-test's side.*
+happens.** Recorded that way rather than as "generalises: yes", because the honest answer is *yes,
+after a chore that is invisible from the test's side.* **Booked below.**
+
+### `CITATION-CONVENTION-BLOCKS-THE-PIN-01` *(new — BOOKED as its own chore, operator ruling at the #181 merge)*
+
+> **THE PROBE MEASURED A CITATION CONVENTION, NOT CONFORMANCE — AND THAT IS THE WHOLE OF WHY THE
+> PIN CANNOT SHIP TODAY.**
+
+| | |
+|---|---|
+| **The blocker** | C7, C8 and the package README cite **bare basenames** — `` (`types.ts`) ``, `` (`MockCommandService.ts`) `` — where C9 cites **full repo-relative paths**. Our tree holds **four `types.ts` files**. A mechanical resolver therefore cannot join a citation to a file, and its failures are ambiguities rather than findings. |
+| **Measured, before deciding** | **15 distinct `` `symbol` (`path`) `` pairs across the three documents; 7 do not resolve; ALL SEVEN ARE FALSE POSITIVES** — every symbol exists in the tree. **47%, and not one of them is a document error.** C9, on its full-path convention, scores **1 of 1**. |
+| **⚠️ The payoff, and it is not hypothetical** | **THE CONVERTED PIN WOULD HAVE CAUGHT ALL FOUR STALE SITES.** Every one of them named `inferBpom` **beside a path** — C9 §7.3, C7 §6.1, C8 §4.6, the README's `C7-MATERIAL-JOIN`. A resolver asserting *this symbol still exists in this file* reddens on all four the moment the function is deleted. **The defect that took a manual re-read to find is exactly the shape this check is good at.** |
+| **Cost, in the order the work has to happen** | **1 · ~40 citations** in C7/C8/README converted to repo-relative paths — mechanical, no judgement, and worthless to skip. **2 · ~1 spec file**, the shape `ledgerTruth.test.ts` already has: every `` `symbol` (`path`) `` pair in `docs/contracts/` must resolve. |
+| **⚠️ WHAT DOES NOT FOLLOW, and it is the part most likely to be over-read** | **C7 §7 AND C8 §7 STAY UNPINNABLE *AS LEDGERS* REGARDLESS OF THIS CHORE.** They are **DECISION REGISTERS** — `C7-FIND-0N` rows mixed among RATIFIED decisions and open co-design items — so there is **no derivable population** of declared non-conformances to check. A pin there needs a **hand-picked list of claims**, which rebuilds `MEANING-SCOPE-IS-A-HAND-PICK-01` on purpose. Restructuring them into enumerated rows is a **document redesign, not a test**, and is not booked. |
+| **Status** | **BOOKED — its own chore.** Until it runs, `C9-STALE-BY-FIX-01`'s asymmetry stands: **only C9's ledger is on the floor, and the other three documents can go stale again with nothing failing.** |
+
+### `SUMMARY-LOSS-IS-DIRECTIONAL-01` — **CLOSED BY MECHANISM, and it proved it here**
+
+Filed at CP-3b: the README summarised C9 §7 as *"(7.1–7.8) … eight"* while §7 carried twelve, and
+**the four dropped rows were the ones running the direction we were not reading.** The fix was not
+a corrected number — it was a **derived** check: the range and the row-id list come from C9 §7
+itself, so an index that omits a ledger row fails the floor.
+
+**Amendment 3 was its first real test and it fired.** Adding §7.13 turned the pin red because the
+README still said `7.1–7.12`.
+
+> **A CLASS CLOSED BY MECHANISM RATHER THAN BY VIGILANCE IS THE ONLY DURABLE KIND.** Nobody had to
+> remember the index existed. The build refused, named the missing row, and the correction was
+> forced rather than noticed — which is the difference between a fix and a resolution.
 
 ### Constraints discharged, in writing
 

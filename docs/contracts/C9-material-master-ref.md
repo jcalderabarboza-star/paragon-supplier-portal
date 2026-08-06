@@ -1117,7 +1117,7 @@ ledger by rule, not by luck.
 
 | **7.12** | **AMENDED (A-13/A-14).** This document has been described to SOMO across four issues as a contract they may ratify | **IT WAS NEVER DELIVERED AND NEVER PINNED.** C9 has only ever lived in our repository; our messages said *"enclosed"* and carried nothing, and the contract, the types module and the field-list generator were **modified in the working tree between their readings** — so they were reading **a document mid-edit, past the version our prose described.** **Two exchanges passed with neither side noticing.** This is the only entry in this ledger that made ratification **impossible rather than merely uninformed**, and it is fixed by the citation block at the head of this document: **all three paths, one SHA, and any later amendment is a new SHA and a new ratification.** |
 
-| **7.13** | **AMENDED (A-16).** This ledger records where our implementation falls short of this document | ⚠️ **IT DID NOT RECORD THE OPPOSITE, AND THE OPPOSITE HAPPENED.** `C9-STALE-BY-FIX-01`. Between the fourth issue and this one **we fixed §7.3** — and this document went on declaring the defect, citing a line range in a file that no longer holds one. **THREE OTHER CONTRACT DOCUMENTS DID THE SAME** (C7 §6.1, C8 §4.6, the package README), each giving the deleted function as a live reason for a design position. **A CONTRACT CAN GO STALE BY BEING FIXED.** This is ADD-3 with the polarity reversed: their observation was that a one-directional log is under-read, and we took it as a lesson about **understating our own implementation**. The direction still unread is the one where **a divergence CLOSES and the ledger keeps declaring it** — because a document that overstates our conformance is caught by anyone who reads the code, and **one that understates it is caught by nobody, since the discrepancy is in our favour and reads as caution.** ⚠️ **ASYMMETRY, NAMED AND NOT CLOSED:** only C9's §7 is pinned to the floor. The other three were corrected by hand here and **nothing will fail if they go stale again.** |
+| **7.13** | **AMENDED (A-16).** This ledger records where our implementation falls short of this document | ⚠️ **IT DID NOT RECORD THE OPPOSITE, AND THE OPPOSITE HAPPENED.** `C9-STALE-BY-FIX-01`. Between the fourth issue and this one **we fixed §7.3** — and this document went on declaring the defect, citing a line range in a file that no longer holds one. **THREE OTHER CONTRACT DOCUMENTS DID THE SAME** (C7 §6.1, C8 §4.6, the package README), each giving the deleted function as a live reason for a design position. **A CONTRACT CAN GO STALE BY BEING FIXED.** This is ADD-3 with the polarity reversed: their observation was that a one-directional log is under-read, and we took it as a lesson about **understating our own implementation**. The direction still unread is the one where **a divergence CLOSES and the ledger keeps declaring it** — because a document that overstates our conformance is caught by anyone who reads the code, and **one that understates it is caught by nobody, since the discrepancy is in our favour and reads as caution.** ⚠️ **ASYMMETRY, NAMED AND NOT CLOSED — BUT NOT PERMANENT EITHER, AND THE DIFFERENCE MATTERS.** Only C9's §7 is pinned to the floor; the other three were corrected by hand and **nothing will fail if they go stale again.** **A pin that would close it is buildable and is BOOKED** — see `CITATION-CONVENTION-BLOCKS-THE-PIN-01` in our register. It is blocked on a documentation chore, not on a design problem: C7 and C8 cite **bare basenames** (`types.ts`, of which our tree holds four) where C9 cites **full repo-relative paths**, so a mechanical resolver measures the citation convention instead of conformance — probed at a **47% false-positive rate, with every false positive a path ambiguity and none a document error.** ⚠️ **DO NOT READ THIS ROW AS CLOSED. It holds until that chore runs, and the chore is not booked to a batch.** |
 
 **None of the above blocks ratification of the SHAPE**, which is what R-1…R-6 ask for. All of it
 blocks any claim that the crosswalk is *operational*, and no such claim is made. **§7.12 is the one
@@ -1186,10 +1186,21 @@ is frozen until you reply in writing.
 **fifth issue — AMENDMENT 3 (A-15…A-21)** at `main` `2dd7f7f`, **docs only — no schema change, so
 the types module and the derived field list are byte-identical to the fourth issue.** The pin moves
 regardless, because this document's own text changed and A-13 makes any amendment a new SHA and a
-new ratification. ⚠️ **Amendment 3 is the first issue in which every item was found by US, about US,
-and six of the seven correct statements we had made about our own tree.** Recorded because §7.9's
-lesson was that a ledger kept by one party about itself finds the kinds of thing that party looks
-for — and §7.13 is the kind we had not been looking for. Every
+new ratification.
+
+⚠️ **THE PROVENANCE RATIO, RECORDED AS A MEASUREMENT RATHER THAN AN IMPRESSION: 0 of 7 found by
+SOMO; 6 of 7 are corrections to statements WE MADE ABOUT OUR OWN TREE.** Every prior issue's
+corrections came from the counterparty's checks. This one came entirely from re-reading our own
+claims against our own code.
+
+**And the ratio is evidence about the READING, not about the writing.** The six were not new
+mistakes — a wrong space count, a number taken by inspection, a reservation nobody approached, a
+ledger row contradicted by its own body — **most of them had been true-and-uncorrected for four
+issues.** Nothing about the tree changed to reveal them; what changed is that somebody looked in a
+direction the ledger had not been kept in. That is ADD-3's observation applied to ourselves and
+then measured: **a log that keeps producing one kind of instance is being kept by someone who
+already knows which kind to look for, and the other kind is not absent — it is unsearched.** §7.13
+is the kind we had not been searching for. Every
 claim about our own tree carries a `file:line`; **every claim about SOMO's tree is now marked with
 how it was obtained** (§3.3) **and, as of ADD-1, with its STATUS — disclosed or reported-measured**
 (§3.4) — the one that carried neither is §7.9. Companion
