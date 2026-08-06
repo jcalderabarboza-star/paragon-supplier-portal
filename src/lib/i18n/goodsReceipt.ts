@@ -178,6 +178,16 @@ export const goodsReceiptEn: Record<string, string> = {
   'goodsReceipt.wizard.field.packagingIntegrity': 'Packaging Integrity',
   'goodsReceipt.wizard.field.halalSealCheck': 'Halal Seal Check',
   'goodsReceipt.wizard.field.bpomLotTracking': 'BPOM Lot Tracking',
+  // CP-3 · REQUIRED-OPENS-PRE-ANSWERED-01 — the MIDDLE state, which had no words
+  // because it had no way to occur. ONE sentence shared by the halal check and
+  // the BPOM check, on purpose: they are the same rule, and giving them separate
+  // wording is the first step back toward them behaving differently.
+  //
+  // It says what is missing and what it costs, and NOTHING about correctness —
+  // an outstanding question is not a mistake, and the copy must not read as an
+  // accusation to a clerk who has simply not got there yet.
+  'goodsReceipt.wizard.check.unanswered':
+    'Not answered. This check is required for this material — the receipt cannot be recorded until an inspector selects Pass or Fail.',
   // CP-2 · 2B-4b — the BPOM refusal, by name. The two messages differ only in
   // which absence they name; both block the step identically.
   'goodsReceipt.wizard.bpom.refused.title': 'BPOM applicability cannot be determined.',
@@ -366,6 +376,8 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.wizard.field.packagingIntegrity': 'Integritas Kemasan',
   'goodsReceipt.wizard.field.halalSealCheck': 'Pemeriksaan Segel Halal',
   'goodsReceipt.wizard.field.bpomLotTracking': 'Pelacakan Lot BPOM',
+  'goodsReceipt.wizard.check.unanswered':
+    'Belum dijawab. Pemeriksaan ini wajib untuk material tersebut — penerimaan tidak dapat dicatat sampai inspektur memilih Lulus atau Gagal.',
   'goodsReceipt.wizard.bpom.refused.title': 'Penerapan BPOM tidak dapat ditentukan.',
   'goodsReceipt.wizard.bpom.refused.unknownMaterial':
     'Master material tidak memuat {{code}}, sehingga tidak diketahui apakah lot ini memerlukan pemeriksaan lot BPOM. Baris ini tidak dapat diinspeksi sampai material tersebut terdaftar.',
