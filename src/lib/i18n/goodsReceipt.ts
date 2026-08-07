@@ -195,6 +195,21 @@ export const goodsReceiptEn: Record<string, string> = {
     'The material master does not name {{code}}, so whether this lot needs a BPOM lot check is unknown. This line cannot be inspected until the material is registered.',
   'goodsReceipt.wizard.bpom.refused.undetermined':
     'The material master names {{code}} but records no BPOM determination for it. This line cannot be inspected until someone rules on it.',
+  // CP-3 · H2 — the halal refusal, by name, and DELIBERATELY NOT SHARED WITH THE
+  // BPOM SENTENCES. The unanswered marker above IS shared, because an
+  // outstanding question is the same fact whichever check owes it. A refusal is
+  // not: it names WHICH REGULATOR has not ruled, and a line can be refused by one
+  // and answerable by the other. One sentence for both would delete that.
+  //
+  // ⚠️ The copy says "halal check" and never "halal certificate" — the check
+  // this wizard asks for is an inspector's SEAL attestation (Seat 3's three-fact
+  // split). Certificate verification is a different fact with a different
+  // answerer and its own clock, and it is not performed anywhere in this product.
+  'goodsReceipt.wizard.halal.refused.title': 'Halal applicability cannot be determined.',
+  'goodsReceipt.wizard.halal.refused.unknownMaterial':
+    'The material master does not name {{code}}, so whether this lot needs a halal check is unknown. This line cannot be inspected until the material is registered.',
+  'goodsReceipt.wizard.halal.refused.undetermined':
+    'The material master names {{code}} but records no halal determination for it. This line cannot be inspected until someone rules on it.',
   'goodsReceipt.wizard.labSampleRequired': 'Lab sample required',
   'goodsReceipt.wizard.labRequestId': 'Lab Request ID:',
   // — Wizard: disposition & submit (step 4) —
@@ -383,6 +398,11 @@ export const goodsReceiptId: Record<string, string> = {
     'Master material tidak memuat {{code}}, sehingga tidak diketahui apakah lot ini memerlukan pemeriksaan lot BPOM. Baris ini tidak dapat diinspeksi sampai material tersebut terdaftar.',
   'goodsReceipt.wizard.bpom.refused.undetermined':
     'Master material memuat {{code}} tetapi tidak mencatat penetapan BPOM untuknya. Baris ini tidak dapat diinspeksi sampai ada yang memutuskan.',
+  'goodsReceipt.wizard.halal.refused.title': 'Penerapan halal tidak dapat ditentukan.',
+  'goodsReceipt.wizard.halal.refused.unknownMaterial':
+    'Master material tidak memuat {{code}}, sehingga tidak diketahui apakah lot ini memerlukan pemeriksaan halal. Baris ini tidak dapat diinspeksi sampai material tersebut terdaftar.',
+  'goodsReceipt.wizard.halal.refused.undetermined':
+    'Master material memuat {{code}} tetapi tidak mencatat penetapan halal untuknya. Baris ini tidak dapat diinspeksi sampai ada yang memutuskan.',
   'goodsReceipt.wizard.labSampleRequired': 'Sampel lab diperlukan',
   'goodsReceipt.wizard.labRequestId': 'ID Permintaan Lab:',
   // — Wizard: disposition & submit (step 4) —

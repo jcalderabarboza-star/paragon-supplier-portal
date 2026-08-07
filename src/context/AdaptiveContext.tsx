@@ -83,19 +83,56 @@ function formatDate(date: string, country: string): string {
 }
 
 // ─── Compliance Requirements ──────────────────────────────────────────────────
+//
+// ── CP-3 · H2 — ⚠️ THE SECOND PROSE PARSE IS RETIRED HERE ────────────────────
+// This function carried the twin of `inferHalal`, and it was the one nobody had
+// found:
+//
+//   const isHalal = cat.includes('halal') || cat.includes('food')
+//                || cat.includes('raw')   || cat.includes('packaging');
+//
+// It decided WHICH HALAL CERTIFICATE A SUPPLIER IS TOLD TO PROVIDE by substring-
+// matching a category label — **an unlicensed second opinion on exactly the
+// question `D-COMP-HALAL-1` leaves open**, and it answered `true` FOR A PET
+// BOTTLE. Zero consumers today, which is why it survived review; but it is
+// EXPOSED ON THE CONTEXT VALUE (`getComplianceRequirements`) and reachable by any
+// caller, so "dormant" is a property of today's callers, not of the code.
+//
+// ── RESHAPED, NOT RETIRED, AND THE ARGUMENT IS WORTH THE FOUR LINES ─────────
+// Deleting the halal entries outright was the other candidate. It was rejected:
+// it would have removed a TRUE statement along with a false discrimination, and
+// left the Indonesian list quieter than the truth — the *tidier-than-true*
+// direction this register keeps finding.
+//
+// The false part was never "Indonesia has a halal certification regime". It was
+// **the per-category discrimination**: which materials fall inside it is a
+// compliance ruling nobody has made, and a substring is not it. So the
+// discrimination goes and the country-level fact stays — which is the shape
+// `SA` in this same function has always had (`GCC Halal Certificate
+// (mandatory)`, unconditional). Three countries, three shapes, and one of them
+// was already right.
+//
+// ⚠️ WHAT THIS FUNCTION MAY AND MAY NOT SAY, stated so it is not re-litigated:
+// it may say a supplier operating in ID/MY faces a halal certification regime.
+// It may NOT say a given MATERIAL needs a halal check — that is `halalOf`
+// (`services/sdc/halal.ts`), it is keyed on a material code, and this function
+// is not given one. Reshaping it to "read the master" would have required
+// inventing a category→material join, which is the fabrication the whole arc
+// refuses. **NO BEHAVIOUR CHANGES TODAY** — the function still has zero
+// consumers; what changes is that a caller who arrives tomorrow is not handed a
+// regulatory determination derived from a label.
 function getComplianceRequirements(country: string, category: string): string[] {
   const reqs: string[] = [];
   const cat = category.toLowerCase();
-  const isHalal = cat.includes('halal') || cat.includes('food') || cat.includes('raw') || cat.includes('packaging');
 
   if (country === 'ID') {
     reqs.push('BPOM Registration');
-    if (isHalal) reqs.push('BPJPH Halal Certificate (MUI)');
+    reqs.push('BPJPH Halal Certificate (MUI)');
     reqs.push('NPWP (Tax ID)', 'SNI Compliance');
   }
   if (country === 'MY') {
     reqs.push('SST Registration');
-    if (isHalal) reqs.push('JAKIM Halal Certificate');
+    reqs.push('JAKIM Halal Certificate');
     reqs.push('MeSTI Certification');
   }
   if (country === 'DE' || country === 'FR') {

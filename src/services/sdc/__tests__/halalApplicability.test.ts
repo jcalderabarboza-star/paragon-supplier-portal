@@ -328,7 +328,12 @@ describe('HALAL-PROSE-READS-AN-ANSWER-01 — the two mechanisms, MEASURED', () =
   });
 });
 
-describe('H1 — NOTHING IS WIRED, and that is asserted rather than promised', () => {
+describe('H2 — WIRED, and the prose parse is GONE', () => {
+  // ⚠️ INVERTED, NOT DELETED — the `bpomApplicability.test.ts` discipline, and
+  // this file was written at H1 saying a future batch would have to flip every
+  // claim below deliberately. H2 is that batch. Each assertion is the exact
+  // negation of the one it replaces, so the file records the SWAP rather than
+  // merely reflecting whatever is true today.
   const sources = () =>
     import.meta.glob('/src/**/*.{ts,tsx}', {
       query: '?raw',
@@ -336,30 +341,129 @@ describe('H1 — NOTHING IS WIRED, and that is asserted rather than promised', (
       eager: true,
     }) as Record<string, string>;
 
-  it('the GR wizard still runs the PROSE PARSE, and does not know this module exists', () => {
-    // ⚠️ THE INVERSION POINT. When H2 lands, every claim in this test flips —
-    // deliberately, in one edit, the way `bpomApplicability.test.ts` recorded the
-    // 2B-4a → 2B-4b swap rather than merely reflecting whatever is true today.
+  /**
+   * ⚠️ CODE ONLY — COMMENTS ARE EXEMPT, AND THE EXEMPTION IS THE POINT.
+   *
+   * The retired rule is RESTATED in a comment on purpose: a rule has to be
+   * written down somewhere to prove it is retired, and the before-and-after of
+   * a swap is evidence. A check that cannot tell code from record would force
+   * deleting the evidence along with the defect. What must not survive is a
+   * parse on a path a receipt can travel.
+   *
+   * No comment-STRIPPING heuristics (they mangle strings and regex literals,
+   * and the failure direction would be a silent miss). A line either IS a
+   * comment line or it is code.
+   */
+  const codeLines = (text: string) =>
+    text
+      .split('\n')
+      .map((line, n) => ({ n: n + 1, line }))
+      .filter(({ line }) => !/^\s*(?:\/\/|\/\*|\*)/.test(line));
+
+  it('the GR wizard runs the MASTER LOOKUP, and the prose parse is not in the file', () => {
     const src = sources();
     const wizard = src['/src/components/v2-features/GRInspectionWizard.tsx'];
     expect(wizard).toBeDefined();
-    expect(wizard).toContain('const inferHalal = (description: string): boolean =>');
-    expect(wizard).toContain('halalRequired: inferHalal(li.description)');
-    expect(wizard).not.toContain('halalOf(');
+
+    // WAS: `toContain('const inferHalal = …')` and `not.toContain('halalOf(')`.
+    // ⚠️ Asserted over CODE lines: the function's text survives in the file as
+    // the record of what was removed, one comment block above its replacement.
+    expect(codeLines(wizard).filter(({ line }) => line.includes('inferHalal'))).toEqual([]);
+    expect(wizard).toContain('halalOf(materialCode)');
+
+    // NOT MERELY CALLED — LOAD-BEARING. The outcome is what the step gate reads,
+    // so a refusal cannot be reduced to a banner beside a check that still
+    // passes. `GRInspectionWizard.test.tsx` proves the behaviour; this proves the
+    // wiring is the one the behaviour runs through.
+    expect(wizard).toContain('if (!l.halal.ok) return false;');
+    expect(wizard).toContain('if (l.halal.required && !l.halalSealCheck) return false;');
   });
 
-  it('NO PRODUCTION MODULE IMPORTS IT — derived, not listed', () => {
+  it('⚠️ NO PROSE PARSE SURVIVES IN PRODUCTION CODE — derived, not a file list', () => {
+    // The dispatch's constraint, asserted the way C9 §7.3's discharge was: a
+    // PROPERTY OVER THE WHOLE TREE, not a list of files somebody has to remember
+    // to extend. Both parses died in this batch — `inferHalal` (the receiving
+    // surface) and `isHalal` (`AdaptiveContext`, the one nobody had found).
     const src = sources();
     expect(Object.keys(src).length).toBeGreaterThan(400);
+
+    // A CASE-FOLDED SUBSTRING TEST against a `halal` literal — the shape of the
+    // defect, in any of the spellings JavaScript offers, not just the one that
+    // was there.
+    //
+    // ⚠️ `toLowerCase()` IS PART OF THE PATTERN, DELIBERATELY. A bare
+    // `toggles.includes('halal')` (`BuyerDiscovery.tsx:416`) is an ARRAY
+    // MEMBERSHIP TEST ON A LITERAL UI TOGGLE ID — not a parse of prose, and
+    // matching it would make this pin noisy. **A noisy pin trains people to
+    // widen the exemption**, which is the one outcome that would retire the
+    // check without anybody deciding to.
+    const PROSE_PARSE =
+      /toLowerCase\(\)\s*\.\s*(?:includes|indexOf|startsWith|endsWith|search)\(\s*['"`][^'"`]*halal|match\(\s*\/[^/]*halal/i;
+
+    const offenders = Object.entries(src)
+      .filter(([f]) => !/\.test\.tsx?$/.test(f))
+      .flatMap(([f, text]) =>
+        codeLines(text)
+          .filter(({ line }) => PROSE_PARSE.test(line))
+          .map(({ n }) => `${f}:${n}`),
+      )
+      .sort();
+
+    // ⚠️ AN EXACT SET OF ONE, NOT AN ALLOWLIST — so a second cannot arrive
+    // quietly. `DISCOVERY-CHIP-PROSE-FILTER-01`, reported and NOT fixed here:
+    //
+    //   supplier.certifications.filter((c) => !c.toLowerCase().includes('halal'))
+    //
+    // It is a DISPLAY DEDUPE on the buyer discovery card — the halal chip is
+    // already rendered from the `halalCertified` boolean, and this drops it from
+    // the generic certifications list so it does not appear twice. **It decides
+    // nothing regulatory and sits on no path a receipt can travel**, which is
+    // why it is out of H2's scope; it is still a prose test over a cert string,
+    // which is why it is NAMED here rather than excluded by a cleverer regex.
+    expect(offenders).toEqual(['/src/pages-v2/BuyerDiscovery.tsx:213']);
+
+    // The two that DID die in this batch, asserted by absence at their own
+    // addresses rather than trusted to the count above.
+    expect(
+      codeLines(src['/src/components/v2-features/GRInspectionWizard.tsx']).filter(({ line }) =>
+        PROSE_PARSE.test(line),
+      ),
+    ).toEqual([]);
+    expect(
+      codeLines(src['/src/context/AdaptiveContext.tsx']).filter(({ line }) =>
+        PROSE_PARSE.test(line),
+      ),
+    ).toEqual([]);
+    // …and `isHalal` is gone from the CODE. Its text survives one comment block
+    // above, as the record of what was retired and why — the same exemption, for
+    // the same reason.
+    expect(
+      codeLines(src['/src/context/AdaptiveContext.tsx']).filter(({ line }) =>
+        line.includes('isHalal'),
+      ),
+    ).toEqual([]);
+
+    // The control: the regex is not broken. It still matches the restatements
+    // kept as the record — in a comment here, and in test files that hold the
+    // before-half of the swap.
+    const anyHit = Object.values(src).filter((text) => PROSE_PARSE.test(text)).length;
+    expect(anyHit, 'the regex matches nothing at all — the pin is vacuous').toBeGreaterThan(0);
+  });
+
+  it('the module HAS a consumer now, and it is the receiving surface', () => {
+    const src = sources();
     const importers = Object.entries(src)
       .filter(([f]) => !f.endsWith('/sdc/halal.ts'))
       .filter(([, text]) => text.includes("/halal'"))
       .map(([f]) => f)
       .sort();
-    // DECLARED INERT — an artifact that exists so the wiring batch (H2) has
-    // something to wire, and so the applicability decision can be ratified
-    // BEFORE it is enforced.
-    expect(importers.filter((f) => !/\.test\.tsx?$/.test(f))).toEqual([]);
+    // WAS: `toEqual([])` under the header "NO PRODUCTION MODULE IMPORTS IT".
+    // Derived rather than listed: exactly one NON-TEST importer, and it is the GR
+    // wizard. A second production importer means the lookup has spread to a
+    // surface nobody reviewed, which is worth failing over.
+    expect(importers.filter((f) => !/\.test\.tsx?$/.test(f))).toEqual([
+      '/src/components/v2-features/GRInspectionWizard.tsx',
+    ]);
 
     // ⚠️ THE LIMIT OF THIS CHECK, STATED: Vite's `import.meta.glob` EXCLUDES THE
     // MODULE IT IS WRITTEN IN, so this scan cannot see its own file — which is
