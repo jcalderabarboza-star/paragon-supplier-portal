@@ -24,6 +24,10 @@ import type {
   InventoryRecord,
 } from '../../types/supplier.types';
 
+// CP-3 · E2 — the enforcement read seam's row type. TYPE-ONLY: naming the
+// vocabulary is not acquiring a consumer, and nothing in this file calls it.
+import type { EnforcementSetting } from '../../lib/enforcement';
+
 // SDC-4b — the collaboration read seam's row types (type-only; the SDC layer
 // already imports IntakePlanState from here, so this reverse reference is a
 // type-only cycle TS resolves at erase-time — no runtime import is emitted).
@@ -1389,6 +1393,27 @@ export interface IChaseService {
   getUnifiedChase(scope: QueryScope): Promise<Page<SupplierChaseView>>;
 }
 
+// ─── Enforcement read (CP-3 · E2 — the setting, behind the seam) ─────────────
+//
+// THE LEDGER, NOT THE ANSWER. This returns the recorded acts; the mode in force
+// is DERIVED by the caller (`effectiveEnforcement`), exactly as `effectivePin`
+// derives the FX basis from `fxPins` rather than the store holding a "current"
+// field. That is what stops "which mode is current" from drifting away from the
+// decisions that justify it — and it is why there is no
+// `getEffectiveMode(checkId)` here: a service method would have to read a clock
+// to answer, and the instant is always an argument (law 0.5).
+//
+// BUYER-SCOPED. A supplier resolves to SCOPE_DENIED: the ledger is a Paragon
+// governance record — who relaxed what, until when, and whether they were named
+// — and today it carries no supplier dimension at all (D1: the key is `checkId`
+// alone). What a supplier is owed is the STAMP on its own receipt, which rides
+// the line (D3) and is E3's. If D1 is ever widened, a per-supplier read of that
+// supplier's own settings is an ADDITIVE change here, not a re-shaping.
+export interface IEnforcementService {
+  /** Every recorded enforcement setting, oldest first. Append-only upstream. */
+  getEnforcementSettings(scope: QueryScope): Promise<Page<EnforcementSetting>>;
+}
+
 export interface IDataService {
   suppliers: ISupplierService;
   procurement: IProcurementService;
@@ -1401,6 +1426,9 @@ export interface IDataService {
   delivery: IDeliveryService;
   /** Unified chase read seam (SDC-5d) — data + commitment chase, buyer-gated. */
   chase: IChaseService;
+  /** Enforcement read seam (CP-3 · E2) — the append-only setting ledger,
+   *  buyer-scoped. The mode in force is derived by the caller, never served. */
+  enforcement: IEnforcementService;
   /** Write seam — the single dispatcher (Step 3.4). */
   commands: ICommandService;
   /** What the current scope may do (Step 3.9 DNA seed; mock-backed today). */

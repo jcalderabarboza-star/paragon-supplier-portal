@@ -107,6 +107,11 @@ export const POLICY_HOOKS = {
    *  document actually declared arrived. Strictly STRONGER than a master check
    *  at this seam (it also refuses a master-valid code the ASN never named). */
   GR_INSPECTION_MATERIALS_DECLARED: 'gr_inspection_materials_declared',
+  /** Enforcement set (CP-3 · E2): the recorded relaxation must be GOVERNED —
+   *  a mode this build recognises, a well-formed actor attribution, a review
+   *  date on anything below BLOCK, and A NAMED ACTOR ON ANY LOOSENING.
+   *  Tightening is always legal, so the safest act needs no permission. */
+  ENFORCEMENT_SET_GOVERNED: 'enforcement_set_governed',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

@@ -5375,3 +5375,358 @@ standing the no-wiring censuses have, and it is stated rather than assumed.
   1 · the ambient clock read kills 8 · an unreadable date holding kills 1 · an
   override at every blocking mode kills 2 · a type-only import turned into a
   value import kills the amended halal census.
+
+---
+
+## CP-3 · E2 — THE SETTING BEHIND THE SEAM, BUILT HEADLESS
+
+**Branch** `feat/e2-enforcement-setting` · **from** main `8289e5c` (floor 2329/187)
+· **to** floor **2417/189** · gates green.
+
+E1 built the vocabulary. E2 builds the SETTING: an append-only ledger behind
+`useDataService()`, a dispatched recording verb, and the derivation that turns
+the ledger into a mode in force. **No gate reads it. Nothing renders it. H4 stays
+gated.** The consumer census in `enforcement.test.ts` names all six consumers and
+would turn red on a seventh.
+
+### 1. What landed
+
+| Piece | Where | Shape |
+| --- | --- | --- |
+| the ledger | `mock/stores/enforcementSettingStore.ts` | flat array · `append` only · **seeded empty** |
+| the derivation | `lib/enforcement.ts` | `settingInForce` · `settingHistory` · `effectiveEnforcement` — pure, `effectivePin`-shaped |
+| the verb | `transitions/flows/enforcement.flow.ts` | `t_enforcement_set` · single-state · state-preserving |
+| the rule | `transitions/policies.ts` | `enforcement_set_governed` |
+| the read | `mock/MockEnforcementService.ts` | `IEnforcementService.getEnforcementSettings` — buyer-scoped |
+| the role | `transitions/roles.ts` | `enforcement:set`, buyer only |
+
+### 2. ⚠️ THE RULING, IMPLEMENTED — `ENF-NO-PERSON-IN-IDENTITY-01` is CLOSED IN CODE
+
+`ActorAttribution` is a discriminated union: `{kind:'RESOLVED', person}` or
+`{kind:'UNATTRIBUTED', reason}`, with the reasons a closed, frozen vocabulary
+(`NO_PERSON_IN_SESSION` · `IDENTITY_PROVIDER_UNAVAILABLE`). It governs BOTH
+`setBy` and `overriddenBy`.
+
+- **`overrideCompletes` is false for every unattributed override**, and
+  `effectiveWithOverride` falls the mode through to `MAXIMUM_RIGOUR` with the
+  source `UNATTRIBUTED_OVERRIDE`. Pinned at **every** starting mode × every
+  starting source.
+- **The lane is built and unusable, and the suite proves it against the real
+  type** — not by describing it. The spec reads `CurrentIdentityContext.tsx` and
+  asserts `CurrentIdentity` contains no `personId` / `displayName` / `userId` /
+  `email`. Today every override E3 could construct is unattributed, so every one
+  of them falls through. That is the pressure, working.
+
+**Where the ruling bought something E1 could not have had.** "TIGHTENING IS
+ALWAYS LEGAL; LOOSENING REQUIRES reviewBy AND A NAMED ACTOR" was vacuous under
+E1's bare `ActingPerson` — the type already demanded a person, so there was
+nothing for the rule to require. Under a discriminated actor the sentence has
+teeth, and it resolves to a better one:
+
+> **THE SAFEST ACT IS ALWAYS AVAILABLE TO ANYBODY.** Setting a check to full
+> rigour needs no review date, no resolved identity, and no argument. Everything
+> below it needs all three.
+
+Failing in the strict direction costs a blocked dock. Failing in the other costs
+an anonymous unlock, and only one of those is recoverable after the goods move.
+
+### 3. ⚠️ NOTHING IS SEEDED — STATED, AS ASKED
+
+**The ledger ships empty. Not one setting, in either direction.** Seeding
+anything below `BLOCK` would relax shipped behaviour (D-ENF-4, UNRULED), and
+seeding `BLOCK` was refused too: it would put a decision on the record that
+nobody took, and `AS_SET` would then claim an author for a constant.
+
+The un-governed state is nonetheless the SAFE state, because an empty ledger
+derives:
+
+```
+effectiveEnforcement([], checkId, instant)
+  → { mode: 'BLOCK', source: 'NO_SETTING_RECORDED' }
+```
+
+`NO_SETTING_RECORDED`, never `AS_SET`. This is the E1 ceiling ruling applied to a
+second status field: reporting `AS_SET` would ANNOUNCE AN ACT THAT DID NOT
+OCCUR. "Nobody has ruled on this" and "somebody chose full rigour" are different
+sentences and an operator acts differently on each.
+
+### 4. The four decisions, discharged
+
+**D1 · THE KEY IS `checkId` ALONE, AND WIDENING IT COSTS NOTHING.**
+Asked for plainly, so: **the cost is nil, and there was no trade to make.** The
+ledger is a FLAT ARRAY — `fxPins`' own choice, in `fxPins`' own words ("an
+APPEND-ONLY LEDGER, not a map keyed by currency"). A `Record<GovernedCheckId, …>`
+would have baked one field into the SHAPE of the store; an array bakes nothing.
+Adding a dimension (supplier · plant · material) later changes exactly two
+expressions — the predicate and the comparator inside `settingInForce` — and no
+stored record, no store method, and no call site. I did **not** build speculative
+specificity machinery for a dimension that does not exist; not foreclosing and
+pre-building are different things, and only the first was asked for.
+
+**D2 · APPEND-ONLY LEDGER, EFFECTIVE DERIVED.** `append` is the only write; the
+store's key set is asserted to be exactly `all · append · forCheck · reset`, so
+an `update` cannot be added quietly. No `supersedes` / `supersededBy` field, and
+the module is asserted not to contain those words. `settingHistory` exists for
+the same reason `pinHistory` does: so "the prior decision is kept" is a READABLE
+FACT rather than a claim. The cost is real and accepted — superseding means
+appending, and the caller must derive.
+
+**D3 · A STAMP RIDES ITS LINE.** No subject key was added. `GovernedCheckStamp`
+still names the check, the verdict, the mode and the mode's source, and nothing
+about what it was about.
+
+**D4 · OVERRIDES CARRY `overriddenAt`.** Added, typed as a required ISO instant,
+store-assigned at the act (the `pinnedAt` discipline) and never payload-supplied.
+`lib/enforcement.ts` still reads no ambient clock.
+
+### 5. FINDINGS
+
+#### `ENF-EVENT-ACTOR-IS-A-PERSONA-01` — the audit trail cannot substitute for attribution
+
+**The second face of `ENF-NO-PERSON-IN-IDENTITY-01`, and the one that would have
+hidden.** Every `t_enforcement_set` emits a DR-10 `TransitionEvent`, and its
+`actor` is `actorKey(scope)` — which answers **`buyer:all`**. A persona and a
+tenant. No human.
+
+So the obvious reassurance — *"the audit trail already records who did it"* — is
+false, and it is false in a way that reads as true right up until somebody asks
+an override to name a person. An override leaning on the DR-10 actor would be
+recording **"a buyer did this"** as though it were **"this person accepted this
+risk"**. Pinned: the spec asserts `event.actor === 'buyer:all'` and
+`not.toContain('usr-014')` in the same breath as the setting's own `setBy`.
+
+**The rule:** an audit trail's actor answers WHICH SEAT, not WHICH PERSON. A
+record that needs accountability carries its own attribution or has none.
+
+#### `ENF-READ-AND-WRITE-WANT-OPPOSITE-FAILURES-01` — one malformed input, two correct answers
+
+An unrecognised enforcement mode is handled **two different ways on purpose**:
+
+| direction | behaviour | why |
+| --- | --- | --- |
+| READING the ledger | ranks at the CEILING (`UNRECOGNISED_MODE`) | a stored typo must never relax anything |
+| WRITING via the verb | REFUSED by name | an authoring typo must be told, not silently maximised into a block nobody asked for |
+
+The tempting move is one shared "handle an unknown enum" helper, and it would
+have got one of the two wrong whichever behaviour it chose. Ranking on write
+means a fat-fingered `BLOKC` silently sets full rigour and the author believes
+they set something else; refusing on read means a single bad row turns the gate
+OFF, which is `ENF-UNKNOWN-MODE-FAILS-OPEN-01` again.
+
+**The rule, generalising `AN UNRECOGNISED MEMBER RANKS AT THE CEILING`:** the
+ceiling rule is a READ rule. **On write, an unrecognised member is refused by
+name.** The two are not in tension — reading has no author to tell, and writing
+does.
+
+#### `ENF-DATE-PARSE-ROLLS-OVER-01` — `'2026-02-30'` is not a rejected date, it is 2 March
+
+`Date.parse('2026-02-30')` does **not** return `NaN`. It returns a valid
+timestamp for **2 March**. Same for `'2026-04-31'`. E1's `reviewLapsed` checked
+shape (`/^\d{4}-\d{2}-\d{2}$/`) and then finiteness, so a review date naming a
+day its month does not have would have passed BOTH and then been compared
+LEXICOGRAPHICALLY — lapsing on 1 March, a day BEFORE the date it actually meant.
+A relaxation whose expiry says one thing and means another.
+
+Not exploitable on main (E1 stored no settings at all, which is the whole point
+of a headless batch), so this is a defect **caught before it could bite** rather
+than one found in the wild. Closed by `isReviewDay`, which round-trips through
+`toISOString().slice(0,10)` and requires the string back unchanged, and which is
+now the ONE standard shared by the recording verb and the ratchet: **what the
+verb refuses to write, the ratchet refuses to read.**
+
+**Cost, recorded honestly:** the round-trip needs `new Date(value)`, which
+tripped E1's crude `expect(code).not.toContain('new Date')` census. That ban was
+LOOSENED, deliberately and with the reasoning in the test: the rule was never
+"no Date constructor", it is **NO AMBIENT CLOCK**. It is now a ban on the nullary
+`new Date()` plus a census proving every remaining construction takes a
+caller-supplied argument (`new Date(value)`, exactly one occurrence). A crude
+census that has to be loosened is worth more than a precise one that was never
+written — but the loosening is a real weakening and is named here rather than
+absorbed.
+
+#### `ENF-BASELINE-MUST-NOT-BE-THE-EFFECTIVE-MODE-01` — a near-miss, recorded
+
+The direction rule compares the proposed mode against **the last RECORDED mode**,
+not against the effective (possibly ratcheted) one. The other choice is the
+intuitive one and it is wrong twice over:
+
+1. **A lapse is a consequence, not a decision.** Baselining on a ratcheted mode
+   would let the calendar silently re-classify an unchanged decision as a
+   relaxation — re-recording `OBSERVE` on a check that had lapsed to
+   `BLOCK_OVERRIDABLE` would become a "loosening" although nobody loosened
+   anything.
+2. **It would make legality depend on the dispatch instant** — the same command
+   legal on Monday and refused on Tuesday. That is a clock deciding a transition
+   by another route, which is exactly what law 0.5 exists to forbid and exactly
+   what the single-state machine below was chosen to avoid.
+
+Pinned structurally rather than by example: the suite asserts the hook's body
+contains `settingInForce(` (which takes no instant) and does **not** contain
+`effectiveEnforcement(` (which does).
+
+The safety net that makes the choice low-stakes, and it is worth naming: a
+setting below `BLOCK` requires `reviewBy` under EITHER baseline, because the type
+requires it, so the disagreement can only ever be about whether a NAMED ACTOR is
+also needed. An un-governed check baselines at `MAXIMUM_RIGOUR`, so **the first
+ever setting below full rigour on any check is a loosening** and must be named —
+otherwise the very first act on every check would slip through unattributed.
+
+### 6. Why the modes are NOT the states (the shape the flow could not have)
+
+The obvious machine is `OBSERVE → BLOCK_OVERRIDABLE → BLOCK`, and **law 0.5
+forbids it outright**: the ratchet tightens when a `reviewBy` passes, and as
+states that lapse would be A TRANSITION FIRED BY THE CLOCK — the `clock` trigger
+the schema makes a compile error (`ClockTriggerIsForbidden`).
+
+So the entity is THE GOVERNED CHECK, it has one state (`Governed`), and
+`t_enforcement_set` is STATE-PRESERVING — `t_rfq_fx_pin`'s shape, for
+`t_rfq_fx_pin`'s reason. The mode is a recorded VALUE on a ledger and the mode in
+force is DERIVED at read, like every other clock-projected state in this
+codebase.
+
+It is a DISPATCHED verb rather than a store write for D-1's reason: "who relaxed
+the halal certificate check, when, until when, and were they named?" is exactly
+what an audit asks later, and a governed fact recorded outside the trail is what
+the trail exists to prevent. A REFUSED set is audited too — the attempt is on the
+record even though the ledger is untouched.
+
+`reviewBy` is deliberately NOT in `requiredFields`: that gate rules on absence
+UNCONDITIONALLY, and `reviewBy` is required below `BLOCK` and legitimately absent
+at it. A conditional requirement is a policy.
+
+### 7. The mode-source vocabulary went from two members to five
+
+`AS_SET` · `EXPIRY_TIGHTENED` · `NO_SETTING_RECORDED` · `UNRECOGNISED_MODE` ·
+`UNATTRIBUTED_OVERRIDE`.
+
+Three of the five produce `BLOCK`, and they would collapse into a single "it
+blocked" if they shared a source. They must not, because they are three different
+problems with three different fixes — *nobody has ruled* / *the ledger is
+unreadable* / *nobody could be named*. Only the last is a sentence somebody can
+act on today. The suite asserts every member is produced by a REAL call path, so
+no member is decoration.
+
+### 8. Constraints discharged
+
+- **No gate reads the setting.** The consumer census names six files and no page,
+  widget or wizard is among them.
+- **No wizard change. H4 stays gated.** The GR-wizard census from E1 is unchanged
+  and still green.
+- **C9 bytes untouched at `af7f0b4`** — `git diff main -- src/services/sdc/
+  src/types/ docs/contracts/` is empty.
+- **Floor never regressed:** 2329/187 → **2417/189** (+88 tests, +2 files).
+- **Sixteen mutations probed, sixteen killed**, each confirmed to have changed the
+  file on disk first and each module restored byte-identical after (the CRLF trap
+  bit again on five multi-line anchors — they matched only after normalising `\n`
+  to `\r\n`, which is why "the probe ran" is never evidence that "the probe
+  mutated"). The list: tie-break inverted · empty ledger reports `AS_SET` · empty
+  ledger fails open to `OBSERVE` · unrecognised mode passes through ·
+  `MAXIMUM_RIGOUR` hardcoded · unattributed override completes · fall-through
+  removed · refused override coherent anywhere · rollover round-trip dropped ·
+  loosening gate disarmed · baseline `OBSERVE` instead of the ceiling · review
+  date not required · malformed actor coerced to `UNATTRIBUTED` · store replaces
+  instead of appending · store ships seeded · `setAt` payload-supplied · supplier
+  granted `enforcement:set`.
+
+### 9. OPEN, for E3
+
+- **`ENF-OVERRIDE-VOCAB-PROVISIONAL-01`** stays open (E1). `UNATTRIBUTED_REASONS`
+  joins it on the same footing — both are strategist-ruled and recorded as
+  decisions TAKEN so ratification is agreeing with something written down.
+- **D-ENF-4 (what, if anything, ships relaxed) stays UNRULED**, and nothing was
+  seeded pending it.
+- **The buyer-only read scope is a build decision I took**, stated so it can be
+  overturned cheaply: a supplier gets `SCOPE_DENIED` rather than an empty page,
+  because an empty page is a CLAIM about the ledger that becomes a lie the moment
+  a buyer records something. What a supplier is owed is the STAMP on its own
+  receipt, which rides the line (D3) and is E3's. Widening this later is additive.
+- **E3 has no way to construct a completing override**, by design. The first
+  honest override in this system requires F1 identity, and until then the lane
+  refuses in a way that names the reason.
+
+### 10. OPERATOR RATIFICATION AT MERGE (#192)
+
+Recorded at merge, in the operator's framing, because the reasoning is the part
+that generalises and the behaviour alone would not carry it.
+
+#### ⚠️ `ENF-EVENT-ACTOR-IS-A-PERSONA-01` IS THE FINDING — and it is filed as a PAIR
+
+> The DR-10 actor is `buyer:all`, so **"THE AUDIT TRAIL ALREADY RECORDS WHO DID
+> IT" IS FALSE, AND FALSE IN A WAY THAT READS AS TRUE.** Without it we would have
+> shipped an override lane believing attribution existed downstream.
+
+**Filing instruction, ratified: this is THE SECOND FACE OF THE IDENTITY GAP and
+it is filed beside `ENF-NO-PERSON-IN-IDENTITY-01` SO NEITHER IS READ ALONE.**
+Read separately they are two small gaps, each with a plausible mitigation sitting
+in the other one's territory — "the session has no person, but the audit trail
+records the actor" and "the actor is only a persona, but the override names a
+person". Read together they are one hole: **nothing anywhere in this system can
+name a human**, and the two mitigations are each other's.
+
+The dangerous shape is not the missing field. It is the FALSE REASSURANCE that
+would have been reached for the moment somebody asked "but is an override
+attributable?" — an answer that is true about the DR-10 event (`actor` is
+populated, on every command, always) and false about the question. A defect that
+answers "yes" to a checked box while answering "no" to the actual question is the
+class that survives review.
+
+#### ⚠️ THE RULING BOUGHT A BETTER PROPERTY THAN IT WAS RULED FOR
+
+Ratified as a general observation, not a note about this batch:
+
+> Under a bare `ActingPerson`, "loosening requires a named actor" was **VACUOUS**
+> — the type already demanded a person, so the rule required nothing. Under a
+> DISCRIMINATED actor it resolves to
+>
+> **THE SAFEST ACT IS ALWAYS AVAILABLE TO ANYBODY** — full rigour needs no review
+> date, no identity, and no argument.
+
+The mechanism worth carrying: **a rule stated over a type that cannot express its
+own failure case is not a rule, it is a restatement of the type.** The ruling on
+`overriddenBy` was made to solve attribution; making absence EXPRESSIBLE is what
+turned an empty sentence about loosening into a real asymmetry — and the
+asymmetry is better than the sentence, because it says which direction is free
+rather than which direction is expensive.
+
+#### `ENF-DATE-PARSE-ROLLS-OVER-01` — and the right handling of the fix's cost
+
+> `Date.parse('2026-02-30')` **IS 2 MARCH, NOT NaN.** E1 would have accepted it
+> and lapsed a day late; **caught only because E1 stored nothing.**
+
+That last clause is the finding's real content. The defect was not found by a
+test, a review or a user — it was found because the batch that would have
+exercised it deliberately shipped without data. A headless batch's value is
+usually described as "nothing can break"; this is the other half, and the
+sharper one: **a lane with no data in it is a lane whose defects are still
+cheap.**
+
+**And the handling of the fix's cost is ratified as correct:** loosening E1's
+crude `new Date` ban to admit the round-trip is **NAMED AS A REAL WEAKENING
+RATHER THAN ABSORBED**. A census that gets quietly relaxed to accommodate the
+code it guards has stopped being a census; one that is relaxed in writing, with
+the replacement stated (nullary ban + a census that every construction takes a
+caller-supplied argument), is still doing its job. The rule: **when a guard has
+to move, the movement is the record.**
+
+#### SEEDING REFUSED IN BOTH DIRECTIONS — the harder call, ratified
+
+> Seeding `BLOCK` would **PUT A DECISION ON THE RECORD NOBODY TOOK**, and
+> `AS_SET` would **CLAIM AN AUTHOR FOR A CONSTANT**. An empty ledger deriving
+> `BLOCK / NO_SETTING_RECORDED` says exactly what is true.
+
+Refusing to seed the RELAXED direction is the obvious call (D-ENF-4 is unruled).
+Refusing to seed the STRICT direction is the one worth recording, because seeding
+`BLOCK` looks free — same behaviour, tidier fixtures — and is not. It would have
+manufactured provenance: a row whose `setBy` and `setAt` describe an act that
+never happened, indistinguishable at read from one that did. **The honest empty
+ledger and the dishonest strict ledger produce the same MODE and different
+TRUTHS**, which is the whole distinction this lane exists to hold.
+
+#### D1 — nil cost accepted, with the distinction kept
+
+> **NOT FORECLOSING AND PRE-BUILDING ARE DIFFERENT THINGS.**
+
+Kept as the standard for every future "leave room for X" instruction: leaving
+room means choosing a shape that does not assume the narrow case (a flat array,
+not a keyed map). It does not mean building the wide case behind a flag nobody
+has ruled on.
