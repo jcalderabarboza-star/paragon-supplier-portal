@@ -54,6 +54,12 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     // layer). The target sets requireCreationOwner (C4b) so the subject supplier ×
     // material is relationship-anchored even under a buyer scope.
     'inventorydeclaration:record',
+    // CP-3 · E2 — recording how hard a governed check bites is a BUYER-side
+    // governance act, and it is granted to the buyer ALONE. A supplier setting
+    // the enforcement mode on its own compliance check would invert the whole
+    // thesis; the refusal lands at the role gate, since an enforcement setting
+    // has no supplier owner for scope to deny.
+    'enforcement:set',
   ],
   // Supplier side: view / acknowledge / confirm an incoming PO; create + submit
   // an advance ship notice; draft + submit an invoice against its own PO; submit

@@ -36,6 +36,7 @@ export { complianceFlow } from './flows/compliance.flow';
 export { requirementResponseFlow } from './flows/requirementResponse.flow';
 export { inventoryDeclarationFlow } from './flows/inventoryDeclaration.flow';
 export { incomingShipmentFlow } from './flows/incomingShipment.flow';
+export { enforcementFlow } from './flows/enforcement.flow';
 
 import { flowRegistry } from './registry';
 import { purchaseOrderFlow } from './flows/purchaseOrder.flow';
@@ -55,6 +56,7 @@ import { complianceFlow } from './flows/compliance.flow';
 import { requirementResponseFlow } from './flows/requirementResponse.flow';
 import { inventoryDeclarationFlow } from './flows/inventoryDeclaration.flow';
 import { incomingShipmentFlow } from './flows/incomingShipment.flow';
+import { enforcementFlow } from './flows/enforcement.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -87,3 +89,8 @@ flowRegistry.register(requirementResponseFlow); // SDC-2a — RequirementRespons
 // ship/arrive/cancel authored-unwired (FORK-2). ETA revision named-deferred (④).
 flowRegistry.register(inventoryDeclarationFlow); // SDC-3a — InventoryDeclaration
 flowRegistry.register(incomingShipmentFlow); // SDC-3a — IncomingShipment
+// CP-3 · E2 — the enforcement-setting recording verb. A DEGENERATE SINGLE-STATE
+// machine on purpose: the modes are a RECORDED VALUE on an append-only ledger,
+// never states, because a ratchet that fired on a lapsed review date would be a
+// clock trigger (law 0.5). WIRED — but no gate reads the setting yet (E3).
+flowRegistry.register(enforcementFlow); // CP-3 · E2 — Enforcement

@@ -36,6 +36,13 @@ import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
 import { BASE_CURRENCY, type BidCurrency } from '../../../lib/currencyPolicy';
 import type { FxPinSource } from '../../../lib/fxPin';
 import {
+  asActorAttribution,
+  isGovernedCheckId,
+  isReviewDay,
+  type EnforcementMode,
+  type GovernedCheckId,
+} from '../../../lib/enforcement';
+import {
   createDispatcher,
   InMemoryAuditSink,
   rolesForPersona,
@@ -59,6 +66,7 @@ import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { requirementResponseStore } from './stores/requirementResponseStore';
 import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
 import { incomingShipmentStore } from './stores/incomingShipmentStore';
+import { enforcementSettingStore } from './stores/enforcementSettingStore';
 import { mockShipments } from '../../../data/mockShipments';
 import {
   FORECAST_PUBLICATIONS,
@@ -1058,6 +1066,50 @@ bindPolicyHook(POLICY_HOOKS.ISH_P2D_DISTRIBUTOR_ONLY, ({ payload }) => {
       };
 });
 
+// — Enforcement target (CP-3 · E2) — the governed check, and its ledger. ————————
+//
+// The entity IS the check, and it exists because `GOVERNED_CHECK_IDS` names it
+// — there is nothing to create. So `readState` answers the single state for a
+// known id and `null` for anything else, which makes an unknown check
+// `NOT_FOUND` rather than a silently-minted one, and `create` is absent
+// entirely.
+//
+// `readScopeOwner` is null: an enforcement setting is a BUYER governance record
+// with no supplier owner. A supplier is stopped at the ROLE gate
+// (`enforcement:set` ∉ supplier), which is where it belongs — a supplier
+// deciding how hard its own compliance check bites would be the whole thesis
+// inverted.
+//
+// `readEntity` hands the policy hook THE LEDGER FOR THIS CHECK, which is what
+// the direction rule needs: "is this a loosening?" is a question about the last
+// recorded act, and the hook must read it from the same place `settingInForce`
+// will.
+//
+// `applyTransition` APPENDS and writes no state (statePreserving). `setAt` is
+// minted HERE, from the clock, at the moment of the act — the `pinnedAt`
+// discipline. The payload has already been through `enforcement_set_governed`
+// (recognised mode, well-formed actor, review date below full rigour, named
+// actor on a loosening), so the reads below cannot mint an ungoverned setting.
+const enforcementTarget: CommandTarget = {
+  readState: (id) => (isGovernedCheckId(id) ? 'Governed' : null),
+  readScopeOwner: () => null,
+  readEntity: (id) => enforcementSettingStore.forCheck(id),
+  applyTransition: (id, _toState, payload) => {
+    const mode = payload.mode as EnforcementMode;
+    const setBy = asActorAttribution(payload.setBy)!;
+    const setAt = new Date().toISOString();
+    const checkId = id as GovernedCheckId;
+    enforcementSettingStore.append(
+      mode === 'BLOCK'
+        ? // At full rigour a review date is legal but optional — there is no
+          //  relaxation whose lapse anyone need care about. Preserved when given,
+          //  never invented.
+          { checkId, setBy, setAt, mode, reviewBy: isReviewDay(payload.reviewBy) ? payload.reviewBy : null }
+        : { checkId, setBy, setAt, mode, reviewBy: payload.reviewBy as string },
+    );
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -1069,6 +1121,9 @@ const TARGETS: Record<string, CommandTarget> = {
   requirementResponse: requirementResponseTarget,
   inventoryDeclaration: inventoryDeclarationTarget,
   incomingShipment: incomingShipmentTarget,
+  // CP-3 · E2 — the enforcement-setting recording verb. Wired so every recorded
+  // relaxation lands in the DR-10 trail; NO GATE READS THE SETTING YET (E3).
+  enforcement: enforcementTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

@@ -25,23 +25,36 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   ENFORCEMENT_MODES,
+  ENFORCEMENT_MODE_SOURCES,
   GOVERNED_CHECK_IDS,
   GOVERNED_VERDICTS,
+  MAXIMUM_RIGOUR,
   OVERRIDE_REASONS,
   REFUSALS_OUTSIDE_ENFORCEMENT,
+  UNATTRIBUTED_REASONS,
+  asActorAttribution,
   blocks,
+  effectiveEnforcement,
   effectiveMode,
+  effectiveWithOverride,
+  isAttributed,
   isCoherentStamp,
   isEnforcementMode,
   isGovernedCheckId,
   isGovernedVerdict,
+  isReviewDay,
   overrideAllowed,
+  overrideCompletes,
   rigour,
+  settingHistory,
+  settingInForce,
   tighten,
 } from './enforcement';
 import type {
   ActingPerson,
+  ActorAttribution,
   EnforcementMode,
+  EnforcementOverride,
   EnforcementSetting,
   GovernedCheckStamp,
 } from './enforcement';
@@ -52,6 +65,12 @@ import { MATERIAL_MASTER } from '../services/sdc/fixtures';
 // ─── Fixtures local to the suite. E1 SEEDS NONE IN THE TREE ──────────────────
 
 const PERSON: ActingPerson = { personId: 'usr-014', displayName: 'Rina Wijaya' };
+
+/** A RESOLVED attribution — an act with a person behind it. */
+const NAMED: ActorAttribution = { kind: 'RESOLVED', person: PERSON };
+/** An UNATTRIBUTED one, carrying WHY. Today this is the only attribution the
+ *  portal could actually produce (`ENF-NO-PERSON-IN-IDENTITY-01`). */
+const NOBODY: ActorAttribution = { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' };
 
 /**
  * A setting, built loosely on purpose: the cast is what lets the suite build
@@ -64,7 +83,7 @@ const setting = (
 ): EnforcementSetting =>
   ({
     checkId: 'halal.certificate',
-    setBy: PERSON,
+    setBy: NAMED,
     setAt: '2026-08-01T09:00:00.000Z',
     mode,
     reviewBy,
@@ -198,12 +217,17 @@ describe('E1 — ⚠️ THE ABSENT FOURTH MODE IS THE MECHANISM, NOT A CONVENTIO
     for (const word of FAIL_OPEN) expect(code).not.toContain(`'${word}'`);
   });
 
-  it('the four vocabularies are FROZEN — a mode cannot be pushed on at runtime', () => {
+  it('every vocabulary is FROZEN — a mode cannot be pushed on at runtime', () => {
+    // Six now: E2 added the mode-source and unattributable-reason lists, and
+    // they are held to the same rule. A closed vocabulary that can be appended
+    // to at runtime is an open one with a comment.
     for (const vocab of [
       ENFORCEMENT_MODES,
       GOVERNED_CHECK_IDS,
       GOVERNED_VERDICTS,
       OVERRIDE_REASONS,
+      ENFORCEMENT_MODE_SOURCES,
+      UNATTRIBUTED_REASONS,
     ]) {
       expect(Object.isFrozen(vocab)).toBe(true);
     }
@@ -517,9 +541,10 @@ describe('E1 — the stamp: an override is coherent at exactly one mode', () => 
       ? {
           ...base,
           override: {
-            overriddenBy: PERSON,
+            overriddenBy: NAMED,
             reason: 'ACCEPTED_TO_QUARANTINE',
             overriddenVerdict: 'ADVERSE',
+            overriddenAt: '2026-09-15T04:20:00.000Z',
           },
         }
       : base;
@@ -545,9 +570,12 @@ describe('E1 — the stamp: an override is coherent at exactly one mode', () => 
   it('the override names WHO, WHY and EXACTLY WHAT it overrode', () => {
     const withOverride = stamp('BLOCK_OVERRIDABLE', true);
     expect(withOverride.override).toEqual({
-      overriddenBy: { personId: 'usr-014', displayName: 'Rina Wijaya' },
+      overriddenBy: { kind: 'RESOLVED', person: { personId: 'usr-014', displayName: 'Rina Wijaya' } },
       reason: 'ACCEPTED_TO_QUARANTINE',
       overriddenVerdict: 'ADVERSE',
+      // E2 · D4 — an override is A DATED ACT OF ACCOUNTABILITY and inherits
+      // nothing. Store-assigned at the act; never a payload field.
+      overriddenAt: '2026-09-15T04:20:00.000Z',
     });
     // The verdict overridden is the verdict stamped. An override authorises the
     // overriding of ONE SPECIFIC ADVERSE ANSWER, never of the check in general
@@ -588,9 +616,11 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     'overrideAllowed',
   ];
 
-  it('the enforcement surface appears in CODE in exactly ONE file — the module', () => {
-    // E2 (the store) and E3 (the consumer) arrive as their own batches. A wire
-    // that turns up here without them turns this red, which is the job.
+  it('⚠️ E2 — the enforcement surface has SIX consumers, and they are NAMED', () => {
+    // E1 asserted ONE file. E2 is the batch that legitimately adds consumers, so
+    // the census does not weaken — it becomes an EXACT LIST. A sixth entry
+    // turning up without a batch that authorises it turns this red, which is
+    // still the job. E3 (a gate that READS the setting) is not among them.
     const src = sources();
     const referencing = Object.entries(src)
       .filter(([, text]) => {
@@ -599,19 +629,48 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
       })
       .map(([path]) => path)
       .sort();
-    expect(referencing).toEqual(['/src/lib/enforcement.ts']);
+    // Suites are split out and named separately rather than swept in: a test
+    // file is not a wire, and folding the two together would let a real consumer
+    // hide behind a new spec file.
+    const suites = referencing.filter((p) => /\.test\.tsx?$/.test(p));
+    expect(suites).toEqual([
+      '/src/services/data/mock/enforcementSeam.test.ts',
+      '/src/services/data/mock/enforcementSetCommand.test.ts',
+    ]);
+    expect(referencing.filter((p) => !suites.includes(p))).toEqual([
+      '/src/lib/enforcement.ts', //                       the vocabulary + derivation
+      '/src/services/data/mock/MockCommandService.ts', // the CommandTarget
+      '/src/services/data/mock/MockEnforcementService.ts', // the read seam
+      '/src/services/data/mock/stores/enforcementSettingStore.ts', // the ledger
+      '/src/services/data/types.ts', //                   the seam's row type (TYPE-ONLY)
+      '/src/services/transitions/policies.ts', //         the recording policy
+    ]);
+    // ⚠️ `types.ts` is a TYPE-ONLY importer and this census cannot tell — it
+    // matches TEXT. That is `CENSUS-COUNTS-TYPE-IMPORTS-01` again, and it is
+    // named here rather than filtered out: the list is exact either way, and a
+    // filter that quietly dropped a file would be the weaker census.
+    // ⚠️ Deliberately ABSENT from that list: every page, every widget, and the
+    // GR wizard. NOTHING RENDERS OR ENFORCES A MODE YET — the setting is
+    // recordable and readable, and no gate consults it. That is the E2 fence.
 
     // ⚠️ THE LIMIT OF THIS CHECK, STATED — the H2/H3 precedent. Vite's
     // `import.meta.glob` EXCLUDES THE MODULE IT IS WRITTEN IN, so the scan
-    // cannot see its own file, which is itself a caller. That is why the
-    // expected list has one entry and not two.
+    // cannot see its own file, which is itself a caller.
     expect(src['/src/lib/enforcement.test.ts']).toBeUndefined();
   });
 
-  it('NO CLOCK IS READ — asserted over the module source, code lines only', () => {
+  it('NO AMBIENT CLOCK IS READ — asserted over the module source, code lines only', () => {
     const code = codeOf(moduleText());
     expect(code).not.toContain('Date.now');
-    expect(code).not.toContain('new Date');
+    // ⚠️ E2 LOOSENED A CRUDE GREP, AND SAYS SO. E1 banned the substring
+    // `new Date`, which `isReviewDay`'s round-trip now trips — and that
+    // round-trip earns its place: `Date.parse('2026-02-30')` does NOT fail, it
+    // rolls over to 2 March, so without it a review date could say one day and
+    // MEAN another. The rule was never "no Date constructor"; it is NO AMBIENT
+    // CLOCK. So the ban is now on the nullary form, plus a census proving every
+    // remaining construction takes a caller-supplied argument.
+    expect(code).not.toContain('new Date()');
+    expect(code.match(/new Date\([^)]*\)/g) ?? []).toEqual(['new Date(value)']);
   });
 
   it('NO STORE, NO SEAM, NO DISPATCHER — and only two type-only imports', () => {
@@ -660,5 +719,375 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     for (const field of ['checkId', 'setBy', 'setAt', 'reviewBy']) {
       expect(code).not.toMatch(new RegExp(`${field}: ['"\`]`));
     }
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CP-3 · E2 — THE SETTING BEHIND THE SEAM.
+//
+// Six further claims, all pure and all over the LEDGER rather than one record:
+//   9.  AN EMPTY LEDGER IS THE CEILING, and says so in its own word. Nothing is
+//       seeded, and the un-governed state is the SAFE state.
+//   10. The setting in force is DERIVED — `effectivePin` exactly, tie-break and
+//       all — and the superseded acts remain readable, which is what keeps the
+//       ratchet auditable.
+//   11. AN UNRECOGNISED MODE RANKS AT THE CEILING at the seam too, with its OWN
+//       source: "unreadable" and "undecided" are different problems.
+//   12. THE ACTOR IS A DISCRIMINATED ATTRIBUTION, and a malformed one is
+//       `undefined` — never a comfortable `UNATTRIBUTED`.
+//   13. ⚠️ AN UNATTRIBUTED OVERRIDE CANNOT COMPLETE. The mode falls through to
+//       the ceiling, at every starting mode, and the stamp says why.
+//   14. ⚠️ THE OVERRIDE LANE IS BUILT AND UNUSABLE — asserted against the real
+//       `CurrentIdentity`, which has no person in it.
+// ═══════════════════════════════════════════════════════════════════════════
+
+const led = (
+  checkId: string,
+  mode: string,
+  setAt: string,
+  reviewBy: string | null = REVIEW_BY,
+  setBy: ActorAttribution = NAMED,
+): EnforcementSetting =>
+  ({ checkId, mode, setAt, reviewBy, setBy }) as unknown as EnforcementSetting;
+
+describe('E2 — ⚠️ AN EMPTY LEDGER IS THE CEILING, AND SAYS SO', () => {
+  it('no setting recorded ⇒ MAXIMUM RIGOUR, sourced NO_SETTING_RECORDED', () => {
+    // The whole reason nothing is seeded (D-ENF-4 is UNRULED) does not leave the
+    // system undefended: absence of a decision is not absence of enforcement.
+    expect(effectiveEnforcement([], 'halal.certificate', BEFORE)).toEqual({
+      mode: MAXIMUM_RIGOUR,
+      source: 'NO_SETTING_RECORDED',
+    });
+    expect(blocks(MAXIMUM_RIGOUR)).toBe(true);
+  });
+
+  it('⚠️ and it does NOT say AS_SET — nobody set it', () => {
+    // The E1 ruling applied to a second status field: reporting AS_SET here
+    // would ANNOUNCE AN ACT THAT DID NOT OCCUR. An operator reads "nobody has
+    // ruled on this" and "somebody chose full rigour" as different sentences,
+    // and acts differently on each.
+    const { source } = effectiveEnforcement(undefined, 'bpom.lot', BEFORE);
+    expect(source).toBe('NO_SETTING_RECORDED');
+    expect(source).not.toBe('AS_SET');
+  });
+
+  it('an undefined ledger and an empty one answer identically', () => {
+    for (const id of GOVERNED_CHECK_IDS) {
+      expect(effectiveEnforcement(undefined, id, BEFORE)).toEqual(
+        effectiveEnforcement([], id, BEFORE),
+      );
+    }
+  });
+
+  it('a ledger with OTHER checks in it leaves this one un-governed', () => {
+    const ledger = [led('bpom.lot', 'OBSERVE', '2026-08-01T09:00:00.000Z')];
+    expect(effectiveEnforcement(ledger, 'halal.certificate', BEFORE).source).toBe(
+      'NO_SETTING_RECORDED',
+    );
+    // …and the check that IS in it is governed. The key is `checkId`, and it
+    // does not leak (D1).
+    expect(effectiveEnforcement(ledger, 'bpom.lot', BEFORE)).toEqual({
+      mode: 'OBSERVE',
+      source: 'AS_SET',
+    });
+  });
+});
+
+describe('E2 — THE SETTING IN FORCE IS DERIVED (the `effectivePin` shape)', () => {
+  const A = led('halal.seal', 'BLOCK', '2026-08-01T09:00:00.000Z', null);
+  const B = led('halal.seal', 'OBSERVE', '2026-08-05T09:00:00.000Z');
+
+  it('the LAST recorded act wins — superseding means appending', () => {
+    expect(settingInForce([A, B], 'halal.seal')).toBe(B);
+    // Ledger ORDER is not the criterion; `setAt` is. A record appended out of
+    // order still loses to the later decision.
+    expect(settingInForce([B, A], 'halal.seal')).toBe(B);
+  });
+
+  it('a tie on setAt is broken by LATER ARRAY POSITION — `effectivePin` exactly', () => {
+    // Two acts recorded in the same millisecond are ordered by the sequence they
+    // were appended in, which is the only ordering that exists at that
+    // resolution. Stated because the alternative (first-wins) is equally
+    // arbitrary and silently different.
+    const same = '2026-08-05T09:00:00.000Z';
+    const first = led('halal.seal', 'OBSERVE', same);
+    const second = led('halal.seal', 'BLOCK', same, null);
+    expect(settingInForce([first, second], 'halal.seal')).toBe(second);
+    expect(settingInForce([second, first], 'halal.seal')).toBe(first);
+  });
+
+  it('⚠️ THE SUPERSEDED ACT SURVIVES — which is what keeps the ratchet auditable', () => {
+    // A mutable current-setting record would have overwritten A. The ratchet
+    // tightens against a `reviewBy`; lose the record and you can see that it bit
+    // and never why. That is the cost D2 accepted, and this is the benefit.
+    expect(settingHistory([A, B], 'halal.seal')).toEqual([A, B]);
+    expect(settingHistory([A, B], 'halal.certificate')).toEqual([]);
+    expect(settingHistory(undefined, 'halal.seal')).toEqual([]);
+  });
+
+  it('there is NO supersedes / supersededBy field — on a ledger, the successor IS the supersession', () => {
+    const code = codeOf(moduleText());
+    expect(code).not.toContain('supersedes');
+    expect(code).not.toContain('supersededBy');
+  });
+
+  it('THE RATCHET COMPOSES OVER THE LEDGER — a lapsed relaxation tightens one step', () => {
+    expect(effectiveEnforcement([A, B], 'halal.seal', BEFORE)).toEqual({
+      mode: 'OBSERVE',
+      source: 'AS_SET',
+    });
+    expect(effectiveEnforcement([A, B], 'halal.seal', DAY_AFTER)).toEqual({
+      mode: 'BLOCK_OVERRIDABLE',
+      source: 'EXPIRY_TIGHTENED',
+    });
+    // Ten years on it is STILL one step. A ratchet, not a decay ladder.
+    expect(effectiveEnforcement([A, B], 'halal.seal', TEN_YEARS_ON)).toEqual({
+      mode: 'BLOCK_OVERRIDABLE',
+      source: 'EXPIRY_TIGHTENED',
+    });
+  });
+
+  it('⚠️ the ledger derivation is DETERMINISTIC — the ambient clock is irrelevant', () => {
+    // The same property E1 proved for one setting, proved again for the shape a
+    // gate will actually call. Only writable because the instant is an argument.
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+      const early = effectiveEnforcement([A, B], 'halal.seal', DAY_AFTER);
+      vi.setSystemTime(new Date('2099-01-01T00:00:00.000Z'));
+      expect(effectiveEnforcement([A, B], 'halal.seal', DAY_AFTER)).toEqual(early);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('E2 — ⚠️ AN UNRECOGNISED MODE RANKS AT THE CEILING (the class rule, at the seam)', () => {
+  it.each(['OFF', 'observe', 'BLOCK ', 'WARN', ''])(
+    'a stored mode of %o ranks at the ceiling, and is NOT reported as AS_SET',
+    (mode) => {
+      // `ENF-UNKNOWN-MODE-FAILS-OPEN-01` as a CLASS: the ledger crosses a seam as
+      // JSON, and JSON has no unions. A typo must mean MAXIMUM rigour, never
+      // minimum — and it must be distinguishable from a decision.
+      const ledger = [led('bpom.lot', mode, '2026-08-01T09:00:00.000Z')];
+      expect(effectiveEnforcement(ledger, 'bpom.lot', BEFORE)).toEqual({
+        mode: MAXIMUM_RIGOUR,
+        source: 'UNRECOGNISED_MODE',
+      });
+    },
+  );
+
+  it('⚠️ and it is NOT collapsed into NO_SETTING_RECORDED — different problems, different fixes', () => {
+    // "The ledger is unreadable" and "the ledger is empty" both block. Only one
+    // of them is a bug, and a shared source would hide which.
+    const ledger = [led('bpom.lot', 'OFF', '2026-08-01T09:00:00.000Z')];
+    const unreadable = effectiveEnforcement(ledger, 'bpom.lot', BEFORE);
+    const undecided = effectiveEnforcement([], 'bpom.lot', BEFORE);
+    expect(unreadable.mode).toBe(undecided.mode);
+    expect(unreadable.source).not.toBe(undecided.source);
+  });
+
+  it('MAXIMUM_RIGOUR is DERIVED from the ramp, not written as a literal', () => {
+    expect(MAXIMUM_RIGOUR).toBe(ENFORCEMENT_MODES[ENFORCEMENT_MODES.length - 1]);
+    expect(rigour(MAXIMUM_RIGOUR)).toBe(ENFORCEMENT_MODES.length - 1);
+    expect(tighten(MAXIMUM_RIGOUR)).toBe(MAXIMUM_RIGOUR);
+    // A stricter mode appended tomorrow moves all three fall-throughs at once,
+    // because none of them names 'BLOCK'.
+    const code = codeOf(moduleText());
+    expect(code).toContain('ENFORCEMENT_MODES[ENFORCEMENT_MODES.length - 1]');
+  });
+});
+
+describe('E2 — the mode-source vocabulary: five reasons, none of them overstating', () => {
+  it('names exactly the five, and every one is produced by a REAL path', () => {
+    expect([...ENFORCEMENT_MODE_SOURCES]).toEqual([
+      'AS_SET',
+      'EXPIRY_TIGHTENED',
+      'NO_SETTING_RECORDED',
+      'UNRECOGNISED_MODE',
+      'UNATTRIBUTED_OVERRIDE',
+    ]);
+    const observing = [led('bpom.lot', 'OBSERVE', '2026-08-01T09:00:00.000Z')];
+    const garbled = [led('bpom.lot', 'OFF', '2026-08-01T09:00:00.000Z')];
+    const produced = new Set<string>([
+      effectiveEnforcement(observing, 'bpom.lot', BEFORE).source,
+      effectiveEnforcement(observing, 'bpom.lot', DAY_AFTER).source,
+      effectiveEnforcement([], 'bpom.lot', BEFORE).source,
+      effectiveEnforcement(garbled, 'bpom.lot', BEFORE).source,
+      effectiveWithOverride(
+        { mode: 'BLOCK_OVERRIDABLE', source: 'AS_SET' },
+        {
+          overriddenBy: NOBODY,
+          reason: 'COMMERCIAL_RISK_ACCEPTED',
+          overriddenVerdict: 'ADVERSE',
+          overriddenAt: '2026-09-15T04:20:00.000Z',
+        },
+      ).source,
+    ]);
+    // No member is decoration: each one is the ONLY answer some real call gives.
+    expect(produced).toEqual(new Set(ENFORCEMENT_MODE_SOURCES));
+  });
+});
+
+describe('E2 — ⚠️ THE ACTOR IS A DISCRIMINATED ATTRIBUTION', () => {
+  it('isAttributed splits the two arms and nothing else', () => {
+    expect(isAttributed(NAMED)).toBe(true);
+    expect(isAttributed(NOBODY)).toBe(false);
+  });
+
+  it('reads a well-formed RESOLVED actor, and a well-formed UNATTRIBUTED one', () => {
+    expect(asActorAttribution({ kind: 'RESOLVED', person: { ...PERSON } })).toEqual(NAMED);
+    expect(asActorAttribution({ kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' })).toEqual(
+      NOBODY,
+    );
+  });
+
+  it.each([
+    [undefined, 'absent'],
+    [null, 'null'],
+    ['Rina Wijaya', 'a bare typed name — the forgeable answer the ruling refused'],
+    [{ personId: 'usr-014', displayName: 'Rina' }, 'a person with no discriminant'],
+    [{ kind: 'RESOLVED' }, 'RESOLVED with no person'],
+    [{ kind: 'RESOLVED', person: { personId: 'usr-014' } }, 'a person with no name'],
+    [{ kind: 'RESOLVED', person: { personId: '  ', displayName: 'Rina' } }, 'a blank id'],
+    [{ kind: 'RESOLVED', person: { personId: 'usr-014', displayName: '' } }, 'a blank name'],
+    [{ kind: 'UNATTRIBUTED' }, 'UNATTRIBUTED with no reason'],
+    [{ kind: 'UNATTRIBUTED', reason: 'BECAUSE' }, 'an off-list reason'],
+    [{ kind: 'SYSTEM' }, 'the comfortable third arm'],
+  ])('⚠️ REFUSES %o (%s) — and refuses it as `undefined`', (value) => {
+    // THE ASSERTION THAT MATTERS is the second half. Coercing garbage into
+    // UNATTRIBUTED would give every typo a legitimate-looking absence to hide
+    // in — and UNATTRIBUTED is a CLAIM ("no person could be resolved, and here
+    // is why"), not a shrug.
+    const parsed = asActorAttribution(value);
+    expect(parsed).toBeUndefined();
+    expect(parsed).not.toEqual(NOBODY);
+  });
+
+  it('the unattributable reasons name a FAILURE TO RESOLVE A HUMAN — no SYSTEM member', () => {
+    expect([...UNATTRIBUTED_REASONS]).toEqual([
+      'NO_PERSON_IN_SESSION',
+      'IDENTITY_PROVIDER_UNAVAILABLE',
+    ]);
+    // "The system did it" is the label that makes an unattributed act look
+    // answered. Every member here is something somebody can go and fix.
+    for (const reason of UNATTRIBUTED_REASONS) {
+      for (const shrug of ['SYSTEM', 'AUTOMATIC', 'N_A', 'UNKNOWN', 'OTHER']) {
+        expect(reason).not.toContain(shrug);
+      }
+    }
+  });
+});
+
+describe('E2 — ⚠️ AN UNATTRIBUTED OVERRIDE CANNOT COMPLETE (the operator ruling)', () => {
+  const override = (by: ActorAttribution): EnforcementOverride => ({
+    overriddenBy: by,
+    reason: 'COMMERCIAL_RISK_ACCEPTED',
+    overriddenVerdict: 'ADVERSE',
+    overriddenAt: '2026-09-15T04:20:00.000Z',
+  });
+
+  it('completes when a person is named, and never when one is not', () => {
+    expect(overrideCompletes(override(NAMED))).toBe(true);
+    expect(overrideCompletes(override(NOBODY))).toBe(false);
+  });
+
+  it('⚠️ THE MODE FALLS THROUGH TO THE CEILING — from EVERY starting mode', () => {
+    for (const mode of ENFORCEMENT_MODES) {
+      for (const source of ENFORCEMENT_MODE_SOURCES) {
+        expect(effectiveWithOverride({ mode, source }, override(NOBODY))).toEqual({
+          mode: MAXIMUM_RIGOUR,
+          source: 'UNATTRIBUTED_OVERRIDE',
+        });
+      }
+    }
+  });
+
+  it('and the fall-through SAYS WHY — a fixable sentence, not "it is set to block"', () => {
+    const { source } = effectiveWithOverride(
+      { mode: 'BLOCK_OVERRIDABLE', source: 'AS_SET' },
+      override(NOBODY),
+    );
+    expect(source).toBe('UNATTRIBUTED_OVERRIDE');
+    expect(source).not.toBe('AS_SET');
+  });
+
+  it('a COMPLETING override changes nothing here — whether it may be honoured is a separate question', () => {
+    const at = { mode: 'BLOCK_OVERRIDABLE', source: 'AS_SET' } as const;
+    expect(effectiveWithOverride(at, override(NAMED))).toEqual(at);
+    expect(effectiveWithOverride(at, undefined)).toEqual(at);
+    // The "may it be honoured" question is `overrideAllowed`, and it is
+    // deliberately NOT folded in: two rules in one function is how one of them
+    // gets forgotten.
+    expect(overrideAllowed('BLOCK_OVERRIDABLE')).toBe(true);
+  });
+
+  it('a REFUSED override is coherent at the ceiling and NOWHERE ELSE', () => {
+    const refused = override(NOBODY);
+    const stampWith = (mode: EnforcementMode, source: string) =>
+      ({
+        checkId: 'halal.certificate',
+        verdict: 'ADVERSE',
+        mode,
+        modeSource: source,
+        override: refused,
+      }) as unknown as GovernedCheckStamp;
+
+    expect(isCoherentStamp(stampWith(MAXIMUM_RIGOUR, 'UNATTRIBUTED_OVERRIDE'))).toBe(true);
+    // The mode is right but the provenance claims something else did it.
+    expect(isCoherentStamp(stampWith(MAXIMUM_RIGOUR, 'AS_SET'))).toBe(false);
+    // The provenance is right but the mode claims the fall-through did not happen.
+    expect(isCoherentStamp(stampWith('BLOCK_OVERRIDABLE', 'UNATTRIBUTED_OVERRIDE'))).toBe(false);
+    expect(isCoherentStamp(stampWith('OBSERVE', 'UNATTRIBUTED_OVERRIDE'))).toBe(false);
+  });
+
+  it('⚠️ THE LANE IS FULLY BUILT AND UNUSABLE — the portal has NO PERSON to name', () => {
+    // `ENF-NO-PERSON-IN-IDENTITY-01`, asserted against the real identity type
+    // rather than described. Today EVERY override E3 could construct is
+    // unattributed, so every one of them falls through to the ceiling. That is
+    // the design: a built lane that is visibly unusable is how F1 identity gets
+    // prioritised, instead of the gap being papered over with a typed name.
+    const identity = sources()['/src/context/CurrentIdentityContext.tsx'];
+    expect(identity).toBeDefined();
+    const code = codeOf(identity);
+    expect(code).toContain('export interface CurrentIdentity {');
+    for (const personField of ['personId', 'displayName', 'userId', 'email']) {
+      expect(code).not.toContain(personField);
+    }
+  });
+});
+
+describe('E2 — ONE STANDARD FOR A REVIEW DATE (what the verb writes, the ratchet reads)', () => {
+  it('accepts a real calendar day', () => {
+    expect(isReviewDay('2026-09-30')).toBe(true);
+    expect(isReviewDay('2024-02-29')).toBe(true);
+  });
+
+  it.each([
+    ['2026-02-30', 'a day February does not have — Date.parse ROLLS IT OVER to 2 March'],
+    ['2026-04-31', 'the same trap in April'],
+    ['2026-13-01', 'a month that does not exist'],
+    ['2026-09-30T00:00:00.000Z', 'an instant, not a day'],
+    ['30/09/2026', 'the other date order'],
+    ['last Tuesday', 'not a date'],
+    ['', 'empty'],
+  ])('refuses %o (%s)', (value) => {
+    expect(isReviewDay(value)).toBe(false);
+  });
+
+  it.each([undefined, null, 20260930, {}])('refuses the non-string %o', (value) => {
+    expect(isReviewDay(value)).toBe(false);
+  });
+
+  it('⚠️ what the verb refuses to WRITE, the ratchet refuses to READ', () => {
+    // One expression of the rule, two consumers (the `confirmedQtyWithinBounds`
+    // discipline). A date can never be recordable and unreadable at once — which
+    // is the shape a permanent relaxation would have hidden in.
+    const rollover = led('bpom.lot', 'OBSERVE', '2026-08-01T09:00:00.000Z', '2026-02-30');
+    expect(isReviewDay('2026-02-30')).toBe(false);
+    expect(effectiveEnforcement([rollover], 'bpom.lot', BEFORE)).toEqual({
+      mode: 'BLOCK_OVERRIDABLE',
+      source: 'EXPIRY_TIGHTENED',
+    });
   });
 });

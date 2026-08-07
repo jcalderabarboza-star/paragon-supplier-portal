@@ -13,6 +13,20 @@ import { deriveHeaderDisposition, type GrHeaderDisposition } from './grRollup';
 import { isMatched } from './invoiceRollup';
 import { BASE_CURRENCY, BID_CURRENCIES, isBidCurrency } from '../../lib/currencyPolicy';
 import { isUsableRate } from '../../lib/fxPin';
+import {
+  ENFORCEMENT_MODES,
+  GOVERNED_CHECK_IDS,
+  MAXIMUM_RIGOUR,
+  UNATTRIBUTED_REASONS,
+  asActorAttribution,
+  isAttributed,
+  isEnforcementMode,
+  isGovernedCheckId,
+  isReviewDay,
+  rigour,
+  settingInForce,
+  type EnforcementSetting,
+} from '../../lib/enforcement';
 
 const BINDINGS = new Map<string, PolicyHookFn>();
 
@@ -179,3 +193,83 @@ const rfqFxPinWellFormed: PolicyHookFn = ({ payload }) => {
 };
 
 bindPolicyHook(POLICY_HOOKS.RFQ_FX_PIN_WELL_FORMED, rfqFxPinWellFormed);
+
+// — Enforcement set: the recorded relaxation must be GOVERNED (CP-3 · E2) ——————
+//
+// THE DIRECTION RULE, as the operator dispatched it: TIGHTENING IS ALWAYS
+// LEGAL; LOOSENING REQUIRES `reviewBy` AND A NAMED ACTOR. Read the asymmetry
+// the right way round — this is not "loosening needs paperwork", it is
+//
+//   THE SAFEST ACT IS ALWAYS AVAILABLE TO ANYBODY.
+//
+// Setting a check to full rigour needs no review date, no resolved identity and
+// no argument. Everything below it does. Failing in the strict direction costs a
+// blocked dock; failing in the other costs an anonymous unlock, and only one of
+// those is recoverable after the goods have moved.
+//
+// FOUR REFUSALS, each by name:
+//   1. an unrecognised MODE. Note the direction: `effectiveEnforcement` RANKS an
+//      unknown mode at the ceiling (the class rule), but this verb REFUSES it.
+//      Reading and writing want opposite behaviours — a stored typo must not
+//      relax anything, and an authoring typo must be told, not silently
+//      maximised into a block nobody asked for.
+//   2. a malformed ACTOR — including a `RESOLVED` one missing either field.
+//      Coercing it to UNATTRIBUTED would give every typo a legitimate-looking
+//      absence to hide in.
+//   3. a relaxation with NO READABLE `reviewBy`. The type already forbids it;
+//      this is the runtime half, because the payload crosses a seam and a type
+//      guarantee is only as strong as the authoring on the other side.
+//   4. a LOOSENING by an unattributed actor.
+//
+// The baseline for "loosening" is the LAST RECORDED MODE, not the effective
+// (possibly ratcheted) one — two reasons, and both matter. A lapse is a
+// CONSEQUENCE, not a decision, so comparing against it would let the calendar
+// silently re-classify an unchanged decision as a relaxation; and legality would
+// then depend on WHEN the command was dispatched, which is a clock deciding a
+// transition by another route. An unset check baselines at MAXIMUM_RIGOUR, so
+// THE FIRST EVER SETTING BELOW FULL RIGOUR IS A LOOSENING and must be named.
+const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target }) => {
+  const mode = payload.mode;
+  if (typeof mode !== 'string' || !isEnforcementMode(mode)) {
+    return {
+      ok: false,
+      reason: `mode '${String(mode)}' is not an enforcement mode (${ENFORCEMENT_MODES.join(', ')})`,
+    };
+  }
+  if (!isGovernedCheckId(entityId)) {
+    // Defence in depth: `readState` already answers null for an unknown check,
+    // so the dispatcher raised NOT_FOUND before this ran. Stated anyway, because
+    // "the target happens to check it" is a convention and this is a rule.
+    return {
+      ok: false,
+      reason: `'${entityId}' is not a governed check (${GOVERNED_CHECK_IDS.join(', ')})`,
+    };
+  }
+  const actor = asActorAttribution(payload.setBy);
+  if (!actor) {
+    return {
+      ok: false,
+      reason:
+        "setBy must be { kind: 'RESOLVED', person: { personId, displayName } } or " +
+        `{ kind: 'UNATTRIBUTED', reason } (${UNATTRIBUTED_REASONS.join(', ')})`,
+    };
+  }
+  if (mode !== MAXIMUM_RIGOUR && !isReviewDay(payload.reviewBy)) {
+    return {
+      ok: false,
+      reason: `a relaxation to ${mode} requires reviewBy as a readable YYYY-MM-DD, got ${String(payload.reviewBy)}`,
+    };
+  }
+  const ledger = target.readEntity(entityId) as readonly EnforcementSetting[] | null;
+  const current = settingInForce(ledger ?? undefined, entityId);
+  const baseline = current && isEnforcementMode(current.mode) ? current.mode : MAXIMUM_RIGOUR;
+  if (rigour(mode) < rigour(baseline) && !isAttributed(actor)) {
+    return {
+      ok: false,
+      reason: `loosening ${entityId} from ${baseline} to ${mode} requires a NAMED actor (setBy.kind is UNATTRIBUTED: ${actor.reason})`,
+    };
+  }
+  return { ok: true };
+};
+
+bindPolicyHook(POLICY_HOOKS.ENFORCEMENT_SET_GOVERNED, enforcementSetGoverned);

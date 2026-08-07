@@ -64,9 +64,51 @@
 //       pure function. Nothing here is a setting and nothing here is tunable.
 //     · THE SETTING IS DATA BEHIND THE SEAM — `FxPin`-shaped: recorded by a
 //       named person at an instant, superseded by appending rather than edited,
-//       and read through `useDataService()`. **E1 DECLARES `EnforcementSetting`
-//       AND SEEDS NOT ONE.** No store, no fixture, no dispatcher transition, no
-//       consumer — that is E2 and E3.
+//       and read through `useDataService()`. **E1 DECLARED `EnforcementSetting`
+//       AND SEEDED NOT ONE.** E2 supplies the store, the recording verb and the
+//       read seam — AND STILL SEEDS NOT ONE (see below).
+//
+// ── E2 — WHAT THIS FILE GAINED, AND WHAT IT DID NOT ────────────────────────
+//   The DERIVATION over the ledger lives here, beside the type it reads, on the
+//   `effectivePin` precedent (`fxPin.ts`): `settingInForce` picks the last
+//   recorded act, `effectiveEnforcement` folds the ratchet onto it, and
+//   `settingHistory` proves the superseded ones are still there. All three are
+//   PURE and take the ledger as an argument — the STORE is `enforcementSetting
+//   Store`, the VERB is `t_enforcement_set`, and neither is named in this file.
+//   The clock stays out: `setAt` / `overriddenAt` are recorded BY the store at
+//   the moment of the act (the `pinnedAt` discipline — a caller that could set
+//   it could backdate its own audit entry), and every function here still takes
+//   its instant as an argument.
+//
+//   ⚠️ **NOTHING IS SEEDED, AND THAT IS A RULING, NOT A GAP.** The ledger ships
+//   EMPTY. An empty ledger derives `BLOCK` — maximum rigour — with the source
+//   `NO_SETTING_RECORDED`, so the un-governed state is the safe one and no
+//   relaxation exists until somebody records one. Seeding anything below `BLOCK`
+//   would be a relaxation of shipped behaviour, which is D-ENF-4 and UNRULED.
+//
+// ── ⚠️ E2 — THE RULING ON `ENF-NO-PERSON-IN-IDENTITY-01` (operator) ─────────
+//   An override's ENTIRE VALUE IS ACCOUNTABILITY — this named person accepted
+//   this risk on this date. `CurrentIdentity` carries a persona, a tenant and a
+//   company; NO HUMAN. So an actor is a DISCRIMINATED ATTRIBUTION
+//   (`ActorAttribution`): either a RESOLVED identity, or UNATTRIBUTED carrying
+//   the reason it could not be resolved.
+//
+//     AN UNATTRIBUTED OVERRIDE CANNOT COMPLETE. THE MODE FALLS THROUGH TO
+//     `BLOCK`. THE OVERRIDE LANE IS FULLY BUILT AND UNUSABLE UNTIL IDENTITY
+//     EXISTS.
+//
+//   The three obvious answers each fail: waiting for F1 OIDC blocks E3
+//   indefinitely; CAPTURING A TYPED NAME IS FORGEABLE AND WORSE THAN NOTHING
+//   BECAUSE IT LOOKS LIKE ATTRIBUTION; dropping attribution makes an override AN
+//   ANONYMOUS UNLOCK. This is the `UNDETERMINED` shape instead — AN EXPLICIT
+//   ABSENCE THAT REFUSES, NOT A VALUE THAT PROCEEDS — and it makes the gap
+//   CREATE PRESSURE rather than be papered over: a built lane that is visibly
+//   unusable is how F1 identity gets prioritised.
+//
+//   The same attribution governs `setBy`, and this is where "tightening is
+//   always legal" bites: a TIGHTENING may be recorded by an unattributed actor
+//   (it removes a relaxation — refusing it would be the wrong direction to fail),
+//   a LOOSENING may not. THE SAFEST ACT IS ALWAYS AVAILABLE TO ANYBODY.
 //
 // ── LAW 0.5 — WHY `dispatchInstant` IS AN ARGUMENT AND NEVER A CLOCK READ ───
 //   Same discipline as `receiptInstant` (H3), for the same reason. The ratchet
@@ -125,6 +167,18 @@ export type EnforcementMode = (typeof ENFORCEMENT_MODES)[number];
 /** The modes that are a RELAXATION — anything short of full rigour. Derived by
  *  exclusion, so a mode inserted into the ramp is relaxed unless it is `BLOCK`. */
 export type RelaxedMode = Exclude<EnforcementMode, 'BLOCK'>;
+
+/**
+ * The top of the ramp — **DERIVED FROM THE ARRAY, never the literal `'BLOCK'`.**
+ *
+ * E2 needs "maximum rigour" in three places (no setting recorded, an
+ * unrecognised mode, a refused override) and each of them is the class rule
+ * `AN UNRECOGNISED MEMBER OF A GOVERNING ENUM RANKS AT THE CEILING`. Writing
+ * `'BLOCK'` three times would restate the ramp three times; taking the last
+ * element means a stricter mode appended tomorrow moves all three at once.
+ */
+export const MAXIMUM_RIGOUR: EnforcementMode =
+  ENFORCEMENT_MODES[ENFORCEMENT_MODES.length - 1];
 
 /**
  * Narrow an arbitrary string to an enforcement mode — **THE BOUNDARY E2 MUST
@@ -290,6 +344,93 @@ export interface ActingPerson {
   readonly displayName: string;
 }
 
+/**
+ * Why an act could not name the person who took it. A CLOSED VOCABULARY, for
+ * the same reason `OVERRIDE_REASONS` is one: an absence nobody can count is an
+ * absence nobody can fix.
+ *
+ * ⚠️ **THERE IS NO `SYSTEM` MEMBER, AND THAT IS THE POINT.** "The system did
+ * it" is the comfortable label that makes an unattributed act look answered;
+ * every member here names a FAILURE TO RESOLVE A HUMAN, which is a thing
+ * somebody can go and fix. Both are PROVISIONAL pending operator ratification,
+ * on the `OVERRIDE_REASONS` precedent — recorded as decisions TAKEN so that
+ * ratifying is agreeing with something written down.
+ */
+export const UNATTRIBUTED_REASONS = Object.freeze([
+  /** Today's state, exactly: `CurrentIdentity` is `{ personaType, supplierId,
+   *  supplierName }` and the portal has no notion of a person at all
+   *  (`ENF-NO-PERSON-IN-IDENTITY-01`). */
+  'NO_PERSON_IN_SESSION',
+  /** F1 identity exists and did not answer. A DIFFERENT fact from the above —
+   *  one is a missing capability, the other a failing one, and collapsing them
+   *  would hide the day the first was fixed. */
+  'IDENTITY_PROVIDER_UNAVAILABLE',
+] as const);
+
+/** The unattributable reasons as a type. DERIVED from the list. */
+export type UnattributedReason = (typeof UNATTRIBUTED_REASONS)[number];
+
+/**
+ * WHO TOOK A RECORDED ACT — **a discriminated attribution, never a bare name**
+ * (the operator's ruling on `ENF-NO-PERSON-IN-IDENTITY-01`; see the header).
+ *
+ * An act either names a person or says WHY IT CANNOT. There is deliberately no
+ * third shape and no optional field: a nullable `person` would let an absence
+ * pass every check a presence passes, which is how an anonymous unlock gets
+ * written down as an override.
+ */
+export type ActorAttribution =
+  | { readonly kind: 'RESOLVED'; readonly person: ActingPerson }
+  | { readonly kind: 'UNATTRIBUTED'; readonly reason: UnattributedReason };
+
+/** The resolved arm, for the places that need the person itself. */
+export type ResolvedActor = Extract<ActorAttribution, { kind: 'RESOLVED' }>;
+
+/** Does this act name a person? The ONE predicate the accountability rules read
+ *  — `overrideCompletes` and the loosening gate both go through it, so "named"
+ *  means the same thing in both places. */
+export function isAttributed(actor: ActorAttribution): actor is ResolvedActor {
+  return actor.kind === 'RESOLVED';
+}
+
+const nonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim() !== '';
+
+/**
+ * Narrow an arbitrary value to an `ActorAttribution` — **the boundary the
+ * recording verb must use**, and the third member of the `isEnforcementMode` /
+ * `isGovernedCheckId` family. An actor arrives from behind the seam as JSON,
+ * and JSON has no discriminated unions.
+ *
+ * ⚠️ **A MALFORMED ACTOR IS `undefined`, NOT AN UNATTRIBUTED ONE.** Coercing
+ * garbage into `UNATTRIBUTED` would give every typo a legitimate-looking
+ * absence to hide in, and `UNATTRIBUTED` is a CLAIM — "no person could be
+ * resolved, and here is why". The caller refuses instead.
+ *
+ * A `RESOLVED` actor needs BOTH fields non-empty: a blank `displayName` beside a
+ * real `personId` is an audit that reads as nobody in five years, and a blank
+ * `personId` is a name that survives nothing.
+ */
+export function asActorAttribution(value: unknown): ActorAttribution | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const actor = value as Record<string, unknown>;
+  if (actor.kind === 'RESOLVED') {
+    const person = actor.person as Record<string, unknown> | undefined;
+    if (typeof person !== 'object' || person === null) return undefined;
+    if (!nonEmptyString(person.personId) || !nonEmptyString(person.displayName)) return undefined;
+    return {
+      kind: 'RESOLVED',
+      person: { personId: person.personId, displayName: person.displayName },
+    };
+  }
+  if (actor.kind === 'UNATTRIBUTED') {
+    return (UNATTRIBUTED_REASONS as readonly string[]).includes(actor.reason as string)
+      ? { kind: 'UNATTRIBUTED', reason: actor.reason as UnattributedReason }
+      : undefined;
+  }
+  return undefined;
+}
+
 // ─── The setting (declared here; seeded, stored and served at E2) ────────────
 
 /**
@@ -308,9 +449,16 @@ export interface ActingPerson {
  */
 export type EnforcementSetting = {
   readonly checkId: GovernedCheckId;
-  /** The person who decided. Not a role, and not "the system". */
-  readonly setBy: ActingPerson;
-  /** When the decision was recorded (ISO instant). Audit, not expiry. */
+  /**
+   * WHO decided — a discriminated attribution, not a bare person (E2 ruling).
+   * An UNATTRIBUTED setter may still record a TIGHTENING; a LOOSENING is refused
+   * at the recording verb (`enforcement_set_governed`). Not a role, and not
+   * "the system".
+   */
+  readonly setBy: ActorAttribution;
+  /** When the decision was recorded (ISO instant). Audit, not expiry. STORE-
+   *  ASSIGNED at the moment of the act (the `pinnedAt` discipline): a caller
+   *  that could set it could backdate its own audit entry. */
   readonly setAt: string;
 } & (
   | {
@@ -335,7 +483,38 @@ export type EnforcementSetting = {
  * — "this was set to observe and the review date passed" is a different
  * sentence from "this is set to block", and an operator acts on the difference.
  */
-export type EnforcementModeSource = 'AS_SET' | 'EXPIRY_TIGHTENED';
+export const ENFORCEMENT_MODE_SOURCES = Object.freeze([
+  /** The mode is the one a person recorded, unmodified. */
+  'AS_SET',
+  /** The recorded mode's `reviewBy` has passed and the ratchet tightened it one
+   *  step (D-ENF-3). */
+  'EXPIRY_TIGHTENED',
+  /** E2 — THE LEDGER NAMES NO SETTING FOR THIS CHECK. The mode is the ceiling
+   *  because nothing has been decided, which is a different sentence from
+   *  "somebody chose full rigour" and an operator acts on the difference. */
+  'NO_SETTING_RECORDED',
+  /** E2 — a setting exists and names a mode THIS BUILD DOES NOT KNOW. Ranked at
+   *  the ceiling per the class rule; named separately so the ledger being
+   *  unreadable is never mistaken for the ledger being strict. */
+  'UNRECOGNISED_MODE',
+  /** E2 — an override was attempted by an UNATTRIBUTED actor, so it could not
+   *  complete and the mode fell through to the ceiling (the operator's ruling on
+   *  `ENF-NO-PERSON-IN-IDENTITY-01`). */
+  'UNATTRIBUTED_OVERRIDE',
+] as const);
+
+/**
+ * WHY the mode in force is the mode in force. DERIVED from the list.
+ *
+ * ⚠️ **EVERY MEMBER NAMES A DIFFERENT REASON AND NONE OF THEM OVERSTATES.** The
+ * rule this vocabulary obeys is the one E1 recorded at the ceiling: a `BLOCK`
+ * whose review lapsed reads `AS_SET`, because reporting `EXPIRY_TIGHTENED`
+ * would ANNOUNCE AN EVENT THAT DID NOT OCCUR. Three of the five modes below
+ * would collapse into a single "it blocked" if they shared a source — and a
+ * provenance field that overstates is worse than an absent one, because it is
+ * actionable.
+ */
+export type EnforcementModeSource = (typeof ENFORCEMENT_MODE_SOURCES)[number];
 
 /** The mode actually in force at an instant, and where it came from. */
 export interface EffectiveEnforcement {
@@ -346,6 +525,24 @@ export interface EffectiveEnforcement {
 /** An ISO calendar day. `reviewBy` is a DAY, not an instant: a review is due by
  *  a date, and a relaxation that expired at 14:32 would be unexplainable. */
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Is this a readable ISO calendar day? The `reviewBy` boundary, exported so the
+ * RECORDING verb and the RATCHET hold a review date to ONE standard — the
+ * `confirmedQtyWithinBounds` discipline: one expression of the rule, the policy
+ * as law and the reader as the consumer that must never see a value it refused.
+ *
+ * Shape AND readability, both: `'2026-13-45'` matches the pattern and is not a
+ * date, and a `reviewBy` that never arrives is a relaxation that never lapses.
+ */
+export function isReviewDay(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    ISO_DAY.test(value) &&
+    Number.isFinite(Date.parse(value)) &&
+    new Date(value).toISOString().slice(0, 10) === value
+  );
+}
 
 /**
  * Has the review date passed at `dispatchInstant`?
@@ -372,8 +569,10 @@ function reviewLapsed(setting: EnforcementSetting, dispatchInstant: string): boo
   const reviewBy: string | null | undefined = setting.reviewBy;
   if (reviewBy === null || reviewBy === undefined) return setting.mode !== 'BLOCK';
   const day = dispatchInstant.slice(0, 10);
-  if (!ISO_DAY.test(reviewBy) || !ISO_DAY.test(day)) return true;
-  if (!Number.isFinite(Date.parse(reviewBy)) || !Number.isFinite(Date.parse(day))) return true;
+  // ONE standard for a review date, shared with the recording verb (E2): the
+  // policy refuses to WRITE what this refuses to READ, so a date can never be
+  // recordable and unreadable at once.
+  if (!isReviewDay(reviewBy) || !isReviewDay(day)) return true;
   return day > reviewBy;
 }
 
@@ -409,6 +608,87 @@ export function effectiveMode(
   return tightened === setting.mode
     ? { mode: setting.mode, source: 'AS_SET' }
     : { mode: tightened, source: 'EXPIRY_TIGHTENED' };
+}
+
+// ─── E2 · the ledger (append-only; effective DERIVED — the `effectivePin` shape)
+
+/**
+ * THE SETTING IN FORCE for one check — the LAST recorded one, which is what
+ * "supersedes" means on an append-only ledger. Derived, never stored.
+ *
+ * `effectivePin` EXACTLY, including the tie-break: ordered by `setAt`, with
+ * LATER ARRAY POSITION winning a tie, because two acts recorded in the same
+ * millisecond are ordered by the sequence they were appended in and that is the
+ * only ordering that exists at that resolution.
+ *
+ * ⚠️ **THE KEY IS `checkId` ALONE (D1, ruled), AND WIDENING IT IS ADDITIVE.**
+ * The ledger is a FLAT ARRAY, deliberately not `Record<GovernedCheckId, …>` —
+ * the `fxPin` header's own words, "an APPEND-ONLY LEDGER, not a map keyed by
+ * currency". A map would bake one field into the shape of the store; an array
+ * bakes nothing, so adding a dimension (supplier · plant · material) later
+ * changes exactly TWO expressions — the predicate on the next line and the
+ * comparator below it — and no stored record and no call site. That is why the
+ * cost of not foreclosing D1 here is nil.
+ */
+export function settingInForce(
+  ledger: readonly EnforcementSetting[] | undefined,
+  checkId: GovernedCheckId,
+): EnforcementSetting | undefined {
+  if (!ledger) return undefined;
+  let winner: EnforcementSetting | undefined;
+  for (const setting of ledger) {
+    if (setting.checkId !== checkId) continue;
+    if (!winner || setting.setAt >= winner.setAt) winner = setting;
+  }
+  return winner;
+}
+
+/**
+ * Every setting ever recorded for a check, in ledger order — the superseded acts
+ * the append-only rule preserves. `pinHistory`'s twin, and it exists for the same
+ * reason: so "the prior decision is kept" is a READABLE FACT rather than a claim.
+ *
+ * ⚠️ This is what a mutable current-setting record would have destroyed. The
+ * ratchet tightens against a `reviewBy`; overwrite the record and the date it
+ * tightened against is gone, so THE RATCHET BECOMES UNAUDITABLE — you can see
+ * that it bit and never why.
+ */
+export function settingHistory(
+  ledger: readonly EnforcementSetting[] | undefined,
+  checkId: GovernedCheckId,
+): readonly EnforcementSetting[] {
+  return (ledger ?? []).filter((s) => s.checkId === checkId);
+}
+
+/**
+ * THE MODE IN FORCE for a check at an instant, read off the whole ledger. The
+ * one function a gate at E3 would call, and the only place the three
+ * "maximum rigour" fall-throughs live.
+ *
+ * ⚠️ **AN EMPTY LEDGER IS THE CEILING, NOT A HOLE.** No recorded setting means
+ * nothing has been relaxed, so the mode is `MAXIMUM_RIGOUR` and the source says
+ * `NO_SETTING_RECORDED` — never `AS_SET`, because nobody set it. This is why
+ * seeding nothing (D-ENF-4 is UNRULED) does not leave the system undefended: the
+ * un-governed state IS the strict state.
+ *
+ * ⚠️ **AN UNRECOGNISED MODE RANKS AT THE CEILING** — the class rule
+ * (`ENF-UNKNOWN-MODE-FAILS-OPEN-01`), applied at the seam where it matters. The
+ * ledger arrives from behind `useDataService()` as JSON, and JSON has no unions;
+ * a typo in a stored mode must mean MAXIMUM rigour, never minimum. It is named
+ * separately from `NO_SETTING_RECORDED` because "unreadable" and "undecided" are
+ * different problems with different fixes.
+ */
+export function effectiveEnforcement(
+  ledger: readonly EnforcementSetting[] | undefined,
+  checkId: GovernedCheckId,
+  dispatchInstant: string,
+): EffectiveEnforcement {
+  const setting = settingInForce(ledger, checkId);
+  if (!setting) return { mode: MAXIMUM_RIGOUR, source: 'NO_SETTING_RECORDED' };
+  if (!isEnforcementMode(setting.mode)) {
+    return { mode: MAXIMUM_RIGOUR, source: 'UNRECOGNISED_MODE' };
+  }
+  return effectiveMode(setting, dispatchInstant);
 }
 
 // ─── The stamp ───────────────────────────────────────────────────────────────
@@ -458,17 +738,65 @@ export type OverrideReason = (typeof OVERRIDE_REASONS)[number];
  * `GovernedCheckStamp`), so an override that names a different verdict than the
  * one stamped cannot be written down at all.
  *
- * ⚠️ **NO `overriddenAt` AT E1, DELIBERATELY.** This module has no clock and
- * would have to take the instant from a caller that does not exist yet; adding
- * the field at E2 alongside the store that can supply it is a widening, not a
- * migration. Noted so the absence reads as a boundary rather than an oversight.
+ * ⚠️ **`overriddenAt` LANDED AT E2 (D4, ruled).** An override is A DATED ACT OF
+ * ACCOUNTABILITY and inherits nothing — not the stamp's context, not the
+ * command's. E1 had no clock and no caller to take the instant from; E2 has the
+ * store, which assigns it at the moment of the act exactly as `pinnedAt` is
+ * assigned. It never comes from a payload and it is never read inside this
+ * module.
  */
 export interface EnforcementOverride<V extends OverridableVerdict = OverridableVerdict> {
-  /** The person. Never a role — see `ActingPerson`. */
-  readonly overriddenBy: ActingPerson;
+  /**
+   * WHO — a discriminated attribution (the operator's ruling on
+   * `ENF-NO-PERSON-IN-IDENTITY-01`). An `UNATTRIBUTED` override is RECORDABLE
+   * and does not COMPLETE: `overrideCompletes` is false and
+   * `effectiveWithOverride` falls the mode through to the ceiling. Recordable on
+   * purpose — the attempt happened, and erasing it would relax honesty to spare
+   * a blush.
+   */
+  readonly overriddenBy: ActorAttribution;
   readonly reason: OverrideReason;
   /** THE EXACT VERDICT OVERRIDDEN. Bound to the stamp's own verdict by type. */
   readonly overriddenVerdict: V;
+  /** WHEN the override was recorded (ISO instant) — D4. Store-assigned at the
+   *  act, never payload-supplied. */
+  readonly overriddenAt: string;
+}
+
+/**
+ * Does this override actually take effect?
+ *
+ *   **AN UNATTRIBUTED OVERRIDE CANNOT COMPLETE** (operator ruling). An
+ *   override's ENTIRE VALUE IS ACCOUNTABILITY — this named person accepted this
+ *   risk on this date — so one that cannot be attributed is not an override.
+ *
+ * Today this returns `false` for every override E3 could construct, because
+ * `CurrentIdentity` has no person in it. THAT IS THE DESIGN: the lane is fully
+ * built and visibly unusable until identity exists, which makes the gap create
+ * pressure instead of being papered over.
+ */
+export function overrideCompletes(override: EnforcementOverride): boolean {
+  return isAttributed(override.overriddenBy);
+}
+
+/**
+ * The mode in force once an attempted override is taken into account.
+ *
+ * Three cases, and only the third moves anything: no override → unchanged; a
+ * COMPLETING override → unchanged (whether it may be honoured at this mode is
+ * `overrideAllowed`, a separate question this function does not answer); a
+ * NON-COMPLETING override → `MAXIMUM_RIGOUR`, sourced `UNATTRIBUTED_OVERRIDE`.
+ *
+ * ⚠️ The source is not cosmetic. A surface must be able to say "this blocked
+ * because nobody could be named", which is a fixable sentence, rather than "this
+ * is set to block", which is not.
+ */
+export function effectiveWithOverride(
+  effective: EffectiveEnforcement,
+  override: EnforcementOverride | undefined,
+): EffectiveEnforcement {
+  if (override === undefined || overrideCompletes(override)) return effective;
+  return { mode: MAXIMUM_RIGOUR, source: 'UNATTRIBUTED_OVERRIDE' };
 }
 
 /** The fields every stamp carries, whatever it answered. */
@@ -531,12 +859,20 @@ type StampPerVerdict<V extends GovernedVerdict> = V extends GovernedVerdict
  * `PASS` cannot carry one, and an override cannot name a verdict other than the
  * stamped one — is already impossible to write.
  *
+ * ⚠️ **E2 SPLIT THE RULE IN TWO, because the ruling created a second legal
+ * shape.** A COMPLETING override is legal at exactly one mode, as before. A
+ * NON-COMPLETING one (unattributed) leaves the ceiling in force and says so —
+ * so `mode: BLOCK` beside a refused override is COHERENT, and it is the only
+ * mode that is. Any other pairing claims an outcome the fall-through did not
+ * produce.
+ *
  * ⚠️ Returns a boolean and refuses nothing on its own. THE ENFORCEMENT OF THIS
- * RULE IS THE CALLER'S, AND THE CALLER IS E2/E3 — a predicate in a headless
- * module cannot stop anybody, and pretending otherwise is the kind of claim
- * this lane exists to avoid.
+ * RULE IS THE CALLER'S, AND THE CALLER IS E3 — a predicate in a headless module
+ * cannot stop anybody, and pretending otherwise is the kind of claim this lane
+ * exists to avoid.
  */
 export function isCoherentStamp(stamp: GovernedCheckStamp): boolean {
   if (stamp.override === undefined) return true;
-  return overrideAllowed(stamp.mode);
+  if (overrideCompletes(stamp.override)) return overrideAllowed(stamp.mode);
+  return stamp.mode === MAXIMUM_RIGOUR && stamp.modeSource === 'UNATTRIBUTED_OVERRIDE';
 }
