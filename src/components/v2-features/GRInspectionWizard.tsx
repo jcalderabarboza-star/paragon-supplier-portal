@@ -249,12 +249,30 @@ const RegulatoryCheck: React.FC<RegulatoryCheckProps> = ({
 //     over. `RM-PSTN-7150` — palm stearin, the single most halal-load-bearing
 //     row in the master — does not fire either.
 //
-// It is left because RETIRING IT REQUIRES A FIELD THAT DOES NOT EXIST. There is
-// no `halalApplicable` on `MaterialMasterEntry`; authoring one (plus its class
-// rule, its provisional seed on all 42 rows and its `D-COMP-HALAL` escalation)
-// is a 2B-4a-shaped batch, and doing it inside a wiring batch would be exactly
-// the decision-smuggling `MG-NO-EMULSIFIER-GROUP-01` was held back from.
-// See `docs/findings.md` → `INFERHALAL-READS-PROSE-01`.
+// ⚠️ CORRECTED AT CP-3 · H1 (`H1-FALSIFIES-A-LIVE-COMMENT-01`). This paragraph
+// used to read: *"It is left because RETIRING IT REQUIRES A FIELD THAT DOES NOT
+// EXIST. There is no `halalApplicable` on `MaterialMasterEntry`; authoring one
+// (plus its class rule, its provisional seed on all 42 rows and its
+// `D-COMP-HALAL` escalation) is a 2B-4a-shaped batch…"* **EVERY CLAUSE OF THAT
+// IS NOW FALSE**: the field exists, the class rule exists, the seed covers all
+// 42 rows, and `D-COMP-HALAL-1..5` is on main. `C9-STALE-BY-FIX-01` — an
+// artifact going stale BY BEING FIXED — inside a comment rather than a contract.
+//
+// It is not a stale DESCRIPTION, which is why it was corrected in the batch that
+// falsified it rather than carried to the wiring batch: **IT ARGUES FOR LEAVING
+// A LIVE REGULATORY FAIL-OPEN IN PLACE.** A justification that has stopped being
+// true survives review on its own authority — a reviewer checks that the
+// reasoning is sound, not that its premise still holds.
+//
+// WHY IT IS STILL LEFT, stated on the premise that is actually true today:
+// `halalApplicable` is AUTHORED BUT UNRATIFIED. All 42 values are PROVISIONAL
+// pending `D-COMP-HALAL-1`, and wiring an unratified applicability against a
+// certificate corpus that does not exist (R0.1 NOT STARTED) is an outage wearing
+// compliance clothes. Retiring the parse is **H2**, a surface batch with its own
+// smoke; the certificate-verification leg is **H4**, gated on `D-COMP-HALAL-4`.
+// The replacement to read FROM is `halalOf` (`services/sdc/halal.ts`).
+// See `docs/findings.md` → `INFERHALAL-READS-PROSE-01`,
+// `HALAL-PROSE-READS-AN-ANSWER-01`.
 //
 // ── ⚠️ STILL TRUE AT CP-3, AND DELIBERATELY UNTOUCHED ───────────────────────
 // `REQUIRED-OPENS-PRE-ANSWERED-01` removed the fabricated `'Pass'` this function

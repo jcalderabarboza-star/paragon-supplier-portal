@@ -121,6 +121,46 @@ export type MaterialType = 'ROH' | 'VERP';
  */
 export type BpomApplicability = 'APPLICABLE' | 'NOT_APPLICABLE' | 'UNDETERMINED';
 
+/**
+ * Whether a received lot of this material requires a **halal check** —
+ * `INFERHALAL-READS-PROSE-01`'s named replacement for
+ * `description.toLowerCase().includes('halal')`.
+ *
+ * ── THREE STATES, THE SAME SHAPE AS `BpomApplicability`, A DIFFERENT REGIME ──
+ *   · `'REQUIRED'`     — a determination: this material needs a halal check.
+ *   · `'NOT_REQUIRED'` — a determination: it does not.
+ *   · `'UNDETERMINED'` — **NOT a determination.** Nobody has ruled. Every
+ *                        consumer must REFUSE on it (`halalOf`, `sdc/halal.ts`).
+ *
+ * ⚠️ **THE SHAPE IS BORROWED FROM BPOM. THE CONTENT IS NOT, AND MUST NOT BE.**
+ * `D-COMP-HALAL-1` says so in the register: BPOM rules packaging
+ * `NOT_APPLICABLE` by registry axis (`bpom.ts`), and halal may not — `doc-001`
+ * is an **MUI halal certificate covering PET bottles**, and
+ * `AdaptiveContext.tsx:89` puts `packaging` inside its `isHalal` selector.
+ * **Packaging is where the two regimes visibly disagree in this tree.** So the
+ * halal class rule seeds packaging `'UNDETERMINED'` — we do not know — rather
+ * than copying a ruling made under a different regulation. That is Seat 3's
+ * refinement, and it is compliance's to answer, not ours.
+ *
+ * ⚠️ **`'UNDETERMINED'` IS NOT QUARANTINE**, for the reason `BpomApplicability`
+ * records above: quarantine stores an untrustworthy fact and lets work proceed
+ * on it; this stores an EXPLICIT ABSENCE OF DETERMINATION and refuses
+ * IDENTICALLY to a code the master cannot resolve at all.
+ *
+ * ⚠️ **IT IS THE DEFAULT, NOT A FALLBACK.** A group nobody has ruled on — and a
+ * material-group AXIS nobody has considered — lands here by construction, so a
+ * group added tomorrow fails CLOSED without anyone remembering to think about
+ * halal. That is the exact property the prose parse lacks, where an unmatched
+ * description is silently a NO.
+ *
+ * ⚠️ **NEVER DERIVED FROM PROSE, AND NEVER FROM A CODE PREFIX.** The incumbent
+ * mechanism reads a supplier-typed `description`; `materialCode` is
+ * contractually OPAQUE (C9 §3). This value is POPULATED AT SEED, per row, from
+ * the material's declared GROUP — see `PROVISIONAL_HALAL_BY_GROUP`
+ * (`sdc/halal.ts`).
+ */
+export type HalalApplicability = 'REQUIRED' | 'NOT_REQUIRED' | 'UNDETERMINED';
+
 export interface MaterialMasterEntry {
   /**
    * The S/4 material code.
@@ -169,6 +209,28 @@ export interface MaterialMasterEntry {
    * into a silent pass, which is the precise defect this field replaced.
    */
   readonly bpomApplicable: BpomApplicability;
+  /**
+   * Halal-check applicability. **REQUIRED on every row**, for the reason
+   * `bpomApplicable` states: an entry that can omit it is an entry whose
+   * silence has to be interpreted, and the whole point of `'UNDETERMINED'` is
+   * that an absence of determination is WRITTEN DOWN rather than inferred from
+   * a missing key.
+   *
+   * ⚠️ **ALL 42 SEEDED VALUES ARE PROVISIONAL** — strategist-ruled on best
+   * practice at H1, **PENDING COMPLIANCE RATIFICATION**, and derived from the
+   * material's declared GROUP, never from its label and never from its code.
+   * `D-COMP-HALAL-1` is the open decision; this field is the shape its answer
+   * lands in, not the answer. See `sdc/halal.ts` for the rule and its disposal
+   * condition.
+   *
+   * ⚠️ **AUTHORED, NOT WIRED (H1).** Nothing reads this field. The receiving
+   * surface still decides the halal question by parsing prose
+   * (`inferHalal`, `GRInspectionWizard.tsx`), which is untouched — retiring it
+   * is H2, and the certificate-verification leg is H4, gated on
+   * `D-COMP-HALAL-4`. Editing a row here moves NOTHING today; it will move what
+   * an inspector is asked to check the moment H2 lands.
+   */
+  readonly halalApplicable: HalalApplicability;
 }
 
 /** The material master, keyed by S/4 material code. */
