@@ -398,10 +398,16 @@ describe('2B-3 — PK-PETB-8825 is its OWN item (operator ruling), not an alias'
     // No alias field was invented to soften the split. ⚠️ The key list is
     // EXACT, so a field added to the entry shape lands here first — which is
     // how `bpomApplicable` announced itself at 2B-4a rather than arriving
-    // unremarked.
+    // unremarked. ⚠️ IT WORKED A SECOND TIME: `halalApplicable` (CP-3 · H1)
+    // failed this assertion before any halal test existed, and is added here
+    // deliberately rather than by a red-test reflex. **This row is one of the
+    // eleven the halal seed leaves `'UNDETERMINED'`** — packaging, which BPOM
+    // excludes and halal may not (`D-COMP-HALAL-1`, Seat 3) — so the field's
+    // arrival on THIS entry is the split it is about, not an incidental one.
     expect(Object.keys(MATERIAL_MASTER['PK-PETB-8825']).sort()).toEqual([
       'bpomApplicable',
       'canonicalUom',
+      'halalApplicable',
       'label',
       'materialCode',
       'materialGroup',

@@ -109,6 +109,28 @@ const PROV_SUPPLIER_DRAFT: Provenance = Object.freeze({
 //   is gone, but the ruling still is not made. `D-COMP-BPOM` is now the thing
 //   standing between an operator and a receivable line, which is the correct
 //   place for an unanswered escalation to be felt.
+//
+//   ⚠️ `halalApplicable` LANDED AT CP-3 · H1 AND IS **AUTHORED, NOT WIRED.**
+//   Nothing reads it; `inferHalal` (`GRInspectionWizard.tsx`) still decides the
+//   halal question by parsing a supplier-typed `description`, and this batch
+//   does not touch it (that is H2). So editing a row here moves NOTHING today —
+//   which is exactly the state `bpomApplicable` was in at 2B-4a, and not the
+//   state it is in now.
+//
+//   ⚠️ EVERY VALUE IS **PROVISIONAL** — strategist-ruled on best practice at H1,
+//   PENDING COMPLIANCE RATIFICATION, taken from the row's DECLARED GROUP via
+//   `PROVISIONAL_HALAL_BY_GROUP` (`sdc/halal.ts`) and NEVER from the label:
+//   four labels in this file contain the word *Halal* and the parse that reads
+//   them is the defect. Thirty-one `REQUIRED` (everything that enters or feeds
+//   a formulation), ELEVEN `UNDETERMINED` (all packaging), and **ZERO
+//   `NOT_REQUIRED` — no row in this master has a basis for saying a halal
+//   determination is unnecessary, and none is invented to fill the state out.**
+//
+//   ⚠️ THE ELEVEN ARE SEAT 3'S REFINEMENT, NOT LEFTOVERS: **packaging is
+//   `UNDETERMINED`, NOT the BPOM axis rule.** BPOM excludes packaging; halal may
+//   not — `doc-001` is an MUI halal certificate linked to a PET bottle. Copying
+//   the neighbouring rule would have handed eleven rows a confident negative
+//   nobody gave. `D-COMP-HALAL-1` is compliance's to answer.
 
 export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
   'RM-EMUL-3310': {
@@ -118,6 +140,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-03', // humectants / glycols
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   'RM-EMUL-3320': {
     materialCode: 'RM-EMUL-3320',
@@ -126,6 +149,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-02', // emollients / esters
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   // CI-tail material (no modelable should-cost benchmark). To SDC it is an
   // ordinary material — present to show the model handles the actives tail.
@@ -136,6 +160,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04', // active ingredients — the tail
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'PK-PETB-8810': {
     materialCode: 'PK-PETB-8810',
@@ -144,6 +169,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20', // rigid plastic packaging
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
   // SDC-2b (F-1a) — second packaging material so the seeded persona (sup-007,
   // PT Berlina Packaging) carries a semi-firm line on its own material×period
@@ -156,6 +182,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-21', // closures
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
 
   // ══ CP-2 · 2B-2 — ADOPTED FROM THE DOCUMENT LANE ════════════════════════════
@@ -170,6 +197,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   // Sibling of the seed's `AI-NIAC-6601`, and the pair is worth reading
   // together: this label STATES its grade, 6601's does not. See
@@ -182,6 +210,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'AI-PANTO-6640': {
     materialCode: 'AI-PANTO-6640',
@@ -190,6 +219,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'AI-PEPTIDE-8801': {
     materialCode: 'AI-PEPTIDE-8801',
@@ -198,6 +228,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'AI-RETA-6750': {
     materialCode: 'AI-RETA-6750',
@@ -206,6 +237,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'AI-SALI-6800': {
     materialCode: 'AI-SALI-6800',
@@ -214,6 +246,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'AI-VITC-6720': {
     materialCode: 'AI-VITC-6720',
@@ -222,6 +255,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'AI-VITC-6730': {
     materialCode: 'AI-VITC-6730',
@@ -230,6 +264,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-05 · fragrance & sensory ────────────────────────────────────────────
@@ -240,6 +275,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-05',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'FR-MKOV-5510': {
     materialCode: 'FR-MKOV-5510',
@@ -248,6 +284,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-05',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   // ⚠️ TRIMMED (`INSTANCE-DATA-IN-A-TYPE-LABEL-01`). The lane said
   // "Make Over Oud & Amber Accord — Batch Q2-2025". A BATCH IS AN INSTANCE, NOT
@@ -262,6 +299,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-05',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   // ⚠️ TRIMMED, same rule. The lane said "… — Lot A" at SIX sites across four
   // modules. Where that lot is operationally real it has nowhere to live in the
@@ -276,6 +314,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-05',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'FR-WARD-4430': {
     materialCode: 'FR-WARD-4430',
@@ -284,6 +323,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-05',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'FR-WARD-4440': {
     materialCode: 'FR-WARD-4440',
@@ -292,6 +332,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-05',
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-02 · emollients / oils / esters ─────────────────────────────────────
@@ -306,6 +347,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-02',
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   'RM-EMUL-9430': {
     materialCode: 'RM-EMUL-9430',
@@ -314,6 +356,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-02',
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-10 · oleochemical feedstocks (upstream of the formulation grain) ────
@@ -327,6 +370,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-10',
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   'RM-LAURIC-7200': {
     materialCode: 'RM-LAURIC-7200',
@@ -335,6 +379,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-10',
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   'RM-MYRST-7310': {
     materialCode: 'RM-MYRST-7310',
@@ -343,6 +388,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-10',
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   'RM-PALM-7100': {
     materialCode: 'RM-PALM-7100',
@@ -351,6 +397,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-10',
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
   'RM-STEAR-7300': {
     materialCode: 'RM-STEAR-7300',
@@ -359,6 +406,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-10',
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-20 · rigid plastic packaging ────────────────────────────────────────
@@ -369,6 +417,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
   'PK-PETB-8802': {
     materialCode: 'PK-PETB-8802',
@@ -377,6 +426,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
 
   // ── MG-23 · paper & board packaging ────────────────────────────────────────
@@ -387,6 +437,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-23',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
   'PK-CART-9910': {
     materialCode: 'PK-CART-9910',
@@ -395,6 +446,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-23',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
   // NOTE — `MG-21` (closures) and `MG-22` (metal) gain NO members here. The
   // tree's only unadopted closure is `PK-ALCP-2441` (RFQ-mute → 2B-3) and its
@@ -473,6 +525,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-06', // botanical extracts & functional
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-03 · humectants / glycols ───────────────────────────────────────────
@@ -500,6 +553,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-03',
     canonicalUom: 'KG',
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-20 · rigid plastic packaging ────────────────────────────────────────
@@ -516,6 +570,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
   'PK-PETB-8825': {
     materialCode: 'PK-PETB-8825',
@@ -533,6 +588,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
 
   // ── MG-21 · closures — where R-1's substrate-vs-function split PAYS OUT ─────
@@ -554,6 +610,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-21',
     canonicalUom: 'PCS',
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
 
   // NOTE — `MG-22` (metal packaging) STILL gains no member, and that is the
@@ -621,6 +678,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     // and no ASN line states a unit. Recorded as the weaker basis it is.
     canonicalUom: 'KG',
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-04 · active ingredients — the two EMULSIONS ─────────────────────────
@@ -653,6 +711,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG', // group convention; no ASN line states a unit
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
   'AI-HYALU-6615': {
     materialCode: 'AI-HYALU-6615',
@@ -664,6 +723,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-04',
     canonicalUom: 'KG', // group convention; no ASN line states a unit
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-10 · oleochemical feedstocks ────────────────────────────────────────
@@ -693,6 +753,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-10',
     canonicalUom: 'KG', // STATED by `c101`, not inferred from the group
     bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-02 · where the emulsifiers live, and that is the finding ────────────
@@ -737,6 +798,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-02',
     canonicalUom: 'KG', // STATED by `c201`, not inferred from the group
     bpomApplicable: 'APPLICABLE',
+    halalApplicable: 'REQUIRED',
   },
 
   // ── MG-20 · rigid plastic packaging ────────────────────────────────────────
@@ -754,6 +816,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-20',
     canonicalUom: 'PCS', // group convention; every MG-20 row is PCS
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
 
   // ── MG-21 · closures ───────────────────────────────────────────────────────
@@ -781,6 +844,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     materialGroup: 'MG-21',
     canonicalUom: 'PCS', // group convention; `PK-CAPF-8820`/`PK-ALCP-2441` are PCS
     bpomApplicable: 'NOT_APPLICABLE',
+    halalApplicable: 'UNDETERMINED',
   },
 });
 

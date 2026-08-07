@@ -4039,3 +4039,213 @@ are on main before H1 is dispatched.
   *a schedule decision smuggled as a gate*.
 - **C9's bytes untouched**; pin `af7f0b4` unaffected.
 - **FLOOR 2226/184, unchanged.** `npm run gates` green.
+
+---
+
+## CP-3 · H1 — HALAL APPLICABILITY, AUTHORED AND NOT WIRED
+
+The 2B-4a template, applied one regulation over. `INFERHALAL-READS-PROSE-01`
+gets its named replacement: **applicability as a MASTER FIELD, read through ONE
+refusal-shaped lookup.** Nothing is wired. `inferHalal` is live and untouched —
+that is H2, and it needs its own smoke.
+
+### What landed
+
+| Artifact | What it is |
+|---|---|
+| `HalalApplicability` (`sdc/types.ts`) | `'REQUIRED' \| 'NOT_REQUIRED' \| 'UNDETERMINED'` — a three-member STRING union, on 2B-4a's recorded encoding decision (in `boolean \| 'UNDETERMINED'` the string member is truthy, so `if (e.halalApplicable)` compiles and converts an absence into a determination). |
+| `MaterialMasterEntry.halalApplicable` | **REQUIRED on all 42 rows.** An entry that can omit it is an entry whose silence has to be interpreted. |
+| `halalOf(code, master?)` (`sdc/halal.ts`) | `{ ok: true; required: boolean }` or `{ ok: false; reason; materialCode }`. **The reason reaches only the message — no caller may branch on it to proceed.** ONE refusal branch in every consumer. |
+| `PROVISIONAL_HALAL_BY_GROUP` | The class rule, **derived from `MATERIAL_GROUPS`** — keys are the registry's groups, so a group added tomorrow appears automatically as `'UNDETERMINED'`, which refuses. |
+| `halalApplicability.test.ts` | 18 tests. |
+
+### THE RULE READS THE `axis`, AND NOTHING ELSE
+
+`bpom.ts` derives its packaging half from the registry `axis` and names its
+applicable half as **three quoted group numbers**. This rule has **no group
+number in it at all** — asserted, not claimed: the test greps this module's own
+source for a quoted `'MG-…'` literal (none) and `bpom.ts` for one (three), so the
+difference is measured. The reason is not tidiness:
+
+> **HALAL CRITICALITY IN A COSMETIC ATTACHES TO WHAT ENTERS THE FORMULA.**
+
+The critical routes — animal-derived fats and their derivatives, alcohol as a
+carrier or extraction solvent — run through the formulation grain **as a class**
+rather than through three groups of it. So: `'formulation-ingredient'` and
+`'upstream-input'` become `REQUIRED`; everything else `UNDETERMINED`.
+**No chemistry is invented.** The rule states that a determination is NEEDED,
+never what the determination is.
+
+⚠️ **THE COST, RECORDED RATHER THAN DISCOVERED LATER:** a rule that reads only
+the axis **cannot express a per-group ruling**, and `D-COMP-HALAL-1` will answer
+per group. The shape gains a group layer when it does — a **NARROWING**, on
+`bpomApplicability.test.ts`'s precedent, recorded as a ratification. Never a
+loosening flag.
+
+### ⚠️ PACKAGING IS `UNDETERMINED`, NOT THE BPOM AXIS RULE — SEAT 3
+
+The single line in this batch that could not have been taken back. BPOM rules
+packaging `NOT_APPLICABLE` by the same registry axis, on a regulation that
+**excludes** packaging. Halal may not, and the tree says so twice:
+
+| In-tree evidence | Says |
+|---|---|
+| `doc-001` (`supplierDocuments.ts:12`) | an **MUI halal certificate** whose `linkedTo` is a **PET bottle** material |
+| `AdaptiveContext.tsx:89` | `packaging` sits **inside** the `isHalal` selector |
+
+**We do not know whether they are right — so the seed says we do not know.**
+Copying the neighbouring rule would have been the cheapest line in the file and
+the only irreversible one: **eleven packaging rows would have acquired a
+confident negative no compliance officer ever gave**, in a field whose entire
+purpose is that nobody invents determinations. `D-COMP-HALAL-1` is compliance's
+to answer, and the disagreement is now asserted per packaging group — halal
+`UNDETERMINED` **and** BPOM `NOT_APPLICABLE`, side by side, so a later tidy-up
+that aligns them goes red.
+
+### ⚠️ `HALAL-PROSE-READS-AN-ANSWER-01` — THE NEW FINDING
+
+Pointed at the master's own 42 labels, the prose parse
+(`description.toLowerCase().includes('halal')`) and the class rule agree on
+**four** rows and disagree on **thirty-eight**. ⚠️ A **counterfactual**, stated
+rather than glossed: `inferHalal` reads a line `description`, never a master
+label — this measures the MECHANISM on the master's population, the same
+counterfactual `bpomApplicability.test.ts` runs with the prefix rule.
+
+**And the four it fires on are the finding, not the thirty-eight:**
+
+| Code | Label | What the word *halal* is doing there |
+|---|---|---|
+| `RM-EMUL-9410` | Glyceryl Stearate SE **(Halal Emulsifier)** | a CLAIM OF COMPLIANCE |
+| `RM-EMUL-9430` | Polysorbate 80 — **Halal**, Food & Cosmetic Grade | a CLAIM OF COMPLIANCE |
+| `RM-LAURIC-7200` | Lauric Acid 99% — **Halal Certified** | a CLAIM OF COMPLIANCE |
+| `RM-STEAR-7300` | Stearic Acid — Double Pressed **(Halal)** | a CLAIM OF COMPLIANCE |
+
+> **THE RULE READS AN ANSWER AND RETURNS A QUESTION.** Every label it matches
+> asserts the material **already is** halal. A check being REQUIRED and a check
+> being SATISFIED are different facts, and a substring cannot tell them apart in
+> either direction — the same predicate returns `true` for *"non-halal"* and
+> *"halal audit failed"*.
+
+This is a **third** defect on the same line, distinct from the two already filed
+(fails open on silence; fails closed on negation). It is also the sharpest
+instance yet of `PREFIX-RULE-SUCCEEDS-BY-ACCIDENT-01`'s class: the mechanism
+looks calibrated *because the rows it hits are the rows somebody wrote a
+compliance claim into* — and a compliance claim is exactly the thing that would
+make a check unnecessary rather than necessary.
+
+**The rest of the measurement:**
+
+- **27** rows the class rule says `REQUIRED` and the prose parse states a
+  confident negative on — including `RM-PSTN-7150` (RBD Palm Stearin), the
+  single most halal-load-bearing row in the master, whose label happens not to
+  contain the word.
+- **11** rows the master REFUSES on and the prose parse **answers anyway**,
+  `false` on every one — the exact eleven `doc-001` gives us reason to doubt.
+  That is `PREFIX-RULE-ASSERTS-A-NEGATIVE-01` one regulation over: a mechanism
+  with no way to say *undetermined* converts every non-match into a
+  determination it has no basis for.
+- ⚠️ **THE FIRING SET MOVED BY ZERO**, asserted against the predicate rather
+  than inferred from what the diff touched. The two mechanisms are disjoint.
+  Containment runs one way: everything the parse fires on is also `REQUIRED`, so
+  **H2 can only add checks, never remove one.**
+
+### ⚠️ ZERO `NOT_REQUIRED`, AND THAT IS AN ASSERTION
+
+The split over 42 rows is **31 / 0 / 11**. No row in this master has a basis for
+saying a halal determination is unnecessary, and the one group where it could
+have been argued by analogy — packaging, which BPOM excludes — is precisely the
+group Seat 3 ruled `UNDETERMINED`. **A state left unused is honest; a state
+filled in so the enum looks exercised is a fabricated determination.** The
+consequence is pinned where a reader hits it: **`halalOf` cannot return
+`{ ok: true, required: false }` against today's master.**
+
+There is also **no deviation row**. `bpomApplicable` carries one
+(`RM-EMUL-9440`, on `doc-201` — a determination somebody actually made). Nothing
+in this tree is a halal determination about a MATERIAL: `doc-001` is a
+certificate about a **supplier's** material, which is `D-COMP-HALAL-2`'s grain
+question and not this field's answer. **No deviation is authored to make the
+seed look better-evidenced than it is.**
+
+### ALL 42 VALUES ARE PROVISIONAL — AND THE DISPOSAL CONDITION
+
+**STRATEGIST-RULED ON BEST PRACTICE, PENDING COMPLIANCE RATIFICATION.** Recorded
+as a decision *taken*, so ratification is an act of agreeing with something
+written down rather than discovering what the fixtures quietly assumed. They are
+**disposed of — not amended** — when `D-COMP-HALAL-1` is answered:
+
+1. **Compliance's answer REPLACES the rule.** Every row is reseeded in the same
+   edit and the word PROVISIONAL leaves the module with the values it qualified.
+   A per-group ratification narrows the pin; it does not open a per-row override.
+2. ⚠️ **IF A WIRE IS PROPOSED WHILE THIS IS STILL PROVISIONAL, THE PROVISIONAL
+   SEED IS WHAT WOULD BE ENFORCED.** A `REQUIRED` here does not mean compliance
+   asked for a check; it means nobody has said otherwise and the strategist ruled
+   conservatively. Enforcing it against a certificate corpus that does not exist
+   (R0.1 `NOT STARTED`) is the *outage wearing compliance clothes* Seat 3 named —
+   the reason H4 is gated on `D-COMP-HALAL-4` and this batch wires nothing.
+3. **If `D-COMP-HALAL-2` rules the grain is supplier × material, this field and
+   this module are DELETED rather than migrated.** A master field at the wrong
+   grain is not salvageable by adding a key.
+
+### THE EXACT-KEY PIN FIRED, AND IT FIRED FIRST
+
+`materialMasterAuthoring.test.ts:402` holds an **exact** key list for one master
+entry, written at 2B-4a so *"a field added to the entry shape lands here first."*
+It did: `halalApplicable` reddened that assertion **before any halal test
+existed**, and the list was extended deliberately rather than by red-test reflex.
+⚠️ The entry it guards (`PK-PETB-8825`) is **one of the eleven packaging rows the
+seed leaves `UNDETERMINED`** — so the field announced itself on exactly the row
+class the ruling is about.
+
+### ⚠️ `H1-FALSIFIES-A-LIVE-COMMENT-01` — DECLARED, NOT FIXED
+
+**This batch made a comment in a production file false, and did not touch it.**
+`GRInspectionWizard.tsx:252-257` explains why `inferHalal` survives:
+
+> *"It is left because RETIRING IT REQUIRES A FIELD THAT DOES NOT EXIST. There is
+> no `halalApplicable` on `MaterialMasterEntry`; authoring one (plus its class
+> rule, its provisional seed on all 42 rows and its `D-COMP-HALAL` escalation) is
+> a 2B-4a-shaped batch…"*
+
+**Every clause of that is now wrong**: the field exists, the class rule exists,
+the seed covers all 42 rows, and the register is on main. This is
+`C9-STALE-BY-FIX-01` exactly — **an artifact going stale by being FIXED**, one
+file over and inside a comment rather than a contract.
+
+**It is left standing deliberately.** The dispatch fenced that file off
+(*`inferHalal` STAYS LIVE AND UNTOUCHED — that is H2*), and a comment edit inside
+a fenced file is the builder deciding where the fence is. The correction is
+therefore **booked as H2's first edit**, and the replacement sentence is written
+here so it is mechanical rather than re-argued:
+
+> *It is left because the field it must read is AUTHORED BUT UNRATIFIED —
+> `halalApplicable` landed at CP-3 · H1 (`sdc/halal.ts`), all 42 values
+> PROVISIONAL pending `D-COMP-HALAL-1`. Wiring it is H2; the certificate leg is
+> H4, gated on `D-COMP-HALAL-4`.*
+
+⚠️ **The reason it is filed rather than silently carried:** the comment does not
+merely describe the code, it **justifies leaving a live regulatory fail-open in
+place**. A justification that has stopped being true is the one kind of stale
+comment that can survive review on its own authority — the reader checks that the
+reasoning is sound, not that the premise still holds. **One line from the
+operator retires it in this PR instead; the fence is theirs to move, not mine.**
+
+### Constraints discharged
+
+- ⚠️ **NO WIRING, AND NO CONSUMER CHANGE.** `inferHalal` is byte-identical;
+  `GRInspectionWizard` still writes `halalRequired: inferHalal(li.description)`
+  on both draft builders. Asserted, not promised: the test pins the wizard as
+  still containing the parse, **not** containing `halalOf(`, and pins the module
+  as having **zero** production importers and no barrel re-export (`bpom.ts`'s
+  precedent). ⚠️ The scan's limit is stated in the test: `import.meta.glob`
+  cannot see the file it is written in.
+- **No prefix or substring rule decides anything** (C9 §3, ratified) — asserted
+  over the module's own source, which contains no `startsWith(`.
+- **The `D-COMP-HALAL-1..5` register was already on main** (previous entry); it
+  is cited by number here and **not re-landed**.
+- ⚠️ **ONE KNOWN FALSEHOOD LEFT STANDING, NAMED**:
+  `H1-FALSIFIES-A-LIVE-COMMENT-01` above. Left because the file is fenced, filed
+  because a stale justification is not a stale description.
+- **C9's bytes untouched**; pin `af7f0b4` unaffected.
+- **FLOOR 2226/184 → 2244/185**, bumped in `scripts/floor.json` because the gate
+  printed the note asking for it. `npm run gates` green: build emitted a bundle ·
+  2244 tests across 185 files · 7 gate tests.
