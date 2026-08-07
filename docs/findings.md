@@ -5135,8 +5135,16 @@ than left to a reader:
    passes silently any more; it passes by a named person, on the record.
 3. **`AS_SET` AT THE CEILING.** `source` names whether the returned mode DIFFERS
    from the recorded one. A lapsed review on a `BLOCK` changed nothing, and
-   reporting `EXPIRY_TIGHTENED` would be a true-sounding statement about an
-   event that did not occur.
+   reporting `EXPIRY_TIGHTENED` would **ANNOUNCE AN EVENT THAT DID NOT OCCUR** —
+   a true-sounding statement about a tightening that never happened.
+   ⚠️ **THE REASONING, RECORDED RATHER THAN THE BEHAVIOUR** (operator, at merge):
+   this is **honest-by-construction applied to a STATUS FIELD rather than to a
+   VALUE.** The lane's usual discipline guards the number a surface shows; here
+   the guarded thing is the field that EXPLAINS the number. A `mode` of `BLOCK`
+   is correct either way — the lie would have been in `source`, which is exactly
+   the field an operator reads to decide whether somebody needs to go and renew
+   something. A provenance field that overstates is worse than an absent one,
+   because it is actionable.
 
 ---
 
@@ -5225,6 +5233,16 @@ reads whole LINES, so a multi-line `import type` reads as a value import and
 fails LOUDLY rather than passing quietly. Probed: turning the type-only import
 into a value import turns the halal census red.
 
+⚠️ **WHY THE OTHER FIX WAS REFUSED** (operator, at merge). The cheap way out was
+to drop the compile-time refusal census and hand-list the two refusal reasons in
+`enforcement.ts`, which would have left both guards untouched. That **trades a
+MECHANISM for a CONVENTION**: the `satisfies Record<HalalRefusalReason |
+BpomRefusalReason, true>` is what makes the boundary structural — a third
+refusal reason cannot become a governed verdict without breaking the build —
+and a hand-list is a copy that goes stale in silence, which is the
+`FLOOR-IN-PROSE-01` shape. Amending the two censuses cost more and kept the
+mechanism.
+
 #### `ENF-UNKNOWN-MODE-FAILS-OPEN-01` — **CAUGHT IN THIS BATCH, FIXED IN IT**
 
 `rigour` was `ENFORCEMENT_MODES.indexOf(mode)`, and `indexOf` returns **−1** for
@@ -5235,10 +5253,38 @@ A SETTING WOULD HAVE TURNED THE GATE OFF SILENTLY**, which is the precise
 fail-open the module exists to make unrepresentable, reintroduced by an
 `indexOf` default nobody chose.
 
+⚠️ **AND IT IS THE MODULE'S OWN THESIS FAILING INSIDE THE MODULE** (operator, at
+merge). The file exists to make a silent pass unrepresentable, and it shipped a
+silent pass — not through a rule anybody wrote, but through the default value of
+a standard-library call.
+
 Fixed: an unrecognised mode ranks at the CEILING, so it blocks and cannot be
 overridden — the only direction that is safe to be wrong in — and
 `isEnforcementMode` / `isGovernedCheckId` are the narrowing boundaries E2 must
 use instead of guessing (the `isBidCurrency` precedent).
+
+**THE RULE THIS ESTABLISHES, STATED AS A CLASS** (operator ruling, at merge —
+it is not about enforcement modes):
+
+> **AN UNRECOGNISED MEMBER OF A GOVERNING ENUM RANKS AT THE CEILING. UNKNOWN
+> MEANS MAXIMUM RIGOUR, NEVER MINIMUM.**
+
+It applies to **every enum that arrives across a seam** — a mode, a check id, a
+lifecycle state, a scheme, a role, a status. The failure shape is always the
+same and is never a rule somebody chose: a lookup returns a MISS
+(`indexOf` → `-1`, `Record[key]` → `undefined`, `Map.get` → `undefined`,
+`switch` → the `default` arm), and the miss then flows into a comparison or a
+coalesce whose natural neutral element is the PERMISSIVE end. Nobody writes
+"unknown means allow"; it is what `-1`, `undefined` and `?? false` mean by
+default, and JSON across a seam is where unknown members come from.
+
+The test for a new one is a single question: **what does this function do with a
+string that is not in the union?** If the answer is "the same as the weakest
+member", it is this defect. Two in-tree instances already read the right way and
+were not derived from this ruling — `provisionalHalalForGroup` (an undeclared
+group is `'UNDETERMINED'`, which refuses) and `provisionalHalalForAxis` (a new
+axis defaults `'UNDETERMINED'`) — so the class is a generalisation of a habit
+this lane already had, now written down so it stops depending on the habit.
 
 #### `ENF-OVERRIDE-VOCAB-PROVISIONAL-01` — **FOUR REASONS, STRATEGIST-RULED**
 
