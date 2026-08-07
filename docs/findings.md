@@ -5643,3 +5643,90 @@ no member is decoration.
 - **E3 has no way to construct a completing override**, by design. The first
   honest override in this system requires F1 identity, and until then the lane
   refuses in a way that names the reason.
+
+### 10. OPERATOR RATIFICATION AT MERGE (#192)
+
+Recorded at merge, in the operator's framing, because the reasoning is the part
+that generalises and the behaviour alone would not carry it.
+
+#### ⚠️ `ENF-EVENT-ACTOR-IS-A-PERSONA-01` IS THE FINDING — and it is filed as a PAIR
+
+> The DR-10 actor is `buyer:all`, so **"THE AUDIT TRAIL ALREADY RECORDS WHO DID
+> IT" IS FALSE, AND FALSE IN A WAY THAT READS AS TRUE.** Without it we would have
+> shipped an override lane believing attribution existed downstream.
+
+**Filing instruction, ratified: this is THE SECOND FACE OF THE IDENTITY GAP and
+it is filed beside `ENF-NO-PERSON-IN-IDENTITY-01` SO NEITHER IS READ ALONE.**
+Read separately they are two small gaps, each with a plausible mitigation sitting
+in the other one's territory — "the session has no person, but the audit trail
+records the actor" and "the actor is only a persona, but the override names a
+person". Read together they are one hole: **nothing anywhere in this system can
+name a human**, and the two mitigations are each other's.
+
+The dangerous shape is not the missing field. It is the FALSE REASSURANCE that
+would have been reached for the moment somebody asked "but is an override
+attributable?" — an answer that is true about the DR-10 event (`actor` is
+populated, on every command, always) and false about the question. A defect that
+answers "yes" to a checked box while answering "no" to the actual question is the
+class that survives review.
+
+#### ⚠️ THE RULING BOUGHT A BETTER PROPERTY THAN IT WAS RULED FOR
+
+Ratified as a general observation, not a note about this batch:
+
+> Under a bare `ActingPerson`, "loosening requires a named actor" was **VACUOUS**
+> — the type already demanded a person, so the rule required nothing. Under a
+> DISCRIMINATED actor it resolves to
+>
+> **THE SAFEST ACT IS ALWAYS AVAILABLE TO ANYBODY** — full rigour needs no review
+> date, no identity, and no argument.
+
+The mechanism worth carrying: **a rule stated over a type that cannot express its
+own failure case is not a rule, it is a restatement of the type.** The ruling on
+`overriddenBy` was made to solve attribution; making absence EXPRESSIBLE is what
+turned an empty sentence about loosening into a real asymmetry — and the
+asymmetry is better than the sentence, because it says which direction is free
+rather than which direction is expensive.
+
+#### `ENF-DATE-PARSE-ROLLS-OVER-01` — and the right handling of the fix's cost
+
+> `Date.parse('2026-02-30')` **IS 2 MARCH, NOT NaN.** E1 would have accepted it
+> and lapsed a day late; **caught only because E1 stored nothing.**
+
+That last clause is the finding's real content. The defect was not found by a
+test, a review or a user — it was found because the batch that would have
+exercised it deliberately shipped without data. A headless batch's value is
+usually described as "nothing can break"; this is the other half, and the
+sharper one: **a lane with no data in it is a lane whose defects are still
+cheap.**
+
+**And the handling of the fix's cost is ratified as correct:** loosening E1's
+crude `new Date` ban to admit the round-trip is **NAMED AS A REAL WEAKENING
+RATHER THAN ABSORBED**. A census that gets quietly relaxed to accommodate the
+code it guards has stopped being a census; one that is relaxed in writing, with
+the replacement stated (nullary ban + a census that every construction takes a
+caller-supplied argument), is still doing its job. The rule: **when a guard has
+to move, the movement is the record.**
+
+#### SEEDING REFUSED IN BOTH DIRECTIONS — the harder call, ratified
+
+> Seeding `BLOCK` would **PUT A DECISION ON THE RECORD NOBODY TOOK**, and
+> `AS_SET` would **CLAIM AN AUTHOR FOR A CONSTANT**. An empty ledger deriving
+> `BLOCK / NO_SETTING_RECORDED` says exactly what is true.
+
+Refusing to seed the RELAXED direction is the obvious call (D-ENF-4 is unruled).
+Refusing to seed the STRICT direction is the one worth recording, because seeding
+`BLOCK` looks free — same behaviour, tidier fixtures — and is not. It would have
+manufactured provenance: a row whose `setBy` and `setAt` describe an act that
+never happened, indistinguishable at read from one that did. **The honest empty
+ledger and the dishonest strict ledger produce the same MODE and different
+TRUTHS**, which is the whole distinction this lane exists to hold.
+
+#### D1 — nil cost accepted, with the distinction kept
+
+> **NOT FORECLOSING AND PRE-BUILDING ARE DIFFERENT THINGS.**
+
+Kept as the standard for every future "leave room for X" instruction: leaving
+room means choosing a shape that does not assume the narrow case (a flat array,
+not a keyed map). It does not mean building the wide case behind a flag nobody
+has ruled on.
