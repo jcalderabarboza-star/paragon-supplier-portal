@@ -4604,6 +4604,103 @@ Everything a machine can confirm is burned down above. What is left is judgement
 
 ---
 
+### SMOKE PASSED — and the two operator outcomes it produced
+
+Four steps plus the EN repeat, console clean. Two of the four steps returned
+something the batch did not have before it ran: a **ruling** on the step-4
+judgement, and a **finding** on the step-1 message. Both are the operator's and
+both are recorded here rather than in the conversation they were made in.
+
+| Step | Subject | Result |
+|---|---|---|
+| 1 | `ASN-2026-012` / `PK-PETB-8801` | refusal verbatim, Next disabled — and the **Lab-sample toggle correctly does not unstick it** |
+| 2 | the same, in ID | full chrome, banner verbatim, **identical** enable/disable. Register accepted as OK for now |
+| 3 | `ASN-2026-015` / `FR-WARD-4410` | both controls unanswered with markers, Next disabled; Pass on both clears the markers and enables Next. **Verified ID and EN** |
+| 4 | `ASN-2025-00301` / `RM-PSTN-7150` | halal ASKS, BPOM REFUSES, two messages never merged, and **NEXT STAYS DISABLED AFTER THE HALAL ANSWER** |
+
+⚠️ **Step 4 is Seat 3's three-fact split holding ON SCREEN** — and it does so on
+the one material where the retired parse returned a confident `false`. The
+`Cancel / Back / Next` chrome staying English is known, pre-existing, and not
+this batch (`ui-v2/Wizard.tsx`, unchanged since #42).
+
+---
+
+### ⚠️ OPERATOR RULING — ASKING ON A REFUSED LINE IS DEFENSIBLE
+
+The step-4 judgement, ruled:
+
+> **THE WORK IS GENUINELY OWED, AND IT IS RECORDED THE MOMENT THE OTHER REGIME
+> CLEARS. SUPPRESSING IT WOULD HIDE WORK THAT WILL BE DEMANDED LATER.**
+
+So a line refused by one regime still ASKS the other regime's question. The
+alternative — rendering only the refusal and hiding every outstanding question
+behind it — would make the visible workload of a line depend on which gate
+happens to fail first, and would spring the hidden work on whoever clears the
+refusal.
+
+⚠️ **AND THE COUNTER-ARGUMENT, RECORDED BESIDE IT SO A FUTURE READER KNOWS THE
+COST WAS WEIGHED RATHER THAN MISSED:**
+
+> **A CHECK PEOPLE CLICK THROUGH IS WORSE THAN NO CHECK.**
+
+An inspector who meets a question on a line they already know cannot be completed
+learns that answering is ceremonial. That habit does not stay on refused lines —
+it is carried to the ones that matter, and a regulatory control answered by
+reflex is a fabricated attestation with a human's name on it. The ruling accepts
+that cost against the certainty of hidden work; **it does not deny it.** If the
+click-through habit is ever observed in the operator lane, this is the entry that
+says the trade was made deliberately and can be remade.
+
+---
+
+### ⚠️ `HALAL-REFUSAL-DEAD-ENDS-01` — FILED BY THE OPERATOR, NOT FIXED HERE
+
+**The refusal is HONEST BUT NOT ACTIONABLE.** It names the material and says a
+ruling is missing. It does not say **who rules, where, or what the clerk does
+with the delivery meanwhile.**
+
+> **A clerk at a dock with a truck waiting has a blocked line and no route. THE
+> MESSAGE ENDS THE CONVERSATION INSTEAD OF ROUTING IT.**
+
+This is the honest half of the fix arriving without the useful half. `bpomOf`'s
+refusal has carried the same shape since 2B-4b and nobody had named it; H2
+doubled its reach, which is what made it visible.
+
+#### WHY IT IS NOT FIXED IN THIS BATCH — THE DESTINATION DOES NOT EXIST
+
+There is **no compliance surface today where `halalApplicable` is set.** A message
+saying *"raise this with Compliance"* would **point at nothing** — a sentence that
+reads as helpful and cannot bear what a reader would do with it, which is the
+class this register keeps retiring (`ANSWER-ABOUT-NOTHING-01`,
+`FLOOR-IN-PROSE-01`, the `plantCode` disclosure line). **The routing batch builds
+the destination and the message TOGETHER**, or it ships a second dead end with
+better manners.
+
+#### THE OPERATOR RULINGS THAT SHAPE THAT BATCH
+
+1. **THE UNRULED THING IS A POLICY DETERMINATION ON THE MATERIAL MASTER**, made
+   once per material or group — **NOT a per-receipt approval.** A manager
+   approving one line would be approving a regulatory classification they do not
+   own, one receipt at a time, forever.
+2. **IT BELONGS ON THE COMPLIANCE SURFACE, NOT THE DOCK.** The dock's job is to
+   report that it is blocked; it is not the place a classification is decided.
+3. ⚠️ **AN EMAIL UNLOCK IS AN OVERRIDE, AND OVERRIDES ON REGULATORY GATES
+   NORMALISE** — the first is deliberate, the fiftieth is a reflex. If one is ever
+   built it must be a **NAMED, AUDITED EVENT WITH AN OWNER AND A REVIEW CADENCE**,
+   not an unlock. That is `D-COMP-HALAL-4` option (b), **and it is not taken.**
+4. ⚠️ **THE CHEAPER ANSWER FIRST: ALL FOUR BLOCKED LINES ARE PACKAGING.** Ruling
+   `D-COMP-HALAL-1` — *is contact packaging in scope for halal* — **unblocks all
+   four with no override mechanism at all.** Get the ruling before building a way
+   around its absence.
+
+⚠️ Point 4 is the one to re-read in six months. The expensive artifact (an
+override path, an audit event, an owner, a cadence) would have been built to
+route around a single unanswered question that **the same four lines are waiting
+on anyway** — `SEED-IS-AN-ANSWER-01`'s shape at process scale: a mechanism
+standing in for a decision, and outliving the decision once it is finally made.
+
+---
+
 ### Constraints discharged
 
 - **NO REGISTRY READ, NO CERTIFICATE LOGIC.** Seat 3's three-fact split is held
@@ -4622,3 +4719,7 @@ Everything a machine can confirm is burned down above. What is left is judgement
 - **Mutation-probed, both directions**: removing the `!l.halal.ok` branch fails 3
   specs; widening the render condition fails NOTHING, and that is filed above
   rather than left as coverage.
+- **The smoke's two outcomes are ON MAIN, in this entry** — the step-4 ruling
+  *with its counter-argument*, and `HALAL-REFUSAL-DEAD-ENDS-01` filed and NOT
+  fixed. A ruling that exists only in the conversation it was made in is
+  `FLOOR-IN-PROSE-01` wearing a decision's clothes.
