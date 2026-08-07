@@ -4266,3 +4266,151 @@ falsified it, instead of finding a comment that has simply always said this.
 - **FLOOR 2226/184 → 2244/185**, bumped in `scripts/floor.json` because the gate
   printed the note asking for it. `npm run gates` green: build emitted a bundle ·
   2244 tests across 185 files · 7 gate tests.
+
+---
+
+## CP-3 · BOOKED, NOT BUILT — `RULE-NOT-POINTED-AT-THE-INBOUND-PATH-01` + `DISCLOSURE-TRAVELS-WITH-THE-VALUE-01`
+
+Two classes out of this morning's SOMO exchange, booked on the standing rule:
+**a class named in a conversation is not a class on main.** Nothing is built —
+no code, no schema, no type, no field. The live instance below is **cited and
+verified, not fixed.**
+
+---
+
+### `RULE-NOT-POINTED-AT-THE-INBOUND-PATH-01`
+
+> **A RULE ADOPTED IN ONE DIRECTION OF A SEAM IS NOT ADOPTED IN THE OTHER, AND
+> NOTHING MAKES THAT VISIBLE.**
+
+Our lane refuses substituted values, and has for five batches. It is not a
+preference — it is the thing CP-2 and CP-3 have been about:
+
+| Rule | Where |
+|---|---|
+| An unresolvable material **refuses by name**, never silently skips | `uomOf` / `bpomOf` / `halalOf` (`sdc/materialMaster.ts`, `sdc/bpom.ts`, `sdc/halal.ts`) |
+| An absence of determination is **stored as an absence** and refuses identically to an unknown code | `'UNDETERMINED'` (`bpomApplicable`, `halalApplicable`) |
+| A derived fact is **never hand-stamped** into a control | `REQUIRED-OPENS-PRE-ANSWERED-01` |
+| An unresolved correspondence is **written as unresolved**, never as a verdict | C9 §5.3 `ADJUDICATED_UNRESOLVED` |
+
+**THE RULE WAS NEVER POINTED AT THE INBOUND PATH.** Every one of those governs a
+value we READ or STORE. Not one of them was ever asked of a value arriving from
+a counterparty through a creation payload.
+
+#### THE LIVE INSTANCE, IN OUR OWN TREE
+
+`MockCommandService.ts:615-616` — the `t_pr_create` creation handler:
+
+```ts
+const priority: PRPriority =
+  payload.priority === 'High' || payload.priority === 'Low' ? payload.priority : 'Medium';
+```
+
+**Everything that is not `'High'` or `'Low'` becomes `'Medium'`** — a malformed
+value, an unrecognised vocabulary, and **an absent field**, all three
+indistinguishable afterwards from a priority somebody chose.
+
+⚠️ **AND THE CORRECT RULE IS THREE LINES ABOVE IT, IN THE SAME FUNCTION**
+(`:609-614`):
+
+```ts
+// `source` persists ONLY when it is a recognised producer token — an unknown
+// or absent value leaves the PR without a producer mark (honest, not guessed).
+```
+
+**Same function, same author, same batch, opposite treatments — and the honest
+one is commented as a principle.** That is what makes this a CLASS rather than a
+lapse: **it is not ignorance of the rule. The rule was simply never pointed at
+this path**, so it was applied where somebody was thinking about it and not
+where they were not. The same asymmetry is visible in the type: `prSource` is
+**optional** with a comment explaining why absence is honest, and `priority` is
+**required** with no absence available — `PurchaseRequisition`, `types.ts:657`,
+`PRPriority = 'High' | 'Medium' | 'Low'`.
+
+#### WHY NOTHING MAKES IT VISIBLE
+
+Our refusal discipline is asserted by tests **over the read path** — a lookup
+that returns an outcome, a field with three states, a census that derives. A
+creation payload has none of that shape to hang an assertion on: it is a bag of
+`unknown`, coerced field by field, and **a coercion that substitutes looks
+exactly like a coercion that refuses** at the call site. Nothing fails when the
+rule is not applied, so nothing announced that it had not been.
+
+**BOTH PLATFORMS HAVE NOW HIT THIS CLASS.** That is the argument for booking it
+as a class rather than fixing one field: a defect two independent teams reach
+from opposite directions is a property of seams, not of a handler.
+
+**SHAPE OF THE FIX, NAMED AND NOT BUILT** (`CENSUS-MUST-DERIVE-01`'s own
+medicine): a **derived** check over every creation payload — for each field the
+handler reads, it either refuses, or records the absence, or is a declared
+exception with a reason. Argued and costed in its own batch. **A list of
+handlers somebody remembers to extend is the thing that failed here.**
+
+---
+
+### `DISCLOSURE-TRAVELS-WITH-THE-VALUE-01` — **SOMO's, and credited to them**
+
+> **A DISCLOSURE HAS TO TRAVEL WITH THE VALUE, NOT WITH THE CONTRACT.** *(SOMO)*
+
+**It is the missing half of the `plantCode` ruling** (this register, *"`plantCode`
+IS THE PRECEDENT — the middle tier working out loud"*). That entry said a
+degraded-not-broken default is legitimate *precisely because it was declared*.
+SOMO's refinement says **where** it has to be declared, and the two cases split
+on exactly that:
+
+| | `plantCode` | `priority` |
+|---|---|---|
+| Degradation declared? | **yes** | **yes — in a contract** |
+| Visible **in the record**? | ⚠️ **YES** — the flag travels with the row | ⚠️ **NO** — invisible at the moment of substitution |
+| Can a reader of the record tell? | **yes** | ⚠️ **NO — a chosen `Medium` and a defaulted `Medium` are the same bytes** |
+
+`REQUIRED-OPENS-PRE-ANSWERED-01` set the dividing line as *"did we say so, and
+does the default claim to be an answer."* **This sharpens the first half: SAID SO
+WHERE.** A disclosure that lives in a contract is read once, at integration
+time, by the person building the seam — and never again by anyone reading a row.
+**A default disclosed only in a document is silent everywhere the value is
+actually used.** Same family as `FLOOR-IN-PROSE-01` and
+`GOVERNANCE-INSIDE-THE-GOVERNED-01`: a rule whose only home is a document binds
+only that document's readers.
+
+#### STRATEGIST LEAN — ON RECORD, NOT RULED
+
+> **THE DEFAULT SHOULD NOT EXIST.** An omitted priority should be an **ABSENCE**
+> — recorded as absent, rendered as absent, never substituted.
+
+Recorded as a **LEAN, not a ruling**, and deliberately not acted on: making
+absence expressible means `PRPriority` gains an absence (optional field, on the
+`prSource` precedent three lines away) and every render of `priority` has to say
+what absent looks like. **That is a build**, and this entry is a booking.
+
+⚠️ **AND THE EXPOSURE IS NOT AN EDGE CASE.** SOMO are verifying whether they emit
+`priority` **at all**. If they do not:
+
+> **EVERY REQUIREMENT THEY HAVE NOTIONALLY SENT WOULD HAVE CARRIED A `Medium`
+> NOBODY CHOSE.**
+
+Not some rows — **100% of inbound rows**, each one arriving as a field the
+receiving system asserts and the sending system never wrote. The substitution
+would be the only thing that had ever set that field. **The measurement is
+pending on their side and is not assumed here**; what is recorded is that the
+class's blast radius is *all of it or none of it*, which is precisely why the
+answer is worth waiting for rather than defaulting past.
+
+---
+
+### Constraints discharged, in writing
+
+- ⚠️ **BOOKED, NOT BUILT.** No code, schema, field, type or fixture. The live
+  instance is **cited and left standing**; the shape of its fix is named, not
+  written.
+- **The live instance is VERIFIED IN THIS TREE**, with file and line
+  (`MockCommandService.ts:615-616`, `types.ts:657`) — not carried from the
+  conversation. The adjacent correct treatment (`:609-614`) is quoted because it
+  is what makes the class legible.
+- **SOMO's formulation is credited to SOMO**, and it is the half our own
+  `plantCode` precedent was missing — stated that way round rather than as a
+  point we had.
+- **The strategist lean is recorded AS A LEAN**, with the build it would require
+  named so nobody mistakes a booking for a decision.
+- **C9's bytes untouched**; pin `af7f0b4` unaffected.
+- **FLOOR 2244/185, unchanged.** `npm run gates` green.
