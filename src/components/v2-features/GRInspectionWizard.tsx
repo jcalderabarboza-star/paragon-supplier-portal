@@ -28,6 +28,8 @@ import {
 } from '../../services/transitions';
 import { bpomOf } from '../../services/sdc/bpom';
 import type { BpomOutcome, BpomRefusalReason } from '../../services/sdc/bpom';
+import { halalOf } from '../../services/sdc/halal';
+import type { HalalOutcome, HalalRefusalReason } from '../../services/sdc/halal';
 
 interface GRInspectionWizardProps {
   onClose: () => void;
@@ -66,6 +68,14 @@ const GR_BPOM_REFUSAL_KEY: Record<BpomRefusalReason, string> = {
   UNDETERMINED_APPLICABILITY: 'goodsReceipt.wizard.bpom.refused.undetermined',
 };
 
+// CP-3 · H2 — the same shape for halal, and the SAME RULE: `reason` reaches the
+// MESSAGE and nothing else. Nothing here, and nothing in `qualityValid`,
+// branches on it to proceed — one refusal branch, both reasons.
+const GR_HALAL_REFUSAL_KEY: Record<HalalRefusalReason, string> = {
+  UNKNOWN_MATERIAL: 'goodsReceipt.wizard.halal.refused.unknownMaterial',
+  UNDETERMINED_APPLICABILITY: 'goodsReceipt.wizard.halal.refused.undetermined',
+};
+
 type SourceMode = 'shipment' | 'manual';
 
 interface LineDraft {
@@ -81,9 +91,29 @@ interface LineDraft {
   rejectionReason: string;
   visualCheck: 'Pass' | 'Fail';
   packagingCheck: 'Pass' | 'Fail' | 'N/A';
-  halalRequired: boolean;
+  /**
+   * The halal gate, read ONCE from the material master (`halalOf`).
+   *
+   * ⚠️ **NOT A BOOLEAN, and that is the whole of `INFERHALAL-READS-PROSE-01`'s
+   * fix.** The field this replaces was `halalRequired: boolean`, seeded by
+   * testing whether a SUPPLIER-TYPED `description` contained the substring
+   * `halal` — three defects on one line: a miss was a silent confident `false`,
+   * `"non-halal"` turned the check ON, and the four fixture labels it did fire
+   * on were the four CLAIMING THE MATERIAL ALREADY IS HALAL (an answer, read as
+   * a question). A boolean also has no room for *nobody has ruled*. The outcome
+   * type can refuse, and `qualityValid` blocks on a refusal.
+   */
+  halal: HalalOutcome;
   /**
    * The halal seal answer, or ABSENT because nobody has given one.
+   *
+   * ⚠️ **THIS IS THE SEAL CHECK AND ONLY THE SEAL CHECK** (Seat 3's three-fact
+   * split): a HUMAN's attestation at the dock, about a physical seal. It is NOT
+   * certificate verification — that is a lookup against the compliance registry,
+   * with its own clock and its own answerer, and it is **H3 (headless) / H4
+   * (wired, gated on `D-COMP-HALAL-4`)**. A `'Pass'` here means an inspector saw
+   * a seal; it does not mean a certificate is valid, and nothing in this file
+   * may make it mean that.
    *
    * ⚠️ The `?` is the whole point and it always was — `'Pass' | 'Fail'` has no
    * room for *unanswered*, so `undefined` IS the third state. What was wrong was
@@ -232,65 +262,36 @@ const RegulatoryCheck: React.FC<RegulatoryCheckProps> = ({
   </div>
 );
 
-// ── ⚠️ `inferHalal` SURVIVES THIS BATCH, AND IT IS THE SAME DEFECT ───────────
-// `INFERHALAL-READS-PROSE-01`. `inferBpom` is gone from this file; its twin is
-// not, and it is REPORTED rather than folded in silently (2B-4b dispatch).
+// ── ✅ CP-3 · H2 — `inferHalal` IS DELETED. THE PROSE PARSE IS GONE ──────────
+// What stood here was a 40-line comment explaining why a live regulatory
+// fail-open was being left in place. It is replaced by the fix, and the record
+// of what was removed is kept because a retired rule has to be restated
+// somewhere to prove it is retired (`bpomApplicability.test.ts`'s precedent):
 //
-// It is not left because it is safer. On two of the three axes it is WORSE:
-//   · `inferBpom` parsed a code WE control; this reads `description`, which on
-//     the ASN lane is a SUPPLIER-SUBMITTED free-text field. A regulatory check
-//     keyed on prose a counterparty types is a weaker thing than one keyed on a
-//     code space we author.
-//   · MEASURED, not argued: across both shipment lanes the halal check fires on
-//     `RM-EMUL-9410` and `RM-EMUL-9430` — and NOT on `RM-EMUL-9440`. Three
-//     emulsifiers, one material group, and the check fires on two of them
-//     because a fixture author happened to write "(Halal Emulsifier)" into a
-//     product name. That is `PREFIX-RULE-SUCCEEDS-BY-ACCIDENT-01` one field
-//     over. `RM-PSTN-7150` — palm stearin, the single most halal-load-bearing
-//     row in the master — does not fire either.
+//   const inferHalal = (description: string): boolean =>
+//     description.toLowerCase().includes('halal');
 //
-// ⚠️ CORRECTED AT CP-3 · H1 (`H1-FALSIFIES-A-LIVE-COMMENT-01`). This paragraph
-// used to read: *"It is left because RETIRING IT REQUIRES A FIELD THAT DOES NOT
-// EXIST. There is no `halalApplicable` on `MaterialMasterEntry`; authoring one
-// (plus its class rule, its provisional seed on all 42 rows and its
-// `D-COMP-HALAL` escalation) is a 2B-4a-shaped batch…"* **EVERY CLAUSE OF THAT
-// IS NOW FALSE**: the field exists, the class rule exists, the seed covers all
-// 42 rows, and `D-COMP-HALAL-1..5` is on main. `C9-STALE-BY-FIX-01` — an
-// artifact going stale BY BEING FIXED — inside a comment rather than a contract.
+// ⚠️ THREE DISTINCT DEFECTS ON THAT ONE LINE, and they fail in three directions:
+//   1. **FAILS OPEN.** A substring miss is a confident `false` — an ASSERTION
+//      that no halal check is owed — arrived at silently.
+//   2. **FAILS CLOSED ON NEGATION.** No word boundary, no negation handling:
+//      `"non-halal"`, `"not halal certified"` and `"halal audit failed"` all
+//      turn the check ON.
+//   3. **IT READS AN ANSWER AND RETURNS A QUESTION**
+//      (`HALAL-PROSE-READS-AN-ANSWER-01`). The four master labels it fired on
+//      are the four that CLAIM THE MATERIAL ALREADY IS HALAL — *Halal
+//      Certified*, *(Halal Emulsifier)*. A claim of compliance is the thing that
+//      would make a check unnecessary; the rule treated it as the trigger.
 //
-// It is not a stale DESCRIPTION, which is why it was corrected in the batch that
-// falsified it rather than carried to the wiring batch: **IT ARGUES FOR LEAVING
-// A LIVE REGULATORY FAIL-OPEN IN PLACE.** A justification that has stopped being
-// true survives review on its own authority — a reviewer checks that the
-// reasoning is sound, not that its premise still holds.
+// And it read `description`, which on the ASN lane is SUPPLIER-SUBMITTED FREE
+// TEXT. C9 §3 forbids deriving semantics from `materialCode` because we do not
+// promise its shape; deriving them from prose a counterparty types is the same
+// class on a weaker input.
 //
-// WHY IT IS STILL LEFT, stated on the premise that is actually true today:
-// `halalApplicable` is AUTHORED BUT UNRATIFIED. All 42 values are PROVISIONAL
-// pending `D-COMP-HALAL-1`, and wiring an unratified applicability against a
-// certificate corpus that does not exist (R0.1 NOT STARTED) is an outage wearing
-// compliance clothes. Retiring the parse is **H2**, a surface batch with its own
-// smoke; the certificate-verification leg is **H4**, gated on `D-COMP-HALAL-4`.
-// The replacement to read FROM is `halalOf` (`services/sdc/halal.ts`).
-// See `docs/findings.md` → `INFERHALAL-READS-PROSE-01`,
-// `HALAL-PROSE-READS-AN-ANSWER-01`.
-//
-// ── ⚠️ STILL TRUE AT CP-3, AND DELIBERATELY UNTOUCHED ───────────────────────
-// `REQUIRED-OPENS-PRE-ANSWERED-01` removed the fabricated `'Pass'` this function
-// used to hand its callers. It did NOT touch the function. WHETHER the halal
-// check is asked remains this prose parse's decision, wrong in the ways measured
-// above; WHAT the answer is is now nobody's decision but an inspector's. Two
-// separable defects, and only the second one was in scope.
-//
-// The consequence, measured and not assumed: `inferHalal` fires on FOUR fixture
-// lines and NONE of them is a receivable GR source (`shp-004` In Transit ×2,
-// `shp-011` Customs Clearance, `shp-016` Delivered — only 'At Dock' /
-// 'Unloading' are eligible). So the halal pre-tick blocked ZERO lines today.
-// Fixing it now costs nothing and closes the hole BEFORE the applicability arc
-// gives it reach — see `PRE-ANSWERED-HAS-NO-REACH-YET-01`.
-const inferHalal = (description: string): boolean => {
-  const d = description.toLowerCase();
-  return d.includes('halal');
-};
+// ⚠️ THE BEHAVIOUR MOVED, AND IT MOVED IN ONE DIRECTION. The parse reached ZERO
+// of the nine receivable lines. `halalOf` reaches all nine: FIVE gain a question
+// that was never asked, FOUR change from a silent `false` to an honest refusal,
+// and NOTHING moves from checked to unchecked. See `docs/findings.md` → H2.
 
 /**
  * The BPOM gate for one line. **NO seeded check value — that is the fix.**
@@ -319,6 +320,24 @@ const seedBpom = (materialCode: string): Pick<LineDraft, 'bpom' | 'bpomLotCheck'
   bpomLotCheck: undefined,
 });
 
+/**
+ * The halal gate for one line — CP-3 · H2, and the exact shape of `seedBpom`.
+ *
+ * ONE read, shared by both draft builders, for the same reason: the shipment
+ * lane and the ASN lane cannot disagree about whether a material needs a halal
+ * check, because **neither of them decides it**. The old code had each builder
+ * call the prose parse on its own `description` — two lanes, two different
+ * strings, one regulatory question, and no guarantee they agreed.
+ *
+ * **NO SEEDED ANSWER**, on the `REQUIRED-OPENS-PRE-ANSWERED-01` ruling: the
+ * question and the answer are different facts with different answerers.
+ * `halalSealCheck` starts absent and stays absent until a human ticks it.
+ */
+const seedHalal = (materialCode: string): Pick<LineDraft, 'halal' | 'halalSealCheck'> => ({
+  halal: halalOf(materialCode),
+  halalSealCheck: undefined,
+});
+
 const buildDraftFromShipment = (s: Shipment): LineDraft[] =>
   s.lineItems.map((li) => ({
     materialCode: li.materialCode,
@@ -329,11 +348,10 @@ const buildDraftFromShipment = (s: Shipment): LineDraft[] =>
     rejectionReason: '',
     visualCheck: 'Pass',
     packagingCheck: 'Pass',
-    halalRequired: inferHalal(li.description),
-    // `REQUIRED-OPENS-PRE-ANSWERED-01`, the halal half — see `seedBpom`. The
-    // applicability call (`inferHalal`) is UNCHANGED and still its own arc; only
-    // the fabricated ANSWER is gone.
-    halalSealCheck: undefined,
+    // ⚠️ CP-3 · H2 — BOTH regulatory gates now read the MATERIAL CODE through
+    // the master. Neither reads `description`, which stays on the draft for
+    // DISPLAY only.
+    ...seedHalal(li.materialCode),
     ...seedBpom(li.materialCode),
     labSampleRequired: false,
   }));
@@ -348,8 +366,7 @@ const buildDraftFromAsn = (a: ASN): LineDraft[] =>
     rejectionReason: '',
     visualCheck: 'Pass',
     packagingCheck: 'Pass',
-    halalRequired: inferHalal(li.description),
-    halalSealCheck: undefined,
+    ...seedHalal(li.materialCode),
     ...seedBpom(li.materialCode),
     labSampleRequired: false,
   }));
@@ -555,9 +572,22 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   // builders stamped an answer into every line they applied to. A gate is only
   // a gate over a value that can be absent. The fix was upstream, in the seed;
   // what changed at this line is that it can now say no.
+  //
+  // ── CP-3 · H2 — AND NOW THE HALAL HALF FAILS CLOSED TOO ───────────────────
+  // `l.halalRequired && !l.halalSealCheck` became the two lines below, and the
+  // shape is deliberately IDENTICAL to BPOM's: **ONE refusal branch covering
+  // BOTH reasons**, then the required-and-unanswered clause. Nothing branches on
+  // `reason` — it reaches the message and nothing else — so neither refusal can
+  // be given a way through that the other does not have.
+  //
+  // ⚠️ THE ORDER MATTERS AND IS NOT COSMETIC. `!l.halal.ok` is tested BEFORE
+  // `l.halal.required`, because `required` does not exist on a refusal. Written
+  // the other way round the compiler would stop it — which is exactly why the
+  // outcome is a discriminated union and not a boolean plus a flag.
   const qualityValid = lines.every((l) => {
     if (!l.visualCheck || !l.packagingCheck) return false;
-    if (l.halalRequired && !l.halalSealCheck) return false;
+    if (!l.halal.ok) return false;
+    if (l.halal.required && !l.halalSealCheck) return false;
     if (!l.bpom.ok) return false;
     if (l.bpom.applicable && !l.bpomLotCheck) return false;
     if (l.labSampleRequired && !l.labRequestId) return false;
@@ -933,7 +963,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   · REQUIRED, ANSWERED     → row, a selection, no marker
                   Neither check opens with an answer (`REQUIRED-OPENS-PRE-
                   ANSWERED-01`); both block `qualityValid` until ticked. */}
-              {l.halalRequired && (
+              {l.halal.ok && l.halal.required && (
                 <RegulatoryCheck
                   name={`halal-${i}`}
                   label={t('goodsReceipt.wizard.field.halalSealCheck')}
@@ -955,9 +985,29 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   testId={`gr-bpom-unanswered-${i}`}
                 />
               )}
-              {/* THE REFUSAL, BY NAME. Not a hidden row and not a skipped check:
-                  the line says which material it cannot answer for and why, and
-                  `qualityValid` will not let the wizard past this step. */}
+              {/* THE REFUSALS, BY NAME. Not a hidden row and not a skipped
+                  check: the line says which material it cannot answer for and
+                  why, and `qualityValid` will not let the wizard past this step.
+                  ⚠️ TWO SEPARATE BANNERS, NEVER MERGED — a line can be refused
+                  by one regime and answerable by the other, and four of the nine
+                  receivable lines are exactly that shape (BPOM determined
+                  not-applicable, halal undetermined). Collapsing them into one
+                  "compliance cannot be determined" message would lose which
+                  regulator has not ruled. */}
+              {!l.halal.ok && (
+                <div
+                  data-testid={`gr-halal-refusal-${i}`}
+                  role="alert"
+                  className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover"
+                >
+                  <span className="font-semibold">
+                    {t('goodsReceipt.wizard.halal.refused.title')}
+                  </span>{' '}
+                  {t(GR_HALAL_REFUSAL_KEY[l.halal.reason], {
+                    code: l.halal.materialCode,
+                  })}
+                </div>
+              )}
               {!l.bpom.ok && (
                 <div
                   data-testid={`gr-bpom-refusal-${i}`}

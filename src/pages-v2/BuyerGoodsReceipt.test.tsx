@@ -66,20 +66,28 @@ const uiTestAsn = (): ASN => ({
   },
   lineItems: [
     {
-      // ⚠️ WAS `PK-UITEST-1`, AND THE CHANGE IS THE 2B-4b GATE FIRING ON A TEST.
-      // The wizard's BPOM check now reads the material master and REFUSES a code
-      // the master cannot resolve, so this spec — whose subject is the ASN
-      // source seam, not compliance — could no longer reach step 4 with an
-      // invented code. It takes a REAL master row (`PK-PETB-8804`, VERP,
-      // NOT_APPLICABLE) so the receipt path it tests is unchanged.
+      // ⚠️ THIS CODE HAS MOVED TWICE, UNDER THE SAME PRESSURE, AND BOTH MOVES
+      // ARE RECORDED RATHER THAN ABSORBED. The spec's subject is the ASN source
+      // seam, not compliance — but each regulatory gate that lands makes a
+      // receipt harder to reach, and that pressure is worth seeing.
       //
-      // The invented code did not simply disappear: the UNKNOWN_MATERIAL
-      // refusal it now provokes is exercised deliberately in
-      // `GRInspectionWizard.test.tsx`, which is the only place in the tree that
-      // can reach that path at all — no fixture anywhere feeds the wizard an
-      // unresolvable code, which IS the discharged 2B-4 gate, observed rather
-      // than asserted.
-      materialCode: 'PK-PETB-8804',
+      //   · `PK-UITEST-1` → `PK-PETB-8804` (2B-4b). The BPOM check began reading
+      //     the material master and REFUSING a code it cannot resolve, so an
+      //     invented code could no longer reach step 4. The UNKNOWN_MATERIAL
+      //     path did not vanish with it: it is exercised deliberately in
+      //     `GRInspectionWizard.test.tsx`, the only place in the tree that can
+      //     reach it, because no fixture feeds the wizard an unresolvable code.
+      //   · `PK-PETB-8804` → `AI-NIAC-6601` (CP-3 · H2). The halal seed leaves
+      //     every PACKAGING row `'UNDETERMINED'` (Seat 3, `D-COMP-HALAL-1` —
+      //     BPOM excludes packaging, halal may not), so the PET bottle now
+      //     REFUSES on halal.
+      //
+      // ⚠️ AND THERE IS NO LONGER A "QUIET" MATERIAL TO PICK. In today's master
+      // BPOM-`NOT_APPLICABLE` ⇔ packaging ⇔ halal-`UNDETERMINED`, so **no
+      // material anywhere clears the quality step without a human answer.**
+      // `AI-NIAC-6601` is MG-04: both regimes can answer it, and both ASK. The
+      // specs below tick both, which is exactly what a clerk now has to do.
+      materialCode: 'AI-NIAC-6601',
       description: 'UI test carton',
       orderedQty: 100,
       shippedQty: 100,
@@ -87,6 +95,21 @@ const uiTestAsn = (): ASN => ({
     },
   ],
 });
+
+/**
+ * CP-3 · H2 — tick both regulatory checks on the quality step.
+ *
+ * Neither is seeded (`REQUIRED-OPENS-PRE-ANSWERED-01`) and both now block
+ * (`INFERBPOM-REGULATORY-01` for BPOM, `INFERHALAL-READS-PROSE-01` for halal),
+ * so a spec whose subject is the ASN source seam has to do what a clerk does.
+ * Written as `getByRole` on the accessible name rather than a test id, so it
+ * fails loudly if either control stops being asked for — silence here would
+ * mean the gate had gone quiet, which is the whole defect class.
+ */
+const answerRegulatoryChecks = () => {
+  fireEvent.click(screen.getByRole('radio', { name: /Halal Seal Check.*Pass/ }));
+  fireEvent.click(screen.getByRole('radio', { name: /BPOM Lot Tracking.*Pass/ }));
+};
 
 describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
   it('receives a GR from a store ASN via the source selector, not fixtures only', async () => {
@@ -103,9 +126,11 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
     const sourceRow = await screen.findByText('ASN-UITEST-1');
     fireEvent.click(sourceRow);
 
-    // Step through the wizard defaults (all accepted, checks pass).
+    // Step through the wizard (all accepted), ANSWERING BOTH REGULATORY CHECKS —
+    // there are no "defaults" for those any more, by design.
     fireEvent.click(screen.getByRole('button', { name: 'Next' })); // → details
     fireEvent.click(screen.getByRole('button', { name: 'Next' })); // → quality
+    answerRegulatoryChecks();
     fireEvent.click(screen.getByRole('button', { name: 'Next' })); // → disposition
     fireEvent.click(screen.getByRole('button', { name: 'Create GR' }));
 
@@ -133,16 +158,17 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
     // Step 1 → Details, then accept 60 of 100 received (40 rejected → mixed line).
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     fireEvent.change(
-      screen.getByLabelText('Accepted quantity for PK-PETB-8804'),
+      screen.getByLabelText('Accepted quantity for AI-NIAC-6601'),
       { target: { value: '60' } },
     );
     fireEvent.change(
-      await screen.findByLabelText('Rejection reason for PK-PETB-8804'),
+      await screen.findByLabelText('Rejection reason for AI-NIAC-6601'),
       { target: { value: '40 cartons crushed in transit' } },
     );
 
-    // Details → Quality → Disposition.
+    // Details → Quality (answer both checks) → Disposition.
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    answerRegulatoryChecks();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     // The header disposition is DERIVED and displayed (no free-choice radio).

@@ -4414,3 +4414,312 @@ answer is worth waiting for rather than defaulting past.
   named so nobody mistakes a booking for a decision.
 - **C9's bytes untouched**; pin `af7f0b4` unaffected.
 - **FLOOR 2244/185, unchanged.** `npm run gates` green.
+
+---
+
+## CP-3 · H2 — THE PROSE PARSES ARE RETIRED, AND THE APPLICABILITY IS WIRED
+
+`INFERHALAL-READS-PROSE-01` **CLOSED.** Both parses are gone — the one on the
+receiving surface and the one nobody had found — and `halalOf` is what the goods
+receipt reads. **The behaviour moved on every one of the nine receivable lines,
+in one direction.**
+
+### What changed
+
+| | Before | After |
+|---|---|---|
+| `LineDraft` | `halalRequired: boolean`, from `description.toLowerCase().includes('halal')` on each builder | `halal: HalalOutcome`, from `halalOf(materialCode)` through ONE seed |
+| `qualityValid` | `halalRequired && !halalSealCheck` — a clause that could never see an absence | `!l.halal.ok` **then** `l.halal.required && !l.halalSealCheck` |
+| Refusal | none — a miss was a silent `false` | a named banner, `role="alert"`, EN + ID |
+| `AdaptiveContext` | `isHalal = cat.includes('halal') \|\| 'food' \|\| 'raw' \|\| 'packaging'` | **retired**; the country-level requirement stays, the per-category discrimination goes |
+
+**One refusal branch, both reasons.** `reason` reaches the message and nothing
+else — `GR_HALAL_REFUSAL_KEY` is a lookup for a sentence, not a fork. ⚠️ The
+order in `qualityValid` is load-bearing and the compiler enforces it: `required`
+does not exist on a refusal, so `!ok` must be tested first. That is why the
+outcome is a discriminated union rather than a boolean plus a flag.
+
+---
+
+### ⚠️ THE DELTA, LINE BY LINE — all nine, measured
+
+| # | Source | Material | Was | Now |
+|---|---|---|---|---|
+| 1 | `shp-012` | `PK-PETB-8801` | silent `false` | ⚠️ **REFUSES** |
+| 2 | `shp-013` | `PK-PETB-8802` | silent `false` | ⚠️ **REFUSES** |
+| 3 | `shp-014` | `RM-COCO-8200` | silent `false` | **asks** (already BPOM-refused) |
+| 4 | `shp-015` | `FR-WARD-4410` | silent `false` | **asks** |
+| 5 | `ASN-2025-00211` | `FR-ROUD-4470` | silent `false` | **asks** |
+| 6 | `ASN-2025-00211` | `PK-PETB-8804` | silent `false` | ⚠️ **REFUSES** |
+| 7 | `ASN-2025-00198` | `PK-ALCP-2450` | silent `false` | ⚠️ **REFUSES** |
+| 8 | `ASN-2025-00301` | `RM-PSTN-7150` | silent `false` | **asks** (already BPOM-refused) |
+| 9 | `ASN-2025-00302` | `RM-EMUL-9440` | silent `false` | **asks** |
+
+**FIVE gain a question · FOUR refuse · ZERO lose a question.** The parse said
+`false` on all nine, so the delta is one-directional **by measurement, not by
+argument** — nothing moved from checked to unchecked, and H2 could only add.
+
+⚠️ **AND THE OPERATOR'S EXPECTATION WAS NOT MET — RECORDED, NOT SMOOTHED.** The
+dispatch expected `RM-COCO-8200` and `RM-PSTN-7150` to refuse. **They do not.**
+Both are MG-10, which the halal class rule marks `REQUIRED`; what they refuse
+under is **BPOM**, a different regime and a state they were already in. The four
+halal refusals are **all packaging** — which is Seat 3's `D-COMP-HALAL-1` ruling
+landing exactly where it said it would. A dispatch expectation quietly not met
+is a finding, so it is written here rather than absorbed.
+
+### ⚠️ THE CONSEQUENCE NOBODY HAD STATED: THERE IS NO QUIET MATERIAL LEFT
+
+In today's master **BPOM-`NOT_APPLICABLE` ⇔ packaging ⇔ halal-`UNDETERMINED`**.
+Composed, that means:
+
+> **NO MATERIAL IN THE MASTER CLEARS THE QUALITY STEP WITHOUT A HUMAN ANSWER,
+> and four of the nine receivable lines cannot clear it at all.**
+
+It surfaced as test pressure rather than as analysis: `BuyerGoodsReceipt.test.tsx`
+had to move its material for the **second** time (`PK-UITEST-1` → `PK-PETB-8804`
+at 2B-4b → `AI-NIAC-6601` here) and then tick two radios, because there was no
+third option. Both moves are recorded inline at the fixture.
+
+---
+
+### `HALAL-PROSE-READS-AN-ANSWER-01` — the retirement, and what it took with it
+
+The deleted line carried **three defects in three directions**, and the header
+comment that replaces it keeps all three:
+
+1. **FAILS OPEN** — a substring miss is a confident `false`, silently.
+2. **FAILS CLOSED ON NEGATION** — `"non-halal"`, `"not halal certified"` and
+   `"halal audit failed"` all turn the check ON.
+3. **READS AN ANSWER AND RETURNS A QUESTION** — the four master labels it fired
+   on are the four CLAIMING THE MATERIAL ALREADY IS HALAL.
+
+And it read `description`, which on the ASN lane is **supplier-submitted free
+text**. C9 §3 forbids deriving semantics from `materialCode` because we do not
+promise its shape; deriving them from prose a counterparty types is the same
+class on a weaker input.
+
+**Asserted as a DERIVED TREE-WIDE PROPERTY**, the way C9 §7.3's discharge was —
+not a file list. The scan is per-line over every non-test module, and **comments
+are exempt by construction**: the retired rules are restated in comments on
+purpose, and a check that cannot tell code from record would force deleting the
+evidence along with the defect.
+
+⚠️ **THE SCAN FOUND A THIRD PARSE, AND IT IS NAMED RATHER THAN REGEXED AWAY** —
+`DISCOVERY-CHIP-PROSE-FILTER-01`, `BuyerDiscovery.tsx:213`:
+`certifications.filter((c) => !c.toLowerCase().includes('halal'))`. It is a
+**display dedupe** — the halal chip already renders from `halalCertified`, and
+this stops it appearing twice. It decides nothing regulatory and sits on no path
+a receipt can travel, so it is out of H2's scope; it is still a prose test over a
+cert string, so it is pinned as an **exact set of one**. A second cannot arrive
+quietly.
+
+---
+
+### THE SECOND OPINION: `AdaptiveContext`'s `isHalal` — RESHAPED, NOT RETIRED
+
+It decided **which halal certificate a supplier is told to provide** by
+substring-matching a category label, and it returned `true` for a PET bottle —
+an unlicensed second opinion on exactly the question `D-COMP-HALAL-1` leaves
+open. Zero consumers, which is why it survived review; but it is **exposed on the
+context value and reachable by any caller**, so "dormant" was a property of
+today's callers, not of the code.
+
+**Deleting the halal entries outright was the other candidate and was rejected**:
+it removes a TRUE statement along with a false discrimination and leaves the
+Indonesian list *quieter than the truth*. The false part was never *"Indonesia
+has a halal certification regime"* — it was the **per-category discrimination**.
+So the discrimination goes and the country-level fact stays, which is the shape
+`SA` in that same function always had (`GCC Halal Certificate (mandatory)`,
+unconditional). **Three countries, three shapes, and one of them was already
+right.**
+
+⚠️ **RESHAPING IT TO "READ THE MASTER" WAS NOT AVAILABLE**: the function is given
+a CATEGORY, not a material code, so a master lookup would have required inventing
+a category→material join — the fabrication this whole arc refuses. What it may
+say is now written down at the call site: a country-level regime, never a
+material-level determination. **No behaviour changes today** — still zero
+consumers.
+
+---
+
+### ⚠️ `H2-NOT-REQUIRED-IS-UNREACHABLE-01` — FOUND BY A MUTATION PROBE
+
+Widening the render condition from `halal.ok && halal.required` to `halal.ok` —
+which would ask an inspector for a **seal check on a material ruled
+`NOT_REQUIRED`** — **SURVIVES THE ENTIRE SUITE.**
+
+It survives because it is currently UNREACHABLE, not because the suite is
+careless: **no row in the master is `'NOT_REQUIRED'`** (H1's 31/0/11 split). The
+BPOM gate has this twin covered only because packaging gives it one.
+
+Pinned as the fact that makes the gap true, so it **self-invalidates**: the day
+`D-COMP-HALAL-1` rules any group `NOT_REQUIRED`, the assertion goes red and
+whoever lands that ruling writes the UI twin that cannot be written today. Not
+skipped, not a placeholder — it asserts something real about the master.
+
+---
+
+### BROWSER QA — EN and ID, on the built bundle
+
+Served from `dist/` (`vite preview`), HashRouter, buyer persona. ⚠️ `npm run dev`
+does not boot this app — `app/index.html` carries `src="../src/main.tsx"`, which
+the dev server resolves to an HTML 200 and the browser rejects as a module, so
+the page renders blank. **QA is on the build, which is what Vercel ships.**
+
+| # | What was witnessed | EN | ID |
+|---|---|---|---|
+| 1 | `ASN-2026-012` / `PK-PETB-8801` — halal refusal names the code, `role="alert"`, **Next disabled**, no seal control offered, **no BPOM refusal** (so the block is unambiguously halal) | ✅ | ✅ |
+| 2 | `ASN-2026-015` / `FR-WARD-4410` — **both** checks render unanswered (`role="status"`), Next disabled; answering both clears both markers and **enables Next** | — | ✅ |
+| 3 | `ASN-2025-00211` — **two lines, two verdicts**: line 0 (`FR-ROUD-4470`) asks both questions, line 1 (`PK-PETB-8804`) refuses on halal only | ✅ | — |
+| 4 | `ASN-2025-00301` / `RM-PSTN-7150` — **halal ASKS and BPOM REFUSES on the same line**, separately named | — | ✅ |
+
+**NO REACHABILITY GAP.** All eight receivable sources (nine lines) appear in the
+wizard's own source picker, so **every refusal this batch creates can be
+witnessed by a clerk** — unlike `ASN-2025-00201`'s Discrepancy status, which had
+no surface. A refusal that cannot be witnessed is not a delivered refusal; these
+are delivered.
+
+⚠️ **ONE PRE-EXISTING GAP OBSERVED, NOT INTRODUCED AND NOT FIXED:** the shared
+`Wizard` component hard-codes its nav buttons — `Cancel` / `Back` / `Next` stay
+English under ID (`ui-v2/Wizard.tsx:122-136`, unchanged since #42). The step
+labels, the check labels, both markers and both refusals all localise correctly.
+Reported because it was seen, out of scope because it belongs to the wizard
+chrome and to every batch that ever used it.
+
+### Operator smoke — 4 judgement steps
+
+Everything a machine can confirm is burned down above. What is left is judgement:
+
+1. **`ASN-2026-012` → Quality.** Read the refusal as a receiving clerk. Does it
+   tell you what to do next, or only that you are stuck? (It names the code and
+   says "until someone rules on it" — it does not say *who*.)
+2. **Same screen in ID.** Is *"Penerapan halal tidak dapat ditentukan"* the right
+   register for a warehouse audience, or too legal?
+3. **`ASN-2026-015` → Quality.** Two required checks stacked on one line. Is the
+   density acceptable, or does the second control read as a repeat of the first?
+4. ⚠️ **`ASN-2025-00301`.** Halal asks, BPOM refuses, on ONE line. **Is it
+   defensible to ask an inspector for a halal seal answer on a line the receipt
+   cannot be completed for anyway?** The alternative — suppressing questions on a
+   refused line — hides work that will be owed the moment the refusal clears.
+
+---
+
+### SMOKE PASSED — and the two operator outcomes it produced
+
+Four steps plus the EN repeat, console clean. Two of the four steps returned
+something the batch did not have before it ran: a **ruling** on the step-4
+judgement, and a **finding** on the step-1 message. Both are the operator's and
+both are recorded here rather than in the conversation they were made in.
+
+| Step | Subject | Result |
+|---|---|---|
+| 1 | `ASN-2026-012` / `PK-PETB-8801` | refusal verbatim, Next disabled — and the **Lab-sample toggle correctly does not unstick it** |
+| 2 | the same, in ID | full chrome, banner verbatim, **identical** enable/disable. Register accepted as OK for now |
+| 3 | `ASN-2026-015` / `FR-WARD-4410` | both controls unanswered with markers, Next disabled; Pass on both clears the markers and enables Next. **Verified ID and EN** |
+| 4 | `ASN-2025-00301` / `RM-PSTN-7150` | halal ASKS, BPOM REFUSES, two messages never merged, and **NEXT STAYS DISABLED AFTER THE HALAL ANSWER** |
+
+⚠️ **Step 4 is Seat 3's three-fact split holding ON SCREEN** — and it does so on
+the one material where the retired parse returned a confident `false`. The
+`Cancel / Back / Next` chrome staying English is known, pre-existing, and not
+this batch (`ui-v2/Wizard.tsx`, unchanged since #42).
+
+---
+
+### ⚠️ OPERATOR RULING — ASKING ON A REFUSED LINE IS DEFENSIBLE
+
+The step-4 judgement, ruled:
+
+> **THE WORK IS GENUINELY OWED, AND IT IS RECORDED THE MOMENT THE OTHER REGIME
+> CLEARS. SUPPRESSING IT WOULD HIDE WORK THAT WILL BE DEMANDED LATER.**
+
+So a line refused by one regime still ASKS the other regime's question. The
+alternative — rendering only the refusal and hiding every outstanding question
+behind it — would make the visible workload of a line depend on which gate
+happens to fail first, and would spring the hidden work on whoever clears the
+refusal.
+
+⚠️ **AND THE COUNTER-ARGUMENT, RECORDED BESIDE IT SO A FUTURE READER KNOWS THE
+COST WAS WEIGHED RATHER THAN MISSED:**
+
+> **A CHECK PEOPLE CLICK THROUGH IS WORSE THAN NO CHECK.**
+
+An inspector who meets a question on a line they already know cannot be completed
+learns that answering is ceremonial. That habit does not stay on refused lines —
+it is carried to the ones that matter, and a regulatory control answered by
+reflex is a fabricated attestation with a human's name on it. The ruling accepts
+that cost against the certainty of hidden work; **it does not deny it.** If the
+click-through habit is ever observed in the operator lane, this is the entry that
+says the trade was made deliberately and can be remade.
+
+---
+
+### ⚠️ `HALAL-REFUSAL-DEAD-ENDS-01` — FILED BY THE OPERATOR, NOT FIXED HERE
+
+**The refusal is HONEST BUT NOT ACTIONABLE.** It names the material and says a
+ruling is missing. It does not say **who rules, where, or what the clerk does
+with the delivery meanwhile.**
+
+> **A clerk at a dock with a truck waiting has a blocked line and no route. THE
+> MESSAGE ENDS THE CONVERSATION INSTEAD OF ROUTING IT.**
+
+This is the honest half of the fix arriving without the useful half. `bpomOf`'s
+refusal has carried the same shape since 2B-4b and nobody had named it; H2
+doubled its reach, which is what made it visible.
+
+#### WHY IT IS NOT FIXED IN THIS BATCH — THE DESTINATION DOES NOT EXIST
+
+There is **no compliance surface today where `halalApplicable` is set.** A message
+saying *"raise this with Compliance"* would **point at nothing** — a sentence that
+reads as helpful and cannot bear what a reader would do with it, which is the
+class this register keeps retiring (`ANSWER-ABOUT-NOTHING-01`,
+`FLOOR-IN-PROSE-01`, the `plantCode` disclosure line). **The routing batch builds
+the destination and the message TOGETHER**, or it ships a second dead end with
+better manners.
+
+#### THE OPERATOR RULINGS THAT SHAPE THAT BATCH
+
+1. **THE UNRULED THING IS A POLICY DETERMINATION ON THE MATERIAL MASTER**, made
+   once per material or group — **NOT a per-receipt approval.** A manager
+   approving one line would be approving a regulatory classification they do not
+   own, one receipt at a time, forever.
+2. **IT BELONGS ON THE COMPLIANCE SURFACE, NOT THE DOCK.** The dock's job is to
+   report that it is blocked; it is not the place a classification is decided.
+3. ⚠️ **AN EMAIL UNLOCK IS AN OVERRIDE, AND OVERRIDES ON REGULATORY GATES
+   NORMALISE** — the first is deliberate, the fiftieth is a reflex. If one is ever
+   built it must be a **NAMED, AUDITED EVENT WITH AN OWNER AND A REVIEW CADENCE**,
+   not an unlock. That is `D-COMP-HALAL-4` option (b), **and it is not taken.**
+4. ⚠️ **THE CHEAPER ANSWER FIRST: ALL FOUR BLOCKED LINES ARE PACKAGING.** Ruling
+   `D-COMP-HALAL-1` — *is contact packaging in scope for halal* — **unblocks all
+   four with no override mechanism at all.** Get the ruling before building a way
+   around its absence.
+
+⚠️ Point 4 is the one to re-read in six months. The expensive artifact (an
+override path, an audit event, an owner, a cadence) would have been built to
+route around a single unanswered question that **the same four lines are waiting
+on anyway** — `SEED-IS-AN-ANSWER-01`'s shape at process scale: a mechanism
+standing in for a decision, and outliving the decision once it is finally made.
+
+---
+
+### Constraints discharged
+
+- **NO REGISTRY READ, NO CERTIFICATE LOGIC.** Seat 3's three-fact split is held
+  in the type: `halalSealCheck`'s doc comment states it is a HUMAN's attestation
+  about a physical seal and **not** certificate verification, and the refusal copy
+  says "halal check", never "halal certificate". H3/H4 are untouched, and H4
+  stays gated on `D-COMP-HALAL-4`.
+- **The two refusal banners are never merged.** A line can be refused by one
+  regime and answerable by the other — four of the nine are exactly that — and
+  one shared "compliance cannot be determined" message would delete which
+  regulator has not ruled.
+- **No prefix or substring rule decides anything** (C9 §3, ratified).
+- **C9's bytes untouched**; pin `af7f0b4` unaffected.
+- **FLOOR 2244/185 → 2251/185.** `npm run gates` green: bundle emitted · 2251
+  tests across 185 files · 7 gate tests.
+- **Mutation-probed, both directions**: removing the `!l.halal.ok` branch fails 3
+  specs; widening the render condition fails NOTHING, and that is filed above
+  rather than left as coverage.
+- **The smoke's two outcomes are ON MAIN, in this entry** — the step-4 ruling
+  *with its counter-argument*, and `HALAL-REFUSAL-DEAD-ENDS-01` filed and NOT
+  fixed. A ruling that exists only in the conversation it was made in is
+  `FLOOR-IN-PROSE-01` wearing a decision's clothes.
