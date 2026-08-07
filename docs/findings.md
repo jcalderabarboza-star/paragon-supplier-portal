@@ -4723,3 +4723,297 @@ standing in for a decision, and outliving the decision once it is finally made.
   *with its counter-argument*, and `HALAL-REFUSAL-DEAD-ENDS-01` filed and NOT
   fixed. A ruling that exists only in the conversation it was made in is
   `FLOOR-IN-PROSE-01` wearing a decision's clothes.
+
+---
+
+## CP-3 · H3 — CERTIFICATE VERIFICATION, BUILT HEADLESS
+
+Seat 3's three-fact split is now three things. `verifyHalalAtReceipt` is the
+third — **a pure function, with no consumer, deliberately.** H4 wires it and H4
+is gated on `D-COMP-HALAL-4`.
+
+| | Fact | Grain | Clock | Answerer | Status |
+|---|---|---|---|---|---|
+| 1 | APPLICABILITY | material | **none** | compliance policy (master field) | wired at H2 |
+| 2 | SEAL CHECK | receipt line | receipt | the inspector, by hand | wired at H2 |
+| 3 | **CERTIFICATE VERIFICATION** | supplier × material × instant | **receipt instant** | the certifier, via the registry | **built here, WIRED NOWHERE** |
+
+```
+verifyHalalAtReceipt(supplierId, materialCode, registry, receiptInstant)
+  → { verdict: 'SATISFIED';     certId; certType; expiryDate }
+  | { verdict: 'NOT_SATISFIED'; reason: 'NO_CERT' | 'EXPIRED'
+                                      | 'SCHEME_INVALID' | 'UNDER_REVIEW' }
+```
+
+`registry` is an ARGUMENT, not an import — the module never reaches for
+`COMPLIANCE_REGISTRY`, so it cannot widen a `QueryScope`. `receiptInstant` is an
+ARGUMENT, never a clock read: the question is *was this lot covered when it
+arrived*, which stops being the same question the moment a certificate lapses
+between receipt and review.
+
+---
+
+### 1. DOES THE EXISTING PROJECTION ANSWER EVERY CASE? — NO. TWO GAPS, FILED
+
+`daysRemaining` / `computeStatus` / `schemeValid` are reused verbatim and
+nothing is reimplemented. The verdict mapping is **total by construction rather
+than by a second rule**: `schemeValid` is false for exactly four situations —
+Missing, Under Review, Expired, mandate-retired scheme — and `computeStatus`
+names the first three, so the `else` is the fourth and only the fourth.
+
+⚠️ **Two cases the existing projection genuinely cannot answer. Neither is
+patched here; writing a second projection beside the first is the thing this
+batch was told not to do.**
+
+#### ⚠️ `HALAL-VERIFY-FOREIGN-RECOGNITION-01` — a foreign cert reads SATISFIED with its own row saying otherwise
+
+`schemeValid` tests exactly one scheme clause: `HALAL_MUI_LEGACY` after
+`BPJPH_MANDATE_DATE`. `HALAL_FOREIGN` passes unconditionally. But **creg-0007's
+own `scopeText` says "foreign halal scheme (recognition pending)"** — the row
+records, in prose, a condition the projection has no field for and no rule
+about. So `verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-BOT-01', …)` returns
+SATISFIED naming a certificate whose domestic recognition its own record calls
+pending.
+
+**NOT FIXED, and the reason is the point.** Under GR 42/2024 a foreign halal
+certificate satisfies the Indonesian mandate only via a *mutual-recognition
+agreement between BPJPH and the foreign body* — **which body, and whether an
+MRA is in force, is a fact about the real world that this tree does not have**
+and that the fixture is forbidden from inventing (every issuer is "Foreign
+scheme body (illustrative)", precisely so no real body is ever named). Adding a
+`recognitionStatus` field would mean seeding rows with recognitions nobody
+granted — `SEED-IS-AN-ANSWER-01` exactly. ⚠️ **The condition is currently
+recorded in `scopeText`, i.e. in PROSE, which is the shape `C9 §3` and
+`INFERHALAL-READS-PROSE-01` both exist to keep out of decision paths.** The
+honest state today is: the rule is absent, the test asserts the absent-rule
+answer so it is visible in the suite, and the field arrives with the R0.1
+harvest or with a compliance ruling — not with a fixture edit.
+
+#### ⚠️ `HALAL-VERIFY-NOT-IN-FORCE-AT-RECEIPT-01` — `issueDate` is consulted by nothing
+
+`computeStatus` looks only at `expiryDate`. **No function in
+`complianceProjection.ts` reads `issueDate` at all.** For a *display* status
+that is fine — a certificate you are looking at today was necessarily issued by
+today. For a **receipt-instant** verification it is not: a certificate issued
+2026-06-01 will report SATISFIED for a lot received 2026-01-15, because nothing
+in the chain asks whether the document existed yet.
+
+The fixture cannot currently exhibit it (every halal row's `issueDate` precedes
+every plausible receipt), so **this is a latent defect that only bites once real
+receipts and real certificates meet — which is exactly H4.** The fix is one
+clause (`issueDate === null || issueDate <= day(receiptInstant)`) and it belongs
+in `complianceProjection.ts` beside the others, **not in a second projection
+here**, and it needs a ruling on the `issueDate: null` case (creg-0013,
+creg-0006 and creg-0004/0009 all carry it) before it can be written: *is an
+undated certificate in force, or unknown?* The register does not answer that,
+and guessing it in a helper would be the fail-open direction.
+
+#### One thing that is NOT a shortfall
+
+`schemeValid` collapses "date-lapsed" and "scheme-retired" into one boolean, so
+this module re-consults `computeStatus` to name WHICH. **That is composition,
+not duplication** — and it is load-bearing: `EXPIRED` sends an operator to chase
+a renewal, `SCHEME_INVALID` sends them to chase a BPJPH migration on a document
+that has not expired. One reason for both would send half of them to the wrong
+place.
+
+---
+
+### 2. ⚠️ THE REGISTRY ROWS WHOSE STORED STATE CONTRADICTS ITS OWN PROJECTION
+
+**THE FULL SET, AND THE CORRECTION.** Censused at `2026-08-07` against
+`computeStatus`. The dispatch expected three certs "marked `Valid` with expiries
+in 2024 and 2025", and the three are there —
+
+| id | supplier | certType | stored | expiry | days | projects |
+|---|---|---|---|---|---|---|
+| creg-0011 | sup-002 | ISO | `Valid` | 2024-11-30 | −615 | **Expired** |
+| creg-0005 | sup-005 | ISO | `Valid` | 2025-04-30 | −464 | **Expired** |
+| creg-0016 | sup-005 | HALAL_FOREIGN | `Valid` | 2025-08-01 | −371 | **Expired** |
+
+— ⚠️ **but calling them a CONTRADICTION reads the registry backwards, and the
+distinction is the whole of law 0.5.** `lifecycleState` is a TRANSITION state
+(`Missing` / `Under Review` / `Valid`); `Expired` is not one of its values and
+never can be. A row storing `Valid` with a lapsed expiry is **the mechanism
+working**: the substrate says *this supplier was granted a certificate*, and the
+clock decay is derived at read. `COMPLIANCE_REGISTRY` cannot hold a stale
+display status, because it does not hold a display status. **There are ZERO
+contradicting rows in the registry, and that is a design property, not luck.**
+
+The three are seeded on purpose — the fixture header promises "≥2 exemplars of
+every computed display status", and these are the `Expired` two-plus.
+
+#### THE ACTUAL CONTRADICTIONS ARE IN THE FIXTURES THAT STORE THE DISPLAY STATUS
+
+Same census, run over the two pre-DTO-v2 fixtures. **This is the corpse count,
+and it is larger than the dispatch's three.**
+
+⚠️ **`supplierDocuments.ts` — ON THE LIVE READ PATH** (`MockProcurementService.ts:14`
+→ the My Documents surface). One contradiction, rendered to users today:
+
+| id | stored | expiry | days | true |
+|---|---|---|---|---|
+| doc-001 | `Expiring Soon` | 2026-05-15 | **−84** | Expired |
+
+⚠️ **`buyerCompliance.ts` — OFF the read path** (I3.2 closed
+`COMPLIANCE-CARVEOUT-01`; `COMPLIANCE_ITEMS` is now imported by exactly one
+file, `halalXpersona.invariant.test.ts`). Its damage is therefore contained —
+but it is the more instructive specimen, because **all ten of its dated rows are
+wrong and they are wrong by two different amounts:**
+
+| id | stored | storedDays | implied authoring date | true days | true status |
+|---|---|---|---|---|---|
+| c-001 | Expired | −346 | 2026-04-11 | −464 | Expired |
+| c-002 | Expiring | 70 | 2026-04-10 | **−49** | **Expired** |
+| c-003 | Expiring | 85 | 2026-04-10 | **−34** | **Expired** |
+| c-004 | Valid | 697 | **2025-04-11** | 214 | Valid |
+| c-005 | Valid | 153 | 2026-04-10 | 34 | **Expiring** |
+| c-006 | Valid | 873 | **2025-04-11** | 390 | Valid |
+| c-007 | Valid | 671 | **2025-04-13** | 190 | Valid |
+| c-008 | Valid | 873 | **2025-04-11** | 390 | Valid |
+| c-009 | Valid | 636 | **2025-04-13** | 155 | Valid |
+| c-010 | Valid | 143 | 2026-04-10 | 24 | **Expiring** |
+
+**⚠️ THE FINDING NOBODY WAS LOOKING FOR: THE FIXTURE HAS TWO AUTHORING DATES.**
+Back-solving `expiryDate − daysRemaining` per row gives **2025-04-11/13 for five
+rows and 2026-04-10/11 for five others.** Somebody refreshed half this file a
+year later and left the other half. **A stored clock value does not merely go
+stale — it goes stale UNEVENLY, and a partial refresh is indistinguishable from
+a correct file by inspection.** Every row looks plausible; no two halves agree
+on what day it is. This is the strongest argument on main for law 0.5 that is
+not a paragraph, and it was invisible until somebody divided.
+
+Also corrected while here: the dispatch's figures were **482 days stale and 83
+days**; measured at `2026-08-07` they are **483 and 84**. `c-006`/`c-008`'s
+`daysRemaining: 873` was last true on **2025-04-11**.
+
+**NOT FIXED — by dispatch, and it would be wrong to fix here anyway.** Both
+fixtures are pre-DTO-v2 shapes whose retirement is a read-path batch, not a
+number edit. Re-typing `daysRemaining` today buys a file that is correct for one
+day and then resumes decaying, which is the defect, performed once more.
+
+#### AND A DECAY THAT HAS NOT HAPPENED YET — `HALAL-VERIFY-EXPIRING-EXEMPLARS-EXPIRE-01`
+
+The registry cannot store a stale status, but its **coverage** still decays. All
+four `Expiring` exemplars are inside their 90-day windows *now*:
+
+| id | Expiring from | until |
+|---|---|---|
+| creg-0008 | 2026-05-22 | **2026-08-20** |
+| creg-0015 | 2026-06-02 | **2026-08-31** |
+| creg-0003 | 2026-06-17 | **2026-09-15** |
+| creg-0012 | 2026-07-02 | **2026-09-30** |
+
+The next row to enter an Expiring window is **creg-0002, on 2027-03-03.** So:
+the header's "≥2 exemplars of every computed display status" **stops being true
+on 2026-09-16**, and from **2026-09-30 to 2027-03-03 the fixture has ZERO
+`Expiring` rows — a five-month hole**, during which every KPI and filter that
+reads plural reads empty. ⚠️ This is the CP-3a clock-decay shape *in a fixture
+that was written specifically to avoid clock decay*: nothing is stored wrong,
+and the file still degrades, because the ILLUSTRATION has a clock even when the
+DATA does not. No test asserts the header's promise today; the daily scheduled
+`npm run gates` will not catch it. **Filed, not fixed** — the fix is either a
+census test that pins the promise (and goes red on 2026-09-16, which is the
+point) or a re-seed, and choosing is a Track-R call.
+
+Related, same axis: **`supplierDocuments.ts` doc-005 crosses into Expiring on
+2026-08-11** — four days out — with `status: 'Valid'` stored. It is not
+contradicting today. It will be on Tuesday.
+
+---
+
+### 3. WHAT H4 WOULD NEED BEYOND THIS FUNCTION — COSTED BEFORE IT IS RULED ON
+
+⚠️ **The blocker is not code.** `verifyHalalAtReceipt` is complete and tested.
+What H4 needs is data and four rulings.
+
+#### THE HARD PRECONDITION — R0.1, AND THERE IS NO WAY ROUND IT
+
+`COMPLIANCE_REGISTRY` names **17 material codes, every one `RM-SAMPLE-…`**;
+`MATERIAL_MASTER` names **42, none of them**. **THE INTERSECTION IS EMPTY — now
+asserted in the suite, not claimed in a header.** The consequence, also
+asserted: **`verifyHalalAtReceipt` returns `NO_CERT` for every one of the 42
+real materials, against all three tenants, at every instant.** A wire today
+would refuse 100% of real receipts.
+
+The three "mitigations" and why each is disqualified: seeding `RM-SAMPLE-…`
+aliases onto real codes, or adding real-looking rows, **breaks the fixture's
+honesty header** — the placeholders exist so nothing in the tree reads as real
+certificate tracking pre-harvest; matching supplier-to-certificate **by name**
+breaks **C9 §3** (`materialCode` is contractually opaque) and re-opens
+`HALAL-XPERSONA-01`, the name-vs-id split the `supplierId` FK was added to
+close. **There is no honest technical mitigation. The bridge is real
+certificate data at R0.1, which is NOT STARTED, and that is the operator's
+schedule, not a gate's.**
+
+#### FOUR RULINGS, none of which this function can make
+
+1. ⚠️ **WHAT A `NOT_SATISFIED` DOES.** Hard block, or a named-and-audited
+   proceed? `D-COMP-HALAL-4` option (b) — *an email unlock* — **is not taken**,
+   and the H2 entry already recorded why: overrides on regulatory gates
+   normalise, the first is deliberate and the fiftieth is a reflex. A block on
+   `NO_CERT` today blocks everything; a proceed-with-warning is a gate that does
+   not gate.
+2. **WHERE THE INSTANT COMES FROM.** `receiptInstant` must be *the moment the
+   lot arrived*, and the GR wizard has no such field on its draft today — only a
+   posting date. Reading `new Date()` at render would reintroduce the exact
+   defect this signature exists to prevent, one layer up.
+3. **THE `issueDate` NULL RULING** (`HALAL-VERIFY-NOT-IN-FORCE-AT-RECEIPT-01`
+   above): is an undated certificate in force, or unknown?
+4. **HOW THE THREE FACTS COMPOSE.** Fact 1 refuses on `UNDETERMINED` (11 rows),
+   fact 3 refuses on `NO_CERT` (42 rows today). ⚠️ **A line can be refused by
+   both, and the two refusals must not merge** — the H2 discipline on the
+   BPOM/halal banners applies unchanged: one message saying "compliance cannot
+   be determined" deletes *which question is unanswered and who answers it*.
+
+#### AND THE CHEAPER ANSWER FIRST — THE H2 POINT-4 SHAPE, AGAIN
+
+`D-COMP-HALAL-1` is still unanswered, and **11 of the 42 master rows are
+`UNDETERMINED`.** Those 11 never reach fact 3 at all: fact 1 refuses them first.
+⚠️ **Building an override path, an audit event, an owner and a cadence to route
+around a certificate corpus that R0.1 will simply deliver is the same mechanism-
+standing-in-for-a-decision the H2 entry flagged for re-reading in six months.**
+Get R0.1 and `D-COMP-HALAL-1`; then wire; then rule on the override if one is
+still wanted.
+
+**Non-blocking, cheap, and worth doing before H4 either way:** the registry has
+**no halal-class `Under Review` row at all** — both `Under Review` rows
+(creg-0004, creg-0009) are BPOM notifications, so the `UNDER_REVIEW` verdict is
+unreachable through the fixture and its test has to build the row. Filed as
+`HALAL-VERIFY-NO-UNDERREVIEW-EXEMPLAR-01`; the gap is asserted, so a future
+seed turns it red rather than leaving a stale comment behind.
+
+---
+
+### Constraints discharged
+
+- **NO WIRING.** `verifyHalalAtReceipt` appears in code in exactly ONE file —
+  itself — asserted by census over `/src/**`, comments exempt. The GR wizard is
+  untouched and is separately asserted not to reference `COMPLIANCE_REGISTRY`,
+  `getComplianceRegistry` or `halalVerification`. ⚠️ **The limit of that census
+  is stated in the test**, on the `halalApplicability.test.ts` precedent:
+  `import.meta.glob` excludes the module it is written in, so the scan cannot
+  see its own file, which is why the expected list has one entry and not two.
+- **NO BRIDGE BETWEEN THE TWO CODE SPACES.** No alias seeded, no registry row
+  added, no name or prose match. The empty intersection is *asserted* instead.
+- **NO CLOCK READ.** Asserted over the module's code lines: no `Date.now`, no
+  `new Date`. Comments are exempt on the H2 precedent — this module's header
+  discusses the stale stored values above, and a check that cannot tell code
+  from record would force deleting the evidence with the defect.
+- **NO SECOND PROJECTION.** `daysRemaining` / `computeStatus` / `schemeValid`
+  are imported, not restated; `BPJPH_MANDATE_DATE` is not re-declared here — a
+  statutory date with two homes has one wrong one.
+- **No prefix or substring rule decides anything** (C9 §3, ratified) — asserted
+  twice: over the source (`startsWith` / `endsWith` absent) and behaviourally
+  (`RM-SAMPLE-BOT` and `RM-SAMPLE-BOT-03` both `NO_CERT` against a row covering
+  `RM-SAMPLE-BOT-01`/`-02`).
+- **C9's bytes untouched**; pin `af7f0b4` unaffected.
+- **FLOOR 2251/185 → 2283/186.** `npm run gates` green: bundle emitted · 2283
+  tests across 186 files · 7 gate tests. `scripts/floor.json` bumped as the note
+  asked.
+- **Mutation-probed, four ways, each confirmed to have actually changed the
+  file** (the CRLF-trap discipline): dropping the halal-class filter fails 1
+  spec; membership → `startsWith` fails 2; `schemeValid` → clock-only fails
+  **9**; reversing `REASON_PRECEDENCE` fails 3. Module restored byte-identical
+  (sha256 `a8981eb69220f1a39e8305f6951416bec29f807c0118626fd81c77fedcaf30fa`,
+  of the working-tree bytes on Windows) and re-run green before commit.
