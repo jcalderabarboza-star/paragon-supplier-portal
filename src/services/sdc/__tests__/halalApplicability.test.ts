@@ -342,6 +342,26 @@ describe('H2 — WIRED, and the prose parse is GONE', () => {
     }) as Record<string, string>;
 
   /**
+   * Does this file reference `spec` ONLY through `import type`?
+   *
+   * ⚠️ `CENSUS-COUNTS-TYPE-IMPORTS-01` (CP-3 · E1). The importer scan below
+   * counts TEXT, so on its own it cannot tell a CALL from a reference that
+   * erases at build. An `import type` cannot invoke `halalOf`; it is gone from
+   * the bundle. The two are therefore separated rather than merged in either
+   * direction — merging them upward would let a real wire hide behind the word
+   * "type", and merging them downward would widen "consumer" to mean "mentions".
+   *
+   * ⚠️ THE LIMIT, STATED: this reads whole LINES, so a multi-line
+   * `import type {\n … } from '…'` would read as a value import and fail the
+   * check loudly rather than pass it quietly. Fail-loud is the right direction
+   * for a census.
+   */
+  const importsTypeOnly = (text: string, spec: string): boolean => {
+    const lines = text.split('\n').filter((line) => line.includes(spec));
+    return lines.length > 0 && lines.every((line) => /^\s*import type\b/.test(line));
+  };
+
+  /**
    * ⚠️ CODE ONLY — COMMENTS ARE EXEMPT, AND THE EXEMPTION IS THE POINT.
    *
    * The retired rule is RESTATED in a comment on purpose: a rule has to be
@@ -457,13 +477,24 @@ describe('H2 — WIRED, and the prose parse is GONE', () => {
       .filter(([, text]) => text.includes("/halal'"))
       .map(([f]) => f)
       .sort();
+    const production = importers.filter((f) => !/\.test\.tsx?$/.test(f));
+    const typeOnly = production.filter((f) => importsTypeOnly(src[f], "/halal'"));
+    const callers = production.filter((f) => !typeOnly.includes(f));
+
     // WAS: `toEqual([])` under the header "NO PRODUCTION MODULE IMPORTS IT".
-    // Derived rather than listed: exactly one NON-TEST importer, and it is the GR
-    // wizard. A second production importer means the lookup has spread to a
+    // Derived rather than listed: exactly one NON-TEST caller, and it is the GR
+    // wizard. A second production caller means the lookup has spread to a
     // surface nobody reviewed, which is worth failing over.
-    expect(importers.filter((f) => !/\.test\.tsx?$/.test(f))).toEqual([
-      '/src/components/v2-features/GRInspectionWizard.tsx',
-    ]);
+    expect(callers).toEqual(['/src/components/v2-features/GRInspectionWizard.tsx']);
+
+    // ⚠️ AND EXACTLY ONE TYPE-ONLY REFERENCE, NAMED (`CENSUS-COUNTS-TYPE-IMPORTS-01`).
+    // `src/lib/enforcement.ts` imports `HalalRefusalReason` to derive — at
+    // COMPILE TIME — the refusal shapes that sit OUTSIDE the enforcement
+    // domain, so a third refusal reason authored here cannot drift in as a
+    // governed verdict. It calls nothing. A SECOND type-only reference fails
+    // this too: an erased import is not a wire, but it is still a coupling
+    // somebody should have to look at.
+    expect(typeOnly).toEqual(['/src/lib/enforcement.ts']);
 
     // ⚠️ THE LIMIT OF THIS CHECK, STATED: Vite's `import.meta.glob` EXCLUDES THE
     // MODULE IT IS WRITTEN IN, so this scan cannot see its own file — which is

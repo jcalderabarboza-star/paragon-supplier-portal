@@ -5054,3 +5054,278 @@ seed turns it red rather than leaving a stale comment behind.
   **9**; reversing `REASON_PRECEDENCE` fails 3. Module restored byte-identical
   (sha256 `a8981eb69220f1a39e8305f6951416bec29f807c0118626fd81c77fedcaf30fa`,
   of the working-tree bytes on Windows) and re-run green before commit.
+
+---
+
+## CP-3 · E1 — THE ENFORCEMENT VOCABULARY, BUILT HEADLESS
+
+The operator's ruling this answers: during implementation we must be able to
+relax rules and, step by step, turn them all on. **The governing distinction is
+not "how much enforcement" but WHICH THING IS BEING RELAXED:**
+
+> **RELAXING ENFORCEMENT IS LEGITIMATE; RELAXING HONESTY IS NOT.** A gate that
+> lets a receipt through WHILE TELLING YOU IT DID is an operational choice. A
+> gate that lets it through SILENTLY is a lie.
+
+`src/lib/enforcement.ts` is the words for that and nothing else — **no store, no
+fixture, no dispatcher transition, no consumer, and not one seeded setting.**
+Those are E2 and E3. The GR wizard is untouched; H4 stays gated.
+
+```
+ENFORCEMENT_MODES = ['OBSERVE', 'BLOCK_OVERRIDABLE', 'BLOCK']   // ORDER IS RIGOUR
+effectiveMode(setting, dispatchInstant) → { mode, source: 'AS_SET' | 'EXPIRY_TIGHTENED' }
+GovernedCheckId = 'halal.seal' | 'halal.certificate' | 'bpom.lot'
+GovernedVerdict = 'PASS' | 'ADVERSE' | 'UNANSWERED'             // NO REFUSAL IN IT
+```
+
+Seat 3's correction is built as ruled: **the precedent is the FX pin, not
+`currencyPolicy`.** `currencyPolicy` holds deploy-edited constants and says so in
+its own voice, and "moved by a recorded act" and "deploy-edited constant" cannot
+share one artifact. So the VOCABULARY is code (this file) and the SETTING is
+data behind the seam (`FxPin`-shaped, E2). `EnforcementSetting` is DECLARED here
+and INSTANTIATED nowhere — asserted, not promised: no line of the module assigns
+a value to `checkId` / `setBy` / `setAt` / `reviewBy`.
+
+---
+
+### 1. THE ANSWER TO THE REPORT QUESTION — YES, AND HERE IS THE TEST
+
+**Is the ratchet's determinism provable with the instant as an argument?
+YES, and the proof is a test that could not otherwise be written:**
+
+```ts
+it('⚠️ and the AMBIENT CLOCK MOVED 79 YEARS between calls changes nothing', () => {
+  vi.setSystemTime(new Date('2020-01-01T00:00:00.000Z'));
+  const early = effectiveMode(s, DAY_AFTER);      // BLOCK_OVERRIDABLE / EXPIRY_TIGHTENED
+  const earlyInForce = effectiveMode(s, BEFORE);  // OBSERVE / AS_SET
+  vi.setSystemTime(new Date('2099-01-01T00:00:00.000Z'));
+  expect(effectiveMode(s, DAY_AFTER)).toEqual(early);
+  expect(effectiveMode(s, BEFORE)).toEqual(earlyInForce);
+  expect(early).not.toEqual(earlyInForce);        // …and the pair is not one constant
+});
+```
+
+The last line matters: without it the test would pass on a function that
+returned the same answer to everything. **Mutation-probed:** replacing
+`dispatchInstant.slice(0, 10)` with `new Date().toISOString().slice(0, 10)` kills
+this spec on its own, as well as six ratchet specs and the no-clock census — the
+determinism spec is not leaning on the census to do its work.
+
+The ratchet itself, ruled at D-ENF-3 and built exactly so:
+
+| set mode | `reviewBy` state | effective | source |
+|---|---|---|---|
+| `OBSERVE` | in force | `OBSERVE` | `AS_SET` |
+| `OBSERVE` | ON the review day, 23:59:59.999 | `OBSERVE` | `AS_SET` |
+| `OBSERVE` | the day after | `BLOCK_OVERRIDABLE` | `EXPIRY_TIGHTENED` |
+| `OBSERVE` | **ten years after** | `BLOCK_OVERRIDABLE` | `EXPIRY_TIGHTENED` |
+| `BLOCK_OVERRIDABLE` | lapsed | `BLOCK` | `EXPIRY_TIGHTENED` |
+| `BLOCK` | lapsed, or `null` | `BLOCK` | **`AS_SET`** |
+
+Three rulings were needed to build it and each is written into the module rather
+than left to a reader:
+
+1. **THE DAY BOUNDARY.** "Past `reviewBy`" has two defensible readings. Ruled
+   strictly-greater: a review due BY the 30th is in force THROUGH the 30th and
+   lapses on the 31st. Both boundaries are pinned; flipping `>` to `>=` kills a
+   spec.
+2. **TEN YEARS IS STILL ONE STEP.** It is a ratchet, not a decay ladder. A
+   calendar lapse must not close a dock — but the relaxation no longer outlives
+   the last deliberate decision about it, because at `BLOCK_OVERRIDABLE` nothing
+   passes silently any more; it passes by a named person, on the record.
+3. **`AS_SET` AT THE CEILING.** `source` names whether the returned mode DIFFERS
+   from the recorded one. A lapsed review on a `BLOCK` changed nothing, and
+   reporting `EXPIRY_TIGHTENED` would be a true-sounding statement about an
+   event that did not occur.
+
+---
+
+### 2. THE BOUNDARY, AND WHY IT IS STRUCTURE RATHER THAN POLICY
+
+> **ENFORCEMENT MODE RELAXES THE CONSEQUENCE OF AN ANSWER; NOTHING MAY RELAX THE
+> ABSENCE OF A QUESTION.**
+
+Three non-passing shapes exist. The mode governs exactly two:
+
+| shape | example | governed? |
+|---|---|---|
+| answered-and-adverse | the certificate is `EXPIRED` | **yes** — `ADVERSE` |
+| asked-and-unanswered | nobody ticked the seal | **yes** — `UNANSWERED` |
+| **refusal** | `UNKNOWN_MATERIAL`, `UNDETERMINED_APPLICABILITY` | **NO — outside the domain** |
+
+The reasoning is `OBSERVE`'s own promise, *record instead of block*: **a refusal
+is the statement that the question could not be posed**, so there is no answer
+to record and nothing to observe. A refusal admitted under `OBSERVE` would be NO
+CHECK, ANNOTATED.
+
+**Built as absence, not as a rule.** The refusal shapes are simply not members
+of `GovernedVerdict`, so no mode can be applied to one without inventing a value
+the union does not contain — and `REFUSALS_OUTSIDE_ENFORCEMENT` is
+`Object.keys` of a `satisfies Record<HalalRefusalReason | BpomRefusalReason,
+true>` census, so **a third refusal reason authored in `halalOf` or `bpomOf`
+breaks the build here** rather than drifting in as a verdict. Pinned four ways:
+the two vocabularies are disjoint; `GovernedCheckId` contains no refusal shape;
+`isGovernedVerdict` answers `false` for both refusals AT EVERY MODE, identically;
+and each refusal name appears in the module's CODE exactly once — inside the
+census that derives it — so **no branch anywhere decides what to do with an
+absence.**
+
+Same shape, one level up: **THERE IS DELIBERATELY NO FOURTH MODE BELOW
+`OBSERVE`.** An `OFF` is the exact fail-open `inferBpom` and `inferHalal` were
+retired for — a regulatory answer produced without a regulatory question. Its
+absence from the union IS the mechanism, on the `HALAL_CERT_TYPES` fail-closed
+precedent, and it is pinned by count, by first member, by a fail-open lexicon
+over the member names, and by a census over the module's code lines. Prepending
+`'OFF'` to the array kills five specs.
+
+---
+
+### 3. FOUR FINDINGS
+
+#### `ENF-NO-PERSON-IN-IDENTITY-01` — **THE PORTAL HAS NO NOTION OF A PERSON**
+
+⚠️ **OPEN, AND IT IS E3'S PREREQUISITE.** `overriddenBy` must be A NAMED PERSON,
+NEVER A ROLE. A type cannot check personhood, and a blocklist of role words
+would be a PROSE PARSE — the class this lane just retired twice. What the shape
+does is make a role AWKWARD rather than natural: `ActingPerson` requires both a
+stable `personId` and the `displayName` captured at the moment of the act, so
+there is no single field into which "Buyer" fits. The real check is E3's
+session — **and the session has no person in it:**
+
+```ts
+export interface CurrentIdentity {          // src/context/CurrentIdentityContext.tsx
+  personaType: 'buyer' | 'supplier';
+  supplierId: string | null;
+  supplierName: string | null;
+}
+```
+
+A persona, a tenant and a company name. **No user, no name, no id.** E3 cannot
+source an `ActingPerson` from anything that exists today, and the honest options
+are (a) wait for F1's OIDC, or (b) capture the name at the override with a
+disclosed marker saying it is typed rather than authenticated. **Recorded, not
+resolved** — the choice is the operator's, and it is worth knowing BEFORE E3
+rather than at the moment somebody needs to override a live block.
+
+#### `CENSUS-COUNTS-TYPE-IMPORTS-01` — **A CENSUS THAT COULD NOT TELL A CALL FROM AN ERASED REFERENCE**
+
+**FOUND BY BEING TRIPPED, AND FIXED.** `halalApplicability.test.ts` and
+`bpomApplicability.test.ts` each assert "exactly one NON-TEST importer, and it
+is the GR wizard" — a genuinely good guard. Both went red on this batch: the new
+module's `import type { HalalRefusalReason }` counted as a production importer,
+because the scan matched TEXT and text cannot distinguish a CALL from a
+reference that erases at build.
+
+Both censuses now split `production` into `callers` and `typeOnly` and **name
+both**: the caller list is unchanged (`GRInspectionWizard.tsx`) and the type-only
+list is exactly `['/src/lib/enforcement.ts']`. Merging them upward would let a
+real wire hide behind the word "type"; merging them downward would widen
+"consumer" to mean "mentions". ⚠️ The limit is stated in both files: the check
+reads whole LINES, so a multi-line `import type` reads as a value import and
+fails LOUDLY rather than passing quietly. Probed: turning the type-only import
+into a value import turns the halal census red.
+
+#### `ENF-UNKNOWN-MODE-FAILS-OPEN-01` — **CAUGHT IN THIS BATCH, FIXED IN IT**
+
+`rigour` was `ENFORCEMENT_MODES.indexOf(mode)`, and `indexOf` returns **−1** for
+a string that is not a member. `blocks` is `rigour(mode) >= rigour('BLOCK_OVERRIDABLE')`,
+so **−1 blocks nothing.** The mode cannot be a non-member through the TYPE — but
+it arrives from behind a seam at E2 as JSON, and JSON has no unions. **A TYPO IN
+A SETTING WOULD HAVE TURNED THE GATE OFF SILENTLY**, which is the precise
+fail-open the module exists to make unrepresentable, reintroduced by an
+`indexOf` default nobody chose.
+
+Fixed: an unrecognised mode ranks at the CEILING, so it blocks and cannot be
+overridden — the only direction that is safe to be wrong in — and
+`isEnforcementMode` / `isGovernedCheckId` are the narrowing boundaries E2 must
+use instead of guessing (the `isBidCurrency` precedent).
+
+#### `ENF-OVERRIDE-VOCAB-PROVISIONAL-01` — **FOUR REASONS, STRATEGIST-RULED**
+
+The override reason vocabulary is CLOSED and has **no catch-all** — one `OTHER`
+collapses a closed vocabulary into free text wearing an enum's clothes, and a
+reason nobody can count is a reason nobody can review. The four are chosen to be
+four DIFFERENT OPERATOR BEHAVIOURS: `EVIDENCE_HELD_OUTSIDE_PORTAL` (the R0.1
+corpus hole — chase the document, not the lot) · `CERTIFIER_CONFIRMED_DIRECTLY` ·
+`ACCEPTED_TO_QUARANTINE` (received, NOT released — an override of the block, not
+of the question) · `COMMERCIAL_RISK_ACCEPTED` (the uncomfortable one, in the list
+precisely so it must be NAMED rather than disguised as one of the other three).
+
+⚠️ **PROVISIONAL pending operator ratification**, on the `sdc/halal.ts`
+precedent: recorded as a decision TAKEN, so ratification is an act of agreeing
+with something written down rather than discovering what the code assumed.
+
+---
+
+### 4. WHAT THE TYPE SHAPE FORECLOSES FOR E2 / E3 — **NOTHING, BUT FOUR THINGS TO DECIDE**
+
+Asked in the dispatch, answered honestly. Nothing below is blocked; each is a
+decision E2 or E3 must take deliberately rather than inherit.
+
+1. ⚠️ **`EnforcementSetting` IS ONE RECORD, NOT A LEDGER — and the FX-pin
+   precedent says it must become one.** `FxPin`'s discipline is an APPEND-ONLY
+   ledger with `effectivePin` DERIVED, so "which basis is current" cannot drift
+   from the record that justifies it. E1 declares the record and
+   `effectiveMode` takes ONE. **E2 must supply `readonly EnforcementSetting[]`
+   and derive the effective one** (ordered by `setAt`, later array position
+   breaking a tie — `effectivePin` exactly), and must NOT add an edit path. The
+   type is ready for that: it has no `supersedes` / `supersededBy` field and
+   should not acquire one, because superseding on an append-only ledger means
+   appending.
+2. ⚠️ **THE SETTING'S KEY IS `checkId` ALONE.** There is no tenant, supplier,
+   plant or material dimension, so today a relaxation is portal-wide for that
+   check. *"Relax `halal.certificate` for sup-007 only"* is a plausible
+   operational want and it does not fit. Widening the key later is a
+   NARROWING-shaped change (more specific settings win), not a migration — but
+   **it is an operator ruling, not a build decision**, and it is cheaper to ask
+   than to discover.
+3. **THE STAMP HAS NO SUBJECT.** `GovernedCheckStamp` names the check, the
+   verdict, the mode and where the mode came from — but not WHAT it was about
+   (which GR line, which lot, which material). That is deliberate: a stamp is a
+   VALUE the receiving line carries, so the subject is the thing holding it. If
+   E3 wants stamps as standalone audit events in the DR-10 taxonomy, they need a
+   subject key added at that point.
+4. **NO `overriddenAt`.** This module has no clock and would have to take the
+   instant from a caller that does not exist yet. Adding the field at E2
+   alongside the store that can supply it is a widening, not a migration — noted
+   so the absence reads as a boundary rather than an oversight.
+
+One further honesty note about the mechanism itself: **the absent fourth mode is
+enforced by a TEST, not by the compiler.** Appending a member to
+`ENFORCEMENT_MODES` compiles cleanly — everything derives from the order, which
+is the property that makes the ramp single-sourced. A fourth mode ABOVE `BLOCK`
+would be a widening of rigour and safe; one BELOW `OBSERVE` is the fail-open, and
+only `enforcement.test.ts` stands between it and the tree. That is the same
+standing the no-wiring censuses have, and it is stated rather than assumed.
+
+---
+
+### Constraints discharged
+
+- **NO STORE, NO CONSUMER, NO DISPATCHER, NO SETTING.** The enforcement surface
+  appears in code in exactly ONE file — itself — by census over `/src/**`
+  (comments exempt; `import.meta.glob` cannot see the test's own file, and the
+  test says so). The module names no `useDataService`, `mockDataService`,
+  `COMPLIANCE_REGISTRY`, `MockCommandService`, `CommandTarget`, `AuditSink` or
+  `QueryScope`, and its import list is asserted to be exactly two TYPE-ONLY
+  lines. The GR wizard is separately asserted untouched.
+- **NO CLOCK READ.** No `Date.now`, no `new Date` in the module's code lines.
+  `Date.parse` of a SUPPLIED string is not a clock read (`complianceProjection`
+  precedent).
+- **FAIL CLOSED EVERYWHERE THE INPUT IS DOUBTFUL** — an unreadable `reviewBy` or
+  `dispatchInstant` is LAPSED; a relaxation that arrives with NO review date is
+  LAPSED (the type rule made to bite at runtime, because a type guarantee is
+  only as strong as the authoring on the other side of a seam); an unrecognised
+  mode ranks at the CEILING.
+- **C9's bytes untouched**; pin `af7f0b4` unaffected. H4 gated; nothing in the
+  GR wizard moves.
+- **FLOOR 2283/186 → 2329/187.** `npm run gates` green. `scripts/floor.json`
+  bumped as the note asked.
+- **Mutation-probed, ten ways, each confirmed to have actually changed the file
+  before the run** (the CRLF-trap discipline), module restored byte-identical
+  and re-run green: a fourth mode below `OBSERVE` kills 5 · a hard-stop ratchet
+  kills 6 · the day boundary flipped kills 1 · a missing review date holding
+  kills 1 · a refusal admitted as a verdict kills 7 · every stamp coherent kills
+  1 · the ambient clock read kills 8 · an unreadable date holding kills 1 · an
+  override at every blocking mode kills 2 · a type-only import turned into a
+  value import kills the amended halal census.
