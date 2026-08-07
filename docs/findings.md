@@ -4196,7 +4196,7 @@ existed**, and the list was extended deliberately rather than by red-test reflex
 seed leaves `UNDETERMINED`** — so the field announced itself on exactly the row
 class the ruling is about.
 
-### ⚠️ `H1-FALSIFIES-A-LIVE-COMMENT-01` — DECLARED, NOT FIXED
+### ⚠️ `H1-FALSIFIES-A-LIVE-COMMENT-01` — **CLOSED IN THIS PR, BY DISPATCH**
 
 **This batch made a comment in a production file false, and did not touch it.**
 `GRInspectionWizard.tsx:252-257` explains why `inferHalal` survives:
@@ -4211,27 +4211,43 @@ the seed covers all 42 rows, and the register is on main. This is
 `C9-STALE-BY-FIX-01` exactly — **an artifact going stale by being FIXED**, one
 file over and inside a comment rather than a contract.
 
-**It is left standing deliberately.** The dispatch fenced that file off
-(*`inferHalal` STAYS LIVE AND UNTOUCHED — that is H2*), and a comment edit inside
-a fenced file is the builder deciding where the fence is. The correction is
-therefore **booked as H2's first edit**, and the replacement sentence is written
-here so it is mechanical rather than re-argued:
+⚠️ **The reason it was raised rather than carried:** the comment does not merely
+describe the code, it **justifies leaving a live regulatory fail-open in place**.
+A justification that has stopped being true is the one kind of stale comment that
+can survive review on its own authority — the reader checks that the reasoning is
+sound, not that the premise still holds. Between H1 and H2, a reviewer would read
+it as a defensible reason to do nothing.
 
-> *It is left because the field it must read is AUTHORED BUT UNRATIFIED —
-> `halalApplicable` landed at CP-3 · H1 (`sdc/halal.ts`), all 42 values
-> PROVISIONAL pending `D-COMP-HALAL-1`. Wiring it is H2; the certificate leg is
-> H4, gated on `D-COMP-HALAL-4`.*
+#### ⚠️ THE FENCE WAS MOVED BY DISPATCH, NOT BY THE SEAT
 
-⚠️ **The reason it is filed rather than silently carried:** the comment does not
-merely describe the code, it **justifies leaving a live regulatory fail-open in
-place**. A justification that has stopped being true is the one kind of stale
-comment that can survive review on its own authority — the reader checks that the
-reasoning is sound, not that the premise still holds. **One line from the
-operator retires it in this PR instead; the fence is theirs to move, not mine.**
+The batch was fenced (*`inferHalal` STAYS LIVE AND UNTOUCHED — that is H2*), so
+the seat **asked instead of editing**, and the operator ruled: the fence holds
+for **BEHAVIOUR**; it does not protect a false sentence about the master. The
+paragraph is corrected **in the batch that falsified it**. Recorded this way on
+purpose — *who moved the fence* is exactly the provenance a later reader needs,
+and a comment edit inside a fence made silently is indistinguishable from a
+builder deciding where the fence is.
+
+**COMMENT ONLY. No logic, no consumer change, `inferHalal` stays live** — the
+function body, both call sites and every behaviour in that file are untouched,
+and the H1 test suite pins the wizard as still running the parse and still not
+calling `halalOf`. The correction replaces a false premise with the true one:
+
+> *`halalApplicable` is AUTHORED BUT UNRATIFIED — all 42 values PROVISIONAL
+> pending `D-COMP-HALAL-1`, and wiring it against a certificate corpus that does
+> not exist (R0.1 NOT STARTED) is an outage wearing compliance clothes. Retiring
+> the parse is H2; the certificate leg is H4, gated on `D-COMP-HALAL-4`.*
+
+⚠️ And the old paragraph is **quoted inside the new one** rather than deleted, on
+the standing precedent (`bpomApplicability.test.ts`'s inversions): the file
+records the SWAP, so a reader can see that a justification once existed and what
+falsified it, instead of finding a comment that has simply always said this.
 
 ### Constraints discharged
 
-- ⚠️ **NO WIRING, AND NO CONSUMER CHANGE.** `inferHalal` is byte-identical;
+- ⚠️ **NO WIRING, AND NO CONSUMER CHANGE.** `inferHalal`'s body and both call
+  sites are byte-identical — the only edit in that file is the COMMENT the
+  operator ruled on above;
   `GRInspectionWizard` still writes `halalRequired: inferHalal(li.description)`
   on both draft builders. Asserted, not promised: the test pins the wizard as
   still containing the parse, **not** containing `halalOf(`, and pins the module
@@ -4242,9 +4258,10 @@ operator retires it in this PR instead; the fence is theirs to move, not mine.**
   over the module's own source, which contains no `startsWith(`.
 - **The `D-COMP-HALAL-1..5` register was already on main** (previous entry); it
   is cited by number here and **not re-landed**.
-- ⚠️ **ONE KNOWN FALSEHOOD LEFT STANDING, NAMED**:
-  `H1-FALSIFIES-A-LIVE-COMMENT-01` above. Left because the file is fenced, filed
-  because a stale justification is not a stale description.
+- ⚠️ **NO KNOWN FALSEHOOD LEFT STANDING.**
+  `H1-FALSIFIES-A-LIVE-COMMENT-01` was raised rather than edited (the file was
+  fenced) and **the operator moved the fence**: comment retired in this PR, and
+  the record says by whom.
 - **C9's bytes untouched**; pin `af7f0b4` unaffected.
 - **FLOOR 2226/184 → 2244/185**, bumped in `scripts/floor.json` because the gate
   printed the note asking for it. `npm run gates` green: build emitted a bundle ·
