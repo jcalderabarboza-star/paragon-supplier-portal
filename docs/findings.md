@@ -138,6 +138,8 @@ from CP-1 onward.
 | **C8-WIRE-OPTION / C8-OPTION-1-DECLINED** *(operator ruling · refs @ `063adca`)* | **OPTION 3, THEN OPTION 2.** The first wire proves **TRANSPORT AND SHAPE ONLY** — no material semantics, no identity claim. The identity join becomes real when **`material_master_ref` freezes**, not before. This sequences correctly against everything else: the intersection is empty by code, any substance pairing would be an adoption not a discovery, and spec-vs-substance is open — a first wire carrying material identity would have to assume answers to all three; one carrying only transport and shape assumes none and still proves what a first wire exists to prove. | **RATIFIED (C8 §4.5).** **Option 1 — the adopted translation on `RM-EMUL-3320 ↔ RM-CETALC`, offered by SOMO on acceptable terms — is EXPLICITLY NOT TAKEN.** Reasons recorded: (a) we do not need a material in the payload sooner, since option 3 proves transport and shape without one; (b) **a fiction with an expiry condition is a fiction someone must remember to retire** — it would be correct-by-agreement until the freeze, then require someone to recall it was provisional and unwind it, and every item in this codebase expected to be remembered was not (the subject of `SEAM-DOC-DRIFT-01`). **Recorded because a declined option that leaves no trace gets re-proposed** — the terms were acceptable and the reasoning sound; the answer is still no, and the next reader should see it was considered rather than overlooked. |
 | **C8-IDENTITY-GRAIN** *(refs @ `063adca`)* | **Does material identity mean the SUBSTANCE or the SPECIFICATION?** A **USP-99.5%** requirement is a **different purchasable item** from unspecified glycerin; a **24mm** cap and an unsized cap are **not interchangeable in procurement**. Both readings are defensible and they produce **different masters**, so this cannot be settled by whoever writes the schema first. Already visible in the intersection: `RM-EMUL-3310` Glycerin USP 99.5% ↔ `RM-GLYC` is MEDIUM-HIGH rather than HIGH precisely because **the grade does not carry** — that downgrade is this question in miniature, not a rounding of confidence. | **NAMED OPEN DECISION — explicitly NOT DEFAULTED (C8 §4.4).** **Blocks nothing under option 3** (the first wire carries no material semantics, so the question cannot bite); **becomes LOAD-BEARING at option 2, because `material_master_ref`'s schema depends on the answer** — a substance-level master and a spec-level master are not the same freeze. **Escalated to Paragon procurement alongside `commitmentClass`** (C8 §2.2) — same class of question, likely the same owners: a platform can express the field but has no standing to decide what it means commercially. No reading is assumed pending the answer; the first mapping this platform chose unilaterally is now void, and the lesson generalises. |
 | **C8-RECIPROCAL-HAZARD** *(refs @ `063adca`)* | **We disclosed `inferBpom`'s prefix-parsed BPOM applicability** (`GRInspectionWizard.tsx:129-163`) — a regulatory determination computed from a string prefix. **SOMO responded with a reciprocal hazard of their own:** their codes carry **class semantics in the prefix** (`RM-` raw, `PM-` packaging), **their explosion engine reads that distinction**, and **nobody had asked what else parses a prefix.** They are booking the check **because we volunteered ours.** Neither hazard was discoverable by the other party — each sits inside code the other will never read — and both surfaced only because one side volunteered a weakness with nothing obliging it to. | **RECORDED AS STANDING PRACTICE (C8 §4.6).** The generalisable line: **a hazard named on one platform is worth more to the other than any agreement in the document.** Practice that follows: **disclose the thing that would embarrass you, first.** Concrete consequence: `MOCK-RETIREMENT-01` stays investigation-first with a blast-radius census, because on **both** platforms a code-space change is a compliance-and-explosion change until proven otherwise. This was the highest-value exchange of the cycle and it came from no clause. |
+| **STALE-BY-HALVES-01** *(class; found by the CP-3 H3 census, `92123b7`; **filed as its own class by operator ruling — it was a paragraph inside `HALAL-VERIFY-*` and read as colour on H3 rather than as a thing that happened to a file nobody was watching**)* | **THE GENERAL FORM, VERBATIM: A STORED CLOCK VALUE GOES STALE UNEVENLY, AND A PARTIAL REFRESH IS INDISTINGUISHABLE FROM A CORRECT FILE BY INSPECTION.** ⚠️ **And the clause that carries the argument: UNIFORM STALENESS ANNOUNCES ITSELF.** That is the whole of why this is worse than ordinary decay, and why it must not be filed alongside it: a uniformly stale file is *wrong everywhere*, so the first row you check tells you the file is wrong. A half-refreshed file is **HALF RIGHT**, and every row in it looks plausible on its own — the correctness of the refreshed half is what conceals the staleness of the other. There is no row you can spot-check that reveals it. **THE INSTANCE — `src/services/data/mock/fixtures/buyerCompliance.ts`.** All **ten** dated rows carry a wrong `daysRemaining` and **four** stored `status` values now contradict their own expiry (c-002 `Expiring`/−49 · c-003 `Expiring`/−34 · c-005 `Valid`/34 · c-010 `Valid`/24, at 2026-08-07). ⚠️ **The detection method is the finding: back-solving `expiryDate − daysRemaining` per row recovers the day each row was typed, and it yields TWO AUTHORING DATES A YEAR APART, FIVE ROWS EACH** — **2025-04-11/13** (c-004, c-006, c-007, c-008, c-009) and **2026-04-10/11** (c-001, c-002, c-003, c-005, c-010). Somebody refreshed half this file a year later and left the other half. No two halves agree on what day it is, and nothing in the file, the types, or the suite records that a refresh happened at all. It was invisible until somebody divided. **EXPOSURE, and it differs from its twin:** `buyerCompliance.ts` is **OFF the read path** — I3.2 closed `COMPLIANCE-CARVEOUT-01`, and `COMPLIANCE_ITEMS` is now imported by exactly one file (`halalXpersona.invariant.test.ts`) — whereas `supplierDocuments.ts` **doc-001 is ON the live read path** (`MockProcurementService.ts:14` → My Documents) rendering `Expiring Soon` on a certificate that expired **84 days** ago. **Different exposure, same defect**; doc-001 is the *uniform* case that announces itself, this row is the one that does not. **RELATION TO LAW 0.5:** this is the empirical argument for it that is not a paragraph. `COMPLIANCE_REGISTRY` cannot exhibit this class at all — it stores no clock-derived value, so there is no half to refresh. | **OPEN — filed, deliberately NOT fixed.** Both fixtures are pre-DTO-v2 shapes whose retirement is a read-path batch, not a number edit: re-typing `daysRemaining` today buys a file correct for one day that then resumes decaying — the defect, performed once more. ⚠️ **What this class asks for is not a fix but a DETECTION:** the back-solve is mechanical (`expiryDate − daysRemaining` → authoring date; >1 distinct value = partial refresh) and would run as a census test over any fixture storing a clock-derived value. **NOT built here** — the honest first move is to stop storing them, which is what DTO-v2 already does, and a detector for a shape you are retiring is a mechanism standing in for a decision. Revisit if the read-path batch slips. |
+| **FIXTURE-EXEMPLAR-HOLE-01** *(child of **`FIXTURE-PRESENT-01`** — see the lineage note; found looking FORWARD, not at today, at CP-3 H3. **Filed at `92123b7` under the id `HALAL-VERIFY-EXPIRING-EXEMPLARS-EXPIRE-01`, which is what commit `92123b7` and PR #189 still say; RENAMED HERE when the lineage was corrected** — the old id named it after the batch that found it rather than after the class it belongs to, which is the same mistake as filing it under the wrong parent)* | ⚠️ **THE LINEAGE IS THE POINT AND IT IS RECORDED FIRST. The parent is `FIXTURE-PRESENT-01`, NOT CP-3a's clock-decay shape.** `FIXTURE-PRESENT-01`'s consequence (2) — *"demo rows cross thresholds unremarked"* — **already names these four rows by id** (`creg-0008` 2026-08-20, `creg-0015` 2026-08-31, `creg-0003` 2026-09-15, `creg-0012` 2026-09-30). This row is that consequence carried one step further and given dates. **WRONG LINEAGE IS WORSE THAN A MISSING ROW: a reader chasing `FIXTURE-PRESENT-01` looks for exactly this case and does not find it, SO THE CLASS LOOKS SMALLER THAN IT IS — that is how a class stops being a class.** *(Cross-reference: CP-3a's clock-decay shape applies too — a green thing goes wrong on a calendar boundary with no commit involved — but it is the cousin, not the parent. The parent is the one that owns the fixture's unowned present.)* **THE FINDING.** `COMPLIANCE_REGISTRY`'s header promises *"≥2 exemplars of every computed display status, so KPIs/filters read plural"*. The registry itself is law-0.5-clean and cannot store a stale status — **and the promise still dies, because the ILLUSTRATION has a clock even where the DATA does not.** All four `Expiring` exemplars are inside their 90-day windows only until: creg-0008 **2026-08-20** · creg-0015 **2026-08-31** · creg-0003 **2026-09-15** · creg-0012 **2026-09-30**. The next row to *enter* an Expiring window is creg-0002 on **2027-03-03**. Therefore: **the "≥2" promise STOPS BEING TRUE ON 2026-09-16**, and from **2026-09-30 to 2027-03-03 the fixture holds ZERO `Expiring` rows — A FIVE-MONTH HOLE**, during which every KPI, filter and chip that reads plural reads empty. Same axis, sooner: `supplierDocuments.ts` **doc-005 crosses into Expiring on 2026-08-11** with `status: 'Valid'` stored. ⚠️ **NOTHING CATCHES ANY OF IT.** No spec asserts the header's promise, so the daily scheduled `npm run gates` — the half built precisely to catch clock decay with no commit involved — stays green straight through it. | **OPEN — filed with its dates so it is actionable rather than ominous.** Two options, neither taken here: **(a) a census test that pins the header's promise** (≥2 exemplars of each display status at a declared instant) — it goes **RED on 2026-09-16**, which is the point, and converts a silent hole into a scheduled failure; **(b) re-seed the four expiry dates.** ⚠️ (b) alone is `FIXTURE-PRESENT-01` option (c) — a manual re-anchor — and buys the same hole further out with nobody owning the cadence; (a) makes the hole audible without deciding who owns the present. **Choosing is a Track-R / `FIXTURE-PRESENT-01` call, not a batch call**, and it is the same question as *"can this contract be generated"*. Blocking nothing today. |
 
 ---
 
@@ -4819,11 +4821,15 @@ place.
 
 ---
 
-### 2. ⚠️ THE REGISTRY ROWS WHOSE STORED STATE CONTRADICTS ITS OWN PROJECTION
+### 2. ⚠️ THE REGISTRY HOLDS NO DISPLAY STATUS, SO IT CANNOT HOLD A STALE ONE
 
-**THE FULL SET, AND THE CORRECTION.** Censused at `2026-08-07` against
-`computeStatus`. The dispatch expected three certs "marked `Valid` with expiries
-in 2024 and 2025", and the three are there —
+**THE CENSUS INVERTS THE QUESTION, AND THAT IS THE FINDING.** A contradiction
+census was asked for; what came back is proof that **the design forbids the
+contradiction**. This is recorded as a design property — **NOT as a correction
+to a defect that was never there.**
+
+Censused at `2026-08-07` against `computeStatus`. The dispatch expected three
+certs "marked `Valid` with expiries in 2024 and 2025", and the three are there —
 
 | id | supplier | certType | stored | expiry | days | projects |
 |---|---|---|---|---|---|---|
@@ -4831,22 +4837,23 @@ in 2024 and 2025", and the three are there —
 | creg-0005 | sup-005 | ISO | `Valid` | 2025-04-30 | −464 | **Expired** |
 | creg-0016 | sup-005 | HALAL_FOREIGN | `Valid` | 2025-08-01 | −371 | **Expired** |
 
-— ⚠️ **but calling them a CONTRADICTION reads the registry backwards, and the
-distinction is the whole of law 0.5.** `lifecycleState` is a TRANSITION state
-(`Missing` / `Under Review` / `Valid`); `Expired` is not one of its values and
-never can be. A row storing `Valid` with a lapsed expiry is **the mechanism
-working**: the substrate says *this supplier was granted a certificate*, and the
-clock decay is derived at read. `COMPLIANCE_REGISTRY` cannot hold a stale
-display status, because it does not hold a display status. **There are ZERO
-contradicting rows in the registry, and that is a design property, not luck.**
+— ⚠️ **and none of the three is a contradiction. Calling them one reads the
+registry backwards, and the distinction is the whole of law 0.5.**
+`lifecycleState` is a TRANSITION state (`Missing` / `Under Review` / `Valid`);
+**`Expired` is not one of its values and never can be.** A row storing `Valid`
+with a lapsed expiry is **THE MECHANISM WORKING**: the substrate says *this
+supplier was granted a certificate*, and the clock decay is derived at read.
+**THE REGISTRY CANNOT HOLD A STALE DISPLAY STATUS BECAUSE IT HOLDS NO DISPLAY
+STATUS.** There are **ZERO** contradicting rows in it, and that is a design
+property, not luck — the property law 0.5 was written to produce.
 
 The three are seeded on purpose — the fixture header promises "≥2 exemplars of
 every computed display status", and these are the `Expired` two-plus.
 
-#### THE ACTUAL CONTRADICTIONS ARE IN THE FIXTURES THAT STORE THE DISPLAY STATUS
+#### THE CONTRADICTIONS ARE IN THE FIXTURES THAT DO STORE A DISPLAY STATUS
 
-Same census, run over the two pre-DTO-v2 fixtures. **This is the corpse count,
-and it is larger than the dispatch's three.**
+Same census, run over the two pre-DTO-v2 fixtures — the layer that predates the
+rule. **This is the corpse count, and it is larger than the dispatch's three.**
 
 ⚠️ **`supplierDocuments.ts` — ON THE LIVE READ PATH** (`MockProcurementService.ts:14`
 → the My Documents surface). One contradiction, rendered to users today:
@@ -4857,9 +4864,12 @@ and it is larger than the dispatch's three.**
 
 ⚠️ **`buyerCompliance.ts` — OFF the read path** (I3.2 closed
 `COMPLIANCE-CARVEOUT-01`; `COMPLIANCE_ITEMS` is now imported by exactly one
-file, `halalXpersona.invariant.test.ts`). Its damage is therefore contained —
-but it is the more instructive specimen, because **all ten of its dated rows are
-wrong and they are wrong by two different amounts:**
+file, `halalXpersona.invariant.test.ts`). **Different exposure, same defect** —
+its damage is contained where doc-001's is rendered. But it is the sharper
+specimen, and **it is not filed here: it is its own class, `STALE-BY-HALVES-01`,
+in the register above.** What follows is the evidence that row is drawn from.
+**All ten of its dated rows are wrong, and they are wrong by two different
+amounts:**
 
 | id | stored | storedDays | implied authoring date | true days | true status |
 |---|---|---|---|---|---|
@@ -4875,13 +4885,23 @@ wrong and they are wrong by two different amounts:**
 | c-010 | Valid | 143 | 2026-04-10 | 24 | **Expiring** |
 
 **⚠️ THE FINDING NOBODY WAS LOOKING FOR: THE FIXTURE HAS TWO AUTHORING DATES.**
-Back-solving `expiryDate − daysRemaining` per row gives **2025-04-11/13 for five
-rows and 2026-04-10/11 for five others.** Somebody refreshed half this file a
-year later and left the other half. **A stored clock value does not merely go
-stale — it goes stale UNEVENLY, and a partial refresh is indistinguishable from
-a correct file by inspection.** Every row looks plausible; no two halves agree
-on what day it is. This is the strongest argument on main for law 0.5 that is
-not a paragraph, and it was invisible until somebody divided.
+Back-solving `expiryDate − daysRemaining` per row recovers the day each row was
+typed, and it gives **2025-04-11/13 for five rows and 2026-04-10/11 for five
+others.** Somebody refreshed half this file a year later and left the other
+half. The general form, and it is the class:
+
+> **A STORED CLOCK VALUE GOES STALE UNEVENLY, AND A PARTIAL REFRESH IS
+> INDISTINGUISHABLE FROM A CORRECT FILE BY INSPECTION.**
+
+⚠️ **And the clause that carries the argument: UNIFORM STALENESS ANNOUNCES
+ITSELF.** Without it this reads as though doc-001 and `buyerCompliance.ts` are
+equally bad, and they are not. **One is stale and says so by being wrong
+everywhere; the other is HALF RIGHT, which is what makes it invisible.** Every
+row looks plausible on its own, no two halves agree on what day it is, and the
+correctness of the refreshed half is precisely what conceals the staleness of
+the other — there is no row you can spot-check that reveals it. This is the
+strongest argument on main for law 0.5 that is not a paragraph, and it was
+invisible until somebody divided.
 
 Also corrected while here: the dispatch's figures were **482 days stale and 83
 days**; measured at `2026-08-07` they are **483 and 84**. `c-006`/`c-008`'s
@@ -4890,9 +4910,22 @@ days**; measured at `2026-08-07` they are **483 and 84**. `c-006`/`c-008`'s
 **NOT FIXED — by dispatch, and it would be wrong to fix here anyway.** Both
 fixtures are pre-DTO-v2 shapes whose retirement is a read-path batch, not a
 number edit. Re-typing `daysRemaining` today buys a file that is correct for one
-day and then resumes decaying, which is the defect, performed once more.
+day and then resumes decaying, which is the defect, performed once more. Filed
+as **`STALE-BY-HALVES-01`**, with the detection method (the back-solve) recorded
+there as the reusable part.
 
-#### AND A DECAY THAT HAS NOT HAPPENED YET — `HALAL-VERIFY-EXPIRING-EXEMPLARS-EXPIRE-01`
+#### AND A DECAY THAT HAS NOT HAPPENED YET — `FIXTURE-EXEMPLAR-HOLE-01`
+
+⚠️ **LINEAGE, STATED FIRST BECAUSE IT IS THE EXPENSIVE PART TO GET WRONG: the
+parent is `FIXTURE-PRESENT-01`, NOT CP-3a's clock-decay shape.**
+`FIXTURE-PRESENT-01`'s consequence (2) — *"demo rows cross thresholds
+unremarked"* — **already names these four rows by id**; this is that consequence
+carried further and given dates. **WRONG LINEAGE IS WORSE THAN A MISSING ROW: a
+reader chasing that family looks for exactly this case and does not find it, SO
+THE CLASS LOOKS SMALLER THAN IT IS — which is how a class stops being a class.**
+CP-3a's shape does apply (a green thing goes wrong on a calendar boundary with
+no commit involved) and is cross-referenced, but it is the cousin. The parent is
+the one that owns the fixture's unowned present.
 
 The registry cannot store a stale status, but its **coverage** still decays. All
 four `Expiring` exemplars are inside their 90-day windows *now*:
@@ -4908,13 +4941,17 @@ The next row to enter an Expiring window is **creg-0002, on 2027-03-03.** So:
 the header's "≥2 exemplars of every computed display status" **stops being true
 on 2026-09-16**, and from **2026-09-30 to 2027-03-03 the fixture has ZERO
 `Expiring` rows — a five-month hole**, during which every KPI and filter that
-reads plural reads empty. ⚠️ This is the CP-3a clock-decay shape *in a fixture
-that was written specifically to avoid clock decay*: nothing is stored wrong,
-and the file still degrades, because the ILLUSTRATION has a clock even when the
-DATA does not. No test asserts the header's promise today; the daily scheduled
-`npm run gates` will not catch it. **Filed, not fixed** — the fix is either a
-census test that pins the promise (and goes red on 2026-09-16, which is the
-point) or a re-seed, and choosing is a Track-R call.
+reads plural reads empty. ⚠️ **The registry is law-0.5-clean and the promise
+dies anyway, because the ILLUSTRATION has a clock even where the DATA does
+not** — nothing is stored wrong and the fixture still degrades. **And nothing
+catches it:** no spec asserts the header's promise, so the daily scheduled
+`npm run gates` — the half built precisely to catch a clock-decay break with no
+commit involved — stays green straight through it. **Filed with its dates so it
+is actionable rather than ominous**, and NOT fixed: (a) a census test pinning
+the promise goes red on **2026-09-16**, which is the point; (b) a re-seed alone
+is `FIXTURE-PRESENT-01` option (c), a manual re-anchor that buys the same hole
+further out with nobody owning the cadence. Choosing belongs to
+`FIXTURE-PRESENT-01`, not to a batch.
 
 Related, same axis: **`supplierDocuments.ts` doc-005 crosses into Expiring on
 2026-08-11** — four days out — with `status: 'Valid'` stored. It is not
