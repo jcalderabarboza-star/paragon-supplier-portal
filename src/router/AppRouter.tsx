@@ -29,6 +29,7 @@ import BuyerAnalytics from '../pages-v2/BuyerAnalytics';
 import BuyerRisk from '../pages-v2/BuyerRisk';
 import BuyerCommHub from '../pages-v2/BuyerCommHub';
 import BuyerCompliance from '../pages-v2/BuyerCompliance';
+import ProcessFlows from '../pages-v2/ProcessFlows';
 import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
 import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
@@ -113,6 +114,10 @@ const AppRouter: React.FC = () => {
               WhatsApp-Hub engagement mock. */}
           <Route path="/buyer/comm-hub" element={<BuyerCommHub />} />
           <Route path="/buyer/compliance" element={<BuyerCompliance />} />
+          {/* PF-1 — the Process Flows module: the surface for the PF-0
+              flow-graph analyzer. Everything it draws is derived from
+              getKnownFlows(); there is no second copy of any machine. */}
+          <Route path="/buyer/process-flows" element={<ProcessFlows />} />
           <Route path="/supplier/dashboard" element={<SupplierDashboardV2 />} />
           <Route path="/supplier/storefront" element={<SupplierMyStorefront />} />
           <Route path="/supplier/documents" element={<SupplierDocumentsV2 />} />

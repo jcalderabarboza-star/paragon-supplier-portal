@@ -7569,3 +7569,242 @@ it.** Nothing is broken today because the ingestion does not exist —
 verbatim in substance: **it must be on the record BEFORE that lane starts, not
 discovered inside it.** `PF1B-CHANNEL-INGEST-LANDS-DRAFT-01`, and the paragraph
 now sits on the verb itself, where an implementer cannot miss it.
+
+---
+
+## PF-1 — THE PROCESS FLOWS PAGE (the surface for the PF-0 analyzer)
+
+**Branch:** `feat/pf-1-process-flows-page` · **Base:** main `456300a` ·
+**Floor:** 2503/194 → **2572/197** · **Route:** `/buyer/process-flows`
+
+The instrument half of PF-0 becomes visible. `flowGraph.ts` could already answer
+"where are the holes"; it answered into a test runner. This batch renders the
+answer — the catalog, the branches, the roles, the boundaries, the cascades and
+the nine census rows — on a surface, in EN and ID, with a lifecycle walk that
+says out loud that it is a reading aid and not Learn.
+
+### 1. THE PROPERTY THE BATCH EXISTS TO HAVE
+
+> ⚠️ **THE MODULE CANNOT SHOW A STATE THE MACHINE DOES NOT HAVE, BECAUSE THERE
+> IS NO OTHER PLACE A STATE COULD COME FROM.**
+
+The page's only input is `buildCatalogView(getKnownFlows())`. There is no
+fixture, no diagram file, no authored node list, and **deliberately no prop by
+which a caller could add, hide or rename a node** — `FlowDiagram` takes a view,
+a cursor and an id prefix, and nothing else.
+
+That property is not self-evident from reading a component, so it is held as
+EQUALITIES AGAINST THE SCHEMA, run over the WHOLE registry rather than a sample
+(`catalogView.test.ts`, `ProcessFlows.test.tsx`):
+
+* every flow in the catalog is a registered flow, in registration order;
+* every state on every view is `flow.states`, in order — `toEqual`, not `toContain`;
+* every transition row is `flow.transitions`, in schema order;
+* every edge names only declared states;
+* every count is a `.length`;
+* and for **each of the eighteen flows in turn**, the set of nodes the page
+  actually paints equals that flow's declared states.
+
+**Why equalities and not spot checks:** a picture is never type-checked. The
+failure this defends against is not "the diagram is ugly", it is "the diagram
+quietly stopped agreeing with the machine, and looked fine".
+
+### 2. WHAT THE DERIVATION SAYS — and the one place the dispatch's vocabulary ran out
+
+Derived per transition: **step kind** (from `trigger`), **personas** (from
+`PERSONA_ROLES` × `requiredRole`), **fact-vs-move** (`statePreserving`),
+**SAP boundary + settlement target** (`sapBoundary` / `settlesTo`), **cascade
+out** (`cascades.ts` as source) and **cascade in** (the same registry, inverted).
+Derived per state: birth · initial · terminal · reachable · inbound · outbound ·
+branch targets · **fork** · the facts recordable there. Derived per flow: counts,
+seeds, and the two honest-render axes.
+
+#### 2.1 `PF1-CREATION-KIND-01` — creation is its own step kind
+
+The dispatch named two kinds: `user` → OPERATOR ACTION, `system`/`cascade` →
+SYSTEM-DRIVEN. **`TransitionTrigger` has four members.**
+
+`creation` is neither, and the page does not pretend otherwise: `t_po_issue` is
+a buyer act (operator-shaped) while a rollup birth is not, and the schema says
+nothing that would let a derivation choose. **Folding it into either bucket
+would have been the first authored claim on a page whose whole thesis is that it
+authors nothing.** It renders as `Creation`, with the raw trigger in parentheses
+beside it in the table, and the reader decides.
+
+> **A DERIVATION MAY NOT ROUND A FOUR-VALUE UNION DOWN TO THE TWO VALUES
+> SOMEBODY HAPPENED TO NAME.**
+
+#### 2.2 `PF1-FORK-IS-A-CHOICE-OF-VERB-01`
+
+A decision fork is **two or more verbs leaving a state**, not two or more
+destinations. On a purchase order, `Sent` offers view / acknowledge / confirm;
+a "distinct targets" rule counts a state with two verbs into one destination as
+no fork at all, **and that state is exactly where a reader has a decision to
+make**. 26 decision points across the catalog on the verb rule.
+
+#### 2.3 `PF1-ENTITY-CAPABILITY-INVERSE-01` — the eight flows no capability reads
+
+The dispatch specified the SIMULATED axis as
+`dispatchesCommands(capability) × feedProvenance(capability)`. Both take a
+`Capability`; the page walks the FLOW CATALOG. So `capabilityForEntity()` was
+added to the LivenessRegistry — **the inverse of the one authored backing map,
+derived, never a second list** — and a repointed backing now moves both
+directions at once.
+
+**Eight of the eighteen flows have no capability at all** (goodsReceiptLine,
+invoiceMatch, quotation, shipment, contract, obligation, incomingShipment,
+enforcement). `null` is the honest answer and the page renders it as
+**"No read surface"**. Naming a merely-adjacent capability for them would be
+`INVENTORY-REFERENT-01` — a marker whose referent is not the data on screen —
+committed on purpose.
+
+But the VERB question still has an answer for those eight, and **`quotation` is
+why it matters**: it is a wired CommandTarget that no capability names, so a
+capability-only lookup would have rendered a machine that genuinely dispatches
+as "unwired". The fallback reads `WIRED_COMMAND_TARGETS` — **the same set one
+layer down**, since `dispatchesCommands` *is* `liveness() === 'LIVE'` *is*
+`WIRED.has(backing)` — so it cannot disagree with the marker regime; it just
+reaches a machine the capability list never named. Pinned both ways.
+
+### 3. THE CENSUS, ON THE DIAGRAM
+
+All nine rows are **derived first (`analyzeFlow`) and annotated second**, and
+each is anchored at the state or transition it concerns — seven on states
+(`Pending`, `Quarantined`, `Qty Mismatch`, `Price Variance`, `Missing`,
+`Governed`), two on edges (`t_pr_source`, `t_pr_convert`). The reason token
+renders **verbatim** — `substrate-only`, `authored-unwired`, `born-state` — the
+census's own closed-vocabulary word, so a reader can trace it back to
+`looseEndCensus.ts`; the gloss lives in a reading key on the rail.
+
+An **uncensused** loose end (impossible on main, reachable in a PR that opens a
+hole) renders as *"no recorded reason"* rather than as nothing. **A hole with no
+annotation must not look like a flow with no holes.**
+
+`PF1-REASON-KEY-EXHAUSTIVE-01`: the token→gloss maps are
+`Record<LooseEndReason, string>` and `Record<LooseEndKind, string>`, not
+functions with a default. A default would silently render the raw token for a
+fifth vocabulary member nobody translated; the exhaustive Record makes **adding
+a word to either closed vocabulary a compile error until it exists in both
+languages.**
+
+### 4. THE WALK — and why the copy is a fact rather than a promise
+
+Session-scoped React state. Nothing saved, nothing dispatched, gone on reload.
+The surface says so above the controls, in the TMS register; operator verbs read
+**Advance**, system and cascade verbs read **Observe** — *shown as observed,
+never performed* — and a separate line says it is **not a guided lesson**, since
+Learn (LN-0/LN-2) walks real records and dispatches real verbs.
+
+`PF1-WALK-CANNOT-DISPATCH-01`: copy that describes a restriction is worth
+exactly as much as the restriction. So there is a **structural lock** — the page
+and every component under `pages-v2/process-flows/` are read as source and
+refused if they contain `dispatch(`, `useCommand`, `settle(`, `CommandService`
+or `useMutation`. **There is no code path from a step to the ledger, and the
+test goes red the moment somebody adds one — before the copy becomes a lie.**
+
+The steps offered are `view.edges` out of the cursor, so **the walk cannot offer
+a step the machine does not have.** A machine with no creation verb (compliance,
+invoiceMatch, goodsReceiptLine, enforcement) says so and seeds from its declared
+initial — the analyzer's ruling 3, read forward instead of backward.
+
+### 5. LAYOUT — a pure function, because it can be WRONG rather than merely ugly
+
+`flowLayout.ts` returns geometry; the component performs no arithmetic. An edge
+that lands on the wrong node, a state placed off-canvas, or two cycles sharing a
+lane are **invisible in a screenshot review — they look like a diagram.**
+
+`PF1-NO-SKIP-ROUTE-01`, the one worth recording: under BFS layering **an edge
+can never span two ranks forward.** If A→B exists and A is reachable, B is
+discovered at rank(A)+1 at the latest. An arc-over-the-top routing case would be
+code that can never run — **a lie about what the diagram can contain** — so it
+does not exist, and the property is pinned over the whole registry instead.
+
+`PF1-SIBLING-IS-NOT-A-CYCLE-01`: BFS layering produces SAME-RANK edges
+(`Viewed → Acknowledged`: forward in meaning, level in depth, because both are
+one step from `Sent`). Routing them in the back lane would have drawn four of a
+purchase order's edges **as loops back up the flow, which is the opposite of
+what they do.** They get their own gutter beside the column.
+
+Two defects found in browser QA and fixed, both of the "looks like a diagram"
+class:
+
+* `deliver` and `close` overlapped into **"deli close"** — a sibling bracket put
+  its label at the row midpoint, where a direct edge between the same two rows
+  already had one. Sibling labels now sit a third of the way down.
+* `authored-unwired` rendered as **`uthored-unwire`** — the chip is wider than
+  the column gap and the nodes painted over both ends. **That is not a degraded
+  label, it is a different word.** The label layer now paints above the nodes
+  (labels only ever sit in gaps and lanes, so they cover no state name), and the
+  canvas is measured from the widest thing DRAWN rather than the last column.
+
+### 6. ⚠️ REPORTED, NOT WORKED AROUND — the two flows a reader cannot see at once
+
+Measured at a 1440-px viewport, where the diagram pane is **784 px**:
+
+| Flow | ranks × rows | canvas | scroll needed |
+|---|---|---|---|
+| **shipment** | 8 × 1 | **2136 px** | 1352 px — **5 of 8 states off-screen** |
+| **invoice** | 7 × 2 | 1868 px | 1084 px |
+| goodsReceipt | 5 × 4 | 1332 px | 548 px |
+| purchaseOrder | 4 × 3 | 1064 px | 280 px |
+| the other 14 | ≤ 4 ranks | ≤ 1064 px | fits or nearly |
+
+The scroll is CONTAINED (the page body does not overflow) and the diagrams are
+correct. But `shipment` is a linear 8-state chain, and at its real size **a
+reader sees three states and must scroll to learn there are five more.**
+
+The dispatch asked for this to be reported rather than worked around, so it is.
+The options, none taken:
+
+1. **Serpentine wrap** at N columns per band — keeps everything on screen, adds
+   a band-crossing edge case to the routing.
+2. **A full-screen affordance** on the diagram — precedent already on main
+   (`pages-v2/plan-grid/FullScreenSection.tsx`). Cheapest; reclaims ~650 px.
+3. **A collapsible catalog rail** — reclaims 288 px, not enough for `shipment`
+   on its own.
+4. **Tighter node pitch** — ~13 % at best. Does not solve `shipment`.
+
+Recommendation if a ruling is wanted: (2), then (1) only if the linear machines
+grow.
+
+### 7. ⚠️ WHAT THE DERIVATION CANNOT EXPRESS, reported before working around it
+
+**`PF1-NO-PURPOSE-ANNOTATION-01` — the expected thing that is genuinely absent.**
+A reader of `t_gr_partial_approve` learns from the schema what it is legal
+from, what it lands in, who may fire it, what fields it needs and what it
+cascades into. **They do not learn what it is FOR.** That is not a rendering
+gap; the schema does not carry it, and nothing derivable substitutes. It is
+PF-2's subject, keyed by transition id and bilaterally pinned. Not one sentence
+of it was written inline here.
+
+**`PF1-DERIVED-PROSE-UNTRANSLATED-01`.** Two pieces of ENGLISH prose reach the
+page from data rather than from the i18n fragment: the analyzer's `detail`
+("no transition leaves it, and it is not declared terminal") and the census
+`note`. Both render verbatim in the Indonesian locale.
+
+This is deliberate and now stated on the surface, next to the identifiers
+sentence: **translating a recorded finding puts a second wording of it in the
+tree**, and the second wording is the one that drifts — the same argument that
+keeps the census keyed on `entity#kind#subject` and never on its prose. If it is
+ever ruled the other way, the analyzer's detail strings become keys, which is a
+PF-0 change and not a page change.
+
+**`PF1-CENSUS-NOTE-IS-RENDERED-01`.** The census `note` — written for a
+developer opening `looseEndCensus.ts` — is now on a UI surface, labelled
+*Census note*. That is the point of the batch ("a reader must be able to see
+that an exemption is A RECORDED DECISION"), but it is worth knowing that those
+notes now have an audience they were not written for, including
+`DESCRIBE-DONT-RENDER-01`'s deliberately-unnamed enforcement vocabulary.
+
+### 8. FENCES HELD
+
+No flow edited · no loose end fixed · the census is data this page READS ·
+C9 `af7f0b4` and C10 `dc8e774` untouched · no glossary links (GL-1) · the floor
+never regresses (2503 → 2572, bumped as the note asked) · EN+ID from birth, with
+parity, interpolation and >60 %-differ all held by `fragments.test.ts` ·
+DP2-BUTTON-01 respected (no solid `variant="primary"` anywhere on the surface —
+`Advance` is action-blue outline, `Observe` and `Reset walk` are secondary).
+
+**Browser QA:** EN and ID, 1440 px, on the built bundle (`vite preview`) —
+catalog rail, all eighteen diagrams, the walk (Sent → Confirmed → Delivered →
+observe close), the census panels, and both honest-marker axes.

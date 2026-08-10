@@ -60,6 +60,8 @@ import { sdcConsolidationEn, sdcConsolidationId } from './i18n/sdcConsolidation'
 import { sdcSupplierEn, sdcSupplierId } from './i18n/sdcSupplier';
 // — Comm Hub C2 inbound confirm-before-commit surface —
 import { commHubInboundEn, commHubInboundId } from './i18n/commHubInbound';
+// — PF-1 process flows (the surface for the PF-0 analyzer) —
+import { processFlowsEn, processFlowsId } from './i18n/processFlows';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -124,6 +126,8 @@ export const resources = {
       ...sdcSupplierEn,
       // — Comm Hub C2 inbound confirm-before-commit —
       ...commHubInboundEn,
+      // — PF-1 process flows —
+      ...processFlowsEn,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
@@ -156,6 +160,7 @@ export const resources = {
       'nav.buyer.risk': 'Risk',
       'nav.buyer.compliance': 'Compliance',
       'nav.buyer.commHub': 'Communication Hub',
+      'nav.buyer.processFlows': 'Process Flows',
       'nav.supplier.dashboard': 'Dashboard',
       'nav.supplier.rfqs': 'RFQs',
       'nav.supplier.forecasts': 'Forecasts',
@@ -501,6 +506,8 @@ export const resources = {
       ...sdcSupplierId,
       // — Comm Hub C2 inbound confirm-before-commit —
       ...commHubInboundId,
+      // — PF-1 process flows —
+      ...processFlowsId,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',
@@ -533,6 +540,7 @@ export const resources = {
       'nav.buyer.risk': 'Risiko',
       'nav.buyer.compliance': 'Kepatuhan',
       'nav.buyer.commHub': 'Pusat Komunikasi',
+      'nav.buyer.processFlows': 'Alur Proses',
       'nav.supplier.dashboard': 'Dasbor',
       'nav.supplier.rfqs': 'RFQ',
       'nav.supplier.forecasts': 'Prakiraan',
