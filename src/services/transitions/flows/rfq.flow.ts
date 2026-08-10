@@ -9,8 +9,8 @@
 // from the store). Award mints NO SAP artifact (no PO, no contract) — it records
 // award metadata only; a `done` cascade, never a sapBoundary verb.
 //
-// Neighbors (publish / close / cancel / reopen) are AUTHORED-UNWIRED à la ASN's
-// logistics verbs: real transitions in the machine, no command target this batch.
+// Neighbors: publish / cancel / reopen are WIRED (publish since PF-1a); close
+// stays authored-unwired until the sourcing boundary lands.
 // `states` lists transition-states only (no clock-derived display states).
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -28,9 +28,20 @@ export const rfqFlow: FlowDefinition = {
     {
       // CREATION verb (Phase A/2, WIRED). Buyer raises a sourcing event. Mirrors
       // t_pr_create's creation shape (creation-class member, not a new event
-      // category). FORK-2B: mints directly into Open — create+publish as ONE
-      // buyer action, matching the prior wizard's Open output — so t_rfq_publish
-      // (Draft→Open) stays authored-unwired. This is the dispatcher path that
+      // category).
+      //
+      // ⚠️ PF-1a · D-1 (OPERATOR) — BIRTHS AT `Draft`, AND THIS REVERSES FORK-2B.
+      // Paragon's practice is DRAFT → REVIEW → PUBLISH. FORK-2B had minted
+      // directly into Open (create+publish as ONE buyer action, matching the
+      // prior wizard's output), which left `initial: 'Draft'` contradicting this
+      // very edge, `Draft` unreachable, and `t_rfq_publish` UNFIREABLE SINCE THE
+      // DAY IT WAS AUTHORED (PF-0: `PF0-RFQ-DRAFT-DEAD-01`).
+      //
+      // This COMPLETES A CAPABILITY THE FLOW AUTHOR SPECIFIED AND THE CREATION
+      // PATH BYPASSED. It does not build a new one: publish, the Draft branch of
+      // cancel, and the declared initial were all already written and
+      // role-gated. What changed is the one value that made them unreachable.
+      // This is the dispatcher path that
       // RETIRES the `extraRfqs` client-fabrication anti-pattern (C6 §1): the RFQ
       // is store-minted with a store-assigned number, never a fabricated peer.
       //
@@ -46,7 +57,7 @@ export const rfqFlow: FlowDefinition = {
       // gate rules on absence, never on value.
       id: 't_rfq_create',
       from: [],
-      to: 'Open',
+      to: 'Draft',
       trigger: 'creation',
       requiredRole: 'rfq:create',
       requiredFields: ['title', 'materialCategory', 'totalQty'],
@@ -54,7 +65,13 @@ export const rfqFlow: FlowDefinition = {
       version: 1,
     },
     {
-      // Buyer publishes a drafted RFQ to its invited suppliers. Authored-unwired.
+      // Buyer publishes a drafted RFQ to its invited suppliers.
+      //
+      // ⚠️ PF-1a — WIRED, and it is the verb that now makes a sourcing event
+      // VISIBLE. Supplier RFQ reads exclude `Draft` (`MockProcurementService.
+      // getRFQs`), so publication is the act that exposes the event to the
+      // invited list rather than a status relabel. Unfireable from the day it
+      // was authored until D-1 moved creation to `Draft`.
       id: 't_rfq_publish',
       from: ['Draft'],
       to: 'Open',

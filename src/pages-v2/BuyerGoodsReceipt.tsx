@@ -33,6 +33,7 @@ import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../hooks/useEnumLabel';
 import {
   useGoodsReceiptPost,
+  useGoodsReceiptRequestRetest,
   useGoodsReceiptSettle,
 } from '../services/query/commandHooks';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -169,6 +170,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const el = useEnumLabel();
   const postMutation = useGoodsReceiptPost();
   const settleMutation = useGoodsReceiptSettle();
+  const retestMutation = useGoodsReceiptRequestRetest();
   const supplierById = useMemo(
     () => new Map(suppliers.map((s) => [s.id, s])),
     [suppliers],
@@ -351,18 +353,30 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       case 'Quality Hold':
         return (
           <div className="flex gap-2">
+            {/* PF-1a — WIRED. This button rendered on `Quality Hold` and fired a
+                toast while the state had NO EXIT AT ALL: the affordance promised
+                an edge the schema did not have, which is closer to a defect than
+                to a gap. It now dispatches `t_gr_request_retest` (Quality Hold →
+                Under Inspection) through the same governed path as every other
+                verb on this page. */}
             <Button
               variant="secondary"
-              onClick={() =>
-                toast({
-                  variant: 'info',
-                  title: t('goodsReceipt.toast.retest.title'),
-                  description: t('goodsReceipt.toast.retest.desc'),
-                })
-              }
+              disabled={retestMutation.isPending}
+              onClick={() => handleRequestRetest(g)}
             >
-              {t('goodsReceipt.footer.requestRetest')}
+              {retestMutation.isPending
+                ? t('goodsReceipt.retest.submitting')
+                : t('goodsReceipt.footer.requestRetest')}
             </Button>
+            {/* ⚠️ STILL A TOAST, AND DELIBERATELY SO — `DEAD-AFFORDANCE-01`,
+                reported not fixed. Overriding a quality hold is a GOVERNANCE ACT
+                whose entire value is accountability: this named person accepted
+                this risk on this date. The platform cannot name a person
+                (C10 §2, `ENF-NO-PERSON-IN-IDENTITY-01`), so wiring it today
+                would write an ANONYMOUS UNLOCK into a permanent trail — the
+                exact shape the enforcement lane already refuses by making an
+                unattributed override unable to complete. It waits for identity,
+                and the wait is the honest state. */}
             <Button
               variant="primary"
               onClick={() =>
@@ -463,6 +477,36 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
               },
             );
           }, 1200);
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('gr.denied.title'), description: t('gr.denied.desc') }),
+      },
+    );
+  };
+
+  // PF-1a — release a held GR for re-inspection (t_gr_request_retest). Payload-
+  // free: the hold already recorded its reason. On success the GR re-derives to
+  // 'Under Inspection', where the disposition verbs become legal again — which
+  // is the whole point of the edge, and the reason the panel is left open rather
+  // than closed: the inspector's next action is on this same GR.
+  const handleRequestRetest = (g: GoodsReceipt) => {
+    retestMutation.mutate(
+      { grId: g.id },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('goodsReceipt.retest.failed.title', { grNumber: g.grNumber }),
+              description: res.reason ?? t('goodsReceipt.retest.failed.desc'),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('goodsReceipt.retest.done.title', { grNumber: g.grNumber }),
+            description: t('goodsReceipt.retest.done.desc'),
+          });
         },
         onError: () =>
           toast({ variant: 'error', title: t('gr.denied.title'), description: t('gr.denied.desc') }),

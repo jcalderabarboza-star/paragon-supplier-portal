@@ -209,6 +209,8 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.award.rejectAll': 'Reject all & resource',
   // — Lifecycle actions (cancel / reopen) —
   'sourcing.lifecycle.actions': 'Lifecycle actions',
+  'sourcing.publish.submit': 'Publish RFQ',
+  'sourcing.publish.submitting': 'Publishing…',
   'sourcing.cancel.submit': 'Cancel RFQ',
   'sourcing.cancel.submitting': 'Cancelling…',
   'sourcing.reopen.submit': 'Reopen RFQ',
@@ -229,7 +231,9 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.timeline.awarded': 'Awarded',
   'sourcing.timeline.closed': 'Closed',
   // — Wizard: chrome —
-  'sourcing.wizard.complete': 'Create & Send RFQ',
+  // PF-1a — IT DOES NOT SEND. Creation births a Draft (D-1); publishing is a
+  // second, deliberate act, and the label said otherwise.
+  'sourcing.wizard.complete': 'Save RFQ draft',
   'sourcing.wizard.step.scope.title': 'Define Scope',
   'sourcing.wizard.step.scope.short': 'Scope',
   'sourcing.wizard.step.scope.desc': 'What are you sourcing and how much?',
@@ -241,7 +245,8 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.wizard.step.terms.desc': 'When are responses due and on what commercial terms?',
   'sourcing.wizard.step.review.title': 'Review & Submit',
   'sourcing.wizard.step.review.short': 'Review',
-  'sourcing.wizard.step.review.desc': 'Check the details before sending to suppliers.',
+  // PF-1a — the draft is not sent here; publishing is what sends it.
+  'sourcing.wizard.step.review.desc': 'Check the details before saving the draft.',
   // — Wizard: scope —
   'sourcing.wizard.field.title': 'RFQ title',
   'sourcing.wizard.placeholder.title': 'e.g. Q3 2026 Fragrance Sourcing — Floral Compounds',
@@ -327,9 +332,17 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.toast.reopenFailed.title': 'Reopen failed',
   'sourcing.toast.reopenFailed.default': 'The RFQ could not be reopened.',
   'sourcing.toast.reopenFailed.dispatch': 'The reopen could not be dispatched.',
-  'sourcing.toast.created.title': '{{rfqNumber}} created',
-  'sourcing.toast.created.desc.one': 'Sent to {{count}} supplier',
-  'sourcing.toast.created.desc.other': 'Sent to {{count}} suppliers',
+  'sourcing.toast.created.title': '{{rfqNumber}} saved as a draft',
+  'sourcing.toast.created.desc.one':
+    'Not sent yet — publish to open it to {{count}} invited supplier',
+  'sourcing.toast.created.desc.other':
+    'Not sent yet — publish to open it to {{count}} invited suppliers',
+  'sourcing.toast.published.title': '{{rfqNumber}} published',
+  'sourcing.toast.published.desc.one': 'Now open to {{count}} invited supplier.',
+  'sourcing.toast.published.desc.other': 'Now open to {{count}} invited suppliers.',
+  'sourcing.toast.publishFailed.title': 'Publish failed',
+  'sourcing.toast.publishFailed.default': 'The RFQ could not be published.',
+  'sourcing.toast.publishFailed.dispatch': 'The publish could not be dispatched.',
   'sourcing.toast.createFailed.title': 'Create failed',
   'sourcing.toast.createFailed.default': 'The RFQ could not be created.',
   'sourcing.toast.createFailed.dispatch': 'The RFQ could not be dispatched.',
@@ -525,6 +538,8 @@ export const sourcingId: Record<string, string> = {
   'sourcing.award.rejectAll': 'Tolak semua & sumber ulang',
   // — Lifecycle actions (batal / buka kembali) —
   'sourcing.lifecycle.actions': 'Tindakan siklus hidup',
+  'sourcing.publish.submit': 'Terbitkan RFQ',
+  'sourcing.publish.submitting': 'Menerbitkan…',
   'sourcing.cancel.submit': 'Batalkan RFQ',
   'sourcing.cancel.submitting': 'Membatalkan…',
   'sourcing.reopen.submit': 'Buka kembali RFQ',
@@ -545,7 +560,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.timeline.awarded': 'Dimenangkan',
   'sourcing.timeline.closed': 'Ditutup',
   // — Wizard: chrome —
-  'sourcing.wizard.complete': 'Buat & Kirim RFQ',
+  'sourcing.wizard.complete': 'Simpan draf RFQ',
   'sourcing.wizard.step.scope.title': 'Tentukan Cakupan',
   'sourcing.wizard.step.scope.short': 'Cakupan',
   'sourcing.wizard.step.scope.desc': 'Apa yang Anda sumberkan dan berapa banyak?',
@@ -557,7 +572,7 @@ export const sourcingId: Record<string, string> = {
   'sourcing.wizard.step.terms.desc': 'Kapan respons jatuh tempo dan dengan syarat komersial apa?',
   'sourcing.wizard.step.review.title': 'Tinjau & Kirim',
   'sourcing.wizard.step.review.short': 'Tinjau',
-  'sourcing.wizard.step.review.desc': 'Periksa detail sebelum mengirim ke pemasok.',
+  'sourcing.wizard.step.review.desc': 'Periksa detail sebelum menyimpan draf.',
   // — Wizard: scope —
   'sourcing.wizard.field.title': 'Judul RFQ',
   'sourcing.wizard.placeholder.title': 'mis. Sumber Pewangi Q3 2026 — Senyawa Floral',
@@ -641,9 +656,19 @@ export const sourcingId: Record<string, string> = {
   'sourcing.toast.reopenFailed.title': 'Pembukaan kembali gagal',
   'sourcing.toast.reopenFailed.default': 'RFQ tidak dapat dibuka kembali.',
   'sourcing.toast.reopenFailed.dispatch': 'Pembukaan kembali tidak dapat dikirim.',
-  'sourcing.toast.created.title': '{{rfqNumber}} dibuat',
-  'sourcing.toast.created.desc.one': 'Dikirim ke {{count}} pemasok',
-  'sourcing.toast.created.desc.other': 'Dikirim ke {{count}} pemasok',
+  'sourcing.toast.created.title': '{{rfqNumber}} disimpan sebagai draf',
+  'sourcing.toast.created.desc.one':
+    'Belum dikirim — terbitkan untuk membukanya ke {{count}} pemasok yang diundang',
+  'sourcing.toast.created.desc.other':
+    'Belum dikirim — terbitkan untuk membukanya ke {{count}} pemasok yang diundang',
+  'sourcing.toast.published.title': '{{rfqNumber}} diterbitkan',
+  'sourcing.toast.published.desc.one':
+    'Kini terbuka untuk {{count}} pemasok yang diundang.',
+  'sourcing.toast.published.desc.other':
+    'Kini terbuka untuk {{count}} pemasok yang diundang.',
+  'sourcing.toast.publishFailed.title': 'Penerbitan gagal',
+  'sourcing.toast.publishFailed.default': 'RFQ tidak dapat diterbitkan.',
+  'sourcing.toast.publishFailed.dispatch': 'Penerbitan tidak dapat dikirim.',
   'sourcing.toast.createFailed.title': 'Pembuatan gagal',
   'sourcing.toast.createFailed.default': 'RFQ tidak dapat dibuat.',
   'sourcing.toast.createFailed.dispatch': 'RFQ tidak dapat dikirim.',

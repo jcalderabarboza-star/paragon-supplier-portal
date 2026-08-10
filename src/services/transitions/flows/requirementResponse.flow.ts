@@ -138,5 +138,24 @@ export const requirementResponseFlow: FlowDefinition = {
       policyHooks: [],
       version: 1,
     },
+    {
+      // ⚠️ PF-1a — THE RESOLUTION EDGE, and the CLEANEST of the three because
+      // the destination is not a judgement call: `dispute` is legal from
+      // `UnderReview` ALONE, so resolving returns it to the one state it can
+      // have come from. `t_invoice_resolve` exactly — same authority, payload-
+      // free, no cascade.
+      //
+      // The role is the DISPUTE role, not a new one: whoever may open a dispute
+      // may close it. Splitting them would be a claim about approval authority
+      // that belongs to the identity contract (C10), not to this flow.
+      id: 't_requirementresponse_resolve',
+      from: ['Disputed'],
+      to: 'UnderReview',
+      trigger: 'user',
+      requiredRole: 'requirementresponse:dispute',
+      requiredFields: [],
+      policyHooks: [],
+      version: 1,
+    },
   ],
 };

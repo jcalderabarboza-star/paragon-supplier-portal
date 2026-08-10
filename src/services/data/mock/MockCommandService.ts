@@ -455,8 +455,9 @@ const rfqTarget: CommandTarget = {
   // Creation (Phase A/2 — retires extraRfqs). Buyer-only: `creationOwner: () =>
   // null` ⇒ a buyer passes creation-scope (the dispatcher only scopes suppliers)
   // then the `rfq:create` role; a supplier resolves owner=null → SCOPE_DENIED
-  // before the role gate (RFQ creation is a buyer verb). `create` mints an Open
-  // RFQ (FORK-2B) from the wizard payload with a store-assigned number; omitted
+  // before the role gate (RFQ creation is a buyer verb). `create` mints a DRAFT
+  // RFQ (PF-1a · D-1, reversing FORK-2B — the buyer publishes it as a second,
+  // deliberate act) from the wizard payload with a store-assigned number; omitted
   // or unrecognised fields default honestly (category/uom fall back rather than
   // guess). NO award metadata and NO downstream artifact on a fresh event.
   creationOwner: () => null,
@@ -477,7 +478,7 @@ const rfqTarget: CommandTarget = {
       materialCategory,
       materialIds: strArr('materialIds'),
       buyerId: 'buyer-001',
-      status: toState as RFQStatus, // 'Open' (FORK-2B)
+      status: toState as RFQStatus, // 'Draft' (PF-1a · D-1 — reverses FORK-2B)
       createdAt: new Date().toISOString().slice(0, 10),
       responseDeadline: str('responseDeadline'),
       awardDeadline: str('awardDeadline'),

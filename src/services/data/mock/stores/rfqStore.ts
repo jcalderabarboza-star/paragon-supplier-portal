@@ -6,7 +6,8 @@
 // invalidated query yields new references and every derivation re-derives. The
 // award verb (`t_rfq_award`) flips status → Awarded and records the award
 // metadata (awardedSupplierId / awardedQuotationId) — no PO/contract minted.
-// Creation (`t_rfq_create` — Phase A/2, retires extraRfqs) ADDS a new Open RFQ
+// Creation (`t_rfq_create` — Phase A/2, retires extraRfqs) ADDS a new DRAFT RFQ
+// (PF-1a · D-1 — it minted Open under FORK-2B; the buyer now publishes)
 // with a store-assigned number (distinct 9xx range, as asnStore/PR): a real
 // push-to-execute target, so getRFQs reflects it — never a fabricated peer.
 // Keyed by id. Seeded from the fixture; `reset()` restores it (test isolation).

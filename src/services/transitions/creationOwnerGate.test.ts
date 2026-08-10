@@ -202,7 +202,11 @@ describe('C4b — REGRESSION: real RFQ / PR buyer verbs (creationOwner:()=>null)
   it('rfq:create under a BUYER scope still SUCCEEDS with creationOwner()===null', async () => {
     const res = await svc.dispatch(buyer, rfqCreate());
     expect(res.status).toBe('done');
-    expect(rfqStore.get(res.entityId!)!.status).toBe('Open');
+    // PF-1a · D-1 — creation births at Draft now (it minted Open under
+    // FORK-2B). What this spec is about is the creationOwner gate, not the
+    // landing state; the state is asserted so the gate cannot go green on a
+    // dispatch that quietly stopped writing one.
+    expect(rfqStore.get(res.entityId!)!.status).toBe('Draft');
   });
 
   it('rfq:create under a SUPPLIER scope still gets SCOPE_DENIED (owner null → denied before the role gate)', async () => {

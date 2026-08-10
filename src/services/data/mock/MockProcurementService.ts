@@ -154,7 +154,19 @@ export class MockProcurementService implements IProcurementService {
     let rows: RFQ[] = [...rfqStore.all()];
     if (scope.personaType === 'supplier') {
       if (!scope.supplierId) return { items: [] };
-      rows = rows.filter((r) => r.invitedSupplierIds.includes(scope.supplierId!));
+      // ⚠️ PF-1a — A `Draft` RFQ IS NOT VISIBLE TO SUPPLIERS, AND THIS LINE IS
+      // WHAT MAKES PUBLICATION AN ACT RATHER THAN A RELABEL.
+      //
+      // Membership alone used to decide visibility. That was harmless only
+      // because no Draft fixture carried an invited supplier; the moment D-1
+      // moved `t_rfq_create` to birth at Draft, EVERY newly-raised RFQ became a
+      // Draft carrying the wizard's invited list — so an unpublished sourcing
+      // event would have been on the supplier's board before the buyer published
+      // it, and `t_rfq_publish` would have changed a label and nothing else.
+      // Reported as a finding before it was fixed (`PF1A-DRAFT-RFQ-VISIBLE-01`).
+      rows = rows.filter(
+        (r) => r.status !== 'Draft' && r.invitedSupplierIds.includes(scope.supplierId!),
+      );
     }
     if (filter?.status) rows = rows.filter((r) => matchesList(r.status, filter.status));
     if (filter?.category)

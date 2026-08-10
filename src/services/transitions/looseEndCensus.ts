@@ -71,7 +71,17 @@ export interface CensusEntry {
 }
 
 /**
- * THE CENSUS. Eighteen rows at PF-0, all derived first and annotated second.
+ * THE CENSUS. **ELEVEN rows — down from EIGHTEEN at PF-0**, and the shrink is
+ * the point: PF-1a repaired seven and the bilateral gate FORCED their exemptions
+ * out. A row cannot outlive its subject here, so this list can only get shorter
+ * truthfully. All eleven are derived first and annotated second.
+ *
+ * **Deleted at PF-1a (D-1, ruled per state):** rfq `Draft` × 2 + `t_rfq_publish`
+ * (creation now births at Draft, so publish fires and the declared initial is
+ * true) · advanceShipNotice `Discrepancy` · requirementResponse `Disputed` ·
+ * purchaseRequisition `Rejected` (resolution edges on the `t_invoice_resolve`
+ * pattern) · goodsReceipt `Quality Hold` (the resume edge behind an affordance
+ * that already shipped).
  *
  * ⚠️ **THE SETTLEMENT PAIRS ARE NOT IN IT, AND THEIR ABSENCE IS THE D-2 RULING
  * WORKING.** `Posted to SAP` and `Payment Released` were unreachable, and
@@ -81,32 +91,6 @@ export interface CensusEntry {
  * (`settlesTo`), not because the reader was told to look away.
  */
 export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
-  // ── advanceShipNotice ──────────────────────────────────────────────────────
-  {
-    entity: 'advanceShipNotice',
-    kind: 'exit-less-state',
-    subject: 'Discrepancy',
-    reason: 'deferred-edge',
-    note:
-      'A GR reject / partial-approve cascades an ASN into Discrepancy and NOTHING BRINGS IT BACK. ' +
-      'The resolution edge is intended and unauthored; `t_invoice_resolve` (Disputed → Submitted) is ' +
-      'the shape it is missing. Note the flow declares NO terminal at all as a result — `Delivered` ' +
-      'is left by the discrepancy edge, so this machine has no declared ending.',
-  },
-
-  // ── goodsReceipt ───────────────────────────────────────────────────────────
-  {
-    entity: 'goodsReceipt',
-    kind: 'exit-less-state',
-    subject: 'Quality Hold',
-    reason: 'deferred-edge',
-    note:
-      '⚠️ REACHABLE (`t_gr_hold`) AND INESCAPABLE — a GR put on quality hold can never leave it, so ' +
-      'the goods are frozen in the machine. Worse than an unwired state: a surface already ships a ' +
-      '"Request Retest" affordance on it whose handler is A TOAST, so the UI offers the exit the ' +
-      'schema does not have. The release/retest edge is the deferred one.',
-  },
-
   // ── goodsReceiptLine ───────────────────────────────────────────────────────
   {
     entity: 'goodsReceiptLine',
@@ -157,55 +141,14 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
     note: 'The twin of `Qty Mismatch`, and the same reasoning applies unchanged.',
   },
 
-  // ── rfq ────────────────────────────────────────────────────────────────────
-  // ⚠️ THREE ROWS, ONE CAUSE, AND IT IS THE SHARPEST THING THE ANALYZER FOUND.
-  // The flow declares `initial: 'Draft'` while its own creation verb births at
-  // `Open`. Everything below follows from that single contradiction — which is
-  // why the three rows are kept separate: each is independently derived, and
-  // fixing the initial alone would close two of them and leave one.
-  {
-    entity: 'rfq',
-    kind: 'initial-integrity',
-    subject: 'Draft',
-    reason: 'authored-unwired',
-    note:
-      '⚠️ THE FLOW CONTRADICTS ITS OWN CREATION EDGE: `initial: \'Draft\'`, while `t_rfq_create` ' +
-      'births an RFQ at `Open`. The declared entry point is not the real one, in the FLAGSHIP ' +
-      'SOURCING FLOW.',
-  },
-  {
-    entity: 'rfq',
-    kind: 'unreachable-state',
-    subject: 'Draft',
-    reason: 'authored-unwired',
-    note:
-      'Consequence of the contradiction above: nothing can enter `Draft`. The draft-RFQ lane is ' +
-      'authored in the alphabet and wired by nothing.',
-  },
-  {
-    entity: 'rfq',
-    kind: 'dead-transition',
-    subject: 't_rfq_publish',
-    reason: 'authored-unwired',
-    note:
-      '⚠️ A DEAD VERB IN THE FLAGSHIP SOURCING FLOW. `t_rfq_publish` fires only from `Draft`, which ' +
-      'nothing can enter, so PUBLISH CAN NEVER FIRE — while `rfq:publish` is granted to the buyer ' +
-      'persona and counted in the capability surface. NOT FIXED HERE (D-1 is the operator\'s): the ' +
-      'two candidate fixes — birth at `Draft` and require publish, or delete the draft lane — are ' +
-      'different products, not different spellings.',
-  },
+  // ── rfq — ⚠️ NO ROWS. All three are GONE (PF-1a · D-1). ────────────────────
+  // The three that stood here were one cause: `initial: 'Draft'` contradicting a
+  // creation verb that births at `Open`. Creation now births at `Draft`, so the
+  // initial is true, `Draft` is reachable, and `t_rfq_publish` fires. Kept as a
+  // comment and not silently deleted, because "this flow used to be the worst
+  // one in the census" is the fact a reader of a shrinking list most wants.
 
   // ── purchaseRequisition ────────────────────────────────────────────────────
-  {
-    entity: 'purchaseRequisition',
-    kind: 'exit-less-state',
-    subject: 'Rejected',
-    reason: 'deferred-edge',
-    note:
-      'A rejected requisition has no revise-and-resubmit edge, so the requester\'s only recourse is a ' +
-      'new PR. The intended pattern demonstrably exists in this tree — `t_invoice_resolve` returns a ' +
-      'Disputed invoice to Submitted — which is what makes this an absence rather than a decision.',
-  },
   {
     entity: 'purchaseRequisition',
     kind: 'unauthored-cascade',
@@ -257,15 +200,6 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'THE SECOND DEAD VERB, and also unlisted: the draft promotion fires only from `Draft`, which ' +
       'nothing can enter. Its own authoring comment already describes it as authored-unwired — what ' +
       'was not known is that it is unfireable, which is a stronger statement than unwired.',
-  },
-  {
-    entity: 'requirementResponse',
-    kind: 'exit-less-state',
-    subject: 'Disputed',
-    reason: 'deferred-edge',
-    note:
-      'A disputed response has no resolution edge. `t_invoice_resolve` is again the shape it is ' +
-      'missing — three flows now park an entity in a problem state that one flow knows how to leave.',
   },
 
   // ── enforcement ────────────────────────────────────────────────────────────

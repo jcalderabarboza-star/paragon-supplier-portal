@@ -51,6 +51,7 @@ import {
   useRfqAward,
   useRfqFxPin,
   useRfqCancel,
+  useRfqPublish,
   useRfqReopen,
   useQuotationReview,
 } from '../services/query/commandHooks';
@@ -811,6 +812,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const awardMutation = useRfqAward();
   const cancelMutation = useRfqCancel();
   const reopenMutation = useRfqReopen();
+  const publishMutation = useRfqPublish();
   const reviewMutation = useQuotationReview();
   const fxPinMutation = useRfqFxPin();
 
@@ -950,6 +952,52 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             variant: 'error',
             title: t('sourcing.toast.reviewFailed.title'),
             description: t('sourcing.toast.reviewFailed.default'),
+          }),
+      },
+    );
+  };
+
+  // PF-1a — publish the RFQ (fires t_rfq_publish, Draft → Open). THE ACT THAT
+  // MAKES THE EVENT VISIBLE: supplier reads exclude Draft, so until this fires
+  // the invited list has not been shown anything. The panel stays open — the
+  // buyer's next move (award, cancel, pin a rate) is on this same RFQ, and the
+  // board re-derives underneath it.
+  const handlePublish = () => {
+    if (!selectedRfq) return;
+    const rfqNumber = selectedRfq.rfqNumber;
+    const invitedCount = selectedRfq.invitedSupplierIds.length;
+    publishMutation.mutate(
+      { rfqId: selectedRfq.id },
+      {
+        onSuccess: (result) => {
+          if (result.status === 'failed') {
+            toast({
+              variant: 'error',
+              title: t('sourcing.toast.publishFailed.title'),
+              description:
+                result.reason ?? t('sourcing.toast.publishFailed.default'),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('sourcing.toast.published.title', { rfqNumber }),
+            // Manual plural selection, the convention this file already uses for
+            // the create toast — not i18next's `_one/_other` suffixes, which are
+            // configured nowhere here and would silently fall back.
+            description: t(
+              invitedCount === 1
+                ? 'sourcing.toast.published.desc.one'
+                : 'sourcing.toast.published.desc.other',
+              { count: invitedCount },
+            ),
+          });
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('sourcing.toast.publishFailed.title'),
+            description: t('sourcing.toast.publishFailed.dispatch'),
           }),
       },
     );
@@ -2348,6 +2396,25 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   {t('sourcing.lifecycle.actions')}
                 </h3>
                 <div className="flex flex-wrap gap-2">
+                  {/* PF-1a — PUBLISH. Wired here and not deferred to the surface
+                      batch because D-1 made `Draft` the state EVERY newly-raised
+                      RFQ lands in: without this button the buyer creates events
+                      only suppliers cannot see, and the draft lane would be a
+                      trap whose only exit is cancel. Solid `primary` is reserved
+                      for the irreversible commit (DP2-BUTTON-01) and publish
+                      qualifies — it exposes the event to the invited list. */}
+                  {selectedRfq.status === 'Draft' && (
+                    <Button
+                      variant="primary"
+                      icon={Send}
+                      disabled={publishMutation.isPending}
+                      onClick={handlePublish}
+                    >
+                      {publishMutation.isPending
+                        ? t('sourcing.publish.submitting')
+                        : t('sourcing.publish.submit')}
+                    </Button>
+                  )}
                   {selectedRfq.status === 'Closed' && (
                     <Button
                       variant="outline"
