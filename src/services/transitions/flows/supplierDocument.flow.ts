@@ -23,6 +23,8 @@ export const supplierDocumentFlow: FlowDefinition = {
   version: 1,
   states: ['Awaiting Upload', 'Under Review', 'Valid'],
   initial: 'Awaiting Upload',
+  /** PF-0 · D-2 */
+  terminals: ['Valid'],
   transitions: [
     {
       id: 't_supplierdoc_request',

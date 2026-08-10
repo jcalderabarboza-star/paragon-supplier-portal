@@ -82,6 +82,25 @@ export interface TransitionDef {
    */
   readonly sapBoundary?: boolean;
   /**
+   * WHERE SETTLEMENT LANDS THE ENTITY — **required exactly when `sapBoundary`
+   * is set, and forbidden otherwise** (PF-0 · D-2, operator ruling). Validated
+   * ∈ the flow's states.
+   *
+   * ⚠️ **WHY THIS IS DECLARED DATA AND NOT A COMMENT.** An Option-B verb parks
+   * the entity in an INTERIM state (`Posting to SAP`, `Releasing Payment`) and
+   * `settle()`'s finalize advances it to the settled one — inside the adapter,
+   * **outside the declared machine**. So the declaration was TRUE AND
+   * INCOMPLETE: a graph derived from it renders `Posted to SAP` unreachable and
+   * `Posting to SAP` exit-less, and **both readings are correct about the
+   * declaration** while being wrong about the system. The fix is to make the
+   * declaration honest, not to exempt the reader.
+   *
+   * It does not change dispatch. The dispatcher still returns `submitted`, the
+   * adapter still owns the finalize; this field states, in data a build can
+   * check, where that finalize is contracted to land.
+   */
+  readonly settlesTo?: string;
+  /**
    * True when this transition RECORDS A FACT without moving the entity (2e-c-3).
    * The dispatcher applies it with the entity's CURRENT state, so `to` is never
    * written; validation requires `to ∈ from` so the declaration stays truthful
@@ -113,6 +132,24 @@ export interface FlowDefinition {
   readonly states: readonly string[];
   /** The state a freshly-created entity lands in (∈ `states`). */
   readonly initial: string;
+  /**
+   * THE STATES THIS MACHINE DECLARES AS ENDINGS (⊆ `states`) — **REQUIRED, and
+   * an empty array is a legal, meaningful answer** (PF-0 · D-2, operator).
+   *
+   * ⚠️ **TERMINAL-NESS IS THE ONE INTENT A GRAPH CANNOT INFER.** "Nothing
+   * leaves this state" is the same SHAPE for an ending and for a hole: `Awarded`
+   * and `Quality Hold` are indistinguishable in the edge set, and only an author
+   * knows which is which. So it is declared, and validated BOTH WAYS —
+   * declared-terminal ⇒ no exit (`validate.ts`), and no-exit ⇒ declared-terminal
+   * or censused (`flowGraph.test.ts`). A flow cannot buy silence by declaring a
+   * live state terminal, and cannot leave a hole unnamed.
+   *
+   * **REQUIRED rather than optional, deliberately:** an optional field is
+   * omitted on exactly the flows whose endings nobody thought about, which are
+   * the flows this exists for. `[]` says *this machine declares no ending* —
+   * which is true of the ASN flow today, and worth being able to read.
+   */
+  readonly terminals: readonly string[];
   /** Every transition (edge). */
   readonly transitions: readonly TransitionDef[];
   /** Schema version of the flow. Positive integer. */

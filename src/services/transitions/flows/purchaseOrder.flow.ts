@@ -30,6 +30,8 @@ export const purchaseOrderFlow: FlowDefinition = {
     POStatus.CLOSED,
   ],
   initial: POStatus.SENT,
+  /** PF-0 · D-2 — a closed PO is the end of the order lifecycle. */
+  terminals: [POStatus.CLOSED],
   transitions: [
     {
       id: 't_po_issue',

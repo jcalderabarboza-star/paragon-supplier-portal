@@ -16,6 +16,7 @@ flowRegistry.register({
   version: 1,
   states: ['New', 'Live'],
   initial: 'New',
+  terminals: ['Live'],
   transitions: [
     { id: 't_gadget_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'gadget:create', requiredFields: ['parentRef', 'label'], policyHooks: [], version: 1 },
     { id: 't_gadget_activate', from: ['New'], to: 'Live', trigger: 'user', requiredRole: 'gadget:activate', requiredFields: [], policyHooks: [], version: 1 },

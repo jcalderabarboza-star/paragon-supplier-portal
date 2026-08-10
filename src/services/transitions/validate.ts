@@ -8,6 +8,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { FlowDefinition } from './schema';
+import { exitsOf } from './flowGraph';
 import { isRegisteredPolicyHook } from './policyHooks';
 
 // `t_<entity>_<verb>` — at least two lowercase segments after the `t_` prefix.
@@ -40,6 +41,20 @@ export function validateFlow(flow: FlowDefinition): FlowValidationResult {
   }
   if (!isPositiveInt(flow.version)) {
     errors.push(`flow '${flow.entity}': version must be a positive integer`);
+  }
+
+  // PF-0 · D-2 — declared terminals, validated as a set that means something.
+  // The second half (a terminal must actually have no exit) runs after the
+  // transition loop, because it needs the whole edge set.
+  if (!Array.isArray(flow.terminals)) {
+    errors.push(`flow '${flow.entity}': 'terminals' must be declared (use [] for a machine with no ending)`);
+  } else {
+    if (new Set(flow.terminals).size !== flow.terminals.length) {
+      errors.push(`flow '${flow.entity}': duplicate state in 'terminals'`);
+    }
+    for (const s of flow.terminals) {
+      if (!states.has(s)) errors.push(`flow '${flow.entity}': terminal '${s}' is not a declared state`);
+    }
   }
 
   const seenIds = new Set<string>();
@@ -89,6 +104,25 @@ export function validateFlow(flow: FlowDefinition): FlowValidationResult {
         errors.push(`${at}: statePreserving requires 'to' ('${t.to}') to be one of its 'from' states`);
       }
     }
+    // PF-0 · D-2 — an Option-B verb must say where settlement lands it, and a
+    // synchronous verb must not pretend it settles anywhere. Required exactly
+    // when `sapBoundary` is set: an optional-on-both-sides field would be
+    // omitted precisely on the boundary verbs whose settlement nobody modelled.
+    if (t.sapBoundary) {
+      if (typeof t.settlesTo !== 'string' || t.settlesTo === '') {
+        errors.push(`${at}: a sapBoundary transition must declare 'settlesTo' (where settle() lands the entity)`);
+      } else if (!states.has(t.settlesTo)) {
+        errors.push(`${at}: 'settlesTo' state '${t.settlesTo}' is not declared`);
+      } else if (t.settlesTo === t.to) {
+        // The interim state and the settled state are the whole point of
+        // Option B. Equal values mean somebody declared the field to satisfy
+        // the check, and a settlement that lands where it started is not one.
+        errors.push(`${at}: 'settlesTo' must differ from 'to' ('${t.to}') — settlement advances past the interim state`);
+      }
+    } else if (t.settlesTo !== undefined) {
+      errors.push(`${at}: 'settlesTo' is only meaningful on a sapBoundary transition`);
+    }
+
     if (!ROLE_RE.test(t.requiredRole)) {
       errors.push(`${at}: requiredRole '${t.requiredRole}' is not a namespaced transition-role (expected <namespace>:<role>)`);
     }
@@ -99,6 +133,29 @@ export function validateFlow(flow: FlowDefinition): FlowValidationResult {
     }
     if (!isPositiveInt(t.version)) {
       errors.push(`${at}: version must be a positive integer`);
+    }
+  }
+
+  // PF-0 · D-2, the second direction — A DECLARED TERMINAL MUST ACTUALLY BE ONE.
+  // Runs last because it needs the whole edge set, and only when the edges are
+  // otherwise well-formed: on a malformed flow the derived exits would be noise
+  // layered on the real error.
+  //
+  // ⚠️ THIS HALF BELONGS AT REGISTRATION, unlike the loose-end gate (which lives
+  // on the vitest floor so a hole cannot brick the app). The difference is that
+  // this is a SELF-CONTRADICTION inside one authored file — a flow saying a state
+  // is an ending while also declaring the edge that leaves it — not a statement
+  // about work nobody has done yet. It is green on every shipped flow today, so
+  // the only way to trip it is to write the contradiction.
+  if (errors.length === 0 && Array.isArray(flow.terminals)) {
+    const exits = exitsOf(flow);
+    for (const terminal of flow.terminals) {
+      const out = exits.get(terminal) ?? [];
+      if (out.length > 0) {
+        errors.push(
+          `flow '${flow.entity}': state '${terminal}' is declared terminal but is left by ${out.join(', ')}`,
+        );
+      }
     }
   }
 

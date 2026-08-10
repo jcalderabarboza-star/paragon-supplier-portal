@@ -1,0 +1,287 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// PF-0 · THE LOOSE-END CENSUS — every hole in the shipped flow catalog, named.
+//
+// ⚠️ **THIS FILE IS AN EXEMPTION LIST, NOT A TO-DO LIST.** Every row is a loose
+// end that SHIPS TODAY. None is fixed by this batch (the fence: D-1 is the
+// operator's, per state). What the census buys is that each one is DELIBERATE
+// and REPORTED, instead of merely present.
+//
+// ── ⚠️ THE CENSUS IS BILATERAL, AND THAT IS THE LOAD-BEARING HALF ───────────
+//   `flowGraph.test.ts` fails in BOTH directions:
+//
+//     · A DERIVED LOOSE END WITH NO ROW HERE → RED. A new hole cannot ship
+//       silently; somebody has to write down what it is and why.
+//     · A ROW HERE THAT IS NO LONGER A LOOSE END → RED. Fixing an edge FORCES
+//       the deletion of its exemption, **so the census can only shrink
+//       truthfully.**
+//
+//   The second direction is the one nothing normally checks, and it is the one
+//   that rots: an exemption list that survives its own subject is a document
+//   asserting a defect the tree no longer has (`C9-STALE-BY-FIX-01`, the same
+//   class one layer down). Here it cannot survive, because the check derives the
+//   truth first and compares second.
+//
+// ── THE PRECEDENTS THIS OBEYS ───────────────────────────────────────────────
+//   `ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01` — the authored list is a STRICT
+//   SUBSET of the derived truth, and the derivation is authority. This file
+//   never enumerates flows, states or transitions on its own account; it only
+//   annotates keys that `analyzeAllFlows` produced.
+//   `CENSUS-MUST-DERIVE-01` — a population is derived, never shape-matched.
+//
+// ── ⚠️ THE KEY IS `entity#kind#subject` AND CARRIES NO PROSE ────────────────
+//   `note` is for a reader and is never compared. A census keyed on its own
+//   wording would go red every time somebody improved a sentence, which trains
+//   people to regenerate the file instead of reading it — and a census that gets
+//   regenerated routinely is not a census.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import type { LooseEndKind } from './flowGraph';
+
+/**
+ * WHY a loose end is exempt. A CLOSED vocabulary, and the closure is the point:
+ * four different situations that a single "known issue" would flatten into one.
+ *
+ * ⚠️ **NO CATCH-ALL MEMBER.** There is no `OTHER` and no `WONT_FIX` — one such
+ * member turns a closed vocabulary into free text wearing an enum's clothes
+ * (`OVERRIDE_REASONS`, same argument). A hole that fits none of these four is a
+ * hole nobody has understood yet, and it should be red until somebody does.
+ */
+export type LooseEndReason =
+  /** The resolving edge is INTENDED and not yet authored. A real gap, booked.
+   *  `t_invoice_resolve` is the shape these are missing. */
+  | 'deferred-edge'
+  /** The states/verbs exist in the catalog and NOTHING WIRES THE PATH to them
+   *  (FORK-2 hybrid: author all flows, wire per Stage-2 surface). */
+  | 'authored-unwired'
+  /** A sub-flow that is documented substrate — rolled up by its parent and never
+   *  instantiated on its own, so it has no creation verb and no resting edges. */
+  | 'substrate-only'
+  /** The `initial` state IS how instances come into existence, with no creation
+   *  verb by design: the entity exists because its subject does. */
+  | 'born-state';
+
+/** One exempted loose end. `entity`/`kind`/`subject` must match a DERIVED key. */
+export interface CensusEntry {
+  readonly entity: string;
+  readonly kind: LooseEndKind;
+  readonly subject: string;
+  readonly reason: LooseEndReason;
+  /** For a human. NEVER compared — see the header. */
+  readonly note: string;
+}
+
+/**
+ * THE CENSUS. Eighteen rows at PF-0, all derived first and annotated second.
+ *
+ * ⚠️ **THE SETTLEMENT PAIRS ARE NOT IN IT, AND THEIR ABSENCE IS THE D-2 RULING
+ * WORKING.** `Posted to SAP` and `Payment Released` were unreachable, and
+ * `Posting to SAP` / `Releasing Payment` were exit-less, in the DECLARED data —
+ * truthfully, because `settle()`'s finalize advanced them from inside the
+ * adapter. They are absent here because the declaration was made honest
+ * (`settlesTo`), not because the reader was told to look away.
+ */
+export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
+  // ── advanceShipNotice ──────────────────────────────────────────────────────
+  {
+    entity: 'advanceShipNotice',
+    kind: 'exit-less-state',
+    subject: 'Discrepancy',
+    reason: 'deferred-edge',
+    note:
+      'A GR reject / partial-approve cascades an ASN into Discrepancy and NOTHING BRINGS IT BACK. ' +
+      'The resolution edge is intended and unauthored; `t_invoice_resolve` (Disputed → Submitted) is ' +
+      'the shape it is missing. Note the flow declares NO terminal at all as a result — `Delivered` ' +
+      'is left by the discrepancy edge, so this machine has no declared ending.',
+  },
+
+  // ── goodsReceipt ───────────────────────────────────────────────────────────
+  {
+    entity: 'goodsReceipt',
+    kind: 'exit-less-state',
+    subject: 'Quality Hold',
+    reason: 'deferred-edge',
+    note:
+      '⚠️ REACHABLE (`t_gr_hold`) AND INESCAPABLE — a GR put on quality hold can never leave it, so ' +
+      'the goods are frozen in the machine. Worse than an unwired state: a surface already ships a ' +
+      '"Request Retest" affordance on it whose handler is A TOAST, so the UI offers the exit the ' +
+      'schema does not have. The release/retest edge is the deferred one.',
+  },
+
+  // ── goodsReceiptLine ───────────────────────────────────────────────────────
+  {
+    entity: 'goodsReceiptLine',
+    kind: 'initial-integrity',
+    subject: 'Pending',
+    reason: 'substrate-only',
+    note:
+      '⚠️ THE SCHEMA CANNOT BRING A LINE INTO EXISTENCE — zero creation verbs, zero inbound edges to ' +
+      '`Pending`, and no CommandTarget. The line sub-flow is rolled up by the GR header (`grRollup`) ' +
+      'and never instantiated on its own; it is documented substrate, and the analyzer seeds its ' +
+      'reachability from `initial` so this is reported ONCE instead of smeared over six states.',
+  },
+  {
+    entity: 'goodsReceiptLine',
+    kind: 'exit-less-state',
+    subject: 'Quarantined',
+    reason: 'deferred-edge',
+    note:
+      'Quarantine is a HOLDING state — the release-or-return edge is what makes it one — and it has ' +
+      'neither. Same shape as the GR header\'s Quality Hold, one grain down.',
+  },
+
+  // ── invoiceMatch ───────────────────────────────────────────────────────────
+  {
+    entity: 'invoiceMatch',
+    kind: 'initial-integrity',
+    subject: 'Pending',
+    reason: 'substrate-only',
+    note:
+      'No creation verb: the match sub-flow is rolled up by the invoice header (`invoiceRollup`) and ' +
+      'never instantiated. Documented substrate, same as the GR line.',
+  },
+  {
+    entity: 'invoiceMatch',
+    kind: 'exit-less-state',
+    subject: 'Qty Mismatch',
+    reason: 'substrate-only',
+    note:
+      'A variance verdict with NO RE-MATCH EDGE — once the rollup lands here the sub-flow cannot ' +
+      'progress. Substrate rather than deferred-edge: the flow is never instantiated, so the missing ' +
+      'edge has never been reachable by anything. It becomes a deferred-edge the day it is.',
+  },
+  {
+    entity: 'invoiceMatch',
+    kind: 'exit-less-state',
+    subject: 'Price Variance',
+    reason: 'substrate-only',
+    note: 'The twin of `Qty Mismatch`, and the same reasoning applies unchanged.',
+  },
+
+  // ── rfq ────────────────────────────────────────────────────────────────────
+  // ⚠️ THREE ROWS, ONE CAUSE, AND IT IS THE SHARPEST THING THE ANALYZER FOUND.
+  // The flow declares `initial: 'Draft'` while its own creation verb births at
+  // `Open`. Everything below follows from that single contradiction — which is
+  // why the three rows are kept separate: each is independently derived, and
+  // fixing the initial alone would close two of them and leave one.
+  {
+    entity: 'rfq',
+    kind: 'initial-integrity',
+    subject: 'Draft',
+    reason: 'authored-unwired',
+    note:
+      '⚠️ THE FLOW CONTRADICTS ITS OWN CREATION EDGE: `initial: \'Draft\'`, while `t_rfq_create` ' +
+      'births an RFQ at `Open`. The declared entry point is not the real one, in the FLAGSHIP ' +
+      'SOURCING FLOW.',
+  },
+  {
+    entity: 'rfq',
+    kind: 'unreachable-state',
+    subject: 'Draft',
+    reason: 'authored-unwired',
+    note:
+      'Consequence of the contradiction above: nothing can enter `Draft`. The draft-RFQ lane is ' +
+      'authored in the alphabet and wired by nothing.',
+  },
+  {
+    entity: 'rfq',
+    kind: 'dead-transition',
+    subject: 't_rfq_publish',
+    reason: 'authored-unwired',
+    note:
+      '⚠️ A DEAD VERB IN THE FLAGSHIP SOURCING FLOW. `t_rfq_publish` fires only from `Draft`, which ' +
+      'nothing can enter, so PUBLISH CAN NEVER FIRE — while `rfq:publish` is granted to the buyer ' +
+      'persona and counted in the capability surface. NOT FIXED HERE (D-1 is the operator\'s): the ' +
+      'two candidate fixes — birth at `Draft` and require publish, or delete the draft lane — are ' +
+      'different products, not different spellings.',
+  },
+
+  // ── purchaseRequisition ────────────────────────────────────────────────────
+  {
+    entity: 'purchaseRequisition',
+    kind: 'exit-less-state',
+    subject: 'Rejected',
+    reason: 'deferred-edge',
+    note:
+      'A rejected requisition has no revise-and-resubmit edge, so the requester\'s only recourse is a ' +
+      'new PR. The intended pattern demonstrably exists in this tree — `t_invoice_resolve` returns a ' +
+      'Disputed invoice to Submitted — which is what makes this an absence rather than a decision.',
+  },
+  {
+    entity: 'purchaseRequisition',
+    kind: 'unauthored-cascade',
+    subject: 't_pr_source',
+    reason: 'authored-unwired',
+    note:
+      'Declares `trigger: \'cascade\'` — "another transition fans out into me" — and NO SOURCE NAMES ' +
+      'IT in `cascades.ts`. The sentence has no subject: nothing can fire it, and its `from` states ' +
+      'are reachable, so it is not even caught as a dead transition.',
+  },
+  {
+    entity: 'purchaseRequisition',
+    kind: 'unauthored-cascade',
+    subject: 't_pr_convert',
+    reason: 'authored-unwired',
+    note: 'The PR→PO conversion cascade, unauthored for the same reason as `t_pr_source`.',
+  },
+
+  // ── compliance ─────────────────────────────────────────────────────────────
+  {
+    entity: 'compliance',
+    kind: 'initial-integrity',
+    subject: 'Missing',
+    reason: 'born-state',
+    note:
+      'NO creation verb BY DESIGN, and the registration comment says so: a required compliance cell ' +
+      'exists because the requirement matrix says a supplier × scheme needs a certificate, so ' +
+      '`Missing` is the natural born-state. The one row here that is an intended shape rather than a ' +
+      'gap — which is exactly why the reason vocabulary distinguishes it from `substrate-only`.',
+  },
+
+  // ── requirementResponse ────────────────────────────────────────────────────
+  {
+    entity: 'requirementResponse',
+    kind: 'unreachable-state',
+    subject: 'Draft',
+    reason: 'authored-unwired',
+    note:
+      '⚠️ NOT IN THE OPENING LIST — the analyzer found it. Both creation verbs (`submit`, ' +
+      '`acknowledge`) birth at `Submitted`, so nothing can enter `Draft`. The same shape as the RFQ ' +
+      'defect, in a second flow, and it would not have been found by reading.',
+  },
+  {
+    entity: 'requirementResponse',
+    kind: 'dead-transition',
+    subject: 't_requirementresponse_promote',
+    reason: 'authored-unwired',
+    note:
+      'THE SECOND DEAD VERB, and also unlisted: the draft promotion fires only from `Draft`, which ' +
+      'nothing can enter. Its own authoring comment already describes it as authored-unwired — what ' +
+      'was not known is that it is unfireable, which is a stronger statement than unwired.',
+  },
+  {
+    entity: 'requirementResponse',
+    kind: 'exit-less-state',
+    subject: 'Disputed',
+    reason: 'deferred-edge',
+    note:
+      'A disputed response has no resolution edge. `t_invoice_resolve` is again the shape it is ' +
+      'missing — three flows now park an entity in a problem state that one flow knows how to leave.',
+  },
+
+  // ── enforcement ────────────────────────────────────────────────────────────
+  {
+    entity: 'enforcement',
+    kind: 'initial-integrity',
+    subject: 'Governed',
+    reason: 'substrate-only',
+    note:
+      'A DEGENERATE SINGLE-STATE LEDGER MACHINE with no creation verb: the entity IS the governed ' +
+      'check, and the governed checks are a frozen closed vocabulary in `lib/enforcement.ts`, not ' +
+      'rows anybody creates. The recording verb is statePreserving, so it is neither an entry nor an ' +
+      'exit, and the state is correctly declared terminal. ' +
+      '⚠️ THIS NOTE DELIBERATELY DOES NOT SPELL THE VOCABULARY\'S IDENTIFIER: the enforcement ' +
+      'consumer census (`lib/enforcement.test.ts`) matches TEXT, so writing the name here would have ' +
+      'enrolled a document that imports nothing as a CONSUMER of that module. `DESCRIBE-DONT-RENDER-01` ' +
+      '— name the mechanism, never render it.',
+  },
+]);

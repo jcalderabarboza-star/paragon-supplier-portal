@@ -6595,3 +6595,306 @@ recorded so that batch is not free to forget it.**
   something written down. **D-ID-1 is the exception that has no disposal condition
   that preserves the property:** after the first attributed record it is not a
   ruling, it is a fact about the data.
+
+---
+
+## DISPATCH PF-0 · THE FLOW-GRAPH ANALYZER AND THE LOOSE-END GATE (`main` `dc8e774`)
+
+The operator's criterion — **no loose ends, no empty flows without purpose** —
+turned from a review criterion into a derivation with a bilateral gate on the
+floor. `flowGraph.ts` (headless analyzer) · `looseEndCensus.ts` (18 rows) ·
+`flowGraph.test.ts` (25 specs). **NOT ONE LOOSE END IS FIXED** — the fence held;
+D-1 is the operator's, per state.
+
+### 1. THE POPULATION — 18 loose ends across 18 registered flows
+
+Derived from `getKnownFlows()`, never hand-listed (`CENSUS-MUST-DERIVE-01`).
+
+| Kind | Count | Where |
+|---|---|---|
+| `exit-less-state` | **7** | ASN `Discrepancy` · GR `Quality Hold` · GRLine `Quarantined` · invoiceMatch `Qty Mismatch` + `Price Variance` · PR `Rejected` · reqResponse `Disputed` |
+| `initial-integrity` | **5** | GRLine `Pending` · invoiceMatch `Pending` · compliance `Missing` · enforcement `Governed` · **rfq `Draft`** |
+| `unreachable-state` | **2** | **rfq `Draft`** · **requirementResponse `Draft`** |
+| `dead-transition` | **2** | **`t_rfq_publish`** · **`t_requirementresponse_promote`** |
+| `unauthored-cascade` | **2** | `t_pr_source` · `t_pr_convert` |
+
+**Reason tokens, all four in use:** `deferred-edge` (5) · `authored-unwired` (7)
+· `substrate-only` (5) · `born-state` (1).
+
+### 2. ⚠️ THE SHARPEST ONE, VERIFIED FIRST AS INSTRUCTED — `PF0-RFQ-DRAFT-DEAD-01`
+
+⚠️ **OPEN. NOT FIXED.**
+
+> **THE FLAGSHIP SOURCING FLOW CONTRADICTS ITS OWN CREATION EDGE, AND A VERB IN
+> IT CAN NEVER FIRE.**
+
+`rfq.flow.ts` declares `initial: 'Draft'`. Its only creation verb,
+`t_rfq_create`, births an RFQ at **`Open`**. Therefore, derived three ways and
+each independently:
+
+- **`Draft` is unreachable** — no creation edge lands there and no transition
+  enters it.
+- **`t_rfq_publish` is DEAD** — its only `from` is `Draft`, so **publish can
+  never fire**, while `rfq:publish` is granted to the buyer persona and counted
+  in the capability surface (`roles.ts`). A capability that cannot be exercised
+  is being reported as one that can.
+- **The declared entry point is not the real one.**
+
+**NOT FIXED, and the reason is that the two candidate repairs are different
+products rather than different spellings:** birth at `Draft` and require an
+explicit publish (a two-step sourcing lane), or delete the draft lane and let
+`t_rfq_create` be the publish (a one-step one). D-1 is the operator's.
+
+### 3. ⚠️ TWO THE OPENING LIST DID NOT NAME — the analyzer earned its keep here
+
+#### `PF0-REQRESPONSE-DRAFT-DEAD-01` — the same defect, in a second flow
+
+⚠️ **OPEN.** `requirementResponse` declares a `Draft` state. **Both** creation
+verbs (`t_requirementresponse_submit`, `t_requirementresponse_acknowledge`) birth
+at `Submitted`, so **nothing can enter `Draft`** and
+**`t_requirementresponse_promote` can never fire.**
+
+**The part worth keeping:** the promote verb's own authoring comment already
+called it *authored-unwired*. **UNWIRED AND UNFIREABLE ARE DIFFERENT CLAIMS** —
+the first says nobody calls it yet, the second says nobody ever could. A reader
+of that comment would have believed the surface was the only missing piece. **A
+derivation found the second flow; reading found the first and stopped.**
+
+#### The settlement pairs were REAL, and D-2 dissolved them rather than exempting them
+
+Before this batch the analyzer reported `Posted to SAP` and `Payment Released`
+as **unreachable**, and `Posting to SAP` / `Releasing Payment` as **exit-less** —
+and **every one of those readings was CORRECT ABOUT THE DECLARATION.**
+`settle()`'s finalize advances them from inside `MockCommandService`, outside the
+declared machine. They are absent from the census because `settlesTo` made the
+declaration honest, **not because the reader was told to look away** (D-2).
+
+### 4. THE GATE, AND WHY IT IS NOT AT REGISTRATION
+
+`flowRegistry.register` throws at import time and the barrel is imported by
+`main.tsx`. **A graph check there would have bricked the app the day it landed** —
+all 18 holes become a white screen. The floor's failure mode is the right one:
+
+> **RED PR, RUNNING APP.**
+
+`flowGraph.ts` therefore only ever RETURNS findings. It refuses nothing.
+
+**BILATERAL, and the second half is load-bearing:**
+
+| Direction | What it prevents |
+|---|---|
+| A derived loose end with **no census row** → RED | A new hole shipping silently |
+| A census row that is **no longer a loose end** → RED | An exemption outliving its subject — a document asserting a defect the tree no longer has (`C9-STALE-BY-FIX-01`, one layer down) |
+
+**BOTH DIRECTIONS WERE MUTATION-PROBED, not assumed.** Removing the `enforcement`
+row turned the first red with the uncensused key named; declaring ASN
+`Discrepancy` terminal turned the second red with the stale key named. Byte
+counts were checked before each run, so a probe that silently failed to mutate
+could not read as a pass (`MUTATION-PROBE-CRLF-TRAP`).
+
+**The key is `entity#kind#subject` and carries no prose.** A census keyed on its
+own wording goes red when somebody improves a sentence, which trains people to
+regenerate the file instead of reading it.
+
+### 5. D-2 — THE TWO SCHEMA ADDITIONS, AND ONE RULE THEY MADE CHECKABLE
+
+**`terminals` on `FlowDefinition` — REQUIRED, not optional.**
+
+> **TERMINAL-NESS IS THE ONE INTENT A GRAPH CANNOT INFER.** `Awarded` and
+> `Quality Hold` are the same SHAPE in the edge set — nothing leaves either — and
+> only an author knows which is an ending and which is a hole.
+
+Required rather than optional **because an optional field is omitted on exactly
+the flows whose endings nobody thought about**, which are the flows it exists
+for. `[]` is legal and means *this machine declares no ending* — **which is true
+of the ASN flow today**: `Delivered` is left by the discrepancy cascade, so it
+cannot be an ending, and `Discrepancy` is a hole. **Being able to read that is
+the argument for the field.**
+
+Validated **both ways**: declared-terminal ⇒ no exit (`validate.ts`, at
+registration) and no-exit ⇒ declared-terminal or censused (the floor). A flow can
+neither buy silence by declaring a live state terminal nor leave a hole unnamed.
+
+**`settlesTo`, required exactly when `sapBoundary` is set** — and **it must
+differ from `to`**, because the interim/settled split IS Option B and a
+settlement landing where the dispatch already put the entity is not one.
+
+⚠️ **AND IT IS DECLARED, NOT EXECUTED.** `settleFinalize` still hardcodes
+`'Posted to SAP'` and `'Payment Released'` in the adapter. The two are **pinned
+to agree** by reading the adapter source (the `ledgerTruth.test.ts` precedent),
+and a spec asserts the honest consequence directly: **a boundary verb with
+`settlesTo` declared and no finalize wired leaves the entity in the interim
+state.** Recorded because a reader who assumed the declaration was executable
+would be wrong in the direction that flatters us.
+
+### 6. THREE MODELLING RULINGS, each of which changes an answer
+
+| Ruling | Why |
+|---|---|
+| A `statePreserving` verb is **neither an entry nor an exit** | It records a fact and moves nothing. Counting it would make a single-state ledger machine look like it had a way out of itself. **It stays in the dead-transition check** — an unfireable recording verb is exactly as dead as an unfireable moving one |
+| A `sapBoundary` settlement **is an edge** | §5 |
+| A flow with **no creation verb seeds from `initial`** | Seeding from an empty birth set makes every state unreachable and every edge dead — **a hundred derived findings all restating one cause**, which is how a census stops being read. The flow gets ONE finding naming the real defect |
+
+All three are pinned, because a ruling that only lives in a comment is a ruling
+the next edit does not know about.
+
+### 7. FINDINGS
+
+#### `PF0-CENSUS-NEARLY-BECAME-A-CONSUMER-01` — `DESCRIBE-DONT-RENDER-01`, live again
+
+⚠️ **CLOSED IN THIS BATCH, recorded because the near-miss is the lesson.**
+
+The enforcement consumer census (`lib/enforcement.test.ts`) is a **text match**
+over `src/**` for the module's exported names. `looseEndCensus.ts` imports
+nothing from `lib/enforcement.ts` — but one census note **spelled the governed-
+check vocabulary's identifier in prose**, and the suite immediately enrolled a
+pure document as the module's **eleventh consumer**.
+
+> **A DOCUMENT THAT NAMES A SYMBOL BECOMES A CONSUMER OF IT, TO EVERY CENSUS THAT
+> MATCHES TEXT.**
+
+The resolution is the class's own prescription — **name the mechanism, never
+render it**: the note now says *"a frozen closed vocabulary in
+`lib/enforcement.ts`"* and states why it declines to spell the name. Adding the
+file to the consumer list instead would have **overstated the enforcement
+surface's reach**, which is the exact drift that census exists to catch.
+
+**This is the third instance of the class in this tree** (`ledgerTruth.test.ts`
+reported itself as a consumer of the module it exists to prove has none; C9 §3.4
+files it beside `CENSUS-MUST-DERIVE-01`). **It recurs because it is a property of
+writing things down, not of carelessness.**
+
+#### `PF0-TESTS-ARE-NOT-TYPECHECKED-01` — a required field did not redden `tsc`
+
+⚠️ **OPEN. Pre-existing, found while verifying this batch, NOT fixed here.**
+
+Adding a REQUIRED field to `FlowDefinition` should have failed the typecheck on
+every test-local flow fixture. **It failed nothing.** `tsconfig.json` excludes
+`src/**/*.test.ts`, and `tsconfig.vitest.json` **extends it and sets only
+`include`** — so the base `exclude` still applies and **the test files are
+excluded from both configs.** `tsc` never checks a spec in this repository, and
+vitest transpiles without typechecking.
+
+The five fixtures were caught at RUNTIME instead, by `assertValidFlow` throwing —
+which worked, and worked only because the new field is validated at runtime too.
+**A required field with no runtime validation would have been silently absent in
+every spec.** Not fixed here (it is a build-config change with a suite-wide blast
+radius, and this batch's fence is the flow graph).
+
+#### `PF0-CAPABILITY-COUNTS-A-DEAD-VERB-01`
+
+⚠️ **OPEN.** `capabilitiesFor(scope)` derives the capability surface from
+`PERSONA_ROLES × the flow catalog`, and **the catalog contains verbs that can
+never fire.** `rfq:publish` is granted to the buyer and `t_rfq_publish` is
+counted — a capability the system reports and cannot exercise. The derivation is
+correct about the catalog; **the catalog is what is wrong**, which is why this is
+filed against the flows and not against `roles.ts`. Closes when
+`PF0-RFQ-DRAFT-DEAD-01` and `PF0-REQRESPONSE-DRAFT-DEAD-01` are ruled.
+
+### 8. WHAT THE ANALYZER DELIBERATELY DOES NOT CHECK
+
+**A PARTIALLY dead `from` set.** `t_rfq_cancel` lists `['Draft', 'Open',
+'Closed']` and `Draft` is unreachable — so one third of its declared sources is
+dead while the verb itself fires fine. The dispatch defines a dead transition as
+one whose **entire** `from` set is unreachable, and that is what shipped; the
+partial case is **pinned as explicitly not firing** so the boundary is a decision
+rather than an oversight. Named here because it is a real (smaller) class: a
+`from` entry that can never match is a claim about legality that is never
+exercised.
+
+### 9. THE CLASS THIS DISPATCH ADDS
+
+> **A DERIVATION FINDS THE SECOND INSTANCE. READING FINDS THE FIRST AND STOPS.**
+
+Seat 3's opening list was built by reading, and it was right about everything it
+named — including one self-correction (`Quality Hold` is REACHABLE via
+`t_gr_hold`, not unreachable as an earlier pass claimed; the analyzer confirms
+the correction). What reading did not produce was the **second** flow with the
+same defect. `requirementResponse` carries the RFQ shape exactly, and nobody had
+looked at it, because nobody had reason to look at it twice.
+
+The census is what makes that durable: it is not a list of what we found, it is a
+**refusal to let the next one be found by reading.**
+
+### 10. AMENDMENT AT MERGE (operator, at #197)
+
+Four things the operator required the entry carry, recorded here rather than
+edited into the sections above so the addition is visible as an addition.
+
+#### 10.1 The framing
+
+> **THE ANALYZER EARNED ITSELF BEFORE THE PAGE EXISTS.** Eighteen loose ends
+> across eighteen flows, **DERIVED, NOT READ** — and PF-1, the surface batch, has
+> not started.
+
+The value did not arrive with a diagram. It arrived with the derivation, which is
+the argument for building the analyzer before the thing it was meant to draw.
+
+#### 10.2 D-1 · the RFQ repair is a PRODUCT decision, stated at the grain that makes it one
+
+Verified, unfixed, and **correctly unfixed**. The two candidate repairs are not
+two spellings of one fix:
+
+| Candidate | What it actually does |
+|---|---|
+| Change `initial` to `'Open'` | **REMOVES A DRAFT CONCEPT.** The draft-RFQ lane stops existing; `t_rfq_publish` is deleted, not repaired |
+| Add a draft-creation verb | **BUILDS ONE.** An RFQ is born unpublished, and publish becomes a required step a buyer takes |
+
+One is a deletion and one is a feature. **That is D-1, and it is the operator's.**
+
+⚠️ **And the cost of leaving it open is stated rather than implied: THE DEAD VERB
+IS STILL COUNTED IN THE CAPABILITY SURFACE.** `rfq:publish` is granted to the
+buyer persona in `PERSONA_ROLES`, and `capabilitiesFor` counts `t_rfq_publish`
+among the transitions that scope may initiate — **a capability the platform
+reports and cannot exercise** (`PF0-CAPABILITY-COUNTS-A-DEAD-VERB-01`). The
+derivation is correct about the catalog; the catalog is what is wrong.
+
+#### 10.3 ⚠️ `PF0-TESTS-ARE-NOT-TYPECHECKED-01` IS THE FINDING THAT OUTLIVES THIS BATCH
+
+**Filed against `TSC-SKIPS-TESTS-01` (OPEN, booked at CP-3) and against
+`4b-FIND-01`'s "same class" note — and it is THE FIRST CONCRETE INSTANCE EITHER
+HAS HAD.** Both were, until now, arguments about a gap nobody had watched cost
+anything.
+
+**What it cost:** a **REQUIRED** field was added to `FlowDefinition` and **`tsc`
+reddened on NOTHING.** Five test-local flow fixtures were missing it. The base
+`exclude` hides every spec from both configs, so no gate looked. The fixtures
+were caught at **RUNTIME**, by `assertValidFlow` throwing at registration — and
+**only because `terminals` happens to be runtime-validated too.**
+
+> **A REQUIRED FIELD WITHOUT RUNTIME VALIDATION WOULD BE SILENTLY ABSENT FROM
+> EVERY SPEC.**
+
+Nothing would have failed. The specs would have run green while exercising a
+shape the type system forbids — which is worse than an untested field, because it
+is a suite reporting on a shape the product does not have.
+
+⚠️ **AND THE BOOKED FIX WOULD NOT HAVE CLOSED IT — MEASURED, NOT ASSUMED.**
+`TSC-SKIPS-TESTS-01` records the remedy as *"`tsc -p tsconfig.vitest.json
+--noEmit` — a gate the operator does not run today"*, on the stated premise that
+that config *"exists and includes them"*. It does include them, **and it also
+inherits the base `exclude`, which wins.** Measured at this SHA:
+
+```
+npx tsc -p tsconfig.vitest.json --noEmit --listFiles
+  → 340 files under src/
+  →   0 spec files
+```
+
+**So the remedy as booked would have run, reported clean, and checked no spec at
+all** — a gate that is green because it was looking elsewhere. **The finding
+sharpens the one it is filed against:** closing `TSC-SKIPS-TESTS-01` needs the
+child config to **override `exclude`**, not merely to be run. Anyone who had run
+it would have concluded the gap was closed.
+
+**BOOKED, NOT FIXED, OUTSIDE THIS FENCE.** It is a build-config change with a
+suite-wide blast radius, and it is the kind of gate the dispatch requires be
+argued before it is added.
+
+#### 10.4 `PF0-CENSUS-NEARLY-BECAME-A-CONSUMER-01`
+
+Confirmed on both counts: the **third** instance of `DESCRIBE-DONT-RENDER-01`,
+and **it recurs because it is a property of writing things down**, not of
+carelessness. Fixed by the class's own prescription — name the mechanism, never
+render it — **rather than by widening the consumer list, which would have
+overstated that module's reach**, which is the drift that census exists to catch.

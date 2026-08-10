@@ -23,6 +23,9 @@ export const invoiceMatchFlow: FlowDefinition = {
   version: 1,
   states: ['Pending', 'Pending GR', 'Matched', 'Qty Mismatch', 'Price Variance'],
   initial: 'Pending',
+  /** PF-0 · D-2 — only a clean match is an ending. The two variance states have
+   *  no re-match edge and are NOT endings (censused). */
+  terminals: ['Matched'],
   transitions: [
     {
       // Awaiting the goods receipt before the match can complete.

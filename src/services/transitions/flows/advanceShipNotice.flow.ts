@@ -27,6 +27,11 @@ export const advanceShipNoticeFlow: FlowDefinition = {
   version: 1,
   states: ['Draft', 'Submitted', 'In Transit', 'Delivered', 'Discrepancy'],
   initial: 'Draft',
+  /** PF-0 · D-2 — ⚠️ THIS MACHINE DECLARES NO ENDING, and that is the truthful
+   *  answer rather than an omission: `Delivered` is left by `t_asn_discrepancy`,
+   *  so it cannot be an ending, and `Discrepancy` has no resolution edge (it is
+   *  censused, not declared). An empty array says so out loud. */
+  terminals: [],
   transitions: [
     {
       // CANONICAL creation verb — see the file header. Supplier drafts an ASN

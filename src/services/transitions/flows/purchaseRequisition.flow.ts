@@ -25,6 +25,10 @@ export const purchaseRequisitionFlow: FlowDefinition = {
     'Rejected',
   ],
   initial: 'Draft',
+  /** PF-0 · D-2 — 'Rejected' is deliberately absent: a rejected requisition has
+   *  no resolution edge, and `t_invoice_resolve` proves the intended pattern
+   *  exists elsewhere. It is a hole, not an ending (censused). */
+  terminals: ['PO Created'],
   transitions: [
     {
       id: 't_pr_create',

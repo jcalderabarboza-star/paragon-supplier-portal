@@ -21,6 +21,8 @@ export const quotationFlow: FlowDefinition = {
   version: 1,
   states: ['Submitted', 'Under Review', 'Awarded', 'Rejected'],
   initial: 'Submitted',
+  /** PF-0 · D-2 — both cascade outcomes are endings. */
+  terminals: ['Awarded', 'Rejected'],
   transitions: [
     {
       // Supplier submits a quotation against an invited RFQ. Creation-shape

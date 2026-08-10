@@ -19,6 +19,8 @@ export const contractFlow: FlowDefinition = {
   version: 1,
   states: ['Draft', 'Active', 'Renewed', 'Terminated'],
   initial: 'Draft',
+  /** PF-0 · D-2 — 'Renewed' is NOT an ending (it is left by terminate). */
+  terminals: ['Terminated'],
   transitions: [
     {
       id: 't_contract_draft',

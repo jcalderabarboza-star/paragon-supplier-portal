@@ -25,6 +25,9 @@ export const requirementResponseFlow: FlowDefinition = {
   version: 1,
   states: ['Draft', 'Submitted', 'UnderReview', 'Accepted', 'Disputed'],
   initial: 'Submitted',
+  /** PF-0 · D-2 — 'Disputed' is deliberately absent: it has no resolution edge
+   *  and is a hole, not an ending (censused). */
+  terminals: ['Accepted'],
   transitions: [
     {
       // Supplier confirms a published forecast line. Creation-shape (store-

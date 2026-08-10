@@ -35,6 +35,9 @@ export const complianceFlow: FlowDefinition = {
   version: 1,
   states: ['Missing', 'Under Review', 'Valid'],
   initial: 'Missing',
+  /** PF-0 · D-2 — a valid certificate is the end of THIS machine. Expiry is a
+   *  read-time projection (law 0.5), never an edge out of 'Valid'. */
+  terminals: ['Valid'],
   transitions: [
     {
       // The supplier submits the certificate for a required cert grid cell.

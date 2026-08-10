@@ -11,14 +11,19 @@ import {
 // A synthetic flow with a sapBoundary transition — no shipped verb is one yet
 // (the first is GR "Posted to SAP", Phase 2.2′). Registered on THIS file's
 // isolated registry singleton so it never leaks into the catalog-role census.
+// PF-0 · D-2 — a sapBoundary verb must now DECLARE where settlement lands it,
+// and `settlesTo` must differ from `to`: the interim/settled split IS Option B,
+// and a settlement that lands where the dispatch already put the entity is not
+// one. This fixture therefore gained the interim state it always implied.
 flowRegistry.register({
   entity: 'widget',
   version: 1,
-  states: ['New', 'Posted'],
+  states: ['New', 'Posting', 'Posted'],
   initial: 'New',
+  terminals: ['Posted'],
   transitions: [
     { id: 't_widget_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'widget:create', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_widget_post', from: ['New'], to: 'Posted', trigger: 'system', requiredRole: 'widget:post', requiredFields: [], policyHooks: [], sapBoundary: true, version: 1 },
+    { id: 't_widget_post', from: ['New'], to: 'Posting', trigger: 'system', requiredRole: 'widget:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', version: 1 },
   ],
 });
 
@@ -30,8 +35,9 @@ flowRegistry.register({
   version: 1,
   states: ['Ready', 'Posting', 'Posted'],
   initial: 'Ready',
+  terminals: ['Posted'],
   transitions: [
-    { id: 't_gadget_post', from: ['Ready'], to: 'Posting', trigger: 'system', requiredRole: 'gadget:post', requiredFields: [], policyHooks: [], sapBoundary: true, version: 1 },
+    { id: 't_gadget_post', from: ['Ready'], to: 'Posting', trigger: 'system', requiredRole: 'gadget:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', version: 1 },
   ],
 });
 
@@ -61,11 +67,17 @@ describe('dispatcher — SAP-boundary submitted→settle (Step 3.5)', () => {
     );
     expect(res.status).toBe('submitted');
     expect(d.getCommandStatus(res.correlationId)?.status).toBe('submitted');
-    expect(rows.get('w-1')!.status).toBe('Posted'); // state moved; SAP ref pending
+    expect(rows.get('w-1')!.status).toBe('Posting'); // interim — SAP ref pending
 
     const settled = d.settle(res.correlationId);
     expect(settled?.status).toBe('done');
     expect(d.getCommandStatus(res.correlationId)?.status).toBe('done');
+    // ⚠️ PF-0 · D-2 — `settlesTo: 'Posted'` is DECLARED and NOTHING READS IT.
+    // No `settleFinalize` is configured here, so the entity stays in the interim
+    // state while the command reads `done`. Pinned deliberately: the declaration
+    // is a contract a graph can check, NOT an executable rule, and a reader who
+    // assumed otherwise would be wrong in the direction that flatters us.
+    expect(rows.get('w-1')!.status).toBe('Posting');
   });
 
   it('Option B: settle runs the registered finalize — interim→terminal + real ref', () => {
