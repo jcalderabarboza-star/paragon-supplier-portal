@@ -2,10 +2,14 @@
 //
 // ⚠️ EVERY STRING HERE IS PAGE CHROME. Not one of them describes a particular
 // flow, state or verb — those are the schema's own identifiers and are rendered
-// untranslated, exactly as a document number is. Purpose annotations ("what is
-// this verb FOR") ride PF-2, keyed by transition id and bilaterally pinned; if
-// this page ever needs a sentence about a specific machine to be comprehensible,
-// that sentence belongs there and not here.
+// untranslated, exactly as a document number is.
+//
+// ⚠️ **PURPOSE PROSE LIVES NEXT DOOR, IN `processFlowPurpose.ts` (PF-2), AND
+// MUST NOT DRIFT BACK INTO THIS FILE.** Those strings are the opposite of these:
+// each one explains ONE registered machine or verb, keyed by its transition id
+// and bilaterally pinned to the registry. Keeping the two apart is what lets
+// this header's first sentence stay literally true — a claim a reader can check
+// by reading the file, rather than a claim about intent.
 //
 // EN+ID from birth (MARKER-I18N-HOLE-01): a late hand-rolled string is exactly
 // the class a coverage sweep is blind to, and a brand-new page is nothing but
@@ -26,6 +30,9 @@ export const processFlowsEn: Record<string, string> = {
     'Real: the catalog. Every state, transition, trigger, role, required field, policy hook, SAP boundary, cascade link, terminal and count below is read from the shipped transition schema at runtime. There is no second copy, so this page cannot show a state the machine does not have — and cannot hide one it does.',
   'processFlows.honesty.notReal':
     'Not real: the lifecycle walk is a local demo cursor. It advances nothing, dispatches nothing, and resets on reload. Whether a machine\'s verbs really dispatch, and where its read surface gets its rows, are marked separately on each flow.',
+  // — PF-2: the one thing on this page that is authored rather than read —
+  'processFlows.honesty.authored':
+    'Authored, not derived: the one-line purpose beside each machine and each verb is written by hand. Purpose is the one thing the transition schema does not carry, and nothing derivable stands in for it — a trigger says a person does something, never why a person would. Each one is pinned to a live transition in both directions, and none of them repeats a state name, role or field, so a sentence here cannot quietly disagree with the machine beside it.',
   'processFlows.honesty.identifiers':
     'State names, transition ids, roles, fields and hook names are the schema\'s own identifiers, and are shown verbatim in both languages. So are the two pieces of recorded English source text below — what the analyzer found, and the census note saying why it ships. Translating a recorded finding would put a second wording of it in the tree.',
 
@@ -140,6 +147,9 @@ export const processFlowsId: Record<string, string> = {
     'Nyata: katalognya. Setiap status, transisi, pemicu, peran, bidang wajib, kait kebijakan, batas SAP, tautan kaskade, akhir, dan hitungan di bawah dibaca dari skema transisi yang dikirim, saat aplikasi berjalan. Tidak ada salinan kedua, jadi halaman ini tidak bisa menampilkan status yang tidak dimiliki mesinnya — dan tidak bisa menyembunyikan status yang dimilikinya.',
   'processFlows.honesty.notReal':
     'Tidak nyata: penelusuran siklus hidup hanyalah kursor demo lokal. Ia tidak memajukan apa pun, tidak mengirim perintah apa pun, dan kembali ke awal saat halaman dimuat ulang. Apakah verba sebuah mesin benar-benar mengirim perintah, dan dari mana permukaan bacanya memperoleh barisnya, ditandai terpisah pada tiap alur.',
+  // — PF-2: the one thing on this page that is authored rather than read —
+  'processFlows.honesty.authored':
+    'Ditulis, bukan diturunkan: kalimat tujuan satu baris di samping tiap mesin dan tiap verba ditulis dengan tangan. Tujuan adalah satu-satunya hal yang tidak dibawa skema transisi, dan tidak ada yang bisa diturunkan sebagai penggantinya — sebuah pemicu menyatakan bahwa seseorang melakukannya, tidak pernah mengapa seseorang mau melakukannya. Masing-masing dipautkan pada transisi yang hidup dari dua arah, dan tak satu pun mengulang nama status, peran, atau bidang, sehingga kalimat di sini tidak bisa diam-diam bertentangan dengan mesin di sebelahnya.',
   'processFlows.honesty.identifiers':
     'Nama status, id transisi, peran, bidang, dan nama kait adalah pengenal milik skema itu sendiri, dan ditampilkan apa adanya dalam kedua bahasa. Begitu pula dua potong teks sumber berbahasa Inggris di halaman ini — apa yang ditemukan penganalisis, dan catatan sensus yang menjelaskan mengapa hal itu tetap dikirim. Menerjemahkan sebuah temuan berarti menaruh versi kedua dari kalimat itu di dalam repositori.',
 

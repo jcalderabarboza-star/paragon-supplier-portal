@@ -4,6 +4,7 @@ import { RotateCcw, ChevronRight } from 'lucide-react';
 import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
 import type { FlowEdge, FlowView } from '../../services/transitions/catalogView';
+import { transitionPurposeKey } from '../../services/transitions/annotations';
 import { verbOf } from './flowLayout';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -133,22 +134,36 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
 
         {steps.map((edge) => {
           const operator = edge.kind === 'operator-action' || edge.kind === 'creation';
+          // PF-2 — the purpose belongs HERE more than anywhere else on the page:
+          // the walk is the surface where a reader is choosing between two verbs,
+          // and "why would I do this" is the only question that separates them.
+          // The SETTLEMENT edge deliberately has none — it is not a verb, it is
+          // where an async boundary lands the entity, and annotating it would
+          // mean authoring a purpose for something nobody performs.
+          const purpose = edge.settlement ? null : transitionPurposeKey(edge.transitionId);
           return (
             <div
               key={edge.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-subtle px-3 py-2"
+              className="flex flex-wrap items-start justify-between gap-3 rounded-md border border-border-subtle px-3 py-2"
             >
-              <span className="flex min-w-0 flex-wrap items-center gap-2">
-                <Data className="text-[11px]">{verbOf(edge.transitionId)}</Data>
-                <ChevronRight size={12} className="text-text-tertiary" />
-                <Data className="text-[11px]">{edge.to}</Data>
-                <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
-                  {edge.settlement
-                    ? t('processFlows.walk.viaSettlement')
-                    : operator
-                      ? t('processFlows.step.operator')
-                      : t('processFlows.step.system')}
+              <span className="min-w-0 flex-1">
+                <span className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Data className="text-[11px]">{verbOf(edge.transitionId)}</Data>
+                  <ChevronRight size={12} className="text-text-tertiary" />
+                  <Data className="text-[11px]">{edge.to}</Data>
+                  <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
+                    {edge.settlement
+                      ? t('processFlows.walk.viaSettlement')
+                      : operator
+                        ? t('processFlows.step.operator')
+                        : t('processFlows.step.system')}
+                  </span>
                 </span>
+                {purpose && (
+                  <p className="mt-1 max-w-prose text-[11px] leading-relaxed text-text-secondary">
+                    {t(purpose)}
+                  </p>
+                )}
               </span>
               <Button
                 variant={operator ? 'outline' : 'secondary'}

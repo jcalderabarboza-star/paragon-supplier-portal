@@ -262,3 +262,81 @@ describe('ProcessFlows — honesty markers', () => {
     await setLang('en');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PF-2 · THE AUTHORED HALF, ON THE SURFACE
+//
+// `annotations.test.ts` holds the pins (registry ↔ annotation ↔ i18n, all four
+// directions) and the no-restatement rule. What is left for a rendered page is
+// the part only a render can be wrong about: that the sentence actually REACHES
+// the reader, in both languages, and that a MISSING one degrades to silence
+// rather than to a key echoed back as if it were prose.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('ProcessFlows — purpose annotations reach the reader (PF-2)', () => {
+  it('every transition on the selected machine shows its purpose', async () => {
+    renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
+    await title();
+    const first = catalog.flows[0];
+    for (const tv of first.transitions) {
+      const node = screen.getByTestId(`pf-purpose-${tv.def.id}`);
+      expect(node.textContent?.trim(), tv.def.id).toBeTruthy();
+    }
+  });
+
+  it('the machine itself carries a purpose, above its counts', async () => {
+    renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
+    await title();
+    pick('invoiceMatch');
+    const node = screen.getByTestId('pf-flow-purpose-invoiceMatch');
+    expect(node.textContent).toContain('what was ordered, what arrived, what is being charged');
+  });
+
+  it('the walk carries the purpose beside each step it offers', async () => {
+    renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
+    await title();
+    // Scoped to the walk section: the same sentence is also in the transitions
+    // table, and an unscoped query would pass on the table alone — which is the
+    // half of the page this test is not about.
+    const walk = screen.getByRole('heading', { name: 'Lifecycle walk' }).closest('section')!;
+    // Before the walk starts, the only step is the creation verb — and the
+    // reason to take it is exactly what a reader is missing at that moment.
+    expect(
+      within(walk).getByText(/Buying makes its decision binding/),
+    ).toBeInTheDocument();
+  });
+
+  it('the honest marker names the authored axis — neither derived nor fiction', async () => {
+    renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
+    await title();
+    expect(screen.getByText(/Authored, not derived/)).toBeInTheDocument();
+  });
+
+  it('⚠️ NO RAW KEY IS EVER RENDERED — a missing string is silence, not prose', async () => {
+    // The failure this guards is the one `FX_REFUSAL_KEY` was built to end: a
+    // lookup that misses renders the KEY, which looks like a sentence to
+    // everything except a person reading it — and looks the same in both
+    // languages, so a translation sweep sees nothing wrong either.
+    for (const lng of ['en', 'id'] as const) {
+      await setLang(lng);
+      const { container, unmount } = renderWithProviders(<ProcessFlows />, {
+        route: '/buyer/process-flows',
+      });
+      await screen.findByRole('heading', { level: 1 });
+      expect(container.textContent, lng).not.toContain('processFlows.');
+      unmount();
+    }
+    await setLang('en');
+  });
+
+  it('the purpose is really translated — the Indonesian page is not the English one', async () => {
+    await setLang('id');
+    renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
+    await screen.findByRole('heading', { level: 1, name: 'Alur Proses' });
+    expect(screen.getByTestId('pf-purpose-t_po_issue').textContent).toContain(
+      'Pembelian menjadikan keputusannya mengikat',
+    );
+    expect(screen.queryByText(/Buying makes its decision binding/)).not.toBeInTheDocument();
+    await setLang('en');
+  });
+});

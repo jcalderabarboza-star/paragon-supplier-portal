@@ -15,6 +15,7 @@ import LifecycleWalk from './process-flows/LifecycleWalk';
 import { looseEndKindKey, reasonKey, ALL_REASONS } from './process-flows/labels';
 import { verbOf } from './process-flows/flowLayout';
 import { getKnownFlows } from '../services/transitions';
+import { entityPurposeKey, transitionPurposeKey } from '../services/transitions/annotations';
 import {
   buildCatalogView,
   type AnnotatedLooseEnd,
@@ -47,13 +48,25 @@ import {
 //   separately — whether the verbs dispatch, and where the read surface's rows
 //   come from — because averaging them picks which lie to tell.
 //
-// ── NO AUTHORED PROSE ──────────────────────────────────────────────────────
-// Purpose annotations ("what is this verb FOR") ride PF-2, keyed by transition
-// id and bilaterally pinned. Every sentence on this page is page chrome; not
-// one describes a particular flow, state or verb. The census `note` IS rendered
-// — verbatim, labelled as source text — because it is existing recorded data,
-// not new prose, and a reader who can see the recorded decision is the entire
-// reason the census exists.
+// ── THE ONE AUTHORED THING (PF-2) ──────────────────────────────────────────
+// ⚠️ **PURPOSE IS AUTHORED, AND IT IS THE ONLY THING ON THIS PAGE THAT IS.**
+// PF-1 could draw the whole catalog and say what none of it was FOR
+// (`PF1-NO-PURPOSE-ANNOTATION-01`), because purpose is the one thing the schema
+// does not carry: `trigger: 'user'` says a person does it, never why a person
+// would. So PF-2 authors one sentence per machine and per verb —
+// `services/transitions/annotations.ts` for the keys, `lib/i18n/
+// processFlowPurpose.ts` for the words, bilaterally pinned to `getKnownFlows()`
+// in both directions.
+//
+// The prose is fenced by the rule it ships under: NO PURPOSE RESTATES A MACHINE
+// FACT. State names, roles, triggers and field lists render from the registry,
+// on the same row, so a sentence repeating one would be a second copy of it —
+// and the copy is the half that goes wrong silently. Held as a test over both
+// languages, not as an instruction to whoever edits next.
+//
+// The census `note` is still rendered verbatim and labelled as source text: it
+// is existing recorded data, not new prose, and a reader who can see the
+// recorded decision is the entire reason the census exists.
 // ────────────────────────────────────────────────────────────────────────────
 
 /** The two-axis honest marker, per flow. Both looked up; neither assertable. */
@@ -117,9 +130,15 @@ const LooseEndRow: React.FC<{ end: AnnotatedLooseEnd }> = ({ end }) => {
 const TransitionRow: React.FC<{ tv: TransitionView }> = ({ tv }) => {
   const { t } = useTranslation();
   const { def } = tv;
+  // PF-2. `null` is unreachable for a registered verb (the bilateral test makes
+  // it so) — and it renders as NOTHING rather than as an echoed key, because a
+  // reader shown `processFlows.purpose.t_whatever` has been handed a defect
+  // dressed as a sentence.
+  const purpose = transitionPurposeKey(def.id);
   return (
-    <TableRow>
-      <TableCell className="py-3">
+    <>
+    <TableRow className={purpose ? '!border-b-0' : ''}>
+      <TableCell className="py-3 align-top">
         <Data className="text-[11px]">{def.id}</Data>
       </TableCell>
       <TableCell className="py-3">
@@ -196,6 +215,27 @@ const TransitionRow: React.FC<{ tv: TransitionView }> = ({ tv }) => {
         </span>
       </TableCell>
     </TableRow>
+    {/* PF-2 — THE PURPOSE GETS ITS OWN FULL-WIDTH ROW, and the reason is
+        measured rather than aesthetic. Inside the first column the sentence was
+        laid out at 132px — twelve lines of eleven-pixel text beside a one-line
+        id — because the other five columns already claim the table's width.
+        Spanning the row costs the table NOTHING horizontally (it was already
+        863px against an 816px wrapper before this batch) and gives the sentence
+        a readable measure. The teal rule marks it as the authored line: the one
+        thing in this table nothing derived. */}
+    {purpose && (
+      <TableRow className="hover:bg-transparent">
+        <TableCell colSpan={6} className="!py-0 !pt-0 pb-3">
+          <p
+            data-testid={`pf-purpose-${def.id}`}
+            className="max-w-prose border-l-2 border-teal/40 pl-3 text-[11px] leading-relaxed text-text-secondary"
+          >
+            {t(purpose)}
+          </p>
+        </TableCell>
+      </TableRow>
+    )}
+    </>
   );
 };
 
@@ -223,6 +263,8 @@ const ProcessFlows: React.FC = () => {
 
   if (!view) return null;
 
+  const flowPurpose = entityPurposeKey(view.entity);
+
   return (
     <AppShellV2>
       <PageHeader
@@ -248,6 +290,13 @@ const ProcessFlows: React.FC = () => {
         </p>
         <p className="mt-1 max-w-4xl text-meta text-text-secondary">
           {t('processFlows.honesty.notReal')}
+        </p>
+        {/* PF-2 — the third axis, and it is neither of the first two. Purpose is
+            not derived (so it is not in `derived`) and it is not fiction (so it
+            is not in `notReal`). It is AUTHORED, which is its own thing to be,
+            and a page that marks the other two honestly has to mark this one. */}
+        <p className="mt-1 max-w-4xl text-meta text-text-secondary">
+          {t('processFlows.honesty.authored')}
         </p>
         <p className="mt-1 max-w-4xl text-meta text-text-tertiary">
           {t('processFlows.honesty.identifiers')}
@@ -324,7 +373,20 @@ const ProcessFlows: React.FC = () => {
                   <GitBranch size={16} className="text-teal" aria-hidden="true" />
                   <Data className="text-[15px]">{view.entity}</Data>
                 </h2>
-                <p className="mt-1 text-meta text-text-tertiary">
+                {/* PF-2 — WHAT THIS MACHINE IS FOR, first, above its counts. A
+                    flow's purpose is not the sum of its verbs: `invoiceMatch` is
+                    four system transitions and the reason it exists is "a wrong
+                    bill is caught before money moves". That is the sentence a
+                    reader needs before any of the rest means anything. */}
+                {flowPurpose && (
+                  <p
+                    data-testid={`pf-flow-purpose-${view.entity}`}
+                    className="mt-1.5 max-w-prose text-meta text-text-secondary"
+                  >
+                    {t(flowPurpose)}
+                  </p>
+                )}
+                <p className="mt-2 text-meta text-text-tertiary">
                   {t('processFlows.flow.counts', {
                     states: view.stateCount,
                     transitions: view.transitionCount,
