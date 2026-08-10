@@ -81,13 +81,24 @@ describe('PF-0 — the loose-end census is bilateral', () => {
     // people to edit the number. The population is reported in the PR and in
     // `docs/findings.md`; what is pinned is that every member is accounted for.
     expect(derived().length).toBe(LOOSE_END_CENSUS.length);
-    expect([...byKind.keys()].sort()).toEqual([
+
+    // ⚠️ SUBSET, NOT EQUALITY — corrected at PF-1b, and the correction is the
+    // same lesson one layer in. This read `toEqual([…all five kinds…])`, which
+    // was true when every kind had at least one member and became FALSE the
+    // moment PF-1a and PF-1b repaired every `dead-transition` and
+    // `unreachable-state` in the tree. A repair turned a green assertion red
+    // WITHOUT ANY DEFECT — exactly the "exact matching trains people to edit the
+    // number" failure the floor rejected (CP-3a), reproduced inside the suite
+    // written to avoid it. What is worth pinning is that no kind escapes the
+    // vocabulary; which kinds happen to be POPULATED is a fact about progress.
+    const KINDS = [
       'dead-transition',
       'exit-less-state',
       'initial-integrity',
       'unauthored-cascade',
       'unreachable-state',
-    ]);
+    ];
+    for (const kind of byKind.keys()) expect(KINDS).toContain(kind);
   });
 });
 

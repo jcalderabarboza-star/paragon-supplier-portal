@@ -7196,3 +7196,376 @@ form in which somebody can go and close it.
 | **requirementResponse `Draft` NOT swept along** | **Correct.** D-1 rests on a stated fact about **SOURCING** practice; whether a supplier drafts a response before submitting is **a different question with a different answer available**. Stays censused (`authored-unwired`) pending its own ruling — **the operator is taking it up** |
 | **`Override hold` stays a toast** | **Correct.** A governance act whose entire value is accountability, on a platform that cannot name a person: **wiring it would write an anonymous unlock into a permanent trail.** Saying so **at the button, in code**, is the right place — the next reader's instinct will be to "fix" it |
 | **`t_pr_reject` requires no reason** | **Filed. A real gap.** The revise edge fixes **RECOURSE, NOT EXPLANATION**, and closing it needs its own ruling and its own blast radius (`PF1A-PR-REJECT-HAS-NO-REASON-01`) |
+
+---
+
+## DISPATCH PF-1b · THE SUPPLIER DRAFT LANE (`main` `af02b09`)
+
+**SUPPLIERS DRAFT TOO.** D-1 extended to `requirementResponse`: the commitment
+creation verb births at `Draft`, `t_requirementresponse_promote` is the
+submission, and the two rows PF-1a deliberately did not sweep along are
+**DELETED**. Census **11 → 9**.
+
+### 1. ⚠️ THE FORK-2B SHAPE IS HERE, AND IT IS EXPLICIT — checked before building
+
+**As instructed, the creation path's comments were read FIRST, and they name the
+decision in as many words** (`requirementResponse.flow.ts`, the header that
+stood before this batch):
+
+> *"`Draft` is a declared state because the SDC-0 seed carries one (rr-0003) and
+> the design names Draft → Submitted; **the wired creation verb births directly
+> at 'Submitted' — drafts are client-side form state, exactly as quotes (Task 3b
+> precedent)**."*
+
+And at the dead verb itself:
+
+> *"AUTHORED-UNWIRED — the seed Draft's legal exit. **Wires when a server-side
+> draft surface exists (SDC-3+); today drafts live client-side and submit via the
+> creation verb.**"*
+
+**So this was a decision, not drift — and it is a DIFFERENT decision from
+FORK-2B, with a sharper cause.** FORK-2B optimised a wizard. This one **copied a
+precedent**:
+
+> ⚠️ **THE QUOTATION MACHINE IS INTERNALLY CONSISTENT BECAUSE IT HAS NO `Draft`
+> STATE AT ALL** (`quotation.flow.ts`: Submitted · Under Review · Awarded ·
+> Rejected). SDC-2a took its creation shape — birth straight at `Submitted` —
+> **AND kept the design's `Draft`.** The contradiction is the residue of
+> importing half of a consistent model.
+
+**That is the generalisable part, and it is new:**
+
+> **A PRECEDENT IS ONLY SAFE TO COPY WHOLE. Copy its behaviour and keep your own
+> extra state, and the state you kept is the one nothing can reach.**
+
+`PF1B-PRECEDENT-COPIED-IN-HALF-01`. Reported before building, as required —
+**the ruling stands, and it is recorded as a REVERSAL of the Task-3b-precedent
+decision, not as closing an oversight.**
+
+### 2. WHAT CHANGED
+
+| | Before | After |
+|---|---|---|
+| `t_requirementresponse_submit` | births `Submitted` | **births `Draft`** |
+| `t_requirementresponse_promote` | authored, **unfireable** | **WIRED — it is the submission** |
+| `t_requirementresponse_acknowledge` | births `Submitted` | **unchanged — see §3** |
+| `submittedAt` | stamped at creation | **stamped at PROMOTION** |
+
+**`submittedAt` moving is not incidental.** A draft has never been submitted, and
+**the SDC-0 seed already encoded that invariant** — rr-0003 carries no
+`submittedAt` at all. Creation stamping one would have made every new draft claim
+a submission instant it did not have, and the "Submitted" column would have shown
+a date for something nobody had sent. Store-assigned on the crossing (the
+`pinnedAt` discipline: a caller that could set it could backdate its own
+submission against a response deadline), and **written only when absent**, so a
+later buyer-side review/accept/dispute cannot restamp the moment the supplier
+answered.
+
+### 3. ⚠️ ACKNOWLEDGE STILL BIRTHS AT `Submitted` — a judgement, stated so it can be reversed
+
+A literal reading of *"creation births at Draft"* covers both creation verbs.
+**It was applied to ONE.**
+
+A visibility-only line carries **no commitment ask** (SDC-2b-EXT): no quantity,
+no committed date, no capacity claim. **There is nothing to review**, so a draft
+step there is ceremony around a single click.
+
+> **THE DRAFT LANE EXISTS FOR THE RESPONSE THAT COMMITS SOMETHING.**
+
+Recorded as a decision rather than left implicit. **It is one word to reverse**
+(`to: 'Draft'`) if the operator wants strict symmetry.
+
+### 4. THE READ-GATING — already true, now load-bearing and pinned
+
+**Reported as required: every buyer surface that reads requirement responses, and
+what each shows today for a Draft.**
+
+| Buyer read | Source | What a Draft does |
+|---|---|---|
+| `getConsolidation` | `consolidationRows` | **SKIPPED.** `latestSubmittedByLine` does `if (r.status === 'Draft') continue` — the line reads `awaiting` |
+| `getChase` | same rows | **SKIPPED** — an unsubmitted line is still chaseable, correctly |
+| `getRollups` | same rows | **SKIPPED** — counted as unanswered |
+| `getCoverage` | declarations + shipments | does not read responses at all |
+| `BuyerCollaboration` | the rows above | `Awaiting` + ⚠️ **a muted italic hint: *"draft in progress"*** |
+
+**The gate was already correct, and this batch is what makes it LOAD-BEARING.**
+Before, `Draft` was a rare seeded state; now every commitment passes through it,
+so that one `continue` is the entire difference between the operator's rule and a
+label. **Pinned in both directions** (`awaiting` before promotion, answered
+after) rather than left as a comment.
+
+#### ⚠️ `PF1B-DRAFT-IN-PROGRESS-IS-NOW-AN-ACTIVITY-MONITOR-01` — OPEN, the one judgement call
+
+`BuyerCollaboration` renders **"Awaiting · *draft in progress*"** from
+`state.draftInProgress`, which is derived from the existence of a Draft. Its own
+code comment says the right thing — *"F-2: a Draft is NOT a response — a muted
+hint, never actionable"* — and **no response CONTENT crosses**: no quantity, no
+date, no root cause, and the line still counts as unanswered everywhere.
+
+**But the delta is real and it is a change in kind, not degree.** With creation
+at Draft, this hint stops being a rarely-set seed flag and becomes:
+
+> **A NEAR-REAL-TIME SIGNAL THAT A NAMED SUPPLIER HAS STARTED WORKING ON AN
+> ANSWER** — visible to the buyer the instant they save, and disclosed by
+> nobody's choice.
+
+⚠️ **RULED AT MERGE: REMOVED — see §11.5.** The reasoning below is kept as the
+case that was put, and the operator overturned it.
+
+**The case as made:** the ruling says the buyer must not see *the response*, and the buyer
+does not — it sees that one exists. Removing the hint would also cost the chase
+lane a real signal (do not chase somebody mid-answer). **Verified in the browser
+in both locales:** the hint renders as *"draft in progress"* / *"draf sedang
+dibuat"*. If the operator reads the rule as covering existence too, it is a
+one-line deletion.
+
+### 5. THREE SURFACE CLAIMS THE RULING FALSIFIED — the same class as PF-1a
+
+**Expected, and found.** `COPY-IS-NOT-DERIVED-FROM-THE-MACHINE-01`, second
+instance in two batches:
+
+| Surface | Said | Now |
+|---|---|---|
+| Panel CTA | **"Submit confirmation"** / *"Kirim konfirmasi"* | **"Save draft"** / *"Simpan draf"* |
+| Success toast | *"**Confirmation submitted** — {{material}}"* + *"Your response is recorded"* | *"**Draft saved** — … · **Not sent yet.** Review it under My responses, then submit it to the buyer."* |
+| — (absent) | there was no submit affordance at all | **"Submit to buyer"** / *"Kirim ke pembeli"*, on Draft cards only |
+
+**EN and ID.** The panel CTA is the sharp one again: a button that says *submit*
+and saves a draft is the defect this class names, and it would have shipped
+green — no test compares a label to a destination.
+
+### 6. THE SUBMIT AFFORDANCE — wired, on the PF-1a precedent
+
+`ResponsesTab` gains **"Submit to buyer"** on `Draft` cards only, dispatching
+`t_requirementresponse_promote` through `useRequirementResponsePromote`.
+
+Wired in this batch rather than deferred to the surface batch **for exactly the
+reason the RFQ publish button was**: creation now lands every commitment in
+`Draft`, so without it the draft lane is a **trap** — every response would rest
+unsent, and the planner's board would read `awaiting` forever.
+⚠️ **OUTLINE, not solid** — the first cut shipped it solid and the operator
+corrected it mid-batch (§10).
+
+### 7. FINDINGS
+
+#### `PF1B-VERB-ID-NAMES-THE-OLD-ACT-01` — ⚠️ OPEN
+
+**`t_requirementresponse_submit` now CREATES A DRAFT.** The id says `submit`; the
+verb does not.
+
+**Not renamed, deliberately.** `TransitionId` is contractually stable — *"stable
+across schema versions and globally unique"* (`schema.ts`) — and it is referenced
+by roles, policy hooks, the DR-10 trail, the capability surface and four suites.
+**Renaming it is a catalog change with its own ruling, not a tidy-up to slip in
+beside a product decision.** Recorded so a reader who trusts the id knows not to.
+
+⚠️ **And note what it is NOT:** this is the id/act gap, which is invisible to
+users. The USER-facing half of the same mismatch was the panel CTA (§5), and that
+one was fixed.
+
+#### `PF1B-CHANNEL-INGEST-LANDS-DRAFT-01` — ⚠️ OPEN, booked
+
+`t_requirementresponse_submit` is the **channel-agnostic shared write-path** for
+the portal surface AND the future Communication Hub ingestion
+(DEC-COMMS-PRIMARY, stated at the verb). It now lands a **Draft** — so a response
+arriving over WhatsApp would rest **unsubmitted**, invisible to the planner,
+**and no channel can promote it.**
+
+**Nothing is broken today** (the Comm Hub ingestion is not built). What would be
+broken is an ingestion built against this verb without reading the paragraph now
+sitting on it. Two candidate answers when it lands — ingestion promotes as a
+second dispatch, or a channel-ingested response is a different creation verb —
+and **neither is this batch's to pick.**
+
+#### `PF1B-PRECEDENT-COPIED-IN-HALF-01` — the class (§1)
+
+### 8. THE CENSUS, AND A CORRECTION THE SHRINK FORCED
+
+**11 → 9.** Remaining: GRLine `Pending` + `Quarantined` · invoiceMatch `Pending`
++ `Qty Mismatch` + `Price Variance` · `t_pr_source` + `t_pr_convert` ·
+compliance `Missing` · enforcement `Governed`.
+
+⚠️ **AND THE GATE ITSELF NEEDED A FIX, WHICH IS WORTH RECORDING BECAUSE IT IS THE
+SAME LESSON ONE LAYER IN.** `flowGraph.test.ts` asserted the census's populated
+KINDS with `toEqual([…all five…])`. That was true when every kind had a member,
+and it **went RED the moment PF-1a and PF-1b repaired every `dead-transition` and
+`unreachable-state` in the tree** — a green assertion turned red **by a repair,
+with no defect anywhere.**
+
+> **AN EXACT-SET ASSERTION OVER A SHRINKING POPULATION IS THE "EDIT THE NUMBER"
+> TRAP WEARING A DIFFERENT SHAPE.**
+
+It is the CP-3a floor argument — exact matching reddens legitimate work until
+somebody edits a constant — reproduced **inside the suite written to avoid it.**
+Corrected to a SUBSET check: no kind may escape the vocabulary; **which kinds are
+populated is a fact about progress, not an invariant.**
+
+### 9. BROWSER QA — EN and ID, on the built bundle
+
+| Check | EN | ID |
+|---|---|---|
+| Panel CTA reads save-not-send | ✅ `Save draft` | ✅ `Simpan draf` |
+| Saving lands a `Draft` with **no** submission date | ✅ `rr-9001 … Draft … SUBMITTED —` | ✅ `rr-9002 … Draf … DIKIRIM —` |
+| `Submit to buyer` shows on Draft only | ✅ | ✅ `Kirim ke pembeli` |
+| Promotion → `Submitted` **and the date appears** | ✅ `SUBMITTED 25 Aug 2026` | ✅ `DIKIRIM 25 Agu 2026` |
+| Buyer board shows the draft hint, never the content | ✅ `Awaiting · draft in progress` | ✅ `Menunggu · draf sedang dibuat` |
+
+Rebuilt on a fresh port and A/B'd `dist/assets`: **every retired string absent,
+every corrected string present, both locales.**
+
+### 10. ⚠️ OPERATOR CORRECTION MID-BATCH — `PF1B-SOLID-BY-ARGUMENT-01`
+
+**The operator sent a screenshot of the new "Kirim ke pembeli" button rendered
+SOLID action-blue, with one instruction: NO BLUE SOLID BUTTONS.** They were
+right, and the interesting part is HOW it got there.
+
+**DP2-BUTTON-01 does not say "solid is for consequential things". It NAMES the
+list:** Award (RFQ) · Release payment · Post-to-SAP · Reject / Dispute ·
+Override-hold. Both buttons this arc added were argued onto solid instead:
+
+| Button | The argument made for it | Why it fails |
+|---|---|---|
+| `Submit to buyer` (PF-1b) | *"sending a commitment to the buyer is this page's irreversible commit"* | Not on the list |
+| `Publish RFQ` (PF-1a, already merged) | *"publish exposes the event to the invited list, so it qualifies"* | Not on the list; **Award already holds the one solid on that surface** |
+
+> **A RESERVED LIST DEFENDED BY ARGUMENT IS NOT RESERVED.** Each case was
+> defensible on its own, and that is precisely the failure mode: a calm register
+> fills with solid buttons **one defensible argument at a time**, and nobody is
+> ever the person who broke it.
+
+**BOTH CORRECTED TO OUTLINE**, including the PF-1a button that had already
+shipped.
+
+#### And a third the ruling itself falsified
+
+`SupplierForecasts`' panel CTA carried `F-3 — the ONE solid primary on this
+surface: the governed commit`. **True while it submitted. It now SAVES A DRAFT**
+— the most reversible act on the page. The solid did not merely become
+unnecessary:
+
+> **IT BECAME A FALSE SIGNAL, PROMISING WEIGHT THE CLICK NO LONGER CARRIES.**
+
+Also outline. ⚠️ **This is `COPY-IS-NOT-DERIVED-FROM-THE-MACHINE-01` with the
+copy replaced by CHROME** — the same unguarded join: a *visual* claim about
+consequence, made true by a state machine three layers away, and falsified by a
+ruling with nothing to catch it. The class is wider than its name suggests:
+**not just words, but every rendered assertion about what a click will do.**
+
+**Left solid, deliberately:** RFQ **Award** (named on the list) and the FX-pin
+dialog (pre-existing, argued as irreversible-append). **A tree-wide solid-button
+audit is NOT in this batch** — the fence is the requirementResponse family, and
+sweeping chrome across every page under a supplier-lane dispatch is how a fence
+stops meaning anything. Offered as its own batch.
+
+**Verified in the browser after the fix:** zero elements carrying the solid
+action fill on the surface, and both CTAs render
+`bg-transparent · text-action · border-action`.
+
+### 11. AMENDMENT AT MERGE (operator, at #199)
+
+#### 11.1 ⚠️ `RESERVED-LIST-BY-ARGUMENT-01` — filed as a class
+
+> **A RESERVED LIST DEFENDED BY ARGUMENT IS NOT RESERVED.**
+>
+> **The test for membership is IS IT NAMED, never IS IT IMPORTANT.**
+
+The operator's ruling on the button self-catch, and it generalises past buttons
+to every reserved vocabulary in this tree — `OVERRIDE_REASONS`, the enforcement
+modes, `GOVERNED_CHECK_IDS`, the four census reason tokens. Each is a closed list
+whose value is exactly that **nothing joins it by being a good candidate.**
+
+**What makes this the finding of the batch is that both arguments were
+DEFENSIBLE IN ISOLATION.** *"Sending a commitment to a buyer is this page's
+irreversible act"* is true. *"Publish exposes the event to the invited list"* is
+true. Neither is a lapse in judgement; **both are judgement, applied where
+judgement was the thing the list existed to replace.** That is the mechanism:
+
+> A closed list does not fail by being overruled. **It fails by being reasoned
+> with**, one defensible case at a time, and nobody is ever the person who broke
+> it.
+
+**Reverting the ALREADY-MERGED `Publish RFQ` rather than leaving it because it
+shipped is the harder half, and the operator named it as the right one.** A
+correction that stops at the branch it was caught on teaches that the rule
+applies to work in progress and not to work that landed — which is the same
+exemption-by-timing that lets a list drift in the first place.
+
+#### 11.2 ⚠️ The third instance is worse — `CONTRACT-OFF-THE-FLOOR-01` at COMMENT scale
+
+The panel CTA carried, in code:
+
+> `F-3 — the ONE solid primary on this surface: the governed commit.`
+
+**TRUE WHEN IT SUBMITTED. FALSE THE MOMENT IT SAVED A DRAFT.** Nobody edited it,
+nobody misread it, and no build step could tell:
+
+> **A COMMENT ACCURATE AT AUTHORING TIME THAT SILENTLY BECAME A LIE WHEN THE
+> BEHAVIOUR BENEATH IT CHANGED.**
+
+**Cross-referenced to `CONTRACT-OFF-THE-FLOOR-01`, which is exactly this shape at
+document scale** — a contract stating a truth about the tree, with nothing
+holding the two together, so a change on one side leaves the other asserting the
+old world. C9 §7.13 recorded the flattering direction of it
+(`C9-STALE-BY-FIX-01`: a contract going stale **by being fixed**). This is the
+same class at the smallest possible grain — **a single comment, three lines from
+the code it describes, and still unguarded.**
+
+It composes with `COPY-IS-NOT-DERIVED-FROM-THE-MACHINE-01`: copy, chrome and
+comments are all **assertions about behaviour that no derivation checks.** The
+census guards the machine. Nothing guards anything written about it.
+
+#### 11.3 `PRECEDENT-COPIED-IN-HALF-01` — filed as its own class
+
+Recorded as a **REVERSAL**, with the distinction kept:
+
+> **FORK-2B OPTIMISED A WIZARD; THIS ONE COPIED A PRECEDENT** — and the quotation
+> machine is internally consistent **because it has no `Draft` state at all.**
+
+The general form:
+
+> **A PRECEDENT IS ONLY SAFE TO COPY WHOLE. COPY THE BEHAVIOUR, KEEP YOUR OWN
+> EXTRA STATE, AND THE STATE YOU KEPT IS THE ONE NOTHING CAN REACH.**
+
+#### 11.4 The tree-wide solid-button audit — ACCEPTED AS ITS OWN BATCH
+
+With the operator's reason recorded as the governing one:
+
+> **SWEEPING CHROME ACROSS EVERY PAGE UNDER A SUPPLIER-LANE FENCE IS HOW A FENCE
+> STOPS MEANING ANYTHING.**
+
+Scope when it runs: every `variant="primary"` in the tree, measured against the
+NAMED list — Award (RFQ) · Release payment · Post-to-SAP · Reject / Dispute ·
+Override-hold — with each survivor stating which member it is, not why it
+deserves to be one.
+
+#### 11.5 THE THREE STOPPING POINTS — RULED
+
+| Point | Ruling |
+|---|---|
+| **Acknowledge stays at `Submitted`** | **CONFIRMED.** A visibility-only line has nothing to review; **symmetry for its own sake would build a review step over a fact nobody composed.** No change. |
+| **The buyer's "draft in progress" hint** | ⚠️ **GOES — DONE IN THIS BATCH.** No content crossed, but creation-at-Draft made it **a near-real-time signal that a named supplier has started, disclosed by nobody's choice.** **EXISTENCE IS PART OF WHAT `Draft` MAKES INVISIBLE — the supplier did not consent to being observed composing.** |
+| **Verb id + channel path** | **FILED, NOT FIXED.** `TransitionId` is contractually stable, so renaming needs its own ruling. |
+
+**On the hint, one step past "a one-line deletion", stated because it was not
+what was asked for:** deleting the render alone would have left
+`draftInProgress` **crossing the seam in the buyer's payload, unrendered** — a
+disclosure nobody can see and nobody removed, one careless cell renderer from
+returning. **The union member is gone**, so `awaiting` is now byte-identical
+whether a draft exists or not; the specs assert the two states are **the same
+value**, which is the only form in which "indistinguishable" is checkable. The
+`sdc.state.draftHint` strings are retired from both locales.
+
+#### 11.6 The forward hazard, on the record BEFORE the lane starts
+
+> ⚠️ **A COMM HUB INGESTION BUILT AGAINST THIS WRITE PATH WOULD NOW LAND
+> UNSUBMITTED.**
+
+`t_requirementresponse_submit` is the channel-agnostic shared write path
+(DEC-COMMS-PRIMARY) and now births a `Draft`. A response arriving over WhatsApp
+would rest unsubmitted, invisible to the planner, **and no channel can promote
+it.** Nothing is broken today because the ingestion does not exist —
+
+**and that is precisely why it is recorded now.** The operator's instruction, kept
+verbatim in substance: **it must be on the record BEFORE that lane starts, not
+discovered inside it.** `PF1B-CHANNEL-INGEST-LANDS-DRAFT-01`, and the paragraph
+now sits on the verb itself, where an implementer cannot miss it.

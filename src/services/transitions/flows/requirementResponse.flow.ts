@@ -2,15 +2,45 @@
 // RequirementResponse flow — SDC-2a (the P1 supplier-submission spine).
 //
 // The supplier's governed confirmation against a published forecast line
-// (design v2 §4; SDC-0 types.ts `RequirementResponse`). Mirrors the quotation
-// machine EXACTLY: `t_requirementresponse_submit` is the ONE supplier-owned
-// CREATION verb (WIRED this batch — see MockCommandService's
-// `requirementResponseTarget`); the buyer-side lifecycle (review / accept /
-// dispute) and the draft-promotion edge are AUTHORED-UNWIRED (FORK-2 hybrid:
-// author all, wire per Stage-2 surface). `Draft` is a declared state because
-// the SDC-0 seed carries one (rr-0003) and the design names Draft → Submitted;
-// the wired creation verb births directly at 'Submitted' — drafts are
-// client-side form state, exactly as quotes (Task 3b precedent).
+// (design v2 §4; SDC-0 types.ts `RequirementResponse`).
+//
+// ── ⚠️ PF-1b · D-1 (OPERATOR) — SUPPLIERS DRAFT TOO ────────────────────────
+//   DRAFT → REVIEW → SUBMIT, the same practice as the buyer lane. The
+//   commitment creation verb now births at `Draft`, and
+//   `t_requirementresponse_promote` — authored and unfireable since the day it
+//   was written — is the SUBMISSION.
+//
+//   ⚠️ **THIS REVERSES A RECORDED DECISION, NOT AN OVERSIGHT.** The header that
+//   stood here said it in as many words: *"`Draft` is a declared state because
+//   the SDC-0 seed carries one (rr-0003) and the design names Draft →
+//   Submitted; the wired creation verb births directly at 'Submitted' — drafts
+//   are client-side form state, exactly as quotes (Task 3b precedent)."*
+//
+//   So the contradiction PF-0 derived had an author and a reason: SDC-2a copied
+//   the QUOTATION machine, which is internally consistent because IT HAS NO
+//   `Draft` STATE AT ALL. This machine took the same creation shape AND kept the
+//   design's `Draft` — and a state the design names, the seed populates, and no
+//   verb can reach is the residue of that trade.
+//
+//   The operator's ruling: a supplier response carries a commitment, and a
+//   commitment gets reviewed before it is sent.
+//
+// ── ⚠️ ACKNOWLEDGE STILL BIRTHS AT `Submitted`, AND THAT IS A DECISION ──────
+//   A visibility-only line carries NO commitment ask (SDC-2b-EXT), so an
+//   acknowledgment has nothing to review: there is no quantity, no date, no
+//   capacity claim. A draft step there would be a ceremony around a single
+//   click. THE DRAFT LANE EXISTS FOR THE RESPONSE THAT COMMITS SOMETHING.
+//   Recorded as a judgement rather than left implicit — it is one word to
+//   reverse if the operator wants strict symmetry.
+//
+// ── ⚠️ CHANNEL-AGNOSTIC, AND THE RULING TOUCHES THAT ───────────────────────
+//   `t_requirementresponse_submit` is the SHARED write-path for the portal
+//   surface AND the future Communication Hub channel-ingestion
+//   (DEC-COMMS-PRIMARY). It now lands a DRAFT — so a channel-ingested response
+//   would rest unsubmitted until something promotes it, and no channel can.
+//   Booked, not solved: `PF1B-CHANNEL-INGEST-LANDS-DRAFT-01`. The Comm Hub
+//   ingestion is not built, so nothing is broken today; what would be broken is
+//   an ingestion built against this verb without reading this paragraph.
 //
 // CHANNEL-AGNOSTIC (DEC-COMMS-PRIMARY): t_requirementresponse_submit is the
 // SHARED write-path for BOTH the portal surface (SDC-2b) and the future
@@ -39,9 +69,17 @@ export const requirementResponseFlow: FlowDefinition = {
       // with a root cause" is a legitimate short confirmation (ruling F-2).
       // uom is NEVER a payload field — the target copies it from the material
       // master (invariant #2).
+      //
+      // ⚠️ PF-1b — BIRTHS AT `Draft`. The id still says `submit` and the verb now
+      // creates a draft: `TransitionId` is contractually STABLE ("stable across
+      // schema versions and globally unique", `schema.ts`), so renaming it is a
+      // catalog change with its own ruling, not a tidy-up to slip in beside a
+      // product decision. Filed as `PF1B-VERB-ID-NAMES-THE-OLD-ACT-01` rather
+      // than silently corrected — a reader who trusts the id is now wrong, and
+      // that is worth a register entry instead of a rename nobody agreed to.
       id: 't_requirementresponse_submit',
       from: [],
-      to: 'Submitted',
+      to: 'Draft',
       trigger: 'creation',
       requiredRole: 'requirementresponse:submit',
       requiredFields: [
@@ -74,6 +112,9 @@ export const requirementResponseFlow: FlowDefinition = {
       // confirmedQty on the floor (the commitment floor above stays
       // byte-identical). Same snapshot binding; the class guard makes this
       // verb legal ONLY against a visibility-only line (the symmetric lock).
+      //
+      // ⚠️ PF-1b — STILL BIRTHS AT `Submitted`. See the header: nothing here is
+      // reviewable, so a draft step would be ceremony around one click.
       id: 't_requirementresponse_acknowledge',
       from: [],
       to: 'Submitted',
@@ -91,9 +132,17 @@ export const requirementResponseFlow: FlowDefinition = {
       version: 1,
     },
     {
-      // AUTHORED-UNWIRED — the seed Draft's legal exit (design: Draft →
-      // Submitted). Wires when a server-side draft surface exists (SDC-3+);
-      // today drafts live client-side and submit via the creation verb.
+      // ⚠️ PF-1b — WIRED, AND IT IS THE SUBMISSION. The comment that stood here
+      // said it "wires when a server-side draft surface exists (SDC-3+); today
+      // drafts live client-side" — the ruling made the server-side draft the
+      // ONLY kind, so this is that day.
+      //
+      // THE BUYER SEES NOTHING UNTIL THIS FIRES: `consolidationRows` skips
+      // `Draft` outright, so promotion is the act that puts a commitment in
+      // front of a planner rather than a status relabel. The store stamps
+      // `submittedAt` HERE and not at creation — a draft has never been
+      // submitted, and the SDC-0 seed's own Draft (rr-0003) already encodes that
+      // invariant by carrying no `submittedAt` at all.
       id: 't_requirementresponse_promote',
       from: ['Draft'],
       to: 'Submitted',

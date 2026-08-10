@@ -41,7 +41,6 @@ export const sdcConsolidationEn: Record<string, string> = {
 
   // — Line response states —
   'sdc.state.awaiting': 'Awaiting',
-  'sdc.state.draftHint': 'draft in progress',
   // SDC-2b-EXT: the visibility response — never rendered as "Confirmed".
   'sdc.state.acknowledged': 'Acknowledged',
   'sdc.state.confirmedFull': 'Confirmed',
@@ -128,7 +127,6 @@ export const sdcConsolidationId: Record<string, string> = {
 
   // — Status respons baris —
   'sdc.state.awaiting': 'Menunggu',
-  'sdc.state.draftHint': 'draf sedang dibuat',
   // SDC-2b-EXT: respons visibilitas — tidak pernah tampil "Dikonfirmasi".
   // (Interim word choice per adjudication; JJ's Indonesian team reviews later.)
   'sdc.state.acknowledged': 'Ditanggapi',

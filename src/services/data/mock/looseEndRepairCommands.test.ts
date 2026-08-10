@@ -16,16 +16,19 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 import { MockCommandService, commandAuditSink } from './MockCommandService';
+import { MockCollaborationService } from './MockCollaborationService';
 import { MockProcurementService } from './MockProcurementService';
 import { asnStore } from './stores/asnStore';
 import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import { requirementResponseStore } from './stores/requirementResponseStore';
 import { rfqStore } from './stores/rfqStore';
+import type { ConsolidationRow } from '../../sdc';
 import type { QueryScope } from '../types';
 
 const svc = new MockCommandService();
 const reads = new MockProcurementService();
+const collab = new MockCollaborationService();
 
 const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
 const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
@@ -159,6 +162,98 @@ describe('PF-1a · ASN — a discrepancy can be resolved', () => {
       entityId: HELD,
     });
     expect(again.status).toBe('failed');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2b. PF-1b — THE SUPPLIER DRAFT LANE (D-1 extended to requirementResponse)
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('PF-1b · requirementResponse — suppliers draft too', () => {
+  const DRAFT = 'rr-0003'; // SDC-0 seed: status 'Draft', sup-002, no submittedAt
+
+  it('the seed Draft is genuinely unsubmitted — the invariant the fixtures already encoded', () => {
+    const seed = requirementResponseStore.get(DRAFT)!;
+    expect(seed.status).toBe('Draft');
+    expect(seed.submittedAt).toBeUndefined();
+  });
+
+  it('⚠️ t_requirementresponse_promote FIRES — unfireable from the day it was authored', async () => {
+    const res = await svc.dispatch(sup002, {
+      transitionId: 't_requirementresponse_promote',
+      entity: 'requirementResponse',
+      entityId: DRAFT,
+    });
+    expect(res.status).toBe('done');
+    expect(requirementResponseStore.get(DRAFT)!.status).toBe('Submitted');
+  });
+
+  it('⚠️ promotion STAMPS the submission instant — creation never did', async () => {
+    expect(requirementResponseStore.get(DRAFT)!.submittedAt).toBeUndefined();
+    await svc.dispatch(sup002, {
+      transitionId: 't_requirementresponse_promote',
+      entity: 'requirementResponse',
+      entityId: DRAFT,
+    });
+    expect(requirementResponseStore.get(DRAFT)!.submittedAt).toBeTruthy();
+  });
+
+  it('a later buyer move does NOT restamp when the supplier answered', async () => {
+    await svc.dispatch(sup002, {
+      transitionId: 't_requirementresponse_promote',
+      entity: 'requirementResponse',
+      entityId: DRAFT,
+    });
+    const stamped = requirementResponseStore.get(DRAFT)!.submittedAt;
+    await svc.dispatch(buyer, {
+      transitionId: 't_requirementresponse_review',
+      entity: 'requirementResponse',
+      entityId: DRAFT,
+    });
+    expect(requirementResponseStore.get(DRAFT)!.submittedAt).toBe(stamped);
+  });
+
+  it('⚠️ THE BUYER SEES NOTHING UNTIL IT IS SUBMITTED — publication is the reveal', async () => {
+    // The supplier-lane twin of the RFQ read gate. `consolidationRows` skips
+    // `Draft`, so the planner's line reads `awaiting` while a complete response
+    // sits unsent — and flips only when the supplier promotes it.
+    const lineOf = async (rows: readonly ConsolidationRow[]) =>
+      rows.find(
+        (r) =>
+          r.line.supplierId === 'sup-002' &&
+          r.line.materialCode === 'RM-EMUL-3320' &&
+          r.line.periodBucket === '2026-09',
+      );
+
+    // ⚠️ THE PREMISE IS ASSERTED, NOT GUARDED. An `if (row)` here would pass
+    // silently the day the fixture stopped carrying this line, which is a test
+    // that reports green for having found nothing to check.
+    const before = await lineOf((await collab.getConsolidation(buyer)).items);
+    expect(before, 'the current publication no longer fans rr-0003’s line').toBeDefined();
+    expect(before!.state.kind).toBe('awaiting');
+
+    await svc.dispatch(sup002, {
+      transitionId: 't_requirementresponse_promote',
+      entity: 'requirementResponse',
+      entityId: DRAFT,
+    });
+
+    const after = await lineOf((await collab.getConsolidation(buyer)).items);
+    expect(after!.state.kind).not.toBe('awaiting');
+  });
+
+  it('a supplier cannot promote ANOTHER supplier’s draft — scope holds', async () => {
+    await expect(
+      svc.dispatch(
+        { personaType: 'supplier', supplierId: 'sup-007' },
+        {
+          transitionId: 't_requirementresponse_promote',
+          entity: 'requirementResponse',
+          entityId: DRAFT,
+        },
+      ),
+    ).rejects.toThrow(/denied for scope/);
+    expect(requirementResponseStore.get(DRAFT)!.status).toBe('Draft');
   });
 });
 

@@ -687,6 +687,16 @@ const requirementResponseTarget: CommandTarget = {
     requirementResponseStore.update(id, (r) => ({
       ...r,
       status: toState as RequirementResponseStatus,
+      // ⚠️ PF-1b — `submittedAt` IS STAMPED AT PROMOTION, NOT AT CREATION. A
+      // draft has never been submitted, and the SDC-0 seed already encodes the
+      // invariant by carrying no `submittedAt` on rr-0003.
+      //
+      // STORE-ASSIGNED, never payload-supplied (the `pinnedAt` discipline: a
+      // caller that could set it could backdate its own submission against a
+      // response deadline). Written only on the Draft → Submitted crossing, and
+      // only when absent — a later buyer-side move (review / accept / dispute)
+      // must not restamp the moment the supplier answered.
+      ...(toState === 'Submitted' && !r.submittedAt ? { submittedAt: sdcClock.now() } : {}),
     }));
   },
   // Line-grain membership folded into creation scope (the quotation pattern,
@@ -776,10 +786,16 @@ const requirementResponseTarget: CommandTarget = {
       periodBucket,
       publicationId,
       planVersion: str('planVersion'),
+      // ⚠️ PF-1b — ONLY WHEN THIS CREATION ACTUALLY SUBMITS. The commitment verb
+      // now births a `Draft`, which by definition has no submission instant; the
+      // acknowledge verb still births `Submitted` and keeps its stamp. Derived
+      // from `toState` rather than from the transition id, so the two can never
+      // disagree about what just happened.
+      //
       // SDC-4a — the SHARED simulated clock, not the real wall-clock: a fresh
       // submission is stamped WITHIN the simulated timeline (after the seed), so
       // the newest-first "My responses" sort surfaces it correctly.
-      submittedAt: sdcClock.now(),
+      ...(toState === 'Draft' ? {} : { submittedAt: sdcClock.now() }),
       // Versioned, never overwritten: prior max + 1 over the response thread.
       submissionVersion: prior.reduce((m, r) => Math.max(m, r.submissionVersion), 0) + 1,
       status: toState as RequirementResponseStatus, // 'Submitted'

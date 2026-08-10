@@ -71,10 +71,10 @@ export interface CensusEntry {
 }
 
 /**
- * THE CENSUS. **ELEVEN rows — down from EIGHTEEN at PF-0**, and the shrink is
- * the point: PF-1a repaired seven and the bilateral gate FORCED their exemptions
- * out. A row cannot outlive its subject here, so this list can only get shorter
- * truthfully. All eleven are derived first and annotated second.
+ * THE CENSUS. **NINE rows — down from EIGHTEEN at PF-0**, and the shrink is the
+ * point: PF-1a repaired seven, PF-1b two more, and the bilateral gate FORCED
+ * every exemption out. A row cannot outlive its subject here, so this list can
+ * only get shorter truthfully. All nine are derived first and annotated second.
  *
  * **Deleted at PF-1a (D-1, ruled per state):** rfq `Draft` × 2 + `t_rfq_publish`
  * (creation now births at Draft, so publish fires and the declared initial is
@@ -82,6 +82,10 @@ export interface CensusEntry {
  * purchaseRequisition `Rejected` (resolution edges on the `t_invoice_resolve`
  * pattern) · goodsReceipt `Quality Hold` (the resume edge behind an affordance
  * that already shipped).
+ *
+ * **Deleted at PF-1b (D-1 extended to the supplier lane):** requirementResponse
+ * `Draft` + `t_requirementresponse_promote` — creation births at `Draft` and
+ * promote is the submission.
  *
  * ⚠️ **THE SETTLEMENT PAIRS ARE NOT IN IT, AND THEIR ABSENCE IS THE D-2 RULING
  * WORKING.** `Posted to SAP` and `Payment Released` were unreachable, and
@@ -180,27 +184,15 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'gap — which is exactly why the reason vocabulary distinguishes it from `substrate-only`.',
   },
 
-  // ── requirementResponse ────────────────────────────────────────────────────
-  {
-    entity: 'requirementResponse',
-    kind: 'unreachable-state',
-    subject: 'Draft',
-    reason: 'authored-unwired',
-    note:
-      '⚠️ NOT IN THE OPENING LIST — the analyzer found it. Both creation verbs (`submit`, ' +
-      '`acknowledge`) birth at `Submitted`, so nothing can enter `Draft`. The same shape as the RFQ ' +
-      'defect, in a second flow, and it would not have been found by reading.',
-  },
-  {
-    entity: 'requirementResponse',
-    kind: 'dead-transition',
-    subject: 't_requirementresponse_promote',
-    reason: 'authored-unwired',
-    note:
-      'THE SECOND DEAD VERB, and also unlisted: the draft promotion fires only from `Draft`, which ' +
-      'nothing can enter. Its own authoring comment already describes it as authored-unwired — what ' +
-      'was not known is that it is unfireable, which is a stronger statement than unwired.',
-  },
+  // ── requirementResponse — ⚠️ NO ROWS. Both are GONE (PF-1b · D-1). ─────────
+  // `Draft` (unreachable) and `t_requirementresponse_promote` (dead) were the
+  // RFQ contradiction in a second flow, and they were the two rows PF-1a
+  // deliberately did NOT sweep along: D-1 rested on a stated fact about SOURCING
+  // practice, and whether a supplier drafts before submitting was a different
+  // question. The operator answered it — SUPPLIERS DRAFT TOO — so creation
+  // births at `Draft` and promote is the submission. Kept as a comment because
+  // "this flow was ruled separately, and on purpose" is the fact a reader of a
+  // shrinking list would otherwise have to reconstruct.
 
   // ── enforcement ────────────────────────────────────────────────────────────
   {

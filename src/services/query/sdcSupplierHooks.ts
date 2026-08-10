@@ -194,6 +194,37 @@ export function useRequirementResponseAcknowledge() {
   });
 }
 
+/**
+ * PF-1b — SUBMIT A DRAFTED CONFIRMATION (`t_requirementresponse_promote`,
+ * Draft → Submitted).
+ *
+ * ⚠️ THIS IS THE ACT THAT PUTS A COMMITMENT IN FRONT OF A PLANNER, not a status
+ * relabel: `consolidationRows` skips `Draft` outright, so until this fires the
+ * buyer's board still reads `awaiting` for the line. The store stamps
+ * `submittedAt` on this crossing — the draft never had one.
+ */
+export function useRequirementResponsePromote() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+  };
+  const invalidate = useInvalidateSdc();
+
+  return useMutation<CommandResult, Error, { responseId: string }>({
+    mutationFn: ({ responseId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_requirementresponse_promote',
+        entity: 'requirementResponse',
+        entityId: responseId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 // ─── SDC-3b — the two additional supplier objects (reads + governed writes) ───
 
 /** One collaborated material, joined with the master for display + the uom the
