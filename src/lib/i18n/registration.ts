@@ -202,7 +202,11 @@ export const registrationEn: Record<string, string> = {
   'registration.success.subtitle': 'Your application has been received and is under review.',
   'registration.success.appNumberLabel': 'Application number',
   'registration.success.nextTitle': 'What happens next?',
-  'registration.success.next.1': 'Our procurement team will review your application within 3–5 business days.',
+  // D-CENSUS-8 — was a 3–5 business-day review promise. NOTHING performs a review:
+  // the wizard validates the form and discards it; no application is persisted or
+  // routed. Promising a turnaround for work no one receives is the plainest kind
+  // of false claim on the portal, and it is made to an external party.
+  'registration.success.next.1': 'This is a demonstration portal — your application has not been submitted to anyone, and no review will take place.',
   'registration.success.next.2': 'You will receive an email at your registered address with the outcome.',
   'registration.success.next.3':
     'If approved, you will receive onboarding instructions and portal access credentials.',
@@ -437,7 +441,7 @@ export const registrationId: Record<string, string> = {
   'registration.success.subtitle': 'Aplikasi Anda telah diterima dan sedang ditinjau.',
   'registration.success.appNumberLabel': 'Nomor aplikasi',
   'registration.success.nextTitle': 'Apa yang terjadi selanjutnya?',
-  'registration.success.next.1': 'Tim pengadaan kami akan meninjau aplikasi Anda dalam 3–5 hari kerja.',
+  'registration.success.next.1': 'Ini adalah portal demonstrasi — aplikasi Anda tidak dikirim ke siapa pun, dan tidak akan ada peninjauan.',
   'registration.success.next.2': 'Anda akan menerima email di alamat terdaftar Anda dengan hasilnya.',
   'registration.success.next.3':
     'Jika disetujui, Anda akan menerima instruksi onboarding dan kredensial akses portal.',

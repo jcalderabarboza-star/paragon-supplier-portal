@@ -9,6 +9,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import Button from '../components/ui-v2/Button';
@@ -1275,6 +1276,12 @@ const SupplierWhatsApp: React.FC = () => {
 
       <PageMetaLine className="-mt-6 mb-6">
         {t('supplierWhatsApp.meta.sessionOpened')} <Data>{lastUpdated}</Data>
+        {/* D-CENSUS-8 — `messaging` is null-backed. This is a scripted simulator: no
+            WhatsApp Business API is connected, no message leaves the browser, and
+            the bot replies are authored. The capability copy claiming the bot sends
+            documents "instantly" and returns "real-time payment info" is retracted
+            in this batch. */}
+        <ProvenanceMarker capability="messaging" className="ml-3 align-middle" />
       </PageMetaLine>
 
       {/* C5 — the demonstration honesty marker: a supplier can never mistake these

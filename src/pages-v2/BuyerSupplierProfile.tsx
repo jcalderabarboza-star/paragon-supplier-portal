@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
+import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { statusTone } from '../lib/statusTone';
@@ -223,6 +225,15 @@ const BuyerSupplierProfile: React.FC = () => {
           </div>
         }
       />
+
+      {/* D-CENSUS-8 — MARKER-SCOPE-01. The only marker on this route sat inside the
+          Message-log tab; the profile header, KPI tiles, catalogue and certificate
+          list — everything a reader would act on — were unmarked. NOTE: the two
+          header buttons above have no handler at all (DEAD-AFFORDANCE-01, filed);
+          this batch marks the data, it does not fix inert affordances. */}
+      <PageMetaLine className="-mt-6 mb-6">
+        <ProvenanceMarker capability="suppliers" />
+      </PageMetaLine>
 
       {/* Overview card */}
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
@@ -588,7 +599,9 @@ const BuyerSupplierProfile: React.FC = () => {
             <span className="text-sm font-semibold text-text-primary">
               {t('buyerSupplierProfile.msglog.heading')}
             </span>
-            <StatusPill variant="neutral">Sample data</StatusPill>
+            {/* MARKER-I18N-HOLE-01 — was a hardcoded English literal, so the marker
+                disappeared entirely in Bahasa. Now registry-derived and translated. */}
+            <ProvenanceMarker capability="messaging" />
           </div>
           <Table>
             <TableHeader>

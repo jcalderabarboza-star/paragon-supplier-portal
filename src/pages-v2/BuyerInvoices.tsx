@@ -27,6 +27,7 @@ import AppShellV2 from '../components/layout-v2/AppShellV2';
 import { CHART_SERIES, CHART_SEMANTIC } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -484,6 +485,10 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
           { count: invoices.length },
         )}{' '}
         {lastUpdated}
+        {/* D-CENSUS-8 — PARTLY REAL, both axes. Dispute / Resolve / Release-payment /
+            Settle all dispatch through the wired `invoice` target (the Option-B SAP
+            boundary is simulated at `settle`, not faked earlier). Feed is fixture. */}
+        <ProvenanceMarker capability="invoices" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">

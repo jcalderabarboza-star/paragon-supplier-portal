@@ -18,6 +18,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -500,6 +501,11 @@ const BuyerShipments: React.FC = () => {
               count: counts.all,
               date: formatDate(TODAY),
             })}
+        {/* D-CENSUS-8 — `shipments` is null-backed: the in-transit / at-dock view is
+            a frozen fixture with no logistics feed behind it. This page's toasts
+            claimed "Reminder sent" and "Carrier alerted" over zero write capability;
+            those are retracted in this batch. */}
+        <ProvenanceMarker capability="shipments" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

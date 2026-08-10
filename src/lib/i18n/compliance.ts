@@ -37,10 +37,19 @@ export const complianceEn: Record<string, string> = {
   'compliance.bpjph.banner.certs': '{{compliant}} of {{total}} halal certs',
   'compliance.bpjph.banner.compliantSuffix': 'are BPJPH-compliant.',
   // — BPJPH deadline card —
-  'compliance.deadline.title': 'BPJPH mandatory deadline',
+  // D-CENSUS-8 — this card was NOT deleted, and the distinction matters.
+  // The 17 Oct 2026 BPJPH date is a REAL Indonesian regulatory fact; the canon
+  // de-pressurized the BUILD on 2026-07-15 (Track-R is a normal operator lane, no
+  // deadline gates delivery, certification is handled manually by the compliance
+  // team), NOT the regulation. Deleting a true external fact would have replaced
+  // one distortion with another. What WAS false was the framing: a red countdown
+  // presented it as PRODUCT urgency — as if this portal were the thing racing the
+  // date. The fact stays; the urgency is retracted, and the copy now says who
+  // actually owns the work.
+  'compliance.deadline.title': 'BPJPH regulatory date (external)',
   'compliance.deadline.subtitle':
-    'All Indonesian cosmetics must carry BPJPH halal cert by 17 Oct 2026.',
-  'compliance.deadline.daysRemaining': 'days remaining',
+    'Indonesian cosmetics must carry BPJPH halal certification by 17 Oct 2026. Certification is handled manually by the compliance team — this portal tracks status, it does not perform or submit certification, and this date does not gate any work here.',
+  'compliance.deadline.daysRemaining': 'days until the regulatory date',
   // — KPI cards —
   'compliance.kpi.expired.eyebrow': 'Expired',
   'compliance.kpi.expired.subtitle': 'Blocks new POs',
@@ -126,10 +135,10 @@ export const complianceId: Record<string, string> = {
   'compliance.bpjph.banner.certs': '{{compliant}} dari {{total}} sertifikat halal',
   'compliance.bpjph.banner.compliantSuffix': 'mematuhi BPJPH.',
   // — BPJPH deadline card —
-  'compliance.deadline.title': 'Tenggat wajib BPJPH',
+  'compliance.deadline.title': 'Tanggal regulasi BPJPH (eksternal)',
   'compliance.deadline.subtitle':
-    'Semua kosmetik Indonesia harus memiliki sertifikat halal BPJPH paling lambat 17 Okt 2026.',
-  'compliance.deadline.daysRemaining': 'hari tersisa',
+    'Kosmetik Indonesia harus memiliki sertifikasi halal BPJPH paling lambat 17 Okt 2026. Sertifikasi ditangani secara manual oleh tim kepatuhan — portal ini melacak status, tidak melakukan atau mengajukan sertifikasi, dan tanggal ini tidak membatasi pekerjaan apa pun di sini.',
+  'compliance.deadline.daysRemaining': 'hari menuju tanggal regulasi',
   // — KPI cards —
   'compliance.kpi.expired.eyebrow': 'Kedaluwarsa',
   'compliance.kpi.expired.subtitle': 'Memblokir PO baru',

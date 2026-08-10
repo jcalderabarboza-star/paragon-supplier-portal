@@ -15,6 +15,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import Data from '../components/ui-v2/Data';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
@@ -315,6 +316,11 @@ const BuyerRequisitions: React.FC = () => {
             : 'requisitions.meta.summary.other',
           { count: prs.length, date: formatDate(maxCreatedDate) },
         )}
+        {/* D-CENSUS-8 — PARTLY REAL, both axes. The PR CommandTarget is wired
+            (G1.1) so a create genuinely dispatches; gate-2 still holds the feed
+            SIMULATED (no live producer — SOMO F2 / Grid G1.2), which is why the
+            feed axis reads the specific "awaiting live PR producer" text. */}
+        <ProvenanceMarker capability="purchaseRequisitions" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <ProcurementFlow />

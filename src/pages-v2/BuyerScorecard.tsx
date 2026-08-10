@@ -40,6 +40,7 @@ import PageHeader from '../components/ui-v2/PageHeader';
 import Data from '../components/ui-v2/Data';
 import TargetBar from '../components/ui-v2/TargetBar';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -272,6 +273,10 @@ const BuyerScorecard: React.FC = () => {
           { count: suppliers.length },
         )}{' '}
         · {t('buyerScorecard.meta.lastActivity')} {latestCommDate}
+        {/* D-CENSUS-8 — `scorecards` is null-backed: the scores are authored fixture
+            values, not computed from transactional history. The header claimed
+            "Real-time performance scoring"; that is retracted in this batch. */}
+        <ProvenanceMarker capability="scorecards" className="ml-3 align-middle" />
       </PageMetaLine>
 
       {/* DP-1: the supplier identity hero restyles from a solid navy fill to a

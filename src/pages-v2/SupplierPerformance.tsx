@@ -34,6 +34,8 @@ import {
   TARGET_STATUS,
 } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
+import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import Data from '../components/ui-v2/Data';
 import TargetBar from '../components/ui-v2/TargetBar';
 import Tabs from '../components/ui-v2/Tabs';
@@ -263,6 +265,14 @@ const SupplierPerformance: React.FC = () => {
           </Button>
         }
       />
+
+      {/* D-CENSUS-8 — MARKER-SCOPE-01. The page's only marker was on the grade-history
+          chart; the OTIF / quality / lead-time scores a supplier is judged on carried
+          none. `scorecards` is null-backed — these figures are authored, not computed
+          from the transactional history this portal holds. */}
+      <PageMetaLine className="-mt-6 mb-6">
+        <ProvenanceMarker capability="scorecards" />
+      </PageMetaLine>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">
         <div className="flex items-start justify-between gap-6 flex-wrap">

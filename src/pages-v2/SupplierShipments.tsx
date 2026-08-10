@@ -18,6 +18,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -1090,6 +1091,10 @@ const SupplierShipments: React.FC = () => {
           shipments: asns.length,
           pos: CONFIRMED_POS.length,
         })}
+        {/* D-CENSUS-8 — PARTLY REAL, both axes. ASN create + submit dispatch through
+            the wired `advanceShipNotice` target and cascade into goods receipt; the
+            POs being shipped against are fixtures. */}
+        <ProvenanceMarker capability="advanceShipNotices" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">

@@ -209,23 +209,34 @@ const buildContractTimeline = (c: Contract, t: TFunction): TimelineEvent[] => {
   ];
 };
 
-const PLACEHOLDER_DOCS = (c: Contract): {
-  name: string;
-  status: 'valid' | 'expiring' | 'expired';
-}[] => {
-  const docs: { name: string; status: 'valid' | 'expiring' | 'expired' }[] = [];
-  if (c.category.toLowerCase().includes('raw') || c.category.toLowerCase().includes('fragrance')) {
-    docs.push({ name: 'BPJPH Halal Certificate', status: 'valid' });
-  }
-  docs.push({ name: 'ISO 9001:2015', status: 'valid' });
-  if (c.type === 'Quality' || c.type === 'Supply') {
-    docs.push({ name: 'BPOM Registration', status: 'expiring' });
-  }
-  return docs;
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// D-CENSUS-8 — PLACEHOLDER_DOCS is DELETED, not marked.
+//
+// What stood here MANUFACTURED regulatory status. It read a free-text category
+// string and, if it contained "raw" or "fragrance", emitted a row that said
+// "BPJPH Halal Certificate — Valid" under a shield icon in success green. It did
+// the same for "BPOM Registration — Expiring" off the contract TYPE. No such
+// certificate was ever looked up; a contract categorised "Raw Materials" was
+// simply asserted to hold a valid halal certificate.
+//
+// This is why a marker was not the fix. DISCLOSURE-TRAVELS-WITH-THE-VALUE-01: a
+// page-level "Sample data" pill does not travel with a green Valid chip beside a
+// named Indonesian regulator, and a reader deciding whether a supplier may ship
+// reads the chip, not the pill. A disclosed fabrication of compliance status is
+// still a fabrication of compliance status.
+//
+// The honest render for "the portal holds no documents for this contract" is
+// zero rows and an empty state that says so. When real linked documents land
+// (Track-R harvest / F1 document store), they arrive as data, not as a function
+// of a category substring.
+// ─────────────────────────────────────────────────────────────────────────────
 
-/** The number of placeholder docs for a contract — the Docs tab count badge. */
-export const docCount = (c: Contract): number => PLACEHOLDER_DOCS(c).length;
+/**
+ * The Docs-tab count badge. Zero by construction: the portal links no documents
+ * to a contract today. Kept as a function (rather than inlining 0) so the day a
+ * real document relation lands there is one place to read it from.
+ */
+export const docCount = (_c: Contract): number => 0;
 
 // ─── Overview tab — key facts + obligations + lifecycle timeline ─────────────
 
@@ -443,30 +454,23 @@ export const ContractDetailBody: React.FC<{
   );
 };
 
-// ─── Docs tab — the (placeholder) linked documents ───────────────────────────
+// ─── Docs tab — no linked documents exist (see the PLACEHOLDER_DOCS note) ────
 
-export const ContractDocsList: React.FC<{ contract: Contract }> = ({ contract }) => {
-  const docs = PLACEHOLDER_DOCS(contract);
+export const ContractDocsList: React.FC<{ contract: Contract }> = () => {
+  const { t } = useTranslation();
   return (
-    <ul className="space-y-2">
-      {docs.map((d) => (
-        <li
-          key={d.name}
-          className="flex items-center justify-between gap-3 p-3 border border-border-subtle rounded-md"
-        >
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={14} className="text-text-tertiary" />
-            <span className="text-sm text-text-primary">{d.name}</span>
-          </div>
-          <StatusPill
-            variant={
-              d.status === 'valid' ? 'success' : d.status === 'expiring' ? 'warning' : 'danger'
-            }
-          >
-            {d.status === 'valid' ? 'Valid' : d.status === 'expiring' ? 'Expiring' : 'Expired'}
-          </StatusPill>
-        </li>
-      ))}
-    </ul>
+    <div className="p-6 border border-border-subtle rounded-md text-center">
+      <ShieldCheck
+        size={20}
+        className="text-text-tertiary mx-auto mb-2"
+        aria-hidden="true"
+      />
+      <div className="text-sm font-semibold text-text-primary mb-1">
+        {t('contracts.docs.empty.title')}
+      </div>
+      <p className="text-meta text-text-tertiary max-w-md mx-auto">
+        {t('contracts.docs.empty.body')}
+      </p>
+    </div>
   );
 };

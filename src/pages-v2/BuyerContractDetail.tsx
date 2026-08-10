@@ -19,6 +19,8 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import LivenessPill from '../components/ui-v2/LivenessPill';
+import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import NotFound from './NotFound';
 import { useContracts, useObligations, useSuppliers } from '../services/query/hooks';
 import {
@@ -141,6 +143,16 @@ const ContractDetailView: React.FC<{
         title={`${contract.contractNumber} — ${contract.title}`}
         subtitle={`${supplierName} · ${typeLabel(t, contract.type)}`}
       />
+
+      {/* D-CENSUS-8 — MARKER-SCOPE-01, the sharpest instance on the portal. The only
+          marker on this route was the LivenessPill inside the Delivery-Agreements
+          tab. The Docs tab — one tab over, and unmarked — was MANUFACTURING
+          "BPJPH Halal Certificate · Valid" from a category substring. The badge was
+          literally on a different tab from the fabrication. The fabrication is now
+          deleted (contractView.tsx) and the marker is page-level. */}
+      <PageMetaLine className="-mt-6 mb-6">
+        <ProvenanceMarker capability="contracts" />
+      </PageMetaLine>
 
       <SubTabs<DetailTab>
         options={[

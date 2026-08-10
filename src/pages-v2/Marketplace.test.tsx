@@ -12,8 +12,13 @@ describe('Marketplace — four honest states', () => {
     renderWithProviders(<Marketplace />);
     expect(await screen.findByText('Global Supplier Marketplace')).toBeInTheDocument();
     expect(await screen.findByText('Total Suppliers')).toBeInTheDocument();
-    // The open-RFQ teaser is visibly marked as static, not live data.
-    expect(await screen.findByText('Sample data')).toBeInTheDocument();
+    // D-CENSUS-8 — was `findByText('Sample data')`, a hardcoded English literal that
+    // vanished under Bahasa (MARKER-I18N-HOLE-01). It is now the registry-derived,
+    // translated ProvenanceMarker, and there are TWO of them: one page-level (the
+    // supplier grid + KPI tiles, which had no marker at all) and one on the open-RFQ
+    // teaser that previously carried the only badge on the route. findAll, and assert
+    // the count, so losing either one fails here.
+    expect(await screen.findAllByText('Sample')).toHaveLength(2);
   });
 
   it('loading: shows LoadingState while the read is pending', () => {

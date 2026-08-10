@@ -14,6 +14,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import { statusTone } from '../lib/statusTone';
@@ -388,6 +389,10 @@ const SupplierDashboard: React.FC = () => {
           country: mySupplier.country,
           category: mySupplier.category,
         })}
+        {/* D-CENSUS-8 — the KPI tiles above were the only unmarked figures on a page
+            whose widgets each carry a derived marker; the briefing block below had
+            its own "Sample data" badge while the numbers at the top had none. */}
+        <ProvenanceMarker capability="dashboard" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-6 mb-6">

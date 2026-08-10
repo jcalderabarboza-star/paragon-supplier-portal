@@ -21,6 +21,7 @@ import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 
 type RequestType = 'External SR' | 'Internal SR' | 'KOL';
 
@@ -1496,6 +1497,14 @@ const SupplierRegistrationV2: React.FC = () => {
       <PageHeader />
       <main className="flex-1 px-4 py-6 sm:py-10">
         <div className="max-w-3xl mx-auto">
+          {/* D-CENSUS-8 — /register carried no marker at all while promising a review
+              nothing performs. `supplierRegistration` is null-backed: the wizard
+              validates and formats a submission, then discards it — no application is
+              persisted, routed, or queued for anyone. The 3–5 business-day review
+              promise is retracted in this batch; this marks the surface itself. */}
+          <div className="mb-4">
+            <ProvenanceMarker capability="supplierRegistration" />
+          </div>
           {submitted ? (
             <SuccessScreen appNumber={appNumber} />
           ) : requestType === null ? (

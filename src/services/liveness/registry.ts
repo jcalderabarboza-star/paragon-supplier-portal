@@ -63,7 +63,30 @@ export type Capability =
   | 'supplierDocuments'
   | 'commodityIntel'
   | 'forecastPublications'
-  | 'deliveryAgreements';
+  | 'deliveryAgreements'
+  // ── D-CENSUS-8 — the domains the marker regime never reached ──────────────
+  // The registry was authored alongside the transactional lanes and stopped
+  // there, so the 13 above are exactly the capabilities that already HAD a
+  // marker. The census inverted the finding: the least-real surfaces (supplier
+  // master, discovery, registration, contracts, logistics, scoring, analytics,
+  // messaging) carried NO marker at all, and a reader trusts an unmarked page
+  // more than a marked one. These eight close that hole. Every one is
+  // null-backed — no lifecycle CommandTarget reads them — so each derives
+  // SIMULATED and green is structurally unreachable, same as `risk`.
+  | 'suppliers'
+  | 'supplierDiscovery'
+  | 'supplierRegistration'
+  | 'contracts'
+  | 'shipments'
+  | 'scorecards'
+  | 'analytics'
+  | 'messaging'
+  // The dashboards' own KPI tiles — NOT the widgets below them, which each carry
+  // their own capability marker already. The tiles aggregate across suppliers,
+  // POs, supplier-health and production-line fixtures; no single transactional
+  // capability describes them, and leaving them the only unmarked figures on an
+  // otherwise-marked page is the inversion this batch exists to end.
+  | 'dashboard';
 
 // The ONLY hand-authored fact here: which command entity/flow each capability
 // reads from (`null` = pure fixture, no lifecycle entity). The TIER is never
@@ -121,6 +144,24 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // When the real S/4HANA scheduling-agreement feed lands (Pattern B, Stage F), it
   // flips through the same two gates.
   deliveryAgreements: null,
+  // ── D-CENSUS-8 — the eight late-marked domains ────────────────────────────
+  // All null-backed, DELIBERATELY. Each of these surfaces reads a frozen fixture
+  // array through `mockDataService`; none is the read-model of a lifecycle
+  // entity. Backing one to a merely-adjacent wired entity is the exact defect
+  // this batch files as INVENTORY-REFERENT-01 (`inventory` is backed to
+  // `inventoryDeclaration` while BuyerInventoryWidget renders `mockInventory` —
+  // so the pill's referent is not the data on screen, and unwire-flips-the-pill
+  // stops meaning anything). Null is the honest backing for a fixture read: it
+  // derives SIMULATED, and it flips only when a real read-model actually lands.
+  suppliers: null,
+  supplierDiscovery: null,
+  supplierRegistration: null,
+  contracts: null,
+  shipments: null,
+  scorecards: null,
+  analytics: null,
+  messaging: null,
+  dashboard: null,
 };
 
 // — Gate-2: harvest gating (LIVENESS-DATASOURCE-01) —————————————————————————————
@@ -247,4 +288,67 @@ export function isLive(capability: Capability): boolean {
     WIRED,
     awaitsHarvest(capability),
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE SECOND AXIS (D-CENSUS-8) — feed provenance, separate from wiring.
+//
+// The census found seven routes where ONE marker cannot tell the truth. On
+// /supplier/orders a Confirm genuinely dispatches through a wired CommandTarget,
+// mutates the store and writes the DR-10 audit trail — while the orders listed
+// are frozen fixtures. A flat amber "Sample" understates the verb; a green
+// "Live" overstates the feed. Both are lies of a different sign.
+//
+// So liveness gets what it always implicitly had: TWO independent questions.
+//   · VERB axis — does acting here really do something? → `isLive` (gates 1+2).
+//   · FEED axis — is the data on screen real? → `feedProvenance`, here.
+//
+// This is NOT gate-2 renamed. Gate-2 asks "may this capability ever go green",
+// and it is applied inconsistently today (LIVENESS-GATE-ASYMMETRY-01, filed this
+// batch, ruled report-only): `purchaseOrders`/`goodsReceipts`/… are wired and
+// UNGATED so they render green, while `inventory`/`purchaseRequisitions`/
+// `forecastPublications` read equally-synthetic stores and are gated. Until that
+// asymmetry is adjudicated, the FEED axis states the fixture fact directly
+// rather than inferring it from a gate that does not consistently encode it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Where a capability's DISPLAYED data comes from — independent of whether its
+ * verbs are wired.
+ *  - FIXTURE — a frozen authored array behind `mockDataService`.
+ *  - LIVE    — a real upstream feed. Nothing on main is LIVE (see below).
+ */
+export type FeedProvenance = 'FIXTURE' | 'LIVE';
+
+/**
+ * Every capability reads FIXTURE today. This is not an opinion to keep in sync
+ * by hand — it is a property of the repo: the backend is greenfield (zero server
+ * code, zero datastore clients; `httpDataService` is the designed Phase-F1 swap
+ * and is not wired). `feedProvenance.test.ts` pins that fact, so the day a real
+ * feed lands, the test fails and forces this map and the marker to move
+ * together rather than letting a stale FIXTURE claim sit under live data.
+ */
+const CAPABILITY_FEED: Record<Capability, FeedProvenance> = Object.freeze(
+  Object.fromEntries(
+    (Object.keys(CAPABILITY_BACKING) as Capability[]).map((c) => [c, 'FIXTURE']),
+  ),
+) as Record<Capability, FeedProvenance>;
+
+/** The feed axis: where this capability's displayed data actually comes from. */
+export function feedProvenance(capability: Capability): FeedProvenance {
+  return CAPABILITY_FEED[capability];
+}
+
+/**
+ * The verb axis, as a marker-facing predicate: acting on this surface really
+ * dispatches through a wired CommandTarget and writes the DR-10 trail — even
+ * though `isLive` is false because the FEED is not real. True exactly for the
+ * partly-real routes the census asked to be named rather than averaged.
+ *
+ * DERIVED, never caller-supplied: a page cannot assert "my buttons work". Unwire
+ * the target and this goes false with no edit here — the same honest-by-
+ * construction property `liveness()` has.
+ */
+export function dispatchesCommands(capability: Capability): boolean {
+  return liveness(capability) === 'LIVE';
 }

@@ -13,6 +13,8 @@ import {
 import { Wallet, Activity, Users, ShoppingCart } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
+import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Table from '../components/ui-v2/Table';
@@ -161,6 +163,14 @@ const BuyerDashboard: React.FC = () => {
           <TimeRangeToggle options={RANGES} value={range} onChange={setRange} />
         }
       />
+
+      {/* D-CENSUS-8 — the widgets below each carry a derived marker; the KPI tiles
+          between them and this header carried none, which made the unmarked numbers
+          look like the trustworthy ones. `dashboard` is null-backed: the tiles
+          aggregate supplier, PO, supplier-health and production-line fixtures. */}
+      <PageMetaLine className="-mt-6 mb-6">
+        <ProvenanceMarker capability="dashboard" />
+      </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">
         <KpiCard

@@ -36,7 +36,7 @@ export const buyerScorecardEn: Record<string, string> = {
   // — Page header —
   'buyerScorecard.header.title': 'Supplier Scorecard',
   'buyerScorecard.header.subtitle':
-    'Real-time performance scoring across all active suppliers.',
+    'Performance scoring across all active suppliers.',
   'buyerScorecard.header.selectSupplier': 'Select supplier',
   // — Meta line —
   'buyerScorecard.meta.suppliers.one': '{{count}} supplier',
@@ -87,7 +87,7 @@ export const buyerScorecardId: Record<string, string> = {
   // — Page header —
   'buyerScorecard.header.title': 'Kartu Skor Pemasok',
   'buyerScorecard.header.subtitle':
-    'Penilaian kinerja waktu nyata di seluruh pemasok aktif.',
+    'Penilaian kinerja di seluruh pemasok aktif.',
   'buyerScorecard.header.selectSupplier': 'Pilih pemasok',
   // — Meta line —
   'buyerScorecard.meta.suppliers.one': '{{count}} pemasok',

@@ -33,8 +33,12 @@ describe('BuyerDiscovery — four honest states', () => {
   it('honesty (CI-0): Market Intelligence declares SIMULATED and carries no fabricated source names', async () => {
     renderWithProviders(<BuyerDiscovery />);
     fireEvent.click(await screen.findByRole('tab', { name: /Market Intelligence/ }));
-    // The tab declares its data simulated via the shared honest-render pill.
-    expect(await screen.findByText('Sample')).toBeInTheDocument();
+    // D-CENSUS-8 — was findByText, which now finds TWO and throws. That second
+    // marker is the fix this batch shipped: the page-level ProvenanceMarker. Before
+    // it, the ONLY marker on /buyer/discovery was this tab's pill, so the candidate
+    // pool — the page's actual claim — read as trustworthy because the marker beside
+    // it belonged to a sibling tab (MARKER-SCOPE-01). Asserting the count keeps both.
+    expect(await screen.findAllByText('Sample')).toHaveLength(2);
     // The invented source attributions are deleted (not relabelled) …
     expect(screen.queryByText(/IFRA index/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Niacinamide spot/)).not.toBeInTheDocument();

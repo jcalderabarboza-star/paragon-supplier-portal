@@ -20,7 +20,7 @@ export const supplierInventoryEn: Record<string, string> = {
   // — Page header —
   'supplierInventory.header.title': 'My Inventory',
   'supplierInventory.header.subtitle':
-    'Live stock visibility · days-of-supply tracking · Paragon minimum thresholds.',
+    'Stock visibility · days-of-supply tracking · Paragon minimum thresholds.',
   // — Header actions —
   'supplierInventory.action.exportEdi': 'Export EDI 846',
   'supplierInventory.action.syncNow': 'Sync now',
@@ -42,9 +42,9 @@ export const supplierInventoryEn: Record<string, string> = {
   'supplierInventory.kpi.pctOfMaterials': '{{pct}}% of materials',
   // — Critical-stock banner (embeds a <strong> count via <Trans>) —
   'supplierInventory.banner.critical.one':
-    '<strong>{{count}} material</strong> at critical stock level. Paragon procurement team has been automatically notified.',
+    '<strong>{{count}} material</strong> at critical stock level.',
   'supplierInventory.banner.critical.other':
-    '<strong>{{count}} materials</strong> at critical stock level. Paragon procurement team has been automatically notified.',
+    '<strong>{{count}} materials</strong> at critical stock level.',
   // — Search / filters —
   'supplierInventory.search.placeholder': 'Search material, code, or supplier…',
   'supplierInventory.filter.all': 'All',
@@ -64,17 +64,17 @@ export const supplierInventoryEn: Record<string, string> = {
   // — Footer info panels —
   'supplierInventory.info.dataSources.label': 'Data sources:',
   'supplierInventory.info.dataSources.body':
-    'API Push (real-time), EDI 846 (daily), Manual (supplier-updated). Phase 2 will add SAP MM stock pull and VMI signal integration.',
+    'The Source column shows the ingestion channel each record is DESIGNED to arrive on — API Push, EDI 846, or Manual. None is connected yet: every row shown is sample data. SAP MM stock pull and VMI signals are planned alongside the live feed.',
   'supplierInventory.info.thresholds.label': 'Thresholds:',
   'supplierInventory.info.thresholds.body':
-    'Critical <7 days · Low 7–14 days · Normal 14–30 days · Excess >30 days. Paragon minimum stock requirements enforced at category level.',
+    'Critical <7 days · Low 7–14 days · Normal 14–30 days · Excess >30 days. These bands classify the rows shown; Paragon minimum stock requirements are not enforced from this page.',
   // — Empty state (all-empty early return) —
   'supplierInventory.empty.title': 'No inventory yet',
   'supplierInventory.empty.subtitle':
     'No stock records on file for {{supplier}}.',
   'supplierInventory.empty.thisSupplier': 'this supplier',
   'supplierInventory.empty.message':
-    'Live stock positions will appear here once inventory is reported.',
+    'Stock positions will appear here once inventory is reported.',
 };
 
 export const supplierInventoryId: Record<string, string> = {
@@ -84,7 +84,7 @@ export const supplierInventoryId: Record<string, string> = {
   // — Page header —
   'supplierInventory.header.title': 'Inventaris Saya',
   'supplierInventory.header.subtitle':
-    'Visibilitas stok langsung · pelacakan hari pasokan · ambang batas minimum Paragon.',
+    'Visibilitas stok · pelacakan hari pasokan · ambang batas minimum Paragon.',
   // — Header actions —
   'supplierInventory.action.exportEdi': 'Ekspor EDI 846',
   'supplierInventory.action.syncNow': 'Sinkronkan sekarang',
@@ -106,9 +106,9 @@ export const supplierInventoryId: Record<string, string> = {
   'supplierInventory.kpi.pctOfMaterials': '{{pct}}% dari material',
   // — Critical-stock banner (embeds a <strong> count via <Trans>) —
   'supplierInventory.banner.critical.one':
-    '<strong>{{count}} material</strong> pada tingkat stok kritis. Tim pengadaan Paragon telah diberi tahu secara otomatis.',
+    '<strong>{{count}} material</strong> pada tingkat stok kritis.',
   'supplierInventory.banner.critical.other':
-    '<strong>{{count}} material</strong> pada tingkat stok kritis. Tim pengadaan Paragon telah diberi tahu secara otomatis.',
+    '<strong>{{count}} material</strong> pada tingkat stok kritis.',
   // — Search / filters —
   'supplierInventory.search.placeholder': 'Cari material, kode, atau pemasok…',
   'supplierInventory.filter.all': 'Semua',
@@ -129,15 +129,15 @@ export const supplierInventoryId: Record<string, string> = {
   // — Footer info panels —
   'supplierInventory.info.dataSources.label': 'Sumber data:',
   'supplierInventory.info.dataSources.body':
-    'API Push (waktu nyata), EDI 846 (harian), Manual (diperbarui pemasok). Fase 2 akan menambahkan penarikan stok SAP MM dan integrasi sinyal VMI.',
+    'Kolom Sumber menunjukkan saluran masuk yang DIRANCANG untuk setiap catatan — API Push, EDI 846, atau Manual. Belum ada yang terhubung: semua baris yang ditampilkan adalah data sampel. Penarikan stok SAP MM dan sinyal VMI direncanakan bersama umpan live.',
   'supplierInventory.info.thresholds.label': 'Ambang batas:',
   'supplierInventory.info.thresholds.body':
-    'Kritis <7 hari · Rendah 7–14 hari · Normal 14–30 hari · Berlebih >30 hari. Persyaratan stok minimum Paragon diberlakukan pada tingkat kategori.',
+    'Kritis <7 hari · Rendah 7–14 hari · Normal 14–30 hari · Berlebih >30 hari. Ambang ini mengklasifikasikan baris yang ditampilkan; persyaratan stok minimum Paragon tidak diberlakukan dari halaman ini.',
   // — Empty state (all-empty early return) —
   'supplierInventory.empty.title': 'Belum ada inventaris',
   'supplierInventory.empty.subtitle':
     'Tidak ada catatan stok untuk {{supplier}}.',
   'supplierInventory.empty.thisSupplier': 'pemasok ini',
   'supplierInventory.empty.message':
-    'Posisi stok langsung akan muncul di sini setelah inventaris dilaporkan.',
+    'Posisi stok akan muncul di sini setelah inventaris dilaporkan.',
 };

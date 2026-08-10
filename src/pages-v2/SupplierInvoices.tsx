@@ -17,6 +17,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
@@ -393,6 +394,10 @@ const SupplierInvoices: React.FC = () => {
           { count: INVOICES.length },
         )}{' '}
         <Data>{fmtDate(lastSubmitted)}</Data>
+        {/* D-CENSUS-8 — PARTLY REAL, both axes. Invoice create + submit dispatch
+            through the wired `invoice` target (DR-7); the PO backing them is fixture,
+            and nothing reaches e-Faktur or SAP. */}
+        <ProvenanceMarker capability="invoices" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">

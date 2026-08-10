@@ -119,8 +119,15 @@ export const contractsEn: Record<string, string> = {
   // — Toasts —
   'contracts.toast.pdfQueued.title': 'PDF export queued',
   'contracts.toast.pdfQueued.desc': 'PDF export coming in Phase 2A.',
-  'contracts.toast.created.title': 'Contract {{number}} created',
-  'contracts.toast.created.desc': 'Saved as Draft. Sign workflow coming in Phase 2A.',
+  // D-CENSUS-8 — the in-fence half of D-CENSUS-3 (CTR-FABRICATION-01).
+  // SAP owns contract identity. This wizard mints `ctr-new-${Date.now()}` AND the
+  // business number `CTR-<yr>-<n>` client-side, then says a contract was 'created'.
+  // Removing the minting is the DEMOTION to a request-to-SAP form, which is a
+  // behavior batch and is split out per the operator ruling. What marking can fix
+  // today is the CLAIM: this draft exists only in this browser tab.
+  'contracts.toast.created.title': 'Draft {{number}} saved in this session',
+  'contracts.toast.created.desc':
+    'Portal-local only — no contract was created in SAP, and the number above is a placeholder this page generated, not a SAP contract number. It is lost on reload.',
   // 2f-b — the create refuses rather than storing a coerced number. The step
   // gate already prevents reaching this, so it is the honest floor, not a path.
   'contracts.toast.numberRefused.title': 'Contract not created',
@@ -237,6 +244,12 @@ export const contractsEn: Record<string, string> = {
   'contracts.detail.tab.overview': 'Overview',
   'contracts.detail.tab.delivery': 'Delivery Agreements',
   'contracts.detail.tab.docs': 'Documents',
+  // D-CENSUS-8 — replaces the manufactured certificate rows (see contractView.tsx).
+  // Says the true thing plainly: nothing is linked, and the certificates that used
+  // to appear here were never looked up.
+  'contracts.docs.empty.title': 'No documents linked',
+  'contracts.docs.empty.body':
+    'The portal holds no documents against this contract. Supplier certificates are managed on the compliance surface and are not linked to contracts here.',
   'contracts.detail.deliveryEmpty': 'No delivery agreements for this contract yet.',
 };
 
@@ -357,8 +370,9 @@ export const contractsId: Record<string, string> = {
   // — Toasts —
   'contracts.toast.pdfQueued.title': 'Ekspor PDF dalam antrean',
   'contracts.toast.pdfQueued.desc': 'Ekspor PDF hadir pada Fase 2A.',
-  'contracts.toast.created.title': 'Kontrak {{number}} dibuat',
-  'contracts.toast.created.desc': 'Disimpan sebagai Draf. Alur penandatanganan hadir pada Fase 2A.',
+  'contracts.toast.created.title': 'Draf {{number}} disimpan di sesi ini',
+  'contracts.toast.created.desc':
+    'Hanya lokal di portal — tidak ada kontrak yang dibuat di SAP, dan nomor di atas adalah placeholder yang dibuat halaman ini, bukan nomor kontrak SAP. Hilang saat halaman dimuat ulang.',
   'contracts.toast.numberRefused.title': 'Kontrak tidak dibuat',
   // — Side-panel footer primary label —
   'contracts.footer.initiateRenewal': 'Mulai pembaruan',
@@ -471,5 +485,8 @@ export const contractsId: Record<string, string> = {
   'contracts.detail.tab.overview': 'Ringkasan',
   'contracts.detail.tab.delivery': 'Perjanjian Pengiriman',
   'contracts.detail.tab.docs': 'Dokumen',
+  'contracts.docs.empty.title': 'Tidak ada dokumen tertaut',
+  'contracts.docs.empty.body':
+    'Portal tidak menyimpan dokumen apa pun untuk kontrak ini. Sertifikat pemasok dikelola di permukaan kepatuhan dan tidak ditautkan ke kontrak di sini.',
   'contracts.detail.deliveryEmpty': 'Belum ada perjanjian pengiriman untuk kontrak ini.',
 };

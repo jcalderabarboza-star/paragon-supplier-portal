@@ -224,37 +224,33 @@ const BuyerCompliance: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-bg-surface border border-warning/40 rounded-lg shadow-sm px-5 py-4 mb-6">
-        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+      {/* D-CENSUS-8 — the FACT stays, the URGENCY is retracted.
+          The 17 Oct 2026 BPJPH date is real Indonesian regulation. What was false
+          was this card's rhetoric: a red-when-≤90-days countdown with a draining
+          progress bar, which reads as "this product is racing a deadline" — the
+          exact pressure the canon removed on 2026-07-15 (Track-R is a normal
+          operator lane; certification is handled manually by the compliance team).
+          Now: neutral border, neutral figure, no colour escalation, no depleting
+          bar. A date the reader may need to know, stated without manufacturing
+          alarm about it. */}
+      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm px-5 py-4 mb-6">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <div className="text-sm font-bold text-text-primary">
               {t('compliance.deadline.title')}
             </div>
-            <div className="text-xs text-text-tertiary mt-0.5">
+            <div className="text-xs text-text-tertiary mt-0.5 max-w-2xl">
               {t('compliance.deadline.subtitle')}
             </div>
           </div>
           <div className="text-right shrink-0">
-            <Data
-              as="div"
-              className={`text-kpi leading-none ${
-                deadline.daysLeft <= 90 ? 'text-danger' : 'text-warning-hover'
-              }`}
-            >
+            <Data as="div" className="text-kpi leading-none text-text-secondary">
               {deadline.daysLeft}
             </Data>
             <div className="text-xs text-text-tertiary mt-1">
               {t('compliance.deadline.daysRemaining')}
             </div>
           </div>
-        </div>
-        <div className="bg-bg-hover rounded-full h-1.5 overflow-hidden">
-          <div
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              deadline.daysLeft <= 90 ? 'bg-danger' : 'bg-warning'
-            }`}
-            style={{ width: `${deadline.pct}%` }}
-          />
         </div>
       </div>
 

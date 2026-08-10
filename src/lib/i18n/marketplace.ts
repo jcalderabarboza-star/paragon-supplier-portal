@@ -17,7 +17,7 @@ export const marketplaceEn: Record<string, string> = {
     'Discover and connect with vetted suppliers worldwide.',
   // — KPI cards —
   'marketplace.kpi.totalSuppliers.eyebrow': 'Total Suppliers',
-  'marketplace.kpi.totalSuppliers.subtitle': 'Vetted on the network',
+  'marketplace.kpi.totalSuppliers.subtitle': 'Listed on the network',
   'marketplace.kpi.countries.eyebrow': 'Countries Covered',
   'marketplace.kpi.countries.subtitle': 'Across APAC + EMEA',
   'marketplace.kpi.activeRfqs.eyebrow': 'Active RFQs',
@@ -61,7 +61,7 @@ export const marketplaceId: Record<string, string> = {
     'Temukan dan terhubung dengan pemasok tepercaya di seluruh dunia.',
   // — KPI cards —
   'marketplace.kpi.totalSuppliers.eyebrow': 'Total Pemasok',
-  'marketplace.kpi.totalSuppliers.subtitle': 'Tepercaya di jaringan',
+  'marketplace.kpi.totalSuppliers.subtitle': 'Terdaftar di jaringan',
   'marketplace.kpi.countries.eyebrow': 'Negara Tercakup',
   'marketplace.kpi.countries.subtitle': 'Di seluruh APAC + EMEA',
   'marketplace.kpi.activeRfqs.eyebrow': 'RFQ Aktif',
