@@ -5978,3 +5978,81 @@ here can name one.
 - **`halal.certificate` stays unseeded until it has a site.** When H4 wires
   `verifyHalalAtReceipt`, the batch that wires it is the batch that opens its
   row — at whatever its shipped behaviour turns out to be.
+
+### 10. ⚠️ OPERATOR RATIFICATION AT MERGE (#193) — THE THREE FINDINGS ARE ONE SHAPE
+
+Recorded at merge, in the operator's framing, because the generalisation is the
+part that survives the batch and the three findings filed separately would not
+carry it.
+
+> **THE THREE FINDINGS ARE ONE SHAPE — A CHECK THAT WOULD HAVE PASSED WHILE
+> PROVING NOTHING.**
+
+Not three defects in the product. Three places where a guard was **already
+green, already worded correctly, and already measuring nothing**, and in all
+three the greenness was indistinguishable from coverage. That is the class, and
+it is worse than a missing test: a missing test is visibly absent, and a guard
+like these reads as done.
+
+#### `ENF-VALUE-CENSUS-IS-BLIND-TO-THE-LITERAL-01` — ⚠️ AND MY CLAIM WAS UNVERIFIED
+
+The seed's header argues at length that the mode must be `MAXIMUM_RIGOUR` and
+never the literal `'BLOCK'`. The spec beside it asserted
+`expect(s.mode).toBe(MAXIMUM_RIGOUR)`. **Mutating the seed to a hard-coded
+`'BLOCK'` left all 13 specs green.**
+
+> **A DERIVED VALUE THAT HAPPENS TO EQUAL ITS LITERAL IS INDISTINGUISHABLE FROM
+> THE LITERAL UNTIL THE DERIVATION CHANGES** — which is to say, until exactly the
+> moment the derivation was there to protect.
+
+⚠️ **FOUND BY PROBE, NOT BY REVIEW, AND THAT IS PART OF THE RECORD.** The
+argument for the derived form was written down, read back, and believed; nothing
+about reading the spec suggested it was blind. Only running the mutation
+separated the claim from the check. **A batch that had skipped the probe would
+have merged a paragraph of correct reasoning guarding nothing** — and would have
+been in exactly the position it was warning about, one appended enum member
+later.
+
+#### `ENF-PROP-FED-GATE-PROVES-NOTHING-01`
+
+> **A PAGE THAT NEVER CALLED THE SEAM WOULD HAVE PASSED EVERY SPEC AND SHIPPED A
+> COSMETIC MIGRATION.**
+
+Every wizard spec hands the ledger in as a prop, so none of them can see whether
+`BuyerGoodsReceipt` reads the registry at all. An empty ledger derives the same
+`BLOCK`, so a disconnected wire and a connected one produce identical behaviour —
+and `BLOCK` is everything this build ships. The migration would have been a
+registry read wired to nothing, with the consequence still effectively in the
+code, and the whole suite would have agreed it was done.
+
+#### `CENSUS-COVERAGE-IS-ASYMMETRIC-01` — the one that generalises furthest
+
+> **TWIN GUARDS WRITTEN FROM THE SAME SENTENCE ARE NOT TWIN GUARDS.**
+
+`halalApplicability.test.ts` and `bpomApplicability.test.ts` carry the same
+heading, the same comment — *"NOT MERELY CALLED — LOAD-BEARING"* — and different
+coverage. The halal twin pinned the whole governed clause and went red on the
+migration, correctly. **The BPOM twin pinned only the refusal line and would have
+slept through it.**
+
+Matching prose is not incidental here; it is the mechanism. The second file's
+comment asserts the coverage the first file's code provides, so a reader
+checking whether BPOM is guarded finds a paragraph saying yes. **A guard is
+audited by reading its assertions, and a twin is the one case where nobody
+does.**
+
+#### ⚠️ AND THE ZERO, KEPT BESIDE THE THING THAT MAKES IT MEAN SOMETHING
+
+> **A ZERO YOU CANNOT MOVE IS A ZERO YOU DID NOT MEASURE.**
+
+The delta is zero across 108 comparisons. That is only evidence of a faithful
+migration because a NON-ZERO is reachable and was reached: under an `OBSERVE`
+ledger five lines stop blocking on the seal question — **the same five H2
+measured as gaining one**, arrived at from the opposite direction by a different
+mechanism two batches later.
+
+This belongs to the same shape as the three above. A delta suite over a
+consequence that cannot vary would report zero forever, and would report it just
+as confidently the day the migration broke. The reachable non-zero is what
+converts "nothing changed" from an observation about the test into an
+observation about the system.
