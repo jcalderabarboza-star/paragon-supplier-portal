@@ -30,6 +30,8 @@ import { bpomOf } from '../../services/sdc/bpom';
 import type { BpomOutcome, BpomRefusalReason } from '../../services/sdc/bpom';
 import { halalOf } from '../../services/sdc/halal';
 import type { HalalOutcome, HalalRefusalReason } from '../../services/sdc/halal';
+import { blocks, effectiveEnforcement } from '../../lib/enforcement';
+import type { EnforcementSetting } from '../../lib/enforcement';
 
 interface GRInspectionWizardProps {
   onClose: () => void;
@@ -43,6 +45,21 @@ interface GRInspectionWizardProps {
   /** ASNs resolved through the service seam (asnStore-backed) — a live
    *  supplier-submitted ASN is a receivable GR source, not just fixture docks. */
   asns: ASN[];
+  /**
+   * The append-only enforcement-setting LEDGER (CP-3 · E4), resolved through
+   * `useEnforcementSettings()` by the page and passed down.
+   *
+   * ⚠️ **THE LEDGER, NOT A MODE.** The mode in force is clock-derived, so it is
+   * computed HERE from an instant this component captures (law 0.5) — a prop
+   * carrying an already-derived mode would have had the page read a clock on
+   * this component's behalf and freeze the answer at page load.
+   *
+   * ⚠️ REQUIRED, not optional. The page gates on the read's four honest states,
+   * so the wizard only ever mounts with a resolved ledger; an optional prop
+   * would silently mean "no ledger" and "unavailable ledger" at once. An EMPTY
+   * ledger is a legitimate value and derives full rigour.
+   */
+  enforcementSettings: readonly EnforcementSetting[];
 }
 
 // CP-0 · W1 · 2f-a — each quantity refusal names its own rule. A blank, an
@@ -401,6 +418,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   initialAsnId,
   shipments,
   asns,
+  enforcementSettings,
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -554,6 +572,43 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
     return true;
   });
 
+  // ── CP-3 · E4 — THE MODE IN FORCE, READ OFF THE LEDGER ────────────────────
+  //
+  // ⚠️ **ONE INSTANT, CAPTURED ONCE, AT THE TOP OF THE INSPECTION.** The
+  // `BuyerCompliance.tsx` precedent, and law 0.5's shape at a surface: nothing
+  // pure reads a clock, so the clock is read HERE, exactly once, and handed to
+  // `effectiveEnforcement` as an argument. A fresh `new Date()` inside the
+  // derivation would make the same inspection answer differently across renders
+  // the moment a `reviewBy` lapsed mid-session — a ratchet biting halfway
+  // through a form, with no act to explain it.
+  const enforcementInstant = useMemo(() => new Date().toISOString(), []);
+
+  /**
+   * Does a required-and-unanswered check STOP the step? Read, never assumed.
+   *
+   * `blocks()` is the ramp comparison from the vocabulary itself — false at
+   * `OBSERVE`, true from `BLOCK_OVERRIDABLE` up — so this file states no order
+   * and can never disagree with the one `ENFORCEMENT_MODES` declares. Whether a
+   * named person may then override at `BLOCK_OVERRIDABLE` is a SEPARATE question
+   * (`overrideAllowed`) and it is E3's; nothing here can construct an override,
+   * because nothing here can name a human.
+   *
+   * ⚠️ An EMPTY ledger answers `BLOCK / NO_SETTING_RECORDED`, so an unseeded,
+   * unavailable or unreadable ledger blocks exactly as today. There is no path
+   * through this derivation on which a missing setting relaxes a check.
+   */
+  const { sealBlocks, lotBlocks } = useMemo(
+    () => ({
+      sealBlocks: blocks(
+        effectiveEnforcement(enforcementSettings, 'halal.seal', enforcementInstant).mode,
+      ),
+      lotBlocks: blocks(
+        effectiveEnforcement(enforcementSettings, 'bpom.lot', enforcementInstant).mode,
+      ),
+    }),
+    [enforcementSettings, enforcementInstant],
+  );
+
   // ── CP-2 · 2B-4b — THE REGULATORY GATE, AND IT FAILS CLOSED ───────────────
   // A REGULATORY GATE THAT FAILS OPEN IS WORSE THAN ONE THAT FAILS LOUD. The
   // line this replaces read `if (l.bpomRequired && !l.bpomLotCheck)` over a
@@ -584,12 +639,33 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   // `l.halal.required`, because `required` does not exist on a refusal. Written
   // the other way round the compiler would stop it — which is exactly why the
   // outcome is a discriminated union and not a boolean plus a flag.
+  //
+  // ── ⚠️ CP-3 · E4 — THE CONSEQUENCE IS NOW READ, NOT HARD-CODED ────────────
+  // Two clauses below gained `&& sealBlocks` / `&& lotBlocks` and NOTHING else
+  // changed. That is the whole migration: the wizard used to assert that a
+  // required-and-unanswered check stops the step; it now ASKS THE REGISTRY
+  // whether it does, and today the registry answers what the wizard used to
+  // assert. **MEASURED DELTA: ZERO** — `GRInspectionWizard.test.tsx`, per check
+  // and per receivable line, on the H2 precedent.
+  //
+  // ⚠️ **THE TWO REFUSAL BRANCHES ARE UNTOUCHED, AND STRUCTURALLY SO.**
+  // `!l.halal.ok` and `!l.bpom.ok` carry no mode and cannot acquire one:
+  //
+  //   ENFORCEMENT MODE RELAXES THE CONSEQUENCE OF AN ANSWER;
+  //   NOTHING MAY RELAX THE ABSENCE OF A QUESTION.
+  //
+  // A refusal is the statement that the question COULD NOT BE POSED, so there
+  // is no answer whose consequence a mode could relax. `UNKNOWN_MATERIAL` and
+  // `UNDETERMINED_APPLICABILITY` are not members of `GovernedVerdict`, so there
+  // is no way to write a mode into those two lines without inventing a value
+  // the union does not contain — the absence is the mechanism, not a rule
+  // somebody has to remember here.
   const qualityValid = lines.every((l) => {
     if (!l.visualCheck || !l.packagingCheck) return false;
     if (!l.halal.ok) return false;
-    if (l.halal.required && !l.halalSealCheck) return false;
+    if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;
     if (!l.bpom.ok) return false;
-    if (l.bpom.applicable && !l.bpomLotCheck) return false;
+    if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;
     if (l.labSampleRequired && !l.labRequestId) return false;
     return true;
   });

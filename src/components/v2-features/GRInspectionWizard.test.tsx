@@ -7,6 +7,14 @@ import { bpomOf } from '../../services/sdc/bpom';
 import { halalOf } from '../../services/sdc/halal';
 import { MATERIAL_MASTER } from '../../services/sdc/fixtures';
 import GRInspectionWizard from './GRInspectionWizard';
+import { enforcementSettingStore } from '../../services/data/mock/stores/enforcementSettingStore';
+import { seedEnforcementLedger, SEEDED_CHECKS } from '../../services/data/mock/enforcementSeed';
+import {
+  GOVERNED_CHECK_IDS,
+  blocks,
+  effectiveEnforcement,
+  type EnforcementSetting,
+} from '../../lib/enforcement';
 
 // ────────────────────────────────────────────────────────────────────────────
 // GRInspectionWizard (CP-0 · W1 · 2f-a) — the FIRST spec this wizard has ever
@@ -21,6 +29,15 @@ import GRInspectionWizard from './GRInspectionWizard';
 // defect, and it is locale-independent and jsdom-visible. The behavioural specs
 // stack on top of it.
 // ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The ledger every pre-E4 spec renders against — EMPTY, which derives
+ * `BLOCK / NO_SETTING_RECORDED` for every check and is therefore byte-for-byte
+ * the consequence those specs were written under. They assert the SAME things
+ * they asserted before the migration, and they had to keep passing unchanged;
+ * that is half of "the delta is zero".
+ */
+const EMPTY_LEDGER: readonly EnforcementSetting[] = [];
 
 // A shipment the wizard actually offers: only 'At Dock' / 'Unloading' are
 // eligible GR sources (ELIGIBLE_STATUSES), and it must carry a line to inspect.
@@ -37,6 +54,7 @@ const renderWizard = () => {
       onComplete={() => {}}
       shipments={mockShipments}
       asns={[...asnStore.all()]}
+      enforcementSettings={EMPTY_LEDGER}
     />,
   );
 };
@@ -335,6 +353,7 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
         onComplete={() => {}}
         shipments={[]}
         asns={[...asnStore.all()]}
+        enforcementSettings={EMPTY_LEDGER}
       />,
     );
     fireEvent.click(await screen.findByText('ASN-UNKNOWN-MAT'));
@@ -372,6 +391,7 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
         onComplete={() => {}}
         shipments={mockShipments}
         asns={[...asnStore.all()]}
+        enforcementSettings={EMPTY_LEDGER}
       />,
     );
     fireEvent.click(await screen.findByText(asn!.asnNumber));
@@ -701,5 +721,327 @@ describe('CP-3 · H2 — the halal gate on a REAL receivable line', () => {
     await openQuality(HALAL_REFUSED!.asnNumber);
     expect(screen.getByTestId('gr-halal-refusal-0').textContent).toMatch(/halal/i);
     expect(screen.queryByTestId('gr-bpom-refusal-0')).not.toBeInTheDocument();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CP-3 · E4 — THE SHIPPED BLOCKS, MIGRATED UNDER THE REGISTRY.
+//
+// The wizard used to ASSERT that a required-and-unanswered check stops the
+// step. It now ASKS the enforcement registry whether it does. That is the whole
+// batch, and the standing requirement on it is a number:
+//
+//   THE DELTA MUST BE ZERO.
+//
+// Measured here twice over, on the H2 precedent — once at the CLAUSE (the
+// consequence the registry returns is the consequence the wizard hard-coded)
+// and once PER RECEIVABLE LINE (no line moves, in either direction, under any
+// combination of answers, at any instant). A migration that changes behaviour
+// is not a migration, and a delta asserted in prose is a promise with no
+// verifier.
+// ───────────────────────────────────────────────────────────────────────────
+
+/** A named person — the attribution the portal cannot produce today, written by
+ *  hand here because a LOOSENING requires one and only a test can supply it. */
+const NAMED_IN_A_TEST = {
+  kind: 'RESOLVED',
+  person: { personId: 'usr-014', displayName: 'Rina Wijaya' },
+} as const;
+
+/** A ledger that RELAXES both shipped checks to `OBSERVE`. Constructed as data,
+ *  never dispatched and never seeded — its only job is to prove the wizard
+ *  genuinely READS the mode. Nothing in the product can produce it today. */
+const OBSERVING_LEDGER: readonly EnforcementSetting[] = SEEDED_CHECKS.map((checkId) => ({
+  checkId,
+  mode: 'OBSERVE' as const,
+  reviewBy: '2099-12-31',
+  setBy: NAMED_IN_A_TEST,
+  setAt: '2026-08-10T00:00:00.000Z',
+}));
+
+/** The ledger the product actually ships, built by running the REAL seed through
+ *  the REAL verb — not a literal that could drift from it. */
+const seededLedger = async (): Promise<readonly EnforcementSetting[]> => {
+  enforcementSettingStore.reset();
+  await seedEnforcementLedger();
+  return [...enforcementSettingStore.all()];
+};
+
+/**
+ * ⚠️ THE RETIRED FORM, RESTATED — `qualityValid`'s two governed clauses EXACTLY
+ * as they read before E4, with the consequence hard-coded. Kept because a rule
+ * that has been replaced must be restated somewhere to prove it was replaced
+ * (`bpomApplicability.test.ts`'s precedent): delete the before-half and the
+ * delta becomes unmeasurable, which is the same as unmeasured.
+ */
+const preMigration = (code: string, sealAnswered: boolean, lotAnswered: boolean): string => {
+  const h = halalOf(code);
+  const b = bpomOf(code);
+  if (!h.ok) return 'REFUSED_HALAL';
+  if (h.required && !sealAnswered) return 'BLOCKED_SEAL';
+  if (!b.ok) return 'REFUSED_BPOM';
+  if (b.applicable && !lotAnswered) return 'BLOCKED_LOT';
+  return 'PASSES';
+};
+
+/** The MIGRATED form, with both consequences read off a ledger at an instant. */
+const postMigration = (
+  ledger: readonly EnforcementSetting[],
+  instant: string,
+  code: string,
+  sealAnswered: boolean,
+  lotAnswered: boolean,
+): string => {
+  const sealBlocks = blocks(effectiveEnforcement(ledger, 'halal.seal', instant).mode);
+  const lotBlocks = blocks(effectiveEnforcement(ledger, 'bpom.lot', instant).mode);
+  const h = halalOf(code);
+  const b = bpomOf(code);
+  if (!h.ok) return 'REFUSED_HALAL';
+  if (h.required && !sealAnswered && sealBlocks) return 'BLOCKED_SEAL';
+  if (!b.ok) return 'REFUSED_BPOM';
+  if (b.applicable && !lotAnswered && lotBlocks) return 'BLOCKED_LOT';
+  return 'PASSES';
+};
+
+/** Every combination of the two answers, including the one the wizard opens in. */
+const ANSWER_STATES: ReadonlyArray<readonly [boolean, boolean]> = [
+  [false, false],
+  [true, false],
+  [false, true],
+  [true, true],
+];
+
+/** Instants spanning far past, today and far future — the ratchet is
+ *  clock-derived, so a delta measured at ONE instant is a delta measured once. */
+const INSTANTS = [
+  '2020-01-01T00:00:00.000Z',
+  '2026-08-10T08:00:00.000Z',
+  '2099-01-01T00:00:00.000Z',
+];
+
+describe('CP-3 · E4 — ⚠️ THE PER-CHECK DELTA, AND IT IS ZERO', () => {
+  it('⚠️ THE MEASUREMENT, PER CHECK — the registry returns what the wizard hard-coded', async () => {
+    // The clause-level half. Each migrated clause is `old && blocks(mode)`, so
+    // the delta is zero exactly when `blocks(mode)` is TRUE for both seeded
+    // checks — stated as the per-check table the dispatch asked for rather than
+    // as one boolean, because "both are fine" is not a measurement.
+    const ledger = await seededLedger();
+    const table = SEEDED_CHECKS.map((checkId) => {
+      const e = effectiveEnforcement(ledger, checkId, INSTANTS[1]);
+      return { checkId, mode: e.mode, source: e.source, blocks: blocks(e.mode) };
+    });
+    expect(table).toEqual([
+      { checkId: 'halal.seal', mode: 'BLOCK', source: 'AS_SET', blocks: true },
+      { checkId: 'bpom.lot', mode: 'BLOCK', source: 'AS_SET', blocks: true },
+    ]);
+  });
+
+  it('⚠️ AND AT EVERY INSTANT — a BLOCK has no review to lapse, so nothing ratchets', async () => {
+    // `AS_SET` at ten years past, never `EXPIRY_TIGHTENED`: the ceiling is a
+    // fixed point and `reviewBy` is null, so there is no date for the calendar
+    // to move this row against. A seed that could ratchet is a delta with a fuse.
+    const ledger = await seededLedger();
+    for (const instant of INSTANTS) {
+      for (const checkId of SEEDED_CHECKS) {
+        expect(effectiveEnforcement(ledger, checkId, instant)).toEqual({
+          mode: 'BLOCK',
+          source: 'AS_SET',
+        });
+      }
+    }
+  });
+
+  it('⚠️ THE DELTA, LINE BY LINE, over every receivable line × every answer state', async () => {
+    // The corpus half, over the same corpus H2 measured its delta on — ONE
+    // definition of "every line a goods receipt can be fed today", shared, so
+    // the two measurements cannot disagree about what they measured.
+    asnStore.reset();
+    const ledger = await seededLedger();
+    const rows = receivableLines();
+    expect(rows).toHaveLength(9);
+
+    const moved: string[] = [];
+    let compared = 0;
+    for (const instant of INSTANTS) {
+      for (const [seal, lot] of ANSWER_STATES) {
+        for (const { li } of rows) {
+          compared += 1;
+          const before = preMigration(li.materialCode, seal, lot);
+          const after = postMigration(ledger, instant, li.materialCode, seal, lot);
+          if (before !== after) {
+            moved.push(
+              `${li.materialCode} @${instant} seal=${seal} lot=${lot}: ${before} → ${after}`,
+            );
+          }
+        }
+      }
+    }
+    // 9 lines × 4 answer states × 3 instants. Asserted so the census cannot pass
+    // by measuring nothing (`EMPTY-INPUT-REPORTS-CLEAN-01`).
+    expect(compared).toBe(108);
+    expect(moved).toEqual([]);
+  });
+
+  it('⚠️ AND THE SAME DELTA AGAINST AN EMPTY LEDGER — the un-seeded state is the safe one', () => {
+    // The seed can fail to land (the boot dispatch reports rather than throws).
+    // This is the proof that a ledger which never got its opening act enforces
+    // IDENTICALLY: the mode is the same `BLOCK`, only the SOURCE differs, and a
+    // source is provenance rather than consequence.
+    asnStore.reset();
+    enforcementSettingStore.reset();
+    const rows = receivableLines();
+    for (const instant of INSTANTS) {
+      for (const [seal, lot] of ANSWER_STATES) {
+        for (const { li } of rows) {
+          expect(postMigration([], instant, li.materialCode, seal, lot)).toBe(
+            preMigration(li.materialCode, seal, lot),
+          );
+        }
+      }
+    }
+    for (const checkId of GOVERNED_CHECK_IDS) {
+      expect(effectiveEnforcement([], checkId, INSTANTS[1])).toEqual({
+        mode: 'BLOCK',
+        source: 'NO_SETTING_RECORDED',
+      });
+    }
+  });
+
+  it('⚠️ THE READ IS LOAD-BEARING — an OBSERVE ledger MOVES both clauses', () => {
+    // Without this, `&& sealBlocks` could be `&& true` and every assertion above
+    // would still pass. A zero delta is only evidence of a FAITHFUL migration if
+    // a non-zero one is reachable; otherwise it is evidence of a no-op.
+    //
+    // ⚠️ This ledger is constructed in a test and is UNREACHABLE in the product:
+    // relaxing to OBSERVE is a LOOSENING, which requires a NAMED actor, and
+    // nothing in this system can name a human (`ENF-NO-PERSON-IN-IDENTITY-01`).
+    expect(
+      SEEDED_CHECKS.map((checkId) =>
+        blocks(effectiveEnforcement(OBSERVING_LEDGER, checkId, INSTANTS[1]).mode),
+      ),
+    ).toEqual([false, false]);
+
+    asnStore.reset();
+    const rows = receivableLines();
+    const differences = rows
+      .map(({ li }) => ({
+        code: li.materialCode,
+        before: preMigration(li.materialCode, false, false),
+        after: postMigration(OBSERVING_LEDGER, INSTANTS[1], li.materialCode, false, false),
+      }))
+      .filter((r) => r.before !== r.after);
+    // FIVE lines stop blocking on the seal question under OBSERVE — the same
+    // five H2 measured as GAINING one. The gate would still ASK; it would stop
+    // stopping, which is exactly what OBSERVE means and exactly what nothing in
+    // this build has been relaxed to.
+    expect(differences.map((d) => d.code).sort()).toEqual([
+      'FR-ROUD-4470',
+      'FR-WARD-4410',
+      'RM-COCO-8200',
+      'RM-EMUL-9440',
+      'RM-PSTN-7150',
+    ]);
+  });
+
+  it('⚠️ THE REFUSALS ARE OUTSIDE THE MODE — asserted over the wizard own source', () => {
+    // ENFORCEMENT MODE RELAXES THE CONSEQUENCE OF AN ANSWER; NOTHING MAY RELAX
+    // THE ABSENCE OF A QUESTION. The two refusal branches must carry no mode
+    // term, and a prose promise would not survive the next edit.
+    const wizard = (
+      import.meta.glob('/src/components/v2-features/GRInspectionWizard.tsx', {
+        query: '?raw',
+        import: 'default',
+        eager: true,
+      }) as Record<string, string>
+    )['/src/components/v2-features/GRInspectionWizard.tsx'];
+    const code = wizard
+      .split(/\r?\n/)
+      .filter((l) => {
+        const t = l.trimStart();
+        return !t.startsWith('//') && !t.startsWith('*');
+      })
+      .join('\n');
+    // The refusals, unchanged and mode-free.
+    expect(code).toContain('if (!l.halal.ok) return false;');
+    expect(code).toContain('if (!l.bpom.ok) return false;');
+    // The two governed clauses, and they are the ONLY two that read a mode.
+    expect(code).toContain('if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;');
+    expect(code).toContain('if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;');
+    // Six mentions and no more: the destructure (2), the derivation (2), the two
+    // clauses (2). A seventh means a third site started reading a mode.
+    expect(code.match(/sealBlocks|lotBlocks/g) ?? []).toHaveLength(6);
+  });
+
+  it('⚠️ `halal.certificate` IS NOT SEEDED — a row nobody took is not written', async () => {
+    // The dispatch said three settings; the tree says TWO checks block today.
+    // `halal.certificate` is authored at H3 and wired nowhere, so it has no
+    // shipped behaviour to open at, and a `BLOCK` row for it would put a
+    // decision on the record that nobody took — which is exactly why E2 refused
+    // to seed at all. Corrected against the ruling by the operator at E4.
+    const ledger = await seededLedger();
+    expect(ledger.map((s) => s.checkId)).toEqual(['halal.seal', 'bpom.lot']);
+    expect(GOVERNED_CHECK_IDS).toContain('halal.certificate');
+    expect(effectiveEnforcement(ledger, 'halal.certificate', INSTANTS[1])).toEqual({
+      mode: 'BLOCK',
+      source: 'NO_SETTING_RECORDED',
+    });
+  });
+});
+
+describe('CP-3 · E4 — the migration at the SURFACE, under the shipped ledger', () => {
+  /** The first eligible dock source whose every line is halal-REQUIRED and whose
+   *  BPOM question is ANSWERABLE — so a disabled Next isolates the seal clause. */
+  const SEAL_ONLY = ELIGIBLE.find((s) =>
+    s.lineItems.every((li) => {
+      const h = halalOf(li.materialCode);
+      const b = bpomOf(li.materialCode);
+      return h.ok && h.required && b.ok && b.applicable;
+    }),
+  );
+
+  const openQualityWith = async (
+    asnNumber: string,
+    enforcementSettings: readonly EnforcementSetting[],
+  ) => {
+    cleanup();
+    asnStore.reset();
+    renderWithProviders(
+      <GRInspectionWizard
+        onClose={() => {}}
+        onComplete={() => {}}
+        shipments={mockShipments}
+        asns={[...asnStore.all()]}
+        enforcementSettings={enforcementSettings}
+      />,
+    );
+    fireEvent.click(await screen.findByText(asnNumber));
+    const next = () => screen.getAllByRole('button', { name: /Next/i })[0];
+    fireEvent.click(next());
+    fireEvent.click(next());
+    return next;
+  };
+
+  it('the fixture reaches the state — else both specs below are vacuous', () => {
+    expect(SEAL_ONLY, 'no eligible source isolates the halal seal clause').toBeDefined();
+  });
+
+  it('⚠️ THE SHIPPED LEDGER STILL STOPS THE WIZARD — same surface, read consequence', async () => {
+    // The pre-E4 spec asserted this with the consequence HARD-CODED. This
+    // asserts the same thing with the consequence READ, against the ledger the
+    // product actually boots with. An identical outcome is the whole point.
+    const ledger = await seededLedger();
+    const next = await openQualityWith(SEAL_ONLY!.asnNumber, ledger);
+    expect(screen.getAllByText('Halal Seal Check').length).toBeGreaterThan(0);
+    expect(next()).toBeDisabled();
+  });
+
+  it('⚠️ AND UNDER `OBSERVE` IT ASKS AND DOES NOT STOP — the question survives the relaxation', async () => {
+    // The proof that relaxing ENFORCEMENT is not relaxing HONESTY: the seal row
+    // still renders, still opens unanswered, and the step no longer blocks on
+    // it. If the row DISAPPEARED, `OBSERVE` would be the fourth mode this
+    // vocabulary refuses to have.
+    const next = await openQualityWith(SEAL_ONLY!.asnNumber, OBSERVING_LEDGER);
+    expect(screen.getAllByText('Halal Seal Check').length).toBeGreaterThan(0);
+    expect(next()).not.toBeDisabled();
   });
 });

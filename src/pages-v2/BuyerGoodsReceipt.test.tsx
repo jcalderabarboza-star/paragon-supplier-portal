@@ -5,6 +5,9 @@ import { withChaos } from '../services/data/mock/withChaos';
 import { asnStore } from '../services/data/mock/stores/asnStore';
 import { goodsReceiptStore } from '../services/data/mock/stores/goodsReceiptStore';
 import type { IDataService, ASN } from '../services/data/types';
+import { MockCommandService } from '../services/data/mock/MockCommandService';
+import { enforcementSettingStore } from '../services/data/mock/stores/enforcementSettingStore';
+import { seedEnforcementLedger, SEEDED_CHECKS } from '../services/data/mock/enforcementSeed';
 import BuyerGoodsReceipt from './BuyerGoodsReceipt';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
@@ -183,5 +186,109 @@ describe('BuyerGoodsReceipt — GR from a live store ASN (UI path)', () => {
       expect(gr?.status).toBe('Posted to SAP');
     });
     expect(asnStore.get('ASN-UITEST-1')!.status).toBe('Discrepancy');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CP-3 · E4 — THE LEDGER REACHES THE GATE, THROUGH THE REAL READ.
+//
+// ⚠️ WHY THIS SUITE EXISTS AND THE WIZARD'S OWN ONE IS NOT ENOUGH. Every spec
+// in `GRInspectionWizard.test.tsx` hands the ledger in as a PROP, so all of
+// them would still pass if `BuyerGoodsReceipt` passed a hard-coded `[]` and
+// never called `useEnforcementSettings()` at all — the behaviour today would
+// be identical (an empty ledger derives the same `BLOCK`), and the migration
+// would be COSMETIC: a registry read wired to nothing, with the consequence
+// still effectively in the code.
+//
+// So the proof has to run the whole path — store → seam → scoped hook → page →
+// wizard → clause — and it has to run it with a mode that MOVES, because a
+// disconnected wire and a connected one are indistinguishable at `BLOCK`.
+// ───────────────────────────────────────────────────────────────────────────
+
+/** A named person. Required because relaxing is a LOOSENING, and only a test
+ *  can supply one — nothing in the product can name a human (F1). */
+const NAMED_IN_A_TEST = {
+  kind: 'RESOLVED',
+  person: { personId: 'usr-014', displayName: 'Rina Wijaya' },
+};
+
+/** Record OBSERVE for both shipped checks, through the real verb. */
+const relaxBothChecks = async () => {
+  const svc = new MockCommandService();
+  for (const entityId of SEEDED_CHECKS) {
+    const res = await svc.dispatch(
+      { personaType: 'buyer', supplierId: null },
+      {
+        transitionId: 't_enforcement_set',
+        entity: 'enforcement',
+        entityId,
+        payload: { mode: 'OBSERVE', reviewBy: '2099-12-31', setBy: NAMED_IN_A_TEST },
+      },
+    );
+    // A silent refusal here would make the spec below assert nothing.
+    expect(res.status).toBe('done');
+  }
+};
+
+/** Open the wizard on the live ASN and stop on the quality step, ANSWERING
+ *  NOTHING — the state in which the two governed clauses decide the outcome. */
+const openQualityUnanswered = async () => {
+  goodsReceiptStore.reset();
+  asnStore.reset();
+  asnStore.add(uiTestAsn());
+  renderWithProviders(<BuyerGoodsReceipt />);
+  await screen.findByText('Rejection Rate (30d)');
+  fireEvent.click(screen.getByRole('button', { name: /New GR/i }));
+  fireEvent.click(await screen.findByText('ASN-UITEST-1'));
+  fireEvent.click(screen.getByRole('button', { name: 'Next' })); // → details
+  fireEvent.click(screen.getByRole('button', { name: 'Next' })); // → quality
+  return () => screen.getByRole('button', { name: 'Next' });
+};
+
+describe('BuyerGoodsReceipt — CP-3 · E4, the enforcement ledger reaches the gate', () => {
+  beforeEach(() => {
+    enforcementSettingStore.reset();
+  });
+
+  it('⚠️ THE SHIPPED LEDGER STILL STOPS THE STEP — the delta at the page is zero', async () => {
+    // `AI-NIAC-6601` is MG-04: halal REQUIRED and BPOM applicable, so both
+    // governed clauses are live and neither is answered. Under the ledger the
+    // product boots with, the step does not advance — exactly as it did before
+    // E4, when the wizard asserted the consequence instead of reading it.
+    await seedEnforcementLedger();
+    const next = await openQualityUnanswered();
+    expect(screen.getByRole('radio', { name: /Halal Seal Check.*Pass/ })).not.toBeChecked();
+    expect(next()).toBeDisabled();
+  });
+
+  it('⚠️ AND AN `OBSERVE` LEDGER REACHES IT — so the read is WIRED, not decorative', async () => {
+    // The same page, the same ASN, the same unanswered checks — and the step
+    // advances, because a recorded relaxation travelled the whole path. This is
+    // the spec that would fail if `BuyerGoodsReceipt` stopped reading the seam
+    // and handed the wizard an empty array.
+    //
+    // ⚠️ AND BOTH QUESTIONS ARE STILL ASKED. Relaxing enforcement is not
+    // relaxing honesty: the radios still render, still open unanswered, and the
+    // inspector is still asked. Only the CONSEQUENCE moved.
+    await relaxBothChecks();
+    const next = await openQualityUnanswered();
+    expect(screen.getByRole('radio', { name: /Halal Seal Check.*Pass/ })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: /BPOM Lot Tracking.*Pass/ })).not.toBeChecked();
+    expect(next()).not.toBeDisabled();
+  });
+
+  it('⚠️ A SUPPLIER NEVER SEES THIS PAGE, so the buyer-only read is not a gap here', async () => {
+    // `getEnforcementSettings` REFUSES a supplier with SCOPE_DENIED rather than
+    // answering with an empty page (E2's build decision). Reaching that refusal
+    // through this page would need a supplier on a buyer route; what a supplier
+    // is owed is the STAMP on its own receipt, which rides E3. Recorded so the
+    // absence of a supplier spec here reads as a boundary, not an oversight.
+    await seedEnforcementLedger();
+    await expect(
+      mockDataService.enforcement.getEnforcementSettings({
+        personaType: 'supplier',
+        supplierId: 'sup-007',
+      }),
+    ).rejects.toMatchObject({ code: 'SCOPE_DENIED' });
   });
 });

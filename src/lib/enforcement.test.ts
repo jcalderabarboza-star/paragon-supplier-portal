@@ -614,13 +614,31 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     'isEnforcementMode',
     'isGovernedCheckId',
     'overrideAllowed',
+    // ⚠️ E4 WIDENED THE SURFACE THE CENSUS WATCHES, and it had to. E2 added the
+    // ledger derivations and E4 is the first batch to CONSUME them; a census
+    // that still only knew E1's names would have missed the seed module
+    // entirely — it imports `MAXIMUM_RIGOUR` and `settingInForce` and not one
+    // E1 name. A consumer census whose vocabulary lags the module's is a census
+    // that reports clean because it was looking elsewhere.
+    'MAXIMUM_RIGOUR',
+    'effectiveEnforcement',
+    'settingInForce',
+    'settingHistory',
+    'GovernedCheckId',
   ];
 
-  it('⚠️ E2 — the enforcement surface has SIX consumers, and they are NAMED', () => {
-    // E1 asserted ONE file. E2 is the batch that legitimately adds consumers, so
-    // the census does not weaken — it becomes an EXACT LIST. A sixth entry
+  it('⚠️ E4 — the enforcement surface has NINE consumers, and FIVE suites', () => {
+    // E1 asserted ONE file. E2 made it an EXACT LIST of six. E4 is the batch
+    // that legitimately adds the GATE SIDE — a query hook, a page, the wizard
+    // itself and the seed — so the list grows again, consciously. An entry
     // turning up without a batch that authorises it turns this red, which is
-    // still the job. E3 (a gate that READS the setting) is not among them.
+    // still the job.
+    //
+    // ⚠️ THE E2 FENCE IS DELIBERATELY GONE. It read "nothing renders or enforces
+    // a mode yet"; E4 is the batch that retires it, and the retirement is the
+    // point rather than a casualty. `GRInspectionWizard.tsx` is now on this list
+    // BY DESIGN — it is the first gate in the system that reads an enforcement
+    // setting instead of asserting one.
     const src = sources();
     const referencing = Object.entries(src)
       .filter(([, text]) => {
@@ -634,24 +652,40 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     // hide behind a new spec file.
     const suites = referencing.filter((p) => /\.test\.tsx?$/.test(p));
     expect(suites).toEqual([
+      '/src/components/v2-features/GRInspectionWizard.test.tsx',
+      // ⚠️ Matches on `getEnforcementSettings` — the E4 end-to-end spec that
+      // proves the ledger reaches the gate through the real read rather than a
+      // prop. That spec exists because the wizard's own suite could not tell a
+      // connected registry from a disconnected one at `BLOCK`.
+      '/src/pages-v2/BuyerGoodsReceipt.test.tsx',
       '/src/services/data/mock/enforcementSeam.test.ts',
+      '/src/services/data/mock/enforcementSeed.test.ts',
       '/src/services/data/mock/enforcementSetCommand.test.ts',
     ]);
     expect(referencing.filter((p) => !suites.includes(p))).toEqual([
+      '/src/components/v2-features/GRInspectionWizard.tsx', // ⚠️ E4 — THE FIRST GATE
       '/src/lib/enforcement.ts', //                       the vocabulary + derivation
+      '/src/pages-v2/BuyerGoodsReceipt.tsx', //           E4 — the page that reads the ledger
       '/src/services/data/mock/MockCommandService.ts', // the CommandTarget
       '/src/services/data/mock/MockEnforcementService.ts', // the read seam
+      '/src/services/data/mock/enforcementSeed.ts', //    E4 — the opening act
       '/src/services/data/mock/stores/enforcementSettingStore.ts', // the ledger
       '/src/services/data/types.ts', //                   the seam's row type (TYPE-ONLY)
+      '/src/services/query/hooks.ts', //                  E4 — the scoped read hook
       '/src/services/transitions/policies.ts', //         the recording policy
     ]);
+    // ⚠️ `main.tsx` IS A CONSUMER OF THE SEED AND IS NOT ON THIS LIST, because it
+    // names `seedEnforcementLedger` and no enforcement vocabulary at all. Stated
+    // rather than filtered: the list is exact, and a reader who assumes "every
+    // file touching enforcement" would otherwise take the omission for absence.
     // ⚠️ `types.ts` is a TYPE-ONLY importer and this census cannot tell — it
     // matches TEXT. That is `CENSUS-COUNTS-TYPE-IMPORTS-01` again, and it is
     // named here rather than filtered out: the list is exact either way, and a
     // filter that quietly dropped a file would be the weaker census.
-    // ⚠️ Deliberately ABSENT from that list: every page, every widget, and the
-    // GR wizard. NOTHING RENDERS OR ENFORCES A MODE YET — the setting is
-    // recordable and readable, and no gate consults it. That is the E2 fence.
+    // ⚠️ Deliberately ABSENT from that list, still: every OTHER page and widget.
+    // Exactly ONE gate reads a mode, and it reads it for exactly TWO checks —
+    // the two that block today. E4 migrated the shipped blocks; it did not open
+    // a season on wiring modes into surfaces.
 
     // ⚠️ THE LIMIT OF THIS CHECK, STATED — the H2/H3 precedent. Vite's
     // `import.meta.glob` EXCLUDES THE MODULE IT IS WRITTEN IN, so the scan
@@ -698,13 +732,32 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     expect(code).not.toContain('bpomOf(');
   });
 
-  it('the GR inspection wizard is untouched by this batch', () => {
-    const wizard = Object.entries(sources()).find(([p]) => p.includes('GRInspectionWizard'));
+  it('⚠️ E4 — the GR wizard reads the LEDGER and derives, and holds no mode of its own', () => {
+    // The E2 fence said the wizard was untouched. E4 touches it, and the shape
+    // of the touch is the thing worth pinning: it reads the LEDGER through a
+    // prop and derives the mode with `effectiveEnforcement` and its own instant.
+    const wizard = Object.entries(sources()).find(([p]) =>
+      p.endsWith('/GRInspectionWizard.tsx'),
+    );
     expect(wizard).toBeDefined();
     const code = codeOf(wizard![1]);
-    expect(code).not.toContain('enforcement');
-    expect(code).not.toContain('effectiveMode');
-    expect(code).not.toContain('GovernedCheck');
+    expect(code).toContain('effectiveEnforcement(');
+    expect(code).toContain('enforcementSettings');
+
+    // ⚠️ IT STORES NO MODE AND NAMES NO MODE. A hard-coded `'BLOCK'` or
+    // `'OBSERVE'` in a gate is the migration undone — the consequence back in
+    // the code, with a registry read beside it for decoration.
+    for (const mode of ['OBSERVE', 'BLOCK_OVERRIDABLE', 'BLOCK']) {
+      expect(code).not.toContain(`'${mode}'`);
+    }
+
+    // ⚠️ AND IT CANNOT CONSTRUCT AN OVERRIDE. That is E3, and it needs a person
+    // this system cannot produce; a gate that could relax its own block without
+    // one would be the anonymous unlock the whole lane exists to refuse.
+    expect(code).not.toContain('overriddenBy');
+    expect(code).not.toContain('EnforcementOverride');
+    expect(code).not.toContain('overrideAllowed');
+    expect(code).not.toContain('GovernedCheckStamp');
   });
 
   it('NO SETTING IS SEEDED — the vocabulary ships without a single value', () => {

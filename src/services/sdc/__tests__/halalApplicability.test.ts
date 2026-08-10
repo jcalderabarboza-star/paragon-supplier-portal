@@ -396,7 +396,21 @@ describe('H2 — WIRED, and the prose parse is GONE', () => {
     // passes. `GRInspectionWizard.test.tsx` proves the behaviour; this proves the
     // wiring is the one the behaviour runs through.
     expect(wizard).toContain('if (!l.halal.ok) return false;');
-    expect(wizard).toContain('if (l.halal.required && !l.halalSealCheck) return false;');
+    // ⚠️ CP-3 · E4 — THE CLAUSE GAINED A CONJUNCT, AND THIS CENSUS CAUGHT IT.
+    // The required-and-unanswered clause now reads its CONSEQUENCE off the
+    // enforcement ledger (`sealBlocks`) instead of hard-coding it. The delta is
+    // ZERO — the seeded mode is `BLOCK` and `blocks('BLOCK')` is the `true` the
+    // clause used to assume — and `GRInspectionWizard.test.tsx` measures that
+    // per check and per receivable line.
+    //
+    // ⚠️ THE REFUSAL LINE ABOVE IS DELIBERATELY UNCHANGED, and the contrast is
+    // the point of updating both in one place: a mode may relax the consequence
+    // of an ANSWER and may never relax the ABSENCE OF A QUESTION. If a
+    // `Blocks` term ever appears on the `!l.halal.ok` line, the assertion above
+    // goes red, which is how this census keeps saying something after E4.
+    expect(wizard).toContain(
+      'if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;',
+    );
   });
 
   it('⚠️ NO PROSE PARSE SURVIVES IN PRODUCTION CODE — derived, not a file list', () => {
