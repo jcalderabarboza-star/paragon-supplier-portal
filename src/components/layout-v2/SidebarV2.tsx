@@ -21,6 +21,7 @@ import {
   BellRing,
   MessageCircle,
   Table2,
+  Workflow,
   Handshake,
   LucideIcon,
 } from 'lucide-react';
@@ -86,6 +87,8 @@ const BUYER_NAV: NavGroup[] = [
       { labelKey: 'nav.buyer.risk', icon: AlertTriangle, path: '/buyer/risk' },
       { labelKey: 'nav.buyer.compliance', icon: ShieldCheck, path: '/buyer/compliance' },
       { labelKey: 'nav.buyer.commHub', icon: MessageCircle, path: '/buyer/comm-hub' },
+      // PF-1 — the derived flow catalog (read-only; the analyzer's surface).
+      { labelKey: 'nav.buyer.processFlows', icon: Workflow, path: '/buyer/process-flows' },
     ],
   },
 ];

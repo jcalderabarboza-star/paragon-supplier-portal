@@ -42,6 +42,7 @@ import BuyerAnalytics from '../pages-v2/BuyerAnalytics';
 import BuyerRisk from '../pages-v2/BuyerRisk';
 import BuyerCommHub from '../pages-v2/BuyerCommHub';
 import BuyerCompliance from '../pages-v2/BuyerCompliance';
+import ProcessFlows from '../pages-v2/ProcessFlows';
 import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
 import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
@@ -96,6 +97,7 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/risk', pattern: '/buyer/risk', at: '/buyer/risk', element: <BuyerRisk />, identity: BUYER },
   { name: 'buyer/comm-hub', pattern: '/buyer/comm-hub', at: '/buyer/comm-hub', element: <BuyerCommHub />, identity: BUYER },
   { name: 'buyer/compliance', pattern: '/buyer/compliance', at: '/buyer/compliance', element: <BuyerCompliance />, identity: BUYER },
+  { name: 'buyer/process-flows', pattern: '/buyer/process-flows', at: '/buyer/process-flows', element: <ProcessFlows />, identity: BUYER },
   { name: 'supplier/dashboard', pattern: '/supplier/dashboard', at: '/supplier/dashboard', element: <SupplierDashboardV2 />, identity: SUPPLIER },
   { name: 'supplier/storefront', pattern: '/supplier/storefront', at: '/supplier/storefront', element: <SupplierMyStorefront />, identity: SUPPLIER },
   { name: 'supplier/documents', pattern: '/supplier/documents', at: '/supplier/documents', element: <SupplierDocumentsV2 />, identity: SUPPLIER },
@@ -113,9 +115,9 @@ const ROUTES: RouteCase[] = [
 ];
 
 describe('sp-001 — every route mounts without crashing', () => {
-  it('route table covers all of AppRouter (39 elements + redirect)', () => {
+  it('route table covers all of AppRouter (40 elements + redirect)', () => {
     // Guards against a route being added to AppRouter but not the smoke.
-    expect(ROUTES.length).toBe(40);
+    expect(ROUTES.length).toBe(41);
   });
 
   it.each(ROUTES)('$name renders and paints content', async ({ pattern, at, element, identity }) => {

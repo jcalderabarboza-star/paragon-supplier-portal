@@ -339,6 +339,36 @@ export function feedProvenance(capability: Capability): FeedProvenance {
   return CAPABILITY_FEED[capability];
 }
 
+// — The INVERSE lookup (PF-1) ————————————————————————————————————————————————
+// `CAPABILITY_BACKING` answers "what entity does this capability read?". The
+// Process Flows surface asks the mirror question — "which capability, if any,
+// reads THIS flow entity?" — because it walks the flow catalog, not the
+// capability list. DERIVED by inverting the ONE authored map rather than
+// authored a second time: a repointed backing moves both directions at once.
+//
+// ⚠️ NULL IS A REAL ANSWER, NOT A MISS. Eight of the eighteen registered flows
+// (goodsReceiptLine, invoiceMatch, quotation, shipment, contract, obligation,
+// incomingShipment, enforcement) have NO capability reading them — sub-flows
+// rolled up by a parent, author-unwired machines, and a ledger machine with no
+// read surface. Returning `null` says so; naming a merely-adjacent capability
+// for them would be INVENTORY-REFERENT-01 (a marker whose referent is not the
+// data on screen) committed on purpose.
+//
+// The map is not injective in principle (two capabilities could name one
+// entity); it is 1:1 today, and the FIRST declared capability wins, which is a
+// stable answer rather than an insertion-order accident.
+const ENTITY_CAPABILITY: ReadonlyMap<string, Capability> = new Map(
+  (Object.keys(CAPABILITY_BACKING) as Capability[])
+    .filter((c) => CAPABILITY_BACKING[c] !== null)
+    .reverse() // reverse + Map-overwrite ⇒ the first-declared capability wins
+    .map((c) => [CAPABILITY_BACKING[c] as string, c] as const),
+);
+
+/** The capability that reads a flow entity, or null when nothing reads it. */
+export function capabilityForEntity(entity: string): Capability | null {
+  return ENTITY_CAPABILITY.get(entity) ?? null;
+}
+
 /**
  * The verb axis, as a marker-facing predicate: acting on this surface really
  * dispatches through a wired CommandTarget and writes the DR-10 trail — even
