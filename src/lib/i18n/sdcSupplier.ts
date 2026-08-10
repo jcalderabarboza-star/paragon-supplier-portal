@@ -42,6 +42,8 @@ export const sdcSupplierEn: Record<string, string> = {
   // — My responses (own facts + status ONLY) —
   'sdcSup.responses.emptyTitle': 'No responses yet',
   'sdcSup.responses.emptyBody': 'Confirm a published line and it will appear here.',
+  'sdcSup.responses.submitDraft': 'Submit to buyer',
+  'sdcSup.responses.submitting': 'Submitting…',
   'sdcSup.responses.col.material': 'Material',
   'sdcSup.responses.col.period': 'Period',
   'sdcSup.responses.col.confirmed': 'Confirmed',
@@ -97,8 +99,10 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.rootCause.quality': 'Quality',
   'sdcSup.rootCause.other': 'Other',
   'sdcSup.panel.cancel': 'Cancel',
-  'sdcSup.panel.submit': 'Submit confirmation',
-  'sdcSup.panel.submitting': 'Submitting…',
+  // ⚠️ PF-1b — THE PANEL SAVES A DRAFT; it does not send. Submitting is a
+  // second, deliberate act from My responses.
+  'sdcSup.panel.submit': 'Save draft',
+  'sdcSup.panel.submitting': 'Saving…',
 
   // — Acknowledge panel (SDC-2b-EXT — the visibility response) —
   'sdcSup.ackPanel.title': 'Acknowledge {{material}}',
@@ -114,8 +118,11 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.toast.missingQty.body': 'Enter the quantity you confirm (0 is valid when you cannot supply).',
   'sdcSup.toast.missingRootCause.title': 'Root cause required',
   'sdcSup.toast.missingRootCause.body': 'You are confirming below the requested quantity — select a root-cause category.',
-  'sdcSup.toast.submitted.title': 'Confirmation submitted — {{material}}',
-  'sdcSup.toast.submitted.body': 'Your response is recorded under My responses.',
+  'sdcSup.toast.draftSaved.title': 'Draft saved — {{material}}',
+  'sdcSup.toast.draftSaved.body':
+    'Not sent yet. Review it under My responses, then submit it to the buyer.',
+  'sdcSup.toast.promoted.title': '{{responseId}} submitted',
+  'sdcSup.toast.promoted.body': 'The buyer can see this confirmation now.',
   'sdcSup.toast.acknowledged.title': 'Acknowledged — {{material}}',
   'sdcSup.toast.acknowledged.body': 'Your visibility response is recorded under My responses.',
   'sdcSup.toast.failed.title': 'Confirmation not submitted',
@@ -355,6 +362,8 @@ export const sdcSupplierId: Record<string, string> = {
   // — Respons Saya —
   'sdcSup.responses.emptyTitle': 'Belum ada respons',
   'sdcSup.responses.emptyBody': 'Konfirmasikan baris terbit dan respons akan muncul di sini.',
+  'sdcSup.responses.submitDraft': 'Kirim ke pembeli',
+  'sdcSup.responses.submitting': 'Mengirim…',
   'sdcSup.responses.col.material': 'Material',
   'sdcSup.responses.col.period': 'Periode',
   'sdcSup.responses.col.confirmed': 'Dikonfirmasi',
@@ -406,8 +415,8 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.rootCause.quality': 'Kualitas',
   'sdcSup.rootCause.other': 'Lainnya',
   'sdcSup.panel.cancel': 'Batal',
-  'sdcSup.panel.submit': 'Kirim konfirmasi',
-  'sdcSup.panel.submitting': 'Mengirim…',
+  'sdcSup.panel.submit': 'Simpan draf',
+  'sdcSup.panel.submitting': 'Menyimpan…',
 
   // — Panel tanggapan visibilitas (SDC-2b-EXT) —
   'sdcSup.ackPanel.title': 'Tanggapi {{material}}',
@@ -423,8 +432,11 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.toast.missingQty.body': 'Masukkan kuantitas yang Anda konfirmasi (0 sah bila tidak dapat memasok).',
   'sdcSup.toast.missingRootCause.title': 'Akar masalah wajib diisi',
   'sdcSup.toast.missingRootCause.body': 'Anda mengonfirmasi di bawah kuantitas yang diminta — pilih kategori akar masalah.',
-  'sdcSup.toast.submitted.title': 'Konfirmasi terkirim — {{material}}',
-  'sdcSup.toast.submitted.body': 'Respons Anda tercatat di Respons Saya.',
+  'sdcSup.toast.draftSaved.title': 'Draf disimpan — {{material}}',
+  'sdcSup.toast.draftSaved.body':
+    'Belum dikirim. Tinjau di Respons Saya, lalu kirim ke pembeli.',
+  'sdcSup.toast.promoted.title': '{{responseId}} terkirim',
+  'sdcSup.toast.promoted.body': 'Pembeli kini dapat melihat konfirmasi ini.',
   'sdcSup.toast.acknowledged.title': 'Ditanggapi — {{material}}',
   'sdcSup.toast.acknowledged.body': 'Respons visibilitas Anda tercatat di Respons Saya.',
   'sdcSup.toast.failed.title': 'Konfirmasi tidak terkirim',

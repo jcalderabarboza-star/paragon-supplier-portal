@@ -35,6 +35,7 @@ import {
   useOwnRequirementResponses,
   useRequirementResponseSubmit,
   useRequirementResponseAcknowledge,
+  useRequirementResponsePromote,
   useOwnCollaboratedMaterials,
   useOwnInventoryDeclarations,
   useOwnIncomingShipments,
@@ -344,9 +345,14 @@ const LineCard: React.FC<{
   );
 };
 
-const ResponsesTab: React.FC<{ responses: readonly RequirementResponse[] }> = ({
-  responses,
-}) => {
+const ResponsesTab: React.FC<{
+  responses: readonly RequirementResponse[];
+  /** PF-1b — submit a DRAFT (t_requirementresponse_promote). Without this the
+   *  draft lane is a trap: every commitment would rest unsent and the planner's
+   *  board would read `awaiting` forever. */
+  onSubmitDraft: (responseId: string) => void;
+  submittingId: string | null;
+}> = ({ responses, onSubmitDraft, submittingId }) => {
   const { t } = useTranslation();
   if (responses.length === 0) {
     return (
@@ -375,8 +381,32 @@ const ResponsesTab: React.FC<{ responses: readonly RequirementResponse[] }> = ({
                 {r.materialCode}
               </Data>
             </div>
-            {/* Own facts + STATUS only (FORK-3b-C) — never a rank or score. */}
-            <StatusPill variant="neutral">{r.status}</StatusPill>
+            <div className="flex items-center gap-2">
+              {/* Own facts + STATUS only (FORK-3b-C) — never a rank or score. */}
+              <StatusPill variant="neutral">{r.status}</StatusPill>
+              {/* PF-1b — the SUBMIT act, on the one state that has one.
+                  ⚠️ OUTLINE, NOT SOLID (DP2-BUTTON-01, operator-corrected). The
+                  first cut shipped solid on the argument that submitting a
+                  commitment is this page's irreversible act. That is not the
+                  rule: solid is RESERVED for a NAMED list — Award, Release
+                  payment, Post-to-SAP, Reject/Dispute, Override-hold — and
+                  "reserved for consequential things" is not the same rule as
+                  "reserved for these". A per-surface judgement about what feels
+                  consequential is exactly how a calm register fills up with
+                  solid buttons, one defensible argument at a time. */}
+              {r.status === 'Draft' && (
+                <Button
+                  variant="outline"
+                  icon={Send}
+                  disabled={submittingId === r.id}
+                  onClick={() => onSubmitDraft(r.id)}
+                >
+                  {submittingId === r.id
+                    ? t('sdcSup.responses.submitting')
+                    : t('sdcSup.responses.submitDraft')}
+                </Button>
+              )}
+            </div>
           </div>
           <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
@@ -672,6 +702,9 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   const crumb = [t('sdcSup.crumb.section'), t('sdcSup.crumb.page')];
   const submitMutation = useRequirementResponseSubmit();
   const acknowledgeMutation = useRequirementResponseAcknowledge();
+  // PF-1b — the promotion of a saved draft into a real submission.
+  const promoteMutation = useRequirementResponsePromote();
+  const [promotingId, setPromotingId] = useState<string | null>(null);
   const declareMutation = useInventoryDeclare();
   const reportMutation = useIncomingShipmentReport();
   const [activeTab, setActiveTab] = useState<TabKey>('lines');
@@ -794,18 +827,50 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         return;
       }
       recordAttempt('RequirementResponse', res);
+      // ⚠️ PF-1b — THIS SAVED A DRAFT. Nothing has been sent: the buyer's
+      // consolidation skips `Draft`, so the planner still reads `awaiting` for
+      // this line until the supplier submits from My responses. The old copy
+      // ("Confirmation submitted") became false the moment creation moved.
       toast({
         variant: 'success',
-        title: t('sdcSup.toast.submitted.title', {
+        title: t('sdcSup.toast.draftSaved.title', {
           material: materialLabel(panelLine.materialCode),
         }),
-        description: t('sdcSup.toast.submitted.body'),
+        description: t('sdcSup.toast.draftSaved.body'),
       });
       setPanelLine(null);
       setForm(emptyForm);
       setActiveTab('responses');
     } catch {
       failToast();
+    }
+  };
+
+  // PF-1b — SUBMIT A DRAFT (t_requirementresponse_promote, Draft → Submitted).
+  // The store stamps `submittedAt` on this crossing, and the buyer's
+  // consolidation starts counting the line as answered only now.
+  const submitDraft = async (responseId: string) => {
+    setPromotingId(responseId);
+    try {
+      const res = await promoteMutation.mutateAsync({ responseId });
+      if (res.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('sdcSup.toast.failed.title'),
+          description: res.reason ?? t('sdcSup.toast.failed.body'),
+        });
+        return;
+      }
+      recordAttempt('RequirementResponse', res);
+      toast({
+        variant: 'success',
+        title: t('sdcSup.toast.promoted.title', { responseId }),
+        description: t('sdcSup.toast.promoted.body'),
+      });
+    } catch {
+      failToast();
+    } finally {
+      setPromotingId(null);
     }
   };
 
@@ -1150,7 +1215,13 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       {activeTab === 'shipments' && (
         <ShipmentsTab shipments={shipments} onReport={openShip} />
       )}
-      {activeTab === 'responses' && <ResponsesTab responses={responses} />}
+      {activeTab === 'responses' && (
+        <ResponsesTab
+          responses={responses}
+          onSubmitDraft={submitDraft}
+          submittingId={promoteMutation.isPending ? promotingId : null}
+        />
+      )}
 
       {/* ── Forecast confirm panel (SDC-2b) ─────────────────────────────────── */}
       <SidePanel
@@ -1166,9 +1237,14 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
             <Button variant="secondary" onClick={() => setPanelLine(null)}>
               {t('sdcSup.panel.cancel')}
             </Button>
-            {/* F-3 — the ONE solid primary on this surface: the governed commit. */}
+            {/* ⚠️ PF-1b — WAS SOLID, NOW OUTLINE, and the ruling is what changed
+                it. F-3 made this "the ONE solid primary on this surface: the
+                governed commit" — true while the button SUBMITTED. It now SAVES
+                A DRAFT, and a draft is the most reversible act on the page. The
+                solid did not become merely unnecessary; it became a false
+                signal, promising weight the click no longer carries. */}
             <Button
-              variant="primary"
+              variant="outline"
               icon={Send}
               disabled={submitMutation.isPending}
               onClick={submitConfirmation}

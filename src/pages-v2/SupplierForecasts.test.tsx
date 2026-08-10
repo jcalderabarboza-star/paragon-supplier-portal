@@ -51,8 +51,17 @@ async function openConfirmFor(materialCode: string) {
 const setQty = (value: string) =>
   fireEvent.change(screen.getByLabelText(/Confirmed quantity/), { target: { value } });
 
+// PF-1b — the panel's commit SAVES A DRAFT. Submitting is a second act, from
+// My responses (`submitDraftFor` below).
 const submitPanel = () =>
-  fireEvent.click(screen.getByRole('button', { name: /Submit confirmation/ }));
+  fireEvent.click(screen.getByRole('button', { name: /Save draft/ }));
+
+/** PF-1b — click `Submit to buyer` on a drafted response card. */
+const submitDraftFor = async (responseId: string) => {
+  const panel = await screen.findByTestId('sdcsup-responses');
+  const card = within(panel).getByText(responseId).closest('div.bg-bg-surface') as HTMLElement;
+  fireEvent.click(within(card).getByRole('button', { name: /Submit to buyer/ }));
+};
 
 describe('SupplierForecasts — own-facts-only (the load-bearing isolation)', () => {
   it('renders ONLY sup-007 fanned lines — no other supplier material leaks', async () => {
@@ -163,7 +172,7 @@ describe('SupplierForecasts — the visibility response (SDC-2b-EXT)', () => {
 });
 
 describe('SupplierForecasts — the governed submit (t_requirementresponse_submit)', () => {
-  it('confirms the FIRM line in full → lands in My responses as Submitted v1', async () => {
+  it('confirms the FIRM line in full → lands in My responses as a DRAFT v1', async () => {
     renderPage();
     await openConfirmFor('PK-PETB-8810');
     setQty('40000');
@@ -174,7 +183,10 @@ describe('SupplierForecasts — the governed submit (t_requirementresponse_submi
       .all()
       .find((r) => r.supplierId === 'sup-007' && r.materialCode === 'PK-PETB-8810');
     expect(minted).toBeDefined();
-    expect(minted!.status).toBe('Submitted');
+    // ⚠️ PF-1b — DRAFT. Every fact below is captured at creation exactly as
+    // before; what changed is that the buyer cannot see it yet.
+    expect(minted!.status).toBe('Draft');
+    expect(minted!.submittedAt).toBeUndefined();
     expect(minted!.submissionVersion).toBe(1);
     expect(minted!.forecastConfirmation.confirmedQty).toBe(40000);
     expect(minted!.forecastConfirmation.uom).toBe('PCS'); // master, not caller
@@ -191,7 +203,7 @@ describe('SupplierForecasts — the governed submit (t_requirementresponse_submi
     expect(
       requirementResponseStore.all().some((r) => r.materialCode === 'PK-CAPF-8820'),
     ).toBe(false);
-    expect(screen.getByRole('button', { name: /Submit confirmation/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Save draft/ })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Category/), { target: { value: 'capacity' } });
     submitPanel();
     await waitFor(() =>
@@ -225,7 +237,7 @@ describe('SupplierForecasts — the governed submit (t_requirementresponse_submi
     const minted = requirementResponseStore
       .all()
       .find((r) => r.supplierId === 'sup-007' && r.forecastConfirmation.confirmedQty === 0)!;
-    expect(minted.status).toBe('Submitted');
+    expect(minted.status).toBe('Draft'); // PF-1b — saved, not sent
     expect(minted.rootCause).toEqual({
       level1: 'capacity',
       note: 'No bridgeable volume this cycle.',
@@ -239,7 +251,7 @@ describe('SupplierForecasts — the governed submit (t_requirementresponse_submi
     submitPanel();
     // Blocked at the form (quantity toast): nothing minted, the panel stays open.
     expect(requirementResponseStore.all().length).toBe(before);
-    expect(screen.getByRole('button', { name: /Submit confirmation/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Save draft/ })).toBeInTheDocument();
   });
 
   it('re-confirming the same line VERSIONS UP — the prior response is not overwritten', async () => {
@@ -330,6 +342,17 @@ describe('SupplierForecasts — the false-deficit chain (CP-0 · 2c)', () => {
     expect(minted.forecastConfirmation.confirmedQty).toBe(40000);
     expect(minted.rootCause).toBeUndefined(); // no fabricated shortfall explanation
 
+    // ⚠️ PF-1b — THE PLANNER SEES NOTHING UNTIL IT IS SUBMITTED, and that is
+    // asserted before the submit rather than assumed away: a Draft leaves the
+    // line `awaiting`, which is the whole point of the draft lane.
+    const beforeRows = consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all());
+    expect(
+      beforeRows.find(
+        (r) => r.line.supplierId === 'sup-007' && r.line.materialCode === 'PK-PETB-8810',
+      )!.state.kind,
+    ).toBe('awaiting');
+    await submitDraftFor(minted.id);
+
     // The downstream link: consolidation derives the planner's deficit from this
     // stored quantity. A full confirmation must derive `confirmed-full`, so
     // BuyerCollaboration has no deficit to render.
@@ -362,7 +385,11 @@ describe('SupplierForecasts — the false-deficit chain (CP-0 · 2c)', () => {
       ).toBe(true),
     );
 
-    // And the REAL deficit still reaches the planner.
+    // And the REAL deficit still reaches the planner — once it is SUBMITTED.
+    const draft = requirementResponseStore
+      .all()
+      .find((r) => r.materialCode === 'PK-CAPF-8820' && r.supplierId === 'sup-007')!;
+    await submitDraftFor(draft.id);
     const rows = consolidationRows(FORECAST_PUBLICATIONS, requirementResponseStore.all());
     const row = rows.find(
       (r) => r.line.supplierId === 'sup-007' && r.line.materialCode === 'PK-CAPF-8820',

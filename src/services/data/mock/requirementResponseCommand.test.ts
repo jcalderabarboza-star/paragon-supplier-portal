@@ -96,12 +96,16 @@ describe('requirementResponse flow — authored machine (SDC-2a)', () => {
 });
 
 describe('t_requirementresponse_submit — supplier-owned creation (line-grain scope)', () => {
-  it('a fanned supplier confirms its line → Submitted, store-assigned id, raw facts persisted', async () => {
+  it('a fanned supplier drafts its line → Draft, store-assigned id, raw facts persisted', async () => {
     const res = await svc.dispatch(sup002, submit());
     expect(res.status).toBe('done');
     expect(res.entityId).toMatch(/^rr-9\d+$/); // 9xxx range (fixtures are 0xxx)
     const r = requirementResponseStore.get(res.entityId!)!;
-    expect(r.status).toBe('Submitted');
+    // ⚠️ PF-1b · D-1 — DRAFT, not Submitted. Suppliers draft too: the commitment
+    // creation verb births a draft and `t_requirementresponse_promote` submits
+    // it. Every raw fact below is persisted at creation exactly as before — the
+    // draft is a complete response that has not been sent, not a partial one.
+    expect(r.status).toBe('Draft');
     expect(r.supplierId).toBe('sup-002');
     expect(r.materialCode).toBe('RM-EMUL-3310');
     expect(r.periodBucket).toBe('2026-08');
@@ -109,8 +113,25 @@ describe('t_requirementresponse_submit — supplier-owned creation (line-grain s
     expect(r.planVersion).toBe('PV-2026-08.2'); // the snapshot answered, bound
     expect(r.forecastConfirmation.confirmedQty).toBe(6000);
     expect(r.forecastConfirmation.committedDate).toBe('2026-08-20');
-    expect(r.submittedAt).toBeTruthy();
+    // ⚠️ AND IT CARRIES NO SUBMISSION INSTANT. A draft has never been submitted;
+    // the store stamps `submittedAt` on the Draft → Submitted crossing. The
+    // SDC-0 seed already encoded this invariant (rr-0003 has no `submittedAt`).
+    expect(r.submittedAt).toBeUndefined();
     expect(r.id).toBe(res.entityId); // the number doubles as the id
+  });
+
+  it('⚠️ PF-1b — promote SUBMITS it, and THAT is when the instant is stamped', async () => {
+    const created = await svc.dispatch(sup002, submit());
+    const id = created.entityId!;
+    const promoted = await svc.dispatch(sup002, {
+      transitionId: 't_requirementresponse_promote',
+      entity: 'requirementResponse',
+      entityId: id,
+    });
+    expect(promoted.status).toBe('done');
+    const r = requirementResponseStore.get(id)!;
+    expect(r.status).toBe('Submitted');
+    expect(r.submittedAt).toBeTruthy();
   });
 
   it('a supplier the line was NOT fanned to is denied (SCOPE_DENIED) — line-grain membership', async () => {

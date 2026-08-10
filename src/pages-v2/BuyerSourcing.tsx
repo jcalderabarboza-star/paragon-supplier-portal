@@ -2400,12 +2400,17 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       batch because D-1 made `Draft` the state EVERY newly-raised
                       RFQ lands in: without this button the buyer creates events
                       only suppliers cannot see, and the draft lane would be a
-                      trap whose only exit is cancel. Solid `primary` is reserved
-                      for the irreversible commit (DP2-BUTTON-01) and publish
-                      qualifies — it exposes the event to the invited list. */}
+                      trap whose only exit is cancel.
+                      ⚠️ OUTLINE, NOT SOLID (DP2-BUTTON-01, operator-corrected).
+                      PF-1a shipped this solid, reasoning that publish "exposes
+                      the event to the invited list" and therefore qualifies as
+                      the irreversible commit. The reserved list is NAMED —
+                      Award, Release payment, Post-to-SAP, Reject/Dispute,
+                      Override-hold — and publish is not on it. Award already
+                      holds the one solid on this surface. */}
                   {selectedRfq.status === 'Draft' && (
                     <Button
-                      variant="primary"
+                      variant="outline"
                       icon={Send}
                       disabled={publishMutation.isPending}
                       onClick={handlePublish}
