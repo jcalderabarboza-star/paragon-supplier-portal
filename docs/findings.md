@@ -6407,3 +6407,191 @@ right everywhere.
 
 **Honest-by-construction was built for the derivation and stopped at the join.**
 That is where the next honesty batch should look.
+
+---
+
+## DISPATCH ID-0 · C10 — THE IDENTITY CONTRACT (docs only, `main` `df585c5`)
+
+`docs/contracts/C10-identity.md`, first issue. **MODEL + PRECONDITIONS ONLY —
+zero code, zero types, zero fixture persons.** Indexed in the package README with
+its §8 ledger and its two open decisions.
+
+### 1. ⚠️ THE MEASUREMENT THIS CONTRACT RESTS ON — the window is open, and it shuts once
+
+Derived, not assumed (`CENSUS-MUST-DERIVE-01`), because the entire case for issuing
+an identity contract **before** the first line of identity code depends on it:
+
+> **NOT ONE `RESOLVED` ATTRIBUTION EXISTS ON ANY RECORD THIS PLATFORM HAS
+> WRITTEN.**
+
+Four anchors, all in the shipped tree at `df585c5`:
+
+| Anchor | What it establishes |
+|---|---|
+| `lib/enforcement.ts:83-87` | The enforcement ledger **ships empty by ruling** |
+| `enforcementSeed.ts:93-96` | The E4 seed records `{ kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' }` |
+| `lib/enforcement.ts:778-780` | `overrideCompletes` is `false` for **every** override this tree can construct |
+| grep, whole repo | The only `personId` literals (`usr-014` and siblings) live **in specs**, never in a fixture or a shipped record |
+
+**Why it matters more than it looks.** A permanent ledger cannot be migrated — that
+is what makes it a ledger. So the first attributed record fixes **the minting rule,
+the attribution seam, the fixture namespace and the event shape** forever, in
+whatever state they happen to be in on that day. Every precondition in C10 §6 is
+**free today and permanent tomorrow**, and none of them is free in the ordinary
+sense of cheap: they are free in the sense that **the cost has not started yet**.
+
+### 2. FINDINGS
+
+#### `C10-DISPLAYNAME-IN-LEDGER-01` — **THE SHIPPED SHAPE CONTRADICTS THE CONTRACT, AND SAYS SO IN ITS OWN VOICE**
+
+⚠️ **OPEN. C10 §8.2, and it is the load-bearing row of that ledger.**
+
+`ActingPerson` requires **both** `personId` and `displayName`, and its doc-comment
+states the ruling D-ID-7 reverses, in as many words:
+
+> *"The name as it stood when the act was recorded. **Captured, never resolved at
+> read** — a person who leaves must not erase who decided."* —
+> `src/lib/enforcement.ts:339-345`
+
+**D-ID-7 rules the opposite** and records why: **a name in an append-only ledger
+cannot be erased, corrected or restricted, and UU PDP grants a data subject rights
+over all three.** The ledger's central property is that it cannot be rewritten; the
+statute's central grant is a right to have personal data rewritten. Copy the name
+in and the two are in permanent, direct conflict **on every historical row**.
+
+**The code's objection is answered rather than overruled.** *"A person who leaves
+must not erase who decided"* is correct and is preserved: the **identity** is in the
+record (`personId`, permanent under D-ID-1) and only the **label** resolves. A
+departed person's registry row is retained for exactly this reason.
+
+> **ADDING THE NAME LATER IS ADDITIVE. REMOVING IT FROM A PERMANENT LEDGER IS
+> IMPOSSIBLE.**
+
+Same asymmetry C9 §2.2 used to key material identity on specification, and it does
+not depend on the open question resolving our way — **which is fortunate, because
+D-ID-7 is PROVISIONAL pending the DPO and composes with D-DPO on Track R.**
+
+**⚠️ THE CORRECTION IS FREE TODAY AND ONLY TODAY.** Zero `RESOLVED` attributions
+exist (§1), so dropping the field loses no stored name. The first attributed record
+ends that permanently. **This is a docs-only batch and the code is untouched; the
+contract is the authority in the interim** (the C9 §7.3 posture, deliberately).
+
+#### `C10-ATTRIBUTION-BY-ASSERTION-01` — `setBy` is a payload field
+
+⚠️ **OPEN. C10 §8.3 / §6.2.** `requiredFields: ['mode', 'setBy']`
+(`flows/enforcement.flow.ts:66`) — **the caller states who acted and the platform
+records the statement.**
+
+Harmless today for exactly one reason: **nothing can construct a `RESOLVED` actor.**
+The day something can, the same seam accepts one from the payload, and
+
+> **AFTER THE FIRST `RESOLVED` RECORD, FORGED AND GENUINE ATTRIBUTIONS ARE
+> INDISTINGUISHABLE IN A PERMANENT LEDGER** — same shape, same fields, same
+> provenance, no forensic difference to find later because none was written.
+
+The flip has **two halves and the second is the one that gets forgotten**: the
+resolved actor comes from the **session** (the `setAt` / `pinnedAt` discipline —
+*a caller that could set it could backdate its own audit entry* — applied with more
+force to **who** than to **when**), **and a payload-supplied `RESOLVED` actor is
+REFUSED BY NAME ON WRITE.** Not ignored, not overwritten: an overwrite is a silent
+correction of an attribution, which leaves a caller believing it attributed an act
+and a record saying somebody else did. An `UNATTRIBUTED` payload value stays legal
+— it is a claim about a **failure to resolve**, which the tightening rule already
+depends on (`lib/enforcement.ts:109-111`).
+
+#### `C10-EVENT-NO-ATTRIBUTION-01` — the event shape is free until the sink is durable
+
+⚠️ **OPEN. C10 §8.4 / §6.4.** `TransitionEvent` carries `actor: string` and nothing
+else about who acted. **The DR-10 taxonomy has no retrofit — *"the sink interface is
+the contract"*** (`transitions/events.ts:6-7`), so the shape is fixed the moment the
+sink becomes durable, for every event ever written.
+
+**Optional, and that is a ruling rather than a hedge:**
+
+> **ATTRIBUTION ABSENT = A MACHINE ACT. NEVER DRESSED AS UNATTRIBUTED.**
+
+`system` / `cascade` / `creation` transitions have no person to name, and recording
+them as `UNATTRIBUTED` would flood a vocabulary whose every member names **a failure
+somebody can go and fix** — destroying the count, and with it the pressure the
+absence exists to create.
+
+> ⚠️ **`UNATTRIBUTED_REASONS` HAS NO `SYSTEM` MEMBER AND MUST NOT ACQUIRE ONE.** The
+> module already says why: *"the system did it" is the comfortable label that makes
+> an unattributed act look answered.* It is the single change that would convert
+> this whole contract's honest absence into a shrug — **it gives every unresolvable
+> act a respectable place to sit.** Its absence from the frozen array is the
+> mechanism, exactly as the missing fourth enforcement mode below `OBSERVE` is.
+
+And the persona actor is **not** what attribution replaces: `actor` is a true fact
+about the scope and stays. Attribution is a **second, orthogonal** field — one
+answers *which seat*, the other *which human*. Collapsing them is
+`ENF-EVENT-ACTOR-IS-A-PERSONA-01` with extra steps.
+
+#### `C10-FIXTURE-PERSON-NAMESPACE-01` — a demo person and a real person are the same shape
+
+⚠️ **OPEN. C10 §8.6 / §6.3.** No `sim-usr-*` namespace and **no pin**. A
+fixture-first portal will acquire demo people; a governed record naming one is
+**manufactured provenance** — the thing E2 refused when it declined to seed an
+invented `personId`, and E4 refused again when it seeded `UNATTRIBUTED`
+(`enforcementSeed.ts:33-38`).
+
+**The namespace is worthless without the pin.** A reserved prefix nobody checks is a
+naming habit, and habits do not survive a deadline. **Free exactly once:** retrofitting
+means auditing every stored attribution to decide which ones were real — against
+records written precisely because nobody could tell the difference at read time.
+
+### 3. WHAT C10 REFUSED TO BUILD, and the reason it does not compile
+
+The tempting approval design is a state per approver
+(`PendingManager → PendingFinance → PendingCFO → Approved`). C10 §4.1 refuses it on
+three costs, and **the third is not a preference**:
+
+| Cost | |
+|---|---|
+| The alphabet explodes | approvers × bands × org shape, per flow |
+| A threshold change becomes a schema migration | an operational decision made on a Tuesday becomes new states, new edges, a deploy — and in-flight objects in states the new machine does not have |
+| ⚠️ **Escalation becomes a CLOCK-FIRED TRANSITION** | `trigger: 'clock'` is **type-level impossible here** — `ClockTriggerIsForbidden` (`schema.ts:37`) fails `tsc`, and `validateFlow` refuses it again for untyped callers (`validate.ts:57-61`) |
+
+**The third cost is not a coincidence.** Law 0.5 forbids clock-fired transitions
+because clock-derived state cannot be stored without going stale, and main carries
+the corpses (`daysRemaining: 873`, 483 days stale; a certificate 84 days expired
+reading `'Expiring Soon'`). **An escalation ladder as states would have reproduced
+that class on approvals** — where the stale value is who is allowed to sign.
+
+So: **approval is a LEDGER PLUS A POLICY OVER THE EXISTING MACHINE.** The approve
+verbs already exist and are already dispatchable (`t_pr_approve`,
+`t_invoice_approve` — both **UI-unreachable**, grep-confirmed zero `.tsx` sites);
+the requirement is derived from the policy ledger and the acts, the terminal verb is
+gated by a **policy hook** (the shipped `POLICY_HOOKS` mechanism), and **escalation
+is a read-time projection.**
+
+### 4. THE CLASS THIS DISPATCH ADDS
+
+> **A DECISION IS FREE EXACTLY WHILE THE RECORD IT WOULD BIND IS EMPTY, AND NOTHING
+> IN A BUILD ANNOUNCES THE DAY THAT STOPS BEING TRUE.**
+
+Four preconditions (C10 §6) are unfixable after the first attributed record, and
+**the tree gives no signal at that moment** — the first `RESOLVED` attribution is a
+green test and a working feature. It is the `FLOOR-IN-PROSE-01` shape moved from
+prose into time: **a fact that is true, load-bearing, and watched by nothing.**
+
+The disposal is a mechanism, not vigilance — a pin that goes red the day a
+`RESOLVED` attribution first reaches a governed record, so the window closing is an
+event somebody has to acknowledge rather than one nobody sees. **Not built in this
+batch (docs only); it rides the first identity code batch, and this is where it is
+recorded so that batch is not free to forget it.**
+
+### 5. OPEN, recorded as open
+
+- **D-ID-2** (supplier-side identity provider) — **UNPROCURED.** The model is
+  complete without it: whichever answer lands supplies a `SubjectBinding` and
+  nothing else.
+- **D-ID-5** (registration-review scope) — provisionally portal, **a leaning not a
+  ruling.** ⚠️ The dependency runs one way: toward the supplier side it is blocked
+  on D-ID-2; toward the portal it is not.
+- **D-ID-1 · D-ID-3 · D-ID-4 · D-ID-6 · D-ID-7** are **PROVISIONAL, strategist-ruled,
+  pending team ratification**, each with its disposal condition stated — on the
+  `ENF-OVERRIDE-VOCAB-PROVISIONAL-01` precedent, so ratifying is agreeing with
+  something written down. **D-ID-1 is the exception that has no disposal condition
+  that preserves the property:** after the first attributed record it is not a
+  ruling, it is a fact about the data.
