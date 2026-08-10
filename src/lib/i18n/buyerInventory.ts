@@ -17,7 +17,7 @@ export const buyerInventoryEn: Record<string, string> = {
   // — Page header —
   'buyerInventory.header.title': 'Inventory Visibility',
   'buyerInventory.header.subtitle':
-    'Real-time upstream supplier inventory positions, days of supply, and critical material alerts.',
+    'Upstream supplier inventory positions, days of supply, and critical material alerts.',
   // — Header actions —
   'buyerInventory.action.export': 'Export',
   'buyerInventory.action.syncNow': 'Sync now',
@@ -71,7 +71,6 @@ export const buyerInventoryEn: Record<string, string> = {
   'buyerInventory.panel.safetyStock': 'Safety Stock',
   'buyerInventory.panel.reorderPoint': 'Reorder Point',
   // — Side panel: sections —
-  'buyerInventory.panel.dosTrend': 'DOS trend · last 30 days',
   'buyerInventory.panel.recentUpdates': 'Recent inventory updates',
   'buyerInventory.panel.activePos': 'Active POs',
   'buyerInventory.panel.noActivePos':
@@ -109,7 +108,7 @@ export const buyerInventoryId: Record<string, string> = {
   // — Page header —
   'buyerInventory.header.title': 'Visibilitas Inventaris',
   'buyerInventory.header.subtitle':
-    'Posisi inventaris pemasok hulu waktu-nyata, hari pasokan, dan peringatan material kritis.',
+    'Posisi inventaris pemasok hulu, hari pasokan, dan peringatan material kritis.',
   // — Header actions —
   'buyerInventory.action.export': 'Ekspor',
   'buyerInventory.action.syncNow': 'Sinkronkan sekarang',
@@ -163,7 +162,6 @@ export const buyerInventoryId: Record<string, string> = {
   'buyerInventory.panel.safetyStock': 'Stok Pengaman',
   'buyerInventory.panel.reorderPoint': 'Titik Pemesanan Ulang',
   // — Side panel: sections —
-  'buyerInventory.panel.dosTrend': 'Tren DOS · 30 hari terakhir',
   'buyerInventory.panel.recentUpdates': 'Pembaruan inventaris terbaru',
   'buyerInventory.panel.activePos': 'PO Aktif',
   'buyerInventory.panel.noActivePos':

@@ -20,6 +20,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
@@ -180,9 +181,15 @@ const GlobalSupplierCard: React.FC<{
           {t('discovery.card.validatedBy')}
         </div>
         <div className="flex flex-wrap gap-1.5">
+          {/* D-CENSUS-8 · DISCOVERY-ENDORSEMENT-01 — the ✓ is GONE. A check mark beside
+              a real corporation's name is an assertion that the corporation vetted
+              this supplier; nothing in the portal checks that, and the suppliers here
+              are fictional. The brand names themselves remain in the fixture and are
+              filed for a fixture batch — retracting the ASSERTION is what marking can
+              honestly do; inventing different brand names is not marking. */}
           {supplier.validatedBy.map((brand) => (
             <StatusPill key={brand} variant="neutral">
-              {`✓ ${brand}`}
+              {brand}
             </StatusPill>
           ))}
         </div>
@@ -564,6 +571,12 @@ const BuyerDiscovery: React.FC = () => {
 
       <PageMetaLine className="-mt-6 mb-6">
         {t('discovery.meta.summary', { count: counts.candidates, date: lastUpdated })}
+        {/* D-CENSUS-8 — MARKER-SCOPE-01. This page DID carry a LivenessPill, but only
+            on the Market-Intelligence tab (capability="commodityIntel"), so the
+            candidate pool — the page's actual claim, and the one the header presented
+            as externally validated — was unmarked while a sibling tab wore a marker.
+            A reader generalises the badge they can see. This states it page-wide. */}
+        <ProvenanceMarker capability="supplierDiscovery" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">

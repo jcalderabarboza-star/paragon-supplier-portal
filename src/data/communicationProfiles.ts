@@ -149,13 +149,26 @@ export const COUNTRY_PROFILES = {
 
 export type CountryCode = keyof typeof COUNTRY_PROFILES;
 
-// Channel definitions
+// Channel definitions.
+//
+// D-CENSUS-8 — these descriptions were written in the PRESENT TENSE about
+// integrations that do not exist. The supplier reads them beside a channel
+// selector with a Save button, so "Real-time messaging" and "DKIM/DMARC secured"
+// read as statements about a live connection they are choosing between. NONE of
+// these channels is connected: there is no WhatsApp Business API, no inbound mail
+// parser, no webhook emitter, and no AS2/SFTP link — the last of which named a
+// real vendor (Cleo) as an existing integration.
+//
+// Retracted to DESIGN INTENT, which is what they always were. The `Designed:`
+// prefix is load-bearing: it is the part that survives being read out of context,
+// which a page-level "Sample" pill does not
+// (DISCLOSURE-TRAVELS-WITH-THE-VALUE-01).
 export const CHANNEL_CONFIG = {
-  whatsapp: { label: 'WhatsApp',    icon: '📱', color: '#107E3E', description: 'Real-time messaging, interactive buttons, document sharing' },
-  wechat:   { label: 'WeChat Work', icon: '💬', color: '#07C160', description: 'WeCom for Chinese business suppliers, formal B2B messaging' },
-  email:    { label: 'Email',       icon: '📧', color: '#BB0000', description: 'Structured email with reply parsing, DKIM/DMARC secured' },
-  api:      { label: 'REST API',    icon: '⚙️', color: '#0097A7', description: 'System-to-system, OAuth 2.0, CloudEvents webhooks' },
-  edi:      { label: 'EDI',         icon: '🔗', color: '#0D1B2A', description: 'X12 / EDIFACT via AS2/SFTP through Cleo Integration Cloud' },
+  whatsapp: { label: 'WhatsApp',    icon: '📱', color: '#107E3E', description: 'Designed: messaging, interactive buttons, document sharing (not connected)' },
+  wechat:   { label: 'WeChat Work', icon: '💬', color: '#07C160', description: 'Designed: WeCom for Chinese business suppliers, formal B2B messaging (not connected)' },
+  email:    { label: 'Email',       icon: '📧', color: '#BB0000', description: 'Designed: structured email with reply parsing, DKIM/DMARC (not connected)' },
+  api:      { label: 'REST API',    icon: '⚙️', color: '#0097A7', description: 'Designed: system-to-system, OAuth 2.0, CloudEvents webhooks (not connected)' },
+  edi:      { label: 'EDI',         icon: '🔗', color: '#0D1B2A', description: 'Designed: X12 / EDIFACT over AS2/SFTP (no integration provider selected)' },
   portal:   { label: 'Web Portal',  icon: '🌐', color: '#354A5F', description: 'Browser-based portal, PWA mobile support' },
 } as const;
 

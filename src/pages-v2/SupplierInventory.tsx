@@ -12,6 +12,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
@@ -240,6 +241,11 @@ const SupplierInventory: React.FC = () => {
             })}{' '}
         · {t('supplierInventory.meta.lastSync')}{' '}
         <Data>{fmtDate(maxLastUpdated)}</Data>
+        {/* D-CENSUS-8 — this page claimed "Live stock visibility" and told the supplier
+            that Paragon "has been automatically notified" of critical stock. Nothing
+            notifies anyone. Both retracted in this batch. The feed axis names the
+            specific waiting state (a live supplier feed, F1). */}
+        <ProvenanceMarker capability="inventory" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 mb-6">

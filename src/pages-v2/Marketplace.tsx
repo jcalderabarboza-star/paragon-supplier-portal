@@ -5,6 +5,8 @@ import { Globe2, Users, FileText, Clock, ArrowUpRight } from 'lucide-react';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
+import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SearchBar from '../components/ui-v2/SearchBar';
 import SupplierCard from '../components/ui-v2/SupplierCard';
@@ -128,6 +130,15 @@ const Marketplace: React.FC = () => {
         subtitle={t('marketplace.header.subtitle')}
       />
 
+      {/* D-CENSUS-8 — MARKER-SCOPE-01. This page did carry a "Sample data" badge, but
+          only on the RFQ section below; the supplier grid and the four KPI tiles above
+          it — the page's actual claim — were unmarked, and a section badge reads as
+          scoped to its section. The page-level marker states the fact once, for the
+          whole route. */}
+      <PageMetaLine className="-mt-6 mb-6">
+        <ProvenanceMarker capability="suppliers" />
+      </PageMetaLine>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
         <KpiCard
           eyebrow={t('marketplace.kpi.totalSuppliers.eyebrow')}
@@ -222,7 +233,12 @@ const Marketplace: React.FC = () => {
           <div>
             <h2 className="text-section text-text-primary flex items-center gap-2">
               {t('marketplace.rfq.title')}
-              <StatusPill variant="neutral">Sample data</StatusPill>
+              {/* MARKER-I18N-HOLE-01 — this was a hardcoded English
+                  `<StatusPill>Sample data</StatusPill>`, so switching the portal to
+                  Bahasa made the honest marker VANISH: the one surface where a
+                  reader most needs the disclosure lost it by changing language.
+                  Migrated onto the registry-derived primitive, which is translated. */}
+              <ProvenanceMarker capability="suppliers" />
             </h2>
             <p className="text-meta text-text-tertiary">
               {t('marketplace.rfq.subtitle')}

@@ -29,6 +29,11 @@ export const widgetEn: Record<string, string> = {
   // Harvest-gated (SDC-3b): the InventoryDeclaration target is wired, but the SOH
   // shown is SIMULATED until real supplier identities submit over a live portal (F1).
   'widget.honesty.awaitingSupplierFeed': 'Sample — awaiting live supplier feed',
+  // D-CENSUS-8 — the VERB axis of ProvenanceMarker. Says the narrow true thing
+  // and no more: acting here really dispatches and is really recorded, in an
+  // in-memory ledger that does not survive a reload and never reaches SAP.
+  // Deliberately NOT "Live" and deliberately not green — the feed is still fixture.
+  'widget.honesty.commandsDispatch': 'Commands dispatch — in-memory ledger',
   'widget.allClear': 'All clear',
   'widget.aria.expand': 'Expand {{title}}',
   'widget.aria.show': 'Show {{title}}',
@@ -110,6 +115,7 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.awaitingProducer': 'Sampel — menunggu produsen PR live (SOMO / Grid)',
   'widget.honesty.awaitingC8Feed': 'Sampel — menunggu feed data C8 SOMO',
   'widget.honesty.awaitingSupplierFeed': 'Sampel — menunggu feed pemasok live',
+  'widget.honesty.commandsDispatch': 'Perintah dijalankan — buku besar in-memory',
   'widget.allClear': 'Semua beres',
   'widget.aria.expand': 'Perluas {{title}}',
   'widget.aria.show': 'Tampilkan {{title}}',

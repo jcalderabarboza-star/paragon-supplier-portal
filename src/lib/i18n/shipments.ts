@@ -114,12 +114,17 @@ export const shipmentsEn: Record<string, string> = {
   'shipments.toast.manualAsn.desc': 'Form will open in a future release.',
   'shipments.toast.dockSchedule.title': 'Dock schedule expanded',
   'shipments.toast.dockSchedule.desc': 'Scroll down to view assignments.',
-  'shipments.toast.reminder.title': 'Reminder sent',
-  'shipments.toast.reminder.desc': 'Notified {{supplier}} for {{asn}}',
+  // D-CENSUS-8 — was 'Reminder sent' / 'Notified {{supplier}}'. Nothing is sent:
+  // there is no outbound channel write on this page. Retracted to the same shape
+  // the manual-ASN and dock-scheduler toasts in this very file already use.
+  'shipments.toast.reminder.title': 'Reminder not available yet',
+  'shipments.toast.reminder.desc':
+    'Supplier reminders for {{asn}} will send once the channel seam is connected. Nothing was sent to {{supplier}}.',
   'shipments.toast.tracking.title': 'Tracking opened',
   'shipments.toast.tracking.desc': 'Carrier: {{carrier}} · {{tracking}}',
-  'shipments.toast.carrierAlerted.title': 'Carrier alerted',
-  'shipments.toast.carrierAlerted.desc': 'Escalation ticket opened for {{asn}}',
+  'shipments.toast.carrierAlerted.title': 'Carrier escalation not available yet',
+  'shipments.toast.carrierAlerted.desc':
+    'No escalation ticket was opened for {{asn}}. Carrier contact is not wired to a real system.',
   'shipments.toast.dockScheduler.title': 'Dock scheduler',
   'shipments.toast.dockScheduler.desc': 'Schedule UI will open in a future release.',
   // — Side-panel footer actions —
@@ -236,12 +241,14 @@ export const shipmentsId: Record<string, string> = {
   'shipments.toast.manualAsn.desc': 'Formulir akan tersedia pada rilis mendatang.',
   'shipments.toast.dockSchedule.title': 'Jadwal dermaga diperluas',
   'shipments.toast.dockSchedule.desc': 'Gulir ke bawah untuk melihat penugasan.',
-  'shipments.toast.reminder.title': 'Pengingat dikirim',
-  'shipments.toast.reminder.desc': 'Memberi tahu {{supplier}} untuk {{asn}}',
+  'shipments.toast.reminder.title': 'Pengingat belum tersedia',
+  'shipments.toast.reminder.desc':
+    'Pengingat pemasok untuk {{asn}} akan dikirim setelah sambungan kanal aktif. Tidak ada yang dikirim ke {{supplier}}.',
   'shipments.toast.tracking.title': 'Pelacakan dibuka',
   'shipments.toast.tracking.desc': 'Kurir: {{carrier}} · {{tracking}}',
-  'shipments.toast.carrierAlerted.title': 'Kurir diberi tahu',
-  'shipments.toast.carrierAlerted.desc': 'Tiket eskalasi dibuka untuk {{asn}}',
+  'shipments.toast.carrierAlerted.title': 'Eskalasi kurir belum tersedia',
+  'shipments.toast.carrierAlerted.desc':
+    'Tidak ada tiket eskalasi yang dibuka untuk {{asn}}. Kontak kurir belum tersambung ke sistem nyata.',
   'shipments.toast.dockScheduler.title': 'Penjadwal dermaga',
   'shipments.toast.dockScheduler.desc': 'Antarmuka penjadwalan akan tersedia pada rilis mendatang.',
   // — Side-panel footer actions —

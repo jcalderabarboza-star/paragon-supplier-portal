@@ -17,6 +17,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
@@ -991,6 +992,10 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
         {t(openCount !== 1 ? 'rfqs.meta.event.other' : 'rfqs.meta.event.one')} ·{' '}
         {submittedCount}{' '}
         {t(submittedCount !== 1 ? 'rfqs.meta.quote.other' : 'rfqs.meta.quote.one')}
+        {/* D-CENSUS-8 — PARTLY REAL, both axes. Quotation submit dispatches through
+            the wired `quotation` target and drives the real RFQ→award cascade; the
+            RFQs being answered are fixtures. */}
+        <ProvenanceMarker capability="rfqs" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">

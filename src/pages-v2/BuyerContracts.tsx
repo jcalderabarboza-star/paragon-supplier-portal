@@ -16,6 +16,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -1200,6 +1201,12 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             : 'contracts.meta.summary.other',
           { count: contracts.length, date: formatDate(lastUpdated) },
         )}
+        {/* D-CENSUS-8 — `contracts` is null-backed: no contract lifecycle target is
+            wired, and SAP owns contract identity. The create wizard on this page
+            still mints one client-side (CTR-FABRICATION-01 / CTR-NUMBER-FABRICATION-01,
+            filed for the D-CENSUS-3 demotion batch); the marker states the feed
+            fact now and does not pretend the wizard's output is a real contract. */}
+        <ProvenanceMarker capability="contracts" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">

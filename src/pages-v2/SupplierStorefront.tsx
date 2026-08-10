@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
+import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Tabs from '../components/ui-v2/Tabs';
@@ -210,6 +212,13 @@ const SupplierStorefront: React.FC = () => {
           </div>
         }
       />
+
+      {/* D-CENSUS-8 — MARKER-SCOPE-01. The existing "Sample data" badge sits on the
+          Track-record tab only; the hero, KPI tiles, product catalogue and
+          certificate list are equally fixture-fed and were unmarked. */}
+      <PageMetaLine className="-mt-6 mb-6">
+        <ProvenanceMarker capability="suppliers" />
+      </PageMetaLine>
 
       {/* Hero banner */}
       <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">

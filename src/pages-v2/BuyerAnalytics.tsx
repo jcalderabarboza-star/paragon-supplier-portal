@@ -31,6 +31,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
@@ -282,6 +283,10 @@ const BuyerAnalytics: React.FC = () => {
           { count: perfTable.length },
         )}{' '}
         · {t('buyerAnalytics.meta.period')}: {periodLabel}
+        {/* D-CENSUS-8 — `analytics` is null-backed: every trend, mix and spend
+            aggregate on this page is derived from authored fixtures, over a period
+            label that names a range no real data covers. */}
+        <ProvenanceMarker capability="analytics" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="mb-6">

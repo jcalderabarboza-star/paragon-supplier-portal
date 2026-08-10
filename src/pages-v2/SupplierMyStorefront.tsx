@@ -15,6 +15,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import FormSection from '../components/ui-v2/FormSection';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
@@ -269,6 +270,9 @@ const StorefrontEditor: React.FC<StorefrontEditorProps> = ({
           certs: certs.filter((c) => c.visible).length,
           pct: completeness,
         })}
+        {/* D-CENSUS-8 — storefront catalog + certificate visibility are fixture-fed;
+            nothing published here reaches a buyer-facing system. */}
+        <ProvenanceMarker capability="suppliers" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <section className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm p-5 mb-6">

@@ -15,18 +15,13 @@ import {
   Hand,
   LucideIcon,
 } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
-} from 'recharts';
+// D-CENSUS-8 — the recharts import is gone with the synthetic DOS trend chart it
+// drew. This page now renders no chart, which is the honest state: it has no
+// time-series data, only current positions.
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -51,7 +46,6 @@ import {
 } from '../services/query/hooks';
 import { formatNumber } from '../lib/format';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
-import { CHART_SERIES, CHART_GRID, CHART_AXIS } from '../lib/chartPalette';
 import { InventoryRecord } from '../types/supplier.types';
 import { POStatus } from '../services/data/types';
 
@@ -138,25 +132,6 @@ const dosBucket = (
     variant: 'info',
     cellCls: 'bg-info-soft text-info',
   };
-};
-
-// Generate a synthetic DOS trend for the last 30 days based on current DOS
-const buildDosTrend = (current: number): { day: string; dos: number }[] => {
-  const out: { day: string; dos: number }[] = [];
-  let value = current + 12; // start higher
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date('2026-05-20');
-    date.setDate(date.getDate() - i);
-    // gentle decline with noise
-    value = value - 0.4 + (Math.sin(i * 0.6) + Math.cos(i * 0.3)) * 0.8;
-    out.push({
-      day: date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }),
-      dos: Math.max(1, Math.round(value)),
-    });
-  }
-  // ensure last point equals current
-  out[out.length - 1].dos = current;
-  return out;
 };
 
 const BuyerInventory: React.FC = () => {
@@ -327,7 +302,6 @@ const BuyerInventory: React.FC = () => {
     ? supplierById.get(selected.supplierId)
     : undefined;
 
-  const dosTrend = selected ? buildDosTrend(selected.daysOfSupply) : [];
 
   const activePOs = selected
     ? purchaseOrders.filter(
@@ -413,6 +387,13 @@ const BuyerInventory: React.FC = () => {
             : 'buyerInventory.meta.materials.other',
           { count: inventory.length, sync: lastSync },
         )}
+        {/* D-CENSUS-8 — the loudest unmarked page on the portal: it claimed
+            "Real-time", "EDI 846" and "automatically notified" over a frozen array.
+            Those claims are retracted in this batch; this states what the feed is.
+            NOTE INVENTORY-REFERENT-01 (filed): the `inventory` capability is backed
+            to `inventoryDeclaration` while this page reads `mockInventory`, so the
+            verb axis here describes a store this page does not render. */}
+        <ProvenanceMarker capability="inventory" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -749,36 +730,15 @@ const BuyerInventory: React.FC = () => {
               </div>
             </section>
 
-            <section>
-              <div className="text-label text-text-tertiary uppercase mb-2">
-                {t('buyerInventory.panel.dosTrend')}
-              </div>
-              <div className="h-40 border border-border-subtle rounded-lg p-2 bg-white">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={dosTrend}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke={CHART_GRID}
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="day"
-                      tick={{ fontSize: 10, fill: CHART_AXIS }}
-                      interval={5}
-                    />
-                    <YAxis tick={{ fontSize: 10, fill: CHART_AXIS }} />
-                    <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="dos"
-                      stroke={CHART_SERIES[0]}
-                      strokeWidth={2}
-                      dot={false}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
+            {/* D-CENSUS-8 — the 30-day DOS trend chart is DELETED, not marked.
+                It plotted `Math.sin(i * 0.6) + Math.cos(i * 0.3)` noise off a
+                hardcoded `new Date('2026-05-20')`, ending at the one real value.
+                A trend line is a CLAIM: a reader draws a conclusion from its slope
+                — depleting, recovering, stable — and every one of those conclusions
+                was manufactured. A "Sample" pill elsewhere on the page does not
+                travel with a curve (DISCLOSURE-TRAVELS-WITH-THE-VALUE-01), so
+                marking it would have left the false inference intact. The current
+                DOS figure is real fixture data and is still shown above. */}
 
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">

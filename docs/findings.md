@@ -6056,3 +6056,354 @@ consequence that cannot vary would report zero forever, and would report it just
 as confidently the day the migration broke. The reachable non-zero is what
 converts "nothing changed" from an observation about the test into an
 observation about the system.
+
+---
+
+## D-CENSUS-8 — HONEST MARKING ON EVERY ROUTE (2026-08-10)
+
+Branch `qa/d-census-8-honest-marking`, off `main` @ `c65df0d`. An external
+coverage census found that the ratified honesty law had never been applied to the
+pages that predate it. The census's own framing is the finding, and it survived
+verification:
+
+> **OUR MOST RIGOROUS LANES WEAR "SIMULATED" PILLS WHILE THE LEAST REAL PAGES
+> CARRY NO MARKER AT ALL — SO A READER TRUSTS THE UNMARKED PAGE MORE THAN THE
+> MARKED ONE.**
+
+Of 43 routes, **22 carried no marker whatsoever**, 3 carried a marker scoped to
+one tab, and 5 carried hand-rolled literals. The 13 that were properly marked were
+exactly the transactional lanes that had received the most engineering scrutiny.
+Marking tracked *attention*, not *realness*, and inverted the signal.
+
+---
+
+### `MARKER-SCOPE-01` — a section marker reads as a page marker
+
+> **THE HONEST BADGE WAS ON THE TAB NOBODY WAS LYING ON.**
+
+Three routes did carry a `LivenessPill`, which is why the census's "these pages
+have no markers" line needed correcting — and the correction makes it worse, not
+better:
+
+| Route | Where the marker was | What was unmarked |
+|---|---|---|
+| `/buyer/discovery` | Market-Intelligence tab (`commodityIntel`) | the candidate pool — the page's actual claim |
+| `/buyer/sourcing` | commodity / market-intel panels | the RFQ pipeline |
+| `/buyer/contracts/:id` | Delivery-Agreements tab | **the Docs tab, which was fabricating certificates** |
+| `/marketplace` | open-RFQ teaser | supplier grid + 4 KPI tiles |
+| `/marketplace/supplier/:id` | Track-record tab | hero, KPIs, catalogue, certificate list |
+| `/supplier/performance` | grade-history chart | the OTIF / quality / lead-time scores a supplier is judged on |
+| `/buyer/suppliers/:id` | Message-log tab | profile header, KPIs, catalogue, compliance |
+
+The pattern is exact and it is the reverse of what you would design: **the marker
+sits on the sub-block someone happened to be editing when the honesty rule landed,
+and the page's load-bearing claim goes bare.** A reader does not carry a badge
+across a tab boundary. On `/buyer/contracts/:id` the badge was literally on a
+different tab from the fabrication.
+
+This is `DISCLOSURE-TRAVELS-WITH-THE-VALUE-01` observed from the other end: the
+original law says a page-level pill does not travel *down* to a paragraph-level
+assertion. This says a section-level pill is read *up* to the whole page. Both
+failures come from the same wrong assumption — that disclosure has a scope the
+reader can see.
+
+---
+
+### `MARKER-I18N-HOLE-01` — the disclosure that disappears in Bahasa
+
+> **TWO OF THE FIVE HAND-ROLLED MARKERS WERE HARDCODED ENGLISH. SWITCH THE PORTAL
+> TO ID AND THE HONEST MARKER IS STILL THERE — IN A LANGUAGE THE READER DID NOT
+> CHOOSE.**
+
+`Marketplace.tsx:225` and `BuyerSupplierProfile.tsx:591` rendered
+`<StatusPill variant="neutral">Sample data</StatusPill>` — a JSX literal, outside
+i18n. Everything else on both pages localises.
+
+The full-EN/ID sweep (Batches 0–6) passed over these because a coverage sweep looks
+for *untranslated user-facing strings* and finds them by scanning i18n fragments
+for gaps. **A string that never entered the i18n system has no gap to find.** The
+honesty marker was invisible to the honesty-adjacent tooling for the same reason it
+was invisible to the translator: it was never data.
+
+Worth stating plainly: an Indonesian-reading supplier on `/marketplace` saw the
+least disclosure of any user on any route, and nothing in the build knew.
+
+---
+
+### `DISCOVERY-ENDORSEMENT-01` — fabricated endorsements attributed to real companies
+
+> **THE PORTAL ASSERTED THAT L'ORÉAL, UNILEVER, P&G AND SHISEIDO HAD VETTED
+> SUPPLIERS THAT DO NOT EXIST.**
+
+This is the most serious copy defect the census surfaced, and it is a different
+*class* from "Real-time". "Real-time" overstates a capability we own. This makes a
+factual assertion about **third parties who have not been asked**, on behalf of
+**fictional entities**, and presents it with a verification affordance:
+
+- `discovery.header.subtitle` — *"market-validated by L'Oréal, Unilever, P&G,
+  Shiseido and more."*
+- Every candidate card: a section headed **"Market validated by"** rendering
+  `✓ L'Oréal`, `✓ Unilever`, … as chips, from `buyerDiscovery.ts` fixture arrays
+  naming ~15 real corporations.
+- A filter toggle: **"Major brand validated"**.
+
+The green check mark is the part that makes it an assertion rather than a
+decoration. A check mark beside a corporate name means *verified*; nothing in the
+portal verifies anything here.
+
+**Retracted, not marked** — the ✓ is deleted, "Market validated by" becomes
+"Reference brands claimed (unverified)", "Major brand validated" becomes "Claims a
+major brand". A page-level "Sample" pill would not have touched this: the reader's
+inference comes from the check mark, three scroll-lengths from the pill.
+
+**Residual, filed not fixed:** the real brand names remain in
+`src/services/data/mock/fixtures/buyerDiscovery.ts`. Retracting the *assertion* is
+what a marking batch can honestly do; inventing replacement brand names is a
+fixture rewrite and belongs to whoever owns demo-data policy. **The claim is
+retracted; the names are still there.**
+
+---
+
+### `INVENTORY-REFERENT-01` — the pill that describes a store its page never reads
+
+> **UNWIRE-FLIPS-THE-PILL ONLY WORKS IF THE PILL POINTS AT THE DATA ON SCREEN.**
+
+The `LivenessRegistry`'s central guarantee is honest-by-construction: tier is
+*derived* from the wiring census, so unwiring a `CommandTarget` flips its
+capability to SIMULATED with no edit in the registry. That guarantee has a
+precondition nobody wrote down — **that the capability's backing entity is the
+thing the surface renders.**
+
+`inventory` is backed to `inventoryDeclaration` (SDC-3b), whose store is
+`inventoryDeclarationStore`. `BuyerInventoryWidget` and `/buyer/inventory` read
+`useInventory` → `MockProcurementService:137` → `mockInventory`, a frozen array
+with no relationship to that store at all.
+
+So on this capability the guarantee is decorative in both directions:
+
+- Unwire `inventoryDeclaration` and the pill flips — over data that did not change.
+- Open gate-2 and the pill goes green — over `mockInventory`, still frozen.
+
+**A derived marker is only as honest as its referent, and the derivation cannot
+check its own referent.** That is the generalisable half: every capability in the
+registry is one careless re-pointing away from this, and no test would notice,
+because every test asserts the derivation and none asserts the join.
+
+The nine capabilities added this batch are all `null`-backed, deliberately, for
+exactly this reason. Null is the honest backing for a fixture read.
+
+---
+
+### `LIVENESS-GATE-ASYMMETRY-01` — the registry cannot be right both ways
+
+> **FIVE CAPABILITIES RENDER GREEN "LIVE" OVER FROZEN FIXTURE ARRAYS.**
+
+Verified by a test that now asserts it rather than working around it
+(`ProvenanceMarker.test.tsx`): `isLive('purchaseOrders')` is **true**.
+
+| Capability | Wired? | Harvest gate? | Renders |
+|---|---|---|---|
+| `purchaseOrders`, `advanceShipNotices`, `goodsReceipts`, `invoices`, `rfqs` | yes | **none** | 🟢 **Live** |
+| `inventory`, `purchaseRequisitions`, `forecastPublications` | yes | yes | 🟠 Sample |
+
+Both groups read in-memory fixture stores. The difference is not a property of the
+data; it is **whether anyone happened to add a gate-2 entry when that capability
+was last touched.** `LIVENESS-DATASOURCE-01` says wiring alone must never flip
+green — and for five capabilities, wiring alone is exactly what flipped green,
+because gate-2 is opt-in and nobody opted them in.
+
+**Operator ruling: report-only this batch.** Gating the other five would leave no
+capability rendering LIVE anywhere in the product, making green dead vocabulary —
+a real decision, not a marking one. Recorded and dated rather than averaged away.
+
+The consequence for this batch, worth being explicit about: **`ProvenanceMarker`
+deliberately does not read `isLive`.** It reads the feed axis, which is FIXTURE,
+so it cannot emit green no matter what gate-2 failed to say. A test pins that, so
+"simplifying" the marker onto `isLive` fails loudly.
+
+---
+
+### The two-axis marker — and why one token could not tell the truth
+
+Seven routes are **partly real**: the verb genuinely dispatches through a wired
+`CommandTarget`, runs the legality/role/field gates and writes the DR-10 trail,
+while the data listed is a frozen fixture. `/supplier/orders` is the clearest —
+Confirm/Reject really mutate state.
+
+For these, both available markers lie in opposite directions:
+
+- amber **"Sample"** → tells the reader the button is theatre. It is not. This
+  teaches them to discount a true signal, which is the more expensive error,
+  because the next true signal is discounted too.
+- green **"Live"** → tells the reader the orders are real. They are not.
+
+So liveness gets what it always implicitly had: **two independent questions.**
+`feedProvenance()` answers *is the data real* (FIXTURE everywhere today — a
+property of the repo, the backend being greenfield, pinned by
+`feedProvenance.test.ts` so the day a real feed lands the test fails first).
+`dispatchesCommands()` answers *does acting here do anything*, derived from wiring
+exactly like gate-1. Neither is caller-supplied; a page cannot assert that its own
+buttons work.
+
+**The honest render of a mixed surface is two statements, not the average of two.**
+
+---
+
+### `CTR-FABRICATION-01` / `CTR-NUMBER-FABRICATION-01` — split out, per ruling
+
+`BuyerContracts.tsx:508-509` mints **both** identities client-side:
+`id: ctr-new-${Date.now()}` **and** the business number
+`CTR-${yr}-${String(nextNum).padStart(3,'0')}`. SAP owns contract identity. The
+census named the id; the business number is the one the SE Team would read as spec,
+and it was unregistered.
+
+**Sized and declined for this batch, as invited.** The demotion to a request-to-SAP
+form is not a deletion: strip the minting and the created `Contract` has no id, so
+the wizard's *behavior* must change — terminal state, the `extraContracts` append,
+the review-step copy, the Docs/count badges that read it, ~140 EN+ID keys, and the
+tests over the CP-0·W1·2f-b parse spine. That is a behavior batch, and folding it
+in would let a marking regression hide inside a wizard rewrite.
+
+**What marking could fix today, and did:** the claim. The toast said *"Contract
+CTR-2026-004 created"*. It now says the draft is portal-local, that no contract was
+created in SAP, that the number is a placeholder this page generated, and that it is
+lost on reload.
+
+---
+
+### `DEAD-AFFORDANCE-01` — inert buttons render identically to live ones
+
+`BulkActionsBar.tsx:8,14` — `onClick?: () => void` on both primary and secondary
+actions. An action with no handler is visually indistinguishable from one that
+works: same variant, same icon, same hover, same cursor. **Blast radius: 16 pages.**
+
+Structural fix: make the handler required, and add an explicit disabled/pending
+variant that *looks* inert — so omitting a handler becomes a type error instead of a
+silent no-op. Not free (16 call sites plus a survey of which omissions are real), so
+not built here.
+
+**The class is wider than `BulkActionsBar`.** Found incidentally while marking:
+`BuyerSupplierProfile.tsx` ("Message", "Create RFQ") and `SupplierStorefront.tsx`
+("Connect", "Request RFQ") render plain `<Button>`s with **no `onClick` at all** —
+four header CTAs, on two of the most demo-visible routes, that do nothing when
+clicked. The optional-handler defect is a property of the button vocabulary, not of
+one bar.
+
+---
+
+### `GR-LAB-FABRICATION-01` — registered at last
+
+`GRInspectionWizard.tsx:694` mints `LAB-2026-${String(100 + idx).padStart(3,'0')}`
+in the browser and persists it. This is the `GR-FABRICATION-01` class surviving in a
+corner after the class was supposedly closed — **a client-minted external-system
+identifier for a laboratory request no laboratory received.** Registered here; not
+fixed (it is minting, not marking).
+
+---
+
+### What was DELETED rather than marked, and the rule behind it
+
+Three things could not be fixed by a marker, because the false inference lives
+closer to the reader than any pill can reach:
+
+1. **`PLACEHOLDER_DOCS`** (`contractView.tsx:212-225`) — read a free-text category
+   string and, if it contained `"raw"` or `"fragrance"`, emitted
+   **"BPJPH Halal Certificate — Valid"** in success green under a shield icon; and
+   **"BPOM Registration — Expiring"** off the contract *type*. No certificate was
+   ever looked up. **A page-level "Sample" pill does not travel to a green Valid
+   chip beside a named Indonesian regulator**, and a reader deciding whether a
+   supplier may ship reads the chip. Deleted; the Docs tab now says no documents are
+   linked, which is true.
+2. **The 30-day DOS trend chart** (`BuyerInventory.tsx:143-160`) —
+   `Math.sin(i*0.6) + Math.cos(i*0.3)` noise off a hardcoded `new Date('2026-05-20')`,
+   snapped to the real value at the last point. **A trend line is a claim**: the
+   reader concludes *depleting* / *recovering* / *stable* from its slope, and every
+   one of those conclusions was manufactured. Deleted (operator ruling). The current
+   DOS figure is real fixture data and remains.
+3. **The `✓` on discovery brand chips** — see `DISCOVERY-ENDORSEMENT-01`.
+
+> **THE RULE: MARK A VALUE, DELETE AN INFERENCE.** A marker can qualify a number a
+> reader will look up. It cannot qualify a shape a reader will reason from — a
+> slope, a green Valid chip, a check mark — because those are consumed
+> pre-verbally, and the pill is somewhere else on the page.
+
+---
+
+### Claims retracted (EN + ID)
+
+| Surface | Was | Now |
+|---|---|---|
+| `/buyer/inventory` header | "**Real-time** upstream supplier inventory positions…" | "Upstream supplier inventory positions…" |
+| `/supplier/inventory` header | "**Live stock visibility** · …" | "Stock visibility · …" |
+| `/supplier/inventory` banner | "…critical stock level. **Paragon procurement team has been automatically notified.**" | "…critical stock level." |
+| `/supplier/inventory` sources | "API Push (**real-time**), EDI 846 (daily), Manual…" | names the channels as *designed*, states none is connected |
+| `/supplier/inventory` thresholds | "…**enforced at category level**." | "…classify the rows shown; not enforced from this page." |
+| `/buyer/scorecard` header | "**Real-time** performance scoring…" | "Performance scoring…" |
+| `/buyer/discovery` header | "…**market-validated by L'Oréal, Unilever, P&G, Shiseido**…" | "Find and qualify new suppliers globally." |
+| `/marketplace` KPI | "**Vetted** on the network" | "Listed on the network" |
+| `/buyer/shipments` toast | "**Reminder sent** / Notified {{supplier}}" | "Reminder not available yet / nothing was sent" |
+| `/buyer/shipments` toast | "**Carrier alerted** / Escalation ticket opened" | "not available yet / no ticket was opened" |
+| `/register` success | "review your application **within 3–5 business days**" | "not submitted to anyone, and no review will take place" |
+| `/supplier/whatsapp` | "bot sends PDF **instantly**" / "**real-time** payment info" | "designed to… (not connected)" |
+| `/buyer/contracts` toast | "**Contract {{n}} created**" | "Draft saved in this session · portal-local, not in SAP" |
+
+The shipments case is worth noting: **the same file already contained the honest
+form.** Two keys above "Reminder sent" sits *"Form will open in a future release."*
+Somebody knew the register. The false toasts are not ignorance of the standard —
+they are the standard applied unevenly within one file, which is how uneven
+disclosure survives review.
+
+---
+
+### ⚠️ WHERE THE HONEST MARKER WOULD ITSELF MISLEAD — named, not averaged
+
+**`/buyer/compliance` — the fact is true; the urgency was the lie.**
+
+The census flagged the 17 Oct 2026 countdown as counting down to a date "the canon
+de-pressurized on 2026-07-15". Half right, and the half it gets wrong matters:
+**the canon de-pressurized the BUILD, not Indonesian law.** BPJPH's date is a real
+external regulatory fact. Deleting it would replace one distortion with another —
+and would be the more dangerous direction, because the reader loses information
+they may actually need.
+
+What was false was the **framing**: a red-when-≤90-days figure with a draining
+progress bar and a warning-amber border reads as *this product is racing a
+deadline* — reimporting the exact pressure the canon removed. Track-R is a normal
+operator lane; certification is handled manually by the compliance team; no
+external deadline gates the build.
+
+Retained as a neutral fact — neutral border, neutral figure, no colour escalation,
+no depleting bar — and the copy now says who owns the work: *"Certification is
+handled manually by the compliance team — this portal tracks status, it does not
+perform or submit certification, and this date does not gate any work here."*
+
+> **A COUNTDOWN IS AN ARGUMENT, NOT A DATE.** The number was never the problem.
+
+**The seven partly-real routes** (`/supplier/orders`, `/supplier/shipments`,
+`/supplier/rfqs`, `/supplier/invoices`, `/buyer/invoices`, `/buyer/goods-receipt`,
+`/buyer/purchase-requisition`) — a flat "Sample" is misleading *downward*. Handled
+by the two-axis marker above rather than by picking a direction to be wrong in.
+
+**`/buyer/collaboration` and `/buyer/plan-grid`** already carry both a pill and a
+prose honesty block. Left alone; more marking would be noise, and noise is how a
+marker regime stops being read.
+
+---
+
+### The shape this batch keeps arriving at
+
+Four findings here — `MARKER-SCOPE-01`, `MARKER-I18N-HOLE-01`,
+`INVENTORY-REFERENT-01`, `LIVENESS-GATE-ASYMMETRY-01` — are the same defect wearing
+different clothes:
+
+> **A DISCLOSURE MECHANISM IS TRUSTED FOR THE AREA IT APPEARS TO COVER, AND
+> NOTHING IN THE BUILD KNOWS WHAT THAT AREA IS.**
+
+The registry knows a capability's tier. It does not know which page renders it,
+which tab the pill lands on, whether the marker survives translation, or whether
+the capability's backing store is the array on screen. Each of those is a join, and
+every one of them was wrong somewhere on main while the derivation was provably
+right everywhere.
+
+**Honest-by-construction was built for the derivation and stopped at the join.**
+That is where the next honesty batch should look.

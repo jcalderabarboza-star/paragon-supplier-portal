@@ -11,6 +11,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
@@ -145,6 +146,10 @@ const BuyerSuppliers: React.FC = () => {
           ? t('buyerSuppliers.meta.records.one', { count: counts.total })
           : t('buyerSuppliers.meta.records.other', { count: counts.total })}{' '}
         · {t('buyerSuppliers.meta.lastUpdated')} <Data>{lastUpdated}</Data>
+        {/* D-CENSUS-8 — supplier master carried NO marker while the transactional
+            lanes all wore one, so the least-real surface read as the most
+            trustworthy. `suppliers` is null-backed → feed axis only, no verb axis. */}
+        <ProvenanceMarker capability="suppliers" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <SubTabs

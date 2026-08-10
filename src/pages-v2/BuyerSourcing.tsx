@@ -22,6 +22,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -1856,6 +1857,11 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             : 'sourcing.meta.summary.other',
           { count: kpis.active, date: formatDate(lastUpdated) },
         )}
+        {/* D-CENSUS-8 — MARKER-SCOPE-01. The existing pills here are scoped to the
+            commodity / market-intel panels; the RFQ pipeline itself was unmarked.
+            PARTLY REAL: award genuinely dispatches through the wired `rfq` target
+            and drives the quotation cascade, over a fixture RFQ set. */}
+        <ProvenanceMarker capability="rfqs" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">

@@ -12,6 +12,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -501,6 +502,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           ? t('goodsReceipt.meta.count.one', { count: counts.all })
           : t('goodsReceipt.meta.count.other', { count: counts.all })}{' '}
         · {t('goodsReceipt.meta.lastPosted')} <Data>{formatDate(TODAY)}</Data>
+        {/* D-CENSUS-8 — PARTLY REAL, both axes. `goodsReceipt` is wired: Post and
+            Settle genuinely dispatch, run the E4 enforcement checks and write the
+            DR-10 trail. The receipts listed are fixtures. */}
+        <ProvenanceMarker capability="goodsReceipts" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

@@ -10,6 +10,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
@@ -345,6 +346,12 @@ const SupplierOrders: React.FC = () => {
           : t('supplierOrders.meta.orders.other', { count: MY_POS.length })}{' '}
         · {t('supplierOrders.meta.lastUpdated')}{' '}
         <Data>{fmtDate(maxOrderDate)}</Data>
+        {/* D-CENSUS-8 — PARTLY REAL, both axes. This is the clearest case the census
+            named: Confirm/Reject here genuinely dispatch through the wired
+            `purchaseOrder` target, run the legality + role + field gates and write
+            the DR-10 trail. A flat "Sample" would teach the reader to discount a
+            true signal; a green "Live" would claim the orders are real. Both. */}
+        <ProvenanceMarker capability="purchaseOrders" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-6">

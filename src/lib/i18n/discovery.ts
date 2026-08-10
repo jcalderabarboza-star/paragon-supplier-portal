@@ -14,7 +14,7 @@ export const discoveryEn: Record<string, string> = {
   // — Page header —
   'discovery.header.title': 'Supplier Discovery',
   'discovery.header.subtitle':
-    "Find and qualify new suppliers globally — market-validated by L'Oréal, Unilever, P&G, Shiseido and more.",
+    'Find and qualify new suppliers globally.',
   'discovery.action.openMarketplace': 'Open Marketplace',
   // — Meta line —
   'discovery.meta.summary': '{{count}} candidates · last updated {{date}}',
@@ -47,7 +47,7 @@ export const discoveryEn: Record<string, string> = {
   'discovery.category.vitamin': 'Vitamin',
   'discovery.category.emollient': 'Emollient',
   'discovery.toggle.halal': 'Halal certified only',
-  'discovery.toggle.major': 'Major brand validated',
+  'discovery.toggle.major': 'Claims a major brand',
   'discovery.filter.clear': 'Clear filters',
   'discovery.sort.label': 'Sort by',
   'discovery.sort.relevance': 'Relevance',
@@ -70,7 +70,11 @@ export const discoveryEn: Record<string, string> = {
   // — Global supplier card —
   'discovery.card.meta': '{{country}} · {{region}} · Est. {{founded}} · {{employees}} employees',
   'discovery.card.matchScore': 'AI Match Score',
-  'discovery.card.validatedBy': 'Market validated by',
+  // D-CENSUS-8 · DISCOVERY-ENDORSEMENT-01. Was 'Market validated by' over a green
+  // check per brand — asserting that real, named corporations had vetted a
+  // FICTIONAL supplier. The portal verifies nothing here. Retracted to what the
+  // field actually is: an unverified list a supplier claims about itself.
+  'discovery.card.validatedBy': 'Reference brands claimed (unverified)',
   'discovery.card.categories': 'Categories',
   'discovery.card.certifications': 'Certifications',
   'discovery.card.halal': 'Halal',
@@ -134,7 +138,7 @@ export const discoveryId: Record<string, string> = {
   // — Page header —
   'discovery.header.title': 'Penemuan Pemasok',
   'discovery.header.subtitle':
-    "Temukan dan kualifikasi pemasok baru secara global — divalidasi pasar oleh L'Oréal, Unilever, P&G, Shiseido, dan lainnya.",
+    'Temukan dan kualifikasi pemasok baru secara global.',
   'discovery.action.openMarketplace': 'Buka Pasar',
   // — Meta line —
   'discovery.meta.summary': '{{count}} kandidat · terakhir diperbarui {{date}}',
@@ -167,7 +171,7 @@ export const discoveryId: Record<string, string> = {
   'discovery.category.vitamin': 'Vitamin',
   'discovery.category.emollient': 'Emolien',
   'discovery.toggle.halal': 'Hanya bersertifikat halal',
-  'discovery.toggle.major': 'Divalidasi merek besar',
+  'discovery.toggle.major': 'Mengklaim merek besar',
   'discovery.filter.clear': 'Hapus filter',
   'discovery.sort.label': 'Urutkan menurut',
   'discovery.sort.relevance': 'Relevansi',
@@ -190,7 +194,7 @@ export const discoveryId: Record<string, string> = {
   // — Global supplier card —
   'discovery.card.meta': '{{country}} · {{region}} · Berdiri {{founded}} · {{employees}} karyawan',
   'discovery.card.matchScore': 'Skor Kecocokan AI',
-  'discovery.card.validatedBy': 'Divalidasi pasar oleh',
+  'discovery.card.validatedBy': 'Merek referensi yang diklaim (belum diverifikasi)',
   'discovery.card.categories': 'Kategori',
   'discovery.card.certifications': 'Sertifikasi',
   'discovery.card.halal': 'Halal',

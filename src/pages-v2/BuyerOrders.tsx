@@ -26,6 +26,7 @@ import {
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
+import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import SubTabs from '../components/ui-v2/SubTabs';
@@ -366,6 +367,11 @@ const BuyerOrders: React.FC = () => {
             : 'buyerOrders.meta.summary.other',
           { count: orders.length, date: formatDate(maxOrderDate) },
         )}
+        {/* D-CENSUS-8 — PARTLY REAL, so both axes render. The PO feed is fixture,
+            but `purchaseOrder` is a wired CommandTarget: a supplier confirm/reject
+            genuinely mutates what this page lists and writes the DR-10 trail. A
+            flat "Sample" here would understate a real signal. */}
+        <ProvenanceMarker capability="purchaseOrders" className="ml-3 align-middle" />
       </PageMetaLine>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
