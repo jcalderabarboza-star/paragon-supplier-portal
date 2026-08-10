@@ -6815,3 +6815,86 @@ looked at it, because nobody had reason to look at it twice.
 
 The census is what makes that durable: it is not a list of what we found, it is a
 **refusal to let the next one be found by reading.**
+
+### 10. AMENDMENT AT MERGE (operator, at #197)
+
+Four things the operator required the entry carry, recorded here rather than
+edited into the sections above so the addition is visible as an addition.
+
+#### 10.1 The framing
+
+> **THE ANALYZER EARNED ITSELF BEFORE THE PAGE EXISTS.** Eighteen loose ends
+> across eighteen flows, **DERIVED, NOT READ** — and PF-1, the surface batch, has
+> not started.
+
+The value did not arrive with a diagram. It arrived with the derivation, which is
+the argument for building the analyzer before the thing it was meant to draw.
+
+#### 10.2 D-1 · the RFQ repair is a PRODUCT decision, stated at the grain that makes it one
+
+Verified, unfixed, and **correctly unfixed**. The two candidate repairs are not
+two spellings of one fix:
+
+| Candidate | What it actually does |
+|---|---|
+| Change `initial` to `'Open'` | **REMOVES A DRAFT CONCEPT.** The draft-RFQ lane stops existing; `t_rfq_publish` is deleted, not repaired |
+| Add a draft-creation verb | **BUILDS ONE.** An RFQ is born unpublished, and publish becomes a required step a buyer takes |
+
+One is a deletion and one is a feature. **That is D-1, and it is the operator's.**
+
+⚠️ **And the cost of leaving it open is stated rather than implied: THE DEAD VERB
+IS STILL COUNTED IN THE CAPABILITY SURFACE.** `rfq:publish` is granted to the
+buyer persona in `PERSONA_ROLES`, and `capabilitiesFor` counts `t_rfq_publish`
+among the transitions that scope may initiate — **a capability the platform
+reports and cannot exercise** (`PF0-CAPABILITY-COUNTS-A-DEAD-VERB-01`). The
+derivation is correct about the catalog; the catalog is what is wrong.
+
+#### 10.3 ⚠️ `PF0-TESTS-ARE-NOT-TYPECHECKED-01` IS THE FINDING THAT OUTLIVES THIS BATCH
+
+**Filed against `TSC-SKIPS-TESTS-01` (OPEN, booked at CP-3) and against
+`4b-FIND-01`'s "same class" note — and it is THE FIRST CONCRETE INSTANCE EITHER
+HAS HAD.** Both were, until now, arguments about a gap nobody had watched cost
+anything.
+
+**What it cost:** a **REQUIRED** field was added to `FlowDefinition` and **`tsc`
+reddened on NOTHING.** Five test-local flow fixtures were missing it. The base
+`exclude` hides every spec from both configs, so no gate looked. The fixtures
+were caught at **RUNTIME**, by `assertValidFlow` throwing at registration — and
+**only because `terminals` happens to be runtime-validated too.**
+
+> **A REQUIRED FIELD WITHOUT RUNTIME VALIDATION WOULD BE SILENTLY ABSENT FROM
+> EVERY SPEC.**
+
+Nothing would have failed. The specs would have run green while exercising a
+shape the type system forbids — which is worse than an untested field, because it
+is a suite reporting on a shape the product does not have.
+
+⚠️ **AND THE BOOKED FIX WOULD NOT HAVE CLOSED IT — MEASURED, NOT ASSUMED.**
+`TSC-SKIPS-TESTS-01` records the remedy as *"`tsc -p tsconfig.vitest.json
+--noEmit` — a gate the operator does not run today"*, on the stated premise that
+that config *"exists and includes them"*. It does include them, **and it also
+inherits the base `exclude`, which wins.** Measured at this SHA:
+
+```
+npx tsc -p tsconfig.vitest.json --noEmit --listFiles
+  → 340 files under src/
+  →   0 spec files
+```
+
+**So the remedy as booked would have run, reported clean, and checked no spec at
+all** — a gate that is green because it was looking elsewhere. **The finding
+sharpens the one it is filed against:** closing `TSC-SKIPS-TESTS-01` needs the
+child config to **override `exclude`**, not merely to be run. Anyone who had run
+it would have concluded the gap was closed.
+
+**BOOKED, NOT FIXED, OUTSIDE THIS FENCE.** It is a build-config change with a
+suite-wide blast radius, and it is the kind of gate the dispatch requires be
+argued before it is added.
+
+#### 10.4 `PF0-CENSUS-NEARLY-BECAME-A-CONSUMER-01`
+
+Confirmed on both counts: the **third** instance of `DESCRIBE-DONT-RENDER-01`,
+and **it recurs because it is a property of writing things down**, not of
+carelessness. Fixed by the class's own prescription — name the mechanism, never
+render it — **rather than by widening the consumer list, which would have
+overstated that module's reach**, which is the drift that census exists to catch.
