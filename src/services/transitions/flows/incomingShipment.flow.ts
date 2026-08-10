@@ -39,6 +39,8 @@ export const incomingShipmentFlow: FlowDefinition = {
   version: 1,
   states: ['Booked', 'Shipped', 'Arrived', 'Cancelled'],
   initial: 'Booked',
+  /** PF-0 · D-2 */
+  terminals: ['Arrived', 'Cancelled'],
   transitions: [
     {
       // Supplier reports an incoming shipment. Creation-shape (store-assigned

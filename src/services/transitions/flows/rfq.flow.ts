@@ -22,6 +22,8 @@ export const rfqFlow: FlowDefinition = {
   version: 1,
   states: ['Draft', 'Open', 'Closed', 'Awarded', 'Cancelled'],
   initial: 'Draft',
+  /** PF-0 · D-2 — an awarded or cancelled RFQ is done. */
+  terminals: ['Awarded', 'Cancelled'],
   transitions: [
     {
       // CREATION verb (Phase A/2, WIRED). Buyer raises a sourcing event. Mirrors

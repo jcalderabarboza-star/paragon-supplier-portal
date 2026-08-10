@@ -47,6 +47,9 @@ export const enforcementFlow: FlowDefinition = {
   // ONE state. A governed check does not have a lifecycle — it has a LEDGER.
   states: ['Governed'],
   initial: 'Governed',
+  /** PF-0 · D-2 — one state, and `t_enforcement_set` is statePreserving, so
+   *  nothing ever leaves it. The ledger machine rests here by design. */
+  terminals: ['Governed'],
   transitions: [
     {
       // WIRED (E2). A buyer records how hard one check bites. The entityId IS

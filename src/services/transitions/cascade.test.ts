@@ -17,6 +17,7 @@ flowRegistry.register({
   version: 1,
   states: ['Open', 'Flagged'],
   initial: 'Open',
+  terminals: ['Flagged'],
   transitions: [
     { id: 't_srcx_flag', from: ['Open'], to: 'Flagged', trigger: 'user', requiredRole: 'srcx:flag', requiredFields: [], policyHooks: [], version: 1 },
   ],
@@ -26,6 +27,7 @@ flowRegistry.register({
   version: 1,
   states: ['Live', 'Alerted'],
   initial: 'Live',
+  terminals: ['Alerted'],
   transitions: [
     { id: 't_dstx_alert', from: ['Live'], to: 'Alerted', trigger: 'cascade', requiredRole: 'dstx:alert', requiredFields: [], policyHooks: [], version: 1 },
   ],

@@ -22,6 +22,7 @@ function baseFlow(): FlowDefinition {
     version: 1,
     states: ['A', 'B'],
     initial: 'A',
+    terminals: ['B'],
     transitions: [
       { id: 't_sample_create', from: [], to: 'A', trigger: 'creation', requiredRole: 'sample:create', requiredFields: [], policyHooks: [], version: 1 },
       { id: 't_sample_advance', from: ['A'], to: 'B', trigger: 'user', requiredRole: 'sample:advance', requiredFields: ['note'], policyHooks: [], version: 1 },

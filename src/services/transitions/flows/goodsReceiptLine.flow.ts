@@ -21,6 +21,9 @@ export const goodsReceiptLineFlow: FlowDefinition = {
   version: 1,
   states: ['Pending', 'Inspected', 'Accepted', 'Rejected', 'Quarantined', 'Returned'],
   initial: 'Pending',
+  /** PF-0 · D-2 — 'Quarantined' is deliberately absent: quarantine is a holding
+   *  state awaiting a release/return edge, not an ending (censused). */
+  terminals: ['Accepted', 'Rejected', 'Returned'],
   transitions: [
     {
       id: 't_grline_inspect',

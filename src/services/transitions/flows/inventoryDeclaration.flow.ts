@@ -64,6 +64,9 @@ export const inventoryDeclarationFlow: FlowDefinition = {
   version: 1,
   states: ['Declared'],
   initial: 'Declared',
+  /** PF-0 · D-2 — a degenerate single-state machine: the snapshot is born where
+   *  it rests, and nothing leaves it. */
+  terminals: ['Declared'],
   transitions: [
     {
       // Supplier declares its own SOH for a collaborated material. Creation-

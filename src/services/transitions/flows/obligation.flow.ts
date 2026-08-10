@@ -18,6 +18,8 @@ export const obligationFlow: FlowDefinition = {
   version: 1,
   states: ['In Progress', 'Completed'],
   initial: 'In Progress',
+  /** PF-0 · D-2 */
+  terminals: ['Completed'],
   transitions: [
     {
       id: 't_obligation_track',

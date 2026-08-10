@@ -42,6 +42,7 @@ flowRegistry.register({
   version: 1,
   states: ['New'],
   initial: 'New',
+  terminals: ['New'],
   transitions: [
     {
       id: 't_anchored_create',

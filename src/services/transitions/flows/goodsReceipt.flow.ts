@@ -50,6 +50,10 @@ export const goodsReceiptFlow: FlowDefinition = {
     'Posted to SAP',
   ],
   initial: 'Pending Inspection',
+  /** PF-0 · D-2 — 'Posted to SAP' is reachable ONLY through `settlesTo` (the
+   *  Option-B settlement edge); 'Quality Hold' is deliberately NOT here — it has
+   *  no exit and is not an ending, which is exactly what the census records. */
+  terminals: ['Rejected', 'Posted to SAP'],
   transitions: [
     {
       // Buyer receives an inbound ASN/shipment. Buyer-scoped creation — the
@@ -136,6 +140,12 @@ export const goodsReceiptFlow: FlowDefinition = {
       requiredFields: [],
       policyHooks: [],
       sapBoundary: true,
+      // PF-0 · D-2 — WHERE SETTLEMENT LANDS IT, in data rather than in the
+      // comment above. `settleFinalize` writes this exact string in the mock
+      // adapter (`MockCommandService.ts`), outside the declared machine; until
+      // that half reads the declaration, the two are pinned to agree on the
+      // floor (`flowGraph.test.ts`).
+      settlesTo: 'Posted to SAP',
       version: 1,
     },
   ],

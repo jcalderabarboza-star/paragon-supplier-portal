@@ -30,6 +30,8 @@ export const shipmentFlow: FlowDefinition = {
     'Delivered',
   ],
   initial: 'Pending ASN',
+  /** PF-0 · D-2 — delivery ends the inbound leg. */
+  terminals: ['Delivered'],
   transitions: [
     {
       // Creation-shape (← PO/ASN). The "created by PO confirm" cascade is a

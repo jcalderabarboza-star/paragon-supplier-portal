@@ -45,6 +45,9 @@ export const invoiceFlow: FlowDefinition = {
     'Disputed',
   ],
   initial: 'Draft',
+  /** PF-0 · D-2 — remittance is the end of the invoice lifecycle. 'Payment
+   *  Released' is reachable only through `settlesTo` (Option B). */
+  terminals: ['Remittance Received'],
   transitions: [
     {
       // CANONICAL creation verb — supplier drafts an invoice against its own PO.
@@ -102,6 +105,8 @@ export const invoiceFlow: FlowDefinition = {
       requiredFields: [],
       policyHooks: [],
       sapBoundary: true,
+      // PF-0 · D-2 — the settlement advance, declared. See the GR twin.
+      settlesTo: 'Payment Released',
       version: 1,
     },
     {
