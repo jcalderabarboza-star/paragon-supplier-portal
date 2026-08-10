@@ -244,3 +244,22 @@ export const useSingleSourceItems = () =>
   useServiceQuery(['discovery', 'singleSource'], (svc, scope) =>
     svc.discovery.getSingleSourceItems(scope),
   );
+
+// ─── Enforcement (CP-3 · E4) ────────────────────────────────────────────────
+
+/**
+ * The append-only enforcement-setting LEDGER — every recorded act, oldest first.
+ *
+ * ⚠️ **THE LEDGER, NEVER THE ANSWER.** There is deliberately no
+ * `useEffectiveEnforcement(checkId)`: the mode in force is clock-derived, so a
+ * hook that answered it would have to read a clock the caller is supposed to
+ * supply as an argument (law 0.5). Consumers call `effectiveEnforcement(ledger,
+ * checkId, instant)` with an instant they captured themselves — the
+ * `effectivePin` shape, and the reason the seam has one method.
+ *
+ * ⚠️ BUYER-SCOPED. A supplier persona gets `SCOPE_DENIED`, not an empty page.
+ */
+export const useEnforcementSettings = () =>
+  useServiceQuery(['enforcement', 'settings'], (svc, scope) =>
+    svc.enforcement.getEnforcementSettings(scope),
+  );

@@ -372,6 +372,16 @@ describe('2B-4b — the gate: WIRED, and the prefix rule is GONE', () => {
     // passes. `GRInspectionWizard.test.tsx` proves the behaviour; this proves
     // the wiring is the one the behaviour runs through.
     expect(wizard).toContain('if (!l.bpom.ok) return false;');
+    // ⚠️ CP-3 · E4 — the applicable-and-unanswered clause now reads its
+    // consequence off the enforcement ledger (`lotBlocks`), measured delta ZERO.
+    // Added here because this census asserted only the REFUSAL line and would
+    // therefore have stayed green through the migration — its halal twin caught
+    // it and this one did not, which is a coverage difference rather than a
+    // design one. The refusal line above stays mode-free: a mode may relax the
+    // consequence of an answer and never the absence of a question.
+    expect(wizard).toContain(
+      'if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;',
+    );
   });
 
   it('NO PREFIX PARSE SURVIVES IN PRODUCTION CODE — derived, not enumerated', () => {

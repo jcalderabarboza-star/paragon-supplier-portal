@@ -5730,3 +5730,251 @@ Kept as the standard for every future "leave room for X" instruction: leaving
 room means choosing a shape that does not assume the narrow case (a flat array,
 not a keyed map). It does not mean building the wide case behind a flag nobody
 has ruled on.
+
+---
+
+## CP-3 · E4 — THE SHIPPED BLOCKS, MIGRATED UNDER THE REGISTRY
+
+**Branch** `feat/e4-enforcement-registry-migration` · **from** main `6cf1327`
+(floor 2417/189) · **to** floor **2444/190** · gates green.
+
+E1 built the vocabulary, E2 built the setting and read nothing, E3 will build the
+stamp and the override. **E4 is the join**: the two checks that block a goods
+receipt today stop asserting their consequence and start reading one.
+
+**THE STANDING REQUIREMENT WAS A NUMBER, AND IT IS MET: THE DELTA IS ZERO.**
+Measured per check and per receivable line, under the shipped ledger and under an
+empty one, at three instants — 108 line-comparisons, none moved.
+
+### 1. What landed
+
+| Piece | Where | Shape |
+| --- | --- | --- |
+| the opening act | `mock/enforcementSeed.ts` | two rows, dispatched through `t_enforcement_set`, `MAXIMUM_RIGOUR`, unattributed |
+| the boot call | `main.tsx` | awaited before the first paint; reports a refusal, never swallows it, always renders |
+| the scoped read | `query/hooks.ts` | `useEnforcementSettings()` — the LEDGER, never an answer |
+| the page | `pages-v2/BuyerGoodsReceipt.tsx` | the ledger joins the page's four honest states and is passed down |
+| the gate | `v2-features/GRInspectionWizard.tsx` | `sealBlocks` / `lotBlocks`, derived from the ledger + one captured instant |
+
+**Two lines of product code changed behaviourally**, and both gained a conjunct:
+
+```
+- if (l.halal.required && !l.halalSealCheck) return false;
++ if (l.halal.required && !l.halalSealCheck && sealBlocks) return false;
+- if (l.bpom.applicable && !l.bpomLotCheck) return false;
++ if (l.bpom.applicable && !l.bpomLotCheck && lotBlocks) return false;
+```
+
+The two REFUSAL branches beside them (`!l.halal.ok`, `!l.bpom.ok`) are untouched,
+and their being untouched is asserted over the wizard's own source rather than
+promised in prose.
+
+> ENFORCEMENT MODE RELAXES THE CONSEQUENCE OF AN ANSWER; NOTHING MAY RELAX THE
+> ABSENCE OF A QUESTION.
+
+### 2. ⚠️ THE RULING'S COUNT WAS WRONG, AND THE CORRECTION IS THE RECORD
+
+`ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01` — **new, and it is the batch's main
+finding.**
+
+The dispatch ruled D-ENF-4 (PROVISIONAL) and listed **three** rows to seed at
+`BLOCK`: `bpom.lot`, `halal.seal`, and *"the unanswered-required clause"*. The
+third **is not a third check.** It is the SHARED SHAPE of the other two — the two
+clauses at `qualityValid` that stop a required-and-unanswered check. There is no
+third block site anywhere in the tree; the only other governed check id,
+`halal.certificate`, is authored at H3 and **wired nowhere.**
+
+**Operator ruling at E4, recorded against the ruling rather than only in the
+outcome:** two rows.
+
+> I read `GOVERNED_CHECK_IDS` as the seed list; you read the tree. Seeding
+> `halal.certificate` would break E2's own ratified rule: **A ROW IS WRITTEN
+> ONLY WHERE A DECISION WAS ACTUALLY TAKEN.** It runs nowhere, blocks nothing,
+> and nobody has ruled it — a row at `BLOCK` would put a decision on the record
+> that nobody took, which is precisely why E2 refused to seed at all.
+
+**Why this generalises.** The vocabulary names every check a mode MAY govern; the
+seed names the ones that HAVE A SHIPPED BEHAVIOUR TO OPEN AT. They are different
+sets and the difference is invisible from the vocabulary's side — which is
+exactly how a three-member enum became a three-row seed. `SEEDED_CHECKS` is
+therefore authored, not derived, and a spec asserts it is a STRICT SUBSET of
+`GOVERNED_CHECK_IDS`: **a check authored tomorrow must be placed there
+consciously rather than inherit a recorded decision by joining a union.**
+
+⚠️ And note which direction the error ran in. Seeding the third row would have
+changed no behaviour at all — `halal.certificate` has no consumer — so **no test
+anywhere would have caught it, and the only cost would have been a permanent
+false claim on a governance ledger.** A defect with no behavioural signature is
+the class this lane exists for.
+
+### 3. ⚠️ `ENF-VALUE-CENSUS-IS-BLIND-TO-THE-LITERAL-01` — found by mutation, not by review
+
+The seed records `mode: MAXIMUM_RIGOUR`, never `'BLOCK'`, and the reason is that
+**the literal is the fail-open shape here**: append a stricter mode to
+`ENFORCEMENT_MODES` and a hard-coded `'BLOCK'` silently becomes a relaxation —
+one notch below the ceiling, recorded as a deliberate act, on nobody's authority.
+
+The suite asserted this with `expect(s.mode).toBe(MAXIMUM_RIGOUR)`. **Mutating
+the seed to a hard-coded `'BLOCK'` left all 13 specs green**, because
+`MAXIMUM_RIGOUR === 'BLOCK'` today and a value comparison cannot tell a derived
+ceiling from a literal that happens to equal it.
+
+> **A PROPERTY ABOUT THE FORM OF THE CODE CANNOT BE ASSERTED OVER ITS VALUES.**
+> The two agree exactly while the property does not matter, and diverge exactly
+> when it starts to.
+
+Closed with a source census: no member of `ENFORCEMENT_MODES` appears as a string
+literal in the seed module's code lines. Re-mutated after the fix and confirmed
+red. This is `CENSUS-MUST-DERIVE-01` inverted — there the census had to derive
+from data; here an assertion over data was blind to a fact about code.
+
+### 4. ⚠️ `ENF-PROP-FED-GATE-PROVES-NOTHING-01` — the wire a green suite cannot see
+
+Every spec in `GRInspectionWizard.test.tsx` hands the ledger in **as a prop**. So
+all of them would have passed if `BuyerGoodsReceipt` had never called
+`useEnforcementSettings()` and passed a hard-coded `[]` instead: an empty ledger
+derives the same `BLOCK`, the behaviour today is identical, and **the migration
+would have been COSMETIC — a registry read wired to nothing, with the consequence
+still effectively in the code.**
+
+> **A WIRE IS ONLY PROVED BY A VALUE THAT CHANGES.** At `BLOCK` a connected
+> registry and a disconnected one are indistinguishable, and `BLOCK` is
+> everything this build ships.
+
+Closed with an end-to-end spec on the real path — store → seam → scoped hook →
+page → wizard → clause — driven by an `OBSERVE` ledger recorded through the real
+verb, asserting the quality step ADVANCES with both checks unanswered. Probed by
+cutting the page's prop to `[]`: red. And its twin asserts that under `OBSERVE`
+**both radios still render and still open unanswered** — relaxing enforcement is
+not relaxing honesty; only the consequence moved.
+
+### 5. ⚠️ THE SEEDING ACTOR — "a named recorded act" resolved before it was built
+
+The dispatch said to seed *"with a named recorded act"*. That collides with a
+settled fence — *nothing in the system can name a human; that is F1* — and the
+collision only resolves one way. **Stated before building rather than assumed,
+and confirmed by the operator:**
+
+> "NAMED RECORDED ACT" MEANS THE ACT IS NAMED ON THE RECORD — dispatched verb,
+> DR-10 trail, ledger row — **NOT that a human is named.**
+
+Inventing a `personId` / `displayName` to seed with would have been the
+manufactured provenance E2 refused, one layer down and harder to see. So
+`setBy` is `{kind:'UNATTRIBUTED', reason:'NO_PERSON_IN_SESSION'}` — and the
+policy permits it for the right reason, not by exception: an opening act **at**
+the ceiling is not a loosening, and **the safest act is always available to
+anybody.**
+
+⚠️ The alternative to running the seed unattributed was never "no row". It was a
+forged one.
+
+### 6. ⚠️ THE CONSUMER CENSUS HAD TO WIDEN ITS VOCABULARY, NOT JUST ITS LIST
+
+E2's census watched thirteen E1 names and listed six consumers. E4 adds four
+consumers — and **the seed module would have escaped it entirely**, because it
+imports `MAXIMUM_RIGOUR` and `settingInForce` and not one E1 name.
+
+> **A CENSUS WHOSE VOCABULARY LAGS THE MODULE REPORTS CLEAN BECAUSE IT WAS
+> LOOKING ELSEWHERE.** Growing the list is the visible half of maintaining a
+> census; growing the terms it matches on is the half that decides whether the
+> list means anything.
+
+Five names added (`MAXIMUM_RIGOUR`, `effectiveEnforcement`, `settingInForce`,
+`settingHistory`, `GovernedCheckId`); the list is now nine files and four suites,
+exact. `main.tsx` is a consumer of the SEED and is deliberately not on it — it
+names `seedEnforcementLedger` and no enforcement vocabulary at all — **stated in
+the spec rather than filtered out**, so a reader does not take the omission for
+absence.
+
+**And the E2 fence is gone on purpose.** `enforcement.test.ts` used to assert
+*"the GR inspection wizard is untouched by this batch"*. E4 is the batch that
+retires it, and the replacement pins the SHAPE of the touch: the wizard reads the
+LEDGER and derives; it names no mode as a literal, and it cannot construct an
+override (`overriddenBy`, `EnforcementOverride`, `overrideAllowed`,
+`GovernedCheckStamp` are all asserted absent). A gate that could relax its own
+block without a person would be the anonymous unlock the lane exists to refuse.
+
+### 6b. ⚠️ `CENSUS-COVERAGE-IS-ASYMMETRIC-01` — the two twins did not both catch it
+
+The full suite went red on **two** censuses neither of which belongs to this
+lane, and that is them working. But only one of the two *twin* censuses fired:
+
+- `halalApplicability.test.ts` asserted the WHOLE clause
+  (`if (l.halal.required && !l.halalSealCheck) return false;`) → **red**, correctly.
+- `bpomApplicability.test.ts` asserted only the REFUSAL line
+  (`if (!l.bpom.ok) return false;`) → **green through the entire migration.**
+
+The two were written as twins, describe the same property in the same words
+("NOT MERELY CALLED — LOAD-BEARING"), and one of them was not checking the
+governed clause at all.
+
+> **TWO CENSUSES THAT READ AS TWINS ARE NOT THEREFORE TWINS.** Matching prose is
+> what makes the gap invisible: the second file's comment asserts the coverage
+> the first file's code provides, and nobody re-reads the assertions under a
+> heading that already sounds right.
+
+Both now pin their governed clause explicitly, and both keep the refusal line
+mode-free beside it — so the contrast between "a mode may govern this" and "a
+mode may never govern this" is stated once per regime, in code.
+
+### 7. THE DELTA, AS MEASURED
+
+Per check, under the shipped ledger, at `2026-08-10T08:00:00Z`:
+
+| check | mode | source | `blocks()` | was |
+| --- | --- | --- | --- | --- |
+| `halal.seal` | `BLOCK` | `AS_SET` | **true** | hard-coded true |
+| `bpom.lot` | `BLOCK` | `AS_SET` | **true** | hard-coded true |
+| `halal.certificate` | `BLOCK` | `NO_SETTING_RECORDED` | — | *not wired; no site* |
+
+Per line: **9 receivable lines × 4 answer states × 3 instants = 108 comparisons,
+0 moved** — the retired clause form is kept in the suite as the before-half, on
+the `bpomApplicability.test.ts` precedent, because deleting the restatement would
+delete the evidence along with the defect.
+
+⚠️ **AND THE SAME ZERO AGAINST AN EMPTY LEDGER.** The boot seed reports rather
+than throws, so a seed that never lands is a reachable state — and it enforces
+identically. The mode is the same `BLOCK`; only the SOURCE moves, from
+`NO_SETTING_RECORDED` to `AS_SET`. **That is the entire behavioural content of
+the seed: it changes what the record SAYS, not what the gate DOES.**
+
+⚠️ **AND A NON-ZERO DELTA IS REACHABLE**, which is what makes the zero evidence
+of a faithful migration rather than of a no-op. Under an `OBSERVE` ledger, five
+lines stop blocking on the seal question — **the same five H2 measured as
+gaining one.** That ledger is constructed in a test and is unreachable in the
+product: relaxing is a loosening, a loosening needs a named actor, and nothing
+here can name one.
+
+### 8. Constraints discharged
+
+- **C9's bytes untouched**; pin `af7f0b4` unaffected — all three blob ids
+  verified identical to the `C9-ISSUE-HASHES-01` table at session start.
+- **No wizard behaviour change beyond reading the mode.** Two conjuncts, nothing
+  else; the render is untouched, so every question is still asked at every mode.
+- **Refusals untouched**, and structurally so: they carry no mode and cannot
+  acquire one, because the refusal reasons are not members of `GovernedVerdict`.
+- **No stamp.** `GovernedCheckStamp` has no consumer; that rides E3 with H4.
+- **Mutation-probed six ways**, each confirmed to have actually changed the file
+  before the run (the CRLF-trap discipline), each restored and re-run green:
+  reverting the seal conjunct kills 2 · reverting the lot conjunct kills 2 · the
+  seed's literal `'BLOCK'` killed **0 before §3 and 1 after** · seeding
+  `halal.certificate` kills 8 · dropping the never-supersede guard kills 2 ·
+  cutting the page's prop to `[]` kills 1.
+
+### 9. OPEN, for E3
+
+- **D-ENF-4 is PROVISIONAL** — strategist-ruled on best practice, pending team
+  ratification, with the disposal condition stated: the team's answer REPLACES
+  these two rows, and they are replaced by APPENDING, because the ledger has no
+  edit path. `ENF-OVERRIDE-VOCAB-PROVISIONAL-01` and `UNATTRIBUTED_REASONS` stay
+  open on the same footing.
+- **Nothing can yet record a relaxation in the product.** `t_enforcement_set`
+  refuses a loosening by an unattributed actor, and the portal can name nobody —
+  so the ONLY mode any surface will show until F1 is `BLOCK`. The lane is built,
+  wired, and visibly unusable in the relaxing direction. That is the design.
+- **There is no UI to set a mode**, deliberately. E4 migrated the shipped blocks;
+  it did not open a season on wiring modes into surfaces. Exactly one gate reads
+  a mode and it reads it for exactly two checks.
+- **`halal.certificate` stays unseeded until it has a site.** When H4 wires
+  `verifyHalalAtReceipt`, the batch that wires it is the batch that opens its
+  row — at whatever its shipped behaviour turns out to be.

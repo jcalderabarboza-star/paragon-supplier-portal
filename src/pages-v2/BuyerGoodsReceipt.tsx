@@ -37,7 +37,14 @@ import {
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
-import { useGoodsReceipts, useSuppliers, useShipments, useASNs } from '../services/query/hooks';
+import {
+  useGoodsReceipts,
+  useSuppliers,
+  useShipments,
+  useASNs,
+  useEnforcementSettings,
+} from '../services/query/hooks';
+import type { EnforcementSetting } from '../lib/enforcement';
 import type {
   GoodsReceipt,
   GRStatus,
@@ -142,6 +149,11 @@ interface GoodsReceiptWorkspaceProps {
   suppliers: Supplier[];
   shipments: Shipment[];
   asns: ASN[];
+  /** The append-only enforcement ledger (CP-3 · E4) — passed to the inspection
+   *  wizard, which derives the mode in force with its own instant. Read here
+   *  rather than in the wizard so the read shares the page's four honest states:
+   *  the wizard never mounts against a pending or failed ledger. */
+  enforcementSettings: readonly EnforcementSetting[];
 }
 
 const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
@@ -149,6 +161,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   suppliers,
   shipments,
   asns,
+  enforcementSettings,
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -853,6 +866,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           initialAsnId={wizardAsnId}
           shipments={shipments}
           asns={asns}
+          enforcementSettings={enforcementSettings}
         />
       )}
     </AppShellV2>
@@ -869,24 +883,42 @@ const BuyerGoodsReceipt: React.FC = () => {
   const suppliersQuery = useSuppliers();
   const shipmentsQuery = useShipments();
   const asnsQuery = useASNs();
+  // CP-3 · E4 — the enforcement ledger joins the page's reads rather than being
+  // fetched inside the wizard. A gate whose governing record is still loading
+  // has no honest answer to give, and the page already owns the four states.
+  const enforcementQuery = useEnforcementSettings();
 
   if (
     grQuery.isPending ||
     suppliersQuery.isPending ||
     shipmentsQuery.isPending ||
-    asnsQuery.isPending
+    asnsQuery.isPending ||
+    enforcementQuery.isPending
   )
     return <LoadingState breadcrumb={GR_CRUMB} />;
-  if (grQuery.isError || suppliersQuery.isError || shipmentsQuery.isError || asnsQuery.isError)
+  if (
+    grQuery.isError ||
+    suppliersQuery.isError ||
+    shipmentsQuery.isError ||
+    asnsQuery.isError ||
+    enforcementQuery.isError
+  )
     return (
       <ErrorState
         breadcrumb={GR_CRUMB}
-        error={grQuery.error ?? suppliersQuery.error ?? shipmentsQuery.error ?? asnsQuery.error}
+        error={
+          grQuery.error ??
+          suppliersQuery.error ??
+          shipmentsQuery.error ??
+          asnsQuery.error ??
+          enforcementQuery.error
+        }
         onRetry={() => {
           grQuery.refetch();
           suppliersQuery.refetch();
           shipmentsQuery.refetch();
           asnsQuery.refetch();
+          enforcementQuery.refetch();
         }}
       />
     );
@@ -908,6 +940,7 @@ const BuyerGoodsReceipt: React.FC = () => {
       suppliers={suppliersQuery.data?.items ?? []}
       shipments={shipmentsQuery.data?.items ?? []}
       asns={asnsQuery.data?.items ?? []}
+      enforcementSettings={enforcementQuery.data?.items ?? []}
     />
   );
 };
