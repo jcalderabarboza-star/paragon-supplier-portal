@@ -87,5 +87,34 @@ export const advanceShipNoticeFlow: FlowDefinition = {
       policyHooks: [],
       version: 1,
     },
+    {
+      // ⚠️ PF-1a — THE RESOLUTION EDGE. `t_invoice_resolve`'s shape exactly
+      // (`invoice.flow.ts`), which is the pattern the operator pointed at: the
+      // same authority that raised the problem state clears it, payload-free,
+      // no cascade, no artifact.
+      //
+      // A GR reject / partial-approve cascaded an ASN into `Discrepancy` and
+      // NOTHING BROUGHT IT BACK — a problem state a user could enter and not
+      // leave, which is exactly the loose end the criterion is about
+      // (PF-0 census, now deleted).
+      //
+      // ⚠️ WHY IT LANDS AT `Delivered`, STATED BECAUSE THE CHOICE IS NOT FREE.
+      // The discrepancy edge is legal from three states, so "return it to where
+      // it was" is not derivable — the machine would have to REMEMBER the prior
+      // state, which is history stored in a state field, the thing this codebase
+      // refuses. `Delivered` is the honest landing point on the merits rather
+      // than by elimination: a discrepancy is only ever raised BY A GOODS-RECEIPT
+      // DISPOSITION, and a goods receipt exists only for goods that arrived. An
+      // ASN sitting at Submitted when the cascade fired was already inconsistent
+      // with its own receipt, and resolving is not the moment to preserve that.
+      id: 't_asn_resolve_discrepancy',
+      from: ['Discrepancy'],
+      to: 'Delivered',
+      trigger: 'user',
+      requiredRole: 'asn:flag',
+      requiredFields: [],
+      policyHooks: [],
+      version: 1,
+    },
   ],
 };

@@ -76,8 +76,12 @@ export const goodsReceiptEn: Record<string, string> = {
   // — Placeholder ("future release") toasts —
   'goodsReceipt.toast.submitResults.title': 'Inspection results',
   'goodsReceipt.toast.submitResults.desc': 'Submit form will open in a future release.',
-  'goodsReceipt.toast.retest.title': 'Retest requested',
-  'goodsReceipt.toast.retest.desc': 'Lab retest queued.',
+  'goodsReceipt.retest.submitting': 'Releasing…',
+  'goodsReceipt.retest.done.title': '{{grNumber}} back under inspection',
+  'goodsReceipt.retest.done.desc':
+    'The hold is released. Record the retest result, then take a disposition.',
+  'goodsReceipt.retest.failed.title': '{{grNumber}} could not be released',
+  'goodsReceipt.retest.failed.desc': 'The retest could not be dispatched.',
   'goodsReceipt.toast.overrideHold.title': 'Hold override requested',
   'goodsReceipt.toast.overrideHold.desc': 'Awaiting QC manager approval.',
   'goodsReceipt.toast.openingSap.title': 'Opening SAP',
@@ -293,8 +297,12 @@ export const goodsReceiptId: Record<string, string> = {
   // — Placeholder ("future release") toasts —
   'goodsReceipt.toast.submitResults.title': 'Hasil inspeksi',
   'goodsReceipt.toast.submitResults.desc': 'Formulir pengiriman akan tersedia pada rilis mendatang.',
-  'goodsReceipt.toast.retest.title': 'Uji ulang diminta',
-  'goodsReceipt.toast.retest.desc': 'Uji ulang lab diantrekan.',
+  'goodsReceipt.retest.submitting': 'Melepaskan…',
+  'goodsReceipt.retest.done.title': '{{grNumber}} kembali diperiksa',
+  'goodsReceipt.retest.done.desc':
+    'Penahanan dilepaskan. Catat hasil uji ulang, lalu ambil keputusan disposisi.',
+  'goodsReceipt.retest.failed.title': '{{grNumber}} tidak dapat dilepaskan',
+  'goodsReceipt.retest.failed.desc': 'Uji ulang tidak dapat dikirim.',
   'goodsReceipt.toast.overrideHold.title': 'Penimpaan penahanan diminta',
   'goodsReceipt.toast.overrideHold.desc': 'Menunggu persetujuan manajer QC.',
   'goodsReceipt.toast.openingSap.title': 'Membuka SAP',

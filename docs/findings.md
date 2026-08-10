@@ -6408,6 +6408,12 @@ right everywhere.
 **Honest-by-construction was built for the derivation and stopped at the join.**
 That is where the next honesty batch should look.
 
+⚠️ **NAMED AT PF-1a: `HONEST-BY-CONSTRUCTION-STOPS-AT-THE-JOIN-01`.** It shipped
+here as an observation without an id, which is how a class stops being citable.
+Its second instance is `COPY-IS-NOT-DERIVED-FROM-THE-MACHINE-01` (PF-1a §10.3) —
+the flow catalog knows a verb's destination and does not know which button claims
+to perform it. Same shape, one surface over.
+
 ---
 
 ## DISPATCH ID-0 · C10 — THE IDENTITY CONTRACT (docs only, `main` `df585c5`)
@@ -6898,3 +6904,295 @@ and **it recurs because it is a property of writing things down**, not of
 carelessness. Fixed by the class's own prescription — name the mechanism, never
 render it — **rather than by widening the consumer list, which would have
 overstated that module's reach**, which is the drift that census exists to catch.
+
+---
+
+## DISPATCH PF-1a · CLOSE THE LOOSE ENDS (`main` `170336f`)
+
+**D-1 ruled, per state. Five decisions, seven census rows closed, ELEVEN
+REMAIN.** The census shrank for the first time — and the bilateral gate is what
+made the shrink provable rather than claimed.
+
+### 1. THE CENSUS SHRANK, AND THE GATE FORCED IT
+
+**18 → 11.** Every repaired row was DELETED from `looseEndCensus.ts`, and it had
+to be: a fixed edge whose exemption survives turns the suite red. **This is the
+property PF-0 built the census for, exercised for the first time**, and it worked
+in the direction that matters — not "the list is shorter because somebody edited
+it", but "the list is shorter because the derivation says so and the file was
+forced to agree."
+
+| Repaired (row deleted) | Verb |
+|---|---|
+| rfq `Draft` × 2 (unreachable + initial-integrity) · `t_rfq_publish` (dead) | `t_rfq_create` now births at `Draft` |
+| advanceShipNotice `Discrepancy` | `t_asn_resolve_discrepancy` |
+| requirementResponse `Disputed` | `t_requirementresponse_resolve` |
+| purchaseRequisition `Rejected` | `t_pr_revise` |
+| goodsReceipt `Quality Hold` | `t_gr_request_retest` |
+
+**Still censused (11):** GRLine `Pending` + `Quarantined` · invoiceMatch
+`Pending` + `Qty Mismatch` + `Price Variance` (substrate-only — building verbs
+for a sub-flow nothing creates would be **building a machine with no operator**)
+· `t_pr_source` + `t_pr_convert` (deferred-edge, pending the SAP integration
+lane) · compliance `Missing` (born-state) · enforcement `Governed`
+(substrate-only) · **requirementResponse `Draft` +
+`t_requirementresponse_promote` — SEE §6, THESE TWO WERE NOT RULED.**
+
+### 2. ⚠️ THE RFQ DRAFT PRODUCT — and it reverses a recorded fork
+
+`t_rfq_create` births at `Draft`. `initial: 'Draft'` becomes TRUE rather than
+contradicted, `t_rfq_publish` fires, and the `Draft` branch of `t_rfq_cancel` is
+reachable.
+
+> **THIS COMPLETES A CAPABILITY THE FLOW AUTHOR SPECIFIED AND THE CREATION PATH
+> BYPASSED. It does not build a new one** — publish, the Draft cancel branch and
+> the declared initial were all already written and role-gated. One value made
+> them unreachable.
+
+⚠️ **AND THE BYPASS WAS A DECISION, NOT AN OVERSIGHT — recorded because the
+operator is overturning something, not merely closing a hole.** The creation
+verb's own comment named it: *"FORK-2B: mints directly into Open —
+create+publish as ONE buyer action, matching the prior wizard's Open output — so
+`t_rfq_publish` (Draft→Open) stays authored-unwired."* **D-1 REVERSES FORK-2B.**
+
+The census row PF-0 filed was therefore not the whole story: the flow did not
+drift into contradiction, it was **put** there, by a ruling that optimised the
+wizard and left the machine inconsistent with itself. Which is the more
+interesting failure: **a decision taken at one layer made a second layer
+permanently false, and nothing connected them until a derivation did.**
+
+### 3. ⚠️ `PF1A-DRAFT-RFQ-VISIBLE-01` — the delta, reported before it was worked around
+
+**MEASURED, as instructed, and it is the finding the operator asked for.**
+
+`MockProcurementService.getRFQs` scoped supplier visibility on **invited
+membership alone** — status was never consulted. That was harmless only because
+**no Draft fixture carried an invited supplier** (`commandHooks.ts` said so in as
+many words). The moment creation births at `Draft`, **every newly-raised RFQ is a
+Draft carrying the wizard's invited list**, so:
+
+> **AN UNPUBLISHED SOURCING EVENT WOULD HAVE BEEN ON THE SUPPLIER'S BOARD BEFORE
+> THE BUYER PUBLISHED IT — and `t_rfq_publish` would have changed a label and
+> nothing else.**
+
+**FIXED IN THE SAME BATCH, and the reasoning is stated because it is a decision
+the operator can reverse:** leaving it would have shipped a product in which the
+verb D-1 just brought alive is decorative. Gating supplier reads on publication
+is not a workaround for the ruling — it IS the ruling. Pinned both ways
+(invisible before, visible after) in `looseEndRepairCommands.test.ts`.
+
+### 4. THREE SURFACE CLAIMS THE RULING FALSIFIED — found in the browser, not by reading
+
+The dispatch required browser QA and this is what it bought. All three were TRUE
+under FORK-2B and became FALSE the moment creation birthed a draft:
+
+| Surface | Said | Now |
+|---|---|---|
+| Create toast | *"{{rfq}} created · **Sent to N suppliers**"* | *"saved as a draft · **Not sent yet** — publish to open it to N invited suppliers"* |
+| Wizard CTA | **"Create & Send RFQ"** | **"Save RFQ draft"** |
+| Wizard review step | *"Check the details **before sending to suppliers**."* | *"…before saving the draft."* |
+
+**EN and ID both.** ⚠️ The first two are the sharper ones: **a button that names
+an act it does not perform is the same defect class as a button that fires a
+toast** — the affordance is the claim. Nothing in the test suite could have
+caught them, because they are copy, and the copy was accurate until this batch.
+
+**NOT changed, and checked rather than assumed:** the RFQ timeline's *"Sent to N
+suppliers"* step already renders `status: 'pending'` with no timestamp while the
+RFQ is `Draft`. It is a future step in a timeline, not a claim about the past.
+
+### 5. THE FOUR OTHER REPAIRS
+
+**Three resolution edges on the `t_invoice_resolve` pattern** — the one the
+operator pointed at, which already proves the shape (`invoice.flow.ts`): same
+authority resolves what it raised, payload-free, no cascade, no artifact.
+
+- **`t_asn_resolve_discrepancy`** → `Delivered`. ⚠️ **The destination is the one
+  judgement call in this batch and it is recorded as one.** The discrepancy edge
+  is legal from three states, so "return it to where it was" is not derivable —
+  the machine would have to REMEMBER the prior state, which is **history stored
+  in a state field**, the thing this codebase refuses. `Delivered` is right on
+  the merits, not by elimination: a discrepancy is only ever raised BY A
+  GOODS-RECEIPT DISPOSITION, and a goods receipt exists only for goods that
+  arrived.
+- **`t_requirementresponse_resolve`** → `UnderReview`. The cleanest: dispute is
+  legal from `UnderReview` ALONE, so there is nothing to adjudicate.
+- **`t_pr_revise`** → **`Draft`**, `requiredFields: ['revisionNote']`, new role
+  `pr:revise`. ⚠️ **The destination IS the ruling.** A bare reopen was refused:
+  landing at `Draft` puts the requisition back in the REQUESTER'S hands and the
+  existing `t_pr_submit` is what returns it to the queue — **the two-step is the
+  revision**, and nothing reaches an approver again without somebody deliberately
+  re-submitting it. A distinct role, because *"may raise a PR"* and *"may reopen
+  a declined one"* are different authorities.
+
+**`t_gr_request_retest`** (Quality Hold → Under Inspection) — and **the button
+was wired in the same batch**, as required. It lands at `Under Inspection` and
+not `Pending Inspection` because that is where the disposition verbs are legal:
+a retest that released the goods into a state with no decision available would
+have been a second loose end.
+
+### 6. ⚠️ `PF1A-REQRESPONSE-DRAFT-UNRULED-01` — TWO ROWS THE DISPATCH DID NOT COVER
+
+**OPEN, and deliberately NOT extrapolated.**
+
+The five decisions cover 15 of the 18 rows, plus the two fenced as legal by
+design = 17. **`requirementResponse` `Draft` (unreachable) and
+`t_requirementresponse_promote` (dead) were not ruled**, and they are **the exact
+shape D-1 just ruled on for the RFQ**: a draft lane whose creation path births
+past it.
+
+**The RFQ ruling was NOT applied to them, and the restraint is the point.** D-1
+rests on a stated fact about the business — *"Paragon's practice is DRAFT →
+REVIEW → PUBLISH"* — which is a claim about **sourcing events**, not about
+supplier requirement responses. Whether a supplier drafts a response before
+submitting it is a different question with a different answer available, and
+**generalising a product ruling from one object to another because the graphs
+rhyme is how a ruling becomes an assumption.** They stay censused, reason
+`authored-unwired`, awaiting a ruling of their own.
+
+### 7. FINDINGS
+
+#### `PF1A-DRAFT-RFQ-VISIBLE-01` — CLOSED IN THIS BATCH (§3)
+
+#### `PF1A-PR-REJECT-HAS-NO-REASON-01` — ⚠️ OPEN
+
+**The OTHER half of "a rejected requisition teaches the requester nothing."**
+`t_pr_reject` carries `requiredFields: []` — **a requisition can be declined
+without a word of explanation.** `t_pr_revise` fixes the RECOURSE; it cannot fix
+the EXPLANATION, and a revision note answering a rejection nobody stated is the
+requester guessing in writing.
+
+Not fixed here: **adding a required field to a shipped verb is a contract change
+with its own blast radius** (every existing dispatch of it starts failing
+`MISSING_FIELDS`), and it was not ruled. Recorded at the verb itself, so the next
+reader of that flow meets it.
+
+#### `PF1A-OVERRIDE-HOLD-STILL-A-TOAST-01` — ⚠️ OPEN, and it must NOT be wired yet
+
+The Quality Hold footer ships **two** buttons. `Request Retest` is now wired. The
+second — **`Override hold`** — remains a toast, and this is the one case in this
+batch where **leaving a dead affordance is the correct call**:
+
+> Overriding a quality hold is a GOVERNANCE ACT whose entire value is
+> accountability — *this named person accepted this risk on this date.* **The
+> platform cannot name a person** (C10 §2, `ENF-NO-PERSON-IN-IDENTITY-01`).
+
+Wiring it today would write **an anonymous unlock** into a permanent trail —
+precisely the shape the enforcement lane already refuses by making an
+unattributed override unable to complete (`overrideCompletes`). **It waits for
+identity, and the wait is the honest state.** Stated at the button, in code, so
+that the next person to find a toast there does not "fix" it.
+
+### 8. THE CLASS THIS DISPATCH ADDS
+
+> **A RULING AT ONE LAYER CAN MAKE A SENTENCE AT ANOTHER LAYER FALSE, AND NOTHING
+> IN A BUILD CONNECTS THEM.**
+
+FORK-2B optimised a wizard and left `initial: 'Draft'` contradicted — invisible
+for months until a graph derivation looked. D-1 reversed it and left THREE PIECES
+OF UI COPY FALSE — invisible to every test, because copy is not derived from the
+machine, and caught only because the dispatch required somebody to open a
+browser.
+
+**Both directions of the same gap:** the flow definition and the words on the
+screen are two statements about one product, and **only one of them is under a
+gate.** The census now guards the machine. Nothing guards the sentence.
+
+### 9. BROWSER QA — EN and ID, on the built bundle
+
+Driven against `vite preview` (the production build), both locales, both changed
+surfaces:
+
+| Check | EN | ID |
+|---|---|---|
+| Create through the wizard → lands `Draft` | ✅ `RFQ-2026-901 … Draft` | — |
+| `Publish RFQ` present on Draft only, disappears after | ✅ | ✅ `Terbitkan RFQ` |
+| Publish → status `Open` | ✅ | ✅ `Terbuka` |
+| GR `Quality Hold` → Request Retest → `Under Inspection` | ✅ (tab counts moved Hold 1→0, Under Inspection 2→3) | ✅ `Minta uji ulang lab` → `Sedang Diinspeksi` |
+
+**And the bundle was A/B'd on a fresh port after a rebuild** (cache-bust): every
+retired string is absent from `dist/assets` and every corrected string present,
+in both locales.
+
+### 10. AMENDMENT AT MERGE (operator, at #198)
+
+#### 10.1 ⚠️ D-1 IS RECORDED AS **REVERSED**, NOT **FIXED** — and what it reversed is FORK-2B
+
+**The operator's ruling on the disclosure, kept verbatim in substance:**
+
+> **D-1 REVERSES A DECISION; IT DOES NOT CLOSE AN OVERSIGHT.**
+
+The flow was made contradictory **deliberately**: create+publish as ONE buyer
+action to match the prior wizard, with `t_rfq_publish` left authored-unwired **on
+purpose**. Neither the analyzer nor the census could see that — they read the
+graph, and the graph does not record intent.
+
+> **THE CENSUS ROW WAS TRUE AND INCOMPLETE.** `Draft` was unreachable and
+> `t_rfq_publish` was dead; both facts held exactly as filed. What the row could
+> not say is that somebody had chosen it.
+
+**Finding the comment before merging is what stopped us overturning someone's
+reasoning without noticing** — and that is the part worth keeping, because the
+batch would have shipped identically either way. The difference is entirely in
+the record: a repair and a reversal leave the same diff and mean different
+things, and only one of them owes the earlier author an argument.
+
+**THE RULING STANDS.** The operator states Paragon's practice is
+**DRAFT → REVIEW → PUBLISH**, and:
+
+> **A MACHINE THAT CONTRADICTS ITSELF TO MATCH A WIZARD IS THE WRONG TRADE.**
+
+FORK-2B bought one fewer click and paid with a state machine that disagreed with
+its own declared entry point. The click is cheaper to re-add than the
+contradiction was to find.
+
+#### 10.2 Supplier-read gating — the ruling, stated as the rule it is
+
+Sentence kept, and sharpened by the operator into the form that generalises:
+
+> **IF AN RFQ CAN SIT IN DRAFT, SUPPLIERS MUST NOT SEE IT — OR DRAFT IS A LABEL
+> RATHER THAN A STATE.**
+
+That is why the read gate is not a workaround for D-1 but a component of it. A
+state nobody is excluded by is a status field, and the verb that leaves it is a
+relabel.
+
+#### 10.3 ⚠️ `COPY-IS-NOT-DERIVED-FROM-THE-MACHINE-01` — the same join, one surface over
+
+**Filed as a class, beside `HONEST-BY-CONSTRUCTION-STOPS-AT-THE-JOIN-01`** (the
+D-CENSUS-8 closing observation, now given the id it was owed).
+
+> **COPY IS NOT DERIVED FROM THE MACHINE.**
+
+The three claims this batch falsified — *"Sent to N suppliers"*, *"Create & Send
+RFQ"*, *"Check the details before sending to suppliers"* — were **true when
+written** and were made false by a ruling three layers away. Nothing failed. No
+test could fail, because no test compares a sentence to a state machine.
+
+**It is the join class exactly, one surface over.** D-CENSUS-8 found that the
+liveness registry knows a capability's tier and does not know which page renders
+it. This finds that the flow catalog knows a verb's destination and does not know
+which button claims to perform it. Same shape:
+
+> **THE DERIVATION IS PROVABLY RIGHT AND THE JOIN IS UNGUARDED.**
+
+And the operator's rule for the surface half, kept:
+
+> **A BUTTON NAMING AN ACT IT DOES NOT PERFORM IS THE SAME CLASS AS A BUTTON
+> FIRING A TOAST.**
+
+A toast-handler at least fails honestly at the moment of the click. A label lies
+before it is pressed, and keeps lying to everyone who reads the screen and does
+not press it.
+
+**The census now guards the machine. Nothing guards the sentence.** Both halves
+of that gap are now filed under one class, from two batches, which is the only
+form in which somebody can go and close it.
+
+#### 10.4 The three stopping points — ALL ACCEPTED by the operator
+
+| Stopping point | Ruling |
+|---|---|
+| **requirementResponse `Draft` NOT swept along** | **Correct.** D-1 rests on a stated fact about **SOURCING** practice; whether a supplier drafts a response before submitting is **a different question with a different answer available**. Stays censused (`authored-unwired`) pending its own ruling — **the operator is taking it up** |
+| **`Override hold` stays a toast** | **Correct.** A governance act whose entire value is accountability, on a platform that cannot name a person: **wiring it would write an anonymous unlock into a permanent trail.** Saying so **at the button, in code**, is the right place — the next reader's instinct will be to "fix" it |
+| **`t_pr_reject` requires no reason** | **Filed. A real gap.** The revise edge fixes **RECOURSE, NOT EXPLANATION**, and closing it needs its own ruling and its own blast radius (`PF1A-PR-REJECT-HAS-NO-REASON-01`) |

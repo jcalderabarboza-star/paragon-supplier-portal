@@ -39,6 +39,10 @@ export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
     'contract:draft', 'contract:activate', 'contract:renew', 'contract:terminate',
     'obligation:track', 'obligation:complete',
     'pr:create', 'pr:submit', 'pr:approve', 'pr:reject', 'pr:source', 'pr:convert',
+    // PF-1a — revising a REJECTED requisition is a distinct authority from
+    // drafting a new one (`t_pr_revise`, Rejected → Draft). Buyer-side: a
+    // purchase requisition is a Paragon-internal document end to end.
+    'pr:revise',
     'shipment:create', 'shipment:advance', // system/cascade (TMS-owned, INT-TMS-01)
     'supplierdoc:request', 'supplierdoc:verify', 'supplierdoc:reject', // verify/reject = system
     // I3.1 — canonical compliance machine (census #11–15). verify/reject = system

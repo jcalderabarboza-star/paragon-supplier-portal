@@ -95,6 +95,35 @@ export const goodsReceiptFlow: FlowDefinition = {
       version: 1,
     },
     {
+      // ⚠️ PF-1a — THE RESUME EDGE, and this one was closer to a DEFECT than to
+      // a gap. `Quality Hold` was REACHABLE (`t_gr_hold`) and INESCAPABLE: goods
+      // frozen in the machine with no verb to release them — while the page
+      // already shipped a "Request Retest" affordance on that exact state whose
+      // handler was A TOAST (`BuyerGoodsReceipt.tsx`). THE UI PROMISED THE EDGE
+      // THE SCHEMA DID NOT HAVE. The button is wired to this verb in the same
+      // batch; the promise is now kept rather than withdrawn.
+      //
+      // PAYLOAD-FREE, on the `t_invoice_resolve` precedent, and the asymmetry
+      // with `t_gr_hold`'s required `holdReason` is deliberate: the hold is the
+      // act that needs explaining and it already recorded one. A retest says
+      // "the condition that caused it was addressed — look again", and inventing
+      // a required field for it would have forced the surface to fabricate a
+      // value, which is how a required field becomes a lie.
+      //
+      // → `Under Inspection`, not `Pending Inspection`: the goods HAVE been
+      // inspected, and the disposition verbs (approve / partial / reject) all
+      // fire from Under Inspection, so a retest lands exactly where a decision
+      // can be taken.
+      id: 't_gr_request_retest',
+      from: ['Quality Hold'],
+      to: 'Under Inspection',
+      trigger: 'user',
+      requiredRole: 'gr:inspect',
+      requiredFields: [],
+      policyHooks: [],
+      version: 1,
+    },
+    {
       // Header disposition = rollup. Legal ONLY when every line rolls up Accepted.
       id: 't_gr_approve',
       from: ['Under Inspection'],

@@ -250,9 +250,12 @@ export function useRfqFxPin() {
 // (cancel: Draft/Open/Closed; reopen: Closed only) and the buyer role, so an
 // illegal-from-here or wrong-persona attempt fails without mutating. On a
 // non-failed outcome the sourcing board + awards history re-derive from the store.
-// (t_rfq_publish stays authored-unwired — the only Draft fixture has no invited
-// suppliers, so publish would yield a hollow 0/0 event. t_quotation_submit /
-// t_quotation_review are WIRED below, Task 3b.)
+// ⚠️ PF-1a — t_rfq_publish IS NOW WIRED. The note that stood here ("the only
+// Draft fixture has no invited suppliers, so publish would yield a hollow 0/0
+// event") described the world in which nothing could REACH Draft. D-1 moved
+// creation there, so every RFQ a buyer raises now arrives carrying its invited
+// list and waits to be published. (t_quotation_submit / t_quotation_review are
+// WIRED below, Task 3b.)
 
 export interface RfqLifecycleVars {
   rfqId: string;
@@ -268,6 +271,32 @@ export function useRfqCancel() {
     mutationFn: ({ rfqId }) =>
       svc.commands.dispatch(scope, {
         transitionId: 't_rfq_cancel',
+        entity: 'rfq',
+        entityId: rfqId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Publish a drafted RFQ to its invited suppliers (fires `t_rfq_publish`,
+ * Draft → Open).
+ *
+ * ⚠️ THIS IS THE ACT THAT MAKES THE EVENT VISIBLE, not a status relabel:
+ * supplier RFQ reads exclude `Draft` (`MockProcurementService.getRFQs`), so an
+ * unpublished event is on nobody's board but the buyer's.
+ */
+export function useRfqPublish() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, RfqLifecycleVars>({
+    mutationFn: ({ rfqId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_rfq_publish',
         entity: 'rfq',
         entityId: rfqId,
       }),
@@ -443,6 +472,34 @@ export function useGoodsReceiptPost() {
     mutationFn: ({ grId }) =>
       svc.commands.dispatch(scope, {
         transitionId: 't_gr_post',
+        entity: 'goodsReceipt',
+        entityId: grId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Release a GR from quality hold for re-inspection (fires `t_gr_request_retest`,
+ * Quality Hold → Under Inspection).
+ *
+ * ⚠️ PF-1a — the verb behind an affordance that already shipped. "Request
+ * Retest" rendered on `Quality Hold` and fired A TOAST; the state had no exit at
+ * all, so the button promised something the machine could not do. Payload-free:
+ * the hold already recorded its reason, and a required field here would have
+ * forced the surface to invent one.
+ */
+export function useGoodsReceiptRequestRetest() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { grId: string }>({
+    mutationFn: ({ grId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_gr_request_retest',
         entity: 'goodsReceipt',
         entityId: grId,
       }),

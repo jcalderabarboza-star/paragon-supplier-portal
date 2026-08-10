@@ -46,12 +46,15 @@ beforeEach(() => {
 });
 
 describe('RFQ create — buyer-only creation dispatches (retires extraRfqs)', () => {
-  it('a buyer raises an RFQ through t_rfq_create → Open, store-assigned number', async () => {
+  it('a buyer raises an RFQ through t_rfq_create → Draft, store-assigned number', async () => {
     const res = await svc.dispatch(buyer, create());
     expect(res.status).toBe('done');
     expect(res.entityId).toMatch(/^RFQ-2026-9\d+$/); // store-assigned, distinct range
     const rfq = rfqStore.get(res.entityId!)!;
-    expect(rfq.status).toBe('Open'); // FORK-2B — create+publish as one buyer action
+    // ⚠️ PF-1a · D-1 — DRAFT, not Open. FORK-2B had create+publish as ONE
+    // buyer action; Paragon's practice is DRAFT → REVIEW → PUBLISH, so the
+    // buyer publishes as a second deliberate act (`t_rfq_publish`).
+    expect(rfq.status).toBe('Draft');
     expect(rfq.title).toBe('Q3 Emulsifier Sourcing — Cetearyl Alcohol');
     expect(rfq.materialCategory).toBe('Emulsifiers');
     expect(rfq.totalQty).toBe(3000);
