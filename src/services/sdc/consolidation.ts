@@ -102,7 +102,22 @@ export function currentPublication(
  *
  *  · awaiting — no SUBMITTED response. SDC-1 ruling F-2: a Draft is NOT a
  *    response (the planner never acts on an uncommitted supplier draft —
- *    own-facts discipline); it only sets the muted `draftInProgress` hint.
+ *    own-facts discipline).
+ *
+ *    ⚠️ PF-1b — THE `draftInProgress` HINT IS GONE, and the FIELD went with
+ *    it rather than only its render (operator ruling). It carried no response
+ *    content, which is why it survived design review; what it carried was
+ *    EXISTENCE. Once creation births every commitment at `Draft`, that flag
+ *    became A NEAR-REAL-TIME SIGNAL THAT A NAMED SUPPLIER HAD STARTED
+ *    COMPOSING AN ANSWER — disclosed by nobody's choice.
+ *
+ *      **EXISTENCE IS PART OF WHAT `Draft` MAKES INVISIBLE.** The supplier did
+ *      not consent to being observed composing.
+ *
+ *    Deleting the render alone would have left the fact CROSSING THE SEAM in
+ *    the buyer's payload, unrendered — a disclosure nobody can see and nobody
+ *    removed. So the union member is gone: `awaiting` now says exactly what it
+ *    means, which is that nothing has been submitted.
  *  · acknowledged — SDC-2b-EXT: a VISIBILITY response (the supplier saw the
  *    visibility-only line and answered with an acknowledgment + optional
  *    signal). Honestly DISTINCT from the commitment states: it never reads
@@ -119,7 +134,7 @@ export function currentPublication(
  *    acknowledgments the same way — "acknowledged 800, now 1 000" is flagged.
  */
 export type LineResponseState =
-  | { readonly kind: 'awaiting'; readonly draftInProgress: boolean }
+  | { readonly kind: 'awaiting' }
   | {
       readonly kind: 'acknowledged';
       readonly response: RequirementResponse;
@@ -202,14 +217,10 @@ export function consolidationRows(
     const k = lineKey(line.supplierId, line.materialCode, line.periodBucket);
     const response = submitted.get(k);
 
-    if (!response) {
-      const draftInProgress = responses.some(
-        (r) =>
-          r.status === 'Draft' &&
-          lineKey(r.supplierId, r.materialCode, r.periodBucket) === k,
-      );
-      return { id: k, line, state: { kind: 'awaiting', draftInProgress } };
-    }
+    // ⚠️ PF-1b — NOTHING IS DERIVED FROM THE DRAFTS HERE. `awaiting` is the
+    // whole answer: a line with no submitted response is unanswered, and whether
+    // somebody is mid-draft is theirs to disclose by submitting.
+    if (!response) return { id: k, line, state: { kind: 'awaiting' } };
 
     // Answered the current snapshot → fresh full/short.
     if (

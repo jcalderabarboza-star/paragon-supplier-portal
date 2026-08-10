@@ -144,9 +144,14 @@ describe('consolidationRows — demand vs confirmation per line', () => {
     }
   });
 
-  it('F-2: a Draft is NOT a response — awaiting, with the draft hint only', () => {
-    const state = rowById(rows, 'sup-002|RM-EMUL-3320|2026-09').state;
-    expect(state).toEqual({ kind: 'awaiting', draftInProgress: true });
+  it('⚠️ PF-1b — a Draft is INVISIBLE, not merely unactionable: no hint at all', () => {
+    // F-2 said a Draft is not a response and showed a muted hint anyway. The
+    // hint carried EXISTENCE, and once creation births every commitment at
+    // Draft that became a live signal that a named supplier had started.
+    // `awaiting` is now byte-identical whether a draft exists or not — which is
+    // what makes the two cases indistinguishable to the buyer.
+    const withDraft = rowById(rows, 'sup-002|RM-EMUL-3320|2026-09').state;
+    expect(withDraft).toEqual({ kind: 'awaiting' });
   });
 
   it('flags stale-against-current when the answered line MOVED in the republication', () => {
@@ -160,10 +165,13 @@ describe('consolidationRows — demand vs confirmation per line', () => {
     }
   });
 
-  it('a supplier line with no record at all is awaiting without the draft hint', () => {
-    // sup-007's F-1a firm PET line has no response — the silent case.
-    const state = rowById(rows, 'sup-007|PK-PETB-8810|2026-08').state;
-    expect(state).toEqual({ kind: 'awaiting', draftInProgress: false });
+  it('⚠ and a line with NO record is indistinguishable from one being drafted', () => {
+    // sup-007's F-1a firm PET line has no response at all — the silent case.
+    // Asserted beside the draft case deliberately: the point is not that the
+    // hint is absent, it is that the two states are the SAME VALUE.
+    const silent = rowById(rows, 'sup-007|PK-PETB-8810|2026-08').state;
+    expect(silent).toEqual({ kind: 'awaiting' });
+    expect(silent).toEqual(rowById(rows, 'sup-002|RM-EMUL-3320|2026-09').state);
   });
 
   it('SDC-2b-EXT: a visibility response reads ACKNOWLEDGED — never a commitment state', () => {

@@ -7309,8 +7309,10 @@ at Draft, this hint stops being a rarely-set seed flag and becomes:
 > ANSWER** — visible to the buyer the instant they save, and disclosed by
 > nobody's choice.
 
-**NOT REMOVED, and the reasoning is stated because it is the operator's to
-overturn:** the ruling says the buyer must not see *the response*, and the buyer
+⚠️ **RULED AT MERGE: REMOVED — see §11.5.** The reasoning below is kept as the
+case that was put, and the operator overturned it.
+
+**The case as made:** the ruling says the buyer must not see *the response*, and the buyer
 does not — it sees that one exists. Removing the hint would also cost the chase
 lane a real signal (do not chase somebody mid-answer). **Verified in the browser
 in both locales:** the hint renders as *"draft in progress"* / *"draf sedang
@@ -7458,3 +7460,112 @@ stops meaning anything. Offered as its own batch.
 **Verified in the browser after the fix:** zero elements carrying the solid
 action fill on the surface, and both CTAs render
 `bg-transparent · text-action · border-action`.
+
+### 11. AMENDMENT AT MERGE (operator, at #199)
+
+#### 11.1 ⚠️ `RESERVED-LIST-BY-ARGUMENT-01` — filed as a class
+
+> **A RESERVED LIST DEFENDED BY ARGUMENT IS NOT RESERVED.**
+>
+> **The test for membership is IS IT NAMED, never IS IT IMPORTANT.**
+
+The operator's ruling on the button self-catch, and it generalises past buttons
+to every reserved vocabulary in this tree — `OVERRIDE_REASONS`, the enforcement
+modes, `GOVERNED_CHECK_IDS`, the four census reason tokens. Each is a closed list
+whose value is exactly that **nothing joins it by being a good candidate.**
+
+**What makes this the finding of the batch is that both arguments were
+DEFENSIBLE IN ISOLATION.** *"Sending a commitment to a buyer is this page's
+irreversible act"* is true. *"Publish exposes the event to the invited list"* is
+true. Neither is a lapse in judgement; **both are judgement, applied where
+judgement was the thing the list existed to replace.** That is the mechanism:
+
+> A closed list does not fail by being overruled. **It fails by being reasoned
+> with**, one defensible case at a time, and nobody is ever the person who broke
+> it.
+
+**Reverting the ALREADY-MERGED `Publish RFQ` rather than leaving it because it
+shipped is the harder half, and the operator named it as the right one.** A
+correction that stops at the branch it was caught on teaches that the rule
+applies to work in progress and not to work that landed — which is the same
+exemption-by-timing that lets a list drift in the first place.
+
+#### 11.2 ⚠️ The third instance is worse — `CONTRACT-OFF-THE-FLOOR-01` at COMMENT scale
+
+The panel CTA carried, in code:
+
+> `F-3 — the ONE solid primary on this surface: the governed commit.`
+
+**TRUE WHEN IT SUBMITTED. FALSE THE MOMENT IT SAVED A DRAFT.** Nobody edited it,
+nobody misread it, and no build step could tell:
+
+> **A COMMENT ACCURATE AT AUTHORING TIME THAT SILENTLY BECAME A LIE WHEN THE
+> BEHAVIOUR BENEATH IT CHANGED.**
+
+**Cross-referenced to `CONTRACT-OFF-THE-FLOOR-01`, which is exactly this shape at
+document scale** — a contract stating a truth about the tree, with nothing
+holding the two together, so a change on one side leaves the other asserting the
+old world. C9 §7.13 recorded the flattering direction of it
+(`C9-STALE-BY-FIX-01`: a contract going stale **by being fixed**). This is the
+same class at the smallest possible grain — **a single comment, three lines from
+the code it describes, and still unguarded.**
+
+It composes with `COPY-IS-NOT-DERIVED-FROM-THE-MACHINE-01`: copy, chrome and
+comments are all **assertions about behaviour that no derivation checks.** The
+census guards the machine. Nothing guards anything written about it.
+
+#### 11.3 `PRECEDENT-COPIED-IN-HALF-01` — filed as its own class
+
+Recorded as a **REVERSAL**, with the distinction kept:
+
+> **FORK-2B OPTIMISED A WIZARD; THIS ONE COPIED A PRECEDENT** — and the quotation
+> machine is internally consistent **because it has no `Draft` state at all.**
+
+The general form:
+
+> **A PRECEDENT IS ONLY SAFE TO COPY WHOLE. COPY THE BEHAVIOUR, KEEP YOUR OWN
+> EXTRA STATE, AND THE STATE YOU KEPT IS THE ONE NOTHING CAN REACH.**
+
+#### 11.4 The tree-wide solid-button audit — ACCEPTED AS ITS OWN BATCH
+
+With the operator's reason recorded as the governing one:
+
+> **SWEEPING CHROME ACROSS EVERY PAGE UNDER A SUPPLIER-LANE FENCE IS HOW A FENCE
+> STOPS MEANING ANYTHING.**
+
+Scope when it runs: every `variant="primary"` in the tree, measured against the
+NAMED list — Award (RFQ) · Release payment · Post-to-SAP · Reject / Dispute ·
+Override-hold — with each survivor stating which member it is, not why it
+deserves to be one.
+
+#### 11.5 THE THREE STOPPING POINTS — RULED
+
+| Point | Ruling |
+|---|---|
+| **Acknowledge stays at `Submitted`** | **CONFIRMED.** A visibility-only line has nothing to review; **symmetry for its own sake would build a review step over a fact nobody composed.** No change. |
+| **The buyer's "draft in progress" hint** | ⚠️ **GOES — DONE IN THIS BATCH.** No content crossed, but creation-at-Draft made it **a near-real-time signal that a named supplier has started, disclosed by nobody's choice.** **EXISTENCE IS PART OF WHAT `Draft` MAKES INVISIBLE — the supplier did not consent to being observed composing.** |
+| **Verb id + channel path** | **FILED, NOT FIXED.** `TransitionId` is contractually stable, so renaming needs its own ruling. |
+
+**On the hint, one step past "a one-line deletion", stated because it was not
+what was asked for:** deleting the render alone would have left
+`draftInProgress` **crossing the seam in the buyer's payload, unrendered** — a
+disclosure nobody can see and nobody removed, one careless cell renderer from
+returning. **The union member is gone**, so `awaiting` is now byte-identical
+whether a draft exists or not; the specs assert the two states are **the same
+value**, which is the only form in which "indistinguishable" is checkable. The
+`sdc.state.draftHint` strings are retired from both locales.
+
+#### 11.6 The forward hazard, on the record BEFORE the lane starts
+
+> ⚠️ **A COMM HUB INGESTION BUILT AGAINST THIS WRITE PATH WOULD NOW LAND
+> UNSUBMITTED.**
+
+`t_requirementresponse_submit` is the channel-agnostic shared write path
+(DEC-COMMS-PRIMARY) and now births a `Draft`. A response arriving over WhatsApp
+would rest unsubmitted, invisible to the planner, **and no channel can promote
+it.** Nothing is broken today because the ingestion does not exist —
+
+**and that is precisely why it is recorded now.** The operator's instruction, kept
+verbatim in substance: **it must be on the record BEFORE that lane starts, not
+discovered inside it.** `PF1B-CHANNEL-INGEST-LANDS-DRAFT-01`, and the paragraph
+now sits on the verb itself, where an implementer cannot miss it.

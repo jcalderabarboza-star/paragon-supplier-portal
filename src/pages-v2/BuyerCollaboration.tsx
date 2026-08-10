@@ -243,16 +243,16 @@ const BuyerCollaboration: React.FC = () => {
           const s = rowData.state;
           return (
             <div className="flex w-full flex-wrap items-center gap-1.5 px-2">
+              {/* ⚠️ PF-1b — THE DRAFT HINT IS GONE (operator ruling). A muted
+                  "draft in progress" rendered here whenever a supplier had an
+                  unsubmitted response. It leaked no CONTENT, which is why it
+                  passed review; it leaked EXISTENCE — and once creation births
+                  every commitment at Draft, that is a live signal that a named
+                  supplier has started composing, disclosed by nobody's choice.
+                  The field is deleted from the projection too, so there is
+                  nothing left here to render. */}
               {s.kind === 'awaiting' && (
-                <>
-                  <span className={CHIP_NEUTRAL}>{t('sdc.state.awaiting')}</span>
-                  {s.draftInProgress && (
-                    // F-2: a Draft is NOT a response — a muted hint, never actionable.
-                    <span className="text-[10px] italic text-text-tertiary">
-                      {t('sdc.state.draftHint')}
-                    </span>
-                  )}
-                </>
+                <span className={CHIP_NEUTRAL}>{t('sdc.state.awaiting')}</span>
               )}
               {s.kind === 'acknowledged' && (
                 <>
