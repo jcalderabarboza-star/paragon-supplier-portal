@@ -6407,3 +6407,298 @@ right everywhere.
 
 **Honest-by-construction was built for the derivation and stopped at the join.**
 That is where the next honesty batch should look.
+
+---
+
+# D-CENSUS-8 REGISTER — ratified at merge (`df585c5`, 2026-08-10)
+
+Operator ruling at merge of #194. The entries below supersede nothing in the
+batch write-up above; they RE-RANK it. Two things were mis-filed on the way in:
+a legal-exposure defect was filed as an honesty defect, and four findings were
+filed as four defects when they are one.
+
+---
+
+## ⓪ `DISCOVERY-ENDORSEMENT-01` — TOP OF THE REGISTER · **LEGAL EXPOSURE, NOT AN HONESTY DEFECT**
+
+> **FABRICATED ENDORSEMENTS ATTRIBUTED TO REAL CORPORATIONS ON BEHALF OF
+> FICTIONAL SUPPLIERS.**
+
+`/buyer/discovery` rendered, on **every candidate card**, a section headed
+**"Market validated by"** containing green-check chips — **✓ L'Oréal · ✓ Unilever
+· ✓ P&G · ✓ Shiseido** — drawn from `buyerDiscovery.ts` fixture arrays naming ~15
+real corporations. A filter toggle, **"Major brand validated"**, let a user narrow
+the list by the fabricated attribute. The header line repeated it in prose.
+
+It was filed inside this batch as one bullet among the copy retractions. **That
+placement was wrong, and the reclassification is the ruling:**
+
+> **THIS IS LEGAL EXPOSURE, NOT AN HONESTY-DOCTRINE DEFECT. THE DISTINCTION IS
+> THAT NO MARKER, PILL OR DISCLAIMER WOULD HAVE MADE IT ACCEPTABLE.**
+
+That is the operative test, and it cleanly separates this from everything else in
+the census. Every other finding here is answerable by disclosure — mark it, say
+what backs it, name the waiting state, and the surface becomes honest. This one is
+not. A "Sample data" pill beside `✓ L'Oréal` does not convert an unauthorised
+statement about a third party into a permissible one; it converts it into a
+*disclosed* unauthorised statement about a third party. **Disclosure is a remedy
+for overstatement. It is not a remedy for speaking on someone else's behalf.**
+
+Three properties made it worse than a copy error, and all three are structural:
+
+1. **The green check is a verification affordance.** A check mark beside a
+   corporate name is not decoration — it is the UI vocabulary for *verified*.
+   Nothing in the portal verifies anything here.
+2. **It was filterable.** A fabricated attribute promoted to a query dimension is
+   no longer a label; it is a claim the product invites the user to *rely on*.
+3. **The subjects are real and the objects are not.** The suppliers are invented.
+   The corporations are not, and were not asked.
+
+**Retracted at #194:** the `✓` deleted, "Market validated by" → "Reference brands
+claimed (unverified)", "Major brand validated" → "Claims a major brand", the
+header endorsement clause deleted, EN and ID.
+
+**⚠️ RESIDUAL, OPEN — the real brand names remain in
+`src/services/data/mock/fixtures/buyerDiscovery.ts`.** Retracting the *assertion*
+is what a marking batch could honestly do; choosing replacement names is
+demo-data policy and belongs to whoever owns it. **The claim is retracted; the
+names are still there.** Given the reclassification above, this residual is not a
+housekeeping item.
+
+---
+
+## ① `HONEST-BY-CONSTRUCTION-STOPS-AT-THE-JOIN-01` — THE CLASS
+
+> **HONEST-BY-CONSTRUCTION WAS BUILT FOR THE DERIVATION AND STOPPED AT THE JOIN.**
+>
+> **The registry knows a capability's TIER. It does not know WHICH PAGE renders
+> it, WHICH TAB the pill lands on, WHETHER IT SURVIVES TRANSLATION, or WHETHER
+> THE BACKING STORE IS THE ARRAY ON SCREEN.**
+
+`MARKER-SCOPE-01`, `MARKER-I18N-HOLE-01`, `INVENTORY-REFERENT-01` and
+`LIVENESS-GATE-ASYMMETRY-01` are **four faces of this, not four defects.** They
+are filed as instances beneath it from here on.
+
+The `LivenessRegistry` (F0.6) is genuinely honest-by-construction *within its own
+frame*: tier is derived from `WIRED_COMMAND_TARGETS`, so unwiring a target flips
+its capability with no edit in the registry, and `registry.test.ts` proves the
+equivalence exhaustively. **That proof was never wrong.** It was answering a
+smaller question than everyone read it as answering.
+
+The derivation is `capability → tier`. Every failure in this batch lived on a join
+the derivation does not span:
+
+| Join | Instance | What was wrong on main |
+|---|---|---|
+| capability → **surface** | `MARKER-SCOPE-01` | the pill rendered on a sibling tab; on `/buyer/contracts/:id` it was one tab over from the fabrication |
+| capability → **rendered string** | `MARKER-I18N-HOLE-01` | the marker was a JSX literal; it survived as English or not at all |
+| capability → **store actually read** | `INVENTORY-REFERENT-01` | `inventory` backed to `inventoryDeclaration`; the page renders `mockInventory` |
+| capability → **gate policy** | `LIVENESS-GATE-ASYMMETRY-01` | gate-2 is opt-in, so five capabilities render green over fixtures |
+
+**The generalisable statement:** a derivation can only be honest about the
+relation it computes. Everything downstream of its output — which component reads
+it, where that component sits, what language it renders in, which array the page
+actually holds — is a join, and **a join is exactly the kind of fact a type system
+and a derivation test both wave through.** Each of these four was *provably*
+correct at the point the proof looked, and wrong by the time a reader saw it.
+
+**This is where the next honesty batch should look.** Not at the derivation — it
+is sound. At the four joins hanging off it.
+
+---
+
+### ①a `MARKER-SCOPE-01` — a section marker is read as a page marker
+
+A reader does not carry a badge across a tab boundary, and nothing in the build
+records what area a marker is asserting over. Seven routes carried a marker scoped
+to a sub-block while the page's load-bearing claim went bare. The sharpest case:
+`/buyer/contracts/:id` wore a `LivenessPill` on the Delivery-Agreements tab while
+the **Docs tab one tab over was manufacturing certificate status**.
+
+This is `DISCLOSURE-TRAVELS-WITH-THE-VALUE-01` observed from the other end — that
+law says a page pill does not travel *down* to a paragraph; this says a section
+pill is read *up* to the page. Same root: **disclosure has a scope the reader
+cannot see and the build does not track.**
+
+### ①b `MARKER-I18N-HOLE-01` — the sweep was structurally blind to exactly the strings that needed it
+
+> **A STRING THAT NEVER ENTERED i18n HAS NO GAP TO FIND, SO THE EN/ID SWEEP WAS
+> STRUCTURALLY BLIND TO EXACTLY THE STRINGS THAT MOST NEEDED IT.**
+
+`Marketplace.tsx:225` and `BuyerSupplierProfile.tsx:591` rendered
+`<StatusPill variant="neutral">Sample data</StatusPill>` — hardcoded English, on
+two of the most demo-visible routes. Switch the portal to Bahasa and **the honesty
+marker was the one element on the page that did not translate.**
+
+The mechanism is the finding, and it is worth stating precisely because it will
+recur: **a coverage sweep finds untranslated strings by scanning i18n fragments
+for missing keys.** It is a search over *entries*. A string that was never an
+entry produces no missing key, no gap, no hit — it is invisible to the tool by
+construction, not by oversight. The full EN/ID Batches 0–6 passed straight over
+both.
+
+The selection effect is the sting: **the strings most likely to be hand-rolled JSX
+literals are the ones added late, in a hurry, to make a page honest** — which
+makes the honesty marker structurally the most likely string on the portal to be
+missed by translation coverage, and the worst one to lose.
+
+An Indonesian-reading supplier on `/marketplace` saw the least disclosure of any
+user on any route, and nothing in the build knew.
+
+### ①c `INVENTORY-REFERENT-01` — a derived marker is only as honest as its referent
+
+`inventory` is backed to `inventoryDeclaration` → `inventoryDeclarationStore`.
+`BuyerInventoryWidget` and `/buyer/inventory` read `useInventory` →
+`MockProcurementService:137` → `mockInventory`, a frozen array with no relation to
+that store. So unwire-flips-the-pill flips a pill over data that did not change,
+and opening gate-2 would paint green over a frozen array.
+
+**The derivation cannot check its own referent** — and no test noticed, because
+every test asserts the derivation and none asserts the join. Every capability in
+the registry is one careless re-pointing away from this.
+
+### ①d `LIVENESS-GATE-ASYMMETRY-01` — gate-2 is opt-in, so green means "nobody got round to it"
+
+`purchaseOrders`, `advanceShipNotices`, `goodsReceipts`, `invoices`, `rfqs` are
+wired and **ungated** → `isLive` returns true → green, over in-memory fixture
+stores. `inventory`, `purchaseRequisitions`, `forecastPublications` read
+equally-synthetic stores and **are** gated. The difference is not a property of
+the data; it is whether anyone added a gate-2 entry when that capability was last
+touched.
+
+`LIVENESS-DATASOURCE-01` says wiring alone must never flip green. For five
+capabilities, **wiring alone is exactly what flipped green** — because gate-2 is
+opt-in and nobody opted them in. **Report-only per operator ruling** (gating the
+other five would make green dead vocabulary — a product decision, not a marking
+one). Now asserted by `ProvenanceMarker.test.tsx` rather than worked around, and
+`ProvenanceMarker` deliberately does not read `isLive` at all.
+
+---
+
+## ② `MARK-A-VALUE-DELETE-AN-INFERENCE-01` — THE RULE, STATED TO BE KEPT
+
+> **MARK A VALUE, DELETE AN INFERENCE.**
+> **A pill can qualify a NUMBER. It cannot qualify a FABRICATED CONCLUSION.**
+
+`PLACEHOLDER_DOCS` asserting **"BPJPH Halal Certificate — Valid" IN SUCCESS
+GREEN** from `category.includes('raw')` **is an inference, and no marker fixes
+it.** That is the canonical instance; keep it attached to the rule.
+
+The rule decides, at a glance, whether a surface is answerable by marking:
+
+- A **value** is looked up. The reader reads a number, a date, a name, and asks
+  where it came from. A marker answers that question, because the reader's
+  question and the marker's answer are about the same object.
+- An **inference** is reasoned from. A slope says *depleting*. A green Valid chip
+  under a shield icon says *this supplier may ship*. A `✓` beside a corporation
+  says *they vetted this*. **The reader never forms the question the marker
+  answers** — the conclusion arrives pre-verbally, and the pill is three scroll
+  lengths away, qualifying something the reader has already stopped thinking
+  about.
+
+Three deletions at #194 under this rule:
+
+1. **`PLACEHOLDER_DOCS`** (`contractView.tsx:212-225`) — invented
+   "BPJPH Halal Certificate · Valid" from a category substring and
+   "BPOM Registration · Expiring" from contract type. Fabricated regulatory
+   status. Docs tab now renders an honest empty state; `docCount` is 0 by
+   construction.
+2. **The 30-day DOS trend chart** (`BuyerInventory.tsx:143-160`) —
+   `Math.sin(i*0.6) + Math.cos(i*0.3)` off a hardcoded `new Date('2026-05-20')`,
+   snapped to the one real value at the last point. **A trend line is a claim.**
+3. **The `✓` on discovery brand chips** — see ⓪.
+
+The corollary is the useful half: **if a marker would fix it, mark it; if a marker
+would only disclose it, delete it.** Applied the other way at `/buyer/compliance`,
+where the 17 Oct 2026 BPJPH date is a true external fact and the *countdown
+framing* was the fabrication — the fact kept, the red-when-≤90-days figure and
+draining bar removed. **A countdown is an argument, not a date.**
+
+---
+
+## ③ `DEAD-AFFORDANCE-01` — booked, not built · **the defect is in the button vocabulary, not one bar**
+
+> **THE DEFECT IS IN THE BUTTON VOCABULARY, NOT ONE BAR.**
+
+`BulkActionsBar.tsx:8,14` — `onClick?: () => void` on both primary and secondary
+actions. An action with no handler renders **pixel-identical** to one that works:
+same variant, same icon, same hover, same cursor. **Blast radius: 16 pages.**
+
+It was dispatched as a `BulkActionsBar` finding. It is not. Found incidentally
+while marking, on two of the most demo-visible routes:
+
+- `BuyerSupplierProfile.tsx` — **"Message"**, **"Create RFQ"**
+- `SupplierStorefront.tsx` — **"Connect"**, **"Request RFQ"**
+
+Four plain `<Button>` header CTAs with **no `onClick` at all** — not a bar in
+sight. The optional handler is a property of the shared button vocabulary, so
+**every consumer of it inherits the defect**, and `BulkActionsBar` was simply where
+it was first noticed.
+
+**Structural fix (not built):** make the handler required, and add an explicit
+disabled/pending variant that *looks* inert — so omitting a handler becomes a
+**type error** rather than a silent no-op. Cost: 16 `BulkActionsBar` call sites,
+plus the plain-`<Button>` sweep, plus a survey of which omissions are deliberate
+placeholders and which are bugs. Its own batch.
+
+---
+
+## ④ `CTR-FABRICATION-01` / `CTR-NUMBER-FABRICATION-01` — D-CENSUS-3 demotion, **costed**
+
+**Split accepted.** Sequencing ratified: *retract the claim now, book the demotion
+next.*
+
+**Retracted at #194** — the create toast now states the draft is portal-local,
+that **no contract was created in SAP**, that the number is **a placeholder this
+page generated, not a SAP contract number**, and that it is **lost on reload**.
+EN and ID.
+
+**Still live on main** (`BuyerContracts.tsx:508-509`) — **both** identities are
+minted client-side:
+
+```
+id:             `ctr-new-${Date.now()}`
+contractNumber: `CTR-${yr}-${String(nextNum).padStart(3, '0')}`
+```
+
+The census named the id. **The business number was unregistered**, and it is the
+one the SE Team reads as spec.
+
+### Blast radius, measured — so the next dispatch is costed
+
+Demotion to a request-to-SAP form is **not a deletion**: strip the minting and the
+created `Contract` has no id, so the wizard's *behavior* must change.
+
+| Surface | Work |
+|---|---|
+| Terminal state | wizard completes into a *request submitted* state, not a created entity |
+| `extraContracts` append | `setExtraContracts` path removed or repointed to a request record |
+| Count badges | every reader of the appended list — group tabs, KPI tiles, meta line |
+| Review-step copy | the step presents a contract for confirmation; must present a **request** |
+| i18n | **~140 EN + ID keys** under `contracts.wizard.*` / `contracts.toast.*` |
+| Tests | the **CP-0 · W1 · 2f-b** parse spine (`readContractValue`, `readNoticeRequiredDays`, refusal keys, step gates) |
+| Host file | `BuyerContracts.tsx`, **1538 lines** |
+
+**Why it could not ride a marking batch:** a marking regression would hide inside
+a wizard rewrite, and the two would be indistinguishable in review.
+
+---
+
+## ⑤ `GR-LAB-FABRICATION-01` — registered
+
+`GRInspectionWizard.tsx:694` mints `LAB-2026-${String(100 + idx).padStart(3,'0')}`
+in the browser and **persists** it. The `GR-FABRICATION-01` class surviving in a
+corner after the class was declared closed — a client-minted **external-system
+identifier for a laboratory request no laboratory received**. Registered, not
+fixed (it is minting, not marking).
+
+---
+
+## What #194 shipped, for the record
+
+`LivenessRegistry` +9 null-backed capabilities · new two-axis `ProvenanceMarker`
+(feed axis + verb axis, both derived, structurally never green) · all 43 routes
+marked · 13 claim families retracted in EN and ID · 3 inferences deleted.
+
+Gates green at merge: **2454 tests / 192 files / 7 gate tests**; floor bumped from
+2444/190. Browser QA passed EN and ID, both personas, all 43 routes, cache-busted.
