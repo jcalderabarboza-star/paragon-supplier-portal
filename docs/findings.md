@@ -6408,6 +6408,12 @@ right everywhere.
 **Honest-by-construction was built for the derivation and stopped at the join.**
 That is where the next honesty batch should look.
 
+⚠️ **NAMED AT PF-1a: `HONEST-BY-CONSTRUCTION-STOPS-AT-THE-JOIN-01`.** It shipped
+here as an observation without an id, which is how a class stops being citable.
+Its second instance is `COPY-IS-NOT-DERIVED-FROM-THE-MACHINE-01` (PF-1a §10.3) —
+the flow catalog knows a verb's destination and does not know which button claims
+to perform it. Same shape, one surface over.
+
 ---
 
 ## DISPATCH ID-0 · C10 — THE IDENTITY CONTRACT (docs only, `main` `df585c5`)
@@ -7107,3 +7113,86 @@ surfaces:
 **And the bundle was A/B'd on a fresh port after a rebuild** (cache-bust): every
 retired string is absent from `dist/assets` and every corrected string present,
 in both locales.
+
+### 10. AMENDMENT AT MERGE (operator, at #198)
+
+#### 10.1 ⚠️ D-1 IS RECORDED AS **REVERSED**, NOT **FIXED** — and what it reversed is FORK-2B
+
+**The operator's ruling on the disclosure, kept verbatim in substance:**
+
+> **D-1 REVERSES A DECISION; IT DOES NOT CLOSE AN OVERSIGHT.**
+
+The flow was made contradictory **deliberately**: create+publish as ONE buyer
+action to match the prior wizard, with `t_rfq_publish` left authored-unwired **on
+purpose**. Neither the analyzer nor the census could see that — they read the
+graph, and the graph does not record intent.
+
+> **THE CENSUS ROW WAS TRUE AND INCOMPLETE.** `Draft` was unreachable and
+> `t_rfq_publish` was dead; both facts held exactly as filed. What the row could
+> not say is that somebody had chosen it.
+
+**Finding the comment before merging is what stopped us overturning someone's
+reasoning without noticing** — and that is the part worth keeping, because the
+batch would have shipped identically either way. The difference is entirely in
+the record: a repair and a reversal leave the same diff and mean different
+things, and only one of them owes the earlier author an argument.
+
+**THE RULING STANDS.** The operator states Paragon's practice is
+**DRAFT → REVIEW → PUBLISH**, and:
+
+> **A MACHINE THAT CONTRADICTS ITSELF TO MATCH A WIZARD IS THE WRONG TRADE.**
+
+FORK-2B bought one fewer click and paid with a state machine that disagreed with
+its own declared entry point. The click is cheaper to re-add than the
+contradiction was to find.
+
+#### 10.2 Supplier-read gating — the ruling, stated as the rule it is
+
+Sentence kept, and sharpened by the operator into the form that generalises:
+
+> **IF AN RFQ CAN SIT IN DRAFT, SUPPLIERS MUST NOT SEE IT — OR DRAFT IS A LABEL
+> RATHER THAN A STATE.**
+
+That is why the read gate is not a workaround for D-1 but a component of it. A
+state nobody is excluded by is a status field, and the verb that leaves it is a
+relabel.
+
+#### 10.3 ⚠️ `COPY-IS-NOT-DERIVED-FROM-THE-MACHINE-01` — the same join, one surface over
+
+**Filed as a class, beside `HONEST-BY-CONSTRUCTION-STOPS-AT-THE-JOIN-01`** (the
+D-CENSUS-8 closing observation, now given the id it was owed).
+
+> **COPY IS NOT DERIVED FROM THE MACHINE.**
+
+The three claims this batch falsified — *"Sent to N suppliers"*, *"Create & Send
+RFQ"*, *"Check the details before sending to suppliers"* — were **true when
+written** and were made false by a ruling three layers away. Nothing failed. No
+test could fail, because no test compares a sentence to a state machine.
+
+**It is the join class exactly, one surface over.** D-CENSUS-8 found that the
+liveness registry knows a capability's tier and does not know which page renders
+it. This finds that the flow catalog knows a verb's destination and does not know
+which button claims to perform it. Same shape:
+
+> **THE DERIVATION IS PROVABLY RIGHT AND THE JOIN IS UNGUARDED.**
+
+And the operator's rule for the surface half, kept:
+
+> **A BUTTON NAMING AN ACT IT DOES NOT PERFORM IS THE SAME CLASS AS A BUTTON
+> FIRING A TOAST.**
+
+A toast-handler at least fails honestly at the moment of the click. A label lies
+before it is pressed, and keeps lying to everyone who reads the screen and does
+not press it.
+
+**The census now guards the machine. Nothing guards the sentence.** Both halves
+of that gap are now filed under one class, from two batches, which is the only
+form in which somebody can go and close it.
+
+#### 10.4 The three stopping points — ALL ACCEPTED by the operator
+
+| Stopping point | Ruling |
+|---|---|
+| **requirementResponse `Draft` NOT swept along** | **Correct.** D-1 rests on a stated fact about **SOURCING** practice; whether a supplier drafts a response before submitting is **a different question with a different answer available**. Stays censused (`authored-unwired`) pending its own ruling — **the operator is taking it up** |
+| **`Override hold` stays a toast** | **Correct.** A governance act whose entire value is accountability, on a platform that cannot name a person: **wiring it would write an anonymous unlock into a permanent trail.** Saying so **at the button, in code**, is the right place — the next reader's instinct will be to "fix" it |
+| **`t_pr_reject` requires no reason** | **Filed. A real gap.** The revise edge fixes **RECOURSE, NOT EXPLANATION**, and closing it needs its own ruling and its own blast radius (`PF1A-PR-REJECT-HAS-NO-REASON-01`) |
