@@ -7808,3 +7808,126 @@ DP2-BUTTON-01 respected (no solid `variant="primary"` anywhere on the surface �
 **Browser QA:** EN and ID, 1440 px, on the built bundle (`vite preview`) —
 catalog rail, all eighteen diagrams, the walk (Sent → Confirmed → Delivered →
 observe close), the census panels, and both honest-marker axes.
+
+### 9. OPERATOR RULINGS ON PF-1 (at review, before merge)
+
+Recorded here rather than left in the review thread: §6 above ends with a
+RECOMMENDATION, and a ruling that only exists as a recommendation somewhere else
+is how a decision gets re-litigated by whoever reads the file next.
+
+#### 9.1 The two things this batch achieved are STRUCTURAL, not features
+
+Kept in the operator's framing, because both are properties rather than
+capabilities and a feature list would lose exactly that:
+
+> **BECAUSE A PICTURE IS NEVER TYPE-CHECKED, THE PROPERTY IS HELD AS EQUALITIES
+> AGAINST THE SCHEMA OVER THE WHOLE REGISTRY** — node for node, in order, for
+> each of eighteen flows in turn.
+
+That is what makes *"the module cannot show a state the machine does not have"*
+**A FACT RATHER THAN AN INTENTION.** The asymmetry is the reason it needed
+saying: **a diagram can drift silently in a way a value cannot.** A wrong number
+on a page is wrong to anyone who checks it; a wrong node on a diagram still
+looks like a diagram, and nothing in a review, a type-check or a screenshot
+distinguishes the two.
+
+> **`PF1-WALK-CANNOT-DISPATCH-01` — THE COPY SAYS THE WALK PERFORMS NOTHING, AND
+> THE TEST MAKES THAT STRUCTURAL RATHER THAN A PROMISE.**
+
+A source-read refusal of `dispatch(`, `useCommand`, `settle(` and
+`CommandService` from the surface. ⚠️ **This is the same distinction this tree
+keeps finding on the WRONG side** — a claim in prose that nothing enforces,
+discovered later to have stopped being true — **and here it is on the right side
+FROM BIRTH.** The copy did not have to be believed; it has to be violated for
+the suite to go green with it removed.
+
+#### 9.2 `PF1-CAPABILITY-FALLBACK-IS-DELIBERATE-01` — do not simplify it back
+
+**RULED CORRECT AND CORRECTLY REPORTED.** The record, so the next reader does
+not "tidy" the fallback away:
+
+Eight of the eighteen flows have NO capability reading them, and **`quotation` is
+a WIRED CommandTarget that no capability names.** Keying the verb axis on
+`Capability` alone would have rendered a machine that genuinely dispatches — and
+genuinely writes the DR-10 trail — as **"Authored — unwired"**, which is false.
+So the axis falls back to `WIRED_COMMAND_TARGETS`: **the same set one layer
+down**, since `dispatchesCommands` *is* `liveness() === 'LIVE'` *is*
+`WIRED.has(backing)`. It cannot disagree with the marker regime; it reaches a
+machine the capability list never named.
+
+The feed axis does NOT fall back, and that asymmetry is the point: it renders
+**"No read surface"**, which is honest silence, because there is no read surface
+to describe. Naming an adjacent capability to fill the gap is
+`INVENTORY-REFERENT-01` — a marker whose referent is not the data on screen.
+
+> **HONEST SILENCE, APPLIED TO A MARKER RATHER THAN TO A VALUE.** The two axes
+> answer different questions, so one of them having no answer is not a reason to
+> invent one for it.
+
+#### 9.3 Readability → `PF1-DIAGRAM-FULLSCREEN-01`, BOOKED
+
+**RULED: a full-screen affordance, on the plan-grid precedent**
+(`pages-v2/plan-grid/FullScreenSection.tsx`). Not built in this batch; booked.
+
+**Serpentine wrap stays in reserve, and the reason is the record:**
+
+> ⚠️ **A WRAPPED CHAIN READS AS A DIFFERENT TOPOLOGY THAN A LINEAR ONE.**
+> Rather scroll than imply a shape the machine does not have.
+
+This is the same rule as everything else on the page, applied to layout instead
+of data: `shipment` is eight states in a line, and a diagram that folds it into
+two rows of four has drawn a branch point where the schema has none — **a
+reader's eye supplies the meaning the fold implies.** Horizontal scrolling is
+merely inconvenient; the fold would be untrue. The cost is stated plainly in §6
+(five of eight states off-screen at 1440 px) and it is a cost the ruling accepts.
+
+#### 9.4 `PF1-CREATION-KIND-01` → creation is its own token — A CORRECTION TO THE DISPATCH
+
+**RULED, and recorded AS A CORRECTION AGAINST THE DISPATCH THAT ASKED FOR IT.**
+The PF-1 dispatch named two step kinds (`user` → OPERATOR ACTION,
+`system`/`cascade` → SYSTEM-DRIVEN). **`TransitionTrigger` has four members.**
+
+> **FOLDING A BIRTH EDGE INTO EITHER BUCKET WOULD BE THE DERIVATION CHOOSING
+> WHERE THE SCHEMA GIVES IT NOTHING TO CHOOSE ON.**
+
+`t_po_issue` is a buyer act and a rollup birth is not; nothing in the trigger,
+the role or the fields separates them, so any assignment would have been the
+page's own opinion — **the first authored claim on a surface whose entire thesis
+is that it authors nothing.** `Creation` renders as its own token, with the raw
+trigger beside it in the table.
+
+Worth keeping as the general form, since a dispatch is not a schema:
+
+> **AN INSTRUCTION THAT ENUMERATES A UNION CAN BE SHORT BY A MEMBER. THE UNION
+> IS THE AUTHORITY; THE INSTRUCTION IS NOT.**
+
+#### 9.5 `PF1-DERIVED-PROSE-UNTRANSLATED-01` → LEAVE IT, SAYING SO
+
+**RULED: leave the analyzer `detail` and the census `note` in English in both
+locales, and disclose it on the surface — which the page now does.**
+
+> **TRANSLATING DERIVED ANALYZER DETAIL WOULD MEAN AUTHORING PROSE AGAINST
+> DERIVED CONTENT, WHICH IS THE DRIFT CLASS THIS DESIGN EXISTS TO AVOID.**
+
+The Indonesian sentence would be a hand-written second wording of a machine-
+generated finding, and the second wording is the one that stops matching — the
+same argument that keeps the census keyed on `entity#kind#subject` and never on
+its prose. **The disclosure is the honest handling, not a deferral**; there is
+no follow-on item hiding behind this ruling.
+
+#### 9.6 The restraint that made the page pinnable
+
+`PF1-NO-PURPOSE-ANNOTATION-01` is PF-2's subject, and **NOT ONE SENTENCE OF IT
+WAS WRITTEN INLINE.**
+
+> **THAT RESTRAINT IS THE BATCH WORKING** — an inline sentence explaining what a
+> verb is FOR is the thing that would have quietly made the page UNPINNABLE.
+
+Every equality in §1 holds because every string on the surface is either page
+chrome (i18n, EN+ID, parity-gated) or a schema identifier rendered verbatim. One
+hand-written sentence about one machine, and the page stops being a pure
+function of the registry: the sentence has no key, no test can tell whether it
+still describes the transition it sits next to, and the next machine that
+changes leaves it behind. **PF-2's whole design — keyed by transition id,
+bilaterally pinned — exists because that sentence has to be attachable to
+something a build can check.**
