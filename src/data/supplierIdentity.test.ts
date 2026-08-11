@@ -13,9 +13,13 @@
 //   It FAILS CLOSED on a name nobody has thought of yet. A list does not.
 //
 //   The email/URL masking is not incidental — it is census defeat #1 made into
-//   code. `s.marlina@givaudan.com` supplied a lowercase `givaudan` that
-//   disqualified the brand from the never-lowercase rule and hid it. Mask the
-//   domains or the rule silently exonerates every brand that owns one.
+//   code. A contact address at a supplier's own corporate domain supplied a
+//   LOWERCASE spelling of that supplier's brand, which disqualified the brand
+//   from the never-lowercase rule and hid it. (The address itself is not quoted
+//   here: batch D removed the real domains, and re-listing one in a comment is
+//   how a name comes back — PF-2a's header describes its deleted endorsers
+//   rather than repeating them, for the same reason.) Mask the domains, or the
+//   rule silently exonerates every brand that owns one.
 //
 // ── THE ROSTER IS A POSITIVE VOCABULARY, NOT A DENYLIST ──────────────────────
 //   `ALLOWED` says what a supplier identity MAY be built from. A new REAL name

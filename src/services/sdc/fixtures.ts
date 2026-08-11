@@ -765,7 +765,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     //   · `ASN-2025-00302` line — *Emulgade SE-PF emulsifier*, 2 400 shipped;
     //   · storefront `c201` — *Emulgade SE-PF Emulsifier*, `uom: 'KG'`,
     //     certs REACH + ISO 9001 (⚠️ **NO halal cert**);
-    //   · `doc-201` — **BPOM Notification TD.02.02.66.10.23.0311**, category
+    //   · `doc-201` — **BPOM Notification SAMPLE-BPOM-0005A**, category
     //     `BPOM Regulatory`, issued by BPOM, linked to `PO-2025-00131`, which
     //     is this ASN's parent;
     //   · `doc-202` — *REACH Compliance / Safety Data Sheet — Emulgade*, issued

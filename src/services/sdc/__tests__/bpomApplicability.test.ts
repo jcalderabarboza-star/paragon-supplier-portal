@@ -97,7 +97,7 @@ describe('2B-4a — the seed is a CLASS RULE, and the rule DERIVES', () => {
     // SET OF ONE — not a loosened predicate, not an "allow overrides" flag.
     // `RM-EMUL-9440` is the first row in the master whose value rests on a
     // DOCUMENT rather than on its group's class default: `doc-201`, a **BPOM
-    // Notification (TD.02.02.66.10.23.0311)** issued by BPOM and linked to
+    // Notification (SAMPLE-BPOM-0005A)** issued by BPOM and linked to
     // `PO-2025-00131`, the parent of the ASN line this code was authored from.
     // MG-02's class rule would say `UNDETERMINED` — nobody has ruled — but
     // somebody DID rule, in a document, about this supply.

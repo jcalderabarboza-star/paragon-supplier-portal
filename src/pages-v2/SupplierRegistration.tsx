@@ -585,7 +585,7 @@ const ContactsStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
                   className={inputClass}
                   value={c.email}
                   onChange={(e) => updateContact(i, 'email', e.target.value)}
-                  placeholder="jane@company.com"
+                  placeholder="jane@example.com"
                 />
               </Field>
               <Field
