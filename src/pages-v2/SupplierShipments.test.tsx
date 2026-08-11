@@ -86,7 +86,7 @@ describe('SupplierShipments — ASN verbs (Step 4 batch i)', () => {
     const createRes = await mockDataService.commands.dispatch(supScope, {
       transitionId: 't_asn_create',
       entity: 'advanceShipNotice',
-      payload: { poReference: 'PO-2025-00108', carrier: 'JNE', trackingNumber: 'JNE123', eta: '2026-05-10' },
+      payload: { poReference: 'PO-2025-00108', carrier: 'Sample Courier', trackingNumber: 'SMPL123', eta: '2026-05-10' },
     });
     expect(createRes.status).toBe('done');
     expect(createRes.entityId).toMatch(/^ASN-2026-9\d+$/);
@@ -100,7 +100,7 @@ describe('SupplierShipments — ASN verbs (Step 4 batch i)', () => {
       transitionId: 't_asn_submit',
       entity: 'advanceShipNotice',
       entityId: createRes.entityId!,
-      payload: { carrier: 'JNE', trackingNumber: 'JNE123', eta: '2026-05-10' },
+      payload: { carrier: 'Sample Courier', trackingNumber: 'SMPL123', eta: '2026-05-10' },
     });
     expect(submitRes.status).toBe('done');
     expect(asnStore.get(createRes.entityId!)?.status).toBe('Submitted');
@@ -145,7 +145,7 @@ describe('SupplierShipments — ASN verbs (Step 4 batch i)', () => {
     renderWithProviders(<SupplierShipments />, { identity: SUPPLIER });
     expect(await screen.findByText('ASN-2025-00215')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
-    fireEvent.change(await screen.findByLabelText('Tracking number'), { target: { value: 'JNE999' } });
+    fireEvent.change(await screen.findByLabelText('Tracking number'), { target: { value: 'SMPL999' } });
     fireEvent.change(screen.getByLabelText('Estimated arrival'), { target: { value: '2026-05-20' } });
     fireEvent.click(screen.getByRole('button', { name: 'Submit ASN' }));
     await waitFor(() => expect(asnStore.get('ASN-2025-00215')?.status).toBe('Submitted'));

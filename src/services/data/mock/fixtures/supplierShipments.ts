@@ -90,8 +90,8 @@ export const MOCK_ASNS: ASN[] = [
     // (ordered 2025-04-03); only the former precedes this eta of 2025-04-02.
     poReference: 'PO-2025-00107',
     status: 'In Transit',
-    carrier: 'JNE Express Cargo',
-    trackingNumber: 'JNE-TRK-882941-X',
+    carrier: 'Sample Express Courier (illustrative)',
+    trackingNumber: 'SMPL-EXP-882941-X',
     eta: '2025-04-02',
     details: {
       originCity: 'Surabaya, ID',
@@ -114,8 +114,8 @@ export const MOCK_ASNS: ASN[] = [
     // — see the header: that axis is 5b-ii's.
     poReference: 'PO-2025-00107',
     status: 'Delivered',
-    carrier: 'Pos Logistik Indonesia',
-    trackingNumber: 'PLI-7723-BC-4401',
+    carrier: 'Sample Postal Logistics (illustrative)',
+    trackingNumber: 'SMPL-PST-7723-BC-4401',
     eta: '2025-03-22',
     details: {
       originCity: 'Bandung, ID',
@@ -136,8 +136,8 @@ export const MOCK_ASNS: ASN[] = [
     // 2025-03-27.
     poReference: 'PO-2025-00107',
     status: 'Discrepancy',
-    carrier: 'SiCepat Cargo',
-    trackingNumber: 'SCP-X-119843-JKT',
+    carrier: 'Sample Parcel Courier (illustrative)',
+    trackingNumber: 'SMPL-PCL-119843-JKT',
     eta: '2025-03-27',
     details: {
       originCity: 'Jakarta, ID',
@@ -185,8 +185,8 @@ export const MOCK_ASNS: ASN[] = [
     // consequence of the rule, not the reason for it.
     poReference: 'PO-2025-00116',
     status: 'In Transit',
-    carrier: 'Meratus Line',
-    trackingNumber: 'MRT-4471-SBY',
+    carrier: 'Sample Interisland Line (illustrative)',
+    trackingNumber: 'SMPL-ISL-4471-SBY',
     eta: '2025-05-06',
     details: {
       originCity: 'Medan, ID',
@@ -211,8 +211,8 @@ export const MOCK_ASNS: ASN[] = [
     // references do and do not determine.
     poReference: 'PO-2025-00131',
     status: 'Delivered',
-    carrier: 'Kuehne+Nagel',
-    trackingNumber: 'KN-DE-99120-JKT',
+    carrier: 'Sample Freight Forwarder (illustrative)',
+    trackingNumber: 'SMPL-FFW-99120-JKT',
     eta: '2025-04-18',
     details: {
       originCity: 'Ludwigshafen, DE',

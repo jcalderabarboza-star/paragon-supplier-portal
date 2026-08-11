@@ -57,7 +57,7 @@ const uiTestAsn = (): ASN => ({
   supplierId: 'sup-007',
   poReference: 'PO-2025-00108',
   status: 'Submitted',
-  carrier: 'JNE',
+  carrier: 'Sample Courier',
   trackingNumber: 'TRK-UI-1',
   eta: '2026-05-25',
   details: {

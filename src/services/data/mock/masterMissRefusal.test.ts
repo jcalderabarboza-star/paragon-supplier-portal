@@ -238,7 +238,7 @@ const asnWith = (asnNumber: string, materialCodes: string[]): ASN => ({
   supplierId: 'sup-007',
   poReference: 'PO-2025-00107',
   status: 'Submitted',
-  carrier: 'JNE',
+  carrier: 'Sample Courier',
   trackingNumber: 'TRK-CP2',
   eta: '2026-05-22',
   details: {

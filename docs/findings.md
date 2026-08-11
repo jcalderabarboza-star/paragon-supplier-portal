@@ -8590,3 +8590,222 @@ The overstatement was small and it was in the direction that flatters the
 finding, which is the direction that needs the check most. **A fixture is what
 the page COULD say; the render is what it DOES.** For any claim of the form *"the
 product tells a user X"*, the fixture is evidence and the render is proof.
+
+---
+
+## `DISCOVERY-REAL-SUBJECTS-01` — THE CENSUS, AND BATCH E (the unrendered residue)
+
+**Status: census COMPLETE and accepted in full · batch E DONE · A / C / D / B OPEN.**
+Ruled by the operator on the census report. Main `abb8c03` at census time.
+
+### 11 · THE FINDING, AS THE REGISTER CARRIES IT
+
+> **THE ENDORSEMENT PAGE WAS NOT THE SITE. IT WAS THE SMALLEST ONE.**
+
+The supplier **master** carries **fabricated STATUTORY IDENTIFIERS** — tax IDs in
+NPWP format, business registrations in NIB format — **on real, named, publicly
+listed corporations, and renders them**. `/buyer/suppliers/sup-007` renders a
+real listed Indonesian packaging manufacturer's legal name, tax ID, business
+registration number, real website, a named contact at the company's real email
+domain, a performance grade, and an intelligence note asserting a supply
+relationship with the client's real brands.
+
+**Materially stronger than a match score.** PF-2a deleted a fabricated
+endorsement; this is a fabricated *identity document*. Ranked first in the census
+and first in the remedy order for that reason.
+
+Two rows recorded separately because they are different KINDS of claim:
+
+- **The `Tbk.` suffix on `PT Ecogreen Oleochemicals Tbk.` (`mockSuppliers.ts:29`)
+  is a FALSE CORPORATE-STATUS CLAIM, distinct from a false performance claim.**
+  Every other fabrication in the census says the company *performed* a certain
+  way. This one says what the company *legally is*. A grade is an opinion with a
+  number on it; a listing status is a fact with a registry behind it.
+- **`Caelo PET Bottle Manufacturer GmbH` (`mockSuppliers.ts:335`) is the sharpest
+  single row.** A real German firm, placed in **the right city** — so not a name
+  collision — described as something it is not, marked `SUSPENDED`, and given the
+  **lowest rating in the dataset** (1.5 / 5, grade D).
+
+### 11a · METHOD CLASS — THE DERIVATION DEFEATED ITSELF THREE TIMES, AND EACH DEFEAT BECAME A FINDING
+
+The census rule was: *a token that appears capitalised and never lowercase
+anywhere in the tree is a proper noun.* It lost seven of the very brands it
+existed to find. Each loss was informative:
+
+1. **A real corporate email domain supplied the lowercase token.**
+   `s.marlina@givaudan.com` contains `givaudan`, which disqualified `Givaudan`.
+   **That is HOW THE EMAIL-DOMAIN LANE SURFACED** — twelve real corporate domains
+   in `mockSuppliers.ts`, one of them rendered on the profile page. **A guard that
+   censuses NAMES would not see it.**
+2. **A lowercase slug id.** `id: 'berlina'` disqualified `Berlina`.
+3. **ALL-CAPS acronym brands** were excluded by rule and needed a separate lane.
+
+A fourth surfaced during batch E, from the FIELD census rather than the token
+census: **`Kuehne+Nagel` carries a `+` and no trade token**, so it passed both
+orthographic passes untouched and was only caught by enumerating `carrier:`
+values. Same for `containerNumber`, which is not a name field at all and holds
+**real ISO container owner codes** (`MAEU`, `HLBU`, `MERU`, `PILU`).
+
+**The class: a detector's failures are evidence, not noise.** Every one of these
+was a place the tree hid an identity in a shape the detector was not built for.
+The instrument note that follows exists because of them.
+
+### 11b · METHOD CLASS — RENDERING CORRECTS THE FIXTURE READING IN BOTH DIRECTIONS
+
+§10b established *the fixture is what the page COULD say; the render is what it
+DOES*, from a case where the fixture flattered the finding. **The census proved
+it cuts the other way just as hard, and batch E proved it a third time.**
+
+| Direction | Instance |
+|---|---|
+| Fixture **over**-read | `COMPLIANCE_ITEMS` — a real certification body asserted to have issued a specific certificate to a real company with an adverse regulatory status, the **strongest-sounding claim in the tree** — is **DEAD CODE**. One importer, a test. No page. |
+| Fixture **under**-read | `mockSuppliers.ts` sits in the legacy `src/data/` lane and **reads as dead**. It is not: six live importers, and it **RENDERS TAX IDS**. |
+| Render **under**-read (batch E) | The census reported *"carriers render on no page"*, swept across 42 routes. **Wrong.** Real carriers rendered in the ASN table on `/supplier/shipments`, and seven more sat in a `CARRIER_OPTIONS` dropdown a supplier picks from. |
+
+**The render pass has its own blind spot, and it is now named: `innerText` does
+not include `<option>` text of a closed `<select>`.** The same blind spot hid the
+buyer-scorecard supplier list (eight real corporations in one control) — it was
+found there only because a dropdown was driven deliberately. **A route sweep over
+`innerText` is a floor, not a census.** Reach into `select.options`, and open
+tabs and wizards, or say plainly that you did not.
+
+### 11c · THE NAMING CONVENTION (operator ruling — A sets it, everything inherits)
+
+**Plainly fictional, obviously not a real company, in the `complianceRegistry.ts`
+house style already shipping**: `Sample Fragrance House`, `Sample Emulsifiers Co.
+(illustrative)`. In-tree precedent, rendering today on `/buyer/compliance`.
+
+**NOT plausible-sounding invented names.** A plausible name **reproduces the
+problem with better luck** — the next census cannot tell it from a real one, and
+neither can a reader. The name must be unmistakable at a glance.
+
+Batch E applies it: `Sample Ocean Carrier (illustrative)`, `Sample Interisland
+Line (illustrative)`, and ten more.
+
+### 11d · THE REMEDY SPLIT — ORDER `E → A → C → D → B`
+
+Split by **what is asserted**, not by file.
+
+| Batch | Scope | State |
+|---|---|---|
+| **E** | unrendered residue: delete `COMPLIANCE_ITEMS`; carriers | **DONE (this PR)** |
+| **A** | statutory identity + adverse grade — supplier master, marketplace, analytics, scorecard, profile | OPEN, large, next |
+| **C** | discovery subjects — `GLOBAL_SUPPLIERS`, `RECOMMENDED`, `QUALIFICATIONS`, alternates | OPEN |
+| **D** | non-name identifiers — email domains, websites, material trademarks | OPEN |
+| **B** | the three RELOCATION cases | OPEN, **last** |
+
+**B is last because it needs REWRITING, NOT RENAMING, and each clause is its own
+judgement. It must not be folded into a mechanical sweep.** The three:
+
+1. **`buyerDiscovery.ts:131`** — *"Distributes \[four real chemical companies]
+   products across SEA."* Renaming the card's SUBJECT leaves four real companies
+   in the OBJECT position, now asserted to have a distribution relationship with
+   an invented one. **Substitution makes this worse.**
+2. **Material trademarks** — a real fragrance house's name inside a *material*
+   code, and a real emulsifier trademark used as material identity. Renaming
+   every supplier does not touch either.
+3. **Certifier / regulator object positions** — these **STAY REAL**.
+   **Fictionalising BPJPH, MUI or BPOM destroys the domain**: they are the actual
+   Indonesian regulators the product exists to model. Once the SUBJECT is
+   fictional, "a BPJPH certificate for Sample Fragrance House" is unobjectionable
+   — which is exactly what `complianceRegistry.ts` already ships.
+
+### 11e · THE INSTRUMENT NOTE — CARRIED INTO A
+
+**PF-2a's guard is a list match, and so is any guard built the same way.** A
+denylist can only ever find what somebody already knew to write down, and it
+trains the next author to append to a list.
+
+**THE RULE THAT GENERALISES IS THE DERIVATION ITSELF** — a capitalised token that
+never appears lowercase, minus email/URL masking, minus the known-fictional
+roster. **IT FAILS CLOSED ON A NAME NOBODY HAS THOUGHT OF YET. A LIST DOES NOT.**
+
+Batch E's guard is the first thing built to that shape, at field scope
+(`carrierIdentity.test.ts`): it asserts what a carrier identity **MAY** be —
+`Sample …` names, `SMPL-…` refs, or a declared sentinel — not what it may not. A
+real carrier added tomorrow reddens it **without anyone editing the test**.
+Mutation-probed both ways: re-inserting a real carrier name goes red, and so does
+re-inserting a real ISO container code alone.
+
+### 11f · BATCH E, AS BUILT
+
+**Deleted — `src/services/data/mock/fixtures/buyerCompliance.ts` (whole file).**
+Twelve rows naming eight real corporations against six real certifiers and
+regulators, including a real German firm's halal certificate marked **Expired**
+with *"Request renewal immediately — blocks new POs"* at `Critical`. Its other
+exports (`ComplianceItem` and three status unions) had **no importer anywhere**.
+Cheapest remedy in the census, worst sentence in the tree.
+
+**No absence-test was added for it, deliberately.** The guard is `tsc`: an import
+of a deleted module fails the build. A test asserting a file's non-existence
+protects nothing the compiler does not already protect.
+
+**Carriers substituted, not deleted** — the field is displayed and a shipment
+needs one. Twelve real carriers and forwarders across `mockShipments.ts`,
+`supplierShipments.ts`, the `CARRIER_OPTIONS` dropdown, six test fixtures, the
+WhatsApp ASN scenario, and a tracking placeholder in **both** locales.
+
+**Tracking and container refs went with them**, though §6 had scoped refs to
+batch D. **A real ISO container owner code identifies the line on its own**, so
+removing the name and keeping `MAEU-8821007` next to it would be exactly the
+completed-half failure §9 warns about — *the corrected half must not stand in for
+the whole*. Scoping corrected mid-batch and recorded here rather than deferred.
+
+**`buyerRisk.ts:117`** asserted Paragon holds *"carrier agreements with"* two
+named real ocean carriers. Generalised to *"two ocean carriers"* — it substitutes
+cleanly and is **not** a relocation case, so it belonged to E.
+
+**`demoFixturesScale.ts` was scoped into E by the census and is EXCLUDED on
+inspection.** Its six corporate names are **comment prose** documenting the
+contract→supplier mapping — **zero code hits** with comments stripped. They
+derive from the master, so editing them now would either desynchronise the
+comment from the fixture it documents or constitute a supplier rename, which E's
+fence forbids. **They follow A.**
+
+### 11g · WHAT `halalXpersona.invariant.test.ts` WAS ACTUALLY ASSERTING
+
+Deleting `COMPLIANCE_ITEMS` broke it. Per the ruling the **premise** was fixed,
+not the deletion — and the premise was wrong in two independent ways.
+
+**One — it was reconciling against a surface no page renders.** The test's header
+predicted *"at R2.2 the compliance read repoints from `COMPLIANCE_ITEMS` to `svc`
+and the assertion below is unchanged"*. **That repoint already happened at I3.2**
+(`COMPLIANCE-CARVEOUT-01`, PR #62). Nobody repointed the test. For two phases it
+reconciled the live master and storefront against **dead fixture data**, and
+reported green. The DTO-v2's `supplierId` is documented in `types.ts` as *"the FK
+that reconciles the name-vs-id split across personas (HALAL-XPERSONA-01)"* — the
+field was built to close this exact finding, and the test never read it.
+**A test can outlive the thing it tests and keep passing. Green meant the join
+landed, not that the join was live.**
+
+**Two — the GRAIN changed under it.** `COMPLIANCE_ITEMS` held one halal row per
+supplier, so a row *was* the surface's claim. The registry's grain is
+supplier × material × certificate, so one supplier holds several halal certs at
+once **by design** — the MUI→BPJPH transition means holding both is correct, and
+a portfolio legitimately mixes `Valid` and `Missing` per material. Pushed
+row-by-row, the comparator compared a supplier **against itself** and reported a
+defect for a correctly-modelled portfolio. The surface is now folded to one claim
+per supplier before comparison: `certified` = any-Valid; `expiry` = the earliest
+dated expiry among valid certs (when halal cover actually starts to lapse);
+`issuer` **abstains**, because across a portfolio the surface makes no
+single-scheme claim.
+
+**Repointing surfaced two real contradictions the dead surface was masking.**
+`sup-002` (master halal expiry vs registry earliest valid expiry) and `sup-005`
+(master `halalCertified: false` vs a Valid halal cert in the registry) are **new
+to the gate but not new** — they were invisible because surface C was dead.
+Both whitelisted as `HALAL-XPERSONA-01`, with the mechanism updated: **the
+name↔id keying gap is CLOSED; what remains is fixture-authoring divergence
+between the master and the DTO-v2 registry, which the id join makes VISIBLE
+rather than causes.** Reconciling those two fixtures is supplier-master work and
+belongs to **A**, not to a deletion batch.
+
+`sup-003` was **removed** from the whitelist: it contradicted only the deleted
+fixture. The registry covers the three tenants (`sup-002`/`005`/`007`), so
+`sup-003` makes no compliance claim and cannot disagree. **A stale whitelist entry
+asserts a live contradiction that no surface produces** — and the test's own
+`found ⊆ allowed` doctrine would have tolerated it silently forever.
+
+Mutation-probed: dangling the registry FK reddens the join test, and
+de-registering `sup-002` reddens the contradiction gate — proving the portfolio
+fold did not neuter the invariant it was introduced to unbreak.

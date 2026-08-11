@@ -34,7 +34,7 @@ const asnOn = (asnNumber: string, poReference: string, supplierId = 'sup-002'): 
   supplierId,
   poReference,
   status: 'Submitted',
-  carrier: 'JNE',
+  carrier: 'Sample Courier',
   trackingNumber: 'TRK-X',
   eta: '2026-05-22',
   details: {

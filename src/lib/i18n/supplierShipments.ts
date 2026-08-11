@@ -162,7 +162,7 @@ export const supplierShipmentsEn: Record<string, string> = {
   'supplierShipments.wizard.review.confirm':
     'I confirm all shipment details are accurate and the goods match the purchase order specifications.',
   // — Input placeholders (example codes kept verbatim) —
-  'supplierShipments.placeholder.tracking': 'e.g. JNE2026001234',
+  'supplierShipments.placeholder.tracking': 'e.g. SMPL2026001234',
   'supplierShipments.placeholder.batch': 'e.g. PKG-2026-441',
   'supplierShipments.placeholder.lot': 'e.g. LOT-2026-001',
   'supplierShipments.placeholder.notes':
@@ -322,7 +322,7 @@ export const supplierShipmentsId: Record<string, string> = {
   'supplierShipments.wizard.review.confirm':
     'Saya mengonfirmasi semua detail pengiriman akurat dan barang sesuai dengan spesifikasi pesanan pembelian.',
   // — Input placeholders (example codes kept verbatim) —
-  'supplierShipments.placeholder.tracking': 'mis. JNE2026001234',
+  'supplierShipments.placeholder.tracking': 'mis. SMPL2026001234',
   'supplierShipments.placeholder.batch': 'mis. PKG-2026-441',
   'supplierShipments.placeholder.lot': 'mis. LOT-2026-001',
   'supplierShipments.placeholder.notes':

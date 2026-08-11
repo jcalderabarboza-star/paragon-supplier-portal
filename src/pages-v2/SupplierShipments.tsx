@@ -93,7 +93,7 @@ interface AsnForm {
 
 const DEFAULT_FORM: AsnForm = {
   poId: '',
-  carrier: 'JNE',
+  carrier: 'Sample Courier (illustrative)',
   trackingNumber: '',
   shipDate: '2026-04-07',
   eta: '',
@@ -106,7 +106,21 @@ const DEFAULT_FORM: AsnForm = {
   lotNumber: '',
 };
 
-const CARRIER_OPTIONS = ['JNE', 'SiCepat', 'J&T', 'Wahana', 'DHL', 'FedEx', 'Other'];
+// Batch E (DISCOVERY-REAL-SUBJECTS-01): this list was six real courier and
+// freight companies plus 'Other' — not named here, for the same reason PF-2a's
+// fixture header describes its deleted endorsers instead of re-listing them.
+// They render as <option>s a supplier picks when submitting an ASN, and
+// <option> text is absent from `innerText` — which is why the render census
+// wrongly reported carriers as rendering nowhere.
+const CARRIER_OPTIONS = [
+  'Sample Courier (illustrative)',
+  'Sample Parcel Courier (illustrative)',
+  'Sample Express Courier (illustrative)',
+  'Sample Air Freight (illustrative)',
+  'Sample Ocean Carrier (illustrative)',
+  'Sample Freight Forwarder (illustrative)',
+  'Other',
+];
 
 const DockAppointments: React.FC = () => {
   const { t } = useTranslation();
@@ -527,7 +541,7 @@ const SupplierShipments: React.FC = () => {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<AsnForm>(DEFAULT_FORM);
   const [submitTarget, setSubmitTarget] = useState<ASN | null>(null);
-  const [submitForm, setSubmitForm] = useState({ carrier: 'JNE', trackingNumber: '', eta: '' });
+  const [submitForm, setSubmitForm] = useState({ carrier: 'Sample Courier (illustrative)', trackingNumber: '', eta: '' });
 
   const supplierQuery = useCurrentSupplier();
   const asnsQuery = useASNs();
@@ -578,7 +592,7 @@ const SupplierShipments: React.FC = () => {
     const real = (v: string) => (v && v !== '—' ? v : '');
     setSubmitTarget(asn);
     setSubmitForm({
-      carrier: real(asn.carrier) || 'JNE',
+      carrier: real(asn.carrier) || 'Sample Courier (illustrative)',
       trackingNumber: real(asn.trackingNumber),
       eta: real(asn.eta),
     });

@@ -81,11 +81,11 @@ const SCENARIOS: Record<ScenarioId, ScenarioConfig> = {
         id: 'bot-init',
         from: 'bot',
         content:
-          '🚚 *Pengingat ASN*\nPO-2025-00108 delivery dalam 3 hari.\nFormat ASN:\n*ASN [PO] [tgl kirim] [carrier] [resi]*\n\nContoh:\nASN PO-00108 2026-04-12 JNE JNE123456',
+          '🚚 *Pengingat ASN*\nPO-2025-00108 delivery dalam 3 hari.\nFormat ASN:\n*ASN [PO] [tgl kirim] [carrier] [resi]*\n\nContoh:\nASN PO-00108 2026-04-12 SampleCourier SMPL123456',
         time: '09:00',
       },
     ],
-    inputDefault: 'ASN PO-00108 2026-04-12 JNE JNE123456',
+    inputDefault: 'ASN PO-00108 2026-04-12 SampleCourier SMPL123456',
   },
   inventory: {
     label: 'Update Inventory',
@@ -141,7 +141,7 @@ const BOT_REPLIES: Record<ScenarioId, Record<string, string>> = {
   },
   asn: {
     default:
-      '✅ *ASN Diterima!*\nASN-2026-001 dibuat otomatis.\n🚚 Carrier: JNE\n📋 Resi: JNE123456\n📅 ETA: 12 Apr 2026\n\n*Slot dock:* Dock 1 — 09:00 WIB NDC Jatake 6\nMohon tiba 15 menit lebih awal. 🙏',
+      '✅ *ASN Diterima!*\nASN-2026-001 dibuat otomatis.\n🚚 Carrier: Sample Courier\n📋 Resi: SMPL123456\n📅 ETA: 12 Apr 2026\n\n*Slot dock:* Dock 1 — 09:00 WIB NDC Jatake 6\nMohon tiba 15 menit lebih awal. 🙏',
   },
   inventory: {
     default:
@@ -729,8 +729,8 @@ const EmailBody: React.FC<{
         <div className={cardCls}>
           <div className="grid grid-cols-1 gap-3">
             {[
-              ['Carrier', 'JNE'],
-              ['Tracking Number', 'JNE123456'],
+              ['Carrier', 'Sample Courier'],
+              ['Tracking Number', 'SMPL123456'],
               ['Ship Date', '12 Apr 2026'],
             ].map(([k, v]) => (
               <div key={k}>
