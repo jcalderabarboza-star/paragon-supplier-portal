@@ -455,11 +455,13 @@ describe('H2 — WIRED, and the prose parse is GONE', () => {
     // why it is out of H2's scope; it is still a prose test over a cert string,
     // which is why it is NAMED here rather than excluded by a cleverer regex.
     // Line moved 213 → 220 at D-CENSUS-8 (the page gained a ProvenanceMarker import
-    // and the endorsement-retraction comment above the card's brand chips). The
-    // filter itself is untouched — same expression, same file, same reason it is
-    // out of scope. The address is re-pinned rather than loosened: an exact set of
+    // and the endorsement-retraction comment above the card's brand chips), then
+    // 220 → 214 at PF-2a, when `DISCOVERY-ENDORSEMENT-01` deleted the whole brand
+    // block those chips lived in. Both shifts are the same expression moving under
+    // an unrelated edit: same file, same line of code, same reason it is out of
+    // scope. The address is re-pinned rather than loosened: an exact set of
     // one is the whole point, and a line-number shift is cheap to re-read.
-    expect(offenders).toEqual(['/src/pages-v2/BuyerDiscovery.tsx:220']);
+    expect(offenders).toEqual(['/src/pages-v2/BuyerDiscovery.tsx:214']);
 
     // The two that DID die in this batch, asserted by absence at their own
     // addresses rather than trusted to the count above.

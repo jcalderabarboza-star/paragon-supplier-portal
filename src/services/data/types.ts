@@ -863,7 +863,16 @@ export interface GlobalSupplier {
   region: string;
   categories: string[];
   certifications: string[];
-  validatedBy: string[];
+  // ⚠️ `validatedBy: string[]` WAS HERE AND IS DELETED, NOT RENAMED
+  // (`DISCOVERY-ENDORSEMENT-01`, reclassified as legal exposure). It carried a
+  // list of named corporations said to have vetted this supplier. The portal
+  // verifies nothing of the kind, so the field could only ever assert what it
+  // could not back — and no marker, pill or disclaimer fixes a statement made on
+  // a third party's behalf. Substituting invented brand names was considered and
+  // refused: it relocates the fabrication rather than removing it, and the same
+  // page already set the precedent one field over (the market-intel source
+  // attributions were DELETED, not relabelled). The field returns if and when a
+  // verification source exists to back it; until then, honest silence.
   matchScore: number;
   description: string;
   employees: string;

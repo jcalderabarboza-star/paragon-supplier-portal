@@ -5,6 +5,21 @@
 // External marketplace entities (global suppliers, recommendations,
 // qualification pipeline, market intel, single-source gaps) — not scoped
 // to a single supplier; the IDs are marketplace IDs, not internal sup-* IDs.
+//
+// ── ⚠️ `validatedBy` IS DELETED — `DISCOVERY-ENDORSEMENT-01` ────────────────
+//   Eight rows each carried a list of named corporations asserted to have vetted
+//   the supplier. Deleted outright, not renamed to invented brands: a fabricated
+//   endorsement stays fabricated when the endorser is made up, and the same page
+//   already deleted (rather than relabelled) its invented market-intel source
+//   attributions. See the note on `GlobalSupplier` in `services/data/types.ts`.
+//
+// ── ⚠️ THE COMPANIES NAMED HERE ARE REAL, AND THAT IS FILED, NOT FIXED ──────
+//   `DISCOVERY-REAL-SUBJECTS-01` (OPEN). Every `name` below is a real, trading
+//   corporation, and each carries fabricated attributes — `matchScore`,
+//   `description` superlatives, qualification and risk rows. The endorsement
+//   ruling was written as *real brands vetting fictional suppliers*; the fixture
+//   says otherwise, so the objects are real too. Widening the remedy to the
+//   supplier identities is an operator ruling and is NOT taken here.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type {
@@ -20,7 +35,6 @@ export const GLOBAL_SUPPLIERS: GlobalSupplier[] = [
     id: 'gs-001', name: 'Givaudan SA', country: 'Switzerland', flag: '🇨🇭', region: 'Europe',
     categories: ['Fragrance', 'Flavor', 'Active Ingredient'],
     certifications: ['ISO 9001', 'ISO 14001', 'Halal MUI', 'COSMOS', 'RSPO'],
-    validatedBy: ["L'Oréal", 'Unilever', 'P&G', 'Shiseido', 'LVMH'],
     matchScore: 96, employees: '16,000+', founded: '1895',
     description: "World's largest fragrance and flavor company. Supplies to all major global beauty brands. Strong halal portfolio with dedicated Islamic certification team.",
     halalCertified: true, alreadyInNetwork: true,
@@ -29,7 +43,6 @@ export const GLOBAL_SUPPLIERS: GlobalSupplier[] = [
     id: 'gs-002', name: 'DSM-Firmenich', country: 'Netherlands', flag: '🇳🇱', region: 'Europe',
     categories: ['Active Ingredient', 'Fragrance', 'Vitamin'],
     certifications: ['ISO 9001', 'GMP', 'Halal JAKIM', 'COSMOS Organic'],
-    validatedBy: ["L'Oréal", 'Estée Lauder', 'Beiersdorf', 'Henkel'],
     matchScore: 91, employees: '28,000+', founded: '2023',
     description: 'Global leader in vitamins, active ingredients, and fragrances. JAKIM halal certified for SEA markets. Strong sustainability credentials aligned with Paragon ESG goals.',
     halalCertified: true, alreadyInNetwork: false,
@@ -38,7 +51,6 @@ export const GLOBAL_SUPPLIERS: GlobalSupplier[] = [
     id: 'gs-003', name: 'Ashland Global Holdings', country: 'United States', flag: '🇺🇸', region: 'Americas',
     categories: ['Active Ingredient', 'Raw Material', 'Specialty Chemical'],
     certifications: ['ISO 9001', 'GMP', 'RSPO', 'Halal IFANCA'],
-    validatedBy: ['P&G', 'Unilever', 'Colgate-Palmolive', 'Johnson & Johnson'],
     matchScore: 87, employees: '4,300+', founded: '1924',
     description: 'Specialty chemical company supplying personal care actives globally. IFANCA halal certified portfolio covering emollients, thickeners, and conditioning agents.',
     halalCertified: true, alreadyInNetwork: false,
@@ -47,7 +59,6 @@ export const GLOBAL_SUPPLIERS: GlobalSupplier[] = [
     id: 'gs-004', name: 'Croda International', country: 'United Kingdom', flag: '🇬🇧', region: 'Europe',
     categories: ['Active Ingredient', 'Raw Material', 'Emollient'],
     certifications: ['ISO 9001', 'ISO 14001', 'Halal MUI', 'COSMOS', 'NATRUE'],
-    validatedBy: ["L'Oréal", 'Shiseido', 'Amorepacific', 'Beiersdorf', 'LVMH'],
     matchScore: 89, employees: '6,000+', founded: '1925',
     description: 'Premium specialty chemical supplier with strong halal and natural credentials. MUI certified. Key supplier to Asian beauty brands. Extensive portfolio for skin care actives.',
     halalCertified: true, alreadyInNetwork: false,
@@ -56,7 +67,6 @@ export const GLOBAL_SUPPLIERS: GlobalSupplier[] = [
     id: 'gs-005', name: 'PT Indesso Aroma', country: 'Indonesia', flag: '🇮🇩', region: 'Asia Pacific',
     categories: ['Fragrance', 'Natural Extract', 'Essential Oil'],
     certifications: ['BPJPH Halal', 'ISO 9001', 'RSPO', 'COSMOS Natural'],
-    validatedBy: ['Unilever Indonesia', 'Wings Group', 'Indofood'],
     matchScore: 93, employees: '500+', founded: '1968',
     description: "Indonesia's leading fragrance house. BPJPH halal certified. Deep knowledge of Indonesian consumer preferences. 7-day lead time vs 35 days from Europe. Reduces Suez Canal exposure.",
     halalCertified: true, alreadyInNetwork: false,
@@ -65,7 +75,6 @@ export const GLOBAL_SUPPLIERS: GlobalSupplier[] = [
     id: 'gs-006', name: 'Zhejiang NHU Co. Ltd.', country: 'China', flag: '🇨🇳', region: 'Asia Pacific',
     categories: ['Vitamin', 'Active Ingredient', 'Specialty Chemical'],
     certifications: ['ISO 9001', 'GMP', 'Halal BPJPH', 'USP Grade'],
-    validatedBy: ['DSM', 'BASF', 'Korean Beauty Brands', 'Japanese OEM'],
     matchScore: 82, employees: '12,000+', founded: '2000',
     description: "World's largest Vitamin E and Niacinamide producer. Competitive pricing 20-30% below European alternatives. BPJPH halal certified. Key supplier to Korean and Japanese beauty industry.",
     halalCertified: true, alreadyInNetwork: true,
@@ -74,7 +83,6 @@ export const GLOBAL_SUPPLIERS: GlobalSupplier[] = [
     id: 'gs-007', name: 'Evonik Industries AG', country: 'Germany', flag: '🇩🇪', region: 'Europe',
     categories: ['Active Ingredient', 'Specialty Chemical', 'Silicone'],
     certifications: ['ISO 9001', 'ISO 14001', 'GMP', 'Halal IFANCA'],
-    validatedBy: ["L'Oréal", 'Henkel', 'Beiersdorf', 'P&G', 'Unilever'],
     matchScore: 84, employees: '34,000+', founded: '2007',
     description: 'Specialty chemicals leader with strong personal care portfolio. IFANCA halal certified silicones and actives. Established relationship with Paragon for active ingredients.',
     halalCertified: true, alreadyInNetwork: true,
@@ -83,7 +91,6 @@ export const GLOBAL_SUPPLIERS: GlobalSupplier[] = [
     id: 'gs-008', name: 'Univar Solutions', country: 'Malaysia', flag: '🇲🇾', region: 'Asia Pacific',
     categories: ['Raw Material', 'Active Ingredient', 'Distribution'],
     certifications: ['ISO 9001', 'Halal JAKIM', 'GDP Certified'],
-    validatedBy: ['BASF', 'Evonik', 'DSM', 'Croda', 'Ashland'],
     matchScore: 85, employees: '9,800+', founded: '1966',
     description: 'Global chemical distributor with Malaysia hub covering SEA. JAKIM halal certified. Single-point access to 100+ global chemical suppliers without direct import complexity.',
     halalCertified: true, alreadyInNetwork: false,

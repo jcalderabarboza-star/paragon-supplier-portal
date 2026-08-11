@@ -72,13 +72,18 @@ const QUAL_VARIANT: Record<QualificationItem['status'], 'neutral' | 'warning' | 
   'Blocked': 'danger',
 };
 
-const MAJOR_BRANDS = ["L'Oréal", 'Unilever', 'P&G', 'Shiseido', 'LVMH', 'Estée Lauder', 'Beiersdorf'];
+// ⚠️ `MAJOR_BRANDS` WAS HERE — seven real corporations, backing a "Claims a
+// major brand" filter over `validatedBy` (`DISCOVERY-ENDORSEMENT-01`). The
+// filter is gone with the field it filtered. It was the aggravator that made the
+// endorsement worse than decoration: a filterable attribute is one the product
+// invites a buyer to shortlist on, so the surface did not merely display the
+// fabrication, it asked to be trusted with it.
 
 type TabKey = 'search' | 'recommendations' | 'qualification' | 'intelligence';
 type Region = 'All' | 'Asia Pacific' | 'Europe' | 'Americas' | 'Middle East';
 type Category = 'All' | 'Fragrance' | 'Active Ingredient' | 'Raw Material' | 'Packaging' | 'Vitamin' | 'Emollient';
 type SortKey = 'relevance' | 'grade' | 'otif' | 'compliance';
-type ToggleId = 'halal' | 'major';
+type ToggleId = 'halal';
 
 // Filter/sort option labels are built from t() inside the component so they
 // re-render on locale change. The `id` values stay enum literals for logic.
@@ -109,7 +114,6 @@ const buildSortOptions = (t: TFunction): { id: SortKey; label: string }[] => [
 
 const buildToggleOptions = (t: TFunction): { id: ToggleId; label: string }[] => [
   { id: 'halal', label: t('discovery.toggle.halal') },
-  { id: 'major', label: t('discovery.toggle.major') },
 ];
 
 const scoreColorClass = (score: number): string => {
@@ -176,24 +180,14 @@ const GlobalSupplierCard: React.FC<{
         {supplier.description}
       </p>
 
-      <div>
-        <div className="text-label text-text-tertiary uppercase mb-2">
-          {t('discovery.card.validatedBy')}
-        </div>
-        <div className="flex flex-wrap gap-1.5">
-          {/* D-CENSUS-8 · DISCOVERY-ENDORSEMENT-01 — the ✓ is GONE. A check mark beside
-              a real corporation's name is an assertion that the corporation vetted
-              this supplier; nothing in the portal checks that, and the suppliers here
-              are fictional. The brand names themselves remain in the fixture and are
-              filed for a fixture batch — retracting the ASSERTION is what marking can
-              honestly do; inventing different brand names is not marking. */}
-          {supplier.validatedBy.map((brand) => (
-            <StatusPill key={brand} variant="neutral">
-              {brand}
-            </StatusPill>
-          ))}
-        </div>
-      </div>
+      {/* DISCOVERY-ENDORSEMENT-01 — the whole "reference brands" block is GONE.
+          D-CENSUS-8 removed the ✓ and retracted the label to "claimed
+          (unverified)", which was the most marking could honestly do while the
+          names stayed. It was not enough, and the reason is the ruling: no
+          marker, pill or disclaimer makes a statement on a third party's behalf
+          permissible. Disclosure is a remedy for overstatement, not for speaking
+          for someone else. The block is deleted rather than re-populated with
+          invented brands — see `services/data/types.ts`. */}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -421,7 +415,6 @@ const BuyerDiscovery: React.FC = () => {
   const [sortBy, setSortBy] = useState<SortKey>('relevance');
 
   const halalOnly = toggles.includes('halal');
-  const majorOnly = toggles.includes('major');
 
   const onToggle = (id: ToggleId) => {
     setToggles((prev) =>
@@ -447,8 +440,6 @@ const BuyerDiscovery: React.FC = () => {
       if (halalOnly && !s.halalCertified) return false;
       if (region !== 'All' && s.region !== region) return false;
       if (category !== 'All' && !s.categories.includes(category)) return false;
-      if (majorOnly && !s.validatedBy.some((b) => MAJOR_BRANDS.includes(b)))
-        return false;
       if (search) {
         const words = search
           .toLowerCase()
@@ -466,7 +457,7 @@ const BuyerDiscovery: React.FC = () => {
       }
       return true;
     });
-  }, [GLOBAL_SUPPLIERS, search, region, category, halalOnly, majorOnly]);
+  }, [GLOBAL_SUPPLIERS, search, region, category, halalOnly]);
 
   const sorted = useMemo(() => {
     const list = [...filtered];
