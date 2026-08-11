@@ -17,13 +17,13 @@
 //   · Each agreement's `contractId` maps to a REAL, openable mockContracts entry
 //     whose `supplierId` matches — so the roll-up's contract deep-link works. The
 //     mapping (verified against src/data/mockContracts.ts):
-//        sa-1001 → ctr-010 / sup-001 (PT Ecogreen, Raw Material)
-//        sa-1002 → ctr-004 / sup-005 (BASF, Active Ingredient)
-//        sa-1003 → ctr-006 / sup-008 (PT Indo Karton, Packaging)
-//        sa-1004 → ctr-008 / sup-009 (Zhejiang NHU, Active Ingredient)
-//        sa-1005 → ctr-002 / sup-003 (Givaudan, Fragrance)
-//        sa-1006 → ctr-005 / sup-004 (Firmenich, Fragrance)
-//        sa-1007 → ctr-007 / sup-006 (Evonik, NDA) — the firm/hard missed anchor
+//        sa-1001 → ctr-010 / sup-001 (PT Sample Oleochemicals, Raw Material)
+//        sa-1002 → ctr-004 / sup-005 (Sample Personal Care, Active Ingredient)
+//        sa-1003 → ctr-006 / sup-008 (PT Sample Carton, Packaging)
+//        sa-1004 → ctr-008 / sup-009 (Sample Vitamins, Active Ingredient)
+//        sa-1005 → ctr-002 / sup-003 (Sample Fragrance House, Fragrance)
+//        sa-1006 → ctr-005 / sup-004 (Sample Aromatics, Fragrance)
+//        sa-1007 → ctr-007 / sup-006 (Sample Specialty Chemicals, NDA) — the firm/hard missed anchor
 //     ctr-001 is deliberately left agreement-free (the scope test's "empty"
 //     example). ctr-003 / sa-0001 stays PRISTINE and UNTOUCHED.
 //   · All demo shipments are `to-paragon` + `Arrived` (the only drawdown
@@ -129,7 +129,7 @@ function demoShip(
   };
 }
 
-// ── sa-1001 — MISSED. sup-001 (Ecogreen) / ctr-010, RM-EMUL-3310, FRC, Case B.
+// ── sa-1001 — MISSED. sup-001 (Sample Oleochemicals) / ctr-010, RM-EMUL-3310, FRC, Case B.
 //    6 monthly from 2026-04-01; seqs 1–3 released, NO shipments → all three miss.
 const SA_1001 = buildAgreement({
   agreementId: 'sa-1001',
@@ -146,7 +146,7 @@ const SA_1001 = buildAgreement({
   releaseSeqs: [1, 2, 3],
 });
 
-// ── sa-1002 — LATE. sup-005 (BASF) / ctr-004, AI-NIAC-6601, FRC, Case B.
+// ── sa-1002 — LATE. sup-005 (Sample Personal Care) / ctr-004, AI-NIAC-6601, FRC, Case B.
 //    4 monthly from 2026-06-01; seqs 1–2 released. seq1 delivered 4d late, seq2 on time.
 const SA_1002 = buildAgreement({
   agreementId: 'sa-1002',
@@ -163,7 +163,7 @@ const SA_1002 = buildAgreement({
   releaseSeqs: [1, 2],
 });
 
-// ── sa-1003 — ON-TRACK. sup-008 (Indo Karton) / ctr-006, PK-PETB-8810, JIT, Case B.
+// ── sa-1003 — ON-TRACK. sup-008 (Sample Carton) / ctr-006, PK-PETB-8810, JIT, Case B.
 //    3 monthly from 2026-05-01; all released, all delivered on time.
 const SA_1003 = buildAgreement({
   agreementId: 'sa-1003',
@@ -180,7 +180,7 @@ const SA_1003 = buildAgreement({
   releaseSeqs: [1, 2, 3],
 });
 
-// ── sa-1004 — PENDING (due-soon). sup-009 (Zhejiang) / ctr-008, AI-NIAC-6601, FRC, Case C.
+// ── sa-1004 — PENDING (due-soon). sup-009 (Sample Vitamins) / ctr-008, AI-NIAC-6601, FRC, Case C.
 //    4 monthly from 2026-07-01; seqs 1–3 released. 1–2 delivered, seq3 (09-01) still pending.
 const SA_1004 = buildAgreement({
   agreementId: 'sa-1004',
@@ -197,7 +197,7 @@ const SA_1004 = buildAgreement({
   releaseSeqs: [1, 2, 3],
 });
 
-// ── sa-1005 — ALL-DRAFT. sup-003 (Givaudan) / ctr-002, RM-EMUL-3320, JIT, Case B.
+// ── sa-1005 — ALL-DRAFT. sup-003 (Sample Fragrance House) / ctr-002, RM-EMUL-3320, JIT, Case B.
 //    4 monthly from 2026-09-01; nothing released (a freshly-drafted agreement).
 const SA_1005 = buildAgreement({
   agreementId: 'sa-1005',
@@ -214,7 +214,7 @@ const SA_1005 = buildAgreement({
   releaseSeqs: [],
 });
 
-// ── sa-1006 — MISSED+LATE mix. sup-004 (Firmenich) / ctr-005, RM-EMUL-3320, FRC, Case B.
+// ── sa-1006 — MISSED+LATE mix. sup-004 (Sample Aromatics) / ctr-005, RM-EMUL-3320, FRC, Case B.
 //    4 monthly from 2026-06-01; seqs 1–3 released. seq1 late, seq2 missed, seq3 on time.
 const SA_1006 = buildAgreement({
   agreementId: 'sa-1006',
@@ -231,7 +231,7 @@ const SA_1006 = buildAgreement({
   releaseSeqs: [1, 2, 3],
 });
 
-// ── sa-1007 — MISSED, FIRM. sup-006 (Evonik) / ctr-007, RM-EMUL-3310, JIT, Case B.
+// ── sa-1007 — MISSED, FIRM. sup-006 (Sample Specialty Chemicals) / ctr-007, RM-EMUL-3310, JIT, Case B.
 //    3 monthly from 2026-05-01; seqs 1–2 released, NO shipments → both miss. Because
 //    the release type is JIT (→ commitmentClass 'firm'), the chase engine escalates
 //    these misses HARD (Urgent) — the one firm/hard chase the fleet needs so the

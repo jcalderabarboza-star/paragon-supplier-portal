@@ -172,7 +172,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     halalApplicable: 'UNDETERMINED',
   },
   // SDC-2b (F-1a) — second packaging material so the seeded persona (sup-007,
-  // PT Berlina Packaging) carries a semi-firm line on its own material×period
+  // PT Sample Packaging) carries a semi-firm line on its own material×period
   // combo (sharing sup-005's PET 2026-09 combo would over-allocate R2's frozen
   // total, invariant #4).
   'PK-CAPF-8820': {
@@ -656,12 +656,12 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     // ⚠️ THE WEAKEST ROW IN THE SET, AND THE PROVENANCE SAYS SO RATHER THAN
     // DRESSING IT UP. Its own description is the ONLY NON-CONTRADICTED SOURCE.
     // Both of the other things the tree says about `MAT-88201` point ELSEWHERE:
-    //   · its `poReference` (pre-5b-i `PO-2025-00112`) is Givaudan's, ordering
+    //   · its `poReference` (pre-5b-i `PO-2025-00112`) is Sample Fragrance House's, ordering
     //     `FR-MKOV-5520` and `FR-WARD-4430`;
-    //   · its `supplierId` is sup-007, PT Berlina PACKAGING, whose only master
+    //   · its `supplierId` is sup-007, PT Sample Packaging PACKAGING, whose only master
     //     relationships are `PK-PETB-8810` and `PK-CAPF-8820`.
     // Operator ruling R-3 refused to retire it onto `FR-WARD-4440` (*Wardah EDP
-    // Parfum Concentrate — Rose & Oud*, sup-004 Firmenich): doing so would
+    // Parfum Concentrate — Rose & Oud*, sup-004 Sample Aromatics): doing so would
     // assert that a packaging converter shipped a fragrance house's
     // concentrate. **THE CONTRADICTION IS PART OF THIS ROW'S PROVENANCE AND
     // AUTHORING DOES NOT ERASE IT** — it is asserted, not narrated, in
@@ -769,7 +769,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     //     `BPOM Regulatory`, issued by BPOM, linked to `PO-2025-00131`, which
     //     is this ASN's parent;
     //   · `doc-202` — *REACH Compliance / Safety Data Sheet — Emulgade*, issued
-    //     by **BASF SE Regulatory Affairs**, `linkedTo: 'All emulsifier grades'`.
+    //     by **Sample Personal Care Regulatory Affairs**, `linkedTo: 'All emulsifier grades'`.
     //
     // ⚠️ `bpomApplicable: 'APPLICABLE'` IS A DEVIATION FROM THE CLASS RULE AND
     // IS MEANT TO BE. `provisionalBpomForGroup('MG-02')` returns `UNDETERMINED`
@@ -782,9 +782,9 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     // cannot grow quietly into a second mechanism.
     //
     // AND THE SAME DOCUMENTS SEPARATE IT FROM `RM-EMUL-9410` (*Glyceryl
-    // Stearate SE (**Halal** Emulsifier)*): a BASF/REACH frame with no halal
+    // Stearate SE (**Halal** Emulsifier)*): a Sample Personal Care/REACH frame with no halal
     // certification is not the Indonesian halal-certified emulsifier lane
-    // (`PT Halal Emulsifier Nusantara`, sup-010). Shared substrings — "SE",
+    // (`PT Sample Halal Emulsifiers`, sup-010). Shared substrings — "SE",
     // "emulsifier" — are not shared identity.
     //
     // ⚠️ GROUP: MG-02 *(Emollients / oils / esters)*, which is where the tree's
@@ -809,7 +809,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     // **`50ml` appears NOWHERE ELSE IN THE TREE**, which is why nothing could
     // be retired onto. Volume is specification under D-IDENTITY-GRAIN, the same
     // axis that keeps `PK-PETB-8810` and `PK-PETB-8825` apart.
-    // Supplier corroborates for once: sup-007 (PT Berlina Packaging) is a
+    // Supplier corroborates for once: sup-007 (PT Sample Packaging) is a
     // declared MANUFACTURER of `PK-PETB-8810` and `PK-CAPF-8820`.
     label: 'PET Bottle 50ml Clear',
     materialType: 'VERP',
@@ -868,7 +868,7 @@ export const SUPPLIER_MATERIAL_RELATIONSHIPS: readonly SupplierMaterialRelations
         Object.freeze({ principalId: 'PRIN-OLEO-01', principalLeadTimeDays: 45 }),
       ]),
     }),
-    // SDC-3a — sup-007 (PT Berlina Packaging) makes its own packaging: two
+    // SDC-3a — sup-007 (PT Sample Packaging) makes its own packaging: two
     // manufacturer relationships so the seeded persona passes the declare verb's
     // collaborated-material membership ((i)∪(ii) ruling) on its own materials.
     Object.freeze({

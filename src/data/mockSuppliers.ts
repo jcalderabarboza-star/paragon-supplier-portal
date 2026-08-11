@@ -6,9 +6,37 @@ import {
   ScorecardGrade,
 } from '../types/supplier.types';
 
+// ────────────────────────────────────────────────────────────────────────────
+// ⚠️ EVERY SUPPLIER BELOW IS FICTIONAL — `DISCOVERY-REAL-SUBJECTS-01`, batch A.
+//   This file previously named twelve REAL trading corporations and carried, on
+//   them, fabricated STATUTORY IDENTIFIERS (NPWP-format tax IDs, NIB-format
+//   business registrations), real corporate email domains and websites,
+//   performance grades, ratings, a SUSPENDED status, and a supply-relationship
+//   claim. Names follow the `complianceRegistry.ts` house style — plainly
+//   fictional, unmistakable at a glance. NOT plausible-sounding invented names:
+//   a plausible name reproduces the problem with better luck, because the next
+//   census cannot tell it from a real one and neither can a reader.
+//   `.example` is the RFC 2606-reserved TLD — those domains can never resolve.
+// ────────────────────────────────────────────────────────────────────────────
+
 // Extended with adaptive intelligence profile fields
 export interface SupplierExtended extends Supplier {
   legalName?: string;
+
+  // ── ⚠️ THIS SHAPE IS KNOWN-WRONG AND BOOKED — `SUPPLIER-IDENTITY-BY-JURISDICTION-01`
+  //   Two flat strings only work for ONE jurisdiction. The comments below are
+  //   slash-lists of incompatible document types, which is the defect admitting
+  //   itself: a field named `taxId` cannot say WHICH DOCUMENT it is, WHOSE
+  //   FORMAT it follows, or WHETHER IT IS REQUIRED for that country — and there
+  //   is no correct way at all to fill these two fields for a jurisdiction where
+  //   tax and registration are one document (China USCC, Singapore UEN).
+  //
+  //   Batch A substituted the VALUES and deliberately did NOT restructure: the
+  //   typed, repeatable identity record is the onboarding arc's job. The sample
+  //   values encode which document they stand for (`SAMPLE-NPWP-…`,
+  //   `SAMPLE-NIB-…`) so that model does not have to re-derive it. DO NOT add
+  //   code or tests that assume exactly one tax id and one registration number
+  //   per supplier — widening the model is not A's job, foreclosing it would be.
   taxId?: string;           // NPWP / SIRET / EIN etc.
   businessRegNo?: string;   // NIB / SIRET etc.
   website?: string;
@@ -25,11 +53,11 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-001',
     sapBpNumber: 'BP-10001234',
-    name: 'PT Ecogreen Oleochemicals',
-    legalName: 'PT Ecogreen Oleochemicals Tbk.',
-    taxId: '02.345.678.9-217.000',
-    businessRegNo: '9120100987654',
-    website: 'www.ecogreen-oleo.co.id',
+    name: 'PT Sample Oleochemicals',
+    legalName: 'PT Sample Oleochemicals',
+    taxId: 'SAMPLE-NPWP-0001',
+    businessRegNo: 'SAMPLE-NIB-0001',
+    website: 'www.sample-oleo.example',
     founded: 1995,
     employees: '1,000–2,500',
     annualRevenue: 'Rp 800+ Miliar',
@@ -42,8 +70,8 @@ export const mockSuppliers: SupplierExtended[] = [
     tier: SupplierTier.API,
     status: SupplierStatus.ACTIVE,
     contactName: 'Budi Santoso',
-    email: 'budi.santoso@ecogreen.co.id',
-    contactEmail: 'budi.santoso@ecogreen.co.id',
+    email: 'budi.santoso@sample-oleo.example',
+    contactEmail: 'budi.santoso@sample-oleo.example',
     phone: '+6281298765001',
     contactPhone: '+6281298765001',
     rating: 4.5,
@@ -61,15 +89,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-002',
     sapBpNumber: 'BP-10001235',
-    name: 'PT Musim Mas Specialty Fats',
+    name: 'PT Sample Specialty Fats',
     category: 'Raw Material',
     country: 'ID',
     city: 'Medan',
     tier: SupplierTier.WEB,
     status: SupplierStatus.ACTIVE,
     contactName: 'Ratna Dewi',
-    email: 'ratna.dewi@musimmas.co.id',
-    contactEmail: 'ratna.dewi@musimmas.co.id',
+    email: 'ratna.dewi@sample-fats.example',
+    contactEmail: 'ratna.dewi@sample-fats.example',
     phone: '+6281234567002',
     contactPhone: '+6281234567002',
     rating: 4.2,
@@ -87,15 +115,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-003',
     sapBpNumber: 'BP-10001236',
-    name: 'Givaudan Indonesia Fragrances',
+    name: 'Sample Fragrance House Indonesia',
     category: 'Fragrance',
     country: 'ID',
     city: 'Jakarta',
     tier: SupplierTier.API,
     status: SupplierStatus.ACTIVE,
     contactName: 'Siti Marlina',
-    email: 's.marlina@givaudan.com',
-    contactEmail: 's.marlina@givaudan.com',
+    email: 's.marlina@sample-fragrance.example',
+    contactEmail: 's.marlina@sample-fragrance.example',
     phone: '+6281187654003',
     contactPhone: '+6281187654003',
     rating: 4.7,
@@ -113,15 +141,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-004',
     sapBpNumber: 'BP-10001237',
-    name: 'Firmenich Malaysia Sdn. Bhd.',
+    name: 'Sample Aromatics Sdn. Bhd.',
     category: 'Fragrance',
     country: 'MY',
     city: 'Petaling Jaya',
     tier: SupplierTier.WEB,
     status: SupplierStatus.ACTIVE,
     contactName: 'Ahmad Fauzi',
-    email: 'a.fauzi@firmenich.com.my',
-    contactEmail: 'a.fauzi@firmenich.com.my',
+    email: 'a.fauzi@sample-aromatics.example',
+    contactEmail: 'a.fauzi@sample-aromatics.example',
     phone: '+60112345004',
     contactPhone: '+60112345004',
     rating: 4.3,
@@ -139,15 +167,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-005',
     sapBpNumber: 'BP-10001238',
-    name: 'BASF Personal Care Emulsifiers GmbH',
+    name: 'Sample Personal Care Emulsifiers GmbH',
     category: 'Active Ingredient',
     country: 'DE',
-    city: 'Ludwigshafen',
+    city: 'Frankfurt',
     tier: SupplierTier.API,
     status: SupplierStatus.ACTIVE,
     contactName: 'Klaus Becker',
-    email: 'k.becker@basf.com',
-    contactEmail: 'k.becker@basf.com',
+    email: 'k.becker@sample-personalcare.example',
+    contactEmail: 'k.becker@sample-personalcare.example',
     phone: '+4962158005',
     contactPhone: '+4962158005',
     rating: 4.6,
@@ -165,15 +193,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-006',
     sapBpNumber: 'BP-10001239',
-    name: 'Evonik Specialty Chemicals France',
+    name: 'Sample Specialty Chemicals France',
     category: 'Active Ingredient',
     country: 'FR',
     city: 'Paris',
     tier: SupplierTier.WEB,
     status: SupplierStatus.ACTIVE,
     contactName: 'Claire Dupont',
-    email: 'c.dupont@evonik.com',
-    contactEmail: 'c.dupont@evonik.com',
+    email: 'c.dupont@sample-specialty.example',
+    contactEmail: 'c.dupont@sample-specialty.example',
     phone: '+33140556006',
     contactPhone: '+33140556006',
     rating: 4.1,
@@ -191,26 +219,26 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-007',
     sapBpNumber: 'BP-10001240',
-    name: 'PT Berlina Packaging Indonesia',
-    legalName: 'PT Berlina Tbk.',
-    taxId: '01.234.567.8-041.000',
-    businessRegNo: '9120300123456',
-    website: 'www.berlina.co.id',
+    name: 'PT Sample Packaging Indonesia',
+    legalName: 'PT Sample Packaging',
+    taxId: 'SAMPLE-NPWP-0007',
+    businessRegNo: 'SAMPLE-NIB-0007',
+    website: 'www.sample-packaging.example',
     founded: 2005,
     employees: '250–500',
     annualRevenue: 'Rp 85–120 Miliar',
     shipFromLocations: ['Tangerang, Banten', 'Cikarang, Jawa Barat'],
     paymentTerms: 'Net 30',
     incoterms: 'FCA Tangerang',
-    intelligenceNote: 'Primary packaging supplier for Wardah and Emina lines. Capacity expansion planned Q3 2026.',
+    intelligenceNote: 'Primary packaging supplier for two flagship cosmetics lines. Capacity expansion planned Q3 2026.',
     category: 'Packaging',
     country: 'ID',
     city: 'Tangerang',
     tier: SupplierTier.WHATSAPP,
     status: SupplierStatus.ACTIVE,
     contactName: 'Hendra Wijaya',
-    email: 'hendra.wijaya@berlina.co.id',
-    contactEmail: 'hendra.wijaya@berlina.co.id',
+    email: 'hendra.wijaya@sample-packaging.example',
+    contactEmail: 'hendra.wijaya@sample-packaging.example',
     phone: '+6281398765007',
     contactPhone: '+6281398765007',
     rating: 3.8,
@@ -228,15 +256,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-008',
     sapBpNumber: 'BP-10001241',
-    name: 'PT Indo Karton Packaging',
+    name: 'PT Sample Carton Packaging',
     category: 'Packaging',
     country: 'ID',
     city: 'Surabaya',
     tier: SupplierTier.WHATSAPP,
     status: SupplierStatus.ACTIVE,
     contactName: 'Andi Prasetyo',
-    email: 'andi.prasetyo@indokarton.co.id',
-    contactEmail: 'andi.prasetyo@indokarton.co.id',
+    email: 'andi.prasetyo@sample-carton.example',
+    contactEmail: 'andi.prasetyo@sample-carton.example',
     phone: '+6285712345008',
     contactPhone: '+6285712345008',
     rating: 3.5,
@@ -254,15 +282,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-009',
     sapBpNumber: 'BP-10001242',
-    name: 'Zhejiang NHU Vitamins Co.',
+    name: 'Sample Vitamins Co.',
     category: 'Active Ingredient',
     country: 'CN',
     city: 'Hangzhou',
     tier: SupplierTier.WEB,
     status: SupplierStatus.ACTIVE,
     contactName: 'Li Wei',
-    email: 'li.wei@zj-nhu.com',
-    contactEmail: 'li.wei@zj-nhu.com',
+    email: 'li.wei@sample-vitamins.example',
+    contactEmail: 'li.wei@sample-vitamins.example',
     phone: '+8657188009009',
     contactPhone: '+8657188009009',
     rating: 4.0,
@@ -280,15 +308,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-010',
     sapBpNumber: 'BP-10001243',
-    name: 'PT Halal Emulsifier Nusantara',
+    name: 'PT Sample Halal Emulsifiers',
     category: 'Raw Material',
     country: 'ID',
     city: 'Bogor',
     tier: SupplierTier.WHATSAPP,
     status: SupplierStatus.ONBOARDING,
     contactName: 'Fajar Nugroho',
-    email: 'fajar.nugroho@henusan.co.id',
-    contactEmail: 'fajar.nugroho@henusan.co.id',
+    email: 'fajar.nugroho@sample-emulsifiers.example',
+    contactEmail: 'fajar.nugroho@sample-emulsifiers.example',
     phone: '+6281567890010',
     contactPhone: '+6281567890010',
     rating: 2.5,
@@ -306,15 +334,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-011',
     sapBpNumber: 'BP-10001244',
-    name: 'Anhui Salicylics & Niacinamide Ltd.',
+    name: 'Sample Salicylics & Niacinamide Ltd.',
     category: 'Active Ingredient',
     country: 'CN',
     city: 'Hefei',
     tier: SupplierTier.WEB,
     status: SupplierStatus.ONBOARDING,
     contactName: 'Zhang Mei',
-    email: 'zhang.mei@anhui-sal.com',
-    contactEmail: 'zhang.mei@anhui-sal.com',
+    email: 'zhang.mei@sample-salicylics.example',
+    contactEmail: 'zhang.mei@sample-salicylics.example',
     phone: '+8655191011011',
     contactPhone: '+8655191011011',
     rating: 3.5,
@@ -332,15 +360,15 @@ export const mockSuppliers: SupplierExtended[] = [
   {
     id: 'sup-012',
     sapBpNumber: 'BP-10001245',
-    name: 'Caelo PET Bottle Manufacturer GmbH',
+    name: 'Sample PET Bottle Manufacturer GmbH',
     category: 'Packaging',
     country: 'DE',
-    city: 'Hilden',
+    city: 'Duesseldorf',
     tier: SupplierTier.API,
     status: SupplierStatus.SUSPENDED,
     contactName: 'Petra Schulz',
-    email: 'p.schulz@caelo.de',
-    contactEmail: 'p.schulz@caelo.de',
+    email: 'p.schulz@sample-pet.example',
+    contactEmail: 'p.schulz@sample-pet.example',
     phone: '+4921038912012',
     contactPhone: '+4921038912012',
     rating: 1.5,

@@ -92,7 +92,7 @@ export const mockObligations: ContractObligation[] = [
     recurrence: 'Annual',
   },
 
-  // ── ctr-002 (Givaudan Fragrance Framework) — 4 obligations ───────────────
+  // ── ctr-002 (Sample Fragrance House Fragrance Framework) — 4 obligations ───────────────
   {
     id: 'obl-002a',
     contractId: 'ctr-002',
@@ -138,7 +138,7 @@ export const mockObligations: ContractObligation[] = [
     recurrence: 'Annual',
   },
 
-  // ── ctr-003 (PT Berlina PET Bottle) — 3 obligations ──────────────────────
+  // ── ctr-003 (PT Sample Packaging PET Bottle) — 3 obligations ──────────────────────
   {
     id: 'obl-003a',
     contractId: 'ctr-003',
@@ -174,7 +174,7 @@ export const mockObligations: ContractObligation[] = [
     recurrence: 'Quarterly',
   },
 
-  // ── ctr-004 (BASF Pricing Agreement) — 4 obligations ─────────────────────
+  // ── ctr-004 (Sample Personal Care Pricing Agreement) — 4 obligations ─────────────────────
   {
     id: 'obl-004a',
     contractId: 'ctr-004',
@@ -222,7 +222,7 @@ export const mockObligations: ContractObligation[] = [
     recurrence: 'Annual',
   },
 
-  // ── ctr-005 (Firmenich Quality Audit) — 5 obligations ────────────────────
+  // ── ctr-005 (Sample Aromatics Quality Audit) — 5 obligations ────────────────────
   {
     id: 'obl-005a',
     contractId: 'ctr-005',
@@ -278,7 +278,7 @@ export const mockObligations: ContractObligation[] = [
     recurrence: 'Annual',
   },
 
-  // ── ctr-006 (Indo Karton Secondary Packaging) — 3 obligations ────────────
+  // ── ctr-006 (Sample Carton Secondary Packaging) — 3 obligations ────────────
   {
     id: 'obl-006a',
     contractId: 'ctr-006',
@@ -313,7 +313,7 @@ export const mockObligations: ContractObligation[] = [
     recurrence: 'Quarterly',
   },
 
-  // ── ctr-007 (Evonik NDA) — 2 obligations ─────────────────────────────────
+  // ── ctr-007 (Sample Specialty Chemicals NDA) — 2 obligations ─────────────────────────────────
   {
     id: 'obl-007a',
     contractId: 'ctr-007',
@@ -337,7 +337,7 @@ export const mockObligations: ContractObligation[] = [
     recurrence: 'Annual',
   },
 
-  // ── ctr-008 (Zhejiang NHU Service) — 4 obligations ───────────────────────
+  // ── ctr-008 (Sample Vitamins Service) — 4 obligations ───────────────────────
   {
     id: 'obl-008a',
     contractId: 'ctr-008',
@@ -384,7 +384,7 @@ export const mockObligations: ContractObligation[] = [
     recurrence: 'Annual',
   },
 
-  // ── ctr-009 (Musim Mas Pricing — Expired) — 3 obligations ────────────────
+  // ── ctr-009 (Sample Specialty Fats Pricing — Expired) — 3 obligations ────────────────
   {
     id: 'obl-009a',
     contractId: 'ctr-009',
@@ -419,7 +419,7 @@ export const mockObligations: ContractObligation[] = [
     completedDate: '2026-02-12',
   },
 
-  // ── ctr-010 (Ecogreen Renewed) — 4 obligations ───────────────────────────
+  // ── ctr-010 (Sample Oleochemicals Renewed) — 4 obligations ───────────────────────────
   {
     id: 'obl-010a',
     contractId: 'ctr-010',
@@ -464,7 +464,7 @@ export const mockObligations: ContractObligation[] = [
     owner: 'Buyer',
   },
 
-  // ── ctr-012 (Caelo Terminated) — 3 obligations ───────────────────────────
+  // ── ctr-012 (Sample PET Terminated) — 3 obligations ───────────────────────────
   {
     id: 'obl-012a',
     contractId: 'ctr-012',

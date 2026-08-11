@@ -14,7 +14,7 @@ describe('BuyerAnalytics — four honest states', () => {
       await screen.findByText('Analytics & Procurement Intelligence'),
     ).toBeInTheDocument();
     // A performance-table row proves the supplier-performance read resolved.
-    expect(await screen.findByText('Zhejiang NHU Vitamins Co.')).toBeInTheDocument();
+    expect(await screen.findByText('Sample Vitamins Co.')).toBeInTheDocument();
   });
 
   it('loading: shows LoadingState while the reads are pending', () => {

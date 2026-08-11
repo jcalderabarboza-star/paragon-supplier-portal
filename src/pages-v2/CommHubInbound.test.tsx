@@ -13,7 +13,7 @@ import i18n from '../lib/i18n';
 // before confirm; supplierId comes from the identity, never the message; the
 // wrapper is stripped so the spine gets bare rows; honest silence on refusal.
 //
-// Default persona is sup-007 (PT Berlina) — it collaborates PK-PETB-8810 (uom
+// Default persona is sup-007 (PT Sample Packaging) — it collaborates PK-PETB-8810 (uom
 // PCS) + PK-CAPF-8820, so a STOK reply for those declares against a real material.
 // ────────────────────────────────────────────────────────────────────────────
 

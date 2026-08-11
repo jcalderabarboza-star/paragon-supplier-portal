@@ -27,7 +27,7 @@ function deliveryStub(views: ReturnType<typeof deriveAgreementView>[]): IDeliver
 }
 
 const demoView = () =>
-  deriveAgreementView(SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS, SDC_SIMULATED_NOW, 'PT Berlina');
+  deriveAgreementView(SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS, SDC_SIMULATED_NOW, 'PT Sample Packaging');
 
 describe('MockChaseService.getUnifiedChase — composition', () => {
   it('folds both families into per-supplier views (commitment-only + data-only)', async () => {

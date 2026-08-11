@@ -128,7 +128,7 @@ describe('SupplierDeliveryAgreements — own-facts-only read-only mirror', () =>
 
 describe('shapeObligations (SDC-5e) — own-facing, drift-omitted', () => {
   const demoView = () =>
-    deriveAgreementView(SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS, SDC_SIMULATED_NOW, 'PT Berlina');
+    deriveAgreementView(SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS, SDC_SIMULATED_NOW, 'PT Sample Packaging');
 
   it('maps sa-0002 into own-facing overdue + upcoming, OVERDUE-first, drift dropped', () => {
     const obligations = shapeObligations([demoView()], SDC_SIMULATED_NOW);
@@ -145,7 +145,7 @@ describe('shapeObligations (SDC-5e) — own-facing, drift-omitted', () => {
   });
 
   it('an all-draft agreement (ctr-003) yields NO obligations (the honest all-clear)', () => {
-    const view = deriveAgreementView(SCHEDULING_AGREEMENT_CTR003, [], SDC_SIMULATED_NOW, 'PT Berlina');
+    const view = deriveAgreementView(SCHEDULING_AGREEMENT_CTR003, [], SDC_SIMULATED_NOW, 'PT Sample Packaging');
     expect(shapeObligations([view], SDC_SIMULATED_NOW)).toEqual([]);
   });
 });

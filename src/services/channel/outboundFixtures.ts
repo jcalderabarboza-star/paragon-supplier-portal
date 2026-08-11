@@ -46,7 +46,7 @@ export const OUTBOUND_REQUEST_SEED: readonly OutboundRequestRecord[] = [
   {
     id: 'obr-0001',
     supplierId: 'sup-005',
-    // sa-1002 IS sup-005's own agreement (BASF / ctr-004) — the LATE case in the
+    // sa-1002 IS sup-005's own agreement (Sample Personal Care / ctr-004) — the LATE case in the
     // scale fleet. Release seq 2 fell due 2026-07-01 and the ask went out
     // 2026-08-18, which is what a chase is: overdue, still open.
     subjectRefs: [
@@ -59,7 +59,7 @@ export const OUTBOUND_REQUEST_SEED: readonly OutboundRequestRecord[] = [
   {
     id: 'obr-0002',
     supplierId: 'sup-007',
-    // sa-0002 IS sup-007's own agreement (PT Berlina / ctr-013) — the surface
+    // sa-0002 IS sup-007's own agreement (PT Sample Packaging / ctr-013) — the surface
     // demo. Item 10's release seq 5 fell due 2026-08-01 and is the MISSED line
     // over the 2026-08-25 clock, so an ask stamped 2026-08-19 is chasing a real
     // miss rather than an invented one.

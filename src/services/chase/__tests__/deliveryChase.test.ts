@@ -264,7 +264,7 @@ describe('deriveDeliveryChase — precedence, determinism, honesty', () => {
 
 describe('deriveDeliveryChase — over the SIMULATED fixtures', () => {
   it('sa-0002 (real missed/late/pending) yields the expected chase; item B all-fulfilled yields none', () => {
-    const view = deriveAgreementView(SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS, NOW, 'PT Berlina');
+    const view = deriveAgreementView(SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS, NOW, 'PT Sample Packaging');
     const chase = deriveDeliveryChase([view], NOW);
 
     // Item A (FRC/semi-firm): seq4 late + seq5 missed → 2 alerts; seq6 pending at
@@ -332,7 +332,7 @@ describe('deriveDeliveryChase — over the SIMULATED fixtures', () => {
   it('ctr-003 (sa-0001, all-draft) yields no chase — nothing is released', () => {
     // Sanity: the pristine anchor has an empty ledger drawdown (all draft).
     expect(SCHEDULING_AGREEMENT_CTR003.items.every((i) => deriveDrawdownLedger(i).releasedQty === 0)).toBe(true);
-    const view = deriveAgreementView(SCHEDULING_AGREEMENT_CTR003, [], NOW, 'PT Berlina');
+    const view = deriveAgreementView(SCHEDULING_AGREEMENT_CTR003, [], NOW, 'PT Sample Packaging');
     expect(deriveDeliveryChase([view], NOW)).toEqual<DeliveryChaseEntry[]>([]);
   });
 });

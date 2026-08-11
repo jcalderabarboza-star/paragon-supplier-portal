@@ -19,10 +19,10 @@ export const PRODUCTION_LINES: ProductionLineRow[] = [
 ];
 
 export const SUPPLIER_HEALTH: SupplierHealthRow[] = [
-  { name: 'Kao Indonesia', score: 94, grade: 'A' },
-  { name: 'BASF SE', score: 89, grade: 'A' },
-  { name: 'Givaudan ID', score: 82, grade: 'B' },
-  { name: 'Lonza APAC', score: 76, grade: 'B' },
-  { name: 'PT Mitra Kemas', score: 68, grade: 'C' },
-  { name: 'Sumber Aroma', score: 54, grade: 'D' },
+  { name: 'Sample Consumer Goods Indonesia', score: 94, grade: 'A' },
+  { name: 'Sample Personal Care SE', score: 89, grade: 'A' },
+  { name: 'Sample Fragrance House ID', score: 82, grade: 'B' },
+  { name: 'Sample Bioscience APAC', score: 76, grade: 'B' },
+  { name: 'PT Sample Kemas', score: 68, grade: 'C' },
+  { name: 'Sample Aroma', score: 54, grade: 'D' },
 ];

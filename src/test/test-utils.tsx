@@ -27,7 +27,7 @@ const BUYER: CurrentIdentity = {
 export const SUPPLIER: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-007',
-  supplierName: 'PT Berlina Packaging Indonesia',
+  supplierName: 'PT Sample Packaging Indonesia',
 };
 
 const stubSource = (identity: CurrentIdentity): IdentitySource => ({

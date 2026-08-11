@@ -14,7 +14,7 @@ describe('BuyerScorecard — four honest states', () => {
     // The default-selected supplier appears in both the selector option and the
     // identity hero — proof the scorecard read resolved and drove the page.
     expect(
-      (await screen.findAllByText('Zhejiang NHU Vitamins Co.')).length,
+      (await screen.findAllByText('Sample Vitamins Co.')).length,
     ).toBeGreaterThan(0);
   });
 

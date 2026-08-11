@@ -60,7 +60,7 @@ beforeEach(() => {
       items: [
         { id: 'sup-002', name: 'PT Alpha' },
         { id: 'sup-005', name: 'PT Beta' },
-        { id: 'sup-007', name: 'PT Berlina Packaging Indonesia' },
+        { id: 'sup-007', name: 'PT Sample Packaging Indonesia' },
       ],
     },
   } as unknown as ReturnType<typeof useSuppliers>);
@@ -110,12 +110,12 @@ describe('BuyerCommHub — the buyer/planner Communication Hub (C4a)', () => {
     expect(screen.getByText('No reply yet')).toBeInTheDocument();
 
     // Worst-first: hard group first (composed before awaiting by status rank),
-    // soft last → PT Alpha (hard/composed), PT Beta (hard/awaiting), PT Berlina (soft/stale).
+    // soft last → PT Alpha (hard/composed), PT Beta (hard/awaiting), PT Sample Packaging (soft/stale).
     const rows = screen.getAllByTestId('commhub-outbound-row');
     expect(rows).toHaveLength(3);
     expect(within(rows[0]).getByText('PT Alpha')).toBeInTheDocument();
     expect(within(rows[1]).getByText('PT Beta')).toBeInTheDocument();
-    expect(within(rows[2]).getByText('PT Berlina Packaging Indonesia')).toBeInTheDocument();
+    expect(within(rows[2]).getByText('PT Sample Packaging Indonesia')).toBeInTheDocument();
   });
 
   it('marks every outbound request "composed — not sent" (never sent)', () => {

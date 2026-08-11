@@ -8967,3 +8967,188 @@ assumption. Widening the model is not A's job; **foreclosing it would be A's
 fault.** If A finds the flat shape genuinely cheaper for the substitution pass,
 the honest move is a marker at the field saying the shape is known-wrong and
 booked here — not silence.
+
+---
+
+## `DISCOVERY-REAL-SUBJECTS-01` · BATCH A — the supplier master and every echo
+
+**Status: A DONE. C / D / B remain OPEN, in that order.** 42 files, 310 insertions.
+
+### 12 · WHAT A REMOVED
+
+The census's Tier-1 finding, retired. Twelve master rows and every echo now name a
+plainly fictional party in the `complianceRegistry.ts` house style.
+
+| Claim | Before | After |
+|---|---|---|
+| Statutory tax id | `01.234.567.8-041.000` (NPWP format) | `SAMPLE-NPWP-0007` |
+| Statutory business reg | `9120300123456` (NIB format) | `SAMPLE-NIB-0007` |
+| **Corporate status** | `PT … Tbk.` on two rows | **deleted, not relabelled** |
+| Corporate email domains | twelve real domains | `.example` (RFC 2606-reserved — cannot resolve) |
+| Websites | two real | `.example` |
+| Supply-relationship claim | *"Primary packaging supplier for \[two real brands] lines"* | generalised |
+| Identifying cities | Ludwigshafen, Hilden | Frankfurt, Duesseldorf |
+| Grades / OTIF / ratings / KPI rows | on real subjects | **kept** — they survive the rename |
+
+**`Tbk.` was deleted rather than replaced.** It is a **false corporate-status
+claim**, distinct in kind from a false performance claim: a grade is an opinion
+with a number on it, a listing status is a fact with a registry behind it.
+Inventing a *different* listing status would be the same act again.
+
+**The Caelo row was substituted, not deleted, by ruling** — the suspended-supplier
+state is worth demonstrating. It keeps `SUSPENDED`, rating 1.5, grade D, and the
+expired certificate; only the subject changed. **That is the whole thesis of the
+remedy in one row: the assessment was never the problem, the subject was.**
+
+### 12a · A SIXTH SITE THE CENSUS NEVER REPORTED — AND WHY IT WAS MISSED
+
+`buyerDashboard.ts` `SUPPLIER_HEALTH` renders six rows on the buyer dashboard,
+each with a health score and a letter grade. Two of them — `Kao Indonesia` and
+`Lonza APAC` — are real corporations **that appear nowhere in the census report**.
+
+**FIFTH DEFEAT, FIFTH FINDING — and this one is a different animal: it is not a
+RULE failure, it is a REVIEW failure.** The derivation *worked*. `Kao`, `Lonza`,
+`Mitra`, `Kemas` each occur exactly once, capitalised, never lowercase — textbook
+hits for the never-lowercase rule, sitting in the candidate set the whole time.
+They were missed because the census **printed the candidates ranked by frequency
+and the adjudicator read the head of the list.**
+
+> **FREQUENCY RANKING IS THE WRONG ORDER FOR THIS POPULATION. A NAME THAT APPEARS
+> ONCE CARRIES EXACTLY THE SAME EXPOSURE AS ONE THAT APPEARS FIFTY-TWO TIMES.**
+
+Ranking by count is a habit borrowed from performance work, where the head of the
+distribution is where the value is. In a legal-exposure census the distribution is
+flat: one mention of a real company graded `D` is one mention. Worse, frequency
+ranking actively hides the dangerous case — a name used once is more likely to be
+an unconsidered aside than a deliberate fixture choice.
+
+This lands on the step §1 already declared as the hand-pick. **The honest reading
+is that declaring a step as judgement is not the same as doing it well**, and the
+declaration bought less protection than it appeared to. Batch A's re-derivation
+printed the tail **alphabetically** and found the sixth site in one pass.
+
+### 12b · THE RULE THAT DECIDES OBJECT-POSITION CASES (generalised from the B fence)
+
+A ruled that fictionalising BPJPH / MUI / BPOM destroys the domain. A hit three
+more institution lanes and needed a rule rather than three more rulings. The
+generalisation, and it decided all of them without a new operator call:
+
+> **A REAL INSTITUTION IN AN OBJECT POSITION STAYS REAL WHEN THE CLAIM IS ABOUT
+> THE SUBJECT. IT MUST GO WHEN THE FIXTURE ASSERTS SOMETHING ABOUT THE
+> INSTITUTION ITSELF.**
+
+| Lane | Verdict | Why |
+|---|---|---|
+| Certifiers / regulators (BPJPH, MUI, BPOM, TÜV, ECHA, NMPA) | **stay** | The claim is *this supplier holds a certificate*. Nothing is asserted about the body. |
+| **Banks** (BCA, Mandiri, BNI, BRI, CIMB Niaga; Deutsche Bank, Société Générale) | **stay — examined and deliberately unchanged** | A bank-picker a supplier chooses from, and `bankAccount` strings. The claim is *this supplier banks here*. Nothing is asserted about the bank. (`DE89-3704` is already the canonical RFC documentation IBAN prefix.) |
+| **Data providers** (World Bank, MPOB, FCPO, FRED, Drewry, LME) | **stay** | Named in comments as CI-3 integration targets. A roadmap statement, not a fabricated claim — the same category as naming SAP. |
+| **Carriers** (batch E) | **went** | The fixture asserted the carrier *performed*: `Delayed`, `delayDays`, a tracking ref. That is a claim about the carrier. |
+
+The carrier row is what makes the rule non-trivial: carriers *look* like the bank
+case and are not, because a shipment fixture grades them.
+
+### 12c · `innerText` HAS A SECOND BLIND SPOT, AND IT IS A DIFFERENT ONE
+
+§11b named `<option>` text of a closed `<select>`. Batch A's QA hit a new one in
+the same instrument: **`innerText` concatenates sibling `<tspan>`s with no
+separator.** A wrapped chart label renders correctly as two lines and reads back
+as `PT SamplePackaging` / `Sample PersonalCare DE` — a missing space that looks
+exactly like a data defect and is not.
+
+It was resolved by reading `<tspan>` nodes directly, i.e. **by an instrument that
+does not share the failure mode** — which is §11b's generalisation being used one
+batch after it was written, on a failure mode nobody had enumerated. That is the
+point of stating the general rule rather than only the `<option>` fact: **the
+second blind spot was found by the rule, not by the list of known blind spots.**
+
+### 12d · GATE 1 DOES NOT TYPECHECK TEST FILES
+
+`tsconfig.json` excludes `src/**/*.test.ts(x)`. A's rename left a dangling
+identifier (`basf?.complianceIssue`) in `scoping.contract.test.ts`; **`tsc`
+reported clean** and only *executing* the test caught it.
+
+The consequence, stated: **gate 1 cannot see any error in a test file, and gate 2
+sees only what executes.** A type error on a non-executed branch of a test is
+invisible to all three gates. Not fixed here — widening `tsconfig` to include
+tests is a build-config change with its own blast radius, and it is not A's.
+Recorded so the next author does not read a green `npm run build` as covering the
+suite's own source.
+
+### 12e · A FOURTH RELOCATION CASE — AND A CREATED IT
+
+Three were known and are B's. **A produced a fourth, and it reads WORSE after A
+than before**, which the split makes unavoidable and therefore worth naming:
+
+`supplierDocuments.ts` `doc-202` now reads —
+*issuer* `Sample Personal Care Regulatory Affairs`, *document*
+`REACH Compliance / Safety Data Sheet — Emulgade`.
+
+`Emulgade` is a **real trademark** and is on B's list. Before A, a real company was
+named as issuing a safety data sheet for its own real product: fabricated, but
+internally coherent. After A, **a fictional company is implied to own and steward a
+real trademarked product** — a claim of a kind that did not exist before.
+
+A could not avoid it: the issuer was a real company in a supplier position and had
+to go. **The incoherence is a cost of the E→A→C→D→B ordering, not a mistake in
+it** — but it means B should take the material trademarks early rather than last
+within its own scope. Same shape, lower stakes: `MATERIAL_MASTER['RM-EMUL-9440']`
+carries `Emulgade SE-PF Emulsifier`.
+
+### 12f · WHAT READS WORSE FICTIONAL — the honest answer
+
+**Almost nothing in A's scope.** A supplier directory, a marketplace, a scorecard,
+an analytics table and a dock schedule are all surfaces whose value is the
+*structure* — grades, OTIF, dock slots — and none of it depended on recognising
+the supplier. The Caelo row proves it: suspended, 1.5/5, grade D, entirely intact.
+
+**One surface does read worse, and it is not A's — it is C's.** `/buyer/discovery`
+exists to answer *"which global supplier should we onboard?"* A buyer evaluating
+that question needs the real name; that is the entire point of the page. Once C
+substitutes `GLOBAL_SUPPLIERS`, the page becomes a demonstration of a search UI
+with nothing real to search for. **That is a finding for C to carry to the
+operator, not an obstacle for C to route around** — and it is the one place in the
+whole census where the strategist's lean (make the subjects fictional) costs the
+surface its purpose rather than only its decoration.
+
+### 12g · THE INTERMEDIATE STATE A SHIPS, DELIBERATELY
+
+**`buyerDiscovery.ts` was not touched** — it is C's file and holds B's clause.
+Until C lands, main renders **the same company under two names**: the supplier
+directory shows `Sample Specialty Chemicals France` while discovery's
+`SINGLE_SOURCE` still lists `Evonik Specialty FR` as a current supplier for a
+material. Four rows are affected.
+
+This is honest (both are fixtures) and incoherent (a user can see both in one
+session). It is the price of splitting by *what is asserted* rather than by file,
+and the split was right. **C should follow closely.** Recorded so the
+inconsistency is not read as a bug report when someone finds it.
+
+**PF-2a's endorsement guard was deliberately excluded from A's sweep.** It pins
+C's residue on purpose (`expect(attributions).toContain('BASF Personal Care DE')`)
+so the census limit cannot pass for coverage. It stays green through A, and **C
+must update it** — a test that asserts a real name is *present* is the one test
+that must change when the name goes.
+
+### 12h · THE GUARD — the derivation, finally where it matters
+
+`src/data/supplierIdentity.test.ts`, 8 assertions. The census rule as a gate:
+**a capitalised token that never appears lowercase, minus email/URL masking, minus
+the known-fictional roster.** `ALLOWED` is a POSITIVE vocabulary — the marker, the
+legal forms, the industry words, the geography. Anything else fails.
+
+The asymmetry is the design: **a new REAL name reddens this with nobody editing
+the test; adding a new FICTIONAL one is a deliberate edit to a vocabulary.** The
+cost falls on the side that should bear it.
+
+Email/URL masking is **census defeat #1 compiled into the guard** — without it a
+real corporate domain supplies the lowercase token that exonerates its own brand.
+
+Two instrument defects were found and fixed while building it, both mine: the
+vocabulary was applied to statutory identifiers (a document number is not a name)
+and to free prose (a sentence-initial capital is grammar, not a name). Split into
+five targeted assertions instead.
+
+Mutation-probed seven ways, each confirming the file changed before trusting red:
+a real supplier name, a real NPWP format, a real NIB format, a real email domain,
+a `Tbk.` status claim, **a real party on a dashboard grade (`Lonza` — a name the
+guard has never seen)**, and **a real party inside supplier PROSE**. All red.

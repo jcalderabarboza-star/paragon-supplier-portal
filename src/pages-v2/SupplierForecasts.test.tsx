@@ -17,7 +17,7 @@ import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 // SupplierForecasts (SDC-2b) — the P1 supplier surface, honest-render +
 // own-facts + governed-submit contract.
 //
-// The seeded persona is sup-007 (PT Berlina Packaging): after F-1(a) it owns
+// The seeded persona is sup-007 (PT Sample Packaging): after F-1(a) it owns
 // THREE fanned lines of the current publication (R2) — PK-PETB-8810 2026-08
 // firm, PK-CAPF-8820 2026-09 semi-firm, AI-NIAC-6601 2026-10 visibility-only.
 // Everything else (glycerin / cetearyl / sup-005's PET line) belongs to OTHER

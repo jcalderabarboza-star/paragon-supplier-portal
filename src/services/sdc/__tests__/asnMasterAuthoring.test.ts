@@ -199,12 +199,12 @@ describe('2B-5b-ii — what each row RESTS ON, counted rather than claimed', () 
     // IS NOT A DOCUMENT THAT NAMES A THING**, and the tier table counts only
     // the ones a machine can follow.
     const reach = docs.find((d) => d.id === 'doc-202')!;
-    expect(reach.issuedBy).toContain('BASF');
+    expect(reach.issuedBy).toContain('Sample Personal Care');
     expect(reach.name).toContain('Emulgade');
     expect(reach.linkedTo).toBe('All emulsifier grades');
     expect(mockPurchaseOrders.some((p) => p.poNumber === reach.linkedTo)).toBe(false);
 
-    // ⚠️ AND THE SAME EVIDENCE SEPARATES IT FROM `RM-EMUL-9410`. A BASF/REACH
+    // ⚠️ AND THE SAME EVIDENCE SEPARATES IT FROM `RM-EMUL-9410`. A Sample Personal Care/REACH
     // frame with NO halal certification is not the Indonesian halal-certified
     // emulsifier lane. Shared substrings — "SE", "emulsifier", the `RM-EMUL`
     // mnemonic — are not shared identity.
@@ -261,12 +261,12 @@ describe('2B-5b-ii — the rulings, asserted so they cannot be tidied away', () 
     expect(parent.lineItems.map((l) => l.materialCode)).not.toContain('FR-ROUD-4470');
     // (c) And the row R-3 refused to retire onto belongs to a DIFFERENT supplier
     //     — a fragrance house. Retiring would have asserted that a packaging
-    //     converter shipped Firmenich's concentrate.
-    const firmenich = mockPurchaseOrders.find((p) =>
+    //     converter shipped Sample Aromatics's concentrate.
+    const sampleAromatics = mockPurchaseOrders.find((p) =>
       p.lineItems.some((l) => l.materialCode === 'FR-WARD-4440'),
     )!;
-    expect(firmenich.supplierId).toBe('sup-004');
-    expect(firmenich.supplierId).not.toBe(asn.supplierId);
+    expect(sampleAromatics.supplierId).toBe('sup-004');
+    expect(sampleAromatics.supplierId).not.toBe(asn.supplierId);
   });
 
   it('⚠️ RM-PSTN-7150 — stearin is NOT stearic acid, and RBD is not the feedstock', () => {

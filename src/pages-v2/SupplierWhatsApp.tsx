@@ -671,7 +671,7 @@ const EmailBody: React.FC<{
     return (
       <>
         <p className="text-sm text-text-primary mb-3 leading-relaxed">
-          Dear PT Berlina team,
+          Dear PT Sample Packaging team,
           <br />
           <br />
           A new purchase order has been issued. Please review and confirm

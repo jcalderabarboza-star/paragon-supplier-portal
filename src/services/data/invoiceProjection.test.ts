@@ -24,7 +24,7 @@ const NOW = '2026-07-06T00:00:00.000Z';
 function inv(overrides: Partial<Invoice>): Invoice {
   return {
     id: 'inv-x', invoiceNumber: 'INV-X', supplierId: 'sup-007',
-    supplierName: 'PT Berlina Packaging Indonesia', poNumber: 'PO-1', poId: 'po-1',
+    supplierName: 'PT Sample Packaging Indonesia', poNumber: 'PO-1', poId: 'po-1',
     amount: 100_000_000, currency: 'IDR', status: 'Submitted', matchStatus: 'Pending GR',
     submittedDate: '2026-06-01', dueDate: '2026-08-01', paymentDate: null,
     paymentRef: null, sapFiDoc: null, sapGrDoc: null, bankAccount: 'BCA 1',

@@ -83,7 +83,7 @@ describe('summarizeAgreementItem — honest, derived roll-up rows', () => {
   });
 
   it('the pristine ctr-003 anchor → DRAFT bucket, ZERO exceptions (never on-track)', () => {
-    const view = deriveAgreementView(SCHEDULING_AGREEMENT_CTR003, [], NOW, 'PT Berlina');
+    const view = deriveAgreementView(SCHEDULING_AGREEMENT_CTR003, [], NOW, 'PT Sample Packaging');
     for (const iv of view.items) {
       const s = summarizeAgreementItem(view, iv, NOW);
       expect(s.bucket).toBe('draft');

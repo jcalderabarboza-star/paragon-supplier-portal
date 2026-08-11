@@ -12,7 +12,7 @@ import i18n from '../lib/i18n';
 // honesty as C2, but the SUBJECT supplier is bound at capture and the dispatch
 // is the C4c RECORDING verb (t_inventorydeclaration_record) — actor = the buyer,
 // truthfully. Default identity is BUYER (renderWithProviders), so the record verb
-// passes its role gate; sup-007 (PT Berlina) collaborates PK-PETB-8810 (uom PCS).
+// passes its role gate; sup-007 (PT Sample Packaging) collaborates PK-PETB-8810 (uom PCS).
 //
 // NB the tests render the panel against the REAL MockCommandService (through
 // useInventoryRecord), so the dispatch, the store mint, and the DR-10 event are

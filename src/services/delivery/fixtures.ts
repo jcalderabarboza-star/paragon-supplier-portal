@@ -8,7 +8,7 @@
 // Reality is swapped in later (Pattern B: the portal drafts, SAP assigns the real
 // numbers back); the SHAPE holds, the specifics get replaced.
 //
-// Seeded over a REAL header contract: ctr-003 (CTR-2025-018, "PT Berlina PET
+// Seeded over a REAL header contract: ctr-003 (CTR-2025-018, "PT Sample Packaging PET
 // Bottle Supply 2025-2026", sup-007 — the SDC test supplier), validity
 // 2025-10-01 → 2026-09-30. Two material items reuse the SDC MATERIAL_MASTER (both
 // codes already exist there and sup-007 already carries manufacturer
