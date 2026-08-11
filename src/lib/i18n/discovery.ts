@@ -14,22 +14,28 @@ export const discoveryEn: Record<string, string> = {
   // — Page header —
   'discovery.header.title': 'Supplier Discovery',
   'discovery.header.subtitle':
-    'Find and qualify new suppliers globally.',
+    // Batch C — was 'Find and qualify new suppliers globally.' The GLOBAL half is
+    // now gated on a discovery feed, so the subtitle led with the one capability
+    // the page cannot currently deliver. It now describes what the page DOES.
+    'Close sourcing gaps and qualify new suppliers.',
   'discovery.action.openMarketplace': 'Open Marketplace',
   // — Meta line —
-  'discovery.meta.summary': '{{count}} candidates · last updated {{date}}',
+  // Batch C — was '{{count}} candidates'. The candidate pool is deleted; the
+  // number beside this label is now the dual-source gap count, so the label says so.
+  'discovery.meta.summary': '{{count}} dual-source gaps · last updated {{date}}',
   // — KPI cards —
-  'discovery.kpi.candidates.eyebrow': 'Candidates Identified',
-  'discovery.kpi.candidates.subtitle': 'Across global beauty market',
+  // DISCOVERY-REAL-SUBJECTS-01 (C) — `candidates` and `approved` are GONE. The
+  // candidates tile read 18 over a fixture of 8 (a `+ 10` literal with no
+  // referent) and `approved` was a hard-coded 2. Neither counted anything.
+  'discovery.kpi.atRisk.eyebrow': 'Qualifications At Risk',
+  'discovery.kpi.atRisk.subtitle': 'Past due or blocked',
   'discovery.kpi.qualifying.eyebrow': 'In Qualification',
   'discovery.kpi.qualifying.subtitle': 'Active onboarding pipeline',
-  'discovery.kpi.approved.eyebrow': 'Approved This Month',
-  'discovery.kpi.approved.subtitle': 'Net-new qualified suppliers',
   'discovery.kpi.gaps.eyebrow': 'Dual-Source Gaps',
   'discovery.kpi.gaps.subtitle': 'Materials with single source',
   // — Sub-tabs —
   'discovery.tab.search': 'Global Search',
-  'discovery.tab.recommendations': 'AI Recommendations',
+  'discovery.tab.gaps': 'Sourcing Gaps',
   'discovery.tab.qualification': 'Qualification Pipeline',
   'discovery.tab.intelligence': 'Market Intelligence',
   // — Search / filters —
@@ -66,6 +72,17 @@ export const discoveryEn: Record<string, string> = {
     'No suppliers match your current search. Try different keywords, remove filters, or browse all regions.',
   'discovery.results.empty.clear': 'Clear all filters',
   // — Search hero (initial, no filter) —
+  // ── The gated global-search tab (batch C) ─────────────────────────────────
+  //   The empty state says WHY it is empty and what would fill it. The
+  //   "awaiting <source>" line is NOT here — it comes from the liveness
+  //   registry's readiness note, so it has one home.
+  'discovery.search.noFeed.title': 'No supplier-discovery feed is connected',
+  'discovery.search.noFeed.body':
+    'Global candidate search needs a real supplier-discovery source. Rather than '
+    + 'show sample companies with scores nothing computed, this tab stays empty '
+    + 'until a feed is connected — then candidates appear here with their source '
+    + 'named. Your own sourcing gaps and qualification pipeline are available now.',
+  'discovery.search.noFeed.toGaps': 'View sourcing gaps',
   'discovery.hero.title': 'Search the global supplier market',
   // DISCOVERY-ENDORSEMENT-01 · the hero. This string asserted that five named
   // real corporations had validated the suppliers below — the SAME claim as the
@@ -148,22 +165,20 @@ export const discoveryId: Record<string, string> = {
   // — Page header —
   'discovery.header.title': 'Penemuan Pemasok',
   'discovery.header.subtitle':
-    'Temukan dan kualifikasi pemasok baru secara global.',
+    'Tutup kesenjangan sumber dan kualifikasi pemasok baru.',
   'discovery.action.openMarketplace': 'Buka Pasar',
   // — Meta line —
-  'discovery.meta.summary': '{{count}} kandidat · terakhir diperbarui {{date}}',
+  'discovery.meta.summary': '{{count}} kesenjangan sumber ganda · terakhir diperbarui {{date}}',
   // — KPI cards —
-  'discovery.kpi.candidates.eyebrow': 'Kandidat Teridentifikasi',
-  'discovery.kpi.candidates.subtitle': 'Di seluruh pasar kecantikan global',
+  'discovery.kpi.atRisk.eyebrow': 'Kualifikasi Berisiko',
+  'discovery.kpi.atRisk.subtitle': 'Melewati tenggat atau terhambat',
   'discovery.kpi.qualifying.eyebrow': 'Dalam Kualifikasi',
   'discovery.kpi.qualifying.subtitle': 'Alur onboarding aktif',
-  'discovery.kpi.approved.eyebrow': 'Disetujui Bulan Ini',
-  'discovery.kpi.approved.subtitle': 'Pemasok baru terkualifikasi',
   'discovery.kpi.gaps.eyebrow': 'Kesenjangan Sumber Ganda',
   'discovery.kpi.gaps.subtitle': 'Material dengan sumber tunggal',
   // — Sub-tabs —
   'discovery.tab.search': 'Pencarian Global',
-  'discovery.tab.recommendations': 'Rekomendasi AI',
+  'discovery.tab.gaps': 'Kesenjangan Sumber',
   'discovery.tab.qualification': 'Alur Kualifikasi',
   'discovery.tab.intelligence': 'Intelijen Pasar',
   // — Search / filters —
@@ -198,6 +213,16 @@ export const discoveryId: Record<string, string> = {
     'Tidak ada pemasok yang cocok dengan pencarian Anda saat ini. Coba kata kunci lain, hapus filter, atau jelajahi semua wilayah.',
   'discovery.results.empty.clear': 'Hapus semua filter',
   // — Search hero (initial, no filter) —
+  // Batch C — the fabrication shipped in BOTH languages, so the honest empty
+  // state does too. PF-2a's rule: the retraction is bilingual or it is partial.
+  'discovery.search.noFeed.title': 'Tidak ada feed penemuan pemasok yang terhubung',
+  'discovery.search.noFeed.body':
+    'Pencarian kandidat global memerlukan sumber penemuan pemasok yang nyata. '
+    + 'Daripada menampilkan perusahaan contoh dengan skor yang tidak dihitung oleh '
+    + 'apa pun, tab ini tetap kosong sampai sebuah feed terhubung — kandidat lalu '
+    + 'muncul di sini dengan sumbernya disebutkan. Kesenjangan sumber dan alur '
+    + 'kualifikasi Anda sendiri sudah tersedia sekarang.',
+  'discovery.search.noFeed.toGaps': 'Lihat kesenjangan sumber',
   'discovery.hero.title': 'Cari pasar pemasok global',
   // DISCOVERY-ENDORSEMENT-01 · the hero, ID. The fabrication shipped in BOTH
   // languages — a translated assertion is a second assertion, not a copy of one.

@@ -855,31 +855,19 @@ export interface Scenario {
 
 // ─── Discovery / Recommendation entities (buyer-side, inline today) ─────────
 
-export interface GlobalSupplier {
-  id: string;
-  name: string;
-  country: string;
-  flag: string;
-  region: string;
-  categories: string[];
-  certifications: string[];
-  // ⚠️ `validatedBy: string[]` WAS HERE AND IS DELETED, NOT RENAMED
-  // (`DISCOVERY-ENDORSEMENT-01`, reclassified as legal exposure). It carried a
-  // list of named corporations said to have vetted this supplier. The portal
-  // verifies nothing of the kind, so the field could only ever assert what it
-  // could not back — and no marker, pill or disclaimer fixes a statement made on
-  // a third party's behalf. Substituting invented brand names was considered and
-  // refused: it relocates the fabrication rather than removing it, and the same
-  // page already set the precedent one field over (the market-intel source
-  // attributions were DELETED, not relabelled). The field returns if and when a
-  // verification source exists to back it; until then, honest silence.
-  matchScore: number;
-  description: string;
-  employees: string;
-  founded: string;
-  halalCertified: boolean;
-  alreadyInNetwork: boolean;
-}
+// ── ⚠️ `GlobalSupplier` IS DELETED — `DISCOVERY-REAL-SUBJECTS-01`, batch C ───
+//   The read-model for the discovery candidate cards: eight real corporations
+//   carrying a `matchScore`, an employee count, a founding year and a superlative
+//   `description`. NOBODY COMPUTED THE SCORE — no engine, no weights, no inputs.
+//   The page was never useful; it was CONVINCING, and that is what made it
+//   dangerous.
+//
+//   The TYPE goes with the fixture, deliberately. Keeping an unread interface
+//   would leave the shape sitting there as an invitation to repopulate it, and
+//   the ruling (Option 4) is that real candidate names must be UNREACHABLE, not
+//   merely absent: they can only ever arrive FROM A SOURCE. When a discovery feed
+//   lands, the type it needs is the SOURCE's shape, not this one.
+//   `IDiscoveryService.getGlobalSuppliers` is removed with it.
 
 export interface RecommendedSupplier {
   id: string;
@@ -1265,7 +1253,6 @@ export interface IRiskService {
 }
 
 export interface IDiscoveryService {
-  getGlobalSuppliers(scope: QueryScope): Promise<Page<GlobalSupplier>>;
   getRecommended(scope: QueryScope): Promise<Page<RecommendedSupplier>>;
   getQualifications(scope: QueryScope): Promise<Page<QualificationItem>>;
   getMarketIntel(scope: QueryScope): Promise<Page<MarketIntelCard>>;

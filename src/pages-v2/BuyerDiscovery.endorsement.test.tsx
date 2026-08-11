@@ -34,9 +34,11 @@
 import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../test/test-utils';
 import { discoveryEn, discoveryId } from '../lib/i18n/discovery';
+import * as discoveryFixtures from '../services/data/mock/fixtures/buyerDiscovery';
 import {
-  GLOBAL_SUPPLIERS,
   SINGLE_SOURCE,
+  RECOMMENDED,
+  QUALIFICATIONS,
 } from '../services/data/mock/fixtures/buyerDiscovery';
 import BuyerDiscovery from './BuyerDiscovery';
 
@@ -58,23 +60,31 @@ const REAL_CORPORATIONS = [
   'BASF',
 ] as const;
 
-// ⚠️ SCOPE, STATED — this sweeps the ENDORSEMENT SURFACE ONLY: the
-// global-supplier rows the field hung off, plus both locales. It does NOT sweep
-// `SINGLE_SOURCE` / `RECOMMENDED`, which still name real corporations in a
-// different role (current source, suggested alternative). That is not an
-// oversight the reader has to detect — it is `DISCOVERY-REAL-SUBJECTS-01`, and
-// the test below pins the residue so the limit cannot pass for coverage.
+// ⚠️ SCOPE, RESTATED AT BATCH C — THE OLD LIMIT IS GONE, SO THE NOTE THAT
+// DESCRIBED IT MUST GO TOO. This used to sweep the endorsement surface ONLY,
+// because `SINGLE_SOURCE` / `RECOMMENDED` still named real corporations and that
+// residue was pinned rather than fixed. C removed the residue: the
+// global-supplier rows are DELETED outright and the three surviving reads took
+// batch A's treatment. So the sweep now covers everything the page ships.
+//
+// The ONE thing still excluded is `SINGLE_SOURCE[].material` — it carries
+// `Givaudan Floral Accord FG-2847`, a real TRADEMARK in a material identity,
+// which is batch B's relocation case. Named here so the exclusion is a stated
+// scope and not an unexamined pass.
 const shippedStrings = (): string[] => [
   ...Object.values(discoveryEn),
   ...Object.values(discoveryId),
-  ...GLOBAL_SUPPLIERS.flatMap((s) => [
-    s.name,
-    s.country,
-    s.region,
-    s.description,
-    ...s.categories,
-    ...s.certifications,
-  ]),
+  ...SINGLE_SOURCE.flatMap((r) => [r.currentSupplier, r.risk, ...r.suggestedAlternatives]),
+  ...RECOMMENDED.flatMap((r) => [r.name, r.whyRecommended, r.riskNote ?? '']),
+  ...QUALIFICATIONS.map((q) => q.supplier),
+];
+
+/** Subject-position identities the page ships — the population batch C had to
+ *  clean. `material` is excluded by scope above (batch B). */
+const subjectIdentities = (): string[] => [
+  ...SINGLE_SOURCE.flatMap((r) => [r.currentSupplier, ...r.suggestedAlternatives]),
+  ...RECOMMENDED.map((r) => r.name),
+  ...QUALIFICATIONS.map((q) => q.supplier),
 ];
 
 describe('DISCOVERY-ENDORSEMENT-01 — the endorsement is deleted, not relabelled', () => {
@@ -86,13 +96,17 @@ describe('DISCOVERY-ENDORSEMENT-01 — the endorsement is deleted, not relabelle
     },
   );
 
-  it('the fixture carries no endorsement field at all — deleted, not emptied', () => {
-    // An empty array would still be a field the page could render a heading
-    // over, and a field a future batch could refill. The key is gone.
-    for (const supplier of GLOBAL_SUPPLIERS) {
-      expect(Object.keys(supplier)).not.toContain('validatedBy');
-    }
-    expect(GLOBAL_SUPPLIERS.length).toBeGreaterThan(0);
+  it('the candidate pool is gone from the fixture entirely — not emptied, not renamed', () => {
+    // At batch C the endorsement's HOST went too. An empty `GLOBAL_SUPPLIERS`
+    // array would still be an export a future batch could refill, and the ruling
+    // is that real candidate names must be UNREACHABLE, not merely absent — so
+    // the export itself must not exist. (Its type and service method go with it;
+    // `tsc` guards those, which is why they are not re-asserted here.)
+    expect(Object.keys(discoveryFixtures)).not.toContain('GLOBAL_SUPPLIERS');
+    // Non-vacuous: the reads that SURVIVE are still exported and populated.
+    expect(SINGLE_SOURCE.length).toBeGreaterThan(0);
+    expect(RECOMMENDED.length).toBeGreaterThan(0);
+    expect(QUALIFICATIONS.length).toBeGreaterThan(0);
   });
 
   it('neither locale keeps a label or filter for the retracted field', () => {
@@ -113,28 +127,41 @@ describe('DISCOVERY-ENDORSEMENT-01 — the endorsement is deleted, not relabelle
     expect(discoveryId['discovery.hero.body']).toBeTruthy();
   });
 
-  // ── ⚠️ BILATERAL, AND THIS HALF IS THE ONE THAT ROTS ──────────────────────
-  //   `looseEndCensus` precedent: an exemption that outlives its subject is a
-  //   document asserting a defect the tree no longer has. So the residue this
-  //   batch deliberately did NOT fix is pinned here, in the direction nothing
-  //   normally checks — if somebody cleans `SINGLE_SOURCE` up, this goes RED and
-  //   forces `DISCOVERY-REAL-SUBJECTS-01` to be closed rather than left standing.
-  it('DISCOVERY-REAL-SUBJECTS-01 is still OPEN — the residue is pinned, not implied', () => {
-    const attributions = SINGLE_SOURCE.flatMap((row) => [
-      row.currentSupplier,
-      ...row.suggestedAlternatives,
-    ]);
-    // Fabricated NEGATIVE claims against a named real corporation — a different
-    // and arguably worse shape than the endorsement this batch removed. Left in
-    // place because renaming these without renaming `GlobalSupplier.name` would
-    // be incoherent, and that is one operator ruling, not a sweep-batch call.
-    expect(attributions).toContain('BASF Personal Care DE');
-    expect(attributions).toContain('Givaudan DE');
-    // ⚠️ The RATING is what reaches a reader — browser-verified. The `risk` prose
-    // beside it is fixture-only and renders nowhere, so it is pinned separately
-    // and NOT described as shipped.
+  // ── ⚠️ THIS PIN HAS INVERTED, AND THAT IS THE POINT OF HAVING WRITTEN IT ───
+  //   It used to assert the residue was PRESENT — `toContain('BASF Personal Care
+  //   DE')` — so that a later batch could not clean it up quietly and leave
+  //   `DISCOVERY-REAL-SUBJECTS-01` standing as an open finding about a tree that
+  //   no longer had the defect. Batch C is that later batch. The pin did its job:
+  //   it went RED and forced this file to be updated deliberately.
+  //
+  //   It is now inverted rather than deleted. Deleting it would remove the only
+  //   thing checking the direction nothing else checks — the guard must not be
+  //   deleted along with the data it guarded. A denylist over subject identities
+  //   is the weak instrument (§11e), so the assertion is a DERIVATION: every
+  //   subject-position identity the page ships must carry the `Sample` marker.
+  //   A real name returning here reddens this without anyone editing a list.
+  it('DISCOVERY-REAL-SUBJECTS-01 · every subject identity is fictional by marker', () => {
+    const subjects = subjectIdentities();
+    const unmarked = subjects.filter(
+      (s) => !/\bSample\b/.test(s) && s !== 'Not yet sourced',
+    );
+    expect(
+      unmarked,
+      `discovery subject identity without the Sample marker: ${unmarked.join(' | ')}`,
+    ).toEqual([]);
+    expect(subjects.length).toBeGreaterThan(8); // non-vacuous
+  });
+
+  it('the ratings and risk levels SURVIVED the substitution — the subject was the defect', () => {
+    // The arc's thesis, asserted where it can regress: C removed the real parties
+    // and kept every assessment. A batch that quietly dropped the risk levels
+    // while renaming would have been a different, lossier remedy.
     expect(SINGLE_SOURCE.map((r) => r.riskLevel)).toContain('High');
-    expect(SINGLE_SOURCE.some((r) => r.risk.includes('quality issues'))).toBe(true);
+    expect(SINGLE_SOURCE.map((r) => r.riskLevel)).toContain('Critical');
+    expect(RECOMMENDED.every((r) => typeof r.matchScore === 'number')).toBe(true);
+    // …and the one sentence that WAS a claim about a real firm's competence is
+    // gone with it. It never rendered; it was still the worst string in the file.
+    expect(SINGLE_SOURCE.some((r) => r.risk.includes('quality issues'))).toBe(false);
   });
 
   it('renders the supplier search with no endorsement heading and no brand pill', async () => {

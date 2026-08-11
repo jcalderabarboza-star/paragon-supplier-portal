@@ -220,11 +220,6 @@ export const useSupplierPerformance = () =>
 
 // ─── Discovery ──────────────────────────────────────────────────────────────
 
-export const useGlobalSuppliers = () =>
-  useServiceQuery(['discovery', 'global'], (svc, scope) =>
-    svc.discovery.getGlobalSuppliers(scope),
-  );
-
 export const useRecommended = () =>
   useServiceQuery(['discovery', 'recommended'], (svc, scope) =>
     svc.discovery.getRecommended(scope),
