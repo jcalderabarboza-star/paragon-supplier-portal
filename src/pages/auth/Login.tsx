@@ -132,7 +132,7 @@ const Login: React.FC = () => {
             <input
               type="email"
               style={INPUT_STYLE}
-              placeholder="your@email.com"
+              placeholder="you@example.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSignIn()}

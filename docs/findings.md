@@ -517,7 +517,7 @@ deliberately **no gate CI can run that the operator cannot**.
 | **NOTIFICATION-UNCONFIRMED-01** *(refs @ `f492b5c` — **⚠️ OPEN, and it is the operator's to close, not ours**)* | **A RED BADGE IS NOT A NOTIFICATION.** Nobody goes to look at a badge on a Saturday — that is the premise of the whole batch, so accepting one as the answer would be circular. GitHub's own path for a scheduled-run failure is **an email to the account that last modified the cron expression** — which, since squash-merges here are authored by `jcalderabarboza-star`, would be the operator — **but only if that account has Actions notifications enabled**, a per-account setting **this repository cannot read and we cannot assert on their behalf.** | **A SECOND, INDEPENDENT PATH IS BUILT, AND THE FIRST IS LEFT UNASSERTED.** A failing **scheduled** run (only scheduled — a PR failure is seen by the person merging) opens or comments on a `gates-failure` **issue**, using `GITHUB_TOKEN` and `gh` — durable, visible without going to look, and independent of the notification setting. **What is NOT claimed: that either path reaches a human.** Per `RECEIVER-CONFIRMS-01` below, **delivery is confirmed by the receiving side or it did not happen.** **Closes when the operator reports having actually RECEIVED something** from a failing scheduled run — not when the mechanism is observed to exist. |
 | **PATH-FILTER-TRAP-01** *(refs @ `f492b5c` — **filed as a decision taken, so it is not re-taken later as an optimisation**)* | The standard economy on a CI workflow is `paths-ignore: docs/**` — skip the suite when only prose changed. **In this repository that is precisely backwards.** The C9 contract pin **reads `docs/contracts/*.md`** and fails when the prose and the types module disagree; `CENSUS-MUST-DERIVE-01` and the derived field list are the same shape. **A docs-only change here is a change to a checked artifact.** | **NO PATH FILTERS, DELIBERATELY, AND THE REASON IS IN THE WORKFLOW FILE** rather than only here — a comment beside the trigger is what a future editor reads before adding the filter. **The economy would have skipped exactly the gate built to catch the drift it was skipping for.** |
 | **CI-PUBLIC-LOGS-01** *(refs @ `f492b5c` — **surfaced while checking Actions was enabled; not a defect, a constraint on everything built after this**)* | **The repository is PUBLIC** (`visibility: public`). Two standing consequences for CI: **Actions logs and run artifacts are world-readable**, and **Actions minutes are free**, which is why a daily full run costs nothing to keep. | **RECORDED AS A CONSTRAINT: NO SECRET MAY EVER ENTER A GATE LOG.** The gates need none — `npm run build`, the suite and `test:gate` all run without environment (`GATE_USER` / `GATE_PASSWORD` / `GATE_SECRET` are edge-runtime env for `middleware.js`, never referenced by the gate *tests*, which use their own literal `'unit-test-secret-do-not-ship'`). The workflow declares `permissions: contents: read`, with `issues: write` scoped to the reporting job alone. **Also recorded because it will matter later:** GitHub disables scheduled workflows on a public repository after **60 days of repository inactivity** — irrelevant at the present commit rate, and the reason a quiet quarter would silently end the daily run. |
-| **TSC-SKIPS-TESTS-01** *(refs @ `f492b5c` — **⚠️ OPEN, NAMED AND NOT FIXED, because fixing it needs an argument the dispatch requires be had first**)* | **`npm run build` never typechecks the test surface.** `tsconfig.json` excludes `src/**/*.test.ts`, `src/**/*.test.tsx` and `src/test`, and vitest transpiles without typechecking — so **no gate typechecks a spec file.** A spec can carry a type error indefinitely and all three gates stay green. `tsconfig.vitest.json` exists and includes them, and nothing runs it. | **CI INHERITS THE GAP EXACTLY, WHICH IS THE POINT: CI IS NOT A SECOND SOURCE OF TRUTH.** Closing it means `tsc -p tsconfig.vitest.json --noEmit` — **a gate the operator does not run today**, and the dispatch is explicit that such a gate is argued before it is added, not smuggled in beside a CI batch. **Filed so the next batch can rule on it with the cost known.** |
+| **TSC-SKIPS-TESTS-01** *(refs @ `f492b5c` — **⚠️ OPEN, NAMED AND NOT FIXED, because fixing it needs an argument the dispatch requires be had first**)* | **`npm run build` never typechecks the test surface.** `tsconfig.json` excludes `src/**/*.test.ts`, `src/**/*.test.tsx` and `src/test`, and vitest transpiles without typechecking — so **no gate typechecks a spec file.** A spec can carry a type error indefinitely and all three gates stay green. `tsconfig.vitest.json` exists and includes them, and nothing runs it. | **CI INHERITS THE GAP EXACTLY, WHICH IS THE POINT: CI IS NOT A SECOND SOURCE OF TRUTH.** ⚠️ **THE REMEDY THIS ROW ORIGINALLY BOOKED — `tsc -p tsconfig.vitest.json --noEmit` — DOES NOT WORK, AND WAS CORRECTED AT BATCH D (§15b). It returns CLEAN on an injected type error**, because the child config `include`s the specs and then INHERITS THE BASE `exclude`, WHICH WINS. Anyone acting on the old record would have added the config, seen green, and CLOSED THIS FINDING WHILE CHANGING NOTHING. **The real remedy OVERRIDES `exclude` (`"exclude": []`), it does not merely run the config — measured cost 32 errors across 18 spec files.** **OPERATOR RULING: SCHEDULED, AFTER B** — a position in the queue, not a hope. Two live instances already (batch A, batch E). |
 
 ### Elevated to CLASSES (operator ruling, CP-3a) — **SOMO's generalisation of our own filing, sharper than ours**
 
@@ -9478,3 +9478,160 @@ so it is an honest-marking concern and not this arc's exposure. **Named here and
 not fixed**: the page carries a page-wide `ProvenanceMarker` that now reads
 "Sample — awaiting supplier-discovery feed", which covers it for a reader who sees
 the marker. A reader who does not is the residual risk.
+
+---
+
+## 15 · BATCH D — identifying, but not a name · and the C rulings
+
+**Status: D DONE. B is the last batch, and it takes the material trademarks FIRST.**
+
+### 15a · THE C RULINGS, ON THE RECORD
+
+**The B-fence call is RATIFIED, not overturned**, and the general form is the part
+that outlives the case:
+
+> **A FENCE THAT FORCES A BATCH TO KNOWINGLY CREATE THE DEFECT IT EXISTS TO
+> PREVENT IS BEING READ TOO LITERALLY.**
+
+Renaming only `mkt-003`'s subject would have manufactured §13b's defect a second
+time, deliberately. The trademarks were accelerated for exactly that reason;
+applying the same reason to the same shape is **the fence read correctly, not
+stretched**. A fence encodes an intent, and a reading that inverts the intent is a
+misreading however faithful it is to the wording.
+
+**PF-2a's pin inverting is the mechanism justifying itself.** It asserted the
+residue was PRESENT so a later batch could not clean it quietly and leave the
+finding standing against a tree that no longer had the defect. C was that batch; it
+went red; it forced a deliberate update. **Inverted rather than deleted, and
+rewritten as a derivation.** And the new sibling pin is the one to keep prominent:
+
+> **THE RISK LEVELS AND MATCH SCORES SURVIVED THE SUBSTITUTION — WHICH NOTHING
+> ELSE WAS CHECKING. THAT IS THE ASSERTION THE WHOLE ARC RESTS ON.**
+
+If a batch had quietly dropped the assessments while renaming the subjects, every
+other guard would have stayed green and the remedy would have silently become a
+lossier one. The thesis needed an assertion, not just a sentence.
+
+**`DISCOVERY-CHIP-PROSE-FILTER-01`, closed by accident, is the argument for
+exact-set-of-N over "no offenders exist":**
+
+> **A DELETION BATCH CLOSED A FINDING IN AN UNRELATED ARC, AND ONLY THE ADDRESS
+> MADE IT VISIBLE.**
+
+A test asserting merely *"no offenders exist"* would have gone from green to green
+and told nobody. The exact set went from `['…BuyerDiscovery.tsx:214']` to `[]` and
+forced a reader to ask why. **Kept as an exact set of zero**, so a *first* offender
+cannot arrive quietly either.
+
+**The two unnamed deletions were right:**
+
+> **A NUMBER THAT LOOKS LIKE A COUNT AND COUNTS NOTHING IS THE SAME DEFECT AS A
+> SCORE NOBODY COMPUTED, WEARING DIFFERENT CLOTHES.**
+
+`GLOBAL_SUPPLIERS.length + 10` rendering **18** over a fixture of **8**, beside a
+hard-coded `approved: 2`. And **a filter over an empty read promises a result it
+cannot produce.**
+
+**The discovery judgement is accepted as reported, including the weakness: the page
+is NARROWER THAN ITS NAME, and what a viewer would have seen WAS PERSUASIVE RATHER
+THAN TRUE. This is the INTENDED STATE, NOT A REGRESSION** — recorded here in those
+words so the operator's smoke reads it that way.
+
+**The watch item is URGENT: `Givaudan Floral Accord FG-2847` is the single most
+conspicuous string on the discovery page**, in the leading table, surrounded by
+`Sample …`. Correctly untouched and far more visible than before. **B takes the
+material trademarks FIRST, not merely early.**
+
+### 15b · `TSC-SKIPS-TESTS-01` — THE RECORD WAS WRONG, AND THAT WAS THE URGENT HALF
+
+The register row is **corrected in place** (§ register). It booked the remedy as
+`tsc -p tsconfig.vitest.json --noEmit`. **That command does not close the gap.**
+
+Measured, not reasoned — a real type error (`const ALLOWED: number = new Set(…)`)
+injected into a spec:
+
+| command | result |
+|---|---|
+| `npx tsc --noEmit` | **exit 0 — clean** |
+| `npx tsc -p tsconfig.vitest.json --noEmit` | **exit 0 — clean** |
+| same config with `"exclude": []` | **reddens correctly** |
+
+The child config `include`s the specs and then **inherits the base `exclude`, which
+wins**. So:
+
+> **ANYONE ACTING ON THE OLD RECORD WOULD HAVE ADDED THE CONFIG, SEEN GREEN, AND
+> CLOSED THE FINDING WHILE CHANGING NOTHING.**
+
+**The real remedy OVERRIDES `exclude` — it does not merely run the config.**
+Measured cost of turning it on: **32 errors across 18 spec files.**
+
+**OPERATOR RULING: SCHEDULED, AFTER B.** A position in the queue, not a hope. Two
+live instances already: batch A's dangling identifier (`tsc` clean, caught only by
+executing the spec) and batch E's guard that would have printed `MOCK_ASNS
+undefined` on failure.
+
+**AND THE CLASS, WHICH IS THE PART THAT GENERALISES:**
+
+> **THIS IS THE SECOND BOOKED REMEDY THAT TURNED OUT TO BE THEATRE.**
+> **A REMEDY RECORDED BUT NEVER RUN IS AN UNTESTED CLAIM WEARING A DISPOSITION.**
+
+A finding with a booked remedy *reads* as handled — the thinking is done, only the
+doing remains. That is exactly the state in which nobody checks it. **The register
+should treat an unrun remedy as an open question, not a settled plan**, and the
+cheap discipline is the one used here: run the command once, at filing time,
+against a deliberately broken input, and record what it actually did.
+
+### 15c · WHAT D REMOVED
+
+The §5 lane: artifacts that identify a real party **without being a proper noun**,
+which is why every name-shaped instrument in this arc walked past them.
+
+| Artifact | Where | Why it is exposure |
+|---|---|---|
+| `supplier@ptberlina.co.id` | `SupplierWhatsApp.tsx` email-preview chrome | A real company's domain. **A's rename never reached it — different string, in a PAGE not a fixture.** |
+| `procurement@paragoncorp.com` | same chrome, as the buyer | Presented as the client's own address. The client's actual domain is not this one, so it is **a third party's domain presented as the client's** — the worse direction. |
+| `TD.01.01.55.09.22.0142`, `TD.02.02.66.10.23.0311` | supplier documents, a PO comment, an SDC fixture, a test | **BPOM notification numbers in the real registry format.** The NPWP/NIB defect A retired, in a second format nobody had looked for. |
+| `+49 621…` dialling code | supplier master | 621 is the area code of the city **A had already generalised** — so the phone both identified the original site and contradicted the new one. |
+| `jane@company.com`, `your@email.com` | form placeholders | Real registered domains used as placeholder idiom. Moved to the RFC 2606 reserved TLD; free to fix, so no reason not to. |
+
+**Kept, each with a stated reason** (now enforced by an allowlist that demands one):
+`paragon.id` — first party, **flagged as an OPERATOR INPUT** in case it is not
+actually theirs, which would make it the `paragoncorp.com` shape again;
+`halal.go.id` — a regulator; `worldbank.org` — a **CC-BY data-licence attribution**,
+and deleting a citation would strip provenance, which is the opposite of this arc.
+
+### 15d · D'S GUARD, AND THE TWO DEFECTS THE PROBE FOUND IN IT
+
+`src/data/thirdPartyIdentifiers.test.ts` — a **tree-wide source scan**, not a
+fixture import, because this lane does not live in one array: the two real domains
+were in JSX and the statutory numbers were spread across four files. **A guard
+scoped to fixtures would have passed while a real domain shipped in a page.**
+
+Positive vocabulary again: a domain must be `.example` or on a **named allowlist
+that requires a reason per entry**. A domain that cannot be justified in one clause
+belongs under `.example` instead.
+
+**Two defects in my own instrument, both found rather than reasoned:**
+
+1. **The first draft flagged 40+ JS property accesses** — `opt.id`, `s.id`, `t.id`
+   — because `.id` is Indonesia's ccTLD *and* the commonest property name here. A
+   pin that noisy trains people to widen the exemption, which retires the check
+   without anyone deciding to. Narrowed to **addressable** forms (email, `scheme://`,
+   `www.`), which is the shape every artifact D removed actually took — **and the
+   residual limit is stated in the file**: a bare domain in prose is not caught.
+2. **The ISO container regex matched NOTHING.** `[A-Z]{4}U-?\d{6,7}` requires five
+   letters; ISO 6346 is three letters plus a category letter (`U`/`J`/`Z`). **The
+   mutation probe caught it — re-inserting a real owner code left the test GREEN.**
+   A regex that silently matches nothing is *the gate green because it is looking at
+   nothing* failure, **inside a guard written against exactly that failure**, in the
+   same batch that corrected a booked remedy for being the same thing. Fixed.
+
+Also encoded: **a format MASK is not an identifier.** `placeholder="00.000.000.0-000.000"`
+communicates the shape and cannot be anyone's tax id. **The defect was never the
+format — it is a PLAUSIBLE VALUE in the format**, because that is what collides
+with a real registry entry. Runs whose digits are all identical pass.
+
+Mutation-probed five ways, each confirming the file changed first: a real domain
+back in JSX → red; a real BPOM number → red; a real NPWP (**cross-checking A**) →
+red; a real ISO container code (**cross-checking E**) → red after the regex fix;
+and the NPWP mask turned into a plausible value → red.

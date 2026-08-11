@@ -618,7 +618,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
   //      2026-05-14 — thirteen months later. Left as found.
   //
   // ── ⚠️ AND THE FINDING THAT MATTERS MOST HANGS OFF THIS ROW ───────────────
-  //   `doc-201` is a **BPOM Notification (TD.02.02.66.10.23.0311)**, category
+  //   `doc-201` is a **BPOM Notification (SAMPLE-BPOM-0005A)**, category
   //   `BPOM Regulatory`, linked to THIS PO — whose ASN carries `MAT-40220`,
   //   for which `inferBpom` returns **false**. The tree already states that a
   //   BPOM registration governs this supply. That `false` is ASSERTED AGAINST

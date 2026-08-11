@@ -955,13 +955,13 @@ const EmailPanel: React.FC = () => {
             <div>
               <div className="text-sm font-bold text-white">Paragon Corp</div>
               <div className="text-xs text-white/60">
-                procurement@paragoncorp.com
+                procurement@sample-buyer.example
               </div>
             </div>
           </div>
           <div className="px-4 py-2.5 bg-bg-surface border-b border-border-subtle text-xs text-text-tertiary">
             <span className="text-text-primary font-semibold">To:</span>{' '}
-            supplier@ptberlina.co.id ·{' '}
+            supplier@sample-packaging.example ·{' '}
             <span className="text-text-primary font-semibold">Sent:</span>{' '}
             <Data>
               {new Date().toLocaleDateString('en-GB', {
