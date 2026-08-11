@@ -203,7 +203,7 @@ export const mockQuotations: Quotation[] = [
     status: 'Under Review',
   },
 
-  // RFQ-2026-004 — Givaudan Floral (Closed)
+  // RFQ-2026-004 — Sample Floral (Closed)
   {
     id: 'qt-004a',
     rfqId: 'rfq-004',

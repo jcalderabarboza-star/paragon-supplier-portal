@@ -9635,3 +9635,163 @@ Mutation-probed five ways, each confirming the file changed first: a real domain
 back in JSX → red; a real BPOM number → red; a real NPWP (**cross-checking A**) →
 red; a real ISO container code (**cross-checking E**) → red after the regex fix;
 and the NPWP mask turned into a plausible value → red.
+
+---
+
+## 16 · BATCH B — the trademarks, and the arc closes
+
+**Status: B DONE. `DISCOVERY-REAL-SUBJECTS-01` IS CLOSED.**
+`E → A → C → D → B` complete. **The shipped bundle contains zero real company
+names and zero real trademarks.**
+
+### 16a · D'S RULINGS, ON THE RECORD
+
+**The self-inflicted one is the finding**, kept verbatim because the compression
+is the point:
+
+> **A REGEX THAT SILENTLY MATCHES NOTHING IS THE
+> GATE-GREEN-BECAUSE-IT-LOOKS-AT-NOTHING FAILURE, INSIDE A GUARD WRITTEN AGAINST
+> THAT FAILURE, IN THE SAME BATCH THAT CORRECTED A BOOKED REMEDY FOR BEING
+> EXACTLY THAT.**
+
+Three layers in one PR, caught only by a mutation probe. **Recording it beat
+fixing it quietly — the instance is worth more than the correction.** A fixed
+regex protects one lane; a recorded instance of *the author of an anti-theatre
+guard shipping theatre inside it* is evidence that the failure is structural and
+not a lapse of care. The correction took one line. The instance is the reason the
+next guard gets probed.
+
+**Re-deriving rather than working the stale list is what found the rest**, and the
+general form is the same rule one level up:
+
+> **A SCOPE WRITTEN BEFORE ITS PREDECESSORS RAN IS A LIST, AND THE LIST RULE
+> APPLIES TO IT.**
+
+§6's D-scope was authored before A, C and E moved the boundaries. Working it would
+have produced **a batch that looked complete and swept nothing** — every item on
+it had already been taken by another batch, so it would have gone green having
+done no work, while three live artifacts sat untouched. **A plan is a list of
+what you knew then.**
+
+**Three findings kept at weight:**
+
+1. **A real domain in JSX that A's fixture rename could not reach.** The guard
+   censused fixtures; the string was page chrome. **Where a value lives is part
+   of its population, and a guard scoped to a file KIND is a guard with a hole
+   shaped like every other kind.**
+2. **`procurement@paragoncorp.com` presented as the CLIENT'S OWN address when it
+   is not the client's domain — a third party's domain wearing the client's
+   name.** The worse direction of the same defect, and **nothing in the census
+   would have caught it, because it did not look like a third-party reference.**
+   Every instrument in this arc looks outward at parties the product names; this
+   was a party the product *impersonated as itself*.
+3. **A dialling code that outlived its city.** `+49 621` both identified the
+   original site AND contradicted the new one. **An identifier that survives a
+   rename is the completed-half failure in a field nobody thinks of as a name.**
+
+**And the distinction that generalises, on its own line:**
+
+> **A FORMAT MASK IS NOT AN IDENTIFIER. `00.000.000.0-000.000` COMMUNICATES THE
+> SHAPE AND CANNOT BE ANYONE'S TAX ID. THE DEFECT WAS NEVER THE FORMAT — IT IS A
+> PLAUSIBLE VALUE IN THE FORMAT.**
+
+The `.id` narrowing with **the residual limit stated in the file** rather than
+shipped silently is the right handling: Indonesia's ccTLD being the commonest
+property name in this codebase is the kind of collision that **makes a derivation
+look broken when it is merely wide.**
+
+### 16b · WHAT B REMOVED — THE TRADEMARKS, TAKEN FIRST
+
+Taken first by ruling, and the reason held up on inspection: after C deleted the
+candidate pool, **the fragrance-house trademark was the single most conspicuous
+string on the discovery page**, sitting in the leading table surrounded by
+`Sample …`. **The deletion made it visible. That is the argument for doing the
+conspicuous half early rather than last** — a residue's visibility is not fixed,
+it is relative to what surrounds it, and every batch that cleans its neighbours
+promotes it.
+
+| Trademark | Where | Now |
+|---|---|---|
+| A real fragrance house's name inside a fragrance material code | `SINGLE_SOURCE.material`, a PR line, an RFQ title, a marketplace row, a sourcing list, a quotation comment, a `covers` string | `Sample Floral Accord …` |
+| The same house in a citrus compound | `BuyerSourcing` | `Sample Citrus Compound` |
+| A real emulsifier trademark used as MATERIAL IDENTITY | `MATERIAL_MASTER['RM-EMUL-9440']`, an ASN line, two storefront rows, `doc-202`, three tests | `Sample Blend PF-20 …` |
+
+**`doc-202` is the relocation A created and reported against itself, now closed.**
+It read *"Sample Personal Care Regulatory Affairs"* issuing a safety data sheet for
+a real trademarked product — a fictional company implied to steward a real product,
+**a claim of a kind that did not exist before the fix**. Both halves are fictional
+now, and the row is coherent again.
+
+**The rename is CASE-PRESERVING, deliberately.** `…Emulsifier` and `…emulsifier`
+are the two halves of a RESOLVED casing-collision finding (2B-5b-ii): the master
+declares one meaning and the other lanes quote it. **Collapsing the case while
+renaming would have decided by tidying what that finding decided by authoring** —
+the exact failure its own comment warns against.
+
+### 16c · WHAT B DID NOT TOUCH, AND WHY
+
+**Certifiers and regulators stay real** — BPJPH, MUI, BPOM, JAKIM, TÜV, ECHA, NMPA.
+**Fictionalising them destroys the domain**: they are the actual authorities the
+product exists to model. And once the SUBJECT is fictional the sentence is
+unobjectionable — *"a BPJPH certificate for Sample Fragrance House"* asserts
+nothing about BPJPH. **`complianceRegistry.ts` already shipped the proof** before
+this arc began.
+
+**The object-position clauses were already clean, and that is a DERIVED result,
+not an assumption.** C generalised the last one (`mkt-003`). Re-running the tail
+derivation over every fixture and page returned exactly two names in B's scope —
+both trademarks — plus first-party brands (`Wardah`, `Emina`, `Instaperfect`,
+`Kahf`) and one data-provider citation (`Drewry`, in a comment, an attribution).
+**Nothing else survived to rewrite.**
+
+### 16d · B'S GUARD, AND THE DERIVATION THAT IS NOT AVAILABLE HERE
+
+> **THERE IS NO CHEAP DERIVATION FOR "IS THIS TOKEN A COMPANY OR A CHEMICAL",
+> AND PRETENDING OTHERWISE WOULD BE THE WEAK INSTRUMENT WEARING A DERIVATION'S
+> CLOTHES.**
+
+Two candidates were **built and measured** before that was written, not reasoned
+about:
+
+- **A positive vocabulary over material labels** — 115 distinct capitalised
+  tokens. Every new material would need a list edit, which trains bulk appending
+  in the one direction that is supposed to cost something.
+- **A hapax rule** (a company name is a one-off; chemistry recurs) — **87 of the
+  115 appear in exactly one label.** Chemistry is mostly one-off too. No precision.
+
+So B asserts the narrower thing that IS derivable — **a corporate legal form has
+no business in a material identity** — with the limit stated in the file:
+**it would not have caught either of B's own cases**, because a bare brand carries
+no legal form. Said plainly so it cannot read as coverage it does not provide.
+
+The real coverage for this lane came from **widening an existing sweep instead of
+inventing a new one**: the endorsement guard now includes `SINGLE_SOURCE[].material`,
+which was its last stated exclusion. **A scope note that outlives its scope is a
+document asserting a limit the tree no longer has** — the `looseEndCensus`
+precedent, applied to a scope comment rather than an exemption.
+
+Mutation-probed three ways: a legal form entering a material label → red; a
+deleted brand returning in a `material` name (**the lane B just added to the
+sweep**) → red; the master label diverging from the lanes quoting it → red.
+
+### 16e · THE ARC, CLOSED
+
+| Batch | Took | Instrument left behind |
+|---|---|---|
+| **E** | dead `COMPLIANCE_ITEMS`; 12 carriers + their tracking/container refs | positive vocabulary over carrier identity |
+| **A** | 12 supplier identities, tax IDs, business registrations, `Tbk.`, domains, a supply claim, 6 dashboard health rows | the never-lowercase derivation, as a gate |
+| **C** | the 8-row candidate pool + its type and read path; 2 unsourced KPI tiles; the filter state | harvest gate — real names now require a real source |
+| **D** | 2 real domains, 2 BPOM numbers, a dialling code, 2 placeholder domains | tree-wide scan: addressable domains + registry formats |
+| **B** | 2 real trademarks used as material identity | legal-form exclusion, with its limit stated |
+
+**Five defeats of the derivation, five findings** — a domain, a slug, a casing
+rule, a punctuation mark, and a frequency-ranked list read from the head. **Not
+one was found by the derivation succeeding.** And three of the five instruments
+built to close them had defects found by mutation probes rather than by review.
+
+The thesis held at every site:
+
+> **THE ASSESSMENT WAS NEVER THE PROBLEM. THE SUBJECT WAS.**
+
+Every grade, rating, risk level, suspension, expired certificate and match score
+that the arc found is still in the tree. Only the real parties left.

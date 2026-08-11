@@ -128,7 +128,7 @@ export const mockRfqs: RFQ[] = [
   {
     id: 'rfq-004',
     rfqNumber: 'RFQ-2026-004',
-    title: 'Givaudan Floral Accord — Wardah Hijab Refresh',
+    title: 'Sample Floral Accord — Wardah Hijab Refresh',
     materialCategory: 'Fragrance',
     materialIds: ['FR-WARD-4430', 'FR-WARD-4440'],
     buyerId: 'buyer-001',

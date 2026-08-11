@@ -46,7 +46,7 @@ const AUTHORED = [
   { was: 'MAT-55022', code: 'AI-NIAC-6612', wasMeaning: 'Active emulsion – Niacinamide 5%' },
   { was: 'MAT-55031', code: 'AI-HYALU-6615', wasMeaning: 'Active emulsion – Hyaluronic 2%' },
   { was: 'MAT-30110', code: 'RM-PSTN-7150', wasMeaning: 'Specialty fat blend — RBD stearin' },
-  { was: 'MAT-40220', code: 'RM-EMUL-9440', wasMeaning: 'Emulgade SE-PF emulsifier' },
+  { was: 'MAT-40220', code: 'RM-EMUL-9440', wasMeaning: 'Sample Blend PF-20 emulsifier' },
 ] as const;
 
 const CODES = AUTHORED.map((a) => a.code);
@@ -145,7 +145,7 @@ describe('2B-5b-ii — what each row RESTS ON, counted rather than claimed', () 
       { code: 'RM-PSTN-7150', meanings: 1, units: 1, docs: 0 },
       // ── PLUS a unit AND a REFERENCE-BOUND DOCUMENT. The best-evidenced row.
       //    ⚠️ ONE, NOT TWO, AND THE COUNT WAS CORRECTED RATHER THAN THE
-      //    PREDICATE. `doc-202` (*REACH SDS — Emulgade*) was claimed as a second
+      //    PREDICATE. `doc-202` (*REACH SDS — Sample Blend PF-20*) was claimed as a second
       //    document; its `linkedTo` is the PROSE STRING 'All emulsifier grades',
       //    not a document reference, so nothing RESOLVES it to this supply.
       //    It corroborates BY NAME and is counted separately below.
@@ -200,7 +200,7 @@ describe('2B-5b-ii — what each row RESTS ON, counted rather than claimed', () 
     // the ones a machine can follow.
     const reach = docs.find((d) => d.id === 'doc-202')!;
     expect(reach.issuedBy).toContain('Sample Personal Care');
-    expect(reach.name).toContain('Emulgade');
+    expect(reach.name).toContain('Sample Blend PF-20');
     expect(reach.linkedTo).toBe('All emulsifier grades');
     expect(mockPurchaseOrders.some((p) => p.poNumber === reach.linkedTo)).toBe(false);
 

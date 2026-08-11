@@ -916,7 +916,7 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     //   · `RM-PSTN-7150` — the ASN said *'Specialty fat blend — RBD stearin'*
     //     and `c101` said *'RBD Palm Stearin — Specialty Fat'*. The master
     //     declares the latter and the ASN line took it.
-    //   · `RM-EMUL-9440` — *'Emulgade SE-PF emulsifier'* vs *'…Emulsifier'*.
+    //   · `RM-EMUL-9440` — *'Sample Blend PF-20 emulsifier'* vs *'…Emulsifier'*.
     // ⚠️ AND C's TRAP IS RESOLVED THE RIGHT WAY ROUND. It was pinned as two
     // strings unequal as written and EQUAL under `toLowerCase`, precisely so
     // nobody could make it vanish by normalising the capital — which would have
@@ -960,8 +960,8 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // difference is invisible in the diff and total in the reasoning, which is
     // why it is asserted rather than described.
     expect(new Set(REFS_DERIVED.filter((r) => r.code === 'RM-EMUL-9440').map((r) => r.meaning)))
-      .toEqual(new Set(['Emulgade SE-PF Emulsifier']));
-    expect(MATERIAL_MASTER['RM-EMUL-9440'].label).toBe('Emulgade SE-PF Emulsifier');
+      .toEqual(new Set(['Sample Blend PF-20 Emulsifier']));
+    expect(MATERIAL_MASTER['RM-EMUL-9440'].label).toBe('Sample Blend PF-20 Emulsifier');
   });
 
   it('the NARROW and DERIVED scopes disagree on EXACTLY the deferred rows', () => {

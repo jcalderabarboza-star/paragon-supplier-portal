@@ -762,13 +762,13 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     // ⚠️ THE BEST-EVIDENCED ROW IN THE SET — FOUR SOURCES, TWO OF THEM
     // DOCUMENTS, and the only row in the ENTIRE MASTER whose `bpomApplicable`
     // rests on a document rather than on its group's class default:
-    //   · `ASN-2025-00302` line — *Emulgade SE-PF emulsifier*, 2 400 shipped;
-    //   · storefront `c201` — *Emulgade SE-PF Emulsifier*, `uom: 'KG'`,
+    //   · `ASN-2025-00302` line — *Sample Blend PF-20 emulsifier*, 2 400 shipped;
+    //   · storefront `c201` — *Sample Blend PF-20 Emulsifier*, `uom: 'KG'`,
     //     certs REACH + ISO 9001 (⚠️ **NO halal cert**);
     //   · `doc-201` — **BPOM Notification SAMPLE-BPOM-0005A**, category
     //     `BPOM Regulatory`, issued by BPOM, linked to `PO-2025-00131`, which
     //     is this ASN's parent;
-    //   · `doc-202` — *REACH Compliance / Safety Data Sheet — Emulgade*, issued
+    //   · `doc-202` — *REACH Compliance / Safety Data Sheet — Sample Blend PF-20*, issued
     //     by **Sample Personal Care Regulatory Affairs**, `linkedTo: 'All emulsifier grades'`.
     //
     // ⚠️ `bpomApplicable: 'APPLICABLE'` IS A DEVIATION FROM THE CLASS RULE AND
@@ -793,7 +793,7 @@ export const MATERIAL_MASTER: MaterialMaster = Object.freeze({
     // siblings rather than somewhere better, because moving them is a registry
     // ruling (the MG-10 shape) and inventing MG-07 inside an authoring diff is
     // the decision-smuggling 2B-1 named. **REPORTED FOR RULING, NOT FIXED HERE.**
-    label: 'Emulgade SE-PF Emulsifier',
+    label: 'Sample Blend PF-20 Emulsifier',
     materialType: 'ROH',
     materialGroup: 'MG-02',
     canonicalUom: 'KG', // STATED by `c201`, not inferred from the group

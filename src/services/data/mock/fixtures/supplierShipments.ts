@@ -222,7 +222,7 @@ export const MOCK_ASNS: ASN[] = [
       temperatureRequirement: 'Ambient (15–25°C)',
     },
     lineItems: [
-      { materialCode: 'RM-EMUL-9440', description: 'Emulgade SE-PF Emulsifier', orderedQty: 2400, shippedQty: 2400, lotNumber: 'LOT-B5540' },
+      { materialCode: 'RM-EMUL-9440', description: 'Sample Blend PF-20 Emulsifier', orderedQty: 2400, shippedQty: 2400, lotNumber: 'LOT-B5540' },
     ],
   },
 ];
