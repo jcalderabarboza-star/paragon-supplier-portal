@@ -9152,3 +9152,149 @@ Mutation-probed seven ways, each confirming the file changed before trusting red
 a real supplier name, a real NPWP format, a real NIB format, a real email domain,
 a `Tbk.` status claim, **a real party on a dashboard grade (`Lonza` — a name the
 guard has never seen)**, and **a real party inside supplier PROSE**. All red.
+
+---
+
+## 13 · THE ARC'S THESIS, AND THE RULINGS ON BATCH A
+
+Filed on the operator's ruling over PR #205. Main `42e8b4c`.
+
+### 13a · THE THESIS — and the row that proves it
+
+> **THE ASSESSMENT WAS NEVER THE PROBLEM. THE SUBJECT WAS.**
+
+That is the thesis of `DISCOVERY-REAL-SUBJECTS-01` and the reason the whole arc
+substitutes rather than deletes. **The proof is the Caelo row**, and it is a proof
+because nothing about it was softened:
+
+| Carried before | Carried after |
+|---|---|
+| `status: SUSPENDED` | `status: SUSPENDED` |
+| `rating: 1.5` — lowest in the dataset | `rating: 1.5` |
+| `scorecardGrade: D` | `scorecardGrade: D` |
+| an expired certificate | an expired certificate |
+| **a real firm, in its real city** | **a fictional firm** |
+
+Every adverse judgement survived intact. **Only the real party left the sentence.**
+A suspended supplier with a 1.5 rating is a state the product must be able to
+show; asserting it about a company that exists is a different act entirely, and
+the difference is the whole finding.
+
+**`Tbk.` is the one thing A deleted rather than substituted, and the asymmetry is
+deliberate.** A performance claim can be restated about a fictional subject
+because the claim is *about the subject*. A **corporate-status** claim is
+different in kind: `Tbk.` asserts an IDX listing — a fact with a public registry
+behind it. **INVENTING A DIFFERENT LISTING STATUS IS THE SAME ACT AGAIN**, just
+about a different registry entry, so there is nothing to substitute *to*. The
+claim was removed, not relocated.
+
+### 13b · THE COMPLETED-HALF FAILURE, INSIDE A BATCH FIXING COMPLETED-HALF FAILURES
+
+**The finding the operator most wants kept, and A reported it against itself.**
+
+`supplierDocuments.ts` `doc-202`, after A:
+
+| | issuer | document |
+|---|---|---|
+| **Before** | a real company's Regulatory Affairs dept | a Safety Data Sheet for **its own real product** |
+| **After** | `Sample Personal Care Regulatory Affairs` | a Safety Data Sheet for **`Emulgade`** — still a real trademark |
+
+Before, the row was **fabricated but COHERENT**: a real firm, its own real
+product. After, **A FICTIONAL COMPANY IS IMPLIED TO STEWARD A REAL TRADEMARKED
+PRODUCT** — and that is **A CLAIM OF A KIND THAT DID NOT EXIST BEFORE THE FIX.**
+
+> **This is the completed-half failure (§9a) appearing INSIDE a batch whose
+> purpose is fixing completed-half failures.**
+
+It is not an argument against the split — A could not leave a real company in a
+supplier position — but it is the sharpest available demonstration that **a
+partial remedy is not a smaller version of a complete one; it can be a new
+defect.** The half that gets fixed changes what the unfixed half means.
+
+**Consequence, ruled: B TAKES THE MATERIAL TRADEMARKS EARLY IN ITS SCOPE, NOT AT
+ITS END.** Every batch-day between A and that fix is a day the tree carries a
+claim neither A nor B intended to make. The same shape sits at lower stakes in
+`MATERIAL_MASTER['RM-EMUL-9440']` (`Emulgade SE-PF Emulsifier`).
+
+### 13c · THE COUNT-RANKING INDICTMENT (stands as filed)
+
+> **A NAME APPEARING ONCE CARRIES THE SAME EXPOSURE AS ONE APPEARING FIFTY-TWO
+> TIMES, AND RANKING BY COUNT ACTIVELY HIDES THE SINGLE UNCONSIDERED ASIDE.**
+
+And the sharper half, which is the part that generalises past this census:
+
+> **DECLARING A STEP AS JUDGEMENT IS NOT THE SAME AS DOING IT WELL.**
+
+§1 named Stage C (real-vs-fictional adjudication) as the hand-pick and stated it
+plainly. That declaration was honest and it bought less protection than it looked
+like it bought — the reader was told where the soft step was, and the soft step
+was still done badly, by reading the head of a frequency-ranked list. **A declared
+limitation is a disclosure, not a control.**
+
+### 13d · METHOD RECORD — `innerText` CONCATENATES SIBLING `<tspan>`s
+
+A wrapped SVG chart label renders correctly on two lines and reads back through
+`innerText` as `PT SamplePackaging` — a missing space that mimics a data defect
+exactly. Resolved by reading `<tspan>` nodes directly.
+
+**What matters is how it was caught.** It is not on the list of known blind spots;
+the list had exactly one entry (`<option>` text, §11b). It was caught by §11b's
+**GENERAL** rule — *verify a coverage claim with an instrument that does not share
+the failure mode of the one that produced it*. **THAT IS THE ARGUMENT FOR HAVING
+STATED THE GENERAL RULE RATHER THAN ONLY THE SPECIFIC FACT, and the rule earned
+itself one batch after it was written**, on a failure mode nobody had enumerated.
+
+A specific fact protects against its own recurrence. A general rule protects
+against the ones you have not met.
+
+### 13e · `PF0-TESTS-ARE-NOT-TYPECHECKED-01` — A SECOND INSTANCE, AND THE BOOKED REMEDY IS WRONG
+
+Cross-referenced to **`PF0-TESTS-ARE-NOT-TYPECHECKED-01`** (§10.3) and
+**`TSC-SKIPS-TESTS-01`** (§ register). **That finding now has two concrete
+instances**; until A it had one.
+
+**The live instance:** A's rename left a dangling identifier
+(`basf?.complianceIssue`) in `scoping.contract.test.ts`. **`tsc` reported clean.**
+Only executing the spec caught it. Exactly the predicted shape: `tsconfig.json`
+excludes `src/**/*.test.ts(x)`, and vitest transpiles without typechecking.
+
+**Two things measured here that the prior filings could only assert:**
+
+**1 · THE BOOKED REMEDY DOES NOT WORK.** `TSC-SKIPS-TESTS-01` books the fix as
+`tsc -p tsconfig.vitest.json --noEmit`. Tested by injecting a real type error
+(`const ALLOWED: number = new Set(…)`) into a spec:
+
+| command | result |
+|---|---|
+| `npx tsc --noEmit` | **exit 0 — clean** |
+| `npx tsc -p tsconfig.vitest.json --noEmit` | **exit 0 — clean** |
+| same config with `"exclude": []` | **reddens correctly** |
+
+`tsconfig.vitest.json` sets `include` but `extends` the base, and **`include` does
+not override `exclude`.** §10.3 predicted this from reading the config; it is now
+verified by running it. **The booked remedy would have been added, passed, and
+closed the finding while changing nothing** — a gate that reports green because it
+is looking at nothing, which is the exact failure `npm run gates` (CP-3a) exists
+to prevent.
+
+**2 · TURNING IT ON IS NOT FREE, AND HERE IS THE NUMBER.** With `"exclude": []` on
+a clean tree: **32 errors across 18 spec files.** Codes: `TS2345` ×8, `TS18048` ×8,
+`TS2352` ×5, `TS2322` ×4, and a tail. So the gap has been hiding real type errors
+for the life of the suite, and closing it is a real remediation task, not a
+one-line config change. **Filed with the cost known, as the dispatch requires —
+still not fixed, because adding a gate is argued first.**
+
+**3 · THE MOST USEFUL INSTANCE IS SELF-INFLICTED.** Batch E's own guard
+(`carrierIdentity.test.ts`) carried `Property 'id' does not exist on type 'ASN'`.
+The assertion logic was correct; the **failure message** interpolated `a.id`,
+which is `undefined` — so the guard would have reported `MOCK_ASNS undefined`
+instead of naming the offending row. **A defect that only manifests on the failure
+path, in a guard written to catch failures, in the same arc that filed this
+finding.** Fixed here (`a.asnNumber`) because a broken diagnostic in a guard is a
+real cost, and leaving a knowingly-wrong one would be its own small dishonesty.
+
+**A note on the register itself:** this gap is filed under **two ids** —
+`TSC-SKIPS-TESTS-01` and `PF0-TESTS-ARE-NOT-TYPECHECKED-01` — by two different
+batches. A finding filed twice under different names is a sign the register was
+not searched before filing. Cross-referenced rather than merged; whichever id
+survives should absorb the other.
