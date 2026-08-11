@@ -9920,3 +9920,82 @@ discipline that would have caught both is cheap and is now demonstrated twice in
 this arc: **run the command once, at filing time, against a deliberately broken
 input, and record what it actually did.** A remedy that has never been executed
 against a failing case is not a remedy; it is a hypothesis with a ticket number.
+
+---
+
+## 18 · `SPEC-OMITS-THE-HONESTY-FIELD-01` — the class behind all six instances
+
+**Filed on the operator's ruling over PR #210.** Not a list of six defects; one
+mechanism that produced all six.
+
+### 18a · THE CLASS
+
+> **A SPEC OMITS WHAT IT DOES NOT READ, AND WHAT A SPEC DOES NOT READ IS EXACTLY
+> THE FIELD CARRYING THE HONESTY CLAIM — BECAUSE THOSE FIELDS ARE CONSUMED BY
+> MARKERS AND GATES, NOT BY THE ASSERTION UNDER TEST.**
+
+**THIS IS A SELECTION EFFECT, NOT CARELESSNESS.** No author decided to drop a
+provenance marker. Each wrote the minimum object their assertion needed, which is
+correct practice — and the fields an assertion never touches are, by construction,
+the ones that exist for *other* readers: the liveness pill, the scoping gate, the
+compliance projection, the honesty marker. So the omission is not random. **It is
+biased, precisely and repeatedly, toward the fields that carry the honesty claim.**
+
+The dropped fields, across six instances: **provenance, identity, scope, and
+compliance applicability — the honesty-bearing ones, EVERY TIME.** And with specs
+untypechecked, **nothing objected.**
+
+The consequence for practice: **a required field is a claim that every constructor
+must answer, and a spec is a constructor.** When the type system is not enforced on
+specs, the honesty fields are the first thing to fall out of test fixtures and the
+last thing anyone notices — because the assertion is green and the field was never
+its subject.
+
+### 18b · ITEM 1 WAS WORSE IN THE SAME DIRECTION
+
+`quotationPriceRanking` violated **both** honest-fact fields on one object:
+
+- **RAW TEXT INTO THE ONE THAT BANNED COERCION** — `leadTimeDays: '18'`, in the
+  field whose doc records that `Number(...) || 0` turned every unreadable token
+  into a maximum lead-time score, and that *"there is no coercion left to do it
+  with."*
+- **NOTHING AT ALL INTO THE ONE THAT BANNED OMISSION** — `moq` absent from five
+  drafts. **`moq` was made required specifically so it could not be dropped
+  silently** (`FIND-02`, the captures-what-it-discards defect), **and it was
+  dropped silently in five drafts.**
+
+> **THE TYPES HAD BEEN SAYING SO SINCE EACH FIX LANDED, TO NOBODY.**
+
+Two fixes, each of which encoded its finding into the type system — the strongest
+form of remedy this codebase has — and both were quietly unobserved on the one
+surface that exercises them, for as long as the specs went unchecked. **A remedy
+encoded in a type is only as strong as the places the type is checked.**
+
+### 18c · THE THIRD INSTANCE, AND THE FIRST ANTICIPATED
+
+The gate asserts that `tsconfig.vitest.json` sets `"exclude": []` rather than
+trusting it. **Without that assertion, a later tidy of the empty array leaves a
+gate that runs, exits 0 and checks nothing.**
+
+That is the **third** appearance of the gate-green-because-it-looks-at-nothing
+failure in this arc — and **the difference worth recording is that it is the FIRST
+ANTICIPATED RATHER THAN DISCOVERED:**
+
+| # | Instance | How it surfaced |
+|---|---|---|
+| 1 | the booked remedy that returned exit 0 while checking nothing | **discovered** — by running it against a broken input |
+| 2 | batch D's ISO container regex that matched nothing | **discovered** — by a mutation probe |
+| 3 | a future tidy of `"exclude": []` | **ANTICIPATED** — asserted before it could happen |
+
+The first two cost a batch each to find. The third costs four lines. **A failure
+mode becomes cheap to defend exactly once you have seen it twice** — which is the
+argument for recording instances rather than only fixing them, and the reason §15d
+was written up as a finding rather than a correction.
+
+### 18d · AND THE RECORD KEPT ITSELF HONEST
+
+`CLAUDE.md` said *"the gates are exactly three"*. Corrected in the same commit that
+made it four: **leaving it would have filed a staleness finding while creating
+one.** The same discipline as §16a's stale scope and §17a's stale count — a
+document that describes a system is part of the system, and it goes stale on the
+commit that changes what it describes, not later.
