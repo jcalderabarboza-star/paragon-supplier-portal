@@ -47,7 +47,9 @@ export const discoveryEn: Record<string, string> = {
   'discovery.category.vitamin': 'Vitamin',
   'discovery.category.emollient': 'Emollient',
   'discovery.toggle.halal': 'Halal certified only',
-  'discovery.toggle.major': 'Claims a major brand',
+  // 'discovery.toggle.major' deleted with the endorsement field it filtered
+  // (DISCOVERY-ENDORSEMENT-01). Both locales, together — a retraction that lands
+  // in one language is MARKER-I18N-HOLE-01 wearing a different hat.
   'discovery.filter.clear': 'Clear filters',
   'discovery.sort.label': 'Sort by',
   'discovery.sort.relevance': 'Relevance',
@@ -65,8 +67,13 @@ export const discoveryEn: Record<string, string> = {
   'discovery.results.empty.clear': 'Clear all filters',
   // — Search hero (initial, no filter) —
   'discovery.hero.title': 'Search the global supplier market',
+  // DISCOVERY-ENDORSEMENT-01 · the hero. This string asserted that five named
+  // real corporations had validated the suppliers below — the SAME claim as the
+  // card label, one field above it, and it survived the D-CENSUS-8 retraction
+  // because that pass fixed the field it was looking at and not the sentence
+  // introducing it. Rewritten to describe what the search DOES.
   'discovery.hero.body':
-    "Find suppliers already validated by L'Oréal, Unilever, P&G, Shiseido, and LVMH. Filter by halal certification, region, and category. Invite directly to Paragon Marketplace or contact via ARIA AI agent.",
+    'Search global suppliers by halal certification, region, and category. Invite directly to Paragon Marketplace or contact via ARIA AI agent.',
   // — Global supplier card —
   'discovery.card.meta': '{{country}} · {{region}} · Est. {{founded}} · {{employees}} employees',
   'discovery.card.matchScore': 'AI Match Score',
@@ -74,7 +81,10 @@ export const discoveryEn: Record<string, string> = {
   // check per brand — asserting that real, named corporations had vetted a
   // FICTIONAL supplier. The portal verifies nothing here. Retracted to what the
   // field actually is: an unverified list a supplier claims about itself.
-  'discovery.card.validatedBy': 'Reference brands claimed (unverified)',
+  // 'discovery.card.validatedBy' deleted — the label had already been retracted
+  // from 'Market validated by' to 'Reference brands claimed (unverified)'. The
+  // honest label was still a heading over named third parties, which is the
+  // thing no wording fixes.
   'discovery.card.categories': 'Categories',
   'discovery.card.certifications': 'Certifications',
   'discovery.card.halal': 'Halal',
@@ -171,7 +181,7 @@ export const discoveryId: Record<string, string> = {
   'discovery.category.vitamin': 'Vitamin',
   'discovery.category.emollient': 'Emolien',
   'discovery.toggle.halal': 'Hanya bersertifikat halal',
-  'discovery.toggle.major': 'Mengklaim merek besar',
+  // 'discovery.toggle.major' deleted — see the EN block.
   'discovery.filter.clear': 'Hapus filter',
   'discovery.sort.label': 'Urutkan menurut',
   'discovery.sort.relevance': 'Relevansi',
@@ -189,12 +199,14 @@ export const discoveryId: Record<string, string> = {
   'discovery.results.empty.clear': 'Hapus semua filter',
   // — Search hero (initial, no filter) —
   'discovery.hero.title': 'Cari pasar pemasok global',
+  // DISCOVERY-ENDORSEMENT-01 · the hero, ID. The fabrication shipped in BOTH
+  // languages — a translated assertion is a second assertion, not a copy of one.
   'discovery.hero.body':
-    "Temukan pemasok yang telah divalidasi oleh L'Oréal, Unilever, P&G, Shiseido, dan LVMH. Saring berdasarkan sertifikasi halal, wilayah, dan kategori. Undang langsung ke Pasar Paragon atau hubungi via agen AI ARIA.",
+    'Cari pemasok global berdasarkan sertifikasi halal, wilayah, dan kategori. Undang langsung ke Pasar Paragon atau hubungi via agen AI ARIA.',
   // — Global supplier card —
   'discovery.card.meta': '{{country}} · {{region}} · Berdiri {{founded}} · {{employees}} karyawan',
   'discovery.card.matchScore': 'Skor Kecocokan AI',
-  'discovery.card.validatedBy': 'Merek referensi yang diklaim (belum diverifikasi)',
+  // 'discovery.card.validatedBy' deleted — see the EN block.
   'discovery.card.categories': 'Kategori',
   'discovery.card.certifications': 'Sertifikasi',
   'discovery.card.halal': 'Halal',

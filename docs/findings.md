@@ -8141,3 +8141,452 @@ authored line.
   i18n keys**, no body overflow in either locale. State names stay untranslated
   in both, as identifiers.
 - Floor: 2572/197 → **2705/198** (+133 tests, +1 file).
+
+# PF-2a · THE ENDORSEMENT RETRACTION, AND FIVE ROWS THE ARC OWED (2026-08-11)
+
+Operator rulings at the merge of PF-2 (`main @ e0892e0`, floor 2705/198). One
+batch: one code change (the endorsement), five register rows, two PRs disposed
+of, two orphaned refs deleted. The code change is small and the reason it is
+small is the point — the surface had already been marked once, and marking was
+the wrong instrument.
+
+## 1 · `PF2-FLOWS-ARE-SELF-DESCRIBING-01` — a clean result, filed as a result
+
+PF-2 authored a one-line purpose for **91 transitions across 18 flows** and was
+dispatched with a hypothesis attached: *a verb nobody can explain in one sentence
+may be a verb that does two things.* The report it was asked for:
+
+> **ZERO of 91 needed the implementation read.** Every purpose was writable from
+> the flow file alone. No handler was opened. The hypothesis found no instance.
+
+Filed as a finding rather than reported as an absence, because it is a **standing
+property of the tree and the next arc depends on it**:
+
+> **THE FLOW CATALOG CAN BE ADJUDICATED FROM THE DECLARATIONS WITHOUT READING
+> DISPATCH CODE.**
+
+The 13 flow files carry enough intent in their authored comments to be reasoned
+about on their own. The retirement pass — what gets deleted, what gets wired,
+what stays as declared substrate — can therefore be run against the declarations.
+That is a much cheaper pass than it would otherwise be, and it is only true
+because somebody wrote the comments. **A property nobody records is a property
+the next batch re-establishes by accident or loses.**
+
+⚠️ The clean result is a result about the CATALOG, not a clean bill for the
+verbs. Three cases were named as near-misses, and two are live retirement input:
+
+- **`t_requirementresponse_submit`** — the verb named `submit` CREATES A DRAFT.
+  The purpose had to compensate (*"…while the number is still theirs to change"*)
+  and the real submission verb, `t_requirementresponse_promote`, took *"the act
+  that makes a promise a promise"*. This is `PF1B-VERB-ID-NAMES-THE-OLD-ACT-01`
+  (OPEN) from the annotation side, and it is a **rename candidate, not a deletion
+  candidate**: the verb is honest, its name is not. Recorded then and repeated
+  here — **the purpose layer now silently compensates for a misleading id**,
+  which is the right thing for prose to do and the wrong thing to rely on.
+- **`t_inventorydeclaration_declare` vs `_record`** — byte-identical in every
+  derived column: same shape, same store, same target state, same required-field
+  floor, same hooks. **The authored sentence is the ONLY thing that distinguishes
+  them.** Either they are one verb with an actor discriminator, or the difference
+  is real and belongs in the schema. A distinction that exists only in prose is
+  in the most fragile place available to it.
+- **`t_pr_source` / `t_pr_convert`** — declared cascades nothing fires; the
+  derived column already reads *"Nothing fires it"*. Declared substrate; wire-or-
+  delete is the operator's, and the page tells the truth either way.
+
+**Both retirement candidates are untouched by this batch, by fence.**
+
+## 2 · `PF2-PURPOSE-NOT-RESTATEMENT-01` — what PF-2 was for, kept verbatim
+
+Four annotations wanted to be written as a machine restatement — `t_gr_hold`,
+`t_gr_approve`, `t_rfq_close`, `t_invmatch_price_variance`. The pattern, which is
+the durable half:
+
+> **THE RESTATEMENT ANSWERS WHAT HAPPENS TO THE RECORD; THE ANNOTATION ANSWERS
+> WHAT HAPPENS TO THE BUSINESS.**
+
+The second is the one the schema cannot supply, and the only one worth authoring.
+`t_rfq_close` is the clearest: *"the event becomes Closed"* against *"The response
+window ends. Late offers are not compared, which is what makes the comparison fair
+to everyone who answered on time."*
+
+And the half that is easy to lose:
+
+> **ALL FOUR WERE CAUGHT WHILE WRITING. NONE BY THE TEST. THE TEST IS A FLOOR,
+> NOT THE MECHANISM.**
+
+The pins (`no purpose repeats a state name / role / field`, `no purpose
+interpolates a variable`, `ID is not the EN string copied`) catch the mechanical
+tells. They do not catch a fluent sentence whose content happens to be the state
+transition. **A gate that would have caught all four does not exist, and claiming
+the suite is what keeps the annotations honest would be the same overstatement
+the annotations themselves refuse.** What kept them honest was refusing the first
+sentence that came out. Recorded so no later batch reads green as sufficient.
+
+None of the four turned out to be a verb with no purpose distinct from its
+mechanics. The temptation came from ids that name a verb-of-the-RECORD (`hold`,
+`approve`, `close`) rather than a verb-of-the-BUSINESS — a naming smell, not a
+redundancy smell, and the same class as `t_requirementresponse_submit` above.
+
+## 3 · `DISCOVERY-ENDORSEMENT-01` — RE-FILED against current main, reclassified
+
+Re-filed here by ruling. **PR #195 was CLOSED UNMERGED**, and the reason is
+itself the doctrine: its 295-line append was based six commits back, on a
+`findings.md` that PF-0/1a/1b/1/2 have since rewritten, and it conflicted. **A
+hand-reseated append across six commits is where drift enters** — the placement
+it was re-ranking is not worth the reconciliation risk of moving 295 lines by
+hand. Its subject matter had already landed (every child code is on main); only
+the RANKING had not. So the ranking is restated here, short, against the tree it
+now describes.
+
+**THE RECLASSIFICATION:**
+
+> **`DISCOVERY-ENDORSEMENT-01` IS LEGAL EXPOSURE, NOT AN HONESTY-DOCTRINE
+> DEFECT.**
+>
+> **NO MARKER, PILL OR DISCLAIMER WOULD HAVE MADE IT ACCEPTABLE.**
+
+Every discovery card rendered `✓ L'Oréal · ✓ Unilever · ✓ P&G · ✓ Shiseido`
+under a heading reading **"Market validated by"**. It went in as one bullet among
+the copy retractions. That placement was wrong, and the operative test is what
+separates this row from every other in the census: **every other finding here is
+answerable by disclosure** — mark it, name what backs it, and the surface becomes
+honest. This one is not. A "Sample data" pill beside `✓ L'Oréal` does not convert
+an unauthorised statement about a third party into a permissible one; it converts
+it into a **disclosed** one. **Disclosure is a remedy for overstatement, not for
+speaking on someone else's behalf.**
+
+**The three aggravators, recorded:**
+
+1. **The green check is a VERIFICATION AFFORDANCE.** It does not decorate the
+   claim, it asserts the claim was checked.
+2. **The attribute was FILTERABLE, so the product invited reliance on it.** A
+   "Claims a major brand" toggle asks a buyer to shortlist on the fabrication.
+   The surface did not merely display it; it asked to be trusted with it.
+3. **The subjects are real and the objects are not.** The statement is made about
+   corporations that exist, on behalf of entries that do not carry the
+   relationship claimed.
+
+### 3a · WHY MARKING FAILED HERE, IN ONE LINE
+
+D-CENSUS-8 did the honest thing available to a marking pass: it deleted the `✓`
+and retracted the label from *"Market validated by"* to *"Reference brands
+claimed (unverified)"*. **That was a better sentence over the same list of named
+third parties.** The instrument was wrong, not the effort — which is exactly what
+the reclassification says, and why the fix in this batch is a DELETION.
+
+### 3b · THE JOIN THAT SURVIVED THE FIRST PASS
+
+`discovery.hero.body` — one field ABOVE the retracted label — still read *"Find
+suppliers already validated by L'Oréal, Unilever, P&G, Shiseido, and LVMH."* The
+retraction fixed the field the pass was looking at and not the sentence
+introducing it. This is `HONEST-BY-CONSTRUCTION-STOPS-AT-THE-JOIN-01` one more
+time, in its plainest form yet: **the marker knew the FIELD; nothing joined the
+field to the paragraph that introduces it.** It shipped in EN and ID both — a
+translated assertion is a second assertion, not a copy of one.
+
+## 4 · `DISCOVERY-REAL-SUBJECTS-01` — NEW, OPEN, and it widens #195's own ruling
+
+⚠️ **The ruling was written as *real brands vetting FICTIONAL suppliers*. The
+fixture says otherwise.** Every one of the eight `GLOBAL_SUPPLIERS` is a real,
+trading corporation — Givaudan SA, DSM-Firmenich, Ashland Global Holdings, Croda
+International, PT Indesso Aroma, Zhejiang NHU, Evonik Industries AG, Univar
+Solutions — and each carries fabricated attributes: a `matchScore` out of 100,
+superlative `description` claims, qualification and risk rows.
+
+So the endorsement was not *real party asserts about invented party*. It was
+**a fabricated commercial relationship between two real corporations, under a
+verification check mark.** That is a widening, not a restatement, and it is the
+operator's to rule on.
+
+**The residue, named, with the shape that is arguably worse than the endorsement:**
+`SINGLE_SOURCE` attributes fabricated **NEGATIVE** claims to named real
+companies. **Verified in the browser rather than asserted from the fixture**, on
+the AI-Recommendations tab, because the two differ and the difference matters:
+
+| what renders | what does NOT |
+|---|---|
+| `currentSupplier` — 8 real corporations by name (`BASF Personal Care DE`, `Givaudan DE`, `Evonik Specialty FR`, `DSM Nutritional SG`, `Univar Solutions MY`, `Bloomage Biotechnology CN`, `Seqens FR`, `Zhejiang NHU CN`) | the `risk` PROSE string — `'High — quality issues + single source'` is fixture-only and reaches no surface |
+| `riskLevel` — `Kritis` / `Tinggi` beside the name | — |
+| `suggestedAlternatives` — named real competitors, as replacements | — |
+
+So the rendered row reads: **`Panthenol B5 USP · BASF Personal Care DE · Tinggi ·
+DSM Nutritional SG, Univar Solutions MY`** — a real company named, rated high
+risk, and two named real competitors offered in its place. The invented *"quality
+issues"* wording never ships; **the invented risk RATING does.** An invented
+endorsement flatters; an invented risk rating on a named supplier disparages, and
+this one comes with a suggested replacement attached.
+
+**NOT FIXED IN THIS BATCH, and the reason is coherence, not scope-dodging:**
+renaming `SINGLE_SOURCE.currentSupplier` while `GlobalSupplier.name` keeps
+`Givaudan SA` would leave the same corporation real in one column and pseudonymous
+in another on the same page. **It is one ruling applied consistently across
+supplier identities, descriptions, single-source rows and recommendations — not a
+sweep-batch call.** Pinned bilaterally in test (§6) so it cannot rot quietly.
+
+## 5 · `DP2-BUTTON-CONSISTENCY-01` — RE-SEATED from PR #150, corrected, re-verified
+
+PR #150 (31 Jul) was the one genuinely unlanded finding of the two open PRs —
+`DP2-BUTTON-CONSISTENCY-01` returned **zero hits** in this file. A one-line append
+50 commits behind: trivial to re-seat, so re-seated rather than closed.
+
+**THE FINDING (unchanged, and it holds):** the canon is being applied correctly —
+every reserved verb renders solid and nothing outside is mis-skinned by accident.
+The defect is narrower and more useful than "a button is wrong": **the reserved
+list is narrower than the set of verbs teams have reasonably judged irreversible,
+and there is no stated test for adding one.**
+
+**TWO CORRECTIONS ON RE-SEATING.**
+
+**⚠️ (a) THE STALE FLOOR IS STRUCK.** #150's body carried *"Floor unchanged:
+1752"*, true on 31 July and now 953 tests behind. **Carrying a stale floor number
+into the row that files a canon defect is `FLOOR-IN-PROSE-01` inside the filing
+itself** — the identical failure, one layer in. No floor number is restated in
+this row. The floor is in `scripts/floor.json`; the gate asserts it; prose does
+not get a copy.
+
+**(b) THE CITATIONS WERE 50 COMMITS OLD AND ARE RE-DERIVED, NOT ASSERTED.**
+Every line number in #150 had moved. Current census of `variant="primary"` in
+`src/`, derived 2026-08-11 against `e0892e0`, **11 sites**:
+
+| site | verb | on DP2-BUTTON-01's reserved list? |
+|---|---|---|
+| `BuyerSourcing.tsx:2844` | Award | yes |
+| `BuyerGoodsReceipt.tsx:398` | Post-to-SAP | yes |
+| `BuyerGoodsReceipt.tsx:381` | Override-hold | yes |
+| `BuyerInvoices.tsx:881` | Release payment | yes |
+| `BuyerInvoices.tsx:901` | Raise dispute | yes |
+| `AgreementDrawdown.tsx:395` | Release through `<date>` | **no** |
+| `BuyerSourcing.tsx:3027` | Confirm FX rate pin | **no — NEW since #150** |
+| `SupplierWhatsApp.tsx` ×4 (699/747/777/847) | messenger chrome | exempt (D-2) |
+
+**The two counter-examples are NOT the two #150 named, and the swap is the most
+useful thing in this row.**
+
+- `SupplierForecasts.tsx` — #150's second counter-example, the self-documented
+  *"the ONE solid primary on this surface: the governed commit"* — **is resolved.**
+  PF-1b turned it OUTLINE, and the recorded reason is exactly the membership test
+  #150 asked for: the button now SAVES A DRAFT, *"and a draft is the most
+  reversible act on the page. The solid did not become merely unnecessary; it
+  became a false signal, promising weight the click no longer carries."*
+- `BuyerSourcing.tsx:3027` (Confirm FX rate pin) **is new**, and it self-documents
+  on the same axis — *"an appended pin cannot be taken back, only superseded."*
+
+> **A THIRD TEAM INDEPENDENTLY REACHED FOR SOLID ON AN IRREVERSIBILITY ARGUMENT
+> THE RESERVED LIST DOES NOT NAME, WHILE THE ONE COUNTER-EXAMPLE THAT GOT
+> RESOLVED WAS RESOLVED BY REASONING ABOUT REVERSIBILITY.** The list is not
+> failing to be obeyed; it is failing to be a RULE. Teams are already applying
+> the test — *does this reach a counterparty or a ledger, and can it be undone
+> from this surface?* — and the canon does not state it.
+
+**Disposition unchanged (CP-0 sweep):** the sweep should decide the RULE — extend
+the reserved list to name these verbs, or state the membership test — not re-skin
+buttons one at a time. Editing CLAUDE.md's DP-2 section is a canon change and the
+operator's call, not a sweep-batch side effect.
+
+## 6 · WHAT THIS BATCH CHANGED
+
+**Argued first, as dispatched: DELETE THE ATTRIBUTE, do not replace it with
+invented brand names.** Three reasons, in order of weight:
+
+1. **Substitution relocates the fabrication instead of removing it.** Given §4 —
+   the suppliers are real — a plainly fictional brand attached to `Givaudan SA`
+   still fabricates a claim about Givaudan. It changes which party is invented,
+   not whether a real party is spoken for.
+2. **The page already set the precedent, one field over, and it was ratified.**
+   D-CENSUS-8 deleted the invented market-intel source attributions rather than
+   relabelling them; the shipped test asserts it in those words — *"The invented
+   source attributions are deleted (not relabelled)."* Two remedies for one class
+   of defect on one page would be the inconsistency, not the fix.
+3. **The field's only content was the endorsement.** With invented names the
+   filter — *"Claims a major brand"* — asks a buyer to shortlist on nothing. The
+   honest position is that the portal has no verification source for this
+   attribute, so the attribute asserts what it cannot back. **Honest silence over
+   a plausible wrong value.** The field returns when a source exists to back it.
+
+**Delta (11 files, code + i18n + test):**
+
+- `services/data/types.ts` — `GlobalSupplier.validatedBy` **removed** from the
+  interface. Deleted, not narrowed to `never[]`: an empty array is still a field
+  a heading can hang off and a future batch can refill.
+- `fixtures/buyerDiscovery.ts` — **8 `validatedBy` rows deleted**, listing 14
+  distinct real corporations between them. Header records both the deletion and
+  the OPEN `DISCOVERY-REAL-SUBJECTS-01`.
+- `BuyerDiscovery.tsx` — the `MAJOR_BRANDS` constant (7 real corporations), the
+  card's endorsement block, the `'major'` toggle, the `majorOnly` filter clause
+  and its `useMemo` dep, and `ToggleId`'s `'major'` member. **The filter goes
+  with the field** — it was aggravator #2.
+- `i18n/discovery.ts` — `discovery.hero.body` rewritten **in EN and ID** to
+  describe what the search does; `discovery.card.validatedBy` and
+  `discovery.toggle.major` deleted **in both locales**. A retraction that lands
+  in one language is `MARKER-I18N-HOLE-01` wearing a different hat.
+- `BuyerDiscovery.endorsement.test.tsx` — **new, 19 tests.**
+
+**⚠️ THE TEST IS A STRING CENSUS, NOT AN ABSENCE ASSERTION, AND THE REASON IS THE
+ONLY FAILURE THAT MATTERS.** "The card does not render a brand pill" passes the
+moment the block is deleted and then never speaks again — it cannot see the name
+coming BACK, and a fixture is the easiest file in the repo to add a
+plausible-looking name to. So the guard sweeps every shipped discovery string —
+fixture rows AND both locales — for 14 named real corporations, and goes red on
+re-introduction in any field, in either language.
+
+**Its scope limit is stated in the file, not left for a reader to detect:** it
+sweeps the endorsement surface, not `SINGLE_SOURCE` / `RECOMMENDED`. And the
+residue is pinned in the direction nothing normally checks — `looseEndCensus`'s
+bilateral shape — so that **cleaning up `SINGLE_SOURCE` turns the test RED and
+forces `DISCOVERY-REAL-SUBJECTS-01` closed rather than leaving an exemption
+standing over a defect the tree no longer has.**
+
+**MUTATION-PROBED, because green proves nothing until it is shown to bite:**
+re-inserting `Supplies Unilever.` into one supplier `description` — a field the
+endorsement never used — turned the suite RED (1 failed / 17 passed at the time).
+The byte-level change was confirmed on disk before the run (`MUTATION-PROBE-CRLF-
+TRAP-01`: a probe that silently fails to mutate reports green and means nothing).
+**The probe also earned its keep as a probe:** it exposed that the census swept
+`GLOBAL_SUPPLIERS` only, which is how the `SINGLE_SOURCE` residue in §4 was found
+and the scope limit came to be written down instead of shipped silently.
+
+## 7 · `BUFFER-IS-NOT-A-RECORD-01`
+
+The session buffer for PF-2 claimed the findings block ran to **§10**; the
+committed block ends at **§8**. Tree clean, matching origin — the artifact was
+always complete and the buffer's account of it was wrong.
+
+> **A SESSION BUFFER IS NOT A RECORD.** It is a paraphrase written for
+> continuity, not a claim anything checks — **nothing fails when it drifts.**
+> Same failure mode as `FLOOR-IN-PROSE-01`, one layer out: a number in prose that
+> no build step can falsify. **THE COMMITTED FILE IS THE RECORD; THE BUFFER IS A
+> POINTER TO IT, AND WHEN THEY DISAGREE THE FILE WINS BY CONSTRUCTION.**
+
+Filed as a row and not as an apology because the failure is structural and will
+recur: every session writes one, no gate reads one. The correct response to a
+buffer/file disagreement is to re-derive from the file — never to reconcile the
+file toward the buffer, and never to report the buffer's version as the outcome.
+This session's orientation reported the disagreement without resolving it, which
+is the behaviour the row is meant to make routine.
+
+## 8 · FENCES HELD
+
+- **Retirement candidates untouched.** `t_inventorydeclaration_declare` /
+  `_record` and `t_requirementresponse_submit` are unedited; no flow file, no
+  transition table, no annotation changed in this batch.
+- **C9 `af7f0b4`, C10 `dc8e774`** — all four paths byte-identical, verified by
+  git blob id before and after.
+- **Floor never regresses.** `scripts/floor.json` bumped, not lowered.
+- EN + ID moved together, both directions of the retraction.
+- **Browser QA on the built bundle (`vite preview`), EN and ID, both run:**
+  `/buyer/discovery` — hero paragraph asserting nothing about third parties in
+  either locale; **8 supplier cards, ZERO of the 14 named corporations present in
+  rendered text, zero endorsement headings, zero brand pills**; card labels down
+  to `Categories · Certifications` (`Kategori · Sertifikasi`); **one filter
+  toggle where there were two**; zero raw i18n keys; no body overflow
+  (`scrollWidth == innerWidth`, 1554px).
+- The residue in §4 was **confirmed by rendering it, not by reading the fixture**
+  — which is how the `risk`-prose-vs-`riskLevel` distinction was caught and the
+  finding narrowed to what a reader can actually see.
+- **PR #195 closed unmerged** (ruling §3); **PR #150 re-seated and closed**
+  (ruling §5); two orphaned local refs deleted, both commits already on main
+  under their squashes.
+
+## 9 · THE RULING'S OWN PREMISE, CORRECTED BY THE OPERATOR AT MERGE
+
+Recorded against the ruling rather than beside it, because a reclassification
+that keeps a wrong premise underneath it will be re-derived wrong by whoever
+reads it next.
+
+**The premise as ruled** (#195, and restated at PF-2a dispatch):
+
+> *"Fabricated endorsements attributed to real corporations on behalf of
+> fictional suppliers"* — and the remedy framed as *"fictional suppliers may
+> claim reference brands; they may not claim REAL ones."*
+
+**The premise, corrected by the operator on the evidence in §4:**
+
+> **ALL EIGHT `GLOBAL_SUPPLIERS` ARE REAL TRADING CORPORATIONS. It was never real
+> brands vetting fictional suppliers — it was A FABRICATED COMMERCIAL ASSESSMENT
+> OF REAL CORPORATIONS, UNDER A VERIFICATION AFFORDANCE.**
+
+The reclassification survives the correction — legal exposure, not an
+honesty-doctrine defect; no marker, pill or disclaimer would have made it
+acceptable — and gets *worse*, not better, for it. The three aggravators stand
+unchanged; aggravator #3 (*the subjects are real and the objects are not*) is the
+one that was half right, and the half it got wrong is the whole finding below.
+
+### 9a · THE CLASS, STATED — `SAME DEFECT, OPPOSITE DIRECTION`
+
+> **WE DELETED THE FABRICATED CLAIM *BY* REAL PARTIES AND LEFT THE FABRICATED
+> CLAIM *ABOUT* REAL PARTIES STANDING. SAME DEFECT, OPPOSITE DIRECTION.**
+
+`validatedBy` was a claim **by** L'Oréal (that it had vetted this supplier) —
+removed at PF-2a. `matchScore`, the `description` superlatives, the risk ratings
+and the qualification rows are claims **about** Givaudan, BASF and six others —
+still shipping. One direction was visible because the endorser was famous; the
+other was invisible because the subject was in the `name` field, where a reader
+of a supplier-discovery fixture expects a supplier to be.
+
+**This is why PF-2a's remedy is correct and incomplete at the same time**, and
+the record should not let the completed half stand in for the whole.
+
+## 10 · `DISCOVERY-REAL-SUBJECTS-01` — DISPOSITION AND THE LEAN, NOT YET RULED
+
+**FILED, NOT FIXED. It gets its own batch, and the operator wants its blast
+radius before the fix.** Nothing in PF-2a touches it beyond the bilateral pin.
+
+**⚠️ STRATEGIST LEAN — ON RECORD, EXPLICITLY NOT A RULING:**
+
+> **MAKE THE SUBJECTS FICTIONAL rather than delete the assessments.** A discovery
+> surface needs suppliers to display; inventing a name costs nothing, while
+> deleting scores and risk rows guts the page's purpose.
+>
+> **A FABRICATED SCORE ABOUT AN INVENTED COMPANY IS A DEMO; A FABRICATED SCORE
+> ABOUT GIVAUDAN IS A STATEMENT ABOUT GIVAUDAN.**
+
+Note that this lands **opposite** to PF-2a's own remedy, and that is not a
+contradiction — it is the two directions of §9a needing different instruments.
+The endorsement had no content beyond the claim, so deleting it cost nothing. The
+assessment IS the surface: a discovery page with no scores and no risk rows is
+not a marked-down discovery page, it is a blank one. **Substitution was refused
+for `validatedBy` because it relocates the fabrication onto a real supplier;
+substitution WORKS for the supplier identity itself, because after it there is no
+real party left in the sentence.** The same test — *is a real party spoken
+about?* — gives opposite answers, and that is the test working.
+
+### 10a · THE CONSTRAINT THE NEXT BATCH INHERITS — `CENSUS-MUST-DERIVE-01`, again
+
+The mutation probe's **by-catch is the important half** of what it did. It proved
+the guard bites, which was the point; it also exposed that the census swept
+`GLOBAL_SUPPLIERS` **only** — which is the sole reason the `SINGLE_SOURCE`
+residue in §4 surfaced at all. Nobody found that by reading; a probe aimed at
+something else walked into it.
+
+Carried forward as a hard constraint, and it is the existing precedent, not a new
+rule:
+
+> **REAL CORPORATION NAMES ARE LIKELY ELSEWHERE** — supplier fixtures, RFQ
+> titles, contract counterparties, document issuers, material descriptions.
+> **THE CENSUS MUST DERIVE ITS POPULATION, NOT MATCH A LIST.**
+
+PF-2a's own guard is a **list match** (14 names), and it is the weaker instrument
+by construction: it can only ever find what somebody already knew to write down.
+It is adequate for what it guards — a closed set of names the defect actually
+shipped, kept from coming back — and it is **NOT** adequate as the discovery
+mechanism for the next batch. `ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01` is the
+same lesson one layer down: the authored list is a strict subset of the derived
+truth, and the derivation is authority.
+
+**Stating a census's scope in the file rather than shipping it silently is the
+handling that made this catchable, and it is kept.** A limit a reader can see is
+a limit somebody can widen; a limit only the author knew is a coverage claim.
+
+### 10b · METHOD, RECORDED — VERIFY BY RENDERING, NOT BY READING THE FIXTURE
+
+**It corrected this batch's own first draft.** §4 was written from the fixture and
+asserted that `SINGLE_SOURCE` ships `risk: 'High — quality issues + single
+source'` against a named real company. Rendering it showed the `risk` PROSE
+reaches no surface — what ships is the `riskLevel` RATING beside the name, plus
+named real competitors as replacements. The finding was narrowed to what a reader
+can actually see before it was committed.
+
+The overstatement was small and it was in the direction that flatters the
+finding, which is the direction that needs the check most. **A fixture is what
+the page COULD say; the render is what it DOES.** For any claim of the form *"the
+product tells a user X"*, the fixture is evidence and the render is proof.
