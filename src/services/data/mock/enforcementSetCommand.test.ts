@@ -297,7 +297,7 @@ describe('t_enforcement_set — ⚠️ LOOSENING REQUIRES reviewBy AND A NAMED A
     expect(enforcementSettingStore.all()).toEqual([]);
   });
 
-  it.each([
+  it.each<[unknown, string]>([
     [{ personId: 'usr-014', displayName: 'Rina' }, 'a person with no discriminant'],
     ['Rina Wijaya', 'a bare typed name — forgeable, and worse than nothing'],
     [{ kind: 'RESOLVED', person: { personId: 'usr-014' } }, 'a person with no name'],

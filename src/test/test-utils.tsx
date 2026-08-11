@@ -16,7 +16,14 @@ import type {
 } from '../context/CurrentIdentityContext';
 
 // Default persona for page tests that don't care about identity.
-const BUYER: CurrentIdentity = {
+//
+// ⚠️ NOW EXPORTED, AND IT WAS ALREADY BEING IMPORTED. `buyerWidgets.test.tsx`
+//   imported `BUYER` from here while it was module-local, so at runtime the
+//   import was `undefined` — and the test worked ONLY because the `identity =
+//   BUYER` DEFAULT PARAMETER below fires on `undefined` and substituted this very
+//   constant. RIGHT RESULT, WRONG REASON, and one edit to that default away from
+//   silently testing a different persona. `tsc` says so; nothing else could.
+export const BUYER: CurrentIdentity = {
   personaType: 'buyer',
   supplierId: null,
   supplierName: null,

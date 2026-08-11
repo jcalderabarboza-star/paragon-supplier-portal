@@ -122,7 +122,7 @@ describe('2B-5b-ii — what each row RESTS ON, counted rather than claimed', () 
     // therefore take `canonicalUom` from their GROUP's convention, and the two
     // that do better do so through a POINTER.
     for (const { line } of asnLines) {
-      expect('uom' in (line as Record<string, unknown>), 'AsnLineItem has no uom').toBe(false);
+      expect('uom' in (line as unknown as Record<string, unknown>), 'AsnLineItem has no uom').toBe(false);
     }
   });
 
@@ -164,7 +164,7 @@ describe('2B-5b-ii — what each row RESTS ON, counted rather than claimed', () 
     // WEAKER basis and is asserted as such rather than left implicit.
     const conventionOf = (group: string) => {
       const siblings = Object.values(MATERIAL_MASTER).filter(
-        (m) => m.materialGroup === group && !CODES.includes(m.materialCode),
+        (m) => m.materialGroup === group && !(CODES as readonly string[]).includes(m.materialCode),
       );
       const units = [...new Set(siblings.map((m) => m.canonicalUom))];
       return units.length === 1 ? units[0] : null;

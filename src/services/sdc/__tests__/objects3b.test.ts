@@ -9,6 +9,7 @@ import {
 } from '../index';
 import type {
   ForecastPublication,
+  Provenance,
   IncomingShipment,
   SupplierMaterialRelationship,
 } from '../types';
@@ -229,6 +230,12 @@ describe('ownCollaboratedMaterials (the (i)∪(ii) membership mirror)', () => {
   ];
   const pubs: ForecastPublication[] = [
     {
+      // ⚠️ ADDED — it was MISSING, and `provenance` is REQUIRED. In a codebase
+      //   whose central discipline is honest provenance, THE ONE REQUIRED FIELD
+      //   THIS TEST DROPPED IS THE PROVENANCE MARKER. It passed because nothing
+      //   on its path reads it — a publication with no honesty marking is a shape
+      //   the type forbids and the untypechecked spec was free to build.
+      provenance: { source: 'SOMO', liveness: 'SIMULATED', planState: 'PLANNED' } as Provenance,
       publicationId: 'PUB-1',
       planVersion: 'v1',
       publishedAt: '2026-08-01T00:00:00.000Z',

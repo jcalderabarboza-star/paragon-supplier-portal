@@ -45,8 +45,9 @@ const title = (): Promise<HTMLElement> =>
 const rail = (): HTMLElement => screen.getByRole('navigation', { name: /lifecycle flows/i });
 // Selection by test id, not by accessible name: `invoice` is a prefix of
 // `invoiceMatch`, and a name-anchored query would silently match two flows.
-const pick = (entity: string): void =>
+const pick = (entity: string): void => {
   fireEvent.click(screen.getByTestId(`pf-flow-${entity}`));
+};
 
 describe('ProcessFlows — the page draws the derivation, not a copy of it', () => {
   it('renders the catalog with counts that are the schema’s own lengths', async () => {

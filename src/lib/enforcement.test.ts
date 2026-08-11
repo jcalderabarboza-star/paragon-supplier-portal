@@ -995,7 +995,7 @@ describe('E2 — ⚠️ THE ACTOR IS A DISCRIMINATED ATTRIBUTION', () => {
     );
   });
 
-  it.each([
+  it.each<[unknown, string]>([
     [undefined, 'absent'],
     [null, 'null'],
     ['Rina Wijaya', 'a bare typed name — the forgeable answer the ruling refused'],

@@ -111,8 +111,8 @@ describe('t_requirementresponse_submit — supplier-owned creation (line-grain s
     expect(r.periodBucket).toBe('2026-08');
     expect(r.publicationId).toBe('PUB-2026-08-RM-R2');
     expect(r.planVersion).toBe('PV-2026-08.2'); // the snapshot answered, bound
-    expect(r.forecastConfirmation.confirmedQty).toBe(6000);
-    expect(r.forecastConfirmation.committedDate).toBe('2026-08-20');
+    expect(r.forecastConfirmation!.confirmedQty).toBe(6000);
+    expect(r.forecastConfirmation!.committedDate).toBe('2026-08-20');
     // ⚠️ AND IT CARRIES NO SUBMISSION INSTANT. A draft has never been submitted;
     // the store stamps `submittedAt` on the Draft → Submitted crossing. The
     // SDC-0 seed already encoded this invariant (rr-0003 has no `submittedAt`).
@@ -338,7 +338,7 @@ describe('t_requirementresponse_submit — honest-by-construction facts', () => 
     );
     const r = requirementResponseStore.get(res.entityId!)!;
     expect(MATERIAL_MASTER['PK-PETB-8810'].canonicalUom).toBe('PCS');
-    expect(r.forecastConfirmation.uom).toBe('PCS');
+    expect(r.forecastConfirmation!.uom).toBe('PCS');
   });
 
   it('confirmedQty 0 + root cause is a LEGAL short confirmation (ruling F-2)', async () => {
@@ -355,7 +355,7 @@ describe('t_requirementresponse_submit — honest-by-construction facts', () => 
     );
     expect(res.status).toBe('done'); // isEmpty(0) is false — 0 passes the floor
     const r = requirementResponseStore.get(res.entityId!)!;
-    expect(r.forecastConfirmation.confirmedQty).toBe(0);
+    expect(r.forecastConfirmation!.confirmedQty).toBe(0);
     expect(r.rootCause).toEqual({
       level1: 'capacity',
       level2: 'line-changeover',

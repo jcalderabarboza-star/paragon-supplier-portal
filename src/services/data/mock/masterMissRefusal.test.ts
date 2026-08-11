@@ -35,7 +35,9 @@ import { MOCK_ASNS } from './fixtures/supplierShipments';
 import type { InspectionResult } from '../../../data/mockGoodsReceipts';
 
 const svc = new MockCommandService();
-const buyer: QueryScope = { personaType: 'buyer' };
+// `supplierId` was MISSING — a scope shape production never builds. It survived
+// on `undefined == null` being true, so every null-check passed by accident.
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
 // sup-002 collaborates on RM-EMUL-3310 (a relationship row) — so creation scope
 // PASSES for it, and the master gate is what the bogus cases actually hit.
 const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };

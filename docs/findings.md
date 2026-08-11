@@ -517,7 +517,7 @@ deliberately **no gate CI can run that the operator cannot**.
 | **NOTIFICATION-UNCONFIRMED-01** *(refs @ `f492b5c` — **⚠️ OPEN, and it is the operator's to close, not ours**)* | **A RED BADGE IS NOT A NOTIFICATION.** Nobody goes to look at a badge on a Saturday — that is the premise of the whole batch, so accepting one as the answer would be circular. GitHub's own path for a scheduled-run failure is **an email to the account that last modified the cron expression** — which, since squash-merges here are authored by `jcalderabarboza-star`, would be the operator — **but only if that account has Actions notifications enabled**, a per-account setting **this repository cannot read and we cannot assert on their behalf.** | **A SECOND, INDEPENDENT PATH IS BUILT, AND THE FIRST IS LEFT UNASSERTED.** A failing **scheduled** run (only scheduled — a PR failure is seen by the person merging) opens or comments on a `gates-failure` **issue**, using `GITHUB_TOKEN` and `gh` — durable, visible without going to look, and independent of the notification setting. **What is NOT claimed: that either path reaches a human.** Per `RECEIVER-CONFIRMS-01` below, **delivery is confirmed by the receiving side or it did not happen.** **Closes when the operator reports having actually RECEIVED something** from a failing scheduled run — not when the mechanism is observed to exist. |
 | **PATH-FILTER-TRAP-01** *(refs @ `f492b5c` — **filed as a decision taken, so it is not re-taken later as an optimisation**)* | The standard economy on a CI workflow is `paths-ignore: docs/**` — skip the suite when only prose changed. **In this repository that is precisely backwards.** The C9 contract pin **reads `docs/contracts/*.md`** and fails when the prose and the types module disagree; `CENSUS-MUST-DERIVE-01` and the derived field list are the same shape. **A docs-only change here is a change to a checked artifact.** | **NO PATH FILTERS, DELIBERATELY, AND THE REASON IS IN THE WORKFLOW FILE** rather than only here — a comment beside the trigger is what a future editor reads before adding the filter. **The economy would have skipped exactly the gate built to catch the drift it was skipping for.** |
 | **CI-PUBLIC-LOGS-01** *(refs @ `f492b5c` — **surfaced while checking Actions was enabled; not a defect, a constraint on everything built after this**)* | **The repository is PUBLIC** (`visibility: public`). Two standing consequences for CI: **Actions logs and run artifacts are world-readable**, and **Actions minutes are free**, which is why a daily full run costs nothing to keep. | **RECORDED AS A CONSTRAINT: NO SECRET MAY EVER ENTER A GATE LOG.** The gates need none — `npm run build`, the suite and `test:gate` all run without environment (`GATE_USER` / `GATE_PASSWORD` / `GATE_SECRET` are edge-runtime env for `middleware.js`, never referenced by the gate *tests*, which use their own literal `'unit-test-secret-do-not-ship'`). The workflow declares `permissions: contents: read`, with `issues: write` scoped to the reporting job alone. **Also recorded because it will matter later:** GitHub disables scheduled workflows on a public repository after **60 days of repository inactivity** — irrelevant at the present commit rate, and the reason a quiet quarter would silently end the daily run. |
-| **TSC-SKIPS-TESTS-01** *(refs @ `f492b5c` — **⚠️ OPEN, NAMED AND NOT FIXED, because fixing it needs an argument the dispatch requires be had first**)* | **`npm run build` never typechecks the test surface.** `tsconfig.json` excludes `src/**/*.test.ts`, `src/**/*.test.tsx` and `src/test`, and vitest transpiles without typechecking — so **no gate typechecks a spec file.** A spec can carry a type error indefinitely and all three gates stay green. `tsconfig.vitest.json` exists and includes them, and nothing runs it. | **CI INHERITS THE GAP EXACTLY, WHICH IS THE POINT: CI IS NOT A SECOND SOURCE OF TRUTH.** ⚠️ **THE REMEDY THIS ROW ORIGINALLY BOOKED — `tsc -p tsconfig.vitest.json --noEmit` — DOES NOT WORK, AND WAS CORRECTED AT BATCH D (§15b). It returns CLEAN on an injected type error**, because the child config `include`s the specs and then INHERITS THE BASE `exclude`, WHICH WINS. Anyone acting on the old record would have added the config, seen green, and CLOSED THIS FINDING WHILE CHANGING NOTHING. **The real remedy OVERRIDES `exclude` (`"exclude": []`), it does not merely run the config — measured cost 32 errors across 18 spec files.** **OPERATOR RULING: SCHEDULED, AFTER B** — a position in the queue, not a hope. Two live instances already (batch A, batch E). |
+| **TSC-SKIPS-TESTS-01** *(refs @ `f492b5c` — **✅ CLOSED at §17: the override landed, the 30 errors are fixed as two recorded jobs, and the gate now RUNS and asserts the override**)* | **`npm run build` never typechecks the test surface.** `tsconfig.json` excludes `src/**/*.test.ts`, `src/**/*.test.tsx` and `src/test`, and vitest transpiles without typechecking — so **no gate typechecks a spec file.** A spec can carry a type error indefinitely and all three gates stay green. `tsconfig.vitest.json` exists and includes them, and nothing runs it. | **CI INHERITS THE GAP EXACTLY, WHICH IS THE POINT: CI IS NOT A SECOND SOURCE OF TRUTH.** ⚠️ **THE REMEDY THIS ROW ORIGINALLY BOOKED — `tsc -p tsconfig.vitest.json --noEmit` — DOES NOT WORK, AND WAS CORRECTED AT BATCH D (§15b). It returns CLEAN on an injected type error**, because the child config `include`s the specs and then INHERITS THE BASE `exclude`, WHICH WINS. Anyone acting on the old record would have added the config, seen green, and CLOSED THIS FINDING WHILE CHANGING NOTHING. **The real remedy OVERRIDES `exclude` (`"exclude": []`), it does not merely run the config — measured cost 32 errors across 18 spec files.** **OPERATOR RULING: SCHEDULED, AFTER B** — a position in the queue, not a hope. Two live instances already (batch A, batch E). |
 
 ### Elevated to CLASSES (operator ruling, CP-3a) — **SOMO's generalisation of our own filing, sharper than ours**
 
@@ -9795,3 +9795,128 @@ The thesis held at every site:
 
 Every grade, rating, risk level, suspension, expired certificate and match score
 that the arc found is still in the tree. Only the real parties left.
+
+---
+
+## 17 · `TSC-SKIPS-TESTS-01` — CLOSED. The specs are typechecked, and the gate runs
+
+**Status: CLOSED.** Two jobs, recorded as two jobs. The register's row is corrected
+(§ register) and the batch that corrected it is this one.
+
+### 17a · THE COUNT WAS STALE, AND THAT IS ITS OWN INSTANCE
+
+**30, not 32.** Batch B resolved two incidentally. The register's figure was
+measured before B ran.
+
+> **A MEASURED FIGURE IN A BOOKED REMEDY GOES STALE THE SAME WAY A SCOPE DOES.**
+
+Same class as §6's D-scope (§16a), one level down. A number attached to an unrun
+remedy reads as *fact*, where a scope at least reads as *plan* — so it is the more
+convincing of the two, and decays exactly as fast. **Measure at execution, not at
+filing; or record the date the figure was taken.**
+
+### 17b · JOB 1 — FIVE SITES THE CONFIG GAP WAS HIDING
+
+Not "five of thirty". These are defects; the other twenty-five are noise.
+
+**1 · THE RANKING TESTS PROVED THE PRE-FIX BEHAVIOUR — the worst of the five.**
+`quotationPriceRanking.test.ts` passed `leadTimeDays: '18'` — RAW TEXT — into the
+field whose declared type is `number | null` and whose own doc says:
+
+> *"It used to arrive as raw text and be coerced here with `Number(...) || 0`. On
+> an axis where 0 is the BEST score, that turned every unreadable token into a
+> maximum lead-time score… **There is no coercion left to do it with.**"*
+
+**The fix removed the coercion. The tests kept proving the old behaviour, green,
+because JS coerced `'18'` in the comparison — and NOTHING COULD SEE IT, BECAUSE
+SPECS ARE NOT TYPECHECKED.** They were demonstrating a property nobody wants
+asserted: that the engine tolerates the pre-fix input shape.
+
+`'18'` → `18` **is not a retype.** It changes what the test proves — from *"the
+engine tolerates raw text"* to *"the engine ranks a parsed lead time"*. Stated at
+the site, and old → new → why is in the PR body.
+
+**2 · THE SAME DEFECT, ONE FIELD OVER.** All five quotation drafts omitted `moq`
+entirely — and `moq: number | null` is REQUIRED, NOT OPTIONAL, **precisely so it
+cannot be dropped silently.** That required-ness *is* `FIND-02`, the
+captures-what-it-discards defect: the form collected a minimum order quantity and
+the builder was never given it, so a stated constraint vanished between the
+supplier typing it and the quotation being minted. **The specs were still built in
+the pre-fix shape for MOQ too**, and the type had been saying so since the fix
+landed, to nobody.
+
+**3 · THE ONE REQUIRED FIELD A TEST DROPPED IS THE PROVENANCE MARKER.**
+`objects3b.test.ts` built a `ForecastPublication` without `provenance` — required,
+and documented as *"source = SOMO; SIMULATED × PLANNED for seed publications"*.
+**In a codebase whose central discipline is honest provenance, that is the field
+that went missing, and it passed because nothing on its path reads it.**
+
+**4 · AN IMPORT THAT RESOLVES TO `undefined`.** `buyerWidgets.test.tsx` imported
+`BUYER` from `test-utils`, where it was declared `const`, not exported. At runtime
+the test passed `{ identity: undefined }` — and worked **only because
+`renderWithProviders` has `{ identity = BUYER }` as a DEFAULT PARAMETER**, which
+fires on `undefined` and substituted that very constant. **Right result, wrong
+reason, and one edit to that default away from silently testing a different
+persona.** `tsc` says so; nothing else could.
+
+**5 · A SCOPE THE TYPE FORBIDS.** `masterMissRefusal.test.ts` built
+`QueryScope` as `{ personaType: 'buyer' }` with `supplierId` missing. **It survived
+on `undefined == null` being true**, so every null-check passed by accident.
+
+**A pattern across 3, 4 and 5, worth naming:** the required fields the specs
+dropped were **the honesty-bearing ones** — provenance, identity, scope. A sixth
+turned up in Job 2's tail: `materialMaster.test.ts`'s minimal fixture omitted
+`bpomApplicable` and `halalApplicable`, the compliance-applicability markers. **A
+spec omits what it does not read, and what a spec does not read is exactly the
+field that carries the honesty claim** — because honesty fields are consumed by
+markers and gates, not by the assertion under test.
+
+### 17c · JOB 2 — TWENTY-FIVE MECHANICAL, AND WHAT "MECHANICAL" MEANS HERE
+
+**Noise in the precise sense: they would fail loudly at runtime if the assumption
+were wrong. Un-narrowed, not unsound.**
+
+| Shape | n | Fix |
+|---|---|---|
+| `possibly undefined` on an optional read | 10 | `!`, **never `?.`** — optional chaining would let a wrong assertion pass vacuously; these must keep throwing |
+| `as Record<string, unknown>` to probe for a field the type forbids | 5 | `as unknown as` — the cast IS the assertion |
+| `it.each` tables of deliberately invalid inputs | 4 | explicit generic; **not one input changed** |
+| literal-tuple `.includes(string)`, `Object.freeze` variance, a `: void` concise body | 6 | widen / complete / block body |
+
+**`fxPin.test.ts`'s invalid inputs are kept exactly as they are, by ruling.**
+Feeding `'17250'`, `null` and `undefined` to a validator is the test's whole point.
+**Correct behaviour TypeScript cannot express through `it.each` is a limit of the
+tool, not a defect in the test** — so the table is typed and the data is untouched.
+
+### 17d · THE GATE IS RUN, NOT MERELY PRESENT
+
+`npm run gates` is now **four** gates. `CLAUDE.md` is corrected in the same commit —
+leaving it saying "exactly three" would have filed a staleness finding while
+creating one.
+
+The gate does two things, and the second is the one that matters:
+
+1. runs `tsc -p tsconfig.vitest.json --noEmit`;
+2. **ASSERTS that `tsconfig.vitest.json` sets `"exclude": []`** — and FAILS with an
+   explanation if it does not.
+
+> **Presence mistaken for enforcement is exactly why the booked remedy was
+> theatre, and adding the override without the assertion would repeat it one layer
+> up.** A future edit that "tidies" the empty `exclude` away would otherwise leave
+> a gate that runs, exits 0, and checks nothing — the
+> gate-green-because-it-looks-at-nothing failure (§15d), for the third time in
+> this arc.
+
+**Mutation-probed both ways**, each confirming the file changed first:
+a type error injected into a spec → **red**; the `exclude` override removed →
+**red, with the explanation**, rather than a silent pass.
+
+### 17e · THE CLASS, CLOSED
+
+> **A REMEDY RECORDED BUT NEVER RUN IS AN UNTESTED CLAIM WEARING A DISPOSITION.**
+
+This was the second booked remedy in the register to turn out to be theatre. The
+discipline that would have caught both is cheap and is now demonstrated twice in
+this arc: **run the command once, at filing time, against a deliberately broken
+input, and record what it actually did.** A remedy that has never been executed
+against a failing case is not a remedy; it is a hypothesis with a ticket number.

@@ -118,7 +118,7 @@ describe('isUsableRate — the 4a-FIND-01 class, closed at the rate', () => {
     expect(isUsableRate(0.0001)).toBe(true);
   });
 
-  it.each([
+  it.each<[unknown, string]>([
     [0, 'zero — a division that produces nonsense'],
     [-1, 'negative — an inverted comparison'],
     [NaN, 'NaN — which `typeof x === "number"` would have admitted'],

@@ -423,7 +423,7 @@ describe('2B-4 GATE — the mechanism landed at 2B-4a; the BEHAVIOUR still has n
     // the wider set; the field was dispatched at 2B-4a and the rule it was
     // guarding is unchanged: mechanism early, behaviour late.
     const missing = Object.values(MATERIAL_MASTER)
-      .filter((m) => !('bpomApplicable' in (m as Record<string, unknown>)))
+      .filter((m) => !('bpomApplicable' in (m as unknown as Record<string, unknown>)))
       .map((m) => m.materialCode);
     expect(missing).toEqual([]);
     expect(Object.keys(MATERIAL_MASTER)).toHaveLength(42);

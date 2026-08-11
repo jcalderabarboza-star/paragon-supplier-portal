@@ -88,7 +88,25 @@ const submitTypedPrice = async (typed: string) => {
       supplierId: 'sup-012',
       unitPrice: price.value,
       currency: 'IDR', // required since 2e-c-2; the whole set shares it, so ranking stays comparable
-      leadTimeDays: '18',
+      // ⚠️ WAS `'18'` — A RAW STRING, IN THE FIELD WHOSE FINDING IS THAT RAW TEXT
+      //   MUST NEVER REACH IT (`QuotationSubmitDraft.leadTimeDays`: *"It used to
+      //   arrive as raw text and be coerced here with `Number(...) || 0` … There is
+      //   no coercion left to do it with."*). The coercion was removed; THIS TEST
+      //   WENT ON PROVING THE OLD BEHAVIOUR, green, because JS coerced `'18'` in the
+      //   comparison and NOTHING COULD SEE IT — specs were not typechecked.
+      //   `18` is not a retype of `'18'`: it changes what the test proves, from
+      //   "the engine tolerates raw text" (a property nobody wants asserted) to
+      //   "the engine ranks a parsed lead time" (the one it is for).
+      leadTimeDays: 18,
+      // ⚠️ WAS ABSENT — and `moq` is REQUIRED, not optional, PRECISELY SO IT
+      //   CANNOT BE DROPPED SILENTLY. That required-ness IS `FIND-02`, the
+      //   captures-what-it-discards defect: the form collected a minimum order
+      //   quantity and this builder was never given it, so a stated constraint
+      //   vanished between the supplier typing it and the quotation being minted.
+      //   These drafts were still built in the PRE-FIX SHAPE — the same defect as
+      //   the raw-text lead time above, one field over. `null` is the honest value
+      //   here ("supplier stated no minimum"), and stating it is the point.
+      moq: null,
       validUntil: '2026-06-30',
     }),
   });
@@ -173,7 +191,9 @@ describe('BLAST RADIUS — a refused bid price never enters the award ranking', 
         supplierId: 'sup-012',
         unitPrice: 1.5, // ← the misparse
         currency: 'IDR',
-        leadTimeDays: '18',
+        leadTimeDays: 18, // was '18' — see the helper above; same defect, same fix
+        // was absent — see the first draft above; same defect, same fix
+        moq: null,
         validUntil: '2026-06-30',
       }),
     });

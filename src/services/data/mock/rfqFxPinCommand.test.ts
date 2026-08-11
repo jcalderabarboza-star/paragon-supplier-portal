@@ -176,7 +176,7 @@ describe('t_rfq_fx_pin — a malformed basis is REFUSED, by name', () => {
     expect(res.reason).toContain('IDR is the comparison base');
   });
 
-  it.each([
+  it.each<[unknown, string]>([
     [0, 'zero'],
     [-17_250, 'negative — an inverted comparison'],
     [Number.NaN, 'NaN, which a typeof check would have admitted'],
