@@ -12,7 +12,7 @@ import { useDeliveryAgreements, useConfirmMatch } from './deliveryHooks';
 const SUPPLIER_005: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-005',
-  supplierName: 'BASF',
+  supplierName: 'Sample Personal Care',
 };
 
 /** A probe that reads ctr-004's agreement and can confirm seq2 of item 10. */

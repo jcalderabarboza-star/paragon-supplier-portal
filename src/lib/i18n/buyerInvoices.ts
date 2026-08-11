@@ -45,7 +45,7 @@ export const buyerInvoicesEn: Record<string, string> = {
   // — Dispute banner (invoice numbers interleaved as data) —
   'buyerInvoices.banner.dispute.label': 'Invoice dispute: ',
   'buyerInvoices.banner.dispute.body':
-    ' — Quantity mismatch on PT Berlina Packaging. Credit note required before payment.',
+    ' — Quantity mismatch on PT Sample Packaging. Credit note required before payment.',
   // — Tabs —
   'buyerInvoices.tab.queue': 'Invoice Queue',
   'buyerInvoices.tab.analytics': 'Spend Analytics',
@@ -197,7 +197,7 @@ export const buyerInvoicesId: Record<string, string> = {
   // — Dispute banner —
   'buyerInvoices.banner.dispute.label': 'Sengketa faktur: ',
   'buyerInvoices.banner.dispute.body':
-    ' — Ketidaksesuaian kuantitas pada PT Berlina Packaging. Nota kredit diperlukan sebelum pembayaran.',
+    ' — Ketidaksesuaian kuantitas pada PT Sample Packaging. Nota kredit diperlukan sebelum pembayaran.',
   // — Tabs —
   'buyerInvoices.tab.queue': 'Antrean Faktur',
   'buyerInvoices.tab.analytics': 'Analitik Belanja',

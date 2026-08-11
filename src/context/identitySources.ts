@@ -8,7 +8,7 @@ const IDENTITY_KEY = 'paragon.identity';
 const LEGACY_PERSONA_KEY = 'paragon.persona';
 
 const SEEDED_SUPPLIER_ID = 'sup-007';
-const SEEDED_SUPPLIER_NAME = 'PT Berlina Packaging Indonesia';
+const SEEDED_SUPPLIER_NAME = 'PT Sample Packaging Indonesia';
 
 const identityForPersona = (persona: PersonaType): CurrentIdentity =>
   persona === 'supplier'

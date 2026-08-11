@@ -7,7 +7,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     prReference: 'PR-2025-00281',
     sourceOfSupply: 'PIR: INF-2025-0045',
     supplierId: 'sup-001',
-    supplierName: 'PT Ecogreen Oleochemicals',
+    supplierName: 'PT Sample Oleochemicals',
     status: POStatus.DELIVERED,
     channel: ChannelType.API,
     currency: 'IDR',
@@ -44,7 +44,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     prReference: 'PR-2025-00284',
     sourceOfSupply: 'PIR: INF-2025-0051',
     supplierId: 'sup-002',
-    supplierName: 'PT Musim Mas Specialty Fats',
+    supplierName: 'PT Sample Specialty Fats',
     status: POStatus.CONFIRMED,
     channel: ChannelType.WEB,
     currency: 'IDR',
@@ -70,7 +70,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-003',
     poNumber: 'PO-2025-00103',
     supplierId: 'sup-003',
-    supplierName: 'Givaudan Indonesia Fragrances',
+    supplierName: 'Sample Fragrance House Indonesia',
     status: POStatus.PARTIALLY_DELIVERED,
     channel: ChannelType.API,
     currency: 'IDR',
@@ -105,7 +105,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-004',
     poNumber: 'PO-2025-00104',
     supplierId: 'sup-004',
-    supplierName: 'Firmenich Malaysia Sdn. Bhd.',
+    supplierName: 'Sample Aromatics Sdn. Bhd.',
     status: POStatus.ACKNOWLEDGED,
     channel: ChannelType.WEB,
     currency: 'IDR',
@@ -131,7 +131,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-005',
     poNumber: 'PO-2025-00105',
     supplierId: 'sup-005',
-    supplierName: 'BASF Personal Care Emulsifiers GmbH',
+    supplierName: 'Sample Personal Care Emulsifiers GmbH',
     status: POStatus.SENT,
     channel: ChannelType.API,
     currency: 'IDR',
@@ -168,7 +168,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     prReference: 'PR-2026-00340',
     sourceOfSupply: 'PIR: INF-2026-0089',
     supplierId: 'sup-006',
-    supplierName: 'Evonik Specialty Chemicals France',
+    supplierName: 'Sample Specialty Chemicals France',
     status: POStatus.VIEWED,
     channel: ChannelType.EMAIL,
     currency: 'IDR',
@@ -194,7 +194,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-007',
     poNumber: 'PO-2025-00107',
     supplierId: 'sup-007',
-    supplierName: 'PT Berlina Packaging Indonesia',
+    supplierName: 'PT Sample Packaging Indonesia',
     status: POStatus.CONFIRMED,
     channel: ChannelType.WHATSAPP,
     currency: 'IDR',
@@ -222,7 +222,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     prReference: 'PR-2026-00341',
     sourceOfSupply: 'Outline Agreement: OA-4600001234',
     supplierId: 'sup-007',
-    supplierName: 'PT Berlina Packaging Indonesia',
+    supplierName: 'PT Sample Packaging Indonesia',
     status: POStatus.SENT,
     channel: ChannelType.WHATSAPP,
     currency: 'IDR',
@@ -248,7 +248,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-009',
     poNumber: 'PO-2025-00109',
     supplierId: 'sup-008',
-    supplierName: 'PT Indo Karton Packaging',
+    supplierName: 'PT Sample Carton Packaging',
     status: POStatus.DELIVERED,
     channel: ChannelType.WHATSAPP,
     currency: 'IDR',
@@ -274,7 +274,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-010',
     poNumber: 'PO-2025-00110',
     supplierId: 'sup-009',
-    supplierName: 'Zhejiang NHU Vitamins Co.',
+    supplierName: 'Sample Vitamins Co.',
     status: POStatus.ACKNOWLEDGED,
     channel: ChannelType.WEB,
     currency: 'IDR',
@@ -300,7 +300,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-011',
     poNumber: 'PO-2025-00111',
     supplierId: 'sup-001',
-    supplierName: 'PT Ecogreen Oleochemicals',
+    supplierName: 'PT Sample Oleochemicals',
     status: POStatus.CLOSED,
     channel: ChannelType.API,
     currency: 'IDR',
@@ -326,7 +326,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-012',
     poNumber: 'PO-2025-00112',
     supplierId: 'sup-003',
-    supplierName: 'Givaudan Indonesia Fragrances',
+    supplierName: 'Sample Fragrance House Indonesia',
     status: POStatus.SENT,
     channel: ChannelType.API,
     currency: 'IDR',
@@ -361,7 +361,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-013',
     poNumber: 'PO-2025-00113',
     supplierId: 'sup-005',
-    supplierName: 'BASF Personal Care Emulsifiers GmbH',
+    supplierName: 'Sample Personal Care Emulsifiers GmbH',
     status: POStatus.DELIVERED,
     channel: ChannelType.API,
     currency: 'IDR',
@@ -387,7 +387,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-014',
     poNumber: 'PO-2025-00114',
     supplierId: 'sup-006',
-    supplierName: 'Evonik Specialty Chemicals France',
+    supplierName: 'Sample Specialty Chemicals France',
     status: POStatus.ACKNOWLEDGED,
     channel: ChannelType.EMAIL,
     currency: 'IDR',
@@ -413,7 +413,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-015',
     poNumber: 'PO-2025-00115',
     supplierId: 'sup-009',
-    supplierName: 'Zhejiang NHU Vitamins Co.',
+    supplierName: 'Sample Vitamins Co.',
     status: POStatus.CLOSED,
     channel: ChannelType.WEB,
     currency: 'IDR',
@@ -439,7 +439,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-016',
     poNumber: 'PO-2025-00116',
     supplierId: 'sup-002',
-    supplierName: 'PT Musim Mas Specialty Fats',
+    supplierName: 'PT Sample Specialty Fats',
     status: POStatus.PARTIALLY_DELIVERED,
     channel: ChannelType.WEB,
     currency: 'IDR',
@@ -474,7 +474,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-017',
     poNumber: 'PO-2025-00117',
     supplierId: 'sup-008',
-    supplierName: 'PT Indo Karton Packaging',
+    supplierName: 'PT Sample Carton Packaging',
     status: POStatus.CONFIRMED,
     channel: ChannelType.WHATSAPP,
     currency: 'IDR',
@@ -500,7 +500,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-018',
     poNumber: 'PO-2025-00118',
     supplierId: 'sup-004',
-    supplierName: 'Firmenich Malaysia Sdn. Bhd.',
+    supplierName: 'Sample Aromatics Sdn. Bhd.',
     status: POStatus.DELIVERED,
     channel: ChannelType.WEB,
     currency: 'IDR',
@@ -526,7 +526,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-019',
     poNumber: 'PO-2025-00119',
     supplierId: 'sup-010',
-    supplierName: 'PT Halal Emulsifier Nusantara',
+    supplierName: 'PT Sample Halal Emulsifiers',
     status: POStatus.SENT,
     channel: ChannelType.WHATSAPP,
     currency: 'IDR',
@@ -552,7 +552,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-020',
     poNumber: 'PO-2025-00120',
     supplierId: 'sup-011',
-    supplierName: 'Anhui Salicylics & Niacinamide Ltd.',
+    supplierName: 'Sample Salicylics & Niacinamide Ltd.',
     status: POStatus.VIEWED,
     channel: ChannelType.EMAIL,
     currency: 'IDR',
@@ -580,7 +580,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
   // ── WHY IT EXISTS NOW ─────────────────────────────────────────────────────
   //   Until this batch, THREE INDEPENDENT FIXTURES referenced this PO and no
   //   fixture authored it:
-  //     · `invoices.ts`            — `inv-basf-1180`, poId `po-131`
+  //     · `invoices.ts`            — `inv-smpl-1180`, poId `po-131`
   //     · `supplierDocuments.ts`   — `doc-201`, `linkedTo: 'PO-2025-00131'`
   //     · `supplierShipments.ts`   — `ASN-2025-00302`, `poReference`
   //   The ruling: REPOINTING THREE REFERENCES TO HIDE A MISSING OBJECT IS
@@ -588,7 +588,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
   //   act as though it does.
   //
   // ── WHAT THE THREE REFERENCES DETERMINE ───────────────────────────────────
-  //   Supplier (`sup-005`, BASF Personal Care Emulsifiers GmbH), currency
+  //   Supplier (`sup-005`, Sample Personal Care Emulsifiers GmbH), currency
   //   (IDR, from the invoice), and that the supply was DELIVERED — the ASN is
   //   `Delivered` with an eta of 2025-04-18. `orderDate` is set before that
   //   eta so the ASN's own selection rule (level 2) holds for the reference
@@ -608,7 +608,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
   //   disagreement below.
   //
   // ── WHAT THE THREE REFERENCES DISAGREE ABOUT (reported, not resolved) ─────
-  //   1. MONEY. `inv-basf-1180` bills 1 120 000 000 IDR. The storefront's own
+  //   1. MONEY. `inv-smpl-1180` bills 1 120 000 000 IDR. The storefront's own
   //      offer for what the ASN shipped (`c201`, 210 000 IDR/KG) against the
   //      2 400 KG shipped is 504 000 000 — a 2.2× gap. The invoice ALREADY
   //      states this: `matchStatus: 'Price Variance'`, `status: 'Disputed'`.
@@ -627,7 +627,7 @@ export const mockPurchaseOrders: PurchaseOrder[] = [
     id: 'po-131',
     poNumber: 'PO-2025-00131',
     supplierId: 'sup-005',
-    supplierName: 'BASF Personal Care Emulsifiers GmbH',
+    supplierName: 'Sample Personal Care Emulsifiers GmbH',
     status: POStatus.DELIVERED,
     channel: ChannelType.EMAIL,
     currency: 'IDR',

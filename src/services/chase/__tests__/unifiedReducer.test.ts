@@ -112,7 +112,7 @@ describe('deriveUnifiedChase — the determinism lock', () => {
 
 describe('deriveUnifiedChase — over the real sa-0002 delivery chase', () => {
   it('binds the real commitment chase (sup-007) with a data reason into a coherent list', () => {
-    const view = deriveAgreementView(SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS, SDC_SIMULATED_NOW, 'PT Berlina');
+    const view = deriveAgreementView(SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS, SDC_SIMULATED_NOW, 'PT Sample Packaging');
     const commitmentEntries = deriveDeliveryChase([view], SDC_SIMULATED_NOW); // 4 rows, all sup-007, soft
     const dataEntries: ChaseEntry[] = [dataEntry('sup-007', 'overdue'), dataEntry('sup-005', 'partial-response')];
 

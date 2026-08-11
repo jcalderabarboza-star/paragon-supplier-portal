@@ -21,17 +21,17 @@
 //   CARRYING THE MATERIAL THEY SHIP. The batch stopped and split.
 //
 // ── WHAT WAS WRONG BEFORE THIS BATCH (six references, five defective) ──────
-//   ASN-2025-00211 · sup-007 → PO-2025-00112, owned by sup-003 (Givaudan)
+//   ASN-2025-00211 · sup-007 → PO-2025-00112, owned by sup-003 (Sample Fragrance House)
 //   ASN-2025-00198 · sup-007 → PO-2025-00107, owned by sup-007 ✅ (the one)
-//   ASN-2025-00201 · sup-007 → PO-2025-00109, owned by sup-008 (Indo Karton)
-//   ASN-2025-00215 · sup-007 → PO-2025-00115, owned by sup-009 (Zhejiang NHU)
-//   ASN-2025-00301 · sup-002 → PO-2025-00120, owned by sup-011 (Anhui)
+//   ASN-2025-00201 · sup-007 → PO-2025-00109, owned by sup-008 (Sample Carton)
+//   ASN-2025-00215 · sup-007 → PO-2025-00115, owned by sup-009 (Sample Vitamins)
+//   ASN-2025-00301 · sup-002 → PO-2025-00120, owned by sup-011 (Sample Salicylics)
 //   ASN-2025-00302 · sup-005 → PO-2025-00131, WHICH DID NOT EXIST
 //
 //   ⚠️ FOUR OF THESE WERE CROSS-TENANT, AND THAT IS NOT COSMETIC. `poReference`
 //   renders to the addressee (`SupplierShipments.tsx:331`) and flows into the
 //   GR wizard's draft as `poNumber` (`GRInspectionWizard.tsx:181`), so a
-//   Givaudan PO number was being shown to PT Berlina. Identity scoping is
+//   Sample Fragrance House PO number was being shown to PT Sample Packaging. Identity scoping is
 //   enforced on `supplierId` (`applySupplierScope`), which means the ASN was
 //   correctly scoped TO the right tenant while carrying ANOTHER tenant's
 //   document number inside it — the scope check cannot see a foreign
@@ -85,7 +85,7 @@ export const MOCK_ASNS: ASN[] = [
   {
     asnNumber: 'ASN-2025-00211',
     supplierId: 'sup-007',
-    // 2B-5b-i — was `PO-2025-00112` (sup-003, Givaudan). Unique at level 2:
+    // 2B-5b-i — was `PO-2025-00112` (sup-003, Sample Fragrance House). Unique at level 2:
     // sup-007 owns PO-2025-00107 (ordered 2025-03-15) and PO-2025-00108
     // (ordered 2025-04-03); only the former precedes this eta of 2025-04-02.
     poReference: 'PO-2025-00107',
@@ -131,7 +131,7 @@ export const MOCK_ASNS: ASN[] = [
   {
     asnNumber: 'ASN-2025-00201',
     supplierId: 'sup-007',
-    // 2B-5b-i — was `PO-2025-00109` (sup-008, PT Indo Karton). Unique at
+    // 2B-5b-i — was `PO-2025-00109` (sup-008, PT Sample Carton). Unique at
     // level 2: PO-2025-00108 is ordered 2025-04-03, after this eta of
     // 2025-03-27.
     poReference: 'PO-2025-00107',
@@ -154,7 +154,7 @@ export const MOCK_ASNS: ASN[] = [
   {
     asnNumber: 'ASN-2025-00215',
     supplierId: 'sup-007',
-    // 2B-5b-i — was `PO-2025-00115` (sup-009, Zhejiang NHU). A DRAFT with an
+    // 2B-5b-i — was `PO-2025-00115` (sup-009, Sample Vitamins). A DRAFT with an
     // empty `eta`, so level 3 constrains nothing; LEVEL 2 decides alone:
     // PO-2025-00108 is SENT, and an ASN cannot exist against an unconfirmed
     // order, leaving PO-2025-00107 (CONFIRMED) as sup-007's only legal parent.
@@ -177,7 +177,7 @@ export const MOCK_ASNS: ASN[] = [
   {
     asnNumber: 'ASN-2025-00301',
     supplierId: 'sup-002',
-    // 2B-5b-i — was `PO-2025-00120` (sup-011, Anhui Salicylics). Both sup-002
+    // 2B-5b-i — was `PO-2025-00120` (sup-011, Sample Salicylics). Both sup-002
     // orders precede this eta, so level 3 decides: PO-2025-00102 is confirmed
     // in full (8 000 of 8 000), PO-2025-00116 is PARTIALLY_DELIVERED with
     // 10 000 of 15 000 and 5 000 of 10 000 — outstanding quantity, which an
@@ -205,7 +205,7 @@ export const MOCK_ASNS: ASN[] = [
     // 2B-5b-i — REFERENCE UNCHANGED; THE OBJECT WAS AUTHORED (operator ruling
     // R-4). `PO-2025-00131` did not exist in `mockPurchaseOrders.ts` while
     // THREE independent fixtures acted as though it did — this ASN, invoice
-    // `inv-basf-1180`, and supplier document `doc-201`. Repointing three
+    // `inv-smpl-1180`, and supplier document `doc-201`. Repointing three
     // references to hide a missing object is worse than the gap, so the object
     // now exists. See `mockPurchaseOrders.ts` (`po-131`) for what the three
     // references do and do not determine.
@@ -215,7 +215,7 @@ export const MOCK_ASNS: ASN[] = [
     trackingNumber: 'SMPL-FFW-99120-JKT',
     eta: '2025-04-18',
     details: {
-      originCity: 'Ludwigshafen, DE',
+      originCity: 'Frankfurt, DE',
       destinationWarehouse: 'Paragon DC Karawang (WH-02)',
       totalCartons: 96,
       grossWeightKg: 2160,

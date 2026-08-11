@@ -12,7 +12,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-001',
     supplierId: 'sup-001',
-    supplierName: 'PT Ecogreen Oleochemicals',
+    supplierName: 'PT Sample Oleochemicals',
     materialCode: 'RM-COCO-8200',
     materialDescription: 'Coconut Fatty Acid Distillate (CFAD)',
     qtyOnHand: 18000,
@@ -29,7 +29,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-002',
     supplierId: 'sup-001',
-    supplierName: 'PT Ecogreen Oleochemicals',
+    supplierName: 'PT Sample Oleochemicals',
     materialCode: 'RM-LAURIC-7200',
     materialDescription: 'Lauric Acid 99% — Halal Certified',
     qtyOnHand: 8500,
@@ -46,7 +46,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-003',
     supplierId: 'sup-002',
-    supplierName: 'PT Musim Mas Specialty Fats',
+    supplierName: 'PT Sample Specialty Fats',
     materialCode: 'RM-EMUL-9410',
     materialDescription: 'Glyceryl Stearate SE (Halal Emulsifier)',
     qtyOnHand: 3200,
@@ -63,7 +63,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-004',
     supplierId: 'sup-002',
-    supplierName: 'PT Musim Mas Specialty Fats',
+    supplierName: 'PT Sample Specialty Fats',
     materialCode: 'RM-STEAR-7300',
     materialDescription: 'Stearic Acid — Double Pressed (Halal)',
     qtyOnHand: 4200,
@@ -80,7 +80,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-005',
     supplierId: 'sup-003',
-    supplierName: 'Givaudan Indonesia Fragrances',
+    supplierName: 'Sample Fragrance House Indonesia',
     materialCode: 'FR-WARD-4410',
     materialDescription: 'Wardah Signature Floral Compound',
     qtyOnHand: 120,
@@ -97,7 +97,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-006',
     supplierId: 'sup-003',
-    supplierName: 'Givaudan Indonesia Fragrances',
+    supplierName: 'Sample Fragrance House Indonesia',
     materialCode: 'FR-EMIN-4420',
     materialDescription: 'Emina Fresh Citrus Accord',
     qtyOnHand: 210,
@@ -114,7 +114,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-007',
     supplierId: 'sup-005',
-    supplierName: 'BASF Personal Care Emulsifiers GmbH',
+    supplierName: 'Sample Personal Care Emulsifiers GmbH',
     materialCode: 'AI-NIAC-6601',
     materialDescription: 'Niacinamide USP Grade 99.5% (Vitamin B3)',
     qtyOnHand: 3800,
@@ -126,12 +126,12 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
     avgDailyDemand: 200,
     lastUpdated: '2025-04-05',
     dataSource: 'EDI 846',
-    location: 'Ludwigshafen, Germany',
+    location: 'Frankfurt, Germany',
   },
   {
     id: 'inv-008',
     supplierId: 'sup-005',
-    supplierName: 'BASF Personal Care Emulsifiers GmbH',
+    supplierName: 'Sample Personal Care Emulsifiers GmbH',
     materialCode: 'AI-HYALU-6610',
     materialDescription: 'Sodium Hyaluronate (High MW, 1.5-2.0 MDa)',
     qtyOnHand: 95,
@@ -143,12 +143,12 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
     avgDailyDemand: 12,
     lastUpdated: '2025-04-05',
     dataSource: 'EDI 846',
-    location: 'Ludwigshafen, Germany',
+    location: 'Frankfurt, Germany',
   },
   {
     id: 'inv-009',
     supplierId: 'sup-006',
-    supplierName: 'Evonik Specialty Chemicals France',
+    supplierName: 'Sample Specialty Chemicals France',
     materialCode: 'AI-VITC-6720',
     materialDescription: 'Ascorbyl Glucoside (Vitamin C Derivative)',
     qtyOnHand: 180,
@@ -165,7 +165,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-010',
     supplierId: 'sup-007',
-    supplierName: 'PT Berlina Packaging Indonesia',
+    supplierName: 'PT Sample Packaging Indonesia',
     materialCode: 'PK-PETB-8801',
     materialDescription: 'PET Bottle 200ml Frosted — Wardah Series',
     qtyOnHand: 85000,
@@ -182,7 +182,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-011',
     supplierId: 'sup-007',
-    supplierName: 'PT Berlina Packaging Indonesia',
+    supplierName: 'PT Sample Packaging Indonesia',
     materialCode: 'PK-PETB-8802',
     materialDescription: 'PET Bottle 100ml Clear — Emina Series',
     qtyOnHand: 22000,
@@ -199,7 +199,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-012',
     supplierId: 'sup-008',
-    supplierName: 'PT Indo Karton Packaging',
+    supplierName: 'PT Sample Carton Packaging',
     materialCode: 'PK-CART-9901',
     materialDescription: 'Mono-Carton Box 70x40x180mm — Wardah Moisturizing Lotion',
     qtyOnHand: 620000,
@@ -216,7 +216,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-013',
     supplierId: 'sup-009',
-    supplierName: 'Zhejiang NHU Vitamins Co.',
+    supplierName: 'Sample Vitamins Co.',
     materialCode: 'AI-VITC-6730',
     materialDescription: 'L-Ascorbic Acid Powder 99% — Cosmetic Grade',
     qtyOnHand: 750,
@@ -233,7 +233,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-014',
     supplierId: 'sup-009',
-    supplierName: 'Zhejiang NHU Vitamins Co.',
+    supplierName: 'Sample Vitamins Co.',
     materialCode: 'AI-PANTO-6640',
     materialDescription: 'D-Panthenol 75% (Provitamin B5)',
     qtyOnHand: 1100,
@@ -250,7 +250,7 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   {
     id: 'inv-015',
     supplierId: 'sup-010',
-    supplierName: 'PT Halal Emulsifier Nusantara',
+    supplierName: 'PT Sample Halal Emulsifiers',
     materialCode: 'RM-EMUL-9430',
     materialDescription: 'Polysorbate 80 — Halal, Food & Cosmetic Grade',
     qtyOnHand: 420,

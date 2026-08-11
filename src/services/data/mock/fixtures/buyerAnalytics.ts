@@ -34,11 +34,11 @@ export const SPEND_CAT: SpendCategoryRow[] = [
 ];
 
 export const TOP_SUPPLIERS: TopSupplierSpend[] = [
-  { supplier: 'PT Berlina Packaging', spend: 820 },
-  { supplier: 'Zhejiang NHU Vitamins', spend: 680 },
-  { supplier: 'BASF Personal Care DE', spend: 540 },
-  { supplier: 'PT Musim Mas Specialty', spend: 420 },
-  { supplier: 'PT Halal Emulsifier Nusantara', spend: 380 },
+  { supplier: 'PT Sample Packaging', spend: 820 },
+  { supplier: 'Sample Vitamins', spend: 680 },
+  { supplier: 'Sample Personal Care DE', spend: 540 },
+  { supplier: 'PT Sample Specialty Fats', spend: 420 },
+  { supplier: 'PT Sample Halal Emulsifiers', spend: 380 },
 ];
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar'];
@@ -70,14 +70,14 @@ export const CHANNEL_DATA: MonthlyChannelMix[] = [
 ];
 
 export const PERF_TABLE: AnalyticsPerfRow[] = [
-  { supplier: 'PT Berlina Packaging Indonesia', category: 'Packaging Primary', otif: 88, otdr: 91, ackSpeed: '18h', invoiceMatch: '98%', grade: 'B', trend: '↑' },
-  { supplier: 'Zhejiang NHU Vitamins Co.', category: 'Active Ingredients', otif: 94, otdr: 96, ackSpeed: '6h', invoiceMatch: '100%', grade: 'A', trend: '↑' },
-  { supplier: 'BASF Personal Care DE', category: 'Active Ingredients', otif: 78, otdr: 82, ackSpeed: '42h', invoiceMatch: '85%', grade: 'C', trend: '↓' },
-  { supplier: 'PT Musim Mas Specialty Fats', category: 'Halal Emulsifier', otif: 92, otdr: 94, ackSpeed: '12h', invoiceMatch: '97%', grade: 'A', trend: '→' },
-  { supplier: 'PT Halal Emulsifier Nusantara', category: 'Halal Emulsifier', otif: 85, otdr: 88, ackSpeed: '24h', invoiceMatch: '95%', grade: 'B', trend: '↑' },
-  { supplier: 'Givaudan Fragrance SG', category: 'Fragrance', otif: 91, otdr: 93, ackSpeed: '8h', invoiceMatch: '99%', grade: 'A', trend: '→' },
-  { supplier: 'PT Ecogreen Oleochemicals', category: 'Natural Botanical', otif: 82, otdr: 85, ackSpeed: '30h', invoiceMatch: '92%', grade: 'B', trend: '↑' },
-  { supplier: 'Evonik Specialty FR', category: 'Active Ingredients', otif: 72, otdr: 76, ackSpeed: '56h', invoiceMatch: '88%', grade: 'C', trend: '↓' },
+  { supplier: 'PT Sample Packaging Indonesia', category: 'Packaging Primary', otif: 88, otdr: 91, ackSpeed: '18h', invoiceMatch: '98%', grade: 'B', trend: '↑' },
+  { supplier: 'Sample Vitamins Co.', category: 'Active Ingredients', otif: 94, otdr: 96, ackSpeed: '6h', invoiceMatch: '100%', grade: 'A', trend: '↑' },
+  { supplier: 'Sample Personal Care DE', category: 'Active Ingredients', otif: 78, otdr: 82, ackSpeed: '42h', invoiceMatch: '85%', grade: 'C', trend: '↓' },
+  { supplier: 'PT Sample Specialty Fats', category: 'Halal Emulsifier', otif: 92, otdr: 94, ackSpeed: '12h', invoiceMatch: '97%', grade: 'A', trend: '→' },
+  { supplier: 'PT Sample Halal Emulsifiers', category: 'Halal Emulsifier', otif: 85, otdr: 88, ackSpeed: '24h', invoiceMatch: '95%', grade: 'B', trend: '↑' },
+  { supplier: 'Sample Fragrance House SG', category: 'Fragrance', otif: 91, otdr: 93, ackSpeed: '8h', invoiceMatch: '99%', grade: 'A', trend: '→' },
+  { supplier: 'PT Sample Oleochemicals', category: 'Natural Botanical', otif: 82, otdr: 85, ackSpeed: '30h', invoiceMatch: '92%', grade: 'B', trend: '↑' },
+  { supplier: 'Sample Specialty FR', category: 'Active Ingredients', otif: 72, otdr: 76, ackSpeed: '56h', invoiceMatch: '88%', grade: 'C', trend: '↓' },
 ];
 
 // Headline KPI cards — relocated from the inline JSX in BuyerAnalytics so the

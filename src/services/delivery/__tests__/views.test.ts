@@ -19,7 +19,7 @@ describe('deriveAgreementView — the demo scenario derives every state honestly
     SCHEDULING_AGREEMENT_DEMO,
     DELIVERY_DEMO_SHIPMENTS,
     NOW,
-    'PT Berlina',
+    'PT Sample Packaging',
   );
   const itemA = view.items.find((i) => i.item.lineSeq === 10)!;
   const itemB = view.items.find((i) => i.item.lineSeq === 20)!;
@@ -27,7 +27,7 @@ describe('deriveAgreementView — the demo scenario derives every state honestly
   const fb = (seq: number) => itemB.fulfillment.find((f) => f.releaseSeq === seq)!;
 
   it('passes the display supplier name through', () => {
-    expect(view.supplierName).toBe('PT Berlina');
+    expect(view.supplierName).toBe('PT Sample Packaging');
   });
 
   it('item A (FRC/Case B): fulfilled · late · missed · pending, all derived', () => {
@@ -74,7 +74,7 @@ describe('deriveAgreementView — ctr-003 stays pristine (all-draft zero-state)'
       SCHEDULING_AGREEMENT_CTR003,
       DELIVERY_DEMO_SHIPMENTS,
       NOW,
-      'PT Berlina',
+      'PT Sample Packaging',
     );
     for (const iv of view.items) {
       expect(iv.fulfillment).toEqual([]); // nothing released ⇒ nothing to fulfill

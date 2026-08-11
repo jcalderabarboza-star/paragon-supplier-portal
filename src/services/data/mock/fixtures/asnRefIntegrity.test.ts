@@ -24,7 +24,7 @@
 //   REPAIRED: existence and TENANT OWNERSHIP, on all six. Four references were
 //   cross-tenant and one named a PO that did not exist. `poReference` renders
 //   to the addressee and flows into the GR wizard's draft `poNumber`, so a
-//   Givaudan document number was reaching PT Berlina — scoping is enforced on
+//   Sample Fragrance House document number was reaching PT Sample Packaging — scoping is enforced on
 //   `supplierId` and cannot see a foreign identifier inside a string field.
 //   NOT REPAIRED: the MATERIAL axis. Every ASN line that would need a matching
 //   PO line carries a third-space `MAT-*` code, and authoring that PO line

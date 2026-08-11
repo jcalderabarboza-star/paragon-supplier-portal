@@ -9,8 +9,8 @@
 // const and COMPLIANCE_ISSUES keyed by supplier NAME. Both are folded here onto
 // the per-supplier record (`improvementActions` / `complianceIssue`) so nothing
 // masquerades as per-supplier data. The old COMPLIANCE_ISSUES entry for
-// "Evonik Specialty Chemicals" matched no displayed supplier (the extra supplier
-// is "Evonik Specialty FR"), so it was dead data and is dropped.
+// "Sample Specialty Chemicals" matched no displayed supplier (the extra supplier
+// is "Sample Specialty FR"), so it was dead data and is dropped.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type {
@@ -23,9 +23,9 @@ import type {
 // KPI bar colour is derived centrally now (DP2-TARGET-01): the tile reads
 // targetStatus(pct, targetPct) — no more hand-assigned per-row hex.
 
-// BASF improvement-plan actions — folded off the page's shared IMPROVEMENT_ACTIONS
+// Sample Personal Care improvement-plan actions — folded off the page's shared IMPROVEMENT_ACTIONS
 // const onto the single supplier that renders them (impPlan === true).
-const BASF_IMPROVEMENT_ACTIONS: ScorecardImprovementAction[] = [
+const SAMPLE_PC_IMPROVEMENT_ACTIONS: ScorecardImprovementAction[] = [
   { item: 'Reduce PO acknowledgment time to <24h', due: 'Apr 30 2026', owner: 'Supplier OPS Team', status: 'In Progress' },
   { item: 'Resolve quality non-conformance batch BAS-2026-0034 root cause', due: 'Apr 20 2026', owner: 'Quality Dept', status: 'In Progress' },
   { item: 'Improve lead time adherence from 74% to ≥85%', due: 'May 31 2026', owner: 'Production Planning', status: 'Pending' },
@@ -33,8 +33,8 @@ const BASF_IMPROVEMENT_ACTIONS: ScorecardImprovementAction[] = [
 
 const CORE_SCORECARDS: SupplierScorecard[] = [
   {
-    id: 'zhejiang',
-    name: 'Zhejiang NHU Vitamins Co.',
+    id: 'sample-vitamins',
+    name: 'Sample Vitamins Co.',
     country: 'CN',
     category: 'Active Ingredients',
     tier: 'Tier 3 — API',
@@ -76,8 +76,8 @@ const CORE_SCORECARDS: SupplierScorecard[] = [
     ],
   },
   {
-    id: 'berlina',
-    name: 'PT Berlina Packaging Indonesia',
+    id: 'sample-packaging',
+    name: 'PT Sample Packaging Indonesia',
     country: 'ID',
     category: 'Packaging Primary',
     tier: 'Tier 1 — WhatsApp',
@@ -120,8 +120,8 @@ const CORE_SCORECARDS: SupplierScorecard[] = [
     ],
   },
   {
-    id: 'basf',
-    name: 'BASF Personal Care DE',
+    id: 'sample-personalcare',
+    name: 'Sample Personal Care DE',
     country: 'DE',
     category: 'Active Ingredients',
     tier: 'Tier 3 — API',
@@ -132,7 +132,7 @@ const CORE_SCORECARDS: SupplierScorecard[] = [
     status: 'Conditional — Improvement Plan Active',
     impPlan: true,
     complianceIssue: { level: 'expiring', label: 'ISO 9001 expiring in 83d' },
-    improvementActions: BASF_IMPROVEMENT_ACTIONS,
+    improvementActions: SAMPLE_PC_IMPROVEMENT_ACTIONS,
     kpis: [
       { name: 'OTIF', value: '78%', target: '95%', pct: 78, targetPct: 95, trend: '↓' },
       { name: 'OTDR', value: '82%', target: '95%', pct: 82, targetPct: 95, trend: '↓' },
@@ -171,11 +171,11 @@ const CORE_SCORECARDS: SupplierScorecard[] = [
 // original construction) with distinct identity + trend series.
 const EXTRA_SCORECARDS: SupplierScorecard[] = (
   [
-    'PT Musim Mas Specialty Fats',
-    'PT Halal Emulsifier Nusantara',
-    'Givaudan Fragrance SG',
-    'PT Ecogreen Oleochemicals',
-    'Evonik Specialty FR',
+    'PT Sample Specialty Fats',
+    'PT Sample Halal Emulsifiers',
+    'Sample Fragrance House SG',
+    'PT Sample Oleochemicals',
+    'Sample Specialty FR',
   ] as const
 ).map((name, i) => ({
   id: `sup-extra-${i}`,

@@ -135,9 +135,9 @@ describe('service scoping contract — non-supplierId scoping models', () => {
     expect((await svc.procurement.getSupplierScorecards(aScope)).items.length).toBe(0);
     // D-2: per-supplier optionals live on the record, not shared consts — the
     // conditional supplier carries both its compliance issue and its plan.
-    const basf = buyer.find((s) => s.id === 'basf');
-    expect(basf?.improvementActions?.length).toBeGreaterThan(0);
-    expect(basf?.complianceIssue?.level).toBe('expiring');
+    const samplePc = buyer.find((s) => s.id === 'sample-personalcare');
+    expect(samplePc?.improvementActions?.length).toBeGreaterThan(0);
+    expect(samplePc?.complianceIssue?.level).toBe('expiring');
   });
 
   it('getRequisitions: buyer sees PRs; a supplier sees none; status filter narrows', async () => {
