@@ -47,6 +47,8 @@ import { sdcSupplierEn, sdcSupplierId } from './sdcSupplier';
 import { commHubInboundEn, commHubInboundId } from './commHubInbound';
 // — PF-1 process flows —
 import { processFlowsEn, processFlowsId } from './processFlows';
+// — PF-2 purpose annotations —
+import { processFlowPurposeEn, processFlowPurposeId } from './processFlowPurpose';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -99,6 +101,9 @@ const FRAGMENTS = [
   { name: 'commHubInbound', en: commHubInboundEn, id: commHubInboundId },
   // — PF-1 process flows —
   { name: 'processFlows', en: processFlowsEn, id: processFlowsId },
+  // — PF-2 purpose annotations (bilaterally pinned to the registry in
+  //   `services/transitions/annotations.test.ts`; this guard is the i18n half) —
+  { name: 'processFlowPurpose', en: processFlowPurposeEn, id: processFlowPurposeId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {

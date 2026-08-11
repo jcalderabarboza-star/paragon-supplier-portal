@@ -62,6 +62,14 @@ import { sdcSupplierEn, sdcSupplierId } from './i18n/sdcSupplier';
 import { commHubInboundEn, commHubInboundId } from './i18n/commHubInbound';
 // — PF-1 process flows (the surface for the PF-0 analyzer) —
 import { processFlowsEn, processFlowsId } from './i18n/processFlows';
+// PF-2 — the purpose annotations. A SEPARATE fragment from the page chrome
+// above, deliberately: everything here describes ONE registered machine or verb,
+// and `processFlows.ts` describes none. Keeping them apart is what lets each
+// file's header state a rule that is literally true of every string in it.
+import {
+  processFlowPurposeEn,
+  processFlowPurposeId,
+} from './i18n/processFlowPurpose';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -128,6 +136,7 @@ export const resources = {
       ...commHubInboundEn,
       // — PF-1 process flows —
       ...processFlowsEn,
+      ...processFlowPurposeEn,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
@@ -508,6 +517,7 @@ export const resources = {
       ...commHubInboundId,
       // — PF-1 process flows —
       ...processFlowsId,
+      ...processFlowPurposeId,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',

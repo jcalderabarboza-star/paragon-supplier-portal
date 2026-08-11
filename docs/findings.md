@@ -7931,3 +7931,213 @@ still describes the transition it sits next to, and the next machine that
 changes leaves it behind. **PF-2's whole design — keyed by transition id,
 bilaterally pinned — exists because that sentence has to be attachable to
 something a build can check.**
+
+---
+
+# PF-2 · PURPOSE ANNOTATIONS — findings
+
+Main `a2c2bfa`. Floor 2572/197 → **2705/198**. One PR.
+
+**What shipped:** 109 authored annotations — 18 machines + all 91 registered
+transitions — keyed by derived identity (`services/transitions/annotations.ts`),
+worded in EN and ID (`lib/i18n/processFlowPurpose.ts`), rendered on three
+surfaces: the flow header, the transitions table, and the lifecycle walk.
+
+## 1 · WHAT THIS BATCH ACTUALLY CHANGED, AND WHY IT NEEDED A DESIGN
+
+Everything on the Process Flows page before today was DERIVED, and derived
+things cannot drift: a wrong count is wrong to anyone who checks it, and PF-1
+holds the whole catalog as equalities against the schema. Purpose is the first
+thing on that page that **nothing derives**, so it is the first thing that can
+be wrong for a year without any gate noticing.
+
+That is the whole reason the shape is `Record<TransitionId, {purposeKey}>` and
+not a `description` field on `TransitionDef`. A field on the transition would
+have been simpler and would have put the sentence inside the machine, where a
+rename carries it along — but it would also have put English prose in the
+transition schema, made every flow file bilingual or monolingual, and given the
+sentence no i18n key. **The annotation is a KEY, never a sentence**, so the
+prose is unreachable except through the translation layer, and a purpose can
+never be English-only (MARKER-I18N-HOLE-01 — ~110 hand-authored strings landing
+late in a page's life is precisely the class a coverage sweep is blind to).
+
+## 2 · THE BILATERAL PIN IS THE POINT, NOT THE PROSE
+
+`annotations.test.ts` fails in **four** directions over `getKnownFlows()`:
+
+| direction | what it refuses |
+|---|---|
+| registry → annotation | a verb shipping with no stated purpose |
+| annotation → registry | a purpose naming a verb the registry does not have |
+| annotation → i18n | a key with no EN **and** ID string |
+| i18n → annotation | prose no annotation points at |
+
+Directions 2 and 4 are the ones nothing normally checks, and they are the ones
+that rot. **A sentence about a deleted verb reads exactly like a sentence about
+a live one** — that is `C9-STALE-BY-FIX-01` and `CENSUS-DERIVE-BILATERAL-01`,
+one surface along. Deleting or renaming a verb now FORCES the deletion of its
+annotation, so this layer can only shrink truthfully.
+
+A fifth assertion states the two SET SIZES are equal, so a simultaneous
+add-and-delete cannot slip past directions 1 and 2 together.
+
+### 2a · `PF2-PIN-IS-A-TEST-NOT-A-BUILD-ERROR-01` — said out loud
+
+The dispatch named `FX_REFUSAL_KEY` as precedent, and that pattern gets a BUILD
+failure when a union grows, because **its population is a TYPE**. This
+population is DATA: transition ids are strings in flow files and no type knows
+them. So the strongest available pin is the floor, not `tsc`.
+
+Recorded rather than papered over, because the paper was available and is a
+trap: a `Record<'t_po_issue' | 't_po_view' | …, PurposeAnnotation>` over a
+hand-typed union WOULD compile-check — by putting **a second copy of the id
+list** in this file, which is the exact thing the derivation refuses. A pin that
+buys compile-time enforcement with a second copy has bought the wrong thing.
+
+## 3 · `PF2-NO-RESTATEMENT-IS-STRUCTURAL-01` — the rule, held rather than asked for
+
+> **A SENTENCE THAT NEVER CONTAINS THE NUMBER CANNOT DRIFT FROM IT.**
+
+`t_gr_hold moves a receipt from Under Inspection to Quality Hold` is a DEFECT,
+not an annotation. It restates two states the diagram already draws, and it is
+wrong the day either is renamed — silently, because nothing compares a sentence
+to a schema.
+
+So it is not an instruction to whoever edits next. A test derives, per flow,
+every machine token the page renders BESIDE that flow's prose — its states,
+`initial`, `terminals`, every transition id, every `requiredRole`, every
+`requiredFields` entry, every policy-hook name, every `settlesTo`, the entity
+key, and the four trigger words — and refuses any purpose string containing one.
+**EN and ID both**, 109 strings each.
+
+**Verified by mutation, not by assumption.** Replacing one purpose with the
+literal defect sentence above turned the suite red and named both offenders:
+
+```
+× t_gr_hold: its purpose names no machine token
+  → en processFlows.purpose.t_gr_hold: expected [ 'Under Inspection', 'Quality Hold' ] to deeply equal []
+```
+
+### 3a · THE LIMIT, RECORDED
+
+It catches the LITERAL restatement, **not a paraphrase of one**. A test that
+tried to judge paraphrase would be judging prose, and would go red on wording
+somebody improved — which trains people to edit the test, and a rule that gets
+edited routinely is not a rule. The literal form is the drift-prone one anyway:
+it is the form that names a token a rename invalidates.
+
+Matching is deliberately asymmetric in a way worth knowing: multi-word states
+(`Quality Hold`) match as PHRASES, single-word states on word boundaries. So
+`dispute` is legal and `Disputed` is not, `approve` is legal and `Approved` is
+not. That is the intended line — the STATE NAME is the thing a rename breaks,
+not the English verb it was named after.
+
+### 3b · WHAT THE RULE COST, AND WHAT IT BOUGHT
+
+It made the prose better, not worse, and in a specific way: forbidding a flow's
+own tokens forces each sentence to say what the thing **is** rather than repeat
+its label. `rfq`'s purpose cannot say "RFQ", so it says *"a sourcing event:
+Paragon asks several suppliers for an offer on the same requirement, so the
+comparison is like for like"*. `obligation` cannot say "obligation", so it says
+*"a promise written into an agreement — a volume, a rebate, a service level"*.
+
+Two sentences read a little sideways as a direct result — *"the goods are
+frozen"* rather than *"the goods go on quality hold"* — and that is the trade
+taken knowingly: the sideways phrasing is the one that survives a rename.
+
+## 4 · `PF2-PURPOSE-IS-A-THIRD-AXIS-01` — the honest marker had two, and needed three
+
+The route's D-CENSUS-8 marker said what is REAL (the derived catalog) and what
+is NOT REAL (the walk's local cursor). Purpose is **neither**. It is not derived,
+so it does not belong in the first; it is not fiction, so it does not belong in
+the second. It is AUTHORED, which is its own thing to be, and a page that marks
+the other two honestly has to mark this one:
+
+> *Authored, not derived: the one-line purpose beside each machine and each verb
+> is written by hand. Purpose is the one thing the transition schema does not
+> carry, and nothing derivable stands in for it — a trigger says a person does
+> something, never why a person would. Each one is pinned to a live transition in
+> both directions, and none of them repeats a state name, role or field, so a
+> sentence here cannot quietly disagree with the machine beside it.*
+
+The marker states the DISCIPLINE, not a reassurance. "Pinned in both directions"
+and "repeats no state name" are both things a reader can go and check.
+
+## 5 · REPORT — TRANSITIONS WHOSE PURPOSE COULD NOT BE STATED WITHOUT READING THE IMPLEMENTATION
+
+**None.** All 91 were writable from the flow file alone — which is itself the
+finding worth recording: the flow definitions carry enough intent, in their
+authored comments, that no verb needed its handler opened to be explained. The
+dispatch's hypothesis (*"a verb nobody can explain in one sentence may be a verb
+that does two things"*) found no instance.
+
+Three came CLOSE enough to name, all for the same reason — the verb is honest
+but the sentence has to carry a distinction the id hides:
+
+- **`t_requirementresponse_submit`** creates a DRAFT. The id says `submit` and
+  the verb does not submit; the purpose therefore says *"works out what it can
+  commit to … while the number is still theirs to change"*, and
+  `t_requirementresponse_promote` gets *"the act that makes a promise a
+  promise"*. This is `PF1B-VERB-ID-NAMES-THE-OLD-ACT-01` (OPEN) seen from the
+  annotation side: **the purpose layer now silently compensates for a
+  misleading id.** That is the right thing for the prose to do and the wrong
+  thing to rely on, so it is noted here rather than treated as closure.
+- **`t_inventorydeclaration_declare` vs `t_inventorydeclaration_record`** are
+  byte-identical in every derived column — same shape, same store, same state,
+  same required floor, same hooks. **The ONLY thing that distinguishes them on
+  the page is now the authored sentence** (supplier states its own stock vs a
+  planner writes down what a supplier said over chat). Before PF-2 the page
+  showed two rows a reader could not tell apart.
+- **`t_pr_source` / `t_pr_convert`** declare a cascade nothing fires. The purpose
+  describes what the verb is FOR, and the derived column beside it already says
+  *"Nothing fires it"* — the two together read correctly, and the purpose
+  deliberately does not mention the wiring, which is a machine fact.
+
+## 6 · REPORT — ANNOTATIONS TEMPTED INTO A MACHINE RESTATEMENT
+
+Four, all caught while writing rather than by the test, and all in the same
+shape — the natural sentence for a verb is its state transition:
+
+| verb | the restatement wanted | what was written instead |
+|---|---|---|
+| `t_gr_hold` | "moves it from Under Inspection to Quality Hold" | *"Something looks wrong, so the goods are frozen rather than taken or refused. The reason written here is what the supplier will be asked about."* |
+| `t_gr_approve` | "the delivery becomes Approved" | *"Quality takes the whole delivery. The supplier gets clean credit for it and the goods can be used."* |
+| `t_rfq_close` | "the event becomes Closed" | *"The response window ends. Late offers are not compared, which is what makes the comparison fair to everyone who answered on time."* |
+| `t_invmatch_price_variance` | "the match lands in Price Variance" | *"The unit price on the bill sits above what was agreed, beyond what tolerance allows. Buying owns that conversation, not finance."* |
+
+The pattern in all four: the restatement answers *what happens to the record*,
+the annotation answers *what happens to the business*. The second is the one the
+schema cannot supply, and it is the only one worth authoring.
+
+## 7 · SURFACES, AND ONE MEASURED LAYOUT DECISION
+
+Purpose renders in three places, and the walk is the one that earns it most:
+standing on `Sent` in the purchase-order flow, a reader is offered **three
+identical `Advance` buttons** — view, acknowledge, confirm. Before PF-2 the only
+thing separating them was three verb names. The purpose is the answer to the
+only question a reader actually has there.
+
+`PF2-PURPOSE-ROW-SPANS-01` — the transitions-table purpose gets its OWN
+full-width row rather than sitting under the id in column 1. Measured, not
+chosen for looks: inside column 1 the sentence laid out at **132px** — twelve
+lines of eleven-pixel text beside a one-line id — because the other five columns
+already claim the table's width. Spanning the row gives it 451px and costs the
+table **nothing** horizontally (863px against an 816px wrapper before and after;
+that overflow is PF-1's, not this batch's). A teal left rule marks it as the
+authored line.
+
+## 8 · FENCES HELD
+
+- No flow edited. No loose end fixed. No diagram changed. No glossary link (GL-1).
+- C9 `af7f0b4`, C10 `dc8e774` untouched.
+- EN+ID from birth, both directions pinned; the ID-is-not-a-copy check is its
+  own assertion (`no purpose is the English string copied into Indonesian`).
+- `no purpose interpolates a variable` is pinned deliberately: a sentence with a
+  hole in it is assembled at render time, and the assembled halves are what
+  drift apart between languages.
+- Browser QA, EN and ID, on the built bundle: all 18 flows swept — flow purpose
+  present on every one, verb purposes exactly matching each flow's transition
+  count (7·6·8·5·8·4·7·4·8·4·2·7·4·3·7·2·4·1 = **91**), zero empty, **zero raw
+  i18n keys**, no body overflow in either locale. State names stay untranslated
+  in both, as identifiers.
+- Floor: 2572/197 → **2705/198** (+133 tests, +1 file).
