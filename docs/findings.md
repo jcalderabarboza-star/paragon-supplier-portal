@@ -8626,7 +8626,7 @@ Two rows recorded separately because they are different KINDS of claim:
   collision — described as something it is not, marked `SUSPENDED`, and given the
   **lowest rating in the dataset** (1.5 / 5, grade D).
 
-### 11a · METHOD CLASS — THE DERIVATION DEFEATED ITSELF THREE TIMES, AND EACH DEFEAT BECAME A FINDING
+### 11a · METHOD CLASS — FOUR DEFEATS, FOUR FINDINGS
 
 The census rule was: *a token that appears capitalised and never lowercase
 anywhere in the tree is a proper noun.* It lost seven of the very brands it
@@ -8640,15 +8640,25 @@ existed to find. Each loss was informative:
 2. **A lowercase slug id.** `id: 'berlina'` disqualified `Berlina`.
 3. **ALL-CAPS acronym brands** were excluded by rule and needed a separate lane.
 
-A fourth surfaced during batch E, from the FIELD census rather than the token
-census: **`Kuehne+Nagel` carries a `+` and no trade token**, so it passed both
-orthographic passes untouched and was only caught by enumerating `carrier:`
-values. Same for `containerNumber`, which is not a name field at all and holds
-**real ISO container owner codes** (`MAEU`, `HLBU`, `MERU`, `PILU`).
+**4.** A fourth surfaced during batch E, from the FIELD census rather than the
+token census: **`Kuehne+Nagel` carries a `+` and NO TRADE TOKEN**, so it passed
+**both** orthographic passes untouched and was caught only by enumerating
+`carrier:` values. Same for `containerNumber`, which is not a name field at all
+and holds **real ISO container owner codes** (`MAEU`, `HLBU`, `MERU`, `PILU`).
 
-**The class: a detector's failures are evidence, not noise.** Every one of these
-was a place the tree hid an identity in a shape the detector was not built for.
-The instrument note that follows exists because of them.
+**RUNNING COUNT: FOUR DEFEATS, FOUR FINDINGS.** Not one of the four was found by
+the derivation succeeding. Each was found by the derivation **failing in a
+specific, legible way** and the failure being read instead of patched: a domain,
+a slug, a casing rule, a punctuation mark. **THE DERIVATION KEEPS FAILING IN WAYS
+THAT TEACH MORE THAN A CLEAN PASS WOULD HAVE.**
+
+**That is the argument for deriving rather than listing, and it is worth stating
+from the failures rather than from the successes.** A list cannot fail
+informatively — it matches or it does not, and a miss is silent. A derivation
+carries a stated rule, so when it misses, the rule tells you *what shape of
+identity you were not looking for*. Four times here the miss was the finding.
+**A detector's failures are evidence, not noise** — which is why the instrument
+note below asks A for a derivation and not a longer list.
 
 ### 11b · METHOD CLASS — RENDERING CORRECTS THE FIXTURE READING IN BOTH DIRECTIONS
 
@@ -8664,10 +8674,28 @@ it cuts the other way just as hard, and batch E proved it a third time.**
 
 **The render pass has its own blind spot, and it is now named: `innerText` does
 not include `<option>` text of a closed `<select>`.** The same blind spot hid the
-buyer-scorecard supplier list (eight real corporations in one control) — it was
-found there only because a dropdown was driven deliberately. **A route sweep over
-`innerText` is a floor, not a census.** Reach into `select.options`, and open
-tabs and wizards, or say plainly that you did not.
+buyer-scorecard supplier list (**eight real corporations in one control**) — found
+there only because a dropdown happened to be driven deliberately, not because the
+sweep caught it. **A ROUTE SWEEP OVER `innerText` IS A FLOOR, NOT A CENSUS.**
+Reach into `select.options`, and open tabs and wizards, or say plainly that you
+did not.
+
+**WHAT MAKES THE THIRD INSTANCE DIFFERENT, AND WHY IT IS THE FINDING OF THE
+BATCH: THE FIRST TWO TURNED THE METHOD ON THE TREE; THIS ONE TURNED IT ON THE
+TOOL.** §10b and the census both used rendering to correct a claim about the
+*fixtures*. Batch E used rendering to correct a claim made **by the render pass
+itself** — the census's own coverage statement, produced by the very instrument
+being checked. An instrument that is only ever pointed outward reports its own
+blind spots as clean coverage: the 42-route sweep did not say *"I could not see
+`<option>` text"*, it said *"carriers render on no page"*, which reads as a
+finding and was a gap.
+
+The generalisation, and it outranks the specific `<option>` fact: **a coverage
+claim must be verified by an instrument that does not share the failure mode of
+the one that produced it.** Here the second instrument was `select.options` plus
+a grep of the shipped bundle — neither of which goes through `innerText`. This is
+`SCOPE-DERIVATION-IS-RECURSIVE-01` arriving one level up: the recursion does not
+stop at the population, it reaches the tool that measured it.
 
 ### 11c · THE NAMING CONVENTION (operator ruling — A sets it, everything inherits)
 
@@ -8751,6 +8779,17 @@ removing the name and keeping `MAEU-8821007` next to it would be exactly the
 completed-half failure §9 warns about — *the corrected half must not stand in for
 the whole*. Scoping corrected mid-batch and recorded here rather than deferred.
 
+**BOTH SCOPING CORRECTIONS WERE ACCEPTED, AND THEY MOVE IN OPPOSITE DIRECTIONS —
+WHICH IS WHAT MAKES THEM JUDGEMENT RATHER THAN CONVENIENCE.** One **pulled work
+forward** into E from a later batch (the refs, because leaving them would ship a
+half-remedy). One **pushed work back** out of E into A (`demoFixturesScale`,
+because doing it now would be wrong twice over). A batch boundary that only ever
+moves one way is not being reasoned about — it is being negotiated. Scope that
+grows is a batch protecting its own completeness claim; scope that shrinks is a
+batch protecting its own effort. **Moving in both directions in the same batch,
+each with a stated reason, is the evidence that the boundary was tested against
+the work rather than against the schedule.**
+
 **`buyerRisk.ts:117`** asserted Paragon holds *"carrier agreements with"* two
 named real ocean carriers. Generalised to *"two ocean carriers"* — it substitutes
 cleanly and is **not** a relocation case, so it belonged to E.
@@ -8809,3 +8848,122 @@ asserts a live contradiction that no surface produces** — and the test's own
 Mutation-probed: dangling the registry FK reddens the join test, and
 de-registering `sup-002` reddens the contradiction gate — proving the portfolio
 fold did not neuter the invariant it was introduced to unbreak.
+
+---
+
+## `SUPPLIER-IDENTITY-BY-JURISDICTION-01` — a flat `taxId` cannot say which document it is
+
+**Status: BOOKED, NOT BUILT. OPEN.** Operator-raised on the
+`DISCOVERY-REAL-SUBJECTS-01` census (2026-08-11), which surfaced the gap without
+being about it. **Lands in the onboarding arc, not in the fabricated-names
+batches — but batch A MUST NOT FORECLOSE IT.**
+
+### The gap
+
+`SupplierExtended` (`src/data/mockSuppliers.ts`) carries supplier identity as
+**two flat strings**:
+
+```ts
+taxId?: string;         // NPWP / SIRET / EIN etc.
+businessRegNo?: string; // NIB / SIRET etc.
+```
+
+The comment already admits the problem it cannot fix: the field is a slash-list
+of incompatible document types. **That shape only works for ONE jurisdiction.**
+
+| Country | Tax identifier | Business registration |
+|---|---|---|
+| Indonesia | NPWP | NIB |
+| Germany | USt-IdNr | Handelsregisternummer |
+| France | TVA | SIRET |
+| China | — | USCC (unified, single number) |
+| Malaysia | — | SSM |
+| Singapore | — | UEN (unified, single number) |
+| India | GSTIN | CIN |
+
+> **A FIELD NAMED `taxId` CANNOT SAY WHICH DOCUMENT IT IS, WHOSE FORMAT IT
+> FOLLOWS, OR WHETHER IT IS REQUIRED FOR THAT COUNTRY.**
+
+Three distinct things collapse into one string, and the collapse is lossy in a
+way no validator can recover: **document TYPE**, **format/checksum RULE**, and
+**whether that jurisdiction requires it at all**. Note the rows where the tax and
+registration identifiers are the *same* document (China USCC, Singapore UEN) —
+the two-field shape does not merely mislabel those, it has no correct way to fill
+them in.
+
+### Two consequences
+
+**1 · It is load-bearing on `D-CENSUS-2`'s onboarding scope (already ruled
+portal-side).** **Verifying a foreign supplier means knowing which documents that
+jurisdiction requires.** A registration flow that asks every supplier for "Tax ID"
+and "Business registration" either demands documents that do not exist in their
+country or accepts a blank where a mandatory one belongs — and cannot tell those
+two cases apart. The current `SupplierRegistration` step asks for NPWP and NIB by
+name (`registration.step.company.field.npwp.label`), i.e. **the Indonesian
+assumption is already hard-coded into the UI copy in both locales**, not only
+into the model.
+
+**2 · Batch A's remedy is not only replacing the numbers.** A was scoped to
+substitute fabricated statutory identifiers on real corporations (§11, Tier 1).
+Substituting `01.234.567.8-041.000` for a `SAMPLE-…` token fixes the fabrication
+and leaves the modelling defect exactly where it was. **A must give the field a
+SHAPE THAT SAYS WHICH DOCUMENT TYPE AND WHICH COUNTRY'S FORMAT.**
+
+### The split — what is portal scope and what needs a ruling
+
+- **The document-type MODEL is portal scope.** Replacing two optional strings
+  with a typed, repeatable identity record — something carrying *document type*,
+  *issuing country*, *value*, and *verification state* — is the portal's to
+  design and does not need an operator decision to be modelled.
+- **The PER-COUNTRY REQUIREMENT MATRIX needs a ruling.** *Which* documents are
+  mandatory for a supplier in each jurisdiction, whether an unverifiable foreign
+  registration blocks onboarding or is accepted with a marker, and who maintains
+  the matrix as jurisdictions change — these are operator calls with compliance
+  consequences, not modelling choices. **Do not infer them.** The matrix is also
+  the thing that decays: a hard-coded requirement list is a clock-decay risk of
+  the same family as `CP-3a`.
+
+### THE MATRIX QUESTION IS NOT GREENFIELD — ONE ALREADY EXISTS, UNCONSUMED
+
+Found while booking this, and it changes where the onboarding arc should start.
+**`src/data/communicationProfiles.ts` already carries a per-country field matrix
+covering ELEVEN jurisdictions** — `invoiceFields`, one list per country:
+
+| | | |
+|---|---|---|
+| Indonesia `NPWP, NIB, Faktur Pajak Number` | Malaysia `SST Registration, Company Registration No.` | China `Unified Social Credit Code, VAT Registration` |
+| Germany `Steuernummer, USt-IdNr, IBAN, BIC/SWIFT` | France `SIRET, TVA Number, IBAN, BIC` | Singapore `UEN, GST Registration No.` |
+| Saudi Arabia `VAT Registration No., CR Number, IBAN` | India `GSTIN, PAN, HSN Code` | United States `EIN/TIN, W-9, DUNS Number` |
+| Japan `Corporate Number, Qualified Invoice Number (T-number)` | Brazil `CNPJ, Nota Fiscal Number` | |
+
+It covers **every jurisdiction the gap statement names**, and it has **ZERO
+CONSUMERS** — nothing in the tree reads `invoiceFields`. So the situation is not
+"the matrix must be built" but **"a matrix was already authored, in a neighbouring
+lane, and nobody wired it"**. Three things follow, and the first is the ruling
+that is actually needed:
+
+1. **`invoiceFields` is an INVOICING requirement list, and identity verification
+   is not the same set.** They overlap heavily and are not identical — `IBAN` /
+   `BIC` / `HSN Code` / `Nota Fiscal Number` are settlement and line-item
+   concerns, not proof that a legal entity exists. **Whether one matrix serves
+   both purposes, or they are two matrices with a shared spine, is the first
+   thing to rule** — before any modelling.
+2. **Reuse it or retire it, but do not author a third.** A second unconsumed
+   per-country list beside this one is how a matrix stops being maintained.
+3. **Its provenance is unstated.** No source, no as-of date, no owner. Whoever
+   adopts it inherits an unattributed regulatory claim about eleven countries —
+   which is the `FIXTURE-PRESENT-01` shape, and needs the same treatment before
+   it drives a gate rather than a demo.
+
+Recorded here rather than acted on: it is onboarding-arc work, and this entry is
+**booked, not built**.
+
+### The constraint on A, stated so it cannot be missed
+
+A may substitute the numbers. **A must not re-commit to the flat two-string shape
+while doing so** — no new code that assumes exactly one tax identifier and
+exactly one registration number per supplier, and no test pinned to that
+assumption. Widening the model is not A's job; **foreclosing it would be A's
+fault.** If A finds the flat shape genuinely cheaper for the substitution pass,
+the honest move is a marker at the field saying the shape is known-wrong and
+booked here — not silence.
