@@ -2,14 +2,12 @@ import type {
   IDiscoveryService,
   Page,
   QueryScope,
-  GlobalSupplier,
   RecommendedSupplier,
   QualificationItem,
   MarketIntelCard,
   SingleSourceItem,
 } from '../types';
 import {
-  GLOBAL_SUPPLIERS,
   RECOMMENDED,
   QUALIFICATIONS,
   MARKET_INTEL,
@@ -23,9 +21,6 @@ function buyerOnly<T>(scope: QueryScope, rows: readonly T[]): T[] {
 }
 
 export class MockDiscoveryService implements IDiscoveryService {
-  async getGlobalSuppliers(scope: QueryScope): Promise<Page<GlobalSupplier>> {
-    return { items: buyerOnly(scope, GLOBAL_SUPPLIERS) };
-  }
   async getRecommended(scope: QueryScope): Promise<Page<RecommendedSupplier>> {
     return { items: buyerOnly(scope, RECOMMENDED) };
   }

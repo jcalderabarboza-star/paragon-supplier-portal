@@ -11,13 +11,15 @@ describe('BuyerDiscovery — four honest states', () => {
   it('data: renders discovery for the buyer once the reads resolve', async () => {
     renderWithProviders(<BuyerDiscovery />);
     expect(await screen.findByText('Supplier Discovery')).toBeInTheDocument();
-    expect(await screen.findByText('Candidates Identified')).toBeInTheDocument();
+    // Batch C — the leading tile is now the gap count. `Candidates Identified`
+    // is gone: it read 18 over a fixture of 8 and counted nothing.
+    expect(await screen.findByText('Dual-Source Gaps')).toBeInTheDocument();
   });
 
   it('loading: shows LoadingState while the reads are pending', () => {
     renderWithProviders(<BuyerDiscovery />, { service: alwaysPending });
     expect(screen.getByText('Loading…')).toBeInTheDocument();
-    expect(screen.queryByText('Candidates Identified')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dual-Source Gaps')).not.toBeInTheDocument();
   });
 
   it('error: shows ErrorState when a read throws', async () => {
@@ -38,7 +40,14 @@ describe('BuyerDiscovery — four honest states', () => {
     // it, the ONLY marker on /buyer/discovery was this tab's pill, so the candidate
     // pool — the page's actual claim — read as trustworthy because the marker beside
     // it belonged to a sibling tab (MARKER-SCOPE-01). Asserting the count keeps both.
-    expect(await screen.findAllByText('Sample')).toHaveLength(2);
+    // DISCOVERY-REAL-SUBJECTS-01 (C) — the page-level marker no longer says a bare
+    // "Sample": `supplierDiscovery` is now HARVEST-GATED, so it reads the readiness
+    // note and states WHY. That is strictly more honest than the count this line
+    // used to assert, so the assertion moved from counting markers to reading them.
+    expect(await screen.findByText('Sample — awaiting supplier-discovery feed'))
+      .toBeInTheDocument();
+    // …and the market-intel tab keeps its own capability pill, unchanged.
+    expect(screen.getByText('Sample')).toBeInTheDocument();
     // The invented source attributions are deleted (not relabelled) …
     expect(screen.queryByText(/IFRA index/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Niacinamide spot/)).not.toBeInTheDocument();

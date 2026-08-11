@@ -114,12 +114,17 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
     expect(note?.source).toBe('Track-R');
   });
 
-  it('only compliance + purchaseRequisitions + forecastPublications + inventory are harvest-gated (others: note null)', () => {
+  it('only the five declared capabilities are harvest-gated (others: note null)', () => {
+    // `supplierDiscovery` joined at DISCOVERY-REAL-SUBJECTS-01 batch C: its
+    // candidate pool was DELETED rather than substituted, so the surface is gated
+    // on a real feed instead of repopulated — a candidate can only ever arrive
+    // FROM A SOURCE. This census test is why that addition could not be silent.
     const gated = new Set<Capability>([
       'compliance',
       'purchaseRequisitions',
       'forecastPublications',
       'inventory',
+      'supplierDiscovery',
     ]);
     for (const cap of ALL_CAPABILITIES) {
       if (gated.has(cap)) continue;

@@ -9298,3 +9298,183 @@ real cost, and leaving a knowingly-wrong one would be its own small dishonesty.
 batches. A finding filed twice under different names is a sign the register was
 not searched before filing. Cross-referenced rather than merged; whichever id
 survives should absorb the other.
+
+---
+
+## 14 · BATCH C — the candidate pool is deleted, and the surface is gated
+
+**Status: C DONE. D then B remain OPEN.** Ruled Option 4 for the candidate cards,
+Option 2's framing for the page.
+
+### 14a · THE SENTENCE THAT GENERALISES PAST THIS PAGE
+
+The dispatch asked whether discovery could be honest and useful at once, framing it
+as a trade. The framing does not survive contact with the fixture:
+
+> **NOBODY COMPUTED 96.**
+
+There was no matching engine, no weights and no inputs behind `matchScore` — nor
+behind the employee counts, the founding years or the superlatives. A buyer
+shortlisting on `Givaudan SA · 96/100 AI Match Score` was acting on a number that
+did not exist. So the choice was never *honest but useless* versus *dishonest but
+useful*. It was:
+
+> **HONEST-AND-VISIBLY-A-DEMO versus DISHONEST-AND-APPARENTLY-REAL.**
+> **THE PAGE WAS NEVER USEFUL; IT WAS CONVINCING.**
+
+That is the finding, and it outranks the page. **Convincing is not a weaker form
+of useful — it is a different thing, and it is the dangerous one.** A surface that
+is visibly incomplete invites the question "what would fill this?". A surface that
+is plausibly complete forecloses it. Every honesty marker in this codebase exists
+because *convincing without being true* is the failure mode fixtures produce by
+default, and it is worth asking of any surface: **if this were empty, would anyone
+notice? If not, its persuasiveness is doing work its data cannot.**
+
+### 14b · WHY DELETION RATHER THAN SUBSTITUTION (the ruling's reasons, recorded)
+
+- **Option 1 spends a batch making a fabrication SAFE; Option 4 makes it
+  UNREACHABLE.**
+- **Option 3 requires an owner for third-party certification accuracy, and that
+  owner does not exist.** Asserting a company is halal-certified when it is not is
+  **the identical exposure in a smaller font** — the certifications list was the
+  trap in that option, not the names.
+- And the structural argument decides it: **real names become impossible to
+  fabricate BY CONSTRUCTION, because they can only ever arrive FROM A SOURCE.**
+  Same discipline as `UNDETERMINED` and `FX_UNPINNED` — **the honest state is the
+  default and the real value requires a real feed.**
+
+`GLOBAL_SUPPLIERS`, the `GlobalSupplier` type, `IDiscoveryService.getGlobalSuppliers`,
+`MockDiscoveryService`'s method, `useGlobalSuppliers` and `GlobalSupplierCard` are
+all deleted. **The type went with the fixture deliberately**: an unread interface
+is an invitation to repopulate it, and when a feed lands the type it needs is the
+SOURCE's shape, not this one.
+
+`supplierDiscovery` is registered in `HARVEST_GATED` (gate-2,
+`LIVENESS-DATASOURCE-01`), which is the right home because **no amount of wiring
+can open gate-2.** The search tab reads the registry's readiness note, so the
+emptiness is *explained* rather than merely displayed — and there is one place to
+change the day a feed lands.
+
+### 14c · THE FILTER STATE WENT WITH THE POOL, AND SO DID TWO KPI TILES
+
+**The search filters are deleted, not disabled.** Region, category, halal-only, the
+four sort keys and the free-text query all filtered a read that no longer exists.
+**A filter over an empty read is an affordance that promises a result it cannot
+produce** — the same overstatement as the scores, one layer down.
+
+**Two KPI tiles were unsourced and are gone rather than recomputed:**
+
+- `candidates: GLOBAL_SUPPLIERS.length + 10` — the tile read **18** over a fixture
+  of **8**. The `+ 10` was a literal with no referent: a rounder, larger number
+  invented at the point of display. Nothing in the census caught it, because it is
+  not a name — it is a number that looks like a count and counts nothing.
+- `approved: 2` — a hard-coded constant.
+
+The three that survive all count something: gaps, in-qualification, at-risk. The
+meta line and the page subtitle were corrected to match (`{{count}} candidates` →
+dual-source gaps; *"Find and qualify new suppliers globally"* → *"Close sourcing
+gaps and qualify new suppliers"*, because the GLOBAL half is the one capability
+the page cannot currently deliver and it was leading the sentence).
+
+### 14d · WHAT SURVIVED, AND WHY THE PAGE SURVIVES THE DELETION
+
+`SINGLE_SOURCE`, `RECOMMENDED`, `QUALIFICATIONS` and `MARKET_INTEL` took **batch
+A's treatment** — fictional subjects, assessments intact — because they name real
+companies inside **Paragon's own pipeline**, and that is A's defect wherever it
+appears.
+
+> **THE GAP TABLE IS GENUINELY USEFUL AND GENUINELY HONEST BECAUSE IT IS ABOUT
+> PARAGON'S OWN SOURCING CONCENTRATION, NOT ANYONE ELSE'S COMPANY.**
+
+That is the reason the page survives losing its most impressive tab, and it is why
+the tab order is now gaps → pipeline → market → search. The distinction it rests
+on is worth stating generally: **a fixture about YOUR OWN operation can be honest
+at fixture quality; a fixture about a THIRD PARTY cannot, because the third party
+is the thing you have no source for.**
+
+### 14e · MY JUDGEMENT, AS ASKED — SOURCING SURFACE, NOT A PAGE WITH A HOLE
+
+**It reads as a sourcing surface.** Rendered and inspected in both locales:
+
+- The landing tab is a **dense, actionable table with a verb on every row** —
+  five materials, incumbent, risk level, two named alternatives, `Start
+  qualification`. Nothing about it is waiting for anything.
+- **All three KPI tiles count something**, and the leading one is the number the
+  page is now organised around.
+- The single best cell on the page is **`Not yet sourced` in red** on the salicylic
+  acid row — a real gap with no incumbent at all. That cell was always the most
+  useful thing here and it was previously three tabs from the landing view.
+- The deleted tab is **one of four and sits last**. A reader arriving at the page
+  does not encounter absence; they encounter a table.
+
+**Where it is weaker, honestly:** the page is now *narrower* than its name. "Supplier
+Discovery" promises discovery, and discovery-of-new-parties is exactly the half
+that is gated. A stakeholder who came specifically to see the global-search demo
+will find a paragraph instead. **That is a smaller loss than it sounds, because
+what they would have seen was persuasive rather than true** — but it is a real
+change in what the page can be demoed for, and the operator's smoke should be run
+knowing that is the intended state, not a regression.
+
+The one thing I would watch: **`Givaudan Floral Accord FG-2847` is now the most
+conspicuous string on the page.** It sits in the MATERIAL column of the leading
+table, surrounded on all sides by `Sample …`. It is batch B's relocation case and
+correctly untouched — but the deletion made it visually obvious in a way it was not
+before, which is a further argument for **B taking the material trademarks early**,
+as already ruled.
+
+### 14f · TWO GUARDS UPDATED RATHER THAN DELETED — AND ONE FINDING CLOSED BY ACCIDENT
+
+**PF-2a's guard: the pin inverted, which is the point of having written it.** It
+asserted the residue was PRESENT (`toContain('BASF Personal Care DE')`) so a later
+batch could not clean it quietly and leave `DISCOVERY-REAL-SUBJECTS-01` standing
+against a tree that no longer had the defect. **C is that later batch; the pin went
+red and forced this file to be updated deliberately.** It is inverted, not deleted
+— **the guard must not be deleted along with the data it guarded.** And the new
+assertion is a DERIVATION, not a denylist: every subject-position identity the page
+ships must carry the `Sample` marker, so a real name returning reddens it with
+nobody editing a list. Its sweep also widened: the old "endorsement surface ONLY"
+scope note described a limit that no longer exists.
+
+A sibling assertion was added for the thesis itself — **the risk levels and match
+scores SURVIVED the substitution.** A batch that quietly dropped the assessments
+while renaming would have been a different, lossier remedy, and nothing else would
+have caught it.
+
+**`LivenessRegistry`'s harvest-gate census went red**, exactly as designed: it
+enumerates the gated capabilities as an exact set, so `supplierDiscovery` could not
+join silently. That is a census test earning its keep.
+
+**`DISCOVERY-CHIP-PROSE-FILTER-01` is CLOSED, incidentally.** H2's constraint —
+*no prose parse survives in production code* — was an exact set of ONE, and the
+survivor was `certifications.filter(c => !c.toLowerCase().includes('halal'))`
+inside `GlobalSupplierCard`. **C deleted the card, so the last prose test over a
+cert string went with it.** The pin is now an exact set of ZERO, kept rather than
+removed so a *first* offender cannot arrive quietly either. Worth noting the shape:
+**a deletion batch closed a finding in an unrelated arc, and only a pin that
+recorded an exact address made that visible.** Its address had already been
+re-pinned twice (213 → 220 → 214) as the expression moved under unrelated edits;
+this time the expression itself is gone.
+
+### 14g · ONE B-FENCE CALL TAKEN, AND REPORTED
+
+`mkt-003`'s `whyRecommended` named four real speciality-chemical companies as lines
+it distributes — one of B's three relocation cases, object position.
+
+**Renaming only the subject and leaving that clause would have manufactured §13b's
+defect a second time, knowingly**: a fictional distributor asserted to carry four
+real companies' products, a claim of a kind that did not exist before the fix. The
+operator accelerated B's material trademarks for exactly that reason. **The same
+reason applies to the same shape**, so the clause is generalised here rather than
+left to manufacture the defect for however long B takes. **Flagged for overturn** —
+it is a fence call, and the fence was the operator's.
+
+### 14h · WHAT C DID NOT DO, STATED
+
+`RECOMMENDED.matchScore` is **kept** (94 / 88 / 79). Under the arc's thesis this is
+correct — the subjects are now fictional, and the assessment was never the problem
+— but the *label* beside it reads "AI Match Score", which asserts a matching engine
+exists. That is a claim about Paragon's own system rather than about a third party,
+so it is an honest-marking concern and not this arc's exposure. **Named here and
+not fixed**: the page carries a page-wide `ProvenanceMarker` that now reads
+"Sample — awaiting supplier-discovery feed", which covers it for a reader who sees
+the marker. A reader who does not is the residual risk.

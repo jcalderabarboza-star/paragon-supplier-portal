@@ -23,8 +23,6 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
-import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
-import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import Table from '../components/ui-v2/Table';
@@ -34,7 +32,6 @@ import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
 import type {
-  GlobalSupplier,
   SingleSourceItem,
   RecommendedSupplier,
   QualificationItem,
@@ -43,8 +40,8 @@ import type {
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import { readinessNote } from '../services/liveness';
 import {
-  useGlobalSuppliers,
   useRecommended,
   useQualifications,
   useMarketIntel,
@@ -79,7 +76,7 @@ const QUAL_VARIANT: Record<QualificationItem['status'], 'neutral' | 'warning' | 
 // invites a buyer to shortlist on, so the surface did not merely display the
 // fabrication, it asked to be trusted with it.
 
-type TabKey = 'search' | 'recommendations' | 'qualification' | 'intelligence';
+type TabKey = 'gaps' | 'qualification' | 'intelligence' | 'search';
 type Region = 'All' | 'Asia Pacific' | 'Europe' | 'Americas' | 'Middle East';
 type Category = 'All' | 'Fragrance' | 'Active Ingredient' | 'Raw Material' | 'Packaging' | 'Vitamin' | 'Emollient';
 type SortKey = 'relevance' | 'grade' | 'otif' | 'compliance';
@@ -87,34 +84,9 @@ type ToggleId = 'halal';
 
 // Filter/sort option labels are built from t() inside the component so they
 // re-render on locale change. The `id` values stay enum literals for logic.
-const buildRegionOptions = (t: TFunction): { id: Region; label: string }[] => [
-  { id: 'All', label: t('discovery.region.all') },
-  { id: 'Asia Pacific', label: t('discovery.region.apac') },
-  { id: 'Europe', label: t('discovery.region.europe') },
-  { id: 'Americas', label: t('discovery.region.americas') },
-  { id: 'Middle East', label: t('discovery.region.middleEast') },
-];
 
-const buildCategoryOptions = (t: TFunction): { id: Category; label: string }[] => [
-  { id: 'All', label: t('discovery.category.all') },
-  { id: 'Fragrance', label: t('discovery.category.fragrance') },
-  { id: 'Active Ingredient', label: t('discovery.category.activeIngredient') },
-  { id: 'Raw Material', label: t('discovery.category.rawMaterial') },
-  { id: 'Packaging', label: t('discovery.category.packaging') },
-  { id: 'Vitamin', label: t('discovery.category.vitamin') },
-  { id: 'Emollient', label: t('discovery.category.emollient') },
-];
 
-const buildSortOptions = (t: TFunction): { id: SortKey; label: string }[] => [
-  { id: 'relevance', label: t('discovery.sort.relevance') },
-  { id: 'grade', label: t('discovery.sort.grade') },
-  { id: 'otif', label: t('discovery.sort.otif') },
-  { id: 'compliance', label: t('discovery.sort.compliance') },
-];
 
-const buildToggleOptions = (t: TFunction): { id: ToggleId; label: string }[] => [
-  { id: 'halal', label: t('discovery.toggle.halal') },
-];
 
 const scoreColorClass = (score: number): string => {
   if (score >= 90) return 'text-success';
@@ -122,126 +94,6 @@ const scoreColorClass = (score: number): string => {
   return 'text-warning-hover';
 };
 
-const SuggestionChip: React.FC<{ label: string; onClick: () => void }> = ({
-  label,
-  onClick,
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className="rounded-full border border-border-subtle bg-bg-hover px-3 py-1 text-xs text-text-secondary hover:bg-white hover:text-text-primary transition-colors"
-  >
-    {label}
-  </button>
-);
-
-const GlobalSupplierCard: React.FC<{
-  supplier: GlobalSupplier;
-  onInvite: () => void;
-  onAria: () => void;
-  onQualify: () => void;
-  onInNetwork: () => void;
-}> = ({ supplier, onInvite, onAria, onQualify, onInNetwork }) => {
-  const { t } = useTranslation();
-  return (
-    <div className="bg-bg-surface border border-border-subtle rounded-lg p-5 shadow-sm flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xl leading-none">{supplier.flag}</span>
-            <span className="text-base font-semibold text-text-primary">
-              {supplier.name}
-            </span>
-            {supplier.alreadyInNetwork && (
-              <StatusPill variant="success">In Network</StatusPill>
-            )}
-          </div>
-          <div className="text-xs text-text-tertiary mt-1">
-            {t('discovery.card.meta', {
-              country: supplier.country,
-              region: supplier.region,
-              founded: supplier.founded,
-              employees: supplier.employees,
-            })}
-          </div>
-        </div>
-        <div className="text-right shrink-0">
-          <div className={`text-2xl font-bold ${scoreColorClass(supplier.matchScore)}`}>
-            {supplier.matchScore}
-            <span className="text-xs font-medium">/100</span>
-          </div>
-          <div className={`text-[10px] font-semibold ${scoreColorClass(supplier.matchScore)}`}>
-            {t('discovery.card.matchScore')}
-          </div>
-        </div>
-      </div>
-
-      <p className="text-sm text-text-secondary leading-relaxed">
-        {supplier.description}
-      </p>
-
-      {/* DISCOVERY-ENDORSEMENT-01 — the whole "reference brands" block is GONE.
-          D-CENSUS-8 removed the ✓ and retracted the label to "claimed
-          (unverified)", which was the most marking could honestly do while the
-          names stayed. It was not enough, and the reason is the ruling: no
-          marker, pill or disclaimer makes a statement on a third party's behalf
-          permissible. Disclosure is a remedy for overstatement, not for speaking
-          for someone else. The block is deleted rather than re-populated with
-          invented brands — see `services/data/types.ts`. */}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <div className="text-label text-text-tertiary uppercase mb-2">
-            {t('discovery.card.categories')}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {supplier.categories.map((c) => (
-              <StatusPill key={c} variant="neutral">
-                {c}
-              </StatusPill>
-            ))}
-          </div>
-        </div>
-        <div>
-          <div className="text-label text-text-tertiary uppercase mb-2">
-            {t('discovery.card.certifications')}
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {supplier.halalCertified && (
-              <StatusPill variant="success">{t('discovery.card.halal')}</StatusPill>
-            )}
-            {supplier.certifications
-              .filter((c) => !c.toLowerCase().includes('halal'))
-              .slice(0, 3)
-              .map((c) => (
-                <StatusPill key={c} variant="neutral">
-                  {c}
-                </StatusPill>
-              ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap gap-2 pt-3 border-t border-border-subtle">
-        {!supplier.alreadyInNetwork ? (
-          <Button variant="outline" icon={Mail} onClick={onInvite}>
-            {t('discovery.card.invite')}
-          </Button>
-        ) : (
-          <Button variant="secondary" icon={CheckCircle2} onClick={onInNetwork}>
-            {t('discovery.card.inNetwork')}
-          </Button>
-        )}
-        <Button variant="secondary" icon={Bot} onClick={onAria}>
-          {t('discovery.card.contactAria')}
-        </Button>
-        <Button variant="secondary" icon={ArrowRight} onClick={onQualify}>
-          {t('discovery.action.startQualification')}
-        </Button>
-      </div>
-    </div>
-  );
-};
 
 const QualificationCard: React.FC<{ item: QualificationItem; onUpdate: () => void }> = ({
   item,
@@ -390,90 +242,29 @@ const BuyerDiscovery: React.FC = () => {
   const { t } = useTranslation();
   const crumb = [t('discovery.crumb.acquire'), t('discovery.crumb.discovery')];
 
-  const REGION_OPTIONS = buildRegionOptions(t);
-  const CATEGORY_OPTIONS = buildCategoryOptions(t);
-  const SORT_OPTIONS = buildSortOptions(t);
-  const TOGGLE_OPTIONS = buildToggleOptions(t);
+  // Gate-2 readiness for the global-search tab — the ONE structural home of the
+  // "awaiting <source>" text (LIVENESS-DATASOURCE-01), read, never hand-rolled.
+  const discoveryReadiness = readinessNote('supplierDiscovery');
 
-  const globalQ = useGlobalSuppliers();
   const recommendedQ = useRecommended();
   const qualificationsQ = useQualifications();
   const marketIntelQ = useMarketIntel();
   const singleSourceQ = useSingleSourceItems();
 
-  const GLOBAL_SUPPLIERS = globalQ.data?.items ?? [];
   const RECOMMENDED = recommendedQ.data?.items ?? [];
   const QUALIFICATIONS = qualificationsQ.data?.items ?? [];
   const MARKET_INTEL = marketIntelQ.data?.items ?? [];
   const SINGLE_SOURCE = singleSourceQ.data?.items ?? [];
 
-  const [tab, setTab] = useState<TabKey>('search');
-  const [search, setSearch] = useState('');
-  const [region, setRegion] = useState<Region>('All');
-  const [category, setCategory] = useState<Category>('All');
-  const [toggles, setToggles] = useState<ToggleId[]>([]);
-  const [sortBy, setSortBy] = useState<SortKey>('relevance');
+  // The page LEADS with the gap console (operator ruling, batch C): the tab that
+  // is about Paragon's OWN sourcing concentration is the one that is both useful
+  // and honest today. Global search moves last and renders a gated empty state.
+  const [tab, setTab] = useState<TabKey>('gaps');
 
-  const halalOnly = toggles.includes('halal');
-
-  const onToggle = (id: ToggleId) => {
-    setToggles((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
-    );
-  };
-
-  const resetSearch = () => {
-    setSearch('');
-    setRegion('All');
-    setCategory('All');
-    setToggles([]);
-  };
-
-  const hasAnyFilter =
-    search !== '' ||
-    region !== 'All' ||
-    category !== 'All' ||
-    toggles.length > 0;
-
-  const filtered = useMemo(() => {
-    return GLOBAL_SUPPLIERS.filter((s) => {
-      if (halalOnly && !s.halalCertified) return false;
-      if (region !== 'All' && s.region !== region) return false;
-      if (category !== 'All' && !s.categories.includes(category)) return false;
-      if (search) {
-        const words = search
-          .toLowerCase()
-          .split(' ')
-          .filter((w) => w.length > 1);
-        if (words.length === 0) return true;
-        return words.some(
-          (w) =>
-            s.name.toLowerCase().includes(w) ||
-            s.categories.some((c) => c.toLowerCase().includes(w)) ||
-            s.description.toLowerCase().includes(w) ||
-            s.country.toLowerCase().includes(w) ||
-            s.region.toLowerCase().includes(w),
-        );
-      }
-      return true;
-    });
-  }, [GLOBAL_SUPPLIERS, search, region, category, halalOnly]);
-
-  const sorted = useMemo(() => {
-    const list = [...filtered];
-    if (sortBy === 'grade' || sortBy === 'otif') {
-      list.sort((a, b) => b.matchScore - a.matchScore);
-    } else if (sortBy === 'compliance') {
-      const score = (s: GlobalSupplier) =>
-        (s.halalCertified ? 2 : 0) + s.certifications.length;
-      list.sort((a, b) => score(b) - score(a));
-    } else {
-      const boost = (s: GlobalSupplier) =>
-        (s.halalCertified ? 5 : 0) + s.certifications.length;
-      list.sort((a, b) => b.matchScore + boost(b) - (a.matchScore + boost(a)));
-    }
-    return list;
-  }, [filtered, sortBy]);
+  // The search FILTER STATE is gone with the candidate pool it filtered — region,
+  // category, halal-only, the sort keys and the free-text query. A filter over an
+  // empty read is an affordance that promises a result it cannot produce, which is
+  // the same overstatement one layer down from the scores themselves.
 
   const lastUpdated = useMemo(() => {
     const latest = QUALIFICATIONS.reduce((acc, q) =>
@@ -486,27 +277,29 @@ const BuyerDiscovery: React.FC = () => {
     });
   }, [QUALIFICATIONS]);
 
+  // ── TWO KPI TILES WENT WITH THE CANDIDATE POOL, AND BOTH WERE UNSOURCED ─────
+  //   `candidates: GLOBAL_SUPPLIERS.length + 10` — the tile read "18 candidates
+  //   identified" over a fixture of 8. The `+ 10` was a literal with no referent:
+  //   a rounder, larger number, invented at the point of display.
+  //   `approved: 2` was a hard-coded constant, not a count of anything.
+  //   Both are deleted rather than recomputed — there is nothing to count.
   const counts = {
-    candidates: GLOBAL_SUPPLIERS.length + 10,
     qualifying: QUALIFICATIONS.length,
-    approved: 2,
+    atRisk: QUALIFICATIONS.filter((q) => q.status === 'At Risk').length,
     gaps: SINGLE_SOURCE.length,
   };
 
   const anyPending =
-    globalQ.isPending ||
     recommendedQ.isPending ||
     qualificationsQ.isPending ||
     marketIntelQ.isPending ||
     singleSourceQ.isPending;
   const anyError =
-    globalQ.isError ||
     recommendedQ.isError ||
     qualificationsQ.isError ||
     marketIntelQ.isError ||
     singleSourceQ.isError;
   const allEmpty =
-    GLOBAL_SUPPLIERS.length === 0 &&
     RECOMMENDED.length === 0 &&
     QUALIFICATIONS.length === 0 &&
     MARKET_INTEL.length === 0 &&
@@ -518,14 +311,12 @@ const BuyerDiscovery: React.FC = () => {
       <ErrorState
         breadcrumb={crumb}
         error={
-          globalQ.error ??
           recommendedQ.error ??
           qualificationsQ.error ??
           marketIntelQ.error ??
           singleSourceQ.error
         }
         onRetry={() => {
-          globalQ.refetch();
           recommendedQ.refetch();
           qualificationsQ.refetch();
           marketIntelQ.refetch();
@@ -561,7 +352,9 @@ const BuyerDiscovery: React.FC = () => {
       />
 
       <PageMetaLine className="-mt-6 mb-6">
-        {t('discovery.meta.summary', { count: counts.candidates, date: lastUpdated })}
+        {/* Was "{{count}} candidates · last updated …" over the invented 18. The
+            meta line now counts the gaps the page is organised around. */}
+        {t('discovery.meta.summary', { count: counts.gaps, date: lastUpdated })}
         {/* D-CENSUS-8 — MARKER-SCOPE-01. This page DID carry a LivenessPill, but only
             on the Market-Intelligence tab (capability="commodityIntel"), so the
             candidate pool — the page's actual claim, and the one the header presented
@@ -570,12 +363,14 @@ const BuyerDiscovery: React.FC = () => {
         <ProvenanceMarker capability="supplierDiscovery" className="ml-3 align-middle" />
       </PageMetaLine>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+      {/* The tiles that survive all count something. Dual-source gaps leads,
+          because it is the figure the page is now organised around. */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
         <KpiCard
-          eyebrow={t('discovery.kpi.candidates.eyebrow')}
-          value={counts.candidates.toString()}
-          subtitle={t('discovery.kpi.candidates.subtitle')}
-          icon={Users}
+          eyebrow={t('discovery.kpi.gaps.eyebrow')}
+          value={counts.gaps.toString()}
+          subtitle={t('discovery.kpi.gaps.subtitle')}
+          icon={AlertTriangle}
         />
         <KpiCard
           eyebrow={t('discovery.kpi.qualifying.eyebrow')}
@@ -584,167 +379,64 @@ const BuyerDiscovery: React.FC = () => {
           icon={ClipboardCheck}
         />
         <KpiCard
-          eyebrow={t('discovery.kpi.approved.eyebrow')}
-          value={counts.approved.toString()}
-          subtitle={t('discovery.kpi.approved.subtitle')}
+          eyebrow={t('discovery.kpi.atRisk.eyebrow')}
+          value={counts.atRisk.toString()}
+          subtitle={t('discovery.kpi.atRisk.subtitle')}
           icon={CheckCircle2}
-        />
-        <KpiCard
-          eyebrow={t('discovery.kpi.gaps.eyebrow')}
-          value={counts.gaps.toString()}
-          subtitle={t('discovery.kpi.gaps.subtitle')}
-          icon={AlertTriangle}
         />
       </div>
 
+      {/* Order is the ruling: what is real today leads; global search is last
+          because it has no source yet and says so. */}
       <SubTabs<TabKey>
         options={[
-          { id: 'search', label: t('discovery.tab.search') },
-          { id: 'recommendations', label: t('discovery.tab.recommendations') },
+          { id: 'gaps', label: t('discovery.tab.gaps'), count: counts.gaps },
           { id: 'qualification', label: t('discovery.tab.qualification'), count: counts.qualifying },
           { id: 'intelligence', label: t('discovery.tab.intelligence') },
+          { id: 'search', label: t('discovery.tab.search') },
         ]}
         value={tab}
         onChange={setTab}
         className="mb-6"
       />
 
+      {/* ── GLOBAL SEARCH — HONEST BY ABSENCE OF A SOURCE ──────────────────────
+          `DISCOVERY-REAL-SUBJECTS-01` batch C. This tab used to list eight real
+          corporations with invented match scores. Both the fixture and its
+          read-model are deleted, and the tab is gated on gate-2 of the liveness
+          model (`LIVENESS-DATASOURCE-01`) rather than repopulated: a candidate
+          can now only ever arrive FROM A SOURCE.
+
+          It states WHY it is empty and what would fill it — an empty state that
+          explains itself is a different object from one that merely renders. The
+          `source` and the readiness note come from the registry, not from a
+          literal here, so the day a discovery feed lands this text changes in one
+          place. */}
       {tab === 'search' && (
-        <div className="flex flex-col gap-5">
-          <SearchBar
-            value={search}
-            onChange={setSearch}
-            placeholder={t('discovery.search.placeholder')}
-          />
-
-          <div className="flex flex-wrap items-center gap-3">
-            <FilterChipsBar<Region>
-              options={REGION_OPTIONS}
-              value={region}
-              onChange={setRegion}
-            />
-            <FilterChipsBar<Category>
-              options={CATEGORY_OPTIONS}
-              value={category}
-              onChange={setCategory}
-            />
-            <FilterChipsBar<ToggleId>
-              options={TOGGLE_OPTIONS}
-              value={toggles}
-              onChange={onToggle}
-              multiSelect
-            />
-            {hasAnyFilter && (
-              <button
-                type="button"
-                onClick={resetSearch}
-                className="text-sm text-teal hover:text-teal-hover font-medium"
-              >
-                {t('discovery.filter.clear')}
-              </button>
-            )}
+        <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
+          <div className="mx-auto w-12 h-12 rounded-full bg-bg-hover flex items-center justify-center mb-4">
+            <Globe2 size={24} className="text-text-tertiary" />
           </div>
-
-          {hasAnyFilter ? (
-            <>
-              <div className="flex items-center justify-between gap-4">
-                <div className="text-meta text-text-tertiary">
-                  {sorted.length === 1
-                    ? t('discovery.results.count.one', { count: sorted.length })
-                    : t('discovery.results.count.other', { count: sorted.length })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-meta text-text-tertiary">{t('discovery.sort.label')}</span>
-                  <FilterChipsBar<SortKey>
-                    options={SORT_OPTIONS}
-                    value={sortBy}
-                    onChange={setSortBy}
-                  />
-                </div>
-              </div>
-
-              {sorted.length === 0 ? (
-                <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
-                  <div className="text-base font-semibold text-text-primary mb-1">
-                    {t('discovery.results.empty.title')}
-                  </div>
-                  <div className="text-sm text-text-tertiary max-w-md mx-auto mb-4">
-                    {t('discovery.results.empty.body')}
-                  </div>
-                  <Button variant="outline" onClick={resetSearch}>
-                    {t('discovery.results.empty.clear')}
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-                  {sorted.map((s) => (
-                    <GlobalSupplierCard
-                      key={s.id}
-                      supplier={s}
-                      onInvite={() =>
-                        toast({
-                          variant: 'success',
-                          title: t('discovery.toast.invited.title', { name: s.name }),
-                          description: t('discovery.toast.invited.desc'),
-                        })
-                      }
-                      onInNetwork={() =>
-                        toast({
-                          title: t('discovery.toast.inNetwork.title', { name: s.name }),
-                        })
-                      }
-                      onAria={() =>
-                        toast({
-                          title: t('discovery.toast.aria.title'),
-                          description: t('discovery.toast.aria.desc', { name: s.name }),
-                        })
-                      }
-                      onQualify={() =>
-                        toast({
-                          variant: 'info',
-                          title: t('discovery.toast.qualStarted.title', { name: s.name }),
-                        })
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-teal-soft flex items-center justify-center mb-4">
-                <Globe2 size={24} className="text-teal" />
-              </div>
-              <div className="text-base font-semibold text-text-primary mb-2">
-                {t('discovery.hero.title')}
-              </div>
-              <div className="text-sm text-text-tertiary max-w-xl mx-auto mb-5 leading-relaxed">
-                {t('discovery.hero.body')}
-              </div>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {[
-                  // i18n-defer: example search seeds — the chip label IS the query
-                  // fed to setSearch() and matched against EN supplier data, so
-                  // translating it would break search. Left EN by design.
-                  'Fragrance Indonesia',
-                  'Niacinamide China',
-                  'Halal emulsifier',
-                  'Packaging SEA',
-                  'Active ingredient Europe',
-                ].map((s) => (
-                  <SuggestionChip
-                    key={s}
-                    label={s}
-                    onClick={() => setSearch(s)}
-                  />
-                ))}
-              </div>
+          <div className="text-base font-semibold text-text-primary mb-2">
+            {t('discovery.search.noFeed.title')}
+          </div>
+          <div className="text-sm text-text-tertiary max-w-xl mx-auto mb-4 leading-relaxed">
+            {t('discovery.search.noFeed.body')}
+          </div>
+          {discoveryReadiness && (
+            <div className="text-meta text-text-tertiary">
+              {t(discoveryReadiness.readinessNoteKey)}
             </div>
           )}
+          <div className="mt-5">
+            <Button variant="outline" onClick={() => setTab('gaps')}>
+              {t('discovery.search.noFeed.toGaps')}
+            </Button>
+          </div>
         </div>
       )}
 
-      {tab === 'recommendations' && (
+      {tab === 'gaps' && (
         <div className="flex flex-col gap-6">
           <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 text-sm text-danger font-medium">
             {t('discovery.rec.dualSourceBanner')}

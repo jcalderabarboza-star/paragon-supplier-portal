@@ -210,6 +210,21 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
     readinessNoteKey: 'widget.honesty.awaitingSupplierFeed',
     source: 'Supplier feed (F1)',
   },
+  // DISCOVERY-REAL-SUBJECTS-01 (batch C) — the discovery candidate pool USED to be
+  // eight real corporations carrying invented match scores. Both the fixture and
+  // its read-model are DELETED, and the surface is gated here instead of
+  // repopulated: the ruling is that real candidate names must be UNREACHABLE, not
+  // merely absent. A candidate can now only ever arrive FROM A SOURCE.
+  //
+  // This is the same discipline as UNDETERMINED and FX_UNPINNED — the honest state
+  // is the DEFAULT and the real value requires a real feed — and gate-2 is the
+  // right home for it because no amount of wiring can open it. The search tab
+  // reads this note to say WHY it is empty, so the emptiness is explained rather
+  // than merely displayed.
+  supplierDiscovery: {
+    readinessNoteKey: 'widget.honesty.awaitingDiscoveryFeed',
+    source: 'Discovery feed',
+  },
 };
 
 // Membership set built once from the exported census. Reading this — rather than

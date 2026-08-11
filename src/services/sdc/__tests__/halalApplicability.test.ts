@@ -443,25 +443,22 @@ describe('H2 — WIRED, and the prose parse is GONE', () => {
       )
       .sort();
 
-    // ⚠️ AN EXACT SET OF ONE, NOT AN ALLOWLIST — so a second cannot arrive
-    // quietly. `DISCOVERY-CHIP-PROSE-FILTER-01`, reported and NOT fixed here:
+    // ⚠️ AN EXACT SET OF ZERO — AND IT USED TO BE A SET OF ONE.
+    // `DISCOVERY-CHIP-PROSE-FILTER-01` is CLOSED, incidentally, by
+    // `DISCOVERY-REAL-SUBJECTS-01` batch C. The surviving offender was
     //
     //   supplier.certifications.filter((c) => !c.toLowerCase().includes('halal'))
     //
-    // It is a DISPLAY DEDUPE on the buyer discovery card — the halal chip is
-    // already rendered from the `halalCertified` boolean, and this drops it from
-    // the generic certifications list so it does not appear twice. **It decides
-    // nothing regulatory and sits on no path a receipt can travel**, which is
-    // why it is out of H2's scope; it is still a prose test over a cert string,
-    // which is why it is NAMED here rather than excluded by a cleverer regex.
-    // Line moved 213 → 220 at D-CENSUS-8 (the page gained a ProvenanceMarker import
-    // and the endorsement-retraction comment above the card's brand chips), then
-    // 220 → 214 at PF-2a, when `DISCOVERY-ENDORSEMENT-01` deleted the whole brand
-    // block those chips lived in. Both shifts are the same expression moving under
-    // an unrelated edit: same file, same line of code, same reason it is out of
-    // scope. The address is re-pinned rather than loosened: an exact set of
-    // one is the whole point, and a line-number shift is cheap to re-read.
-    expect(offenders).toEqual(['/src/pages-v2/BuyerDiscovery.tsx:214']);
+    // a display dedupe inside `GlobalSupplierCard` — and C DELETED that card
+    // along with the candidate pool it rendered. So the last prose test over a
+    // cert string in production code went with it, and H2's constraint is now
+    // literally true rather than true-with-one-named-exception.
+    //
+    // The pin is kept as an EXACT SET, now empty: a first offender cannot arrive
+    // quietly any more than a second could. Its address was re-pinned twice before
+    // this (213 → 220 at D-CENSUS-8, 220 → 214 at PF-2a) as the same expression
+    // moved under unrelated edits; this time the expression itself is gone.
+    expect(offenders).toEqual([]);
 
     // The two that DID die in this batch, asserted by absence at their own
     // addresses rather than trusted to the count above.
