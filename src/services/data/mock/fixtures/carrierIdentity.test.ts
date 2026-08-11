@@ -34,7 +34,7 @@ const isSampleRef = (v: string) => /^SMPL-/.test(v);
 describe('DISCOVERY-REAL-SUBJECTS-01 · carrier identities are fictional by vocabulary', () => {
   const carriers: Array<{ where: string; value: string }> = [
     ...mockShipments.map((s) => ({ where: `mockShipments ${s.id}`, value: s.carrier })),
-    ...MOCK_ASNS.map((a) => ({ where: `MOCK_ASNS ${a.id}`, value: a.carrier })),
+    ...MOCK_ASNS.map((a) => ({ where: `MOCK_ASNS ${a.asnNumber}`, value: a.carrier })),
   ];
 
   it('is non-vacuous — both shipment fixtures carry carriers', () => {
@@ -58,7 +58,7 @@ describe('DISCOVERY-REAL-SUBJECTS-01 · carrier identities are fictional by voca
           ? [{ where: `mockShipments ${s.id}.containerNumber`, value: s.containerNumber }]
           : []),
       ]),
-      ...MOCK_ASNS.map((a) => ({ where: `MOCK_ASNS ${a.id}.trackingNumber`, value: a.trackingNumber })),
+      ...MOCK_ASNS.map((a) => ({ where: `MOCK_ASNS ${a.asnNumber}.trackingNumber`, value: a.trackingNumber })),
     ];
     const bad = refs
       .filter((r) => !SENTINELS.has(r.value) && !isSampleRef(r.value))
