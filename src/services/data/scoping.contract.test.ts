@@ -297,7 +297,7 @@ describe('service scoping contract — commands (DR-6 amended)', () => {
         transitionId: 't_asn_submit',
         entity: 'advanceShipNotice',
         entityId: bAsns[0].asnNumber,
-        payload: { carrier: 'JNE', trackingNumber: 'X1', eta: '2026-05-01' },
+        payload: { carrier: 'Sample Courier', trackingNumber: 'X1', eta: '2026-05-01' },
       }),
     ).rejects.toMatchObject({ code: 'SCOPE_DENIED' });
   });

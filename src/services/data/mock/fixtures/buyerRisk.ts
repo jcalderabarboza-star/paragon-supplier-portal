@@ -114,7 +114,7 @@ export const SCENARIO_ME: Scenario = {
       leadTime: '+18 days',
       feasibility: 'high',
       details:
-        'Redirect all inbound APAC freight via southern African routing. Carrier agreements with Maersk and MSC already in place. Inventory buffer required: +3 weeks safety stock. Begin pre-positioning in Singapore and Rotterdam hubs.',
+        'Redirect all inbound APAC freight via southern African routing. Carrier agreements with two ocean carriers already in place. Inventory buffer required: +3 weeks safety stock. Begin pre-positioning in Singapore and Rotterdam hubs.',
     },
     {
       id: 's2',
