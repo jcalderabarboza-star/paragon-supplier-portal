@@ -27,5 +27,5 @@ export const DOCUMENTS: SupplierDocument[] = [
 
   // sup-005 — Sample Personal Care Emulsifiers
   { id: 'doc-201', supplierId: 'sup-005', name: 'BPOM Notification — SAMPLE-BPOM-0005A', category: 'BPOM Regulatory', status: 'Valid', issuedBy: 'BPOM (Badan Pengawas Obat dan Makanan)', issuedDate: '2023-10-05', expiryDate: '2028-10-04', fileType: 'PDF', fileSize: '910 KB', version: 'v1', linkedTo: 'PO-2025-00131' },
-  { id: 'doc-202', supplierId: 'sup-005', name: 'REACH Compliance / Safety Data Sheet — Emulgade', category: 'Quality', status: 'Expiring Soon', issuedBy: 'Sample Personal Care Regulatory Affairs', issuedDate: '2023-08-20', expiryDate: '2026-08-19', fileType: 'PDF', fileSize: '3.4 MB', version: 'v5', linkedTo: 'All emulsifier grades' },
+  { id: 'doc-202', supplierId: 'sup-005', name: 'REACH Compliance / Safety Data Sheet — Sample Blend PF-20', category: 'Quality', status: 'Expiring Soon', issuedBy: 'Sample Personal Care Regulatory Affairs', issuedDate: '2023-08-20', expiryDate: '2026-08-19', fileType: 'PDF', fileSize: '3.4 MB', version: 'v5', linkedTo: 'All emulsifier grades' },
 ];

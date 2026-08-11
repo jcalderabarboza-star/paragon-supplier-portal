@@ -45,7 +45,7 @@ const OPEN_RFQS = [
   },
   {
     num: 'RFQ-2026-004',
-    material: 'Givaudan Floral Accord Wardah',
+    material: 'Sample Floral Accord Wardah',
     qty: '100 KG',
     deadline: 'Apr 18',
   },

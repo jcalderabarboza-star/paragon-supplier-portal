@@ -115,6 +115,44 @@ describe('DISCOVERY-REAL-SUBJECTS-01 · batch D — identifiers that are not nam
     ).toEqual([]);
   });
 
+  // ── ⚠️ BATCH B'S LANE, AND THE HONEST LIMIT ON IT ──────────────────────────
+  //   B removed two real TRADEMARKS used as material identities — a fragrance
+  //   house's name inside a fragrance code, and an emulsifier trademark used as
+  //   the material's label.
+  //
+  //   THERE IS NO CHEAP DERIVATION FOR "IS THIS TOKEN A COMPANY OR A CHEMICAL",
+  //   AND PRETENDING OTHERWISE WOULD BE THE WEAK INSTRUMENT WEARING A DERIVATION'S
+  //   CLOTHES. Two were tried and measured before this was written:
+  //     · a positive vocabulary over material labels — 115 distinct capitalised
+  //       tokens, so every new material would need a list edit, which trains bulk
+  //       appending in the one direction that is supposed to cost something;
+  //     · a hapax rule (a company name is a one-off; chemistry recurs) — 87 of
+  //       those 115 appear in exactly ONE label. Chemistry is mostly one-off too,
+  //       so the rule has no precision.
+  //
+  //   What IS derivable is narrower, and it is asserted rather than described: a
+  //   CORPORATE LEGAL FORM has no business in a material identity. That catches
+  //   the commonest way a company enters this lane and has no false positives on
+  //   chemistry. ⚠️ IT WOULD NOT HAVE CAUGHT EITHER OF B'S OWN CASES, because a
+  //   bare brand carries no legal form — said plainly so this does not read as
+  //   coverage it does not provide. The residue is covered instead by the
+  //   endorsement guard's denylist sweep (which now includes `material`) and by
+  //   the tree-wide scans above.
+  it('no material identity carries a corporate legal form', () => {
+    const LEGAL_FORM = /\b(?:PT|CV|Tbk|GmbH|AG|NV|BV|Ltd|Limited|Inc|LLC|Sdn|Bhd|Pte|Corp|Corporation|Holdings?)\b\.?/;
+    const offenders: string[] = [];
+    for (const [file, text] of Object.entries(sources())) {
+      if (file === SELF) continue;
+      for (const m of text.matchAll(/(?:label|material|materialDescription):\s*'([^']+)'/g)) {
+        if (LEGAL_FORM.test(m[1])) offenders.push(`${file}  ${m[1]}`);
+      }
+    }
+    expect(
+      offenders,
+      `a material identity naming a company (legal form present):\n${offenders.join('\n')}`,
+    ).toEqual([]);
+  });
+
   it('no statutory identifier ships in a real registry format', () => {
     // The strongest shape the census found, in every format it found it in. A
     // fabricated number in a REAL format can collide with a real registry entry,

@@ -67,20 +67,21 @@ const REAL_CORPORATIONS = [
 // global-supplier rows are DELETED outright and the three surviving reads took
 // batch A's treatment. So the sweep now covers everything the page ships.
 //
-// The ONE thing still excluded is `SINGLE_SOURCE[].material` — it carries
-// `Givaudan Floral Accord FG-2847`, a real TRADEMARK in a material identity,
-// which is batch B's relocation case. Named here so the exclusion is a stated
-// scope and not an unexamined pass.
+// ⚠️ THE LAST EXCLUSION IS GONE TOO. `SINGLE_SOURCE[].material` used to be held
+// out because it carried a real fragrance house's name inside a material
+// identity — batch B's relocation case. B took it, so `material` is now IN the
+// sweep and this file has no stated exclusion left. A scope note that outlives
+// its scope is a document asserting a limit the tree no longer has.
 const shippedStrings = (): string[] => [
   ...Object.values(discoveryEn),
   ...Object.values(discoveryId),
-  ...SINGLE_SOURCE.flatMap((r) => [r.currentSupplier, r.risk, ...r.suggestedAlternatives]),
+  ...SINGLE_SOURCE.flatMap((r) => [r.currentSupplier, r.risk, r.material, ...r.suggestedAlternatives]),
   ...RECOMMENDED.flatMap((r) => [r.name, r.whyRecommended, r.riskNote ?? '']),
   ...QUALIFICATIONS.map((q) => q.supplier),
 ];
 
 /** Subject-position identities the page ships — the population batch C had to
- *  clean. `material` is excluded by scope above (batch B). */
+ *  clean. `material` joined the sweep at batch B. */
 const subjectIdentities = (): string[] => [
   ...SINGLE_SOURCE.flatMap((r) => [r.currentSupplier, ...r.suggestedAlternatives]),
   ...RECOMMENDED.map((r) => r.name),

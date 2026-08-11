@@ -48,15 +48,18 @@ import type {
 //   and what it would take to dual-source them. That is genuinely useful AND
 //   genuinely honest, which is why it now leads the page.
 //
-//   `material` names keep `Givaudan Floral Accord FG-2847` — a real TRADEMARK in
-//   a material identity, which is batch B's relocation case and is NOT touched
-//   here (see `MATERIAL_MASTER['RM-EMUL-9440']` for the sibling).
+//   `material` names were the last real-party residue on this page: a real
+//   fragrance house's name inside a material identity, held out as batch B's
+//   relocation case. B TOOK THEM, and took them FIRST — by then the trademark was
+//   the single most conspicuous string on the page, sitting in this table
+//   surrounded by `Sample …`. The deletion made it visible, which is the argument
+//   for doing the conspicuous half early rather than last.
 //
 //   `risk: 'High — quality issues + single source'` on the Panthenol row is gone
 //   with the real subject it described. It never rendered (only `riskLevel` does),
 //   and it was the worst sentence in the file.
 export const SINGLE_SOURCE: SingleSourceItem[] = [
-  { material: 'Givaudan Floral Accord FG-2847', category: 'Fragrance',
+  { material: 'Sample Floral Accord FG-2847', category: 'Fragrance',
     currentSupplier: 'Sample Fragrance House DE', riskLevel: 'Critical',
     risk: 'Critical — Suez disruption',
     suggestedAlternatives: ['PT Sample Aroma ID', 'PT Sample Essential Oils ID'] },
@@ -95,7 +98,7 @@ export const RECOMMENDED: RecommendedSupplier[] = [
   { id: 'mkt-001', name: 'PT Sample Aroma', country: 'Indonesia', flag: '🇮🇩',
     matchScore: 94,
     whyRecommended: 'Indonesian fragrance specialist. BPJPH halal certified. Supplies major local FMCG brands. Would reduce Suez Canal exposure for fragrance compounds. Lead time 7 days vs. 35 days from European suppliers.',
-    covers: 'Givaudan Floral Accord gap + Centella gap',
+    covers: 'Sample Floral Accord gap + Centella gap',
     storefrontPath: '/marketplace/supplier/mkt-001' },
   { id: 'mkt-003', name: 'Sample Distribution Malaysia', country: 'Malaysia', flag: '🇲🇾',
     matchScore: 88,

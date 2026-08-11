@@ -144,7 +144,7 @@ const CATEGORY_TO_SUPPLIER_CATEGORY: Record<RFQCategory, string[]> = {
 const MATERIAL_CATALOG: Record<RFQCategory, string[]> = {
   Fragrance: [
     'Wardah Floral Accord',
-    'Givaudan Citrus Compound',
+    'Sample Citrus Compound',
     'Make Over Oud Base',
     'Emina Fresh Accord',
   ],
