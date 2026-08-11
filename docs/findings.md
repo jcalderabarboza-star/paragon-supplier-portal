@@ -8486,3 +8486,107 @@ is the behaviour the row is meant to make routine.
 - **PR #195 closed unmerged** (ruling §3); **PR #150 re-seated and closed**
   (ruling §5); two orphaned local refs deleted, both commits already on main
   under their squashes.
+
+## 9 · THE RULING'S OWN PREMISE, CORRECTED BY THE OPERATOR AT MERGE
+
+Recorded against the ruling rather than beside it, because a reclassification
+that keeps a wrong premise underneath it will be re-derived wrong by whoever
+reads it next.
+
+**The premise as ruled** (#195, and restated at PF-2a dispatch):
+
+> *"Fabricated endorsements attributed to real corporations on behalf of
+> fictional suppliers"* — and the remedy framed as *"fictional suppliers may
+> claim reference brands; they may not claim REAL ones."*
+
+**The premise, corrected by the operator on the evidence in §4:**
+
+> **ALL EIGHT `GLOBAL_SUPPLIERS` ARE REAL TRADING CORPORATIONS. It was never real
+> brands vetting fictional suppliers — it was A FABRICATED COMMERCIAL ASSESSMENT
+> OF REAL CORPORATIONS, UNDER A VERIFICATION AFFORDANCE.**
+
+The reclassification survives the correction — legal exposure, not an
+honesty-doctrine defect; no marker, pill or disclaimer would have made it
+acceptable — and gets *worse*, not better, for it. The three aggravators stand
+unchanged; aggravator #3 (*the subjects are real and the objects are not*) is the
+one that was half right, and the half it got wrong is the whole finding below.
+
+### 9a · THE CLASS, STATED — `SAME DEFECT, OPPOSITE DIRECTION`
+
+> **WE DELETED THE FABRICATED CLAIM *BY* REAL PARTIES AND LEFT THE FABRICATED
+> CLAIM *ABOUT* REAL PARTIES STANDING. SAME DEFECT, OPPOSITE DIRECTION.**
+
+`validatedBy` was a claim **by** L'Oréal (that it had vetted this supplier) —
+removed at PF-2a. `matchScore`, the `description` superlatives, the risk ratings
+and the qualification rows are claims **about** Givaudan, BASF and six others —
+still shipping. One direction was visible because the endorser was famous; the
+other was invisible because the subject was in the `name` field, where a reader
+of a supplier-discovery fixture expects a supplier to be.
+
+**This is why PF-2a's remedy is correct and incomplete at the same time**, and
+the record should not let the completed half stand in for the whole.
+
+## 10 · `DISCOVERY-REAL-SUBJECTS-01` — DISPOSITION AND THE LEAN, NOT YET RULED
+
+**FILED, NOT FIXED. It gets its own batch, and the operator wants its blast
+radius before the fix.** Nothing in PF-2a touches it beyond the bilateral pin.
+
+**⚠️ STRATEGIST LEAN — ON RECORD, EXPLICITLY NOT A RULING:**
+
+> **MAKE THE SUBJECTS FICTIONAL rather than delete the assessments.** A discovery
+> surface needs suppliers to display; inventing a name costs nothing, while
+> deleting scores and risk rows guts the page's purpose.
+>
+> **A FABRICATED SCORE ABOUT AN INVENTED COMPANY IS A DEMO; A FABRICATED SCORE
+> ABOUT GIVAUDAN IS A STATEMENT ABOUT GIVAUDAN.**
+
+Note that this lands **opposite** to PF-2a's own remedy, and that is not a
+contradiction — it is the two directions of §9a needing different instruments.
+The endorsement had no content beyond the claim, so deleting it cost nothing. The
+assessment IS the surface: a discovery page with no scores and no risk rows is
+not a marked-down discovery page, it is a blank one. **Substitution was refused
+for `validatedBy` because it relocates the fabrication onto a real supplier;
+substitution WORKS for the supplier identity itself, because after it there is no
+real party left in the sentence.** The same test — *is a real party spoken
+about?* — gives opposite answers, and that is the test working.
+
+### 10a · THE CONSTRAINT THE NEXT BATCH INHERITS — `CENSUS-MUST-DERIVE-01`, again
+
+The mutation probe's **by-catch is the important half** of what it did. It proved
+the guard bites, which was the point; it also exposed that the census swept
+`GLOBAL_SUPPLIERS` **only** — which is the sole reason the `SINGLE_SOURCE`
+residue in §4 surfaced at all. Nobody found that by reading; a probe aimed at
+something else walked into it.
+
+Carried forward as a hard constraint, and it is the existing precedent, not a new
+rule:
+
+> **REAL CORPORATION NAMES ARE LIKELY ELSEWHERE** — supplier fixtures, RFQ
+> titles, contract counterparties, document issuers, material descriptions.
+> **THE CENSUS MUST DERIVE ITS POPULATION, NOT MATCH A LIST.**
+
+PF-2a's own guard is a **list match** (14 names), and it is the weaker instrument
+by construction: it can only ever find what somebody already knew to write down.
+It is adequate for what it guards — a closed set of names the defect actually
+shipped, kept from coming back — and it is **NOT** adequate as the discovery
+mechanism for the next batch. `ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01` is the
+same lesson one layer down: the authored list is a strict subset of the derived
+truth, and the derivation is authority.
+
+**Stating a census's scope in the file rather than shipping it silently is the
+handling that made this catchable, and it is kept.** A limit a reader can see is
+a limit somebody can widen; a limit only the author knew is a coverage claim.
+
+### 10b · METHOD, RECORDED — VERIFY BY RENDERING, NOT BY READING THE FIXTURE
+
+**It corrected this batch's own first draft.** §4 was written from the fixture and
+asserted that `SINGLE_SOURCE` ships `risk: 'High — quality issues + single
+source'` against a named real company. Rendering it showed the `risk` PROSE
+reaches no surface — what ships is the `riskLevel` RATING beside the name, plus
+named real competitors as replacements. The finding was narrowed to what a reader
+can actually see before it was committed.
+
+The overstatement was small and it was in the direction that flatters the
+finding, which is the direction that needs the check most. **A fixture is what
+the page COULD say; the render is what it DOES.** For any claim of the form *"the
+product tells a user X"*, the fixture is evidence and the render is proof.
