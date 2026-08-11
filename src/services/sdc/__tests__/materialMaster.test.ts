@@ -18,6 +18,14 @@ import {
 
 // A master with exactly one entry — enough to prove the refusal without
 // mutating the frozen real fixture.
+//
+// ⚠️ `bpomApplicable` / `halalApplicable` WERE MISSING, and both are REQUIRED.
+//   The entry is minimal by design, but "minimal" was silently reaching past what
+//   the type permits — and, as with the dropped `provenance` and the dropped
+//   `supplierId` in this same batch, THE FIELDS A SPEC OMITTED WERE THE
+//   COMPLIANCE-BEARING ONES. They are not read on this path, which is exactly why
+//   nothing noticed. `'UNDETERMINED'` is the honest value for a substance nobody
+//   has assessed — the same discipline the production seeds use.
 const TINY: MaterialMaster = Object.freeze({
   'RM-TEST-0001': {
     materialCode: 'RM-TEST-0001',
@@ -25,6 +33,8 @@ const TINY: MaterialMaster = Object.freeze({
     materialType: 'ROH',
     materialGroup: 'MG-99',
     canonicalUom: 'PCS',
+    bpomApplicable: 'UNDETERMINED',
+    halalApplicable: 'UNDETERMINED',
   },
 });
 

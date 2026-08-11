@@ -183,8 +183,8 @@ describe('computeShouldCost — TAIL materials are honest, never fabricated', ()
     const r = computeShouldCost(tail, ROOTS, FX);
     expect(r.tail).toBe(true);
     // The type carries no cost field on a tail result — assert honestly at runtime too.
-    expect((r as Record<string, unknown>).band).toBeUndefined();
-    expect((r as Record<string, unknown>).basisCostUsdPerKg).toBeUndefined();
+    expect((r as unknown as Record<string, unknown>).band).toBeUndefined();
+    expect((r as unknown as Record<string, unknown>).basisCostUsdPerKg).toBeUndefined();
     if (r.tail) expect(r.reason).toBe('no modelable benchmark');
   });
 });

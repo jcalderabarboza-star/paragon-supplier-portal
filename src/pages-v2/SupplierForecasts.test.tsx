@@ -188,8 +188,8 @@ describe('SupplierForecasts — the governed submit (t_requirementresponse_submi
     expect(minted!.status).toBe('Draft');
     expect(minted!.submittedAt).toBeUndefined();
     expect(minted!.submissionVersion).toBe(1);
-    expect(minted!.forecastConfirmation.confirmedQty).toBe(40000);
-    expect(minted!.forecastConfirmation.uom).toBe('PCS'); // master, not caller
+    expect(minted!.forecastConfirmation!.confirmedQty).toBe(40000);
+    expect(minted!.forecastConfirmation!.uom).toBe('PCS'); // master, not caller
     expect(minted!.planVersion).toBe('PV-2026-08.2'); // bound to the rendered snapshot
     expect(within(panel).getByText(minted!.id)).toBeInTheDocument();
   });
@@ -215,7 +215,7 @@ describe('SupplierForecasts — the governed submit (t_requirementresponse_submi
       .all()
       .find((r) => r.materialCode === 'PK-CAPF-8820')!;
     expect(minted.rootCause?.level1).toBe('capacity');
-    expect(minted.forecastConfirmation.confirmedQty).toBe(50000);
+    expect(minted.forecastConfirmation!.confirmedQty).toBe(50000);
   });
 
   it('F-2: zero-qty + root cause is a LEGAL "cannot supply at all" short', async () => {
@@ -231,12 +231,12 @@ describe('SupplierForecasts — the governed submit (t_requirementresponse_submi
       expect(
         requirementResponseStore
           .all()
-          .some((r) => r.supplierId === 'sup-007' && r.forecastConfirmation.confirmedQty === 0),
+          .some((r) => r.supplierId === 'sup-007' && r.forecastConfirmation!.confirmedQty === 0),
       ).toBe(true),
     );
     const minted = requirementResponseStore
       .all()
-      .find((r) => r.supplierId === 'sup-007' && r.forecastConfirmation.confirmedQty === 0)!;
+      .find((r) => r.supplierId === 'sup-007' && r.forecastConfirmation!.confirmedQty === 0)!;
     expect(minted.status).toBe('Draft'); // PF-1b — saved, not sent
     expect(minted.rootCause).toEqual({
       level1: 'capacity',
@@ -339,7 +339,7 @@ describe('SupplierForecasts — the false-deficit chain (CP-0 · 2c)', () => {
     const minted = requirementResponseStore
       .all()
       .find((r) => r.materialCode === 'PK-PETB-8810' && r.supplierId === 'sup-007')!;
-    expect(minted.forecastConfirmation.confirmedQty).toBe(40000);
+    expect(minted.forecastConfirmation!.confirmedQty).toBe(40000);
     expect(minted.rootCause).toBeUndefined(); // no fabricated shortfall explanation
 
     // ⚠️ PF-1b — THE PLANNER SEES NOTHING UNTIL IT IS SUBMITTED, and that is

@@ -98,8 +98,8 @@ function assertCount(gate, label, actual, expected, floorPath) {
 
 mkdirSync(OUT, { recursive: true });
 
-// ── Gate 1/3 · npm run build (tsc && vite build) ────────────────────────────
-group('gate 1/3 · npm run build  (tsc && vite build)');
+// ── Gate 1/4 · npm run build (tsc && vite build) ────────────────────────────
+group('gate 1/4 · npm run build  (tsc && vite build)');
 {
   const dist = join(ROOT, 'dist');
   // Removed first so the artifact assertions below cannot be satisfied by a
@@ -124,11 +124,52 @@ group('gate 1/3 · npm run build  (tsc && vite build)');
 }
 endGroup();
 
-// ── Gate 2/3 · npx vitest run ───────────────────────────────────────────────
+// ── Gate 2/4 · tsc -p tsconfig.vitest.json (the SPEC surface) ───────────────
+// `TSC-SKIPS-TESTS-01`. Gate 1 runs `tsc` against `tsconfig.json`, which
+// EXCLUDES `src/**/*.test.ts(x)` — so for the life of the suite no gate ever
+// typechecked a spec, and vitest transpiles without checking. A spec could carry
+// a type error indefinitely with all three gates green.
+//
+// ⚠️ THE BOOKED REMEDY WAS `tsc -p tsconfig.vitest.json --noEmit` AND IT DID
+//   NOTHING: the child config `include`s the specs and then INHERITS the base
+//   `exclude`, which wins. Measured, not reasoned — an injected type error left
+//   both configs exit-0. The override (`"exclude": []`) is what closes it.
+//
+// AND THE CONFIG IS RUN HERE, NOT MERELY PRESENT. Adding the override without
+// adding this gate would repeat the same failure one layer up: presence mistaken
+// for enforcement is exactly why the booked remedy was theatre.
+group('gate 2/4 · tsc -p tsconfig.vitest.json  (typecheck the specs)');
+{
+  const cfg = join(ROOT, 'tsconfig.vitest.json');
+  if (!existsSync(cfg)) {
+    fail('tsc-specs', 'tsconfig.vitest.json is missing — the spec surface has no typecheck');
+  }
+  // The override is asserted, not assumed: without it this gate passes while
+  // checking nothing, which is the failure it exists to prevent.
+  const parsed = JSON.parse(readFileSync(cfg, 'utf8'));
+  if (!Array.isArray(parsed.exclude) || parsed.exclude.length !== 0) {
+    fail(
+      'tsc-specs',
+      'tsconfig.vitest.json must set `"exclude": []` — it EXTENDS a config that excludes '
+        + 'every spec, and `include` does not override an inherited `exclude`. Without the '
+        + 'override this gate typechecks nothing and reports green.',
+    );
+  }
+  ok('tsconfig.vitest.json overrides the inherited exclude');
+
+  const status = run('tsc-specs', 'npx', ['tsc', '-p', 'tsconfig.vitest.json', '--noEmit'], {
+    shell: true,
+  });
+  if (status !== 0) fail('tsc-specs', `\`tsc -p tsconfig.vitest.json\` exited ${status}`);
+  ok('specs typecheck clean');
+}
+endGroup();
+
+// ── Gate 3/4 · npx vitest run ───────────────────────────────────────────────
 // Identical execution to the documented gate; two reporters are added so the
 // run leaves a machine-readable record to assert against. Invoked through the
 // installed bin rather than `npx` so no network or shell resolution is involved.
-group('gate 2/3 · npx vitest run  (the floor)');
+group('gate 3/4 · npx vitest run  (the floor)');
 {
   const reportRel = `${OUT_REL}/vitest.json`;
   const report = join(ROOT, reportRel);
@@ -165,10 +206,10 @@ group('gate 2/3 · npx vitest run  (the floor)');
 }
 endGroup();
 
-// ── Gate 3/3 · npm run test:gate (SEC-GATE-01) ──────────────────────────────
+// ── Gate 4/4 · npm run test:gate (SEC-GATE-01) ──────────────────────────────
 // The command is DERIVED from package.json rather than restated here: a second
 // copy of the invocation is a second thing that can drift (CENSUS-MUST-DERIVE-01).
-group('gate 3/3 · npm run test:gate  (SEC-GATE-01 session/HMAC)');
+group('gate 4/4 · npm run test:gate  (SEC-GATE-01 session/HMAC)');
 {
   const script = String(PKG.scripts?.['test:gate'] ?? '');
   const argv = script.split(/\s+/).filter(Boolean);

@@ -357,7 +357,7 @@ describe('2B-4 GATE — the mechanism landed at 2B-4a; the BEHAVIOUR still has n
     // EARLY." A deleted assertion and a discharged one look identical in a
     // diff; an inverted one does not.
     const missing = Object.values(MATERIAL_MASTER)
-      .filter((m) => !('bpomApplicable' in (m as Record<string, unknown>)))
+      .filter((m) => !('bpomApplicable' in (m as unknown as Record<string, unknown>)))
       .map((m) => m.materialCode);
     expect(missing).toEqual([]);
     // ⚠️ INVERTED AT 2B-4b. This used to read: "the half that has NOT changed,

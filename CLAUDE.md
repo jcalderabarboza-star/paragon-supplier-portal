@@ -220,13 +220,20 @@ family reads as one product line.
 ## Gates — THIS PROJECT HAS NO LINT SCRIPT
 There is no `lint` script and no ESLint config. Do not invent one, and do not
 run `npx eslint` — it fails on missing config, which is not a code defect.
-The gates are exactly three:
+The gates are exactly four (three until `TSC-SKIPS-TESTS-01` closed):
 - `npm run build`  → `tsc && vite build` (typecheck + bundle)
+- `tsc -p tsconfig.vitest.json --noEmit` → **typechecks the SPEC surface**, which
+  `tsconfig.json` excludes. Added when `TSC-SKIPS-TESTS-01` was closed: for the
+  life of the suite no gate typechecked a test, and the remedy the register had
+  booked did not work (the child config `include`s the specs and then inherits
+  the base `exclude`, which wins). The override `"exclude": []` is what closes
+  it, and `npm run gates` ASSERTS the override is present — without it the gate
+  would pass while checking nothing.
 - `npx vitest run` → the test floor, which never regresses
 - `npm run test:gate` → the SEC-GATE-01 session/HMAC suite (`gate/`, outside `src/`)
 
-### `npm run gates` — the three, run and ASSERTED (CP-3a)
-`npm run gates` (`scripts/gates.mjs`) runs exactly those three, in that order,
+### `npm run gates` — the four, run and ASSERTED (CP-3a)
+`npm run gates` (`scripts/gates.mjs`) runs exactly those four, in that order,
 and then asserts that each one did something: the build emitted a bundle, the
 suite collected at least the recorded number of tests across at least the
 recorded number of files, and the gate suite passed at least its recorded count.

@@ -84,6 +84,15 @@ const submitTypedLeadTime = async (typed: string, unit: 'days' | 'weeks' = 'days
       unitPrice: 15_000, // identical to the incumbent — neutral on price
       currency: 'IDR', // required since 2e-c-2; neutral here, as every quote shares it
       leadTimeDays: lead.days,
+      // ⚠️ WAS ABSENT — and `moq` is REQUIRED, not optional, PRECISELY SO IT
+      //   CANNOT BE DROPPED SILENTLY. That required-ness IS `FIND-02`, the
+      //   captures-what-it-discards defect: the form collected a minimum order
+      //   quantity and this builder was never given it, so a stated constraint
+      //   vanished between the supplier typing it and the quotation being minted.
+      //   These drafts were still built in the PRE-FIX SHAPE — the same defect as
+      //   the raw-text lead time above, one field over. `null` is the honest value
+      //   here ("supplier stated no minimum"), and stating it is the point.
+      moq: null,
       validUntil: '2026-06-30',
     }),
   });
@@ -200,6 +209,8 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
         unitPrice: 15_000,
         currency: 'IDR',
         leadTimeDays: 3, // ← the truncation artifact
+        // was absent — see the first draft above; same defect, same fix
+        moq: null,
         validUntil: '2026-06-30',
       }),
     });
@@ -223,6 +234,8 @@ describe('FIND-05 — the award recommendation is decided by lead time, honestly
         unitPrice: 15_000,
         currency: 'IDR',
         leadTimeDays: 0, // ← what `Number("abc") || 0` produced
+        // was absent — see the first draft above; same defect, same fix
+        moq: null,
         validUntil: '2026-06-30',
       }),
     });
