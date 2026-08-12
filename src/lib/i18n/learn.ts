@@ -12,7 +12,8 @@
 // The dual-trigger reality (GR 42/2024) is named ONCE in the first step: BPJPH
 // certs are permanent (re-certify only on composition/PPH change); legacy MUI/GR-39
 // certs carry a fixed expiry and must migrate. All steps then share ONE SIHALAL
-// path (no certBasis branching). The disclaimer + source link render on EVERY step.
+// path (no per-certificate branching — D-A deleted `certBasis`, so there is no
+// longer a field to branch on). The disclaimer + source link render on EVERY step.
 export const learnEn: Record<string, string> = {
   // — Lesson chrome —
   'learn.halalRenewal.title': 'Halal certificate renewal — a guide',

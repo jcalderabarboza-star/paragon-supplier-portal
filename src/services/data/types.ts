@@ -764,10 +764,6 @@ export type CertType =
   | 'ISO'
   | 'OTHER';
 
-/** GR 42/2024 made BPJPH certs permanent-validity; legacy GR-39 certs kept a
- *  4-year expiry clock. `certBasis` disambiguates the two clock models. */
-export type CertBasis = 'permanent' | 'legacy-4yr';
-
 /** Raw-material grouping (Spine: cert grain is supplier AND raw-material level). */
 export type MaterialCategory =
   | 'fragrance'
@@ -807,15 +803,14 @@ export interface ComplianceRegistryEntry {
   issuer: string;
   issueDate: string | null;
   /** `null` = unknown, NEVER guessed (a blank expiry on a required cert is itself
-   *  a finding) — also `null` for a permanent-basis BPJPH cert. */
+   *  a finding) — and also `null` for a BPJPH cert, whose validity is permanent
+   *  under GR 42/2024 so no expiry exists to record. (D-A: this sentence used to
+   *  say "permanent-basis", naming the deleted `certBasis` field; the FACT is a
+   *  property of the cert TYPE and survives the field's removal.) */
   expiryDate: string | null;
-  certBasis: CertBasis;
   /** The STORED transition-state (Missing/Under Review/Valid). The display status
    *  is computed from this + the clock, never stored. */
   lifecycleState: ComplianceLifecycleState;
-  /** Whether this cert is required for the supplier's halal-brand supply — gates
-   *  the BPJPH KPI and remind-eligibility. */
-  requiredForHalalBrands: boolean;
   scopeText: string;
   notes: string;
 }

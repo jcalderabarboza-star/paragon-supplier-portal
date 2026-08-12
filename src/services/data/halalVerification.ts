@@ -214,7 +214,8 @@ function failureReason(
  * entitled to read, so this function can never widen a `QueryScope`.
  *
  * ⚠️ **NOT ANSWERED HERE:** whether the material required a halal check at all
- * (`halalOf`, H1 — this function does not consult `requiredForHalalBrands`,
+ * (`halalOf`, H1 — this function consults no per-registry-row applicability flag;
+ * `requiredForHalalBrands` was deleted at D-D, unread by anything,
  * which is the registry's own opinion about a supplier's brand supply and not a
  * determination about the material), and whether an inspector ticked the seal
  * (H2). A `NO_CERT` on a material that never needed a certificate is not a

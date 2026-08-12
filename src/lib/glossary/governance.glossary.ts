@@ -14,7 +14,7 @@ import type {
   OverrideReason,
   UnattributedReason,
 } from '../enforcement';
-import type { CertBasis, CertType, ComplianceDisplayStatus } from '../../services/data/types';
+import type { CertType, ComplianceDisplayStatus } from '../../services/data/types';
 import type { HalalApplicability, BpomApplicability } from '../../services/sdc/types';
 
 /** How hard a governed check bites when it comes back adverse. */
@@ -179,18 +179,6 @@ export const CERT_TYPE_GLOSSARY = {
     id: 'Sertifikat yang disimpan portal tetapi tidak dimodelkan. Sengaja tidak digabungkan ke jenis terdekat — jenis yang salah lebih buruk daripada yang tidak terklasifikasi.',
   },
 } satisfies GlossaryOf<CertType>;
-
-/** How long a certificate's validity runs. */
-export const CERT_BASIS_GLOSSARY = {
-  permanent: {
-    en: 'Validity runs until the certificate\'s own expiry date.',
-    id: 'Masa berlaku berjalan sampai tanggal kedaluwarsa sertifikat itu sendiri.',
-  },
-  'legacy-4yr': {
-    en: 'A transitional four-year term applied to certificates issued under the previous scheme, regardless of what the document itself says.',
-    id: 'Jangka transisi empat tahun yang berlaku untuk sertifikat yang diterbitkan di bawah skema sebelumnya, terlepas dari apa yang tertulis pada dokumennya.',
-  },
-} satisfies GlossaryOf<CertBasis>;
 
 /** Whether a material needs a halal determination at all. */
 export const HALAL_APPLICABILITY_GLOSSARY = {

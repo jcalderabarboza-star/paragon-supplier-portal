@@ -10914,3 +10914,131 @@ different derivation than "could I write this without reading the code", because
 a business term is usually perfectly explicable AND possibly wrong. That
 derivation does not exist yet.
 
+
+
+---
+
+## §36 — D-A / D-D · `certBasis` and `requiredForHalalBrands` DELETED
+
+Two typed compliance fields, **read by nothing**, each carrying a claim that
+disagreed with the tree around it. Deleted rather than reconciled.
+
+### ⚠️ THE FOURTH READING IS THE STRONGEST SINGLE PIECE OF EVIDENCE
+
+The dispatch named three readings of `certBasis`. Deriving them per-record found
+a fourth that neither the dispatch nor Seat 3 had:
+
+**ACROSS 16 FIXTURE RECORDS, `HALAL_BPJPH` CARRIES BOTH BASES — `permanent` ×4
+AND `legacy-4yr` ×2.**
+
+The ISO / OTHER / HALAL_FOREIGN anomaly was the visible one: a field applying an
+Indonesian halal transition to schemes it never touched. **This is worse, and it
+is different in kind — A CONTRADICTION INSIDE THE VERY CERT TYPE THE FIELD
+EXISTS TO DESCRIBE.** Under reading 1 a BPJPH cert is permanent BY STATUTE, so
+those two rows contradict the type comment, the glossary, AND the other four
+rows of their own type simultaneously. A field cannot be reconciled to a
+disagreement it holds against itself at the same grain it operates on.
+
+### D-D — `requiredForHalalBrands`, the same discipline
+
+Its doc claimed it *"gates the BPJPH KPI and remind-eligibility."* **It gates
+neither.** `remindEligible()` reads `lifecycleState` and nothing else, and
+`halalVerification.ts` states in its own header that it does not consult the
+field. **A boolean that named its own consumers, and had none.**
+
+### What went, and what stayed
+
+| Deleted | Kept |
+|---|---|
+| `CertBasis` union + its comment (`types.ts`) | **The statutory facts**, moved beside `BPJPH_MANDATE_DATE` |
+| `certBasis` + `requiredForHalalBrands` fields | `certType` — the scheme dimension, which IS read |
+| The glossary pair + its registry row | `expiryDate` — the clock dimension, which IS read |
+| 16 fixture literals × 2 fields | |
+| 2 test-builder lines × 2 fields | |
+
+**Glossary census: 66 terms / 18 registries → 64 / 17**, as ruled.
+
+### The three return conditions, cross-pointed
+
+`schemeValid()` now names its conditions and says what they read: **(1) the
+clock, from `expiryDate`; (2) the scheme, from `certType`; (3) otherwise valid.**
+⚠️ **Read together they are the evidence: NONE consults a validity basis.** Both
+dimensions `certBasis` claimed to carry were already carried by fields that are
+actually read.
+
+### ⚠️ THE STATUTORY KNOWLEDGE — preserved, not re-introduced
+
+Recorded on `BPJPH_MANDATE_DATE`, because it is the part that is **genuinely
+hard to recover** — not derivable from the data, and the fixtures actively
+disagreed with it:
+
+- A BPJPH cert (GR 42/2024) has **permanent validity**; there is no expiry to
+  record, which is why `expiryDate` is legitimately `null` for one.
+- ⚠️ **A LEGACY (GR-39 / MUI) CERT'S TERM IS ISSUANCE PLUS FOUR YEARS BY
+  STATUTE, REGARDLESS OF WHAT THE DOCUMENT PRINTS.** The printed date is not
+  authority. Anything that later computes a legacy expiry must derive it from
+  `issueDate`, never trust `expiryDate`.
+
+**Recorded as KNOWLEDGE, not re-introduced as a FIELD** — nothing reads it
+today, and a field nothing reads is exactly how the last disagreement went four
+documents deep without anything noticing.
+
+**D-E: booked by operator ruling.** Its specification is not restated here
+because this seat does not hold it — restating it from inference would be the
+`DECISION-RECORDED-NOT-EXECUTED-01` failure in reverse.
+
+---
+
+## §37 — `UNDEFINABLE-TEST-SELECTS-FOR-ENGINEERING-OPACITY-01` — the instrument gap
+
+⚠️ **THE UNDEFINABLE-TERM TEST SELECTS FOR ENGINEERING OPACITY. A BUSINESS TERM
+IS USUALLY PERFECTLY EXPLICABLE AND POSSIBLY WRONG.** The instrument finds
+`AS_SET` and **CAN NEVER FIND A TERM PROCUREMENT WOULD DISPUTE.** The two
+failure modes are orthogonal, and we have an instrument for only one.
+
+### What a second derivation would have to look for
+
+**A term that is DEFINABLE, CONFIDENTLY DEFINED, AND DEFINED DIFFERENTLY BY THE
+BUSINESS.** All three at once — and the third is the problem.
+
+### ⚠️ CAN ANY SIGNAL IN THE TREE DISTINGUISH IT? NO. Plainly: it is only findable by asking.
+
+The first two properties are internal and derivable. **The third is a fact about
+people, and the tree contains only our side of the disagreement.** Every
+derivable signal — undefinability, inconsistency across documents, unread
+fields, stale counts — finds cases where **WE DISAGREE WITH OURSELVES**.
+`certBasis` was found precisely because four documents diverged. **A term on
+which we are internally perfectly consistent and simply wrong leaves NO TRACE,
+BY CONSTRUCTION: consistency is what the tree can see, and correctness is not.**
+
+What the tree *can* do is **rank, not detect** — raise a prior, never fire:
+
+| Weak signal | What it suggests |
+|---|---|
+| The term appears in fixture DATA, not only in code identifiers | The business coined it; we are a borrower, so a mismatch is ours (§35's routing rule, made derivable) |
+| High surface fan-out — many pages render it | Not more likely wrong, but more expensive if it is |
+| Our definition cites no external source | Nobody checked it against anything outside the repo |
+
+None of these is evidence of divergence. **They are a reading order.**
+
+### ⚠️ AND THAT ANSWER SHAPES HOW THE REVIEW IS RUN
+
+If the only instrument is asking, then the asking is the instrument — **and it
+can be run well or badly.**
+
+**Run it as ELICITATION, not as review.** Ask the team to define a term in their
+own words **BEFORE** showing them ours. Showing our definition first turns the
+one instrument we have into an anchoring exercise: a reviewer shown a plausible
+definition agrees with it, and a silent agreement is indistinguishable from a
+real one — **the unfalsifiable shape (§29) reproduced in the review process
+itself.**
+
+Concretely: the highest-fan-out **domain** terms (*quality hold*,
+*disposition*, *sourcing event*, *legacy certificate*, *under review*) go on a
+sheet with **no definitions on it**, and ours are compared afterwards. The three
+terms §31b originally proposed — `CHAOS`, `legacy-4yr`, `AS_SET` — are
+engineering names and belong in a different conversation entirely (§35).
+
+**This finding is OPEN. No second derivation exists, and the honest conclusion
+is that none can — so the remedy is procedural, not a gate.**
+
