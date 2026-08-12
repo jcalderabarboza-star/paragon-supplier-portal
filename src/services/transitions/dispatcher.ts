@@ -33,6 +33,7 @@ import type { CommandDecision } from '../data/types';
 import type { AuditSink } from './events';
 import { actorKey } from './events';
 import { getTransition } from './registry';
+import { refusal } from './refusals';
 
 /**
  * A per-entity adapter the dispatcher reads/writes through.
@@ -202,10 +203,10 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     ): CommandResult => finish(s, tid, outcome, reason, entityId, causationId, input.decision);
 
     const transition = getTransition(input.transitionId);
-    if (!transition) return fin(scope, input.transitionId, 'failed', 'UNKNOWN_TRANSITION');
+    if (!transition) return fin(scope, input.transitionId, 'failed', refusal('UNKNOWN_TRANSITION'));
 
     const target = deps.target(input.entity);
-    if (!target) return fin(scope, input.transitionId, 'failed', `UNKNOWN_ENTITY:${input.entity}`);
+    if (!target) return fin(scope, input.transitionId, 'failed', refusal('UNKNOWN_ENTITY', input.entity));
 
     const isCreation = transition.trigger === 'creation';
     const payload = input.payload ?? {};
@@ -228,7 +229,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         throw new DataError('SCOPE_DENIED', `creation of ${input.entity} denied: unresolved owner`);
       }
     } else {
-      if (!input.entityId) return fin(scope, transition.id, 'failed', 'MISSING_ENTITY_ID');
+      if (!input.entityId) return fin(scope, transition.id, 'failed', refusal('MISSING_ENTITY_ID'));
       currentState = target.readState(input.entityId);
       const owner = target.readScopeOwner(input.entityId);
       if (scope.personaType === 'supplier') {
@@ -244,24 +245,24 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
 
     // (3) requiredRole ∈ scope roles.
     if (!deps.resolveRoles(scope).includes(transition.requiredRole)) {
-      return fin(scope, transition.id, 'failed', `ROLE_NOT_PERMITTED:${transition.requiredRole}`);
+      return fin(scope, transition.id, 'failed', refusal('ROLE_NOT_PERMITTED', transition.requiredRole));
     }
 
     // (4) transition legality (creation has no from-state to check).
     if (!isCreation && !transition.from.includes(currentState!)) {
-      return fin(scope, transition.id, 'failed', `ILLEGAL_TRANSITION:${currentState}->${transition.to}`);
+      return fin(scope, transition.id, 'failed', refusal('ILLEGAL_TRANSITION', `${currentState}->${transition.to}`));
     }
 
     // (5) requiredFields.
     const missing = transition.requiredFields.filter((f) => isEmpty(payload[f]));
     if (missing.length > 0) {
-      return fin(scope, transition.id, 'failed', `MISSING_FIELDS:${missing.join(',')}`);
+      return fin(scope, transition.id, 'failed', refusal('MISSING_FIELDS', missing.join(',')));
     }
 
     // (6) policy hooks (by registered name).
     for (const name of transition.policyHooks) {
       const hook = deps.resolvePolicyHook(name);
-      if (!hook) return fin(scope, transition.id, 'failed', `UNBOUND_HOOK:${name}`);
+      if (!hook) return fin(scope, transition.id, 'failed', refusal('UNBOUND_HOOK', name));
       const decision = hook({
         entityId: input.entityId ?? '',
         currentState: currentState ?? '',
@@ -272,7 +273,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         target,
       });
       if (!decision.ok) {
-        return fin(scope, transition.id, 'failed', `POLICY_REJECTED:${name}:${decision.reason ?? ''}`);
+        return fin(scope, transition.id, 'failed', refusal('POLICY_REJECTED', `${name}:${decision.reason ?? ''}`));
       }
     }
 
@@ -281,7 +282,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     const outcome: CommandOutcome = transition.sapBoundary ? 'submitted' : 'done';
     let result: CommandResult;
     if (isCreation) {
-      if (!target.create) return fin(scope, transition.id, 'failed', `UNSUPPORTED_CREATION:${input.entity}`);
+      if (!target.create) return fin(scope, transition.id, 'failed', refusal('UNSUPPORTED_CREATION', input.entity));
       const { entityId } = target.create(payload, transition.to);
       result = fin(scope, transition.id, outcome, undefined, entityId);
     } else {
