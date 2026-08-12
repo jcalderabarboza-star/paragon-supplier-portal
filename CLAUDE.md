@@ -291,6 +291,24 @@ prose, in the section that forbids restating cardinalities in prose. §27 /
    to test **both halves of the generic**: the VALUE must be `string`, which is
    what makes it a message map.
 
+   ⚠️ **D-F · THIRD INSTANCE, AND THE FIRST WHERE WIDENING DELETED TRUE
+   FINDINGS RATHER THAN ADDING FALSE ONES.** The stored-field gate's first
+   population matcher walked interfaces syntactically and returned 10 DTOs;
+   re-deriving through the TypeScript CHECKER instead **gained 17 and silently
+   lost 5**, because an OPTIONAL property's type widens to `… | undefined` — a
+   fresh union whose `aliasSymbol` is gone — so `reason?: QtyRefusalReason` no
+   longer names its own union. **The number went UP, which is what a widening
+   is supposed to look like**, and the loss was visible only by diffing against
+   the narrower run. Fixed by reading BOTH halves — the declared type NODE
+   (sees optionals, blind to `extends`) and the checker alias (sees `extends`,
+   blind to optionals) — and unioning them. §40e.
+
+   ⚠️ **AND IT SHARPENS THE RULE: RE-DERIVE MEANS COMPARE THE SETS, NOT THE
+   COUNTS.** Rules 1–3 all assume a wrong population ANNOUNCES ITSELF BY SIZE —
+   suspiciously small, suspiciously round, a red list of files. This one grew,
+   which is what a correct widening looks like, and the losses sat inside the
+   gain where no check on the total could see them.
+
    ⚠️ **WHY RULES 1 AND 2 ARE WORTH READING AS A PAIR, AND WHY GL-1 IS FILED
    AGAINST BOTH:** widening creates false accusations as readily as narrowing
    creates blind spots — **on the same instrument, in the same hour, on the seat
@@ -318,6 +336,17 @@ produces it** (§27). Do not restate a cardinality in prose — the "four unwire
 flows / 10 wired targets" sentence was wrong twice, in one sentence, for exactly
 that reason.
 
+⚠️ **AND A COUNT IS COMPARABLE ONLY TO A COUNT FROM THE SAME INSTRUMENT**
+(`COUNT-RESTATED-ACROSS-INSTRUMENTS-01`, §40k). A prototype and the thing it
+became are TWO instruments — especially then, because the differences are the
+deliberate improvements, which is exactly what changes the count. D-F subtracted
+a prototype's figure from the shipped gate's, got a gap of 7 where the truth was
+2, and **wrote a plausible, specific, quantified explanation for the gap rather
+than re-running.** The general form, and it is the reason this sits under the
+derivation rules: **A BARE WRONG NUMBER GETS CHECKED; A WRONG NUMBER WITH AN
+EXPLANATION GETS BELIEVED.** The explanation is not a failed catch — it is the
+mechanism by which the error survives. **Re-run; do not reconcile.**
+
 ### And the rule above the three: PROBE THE GUARD BOTH WAYS
 Rules 1–3 guard a POPULATION. They say nothing about the instrument that guards
 an INVARIANT. **A guard is habitually probed in one direction only — "does it
@@ -328,6 +357,20 @@ rejected the bad ref *and the known-good one*, because a mapped type collapsed
 **Assert a known-GOOD input passes before you believe a known-BAD input failed.**
 The running count of this class lives in `docs/findings.md` §39 — it is a table,
 and the table is the count.
+
+⚠️ **D-F IS THE FIRST BATCH IN WHICH THE REFLEX PAID FOR ITSELF, AND IT PAID ON
+THE FIRST RUN.** The stored-field gate came back GREEN against the real tree
+while its own known-good probe was failing: the synthetic harness put its files
+outside `src/`, so the derivation returned an EMPTY population, and a
+one-directional probe would have read that as *"yes, it catches the bad thing —
+there is nothing bad here."* The good-input probe and its bad-input twin now run
+against the SAME synthetic program, so neither can be believed alone. §40e.
+
+The gate itself is `src/lib/storedFieldGate/` — every stored field on a
+glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
+its reason stated. It is deliberately TEST-level, not type-level, precisely so
+#179's mutation practice CAN reach it; both directions of the bilateral
+assertion are mutation-probed.
 
 ## Gates — THIS PROJECT HAS NO LINT SCRIPT
 There is no `lint` script and no ESLint config. Do not invent one, and do not

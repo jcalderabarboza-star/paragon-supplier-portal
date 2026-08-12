@@ -11437,3 +11437,484 @@ there.** The page's value today is the definitions, which is what the review is
 for. **GL-0b thickens it; padding would not** — and a derived section filled with
 authored appearances would be the second copy that rots, on the one page whose
 subject is having exactly one copy of each word.
+
+---
+
+## §40 — D-F · THE STORED-FIELD GATE (BUILT). Every stored field on a glossary-covered DTO has a reader, or a reason
+
+Branched from main `8e906ff`. Floor 2906/208/7 → **2923/209/7**. Four gates green.
+New: `src/lib/storedFieldGate/{derive.ts, allowlist.ts, storedFieldGate.test.ts}`.
+
+**THE RULE.** *Every stored field on a glossary-covered DTO has at least one
+NON-FIXTURE READER, or an allowlisted reason with that reason stated.*
+
+**WHY IT EXISTS.** `certBasis` and `requiredForHalalBrands` were deleted this
+morning (§36). Both were stored fields read by nothing, each carrying a claim
+that disagreed with the tree around it, and **both were found by a human reading
+carefully.** Neither would have failed anything. That instrument does not scale,
+does not run on a schedule, and was not available to the four batches that walked
+past `certBasis` before Seat 3 stopped on it.
+
+---
+
+### 40a · THE POPULATION IS DERIVED, AND HERE IS THE DERIVATION
+
+Nothing in this gate is listed. The chain runs in one direction:
+
+```
+GLOSSARY_REGISTRIES (17 source unions, imported — not re-listed)
+  → any interface / class / type-alias in src/ with ≥1 property typed by one
+  → ALL its stored fields (not only the vocabulary-typed ones)
+    → keyed by the DECLARATION the field is written in, not by every type that
+      exposes it
+```
+
+A DTO that starts speaking the vocabulary joins the population with **no edit
+here**, and a field added to a covered DTO is under the gate the moment it is
+written. That is what makes `requiredForHalalBrands` catchable: a `boolean` with
+no vocabulary of its own, caught **purely because it rides a covered DTO.** A
+gate keyed on vocabulary-typed fields alone would have caught `certBasis` and
+missed its neighbour — which is the *"catches only the case it was written from"*
+failure the dispatch named.
+
+**Derived at this commit** (a stamped observation, not a standing claim — §27):
+**33 covered types · 31 owning declarations · 122 stored fields · 30 flagged.**
+The covered types, in full:
+
+| File | Covered types |
+|---|---|
+| `services/data/types.ts` | `ComplianceRegistryEntry`, `DataError` |
+| `services/data/halalVerification.ts` | `HalalVerification` |
+| `services/sdc/types.ts` | `MaterialMasterEntry` |
+| `services/sdc/{bpom,halal,objectSubmitModels}.ts` | `BpomOutcome`, `HalalOutcome`, `DraftOutcome` |
+| `lib/enforcement.ts` | `ActorAttribution`, `EffectiveEnforcement`, `EnforcementOverride`, `EnforcementSetting`, `GovernedCheckStampBase`, `StampFor`, `GovernedCheckStamp`, `StampPerVerdict` |
+| `lib/{localeNumber,quoteScore}.ts` | `QtyOutcome`, `ScoringOutcome` |
+| `services/channel/replyParser.ts` | `ChannelReplyDiagnostics` |
+| `services/data/mock/enforcementSeed.ts` | `EnforcementSeedOutcome` |
+| `pages-v2/…` (models + one view) | `RfqDraftRefusal`, `RfqDraftOutcome`, `TotalQtyOutcome`, `BudgetOutcome`, `ContractDraftRefusal`, `ContractDraftOutcome`, `ContractNumberOutcome`, `PoLineQtyOutcome`, `PoConfirmQtysOutcome`, `InvoiceAmountOutcome`, `RefusedImportRow`, `Row` (BuyerCompliance) |
+| `components/…` | `TolerancePctOutcome`, `GrLineQtyOutcome` |
+
+---
+
+### 40b · SEAT 3's CAVEAT IS BINDING, AND IT IS ANSWERED RATHER THAN DISCLOSED
+
+> *The reader census matches field names, not entity-qualified reads, so a name
+> shared across entities can mask an unread field.*
+
+**Entity-qualified reads ARE achievable, and this census does them.** Every
+property access is resolved through the TypeScript **checker** and the resolved
+symbol's DECLARATION is compared against the population's declarations.
+`rfq.materialCategory` and `entry.materialCategory` are different fields here
+because they always were different declarations.
+
+⚠️ **THE CAVEAT IS NOT AN EDGE CASE — IT IS THE DOMINANT CLASS.** Most of what
+the gate flags shares its name with a declaration elsewhere in the tree, and a
+name census would have cleared every one of those on the strength of the *other*
+entity's reads. Hand-verified samples of what a name census sees:
+
+| Flagged field | What the name census finds instead | Verdict it would have returned |
+|---|---|---|
+| `ComplianceRegistryEntry.materialCategory` | 8 hits, all the RFQ entities' `materialCategory` | **cleared** — Seat 3's own example |
+| `MaterialMasterEntry.materialCode` | `li.materialCode` on GR line drafts, `item.materialCode` on drawdown rows | **cleared** |
+| `ScoringOutcome.basis` | `material.basis` in `shouldCost.ts` | **cleared** |
+| `RefusedImportRow.batchNumber` | `r.batchNumber` on bulk-stock rows | **cleared** |
+| `PoConfirmQtysOutcome.line` / `.reason` / `DraftOutcome.field` | ~100 i18n key fragments each (`…refused.reason`, `release.line`) | **cleared** |
+
+The count is deliberately not written here: `sharedNameWith` on each row **is**
+the derivation, and the gate reports it at read time.
+
+⚠️ **AND THE REVERSE DIRECTION IS A TEST, NOT A PROMISE.** The self-probe builds a
+synthetic program containing two DTOs with a same-named field — one read in
+production, one not — and asserts the unread one is flagged **and** that the
+collision is reported. Seat 3's caveat now fails a build if the instrument ever
+regresses to name matching.
+
+---
+
+### 40c · WHAT THE GATE FLAGS TODAY — the residue, in full
+
+`reads` counts fixture/test reads only; every row has **zero** non-fixture reads.
+**Nothing below is fixed** — D-F's fence is census and allowlist only, and each
+residue is its own ruling.
+
+| Owner | Field | reads | note |
+|---|---|---|---|
+| `ComplianceRegistryEntry` | `materialCategory` | 0 | **Seat 3's hand-found suspect.** The grain the Spine says certs run at |
+| | `issueDate` | 0 | the statutory legacy-term input D-A preserved as knowledge |
+| | `scopeText` | 0 | **Seat 3's other suspect.** What the cert covers — name occurs at no other declaration |
+| | `notes` | 0 | free text with no stated purpose at all |
+| `MaterialMasterEntry` | `materialGroup` | 34 | **largest test-only read count in the population** |
+| | `materialCode` | 17 | the tree reads this name constantly, at other declarations |
+| | `materialType` | 4 | sits beside two fields that ARE read in production |
+| `HalalVerification` | `verdict`,`reason`,`certId`,`certType`,`expiryDate` | 7,0,0,0,0 | H3, ruled headless; H4 gated on `D-COMP-HALAL-4` |
+| `lib/enforcement.ts` | `ActorAttribution.person` | 0 | unreachable by construction (`ENF-NO-PERSON-IN-IDENTITY-01`) |
+| | `EffectiveEnforcement.source` | 13 | the field that lets a block explain itself |
+| | `EnforcementOverride.reason` / `.overriddenVerdict` / `.overriddenAt` | 0,1,0 | **the accountability record nobody reads back** |
+| | `EnforcementSetting.setBy` | 4 | who set a mode |
+| | `GovernedCheckStampBase.checkId` | 0 | which check a stamp belongs to |
+| | `StampFor.verdict` | 1 | the union discriminant — heavily used by `tsc`, not at run time |
+| `EnforcementSeedOutcome` | `checkId`,`reason` | 1,0 | a seed reporting an outcome nobody inspects |
+| `ScoringOutcome` | `basis` | 13 | the FX axis the 2e-c arc existed to make explicit |
+| `ChannelReplyDiagnostics` | `materialMatch` | 5 | on a type whose purpose is to be shown to a triaging human |
+| `TolerancePctOutcome` | `pct` | 4 | the parsed value the editor never reads off the outcome |
+| `PoConfirmQtysOutcome` | `line`,`reason` | 1,1 | a refusal that knows where it happened, and nothing asks |
+| `DraftOutcome` | `field` | 0 | same shape |
+| `RefusedImportRow` | `batchNumber` | 0 | same shape |
+| `DataError` | `cause` | 0 (**1 write**) | **the only write-only field in the population** |
+
+⚠️ **THE ONE THAT SHOULD BE READ FIRST IS NOT THE ONE SEAT 3 NAMED, AND IT
+OUTRANKS THEM.** `DataError.cause` is assigned in the constructor and read by
+nothing, so **every underlying cause the data layer captures is discarded at the
+first boundary that handles the error.** It survived scrutiny because it shadows
+the standard `Error.cause`, which makes it look consumed by machinery that is not
+there.
+
+**This is a DIAGNOSTIC LOSS, not a tidiness issue, and the distinction is the
+whole reason it is ranked above `materialCategory` and `scopeText`.** Those two
+are fields nobody reads; this is a field that is *written on every failure* and
+then dropped. It costs nothing while everything works and costs the entire
+root-cause trail on the day something does not — and the day something does not
+is the day nobody is reading a stored-field census.
+
+**A second cluster worth naming as a cluster:** `EnforcementOverride.reason`,
+`.overriddenAt`, `EnforcementSetting.setBy` and `ActorAttribution.person` are
+four fields of *one* idea — **who relaxed what, when, and why.** The E2 header
+says a closed override vocabulary exists because *"an absence nobody can count is
+an absence nobody can fix."* The count it was built to enable is taken nowhere.
+That is one ruling, not four.
+
+---
+
+### 40d · WOULD IT HAVE CAUGHT `certBasis` **AND** `requiredForHalalBrands`? — **YES, AND IT IS PROVEN, NOT ARGUED**
+
+The dispatch's real question is whether the gate catches only the case it was
+written from. So the **shipped** `derive.ts` — not a prototype of it — was run
+against the tree as it stood before the deletion (`git archive 56e275a`, the
+parent of #219), with the **pre-deletion vocabulary read off that tree's own
+glossary** (18 unions, `CertBasis` present). Using today's registries on
+yesterday's tree would have been the inherited list this gate exists to refuse.
+
+```
+ComplianceRegistryEntry.certBasis               inPopulation=true vocab=[CertBasis] reads=0 FLAGGED=true
+ComplianceRegistryEntry.requiredForHalalBrands  inPopulation=true vocab=[]          reads=0 FLAGGED=true
+
+pre-deletion  (56e275a): 33 covered types · 124 stored fields · 32 flagged
+post-deletion (8e906ff): 33 covered types · 122 stored fields · 30 flagged
+```
+
+Both flagged. **The delta is exactly the two fields, on both counts.**
+
+⚠️ **AND THE TWO ARE CAUGHT BY DIFFERENT HALVES OF THE MECHANISM, WHICH IS THE
+POINT — PROVEN BY REMOVING THE CHOICE, NOT ASSERTED.** `certBasis` was typed by
+its own glossary union, so a vocabulary-keyed gate would have found it.
+`requiredForHalalBrands` was a bare `boolean` naming consumers it did not have.
+The design choice under test is taking **all** fields on a covered DTO rather
+than only the vocabulary-typed ones, so the counterfactual was run on the same
+pre-deletion tree:
+
+```
+population = vocabulary-typed fields ONLY
+    stored fields: 34 (was 124)      flagged: 8 (was 32)
+    certBasis               inPopulation=true   FLAGGED=true
+    requiredForHalalBrands  inPopulation=false  FLAGGED=false
+```
+
+**`requiredForHalalBrands` does not merely go unflagged — IT LEAVES THE
+POPULATION ENTIRELY.** A vocabulary-keyed gate catches `certBasis` and is
+**structurally blind to the bare boolean beside it**: not a threshold it fails,
+a question it never asks. Taking all fields on a covered DTO is the only reason
+the harder half is reachable at all. A gate that caught one and not the other
+would have been the list problem wearing a test, and **would have looked
+identical from here.**
+
+---
+
+### 40e · THE FOUR RULES, APPLIED TO THIS INSTRUMENT — three of them fired
+
+**Rule 1 — derive; a suspicious result is a bug report about the matcher.** The
+first derivation returned **10 covered DTOs from 17 unions**. Small and round
+enough to distrust: probing `DataErrorCode`, whose only field use is
+`readonly code: DataErrorCode` inside a **class**, showed the matcher walked
+interfaces and type-alias object literals and nothing else. Classes, `extends`,
+intersections and unions-of-object-literals were all invisible.
+
+**Rule 2 — widening creates false accusations as readily as narrowing creates
+blind spots. ⚠️ THIS ONE FIRED ON THE INSTRUMENT'S OWN AUTHOR, AGAIN.** The fix
+for rule 1 was to enumerate through the **checker** instead. It **gained 17 DTOs
+and silently lost 5** — because an *optional* property's type is widened to
+`… | undefined`, a fresh union whose `aliasSymbol` is gone and whose constituents
+are bare string literals, so `reason?: QtyRefusalReason` no longer names its own
+union. **The widening did not merely add noise; it deleted true findings, and the
+new number was bigger, which is exactly what a widening is expected to look
+like.** Caught only by diffing against the narrower run.
+Resolution: **read both halves** — the declared type NODE (sees optionals and
+`| null`; blind to inheritance) *and* the checker alias (sees inheritance and
+mapped types; blind to optionals) — and union them. Filed to `CLAUDE.md` under
+rule 2, beside GL-1's.
+
+⚠️ **THIS IS THE NASTIEST FORM OF THE CLASS, AND IT IS WORTH SAYING WHY.**
+Rules 1–3 rest on one shared assumption: **that a wrong population announces
+itself BY SIZE.** Rule 1 says distrust a result that is suspiciously small or
+round. Rule 2's recorded instances threw red lists of files the moment they ran.
+Rule 3 guards against reading absence out of a truncated window. **Every one of
+those reflexes is a SIZE reflex — and this instance defeats all three, because
+the population GREW.** 10 → 22 is exactly the number a correct widening
+produces; the five losses were *inside* the gain and invisible to any check on
+the total. The only thing that found them was diffing the **membership** of the
+two runs. **So: re-derive after every widening means COMPARE THE SETS, NOT THE
+COUNTS** — a rule the register did not previously contain, because until now
+every instance of the class had been considerate enough to look wrong.
+
+**Rule 3 — never conclude absence from a truncated view.** Not triggered: every
+membership question here was asserted programmatically (`census.fields` filtered
+in the test, never paged).
+
+**Rule 4 — ⚠️ ASSERT A KNOWN-GOOD INPUT PASSES BEFORE YOU BELIEVE A KNOWN-BAD ONE
+FAILED. THIS IS THE FIRST BATCH IN WHICH THE REFLEX PAID FOR ITSELF, AND IT PAID
+IMMEDIATELY.** On the first run of the finished gate:
+
+```
+✓ D-F stored-field gate (the tree) — all 5 passed, allowlist matched the flagged set exactly
+× D-F self-probe — ACCEPTS Covered.readByAccess  → fell out of the population entirely
+```
+
+**The gate against the real tree was GREEN while its instrument was returning an
+empty population on a controlled input.** The synthetic harness put its files at
+`/dto.ts` rather than `/src/dto.ts`, so the `src/`-prefix filter discarded
+everything; had the probe only asked *"does it catch the bad thing?"*, the answer
+would have been *"yes — it flags nothing, and nothing bad is present"*, and the
+tree run would have confirmed it. Every good-input probe now runs against the
+**same synthetic program** as its bad-input twin, so neither can be believed
+without the other.
+
+⚠️ Recorded as a **successful application, not a new `GUARD-WRONG-IN-THE-PASSING-
+DIRECTION-01` instance** — §39b's table stays at five. The reflex worked; the
+class is a guard that *ships* wrong in the passing direction, and this one did
+not ship.
+
+**This gate is TEST-level rather than type-level, deliberately.** §39b records
+that #179's mutation practice cannot reach a `tsc` error, which would leave rule 4
+as the only protection. At test level the gate can be mutation-probed, and was:
+
+| Probe | Expected | Result |
+|---|---|---|
+| add `probeUnreadField: string` to `ComplianceRegistryEntry` | fails **unlisted** | `A STORED FIELD … HAS NO NON-FIXTURE READER AND NO STATED REASON` ✓ |
+| make `complianceProjection.ts` read `entry.scopeText` | fails **stale exemption** | `AN EXEMPTION OUTLIVED ITS SUBJECT … NOW READ at …:56` ✓ |
+
+Both edits were confirmed to have landed before the result was believed
+(`MUTATION-PROBE-CRLF` — the first attempt matched `\n` against a CRLF file and
+changed nothing, exactly as the register predicts).
+
+---
+
+### 40f · THE ALLOWLIST IS BILATERAL — set equality, not containment
+
+The gate asserts the allowlist keys are **exactly** the flagged set. Two
+failures, and the second is the one containment-style lists never have:
+
+* an **unlisted** field with no non-fixture reader → a new `certBasis`;
+* a **listed** field that acquired a reader, or was deleted → **the exemption
+  outlived its subject.**
+
+Nobody can fix a field and leave its excuse behind, because leaving the excuse
+behind is a red build. **The list can therefore only ever shrink truthfully.**
+
+**REASON TOKENS, AND THE ONE THAT WAS ARGUED DOWN.** Each carries a *mechanical*
+obligation, because a token whose only obligation is prose is a token people
+reach for:
+
+| Token | Obligation the gate checks |
+|---|---|
+| `data-in-waiting` | must name a `consumer` |
+| `contract-surface` | must name a `contract` |
+| `substrate` | must name a `surface` |
+| `unadjudicated` | ⚠️ **not an exemption — counted debt**, published by `unadjudicatedCount()` |
+
+All rows additionally require prose of real length, and any `pinnedBy` spec must
+still exist on disk.
+
+A fourth substantive token — `headless-by-ruling`, for a whole module ruled
+unwired with a named release gate — was drafted for `HalalVerification` and
+**rejected**: it collapses into `data-in-waiting` and differs only in GRAIN, and
+a token that differs only in grain is a token to shop for when the honest one is
+uncomfortable. What it was actually carrying — *a separate test pins this
+absence* — became the `pinnedBy` field instead.
+
+⚠️ **MOST ROWS ARE `unadjudicated`, AND THAT IS THE HONEST STATE.** A substantive
+token is assigned only where the tree ALREADY carries the ruling in a header or a
+commit (`issueDate`'s statutory note; H3's headlessness header). Assigning one
+anywhere else would be making the ruling D-F is fenced from making. The rest are
+a worklist **with a build behind it**, which is more than any of them had this
+morning.
+
+---
+
+### 40g · "ANY FIELD WHERE YOU CANNOT TELL READER FROM FIXTURE" — **none today, and the reason is structural**
+
+Asked, and derived rather than asserted. **Every read the fixture predicate
+silences on the current tree is in a spec** (`*.test.ts` / `__tests__/`); no
+fixture module, seed or test builder reads a population field at all.
+
+That is not luck. **An object-literal key is a STORE, never a read** — so a data
+module contributes zero reads *by construction*, not by path classification. The
+predicate only ever has to decide about specs, and specs are unambiguous. The
+judgement calls it does contain — chiefly `*Seed.ts`, which holds logic as well
+as data — therefore **decide nothing at present**, and are kept rather than
+tuned, because a predicate written on the day the question becomes real would be
+written to fit the answer.
+
+⚠️ One correction against my own first draft, recorded because it is the shape
+this whole batch is about: the `EnforcementSeedOutcome` allowlist row initially
+claimed the seed module *"is not classified as a fixture by this gate on
+purpose."* **It is** — `/Seed\.ts$/` matches it. The prose asserted a fact about
+a regex three lines away and was wrong, and nothing would have failed.
+
+---
+
+### 40h · THE LIMITS, STATED IN THE FILE AS WELL AS HERE
+
+A read this instrument **cannot** see, and may therefore flag as absent:
+
+1. **Dynamic keys** — `entry[k]` for a variable `k`. Only string-literal
+   arguments resolve.
+2. **Whole-object consumption** — `{...entry}`, `JSON.stringify(entry)`,
+   `Object.entries(entry).map(…)`. A generic table that renders every key *does*
+   display the field and this census records no read for it. **Deliberate:**
+   *"some renderer might print it"* is precisely the claim `certBasis` could have
+   made for four documents.
+3. **Type-level reference** — `Pick<T,'scopeText'>`, `keyof T`. A field named in
+   a type operator is not a field anybody reads.
+
+And one it counts that you might not: a read in a non-fixture module counts
+**even inside dead code**. This gate answers *"is it read"*, not *"is it
+reachable"* — reachability is the R1/R3 instrument, and conflating them would let
+each excuse the other.
+
+---
+
+### 40i · A COLLISION WITH TWO EXISTING CENSUSES, AND WHAT IT EXPOSES ABOUT THEM
+
+Adding this module turned two unrelated suites red. Neither was a defect in this
+gate, and both are worth recording.
+
+**H3's headlessness census** (`verifyHalalAtReceipt` must appear in code in
+exactly one file) went red because an allowlist row's *prose* named the function.
+That census **explicitly exempts comments** so a file may discuss the third fact
+— but a string literal is a code line. Resolved as the census intends: the
+identifier moved into a `//` comment and the row's prose stays generic.
+
+**E4's enforcement consumer census** went red because the allowlist's KEYS are
+`Owner.field` **strings**, and two exempted fields are declared on
+`EnforcementSetting` and `GovernedCheckStampBase`. That one is not reworded away
+— those are the keys, and the file cannot spell them any other way.
+
+⚠️ **SO `storedFieldGate/allowlist.ts` IS NOW ON A LIST OF "CONSUMERS" WHILE
+IMPORTING NOTHING FROM THAT MODULE.** The census matches **string inclusion over
+code lines**, so it cannot tell a consumer from a mention: every other entry
+earned its place by importing something, this one by *naming* something. The
+census's actual job is unharmed — an entry still cannot appear without a batch
+authorising it — but a reader can no longer take that list as a list of
+consumers. **Written down in the census itself rather than left for the next
+reader to discover**, which is the same argument §39b makes for tabulating a
+class instead of narrating it.
+
+---
+
+### 40j · WHAT THIS DOES NOT DO
+
+It does not check that a field is **correct**, only that something reads it. A
+field with one reader and three incompatible readings — which is what `certBasis`
+actually was — **passes this gate.** The four-way disagreement was found by
+deriving per-record and noticing `HALAL_BPJPH` carried both bases, and no
+structural rule reaches that; §37 already records why (*a term on which we are
+internally consistent and simply wrong leaves no trace by construction*).
+
+What the gate removes is the **cheapest** hiding place: a field that nothing reads
+at all, which is where both of this morning's deletions were sitting, and which
+no longer survives a build.
+
+---
+
+### 40k · `COUNT-RESTATED-ACROSS-INSTRUMENTS-01` — ⚠️ **THE STORY IS THE DEFECT, NOT THE FIGURE**
+
+**Filed against this entry, by the seat that wrote it, one dispatch after
+publishing it — and it outranks every number in §40.**
+
+#### What happened
+
+§40d originally read:
+
+> ~~`pre-deletion (56e275a): 33 covered types · 141 stored fields · 37 flagged`~~
+> ~~Both flagged. **37 → 30 is exactly the two fields plus the five that rode the
+> deleted `CertBasis` registry row out of the population.**~~
+
+The pre-deletion figures came from **prototype `proto3.mjs`, which keyed fields
+PER EXPOSING DTO** — so `GovernedCheckStampBase.checkId`, reachable through four
+aliases, counted four times. The shipped `derive.ts` keys **BY OWNING
+DECLARATION**, deliberately, so it counts once. The post-deletion figures came
+from the shipped gate.
+
+**Two instruments, two keying schemes, one subtraction.** The 141 and the 122
+were never on the same axis, and neither were the 37 and the 30.
+
+Re-run with the **shipped** derivation on **both** trees, the real numbers are
+`124 → 122` and `32 → 30`: **the delta is exactly the two deleted fields.**
+
+#### ⚠️ The part that matters, and it is not the arithmetic
+
+The gap was 7 where it should have been 2. I did not check the instrument. **I
+wrote an explanation for it** — *"plus the five that rode the deleted `CertBasis`
+registry row out of the population"* — and it is a good explanation. `CertBasis`
+*was* a deleted glossary registry row. Registry rows *do* remove covered DTOs and
+their fields. The sentence is mechanically plausible, specific, quantified, and
+**entirely invented**: no five fields left the population, and the whole gap was
+a keying scheme.
+
+> **A BARE WRONG NUMBER GETS CHECKED. A WRONG NUMBER WITH AN EXPLANATION GETS
+> BELIEVED.**
+
+That is the finding, and it generalises past this batch. An unexplained
+discrepancy is an open question and reads like one — the next person sees `7`
+where they expected `2` and goes looking. An *explained* discrepancy is a closed
+question: it recruits the reader's assent, and it recruits the author's first,
+which is why I stopped looking. **The explanation did not merely fail to catch
+the error — it is the mechanism by which the error survived**, and it survived
+into a merged register entry, in a PR body, and into a report to the operator.
+
+#### Why it is filed HERE specifically
+
+Because of where it happened. §40 announces a gate whose entire subject is
+**claims that nothing checks** — a stored field whose comment names consumers it
+does not have; a cardinality restated in prose beside the list that contradicts
+it (§27 / `FLOOR-IN-PROSE-01`). The entry announcing that gate carried a
+fabricated reconciliation for four hours. **The class does not exempt the seat
+writing about the class**, which is now the fourth arc running in which a
+heuristic has fired on the seat holding it (§39a; `DERIVED-OVER-A-CHOSEN-SCOPE-01`;
+`EMPTY-INPUT-REPORTS-CLEAN-01` instance 3).
+
+#### The reflex, stated so it is reusable
+
+**A count is comparable only to a count from the SAME instrument.** A prototype
+and the thing it became are two instruments even when one was copied from the
+other — *especially* then, because the differences are the deliberate
+improvements and are therefore exactly the ones that change what gets counted.
+Before subtracting two figures, ask which code produced each; if the answer is
+"different code", **re-run, do not reconcile.** Re-running the shipped
+derivation on both trees cost one temporary spec and eight seconds.
+
+⚠️ **AND THE CONCLUSION GOT STRONGER FOR THE CORRECTION**, which is worth
+recording because it is the usual case and is usually assumed to be the
+opposite. `124 → 122` and `32 → 30`, delta exactly two, is a **cleaner** result
+than "37 → 30, of which two are the fields and five are a registry row." The
+invented story was not buying a stronger claim — it was **paying** for one, by
+adding a moving part the real answer does not have. The tidier number was
+available the whole time, behind a re-run I did not do.
+
+#### Disposition
+
+**CLOSED as a filing; no code change.** There is nothing to gate here: this is a
+prose defect in a register, and §37 already records why that class has no
+mechanical instrument (*a term on which we are internally consistent and simply
+wrong leaves no trace by construction*). What it gets instead is a name, so the
+next occurrence is an append rather than a rediscovery — and the numbers it
+corrupted are fixed above.

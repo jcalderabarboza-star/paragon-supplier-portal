@@ -688,6 +688,22 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
       // exact list beats a tidy one.
       '/src/lib/glossary/governance.glossary.ts', // GL-0 — the definitions (TYPE-ONLY)
       '/src/lib/glossary/index.ts', //               GL-0 — the barrel (TYPE-ONLY)
+      // ⚠️ D-F — AND IT IS NOT A CONSUMER AT ALL. It imports NOTHING from this
+      // module. It matches because the stored-field gate's allowlist keys are
+      // `Owner.field` STRINGS, and two of the fields it exempts are declared on
+      // `EnforcementSetting` and `GovernedCheckStampBase` — so the type names
+      // occur as substrings of data this file cannot spell any other way.
+      //
+      // ⚠️ **THE LIMIT THIS ENTRY EXPOSES, RECORDED RATHER THAN PAPERED OVER:**
+      // this census matches STRING INCLUSION over code lines, so it cannot tell
+      // a consumer from a mention. Every entry above earned its place by
+      // importing something; this one earned it by naming something. The
+      // census's job — "an entry turning up without a batch that authorises it
+      // turns this red" — is unharmed, because the entry still had to be
+      // authorised here. What is harmed is the reader's ability to take this
+      // list as a list of consumers, which is why the distinction is written
+      // down instead of left for the next reader to discover.
+      '/src/lib/storedFieldGate/allowlist.ts',
       '/src/pages-v2/BuyerGoodsReceipt.tsx', //           E4 — the page that reads the ledger
       // ⚠️ GL-1 — THE FIRST VALUE CONSUMER OUTSIDE THIS MODULE'S OWN LANE, and
       // it consumes exactly one name: `REFUSALS_OUTSIDE_ENFORCEMENT`. The
