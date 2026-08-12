@@ -238,6 +238,41 @@ family reads as one product line.
   table primitives only) immediately after PR-B merges — investigation-first, no
   per-page sweep. Page-level cleanup stays opportunistic.
 
+## Deriving a population — STANDING HEURISTIC (not arc history)
+
+Whenever you answer "which things are X?" by scanning the tree — dead modules,
+uncalled verbs, unbacked affordances, missing i18n keys — **derive the
+population; never work an inherited list.** A scope written before its
+predecessors ran is a list. Two rules earned across five arcs
+(`CENSUS-MUST-DERIVE-01`, the bilateral loose-end census,
+`ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01`, `FLOOR-IN-PROSE-01`, and the R1
+false-affordance sweep):
+
+1. ⚠️ **A DERIVED POPULATION THAT COMES BACK SUSPICIOUSLY SMALL OR SUSPICIOUSLY
+   ROUND IS REPORTING ON ITS OWN MATCHER, NOT ON THE TREE.** Treat a clean
+   result as a bug report about the instrument until you have proved otherwise.
+   Both of R1's were this signal: **"0 verbs with no caller"** (two catalog
+   files name all 91 by construction) and **"16 orphans"** (an import matcher
+   that could not cross a newline — it condemned ~2,000 lines of live code,
+   including a walkthrough the operator had specifically ruled to build).
+   Sanity-check by asserting a known-true member is present and a known-false
+   one is absent, before reporting anything.
+2. **Widening a matcher creates false accusations as readily as narrowing it
+   creates blind spots.** R1 widened handler matching to `on[A-Z]\w*` and swept
+   in `onSuccess`/`onError` — react-query lifecycle callbacks, not affordances —
+   which accused fully-wired code of lying. Re-derive after every widening too,
+   not only after every narrowing.
+
+Handler shapes in THIS codebase that a naive matcher misses: custom props
+(`onQualify`, `onInviteRfq`, `onUpdate`), and **named handlers hoisted out of
+the JSX** (`const handleExport = () => …`) — which is where the largest pages
+keep their affordances. Full list: `docs/findings.md` §19.
+
+**A count you publish must be derived at read time or name the derivation that
+produces it** (§27). Do not restate a cardinality in prose — the "four unwired
+flows / 10 wired targets" sentence was wrong twice, in one sentence, for exactly
+that reason.
+
 ## Gates — THIS PROJECT HAS NO LINT SCRIPT
 There is no `lint` script and no ESLint config. Do not invent one, and do not
 run `npx eslint` — it fails on missing config, which is not a code defect.
