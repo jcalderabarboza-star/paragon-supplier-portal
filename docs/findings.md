@@ -10402,6 +10402,34 @@ this number without re-deriving it.*
 (73). The only member of the R1 orphan set that survives `UNUSED-IS-NOT-USELESS-01`
 (§25).
 
+### THE WARRANT — `DECISION-RECORDED-NOT-EXECUTED-01`
+
+**THE STRONGEST GROUND IS NOT THE CENSUS. IT IS THAT THE DELETION WAS ALREADY
+DECIDED.** `docs/Supplier_Portal_End_to_End_Plan_v1.1.md:219` lists
+`kpi.types.ts` under the `types/` row and records it *"Slated for Batch 1.4
+removal."* **Batch 1.4 SHIPPED — the canonical `PurchaseOrder`, PR #33 — AND
+LEFT THE FILE BEHIND.**
+
+**R3 IS NOT A NEW RETIREMENT DECISION. IT IS THE EXECUTION OF ONE TAKEN AND
+DROPPED.**
+
+⚠️ **THE GENERAL FORM, because this is a class and not an anecdote: A DECISION
+RECORDED IN A PLAN AND NOT EXECUTED LOOKS EXACTLY LIKE A DECISION NEVER TAKEN.**
+Four phases and roughly 180 commits later, the file was indistinguishable from
+one nobody had ever considered — it took a fresh census to rediscover ground
+that had already been settled and written down. The plan row was not wrong and
+was never contradicted; **it simply had nothing attached to it that could
+notice it had not happened.** Same shape as §26 and §27 and the whole closing
+asymmetry in §29: not a false claim — **an unfalsifiable one.**
+
+The practical consequence for future batches: **a plan row that says "slated for
+removal" is a liability until something executes or retracts it.** When a batch
+declines to carry out a recorded decision, say so in the register at the time,
+or the next reader has to re-derive the decision from scratch and may reach the
+opposite one.
+
+### The census evidence, which agrees
+
 | Test | Result |
 |---|---|
 | Production importers | **ZERO** — unreachable from `main.tsx`'s import graph |
@@ -10415,12 +10443,7 @@ That last row is the whole argument. `shouldCostBacktest.ts` and
 Stage I · I2 names them. `halalVerification.ts` is equally unimported and was
 kept because H4 / `D-COMP-HALAL-4` names it. **Nothing names these two.**
 
-**The forward plan does better than not naming them — IT NAMED THEM FOR
-DELETION.** `docs/Supplier_Portal_End_to_End_Plan_v1.1.md:219` lists
-`kpi.types.ts` under the `types/` row and records it *"Slated for Batch 1.4
-removal."* Batch 1.4 shipped the canonical `PurchaseOrder` (PR #33) and this
-file was left behind. **R3 is not a new retirement decision; it is the execution
-of one taken at Batch 1.4 and never carried out.** Retiring it also does not
+Retiring it also does not
 disturb `MOCK-RETIREMENT-SCOPE-01` (§ above): `mockKpis` is explicitly one of
 the FIVE of the ten legacy mock files that *"carry no material identity at
 all"*, and that finding's headline — the type-home / seed argument that makes
@@ -10470,4 +10493,77 @@ those grounds.** The harness's justification is its future; the history's
 justification is its past, and cutting I2 does not un-observe a price. A record
 whose value survives the cancellation of the feature that motivated it is not
 held by that feature.
+
+
+
+---
+
+## §29 — `UNFALSIFIABLE-NOT-FALSE-01` (ARC CLOSE — R1/R2/R3 — and the shape of the next hunt)
+
+**OF THE THREE REGISTERS THAT WENT STALE IN THIS ARC — THE FLOW COUNT, THE
+TARGET COUNT, AND THE I3 STAMP — NONE WAS A LIE, AND ALL THREE WERE
+UNFALSIFIABLE.**
+
+Not wrong claims. **CLAIMS WITH NOTHING THAT COULD HAVE CAUGHT THEM.**
+
+| The claim | Was it a lie? | What could have caught it |
+|---|---|---|
+| *"FOUR remain author-unwired"* (`CLAUDE.md`) | **No.** True of the F0.4 subset it was silently scoped to | **Nothing.** No check derived `getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS` and compared |
+| *"Wired CommandTargets now number 10, not 6"* | **No.** True when written; `enforcement` arrived after | **Nothing.** A cardinality restated in prose, beside line refs that drifted ~150 lines |
+| *"I3 compliance phase COMPLETE"* | **No.** The read path really is complete | **Nothing.** The stamp had no field for READ vs WRITE, so the inert write half had nowhere to be false |
+
+Three different documents, three different authors, three different phases —
+**one defect.** Each sentence was accurate at authorship and none acquired a
+contradiction; they simply had no mechanism attached that could ever report
+otherwise. **A claim that cannot go stale is not a claim, and the tree
+accumulated three of them without a single check going red.**
+
+This arc's own instrument had the same disease one layer up: *"0 verbs with no
+caller"* and *"16 orphans"* were both **unfalsifiable outputs of a matcher
+nobody had asked to prove itself** (§19). The fix in every case was identical —
+**attach something that can fail.**
+
+### What this arc attached
+
+| Register | Now falsifiable by |
+|---|---|
+| Which affordances lie about acts | `toastHonesty.guard.test.tsx` — derives its own population, list-free, both locales, **no exemption list to outlive its subject** (R1) |
+| Which flows are target-less | `CLAUDE.md` points at the derivation, not at a number (R2, §21) |
+| Which verbs cannot fire | 21 declared `WIRE-LATER`, each naming what it waits on (R2, §22) |
+| Whether a retired module returns | **`tsc`** — proven with a probe, not asserted (R3, §28) |
+
+### ⚠️ THE SHAPE THE NEXT HUNT TAKES
+
+**Stop hunting for false statements. Hunt for claims with no mechanism that
+could report them false.** The three that rotted here were found only because
+somebody re-derived a population by hand — which does not scale and did not
+happen for four phases.
+
+The signature to search for, in priority order:
+
+1. **A COUNT IN PROSE.** Any cardinality in `CLAUDE.md`, a design doc, or a file
+   header that is not derived at read time or accompanied by the derivation that
+   produces it (§27). The floor already learned this (`FLOOR-IN-PROSE-01`); the
+   flow and target counts learned it again.
+2. **A COMPLETION STAMP WITH NO HALF.** Any `X COMPLETE` that does not say
+   whether it means READ-complete or WRITE-complete (§26). **Every Stage-I stamp
+   is a candidate by construction**, because each I-capability ships fixture-first
+   and flips Live when its Stage-F prerequisite lands — read and write halves
+   completing on different dates is the design, not an accident.
+3. **A RECORDED DECISION WITH NO EXECUTION AND NO RETRACTION** (§28,
+   `DECISION-RECORDED-NOT-EXECUTED-01`). `kpi.types.ts` sat slated-for-removal
+   through four phases and became indistinguishable from a file nobody had
+   considered. **Other plan rows say "slated" and have not been swept.**
+4. **AN EXEMPTION LIST THAT CAN OUTLIVE ITS SUBJECT.** The loose-end census is
+   bilateral and cannot; the honesty guard has none by design. Anything else
+   that enumerates known-bad rows should be checked for the reverse direction —
+   a row that is no longer true must go red (`C9-STALE-BY-FIX-01`).
+5. **A DERIVED RESULT NOBODY MADE PROVE ITSELF** (§19, and now the standing
+   heuristic in `CLAUDE.md`). Suspiciously small, suspiciously round, or
+   suspiciously clean.
+
+**The honest limit of this close:** items 1–5 are a search pattern, not a gate.
+Nothing in the tree currently fails when a new unfalsifiable claim is written —
+**that is the next thing to attach, and until it exists this section is itself a
+claim with nothing that could catch it.**
 
