@@ -11079,3 +11079,183 @@ recorded as the team's word against ours rather than as a correction to ours.
 **This finding is OPEN. No second derivation exists, and the honest conclusion
 is that none can — so the remedy is procedural, not a gate.**
 
+
+---
+
+## §38 — GL-1 · THE GLOSSARY SURFACE (BUILT), and the two halves it leaves apart
+
+GL-0 shipped the vocabulary headless. GL-1 gives it a page (`/glossary`,
+persona-neutral), a derived "appears in these flows" list, derived related
+terms, and **a term chip at every refusal render site over a registered
+vocabulary** — the destination `HALAL-REFUSAL-DEAD-ENDS-01` had been open for.
+
+Four gates green: **2906 tests across 208 files**, gate suite 7.
+`scripts/floor.json` bumped from 2862/205.
+
+### What closed, and what deliberately did not
+
+**CLOSED — the definitional half.** A refusal that told a clerk only that they
+were stuck now carries a link to what the word means, in their own language.
+Verified end to end in the browser, both locales: typing `1.500` into the PR
+quantity refuses, the refusal renders the chip, the chip lands on
+`/glossary?term=QtyRefusalReason.AMBIGUOUS_QTY` with the card highlighted.
+
+⚠️ **OPEN — the routing half. `remedyRoute` IS STILL DECLARED AND ABSENT ON
+EVERY ENTRY**, and GL-1 did not populate one. The glossary answers *what does
+UNDETERMINED_APPLICABILITY mean*. **It gives the clerk at the dock no route** —
+who rules, where, what happens to the delivery meanwhile (D-COMP-HALAL-4). The
+page states that gap in its own honest marker (`glossary.remedy.*`, EN + ID) and
+a test asserts both the sentence and that no entry has acquired a route. The
+finding's own warning was the fence: *build the destination and the message
+together, or ship a second dead end with better manners.* **The row must not be
+read as closed.**
+
+### ⚠️ THE HEADLINE DERIVED RESULT IS THIN, AND IT IS NOT A DEFECT
+
+**3 of 64 terms have an "appears in these flows" list. 61 come back empty.**
+7 of 64 have a related term. Under the standing heuristic a result this small is
+a bug report about the instrument until proved otherwise, so
+`glossary/appearances.test.ts` proves it otherwise BEFORE the page reports it:
+each of the four match kinds is asserted against a known-true registry
+identifier (`Missing` → state, `t_po_confirm` → transition,
+`confirmedQuantities` → required field, `enforcement_set_governed` → policy
+hook), and known-false words are asserted absent.
+
+The three that match are the compliance display statuses `Missing` ·
+`Under Review` · `Valid`. **Why the other 61 are empty, by class:**
+
+| Class | Terms | Why empty |
+|---|---|---|
+| Refusal reasons (Command · DataError · Fx · Qty · Halal · Bpom · HalalNotSatisfied) | 27 | A refusal is what happens **instead of** a transition. It is not in any transition table and cannot be. |
+| Governance vocabulary (mode · check · verdict · override · unattributed · mode source) | 20 | The enforcement ledger is a parallel structure to the flows. `GovernedCheckId` (`halal.seal`) is not a policy-hook name (`enforcement_set_governed`) — the two vocabularies genuinely do not touch. |
+| `CertType` · applicabilities | 12 | Fixture field values, not machine states. |
+| `ComplianceDisplayStatus.Expiring` / `.Expired` | 2 | ⚠️ **Law 0.5, and the most valuable empty result on the page.** Clock-derived states are read-time projections and never appear in a transition table. Their absence is the schema being CORRECT. A test asserts they stay empty: if either goes non-empty, a clock-projected state has leaked into a machine. |
+
+**The instrument is right and the tree is thin.** GL-0b — the 125 unregistered
+unions — is the answer, not padding. Filling these lists with authored
+appearances would have been the second copy that rots.
+
+### Related concepts: two relations, both read from shipped declarations
+
+No hand-drawn concept map. Exactly two, because exactly two exist in code:
+
+- **`shared-word`** — the same key defined in another registered vocabulary,
+  derived from `GLOSSARY_REGISTRIES`. This is what surfaces the halal/BPOM twins
+  (`UNKNOWN_MATERIAL` in both, separate types BY DESIGN) and the two
+  `UNDETERMINED` applicabilities.
+- **`outside-enforcement`** — read from `REFUSALS_OUTSIDE_ENFORCEMENT` in
+  `lib/enforcement.ts`, the `satisfies`-pinned census that says which refusal
+  shapes are why a check reads `UNANSWERED` rather than `ADVERSE`. Rendered in
+  BOTH directions from that ONE array, so a third refusal shape appears on the
+  page with no edit here.
+
+### ⚠️ THE SITE MY HAND-GREP MISSED, AND THE GUARD THAT FOUND IT
+
+I derived the refusal sites by grepping a **list of map names I had read off an
+earlier grep** — which is a list, not a derivation, and it was wrong.
+`chipCoverage.test.ts` derives the population properly (registered vocabularies
+→ `Record<Vocab, string>` declarations → uses → JSX-or-not) and immediately
+named **`BuyerSourcing.tsx` `RFQ_BUDGET_REFUSAL_KEY`** — a 21st render site my
+list never contained, because its map is `Record<Exclude<QtyRefusalReason,
+'EMPTY_QTY'>, string>` and my name list predated it. `CENSUS-MUST-DERIVE-01`
+firing on its own author, one batch after being written down.
+
+The same run also produced **three false accusations** against
+`services/sdc/ingest.ts`: my first matcher keyed only on the union and swept in
+`Record<QtyRefusalReason, ParseReason>` — a union-to-union translation table in
+a service, with no message and no surface. Rule 2 (`widening creates false
+accusations as readily as narrowing creates blind spots`): the fix was to test
+BOTH halves of the generic, requiring the VALUE to be `string`. That is what
+makes it a MESSAGE map, which is the shape the dispatch actually named.
+
+**Mutation-proved, not assumed:** removing one chip from
+`SupplierInvoices.tsx` turns two independent checks red — the proximity check
+(*"has no glossary destination"*) and the per-file count check (*"fewer chips
+than rendered refusals"*). The file was confirmed changed before the run.
+
+### Where a chip CANNOT attach, reported before working around it
+
+**`Toast.description` is typed `string`.** Six uses of a registered-vocabulary
+message map feed a toast rather than JSX — three in `SupplierForecasts.tsx`, one
+in `SupplierInvoices.tsx`, and two through the helpers `contractRefusalKey` /
+`rfqRefusalKey`, whose only consumers are toasts. A React element cannot go
+there.
+
+**Ruled, not worked around:** widening a shared component's contract to
+`ReactNode` to fit a link into a notification that disappears in four seconds is
+the wrong trade and outside GL-1's fence. `chipCoverage.test.ts` classifies
+these structurally (it can SEE the string-typed consumer) rather than exempting
+them by name, and a third test asserts every exclusion still has a visible
+string-typed consumer — so the ruling stays checkable instead of becoming an
+assumption.
+
+### The ref type is derived, so a chip cannot rot into a bad link
+
+`GlossaryRef` is a discriminated union **generated from `GLOSSARY_REGISTRIES`**,
+whose entries are `satisfies`-pinned to their source unions. `sourceType:
+'QtyRefusalReason'` with `term: 'FX_STALE'` does not compile; a term deleted
+from a source union stops compiling at every site that pointed at it. Probed in
+both directions before use — the first formulation rejected the KNOWN-GOOD ref
+too (mapped-type-over-tuple indexing collapsed `term` to `never`), which a
+one-sided probe would have shipped as a working guard.
+
+This required `GLOSSARY_REGISTRIES` to stop being widened to
+`readonly { sourceType: string; … }[]`. **Widening it silently disarms
+`GlossaryRef`** — noted in the file, because nothing would fail if someone
+re-annotated it.
+
+### The fences held
+
+- **No KPI terms** (GL-2), **no benchmarks**, **no flow-state or transition
+  prose.** `annotations.ts` + `processFlowPurpose.ts` already are that glossary;
+  a term whose word occurs in a machine gets a derived list of WHERE and a link
+  to Process Flows — never a sentence about what that machine is for.
+- The 125 unregistered unions stay unregistered (GL-0b).
+- Definitions live on the glossary entries, EN and ID on the same object.
+  **They are deliberately NOT i18n keys** — a definition in the locale maps
+  would be two edits per correction, in the one file a coverage sweep cannot
+  distinguish from ordinary chrome. `lib/i18n/glossary.ts` is page chrome only,
+  and its header says so.
+
+### The exact-spelling match, and why the collision is shown rather than hidden
+
+`Under Review` is a declared state in **three** unrelated machines — compliance,
+quotation, supplierDocument. The match is exact spelling and nothing else, so
+the page shows all three and says, in the reader's language, that this is one
+word in two places. **That collision is a finding the review exists to correct**;
+a cleverer matcher would have hidden it. The cost is stated on the page rather
+than in a comment: the match is blind to synonymy and credulous about homonymy.
+
+### Does it read as a reference or as a wall? — REFERENCE, thinly
+
+64 terms across 17 vocabularies, grouped by source union with a counted filter
+rail and a search that reads BOTH locales' definitions. Verified at 1600px in
+both locales: 64 cards, 17 groups, no horizontal overflow, no English leaking
+into the Indonesian render, every card's definition non-empty in both.
+
+**It is thin in one specific way and that should be said:** the per-term derived
+sections are absent on 57 of 64 cards, so most cards are a term, a definition and
+a source path. That is honest — there is nothing else true to put there — but it
+means the page's value today is almost entirely *the definitions*, which is
+exactly what the review is for. GL-0b widening the registered scope is what
+thickens it; padding would not.
+
+### A pre-existing defect noticed in passing (NOT GL-1's, NOT fixed here)
+
+**`document.documentElement.lang` stays `"en"` after switching to Indonesian.**
+It is set once in `app/index.html` and nothing updates it, so every page in the
+portal — not just this one — tells a screen reader to pronounce Indonesian with
+English phonemes. Out of GL-1's fence and filed rather than fixed, because it is
+an app-shell change that wants its own batch and its own test.
+
+### Browser QA
+
+`vite preview`, 1600×1000, dpr 0.667, EN and ID, both personas. The instrument
+was **structured DOM reads and geometry**, never `innerText`: per-card
+`querySelector('p')` for definitions (so a missing one cannot hide behind a
+neighbour's text), `getBoundingClientRect` containment for the chips, attribute
+reads for `data-glossary-term` / `href` / `aria-label`, and
+`scrollWidth > clientWidth` for overflow. Chips verified on both a buyer surface
+(PR quantity, EN) and a supplier surface (invoice amount, ID) — 106px chip
+inside its parent in both, translated `aria-label` and `title`, term token
+untranslated by design.

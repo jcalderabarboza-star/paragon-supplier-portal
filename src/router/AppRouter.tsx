@@ -30,6 +30,10 @@ import BuyerRisk from '../pages-v2/BuyerRisk';
 import BuyerCommHub from '../pages-v2/BuyerCommHub';
 import BuyerCompliance from '../pages-v2/BuyerCompliance';
 import ProcessFlows from '../pages-v2/ProcessFlows';
+// GL-1 — the glossary surface. PERSONA-NEUTRAL by route, deliberately: the term
+// chips that lead here sit on buyer AND supplier refusal sites, so a
+// `/buyer/...` path would have sent every supplier out of their own shell.
+import Glossary from '../pages-v2/Glossary';
 import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
 import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
@@ -118,6 +122,7 @@ const AppRouter: React.FC = () => {
               flow-graph analyzer. Everything it draws is derived from
               getKnownFlows(); there is no second copy of any machine. */}
           <Route path="/buyer/process-flows" element={<ProcessFlows />} />
+          <Route path="/glossary" element={<Glossary />} />
           <Route path="/supplier/dashboard" element={<SupplierDashboardV2 />} />
           <Route path="/supplier/storefront" element={<SupplierMyStorefront />} />
           <Route path="/supplier/documents" element={<SupplierDocumentsV2 />} />

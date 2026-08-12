@@ -6,6 +6,10 @@ interface SearchBarProps {
   onChange: (next: string) => void;
   placeholder?: string;
   className?: string;
+  /** Accessible name for the input. Optional and additive (GL-1): a placeholder
+   *  is a hint, not a label, and a search box whose only name is its hint loses
+   *  that name the moment a reader types. Existing callers are unaffected. */
+  ariaLabel?: string;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
@@ -13,6 +17,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   onChange,
   placeholder = 'Search…',
   className = '',
+  ariaLabel,
 }) => {
   return (
     <div
@@ -24,6 +29,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        aria-label={ariaLabel}
         className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none"
       />
       {value && (

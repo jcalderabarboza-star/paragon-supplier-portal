@@ -627,7 +627,13 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     'GovernedCheckId',
   ];
 
-  it('⚠️ E4 — the enforcement surface has NINE consumers, and FIVE suites', () => {
+  // ⚠️ THE TITLE NO LONGER CARRIES THE COUNTS, and that is a fix, not a loss
+  // (GL-1). It read "NINE consumers, and FIVE suites" while the lists below held
+  // thirteen and five — a cardinality restated in prose, wrong, and invisible
+  // because nothing checks a test's name. `FLOOR-IN-PROSE-01` and §27: a count
+  // is derived at read time or it is not published. The LISTS are the assertion;
+  // they are exact, and they are the only place a number belongs.
+  it('⚠️ E4 — the enforcement surface has an EXACT consumer list, suites apart', () => {
     // E1 asserted ONE file. E2 made it an EXACT LIST of six. E4 is the batch
     // that legitimately adds the GATE SIDE — a query hook, a page, the wizard
     // itself and the seed — so the list grows again, consciously. An entry
@@ -658,6 +664,12 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
       // prop. That spec exists because the wizard's own suite could not tell a
       // connected registry from a disconnected one at `BLOCK`.
       '/src/pages-v2/BuyerGoodsReceipt.test.tsx',
+      // ⚠️ GL-1 — the glossary's appearance/relation derivation, and the first
+      // spec outside this module to drive `REFUSALS_OUTSIDE_ENFORCEMENT` as a
+      // VALUE. It asserts that the two out-of-domain refusal shapes link to
+      // UNANSWERED in both directions, read off that array rather than a second
+      // list beside it.
+      '/src/pages-v2/glossary/appearances.test.ts',
       '/src/services/data/mock/enforcementSeam.test.ts',
       '/src/services/data/mock/enforcementSeed.test.ts',
       '/src/services/data/mock/enforcementSetCommand.test.ts',
@@ -665,17 +677,26 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     expect(referencing.filter((p) => !suites.includes(p))).toEqual([
       '/src/components/v2-features/GRInspectionWizard.tsx', // ⚠️ E4 — THE FIRST GATE
       '/src/lib/enforcement.ts', //                       the vocabulary + derivation
-      // ⚠️ GL-0 — the glossary. TYPE-ONLY, and HEADLESS: it imports the six
-      // enforcement unions to pin `Record<Member, GlossaryEntry>` with
-      // `satisfies`, so an enforcement term cannot exist without a definition
-      // and a definition cannot outlive its term. It reads no setting, renders
-      // nothing, and no surface imports it (GL-1 owns the page). Two entries
-      // rather than one because the barrel re-exports the registry names —
-      // listed separately rather than filtered, per this census's own rule that
-      // an exact list beats a tidy one.
+      // ⚠️ GL-0 — the glossary. STILL TYPE-ONLY, but **NO LONGER HEADLESS**: it
+      // imports the six enforcement unions to pin `Record<Member,
+      // GlossaryEntry>` with `satisfies`, so an enforcement term cannot exist
+      // without a definition and a definition cannot outlive its term. It reads
+      // no setting. GL-1 gave it a surface, so the old clause "no surface
+      // imports it" is retired here rather than left to rot. Two entries rather
+      // than one because the barrel re-exports the registry names — listed
+      // separately rather than filtered, per this census's own rule that an
+      // exact list beats a tidy one.
       '/src/lib/glossary/governance.glossary.ts', // GL-0 — the definitions (TYPE-ONLY)
       '/src/lib/glossary/index.ts', //               GL-0 — the barrel (TYPE-ONLY)
       '/src/pages-v2/BuyerGoodsReceipt.tsx', //           E4 — the page that reads the ledger
+      // ⚠️ GL-1 — THE FIRST VALUE CONSUMER OUTSIDE THIS MODULE'S OWN LANE, and
+      // it consumes exactly one name: `REFUSALS_OUTSIDE_ENFORCEMENT`. The
+      // glossary's "related terms" needed a relationship the CODE already
+      // states, not a hand-drawn concept map, and that `satisfies`-pinned census
+      // is one — it says which refusal shapes are the reason a check reads
+      // UNANSWERED rather than ADVERSE. Reading it here means the two can never
+      // disagree; a third refusal shape appears on the page with no edit.
+      '/src/pages-v2/glossary/appearances.ts',
       '/src/services/data/mock/MockCommandService.ts', // the CommandTarget
       '/src/services/data/mock/MockEnforcementService.ts', // the read seam
       '/src/services/data/mock/enforcementSeed.ts', //    E4 — the opening act

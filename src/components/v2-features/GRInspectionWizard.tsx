@@ -32,6 +32,8 @@ import { halalOf } from '../../services/sdc/halal';
 import type { HalalOutcome, HalalRefusalReason } from '../../services/sdc/halal';
 import { blocks, effectiveEnforcement } from '../../lib/enforcement';
 import type { EnforcementSetting } from '../../lib/enforcement';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../ui-v2/GlossaryTermChip';
 
 interface GRInspectionWizardProps {
   onClose: () => void;
@@ -903,7 +905,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                           data-testid={`gr-received-refusal-${i}`}
                           className="mt-1 text-[11px] text-danger"
                         >
-                          {t(GR_QTY_REFUSAL_KEY[qty.reason])}
+                          {t(GR_QTY_REFUSAL_KEY[qty.reason])}{' '}
+                          <GlossaryTermChip
+                            refTo={{ sourceType: 'QtyRefusalReason', term: qty.reason }}
+                          />
                         </div>
                       )}
                     </div>
@@ -930,7 +935,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                           data-testid={`gr-accepted-refusal-${i}`}
                           className="mt-1 text-[11px] text-danger"
                         >
-                          {t(GR_QTY_REFUSAL_KEY[qty.reason])}
+                          {t(GR_QTY_REFUSAL_KEY[qty.reason])}{' '}
+                          <GlossaryTermChip
+                            refTo={{ sourceType: 'QtyRefusalReason', term: qty.reason }}
+                          />
                         </div>
                       )}
                     </div>
@@ -1081,7 +1089,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   </span>{' '}
                   {t(GR_HALAL_REFUSAL_KEY[l.halal.reason], {
                     code: l.halal.materialCode,
-                  })}
+                  })}{' '}
+                  <GlossaryTermChip
+                    refTo={{ sourceType: 'HalalRefusalReason', term: l.halal.reason }}
+                  />
                 </div>
               )}
               {!l.bpom.ok && (
@@ -1095,7 +1106,10 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   </span>{' '}
                   {t(GR_BPOM_REFUSAL_KEY[l.bpom.reason], {
                     code: l.bpom.materialCode,
-                  })}
+                  })}{' '}
+                  <GlossaryTermChip
+                    refTo={{ sourceType: 'BpomRefusalReason', term: l.bpom.reason }}
+                  />
                 </div>
               )}
             </div>

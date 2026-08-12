@@ -49,6 +49,8 @@ import { commHubInboundEn, commHubInboundId } from './commHubInbound';
 import { processFlowsEn, processFlowsId } from './processFlows';
 // — PF-2 purpose annotations —
 import { processFlowPurposeEn, processFlowPurposeId } from './processFlowPurpose';
+// — GL-1 glossary surface (chrome only; the definitions are not i18n keys) —
+import { glossaryEn, glossaryId } from './glossary';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -104,6 +106,10 @@ const FRAGMENTS = [
   // — PF-2 purpose annotations (bilaterally pinned to the registry in
   //   `services/transitions/annotations.test.ts`; this guard is the i18n half) —
   { name: 'processFlowPurpose', en: processFlowPurposeEn, id: processFlowPurposeId },
+  // GL-1 — the glossary PAGE CHROME. The definitions themselves are deliberately
+  // NOT here: they live on the glossary entries, EN and ID on the same object,
+  // which is what makes a vocabulary correction one edit rather than two.
+  { name: 'glossary', en: glossaryEn, id: glossaryId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {

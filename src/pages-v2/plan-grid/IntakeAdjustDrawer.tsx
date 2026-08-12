@@ -17,6 +17,8 @@ import {
   type PrIntakeLine,
   type PushRowState,
 } from './planGridModel';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../../components/ui-v2/GlossaryTermChip';
 
 // ────────────────────────────────────────────────────────────────────────────
 // IntakeAdjustDrawer (Stage G · G1.3.2) — the working-set override surface, in
@@ -210,7 +212,8 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
                 data-testid="accepted-qty-refusal"
                 className="inline-flex items-center rounded-sm border border-danger/30 bg-danger-soft px-1.5 py-0.5 font-medium text-danger"
               >
-                {t(QTY_REFUSAL_KEY[parsed.reason])}
+                {t(QTY_REFUSAL_KEY[parsed.reason])}{' '}
+                <GlossaryTermChip refTo={{ sourceType: 'QtyRefusalReason', term: parsed.reason }} />
               </span>
             )}
           </div>

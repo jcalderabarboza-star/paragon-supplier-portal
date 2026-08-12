@@ -72,6 +72,8 @@ import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
 import BulkStockEntryGrid from './BulkStockEntryGrid';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SupplierForecasts (SDC-2b → SDC-3b) — the P1 supplier SUBMISSION HUB. One
@@ -1313,7 +1315,10 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                     data-testid="confirm-qty-refusal"
                     className="mt-1 text-[11px] text-danger"
                   >
-                    {t(CONFIRM_REFUSAL_KEY[confirmQty.reason])}
+                    {t(CONFIRM_REFUSAL_KEY[confirmQty.reason])}{' '}
+                    <GlossaryTermChip
+                      refTo={{ sourceType: 'QtyRefusalReason', term: confirmQty.reason }}
+                    />
                   </div>
                 )}
                 <div id="sdcsup-qty-hint" className="mt-1 text-[11px] text-text-tertiary">
@@ -1644,7 +1649,12 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                       {sohBatchMismatch && ` — ${t('sdcSup.stock.panel.batchMismatch')}`}
                     </>
                   ) : (
-                    t(SOH_REFUSAL_KEY[sohNormalized.reason])
+                    <>
+                      {t(SOH_REFUSAL_KEY[sohNormalized.reason])}{' '}
+                      <GlossaryTermChip
+                        refTo={{ sourceType: 'QtyRefusalReason', term: sohNormalized.reason }}
+                      />
+                    </>
                   )}
                 </div>
               )}
@@ -1765,7 +1775,10 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
                   data-testid="ship-qty-refusal"
                   className="mt-1 text-xs text-danger"
                 >
-                  {t(SHIP_REFUSAL_KEY[shipQty.reason])}
+                  {t(SHIP_REFUSAL_KEY[shipQty.reason])}{' '}
+                  <GlossaryTermChip
+                    refTo={{ sourceType: 'QtyRefusalReason', term: shipQty.reason }}
+                  />
                 </p>
               ) : (
                 <p id="sdcsup-ship-qty-hint" className="mt-1 text-xs text-text-tertiary">

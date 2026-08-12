@@ -50,6 +50,8 @@ import {
 import { useInvoiceCreate, useInvoiceSubmit } from '../services/query/commandHooks';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 import { readInvoiceAmount } from './invoices/invoiceAmountModel';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
 // CP-0 · W1 · 2f-d — each refusal names what to type instead. Replaces a
 // hard-coded English literal ('PO and a positive amount are required') that
@@ -847,7 +849,10 @@ const SupplierInvoices: React.FC = () => {
                 data-testid="invoice-amount-refusal"
                 className="mt-1 text-[11px] text-danger"
               >
-                {t(INVOICE_AMOUNT_REFUSAL_KEY[amountRead.reason])}
+                {t(INVOICE_AMOUNT_REFUSAL_KEY[amountRead.reason])}{' '}
+                <GlossaryTermChip
+                  refTo={{ sourceType: 'QtyRefusalReason', term: amountRead.reason }}
+                />
               </div>
             )}
             {/* The pre-existing `> 0` rule, finally SAYING SO rather than

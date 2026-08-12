@@ -51,6 +51,8 @@ import {
   seedContractNumber,
   type ContractNumericField,
 } from './contracts/contractCreateModel';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
 type GroupTab =
   | 'all'
@@ -772,7 +774,10 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     data-testid="contract-notice-refusal"
                     className="mt-1 text-[11px] text-danger"
                   >
-                    {t(CONTRACT_NOTICE_REFUSAL_KEY[noticeRead.reason])}
+                    {t(CONTRACT_NOTICE_REFUSAL_KEY[noticeRead.reason])}{' '}
+                    <GlossaryTermChip
+                      refTo={{ sourceType: 'QtyRefusalReason', term: noticeRead.reason }}
+                    />
                   </div>
                 )}
               </div>
@@ -801,7 +806,10 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                 data-testid="contract-value-refusal"
                 className="mt-1 text-[11px] text-danger"
               >
-                {t(CONTRACT_VALUE_REFUSAL_KEY[valueRead.reason])}
+                {t(CONTRACT_VALUE_REFUSAL_KEY[valueRead.reason])}{' '}
+                <GlossaryTermChip
+                  refTo={{ sourceType: 'QtyRefusalReason', term: valueRead.reason }}
+                />
               </div>
             )}
             {/* The pre-existing `> 0` gate, finally SAYING SO. It has always

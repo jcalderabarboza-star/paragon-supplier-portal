@@ -40,6 +40,8 @@ import {
   readConfirmedQuantities,
   seedConfirmQty,
 } from './orders/poConfirmModel';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
@@ -696,7 +698,13 @@ const SupplierOrders: React.FC = () => {
                                     (lineReads[idx] as { reason: QtyRefusalReason })
                                       .reason
                                   ],
-                                )}
+                                )}{' '}
+                                <GlossaryTermChip
+                                  refTo={{
+                                    sourceType: 'QtyRefusalReason',
+                                    term: (lineReads[idx] as { reason: QtyRefusalReason }).reason,
+                                  }}
+                                />
                               </div>
                             )}
                             {/* The bounds mirror — courtesy, not law (see the

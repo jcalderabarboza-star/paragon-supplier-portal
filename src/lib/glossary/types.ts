@@ -1,10 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// GL-0 · THE GLOSSARY CONTRACT — headless.
+// GL-0 · THE GLOSSARY CONTRACT.
 //
-// ⚠️ **NO PAGE, NO LINK, NO RENDER.** Nothing imports this from a surface, and
-// that is the batch's fence (GL-1 owns the page and the refusal-site links).
-// What ships here is the VOCABULARY: one definition, in one place, for terms
-// that until now existed only as type members.
+// ⚠️ **GL-0's "NO PAGE, NO LINK, NO RENDER" HAS BEEN SPENT — GL-1 BUILT BOTH.**
+// The fence was a batch boundary, not a property of this file, and leaving the
+// sentence standing would have made the header lie the moment it was crossed.
+// `pages-v2/Glossary.tsx` renders every registry, and `ui-v2/GlossaryTermChip`
+// links refusal sites to it. What ships HERE is unchanged: the VOCABULARY —
+// one definition, in one place, for terms that existed only as type members.
 //
 // ── WHY, AND IT IS NOT A REFERENCE PAGE ─────────────────────────────────────
 //   The procurement team's review is running. A glossary is what makes their
@@ -38,10 +40,11 @@ export interface GlossaryEntry {
   /**
    * Where a reader goes to act on this term.
    *
-   * ⚠️ **OPTIONAL, AND ABSENT ON EVERY ENTRY IN THIS BATCH. ABSENT RENDERS
-   * NOTHING.** The glossary closes the DEFINITIONAL half of
-   * `HALAL-REFUSAL-DEAD-ENDS-01` — a refusal that told you only that you were
-   * stuck can now at least be looked up. **THE ROUTING HALF STAYS OPEN**,
+   * ⚠️ **OPTIONAL, AND STILL ABSENT ON EVERY ENTRY. ABSENT RENDERS NOTHING** —
+   * and GL-1, which built the page and the chips, did not populate one. The
+   * glossary closes the DEFINITIONAL half of `HALAL-REFUSAL-DEAD-ENDS-01` — a
+   * refusal that told you only that you were stuck can now at least be looked
+   * up, from the refusal itself. **THE ROUTING HALF STAYS OPEN**,
    * because the destination does not exist: who rules on a halal
    * determination, where they do it, and what the clerk does meanwhile are
    * unanswered (D-COMP-HALAL-4). The field is declared so the shape is agreed;

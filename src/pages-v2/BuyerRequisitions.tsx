@@ -41,6 +41,8 @@ import { DataError } from '../services/data/types';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
 import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
 // ── CP-0 · W1 · PR-2b — the New-PR quantity is PARSED, never coerced ─────────
 // `Number(form.qty)` behind a `type="number"` field read "4.500" as 4.5, so a
@@ -708,7 +710,10 @@ const BuyerRequisitions: React.FC = () => {
                     data-testid="new-pr-qty-refusal"
                     className="mt-1 text-[11px] text-danger"
                   >
-                    {t(QTY_REFUSAL_KEY[parsedQty.reason])}
+                    {t(QTY_REFUSAL_KEY[parsedQty.reason])}{' '}
+                    <GlossaryTermChip
+                      refTo={{ sourceType: 'QtyRefusalReason', term: parsedQty.reason }}
+                    />
                   </div>
                 )}
                 <div className="mt-1 text-[11px] text-text-tertiary">

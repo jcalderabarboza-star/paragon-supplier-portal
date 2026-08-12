@@ -31,6 +31,8 @@ import { formatNumber } from '../lib/format';
 import { normalizeQty, type QtyOutcome, type QtyRefusalReason } from '../lib/localeNumber';
 import XlsxImportPanel from './XlsxImportPanel';
 import type { BatchGridRow } from './xlsxImportMap';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SDC-3c-b — the EDITABLE bulk stock-entry grid (DEC-MAGIC-LINK-GRID, visible).
@@ -498,7 +500,12 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
           data-testid="sdcsup-bulk-summary"
         >
           {!total.ok
-            ? t(TOTAL_REFUSAL_KEY[total.reason])
+            ? (
+              <>
+                {t(TOTAL_REFUSAL_KEY[total.reason])}{' '}
+                <GlossaryTermChip refTo={{ sourceType: 'QtyRefusalReason', term: total.reason }} />
+              </>
+            )
             : unreadable > 0
               ? // No Σ is printed at all: a sum across an unknown is not a sum.
                 t('sdcSup.bulk.batchSum.refused', { count: unreadable })
