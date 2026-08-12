@@ -263,6 +263,16 @@ false-affordance sweep):
    which accused fully-wired code of lying. Re-derive after every widening too,
    not only after every narrowing.
 
+3. ⚠️ **NEVER CONCLUDE ABSENCE FROM A TRUNCATED VIEW OF A DERIVATION.** Rules 1
+   and 2 guard the matcher; this one guards the READING. At GL-0 the union
+   derivation was correct (143/580) and a `sed -n '80,200p'` window over its
+   265-line output did not show the halal/BPOM unions — briefly read as "the
+   tree is missing them" when they were present throughout. **Assert membership
+   programmatically** (`grep -c` the derived output, or filter the derivation)
+   rather than paging it: a `head`/`sed` window is a sampling instrument, and
+   reading absence out of a sample is the same error one layer up — a
+   conclusion reporting on the instrument rather than on the tree.
+
 Handler shapes in THIS codebase that a naive matcher misses: custom props
 (`onQualify`, `onInviteRfq`, `onUpdate`), and **named handlers hoisted out of
 the JSX** (`const handleExport = () => …`) — which is where the largest pages

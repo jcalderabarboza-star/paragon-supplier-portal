@@ -10681,3 +10681,85 @@ term unable to exist without a definition.
 **Gates green: 2862 tests / 205 files / 7 gate tests.** Floor bumped from
 2848/203.
 
+
+
+---
+
+## §31 — GL-0 addenda: a correction against the dispatch, the review's opening rows, and a heuristic that fired late
+
+### 31a — ⚠️ CORRECTION AGAINST THE DISPATCH: the tree already had it
+
+The GL-0 dispatch listed **flow states and transitions** in the derivable
+population. **They were already built.** `services/transitions/annotations.ts`
+holds an authored purpose per flow and per transition, keyed by derived
+identity; `lib/i18n/processFlowPurpose.ts` holds the prose in EN + ID;
+`annotations.test.ts` pins the two bilaterally in both directions.
+
+That is a glossary in everything but name, and **re-authoring it under a new
+heading would have produced THE SECOND COPY THAT FILE'S OWN HEADER FORBIDS** —
+the copy being, as that header says, the half that goes wrong silently. Building
+the listed item would have been the defect.
+
+**Recorded as a correction against the dispatch, not as a scope choice**, and
+the distinction matters: a batch that quietly declines a listed item looks
+identical to a batch that forgot it (`DECISION-RECORDED-NOT-EXECUTED-01`, §28,
+the same shape one register over). The general form worth keeping:
+
+⚠️ **BEFORE BUILDING A LISTED ITEM, CHECK WHETHER THE TREE ALREADY HAS IT UNDER
+ANOTHER NAME.** A dispatch is written from the outside; the tree is the
+authority on what exists. PF-2 shipped the flow glossary without calling it one,
+so a later reader searching for "glossary" would not have found it — which is
+how a tree comes to hold two.
+
+### 31b — THE PROCUREMENT REVIEW'S FIRST THREE ROWS
+
+⚠️ **`CHAOS`, `legacy-4yr`, `AS_SET` — show these first.**
+
+They are the three of 66 whose definition could not be written without reading
+the implementation. **A TERM THE PLATFORM CANNOT EXPLAIN IS A BETTER OPENING
+QUESTION THAN ANY SCREEN**: it asks the team what they call the thing, rather
+than asking them to react to what we called it.
+
+| Term | The question it opens |
+|---|---|
+| `CHAOS` (`DataErrorCode`) | Nothing in the name says *dev-only, env-gated fault injector, never occurs in production*. What does the team call a fault the system caused on purpose? |
+| `legacy-4yr` (`CertBasis`) | Compresses a policy into a member name — but not which scheme, nor why four years. What does the team call the transitional term? |
+| `AS_SET` (`EnforcementModeSource`) | Means *nothing intervened* — a statement about the OTHER four members, unreadable without them. What does the team call the ordinary case? |
+
+**THE STRUCTURAL EXPLANATION, kept verbatim because it predicts where the next
+three will be: PF-2 GOT ZERO OF NINETY-ONE BECAUSE VERBS ARE NAMED FOR ACTS;
+CODES CAN BE NAMED FOR THEIR MECHANISM, AND A MECHANISM-NAME READS FINE TO
+WHOEVER WROTE THE MECHANISM.** A verb that misnames its act is obvious to
+everyone. A code that names its mechanism is obvious only to its author. So the
+next undefinable terms will be found among CODES AND STATES, not verbs — and
+disproportionately among those whose names encode HOW rather than WHAT.
+
+### 31c — THE HEURISTIC FIRED, BUT A STEP LATE
+
+The standing heuristic (`CLAUDE.md`, *"a derived population that comes back
+suspiciously small or round is reporting on its own matcher"*) **worked and
+caught the error — one step later than it should have.**
+
+What happened: the union derivation returned 143 / 580 — correctly, and not a
+suspicious shape, so the heuristic had nothing to fire on. I then read the
+result through a **truncated view** (`sed -n '80,200p'`), did not see the
+halal/BPOM unions in the window, and briefly concluded they were missing from
+the tree. They were present the whole time. The heuristic fired only at the next
+step, when I went to grep the tree and found them.
+
+⚠️ **THE MISSING EARLIER TRIGGER, and it is the useful half: THE SUSPICIOUS
+THING WAS NOT THE POPULATION — IT WAS MY VIEW OF IT.** The heuristic guards
+against a bad matcher and has nothing to say about a bad *reading*. The trigger
+that would have caught it one step sooner:
+
+**NEVER CONCLUDE ABSENCE FROM A TRUNCATED VIEW OF A DERIVATION. ASSERT
+MEMBERSHIP PROGRAMMATICALLY** — `grep -c` the derived output for the expected
+member, or filter the derivation rather than paging it. A `head`/`sed` window
+over a 265-line result is a sampling instrument, and reading absence out of a
+sample is the same error class the heuristic already names, one layer up: **a
+conclusion reporting on the instrument rather than on the tree.**
+
+Added to the standing heuristic in `CLAUDE.md` as its third rule, because a
+heuristic that fires late needs an earlier trigger, and knowing exactly where it
+fired is how the earlier one gets found.
+
