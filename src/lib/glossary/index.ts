@@ -48,7 +48,6 @@ export {
   ENFORCEMENT_MODE_SOURCE_GLOSSARY,
   COMPLIANCE_DISPLAY_GLOSSARY,
   CERT_TYPE_GLOSSARY,
-  CERT_BASIS_GLOSSARY,
   HALAL_APPLICABILITY_GLOSSARY,
   BPOM_APPLICABILITY_GLOSSARY,
 } from './governance.glossary';
@@ -71,7 +70,6 @@ import {
   ENFORCEMENT_MODE_SOURCE_GLOSSARY,
   COMPLIANCE_DISPLAY_GLOSSARY,
   CERT_TYPE_GLOSSARY,
-  CERT_BASIS_GLOSSARY,
   HALAL_APPLICABILITY_GLOSSARY,
   BPOM_APPLICABILITY_GLOSSARY,
 } from './governance.glossary';
@@ -102,7 +100,6 @@ export const GLOSSARY_REGISTRIES: readonly {
   { sourceType: 'EnforcementModeSource', sourceFile: 'src/lib/enforcement.ts', entries: ENFORCEMENT_MODE_SOURCE_GLOSSARY },
   { sourceType: 'ComplianceDisplayStatus', sourceFile: 'src/services/data/types.ts', entries: COMPLIANCE_DISPLAY_GLOSSARY },
   { sourceType: 'CertType', sourceFile: 'src/services/data/types.ts', entries: CERT_TYPE_GLOSSARY },
-  { sourceType: 'CertBasis', sourceFile: 'src/services/data/types.ts', entries: CERT_BASIS_GLOSSARY },
   { sourceType: 'HalalApplicability', sourceFile: 'src/services/sdc/types.ts', entries: HALAL_APPLICABILITY_GLOSSARY },
   { sourceType: 'BpomApplicability', sourceFile: 'src/services/sdc/types.ts', entries: BPOM_APPLICABILITY_GLOSSARY },
 ]);

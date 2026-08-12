@@ -99,7 +99,8 @@ const SupplierDocuments: React.FC = () => {
   const [activeDoc, setActiveDoc] = useState<SupplierDocument | null>(null);
   const [uploaded, setUploaded] = useState(false);
   // I3.4 (FORK-1=(c)) — the halal-renewal walkthrough. Read-only guidance; a
-  // shared SIHALAL path (no per-document/certBasis branching). Opened from the
+  // shared SIHALAL path (no per-document branching; the `certBasis` this once
+  // named was deleted at D-A). Opened from the
   // per-document "Renew" action AND the standalone "How to renew" entry.
   const [lessonOpen, setLessonOpen] = useState(false);
   const lessonSteps = useMemo(

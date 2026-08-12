@@ -29,11 +29,29 @@ function day(nowIso: string): string {
 export const EXPIRING_WINDOW_DAYS = 90;
 
 /** The BPJPH mandate date (GR 42/2024): from this day a MUI-legacy halal cert no
- *  longer satisfies the Indonesian halal mandate, regardless of its own validity. */
+ *  longer satisfies the Indonesian halal mandate, regardless of its own validity.
+ *
+ *  ── ⚠️ THE STATUTORY FACTS, KEPT HERE BECAUSE D-A DELETED THEIR OLD HOME ────
+ *  `certBasis` carried these two clock models and was READ BY NOTHING while
+ *  four documents disagreed about what it meant, so it was deleted rather than
+ *  reconciled. **The statute did not go with it**, and it is the part that is
+ *  genuinely hard to recover — not derivable from the data, and the fixtures
+ *  actively disagreed with it:
+ *
+ *    · A BPJPH cert (GR 42/2024) has PERMANENT VALIDITY. There is no expiry to
+ *      record, which is why `expiryDate` is legitimately `null` for one.
+ *    · ⚠️ A LEGACY (GR-39 / MUI) CERT'S TERM IS **ISSUANCE PLUS FOUR YEARS BY
+ *      STATUTE, REGARDLESS OF WHAT THE DOCUMENT PRINTS.** The printed date is
+ *      not authority; the statute is. Anything that later computes a legacy
+ *      cert's expiry must derive it from `issueDate`, NOT trust `expiryDate`.
+ *
+ *  Recorded as knowledge, NOT re-introduced as a field: nothing reads it today,
+ *  and a field nothing reads is how the last disagreement went unnoticed. */
 export const BPJPH_MANDATE_DATE = '2026-10-17';
 
 /** Whole days until `expiryDate` from `now` (negative = past expiry). `null` when
- *  the cert has no expiry — unknown (never guessed) OR a permanent-basis cert. */
+ *  the cert has no expiry — unknown (never guessed) OR a BPJPH cert, which has
+ *  permanent validity under GR 42/2024 and so has no expiry to record. */
 export function daysRemaining(entry: ComplianceRegistryEntry, nowIso: string): number | null {
   if (entry.expiryDate === null) return null;
   const expiry = Date.parse(entry.expiryDate);
@@ -65,8 +83,23 @@ export function computeStatus(
  *  does NOT close until REAL issuer data backs it. */
 export function schemeValid(entry: ComplianceRegistryEntry, nowIso: string): boolean {
   const status = computeStatus(entry, nowIso);
+  // (1) THE CLOCK. Derived from `expiryDate` + today, never stored. Missing and
+  //     Under Review are not failures of the clock — they are states in which no
+  //     clock has started — and all three are equally not-valid here.
   if (status === 'Missing' || status === 'Under Review' || status === 'Expired') return false;
+  // (2) THE SCHEME. Judged from `certType` — the cert's ISSUING SCHEME — and the
+  //     statutory mandate date. This is the ONLY condition that asks what KIND of
+  //     certificate it is.
   if (entry.certType === 'HALAL_MUI_LEGACY' && day(nowIso) >= BPJPH_MANDATE_DATE) return false;
+  // (3) Otherwise valid.
+  //
+  // ⚠️ **D-A — READ (1), (2) AND (3) TOGETHER: NONE OF THEM CONSULTS A VALIDITY
+  // BASIS, AND THAT IS THE EVIDENCE THE DELETED FIELD WAS UNREAD.** `certBasis`
+  // existed to disambiguate two clock models; condition (1) takes its clock
+  // straight from `expiryDate`, and condition (2) takes its scheme straight from
+  // `certType`. Both dimensions the field claimed to carry were already carried
+  // by fields that ARE read. The statutory facts it encoded are preserved on
+  // `BPJPH_MANDATE_DATE` above.
   return true;
 }
 

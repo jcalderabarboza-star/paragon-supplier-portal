@@ -14,7 +14,8 @@ import { Layers, FileCheck2, Building2, Clock, UploadCloud } from 'lucide-react'
 // validity and needs re-certification only on a composition / Halal Product
 // Process (PPH) change; a legacy MUI / GR-39 certificate carries a fixed expiry
 // and must migrate to BPJPH. The FIRST step names both triggers, then all steps
-// share ONE SIHALAL path (no per-`certBasis` branching — that content engine is
+// share ONE SIHALAL path (no per-certificate branching — D-A deleted `certBasis`,
+// so the field this once promised not to read is gone — that content engine is
 // deferred; a single shared path is also what the team's Compliance session
 // ratifies). Every specific regulatory fact routes to `HALAL_RENEWAL_SOURCE`.
 // ────────────────────────────────────────────────────────────────────────────
