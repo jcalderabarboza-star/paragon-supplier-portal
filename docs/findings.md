@@ -10327,3 +10327,147 @@ importers, zero specs, zero blast radius**, and nothing in the register or the
 forward plan names a consumer. It is the only member of the R1 orphan set that
 survives this rule.
 
+
+
+---
+
+## §26 — `PHASE-STAMP-MUST-NAME-WHICH-HALF-01` (R3, GENERAL FORM — the class behind §21)
+
+**A PHASE STAMP MUST NAME WHICH HALF IT CLAIMS, OR IT CLAIMS BOTH TO A READER
+AND NEITHER TO A CHECKER.**
+
+The compliance case is the specimen. `I3 COMPLETE` was **true**: the canonical
+compliance machine was authored, `BuyerCompliance` was re-pointed onto the
+`useDataService()` seam, `COMPLIANCE-CARVEOUT-01` was closed, and the
+SIMULATED→LIVE flip harness was proven. **A COMPLETE READ PATH AND AN INERT
+WRITE PATH ARE COMPATIBLE**, and the stamp never said which one it meant — so a
+reader took it for both, and no check could take it for either.
+
+**THAT IS HOW A WHOLE MACHINE STAYED OUT OF A COUNT FOR FOUR PHASES. NOT
+CONCEALMENT — AN AMBIGUOUS COMPLETION CLAIM.** Nobody hid that
+`t_compliance_submit` / `_verify` / `_reject` cannot fire. The claim simply had
+no field for it, so there was nowhere for the fact to be false.
+
+**THE REMEDY IS SHAPE, NOT DILIGENCE.** "Read the stamp more carefully" does not
+survive a phase boundary. A completion claim carries a half:
+
+| Half | The question it answers | The check that can falsify it |
+|---|---|---|
+| **READ-COMPLETE** | Can a user SEE the truth, through the real seam, honestly marked? | The page reads via `useDataService()`; liveness is derived, not asserted |
+| **WRITE-COMPLETE** | Can a user CHANGE it — is there a `CommandTarget` and does any verb dispatch? | The entity key is in `WIRED_COMMAND_TARGETS`; verbs have callers |
+
+A stamp naming neither is a stamp that cannot go stale, and **a claim that
+cannot go stale is not a claim.** This is the same defect one grain up from
+`FLOOR-IN-PROSE-01` (a number nothing can falsify) and one grain down from
+`SPEC-OMITS-THE-HONESTY-FIELD-01` (a record with no field for the fact).
+
+**Applies to every future phase stamp**, and to the I-lane stamps most of all:
+each Stage-I capability ships fixture-first behind honest markers and flips Live
+when its Stage-F prerequisite lands — which is precisely a phase whose read half
+and write half complete on different dates.
+
+---
+
+## §27 — `PROSE-CARRYING-COUNTS-01` (R3, GENERAL FORM — kept beside §21 deliberately)
+
+**TWO ERRORS IN ONE SENTENCE IS THE EVIDENCE THAT PROSE CARRYING COUNTS IS THE
+DEFECT, NOT THE COUNTS.**
+
+The `CLAUDE.md` sentence corrected at R2 was wrong **twice, independently**:
+
+1. *"FOUR remain author-unwired"* — the population is **seven**.
+2. *"Wired CommandTargets now number 10, not 6"* — they number **11**, and the
+   line refs cited alongside had drifted **~150 lines**.
+
+Same sentence. Same cause. **Neither number had anything that could falsify it**,
+so both rotted on the commits that changed what they described, and the sentence
+carried on asserting. The second is the more damning: it already contains its
+own correction history (*"10, not 6"*), which proves somebody updated it once —
+and it was wrong again by the next phase. **A number that gets hand-corrected
+routinely is not maintained; it is a number somebody edits.** (The floor learned
+this first: `FLOOR-IN-PROSE-01`, CP-3a, and the remedy there was to delete the
+number from prose and point at the file that holds it.)
+
+**THE RULE: A COUNT IN PROSE MUST EITHER BE DERIVED AT READ TIME OR NAME THE
+DERIVATION THAT PRODUCES IT.** `CLAUDE.md` now points at `TARGETS` /
+`WIRED_COMMAND_TARGETS` and at `getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`
+rather than restating their cardinality, and says so in-line: *do not restate
+this number without re-deriving it.*
+
+---
+
+## §28 — `mockKpis.ts` + `kpi.types.ts` RETIRED (R3, CLOSED)
+
+**166 lines deleted** — `src/data/mockKpis.ts` (93) and `src/types/kpi.types.ts`
+(73). The only member of the R1 orphan set that survives `UNUSED-IS-NOT-USELESS-01`
+(§25).
+
+| Test | Result |
+|---|---|
+| Production importers | **ZERO** — unreachable from `main.tsx`'s import graph |
+| Spec importers | **ZERO** — no test file references either module |
+| Cross-references (repo-wide, all extensions) | Only each other, plus documentation |
+| Blast radius | **NONE** — no route, no nav entry, no i18n key, no fixture consumer |
+| **Named consumer in the register or the forward plan** | **NONE — AND THAT IS THE CLAUSE THAT DISTINGUISHES R3 FROM THE TWO FILES WE JUST KEPT** |
+
+That last row is the whole argument. `shouldCostBacktest.ts` and
+`commodityHistory.ts` are equally unimported, and they were **kept** because
+Stage I · I2 names them. `halalVerification.ts` is equally unimported and was
+kept because H4 / `D-COMP-HALAL-4` names it. **Nothing names these two.**
+
+**The forward plan does better than not naming them — IT NAMED THEM FOR
+DELETION.** `docs/Supplier_Portal_End_to_End_Plan_v1.1.md:219` lists
+`kpi.types.ts` under the `types/` row and records it *"Slated for Batch 1.4
+removal."* Batch 1.4 shipped the canonical `PurchaseOrder` (PR #33) and this
+file was left behind. **R3 is not a new retirement decision; it is the execution
+of one taken at Batch 1.4 and never carried out.** Retiring it also does not
+disturb `MOCK-RETIREMENT-SCOPE-01` (§ above): `mockKpis` is explicitly one of
+the FIVE of the ten legacy mock files that *"carry no material identity at
+all"*, and that finding's headline — the type-home / seed argument that makes
+the other five undeletable — never applied to it.
+
+**NO ABSENCE TEST WAS ADDED. THE GUARD IS `tsc`.** An absence test asserting
+"this module does not exist" is a test of the filesystem, not of behaviour: it
+passes forever, tells nobody anything, and its only effect is to raise the floor
+so a future re-introduction is harder to notice rather than easier. The build
+gate (`tsc && vite build`) fails on the first import of a module that is gone,
+which is the whole of the guarantee needed and costs nothing to maintain.
+
+**Floor: UNCHANGED at 2848/203/7.** Both files had zero specs, so nothing came
+down with them — the retirement that costs no test is exactly the retirement
+`UNUSED-IS-NOT-USELESS-01` permits.
+
+**`README.md` updated in the same commit** (its `src/` tree listed both files).
+A document that describes a system is part of the system, and it goes stale on
+the commit that changes what it describes, not later — the discipline §17a and
+§16a already record. ⚠️ **Not fixed here and worth a later batch:** the rest of
+that README tree is broadly stale on its own account (it still describes
+`context/PersonaContext.tsx` and a `pages/buyer/` layout that the v2 migration
+replaced). Two lines were removed because this commit made them false; the
+remainder was already false and is not R3's to sweep.
+
+---
+
+## §25 amendment — `UNUSED-IS-NOT-USELESS-01`, SHARPENED (R3, operator-ratified)
+
+The rule as first stated was **"unused is not the same as useless."** Ratified,
+and now sharpened, because the two files it saved were not saved for the same
+reason:
+
+**SOME ARTIFACTS ARE IRREPRODUCIBLE, AND THOSE DESERVE A STRONGER PRESUMPTION
+THAN MERELY USEFUL ONES.**
+
+| Module | Why kept | Strength of the presumption |
+|---|---|---|
+| `lib/shouldCostBacktest.ts` | Stage I · I2 names it | **USEFUL.** 330 lines of harness. If it were lost, it could be **rebuilt from its spec** — the build plan §6 states the six acceptance episodes and the falsification check it implements |
+| `services/data/mock/fixtures/commodityHistory.ts` | Stage I · I2 names it | **IRREPRODUCIBLE.** 257 lines of **vendored OBSERVED × SNAPSHOT(as-of) commodity history with documented provenance** — real, honestly-dated prices, distinctly marked as live-fetched vs sourced from the public record. **CODE CAN BE REWRITTEN FROM A SPEC; THAT RECORD CANNOT.** Re-vendoring it means re-sourcing historical prices as-of dates now past, and the provenance marks could not be reconstructed at all |
+| `services/data/halalVerification.ts` | H4 / `D-COMP-HALAL-4` names it | **USEFUL.** Rebuildable from the ratified three-fact split |
+
+**The operational consequence:** a future census may legitimately re-open the
+*useful* rows if their named consumer is abandoned — if I2 is cut, the backtest
+harness is a fair question again. **It may not re-open the irreproducible one on
+those grounds.** The harness's justification is its future; the history's
+justification is its past, and cutting I2 does not un-observe a price. A record
+whose value survives the cancellation of the feature that motivated it is not
+held by that feature.
+

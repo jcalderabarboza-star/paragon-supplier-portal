@@ -91,8 +91,7 @@ src/
 ├── data/
 │   ├── mockPurchaseOrders.ts  # 15 POs across 8 suppliers
 │   ├── mockSuppliers.ts       # 8 supplier profiles with scorecards
-│   ├── mockInventory.ts       # 20 inventory records
-│   └── mockKpis.ts            # KPI values and alert counts
+│   └── mockInventory.ts       # 20 inventory records
 ├── pages/
 │   ├── auth/Login.tsx
 │   ├── buyer/                 # 5 buyer pages
@@ -103,8 +102,7 @@ src/
 ├── theme/
 │   └── fioriTheme.ts          # Design tokens (colours, shell constants)
 ├── types/
-│   ├── supplier.types.ts      # POStatus, StockStatus, ChannelType enums
-│   └── kpi.types.ts           # KpiItem interface
+│   └── supplier.types.ts      # POStatus, StockStatus, ChannelType enums
 ├── index.css                  # Inter font, portal-card utilities, scrollbar
 └── main.tsx                   # React root, ThemeProvider, CSS import
 ```
