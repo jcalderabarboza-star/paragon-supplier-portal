@@ -57,7 +57,7 @@ export const supplierMyStorefrontEn: Record<string, string> = {
   'supplierMyStorefront.field.employees': 'Employees',
   'supplierMyStorefront.field.revenue': 'Revenue',
   'supplierMyStorefront.field.description': 'Description',
-  'supplierMyStorefront.toast.profileUpdated': 'Company profile updated',
+  'supplierMyStorefront.toast.profileUpdated': 'Profile changes not saved — storefront editing is not wired to a real store.',
   // — Step 2: materials I supply —
   'supplierMyStorefront.step2.title': 'Materials I supply',
   'supplierMyStorefront.step2.description':
@@ -104,14 +104,14 @@ export const supplierMyStorefrontEn: Record<string, string> = {
   'supplierMyStorefront.step4.title': 'Preferred communication channels',
   'supplierMyStorefront.step4.description':
     'Primary channel is used for time-sensitive notifications; fallback only when primary fails.',
-  'supplierMyStorefront.toast.channelUpdated': 'Channel preferences updated',
+  'supplierMyStorefront.toast.channelUpdated': 'Channel preferences not saved — storefront editing is not wired to a real store.',
   'supplierMyStorefront.channel.primary': 'PRIMARY',
   'supplierMyStorefront.channel.fallback': 'FALLBACK',
   // — Step 5: business hours & timezone —
   'supplierMyStorefront.step5.title': 'Business hours & timezone',
   'supplierMyStorefront.step5.description':
     "When you're available to respond. Drives bot escalation timing.",
-  'supplierMyStorefront.toast.hoursUpdated': 'Business hours updated',
+  'supplierMyStorefront.toast.hoursUpdated': 'Business hours not saved — storefront editing is not wired to a real store.',
   'supplierMyStorefront.field.businessHours': 'Business hours',
   'supplierMyStorefront.field.to': 'to',
   'supplierMyStorefront.field.timezone': 'Timezone',
@@ -188,7 +188,7 @@ export const supplierMyStorefrontId: Record<string, string> = {
   'supplierMyStorefront.field.employees': 'Karyawan',
   'supplierMyStorefront.field.revenue': 'Pendapatan',
   'supplierMyStorefront.field.description': 'Deskripsi',
-  'supplierMyStorefront.toast.profileUpdated': 'Profil perusahaan diperbarui',
+  'supplierMyStorefront.toast.profileUpdated': 'Perubahan profil tidak disimpan — penyuntingan etalase belum tersambung ke penyimpanan nyata.',
   // — Step 2: materials I supply —
   'supplierMyStorefront.step2.title': 'Material yang saya pasok',
   'supplierMyStorefront.step2.description':
@@ -235,14 +235,14 @@ export const supplierMyStorefrontId: Record<string, string> = {
   'supplierMyStorefront.step4.title': 'Kanal komunikasi pilihan',
   'supplierMyStorefront.step4.description':
     'Kanal utama digunakan untuk notifikasi mendesak; cadangan hanya saat kanal utama gagal.',
-  'supplierMyStorefront.toast.channelUpdated': 'Preferensi kanal diperbarui',
+  'supplierMyStorefront.toast.channelUpdated': 'Preferensi kanal tidak disimpan — penyuntingan etalase belum tersambung ke penyimpanan nyata.',
   'supplierMyStorefront.channel.primary': 'UTAMA',
   'supplierMyStorefront.channel.fallback': 'CADANGAN',
   // — Step 5: business hours & timezone —
   'supplierMyStorefront.step5.title': 'Jam kerja & zona waktu',
   'supplierMyStorefront.step5.description':
     'Saat Anda tersedia untuk merespons. Menentukan waktu eskalasi bot.',
-  'supplierMyStorefront.toast.hoursUpdated': 'Jam kerja diperbarui',
+  'supplierMyStorefront.toast.hoursUpdated': 'Jam kerja tidak disimpan — penyuntingan etalase belum tersambung ke penyimpanan nyata.',
   'supplierMyStorefront.field.businessHours': 'Jam kerja',
   'supplierMyStorefront.field.to': 'sampai',
   'supplierMyStorefront.field.timezone': 'Zona waktu',

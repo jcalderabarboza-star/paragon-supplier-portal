@@ -23,7 +23,7 @@ export const riskEn: Record<string, string> = {
     'Geopolitical · single-source · compliance · financial risk — illustrative scenario intelligence.',
   'risk.action.exportReport': 'Export Report',
   'risk.action.configureAlerts': 'Configure Alerts',
-  'risk.toast.exportStarting': 'Risk report export starting',
+  'risk.toast.exportStarting': 'Risk report export not available yet — no file was generated.',
   'risk.toast.alertConfig.title': 'Alert configuration',
   'risk.toast.alertConfig.desc': 'Channel rules editor coming in Phase 2A.',
   // — Meta line (honest illustrative caption; the LivenessPill carries the SIMULATED marker) —
@@ -103,8 +103,8 @@ export const riskEn: Record<string, string> = {
   'risk.toast.warRoomForwarded.title': 'Scenario forwarded to War Room',
   'risk.toast.warRoomForwarded.desc':
     '{{title}} dispatched to procurement leadership.',
-  'risk.toast.activationInitiated': '{{name}} activation initiated',
-  'risk.toast.openingAnalysis': 'Opening full analysis for {{id}}',
+  'risk.toast.activationInitiated': 'Plan activation not available yet — nothing was activated for {{name}}.',
+  'risk.toast.openingAnalysis': 'Full analysis not available yet — {{id}} has no detail view.',
   // — Compliance Risks tab —
   'risk.compliance.actionRequired': 'Action required: ',
   'risk.compliance.certWarnPrefix': "{{supplier}}'s {{type}} expires in ",
@@ -127,8 +127,8 @@ export const riskEn: Record<string, string> = {
   'risk.compliance.differentAngleSuffix':
     ': this view focuses on expiry urgency for risk-exposed suppliers only.',
   // — Compliance toasts —
-  'risk.toast.urgentRenewal': 'Urgent renewal requested for {{supplier}}',
-  'risk.toast.reminderSent': 'Reminder sent to {{supplier}}',
+  'risk.toast.urgentRenewal': 'Urgent renewal not available yet — nothing was requested from {{supplier}}.',
+  'risk.toast.reminderSent': 'Reminder not available yet — nothing was sent to {{supplier}}.',
   // — Commodity Prices tab —
   'risk.commodity.alertIf': 'Alert if {{dir}}:',
   'risk.commodity.dirAbove': 'above',
@@ -157,7 +157,7 @@ export const riskId: Record<string, string> = {
     'Geopolitik · sumber tunggal · kepatuhan · risiko finansial — intelijen skenario ilustratif.',
   'risk.action.exportReport': 'Ekspor Laporan',
   'risk.action.configureAlerts': 'Konfigurasi Peringatan',
-  'risk.toast.exportStarting': 'Ekspor laporan risiko dimulai',
+  'risk.toast.exportStarting': 'Ekspor laporan risiko belum tersedia — tidak ada berkas yang dibuat.',
   'risk.toast.alertConfig.title': 'Konfigurasi peringatan',
   'risk.toast.alertConfig.desc': 'Editor aturan kanal hadir pada Fase 2A.',
   // — Meta line (honest illustrative caption; the LivenessPill carries the SIMULATED marker) —
@@ -234,8 +234,8 @@ export const riskId: Record<string, string> = {
   'risk.toast.warRoomForwarded.title': 'Skenario diteruskan ke War Room',
   'risk.toast.warRoomForwarded.desc':
     '{{title}} dikirim ke pimpinan pengadaan.',
-  'risk.toast.activationInitiated': 'Aktivasi {{name}} dimulai',
-  'risk.toast.openingAnalysis': 'Membuka analisis lengkap untuk {{id}}',
+  'risk.toast.activationInitiated': 'Aktivasi rencana belum tersedia — tidak ada yang diaktifkan untuk {{name}}.',
+  'risk.toast.openingAnalysis': 'Analisis lengkap belum tersedia — {{id}} tidak memiliki tampilan detail.',
   // — Compliance Risks tab —
   'risk.compliance.actionRequired': 'Tindakan diperlukan: ',
   'risk.compliance.certWarnPrefix': '{{type}} milik {{supplier}} kedaluwarsa dalam ',
@@ -258,8 +258,8 @@ export const riskId: Record<string, string> = {
   'risk.compliance.differentAngleSuffix':
     ': tampilan ini berfokus pada urgensi kedaluwarsa hanya untuk pemasok yang berisiko.',
   // — Compliance toasts —
-  'risk.toast.urgentRenewal': 'Pembaruan mendesak diminta untuk {{supplier}}',
-  'risk.toast.reminderSent': 'Pengingat dikirim ke {{supplier}}',
+  'risk.toast.urgentRenewal': 'Pembaruan mendesak belum tersedia — tidak ada yang diminta dari {{supplier}}.',
+  'risk.toast.reminderSent': 'Pengingat belum tersedia — tidak ada yang dikirim ke {{supplier}}.',
   // — Commodity Prices tab —
   'risk.commodity.alertIf': 'Peringatan jika {{dir}}:',
   'risk.commodity.dirAbove': 'di atas',

@@ -31,7 +31,7 @@ export const buyerAnalyticsEn: Record<string, string> = {
     'YTD performance metrics and procurement insights.',
   // — Header action + toast —
   'buyerAnalytics.action.export': 'Export Report',
-  'buyerAnalytics.toast.exportStarting': 'Report export starting',
+  'buyerAnalytics.toast.exportStarting': 'Report export not available yet — no file was generated.',
   // — Meta line —
   'buyerAnalytics.meta.suppliers.one': '{{count}} supplier',
   'buyerAnalytics.meta.suppliers.other': '{{count}} suppliers',
@@ -96,7 +96,7 @@ export const buyerAnalyticsId: Record<string, string> = {
     'Metrik kinerja YTD dan wawasan pengadaan.',
   // — Header action + toast —
   'buyerAnalytics.action.export': 'Ekspor Laporan',
-  'buyerAnalytics.toast.exportStarting': 'Ekspor laporan dimulai',
+  'buyerAnalytics.toast.exportStarting': 'Ekspor laporan belum tersedia — tidak ada berkas yang dibuat.',
   // — Meta line —
   'buyerAnalytics.meta.suppliers.one': '{{count}} pemasok',
   'buyerAnalytics.meta.suppliers.other': '{{count}} pemasok',

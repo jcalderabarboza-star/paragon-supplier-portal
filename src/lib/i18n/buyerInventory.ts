@@ -79,11 +79,11 @@ export const buyerInventoryEn: Record<string, string> = {
   'buyerInventory.panel.col.qty': 'Qty',
   'buyerInventory.panel.col.eta': 'ETA',
   // — Toasts —
-  'buyerInventory.toast.syncQueued.title': 'Sync queued',
-  'buyerInventory.toast.syncQueued.desc': 'Last update: {{time}}',
-  'buyerInventory.toast.exportStarted.title': 'Export started',
+  'buyerInventory.toast.syncQueued.title': 'Inventory sync not available yet',
+  'buyerInventory.toast.syncQueued.desc': 'Nothing was synced. Last update shown: {{time}}',
+  'buyerInventory.toast.exportStarted.title': 'Inventory export not available yet',
   'buyerInventory.toast.exportStarted.desc':
-    'Inventory snapshot will be ready shortly.',
+    'No snapshot was generated — inventory export is not wired to a real system.',
   // — Side panel timeline —
   'buyerInventory.timeline.stockUpdate.title': 'Stock update from {{source}}',
   'buyerInventory.timeline.stockUpdate.desc': 'On-hand {{qty}} {{uom}}',
@@ -170,11 +170,11 @@ export const buyerInventoryId: Record<string, string> = {
   'buyerInventory.panel.col.qty': 'Kuantitas',
   'buyerInventory.panel.col.eta': 'ETA',
   // — Toasts —
-  'buyerInventory.toast.syncQueued.title': 'Sinkronisasi diantrekan',
-  'buyerInventory.toast.syncQueued.desc': 'Pembaruan terakhir: {{time}}',
-  'buyerInventory.toast.exportStarted.title': 'Ekspor dimulai',
+  'buyerInventory.toast.syncQueued.title': 'Sinkronisasi inventaris belum tersedia',
+  'buyerInventory.toast.syncQueued.desc': 'Tidak ada yang disinkronkan. Pembaruan terakhir yang ditampilkan: {{time}}',
+  'buyerInventory.toast.exportStarted.title': 'Ekspor inventaris belum tersedia',
   'buyerInventory.toast.exportStarted.desc':
-    'Snapshot inventaris akan segera siap.',
+    'Tidak ada snapshot yang dibuat — ekspor inventaris belum tersambung ke sistem nyata.',
   // — Side panel timeline —
   'buyerInventory.timeline.stockUpdate.title': 'Pembaruan stok dari {{source}}',
   'buyerInventory.timeline.stockUpdate.desc': 'Stok fisik {{qty}} {{uom}}',

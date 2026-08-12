@@ -170,8 +170,8 @@ export const supplierShipmentsEn: Record<string, string> = {
   // — Submit side-panel —
   'supplierShipments.submitPanel.title': 'Submit {{asnNumber}}',
   // — Export toast —
-  'supplierShipments.toast.export.title': 'EDI 856 export generated',
-  'supplierShipments.toast.export.desc': 'Download will start shortly.',
+  'supplierShipments.toast.export.title': 'EDI 856 export not available yet',
+  'supplierShipments.toast.export.desc': 'No file was generated — EDI export is not wired to a real system.',
   // — Carrier <select> generic option (proper-noun carriers stay EN) —
   'supplierShipments.option.other': 'Other',
 };
@@ -330,8 +330,8 @@ export const supplierShipmentsId: Record<string, string> = {
   // — Submit side-panel —
   'supplierShipments.submitPanel.title': 'Kirim {{asnNumber}}',
   // — Export toast —
-  'supplierShipments.toast.export.title': 'Ekspor EDI 856 dibuat',
-  'supplierShipments.toast.export.desc': 'Unduhan akan segera dimulai.',
+  'supplierShipments.toast.export.title': 'Ekspor EDI 856 belum tersedia',
+  'supplierShipments.toast.export.desc': 'Tidak ada berkas yang dibuat — ekspor EDI belum tersambung ke sistem nyata.',
   // — Carrier <select> generic option (proper-noun carriers stay EN) —
   'supplierShipments.option.other': 'Lainnya',
 };

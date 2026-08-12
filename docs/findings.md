@@ -9999,3 +9999,104 @@ made it four: **leaving it would have filed a staleness finding while creating
 one.** The same discipline as §16a's stale scope and §17a's stale count — a
 document that describes a system is part of the system, and it goes stale on the
 commit that changes what it describes, not later.
+
+
+---
+
+## §18 — `PAGES-DISCLAIM-DATA-ASSERT-ACTS-01` (R1, CLOSED by this PR)
+
+**THE PAGES DISCLAIM THEIR DATA AND ASSERT THEIR ACTS.**
+
+`BuyerRisk` says EVERY FIGURE IS ILLUSTRATIVE, then offers an "Export Report"
+that produces a toast.
+
+**The consequence, stated:** EVERY HONEST-MARKING ARC THIS PORTAL HAS RUN HAS
+COVERED DATA. NONE COVERED ACTS. `D-CENSUS-8` marked what a page SAYS; nothing
+marked what a page CLAIMS TO HAVE DONE — and a claim about an act is the one a
+user acts on the strength of. A figure marked illustrative is a figure a reader
+discounts. A toast reading *"Reminder queued for PT Berlina"* is a thing a
+planner then does not do again.
+
+### What was found
+
+Derived from source (`src/pages-v2/toastHonesty.guard.test.tsx`), not from a
+list: every `toast(` inside an affordance handler whose body performs no
+dispatch, no mutation, no navigation, no state change and no download.
+
+**The derived population is 53 unbacked affordances.** They split two ways, and
+the split is the finding:
+
+| Grade | Disposition |
+|---|---|
+| Asserted a completed act that did not happen — *"Reminder queued"*, *"Channel preferences updated"*, *"Paragon team notified"*, *"Opening SAP"*, *"Tracking opened"*, *"EDI 856 export generated"* | **RE-WORDED**, EN+ID |
+| Announced an export or download that produces no file — *"Downloading aging report"*, *"Generating compliance report PDF"*, *"Risk report export starting"* | **RE-WORDED**, EN+ID |
+| Already honest — *"not available yet"*, *"will open in a future release"*, *"(mock)"*, *"Simulated — delivery pending live channel"* | **UNTOUCHED.** They are the register every other string now matches, and the file already contained its own answer |
+| Hardcoded English template literal, both locales bypassed | **EXTERNALISED** as `supplierDashboard.brief.toast.desc` |
+
+**54 keys × 2 locales = 108 strings**, across **19 i18n fragments** and one page
+component. All 53 sites are green under the guard; the population is now
+uniformly honest.
+
+### Three corrections to the inherited census, recorded because each was wrong in a different way
+
+1. **`BuyerCompliance` "Reminder queued for {{supplier}}" was reported as a lie
+   and is not one.** Its `desc` already read *"Simulated — delivery pending live
+   channel."* The census graded the TITLE and never read the DESC. A toast is a
+   PAIR, and honesty can live in either half.
+2. **`BuyerSourcing`'s RFQ-create toasts were flagged and are fully backed** —
+   they fire inside `createMutation.mutate`'s `onSuccess`. A `onSuccess`
+   callback is not an affordance; treating it as one accuses working code.
+3. **`t_gr_hold` is NOT the verb the Override-hold affordance wants.** It runs
+   `Under Inspection → Quality Hold` — it PLACES a hold. Overriding one is
+   `Quality Hold → Under Inspection`, which is `t_gr_request_retest`, and that
+   IS wired and shipping one button to the left. Two separate gaps, not one:
+   `t_gr_hold` has no affordance, and the Override-hold affordance has no verb.
+
+### `t_gr_hold` / Override hold — NOT WIRED, and the reason is ratified
+
+The dispatch asked for a wire if it is a batch-sized act. It is not, and the
+refusal is already in the tree at `BuyerGoodsReceipt.tsx:371-379`
+(`DEAD-AFFORDANCE-01`): overriding a quality hold is a GOVERNANCE ACT whose
+entire value is accountability — *this named person accepted this risk on this
+date*. The platform cannot name a person (C10 §2,
+`ENF-NO-PERSON-IN-IDENTITY-01`), so wiring it would write an ANONYMOUS UNLOCK
+into a permanent trail: the exact shape the enforcement lane already refuses.
+**Re-worded, and the toast now says why** rather than *"Awaiting QC manager
+approval"* — a sentence that invented an approver the system does not have.
+
+### The gate, and its stated limit
+
+`toastHonesty.guard.test.tsx` — **bilateral and list-free.** The population
+derives from the page sources; the verdict derives from the shipped `resources`
+bundle in BOTH locales. There is NO exemption list, deliberately: wiring an
+affordance removes it from the population automatically, so no row can outlive
+its subject (`C9-STALE-BY-FIX-01`). The only ways to pass are to be honest or to
+be real.
+
+⚠️ **THE LIMIT, RECORDED: IT JUDGES "NO SIDE EFFECT AT ALL", NEVER "THE SIDE
+EFFECT MATCHES THE CLAIM."** A React state setter counts as a real act, because
+for a UI affordance it usually is one (expanding a dock panel, loading parsed
+XLSX rows into a grid) — without that the guard accuses a working import of
+lying, which trains people to weaken it. The residue it cannot see is a handler
+that does something SMALLER than it claims: `SupplierDashboard`'s briefing card
+dismissed itself while announcing *"<label> workflow initiated."* That one was
+found and fixed BY HAND at R1. **A future instance of that shape will not go
+red**, and that is the trade this guard makes.
+
+**Also recorded — the instrument under-reported three times before it settled**,
+which is why the population is 51 keys and not the 18 the census named:
+a `[^;\n]*?from` import matcher that cannot see a multi-line import (condemned
+~2,000 lines of live code); a handler matcher that knew only six fixed `on*`
+names and missed this codebase's custom props; and one that missed NAMED
+handlers entirely (`const handleExport = () => toast(...)`), which is where the
+largest pages keep their affordances.
+
+### Wiring cheaper than re-wording — REPORTED, NOT TAKEN (R2/R3 candidates)
+
+| Affordance | Why wiring is plausible | Why this PR did not take it |
+|---|---|---|
+| `BuyerRequisitions` "submitted for approval" | `t_pr_submit` is declared and uncalled; the PR target's `applyTransition` is GENERIC (`MockCommandService.ts:610`), so only a hook is missing — no target edit, no flow edit | Changes PR lifecycle behaviour. Belongs in a batch with its own tests, not a copy batch |
+| `BuyerRequisitions` "PO creation" / "Sourcing event" | same shape | same |
+| `SupplierDashboard` / `SupplierOrders` "Opening {{po}}", "Creating ASN" | pure NAVIGATION — `/supplier/orders` has `usePurchaseOrderConfirm` wired; one `navigate()` makes the sentence true | A behaviour change smuggled into a copy batch. Re-worded to POINT AT the real surface instead |
+| `BuyerRisk` "Opening full analysis" | — | No detail surface exists to open |
+

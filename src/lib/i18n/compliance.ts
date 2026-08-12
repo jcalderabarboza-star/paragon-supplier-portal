@@ -23,7 +23,7 @@ export const complianceEn: Record<string, string> = {
   'compliance.header.subtitle':
     'Halal · BPOM · ISO · REACH · GMP — October 2026 BPJPH mandatory transition.',
   'compliance.action.exportReport': 'Export Report',
-  'compliance.toast.exporting': 'Generating compliance report PDF',
+  'compliance.toast.exporting': 'Compliance report not available yet — no PDF was generated.',
   // — Meta line —
   'compliance.meta.summary': '{{count}} certificates · last refreshed {{date}}',
   // — Data-readiness (waiting-state) banner (I3.3) —
@@ -121,7 +121,7 @@ export const complianceId: Record<string, string> = {
   'compliance.header.subtitle':
     'Halal · BPOM · ISO · REACH · GMP — transisi wajib BPJPH Oktober 2026.',
   'compliance.action.exportReport': 'Ekspor Laporan',
-  'compliance.toast.exporting': 'Membuat PDF laporan kepatuhan',
+  'compliance.toast.exporting': 'Laporan kepatuhan belum tersedia — tidak ada PDF yang dibuat.',
   // — Meta line —
   'compliance.meta.summary': '{{count}} sertifikat · terakhir diperbarui {{date}}',
   // — Data-readiness (waiting-state) banner (I3.3) —
