@@ -52,8 +52,29 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   link, roles mapped for catalog-coverage only (DNA-SEED-01 contract surface, no
   UI consumer). **PR is NO LONGER among them** — corrected 2026-08-03: it was
   wired at G1.1 and dispatches (`MockCommandService.ts:547-593`, registered
-  `:983`). **Wired CommandTargets now number 10, not 6** (`:976-987`; census
-  evolution tracked at `:989-991`). It is
+  `:983`).
+
+  ⚠️ **CORRECTED AT R2 (2026-08-12) — THE TARGET-LESS FLOWS ARE SEVEN, NOT FOUR,
+  AND THE COUNT ABOVE IS THE F0.4 SUBSET, NOT THE POPULATION.** Derived from
+  `getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`, the flows with NO CommandTarget
+  are: **Shipment · Contract · Obligation · SupplierDocument · goodsReceiptLine ·
+  invoiceMatch · compliance** — 30 verbs that cannot fire. The "four" counted
+  only the five F0.4 machines and never included the two rolled-up sub-flows or
+  the compliance machine, so the sentence was true of its own subset and false
+  of the tree. **⚠️ NAME COMPLIANCE SPECIFICALLY: I3 is stamped COMPLETE below
+  and `BuyerCompliance` really does read through the seam — but the compliance
+  MACHINE IS READ-ONLY. `t_compliance_submit` / `_verify` / `_reject` CAN NEVER
+  FIRE.** A complete read path and an inert write path are compatible, and
+  nothing in the I3 stamp said which one it meant. All seven ARE honestly badged
+  `AUTHORED — UNWIRED` on `/buyer/process-flows` (verified by rendering, R1) —
+  the defect was in this file, not on the surface.
+
+  **Wired CommandTargets number 11, not 10 and not 6** — `TARGETS`
+  (`MockCommandService.ts:1130`), exported as `WIRED_COMMAND_TARGETS` (`:1155`).
+  The 11th is `enforcement` (CP-3 · E2); the "10" predated it and the line refs
+  cited with it had drifted ~150 lines. **Do not restate this number without
+  re-deriving it** — it has now been wrong twice, in the same sentence, for the
+  same reason. It is
   deliberately **contract-complete, NOT behavior-complete** — remaining verb
   wiring (and each machine's CommandTarget) rides its Stage-2 surface (FORK-2
   hybrid). Clock-projected states stay out of every transition table (law 0.5);
