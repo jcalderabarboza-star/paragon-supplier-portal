@@ -70,6 +70,11 @@ import {
   processFlowPurposeEn,
   processFlowPurposeId,
 } from './i18n/processFlowPurpose';
+// — GL-1 the glossary surface. PAGE CHROME ONLY: every DEFINITION lives beside
+//   its union in `lib/glossary/*.glossary.ts`, EN and ID on the same entry, so a
+//   vocabulary correction is one edit in one place rather than a hunt through
+//   two locale maps.
+import { glossaryEn, glossaryId } from './i18n/glossary';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -137,6 +142,8 @@ export const resources = {
       // — PF-1 process flows —
       ...processFlowsEn,
       ...processFlowPurposeEn,
+      // — GL-1 glossary (chrome only) —
+      ...glossaryEn,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
@@ -170,6 +177,7 @@ export const resources = {
       'nav.buyer.compliance': 'Compliance',
       'nav.buyer.commHub': 'Communication Hub',
       'nav.buyer.processFlows': 'Process Flows',
+      'nav.glossary': 'Glossary',
       'nav.supplier.dashboard': 'Dashboard',
       'nav.supplier.rfqs': 'RFQs',
       'nav.supplier.forecasts': 'Forecasts',
@@ -518,6 +526,8 @@ export const resources = {
       // — PF-1 process flows —
       ...processFlowsId,
       ...processFlowPurposeId,
+      // — GL-1 glossary (chrome only) —
+      ...glossaryId,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',
@@ -551,6 +561,7 @@ export const resources = {
       'nav.buyer.compliance': 'Kepatuhan',
       'nav.buyer.commHub': 'Pusat Komunikasi',
       'nav.buyer.processFlows': 'Alur Proses',
+      'nav.glossary': 'Glosarium',
       'nav.supplier.dashboard': 'Dasbor',
       'nav.supplier.rfqs': 'RFQ',
       'nav.supplier.forecasts': 'Prakiraan',

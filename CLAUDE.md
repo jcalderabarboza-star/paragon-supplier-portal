@@ -144,6 +144,12 @@ Routing is HashRouter (`src/router/AppRouter.tsx`) — not BrowserRouter. The `/
 home redirect points to `/buyer/dashboard`; unknown routes render a real 404
 (`src/pages-v2/NotFound.tsx`).
 
+Most routes are persona-prefixed (`/buyer/…`, `/supplier/…`). Two are
+deliberately NOT: `/marketplace` and `/glossary` (GL-1). The glossary is reached
+by term chips that sit on BOTH personas' refusal sites, so a persona prefix
+would have sent half its readers out of their own shell; it is listed in both
+nav groups under one neutral key, `nav.glossary`.
+
 ## Design principles
 
 ### DP-1 — Fiori-aligned visual language

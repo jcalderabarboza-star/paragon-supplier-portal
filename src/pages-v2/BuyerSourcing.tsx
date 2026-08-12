@@ -106,6 +106,8 @@ import type { TFunction } from 'i18next';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
 import type { Quotation } from '../data/mockQuotations';
 import type { Supplier } from '../services/data/types';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
 type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed';
 
@@ -1372,7 +1374,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   data-testid="rfq-budget-refusal"
                   className="mt-1 text-[11px] text-danger"
                 >
-                  {t(RFQ_BUDGET_REFUSAL_KEY[budgetRead.reason])}
+                  {t(RFQ_BUDGET_REFUSAL_KEY[budgetRead.reason])}{' '}
+                  <GlossaryTermChip
+                    refTo={{ sourceType: 'QtyRefusalReason', term: budgetRead.reason }}
+                  />
                 </div>
               )}
             </div>
@@ -1442,7 +1447,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   data-testid="rfq-qty-refusal"
                   className="mt-1 text-[11px] text-danger"
                 >
-                  {t(RFQ_QTY_REFUSAL_KEY[qtyRead.reason])}
+                  {t(RFQ_QTY_REFUSAL_KEY[qtyRead.reason])}{' '}
+                  <GlossaryTermChip
+                    refTo={{ sourceType: 'QtyRefusalReason', term: qtyRead.reason }}
+                  />
                 </div>
               )}
             </div>
@@ -2487,7 +2495,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       .filter(Boolean)
                       .map((d) => formatDate(d as string))
                       .join(', '),
-                  })}
+                  })}{' '}
+                  <GlossaryTermChip
+                    refTo={{ sourceType: 'FxRefusalReason', term: scoring.reason }}
+                  />
                 </div>
               )}
               {/* 2e-c-4 — THE RECORDED BASIS, on screen. A buyer must be able to

@@ -43,6 +43,8 @@ import {
 } from '../services/sdc';
 import type { CommandResult } from '../services/data/types';
 import { formatNumber, formatDate } from '../lib/format';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Comm Hub C2 — the INBOUND CONFIRM-BEFORE-COMMIT surface (DEC-COMMS-PRIMARY).
@@ -522,7 +524,12 @@ const CommHubInbound: React.FC = () => {
               {parsed.diagnostics.qtyReason && (
                 <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning-soft px-3 py-2 text-xs text-warning-hover">
                   <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-                  <span>{t('commHub.infer.qtyRefused', { reason: t(QTY_REASON_KEY[parsed.diagnostics.qtyReason]) })}</span>
+                  <span>
+                    {t('commHub.infer.qtyRefused', { reason: t(QTY_REASON_KEY[parsed.diagnostics.qtyReason]) })}{' '}
+                    <GlossaryTermChip
+                      refTo={{ sourceType: 'QtyRefusalReason', term: parsed.diagnostics.qtyReason }}
+                    />
+                  </span>
                 </div>
               )}
 

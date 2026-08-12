@@ -22,6 +22,7 @@ import {
   MessageCircle,
   Table2,
   Workflow,
+  BookOpen,
   Handshake,
   LucideIcon,
 } from 'lucide-react';
@@ -89,6 +90,10 @@ const BUYER_NAV: NavGroup[] = [
       { labelKey: 'nav.buyer.commHub', icon: MessageCircle, path: '/buyer/comm-hub' },
       // PF-1 — the derived flow catalog (read-only; the analyzer's surface).
       { labelKey: 'nav.buyer.processFlows', icon: Workflow, path: '/buyer/process-flows' },
+      // GL-1 — the glossary. LISTED IN BOTH PERSONAS' NAV, under one
+      // persona-neutral key and one persona-neutral path, because the term chips
+      // that lead here sit on both sides' refusal sites.
+      { labelKey: 'nav.glossary', icon: BookOpen, path: '/glossary' },
     ],
   },
 ];
@@ -130,6 +135,7 @@ const SUPPLIER_NAV: NavGroup[] = [
       { labelKey: 'nav.supplier.performance', icon: BarChart2, path: '/supplier/performance' },
       { labelKey: 'nav.supplier.whatsapp', icon: MessageCircle, path: '/supplier/whatsapp' },
       { labelKey: 'nav.supplier.commHub', icon: Inbox, path: '/supplier/comm-hub' },
+      { labelKey: 'nav.glossary', icon: BookOpen, path: '/glossary' },
     ],
   },
 ];

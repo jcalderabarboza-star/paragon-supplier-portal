@@ -13,6 +13,8 @@ import {
   type MapField,
   type BatchGridRow,
 } from './xlsxImportMap';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SDC-3c-c-b — the XLSX import flow (the SURFACE half). A pre-fill SOURCE for the
@@ -275,7 +277,8 @@ const XlsxImportPanel: React.FC<XlsxImportPanelProps> = ({ onImport, onCancel })
                         row: r.index + 1,
                         raw: r.raw,
                         reason: t(UNREADABLE_REASON_KEY[r.reason]),
-                      })}
+                      })}{' '}
+                      <GlossaryTermChip refTo={{ sourceType: 'QtyRefusalReason', term: r.reason }} />
                     </li>
                   ))}
                 </ul>

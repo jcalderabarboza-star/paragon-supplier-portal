@@ -18,6 +18,8 @@ import type { DrawdownEnforcement, TolerancePolicy } from '../../services/delive
 import type { EditPolicyPatch } from '../../services/delivery';
 import type { QtyRefusalReason } from '../../lib/localeNumber';
 import { readTolerancePct, seedTolerancePct } from './tolerancePctModel';
+// GL-1 - the glossary destination for this surface's refusals.
+import GlossaryTermChip from '../ui-v2/GlossaryTermChip';
 
 const ENFORCEMENTS: readonly DrawdownEnforcement[] = ['flag', 'ignore', 'block'];
 
@@ -151,7 +153,8 @@ const PolicyEditor: React.FC<{
               data-testid="policy-pct-refusal"
               className="mt-1 text-[11px] text-danger"
             >
-              {t(PCT_REFUSAL_KEY[pctRead.reason])}
+              {t(PCT_REFUSAL_KEY[pctRead.reason])}{' '}
+              <GlossaryTermChip refTo={{ sourceType: 'QtyRefusalReason', term: pctRead.reason }} />
             </div>
           )}
         </div>
