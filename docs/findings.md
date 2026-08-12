@@ -11259,3 +11259,181 @@ reads for `data-glossary-term` / `href` / `aria-label`, and
 (PR quantity, EN) and a supplier surface (invoice amount, ID) — 106px chip
 inside its parent in both, translated `aria-label` and `title`, term token
 untranslated by design.
+
+---
+
+## §39 — GL-1 filings: the two heuristic instances, the guard-direction count (DERIVED, and the figure corrected), and `HTML-LANG-STUCK-AT-EN-01`
+
+Register and `CLAUDE.md` only. No code, no gates changed. Main `8e9e3c0`,
+floor 2906/208/7 — unchanged by this PR.
+
+---
+
+### 39a · THE TWO HEURISTIC INSTANCES NOW LIVE WHERE THE RULE LIVES
+
+Both were narrated in §38 and **filed nowhere the rule could be read with its
+evidence.** A rule in `CLAUDE.md` with its instances in `docs/findings.md` is a
+rule whose evidence a reader will not find, because nobody follows a cross-file
+trail to check whether a rule earned itself. They are now **in `CLAUDE.md`,
+under the rules they belong to**, and §38 keeps the narrative.
+
+| Rule | GL-1's instance |
+|---|---|
+| **Rule 1 — derive, never work an inherited list** | The refusal sites were derived **from a list of map names read off an earlier grep**. That is a list, not a derivation. The proper derivation named a **21st site the list never contained** — `BuyerSourcing.tsx`'s `RFQ_BUDGET_REFUSAL_KEY`, whose map is `Record<Exclude<QtyRefusalReason, 'EMPTY_QTY'>, string>`, **a shape the eye would never catch.** |
+| **Rule 2 — widening creates false accusations as readily as narrowing creates blind spots** | The first matcher keyed **only on the union** and produced **three false accusations** against `services/sdc/ingest.ts` — a `Record<QtyRefusalReason, ParseReason>` union-to-union translation table in a service, no message, no surface. Fixed by testing **both halves of the generic**: the value must be `string`. |
+
+⚠️ **WHAT MAKES THE PAIR WORTH FILING TOGETHER, AND IT IS NOT THAT THERE ARE TWO
+OF THEM.** They are the two ways ONE instrument is wrong, and they happened **on
+the same instrument, in the same hour, on the seat that wrote the rule.** Neither
+is the careless opposite of the other. A batch that fixes one without re-deriving
+is not being careful — it is choosing which way to be wrong next.
+
+The rule is stronger for having caught its own author. It is also the third arc
+running in which `CENSUS-MUST-DERIVE-01` has fired on the seat holding it
+(`DERIVED-OVER-A-CHOSEN-SCOPE-01`, `EMPTY-INPUT-REPORTS-CLEAN-01` instance 3,
+this) — **the shape is not avoided by knowing about it**, which is instance 3's
+own sentence and it keeps being true.
+
+### 39a-i · a count-in-prose, found in the section that forbids count-in-prose
+
+The heuristic's own preamble read **"Two rules earned across five arcs"** while
+**three** were numbered underneath it. Rule 3 landed at GL-0 and the preamble was
+never touched. Corrected to point at the numbering rather than restate it.
+`FLOOR-IN-PROSE-01` / §27, **inside the paragraph that states the rule** — which
+is the same joke as 39a and should be recorded with the same lack of amusement.
+
+---
+
+### 39b · `GUARD-WRONG-IN-THE-PASSING-DIRECTION-01` — the count, DERIVED
+
+The dispatch said *"third this arc"* and instructed me to **derive it rather
+than take the figure**. I did. **The figure is close and the scope is wrong, and
+the derivation also found that a running count already half-existed and had
+never been tabulated — which is the actual defect.**
+
+#### The class, stated before it is counted
+
+**A guard whose verification was ONE-SIDED, so its defect sat in the direction
+nobody looked.** The habitual probe of a guard is *"does it catch the bad
+thing?"* — so a guard that is **wrong about what it should ACCEPT** ships looking
+like a working guard, and a probe apparatus that lies in the same direction
+libels a guard that was fine all along.
+
+**The admission test — the defect must be INVISIBLE from the direction habitually
+probed.** That is what excludes the two GL-1 matcher errors above: both threw a
+red list of files the moment they ran. **A false accusation announces itself; a
+guard that is wrong in the passing direction does not.** Those two are rule-2
+instances, filed at 39a, and are deliberately NOT counted here — filing one event
+under two classes would inflate both.
+
+#### The derivation, and what it found
+
+Grepping the register for the class name returns a lineage that already exists:
+**`PROBE-NEEDS-PROBING-01`** — *"the verification apparatus lying, not the thing
+under verification"*. Its appearances are recorded, each in the prose of the
+batch that hit it, **and never once collected**. So the dispatch's premise is
+right for a reason it did not state: the count did not exist because **the
+instances were filed as narrative, and narrative does not add up.**
+
+| # | Appearance | The apparatus | What it looked like | How it was caught |
+|---|---|---|---|---|
+| 1 | 2B-4a · M8 | mutation probe | a probe that genuinely **could not bite**, reported undetected | operator ruling: *a probe that cannot bite is disclosed, never contorted* |
+| 2 | #178 · M1 | mutation probe | **edit never applied** (anchor absent) → green suite, reading exactly as *"the pin does not detect this"* | re-run; the pin reddened 3. **The honest response would have libelled a working pin** |
+| 3 | 2B-5b-ii · M3b | mutation probe | **edit applied and mutated nothing** — a later key overwrote the inserted one; the assert-it-landed guard passed | re-anchored; reddens 9. *A probe that applies is not a probe that mutates* |
+| 4 | #182 · M5 | mutation probe | `$` anchored against **CRLF**, so the substitution reported success and changed nothing | two neighbouring probes printing nothing at all. **First with an ENVIRONMENTAL cause** |
+| 5 | **GL-1 · `GlossaryRef`** | **a TYPE-LEVEL guard — the first non-probe in the lineage** | the mapped type collapsed `term` to `never`, so it **rejected the known-GOOD ref as well as the bad one**. `tsc` was green on the tree; only the probe disagreed | probing **both** directions before use. A one-sided probe would have shipped it as a working guard |
+
+**The corrected figure, and the derivation is the authority:** GL-1's is the
+**fifth appearance in the register** and the **first in the current arc**
+(§30–§38 hold no other). The dispatch's *"third this arc"* most likely carried
+over the **`18c`** table's *"third appearance of the gate-green-because-it-
+looks-at-nothing failure in this arc"* — which lives under
+`## 18 · SPEC-OMITS-THE-HONESTY-FIELD-01` (**the pre-`§` numbering; not `§18`**),
+counts a **sibling** class (the one later named `EMPTY-INPUT-REPORTS-CLEAN-01`),
+and belongs to the **R1/CP-3a arc, not this one**. Two adjacent classes, two
+arcs, one number that survived the move intact. **Memory is not a record; that
+is the whole argument for the table.**
+
+⚠️ And note what the two siblings are **not** — they are the two halves of one
+asymmetry, and keeping them apart is deliberate: `18c` /
+`EMPTY-INPUT-REPORTS-CLEAN-01` is a guard **too loose to say anything** (it
+accepts everything, having examined nothing); this class is a guard **wrong
+about what it should accept**. Both ship green. Only the second survives a probe
+of the failing direction, which is why it needs its own reflex and its own row.
+
+#### ⚠️ Why row 5 is the one that changes the class
+
+Rows 1–4 are all **mutation probes** — a runtime apparatus, with a runtime
+symptom (a suite that goes green when it should not). Row 5 is a **type-level
+guard**, and it had **no symptom at all**: `tsc` passed on the whole tree, every
+gate was green, and the guard was rejecting everything it was built to accept.
+The standing practice earned at #179 — *every probe asserts its own edit landed,
+and one control probe per batch deliberately fails to apply* — **does not reach a
+type.** There is nothing to assert landed.
+
+**The reflex that does reach it, and it is the general form of the #179 practice:
+ASSERT A KNOWN-GOOD INPUT PASSES BEFORE YOU BELIEVE A KNOWN-BAD INPUT FAILED.**
+It is rule 1's *"assert a known-true member is present and a known-false one is
+absent"* — the same sentence, moved from populations to guards. Filed in
+`CLAUDE.md` beside the three derivation rules.
+
+#### The limit of this count, stated
+
+**This derivation is a READING of a prose register, not a mechanical census.** I
+grepped for a class name and for the phrases the class tends to be written in;
+an instance recorded in words that match neither is invisible to it, and nothing
+will ever go red about that. Same shape as §37's instrument gap, one level over —
+and the honest mitigation is the same: **the table is now the place, so the next
+instance is an append rather than a rediscovery.** A count read as three
+accidents is three accidents; **a count read as a table is a pattern.**
+
+---
+
+### 39c · `HTML-LANG-STUCK-AT-EN-01` — BOOKED, NOT FIXED
+
+| | |
+|---|---|
+| **Finding** | **`document.documentElement.lang` stays `"en"` after switching the portal to Indonesian.** It is set once in `app/index.html` and **nothing updates it** — not the language menu, not `i18n.changeLanguage`, not `AppShellV2` (which re-keys `<main>` on `i18n.language` and stops there). Observed directly in the GL-1 browser QA: with every visible string rendering Indonesian, `documentElement.lang` read `"en"`. |
+| **Scope** | **APP-WIDE, EVERY PAGE.** Not a glossary defect. The glossary is simply where it was noticed, because it was the first page whose full text was read back attribute-by-attribute in both locales. |
+| **⚠️ The consequence, stated rather than left as a spec-compliance point** | **SCREEN READERS ANNOUNCE INDONESIAN TEXT WITH ENGLISH PHONEMES.** A reader using assistive technology gets the whole portal in the wrong voice — not degraded, *wrong* — and it is silent: nothing on screen looks different, so a sighted reviewer in either locale sees a page that is completely correct. |
+| **Class** | Same class as `MARKER-I18N-HOLE-01`'s screen-reader finding: **an i18n hole that only assistive technology can perceive, so no visual QA in either locale can find it.** The two belong together, and this is the second — which makes it a shape rather than an accident. |
+| **Why NOT fixed here** | It is an **app-shell change** (the language menu, or an effect on the i18n instance, writing `documentElement.lang` and `dir`), and it wants its own test — one that switches locale and asserts the attribute, in the layer that owns it. Smuggling it into a docs PR would give it no gate and no home. ⚠️ It is also the kind of one-line fix that **looks too small to test**, which is exactly how the first one shipped. |
+| **Disposition** | **OPEN. Booked as its own batch.** Not started. |
+
+---
+
+### 39d · CARRIED FORWARD — the four that should not live only in a merge report
+
+Recorded here because a merge report is not a register, and these are GL-1's
+substance rather than its logistics.
+
+**1 · THE ORDER IS THE FINDING: AN EMPTY RESULT IS ONLY EVIDENCE IF THE MATCHER
+WAS SHOWN TO MATCH.** GL-1's appearance derivation returned 61 empties out of 64.
+Under rule 1 that is a bug report about the instrument — so all four match kinds
+were asserted against known-true registry identifiers (`Missing`→state,
+`t_po_confirm`→transition, `confirmedQuantities`→field,
+`enforcement_set_governed`→hook) **before the page was allowed to report the
+emptiness at all.** The sequence is the whole claim. Run the other way round, the
+same 61 empties would be worth nothing, and would look identical.
+
+**2 · THE BEST EMPTY IS A GUARANTEE, NOT A GAP.**
+`ComplianceDisplayStatus.Expiring` and `.Expired` have no appearances **because
+of law 0.5** — clock-derived states are read-time projections and never enter a
+transition table. `appearances.test.ts` **asserts they stay empty**, so
+**a non-empty result there means a clock-projected state has leaked into a
+machine.** An empty cell doing duty as a live invariant, and it beats any content
+it could have carried: content would have to be maintained, whereas this fails
+loudly the day the schema stops being true.
+
+**3 · `remedyRoute` IS ABSENT ON EVERY ENTRY**, held by a test and stated on the
+page in both languages. **The definitional half of `HALAL-REFUSAL-DEAD-ENDS-01`
+is closed; THE ROUTING HALF STAYS OPEN on D-COMP-HALAL-4.** A chip now takes the
+clerk to what the word means and no further. **The row must not be read as
+closed.**
+
+**4 · REFERENCE, THINLY — the page's own honest verdict.** 57 of 64 cards carry a
+term, a definition and a source path **because there is nothing else true to put
+there.** The page's value today is the definitions, which is what the review is
+for. **GL-0b thickens it; padding would not** — and a derived section filled with
+authored appearances would be the second copy that rots, on the one page whose
+subject is having exactly one copy of each word.
