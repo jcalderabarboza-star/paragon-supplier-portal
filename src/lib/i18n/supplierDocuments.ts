@@ -97,7 +97,7 @@ export const supplierDocumentsEn: Record<string, string> = {
   // — Toasts —
   'supplierDocuments.toast.uploaded.title': 'Document uploaded',
   'supplierDocuments.toast.uploaded.desc': 'Pending Paragon review.',
-  'supplierDocuments.toast.downloading': 'Downloading {{name}}',
+  'supplierDocuments.toast.downloading': 'Download not available yet — {{name}} was not downloaded.',
   'supplierDocuments.toast.renewStarted': 'Renewal workflow started for {{name}}',
   // — Empty state (all-empty early return) —
   'supplierDocuments.empty.title': 'No documents yet',
@@ -189,7 +189,7 @@ export const supplierDocumentsId: Record<string, string> = {
   // — Toasts —
   'supplierDocuments.toast.uploaded.title': 'Dokumen diunggah',
   'supplierDocuments.toast.uploaded.desc': 'Menunggu tinjauan Paragon.',
-  'supplierDocuments.toast.downloading': 'Mengunduh {{name}}',
+  'supplierDocuments.toast.downloading': 'Unduhan belum tersedia — {{name}} tidak diunduh.',
   'supplierDocuments.toast.renewStarted': 'Alur pembaruan dimulai untuk {{name}}',
   // — Empty state (all-empty early return) —
   'supplierDocuments.empty.title': 'Belum ada dokumen',

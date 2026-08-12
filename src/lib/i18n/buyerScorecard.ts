@@ -73,8 +73,8 @@ export const buyerScorecardEn: Record<string, string> = {
   'buyerScorecard.imp.owner': 'Owner',
   'buyerScorecard.imp.due': 'Due',
   'buyerScorecard.imp.send': 'Send improvement plan',
-  'buyerScorecard.imp.toast.title': 'Improvement plan sent to {{name}}',
-  'buyerScorecard.imp.toast.desc': 'Delivered via email.',
+  'buyerScorecard.imp.toast.title': 'Improvement plan not sent to {{name}}',
+  'buyerScorecard.imp.toast.desc': 'Nothing was delivered — supplier email is not wired to a real channel.',
   // — Communication log section —
   'buyerScorecard.comm.title': 'Communication log — last 5 interactions',
   'buyerScorecard.comm.empty': 'No communication log entries.',
@@ -125,8 +125,8 @@ export const buyerScorecardId: Record<string, string> = {
   'buyerScorecard.imp.owner': 'Penanggung jawab',
   'buyerScorecard.imp.due': 'Tenggat',
   'buyerScorecard.imp.send': 'Kirim rencana perbaikan',
-  'buyerScorecard.imp.toast.title': 'Rencana perbaikan dikirim ke {{name}}',
-  'buyerScorecard.imp.toast.desc': 'Dikirim melalui email.',
+  'buyerScorecard.imp.toast.title': 'Rencana perbaikan tidak dikirim ke {{name}}',
+  'buyerScorecard.imp.toast.desc': 'Tidak ada yang dikirim — email pemasok belum tersambung ke kanal nyata.',
   // — Communication log section —
   'buyerScorecard.comm.title': 'Log komunikasi — 5 interaksi terakhir',
   'buyerScorecard.comm.empty': 'Tidak ada entri log komunikasi.',

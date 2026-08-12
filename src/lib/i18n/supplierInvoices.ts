@@ -48,11 +48,11 @@ export const supplierInvoicesEn: Record<string, string> = {
   'supplierInvoices.action.resolve': 'Resolve',
   'supplierInvoices.action.view': 'View',
   // — Inline scaffolding toasts (mutation toasts stay under invoice.*) —
-  'supplierInvoices.toast.export.title': 'Downloading invoice report',
-  'supplierInvoices.toast.resolve.title': 'Resolve dispute',
+  'supplierInvoices.toast.export.title': 'Invoice report not available yet — no file was downloaded.',
+  'supplierInvoices.toast.resolve.title': 'Dispute resolution not available yet',
   'supplierInvoices.toast.resolve.desc':
-    'Contact Paragon Finance Controller to resolve dispute.',
-  'supplierInvoices.toast.downloadPdf.title': 'Downloading remittance advice PDF',
+    'Nothing was changed — contact your Paragon Finance Controller to resolve this dispute.',
+  'supplierInvoices.toast.downloadPdf.title': 'Remittance advice not available yet — no PDF was downloaded.',
   // — Ariba info banner (interleaved <strong>) —
   'supplierInvoices.ariba.pre': 'Full e-invoicing with ',
   'supplierInvoices.ariba.strong': 'SAP Ariba integration',
@@ -169,11 +169,11 @@ export const supplierInvoicesId: Record<string, string> = {
   'supplierInvoices.action.resolve': 'Selesaikan',
   'supplierInvoices.action.view': 'Lihat',
   // — Inline scaffolding toasts —
-  'supplierInvoices.toast.export.title': 'Mengunduh laporan faktur',
-  'supplierInvoices.toast.resolve.title': 'Selesaikan sengketa',
+  'supplierInvoices.toast.export.title': 'Laporan faktur belum tersedia — tidak ada berkas yang diunduh.',
+  'supplierInvoices.toast.resolve.title': 'Penyelesaian sengketa belum tersedia',
   'supplierInvoices.toast.resolve.desc':
-    'Hubungi Pengawas Keuangan Paragon untuk menyelesaikan sengketa.',
-  'supplierInvoices.toast.downloadPdf.title': 'Mengunduh PDF bukti pembayaran',
+    'Tidak ada yang diubah — hubungi Pengawas Keuangan Paragon untuk menyelesaikan sengketa ini.',
+  'supplierInvoices.toast.downloadPdf.title': 'Bukti pembayaran belum tersedia — tidak ada PDF yang diunduh.',
   // — Ariba info banner —
   'supplierInvoices.ariba.pre': 'E-invoicing penuh dengan ',
   'supplierInvoices.ariba.strong': 'integrasi SAP Ariba',

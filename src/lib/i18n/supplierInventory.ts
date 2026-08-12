@@ -25,11 +25,11 @@ export const supplierInventoryEn: Record<string, string> = {
   'supplierInventory.action.exportEdi': 'Export EDI 846',
   'supplierInventory.action.syncNow': 'Sync now',
   // — Toasts —
-  'supplierInventory.toast.exportPreparing.title': 'Export preparing',
+  'supplierInventory.toast.exportPreparing.title': 'EDI export not available yet — no file was generated.',
   'supplierInventory.toast.exportPreparing.desc':
     'EDI 846 format download starting.',
   'supplierInventory.toast.syncing.title':
-    'Syncing inventory from supplier API feeds',
+    'Inventory sync not available yet — nothing was synced.',
   // — Meta line —
   'supplierInventory.meta.materials.one': '{{count}} material',
   'supplierInventory.meta.materials.other': '{{count}} materials',
@@ -89,11 +89,11 @@ export const supplierInventoryId: Record<string, string> = {
   'supplierInventory.action.exportEdi': 'Ekspor EDI 846',
   'supplierInventory.action.syncNow': 'Sinkronkan sekarang',
   // — Toasts —
-  'supplierInventory.toast.exportPreparing.title': 'Menyiapkan ekspor',
+  'supplierInventory.toast.exportPreparing.title': 'Ekspor EDI belum tersedia — tidak ada berkas yang dibuat.',
   'supplierInventory.toast.exportPreparing.desc':
     'Unduhan format EDI 846 dimulai.',
   'supplierInventory.toast.syncing.title':
-    'Menyinkronkan inventaris dari umpan API pemasok',
+    'Sinkronisasi inventaris belum tersedia — tidak ada yang disinkronkan.',
   // — Meta line —
   'supplierInventory.meta.materials.one': '{{count}} material',
   'supplierInventory.meta.materials.other': '{{count}} material',

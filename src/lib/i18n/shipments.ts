@@ -108,8 +108,8 @@ export const shipmentsEn: Record<string, string> = {
   'shipments.timeline.daysInTransit.one': '{{count}} day',
   'shipments.timeline.daysInTransit.other': '{{count}} days',
   // — Toasts —
-  'shipments.toast.export.title': 'Export queued',
-  'shipments.toast.export.desc': 'Shipments export will download shortly.',
+  'shipments.toast.export.title': 'Shipments export not available yet',
+  'shipments.toast.export.desc': 'No file was generated — shipments export is not wired to a real system.',
   'shipments.toast.manualAsn.title': 'Manual ASN entry',
   'shipments.toast.manualAsn.desc': 'Form will open in a future release.',
   'shipments.toast.dockSchedule.title': 'Dock schedule expanded',
@@ -120,7 +120,7 @@ export const shipmentsEn: Record<string, string> = {
   'shipments.toast.reminder.title': 'Reminder not available yet',
   'shipments.toast.reminder.desc':
     'Supplier reminders for {{asn}} will send once the channel seam is connected. Nothing was sent to {{supplier}}.',
-  'shipments.toast.tracking.title': 'Tracking opened',
+  'shipments.toast.tracking.title': 'Carrier tracking not available yet — nothing was opened.',
   'shipments.toast.tracking.desc': 'Carrier: {{carrier}} · {{tracking}}',
   'shipments.toast.carrierAlerted.title': 'Carrier escalation not available yet',
   'shipments.toast.carrierAlerted.desc':
@@ -235,8 +235,8 @@ export const shipmentsId: Record<string, string> = {
   'shipments.timeline.daysInTransit.one': '{{count}} hari',
   'shipments.timeline.daysInTransit.other': '{{count}} hari',
   // — Toasts —
-  'shipments.toast.export.title': 'Ekspor dalam antrean',
-  'shipments.toast.export.desc': 'Ekspor pengiriman akan segera diunduh.',
+  'shipments.toast.export.title': 'Ekspor pengiriman belum tersedia',
+  'shipments.toast.export.desc': 'Tidak ada berkas yang dibuat — ekspor pengiriman belum tersambung ke sistem nyata.',
   'shipments.toast.manualAsn.title': 'Entri ASN manual',
   'shipments.toast.manualAsn.desc': 'Formulir akan tersedia pada rilis mendatang.',
   'shipments.toast.dockSchedule.title': 'Jadwal dermaga diperluas',
@@ -244,7 +244,7 @@ export const shipmentsId: Record<string, string> = {
   'shipments.toast.reminder.title': 'Pengingat belum tersedia',
   'shipments.toast.reminder.desc':
     'Pengingat pemasok untuk {{asn}} akan dikirim setelah sambungan kanal aktif. Tidak ada yang dikirim ke {{supplier}}.',
-  'shipments.toast.tracking.title': 'Pelacakan dibuka',
+  'shipments.toast.tracking.title': 'Pelacakan kurir belum tersedia — tidak ada yang dibuka.',
   'shipments.toast.tracking.desc': 'Kurir: {{carrier}} · {{tracking}}',
   'shipments.toast.carrierAlerted.title': 'Eskalasi kurir belum tersedia',
   'shipments.toast.carrierAlerted.desc':

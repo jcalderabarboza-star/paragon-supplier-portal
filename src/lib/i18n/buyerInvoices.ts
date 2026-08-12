@@ -26,8 +26,8 @@ export const buyerInvoicesEn: Record<string, string> = {
   // — Bulk actions + their toasts —
   'buyerInvoices.action.sapApExport': 'SAP AP Export',
   'buyerInvoices.action.exportReport': 'Export Report',
-  'buyerInvoices.toast.sapExport.title': 'Exporting to SAP AP batch',
-  'buyerInvoices.toast.agingReport.title': 'Downloading aging report',
+  'buyerInvoices.toast.sapExport.title': 'SAP AP export not available yet — nothing was sent to SAP.',
+  'buyerInvoices.toast.agingReport.title': 'Aging report not available yet — no file was downloaded.',
   // — Meta line (count sibling; trailing formatted date rendered after) —
   'buyerInvoices.meta.summary.one': '{{count}} invoice · last updated',
   'buyerInvoices.meta.summary.other': '{{count}} invoices · last updated',
@@ -178,8 +178,8 @@ export const buyerInvoicesId: Record<string, string> = {
   // — Bulk actions + their toasts —
   'buyerInvoices.action.sapApExport': 'Ekspor SAP AP',
   'buyerInvoices.action.exportReport': 'Ekspor Laporan',
-  'buyerInvoices.toast.sapExport.title': 'Mengekspor ke batch SAP AP',
-  'buyerInvoices.toast.agingReport.title': 'Mengunduh laporan umur',
+  'buyerInvoices.toast.sapExport.title': 'Ekspor SAP AP belum tersedia — tidak ada yang dikirim ke SAP.',
+  'buyerInvoices.toast.agingReport.title': 'Laporan umur belum tersedia — tidak ada berkas yang diunduh.',
   // — Meta line —
   'buyerInvoices.meta.summary.one': '{{count}} faktur · terakhir diperbarui',
   'buyerInvoices.meta.summary.other': '{{count}} faktur · terakhir diperbarui',

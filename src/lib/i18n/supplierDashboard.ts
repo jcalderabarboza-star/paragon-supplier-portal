@@ -60,9 +60,9 @@ export const supplierDashboardEn: Record<string, string> = {
   'supplierDashboard.orders.action.confirm': 'Confirm',
   'supplierDashboard.orders.action.createAsn': 'Create ASN',
   'supplierDashboard.orders.action.view': 'View',
-  'supplierDashboard.orders.toast.opening': 'Opening {{po}} for confirmation',
-  'supplierDashboard.orders.toast.creatingAsn': 'Creating ASN for {{po}}',
-  'supplierDashboard.orders.toast.viewing': 'Viewing {{po}}',
+  'supplierDashboard.orders.toast.opening': 'PO confirmation not available from this card — nothing was opened. Use My Orders.',
+  'supplierDashboard.orders.toast.creatingAsn': 'ASN creation not available from this card — nothing was created. Use Shipments & ASN.',
+  'supplierDashboard.orders.toast.viewing': 'PO detail not available from this card — nothing was opened. Use My Orders.',
   // — Performance score —
   'supplierDashboard.perf.title': 'My performance score',
   'supplierDashboard.perf.otif': 'OTIF',
@@ -78,6 +78,10 @@ export const supplierDashboardEn: Record<string, string> = {
   'supplierDashboard.docs.action.upload': 'Upload',
   'supplierDashboard.docs.toast.title': '{{action}} — {{name}}',
   'supplierDashboard.docs.toast.desc': 'Document management workflow coming in Phase 2.',
+  // R1 — was a hardcoded template literal in the component (EN only, both
+  // locales bypassed) that read "<label> workflow initiated." The handler only
+  // dismisses the briefing card; no workflow is initiated by it.
+  'supplierDashboard.brief.toast.desc': 'Nothing was initiated — this card only dismisses the briefing.',
   // — Empty state (no supplier profile) —
   'supplierDashboard.empty.title': 'No supplier profile yet',
   'supplierDashboard.empty.subtitle': 'Your Paragon supplier record is not available.',
@@ -134,9 +138,9 @@ export const supplierDashboardId: Record<string, string> = {
   'supplierDashboard.orders.action.confirm': 'Konfirmasi',
   'supplierDashboard.orders.action.createAsn': 'Buat ASN',
   'supplierDashboard.orders.action.view': 'Lihat',
-  'supplierDashboard.orders.toast.opening': 'Membuka {{po}} untuk konfirmasi',
-  'supplierDashboard.orders.toast.creatingAsn': 'Membuat ASN untuk {{po}}',
-  'supplierDashboard.orders.toast.viewing': 'Melihat {{po}}',
+  'supplierDashboard.orders.toast.opening': 'Konfirmasi PO tidak tersedia dari kartu ini — tidak ada yang dibuka. Gunakan Pesanan Saya.',
+  'supplierDashboard.orders.toast.creatingAsn': 'Pembuatan ASN tidak tersedia dari kartu ini — tidak ada yang dibuat. Gunakan Pengiriman & ASN.',
+  'supplierDashboard.orders.toast.viewing': 'Detail PO tidak tersedia dari kartu ini — tidak ada yang dibuka. Gunakan Pesanan Saya.',
   // — Performance score —
   'supplierDashboard.perf.title': 'Skor kinerja saya',
   'supplierDashboard.perf.otif': 'OTIF',
@@ -152,6 +156,7 @@ export const supplierDashboardId: Record<string, string> = {
   'supplierDashboard.docs.action.upload': 'Unggah',
   'supplierDashboard.docs.toast.title': '{{action}} — {{name}}',
   'supplierDashboard.docs.toast.desc': 'Alur manajemen dokumen akan hadir di Fase 2.',
+  'supplierDashboard.brief.toast.desc': 'Tidak ada yang dimulai — kartu ini hanya menutup ringkasan.',
   // — Empty state (no supplier profile) —
   'supplierDashboard.empty.title': 'Belum ada profil pemasok',
   'supplierDashboard.empty.subtitle': 'Catatan pemasok Paragon Anda tidak tersedia.',

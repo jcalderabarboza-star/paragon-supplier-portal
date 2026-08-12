@@ -550,12 +550,16 @@ const SupplierDashboard: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              // i18n-defer: mock/sample data — toast echoes the
-                              // sample-briefing action title/label (EN by design).
+                              // R1 — the description was a hardcoded template
+                              // literal asserting "<label> workflow initiated."
+                              // It was EN-only (both locales bypassed) and it was
+                              // FALSE: this handler dismisses the card and does
+                              // nothing else. `action.title` stays verbatim —
+                              // it is sample-briefing DATA, not a claim.
                               toast({
                                 variant: 'info',
                                 title: action.title,
-                                description: `${action.btnLabel} workflow initiated.`,
+                                description: t('supplierDashboard.brief.toast.desc'),
                               });
                               dismiss(action.id);
                             }}

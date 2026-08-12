@@ -110,8 +110,8 @@ export const supplierOrdersEn: Record<string, string> = {
     'Change request for {{poNumber}} submitted',
   'supplierOrders.toast.changeSubmitted.desc': 'Paragon team will review.',
   'supplierOrders.toast.asnCreation.title': 'ASN creation for {{poNumber}}',
-  'supplierOrders.toast.asnContinue': 'Open My Shipments & ASN to continue.',
-  'supplierOrders.toast.creatingAsn.title': 'Creating ASN for {{poNumber}}',
+  'supplierOrders.toast.asnContinue': 'Open My Shipments & ASN to create it there.',
+  'supplierOrders.toast.creatingAsn.title': 'ASN creation not available from this card — nothing was created for {{poNumber}}.',
   // — Empty state (all-empty early return) —
   'supplierOrders.empty.title': 'No purchase orders yet',
   'supplierOrders.empty.subtitle':
@@ -218,8 +218,8 @@ export const supplierOrdersId: Record<string, string> = {
   'supplierOrders.toast.changeSubmitted.desc': 'Tim Paragon akan meninjau.',
   'supplierOrders.toast.asnCreation.title': 'Pembuatan ASN untuk {{poNumber}}',
   'supplierOrders.toast.asnContinue':
-    'Buka Pengiriman & ASN Saya untuk melanjutkan.',
-  'supplierOrders.toast.creatingAsn.title': 'Membuat ASN untuk {{poNumber}}',
+    'Buka Pengiriman & ASN Saya untuk membuatnya di sana.',
+  'supplierOrders.toast.creatingAsn.title': 'Pembuatan ASN tidak tersedia dari kartu ini — tidak ada yang dibuat untuk {{poNumber}}.',
   // — Empty state (all-empty early return) —
   'supplierOrders.empty.title': 'Belum ada pesanan pembelian',
   'supplierOrders.empty.subtitle':
