@@ -8,7 +8,7 @@
 //   (`effectiveEnforcement`), so the un-governed state is the SAFE state and a
 //   check nobody has ruled on is not thereby off. Seeding `BLOCK` explicitly was
 //   also refused: it would put a decision on the record that nobody took, and
-//   `AS_SET` would then claim an author for a constant.
+//   `AS_RECORDED` would then claim an author for a constant.
 //
 // ⚠️ THERE IS NO `update`, AND THERE IS DELIBERATELY NEVER GOING TO BE ONE
 //   (D2, ruled — the `fxPins` freeze). SUPERSEDING ON AN APPEND-ONLY LEDGER

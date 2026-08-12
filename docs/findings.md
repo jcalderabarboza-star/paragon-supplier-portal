@@ -10763,3 +10763,154 @@ Added to the standing heuristic in `CLAUDE.md` as its third rule, because a
 heuristic that fires late needs an earlier trigger, and knowing exactly where it
 fired is how the earlier one gets found.
 
+
+
+---
+
+## §32 — D-B · `AS_SET` → `AS_RECORDED` (DONE), and a correction against the dispatch
+
+**Renamed. 38 occurrences across 7 files, EN + ID prose rewritten, `tsc` clean.**
+
+`AS_SET` named the MECHANISM — *a setting was set*. `AS_RECORDED` names what a
+reader needs: **the recorded mode is the one in force, because nothing
+intervened.** It is a statement about the other four members of
+`EnforcementModeSource`, and the old name said none of that.
+
+### ⚠️ THE CORRECTION AGAINST THE DISPATCH — and it decided the batch
+
+The original brief asserted this string was **already stamped into durable
+records**, which would have made the rename a ledger migration and effectively
+impossible. Seat 3 corrected it, and the correction is the reason this shipped
+today. **VERIFIED BEFORE MOVING ANYTHING**, per the dispatch's own instruction:
+
+| Check | Result |
+|---|---|
+| `GovernedCheckStamp` / `StampPerVerdict` production importers | **ONLY `enforcement.ts` itself** — the shape exists and NOTHING PRODUCES IT |
+| `EnforcementModeSource` production consumers | `enforcement.ts` + the GL-0 glossary (type-only) |
+| Does any store or fixture persist a mode source? | **NO.** `enforcementSettingStore` persists `mode`; **the source is DERIVED AT READ TIME and never written** |
+
+So the string exists only in a derivation and its definitions: **a
+compiler-checked two-string-and-a-key move today, a ledger migration the day
+stamps persist.** A NOW-OR-NEVER WITH A CLOSING DATE, not a preference.
+
+⚠️ **The general form, because the window shape recurs:** a name is cheap to
+change while its only consumers are the compiler and the tests, and expensive
+the moment it is written into something durable. **The cost of a rename is set
+by whether a PRODUCER exists, not by how many references do** — 38 references
+moved in one pass; one persisted row would have blocked all of them.
+
+**The definition keeps the subtlety, which is the part a reader needs:** *a
+full-rigour setting whose review date has passed still reads as recorded, NOT as
+tightened — nothing was tightened, because there is nothing stricter to tighten
+to.*
+
+---
+
+## §33 — D-C · `CHAOS` — NO ACTION, filed so it is not re-opened
+
+`CHAOS` was flagged (§30) as one of three terms undefinable without reading the
+implementation. **It is not being renamed, and the reasons are recorded here so
+the next census does not re-derive the question and reach the opposite answer:**
+
+- **It is a TERM OF ART.** *Chaos engineering* is the established name for
+  deliberately injecting faults to prove a system degrades honestly. The term is
+  opaque to an outsider and immediately legible to its actual audience.
+- **DEV-ONLY and STATICALLY DEAD in the production build** — env-gated, so it
+  cannot reach a user under any configuration.
+- ⚠️ **C2 PINS IT PRECISELY IN ORDER TO TELL THE BACKEND NEVER TO EMIT IT.** The
+  contract line exists for that purpose. The name is load-bearing in a contract
+  whose whole point is that this code is one the real backend must never send.
+
+**A rename costs a C2 amendment and buys nothing.** It would also weaken the
+contract: the C2 line is easiest to enforce while the forbidden code has a
+distinctive, un-guessable name.
+
+---
+
+## §34 — D-A · `certBasis` — FILED, NOT TOUCHED. Operator ruling pending.
+
+**THE FINDING IS THE DISAGREEMENT.** Three readings of one field, and the
+dispatch asked for all three. Deriving them found a **fourth**.
+
+| # | Source | The reading |
+|---|---|---|
+| 1 | **The type comment** (`services/data/types.ts:767-768`) | GR 42/2024 made BPJPH certs permanent-validity; legacy GR-39 certs kept a four-year expiry clock. **`certBasis` disambiguates the two STATUTORY CLOCK MODELS.** |
+| 2 | **The glossary** (`governance.glossary.ts`, GL-0) | `permanent` = *validity runs until the certificate's own expiry date*. **A property of the DOCUMENT.** |
+| 3 | **The fixtures** (`complianceRegistry.ts`) | Effectively *has-an-expiry-date vs hasn't* — stamping `legacy-4yr` on **ISO (2), OTHER (1) and HALAL_FOREIGN (2)** certs, schemes the Indonesian halal transition never touched |
+| 4 | ⚠️ **The fixtures, against THEMSELVES** — derived at D-A, not previously reported | Across 16 records, **`HALAL_BPJPH` carries BOTH bases**: `permanent` ×4 and `legacy-4yr` ×2. Under reading 1 a BPJPH cert is permanent BY STATUTE, so those two rows contradict the type comment AND the other four rows of their own type |
+
+**UNDER THE GLOSSARY'S READING AN ISO CERT SHOULD BE `permanent`, WHICH IS THE
+OPPOSITE OF WHAT THE FIXTURES SAY.**
+
+### Why it is more than a documentation defect
+
+**NOTHING READS `certBasis` TODAY, SO NOTHING IS BROKEN.** No page, hook or
+service branches on it (`SupplierDocuments`, the learn walkthrough and the i18n
+fragment all state explicitly that they do NOT branch on it). **BUT IT IS A
+COMPLIANCE FIELD ON TRACK R'S OWN REGISTRY, AND IT WILL BE READ THE MOMENT THE
+HARVEST LANDS** — at which point the reader picks one of four incompatible
+meanings, and the two that disagree with statute are the ones that produce a
+wrong expiry.
+
+### ⚠️ THE STATUTORY KNOWLEDGE — recorded regardless of the ruling
+
+**A LEGACY CERT'S TERM IS ISSUANCE PLUS FOUR YEARS BY STATUTE, REGARDLESS OF
+WHAT THE DOCUMENT PRINTS.**
+
+Recorded here because it is the part that is **genuinely hard to recover**: it
+is not derivable from the data, not inferable from the type, and not something a
+future reader can reconstruct from the fixtures — which, as reading 4 shows,
+disagree with it. A ruling can be re-taken; this fact would have to be
+re-researched.
+
+### The general form
+
+**THREE READINGS OF ONE FIELD, NONE OF THEM WRONG WHERE THEY WERE WRITTEN, AND
+NOTHING THAT COULD HAVE CAUGHT THE DISAGREEMENT.** The type comment was right
+about statute. The glossary was right about documents. The fixtures were
+internally plausible. Each was authored in its own file, against its own
+question, and **no check compares a field's comment, its definition, and its
+data.**
+
+That is **§29's unfalsifiable-claim shape ON A TYPED FIELD RATHER THAN IN
+PROSE** — and it is worse than the prose cases, because a typed field looks
+checked. `tsc` verifies that every value is one of two strings; it cannot
+verify that the two strings mean the same thing to the three documents that use
+them. **A closed union guarantees a member is spelled correctly, never that it
+is understood identically.**
+
+---
+
+## §35 — ROUTING CORRECTION: `CHAOS`, `legacy-4yr` and `AS_SET` are NOT procurement vocabulary
+
+§31b filed those three as **the procurement review's opening rows.** ⚠️ **THAT
+WAS WRONG AND IS OVERTURNED.** They are **internal mechanism names**, and asking
+a procurement reader to name them would be asking them to name something **they
+have never encountered**. The correction stands on the record beside the
+original, per the register's own rule that a superseded claim is kept, not
+edited away.
+
+### The rule, since the glossary will grow
+
+⚠️ **A TERM THE PLATFORM CANNOT EXPLAIN IS EITHER A DOMAIN QUESTION OR AN
+ENGINEERING ONE, AND THE ROUTING DEPENDS ON WHO COINED IT.**
+
+- **A term the BUSINESS coined goes to the business.** *Quality hold*,
+  *disposition*, *legacy certificate*, *sourcing event* — the team owns the word
+  and the portal is a borrower, so a mismatch is the portal's error.
+- **A term the IMPLEMENTATION coined goes to whoever can read the
+  implementation.** `CHAOS`, `AS_SET`, `UNBOUND_HOOK` — no procurement reader
+  ever named these, and their opacity is an engineering-clarity problem, not a
+  vocabulary disagreement.
+
+**What §31b got right and is worth keeping:** *a term the platform cannot
+explain is a good opening question.* **What it got wrong: WHO to ask.** The
+undefinability test finds a real defect every time; it does not tell you whose
+defect it is, and this batch is the correction that adds the second step.
+
+**Consequence for the review:** the three rows to open with are **domain** terms
+whose portal definition may not match the team's — and finding those needs a
+different derivation than "could I write this without reading the code", because
+a business term is usually perfectly explicable AND possibly wrong. That
+derivation does not exist yet.
+
