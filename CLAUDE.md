@@ -249,10 +249,14 @@ family reads as one product line.
 Whenever you answer "which things are X?" by scanning the tree — dead modules,
 uncalled verbs, unbacked affordances, missing i18n keys — **derive the
 population; never work an inherited list.** A scope written before its
-predecessors ran is a list. Two rules earned across five arcs
-(`CENSUS-MUST-DERIVE-01`, the bilateral loose-end census,
-`ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01`, `FLOOR-IN-PROSE-01`, and the R1
-false-affordance sweep):
+predecessors ran is a list. The rules below were earned across the arcs recorded
+in `docs/findings.md` (`CENSUS-MUST-DERIVE-01`, the bilateral loose-end census,
+`ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01`, `FLOOR-IN-PROSE-01`, the R1
+false-affordance sweep, and GL-1) — **the rules are numbered below and the
+numbering is the count.** (It read *"Two rules"* while three were numbered
+underneath it, from GL-0 until GL-1 corrected it: a cardinality restated in
+prose, in the section that forbids restating cardinalities in prose. §27 /
+`FLOOR-IN-PROSE-01`, in its own house.)
 
 1. ⚠️ **A DERIVED POPULATION THAT COMES BACK SUSPICIOUSLY SMALL OR SUSPICIOUSLY
    ROUND IS REPORTING ON ITS OWN MATCHER, NOT ON THE TREE.** Treat a clean
@@ -263,11 +267,36 @@ false-affordance sweep):
    including a walkthrough the operator had specifically ruled to build).
    Sanity-check by asserting a known-true member is present and a known-false
    one is absent, before reporting anything.
+
+   ⚠️ **GL-1 · THE RULE FIRED ON THE SEAT THAT WROTE IT.** The refusal sites were
+   derived **from a list of map names read off an earlier grep — a list, not a
+   derivation.** The proper derivation (registered vocabularies →
+   `Record<Vocab, string>` declarations → uses) immediately named a **21st site
+   the list never contained**, because its map is
+   `Record<Exclude<QtyRefusalReason, 'EMPTY_QTY'>, string>` — **a shape the eye
+   would never catch**, and one no name-list could have held. A grep output
+   pasted forward is an inherited list wearing a derivation's clothes.
+
 2. **Widening a matcher creates false accusations as readily as narrowing it
    creates blind spots.** R1 widened handler matching to `on[A-Z]\w*` and swept
    in `onSuccess`/`onError` — react-query lifecycle callbacks, not affordances —
    which accused fully-wired code of lying. Re-derive after every widening too,
    not only after every narrowing.
+
+   ⚠️ **GL-1 · SECOND INSTANCE, SAME BATCH.** The first refusal-site matcher
+   keyed **only on the union** (`Record<QtyRefusalReason, …>`) and produced
+   **three false accusations** against `services/sdc/ingest.ts` — a
+   union-to-union translation table (`Record<QtyRefusalReason, ParseReason>`) in
+   a service, with no message and no surface to attach anything to. The fix was
+   to test **both halves of the generic**: the VALUE must be `string`, which is
+   what makes it a message map.
+
+   ⚠️ **WHY RULES 1 AND 2 ARE WORTH READING AS A PAIR, AND WHY GL-1 IS FILED
+   AGAINST BOTH:** widening creates false accusations as readily as narrowing
+   creates blind spots — **on the same instrument, in the same hour, on the seat
+   that wrote the rule.** Neither error is the careless opposite of the other;
+   they are the two ways one matcher is wrong, and a batch that fixes one
+   without re-deriving is simply choosing which way to be wrong next.
 
 3. ⚠️ **NEVER CONCLUDE ABSENCE FROM A TRUNCATED VIEW OF A DERIVATION.** Rules 1
    and 2 guard the matcher; this one guards the READING. At GL-0 the union
@@ -288,6 +317,17 @@ keep their affordances. Full list: `docs/findings.md` §19.
 produces it** (§27). Do not restate a cardinality in prose — the "four unwired
 flows / 10 wired targets" sentence was wrong twice, in one sentence, for exactly
 that reason.
+
+### And the rule above the three: PROBE THE GUARD BOTH WAYS
+Rules 1–3 guard a POPULATION. They say nothing about the instrument that guards
+an INVARIANT. **A guard is habitually probed in one direction only — "does it
+catch the bad thing?" — so a guard that is wrong about what it should ACCEPT
+ships looking like a working guard.** GL-1's chip-ref type was exactly this: it
+rejected the bad ref *and the known-good one*, because a mapped type collapsed
+`term` to `never`. A one-sided probe would have shipped it.
+**Assert a known-GOOD input passes before you believe a known-BAD input failed.**
+The running count of this class lives in `docs/findings.md` §39 — it is a table,
+and the table is the count.
 
 ## Gates — THIS PROJECT HAS NO LINT SCRIPT
 There is no `lint` script and no ESLint config. Do not invent one, and do not
