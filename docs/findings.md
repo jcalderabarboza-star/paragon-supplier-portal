@@ -10991,6 +10991,25 @@ because this seat does not hold it — restating it from inference would be the
 
 ## §37 — `UNDEFINABLE-TEST-SELECTS-FOR-ENGINEERING-OPACITY-01` — the instrument gap
 
+> ### ⚠️ CLASS: **PROCEDURAL** — the first in this register, and the distinction is not cosmetic
+>
+> **EVERY OTHER FINDING HERE IS GATEABLE.** Each one names a defect the tree
+> could be made to catch, and most were closed by attaching something that can
+> fail: a bilateral census, a `satisfies` pin, a derived population, `tsc`.
+> Even §29 — whose whole subject is claims nothing could catch — proposes
+> attaching a gate as the next step.
+>
+> **THIS ONE CANNOT BE GATED, AND NOT FOR WANT OF EFFORT.** The remedy is a
+> change to HOW A CONVERSATION IS RUN, not to what the build checks. A reader
+> who files it beside the others will look for the gate, not find one, and
+> conclude the work is unfinished. **It is finished; the answer is that no gate
+> exists.**
+>
+> Consequence for the register itself: a finding whose remedy is procedural
+> **cannot be closed by a PR**, so it will sit open indefinitely without that
+> meaning anything is outstanding. Mark it, or the open-findings count acquires
+> a permanent resident nobody can retire.
+
 ⚠️ **THE UNDEFINABLE-TERM TEST SELECTS FOR ENGINEERING OPACITY. A BUSINESS TERM
 IS USUALLY PERFECTLY EXPLICABLE AND POSSIBLY WRONG.** The instrument finds
 `AS_SET` and **CAN NEVER FIND A TERM PROCUREMENT WOULD DISPUTE.** The two
@@ -11038,6 +11057,24 @@ Concretely: the highest-fan-out **domain** terms (*quality hold*,
 sheet with **no definitions on it**, and ours are compared afterwards. The three
 terms §31b originally proposed — `CHAOS`, `legacy-4yr`, `AS_SET` — are
 engineering names and belong in a different conversation entirely (§35).
+
+### ⚠️ THE OPERATIONAL INSTRUCTION, stated plainly because it changes what someone does next week
+
+**RUN THE PROCUREMENT REVIEW AS ELICITATION, NOT AS REVIEW.**
+
+**ASK THE TEAM TO DEFINE A TERM IN THEIR OWN WORDS BEFORE SHOWING THEM OURS.**
+
+This is not a preference about facilitation style. Ours is the only instrument
+that can find a term the business would dispute, and **showing our definition
+first destroys it**: a reviewer shown a plausible definition agrees with it, and
+**A SILENT AGREEMENT IS INDISTINGUISHABLE FROM A REAL ONE.** That is §29's
+unfalsifiable shape **reproduced inside the review process itself** — an
+agreement with nothing that could have caught it being hollow.
+
+Practically: the high-fan-out DOMAIN terms (*quality hold*, *disposition*,
+*sourcing event*, *legacy certificate*, *under review*) go on a sheet **with no
+definitions printed on it**. Ours are compared afterwards, and a divergence is
+recorded as the team's word against ours rather than as a correction to ours.
 
 **This finding is OPEN. No second derivation exists, and the honest conclusion
 is that none can — so the remedy is procedural, not a gate.**
