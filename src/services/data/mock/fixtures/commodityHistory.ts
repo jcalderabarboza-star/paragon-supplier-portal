@@ -1,6 +1,21 @@
 // ────────────────────────────────────────────────────────────────────────────
 // CI-1.5 — Vendored commodity HISTORY for the calibration & backtest gate.
 //
+// ── ⚠️ HEADLESS BY DESIGN. ITS ONLY READER IS THE BACKTEST HARNESS ──────────
+//   No page, hook or service reads this fixture; `lib/shouldCostBacktest.ts` is
+//   its sole importer, and that module is itself headless. A retirement census
+//   (R1, 2026-08-12) surfaced the PAIR as dead weight — 587 lines between them —
+//   and the operator RULED THEM KEPT (`UNUSED-IS-NOT-USELESS-01`, findings §25).
+//
+//   **WHAT WOULD CONSUME IT: Stage I · I2**, with the harness above. This is the
+//   price series the backtest runs against; deleting it would silently make the
+//   harness untestable rather than merely unused.
+//
+//   ⚠️ **RETIRING IT WOULD ALSO DESTROY SOMETHING UNRECOVERABLE.** These are
+//   OBSERVED × SNAPSHOT(as-of) figures with documented provenance (below) —
+//   real, honestly-dated history. Code can be rewritten from a spec; a
+//   vendored historical record with its provenance intact cannot.
+//
 // These are OBSERVED × SNAPSHOT(as-of) fixtures: REAL, STATIC, honestly-dated
 // historical prices — NOT SIMULATED, NOT invented. The should-cost engine is run
 // over them month-by-month to prove its coefficients produce sane numbers against

@@ -10100,3 +10100,230 @@ largest pages keep their affordances.
 | `SupplierDashboard` / `SupplierOrders` "Opening {{po}}", "Creating ASN" | pure NAVIGATION — `/supplier/orders` has `usePurchaseOrderConfirm` wired; one `navigate()` makes the sentence true | A behaviour change smuggled into a copy batch. Re-worded to POINT AT the real surface instead |
 | `BuyerRisk` "Opening full analysis" | — | No detail surface exists to open |
 
+
+
+---
+
+## §19 — `INSTRUMENT-SHAPE-UNDER-REPORTS-01` (R2, DECLARED)
+
+**THE POPULATION WAS 53, NOT 18, AND THE REASON IS THE FINDING.** The R1 census
+instrument under-reported THREE times. Each failure was **THE INSTRUMENT'S
+SHAPE, NOT THE TREE'S** — the code was always what it was; the scanner could not
+see it. Filed because a derivation is only as trustworthy as its matcher, and
+these three are the matcher bugs this codebase specifically provokes.
+
+| # | The matcher | What it could not see | What it cost |
+|---|---|---|---|
+| 1 | `\b(?:import\|export)\b[^;\n]*?from\s*['"]…['"]` | **A MULTI-LINE NAMED IMPORT.** `[^;\n]` excludes the newline, so `import {\n  a,\n} from 'x'` never matched | **CONDEMNED ~2,000 LINES OF LIVE CODE** as orphans — `contractView.tsx` (477), `poConfirmModel.ts`, `rfqCreateModel.ts`, four fixtures, and `lib/learn/halalRenewalWalkthrough.ts` — **the halal walkthrough the operator SPECIFICALLY RULED TO BUILD (FORK-1 = (c), I3.4)**. Corrected before reporting; the orphan count fell 16 → 3 |
+| 2 | `on(?:Click\|Action\|Submit\|Confirm\|Select\|Change)` | **CUSTOM HANDLER PROPS.** This codebase passes `onQualify`, `onInviteRfq`, `onUpdate`, `onViewStorefront` | Mis-attributed handler bodies — a toast got matched to the WRONG enclosing handler, so `BuyerDiscovery`'s three qualification affordances were invisible |
+| 3 | inline `on…={() => …}` only | **NAMED HANDLERS.** `const handleExport = () => toast(...)` — **WHICH IS WHERE THE LARGEST PAGES KEEP THEIR AFFORDANCES** | `BuyerGoodsReceipt.handleExport` sat in the hole, along with 6 more sites across `shipments`, `buyerInventory`, `supplierOrders`, `rfqs` |
+
+A fourth correction, opposite in sign: widening (2) to `on[A-Z]\w*` swept in
+`onSuccess` / `onError`, which are **react-query lifecycle callbacks, not
+affordances**. That version accused `BuyerSourcing`'s fully-wired RFQ-create
+toast of lying. **Widening a matcher can create false accusations as easily as
+narrowing it creates blind spots**, and only re-deriving catches either.
+
+**This is the FIFTH ARC IN WHICH DERIVING BEAT LISTING BY FAILING
+INFORMATIVELY** (with `CENSUS-MUST-DERIVE-01`, the bilateral loose-end census,
+`ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01`, and the `FLOOR-IN-PROSE-01` pointer).
+The pattern is now consistent enough to state as a rule: **a derived population
+that comes back suspiciously small or suspiciously round is reporting on its own
+matcher, not on the tree.** 0 unnamed verbs and 16 orphans were both that
+signal.
+
+---
+
+## §20 — `TOAST-INVENTED-A-PARTY-01` (R2, CLOSED at R1 — filed separately, different class)
+
+*"Hold override requested"* / **"Awaiting QC manager approval."**
+(`goodsReceipt.toast.overrideHold`, was at `BuyerGoodsReceipt.tsx:382`)
+
+**FILED SEPARATELY FROM THE OTHER 52 BECAUSE IT IS A DIFFERENT CLASS, AND IT IS
+THE ONLY ONE THAT FABRICATES A PARTY.** The other fifty-two asserted an ACT that
+did not happen — an export, a sync, a sent message. This one asserted a
+**PERSON**: a QC manager who is reviewing a request. There is no QC manager, no
+request, no queue and no review. It did not overstate what the software did; it
+invented a human being in an approval chain, and told the operator to wait for
+them.
+
+The severity ordering is the point: an unbacked export wastes a click. **An
+invented approver puts a quality hold into an imaginary escalation and leaves a
+real one un-escalated.** A user who believes a named party is reviewing does not
+go and find the real one.
+
+**Why the verb was NOT wired instead — refusal RATIFIED (C10 §2,
+`ENF-NO-PERSON-IN-IDENTITY-01`, and already recorded at
+`BuyerGoodsReceipt.tsx:371-379` as `DEAD-AFFORDANCE-01`):** an override's entire
+value is accountability — *this named person accepted this risk on this date*.
+The platform cannot name a person. **Wiring it writes an ANONYMOUS UNLOCK into a
+permanent trail** — the exact shape the enforcement lane already refuses by
+making an unattributed override unable to complete. The string now says that.
+
+**Also corrected: `t_gr_hold` was never this affordance's verb.** It runs
+`Under Inspection → Quality Hold` — it PLACES a hold. Overriding one is
+`Quality Hold → Under Inspection`, which is `t_gr_request_retest`, and that IS
+wired and ships one button to the left. See §22 for the asymmetry this leaves.
+
+---
+
+## §21 — `UNWIRED-FLOWS-ARE-SEVEN-NOT-FOUR-01` (R2, DECLARED — CLAUDE.md corrected)
+
+`CLAUDE.md` said **FOUR** flows remain author-unwired
+(Shipment/Contract/Obligation/SupplierDocument). Derived from `getKnownFlows()`
+∖ `WIRED_COMMAND_TARGETS`, it is **SEVEN**, and they hold **30 verbs that cannot
+fire**:
+
+| Flow | Verbs | Why it was missed |
+|---|---|---|
+| `shipment` | 8 | — (in the four) |
+| `contract` | 4 | — (in the four) |
+| `supplierDocument` | 4 | — (in the four) |
+| `obligation` | 2 | — (in the four) |
+| `goodsReceiptLine` | 5 | A rolled-up sub-flow; the "four" counted only the F0.4 five |
+| `invoiceMatch` | 4 | Same |
+| **`compliance`** | **3** | **Never counted at all** |
+
+⚠️ **COMPLIANCE IS NAMED SPECIFICALLY.** I3 is stamped COMPLETE, `BuyerCompliance`
+really does read through the `useDataService()` seam, and
+`COMPLIANCE-CARVEOUT-01` really is closed. **AND THE COMPLIANCE MACHINE IS
+READ-ONLY: `t_compliance_submit` / `_verify` / `_reject` CAN NEVER FIRE.** A
+complete READ path and an inert WRITE path are entirely compatible, and nothing
+in the I3 completion stamp said which of the two it was claiming. That is how a
+whole machine stayed out of a count for four phases.
+
+**All seven ARE honestly badged `AUTHORED — UNWIRED` on `/buyer/process-flows`**
+(verified by rendering all seven plus two wired controls, R1 — the wired ones
+carry no badge). The Seat-3 charge that they "read as working on the diagram"
+was TRUE WHEN WRITTEN and was closed by PF-1/PF-2. **The defect was in
+`CLAUDE.md`, not on the surface** — the register was staler than the product.
+
+**Wired CommandTargets are 11, not 10** (`MockCommandService.ts:1130` /
+`:1155`). The 11th is `enforcement` (CP-3 · E2). That sentence has now been
+wrong twice for the same reason: **a count restated in prose instead of derived**
+(`FLOOR-IN-PROSE-01`, one layer up).
+
+---
+
+## §22 — `UNCALLED-VERBS-IN-WIRED-FLOWS-01` (R2, DECLARED — 21 verbs, ALL `WIRE-LATER`)
+
+**THE GENUINELY UNREPORTED SET.** These 21 sit inside flows whose CommandTarget
+IS wired — so **THEY CARRY NO `AUTHORED — UNWIRED` BADGE PRECISELY BECAUSE THE
+FLOW IS WIRED.** A `/buyer/process-flows` reader sees a wired machine and would
+reasonably take every verb on it as operable. Seven are ordinary procurement
+acts, not exotica.
+
+**Disposition: ALL 21 ARE `WIRE-LATER`. NONE IS SUBSTRATE, and that is a
+finding rather than a hedge** — `substrate-only` means *rolled up by a parent and
+never instantiated on its own*, which is true of `goodsReceiptLine` and
+`invoiceMatch` (both in §21, both target-less). Every verb below belongs to an
+entity that IS instantiated and IS dispatched against. There is no principled
+reason any of them stays dark forever; each is waiting on a surface.
+
+| Verb | Flow | Trigger | Waiting on |
+|---|---|---|---|
+| `t_pr_submit` | purchaseRequisition | user | **CHEAPEST OF THE SET.** `applyTransition` is GENERIC (`MockCommandService.ts:610`) — only a hook is missing. No target edit, no flow edit |
+| `t_pr_approve` | purchaseRequisition | user | Same. An **ordinary procurement act** |
+| `t_pr_reject` | purchaseRequisition | user | Same |
+| `t_po_close` | purchaseOrder | user | An **ordinary procurement act**; a PO close affordance |
+| `t_po_view` | purchaseOrder | user | The supplier-opened receipt; rides the PO detail surface |
+| `t_po_acknowledge` | purchaseOrder | user | An ack distinct from confirm |
+| `t_po_partial_deliver` | purchaseOrder | system | A GR→PO cascade; **no source names it in `cascades.ts`** |
+| `t_po_deliver` | purchaseOrder | system | Same, the full-delivery counterpart |
+| `t_rfq_close` | rfq | user | An RFQ close affordance |
+| `t_gr_hold` | goodsReceipt | user | ⚠️ **THE ASYMMETRY: the EXIT from `Quality Hold` is wired (`t_gr_request_retest`) and the ENTRY is not.** No verb ever puts a GR on hold; the only instance in that state is FIXTURE-SEEDED (`src/data/mockGoodsReceipts.ts:229`). The state is real on screen and unreachable by any act |
+| `t_invoice_remit` | invoice | system | The F2 bank/remittance seam |
+| `t_asn_in_transit` | advanceShipNotice | system | The F2 carrier-event seam — there is no transport today |
+| `t_asn_deliver` | advanceShipNotice | system | Same |
+| `t_asn_resolve_discrepancy` | advanceShipNotice | user | A discrepancy-resolution affordance |
+| `t_requirementresponse_review` | requirementResponse | user | **The BUYER half of SDC-2.** The supplier submit path is wired; the buyer review lane has no surface |
+| `t_requirementresponse_accept` | requirementResponse | user | Same |
+| `t_requirementresponse_dispute` | requirementResponse | user | Same |
+| `t_requirementresponse_resolve` | requirementResponse | user | Same |
+| `t_incomingshipment_ship` | incomingShipment | user | SDC-3a wired the target and the report verb; these ride the shipment-tracking surface |
+| `t_incomingshipment_arrive` | incomingShipment | user | Same |
+| `t_incomingshipment_cancel` | incomingShipment | user | Same |
+
+**Not swept into R2:** wiring any of them is a BEHAVIOUR change. The
+not-half-wiring reasoning that kept `t_gr_hold` dark applies to PR approval too —
+an approval verb wired without its approver surface is the same shape of
+half-truth. Tabled with evidence.
+
+---
+
+## §23 — `DECLARED-DEMO-SUBSTRATE-01` (R2, DECLARED — so the next census does not re-open them)
+
+Seat 3's theatre census named `SupplierWhatsApp` (1,316 lines) and `BuyerRisk`
+(1,142 lines) as surfaces that **simulate rather than do**. **THAT IS TRUE. THE
+IMPLIED DEFECT WAS CONCEALMENT, AND IT IS NOT THERE.** Both declare what they
+are, on screen, verified by rendering (R1):
+
+| Surface | What it declares on screen | Nav label |
+|---|---|---|
+| `SupplierWhatsApp` | *"Demonstration — these are scripted example conversations, not your real messages."* · *"(not connected)"* ×2 | **"Channel Demo"** — not "WhatsApp" |
+| `BuyerRisk` | *"Every figure on this page is illustrative. It is the specification for supply-risk intelligence (Stage-2 · I3) — to be derived from real spend, supplier, and commodity data when that capability lands."* + five per-panel *"no live feed"* markers | "Risk" |
+
+**DECLARED: DEMO SUBSTRATE. KEEP. DO NOT RE-OPEN.** Two corrections ride along:
+
+- The Comm Hub design skeleton says `SupplierWhatsApp`'s *"Bot actions fire
+  toasts."* **That is now STALE — the page contains ZERO `toast` calls and zero
+  service imports.** It is a fully self-contained simulator.
+- Its residual honesty gap was never the page; it was the **acts** on the other
+  nineteen surfaces (§20, `PAGES-DISCLAIM-DATA-ASSERT-ACTS-01`), closed at R1.
+
+---
+
+## §24 — `PF2-DECLARE-RECORD-OVERSTATED-01` (R2, CORRECTION)
+
+PF-2 recorded that `t_inventorydeclaration_declare` and
+`t_inventorydeclaration_record` are **"BYTE-IDENTICAL IN EVERY DERIVED COLUMN"**,
+leaving *"the authored sentence as the only thing distinguishing them."*
+
+**OVERSTATED.** Comparing `from` / `to` / `trigger` / `requiredRole` /
+`requiredFields` / `policyHooks` / `version` / `statePreserving` / `settlesTo`
+with comments stripped, **exactly one column differs — and it is the one that
+carries the intent**:
+
+```
+requiredRole:  'inventorydeclaration:declare'   (SUPPLIER)
+requiredRole:  'inventorydeclaration:record'    (BUYER)
+```
+
+That is a machine-readable distinction producing a **different DR-10 actor**, and
+the flow's own header states it (C4c, ruled option (d)). The prose is not
+load-bearing; the role is. The original finding was reached by a column set that
+omitted `requiredRole` — **the census's own key, not the tree's** (same class as
+§19).
+
+---
+
+## §25 — `UNUSED-IS-NOT-USELESS-01` (R2, OPERATOR RULING — declared substrate)
+
+**THE RULE, ON RECORD: UNUSED IS NOT THE SAME AS USELESS, AND THE FLOOR COMES
+DOWN FOR A WRONG TEST, NOT FOR AN UNREAD ONE.**
+
+The R1 census proposed retiring `shouldCostBacktest.ts` (330 lines) and
+`commodityHistory.ts` (257) because retiring them costs 15 tests and would
+require lowering `scripts/floor.json`. **RULED: KEEP. DECLARED AS SUBSTRATE**,
+given the `halalVerification.ts` treatment — a header stating it is headless BY
+DESIGN, plus this row naming **what would consume it**.
+
+| Module | Lines | Headless because | WHAT WOULD CONSUME IT |
+|---|---|---|---|
+| `src/lib/shouldCostBacktest.ts` | 330 | The should-cost model has no surface yet | **Stage I · I2** (should-cost / commodity-FX). It is the backtest harness that would validate the model before a buyer ever sees a number |
+| `src/services/data/mock/fixtures/commodityHistory.ts` | 257 | Read only by `shouldCostBacktest.ts` | Same — I2. It is the price series the backtest runs against |
+| `src/services/data/halalVerification.ts` | 254 | Its own header forbids acquiring a consumer here | **H4, gated on `D-COMP-HALAL-4`** — the third of Seat 3's three-fact split (certificate verification at the instant of receipt) |
+
+**WHY THE RULE MATTERS, stated as the test it must survive:** if *"no caller"*
+were sufficient grounds for retirement, then **`halalVerification.ts` GOES
+NEXT** — 254 lines, headless, zero prod importers, and **its own header
+explicitly forbids acquiring a consumer**. Same shape, same evidence, and we
+would be **wrong**, because that module is a ratified Track-R capability waiting
+on a named gate. A retirement rule that cannot tell those two apart is not a
+rule; it is a line-count.
+
+**R3 IS THEREFORE `mockKpis.ts` + `kpi.types.ts` ONLY** — 166 lines, **zero
+importers, zero specs, zero blast radius**, and nothing in the register or the
+forward plan names a consumer. It is the only member of the R1 orphan set that
+survives this rule.
+

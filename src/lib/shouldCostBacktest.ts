@@ -1,6 +1,25 @@
 // ────────────────────────────────────────────────────────────────────────────
 // CI-1.5 — Calibration & backtest harness (the GATE before CI-2).
 //
+// ── ⚠️ HEADLESS BY DESIGN. NO PRODUCTION CONSUMER, AND THAT IS NOT A DEFECT ──
+//   Nothing in `src/main.tsx`'s import graph reaches this module: its only
+//   importer is its own spec (`shouldCostBacktest.test.ts`, 15 tests). A
+//   retirement census (R1, 2026-08-12) surfaced it as dead weight and the
+//   operator RULED IT KEPT (`UNUSED-IS-NOT-USELESS-01`, findings §25).
+//
+//   **WHAT WOULD CONSUME IT: Stage I · I2** (should-cost / commodity-FX). This
+//   is the harness that validates the engine's coefficients against real history
+//   BEFORE a should-cost spread ever renders to a buyer. It is supposed to run
+//   ahead of its surface — a backtest that only appears once the feature ships
+//   has already missed its job.
+//
+//   **THE RULE, so the next census does not re-derive the wrong answer: UNUSED
+//   IS NOT THE SAME AS USELESS, AND THE FLOOR COMES DOWN FOR A WRONG TEST, NOT
+//   FOR AN UNREAD ONE.** If "no caller" were sufficient grounds, then
+//   `services/data/halalVerification.ts` goes next — 254 lines, headless, and
+//   its own header forbids acquiring a consumer. Same shape, and retiring it
+//   would be wrong.
+//
 // Drives the UNCHANGED should-cost engine (shouldCost.ts) month-by-month over the
 // vendored OBSERVED × SNAPSHOT real history (commodityHistory.ts) and evaluates
 // the six named acceptance episodes + the falsification check (build-plan §6).
