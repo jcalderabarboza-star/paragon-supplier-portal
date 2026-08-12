@@ -485,7 +485,7 @@ export type EnforcementSetting = {
  */
 export const ENFORCEMENT_MODE_SOURCES = Object.freeze([
   /** The mode is the one a person recorded, unmodified. */
-  'AS_SET',
+  'AS_RECORDED',
   /** The recorded mode's `reviewBy` has passed and the ratchet tightened it one
    *  step (D-ENF-3). */
   'EXPIRY_TIGHTENED',
@@ -508,7 +508,7 @@ export const ENFORCEMENT_MODE_SOURCES = Object.freeze([
  *
  * ⚠️ **EVERY MEMBER NAMES A DIFFERENT REASON AND NONE OF THEM OVERSTATES.** The
  * rule this vocabulary obeys is the one E1 recorded at the ceiling: a `BLOCK`
- * whose review lapsed reads `AS_SET`, because reporting `EXPIRY_TIGHTENED`
+ * whose review lapsed reads `AS_RECORDED`, because reporting `EXPIRY_TIGHTENED`
  * would ANNOUNCE AN EVENT THAT DID NOT OCCUR. Three of the five modes below
  * would collapse into a single "it blocked" if they shared a source — and a
  * provenance field that overstates is worse than an absent one, because it is
@@ -594,7 +594,7 @@ function reviewLapsed(setting: EnforcementSetting, dispatchInstant: string): boo
  * merely repeatable; the suite pins it at both boundaries and at ten years.
  *
  * `source` names whether the returned mode DIFFERS from the recorded one, so
- * `BLOCK` with a lapsed review reads `AS_SET`: nothing was tightened, because
+ * `BLOCK` with a lapsed review reads `AS_RECORDED`: nothing was tightened, because
  * the ceiling is a fixed point.
  */
 export function effectiveMode(
@@ -602,11 +602,11 @@ export function effectiveMode(
   dispatchInstant: string,
 ): EffectiveEnforcement {
   if (!reviewLapsed(setting, dispatchInstant)) {
-    return { mode: setting.mode, source: 'AS_SET' };
+    return { mode: setting.mode, source: 'AS_RECORDED' };
   }
   const tightened = tighten(setting.mode);
   return tightened === setting.mode
-    ? { mode: setting.mode, source: 'AS_SET' }
+    ? { mode: setting.mode, source: 'AS_RECORDED' }
     : { mode: tightened, source: 'EXPIRY_TIGHTENED' };
 }
 
@@ -667,7 +667,7 @@ export function settingHistory(
  *
  * ⚠️ **AN EMPTY LEDGER IS THE CEILING, NOT A HOLE.** No recorded setting means
  * nothing has been relaxed, so the mode is `MAXIMUM_RIGOUR` and the source says
- * `NO_SETTING_RECORDED` — never `AS_SET`, because nobody set it. This is why
+ * `NO_SETTING_RECORDED` — never `AS_RECORDED`, because nobody set it. This is why
  * seeding nothing (D-ENF-4 is UNRULED) does not leave the system undefended: the
  * un-governed state IS the strict state.
  *

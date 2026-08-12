@@ -103,9 +103,12 @@ export const UNATTRIBUTED_REASON_GLOSSARY = {
 
 /** Where the mode that was applied actually came from. */
 export const ENFORCEMENT_MODE_SOURCE_GLOSSARY = {
-  AS_SET: {
-    en: 'The mode a person recorded is the mode that was applied. The ordinary case.',
-    id: 'Mode yang dicatat seseorang adalah mode yang diterapkan. Kasus biasa.',
+  // D-B — renamed from `AS_SET` (2026-08-12). `AS_SET` named the MECHANISM
+  // (a setting was set); `AS_RECORDED` names what a reader needs — that the
+  // recorded mode is the one in force because nothing intervened.
+  AS_RECORDED: {
+    en: 'The mode someone recorded is the mode in force, because nothing intervened. Note the case that reads oddly and is correct: a full-rigour setting whose review date has passed still reads as recorded, NOT as tightened — nothing was tightened, because there is nothing stricter to tighten to.',
+    id: 'Mode yang dicatat seseorang adalah mode yang berlaku, karena tidak ada yang mengintervensi. Perhatikan kasus yang terbaca ganjil namun benar: pengaturan rigor penuh yang tanggal peninjauannya telah lewat tetap terbaca sebagai tercatat, BUKAN diperketat — tidak ada yang diperketat, karena tidak ada yang lebih ketat untuk dituju.',
   },
   EXPIRY_TIGHTENED: {
     en: 'A recorded relaxation had passed its review date, so the stricter mode was applied instead. A relaxation expires by itself rather than lasting until somebody remembers it.',

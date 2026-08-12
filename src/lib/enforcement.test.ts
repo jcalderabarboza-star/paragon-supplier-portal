@@ -354,7 +354,7 @@ describe('E1 — THE RATCHET (D-ENF-3): one step, and never past the ceiling', (
   it('before the review date, the mode is AS SET', () => {
     expect(effectiveMode(setting('OBSERVE', REVIEW_BY), BEFORE)).toEqual({
       mode: 'OBSERVE',
-      source: 'AS_SET',
+      source: 'AS_RECORDED',
     });
   });
 
@@ -364,7 +364,7 @@ describe('E1 — THE RATCHET (D-ENF-3): one step, and never past the ceiling', (
     // force THROUGH the 30th, to its last millisecond, and lapses on the 31st.
     expect(effectiveMode(setting('OBSERVE', REVIEW_BY), ON_THE_DAY)).toEqual({
       mode: 'OBSERVE',
-      source: 'AS_SET',
+      source: 'AS_RECORDED',
     });
   });
 
@@ -400,20 +400,20 @@ describe('E1 — THE RATCHET (D-ENF-3): one step, and never past the ceiling', (
     });
   });
 
-  it('the ceiling does not tighten, and does not claim to: BLOCK reads AS_SET', () => {
+  it('the ceiling does not tighten, and does not claim to: BLOCK reads AS_RECORDED', () => {
     // `source` names whether the returned mode DIFFERS from the recorded one.
     // A lapsed review on a BLOCK changed nothing, so saying EXPIRY_TIGHTENED
     // would be a true-sounding statement about an event that did not occur.
     expect(effectiveMode(setting('BLOCK', REVIEW_BY), TEN_YEARS_ON)).toEqual({
       mode: 'BLOCK',
-      source: 'AS_SET',
+      source: 'AS_RECORDED',
     });
   });
 
   it('a BLOCK with NO review date never lapses — there is nothing to renew', () => {
     expect(effectiveMode(setting('BLOCK', null), TEN_YEARS_ON)).toEqual({
       mode: 'BLOCK',
-      source: 'AS_SET',
+      source: 'AS_RECORDED',
     });
   });
 
@@ -535,7 +535,7 @@ describe('E1 — the stamp: an override is coherent at exactly one mode', () => 
       checkId: 'halal.certificate',
       verdict: 'ADVERSE',
       mode,
-      modeSource: 'AS_SET',
+      modeSource: 'AS_RECORDED',
     } as const;
     return withOverride
       ? {
@@ -824,14 +824,14 @@ describe('E2 — ⚠️ AN EMPTY LEDGER IS THE CEILING, AND SAYS SO', () => {
     expect(blocks(MAXIMUM_RIGOUR)).toBe(true);
   });
 
-  it('⚠️ and it does NOT say AS_SET — nobody set it', () => {
-    // The E1 ruling applied to a second status field: reporting AS_SET here
+  it('⚠️ and it does NOT say AS_RECORDED — nobody set it', () => {
+    // The E1 ruling applied to a second status field: reporting AS_RECORDED here
     // would ANNOUNCE AN ACT THAT DID NOT OCCUR. An operator reads "nobody has
     // ruled on this" and "somebody chose full rigour" as different sentences,
     // and acts differently on each.
     const { source } = effectiveEnforcement(undefined, 'bpom.lot', BEFORE);
     expect(source).toBe('NO_SETTING_RECORDED');
-    expect(source).not.toBe('AS_SET');
+    expect(source).not.toBe('AS_RECORDED');
   });
 
   it('an undefined ledger and an empty one answer identically', () => {
@@ -851,7 +851,7 @@ describe('E2 — ⚠️ AN EMPTY LEDGER IS THE CEILING, AND SAYS SO', () => {
     // does not leak (D1).
     expect(effectiveEnforcement(ledger, 'bpom.lot', BEFORE)).toEqual({
       mode: 'OBSERVE',
-      source: 'AS_SET',
+      source: 'AS_RECORDED',
     });
   });
 });
@@ -897,7 +897,7 @@ describe('E2 — THE SETTING IN FORCE IS DERIVED (the `effectivePin` shape)', ()
   it('THE RATCHET COMPOSES OVER THE LEDGER — a lapsed relaxation tightens one step', () => {
     expect(effectiveEnforcement([A, B], 'halal.seal', BEFORE)).toEqual({
       mode: 'OBSERVE',
-      source: 'AS_SET',
+      source: 'AS_RECORDED',
     });
     expect(effectiveEnforcement([A, B], 'halal.seal', DAY_AFTER)).toEqual({
       mode: 'BLOCK_OVERRIDABLE',
@@ -927,7 +927,7 @@ describe('E2 — THE SETTING IN FORCE IS DERIVED (the `effectivePin` shape)', ()
 
 describe('E2 — ⚠️ AN UNRECOGNISED MODE RANKS AT THE CEILING (the class rule, at the seam)', () => {
   it.each(['OFF', 'observe', 'BLOCK ', 'WARN', ''])(
-    'a stored mode of %o ranks at the ceiling, and is NOT reported as AS_SET',
+    'a stored mode of %o ranks at the ceiling, and is NOT reported as AS_RECORDED',
     (mode) => {
       // `ENF-UNKNOWN-MODE-FAILS-OPEN-01` as a CLASS: the ledger crosses a seam as
       // JSON, and JSON has no unions. A typo must mean MAXIMUM rigour, never
@@ -964,7 +964,7 @@ describe('E2 — ⚠️ AN UNRECOGNISED MODE RANKS AT THE CEILING (the class rul
 describe('E2 — the mode-source vocabulary: five reasons, none of them overstating', () => {
   it('names exactly the five, and every one is produced by a REAL path', () => {
     expect([...ENFORCEMENT_MODE_SOURCES]).toEqual([
-      'AS_SET',
+      'AS_RECORDED',
       'EXPIRY_TIGHTENED',
       'NO_SETTING_RECORDED',
       'UNRECOGNISED_MODE',
@@ -978,7 +978,7 @@ describe('E2 — the mode-source vocabulary: five reasons, none of them overstat
       effectiveEnforcement([], 'bpom.lot', BEFORE).source,
       effectiveEnforcement(garbled, 'bpom.lot', BEFORE).source,
       effectiveWithOverride(
-        { mode: 'BLOCK_OVERRIDABLE', source: 'AS_SET' },
+        { mode: 'BLOCK_OVERRIDABLE', source: 'AS_RECORDED' },
         {
           overriddenBy: NOBODY,
           reason: 'COMMERCIAL_RISK_ACCEPTED',
@@ -1068,15 +1068,15 @@ describe('E2 — ⚠️ AN UNATTRIBUTED OVERRIDE CANNOT COMPLETE (the operator r
 
   it('and the fall-through SAYS WHY — a fixable sentence, not "it is set to block"', () => {
     const { source } = effectiveWithOverride(
-      { mode: 'BLOCK_OVERRIDABLE', source: 'AS_SET' },
+      { mode: 'BLOCK_OVERRIDABLE', source: 'AS_RECORDED' },
       override(NOBODY),
     );
     expect(source).toBe('UNATTRIBUTED_OVERRIDE');
-    expect(source).not.toBe('AS_SET');
+    expect(source).not.toBe('AS_RECORDED');
   });
 
   it('a COMPLETING override changes nothing here — whether it may be honoured is a separate question', () => {
-    const at = { mode: 'BLOCK_OVERRIDABLE', source: 'AS_SET' } as const;
+    const at = { mode: 'BLOCK_OVERRIDABLE', source: 'AS_RECORDED' } as const;
     expect(effectiveWithOverride(at, override(NAMED))).toEqual(at);
     expect(effectiveWithOverride(at, undefined)).toEqual(at);
     // The "may it be honoured" question is `overrideAllowed`, and it is
@@ -1098,7 +1098,7 @@ describe('E2 — ⚠️ AN UNATTRIBUTED OVERRIDE CANNOT COMPLETE (the operator r
 
     expect(isCoherentStamp(stampWith(MAXIMUM_RIGOUR, 'UNATTRIBUTED_OVERRIDE'))).toBe(true);
     // The mode is right but the provenance claims something else did it.
-    expect(isCoherentStamp(stampWith(MAXIMUM_RIGOUR, 'AS_SET'))).toBe(false);
+    expect(isCoherentStamp(stampWith(MAXIMUM_RIGOUR, 'AS_RECORDED'))).toBe(false);
     // The provenance is right but the mode claims the fall-through did not happen.
     expect(isCoherentStamp(stampWith('BLOCK_OVERRIDABLE', 'UNATTRIBUTED_OVERRIDE'))).toBe(false);
     expect(isCoherentStamp(stampWith('OBSERVE', 'UNATTRIBUTED_OVERRIDE'))).toBe(false);

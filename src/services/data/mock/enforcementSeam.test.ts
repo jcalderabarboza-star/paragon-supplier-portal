@@ -68,7 +68,7 @@ describe('IEnforcementService — the ledger, behind the seam', () => {
     // avoids by never putting the question on the service at all.
     expect(effectiveEnforcement(items, 'bpom.lot', '2026-12-01T00:00:00.000Z')).toEqual({
       mode: 'OBSERVE',
-      source: 'AS_SET',
+      source: 'AS_RECORDED',
     });
     expect(effectiveEnforcement(items, 'bpom.lot', '2027-02-01T00:00:00.000Z')).toEqual({
       mode: 'BLOCK_OVERRIDABLE',

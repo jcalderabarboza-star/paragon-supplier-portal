@@ -831,13 +831,13 @@ describe('CP-3 · E4 — ⚠️ THE PER-CHECK DELTA, AND IT IS ZERO', () => {
       return { checkId, mode: e.mode, source: e.source, blocks: blocks(e.mode) };
     });
     expect(table).toEqual([
-      { checkId: 'halal.seal', mode: 'BLOCK', source: 'AS_SET', blocks: true },
-      { checkId: 'bpom.lot', mode: 'BLOCK', source: 'AS_SET', blocks: true },
+      { checkId: 'halal.seal', mode: 'BLOCK', source: 'AS_RECORDED', blocks: true },
+      { checkId: 'bpom.lot', mode: 'BLOCK', source: 'AS_RECORDED', blocks: true },
     ]);
   });
 
   it('⚠️ AND AT EVERY INSTANT — a BLOCK has no review to lapse, so nothing ratchets', async () => {
-    // `AS_SET` at ten years past, never `EXPIRY_TIGHTENED`: the ceiling is a
+    // `AS_RECORDED` at ten years past, never `EXPIRY_TIGHTENED`: the ceiling is a
     // fixed point and `reviewBy` is null, so there is no date for the calendar
     // to move this row against. A seed that could ratchet is a delta with a fuse.
     const ledger = await seededLedger();
@@ -845,7 +845,7 @@ describe('CP-3 · E4 — ⚠️ THE PER-CHECK DELTA, AND IT IS ZERO', () => {
       for (const checkId of SEEDED_CHECKS) {
         expect(effectiveEnforcement(ledger, checkId, instant)).toEqual({
           mode: 'BLOCK',
-          source: 'AS_SET',
+          source: 'AS_RECORDED',
         });
       }
     }

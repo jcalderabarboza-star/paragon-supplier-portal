@@ -11,7 +11,7 @@
 //     opening act at full rigour is not a loosening;
 //   • it NEVER SUPERSEDES a recorded act — running it again records nothing;
 //   • ⚠️ AND IT CHANGES NO CONSEQUENCE. Seeded and unseeded derive the same
-//     `BLOCK`; only the SOURCE moves, from `NO_SETTING_RECORDED` to `AS_SET`.
+//     `BLOCK`; only the SOURCE moves, from `NO_SETTING_RECORDED` to `AS_RECORDED`.
 //     That is the entire behavioural content of this batch's seed half.
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -130,13 +130,13 @@ describe('E4 seed — ⚠️ FULL RIGOUR, TAKEN FROM THE RAMP', () => {
     for (const s of enforcementSettingStore.all()) expect(s.reviewBy).toBeNull();
   });
 
-  it('⚠️ AND THEREFORE NOTHING RATCHETS — `AS_SET` at ten years past, never tightened', async () => {
+  it('⚠️ AND THEREFORE NOTHING RATCHETS — `AS_RECORDED` at ten years past, never tightened', async () => {
     await seedEnforcementLedger();
     for (const instant of ['2020-01-01T00:00:00.000Z', AT, '2099-01-01T00:00:00.000Z']) {
       for (const checkId of SEEDED_CHECKS) {
         expect(effectiveEnforcement(enforcementSettingStore.all(), checkId, instant)).toEqual({
           mode: 'BLOCK',
-          source: 'AS_SET',
+          source: 'AS_RECORDED',
         });
       }
     }
@@ -210,7 +210,7 @@ describe('E4 seed — ⚠️ IT OPENS A LEDGER, IT DOES NOT CLOSE ONE', () => {
     ]);
     expect(effectiveEnforcement(enforcementSettingStore.all(), 'bpom.lot', AT)).toEqual({
       mode: 'OBSERVE',
-      source: 'AS_SET',
+      source: 'AS_RECORDED',
     });
   });
 });
@@ -218,7 +218,7 @@ describe('E4 seed — ⚠️ IT OPENS A LEDGER, IT DOES NOT CLOSE ONE', () => {
 describe('E4 seed — ⚠️ THE CONSEQUENCE IS UNCHANGED. ONLY THE PROVENANCE MOVES.', () => {
   it('⚠️ THE DELTA — seeded and unseeded BLOCK identically', async () => {
     // The whole behavioural claim of the seed, in one comparison. Before: no
-    // row, `BLOCK / NO_SETTING_RECORDED`. After: a row, `BLOCK / AS_SET`. The
+    // row, `BLOCK / NO_SETTING_RECORDED`. After: a row, `BLOCK / AS_RECORDED`. The
     // mode is the same, so `blocks()` is the same, so every gate that reads it
     // does the same thing. What changed is that the record now says a decision
     // was taken, because one was.
@@ -233,6 +233,6 @@ describe('E4 seed — ⚠️ THE CONSEQUENCE IS UNCHANGED. ONLY THE PROVENANCE M
     expect(before.map((e) => e.mode)).toEqual(after.map((e) => e.mode));
     expect(before.map((e) => blocks(e.mode))).toEqual(after.map((e) => blocks(e.mode)));
     expect(before.map((e) => e.source)).toEqual(['NO_SETTING_RECORDED', 'NO_SETTING_RECORDED']);
-    expect(after.map((e) => e.source)).toEqual(['AS_SET', 'AS_SET']);
+    expect(after.map((e) => e.source)).toEqual(['AS_RECORDED', 'AS_RECORDED']);
   });
 });
