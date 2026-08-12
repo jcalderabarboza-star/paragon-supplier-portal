@@ -303,6 +303,12 @@ prose, in the section that forbids restating cardinalities in prose. §27 /
    (sees optionals, blind to `extends`) and the checker alias (sees `extends`,
    blind to optionals) — and unioning them. §40e.
 
+   ⚠️ **AND IT SHARPENS THE RULE: RE-DERIVE MEANS COMPARE THE SETS, NOT THE
+   COUNTS.** Rules 1–3 all assume a wrong population ANNOUNCES ITSELF BY SIZE —
+   suspiciously small, suspiciously round, a red list of files. This one grew,
+   which is what a correct widening looks like, and the losses sat inside the
+   gain where no check on the total could see them.
+
    ⚠️ **WHY RULES 1 AND 2 ARE WORTH READING AS A PAIR, AND WHY GL-1 IS FILED
    AGAINST BOTH:** widening creates false accusations as readily as narrowing
    creates blind spots — **on the same instrument, in the same hour, on the seat
@@ -329,6 +335,17 @@ keep their affordances. Full list: `docs/findings.md` §19.
 produces it** (§27). Do not restate a cardinality in prose — the "four unwired
 flows / 10 wired targets" sentence was wrong twice, in one sentence, for exactly
 that reason.
+
+⚠️ **AND A COUNT IS COMPARABLE ONLY TO A COUNT FROM THE SAME INSTRUMENT**
+(`COUNT-RESTATED-ACROSS-INSTRUMENTS-01`, §40k). A prototype and the thing it
+became are TWO instruments — especially then, because the differences are the
+deliberate improvements, which is exactly what changes the count. D-F subtracted
+a prototype's figure from the shipped gate's, got a gap of 7 where the truth was
+2, and **wrote a plausible, specific, quantified explanation for the gap rather
+than re-running.** The general form, and it is the reason this sits under the
+derivation rules: **A BARE WRONG NUMBER GETS CHECKED; A WRONG NUMBER WITH AN
+EXPLANATION GETS BELIEVED.** The explanation is not a failed catch — it is the
+mechanism by which the error survives. **Re-run; do not reconcile.**
 
 ### And the rule above the three: PROBE THE GUARD BOTH WAYS
 Rules 1–3 guard a POPULATION. They say nothing about the instrument that guards

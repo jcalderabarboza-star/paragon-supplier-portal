@@ -11562,11 +11562,19 @@ residue is its own ruling.
 | `RefusedImportRow` | `batchNumber` | 0 | same shape |
 | `DataError` | `cause` | 0 (**1 write**) | **the only write-only field in the population** |
 
-⚠️ **THE ONE THAT SHOULD BE READ FIRST IS NOT THE ONE SEAT 3 NAMED.**
-`DataError.cause` is assigned in the constructor and read by nothing, so **every
-underlying cause the data layer captures is discarded at the first boundary that
-handles the error.** It survived scrutiny because it shadows the standard
-`Error.cause`, which makes it look consumed by machinery that is not there.
+⚠️ **THE ONE THAT SHOULD BE READ FIRST IS NOT THE ONE SEAT 3 NAMED, AND IT
+OUTRANKS THEM.** `DataError.cause` is assigned in the constructor and read by
+nothing, so **every underlying cause the data layer captures is discarded at the
+first boundary that handles the error.** It survived scrutiny because it shadows
+the standard `Error.cause`, which makes it look consumed by machinery that is not
+there.
+
+**This is a DIAGNOSTIC LOSS, not a tidiness issue, and the distinction is the
+whole reason it is ranked above `materialCategory` and `scopeText`.** Those two
+are fields nobody reads; this is a field that is *written on every failure* and
+then dropped. It costs nothing while everything works and costs the entire
+root-cause trail on the day something does not — and the day something does not
+is the day nobody is reading a stored-field census.
 
 **A second cluster worth naming as a cluster:** `EnforcementOverride.reason`,
 `.overriddenAt`, `EnforcementSetting.setBy` and `ActorAttribution.person` are
@@ -11580,27 +11588,44 @@ That is one ruling, not four.
 ### 40d · WOULD IT HAVE CAUGHT `certBasis` **AND** `requiredForHalalBrands`? — **YES, AND IT IS PROVEN, NOT ARGUED**
 
 The dispatch's real question is whether the gate catches only the case it was
-written from. So it was **run against the tree as it stood before the deletion**
-— `git archive 56e275a`, the parent of #219 — with no knowledge of either field:
+written from. So the **shipped** `derive.ts` — not a prototype of it — was run
+against the tree as it stood before the deletion (`git archive 56e275a`, the
+parent of #219), with the **pre-deletion vocabulary read off that tree's own
+glossary** (18 unions, `CertBasis` present). Using today's registries on
+yesterday's tree would have been the inherited list this gate exists to refuse.
 
 ```
-pre-deletion  (56e275a): 33 covered types · 141 stored fields · 37 flagged
-    FLAG ComplianceRegistryEntry.certBasis              reads=0
-    FLAG ComplianceRegistryEntry.requiredForHalalBrands reads=0
+ComplianceRegistryEntry.certBasis               inPopulation=true vocab=[CertBasis] reads=0 FLAGGED=true
+ComplianceRegistryEntry.requiredForHalalBrands  inPopulation=true vocab=[]          reads=0 FLAGGED=true
+
+pre-deletion  (56e275a): 33 covered types · 124 stored fields · 32 flagged
 post-deletion (8e906ff): 33 covered types · 122 stored fields · 30 flagged
 ```
 
-Both flagged. **37 → 30 is exactly the two fields plus the five that rode the
-deleted `CertBasis` registry row out of the population.**
+Both flagged. **The delta is exactly the two fields, on both counts.**
 
 ⚠️ **AND THE TWO ARE CAUGHT BY DIFFERENT HALVES OF THE MECHANISM, WHICH IS THE
-POINT.** `certBasis` was typed by its own glossary union, so a vocabulary-only
-gate would have found it. `requiredForHalalBrands` was a bare `boolean` naming
-consumers it did not have — **invisible to any vocabulary-keyed rule**, and
-caught only because the population is *every stored field on a covered DTO*
-rather than *every vocabulary-typed field*. A gate that caught one and not the
-other would have been the list problem wearing a test, and would have looked
-identical from here.
+POINT — PROVEN BY REMOVING THE CHOICE, NOT ASSERTED.** `certBasis` was typed by
+its own glossary union, so a vocabulary-keyed gate would have found it.
+`requiredForHalalBrands` was a bare `boolean` naming consumers it did not have.
+The design choice under test is taking **all** fields on a covered DTO rather
+than only the vocabulary-typed ones, so the counterfactual was run on the same
+pre-deletion tree:
+
+```
+population = vocabulary-typed fields ONLY
+    stored fields: 34 (was 124)      flagged: 8 (was 32)
+    certBasis               inPopulation=true   FLAGGED=true
+    requiredForHalalBrands  inPopulation=false  FLAGGED=false
+```
+
+**`requiredForHalalBrands` does not merely go unflagged — IT LEAVES THE
+POPULATION ENTIRELY.** A vocabulary-keyed gate catches `certBasis` and is
+**structurally blind to the bare boolean beside it**: not a threshold it fails,
+a question it never asks. Taking all fields on a covered DTO is the only reason
+the harder half is reachable at all. A gate that caught one and not the other
+would have been the list problem wearing a test, and **would have looked
+identical from here.**
 
 ---
 
@@ -11626,6 +11651,19 @@ Resolution: **read both halves** — the declared type NODE (sees optionals and
 `| null`; blind to inheritance) *and* the checker alias (sees inheritance and
 mapped types; blind to optionals) — and union them. Filed to `CLAUDE.md` under
 rule 2, beside GL-1's.
+
+⚠️ **THIS IS THE NASTIEST FORM OF THE CLASS, AND IT IS WORTH SAYING WHY.**
+Rules 1–3 rest on one shared assumption: **that a wrong population announces
+itself BY SIZE.** Rule 1 says distrust a result that is suspiciously small or
+round. Rule 2's recorded instances threw red lists of files the moment they ran.
+Rule 3 guards against reading absence out of a truncated window. **Every one of
+those reflexes is a SIZE reflex — and this instance defeats all three, because
+the population GREW.** 10 → 22 is exactly the number a correct widening
+produces; the five losses were *inside* the gain and invisible to any check on
+the total. The only thing that found them was diffing the **membership** of the
+two runs. **So: re-derive after every widening means COMPARE THE SETS, NOT THE
+COUNTS** — a rule the register did not previously contain, because until now
+every instance of the class had been considerate enough to look wrong.
 
 **Rule 3 — never conclude absence from a truncated view.** Not triggered: every
 membership question here was asserted programmatically (`census.fields` filtered
@@ -11794,3 +11832,89 @@ internally consistent and simply wrong leaves no trace by construction*).
 What the gate removes is the **cheapest** hiding place: a field that nothing reads
 at all, which is where both of this morning's deletions were sitting, and which
 no longer survives a build.
+
+---
+
+### 40k · `COUNT-RESTATED-ACROSS-INSTRUMENTS-01` — ⚠️ **THE STORY IS THE DEFECT, NOT THE FIGURE**
+
+**Filed against this entry, by the seat that wrote it, one dispatch after
+publishing it — and it outranks every number in §40.**
+
+#### What happened
+
+§40d originally read:
+
+> ~~`pre-deletion (56e275a): 33 covered types · 141 stored fields · 37 flagged`~~
+> ~~Both flagged. **37 → 30 is exactly the two fields plus the five that rode the
+> deleted `CertBasis` registry row out of the population.**~~
+
+The pre-deletion figures came from **prototype `proto3.mjs`, which keyed fields
+PER EXPOSING DTO** — so `GovernedCheckStampBase.checkId`, reachable through four
+aliases, counted four times. The shipped `derive.ts` keys **BY OWNING
+DECLARATION**, deliberately, so it counts once. The post-deletion figures came
+from the shipped gate.
+
+**Two instruments, two keying schemes, one subtraction.** The 141 and the 122
+were never on the same axis, and neither were the 37 and the 30.
+
+Re-run with the **shipped** derivation on **both** trees, the real numbers are
+`124 → 122` and `32 → 30`: **the delta is exactly the two deleted fields.**
+
+#### ⚠️ The part that matters, and it is not the arithmetic
+
+The gap was 7 where it should have been 2. I did not check the instrument. **I
+wrote an explanation for it** — *"plus the five that rode the deleted `CertBasis`
+registry row out of the population"* — and it is a good explanation. `CertBasis`
+*was* a deleted glossary registry row. Registry rows *do* remove covered DTOs and
+their fields. The sentence is mechanically plausible, specific, quantified, and
+**entirely invented**: no five fields left the population, and the whole gap was
+a keying scheme.
+
+> **A BARE WRONG NUMBER GETS CHECKED. A WRONG NUMBER WITH AN EXPLANATION GETS
+> BELIEVED.**
+
+That is the finding, and it generalises past this batch. An unexplained
+discrepancy is an open question and reads like one — the next person sees `7`
+where they expected `2` and goes looking. An *explained* discrepancy is a closed
+question: it recruits the reader's assent, and it recruits the author's first,
+which is why I stopped looking. **The explanation did not merely fail to catch
+the error — it is the mechanism by which the error survived**, and it survived
+into a merged register entry, in a PR body, and into a report to the operator.
+
+#### Why it is filed HERE specifically
+
+Because of where it happened. §40 announces a gate whose entire subject is
+**claims that nothing checks** — a stored field whose comment names consumers it
+does not have; a cardinality restated in prose beside the list that contradicts
+it (§27 / `FLOOR-IN-PROSE-01`). The entry announcing that gate carried a
+fabricated reconciliation for four hours. **The class does not exempt the seat
+writing about the class**, which is now the fourth arc running in which a
+heuristic has fired on the seat holding it (§39a; `DERIVED-OVER-A-CHOSEN-SCOPE-01`;
+`EMPTY-INPUT-REPORTS-CLEAN-01` instance 3).
+
+#### The reflex, stated so it is reusable
+
+**A count is comparable only to a count from the SAME instrument.** A prototype
+and the thing it became are two instruments even when one was copied from the
+other — *especially* then, because the differences are the deliberate
+improvements and are therefore exactly the ones that change what gets counted.
+Before subtracting two figures, ask which code produced each; if the answer is
+"different code", **re-run, do not reconcile.** Re-running the shipped
+derivation on both trees cost one temporary spec and eight seconds.
+
+⚠️ **AND THE CONCLUSION GOT STRONGER FOR THE CORRECTION**, which is worth
+recording because it is the usual case and is usually assumed to be the
+opposite. `124 → 122` and `32 → 30`, delta exactly two, is a **cleaner** result
+than "37 → 30, of which two are the fields and five are a registry row." The
+invented story was not buying a stronger claim — it was **paying** for one, by
+adding a moving part the real answer does not have. The tidier number was
+available the whole time, behind a re-run I did not do.
+
+#### Disposition
+
+**CLOSED as a filing; no code change.** There is nothing to gate here: this is a
+prose defect in a register, and §37 already records why that class has no
+mechanical instrument (*a term on which we are internally consistent and simply
+wrong leaves no trace by construction*). What it gets instead is a name, so the
+next occurrence is an append rather than a rediscovery — and the numbers it
+corrupted are fixed above.
