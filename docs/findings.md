@@ -10567,3 +10567,117 @@ Nothing in the tree currently fails when a new unfalsifiable claim is written �
 **that is the next thing to attach, and until it exists this section is itself a
 claim with nothing that could catch it.**
 
+
+
+---
+
+## §30 — GL-0 · THE GLOSSARY VOCABULARY, HEADLESS (BUILT)
+
+No page, no link, no render. What ships is the vocabulary: **one definition, in
+one place**, so the procurement review's corrections are an EDIT rather than an
+archaeology.
+
+### The stringly-reason class, retired
+
+`CommandResult.reason` is documented *"the machine-readable rejection reason"*
+and typed `reason?: string` — **free-form, machine-readable by grep only.** Nine
+templated prefixes were assembled inline at nine call sites. They are now
+`COMMAND_REFUSALS` (frozen array) + `CommandRefusal` (derived type) in
+`services/transitions/refusals.ts`, and the dispatcher constructs every refusal
+through `refusal(kind, detail)`. The `ENFORCEMENT_MODES` treatment exactly.
+
+**The array is a PINNED COPY, not the source** — `refusals.test.ts` derives the
+truth from `dispatcher.ts` and fails BOTH ways. Proven by mutation, not assumed:
+dropping `UNBOUND_HOOK` → *"dispatcher emits refusals the vocabulary does not
+name"*; adding `NEVER_EMITTED` → *"vocabulary names refusals nothing emits"*.
+
+⚠️ **`reason` STAYS `string`, deliberately.** The wire value is `PREFIX` or
+`PREFIX:detail`, and the detail is runtime data (a role, a state pair, a field
+list) — so the full string is not a member of any closed set and never can be.
+What is closed is the PREFIX. Narrowing the field would have forced the detail
+into a second field nothing reads.
+
+### The derived population, and the scope that was NOT derived
+
+**143 closed string-literal unions / 580 members** across `src/` — reported so
+the number is on record, and it is neither suspiciously small nor round.
+
+**GL-0 registers 18 of them / 66 terms**: the REFUSAL and GOVERNANCE
+vocabularies. ⚠️ **THE SCOPE IS AUTHORED AND THE FILE SAYS SO.** There is no
+mechanical rule separating "vocabulary" from "UI mechanics", and inventing one
+would have been the census reporting on its own matcher. `ToastVariant`,
+`TimelineEventStatus`, `EdgeRoute` and `CHART_SERIES` (hex colours) are not
+terms a reviewer corrects; a definition for them would be a summary of the
+implementation. **The remaining 125 unions are GL-0b's worklist, not a silent
+omission.**
+
+What IS mechanical: every registry is `Record<Member, GlossaryEntry>` pinned
+with `satisfies`, so **a member cannot exist without a definition and a
+definition cannot outlive its member.** The gate is `tsc` — proven by removing
+one entry: `TS1360 Property 'UNBOUND_HOOK' is missing`.
+
+### ⚠️ FLOW STATES AND TRANSITIONS ARE DELIBERATELY ABSENT
+
+The dispatch listed them. **They already have exactly this**:
+`transitions/annotations.ts` holds an authored purpose per flow and per
+transition keyed by derived identity, with the prose in
+`i18n/processFlowPurpose.ts` (EN + ID) and `annotations.test.ts` pinning the two
+bilaterally. **Re-authoring them here would create the second copy that file's
+own header forbids**, and the copy is the half that goes wrong silently. The
+glossary defers; GL-1 links the two surfaces rather than duplicating the words.
+
+### `HalalNotSatisfiedReason` — its first surface, ever
+
+Fully typed, precedence-ordered, and rendered NOWHERE. **A vocabulary can be
+complete, correct, ordered and invisible.** The four definitions state where
+each sits in the precedence, because the ordering is a fact about the check.
+
+### `remedyRoute` — declared, ABSENT everywhere, and gated absent
+
+GL-0 closes the **definitional** half of `HALAL-REFUSAL-DEAD-ENDS-01`: a refusal
+that told you only that you were stuck can now be looked up. ⚠️ **THE ROUTING
+HALF STAYS OPEN.** Who rules on a halal determination, where, and what the clerk
+does meanwhile do not exist (`D-COMP-HALAL-4`). A test asserts the field is
+absent on every entry, so the row cannot quietly come to read as closed.
+
+### REPORT — the two questions asked
+
+**1. A union expected and not found: NONE.** Every union the dispatch named
+exists. One near-miss worth recording because it was MY error, not the tree's: I
+briefly believed `HalalRefusalReason` / `BpomRefusalReason` / `*Applicability`
+were missing from the derivation — **they were present and I had truncated my own
+output**. The standing heuristic caught it one step later than it should have.
+Two placement notes: the applicability unions live in `sdc/types.ts`, not beside
+their lookups; the enforcement six are const-array-derived, not `type` unions.
+
+**2. A term whose definition could not be written without reading the
+implementation: THREE of 66.** PF-2 asked this of 91 transitions and came back
+**zero**. This came back **three**, and the difference is structural rather than
+a regression:
+
+| Term | Why the name does not carry the meaning |
+|---|---|
+| `CHAOS` (`DataErrorCode`) | Nothing in the name says *dev-only, env-gated fault injector, never occurs in a real deployment*. Reading `withChaos.ts` was required |
+| `legacy-4yr` (`CertBasis`) | Encodes a duration but not WHICH scheme it applies to or why four years — a policy fact compressed into a member name |
+| `AS_SET` (`EnforcementModeSource`) | Opaque until you read the resolution order it sits in; it means *nothing intervened*, which is a statement about the other four members |
+
+**The structural reason: PF-2's subjects were VERBS, named for acts. These are
+STATES AND CODES, named for conditions — and a code can be named for its
+MECHANISM (`CHAOS`, `legacy-4yr`) rather than for what it means to a reader.** A
+verb that misnames its act is obvious; a code that names its mechanism reads
+fine to the person who wrote the mechanism. **Those three are the first rows the
+procurement review should be shown**, because they are where the portal's word
+and the team's word are most likely to differ.
+
+### Consumer censuses — three went red, correctly
+
+`enforcement.test.ts`, `halalApplicability.test.ts` and `bpomApplicability.test.ts`
+hold exact consumer lists and caught the glossary's type-only imports. **That is
+the census working**: each says a new coupling is *"still a coupling somebody
+should have to look at."* Each list is updated with the reason rather than
+widened — the imports are type-only, headless, and are precisely what makes a
+term unable to exist without a definition.
+
+**Gates green: 2862 tests / 205 files / 7 gate tests.** Floor bumped from
+2848/203.
+

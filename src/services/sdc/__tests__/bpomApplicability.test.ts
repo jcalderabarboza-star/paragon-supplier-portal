@@ -433,7 +433,16 @@ describe('2B-4b — the gate: WIRED, and the prefix rule is GONE', () => {
     // governed verdict. It calls nothing. A SECOND type-only reference fails
     // this too: an erased import is not a wire, but it is still a coupling
     // somebody should have to look at.
-    expect(typeOnly).toEqual(['/src/lib/enforcement.ts']);
+    // GL-0 adds the SECOND, and this check demanded somebody look at it — so:
+    // `glossary/refusals.glossary.ts` imports `BpomRefusalReason` to pin a
+    // `Record<Member, GlossaryEntry>` with `satisfies`. It calls nothing, reads
+    // no master, and reaches no surface (the glossary is headless at GL-0). The
+    // coupling is the POINT: it is what makes a refusal reason unable to exist
+    // without a definition, and a definition unable to outlive its reason.
+    expect(typeOnly).toEqual([
+      '/src/lib/enforcement.ts',
+      '/src/lib/glossary/refusals.glossary.ts',
+    ]);
 
     // ⚠️ THE LIMIT OF THIS CHECK, STATED AND UNCHANGED FROM 2B-4a: Vite's
     // `import.meta.glob` EXCLUDES THE MODULE IT IS WRITTEN IN, so this scan

@@ -665,6 +665,16 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     expect(referencing.filter((p) => !suites.includes(p))).toEqual([
       '/src/components/v2-features/GRInspectionWizard.tsx', // ⚠️ E4 — THE FIRST GATE
       '/src/lib/enforcement.ts', //                       the vocabulary + derivation
+      // ⚠️ GL-0 — the glossary. TYPE-ONLY, and HEADLESS: it imports the six
+      // enforcement unions to pin `Record<Member, GlossaryEntry>` with
+      // `satisfies`, so an enforcement term cannot exist without a definition
+      // and a definition cannot outlive its term. It reads no setting, renders
+      // nothing, and no surface imports it (GL-1 owns the page). Two entries
+      // rather than one because the barrel re-exports the registry names —
+      // listed separately rather than filtered, per this census's own rule that
+      // an exact list beats a tidy one.
+      '/src/lib/glossary/governance.glossary.ts', // GL-0 — the definitions (TYPE-ONLY)
+      '/src/lib/glossary/index.ts', //               GL-0 — the barrel (TYPE-ONLY)
       '/src/pages-v2/BuyerGoodsReceipt.tsx', //           E4 — the page that reads the ledger
       '/src/services/data/mock/MockCommandService.ts', // the CommandTarget
       '/src/services/data/mock/MockEnforcementService.ts', // the read seam
