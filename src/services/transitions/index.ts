@@ -14,6 +14,7 @@ export * from './policyHooks';
 export * from './roles';
 export * from './events';
 export * from './dispatcher';
+export * from './settleFaults';
 // Importing ./policies binds the policy-hook implementations (side effect).
 export * from './policies';
 export * from './grRollup';
