@@ -326,6 +326,17 @@ prose, in the section that forbids restating cardinalities in prose. §27 /
    reading absence out of a sample is the same error one layer up — a
    conclusion reporting on the instrument rather than on the tree.
 
+   ⚠️ **§42 · AND THE SAME RULE GOVERNS WHAT A MATCH *MEANS*, NOT ONLY WHICH
+   MATCHES YOU FOUND. THE SCAN MATCHED A CALL SITE; THE DERIVATION MATCHED A
+   REGISTRATION SITE; ONLY THE SECOND IS WHAT A KEY COLLISION NEEDS.** A verb
+   appearing in a call is not a verb claiming a key. Four premises inverted on
+   measurement in one arc — two of them naming identifiers that do not exist in
+   the tree at all — and each was a scan's match read as if it were a
+   registration's. **Name the site the claim REQUIRES, then assert membership at
+   THAT site.** A correct-sounding claim resting on the wrong site is the same
+   defect as `COUNT-RESTATED-ACROSS-INSTRUMENTS-01` (§40k) with a location
+   standing in for a number.
+
 Handler shapes in THIS codebase that a naive matcher misses: custom props
 (`onQualify`, `onInviteRfq`, `onUpdate`), and **named handlers hoisted out of
 the JSX** (`const handleExport = () => …`) — which is where the largest pages
@@ -365,6 +376,20 @@ outside `src/`, so the derivation returned an EMPTY population, and a
 one-directional probe would have read that as *"yes, it catches the bad thing —
 there is nothing bad here."* The good-input probe and its bad-input twin now run
 against the SAME synthetic program, so neither can be believed alone. §40e.
+
+⚠️ **§42 · SECOND INSTANCE, ONE DAY LATER, AND IT WOULD HAVE PRODUCED THE RIGHT
+CONCLUSION BY AN INSTRUMENT THAT PROVED NOTHING.** A derivation asking "does any
+transition-id keying collide?" returned **"0 colliding" on every keying** — over
+an EMPTY population, because it imported `./registry` instead of `./index`, so no
+shipped flow had self-registered and `getKnownFlows()` returned `[]`. The
+conclusion it pointed at ("nothing collides") happens to be TRUE, which is what
+makes this the dangerous shape: **a right answer from an instrument that examined
+nothing looks exactly like a right answer.** Only the known-good control
+(`expect(ids).toContain('t_gr_post')`) went red, beside `total transition ids: 0`.
+Filed as `EMPTY-INPUT-REPORTS-CLEAN-01`, **not** in §39b's table — that table
+counts the opposite half of the asymmetry, and one event under two classes
+inflates both. The population guard is now the FIRST test in the shipped gate and
+asserts MEMBERSHIP, never a count. §42b.
 
 The gate itself is `src/lib/storedFieldGate/` — every stored field on a
 glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
