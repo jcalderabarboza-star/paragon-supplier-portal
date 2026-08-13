@@ -130,6 +130,18 @@ function cascadeViolations(
 // ── A synthetic two-lane tree: the exact shape the ruling described ───────────
 // Two independently-numbered lanes whose verbs collide on the bare suffix
 // (`release`). Only the ENTITY tells them apart, which is what the gate checks.
+//
+// ⚠️ **THIS IS A GATE AGAINST A LANE THAT WILL EXIST — DO NOT DELETE IT AS A TEST
+// FOR NOTHING.** Neither `t_delivery_release` nor `t_deliveryagreement_release` is
+// in the catalog today: 91 transition ids, none containing `delivery`, because
+// `services/delivery/index.ts` says of itself *"Spine only — no flows, no
+// CommandTargets, no UI, no registry touch."* **TODAY.** That module is a modelled
+// SAP LPA scheduling agreement whose whole trajectory is toward a flow and a
+// CommandTarget, and the day it gets them this tree stops being synthetic. A gate
+// authored only for shapes already present is a gate that arrives after the
+// defect — and this particular shape does not announce itself when it arrives,
+// because a lane mismatch throws nothing and refuses nothing. The named entities
+// are deliberate: they are the ones a reader will recognise when the lane lands.
 const LANE_A: FlowDefinition = {
   entity: 'delivery',
   version: 1,

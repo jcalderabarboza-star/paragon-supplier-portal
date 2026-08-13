@@ -12206,10 +12206,10 @@ requirement will be waiting in the file the F1 author opens first.
 
 ---
 
-## §42 — THE CASCADE-MAP COVERAGE GATE. Four inverted premises, and the one thing that survived them
+## §42 — THE CASCADE-MAP COVERAGE GATE. Five inverted premises, and the one thing that survived them
 
 Branched from main `fd4acd6`. Floor 2927/210/7 → **2937/211/7**. Four gates green.
-Investigation of `dispatcher.ts:334` (filed at §41f) produced **four premises that
+Investigation of `dispatcher.ts:334` (filed at §41f) produced **five premises that
 inverted on measurement** and exactly one defect worth building against. This
 entry is mostly the sequence, because the sequence is the finding.
 
@@ -12223,14 +12223,24 @@ entry is mostly the sequence, because the sequence is the finding.
 > AMBIGUOUS KEY THAT WOULD PRODUCE A PLAUSIBLE WRONG WRITE RATHER THAN A CRASH —
 > IS THE ONE WORTH FIXING.**
 
-**Four inverted premises, every one found by RE-DERIVING rather than re-reading:**
+**FIVE INVERTED PREMISES, EVERY ONE FOUND BY RE-DERIVING RATHER THAN RE-READING.**
+Not one was caught by reading the file again, and two of them named identifiers
+that are not in the tree at all — which no amount of re-reading the *right* file
+would have revealed, because the wrong file was never opened.
 
 | # | the premise | what measurement said |
 |---|---|---|
 | 1 | *"a cascade fails and the dispatcher swallows it with no record"* (§41f, mine) | **8 of 12 failure paths are already fully recorded.** `fin()` emits before it returns, so every path that RETURNS is audited; only the four `throw new DataError` sites emit nothing, because they fire before a `correlationId` exists. 3 silent, 1 uncaught. |
 | 2 | *"only 1 of 6 cascade targets records a governed event; 5 of 6 have no record even on the success path"* | The **population of 6 is real and derivable** (authored targets ∪ `trigger: 'cascade'`). The numerator is not: **4 of 6 can fire and all 4 emit on success**, measured twice. The other 2 cannot fire because nothing fires them, and both are already `unauthored-cascade` rows in `LOOSE_END_CENSUS`. |
 | 3 | *"a Map key collision where an unregistered flow makes two entities collide, and the second silently overwrites the first"* | `FlowRegistry.register` **throws** on a duplicate entity key AND on a duplicate transition id, and never overwrites. Probed known-good first. The two silent-overwrite `new Map(entries)` sites in the spine (`catalogView.ts:265`, `liveness/registry.ts:375`) have zero duplicates and a documented deterministic winner respectively. |
-| 4 | *"`t_delivery_release` and `t_deliveryagreement_release` both key to `release`; the second overwrites the first"* | **Neither id exists.** 91 transition ids, 91 distinct, none containing `delivery`; the only id containing `release` is `t_invoice_release_payment`. There is no `runCascades`, no `CascadeMap` type, no `agr-2026-…` fixture row, and no map anywhere keyed by a verb suffix. `delivery/index.ts` states the lane is *"Spine only — no flows, no CommandTargets, no UI, no registry touch."* |
+| 4 | *"two of six are pure store mutations that BYPASS the dispatcher, so they cannot emit and cannot fail — architecturally exempt from the machine that records"* | Nothing bypasses it. **Every writer of `purchaseRequisitionStore` is inside `purchaseRequisitionTarget`.** The two that cannot fire are `t_pr_source` / `t_pr_convert`, and the reason is different and already declared: **nothing fires them.** Both are `unauthored-cascade` rows in `LOOSE_END_CENSUS` — *"The sentence has no subject."* Honest-by-construction and on the surface, not a hidden exemption. Wiring them is a FORK-2 call, not a recording one. |
+| 5 | *"`t_delivery_release` and `t_deliveryagreement_release` both key to `release`; the second overwrites the first"* — then, refined: *"the target is never a source, so the collision is unreachable"* | ⚠️ **THE MOST COMPLETE INVERSION OF THE ARC, AND THE REFINEMENT WAS ALSO WRONG. NEITHER ENTITY EXISTS.** 91 transition ids, 91 distinct, **none containing `delivery`**; the only id containing `release` is `t_invoice_release_payment`. No `runCascades` anywhere in the repo, no `CascadeMap` type, no `agr-2026-…` fixture row, no map keyed by a verb suffix. **`delivery/index.ts` declares the lane spine-only in its own header** — *"no flows, no CommandTargets, no UI, no registry touch."* Not *unreachable because the target is never a source*: **there is no delivery transition and no cascade registration for anything to reach.** |
+
+⚠️ **WHY ROW 5 IS THE ONE THAT SETTLES THE MECHANISM.** Its first statement was
+wrong and **its correction was wrong in the same direction** — both located the
+defect one step short of the registration site. A wrong claim that survives its
+own first correction is not a slip; it is a reading habit, and the habit is
+reading a call as if it were a declaration.
 
 ⚠️ **AND PREMISE 4 NAMES ITS OWN MECHANISM, WHICH IS RULE 3:**
 
@@ -12263,6 +12273,18 @@ in the shipped gate and it asserts membership, not a count.**
 
 Standing count: this is the third time the both-ways reflex has paid (§40e, §41,
 here) and the second time it caught a **false green** rather than a false red.
+The reflex was written down yesterday and caught a false green today, **on the
+batch investigating false greens.**
+
+⚠️ **WHICH CLASS THIS IS FILED UNDER, AND WHY IT GETS NO ROW IN §39b.** The
+DEFECT is `EMPTY-INPUT-REPORTS-CLEAN-01` — a guard **too loose to say anything**,
+having examined nothing. The REFLEX that caught it is rule 4. §39b's table counts
+`GUARD-WRONG-IN-THE-PASSING-DIRECTION-01` — a guard **wrong about what it should
+ACCEPT** — and §39b states outright that the two are the halves of one asymmetry
+and are kept apart on purpose. **Adding a row there would be filing one event
+under two classes and inflating both**, which is the error §39b already refuses
+for the GL-1 matcher pair. The instance goes where the rule lives, in `CLAUDE.md`
+under *probe the guard both ways*, beside D-F's.
 
 ---
 

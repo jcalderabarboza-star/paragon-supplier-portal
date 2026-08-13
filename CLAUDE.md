@@ -377,6 +377,20 @@ one-directional probe would have read that as *"yes, it catches the bad thing �
 there is nothing bad here."* The good-input probe and its bad-input twin now run
 against the SAME synthetic program, so neither can be believed alone. §40e.
 
+⚠️ **§42 · SECOND INSTANCE, ONE DAY LATER, AND IT WOULD HAVE PRODUCED THE RIGHT
+CONCLUSION BY AN INSTRUMENT THAT PROVED NOTHING.** A derivation asking "does any
+transition-id keying collide?" returned **"0 colliding" on every keying** — over
+an EMPTY population, because it imported `./registry` instead of `./index`, so no
+shipped flow had self-registered and `getKnownFlows()` returned `[]`. The
+conclusion it pointed at ("nothing collides") happens to be TRUE, which is what
+makes this the dangerous shape: **a right answer from an instrument that examined
+nothing looks exactly like a right answer.** Only the known-good control
+(`expect(ids).toContain('t_gr_post')`) went red, beside `total transition ids: 0`.
+Filed as `EMPTY-INPUT-REPORTS-CLEAN-01`, **not** in §39b's table — that table
+counts the opposite half of the asymmetry, and one event under two classes
+inflates both. The population guard is now the FIRST test in the shipped gate and
+asserts MEMBERSHIP, never a count. §42b.
+
 The gate itself is `src/lib/storedFieldGate/` — every stored field on a
 glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
 its reason stated. It is deliberately TEST-level, not type-level, precisely so
