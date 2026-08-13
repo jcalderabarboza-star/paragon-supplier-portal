@@ -364,15 +364,16 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
       'importer. Zero reads — the import refusal surface identifies rows some other way.',
     since: D_F,
   },
-  {
-    key: 'DataError.cause',
-    reason: 'unadjudicated',
-    why:
-      'THE ONLY WRITE-ONLY FIELD IN THE POPULATION: assigned in the DataError constructor and read by ' +
-      'nothing, so every underlying cause the data layer captures is discarded at the first boundary ' +
-      'that logs the error. It shadows the standard Error.cause, which is what makes it look consumed.',
-    since: D_F,
-  },
+  // ⚠️ `DataError.cause` STOOD HERE, AND ITS DELETION IS THIS LIST'S FIRST
+  // SHRINK. The row said the field discarded "every underlying cause the data
+  // layer captures"; deriving the call sites showed ZERO OF SEVEN pass a cause
+  // at all, so nothing was captured and nothing was discarded — the row's prose
+  // asserted a capture that does not happen. The real defect was that the field
+  // was ENUMERABLE where the platform's `Error.cause` is not. Field deleted, and
+  // the requirement preserved in `services/data/types.ts` beside `DataErrorCode`
+  // (§41). **The gate went red BEFORE this row was removed** — `AN EXEMPTION
+  // OUTLIVED ITS SUBJECT · DataError.cause — the field no longer exists` — which
+  // is the whole point of the bilateral half and its first exercise.
 ]);
 
 /** Rows still awaiting a ruling. Published by the gate so the debt is a number

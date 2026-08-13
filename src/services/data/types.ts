@@ -163,15 +163,40 @@ export type DataErrorCode =
   | 'CHAOS'
   | 'UNKNOWN';
 
+// ─── ⚠️ WHEN F1 INTRODUCES A CAUSE CHANNEL (D-F ruling, 2026-08-13) ──────────
+//
+// `DataError` carried `cause?: unknown` from DR-4 until D-F deleted it. It was
+// never populated: ALL SEVEN construction sites passed two arguments, and all
+// seven are POLICY REFUSALS OR SYNTHETIC INJECTION — none sits inside a `catch`,
+// so none had an underlying failure to wrap. The knowledge is preserved here
+// rather than the field, on the D-A precedent, because the requirement is
+// STRICTLY MORE THAN THE FIELD SAID:
+//
+//   1. IT SHIPS WITH ITS READER. A named PRODUCER is not a named consumer.
+//      The paragraph above names the Phase-3 adapter as the thing that will
+//      WRITE a cause; nothing named would ever READ one, and a channel written
+//      by somebody and read by nobody is what was just deleted.
+//   2. IT SHIPS NON-ENUMERABLE — `Object.defineProperty(this, 'cause',
+//      { value, enumerable: false, writable: true, configurable: true })`, which
+//      is what the platform does for `new Error(msg, { cause })`. The deleted
+//      field was ENUMERABLE, so a populated cause would have entered EVERY
+//      `JSON.stringify` of the error — every log line, telemetry payload and
+//      audit record — with nobody having chosen. That is why "capture it but do
+//      not render it" was not available as a safe interim: capture WAS exposure.
+//   3. RENDERING IT IS A SEPARATE RULING. Under F1 a cause is an HTTP body or an
+//      SAP message; what may reach `ErrorState` is a policy decision, not a
+//      wiring task.
+//
+// Pinned by `dataError.contract.test.ts`, which fails if a `cause` returns
+// enumerable — a requirement recorded only in prose is a promise with no
+// verifier.
 export class DataError extends Error {
   readonly code: DataErrorCode;
-  readonly cause?: unknown;
 
-  constructor(code: DataErrorCode, message: string, cause?: unknown) {
+  constructor(code: DataErrorCode, message: string) {
     super(message);
     this.name = 'DataError';
     this.code = code;
-    this.cause = cause;
     // Restore prototype chain for instanceof across the TS target.
     Object.setPrototypeOf(this, DataError.prototype);
   }
