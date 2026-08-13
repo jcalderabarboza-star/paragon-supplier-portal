@@ -9921,6 +9921,26 @@ this arc: **run the command once, at filing time, against a deliberately broken
 input, and record what it actually did.** A remedy that has never been executed
 against a failing case is not a remedy; it is a hypothesis with a ticket number.
 
+### 17f · THE GATE'S LIVE RECORD — **third instance, §41, two days after it turned on**
+
+The register's row closed this with *"two live instances already (batch A, batch
+E)"*. **There is now a third, and it is the first EARNED AFTER the gate went
+live rather than found while building it.**
+
+| # | Batch | What only `tsc -p tsconfig.vitest.json` could see |
+|---|---|---|
+| 1 | A | spec type errors invisible to all three gates |
+| 2 | E | same class, second occurrence |
+| 3 | **§41 · D-F ruling** | `dataError.contract.test.ts` asserted the platform's shape with `new Error('native', { cause: 'root' } as ErrorOptions)`. **`ErrorOptions` does not exist in this project** — `lib` is ES2020 and `Error.cause` arrives in `lib.es2022.error.d.ts`. Vitest ran the file GREEN (it transpiles without typechecking, and the construction works at run time); `tsc` returned `TS2554: Expected 0-1 arguments, but got 2` and `TS2304: Cannot find name 'ErrorOptions'`. |
+
+⚠️ **AND THE THIRD INSTANCE IS THE ONE THAT ARGUES FOR THE GATE, BECAUSE OF WHAT
+THE SPEC WAS FOR.** It was written to PRESERVE A REQUIREMENT about a field being
+deleted — the verifier standing in for a comment, on the reasoning that *a
+ratification recorded in prose is a promise with no verifier*. **The verifier
+itself would have shipped carrying a type error, green in vitest, in the same PR
+that argued verifiers beat prose.** A gate that catches a defect in the very
+artifact written to prevent defects is a gate that has finished earning itself.
+
 ---
 
 ## 18 · `SPEC-OMITS-THE-HONESTY-FIELD-01` — the class behind all six instances
@@ -11997,6 +12017,32 @@ accessor; `super(message)` is called without options, so `Error` never creates
 one. The declaration **manufactured** an own property the platform would not
 have made — and made it with the wrong descriptor.
 
+#### ⚠️ WHY NOBODY EVER QUESTIONED IT — the mechanism, and it closes the loop
+
+**`lib` here is `["ES2020", "DOM", "DOM.Iterable"]`, and `Error.cause` arrives in
+`lib.es2022.error.d.ts`.** So at TYPE LEVEL the standard property **did not exist
+in this project at all**. The field was not shadowing a platform member, because
+as far as every author, reviewer and `tsc` run was concerned **there was no
+platform member to shadow.** `cause?: unknown` read as an ordinary optional field
+on an ordinary class, and it read that way correctly — the language the codebase
+is written in does not contain the thing it collides with. The collision is real
+only at RUN TIME, where the engine is ES2022+ and `new Error(msg, { cause })`
+works fine.
+
+That is the whole answer to *how did this survive four batches of scrutiny*: it
+was invisible in the layer people read, and visible only in the layer nobody
+inspects unless they go looking at property descriptors. **It also closes the
+loop on why the field existed at all** — an author reaching for a cause channel
+in ES2020 typings has no platform one to reach for, so writing your own is the
+obvious move, and the descriptor difference is not something the type system
+would ever mention.
+
+**And the discovery came from the gate, not from reasoning:** the assertion that
+pins the platform's shape was first written with `ErrorOptions`, which does not
+exist here. Vitest ran it green; the spec typecheck did not. Filed as
+`TSC-SKIPS-TESTS-01`'s third live instance (§17f) and recorded in the test at the
+cast that works around it, which is where the next reader will meet it.
+
 **CONSEQUENCE B — the one that decided the ruling.** The platform makes
 `Error.cause` **non-enumerable**. This one was **enumerable**. So the moment a
 cause were populated it would enter **every `JSON.stringify` of the error
@@ -12101,6 +12147,17 @@ so the gate could be observed doing it:
 containment-style allowlist does not have, and the reason D-F was built as set
 equality. Row removed; 30 → 29. The removal site carries the history rather than
 vanishing silently.
+
+⚠️ **RECORDED AS WORKING, BECAUSE THIS IS THE HALF THAT IS EASY TO BUILD AND EASY
+TO OMIT.** Every allowlist grows a containment check — *is anything unlisted
+failing?* — because that is the half that stops a defect arriving. The shrink
+half stops a defect LINGERING, pays nothing on the day it is written, and is
+therefore the half that gets left out or, worse, written and never exercised.
+D-F shipped it one day and spent it the next, on the first field anybody ruled
+on. **It fired unprompted, named the row, and named the reason** (`the field no
+longer exists`, distinguished in the message from `NOW READ at …`). One
+instance is not a track record, but an unexercised guard and an exercised one
+are different objects, and this one is now the second kind.
 
 ---
 
