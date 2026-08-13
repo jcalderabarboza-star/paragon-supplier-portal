@@ -9921,6 +9921,26 @@ this arc: **run the command once, at filing time, against a deliberately broken
 input, and record what it actually did.** A remedy that has never been executed
 against a failing case is not a remedy; it is a hypothesis with a ticket number.
 
+### 17f · THE GATE'S LIVE RECORD — **third instance, §41, two days after it turned on**
+
+The register's row closed this with *"two live instances already (batch A, batch
+E)"*. **There is now a third, and it is the first EARNED AFTER the gate went
+live rather than found while building it.**
+
+| # | Batch | What only `tsc -p tsconfig.vitest.json` could see |
+|---|---|---|
+| 1 | A | spec type errors invisible to all three gates |
+| 2 | E | same class, second occurrence |
+| 3 | **§41 · D-F ruling** | `dataError.contract.test.ts` asserted the platform's shape with `new Error('native', { cause: 'root' } as ErrorOptions)`. **`ErrorOptions` does not exist in this project** — `lib` is ES2020 and `Error.cause` arrives in `lib.es2022.error.d.ts`. Vitest ran the file GREEN (it transpiles without typechecking, and the construction works at run time); `tsc` returned `TS2554: Expected 0-1 arguments, but got 2` and `TS2304: Cannot find name 'ErrorOptions'`. |
+
+⚠️ **AND THE THIRD INSTANCE IS THE ONE THAT ARGUES FOR THE GATE, BECAUSE OF WHAT
+THE SPEC WAS FOR.** It was written to PRESERVE A REQUIREMENT about a field being
+deleted — the verifier standing in for a comment, on the reasoning that *a
+ratification recorded in prose is a promise with no verifier*. **The verifier
+itself would have shipped carrying a type error, green in vitest, in the same PR
+that argued verifiers beat prose.** A gate that catches a defect in the very
+artifact written to prevent defects is a gate that has finished earning itself.
+
 ---
 
 ## 18 · `SPEC-OMITS-THE-HONESTY-FIELD-01` — the class behind all six instances
@@ -11562,19 +11582,23 @@ residue is its own ruling.
 | `RefusedImportRow` | `batchNumber` | 0 | same shape |
 | `DataError` | `cause` | 0 (**1 write**) | **the only write-only field in the population** |
 
-⚠️ **THE ONE THAT SHOULD BE READ FIRST IS NOT THE ONE SEAT 3 NAMED, AND IT
-OUTRANKS THEM.** `DataError.cause` is assigned in the constructor and read by
-nothing, so **every underlying cause the data layer captures is discarded at the
-first boundary that handles the error.** It survived scrutiny because it shadows
-the standard `Error.cause`, which makes it look consumed by machinery that is not
-there.
+⚠️ **CORRECTED AT §41 — THE SEVERITY CLAIM BELOW WAS WRONG, AND STRIKING IT IS
+NOT A DETAIL.** What stood here read: *"every underlying cause the data layer
+captures is discarded at the first boundary that handles the error… a DIAGNOSTIC
+LOSS, not a tidiness issue"*, and ranked the field above `materialCategory` and
+`scopeText` on that basis. **Nothing is captured.** Deriving the construction
+sites (§41) found **zero of seven** pass a cause, and all seven are policy
+refusals or synthetic injection with no underlying failure to wrap — so nothing
+was discarded, because nothing was ever taken.
 
-**This is a DIAGNOSTIC LOSS, not a tidiness issue, and the distinction is the
-whole reason it is ranked above `materialCategory` and `scopeText`.** Those two
-are fields nobody reads; this is a field that is *written on every failure* and
-then dropped. It costs nothing while everything works and costs the entire
-root-cause trail on the day something does not — and the day something does not
-is the day nobody is reading a stored-field census.
+The STRUCTURAL observation was right and stands: `DataError.cause` was the only
+write-only field in the population, assigned in the constructor and read by
+nothing. **The consequence was inferred from the field's SHAPE without checking
+its CALL SITES, and the inference is what carried it into an operator dispatch
+and a work ranking** — `COUNT-RESTATED-ACROSS-INSTRUMENTS-01`'s sibling, one
+batch later, from the same seat: *a wrong claim with an explanation gets
+believed.* §41 holds the derivation, the real defect (the field was ENUMERABLE
+where the platform's `Error.cause` is not), and the deletion.
 
 **A second cluster worth naming as a cluster:** `EnforcementOverride.reason`,
 `.overriddenAt`, `EnforcementSetting.setBy` and `ActorAttribution.person` are
@@ -11918,3 +11942,255 @@ mechanical instrument (*a term on which we are internally consistent and simply
 wrong leaves no trace by construction*). What it gets instead is a name, so the
 next occurrence is an append rather than a rediscovery — and the numbers it
 corrupted are fixed above.
+
+---
+
+## §41 — `DataError.cause` DELETED. The enumerable-cause defect, and a severity claim of mine that was never derived
+
+Branched from main `49e7b24`. Floor 2923/209/7 → **2927/210/7**. Four gates green.
+**The first exercise of the allowlist's shrink direction:** 30 rows → 29.
+
+---
+
+### 41a · ⚠️ THE PREMISE WAS WRONG, AND IT WAS MINE
+
+The dispatch that ordered this batch ranked `DataError.cause` first among the 24
+unadjudicated rows on the strength of a sentence from §40c:
+
+> ~~*every underlying cause the data layer captures is discarded at the first
+> boundary that handles the error… a DIAGNOSTIC LOSS, not a tidiness issue*~~
+
+**Nothing is captured.** Derived through the TypeScript checker rather than by
+grep, and cross-checked against the grep in both directions (rule 2 — compare the
+sets, not the counts; `only in grep: (none)`, `only in checker: (none)`):
+
+```
+=== DataError CONSTRUCTIONS, derived BY TYPE: 7 ===
+ services/transitions/dispatcher.ts:221   args=2 code='SCOPE_DENIED' cause=ABSENT
+ services/transitions/dispatcher.ts:229   args=2 code='SCOPE_DENIED' cause=ABSENT
+ services/transitions/dispatcher.ts:239   args=2 code='SCOPE_DENIED' cause=ABSENT
+ services/transitions/dispatcher.ts:242   args=2 code='NOT_FOUND'    cause=ABSENT
+ services/data/mock/MockSupplierService.ts:15     args=2 code='SCOPE_DENIED' cause=ABSENT
+ services/data/mock/MockEnforcementService.ts:27  args=2 code='SCOPE_DENIED' cause=ABSENT
+ services/data/mock/withChaos.ts:40               args=2 code='CHAOS'        cause=ABSENT
+
+constructions passing a cause: 0 / 7
+```
+
+**All seven are policy refusals or synthetic injection. Not one sits inside a
+`catch`**, so not one has an underlying failure to wrap. `this.cause = cause`
+ran on every failure and assigned `undefined`, every time. `UPSTREAM` and
+`UNKNOWN` — the two codes that would carry a cause — are never constructed at all.
+
+The structural observation was sound: the only write-only field in the
+population, read by nothing (`.cause` occurs exactly once in the whole tree,
+`types.ts:174`, the constructor's own write). **The CONSEQUENCE was inferred from
+the field's SHAPE without checking its CALL SITES**, and the inference is what
+carried it — into §40c, into an operator dispatch, and into the ranking that put
+it ahead of `materialCategory` and `scopeText`.
+
+⚠️ **THIS IS `COUNT-RESTATED-ACROSS-INSTRUMENTS-01`'s SIBLING, ONE BATCH LATER,
+FROM THE SAME SEAT.** §40k's lesson was *a wrong number with an explanation gets
+believed*. This is the same move applied to a MECHANISM rather than a number: a
+correct structural finding, plus a plausible causal story, and the story is what
+made it survive review. The generalisation stands and now has two instances:
+**an explanation is not evidence, and it is the thing that stops the next reader
+looking.** §40c is struck and corrected in place.
+
+---
+
+### 41b · THE REAL DEFECT — ⚠️ **THE FIELD WAS ENUMERABLE WHERE THE PLATFORM'S IS NOT**
+
+Probed at run time rather than reasoned about:
+
+```
+new Error(msg)          'cause' in e=false  ownDescriptor=NONE
+new Error(msg,{cause})  'cause' in e=true   {value:C,         writable:true, enumerable:FALSE}
+DataError(2 args)       'cause' in e=true   {value:undefined, writable:true, enumerable:TRUE }
+DataError(3 args)       'cause' in e=true   {value:Error:root,writable:true, enumerable:TRUE }
+prototype has cause accessor: false
+JSON.stringify(de3): {"code":"UPSTREAM","cause":{},"name":"DataError"}
+```
+
+It was neither a shadow nor an override. `Error.prototype` has **no** `cause`
+accessor; `super(message)` is called without options, so `Error` never creates
+one. The declaration **manufactured** an own property the platform would not
+have made — and made it with the wrong descriptor.
+
+#### ⚠️ WHY NOBODY EVER QUESTIONED IT — the mechanism, and it closes the loop
+
+**`lib` here is `["ES2020", "DOM", "DOM.Iterable"]`, and `Error.cause` arrives in
+`lib.es2022.error.d.ts`.** So at TYPE LEVEL the standard property **did not exist
+in this project at all**. The field was not shadowing a platform member, because
+as far as every author, reviewer and `tsc` run was concerned **there was no
+platform member to shadow.** `cause?: unknown` read as an ordinary optional field
+on an ordinary class, and it read that way correctly — the language the codebase
+is written in does not contain the thing it collides with. The collision is real
+only at RUN TIME, where the engine is ES2022+ and `new Error(msg, { cause })`
+works fine.
+
+That is the whole answer to *how did this survive four batches of scrutiny*: it
+was invisible in the layer people read, and visible only in the layer nobody
+inspects unless they go looking at property descriptors. **It also closes the
+loop on why the field existed at all** — an author reaching for a cause channel
+in ES2020 typings has no platform one to reach for, so writing your own is the
+obvious move, and the descriptor difference is not something the type system
+would ever mention.
+
+**And the discovery came from the gate, not from reasoning:** the assertion that
+pins the platform's shape was first written with `ErrorOptions`, which does not
+exist here. Vitest ran it green; the spec typecheck did not. Filed as
+`TSC-SKIPS-TESTS-01`'s third live instance (§17f) and recorded in the test at the
+cast that works around it, which is where the next reader will meet it.
+
+**CONSEQUENCE B — the one that decided the ruling.** The platform makes
+`Error.cause` **non-enumerable**. This one was **enumerable**. So the moment a
+cause were populated it would enter **every `JSON.stringify` of the error
+automatically — no decision, no site, no review**: every log line, telemetry
+payload and audit record. (`message` and `stack`, real `Error` own properties,
+are non-enumerable and are correctly omitted; `code`, `cause` and `name` were
+not.) The platform made that choice deliberately, and this declaration silently
+opted out of it.
+
+⚠️ **THAT OVERTURNED THE FALLBACK, NOT ONLY THE LEAN.** The dispatch's interim —
+*"read it into the error path (logging, the audit sink) WITHOUT rendering it"* —
+is **not a safe interim on this shape**: populating the field already places it
+in every serialisation. **Capture WAS exposure.** There was no version of
+"capture now, decide rendering later" available until the enumerability was
+fixed, and fixing the enumerability is indistinguishable from writing the field
+again properly.
+
+**CONSEQUENCE A, live today and not hypothetical.** `'cause' in err` was **TRUE
+on every `DataError`** while the value was always `undefined`; a plain `Error`
+answers `false`. Any feature-detect by `in` — the idiomatic test for optional
+error metadata — got a **false positive on every error the data layer threw**.
+
+---
+
+### 41c · THE RULING, AND ITS REASONING IS THE SPEC ARGUMENT
+
+**DELETE.** Not on tidiness, and not because the field was unused:
+
+> **THE FIXTURE FRONTEND IS THE SE TEAM'S EXECUTABLE SPECIFICATION, AND IT
+> SPECIFIED A CAUSE CHANNEL THAT NO PRODUCER USES AND NO CONSUMER READS.** The F1
+> author reading `cause?: unknown` would reasonably infer an established pattern
+> and wire to it — **into an enumerable property that leaks into serialisation.**
+> **A field that teaches the next implementer the wrong thing is worse than an
+> absent one.**
+
+Cost, as predicted and as executed: **three lines, zero call-site churn** (no
+site passed a third argument), and no spec referenced `.cause`.
+
+**Why not DEFER as `data-in-waiting` — and this is the distinction the six
+substantive tokens exist to make:**
+
+> ⚠️ **A NAMED PRODUCER IS NOT A NAMED CONSUMER.**
+
+`types.ts:158` names the Phase-3 real adapter as the thing that will **write** a
+cause. Nothing named would ever **read** one — not `ErrorState` (renders
+`code: message`), not `IntakeReview` or `IntakeAdjustDrawer` (read `.code`), not
+`BuyerRequisitions` (reads `.message`). A channel written by somebody and read by
+nobody is exactly what was deleted; deferring it would have re-described the
+defect as a plan.
+
+**Why not READ.** There was nothing to read. It decomposes into *start capturing*
+and *surface it*, and the first is impossible: no construction site has an
+underlying exception. Doing it would have meant inventing failures to wrap.
+
+---
+
+### 41d · THE REQUIREMENT PRESERVED IN CODE — **strictly more than the field said**
+
+On the D-A precedent (§36: delete the field, keep the knowledge), the requirement
+now sits beside `DataErrorCode` in `services/data/types.ts` — **in code, not in a
+register row alone**, because the register is not what an F1 author reads:
+
+1. **IT SHIPS WITH ITS READER.** A named producer is not a named consumer.
+2. **IT SHIPS NON-ENUMERABLE** — `Object.defineProperty(this, 'cause',
+   { value, enumerable: false, … })`, which is what the platform does.
+3. **RENDERING IT IS A SEPARATE RULING** — under F1 a cause is an HTTP body or an
+   SAP message; what may reach `ErrorState` is policy, not wiring.
+
+**All three are things the field never said.** It said only *"an optional unknown
+may be attached"* — which is how it came to be attached wrongly and read never.
+
+⚠️ **AND THE REQUIREMENT HAS A VERIFIER**, because *a ratification recorded in
+prose is a promise with no verifier* (§1, credited to SOMO) and a comment
+promising non-enumerability is precisely that.
+`services/data/dataError.contract.test.ts` pins it: no own `cause` descriptor,
+`'cause' in err === false`, `cause` absent from `Object.keys` and from
+`JSON.stringify`, arity exactly 2 — **and it asserts the platform's own shape
+alongside**, so the requirement names something real rather than something
+remembered.
+
+**Mutation-probed.** Re-adding `readonly cause?: unknown` as a class field turns
+**three of the four contract assertions red** — including
+`DataError own enumerable keys: code, cause, name` — while the known-good control
+(*still an Error, still survives `instanceof`*) stays green, which is the order
+rule 4 requires. The probe's edit was confirmed landed before its result was
+believed.
+
+---
+
+### 41e · THE BILATERAL SHRINK — first exercise, and it fired before it was asked to
+
+The allowlist row had to die with its subject. It was left in place deliberately
+so the gate could be observed doing it:
+
+```
+× D-F stored-field gate (the tree) > ⚠️ BILATERAL — the allowlist is EXACTLY the flagged set
+  → AN EXEMPTION OUTLIVED ITS SUBJECT. Delete these rows from allowlist.ts —
+    DataError.cause  — the field no longer exists
+```
+
+**The gate went red on the DELETION, not on the addition** — the direction a
+containment-style allowlist does not have, and the reason D-F was built as set
+equality. Row removed; 30 → 29. The removal site carries the history rather than
+vanishing silently.
+
+⚠️ **RECORDED AS WORKING, BECAUSE THIS IS THE HALF THAT IS EASY TO BUILD AND EASY
+TO OMIT.** Every allowlist grows a containment check — *is anything unlisted
+failing?* — because that is the half that stops a defect arriving. The shrink
+half stops a defect LINGERING, pays nothing on the day it is written, and is
+therefore the half that gets left out or, worse, written and never exercised.
+D-F shipped it one day and spent it the next, on the first field anybody ruled
+on. **It fired unprompted, named the row, and named the reason** (`the field no
+longer exists`, distinguished in the message from `NOW READ at …`). One
+instance is not a track record, but an unexercised guard and an exercised one
+are different objects, and this one is now the second kind.
+
+---
+
+### 41f · TWO LEADS, FILED AND NOT FIXED
+
+**1 · `dispatcher.ts:334` — `catch { /* best-effort cross-entity cascade */ }`.
+⚠️ THIS IS THE LOSS THAT WAS MISTAKENLY ATTRIBUTED TO `cause`, AND IT IS REAL.**
+A cascaded command can throw and the dispatcher **swallows it with no record, no
+event, and no audit entry**. Its own ruling.
+
+**Ranked, and the ranking is the point: this is a GOVERNANCE gap, not a
+diagnostic one.** A lost stack trace costs a debugging session. A silently
+swallowed cascade means **a transition the system decided to attempt has no
+record that it was attempted or that it failed** — on the DR-10 path whose entire
+purpose is that every transition is accounted for. The cascade is where GR→ASN
+and RFQ→quotation propagate; a swallow there is an entity left in a state nobody
+chose, with nothing in the audit sink to say why. It outranks every remaining
+stored-field row, including the two Seat 3 named by hand.
+
+**2 · `UPSTREAM` and `UNKNOWN` are `DataErrorCode` members NOTHING EVER
+CONSTRUCTS.** A **glossary-registered vocabulary with unreachable members** —
+GL-0 defines both terms, GL-1 renders them, and no code path can produce either.
+Adjacent to GL-0b, and a different shape from the loose-end census: not an
+affordance with no backing, but a *word with no way of being said*. Whether the
+right answer is deletion or a producer is a ruling nobody has taken.
+
+---
+
+### 41g · WHAT THIS BATCH DOES NOT CLAIM
+
+It does not claim the data layer now records failure causes — it records none,
+and records none deliberately. Every `DataError` today is a **decision**
+(scope denial, not-found) or an **injection** (chaos), and a decision has no
+cause to attach. The day a real upstream failure exists is the day the channel
+should exist, **with its reader, and non-enumerable.** That day is F1's, and the
+requirement will be waiting in the file the F1 author opens first.
