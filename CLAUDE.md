@@ -326,6 +326,17 @@ prose, in the section that forbids restating cardinalities in prose. §27 /
    reading absence out of a sample is the same error one layer up — a
    conclusion reporting on the instrument rather than on the tree.
 
+   ⚠️ **§42 · AND THE SAME RULE GOVERNS WHAT A MATCH *MEANS*, NOT ONLY WHICH
+   MATCHES YOU FOUND. THE SCAN MATCHED A CALL SITE; THE DERIVATION MATCHED A
+   REGISTRATION SITE; ONLY THE SECOND IS WHAT A KEY COLLISION NEEDS.** A verb
+   appearing in a call is not a verb claiming a key. Four premises inverted on
+   measurement in one arc — two of them naming identifiers that do not exist in
+   the tree at all — and each was a scan's match read as if it were a
+   registration's. **Name the site the claim REQUIRES, then assert membership at
+   THAT site.** A correct-sounding claim resting on the wrong site is the same
+   defect as `COUNT-RESTATED-ACROSS-INSTRUMENTS-01` (§40k) with a location
+   standing in for a number.
+
 Handler shapes in THIS codebase that a naive matcher misses: custom props
 (`onQualify`, `onInviteRfq`, `onUpdate`), and **named handlers hoisted out of
 the JSX** (`const handleExport = () => …`) — which is where the largest pages

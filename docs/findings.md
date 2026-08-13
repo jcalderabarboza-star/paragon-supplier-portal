@@ -12168,6 +12168,15 @@ are different objects, and this one is now the second kind.
 A cascaded command can throw and the dispatcher **swallows it with no record, no
 event, and no audit entry**. Its own ruling.
 
+> ⚠️ **CORRECTED AT §42 — TRUE OF THE THROW CLASS, NOT OF CASCADE FAILURE.**
+> Measured across all twelve failure paths: **eight are already fully recorded**,
+> each emitting its own `failed` event with its own `correlationId` and the
+> source's `causationId`. `fin()` emits before it returns, so every path that
+> RETURNS is audited; only the four `throw new DataError` sites emit nothing,
+> because they fire before a `correlationId` exists. Three vanish, one is not
+> caught at all (the resolver call sits OUTSIDE the `try`). The sentence above
+> generalised from the one class it had looked at — §42a, premise 1.
+
 **Ranked, and the ranking is the point: this is a GOVERNANCE gap, not a
 diagnostic one.** A lost stack trace costs a debugging session. A silently
 swallowed cascade means **a transition the system decided to attempt has no
@@ -12194,3 +12203,167 @@ and records none deliberately. Every `DataError` today is a **decision**
 cause to attach. The day a real upstream failure exists is the day the channel
 should exist, **with its reader, and non-enumerable.** That day is F1's, and the
 requirement will be waiting in the file the F1 author opens first.
+
+---
+
+## §42 — THE CASCADE-MAP COVERAGE GATE. Four inverted premises, and the one thing that survived them
+
+Branched from main `fd4acd6`. Floor 2927/210/7 → **2937/211/7**. Four gates green.
+Investigation of `dispatcher.ts:334` (filed at §41f) produced **four premises that
+inverted on measurement** and exactly one defect worth building against. This
+entry is mostly the sequence, because the sequence is the finding.
+
+---
+
+### 42a · ⚠️ THE SEQUENCE, AND IT IS THE ARC'S LESSON IN MINIATURE
+
+> **A SWALLOWED CATCH LED TO A CENSUS. THE CENSUS MADE A WRONG CLAIM AND FOUND A
+> REAL VULNERABILITY IN THE SAME PASS. THE VULNERABILITY'S FIRST STATEMENT WAS
+> ALSO WRONG, AND SO WAS ITS SECOND. WHAT SURVIVED ALL THREE CORRECTIONS — AN
+> AMBIGUOUS KEY THAT WOULD PRODUCE A PLAUSIBLE WRONG WRITE RATHER THAN A CRASH —
+> IS THE ONE WORTH FIXING.**
+
+**Four inverted premises, every one found by RE-DERIVING rather than re-reading:**
+
+| # | the premise | what measurement said |
+|---|---|---|
+| 1 | *"a cascade fails and the dispatcher swallows it with no record"* (§41f, mine) | **8 of 12 failure paths are already fully recorded.** `fin()` emits before it returns, so every path that RETURNS is audited; only the four `throw new DataError` sites emit nothing, because they fire before a `correlationId` exists. 3 silent, 1 uncaught. |
+| 2 | *"only 1 of 6 cascade targets records a governed event; 5 of 6 have no record even on the success path"* | The **population of 6 is real and derivable** (authored targets ∪ `trigger: 'cascade'`). The numerator is not: **4 of 6 can fire and all 4 emit on success**, measured twice. The other 2 cannot fire because nothing fires them, and both are already `unauthored-cascade` rows in `LOOSE_END_CENSUS`. |
+| 3 | *"a Map key collision where an unregistered flow makes two entities collide, and the second silently overwrites the first"* | `FlowRegistry.register` **throws** on a duplicate entity key AND on a duplicate transition id, and never overwrites. Probed known-good first. The two silent-overwrite `new Map(entries)` sites in the spine (`catalogView.ts:265`, `liveness/registry.ts:375`) have zero duplicates and a documented deterministic winner respectively. |
+| 4 | *"`t_delivery_release` and `t_deliveryagreement_release` both key to `release`; the second overwrites the first"* | **Neither id exists.** 91 transition ids, 91 distinct, none containing `delivery`; the only id containing `release` is `t_invoice_release_payment`. There is no `runCascades`, no `CascadeMap` type, no `agr-2026-…` fixture row, and no map anywhere keyed by a verb suffix. `delivery/index.ts` states the lane is *"Spine only — no flows, no CommandTargets, no UI, no registry touch."* |
+
+⚠️ **AND PREMISE 4 NAMES ITS OWN MECHANISM, WHICH IS RULE 3:**
+
+> **THE SCAN MATCHED A CALL SITE; THE DERIVATION MATCHED A REGISTRATION SITE.
+> ONLY THE SECOND IS WHAT A KEY COLLISION NEEDS.**
+
+A verb appearing in a call is not a verb claiming a key. That is the same shape as
+GL-1's *"a grep output pasted forward is an inherited list wearing a derivation's
+clothes"* — one layer down, on the question of what a match MEANS rather than
+which matches were found.
+
+---
+
+### 42b · ⚠️ THE GATE'S OWN FIRST DRAFT PASSED OVER ZERO ROWS — rule 4, third payment
+
+The derivation written to check premise 4 returned **"0 colliding" on every
+keying**. It was reporting on an **empty population**: it imported `./registry`
+instead of `./index`, so no shipped flow had self-registered, `getKnownFlows()`
+returned `[]`, and every duplicate check ran over nothing and came back clean.
+
+The only thing that caught it was the known-GOOD control —
+`expect(ids).toContain('t_gr_post')` — going red beside `total transition ids: 0`.
+
+**`EMPTY-INPUT-REPORTS-CLEAN-01`, committed inside the instrument written to
+check for exactly that class**, and it would have produced the RIGHT conclusion
+("no collisions in the tree") by an instrument that proved nothing. A correct
+answer from an empty population is the most dangerous result a census can return,
+because nothing about it looks wrong. **The population guard is now the FIRST test
+in the shipped gate and it asserts membership, not a count.**
+
+Standing count: this is the third time the both-ways reflex has paid (§40e, §41,
+here) and the second time it caught a **false green** rather than a false red.
+
+---
+
+### 42c · WHAT IS ACTUALLY TRUE — the vulnerability, stated correctly at last
+
+Not a collision, and not an overwrite. The shipped facts:
+
+- **The bare verb suffix IS ambiguous, today, on 14 verbs.** `create` ×6,
+  `submit` ×7, `reject` ×6, and `award` ← `t_rfq_award` + `t_quotation_award` —
+  two lanes, one suffix.
+- **Nothing keys by it.** The only verb-slicing function in the tree is
+  `verbOf()` (`flowLayout.ts:97`), whose single non-test caller renders it as a
+  diagram edge LABEL (`FlowDiagram.tsx:224`).
+- **The cascade path is already entity-qualified, by design and in both halves.**
+  `CascadeLink` carries `targetEntity` AND `targetTransitionId`; the dispatcher
+  resolves the target through `deps.target(input.entity)` while resolving the
+  verb through the globally-unique `getTransition(input.transitionId)`.
+
+⚠️ **AND THAT IS EXACTLY WHY THIS GATE EXISTS. A cascade addresses the wrong
+machine only if those two independent qualifications DISAGREE — and until this
+batch, NOTHING CHECKED THAT THEY AGREE.** Every field in a `CascadeLink` is a
+bare `string`. An authored link naming one lane's entity and another lane's verb
+resolves on both halves, refuses nothing, throws nothing, and writes a real
+transition onto the wrong document. **It is not an exception to catch. It is a
+plausible wrong write**, and the audit trail would record it as a success.
+
+> **THE SAFETY WAS CARRIED BY CONVENTION, NOT BY VERIFICATION.** The design is
+> right; there was no verifier, and *a ratification recorded in prose is a promise
+> with no verifier* (§1) applies to a design ratified only by everyone happening
+> to author it correctly.
+
+---
+
+### 42d · THE GATE — `src/services/transitions/cascadeIntegrity.test.ts`
+
+The checker is a **pure function over injected inputs** (`cascadeViolations(cascades,
+flows, wired)`), so the identical code runs against the shipped map and against a
+synthetic tree — which is what makes both directions probeable on ONE instrument.
+Seven violation kinds; the load-bearing one is **`target-lane-mismatch`**: the
+target transition is real, the target entity is real, and they belong to different
+machines.
+
+**Both directions, known-GOOD first in every describe:**
+
+- the catalog is loaded (a known-TRUE member present, a known-FALSE one absent);
+- the shipped map yields **zero** violations;
+- every authored link's target transition is declared BY the flow it names, and
+  the entity is in `WIRED_COMMAND_TARGETS`;
+- a **clean synthetic tree** yields zero violations — the control for the red
+  cases — and then each red case yields exactly the violation it earns, including
+  the two-lane scenario authored verbatim (`delivery` / `deliveryAgreement`, both
+  declaring a `…_release` verb) so **the shape the ruling described exists in the
+  suite as a RED case even though it cannot occur in the tree.**
+
+**Mutation-probed on the shipped map.** Repointing `t_gr_post`'s link from
+`invoice` to `quotation` turns the gate red with
+`target-lane-mismatch: 't_gr_post' → entity 'quotation' but 't_invoice_match'
+belongs to 'invoice'`, while the population and synthetic controls stay green.
+The edit was confirmed landed (`occurrences: 1 / CHANGED: True`) before the
+result was believed — the CRLF trap makes a green mutation probe meaningless
+otherwise.
+
+**Test-local by choice, not by accident.** It is an assertion about authored data,
+not a runtime module, and adding a source module that only a test imports has a
+known cost here: the H3 headlessness and E4 consumer censuses both read module
+lists, and D-F paid that cost in edits to two other files.
+
+---
+
+### 42e · THE STATED RESIDUAL — one authored target is invisible to the integrity check
+
+`flowGraph`'s cascade-integrity rule examines transitions whose OWN trigger is
+`cascade`. **`t_invoice_match` is an authored cascade target declaring
+`trigger: 'system'`**, so that rule cannot see it in either direction — it is
+never asked "does a source fire you?", and it never appears in
+`authoredCascadeTargets` reasoning as a cascade.
+
+This is the true **1 of 6** in the population premise 2 mis-read, and it means the
+opposite of what was claimed: not *unrecorded*, but **unchecked**. Pinned as an
+EXACT SET, INVERTED (`expect(notDeclaredCascade).toEqual(['t_invoice_match'])`), so
+the day somebody re-triggers it the pin goes red and the residual is rewritten
+rather than quietly shrinking. A `.filter(...).toEqual([])` here would have been a
+lie, and a "known exceptions" list would have been `ADOPTION-QUEUE-01`.
+
+---
+
+### 42f · WHAT THIS BATCH DOES NOT CLAIM
+
+It does not fix the swallowed catch — three silent throw paths remain, of which
+**one is live**: 14 of 14 fixture GRs and 6 GR-creatable shipment refs name an ASN
+document the ASN store does not contain, so a disposition cascade throws
+`NOT_FOUND` and vanishes while the primary reports `done`. The primary is **not**
+lying — it reports honestly on its own scope, and its write is committed before
+the cascade runs, which is why FAILING it would report a failure for a write that
+happened. **The record is incomplete, not false**, and that is the whole distance
+between a diagnostic gap and a governance breach.
+
+It does not make the key entity-qualified, because **it already is** — the batch
+makes that guarantee CHECKED rather than conventional.
+
+It does not touch the two authored-but-unfired PR cascades. They are not
+dispatcher-bypassing store mutations: every writer of `purchaseRequisitionStore`
+is inside `purchaseRequisitionTarget`. They are unauthored cascade declarations,
+already on the surface as loose ends, and wiring them is a FORK-2 decision.
