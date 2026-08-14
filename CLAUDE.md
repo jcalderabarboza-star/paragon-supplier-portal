@@ -337,6 +337,20 @@ prose, in the section that forbids restating cardinalities in prose. §27 /
    defect as `COUNT-RESTATED-ACROSS-INSTRUMENTS-01` (§40k) with a location
    standing in for a number.
 
+   ⚠️ **§43 · AND THE RULE BINDS THE SEAT THAT DISPATCHES, NOT ONLY THE ONE
+   THAT MEASURES. A PLAN READ AS A RESULT IS THE SAME DEFECT CLASS AS A SCAN
+   READ AS A DERIVATION.** The cascade arc ended on its SEVENTH inverted
+   premise: a ruling to *merge PR #226* when no PR, no branch and no code
+   existed — the number, the string, the surfaces and a demo risk all read off
+   a PLAN as though it were a RESULT. Six premises inverted on measurement and
+   each cost a report; the seventh cost nothing **only because it was refused**,
+   and it is the one that mattered most: **it required an OUTWARD, IRREVERSIBLE
+   ACTION to act on.** Six wrong premises can be corrected by measuring again;
+   a merge cannot. So before ANY outward or irreversible step — merge, push,
+   publish, delete — assert the object exists **at the site the action names**
+   (`gh pr list`, `git branch`, the file itself), never from the conversation
+   that described it. §43a.
+
 Handler shapes in THIS codebase that a naive matcher misses: custom props
 (`onQualify`, `onInviteRfq`, `onUpdate`), and **named handlers hoisted out of
 the JSX** (`const handleExport = () => …`) — which is where the largest pages

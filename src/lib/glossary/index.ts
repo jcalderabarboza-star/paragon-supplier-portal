@@ -36,6 +36,7 @@ export type { GlossaryEntry, GlossaryOf } from './types';
 export {
   COMMAND_REFUSAL_GLOSSARY,
   DATA_ERROR_GLOSSARY,
+  SETTLE_FAULT_GLOSSARY,
   FX_REFUSAL_GLOSSARY,
   QTY_REFUSAL_GLOSSARY,
   HALAL_REFUSAL_GLOSSARY,
@@ -59,6 +60,7 @@ export {
 import {
   COMMAND_REFUSAL_GLOSSARY,
   DATA_ERROR_GLOSSARY,
+  SETTLE_FAULT_GLOSSARY,
   FX_REFUSAL_GLOSSARY,
   QTY_REFUSAL_GLOSSARY,
   HALAL_REFUSAL_GLOSSARY,
@@ -103,6 +105,7 @@ export interface GlossaryRegistry {
 const REGISTRIES = [
   { sourceType: 'CommandRefusal', sourceFile: 'src/services/transitions/refusals.ts', entries: COMMAND_REFUSAL_GLOSSARY },
   { sourceType: 'DataErrorCode', sourceFile: 'src/services/data/types.ts', entries: DATA_ERROR_GLOSSARY },
+  { sourceType: 'SettleFault', sourceFile: 'src/services/transitions/settleFaults.ts', entries: SETTLE_FAULT_GLOSSARY },
   { sourceType: 'FxRefusalReason', sourceFile: 'src/lib/fxPin.ts', entries: FX_REFUSAL_GLOSSARY },
   { sourceType: 'QtyRefusalReason', sourceFile: 'src/lib/localeNumber.ts', entries: QTY_REFUSAL_GLOSSARY },
   { sourceType: 'HalalRefusalReason', sourceFile: 'src/services/sdc/halal.ts', entries: HALAL_REFUSAL_GLOSSARY },

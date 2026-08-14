@@ -435,6 +435,19 @@ export const resources = {
       'gr.post.posted.desc': 'SAP assigned the material document on settlement.',
       'gr.post.failed.title': 'Could not post {{grNumber}}',
       'gr.post.failed.desc': 'Posting was rejected ({{reason}}).',
+      // — §43 · Settle-fault toasts. Cross-surface (GR post + invoice payment),
+      //   so they live here rather than in either page fragment. Keyed by the
+      //   `SettleFault` member; the definitions behind them are the glossary's.
+      //   EVERY string names the document's state and whether asking again
+      //   helps — a refusal that reports only failure is half a remedy.
+      'settle.failed.title': 'Settlement did not complete',
+      'settle.failed.REFUSED':
+        'A governing rule refused the settlement. The document is unchanged and still awaiting settlement — asking again gives the same refusal.',
+      'settle.failed.TRANSPORT':
+        'The settling system did not answer. The document is unchanged and still awaiting settlement — run the same action again; settling twice is safe.',
+      'settle.failed.UNGOVERNED':
+        'The settlement stopped on an unclassified fault. The document is unchanged and still awaiting settlement — retrying will not clear it. Report the reference below.',
+      'settle.failed.ref': 'Reference {{correlationId}}.',
       'gr.denied.title': 'Not authorized',
       'gr.denied.desc': 'You are not authorized to act on this goods receipt.',
       // — Invoice verbs (Step 4 batch iii, DR-7) —
@@ -813,6 +826,15 @@ export const resources = {
       'gr.post.posted.desc': 'SAP menetapkan dokumen material saat penyelesaian.',
       'gr.post.failed.title': 'Tidak dapat mengirim {{grNumber}}',
       'gr.post.failed.desc': 'Pengiriman ditolak ({{reason}}).',
+      // — §43 · Toast kegagalan penyelesaian (lihat blok EN). —
+      'settle.failed.title': 'Penyelesaian tidak tuntas',
+      'settle.failed.REFUSED':
+        'Sebuah aturan yang mengatur menolak penyelesaian. Dokumen tidak berubah dan masih menunggu penyelesaian — meminta lagi menghasilkan penolakan yang sama.',
+      'settle.failed.TRANSPORT':
+        'Sistem penyelesai tidak menjawab. Dokumen tidak berubah dan masih menunggu penyelesaian — jalankan tindakan yang sama sekali lagi; menyelesaikan dua kali tetap aman.',
+      'settle.failed.UNGOVERNED':
+        'Penyelesaian berhenti karena kesalahan yang tidak terklasifikasi. Dokumen tidak berubah dan masih menunggu penyelesaian — mengulang tidak akan menuntaskannya. Laporkan referensi di bawah.',
+      'settle.failed.ref': 'Referensi {{correlationId}}.',
       'gr.denied.title': 'Tidak berwenang',
       'gr.denied.desc': 'Anda tidak berwenang menindaklanjuti penerimaan barang ini.',
       // — Invoice verbs (ID stub — refined in the Phase 3′ ID-first sweep) —

@@ -14,6 +14,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 import type { GlossaryOf } from './types';
 import type { CommandRefusal } from '../../services/transitions/refusals';
+import type { SettleFault } from '../../services/transitions/settleFaults';
 import type { FxRefusalReason } from '../fxPin';
 import type { QtyRefusalReason } from '../localeNumber';
 import type { HalalNotSatisfiedReason } from '../../services/data/halalVerification';
@@ -84,6 +85,28 @@ export const DATA_ERROR_GLOSSARY = {
     id: 'Kegagalan yang tidak dapat diklasifikasikan lapisan baca. Dilaporkan sebagai tidak diketahui alih-alih digabungkan ke penyebab terdekat, karena penyebab yang salah lebih buruk daripada kekosongan yang jujur.',
   },
 } satisfies GlossaryOf<DataErrorCode>;
+
+/**
+ * §43 · The settle boundary's three. A `sapBoundary` command is TWO acts — the
+ * submission and the settlement that lands it — and these classify a failure of
+ * the SECOND. Each entry says the same three things, because a refusal that
+ * omits any of them is the dead end `HALAL-REFUSAL-DEAD-ENDS-01` names: what
+ * happened, what state the document is now in, and whether asking again helps.
+ */
+export const SETTLE_FAULT_GLOSSARY = {
+  REFUSED: {
+    en: 'The settlement was refused by a governing rule — the same kind of no a command gives before anything changes. The document is unchanged and still awaiting settlement. Asking again produces the same refusal; what the refusal names has to change first.',
+    id: 'Penyelesaian ditolak oleh aturan yang mengatur — penolakan sejenis yang diberikan sebuah perintah sebelum ada yang berubah. Dokumen tidak berubah dan masih menunggu penyelesaian. Meminta lagi menghasilkan penolakan yang sama; yang disebut penolakan itu harus diubah lebih dulu.',
+  },
+  TRANSPORT: {
+    en: 'The system that completes the settlement did not answer. The document is unchanged and still awaiting settlement — nothing was written by halves. This is the one class where trying again is the normal response.',
+    id: 'Sistem yang menuntaskan penyelesaian tidak menjawab. Dokumen tidak berubah dan masih menunggu penyelesaian — tidak ada yang tertulis setengah jalan. Ini satu-satunya kelas yang wajar untuk dicoba lagi.',
+  },
+  UNGOVERNED: {
+    en: 'The settlement stopped on a failure that never entered the governed failure channel at all, so the system can say that something broke but not that the next attempt would pass. The document is unchanged and still awaiting settlement. It is deliberately NOT offered as retryable — a fault a retry cannot fix must not read as a passing blip. Report it with the command reference.',
+    id: 'Penyelesaian berhenti karena kegagalan yang sama sekali tidak masuk ke saluran kegagalan yang diatur, sehingga sistem dapat mengatakan ada yang rusak tetapi tidak bahwa percobaan berikutnya akan berhasil. Dokumen tidak berubah dan masih menunggu penyelesaian. Sengaja TIDAK ditawarkan untuk dicoba lagi — kesalahan yang tidak dapat diperbaiki dengan mengulang tidak boleh terbaca sebagai gangguan sesaat. Laporkan dengan referensi perintah.',
+  },
+} satisfies GlossaryOf<SettleFault>;
 
 /** A quoted price could not be judged because its exchange rate was unusable. */
 export const FX_REFUSAL_GLOSSARY = {
