@@ -12835,7 +12835,15 @@ argument is a BCP-47 literal or **absent** — excluding the sanctioned
 and **12 live no-locale-arg calls** (2 further matches were inside comments).
 None can follow `i18n.language` by construction. The no-arg subset is the sharp
 one: it follows the **browser's** locale, so grouping differs per visitor
-regardless of the app's language. Largely the known opportunistic formatter
+regardless of the app's language.
+
+⚠️ **AND THIS SECTION LOOKED IN THE WRONG PLACE FOR THE WORST CASE — SEE §46.**
+It swept the CALL SITES that bypass `lib/format.ts` and never examined
+`lib/format.ts` itself, where `formatNumber` and `formatIDR` render `id-ID`
+grouping **in every locale, deterministically**. A browser-following formatter is
+at least sometimes right; that one is never right for an English reader. It is
+`documentLocale`'s defect inverted — and it is a ratified decision rather than a
+gap, which is why §46 files it for a ruling and not as a repair. Largely the known opportunistic formatter
 migration (DP precedent) rather than a fresh discovery. **Its own batch. Not
 touched here** — a population that size inside an app-shell fix is how a fix
 stops being reviewable.
@@ -12892,3 +12900,170 @@ bytes the page had actually loaded rather than trusting the URL. Cache-busted,
 both locales verified end to end, console clean (0 errors, 0 warnings): boot in
 ID gives `lang="id"`, `dir="ltr"`, the Indonesian tab title, and the Indonesian
 clear-search name, with the English literal absent from the live DOM.
+
+---
+
+## §46 — THE FORMATTER HALF OF THE LOCALE SEAM. The twelfth inversion, the instruction that corrected it inverting in turn, and a defect that turns out to be a ratified decision
+
+Register only. **No code changed.** §45 is on `main` at `cc780c1`; PR #227 still
+carries §44, so this is §46.
+
+### 46a · THE TWELFTH INVERSION, AND THE INSTRUCTION THAT CORRECTED IT INVERTED IN THREE PARTICULARS OUT OF FOUR
+
+The eleventh was an artifact asserted that was never in the tree, used as an
+entry's lead evidence. The twelfth was caught **inside the filing instruction
+written to correct the eleventh** — the narrowest place any of them has been
+caught, and the register should say so plainly. It should also say the rest,
+because a correction believed on authority is the same failure as a premise
+believed on authority:
+
+| the instruction said | measured | verdict |
+|---|---|---|
+| "`formatDate` **and** `formatDateTime` hardcode `'id-ID'`" | `formatDateTime` **does not exist anywhere in the tree** — zero hits repo-wide including tests. `lib/format.ts` exports exactly four functions: `formatNumber`, `formatIDR`, `formatMoney`, `formatDate`. | **REFUTED** |
+| `formatDate` hardcodes `'id-ID'` | `format.ts:105` is `new Intl.DateTimeFormat(isID() ? 'id-ID' : 'en-GB', …)`. It is **the one function in the file that fully reads the i18n instance**, and its docstring names the divergence it produces (`Aug/Oct/Dec` vs `Agu/Okt/Des`). | **REFUTED — and it is the opposite of the example** |
+| "most of the 55 are `.toFixed()` and `Intl` constructors that take no locale by design" | The matcher keys on `new Intl.*Format(` and `.toLocale{String,DateString,TimeString}(` **only** — the string `toFixed` does not appear in it. `src` contains 23 `.toFixed(` calls and **none of them is in the 55**. | **REFUTED** |
+| "the 12 was a scan artifact" | Re-read from source, line by line, all twelve are **live** `.toLocaleString()` calls with no argument, in `BuyerRisk` (2), `SupplierDashboard` (1), `SupplierOrders` (3), `SupplierShipments` (6). `Number.prototype.toLocaleString()` with no locale uses the runtime default. | **REFUTED — the figure stands** |
+| **the DIRECTION: something in the formatter seam ignores the user entirely, and that is worse than following the browser** | **A real object, at a different address than the one named.** | ✅ **CORRECT, and sharper than §45e's framing** |
+
+⚠️ **THE MECHANISM IS `COUNT-RESTATED-ACROSS-INSTRUMENTS-01`, ONE TURN AFTER THE
+REGISTER RECORDED IT.** A figure derived by a matcher that cannot match
+`.toFixed()` was corrected against an impression formed by an instrument that
+evidently could. **A prototype and the thing it became are two instruments** —
+and so are two greps written an hour apart for different questions. **Re-run; do
+not reconcile.** Declining to withdraw a figure on instruction, and re-deriving
+it instead, is the same discipline as declining to file one — it just runs in the
+uncomfortable direction.
+
+### 46b · `FORMATDATE-HARDCODES-ID-01` CANNOT BE FILED UNDER THAT NAME. The real object is `formatNumber`
+
+The hardcode is real. It is at `src/lib/format.ts:17`:
+
+```ts
+const idID = new Intl.NumberFormat('id-ID');   // module-level, unconditional
+```
+
+consumed by **`formatNumber`** (`:28`) and by **`formatIDR`**'s full form (`:48`).
+Neither consults `isID()`. **An English user gets Indonesian digit grouping on
+every quantity and every rupiah amount in the app, deterministically.**
+
+And the operator's framing leads the row, because it is the sharper half:
+
+> **That hardcode is `documentLocale`'s defect, inverted. `lang` said English
+> while the content was Indonesian; the grouping renders Indonesian while the
+> content is English. Same seam, opposite direction — and the batch that fixed
+> one sat beside the other without seeing it.**
+
+### 46c · ⚠️ AND IT IS NOT A DEFECT. IT IS A RATIFIED DECISION, PINNED BY A TEST
+
+This is why the row is filed as an open question rather than a finding, and it is
+the most important thing measured this turn.
+
+- `format.ts:3` — *"id-ID conventions (Rp prefix, dot thousands)"*.
+- `format.ts:19–20` — *"EN output stays **byte-identical to the pre-i18n
+  behaviour**; only ID mode diverges."*
+- `format.test.ts` — a test whose **name** is
+  **`'full IDR + number grouping stay id-ID in both locales'`**, asserting
+  `formatNumber(1234567) === '1.234.567'` and
+  `formatIDR(1_250_000_000) === 'Rp 1.250.000.000'` under `lng = 'id'` **and**
+  a sibling case asserting EN output is unchanged.
+
+⚠️ **SO THE SAME SEAM HAS BOTH HALVES PINNED GREEN, TO OPPOSITE CONTRACTS.**
+`documentLocale.test.ts` asserts the document **tracks** the language.
+`format.test.ts` asserts the grouping **ignores** it. Both pass. Neither knows
+the other exists. **That is a stronger and more troubling shape than an
+unguarded half**, and it generalises past this repo:
+
+> **A pin that asserts one half of a seam leaves the other unguarded, and the
+> green pin reads as coverage.** Here, worse: **the other half was not unguarded
+> — it was guarded to the opposite contract, and the suite was green on both.**
+> Two correct-looking tests can encode a contradiction that neither can see,
+> because a pin's scope is invisible from inside its own result.
+
+⚠️ **AND NOTE WHAT THIS EVIDENCE IS.** It is exactly the class whose *absence*
+made the eleventh inversion's invented `<span lang="en">` so attractive: an
+author who understood the mechanism and chose. For `lang` it did not exist
+anywhere, which is why §45 rests the gap case on `documentElement` being
+untouched repo-wide. **Here it does exist** — in a comment and in a test name —
+which is precisely why this cannot be filed as the same kind of thing. A gap and
+a decision are not two severities of one finding. **They are different findings,
+and only one of them is anybody's mistake.**
+
+The open question, for a ruling and not for a seat: the freeze was taken when EN
+output was being held byte-identical to the *pre-i18n* app. Now that two locales
+genuinely ship, does it still hold — and does it hold **equally** for both
+consumers? They are not obviously the same case:
+
+- **`formatIDR`** — rupiah rendered in Indonesian convention is defensible in any
+  UI language; it is a property of the currency, like the `Rp` prefix itself.
+- **`formatNumber`** — a bare quantity is not a currency. `"1.234.567"` kg shown
+  to an English reader is not merely unfamiliar, it is **ambiguous against their
+  own convention**, where the same string reads as one-point-two-three-four.
+
+### 46d · BLAST RADIUS, MEASURED
+
+| | |
+|---|---|
+| files importing `formatDate` | **34** — locale-aware already; **no fix needed, and none proposed** |
+| files importing `formatNumber` / `formatIDR` | **35** — the hardcode's reach |
+| files with a **page-local** date helper hardcoding `'en-GB'`, bypassing `formatDate` entirely | **14** |
+| live `.toLocaleString()` no-argument calls (browser-locale-following) | **12** |
+
+The 14 are the seam's third state and were not previously named: not "tracks the
+language" and not "ignores it by ruling", but **never routed through the
+sanctioned helper at all**. A ruling on `format.ts` does not reach them.
+
+### 46e · IS THE FIX ONE CALL SITE OR A SIGNATURE CHANGE? — One call site. That is not the cost
+
+**Code:** one line, inside `format.ts`, no signature change and no caller
+touched — replace the module-level `idID` const with a per-call formatter
+selected by `isID()`, exactly as `formatDate:105` already does. Both public
+signatures stay identical, so all 35 importers are unaffected at the type level.
+
+**The actual cost is a ruling and a deliberate red.** The change alters rendered
+EN output across 35 files' surfaces and **must** redden
+`'full IDR + number grouping stay id-ID in both locales'` — a test that is
+currently correct about a decision that would no longer be the decision. That
+redness is the good kind and it is the reason the change cannot be smuggled in
+opportunistically: **a green suite is currently asserting the behaviour, so
+changing it silently is impossible, which is the pin working.**
+
+### 46f · CAN THE PIN BE WIDENED TO COVER THE FORMATTER HALF? — Yes, and it must not be a second assertion
+
+A second `expect` asserting "formatters follow the language" would be a third
+unguarded scope: it would cover the formatters that exist today and say nothing
+about the next one. The seam's real contract is a **derivation over the module's
+exports**, with a bilateral allowlist:
+
+> For every export of `lib/format.ts`, under each locale in
+> `Object.keys(resources)`: either its output **varies with the language**, or it
+> carries an **allowlist row stating why it is language-invariant** — and the
+> allowlist is asserted in BOTH directions, so a row for a formatter that has
+> since become locale-aware fails just as loudly as a missing row.
+
+`formatMoney` would carry a row (per-currency locale, by the 2e-c ruling);
+`formatIDR` would carry one if the rupiah convention is affirmed; `formatNumber`
+would carry one **or be fixed** — and that choice becomes visible in a file
+instead of implicit in a const. A formatter added later is covered without
+anyone remembering, which is the property a second assertion cannot have.
+
+**The precedent is in-repo and is the right one to copy:**
+`src/lib/storedFieldGate/` (`derive.ts` + `allowlist.ts` + a test whose
+bilateral assertions are both mutation-probed) — the D-F gate, built for exactly
+this shape: *every X has a Y, or a stated reason why not.*
+
+### 46g · DISPOSITION
+
+**OPEN. Register only. Nothing fixed, and nothing should be** until the ruling in
+§46c is made, because the change is a deliberate behaviour change to shipped
+output rather than a repair. `FORMATDATE-HARDCODES-ID-01` is **not** filed —
+the name describes a function that reads the instance correctly and a function
+that does not exist. Filed instead as:
+
+- **`FORMATNUMBER-HARDCODES-ID-01`** — `formatNumber` / `formatIDR` render id-ID
+  grouping in every locale, by a decision recorded in a comment and held by a
+  test. Needs a ruling, not a fix. §46b, §46c.
+- **`SEAM-PINNED-BOTH-WAYS-01`** — the same seam holds two green pins asserting
+  opposite contracts, neither aware of the other. The widened-gate remedy is
+  §46f. **This is the generalisable one.**
+- **`LOCAL-DATE-HELPERS-BYPASS-FORMATDATE-01`** — 14 files format dates without
+  ever reaching the sanctioned helper, so no ruling on `format.ts` governs them.
