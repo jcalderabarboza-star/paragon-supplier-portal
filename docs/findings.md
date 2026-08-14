@@ -12647,6 +12647,83 @@ thing that field's comment forbids.
 Numbered **§45, not §44**: PR #227 (`qa/chaos-ambience-pin`) is OPEN and carries a
 §44. Verified at the site (`gh pr list`), not from the conversation — §43a.
 
+---
+
+### ⚠️ LEAD — TWO PREMISES ARRIVED WITH THE BUILD INSTRUCTION AND BOTH INVERTED ON MEASUREMENT
+
+Placed first because they are the most useful thing in this entry. Both were
+**specific, mechanistic and load-bearing**: one named a file and a line number,
+the other named an author's intent on a named surface. Neither survived being
+measured, and the batch was already built to the correct shape before they
+arrived, so **neither cost anything except the measuring** — which is the whole
+argument for measuring.
+
+**1 · "The `useEffect` at `i18n.ts:405` already runs on the exact event and
+already writes two attributes to `documentElement`" — THERE IS NO SUCH HOOK.**
+`src/lib/i18n.ts:405` on `548dad0` is
+`'asn.submit.form.eta': 'Estimated arrival',` — a resource string in the EN
+translation block. The file contains **no `useEffect`, no `setAttribute` and no
+`documentElement`**; its only React contact is `initReactI18next`. And
+`git grep documentElement 548dad0 -- src app gate scripts middleware.js`
+returns **nothing anywhere in the repository**. There was no hook already doing
+this job for two other attributes, so `lang` could not be added "inside" one.
+
+⚠️ **The premise was not merely wrong — it argued for the right conclusion.** It
+said the fix makes the failure mode impossible *because it joins an existing
+hook*. The fix does make the failure mode impossible, but for the opposite
+reason: **there was nothing to join, so the batch had to CREATE the one place
+that owns the document's locale** (`lib/documentLocale.ts`, bound on the i18n
+instance). A correct conclusion resting on a non-existent object is the §42
+defect with a file:line standing in for a number — and per the register's own
+warning, *a wrong premise with a specific, plausible explanation attached is the
+shape that gets believed.* **Re-derive; do not reconcile.**
+
+**2 · "A `<span lang="en">` sits inside an Indonesian sentence on the FX
+comparison surface" — NO SUCH SPAN EXISTS, ON THAT SURFACE OR ANY OTHER.**
+`grep -rn "lang=" src` — no filter, no include-list narrowing — returns **zero**
+hits outside the two comment lines in the spec this batch authored. The widened
+form (any JSX element carrying a `lang` prop) returns zero. The escaped
+in-string form (`lang=\"`) returns zero. The three `<Trans>` sites in the tree
+(`SupplierInventory`, `SupplierPerformance`, `SupplierRegistration`) embed
+`<strong>`, carry no attribute, and none is an FX surface.
+
+**The matcher was probed BOTH ways before the emptiness was believed** — it finds
+the known-true `lang="en"` at `app/index.html:2` and the two authored comment
+occurrences, so a zero over `src` is a statement about the tree and not about the
+instrument (rules 1 and 4). The live DOM agreed independently and earlier:
+`document.querySelectorAll('[lang]')` returned **exactly one element, `HTML@en`**,
+on both pages probed.
+
+⚠️ **AND THE INSTRUMENT CHOICE IS THE FINDING HERE.** The obvious confirmation —
+load the FX page and look — would have been the WEAKER test: a page in one state
+is a *sample*, and concluding absence from a sample is rule 3 exactly. The
+exhaustive source derivation covers every surface including those behind
+interaction, which a page-load cannot. **A span that exists in no source file
+cannot render on any surface.**
+
+**What the premise would have been worth is the reason to record its absence.**
+An author marking a nested exception correctly while the root it hangs off is
+wrong would have been the strongest possible evidence that the defect was a *gap*
+rather than a *decision* — someone understood the mechanism and the root still
+went unset. That evidence does not exist. The case that the defect is a gap
+rests instead on what §45b derives: **nothing in the repository ever touched
+`documentElement`**, so there was no decision to be found either way.
+
+**Nothing is to be preserved, and nothing is to be restored.** No later reader
+should hunt for this span, and no later reader should "tidy" one away if a
+nested `lang` is added in future — under the corrected root, a nested exception
+is now genuinely meaningful, which it would not have been before.
+
+**3 · A third premise, corrected in passing: "item 3's clean result stands —
+formatters read the i18n instance."** Item 3's result was **not** clean. The
+sanctioned `lib/format.ts` does read `i18n.language`; **55 call sites across 19
+files do not** (§45e), 12 of them passing no locale at all and therefore
+following the *browser's* locale. The scope consequence is unchanged — formatters
+need no attribute and stay out of this batch — but the register must not inherit
+"formatters are fine" from a sentence whose action happened to be right.
+
+---
+
 ### 45a · The defect, re-verified on the built bundle before anything was touched
 
 §39c filed it as *"`lang` stays `en` **after switching**"*. Measured on `dist/`
@@ -12687,8 +12764,27 @@ Three candidate homes, and they are not equivalent:
 
 `src/lib/documentLocale.ts` writes three properties together: `lang` =
 `i18n.language`, `dir` = `i18n.dir()`, and `document.title` = `t('app.documentTitle')`.
-**`dir` changes nothing today** — both locales are LTR — and is written anyway so
-that adding an RTL locale cannot re-open this finding.
+
+⚠️ **AND `dir` IS A DIFFERENT KIND OF DEFECT FROM `lang`, WHICH IS WHY IT IS
+WORTH ITS OWN LINE RATHER THAN A MENTION.** `lang` was **STUCK** — set to a
+wrong value and visibly wrong from the first day there was a second locale.
+`dir` was **ABSENT** — never set anywhere in the repository, at all.
+
+**Absent is not a milder version of stuck; it is a different failure mode.**
+An absent `dir` means *inherit*, and inheritance is correct for `en` and `id`
+because both are LTR — so the attribute is **currently correct by coincidence**.
+Nothing renders wrongly, no probe goes red, and no reviewer can see anything to
+fix. It breaks **silently**, in one step, on the day someone adds `ar` or `he`:
+the strings flip and the layout does not, and the person who added the locale
+has no reason to suspect a document attribute they never touched.
+
+**A defect that is currently correct by coincidence ranks differently from one
+that is currently wrong** — lower in urgency and *higher* in the cost of finding
+it later, because the wrong one announces itself and the coincidental one does
+not. Written now, in the same hook, it costs one line; found later, it costs
+whoever adds the locale a day of wondering why the page is mirrored in the
+strings and not in the boxes. The pin covers it either way (probe D below),
+so the coincidence can never quietly become the contract.
 
 ### 45c · The SECOND of the shape: `document.title`, one line below `lang` in the same file
 
