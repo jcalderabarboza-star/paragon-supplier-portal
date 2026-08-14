@@ -21,6 +21,7 @@ import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import { isLive, readinessNote } from '../services/liveness';
+import { formatDate } from '../lib/format';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -80,14 +81,13 @@ const CATEGORY_OPTIONS: { id: CategoryFilter; labelKey: string }[] = [
   { id: 'Other', labelKey: 'compliance.filter.category.other' },
 ];
 
-const fmtDate = (s: string | null): string => {
-  if (!s) return '—';
-  return new Date(s).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-};
+// Dates on this surface go through the canonical `formatDate` (lib/format), the
+// mechanism the tree already uses at 101 call sites. The local helper this
+// replaces hardcoded 'en-GB', so a certificate expiry rendered "15 Dec 2027" to
+// an Indonesian reader while the SAME field, on the SAME domain's widgets
+// (BuyerComplianceWidget / SupplierCertsExpiringWidget, which already import
+// formatDate), rendered "15 Des 2027". A regulatory record disagreeing with its
+// own summary tile is worse than either rendering alone. §47.
 
 const BuyerCompliance: React.FC = () => {
   const { t } = useTranslation();
@@ -154,11 +154,7 @@ const BuyerCompliance: React.FC = () => {
     return { daysLeft, pct };
   }, []);
 
-  const today = new Date().toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  const today = formatDate(new Date());
 
   return (
     <AppShellV2>
@@ -344,7 +340,7 @@ const BuyerCompliance: React.FC = () => {
                 </TableCell>
                 <TableCell>
                   <div className="text-sm text-text-secondary whitespace-nowrap">
-                    {fmtDate(entry.expiryDate)}
+                    {formatDate(entry.expiryDate)}
                   </div>
                   {days !== null && (
                     <div

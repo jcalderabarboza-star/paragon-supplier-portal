@@ -13067,3 +13067,153 @@ that does not exist. Filed instead as:
   §46f. **This is the generalisable one.**
 - **`LOCAL-DATE-HELPERS-BYPASS-FORMATDATE-01`** — 14 files format dates without
   ever reaching the sanctioned helper, so no ruling on `format.ts` governs them.
+
+---
+
+## §47 — THE COMPLIANCE SURFACE'S DATES, FIXED. A deletion ruling refused against an artifact that does not exist, an ambiguity axis promoted to a guard, and a figure of mine corrected
+
+### 47a · THE RULING'S PARTICULARS, MEASURED. Four refuted, one refuted-in-degree, one right at a different address
+
+| the ruling said | measured | |
+|---|---|---|
+| "`formatDate` **has one caller** across the tree; **178 of 179** date renders use other paths" | **101 call sites across 25 importing files.** It is the DOMINANT path, not a stranded one. | REFUTED |
+| "`formatDateTime` has zero callers, so it is unreachable, untested and wrong. **RULING: DELETE it**" | **`formatDateTime` does not exist.** The only occurrence anywhere in the repository — code, tests, docs — is §46's own sentence saying so. | **REFUSED. See 47b.** |
+| "`'21/09/2027'` … a date that reads as a different date depending on who is looking" | `formatDate` emits `dd MMM yyyy` — `"20 Aug 2026"`. **Zero** `toLocaleDateString()` calls without an options object exist in the tree, and **zero** date options use `month: '2-digit'`. No date render in the app produces slashes. | REFUTED |
+| "FIX `formatDate`: take the locale from the i18n instance" | `format.ts:105` is already `new Intl.DateTimeFormat(isID() ? 'id-ID' : 'en-GB', …)`. It has read the instance since it was written. | REFUTED |
+| "`en-GB` and `id-ID` produce **byte-identical** output" | **Seven of twelve months.** Five differ: `May→Mei`, `Aug→Agu`, **`Sept→Sep`**, `Oct→Okt`, `Dec→Des` — and `format.test.ts` already asserts three of them. | **REFUTED IN DEGREE — and the kernel is the best finding in this batch. See 47d.** |
+| **the compliance surface renders a date that can be misread** | **Real, at a different address than the one named.** Fixed here. See 47c. | ✅ |
+
+⚠️ **AND ONE OF THE TWO FIGURES BEING CORRECTED WAS MINE, ALSO WRONG.** §46d
+reported "34 files importing `formatDate`". That was `grep -l formatDate` — files
+containing the STRING, **six of which define their own local function of the
+same name** (`AdaptiveContext`, `BuyerContracts`, `BuyerGoodsReceipt`,
+`BuyerShipments`, `BuyerSuppliers`, `contracts/contractView`). Neither 34 nor 1
+was the population. **The instrument that answers "who calls this function" is
+the import list plus the call sites — 25 and 101 — and a name-match answers a
+different question**, which is `CENSUS-MUST-DERIVE-01` in the plainest form: a
+grep for a NAME cannot distinguish the definition you mean from five shadowing
+it.
+
+### 47b · ⚠️ THE DELETION IS REFUSED, AND REFUSING IS DOCTRINE RATHER THAN JUDGEMENT
+
+The ruling ordered `formatDateTime` deleted as an unreachable artifact of the
+`certBasis` / `requiredForHalalBrands` class. **There is nothing to delete.**
+
+```
+$ grep -rniE "formatdatetime" src gate scripts docs
+docs/findings.md:12922:  … `formatDateTime` **does not exist anywhere in the tree** …
+```
+
+One hit, and it is §46 reporting the absence. `lib/format.ts` exports exactly
+four functions: `formatNumber`, `formatIDR`, `formatMoney`, `formatDate`.
+
+This is `CLAUDE.md`'s merge-doctrine class with a different verb: **an outward,
+irreversible action ordered against an object that exists only in the
+conversation that described it.** The doctrine names `merge, push, publish,
+delete` — this is the fourth. The seat asserts the object at the site the action
+names before acting, never from the description, and **the assertion returned
+nothing**. Recorded as a refusal rather than a no-op, because a delete that
+quietly finds nothing to delete reports success and teaches nobody anything.
+
+⚠️ **The conditional attached to the ruling is the part that survives, and it is
+sound:** *if such a function should exist, it ships WITH A CALLER AND A LOCALE
+ARGUMENT — the D-A precedent, where the requirement survives in code and the
+wrong artifact does not.* Nothing here contradicts that. There is simply no
+artifact yet to hold to it.
+
+### 47c · WHAT WAS ACTUALLY WRONG ON THE COMPLIANCE SURFACE — and it was worth finding
+
+`BuyerCompliance.tsx` did not use `formatDate`. It defined its own `fmtDate`,
+hardcoded to `'en-GB'`, and used it at exactly one site: the cell rendering
+`entry.expiryDate` — **the certificate expiry on the compliance page**. The
+page's "as of" line hardcoded the same locale a second time.
+
+⚠️ **AND THE SHARP PART IS THE DISAGREEMENT, NOT THE HARDCODE.**
+`BuyerComplianceWidget` and `SupplierCertsExpiringWidget` — the same domain, the
+same field, the summary tiles for this very page — **already import the
+canonical `formatDate`**. So an Indonesian reader saw a certificate expiring
+`20 Agu 2026` on the dashboard tile and `20 Aug 2026` on the compliance record
+itself. **A regulatory record disagreeing with its own summary is worse than
+either rendering alone**, because neither reading is available as "the one the
+system means".
+
+Fixed by routing both sites through `formatDate` — *the mechanism the tree
+already uses at 101 call sites*, as instructed, rather than a second one. The
+local helper is deleted; no signature changed; no other file touched.
+
+**Scope, stated:** thirteen further files still format dates through page-local
+`en-GB` helpers (`LOCAL-DATE-HELPERS-BYPASS-FORMATDATE-01`, §46d). They are the
+same defect and they are **not** fixed here — the fence named the compliance
+surface, and a fourteen-file sweep is its own batch with its own QA.
+
+### 47d · THE AMBIGUITY AXIS IS REAL, THE MECHANISM WAS NOT, AND IT IS NOW A GUARD
+
+The ruling's instinct — *no instrument caught this because the obvious gate is
+blind to it by construction* — is **correct, and it is the most generalisable
+thing in this arc.** The mechanism is not day/month ordering (nothing in the app
+renders numeric dates). It is the month abbreviation, and the measurement is:
+
+> **`en-GB` and `id-ID` render `dd MMM yyyy` IDENTICALLY FOR SEVEN OF TWELVE
+> MONTHS.** Jan Feb Mar Apr Jun Jul Nov are byte-identical. Only May→Mei,
+> Aug→Agu, Sept→Sep, Oct→Okt, Dec→Des differ.
+
+**So an EN-vs-ID parity assertion written against a January date passes while
+seeing nothing — and goes on passing with the fix removed.** The instruction to
+pin against `en-US` would also discriminate, but `formatDate` never emits
+`en-US`; pinning against a locale the function cannot produce would test the
+test, not the code.
+
+The remedy shipped is the axis **as a control rather than a caveat**: the pin's
+FIRST test asserts that its chosen date falls in one of the five discriminating
+months, so a later fixture edit that moves it into a silent month **fails
+loudly** instead of letting the two real assertions quietly stop testing
+anything. Mutation-probed in that exact direction: moving the pinned date to
+June reddens the control (`Tests 1 failed | 2 passed`), and restoring the
+`en-GB` hardcode reddens the ID case (`Tests 1 failed | 2 passed`).
+
+This is the general form, and it belongs with the guard-direction table in §39:
+**an input must be proved capable of exhibiting the defect before a green result
+over it means anything.** Rule 4 asks whether the test would have failed; this
+asks the prior question — *could the INPUT have shown it?*
+
+### 47e · THE PIN-SCOPE CORRECTION IS RIGHT, AND IT LANDS ON THE PROPOSAL RATHER THAN ON THE ANSWER
+
+The correction is sound and worth keeping: **`documentLocale` writes to the DOM,
+`format.ts` returns strings, and no import path connects them — they are not one
+seam.** A "widened" `documentLocale` pin reaching formatters would have been
+another single-half assertion wearing the word *widened*.
+
+For the record's accuracy: **§46f did not propose that.** Asked whether the pin
+could be widened, it declined the widening and proposed a *separate* derivation
+scoped to `lib/format.ts`'s own exports, with a bilateral allowlist on the
+`storedFieldGate` pattern. The correction therefore applies to the **question**,
+not to the answer given — and both should stand, because the reasoning that
+makes the correction true is also the reasoning that made the answer decline it.
+
+### 47f · `formatMoney` REQUIRES ITS CURRENCY WHILE `formatDate` INFERS ITS LOCALE — and the asymmetry is CORRECT
+
+A genuinely sharp observation, and the precedent decides it the other way:
+
+- **Currency is a property of the DATUM.** A defaulted currency is an assertion
+  about money the function is not in a position to make — which is exactly what
+  the 2e-c ruling found when a USD-vs-domestic binary rendered a €2.85 bid as
+  "€3". It must be required.
+- **Locale is a property of the VIEWER.** It is not carried by the value being
+  formatted and cannot be, so a required locale parameter would push the same
+  `isID()` read out to 101 call sites — 101 chances to get it wrong, replacing
+  one place that is right.
+
+**Same file, opposite disciplines, both correct** — because they are answering
+about different things. Filed so the asymmetry is not "tidied" into consistency
+later by someone who reads only the signatures.
+
+### 47g · DISPOSITION
+
+- **FIXED:** `BuyerCompliance` expiry + meta dates now render through
+  `formatDate`. Pinned in `BuyerCompliance.date.test.tsx` (3 tests, both probes
+  red). Browser QA on the compliance surface, both locales.
+- **REFUSED:** deleting `formatDateTime` — no such artifact. 47b.
+- **NOT DONE, filed:** `FORMATNUMBER-HARDCODES-ID-01` (still awaiting a ruling,
+  §46c) and `LOCAL-DATE-HELPERS-BYPASS-FORMATDATE-01`'s remaining 13 files.
+- **`FORMATDATE-HARDCODES-ID-01` remains unfiled.** `formatDate` reads the
+  instance and always has.
