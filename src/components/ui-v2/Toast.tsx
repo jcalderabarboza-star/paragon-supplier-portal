@@ -7,6 +7,7 @@ import {
   X,
   LucideIcon,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ToastVariant } from '../../hooks/useToast';
 
 interface ToastProps {
@@ -47,6 +48,7 @@ const Toast: React.FC<ToastProps> = ({
   duration = 4500,
   onDismiss,
 }) => {
+  const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -85,7 +87,7 @@ const Toast: React.FC<ToastProps> = ({
       </div>
       <button
         type="button"
-        aria-label="Dismiss"
+        aria-label={t('ui.dismiss')}
         onClick={handleClose}
         className="text-text-tertiary hover:text-text-secondary shrink-0"
       >

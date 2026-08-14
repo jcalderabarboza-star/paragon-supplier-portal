@@ -11,6 +11,7 @@
 
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { syncDocumentLocale } from './documentLocale';
 import { statusResourcesEn, statusResourcesId } from './statusLabel';
 import { enumResourcesEn, enumResourcesId } from './priorityLabel';
 import { modeResourcesEn, modeResourcesId } from './modeLabel';
@@ -147,6 +148,12 @@ export const resources = {
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
+      // The BROWSER-TAB title (HTML-LANG-STUCK-AT-EN-01). Separate from
+      // `app.title` on purpose: the tab carries the program suffix and the
+      // in-app heading does not, so one key cannot serve both without one of
+      // the two surfaces being wrong. "Odyssey" is a programme NAME and stays
+      // untranslated in both locales, like the language autonyms.
+      'app.documentTitle': 'Paragon Supplier Portal · Odyssey Program',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Acquire',
       'nav.section.transact': 'Transact',
@@ -382,6 +389,15 @@ export const resources = {
       'topbar.notifications': 'Notifications',
       'topbar.userAvatar': 'User avatar',
       'topbar.language': 'Language',
+      // — Shared ui-v2 primitives. THESE ARE ACCESSIBLE NAMES, NOT VISIBLE COPY
+      //   (HTML-LANG-STUCK-AT-EN-01, the third of the shape). Each was an
+      //   English literal inside a primitive that renders on EVERY page, so a
+      //   reader on assistive technology heard English on an otherwise fully
+      //   Indonesian surface — and no visual QA in either locale could see it.
+      //   Same class as MARKER-I18N-HOLE-01.
+      'ui.clearSearch': 'Clear search',
+      'ui.closePanel': 'Close panel',
+      'ui.dismiss': 'Dismiss',
       // — PO confirm (Step 3.10 proof surface) —
       'po.confirm.action': 'Confirm order',
       'po.confirm.submitting': 'Confirming…',
@@ -544,6 +560,8 @@ export const resources = {
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',
+      // Judul tab peramban (lihat blok EN). "Odyssey" adalah nama program.
+      'app.documentTitle': 'Portal Pemasok Paragon · Program Odyssey',
       // — Shared chrome: sidebar nav (Batch 0, translate-once) —
       'nav.section.acquire': 'Pengadaan',
       'nav.section.transact': 'Transaksi',
@@ -776,6 +794,11 @@ export const resources = {
       'topbar.notifications': 'Notifikasi',
       'topbar.userAvatar': 'Avatar pengguna',
       'topbar.language': 'Bahasa',
+      // — Primitif ui-v2 bersama: nama aksesibilitas, bukan teks terlihat
+      //   (lihat blok EN). —
+      'ui.clearSearch': 'Hapus pencarian',
+      'ui.closePanel': 'Tutup panel',
+      'ui.dismiss': 'Tutup',
       // — PO confirm (ID stub — refined in the Phase 3′ ID-first sweep) —
       'po.confirm.action': 'Konfirmasi pesanan',
       'po.confirm.submitting': 'Mengonfirmasi…',
@@ -881,5 +904,13 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false }, // React already escapes
   returnNull: false,
 });
+
+// HTML-LANG-STUCK-AT-EN-01 (§39c). Bind `<html lang>` / `<html dir>` /
+// `document.title` to the language, here rather than in a root component: this
+// module OWNS the language, so nothing can change it without the document
+// following. Unconditional — a conditional binding is a binding that can be
+// missing. Applies once immediately, which is the BOOT path (a restored `id`
+// choice must not paint an `en` document before anyone touches the menu).
+syncDocumentLocale(i18n);
 
 export default i18n;
