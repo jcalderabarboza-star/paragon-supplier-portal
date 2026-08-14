@@ -1,5 +1,6 @@
 import React from 'react';
 import { Search, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SearchBarProps {
   value: string;
@@ -19,6 +20,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   className = '',
   ariaLabel,
 }) => {
+  const { t } = useTranslation();
   return (
     <div
       className={`flex items-center h-10 w-full bg-white border border-border-input rounded-md px-3 gap-2 focus-within:border-teal transition-colors ${className}`}
@@ -35,7 +37,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
       {value && (
         <button
           type="button"
-          aria-label="Clear search"
+          aria-label={t('ui.clearSearch')}
           onClick={() => onChange('')}
           className="text-text-tertiary hover:text-text-secondary shrink-0"
         >

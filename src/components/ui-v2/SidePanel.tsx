@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface SidePanelProps {
   open: boolean;
@@ -16,6 +17,7 @@ const SidePanel: React.FC<SidePanelProps> = ({
   children,
   footerActions,
 }) => {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -50,7 +52,7 @@ const SidePanel: React.FC<SidePanelProps> = ({
           </h2>
           <button
             type="button"
-            aria-label="Close panel"
+            aria-label={t('ui.closePanel')}
             onClick={onClose}
             className="shrink-0 text-text-tertiary hover:text-text-secondary transition-colors"
           >

@@ -11418,7 +11418,7 @@ accidents is three accidents; **a count read as a table is a pattern.**
 | **⚠️ The consequence, stated rather than left as a spec-compliance point** | **SCREEN READERS ANNOUNCE INDONESIAN TEXT WITH ENGLISH PHONEMES.** A reader using assistive technology gets the whole portal in the wrong voice — not degraded, *wrong* — and it is silent: nothing on screen looks different, so a sighted reviewer in either locale sees a page that is completely correct. |
 | **Class** | Same class as `MARKER-I18N-HOLE-01`'s screen-reader finding: **an i18n hole that only assistive technology can perceive, so no visual QA in either locale can find it.** The two belong together, and this is the second — which makes it a shape rather than an accident. |
 | **Why NOT fixed here** | It is an **app-shell change** (the language menu, or an effect on the i18n instance, writing `documentElement.lang` and `dir`), and it wants its own test — one that switches locale and asserts the attribute, in the layer that owns it. Smuggling it into a docs PR would give it no gate and no home. ⚠️ It is also the kind of one-line fix that **looks too small to test**, which is exactly how the first one shipped. |
-| **Disposition** | **OPEN. Booked as its own batch.** Not started. |
+| **Disposition** | ~~OPEN. Booked as its own batch.~~ **CLOSED — see §45.** Bound on the i18n instance (`lib/documentLocale.ts`), so the failure mode is impossible rather than fixed; pinned in `documentLocale.test.ts`, mutation-probed six ways. ⚠️ **This row understated it**: the attribute was CONSTANT, not stale-after-a-switch, so it was already wrong at first paint for a reader whose Indonesian choice was restored from `localStorage` — the case a switching-shaped fix would have missed. §45a. |
 
 ---
 
@@ -12639,3 +12639,160 @@ thing that field's comment forbids.
 - The `if (!ctx)` branch in `settle()` is unreachable by construction and says so;
   its behaviour is exactly the pre-§43 behaviour for a state that cannot occur,
   and the invariant that keeps it unreachable is pinned rather than assumed.
+
+---
+
+## §45 — `HTML-LANG-STUCK-AT-EN-01` CLOSED. The document's locale, bound to the instance that owns it — and the third of the shape
+
+Numbered **§45, not §44**: PR #227 (`qa/chaos-ambience-pin`) is OPEN and carries a
+§44. Verified at the site (`gh pr list`), not from the conversation — §43a.
+
+### 45a · The defect, re-verified on the built bundle before anything was touched
+
+§39c filed it as *"`lang` stays `en` **after switching**"*. Measured on `dist/`
+through `vite preview` and the real menu control, in both directions:
+
+| phase | `documentElement.lang` | `localStorage` | rendered nav |
+|---|---|---|---|
+| first load (EN) | `en` | `en` | `Acquire · Dashboard…` |
+| after EN→ID via the menu | **`en`** | `id` | `Pengadaan · Dasbor…` |
+| **reload, ID persisted** | **`en`** | `id` | `Pengadaan · Dasbor…` |
+| after ID→EN via the menu | `en` | `en` | `Acquire · Dashboard…` |
+
+**The attribute was not stale. It was CONSTANT** — and the row the filing did
+not contain is the third one. A returning reader whose Indonesian choice is
+restored from `localStorage` got an `en` document **at first paint, before any
+interaction at all**. That is the population the defect actually hurt, and a
+finding phrased around *switching* would have let a fix that only handled the
+toggle look complete. `document.querySelectorAll('[lang]')` over the live DOM
+returned **exactly one element — `HTML@en`**: nothing anywhere contradicted it.
+
+### 45b · Where it belongs — and why "fixed" and "impossible" are different places
+
+The derivation of *everything that knows the current language* (writers of the
+instance ∪ readers of `i18n.language` ∪ users of `LANG_STORAGE_KEY`, non-test
+`src/**`) returned: `initialLng()` + `lng:` at init (**boot**),
+`LanguageMenu.tsx:49` (**the only non-test `changeLanguage` caller**), the
+localStorage pair, three readers, and `AppShellV2.tsx:23`, which re-keys
+`<main>` on the language **and stops there**. `document.documentElement` appeared
+**nowhere in the repository**. Nothing owned the document's locale.
+
+Three candidate homes, and they are not equivalent:
+
+| where | verdict |
+|---|---|
+| a root-component `useEffect` | **fixes it, and can drift.** Any surface that does not mount that root — a future shell, an error boundary, a standalone route — silently loses the sync, and nothing goes red. |
+| the toggle owns it | **worst.** It leaves the BOOT path uncovered, and the table above proves boot is the failing case. A second entry point (`?lang=`, a deep link) re-opens it. |
+| **a `languageChanged` binding registered in `lib/i18n.ts`** | ✅ **the failure mode becomes impossible rather than fixed.** The document is written by the module that OWNS the language, at the instant it changes. There is no way to change the language except through the instance — so there is no code path that can desync it, *including callers that do not exist yet*. The same registration covers boot; the other two do not. |
+
+`src/lib/documentLocale.ts` writes three properties together: `lang` =
+`i18n.language`, `dir` = `i18n.dir()`, and `document.title` = `t('app.documentTitle')`.
+**`dir` changes nothing today** — both locales are LTR — and is written anyway so
+that adding an RTL locale cannot re-open this finding.
+
+### 45c · The SECOND of the shape: `document.title`, one line below `lang` in the same file
+
+`app/index.html:12` set the browser-tab title once and **nothing updated it**,
+while `app.title` *did* translate in the top bar (`TopBarV2.tsx:26`). A screen
+reader announces the document title on load and on window/tab switch; it is the
+accessible name of the document. Same file, same mechanism, same invisibility to
+visual QA in either locale — **and it was one line away from the attribute that
+got filed**, which is the part worth keeping: the first instance was found
+because somebody read an accessibility tree, and its neighbour survived that
+same reading.
+
+### 45d · The THIRD of the shape: accessible names in shared primitives
+
+Derived over every `.tsx` — attributes {`aria-label`, `aria-description`,
+`aria-valuetext`, `title`, `alt`, `placeholder`} whose value is a literal rather
+than `{t(…)}`. **Three genuine members, all in shared `ui-v2` primitives**, so
+each was English on *every page* in Bahasa, and each is a11y-only:
+`SearchBar` "Clear search", `SidePanel` "Close panel", `Toast` "Dismiss".
+`MARKER-I18N-HOLE-01`'s class, third instance.
+
+⚠️ **AND THE MATCHER OVER-ACCUSED, 29 DOWN TO 3 — RULE 2, ON THIS SEAT, IN THIS
+BATCH.** Both directions of the over-match, stated rather than quietly dropped:
+
+- `GRInspectionWizard.tsx:260` `aria-label={\`${label} — ${el(v)}\`}` was accused
+  and is **fully translated**: `label` arrives as `t('goodsReceipt.wizard.field.…')`
+  and `el` is `useEnumLabel()`. **A template containing no literal `t(` is not an
+  untranslated string** — the matcher tested the wrong half, exactly as GL-1's
+  `Record<Vocab, string>` matcher did.
+- `NoSupplierIdentity.tsx:10` and `NotFound.tsx:17` matched on `title=` but are
+  **`PageHeader` props — VISIBLE copy, not DOM attributes.** Real i18n gaps, and
+  a **different class**: a sighted reviewer in Bahasa can find them. Filed, not
+  fixed here; putting them in this batch would have quietly changed what the
+  batch was about.
+- 22 of the 29 are `placeholder` **format exemplars** (`00.000.000.0-000.000`,
+  `+62 812 3456 7890`, `ASN-2026-XXX`, `0`) — identity/format data, correctly
+  untranslated on the same principle as the language autonyms. Marginal and left
+  alone: `"e.g. GLY-24A"` / `"e.g. AWB-88231145"` carry an English `e.g.` on a
+  supplier-facing surface. `SearchBar`'s default `placeholder = 'Search…'` is
+  likewise English, and likewise VISIBLE — same class as the two above.
+
+### 45e · REPORTED AND STOPPED: locale-blind formatting, 55 sites / 19 files
+
+Derived at **call sites** — `new Intl.*Format(…)` or `.toLocale*(…)` whose first
+argument is a BCP-47 literal or **absent** — excluding the sanctioned
+`lib/format.ts`, which reads `i18n.language` and is the correct behaviour:
+21 × `'en-GB'`, 8 × `'id-ID'`, 4 × `'en-US'`, 8 × other tags (`AdaptiveContext`),
+and **12 live no-locale-arg calls** (2 further matches were inside comments).
+None can follow `i18n.language` by construction. The no-arg subset is the sharp
+one: it follows the **browser's** locale, so grouping differs per visitor
+regardless of the app's language. Largely the known opportunistic formatter
+migration (DP precedent) rather than a fresh discovery. **Its own batch. Not
+touched here** — a population that size inside an app-shell fix is how a fix
+stops being reviewable.
+
+The derivation's controls passed in **both** directions before any of the above
+was believed: `localeNumber.ts`'s `'id'`/`'en'` **parse conventions** were NOT
+matched (they never reach `Intl`), `rowKey="id"` was NOT matched,
+`LanguageMenu`'s `aria-label={t(…)}` was NOT matched, and a non-empty-population
+guard stood against `EMPTY-INPUT-REPORTS-CLEAN-01`.
+
+### 45f · The pin, and why it poisons before it asserts
+
+`src/lib/documentLocale.test.ts` asserts the **invariant**, over
+`Object.keys(resources)` — derived, not listed — so a third locale is covered on
+the next run without anyone remembering to extend the file.
+
+⚠️ **EVERY CASE SETS `lang='zz' dir='rtl' title='POISONED'` BEFORE IT SWITCHES,
+AND THAT IS THE WHOLE TEST.** `app/index.html` ships `lang="en"`. So *"switch to
+English, assert `lang === 'en'`"* **PASSES WITH THE FIX ENTIRELY REMOVED** —
+right for the wrong reason, a guard probed in one direction only. Poisoning
+first is what makes the assertion capable of distinguishing *the effect wrote
+`en`* from *`en` was already sitting there*. This is the rule-above-the-three in
+the one shape where the trap is not hypothetical: **the correct value was
+already in the file the defect lived in.**
+
+Mutation-probed, every probe asserting the file **bytes changed** before its
+result was believed (the CRLF trap makes an unmatched probe look like a passing
+one):
+
+| probe | result |
+|---|---|
+| A · remove the wiring in `i18n.ts` | RED — 4 failed |
+| B · keep the listener, drop the initial apply | RED — **1 failed** (the boot case, isolated) |
+| C · keep the initial apply, drop the listener | RED — 4 failed |
+| D · drop the `dir` write | RED — 3 failed |
+| E · drop the `title` write | RED — 3 failed |
+| **F · write a constant `'en'` — the original defect, restored** | **RED — 4 failed** |
+
+`src/components/ui-v2/a11yLabels.test.tsx` pins the three accessible names in
+both locales; its own control asserts EN and ID genuinely differ for each key,
+**because a key whose ID string equalled its EN string would satisfy
+"not English" by accident**. Probed the same way: restoring each literal reddens
+exactly one case, and flattening the ID string onto the EN one reddens two.
+
+### 45g · The browser QA that lied first
+
+The first post-fix preview run reported the fix **not working** — `lang` still
+`en`, `dir` still absent. It was the browser serving a **cached `index.html`
+pointing at the pre-fix bundle** (`index-BB91KWhi.js`, while `dist/` had built
+`index-CyMgfz3A.js`). Recorded because the failure mode is symmetrical with
+everything else in this register: **a stale artefact produces a confident,
+specific, wrong reading**, and the only thing that caught it was checking which
+bytes the page had actually loaded rather than trusting the URL. Cache-busted,
+both locales verified end to end, console clean (0 errors, 0 warnings): boot in
+ID gives `lang="id"`, `dir="ltr"`, the Indonesian tab title, and the Indonesian
+clear-search name, with the English literal absent from the live DOM.
