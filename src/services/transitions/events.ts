@@ -5,6 +5,18 @@
 // submitted / failed). The Phase-5′ CMVE AuditSink persists the SAME shape, so
 // there is no retrofit — the sink interface is the contract. Coordinated with
 // Track R (DR-10).
+//
+// ⚠️ **THAT SENTENCE WAS FALSE FOR THE LIFE OF THE SEAM, AND FALSE ON THE
+// SUCCESS PATH (§43).** A `sapBoundary` verb resolves `submitted` and settles
+// later; the settlement flips the recorded status to `done` — an OUTCOME — and
+// `settle()` never called `sink.emit`. `deps.sink.emit` appeared exactly once in
+// the whole dispatcher, inside `finish()`. So the ledger held the `submitted`
+// and never the `done`, and eight fixture documents rest in a `settlesTo` state
+// (3 GRs `Posted to SAP`, 5 invoices `Payment Released`) that no recorded event
+// accounts for. **The ledger could not tell a settled document from a seeded
+// one** — if a real settlement had produced all eight it would look identical.
+// The settlement is now a distinct event under the SAME correlationId, which is
+// what makes the sentence above true rather than intended.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { QueryScope } from '../data/types';
@@ -31,6 +43,20 @@ export interface TransitionEvent {
   readonly causationId?: string;
   /** How it resolved. */
   readonly outcome: CommandOutcome;
+  /**
+   * WHY it resolved that way, on a `failed` outcome — the same wire value as
+   * `CommandResult.reason`: `PREFIX` or `PREFIX:detail`, decoded back to its
+   * closed kind by `refusalKindOf` (the dispatcher's nine) or
+   * `settleFaultKindOf` (the settle boundary's three).
+   *
+   * ⚠️ **ADDED AT §43, AND ITS ABSENCE WAS LOAD-BEARING.** Until this field
+   * existed, `CommandResult` carried the reason and the EVENT did not — so a
+   * failure whose result nobody keeps left a record saying only THAT it failed.
+   * The cascade fan-out discards every `CommandResult` it produces
+   * (`dispatcher.ts:329`), which is precisely the population the DR-10 ledger is
+   * for. Absent on `done` / `submitted`.
+   */
+  readonly reason?: string;
   /** ISO timestamp (supplied by the caller — no clock reads inside pure code). */
   readonly ts: string;
   /**

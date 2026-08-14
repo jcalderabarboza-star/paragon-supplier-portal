@@ -1341,12 +1341,26 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
         if (postRes.status === 'submitted') {
           // The async SAP callback settles: Posting to SAP → Posted to SAP +
           // the real material document (assigned on settle).
-          await settleGR.mutateAsync({ correlationId: postRes.correlationId });
-          toast({
-            variant: 'success',
-            title: t('gr.post.posted.title', { grNumber }),
-            description: t('gr.post.posted.desc'),
-          });
+          // §43 — the settle's OWN failure is surfaced (classified, with its
+          // remedy) by the mutation's onError. It is caught HERE so it cannot
+          // reach the outer catch, which would relabel a settlement fault as
+          // 'Not authorized' — a confidently WRONG cause, and the only thing
+          // worse than no message. On a failed settle the command stays
+          // `submitted` and the GR stays 'Posting to SAP', so the post action
+          // genuinely re-attempts it.
+          let settled = true;
+          try {
+            await settleGR.mutateAsync({ correlationId: postRes.correlationId });
+          } catch {
+            settled = false;
+          }
+          if (settled) {
+            toast({
+              variant: 'success',
+              title: t('gr.post.posted.title', { grNumber }),
+              description: t('gr.post.posted.desc'),
+            });
+          }
         } else {
           toast({
             variant: 'warning',

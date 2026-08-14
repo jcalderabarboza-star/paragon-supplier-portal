@@ -12390,6 +12390,255 @@ dispatcher-bypassing store mutations: every writer of `purchaseRequisitionStore`
 is inside `purchaseRequisitionTarget`. They are unauthored cascade declarations,
 already on the surface as loose ends, and wiring them is a FORK-2 decision.
 
+---
+
+## §43 — THE SETTLEMENT IS A RECORDED EVENT. And the arc that ended: SEVEN inverted premises
+
+Branched from main `bc2106d`. Floor 2937/211/7 → **2960/214/7**. Four gates green.
+The cascade arc (§41f → §42) closed on its seventh inverted premise and left one
+real defect behind it, on the audit spine. This entry is that defect, its fix, and
+the arc's closing row.
+
+---
+
+### 43a · ⚠️ THE ARC'S CLOSING ROW — SEVEN, NOT SIX
+
+> **SIX PREMISES INVERTED ON MEASUREMENT; THE SEVENTH ASSERTED A MERGE TARGET
+> THAT WAS NEVER CREATED. EVERY WRONG PREMISE COST A REPORT, NEVER A BATCH — AND
+> THE SEVENTH COST NOTHING AT ALL, BECAUSE THE RULE THAT ENDED THE ARC IS THE
+> SAME ONE THAT STARTED IT: DERIVE, DO NOT RE-READ.**
+
+| # | the premise | what measurement said |
+|---|---|---|
+| 1–5 | *(the cascade five)* | Recorded in full at §42a. |
+| 6 | *"`cascades.ts` does not exist; the dispatcher has no cascade execution; `dispatcher.ts:334` is a target's own internal try; `settle()`'s catch; `flowRegistry.ts` raises `FLOW_NOT_REGISTERED` and `INVALID_TRANSITION`; fifteen `sapBoundary` sites"* | **`cascades.ts` exists** — blob `c5f35ce`, 52 lines, tracked. **Cascade execution is `dispatcher.ts:317–338`**, proven live by `cascade.test.ts`. **`dispatcher.ts:334` is the ONLY `catch` in `src/services/transitions/`** — the whole module. **`settle()` has no try/catch.** **No file named `flowRegistry.*` exists**; `FLOW_NOT_REGISTERED` and `INVALID_TRANSITION`: **zero hits** across `*.ts`, `*.tsx`, `*.md`, `*.json`. **`sapBoundary: true` is declared twice**, not fifteen times. |
+| 7 | *"MERGE #226"* | **PR #226 did not exist.** Highest PR was #225 (MERGED); no branch had been cut; the tree was clean at `bc2106d`; `SETTLE_FAILED` had zero hits repo-wide. The seat had **read a report as a build** and ruled on a merge — inventing the PR number, the string, the surfaces and a demo risk out of a PLAN. |
+
+⚠️ **WHAT DISTINGUISHES THE SEVENTH, AND IT IS THE REASON IT LEADS RATHER THAN
+CLOSES.** Premises 1–6 would each have cost a wrong sentence in a report.
+**The seventh required an OUTWARD, IRREVERSIBLE ACTION to act on.** Six could be
+corrected by measuring again; a merge cannot.
+
+> **THE STRATEGIST SEAT IS SUBJECT TO THE SAME RULE AS THE INSTRUMENTS, AND
+> A PLAN READ AS A RESULT IS THE SAME DEFECT CLASS AS A SCAN READ AS A
+> DERIVATION (§42, rule 3).** In both, an artefact that DESCRIBES the tree is
+> consumed as though it REPORTED on the tree. The scan/derivation pair differed
+> by a location; this pair differs by a tense.
+
+⚠️ **AND THE §43 CORRECTION TO §42a's OWN LESSON.** §42a's dispatch proposed:
+*"each correction moved the location and kept the object, and the object was
+never there."* Measurement says the inverse, and it is sharper: **the object sat
+at `dispatcher.ts:334` from dispatch 1 onward — the first location named. The
+RELOCATIONS were the error, not the object.** Five corrections moved a real
+defect off its real site; the sixth moved it to an empty one. The dispatch that
+denied the cascade layer existed also fenced *"the two PR cascades"* out of
+scope — **a dispatch carrying its own disproof.**
+
+---
+
+### 43b · THE DEFECT — the second act was never recorded, and it was silent on SUCCESS
+
+`deps.sink.emit` appeared **exactly once in the whole dispatcher**, inside
+`finish()`. **`settle()` never called it.**
+
+A `sapBoundary` verb is deliberately two acts: the `submitted` moment, and the
+settlement that lands it (`t_gr_post` → 'Posted to SAP' + the real material
+document; `t_invoice_release_payment` → 'Payment Released' + the FI document).
+The async split exists BECAUSE the second act is a distinct event. It was never
+emitted — **on the failure path and on the success path alike**, and the success
+path is the default one.
+
+`events.ts:4` claimed, for the life of the seam: *"The dispatcher emits a
+TransitionEvent on EVERY command outcome (done / submitted / failed)."* A settled
+command's recorded outcome **is** `done`. The header was false, and false where
+nobody looks.
+
+⚠️ **THE TREE ALREADY HELD THE DEMONSTRATION.** **Eight fixture documents rest in
+a `settlesTo` state** — 3 GRs at `Posted to SAP` (6 seeded `sapMaterialDoc`
+values) and 5 invoices at `Payment Released` (13 seeded `sapFiDoc`/`paymentRef`
+values) — states reachable in the running system ONLY through a settlement. The
+ledger holds **zero** settlement events. The precise statement is not that the
+recording path cannot explain them:
+
+> **THE LEDGER COULD NOT TELL A SETTLED DOCUMENT FROM A SEEDED ONE.** Had a real
+> settlement produced all eight, the ledger would look byte-identical to how it
+> looked before this batch. That is what a missing emit costs, and it costs it
+> silently.
+
+---
+
+### 43c · ⚠️ THE SHIPPED UI WAS WORSE, AND IT LEADS THE REMEDY HALF
+
+`commandHooks.ts` contained **ZERO `onError` handlers** — `grep -c onError` → `0`.
+Both settle mutations (`useGoodsReceiptSettle`, `useInvoiceSettlePayment`) carried
+`onSuccess` only, and all three call sites passed `onSuccess` only. **A rejected
+settle was an unhandled mutation rejection: no toast, no banner, no i18n key.**
+The document rested in 'Posting to SAP' or 'Releasing Payment' and nothing ever
+said why — silent at the UI layer as well as at the ledger.
+
+**It was not an oversight at one call site; it was the SHAPE.** Three sites each
+had to opt in and none did. So the handler now lives on the MUTATION, where a
+fourth call site cannot be silent by omission.
+
+⚠️ **AND ONE SURFACE WAS WORSE THAN SILENT.** `GRInspectionWizard`'s outer
+`catch` renders `gr.denied.*` — *"Not authorized · You are not authorized to act
+on this goods receipt."* A settlement fault reaching it would have been relabelled
+as an **authorization denial**: a confidently WRONG cause, which is the only thing
+worse than no message. The settle call is now caught locally so it cannot reach it.
+
+---
+
+### 43d · THE SPLIT — at the BOUNDARY, not at the throw site
+
+The ruling named the throw site: `registry.ts` raises **three bare `Error`s**
+(`:25` duplicate flow key, `:30` duplicate transition id, `validate.ts:169`
+malformed flow) against the dispatcher's four typed `DataError`s, so a caller
+cannot tell a permanent misconfiguration from a runtime failure — neither is typed.
+
+**Typing them there would have inverted the dependency.** `registry.ts` is a leaf:
+the flows, the catalog view, the flow graph and the census gates import it, and
+none of them commands anything. Making it import the command layer's error
+vocabulary buys the distinction with a coupling every non-commanding consumer
+then carries.
+
+> **THE GENERAL FORM, AND IT IS THE FINDING: THE SPLIT IS A PROPERTY OF HOW A
+> FAILURE IS HANDLED, NOT OF WHERE IT WAS THROWN.**
+
+The settle boundary already imports `DataError` and already catches everything, so
+classifying THERE gets the same distinction **with no new coupling and no edit to
+any leaf**.
+
+**`src/services/transitions/settleFaults.ts` — three members, each a predicate
+over what actually reached the catch:**
+
+| member | predicate | retryable |
+|---|---|---|
+| `REFUSED` | a `DataError` whose code the **dispatcher itself constructs** | **no** — the governed answer does not change on a second ask |
+| `TRANSPORT` | a `DataError` carrying any other code | **yes** — the one class where the next attempt can legitimately differ |
+| `UNGOVERNED` | not a `DataError` at all — where `registry.ts`'s three bare `Error`s land | **no** |
+
+⚠️ **WHY IT KEYS ON THE CODE AND NOT ON `instanceof DataError`** — the first draft
+did the latter and it is wrong **in the passing direction**. Under F1
+`httpDataService` throws `DataError('UPSTREAM', …)` for a dead backend; an
+`instanceof` test files that as a **governed refusal**, which is the exact
+misreading the ruling forbids, arriving from the exact direction that makes the
+split worth building. `DISPATCHER_THROWN_CODES` is **derived from `dispatcher.ts`
+at test time** and set-compared, with a `thrown.size > 0` control beside it, so a
+third throw code cannot be laundered into `TRANSPORT` by being forgotten —
+and an empty regex match cannot report clean (`EMPTY-INPUT-REPORTS-CLEAN-01`, §42b).
+
+⚠️ **WHAT THE VOCABULARY REFUSES TO CLAIM.** The ruling asked for
+permanent-versus-transient. **The boundary cannot see it**: a `TypeError` from a
+target and a hypothetical socket reset both arrive as a bare `Error` carrying
+nothing that separates them. So `UNGOVERNED` is named for what is TRUE of it — it
+never entered the governed channel — and a `MISCONFIGURED` member was **not**
+invented, because a member with no definition is what GL-0's satisfies-pin exists
+to stop. **The ruling still lands, through the retryability table: nothing
+ungoverned is offered as retryable at all.** A permanent misconfiguration cannot
+read as a retryable blip because it is never offered as one.
+
+---
+
+### 43e · ⚠️ THE ONE BEHAVIOURAL DIFFERENCE, ON A PATH THAT CANNOT EXECUTE — and why the remedy needed it
+
+Pre-§43, `settle()` flipped the status to `done` **before** running the finalize.
+A finalize throw therefore left the status claiming `done` with nothing finalized,
+AND left `pending` undeleted — so **the retry a UI would offer found a settled
+command and silently no-opped.**
+
+> **"TRY AGAIN" OVER A NO-OP IS A DEAD END WEARING A REMEDY'S CLOTHES** —
+> `HALAL-REFUSAL-DEAD-ENDS-01` in the one place where the destination was
+> supposed to exist.
+
+So the failure branch **records, then rethrows, and does NOT flip the status**.
+The caller's experience is byte-identical — the throw still propagates. The
+command stays `submitted`, `pending` keeps its context, and the next settle
+genuinely re-attempts (pinned: a first attempt throws, the second lands the
+document and the ledger reads `submitted · failed · done`).
+
+**Every reachable path is unchanged**: no `settleFinalize` in this tree can throw
+(both are store `update` calls, and every mock store's `update` is a `rows.map`
+no-op on a missing id). The difference is confined to a path that cannot execute
+today — and it is what makes the named remedy TRUE rather than decorative.
+
+---
+
+### 43f · REACHABILITY — the two halves rank differently, and the entry says which
+
+- **A settle that RECORDS NOTHING: reachable, live, default, shipping.** Both
+  `sapBoundary` verbs are UI-wired (`commandHooks.ts` GR post-settle and invoice
+  payment-settle). Every settlement that has ever run emitted nothing.
+- **The UI silence: reachable, live, default, shipping**, and *unconditional* —
+  zero `onError` handlers is not rate-dependent.
+- **A settle FAILURE: a spec fix.** Nothing in this tree can make `settleFinalize`
+  throw.
+
+⚠️ **THE 1-IN-20 FIGURE DOES NOT MEASURE OUT, AND THE CORRECTION MATTERS BECAUSE
+IT WOULD HAVE RANKED THE BATCH WRONG.** `MockCommandService` carries no injection.
+The injector is a separate decorator, `withChaos.ts`, applied in `main.tsx`; its
+default `failureRate` is **0.15**, not 0.05; it is gated
+`import.meta.env.DEV && VITE_CHAOS === 'on'`, and `import.meta.env.DEV` is
+**statically false in the Vercel production build** — measured on the built
+bundle, the string `Injected chaos failure on` is **ABSENT** from `dist/assets/`.
+It also throws at the *service boundary*, before `dispatcher.settle` is entered,
+so it never reaches a settle recording site at all. **The batch is justified by
+the unconditional silence, not by a rate.**
+
+---
+
+### 43g · WHAT A USER SEES NOW — measured on the built bundle, both locales
+
+All fourteen strings verified present in `dist/assets/index-*.js` after
+`npm run build`, and rendered through the real `Toaster` in both locales by
+`settleFailureSurface.test.tsx`.
+
+**Surfaces (3):** `BuyerGoodsReceipt` (Post to SAP → settle),
+`BuyerInvoices` (Release payment → settle), `GRInspectionWizard` (auto-post →
+settle). All three inherit the handler from the mutation; none opts in.
+
+**Title, both locales:** *"Settlement did not complete"* / *"Penyelesaian tidak
+tuntas"*.
+
+**Body — one string per class, and every one says three things** (what happened ·
+what state the document is in · whether asking again helps):
+
+| class | EN | ID |
+|---|---|---|
+| `TRANSPORT` | "The settling system did not answer. The document is unchanged and still awaiting settlement — run the same action again; **settling twice is safe**." | "Sistem penyelesai tidak menjawab. … jalankan tindakan yang sama sekali lagi; **menyelesaikan dua kali tetap aman**." |
+| `REFUSED` | "A governing rule refused the settlement. … **asking again gives the same refusal**." | "Sebuah aturan yang mengatur menolak penyelesaian. … **meminta lagi menghasilkan penolakan yang sama**." |
+| `UNGOVERNED` | "The settlement stopped on an unclassified fault. … **retrying will not clear it. Report the reference below.**" | "… **mengulang tidak akan menuntaskannya. Laporkan referensi di bawah.**" |
+
+Plus `Reference {{correlationId}}` / `Referensi {{correlationId}}`, so the
+UNGOVERNED report has something to carry.
+
+⚠️ **THE REMEDY IS NAMED AND IT IS DIFFERENT PER CLASS — which is the whole
+point.** Two of three classes tell the user retrying will NOT help and what to do
+instead. A single "something went wrong, try again" would have been half a
+remedy for one class and a lie for the other two.
+
+⚠️ **`remedyRoute` WAS NOT POPULATED, AND THE FENCE HELD.** `GlossaryEntry.
+remedyRoute` is still empty on every entry, with its own warning *"do not
+populate it to make a row look finished."* The settle remedy is not a route — it
+is the SAME action, still available, on the surface the user is already looking
+at. Filling a route field to make three rows look complete would have been the
+thing that field's comment forbids.
+
+---
+
+### 43h · WHAT THIS BATCH DOES NOT CLAIM
+
+- **`dispatcher.ts:334` — the cascade swallow — is still open.** It is the arc's
+  original object and it was never folded in under a ruling that said it was not
+  there. Three silent throw paths remain, of which one is live (14 of 14 fixture
+  GRs name an absent ASN).
+- **`t_invoice_match` stays §42e's**, pinned as an exact set. Untouched.
+- **The two authored-but-unfired PR cascades stay out** — FORK-2, not recording.
+- **`registry.ts` still throws bare `Error`s.** The split classifies them
+  correctly at the boundary; it does not type them at the source, and 43d is the
+  argument for why that is the right place and not a deferral.
+- The `if (!ctx)` branch in `settle()` is unreachable by construction and says so;
+  its behaviour is exactly the pre-§43 behaviour for a state that cannot occur,
+  and the invariant that keeps it unreachable is pinned rather than assumed.
 ## §44 — THE HAZARD THAT WAS NOT THERE. Three inversions on one subject, the two pins the arc actually earned, and the first gate on the DISPATCH side
 
 **Batch:** `qa/chaos-ambience-pin`, off `main` @ `bc2106d`. Test-infrastructure and
@@ -12540,3 +12789,121 @@ them.
 - **The floor never regresses** — `scripts/floor.json` bumped, not lowered.
 - **PR #226 (`feat/settle-recording`) is untouched by this batch** and remains
   open; this branch was cut from `main`, not from it.
+
+### 8 · ⚠️ `FINDING-HAS-NO-GATE-01` *(new class)* — A FINDING IS A CLAIM ABOUT THE TREE AND INHERITS EVERY RULE A CLAIM INHERITS, BUT NOTHING CHECKS IT
+
+Filed at the strategist's direction, and it is the most portable thing this arc
+produced.
+
+> **EVERY OTHER CLAIM IN THIS PROJECT HAS AN INSTRUMENT BEHIND IT.** A count is
+> derived at read time. A population is derived, probed both ways, and asserted
+> by membership. A behaviour is pinned by a spec and mutation-probed. **A FINDING
+> IS ALSO A CLAIM ABOUT THE TREE — `dispatcher.ts:334` is the only catch, eight
+> fixture documents rest in a `settlesTo` state, the injector is applied in one
+> place — AND IT HAS NO GATE AT ALL.** It is prose in a markdown file. Nothing
+> re-derives it, nothing reddens when it stops being true, and it is read later
+> by people who reasonably assume the register was checked because everything
+> else here is.
+
+This is `§29`'s unfalsifiable shape one layer in: §29 is about a *test* that
+cannot fail; this is about a *record* that cannot fail. The register is the one
+artifact in the repo that is exempt from the repo's own discipline, and it is
+also the artifact most likely to be quoted forward.
+
+⚠️ **NOT A CANDIDATE FIX, AND THE REFUSAL IS DELIBERATE.** The obvious remedy —
+gate the register — is the shape `MEANING-SCOPE-IS-A-HAND-PICK-01` and §40j both
+warn against: a findings entry is prose about a mechanism, its population is not
+derivable, and any gate over it would need a hand-picked list of claims, which
+rebuilds the defect on purpose. **What IS actionable, and is now practice:**
+a finding that states a cardinality or names a site must carry the derivation
+that produced it, so the next reader can re-run rather than re-trust — the same
+rule §27 already applies to prose counts, extended from numbers to claims.
+
+#### The instance that prompted it was itself inverted, and that is the entry
+
+**The twelfth premise of the arc: *"§43's own text asserts the eight-file
+`beforeEach` leakage — a wrong claim about the tree, in a merged register, in
+the entry that documents a fix."*** Measured before rewriting anything, because
+the instruction was to **rewrite §43 in place, not to append an amendment** —
+a destructive edit to a merged record.
+
+**§43 asserts no such thing. On this exact point it already carried the
+refutation**, six days before the arc re-derived it, under its own warning
+banner:
+
+> ⚠️ **THE 1-IN-20 FIGURE DOES NOT MEASURE OUT, AND THE CORRECTION MATTERS
+> BECAUSE IT WOULD HAVE RANKED THE BATCH WRONG.** `MockCommandService` carries
+> no injection. The injector is a separate decorator, `withChaos.ts`, applied in
+> `main.tsx`; its default `failureRate` is **0.15**, not 0.05 … measured on the
+> built bundle, the string `Injected chaos failure on` is **ABSENT** from
+> `dist/assets/`. … **The batch is justified by the unconditional silence, not
+> by a rate.**
+
+And the word **"eight"** in §43 refers to **eight fixture documents** resting in
+a `settlesTo` state — the batch's central demonstration — not to eight files
+sharing a hook. Two different subjects, one shared numeral.
+
+⚠️ **SO THE TWELFTH INVERSION IS THE FIRST THAT WOULD HAVE DESTROYED A CORRECT
+RECORD RATHER THAN COSTING A REPORT.** Rewrite-in-place was the instruction, and
+the passage it would have overwritten is the one place in the register that had
+already got this right. **It is also, precisely, evidence FOR the class filed
+above**: the reason a wrong claim about §43 was believable is that nothing in
+the toolchain can check what a findings entry says — including a claim about
+another findings entry.
+
+### 9 · TWO CLAIMS DERIVED RATHER THAN INHERITED, AND BOTH CAME BACK NARROWER
+
+The strategist's instruction was explicit — *derive that claim; do not inherit
+it from me* — and both claims changed shape under measurement.
+
+**(i) `useInvoiceSettlePayment` has ZERO direct coverage. — FALSE. It has one.**
+Derivation: the two `sapBoundary` verbs are `t_gr_post` and
+`t_invoice_release_payment`; their UI hooks are `useGoodsReceiptSettle`
+(`commandHooks.ts:551`) and `useInvoiceSettlePayment` (`:706`); every spec
+reference to either resolves to `settleFailureSurface.test.tsx`, where
+`InvoiceProbe` (`:48`) is rendered and asserted by
+*"surfaces the SAME classified string on the invoice path — one vocabulary, two
+surfaces"* (`:102`).
+
+**THE TRUE FINDING IS UNDERNEATH IT AND IS AN ASYMMETRY, NOT AN ABSENCE.** Of the
+seven tests in that file, the invoice path carries **one** — the shared-vocabulary
+case. All three fault classes (`TRANSPORT`, `UNGOVERNED`, `REFUSED`) and both
+locales are asserted **only through `GrProbe`**. The classifier is path-independent
+so the coverage is not fictitious; but if the invoice path ever diverges — a
+different toast, a different remedy sentence, an ID string that does not follow —
+**six of the seven assertions would not notice.** Filed as a real, narrow gap,
+and noted at the head of the spec itself so the next author meets it there.
+
+**(ii) A constant `Math.random` stub makes the two consumers inseparable — you
+cannot make `settle` fail while keeping the correlation id stable. — FALSE, and
+measured twice.** Correlation ids are not random. They come from a monotonic
+counter, `nextCorrelationId: () => \`cmd_${(++seq).toString(36).padStart(4,'0')}\``
+(`MockCommandService.ts:1272`), whose own comment reads *"deterministic for
+tests"*. Stubbing `Math.random` cannot move a correlation id, so the constraint
+does not exist and **was not filed as one** — filing it would have put a false
+design constraint at exactly the site the next author was promised a true
+warning. The only real `Math.random` pair sits inside `withChaos` (jitter at
+`:26`, failure at `:39`), and with `minMs === maxMs` the jitter term is `0`
+regardless of the draw, so even that coupling is inert in every spec
+configuration in the tree.
+
+### 10 · THE SCOPE ATTRIBUTION, RECORDED AS THE STRATEGIST RULED IT
+
+> **THE FOUR ARTIFACTS WERE ALWAYS ABOUT INJECTION-REACHABILITY. IT WAS THE
+> MERGE INSTRUCTION THAT MISATTRIBUTED THE POPULATION, NOT THE SEAT'S SCOPE.**
+
+Recorded here in that form because the alternative reading — that the seat
+scoped on settle-reachability and was corrected — is the one a later reader
+would infer from the order the messages arrived in, and it is wrong.
+
+⚠️ **A SEPARATE MISATTRIBUTION IS RECORDED BESIDE IT, UNRESOLVED RATHER THAN
+SMOOTHED OVER.** The four artifacts named in the final dispatch — *the docstring,
+the security suite's real check, `useInvoiceSettlePayment`'s coverage gap, and
+the `Math.random()` call-order coupling* — **are not the four this batch built**,
+which are the ambience pin, the clock pin, the merge doctrine, and this register
+entry. Two of the named four were measured false above; the other two name
+artifacts (*a docstring*, *the security suite's real check*) that no turn of this
+arc produced or scoped. **The batch was built to the scope the seat reported and
+the strategist ruled on, not to that list** — stated plainly, because a register
+that quietly adopts a scope it did not execute is the same defect as a plan read
+as a result, one artifact further downstream.

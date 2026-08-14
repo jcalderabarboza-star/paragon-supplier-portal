@@ -34,6 +34,7 @@ import type { AuditSink } from './events';
 import { actorKey } from './events';
 import { getTransition } from './registry';
 import { refusal } from './refusals';
+import { classifySettleFault, settleFault, settleFaultDetail } from './settleFaults';
 
 /**
  * A per-entity adapter the dispatcher reads/writes through.
@@ -112,6 +113,16 @@ export interface SettleContext {
   transitionId: string;
   entityId: string;
   payload: Record<string, unknown>;
+  /**
+   * The scope the ORIGINATING command ran under (§43). `settle(correlationId)`
+   * takes no scope — the settlement is the SAP callback, not a fresh user act —
+   * so the second act's event would have had no `actor` to name. This carries it
+   * forward, which is literally what `TransitionEvent.scope` is documented as:
+   * *the scope the command ran under*. A `system:sap` actor was rejected —
+   * inventing an actor vocabulary to fill one field is a member with no
+   * definition, and the honest answer was already in hand.
+   */
+  scope: QueryScope;
 }
 
 export interface DispatcherDeps {
@@ -160,6 +171,41 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
   // Submitted commands awaiting settlement: correlationId → what to finalize.
   const pending = new Map<string, SettleContext>();
 
+  /**
+   * The ONE emit. Takes the correlationId rather than minting it, because the
+   * settlement (§43) is a SECOND event under the FIRST command's correlationId —
+   * `finish()` mints, `settle()` reuses, and both record through here so no
+   * outcome can acquire a private event shape.
+   */
+  function emit(
+    scope: QueryScope,
+    transitionId: string,
+    outcome: CommandOutcome,
+    correlationId: string,
+    ts: string,
+    reason?: string,
+    causationId?: string,
+    decision?: CommandDecision,
+  ): void {
+    deps.sink.emit({
+      event: transitionId,
+      actor: actorKey(scope),
+      scope,
+      correlationId,
+      // Present only on a cascaded transition — groups the fan-out under the
+      // source command's correlationId (DR-10) without sharing correlationId.
+      ...(causationId ? { causationId } : {}),
+      outcome,
+      // WHY it failed, on the event and not only on the discarded CommandResult
+      // (§43). Absent on a non-failure, so a `done` event gains no empty key.
+      ...(reason ? { reason } : {}),
+      ts,
+      // Governed-decision provenance (C6-LOCK) — forwarded VERBATIM from the
+      // caller's input; the dispatcher neither reads nor validates it.
+      ...(decision ? { decision } : {}),
+    });
+  }
+
   function finish(
     scope: QueryScope,
     transitionId: string,
@@ -171,20 +217,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
   ): CommandResult {
     const correlationId = deps.nextCorrelationId();
     const ts = deps.now();
-    deps.sink.emit({
-      event: transitionId,
-      actor: actorKey(scope),
-      scope,
-      correlationId,
-      // Present only on a cascaded transition — groups the fan-out under the
-      // source command's correlationId (DR-10) without sharing correlationId.
-      ...(causationId ? { causationId } : {}),
-      outcome,
-      ts,
-      // Governed-decision provenance (C6-LOCK) — forwarded VERBATIM from the
-      // caller's input; the dispatcher neither reads nor validates it.
-      ...(decision ? { decision } : {}),
-    });
+    emit(scope, transitionId, outcome, correlationId, ts, reason, causationId, decision);
     statuses.set(correlationId, { correlationId, transitionId, status: outcome, ts });
     return { correlationId, transitionId, status: outcome, reason, entityId };
   }
@@ -308,6 +341,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         transitionId: transition.id,
         entityId: resolvedId,
         payload,
+        scope,
       });
     }
 
@@ -344,16 +378,64 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     return statuses.get(correlationId) ?? null;
   }
 
+  // ── §43 · THE SECOND ACT, RECORDED ─────────────────────────────────────────
+  // A `sapBoundary` verb is two events, not one: the `submitted` moment and the
+  // settlement that lands it. Only the first was ever emitted. Now both are, on
+  // the SAME correlationId — which is what Option B already promised in prose
+  // ("under the SAME correlationId") and what `getCommandStatus` staying 1:1
+  // requires: one command, one correlationId, two recorded acts distinguished by
+  // outcome.
   function settle(correlationId: string): CommandStatus | null {
     const current = statuses.get(correlationId);
     if (current && current.status === 'submitted') {
-      const settled: CommandStatus = { ...current, status: 'done', ts: deps.now() };
-      statuses.set(correlationId, settled);
-      // Option B: run the registered finalize (advance interim→terminal +
-      // assign the real system reference) under the SAME correlationId.
+      const ts = deps.now();
       const ctx = pending.get(correlationId);
-      if (ctx && deps.settleFinalize) deps.settleFinalize(ctx);
+      // Unreachable by construction — `pending` and a `submitted` status are
+      // written together (see the `outcome === 'submitted'` block above) and the
+      // entry outlives the status flip. Pinned by `settleRecording.test.ts`, so
+      // this branch cannot quietly become the settle path again. Behaviour here
+      // is EXACTLY the pre-§43 behaviour for a state that cannot occur.
+      if (!ctx) {
+        const settled: CommandStatus = { ...current, status: 'done', ts };
+        statuses.set(correlationId, settled);
+        return settled;
+      }
+      if (deps.settleFinalize) {
+        try {
+          // Option B: advance interim→terminal + assign the real system
+          // reference.
+          deps.settleFinalize(ctx);
+        } catch (err) {
+          // ⚠️ RECORD, THEN RETHROW. The caller's experience is byte-identical
+          // to before — the throw still propagates — and only the record is
+          // added. The primary command still succeeded and still reports
+          // honestly on its own scope: THE RECORD IS INCOMPLETE, NOT FALSE.
+          emit(
+            ctx.scope,
+            current.transitionId,
+            'failed',
+            correlationId,
+            ts,
+            settleFault(classifySettleFault(err), settleFaultDetail(err)),
+          );
+          // ⚠️ THE STATUS IS DELIBERATELY *NOT* FLIPPED HERE, AND THIS IS THE
+          // ONE BEHAVIOURAL DIFFERENCE IN THE BATCH — confined to a path that
+          // cannot execute in this tree (no `settleFinalize` in the mock can
+          // throw; every store `update` is a `rows.map` no-op on a missing id).
+          // Pre-§43 the flip happened BEFORE the finalize, so a throw left the
+          // status claiming `done` with nothing finalized AND left `pending`
+          // undeleted — meaning the retry the UI is about to offer would find a
+          // `done` status and silently no-op. Offering "retry" over that would
+          // be a dead end wearing a remedy's clothes, which is the whole of
+          // `HALAL-REFUSAL-DEAD-ENDS-01`. Leaving the command `submitted` is
+          // what makes the named remedy TRUE.
+          throw err;
+        }
+      }
+      const settled: CommandStatus = { ...current, status: 'done', ts };
+      statuses.set(correlationId, settled);
       pending.delete(correlationId);
+      emit(ctx.scope, current.transitionId, 'done', correlationId, ts);
       return settled;
     }
     return current ?? null;

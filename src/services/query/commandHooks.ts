@@ -8,7 +8,10 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useDataService } from '../data/DataServiceContext';
+import { useToast } from '../../hooks/useToast';
+import { classifySettleFault } from '../transitions/settleFaults';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { scopeKey } from './useServiceQuery';
 import type { BidCurrency } from '../../lib/currencyPolicy';
@@ -24,6 +27,37 @@ import type {
 function useScope(): QueryScope {
   const { identity } = useCurrentIdentity();
   return { personaType: identity.personaType, supplierId: identity.supplierId };
+}
+
+// ── §43 · THE SETTLE FAILURE SURFACE ────────────────────────────────────────
+//
+// ⚠️ **IT LIVES IN THE HOOK, AND THAT IS THE FIX.** Before this batch
+// `commandHooks.ts` contained ZERO `onError` handlers — a rejected settle was an
+// unhandled mutation rejection: no toast, no banner, no i18n key. The document
+// sat in 'Posting to SAP' or 'Releasing Payment' and nothing ever said why.
+// That was not an oversight at one call site; it was the SHAPE — three call
+// sites each had to opt in and none did. Putting the handler on the mutation
+// itself means a fourth settle call site cannot be silent by omission.
+//
+// The string is chosen by the classified fault, so a permanent misconfiguration
+// does not read as a retryable blip, and every branch names the document's state
+// and whether asking again helps (`HALAL-REFUSAL-DEAD-ENDS-01` — a refusal that
+// only reports failure is half a remedy). The remedy for TRANSPORT is REAL: the
+// dispatcher leaves a failed settle `submitted`, so the same action genuinely
+// re-attempts (see `dispatcher.ts` settle).
+function useSettleErrorToast(): (err: unknown, vars: { correlationId: string }) => void {
+  const { toast } = useToast();
+  const { t } = useTranslation();
+  return (err, vars) => {
+    const fault = classifySettleFault(err);
+    toast({
+      variant: 'error',
+      title: t('settle.failed.title'),
+      description: `${t(`settle.failed.${fault}`)} ${t('settle.failed.ref', {
+        correlationId: vars.correlationId,
+      })}`,
+    });
+  };
 }
 
 // Targeted invalidation: only the current scope's procurement reads (the last
@@ -518,10 +552,12 @@ export function useGoodsReceiptSettle() {
   const svc = useDataService();
   const scope = useScope();
   const invalidate = useInvalidateProcurement();
+  const onSettleError = useSettleErrorToast();
 
   return useMutation<CommandStatus | null, Error, { correlationId: string }>({
     mutationFn: ({ correlationId }) => svc.commands.settle(scope, correlationId),
     onSuccess: () => invalidate(scope),
+    onError: onSettleError,
   });
 }
 
@@ -671,10 +707,12 @@ export function useInvoiceSettlePayment() {
   const svc = useDataService();
   const scope = useScope();
   const invalidate = useInvalidateProcurement();
+  const onSettleError = useSettleErrorToast();
 
   return useMutation<CommandStatus | null, Error, { correlationId: string }>({
     mutationFn: ({ correlationId }) => svc.commands.settle(scope, correlationId),
     onSuccess: () => invalidate(scope),
+    onError: onSettleError,
   });
 }
 
