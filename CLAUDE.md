@@ -5,6 +5,29 @@
 - Open a pull request to `main`; never push directly to `main`
 - The CLI merges via the GitHub UI (Squash + delete branch); the operator directs and approves
 
+### ⚠️ MERGE DOCTRINE — A MERGE INSTRUCTION NAMING A PR THE SEAT HAS NOT ITSELF
+### REPORTED IS A REQUEST TO VERIFY, NOT TO MERGE (ratified 2026-08-14)
+
+**The seat MUST refuse it, and refusing is doctrine rather than judgement.**
+Two merge instructions were issued in one arc for PRs that had never existed —
+`#226` before it was opened, and `#228` which was never opened at all. Both were
+refused, and the refusal is the only reason neither cost anything.
+
+The mechanism, named by the strategist against themself: **A PLAN WAS READ AS A
+RESULT.** The seat reports what it *would* build; that report is read as a build
+report; artifacts that exist only in a description get ruled on. **The
+strategist will not issue a merge instruction without a SHA and a PR number
+reported by the seat in the turn immediately prior.** Absent both, the
+instruction is a request to verify.
+
+⚠️ **AND THIS IS THE CLASS THE DISCIPLINE WAS NOT PROTECTING AGAINST, BECAUSE
+THE DISCIPLINE RUNS ON THE CODE SIDE AND THE DISPATCH SIDE HAD NO GATE.** Every
+code-side inverted premise costs a report, which is recoverable by measuring
+again. A merge is not. So before ANY outward or irreversible step — merge, push,
+publish, delete — assert the object exists **at the site the action names**
+(`gh pr view <n>`, `git branch`, the file itself), never from the conversation
+that described it. See `docs/findings.md` §43a and §44.
+
 ## Session startup — run these commands every time
 git checkout main && git pull origin main
 

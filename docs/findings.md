@@ -12389,3 +12389,154 @@ It does not touch the two authored-but-unfired PR cascades. They are not
 dispatcher-bypassing store mutations: every writer of `purchaseRequisitionStore`
 is inside `purchaseRequisitionTarget`. They are unauthored cascade declarations,
 already on the surface as loose ends, and wiring them is a FORK-2 decision.
+
+## §44 — THE HAZARD THAT WAS NOT THERE. Three inversions on one subject, the two pins the arc actually earned, and the first gate on the DISPATCH side
+
+**Batch:** `qa/chaos-ambience-pin`, off `main` @ `bc2106d`. Test-infrastructure and
+register only — **no production behaviour changed**, and none was required.
+
+The arc opened on a reported live instrument defect: *"the injected 1-in-20
+failure is reset GLOBALLY, so any suite touching the dispatcher silently
+disables it for every later test in the file — the pattern is already in EIGHT
+FILES."* Nothing in that sentence was true of this tree. It took three dispatches
+to establish that, and the establishing is the finding.
+
+### 1 · THE THREE INVERSIONS, IN ORDER, AND WHAT EACH ONE GOT WRONG
+
+| # | The premise | Measured |
+|---|---|---|
+| **9** | *"The injected rate is global mutable state, reset in a `beforeEach`, leaking across tests."* | **`withChaos` holds NO module state.** The rate is a field on a caller-supplied `ChaosConfig`; there is no setter, no reset, no `let`. `Math.random()` is read fresh per call. **Zero sites reset, stub or perturb it**, so the population of affected suites is empty because the upstream population is empty. Also not 1-in-20: the only defaults are `0.15` (env, never applied under test) and `0`/`1` in specs. **No population in the area has size 8** — measured: 28 / 27 / 26 / 5 / 2 / 48 / 15. |
+| **10** | *"Injection is live in 4,290 assertions, 2,946 unprotected; a flakiness bomb at 5% on any settle path."* | **Injection is live in ZERO assertions.** `renderWithProviders` defaults to the plain `mockDataService`; no `.env` file exists; `VITE_CHAOS` is never set; `withChaos` is applied by exactly one non-spec module, env-gated. Measured totals: **5,783** `expect(` sites, **545** in chaos-importing specs, **36 of 214** spec files injection-reachable. Neither 4,290 nor 2,946 reproduces on any instrument. **No 5% rate exists anywhere in the tree.** |
+| **11** | *"Injection fires ONLY on `sapBoundary` transitions, of which there are TWO, and both are covered."* | **The count of two is CORRECT and derived** — `t_gr_post` (`goodsReceipt.flow.ts:171`), `t_invoice_release_payment` (`invoice.flow.ts:107`). **The rest is false.** `withChaos` proxies every method of all ten sub-services plus `commands`; injection is reachable from any read through `mockDataService`, not from the settle path. |
+
+⚠️ **AND A FOURTH, INSIDE THE THIRD, RECORDED BECAUSE IT WAS CALLED THE SHARPEST
+FINDING OF THE SET:** *"a stub returning a constant makes the two `Math.random()`
+consumers inseparable — you cannot make `settle` fail while keeping the
+correlation id stable."* **Correlation ids are not random.** They come from a
+monotonic counter — `nextCorrelationId: () => \`cmd_${(++seq).toString(36).padStart(4,'0')}\``
+(`MockCommandService.ts:1272`), whose own comment reads *"deterministic for
+tests"*. Stubbing `Math.random` cannot move a correlation id, so the constraint
+described does not exist and was not filed.
+
+### 2 · ⚠️ THE AXIS ERROR, WHICH IS RULE 3 IN A NEW CURRENCY
+
+Inversion 11's diagnosis, in the strategist's words and ratified here: **THE
+POPULATION WAS MEASURED ON THE WRONG AXIS — not WHICH SUITES LACK A STUB, but
+WHICH SUITES REACH THE CODE THE STUB PROTECTS AGAINST.**
+
+> **THE SCAN MATCHED A PROTECTION SITE; THE DERIVATION MATCHED A REACHABILITY
+> SITE.** A suite that does not stub the injector is not thereby exposed to it —
+> it may never reach the injector at all.
+
+**SETTLE-REACHABLE AND INJECTION-REACHABLE ARE TWO DIFFERENT POPULATIONS, AND
+THE ARC'S LAST INVERSION WAS MERGING THEM.** The proof is a single exhibit, and
+it is now a gate: `goodsReceiptCommand.test.ts` is the most settle-reachable spec
+in the tree — it drives `post → submitted → settle → real MAT-DOC` against the
+real `MockCommandService` and the real stores — and it is **not injection-reachable
+at all**, because it constructs its own service and never touches
+`mockDataService`. Measured at a forced rate of 1.0: **351 tests across 52 files
+went red and all six of that spec's tests stayed GREEN.**
+
+### 3 · THE MEASUREMENT THAT SETTLED IT, AND ITS OWN CONTROLS
+
+A temporary env-gated scaffold wrapped `mockDataService`, run and reverted (tree
+clean, `git status` empty). **Rule 4 applied to the harness before any result was
+believed:**
+
+| Run | Result |
+|---|---|
+| Scaffold present, rate unset | suite **green** — the scaffold is provably inert |
+| Rate `1.0`, subset | `BuyerOrders > data:` **RED** — the scaffold provably injects |
+| Rate `1.0`, full suite | **351 failed / 2,609 passed**, 52 of 214 files |
+| Rate `0.05`, full suite | **49 failed / 2,911 passed**, 17 of 214 files |
+
+⚠️ **THE 351 ARE NOT FALSE GREENS, AND THE DISTINCTION IS THE WHOLE RANKING
+QUESTION.** A test that reads data and asserts on the result *should* fail when
+the read throws; that is correct dependence. **A false green is narrower: an
+assertion that cannot tell the injected fault from the refusal it means to pin.**
+Derived: 7 × `rejects.toMatchObject({code})` (pins identity, cannot be fooled) and
+**2 × `rejects.toBeInstanceOf(DataError)` — which CHAOS also satisfies.** Both
+candidates are **paired**, in the same test, with a `toMatchObject({code:'SCOPE_DENIED'})`
+on the following line, and **both were confirmed RED under forced injection by
+execution, not by reading**. **Zero false greens survive. Nothing outranked the
+batch.**
+
+Two figures are **WITHDRAWN by the strategist** and recorded as withdrawn: the
+2,946, and *"200 unseeded runs, four gates, not one failure"*. Neither has a
+locatable instrument. Their own ruling applies: **A MEASURED NULL WHOSE
+INSTRUMENT CANNOT BE LOCATED IS A REASONED NULL WEARING A NUMBER.**
+
+And beside it, the seat's own near-miss in the same hour: **a raw grep of
+`sapBoundary: true` returns 4, two of which are prose in file headers.** Filtered
+to code declarations it is 2. Same rule, same hour, both seats — which is the
+honest reason this section exists rather than a scolding one.
+
+### 4 · WHAT WAS BUILT (and why these two and not a remedy)
+
+There was no defect to remedy. What there was: a set of facts true this morning
+with nothing making them stay true. Both pins are **bilateral or membership-based,
+never a count** (§42b), and **both were seen RED before being believed green**.
+
+- **`src/services/data/mock/chaosAmbience.test.ts`** — pins that injection is
+  never ambient: exactly one non-spec module applies `withChaos` and its use is
+  env-gated; the mock does not wrap itself; the shared harness hands out the
+  plain service. Its behavioural probe is **deterministic, needing no rate, clock
+  or randomness**: `chaosProxy` mints a fresh closure on every property read, so
+  `svc.suppliers.list === svc.suppliers.list` is **false through a wrap and true
+  on the raw service** — known-BAD asserted first, in the same test. A fifth test
+  fixes the axis error as an exhibit. **Probe: making injection ambient at 5%
+  turned 3 of its 5 tests red — the three that assert ambience, and only those.**
+- **`src/services/sdc/__tests__/clockRestore.test.ts`** — `set` implies `restore`
+  on `sdcClock`, **the one construct in the tree that genuinely has the shape
+  inversion 9 described** (module `let`, exported `set`/`reset`). Not a defect
+  today: all callers restore in a hook. That is a fact about this morning; this
+  file is the difference. **Probe: deleting one real `sdcClock.reset()` reddened
+  it and named the offending file.**
+
+⚠️ **`import.meta.glob` EXCLUDES THE MODULE IT IS WRITTEN IN.** Both files
+contain their subject's identifiers in prose and would be their own first false
+positives. Each **asserts its own absence** from the scan rather than assuming it.
+
+### 5 · THE FIRST GATE ON THE DISPATCH SIDE — and it is the important half
+
+Ratified into `CLAUDE.md` this batch: **A MERGE INSTRUCTION NAMING A PR THE SEAT
+HAS NOT ITSELF REPORTED IS A REQUEST TO VERIFY, NOT TO MERGE, AND THE SEAT MUST
+REFUSE IT.** The strategist will not issue one without a SHA and a PR number
+reported by the seat in the immediately prior turn.
+
+Two such instructions were issued in this arc — `#226` before it existed, and
+`#228` which was never opened at all (`gh pr view 228` → *Could not resolve*;
+`#226` was and remains the highest number ever assigned). Both were refused.
+
+> ⚠️ **EVERY CODE-SIDE INVERTED PREMISE COST A REPORT. THESE COST AN INSTRUCTION
+> TO TAKE AN IRREVERSIBLE ACTION — THE ONE CLASS THE DISCIPLINE WAS NOT
+> PROTECTING AGAINST, BECAUSE THE DISCIPLINE RAN ON THE CODE SIDE AND THE
+> DISPATCH SIDE HAD NO GATE.** Six wrong premises can be corrected by measuring
+> again; a merge cannot.
+
+### 6 · THE ARC'S TALLY
+
+**ELEVEN INVERTED PREMISES, EVERY ONE CAUGHT BY MEASURING BEFORE BUILDING.** Six
+relocated a defect; **two asserted a merge that never happened**; one was the
+original finding wrong at its root rather than the reading of it; one was the
+population measured on the wrong axis; one named a design constraint over a
+counter that is not random. **NOT ONE COST A BATCH.**
+
+The strategist's own reading of the tally is ratified here because it is the
+part that generalises: **the discipline is now catching errors AT THE SOURCE AND
+NOT ONLY IN THE READING OF THEM** — and, as of this batch, on the side of the
+conversation that issues instructions and not only on the side that executes
+them.
+
+### 7 · FENCES HELD
+
+- **No production behaviour changed.** Two new spec files, one `CLAUDE.md`
+  section, this entry, one floor bump. Every experiment scaffold reverted and
+  re-verified; `git status` clean between each.
+- **C9 `af7f0b4`, C10 `dc8e774`** — all four paths byte-identical, verified by
+  git blob id, not read from and not written to.
+- The 29 stored-field rows, `t_invoice_match`, `HTML-LANG-STUCK-AT-EN-01` and
+  GL-0b stay filed and untouched.
+- **The floor never regresses** — `scripts/floor.json` bumped, not lowered.
+- **PR #226 (`feat/settle-recording`) is untouched by this batch** and remains
+  open; this branch was cut from `main`, not from it.
