@@ -14159,17 +14159,18 @@ lists were derived.
 
 ### 52a · RULE 4 COVERS THE PROBE. THIS COVERS THE INSTRUMENT THAT COUNTS IT.
 
-`docs/findings.md` §50e and §51f are two members of one class, one batch apart,
-in the same harness, by two unrelated mechanisms:
+`docs/findings.md` §50e, §51f and §53f are three members of one class, in the
+same harness, by three unrelated mechanisms:
 
 | | mechanism | reported | actual |
 |---|---|---|---|
 | §50e | the mutation made the flow fail `assertValidFlow`, so it never registered and vitest printed a FAILED SUITE with *"no tests"* — the counter watched `Tests N failed` | **0 killed** | the whole suite, which is a harder kill than an assertion |
 | §51f | the counter matched `Tests\D+(\d+) failed` against vitest's COLOURED summary, and `ESC[1m` contains a digit — `\D+` stopped short, `(\d+)` captured the `1` out of the formatting | **0 killed** | one test, red, by name |
+| §53f | the harness asked `git diff --quiet` whether the mutation had landed. The mutated file was **UNTRACKED** — new in the same batch — so `git diff` reports nothing for it by construction, and the harness printed `!! FILE UNCHANGED — probe is a lie` | **probe never applied** | applied; three tests red, by name, in that same run |
 
 > **THE UNIFYING OBSERVATION IS THE VALUABLE PART, AND IT IS WHY THIS BELONGS IN
-> THE STANDING HEURISTIC RATHER THAN IN A BATCH ENTRY: BOTH MECHANISMS FAIL IN
-> THE SAME DIRECTION — TOWARD "YOUR GATE IS WEAK" — AND THAT IS THE READING THAT
+> THE STANDING HEURISTIC RATHER THAN IN A BATCH ENTRY: ALL THREE MECHANISMS FAIL
+> IN THE SAME DIRECTION — TOWARD "YOUR GATE IS WEAK" — AND THAT IS THE READING THAT
 > GETS BELIEVED, BECAUSE IT SOUNDS LIKE THE HUMBLE ANSWER.** A counter that
 > over-reports kills is challenged in the next sentence. One that under-reports
 > them is accepted as modesty, and the response is to go and strengthen a gate
@@ -14178,9 +14179,18 @@ in the same harness, by two unrelated mechanisms:
 > around a phantom.
 
 The rule, as ratified: **strip the formatting before parsing an instrument's
-output, and confirm one kill BY NAME before trusting a count.** Both instances
-were caught the same way — by reading the raw output of one probe by eye — which
-is the confirmation the rule now requires up front.
+output, and confirm one kill BY NAME before trusting a count.** The first two
+instances were caught the same way — by reading the raw output of one probe by
+eye — which is the confirmation the rule now requires up front.
+
+⚠️ **THE THIRD (§53f) IS THE ONE THE RULE ITSELF CAUGHT, AND IT IS WHY THE
+"BY NAME" HALF IS NOT DECORATION.** The three mechanisms have nothing in common
+at the implementation level — a suite that never registered, an ANSI escape, and
+a VCS that cannot speak about an untracked path. Nothing generalisable connects
+them, and no amount of hardening one anticipates the next. What connects them is
+the DIRECTION, and the named kill is the only check that is indifferent to
+mechanism: **a probe that killed three tests by name did not fail to apply, and
+that sentence is true whatever the counter said and however it was wrong.**
 
 ### 52b · THE INVENTED-ARTIFACT CLASS, DERIVED RATHER THAN TALLIED
 
@@ -14395,3 +14405,127 @@ creation) · `ProcessFlows.tsx:205` (the cascade badge).
   fields, so PF-1 still cannot show a state the machine does not have. C9
   `af7f0b4` and C10 `dc8e774` byte-identical. Floor **3020 → 3026 / 220 / 7**,
   bumped because the gate asked.
+
+## §54 — THE RETRACTING INVENTION. §52 counts inventions that ADDED a claim; this one SUBTRACTED a correct one, and that is a different class
+
+§52b tabulates artifacts named as existing and measured absent. Every member of
+that table has the same shape: a dispatch **asserted** something — a function, a
+span, a symbol — and building on it would have added a claim the tree does not
+support. §53e added four more.
+
+**One of those four does not belong in that table, and filing it there would
+have hidden what makes it worse.**
+
+### 54a · THE INSTANCE
+
+A ruling described a defect in `catalogView.stepKind`: that it read `trigger`
+**in two independent places for two different jobs** — `stepKind` rendering
+*Operator action* while `derivedFor` rendered *System-driven*, from the same
+field, on the same row. It named both symbols. And it drew the conclusion
+against itself:
+
+> *"My 'the one place the mapping is stated' was READING A COMMENT THAT
+> DESCRIBES ONLY ONE OF THEM."*
+
+Measured, and stated as the derivation rather than as a number (§27):
+`git grep -il` over all tracked files returns, for each symbol, **exactly one
+file — `docs/findings.md`** — and `git grep -il … ':!docs/findings.md'` returns
+**zero**. `git log --all -S` names **exactly one commit** for each: `426b96c`,
+the entry that records their absence. **So outside this register the symbols do
+not occur, and have never occurred on any branch, in any commit.** There is one
+read of `trigger` in `stepKind`, producing one value, consumed by four sites.
+There is no second mapping.
+
+⚠️ **AND THE PRECISION IS NOT PEDANTRY — RECORDING AN ABSENCE CREATES THE ONLY
+OCCURRENCE.** A future reader who greps for `derivedFor` gets a hit, and the hit
+is this paragraph. Written as *"zero occurrences repo-wide"* the claim falsifies
+itself the moment it is filed, and the reader who checks it is left with a
+register that appears to be wrong about the one thing it exists to be right
+about. **The same correction applies to every row of §52b's table**, which was
+written before its own entries existed: those counts are all *outside the
+register*, and a claim of absence in this file must always say so.
+
+> **THE GENERAL FORM, AND IT IS THE ONE `FLOOR-IN-PROSE-01` KEEPS TEACHING: A
+> RECORD THAT COUNTS THINGS IS PART OF THE POPULATION IT COUNTS.** State the
+> exclusion at write time; a derivation that does not name its own scope stops
+> being true on the day it is committed.
+
+> **SO THE COMMENT — *"the ONE place the mapping is stated"* — WAS ACCURATE AS
+> WRITTEN, AND THE INVENTION'S WHOLE FUNCTION WAS TO RETRACT IT.**
+
+### 54b · WHY IT IS A DIFFERENT CLASS, AND THE DANGEROUS HALF
+
+> **AN INVENTION THAT ADDS IS CHECKED AGAINST THE TREE. AN INVENTION THAT
+> RETRACTS ARRIVES WEARING THE COSTUME OF A SELF-CORRECTION, WHICH IS THE FORM
+> LEAST LIKELY TO BE CHALLENGED.**
+
+The mechanism is social, not technical, and it is the whole finding:
+**challenging a self-correction looks like defending yourself.** A reader who
+would `grep` for an asserted function feels no such impulse toward a withdrawn
+claim — withdrawal reads as rigour, and asking *"are you sure you were wrong?"*
+reads as reluctance to admit a mistake. So the reader who would check an added
+claim lets a subtracted one pass.
+
+The cost is also asymmetric. An added claim that survives leaves a wrong thing
+in the tree, where the next derivation can find it. A **retracted** claim that
+survives deletes a true thing from the record, and nothing later goes looking
+for it: the correct comment gets rewritten to match the phantom defect, and the
+tree now documents a machine it does not have. Here it would have cost the
+comment AND a batch spent splitting a function that was never conflated.
+
+### 54c · THE SAME ASYMMETRY ONE LEVEL UP, IN PROSE RATHER THAN IN A COUNTER
+
+§51 named this direction in an **instrument**: a counter that under-reports
+kills is accepted as modesty, while one that over-reports is challenged in the
+next sentence. §52a generalised it across two mechanisms; the third
+(untracked-file check, §53f) is now in that table.
+
+**This is that asymmetry one level up — in the strategist's reasoning rather
+than in a harness.** Same shape, same reason it survives:
+
+| where | the humble-sounding reading | why it is believed | what it costs |
+|---|---|---|---|
+| §50e · §51f · §53f | *"your gate is weak"* | modesty about one's own instrument | a batch strengthening a gate that was never weak |
+| **§54 · here** | *"my earlier statement was wrong"* | modesty about one's own reasoning | a true statement deleted, and a batch fixing a phantom defect |
+
+> **THE HUMBLE-SOUNDING DIRECTION HAS NOW APPEARED IN THREE INSTRUMENTS AND
+> ONCE IN THE STRATEGIST'S REASONING.** That is four events in one direction and
+> zero in the other, which is no longer a coincidence about counters. It is a
+> property of how self-deprecating claims are read — by machines parsing their
+> own output and by people reading their own prior sentences — and it is why
+> both halves of the ratified rule are about CONFIRMING rather than doubting:
+> confirm one kill by name; confirm a named artifact exists.
+
+### 54d · THE REMEDY, AND WHY IT IS THE ONE ALREADY WRITTEN
+
+No new rule. §52's reflex already covers it and needs only to be read as
+applying in **both** directions:
+
+> **BEFORE BUILDING ON AN ARTIFACT A DISPATCH NAMES, `grep` FOR IT — INCLUDING
+> WHEN THE DISPATCH NAMES IT IN ORDER TO CONFESS SOMETHING.** A retraction that
+> names a symbol is still a claim about the tree, and it is measured the same
+> way: one line, no judgement required.
+
+The measurement that settled this one was `git grep -i` plus `git log --all -S`,
+took under a minute, and returned two empty results. **Nothing about the
+retraction's tone survived contact with an empty result** — which is exactly the
+property that makes a measurement the right instrument for a claim that is
+otherwise unfalsifiable by reading.
+
+⚠️ **AND THE UNDER-COUNT WARNING FROM §52b APPLIES HERE WITH MORE FORCE.** An
+invented artifact that gets refused in conversation leaves no trace; a
+retraction that is quietly ACCEPTED leaves less than none — the true statement
+simply disappears, and there is no artifact left to grep for. **This class has
+no derivable population at all.** One instance is recorded because it happened
+to name symbols; a retraction phrased without one would have been unmeasurable.
+
+### 54e · DISPOSITION
+
+- **RECORDED:** the retracting invention as its own class, distinct from §52b's
+  additive table, with the mechanism that makes it the dangerous half named and
+  the §51 cross-reference stated.
+- **AMENDED:** §52a's counter-instrument table gains its third member (§53f,
+  the untracked-file check) — three mechanisms, one direction.
+- **UNTOUCHED:** no code, no test, no flow, no surface, no gate. C9 `af7f0b4`
+  and C10 `dc8e774` byte-identical. Floor **3026 / 220 / 7**, unchanged — this
+  batch adds no tests and says so.
