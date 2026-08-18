@@ -405,6 +405,39 @@ counts the opposite half of the asymmetry, and one event under two classes
 inflates both. The population guard is now the FIRST test in the shipped gate and
 asserts MEMBERSHIP, never a count. §42b.
 
+⚠️ **§51 · AND ONE LAYER ABOVE THE PROBE: THE INSTRUMENT THAT COUNTS THE PROBE.
+RULE 4 COVERS THE PROBE. THIS COVERS THE THING THAT READS THE PROBE'S OUTPUT, AND
+ITS FAILURE MODE IS FLATTERINGLY HUMBLE.** A mutation probe is trusted through a
+counter, and a counter is an instrument like any other — with two ways to be
+wrong that have both now happened, one batch apart, in the same harness:
+
+- **§50e — the kill that never registers.** Thinning a `surfaceable` reason made
+  the flow fail `assertValidFlow`, so it never registered, so vitest reported a
+  FAILED SUITE with *"no tests"*. A counter watching `Tests N failed` saw
+  nothing and reported **0 KILLED** on a probe that had killed everything.
+- **§51f — the digit inside the escape code.** The same counter matched
+  `Tests\D+(\d+) failed` against vitest's COLOURED summary, and `ESC[1m`
+  contains a digit: `\D+` stopped short, `(\d+)` captured the `1` out of the
+  formatting, ` failed` did not follow, and it again reported **0 KILLED** on a
+  probe that killed a named test.
+
+**BOTH MECHANISMS FAIL IN THE SAME DIRECTION — TOWARD "YOUR GATE IS WEAK" — AND
+THAT IS THE READING THAT GETS BELIEVED, BECAUSE IT SOUNDS LIKE THE HUMBLE
+ANSWER.** A counter that over-reports kills would be challenged immediately; one
+that under-reports them is accepted as modesty and the gate gets rewritten to fix
+a hole it does not have. **STRIP THE FORMATTING BEFORE PARSING AN INSTRUMENT'S
+OUTPUT, AND CONFIRM ONE KILL BY NAME BEFORE TRUSTING A COUNT.**
+
+⚠️ **AND THE SAME REFLEX APPLIES TO AN ARTIFACT NAMED IN A DISPATCH.** Three
+identifiers have now been named as existing code and measured absent —
+`getInvoiceAction`, the FX-page `<span lang="en">` (§45), and `SurfaceExpectation`
+(§51) — beside a SHA (`c95e8ce`) and a PR number the tree never held. **The
+register under-counts this class by construction:** an invented artifact that is
+REFUSED in conversation leaves no trace, so only the ones that reached a batch
+were ever written down. Before building on a named artifact, `grep` for it —
+absence is a one-line measurement and a wrong premise with a specific name is the
+most believable kind.
+
 The gate itself is `src/lib/storedFieldGate/` — every stored field on a
 glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
 its reason stated. It is deliberately TEST-level, not type-level, precisely so
