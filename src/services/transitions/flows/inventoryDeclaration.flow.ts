@@ -86,6 +86,7 @@ export const inventoryDeclarationFlow: FlowDefinition = {
       // (CP-2 · B1) the master must actually name the code, so the unit the
       // target copies EXISTS rather than defaulting to a fabricated 'KG'.
       policyHooks: [POLICY_HOOKS.SDC_MATERIAL_KNOWN, POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -104,6 +105,7 @@ export const inventoryDeclarationFlow: FlowDefinition = {
       requiredRole: 'inventorydeclaration:record',
       requiredFields: ['materialCode', 'totalQty'],
       policyHooks: [POLICY_HOOKS.SDC_MATERIAL_KNOWN, POLICY_HOOKS.INV_DECLARE_BATCH_TOTAL],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],

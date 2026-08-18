@@ -19,7 +19,7 @@ flowRegistry.register({
   initial: 'Open',
   terminals: ['Flagged'],
   transitions: [
-    { id: 't_srcx_flag', from: ['Open'], to: 'Flagged', trigger: 'user', requiredRole: 'srcx:flag', requiredFields: [], policyHooks: [], version: 1 },
+    { id: 't_srcx_flag', from: ['Open'], to: 'Flagged', trigger: 'user', requiredRole: 'srcx:flag', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
   ],
 });
 flowRegistry.register({
@@ -29,7 +29,7 @@ flowRegistry.register({
   initial: 'Live',
   terminals: ['Alerted'],
   transitions: [
-    { id: 't_dstx_alert', from: ['Live'], to: 'Alerted', trigger: 'cascade', requiredRole: 'dstx:alert', requiredFields: [], policyHooks: [], version: 1 },
+    { id: 't_dstx_alert', from: ['Live'], to: 'Alerted', trigger: 'cascade', requiredRole: 'dstx:alert', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
   ],
 });
 

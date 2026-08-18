@@ -34,6 +34,7 @@ export const supplierDocumentFlow: FlowDefinition = {
       requiredRole: 'supplierdoc:request',
       requiredFields: ['supplierId', 'category'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -45,6 +46,7 @@ export const supplierDocumentFlow: FlowDefinition = {
       requiredRole: 'supplierdoc:submit',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -57,6 +59,15 @@ export const supplierDocumentFlow: FlowDefinition = {
       requiredRole: 'supplierdoc:verify',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'ruled-unsurfaced',
+        why:
+          'roles.ts declares verify/reject a VERIFICATION PIPELINE rather ' +
+          'than a screen. ⚠️ This is the least settled value in the batch: a ' +
+          'compliance officer plainly could review a certificate, and Track ' +
+          'R’s operator lane is the ruling most likely to flip it.',
+      },
       version: 1,
     },
     {
@@ -67,6 +78,13 @@ export const supplierDocumentFlow: FlowDefinition = {
       requiredRole: 'supplierdoc:reject',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'ruled-unsurfaced',
+        why:
+          'roles.ts declares verify/reject a VERIFICATION PIPELINE rather ' +
+          'than a screen. Flips with the same ruling as its sibling.',
+      },
       version: 1,
     },
   ],

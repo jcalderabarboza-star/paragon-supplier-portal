@@ -52,6 +52,7 @@ export const quotationFlow: FlowDefinition = {
       // is non-empty, so without this an arbitrary token ('CNY', 'Rp', 'usd')
       // would satisfy the floor and be stored as a currency nobody permits.
       policyHooks: [POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -63,6 +64,7 @@ export const quotationFlow: FlowDefinition = {
       requiredRole: 'quotation:review',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -74,6 +76,13 @@ export const quotationFlow: FlowDefinition = {
       requiredRole: 'quotation:award',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'A consequence of the buyer awarding the RFQ (cascade). The buyer ' +
+          'acted once; this is the fan-out.',
+      },
       version: 1,
     },
     {
@@ -85,6 +94,13 @@ export const quotationFlow: FlowDefinition = {
       requiredRole: 'quotation:reject',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'A consequence of the buyer awarding the RFQ (cascade). Losing ' +
+          'quotes are not rejected one by one.',
+      },
       version: 1,
     },
   ],

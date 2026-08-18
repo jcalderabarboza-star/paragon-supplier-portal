@@ -102,6 +102,7 @@ export const requirementResponseFlow: FlowDefinition = {
         POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND,
         POLICY_HOOKS.RR_SUBMIT_COMMITMENT_CLASS,
       ],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -129,6 +130,7 @@ export const requirementResponseFlow: FlowDefinition = {
         POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND,
         POLICY_HOOKS.RR_ACKNOWLEDGE_VISIBILITY_CLASS,
       ],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -150,6 +152,7 @@ export const requirementResponseFlow: FlowDefinition = {
       requiredRole: 'requirementresponse:submit',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -162,6 +165,7 @@ export const requirementResponseFlow: FlowDefinition = {
       requiredRole: 'requirementresponse:review',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -173,6 +177,7 @@ export const requirementResponseFlow: FlowDefinition = {
       requiredRole: 'requirementresponse:accept',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -185,6 +190,7 @@ export const requirementResponseFlow: FlowDefinition = {
       requiredRole: 'requirementresponse:dispute',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -204,6 +210,7 @@ export const requirementResponseFlow: FlowDefinition = {
       requiredRole: 'requirementresponse:dispute',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],

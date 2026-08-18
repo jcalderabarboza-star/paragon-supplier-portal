@@ -107,11 +107,11 @@ const probe: FlowDefinition = {
   initial: 'New',
   terminals: ['Done', 'Posted'],
   transitions: [
-    { id: 't_probe_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'po:issue', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_probe_start', from: ['New'], to: 'Live', trigger: 'user', requiredRole: 'po:confirm', requiredFields: ['qty'], policyHooks: [], version: 1 },
-    { id: 't_probe_finish', from: ['New', 'Live'], to: 'Done', trigger: 'system', requiredRole: 'po:close', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_probe_pin', from: ['Live'], to: 'Live', trigger: 'user', statePreserving: true, requiredRole: 'rfq:fx-pin', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_probe_post', from: ['Live'], to: 'Posting', trigger: 'system', requiredRole: 'gr:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', version: 1 },
+    { id: 't_probe_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'po:issue', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_probe_start', from: ['New'], to: 'Live', trigger: 'user', requiredRole: 'po:confirm', requiredFields: ['qty'], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_probe_finish', from: ['New', 'Live'], to: 'Done', trigger: 'system', requiredRole: 'po:close', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_probe_pin', from: ['Live'], to: 'Live', trigger: 'user', statePreserving: true, requiredRole: 'rfq:fx-pin', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_probe_post', from: ['Live'], to: 'Posting', trigger: 'system', requiredRole: 'gr:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', surfaceable: { surfaced: true }, version: 1 },
   ],
 };
 
@@ -178,7 +178,7 @@ describe('PF-1 — a decision fork is a CHOICE OF VERB', () => {
         ...probe,
         transitions: [
           ...probe.transitions,
-          { id: 't_probe_shortcut', from: ['New'], to: 'Done', trigger: 'user', requiredRole: 'po:close', requiredFields: [], policyHooks: [], version: 1 },
+          { id: 't_probe_shortcut', from: ['New'], to: 'Done', trigger: 'user', requiredRole: 'po:close', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
         ],
       },
       sources,

@@ -52,6 +52,7 @@ flowRegistry.register({
       requiredRole: 'anchored:create',
       requiredFields: ['parentRef'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],

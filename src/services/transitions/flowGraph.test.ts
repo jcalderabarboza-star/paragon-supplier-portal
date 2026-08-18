@@ -115,9 +115,9 @@ const clean: FlowDefinition = {
   initial: 'New',
   terminals: ['Done'],
   transitions: [
-    { id: 't_probe_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'probe:create', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_probe_start', from: ['New'], to: 'Live', trigger: 'user', requiredRole: 'probe:start', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_probe_finish', from: ['Live'], to: 'Done', trigger: 'user', requiredRole: 'probe:finish', requiredFields: [], policyHooks: [], version: 1 },
+    { id: 't_probe_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'probe:create', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_probe_start', from: ['New'], to: 'Live', trigger: 'user', requiredRole: 'probe:start', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_probe_finish', from: ['Live'], to: 'Done', trigger: 'user', requiredRole: 'probe:finish', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
   ],
 };
 
@@ -152,7 +152,7 @@ describe('the analyzer detects each defect class', () => {
       states: [...clean.states, 'Orphan'],
       transitions: [
         ...clean.transitions,
-        { id: 't_probe_revive', from: ['Orphan'], to: 'Live', trigger: 'user', requiredRole: 'probe:revive', requiredFields: [], policyHooks: [], version: 1 },
+        { id: 't_probe_revive', from: ['Orphan'], to: 'Live', trigger: 'user', requiredRole: 'probe:revive', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
       ],
     });
     expect(analyzeFlow(flow, new Set()).map(looseEndKey)).toContain('probe#dead-transition#t_probe_revive');
@@ -163,7 +163,7 @@ describe('the analyzer detects each defect class', () => {
       states: [...clean.states, 'Orphan'],
       transitions: [
         ...clean.transitions,
-        { id: 't_probe_revive', from: ['Orphan', 'Live'], to: 'Done', trigger: 'user', requiredRole: 'probe:revive', requiredFields: [], policyHooks: [], version: 1 },
+        { id: 't_probe_revive', from: ['Orphan', 'Live'], to: 'Done', trigger: 'user', requiredRole: 'probe:revive', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
       ],
     });
     expect(analyzeFlow(flow, new Set()).map(looseEndKey)).not.toContain(
@@ -197,7 +197,7 @@ describe('the analyzer detects each defect class', () => {
     const flow = withStates(clean, {
       transitions: [
         ...clean.transitions,
-        { id: 't_probe_flag', from: ['Live'], to: 'Done', trigger: 'cascade', requiredRole: 'probe:flag', requiredFields: [], policyHooks: [], version: 1 },
+        { id: 't_probe_flag', from: ['Live'], to: 'Done', trigger: 'cascade', requiredRole: 'probe:flag', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
       ],
     });
     expect(analyzeFlow(flow, new Set()).map(looseEndKey)).toContain('probe#unauthored-cascade#t_probe_flag');
@@ -227,7 +227,7 @@ describe('the modelling rulings the graph is built on', () => {
       terminals: ['Done'],
       transitions: [
         ...clean.transitions,
-        { id: 't_probe_pin', from: ['Done'], to: 'Done', trigger: 'user', statePreserving: true, requiredRole: 'probe:pin', requiredFields: [], policyHooks: [], version: 1 },
+        { id: 't_probe_pin', from: ['Done'], to: 'Done', trigger: 'user', statePreserving: true, requiredRole: 'probe:pin', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
       ],
     });
     // If the recording verb counted as an exit, `Done` could not be declared
@@ -242,7 +242,7 @@ describe('the modelling rulings the graph is built on', () => {
       states: [...clean.states, 'Orphan'],
       transitions: [
         ...clean.transitions,
-        { id: 't_probe_pin', from: ['Orphan'], to: 'Orphan', trigger: 'user', statePreserving: true, requiredRole: 'probe:pin', requiredFields: [], policyHooks: [], version: 1 },
+        { id: 't_probe_pin', from: ['Orphan'], to: 'Orphan', trigger: 'user', statePreserving: true, requiredRole: 'probe:pin', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
       ],
     });
     expect(analyzeFlow(flow, new Set()).map(looseEndKey)).toContain('probe#dead-transition#t_probe_pin');
@@ -256,8 +256,8 @@ describe('the modelling rulings the graph is built on', () => {
       initial: 'Ready',
       terminals: ['Posted'],
       transitions: [
-        { id: 't_boundary_create', from: [], to: 'Ready', trigger: 'creation', requiredRole: 'boundary:create', requiredFields: [], policyHooks: [], version: 1 },
-        { id: 't_boundary_post', from: ['Ready'], to: 'Posting', trigger: 'system', requiredRole: 'boundary:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', version: 1 },
+        { id: 't_boundary_create', from: [], to: 'Ready', trigger: 'creation', requiredRole: 'boundary:create', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+        { id: 't_boundary_post', from: ['Ready'], to: 'Posting', trigger: 'system', requiredRole: 'boundary:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', surfaceable: { surfaced: true }, version: 1 },
       ],
     };
     expect(analyzeFlow(boundary, new Set())).toEqual([]);
@@ -310,7 +310,7 @@ describe('D-2 — terminals', () => {
       terminals: [],
       transitions: [
         ...clean.transitions,
-        { id: 't_probe_reopen', from: ['Done'], to: 'Live', trigger: 'user', requiredRole: 'probe:reopen', requiredFields: [], policyHooks: [], version: 1 },
+        { id: 't_probe_reopen', from: ['Done'], to: 'Live', trigger: 'user', requiredRole: 'probe:reopen', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
       ],
     });
     expect(validateFlow(noEnding).ok).toBe(true);

@@ -22,8 +22,8 @@ flowRegistry.register({
   initial: 'New',
   terminals: ['Posted'],
   transitions: [
-    { id: 't_widget_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'widget:create', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_widget_post', from: ['New'], to: 'Posting', trigger: 'system', requiredRole: 'widget:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', version: 1 },
+    { id: 't_widget_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'widget:create', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_widget_post', from: ['New'], to: 'Posting', trigger: 'system', requiredRole: 'widget:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', surfaceable: { surfaced: true }, version: 1 },
   ],
 });
 
@@ -37,7 +37,7 @@ flowRegistry.register({
   initial: 'Ready',
   terminals: ['Posted'],
   transitions: [
-    { id: 't_gadget_post', from: ['Ready'], to: 'Posting', trigger: 'system', requiredRole: 'gadget:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', version: 1 },
+    { id: 't_gadget_post', from: ['Ready'], to: 'Posting', trigger: 'system', requiredRole: 'gadget:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', surfaceable: { surfaced: true }, version: 1 },
   ],
 });
 

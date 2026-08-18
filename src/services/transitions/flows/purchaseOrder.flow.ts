@@ -41,6 +41,14 @@ export const purchaseOrderFlow: FlowDefinition = {
       requiredRole: 'po:issue',
       requiredFields: ['supplierId', 'lineItems'],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'A purchase order is raised in S/4HANA and arrives here as a fact. ' +
+          'The portal is where a supplier RECEIVES a PO, never where Paragon ' +
+          'issues one.',
+      },
       version: 1,
     },
     {
@@ -51,6 +59,7 @@ export const purchaseOrderFlow: FlowDefinition = {
       requiredRole: 'po:view',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -61,6 +70,7 @@ export const purchaseOrderFlow: FlowDefinition = {
       requiredRole: 'po:acknowledge',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -74,6 +84,7 @@ export const purchaseOrderFlow: FlowDefinition = {
       requiredRole: 'po:confirm',
       requiredFields: ['confirmedQuantities'],
       policyHooks: [POLICY_HOOKS.PO_CONFIRM_QTY_WITHIN_ORDERED],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -84,6 +95,13 @@ export const purchaseOrderFlow: FlowDefinition = {
       requiredRole: 'po:fulfil',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'Goods movement is posted in S/4HANA against the PO. Nobody in this ' +
+          'portal declares a delivery.',
+      },
       version: 1,
     },
     {
@@ -94,6 +112,13 @@ export const purchaseOrderFlow: FlowDefinition = {
       requiredRole: 'po:fulfil',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'Goods movement is posted in S/4HANA against the PO. Nobody in this ' +
+          'portal declares a delivery.',
+      },
       version: 1,
     },
     {
@@ -104,6 +129,13 @@ export const purchaseOrderFlow: FlowDefinition = {
       requiredRole: 'po:close',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'A PO closes in S/4HANA once delivery and invoicing reconcile; the ' +
+          'portal reads the outcome.',
+      },
       version: 1,
     },
   ],

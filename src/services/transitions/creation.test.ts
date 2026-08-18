@@ -18,8 +18,8 @@ flowRegistry.register({
   initial: 'New',
   terminals: ['Live'],
   transitions: [
-    { id: 't_gadget_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'gadget:create', requiredFields: ['parentRef', 'label'], policyHooks: [], version: 1 },
-    { id: 't_gadget_activate', from: ['New'], to: 'Live', trigger: 'user', requiredRole: 'gadget:activate', requiredFields: [], policyHooks: [], version: 1 },
+    { id: 't_gadget_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'gadget:create', requiredFields: ['parentRef', 'label'], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_gadget_activate', from: ['New'], to: 'Live', trigger: 'user', requiredRole: 'gadget:activate', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
   ],
 });
 

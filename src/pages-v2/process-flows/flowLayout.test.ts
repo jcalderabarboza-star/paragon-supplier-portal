@@ -93,10 +93,10 @@ const chain: FlowDefinition = {
   initial: 'New',
   terminals: ['Done', 'Orphan'],
   transitions: [
-    { id: 't_probe_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'po:issue', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_probe_start', from: ['New'], to: 'Live', trigger: 'user', requiredRole: 'po:confirm', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_probe_finish', from: ['Live'], to: 'Done', trigger: 'user', requiredRole: 'po:close', requiredFields: [], policyHooks: [], version: 1 },
-    { id: 't_probe_reopen', from: ['Done'], to: 'Live', trigger: 'user', requiredRole: 'rfq:reopen', requiredFields: [], policyHooks: [], version: 1 },
+    { id: 't_probe_create', from: [], to: 'New', trigger: 'creation', requiredRole: 'po:issue', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_probe_start', from: ['New'], to: 'Live', trigger: 'user', requiredRole: 'po:confirm', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_probe_finish', from: ['Live'], to: 'Done', trigger: 'user', requiredRole: 'po:close', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_probe_reopen', from: ['Done'], to: 'Live', trigger: 'user', requiredRole: 'rfq:reopen', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
   ],
 };
 const chainView = buildFlowView(chain, bare);
@@ -149,7 +149,7 @@ describe('PF-1 — routing', () => {
         terminals: ['Done'],
         transitions: [
           ...chain.transitions.slice(0, 3),
-          { id: 't_probe_skip', from: ['New'], to: 'Done', trigger: 'user', requiredRole: 'po:close', requiredFields: [], policyHooks: [], version: 1 },
+          { id: 't_probe_skip', from: ['New'], to: 'Done', trigger: 'user', requiredRole: 'po:close', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
         ],
       },
       bare,
@@ -185,7 +185,7 @@ describe('PF-1 — routing', () => {
         transitions: [
           ...chain.transitions.slice(0, 3),
           chain.transitions[3],
-          { id: 't_probe_revise', from: ['Done'], to: 'New', trigger: 'user', requiredRole: 'pr:revise', requiredFields: [], policyHooks: [], version: 1 },
+          { id: 't_probe_revise', from: ['Done'], to: 'New', trigger: 'user', requiredRole: 'pr:revise', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
         ],
       },
       bare,

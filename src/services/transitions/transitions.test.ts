@@ -24,8 +24,8 @@ function baseFlow(): FlowDefinition {
     initial: 'A',
     terminals: ['B'],
     transitions: [
-      { id: 't_sample_create', from: [], to: 'A', trigger: 'creation', requiredRole: 'sample:create', requiredFields: [], policyHooks: [], version: 1 },
-      { id: 't_sample_advance', from: ['A'], to: 'B', trigger: 'user', requiredRole: 'sample:advance', requiredFields: ['note'], policyHooks: [], version: 1 },
+      { id: 't_sample_create', from: [], to: 'A', trigger: 'creation', requiredRole: 'sample:create', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
+      { id: 't_sample_advance', from: ['A'], to: 'B', trigger: 'user', requiredRole: 'sample:advance', requiredFields: ['note'], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
     ],
   };
 }
@@ -176,9 +176,9 @@ describe('FlowRegistry — admission + global uniqueness', () => {
       ...baseFlow(),
       entity: 'other',
       transitions: [
-        { id: 't_other_create', from: [], to: 'A', trigger: 'creation', requiredRole: 'other:create', requiredFields: [], policyHooks: [], version: 1 },
+        { id: 't_other_create', from: [], to: 'A', trigger: 'creation', requiredRole: 'other:create', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
         // Reuses 't_sample_advance' — must be refused.
-        { id: 't_sample_advance', from: ['A'], to: 'B', trigger: 'user', requiredRole: 'other:advance', requiredFields: [], policyHooks: [], version: 1 },
+        { id: 't_sample_advance', from: ['A'], to: 'B', trigger: 'user', requiredRole: 'other:advance', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
       ],
     };
     expect(() => reg.register(clash)).toThrow(/already registered by flow 'sample'/);
@@ -233,6 +233,7 @@ describe('validateFlow — statePreserving transitions', () => {
           requiredFields: [],
           policyHooks: [],
           statePreserving: true,
+          surfaceable: { surfaced: true },
           version: 1,
         },
       ],

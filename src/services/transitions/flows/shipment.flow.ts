@@ -43,6 +43,13 @@ export const shipmentFlow: FlowDefinition = {
       requiredRole: 'shipment:create',
       requiredFields: ['poNumber', 'supplierId'],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'A shipment record originates in the TMS (INT-TMS-01); Paragon ' +
+          'receives it.',
+      },
       version: 1,
     },
     {
@@ -53,6 +60,14 @@ export const shipmentFlow: FlowDefinition = {
       requiredRole: 'shipment:advance',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'The TMS records that the supplier lodged an ASN against this ' +
+          'shipment (INT-TMS-01). Paragon learns of it; nobody here declares ' +
+          'it.',
+      },
       version: 1,
     },
     {
@@ -63,6 +78,13 @@ export const shipmentFlow: FlowDefinition = {
       requiredRole: 'shipment:advance',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'Departure is a carrier scan reported through the TMS (INT-TMS-01). ' +
+          'The buyer watching the shipment has nothing to press.',
+      },
       version: 1,
     },
     {
@@ -73,6 +95,13 @@ export const shipmentFlow: FlowDefinition = {
       requiredRole: 'shipment:advance',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'Port arrival is a carrier/terminal event reported through the TMS ' +
+          '(INT-TMS-01), not a fact anybody in this portal asserts.',
+      },
       version: 1,
     },
     {
@@ -83,6 +112,13 @@ export const shipmentFlow: FlowDefinition = {
       requiredRole: 'shipment:advance',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'Customs clearance is an authority outcome relayed by the forwarder ' +
+          'through the TMS (INT-TMS-01).',
+      },
       version: 1,
     },
     {
@@ -93,6 +129,14 @@ export const shipmentFlow: FlowDefinition = {
       requiredRole: 'shipment:advance',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'Dock assignment is a warehouse/TMS scheduling event (INT-TMS-01). ' +
+          'The buyer page offers a dock-schedule toast at this state; it is ' +
+          'not this verb.',
+      },
       version: 1,
     },
     {
@@ -103,6 +147,14 @@ export const shipmentFlow: FlowDefinition = {
       requiredRole: 'shipment:advance',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'Unloading is recorded by the warehouse through the TMS ' +
+          '(INT-TMS-01). The Paragon act that follows it is the goods ' +
+          'receipt, which has its own flow.',
+      },
       version: 1,
     },
     {
@@ -113,6 +165,14 @@ export const shipmentFlow: FlowDefinition = {
       requiredRole: 'shipment:advance',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'TMS milestone (INT-TMS-01). The buyer page renders a button on ' +
+          'several of these states; every one of them is navigation or a ' +
+          'toast, never this verb.',
+      },
       version: 1,
     },
   ],

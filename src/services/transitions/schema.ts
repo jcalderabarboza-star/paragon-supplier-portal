@@ -24,6 +24,19 @@
  *
  * `clock` is DELIBERATELY ABSENT. Clock-derived states are read-time projections
  * (law 0.5), never transitions. See the compile-time guard below.
+ *
+ * ⚠️ **THIS FIELD IS PROVENANCE. IT DOES NOT SAY WHETHER A SCREEN OFFERS THE
+ * ACT — read `surfaceable` for that, and never infer one from the other.**
+ * For most of the tree the two agree, and *mostly* is exactly the problem: a
+ * field right three times in four earns trust it cannot hold. The proof is the
+ * `sapBoundary` population, which is TWO transitions and disagrees with itself
+ * — `t_gr_post` is `system` and `t_invoice_release_payment` is `user`, and both
+ * are the same panel-terminal button a buyer clicks. `system` also settles a
+ * question about THE SEAM, not about the act: `t_asn_deliver` is `system`
+ * because a carrier feed would drive it, so `system` currently means "not by a
+ * Paragon human AT THIS SEAM" — which is why a supplier-portal act can read as
+ * system-driven while a supplier does it. That is a real distinction and it is
+ * not the one this field's name implies. §50.
  */
 export type TransitionTrigger = 'user' | 'system' | 'cascade' | 'creation';
 
@@ -58,6 +71,58 @@ export type TransitionId = string;
  */
 export type PolicyHookName = string;
 
+/**
+ * WHY AN ACT HAS NO SCREEN. Three reasons, and they have different futures —
+ * which is the whole reason a bare `false` was refused (operator ruling, §50).
+ *
+ * - `external-fact`     — something outside Paragon reports it (a carrier feed,
+ *                         S/4HANA, a bank remittance). No screen is possible
+ *                         because no person here initiates it.
+ * - `computed`          — the platform derives it from what it already holds (a
+ *                         match verdict, a cascade, a deadline elapsing). There
+ *                         is nothing to click.
+ * - `ruled-unsurfaced`  — a person COULD initiate it and a STANDING RULING
+ *                         refuses the screen. The `why` cites the ruling, and
+ *                         **lifting that ruling is what changes this value** —
+ *                         which is what separates it from `surfaced: true` on
+ *                         an act that simply has not been built yet.
+ */
+export type NotSurfacedReason = 'external-fact' | 'computed' | 'ruled-unsurfaced';
+
+/**
+ * DOES THE PLATFORM INTEND A SCREEN FOR THIS ACT AT ALL — a DESIGN-TIME
+ * question, and the axis nothing in this schema modelled before §50.
+ *
+ * ⚠️ **NOT "MAY THIS ACTOR DO IT NOW".** Role, scope, precondition and required
+ * fields are answered by the DISPATCHER AT REQUEST TIME and are already
+ * modelled. This says only whether the act is one a human is ever meant to
+ * initiate through a Paragon surface.
+ *
+ * ⚠️ **`surfaced: true` DOES NOT MEAN A SCREEN EXISTS TODAY.** It means one is
+ * intended. An intended act with no screen yet is the gap census
+ * (`USER-VERBS-WITHOUT-SURFACES-01`, §49g) and it must stay visible as a gap —
+ * so the gate asserts ONE direction only: everything DISPATCHED is surfaceable.
+ * The converse would demand a screen for every intended act on the day it is
+ * declared, and would turn a truthful backlog into a red build.
+ *
+ * ⚠️ **DELIBERATELY KEYED ON THE VERB, NEVER ON (verb, state).** Keying it per
+ * state would let `t_po_confirm` — surfaceable, and offered from 2 of its 3
+ * declared from-states — DECLARE ITS OWN LIVE DEFECT CORRECT, and the census
+ * that found it could never find it again. A field that lets a defect declare
+ * itself correct is worse than no field. The verb-level form is exact only
+ * while every `requiredRole` maps to ONE persona; that is true of all 46 user
+ * verbs today, NOTHING IN THIS SCHEMA ENFORCES IT, and the gate therefore
+ * ASSERTS it rather than assuming it.
+ */
+export type Surfaceability =
+  | { readonly surfaced: true }
+  | {
+      readonly surfaced: false;
+      readonly because: NotSurfacedReason;
+      /** The reason, stated. An empty one is an omission wearing a row's clothes. */
+      readonly why: string;
+    };
+
 /** One transition (edge) in a flow. */
 export interface TransitionDef {
   /** Stable id, `t_<entity>_<verb>`. Globally unique across all flows. */
@@ -66,8 +131,16 @@ export interface TransitionDef {
   readonly from: readonly string[];
   /** Target state (∈ the flow's declared states). */
   readonly to: string;
-  /** What fires it. `clock` is type-level impossible (law 0.5). */
+  /** WHAT FIRES IT — provenance only. Not the surface: read `surfaceable`. */
   readonly trigger: TransitionTrigger;
+  /**
+   * WHETHER A PARAGON SURFACE IS EVER MEANT TO OFFER THIS ACT. Required on
+   * every transition — a member that cannot exist without a value (E1/GL-0) —
+   * and **authored per verb, never seeded from `trigger`**: the two disagree,
+   * and seeding would have manufactured the disagreements and called them
+   * derived. §50 lists every disagreement explicitly.
+   */
+  readonly surfaceable: Surfaceability;
   /** Namespaced transition-role permitted to fire it. */
   readonly requiredRole: TransitionRole;
   /** Command-payload field names that must be present (validated at dispatch). */

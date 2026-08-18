@@ -33,6 +33,7 @@ export const goodsReceiptLineFlow: FlowDefinition = {
       requiredRole: 'gr:inspect',
       requiredFields: ['visualCheck', 'packagingCheck'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -43,6 +44,7 @@ export const goodsReceiptLineFlow: FlowDefinition = {
       requiredRole: 'gr:disposition',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -53,6 +55,7 @@ export const goodsReceiptLineFlow: FlowDefinition = {
       requiredRole: 'gr:disposition',
       requiredFields: ['rejectionReason'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -63,6 +66,7 @@ export const goodsReceiptLineFlow: FlowDefinition = {
       requiredRole: 'gr:inspect',
       requiredFields: ['holdReason'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -73,6 +77,7 @@ export const goodsReceiptLineFlow: FlowDefinition = {
       requiredRole: 'gr:disposition',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],
