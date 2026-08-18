@@ -11,7 +11,7 @@
 // the same flow.
 // ─────────────────────────────────────────────────────────────────────────────
 import { describe, it, expect } from 'vitest';
-import { userVerbsFrom, isTerminalState, getFlow } from './index';
+import { userVerbsFrom, isTerminalState, getFlow, getTransition } from './index';
 
 describe('userVerbsFrom — legality, derived from the machine', () => {
   it('answers at all: the known-GOOD state yields the verb the defect hid', () => {
@@ -28,7 +28,18 @@ describe('userVerbsFrom — legality, derived from the machine', () => {
     expect(userVerbsFrom('invoice', 'Approved').length).toBeGreaterThan(0);
   });
 
-  it('offers ONLY user-triggered verbs — system and cascade edges are not affordances', () => {
+  it('offers only SURFACEABLE verbs — which §51 made a different set from user-triggered', () => {
+    // ⚠️ THIS TEST'S OLD NAME SURVIVED ITS OWN TRUTH — the PF-2 decayed-claim
+    // shape, caught here rather than filed. It said "user-triggered", and
+    // `t_gr_post` is `trigger: 'system'` AND the reserved solid a buyer presses
+    // on /buyer/goods-receipt. The rule was never "only user-triggered verbs";
+    // it was "only verbs a screen is meant to offer", and until §50 there was
+    // no field that said so.
+    expect(getTransition('t_gr_post')!.trigger).toBe('system');
+    expect(userVerbsFrom('goodsReceipt', 'Approved').map((t) => t.id)).toContain('t_gr_post');
+  });
+
+  it('still refuses the edges no screen owns — system and cascade alike', () => {
     // 'Payment Released' has exactly one declared exit, t_invoice_remit, and it
     // is system-triggered: the surface must not render it as a button (PF-1a).
     const declared = getFlow('invoice')!.transitions.filter((t) =>

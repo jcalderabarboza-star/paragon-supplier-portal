@@ -132,13 +132,27 @@ describe('invoiceActionsFor — derived from the canonical state', () => {
     expect(declared.from.length).toBeGreaterThan(1);
   });
 
-  it('a verb that is deferred never reaches the surface, however legal it is', () => {
-    // t_invoice_approve IS legal from Matched — and is ruled unreachable (C10).
-    expect(userVerbsFrom('invoice', 'Matched').map((t) => t.id)).toContain('t_invoice_approve');
+  it('a verb RULED unsurfaced is refused at the seam now, not only at the surface', () => {
+    // ⚠️ THIS ASSERTION INVERTED AT §51 AND THE INVERSION IS THE POINT. It used
+    // to read `toContain`: `t_invoice_approve` is legal from `Matched`, so the
+    // seam offered it and `INVOICE_VERB_DEFERRED` was the only thing keeping it
+    // off the screen. Now `surfaceable: { surfaced: false, because:
+    // 'ruled-unsurfaced' }` (C10 §2.4 — approval is attributable and the
+    // platform cannot name a person) refuses it one layer earlier, so the
+    // deferral row is a SECOND account of the same decision rather than the
+    // only one. The rendered surface did not move: this verb was never in
+    // INVOICE_VERB_SURFACE.
+    expect(getFlow('invoice')!.transitions.find((t) => t.id === 't_invoice_approve')!.from).toContain(
+      'Matched',
+    );
+    expect(userVerbsFrom('invoice', 'Matched').map((t) => t.id)).not.toContain('t_invoice_approve');
     expect(invoiceActionsFor('Matched').map((a) => a.transitionId)).not.toContain(
       't_invoice_approve',
     );
-    // Paired: Matched is not simply empty — dispute survives the filter.
+    // Paired membership, three times over: the state is not simply empty, the
+    // seam still answers, and the deferral row still accounts for the verb.
     expect(invoiceActionsFor('Matched').map((a) => a.transitionId)).toContain('t_invoice_dispute');
+    expect(userVerbsFrom('invoice', 'Matched').length).toBeGreaterThan(0);
+    expect(Object.keys(INVOICE_VERB_DEFERRED)).toContain('t_invoice_approve');
   });
 });

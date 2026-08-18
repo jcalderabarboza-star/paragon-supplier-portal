@@ -226,6 +226,46 @@ describe('DISPATCHED ⇒ SURFACEABLE — the one direction this gate asserts', (
   });
 });
 
+describe('THE CENSUS — acts a screen is meant to offer that no screen offers', () => {
+  const src = sources();
+  const firable = operatorFirableIds(src);
+  const census = allTransitions()
+    .filter((t) => t.surfaceable.surfaced && !firable.has(t.id) && t.from.length > 0)
+    .map((t) => t.id);
+
+  it('⚠️ RULE 4 — the census FLAGS a verb that is surfaceable and unsurfaced', () => {
+    // Believing anything the census EXCLUDES requires proving it includes what
+    // it must. A census that flags nothing looks exactly like a clean tree, and
+    // this one has a known-true member: PF-1a declared `t_pr_revise` and no
+    // surface ever offered it (§49e), and `t_pr_submit` has a button that
+    // toasts instead of dispatching.
+    expect(census).toContain('t_pr_revise');
+    expect(census).toContain('t_pr_submit');
+    expect(census).toContain('t_asn_resolve_discrepancy');
+    expect(census.length).toBeGreaterThan(5);
+  });
+
+  it('and only THEN: the two verbs RULED unsurfaced are absent — they are decisions, not gaps', () => {
+    // This is what `surfaceable === true` buys over a bare field swap. Both are
+    // `trigger: 'user'`, so a swap-free census keyed on `trigger` flags them;
+    // both are refused by the SAME identity ruling (C10 ·
+    // ENF-NO-PERSON-IN-IDENTITY-01), so flagging them would file a decision as
+    // a defect.
+    expect(census).not.toContain('t_invoice_approve');
+    expect(census).not.toContain('t_enforcement_set');
+  });
+
+  it('and the verb that used to be a false positive is gone from the other side', () => {
+    // `t_gr_post` is `trigger: 'system'` and IS pressed. Any census asking
+    // "which acts should a person reach?" through `trigger` could never see it
+    // as an act at all — it was invisible to the question, which is a quieter
+    // failure than a wrong answer.
+    expect(getTransition('t_gr_post')!.surfaceable.surfaced).toBe(true);
+    expect(firable.has('t_gr_post')).toBe(true);
+    expect(census).not.toContain('t_gr_post');
+  });
+});
+
 describe('the runtime validator — probed BOTH ways on the same synthetic flow', () => {
   const flow = (surfaceable: unknown): FlowDefinition =>
     ({
