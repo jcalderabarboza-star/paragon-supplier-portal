@@ -43,6 +43,7 @@ export const advanceShipNoticeFlow: FlowDefinition = {
       requiredRole: 'asn:create',
       requiredFields: ['poReference'],
       policyHooks: [POLICY_HOOKS.ASN_CREATE_PO_CONFIRMED],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -53,6 +54,7 @@ export const advanceShipNoticeFlow: FlowDefinition = {
       requiredRole: 'asn:submit',
       requiredFields: ['carrier', 'trackingNumber', 'eta'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -64,6 +66,14 @@ export const advanceShipNoticeFlow: FlowDefinition = {
       requiredRole: 'asn:carry',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'A carrier feed reports departure (INT-TMS-01). No person here ' +
+          'initiates it — and this verb is exactly why `trigger: system` ' +
+          'reads as a statement about the SEAM rather than about the act.',
+      },
       version: 1,
     },
     {
@@ -74,6 +84,13 @@ export const advanceShipNoticeFlow: FlowDefinition = {
       requiredRole: 'asn:carry',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'A carrier feed reports delivery (INT-TMS-01); the supplier who ' +
+          'physically delivered it does not press this.',
+      },
       version: 1,
     },
     {
@@ -85,6 +102,13 @@ export const advanceShipNoticeFlow: FlowDefinition = {
       requiredRole: 'asn:flag',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'Raised by the GR mismatch cascade. It is a consequence the ' +
+          'platform derives from a receipt, not something anybody declares.',
+      },
       version: 1,
     },
     {
@@ -114,6 +138,7 @@ export const advanceShipNoticeFlow: FlowDefinition = {
       requiredRole: 'asn:flag',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],

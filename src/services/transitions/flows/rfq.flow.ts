@@ -62,6 +62,7 @@ export const rfqFlow: FlowDefinition = {
       requiredRole: 'rfq:create',
       requiredFields: ['title', 'materialCategory', 'totalQty'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -79,6 +80,7 @@ export const rfqFlow: FlowDefinition = {
       requiredRole: 'rfq:publish',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -91,6 +93,15 @@ export const rfqFlow: FlowDefinition = {
       requiredRole: 'rfq:close',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'The award deadline elapsing. Nobody initiates it; law 0.5 forbids ' +
+          'a `clock` trigger, so it is modelled `system` — and nothing fires ' +
+          'it today, which is why the surface offers Award from Open AND ' +
+          'Closed.',
+      },
       version: 1,
     },
     {
@@ -105,6 +116,7 @@ export const rfqFlow: FlowDefinition = {
       requiredRole: 'rfq:award',
       requiredFields: ['awardedQuotationId', 'awardedSupplierId'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -138,6 +150,7 @@ export const rfqFlow: FlowDefinition = {
       // distinction an auditor cares about.
       requiredFields: ['quote', 'rate', 'asOf', 'source'],
       policyHooks: [POLICY_HOOKS.RFQ_FX_PIN_WELL_FORMED],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -149,6 +162,7 @@ export const rfqFlow: FlowDefinition = {
       requiredRole: 'rfq:cancel',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -160,6 +174,7 @@ export const rfqFlow: FlowDefinition = {
       requiredRole: 'rfq:reopen',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],

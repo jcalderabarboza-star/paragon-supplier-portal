@@ -35,8 +35,8 @@ flowRegistry.register({
   initial: 'Ready',
   terminals: ['Posted'],
   transitions: [
-    { id: 't_sbox_post', from: ['Ready'], to: 'Posting', trigger: 'system', requiredRole: 'sbox:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', version: 1 },
-    { id: 't_sbox_cancel', from: ['Ready'], to: 'Posted', trigger: 'user', requiredRole: 'sbox:none', requiredFields: [], policyHooks: [], version: 1 },
+    { id: 't_sbox_post', from: ['Ready'], to: 'Posting', trigger: 'system', requiredRole: 'sbox:post', requiredFields: [], policyHooks: [], sapBoundary: true, settlesTo: 'Posted', surfaceable: { surfaced: true }, version: 1 },
+    { id: 't_sbox_cancel', from: ['Ready'], to: 'Posted', trigger: 'user', requiredRole: 'sbox:none', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
   ],
 });
 

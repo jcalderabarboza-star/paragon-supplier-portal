@@ -149,7 +149,7 @@ const LANE_A: FlowDefinition = {
   initial: 'Draft',
   terminals: ['Released'],
   transitions: [
-    { id: 't_delivery_release', from: ['Draft'], to: 'Released', trigger: 'cascade', requiredRole: 'delivery:release', requiredFields: [], policyHooks: [], version: 1 },
+    { id: 't_delivery_release', from: ['Draft'], to: 'Released', trigger: 'cascade', requiredRole: 'delivery:release', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
   ],
 };
 const LANE_B: FlowDefinition = {
@@ -159,7 +159,7 @@ const LANE_B: FlowDefinition = {
   initial: 'Draft',
   terminals: ['Released'],
   transitions: [
-    { id: 't_deliveryagreement_release', from: ['Draft'], to: 'Released', trigger: 'cascade', requiredRole: 'deliveryagreement:release', requiredFields: [], policyHooks: [], version: 1 },
+    { id: 't_deliveryagreement_release', from: ['Draft'], to: 'Released', trigger: 'cascade', requiredRole: 'deliveryagreement:release', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
   ],
 };
 const SOURCE: FlowDefinition = {
@@ -169,7 +169,7 @@ const SOURCE: FlowDefinition = {
   initial: 'Open',
   terminals: ['Fired'],
   transitions: [
-    { id: 't_src_go', from: ['Open'], to: 'Fired', trigger: 'user', requiredRole: 'src:go', requiredFields: [], policyHooks: [], version: 1 },
+    { id: 't_src_go', from: ['Open'], to: 'Fired', trigger: 'user', requiredRole: 'src:go', requiredFields: [], policyHooks: [], surfaceable: { surfaced: true }, version: 1 },
   ],
 };
 const SYNTH_FLOWS = [SOURCE, LANE_A, LANE_B];

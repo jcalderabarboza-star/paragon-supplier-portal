@@ -62,6 +62,7 @@ export const incomingShipmentFlow: FlowDefinition = {
         POLICY_HOOKS.ISH_P2D_NO_ASN,
         POLICY_HOOKS.ISH_P2D_DISTRIBUTOR_ONLY,
       ],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -73,6 +74,7 @@ export const incomingShipmentFlow: FlowDefinition = {
       requiredRole: 'incomingshipment:ship',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -86,6 +88,7 @@ export const incomingShipmentFlow: FlowDefinition = {
       requiredRole: 'incomingshipment:arrive',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -97,6 +100,7 @@ export const incomingShipmentFlow: FlowDefinition = {
       requiredRole: 'incomingshipment:cancel',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],

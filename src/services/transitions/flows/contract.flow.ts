@@ -30,6 +30,7 @@ export const contractFlow: FlowDefinition = {
       requiredRole: 'contract:draft',
       requiredFields: ['supplierId', 'title'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -40,6 +41,7 @@ export const contractFlow: FlowDefinition = {
       requiredRole: 'contract:activate',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -50,6 +52,7 @@ export const contractFlow: FlowDefinition = {
       requiredRole: 'contract:renew',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -61,6 +64,7 @@ export const contractFlow: FlowDefinition = {
       requiredRole: 'contract:terminate',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],

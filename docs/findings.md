@@ -13737,3 +13737,222 @@ machine.**
 - **UNTOUCHED:** no surface edited, no flow edited, no verb wired, no gate built.
   C9 `af7f0b4` and C10 `dc8e774` byte-identical. Floor `3005 / 219 / 7`,
   unchanged — this batch adds no tests, and says so rather than padding one.
+
+## §50 — `surfaceable`. The two jobs `trigger` was quietly doing, split — authored per verb, exhaustive over 91, and NOT seeded from the field it corrects
+
+### 50a · WHAT DECIDED IT, AND IT WAS NOT THE RATIO
+
+The census (§49) was dispatched to find surfaces that decide legality for
+themselves. It found something else on the way: **`trigger` answers *what fires
+an act* and was being read by two consumers as *whether a screen offers it*.**
+
+The decisive evidence is one line, and it is exhaustive rather than
+illustrative:
+
+> **`sapBoundary` IS TRUE ON EXACTLY TWO TRANSITIONS IN THE TREE, AND THEY
+> DISAGREE WITH EACH OTHER.** `t_gr_post` is `trigger: 'system'`;
+> `t_invoice_release_payment` is `trigger: 'user'`. Same shape, same
+> `settlesTo` mechanics, same panel-terminal button a buyer presses, opposite
+> values. **Not a counterexample inside a population — a 100% disagreement rate
+> on the one sub-population where two verbs are structurally identical.**
+
+⚠️ **AND THE RATIO ARGUMENT, WHICH THE RULING LED WITH, DOES NOT SURVIVE
+MEASUREMENT — IN THE DIRECTION THAT MATTERS.** Ruled: *five `system` verbs have
+human affordances, six `user` verbs have none, the field predicts the surface at
+76%*. Measured before authoring: `system` verbs a person can actually cause =
+**2** (`t_gr_post` directly, `t_invoice_match` as a cascade from that click), or
+**7** under the loosest reading (a control rendered anywhere the verb is legal —
+all but one of them a toast or a navigation button). `user` verbs with no
+affordance = **28**, which is §49g. Agreement over the 70 non-creation,
+non-cascade transitions = **59%**.
+
+**The conclusion is unaffected and the correction still matters.** A ruling that
+rests on "right three times in four" invites the reply *"then fix the quarter"*.
+A ruling that rests on **two of two structurally identical verbs disagreeing**
+cannot be answered that way. The weaker argument was the one that would have
+lost.
+
+### 50b · THE FIELD, AND THE THREE THINGS THAT SHAPE IT
+
+```ts
+readonly surfaceable:
+  | { readonly surfaced: true }
+  | { readonly surfaced: false; readonly because: NotSurfacedReason; readonly why: string };
+```
+
+**REQUIRED on `TransitionDef`, exhaustive over all 91** — creation verbs
+included. Exhausting over the 46 user verbs was considered and refused for a
+reason the tree supplies: **`t_gr_post` is a `system` verb and is the case that
+motivated the split**, so a 46-verb population leaves the decisive member with
+no value. E1/GL-0's discipline where it actually bites.
+
+**A BARE BOOLEAN WAS REFUSED.** Three reasons an act carries no screen, and they
+have different futures:
+
+| reason | n | what it means |
+|---|---|---|
+| `external-fact` | 15 | something outside Paragon reports it — a carrier feed, S/4HANA, a bank remittance. No screen is *possible*. |
+| `computed` | 11 | the platform derives it — a match verdict, a cascade fan-out, a deadline elapsing. There is nothing to click. |
+| `ruled-unsurfaced` | 6 | a person COULD initiate it and **a standing ruling refuses the screen**. The `why` cites the ruling, and **lifting that ruling is what changes the value.** |
+
+That third row is the load-bearing one. **`surfaced: true` does not mean a screen
+exists** — it means one is intended. So *"nobody has built it yet"* is `true`
+plus §49g's gap census, and *"a ruling says no"* is `false` with the ruling
+named. A bare `false` would have collapsed those into one word, and they point in
+opposite directions.
+
+**KEYED ON THE VERB, NEVER ON (verb, state).** Derived, not assumed: all 46 user
+verbs map to **exactly one persona** through `requiredRole → PERSONA_ROLES`
+(`{1: 46}`; zero map to both), so persona is already a function of the verb and a
+per-persona field would be 46 rows of redundancy. The per-STATE axis was refused
+on stronger grounds than redundancy:
+
+> **KEYING ON `(verb, state)` WOULD MAKE `t_po_confirm`'s LIVE DEFECT —
+> SURFACEABLE, AND OFFERED FROM 2 OF ITS 3 DECLARED FROM-STATES (§49i) —
+> AUTHORABLE AS INTENT, AND THE CENSUS THAT FOUND IT COULD NEVER FIND IT AGAIN.
+> A FIELD THAT LETS A DEFECT DECLARE ITSELF CORRECT IS WORSE THAN NO FIELD.**
+
+**AND THE 1:1 IS CONTINGENT, SO THE GATE ASSERTS IT.** `{1: 46}` is true today
+and **nothing in the schema enforces it**; the day a `requiredRole` is granted to
+both personas, a verb-level boolean goes silently lossy — it would have to mean
+"surfaced for somebody" without saying whom. `surfaceable.test.ts` fails on that
+day, by derivation, which is the only thing standing between this design and that
+failure.
+
+**WHY THIS IS NOT A FOURTH MOSTLY-RIGHT FIELD.** Role, scope, precondition and
+required fields are answered **by the dispatcher at request time** and are
+already modelled. `surfaceable` answers a **design-time** question — *does the
+platform intend a screen for this act at all* — **which nothing currently
+models.** The other two axes exist elsewhere; this one existed nowhere.
+
+### 50c · THE FIVE DISAGREEMENTS, STATED — EVERY ONE AN AUTHORING DECISION
+
+**Not seeded from `trigger`.** All 91 values were authored per verb, and the
+disagreement set was DERIVED afterwards rather than predicted. The ruling's
+"11" was a number carried forward from an earlier census and was explicitly not
+a target. **The count is 5.**
+
+| verb | `trigger` | `surfaceable` | the decision |
+|---|---|---|---|
+| `t_gr_post` | `system` | **true** | ⚠️ **THE ONE THAT FORCED THE SPLIT.** A buyer presses it; it is the reserved solid on `/buyer/goods-receipt` and the SAP boundary. `system` describes the actor on the FAR side of the seam, which is why the field disagreed with the page. |
+| `t_invoice_approve` | `user` | **false** · `ruled-unsurfaced` | C10 §2.4 — approval is attributable and the platform cannot name a person (`ENF-NO-PERSON-IN-IDENTITY-01`), so an anonymous approval is refused rather than offered. |
+| `t_enforcement_set` | `user` | **false** · `ruled-unsurfaced` | The same ruling that blocks the GR override-hold. A governed relaxation with no named person writes an anonymous unlock into a permanent trail. |
+| `t_po_issue` | `creation` | **false** · `external-fact` | A PO is raised in S/4HANA and arrives here as a fact. The portal is where a supplier RECEIVES a PO, never where Paragon issues one. |
+| `t_shipment_create` | `creation` | **false** · `external-fact` | A shipment record originates in the TMS (INT-TMS-01). |
+
+Agreement is **86/91 = 95%** — higher than the ruled 76%, and the number is not
+the point: three of the five are acts a person is *permitted* to fire that no
+screen may offer, and one is an act the machine calls automatic that a person
+presses every day.
+
+⚠️ **THE VALUE I AM LEAST SURE OF, FLAGGED IN THE CODE AS WELL AS HERE:**
+`t_supplierdoc_verify` / `_reject` and `t_compliance_verify` / `_reject` are
+authored `ruled-unsurfaced` because `roles.ts` and I3.1 declare verification a
+PIPELINE rather than a screen. **A compliance officer plainly could review a
+certificate**, and Track R's operator lane is the ruling most likely to flip
+these four. They are the four rows to re-read first when that lane is dispatched.
+
+### 50d · `trigger` STAYS, AND ITS DOC-COMMENT NOW SAYS WHAT IT IS
+
+Option 3's rename was refused: it moves the ambiguity into a new name and costs a
+C-document amendment and a SOMO re-ratification. The field keeps **provenance**
+and stops claiming the surface, and the comment now records the sharper half:
+
+> **`system` NAMES A STATE THAT IS SETTLED AT THE SEAM, NOT A PROPERTY OF THE
+> ACT.** `t_asn_deliver` is `system` because a carrier feed would drive it, so
+> `system` currently means **"not by a Paragon human AT THIS SEAM"** — which is
+> why a supplier-portal act can read as system-driven while a supplier does it.
+> That is a real distinction, and it is not the one the field's name implies.
+
+### 50e · THE GATE, AND THE THREE TIMES IT CAUGHT ITS OWN AUTHOR
+
+`src/services/transitions/surfaceable.test.ts`, 11 tests, population guard FIRST
+and asserting MEMBERSHIP (`EMPTY-INPUT-REPORTS-CLEAN-01`).
+
+**It asserts ONE direction: everything an operator can fire is surfaceable.** The
+converse — every surfaceable act has a screen — would redden the build for the 28
+verbs of `USER-VERBS-WITHOUT-SURFACES-01`, which are a truthful backlog. **A gate
+that forces a backlog to lie about itself is worse than no gate.**
+
+The gate went red three times against its own author before it went green, and
+each refusal is recorded because each was a real defect in the work:
+
+1. **It refused six of my own reasons.** `'TMS milestone (INT-TMS-01).'`, repeated
+   across six shipment verbs, is a placeholder — which is exactly what the
+   40-character floor exists to catch. Six distinct reasons replaced it.
+2. **It condemned four cascade targets, and the exclusion is principled rather
+   than convenient.** `cascades.ts` registers what other verbs fan OUT into;
+   naming an id there is the platform firing itself, not a person firing it.
+   §42's rule: name the site the claim requires — a fan-out registration is not
+   it.
+3. **It condemned three more shapes that NAME an id without anybody being able to
+   fire it** — a seed (`enforcementSeed.ts` → `t_enforcement_set`), the mock
+   adapter's own cascade plumbing (`t_quotation_award`), and a hook with no
+   consumer (`useInvoiceApprove`). The derivation now requires BOTH halves: a
+   dispatch site AND a surface that calls the exported hook enclosing it. A
+   `SHOUTING_CONST` is never a hook — taking `WIRED_COMMAND_TARGETS` for one is
+   what declared `t_invoice_release_payment` unreachable at §49b.
+
+**Mutation probes**, each confirmed changed on disk before the run (the CRLF
+trap) and each restored:
+
+| Probe | Result |
+|---|---|
+| declare `t_gr_post` unsurfaceable | 2 tests killed |
+| replace a real reason with `'derived'` | **the flow refuses to register** — `assertValidFlow` throws and the whole suite fails, which is a harder kill than a failed assertion |
+| grant `po:confirm` to BOTH personas | 1 test killed — the 1:1 invariant, which is the whole basis of the verb-level form |
+
+⚠️ **AND THE SECOND PROBE'S FIRST READING WAS WRONG IN THE FLATTERING
+DIRECTION.** The harness parsed `Tests N failed` and reported **0 killed**,
+because a flow that fails validation never registers — vitest reports a FAILED
+SUITE with *"no tests"*, and a counter watching test failures sees nothing. Read
+literally it says the gate has no teeth; it actually has more. **A probe harness
+can under-report a kill exactly as easily as a matcher can under-report a
+population, and it fails silent in the direction that looks like a finding.**
+
+### 50f · WHAT PF-1 SHOULD READ, AND WHEN
+
+⚠️ **CORRECTION TO THE DISPATCH FIRST: PF-1's SIMULATED/GOVERNED axis does NOT
+read `trigger`.** That two-axis honest marker reads `view.feed` / `view.capability`
+(read axis) and `view.dispatches` — which is `dispatchesCommands(cap)` over
+`WIRED_COMMAND_TARGETS` (verb axis). It is untouched by this batch and needs no
+change.
+
+The `trigger` consumer in PF-1 is **`catalogView.stepKind`**, commented *"the ONE
+place the mapping is stated"*, which collapses `user → operator-action` and
+everything else → `system-driven`. **That is the reader that should change**: the
+operator-action badge should read `surfaceable`, and `trigger` should keep a badge
+of its own for provenance — the two jobs, shown as two things.
+
+**NEXT BATCH, NOT THIS ONE**, and the reason is not caution: `stepKind` changes
+what PF-1 publishes for all 91 rows in two languages, and it is a rendered
+surface that needs browser QA on the built bundle. Shipping a vocabulary and
+re-labelling every row that reads it in one PR makes the review unable to
+separate "is the value right" from "is the badge right". **`surfaceable` ships
+authored, gated, and read by no production surface yet — deliberately, and this
+sentence is the badge on that.**
+
+Since PF-1 publishes `t_gr_post` as `system-driven` while `/buyer/goods-receipt`
+renders it as the reserved solid, **that contradiction is visible to a user today
+and remains so until the next batch.** It is 4 days old only in the sense that
+`userVerbsFrom` is; `stepKind` has published it since PF-1 (#200).
+
+### 50g · DISPOSITION
+
+- **BUILT:** `Surfaceability` + `NotSurfacedReason` in `schema.ts`; `surfaceable`
+  required on `TransitionDef`; **91 values authored per verb**; runtime
+  validation in `validate.ts` (a declared reason, stated in its own words);
+  `surfaceable.test.ts` (11 tests) with the 1:1 persona invariant asserted.
+- **CORRECTED:** `trigger`'s doc-comment — provenance kept, the surface claim
+  dropped, and `system`'s real meaning ("not by a Paragon human at this seam")
+  written down.
+- **FILED, NOT FIXED:** `t_gr_post`'s two published descriptions still disagree
+  until `stepKind` moves. The four `ruled-unsurfaced` verification verbs are the
+  first rows Track R should re-read.
+- **NOT DONE, DELIBERATELY:** `userVerbsFrom` still filters on `trigger`. Moving
+  it to `surfaceable` changes what a shipped surface offers and is its own
+  ruling — it would, correctly, give `/buyer/goods-receipt` its Post button back
+  in the derivation.
+- **UNTOUCHED:** no surface edited, no flow's states or edges changed, no verb
+  wired. C9 `af7f0b4` and C10 `dc8e774` byte-identical. Floor **3005 → 3016 /
+  219 → 220**, bumped because the gate asked, and it never regresses.

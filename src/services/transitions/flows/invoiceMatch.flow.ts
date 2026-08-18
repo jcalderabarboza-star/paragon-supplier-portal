@@ -36,6 +36,13 @@ export const invoiceMatchFlow: FlowDefinition = {
       requiredRole: 'invoice:match',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'The match engine parks the line when no GR exists yet. Derived ' +
+          'from what the platform already holds.',
+      },
       version: 1,
     },
     {
@@ -47,6 +54,12 @@ export const invoiceMatchFlow: FlowDefinition = {
       requiredRole: 'invoice:match',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'The match engine’s verdict. Derived, not declared.',
+      },
       version: 1,
     },
     {
@@ -58,6 +71,12 @@ export const invoiceMatchFlow: FlowDefinition = {
       requiredRole: 'invoice:match',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'The match engine’s verdict. Derived, not declared.',
+      },
       version: 1,
     },
     {
@@ -69,6 +88,12 @@ export const invoiceMatchFlow: FlowDefinition = {
       requiredRole: 'invoice:match',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'The match engine’s verdict. Derived, not declared.',
+      },
       version: 1,
     },
   ],

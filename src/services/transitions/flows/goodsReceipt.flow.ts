@@ -72,6 +72,7 @@ export const goodsReceiptFlow: FlowDefinition = {
         POLICY_HOOKS.GR_CREATE_SHIPMENT_RECEIVED,
         POLICY_HOOKS.GR_INSPECTION_MATERIALS_DECLARED,
       ],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -82,6 +83,7 @@ export const goodsReceiptFlow: FlowDefinition = {
       requiredRole: 'gr:inspect',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -92,6 +94,7 @@ export const goodsReceiptFlow: FlowDefinition = {
       requiredRole: 'gr:inspect',
       requiredFields: ['holdReason'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -121,6 +124,7 @@ export const goodsReceiptFlow: FlowDefinition = {
       requiredRole: 'gr:inspect',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -132,6 +136,7 @@ export const goodsReceiptFlow: FlowDefinition = {
       requiredRole: 'gr:disposition',
       requiredFields: [],
       policyHooks: [POLICY_HOOKS.GR_ROLLUP_APPROVED],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -144,6 +149,7 @@ export const goodsReceiptFlow: FlowDefinition = {
       requiredRole: 'gr:disposition',
       requiredFields: [],
       policyHooks: [POLICY_HOOKS.GR_ROLLUP_PARTIAL],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -155,6 +161,7 @@ export const goodsReceiptFlow: FlowDefinition = {
       requiredRole: 'gr:disposition',
       requiredFields: ['dispositionReason'],
       policyHooks: [POLICY_HOOKS.GR_ROLLUP_REJECTED],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -175,6 +182,7 @@ export const goodsReceiptFlow: FlowDefinition = {
       // that half reads the declaration, the two are pinned to agree on the
       // floor (`flowGraph.test.ts`).
       settlesTo: 'Posted to SAP',
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],

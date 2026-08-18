@@ -48,6 +48,7 @@ export const complianceFlow: FlowDefinition = {
       requiredRole: 'compliance:submit',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -59,6 +60,14 @@ export const complianceFlow: FlowDefinition = {
       requiredRole: 'compliance:verify',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'ruled-unsurfaced',
+        why:
+          'I3.1 models verification as the pipeline behind the compliance ' +
+          'registry, not as an operator screen. Flips when Track R rules its ' +
+          'operator lane, not when somebody finds time to build it.',
+      },
       version: 1,
     },
     {
@@ -70,6 +79,13 @@ export const complianceFlow: FlowDefinition = {
       requiredRole: 'compliance:reject',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'ruled-unsurfaced',
+        why:
+          'I3.1 models verification as the pipeline behind the compliance ' +
+          'registry, not as an operator screen.',
+      },
       version: 1,
     },
   ],

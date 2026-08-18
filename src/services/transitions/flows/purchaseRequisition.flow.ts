@@ -38,6 +38,7 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       requiredRole: 'pr:create',
       requiredFields: ['material', 'quantity'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -48,6 +49,7 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       requiredRole: 'pr:submit',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -58,6 +60,7 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       requiredRole: 'pr:approve',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -74,6 +77,7 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       // was not ruled, so it is reported rather than smuggled in beside this.
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -102,6 +106,7 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       requiredRole: 'pr:revise',
       requiredFields: ['revisionNote'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -114,6 +119,13 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       requiredRole: 'pr:source',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'A consequence of approval routing (cascade), decided by the ' +
+          'source-of-supply data rather than by a person choosing it here.',
+      },
       version: 1,
     },
     {
@@ -125,6 +137,13 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       requiredRole: 'pr:convert',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'A consequence of approval routing (cascade): an approved ' +
+          'requisition with a PIR becomes a PO.',
+      },
       version: 1,
     },
   ],

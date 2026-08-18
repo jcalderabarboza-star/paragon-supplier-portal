@@ -29,6 +29,7 @@ export const obligationFlow: FlowDefinition = {
       requiredRole: 'obligation:track',
       requiredFields: ['contractId'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -39,6 +40,7 @@ export const obligationFlow: FlowDefinition = {
       requiredRole: 'obligation:complete',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],

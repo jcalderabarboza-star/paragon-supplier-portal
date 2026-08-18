@@ -7,7 +7,7 @@
 // at COMMAND time lands with the dispatcher (Step 3.4).
 // ────────────────────────────────────────────────────────────────────────────
 
-import type { FlowDefinition } from './schema';
+import type { FlowDefinition, Surfaceability } from './schema';
 import { exitsOf } from './flowGraph';
 import { isRegisteredPolicyHook } from './policyHooks';
 
@@ -15,6 +15,9 @@ import { isRegisteredPolicyHook } from './policyHooks';
 const TRANSITION_ID_RE = /^t_[a-z0-9]+(?:_[a-z0-9]+)+$/;
 // `<namespace>:<role>` — dotted namespace allowed, both sides lowercase.
 const ROLE_RE = /^[a-z][a-z0-9]*(?:\.[a-z0-9]+)*:[a-z][a-z0-9-]*$/;
+/** The declared reasons an act carries no screen. `schema.ts` owns the meanings;
+ *  this set is the runtime half, so an untyped caller cannot invent a fourth. */
+const NOT_SURFACED_REASONS = new Set(['external-fact', 'computed', 'ruled-unsurfaced']);
 
 export interface FlowValidationResult {
   readonly ok: boolean;
@@ -73,6 +76,25 @@ export function validateFlow(flow: FlowDefinition): FlowValidationResult {
     // already makes 'clock' unassignable to TransitionTrigger.
     if ((t.trigger as string) === 'clock') {
       errors.push(`${at}: 'clock' trigger is forbidden (law 0.5 — clock states are computed, never transitioned)`);
+    }
+
+    // §50 — `surfaceable` is REQUIRED and its `false` half must carry a real
+    // reason. The type already forces the shape for TS callers; this is the
+    // defence-in-depth half, and it is the one that catches a reason authored
+    // as a placeholder — an omission wearing a row's clothes.
+    const s = t.surfaceable as Surfaceability | undefined;
+    if (!s || typeof s.surfaced !== 'boolean') {
+      errors.push(`${at}: 'surfaceable' is required (see schema.ts — design-time, not request-time)`);
+    } else if (s.surfaced === false) {
+      if (!NOT_SURFACED_REASONS.has(s.because)) {
+        errors.push(`${at}: 'surfaceable.because' must be one of ${[...NOT_SURFACED_REASONS].join(' | ')}`);
+      }
+      if (typeof s.why !== 'string' || s.why.trim().length < 40) {
+        errors.push(
+          `${at}: a NOT-surfaced act must state WHY in its own words — ` +
+            `the three reasons have different futures and a placeholder erases the difference`,
+        );
+      }
     }
 
     if (t.trigger === 'creation') {

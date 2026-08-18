@@ -68,6 +68,15 @@ export const enforcementFlow: FlowDefinition = {
       // audit entry (the `pinnedAt` discipline).
       requiredFields: ['mode', 'setBy'],
       policyHooks: [POLICY_HOOKS.ENFORCEMENT_SET_GOVERNED],
+      surfaceable: {
+        surfaced: false,
+        because: 'ruled-unsurfaced',
+        why:
+          'C10 · ENF-NO-PERSON-IN-IDENTITY-01 — relaxing a governed check is ' +
+          'an attributable act and the platform cannot name a person, so an ' +
+          'anonymous relaxation is refused rather than offered. The same ' +
+          'ruling that blocks the GR override-hold blocks this.',
+      },
       version: 1,
     },
   ],

@@ -59,6 +59,7 @@ export const invoiceFlow: FlowDefinition = {
       requiredRole: 'invoice:submit',
       requiredFields: ['poReference'],
       policyHooks: [POLICY_HOOKS.INVOICE_CREATE_PO_CONFIRMED],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -69,6 +70,7 @@ export const invoiceFlow: FlowDefinition = {
       requiredRole: 'invoice:submit',
       requiredFields: ['amount'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -81,6 +83,13 @@ export const invoiceFlow: FlowDefinition = {
       requiredRole: 'invoice:match',
       requiredFields: [],
       policyHooks: [POLICY_HOOKS.INVOICE_ROLLUP_MATCHED],
+      surfaceable: {
+        surfaced: false,
+        because: 'computed',
+        why:
+          'The 3-way match verdict is derived from the PO, the GR and the ' +
+          'invoice. There is nothing to click.',
+      },
       version: 1,
     },
     {
@@ -91,6 +100,15 @@ export const invoiceFlow: FlowDefinition = {
       requiredRole: 'invoice:approve',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'ruled-unsurfaced',
+        why:
+          'C10 §2.4 — approval is an attributable act and the platform cannot ' +
+          'name a person (ENF-NO-PERSON-IN-IDENTITY-01), so an anonymous ' +
+          'approval is refused rather than offered. Lifting that ruling, not ' +
+          'building a screen, is what changes this value.',
+      },
       version: 1,
     },
     {
@@ -107,6 +125,7 @@ export const invoiceFlow: FlowDefinition = {
       sapBoundary: true,
       // PF-0 · D-2 — the settlement advance, declared. See the GR twin.
       settlesTo: 'Payment Released',
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -119,6 +138,13 @@ export const invoiceFlow: FlowDefinition = {
       requiredRole: 'invoice:pay',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why:
+          'Remittance is confirmed by the bank/SAP settlement feed. The buyer ' +
+          'released the payment; the money arriving is not their act.',
+      },
       version: 1,
     },
     {
@@ -130,6 +156,7 @@ export const invoiceFlow: FlowDefinition = {
       requiredRole: 'invoice:dispute',
       requiredFields: ['disputeReason'],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
     {
@@ -141,6 +168,7 @@ export const invoiceFlow: FlowDefinition = {
       requiredRole: 'invoice:dispute',
       requiredFields: [],
       policyHooks: [],
+      surfaceable: { surfaced: true },
       version: 1,
     },
   ],
