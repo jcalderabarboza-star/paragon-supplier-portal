@@ -118,6 +118,9 @@ export function toSupplierInvoice(inv: Invoice, nowIso: string): SupplierInvoice
 export function toBuyerInvoice(inv: Invoice, nowIso: string): BuyerInvoice {
   return {
     id: inv.id,
+    // The canonical state, uncollapsed — the input every legality question takes.
+    // `status` below is the display label and is lossy by design (see the DTO).
+    lifecycleState: inv.status,
     invoiceNumber: inv.invoiceNumber,
     supplierName: inv.supplierName,
     supplierId: inv.supplierId,

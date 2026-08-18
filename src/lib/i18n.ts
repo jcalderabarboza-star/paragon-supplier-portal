@@ -494,6 +494,10 @@ export const resources = {
       'invoice.pay.released.desc': 'SAP assigned the FI document on settlement.',
       'invoice.pay.failed.title': 'Could not release payment for {{invoiceNumber}}',
       'invoice.pay.failed.desc': 'Payment release was rejected ({{reason}}).',
+      // The retry of a settle that failed — the dispatcher leaves a failed settle
+      // `submitted`, so this re-attempt is real and not a reset.
+      'invoice.settle.retried.title': 'Settlement completed on retry',
+      'invoice.settle.retried.desc': 'SAP assigned the FI document. The invoice is now released.',
       'invoice.match.deferred.title': 'Awaiting 3-way match',
       'invoice.match.deferred.desc': 'Match completes on goods-receipt posting in SAP.',
       'invoice.remittance.generated.title': 'Remittance advice generated',
@@ -887,6 +891,10 @@ export const resources = {
       'invoice.pay.released.desc': 'SAP menetapkan dokumen FI saat penyelesaian.',
       'invoice.pay.failed.title': 'Tidak dapat merilis pembayaran untuk {{invoiceNumber}}',
       'invoice.pay.failed.desc': 'Rilis pembayaran ditolak ({{reason}}).',
+      // Percobaan ulang penyelesaian — dispatcher membiarkan settle yang gagal
+      // tetap `submitted`, jadi percobaan ini nyata, bukan pengaturan ulang.
+      'invoice.settle.retried.title': 'Penyelesaian tuntas saat dicoba ulang',
+      'invoice.settle.retried.desc': 'SAP menetapkan dokumen FI. Faktur kini dirilis.',
       'invoice.match.deferred.title': 'Menunggu pencocokan 3 arah',
       'invoice.match.deferred.desc': 'Pencocokan selesai saat penerimaan barang diposting di SAP.',
       'invoice.remittance.generated.title': 'Bukti pembayaran dibuat',

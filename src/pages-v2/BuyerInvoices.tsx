@@ -59,6 +59,8 @@ import {
   useInvoiceResolve,
 } from '../services/query/commandHooks';
 import { formatIDR, formatDate } from '../lib/format';
+import { invoiceActionsFor, invoiceCommitAction } from './invoices/invoiceActionModel';
+import { classifySettleFault, SETTLE_FAULT_RETRYABLE, type SettleFault } from '../services/transitions';
 
 const STATUS_VARIANT: Record<InvStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
   'Pending Match': 'neutral',
@@ -112,6 +114,16 @@ const STATUS_FILTER_KEY: Record<StatusFilter, string> = {
   Overdue: 'buyerInvoices.filter.overdue',
 };
 
+// ⚠️ **THIS MAP NO LONGER CHOOSES A MACHINE VERB, AND THAT IS THE FIX.** It is
+// keyed on the DISPLAY LABEL, which is lossy by construction: `toBuyerLabel`
+// collapses a past-due `Approved` into `Overdue`, so asking this map "what may I
+// do?" answered `Escalate` — a toast — on every invoice the machine declared
+// releasable. Both Approved invoices in the tree are past due, so it was 2 of 2,
+// decaying in from each due date with no commit involved.
+// What remains here are the INFORMATIONAL footers — affordances that are not
+// transitions at all (a deferral notice, a remittance advice, an escalation).
+// The verbs come from `invoiceActionsFor(lifecycleState)`, derived from the
+// machine. See `invoices/invoiceActionModel.ts`.
 const FOOTER_ACTION_KEY: Record<InvStatus, string> = {
   'Pending Match': 'buyerInvoices.footer.reviewMatch',
   Approved: 'buyerInvoices.footer.releasePayment',
@@ -201,7 +213,35 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     () => invoices.find((i) => i.id === selectedId) ?? null,
     [invoices, selectedId],
   );
+  // The ONE reserved-solid commit for the selected invoice, DERIVED from the
+  // machine with the canonical state. `null` whenever no transition is legal —
+  // which is what makes the primary slot fall back to an outline informational
+  // footer instead of asserting an action that does not exist.
+  const commitAction = useMemo(
+    () => (selected ? invoiceCommitAction(selected.lifecycleState) : null),
+    [selected],
+  );
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
+  // ── THE SETTLE WATCH ──────────────────────────────────────────────────────
+  // A settle that fails leaves the command `submitted` and the invoice parked in
+  // the interim 'Releasing Payment' — the dispatcher's deliberate design, so the
+  // same action genuinely re-attempts. Until now the ONLY trace of that failure
+  // was the hook's toast, which a user dismisses and cannot get back; the row
+  // then sat in an interim state with no account of itself and no way forward.
+  // This holds the correlationId and the classified fault for the settles THIS
+  // session started, which is exactly the set we can honestly offer a retry for.
+  // We do not fabricate one for an invoice parked by an earlier session — that
+  // surface says it is waiting and offers nothing, because that is the truth.
+  const [settleWatch, setSettleWatch] = useState<
+    Record<string, { correlationId: string; fault: SettleFault | null }>
+  >({});
+  const watchSettle = (id: string, correlationId: string, fault: SettleFault | null) =>
+    setSettleWatch((w) => ({ ...w, [id]: { correlationId, fault } }));
+  const clearSettle = (id: string) =>
+    setSettleWatch((w) => {
+      const { [id]: _done, ...rest } = w;
+      return rest;
+    });
 
   // Aging bucket display label — only the 'Current' token localizes; the numeric
   // ranges (1–30d …) are stable data used as chart X-axis keys + React keys.
@@ -284,10 +324,27 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     setPanelMode('detail');
   };
 
+  // ⚠️ ORDER IS THE CONTRACT HERE: THE MACHINE IS ASKED FIRST, WITH THE CANONICAL
+  // STATE, AND ONLY WHAT IT DECLINES TO ANSWER FALLS THROUGH TO THE DISPLAY
+  // LABEL. Reversing these two blocks reintroduces the defect exactly — a
+  // past-due Approved invoice matches `status === 'Overdue'` before it ever
+  // reaches the legality question, and the release affordance disappears again.
   const handleFooterAction = () => {
     if (!selected) return;
-    if (selected.status === 'Approved') {
+    const actions = invoiceActionsFor(selected.lifecycleState);
+    if (actions.some((a) => a.solid)) {
       setPanelMode('confirming');
+      return;
+    }
+    if (actions.some((a) => a.transitionId === 't_invoice_resolve')) {
+      handleResolve();
+      return;
+    }
+    // Below this line NO transition is legal from the canonical state, so what
+    // remains are informational affordances — and those genuinely are about the
+    // display label (aging, the remittance advice), which is why they key on it.
+    if (selected.lifecycleState === 'Releasing Payment') {
+      // In flight at the SAP boundary. The footer renders a notice, not a verb.
       return;
     }
     if (selected.status === 'Payment Released') {
@@ -310,9 +367,6 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
         description: t('buyerInvoices.toast.escalate.desc'),
       });
       return;
-    }
-    if (selected.status === 'Disputed') {
-      handleResolve();
     }
   };
 
@@ -343,22 +397,58 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             description: t('invoice.pay.releasing.desc'),
           });
           const { correlationId } = res;
+          watchSettle(inv.id, correlationId, null);
           window.setTimeout(() => {
             settleMutation.mutate(
               { correlationId },
               {
-                onSuccess: () =>
+                onSuccess: () => {
+                  clearSettle(inv.id);
                   toast({
                     variant: 'success',
                     title: t('invoice.pay.released.title', { invoiceNumber: inv.invoiceNumber }),
                     description: t('invoice.pay.released.desc'),
-                  }),
+                  });
+                },
+                // ⚠️ THE HOOK'S `onError` STILL FIRES — this does not replace it.
+                // `useInvoiceSettlePayment` carries `useSettleErrorToast`, which
+                // classifies the fault and names its remedy (§43). That handler
+                // was built two batches ago and every consumer so far has done
+                // nothing but let it toast. This records the fault ON THE ROW, so
+                // the account of the failure outlives the toast — TanStack runs
+                // the mutation-level callback first, then this one.
+                onError: (err) => watchSettle(inv.id, correlationId, classifySettleFault(err)),
               },
             );
           }, 1200);
         },
         onError: () =>
           toast({ variant: 'error', title: t('invoice.denied.title'), description: t('invoice.denied.desc') }),
+      },
+    );
+  };
+
+  // Re-attempt a settle THIS session started and saw fail. Honest because the
+  // dispatcher leaves a failed settle `submitted` — the same correlationId is
+  // genuinely re-settleable, and `SETTLE_FAULT_RETRYABLE` says which faults can
+  // legitimately answer differently on a second ask. A REFUSED or UNGOVERNED
+  // fault gets no retry button: asking again cannot change a governed answer,
+  // and offering it would be a `PF-1a` affordance promising what it cannot do.
+  const retrySettle = (invoiceId: string) => {
+    const watch = settleWatch[invoiceId];
+    if (!watch) return;
+    settleMutation.mutate(
+      { correlationId: watch.correlationId },
+      {
+        onSuccess: () => {
+          clearSettle(invoiceId);
+          toast({
+            variant: 'success',
+            title: t('invoice.settle.retried.title'),
+            description: t('invoice.settle.retried.desc'),
+          });
+        },
+        onError: (err) => watchSettle(invoiceId, watch.correlationId, classifySettleFault(err)),
       },
     );
   };
@@ -855,18 +945,45 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                   <Button variant="secondary" onClick={closePanel}>
                     {t('buyerInvoices.action.close')}
                   </Button>
-                  {(selected.status === 'Pending Match' ||
-                    selected.status === 'Approved') && (
+                  {/* Dispute is offered exactly where the MACHINE says it is legal
+                      (Submitted | Matched | Approved) — not where a display label
+                      happened to list it. A past-due Approved invoice keeps it. */}
+                  {invoiceActionsFor(selected.lifecycleState).some(
+                    (a) => a.transitionId === 't_invoice_dispute',
+                  ) && (
                     <Button variant="secondary" onClick={() => setPanelMode('disputing')}>
                       {t('buyerInvoices.action.dispute')}
                     </Button>
                   )}
-                  <Button
-                    variant={selected.status === 'Approved' ? 'primary' : 'outline'}
-                    onClick={handleFooterAction}
-                  >
-                    {t(FOOTER_ACTION_KEY[selected.status])}
-                  </Button>
+                  {selected.lifecycleState === 'Releasing Payment' ? (
+                    // AT THE SAP BOUNDARY. No verb is legal from the interim
+                    // state; the footer accounts for the wait, or for the failure
+                    // if this session saw one, and offers a retry only when the
+                    // classified fault says a second ask can answer differently.
+                    settleWatch[selected.id]?.fault ? (
+                      SETTLE_FAULT_RETRYABLE[settleWatch[selected.id].fault!] ? (
+                        <Button variant="primary" onClick={() => retrySettle(selected.id)}>
+                          {t('buyerInvoices.action.retrySettle')}
+                        </Button>
+                      ) : (
+                        <span className="text-xs text-danger self-center">
+                          {t('buyerInvoices.settle.notRetryable')}
+                        </span>
+                      )
+                    ) : (
+                      <span className="text-xs text-text-tertiary self-center">
+                        {t('buyerInvoices.settle.inFlight')}
+                      </span>
+                    )
+                  ) : (
+                    <Button
+                      variant={commitAction ? 'primary' : 'outline'}
+                      disabled={releaseMutation.isPending}
+                      onClick={handleFooterAction}
+                    >
+                      {t(commitAction ? commitAction.labelKey : FOOTER_ACTION_KEY[selected.status])}
+                    </Button>
+                  )}
                 </>
               )}
               {panelMode === 'confirming' && (
@@ -1078,6 +1195,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     {selected.bankAccount}
                   </Data>
                   {t('buyerInvoices.confirm.body.post')}
+                </div>
+                <div className="mt-2 pt-2 border-t border-warning/30 text-xs text-text-secondary">
+                  {t('buyerInvoices.confirm.simulatedSettle')}
                 </div>
               </section>
             )}
