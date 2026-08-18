@@ -13217,3 +13217,190 @@ later by someone who reads only the signatures.
   §46c) and `LOCAL-DATE-HELPERS-BYPASS-FORMATDATE-01`'s remaining 13 files.
 - **`FORMATDATE-HARDCODES-ID-01` remains unfiled.** `formatDate` reads the
   instance and always has.
+
+## §48 — THE INVOICE RELEASE AFFORDANCE, RESTORED. A decayed claim whose mover was the CLOCK, not the flow — and a dispatch that was right about the symptom while every premise it named was false
+
+### 48a · THE CHARACTER OF THE RULING, AND THE ONE CORRECTION IT NEEDS
+
+The ruling leads on item 4 and files this as a **DECAYED CLAIM** — the PF-2
+coverage-sentence class: *a surface assertion true at its SHA and false after a
+change, with nothing that could have caught it*. **The class is exactly right and
+the entry is filed under it.** One particular is corrected, and it matters
+because it changes what the fix had to be:
+
+> **THE RULING SAYS THE FLOW MOVED UNDERNEATH A CORRECT DISPLAY. THE FLOW NEVER
+> MOVED. THE CLOCK DID.**
+
+`t_invoice_release_payment` and `Payment Released` did not arrive later at the
+enforcement work — they shipped WITH the surface, in the same batch (v2.2 Step 4
+batch iii, PR #38), and `BuyerInvoices.tsx` has wired `useInvoiceReleasePayment`
+since that day. `Approved` was never rendered as a terminal display state either.
+What happened is narrower, worse, and invisible to every instrument this project
+owns:
+
+- `FOOTER_ACTION_KEY` was `Record<BuyerInvoiceStatus, string>` — keyed on the
+  **PROJECTION LABEL**, not the canonical state.
+- `toBuyerLabel` collapses `Approved → Overdue` the day the due date passes
+  (DR-8, a clock derivation, law 0.5). The collapse is deliberate and correct
+  **as a display**.
+- So on **2026-08-02**, one day after `inv-giv-0892`'s due date, the footer
+  stopped answering `Release payment` and started answering `Escalate` — a toast.
+  No commit was involved. Nothing in the machine changed.
+
+**Measured at the live wall clock (2026-08-18), on the built bundle, before the
+fix: the status filter chips read `Approved 0 · Overdue 5`.** Both invoices the
+machine declares releasable were labelled Overdue, so the release affordance was
+unreachable for **2 of 2 — the entire releasable population, not an edge case.**
+
+So the ruling's conclusion — *the product cannot release payment; build the
+action surface* — was **TRUE at the clock a user actually has**, and every
+premise offered for it was false. That combination is the finding.
+
+### 48b · WHY NOTHING CAUGHT IT, AND THE HALF THAT IS GENUINELY NEW
+
+`BuyerInvoices.test.tsx` asserted the whole release path and was green
+throughout. It is green because it calls `usePinnedDemoClock()`.
+
+That pin was added by **`2e-c-6-FIND-01`**, when this same decay broke this same
+spec on 2026-08-02. The remedy recorded then was correct for what it was asked to
+fix — a spec must declare the instant it reads. `demoClock.ts` even says so in
+its own header, and states the residue plainly:
+
+> *"SCOPE: this pins the TEST clock only. The running demo still reads the wall
+> clock and therefore still drifts (five overdue invoices today, not one) — that
+> is the demo-present canon question, which is the operator's to decide and is
+> deliberately NOT settled here."*
+
+**The residue was declared. What was never traced is what the drift COSTS.** It
+was read as a labelling drift — five rows saying Overdue instead of one. It is
+also an **affordance** drift: the same collapse that changes a chip removes the
+only path to the only SAP-boundary verb the buyer owns. The pin fixed the symptom
+in the suite and left it in production, and the note that recorded the residue
+described it as cosmetic.
+
+> **A PIN THAT STABILISES A TEST AGAINST A CLOCK DOES NOT STABILISE THE PRODUCT
+> AGAINST IT. IT REMOVES THE ONLY INSTRUMENT THAT WAS STILL REPORTING THE DRIFT.**
+
+Filed as `CLOCK-PIN-HIDES-PRODUCT-DECAY-01`. It is not `2e-c-6-FIND-01` restated:
+that finding is about a spec reading an unpinned clock, this one is about what
+happens to the product after the spec stops.
+
+### 48c · THE FIX IS A SEAM, NOT A BUTTON
+
+`src/services/transitions/legality.ts` — `userVerbsFrom(entity, state)`, derived
+from the registered flow, filtered to `trigger: 'user'`. The rule it encodes:
+
+> **LEGALITY IS A QUESTION FOR THE MACHINE, ASKED WITH THE CANONICAL STATE.**
+> A display label may summarise, colour, sort or warn. It may never be the input
+> to *"what may I do here?"*.
+
+`BuyerInvoice` now carries `lifecycleState` (canonical) beside `status`
+(display). Two fields, so confusing them is a type error rather than a silent
+wrong answer. `invoiceActionModel.ts` supplies presentation only, **keyed on
+transition ids**, and is BILATERAL: every user verb the invoice machine declares
+is either surfaced or deferred with its reason stated, and the gate fails if the
+two sets drift. `t_invoice_approve`'s deferral cites C10 §2.4 — ruled unreachable
+on identity, not missing.
+
+**The ordering inside `handleFooterAction` is the contract, and it is commented
+as such**: the machine is asked FIRST, and only what it declines to answer falls
+through to the display label. Reversing those two blocks reintroduces the defect
+exactly.
+
+### 48d · THE SETTLE-FAILURE CORRECTION — the ruling's sharper half, inverted on measurement
+
+The ruling states: *"onError IS ON THE HOOK, NOT THE COMPONENT... AND THE GR
+WIZARD CALLS THE TARGET DIRECTLY AND BYPASSES IT."*
+
+**Measured: no component in the tree calls `commands.settle` directly.**
+`GRInspectionWizard.tsx:441` calls `useGoodsReceiptSettle()` and `:1353` calls
+`settleGR.mutateAsync(...)` — through the hook, with the classified toast in
+force. It then wraps that call in `try/catch`, and its comment says why:
+
+> *"It is caught HERE so it cannot reach the outer catch, which would relabel a
+> settlement fault as 'Not authorized' — a confidently WRONG cause, and the only
+> thing worse than no message."*
+
+**The GR wizard is not the surface that bypasses the remedy. It is the most
+careful consumer of it in the tree.**
+
+But the ruling's *instruction* — USE THE HOOK, and report what that exercises
+that nothing has — lands on something real, and the honest form is narrower than
+"first consumer":
+
+- `useSettleErrorToast` had **three consumers and zero tests**. `classifySettleFault`
+  is unit-tested eight ways in `settleFaults.test.ts`; the **surface handler that
+  calls it was never once exercised**. Every consumer let it toast and did
+  nothing else, so "it fires" was believed, never shown.
+- This batch is the **first registration of a component-level `onError` on a
+  settle anywhere in the tree** — coexisting with the hook's, not replacing it
+  (TanStack runs the mutation-level callback first). The hook toasts; the
+  component records the classified fault ON THE ROW, so the account of the
+  failure outlives a dismissed toast.
+- That turns the remedy from a message into a state: `SETTLE_FAULT_RETRYABLE`
+  decides whether a retry is offered at all. TRANSPORT gets a real re-attempt
+  (the dispatcher leaves a failed settle `submitted`). REFUSED and UNGOVERNED get
+  a stated dead end instead of a button that cannot work — `PF-1a` in the one
+  direction that batch did not cover.
+
+### 48e · RULE 4, AND WHAT THE PROBES KILLED
+
+The known-GOOD path is asserted to RECORD before any bad-path claim is believed:
+a settle that SUCCEEDS must leave no failure affordance behind. `ToastProvider`
+renders only children, so a toast is invisible to a spec — a `ToastSpy` surfaces
+the queue, without which *"the handler fired"* is unfalsifiable.
+
+Five mutation probes, each confirmed to have changed the file on disk before the
+run (the CRLF trap), each restored and re-run green:
+
+| Probe | Killed |
+|---|---|
+| delete the `t_invoice_release_payment` surface row | 3 |
+| drop the `trigger === 'user'` filter from the derivation | 2 |
+| `invoiceCommitAction` returns `null` | 5 |
+| remove the component-level `onError` that records the fault | 2 |
+| offer the retry regardless of `SETTLE_FAULT_RETRYABLE` | 1 |
+
+The population guard is the FIRST test in the coverage gate and asserts
+MEMBERSHIP, never a count (`EMPTY-INPUT-REPORTS-CLEAN-01`).
+
+### 48f · THE `Math.random` COUPLING IS NOT AT THE ADDRESS THE RULING NAMES
+
+*"the Math.random() CALL-ORDER COUPLING is filed in commandHooks.ts"* —
+**`commandHooks.ts` contains zero occurrences of `Math.random`.** The injector is
+`withChaos.ts:39` (`Math.random() < cfg.failureRate`), and at `failureRate: 1` it
+is total, so no stubbing and no call-order reasoning was needed. The failure specs
+replace `commands.settle` through a Proxy instead — a class instance, so a spread
+would have dropped its prototype. Nothing in this batch had to touch the coupling,
+and the trap it warns about did not arise.
+
+### 48g · ITEM 5 STAYS FILED, WITH ONE PARTICULAR CORRECTED
+
+`t_gr_hold` is untouched, per the fence. One correction for the record: the
+ruling describes it as firing *"from a page a supplier cannot reach"*. It fires
+from **no page at all** — zero callers. The asymmetry the ruling names is real
+and already filed verbatim at `docs/findings.md:10254`: the EXIT from
+`Quality Hold` is wired (`t_gr_request_retest`) and the ENTRY is not; the only
+instance in that state is fixture-seeded.
+
+The broader census stands as reported and unbuilt: **37 non-terminal states no
+surface can leave**, across 12 of 18 flows, derived with cascade targets and
+`settlesTo` edges folded in (without those two corrections the same derivation
+returns 43 and condemns both working SAP boundaries).
+
+### 48h · DISPOSITION
+
+- **FIXED:** the release affordance survives the clock. Derived from the machine,
+  gated bilaterally, pinned by a spec that pins its clock PAST the due date —
+  where the defect lived — rather than at the demo present, where it hid.
+- **NEW:** `legality.ts` (`userVerbsFrom` / `isTerminalState`), `BuyerInvoice.
+  lifecycleState`, the settle-failure state on the row with a retryability-gated
+  remedy, and the first test coverage `useSettleErrorToast` has ever had.
+- **FILED, NOT FIXED:** `CLOCK-PIN-HIDES-PRODUCT-DECAY-01`. The demo-present
+  canon question `demoClock.ts` declares open is still open, and is still the
+  operator's.
+- **CORRECTED:** the mover was the clock, not the flow · the GR wizard does not
+  bypass the hook · the `Math.random` coupling is not in `commandHooks.ts` ·
+  `t_gr_hold` fires from nowhere, not from a buyer-only page.
+- **UNTOUCHED:** no flow edited, no transition added, `t_gr_hold` not approached.
+  C9 `af7f0b4` and C10 `dc8e774` byte-identical, verified by blob id.

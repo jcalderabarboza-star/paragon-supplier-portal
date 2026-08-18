@@ -388,6 +388,21 @@ export type InvoiceMatchStatus =
 
 export interface BuyerInvoice {
   id: string;
+  /**
+   * THE CANONICAL LIFECYCLE STATE, carried alongside the display label.
+   *
+   * ⚠️ **`status` ABOVE IS A LOSSY DISPLAY LABEL AND MUST NEVER GATE AN ACTION.**
+   * `toBuyerLabel` collapses `Approved` into the computed `Overdue` once the due
+   * date passes, and collapses the Option-B interim `Releasing Payment` into
+   * `Payment Released`. Both collapses are deliberate and both destroy exactly
+   * the distinction a "what may I do here?" question needs. This field is the
+   * un-collapsed truth, and it is what `userVerbsFrom('invoice', …)` is asked.
+   *
+   * Display reads `status`; legality reads `lifecycleState`. Keeping them as two
+   * fields is what makes the confusion a type error rather than a silent
+   * wrong answer.
+   */
+  lifecycleState: InvoiceStatus;
   invoiceNumber: string;
   supplierName: string;
   supplierId: string;

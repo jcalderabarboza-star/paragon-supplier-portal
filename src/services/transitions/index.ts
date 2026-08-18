@@ -10,6 +10,7 @@
 export * from './schema';
 export * from './validate';
 export * from './registry';
+export * from './legality';
 export * from './policyHooks';
 export * from './roles';
 export * from './events';

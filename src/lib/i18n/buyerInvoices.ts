@@ -101,6 +101,11 @@ export const buyerInvoicesEn: Record<string, string> = {
   'buyerInvoices.action.raiseDispute': 'Raise dispute',
   'buyerInvoices.action.back': 'Back',
   'buyerInvoices.action.sendToSupplier': 'Send to supplier',
+  // — The SAP-boundary interim: waiting, failed, retried —
+  'buyerInvoices.action.retrySettle': 'Retry settlement',
+  'buyerInvoices.settle.inFlight': 'Awaiting SAP settlement — no FI document yet',
+  'buyerInvoices.settle.notRetryable':
+    'Settlement was refused. Asking again will not change the answer — the invoice stays here until the refusal is resolved.',
   // — Footer action by status —
   'buyerInvoices.footer.reviewMatch': 'Review match',
   'buyerInvoices.footer.releasePayment': 'Release payment',
@@ -144,6 +149,12 @@ export const buyerInvoicesEn: Record<string, string> = {
   'buyerInvoices.confirm.body.mid': ' will be transferred to ',
   'buyerInvoices.confirm.body.post':
     '. Verify bank details before confirming.',
+  // D-CENSUS-8 precision, at the moment of commit. The page marker already
+  // carries the two census axes (sample feed · commands really dispatch); this
+  // is the THIRD thing a reader needs here and only here, because this is the
+  // one verb on the page that crosses the SAP boundary.
+  'buyerInvoices.confirm.simulatedSettle':
+    'The release itself is governed and real: it dispatches, the trail records it, and the invoice moves to Releasing Payment. The SAP settlement callback that mints the FI document is SIMULATED — no payment leaves any bank.',
   // — Dispute form —
   'buyerInvoices.dispute.srLabel': 'Dispute reason for {{invoiceNumber}}',
   'buyerInvoices.dispute.placeholder':
@@ -253,6 +264,11 @@ export const buyerInvoicesId: Record<string, string> = {
   'buyerInvoices.action.raiseDispute': 'Ajukan sengketa',
   'buyerInvoices.action.back': 'Kembali',
   'buyerInvoices.action.sendToSupplier': 'Kirim ke pemasok',
+  // — Interim batas SAP: menunggu, gagal, dicoba ulang —
+  'buyerInvoices.action.retrySettle': 'Coba selesaikan lagi',
+  'buyerInvoices.settle.inFlight': 'Menunggu penyelesaian SAP — dokumen FI belum ada',
+  'buyerInvoices.settle.notRetryable':
+    'Penyelesaian ditolak. Mengulang permintaan tidak akan mengubah jawabannya — faktur tetap di sini sampai penolakan itu diselesaikan.',
   // — Footer action by status —
   'buyerInvoices.footer.reviewMatch': 'Tinjau pencocokan',
   'buyerInvoices.footer.releasePayment': 'Rilis pembayaran',
@@ -297,6 +313,8 @@ export const buyerInvoicesId: Record<string, string> = {
   'buyerInvoices.confirm.body.mid': ' akan ditransfer ke ',
   'buyerInvoices.confirm.body.post':
     '. Verifikasi detail bank sebelum mengonfirmasi.',
+  'buyerInvoices.confirm.simulatedSettle':
+    'Pelepasan itu sendiri diatur dan nyata: perintahnya terkirim, jejaknya tercatat, dan faktur berpindah ke Merilis Pembayaran. Callback penyelesaian SAP yang menerbitkan dokumen FI bersifat SIMULASI — tidak ada dana yang keluar dari bank mana pun.',
   // — Dispute form —
   'buyerInvoices.dispute.srLabel': 'Alasan sengketa untuk {{invoiceNumber}}',
   'buyerInvoices.dispute.placeholder':
