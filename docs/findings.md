@@ -13956,3 +13956,197 @@ and remains so until the next batch.** It is 4 days old only in the sense that
 - **UNTOUCHED:** no surface edited, no flow's states or edges changed, no verb
   wired. C9 `af7f0b4` and C10 `dc8e774` byte-identical. Floor **3005 → 3016 /
   219 → 220**, bumped because the gate asked, and it never regresses.
+
+## §51 — `userVerbsFrom` reads `surfaceable`. What a correctly-split field looks like from the consumer's side — and a null result that is evidence
+
+### 51a · THE FUNCTION WAS NEVER WRONG, AND THAT LEADS THE ENTRY
+
+`userVerbsFrom` shipped filtering on `trigger === 'user'`, and this batch changes
+it to `surfaceable.surfaced === true`. **The next reader will assume a bug was
+fixed. There was no bug.**
+
+> **`userVerbsFrom` IS "WHICH VERBS SHOULD A HUMAN REACH FROM HERE", AND
+> `trigger === 'user'` WAS THE CORRECT IMPLEMENTATION OF THAT QUESTION FOR AS
+> LONG AS ONE FIELD ANSWERED BOTH. THE TWO QUESTIONS WERE THE SAME QUESTION
+> UNTIL §50 SPLIT THEM. The function was reading the only field that existed.**
+
+That is what a correctly-split field looks like from the consumer's side, and it
+is worth saying out loud because the register's other seam changes were all
+corrections of defects. This one is not. It is a consumer catching up with a
+vocabulary that grew underneath it — the same event as a caller updating for a
+new parameter, and it should read like one.
+
+### 51b · THE DELTA: FOUR (entity, state) PAIRS, ZERO SURFACES
+
+Derived over all 85 states before building anything:
+
+| flow · state | added | removed |
+|---|---|---|
+| goodsReceipt · Approved | **`t_gr_post`** | — |
+| goodsReceipt · Partially Approved | **`t_gr_post`** | — |
+| invoice · Matched | — | `t_invoice_approve` |
+| enforcement · Governed | — | `t_enforcement_set` |
+
+Nothing else in the tree moves. Creation verbs cannot enter — their `from` is
+empty, so `from.includes(state)` is false at every state — and no cascade is
+`surfaced: true`.
+
+⚠️ **AND THE RULING'S PREMISE ABOUT THE CONSUMER IS CORRECTED, BECAUSE THE
+CORRECTION IS THE SAFETY ARGUMENT.** The dispatch states that `userVerbsFrom`
+has one consumer, `SurfaceExpectation`, and that *"only the census reads it —
+nothing in the derivation reaches the page"*.
+
+- **`SurfaceExpectation` does not exist.** Zero occurrences in `src/`, `docs/`
+  or `scripts/`.
+- **The derivation DOES reach a page.** `userVerbsFrom` → `invoiceActionModel`
+  → `BuyerInvoices.tsx`, at four call sites (`:221`, `:334`, `:951`, and the
+  memo behind the footer).
+
+**So "zero surfaces move" is not true by construction — it is true by
+measurement, and the difference matters.** This change touches a live page's
+action model; it produces identical output because the one removed verb
+(`t_invoice_approve`) was already filtered by `INVOICE_VERB_SURFACE`, which is a
+fact about that map, not a fact about the architecture. Simulated at all eight
+invoice states before the edit and identical at every one:
+
+```
+Draft []              Submitted [dispute]      Matched [dispute]
+Approved [release_payment, dispute]            Releasing Payment []
+Payment Released []   Remittance Received []   Disputed [resolve]
+```
+
+Recording it as "nothing reaches the page" would license the next author to move
+this filter without measuring. **They must measure.**
+
+**And `/buyer/goods-receipt` gains nothing today.** `userVerbsFrom('goodsReceipt',
+'Approved')` now returns `t_gr_post`, but that page renders from its own authored
+`switch`, not from the seam. **The Post button was never lost and is not
+restored** — what changes is that adopting the seam there no longer deletes it.
+No i18n key is added, removed or changed, in either locale; the three affected
+ids appear only in `processFlowPurpose.ts`, which this batch does not touch.
+
+### 51c · THE CENSUS MOVES BY TWO, AND THE DIRECTION IS THE OPPOSITE OF THE RULING'S
+
+Measured on ONE instrument (the shipped `operatorFirableIds`, both sides):
+
+| census | population |
+|---|---|
+| OLD — `trigger === 'user'` ∧ not operator-firable | **28** |
+| NEW — `surfaceable` ∧ has a from-state ∧ not operator-firable | **26** |
+
+**LEFT: `t_invoice_approve`, `t_enforcement_set`. ENTERED: nothing.**
+
+The ruling reads it the other way — *"`t_gr_post` leaves as a false positive, and
+`t_invoice_approve` and `t_enforcement_set` enter as new ones"* — and both halves
+invert on measurement. The two identity-ruled verbs **leave**: they are
+`surfaced: false · ruled-unsurfaced`, so a census of *acts a person cannot reach*
+correctly stops counting them. And `t_gr_post` was never in the census to leave:
+it is operator-firable, and under a `trigger`-keyed census it was **invisible to
+the question rather than wrongly answered** — a quieter failure than a false
+positive, and the one worth naming.
+
+**The ruling's REASONING is exactly right and is what got built.** Filtering on
+`surfaceable === true` — never on `trigger`, never on `surfaced !== false` — is
+what keeps two verbs refused BY RULING out of a list of gaps. *A decision filed
+as a defect is a defect in the register, not in the product.*
+
+⚠️ **AND MY FIRST COMPARISON OF THE TWO CENSUSES WAS ITSELF A
+`COUNT-RESTATED-ACROSS-INSTRUMENTS-01` (§40k).** It reported **28 → 27 with
+`t_gr_post` ENTERING**, because the "old" side came from the §49 reachability
+script, which enumerates USER VERBS ONLY — so a `system` verb could not be in its
+firable set and fell into the census by construction. The shipped gate asserts
+`census` does NOT contain `t_gr_post`, and it was green, which is what exposed
+the contradiction. **The instrument that caught it was the one built in the same
+batch, and the wrong number came from reusing a script from two batches ago
+against a question it was never shaped for.**
+
+### 51d · THE ZERO DELTA ON 18-OF-35 AND 3-OF-5 IS EVIDENCE, NOT ABSENCE
+
+§49f's finding — **18 of the 35 verb-bearing states expose no reachable verb** —
+is unchanged by this batch. So is §49i's `t_po_confirm` gap (offered from 2 of
+its 3 from-states). Read carelessly that says the batch did nothing.
+
+> **THE SPLIT CHANGED THE MEANING WITHOUT CHANGING THE POPULATION, AND THAT IS
+> EXACTLY WHAT A CORRECT SPLIT LOOKS LIKE.** Before, "18 of 35" meant *states
+> with no reachable `trigger: 'user'` verb* — a sentence about what FIRES acts,
+> used as a claim about what people can DO. Now it means *states with no
+> reachable act a screen is meant to offer*, which is the claim that was always
+> intended. **Same 18 states, different assertion, and only the second one is
+> the finding anybody wanted.** A split that moved the population would have
+> meant one of the two fields was mis-authored.
+
+The two censuses agree on 26 of 28 members precisely because the authoring
+was per verb and honest. The disagreement is the two the identity ruling
+refuses — and that pair is the entire visible effect of the batch.
+
+### 51e · THE TWO SPEC CLAIMS THE SPLIT DECAYED — ONE RED, ONE GREEN AND UNTRUE
+
+- **RED:** `invoiceActionModel.test.ts` asserted `userVerbsFrom('invoice',
+  'Matched')` **contains** `t_invoice_approve`, documenting *"a verb that is
+  deferred never reaches the surface, however legal it is."* The assertion is now
+  inverted, and the inversion is the point: the verb is refused **at the seam**,
+  so `INVOICE_VERB_DEFERRED` is a SECOND account of the same decision rather than
+  the only one. The test now pins all three facts — the flow still declares the
+  verb legal from `Matched`, the seam no longer offers it, and the deferral row
+  still accounts for it in the bilateral gate.
+- **GREEN AND NO LONGER TRUE:** `legality.test.ts` had a test titled *"offers
+  ONLY user-triggered verbs — system and cascade edges are not affordances"*.
+  Every assertion under it still passes; **the sentence became false the moment
+  `t_gr_post` entered**, and nothing would ever have gone red. That is the PF-2
+  decayed-claim shape caught rather than filed, and it is now two tests: one that
+  asserts the new rule with `t_gr_post` as its witness, one that keeps the old
+  refusals (`invoice/Payment Released` → `[]`, `quotation/Under Review` → `[]`).
+
+**The duplication is deliberate and recorded:** `t_invoice_approve` is now
+refused in two places, `surfaceable` in the flow and `INVOICE_VERB_DEFERRED` on
+the surface, both citing C10 §2.4. Retiring the row means re-pointing the invoice
+bilateral gate at `surfaceable`, which is its own batch — collapsing a coverage
+gate in the same PR that moves the seam it covers is the shape that makes a
+review unable to tell which half is right.
+
+### 51f · RULE 4 ON THE CENSUS, AND THE PROBE COUNTER FAILING SILENT AGAIN
+
+The census gate asserts MEMBERSHIP before it asserts absence: `t_pr_revise`,
+`t_pr_submit` and `t_asn_resolve_discrepancy` **must be flagged** — all three are
+surfaceable, none reachable, all three PF-1a leftovers (§49e) — and only then is
+the absence of `t_invoice_approve` and `t_enforcement_set` evidence of anything.
+
+| Probe | Result |
+|---|---|
+| declare `t_pr_revise` NOT surfaceable — it leaves the census | 1 test killed |
+| declare `t_invoice_approve` surfaceable — a decision filed as a gap | 1 test killed |
+
+⚠️ **AND BOTH PROBES FIRST REPORTED `0 KILLED`, WHICH IS THE §50e SHAPE AGAIN,
+ONE BATCH LATER, IN THE HARNESS WRITTEN TO MEASURE IT.** The counter matched
+`Tests\D+(\d+) failed` against vitest's coloured summary — and **`\x1b[1m`
+contains a digit**, so `\D+` stopped short, `(\d+)` captured the `1` out of the
+escape sequence, ` failed` did not follow, and the match failed. Read literally:
+*the census has no teeth.* Measured by eye on the same mutation: one test red,
+by name.
+
+> **THE FILED SHAPE WAS "A PROBE HARNESS CAN UNDER-REPORT A KILL". THIS IS ITS
+> SECOND INSTANCE AND A DIFFERENT MECHANISM — not a suite that refused to load,
+> but a REGEX DEFEATED BY THE TERMINAL'S OWN FORMATTING. Two mechanisms, one
+> direction: BOTH FAIL TOWARD "YOUR GATE IS WEAK", WHICH IS THE READING THAT
+> GETS BELIEVED AND ACTED ON, because it sounds like the humble answer.**
+> `docs/findings.md` §50e opened the class; this closes it as a class with two
+> members and a rule: **strip the formatting before parsing an instrument's
+> output, and confirm a kill by name at least once before trusting a count.**
+
+### 51g · DISPOSITION
+
+- **CHANGED:** `legality.ts` — `userVerbsFrom` filters on `surfaceable.surfaced
+  === true`, with the doc-comment saying plainly that the previous filter was not
+  a defect.
+- **RE-AUTHORED:** two spec claims, one red and one green-and-untrue.
+- **BUILT:** the census block in `surfaceable.test.ts` — membership-first, Rule 4
+  in both directions, mutation-probed both ways.
+- **CORRECTED:** `SurfaceExpectation` does not exist · the derivation DOES reach
+  `BuyerInvoices` and "zero surfaces move" is a measurement, not a guarantee ·
+  the census moves 28 → 26 with two LEAVING and none entering, not the reverse ·
+  `t_gr_post` was never in the census · my own first comparison was a
+  cross-instrument count error caught by this batch's own gate.
+- **UNTOUCHED:** no surface edited, no flow's states or edges changed, no verb
+  wired, `catalogView.stepKind` not approached — it is the next batch. C9
+  `af7f0b4` and C10 `dc8e774` byte-identical. Floor **3016 → 3020**, files
+  unchanged at 220.
