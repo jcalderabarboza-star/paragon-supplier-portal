@@ -122,24 +122,112 @@ const sources: CatalogSources = {
   wiredTargets: [],
 };
 
-describe('PF-1 — step kind is DERIVED from trigger, never authored', () => {
-  it('user → operator action; system and cascade → system-driven', () => {
-    expect(stepKind(probe.transitions[1])).toBe('operator-action');
-    expect(stepKind(probe.transitions[2])).toBe('system-driven');
-    expect(
-      stepKind({ ...probe.transitions[2], trigger: 'cascade' }),
-    ).toBe('system-driven');
+describe('PF-1 — step kind is DERIVED from TWO fields, never authored', () => {
+  // ⚠️ POPULATION GUARD FIRST, AND IT ASSERTS MEMBERSHIP, NEVER A COUNT
+  // (§42b / EMPTY-INPUT-REPORTS-CLEAN-01). Every claim below reads the whole
+  // registry; over an empty registry they would all be vacuously green.
+  it('the registry this suite reads is NOT empty', () => {
+    const ids = getKnownFlows().flatMap((f) => f.transitions.map((t) => t.id));
+    expect(ids).toContain('t_gr_post');
+    expect(ids).toContain('t_invoice_approve');
+    expect(ids).not.toContain('t_this_verb_does_not_exist');
   });
 
-  it('⚠️ creation is its OWN kind — the union has four members, not three', () => {
-    // Folding a creation verb into either bucket would assert something the
-    // schema does not say: `t_po_issue` is a buyer act and a rollup birth is
-    // not. See PF1-CREATION-KIND-01 in docs/findings.md.
-    expect(stepKind(probe.transitions[0])).toBe('creation');
-    const kinds = new Set(
-      getKnownFlows().flatMap((f) => f.transitions.map(stepKind)),
+  it('the SURFACE axis decides operator vs system — not `trigger`', () => {
+    expect(stepKind(probe.transitions[1])).toBe('operator-action');
+    // `t_probe_finish` is `trigger: 'system'` AND `surfaced: true` — the
+    // `t_gr_post` shape. It is an operator action, because a person presses it.
+    expect(stepKind(probe.transitions[2])).toBe('operator-action');
+    expect(stepKind({ ...probe.transitions[2], trigger: 'cascade' })).toBe(
+      'operator-action',
     );
-    expect(kinds.has('creation')).toBe(true);
+    // …and the same verb becomes system-driven on the SURFACE field alone,
+    // with `trigger` untouched. That is what "two axes" means here.
+    const unsurfaced = {
+      ...probe.transitions[2],
+      surfaceable: {
+        surfaced: false,
+        because: 'external-fact',
+        why: 'a feed reports it',
+      },
+    } as const;
+    expect(stepKind(unsurfaced)).toBe('system-driven');
+  });
+
+  it('⚠️ a REFUSED human act is `unsurfaced-act`, never `system-driven`', () => {
+    // Reading `surfaceable` alone would have collapsed these into
+    // `system-driven`, which nothing drives — one published falsehood traded
+    // for two. `ruled-unsurfaced` is the reason that earns its own token, and
+    // it is the reason `system-driven` is now TRUE rather than approximate.
+    const ruled = {
+      ...probe.transitions[1],
+      surfaceable: {
+        surfaced: false,
+        because: 'ruled-unsurfaced',
+        why: 'a standing ruling refuses the screen',
+      },
+    } as const;
+    expect(stepKind(ruled)).toBe('unsurfaced-act');
+    // The shipped witnesses, BY NAME — both are `trigger: 'user'`.
+    const byId = new Map(
+      getKnownFlows().flatMap((f) => f.transitions.map((t) => [t.id, t] as const)),
+    );
+    for (const id of ['t_invoice_approve', 't_enforcement_set']) {
+      const def = byId.get(id)!;
+      expect(def.trigger).toBe('user');
+      expect(stepKind(def)).toBe('unsurfaced-act');
+    }
+  });
+
+  it('⚠️ `t_gr_post` is an OPERATOR ACTION — the contradiction PF-1 published', () => {
+    // Thirty PRs' worth: PF-1 published it `system-driven` while
+    // `/buyer/goods-receipt` rendered it as the reserved solid a buyer presses.
+    // `trigger: 'system'` describes the actor on the FAR side of the SAP seam.
+    const post = getKnownFlows()
+      .flatMap((f) => f.transitions)
+      .find((t) => t.id === 't_gr_post')!;
+    expect(post.trigger).toBe('system');
+    expect(post.surfaceable.surfaced).toBe(true);
+    expect(stepKind(post)).toBe('operator-action');
+  });
+
+  it('⚠️ creation short-circuits FIRST — a birth is a shape, not an actor', () => {
+    // Folding a creation verb into either bucket would assert something the
+    // schema does not say (PF1-CREATION-KIND-01). And the ORDER is load-bearing
+    // in the other direction too: two births are `surfaced: false`, so reading
+    // the surface axis first would silently reclassify them.
+    expect(stepKind(probe.transitions[0])).toBe('creation');
+    const byId = new Map(
+      getKnownFlows().flatMap((f) => f.transitions.map((t) => [t.id, t] as const)),
+    );
+    for (const id of ['t_po_issue', 't_shipment_create']) {
+      const def = byId.get(id)!;
+      expect(def.surfaceable.surfaced).toBe(false);
+      expect(stepKind(def)).toBe('creation');
+    }
+    // …and a SURFACED birth is `creation` too — the kind is the shape, and the
+    // walk asks `surfaceable` separately for who may perform it.
+    expect(stepKind(byId.get('t_asn_create')!)).toBe('creation');
+  });
+
+  it('every one of the four kinds is INHABITED by the shipped registry', () => {
+    // A token no flow produces is a legend entry describing nothing.
+    const kinds = new Set(getKnownFlows().flatMap((f) => f.transitions.map(stepKind)));
+    for (const k of ['operator-action', 'system-driven', 'unsurfaced-act', 'creation'])
+      expect([...kinds]).toContain(k);
+  });
+
+  it('⚠️ `system-driven` now means EXTERNAL FACT or COMPUTED, and nothing else', () => {
+    // The claim that makes the badge true rather than approximate. Derived over
+    // every transition, so a future verb cannot quietly re-broaden it.
+    for (const flow of getKnownFlows())
+      for (const def of flow.transitions)
+        if (stepKind(def) === 'system-driven') {
+          expect(def.surfaceable.surfaced).toBe(false);
+          expect(
+            def.surfaceable.surfaced ? '' : def.surfaceable.because,
+          ).not.toBe('ruled-unsurfaced');
+        }
   });
 });
 

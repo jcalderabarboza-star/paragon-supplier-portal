@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { STEP_KIND_KEY } from '../../lib/i18n/stepKind';
 import type { FlowView, StepKind } from '../../services/transitions/catalogView';
 import { layoutFlow, verbOf, NODE_W, NODE_H, type LaidOutEdge } from './flowLayout';
 
@@ -40,6 +41,12 @@ function inkFor(edge: LaidOutEdge['edge']): EdgeInk {
   if (edge.cascade) return { stroke: CROSS, dash: '2 4', marker: 'cross' };
   if (edge.kind === 'creation') return { stroke: BIRTH, marker: 'birth' };
   if (edge.kind === 'system-driven') return { stroke: SYSTEM, dash: '6 4', marker: 'system' };
+  // An `unsurfaced-act` edge keeps the OPERATOR ink deliberately — a person
+  // really could perform it — and is drawn finely dotted to say the platform
+  // offers no way to. Colour alone never carries it: the dash does the work,
+  // so the distinction survives a colourblind reader (DP-2).
+  if (edge.kind === 'unsurfaced-act')
+    return { stroke: OPERATOR, dash: '1 3', marker: 'operator' };
   return { stroke: OPERATOR, marker: 'operator' };
 }
 
@@ -89,14 +96,7 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ view, cursor, idPrefix }) => 
     [view.transitions],
   );
 
-  const kindLabel = (kind: StepKind): string =>
-    t(
-      kind === 'operator-action'
-        ? 'processFlows.step.operator'
-        : kind === 'creation'
-          ? 'processFlows.step.creation'
-          : 'processFlows.step.system',
-    );
+  const kindLabel = (kind: StepKind): string => t(STEP_KIND_KEY[kind]);
 
   return (
     <div className="overflow-x-auto">
@@ -241,6 +241,7 @@ const FlowDiagram: React.FC<FlowDiagramProps> = ({ view, cursor, idPrefix }) => 
           [
             { kind: 'operator-action' as StepKind, stroke: OPERATOR, dash: undefined },
             { kind: 'system-driven' as StepKind, stroke: SYSTEM, dash: '6 4' },
+            { kind: 'unsurfaced-act' as StepKind, stroke: OPERATOR, dash: '1 3' },
             { kind: 'creation' as StepKind, stroke: BIRTH, dash: undefined },
           ]
         ).map((item) => (

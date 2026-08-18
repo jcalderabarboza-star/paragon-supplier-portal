@@ -54,9 +54,13 @@ export const processFlowsEn: Record<string, string> = {
   'processFlows.provenance.dispatches': 'Commands dispatch',
   'processFlows.provenance.unwired': 'Authored — unwired',
 
-  // — Step kinds (derived from `trigger`, never authored) —
+  // — Step kinds (derived from `trigger` + `surfaceable`, never authored) —
   'processFlows.step.operator': 'Operator action',
   'processFlows.step.system': 'System-driven',
+  // A human act with no screen — refused by a standing ruling, not unbuilt.
+  // "Not offered" says what a reader can observe; the row's `why` says which
+  // ruling, and lifting that ruling is what changes it.
+  'processFlows.step.unsurfaced': 'Not offered',
   'processFlows.step.creation': 'Creation',
 
   // — Node + edge badges —
@@ -171,9 +175,10 @@ export const processFlowsId: Record<string, string> = {
   'processFlows.provenance.dispatches': 'Perintah terkirim',
   'processFlows.provenance.unwired': 'Ditulis — belum tersambung',
 
-  // — Step kinds (derived from `trigger`, never authored) —
+  // — Step kinds (derived from `trigger` + `surfaceable`, never authored) —
   'processFlows.step.operator': 'Tindakan operator',
   'processFlows.step.system': 'Digerakkan sistem',
+  'processFlows.step.unsurfaced': 'Tidak disediakan',
   'processFlows.step.creation': 'Pembuatan',
 
   // — Node + edge badges —

@@ -176,18 +176,36 @@ describe('ProcessFlows — the lifecycle walk is honest about what it is', () =>
     await title();
     // purchaseOrder: born at Sent, then a three-way fork.
     expect(screen.getByText('not started')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Advance' }));
+    // ⚠️ THE BIRTH STEP IS "OBSERVE", NOT "ADVANCE" (§52). `t_po_issue` is a
+    // purchase order raised in S/4HANA and RECEIVED here as a fact; nobody in
+    // this portal issues one. It read "Advance" until the walk stopped asking
+    // the structural axis (`kind === 'creation'`) a surface question.
+    fireEvent.click(screen.getByRole('button', { name: 'Observe' }));
     expect(screen.getAllByText('Sent').length).toBeGreaterThan(0);
-    // Three verbs leave `Sent`; all three are offered, none is invented.
+    // Three verbs leave `Sent`; all three are offered, none is invented — and
+    // all three ARE performable, so the count is unchanged by the fix.
     expect(screen.getAllByRole('button', { name: 'Advance' })).toHaveLength(3);
     fireEvent.click(screen.getByRole('button', { name: 'Reset walk' }));
     expect(screen.getByText('not started')).toBeInTheDocument();
   });
 
+  it('⚠️ a BIRTH the platform receives as a fact is observed, not advanced', async () => {
+    // The known-GOOD half of the same fix, asserted separately so a regression
+    // cannot hide behind the walk test above: before the cursor starts, the
+    // ONLY step purchaseOrder offers is its creation verb, and it is a fact
+    // arriving from S/4HANA. A surfaced birth (`t_asn_create`) is the other
+    // half and is covered by the catalogView gate, which reads every flow.
+    renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
+    await title();
+    const walk = screen.getByRole('heading', { name: 'Lifecycle walk' }).closest('section')!;
+    expect(within(walk).queryByRole('button', { name: 'Advance' })).toBeNull();
+    expect(within(walk).getByRole('button', { name: 'Observe' })).toBeInTheDocument();
+  });
+
   it('a system-driven step reads "Observe", never "Advance"', async () => {
     renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
     await title();
-    fireEvent.click(screen.getByRole('button', { name: 'Advance' })); // → Sent
+    fireEvent.click(screen.getByRole('button', { name: 'Observe' })); // → Sent
     // Confirm is the operator verb that unlocks the system-driven fulfilment.
     const confirm = screen
       .getAllByRole('button', { name: 'Advance' })

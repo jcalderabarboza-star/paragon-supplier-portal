@@ -14,6 +14,7 @@ import FlowDiagram from './process-flows/FlowDiagram';
 import LifecycleWalk from './process-flows/LifecycleWalk';
 import { looseEndKindKey, reasonKey, ALL_REASONS } from './process-flows/labels';
 import { verbOf } from './process-flows/flowLayout';
+import { STEP_KIND_KEY } from '../lib/i18n/stepKind';
 import { getKnownFlows } from '../services/transitions';
 import { entityPurposeKey, transitionPurposeKey } from '../services/transitions/annotations';
 import {
@@ -151,13 +152,12 @@ const TransitionRow: React.FC<{ tv: TransitionView }> = ({ tv }) => {
         </span>
       </TableCell>
       <TableCell className="py-3 whitespace-nowrap text-[11px] text-text-secondary">
-        {t(
-          tv.kind === 'operator-action'
-            ? 'processFlows.step.operator'
-            : tv.kind === 'creation'
-              ? 'processFlows.step.creation'
-              : 'processFlows.step.system',
-        )}
+        {t(STEP_KIND_KEY[tv.kind])}
+        {/* THE OTHER AXIS, VERBATIM. The badge above answers "can anyone here
+            perform this"; this answers "what fires it". They are two questions
+            and §50 split the fields that answer them, so the row shows both
+            rather than letting one stand in for the other. Raw and
+            untranslated by design — it is the schema token, not prose. */}
         <span className="ml-1 text-text-tertiary">({def.trigger})</span>
       </TableCell>
       <TableCell className="py-3">
