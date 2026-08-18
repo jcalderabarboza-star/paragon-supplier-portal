@@ -13404,3 +13404,336 @@ returns 43 and condemns both working SAP boundaries).
   `t_gr_hold` fires from nowhere, not from a buyer-only page.
 - **UNTOUCHED:** no flow edited, no transition added, `t_gr_hold` not approached.
   C9 `af7f0b4` and C10 `dc8e774` byte-identical, verified by blob id.
+
+## §49 — THE SURFACE-DISAGREES-WITH-THE-MACHINE CENSUS. A class that did not cohere, a batch that measured its own completion against the wrong half of the tree, and a gate that does not exist — structurally, not for want of effort
+
+### 49a · THE RULING, THE THREE PREMISES THAT INVERTED, AND THE BATCH'S OWN LINE
+
+| Ruled | Measured |
+|---|---|
+| *"an invoice `Disputed` sits in a machine with THREE live exits and the buyer surface offers NONE"* | `Disputed` has **ONE** exit — `t_invoice_resolve` — and the buyer surface **DOES** offer it (`INVOICE_VERB_SURFACE`, asserted in `invoiceActionModel.test.ts`). Both halves false. The shape is real and its population is **18 states**. |
+| *"the two-verb asymmetry on ASN `Discrepancy` — fixed with the same call, in the same batch, and only one lane got the surface"* | True on the page, wrong about the batch, **and four times larger**. §49e. |
+| *"20 of 45 verbs unreachable"* | **28 of 46.** §49g. |
+
+> **ALL THREE FINDINGS WERE WRONG ON THEIR PREMISE, RIGHT ON THEIR SHAPE, AND
+> MEASUREMENT MADE ALL THREE BIGGER.**
+>
+> That is the batch's own line, and it is not a consolation. A premise names an
+> ADDRESS; a shape names a MECHANISM. This register has spent six batches
+> learning that a wrong premise with a confident explanation survives scrutiny
+> (`§40k` — *a bare wrong number gets checked; a wrong number with an
+> explanation gets believed*). What it had not recorded is the converse, and
+> this batch is three consecutive instances of it: **an operator reading the
+> tree from the outside can be wrong about every particular and still be
+> pointing at something real, and the honest response is to derive the
+> population rather than to accept OR to dismiss the claim.** Dismissing
+> finding 1 on its false premise would have cost 18 states. Accepting it would
+> have filed a defect against a surface that does not have one.
+
+**Main is `0869878`.** The dispatches through this arc cited `c95e8ce`, which is
+not a valid object in this repository; the operator corrected it at merge and it
+is recorded here so the entry does not carry a SHA the tree never held.
+
+### 49b · THE INSTRUMENT, AND THE TWO WIDENINGS THAT FIRED ON IT
+
+Six passes over a `ts.Program` built from `tsconfig.json`, with the state
+universe **derived from the flow registry at runtime** (18 flows · 85 state
+slots · 59 distinct state strings). Every pass carries controls in BOTH
+directions; the known-GOOD assertions are the load-bearing half.
+
+| Pass | Registration site | Result |
+|---|---|---|
+| 1 | any `Record`/mapped type, object key, `===`/`!==`, `case`, array element resolving to a machine state | 349 sites · 41 files |
+| 2 | of those — branch contains an affordance, or map value names an action | 27 state-keyed maps (**3** are action maps) · 24 gating compares/cases |
+| 3 | hoisted named predicates over states (pass 2 is structurally blind to these) | 18 |
+| 4 | every string union/enum vs the states of the flow it overlaps | 217 unions → 30 overlap → **11 exact · 9 mixed** |
+| 5 | decisions keyed on a NON-machine label — the invoice defect's actual shape | 101 sites · **1** gating |
+| 6 | the 46 declared user verbs vs their dispatch sites and those sites' callers | **18 reachable · 28 not** |
+
+**WIDENING ONE — THE NARROW MATCHER CONDEMNED THREE WIRED VERBS.** Pass 6 first
+required the literal shape `transitionId: 't_x'`. `t_gr_approve`,
+`t_gr_partial_approve` and `t_gr_reject` are **never written that way anywhere**:
+`grRollup.ts` RETURNS the id from the line dispositions and the hook takes it as
+a parameter, so the literal that reaches the dispatcher lives inside a rollup
+function. §42's rule on a fresh instrument — **name the site the claim
+REQUIRES.** A verb is dispatched where its id is HANDED to the dispatcher, and
+that site is not obliged to be a property assignment.
+
+**WIDENING TWO — AND IT IS THE DANGEROUS DIRECTION, FOR THE SECOND TIME.**
+Widening to the bare quoted id broke the hook resolution: the first home for
+`t_invoice_release_payment` became `MockCommandService.ts`, whose enclosing
+export is the registry const `WIRED_COMMAND_TARGETS`, so the caller search hunted
+for `WIRED_COMMAND_TARGETS(` and **declared unreachable the verb #230 had spent
+an entire batch restoring.** The total went **15 → 17**, which is exactly what a
+correct widening looks like. Only the known-good control went red, alone.
+
+> ⚠️ **RULE 2, BOTH INSTANCES, RECORDED TOGETHER — A WIDENING CAN LOSE MEMBERS
+> WHILE THE COUNT RISES, AND THIS PROJECT HAS NOW SEEN IT TWICE.**
+>
+> | | Instrument | Gained | Lost silently | What made the loss invisible |
+> |---|---|---|---|---|
+> | **D-F, §40e** | stored-field population: syntactic walk → TypeScript checker | +17 | **5** | an OPTIONAL property widens to `… \| undefined`, a fresh union whose `aliasSymbol` is gone, so `reason?: QtyRefusalReason` stops naming its own union |
+> | **§49, this batch** | verb dispatch: `transitionId: 't_x'` → the bare quoted id | +3 | **1** | the bare id matches a REGISTRY const before it matches a hook, so `enclosingExport` returned `WIRED_COMMAND_TARGETS` and the caller search had nothing to find |
+>
+> The two failures share no code and no author's mistake. They share a
+> **shape**: the widening admitted a new class of site, that class ranked ahead
+> of the intended one at some position, and the displacement was arithmetically
+> hidden inside a gain. **No check on a total can see this. Only a set diff, or
+> a known-good member asserted by name, can.** Rules 1 and 3 assume a wrong
+> population announces itself by size; this pair is the standing proof that the
+> assumption fails in exactly the direction that looks like success.
+
+**Honest limits, stated before the findings.** The affordance detector keys on
+JSX tag names, `onClick`/`disabled`/`onChange`, and `handleX`/`onX` identifiers
+with react-query's `onSuccess`/`onError` excluded (§19, rule 2's own precedent).
+**`AFFORDANCE_TAG` is a LIST, and it is the weakest joint in the instrument** —
+a bespoke affordance component not named `Button`/`Menu`/`Select`/… is invisible
+to pass 2. Everything else on every pass is derived. Pass 2's branch-walk stops
+six nodes up, which is why pass 3 exists; `BuyerOrders.isOpen` is the known-true
+member pass 2 misses and pass 3 catches.
+
+### 49c · THE CLASS DOES NOT COHERE, AND ITEM 4 IS WHY THAT WAS FOUND
+
+The dispatch's item 4 — *"whether the population splits; do not merge two shapes
+to make one count"* — **fired, and it fired on the register's own candidate.**
+
+> **CLASS A — THE SURFACE DECIDES FOR ITSELF.** The machine declares a verb
+> legal; the surface answers the legality question from something that is not
+> the machine (a display label, a hand-authored `from` list, a switch); the
+> operator loses an act they are entitled to. Remedy: **ask the machine**
+> (`userVerbsFrom`), gated bilaterally per surface.
+>
+> **CLASS B — THE SURFACE ASKS CORRECTLY, THE MACHINE IS INCOMPLETE.** The
+> surface's reading is right and the tree is still wrong, because the verb has
+> no dispatch, or the state has no entry. Remedy: **wiring or a product
+> decision** — never a seam, because there is nothing for a seam to read.
+
+**`t_gr_hold` IS CLASS B AND WAS NEVER CLASS A.** The flow declares
+`Under Inspection → Quality Hold`; no surface offers it; **the surface is reading
+the machine correctly and the machine's ENTRY is unwired.** Had it been counted
+as the second instance of the invoice defect — as this register nearly did —
+two different things would have been filed as one, and the remedy that closed the
+invoice case would have been prescribed for a case it cannot touch.
+
+**§48 closed ONE INSTANCE OF CLASS A.** It did not close Class A, and it never
+touched Class B.
+
+A third shape belongs to neither: **VOCABULARY** — 9 unions holding words no flow
+declares (§49i). Its remedy is the lifecycle/display split.
+
+### 49d · THE RULING THAT BLOCKS EVERY OTHER ONE — `t_gr_post` IS `trigger: 'system'` AND IS A BUTTON
+
+**This is not subordinate to the findings below. It gates the remedy all three
+of them point at.**
+
+`t_gr_post` is declared `trigger: 'system'`, `from: ['Approved','Partially
+Approved']`. It is also **the reserved solid on `/buyer/goods-receipt`** — the
+SAP boundary, dispatched by `handlePostToSap` through `useGoodsReceiptPost`. So:
+
+> **`userVerbsFrom('goodsReceipt','Approved')` RETURNS `[]`. APPLYING §48's SEAM
+> VERBATIM TO THAT PAGE DELETES THE POST-TO-SAP BUTTON.**
+
+Derived: of **29 transition ids dispatched from a surface or hook, exactly one is
+neither `user` nor `creation`** — this one. Its sibling SAP-boundary verb,
+`t_invoice_release_payment`, is `trigger: 'user'`. **The two boundary verbs are
+labelled differently for the same act.**
+
+And the dispatcher **never reads `trigger` at all**: it enforces
+`from.includes(currentState)` and role and fields and scope and policy, and
+nothing else. So `trigger` has exactly **one consumer in the entire tree**, and
+that consumer is `userVerbsFrom`, which shipped four days ago.
+
+> **A FOUR-DAY-OLD ABSTRACTION DISAGREEING WITH A SHIPPED SURFACE. The surface
+> is two years of use; the abstraction is a week.** Which one is wrong is a
+> ruling, not a measurement — but nothing may adopt the seam until it is made,
+> because every adoption inherits the disagreement silently: the button simply
+> does not render, and no gate in this project would notice.
+
+### 49e · FINDING RANKED FIRST — PF-1a ADDED FOUR EXITS AND SURFACED ONE
+
+*(Ranked second in the census report; the operator raised it at merge, and the
+mechanism below is why.)*
+
+The ruling named ASN `Discrepancy`, and on the page it is exactly right:
+`SupplierShipments.tsx:363` gates `Draft` and dispatches `t_asn_submit` through
+`useAdvanceShipNoticeSubmit`; `:371` gates `Discrepancy` and calls
+`resolveDiscrepancy`, **a toast** (`asn.discrepancy.deferred.*`). Two user verbs
+on one flow, adjacent cells in one table, one wired and one not.
+
+**The batch is not the one named, and the failure is four times larger.**
+Measured by `git log -S`:
+
+- The submit hook and the deferral toast **both arrived at #36**, and the toast
+  was declared *deferred* from birth — honest, not accidental.
+- `t_asn_resolve_discrepancy` — the transition — arrived **162 PRs later, at
+  `af02b09` (PF-1a, #198)**. The machine acquired the exit; the toast that had
+  deferred it was never revisited.
+- **PF-1a added exactly four user verbs, one to each of four flows, and touched
+  two surfaces.** `t_gr_request_retest` → surfaced and wired in the same batch.
+  `t_asn_resolve_discrepancy` · `t_pr_revise` · `t_requirementresponse_resolve`
+  → **none surfaced, then or since.** All three sit in §49f's table today.
+
+> **A BATCH NAMED "CLOSE THE LOOSE ENDS" COMPLETED A QUARTER OF ITSELF.**
+>
+> **THE MECHANISM, AND IT IS THE GENERALISABLE PART: THAT BATCH MEASURED ITS OWN
+> COMPLETION AGAINST THE MACHINE AND NEVER ASKED THE SURFACE.** Its exit
+> criterion was a property of `looseEndCensus.ts` — every state has a declared
+> exit — and by that criterion it passed completely and truthfully. The
+> criterion was satisfiable **entirely inside `src/services/transitions/`**, and
+> three of its four deliverables needed a file outside that directory to be of
+> any use to a person. Nothing lied. The batch simply asked *"does the machine
+> now permit it?"* when the loose end was *"can anybody do it?"*
+>
+> This is `ELIGIBILITY-IS-NOT-TERMINALITY-01` (§49f) seen from the producing
+> side rather than the consuming one, and it is why no gate closes either:
+> **a completion criterion drawn from the flow layer cannot see the surface
+> layer, and the flow layer is where every such criterion has been drawn.**
+
+### 49f · FINDING RANKED SECOND — `ELIGIBILITY-IS-NOT-TERMINALITY-01`
+
+**THE MACHINE CAN MOVE AND THE OPERATOR CANNOT MOVE IT.** Derived across all 18
+flows: of **85 states, 35 declare at least one user verb, and in 18 of those 35
+NOT ONE declared verb is reachable from any surface.** Four more are partial.
+
+| Flow | State | Declared user verbs, none reachable |
+|---|---|---|
+| advanceShipNotice | Discrepancy | `t_asn_resolve_discrepancy` |
+| goodsReceiptLine | Pending · Inspected | `t_grline_inspect` · accept/reject/quarantine/return |
+| contract | Draft · Active · Renewed | activate/terminate · renew/terminate · terminate |
+| obligation | In Progress | `t_obligation_complete` |
+| purchaseRequisition | Draft · Pending Approval · Rejected | submit · approve/reject · revise |
+| supplierDocument | Awaiting Upload | `t_supplierdoc_submit` |
+| compliance | Missing | `t_compliance_submit` |
+| requirementResponse | Submitted · UnderReview · **Disputed** | review · accept/dispute · **resolve** |
+| incomingShipment | Booked · Shipped | ship/cancel · arrive/cancel |
+| enforcement | Governed | `t_enforcement_set` (dispatched **only from a seed**) |
+
+Partial: `purchaseOrder` `Sent` (missing view + acknowledge) · `purchaseOrder`
+`Viewed` (missing acknowledge) · `goodsReceipt` `Under Inspection` (missing
+hold) · `invoice` `Matched` (missing approve — ruled unreachable on identity,
+C10 §2.4, correctly deferred).
+
+⚠️ **THE PREMISE WAS FALSE AND THE POPULATION IS THE OUTPUT.** The ruling
+described *"a `Disputed` state whose machine can move and whose surface offers
+nothing"* — and **`requirementResponse` `Disputed` is exactly that**, bolded
+above. The description was a real defect **at the wrong address**: it was
+attached to `invoice` `Disputed`, which has one exit and offers it. A false
+address with a true mechanism is not a failed observation; it is an observation
+whose population had never been derived.
+
+**Why the name is the finding.** `terminals` answers *can the machine leave this
+state*. A surface answers *can THIS actor do something here NOW*. Eighteen states
+prove the questions have different answers: none is terminal, every one is an
+ending in practice, and no gate reading `terminals` could ever have said so.
+
+### 49g · FINDING RANKED THIRD — `USER-VERBS-WITHOUT-SURFACES-01`
+
+**The derived population beneath every per-surface finding in this entry, and the
+number this register did not have.**
+
+Of **91 declared transitions, 46 are `trigger: 'user'`. 18 are reachable. 28 are
+not** — 26 never dispatched from anywhere, and 2 dispatched with no production
+caller (`t_invoice_approve` via `useInvoiceApprove`, deferred on identity;
+`t_enforcement_set`, dispatched only from `enforcementSeed.ts`).
+
+Reachable means both halves: the id reaches the dispatcher from some module,
+**and** the hook carrying it has a caller outside the specs. Either half alone is
+the shape that has fooled this register before — a hook with no consumer looks
+wired from the hook's side and is dead from the operator's.
+
+This is not a defect list. It is the **denominator**: 61% of the acts the
+platform models cannot be performed in it. Several are ruled deferrals, several
+are the author-unwired F0.4 registry flows working exactly as FORK-2 intends,
+and several are genuine gaps. **Which is which is a product decision per verb,
+and this entry does not pretend otherwise.**
+
+### 49h · THE GATE ANSWER — A FINDING WHOSE REMEDY IS NOT A GATE (§37's shape, second instance)
+
+**NO DERIVABLE GATE EXISTS FOR THIS CLASS, AND THE REASON IS STRUCTURAL RATHER
+THAN A SHORTFALL OF EFFORT.**
+
+`terminals` answers *"can the machine leave this state"*. Every surface in §49f
+answers a different question: *"can THIS ACTOR, in THIS SCOPE, with THESE
+preconditions met, do something here NOW"* — **per-persona, per-scope,
+per-precondition, and the flow models none of the three.** A gate asserting
+"this state owes this surface an affordance" must be told, by hand, **which
+surfaces owe which states** — and a hand-picked list of owed states is
+`ENF-SEED-LIST-IS-NOT-THE-VOCABULARY-01` rebuilt inside the remedy meant to close
+it.
+
+> **AND `isTerminalState` HAVING ZERO CONSUMERS IS NOT THE GAP IT LOOKED LIKE.**
+> The census's first reading was that the seam shipped a function nothing calls.
+> The measured reading is better and worse: **the surfaces were never asking the
+> wrong question — they were asking a DIFFERENT one.** Every authored end-set in
+> the tree (`isOpen`, `isPaidStatus`, `isUnpaid`, `isClosed`, `isRenewed`,
+> `isTerminated`) drives a timeline, an icon, a KPI count or a sort order. **Not
+> one gates a verb.** `terminals` has no operational consumer because terminality
+> is not the question an operator's screen asks.
+
+**What CAN be gated, derivably, and is not proposed here** (each its own ruling):
+the **trigger invariant** — every dispatched id resolves to `user | creation`,
+both ends derived, **one violation today** (§49d, and it must be ruled first);
+and the **vocabulary invariant** — a union overlapping a flow's states adds no
+member without a bilateral row stating why, population derived by pass 4, the
+ratified `storedFieldGate` shape.
+
+What cannot be gated at all is the largest part: the surfaces in §49i **agree
+with the machine today, by hand.** A gate has nothing to fail on until the flow
+moves, and on that day the gate does not exist yet. That half is procedural, like
+§37, and no checker closes it.
+
+### 49i · THE REST OF THE CENSUS
+
+**CLASS A, LIVE, ONE INSTANCE.** `SupplierOrders.tsx:49` —
+`ACTION_STATUSES: POStatus[] = [SENT, ACKNOWLEDGED]`, consumed at six sites and
+duplicated as `isConfirmable` in `OrdersToConfirmWidget.tsx:29`. The machine
+declares `t_po_confirm.from = ['Sent','Viewed','Acknowledged']`. **`Viewed` is
+missing from the surface**, and from all three tab partitions, which cover 6 of 7
+`POStatus` members. Bound honestly: two POs ship in `Viewed` (sup-006, sup-011),
+the seeded supplier is sup-007, and `t_po_view` has zero dispatch sites — so the
+state is **unreachable at runtime today**. Live in code, unreachable in the demo.
+`POStatus[]` carries no exhaustiveness; tsc is silent; **it is already wrong and
+nothing went red.**
+
+**VOCABULARY — 9 unions hold words no flow declares.** `BuyerInvoiceStatus`
+(+Overdue, +Pending Match) · `SupplierInvoiceStatus` · `SupplierDocumentStatus`
+(+Expiring Soon, +Expired) · `ContractStatus` · `ObligationStatus` ·
+`ShipmentStatus` (+Delayed) · `ComplianceDisplayStatus` · two `StatusFilter`s. Of
+101 decision sites keyed on such a label, **exactly one gates an affordance**
+(`BuyerShipments.tsx:420 case 'Delayed'`, on a flow with zero user verbs — so it
+is navigation, not legality).
+
+⚠️ **`DOC_STATUS_ACTION_KEY` IS NOT A SECOND INSTANCE OF THE INVOICE DEFECT, AND
+SAYING SO WOULD BE THE MERGE ITEM 4 FORBIDS.** Same shape — an action map keyed
+on a union mixing canonical states with derived labels — and **two of the three
+ingredients are missing**: `SupplierDocument.status` is a STORED literal, not a
+read-time projection, so it does not decay (it is frozen wrong — `doc-001` reads
+`'Expiring Soon'` on a certificate that expired 2026-05-15, the `F0.4-FIND-01`
+corpse), and the affordance it selects is a toast, not a verb. The remedy already
+exists in this tree and nothing else adopted it: I3 ships
+`ComplianceLifecycleState` (0 extras) beside `ComplianceDisplayStatus` (2).
+
+**ADOPTION COST, DERIVED:** 13 surfaces dispatch a transition. **One asks the
+machine.**
+
+### 49j · DISPOSITION
+
+- **BLOCKING, RULED NEXT:** `t_gr_post`'s trigger (§49d). No adoption of §48's
+  seam anywhere until it is settled.
+- **FILED, NOT FIXED — the three ranked findings.** PF-1a's quarter-completion
+  (four exits, one surfaced) · `ELIGIBILITY-IS-NOT-TERMINALITY-01` (18 of 35) ·
+  `USER-VERBS-WITHOUT-SURFACES-01` (28 of 46). Each is a ruling and several are
+  product decisions, not wiring.
+- **CLASS ROW SPLIT:** Class A (surface decides for itself) · Class B (surface
+  asks correctly, machine incomplete). `t_gr_hold` is **B**. §48 closed one
+  instance of **A**.
+- **THE GATE:** none, structurally. Recorded beside §37.
+- **RULE 2 GAINS A SECOND INSTANCE OF ITS DANGEROUS DIRECTION** — a widening
+  that lost a member while the count rose. Both instances tabulated in §49b.
+- **CORRECTED:** invoice `Disputed` has one exit and it is surfaced, and the
+  ruling's description fits `requirementResponse` `Disputed` · the ASN
+  asymmetry's batch is #198, not #36, and is four verbs wide · 28 of 46, not 20
+  of 45 · main is `0869878`, not `c95e8ce`.
+- **UNTOUCHED:** no surface edited, no flow edited, no verb wired, no gate built.
+  C9 `af7f0b4` and C10 `dc8e774` byte-identical. Floor `3005 / 219 / 7`,
+  unchanged — this batch adds no tests, and says so rather than padding one.
