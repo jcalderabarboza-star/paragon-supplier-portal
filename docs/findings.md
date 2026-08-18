@@ -14150,3 +14150,76 @@ by name.
   wired, `catalogView.stepKind` not approached — it is the next batch. C9
   `af7f0b4` and C10 `dc8e774` byte-identical. Floor **3016 → 3020**, files
   unchanged at 220.
+
+## §52 — The standing heuristic gains the layer above the probe, and the invented-artifact class is recorded where it can be counted
+
+Register-and-heuristic only. No code, no test, no flow. `CLAUDE.md` gains one
+block beside rule 4; this section records what that block is for and how its two
+lists were derived.
+
+### 52a · RULE 4 COVERS THE PROBE. THIS COVERS THE INSTRUMENT THAT COUNTS IT.
+
+`docs/findings.md` §50e and §51f are two members of one class, one batch apart,
+in the same harness, by two unrelated mechanisms:
+
+| | mechanism | reported | actual |
+|---|---|---|---|
+| §50e | the mutation made the flow fail `assertValidFlow`, so it never registered and vitest printed a FAILED SUITE with *"no tests"* — the counter watched `Tests N failed` | **0 killed** | the whole suite, which is a harder kill than an assertion |
+| §51f | the counter matched `Tests\D+(\d+) failed` against vitest's COLOURED summary, and `ESC[1m` contains a digit — `\D+` stopped short, `(\d+)` captured the `1` out of the formatting | **0 killed** | one test, red, by name |
+
+> **THE UNIFYING OBSERVATION IS THE VALUABLE PART, AND IT IS WHY THIS BELONGS IN
+> THE STANDING HEURISTIC RATHER THAN IN A BATCH ENTRY: BOTH MECHANISMS FAIL IN
+> THE SAME DIRECTION — TOWARD "YOUR GATE IS WEAK" — AND THAT IS THE READING THAT
+> GETS BELIEVED, BECAUSE IT SOUNDS LIKE THE HUMBLE ANSWER.** A counter that
+> over-reports kills is challenged in the next sentence. One that under-reports
+> them is accepted as modesty, and the response is to go and strengthen a gate
+> that was never weak — spending a batch closing a hole that does not exist,
+> which is worse than the wasted time because the *real* gate gets rewritten
+> around a phantom.
+
+The rule, as ratified: **strip the formatting before parsing an instrument's
+output, and confirm one kill BY NAME before trusting a count.** Both instances
+were caught the same way — by reading the raw output of one probe by eye — which
+is the confirmation the rule now requires up front.
+
+### 52b · THE INVENTED-ARTIFACT CLASS, DERIVED RATHER THAN TALLIED
+
+`SurfaceExpectation` (§51) was named in a dispatch as `userVerbsFrom`'s only
+consumer and has **zero occurrences in `src/`, `docs/` or `scripts/`**. The
+ruling calls it the third. Derived from this register rather than restated:
+
+| named as existing | measured | recorded |
+|---|---|---|
+| `getInvoiceAction` — "a hardcoded status→verb map" | zero occurrences in `src/` | ⚠️ **nowhere** |
+| `<span lang="en">` inside an Indonesian FX sentence | absent; the only `lang="en"` is `app/index.html:2` | §45 |
+| `SurfaceExpectation` | zero occurrences anywhere | §51 |
+
+Beside them, two objects rather than identifiers: the SHA **`c95e8ce`**, carried
+across four dispatches and not a valid object in this repository (§49a), and a PR
+number that did not exist when a merge was ordered on it (§43a, refused).
+
+⚠️ **AND THE ROW THAT MAKES THE TABLE HONEST IS THE EMPTY ONE. THE REGISTER
+UNDER-COUNTS THIS CLASS BY CONSTRUCTION.** `getInvoiceAction` was refused in
+conversation and never reached a batch, so nothing was ever written down — the
+class is visible only where an invented artifact survived long enough to be
+built against. **A count of it is therefore a lower bound, and any future
+sentence of the form "the Nth instance" is a claim about what got recorded, not
+about what happened.** That is the same defect as `FLOOR-IN-PROSE-01` in a
+different costume: a cardinality whose derivation is unavailable.
+
+The remedy is not a gate — there is nothing to derive a population from. It is
+one reflex, now written beside rule 4: **before building on an artifact a
+dispatch names, `grep` for it.** Absence is a one-line measurement, and **a wrong
+premise with a specific identifier in it is the most believable kind there is**
+— which is why every one of these survived a reading before it met a `grep`.
+
+### 52c · DISPOSITION
+
+- **CHANGED:** `CLAUDE.md` — one block beside "PROBE THE GUARD BOTH WAYS",
+  carrying the counter-instrument rule and the named-artifact reflex.
+- **RECORDED:** the two-member counter class, closed; the invented-artifact
+  table, with its own under-count stated as a property of the record rather
+  than as a caveat.
+- **UNTOUCHED:** no code, no test, no flow, no surface. C9 `af7f0b4` and C10
+  `dc8e774` byte-identical. Floor **3020 / 220 / 7**, unchanged — this batch adds
+  no tests and says so.
