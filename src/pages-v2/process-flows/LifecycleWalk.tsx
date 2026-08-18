@@ -5,6 +5,7 @@ import Button from '../../components/ui-v2/Button';
 import Data from '../../components/ui-v2/Data';
 import type { FlowEdge, FlowView } from '../../services/transitions/catalogView';
 import { transitionPurposeKey } from '../../services/transitions/annotations';
+import { isPerformable, STEP_KIND_KEY } from '../../lib/i18n/stepKind';
 import { verbOf } from './flowLayout';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -53,6 +54,13 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
     ? view.edges.filter((e) => e.from === cursor)
     : view.edges.filter((e) => e.from === null);
   const seeds = started ? [] : view.seededFrom;
+
+  // The defs behind the drawable edges — a settlement edge borrows its verb's
+  // id, which is why the performability read excludes it explicitly above.
+  const defById = React.useMemo(
+    () => new Map(view.transitions.map((tr) => [tr.def.id, tr.def])),
+    [view.transitions],
+  );
 
   const current = started ? view.states.find((s) => s.name === cursor) : undefined;
   const facts = current?.facts ?? [];
@@ -133,7 +141,14 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
           ))}
 
         {steps.map((edge) => {
-          const operator = edge.kind === 'operator-action' || edge.kind === 'creation';
+          // THE SURFACE AXIS, ASKED OF THE FIELD THAT ANSWERS IT (§52). This
+          // read `kind === 'operator-action' || kind === 'creation'` and got
+          // two births wrong in the direction that matters: `t_po_issue` and
+          // `t_shipment_create` arrive from S/4HANA and the TMS as facts, and
+          // the walk offered both as steps the reader ADVANCES. `creation` is
+          // the structural axis; it never answered this question.
+          const def = defById.get(edge.transitionId);
+          const operator = !edge.settlement && def !== undefined && isPerformable(def);
           // PF-2 — the purpose belongs HERE more than anywhere else on the page:
           // the walk is the surface where a reader is choosing between two verbs,
           // and "why would I do this" is the only question that separates them.
@@ -154,9 +169,7 @@ const LifecycleWalk: React.FC<LifecycleWalkProps> = ({
                   <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
                     {edge.settlement
                       ? t('processFlows.walk.viaSettlement')
-                      : operator
-                        ? t('processFlows.step.operator')
-                        : t('processFlows.step.system')}
+                      : t(STEP_KIND_KEY[edge.kind])}
                   </span>
                 </span>
                 {purpose && (

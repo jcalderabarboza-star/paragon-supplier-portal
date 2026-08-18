@@ -51,16 +51,37 @@ import { PERSONA_ROLES } from './roles';
 import type { FlowDefinition, TransitionDef } from './schema';
 
 /**
- * WHAT DRIVES A STEP — derived from `trigger`, never authored.
+ * WHAT KIND OF STEP THIS IS TO A READER OF THE DIAGRAM — derived from TWO
+ * schema fields, never authored.
  *
- * ⚠️ **`creation` IS ITS OWN KIND, DELIBERATELY.** The dispatch named two
- * (`user` → operator, `system`/`cascade` → system-driven) and the trigger union
- * has FOUR members. A creation verb is neither: `t_po_issue` is a buyer act and
- * `t_invoicematch_open` would be a rollup, so folding creation into either
- * bucket would assert something the schema does not say. It gets its own token
- * and the reader decides — see PF1-CREATION-KIND-01 in docs/findings.md.
+ * ⚠️ **TWO AXES, AND THEY ARE NOT INTERCHANGEABLE (§52).** `trigger` says WHAT
+ * FIRES an act; `surfaceable` says whether a Paragon surface is ever meant to
+ * OFFER it. §50 split them because one field had been doing both jobs and
+ * predicted the surface at 76%. This function reads BOTH, and reads each one
+ * only for the question it actually answers:
+ *   · `trigger` → the STRUCTURAL question (is this a birth?),
+ *   · `surfaceable` → the SURFACE question (can anyone here perform it?).
+ *
+ * ⚠️ **`creation` IS ITS OWN KIND, DELIBERATELY.** The trigger union has FOUR
+ * members and a creation verb is neither operator nor system: `t_po_issue` is a
+ * PO arriving as a fact and `t_asn_create` is a supplier act, so folding
+ * creation into either bucket would assert something the schema does not say.
+ * It gets its own token and the reader decides — PF1-CREATION-KIND-01.
+ *
+ * ⚠️ **`unsurfaced-act` IS WHY THIS COULD NOT COLLAPSE TO ONE AXIS.** Reading
+ * `surfaceable` ALONE would have relabelled `t_invoice_approve` and
+ * `t_enforcement_set` — human acts a STANDING RULING refuses to put on a screen
+ * (C10 · ENF-NO-PERSON-IN-IDENTITY-01) — as `system-driven`, which nothing
+ * drives. That would have fixed one published falsehood by shipping two. The
+ * `ruled-unsurfaced` reason gets its own token, and `system-driven` therefore
+ * stops being an approximation and starts being TRUE: it now means an external
+ * fact or a computed verdict, and nothing else. §52.
  */
-export type StepKind = 'operator-action' | 'system-driven' | 'creation';
+export type StepKind =
+  | 'operator-action'
+  | 'system-driven'
+  | 'unsurfaced-act'
+  | 'creation';
 
 /** A derived loose end, annotated with its census row (PF-0's exemption list). */
 export interface AnnotatedLooseEnd extends LooseEnd {
@@ -188,10 +209,25 @@ const DEFAULT_SOURCES: CatalogSources = {
   wiredTargets: WIRED_COMMAND_TARGETS,
 };
 
-/** `trigger` → what drives the step. The ONE place the mapping is stated. */
+/**
+ * The two axes → what kind of step this is. The ONE place the mapping is stated,
+ * and after §52 the ONE place in the tree that branches on the SURFACE question
+ * at all: every other surviving `trigger` reader keys on `creation` or
+ * `cascade` — the two STRUCTURAL members — so `user` vs `system` is now purely
+ * descriptive provenance, displayed (`ProcessFlows.tsx`) and never decided on.
+ *
+ * ⚠️ **ORDER IS LOAD-BEARING.** `creation` short-circuits FIRST because it is a
+ * question about the edge's shape (no `from`), not about who performs it — 16
+ * verbs, two of which are `surfaced: false`. Reading `surfaceable` first would
+ * silently reclassify `t_po_issue` and `t_shipment_create`, which are births
+ * that happen to arrive as external facts.
+ */
 export function stepKind(t: TransitionDef): StepKind {
   if (t.trigger === 'creation') return 'creation';
-  return t.trigger === 'user' ? 'operator-action' : 'system-driven';
+  if (t.surfaceable.surfaced) return 'operator-action';
+  return t.surfaceable.because === 'ruled-unsurfaced'
+    ? 'unsurfaced-act'
+    : 'system-driven';
 }
 
 /** The personas whose mapped role set permits a transition-role. */

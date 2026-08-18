@@ -14223,3 +14223,175 @@ premise with a specific identifier in it is the most believable kind there is**
 - **UNTOUCHED:** no code, no test, no flow, no surface. C9 `af7f0b4` and C10
   `dc8e774` byte-identical. Floor **3020 / 220 / 7**, unchanged — this batch adds
   no tests and says so.
+
+## §53 — `catalogView.stepKind` reads BOTH axes. The badge that predicted the surface from provenance, corrected — and the fourth batch running in which the dispatched premise named code that does not exist
+
+`trigger` was doing two jobs; §50 split them into `trigger` (provenance) and
+`surfaceable` (surface), and §51 moved `userVerbsFrom` onto the new field. The
+remaining consumer was `stepKind`, whose own comment called it *"the ONE place
+the mapping is stated"* — and PF-1 renders that mapping as a badge on all 91
+rows, in two languages.
+
+> **THE CONTRADICTION THIS CLOSES: PF-1 PUBLISHED `t_gr_post` AS
+> `System-driven` WHILE `/buyer/goods-receipt` RENDERED IT AS THE RESERVED
+> SOLID A BUYER PRESSES.** Visible on the page since PF-1 (#200) — thirty PRs.
+> It resolves in favour of the shipped surface, which was right all along.
+
+### 53a · THE DISAGREEMENT SET WAS THREE, NOT FIVE — AND THE TWO THAT LEFT ARE THE REASON DERIVATION IS A RULE
+
+The dispatch named five rows: `t_gr_post`, `t_invoice_approve`,
+`t_enforcement_set`, `t_po_issue`, `t_shipment_create`. Derived against what
+`stepKind` ACTUALLY computes, it is three. `t_po_issue` and `t_shipment_create`
+are `trigger: 'creation'` with `surfaced: false`, and **`stepKind` short-circuits
+`creation` FIRST** — so `surfaceable` is never read for them and both sides
+agree.
+
+The five came from a `trigger`-vs-`surfaceable` diff. That diff is not the
+function. **A 4→3 collapse with a short-circuit is not "a read of `trigger`",
+and the difference is exactly two false members.** §42 in a new costume: the
+claim required the mapping's own site, and a field-level diff stood in for it.
+
+### 53b · AND READING `surfaceable` ALONE WOULD HAVE FIXED ONE PUBLISHED FALSEHOOD BY SHIPPING TWO
+
+`t_invoice_approve` and `t_enforcement_set` are `trigger: 'user'` with
+`surfaced: false · ruled-unsurfaced` — human acts a STANDING RULING refuses to
+put on a screen (C10 · `ENF-NO-PERSON-IN-IDENTITY-01`: an approval is
+attributable and the platform cannot name a person). A one-axis badge relabels
+both **`System-driven`**, and nothing drives either one.
+
+> **THE BOOLEAN IS THREE FACTS IN ONE COSTUME.** `external-fact` (13) and
+> `computed` (11) really are system-driven. `ruled-unsurfaced` (6) is not
+> driven by anything — it is a refusal. `surfaced: false` cannot tell them
+> apart, and the token that can is `because`.
+
+So the fourth kind, `unsurfaced-act` (EN *"Not offered"* / ID *"Tidak
+disediakan"*), is not a concession to keep three labels working. **It is what
+makes `System-driven` TRUE rather than approximate:** after this batch the token
+means *external fact or computed verdict*, and a gate asserts that over every
+transition so a future verb cannot quietly re-broaden it.
+
+### 53c · THE SEVEN ROWS THAT CHANGE, DERIVED — TWO GROUPS, AND THEY ARE DIFFERENT KINDS OF EVENT
+
+| id | was | now | which group |
+|---|---|---|---|
+| `t_gr_post` | System-driven | **Operator action** | the thirty-PR contradiction closing |
+| `t_invoice_approve` | Operator action | **Not offered** | a capability the badge did not have |
+| `t_enforcement_set` | Operator action | **Not offered** | ” |
+| `t_supplierdoc_verify` | System-driven | **Not offered** | ” |
+| `t_supplierdoc_reject` | System-driven | **Not offered** | ” |
+| `t_compliance_verify` | System-driven | **Not offered** | ” |
+| `t_compliance_reject` | System-driven | **Not offered** | ” |
+
+Distribution 46/29/16 → 45/24/6/16, confirmed on the BUILT bundle across all 18
+flows in both locales.
+
+### 53d · THE EIGHTH CHANGE, WHICH NO DISPATCH NAMED AND WHICH WAS THE ACTUAL SECOND READER
+
+`LifecycleWalk.tsx` asked `kind === 'operator-action' || kind === 'creation'`
+and used the answer to choose between **"Advance"** and **"Observe"**.
+
+> **`creation` IS THE STRUCTURAL AXIS. IT SAYS AN ENTITY IS BORN HERE, NOT THAT
+> ANYBODY HERE BORE IT.** So the walk offered `t_po_issue` — a purchase order
+> raised in S/4HANA and RECEIVED as a fact — as a step the reader ADVANCES.
+> `t_shipment_create` (a TMS record) likewise. The page's own copy says *"system
+> steps are shown as observed, never performed"*, and two births were the
+> exception nothing checked.
+
+Fixed by asking the surface field directly (`isPerformable(def)` reads
+`surfaceable.surfaced`), never a `StepKind` — because a `StepKind` cannot answer
+it for a creation verb without collapsing the two axes back together.
+
+**And the mapping is now a `Record<StepKind, string>` in one file.** It had been
+inlined at three render sites as nested ternaries with `system` as the
+fall-through `else`, which has one property that matters: **adding a fourth kind
+is not a compile error there, it is a silent mislabel** — every new member falls
+into the last `else`, on every surface, in both locales, with nothing red. The
+exhaustive record is why the walk's two-valued fold was found at all: it never
+type-checked against the union it was reading.
+
+### 53e · FOUR PREMISES IN THE RULING NAMED CODE THAT DOES NOT EXIST — AND THE REFLEX §52 WROTE IS WHAT CAUGHT THEM
+
+§52 closed with one reflex: **before building on an artifact a dispatch names,
+`grep` for it.** It was written on 2026-08-18 and paid the same day.
+
+| named | measured | consequence |
+|---|---|---|
+| `derivedFor` — *"a second independent read of `trigger` on the same row"* | **zero occurrences**; `git log --all -S` **empty** — never existed on any branch | the "two independent reads" premise had no second read |
+| `stepKindOf` — *"fix the reversed reading"* | **zero occurrences**, same measurement | nothing to fix |
+| *"SIMULATED returned for a wired capability — it makes the page's own legend false"* | the real function is `livenessFrom`, and it is **correct in both directions** | no defect existed |
+| *"five rows: `t_enforcement_set` gaining SIMULATED"* | `enforcement` **is a wired CommandTarget** → the tier is `LIVE`; and **no `enforcement` capability exists** in `ALL_CAPABILITIES`, so the per-capability tier does not reach it at all. The flow has **one** verb, so "five rows" had no population | the SIMULATED half of the scope was unbuildable, and would have rendered the OPPOSITE value on the verb it was meant to mark |
+
+The third one is the one worth keeping. **It was refuted by the guard-both-ways
+reflex working as designed:** the known-GOOD probe ran FIRST —
+`wired.has('enforcement') === true` → `livenessFrom('enforcement', wired) ===
+'LIVE'` — and it passed, which is what proved there was nothing to fix. Had only
+the known-bad direction been probed, `SIMULATED` for an unwired backing would
+have looked like a confirmed symptom of the reported bug.
+
+> **AND THE HONEST SHAPE OF THE RULING SURVIVED ALL FOUR.** *"The three-value
+> badge does not lose System-driven, it makes it true rather than
+> approximate"* is exactly what got built. The reasoning was right; the
+> artifacts it named were not. Those are separable, and separating them is the
+> batch.
+
+### 53f · ONE COUNTER-INSTRUMENT FAILURE, MINE, IN THE DIRECTION §51 NAMES
+
+The mutation harness printed **`!! FILE UNCHANGED — probe is a lie`** for the
+`isPerformable` probe. It had changed. The check was `git diff --quiet`, and
+`stepKind.ts` was **untracked** — a new file in the same batch — so `git diff`
+reports nothing for it by construction.
+
+**§51's asymmetry again, exactly: the failure read as "your probe is weak",
+which is the humble-sounding answer and therefore the believed one.** It was
+caught only because the probe had also killed three tests BY NAME in the same
+run, and a probe that kills three named tests did not fail to apply. The
+companion rule earns itself a second time: **confirm one kill by name before
+trusting any instrument that reports on the probe.**
+
+### 53g · WHAT REMAINS ON `trigger` — A NULL RESULT WORTH RECORDING
+
+Derived from every `trigger` comparison in non-test, non-flow source:
+`catalogView` (creation, cascade) · `dispatcher.ts:244` (creation) ·
+`flowGraph.ts` (creation, cascade) · `validate.ts` (the law-0.5 `clock` guard,
+creation) · `ProcessFlows.tsx:205` (the cascade badge).
+
+> **NOTHING IN THE TREE BRANCHES ON `trigger === 'user'` OR ON `'system'` ANY
+> MORE.** Every surviving reader keys on `creation` or `cascade` — the two
+> STRUCTURAL members (empty `from`; fired-by-another-transition). The
+> `user`/`system` distinction is now purely descriptive provenance: rendered
+> verbatim beside the badge on `ProcessFlows.tsx:161`, and decided on nowhere.
+> That is what a correctly split field looks like from the far end — §50 said
+> `trigger` should keep a badge of its own, and it now has exactly that and
+> nothing else.
+
+### 53h · DISPOSITION
+
+- **BUILT:** `StepKind` gains `unsurfaced-act`; `stepKind` reads `trigger` for
+  the structural question and `surfaceable` for the surface question;
+  `src/lib/i18n/stepKind.ts` holds the exhaustive `Record<StepKind, string>` and
+  `isPerformable`; fourth edge ink (operator colour, `1 3` dots — the DASH
+  carries it, so a colourblind reader keeps the distinction) + fourth legend
+  entry; the walk's Advance/Observe reads the surface axis.
+- **i18n:** `processFlows.step.unsurfaced` in EN **and** ID from birth
+  (`MARKER-I18N-HOLE-01`); EN/ID parity mutation-probed by dropping the ID key —
+  2 tests red by name.
+- **GATED:** 6 new assertions in `catalogView.test.ts`, population guard FIRST
+  and asserting MEMBERSHIP (§42b); `t_gr_post`, `t_invoice_approve`,
+  `t_enforcement_set`, `t_po_issue`, `t_shipment_create`, `t_asn_create` named
+  as witnesses; the `system-driven` ⇒ *not* `ruled-unsurfaced` invariant derived
+  over all 91.
+- **MUTATION-PROBED, FOUR PROBES, EACH KILLING BY NAME:** revert to `trigger`
+  (4 red) · collapse `unsurfaced-act` into `system-driven` (3 red) · drop the ID
+  key (2 red) · re-fold `creation` into performable (3 red).
+- **BROWSER QA on the BUILT bundle**, both locales, all 18 flows, 91/91 rows
+  read from the DOM rather than `innerText`; distribution and all seven
+  witnesses confirmed; zero raw i18n keys; the walk's first purchaseOrder step
+  reads **Observe**.
+- **NOT BUILT, AND THE MEASUREMENT IS WHY:** the SIMULATED axis (53e). A
+  per-capability tier cannot express a per-verb fact, and for the one verb it
+  was dispatched to mark it returns `LIVE`.
+- **UNTOUCHED:** no flow's states, edges or verbs; nothing wired; no authored
+  escape hatch — the badge is still a pure function of two required schema
+  fields, so PF-1 still cannot show a state the machine does not have. C9
+  `af7f0b4` and C10 `dc8e774` byte-identical. Floor **3020 → 3026 / 220 / 7**,
+  bumped because the gate asked.
