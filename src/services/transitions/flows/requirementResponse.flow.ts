@@ -88,6 +88,12 @@ export const requirementResponseFlow: FlowDefinition = {
         'materialCode',
         'periodBucket',
         'confirmedQty',
+        // THE TOKEN THE NUMBER WAS READ FROM. Required, because the guard below
+        // has nothing to check against without it — and because a payload that
+        // carries a number and no token is exactly the hand-crafted dispatch
+        // `isEmpty` cannot see. Presence is proven here; AGREEMENT is proven by
+        // the hook, since `isEmpty('   ')` is false.
+        'confirmedQtyRaw',
       ],
       // The planVersion the payload claims must be the referenced publication's
       // own planVersion — a response can never bind a snapshot that isn't the
@@ -107,6 +113,12 @@ export const requirementResponseFlow: FlowDefinition = {
         // is `>= 0` — a typed 0 is the ratified F-2 short confirmation, unlike
         // the PO-confirm neighbour's `> 0`. See RR_SUBMIT_QTY_FLOOR.
         POLICY_HOOKS.RR_SUBMIT_QTY_FLOOR,
+        // ORDER IS LOAD-BEARING: the floor runs FIRST and establishes that
+        // `confirmedQty` is a finite non-negative NUMBER, so the agreement check
+        // below can compare against it without re-proving its type. Reversed,
+        // the agreement hook would be comparing a parse result against an
+        // unvalidated `unknown` and would have to duplicate the floor to say so.
+        POLICY_HOOKS.RR_SUBMIT_QTY_AGREES,
       ],
       surfaceable: { surfaced: true },
       version: 1,

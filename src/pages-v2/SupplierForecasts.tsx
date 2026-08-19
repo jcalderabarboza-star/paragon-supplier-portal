@@ -894,6 +894,18 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
       // The SAME parsed value the gate above judged — the builder can no longer
       // re-read the string and reach a different number (CP-0 §4).
       confirmedQty: confirmQty.value,
+      // THE HOIST — the token travels with the number so the TRANSITION can check
+      // that they agree, instead of taking this component's word for it. Both come
+      // from the one `normalizeQty` call at the top of this component, so the
+      // transition's re-parse is the identical call on the identical input and
+      // agreement here is STRUCTURAL, not lucky.
+      //
+      // No `numberConvention` key: that call is deliberately HINT-FREE (a confirm
+      // form carries no origin convention — the `poConfirmModel` ruling), and the
+      // transition must re-parse the same way. Passing a convention this component
+      // does not actually have is how "renders in one language, parses in another"
+      // gets written; #240 is the register entry for that shape.
+      confirmedQtyRaw: form.confirmedQty,
       ...(form.committedDate ? { committedDate: form.committedDate } : {}),
       ...(form.capacityConstraint ? { capacityConstraint: form.capacityConstraint } : {}),
       ...(form.rootCauseLevel1
