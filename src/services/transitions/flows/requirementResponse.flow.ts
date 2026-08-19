@@ -187,15 +187,31 @@ export const requirementResponseFlow: FlowDefinition = {
       version: 1,
     },
     {
-      // AUTHORED-UNWIRED — buyer disputes it (deviation unresolved; the
-      // root-cause child is where the supplier's explanation already lives).
+      // Buyer disputes it (deviation unresolved; the root-cause child is where
+      // the supplier's own explanation already lives).
+      //
+      // ⚠️ R1b — `disputeText` IS REQUIRED, AND THE ASYMMETRY IT CLOSES WAS WITH
+      // THE NEIGHBOUR THIS MACHINE COPIED. `t_invoice_dispute` has required a
+      // `disputeReason` since it was written; this verb required nothing, so a
+      // supplier's commitment could be rejected with no recorded ground. The
+      // gap only became a live cost at R1a, which put "awaiting Paragon" on the
+      // supplier's screen — a promise of review whose outcome had no content.
+      //
+      // ⚠️ AND IT DOES NOT COPY THE NEIGHBOUR'S OTHER HALF, WHICH IS BROKEN.
+      // `t_invoice_dispute`'s reason is required by the transition, typed into a
+      // real form, carried in the payload — and then DISCARDED: `invoiceTarget`
+      // writes `status` and `amount`, and `disputeReason` is on no DTO in the
+      // tree. A required field nothing stores is a field that exists only in the
+      // refusal message. Here the target APPENDS it to the response's ledger, so
+      // the requirement and the record are the same fact. Booked against the
+      // invoice lane, not fixed here: `INVOICE-DISPUTE-REASON-UNSTORED-01`.
       id: 't_requirementresponse_dispute',
       from: ['UnderReview'],
       to: 'Disputed',
       trigger: 'user',
       requiredRole: 'requirementresponse:dispute',
-      requiredFields: [],
-      policyHooks: [],
+      requiredFields: ['disputeText'],
+      policyHooks: [POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED],
       surfaceable: { surfaced: true },
       version: 1,
     },
@@ -209,13 +225,23 @@ export const requirementResponseFlow: FlowDefinition = {
       // The role is the DISPUTE role, not a new one: whoever may open a dispute
       // may close it. Splitting them would be a claim about approval authority
       // that belongs to the identity contract (C10), not to this flow.
+      //
+      // ⚠️ R1b — AND HERE THE TWIN IS DELIBERATELY NOT FOLLOWED. `t_invoice_resolve`
+      // is payload-free, and the symmetry argument for copying it is real: resolving
+      // returns the response to the one state it can have come from, so there is no
+      // DESTINATION to justify. The operator ruled the other way, and the ruling is
+      // about the SUPPLIER, not the machine: **a resolution that carries nothing
+      // reports the outcome of a promised review as a bare status change.** The
+      // supplier watches `Disputed` become `UnderReview` and learns nothing about
+      // why. So this verb requires its own text, and it lands as a SECOND ledger
+      // entry beside the raise — never over it.
       id: 't_requirementresponse_resolve',
       from: ['Disputed'],
       to: 'UnderReview',
       trigger: 'user',
       requiredRole: 'requirementresponse:dispute',
-      requiredFields: [],
-      policyHooks: [],
+      requiredFields: ['resolutionText'],
+      policyHooks: [POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED],
       surfaceable: { surfaced: true },
       version: 1,
     },

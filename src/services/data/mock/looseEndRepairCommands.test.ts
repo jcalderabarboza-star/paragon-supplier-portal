@@ -261,8 +261,15 @@ describe('PF-1a · requirementResponse — a dispute can be resolved', () => {
   const RR = 'rr-0001'; // fixture: status 'Submitted'
 
   it('⚠️ the full round trip: Submitted → UnderReview → Disputed → UnderReview', async () => {
+    // R1b — dispute and resolve now REQUIRE their authored text. The round trip
+    // still holds; what changed is that neither end of it can fire empty.
     const step = (transitionId: string) =>
-      svc.dispatch(buyer, { transitionId, entity: 'requirementResponse', entityId: RR });
+      svc.dispatch(buyer, {
+        transitionId,
+        entity: 'requirementResponse',
+        entityId: RR,
+        payload: { disputeText: 'Short against a firm line.', resolutionText: 'Accepted.' },
+      });
 
     expect((await step('t_requirementresponse_review')).status).toBe('done');
     expect(requirementResponseStore.get(RR)!.status).toBe('UnderReview');

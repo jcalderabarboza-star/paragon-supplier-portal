@@ -58,6 +58,10 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.responses.col.committedDate': 'Committed date',
   'sdcSup.responses.col.version': 'Version',
   'sdcSup.responses.col.submitted': 'Submitted',
+  // R1b — the buyer's dispute text and its resolution, shown to the supplier who
+  // did not write them (the mirror of `rootCause` directly above).
+  'sdcSup.responses.dispute.raised': 'Paragon disputed this',
+  'sdcSup.responses.dispute.resolved': 'Paragon resolved the dispute',
   'sdcSup.responses.rootCause': 'Root cause',
   // SDC-2b-EXT: how an acknowledgment renders — never a quantity, and the
   // label reads "Response" (the word "confirmed" never touches an ack).
@@ -382,6 +386,8 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.responses.col.committedDate': 'Tanggal komitmen',
   'sdcSup.responses.col.version': 'Versi',
   'sdcSup.responses.col.submitted': 'Dikirim',
+  'sdcSup.responses.dispute.raised': 'Paragon menyanggah tanggapan ini',
+  'sdcSup.responses.dispute.resolved': 'Paragon menyelesaikan sanggahan',
   'sdcSup.responses.rootCause': 'Akar masalah',
   'sdcSup.responses.col.response': 'Respons',
   'sdcSup.responses.ack': 'Ditanggapi',

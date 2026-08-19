@@ -683,10 +683,37 @@ const requirementResponseTarget: CommandTarget = {
   readState: (id) => requirementResponseStore.get(id)?.status ?? null,
   readScopeOwner: (id) => requirementResponseStore.get(id)?.supplierId ?? null,
   readEntity: (id) => requirementResponseStore.get(id) ?? null,
-  applyTransition: (id, toState) => {
+  applyTransition: (id, toState, payload) => {
     requirementResponseStore.update(id, (r) => ({
       ...r,
       status: toState as RequirementResponseStatus,
+      // ⚠️ R1b — THE DISPUTE LEDGER APPENDS. It never clears and never replaces.
+      // `r` is the PRE-transition record, so `r.status` is the from-state: that
+      // is what separates a RESOLUTION (Disputed → UnderReview) from a REVIEW
+      // (Submitted → UnderReview), which lands on the same state and must add
+      // nothing. The text was proven non-blank by `rr_dispute_text_authored`;
+      // `at` is minted HERE from the shared SDC clock and never taken from the
+      // payload (the `pinnedAt` discipline — a caller that could set it could
+      // backdate its own dispute).
+      //
+      // This is the half the invoice lane never built: there, the required
+      // `disputeReason` reaches `applyTransition` and is dropped on the floor.
+      ...(toState === 'Disputed'
+        ? {
+            disputes: [
+              ...(r.disputes ?? []),
+              { kind: 'raised' as const, text: String(payload.disputeText), at: sdcClock.now() },
+            ],
+          }
+        : {}),
+      ...(r.status === 'Disputed' && toState === 'UnderReview'
+        ? {
+            disputes: [
+              ...(r.disputes ?? []),
+              { kind: 'resolved' as const, text: String(payload.resolutionText), at: sdcClock.now() },
+            ],
+          }
+        : {}),
       // ⚠️ PF-1b — `submittedAt` IS STAMPED AT PROMOTION, NOT AT CREATION. A
       // draft has never been submitted, and the SDC-0 seed already encodes the
       // invariant by carrying no `submittedAt` on rr-0003.
@@ -842,6 +869,38 @@ bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_QTY_FLOOR, ({ payload }) => {
   }
   if (q < 0) {
     return { ok: false, reason: `confirmedQty ${q} is negative — a commitment cannot be less than nothing` };
+  }
+  return { ok: true };
+});
+
+// RR dispute / resolve — the authored text must be SUBSTANCE, not presence.
+//
+// ⚠️ WHICH FIELD IS ASKED FOR IS DERIVED FROM THE MACHINE, NEVER FROM THE
+// TRANSITION ID. `toState === 'Disputed'` is the raise; `currentState ===
+// 'Disputed'` is the resolution. Keying on the id would put the same fact in two
+// places and let them disagree — and `t_requirementresponse_review` ALSO lands on
+// `UnderReview`, so `toState` alone cannot tell a resolution from a review (it
+// carries no hook, but a guard that would be wrong if it were reached is a guard
+// waiting for its second caller).
+//
+// The bound is a NON-BLANK STRING. `requiredFields` runs `isEmpty`, and
+// `isEmpty('   ')` is false — so is `isEmpty(0)` and `isEmpty(false)`. Without
+// this, "required" admitted the space bar. It cannot prove the text is TRUE or
+// responsive; no value-level guard can, exactly as the qty floor cannot tell
+// 2400 from 2.4.
+bindPolicyHook(POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED, ({ payload, toState, currentState }) => {
+  const field = toState === 'Disputed' ? 'disputeText' : 'resolutionText';
+  const value = payload[field];
+  if (typeof value !== 'string') {
+    return { ok: false, reason: `${field} must be text, got ${typeof value}` };
+  }
+  if (value.trim() === '') {
+    return {
+      ok: false,
+      reason: `${field} is blank — a ${
+        toState === 'Disputed' ? 'dispute' : 'resolution'
+      } from ${currentState} must say something the supplier can read`,
+    };
   }
   return { ok: true };
 });
