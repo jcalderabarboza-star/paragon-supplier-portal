@@ -12,9 +12,9 @@ export const sdcConsolidationEn: Record<string, string> = {
     '{{lines}} published lines · {{suppliers}} suppliers · plan {{planVersion}} — sample clock, as of {{asOf}}',
 
   // — Honesty banner (SIMULATED feed; read-only end-to-end) —
-  'sdc.honesty.title': 'Consolidation view — read-only',
+  'sdc.honesty.title': 'Consolidation view — read-only except dispute resolution',
   'sdc.honesty.body':
-    'Every figure below is simulated sample data. This view consolidates the published forecast against supplier confirmations; nothing here edits, dispatches, or publishes. The SOMO C8 feed has not landed — the page flips live only when it does.',
+    'Every figure below is simulated sample data. This view consolidates the published forecast against supplier confirmations. ONE action writes: resolving a supplier dispute — nothing else here edits, dispatches, or publishes. The SOMO C8 feed has not landed — the page flips live only when it does.',
 
   // — Period filter bar (the PERIOD owns the commitment class; lines echo) —
   'sdc.period.all': 'All periods',
@@ -86,6 +86,34 @@ export const sdcConsolidationEn: Record<string, string> = {
 
   // — Empty / placeholder —
   'sdc.empty.dash': '—',
+
+  // — R1b · THE ONE WRITE ON THIS PAGE: resolving a dispute —
+  // Per-state by construction: the column renders NOTHING unless the machine
+  // offers `t_requirementresponse_resolve` from that row's state, so there is no
+  // blanket "Action" string standing in for four different situations.
+  'sdc.disputes.title': 'Disputes awaiting your resolution',
+  'sdc.disputes.subtitle':
+    'Every response the machine says you can resolve. Answering one requires words the supplier will read on their own line.',
+  'sdc.disputes.none': 'No dispute is waiting on you.',
+  'sdc.resolve.cta': 'Resolve',
+  'sdc.resolve.ctaTitle': 'Answer this dispute — {{material}} · {{period}}',
+  'sdc.resolve.panelTitle': 'Resolve dispute — {{material}}',
+  'sdc.resolve.section.exchange': 'The dispute so far',
+  'sdc.resolve.section.supplierSaid': 'What the supplier said',
+  'sdc.resolve.section.answer': 'Your answer',
+  'sdc.resolve.raised': 'Paragon disputed this',
+  'sdc.resolve.resolved': 'Paragon resolved the dispute',
+  'sdc.resolve.noRootCause': 'The supplier stated no cause.',
+  'sdc.resolve.srLabel': 'Your answer to {{supplier}} on {{material}}',
+  'sdc.resolve.placeholder': 'Explain what you are accepting, changing, or asking for.',
+  'sdc.resolve.note':
+    'Required. The supplier reads this on their own response, beside their words — a resolution with nothing said arrives as a bare status change.',
+  'sdc.resolve.missingReason': 'A resolution needs an answer the supplier can read.',
+  'sdc.resolve.cancel': 'Cancel',
+  'sdc.resolve.commit': 'Resolve dispute',
+  'sdc.resolve.done.title': 'Dispute resolved — {{material}}',
+  'sdc.resolve.done.body': '{{supplier}} can now read your answer on their response.',
+  'sdc.resolve.failed.title': 'Could not resolve the dispute on {{material}}',
 };
 
 export const sdcConsolidationId: Record<string, string> = {
@@ -98,9 +126,9 @@ export const sdcConsolidationId: Record<string, string> = {
     '{{lines}} baris terbit · {{suppliers}} pemasok · rencana {{planVersion}} — jam sampel, per {{asOf}}',
 
   // — Spanduk kejujuran —
-  'sdc.honesty.title': 'Tampilan konsolidasi — hanya-baca',
+  'sdc.honesty.title': 'Tampilan konsolidasi — hanya-baca kecuali penyelesaian sanggahan',
   'sdc.honesty.body':
-    'Semua angka di bawah adalah data sampel simulasi. Tampilan ini mengonsolidasikan prakiraan terbit terhadap konfirmasi pemasok; tidak ada yang mengubah, mengirim, atau menerbitkan. Feed SOMO C8 belum tersedia — halaman ini beralih live hanya setelah feed itu ada.',
+    'Semua angka di bawah adalah data sampel simulasi. Tampilan ini mengonsolidasikan prakiraan terbit terhadap konfirmasi pemasok. SATU tindakan menulis: menyelesaikan sanggahan pemasok — selain itu tidak ada yang mengubah, mengirim, atau menerbitkan. Feed SOMO C8 belum tersedia — halaman ini beralih live hanya setelah feed itu ada.',
 
   // — Bilah saring periode —
   'sdc.period.all': 'Semua periode',
@@ -170,4 +198,29 @@ export const sdcConsolidationId: Record<string, string> = {
 
   // — Kosong / pengganti —
   'sdc.empty.dash': '—',
+
+  // — R1b · SATU-SATUNYA TULISAN DI HALAMAN INI: menyelesaikan sanggahan —
+  'sdc.disputes.title': 'Sanggahan menunggu penyelesaian Anda',
+  'sdc.disputes.subtitle':
+    'Setiap tanggapan yang menurut mesin dapat Anda selesaikan. Menjawabnya memerlukan kata-kata yang akan dibaca pemasok pada baris mereka sendiri.',
+  'sdc.disputes.none': 'Tidak ada sanggahan yang menunggu Anda.',
+  'sdc.resolve.cta': 'Selesaikan',
+  'sdc.resolve.ctaTitle': 'Jawab sanggahan ini — {{material}} · {{period}}',
+  'sdc.resolve.panelTitle': 'Selesaikan sanggahan — {{material}}',
+  'sdc.resolve.section.exchange': 'Sanggahan sejauh ini',
+  'sdc.resolve.section.supplierSaid': 'Yang disampaikan pemasok',
+  'sdc.resolve.section.answer': 'Jawaban Anda',
+  'sdc.resolve.raised': 'Paragon menyanggah tanggapan ini',
+  'sdc.resolve.resolved': 'Paragon menyelesaikan sanggahan',
+  'sdc.resolve.noRootCause': 'Pemasok tidak menyatakan penyebab.',
+  'sdc.resolve.srLabel': 'Jawaban Anda kepada {{supplier}} atas {{material}}',
+  'sdc.resolve.placeholder': 'Jelaskan apa yang Anda terima, ubah, atau minta.',
+  'sdc.resolve.note':
+    'Wajib diisi. Pemasok membaca ini pada tanggapan mereka sendiri, di samping kata-kata mereka — penyelesaian tanpa penjelasan hanya tiba sebagai perubahan status.',
+  'sdc.resolve.missingReason': 'Penyelesaian memerlukan jawaban yang dapat dibaca pemasok.',
+  'sdc.resolve.cancel': 'Batal',
+  'sdc.resolve.commit': 'Selesaikan sanggahan',
+  'sdc.resolve.done.title': 'Sanggahan diselesaikan — {{material}}',
+  'sdc.resolve.done.body': '{{supplier}} kini dapat membaca jawaban Anda pada tanggapan mereka.',
+  'sdc.resolve.failed.title': 'Tidak dapat menyelesaikan sanggahan pada {{material}}',
 };

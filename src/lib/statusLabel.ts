@@ -95,6 +95,7 @@ const STATUS_ID: Record<string, string> = {
   Excess: 'Berlebih',
   Terminated: 'Dihentikan',
   'Under Review': 'Sedang Ditinjau',
+  Accepted: 'Diterima',
   Manual: 'Manual',
   Outbound: 'Keluar',
 };
@@ -115,8 +116,32 @@ function slug(status: string): string {
  * shared canonical vocabulary (StatusPill then renders it verbatim). Trims and
  * matches the exact canonical casing.
  */
+/**
+ * R1b — MACHINE STATE → CANONICAL DISPLAY STATUS.
+ *
+ * The transition flows and this map are two vocabularies, and they agreed by
+ * COINCIDENCE, not by construction: `requirementResponse` declares five states
+ * and three of them happen to be spelled exactly like their display status.
+ * `UnderReview` is not — this map is keyed `'Under Review'`, with the space —
+ * so it resolved to null and a supplier whose dispute had been resolved read the
+ * raw literal, in BOTH locales.
+ *
+ * ⚠️ AND THE OBVIOUS FIX WAS WRONG, WHICH IS WHY IT IS AN ALIAS AND NOT AN
+ * ENTRY. Registering `UnderReview` as its own canonical status makes its EN
+ * label the string "UnderReview", because this map's EN value IS the canonical
+ * key (that is the translate-once design). Browser QA caught it: the chip came
+ * back, reading the machine's spelling. An alias resolves to the label that
+ * already exists and already localizes.
+ *
+ * `Accepted` was a genuine gap and IS registered — it reads correctly in EN.
+ */
+const MACHINE_STATE_ALIAS: Record<string, string> = {
+  UnderReview: 'Under Review',
+};
+
 export function statusLabelKey(label: string): string | null {
-  const key = label.trim();
+  const raw = label.trim();
+  const key = MACHINE_STATE_ALIAS[raw] ?? raw;
   return key in STATUS_ID ? slug(key) : null;
 }
 

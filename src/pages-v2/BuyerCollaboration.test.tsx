@@ -32,12 +32,43 @@ describe('BuyerCollaboration — honest render (page-level)', () => {
     expect(screen.queryByText(/^Live$/)).not.toBeInTheDocument();
   });
 
-  it('renders the read-only honesty banner (nothing edits, dispatches, or publishes)', () => {
+  it('⚠ the honesty banner NAMES the one write — it no longer claims read-only end to end', () => {
+    // R1b CHANGED THIS TEST, and the change is the point rather than upkeep.
+    // Until this batch the page dispatched nothing and the banner said so; the
+    // resolve action makes the old sentence FALSE. A banner still promising
+    // "nothing here edits, dispatches, or publishes" over a surface that
+    // dispatches is an unbacked affordance run backwards — the page under-
+    // claiming what it does, which this project treats as the same defect class
+    // as over-claiming. The assertion below is deliberately POSITIVE about the
+    // exception rather than merely dropping the old string: a banner that named
+    // no write at all would pass a weakened test.
     renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
-    expect(screen.getByText(/Consolidation view — read-only/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/nothing here edits, dispatches, or publishes/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/read-only except dispute resolution/i)).toBeInTheDocument();
+    expect(screen.getByText(/resolving a supplier dispute/i)).toBeInTheDocument();
+    expect(screen.getByText(/nothing else here edits, dispatches, or publishes/i)).toBeInTheDocument();
+  });
+
+  it('⚠ AND THE HONESTY MARKER IS HONEST IN BOTH LOCALES — found by ID browser QA', async () => {
+    // The EN banner was corrected and the ID one was not. Nothing was red: the
+    // page was truthful in English and still promised "hanya-baca / tidak ada
+    // yang mengubah" — read-only, nothing edits — to an Indonesian reader,
+    // over a surface that now dispatches. An honesty marker translated in one
+    // locale only is a false claim in the other, and it took a browser pass in
+    // ID to see it, because every spec in this file rendered in EN.
+    await i18n.changeLanguage('id');
+    renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
+    expect(screen.getByText(/hanya-baca kecuali penyelesaian sanggahan/i)).toBeInTheDocument();
+    expect(screen.getByText(/menyelesaikan sanggahan pemasok/i)).toBeInTheDocument();
+    expect(screen.queryByText(/^Tampilan konsolidasi — hanya-baca$/)).not.toBeInTheDocument();
+    await i18n.changeLanguage('en');
+  });
+
+  it('⚠ CONTROL — the retired absolute claim is GONE, not merely unasserted', () => {
+    // Without this, deleting the exception clause from the banner would leave
+    // the test above green on the first two matchers and the page would quietly
+    // go back to promising read-only.
+    renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
+    expect(screen.queryByText(/^Consolidation view — read-only$/)).not.toBeInTheDocument();
   });
 
   it('declares the pinned sample clock on the meta line (never presented as the real clock)', () => {

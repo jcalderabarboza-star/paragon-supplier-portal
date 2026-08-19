@@ -28,6 +28,7 @@ import type {
   SupplierRollup,
   ChaseEntry,
 } from '../sdc';
+import { buildRequirementResolutionPayload } from '../sdc/submitModel';
 import type { ChannelMessage } from '../channel/types';
 import type { CommandResult, QueryScope } from '../data/types';
 
@@ -147,6 +148,69 @@ export function useInventoryRecord() {
       if (result.status !== 'failed') {
         qc.invalidateQueries({
           predicate: (q) => isRecordedDeclarationInvalidation(q.queryKey, message.supplierId),
+        });
+      }
+    },
+  });
+}
+
+// ─── R1b — the buyer's RESOLVE write (the dispute seam, closed) ───────────────
+// #239 gave `t_requirementresponse_resolve` a required, proven, stored reason
+// and left it with no caller. This is the caller. It is the FIRST mutation on
+// the consolidation surface — that page was read-only end to end until now, and
+// its honesty banner is updated in the same batch rather than left saying so.
+
+export interface ResolveDisputeVars {
+  /** The disputed response being answered. */
+  responseId: string;
+  /**
+   * The supplier the response belongs to — carried for INVALIDATION, never for
+   * authorization (the dispatcher derives the actor from the buyer scope). It is
+   * what lets the answer reach the party who did not write it in-session.
+   */
+  supplierId: string;
+  /** The planner's authored answer. Required by the verb; blank dies at the
+   *  machine (`rr_dispute_text_authored`) even if a caller gets past the form. */
+  resolutionReason: string;
+}
+
+/**
+ * Resolve a disputed requirement response (fires `t_requirementresponse_resolve`,
+ * `Disputed → UnderReview`) under the BUYER scope, so the DR-10 actor is honestly
+ * the buyer.
+ *
+ * ⚠️ IT INVALIDATES THE SUBJECT SUPPLIER TOO, and that is the whole point of the
+ * batch rather than a cache detail. A resolution the supplier cannot read is the
+ * bare status change R1a already promised them wouldn't happen; invalidating only
+ * the buyer's own reads would leave the answer sitting in the store while the
+ * party it was written FOR still sees the dispute unanswered until they reload.
+ * The predicate is `isRecordedDeclarationInvalidation` — reused verbatim from the
+ * C4c carve-out because this is the same shape it was written for: a BUYER write
+ * ABOUT a subject supplier. No other supplier is touched.
+ */
+export function useResolveRequirementDispute() {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const qc = useQueryClient();
+
+  return useMutation<CommandResult, Error, ResolveDisputeVars>({
+    mutationFn: ({ responseId, resolutionReason }) =>
+      svc.commands.dispatch(
+        { personaType: identity.personaType, supplierId: identity.supplierId },
+        {
+          transitionId: 't_requirementresponse_resolve',
+          entity: 'requirementResponse',
+          entityId: responseId,
+          // ⚠️ The payload is built by `buildRequirementResolutionPayload`, not
+          // assembled here — the draft layer is what keeps the key derived from
+          // the verb instead of transcribed at each call site (§55, disputeDrafts).
+          payload: buildRequirementResolutionPayload({ resolutionReason }),
+        },
+      ),
+    onSuccess: (result, { supplierId }) => {
+      if (result.status !== 'failed') {
+        qc.invalidateQueries({
+          predicate: (q) => isRecordedDeclarationInvalidation(q.queryKey, supplierId),
         });
       }
     },
