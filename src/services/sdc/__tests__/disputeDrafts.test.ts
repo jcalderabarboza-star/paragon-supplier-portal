@@ -52,6 +52,13 @@ describe('R1b — the draft builders are PURE ASSEMBLY (the words given are the 
     expect(buildRequirementDisputePayload({ disputeReason: '   ' })).toEqual({
       disputeReason: '   ',
     });
+    // ⚠️ BOTH BUILDERS, NOT ONE. The first cut asserted this for the RAISE only,
+    // and a mutation that made the RESOLUTION builder trim survived the suite —
+    // found by probing, not by review. Two builders is two assertions; a guard
+    // proven on one half is a guard on one half.
+    expect(buildRequirementResolutionPayload({ resolutionReason: '   ' })).toEqual({
+      resolutionReason: '   ',
+    });
   });
 });
 
