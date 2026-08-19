@@ -24,8 +24,10 @@
 // canonical state they hold.
 // ────────────────────────────────────────────────────────────────────────────
 
+import type { PersonaType } from '../../context/CurrentIdentityContext';
 import type { TransitionDef } from './schema';
 import { getFlow } from './registry';
+import { PERSONA_ROLES, personaCan } from './roles';
 
 /**
  * Every transition a SURFACE MAY OFFER from `state` on `entity`, in declaration
@@ -72,4 +74,52 @@ export function userVerbsFrom(entity: string, state: string): readonly Transitio
  */
 export function isTerminalState(entity: string, state: string): boolean {
   return getFlow(entity)?.terminals.includes(state) ?? false;
+}
+
+/**
+ * WHOSE ACT IS NEXT — the same question as `userVerbsFrom`, asked about the
+ * ACTOR rather than the verb.
+ *
+ * ⚠️ **THIS EXISTS BECAUSE A STATE A SUPPLIER CAN SEE AND CANNOT ACT ON, WITH
+ * NO INDICATION OF WHO ACTS, IS THE DEAD-END SHAPE** (`HALAL-REFUSAL-DEAD-ENDS-01`,
+ * one lane over). The supplier's own responses list rendered a bare status word
+ * — `Submitted`, `UnderReview`, `Disputed` — for three states whose every exit
+ * belongs to the BUYER by `requiredRole`. Nothing on the surface said so, and
+ * "nothing is happening" and "someone else is acting" look identical when the
+ * only thing on screen is a noun.
+ *
+ * ⚠️ **AND IT IS DERIVED, NOT MAPPED, FOR THE REASON THIS FILE ALREADY STATES
+ * AT LENGTH.** The obvious implementation is a hand-authored
+ * `Record<Status, Actor>` beside the pill — which is precisely the
+ * `BuyerInvoices` footer-verb defect in a new costume: a display concern
+ * answering a question only the machine can answer. Read-only-with-the-actor-
+ * named is a RULING here (every RR exit is the buyer's, deliberately), and a
+ * ruling that is transcribed into a page's constant is a ruling that silently
+ * stops tracking the machine the day a verb's role changes.
+ *
+ * Total, and the three outcomes are kept DISTINCT on purpose — `userVerbsFrom`
+ * returns `[]` for a dead end and an ending alike, which is right for "what may
+ * I offer?" and wrong for "who acts next?". A caller must not be able to render
+ * "Complete" over a state the surface simply cannot leave:
+ *   · `ended`    — a declared terminal. Nobody acts; the flow is over.
+ *   · `stranded` — NOT terminal and no surfaceable exit. A FINDING, never copy.
+ *   · `actors`   — the personas that own at least one surfaceable exit.
+ */
+export type NextActor =
+  | { readonly kind: 'ended' }
+  | { readonly kind: 'stranded' }
+  | { readonly kind: 'actors'; readonly personas: readonly PersonaType[] };
+
+export function nextActorFrom(entity: string, state: string): NextActor {
+  const verbs = userVerbsFrom(entity, state);
+  if (verbs.length === 0) {
+    return isTerminalState(entity, state) ? { kind: 'ended' } : { kind: 'stranded' };
+  }
+  const personas = (Object.keys(PERSONA_ROLES) as PersonaType[]).filter((p) =>
+    verbs.some((v) => personaCan(p, v.requiredRole)),
+  );
+  // A surfaceable verb whose role NO persona holds is unreachable by anyone —
+  // `stranded` is the honest reading, not an empty actor list a caller would
+  // render as blank.
+  return personas.length === 0 ? { kind: 'stranded' } : { kind: 'actors', personas };
 }
