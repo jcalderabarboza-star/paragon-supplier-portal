@@ -352,6 +352,15 @@ export interface RootCause {
  * every resolved response carry a stale accusation forever. The ledger has
  * neither failure mode: the raise stays, the resolution lands BESIDE it.
  *
+ * ── ⚠️ AND THERE WAS NO EXISTING FIELD TO REUSE — MEASURED, NOT ASSUMED ────
+ * Reusing a field beats adding a parallel one, so the candidates were derived
+ * before this one was written. `plannerNote` (the buyer's word) and
+ * `supplierNote` (the supplier's) were both named as already present on this
+ * DTO: **each has ZERO occurrences in `src/`**, and the interface below declares
+ * fourteen fields, none of them either. The supplier's word is real and is
+ * `rootCause` / `acknowledgment.note`; the buyer had nothing at all, which is
+ * the defect this closes rather than an argument about where to put it. §55h.
+ *
  * ── ⚠️ NO ACTOR IS STORED, AND THAT IS DELIBERATE ──────────────────────────
  * Both entry kinds are gated on `requirementresponse:dispute`, which ONLY the
  * buyer holds (`PERSONA_ROLES`), so `by: 'buyer'` would be a stored copy of
