@@ -1163,6 +1163,29 @@ export const REQUIREMENT_RESPONSES: readonly RequirementResponse[] = Object.free
     provenance: PROV_SUPPLIER_SEED,
   }),
   // sup-005 (distributor) is short 500 kg on its firm 3 500 — carries a root cause.
+  //
+  // ⚠️ R1b — AND IT IS THE ONE DISPUTED RESPONSE, so the buyer's resolve surface
+  // has something to act on. `Disputed` is reachable ONLY through
+  // `t_requirementresponse_dispute`, whose surface is not built — and whose own
+  // from-state `UnderReview` has no caller either — so without a seed in this
+  // state the action cell would render on ZERO rows forever and no browser QA
+  // could reach it. This batch adds no path INTO `Disputed`, only out of it.
+  //
+  // ⚠️ THE STATUS IS FLIPPED ON AN EXISTING RECORD RATHER THAN A SIXTH ADDED,
+  // AND THE REASON IS MEASUREMENT, NOT TIDINESS. `consolidationRows` ignores
+  // status entirely (it skips `Draft` and nothing else), and so do
+  // `supplierRollups` and `chaseList` — so flipping one moves NO count anywhere.
+  // Adding a sixth response DID move them: sup-007 fell from two awaiting lines
+  // to one, tying sup-002, and the chase-list ordering test — which asserts the
+  // list orders by how much is outstanding — became a coin-flip between two
+  // equal suppliers. It would still have gone GREEN once renumbered, and it
+  // would have stopped measuring the thing it was written to measure.
+  //
+  // ⚠️ SEEDED WITH ITS RAISE ENTRY, NEVER A BARE STATUS. Since #239 every path
+  // into `Disputed` APPENDS to the ledger, so a `Disputed` record with an empty
+  // `disputeResponse` is a shape the machine can no longer produce — and the
+  // resolve panel, which renders the raise it is answering, would have opened on
+  // a dispute with no words in it.
   Object.freeze({
     id: 'rr-0002',
     supplierId: 'sup-005',
@@ -1172,7 +1195,7 @@ export const REQUIREMENT_RESPONSES: readonly RequirementResponse[] = Object.free
     planVersion: 'PV-2026-08.1',
     submittedAt: '2026-08-03T10:40:00.000Z',
     submissionVersion: 1,
-    status: 'Submitted',
+    status: 'Disputed',
     forecastConfirmation: Object.freeze({
       confirmedQty: 3000,
       uom: 'KG',
@@ -1184,6 +1207,13 @@ export const REQUIREMENT_RESPONSES: readonly RequirementResponse[] = Object.free
       level2: 'principal-allocation',
       note: 'Principal lead time constrains bridgeable volume this period.',
     }),
+    disputeResponse: Object.freeze([
+      Object.freeze({
+        kind: 'raised',
+        text: 'The 3 500 is a firm line against a committed launch window. A principal allocation cap needed flagging at publication, not at confirmation — please re-plan the shortfall or escalate to the principal.',
+        at: '2026-08-17T02:30:00.000Z',
+      }),
+    ]),
     provenance: PROV_SUPPLIER_SEED,
   }),
   // sup-002 has a Draft against its semi-firm 2026-09 line (not yet submitted).

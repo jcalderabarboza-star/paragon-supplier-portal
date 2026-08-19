@@ -102,6 +102,13 @@ const STATUS_TONE: Record<string, StatusTone> = {
   Excess: 'neutral',
   Terminated: 'neutral',
   'Under Review': 'neutral',
+  // R1b — `Accepted` is a real DISPLAY status this registry simply never had,
+  // and it is the terminal state of `requirementResponse`. Its sibling miss,
+  // the machine's spelling `UnderReview`, is NOT registered here: it is an
+  // ALIAS of the existing 'Under Review' (statusLabel.ts). Registering it would
+  // have made its own EN label the literal "UnderReview", because this map's EN
+  // value IS the canonical string — which is exactly what browser QA caught.
+  Accepted: 'success',
   Manual: 'neutral',
   Outbound: 'neutral',
 };

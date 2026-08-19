@@ -14726,3 +14726,159 @@ the most believable kind.
   measured `done`).
 - **UNTOUCHED:** no surface action, no buyer file in the diff, R1c / R1d and rank
   2 unmoved. C9 `af7f0b4` and C10 `dc8e774` byte-identical.
+
+
+---
+
+## §56 — THE LOOP CLOSES. And three of the batch's four findings were produced by instruments running *after* the code was written — a mutation probe, an EN browser pass, and an ID browser pass — none of them by review
+
+**Batch:** R1b proper (PR pending). **Floor** 3097 / 227 → **3100 / 227 / 7**.
+
+### 56a · WHAT LANDED, AND WHAT IT COMPLETES
+
+R1a put *"Awaiting Paragon"* on the supplier's row — a promise of review. #239 gave
+`t_requirementresponse_resolve` a required, proven, stored reason and **no caller
+at all**; its own entry said the batch *"built both ends of the wire and left the
+switch off."* This is the switch:
+
+- `useResolveRequirementDispute` (`sdcBuyerHooks.ts`) — the buyer-scoped write,
+  payload assembled by `buildRequirementResolutionPayload` rather than
+  transcribed, and invalidating the **subject supplier's** reads as well as the
+  buyer's (the C4c predicate, reused verbatim — same shape: a buyer write ABOUT
+  a supplier).
+- A **disputes queue** on `/buyer/collaboration`, population derived from
+  `userVerbsFrom` so it empties itself when a dispute is answered.
+- A **resolve panel** in the invoice dispute panel's shape, with the commit
+  disabled while the answer is blank.
+- The **lifecycle chip** on the consolidation row — the axis that cell never
+  carried.
+
+### 56b · ⚠️ THE ACTION MOVED OUT OF THE GRID, AND THE REASON IS A COVERAGE HOLE, NOT A PREFERENCE
+
+It was built where the dispatch put it: an action cell on the disputed DSG row.
+Then the spec suite could not see it — **the `react-datasheet-grid` body is
+virtualized and lays out NO ROWS under jsdom's zero-height viewport**, a fact
+this page's own test header has stated since SDC-1b and which was read *after*
+writing twelve tests that all failed identically.
+
+The page's one and only write would have shipped with **zero spec coverage** and
+nothing behind it but a browser pass. Moved to plain DOM beside the chase list —
+the shape this page already uses for work a planner must act on. The lifecycle
+chip stays in the grid, because a chip is a *render*, and browser QA is a
+sufficient instrument for a render in a way it is not for a write.
+
+**The general form: WHERE A CONTROL LIVES DECIDES WHAT CAN TEST IT, and that is
+a design constraint of the same rank as where it reads best.**
+
+### 56c · ⚠️ THE FIXTURE WAS RE-SEATED BECAUSE THE FIRST SEAT BROKE A TEST *SILENTLY AND GREENLY*
+
+`Disputed` is reachable only through `t_requirementresponse_dispute`, which has
+no surface — so a seed is the only way the action cell renders on anything. The
+first attempt **added** a sixth response (`rr-0006`, sup-007). Eight tests went
+red, seven of them honest renumbering. The eighth was not:
+
+> `chaseList` asserts the list **orders by how much is outstanding**. The new
+> response dropped sup-007 from two awaiting lines to one, **tying sup-002** — so
+> the assertion became a coin-flip between two equal suppliers.
+
+**It would have gone green again the moment somebody updated the expected array,
+and it would have stopped measuring the thing it was written to measure.** That
+is the failure mode a floor cannot see and a green suite cannot report.
+
+Re-seated by **flipping an existing record's status** instead (`rr-0002` →
+`Disputed`, with its raise entry). Derived, not hoped: `consolidationRows` skips
+`Draft` and nothing else, and `supplierRollups` / `chaseList` read only the
+derived row states — **so a status flip moves no count anywhere.** Blast radius
+fell from eight tests to one, and that one was the honesty banner this batch
+deliberately changed.
+
+### 56d · ⚠️ THE MUTATION PROBE, AND THE SURVIVOR THAT IS A CORRECTION TO A COMMENT RATHER THAN TO CODE
+
+Eight mutations, **35 named kills**, every mutation confirmed on disk, ANSI
+stripped, collection checked (§50e/§51f both pre-empted). One survivor, reported
+rather than buried:
+
+| | mutation | kills |
+|---|---|---|
+| A | gate always TRUE | 12 |
+| B | gate always FALSE | 12 |
+| C | commit no longer disabled when blank | 2 |
+| D | the answer shipped untrimmed | 1 |
+| E | the box pre-filled instead of empty | 3 |
+| F | invalidation drops the subject supplier | 1 |
+| G | the hook fires the wrong verb | 4 |
+| **H** | **the blank guard inside `onCommit` removed** | **0 — SURVIVED** |
+
+H is **unreachable by construction**: no test can click a disabled button, so no
+test can reach the guard behind it. The code was correct; **the comment above it
+was not** — it claimed three layers of defence where two bite (the disabled
+commit, asserted and mutation-killed; and `rr_dispute_text_authored` at the
+transition, the only one a hand-crafted dispatch cannot skip) and one is belt.
+
+**A GUARD ON AN UNREACHABLE PATH CANNOT BE MUTATION-KILLED, AND WRITING IT UP AS
+A LAYER IS CLAIMING COVERAGE THAT DOES NOT EXIST.** The fix was to the prose. The
+alternative — engineering a test-only backdoor so the number reads 8/8 — would
+have bought a clean scoreboard by making the probe measure the harness.
+
+### 56e · ⚠️ TWO VOCABULARIES THAT AGREED BY COINCIDENCE — FOUND BY THE EN BROWSER PASS, AND THE OBVIOUS FIX WAS WRONG
+
+Resolving worked, and **the lifecycle chip vanished**. The transition flows and
+the central status-label registry are two vocabularies:
+`requirementResponse` declares five states and **three are spelled exactly like
+their display status by coincidence.** `UnderReview` is not — the map is keyed
+`'Under Review'`, with the space — so `statusLabelKey` returned null. `Accepted`
+was simply absent.
+
+Both misses are reachable **only through buyer verbs**, and no buyer verb had a
+surface until this batch. That is the whole reason a defect this plain survived:
+*nothing could get there.* A supplier whose dispute was resolved would have read
+the raw literal `UnderReview`, **in both locales.**
+
+⚠️ **AND THE FIRST FIX WAS WRONG IN A WAY ONLY THE BROWSER COULD SHOW.**
+Registering `UnderReview` as a canonical status made the chip come back reading
+**"UnderReview"** — because this map's EN value *is* the canonical key (that is
+the translate-once design). The correct shape is an **alias** to the label that
+already exists and already localizes. `Accepted` was a genuine gap and is
+registered properly.
+
+Repaired centrally, so both personas fix at once with no page edit:
+`SupplierForecasts` is not in the diff and its StatusPill now reads *"Sedang
+Ditinjau"*. A **derived census** of the remedy's reach: 18 flows, 85 states,
+**10 still unlabelled** — listed and booked as `FLOW-STATE-HAS-NO-LABEL-01`, not
+fixed here.
+
+### 56f · ⚠️ THE HONESTY BANNER WAS CORRECTED IN ENGLISH ONLY, AND ONLY THE ID BROWSER PASS SAW IT
+
+The page had been read-only end to end for its whole life and said so. This batch
+makes that false, so the banner was rewritten to name the one write — **in `En`.**
+The `Id` fragment still promised *"hanya-baca … tidak ada yang mengubah,
+mengirim, atau menerbitkan."*
+
+Nothing was red. Key parity passed — **both keys existed and both had values.**
+The page was truthful in English and made a **false claim in Indonesian**, over a
+surface that now dispatches. Every spec in the page's suite renders in EN, so the
+suite could not have caught it; it took a browser pass in ID.
+
+**AN HONESTY MARKER TRANSLATED IN ONE LOCALE IS A FALSE CLAIM IN THE OTHER, AND
+KEY-PARITY CHECKING CANNOT SEE IT — parity proves a string is present, never that
+it still says the same thing.** This is the mirror of the unbacked affordance:
+the page *under*-claiming what it does. Corrected, and asserted in ID.
+
+### 56g · DISPOSITION
+
+- **BUILT:** the buyer resolve hook · the derived disputes queue · the resolve
+  panel (raise + the supplier's own words + required answer, commit shut while
+  blank) · the lifecycle chip · EN/ID from birth · one fixture flipped to
+  `Disputed` with its raise entry.
+- **VERIFIED:** gates green, **3100 / 227 / 7**. Full loop on the BUILT BUNDLE in
+  **both locales** — buyer's button in, supplier's ledger out, across the persona
+  boundary in one session. Computed styles confirm DP2-WARN-01's FILL/TEXT split
+  (`#8A5606` text on a `#D97706` edge) and DP2-BUTTON-01 (outline CTA, solid
+  reserved commit).
+- **SECOND SURFACE, DECLARED:** `statusLabel.ts` / `statusTone.ts` are central.
+  The `Accepted` registration also covers `goodsReceiptLine:Accepted` — **measured
+  to have no renderer today**, so no other surface moves now.
+- **BOOKED, NOT BUILT:** `FLOW-STATE-HAS-NO-LABEL-01` (10 states) · the seed
+  supplier id is hardcoded **twice**, in `identitySources.ts` and `SidebarV2.tsx`
+  · the dispute still has no lock · `review` / `dispute` / `accept` remain
+  surface-less, so `Disputed` is still reachable only from a fixture.

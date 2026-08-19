@@ -14,6 +14,7 @@ import PlanCellMarker from './plan-grid/PlanCellMarker';
 import FullScreenSection from './plan-grid/FullScreenSection';
 import { dataCell, textCell } from './plan-grid/cells';
 import { formatDate, formatNumber } from '../lib/format';
+import { statusLabelKey } from '../lib/statusLabel';
 import { mockSuppliers } from '../data/mockSuppliers';
 import {
   FORECAST_PUBLICATIONS,
@@ -30,13 +31,24 @@ import {
   useCoverageEntries,
   useChaseEntries,
   useSupplierRollups,
+  useResolveRequirementDispute,
 } from '../services/query/sdcBuyerHooks';
+import { userVerbsFrom } from '../services/transitions';
+import SidePanel from '../components/ui-v2/SidePanel';
+import Button from '../components/ui-v2/Button';
+import { useToast } from '../hooks/useToast';
+import type { RequirementResponse, DisputeEntry } from '../services/sdc';
 
 // ────────────────────────────────────────────────────────────────────────────
 // BuyerCollaboration (SDC-1b) — the P2 planner consolidation view: the
 // master-spreadsheet replacement (RFP p.13) on screen.
 //
-// READ-ONLY end-to-end: this page renders no mutation, no command, no dispatch.
+// (WAS: read-only end-to-end.) NO LONGER TRUE AS OF R1b, and the sentence that
+// stood here is corrected rather than deleted. ONE action writes: a planner
+// resolves a supplier's dispute, firing `t_requirementresponse_resolve` with the
+// required authored answer. Everything else still renders no mutation, no
+// command and no dispatch. The honesty BANNER copy changed in the same batch —
+// a banner still promising read-only is an unbacked affordance run backwards.
 // SDC-4d — the consolidation reads are now buyer-scoped `useServiceQuery` over
 // the LIVE stores (via svc.collaboration.*), fed by the shared sdcClock, so a P1
 // supplier declare / confirm is reflected here (the P1→P2 loop, closed on
@@ -72,6 +84,22 @@ const CURRENT = currentPublication(FORECAST_PUBLICATIONS);
 // `height` prop AND the `--plan-dsg-h` pin (anti-trembling, planGrid.css).
 const DSG_H = { grid: 256 } as const;
 const dsgVar = (h: number) => ({ '--plan-dsg-h': `${h}px` }) as React.CSSProperties;
+
+// R1b - THE GATE IS THE MACHINE, NOT A STATUS LITERAL.
+// `userVerbsFrom` reads `surfaceable` (S51), so a verb the flow marks unsurfaced
+// can never reach this column even when its from-state matches. Writing
+// `status === 'Disputed'` here would be shorter, correct today, and would keep
+// offering the button on the day somebody flips `surfaceable` to false - an
+// affordance outliving its own legality.
+const RESOLVE_VERB = 't_requirementresponse_resolve';
+
+const offersResolve = (state: string): boolean =>
+  userVerbsFrom('requirementResponse', state).some((v) => v.id === RESOLVE_VERB);
+
+/** The response behind a row's state, when the state carries one. `awaiting`
+ *  does not: nobody answered, so there is nothing to dispute or resolve. */
+const responseOf = (state: ConsolidationRow['state']): RequirementResponse | null =>
+  'response' in state ? state.response : null;
 
 const supplierName = (id: string): string =>
   mockSuppliers.find((s) => s.id === id)?.name ?? id;
@@ -110,11 +138,162 @@ type CoverageRow = ConsolidationRow & {
   readonly coverage: SupplierCoverageEntry | null;
 };
 
+// ────────────────────────────────────────────────────────────────────────────
+// R1b - THE RESOLVE CAPTURE.
+//
+// The shape is BuyerInvoices' dispute panel, copied rather than invented: a
+// SidePanel (`role="dialog" aria-modal="true"`), the record above, the authored
+// text below, cancel + commit in the footer. What is NOT copied is the guard.
+// The neighbour's commit is `disabled={mutation.isPending}` only, and refuses a
+// blank reason by early-returning into a toast - measured on the tree, not
+// assumed from the pattern. Here the commit is ALSO disabled while the answer is
+// blank, on the operator ruling: the supplier cannot dispute without saying why,
+// so the buyer must not resolve without saying why, and a dismissible capture on
+// a required field is how a required thing becomes a suggestion.
+//
+// THE RAISE IS RENDERED ABOVE THE BOX, and it is not decoration: a planner
+// answering a dispute they cannot see would be composing a reply to a message
+// they never read. The supplier's OWN words sit beside it for the same reason -
+// R1a rendered the supplier's objection to the supplier; this is the first
+// surface that renders it to the BUYER, at the moment of answering it.
+//
+// DP2-WARN-01: `text-warning-hover` is the only warning colour legal as TEXT on
+// light; the bright DEFAULT is graphical-only and `text-warning` never appears.
+// DP2-BUTTON-01: the commit is SOLID action-blue - a resolution appends to an
+// immutable ledger the supplier reads, which is the reserved irreversible-commit
+// class. The row CTA that opens this panel is outline: it commits nothing.
+// ────────────────────────────────────────────────────────────────────────────
+const DisputeExchange: React.FC<{ entries: readonly DisputeEntry[] }> = ({ entries }) => {
+  const { t } = useTranslation();
+  if (entries.length === 0) return null;
+  return (
+    <div className="flex flex-col gap-2" data-testid="sdc-resolve-exchange">
+      {entries.map((e, i) => (
+        <div
+          key={`${e.at}-${i}`}
+          className={`border-l-2 py-1 pl-3 ${
+            e.kind === 'raised' ? 'border-l-warning' : 'border-l-success'
+          }`}
+        >
+          <div className="text-label mb-0.5 uppercase">
+            <span className={e.kind === 'raised' ? 'text-warning-hover' : 'text-success'}>
+              {t(e.kind === 'raised' ? 'sdc.resolve.raised' : 'sdc.resolve.resolved')}
+            </span>{' '}
+            <Data className="normal-case text-text-tertiary">{formatDate(e.at)}</Data>
+          </div>
+          <div className="text-xs text-text-secondary">{e.text}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const ResolvePanel: React.FC<{
+  row: CoverageRow | null;
+  answer: string;
+  onAnswer: (v: string) => void;
+  pending: boolean;
+  onCancel: () => void;
+  onCommit: () => void;
+}> = ({ row, answer, onAnswer, pending, onCancel, onCommit }) => {
+  const { t } = useTranslation();
+  const response = row ? responseOf(row.state) : null;
+  const blank = answer.trim() === '';
+
+  return (
+    <SidePanel
+      open={row !== null}
+      onClose={onCancel}
+      title={t('sdc.resolve.panelTitle', { material: row?.line.materialCode ?? '' })}
+      footerActions={
+        <>
+          <Button variant="secondary" onClick={onCancel}>
+            {t('sdc.resolve.cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            data-testid="sdc-resolve-commit"
+            disabled={pending || blank}
+            onClick={onCommit}
+          >
+            {t('sdc.resolve.commit')}
+          </Button>
+        </>
+      }
+    >
+      {response && row && (
+        <div className="flex flex-col gap-6">
+          <section>
+            <h3 className="text-label mb-2 uppercase text-text-tertiary">
+              {t('sdc.resolve.section.exchange')}
+            </h3>
+            <div className="mb-2 text-xs text-text-tertiary">
+              <Data>{response.id}</Data> · {supplierName(response.supplierId)} ·{' '}
+              <Data>{row.line.periodBucket}</Data>
+            </div>
+            <DisputeExchange entries={response.disputeResponse ?? []} />
+          </section>
+
+          <section>
+            <h3 className="text-label mb-2 uppercase text-text-tertiary">
+              {t('sdc.resolve.section.supplierSaid')}
+            </h3>
+            {/* The supplier's own words, unedited and untranslated - a record,
+                not copy. An HONEST BLANK when they stated none: this lane never
+                fabricates a cause on a supplier's behalf. */}
+            <p className="text-xs text-text-secondary" data-testid="sdc-resolve-rootcause">
+              {response.rootCause?.note ??
+                response.forecastConfirmation?.capacityConstraint ??
+                t('sdc.resolve.noRootCause')}
+            </p>
+          </section>
+
+          <section>
+            <h3 className="text-label mb-2 uppercase text-text-tertiary">
+              {t('sdc.resolve.section.answer')}
+            </h3>
+            <label htmlFor="sdc-resolution-reason" className="sr-only">
+              {t('sdc.resolve.srLabel', {
+                supplier: supplierName(response.supplierId),
+                material: row.line.materialCode,
+              })}
+            </label>
+            <textarea
+              id="sdc-resolution-reason"
+              data-testid="sdc-resolve-input"
+              className="w-full rounded-md border border-border-subtle bg-bg-surface px-3 py-2 text-sm text-text-primary"
+              rows={4}
+              placeholder={t('sdc.resolve.placeholder')}
+              value={answer}
+              onChange={(e) => onAnswer(e.target.value)}
+            />
+            <div className="mt-2 text-xs text-text-tertiary">{t('sdc.resolve.note')}</div>
+          </section>
+        </div>
+      )}
+    </SidePanel>
+  );
+};
+
 const BuyerCollaboration: React.FC = () => {
   const { t } = useTranslation();
 
   // The period filter — 'all' or one horizon bucket of the current publication.
   const [period, setPeriod] = useState<string>('all');
+
+  // R1b - the resolve capture. `answer` is deliberately NOT seeded from
+  // anything: a resolution is AUTHORED, and pre-filling it with the dispute text
+  // would let somebody resolve by pressing a button on a sentence they did not
+  // write.
+  const [resolving, setResolving] = useState<CoverageRow | null>(null);
+  const [answer, setAnswer] = useState('');
+  const resolveMutation = useResolveRequirementDispute();
+  const { toast } = useToast();
+
+  const closeResolve = () => {
+    setResolving(null);
+    setAnswer('');
+  };
 
   // SDC-4d — the live buyer-scoped consolidation reads (over svc.collaboration.*,
   // fed by the shared sdcClock). Buyer-gated: a supplier persona resolves [].
@@ -134,6 +313,20 @@ const BuyerCollaboration: React.FC = () => {
       coverage: byPair.get(`${r.line.supplierId}|${r.line.materialCode}`) ?? null,
     }));
   }, [rows, coverage]);
+
+  // R1b - the rows the MACHINE says are resolvable. `userVerbsFrom` reads
+  // `surfaceable` (S51), so a verb the flow marks unsurfaced never reaches this
+  // list even when its from-state matches; `status === 'Disputed'` would be
+  // shorter, correct today, and would keep offering the button on the day
+  // somebody flipped `surfaceable` to false.
+  const disputedRows = useMemo(
+    () =>
+      rowsWithCoverage.filter((r) => {
+        const response = responseOf(r.state);
+        return response !== null && offersResolve(response.status);
+      }),
+    [rowsWithCoverage],
+  );
 
   const visibleRows = useMemo(
     () =>
@@ -274,6 +467,25 @@ const BuyerCollaboration: React.FC = () => {
                   {s.carriedForward && carriedToken}
                 </>
               )}
+              {/* R1b - THE LIFECYCLE AXIS, which this cell never carried.
+                  Everything above is the QUANTITY join (awaiting / acknowledged
+                  / full / short / stale); a DISPUTED response rendered here as
+                  plain `short`, pixel-identical to one nobody had looked at.
+                  The label comes from the SAME central status map the supplier's
+                  own page localizes through, so the two personas cannot drift
+                  into different words for one state. */}
+              {responseOf(s) &&
+                statusLabelKey(responseOf(s)!.status) &&
+                responseOf(s)!.status !== 'Submitted' && (
+                  <span
+                    className={
+                      responseOf(s)!.status === 'Disputed' ? CHIP_WARNING : CHIP_NEUTRAL
+                    }
+                    data-testid="sdc-lifecycle-chip"
+                  >
+                    {t(statusLabelKey(responseOf(s)!.status)!)}
+                  </span>
+                )}
               {s.kind === 'stale-against-current' && (
                 <span className={CHIP_WARNING}>
                   {s.answeredQty === null
@@ -532,6 +744,132 @@ const BuyerCollaboration: React.FC = () => {
           </ul>
         )}
       </section>
+
+      {/* R1b - DISPUTES AWAITING RESOLUTION.
+          ⚠️ THIS IS NOT WHERE THE ACTION WAS FIRST BUILT, and the move is a
+          finding rather than a preference. It was an action cell in the DSG,
+          which is where "the buyer's action on the disputed row" naturally
+          lands - and the grid BODY is virtualized and lays out NO ROWS under
+          jsdom's zero-height viewport (this page's own test header has said so
+          since SDC-1b). The page's one and only write would have shipped with
+          zero spec coverage and nothing but browser QA behind it.
+          Plain DOM, beside the chase list, which is the shape this page already
+          uses for work a planner has to act on. The population is DERIVED from
+          the machine, never filtered on a status literal, so the section empties
+          itself the moment a dispute is answered. */}
+      <section className="mb-8" data-testid="sdc-disputes">
+        <h2 className="mb-1 text-base font-semibold text-text-primary">
+          {t('sdc.disputes.title')}
+        </h2>
+        <p className="mb-3 text-sm text-text-secondary">{t('sdc.disputes.subtitle')}</p>
+        {disputedRows.length === 0 ? (
+          <p className="text-sm text-text-tertiary">{t('sdc.disputes.none')}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {disputedRows.map((row) => {
+              const response = responseOf(row.state)!;
+              return (
+                <li
+                  key={row.id}
+                  className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm"
+                >
+                  <span className={CHIP_WARNING}>{t('sdc.resolve.raised')}</span>
+                  <span className="font-medium text-text-primary">
+                    {supplierName(row.line.supplierId)}
+                  </span>
+                  <Data className="text-xs">{row.line.materialCode}</Data>
+                  <Data className="text-xs">{row.line.periodBucket}</Data>
+                  <Data className="text-xs text-text-tertiary">{response.id}</Data>
+                  <button
+                    type="button"
+                    data-testid="sdc-resolve-cta"
+                    title={t('sdc.resolve.ctaTitle', {
+                      material: row.line.materialCode,
+                      period: row.line.periodBucket,
+                    })}
+                    onClick={() => {
+                      setResolving(row);
+                      setAnswer('');
+                    }}
+                    className="ml-auto rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action transition-colors hover:bg-action-soft"
+                  >
+                    {t('sdc.resolve.cta')}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {/* R1b - the resolve capture, in the invoice dispute panel's shape. */}
+      <ResolvePanel
+        row={resolving}
+        answer={answer}
+        onAnswer={setAnswer}
+        pending={resolveMutation.isPending}
+        onCancel={closeResolve}
+        onCommit={() => {
+          const row = resolving;
+          const response = row ? responseOf(row.state) : null;
+          if (!row || !response) return;
+          // ⚠️ THIS BRANCH IS UNREACHABLE WHILE THE COMMIT IS DISABLED, AND THE
+          // MUTATION PROBE SAYS SO RATHER THAN THE COMMENT CLAIMING OTHERWISE.
+          // Replacing it with `if (false)` kills NOTHING - no test can click a
+          // disabled button, so no test can reach here. It is kept as the thing
+          // that catches a future edit removing `disabled`, and it is honestly
+          // BELT, NOT A LAYER: writing "three guards" over one reachable guard
+          // and one unreachable one would be claiming coverage that does not
+          // exist. The two that DO bite are the disabled commit (asserted, and
+          // a mutation kills it) and `rr_dispute_text_authored` at the
+          // TRANSITION (asserted, and the only one a hand-crafted dispatch
+          // cannot skip). The neighbour this panel copies (BuyerInvoices) has
+          // only this unreachable-shaped one and no disabled commit at all -
+          // measured on the tree, not assumed from the pattern.
+          if (!answer.trim()) {
+            toast({ variant: 'warning', title: t('sdc.resolve.missingReason') });
+            return;
+          }
+          resolveMutation.mutate(
+            {
+              responseId: response.id,
+              supplierId: response.supplierId,
+              resolutionReason: answer.trim(),
+            },
+            {
+              onSuccess: (res) => {
+                if (res.status === 'failed') {
+                  toast({
+                    variant: 'warning',
+                    title: t('sdc.resolve.failed.title', {
+                      material: row.line.materialCode,
+                    }),
+                    description: res.reason,
+                  });
+                  return;
+                }
+                toast({
+                  variant: 'success',
+                  title: t('sdc.resolve.done.title', {
+                    material: row.line.materialCode,
+                  }),
+                  description: t('sdc.resolve.done.body', {
+                    supplier: supplierName(response.supplierId),
+                  }),
+                });
+                closeResolve();
+              },
+              onError: () =>
+                toast({
+                  variant: 'warning',
+                  title: t('sdc.resolve.failed.title', {
+                    material: row.line.materialCode,
+                  }),
+                }),
+            },
+          );
+        }}
+      />
     </AppShellV2>
   );
 };
