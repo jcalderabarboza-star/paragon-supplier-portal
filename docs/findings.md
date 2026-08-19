@@ -14529,3 +14529,200 @@ to name symbols; a retraction phrased without one would have been unmeasurable.
 - **UNTOUCHED:** no code, no test, no flow, no surface, no gate. C9 `af7f0b4`
   and C10 `dc8e774` byte-identical. Floor **3026 / 220 / 7**, unchanged — this
   batch adds no tests and says so.
+
+
+---
+
+## §55 — THE BUYER'S DISPUTE GAINS WORDS. And the invented-artifact class gains a SOURCE: a refused invention that was written into a memory note and came back as a dispatched premise
+
+**Batch:** R1a → R1b (PRs #238 merged, #239 open). **Floor** 3054 / 223 → **3076 / 225 / 7**.
+
+### 55a · THE DEFECT, AND WHY IT WAS A SPEC DEFECT RATHER THAN A LIVE ONE
+
+`t_requirementresponse_dispute` carried `requiredFields: []`. So the CONTRACT — the
+thing an F1 author implements against — said a supplier's governed commitment
+could be rejected with **no recorded ground at all**. The verb this machine was
+copied from, `t_invoice_dispute`, has required a `disputeReason` since the day it
+was written.
+
+Nothing was live: neither buyer verb has a production caller (surfacing them is
+R1b proper, still booked). That makes it the worse of the two kinds, on the
+`requirementResponseQtyFloor` ranking — **a live defect is fixed by whoever hits
+it; a spec defect is implemented faithfully.**
+
+What turned it from dormant into a cost was **R1a, one batch earlier**: the
+supplier's row now reads *"Awaiting Paragon — nothing needed from you."* The
+platform began PROMISING a review whose outcome it then reported as a bare status
+change. A dead end is honest; a promise with no content is not.
+
+### 55b · THE NEIGHBOUR IS HALF A PRECEDENT, AND THE OTHER HALF IS BROKEN
+
+The obvious fix was to copy `t_invoice_dispute`. Measured before copying:
+
+> `invoiceTarget.applyTransition` writes `status` and `amount`. **`disputeReason`
+> is on NO DTO in the tree** (`grep disputeReason src/services/data/types.ts
+> src/services/sdc/types.ts` → zero).
+
+It is required by the transition, typed into a real form
+(`BuyerInvoices.tsx:1218`), carried in the payload (`commandHooks.ts:650`),
+asserted by a test (`MISSING_FIELDS:disputeReason`) — **and dropped on the
+floor.** A required field nothing stores exists only in its own refusal message,
+and the whole apparatus around it is green.
+
+Copying the requirement without the storage would have shipped the same
+write-only field twice. Booked against the invoice lane, not fixed here:
+`INVOICE-DISPUTE-REASON-UNSTORED-01`.
+
+### 55c · A LEDGER, NOT A FIELD — AND THE LANE DECIDED IT, NOT THE STRATEGIST
+
+The shape question was put explicitly: does a reason CLEAR on resolution, MOVE to
+a history, or STAY with a resolution beside it? It was not adjudicated from
+first principles because **the lane had already answered it three times**:
+
+- `submissionVersion` — *"Versioned, never overwritten: prior max + 1 over the
+  response thread."*
+- `submittedAt` — stamped once, with the reason in the comment: *"a later
+  buyer-side move (review / accept / dispute) must not restamp the moment the
+  supplier answered."*
+- `enforcementSettingStore.append` — a governed record that APPENDS and writes no
+  state.
+
+A scalar reason cannot answer *"was this dispute ever answered."* Clearing it
+loses that a dispute happened; keeping it makes every resolved response carry a
+stale accusation forever. **A DISPUTE THAT WAS ANSWERED IS NOT THE SAME AS ONE
+THAT WAS NEVER RAISED** (operator), and an append-only ledger is the only shape
+with neither failure mode. Recorded here as a lane derivation rather than a
+ruling, because that is what it was.
+
+### 55d · THE SYMMETRY ARGUMENT, WHICH IS WHAT MAKES THIS A LANE FIX
+
+Both buyer verbs on the dispute seam ANSWER something the supplier said, and
+before this batch neither could say why. `dispute` rejects the supplier's number;
+`resolve` acquits it. They are one act apart on one seam, and shipping the
+requirement on one of them would have left the identical gap on the other.
+
+⚠️ **AND THE SYMMETRY INVERTS ON MEASUREMENT, IN THE DIRECTION THAT MAKES IT
+SHARPER.** The premise offered was that *the supplier's own objection is already
+required, immutable, and rendered back to them.* Derived from the flow:
+
+```
+t_requirementresponse_submit  ['publicationId','planVersion','materialCode','periodBucket','confirmedQty']
+```
+
+`rootCause` is **not** in it, and the DTO types it `rootCause?: RootCause` —
+OPTIONAL — and `submitModel.ts:100` spreads it only when present. **A supplier
+may confirm 6,000 KG against a 9,000 KG firm line and say nothing about why.**
+
+So the true state after this batch is not *"the buyer can now explain."* It is:
+**the buyer MUST explain and the supplier still need not** — the asymmetry did
+not close, it reversed. Requiring `rootCause` on a short confirmation would break
+a WIRED production caller (`SupplierForecasts`), which is a product ruling and
+not a spec tidy-up. Booked: `RR-SHORTFALL-NEEDS-NO-REASON-01`.
+
+### 55e · TWO GUARDS A ONE-DIRECTIONAL PROBE WOULD HAVE SHIPPED WRONG
+
+**`requiredFields` is `isEmpty`, and `isEmpty('   ')` is FALSE.** So is
+`isEmpty(0)`, `isEmpty(false)` and `isEmpty({})` (`dispatcher.ts:163`). A required
+TEXT field therefore admitted the space bar, a number and an object. This is the
+`RR_SUBMIT_QTY_FLOOR` lesson transposed onto a string — presence is not a value —
+and `rr_dispute_text_authored` is what makes "required" mean somebody wrote
+something. It proves the text is a non-blank string; it cannot prove the text is
+TRUE or responsive, exactly as the qty floor cannot tell 2400 from 2.4.
+
+**The FROM-state is the discriminator, not the destination.**
+`t_requirementresponse_review` lands on `UnderReview` — *the same state a
+resolution lands on*. A guard keyed on `toState` appends a phantom `resolved`
+entry to a response nobody ever disputed, **and every refusal test stays green**,
+because refusal tests only ever ask whether the bad input was caught. Two
+known-good tests hold it open, one at the spine (*"A REVIEW ADDS NOTHING"*) and
+one at the surface (*"A REVIEWED-BUT-UNDISPUTED RESPONSE STILL RENDERS
+NOTHING"*). The mutation that drops the guard kills six tests; both known-goods
+are among them.
+
+### 55f · NO ACTOR IS STORED, AND THE REASON IS THE ENFORCEMENT RULING
+
+`by: 'buyer'` was rejected as a field. Both entry kinds are gated on
+`requirementresponse:dispute`, which only the buyer holds, so a stored actor is a
+copy of what the role gate proves — a derived value that can drift from its own
+derivation. The attribution worth having is a NAMED HUMAN, and this build has
+none (`ENF-NO-PERSON-IN-IDENTITY-01`): `CurrentIdentity` carries a persona, a
+tenant and a company. The enforcement lane answers that with `ActorAttribution`,
+whose `UNATTRIBUTED` arm **refuses the act** — correct for an override, and here
+it would make a dispute unraisable. So the ledger records WHAT WAS SAID and WHEN
+and claims no accountability it cannot back. Booked:
+`RR-DISPUTE-HAS-NO-HUMAN-01`, closes with F1 OIDC.
+
+### 55g · THE NAMING QUESTION, ANSWERED IN THE GENERAL FORM
+
+The gate on this batch was: *does the field name read as a NOTE rather than a
+REPLY? A field whose name understates its role is how a required thing becomes a
+suggestion.* The instinct is right and it is why the names are what they are:
+`disputeText` / `resolutionText` as payload fields, and the entry discriminated
+`kind: 'raised' | 'resolved'` rather than carrying a bare `note`. **The
+discriminator is the half that does the work** — a reader who sees `raised` and
+`resolved` cannot mistake either for optional commentary, and no naming of the
+text field alone could have achieved that.
+
+### 55h · ⚠️ THE INVENTED-ARTIFACT CLASS GAINS FOUR NAMES AND — FOR THE FIRST TIME — A SOURCE
+
+§52b records artifacts named in a dispatch as existing code and measured absent,
+and warns that **the register under-counts by construction**, because an
+invention refused in conversation leaves no trace. This arc adds four in three
+consecutive dispatches:
+
+| named as existing | measured | where the claim rested |
+|---|---|---|
+| `t_requirementresponse_correct` — "REQUIRES `confirmedQuantities`" | zero occurrences in `src/` | a whole ruling (the "stale-reason defect") |
+| `plannerNote` — "EXISTS ON THE DTO and is never written" | zero occurrences in `src/` | a ruling to reuse it instead of adding a field |
+| `supplierNote` — "the supplier's word" | zero occurrences in `src/` | the turn-taking premise |
+| `resolutionReason` | zero occurrences in `src/` | the proposed field name |
+
+Derived, not asserted: the `RequirementResponse` interface declares fourteen
+fields and none is named any of these; the machine declares seven verbs and none
+is named `correct`.
+
+⚠️ **AND THE `confirmedQuantities` HALF IS §42's CLASS EXACTLY.**
+`confirmedQuantities` **does** exist — 10 occurrences — as **`t_po_confirm`'s
+payload field, one lane over.** A scan matches; a derivation at the registration
+site does not. A real identifier borrowed into a false sentence is the most
+believable shape an invention can take, because half of it greps.
+
+⚠️ **THE NEW PART, AND IT IS THE REASON THIS SECTION EXISTS.** §52b says refused
+inventions leave no trace. **One did not merely leave a trace — it left a
+RECORD.** `t_requirementresponse_correct` appears exactly once anywhere in this
+repository, in `.remember/today-2026-08-19.md`, written by THIS SEAT earlier the
+same day, where a plan under consideration was minuted as a measured fact
+("precondition identified (`t_requirementresponse_correct` unvalidated writes vs
+supplier path)"). It was never in the tree. It then re-entered as a dispatched
+premise, twice, and the second time carried a ruling.
+
+**So the propagation path is not conversation → forgetting. It is conversation →
+NOTE → premise → ruling.** A memory file is an instrument like any other, and it
+has the failure mode §43a names for dispatches: **a plan written down in the
+past tense is indistinguishable from a result.** The register's under-count is
+therefore not only silent refusals; it includes inventions that were LAUNDERED
+THROUGH A NOTE INTO FACTHOOD. The mitigation is the one already standing and it
+cost one line here: **`grep` for a named artifact before building on it** —
+absence is a one-line measurement, and a wrong premise with a specific name is
+the most believable kind.
+
+### 55i · DISPOSITION
+
+- **BUILT (PR #239):** `DisputeEntry` + `RequirementResponse.disputes` (append-
+  only); `disputeText` / `resolutionText` required on both dispute-seam verbs;
+  `rr_dispute_text_authored` proving substance over presence; the target
+  APPENDING rather than discarding; the supplier's row rendering the buyer's
+  words, EN and ID from birth.
+- **BREAK SURFACE, MEASURED:** four dispatch sites in two SPEC files. No product
+  code dispatches either verb, so nothing had to become optional.
+- **VERIFIED:** gates green, 3076 / 225 / 7. Six mutations, fifteen kills, **every
+  kill named** — baseline 0 of 22, each mutation confirmed applied by re-reading
+  the file, ANSI stripped before parsing (the §52a table's two mechanisms, both
+  pre-empted). Browser QA on the BUILT BUNDLE in both locales; DP2-WARN-01's
+  FILL/TEXT split confirmed in computed styles (`#8A5606` text, `#D97706` border).
+- **BOOKED, NOT BUILT:** `INVOICE-DISPUTE-REASON-UNSTORED-01` ·
+  `RR-SHORTFALL-NEEDS-NO-REASON-01` · `RR-DISPUTE-HAS-NO-HUMAN-01` · the dispute
+  has no lock (a supplier can supersede a disputed response by resubmitting —
+  measured `done`).
+- **UNTOUCHED:** no surface action, no buyer file in the diff, R1c / R1d and rank
+  2 unmoved. C9 `af7f0b4` and C10 `dc8e774` byte-identical.

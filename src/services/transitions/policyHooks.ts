@@ -93,6 +93,22 @@ export const POLICY_HOOKS = {
    * fails the day the parse moves into the transition.
    */
   RR_SUBMIT_QTY_FLOOR: 'rr_submit_qty_floor',
+  /**
+   * RR dispute / resolve: the authored text must be SUBSTANCE, not presence.
+   *
+   * ⚠️ **THE DISPATCHER'S `requiredFields` RULE IS `isEmpty`, AND `isEmpty('   ')`
+   * IS FALSE.** So is `isEmpty(0)`, `isEmpty(false)` and `isEmpty({})`. A
+   * required text field therefore admits a space bar, a number and an object —
+   * which is the RR_SUBMIT_QTY_FLOOR lesson on a string: presence is not a
+   * value, and **an omitted field passes a check written for a bad one**
+   * (operator, the quantity batch). This hook is what makes "required" mean
+   * "somebody wrote something".
+   *
+   * It proves the text is a NON-BLANK STRING. It cannot prove the text is TRUE,
+   * relevant, or responsive — no value-level guard can, exactly as the qty floor
+   * cannot tell 2400 from 2.4. That limit is stated, not papered over.
+   */
+  RR_DISPUTE_TEXT_AUTHORED: 'rr_dispute_text_authored',
   /** RR acknowledge: the fanned line MUST be visibility-only (an acknowledge
    *  can never dodge the commitment floor on a firm/semi-firm line). */
   RR_ACKNOWLEDGE_VISIBILITY_CLASS: 'rr_acknowledge_visibility_class',

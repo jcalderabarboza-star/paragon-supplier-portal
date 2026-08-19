@@ -46,6 +46,13 @@ const openResponses = async () => {
   return await screen.findByTestId('sdcsup-responses');
 };
 
+// R1b — the buyer's authored text. Both verbs REQUIRE it now, so a payload-free
+// dispatch is refused BY THE MACHINE — which is why these four call sites broke
+// when the field landed, and why they are the whole break surface: no product
+// code dispatches either verb yet (that is R1b proper, still booked).
+export const DISPUTE_TEXT = 'Confirmed 6,000 KG against a 9,000 KG firm line — short by 3,000.';
+export const RESOLUTION_TEXT = 'Shortfall accepted; the gap is covered from the Q4 buffer.';
+
 /** Move rr-0001 through the REAL machine, as the buyer. */
 const drive = async (path: readonly string[]) => {
   const svc = new MockCommandService();
@@ -54,7 +61,9 @@ const drive = async (path: readonly string[]) => {
       transitionId,
       entity: 'requirementResponse',
       entityId: 'rr-0001',
-      payload: {},
+      // One payload carries both texts; each verb reads only the field IT
+      // requires, so this helper does not have to know which step it is on.
+      payload: { disputeReason: DISPUTE_TEXT, resolutionReason: RESOLUTION_TEXT },
     } as never);
     expect(res.status).not.toBe('failed');
   }

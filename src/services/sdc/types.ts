@@ -337,6 +337,55 @@ export interface RootCause {
 }
 
 /**
+ * ONE ENTRY IN THE DISPUTE LEDGER — the buyer's authored words on a supplier's
+ * commitment, kept beside the response and NEVER overwritten.
+ *
+ * ── ⚠️ WHY A LEDGER AND NOT A `disputeReason` FIELD ────────────────────────
+ * The scalar shape was the obvious one and this lane refuses it, for a reason
+ * the lane already states three times over: `submissionVersion` is "versioned,
+ * never overwritten"; `submittedAt` is stamped once because "a later buyer-side
+ * move must not restamp the moment the supplier answered"; and the enforcement
+ * ledger APPENDS rather than sets. A scalar reason answers "what is the dispute"
+ * and CANNOT answer "was this dispute ever answered" — and **A DISPUTE THAT WAS
+ * ANSWERED IS NOT THE SAME AS ONE THAT WAS NEVER RAISED** (operator ruling).
+ * Clearing it on resolution loses that distinction; leaving it in place makes
+ * every resolved response carry a stale accusation forever. The ledger has
+ * neither failure mode: the raise stays, the resolution lands BESIDE it.
+ *
+ * ── ⚠️ AND THERE WAS NO EXISTING FIELD TO REUSE — MEASURED, NOT ASSUMED ────
+ * Reusing a field beats adding a parallel one, so the candidates were derived
+ * before this one was written. `plannerNote` (the buyer's word) and
+ * `supplierNote` (the supplier's) were both named as already present on this
+ * DTO: **each has ZERO occurrences in `src/`**, and the interface below declares
+ * fourteen fields, none of them either. The supplier's word is real and is
+ * `rootCause` / `acknowledgment.note`; the buyer had nothing at all, which is
+ * the defect this closes rather than an argument about where to put it. §55h.
+ *
+ * ── ⚠️ NO ACTOR IS STORED, AND THAT IS DELIBERATE ──────────────────────────
+ * Both entry kinds are gated on `requirementresponse:dispute`, which ONLY the
+ * buyer holds (`PERSONA_ROLES`), so `by: 'buyer'` would be a stored copy of
+ * something the role gate already proves — a derived value that can drift from
+ * its own derivation. The attribution actually worth having is a NAMED HUMAN,
+ * and this build has none: `CurrentIdentity` carries a persona, a tenant and a
+ * company, no person (`ENF-NO-PERSON-IN-IDENTITY-01`). The enforcement lane
+ * answers that with `ActorAttribution`, whose UNATTRIBUTED arm REFUSES THE ACT —
+ * correct for an override, wrong here: it would make a dispute unraisable. So
+ * this records WHAT WAS SAID and WHEN, and claims no accountability it cannot
+ * back. Booked: `RR-DISPUTE-HAS-NO-HUMAN-01`, closes with F1 OIDC.
+ */
+export interface DisputeEntry {
+  /** `raised` opens the dispute; `resolved` closes it. Both are buyer acts. */
+  readonly kind: 'raised' | 'resolved';
+  /** The authored text. Required by the transition and proven non-blank by
+   *  `rr_dispute_text_authored` — `requiredFields` proves PRESENCE only. */
+  readonly text: string;
+  /** Store-minted from the shared SDC clock at the moment of the act (the
+   *  `pinnedAt` discipline) — never payload-supplied, or a caller could backdate
+   *  its own dispute against a response deadline. */
+  readonly at: string;
+}
+
+/**
  * The spine: a response against a published forecast VERSION, with root-cause
  * as its child. Keyed by publicationId + planVersion + periodBucket (+ supplier +
  * material) — it binds the EXACT snapshot answered (own-facts-only, mirroring
@@ -368,6 +417,22 @@ export interface RequirementResponse {
   /** The visibility response (visibility-only lines). XOR with `forecastConfirmation`. */
   readonly acknowledgment?: Acknowledgment;
   readonly rootCause?: RootCause;
+  /**
+   * THE BUYER'S ANSWER — append-only, absent until the first dispute is raised.
+   * The LAST entry is the current standing; the whole array is its history.
+   *
+   * ⚠️ **THIS IS THE ANSWER, NOT WHAT THE ACTOR TYPED TO PRODUCE IT** (operator
+   * ruling, and it is why the field is named for the RESPONSE rather than for
+   * the input). The draft field a planner fills lives in `submitModel.ts`
+   * (`DisputeRaiseDraft` / `DisputeResolutionDraft`) and is transient, per-act,
+   * and theirs; this is the stored record and belongs to the store. The lane
+   * already keeps the same separation one row up — `rootCause` is what the
+   * SUPPLIER wrote, `forecastConfirmation` is what got stored from it.
+   *
+   * Collapsing the two is how a stored record starts being edited like a form
+   * field. Read it, never rewrite it.
+   */
+  readonly disputeResponse?: readonly DisputeEntry[];
   /** source = SUPPLIER; LIVE × committed once submitted (SIMULATED in seed). */
   readonly provenance: Provenance;
 }
