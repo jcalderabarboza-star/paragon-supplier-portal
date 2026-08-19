@@ -101,6 +101,12 @@ export const requirementResponseFlow: FlowDefinition = {
         POLICY_HOOKS.SDC_MATERIAL_KNOWN,
         POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND,
         POLICY_HOOKS.RR_SUBMIT_COMMITMENT_CLASS,
+        // `requiredFields` proves PRESENCE only (the dispatcher's rule 5 is
+        // `isEmpty`), so before this hook a negative, infinite or NaN
+        // `confirmedQty` reached the store as a governed commitment. The floor
+        // is `>= 0` — a typed 0 is the ratified F-2 short confirmation, unlike
+        // the PO-confirm neighbour's `> 0`. See RR_SUBMIT_QTY_FLOOR.
+        POLICY_HOOKS.RR_SUBMIT_QTY_FLOOR,
       ],
       surfaceable: { surfaced: true },
       version: 1,

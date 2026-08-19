@@ -68,6 +68,31 @@ export const POLICY_HOOKS = {
   /** RR submit: the fanned line must NOT be visibility-only (a "confirmed
    *  commitment" against a no-commitment class would be a fabricated claim). */
   RR_SUBMIT_COMMITMENT_CLASS: 'rr_submit_commitment_class',
+  /**
+   * RR submit: `confirmedQty` must be a FINITE number and NOT NEGATIVE.
+   *
+   * ⚠️ **THE FLOOR IS `>= 0`, NOT `> 0`, AND THE DIFFERENCE IS RATIFIED.**
+   * `PO_CONFIRM_QTY_WITHIN_ORDERED` — the neighbouring verb that already
+   * enforces this shape on a field of the same name — requires `q > 0`, because
+   * a purchase-order line confirmed at zero is a line that should not have been
+   * confirmed. A forecast response is the opposite case: **a TYPED 0 is the
+   * legal "cannot supply at all" short confirmation (F-2)** and is recorded as
+   * the commitment it is (`submitModel.ts`). Copying the neighbour's bound
+   * verbatim would have refused the one answer this verb exists to carry.
+   *
+   * `Number.isFinite` rather than `typeof === 'number'` — the 2f-c SE-Team spec
+   * edit, for the same reason it was made there: `typeof NaN === 'number'`, and
+   * NaN fails every comparison silently, so a hand-crafted dispatch could stamp
+   * `confirmedQty: NaN` into the store and poison every Σ that reads it.
+   *
+   * ⚠️ **WHAT THIS HOOK DOES NOT DO, AND CANNOT.** It validates the VALUE, never
+   * the READING. The parse lives at the caller (CP-0 §4, "the builder does not
+   * parse"), so the transition cannot tell 2400 from 2.4 — both are finite and
+   * non-negative. That gap is held open on purpose by the `SUB-01` witness in
+   * `requirementResponseQtyFloor.test.ts`, which asserts the wrong behaviour and
+   * fails the day the parse moves into the transition.
+   */
+  RR_SUBMIT_QTY_FLOOR: 'rr_submit_qty_floor',
   /** RR acknowledge: the fanned line MUST be visibility-only (an acknowledge
    *  can never dodge the commitment floor on a firm/semi-firm line). */
   RR_ACKNOWLEDGE_VISIBILITY_CLASS: 'rr_acknowledge_visibility_class',

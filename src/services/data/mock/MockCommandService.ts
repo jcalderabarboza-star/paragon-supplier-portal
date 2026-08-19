@@ -824,6 +824,28 @@ bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND, ({ payload }) => {
   return { ok: true };
 });
 
+// RR submit — the quantity floor at the TRANSITION (the contract), mirroring
+// the shape `PO_CONFIRM_QTY_WITHIN_ORDERED` already enforces on a field of the
+// same name. `requiredFields` proves presence; this proves the value is a
+// number a Σ can survive. The bound is `>= 0`, NOT the neighbour's `> 0`: a
+// typed 0 is the ratified F-2 "cannot supply at all" confirmation.
+//
+// It validates the VALUE, never the READING — the parse stays at the caller
+// (CP-0 §4), so 2.4 and 2400 are equally legal here. `SUB-01` holds that gap.
+bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_QTY_FLOOR, ({ payload }) => {
+  const q = payload.confirmedQty;
+  if (typeof q !== 'number' || !Number.isFinite(q)) {
+    return {
+      ok: false,
+      reason: `confirmedQty must be a finite number, got ${typeof q === 'number' ? String(q) : typeof q}`,
+    };
+  }
+  if (q < 0) {
+    return { ok: false, reason: `confirmedQty ${q} is negative — a commitment cannot be less than nothing` };
+  }
+  return { ok: true };
+});
+
 // SDC-2b-EXT — the symmetric class guards (the honesty lock). creationOwner
 // already proved the fanned line exists, so resolving it here cannot miss.
 const fannedLineClass = (payload: Record<string, unknown>) =>
