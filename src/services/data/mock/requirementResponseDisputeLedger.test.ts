@@ -43,11 +43,11 @@ const fire = (transitionId: string, payload: Record<string, unknown> = {}) =>
 
 const review = () => fire('t_requirementresponse_review');
 const dispute = (text: unknown = 'Short by 3,000 KG against a firm line.') =>
-  fire('t_requirementresponse_dispute', { disputeText: text });
+  fire('t_requirementresponse_dispute', { disputeReason: text });
 const resolve = (text: unknown = 'Shortfall accepted; covered from the Q4 buffer.') =>
-  fire('t_requirementresponse_resolve', { resolutionText: text });
+  fire('t_requirementresponse_resolve', { resolutionReason: text });
 
-const ledger = () => requirementResponseStore.get(RR)?.disputes ?? [];
+const ledger = () => requirementResponseStore.get(RR)?.disputeResponse ?? [];
 
 beforeEach(() => {
   requirementResponseStore.reset();
@@ -56,7 +56,7 @@ beforeEach(() => {
 describe('R1b — the contract an F1 author reads (not the surface)', () => {
   it('dispute REQUIRES its text and proves it — the asymmetry with t_invoice_dispute, closed', () => {
     const t = getTransition('t_requirementresponse_dispute')!;
-    expect(t.requiredFields).toEqual(['disputeText']);
+    expect(t.requiredFields).toEqual(['disputeReason']);
     expect(t.policyHooks).toContain('rr_dispute_text_authored');
   });
 
@@ -65,7 +65,7 @@ describe('R1b — the contract an F1 author reads (not the surface)', () => {
     // it is real. The ruling is about the SUPPLIER: a resolution that carries
     // nothing reports the outcome of a promised review as a bare status change.
     const t = getTransition('t_requirementresponse_resolve')!;
-    expect(t.requiredFields).toEqual(['resolutionText']);
+    expect(t.requiredFields).toEqual(['resolutionReason']);
     expect(t.policyHooks).toContain('rr_dispute_text_authored');
   });
 
@@ -137,7 +137,7 @@ describe('R1b — THE LEDGER APPENDS. It never clears and never replaces.', () =
     // The `pinnedAt` discipline: a caller that could set the instant could
     // backdate its own dispute against a response deadline.
     const res = await fire('t_requirementresponse_resolve', {
-      resolutionText: 'Accepted.',
+      resolutionReason: 'Accepted.',
       at: '1999-01-01T00:00:00.000Z',
     });
     expect(res.status).not.toBe('failed');
@@ -151,7 +151,7 @@ describe('R1b — WHAT IS NOW REFUSED, and the store is untouched by every refus
     await review();
     const res = await fire('t_requirementresponse_dispute');
     expect(res.status).toBe('failed');
-    expect(res.reason).toMatch(/MISSING_FIELDS:disputeText/);
+    expect(res.reason).toMatch(/MISSING_FIELDS:disputeReason/);
   });
 
   it('⚠️ refuses a BLANK dispute — `isEmpty("   ")` is FALSE, so required alone admitted the space bar', async () => {
@@ -172,7 +172,7 @@ describe('R1b — WHAT IS NOW REFUSED, and the store is untouched by every refus
     await review();
     await dispute();
     expect((await fire('t_requirementresponse_resolve')).reason).toMatch(
-      /MISSING_FIELDS:resolutionText/,
+      /MISSING_FIELDS:resolutionReason/,
     );
     expect((await resolve('  ')).reason).toMatch(/POLICY_REJECTED:rr_dispute_text_authored/);
   });

@@ -47,7 +47,7 @@ const drive = async (path: readonly string[]) => {
       transitionId,
       entity: 'requirementResponse',
       entityId: 'rr-0001',
-      payload: { disputeText: DISPUTE_TEXT, resolutionText: RESOLUTION_TEXT },
+      payload: { disputeReason: DISPUTE_TEXT, resolutionReason: RESOLUTION_TEXT },
     } as never);
     expect(res.status).not.toBe('failed');
   }

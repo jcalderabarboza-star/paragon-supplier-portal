@@ -548,7 +548,7 @@ const ResponsesTab: React.FC<{
             </div>
           )}
           {/* R1b — the buyer's dispute text and its resolution, in order. */}
-          <DisputeLedger entries={r.disputes ?? []} />
+          <DisputeLedger entries={r.disputeResponse ?? []} />
         </div>
       ))}
     </div>

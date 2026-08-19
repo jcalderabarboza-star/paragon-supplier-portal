@@ -100,3 +100,63 @@ export function buildRequirementResponsePayload(
     ...(draft.rootCause ? { rootCause: draft.rootCause } : {}),
   };
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// R1b — THE BUYER'S DRAFTS. Two acts on the dispute seam, two drafts.
+//
+// ⚠️ **THE DTO FIELD IS THE ANSWER; THE DRAFT FIELD IS WHAT THE ACTOR WROTE TO
+// PRODUCE IT** (operator ruling). They are not the same thing and collapsing
+// them is how a stored record starts being edited like a form field:
+// `RequirementResponse.disputeResponse` is an APPEND-ONLY ledger the store owns
+// and nothing rewrites; a draft is transient, per-act, and belongs to whoever is
+// typing. The supplier lane already has this shape — `RequirementResponseDraft`
+// above is what the supplier wrote, `forecastConfirmation` is what got stored —
+// so these are the buyer's half of a pattern the lane already keeps.
+//
+// ⚠️ **AND THE SPLIT IS THE POINT: TWO ACTS, TWO DRAFTS, TWO NAMES.** The ruling
+// that produced these rejected reusing ONE field across two jobs, on the ground
+// that a field carrying two jobs cannot be given an honest name and cannot be
+// made required without breaking the job it was not named for. That argument is
+// applied here rather than only cited: `disputeReason` names an objection and
+// `resolutionReason` names its answer, because naming the RAISE a "resolution"
+// would re-collapse at the draft layer exactly what the split just separated.
+//
+// NO SURFACE CONSUMES THESE YET — the action cell is R1b proper and waits. They
+// are the model layer the surface will build against, landing first on purpose
+// so the surface has a typed thing to fill rather than inventing a payload shape.
+// ────────────────────────────────────────────────────────────────────────────
+
+/** What a planner wrote to RAISE a dispute (`t_requirementresponse_dispute`). */
+export interface DisputeRaiseDraft {
+  /** The objection. NOT optional: a reply cannot be optional-shaped, and an
+   *  optional field is what makes a required thing silently unwritten. */
+  disputeReason: string;
+}
+
+/** What a planner wrote to CLOSE one (`t_requirementresponse_resolve`). */
+export interface DisputeResolutionDraft {
+  /** The answer beside the question — it JOINS the raise in the ledger, never
+   *  replaces it. Required for the same reason the raise is. */
+  resolutionReason: string;
+}
+
+/**
+ * Build the `t_requirementresponse_dispute` payload. Pure assembly, exactly as
+ * `buildRequirementResponsePayload`: the words it is given are the words it
+ * ships. Substance is proven at the TRANSITION (`rr_dispute_text_authored`) —
+ * `requiredFields` runs `isEmpty`, and `isEmpty('   ')` is false, so a builder
+ * that trimmed here would put the real guard in the one layer a hand-crafted
+ * dispatch skips.
+ */
+export function buildRequirementDisputePayload(
+  draft: DisputeRaiseDraft,
+): Record<string, unknown> {
+  return { disputeReason: draft.disputeReason };
+}
+
+/** Build the `t_requirementresponse_resolve` payload. Same discipline. */
+export function buildRequirementResolutionPayload(
+  draft: DisputeResolutionDraft,
+): Record<string, unknown> {
+  return { resolutionReason: draft.resolutionReason };
+}

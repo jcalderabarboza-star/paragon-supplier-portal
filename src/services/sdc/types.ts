@@ -418,11 +418,21 @@ export interface RequirementResponse {
   readonly acknowledgment?: Acknowledgment;
   readonly rootCause?: RootCause;
   /**
-   * The buyer's dispute ledger — APPEND-ONLY, absent until the first dispute is
-   * raised. The LAST entry is the current standing of the dispute; the whole
-   * array is its history. Read it, never rewrite it.
+   * THE BUYER'S ANSWER — append-only, absent until the first dispute is raised.
+   * The LAST entry is the current standing; the whole array is its history.
+   *
+   * ⚠️ **THIS IS THE ANSWER, NOT WHAT THE ACTOR TYPED TO PRODUCE IT** (operator
+   * ruling, and it is why the field is named for the RESPONSE rather than for
+   * the input). The draft field a planner fills lives in `submitModel.ts`
+   * (`DisputeRaiseDraft` / `DisputeResolutionDraft`) and is transient, per-act,
+   * and theirs; this is the stored record and belongs to the store. The lane
+   * already keeps the same separation one row up — `rootCause` is what the
+   * SUPPLIER wrote, `forecastConfirmation` is what got stored from it.
+   *
+   * Collapsing the two is how a stored record starts being edited like a form
+   * field. Read it, never rewrite it.
    */
-  readonly disputes?: readonly DisputeEntry[];
+  readonly disputeResponse?: readonly DisputeEntry[];
   /** source = SUPPLIER; LIVE × committed once submitted (SIMULATED in seed). */
   readonly provenance: Provenance;
 }

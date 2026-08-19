@@ -700,17 +700,17 @@ const requirementResponseTarget: CommandTarget = {
       // `disputeReason` reaches `applyTransition` and is dropped on the floor.
       ...(toState === 'Disputed'
         ? {
-            disputes: [
-              ...(r.disputes ?? []),
-              { kind: 'raised' as const, text: String(payload.disputeText), at: sdcClock.now() },
+            disputeResponse: [
+              ...(r.disputeResponse ?? []),
+              { kind: 'raised' as const, text: String(payload.disputeReason), at: sdcClock.now() },
             ],
           }
         : {}),
       ...(r.status === 'Disputed' && toState === 'UnderReview'
         ? {
-            disputes: [
-              ...(r.disputes ?? []),
-              { kind: 'resolved' as const, text: String(payload.resolutionText), at: sdcClock.now() },
+            disputeResponse: [
+              ...(r.disputeResponse ?? []),
+              { kind: 'resolved' as const, text: String(payload.resolutionReason), at: sdcClock.now() },
             ],
           }
         : {}),
@@ -889,7 +889,7 @@ bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_QTY_FLOOR, ({ payload }) => {
 // responsive; no value-level guard can, exactly as the qty floor cannot tell
 // 2400 from 2.4.
 bindPolicyHook(POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED, ({ payload, toState, currentState }) => {
-  const field = toState === 'Disputed' ? 'disputeText' : 'resolutionText';
+  const field = toState === 'Disputed' ? 'disputeReason' : 'resolutionReason';
   const value = payload[field];
   if (typeof value !== 'string') {
     return { ok: false, reason: `${field} must be text, got ${typeof value}` };

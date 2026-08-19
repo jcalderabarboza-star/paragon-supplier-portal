@@ -190,7 +190,7 @@ export const requirementResponseFlow: FlowDefinition = {
       // Buyer disputes it (deviation unresolved; the root-cause child is where
       // the supplier's own explanation already lives).
       //
-      // ⚠️ R1b — `disputeText` IS REQUIRED, AND THE ASYMMETRY IT CLOSES WAS WITH
+      // ⚠️ R1b — `disputeReason` IS REQUIRED, AND THE ASYMMETRY IT CLOSES WAS WITH
       // THE NEIGHBOUR THIS MACHINE COPIED. `t_invoice_dispute` has required a
       // `disputeReason` since it was written; this verb required nothing, so a
       // supplier's commitment could be rejected with no recorded ground. The
@@ -210,7 +210,7 @@ export const requirementResponseFlow: FlowDefinition = {
       to: 'Disputed',
       trigger: 'user',
       requiredRole: 'requirementresponse:dispute',
-      requiredFields: ['disputeText'],
+      requiredFields: ['disputeReason'],
       policyHooks: [POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED],
       surfaceable: { surfaced: true },
       version: 1,
@@ -240,7 +240,7 @@ export const requirementResponseFlow: FlowDefinition = {
       to: 'UnderReview',
       trigger: 'user',
       requiredRole: 'requirementresponse:dispute',
-      requiredFields: ['resolutionText'],
+      requiredFields: ['resolutionReason'],
       policyHooks: [POLICY_HOOKS.RR_DISPUTE_TEXT_AUTHORED],
       surfaceable: { surfaced: true },
       version: 1,

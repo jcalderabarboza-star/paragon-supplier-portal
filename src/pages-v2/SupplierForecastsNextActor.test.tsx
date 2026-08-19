@@ -63,7 +63,7 @@ const drive = async (path: readonly string[]) => {
       entityId: 'rr-0001',
       // One payload carries both texts; each verb reads only the field IT
       // requires, so this helper does not have to know which step it is on.
-      payload: { disputeText: DISPUTE_TEXT, resolutionText: RESOLUTION_TEXT },
+      payload: { disputeReason: DISPUTE_TEXT, resolutionReason: RESOLUTION_TEXT },
     } as never);
     expect(res.status).not.toBe('failed');
   }

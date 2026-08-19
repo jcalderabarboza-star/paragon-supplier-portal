@@ -268,7 +268,7 @@ describe('PF-1a · requirementResponse — a dispute can be resolved', () => {
         transitionId,
         entity: 'requirementResponse',
         entityId: RR,
-        payload: { disputeText: 'Short against a firm line.', resolutionText: 'Accepted.' },
+        payload: { disputeReason: 'Short against a firm line.', resolutionReason: 'Accepted.' },
       });
 
     expect((await step('t_requirementresponse_review')).status).toBe('done');
