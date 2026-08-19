@@ -100,6 +100,7 @@ describe('buildRequirementResponsePayload — the snapshot binding is structural
   it('copies publicationId/planVersion/material/period from the rendered objects, supplierId from identity', () => {
     const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
       confirmedQty: 6000,
+      confirmedQtyRaw: '6000',
       committedDate: '2026-08-20',
     });
     expect(payload).toEqual({
@@ -109,6 +110,10 @@ describe('buildRequirementResponsePayload — the snapshot binding is structural
       periodBucket: '2026-08',
       supplierId: 'sup-002',
       confirmedQty: 6000,
+      // THE HOIST — the token rides beside the number so the TRANSITION can check
+      // that they agree. `toEqual` is exact, so this assertion is also the proof
+      // that the builder adds NOTHING ELSE while carrying it.
+      confirmedQtyRaw: '6000',
       committedDate: '2026-08-20',
     });
   });
@@ -118,6 +123,7 @@ describe('buildRequirementResponsePayload — the snapshot binding is structural
   it('never carries a uom — the master owns the unit (invariant #2)', () => {
     const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
       confirmedQty: 10,
+      confirmedQtyRaw: '10',
     });
     expect('uom' in payload).toBe(false);
   });
@@ -142,6 +148,7 @@ describe('buildRequirementResponsePayload — the snapshot binding is structural
   it('a TYPED zero is carried through — the legal "cannot supply at all" short (F-2)', () => {
     const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
       confirmedQty: 0,
+      confirmedQtyRaw: '0',
       rootCause: { level1: 'capacity' },
     });
     expect(payload.confirmedQty).toBe(0);
@@ -152,16 +159,80 @@ describe('buildRequirementResponsePayload — the snapshot binding is structural
     // The structural guarantee: no string input, so nothing to parse, so no
     // second reading that could diverge from the gate the surface applied.
     expect(
-      buildRequirementResponsePayload(pub, line, 'sup-002', { confirmedQty: 2400 }).confirmedQty,
+      buildRequirementResponsePayload(pub, line, 'sup-002', {
+        confirmedQty: 2400,
+        confirmedQtyRaw: '2.400',
+        numberConvention: 'id',
+      }).confirmedQty,
     ).toBe(2400);
     expect(
-      buildRequirementResponsePayload(pub, line, 'sup-002', { confirmedQty: 2.4 }).confirmedQty,
+      buildRequirementResponsePayload(pub, line, 'sup-002', {
+        confirmedQty: 2.4,
+        confirmedQtyRaw: '2.400',
+        numberConvention: 'en',
+      }).confirmedQty,
     ).toBe(2.4);
+  });
+
+  // ⚠️ THE BUILDER IS STILL NOT THE GUARD, AND THIS ASSERTS IT RATHER THAN
+  // TRUSTING IT. The pair above ships the SAME token as two different numbers,
+  // and the builder accepts both — correctly, because it is pure assembly and
+  // 2.400 really does read both ways. What is new is that neither could reach
+  // the store on a lie: the transition re-parses under the stated convention and
+  // refuses the pairing that does not hold (`rr_submit_qty_agrees`). If a future
+  // batch is tempted to make the builder check this, THIS is the reason not to —
+  // a check here is one a hand-crafted dispatch skips.
+  it('carries a token that DISAGREES with the number — the builder is assembly, not the guard', () => {
+    const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
+      confirmedQty: 999,
+      confirmedQtyRaw: '6000',
+    });
+    expect(payload.confirmedQty).toBe(999);
+    expect(payload.confirmedQtyRaw).toBe('6000');
+  });
+
+  // ⚠️ BOTH OF THESE EXIST BECAUSE THE MUTATION PROBE FOUND NOTHING WATCHING
+  // THEM. Dropping the convention on the way out, and trimming the token on the
+  // way out, both survived every other assertion in the batch — the first because
+  // the ONE production caller passes no convention, the second because
+  // `normalizeQty` trims internally so a trimmed token reads identically. Two
+  // silent survivors, each a promise the prose made and nothing checked.
+  it('FORWARDS a stated convention — the transition must re-parse the way the caller did', () => {
+    const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
+      confirmedQty: 2400,
+      confirmedQtyRaw: '2.400',
+      numberConvention: 'id',
+    });
+    expect(payload.numberConvention).toBe('id');
+  });
+
+  it('ships the token VERBATIM — padding and all, because the audit trail is the keystrokes', () => {
+    // Trimming here is unobservable through the guard (normalizeQty trims), which
+    // is exactly why it needs an assertion of its own: the reason not to trim is
+    // that the payload is the RECORD of what the supplier typed, and a builder
+    // that quietly tidies it is editing evidence.
+    const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
+      confirmedQty: 6000,
+      confirmedQtyRaw: '  6000  ',
+    });
+    expect(payload.confirmedQtyRaw).toBe('  6000  ');
+  });
+
+  it('omits numberConvention when the caller had none — absence is the HINT-FREE reading', () => {
+    // The supplier's confirm form is hint-free by ruling (`poConfirmModel`), so
+    // its payload must carry no convention at all rather than a default one. A
+    // defaulted 'id' here would silently RESOLVE ambiguity the surface refused.
+    const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
+      confirmedQty: 6000,
+      confirmedQtyRaw: '6000',
+    });
+    expect('numberConvention' in payload).toBe(false);
   });
 
   it('omits absent optionals rather than sending empty markers', () => {
     const payload = buildRequirementResponsePayload(pub, line, 'sup-002', {
       confirmedQty: 100,
+      confirmedQtyRaw: '100',
     });
     expect('committedDate' in payload).toBe(false);
     expect('capacityConstraint' in payload).toBe(false);

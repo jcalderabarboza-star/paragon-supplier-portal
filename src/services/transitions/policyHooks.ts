@@ -86,13 +86,59 @@ export const POLICY_HOOKS = {
    * `confirmedQty: NaN` into the store and poison every Σ that reads it.
    *
    * ⚠️ **WHAT THIS HOOK DOES NOT DO, AND CANNOT.** It validates the VALUE, never
-   * the READING. The parse lives at the caller (CP-0 §4, "the builder does not
-   * parse"), so the transition cannot tell 2400 from 2.4 — both are finite and
-   * non-negative. That gap is held open on purpose by the `SUB-01` witness in
-   * `requirementResponseQtyFloor.test.ts`, which asserts the wrong behaviour and
-   * fails the day the parse moves into the transition.
+   * the READING — 2400 and 2.4 are both finite and non-negative. That gap is now
+   * closed by its neighbour below rather than held open; `SUB-01` was the witness
+   * that failed the day it closed, and it is INVERTED, not deleted.
    */
   RR_SUBMIT_QTY_FLOOR: 'rr_submit_qty_floor',
+  /**
+   * RR submit — THE QUANTITY AGREES WITH THE TOKEN IT WAS READ FROM.
+   *
+   * The floor above proves the VALUE; this proves the READING, by re-running the
+   * one legal parser (`normalizeQty`) over the raw token the caller shipped and
+   * requiring the result to equal the number the caller declared.
+   *
+   * ⚠️ **THIS IS NOT THE GUARD THAT WAS FIRST RULED, AND THE DIFFERENCE IS THE
+   * POINT.** The ruling asked for `LOCALE_MISMATCH`: the transition would compare
+   * the convention on the draft against a `locale` the datasheet carries per row.
+   * Measured, there is no such field and there cannot be one without a new type —
+   * `GridRow` is `Record<string, string>`, the concrete datasheet row is
+   * `{ batchNumber, qty, expiryDate }`, and the convention exists exactly ONCE PER
+   * PARSE CALL on `GridContext.numberFormatHint`, which never enters a draft or a
+   * payload. **A MISMATCH CHECK NEEDS TWO INDEPENDENTLY-SUPPLIED LOCALES AND THERE
+   * IS ONE**, so a `LOCALE_MISMATCH` authored against this tree would have compared
+   * the single convention with itself, refused nothing, and shipped green —
+   * `EMPTY-INPUT-REPORTS-CLEAN-01` (§42b) wearing a guard's clothes.
+   *
+   * The second witness is not a second locale. It is the RAW TOKEN, which the
+   * surface has always had and always discarded. That makes the guard:
+   *   · a caller that parses under one convention and DECLARES another — caught,
+   *     because re-parsing under the declared convention yields a different number
+   *     than the one shipped;
+   *   · a caller that parses correctly and ships a different number — caught;
+   *   · an ambiguous token declared as one of its two readings — caught, because
+   *     the hint-free re-parse refuses AMBIGUOUS_QTY at the TRANSITION and not
+   *     only at the surface;
+   *   · a hand-crafted dispatch carrying a bare number and NO token — caught, and
+   *     this is the case `requiredFields` cannot see alone: rule 5 is `isEmpty`,
+   *     and `isEmpty('   ')` is false.
+   *
+   * ⚠️ **THE HONEST COST, STATED AS THE BATCH'S COST AND NOT AS A CAVEAT.** This
+   * moves the parse INTO the contract and leaves the thing that makes it correct
+   * OUTSIDE it. The convention is still supplied by the caller, and nothing here
+   * can tell a truthful `'id'` from a mistaken one: a caller that reads an
+   * Indonesian typist's "1.234" under a declared `'en'` produces 1.234, declares
+   * 1.234, and agrees with itself perfectly. What changed is that a caller must now
+   * be INTERNALLY CONSISTENT, which is strictly more than it had to be. It is not
+   * the same thing as being right, and no guard at this layer can be.
+   *
+   * ⚠️ **ABSENCE OF `numberConvention` MEANS HINT-FREE, WHICH IS THE STRICTER
+   * READING.** A caller that omits it gets a parse that REFUSES cross-convention
+   * ambiguity rather than resolving it, so forgetting the field can only tighten
+   * this guard, never loosen it. That direction is deliberate: an optional field
+   * whose absence RELAXED a check would be the `isEmpty` defect one layer up.
+   */
+  RR_SUBMIT_QTY_AGREES: 'rr_submit_qty_agrees',
   /**
    * RR dispute / resolve: the authored text must be SUBSTANCE, not presence.
    *

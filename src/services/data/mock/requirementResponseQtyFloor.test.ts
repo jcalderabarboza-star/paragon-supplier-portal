@@ -5,6 +5,9 @@
 // production caller of `t_requirementresponse_submit` parses through
 // `normalizeQty` and refuses EMPTY_QTY / NOT_NUMERIC / AMBIGUOUS_QTY
 // (`SupplierForecasts.tsx`), so **no human could reach the gap this closes**.
+// That is still true of the floor, and it is why the hoist below was ranked as
+// a contract repair rather than an outage: it closes what an F1 author reading
+// the DTO could do, not what a supplier at a keyboard could do.
 // That makes it a SPEC defect rather than a live one — and the worse of the two:
 // a live defect is fixed by whoever hits it; a spec defect is IMPLEMENTED
 // FAITHFULLY. `RequirementResponseDraft` types `confirmedQty: number` with no
@@ -22,14 +25,27 @@
 // thing the product needs. A probe that only proves the fix catches the bad
 // input would have shipped a floor that broke F-2 and stayed green.
 //
-// ⚠️ **SUB-01 IS A WITNESS AND IT ASSERTS THE WRONG BEHAVIOUR ON PURPOSE.**
-// The floor validates the VALUE; it cannot validate the READING. The parse
-// lives at the caller (CP-0 §4, "the builder does not parse"), so the
-// transition cannot tell 2400 from 2.4 — both are finite and non-negative.
-// Moving the parse into the transition is a DTO change and a separate batch, so
-// the gap is held open by an assertion that FAILS THE DAY IT IS CORRECTED,
-// rather than by a comment nobody re-reads. Same instrument, same reason, as
-// the 2e-c-6 mixed-currency fixture: the gap is load-bearing, not remembered.
+// ⚠️ **SUB-01 WAS A WITNESS THAT ASSERTED THE WRONG BEHAVIOUR ON PURPOSE, AND
+// THE DAY IT FAILED HAS ARRIVED. IT IS INVERTED, NOT DELETED.** It held open a
+// gap: the floor validates the VALUE and could not validate the READING, so the
+// transition could not tell 2400 from 2.4 — both finite, both non-negative.
+// The hoist closed it by handing the transition the TOKEN and re-running the one
+// legal parser (`rr_submit_qty_agrees`).
+//
+// The case is unchanged — still "2.400", still the number 2.4 — and only the
+// EXPECTATION flipped, because a witness that is deleted rather than flipped
+// loses the record of what it was witnessing (operator ruling). What used to
+// read "the transition accepts the wrong reading" now reads "the transition
+// refuses the pairing", and a reader who follows the git blame lands on the
+// comment that explains why it ever passed.
+//
+// ⚠️ **AND ITS SECOND ASSERTION WAS A TAUTOLOGY THE WHOLE TIME.** It read
+// `expect(Number.isFinite(2.4) && 2.4 >= 0).toBe(true)` — a statement about two
+// literals that no product change could ever falsify. It was written to say
+// "the floor cannot close this gap", which was TRUE, but it proved nothing and
+// could not have gone red when the gap closed. It is replaced below by the
+// assertion it was reaching for: the same token, declared under two different
+// conventions, where one pairing holds and the other is refused.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -43,8 +59,12 @@ const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
 
 const svc = new MockCommandService();
 
-/** The R2 fanned line for sup-002 (RM-EMUL-3310 / 2026-08), payload-complete. */
-const submit = (confirmedQty: unknown) => ({
+/** The R2 fanned line for sup-002 (RM-EMUL-3310 / 2026-08), payload-complete.
+ *
+ *  `raw` defaults to `String(confirmedQty)` so the FLOOR cases below read exactly
+ *  as they did before the hoist — a caller that states one number states it once.
+ *  The AGREEMENT cases pass a token that differs from the number on purpose. */
+const submit = (confirmedQty: unknown, raw?: string, numberConvention?: 'id' | 'en') => ({
   transitionId: 't_requirementresponse_submit',
   entity: 'requirementResponse',
   payload: {
@@ -54,11 +74,14 @@ const submit = (confirmedQty: unknown) => ({
     periodBucket: '2026-08',
     supplierId: 'sup-002',
     confirmedQty,
+    confirmedQtyRaw: raw ?? String(confirmedQty),
+    ...(numberConvention ? { numberConvention } : {}),
     committedDate: '2026-08-20',
   },
 });
 
-const fire = (confirmedQty: unknown) => svc.dispatch(sup002, submit(confirmedQty));
+const fire = (confirmedQty: unknown, raw?: string, numberConvention?: 'id' | 'en') =>
+  svc.dispatch(sup002, submit(confirmedQty, raw, numberConvention));
 
 beforeEach(() => {
   requirementResponseStore.reset();
@@ -68,6 +91,19 @@ describe('RR submit — the floor is declared on the transition, not only at the
   it('the verb carries the hook (the contract, not the surface, is what an F1 author reads)', () => {
     expect(getTransition('t_requirementresponse_submit')!.policyHooks).toContain(
       'rr_submit_qty_floor',
+    );
+  });
+
+  it('and the READING is proven too — the agreement guard rides the same verb', () => {
+    const t = getTransition('t_requirementresponse_submit')!;
+    expect(t.policyHooks).toContain('rr_submit_qty_agrees');
+    expect(t.requiredFields).toContain('confirmedQtyRaw');
+    // ORDER IS LOAD-BEARING: the floor establishes that `confirmedQty` is a
+    // finite number, so the agreement hook can compare against it without
+    // re-proving its type. Asserted rather than commented, because a reordering
+    // would still pass every behavioural test in this file.
+    expect(t.policyHooks.indexOf('rr_submit_qty_floor')).toBeLessThan(
+      t.policyHooks.indexOf('rr_submit_qty_agrees'),
     );
   });
 });
@@ -131,28 +167,47 @@ describe('RR submit qty floor — WHAT IT NOW REFUSES THAT IT ACCEPTED BEFORE', 
   });
 });
 
-describe('SUB-01 — THE WITNESS. This asserts the WRONG behaviour on purpose.', () => {
-  // "2.400" is 2400 under an id-ID reading and 2.4 under an en-US one.
-  // `normalizeQty` refuses it as AMBIGUOUS_QTY — at the CALLER. The transition
-  // never sees the token, only a number, so it cannot tell the two apart.
-  it('⚠️ THE TRANSITION ACCEPTS 2.4 — the wrong reading of "2.400" — because the parse is not its job', async () => {
-    const res = await fire(2.4);
+describe('SUB-01 — INVERTED. The witness kept its case and flipped its expectation.', () => {
+  // "2.400" is 2400 under an id-ID reading and 2.4 under an en-US one. Before the
+  // hoist the transition never saw the token, only a number, so it could not tell
+  // the two apart and this test asserted that it accepted the wrong one.
+  it('⚠️ THE TRANSITION NOW REFUSES 2.4 FROM "2.400" — it re-reads the token and will not guess', async () => {
+    const before = requirementResponseStore.all().length;
+    const res = await fire(2.4, '2.400');
 
-    // NOT the behaviour we want. It is the behaviour the contract currently
-    // specifies, and it is asserted so that the day the parse moves INTO the
-    // transition (a DTO change, a separate batch), THIS TEST GOES RED and the
-    // author is sent to this comment rather than to a merge conflict.
+    // WAS: `expect(res.status).not.toBe('failed')` + stored 2.4. That was the
+    // behaviour the contract specified and this file existed to make visible.
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/POLICY_REJECTED:rr_submit_qty_agrees/);
+    expect(res.reason).toMatch(/AMBIGUOUS_QTY/);
+    // Hint-free, so the refusal is AMBIGUITY, not disagreement: 2.4 genuinely is
+    // one of the two legal readings. The transition declines to pick, which is
+    // the same answer the surface gives — now stated in the contract as well.
+    expect(requirementResponseStore.all().length).toBe(before);
+  });
+
+  // ⚠️ THIS REPLACES A TAUTOLOGY. The assertion that stood here compared two
+  // literals (`Number.isFinite(2.4) && 2.4 >= 0`) and could never fail. What it
+  // was reaching for is below, and it is the guard's real subject: ONE TOKEN,
+  // TWO DECLARED CONVENTIONS, and only one of the pairings is honest.
+  it('⚠️ THE SAME TOKEN UNDER "en" AGREES WITH 2.4 — a stated convention resolves what silence refuses', async () => {
+    const res = await fire(2.4, '2.400', 'en');
     expect(res.status).not.toBe('failed');
     const stored = requirementResponseStore.all().find((r) => r.supplierId === 'sup-002');
     expect(stored?.forecastConfirmation?.confirmedQty).toBe(2.4);
   });
 
-  it('⚠️ AND THE FLOOR CANNOT CLOSE IT — 2.4 satisfies every bound the floor states', () => {
-    // Stated as an assertion rather than as prose so the claim is checked: the
-    // gap is not an oversight in the floor, it is outside what a value-level
-    // guard can express. Closing it requires the raw token, which the
-    // transition is not given.
-    const q = 2.4;
-    expect(Number.isFinite(q) && q >= 0).toBe(true);
+  it('⚠️ AND UNDER "id" IT IS REFUSED — the caller parsed one way and declared another', async () => {
+    // The failure this guard exists for. "2.400" under id is 2400; a caller that
+    // ships 2.4 while declaring 'id' has read the token with one convention and
+    // labelled it with the other. Nothing before the hoist could see this: the
+    // transition received the number 2.4 and had no second fact to check it with.
+    const before = requirementResponseStore.all().length;
+    const res = await fire(2.4, '2.400', 'id');
+    expect(res.status).toBe('failed');
+    expect(res.reason).toMatch(/POLICY_REJECTED:rr_submit_qty_agrees/);
+    expect(res.reason).toMatch(/disagrees/);
+    expect(res.reason).toMatch(/2400/); // the refusal NAMES the number the token reads
+    expect(requirementResponseStore.all().length).toBe(before);
   });
 });

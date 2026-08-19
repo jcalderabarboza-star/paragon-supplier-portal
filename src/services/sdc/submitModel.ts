@@ -12,6 +12,7 @@
 // copies it from the material master (invariant #2), never from the caller.
 // ────────────────────────────────────────────────────────────────────────────
 
+import type { NumberConvention } from '../../lib/localeNumber';
 import type { ForecastLine, ForecastPublication, RootCause } from './types';
 
 /** Build the `t_requirementresponse_acknowledge` payload (SDC-2b-EXT) from the
@@ -56,12 +57,40 @@ export function buildRequirementAcknowledgePayload(
 // The builder now takes a NUMBER. It cannot parse, so it cannot disagree with
 // the gate; callers normalise ONCE (via `normalizeQty`) and gate and ship the
 // same value. Blank and ambiguous never reach here — they refuse upstream.
+//
+// ── THE HOIST — the builder still does not parse, but it now CARRIES the token ─
+//
+// Everything above stands. What was missing is that "callers normalise ONCE and
+// ship the same value" was a PROMISE THE CONTRACT COULD NOT CHECK: the payload
+// held a bare number, so a caller that normalised under one convention and
+// shipped another, or normalised correctly and shipped something else entirely,
+// was indistinguishable at the transition from one that did neither.
+//
+// The draft now carries the TOKEN AS TYPED beside the number, and the convention
+// the caller parsed under. The builder still parses nothing — it copies all
+// three through verbatim — and the transition re-runs `normalizeQty` and refuses
+// `rr_submit_qty_agrees` if the token does not read as the number.
+//
+// ⚠️ **VERBATIM IS THE POINT AND `.trim()` HERE WOULD BE A DEFECT.** Whatever
+// this ships is what the transition re-parses; normalising the token on the way
+// out would put the real guard in the one layer a hand-crafted dispatch skips —
+// the `rr_dispute_text_authored` lesson, on a number. `normalizeQty` trims
+// internally, so a padded token is read identically at both ends anyway.
 
 /** The confirm-form fields the submit payload is derived from. `confirmedQty`
  *  is ALREADY NORMALISED — the caller ran the one legal parse and refused
  *  anything unreadable, so no coercion happens here (CP-0 §4). */
 export interface RequirementResponseDraft {
   confirmedQty: number;
+  /** The quantity token EXACTLY as the supplier typed it — the evidence for
+   *  `confirmedQty`, not a second copy of it. Never trimmed, never reformatted
+   *  on the way out; the transition re-parses precisely this. */
+  confirmedQtyRaw: string;
+  /** The convention the caller resolved `confirmedQtyRaw` under, when it had one.
+   *  ABSENT means the caller parsed HINT-FREE, which is the stricter reading —
+   *  a cross-convention ambiguity refuses instead of being decided. Omitting it
+   *  can therefore only tighten the transition's check, never loosen it. */
+  numberConvention?: NumberConvention;
   committedDate?: string;
   capacityConstraint?: string;
   /** The deviation explanation — required by UX when short (form-level rule). */
@@ -78,7 +107,8 @@ export interface RequirementResponseDraft {
  *    is recorded as the commitment it is;
  *  · a BLANK field is not a zero — it refuses at the surface and never arrives;
  *  · an AMBIGUOUS token ("2.400" = 2400 or 2.4) refuses too, rather than
- *    shipping one plausible reading of two.
+ *    shipping one plausible reading of two — at the surface AND, since the
+ *    hoist, again at the transition, which re-reads the token it is handed.
  *
  * No id, version, status, or uom — those are STORE/master-assigned on create.
  */
@@ -95,6 +125,10 @@ export function buildRequirementResponsePayload(
     periodBucket: line.periodBucket,
     supplierId,
     confirmedQty: draft.confirmedQty,
+    // Shipped VERBATIM — see the header. The transition re-parses this exact
+    // string, so anything done to it here would be done behind the guard.
+    confirmedQtyRaw: draft.confirmedQtyRaw,
+    ...(draft.numberConvention ? { numberConvention: draft.numberConvention } : {}),
     ...(draft.committedDate ? { committedDate: draft.committedDate } : {}),
     ...(draft.capacityConstraint ? { capacityConstraint: draft.capacityConstraint } : {}),
     ...(draft.rootCause ? { rootCause: draft.rootCause } : {}),

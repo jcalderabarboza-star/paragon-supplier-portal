@@ -378,6 +378,7 @@ describe('SubmissionSession causationId seam — anchor-correlationId grouping (
         periodBucket: '2026-08',
         supplierId: 'sup-002',
         confirmedQty: 6000,
+        confirmedQtyRaw: '6000',
       },
     });
     session.attempt('RequirementResponse', c1.entityId!, c1.correlationId);

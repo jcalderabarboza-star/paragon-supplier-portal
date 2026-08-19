@@ -14882,3 +14882,212 @@ the page *under*-claiming what it does. Corrected, and asserted in ID.
   supplier id is hardcoded **twice**, in `identitySources.ts` and `SidebarV2.tsx`
   · the dispute still has no lock · `review` / `dispute` / `accept` remain
   surface-less, so `Disputed` is still reachable only from a fixture.
+
+
+---
+
+## §57 — THE HOIST. A decayed evidence pointer inside a ratified rule sent three dispatches down a route that does not exist — and the guard that was ruled could not have refused anything
+
+**Batch:** the RR-submit quantity hoist (`feat/rr-submit-qty-agreement`).
+**Floor** 3100 / 227 / 7 → **3123 / 228 / 7**.
+
+### 57a · ⚠️ THE HEADLINE, AND IT LEADS BECAUSE IT EXPLAINS THE OTHER FINDINGS RATHER THAN SITTING BESIDE THEM
+
+The C1 channel parser's SHAPE ruling (`replyParser.ts:9-14`, Seat 3 ratified) reads:
+
+> *"The parser emits `GridRow[]`, and the dispatch path is `GridRow → parseGrid →
+> builder` — NOT the object builders directly. **The builders coerce
+> `Number(...) || 0` (submitModel.ts:63)**, so a garbage qty would become a legal
+> ZERO-COMMITMENT."*
+
+`submitModel.ts:63` today is `export interface RequirementResponseDraft {` — the
+interface that REPLACED the coercion when CP-0 · W1 · PR-2c removed it. The rule
+cites, as its reason for existing, a defect that a later batch fixed **at the
+exact line number it names**, and the citation now resolves to the fix.
+
+⚠️ **A DECAYED CLAIM INSIDE A RATIFIED RULE IS NOT THE SAME OBJECT AS A DECAYED
+CLAIM IN PROSE, AND IT IS WORSE. Prose gets re-read sceptically; a RULING gets
+CITED.** Three consecutive dispatches named `GridRow → parseGrid` as the settled
+route for the supplier's confirm form. It is not, on two independent grounds
+neither of which the rule states, because the rule was never wrong about its own
+scope — only about its evidence:
+
+- the rule is scoped to **row emitters** (*"a channel reply is the third emitter
+  of rows — a grid emits them, an XLSX parse emits them"*), and a one-line modal
+  is not a fourth;
+- `GridParseSpec.kind` is the **string literal `'InventoryDeclaration'` in both
+  arms**, and `parseGrid` emits that kind at its only two exits, so a
+  requirementResponse cannot ride it without widening the spec.
+
+**What a reader should conclude, stated as the finding rather than left to
+inference: THE RULE MAY STILL BE RIGHT, BUT ITS STATED EVIDENCE NO LONGER
+SUPPORTS IT, AND NOTHING IN THIS REPO WOULD HAVE CAUGHT THAT.** No gate reads a
+comment. No test asserts that a cited line still says what the citation claims.
+`RETIRED-CODE-GREPS-AS-LIVE-01` covers a grep matching a comment; this is the
+harder shape — **a live doctrine whose footnote rotted underneath it**, filed as
+`DOCTRINE-CITES-ITS-OWN-FIX-01`.
+
+### 57b · ⚠️ THE RULED GUARD COULD NOT HAVE REFUSED ANYTHING, AND IT WOULD HAVE SHIPPED GREEN
+
+The dispatch ruled `LOCALE_MISMATCH`: the transition would assert that the
+convention on the draft matches the `locale` *"the DSG already carries per row"*,
+so a caller supplying two disagreeing locales is caught. Measured at the sites
+the claim names:
+
+| the ruling's premise | measured |
+|---|---|
+| the draft carries `GridRow[]` with `rawQty` and `locale` | `RequirementResponseDraft` = `{ confirmedQty, committedDate?, capacityConstraint?, rootCause? }` |
+| `rawQty` is a field | 6 occurrences, all one identifier — `rawQtyColumn`, a datasheet COLUMN on the **inventory** grid, a different lane and a different verb |
+| the DSG carries `locale` per row | `GridRow = Record<string, string>`; the concrete row is `{ batchNumber, qty, expiryDate }` |
+| `LOCALE_MISMATCH` | 0 occurrences |
+
+The convention exists exactly **ONCE PER PARSE CALL**, on
+`GridContext.numberFormatHint`, assembled at the surface and never entering a
+draft or a payload.
+
+⚠️ **A MISMATCH CHECK NEEDS TWO INDEPENDENTLY-SUPPLIED LOCALES. THERE IS ONE.**
+Authored as ruled, `LOCALE_MISMATCH` would have compared the single convention
+with itself, refused nothing, passed every test written for it, and shipped —
+`EMPTY-INPUT-REPORTS-CLEAN-01` (§42b) wearing a guard's clothes rather than a
+census's. **The tell is the same one §42b names: a right-sounding result from an
+instrument that examined nothing looks exactly like a right-sounding result.**
+
+The operator's goal survived the correction intact. The second witness is not a
+second locale — **it is the RAW TOKEN, which the surface has always had and always
+discarded.**
+
+### 57c · WHAT LANDED
+
+`t_requirementresponse_submit` now takes `confirmedQtyRaw` (required) and an
+optional `numberConvention` beside `confirmedQty`, and `rr_submit_qty_agrees`
+re-runs the ONE legal parser (`normalizeQty` — the same function, not a second
+implementation) over the token and refuses unless it reads as the declared
+number. Order is load-bearing and asserted: the floor runs first and establishes
+that `confirmedQty` is a finite number, so the agreement hook compares against a
+proven value instead of an `unknown`.
+
+Four shapes are now refusable that were not:
+a caller that parses under one convention and **declares** another · a caller
+that parses correctly and ships a different number · an ambiguous token declared
+as one of its two readings · **a hand-crafted dispatch carrying a bare number and
+no token** — the case `requiredFields` cannot see alone, because rule 5 is
+`isEmpty` and `isEmpty('   ')` is false.
+
+**THE DELTA AT THE SURFACE IS ZERO, and it is proven by the instrument that
+would have caught it rather than by inspection:** `SupplierForecasts.test.tsx` is
+NOT in this diff and passes unchanged, including its `'40.000'` ambiguity witness.
+The screen sends one more field; the set of things it can successfully send is
+identical. `MockCommandService.ts`'s `: 0` fallback is deleted with it —
+unreachable since #237 (hooks run at dispatcher step 6, `applyTransition` at 7),
+and its comment still described the pre-#237 coercion.
+
+### 57d · ⚠️ THE MEASUREMENT THAT MADE THE WITNESS RESOLVABLE — SUB-01 ASSERTED NEITHER THING IT WAS CITED FOR, TWICE, IN OPPOSITE DIRECTIONS
+
+SUB-01 was described in dispatch as asserting `AMBIGUOUS_QTY` / the `1.234` case,
+after having been described a day earlier as covering `12,5`. Derived from the
+file: it imports `normalizeQty` at **zero** call sites — both occurrences are in
+comments — and its two assertions were `fire(2.4)` succeeds, and
+`expect(Number.isFinite(2.4) && 2.4 >= 0).toBe(true)`.
+
+⚠️ **A SPEC WHOSE COMMENT DISCUSSES AN INSTRUMENT IT NEVER CALLS READS, TO EVERY
+LATER READER INCLUDING ITS AUTHOR, AS IF IT CALLED IT.** SUB-01's prose is long,
+correct, and load-bearing on nothing; the assertions underneath were narrower than
+every description of them. **A witness is only as wide as the symbols it
+references** — filed as `SUB-01-BELIEVED-WIDER-THAN-IT-IS-01`.
+
+Its second assertion was a **tautology over two literals** that no product change
+could falsify. It was written to say "the floor cannot close this gap" — true, and
+unprovable by comparing 2.4 to itself. **A tautology in a witness is worse than a
+missing test, because it occupies the slot where the real check would go and
+reports green forever.** Replaced by the assertion it was reaching for: one token,
+two declared conventions, one pairing honest and one refused.
+
+SUB-01 is **INVERTED, not deleted** (operator ruling — *a witness that is deleted
+rather than flipped loses the record of what it was witnessing*). Same case,
+same token, flipped expectation.
+
+### 57e · ⚠️ §52a GAINS ITS FOURTH MEMBER, AND IT IS THE FIRST WHERE THE GUARD WRITTEN FOR THIS EXACT CLASS WAS PRESENT AND STILL MISSED
+
+The probe's `collected()` existed **specifically** to pre-empt §50e, and its
+docstring says so. It asked `re.search(r'Tests\s', out)` — whether the LABEL
+appeared.
+
+Mutation H made the flow carry an unregistered hook name, so `assertValidFlow`
+threw, the flow never registered, the suite died at import, and vitest printed
+`Tests  no tests` beside `Failed Suites 1`. **The label was present. The guard
+passed. No test emitted a `×`. The probe reported 0 KILLED on a mutation that
+killed the entire suite at construction time** — and the reading it invited was
+the flattering one: *"your order assertion is untested."*
+
+| # | instance | mechanism | direction |
+|---|---|---|---|
+| §50e | thinned reason → flow fails `assertValidFlow` | suite reports "no tests" | under-reports |
+| §51f | `Tests\D+(\d+) failed` vs `ESC[1m` | digit captured out of formatting | under-reports |
+| §53f | — | — | under-reports |
+| **§57e** | **`Tests\s` matches the label in `Tests  no tests`** | **the guard checked for a LABEL, not a COUNT** | **under-reports** |
+
+**ALL FOUR FAIL TOWARD "YOUR GATE IS WEAK", WHICH IS THE READING THAT GETS
+BELIEVED BECAUSE IT SOUNDS HUMBLE.** The sharpened rule:
+**ASK AN INSTRUMENT FOR A COUNT, NEVER FOR A LABEL — a label is present in the
+failure mode too.** Fixed by requiring `Tests\s+\d` and refusing outright on
+`Failed Suites` / `no tests`.
+
+⚠️ **AND H WAS ITSELF A BAD MUTATION, which is the finding under the finding.** It
+substituted an identifier that does not exist — a TYPE error, and vitest does not
+typecheck — so it tested nothing about ORDER. **A mutation that breaks
+CONSTRUCTION is not a mutation of BEHAVIOUR, and it will read as a survivor on a
+probe that only counts test failures.** Replaced with a genuine two-line swap,
+which kills 5 by name including all four floor refusals.
+
+### 57f · ⚠️ TWO SURVIVORS THAT WERE PROMISES THE PROSE MADE AND NOTHING CHECKED
+
+After H was repaired, two mutations still survived — and neither was a false
+alarm:
+
+- **the builder DROPS `numberConvention`** — survived because the ONE production
+  caller passes none, so every existing test was blind to it;
+- **the builder TRIMS the token** — survived because `normalizeQty` trims
+  internally, so a trimmed token is unobservable *through the guard*.
+
+Both had a comment insisting on the behaviour. **A property that is unobservable
+through the guard still needs an assertion of its own, because the REASON for it
+lives outside the guard**: the payload is the record of what the supplier typed,
+and a builder that quietly tidies it is editing evidence. Closed by two direct
+assertions; final probe: **56 named kills across 10 mutations, NO SURVIVORS**,
+every mutation confirmed on disk, ANSI stripped, kills counted by name.
+
+### 57g · ⚠️ THE HONEST COST, RECORDED AS THE BATCH'S COST AND NOT AS A CAVEAT — AND ASSERTED AS A PASSING TEST
+
+**This moves the parse INTO the contract and leaves the thing that makes it
+correct OUTSIDE.** The convention is still supplied by the caller, and nothing at
+this layer knows who typed the token: a caller that reads an Indonesian typist's
+`"1.234"` under a declared `'en'`, ships 1.234, and declares `'en'` is internally
+perfect and refused by nothing. Derived, the reason is structural rather than an
+oversight — **`i18n.language` is read at five non-test sites, all under
+`components/` · `lib/` · `pages-v2/`, and ZERO under `src/services/`.** A
+transition has no route to the language, by a layer boundary that is itself
+correct.
+
+That limit is a **green test** (*"a caller that is CONSISTENTLY WRONG passes"*),
+not a paragraph, so a future batch claiming "the parse is in the contract, so
+quantities are safe" is contradicted by an assertion rather than by prose. The
+remedy — a convention DERIVED at the seam from `i18n.language` rather than
+accepted as a caller-supplied literal — is the next thing this lane should cost,
+and the precedent to beat is already in the tree: `numberFormatHint` is passed at
+exactly two production sites, both hardcoded `'id'`, neither deriving anything.
+
+### 57h · SEQUENCING, RECORDED SO IT IS NOT INHERITED AS A SIBLING
+
+The buyer's `correct` entry **cannot share this one and is not a variation on
+it**: `Record<string, number>`, no `rawQty`, no locale, no `GridRow` — a different
+DTO change, to be re-costed after this lands rather than before.
+`t_requirementresponse_correct` remains at **0 occurrences in `src/`** (eighth
+measurement, eighth null). The operator's earlier "two moves" framing is
+superseded here on the operator's own instruction.
+
+**BOOKED, NOT BUILT:** the token is carried on the PAYLOAD but not STORED, so the
+record keeps the number without the evidence it was read from — worth costing
+when the audit trail is next opened · the convention-derived-at-the-seam remedy
+above · `GridParseSpec` still cannot express a requirementResponse, and the C1
+shape rule's citation is corrected in this entry but NOT in `replyParser.ts`,
+because editing a ratified rule is a ruling, not a tidy-up.

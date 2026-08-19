@@ -51,6 +51,10 @@ const submit = (overrides: Record<string, unknown> = {}) => ({
     periodBucket: '2026-08',
     supplierId: 'sup-002',
     confirmedQty: 6000,
+    // THE HOIST — every dispatch carries the token its number was read from, and
+    // an override that moves one must move the other or `rr_submit_qty_agrees`
+    // refuses. That coupling is the guard working, not friction to route around.
+    confirmedQtyRaw: '6000',
     committedDate: '2026-08-20',
     ...overrides,
   },
@@ -73,6 +77,7 @@ describe('requirementResponse flow — authored machine (SDC-2a)', () => {
       'materialCode',
       'periodBucket',
       'confirmedQty',
+      'confirmedQtyRaw',
     ]);
     // The authored-unwired lifecycle exists in the registry (FORK-2 hybrid).
     expect(getTransition('t_requirementresponse_promote')!.to).toBe('Submitted');
@@ -182,8 +187,11 @@ describe('t_requirementresponse_submit — supplier-owned creation (line-grain s
     expect(requirementResponseStore.all().length).toBe(before);
   });
 
-  it('planVersion + confirmedQty are the required floor — a hollow response fails, mints nothing', async () => {
-    for (const field of ['planVersion', 'confirmedQty']) {
+  it('planVersion + confirmedQty + its token are the required floor — a hollow response mints nothing', async () => {
+    // `confirmedQtyRaw` joins the floor because the agreement guard has nothing
+    // to check without it — a payload with a number and no token is exactly the
+    // hand-crafted dispatch shape.
+    for (const field of ['planVersion', 'confirmedQty', 'confirmedQtyRaw']) {
       const before = requirementResponseStore.all().length;
       const payload = { ...submit().payload };
       delete (payload as Record<string, unknown>)[field];
@@ -210,7 +218,10 @@ describe('t_requirementresponse_submit — the snapshot binding is un-falsifiabl
     // DIFFERENT publication) — it must NOT leak into R2's version count.
     const first = await svc.dispatch(sup002, submit());
     expect(requirementResponseStore.get(first.entityId!)!.submissionVersion).toBe(1);
-    const second = await svc.dispatch(sup002, submit({ confirmedQty: 5500 }));
+    const second = await svc.dispatch(
+      sup002,
+      submit({ confirmedQty: 5500, confirmedQtyRaw: '5500' }),
+    );
     const r2 = requirementResponseStore.get(second.entityId!)!;
     expect(r2.submissionVersion).toBe(2);
     // Versioned, not overwritten — the first submission is still there.
@@ -280,6 +291,7 @@ describe('t_requirementresponse_acknowledge — the visibility response (SDC-2b-
         materialCode: 'AI-NIAC-6601',
         periodBucket: '2026-10',
         confirmedQty: 800,
+        confirmedQtyRaw: '800',
       }),
     );
     expect(res.status).toBe('failed');
@@ -333,6 +345,7 @@ describe('t_requirementresponse_submit — honest-by-construction facts', () => 
         materialCode: 'PK-PETB-8810',
         periodBucket: '2026-09',
         confirmedQty: 150000,
+        confirmedQtyRaw: '150000',
         uom: 'KG', // spoofed unit — must not persist
       }),
     );
@@ -346,6 +359,7 @@ describe('t_requirementresponse_submit — honest-by-construction facts', () => 
       sup002,
       submit({
         confirmedQty: 0,
+        confirmedQtyRaw: '0',
         rootCause: {
           level1: 'capacity',
           level2: 'line-changeover',

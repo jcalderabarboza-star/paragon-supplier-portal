@@ -35,6 +35,9 @@ import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
 import { BASE_CURRENCY, type BidCurrency } from '../../../lib/currencyPolicy';
 import type { FxPinSource } from '../../../lib/fxPin';
+// THE ONE LEGAL PARSER (CP-0 · W1). The transition re-runs the SAME function
+// the surface ran — not a second implementation that could drift from it.
+import { normalizeQty, type NumberConvention } from '../../../lib/localeNumber';
 import {
   asActorAttribution,
   isGovernedCheckId,
@@ -797,8 +800,19 @@ const requirementResponseTarget: CommandTarget = {
       : {
           forecastConfirmation: {
             // 0 is a legal confirmation ("cannot supply") — dispatcher isEmpty(0)
-            // already admits it; NaN/absent coerces to 0 with the root cause telling why.
-            confirmedQty: typeof payload.confirmedQty === 'number' ? payload.confirmedQty : 0,
+            // already admits it.
+            //
+            // ⚠️ THE `: 0` FALLBACK THAT STOOD HERE WAS UNREACHABLE AND ITS COMMENT
+            // DESCRIBED DELETED BEHAVIOUR. It read "NaN/absent coerces to 0 with the
+            // root cause telling why" — true before #237, when nothing above proved
+            // the type. Policy hooks run at dispatcher step 6 and `applyTransition`
+            // at step 7, so since RR_SUBMIT_QTY_FLOOR landed, a non-number or a
+            // non-finite `confirmedQty` cannot reach this line at all. Manufacturing
+            // a ZERO COMMITMENT out of garbage is the exact defect CP-0 killed in
+            // `submitModel`; it survived here for one release as dead code wearing a
+            // justification. The floor and the agreement guard are the two proofs
+            // that let this be a plain read.
+            confirmedQty: payload.confirmedQty as number,
             uom,
             ...(str('committedDate') ? { committedDate: str('committedDate') } : {}),
             ...(str('capacityConstraint')
@@ -857,8 +871,8 @@ bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_PLANVERSION_BOUND, ({ payload }) => {
 // number a Σ can survive. The bound is `>= 0`, NOT the neighbour's `> 0`: a
 // typed 0 is the ratified F-2 "cannot supply at all" confirmation.
 //
-// It validates the VALUE, never the READING — the parse stays at the caller
-// (CP-0 §4), so 2.4 and 2400 are equally legal here. `SUB-01` holds that gap.
+// It validates the VALUE, never the READING. The READING is now proven by
+// RR_SUBMIT_QTY_AGREES below, which is where `SUB-01`'s gap closed.
 bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_QTY_FLOOR, ({ payload }) => {
   const q = payload.confirmedQty;
   if (typeof q !== 'number' || !Number.isFinite(q)) {
@@ -869,6 +883,66 @@ bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_QTY_FLOOR, ({ payload }) => {
   }
   if (q < 0) {
     return { ok: false, reason: `confirmedQty ${q} is negative — a commitment cannot be less than nothing` };
+  }
+  return { ok: true };
+});
+
+// RR submit — THE READING, proven at the transition by re-parsing the token.
+//
+// THE HOIST (CP-0 §4 amended for THIS VERB ONLY). "The builder does not parse"
+// is unchanged: the builder still ships the number it is given. What changed is
+// that the CONTRACT no longer takes the caller's word for what that number
+// means — it is handed the token too, runs the same `normalizeQty` the surface
+// ran, and refuses if the two disagree.
+//
+// ⚠️ WHAT THIS CANNOT DO is stated on POLICY_HOOKS.RR_SUBMIT_QTY_AGREES at
+// length and is the batch's honest cost: the convention is still the caller's
+// to supply, so this proves CONSISTENCY, never correctness.
+bindPolicyHook(POLICY_HOOKS.RR_SUBMIT_QTY_AGREES, ({ payload }) => {
+  const raw = payload.confirmedQtyRaw;
+  // `requiredFields` already refused an absent / empty token — but it uses
+  // `isEmpty`, which is FALSE for `0`, `false` and `'   '`. A NUMBER in this
+  // slot would sail through rule 5 and then silently stringify here, so the
+  // type is proven rather than assumed.
+  if (typeof raw !== 'string') {
+    return {
+      ok: false,
+      reason: `confirmedQtyRaw must be the quantity token as typed (a string), got ${typeof raw}`,
+    };
+  }
+
+  // An unrecognised convention is refused rather than ignored. Ignoring it would
+  // silently downgrade to the hint-free parse — which is STRICTER, so it would
+  // usually still refuse; "usually" is not a contract, and a caller shipping
+  // `numberConvention: 'de'` has a defect it deserves to be told about.
+  const conv = payload.numberConvention;
+  if (conv !== undefined && conv !== 'id' && conv !== 'en') {
+    return {
+      ok: false,
+      reason: `numberConvention must be 'id' or 'en' when present, got ${JSON.stringify(conv)}`,
+    };
+  }
+
+  const parsed = normalizeQty(raw, conv as NumberConvention | undefined);
+  if (!parsed.ok) {
+    // The refusal REASON travels, because "we cannot read this" and "we cannot
+    // tell which of two numbers you mean" ask the caller for different things —
+    // the same distinction the surface already makes in its toast.
+    return {
+      ok: false,
+      reason: `confirmedQtyRaw ${JSON.stringify(raw)} is not a readable quantity (${parsed.reason})`,
+    };
+  }
+
+  // The floor ran first, so `confirmedQty` is already a finite number here.
+  if (parsed.value !== payload.confirmedQty) {
+    return {
+      ok: false,
+      reason:
+        `confirmedQty ${String(payload.confirmedQty)} disagrees with confirmedQtyRaw ` +
+        `${JSON.stringify(raw)}, which reads ${parsed.value}` +
+        `${conv === undefined ? ' with no stated convention' : ` under '${String(conv)}'`}`,
+    };
   }
   return { ok: true };
 });
