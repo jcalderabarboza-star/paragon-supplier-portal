@@ -13,6 +13,7 @@ import {
   Trash2,
   Truck,
 } from 'lucide-react';
+import { nextActorFrom } from '../services/transitions';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
@@ -347,6 +348,33 @@ const LineCard: React.FC<{
   );
 };
 
+/**
+ * R1a — the one line that names the actor. `ended` and `stranded` are kept
+ * apart here exactly as `nextActorFrom` keeps them apart: a state the surface
+ * cannot leave must never render as "Complete".
+ */
+const nextActorKey = (state: string): string | null => {
+  const next = nextActorFrom('requirementResponse', state);
+  if (next.kind === 'ended') return 'sdcSup.responses.actor.ended';
+  if (next.kind === 'stranded') return null;
+  // The supplier's own turn wins the label when both personas can act — this is
+  // the supplier's page, and "your turn" is the actionable half.
+  return next.personas.includes('supplier')
+    ? 'sdcSup.responses.actor.supplier'
+    : 'sdcSup.responses.actor.buyer';
+};
+
+const NextActorLine: React.FC<{ state: string }> = ({ state }) => {
+  const { t } = useTranslation();
+  const key = nextActorKey(state);
+  if (!key) return null;
+  return (
+    <div className="text-xs text-text-tertiary mb-3" data-testid="sdcsup-response-actor">
+      {t(key)}
+    </div>
+  );
+};
+
 const ResponsesTab: React.FC<{
   responses: readonly RequirementResponse[];
   /** PF-1b — submit a DRAFT (t_requirementresponse_promote). Without this the
@@ -410,6 +438,15 @@ const ResponsesTab: React.FC<{
               )}
             </div>
           </div>
+          {/* R1a — WHOSE ACT IS NEXT. Derived from the machine
+              (`nextActorFrom`), never from a per-status constant: every exit
+              from Submitted / UnderReview / Disputed is the buyer's by
+              `requiredRole`, and transcribing that ruling into a page map is
+              the BuyerInvoices footer-verb defect (§48) in a new costume.
+              `stranded` renders NOTHING on purpose — it is a finding, not copy,
+              and `nextActorCopy` returning null is asserted rather than
+              described. */}
+          <NextActorLine state={r.status} />
           <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
               { label: t('sdcSup.responses.col.material'), value: materialLabel(r.materialCode) },

@@ -42,6 +42,14 @@ export const sdcSupplierEn: Record<string, string> = {
   // — My responses (own facts + status ONLY) —
   'sdcSup.responses.emptyTitle': 'No responses yet',
   'sdcSup.responses.emptyBody': 'Confirm a published line and it will appear here.',
+  // — R1a · WHOSE ACT IS NEXT (derived from the machine, `nextActorFrom`) —
+  // Every exit from Submitted / UnderReview / Disputed is the BUYER's by
+  // `requiredRole` — a ruling, not a gap — so the honest supplier surface is
+  // read-only WITH THE ACTOR NAMED. Without this line the page shows a noun and
+  // a supplier cannot tell "someone else is acting" from "nothing is happening".
+  'sdcSup.responses.actor.buyer': 'Awaiting Paragon — nothing needed from you',
+  'sdcSup.responses.actor.supplier': 'Your turn — this is waiting on you',
+  'sdcSup.responses.actor.ended': 'Complete — no further action',
   'sdcSup.responses.submitDraft': 'Submit to buyer',
   'sdcSup.responses.submitting': 'Submitting…',
   'sdcSup.responses.col.material': 'Material',
@@ -362,6 +370,10 @@ export const sdcSupplierId: Record<string, string> = {
   // — Respons Saya —
   'sdcSup.responses.emptyTitle': 'Belum ada respons',
   'sdcSup.responses.emptyBody': 'Konfirmasikan baris terbit dan respons akan muncul di sini.',
+  // R1a — lihat catatan EN: pelaku berikutnya, diturunkan dari mesin.
+  'sdcSup.responses.actor.buyer': 'Menunggu Paragon — tidak ada tindakan dari Anda',
+  'sdcSup.responses.actor.supplier': 'Giliran Anda — menunggu tindakan Anda',
+  'sdcSup.responses.actor.ended': 'Selesai — tidak ada tindakan lanjutan',
   'sdcSup.responses.submitDraft': 'Kirim ke pembeli',
   'sdcSup.responses.submitting': 'Mengirim…',
   'sdcSup.responses.col.material': 'Material',
