@@ -15091,3 +15091,224 @@ when the audit trail is next opened · the convention-derived-at-the-seam remedy
 above · `GridParseSpec` still cannot express a requirementResponse, and the C1
 shape rule's citation is corrected in this entry but NOT in `replyParser.ts`,
 because editing a ratified rule is a ruling, not a tidy-up.
+
+---
+
+## 58 · THE PHANTOM VERB SETTLED — AND THE CENSUS THAT NEVER COUNTED IT (`main` `5c9eeae`)
+
+**Register-only batch. No verb authored, no surface built, no flow touched.** The
+ruling that opened it asked for two things: settle `t_requirementresponse_correct`,
+and correct every census figure that had counted it. **The first is settled and
+recorded below. The second was measured and REFUSED: no census figure ever
+counted it, and correcting §49 / §53 / the four-verb table would have introduced
+four errors into rows that are right.**
+
+### 58a · THE SETTLED FACT, STATED AT THE PRECISION THE EVIDENCE SUPPORTS
+
+`t_requirementresponse_correct` **was never authored.** Derived, not asserted:
+
+| instrument | result |
+|---|---|
+| `getKnownFlows()` → every transition id | 18 flows · 91 ids · **zero** match `/correct/i` |
+| `grep -rn` over `src/`, case-insensitive | **0** |
+| `git log --all -S` over `*.ts` / `*.tsx` — **every commit, every ref** | **0** |
+
+Rule 4 ran first and in the load-bearing direction: `t_gr_post`,
+`t_po_confirm` and `t_requirementresponse_dispute` were all asserted PRESENT
+before any absence was believed, and a bogus id asserted absent. The population
+guard (`ids.length > 50`) ran ahead of both — `EMPTY-INPUT-REPORTS-CLEAN-01`,
+§42b, in the seat that has to keep paying it.
+
+⚠️ **ONE CORRECTION TO THE RULING'S OWN WORDING, AND IT IS THE KIND THIS REGISTER
+EXISTS FOR.** The ruling said *"zero in git history."* **It is not zero — it is
+two commits**, `8aa9468` (#239) and `5c9eeae` (#241), **both touching
+`docs/findings.md` and nothing else.** The string has a git history; what it has
+never had is a line of source. "Never authored" is true and "zero in git history"
+is false, and the difference matters because the two commits are *this register
+recording the invention* — the trace §52b said refused inventions do not leave.
+
+### 58b · ⚠️ THE SHARPER HALF IS REFUTED — THE CENSUS COUNTED THE TREE, AND IT COUNTED IT RIGHT
+
+The ruling's leading claim was that §49 listed `correct` among 46 user verbs,
+§53 gave it a `surfaceable` value, and every downstream figure inherited a verb
+that does not exist — because *"the instrument read `getVerbCatalog()`, which
+reads the docs, not the flow."*
+
+**`getVerbCatalog` does not exist.** Zero occurrences tree-wide, all file types,
+`node_modules` and `.git` excluded. The named instrument is itself an invention,
+and it is the fourth artifact this arc has named as existing code and measured
+absent (`getInvoiceAction` · the FX `<span lang="en">` · `SurfaceExpectation` ·
+now this).
+
+**What §49b actually says it read, in its own words:** *"Six passes over a
+`ts.Program` built from `tsconfig.json`, with the state universe **derived from
+the flow registry at runtime**."* Pass 6 is *"the 46 declared user verbs vs their
+dispatch sites and those sites' callers."* The instrument read the flow and the
+TypeScript program. It never read a doc.
+
+**And the arithmetic closes it in both directions, historically and today:**
+
+| | at `4e60dbb` (where "28 of 46" landed, #231) | at `5c9eeae` (today) |
+|---|---|---|
+| `trigger: 'user'` counted in the flow files | **46** | **46** |
+| user verbs in `requirementResponse.flow.ts` | **5** | **5** |
+| `requirementresponse_correct` in `src/` | **absent** | **absent** |
+
+**IF THE PHANTOM HAD BEEN COUNTED, REMOVING IT WOULD LEAVE 45.** The flow yields
+46 at both ends with the phantom absent from both, and the five RR user verbs are
+the same five (`accept` · `dispute` · `promote` · `resolve` · `review`). §53 could
+not have given it a `surfaceable` value either: **every one of the 91 transitions
+carries `surfaceable`** (derived — the set lacking it is empty), and the phantom
+is not among the 91.
+
+Read directly: the string `correct` appears in §49 and §53 **only as the English
+word** — "corrected", "correctly", "a correct widening". No table row, no verb
+list, no figure. The "four-verb table" and the "rank-1 four" are PF-1a's four
+REAL verbs (`t_gr_request_retest` · `t_asn_resolve_discrepancy` · `t_pr_revise` ·
+`t_requirementresponse_resolve`), named in §49e.
+
+**NOTHING IN §49, §53, THE FOUR-VERB TABLE OR THE RANK-1 FOUR REQUIRES
+CORRECTION ON THIS GROUND. THE INSTRUCTION TO CORRECT THEM WAS DECLINED, AND
+THIS PARAGRAPH IS WHY.**
+
+### 58c · ⚠️ THE CLASS IS REAL AND WORTH KEEPING — BUT ITS FIRST INSTANCE IS THE RULING, NOT THE CENSUS
+
+The ruling proposed a new class and named it exactly right:
+
+> **A CENSUS THAT READS THE RECORD MEASURES THE RECORD.**
+
+It is a true class and it is filed. **What it does not have is the instance the
+ruling gave it.** The census read the tree. The thing that read the record and
+reported it as a measurement of an instrument was **the ruling itself** — it
+described §49's population, §53's field, the four-verb table and the rank-1 four
+from the register's prose, attributed them to a function that does not exist, and
+issued a correction order against four rows nobody had measured.
+
+That is the same shape one layer up, and it is the third distinct layer this arc
+has caught it on: §42 (a scan read as a derivation) · §43a (a plan read as a
+result) · **here, a record read as a measurement of the instrument that produced
+it.** Filed as `CENSUS-THAT-READS-THE-RECORD-01`, with the standing correction
+that **the mitigation is the one already on the books and it cost one command:
+name the site the claim requires, and assert membership there.** Two greps —
+`getVerbCatalog` and `trigger: 'user'` at the census commit — would have stopped
+the whole order.
+
+⚠️ **AND IT IS WORTH NAMING WHY THIS ONE WAS BELIEVABLE, BECAUSE IT IS THE
+`COUNT-RESTATED-ACROSS-INSTRUMENTS-01` MECHANISM WEARING A DIFFERENT COAT:** the
+order arrived **with an explanation attached** — a named function, a stated
+reading path (docs not flow), and a specific list of contaminated figures. **A
+BARE WRONG CLAIM GETS CHECKED; A WRONG CLAIM WITH A MECHANISM GETS BELIEVED.**
+The mechanism is not a failed catch — it is how the error would have reached four
+correct rows.
+
+### 58d · TWO MORE PREMISES IN THE ORDER, MEASURED
+
+- *"the fields I ruled onto it at #238 — `plannerResponse`, `resolutionReason` —
+  landed on a verb that is not there."* **`plannerResponse`: 0 occurrences,
+  anywhere, any file type.** It has never existed. **`resolutionReason`: 22
+  occurrences**, and it landed at **#240**, not #238, **on
+  `t_requirementresponse_resolve` — a verb that exists, dispatches, and has a
+  shipped surface.** Neither field is orphaned and neither arrived at #238.
+- **What #238 actually did:** R1a, next-actor derivation. Six files —
+  `floor.json`, `i18n/sdcSupplier.ts`, `SupplierForecasts.tsx`,
+  `SupplierForecastsNextActor.test.tsx`, `legality.ts`, `nextActor.test.ts`. Its
+  own body states *"no DTO change; every exit stays the buyer's."* It added no
+  field and no call site.
+
+**R1b's shipped surface is wired to `t_requirementresponse_resolve`**, dispatched
+at `sdcBuyerHooks.ts:201` from `BuyerCollaboration.tsx:94`, payload built by
+`buildRequirementResolutionPayload` from `DisputeResolutionDraft`. Nothing in
+R1b is dead. What is *unwired* is its sibling: **`t_requirementresponse_dispute`
+has no production dispatch site** — tests and fixtures only, which
+`fixtures.ts:1169` already states.
+
+### 58e · §55h's OWN SENTENCE HAS DECAYED, AND IT IS THE `DOCTRINE-CITES-ITS-OWN-FIX-01` SHAPE
+
+§55h reads: *"`t_requirementresponse_correct` appears exactly once anywhere in
+this repository, in `.remember/today-2026-08-19.md`."* **Measured today: six
+occurrences across three files** — two in `.remember/today-2026-08-19.done.md`
+(the file was renamed on completion) and four in `docs/findings.md`, three of
+which are §55h itself describing the one it is counting. **A count that includes
+its own statement of the count decays the moment it is written.** Left in place
+and annotated here rather than edited: §55h was true at its ref, and rewriting a
+ratified entry to preserve a number is the failure it was filed against.
+
+### 58f · THE FIGURES RE-DERIVED — SETS, NOT COUNTS (RULE 2)
+
+Re-derived from the live instrument (`surfaceable.test.ts`'s census block, which
+computes `surfaceable.surfaced && !firable && from.length > 0` at read time and
+asserts MEMBERSHIP, never a count):
+
+| figure | §49 (#231) | after #234 | **today (`5c9eeae`)** |
+|---|---|---|---|
+| user verbs | 46 | 46 | **46** |
+| firable | 18 | — | **19** |
+| census (surfaceable · unsurfaced) | 28 | 26 | **25** |
+
+**The set difference, which is the part a count cannot show:**
+`t_requirementresponse_resolve` **LEFT the census at #240** — it was one of
+§49e's four PF-1a verbs recorded as *"none surfaced, then or since"*, and that
+sentence is now stale in exactly one member. **None entered.** The three
+requirementResponse verbs still in the census are `accept` · `dispute` ·
+`review` — independently confirming the "three unsurfaced buyer verbs" the R1c
+note recorded, by a different instrument.
+
+**No figure moved because of the phantom. Every movement is a real verb being
+wired.** The census is self-correcting by construction, which is why it did not
+need this batch and would not have needed it had the phantom been real.
+
+### 58g · SHOULD THE VERB EXIST — REPORTED, NOT RULED
+
+Reported for the operator's separate ruling, as directed.
+
+**The lane has no gap where the phantom was believed to be.** The act
+`correct` was imagined to perform — a buyer changing a supplier's committed
+quantity — is covered end to end by verbs that exist: the buyer disputes with a
+required, proven, stored reason (`t_requirementresponse_dispute`), and **the
+supplier supersedes the disputed response by resubmitting** (measured `done`,
+recorded at #239 as *"the dispute has no lock"*). The commitment stays authored
+by the party that owes it, which is the honest ownership.
+
+**Recommendation: do not author it.** A buyer-authored quantity would put the
+supplier's commitment in the buyer's hand and leave the response's own
+`confirmedQtyRaw` evidence describing a number nobody typed — the §57g cost,
+inverted and made permanent. If the operator wants the act anyway, the guard is
+free: `RR_SUBMIT_QTY_AGREES` reads `confirmedQtyRaw` + `numberConvention` +
+`confirmedQty` and generalises unchanged, **one parse with two callers, and no
+`GridParseSpec` widening** — `normalizeQty` lives in `lib/` and `parseGrid` is
+not on that path at all.
+
+⚠️ **AND THE R1c BLOCKER RECORDED IN THE NOTES IS NOT THE REAL ONE.**
+`.remember` records R1c as blocked because *"parsing blocks qty override"*.
+Measured: `normalizeQty(raw, hint?)` has **arity 2** and no channel by which a
+sibling row could reach it; `AMBIGUOUS_QTY` is a **per-token** verdict
+(`ingest.ts:119`, *"refuses per row"*), and `hasAnyComma` has **zero occurrences
+tree-wide**. `'1.234'` alone → `AMBIGUOUS_QTY`; under `'id'` → 1234; under
+`'en'` → 1.234 — identical inside a grid and out of one. **R1c's blocker is not
+the parse. It is that no buyer verb accepts a quantity at all** — a machine
+change and a ruling, not a batch.
+
+### 58h · DISPOSITION
+
+- **SETTLED:** `t_requirementresponse_correct` never authored — 0 in `src/`,
+  0 in every commit of every `.ts`/`.tsx`, absent from all 91 registered ids.
+  Ninth measurement, ninth null.
+- **REFUSED:** the instruction to correct §49 · §53 · the four-verb table · the
+  rank-1 four. They never counted the phantom; the correction would have created
+  four errors. §58b carries the derivation both directions and historically.
+- **FILED:** `CENSUS-THAT-READS-THE-RECORD-01` — the class as the ruling named
+  it, with the instance corrected to the ruling itself.
+- **CORRECTED:** `getVerbCatalog` does not exist · `plannerResponse` does not
+  exist · "zero in git history" is two commits, both this register ·
+  `resolutionReason` landed at #240 on a real, wired verb, not at #238 on a
+  phantom · §55h's "exactly once" is now six.
+- **RE-DERIVED:** census 28 → 26 → **25**, firable 18 → **19**, user verbs
+  **46** unchanged; the only member to leave is `t_requirementresponse_resolve`
+  and #240 is why. §49e's "none surfaced, then or since" is stale in that one
+  member and annotated, not rewritten.
+- **BOOKED, NOT BUILT:** `t_requirementresponse_dispute` has no production
+  dispatch site · §49e's stale member · the R1c blocker restated above.
+- **UNTOUCHED:** no verb authored, no surface built, no flow file, no DTO, no
+  test. R1c stays blocked and its blocker is now different from the one
+  recorded. C9 `af7f0b4` and C10 `dc8e774` byte-identical, verified by blob id
+  before and after. Floor unchanged — this batch adds no test.
