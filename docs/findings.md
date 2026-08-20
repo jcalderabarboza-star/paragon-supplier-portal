@@ -15777,6 +15777,24 @@ and still closes only on real issuer data.)
 
 **Branch `feat/halal-certificate-notice`. Floor 3129/228 → 3141/228; gate 7.**
 
+### ⚠️ THE HEAD OF THE ENTRY — THE OCTOBER DEADLINE IS ON A RECEIVING SURFACE
+
+**On 16 October a clerk at Dock B-3 reads *Halal certificate (Halal (MUI,
+legacy)) · `SAMPLE-HALAL-0007B` · valid to 1 Jun 2027*. On 17 October the same
+lot, the same document, every date on it unchanged, reads *"the halal certificate
+is in date, but its scheme no longer satisfies the BPJPH mandate (GR 42/2024) as
+of this receipt"* — and the receipt still goes through.**
+
+That is the arc's payload and it is why it leads. **It is the first time the
+17-Oct-2026 deadline is visible on a RECEIVING SURFACE rather than in a
+document** — not in a plan, not in a register row, not on a compliance page a
+dock clerk never opens, but on the line they are inspecting, at the moment the
+goods are in front of them, with the date in the notice. Until this batch it was
+demonstrable only in a spec, against a material no goods receipt could reach
+(63d).
+
+---
+
 The dispatch ruled `halal.certificate = BLOCK_OVERRIDABLE`, then — on the H4
 investigation's finding that an override cannot COMPLETE without a named person —
 re-ruled it to `OBSERVE`, "one line, and it reaches the clerk today", with
@@ -15850,7 +15868,51 @@ This is the class the register keeps naming — an artifact named as existing co
 and measured absent. **NO ORDINAL IS ATTACHED TO IT HERE, DELIBERATELY**: the
 class under-counts itself by construction (an invented artifact REFUSED in
 conversation leaves no trace), so the only honest count is the list in CLAUDE.md,
-which this batch extends rather than restates. That list now names four. **It cost nothing
+which this batch extends rather than restates. That list now names four. (The
+operator's own running tally of inverted premises makes this **their
+sixteenth**; that count is theirs, kept by them, and is recorded here as an
+attribution rather than re-derived — it is a different instrument from the
+artifact list and the two must not be added together.)
+
+#### ⚠️ AND THE CORRECTION CARRIES THE PART THAT MATTERS — THE NAMED SAFE PATH WAS THE BLOCKING ONE
+
+The operator's acceptance is the finding, not the admission:
+
+> **WIRING THE NOTICE THROUGH IT WOULD HAVE DISABLED THE NEXT BUTTON UNDER AN
+> OBSERVE RULING — THE BLOCK, ARRIVING THROUGH THE CHANNEL I NAMED AS THE SAFE
+> PATH.**
+
+**AND THAT COUNTERFACTUAL IS NOT SPECULATION — IT IS MEASURED, BY MUTANTS 5 AND
+6 (63h).** Any accumulator that feeds `qualityValid` is a BLOCKING channel by
+construction: `qualityValid` → `isStepValid(2)` → `<Button disabled={!nextValid}>`.
+There is no advisory position on that path. Adding a single certificate clause to
+`qualityValid` disabled `Next` and killed *AND THE RECEIPT PROCEEDS — an EXPIRED
+certificate does not disable Next*, by name, at both the source and render
+levels. **The imaginary channel and the real one would have had the same effect,
+because the effect comes from the consumer, not the collection.**
+
+So the notice is a PARALLEL ADVISORY CHANNEL and the operator's ruling on its
+shape is recorded as law:
+
+> **THE SEPARATION IS STRUCTURAL, NOT COSMETIC — AN ADVISORY THAT SHARES A
+> CHANNEL WITH A BLOCKER IS ONE REFACTOR AWAY FROM BECOMING ONE.**
+
+`certVerdicts` is its own `useMemo`, read only by the render. Nothing merges it
+into the step gate, and two instruments — a source-level pin over `qualityValid`'s
+text and a render-level pin that clicks through — refuse the merge from opposite
+directions. A shared list would have made "advisory" a property of how carefully
+somebody reads the consumer, which is not a property at all.
+
+⚠️ **ONE HALF OF THE CORRECTION'S EVIDENCE COULD NOT BE REPRODUCED, AND IT IS
+RECORDED RATHER THAN QUIETLY ACCEPTED.** The correction cites *"NINE CALL SITES,
+ALL `[]`, `useMemo` READS `[]`"*. Re-measured: `blockingReasons` has **ZERO**
+occurrences in `src/` in any casing, and zero on `main`; the only two in the tree
+are the two sentences above saying so. The wizard has **one** `useMemo` with `[]`
+deps and **no** `= []` binding at all. **The CONCLUSION is correct and matches the
+measurement; the nine call sites describe something else.** Filed because a right
+answer resting on evidence that is not there is the shape §40k warns about — *a
+bare wrong number gets checked; a wrong number with an explanation gets believed*
+— and it does not stop being that shape when the answer happens to be right. **It cost nothing
 because it was grepped before it was built on**, which is the whole of the rule:
 absence is a one-line measurement and a wrong premise with a specific name is the
 most believable kind. The requirement it was offered in support of was real and
@@ -16034,6 +16096,90 @@ run (§51f and the CRLF trap).
 The last two are one mutant against two instruments deliberately: a source-level
 pin reads `qualityValid`'s text, a render-level pin clicks through and checks
 `Next`. A clause only one of them catches is a clause the other cannot see.
+
+---
+
+---
+
+### 63i · ⚠️ `FIXTURE-HONEST-AS-DATA-FALSE-AS-A-REFERENCE-01` — filed at H4, caused at the seam batch
+
+**A NEW CLASS, AND THE OPERATOR NAMED IT AGAINST THEIR OWN SEAM-BATCH RULING:**
+
+> I ORDERED "PLAINLY-FICTIONAL CERTIFICATE DATA, MARKED AS SUCH" … HONEST IN A
+> FIXTURE AND USELESS ON A DOCK.
+
+The seam batch (§62) moved the registry's honesty onto the certificate FIELDS and
+pinned three invariants in the suite: no row names a real company, a real
+certifying body, or a real certificate number. Every `certNumber` became a
+`SAMPLE-…` token. **That was correct, it is still correct, and it was the right
+call for a fixture nobody rendered.**
+
+H4 rendered it. `SAMPLE-HALAL-0007B` is now printed on a receiving surface,
+labelled *Certificate*, as the reference a clerk quotes to a supplier — and **a
+supplier has never heard of it.** The value is simultaneously:
+
+- **TRUE AS DATA.** It is honestly synthetic, marked three ways, and the
+  LivenessRegistry holds the whole capability at SIMULATED. Nothing about it
+  claims to be a real document.
+- **FALSE AS A REFERENCE.** Its entire job on that surface is to be quoted, and
+  quoting it fails. The marker that makes it truthful is what makes it unusable.
+
+**THE TWO PROPERTIES DO NOT CONFLICT AND THAT IS WHY THE CLASS IS WORTH A NAME.**
+An honesty device is judged against a READER, and a fixture with no reader has no
+one to be dishonest to. The moment a surface renders it, the device acquires an
+audience it was never sized for — and the defect is invisible until then, because
+until then the field is only ever compared against other fields.
+
+> ⚠️ **ONLY RENDERING IT SHOWED THE DIFFERENCE.** No census could have caught
+> this: the value passes every invariant §62 wrote, and it passes them
+> *correctly*. There is no derivation over the fixture that distinguishes "a
+> plausible-looking synthetic id" from "an id somebody can act on", because the
+> distinction lives entirely in what the reader is expected to DO with it.
+
+**AND IT IS THE SECOND TIME THIS ARC HAS FOUND A DEFECT THAT ONLY A CONSUMER
+COULD EXPOSE.** §62 retired the `RM-SAMPLE-…` device because a surface that
+cannot be reached cannot be wrong — *unfalsifiable, not honest*. This is the same
+lesson one layer along: **a fixture value is not finished when it is honest; it
+is finished when it is honest to the person who reads it.**
+
+#### NOT FIXED HERE, AND THE REASON IS NOT COST
+
+Ruled deferred by the operator, and the reasoning is the useful part:
+
+> THE CLERK HAS ENOUGH WITHOUT IT: **SUPPLIER, MATERIAL, STATUS AND DATE MAKE THE
+> CALL ACTIONABLE.**
+
+That is true of the shipped notice, and it is what makes the deferral safe rather
+than merely cheap. A clerk holding *PT Sample Packaging Indonesia · AI-NIAC-6612 ·
+scheme retired under GR 42/2024 · valid to 1 Jun 2027* can make the call; the
+certificate number is the fifth field, not the load-bearing one. Papering it —
+minting a realistic-looking BPJPH number so the field reads better — would have
+traded a **useless** reference for a **misleading** one and broken §62's invariant
+to do it. That is strictly worse and it is what the register would have recorded.
+
+⚠️ **THE REAL FIX IS R0.1 (the Track-R certificate harvest, NOT STARTED)**, and
+this row is one more thing waiting on it. When real certificate numbers arrive,
+the field becomes what the surface already claims it is, with no code change —
+the notice is already reading the seam.
+
+#### ⚠️ THE STRING IN THE DISPATCH IS NOT IN THE TREE
+
+The correction names `'ID-BPJPH-SAMPLE-0002'`. **Zero occurrences in `src/`**; the
+value actually rendered for `creg-0002` is `SAMPLE-HALAL-0007B`, and the eight
+halal-class rows the notice can reach are all `SAMPLE-HALAL-…`. Recorded because
+the artifact-named-in-a-dispatch class is live in this same entry (63b) and a
+finding filed against a string that does not exist is unfindable by the next
+reader. **THE FINDING IS UNAFFECTED** — the defect is a property of the SHAPE
+(`SAMPLE-`-prefixed, synthetic, rendered as a quotable reference), which every
+one of the eight shares, and the operator's diagnosis is right about all of them.
+
+Nor was it "correctly deferred rather than papered" by this seat: **it was not
+raised at all.** H4 rendered `certNumber` because the ruling named the certificate
+reference as one of the four things the clerk must see, and the seat did not
+notice that the thing it was rendering could not be quoted. The operator found it
+by reading what shipped. Recorded that way round, because a deferral credited to
+somebody who never considered the question is a decision nobody actually made —
+`SEED-IS-AN-ANSWER-01`'s shape applied to authorship.
 
 ---
 
