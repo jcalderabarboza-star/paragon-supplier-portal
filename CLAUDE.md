@@ -49,6 +49,25 @@ Direct pushes to `main` are not used.
 > `UNATTRIBUTED: NO_PERSON_IN_SESSION`. **C10 §6.2's payload-refusal half is NOT
 > built** and is guarded by a tripwire in `simUsrNamespace.test.ts` — the moment
 > shipped code constructs a `RESOLVED` actor, the refusal must land first.
+>
+> **AUTHORISATION IS NOW VISIBLE (§65).** The identity panel (`IdentityPanel`,
+> in the avatar) states the seat's role and the scope it grants, and is the ONE
+> role control — a sidebar chip block was built and rejected, and must not come
+> back. `/buyer/roles` is a READ-ONLY catalogue (list → detail), derived from
+> `SYSTEM_ROLES` × `getKnownFlows()`. It is UNGATED deliberately: **no page in
+> this platform has ever gated on role**, no atom could express it (C10 §3.3),
+> and the gate is filed as the precondition of EDITABILITY, not of reading.
+> Nothing persists a custom role — no store, no target — so duplicate-and-narrow
+> is a store, a verb and a merge rule, not a page feature.
+>
+> ⚠️ **`ROUTE-SMOKE-GUARD-IS-SELF-REFERENTIAL-01` (§65a).** `allRoutes.smoke`'s
+> coverage guard asserted its OWN table's length against a hardcoded number and
+> never read `AppRouter` — it could not detect the defect its comment named, and
+> was hiding three untested routes. It now DERIVES from the router source and
+> asserts membership both ways. **A page also has to bring its own chrome:**
+> `AppRouter` is a flat `<Routes>` with no layout route, so a page that forgets
+> `AppShellV2` renders with no sidebar and no way back, and
+> `renderWithProviders` will never say so.
 Re-baselined by the **Canon True-Up** (2026-07-14). The prior "main @ #53" pointer
 was stale by ~12 commits; F0 (contract-freeze) and the I3 compliance phase are DONE,
 and the Stage G planning canon + World-Class Build Plan are now on main.

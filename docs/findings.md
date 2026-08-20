@@ -16512,3 +16512,214 @@ Built bundle, `vite preview`, both personas, both locales.
 > binding constraint where it was wired and leaves the rest to a successor. **Not
 > worked around, reported.**
 
+---
+
+## §65 — THE ROLES CATALOGUE AND THE IDENTITY PANEL. Authorisation becomes visible — and a route guard that could not detect the thing its own comment named
+
+**Branch `feat/roles-page-avatar-panel` (stacked on `feat/roles-module-batch-a`).
+Floor 3189/233 → 3235/236; gate 7.**
+
+### ⚠️ THE HEAD OF THE ENTRY — BATCH A WAS INVISIBLE, AND THAT MADE THE HANDOFF HALF AN ANSWER
+
+Batch A put authorisation in the machine: six roles, the persona-wide grant
+retired, `ROLE_NOT_PERMITTED:invoice:pay` raised against a buyer for the first
+time. **None of it was visible.** A procurement user read *"Awaiting Finance"*
+on an invoice and had no way to learn which role they held or why the button was
+somebody else's. The machine answered WHOSE ACT IS NEXT while WHO AM I went
+unanswered, and one without the other is half a handoff.
+
+This batch answers the second half in the avatar panel, and puts the catalogue
+on a page.
+
+---
+
+### 65a · ⚠️ `ROUTE-SMOKE-GUARD-IS-SELF-REFERENTIAL-01` — A GUARD THAT COULD NOT DETECT THE THING ITS OWN COMMENT NAMED
+
+`allRoutes.smoke.test.tsx` carried this, under this comment:
+
+```ts
+it('route table covers all of AppRouter (40 elements + redirect)', () => {
+  // Guards against a route being added to AppRouter but not the smoke.
+  expect(ROUTES.length).toBe(41);
+});
+```
+
+**It asserts the SMOKE TABLE'S OWN LENGTH against a hardcoded number and never
+reads `AppRouter` at all.** Add a route to the router and not to the table: the
+table is still 41, the assertion is still green, and the new route is never
+mounted. The guard is structurally incapable of catching its stated defect —
+a restated cardinality wearing a derivation's clothes, which is
+`FLOOR-IN-PROSE-01` inside the file that guards the router.
+
+**It had concealed real gaps, not only mine.** Replacing it with a derivation
+over `AppRouter.tsx` immediately named THREE untested routes: `/`,
+`/buyer/intake-review` and `/glossary`. The latter two have dedicated specs, so
+they were not untested — but neither was covered by the route table that claimed
+to cover all of `AppRouter`, and nothing would ever have said so.
+
+> ⚠️ **AND THE REPLACEMENT WAS WRONG TWICE BEFORE IT WAS RIGHT — RULE 2, IN THE
+> FILE THAT NOW TEACHES IT.**
+>
+> 1. First cut matched `<Route path="…" element={<Word` to exclude `<Navigate>`
+>    redirects by ELEMENT rather than by an allowlist. Correct in intent —
+>    and it silently DROPPED the three routes that wrap their element in
+>    `<Suspense>` across several lines (`/buyer/collaboration`,
+>    `/buyer/plan-grid`, `/supplier/forecasts`), which then surfaced as *stale
+>    smoke rows*. **The narrowing that correctly excluded redirects created a
+>    blind spot for multi-line declarations**, and only the OTHER direction of
+>    the bilateral assertion revealed it.
+> 2. Fixed by splitting on the `<Route` tag instead of assuming one line.
+>
+> Both directions had to be re-derived. A one-directional version of this guard
+> would have shipped looking like it worked — again.
+
+The replacement asserts MEMBERSHIP in both directions and runs a population
+guard first (`declared.length > 30`, a known-good path present, a known-bad path
+absent), so a blinded derivation cannot report clean. **Mutant N6 — blinding the
+split — is killed by name.**
+
+---
+
+### 65b · THE THREE QUESTIONS, MEASURED BEFORE BUILDING
+
+| Question | Measured |
+|---|---|
+| **Is the role reachable from a component?** | **Yes.** `businessRoles` and `actor` are fields on `CurrentIdentity` in React context (`CurrentIdentityContext.tsx:34,57`), read via `useCurrentIdentity()`; 10+ components already consume it. The panel is a surface, not a rewrite. |
+| **What does a custom role persist to?** | **Nothing.** Eleven fixture stores, none for roles/permissions/users/persons. `SYSTEM_ROLES` is an `Object.freeze`d module constant read at import. `localStorage['paragon.identity']` holds which roles a SEAT HOLDS, never role definitions. |
+| **Does the Roles page need a role?** | **No atom could express it.** Zero of the 64 atoms match `role|admin|platform|settings|user`, and C10 §3.3 forbids inventing one: *a permission that corresponds to no transition cannot exist*. |
+
+**The operator ruled on all three:** ship read-only and say so; ship ungated and
+file the gate as the PRECONDITION OF EDITABILITY. The reasoning is the
+enforcement ruling one layer up — *procurement cannot lower the bar it is
+measured against, and whoever can edit roles can grant themselves any verb.* A
+read-only catalogue grants nothing; an editable one is a self-service privilege
+grant.
+
+> ⚠️ **AND NO PAGE IN THIS PLATFORM HAS EVER GATED ON ROLE.** The pattern does
+> not exist. The first role-gated page is a shape decision and must be taken
+> deliberately rather than inherited from this batch — recorded here so the
+> successor cannot acquire it by accident.
+
+---
+
+### 65c · WHAT TRANSFERS FROM THE REFERENCE, AND WHAT IS ABSENT RATHER THAN EMPTY
+
+The operator's TMS screenshot lists roles as a table — ROLE CODE · DISPLAY NAME ·
+DESCRIPTION · KIND · **USERS** · **LAST MODIFIED** · **STATUS** · ACTIONS — with
+KPI tiles and a Create button.
+
+**Transfers:** the LIST shape, the code/name/description/kind columns, the
+`View →` action, a search box, and permissions living on the role's own page.
+
+**Does not transfer, and the distinction is the point:**
+
+| TMS column | Why ours is absent |
+|---|---|
+| **USERS ASSIGNED** | We hold no people. Every row would read `0`, and the honest marker would be doing all the work — the operator's own reason for deferring the Users page. |
+| **LAST MODIFIED** | `SYSTEM_ROLES` is a frozen module constant, not a row. There is no modification to record. |
+| **STATUS (Active/Inactive)** | A role is compiled in or it does not exist. There is no activation state to show. |
+| **+ Create role** | Nothing persists a custom role. A Create button writing to React state builds a role that vanishes on reload. |
+
+**Three invented facts filling a layout is exactly the class this arc spent a
+batch removing.** The KPI tiles were likewise re-derived rather than copied: ours
+are `System roles` / `Distinct permissions` / `Governed actions` — all three
+derived, none of them a placeholder.
+
+---
+
+### 65d · TWO DEFECTS THE BUILT BUNDLE FOUND THAT THE SUITE COULD NOT
+
+**1 · The page had no chrome.** `AppRouter` is a FLAT `<Routes>` with no layout
+route: every page wraps itself in `AppShellV2`. The catalogue shipped without it
+and rendered a working page with **no sidebar and no avatar** — no way back to
+the app. Caught by a geometry read (`avatarPresent: false`), not by an
+assertion: `renderWithProviders` mounts a page directly and **never asks whether
+it brought its own chrome**, so every other test in the file passed over it.
+
+**2 · `roles.owner.supplier` was `'the supplier'`.** Shaped for the sentence
+*"Awaiting the supplier"* — correct at the handoff, and then the catalogue headed
+a card with it. **ONE KEY DOING TWO JOBS: a role NAME and a sentence fragment.**
+A lowercase heading is valid text, so nothing could have gone red. Fixed at the
+key (`'Supplier'` / `'Pemasok'`), which serves both, rather than special-casing
+the page — and pinned by a test that asserts every role name begins with a
+capital.
+
+Both are the same shape: **a page can be entirely correct about its data and
+wrong about being a page.**
+
+---
+
+### 65e · THE PANEL — ROLE SELECTABLE, SCOPE NOT, AND OUR AXES DERIVED
+
+The reference states the role, offers a selector, shows the access scope, and
+says CHANGING SCOPE IS SOMEONE ELSE'S ACT. **That last line is the handoff rule
+this arc already ruled for cross-role verbs, applied to identity** — so it is
+law here, not decoration.
+
+⚠️ **AND THE SCOPE AXES ARE OURS.** TMS scopes on warehouses, nodes and
+workspaces; **none of the three exists in this platform.** Ours is exactly
+`QueryScope` — `{ personaType, supplierId }` — because that is the tuple every
+read and every command is actually scoped by. A buyer reads *All suppliers
+(buyer-side)*; a supplier reads *PT Sample Packaging Indonesia only*. Copying
+TMS's axes would have put three words on the panel that no code enforces.
+
+**The role control is a COLLAPSED DROPDOWN naming the CURRENT role** —
+`Procurement +5`, not a roster. Enumerating every held role in the trigger turns
+the panel's headline answer back into the list the dropdown exists to collapse.
+The panel is 424px collapsed, 640px open.
+
+**ONE ROLE CONTROL, NOT TWO:** the sidebar chip block that §64i removed is not
+coming back, and the panel is the only place a role can be changed.
+
+---
+
+### 65f · THE MUTATION PROBES
+
+Six, each confirmed **changed on disk** before its result was believed:
+
+| mutant | result |
+|---|---|
+| N1 catalogue re-states a role instead of deriving | **KILLED** (4) |
+| N2 a Create button appears on the read-only catalogue | **KILLED** (1) |
+| N3 scope-handoff line removed from the panel | **KILLED** (2) |
+| N4 the last-role lockout guard removed | **KILLED** (1) |
+| N5 supplier seat offered a buyer bundle (cross-tenancy grant) | **KILLED** (1) |
+| N6 route-coverage guard blinded (derivation returns nothing) | **KILLED** (1) |
+
+---
+
+### 65g · BROWSER QA — BUILT BUNDLE, BOTH PERSONAS, BOTH LOCALES, TWO INDEPENDENT METHODS
+
+**`getBoundingClientRect` for placement, structured DOM reads for content** —
+the discipline that catches what `innerText` misses.
+
+- **Placement:** role controls in the sidebar = **0**; panel below the header and
+  right of the sidebar; **0** role controls outside the panel.
+- **The list (ID):** 7 rows, headers `Kode peran · Nama tampilan · Deskripsi ·
+  Jenis · Jangkauan · Tindakan`, KPIs `7 / 52 / 67`, **no Create button**, and
+  no users/modified/status column.
+- **The detail:** clicking `receiving` → `#/buyer/roles/receiving`, heading
+  *Penerimaan*, `5 izin · 15 tindakan · 14 di layar`, 3 modules, 5 permissions,
+  14 verbs, back link, marker.
+- **The panel (EN):** collapsed reads `Procurement +5`; expanded lists the six.
+- **An unknown role is a 404**, not a role-shaped page with nothing in it — an
+  empty detail claims *"this role has no permissions"*, which is a different and
+  much worse statement than *"there is no such role"*.
+
+---
+
+### 65h · ⚠️ THE DISPATCH'S REPO STATE DID NOT EXIST, FOR THE SECOND CONSECUTIVE BATCH
+
+Named: main `dbb9b21`, floor `3157/229`, and *"the demo switcher that #250 moved
+here"*. Measured after `git fetch --all --prune`: **`dbb9b21` is not a valid
+object**, `origin/main` is `dd3160e`, **no commit in the ref graph has floor
+3157/229**, and **#250 has never existed** (nor #249). PR **#248 is still OPEN**
+at `aecaab2`.
+
+The preceding dispatch had asked for `#250` at `22a05f8` to be **merged** — an
+outward, irreversible act on an object that does not exist. It was refused on
+§43a and cost nothing. **This batch is therefore stacked on `feat/roles-module-
+batch-a`, not on main**, because every symbol it imports — `SYSTEM_ROLES`,
+`atomsFor`, `handoff.ts`, `CurrentIdentity.businessRoles` — exists only there.
+**#248 must merge before this one.**
+

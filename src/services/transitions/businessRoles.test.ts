@@ -176,6 +176,77 @@ describe('THE OPERATOR RULINGS, ASSERTED', () => {
   });
 });
 
+describe('⚠️ THE SUPER ADMIN — DERIVED, BOUNDED, AND NAMED', () => {
+  it('holds THE UNION OF EVERY OTHER BUNDLE — derived, so it cannot drift', () => {
+    // Hand-listing 52 atoms would put a copy of every other bundle somewhere
+    // nothing checks. Composed, `admin` gains an atom in the same commit a lane
+    // gains one — which is what makes this assertion structural rather than a
+    // snapshot.
+    const others = (Object.keys(SYSTEM_ROLES) as SystemRoleId[]).filter((r) => r !== 'admin');
+    expect(others.length).toBeGreaterThan(0); // population guard
+    const union = new Set(others.flatMap((r) => SYSTEM_ROLES[r]));
+    expect(new Set(SYSTEM_ROLES.admin)).toEqual(union);
+  });
+
+  it('⚠️ IS BOUNDED BY WHAT A HUMAN CAN DO — no machine-only atom', () => {
+    // THE EXCLUSION IS WHAT MAKES THE BUNDLE RIGHT (operator ruling). A super
+    // admin cannot fire S/4HANA's or the TMS's acts, because those have no human
+    // owner by construction — and that is the one thing a super admin should not
+    // be able to override invisibly either.
+    const assignable = new Set(
+      (Object.keys(SYSTEM_ROLES) as SystemRoleId[])
+        .filter((r) => r !== 'admin')
+        .flatMap((r) => SYSTEM_ROLES[r]),
+    );
+    const machineOnly = AUTOMATION_ATOMS.filter((a) => !assignable.has(a));
+    expect(machineOnly.length, 'no machine-only atoms to exclude — the probe is vacuous').
+      toBeGreaterThan(0);
+    for (const a of machineOnly) {
+      expect(SYSTEM_ROLES.admin, `admin holds machine-only atom '${a}'`).not.toContain(a);
+    }
+    // Known-GOOD control beside it: it DOES hold the human ones.
+    expect(SYSTEM_ROLES.admin).toContain('invoice:pay');
+    expect(SYSTEM_ROLES.admin).toContain('po:confirm');
+  });
+
+  it('⚠️ SPANS BOTH TENANCIES — which is what buyer:all never did', () => {
+    // Measured: the sides are DISJOINT. The retired persona grant reached 36
+    // assignable buyer atoms and zero supplier atoms; "wildcard" was accurate
+    // about its SHAPE and loose about its REACH. `admin` is genuinely wider,
+    // which is why it is named on the catalogue rather than quietly granted.
+    const buyerAtoms = new Set(PERSONA_SYSTEM_ROLES.buyer.flatMap((r) => SYSTEM_ROLES[r]));
+    const supAtoms = new Set(PERSONA_SYSTEM_ROLES.supplier.flatMap((r) => SYSTEM_ROLES[r]));
+    expect([...buyerAtoms].filter((a) => supAtoms.has(a))).toEqual([]);
+    for (const a of [...buyerAtoms, ...supAtoms]) expect(SYSTEM_ROLES.admin).toContain(a);
+  });
+
+  it('⚠️ IS NOT A PERSONA BUNDLE — the tenancy answer must not collapse', () => {
+    // Listing `admin` under a persona would make `PERSONA_ROLES.buyer` span
+    // supplier atoms, and `personaCan('buyer','po:confirm')` would turn true —
+    // collapsing the answer `nextActorFrom`, `catalogView` and the `surfaceable`
+    // per-persona invariant all read.
+    expect(PERSONA_SYSTEM_ROLES.buyer as readonly string[]).not.toContain('admin');
+    expect(PERSONA_SYSTEM_ROLES.supplier as readonly string[]).not.toContain('admin');
+  });
+
+  it('⚠️ DOES NOT POLLUTE THE HANDOFF — universality names no owner', () => {
+    // `rolesHolding` filters `admin` out. Unfiltered, it would name admin on all
+    // 52 atoms and every withheld verb would read "Awaiting Finance / Admin".
+    // Finance OWNS `invoice:pay`; admin can ALSO do it — different statements,
+    // and only the first is an owner.
+    expect(rolesHolding('invoice:pay')).toEqual(['finance']);
+    expect(rolesHolding('gr:post')).toEqual(['receiving']);
+    expect(rolesHolding('po:confirm')).toEqual(['supplier']);
+    // …and admin's reach is still stated in full, on its own row.
+    expect(SYSTEM_ROLES.admin).toContain('invoice:pay');
+  });
+
+  it('is a SYSTEM role, distinguishable from an invented one', () => {
+    expect(isSystemRole('admin')).toBe(true);
+    expect(isSystemRole('admin-jakarta-nightshift')).toBe(false);
+  });
+});
+
 describe('atomsFor — resolution', () => {
   it('unions bundles and dedupes a shared atom', () => {
     // `asn:flag` is in `receiving` AND the automation grant: the clerk resolves

@@ -90,6 +90,7 @@ export const ROLE_LABEL_KEY: Readonly<Record<SystemRoleId, string>> = Object.fre
   planning: 'roles.owner.planning',
   requisitioner: 'roles.owner.requisitioner',
   supplier: 'roles.owner.supplier',
+  admin: 'roles.owner.admin',
 });
 
 /**
@@ -108,6 +109,10 @@ const ROLE_ORDER: readonly SystemRoleId[] = [
   'planning',
   'requisitioner',
   'supplier',
+  // Last, and in practice never reached: `rolesHolding` filters `admin` out
+  // before an owner list is built, because a role that holds everything names
+  // nothing. Present here so the record stays total over the union.
+  'admin',
 ];
 
 export function ownerLabelKeys(owners: readonly SystemRoleId[]): readonly string[] {
