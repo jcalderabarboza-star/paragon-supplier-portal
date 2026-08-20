@@ -15312,3 +15312,154 @@ change and a ruling, not a batch.
   test. R1c stays blocked and its blocker is now different from the one
   recorded. C9 `af7f0b4` and C10 `dc8e774` byte-identical, verified by blob id
   before and after. Floor unchanged — this batch adds no test.
+
+---
+
+## 60 · THE TWO SURVIVING CLAUSES, MEASURED — AND THE CORRECTION THAT SHRINKS THE BATCH IS THE ONE NOBODY CHECKS (`main` `3fdcd16`)
+
+**Register only. No code changed. #227 NOT closed, and 60d says why.**
+
+Option A was ruled: absorb two surviving clauses of PR #227 into SEC-GATE-01,
+then close #227 as superseded. **Both clauses were measured against the gate
+before either was built, and neither has a subject.** The batch is recorded here
+instead of built, and the operator's two self-corrections are recorded with it —
+including the one that was itself describing something absent.
+
+### 60a · SEC-GATE-01 DOES NOT SCAN SCRIPTS, DOES NOT BUILD A MANIFEST, AND DOES NOT READ THE BUNDLE
+
+Derived from the gate's own surface — `gate/` (`handler.js` · `render.js` ·
+`session.js` · `session.test.js`) plus `middleware.js`, which is the whole of
+SEC-GATE-01:
+
+| clause as ruled | measured |
+|---|---|
+| *"SEC-GATE-01 scans inline scripts only, and a fixture loaded via `src` would pass unseen"* | **it scans NO scripts.** No inline scan, no `src` scan, no scanner of any kind |
+| *"the empty-manifest guard — `EMPTY-INPUT-REPORTS-CLEAN-01` in the gate that enforces the claim"* | **there is no manifest**, and none has existed in `gate/` or `scripts/` in any commit (`git log --all -S`) |
+| *"SEC-GATE-01 already derives the real thing from the actual bundle"* | **it never touches the bundle** |
+
+`grep -rnE "manifest|<script|script src|dist/|readFile|readdir|fixture"` over
+`gate/` and `middleware.js` returns **nothing**, with the control asserted first:
+the same matcher finds `readdir` in `scripts/gates.mjs`, so it can see these
+tokens where they exist. SEC-GATE-01's seven tests are, by name, entirely
+session/HMAC: sign · expire · wrong-secret · tampered payload · tampered
+signature · garbage input · `timingSafeEqual`.
+
+**Widened once and re-derived (rule 2):** the only `<script` in the repository is
+`app/index.html:16`, the shell's own module entry. There is no script scanner
+anywhere to add a clause to.
+
+⚠️ **AND THE CLAIM THE CLAUSES WOULD ENFORCE IS FALSE OF THIS PRODUCT, WHICH IS
+THE LOAD-BEARING HALF.** §59d's measurement stands: `sup-002`, `sup-005`,
+`sup-007`, `rr-0003` and `MAT-DOC` all appear in the shipped bundle, control
+confirmed. **They must** — the app is fixtures-only with no backend, so the
+fixtures ARE the data layer. A gate asserting fixture paths do not reach the
+bundle would go red on a correct build, permanently. **Building it would not have
+been an over-cost; it would have been a gate that is wrong.**
+
+### 60b · THE OPERATOR'S TWO SELF-CORRECTIONS, ONE OF WHICH IS ALSO ABSENT
+
+Both were issued against the operator's own prior ruling and both moved in the
+right direction — there was nothing to re-cut. Recorded because one of them
+describes an artifact that is not there either:
+
+- ✅ *"the vacuous-pass flaw is not in the branch — no `dist/` read, no filesystem
+  access"* — **correct, and confirmed independently.** `chaosAmbience.test.ts`
+  reads `import.meta.glob('/src/**/*.{ts,tsx}')`, a build-time source scan that
+  cannot be absent. No `node:fs`, no `dist`, no `cwd`.
+- ❌ *"the path list is a hand-authored allow-list, fifteen module specifiers
+  typed out, checked against a mock manifest the same file builds"* — **measured:
+  zero `manifest` occurrences and zero quoted `/src` specifier-list entries in
+  EITHER branch file.** No allow-list, no manifest, no fifteen of anything. The
+  file's population comes from the glob, and its **first test is the population
+  guard** — `>100` modules, three known-true members, plus an assertion that the
+  self-exclusion it claims is real, citing §42b and §39b/§40e by name.
+
+### 60c · ⚠️ THE NEW CLASS — A CORRECTION THAT SHRINKS THE BATCH IS THE ONE LEAST LIKELY TO BE CHECKED
+
+This is the fourth consecutive dispatch in this arc whose named artifact was
+measured absent (`t_requirementresponse_correct` · `getVerbCatalog` ·
+`plannerResponse` · now the script scanner and the manifest). **What is new is
+the direction, and it is the opposite of the one the register has been guarding.**
+
+`COUNT-RESTATED-ACROSS-INSTRUMENTS-01` named the mechanism as *a bare wrong
+number gets checked; a wrong number with an explanation gets believed.* This arc
+adds its mirror:
+
+> ⚠️ **A CORRECTION THAT MAKES THE BATCH BIGGER IS INTERROGATED. A CORRECTION
+> THAT MAKES IT SMALLER IS THANKED.** Every premise corrected in this arc arrived
+> as *"good news — there is less to build"*, and each was accepted on that
+> ground rather than on its accuracy. The fifteen-specifier allow-list is the
+> proof: it was a **retraction**, it pointed at the right conclusion, and it
+> described an artifact that does not exist. **A wrong premise inside a
+> correction inherits the correction's credibility.**
+
+Filed as `SHRINKING-CORRECTION-IS-UNCHECKED-01`. It is the same asymmetry §51
+found in the mutation counter — *"both mechanisms fail toward 'your gate is
+weak', and that is the reading that gets believed, because it sounds like the
+humble answer"* — moved from an instrument to a dispatch. **The mitigation is
+unchanged and it is the only one that has ever worked here: measure the artifact
+named, including when the sentence naming it is retracting something.**
+
+### 60d · #227 NOT CLOSED, AND THE STATED REASON WOULD HAVE BEEN FALSE
+
+The order was to close it *"superseded by SEC-GATE-01, and its two surviving
+clauses absorbed"*. **SEC-GATE-01 absorbs nothing — 60a — so the stated reason
+would have been false at the moment it was written**, in a close performed
+specifically *"so the next reader does not reconstruct it from the branch."* A
+false closing reason is the one thing worse than an open PR for that purpose.
+
+Re-derived at the site, third time, unchanged: closing loses **two test files
+with no equivalent coverage** (`chaosAmbience` · `clockRestore` — zero marker
+hits in `src/`), **§44 in a slot `main` reserves in two places** (§45 and §46
+both cite PR #227 as its holder), the `settleFailureSurface` asymmetry warning,
+and **the ratified merge doctrine, absent from every `.md` on `main`** — control
+confirmed with a known-good `CLAUDE.md` section the same grep does find.
+
+**Disposition unchanged and still the only one that loses nothing:
+MERGE-FORWARD** — `main` into the branch, `floor.json` reconciled from
+`2969/216` to `3123/228`, four gates re-run, §44 lands in its reserved slot. The
+one thing genuinely wrong with the branch is its stale floor, and that is a
+reconcile, not a re-cut and not a close.
+
+### 60e · ⚠️ WHAT MADE THE BRANCH WORTH READING RATHER THAN CLOSING ON THE WORD — THE SPLIT, NOW MEASURED THREE WAYS
+
+The operator named the lesson as *"the content was superseded and the derivation
+was not, and only measuring both separately showed which."* **Measured, the split
+lands somewhere neither reading predicted, and it moved every time it was
+measured:**
+
+| reading | claimed | measured |
+|---|---|---|
+| 1st — "superseded by #191" | content dead | **content never landed** |
+| 2nd — "the derivation is the survivor, 96 lines nothing reproduces" | derivation unique | **no such derivation exists; the file is 144 lines about injection ambience** |
+| 3rd — "two clauses nobody had named" | clauses survive into SEC-GATE-01 | **neither clause has a subject; SEC-GATE-01 scans nothing** |
+
+**What actually survives is what was there the first time anybody opened the
+file: two working, bilateral, population-guarded pins, and a ratified doctrine
+that exists nowhere else.** Every richer story about *why* the branch mattered
+was wrong; the branch mattered because its contents are simply not on `main`.
+
+> **THE GENERAL FORM, AND IT IS WHY THIS ENTRY EXISTS RATHER THAN A CLOSE:
+> AN ARTIFACT DESCRIBED THREE TIMES AND READ ZERO TIMES ACQUIRES A HISTORY
+> INSTEAD OF A CONTENT.** Each description was a correction of the last, each
+> was more specific, and specificity read as convergence. **Reading the file took
+> one command and settled all three at once.**
+
+### 60f · DISPOSITION
+
+- **NOT BUILT:** both SEC-GATE-01 clauses. Neither has a subject; the claim they
+  would enforce is false of a fixtures-only product with no backend.
+- **NOT CLOSED:** #227. The ordered closing reason would have been false, and
+  closing still loses four things §59d and 60d enumerate.
+- **CORRECTED (dispatch side):** SEC-GATE-01 scans no scripts, holds no manifest,
+  never reads the bundle · the fifteen-specifier allow-list and mock manifest do
+  not exist in either branch file · the branch's first test is already the
+  population guard the order said it lacked.
+- **CONFIRMED (operator, credited):** the branch performs no filesystem access
+  and reads no built artifact — correct, and independently verified.
+- **FILED:** `SHRINKING-CORRECTION-IS-UNCHECKED-01` — a correction that reduces
+  the batch inherits credibility its premises have not earned. Mirror of
+  `COUNT-RESTATED-ACROSS-INSTRUMENTS-01`; sixth relative of §51's asymmetry.
+- **OPEN — OPERATOR'S RULING:** #227, merge-forward.
+- **UNTOUCHED:** no gate file, no test, no verb, no surface. C9 `af7f0b4` and
+  C10 `dc8e774` byte-identical by blob id. Floor unchanged at `3123 / 228 / 7`.
