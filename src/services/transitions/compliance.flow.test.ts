@@ -21,6 +21,7 @@ import {
 } from './index';
 import { MockCommandService } from '../data/mock/MockCommandService';
 import type { QueryScope } from '../data/types';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 // Clock-derived display states (law 0.5 / census G1) — MUST NOT be transition-
 // states; they are computed in `complianceProjection.ts`.
@@ -83,7 +84,7 @@ describe('compliance flow — inert (author-unwired, no CommandTarget/cascade)',
 
   it('dispatch fails UNKNOWN_ENTITY — nothing is wired (SIMULATED)', async () => {
     const svc = new MockCommandService();
-    const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+    const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
     const res = await svc.dispatch(buyer, {
       transitionId: 't_compliance_verify',
       entity: 'compliance',

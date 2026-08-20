@@ -7,6 +7,7 @@ import {
   flowRegistry,
   type CommandTarget,
 } from './index';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 // A synthetic flow with a sapBoundary transition — no shipped verb is one yet
 // (the first is GR "Posted to SAP", Phase 2.2′). Registered on THIS file's
@@ -62,7 +63,7 @@ describe('dispatcher — SAP-boundary submitted→settle (Step 3.5)', () => {
     });
 
     const res = d.dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       { transitionId: 't_widget_post', entity: 'widget', entityId: 'w-1' },
     );
     expect(res.status).toBe('submitted');
@@ -105,7 +106,7 @@ describe('dispatcher — SAP-boundary submitted→settle (Step 3.5)', () => {
     });
 
     const res = d.dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       { transitionId: 't_gadget_post', entity: 'gadget', entityId: 'g-1' },
     );
     expect(res.status).toBe('submitted');

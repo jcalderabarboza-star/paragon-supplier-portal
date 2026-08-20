@@ -33,6 +33,8 @@ import { userVerbsFrom, getFlow } from '../services/transitions';
 import { statusLabelKey } from '../lib/statusLabel';
 import i18n from '../lib/i18n';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { NO_PERSON } from '../context/noPerson';
 
 /** The seeded disputed response: sup-005's short firm glycerin line. */
 const RR = 'rr-0002';
@@ -40,6 +42,8 @@ const SUP005: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-005',
   supplierName: 'PT Distributor Kimia Nusantara',
+  businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+  actor: NO_PERSON,
 };
 
 const ANSWER = 'Accepted — the 500 KG gap is covered from the Q4 buffer, no re-plan needed.';

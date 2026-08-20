@@ -10,12 +10,13 @@ import { deriveAgreementView } from '../services/delivery';
 import { SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS } from '../services/delivery/demoFixtures';
 import { SCHEDULING_AGREEMENT_CTR003 } from '../services/delivery/fixtures';
 import { SDC_SIMULATED_NOW } from '../services/sdc';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 
 // The supplier's own-facts-only delivery mirror. Reads sup-007's OWN agreements
 // (sa-0001 pristine + sa-0002 rich) via the identity-scoped hook — own-only by
 // construction. Read-only: no release / confirm / policy-edit control renders.
 
-const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null };
+const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 
 describe('SupplierDeliveryAgreements — own-facts-only read-only mirror', () => {
   afterEach(() => schedulingAgreementStore.reset());

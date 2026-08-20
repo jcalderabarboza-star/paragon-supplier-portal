@@ -9,6 +9,7 @@ import { MockCommandService } from '../services/data/mock/MockCommandService';
 import { enforcementSettingStore } from '../services/data/mock/stores/enforcementSettingStore';
 import { seedEnforcementLedger, SEEDED_CHECKS } from '../services/data/mock/enforcementSeed';
 import BuyerGoodsReceipt from './BuyerGoodsReceipt';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
@@ -217,7 +218,7 @@ const relaxBothChecks = async () => {
   const svc = new MockCommandService();
   for (const entityId of SEEDED_CHECKS) {
     const res = await svc.dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       {
         transitionId: 't_enforcement_set',
         entity: 'enforcement',

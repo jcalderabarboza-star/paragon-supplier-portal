@@ -60,6 +60,8 @@ export function useReleaseLines() {
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   const qc = useQueryClient();
 
@@ -103,6 +105,8 @@ export function useConfirmMatch() {
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   const qc = useQueryClient();
 
@@ -147,6 +151,8 @@ export function useEditPolicy() {
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   const qc = useQueryClient();
 

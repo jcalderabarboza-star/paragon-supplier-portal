@@ -27,9 +27,10 @@ import {
   settingHistory,
   settingInForce,
 } from '../../../lib/enforcement';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
-const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-005' };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 const CHECK = 'halal.certificate';

@@ -30,10 +30,11 @@ import { channelProvenanceStore } from '../../channel/provenanceStore';
 import { makeProvenanceRef, type ChannelMessage } from '../../channel/types';
 import { DataError } from '../types';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 // sup-002 makes glycerin (RM-EMUL-3310, manufacturer relationship + fanned).
-const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
+const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 

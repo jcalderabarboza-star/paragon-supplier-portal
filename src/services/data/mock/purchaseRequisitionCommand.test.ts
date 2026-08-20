@@ -22,9 +22,10 @@ import {
   awaitsHarvest,
   readinessNote,
 } from '../../liveness/registry';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
-const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockCommandService();
 const reads = new MockProcurementService();
 

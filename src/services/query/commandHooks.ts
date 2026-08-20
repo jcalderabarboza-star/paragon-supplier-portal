@@ -24,9 +24,25 @@ import type {
   CommandDecision,
 } from '../data/types';
 
+/**
+ * The COMMAND scope — tenancy plus the seat's business roles.
+ *
+ * ⚠️ **THIS IS THE PRODUCTION PATH THE WILDCARD RETIREMENT TURNS ON.** Every
+ * governed act in the portal dispatches through a hook in this file, and every
+ * one of them takes its scope from here. Before this arc the scope carried
+ * tenancy only and the dispatcher widened it to the whole persona; now the
+ * seat's roles travel with the command and the dispatcher resolves atoms from
+ * THEM. A scope built anywhere else without roles is refused at the role gate
+ * rather than silently granted 48 atoms — which is the whole point.
+ */
 function useScope(): QueryScope {
   const { identity } = useCurrentIdentity();
-  return { personaType: identity.personaType, supplierId: identity.supplierId };
+  return {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
+  };
 }
 
 // ── §43 · THE SETTLE FAILURE SURFACE ────────────────────────────────────────

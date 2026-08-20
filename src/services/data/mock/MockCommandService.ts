@@ -48,7 +48,7 @@ import {
 import {
   createDispatcher,
   InMemoryAuditSink,
-  rolesForPersona,
+  atomsFor,
   resolvePolicyHook,
   bindPolicyHook,
   POLICY_HOOKS,
@@ -1420,7 +1420,25 @@ export const commandAuditSink = new InMemoryAuditSink();
 let seq = 0;
 
 const dispatcher = createDispatcher({
-  resolveRoles: (scope) => rolesForPersona(scope.personaType),
+  // ── ⚠️ THE WILDCARD RETIREMENT, AND IT IS THIS ONE LINE ────────────────────
+  //
+  // WAS: `(scope) => rolesForPersona(scope.personaType)`. `PersonaType` is
+  // `'buyer' | 'supplier'`, so EVERY buyer session resolved to all 48 buyer
+  // atoms unconditionally — award, post-to-SAP, release-payment and
+  // enforcement-mode-setting held by one undifferentiated seat. That
+  // persona-wide grant WAS the wildcard: there is no literal `buyer:all` in the
+  // role path (it is the DR-10 audit ACTOR string, `events.ts:actorKey`, and a
+  // `requiredRole` on 0 of 91 transitions) and the gate is a plain
+  // `Array.includes` with no short-circuit. The wildcard was the SHAPE of the
+  // grant, not a token in it.
+  //
+  // ⚠️ **AND THERE IS DELIBERATELY NO PERSONA FALLBACK.** A scope without roles
+  // resolves to NOTHING and is refused `ROLE_NOT_PERMITTED`. Falling back to
+  // the persona span would re-grant all 48 atoms to every caller that had not
+  // been migrated yet — the wildcard surviving as a default, which is a
+  // wildcard with better manners. A refusal is loud, attributable to a named
+  // atom, and impossible to mistake for a working narrow grant.
+  resolveRoles: (scope) => atomsFor(scope.businessRoles ?? []),
   target: (entity) => TARGETS[entity],
   resolvePolicyHook,
   sink: commandAuditSink,

@@ -15,11 +15,12 @@ import { invoiceStore } from './stores/invoiceStore';
 import { INVOICES } from './fixtures/invoices';
 import { usePinnedDemoClock } from '../../../test/demoClock';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
 const reads = new MockProcurementService();
 const commands = new MockCommandService();
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
-const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 // These reads project `Overdue` from the clock (`invoiceProjection`), and the
 // service seam supplies `now` from the wall clock. Without a pinned instant the
@@ -58,7 +59,7 @@ describe('invoice reads — one canonical store, two truthful persona views', ()
 
   it('a buyer command advances BOTH surfaces coherently — no drift', async () => {
     // inv-giv-0892 (sup-003) is Approved. Release + settle → both read Payment Released.
-    const sup003: QueryScope = { personaType: 'supplier', supplierId: 'sup-003' };
+    const sup003: QueryScope = { personaType: 'supplier', supplierId: 'sup-003', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
     const post = await commands.dispatch(buyer, {
       transitionId: 't_invoice_release_payment',
       entity: 'invoice',

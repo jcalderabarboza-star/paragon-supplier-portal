@@ -146,6 +146,39 @@ export type {
 export interface QueryScope {
   personaType: 'buyer' | 'supplier';
   supplierId: string | null;
+  /**
+   * THE BUSINESS ROLES THE ACTING SESSION HOLDS — the authorisation half, and
+   * a READ scope never needs it (tenancy is `personaType` × `supplierId`).
+   *
+   * ⚠️ **OPTIONAL ON THE TYPE, REQUIRED ON THE COMMAND PATH, AND THE
+   * DIFFERENCE IS ENFORCED IN THE DISPATCHER RATHER THAN HERE.** Making it
+   * required would put an authorisation field on `list()` / `getById()`, which
+   * conflates two questions and would force ~60 read specs to answer one they
+   * do not ask. Absent on a COMMAND, the dispatcher refuses with
+   * `ROLE_NOT_PERMITTED` — it does NOT fall back to the persona span, because
+   * that fallback IS the wildcard this arc retired: a persona spanning 48
+   * atoms unconditionally.
+   *
+   * `scopeKey` deliberately ignores it — two sessions with different roles read
+   * the same tenant's data, so folding roles into the cache key would shard the
+   * query cache on a dimension the reads do not vary by.
+   */
+  businessRoles?: readonly string[];
+  /**
+   * WHO IS ACTING, carried from the SESSION — never from a command payload
+   * (C10 §6.2). The `setAt` / `pinnedAt` discipline this tree has ratified
+   * twice applies with more force to WHO than to WHEN: *a caller that could
+   * set it could backdate its own audit entry*.
+   *
+   * ⚠️ **THE OTHER HALF OF §6.2 IS NOT BUILT AND IS STILL FREE.** A
+   * payload-supplied `RESOLVED` actor is not yet REFUSED BY NAME on write; it
+   * is harmless today for one reason only — nothing in shipped code constructs
+   * a `RESOLVED` actor, so no forged attribution can exist. That precondition
+   * becomes unfixable at the FIRST `RESOLVED` record, and this batch creates
+   * none. Stated here so the absence is a fact in the tree rather than a claim
+   * in a report.
+   */
+  actor?: import('../../lib/enforcement').ActorAttribution;
 }
 
 // ─── Error contract (DR-4) — the single failure channel for the data layer ──

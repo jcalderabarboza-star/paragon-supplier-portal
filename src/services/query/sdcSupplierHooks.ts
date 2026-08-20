@@ -146,6 +146,8 @@ export function useRequirementResponseSubmit() {
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   const invalidate = useInvalidateSdc();
 
@@ -174,6 +176,8 @@ export function useRequirementResponseAcknowledge() {
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   const invalidate = useInvalidateSdc();
 
@@ -209,6 +213,8 @@ export function useRequirementResponsePromote() {
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   const invalidate = useInvalidateSdc();
 
@@ -316,6 +322,8 @@ export function useInventoryDeclare() {
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   const invalidate = useInvalidateSdc();
 
@@ -344,6 +352,8 @@ export function useIncomingShipmentReport() {
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   const invalidate = useInvalidateSdc();
 

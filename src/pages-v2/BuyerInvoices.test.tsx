@@ -8,6 +8,8 @@ import { usePinnedDemoClock } from '../test/demoClock';
 import { DataError, type IDataService } from '../services/data/types';
 import { useToast } from '../hooks/useToast';
 import BuyerInvoices from './BuyerInvoices';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { NO_PERSON } from '../context/noPerson';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
@@ -17,6 +19,8 @@ const SUPPLIER_NO_INVOICES: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-999',
   supplierName: 'PT No Invoices',
+  businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+  actor: NO_PERSON,
 };
 
 describe('BuyerInvoices — four honest states', () => {

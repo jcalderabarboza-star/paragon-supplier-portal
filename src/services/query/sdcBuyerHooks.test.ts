@@ -10,12 +10,13 @@ import { describe, it, expect } from 'vitest';
 
 import { isRecordedDeclarationInvalidation } from './sdcBuyerHooks';
 import { scopeKey } from './useServiceQuery';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 const SUBJECT = 'sup-002';
 const OTHER = 'sup-005';
 const subjectKey = scopeKey({ personaType: 'supplier', supplierId: SUBJECT });
 const otherKey = scopeKey({ personaType: 'supplier', supplierId: OTHER });
-const buyerKey = scopeKey({ personaType: 'buyer', supplierId: null });
+const buyerKey = scopeKey({ personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer });
 
 describe('isRecordedDeclarationInvalidation — the C4c carve-out', () => {
   it("invalidates the SUBJECT supplier's own sdc reads (else their portal SOH goes stale)", () => {

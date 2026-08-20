@@ -25,13 +25,14 @@ import { requirementResponseStore } from './stores/requirementResponseStore';
 import { rfqStore } from './stores/rfqStore';
 import type { ConsolidationRow } from '../../sdc';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
 const svc = new MockCommandService();
 const reads = new MockProcurementService();
 const collab = new MockCollaborationService();
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
-const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 beforeEach(() => {
   rfqStore.reset();
@@ -245,7 +246,7 @@ describe('PF-1b · requirementResponse — suppliers draft too', () => {
   it('a supplier cannot promote ANOTHER supplier’s draft — scope holds', async () => {
     await expect(
       svc.dispatch(
-        { personaType: 'supplier', supplierId: 'sup-007' },
+        { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier },
         {
           transitionId: 't_requirementresponse_promote',
           entity: 'requirementResponse',

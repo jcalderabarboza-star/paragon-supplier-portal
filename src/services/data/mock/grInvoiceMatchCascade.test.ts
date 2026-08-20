@@ -23,8 +23,9 @@ import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { asnStore } from './stores/asnStore';
 import { invoiceStore } from './stores/invoiceStore';
 import type { QueryScope, InspectionResult, ASN } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const svc = new MockCommandService();
 
 // A submitted ASN seeded directly so a GR can be created + posted against the

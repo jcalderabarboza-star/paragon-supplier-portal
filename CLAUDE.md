@@ -25,6 +25,30 @@ and approves, and the CLI merges via the GitHub UI (Squash + delete branch).
 Direct pushes to `main` are not used.
 
 ## Current state (as-built: main @ #65 — F0 + I3 complete; Stage G planning canon on main)
+
+> ⚠️ **AUTHORISATION NOW EXISTS (Batch A, §64).** `resolveRoles` no longer widens
+> a persona to its whole atom set: it resolves the SEAT's business roles
+> (`services/transitions/businessRoles.ts` — six system roles + a supplier role,
+> plus an `automation` grant that is deliberately NOT assignable to a person).
+> **There is no persona fallback**; a command scope without `businessRoles` is
+> refused, because a fallback is the wildcard with better manners. The cascade
+> fan-out runs under the automation grant — it re-dispatches inside a `catch {}`,
+> so it is the one path where a narrowed grant deletes a reachable act in
+> silence. `PERSONA_ROLES` survives as a DERIVED tenancy view and is no longer an
+> authorisation source. **Do not restate the atom or role counts here** — derive
+> them from `SYSTEM_ROLES` × `catalogRoles()`; the bilateral gate in
+> `businessRoles.test.ts` is what keeps them honest.
+>
+> **The cross-role handoff renders the wait, not a gap** (`handoff.ts` +
+> `HandoffNotice`) — and it is wired on **BuyerInvoices only**. Every other
+> governed surface still renders its affordances unconditionally, so a narrowed
+> seat gets a dispatcher refusal with no rendered owner. Derive the exposure from
+> `HandoffNotice`'s importers before claiming otherwise (§64j).
+>
+> The resolved actor is a SEAM, not a person: `CurrentIdentity.actor` is always
+> `UNATTRIBUTED: NO_PERSON_IN_SESSION`. **C10 §6.2's payload-refusal half is NOT
+> built** and is guarded by a tripwire in `simUsrNamespace.test.ts` — the moment
+> shipped code constructs a `RESOLVED` actor, the refusal must land first.
 Re-baselined by the **Canon True-Up** (2026-07-14). The prior "main @ #53" pointer
 was stale by ~12 commits; F0 (contract-freeze) and the I3 compliance phase are DONE,
 and the Stage G planning canon + World-Class Build Plan are now on main.
@@ -431,8 +455,20 @@ OUTPUT, AND CONFIRM ONE KILL BY NAME BEFORE TRUSTING A COUNT.**
 ⚠️ **AND THE SAME REFLEX APPLIES TO AN ARTIFACT NAMED IN A DISPATCH.** The
 identifiers named as existing code and measured absent are
 `getInvoiceAction`, the FX-page `<span lang="en">` (§45), `SurfaceExpectation`
-(§51) and **`blockingReasons` (§63b)** — beside a SHA (`c95e8ce`) and a PR number
-the tree never held. **THE LIST IS THE COUNT; do not restate it as a number** —
+(§51), **`blockingReasons` (§63b)**, and — all four in ONE dispatch (§64a) —
+**`roleMatches`**, **`buyer:planner`**, **`t_asn_confirm`** and
+**`t_asn_dispatch`** — beside a SHA (`c95e8ce`) and a PR number the tree never
+held.
+
+⚠️ **§64a ADDS THE VARIANT THAT IS HARDEST TO CATCH: A MISDESCRIBED MECHANISM
+ATTACHED TO A CORRECT CONCLUSION.** The dispatch said `buyer:all` was a wildcard
+that `roleMatches` short-circuits, on 32 of 44. `buyer:all` is a `requiredRole`
+on **0 of 91** transitions (it is the DR-10 audit ACTOR string) and `roleMatches`
+does not exist — the gate is a bare `Array.includes`. **And the conclusion was
+right anyway**: the persona-wide grant WAS a wildcard, because holding all 48
+atoms by virtue of being a buyer is exactly that. The wildcard was the SHAPE of
+the grant, not a token in it. **A hunt for the named token finds nothing and
+concludes there is no wildcard** — so grep the artifact, keep the property. **THE LIST IS THE COUNT; do not restate it as a number** —
 the sentence that stood here opened with *"Three"* while it was already time to
 write a fourth, which is `FLOOR-IN-PROSE-01` in the paragraph that teaches the
 reflex. `blockingReasons` was the load-bearing mechanism of a ruling — *"your own
