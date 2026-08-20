@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Info, Lock, Users, ArrowRight, Search } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import { deriveRoleViews, roleTotals, type RoleView } from './roles/roleModel';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE ROLES CATALOGUE — A LIST, AND A ROLE OPENS ITS OWN PAGE.
@@ -26,16 +27,19 @@ import { deriveRoleViews, roleTotals, type RoleView } from './roles/roleModel';
 // as an oversight.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const KpiTile: React.FC<{ labelKey: string; value: number; testId: string }> = ({
-  labelKey,
-  value,
-  testId,
-}) => {
+const KpiTile: React.FC<{
+  labelKey: string;
+  value: number;
+  testId: string;
+  /** Optional derived breakdown — what the total is made of. */
+  sub?: string;
+}> = ({ labelKey, value, testId, sub }) => {
   const { t } = useTranslation();
   return (
     <div className="bg-white border border-border-subtle rounded-lg p-4" data-testid={testId}>
       <div className="text-label text-text-tertiary uppercase">{t(labelKey)}</div>
       <div className="text-2xl font-semibold text-data-navy font-mono mt-1">{value}</div>
+      {sub && <div className="text-xs text-text-tertiary font-mono mt-0.5">{sub}</div>}
     </div>
   );
 };
@@ -109,7 +113,18 @@ const RolesCatalogue: React.FC = () => {
 
         {/* KPI tiles — only the three we can DERIVE. */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-          <KpiTile labelKey="roles.page.kpi.roles" value={totals.roles} testId="kpi-roles" />
+          <KpiTile
+            labelKey="roles.page.kpi.roles"
+            value={totals.roles}
+            testId="kpi-roles"
+            // ⚠️ THE TILE NAMES WHAT IT COUNTS AND SHOWS THE SPLIT. The false
+            // "six" was the BUYER subset written as the population; putting both
+            // figures beside the total is what stops that reading recurring.
+            sub={t('roles.page.kpi.rolesSplit', {
+              buyer: PERSONA_SYSTEM_ROLES.buyer.length,
+              supplier: PERSONA_SYSTEM_ROLES.supplier.length,
+            })}
+          />
           <KpiTile
             labelKey="roles.page.kpi.permissions"
             value={totals.permissions}
@@ -129,7 +144,7 @@ const RolesCatalogue: React.FC = () => {
               {t('roles.page.readOnlyTitle')}
             </div>
             <p className="text-xs text-text-secondary leading-relaxed mt-1">
-              {t('roles.page.readOnlyBody')}
+              {t('roles.page.readOnlyBody', { count: totals.roles })}
             </p>
           </div>
         </div>
