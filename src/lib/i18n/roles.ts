@@ -75,6 +75,10 @@ export const rolesEn: Record<string, string> = {
   // MODIFIED and STATUS; we hold no people, no modification record and no
   // activation state, so those columns would be invented rather than empty.
   'roles.page.kpi.roles': 'System roles',
+  // ⚠️ THE SPLIT, DERIVED AND ON SCREEN. "Six" was `PERSONA_SYSTEM_ROLES.buyer`
+  // stated as the population. Showing both figures beside the total is what
+  // stops the subset being mistaken for the whole a second time.
+  'roles.page.kpi.rolesSplit': '{{buyer}} buyer · {{supplier}} supplier',
   'roles.page.kpi.permissions': 'Distinct permissions',
   'roles.page.kpi.actions': 'Governed actions',
   'roles.page.search': 'Search roles by name or code…',
@@ -99,7 +103,7 @@ export const rolesEn: Record<string, string> = {
   // must say why rather than leave a missing Create button to be read as a bug.
   'roles.page.readOnlyTitle': 'Read-only catalogue',
   'roles.page.readOnlyBody':
-    'These six roles are real: they are read from the same definitions the dispatcher checks on every governed action, so this page cannot drift from what the portal enforces. Custom roles cannot be created yet — nothing in the platform stores one, so a Create button here would build a role that vanished on reload. Duplicating and narrowing a role needs a store, a recorded act and a merge rule; that is the next piece of work, not this page.',
+    'All {{count}} roles here are real: they are read from the same definitions the dispatcher checks on every governed action, so this page cannot drift from what the portal enforces. Custom roles cannot be created yet — nothing in the platform stores one, so a Create button here would build a role that vanished on reload. Duplicating and narrowing a role needs a store, a recorded act and a merge rule; that is the next piece of work, not this page.',
   'roles.page.usersDeferredTitle': 'No user list yet',
   'roles.page.usersDeferredBody':
     'The portal holds no people. Staff identity comes from the corporate directory and has not been connected, so no role can show who is assigned to it — and every count would read zero.',
@@ -147,6 +151,7 @@ export const rolesId: Record<string, string> = {
   'roles.page.back': 'Kembali ke peran',
   'roles.page.reach': '{{modules}} modul · {{permissions}} izin',
   'roles.page.kpi.roles': 'Peran sistem',
+  'roles.page.kpi.rolesSplit': '{{buyer}} pembeli · {{supplier}} pemasok',
   'roles.page.kpi.permissions': 'Izin berbeda',
   'roles.page.kpi.actions': 'Tindakan yang diatur',
   'roles.page.search': 'Cari peran berdasarkan nama atau kode…',
@@ -167,7 +172,7 @@ export const rolesId: Record<string, string> = {
   'roles.page.unwiredNote': 'sudah ditulis, belum terhubung ke layar',
   'roles.page.readOnlyTitle': 'Katalog hanya-baca',
   'roles.page.readOnlyBody':
-    'Enam peran ini nyata: dibaca dari definisi yang sama yang diperiksa dispatcher pada setiap tindakan yang diatur, sehingga halaman ini tidak dapat menyimpang dari yang ditegakkan portal. Peran khusus belum dapat dibuat — tidak ada penyimpanan untuk itu, sehingga tombol Buat di sini akan membuat peran yang hilang saat dimuat ulang. Menyalin dan mempersempit peran memerlukan penyimpanan, tindakan tercatat, dan aturan penggabungan; itu pekerjaan berikutnya, bukan halaman ini.',
+    'Semua {{count}} peran di sini nyata: dibaca dari definisi yang sama yang diperiksa dispatcher pada setiap tindakan yang diatur, sehingga halaman ini tidak dapat menyimpang dari yang ditegakkan portal. Peran khusus belum dapat dibuat — tidak ada penyimpanan untuk itu, sehingga tombol Buat di sini akan membuat peran yang hilang saat dimuat ulang. Menyalin dan mempersempit peran memerlukan penyimpanan, tindakan tercatat, dan aturan penggabungan; itu pekerjaan berikutnya, bukan halaman ini.',
   'roles.page.usersDeferredTitle': 'Belum ada daftar pengguna',
   'roles.page.usersDeferredBody':
     'Portal tidak menyimpan orang. Identitas staf berasal dari direktori korporat dan belum terhubung, sehingga tidak ada peran yang dapat menunjukkan siapa yang ditugaskan — dan setiap hitungan akan menampilkan nol.',

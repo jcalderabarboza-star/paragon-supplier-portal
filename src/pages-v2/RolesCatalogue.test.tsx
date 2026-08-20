@@ -1,6 +1,10 @@
 import { screen, within, fireEvent } from '@testing-library/react';
 import { renderWithProviders, BUYER } from '../test/test-utils';
-import { SYSTEM_ROLES, type SystemRoleId } from '../services/transitions/businessRoles';
+import {
+  SYSTEM_ROLES,
+  PERSONA_SYSTEM_ROLES,
+  type SystemRoleId,
+} from '../services/transitions/businessRoles';
 import { deriveRoleViews, roleTotals } from './roles/roleModel';
 import i18n from '../lib/i18n';
 import RolesCatalogue from './RolesCatalogue';
@@ -121,6 +125,55 @@ describe('⚠️ READ-ONLY IS A RULING, AND THE PAGE SAYS WHY', () => {
     for (const id of Object.keys(SYSTEM_ROLES) as SystemRoleId[]) {
       expect(screen.getByTestId(`role-badge-${id}`)).toHaveTextContent(/System role/i);
     }
+  });
+});
+
+describe('⚠️ THE PROSE CARRIES NO CARDINALITY OF ITS OWN', () => {
+  // ⚠️ **THIS IS THE GATE THAT DID NOT EXIST, AND ITS ABSENCE IS THE FINDING.**
+  // The marker read "These six roles are real" on a page whose tile read 7:
+  // `six` was `PERSONA_SYSTEM_ROLES.buyer.length` — TRUE OF THE BUYER SUBSET,
+  // written as the population. The same sentence rendered on the detail footer.
+  //
+  // Nothing could have caught it. The tile test asserted the tile against the
+  // derivation; the marker test asserted the marker against `/cannot be created
+  // yet/`. **No test compared the PROSE's number to the derivation**, because
+  // the prose was not thought of as carrying one — `FLOOR-IN-PROSE-01`, inside
+  // the page whose entire claim is that it cannot drift from what the portal
+  // enforces.
+  it('the marker states the DERIVED role count, not a written one', async () => {
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    const marker = await screen.findByTestId('roles-readonly-marker');
+    const derived = roleTotals(deriveRoleViews()).roles;
+    expect(marker).toHaveTextContent(new RegExp(`\\b${derived}\\b`));
+    // And it agrees with the tile — one derivation, two renderings.
+    expect(screen.getByTestId('kpi-roles')).toHaveTextContent(String(derived));
+  });
+
+  it('no English or Indonesian number-word survives in the marker copy', async () => {
+    // A word is how the cardinality got in. Digits come from interpolation;
+    // words come from a keyboard.
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    const marker = await screen.findByTestId('roles-readonly-marker');
+    const text = marker.textContent ?? '';
+    for (const w of ['five', 'six', 'seven', 'eight', 'lima', 'enam', 'tujuh', 'delapan']) {
+      expect(
+        new RegExp(`\\b${w}\\b`, 'i').test(text),
+        `the marker writes the number as the word '${w}' instead of deriving it`,
+      ).toBe(false);
+    }
+  });
+
+  it('⚠️ THE TILE NAMES WHAT IT COUNTS — the subset is shown beside the total', async () => {
+    // "Six" was a subset presented as a total. Rendering the split beside the
+    // figure is what stops that reading recurring.
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    const tile = await screen.findByTestId('kpi-roles');
+    expect(tile).toHaveTextContent(String(PERSONA_SYSTEM_ROLES.buyer.length));
+    expect(tile).toHaveTextContent(String(PERSONA_SYSTEM_ROLES.supplier.length));
+    expect(
+      PERSONA_SYSTEM_ROLES.buyer.length + PERSONA_SYSTEM_ROLES.supplier.length,
+      'the split does not add up to the total the tile shows',
+    ).toBe(roleTotals(deriveRoleViews()).roles);
   });
 });
 

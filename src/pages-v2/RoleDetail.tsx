@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Lock, Info } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import NotFound from './NotFound';
-import { findRoleView } from './roles/roleModel';
+import { findRoleView, deriveRoleViews } from './roles/roleModel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ONE ROLE — its permissions, the modules it touches, and the acts it can take.
@@ -24,6 +24,9 @@ const RoleDetail: React.FC = () => {
   const navigate = useNavigate();
   const { roleId } = useParams<{ roleId: string }>();
   const role = useMemo(() => (roleId ? findRoleView(roleId) : undefined), [roleId]);
+  // The footer repeats the list's marker, so it must repeat the list's COUNT —
+  // from the same derivation, never a second figure that could disagree.
+  const roleCount = useMemo(() => deriveRoleViews().length, []);
 
   if (!role) return <NotFound />;
 
@@ -128,7 +131,7 @@ const RoleDetail: React.FC = () => {
 
         <div className="mt-4 flex gap-2 text-xs text-text-tertiary" data-testid="role-detail-marker">
           <Info size={12} className="shrink-0 mt-0.5" />
-          <p className="leading-relaxed">{t('roles.page.readOnlyBody')}</p>
+          <p className="leading-relaxed">{t('roles.page.readOnlyBody', { count: roleCount })}</p>
         </div>
       </div>
     </AppShellV2>
