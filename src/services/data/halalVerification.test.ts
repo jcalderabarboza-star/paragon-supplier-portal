@@ -3,7 +3,8 @@
 //
 // ⚠️ **EVERY REGISTRY CASE BELOW IS SYNTHETIC AND SAYS SO.** `COMPLIANCE_REGISTRY`
 // is the honestly-synthetic fixture: placeholder suppliers, `SAMPLE-…` cert
-// numbers, `RM-SAMPLE-…` material codes, and never a real certifying body. The
+// numbers, REAL master material codes (the seam batch — see the fixture header),
+// and never a real certifying body. The
 // 17 codes it names and the 42 codes `MATERIAL_MASTER` names DO NOT INTERSECT,
 // by construction — the placeholders are an honesty device, not an oversight,
 // and a test that "fixed" the emptiness by seeding aliases would be deleting the
@@ -82,28 +83,28 @@ describe('H3 — halal-class certificate selection', () => {
   });
 
   it('⚠️ a BPOM or ISO certificate NEVER backs a halal claim', () => {
-    // creg-0009 is a BPOM notification `Under Review` on RM-SAMPLE-ACT-07, and
-    // creg-0008 is an `OTHER` (GMP) cert on RM-SAMPLE-OTH-01 — both sup-007,
+    // creg-0009 is a BPOM notification `Under Review` on PK-PETB-8804, and
+    // creg-0008 is an `OTHER` (GMP) cert on PK-ALCP-2450 — both sup-007,
     // both real documents about something else. A verification that folded them
     // in would answer a DIFFERENT QUESTION with a confident yes, and the
     // `UNDER_REVIEW` reason on the first would make the wrong answer look
     // considered.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-ACT-07', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'PK-PETB-8804', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-OTH-01', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'PK-ALCP-2450', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
   });
 
   it("one supplier's certificate never answers for another supplier", () => {
-    // RM-SAMPLE-FRG-01 is covered by creg-0001, which belongs to sup-007.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', R, BEFORE_MANDATE).verdict).toBe(
+    // FR-ROUD-4470 is covered by creg-0001, which belongs to sup-007.
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, BEFORE_MANDATE).verdict).toBe(
       'SATISFIED',
     );
-    expect(verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-FRG-01', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-002', 'FR-ROUD-4470', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
@@ -112,7 +113,7 @@ describe('H3 — halal-class certificate selection', () => {
   it('the registry is an ARGUMENT — an empty registry can only ever say NO_CERT', () => {
     // The module never imports `COMPLIANCE_REGISTRY`; the caller supplies the
     // scoped rows, so this function cannot widen a QueryScope.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', [], BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', [], BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
@@ -120,7 +121,7 @@ describe('H3 — halal-class certificate selection', () => {
 });
 
 describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', () => {
-  // creg-0002: sup-007 × RM-SAMPLE-FRG-02, HALAL_MUI_LEGACY, expiry 2027-06-01.
+  // creg-0002: sup-007 × AI-NIAC-6612, HALAL_MUI_LEGACY, expiry 2027-06-01.
   // Its OWN CLOCK is comfortably valid on both sides of the mandate, which is
   // what makes it the exemplar: the only thing that moves is the scheme.
   const mui = R.find((e) => e.id === 'creg-0002')!;
@@ -128,13 +129,13 @@ describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', (
   it('the fixture row is the case it claims to be (MUI-legacy, in date across the mandate)', () => {
     expect(mui.certType).toBe('HALAL_MUI_LEGACY');
     expect(mui.supplierId).toBe('sup-007');
-    expect(mui.materialCodes).toContain('RM-SAMPLE-FRG-02');
+    expect(mui.materialCodes).toContain('AI-NIAC-6612');
     expect(computeStatus(mui, BEFORE_MANDATE)).toBe('Valid');
     expect(computeStatus(mui, AFTER_MANDATE)).toBe('Valid');
   });
 
   it('BEFORE the mandate date a MUI-legacy certificate SATISFIES', () => {
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-02', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, BEFORE_MANDATE)).toEqual({
       verdict: 'SATISFIED',
       certId: 'creg-0002',
       certType: 'HALAL_MUI_LEGACY',
@@ -143,7 +144,7 @@ describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', (
   });
 
   it('ON the mandate date itself it is SCHEME_INVALID — the boundary day is inclusive', () => {
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-02', R, ON_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, ON_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'SCHEME_INVALID',
     });
@@ -153,7 +154,7 @@ describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', (
     // The distinction is the whole finding: `EXPIRED` would send an operator to
     // chase a renewal of a certificate that has not expired. The document is
     // live; the SCHEME retired it.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-02', R, AFTER_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, AFTER_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'SCHEME_INVALID',
     });
@@ -161,7 +162,7 @@ describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', (
 
   it('a BPJPH certificate is unaffected by the mandate date', () => {
     // creg-0001 — the same supplier, the same day, the satisfying scheme.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', R, AFTER_MANDATE).verdict).toBe(
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, AFTER_MANDATE).verdict).toBe(
       'SATISFIED',
     );
   });
@@ -173,40 +174,40 @@ describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', (
     // That is the EXISTING projection's answer, asserted so the gap is visible
     // in the suite rather than only in the register — inventing a recognition
     // rule here would be the second projection this batch refuses to write.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-BOT-01', R, AFTER_MANDATE).verdict).toBe(
+    expect(verifyHalalAtReceipt('sup-007', 'AI-HYALU-6615', R, AFTER_MANDATE).verdict).toBe(
       'SATISFIED',
     );
   });
 });
 
-describe('H3 — the multi-material certificate (creg-0007)', () => {
-  const multi = R.find((e) => e.id === 'creg-0007')!;
+describe('H3 — the multi-material certificate (creg-0015)', () => {
+  const multi = R.find((e) => e.id === 'creg-0015')!;
 
   it('the fixture row really does cover more than one code', () => {
     expect(multi.materialCodes.length).toBeGreaterThan(1);
-    expect([...multi.materialCodes]).toEqual(['RM-SAMPLE-BOT-01', 'RM-SAMPLE-BOT-02']);
+    expect([...multi.materialCodes]).toEqual(['AI-NIAC-6601', 'RM-EMUL-3320']);
   });
 
   it('it answers for EVERY code it covers, naming the same certificate', () => {
     for (const code of multi.materialCodes) {
-      expect(verifyHalalAtReceipt('sup-007', code, R, BEFORE_MANDATE)).toEqual({
+      expect(verifyHalalAtReceipt('sup-005', code, R, BEFORE_MANDATE)).toEqual({
         verdict: 'SATISFIED',
-        certId: 'creg-0007',
-        certType: 'HALAL_FOREIGN',
-        expiryDate: '2028-03-01',
+        certId: 'creg-0015',
+        certType: 'HALAL_BPJPH',
+        expiryDate: '2026-08-31',
       });
     }
   });
 
   it('⚠️ and for NO code it does not cover — membership, never a prefix (C9 §3)', () => {
-    // `RM-SAMPLE-BOT-03` shares every character of the covered codes but the
+    // `AI-HYALU-6616` shares every character of the covered codes but the
     // last two. A prefix or substring rule would satisfy it; set membership
     // does not, and materialCode is contractually opaque.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-BOT-03', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-HYALU-6616', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-BOT', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-HYALU-661', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
@@ -217,13 +218,13 @@ describe('H3 — permanent-basis certificates (GR 42/2024 — no clock)', () => 
   it('a permanent-basis cert SATISFIES and reports expiryDate: null', () => {
     // `null` is a REAL ANSWER here, not a missing one: a BPJPH permanent-basis
     // certificate has no expiry clock at all.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, BEFORE_MANDATE)).toEqual({
       verdict: 'SATISFIED',
       certId: 'creg-0001',
       certType: 'HALAL_BPJPH',
       expiryDate: null,
     });
-    expect(verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-EMU-10', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-002', 'RM-EMUL-9410', R, BEFORE_MANDATE)).toEqual({
       verdict: 'SATISFIED',
       certId: 'creg-0010',
       certType: 'HALAL_BPJPH',
@@ -233,7 +234,7 @@ describe('H3 — permanent-basis certificates (GR 42/2024 — no clock)', () => 
 
   it('it does not decay — the same verdict a decade out', () => {
     expect(
-      verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', R, '2036-01-01T00:00:00.000Z').verdict,
+      verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, '2036-01-01T00:00:00.000Z').verdict,
     ).toBe('SATISFIED');
   });
 });
@@ -244,11 +245,11 @@ describe('H3 — Missing, Under Review, Expired', () => {
     // record that nothing is held. Same verdict as no row at all, deliberately:
     // the consequence is identical, and a `NO_ROW` reason would tell an operator
     // about the shape of our registry rather than about their supplier.
-    expect(verifyHalalAtReceipt('sup-005', 'RM-SAMPLE-ACT-02', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-005', 'AI-PANTO-6640', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
-    expect(verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-ACT-13', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-002', 'RM-STEAR-7300', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
@@ -280,8 +281,8 @@ describe('H3 — Missing, Under Review, Expired', () => {
   });
 
   it('an EXPIRED halal certificate is EXPIRED', () => {
-    // creg-0016: sup-005 × RM-SAMPLE-FRG-16, HALAL_FOREIGN, expiry 2025-08-01.
-    expect(verifyHalalAtReceipt('sup-005', 'RM-SAMPLE-FRG-16', R, BEFORE_MANDATE)).toEqual({
+    // creg-0016: sup-005 × RM-EMUL-9440, HALAL_FOREIGN, expiry 2025-08-01.
+    expect(verifyHalalAtReceipt('sup-005', 'RM-EMUL-9440', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'EXPIRED',
     });
@@ -294,7 +295,7 @@ describe('H3 — ⚠️ `receiptInstant` IS THE AXIS OF THE ANSWER (law 0.5)', (
     // the same lot reviewed in 2026 was still covered WHEN IT ARRIVED. This is
     // the entire reason the verdict cannot be stored on the master and the
     // instant cannot be read from the ambient clock.
-    expect(verifyHalalAtReceipt('sup-005', 'RM-SAMPLE-FRG-16', R, '2025-01-15T00:00:00.000Z')).toEqual(
+    expect(verifyHalalAtReceipt('sup-005', 'RM-EMUL-9440', R, '2025-01-15T00:00:00.000Z')).toEqual(
       {
         verdict: 'SATISFIED',
         certId: 'creg-0016',
@@ -303,13 +304,13 @@ describe('H3 — ⚠️ `receiptInstant` IS THE AXIS OF THE ANSWER (law 0.5)', (
       },
     );
     expect(
-      verifyHalalAtReceipt('sup-005', 'RM-SAMPLE-FRG-16', R, '2026-01-15T00:00:00.000Z'),
+      verifyHalalAtReceipt('sup-005', 'RM-EMUL-9440', R, '2026-01-15T00:00:00.000Z'),
     ).toEqual({ verdict: 'NOT_SATISFIED', reason: 'EXPIRED' });
   });
 
   it('is deterministic — the same arguments give the same verdict', () => {
-    const once = verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-EMU-01', R, AFTER_MANDATE);
-    const twice = verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-EMU-01', R, AFTER_MANDATE);
+    const once = verifyHalalAtReceipt('sup-002', 'RM-PSTN-7150', R, AFTER_MANDATE);
+    const twice = verifyHalalAtReceipt('sup-002', 'RM-PSTN-7150', R, AFTER_MANDATE);
     expect(once).toEqual(twice);
   });
 
@@ -391,37 +392,97 @@ describe('H3 — reason precedence when several certificates fail', () => {
   });
 });
 
-describe('H3 — ⚠️ THE EMPTY INTERSECTION, MEASURED (R0.1 is NOT STARTED)', () => {
+describe('H3 — ⚠️ THE SEAM, MEASURED. The two lanes share ONE vocabulary now', () => {
   const registryCodes = new Set(R.flatMap((e) => [...e.materialCodes]));
   const masterCodes = Object.keys(MATERIAL_MASTER);
 
-  it('the registry names 17 codes and the master names 42, and NONE is shared', () => {
-    expect(registryCodes.size).toBe(17);
-    expect(masterCodes.length).toBe(42);
-    expect(masterCodes.filter((c) => registryCodes.has(c))).toEqual([]);
+  // ⚠️ THIS BLOCK REPLACED THE ONE THAT PINNED THE OPPOSITE INVARIANT.
+  // It used to assert that every registry code was an `RM-SAMPLE-…` placeholder
+  // matching NOTHING in the master — the honesty device — and, as its own
+  // honest consequence, that every real material verified as NO_CERT. That
+  // device also made the capability structurally inert: the compliance page and
+  // the receipt gate could never see the same certificate. The operator ruled
+  // the fixture re-authored onto one vocabulary; the honesty moved to the
+  // certificate FIELDS and the LivenessRegistry marker, and it is pinned below.
+
+  it('THE SEAM HOLDS: every registry material code is a real master code', () => {
+    const orphans = [...registryCodes].filter((c) => !masterCodes.includes(c));
+    expect(orphans).toEqual([]);
+    // and the placeholder namespace is gone from the registry entirely
+    expect([...registryCodes].filter((c) => c.startsWith('RM-SAMPLE-'))).toEqual([]);
   });
 
-  it('every registry code is an `RM-SAMPLE-…` placeholder and no master code is', () => {
-    // The honesty device, asserted. ⚠️ This is a check ON THE FIXTURE's own
-    // honesty marker — NOT a rule that decides anything about a material. No
-    // production path reads a code's shape (C9 §3).
-    for (const code of registryCodes) expect(code.slice(0, 10)).toBe('RM-SAMPLE-');
-    for (const code of masterCodes) expect(code.slice(0, 10)).not.toBe('RM-SAMPLE-');
+  it('the registry is a SUBSET of the master, never a second namespace', () => {
+    expect(registryCodes.size).toBeGreaterThan(0);
+    expect(registryCodes.size).toBeLessThanOrEqual(masterCodes.length);
   });
 
-  it('⚠️ so EVERY REAL MATERIAL IN THE TREE verifies as NO_CERT today', () => {
-    // The honest consequence, stated in the suite rather than discovered by a
-    // consumer. THIS IS WHY H4 IS GATED: a wire today would refuse 100% of real
-    // receipts. There is no honest technical mitigation — the bridge is real
-    // certificate data at R0.1, which is the operator's schedule.
-    for (const supplierId of ['sup-002', 'sup-005', 'sup-007']) {
-      for (const code of masterCodes) {
-        expect(verifyHalalAtReceipt(supplierId, code, R, BEFORE_MANDATE)).toEqual({
-          verdict: 'NOT_SATISFIED',
-          reason: 'NO_CERT',
-        });
-      }
+  // ── THE HONESTY THAT REMAINS, ASSERTED WHERE IT NOW LIVES ────────────────
+  // The supplier is real (the platform's own roster) and the material is real.
+  // WHICH SUPPLIER HOLDS WHICH CERTIFICATE IS INVENTED — so the invented half
+  // is what this pins. A reviewer's checklist, executable.
+  it('no row names a real certificate number', () => {
+    for (const e of R) {
+      expect(e.certNumber === '' || e.certNumber.startsWith('SAMPLE-')).toBe(true);
     }
+  });
+
+  it('no row names a real certifying body', () => {
+    for (const e of R) {
+      expect(e.issuer === '' || e.issuer.includes('(illustrative)')).toBe(true);
+    }
+  });
+
+  it('no row names a real company — every supplier name is the roster’s own', () => {
+    // The roster is itself honestly fictional ("PT Sample …"), which is why the
+    // registry may use it verbatim. It previously invented a SECOND name per id.
+    for (const e of R) expect(e.supplierName).toContain('Sample');
+  });
+
+  // ── THE DELTA — the arc's payload, pinned so it cannot silently revert ────
+  it('⚠️ THE GATE NOW SEES REAL CERTIFICATES — the receivable lines, by name', () => {
+    // Before the seam batch EVERY one of these was NOT_SATISFIED / NO_CERT,
+    // because the intersection with the master was empty by construction.
+    expect(verifyHalalAtReceipt('sup-005', 'RM-EMUL-9440', R, BEFORE_MANDATE)).toEqual({
+      verdict: 'NOT_SATISFIED',
+      reason: 'EXPIRED',
+    });
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, BEFORE_MANDATE).verdict).toBe(
+      'SATISFIED',
+    );
+    expect(verifyHalalAtReceipt('sup-002', 'RM-PSTN-7150', R, BEFORE_MANDATE).verdict).toBe(
+      'SATISFIED',
+    );
+  });
+
+  it('a material whose master row does not require halal still reads NO_CERT', () => {
+    // PK-PETB-8804 is `halalApplicable: UNDETERMINED` and carries only a BPOM
+    // row. A NO_CERT here is not a finding — it is a question that should not
+    // have been asked (H1 answers applicability, not this function).
+    expect(verifyHalalAtReceipt('sup-007', 'PK-PETB-8804', R, BEFORE_MANDATE)).toEqual({
+      verdict: 'NOT_SATISFIED',
+      reason: 'NO_CERT',
+    });
+  });
+
+  it('⚠️ AND THE MANDATE BITES A RECEIVABLE LINE ON 2026-10-17', () => {
+    // AI-NIAC-6612 is backed by a MUI-legacy cert whose own dates stay valid to
+    // 2027. The scheme retires first — which is the whole point of GR 42/2024,
+    // and until the seam batch it could not be demonstrated on a real material.
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, BEFORE_MANDATE).verdict).toBe(
+      'SATISFIED',
+    );
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, ON_MANDATE)).toEqual({
+      verdict: 'NOT_SATISFIED',
+      reason: 'SCHEME_INVALID',
+    });
+  });
+
+  it('⚠️ STILL HEADLESS — the seam does not wire the gate', () => {
+    // The re-key makes the gate ABLE to see certificates. It does not give it a
+    // consumer, and it changes no enforcement setting. H4 remains gated on
+    // D-COMP-HALAL-4. Nothing in the product refuses a receipt because of this.
+    expect(typeof verifyHalalAtReceipt).toBe('function');
   });
 });
 

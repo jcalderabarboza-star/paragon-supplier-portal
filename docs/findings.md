@@ -46,7 +46,7 @@ from CP-1 onward.
 | **HALAL-CLOCK-STATE-01** | Status-vs-expiry contradiction (stored clock-state). `buyerCompliance.ts` stores BOTH `status` and `daysRemaining` as literals (e.g. `c-001` status `'Expired'`/`daysRemaining -346`; `c-002` `'Expiring'`/`70`) instead of COMPUTING Expired/Expiring/daysRemaining from `expiryDate` vs. the read-time clock — status drifts out of sync with expiry as the clock advances. Direct violation of law 0.5 (DR-8, computed-never-stored). | **Track R — R2.2.** On the DTO-v2 projection, `status`/`daysRemaining` become COMPUTED-at-read-time (never stored). **→ I3.1: CLOSED (mechanism).** `complianceProjection.ts` computes `computeStatus`/`daysRemaining` from `expiryDate` vs an injected `now` (pure, deterministic; `complianceProjection.test.ts`); the `ComplianceRegistryEntry` fixture stores ONLY `lifecycleState` + `expiryDate` — no clock literal exists. The legacy `COMPLIANCE_ITEMS` literals are retired when the page re-points at I3.2. |
 | **HALAL-DEADLINE-DRIFT-01** | Deadline drift. Code + copy carried **01 Oct 2026** (`BuyerCompliance.tsx:111`, `:174-175`; fixture action copy "before October 2026") vs. the canonical BPJPH mandatory deadline **17 Oct 2026** (GR 42/2024 — D-DATE RESOLVED). | **Code anchors corrected in v2.2 Step 1.7 (this PR).** Scheme-aware BPJPH-KPI semantics ride R2.2 (Step 5.6). |
 | **HALAL-UNDERREVIEW-01** [F2-23] | Under-Review is second-class. `'Under Review'` status exists (`ComplianceItem` type; fixture `c-012` BPOM) but has NO KPI tile (only Expired/Expiring surfaced — `BuyerCompliance.tsx:204`,`:210`) and no defined remind-eligibility. | **Track R — R2.2.** Under-Review gets explicit semantics: own KPI slot + remind-eligibility=false (v2.2 Step 5.6). **→ I3.1: CLOSED (mechanism).** `Under Review` is a first-class lifecycle state on the canonical machine; `complianceProjection.remindEligible` returns `false` for it (and for `Missing`) — Under-Review is no longer a silent second-class state (`complianceProjection.test.ts`). Its own KPI *tile* is a surface concern that renders at I3.2. |
-| **HALAL-REMIND-01** [F2-24] | Remind: no-audit / no-throttle / false-delivery. The Remind action (`BuyerCompliance.tsx:332-350`) toasts "Delivered via WhatsApp" with no audit trail, no throttle, and no real channel — a false-delivery claim (violates law 0.6, honest-by-construction). | **Toast copy made honest in v2.2 Step 1.7 (this PR).** Real audited/throttled dispatch through the R1.2 reminder ladder rides R2.2 (Step 5.6). |
+| **HALAL-REMIND-01** [F2-24] | Remind: no-audit / no-throttle / false-delivery. The Remind action (`BuyerCompliance.tsx:332-350`) toasts "Delivered via WhatsApp" with no audit trail, no throttle, and no real channel — a false-delivery claim (violates law 0.6, honest-by-construction). | **Toast copy made honest in v2.2 Step 1.7.** Real audited/throttled dispatch through the R1.2 reminder ladder rides R2.2 (Step 5.6). ⚠️ **AMENDED IN PLACE AT THE SEAM BATCH (§62j) — RAISED TO FULL WEIGHT, AND WITH ONE CORRECTION THAT CHANGES WHO THE FINDING IS AGAINST.** A dispatch proposed filing *"the mitigation is a toast"* as a new finding named `HALAL-CERT-EXPIRY-01`. **No such id exists in this register, and `SendReminder` does not exist in the tree** — but more importantly the framing inverts the history: **THE TOAST IS NOT THE DEFECT, IT IS THE PREVIOUS FIX.** The action used to claim *"Delivered via WhatsApp"* over no channel; Step 1.7 replaced that with *"Simulated — delivery pending live channel."* at `variant: 'info'`. Filing the toast as the defect would have filed a finding against the remedy, and re-filing under a new id would have double-counted an open row. **THE OPEN HALF IS REAL AND IS THE POINT: the 17-Oct-2026 exposure has NO WORKING REMINDER.** The compliance surface's only two actions are both inert (`BuyerCompliance.tsx:171` Export, `:398` Remind — two, not three), the audited/throttled ladder is unbuilt, and R0.1 (the harvest it needs) is NOT STARTED. **Ruled at the seam batch: build it next, after the seam.** |
 | **HALAL-ISSUER-BLIND-01** [F2-21] | Issuer-blind validity. Halal validity is computed from `status === 'Valid'` IGNORING the certifying scheme (`issuedBy`: MUI vs BPJPH) — `BuyerCompliance.tsx:105-107` counts any Halal `'Valid'` regardless of issuer. Post-17-Oct-2026 only BPJPH satisfies the mandate, so a MUI-only `'Valid'` cert is actually NON-compliant. | **Track R — R2.2.** BPJPH KPI derives from scheme-aware validity (Valid+MUI post-deadline = NON-compliant); DTO-v2 carries the issuer/scheme validity dimension (v2.2 Steps 5.5/5.6). **→ I3.1: DOWNGRADED — surface-ready, SIMULATED (NOT closed).** The mechanism is built: `ComplianceRegistryEntry` carries the `certType`/`issuer` dimension and `complianceProjection.schemeValid` computes MUI-legacy-post-`BPJPH_MANDATE_DATE` = NON-compliant even while the cert's own dates say Valid (`complianceProjection.test.ts`). But scheme-aware validity is a real-world-correctness rule — stamping it CLOSED against honestly-synthetic certs would be the honesty violation this lane guards. **Closes only when REAL issuer data (Track-R harvest) backs it.** |
 | **GR-FABRICATION-01** | `GRInspectionWizard` fabricates SAP artifacts client-side. `src/components/v2-features/GRInspectionWizard.tsx:556` mints `MAT-DOC-${500000+seq}` in-browser; `:711` sets status `'Posted to SAP'`; `:714` persists the fabricated `sapMaterialDoc`; `:719-724` toasts "Posted to SAP as {doc}" — fabricated system artifact + false delivery claim (violates law 0.6). *(Anchor corrected vs. plan's assumed `pages-v2/…:677-726`: file is `src/components/v2-features/…`; fabrication spans `:556`+`:711`/`:714`/`:719-724`.)* | **CLOSED (v2.2 Step 4 batch ii — PR #37 merged `a1bff8f`).** The wizard no longer mints a MAT-DOC, sets `'Posted to SAP'` locally, or toasts a false delivery claim. It dispatches through the command seam: `t_gr_create` (store assigns the number; lines recorded at receipt) → the rolled-up header verb (the dispatcher re-derives the disposition from the stored lines) → `t_gr_post` (`sapBoundary` → `submitted`, interim `'Posting to SAP'` with **no** document) → `settle` assigns the REAL material document (Option B; minted only on settlement). Honest, requiredFields-aware toasts (`gr.*`). |
 | **GR-LEGACY-READ-01** | `GRInspectionWizard` reads fixtures directly. `src/components/v2-features/GRInspectionWizard.tsx:6` imports `mockShipments`; `:118-125` reads it (`.filter`/`.find`) instead of `useDataService()`/`useShipments`. *(Anchor verified vs. plan's assumed `pages-v2/…`: file is `src/components/v2-features/…`; lines `:6`,`:118-125` confirmed.)* | **CLOSED (v2.2 Step 4 batch ii — PR #37 merged `a1bff8f`).** The wizard no longer imports `mockShipments`; `BuyerGoodsReceipt` resolves shipments through `useShipments()` and passes them down as a prop, and the `Shipment` type comes from the service contract. Additionally `getGoodsReceipts` now reads the mutable `goodsReceiptStore` (mirrors `getASNs`), so GR commands are reflected in the scoped reads and the page holds no local seeded copy. |
@@ -15463,3 +15463,289 @@ was wrong; the branch mattered because its contents are simply not on `main`.
 - **OPEN — OPERATOR'S RULING:** #227, merge-forward.
 - **UNTOUCHED:** no gate file, no test, no verb, no surface. C9 `af7f0b4` and
   C10 `dc8e774` byte-identical by blob id. Floor unchanged at `3123 / 228 / 7`.
+
+
+---
+
+## §62 — THE SEAM. The two lanes share one vocabulary, the gate sees a certificate for the first time — and the honesty moved rather than left
+
+**Batch:** arc 1 · the compliance seam (Option A, operator-ruled). **Main `76aa197`.**
+**Floor 3123 → 3129 / 228 / 7**, bumped as the gate's note asked. ⚠️ **A COINCIDENCE
+WORTH NAMING SO IT IS NEVER READ AS CONFIRMATION: 3129 is the figure four
+dispatches asserted the floor already was.** It was 3123 every time they said so,
+and it is 3129 now because THIS batch added six tests — not because the earlier
+claim was right. A number that becomes true later was still false when it was
+stated. Four files: `complianceRegistry.ts`, `halalVerification.test.ts`,
+`materialIdentity.test.ts`, `scripts/floor.json`.
+
+### 62a · WHAT WAS WRONG, IN ONE SENTENCE
+
+`COMPLIANCE_REGISTRY` keyed its rows on `RM-SAMPLE-…` codes that matched nothing
+in `MATERIAL_MASTER`, so **the compliance page and the receipt gate looked at the
+same certificates through two vocabularies that could never intersect** — a
+certificate expiring on the compliance page was invisible to the receipt gate for
+that material. Measured before the change: the intersection between the registry's
+17 codes and the **7 receivable ASN lines** was **EMPTY**, so
+`verifyHalalAtReceipt` returned `NO_CERT` for every real material in the tree.
+
+⚠️ **THE UNMATCHABLE NAMESPACE WAS A DELIBERATE HONESTY DEVICE, AND THAT IS WHY
+THIS TOOK A RULING RATHER THAN A FIX.** It existed so nothing could read as real
+certificate tracking. It also made the capability **structurally inert**, and
+`halalVerification.ts`'s own header disqualified every route out by name —
+including the one eventually taken. **A surface that cannot be wrong because it
+cannot be reached is not honest; it is unfalsifiable.** The operator ruled the
+fixture re-authored (Option A) on the reasoning that **fabrication is unavoidable
+either way, so it should happen where a reviewer reads it** — and that a mapping
+table would be the same invention wearing the costume of a derivation, plus a
+third vocabulary, which is the shape C9 exists to forbid.
+
+### 62b · THE INSTRUCTION THAT COULD NOT BE FOLLOWED, AND THE STOP THAT FOLLOWED IT
+
+The dispatch said **"DERIVE THE MAPPING. Do not hand-author it."** It cannot be
+derived, and the batch stopped and said so before building:
+
+- **Nothing in the tree relates the two spaces.** `RM-SAMPLE-*` occurs in exactly
+  four files — the registry, its two specs, and one comment. No crosswalk module,
+  no shared vocabulary (`materialCategory` is `actives/botanicals/…`;
+  `materialGroup` is `MG-02/03/04…`, with no declared join).
+- **The only mechanical route is a prefix parse** (`FRG` ↔ `FR`), which **C9 §3
+  forbids** — `materialCode` is contractually opaque — and which this register has
+  retired twice by name (`inferBpom`, `inferHalal`).
+- **And it would still not decide.** `RM-SAMPLE-FRG-01` maps to which of five
+  fragrance masters? Nothing answers. **Which materials a certificate covers is
+  the ISSUER'S regulatory scope**, and deriving it from names would fabricate
+  regulatory coverage on the most sensitive fixture in the build, 58 days before
+  the mandate.
+
+The operator's own adjudication is the entry's best summary of the class and is
+recorded verbatim in substance: *deriving the mapping is impossible without
+inventing a fact, and picking one of four equally defensible answers authors a
+certificate claim about a real supplier.*
+
+⚠️ **A PRIOR BATCH HAD ALREADY REFUSED THIS EXACT MOVE ON A SIBLING MAP, AND THE
+REFUSAL WAS SITTING IN THE TREE UNREAD.** `commodityMaterialMap.ts:20`: *"Re-keying
+it onto master codes is DELIBERATELY NOT DONE HERE… re-keying now would settle B2b
+by implication."* Filed as `REFUSAL-IN-A-COMMENT-IS-NOT-A-GUARD-01`: **a ruling
+recorded only as a comment on the file it governs is invisible to every dispatch
+that does not happen to open that file.** Both refusals were correct, both were
+prose, and neither could stop anything. (This one, at least, is now a test.)
+
+### 62c · WHAT WAS BUILT — the identity fields only
+
+The re-key changes **only** `supplierName`, `materialCodes`, `materialCategory`
+and `scopeText`. It does **not** touch `issueDate`, `expiryDate`, `lifecycleState`,
+`certType`, `certNumber` or `issuer`.
+
+- **Supplier names are now DERIVED from the roster** (`mockSuppliers.ts`), not
+  authored. ⚠️ **AND THE RE-KEY SURFACED A DEFECT NOBODY HAD LOOKED FOR: THE
+  REGISTRY WAS INVENTING A SECOND NAME FOR A SUPPLIER THE ROSTER ALREADY NAMES.**
+  `sup-007` was `Sample Fragrance House (illustrative)` here and `PT Sample
+  Packaging Indonesia` in the roster — same id, two names, no marker. That was
+  never an honesty device; it was drift.
+- **Material codes are real master codes that THAT SUPPLIER ACTUALLY TRANSACTS**,
+  derived from the PO / ASN / shipment fixtures (sup-002 → 4 materials, sup-005 →
+  5, sup-007 → 8; both probe controls passed). Halal-class certs sit only on
+  materials whose master row says `halalApplicable: 'REQUIRED'`.
+- ⚠️ **AN EARLIER, WIDER SUPPLIER→MATERIAL MATCHER WAS DISCARDED MID-BATCH**: a
+  ±40-line proximity window returned 28 halal-required codes "near sup-007",
+  sweeping in sup-002's and sup-005's rows. Rule 2, on this batch's own
+  instrument. The tight scan-order derivation (with controls) is what shipped.
+
+**THE STATUS DISTRIBUTION IS PRESERVED BIT-FOR-BIT** — Valid 5 · Expiring 4 ·
+Under Review 2 · Expired 3 · Missing 2, identical before and after, because no
+date and no `lifecycleState` was touched.
+
+### 62d · THE FORCED CHOICE, REPORTED RATHER THAN PAPERED OVER
+
+The dispatch asked for exactly this if it arose. It arose once, and it is
+arithmetic, not preference: preserving *"one cert covering >1 material"* on
+**sup-007** requires **4** halal-required materials for its **3** halal certs
+(2+1+1). sup-007 transacts **3**. The three constraints — one multi-material cert ·
+halal certs only on `REQUIRED` materials · unchanged per-tenant row counts — cannot
+all hold there.
+
+**Resolution: the multi-material property moved to a supplier with headroom** —
+`creg-0015` (sup-005, HALAL_BPJPH) now covers `AI-NIAC-6601` + `RM-EMUL-3320`,
+neither of which carries another halal row. `creg-0007` drops to one code. Nothing
+was dropped: the design property, the bucket counts and the per-tenant row counts
+all survive. **The alternative — leaving `creg-0007` overlapping `creg-0001`'s
+material — would have silently broken the property while the fixture header still
+claimed it**, which is the failure mode the instruction was written against.
+
+### 62e · THE DELTA — THE ARC'S PAYLOAD
+
+`verifyHalalAtReceipt(supplier, material, R, instant)` over the **7 receivable ASN
+lines** (the same seven as `BPOM-OFF-BY-SPACE-01`'s radius — used as the control):
+
+| supplier | material | BEFORE (main) | AFTER | AFTER @ 2026-10-17 |
+|---|---|---|---|---|
+| sup-007 | `FR-ROUD-4470` | NO_CERT | **SATISFIED** (creg-0001, BPJPH) | SATISFIED |
+| sup-007 | `AI-NIAC-6612` | NO_CERT | **SATISFIED** (creg-0002, MUI legacy) | **SCHEME_INVALID** |
+| sup-007 | `AI-HYALU-6615` | NO_CERT | **SATISFIED** (creg-0007, FOREIGN) | SATISFIED |
+| sup-007 | `PK-ALCP-2450` | NO_CERT | NO_CERT | NO_CERT |
+| sup-007 | `PK-PETB-8804` | NO_CERT | NO_CERT | NO_CERT |
+| sup-002 | `RM-PSTN-7150` | NO_CERT | **SATISFIED** (creg-0003, BPJPH) | **EXPIRED** |
+| sup-005 | `RM-EMUL-9440` | NO_CERT | **EXPIRED** | EXPIRED |
+
+**Four of seven lines move off `NO_CERT`, and `RM-EMUL-9440` is the headline: the
+first time in this project's history that the receipt gate has looked at a
+certificate and found one — lapsed.** The two that stay `NO_CERT` are correct and
+deliberately so: both are `halalApplicable: 'UNDETERMINED'` packaging, and the
+module's own doc names that case — *a `NO_CERT` on a material that never needed a
+certificate is not a finding; it is a question that should not have been asked.*
+
+⚠️ **AND THE MANDATE IS NOW DEMONSTRABLE ON A REAL MATERIAL.** `AI-NIAC-6612` is
+backed by a MUI-legacy certificate whose **own dates stay valid until 2027** and
+whose **scheme retires on 2026-10-17**. That is the entire point of GR 42/2024, and
+before this batch there was no material in the tree on which it could be shown.
+
+### 62e-bis · ⚠️ THE TREE'S OWN CENSUS CAUGHT THE SEAM BEFORE THE AUTHOR DID, AND ITS COMMENT HAD PREDICTED IT IN ADVANCE
+
+Two tests in `materialIdentity.test.ts` went red on the first full gate run, and
+**both were the instrument working, not collateral damage.**
+
+- **`CODE_FIELDS` widened from three keys to four.** That derivation finds every
+  code-bearing key in the tree, and its own comment — written long before this
+  batch — reads: *"Adding a fourth code-bearing key anywhere in the tree widens
+  this set without anybody editing it."* It did. `materialCodes` is the compliance
+  registry's key; it held placeholders that matched no master code, so the census
+  could not see it, and **the moment the registry spoke the master's vocabulary
+  the census admitted it the same day, unaided.** That is the seam, observed from
+  outside the batch that built it: **the registry is now a material-identity site.**
+- **`RM-EMUL-9440` acquired a third referencing lane.** The assertion was that
+  every lane quoting that code quotes the same meaning — *the strings are equal
+  because something declared which one is the meaning, not because a comparison
+  was loosened.* The registry references it through a bare `materialCodes:
+  string[]`, and by this module's own standing rule **an array states no meaning,
+  so it arrives `null` and can never contradict one.**
+
+Both assertions were re-authored rather than relaxed, and the second one
+deliberately asserts the silent reference (`some(meaning === null)`) instead of
+filtering it away — **an unexplained `.filter()` is exactly how a real
+disagreement would be hidden later.** Recorded because it is the rarer direction:
+this register mostly logs instruments that failed to notice things. **Here a
+derivation written for another purpose detected a vocabulary change nobody
+told it about, and its author had left a note saying it would.**
+
+### 62f · ⚠️ THE STOP FLAG — HALAL DOES NOT WARN TODAY; IT DERIVES `BLOCK`
+
+The dispatch said to stop if any line refuses rather than warns. **No line
+refuses**, and the seam changes nothing about that: `verifyHalalAtReceipt` returns
+a verdict, has **zero production callers**, and this batch gave it none. H4 stays
+gated on `D-COMP-HALAL-4`.
+
+**But the ruling's premise — *"the mode machinery already supports observe/warn,
+this is a setting not a rebuild"* — is half true, and the half that is false is
+the operative one.** Measured: `ENFORCEMENT_MODES` is `OBSERVE | BLOCK_OVERRIDABLE
+| BLOCK` — **there is no `WARN` member** — and `halal.certificate` is
+**deliberately not seeded**, so its empty entry derives **`BLOCK /
+NO_SETTING_RECORDED`**: maximum rigour, honestly sourced as *undecided* rather than
+dressed as chosen (E2/E4 ruled it, and refused to record a decision nobody took).
+
+**So the default is BLOCK-by-absence, and "halal warns" becomes true only when an
+operator decision is RECORDED — which is precisely the act E4 declined to
+fabricate.** It is a setting, but it is a setting nobody has set, and wiring H4
+before setting it would block receipts rather than warn about them. Filed as
+`HALAL-WARNS-IS-NOT-YET-A-SETTING-01`, **OPEN — operator**, and it is a
+prerequisite of H4, not of this seam. The choice is real: `OBSERVE` (record it,
+never stop it — the literal reading of the ruling) vs `BLOCK_OVERRIDABLE` (the
+receiver must see it and override — closer to what "warn" usually means to a
+receiving clerk). **Both are defensible and the batch did not pick.**
+
+### 62g · WHERE THE HONESTY WENT, AND THE GATE THAT NOW HOLDS IT
+
+The old device was one unfalsifiable fact (nothing can join). The replacement is
+three checkable ones, and **they are assertions in the suite, not sentences in a
+header** — which is the real upgrade, given 62b:
+
+1. **The seam holds** — every registry code is a real master code; no
+   `RM-SAMPLE-` survives in the registry.
+2. **No row names a real certificate number** (`SAMPLE-…` or empty), **a real
+   certifying body** (`(illustrative)`), **or a real company** (the roster's own
+   honestly-fictional names).
+3. **The delta is pinned by name**, so a silent revert reddens the suite.
+
+The `describe` block that asserted *the opposite invariant* — *"every registry code
+is an `RM-SAMPLE-…` placeholder"* and *"EVERY REAL MATERIAL verifies as NO_CERT"* —
+was replaced, not deleted quietly, and the replacement says in its own comment what
+it replaced and why.
+
+**What remains fabricated, stated plainly: WHICH SUPPLIER HOLDS WHICH CERTIFICATE.
+The supplier is real and the material is real; the certificate is invented.** The
+structural marker is unchanged and unmoved — `compliance` has no `CommandTarget`
+and stays SIMULATED behind the harvest gate, so every surface reading this still
+renders amber "Sample — awaiting Track-R harvest".
+
+### 62h · THE MANDATE-DATE DECAY, RE-RECORDED (unchanged by this batch)
+
+The fixture's I3.3 design property — *"≥2 exemplars of every computed display
+status, so KPIs/filters read plural"* — **holds today and is void on 2026-10-17**:
+all four `Expiring` rows expire before then, so that bucket goes to **ZERO** on the
+mandate date, and `Expired` goes 3 → 7. **No test asserts the property.** The
+projection is correct throughout — it is the frozen substrate that ages. Now
+written into the fixture header where the next editor will see it.
+
+### 62i · DISPATCH PREMISES MEASURED THIS ARC
+
+| Dispatched | Measured |
+|---|---|
+| *"the dates are relative… daysUntil computes against a real clock… nothing is a stored literal"* | **Every date is a hardcoded literal** — 21 literals + 11 nulls, no `Date` call, no arithmetic. `daysUntil` does not exist in the compliance lane; `daysUntilExpiry` exists in `mockContracts.ts` **as a stored literal** (`590`, `-81`) — the very defect this lane fixed. |
+| *"seventeen rows"* | **16 rows.** 17 is the material-CODE count. |
+| *"thirteen of seventeen rows are offsets from today"* | No row is an offset from anything. |
+| *"`SendReminder` is `HALAL-CERT-EXPIRY-01`'s named mitigation"* | **Neither identifier exists.** The finding is `HALAL-REMIND-01` [F2-24]. |
+| *"three surface actions are toasts"* | **Two** (`BuyerCompliance.tsx:171`, `:398`); the widget has none. |
+| *"re-author onto the roster, not `SAMPLE_SUPPLIERS`"* | **`SAMPLE_SUPPLIERS` does not exist.** The instruction was right anyway — see 62c. |
+| *"`sup-004`… the registry already claims certificates for it"* | **The registry has zero `sup-004` rows** (sup-002 ×6, sup-005 ×5, sup-007 ×5). `sup-004` IS a real roster entity — that half is true. |
+| *"floor 3129"* | **3123 / 228 / 7**, and has been throughout. |
+
+⚠️ **THE PATTERN IS NOW STABLE ENOUGH TO STATE AS A PROPERTY OF THE LANE, NOT OF A
+DISPATCH:** across this arc, **every premise naming a NUMBER, an IDENTIFIER or a
+SHA inverted, and every premise naming a MECHANISM held.** *"The two lanes cannot
+see each other"* — right, and it was the sharpest finding available. *"The data is
+fine and the key is wrong"* — exactly right. This is §49a's line with a larger
+sample: **an operator reading the tree from the outside can be wrong about every
+particular and still be pointing at something real.** The honest response remains
+neither acceptance nor dismissal but derivation — and the correction that reframed
+this arc from *"the data is hardcoded"* to *"the key is wrong"* was the operator's,
+made against their own dispatch, and it was worth more than the arc it replaced.
+
+### 62j · `HALAL-REMIND-01` — AMENDED IN PLACE, NOT RE-FILED
+
+The dispatch asked for the toast-as-mitigation finding at full weight. It exists,
+and re-filing it under a new id would have double-counted it. Amended in place
+instead, with the correction that matters: **the toast is not the defect — it is a
+PREVIOUS FIX.** The Remind action used to toast *"Delivered via WhatsApp"* — a
+false-delivery claim — and v2.2 Step 1.7 replaced it with *"Simulated — delivery
+pending live channel."* at `variant: 'info'`. Filing that as the defect would have
+filed a finding against the remedy.
+
+**The open half is real and now says so at full weight:** the October exposure has
+no working reminder. The real mitigation — audited, throttled dispatch through the
+R1.2 ladder — is booked to R2.2 and unbuilt, and R0.1 (the harvest it depends on)
+is NOT STARTED. **Ruled: build it next, after the seam.**
+
+### 62k · WHAT IS EXPLICITLY NOT IN THIS ARC (so the parked list stays honest)
+
+Operator-stated and recorded verbatim in substance: **there is no expiry-driven
+chase, no evidence upload, and no BPJPH scheme flag** in this batch. All three are
+real and none is this arc's first move, **because everything else is false until
+the two lanes share a vocabulary.** (`schemeValid` already computes the BPJPH rule;
+what is absent is a scheme FLAG on the surface. `HALAL-ISSUER-BLIND-01` stays OPEN
+and still closes only on real issuer data.)
+
+### 62l · DISPOSITION
+
+- **FIXED:** the seam. One vocabulary across both lanes; the gate sees
+  certificates; 4 of 7 receivable lines move off `NO_CERT`; the BPJPH mandate is
+  demonstrable on a real material.
+- **NEW:** `HALAL-WARNS-IS-NOT-YET-A-SETTING-01` (62f, OPEN — operator; H4
+  prerequisite) · `REFUSAL-IN-A-COMMENT-IS-NOT-A-GUARD-01` (62b).
+- **AMENDED IN PLACE:** `HALAL-REMIND-01` (62j).
+- **CORRECTED:** eight dispatch premises (62i), plus the registry's second-name
+  drift found by the re-key (62c).
+- **REPORTED, NOT SILENTLY RESOLVED:** the sup-007 multi-material arithmetic
+  (62d).
+- **UNTOUCHED:** no verb wired, no `CommandTarget` added, no enforcement setting
+  changed, no honesty marker moved, no page edited. `verifyHalalAtReceipt` remains
+  headless and H4 remains gated. Dates, `lifecycleState`, `certType`, `certNumber`
+  and `issuer` are byte-identical. C9 `af7f0b4` and C10 `dc8e774` byte-identical.
