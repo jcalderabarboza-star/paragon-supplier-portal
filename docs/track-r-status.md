@@ -4,7 +4,7 @@
 
 **Framing (realigned 2026-07-15):** Track R is a **NORMAL capability — de-pressurized, on equal footing with every other lane**. **No external deadline gates the platform build.** The platform's job is to MODEL the full compliance flow well, switchable on whenever (this year or next); certification is handled manually by the compliance team, and switch-on timing is operational, not a build gate. The register below tracks operator-side mobilization state — stale entries signal operational pace, not a missed deadline. The compliance DESIGN (I3 machine, honest SIMULATED surface, two-gate flip harness) STANDS in full.
 
-**Last update:** 2026-07-06 (register); framing de-pressurized 2026-07-15.
+**Last update:** 2026-08-20 — **Track R re-prioritized to ARC 1** (see the log). Register rows below are still 2026-07-06 state; framing de-pressurized 2026-07-15, and that de-pressurization is now superseded **for sequencing only**.
 
 ---
 
@@ -42,6 +42,25 @@
 | R1.5 | Contract tests on the portal seam (DTO v2 projection) | NOT STARTED | 2026-07-06 |
 
 ## Log (append-only, newest first)
+
+- **2026-08-20** — **RE-PRIORITIZED: Track R is ARC 1.** An end-to-end
+  architectural review recalibrated the path and the operator ruled Track R first
+  of three arcs. **This reverses the 2026-07-15 de-pressurization FOR SEQUENCING
+  ONLY, and it is recorded as a reversal rather than an edit** — the earlier
+  ruling is not deleted above, so a reader can see both and see which one is
+  current. *Unchanged by the reversal:* certification stays manual and
+  compliance-team-owned; D-CAL / D-STAFF / D-SAP / D-DPO stay non-blocking; and
+  **no honesty marker moves** — `compliance` has no `CommandTarget` and stays
+  SIMULATED behind the two-gate guard (LIVENESS-DATASOURCE-01) until R0.1 makes
+  gate 2 real. *Changed:* which lane the frontend seat's next batches serve.
+  **R0.1 is still NOT STARTED and is still the long pole** — every row in R1
+  depends on it, and no amount of frontend work substitutes for the harvest.
+  The regulatory date is 17 Oct 2026 (GR 42/2024, BPJPH), **58 days from this
+  entry**. Arc 1's three deliverables, in order: an operator-editable certificate
+  registry (today `COMPLIANCE_REGISTRY` is 16 frozen synthetic rows nobody can
+  edit) → the expiry projection running on entered dates → `verifyHalalAtReceipt`
+  acquiring its consumer at H4 (`D-COMP-HALAL-4`). Full statement: `CLAUDE.md` →
+  THE RECALIBRATED PATH.
 
 - **2026-07-15** — **Strategic realignment: Track R de-pressurized to a NORMAL capability.** No external deadline gates the platform build; certification is handled manually by the compliance team; the platform's job is to model the full compliance flow, switch-on timing operational. Deadline/urgency/tripwire framing retired from the standing canon (this register + CLAUDE.md + World-Class Build Plan §7). The compliance DESIGN is untouched and STANDS. The register remains a useful operator-side mobilization log.
 - **2026-07-06** — Register created per Build Plan v2.2 Step 5.1. All items initialized. D-CAL + D-STAFF flagged as that week's priority. (Historical entry — see the 2026-07-15 de-pressurization above.)

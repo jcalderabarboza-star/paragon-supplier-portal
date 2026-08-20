@@ -172,4 +172,4 @@ requires in-grid formulas AND the spike shows they can be honesty-contained.
 | G-PLACE | Stage G = I6 award-scenario implementation; priority after I3 closes | ADJUDICATED |
 | G-KEYSTONE | PLANNED = orthogonal axis, not a registry tier; overlay never merged; push-only exit | ADJUDICATED |
 | FORK-G1 | Grid engine + license posture + formulas IN/OUT | **OPEN — resolved by G0 scorecard** (lean: AG Grid Enterprise, formulas OUT) |
-| G-PRECOND | Build Plan branch merged to main before G0 opens | OPEN — operator |
+| G-PRECOND | Build Plan branch merged to main before G0 opens | **SATISFIED 2026-07-14** — the Build Plan merged as PR #65 (`65edbde`) and G0.1 opened the next day as PR #67 (`dc059fc`). Carried as `OPEN — operator` for five weeks after the thing it gated had already run; corrected 2026-08-20. **Stage G is DORMANT at G1.3, not next** — see `CLAUDE.md` → THE RECALIBRATED PATH. |
