@@ -428,13 +428,19 @@ that under-reports them is accepted as modesty and the gate gets rewritten to fi
 a hole it does not have. **STRIP THE FORMATTING BEFORE PARSING AN INSTRUMENT'S
 OUTPUT, AND CONFIRM ONE KILL BY NAME BEFORE TRUSTING A COUNT.**
 
-⚠️ **AND THE SAME REFLEX APPLIES TO AN ARTIFACT NAMED IN A DISPATCH.** Three
-identifiers have now been named as existing code and measured absent —
-`getInvoiceAction`, the FX-page `<span lang="en">` (§45), and `SurfaceExpectation`
-(§51) — beside a SHA (`c95e8ce`) and a PR number the tree never held. **The
-register under-counts this class by construction:** an invented artifact that is
-REFUSED in conversation leaves no trace, so only the ones that reached a batch
-were ever written down. Before building on a named artifact, `grep` for it —
+⚠️ **AND THE SAME REFLEX APPLIES TO AN ARTIFACT NAMED IN A DISPATCH.** The
+identifiers named as existing code and measured absent are
+`getInvoiceAction`, the FX-page `<span lang="en">` (§45), `SurfaceExpectation`
+(§51) and **`blockingReasons` (§63b)** — beside a SHA (`c95e8ce`) and a PR number
+the tree never held. **THE LIST IS THE COUNT; do not restate it as a number** —
+the sentence that stood here opened with *"Three"* while it was already time to
+write a fourth, which is `FLOOR-IN-PROSE-01` in the paragraph that teaches the
+reflex. `blockingReasons` was the load-bearing mechanism of a ruling — *"your own
+finding shows how: `qualityValid` ALREADY WRITES INTO `blockingReasons`"* — and it
+cost nothing only because it was grepped before it was built on. **The register
+under-counts this class by construction:** an invented artifact that is REFUSED in
+conversation leaves no trace, so only the ones that reached a batch were ever
+written down. Before building on a named artifact, `grep` for it —
 absence is a one-line measurement and a wrong premise with a specific name is the
 most believable kind.
 

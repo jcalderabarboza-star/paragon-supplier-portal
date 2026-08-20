@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { screen, fireEvent, cleanup } from '@testing-library/react';
 import { renderWithProviders } from '../../test/test-utils';
 import { mockShipments } from '../../data/mockShipments';
@@ -6,6 +6,8 @@ import { asnStore } from '../../services/data/mock/stores/asnStore';
 import { bpomOf } from '../../services/sdc/bpom';
 import { halalOf } from '../../services/sdc/halal';
 import { MATERIAL_MASTER } from '../../services/sdc/fixtures';
+import { COMPLIANCE_REGISTRY } from '../../services/data/mock/fixtures/complianceRegistry';
+import { verifyHalalAtReceipt } from '../../services/data/halalVerification';
 import GRInspectionWizard from './GRInspectionWizard';
 import { enforcementSettingStore } from '../../services/data/mock/stores/enforcementSettingStore';
 import { seedEnforcementLedger, SEEDED_CHECKS } from '../../services/data/mock/enforcementSeed';
@@ -39,6 +41,18 @@ import {
  */
 const EMPTY_LEDGER: readonly EnforcementSetting[] = [];
 
+/**
+ * The compliance registry every spec renders against — THE REAL ONE (I3.1).
+ *
+ * ⚠️ **NOT `[]`, AND THE PROP HAS NO DEFAULT, DELIBERATELY.** An empty registry
+ * makes every material read `NO_CERT`, so a forgotten prop would render a notice
+ * saying *"no halal certificate is on record"* about a supplier whose
+ * certificate the platform holds. That is a fail-open in the direction that
+ * LOOKS strict, which is the hardest kind to notice — so the prop is required
+ * and every render site states what it reads.
+ */
+const REGISTRY = COMPLIANCE_REGISTRY;
+
 // A shipment the wizard actually offers: only 'At Dock' / 'Unloading' are
 // eligible GR sources (ELIGIBLE_STATUSES), and it must carry a line to inspect.
 const RECEIVABLE = mockShipments.find(
@@ -55,6 +69,7 @@ const renderWizard = () => {
       shipments={mockShipments}
       asns={[...asnStore.all()]}
       enforcementSettings={EMPTY_LEDGER}
+      complianceRegistry={REGISTRY}
     />,
   );
 };
@@ -354,6 +369,7 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
         shipments={[]}
         asns={[...asnStore.all()]}
         enforcementSettings={EMPTY_LEDGER}
+        complianceRegistry={REGISTRY}
       />,
     );
     fireEvent.click(await screen.findByText('ASN-UNKNOWN-MAT'));
@@ -392,6 +408,7 @@ describe('GRInspectionWizard — the BPOM gate reads the master and fails closed
         shipments={mockShipments}
         asns={[...asnStore.all()]}
         enforcementSettings={EMPTY_LEDGER}
+        complianceRegistry={REGISTRY}
       />,
     );
     fireEvent.click(await screen.findByText(asn!.asnNumber));
@@ -539,7 +556,14 @@ describe('CP-3 · H2 — THE DELTA, LINE BY LINE, over every receivable line', (
     // the wrong reason is exactly what a census matching a shape looks like.
     asnStore.reset();
     const rows = receivableLines();
-    expect(rows).toHaveLength(9);
+    // ⚠️ **NINE AT H2; TEN AT H4.** `AI-NIAC-6612` joined `shp-013` so the BPJPH
+    // mandate flip would be REACHABLE FROM A DOCK — measured at H4, it was not:
+    // the only material that flips on the mandate date shipped solely on
+    // `ASN-2025-00201`, which is `Discrepancy` and therefore outside
+    // `RECEIVABLE_ASN_STATUSES`. The arc's headline was pinned in a spec and
+    // unreachable in the product. This count moving is that fix, and it is
+    // stated here rather than adjusted quietly.
+    expect(rows).toHaveLength(10);
 
     const gained = rows
       .filter(({ li }) => {
@@ -557,7 +581,11 @@ describe('CP-3 · H2 — THE DELTA, LINE BY LINE, over every receivable line', (
     // one is an emulsifier — and `RM-PSTN-7150` (RBD Palm Stearin) is the row
     // the register kept naming: halal turns on the processing chain, and the
     // prose parse said nothing because the label happens not to carry the word.
+    // ⚠️ SIX AT H4 — the fifth of the H2 five plus `AI-NIAC-6612`, which the
+    // master marks REQUIRED. It gains a SEAL question exactly like the others;
+    // what makes it the mandate exemplar is fact 3, not fact 1.
     expect(gained).toEqual([
+      'AI-NIAC-6612',
       'FR-ROUD-4470',
       'FR-WARD-4410',
       'RM-COCO-8200',
@@ -580,7 +608,9 @@ describe('CP-3 · H2 — THE DELTA, LINE BY LINE, over every receivable line', (
     ]);
 
     // EVERY LINE IS NOW ANSWERED OR REFUSED — no third outcome, nothing silent.
-    expect(gained.length + refused.length).toBe(9);
+    // ⚠️ THE REFUSED SET IS UNCHANGED AT FOUR, which is the half that matters:
+    // the H4 line ADDED a question and moved no line out of a refusal.
+    expect(gained.length + refused.length).toBe(10);
 
     // ⚠️ AND NOTHING MOVED FROM CHECKED TO UNCHECKED. The prose parse said
     // `false` on ALL NINE, so the delta is one-directional by measurement, not
@@ -858,7 +888,8 @@ describe('CP-3 · E4 — ⚠️ THE PER-CHECK DELTA, AND IT IS ZERO', () => {
     asnStore.reset();
     const ledger = await seededLedger();
     const rows = receivableLines();
-    expect(rows).toHaveLength(9);
+    // TEN at H4 — see the H2 census above for why the population grew.
+    expect(rows).toHaveLength(10);
 
     const moved: string[] = [];
     let compared = 0;
@@ -876,9 +907,9 @@ describe('CP-3 · E4 — ⚠️ THE PER-CHECK DELTA, AND IT IS ZERO', () => {
         }
       }
     }
-    // 9 lines × 4 answer states × 3 instants. Asserted so the census cannot pass
-    // by measuring nothing (`EMPTY-INPUT-REPORTS-CLEAN-01`).
-    expect(compared).toBe(108);
+    // 10 lines × 4 answer states × 3 instants. Asserted so the census cannot
+    // pass by measuring nothing (`EMPTY-INPUT-REPORTS-CLEAN-01`).
+    expect(compared).toBe(120);
     expect(moved).toEqual([]);
   });
 
@@ -930,11 +961,22 @@ describe('CP-3 · E4 — ⚠️ THE PER-CHECK DELTA, AND IT IS ZERO', () => {
         after: postMigration(OBSERVING_LEDGER, INSTANTS[1], li.materialCode, false, false),
       }))
       .filter((r) => r.before !== r.after);
-    // FIVE lines stop blocking on the seal question under OBSERVE — the same
-    // five H2 measured as GAINING one. The gate would still ASK; it would stop
-    // stopping, which is exactly what OBSERVE means and exactly what nothing in
-    // this build has been relaxed to.
+    // SIX lines stop blocking on the seal question under OBSERVE — the same six
+    // the census above measures as GAINING one. The gate would still ASK; it
+    // would stop stopping, which is exactly what OBSERVE means and exactly what
+    // nothing in this build has been relaxed to.
+    //
+    // ⚠️ **AND H4 MEASURED WHY IT HAS NOT BEEN, WHICH SHARPENS THE NOTE ABOVE
+    // FROM AN ASIDE INTO THE BATCH'S FINDING.** This ledger is unreachable in
+    // the product not because relaxing to `OBSERVE` is undesirable but because
+    // it is UNRECORDABLE: `enforcement_set_governed` refuses a loosening by an
+    // unattributed actor, and the portal cannot name a person. `OBSERVE` and
+    // `BLOCK_OVERRIDABLE` are refused by the SAME clause, so **every mode below
+    // `BLOCK` is out of reach until identity exists** — see `docs/findings.md`
+    // §63 (`HALAL-ENFORCEMENT-CEILING-IS-IDENTITY-01`). Probed both ways in
+    // `enforcementSetCommand.test.ts`, including the tightening that IS accepted.
     expect(differences.map((d) => d.code).sort()).toEqual([
+      'AI-NIAC-6612',
       'FR-ROUD-4470',
       'FR-WARD-4410',
       'RM-COCO-8200',
@@ -1012,6 +1054,7 @@ describe('CP-3 · E4 — the migration at the SURFACE, under the shipped ledger'
         shipments={mockShipments}
         asns={[...asnStore.all()]}
         enforcementSettings={enforcementSettings}
+        complianceRegistry={REGISTRY}
       />,
     );
     fireEvent.click(await screen.findByText(asnNumber));
@@ -1043,5 +1086,174 @@ describe('CP-3 · E4 — the migration at the SURFACE, under the shipped ledger'
     const next = await openQualityWith(SEAL_ONLY!.asnNumber, OBSERVING_LEDGER);
     expect(screen.getAllByText('Halal Seal Check').length).toBeGreaterThan(0);
     expect(next()).not.toBeDisabled();
+  });
+});
+
+
+// ────────────────────────────────────────────────────────────────────────────
+// CP-3 · H4 — THE CERTIFICATE NOTICE AT THE SURFACE.
+//
+// THE OPERATOR'S RULING, and every assertion below is one half of it:
+//
+//   BLOCK_OVERRIDABLE DOES NOT STOP THE GOODS. IT STOPS THE SCREEN … THE BLOCK
+//   IS ON THE IGNORING, NOT ON THE GOODS.
+//
+// Measured before building, `BLOCK_OVERRIDABLE` turned out to be unreachable:
+// an override cannot COMPLETE without a named person, so it degrades to `BLOCK`
+// — and the setting itself is unrecordable for the same reason, `OBSERVE`
+// included. What survives the measurement is the requirement underneath, which
+// was never about the mode:
+//
+//   A CLERK WHO IS NOT TOLD CANNOT DO THE JOB.
+//
+// So: THE CLERK IS TOLD, AND THE RECEIPT PROCEEDS. Both halves are pinned here,
+// because either one alone is a different product.
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('CP-3 · H4 — the certificate notice TELLS, and does not STOP', () => {
+  /** `shp-013` — the At Dock source carrying the mandate exemplar at line 1. */
+  const DOCK = mockShipments.find((s) => s.asnNumber === 'ASN-2026-013')!;
+
+  const openAt = async (asnNumber: string, isoDay: string) => {
+    cleanup();
+    asnStore.reset();
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(`${isoDay}T09:00:00.000Z`));
+    renderWithProviders(
+      <GRInspectionWizard
+        onClose={() => {}}
+        onComplete={() => {}}
+        shipments={mockShipments}
+        asns={[...asnStore.all()]}
+        enforcementSettings={EMPTY_LEDGER}
+        complianceRegistry={REGISTRY}
+      />,
+    );
+    fireEvent.click(await screen.findByText(asnNumber));
+    const next = () => screen.getAllByRole('button', { name: /Next/i })[0];
+    fireEvent.click(next());
+    fireEvent.click(next());
+    return next;
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('⚠️ THE FIXTURE IS REACHABLE — the mandate exemplar is on a RECEIVABLE source', () => {
+    // The control for everything below, and the defect H4 found: `AI-NIAC-6612`
+    // shipped ONLY on `ASN-2025-00201`, whose status is `Discrepancy` and
+    // therefore outside `RECEIVABLE_ASN_STATUSES`. The one material that
+    // demonstrates the BPJPH mandate could not be reached from a dock at all —
+    // the arc's headline was pinned in a spec and invisible in the product.
+    expect(DOCK.status).toBe('At Dock');
+    expect(DOCK.lineItems.map((li) => li.materialCode)).toContain('AI-NIAC-6612');
+    // And the row it verifies against is MUI-legacy, which is what makes the
+    // flip a SCHEME retirement rather than an expiry.
+    const cert = REGISTRY.find((e) => e.id === 'creg-0002')!;
+    expect(cert.certType).toBe('HALAL_MUI_LEGACY');
+    expect(cert.supplierId).toBe(DOCK.supplierId);
+  });
+
+  it('TODAY — the clerk sees a VALID certificate, named and dated', async () => {
+    await openAt(DOCK.asnNumber, '2026-08-20');
+    const valid = await screen.findByTestId('gr-cert-valid-1');
+    expect(valid.textContent).toContain('SAMPLE-HALAL-0007B');
+    // The expiry is shown as a DATE, not as a verdict: an operator plans against
+    // it, and 2027 is why "expired" would be the wrong word in October.
+    expect(valid.textContent).toMatch(/1 Jun 2027|2027/);
+    // No warning banner on this line — nothing is wrong with it today.
+    expect(screen.queryByTestId('gr-cert-notice-1')).toBeNull();
+  });
+
+  it('⚠️ ON 2026-10-17 — THE MANDATE BITES, AT A DOCK, WITH NO DATE CHANGED', async () => {
+    await openAt(DOCK.asnNumber, '2026-10-17');
+    const notice = await screen.findByTestId('gr-cert-notice-1');
+    // The reason is SCHEME_INVALID and the copy says so — never "expired",
+    // which would send the clerk to chase a renewal of a live document.
+    expect(notice.textContent).toMatch(/scheme no longer satisfies the BPJPH mandate/i);
+    expect(notice.textContent).not.toMatch(/expired on/i);
+    // ⚠️ EVERY FIELD THE OPERATOR NAMED, ON THE SCREEN: the supplier, the
+    // certificate reference, the issuer, the expiry date.
+    expect(notice.textContent).toContain('PT Sample Packaging Indonesia');
+    expect(notice.textContent).toContain('SAMPLE-HALAL-0007B');
+    expect(notice.textContent).toContain('MUI legacy (illustrative)');
+    expect(notice.textContent).toMatch(/2027/);
+    // And it says, in words, that the receipt is not stopped.
+    expect(notice.textContent).toMatch(/does not stop the receipt/i);
+    // The valid line is gone — this is a REPLACEMENT, not an addition.
+    expect(screen.queryByTestId('gr-cert-valid-1')).toBeNull();
+  });
+
+  it('⚠️ `role="status"`, NEVER `role="alert"` — the politeness IS the semantics', async () => {
+    await openAt(DOCK.asnNumber, '2026-10-17');
+    const notice = await screen.findByTestId('gr-cert-notice-1');
+    expect(notice).toHaveAttribute('role', 'status');
+    // The refusal on the sibling line DOES stop the step, and it is `alert`.
+    // The two are deliberately different, and a screen-reader user hears the
+    // difference before they read either.
+    expect(screen.getByTestId('gr-halal-refusal-0')).toHaveAttribute('role', 'alert');
+  });
+
+  it('⚠️ AND THE RECEIPT PROCEEDS — an EXPIRED certificate does not disable Next', async () => {
+    // `ASN-2025-00302` — sup-005 × `RM-EMUL-9440`, halal REQUIRED, BPOM
+    // APPLICABLE, certificate EXPIRED since 2025-08-01. THE POINT OF THE WHOLE
+    // BATCH: answer the two questions a human owes and the wizard lets you
+    // through, WITH the notice on screen. If a `certBlocks` clause ever reaches
+    // `qualityValid`, this is the test that goes red.
+    const next = await openAt('ASN-2025-00302', '2026-08-20');
+    const notice = await screen.findByTestId('gr-cert-notice-0');
+    expect(notice.textContent).toMatch(/expired on/i);
+    expect(notice.textContent).toContain('RM-EMUL-9440');
+
+    // Both human answers still owed — the notice did not answer them.
+    expect(next()).toBeDisabled();
+    fireEvent.click(radioFor('Halal Seal Check', 'Pass'));
+    fireEvent.click(radioFor('BPOM Lot Tracking', 'Pass'));
+
+    // ⚠️ THROUGH — with an expired halal certificate named on the screen.
+    expect(next()).not.toBeDisabled();
+    expect(screen.getByTestId('gr-cert-notice-0')).toBeInTheDocument();
+  });
+
+  it('⚠️ A QUESTION THAT SHOULD NOT HAVE BEEN ASKED DOES NOT BECOME A WARNING', async () => {
+    // `PK-PETB-8802` is `UNDETERMINED_APPLICABILITY`: nobody has ruled on
+    // whether contact packaging is in halal scope (`D-COMP-HALAL-1`). A
+    // `NO_CERT` there is not a finding — it is an answer to a question the
+    // platform has no business posing, and rendering it as a certificate
+    // warning would answer `D-COMP-HALAL-1` in the affirmative by implication.
+    //
+    // ⚠️ THE FOUR REFUSING LINES ARE ALL PACKAGING and NONE of them gets a
+    // notice, in EITHER shape. Derived, not listed.
+    await openAt(DOCK.asnNumber, '2026-10-17');
+    expect(screen.getByTestId('gr-halal-refusal-0')).toBeInTheDocument();
+    expect(screen.queryByTestId('gr-cert-notice-0')).toBeNull();
+    expect(screen.queryByTestId('gr-cert-valid-0')).toBeNull();
+
+    const refusing = receivableLines().filter(({ li }) => !halalOf(li.materialCode).ok);
+    expect(refusing.map(({ li }) => li.materialCode).sort()).toEqual([
+      'PK-ALCP-2450',
+      'PK-PETB-8801',
+      'PK-PETB-8802',
+      'PK-PETB-8804',
+    ]);
+    // Every one of them would verify as NO_CERT if asked — which is exactly why
+    // the gate on `l.halal.required` is load-bearing rather than tidy.
+    for (const { li } of refusing) {
+      const v = verifyHalalAtReceipt('sup-007', li.materialCode, REGISTRY, '2026-10-17T00:00:00.000Z');
+      expect(v).toEqual({ verdict: 'NOT_SATISFIED', reason: 'NO_CERT' });
+    }
+  });
+
+  it('⚠️ THE NOTICE CANNOT REACH THE STEP GATE — the mode is never consulted for it', () => {
+    // The complement of the render tests, at the level the render cannot reach:
+    // `halal.certificate` derives `BLOCK / NO_SETTING_RECORDED` and NOTHING in
+    // this wizard asks. If it ever did, six of ten receivable lines would stop
+    // the dock on a certificate the harvest (R0.1) has not collected.
+    expect(effectiveEnforcement([], 'halal.certificate', INSTANTS[1])).toEqual({
+      mode: 'BLOCK',
+      source: 'NO_SETTING_RECORDED',
+    });
+    expect(blocks('BLOCK')).toBe(true);
   });
 });

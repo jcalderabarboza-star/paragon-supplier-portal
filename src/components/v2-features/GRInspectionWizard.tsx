@@ -32,8 +32,15 @@ import { halalOf } from '../../services/sdc/halal';
 import type { HalalOutcome, HalalRefusalReason } from '../../services/sdc/halal';
 import { blocks, effectiveEnforcement } from '../../lib/enforcement';
 import type { EnforcementSetting } from '../../lib/enforcement';
+import { verifyHalalAtReceipt } from '../../services/data/halalVerification';
+import type {
+  HalalVerification,
+  HalalNotSatisfiedReason,
+} from '../../services/data/halalVerification';
+import type { ComplianceRegistryEntry } from '../../services/data/types';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../ui-v2/GlossaryTermChip';
+import { formatDate } from '../../lib/format';
 
 interface GRInspectionWizardProps {
   onClose: () => void;
@@ -62,6 +69,15 @@ interface GRInspectionWizardProps {
    * ledger is a legitimate value and derives full rigour.
    */
   enforcementSettings: readonly EnforcementSetting[];
+  /**
+   * The compliance registry (I3.1) — fact 3 of the halal split, resolved by the
+   * page through `useComplianceRegistry()` and passed down like the ledger.
+   *
+   * ⚠️ **AN ARGUMENT, NEVER AN IMPORT**, for `verifyHalalAtReceipt`'s own
+   * reason: the caller supplies the rows it is entitled to read, so no
+   * derivation below can widen a `QueryScope`.
+   */
+  complianceRegistry: readonly ComplianceRegistryEntry[];
 }
 
 // CP-0 · W1 · 2f-a — each quantity refusal names its own rule. A blank, an
@@ -90,6 +106,18 @@ const GR_BPOM_REFUSAL_KEY: Record<BpomRefusalReason, string> = {
 // CP-3 · H2 — the same shape for halal, and the SAME RULE: `reason` reaches the
 // MESSAGE and nothing else. Nothing here, and nothing in `qualityValid`,
 // branches on it to proceed — one refusal branch, both reasons.
+// CP-3 · H4 — the four certificate outcomes, each to ITS OWN sentence.
+// ⚠️ A TOTAL `Record`, so a fifth `HalalNotSatisfiedReason` fails to compile
+// here until somebody writes the sentence for it — the same census discipline
+// the two refusal maps carry, and the reason neither can silently acquire a
+// member that renders as a blank.
+const CERT_REASON_KEY: Record<HalalNotSatisfiedReason, string> = {
+  EXPIRED: 'goodsReceipt.wizard.cert.reason.EXPIRED',
+  SCHEME_INVALID: 'goodsReceipt.wizard.cert.reason.SCHEME_INVALID',
+  UNDER_REVIEW: 'goodsReceipt.wizard.cert.reason.UNDER_REVIEW',
+  NO_CERT: 'goodsReceipt.wizard.cert.reason.NO_CERT',
+};
+
 const GR_HALAL_REFUSAL_KEY: Record<HalalRefusalReason, string> = {
   UNKNOWN_MATERIAL: 'goodsReceipt.wizard.halal.refused.unknownMaterial',
   UNDETERMINED_APPLICABILITY: 'goodsReceipt.wizard.halal.refused.undetermined',
@@ -352,6 +380,136 @@ const seedBpom = (materialCode: string): Pick<LineDraft, 'bpom' | 'bpomLotCheck'
  * question and the answer are different facts with different answerers.
  * `halalSealCheck` starts absent and stays absent until a human ticks it.
  */
+/**
+ * CP-3 · H4 — WHAT THE CLERK IS TOLD ABOUT THE CERTIFICATE.
+ *
+ * TWO SHAPES, and the difference between them is the whole demonstration: a
+ * quiet line when a certificate backs the lot, a warning banner when one does
+ * not. On 2026-10-17 `AI-NIAC-6612` moves from the first to the second WITHOUT
+ * ANY DATE ON THE DOCUMENT CHANGING — the scheme retires under GR 42/2024 — and
+ * that transition is what the mandate looks like at a dock.
+ *
+ * ⚠️ **`role="status"`, NEVER `role="alert"`.** The two refusal banners are
+ * `alert` because they stop the step; this does not stop anything, and an
+ * assertive live region would announce an emergency to a screen-reader user for
+ * a line that is going to pass. THE POLITENESS LEVEL IS THE ENFORCEMENT
+ * SEMANTICS, SPOKEN.
+ *
+ * ⚠️ **THE REASON CARRIES A GLOSSARY CHIP AND THE COPY NAMES A NEXT ACTION.**
+ * `HALAL-REFUSAL-DEAD-ENDS-01`: a refusal that ends the conversation is half a
+ * remedy. Every field a person needs to make the call — whose certificate,
+ * which document, issued by whom, expiring when — is on the banner, because
+ * `verifyHalalAtReceipt` was widened at H4 to carry them.
+ */
+const CertificateNotice: React.FC<{
+  verdict: HalalVerification;
+  materialCode: string;
+  supplierName: string;
+  index: number;
+}> = ({ verdict, materialCode, supplierName, index }) => {
+  const { t } = useTranslation();
+
+  if (verdict.verdict === 'SATISFIED') {
+    return (
+      <div
+        data-testid={`gr-cert-valid-${index}`}
+        className="col-span-2 flex flex-wrap items-baseline gap-x-2 text-xs text-text-secondary"
+      >
+        {/* ⚠️ THE SCHEME IS NAMED, NOT JUST "a halal certificate".
+            `HALAL-ISSUER-BLIND-01` recorded that the old `status === 'Valid'`
+            check could not see this axis at all — and it is the axis the BPJPH
+            mandate turns on, so a clerk reading "MUI, legacy" in September has
+            the warning a month before the scheme retires. Reuses the compliance
+            page's OWN label map: one vocabulary for a cert type, two surfaces. */}
+        <span className="font-medium">
+          {t('goodsReceipt.wizard.cert.valid.label')} (
+          {t(`compliance.certType.${verdict.certType}`)})
+        </span>
+        <Data as="span">{verdict.certNumber}</Data>
+        <span>·</span>
+        <span>
+          {verdict.expiryDate === null
+            ? t('goodsReceipt.wizard.cert.valid.noExpiry')
+            : t('goodsReceipt.wizard.cert.valid.expires', {
+                date: formatDate(verdict.expiryDate),
+              })}
+        </span>
+      </div>
+    );
+  }
+
+  // ⚠️ `NO_CERT` NAMES NO DOCUMENT, AND THE TYPE IS WHY. Narrowing on the reason
+  // is what hands the certificate over on the other three arms — there is no
+  // optional field to forget to check, and no arm on which these renders could
+  // print an empty string.
+  const detail =
+    verdict.reason === 'NO_CERT'
+      ? null
+      : {
+          supplier: verdict.supplierName,
+          certNumber: verdict.certNumber,
+          certType: verdict.certType,
+          issuer: verdict.issuer,
+          expiry: verdict.expiryDate,
+        };
+
+  return (
+    <div
+      data-testid={`gr-cert-notice-${index}`}
+      role="status"
+      className="col-span-2 rounded-md border border-warning bg-warning-soft px-3 py-2 text-xs text-warning-hover flex flex-col gap-1"
+    >
+      <div>
+        <span className="font-semibold">{t('goodsReceipt.wizard.cert.notice.title')}</span>{' '}
+        {t(CERT_REASON_KEY[verdict.reason], {
+          material: materialCode,
+          supplier: detail?.supplier ?? supplierName,
+          expiry: detail?.expiry ? formatDate(detail.expiry) : '',
+        })}{' '}
+        <GlossaryTermChip
+          refTo={{ sourceType: 'HalalNotSatisfiedReason', term: verdict.reason }}
+        />
+      </div>
+      {detail !== null && (
+        <dl className="flex flex-wrap gap-x-4 gap-y-0.5">
+          <div className="flex gap-1">
+            <dt>{t('goodsReceipt.wizard.cert.field.supplier')}:</dt>
+            <dd className="font-medium">{detail.supplier}</dd>
+          </div>
+          <div className="flex gap-1">
+            <dt>{t('goodsReceipt.wizard.cert.field.certNumber')}:</dt>
+            <dd>
+              <Data as="span">{detail.certNumber}</Data>
+            </dd>
+          </div>
+          <div className="flex gap-1">
+            <dt>{t('goodsReceipt.wizard.cert.field.scheme')}:</dt>
+            <dd className="font-medium">{t(`compliance.certType.${detail.certType}`)}</dd>
+          </div>
+          <div className="flex gap-1">
+            <dt>{t('goodsReceipt.wizard.cert.field.issuer')}:</dt>
+            <dd className="font-medium">{detail.issuer}</dd>
+          </div>
+          <div className="flex gap-1">
+            <dt>{t('goodsReceipt.wizard.cert.field.expiry')}:</dt>
+            <dd>
+              <Data as="span">
+                {detail.expiry === null
+                  ? t('goodsReceipt.wizard.cert.valid.noExpiry')
+                  : formatDate(detail.expiry)}
+              </Data>
+            </dd>
+          </div>
+        </dl>
+      )}
+      {/* ⚠️ THE SENTENCE THAT MAKES THIS A NOTICE AND NOT A BLOCK, ON THE
+          SURFACE where the clerk reads it rather than only in a mode nobody
+          can see. */}
+      <div className="italic">{t('goodsReceipt.wizard.cert.notice.proceeds')}</div>
+    </div>
+  );
+};
+
 const seedHalal = (materialCode: string): Pick<LineDraft, 'halal' | 'halalSealCheck'> => ({
   halal: halalOf(materialCode),
   halalSealCheck: undefined,
@@ -421,6 +579,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   shipments,
   asns,
   enforcementSettings,
+  complianceRegistry,
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -583,7 +742,14 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   // derivation would make the same inspection answer differently across renders
   // the moment a `reviewBy` lapsed mid-session — a ratchet biting halfway
   // through a form, with no act to explain it.
-  const enforcementInstant = useMemo(() => new Date().toISOString(), []);
+  //
+  // ⚠️ **RENAMED AT H4 FROM `enforcementInstant`, AND THE RENAME IS THE POINT.**
+  // The certificate notice below needs an instant too, and a SECOND
+  // `new Date()` would have been a second clock: the mode could then be derived
+  // at one moment and the certificate at another, so a lapse falling between
+  // them would produce an inspection nothing could explain. ONE READ, ONE NAME,
+  // BOTH DERIVATIONS.
+  const inspectionInstant = useMemo(() => new Date().toISOString(), []);
 
   /**
    * Does a required-and-unanswered check STOP the step? Read, never assumed.
@@ -602,13 +768,68 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
   const { sealBlocks, lotBlocks } = useMemo(
     () => ({
       sealBlocks: blocks(
-        effectiveEnforcement(enforcementSettings, 'halal.seal', enforcementInstant).mode,
+        effectiveEnforcement(enforcementSettings, 'halal.seal', inspectionInstant).mode,
       ),
       lotBlocks: blocks(
-        effectiveEnforcement(enforcementSettings, 'bpom.lot', enforcementInstant).mode,
+        effectiveEnforcement(enforcementSettings, 'bpom.lot', inspectionInstant).mode,
       ),
     }),
-    [enforcementSettings, enforcementInstant],
+    [enforcementSettings, inspectionInstant],
+  );
+
+  // ── ⚠️ CP-3 · H4 — THE CERTIFICATE NOTICE. IT TELLS; IT DOES NOT STOP. ────
+  //
+  // THE OPERATOR'S RULING, and it is a ruling about the CLERK, not about a mode:
+  //
+  //   THE CLERK'S JOB IS TO WORK WITH THE INTERNAL TEAM AND THE SUPPLIER TO
+  //   UPDATE THE CERTIFICATE — AND A CLERK WHO IS NOT TOLD CANNOT DO THAT JOB.
+  //
+  // So fact 3 finally reaches a surface. `verifyHalalAtReceipt` was authored at
+  // H3 with NO CONSUMER AT ALL — measured at H4: zero product callers, every
+  // mention in the tree a comment or a type-only glossary import. This is its
+  // first.
+  //
+  // ── ⚠️ WHY IT IS NOT WIRED TO `qualityValid`, AND WHY THAT IS NOT A DODGE ──
+  //   `halal.certificate` HAS NO RECORDED SETTING, so `effectiveEnforcement`
+  //   derives `BLOCK / NO_SETTING_RECORDED` — the honest ceiling for a check
+  //   nobody has ruled on. Adding a `&& certBlocks` clause below would therefore
+  //   have STOPPED THE DOCK on six of ten receivable lines, which is the exact
+  //   outcome the operator ruled against.
+  //
+  //   The operator's answer was to seed `OBSERVE`. **MEASURED, AND IT IS
+  //   REFUSED**: `OBSERVE` is a LOOSENING from the `MAXIMUM_RIGOUR` baseline, and
+  //   `enforcement_set_governed` refuses a loosening by an unattributed actor —
+  //   the SAME refusal, for the SAME reason, as `BLOCK_OVERRIDABLE`. The portal
+  //   cannot name a person (`ENF-NO-PERSON-IN-IDENTITY-01`), so **EVERY MODE
+  //   BELOW `BLOCK` IS UNRECORDABLE TODAY.** See `docs/findings.md` §63.
+  //
+  //   What is left is the half that needs no setting: **the notice is not the
+  //   governed check.** It reads the registry and renders; it is consulted by
+  //   nothing that can refuse. `halal.certificate` stays exactly as E4 left it —
+  //   unseeded, unwired, at the honest ceiling — and the day identity lands, the
+  //   successor is a seed plus ONE clause here.
+  //
+  // ── ⚠️ GATED ON `l.halal.ok && l.halal.required`, WHICH IS THE WHOLE OF ────
+  //   ITEM 5. A material whose applicability nobody has ruled on
+  //   (`UNDETERMINED_APPLICABILITY`) must not acquire a certificate warning: a
+  //   `NO_CERT` on a material that never needed a certificate IS NOT A FINDING,
+  //   IT IS A QUESTION THAT SHOULD NOT HAVE BEEN ASKED, and dressing it as a
+  //   warning would answer it in the affirmative by implication. Four receivable
+  //   lines are that shape and NONE of them gets a notice. Pinned in the spec,
+  //   and mutation-probed by widening this condition.
+  const certVerdicts: readonly (HalalVerification | null)[] = useMemo(
+    () =>
+      lines.map((l) =>
+        activeSource && l.halal.ok && l.halal.required
+          ? verifyHalalAtReceipt(
+              activeSource.supplierId,
+              l.materialCode,
+              complianceRegistry,
+              inspectionInstant,
+            )
+          : null,
+      ),
+    [lines, activeSource, complianceRegistry, inspectionInstant],
   );
 
   // ── CP-2 · 2B-4b — THE REGULATORY GATE, AND IT FAILS CLOSED ───────────────
@@ -1056,6 +1277,20 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
                   el={el}
                   unansweredText={t('goodsReceipt.wizard.check.unanswered')}
                   testId={`gr-halal-unanswered-${i}`}
+                />
+              )}
+              {/* CP-3 · H4 — the CERTIFICATE half of the halal fact, directly
+                  under the SEAL half. Two facts, two rows, never merged: an
+                  inspector's attestation about a physical seal and a document's
+                  validity at the receipt instant are different questions with
+                  different answerers, and one combined row would let a ticked
+                  seal read as a valid certificate. */}
+              {certVerdicts[i] != null && (
+                <CertificateNotice
+                  verdict={certVerdicts[i]!}
+                  materialCode={l.materialCode}
+                  supplierName={activeSource?.supplierName ?? ''}
+                  index={i}
                 />
               )}
               {l.bpom.ok && l.bpom.applicable && (

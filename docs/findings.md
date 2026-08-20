@@ -3918,7 +3918,7 @@ CP-2. Items 1–3 and 5 are ruled below; **4 is the only one still open.**
 | **D-COMP-HALAL-1** | **APPLICABILITY CONTENT** — which material groups require a halal check at receipt. ⚠️ **It will NOT mirror BPOM.** BPOM rules packaging `NOT_APPLICABLE` by registry axis (`bpom.ts:100-101`); `doc-001` links a halal certificate to PET bottles and `AdaptiveContext:89` puts `packaging` inside `isHalal`. **Packaging is where the two regimes visibly disagree in-tree — and it is 4 of the 9 receivable lines.** |
 | **D-COMP-HALAL-2** | **GRAIN** — material (master field) or supplier × material (registry). Decides whether the BPOM template is reusable at all. |
 | **D-COMP-HALAL-3** | **WHAT IS BEING ATTESTED** — "Halal Seal Check" names a physical seal on a drum. Seal verification, certificate confirmation, or both as separate checks? One Pass/Fail currently conflates them. |
-| **D-COMP-HALAL-4** | ⚠️ **THE DEAD-END RULING — THE ONLY ITEM STILL OPEN.** If applicability lands before the harvest, a required check has no certificate to verify against. Block · block with a recorded override · or stay unwired until R0.1. **Must be answered BEFORE any wire, not discovered during one.** **H4 is gated on this.** |
+| **D-COMP-HALAL-4** | ⚠️ **ANSWERED AT H4 (§63), AND BY NEITHER WIRE ON ITS OWN LIST.** The operator ruled the certificate status SURFACED and the receipt ALLOWED TO PROCEED — a third answer this row did not contain, and the one that needed no enforcement setting at all (which is what let it ship, since §63a measured every mode below `BLOCK` to be unrecordable). The notice names the supplier, the certificate, the scheme, the issuer and the expiry, and disables nothing. Original text: ⚠️ **THE DEAD-END RULING — THE ONLY ITEM STILL OPEN.** If applicability lands before the harvest, a required check has no certificate to verify against. Block · block with a recorded override · or stay unwired until R0.1. **Must be answered BEFORE any wire, not discovered during one.** **H4 is gated on this.** |
 | **D-COMP-HALAL-5** | **SOURCE OF TRUTH** — which of the seven halal vocabularies governs a receiving decision. **RULED below.** |
 | **D-OPS-PENDINGCAST** | The `'Pending' as OptionalCheck` cast (`mockGoodsReceipts.ts:79,293`) — legitimate fourth stored state (the display already renders it, `BuyerGoodsReceipt.tsx:90`) or fixture error? Mine to fix once ruled; not a compliance question. |
 
@@ -15652,6 +15652,27 @@ never stop it — the literal reading of the ruling) vs `BLOCK_OVERRIDABLE` (the
 receiver must see it and override — closer to what "warn" usually means to a
 receiving clerk). **Both are defensible and the batch did not pick.**
 
+> ⚠️ **AMENDED AT H4 (§63a) — THE OPERATOR PICKED BOTH, IN TURN, AND NEITHER CAN
+> BE RECORDED.** `BLOCK_OVERRIDABLE` was ruled first and withdrawn on the finding
+> that an override cannot COMPLETE without a named person; `OBSERVE` was ruled in
+> its place as "one line". Measured through the shipped verb, **`OBSERVE` is
+> refused by the same clause, with the same sentence, for the same reason** — the
+> direction rule baselines an unset check at `MAXIMUM_RIGOUR`, so EVERY mode below
+> `BLOCK` is a loosening and needs an actor the portal cannot produce.
+>
+> **This row's framing was one notch too low and is corrected rather than closed:
+> the blocker is not "nobody has set it", it is that NOBODY CAN.** The finding it
+> becomes is `HALAL-ENFORCEMENT-CEILING-IS-IDENTITY-01` (§63a) — filed at full
+> weight, **OPEN — operator**, because the October mandate arrives before the
+> identity spine does on current sequencing. This row stays open beneath it and is
+> discharged by the same act.
+>
+> **H4 shipped WITHOUT a setting and without wiring the check**, which is why it
+> did not need one: the certificate notice is not the governed check. It reads the
+> registry and renders; `qualityValid` never consults it, pinned at both the source
+> and render levels. `halal.certificate` remains at `BLOCK / NO_SETTING_RECORDED`
+> — honest, and consulted by nothing.
+
 ### 62g · WHERE THE HONESTY WENT, AND THE GATE THAT NOW HOLDS IT
 
 The old device was one unfalsifiable fact (nothing can join). The replacement is
@@ -15749,3 +15770,288 @@ and still closes only on real issuer data.)
   changed, no honesty marker moved, no page edited. `verifyHalalAtReceipt` remains
   headless and H4 remains gated. Dates, `lifecycleState`, `certType`, `certNumber`
   and `issuer` are byte-identical. C9 `af7f0b4` and C10 `dc8e774` byte-identical.
+
+---
+
+## §63 — H4. The clerk is told, the receipt proceeds — and the mode that was supposed to make it so cannot be recorded at all
+
+**Branch `feat/halal-certificate-notice`. Floor 3129/228 → 3141/228; gate 7.**
+
+The dispatch ruled `halal.certificate = BLOCK_OVERRIDABLE`, then — on the H4
+investigation's finding that an override cannot COMPLETE without a named person —
+re-ruled it to `OBSERVE`, "one line, and it reaches the clerk today", with
+`BLOCK_OVERRIDABLE` as the declared successor when identity lands.
+
+**Measured: `OBSERVE` is refused by the same clause, with the same sentence, for
+the same reason.** What shipped is the half of the ruling that never needed a
+mode — and it is the half the operator said was the requirement.
+
+---
+
+### 63a · ⚠️ `HALAL-ENFORCEMENT-CEILING-IS-IDENTITY-01` — FILED AT FULL WEIGHT
+
+`enforcement_set_governed` baselines an unset check at `MAXIMUM_RIGOUR` and
+refuses a LOOSENING by an unattributed actor. `rigour('OBSERVE') = 0 <
+rigour('BLOCK') = 2`, so the first setting below full rigour is a loosening **for
+every mode on the ramp** — the rule is about the DIRECTION, and the direction is
+the same whichever relaxed mode you pick.
+
+Probed both ways through the shipped verb, not read off the policy:
+
+| act | actor | result |
+|---|---|---|
+| `BLOCK` | UNATTRIBUTED | **`done`** — the known-good control |
+| `OBSERVE` | UNATTRIBUTED | `failed POLICY_REJECTED … loosening halal.certificate from BLOCK to OBSERVE requires a NAMED actor (setBy.kind is UNATTRIBUTED: NO_PERSON_IN_SESSION)` |
+| `BLOCK_OVERRIDABLE` | UNATTRIBUTED | the same refusal, differing only in the mode it names |
+| `OBSERVE` | RESOLVED | **`done`** — the gap is identity and nothing else |
+
+The control is not decoration. Without it, *"the dispatch failed"* is equally
+consistent with a broken harness, an unregistered flow or a role gate; §39's
+reflex, and it is the run that makes the other three mean something.
+
+> ⚠️ **THE CEILING IS NOT A PROPERTY OF THE OVERRIDE LANE. IT IS A PROPERTY OF
+> THE LEDGER, AND IT COVERS THE WHOLE RAMP AT ONCE.** The investigation reported
+> it one notch too low — *"BLOCK_OVERRIDABLE is unreachable"* — and the re-ruling
+> to `OBSERVE` was a rational move against that report. It was one notch short:
+> **the strongest recordable mode is `BLOCK`, and the only settings this platform
+> can take are the ones that tighten.**
+
+**AND THE OCTOBER MANDATE ARRIVES BEFORE THE IDENTITY SPINE DOES ON CURRENT
+SEQUENCING** (identity is F1; the mandate is 2026-10-17). That is an operator
+decision, not a code change, and it is on the record now rather than after.
+
+There is also no way to record WHY. `EnforcementSetting` is
+`{ checkId, setBy, setAt, mode, reviewBy }`, and `applyTransition`
+(`MockCommandService.ts`) constructs the row field by field, so a rationale in
+the payload is DROPPED rather than stored. Reported before writing one, as
+dispatched — and now asserted in `enforcementSetCommand.test.ts` so the absence
+is a fact in the suite instead of a claim in a report. `CommandDecision.reason`
+is free text but numerically shaped (`from: number` / `to: number`) and lands
+only in the in-memory DR-10 sink.
+
+**Nothing was seeded.** `halal.certificate` stays exactly as E4 left it: unseeded,
+unwired, deriving `BLOCK / NO_SETTING_RECORDED` — the honest ceiling for a check
+nobody has ruled on. Wiring it to `qualityValid` would have stopped the dock on
+six of ten receivable lines, which is what the operator ruled against.
+
+---
+
+### 63b · ⚠️ `blockingReasons` DOES NOT EXIST — AN ARTIFACT NAMED IN A DISPATCH, MEASURED ABSENT
+
+The ruling rested on it: *"your own finding shows how: `qualityValid` ALREADY
+WRITES INTO `blockingReasons`"*. Zero matches in the tree, for that identifier and
+for every near-name (`blockingReason`, `blockReasons`, `blockedReasons`,
+`blockReason`). `qualityValid` is `lines.every(l => { … return true; })` returning
+a bare boolean, and the investigation had reported the opposite two turns
+earlier: an enforcement block renders as `<Button disabled>Next</Button>` and
+nothing else.
+
+This is the class the register keeps naming — an artifact named as existing code
+and measured absent. **NO ORDINAL IS ATTACHED TO IT HERE, DELIBERATELY**: the
+class under-counts itself by construction (an invented artifact REFUSED in
+conversation leaves no trace), so the only honest count is the list in CLAUDE.md,
+which this batch extends rather than restates. That list now names four. **It cost nothing
+because it was grepped before it was built on**, which is the whole of the rule:
+absence is a one-line measurement and a wrong premise with a specific name is the
+most believable kind. The requirement it was offered in support of was real and
+is built; only the mechanism was imaginary, and the notice is a new render path
+rather than a hook into an accumulator.
+
+---
+
+### 63c · ⚠️ A PIN THAT WAS GREEN ABOUT THE WRONG FILE FOR THE WHOLE OF H3
+
+`halalVerification.test.ts` carried *"the GR inspection wizard does not read the
+compliance registry at all"*:
+
+```ts
+const wizard = Object.entries(sources()).find(([p]) => p.includes('GRInspectionWizard'));
+```
+
+`find` takes the FIRST match; the glob is alphabetical; **`GRInspectionWizard.test.tsx`
+sorts before `GRInspectionWizard.tsx`.** All three of its `not.toContain` calls
+were inspecting THE SPEC FILE. It asserted that the test does not mention the
+registry — true, vacuous, and not the claim in its own title.
+
+Found only because H4 added a registry import to the *spec*, so it failed for the
+wrong reason too. §42's rule verbatim: **the scan matched a file; the claim
+required a different file.** A pin aimed at the wrong target passes for exactly
+the reason an empty population reports clean, and nothing goes red to say so.
+Re-authored to name the path the claim requires, with a control asserting BOTH
+files are in the glob so "the one I meant" can never be assumed again.
+
+---
+
+### 63d · ⚠️ THE MANDATE FLIP WAS NOT DEMONSTRABLE, AND §62 COUNTED THE WRONG POPULATION
+
+§62e measured its delta over *"the 7 receivable ASN lines"*. That population is
+`asnRefIntegrity.test.ts`'s — **every `MOCK_ASNS` line**, not every receivable
+line. It therefore INCLUDED `AI-NIAC-6612` and `AI-HYALU-6615` (ASN-2025-00201,
+status `Discrepancy`, outside `RECEIVABLE_ASN_STATUSES`) and EXCLUDED the four
+shipment-sourced lines that a goods receipt actually reaches.
+
+Derived through the wizard's own filters, the receivable population was **NINE**
+— the control being the tree's own comments, *"of the nine receivable lines …
+FIVE gain a question"* and *"four of the nine … are exactly that shape"*, both of
+which the derivation reproduces exactly. My own first attempt returned FIVE and
+was discarded: it swept `incomingShipmentStore`, a different entity with no
+`lineItems` and no `status`. Rule 1 fired on a suspiciously small number.
+
+**Consequences, both of which the dispatch inherited from §62:** three lines moved
+off `NO_CERT` at the seam, not four; and — measured across
+`2026-08-20 / 09-14 / 09-16 / 10-16 / 10-17 / 10-18` — **no receivable line
+changed verdict across the mandate boundary at all.** The only movement in the
+window was `RM-PSTN-7150` at 2026-09-15, its own expiry, a month early and by
+`EXPIRED` rather than `SCHEME_INVALID`. The arc's headline was pinned in a spec
+and unreachable in the product.
+
+**Fixed by making it reachable**, not by re-describing it: `AI-NIAC-6612` was
+added to `shp-013` (`ASN-2026-013`, sup-007, **At Dock**). Not by re-statusing
+`ASN-2025-00201` — that is the tree's only `Discrepancy` exemplar (the KPI
+derivation, `SupplierShipments.tsx`, the repair verb's `from: ['Discrepancy']`,
+`looseEndRepairCommands.test.ts`'s HELD fixture) and its status is entailed by
+its own 720-of-800 short-ship; re-statusing it would have deleted an exemplar and
+contradicted the row to demonstrate a notice. Not on `shp-012` either, which is
+the spec's `RECEIVABLE` default and the subject of two dozen position-indexed
+tests.
+
+---
+
+### 63e · WHAT THE CLERK SEES — THE TEN RECEIVABLE LINES, TODAY AND ON 2026-10-17
+
+| ASN | material | applicability | today (2026-08-20) | 2026-10-17 |
+|---|---|---|---|---|
+| ASN-2026-012 | `PK-PETB-8801` | REFUSAL | **no notice** | **no notice** |
+| ASN-2026-013 | `PK-PETB-8802` | REFUSAL | **no notice** | **no notice** |
+| **ASN-2026-013** | **`AI-NIAC-6612`** | REQUIRED | **valid** · `SAMPLE-HALAL-0007B` | ⚠️ **notice · SCHEME_INVALID** |
+| ASN-2026-014 | `RM-COCO-8200` | REQUIRED | notice · NO_CERT | notice · NO_CERT |
+| ASN-2026-015 | `FR-WARD-4410` | REQUIRED | notice · NO_CERT | notice · NO_CERT |
+| ASN-2025-00211 | `FR-ROUD-4470` | REQUIRED | valid · `SAMPLE-HALAL-0007A` | valid (BPJPH — no clock) |
+| ASN-2025-00211 | `PK-PETB-8804` | REFUSAL | **no notice** | **no notice** |
+| ASN-2025-00198 | `PK-ALCP-2450` | REFUSAL | **no notice** | **no notice** |
+| ASN-2025-00301 | `RM-PSTN-7150` | REQUIRED | valid · `SAMPLE-HALAL-0002A` | notice · EXPIRED |
+| ASN-2025-00302 | `RM-EMUL-9440` | REQUIRED | notice · EXPIRED | notice · EXPIRED |
+
+**`AI-NIAC-6612` is the row the arc is about.** On 16 October a clerk at Dock
+sees *Halal certificate (Halal (MUI, legacy)) · SAMPLE-HALAL-0007B · valid to
+1 Jun 2027*. On 17 October the same lot, the same document, every date unchanged,
+reads *"the halal certificate is in date, but its scheme no longer satisfies the
+BPJPH mandate (GR 42/2024) as of this receipt"* — with the supplier, the
+certificate number, the scheme, the issuer and the expiry beside it, and the
+sentence **"This does not stop the receipt."** In neither state is `Next`
+disabled by the certificate.
+
+⚠️ **AND THE FOUR REFUSING LINES GET NOTHING, IN EITHER SHAPE.** The notice is
+gated on `l.halal.ok && l.halal.required`. A material whose applicability nobody
+has ruled on (`D-COMP-HALAL-1`) would verify as `NO_CERT` if asked — and
+rendering that as a certificate warning would answer `D-COMP-HALAL-1` in the
+affirmative by implication. *A question that should not have been asked does not
+become a warning.* The dispatch said two such lines; there are **four**, all
+packaging, and the register already said so at
+`HALAL-REFUSAL-DEAD-ENDS-01` point 4 — the "two" is §62's population again.
+
+---
+
+### 63f · THE DTO WIDENED, BECAUSE A REFUSAL THAT NAMES NOTHING IS HALF A REMEDY
+
+H3's failing arm was `{ verdict: 'NOT_SATISFIED'; reason }` — a reason enum and
+nothing else. Every field the operator named as actionable was in hand when the
+verdict was computed and discarded at the return.
+
+`NO_CERT` is split out **by type, not by an optional field**: an
+`expiryDate?: string` on one failing arm would be the optional-shaped record the
+dispute lane already ruled against. Here the REASON decides the shape —
+`EXPIRED` / `SCHEME_INVALID` / `UNDER_REVIEW` refer to a document that exists, so
+they carry it and cannot be written without it; `NO_CERT` says there is no
+document and has no room for one. The non-`NO_CERT` arm is `Exclude<…, 'NO_CERT'>`,
+so a fifth reason lands there and must name a certificate — the correct default,
+with the exception placed consciously.
+
+That bought an assertion the batch did not have before: **the reason and the
+certificate come from the same row.** Mutating `REASON_PRECEDENCE`'s winner to
+"the first candidate" now kills four named tests; before H4 the verdict carried
+no document, so there was nothing that could disagree and nothing that could be
+checked.
+
+⚠️ **AND `certId` WAS DELETED, BY THE GATE, ON ITS FIRST REAL TEST.** H3 carried
+the registry row id with the H4 surface named as its consumer. H4 arrived and did
+not consume it — a clerk quotes a certificate NUMBER on a call, never an internal
+row id — so it finished the batch with zero readers and the stored-field gate
+flagged it. Keeping it would have required an allowlist row naming a future audit
+lane, which is `certBasis`'s exact shape and the reason the gate exists.
+`certNumber` is unique across every non-empty registry row, so nothing lost the
+ability to say WHICH document.
+
+**THE ALLOWLIST SHRANK BY FIVE.** All five `HalalVerification.*` rows were
+`data-in-waiting` naming the SAME consumer — *"H4 — the GR receiving surface,
+gated on D-COMP-HALAL-4 and R0.1"*. H4 landed, so the gate's STALE half demanded
+they go: *an excuse left behind after the thing it excused was fixed is how a list
+stops being able to shrink.* **It had never shrunk before.**
+
+`D-COMP-HALAL-4` — the ruling H4 was gated on — is answered, and in NEITHER of
+the two directions its own option list offered as a wire: not *block*, and not
+*block with a recorded override*, but **surface the status and let the receipt
+proceed**.
+
+---
+
+### 63g · THE TREE'S OWN CENSUSES CAUGHT THE FIXTURE CHANGE — FOUR OF THEM
+
+Seven specs went red on the added shipment line and every one was correct:
+
+- **`materialMasterAdoption`** — `AI-NIAC-6612` was `AUTHORED_ASN`, whose defining
+  property is *sourced by `supplierShipments.ts` and nothing else*. A second lane
+  moves it to `ADOPTED` by definition: 25 → 26 and 7 → 6, **equal and opposite,
+  with the total still 33.** A census whose halves moved the same way would be
+  reporting something else.
+- **`materialIdentity`** — the DECLARED document lane grew **33 → 34, the first
+  time it has ever moved.** Every prior batch changed the RESOLVABLE count while
+  holding the lane still, so *"the lane did not shrink"* and *"the lane did not
+  move"* had been the same sentence and only the first was ever true. The
+  complement — lane codes the master cannot resolve — stayed empty, which is the
+  half that must never move.
+- **the KG/PCS split** — 21 → 22 KG, PCS untouched: a code changing ROUTE must not
+  change UNIT.
+- **the receivable-line census** in the wizard spec — 9 → 10, stated rather than
+  adjusted.
+
+---
+
+### 63h · MUTATION-PROBED, SIX MUTANTS, EACH KILLED BY NAME
+
+Formatting stripped before parsing and the changed bytes confirmed before each
+run (§51f and the CRLF trap).
+
+| mutant | killed |
+|---|---|
+| widen the notice gate to cover refusals | *A QUESTION THAT SHOULD NOT HAVE BEEN ASKED DOES NOT BECOME A WARNING* |
+| a seal clause that ignores the mode | *AND UNDER `OBSERVE` IT ASKS AND DOES NOT STOP* |
+| report the first candidate, not the strongest | 4 tests, incl. *is INDEPENDENT of the order the rows arrive in* |
+| blank the expiry a clerk plans against | 10 tests, incl. *AFTER the mandate date it is SCHEME_INVALID, and NOT EXPIRED* |
+| **a certificate clause in `qualityValid`** (source guard) | *THE WIZARD READS THE REGISTRY — and `qualityValid` never consults it* |
+| **the same clause** (render guard) | *AND THE RECEIPT PROCEEDS — an EXPIRED certificate does not disable Next* |
+
+The last two are one mutant against two instruments deliberately: a source-level
+pin reads `qualityValid`'s text, a render-level pin clicks through and checks
+`Next`. A clause only one of them catches is a clause the other cannot see.
+
+---
+
+### Constraints discharged
+
+- **No enforcement mode added**; `ENFORCEMENT_MODES` untouched. No mode SET
+  either — the seed was refused and reported rather than forced.
+- **No reminder work.** `HALAL-REMIND-01`'s open half is untouched and still next.
+- **The notice is not the governed check.** `halal.certificate` remains unseeded
+  and unwired; `qualityValid` and `isStepValid` are pinned free of it at both the
+  source and render levels.
+- **C9 §3** — no prefix or substring rule decides anything; the notice keys on
+  `halalOf` and set membership only. **C9 `af7f0b4`, C10 `dc8e774` untouched.**
+- **Law 0.5** — one clock read per inspection, renamed `enforcementInstant` →
+  `inspectionInstant` because a second `new Date()` would have let the mode and
+  the certificate be derived at different moments.
+- **EN/ID both authored**; the scheme label reuses `compliance.certType.*` rather
+  than minting a second vocabulary for a cert type.
+- **`role="status"`, never `role="alert"`** — the politeness level is the
+  enforcement semantics, spoken, and the sibling refusal banner keeps `alert`.
+- **FLOOR 3129/228 → 3141/228**, gate 7. `npm run gates` green.

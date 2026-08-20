@@ -45,6 +45,7 @@ import {
   useShipments,
   useASNs,
   useEnforcementSettings,
+  useComplianceRegistry,
 } from '../services/query/hooks';
 import type { EnforcementSetting } from '../lib/enforcement';
 import type {
@@ -54,6 +55,7 @@ import type {
   Supplier,
   Shipment,
   ASN,
+  ComplianceRegistryEntry,
 } from '../services/data/types';
 
 const TODAY = '2026-05-20';
@@ -156,6 +158,13 @@ interface GoodsReceiptWorkspaceProps {
    *  rather than in the wizard so the read shares the page's four honest states:
    *  the wizard never mounts against a pending or failed ledger. */
   enforcementSettings: readonly EnforcementSetting[];
+  /** The compliance registry (I3.1) — the certificate side of the halal
+   *  three-fact split, passed to the wizard for the H4 NOTICE. Read here for the
+   *  same reason as the ledger above: the wizard never mounts against a pending
+   *  or failed read, so a notice can never be absent because a fetch was in
+   *  flight. **A NOTICE THAT SOMETIMES DOES NOT RENDER IS WORSE THAN NONE** —
+   *  it teaches a clerk that no banner means no problem. */
+  complianceRegistry: readonly ComplianceRegistryEntry[];
 }
 
 const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
@@ -164,6 +173,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   shipments,
   asns,
   enforcementSettings,
+  complianceRegistry,
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -916,6 +926,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           shipments={shipments}
           asns={asns}
           enforcementSettings={enforcementSettings}
+          complianceRegistry={complianceRegistry}
         />
       )}
     </AppShellV2>
@@ -936,13 +947,17 @@ const BuyerGoodsReceipt: React.FC = () => {
   // fetched inside the wizard. A gate whose governing record is still loading
   // has no honest answer to give, and the page already owns the four states.
   const enforcementQuery = useEnforcementSettings();
+  // CP-3 · H4 — the certificate side joins the same read set. Buyer scope reads
+  // the superset; the service applies the scoping contract, not this page.
+  const registryQuery = useComplianceRegistry();
 
   if (
     grQuery.isPending ||
     suppliersQuery.isPending ||
     shipmentsQuery.isPending ||
     asnsQuery.isPending ||
-    enforcementQuery.isPending
+    enforcementQuery.isPending ||
+    registryQuery.isPending
   )
     return <LoadingState breadcrumb={GR_CRUMB} />;
   if (
@@ -950,7 +965,8 @@ const BuyerGoodsReceipt: React.FC = () => {
     suppliersQuery.isError ||
     shipmentsQuery.isError ||
     asnsQuery.isError ||
-    enforcementQuery.isError
+    enforcementQuery.isError ||
+    registryQuery.isError
   )
     return (
       <ErrorState
@@ -960,7 +976,8 @@ const BuyerGoodsReceipt: React.FC = () => {
           suppliersQuery.error ??
           shipmentsQuery.error ??
           asnsQuery.error ??
-          enforcementQuery.error
+          enforcementQuery.error ??
+          registryQuery.error
         }
         onRetry={() => {
           grQuery.refetch();
@@ -968,6 +985,7 @@ const BuyerGoodsReceipt: React.FC = () => {
           shipmentsQuery.refetch();
           asnsQuery.refetch();
           enforcementQuery.refetch();
+          registryQuery.refetch();
         }}
       />
     );
@@ -990,6 +1008,7 @@ const BuyerGoodsReceipt: React.FC = () => {
       shipments={shipmentsQuery.data?.items ?? []}
       asns={asnsQuery.data?.items ?? []}
       enforcementSettings={enforcementQuery.data?.items ?? []}
+      complianceRegistry={registryQuery.data?.items ?? []}
     />
   );
 };
