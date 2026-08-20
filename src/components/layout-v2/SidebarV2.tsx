@@ -98,6 +98,22 @@ const BUYER_NAV: NavGroup[] = [
       { labelKey: 'nav.glossary', icon: BookOpen, path: '/glossary' },
     ],
   },
+  {
+    // ── THE PLATFORM GROUPING ────────────────────────────────────────────────
+    // Settings-shaped items, deliberately apart from the day-to-day work
+    // sections. WHO I AM is in the avatar panel; MANAGING WHO ANYONE IS is a
+    // page — and a role catalogue is the second, not the first.
+    //
+    // A Users page is NOT here and that is a ruling: the portal holds no people
+    // (staff identity is the corporate directory's, unconnected), so it would
+    // show an empty list and "0 assigned" on every role, with the honest marker
+    // doing all the work. Shipping the shape without the substance is the class
+    // this project spends its time removing.
+    labelKey: 'nav.section.platform',
+    items: [
+      { labelKey: 'nav.buyer.roles', icon: ShieldCheck, path: '/buyer/roles' },
+    ],
+  },
 ];
 
 const SUPPLIER_NAV: NavGroup[] = [

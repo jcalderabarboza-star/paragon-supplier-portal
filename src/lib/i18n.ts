@@ -161,6 +161,10 @@ export const resources = {
       'nav.section.transact': 'Transact',
       'nav.section.settle': 'Settle',
       'nav.section.intelligence': 'Intelligence',
+      // The PLATFORM grouping — settings-shaped items, not day-to-day work.
+      // Managing who anyone is is a page; who I am is in the avatar.
+      'nav.section.platform': 'Platform',
+      'nav.buyer.roles': 'Roles',
       'nav.persona.buyer': 'Buyer',
       'nav.persona.supplier': 'Supplier',
       'nav.buyer.dashboard': 'Dashboard',
@@ -574,6 +578,8 @@ export const resources = {
       'nav.section.transact': 'Transaksi',
       'nav.section.settle': 'Penyelesaian',
       'nav.section.intelligence': 'Intelijen',
+      'nav.section.platform': 'Platform',
+      'nav.buyer.roles': 'Peran',
       'nav.persona.buyer': 'Pembeli',
       'nav.persona.supplier': 'Pemasok',
       'nav.buyer.dashboard': 'Dasbor',

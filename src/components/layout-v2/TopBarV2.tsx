@@ -3,6 +3,7 @@ import { Menu, Search, Bell } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { resolveEnvBadge } from '../../lib/envBadge';
 import LanguageMenu from './LanguageMenu';
+import IdentityPanel from './IdentityPanel';
 
 const TopBarV2: React.FC = () => {
   const { t } = useTranslation();
@@ -66,12 +67,9 @@ const TopBarV2: React.FC = () => {
             3
           </span>
         </button>
-        <div
-          aria-label={t('topbar.userAvatar')}
-          className="w-8 h-8 rounded-full bg-action-muted text-white text-xs font-semibold flex items-center justify-center"
-        >
-          JJ
-        </div>
+        {/* The avatar is now a PANEL, not a decoration: the current role and the
+            scope it grants live here, because identity belongs with identity. */}
+        <IdentityPanel />
       </div>
     </header>
   );
