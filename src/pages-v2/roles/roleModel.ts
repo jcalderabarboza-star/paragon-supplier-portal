@@ -36,7 +36,8 @@ export interface RoleVerb {
 
 export interface RoleView {
   readonly id: SystemRoleId;
-  readonly side: 'buyer' | 'supplier';
+  /** `both` is `admin` — it spans the tenancies rather than sitting on a side. */
+  readonly side: 'buyer' | 'supplier' | 'both';
   readonly isSystem: boolean;
   readonly atoms: readonly string[];
   readonly modules: readonly string[];
@@ -65,7 +66,7 @@ export function deriveRoleViews(): readonly RoleView[] {
     const verbs = all.filter((t) => atoms.includes(t.requiredRole));
     return {
       id,
-      side: buyerSide.has(id) ? 'buyer' : 'supplier',
+      side: id === 'admin' ? 'both' : buyerSide.has(id) ? 'buyer' : 'supplier',
       isSystem: isSystemRole(id),
       atoms,
       modules: [...new Set(verbs.map((v) => v.entity))].sort(),
@@ -88,5 +89,18 @@ export function findRoleView(id: string): RoleView | undefined {
 export function roleTotals(views: readonly RoleView[]) {
   const permissions = new Set(views.flatMap((v) => v.atoms));
   const actions = new Set(views.flatMap((v) => v.verbs.map((x) => x.id)));
-  return { roles: views.length, permissions: permissions.size, actions: actions.size };
+  // ⚠️ THE SPLIT IS DERIVED FROM THE SAME VIEWS AS THE TOTAL, so the parts
+  // ALWAYS sum to the whole. The first version of this tile added `buyer` and
+  // `supplier` from `PERSONA_SYSTEM_ROLES` — two figures from a DIFFERENT
+  // population than the total — and it stopped adding up the moment `admin`
+  // landed on neither side. A split that cannot account for its own total is
+  // the subset-as-population error wearing a breakdown's clothes.
+  const bySide = { buyer: 0, supplier: 0, both: 0 };
+  for (const v of views) bySide[v.side] += 1;
+  return {
+    roles: views.length,
+    permissions: permissions.size,
+    actions: actions.size,
+    bySide,
+  };
 }
