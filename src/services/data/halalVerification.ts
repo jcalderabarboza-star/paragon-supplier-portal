@@ -129,13 +129,66 @@ export type HalalNotSatisfiedReason =
   | 'UNDER_REVIEW';
 
 /**
+ * THE CERTIFICATE A VERDICT IS ABOUT — the fields a person acts on.
+ *
+ * ⚠️ **WIDENED AT H4, AND THE WIDENING IS THE POINT OF THE BATCH.** H3 shipped
+ * these fields on `SATISFIED` only, so the arm that says *"this lot has a halal
+ * problem"* carried a reason enum and NOTHING ELSE — no certificate, no expiry,
+ * no supplier. `HALAL-REFUSAL-DEAD-ENDS-01` is exactly that shape:
+ *
+ *   A REFUSAL THAT ENDS THE CONVERSATION IS HALF A REMEDY.
+ *
+ * The operator's ruling at H4 is that **the clerk's job is to work with the
+ * internal team and the supplier to update the certificate**, and a clerk who is
+ * told only *"expired"* cannot start that job: they do not know which document,
+ * whose, or when it lapsed. Every field here was named in that ruling — the
+ * expiry, the supplier, the certificate reference — plus `issuer`, because the
+ * body that renews it is the other half of "who do I call".
+ *
+ * ⚠️ **NOT A WIDENING OF WHAT THE FUNCTION KNOWS.** Each field is copied off the
+ * `ComplianceRegistryEntry` the verdict was ALREADY computed from. H3 had all of
+ * this in hand and dropped it at the return.
+ *
+ * ⚠️ **AND `certId` IS NOT HERE — H3's ROW ID WAS DELETED AT H4, BY THE GATE.**
+ * H3 carried the registry row id so a verdict could be "traced to the document
+ * that produced it", with the H4 surface named as its consumer. H4 arrived and
+ * did NOT consume it: a clerk quotes a CERTIFICATE NUMBER on a call, never an
+ * internal row id, so `certId` finished the batch with zero readers and the
+ * stored-field gate flagged it — correctly. Keeping it would have needed an
+ * allowlist row naming a future audit lane as its consumer, which is
+ * `certBasis`'s exact shape and the reason that gate exists. `certNumber` is
+ * unique across every non-empty registry row, so nothing lost the ability to say
+ * WHICH document. **If an audit event later needs a stable handle, it re-adds
+ * one WITH its consumer**, rather than inheriting one nobody asked for.
+ */
+export interface VerifiedCertificateRef {
+  readonly certType: CertType;
+  /** THE HUMAN-FACING REFERENCE. What a clerk quotes on a call. */
+  readonly certNumber: string;
+  /** WHO ISSUES IT — the body a renewal is chased through. */
+  readonly issuer: string;
+  /** `string | null`; `null` is a real answer — a BPJPH certificate has no clock
+   *  under GR 42/2024, and that is not the same as an unknown expiry. */
+  readonly expiryDate: string | null;
+  /** WHOSE certificate. The registry's own roster name, so the notice and the
+   *  compliance page name the supplier identically. */
+  readonly supplierName: string;
+}
+
+/**
  * The outcome of a certificate verification at a receipt instant.
  *
- * `SATISFIED` NAMES THE CERTIFICATE it relied on (`certId` / `certType` /
- * `expiryDate`) — a verification that says only "yes" cannot be audited, and an
- * auditor's first question is *which document*. `expiryDate` is `string | null`
- * because `null` is a real answer here: a BPJPH permanent-basis certificate has
- * no clock (GR 42/2024), and that is not the same as an unknown expiry.
+ * **BOTH DECIDED ARMS NAME THE CERTIFICATE**, and the ONE arm that names nothing
+ * is the one for which there is nothing to name.
+ *
+ * ⚠️ **`NO_CERT` IS SPLIT OUT BY TYPE, NOT BY AN OPTIONAL FIELD.** An
+ * `expiryDate?: string` on a single failing arm would have been the
+ * optional-shaped record the dispute lane already ruled against: an absence that
+ * passes every check a presence passes. Here the REASON decides the shape —
+ * `EXPIRED` / `SCHEME_INVALID` / `UNDER_REVIEW` all refer to A DOCUMENT THAT
+ * EXISTS, so they carry it and cannot be written without it; `NO_CERT` says
+ * there is no document, so it has no room for one. A consumer that wants the
+ * certificate narrows on `reason !== 'NO_CERT'` and the compiler hands it over.
  *
  * ⚠️ `SATISFIED` is a statement about A CERTIFICATE, not about a lot. It does
  * not assert the material needed a check (fact 1, `halalOf`) nor that anyone
@@ -143,13 +196,18 @@ export type HalalNotSatisfiedReason =
  * none of them substitutes for another.
  */
 export type HalalVerification =
-  | {
-      readonly verdict: 'SATISFIED';
-      readonly certId: string;
-      readonly certType: CertType;
-      readonly expiryDate: string | null;
-    }
-  | { readonly verdict: 'NOT_SATISFIED'; readonly reason: HalalNotSatisfiedReason };
+  | ({ readonly verdict: 'SATISFIED' } & VerifiedCertificateRef)
+  /** THERE IS NO DOCUMENT. The only arm that names none, and the only one that
+   *  may not — see above. */
+  | { readonly verdict: 'NOT_SATISFIED'; readonly reason: 'NO_CERT' }
+  | ({
+      readonly verdict: 'NOT_SATISFIED';
+      /** DERIVED BY EXCLUSION, never re-listed: a fifth failure reason added to
+       *  `HalalNotSatisfiedReason` tomorrow lands in THIS arm and must therefore
+       *  name a certificate, which is the correct default — a new reason that
+       *  genuinely names nothing has to be placed above, consciously. */
+       readonly reason: Exclude<HalalNotSatisfiedReason, 'NO_CERT'>;
+    } & VerifiedCertificateRef);
 
 /**
  * Reason precedence when a supplier × material holds SEVERAL halal-class
@@ -221,6 +279,21 @@ function failureReason(
  * (H2). A `NO_CERT` on a material that never needed a certificate is not a
  * finding; it is a question that should not have been asked.
  */
+/**
+ * Copy the acting certificate onto a verdict. ONE expression of the mapping, so
+ * the `SATISFIED` arm and the failing arms can never name a document
+ * differently — the defect shape a second literal would invite.
+ */
+function certRef(entry: ComplianceRegistryEntry): VerifiedCertificateRef {
+  return {
+    certType: entry.certType,
+    certNumber: entry.certNumber,
+    issuer: entry.issuer,
+    expiryDate: entry.expiryDate,
+    supplierName: entry.supplierName,
+  };
+}
+
 export function verifyHalalAtReceipt(
   supplierId: string,
   materialCode: string,
@@ -236,20 +309,34 @@ export function verifyHalalAtReceipt(
 
   const satisfying = candidates.find((entry) => schemeValid(entry, receiptInstant));
   if (satisfying !== undefined) {
-    return {
-      verdict: 'SATISFIED',
-      certId: satisfying.id,
-      certType: satisfying.certType,
-      expiryDate: satisfying.expiryDate,
-    };
+    return { verdict: 'SATISFIED', ...certRef(satisfying) };
   }
 
   // No candidate rows at all is NO_CERT — the same verdict as a row that
   // records nothing held, because the consequence is identical: there is no
   // document. The two are deliberately NOT split; a `NO_ROW` reason would tell
   // an operator about the shape of our fixtures, not about their supplier.
-  const reasons = candidates.map((entry) => failureReason(entry, receiptInstant));
-  const reason =
-    REASON_PRECEDENCE.find((candidate) => reasons.includes(candidate)) ?? 'NO_CERT';
-  return { verdict: 'NOT_SATISFIED', reason };
+  //
+  // ⚠️ **H4 — THE REPORTED REASON AND THE NAMED CERTIFICATE COME FROM THE SAME
+  // ROW, BY CONSTRUCTION.** `REASON_PRECEDENCE` already chose the STRONGEST
+  // candidate's failure; naming a certificate meant finding the row that failure
+  // belongs to, not picking one. Deriving the reason from the found ENTRY —
+  // rather than finding an entry to match a separately-derived reason — is what
+  // makes them incapable of disagreeing: there is one `failureReason` call per
+  // row and the winner carries its own.
+  const failures = candidates.map((entry) => ({
+    entry,
+    reason: failureReason(entry, receiptInstant),
+  }));
+  const strongest = REASON_PRECEDENCE.flatMap((candidate) =>
+    failures.filter((f) => f.reason === candidate),
+  )[0];
+
+  // Nothing held, by either route. The type gives this arm no room for a
+  // certificate, which is the ruling above made unrepresentable rather than
+  // remembered.
+  if (strongest === undefined || strongest.reason === 'NO_CERT') {
+    return { verdict: 'NOT_SATISFIED', reason: 'NO_CERT' };
+  }
+  return { verdict: 'NOT_SATISFIED', reason: strongest.reason, ...certRef(strongest.entry) };
 }
