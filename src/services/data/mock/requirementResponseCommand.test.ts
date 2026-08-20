@@ -31,13 +31,14 @@ import {
 } from '../../transitions';
 import { DataError } from '../types';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 // R2 (PUB-2026-08-RM-R2 / PV-2026-08.2) fans RM-EMUL-3310 2026-08 to sup-002 +
 // sup-005; AI-NIAC-6601 2026-10 to sup-007 ONLY.
-const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
-const sup005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005' };
-const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
+const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+const sup005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 

@@ -8,6 +8,7 @@ import { quotationStore } from '../services/data/mock/stores/quotationStore';
 import { rfqStore } from '../services/data/mock/stores/rfqStore';
 import i18n from '../lib/i18n';
 import BuyerSourcing from './BuyerSourcing';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
@@ -128,7 +129,7 @@ describe('BuyerSourcing — the minimum order quantity reaches the comparison', 
     // goes through, then the buyer surface reading it back. A value preserved in
     // the payload but invisible here would still be a dropped constraint.
     await new MockCommandService().dispatch(
-      { personaType: 'supplier', supplierId: 'sup-007' },
+      { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier },
       {
         transitionId: 't_quotation_submit',
         entity: 'quotation',
@@ -484,7 +485,7 @@ describe('BuyerSourcing — a comparison with no FX basis withholds the ranking'
     const svc = new MockCommandService();
     for (const quote of ['EUR', 'USD'] as const) {
       const res = await svc.dispatch(
-        { personaType: 'buyer', supplierId: null },
+        { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
         {
           transitionId: 't_rfq_fx_pin',
           entity: 'rfq',
@@ -507,7 +508,7 @@ describe('BuyerSourcing — a comparison with no FX basis withholds the ranking'
     // USD gets a CURRENT rate and EUR an old one, so the only thing left to
     // refuse is staleness — not a missing pin wearing the wrong label.
     await svc.dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       {
         transitionId: 't_rfq_fx_pin',
         entity: 'rfq',
@@ -521,7 +522,7 @@ describe('BuyerSourcing — a comparison with no FX basis withholds the ranking'
       },
     );
     await svc.dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       {
         transitionId: 't_rfq_fx_pin',
         entity: 'rfq',
@@ -583,7 +584,7 @@ describe('BuyerSourcing — the FX basis is visible, and recordable (2e-c-4)', (
 
   const recordPin = async (quote: 'EUR' | 'USD', rate: number, asOf = today()) =>
     new MockCommandService().dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       {
         transitionId: 't_rfq_fx_pin',
         entity: 'rfq',
@@ -665,7 +666,7 @@ describe('BuyerSourcing — recording a rate is confirm-before-commit (2e-c-4)',
     quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
     if (prepinUsd) {
       await new MockCommandService().dispatch(
-        { personaType: 'buyer', supplierId: null },
+        { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
         {
           transitionId: 't_rfq_fx_pin',
           entity: 'rfq',
@@ -827,7 +828,7 @@ describe('BuyerSourcing — a supersede reads as a NEW RECORDED ACT (2e-c-4)', (
   const withExistingPin = async () => {
     quotationStore.update('qt-009a', (q) => ({ ...q, currency: 'EUR' }));
     await new MockCommandService().dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       {
         transitionId: 't_rfq_fx_pin',
         entity: 'rfq',
@@ -897,7 +898,7 @@ describe('BuyerSourcing — the award summary states the currency it was awarded
     // recording what Paragon actually committed to renamed a $22,800 contract
     // as Rp 22.800. The last place a currency may be assumed.
     await new MockCommandService().dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       {
         transitionId: 't_rfq_award',
         entity: 'rfq',

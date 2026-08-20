@@ -17,9 +17,10 @@ import { rfqStore } from './stores/rfqStore';
 import { quotationStore } from './stores/quotationStore';
 import { purchaseOrderStore } from './stores/purchaseOrderStore';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
-const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-001' };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-001', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockCommandService();
 
 // Fixture states: rfq-001/002/003 Open · rfq-004/005 Closed · rfq-006/007

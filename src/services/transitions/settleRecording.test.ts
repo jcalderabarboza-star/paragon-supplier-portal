@@ -25,6 +25,7 @@ import {
   type SettleContext,
 } from './index';
 import { DataError } from '../data/types';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 // A synthetic sapBoundary flow on THIS file's isolated registry (vitest isolates
 // files), so it never enters the catalog-role census.
@@ -40,7 +41,7 @@ flowRegistry.register({
   ],
 });
 
-const SCOPE = { personaType: 'buyer', supplierId: null } as const;
+const SCOPE = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer } as const;
 
 function wire(finalize?: (ctx: SettleContext) => void): {
   d: Dispatcher;

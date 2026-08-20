@@ -29,8 +29,9 @@ import {
   effectiveEnforcement,
   isAttributed,
 } from '../../../lib/enforcement';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const svc = new MockCommandService();
 const NAMED = { kind: 'RESOLVED', person: { personId: 'usr-014', displayName: 'Rina Wijaya' } };
 const AT = '2026-08-10T08:00:00.000Z';

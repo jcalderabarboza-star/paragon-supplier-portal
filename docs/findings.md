@@ -16201,3 +16201,314 @@ somebody who never considered the question is a decision nobody actually made �
 - **`role="status"`, never `role="alert"`** — the politeness level is the
   enforcement semantics, spoken, and the sibling refusal banner keeps `alert`.
 - **FLOOR 3129/228 → 3141/228**, gate 7. `npm run gates` green.
+
+---
+
+## §64 — BATCH A. Authorisation exists for the first time — and the wildcard that was retired was never the token it was named after
+
+**Branch `feat/roles-module-batch-a`. Floor 3141/228 → 3189/233; gate 7.**
+
+### ⚠️ THE HEAD OF THE ENTRY — THE FIRST BUYER↔BUYER REFUSAL IN THE TREE
+
+**`ROLE_NOT_PERMITTED:invoice:pay`, raised against a buyer.**
+
+Before this batch that string could not exist. `resolveRoles` was
+`(scope) => rolesForPersona(scope.personaType)` — ONE line — and `PersonaType` is
+`'buyer' | 'supplier'`, so every buyer session resolved to all 48 buyer atoms
+unconditionally. **Every `ROLE_NOT_PERMITTED` assertion in the suite was
+buyer↔supplier, and by construction none could be anything else.** The role gate
+discriminated at the TENANCY boundary and nowhere else, which is why *"`requiredRole`
+is a control"* and *"authorisation exists"* were different claims and only the
+first was true.
+
+`roleGate.test.ts` is nine tests that could not have been written a commit ago.
+
+---
+
+### 64a · ⚠️ THE WILDCARD WAS REAL. THE TOKEN IT WAS NAMED AFTER WAS NOT.
+
+The dispatch reframed the batch around a specific mechanism:
+
+> *"`buyer:all` IS A WILDCARD, NOT A ROLE … `roleMatches` SHORT-CIRCUITS ON IT, AND
+> IT IS A REQUIREMENT ON 32 OF 44 — SO A `procurement` USER IS REFUSED TODAY UNLESS
+> THEY ALSO HOLD IT. This is NOT EDITING 44 ROWS. IT IS RETIRING A WILDCARD."*
+
+Measured, before building:
+
+| Named | Measured |
+|---|---|
+| `buyer:planner` | **0 matches, repo-wide.** `enforcement.flow.ts:63` is `requiredRole: 'enforcement:set'` |
+| `roleMatches` | **0 matches**, and 0 for `roleMatch` / `matchRole` / `matchesRole` / `roleSatisfies` |
+| `t_asn_confirm` | **0 matches.** ASN's six ids are create · submit · in_transit · deliver · discrepancy · resolve_discrepancy |
+| `t_asn_dispatch` | **0 matches.** The only `t_*_confirm` in the flow tree is `t_po_confirm`; there is no `t_*_dispatch` |
+| `t_gr_hold` "already named as a segregation question" | `t_gr_hold` exists; **"segregation" appears nowhere in `src/` or `docs/`** |
+| `buyer:all` as a `requiredRole` | **0 of 91 transitions.** It is the DR-10 AUDIT ACTOR string (`events.ts:actorKey`) |
+
+The role check, verbatim (`dispatcher.ts:279-282`):
+
+```ts
+if (!deps.resolveRoles(scope).includes(transition.requiredRole)) {
+```
+
+**A plain `Array.prototype.includes`. No wildcard, no short-circuit, no
+special-cased value.**
+
+> ⚠️ **AND YET THE CONCLUSION WAS RIGHT, WHICH IS THE PART WORTH KEEPING.** The
+> persona-wide grant IS a wildcard — *holding all 48 atoms because you are a
+> buyer* is exactly "a wildcard, not a role". **The wildcard was the SHAPE of the
+> grant, not a token in it.** The dispatch named a mechanism that does not exist
+> and described, correctly, a property that does. Both halves matter: the
+> property is why the batch was right, and the mechanism is why the batch would
+> have been built wrong — a hunt for `roleMatches` finds nothing and a scope of
+> "retire a token" would have shipped with the grant untouched.
+
+This is the fifth batch running in which a dispatched premise named code that is
+not in the tree, and the register's list of invented artifacts gains
+`roleMatches`, `buyer:planner`, `t_asn_confirm` and `t_asn_dispatch`. **No ordinal
+is attached, deliberately** — the class under-counts itself by construction, and
+CLAUDE.md carries the list rather than a number.
+
+---
+
+### 64b · ⚠️ THE OPERATOR'S SEQUENCING RULING WAS CORRECT ON A MECHANISM THAT WAS ALSO MISDESCRIBED — AND IT SAVED THE ENFORCEMENT LANE
+
+The ruling that `enforcement:set` moves to `compliance` was re-scoped mid-batch:
+
+> *"`useEnforcementSet` DOES NOT EXIST … THE WILDCARD IS NOT A LEGACY CONVENIENCE
+> ON THIS VERB — IT IS THE ONLY REASON IT HAS EVER FIRED. Retiring the wildcard
+> and moving the role in one batch would make THE ENFORCEMENT LANE UNREACHABLE
+> WITH NO CONSUMER TO CATCH IT."*
+
+**`useEnforcementSet` is absent — measured, and `commandHooks.ts` names no
+enforcement hook at all.** No shipped site dispatches `t_enforcement_set`; the
+verb is `surfaced: false / ruled-unsurfaced`; its only firings are
+`enforcementSeed.ts` and four spec files, and those fired **through the buyer
+persona grant**, not through a `['buyer:all']` literal (there is none in the
+tree). So the conclusion holds exactly, on the corrected mechanism: the
+persona-wide grant was the only thing making that verb reachable, and moving the
+atom in the same batch that retired the grant would have left the lane dead with
+nothing to notice.
+
+`enforcement:set` therefore stays in `procurement`, and
+`businessRoles.test.ts` carries the bookmark:
+
+```ts
+it('⚠️ enforcement:set is STILL procurement — the ruled move waits on a caller', …)
+```
+
+**The ruling is BOOKED, NOT WITHDRAWN**, with its reason recorded as law: *if
+procurement can set the halal enforcement mode, procurement can lower the bar it
+is measured against; the same party cannot both set the mode and be governed by
+it.* Its precondition is a caller.
+
+---
+
+### 64c · THE SIX ROLES, AND THE SEVENTH THING THAT IS NOT A ROLE
+
+Derived from `surfaceable`, **never from `trigger`** — the two disagree, and
+`t_gr_post` is the disagreement that decides it: `trigger: system` but
+`surfaced: true`, because a person presses it on the dock. Deriving ownership
+from `trigger` takes the SAP post away from receiving.
+
+| Role | atoms | the ruling behind it |
+|---|---|---|
+| `procurement` | 16 | award · sourcing · orders · contracting · `pr:approve`/`reject` (+ `enforcement:set`, pending its caller) |
+| `receiving` | 5 | 13 of the 41 human verbs — a dock clerk is not a category manager |
+| `finance` | 3 | operator, explicit: procurement does NOT hold `t_invoice_release_payment` |
+| `compliance` | 5 | ⚠️ holds no verb a human can fire on a screen today, and that is honest |
+| `planning` | 4 | the SDC / P2 lane |
+| `requisitioner` | 3 | raising ≠ approving |
+| `supplier` | 16 | ONE role — supplier-side person identity is unprocured (D-ID-2) |
+
+**`pr:approve` sits in `procurement` rather than in an `approver` role**, because
+C10 §3.4 forbids a bundle carrying approve-anything: approval authority comes
+from the policy ledger's threshold bands, and a role that carried it would put
+the threshold back inside the role where it cannot vary by value, plant, category
+or date without minting a role per band.
+
+> ⚠️ **`automation` IS NOT A BUSINESS ROLE AND IS KEPT OUT OF `SystemRoleId` SO IT
+> CANNOT BE ASSIGNED.** 26 of the 73 buyer transitions are `surfaced: false` for
+> `external-fact` (15) or `computed` (11) — S/4HANA, the carrier, the TMS, the
+> bank, the cascade fan-out. They have no human owner **by construction**, and
+> C10 §6.4 already rules the shape: *attribution absent = a machine act, never
+> dressed as UNATTRIBUTED*. Folding them into a bundle would make "a person held
+> this" and "the platform did this" indistinguishable at the record level — the
+> merge §3.6 refuses for delegation-vs-assignment, one layer down.
+
+---
+
+### 64d · ⚠️ THE CASCADE FAN-OUT IS THE ONE PLACE A NARROWED GRANT DELETES A REACHABLE ACT IN SILENCE
+
+`dispatcher.ts` re-dispatches every cascade under a **hardcoded synthetic scope**,
+**inside a `catch {}`**, best-effort by design:
+
+```ts
+dispatch({ personaType: 'buyer', supplierId: null }, …)
+```
+
+So a cascade refused at the role gate fails **silently**. Nothing in the suite
+watched it, and nothing on a surface would show it. The four atoms that
+load-bear — `asn:flag`, `invoice:match`, `quotation:award`, `quotation:reject` —
+are now in `AUTOMATION_ATOMS`, and the gate **derives the target list from
+`CASCADES` rather than restating it**:
+
+```
+const targets = Object.values(CASCADES).flat().map(c => c.targetTransitionId);
+expect(targets.length).toBeGreaterThan(0);   // population guard FIRST
+```
+
+**Mutant M3 — drop `invoice:match` from the grant — is killed by name.**
+
+---
+
+### 64e · THE HANDOFF IS DERIVED, AND THE TRAP IT REPLACES WAS LIVE
+
+The operator's argument decided it: *`requiredRole` is per-verb AND per-state, so
+the derivation gives an owner without a second vocabulary — and that is what
+stays true when a verb moves.* R1a's authored pattern was correct for its context
+and does not generalise.
+
+⚠️ **THE LIVE TRAP.** `SupplierForecasts.tsx:357` keys the R1a actor line on
+
+```ts
+next.personas.includes('supplier') ? '…actor.supplier' : '…actor.buyer'
+```
+
+**total only because `PersonaType` has two members.** A third actor falls through
+to *"Awaiting Paragon"* over a finance-owned verb — the exact mislabel the
+constraint forbids, produced by the mechanism meant to prevent it. `handoff.ts`
+replaces the shape with a **total `Record<SystemRoleId, string>`**, so a seventh
+role is a `tsc` error rather than a blank chip.
+
+**`unowned` is kept apart from `withheld`**, for the reason `nextActorFrom` keeps
+`stranded` apart from `ended`: *"Awaiting nobody"* promises an act that will
+never come.
+
+---
+
+### 64f · ⚠️ THE FILTER THAT WOULD HAVE DELETED THE BUTTON — AND THE ONE THE BROWSER CAUGHT ANYWAY
+
+`invoiceActionsFor` is `userVerbsFrom(...).filter(id in SURFACE)` and has **no
+role check**. The obvious way to honour a narrowed seat — `&& seatHolds(atom)` —
+**makes the button vanish**, in the one file written to stop verbs from quietly
+not appearing. So the seat **annotates** the population rather than filtering it:
+a withheld verb stays in the bilateral map and renders as a wait.
+
+> ⚠️ **AND THE FIRST CUT OF THAT GUARD STILL LEFT A LIVE BUTTON, WHICH THE SUITE
+> COULD NOT SEE.** `handleFooterAction` dispatches the solid commit when there is
+> one and `t_invoice_resolve` when there is not — so a **DISPUTED** invoice puts a
+> finance-owned verb in the primary slot with `commitAction === null`. Guarding
+> only the commit left "Resolve dispute" present, pressable, and refused at the
+> dispatcher for a procurement seat.
+>
+> **Every list-level affordance is byte-identical for every seat** (verified: 7
+> buyer surfaces, full seat vs `procurement`-only, zero differences), so the
+> defect existed only inside a detail panel, reachable only by selecting a
+> Disputed row. It was found on the built bundle and is now pinned by two tests —
+> the withheld half and the known-GOOD half.
+
+---
+
+### 64g · THE MUTATION PROBES, AND THE COUNTER THAT LIED FIRST
+
+Five mutants, each confirmed **changed on disk** before its result was believed:
+
+| mutant | result |
+|---|---|
+| M1 persona fallback restored (the wildcard sneaks back) | **KILLED** (1) |
+| M2 withheld verbs FILTERED out (the vanishing button) | **KILLED** (4) |
+| M3 a cascade target dropped from the automation grant | **KILLED** (2) |
+| M4 `unowned` collapsed into `withheld` ("Awaiting nobody") | **KILLED** (1) |
+| M5 `finance` granted `rfq:award` (segregation broken one way) | **KILLED** (1) |
+
+⚠️ **THE FIRST RUN REPORTED ALL FIVE AS `SURVIVED`, AND §51'S LESSON IS WHY THAT
+WAS NOT BELIEVED.** The runner captured subprocess output without an encoding and
+died on `cp1252`, so `killed` came back `None` and rendered as SURVIVED —
+mechanism three of the same class, after §50e's unregistered flow and §51f's digit
+inside an escape code. **All three fail toward "your gate is weak", which is the
+reading that gets believed because it sounds like the humble answer.** The
+`mutated=True` column is what made the harness fault visible: a probe that
+survived while the file provably changed is a claim about the runner, not the gate.
+
+---
+
+### 64h · THE RESOLVED-ACTOR SEAM — HALF BUILT, AND THE HALF THAT IS NOT IS NAMED
+
+C10's four preconditions were re-measured at `dd3160e` and **all four were free.**
+
+Built: `CurrentIdentity.actor: ActorAttribution`, carried onto `QueryScope`,
+always `UNATTRIBUTED: NO_PERSON_IN_SESSION` — **the measured fact, not a stub**.
+`sim-usr-*` is reserved and **pinned** (`simUsrNamespace.test.ts`), because a
+prefix nobody checks is a naming habit.
+
+⚠️ **NOT BUILT: C10 §6.2's second half — a payload-supplied `RESOLVED` actor
+REFUSED BY NAME ON WRITE.** It is harmless today for exactly one reason: nothing
+in shipped code constructs a `RESOLVED` actor, so a forged attribution cannot
+exist. **That claim is now a tripwire rather than a sentence** — the pin scans
+shipped sources for a constructor and fails the floor if one appears.
+
+The precondition becomes unfixable at the FIRST `RESOLVED` record, and this batch
+creates none. Closing it means migrating 21 spec sites that pass a payload actor
+— including the four that DOCUMENT §63a's ceiling — in the same batch that
+changes authorisation on every governed act. **Deferred deliberately, and the
+window is still open.**
+
+> ⚠️ **AND THE TRIPWIRE'S FIRST MATCHER MADE A FALSE ACCUSATION — RULE 2, ON THE
+> BATCH THAT CITES RULE 2.** A bare `/kind:\s*'RESOLVED'/` condemned
+> `services/transitions/policies.ts`, whose only occurrence is inside a REFUSAL
+> MESSAGE documenting the shape a caller must send. **A string describing a
+> constructor is not a constructor.** The matcher now strips double-quoted and
+> template spans, and is probed in BOTH directions — the known-GOOD prose case
+> sits beside the known-BAD constructor case, because a guard wrong about what it
+> should ACCEPT ships looking like a working guard.
+
+---
+
+### 64i · THE SIDEBAR ROLE PICKER — BUILT, THEN REJECTED, THEN REMOVED
+
+A chip block above the nav was built to make the narrowing demonstrable. The
+operator rejected it mid-batch:
+
+> *"A persistent control block above the navigation makes ROLE-SWITCHING LOOK LIKE
+> A NAVIGATION-LEVEL CONCERN — something done constantly, like a filter. IT IS
+> NOT. A PERSON HOLDS A ROLE; THEY DO NOT SHOP FOR ONE."*
+
+It is gone, and its i18n keys with it — an unused key is a false affordance in the
+i18n layer. **Batch A ships headless**, because the avatar panel does not exist
+(the avatar is a bare `<div>` of initials) and building one properly is the
+successor's surface. **An interim surface in the wrong place is how an
+information architecture gets decided by accident.**
+
+**The non-foreclosure is confirmed and it is the load-bearing check:**
+`businessRoles` and `actor` live on `CurrentIdentity` in React context, read via
+`useCurrentIdentity()` — **not in a dispatch-time closure.** `SidebarV2` read and
+WROTE both from a component before the block was removed, which is the proof
+rather than the claim. An avatar panel is an additive consumer.
+
+---
+
+### 64j · WHAT THE BROWSER QA FOUND, AND WHAT IT DID NOT
+
+Built bundle, `vite preview`, both personas, both locales.
+
+- **Nothing vanished.** 7 buyer surfaces × (full seat vs `procurement`-only) →
+  **identical button sets**. The supplier lanes render intact.
+- The handoff renders: **"Awaiting Finance" / "Menunggu Keuangan"**, a `SPAN`,
+  `data-handoff="withheld"`, visible — **not a disabled button**, which in a text
+  sweep reads identically to an absent one.
+- Both write paths work end to end: supplier `PO-2025-00108 confirmed`, buyer
+  release through the SAP settle callback.
+
+> ⚠️ **THE HONEST LIMIT, AND IT IS THE FINDING: THE CONSTRAINT HOLDS ON ONE
+> SURFACE OF SIX.** Derived — `HandoffNotice` / `invoiceActionsForSeat` /
+> `availabilityOf` are imported by `BuyerInvoices.tsx` and nothing else. Of the 45
+> wired + surfaced verbs, **3 render the wait** (finance's, on invoices) and **26
+> do not**: `procurement` 9 · `receiving` 9 · `planning` 5 · `requisitioner` 3.
+> The supplier's 16 are structurally unexposed — one role, so no seat can lack it.
+>
+> **Those 26 are not vanished buttons. They are LYING buttons** — present,
+> pressable, and refused at the dispatcher with no rendered wait. That is the
+> safer of the two failures and it is still a failure: the batch satisfies the
+> binding constraint where it was wired and leaves the rest to a successor. **Not
+> worked around, reported.**
+

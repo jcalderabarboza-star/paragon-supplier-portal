@@ -32,6 +32,7 @@ import type {
 import type { CommandDecision } from '../data/types';
 import type { AuditSink } from './events';
 import { actorKey } from './events';
+import { AUTOMATION_ROLE } from './businessRoles';
 import { getTransition } from './registry';
 import { refusal } from './refusals';
 import { classifySettleFault, settleFault, settleFaultDetail } from './settleFaults';
@@ -360,8 +361,24 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
           // Cascaded command carries the source's correlationId as causationId,
           // so its events group with the source WITHOUT sharing correlationId
           // (each cascaded transition keeps its own 1:1 status — DR-10, Option A).
+          // ⚠️ **THE CASCADE RUNS UNDER THE AUTOMATION GRANT, NOT A PERSONA.**
+          // This re-dispatch sits inside a `catch {}` and is best-effort by
+          // design, so a cascade refused at the role gate fails SILENTLY — it
+          // is the one path in the system where narrowing a grant can delete a
+          // reachable act with nothing to report it. The four atoms this
+          // actually needs (`asn:flag`, `invoice:match`, `quotation:award`,
+          // `quotation:reject`) are in `AUTOMATION_ATOMS`, which is asserted
+          // against the cascade map by `businessRoles.test.ts`.
+          //
+          // `automation` is NOT a `SystemRoleId` and cannot be assigned to a
+          // person (C10 §6.4 — attribution absent = a machine act). This is the
+          // only site that names it.
           dispatch(
-            { personaType: 'buyer', supplierId: null },
+            {
+              personaType: 'buyer',
+              supplierId: null,
+              businessRoles: [AUTOMATION_ROLE],
+            },
             { transitionId: c.transitionId, entity: c.entity, entityId: c.entityId, payload: c.payload },
             result.correlationId,
           );

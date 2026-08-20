@@ -59,6 +59,7 @@ import { intakeReviewEn, intakeReviewId } from './i18n/intakeReview';
 import { sdcConsolidationEn, sdcConsolidationId } from './i18n/sdcConsolidation';
 // — SDC-2b P1 supplier forecast-confirmation surface —
 import { sdcSupplierEn, sdcSupplierId } from './i18n/sdcSupplier';
+import { rolesEn, rolesId } from './i18n/roles';
 // — Comm Hub C2 inbound confirm-before-commit surface —
 import { commHubInboundEn, commHubInboundId } from './i18n/commHubInbound';
 // — PF-1 process flows (the surface for the PF-0 analyzer) —
@@ -138,6 +139,7 @@ export const resources = {
       ...sdcConsolidationEn,
       // — SDC-2b supplier forecast confirmations —
       ...sdcSupplierEn,
+      ...rolesEn,
       // — Comm Hub C2 inbound confirm-before-commit —
       ...commHubInboundEn,
       // — PF-1 process flows —
@@ -554,6 +556,7 @@ export const resources = {
       ...sdcConsolidationId,
       // — SDC-2b supplier forecast confirmations —
       ...sdcSupplierId,
+      ...rolesId,
       // — Comm Hub C2 inbound confirm-before-commit —
       ...commHubInboundId,
       // — PF-1 process flows —

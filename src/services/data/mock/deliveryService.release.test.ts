@@ -3,9 +3,10 @@ import { MockDeliveryService } from './MockDeliveryService';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
 import type { DeliveryAgreementView } from '../../delivery';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const BUYER: QueryScope = { personaType: 'buyer', supplierId: null };
-const SUPPLIER_007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
+const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const SUPPLIER_007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockDeliveryService();
 
 /** The item-10 (PK-PETB-8810 FRC) view for one contract's single agreement. */

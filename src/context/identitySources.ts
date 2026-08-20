@@ -3,6 +3,11 @@ import {
   IdentitySource,
   PersonaType,
 } from './CurrentIdentityContext';
+import {
+  PERSONA_SYSTEM_ROLES,
+  isSystemRole,
+} from '../services/transitions/businessRoles';
+import { NO_PERSON } from './noPerson';
 
 const IDENTITY_KEY = 'paragon.identity';
 const LEGACY_PERSONA_KEY = 'paragon.persona';
@@ -10,14 +15,49 @@ const LEGACY_PERSONA_KEY = 'paragon.persona';
 const SEEDED_SUPPLIER_ID = 'sup-007';
 const SEEDED_SUPPLIER_NAME = 'PT Sample Packaging Indonesia';
 
+// ⚠️ **THE DEMO SEAT OPENS HOLDING EVERY ROLE ON ITS SIDE, AND THAT IS A
+// DELIBERATE DEFAULT RATHER THAN A LEFTOVER WILDCARD.** The difference is where
+// the breadth lives: it is now DATA ON A SEAT that a person can narrow, not a
+// property of being a buyer. Seeding a narrower demo default would delete
+// affordances from a portal nobody asked to change; seeding all six keeps every
+// currently-reachable act reachable on the day this lands, and the role picker
+// is what makes the narrowing demonstrable.
 const identityForPersona = (persona: PersonaType): CurrentIdentity =>
   persona === 'supplier'
     ? {
         personaType: 'supplier',
         supplierId: SEEDED_SUPPLIER_ID,
         supplierName: SEEDED_SUPPLIER_NAME,
+        businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+        actor: NO_PERSON,
       }
-    : { personaType: 'buyer', supplierId: null, supplierName: null };
+    : {
+        personaType: 'buyer',
+        supplierId: null,
+        supplierName: null,
+        businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+        actor: NO_PERSON,
+      };
+
+/**
+ * Roles read back from storage, filtered to ones this persona can actually
+ * hold. **A stored role is not trusted** — localStorage is caller-supplied, and
+ * an unrecognised or cross-persona id would otherwise grant atoms silently.
+ * An empty result falls back to the persona's full set rather than to nothing:
+ * a seat that can do nothing is indistinguishable from a broken portal.
+ */
+const rolesFromStorage = (
+  persona: PersonaType,
+  value: unknown,
+): readonly string[] => {
+  const allowed = PERSONA_SYSTEM_ROLES[persona];
+  if (!Array.isArray(value)) return allowed;
+  const kept = value.filter(
+    (r): r is string =>
+      typeof r === 'string' && isSystemRole(r) && (allowed as readonly string[]).includes(r),
+  );
+  return kept.length > 0 ? kept : allowed;
+};
 
 const personaFromHash = (): PersonaType | null => {
   if (typeof window === 'undefined') return null;
@@ -48,12 +88,16 @@ export const mockIdentitySource: IdentitySource = {
 
     // Resolve effective persona: hash override > stored new key > legacy key > 'buyer'
     let storedPersona: PersonaType | null = null;
+    let storedRoles: unknown = undefined;
 
     try {
       const raw = window.localStorage.getItem(IDENTITY_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as unknown;
-        if (isCurrentIdentity(parsed)) storedPersona = parsed.personaType;
+        if (isCurrentIdentity(parsed)) {
+          storedPersona = parsed.personaType;
+          storedRoles = (parsed as { businessRoles?: unknown }).businessRoles;
+        }
       }
     } catch {
       // ignore parse / storage errors
@@ -69,7 +113,12 @@ export const mockIdentitySource: IdentitySource = {
     }
 
     const effective: PersonaType = hashPersona ?? storedPersona ?? 'buyer';
-    return identityForPersona(effective);
+    const base = identityForPersona(effective);
+    // Stored roles survive a reload ONLY for the persona they were stored
+    // under — switching sides re-seeds, because a role bundle is per-side.
+    return effective === storedPersona
+      ? { ...base, businessRoles: rolesFromStorage(effective, storedRoles) }
+      : base;
   },
 
   save(next: CurrentIdentity): void {

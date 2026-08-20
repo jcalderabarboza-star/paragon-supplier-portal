@@ -38,8 +38,9 @@ import { requirementResponseStore } from './stores/requirementResponseStore';
 import { normalizeQty } from '../../../lib/localeNumber';
 import { buildRequirementResponsePayload, FORECAST_PUBLICATIONS } from '../../sdc';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
+const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockCommandService();
 
 const pub = FORECAST_PUBLICATIONS.find((p) => p.publicationId === 'PUB-2026-08-RM-R2')!;

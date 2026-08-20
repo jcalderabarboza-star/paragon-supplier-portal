@@ -58,8 +58,16 @@ import SupplierRegistrationV2 from '../pages-v2/SupplierRegistration';
 import SupplierDeliveryAgreements from '../pages-v2/SupplierDeliveryAgreements';
 import SupplierPerformance from '../pages-v2/SupplierPerformance';
 import NotFound from '../pages-v2/NotFound';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { NO_PERSON } from '../context/noPerson';
 
-const BUYER: CurrentIdentity = { personaType: 'buyer', supplierId: null, supplierName: null };
+const BUYER: CurrentIdentity = {
+  personaType: 'buyer',
+  supplierId: null,
+  supplierName: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  actor: NO_PERSON,
+};
 
 // pattern = the <Route path>; at = the concrete URL mounted (resolves :params).
 interface RouteCase {

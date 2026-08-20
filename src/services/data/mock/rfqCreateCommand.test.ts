@@ -16,9 +16,10 @@ import { MockProcurementService } from './MockProcurementService';
 import { rfqStore } from './stores/rfqStore';
 import { DataError } from '../types';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
-const sup005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005' };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const sup005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockCommandService();
 const reads = new MockProcurementService();
 

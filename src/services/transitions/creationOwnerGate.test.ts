@@ -33,6 +33,7 @@ import type { QueryScope } from '../data/types';
 import { MockCommandService } from '../data/mock/MockCommandService';
 import { rfqStore } from '../data/mock/stores/rfqStore';
 import { purchaseRequisitionStore } from '../data/mock/stores/purchaseRequisitionStore';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 // ── A synthetic creation flow on this file's isolated registry singleton. ──────
 // `anchored` mirrors a buyer-authored RECORDING verb (C4c's shape): a
@@ -58,9 +59,9 @@ flowRegistry.register({
   ],
 });
 
-const supA: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
-const supB: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+const supA: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+const supB: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 
 // A creation target whose owner resolves to sup-007 for a known parent, null
 // otherwise. `requireCreationOwner` is parameterised so the SAME target proves

@@ -39,8 +39,9 @@
 import { describe, it, expect } from 'vitest';
 import { mockDataService as svc } from './mock/mockDataService';
 import type { QueryScope } from './types';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
-const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null };
+const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 
 // Registered cross-persona contradictions — KNOWN, whitelisted by finding-id.
 //
