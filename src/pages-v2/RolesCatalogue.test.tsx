@@ -1,10 +1,6 @@
 import { screen, within, fireEvent } from '@testing-library/react';
 import { renderWithProviders, BUYER } from '../test/test-utils';
-import {
-  SYSTEM_ROLES,
-  PERSONA_SYSTEM_ROLES,
-  type SystemRoleId,
-} from '../services/transitions/businessRoles';
+import { SYSTEM_ROLES, type SystemRoleId } from '../services/transitions/businessRoles';
 import { deriveRoleViews, roleTotals } from './roles/roleModel';
 import i18n from '../lib/i18n';
 import RolesCatalogue from './RolesCatalogue';
@@ -80,6 +76,19 @@ describe('⚠️ THE LIST IS DERIVED — one row per system role, no more, no fe
         `the list shows a '${forbidden}' column and we have no such data`,
       ).toBe(false);
     }
+  });
+
+  it('a single-module role reads "1 module", not "1 modules"', async () => {
+    // Visible on two rows the moment `admin` made the list worth reading
+    // closely. i18next selects the arm on `count`; the explicit interpolations
+    // keep BOTH numbers rendering on either arm.
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    const row = await screen.findByTestId('role-row-finance');
+    expect(within(row).getByText(/1 module(?![s])/)).toBeInTheDocument();
+    expect(within(row).queryByText(/1 modules/)).not.toBeInTheDocument();
+    // Known-GOOD control: a multi-module role still pluralises.
+    const admin = screen.getByTestId('role-row-admin');
+    expect(within(admin).getByText(/\d+ modules/)).toBeInTheDocument();
   });
 
   it('search narrows the list and says so when nothing matches', async () => {
@@ -168,12 +177,17 @@ describe('⚠️ THE PROSE CARRIES NO CARDINALITY OF ITS OWN', () => {
     // figure is what stops that reading recurring.
     renderWithProviders(<RolesCatalogue />, { identity: BUYER });
     const tile = await screen.findByTestId('kpi-roles');
-    expect(tile).toHaveTextContent(String(PERSONA_SYSTEM_ROLES.buyer.length));
-    expect(tile).toHaveTextContent(String(PERSONA_SYSTEM_ROLES.supplier.length));
+    const totals = roleTotals(deriveRoleViews());
+    expect(tile).toHaveTextContent(String(totals.bySide.buyer));
+    expect(tile).toHaveTextContent(String(totals.bySide.supplier));
+    // ⚠️ THE PARTS MUST ACCOUNT FOR THE WHOLE. This assertion is what caught
+    // `admin` landing on neither side: the split was drawn from
+    // PERSONA_SYSTEM_ROLES — a DIFFERENT population than the total — and it
+    // stopped summing the moment a cross-tenancy role existed.
     expect(
-      PERSONA_SYSTEM_ROLES.buyer.length + PERSONA_SYSTEM_ROLES.supplier.length,
+      totals.bySide.buyer + totals.bySide.supplier + totals.bySide.both,
       'the split does not add up to the total the tile shows',
-    ).toBe(roleTotals(deriveRoleViews()).roles);
+    ).toBe(totals.roles);
   });
 });
 

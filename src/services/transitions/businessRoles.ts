@@ -61,7 +61,8 @@ export type SystemRoleId =
   | 'compliance'
   | 'planning'
   | 'requisitioner'
-  | 'supplier';
+  | 'supplier'
+  | 'admin';
 
 /**
  * ⚠️ **`automation` IS NOT A BUSINESS ROLE AND MUST NEVER BECOME ONE.**
@@ -95,8 +96,7 @@ export type BusinessRoleId = string;
  * both red, in both directions. The bilateral assertion is the point; a
  * one-sided one would ship looking like a working gate (§39).
  */
-export const SYSTEM_ROLES: Readonly<Record<SystemRoleId, readonly TransitionRole[]>> =
-  Object.freeze({
+const LANE_BUNDLES = Object.freeze({
     // Sourcing, orders and contracting — operator ruling: "award, sourcing,
     // orders stay procurement". Holds `pr:approve`/`pr:reject` because C10 §3.4
     // FORBIDS an `approver` role that carries approve-anything: approval
@@ -173,6 +173,43 @@ export const SYSTEM_ROLES: Readonly<Record<SystemRoleId, readonly TransitionRole
   });
 
 /**
+ * ⚠️ **THE SUPER ADMIN, AND IT IS DERIVED — THE UNION OF EVERY LANE BUNDLE.**
+ *
+ * Hand-listing these 52 atoms would put a copy of every other bundle in a place
+ * nothing checks, and it would go stale the first time a lane gains an atom.
+ * Composing it means **`admin` cannot drift by construction**: add `rfq:cancel`
+ * to `procurement` tomorrow and `admin` holds it in the same commit, with no
+ * edit here and none on the page.
+ *
+ * ⚠️ **AND THE EXCLUSION IS WHAT MAKES THE BUNDLE RIGHT.** It is the union of
+ * what PEOPLE hold — 36 buyer-side atoms plus 16 supplier atoms, disjoint — and
+ * it deliberately does NOT include the 12 machine-only atoms in
+ * `AUTOMATION_ATOMS`. **A super admin cannot fire S/4HANA's or the TMS's acts,
+ * because those have no human owner by construction** (operator ruling), and
+ * that is precisely the thing a super admin should not be able to override
+ * invisibly either. A super admin bounded by what a human can legitimately do is
+ * a role; one bounded by nothing is the wildcard with a name.
+ *
+ * ⚠️ **AND `buyer:all` WAS NEVER TOTAL, MEASURED.** The retired persona grant
+ * reached 48 atoms — 36 assignable plus the 12 now in the automation grant — and
+ * **touched zero supplier atoms**: the two sides are disjoint and the tenancy
+ * boundary always held. "Wildcard" was accurate about its SHAPE (unconditional
+ * breadth within a side) and loose about its REACH. So `admin` is genuinely
+ * wider than the thing this arc retired, which is why it is named on the
+ * catalogue rather than quietly granted.
+ */
+const ADMIN_ATOMS: readonly TransitionRole[] = Object.freeze([
+  ...new Set(Object.values(LANE_BUNDLES).flat()),
+]);
+
+/**
+ * THE SEEDED BUNDLES, `admin` included. Ordered with `admin` last so the
+ * catalogue reads lanes first and the universal role at the end.
+ */
+export const SYSTEM_ROLES: Readonly<Record<SystemRoleId, readonly TransitionRole[]>> =
+  Object.freeze({ ...LANE_BUNDLES, admin: ADMIN_ATOMS });
+
+/**
  * The machine grant. Every atom required by a buyer transition that is
  * `surfaced: false` for `external-fact` or `computed`.
  *
@@ -219,7 +256,16 @@ export function atomsFor(roles: readonly BusinessRoleId[]): readonly TransitionR
   return [...atoms];
 }
 
-/** The system roles that belong to a persona — the ONE place the sides split. */
+/**
+ * The system roles that belong to a persona — the ONE place the sides split.
+ *
+ * ⚠️ **`admin` IS ABSENT HERE ON PURPOSE, AND IT IS NOT AN OVERSIGHT.** It spans
+ * BOTH tenancies, so listing it under `buyer` would make `PERSONA_ROLES.buyer`
+ * span supplier atoms — and `personaCan('buyer', 'po:confirm')` would become
+ * true, collapsing the tenancy answer that `nextActorFrom`, `catalogView` and
+ * the `surfaceable` per-persona invariant all read. A persona is a SIDE; admin
+ * is not on a side. It is a catalogue role, not a seat-picker option.
+ */
 export const PERSONA_SYSTEM_ROLES: Readonly<
   Record<'buyer' | 'supplier', readonly SystemRoleId[]>
 > = Object.freeze({
@@ -234,9 +280,25 @@ export const PERSONA_SYSTEM_ROLES: Readonly<
   supplier: Object.freeze(['supplier'] as readonly SystemRoleId[]),
 });
 
-/** Which system roles grant `atom`. Empty ⇒ nobody assignable holds it. */
+/**
+ * Which system roles grant `atom`. Empty ⇒ nobody assignable holds it.
+ *
+ * ⚠️ **`admin` IS DELIBERATELY EXCLUDED, AND THIS IS THE UNIVERSALITY PROBLEM
+ * IN ITS SECOND FORM.** The operator filed the first: *a derivation keyed on
+ * usage cannot see a member defined by universality.* This is its inverse — **a
+ * member defined by universality POLLUTES every usage-keyed answer.** `admin`
+ * holds every assignable atom, so an unfiltered `rolesHolding` names it on all
+ * 52, and the cross-role handoff would read *"Awaiting Finance / Admin"* on
+ * every withheld verb in the portal.
+ *
+ * The two statements are different and only one is an OWNER: **finance owns
+ * `invoice:pay`; admin can also do it.** A handoff names the owner, so it must
+ * name finance. `SYSTEM_ROLES.admin` is where admin's reach is stated — plainly,
+ * in full, on its own catalogue row — which is the operator's requirement that a
+ * super admin be named rather than hidden.
+ */
 export function rolesHolding(atom: TransitionRole): readonly SystemRoleId[] {
-  return (Object.keys(SYSTEM_ROLES) as SystemRoleId[]).filter((r) =>
-    SYSTEM_ROLES[r].includes(atom),
-  );
+  return (Object.keys(SYSTEM_ROLES) as SystemRoleId[])
+    .filter((r) => r !== 'admin')
+    .filter((r) => SYSTEM_ROLES[r].includes(atom));
 }

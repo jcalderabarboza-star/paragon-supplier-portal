@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom';
 import { Info, Lock, Users, ArrowRight, Search } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import { deriveRoleViews, roleTotals, type RoleView } from './roles/roleModel';
-import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE ROLES CATALOGUE — A LIST, AND A ROLE OPENS ITS OWN PAGE.
@@ -74,6 +73,7 @@ const RoleRow: React.FC<{ role: RoleView }> = ({ role }) => {
       </td>
       <td className="py-3 px-4 align-middle text-xs text-text-tertiary font-mono whitespace-nowrap">
         {t('roles.page.reach', {
+          count: role.modules.length,
           modules: role.modules.length,
           permissions: role.atoms.length,
         })}
@@ -121,8 +121,9 @@ const RolesCatalogue: React.FC = () => {
             // "six" was the BUYER subset written as the population; putting both
             // figures beside the total is what stops that reading recurring.
             sub={t('roles.page.kpi.rolesSplit', {
-              buyer: PERSONA_SYSTEM_ROLES.buyer.length,
-              supplier: PERSONA_SYSTEM_ROLES.supplier.length,
+              buyer: totals.bySide.buyer,
+              supplier: totals.bySide.supplier,
+              both: totals.bySide.both,
             })}
           />
           <KpiTile
