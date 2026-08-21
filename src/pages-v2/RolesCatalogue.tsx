@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Info, Lock, Users, ArrowRight, Search } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import { deriveRoleViews, roleTotals, type RoleView } from './roles/roleModel';
+import CreateRolePanel from './roles/CreateRolePanel';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE ROLES CATALOGUE — A LIST, AND A ROLE OPENS ITS OWN PAGE.
@@ -19,11 +20,18 @@ import { deriveRoleViews, roleTotals, type RoleView } from './roles/roleModel';
 // columns would be three invented facts filling a layout. They are ABSENT, not
 // empty — see `roles/roleModel.ts`.
 //
-// ⚠️ **AND NO CREATE BUTTON.** TMS has one; we cannot. Nothing in the platform
-// persists a custom role, so a Create button writing to React state would build
-// a role that vanished on reload — the false-affordance class this arc spent a
-// batch removing. The page says so rather than leaving the absence to be read
-// as an oversight.
+// ⚠️ **THERE IS NOW A CREATE PANEL, AND IT IS GATED — THE FIRST ROLE-GATED
+// SURFACE IN THIS PLATFORM.** The sentence that stood here said a Create button
+// would build a role that vanished on reload; a grant is now recorded through
+// the dispatcher and enforced for the session, and the marker states exactly
+// what survives and what does not rather than dropping the claim.
+//
+// ⚠️ **NOTHING BELOW THIS LINE LEARNED THAT CUSTOM ROLES EXIST.** `RoleRow`,
+// the table, the KPI tiles and the reach column are unchanged: they read
+// `deriveRoleViews()`, and the derivation grew. That is the property the
+// catalogue was built for and the reason the tile moves 8 → 9 with no edit here.
+// The two additions are the WRITE path (`CreateRolePanel`) and a version bump
+// that lets the memo re-derive after a grant — neither is a display change.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const KpiTile: React.FC<{
@@ -90,7 +98,11 @@ const RoleRow: React.FC<{ role: RoleView }> = ({ role }) => {
 
 const RolesCatalogue: React.FC = () => {
   const { t } = useTranslation();
-  const views = useMemo(deriveRoleViews, []);
+  // The derivation reads a MUTABLE store now, so the memo needs a reason to run
+  // again. `version` is that reason and nothing else: no query caches a role
+  // definition, so there is no `invalidateQueries` that would do this for us.
+  const [version, setVersion] = useState(0);
+  const views = useMemo(deriveRoleViews, [version]);
   const totals = useMemo(() => roleTotals(views), [views]);
   const [q, setQ] = useState('');
 
@@ -149,6 +161,8 @@ const RolesCatalogue: React.FC = () => {
             </p>
           </div>
         </div>
+
+        <CreateRolePanel onGranted={() => setVersion((v) => v + 1)} />
 
         <div
           className="mb-5 border border-border-subtle rounded-lg p-4 flex gap-3"

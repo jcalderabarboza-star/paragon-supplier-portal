@@ -2,8 +2,15 @@ import {
   SYSTEM_ROLES,
   PERSONA_SYSTEM_ROLES,
   isSystemRole,
+  type BusinessRoleId,
   type SystemRoleId,
 } from '../../services/transitions/businessRoles';
+import {
+  atomsOfCustomRole,
+  customRoleStore,
+  retainedFromParent,
+  sideOfSystemRole,
+} from '../../services/transitions/customRoles';
 import { getKnownFlows } from '../../services/transitions';
 import { WIRED_COMMAND_TARGETS } from '../../services/data/mock/MockCommandService';
 
@@ -35,15 +42,38 @@ export interface RoleVerb {
 }
 
 export interface RoleView {
-  readonly id: SystemRoleId;
+  readonly id: BusinessRoleId;
   /** `both` is `admin` — it spans the tenancies rather than sitting on a side. */
   readonly side: 'buyer' | 'supplier' | 'both';
   readonly isSystem: boolean;
+  /** The system role a CUSTOM role copies. Absent on a system role. */
+  readonly parent?: SystemRoleId;
+  /**
+   * D1's exception, derived: atoms the parent held at grant time and holds no
+   * longer, RETAINED rather than silently dropped. Always empty while grants are
+   * session-scoped and bundles are compile-time — see `customRoles.ts`.
+   */
+  readonly retained: readonly string[];
   readonly atoms: readonly string[];
   readonly modules: readonly string[];
   readonly verbs: readonly RoleVerb[];
   readonly surfacedCount: number;
-  /** i18n keys — the display strings are prose and belong to the locale layer. */
+  /**
+   * What the surface passes to `t()`.
+   *
+   * ⚠️ **A SYSTEM ROLE'S IS AN i18n KEY; A CUSTOM ROLE'S IS THE LITERAL TEXT,
+   * AND THE PAGE CANNOT TELL — DELIBERATELY.** A custom role's name is USER
+   * TEXT: nobody has translated it and nobody can, so it must render identically
+   * in EN and ID. i18next returns a missing key verbatim, so passing the literal
+   * through `t()` renders exactly the text that was typed, in both locales, with
+   * no branch on the page. **This is why `role_grant_governed` forbids `:` and
+   * `.` in the name** — i18next reads them as namespace and key separators, and
+   * a name carrying one would render TRUNCATED rather than wrong-looking.
+   *
+   * The alternative was a discriminated `name` field, which would have meant
+   * editing both surfaces to render a custom role — the thing D4 calls a
+   * finding.
+   */
   readonly nameKey: string;
   readonly descriptionKey: string;
 }
@@ -61,21 +91,63 @@ export function deriveRoleViews(): readonly RoleView[] {
   );
   const buyerSide = new Set<string>(PERSONA_SYSTEM_ROLES.buyer);
 
-  return (Object.keys(SYSTEM_ROLES) as SystemRoleId[]).map((id) => {
-    const atoms = SYSTEM_ROLES[id];
+  // ⚠️ EVERY FIELD BELOW IS COMPUTED FROM `atoms`, WHICHEVER KIND OF ROLE IT IS.
+  // That is the property D4 requires and the reason no surface changed to show a
+  // custom role: `verbs`, `modules` and `surfacedCount` never learn that custom
+  // roles exist, because they only ever asked what atoms a role holds.
+  const view = (
+    id: BusinessRoleId,
+    side: RoleView['side'],
+    atoms: readonly string[],
+    nameKey: string,
+    descriptionKey: string,
+    extra: { parent?: SystemRoleId; retained?: readonly string[] } = {},
+  ): RoleView => {
     const verbs = all.filter((t) => atoms.includes(t.requiredRole));
     return {
       id,
-      side: id === 'admin' ? 'both' : buyerSide.has(id) ? 'buyer' : 'supplier',
+      side,
       isSystem: isSystemRole(id),
+      parent: extra.parent,
+      retained: extra.retained ?? [],
       atoms,
       modules: [...new Set(verbs.map((v) => v.entity))].sort(),
       verbs,
       surfacedCount: verbs.filter((v) => v.surfaced).length,
-      nameKey: `roles.owner.${id}`,
-      descriptionKey: `roles.desc.${id}`,
+      nameKey,
+      descriptionKey,
     };
-  });
+  };
+
+  const system = (Object.keys(SYSTEM_ROLES) as SystemRoleId[]).map((id) =>
+    view(
+      id,
+      id === 'admin' ? 'both' : buyerSide.has(id) ? 'buyer' : 'supplier',
+      SYSTEM_ROLES[id],
+      `roles.owner.${id}`,
+      `roles.desc.${id}`,
+    ),
+  );
+
+  // ⚠️ **A CUSTOM ROLE'S SIDE COMES FROM ITS PARENT, NEVER FROM MEMBERSHIP.**
+  // The system arm asks `buyerSide.has(id)`, and a custom id is in NEITHER
+  // persona list — so the same ternary would have fallen through to its else
+  // arm and labelled every custom buyer role **Supplier side**. Not a crash and
+  // not a red test: one wrong word about tenancy, on the page whose whole
+  // subject is tenancy. `sideOfSystemRole(parent)` cannot return null here
+  // because `role_grant_governed` refuses `admin` as a parent.
+  const custom = customRoleStore.all().map((def) =>
+    view(
+      def.id,
+      sideOfSystemRole(def.parent) ?? 'both',
+      atomsOfCustomRole(def),
+      def.displayName,
+      def.description,
+      { parent: def.parent, retained: retainedFromParent(def) },
+    ),
+  );
+
+  return [...system, ...custom];
 }
 
 export function findRoleView(id: string): RoleView | undefined {

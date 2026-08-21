@@ -79,7 +79,12 @@ export const rolesEn: Record<string, string> = {
   // KPI tiles — ONLY the ones we can derive. TMS shows USERS ASSIGNED, LAST
   // MODIFIED and STATUS; we hold no people, no modification record and no
   // activation state, so those columns would be invented rather than empty.
-  'roles.page.kpi.roles': 'System roles',
+  // ⚠️ IT READ 'System roles' UNTIL A CUSTOM ROLE COULD EXIST. The tile
+  // counts `views.length`, and the derivation now yields system AND custom roles
+  // — so the label restated a property of the population that the derivation
+  // never guaranteed. `FLOOR-IN-PROSE-01` wearing a noun instead of a number. The
+  // KIND is on every row and in the split beneath; the tile counts roles.
+  'roles.page.kpi.roles': 'Roles',
   // ⚠️ THE SPLIT, DERIVED AND ON SCREEN. "Six" was `PERSONA_SYSTEM_ROLES.buyer`
   // stated as the population. Showing both figures beside the total is what
   // stops the subset being mistaken for the whole a second time.
@@ -111,9 +116,48 @@ export const rolesEn: Record<string, string> = {
   'roles.page.unwiredNote': 'authored, not yet wired to a screen',
   // ⚠️ THE HONEST MARKER. Read-only is a RULING, not an omission, and the page
   // must say why rather than leave a missing Create button to be read as a bug.
-  'roles.page.readOnlyTitle': 'Read-only catalogue',
+  // ⚠️ **THE KEY NAMES ARE HISTORICAL AND THE COPY IS NOT.** This page is no
+  // longer read-only. The old text said *nothing in the platform stores one, so a
+  // Create button would build a role that vanished on reload* — and the ruling
+  // was that whatever ships must make that statement FALSE rather than merely
+  // remove it. Something stores one now, it is recorded through the dispatcher,
+  // and the reload half is STILL TRUE — so it is still said, in the same breath
+  // as the reason it is deliberate.
+  'roles.page.readOnlyTitle': 'The role catalogue',
   'roles.page.readOnlyBody':
-    'All {{count}} roles here are real: they are read from the same definitions the dispatcher checks on every governed action, so this page cannot drift from what the portal enforces. Custom roles cannot be created yet — nothing in the platform stores one, so a Create button here would build a role that vanished on reload. Duplicating and narrowing a role needs a store, a recorded act and a merge rule; that is the next piece of work, not this page.',
+    'All {{count}} roles here are real: they are read from the same definitions the dispatcher checks on every governed action, so this page cannot drift from what the portal enforces. A custom role copies one system role and adds to it — it can never subtract, so it cannot silently drop a permission the system role was relied on to carry. Every grant is recorded through the same dispatcher as any other governed action and lands in the audit trail. A grant lasts for this browser session only: it is held in memory, never written to disk, and it is gone when you reload. That is deliberate rather than unfinished — the platform cannot yet name the person who granted it, and a privilege grant nobody can be named for should not outlive the act that made it.',
+
+  // ── DUPLICATE-AND-NARROW ─ THE FIRST ROLE-GATED SURFACE IN THIS PLATFORM ──
+  //
+  // ⚠️ **`createGateTitle` / the HandoffNotice beside it are the gate.** No page
+  // in this portal has ever gated on role — not one `<Route>` carries a guard,
+  // and the only role-conditional rendering in the tree before this batch was the
+  // invoice footer. The shape was taken deliberately: the AFFORDANCE is gated,
+  // never the route, because the standing ruling is that a withheld verb renders
+  // THE WAIT, NOT A GAP. A route guard would have rendered a gap — and it would
+  // have hidden the catalogue, which §65 ruled must stay readable by anyone.
+  'roles.page.createTitle': 'Create a custom role',
+  'roles.page.createIntro':
+    'A custom role copies one system role and adds permissions to it. It can never remove one, and it can never reach across to the other side — a buyer role cannot be given supplier permissions, or the reverse.',
+  'roles.page.createGateTitle': 'Editing roles is a compliance action',
+  'roles.page.createGateBody':
+    'Whoever can edit roles can grant themselves any action, so procurement cannot hold this — it would let the same party lower the bar it is measured against. Your seat can read every role on this page; creating one is somebody else’s act.',
+  'roles.page.createParent': 'Copy from',
+  'roles.page.createId': 'Role code',
+  'roles.page.createIdHint': 'Lowercase letters, digits and hyphens.',
+  'roles.page.createName': 'Display name',
+  'roles.page.createDescription': 'Description',
+  'roles.page.createAdds': 'Permissions to add',
+  'roles.page.createAddsHint':
+    'Only permissions on the same side as the role you are copying are offered. The rest are already held by it.',
+  'roles.page.createAddsNone': 'This role already holds every permission on its side.',
+  'roles.page.createSubmit': 'Create role',
+  'roles.page.createGrantedBy':
+    'This grant will be recorded as taken by nobody the platform can name, because there is no user directory yet. That is why it does not survive a reload.',
+  'roles.page.createOk': 'Role {{id}} created. It is enforced now and gone on reload.',
+  // The dispatcher’s own words. A refusal that only says “failed” is half a
+  // remedy — the reason names the atom, the side, or the field.
+  'roles.page.createRefused': 'Refused: {{reason}}',
   'roles.page.usersDeferredTitle': 'No user list yet',
   'roles.page.usersDeferredBody':
     'The portal holds no people. Staff identity comes from the corporate directory and has not been connected, so no role can show who is assigned to it — and every count would read zero.',
@@ -162,7 +206,7 @@ export const rolesId: Record<string, string> = {
   'roles.page.back': 'Kembali ke peran',
   // Indonesian does not inflect for number — one arm serves every count.
   'roles.page.reach_other': '{{modules}} modul · {{permissions}} izin',
-  'roles.page.kpi.roles': 'Peran sistem',
+  'roles.page.kpi.roles': 'Peran',
   'roles.page.kpi.rolesSplit': '{{buyer}} pembeli · {{supplier}} pemasok · {{both}} lintas-tenansi',
   'roles.page.kpi.permissions': 'Izin berbeda',
   'roles.page.kpi.actions': 'Tindakan yang diatur',
@@ -184,9 +228,30 @@ export const rolesId: Record<string, string> = {
   'roles.page.side.buyer': 'Sisi pembeli',
   'roles.page.side.supplier': 'Sisi pemasok',
   'roles.page.unwiredNote': 'sudah ditulis, belum terhubung ke layar',
-  'roles.page.readOnlyTitle': 'Katalog hanya-baca',
+  'roles.page.readOnlyTitle': 'Katalog peran',
   'roles.page.readOnlyBody':
-    'Semua {{count}} peran di sini nyata: dibaca dari definisi yang sama yang diperiksa dispatcher pada setiap tindakan yang diatur, sehingga halaman ini tidak dapat menyimpang dari yang ditegakkan portal. Peran khusus belum dapat dibuat — tidak ada penyimpanan untuk itu, sehingga tombol Buat di sini akan membuat peran yang hilang saat dimuat ulang. Menyalin dan mempersempit peran memerlukan penyimpanan, tindakan tercatat, dan aturan penggabungan; itu pekerjaan berikutnya, bukan halaman ini.',
+    'Semua {{count}} peran di sini nyata: dibaca dari definisi yang sama yang diperiksa dispatcher pada setiap tindakan yang diatur, sehingga halaman ini tidak dapat menyimpang dari yang ditegakkan portal. Peran khusus menyalin satu peran sistem lalu menambahkan padanya — tidak pernah mengurangi, sehingga tidak dapat diam-diam menghapus izin yang diandalkan dari peran sistem itu. Setiap pemberian dicatat melalui dispatcher yang sama seperti tindakan diatur lainnya dan masuk ke jejak audit. Pemberian hanya berlaku untuk sesi peramban ini: disimpan di memori, tidak pernah ditulis ke disk, dan hilang saat Anda memuat ulang. Itu disengaja, bukan belum selesai — platform belum dapat menyebut nama orang yang memberikannya, dan pemberian hak istimewa yang tidak dapat dinamai siapa pun tidak boleh bertahan lebih lama dari tindakan yang membuatnya.',
+
+  'roles.page.createTitle': 'Buat peran khusus',
+  'roles.page.createIntro':
+    'Peran khusus menyalin satu peran sistem dan menambahkan izin padanya. Tidak pernah menghapus izin, dan tidak pernah menjangkau sisi lain — peran pembeli tidak dapat diberi izin pemasok, atau sebaliknya.',
+  'roles.page.createGateTitle': 'Mengubah peran adalah tindakan kepatuhan',
+  'roles.page.createGateBody':
+    'Siapa pun yang dapat mengubah peran dapat memberikan dirinya tindakan apa pun, sehingga pengadaan tidak memegang ini — itu akan membuat pihak yang sama menurunkan standar yang mengukurnya. Kursi Anda dapat membaca setiap peran di halaman ini; membuatnya adalah tindakan orang lain.',
+  'roles.page.createParent': 'Salin dari',
+  'roles.page.createId': 'Kode peran',
+  'roles.page.createIdHint': 'Huruf kecil, angka, dan tanda hubung.',
+  'roles.page.createName': 'Nama tampilan',
+  'roles.page.createDescription': 'Deskripsi',
+  'roles.page.createAdds': 'Izin yang ditambahkan',
+  'roles.page.createAddsHint':
+    'Hanya izin di sisi yang sama dengan peran yang Anda salin yang ditawarkan. Sisanya sudah dipegang olehnya.',
+  'roles.page.createAddsNone': 'Peran ini sudah memegang setiap izin di sisinya.',
+  'roles.page.createSubmit': 'Buat peran',
+  'roles.page.createGrantedBy':
+    'Pemberian ini akan dicatat sebagai dilakukan oleh orang yang tidak dapat disebut namanya oleh platform, karena belum ada direktori pengguna. Itulah sebabnya pemberian ini tidak bertahan setelah dimuat ulang.',
+  'roles.page.createOk': 'Peran {{id}} dibuat. Berlaku sekarang dan hilang saat dimuat ulang.',
+  'roles.page.createRefused': 'Ditolak: {{reason}}',
   'roles.page.usersDeferredTitle': 'Belum ada daftar pengguna',
   'roles.page.usersDeferredBody':
     'Portal tidak menyimpan orang. Identitas staf berasal dari direktori korporat dan belum terhubung, sehingga tidak ada peran yang dapat menunjukkan siapa yang ditugaskan — dan setiap hitungan akan menampilkan nol.',

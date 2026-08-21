@@ -199,6 +199,9 @@ export const POLICY_HOOKS = {
    *  date on anything below BLOCK, and A NAMED ACTOR ON ANY LOOSENING.
    *  Tightening is always legal, so the safest act needs no permission. */
   ENFORCEMENT_SET_GOVERNED: 'enforcement_set_governed',
+  // The privilege grant. Refuses a cross-tenancy add BY NAME, per atom — a
+  // surface can prevent the gesture, only the verb can prevent the act.
+  ROLE_GRANT_GOVERNED: 'role_grant_governed',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

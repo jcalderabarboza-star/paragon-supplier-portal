@@ -16723,3 +16723,293 @@ batch-a`, not on main**, because every symbol it imports — `SYSTEM_ROLES`,
 `atomsFor`, `handoff.ts`, `CurrentIdentity.businessRoles` — exists only there.
 **#248 must merge before this one.**
 
+---
+
+## §66 · DUPLICATE-AND-NARROW — A STORE, A VERB, A MERGE RULE, AND THE FIRST ROLE-GATED SURFACE
+
+The roles arc closed at §65 with a READ-ONLY catalogue whose marker said, in
+full: *"Custom roles cannot be created yet — nothing in the platform stores one,
+so a Create button here would build a role that vanished on reload."* The
+operator's ruling for the successor was that **whatever ships must make that
+sentence FALSE rather than merely remove it.** Everything below is downstream of
+that.
+
+---
+
+### 66a · THE SHAPE — PARENT PLUS ADDITIONS, AND THE SNAPSHOT IS THE DEFECT THIS PROJECT ALREADY SHIPPED ONCE
+
+`CustomRoleDefinition` is `{ id, parent, adds, … }` and its atoms are
+`SYSTEM_ROLES[parent] ∪ adds`, **composed at read**. A snapshot of the parent's
+atoms was refused, and the argument that decided it is the operator's own
+additive ruling turned around:
+
+> A role that only ever adds CANNOT SILENTLY DROP A PERMISSION THE SYSTEM ROLE
+> WAS RELIED ON TO CARRY.
+
+**A snapshot drops silently by construction the moment the parent GAINS an
+atom.** Copy `procurement` today; add `rfq:split` to `procurement` next quarter;
+every snapshot copy fails to gain it, and nothing anywhere says so. The ruling
+that forbids subtraction is delivered only by the reference form.
+
+The second argument is the gate. `businessRoles.test.ts` asserts both directions
+of (bundle atoms ⊆ catalog) and (catalog ⊆ bundles ∪ automation), and **both
+iterate `SYSTEM_ROLES`.** A snapshot stored outside that object would be outside
+the population — free to hold a retired atom forever, invisible to the one gate
+built for exactly this question.
+
+⚠️ **AND `businessRoles.test.ts` HAD ALREADY WRITTEN THE SNAPSHOT FORM.** The
+§64 non-foreclosure test constructs `[...SYSTEM_ROLES.procurement, 'gr:post']`.
+It proves a bundle is copyable AS A VALUE and nothing more; it is not a ruling on
+shape, and reading it as one is how the wrong form would have been inherited.
+
+---
+
+### 66b · D1'S EXCEPTION — RETAINED, NOT DROPPED, AND IT HAS NO SURFACE ON PURPOSE
+
+The ruling: *IF A PARENT ATOM IS EVER REMOVED, THE CHILD MUST NOT SILENTLY LOSE
+IT.* So the grant records `parentAtomsAtGrant`, **a baseline that is never the
+resolution source**, and `retainedFromParent()` names anything the parent has
+since dropped. The child keeps it; the difference is derivable.
+
+⚠️ **THE STATE IS UNREACHABLE TODAY AND THE NOTICE WAS DELIBERATELY NOT BUILT.**
+`LANE_BUNDLES` is a frozen module constant and a grant lives for one session, so
+a parent cannot lose an atom while a child exists — impossible at runtime, not
+merely rare. A notice for it would be a surface for a fact that cannot occur.
+The RULE is built and pinned; the notice becomes owed the day a grant outlives a
+deploy. Same posture as every other contract-complete-not-behavior-complete piece
+in this tree.
+
+---
+
+### 66c · THE STORE — SESSION-SCOPED, AND THE MARKER STATES IT RATHER THAN OMITTING IT
+
+Measured before deciding: **every one of the eleven stores in
+`data/mock/stores/` is a module-scope `let rows`**, and the only things in the
+whole tree that survive a reload are the locale (`paragon.lang`) and the seat
+(`paragon.identity`). No `localStorage` was added. The operator ruled
+session-scope; the reason recorded with it is stronger than the ruling needed:
+
+> The platform cannot name the person who granted a role. A privilege grant
+> nobody can be named for should not outlive the act that made it.
+
+The counter-precedent is on the record too: `paragon_gr_posted` was a
+localStorage overlay for domain state and was DELETED as dishonest (INV-SEED-01 →
+INV-GR-OVERLAY-01). `paragon.identity` holds a SEAT PREFERENCE; a role definition
+is a governed record, and the two do not belong under one key.
+
+**The successor sentence is the old one's negation, not its deletion:** *"A grant
+lasts for this browser session only: it is held in memory, never written to disk,
+and it is gone when you reload. That is deliberate rather than unfinished."*
+Asserted on the built bundle (9 rows → reload → 8, nothing new in localStorage)
+and in the suite, including a `setItem` spy that fails if a grant ever writes.
+
+---
+
+### 66d · THE VERB — `t_enforcement_set`'S SHAPE, FOLLOWED RATHER THAN ADAPTED
+
+`role:grant` writing outside the dispatcher would have been the only
+privilege-granting act in the platform with no `TransitionEvent`. So: entity
+`role`, states `['Defined']`, `t_role_grant` `statePreserving`, an append-only
+ledger, a CommandTarget, a policy hook — the enforcement machine, verb for verb.
+
+**THE ENTITY IS THE PARENT SYSTEM ROLE.** `entityId` IS the `SystemRoleId` being
+copied, exactly as enforcement's IS the `GovernedCheckId`, so there is no
+`parent` payload field that could disagree with the entity commanded. `readState`
+answers `Defined` for a known role and `null` for anything else, making an
+unknown parent NOT_FOUND rather than a silently-minted one. `grantedAt` and
+`parentAtomsAtGrant` are minted in the target — the `pinnedAt` discipline, and
+for the baseline it is load-bearing: a caller that could supply it could fake the
+drift check into silence.
+
+⚠️ **`role:grant` IS A `compliance` ATOM, AND THAT MOVE IS EXECUTED RATHER THAN
+BOOKED.** Whoever can edit roles can grant themselves any verb. The identical
+ruling for `enforcement:set` has sat deferred since §64 for want of a caller;
+this one had no pre-existing caller to strand, so it lands correctly on day one.
+`compliance`'s header comment — *"HOLDS NO VERB A HUMAN CAN FIRE ON A SCREEN
+TODAY"* — is now false of one atom and true of the other five, and says so.
+
+⚠️ **THE ATTRIBUTION QUESTION WAS RAISED BEFORE BUILDING AND IS RECORDED HERE
+BECAUSE IT WAS NOT RULED EXPLICITLY.** `enforcementSetGoverned` refuses a
+LOOSENING by an unattributed actor. **A custom role is additive, so every grant
+is a loosening, 100% of the time** — and the seat's actor is always
+`UNATTRIBUTED: NO_PERSON_IN_SESSION`. Applying that rule verbatim would refuse
+every grant this platform can make. The build validates `grantedBy` and does NOT
+require `isAttributed`; **what pays for the difference is D2's session scope** —
+an anonymous grant that cannot outlive a browser tab is a demonstrable act rather
+than a durable ungoverned one. The day an IdP answers, `policies.ts` is where the
+`isAttributed` guard lands and where durability becomes arguable. **If the
+operator wants the stricter reading, the verb ships `ruled-unsurfaced` and the
+panel becomes a gate with nothing behind it; that is a one-line change and a
+ruling, not a rebuild.**
+
+---
+
+### 66e · TENANCY — REFUSED AT THE VERB, BY NAME, PER ATOM
+
+The operator's sharpest point: **nothing forbade a custom role mixing buyer and
+supplier atoms, and a boundary that has held by construction since the beginning
+would have fallen to a form.** `role_grant_governed` refuses each offending atom
+by name, with both sides in the message, and refuses `admin` as a parent outright
+— a copy of the one cross-tenancy role spans by construction. The buyer/supplier
+disjointness is asserted directly as the invariant the rule protects, and the
+guard is probed BOTH ways: a same-side atom must PASS before a cross-side refusal
+means anything.
+
+The form offers only same-side atoms (32 of them for a `receiving` child,
+browser-verified, zero supplier atoms among them) — **which is exactly why the
+verb-level check must exist.** A surface can prevent the gesture; only the verb
+can prevent the act.
+
+---
+
+### 66f · THE MERGE RULE — AND THE THREE FIELDS THAT DID NOT FOLLOW THE DATA
+
+The tile moved 8 → 9 with **no edit to `RoleRow`, the table, the KPI tile, the
+reach column or `RoleDetail`** — five of eight `RoleView` fields (`atoms`,
+`verbs`, `modules`, `surfacedCount`, `isSystem`) compute from atoms and never
+learned custom roles exist. Three did not, and the first fails silently:
+
+⚠️ **`side` — THE ONE THAT WOULD HAVE SHIPPED.** It read
+`buyerSide.has(id) ? 'buyer' : 'supplier'`, and a custom id is in NEITHER persona
+list, **so the else-arm labelled every custom BUYER role "Supplier side".** Not a
+crash, not a red test: one wrong word about tenancy, on the page whose entire
+subject is tenancy. It now derives from the PARENT.
+
+⚠️ **`nameKey` / `descriptionKey` — i18n KEYS FOR TEXT THAT HAS NO KEY.** A
+custom role's name is user text; nobody has translated it and nobody can. It is
+passed to `t()` as its own key, so i18next's missing-key fallback renders it
+verbatim and identically in EN and ID, **with no branch on either page** — the
+alternative was a discriminated `name` field, which would have meant editing both
+surfaces, which D4 calls a finding.
+
+⚠️ **AND THE FIRST RULE WRITTEN AROUND THAT WAS WRONG, CORRECTED BY MEASUREMENT.**
+The policy initially banned `:` and `.` in a role's name and description, on the
+theory that i18next reads them as namespace and key separators and would TRUNCATE
+such a string. **Probed against this app's own i18n instance:
+`t('Night: Jakarta')` and `t('The dock, after hours.')` both come back whole**,
+because neither prefix names a loaded namespace. The ban would have made a
+description unable to end in a full stop, to prevent a truncation that does not
+happen. Only the one prefix that genuinely resolves — this app's single loaded
+namespace — is refused, and by name rather than by banning a character class.
+
+⚠️ **THE KPI LABEL — `FLOOR-IN-PROSE-01` WEARING A NOUN INSTEAD OF A NUMBER.**
+`'System roles'` labelled a tile counting `views.length`. It restated a property
+of the population the derivation never guaranteed, and it would have read
+"System roles: 9" over a list containing one that is not. Now `'Roles'`; the KIND
+is on every row and in the split beneath.
+
+`rolesHolding()` needed NO change — it iterates `Object.keys(SYSTEM_ROLES)`, so a
+custom role can never be named as a handoff owner. That is right for the same
+reason `admin` is excluded: **finance OWNS `invoice:pay`; a copy of finance can
+also do it**, and "Awaiting Finance / Jakarta Night Shift" would name a session's
+contents as a process owner.
+
+---
+
+### 66g · ⚠️ THE CALL-SITE PIN, AND IT PAID FOR ITSELF ON ITS FIRST RUN
+
+`atomsFor` (system vocabulary) and `atomsForSeat` (system + this session's
+grants) **differ silently and in the reassuring direction**: a seat resolved
+through the narrow one is told it holds fewer permissions than the dispatcher
+will grant it, or is refused every act with nothing to say the role existed.
+
+So `businessRoles.test.ts` now DERIVES every `atomsFor` call site from source and
+holds a bilateral allowlist with a reason per row. **On its first run it named
+`IdentityPanel.tsx` — `atomsFor(held)`, where `held` is the SEAT's roles. The
+panel whose entire job is stating a seat's reach, under-reporting that reach.**
+Nothing else could have found it: the count was derived, correct-looking and
+wrong.
+
+⚠️ **AND THE INSTRUMENT'S FIRST VERSION MADE A FALSE ACCUSATION — RULE 2, ON THE
+FILE IT HAD JUST REPAIRED.** After the fix it still named `IdentityPanel.tsx`,
+because the repair NOTE quotes the defect while the code says `atomsForSeat`. **A
+matcher that reads prose condemns the fix for describing the defect.** Comments
+are stripped before matching, and `atomsForSeat(` is masked because it shares the
+prefix. Both halves are probed: a known caller present, a known non-caller
+absent, and the three seat surfaces asserted to use the composing resolver — so
+the guard cannot pass in a tree where nothing resolves a seat at all.
+
+---
+
+### 66h · THE COMPLIANCE GATE — THE FIRST ROLE-GATED SURFACE, AND THE SHAPE WAS TAKEN
+
+Derived before building, over `pages-v2` + `components` + `pages` for
+`availabilityOf|atomsFor|personaCan|capabilitiesFor|isSystemRole|businessRoles`
+(known-good `BuyerInvoices` present, known-bad `BuyerOrders` absent): **SIX
+files, of which only `BuyerInvoices` + `invoiceActionModel` read a seat's roles
+to decide what renders — and per affordance, never per page. Not one `<Route>` in
+`AppRouter.tsx` carries a guard element.** No route in this platform gates on
+anything, persona included.
+
+**THE AFFORDANCE IS GATED, NEVER THE ROUTE.** A route guard was refused twice
+over: it would render A GAP where the standing ruling requires THE WAIT, and it
+would hide the catalogue, which §65 ruled must stay readable by anyone — reading
+which roles exist is not editing one. A seat without `role:grant` gets
+`HandoffNotice` reading **"Awaiting Compliance"** (`data-handoff="withheld"`)
+beside a line saying why procurement cannot hold it, with all nine rows still
+listed beneath. Browser-verified in ID: *"Menunggu Kepatuhan"*.
+
+---
+
+### 66i · THE MUTATION PROBES
+
+Eight, each confirmed **changed on disk** (sha before → after → restored) before
+its result was believed, and each kill confirmed BY TEST NAME:
+
+| mutant | result |
+|---|---|
+| N1 the derivation drops custom roles | **KILLED** |
+| N2 `side` derived by membership instead of from the parent | **KILLED** |
+| N3 the tenancy arm removed from the atom predicate | **KILLED** |
+| N4 `role:grant` moved out of `compliance` | **KILLED** |
+| N5 `resolveRoles` reverts to the system-only `atomsFor` | **KILLED** |
+| N6 `retainedFromParent` returns nothing (D1's exception deleted) | **KILLED** |
+| N7 the compliance gate always renders the affordance | **KILLED** |
+| N8 the marker reverts to "cannot be created yet" | **KILLED** |
+
+---
+
+### 66j · BROWSER QA — BUILT BUNDLE, BOTH LOCALES, THE FULL ROUND TRIP
+
+- **Before:** 8 rows, tile `PERAN 8 · 6 pembeli · 1 pemasok · 1 lintas-tenansi`.
+- **The form:** 32 offerable atoms for a `receiving` child, **zero of them
+  supplier-side**; the attribution line states the grant is recorded against
+  nobody nameable BEFORE the act rather than after it.
+- **After:** 9 rows; the new row reads `jakarta-night-shift · Jakarta Night Shift
+  · Dermaga, setelah jam kerja. · Peran khusus · 4 modul · 6 izin`; tile
+  `PERAN 9 · 7 pembeli · 1 pemasok · 1 lintas-tenansi` — **the split still sums
+  to its own total**; marker count 9.
+- **The detail page** resolves it with no edit: heading *Jakarta Night Shift*,
+  badge *Peran khusus*, `6 izin · 17 tindakan · 16 di layar`, the parent's five
+  atoms plus `invoice:dispute`, four modules.
+- **The gate:** narrowing the seat in the identity panel (6 peran · 37 izin → 5
+  peran · 31 izin) replaces the panel with *"Menunggu Kepatuhan"* and leaves all
+  nine rows readable.
+- **A refusal renders the dispatcher's own words:** `Refused:
+  POLICY_REJECTED:role_grant_governed:'finance' is already a system role`.
+- **The reload:** 9 → 8, the custom role gone, `localStorage` still exactly
+  `paragon.lang` + `paragon.identity`. The narrowed SEAT survived, correctly —
+  that is a preference; the role definition is not.
+
+⚠️ **ONE ROUGH EDGE, LEFT AS IT IS AND REPORTED:** the refusal toast shows the
+raw `POLICY_REJECTED:<hook>:` prefix. Mapping refusal codes to friendlier copy
+would be a second vocabulary beside the dispatcher's, which is the thing C10 §3.3
+refuses; the actionable half of the sentence is already there and correct.
+
+---
+
+### 66k · WHAT IS DELIBERATELY NOT IN THIS BATCH
+
+**ASSIGNING a custom role to a seat.** The identity panel offers the six system
+roles and no custom one, and that is scope, not oversight: assignment is a second
+act with a second store interaction, and it has a defect waiting for it that this
+batch would otherwise have created. `rolesFromStorage` (`identitySources.ts`)
+filters stored roles through `isSystemRole(r)` and **falls back to the persona's
+FULL set when nothing survives** — so a seat narrowed to a custom role would be
+silently re-granted every atom on its side at the next reload. Not a lost
+narrowing: an INVERTED one, in the widening direction. That line is the first
+thing the assignment batch must fix.
+
+Also absent, and named rather than implied: **narrowing** (a separate deliberate
+act, per the ruling), **revoking** a grant (an append-only ledger has no update
+path by design), and any surface for the retained-atom set (66b).

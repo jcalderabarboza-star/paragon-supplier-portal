@@ -769,3 +769,50 @@ export function usePurchaseRequisitionCreate() {
     },
   });
 }
+
+// ── DUPLICATE-AND-NARROW — the privilege grant ──────────────────────────────
+//
+// ⚠️ **`entityId` IS THE PARENT SYSTEM ROLE, AND THERE IS NO `parent` PAYLOAD
+// FIELD.** The entity commanded IS the role being copied, so the two cannot
+// disagree — enforcement's `checkId` discipline, applied to a role.
+//
+// ⚠️ **`grantedBy` COMES FROM THE SESSION, NEVER FROM THE FORM (C10 §6.2).**
+// It is `identity.actor` — today always `UNATTRIBUTED: NO_PERSON_IN_SESSION`,
+// which is a CLAIM the platform is entitled to make, not a placeholder. A form
+// field for it would let a caller name whoever it liked as the granter of a
+// privilege, which is the payload-refusal C10 §6.2 exists to state.
+//
+// There is NO `invalidateProcurement` here: a role definition is not procurement
+// data and no query reads it. The catalogue re-derives from the store directly,
+// which is why the page bumps a version rather than awaiting a refetch.
+export interface RoleGrantVars {
+  /** The system role being copied — the command's entityId. */
+  parent: string;
+  roleId: string;
+  displayName: string;
+  description: string;
+  adds: readonly string[];
+}
+
+/** Grant a custom role: copy one system role and add to it (`t_role_grant`). */
+export function useRoleGrant() {
+  const svc = useDataService();
+  const scope = useScope();
+  const { identity } = useCurrentIdentity();
+
+  return useMutation<CommandResult, Error, RoleGrantVars>({
+    mutationFn: ({ parent, roleId, displayName, description, adds }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_role_grant',
+        entity: 'role',
+        entityId: parent,
+        payload: {
+          roleId,
+          displayName,
+          description,
+          adds: [...adds],
+          grantedBy: identity.actor,
+        },
+      }),
+  });
+}

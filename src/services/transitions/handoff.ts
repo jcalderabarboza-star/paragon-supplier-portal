@@ -38,7 +38,8 @@
 
 import type { TransitionDef, TransitionRole } from './schema';
 import type { SystemRoleId, BusinessRoleId } from './businessRoles';
-import { atomsFor, rolesHolding } from './businessRoles';
+import { rolesHolding } from './businessRoles';
+import { atomsForSeat } from './customRoles';
 
 /**
  * WHETHER THIS SEAT MAY FIRE A VERB, AND IF NOT, WHOSE IT IS.
@@ -64,7 +65,11 @@ export function availabilityOfAtom(
   atom: TransitionRole,
   seatRoles: readonly BusinessRoleId[],
 ): VerbAvailability {
-  if (atomsFor(seatRoles).includes(atom)) return { kind: 'held' };
+  // `atomsForSeat`, not `atomsFor`: a seat may hold a granted custom role, and
+  // resolving it through the system-only function would report every one of its
+  // atoms as WITHHELD — the handoff naming an owner for an act the seat can
+  // actually take, which is worse than a missing button.
+  if (atomsForSeat(seatRoles).includes(atom)) return { kind: 'held' };
   const owners = rolesHolding(atom);
   return owners.length > 0 ? { kind: 'withheld', owners } : { kind: 'unowned' };
 }

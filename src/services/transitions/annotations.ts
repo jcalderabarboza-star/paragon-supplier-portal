@@ -252,6 +252,7 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
 
   // ── enforcement ────────────────────────────────────────────────────────────
   t_enforcement_set: { purposeKey: 'processFlows.purpose.t_enforcement_set' },
+  t_role_grant: { purposeKey: 'processFlows.purpose.t_role_grant' },
 });
 
 /**
@@ -281,6 +282,7 @@ export const ENTITY_PURPOSE: FlowAnnotations = Object.freeze({
   inventoryDeclaration: { purposeKey: 'processFlows.purpose.entity.inventoryDeclaration' },
   incomingShipment: { purposeKey: 'processFlows.purpose.entity.incomingShipment' },
   enforcement: { purposeKey: 'processFlows.purpose.entity.enforcement' },
+  role: { purposeKey: 'processFlows.purpose.entity.role' },
 });
 
 /**

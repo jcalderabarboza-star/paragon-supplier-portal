@@ -60,6 +60,24 @@ Direct pushes to `main` are not used.
 > Nothing persists a custom role — no store, no target — so duplicate-and-narrow
 > is a store, a verb and a merge rule, not a page feature.
 >
+> **CUSTOM ROLES EXIST, FOR THE SESSION (§66).** A custom role is
+> `{ parent, adds }` — a PARENT REFERENCE resolved at read, never a snapshot of
+> atoms, because a snapshot silently keeps yesterday's truth the moment the
+> parent gains one. It is granted by `t_role_grant` (`flows/role.flow.ts`),
+> which follows `t_enforcement_set` verb for verb: single state `Defined`,
+> `statePreserving`, append-only ledger, CommandTarget, policy hook, and
+> `entityId` IS the parent `SystemRoleId`. **`role:grant` is a `compliance`
+> atom** — whoever can edit roles can grant themselves any verb, so procurement
+> cannot hold it. **A CUSTOM ROLE MAY NOT SPAN TENANCIES**, refused at the verb
+> by name, per atom. The store (`services/transitions/customRoles.ts`) is
+> module-scope and **does not survive a reload**, and the catalogue marker says
+> so with the reason: a privilege grant nobody can be named for should not
+> outlive the act. **Every SEAT resolves through `atomsForSeat`, never
+> `atomsFor`** — the call sites are derived from source and allowlisted
+> bilaterally in `businessRoles.test.ts`. **ASSIGNING a custom role to a seat is
+> NOT built** (§66k): `rolesFromStorage` would silently re-widen such a seat to
+> its whole persona on reload, and that line is the assignment batch's first fix.
+>
 > ⚠️ **`ROUTE-SMOKE-GUARD-IS-SELF-REFERENTIAL-01` (§65a).** `allRoutes.smoke`'s
 > coverage guard asserted its OWN table's length against a hardcoded number and
 > never read `AppRouter` — it could not detect the defect its comment named, and
