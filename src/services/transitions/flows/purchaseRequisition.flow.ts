@@ -12,6 +12,7 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { FlowDefinition } from '../schema';
+import { POLICY_HOOKS } from '../policyHooks';
 
 export const purchaseRequisitionFlow: FlowDefinition = {
   entity: 'purchaseRequisition',
@@ -69,14 +70,24 @@ export const purchaseRequisitionFlow: FlowDefinition = {
       to: 'Rejected',
       trigger: 'user',
       requiredRole: 'pr:reject',
-      // ⚠️ NO REASON IS REQUIRED, and PF-1a did not change that
-      // (`PF1A-PR-REJECT-HAS-NO-REASON-01`, OPEN). It is the OTHER half of "a
-      // rejected requisition teaches the requester nothing" — the revise edge
-      // below fixes the recourse, not the explanation. Adding a required field
-      // to a shipped verb is a contract change with its own blast radius and it
-      // was not ruled, so it is reported rather than smuggled in beside this.
-      requiredFields: [],
-      policyHooks: [],
+      // ⚠️ **`PF1A-PR-REJECT-HAS-NO-REASON-01` IS CLOSED HERE, AND IT IS A
+      // CONTRACT CHANGE TAKEN DELIBERATELY.** PF-1a reported it rather than
+      // smuggling it in, on the ground that adding a required field to a shipped
+      // verb has its own blast radius and had not been ruled. It has now been
+      // ruled (§67): a rejection a requester cannot understand is the dispute
+      // lane's defect one lane over, and the revise edge below repairs the
+      // RECOURSE while leaving the EXPLANATION missing.
+      //
+      // ⚠️ **TWO GUARDS, NOT ONE, AND THE SECOND IS WHAT MAKES THE FIRST MEAN
+      // ANYTHING.** `requiredFields` runs `isEmpty`, and `isEmpty('   ')` is
+      // FALSE — so is `isEmpty(0)` and `isEmpty(false)`. Presence alone admits
+      // the space bar, a number and an object. `PR_REJECT_REASON_AUTHORED` is
+      // the `RR_DISPUTE_TEXT_AUTHORED` guard applied here verbatim: it proves a
+      // NON-BLANK STRING. Neither can prove the text is true or responsive — no
+      // value-level guard can, exactly as the qty floor cannot tell 2400 from
+      // 2.4 — and that limit is stated rather than papered over.
+      requiredFields: ['rejectionReason'],
+      policyHooks: [POLICY_HOOKS.PR_REJECT_REASON_AUTHORED],
       surfaceable: { surfaced: true },
       version: 1,
     },

@@ -16723,3 +16723,236 @@ batch-a`, not on main**, because every symbol it imports — `SYSTEM_ROLES`,
 `atomsFor`, `handoff.ts`, `CurrentIdentity.businessRoles` — exists only there.
 **#248 must merge before this one.**
 
+## §67 — THE APPROVAL SURFACE. The verbs were never unbuilt; the connection was — and the batch's own dispatch inverted twice on measurement
+
+**Branch:** `feat/pr-approval-surface`, off `main` @ `1a7cb3d`. Floor 3245/236 → **3275/238**.
+Deliberately NOT stacked on `feat/custom-roles-grant` (#251): every symbol this
+batch imports — `availabilityOfAtom`, `HandoffNotice`, `SYSTEM_ROLES`,
+`PERSONA_SYSTEM_ROLES` — is already on main. Stacking would have coupled an
+approval lane to an unmerged roles PR for nothing.
+
+---
+
+### 67a — ⚠️ THE FINDING THE OPERATOR ASKED TO BE FILED IS FALSE, AND THIS IS WHAT WAS FILED INSTEAD
+
+The dispatch ruled, twice and at full weight:
+
+> *"t_pr_submit DOES NOT EXIST. A requisition ARRIVES ALREADY Submitted, AND
+> THERE IS NO REQUESTER ACT IN THE MACHINE AT ALL — so nothing separates
+> requester from approver BECAUSE THE VERB THAT WOULD CREATE THE DISTINCTION WAS
+> NEVER AUTHORED. File that at full weight."*
+
+**Measured at the registration site, four ways, all green on the commit that
+received the ruling:**
+
+- `surfaceable.test.ts` derives its census from `getKnownFlows().flatMap(...)`
+  and asserts `expect(census).toContain('t_pr_submit')`. A census over the
+  REGISTERED catalog cannot contain an unregistered verb.
+- `businessRoles.test.ts` asserts every bundle atom ∈ `catalogRoles()`
+  bilaterally; `requisitioner` names `pr:submit`.
+- `looseEndRepairCommands.test.ts:305-314` DISPATCHES it through the real
+  service and asserts the store lands at `'Pending Approval'`.
+- **C7 — the ratified contract invoked to retire creation — documents it
+  itself**, `C7-pr-intake.md:132`: `t_pr_submit (:40-48) | Draft → Pending
+  Approval | user | pr:submit`.
+
+And `t_pr_create` is `∅ → Draft` (C7 :131), so **"arrives already Submitted" is
+false in the same breath**: the intake lands one state short of the queue.
+
+**THE MACHINE HAS TWO SIDES AND BOTH ARE AUTHORED.** `requisitioner`
+(`pr:create` · `pr:submit` · `pr:revise`) is a separate seeded bundle from
+`procurement` (`pr:approve` · `pr:reject`), split deliberately, with the reason
+written in `businessRoles.ts`: *"Raising and revising a requisition — split from
+approving one, which is the segregation `pr:approve` living in `procurement`
+expresses."*
+
+**THE TRUE SHAPE, which is the one now pinned by test:** the segregation is
+absent from the **SEAT** and from the **SURFACE**, not from the machine.
+`PERSONA_SYSTEM_ROLES.buyer` holds every buyer lane bundle, set at three sites
+(`Login.tsx:40`, `SidebarV2.tsx:183`, `identitySources.ts:38`), so one buyer
+session holds both sides and nothing stops a seat approving what it raised. That
+is fixable by narrowing a default. The dictated version would not have been:
+authoring a verb that already exists cannot be done, and the batch would have
+had nowhere to go.
+
+> ⚠️ **AND THE RULING'S OTHER HALF WAS RIGHT AND IS KEPT.** *"Authoring it would
+> put a second creation path beside a ratified C7 seam"* — correct, and it is
+> why no submit affordance ships here. The **conclusion survives its premise**,
+> which is `§64a`'s shape exactly (a misdescribed mechanism attached to a correct
+> conclusion), and it is why the ruling was executed rather than returned.
+
+### 67b — ⚠️ `rejectionReason` DID NOT EXIST. THE MATCH WAS IN ANOTHER LANE.
+
+> *"THE REJECT REASON WAS SETTLED BY THE TREE BEFORE I ASKED: rejectionReason
+> ALREADY EXISTS, IS REQUIRED, AND t_pr_reject WRITES IT TODAY. Nineteenth;
+> record it lightly, it cost nothing."*
+
+`grep -rn rejectionReason` over the whole repo returns `GRInspectionWizard.tsx`,
+`mockGoodsReceipts.ts` and `goodsReceipt.ts` i18n — **the GR line-inspection
+field, and nothing else.** Zero occurrences in any purchase-requisition file. On
+the flow itself, `t_pr_reject` carried `requiredFields: []` and a comment naming
+`PF1A-PR-REJECT-HAS-NO-REASON-01` as OPEN.
+
+**This is `§42` in its purest form: a scan matched a call site in a DIFFERENT
+LANE and it was read as a registration in this one.** It is the nineteenth
+inverted premise only if it is counted as the *twentieth and twenty-first* —
+`t_pr_submit` inverted in the same dispatch — and it did NOT cost nothing: it
+was a ruling to build a capture for a field that did not exist, which would have
+shipped a required-looking box whose value evaporated at `applyTransition`.
+
+**So the field was BUILT, not found**, and the register should read that way.
+
+### 67c — THE CONTRACT CHANGE, TAKEN DELIBERATELY, AND ITS PREDICTED BLAST RADIUS ARRIVED ON SCHEDULE
+
+`PF1A-PR-REJECT-HAS-NO-REASON-01` is **CLOSED**. Four parts, and the second is
+what makes the first mean anything:
+
+1. `rejectionReason?: string` on `PurchaseRequisition` — optional on the DTO,
+   required on the VERB. A Draft has no rejection to explain, so a non-optional
+   field would force every intake row to carry an empty string that reads like
+   an answer.
+2. `requiredFields: ['rejectionReason']` **plus** `PR_REJECT_REASON_AUTHORED`.
+   The dispatcher's rule 5 is `isEmpty`, and **`isEmpty('   ')` is FALSE** — so
+   is `isEmpty(0)`. Presence alone admits the space bar, and **a required field
+   that admits the space bar is a suggestion with a validation message.** The
+   hook is the `RR_DISPUTE_TEXT_AUTHORED` guard, second instance, deliberately
+   not shared (the two verbs read different payload fields; a shared hook would
+   have to branch on `toState`, which is the fragility that hook's own header
+   warns about).
+3. **The value is PERSISTED** — `applyTransition` writes it onto the document.
+   ⚠️ **This is the half the invoice lane never built**: there a required
+   `disputeReason` reaches `applyTransition` and is dropped on the floor
+   (`MockCommandService.ts:703` says so in its own comment). A required field
+   whose value evaporates is a validation message, not a record.
+4. The surface disables its commit until the box is non-empty. The disable is
+   the courtesy; the hook is the guarantee for anything that never renders.
+
+**THE BLAST RADIUS PF-1a PREDICTED LANDED EXACTLY WHERE IT SAID.** Three PF-1a
+specs rejected with no payload; a bare reject now fails `MISSING_FIELDS`, the PR
+never reaches `Rejected`, and the revise edge under test refuses as
+`ILLEGAL_TRANSITION` instead. The setup act now supplies what the verb asks for
+and **the assertions are unchanged** — the revise ruling did not move. PF-1a was
+right to report rather than smuggle, and right that it needed a ruling first.
+
+### 67d — ⚠️ A FOURTH FALSE AFFORDANCE, FOUND BY A TEST, IN A STRING RATHER THAN A HANDLER
+
+The investigation censused THREE toasting affordances. A fourth existed and no
+sweep in this arc had seen it, because **it was not a handler defect — it was a
+LABEL.** The New-PR panel's commit read **"Submit for approval"** and dispatches
+`t_pr_create`, which mints a **Draft** and never reaches the approval queue. The
+label named `t_pr_submit`; the verb was `t_pr_create`.
+
+It surfaced only because a new spec asserted `queryByText('Submit for
+approval')` was absent and failed against a button in a different panel.
+
+> ⚠️ **AND THE ASSERTION THAT FOUND IT WAS ITSELF THE §42 ERROR.** A text sweep
+> matched a LABEL; the claim ("the retired affordance is gone") needed a SITE.
+> The fix was to key on the detail panel's own testids. **The instrument was
+> wrong in the same way the thing it found was wrong** — and it still found it,
+> which is the argument for asserting absence at all.
+
+Retired to **"Create requisition" / "Buat permintaan"**. Six selectors in
+`BuyerRequisitions.test.tsx` moved with the label; the assertions they guard are
+unchanged.
+
+**And the three original retirements are stated precisely, because the flat
+accusation would have been wrong:** their COPY was already honest ("PO creation
+not available yet — nothing was created"). What lied was the **SHAPE** — a live
+button in the commit slot, labelled with the verb, firing a **green success
+toast** to report that nothing happened. A reader decides from the affordance,
+not from the notification they get after pressing it, and an honest sentence
+delivered in a success variant reads as confirmation.
+
+### 67e — THE CEILING IS UNIFORM, NOT SPECIFIC — RULED, AND THE MECHANISM VERIFIED
+
+Operator ruling, and it holds on measurement:
+
+> `overrideCompletes(override)` is literally `return isAttributed(override.overriddenBy);`
+> (`lib/enforcement.ts:778`). The enforcement override **STRUCTURALLY CANNOT
+> COMPLETE** without a resolved actor. **Approval carries no such predicate**, so
+> it records `UNATTRIBUTED` like every other governed act and proceeds.
+
+**C10's ledger-plus-policy ruling is what makes that true**, and this is the
+entry worth keeping: §4.1 refused a state-per-approver machine, so the person
+never entered the machine, so there is no structural place for a person to be
+required. The doctrine that was argued on alphabet-size and clock-triggers turns
+out to have bought identity-independence as a side effect.
+
+`t_pr_approve` fits §4's shape exactly — one edge, no approver-named states, no
+threshold in the machine, `trigger: 'user'`, and **`policyHooks: []`**, the
+socket §4 point 3 names, still empty and now the obvious seat for threshold
+bands.
+
+**The surface states it before the act** (§66 precedent, verbatim): a seat that
+can decide reads *"the decision is recorded as unattributed"* first. A seat that
+cannot decide is not told — the notice belongs to the act, not to the page.
+
+⚠️ **WHAT REMAINS UNTRUE AND IS NOT FIXED HERE:** the DR-10 event records
+`actor: 'buyer:all'` and `TransitionEvent` has **no attribution field at all**
+(C10 §6.4 requires it gain one before the sink is durable; not built). So the
+notice is honest and the LEDGER is not yet — the record says `buyer:all`, which
+does not read as an honest absence. Filed, not closed.
+
+### 67f — WHAT SHIPPED
+
+`useRequisitionApprove` / `useRequisitionReject` — the whole missing
+connection. Approve and reject reachable in `BuyerRequisitions`' existing detail
+panel, gated on `availabilityOfAtom('pr:approve' | 'pr:reject', seat)`; a seat
+without the atom reads **"Awaiting Procurement"** via `HandoffNotice`, derived
+from `rolesHolding` and never authored as a status→owner map. **BuyerRequisitions
+is the second `HandoffNotice` importer**, taking this lane out of §64j's
+exposure list.
+
+⚠️ **THE SELECTED ROW IS NOW DERIVED FROM THE LIST, NOT HELD AS A SNAPSHOT.** A
+held snapshot would keep rendering `Pending Approval` with its Approve button
+intact over a document already Approved — an affordance for an act the
+dispatcher would refuse as `ILLEGAL_TRANSITION`. The panel is a view of the
+store, not a copy of it.
+
+**Approved states its terminality**, because `t_pr_source` / `t_pr_convert` are
+`unauthored-cascade` census rows and an approved requisition that looks like it
+is going somewhere is the false-affordance class. **Draft states why nothing
+here submits it** — C7's seam, not ours.
+
+**Five mutation probes, each killing a named test** (formatting stripped before
+parsing, §51f; every probe asserted the file changed on disk, and restore moved
+into a `finally` after the first run threw between mutate and restore):
+requiredFields dropped → 1 · policy hook neutered → 2 · persistence removed → 3 ·
+`canReject` forced true → 1 · role gate bypassed → 2.
+
+Browser QA on the built bundle, **EN and ID**, cache-busted after the first run
+served a stale hash (`index-BnKQ21Fs` while dist held `index-CtxWr4UL` — the
+result would have been a lie). End-to-end: whitespace stays disabled, a real
+reason enables, dispatch lands `Rejected`, the reason reads back on the
+document. ID renders the reason capture, the attribution note, the terminality
+and draft statements with no overflow.
+
+### 67g — RETIRED, AGAINST THE DISPATCH *AND* AGAINST THE RECALIBRATION
+
+> **"Procurement's own entry point has no page"** is retired. The intake is
+> built, ratified in C7, and dispatches: `t_pr_create` is reachable from THREE
+> surfaces (`BuyerRequisitions` New-PR, `IntakeReview` accept-push, `PlanGrid`
+> `IntakeAdjustDrawer`). The architectural recalibration that ranked this arc
+> second carried the same premise and is corrected with it.
+
+**The gap was approval, and beneath it something narrower:** the entry point
+worked and the exit did not exist. Until this batch, every requisition the
+platform created was created into a dead end — `t_pr_create` lands at `Draft`,
+the only edge out is `t_pr_submit`, and no shipped code called it. That is still
+true of Draft; what changed is that the queue now empties.
+
+### 67h — OPEN, AND STATED
+
+- **`approver` is rendered and no verb writes it.** `create` sets `''`,
+  `applyTransition` touches only `status`, and the panel displays fixture prose
+  (`'VP Procurement'`, `'Section Head'`). Worse now than before the batch, since
+  a real approval leaves it untouched. Not ruled; not fixed.
+- **The threshold ladder still lives in that fixture prose** — 210M → VP, 105/79/67M
+  → Head, 43M → Section Head. Nothing anywhere reads `estimatedValue` for a
+  comparison. `FLOOR-IN-PROSE-01` wearing an approval policy's clothes, and the
+  empty `policyHooks: []` on `t_pr_approve` is where it belongs.
+- **`revisionNote` is still dropped on the floor** — required by `t_pr_revise`,
+  enforced, and persisted nowhere. The same defect this batch closed for
+  `rejectionReason`, one edge over.
+- **The default buyer seat still holds both sides of the segregation.** Pinned
+  by test so the day it narrows, something notices.

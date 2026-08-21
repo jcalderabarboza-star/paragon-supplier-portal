@@ -610,8 +610,27 @@ const purchaseRequisitionTarget: CommandTarget = {
   readState: (id) => purchaseRequisitionStore.get(id)?.status ?? null,
   readScopeOwner: () => null,
   readEntity: (id) => purchaseRequisitionStore.get(id) ?? null,
-  applyTransition: (id, toState) => {
-    purchaseRequisitionStore.update(id, (pr) => ({ ...pr, status: toState as PRStatus }));
+  applyTransition: (id, toState, payload) => {
+    purchaseRequisitionStore.update(id, (pr) => ({
+      ...pr,
+      status: toState as PRStatus,
+      // ⚠️ §67 — THE REJECTION REASON IS PERSISTED, AND THIS IS THE HALF THE
+      // INVOICE LANE NEVER BUILT. There, a required `disputeReason` reaches
+      // `applyTransition` and is dropped on the floor (`:703`); here the text
+      // the verb refused to proceed without is written onto the document the
+      // requester reads. A required field whose value evaporates is a
+      // validation message, not a record.
+      //
+      // Proven a non-blank string by `PR_REJECT_REASON_AUTHORED` before this
+      // runs, so no re-check and no fallback: a fallback here would be the
+      // guard admitting it does not trust itself.
+      //
+      // NOT cleared on any other edge — `t_pr_revise` carries the PR back to
+      // Draft and the reason stays, because "why this came back" is precisely
+      // what a requester needs while revising. Only a fresh rejection replaces
+      // it.
+      ...(toState === 'Rejected' ? { rejectionReason: String(payload.rejectionReason) } : {}),
+    }));
   },
   creationOwner: () => null,
   create: (payload, toState) => {

@@ -734,6 +734,20 @@ export interface PurchaseRequisition {
   priority: PRPriority;
   justification: string;
   source?: PrSource;
+  /**
+   * Why the requisition was rejected — written by `t_pr_reject` and by nothing
+   * else. Absent until a rejection happens; it is NOT cleared by `t_pr_revise`,
+   * because "why this came back" is the one thing a requester needs while they
+   * are revising it, and clearing it on the way to Draft would delete the
+   * explanation at exactly the moment it becomes useful.
+   *
+   * ⚠️ OPTIONAL ON THE DTO, REQUIRED ON THE VERB — and the split is deliberate.
+   * A `Draft` PR has no rejection to explain, so a non-optional field would
+   * force every intake-created row to carry an empty string that reads like an
+   * answer. The REQUIREMENT lives where the act is (`requiredFields` +
+   * `PR_REJECT_REASON_AUTHORED`), which is the only place it can be enforced.
+   */
+  rejectionReason?: string;
 }
 
 // ─── PR-intake line (C7 §2 — one shape, two producers) ──────────────────────
