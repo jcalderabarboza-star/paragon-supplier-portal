@@ -16,7 +16,7 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.flow.createPr.label': 'Create PR',
   'requisitions.flow.createPr.sub': 'Requestor',
   'requisitions.flow.approval.label': 'Approval',
-  'requisitions.flow.approval.sub': 'Section Head / VP',
+  'requisitions.flow.approval.sub': 'Procurement decides',
   'requisitions.flow.sourceCheck.label': 'Source Check',
   'requisitions.flow.sourceCheck.sub': 'PIR or OA?',
   'requisitions.flow.createPo.label': 'Create PO',
@@ -125,6 +125,10 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.panel.field.requestor': 'Requestor',
   'requisitions.panel.field.costCenter': 'Cost center',
   'requisitions.panel.field.approvalLevel': 'Routes to',
+  // §69 — the band SAYS it is authored, because it looks computed and is not.
+  'requisitions.panel.approvalLevel.authored':
+    'Authored on the document — not derived from the estimated value.',
+  'requisitions.panel.approvalLevel.unassigned': 'Not assigned',
   'requisitions.panel.field.approvedBy': 'Approved by',
   'requisitions.panel.field.status': 'Status',
   'requisitions.panel.source.title': 'Source of supply',
@@ -195,7 +199,13 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.new.step3.title': 'Business justification',
   'requisitions.new.step3.desc': 'Why is this needed?',
   'requisitions.new.placeholder.justification': 'Business reason…',
-  'requisitions.new.info': 'After submission this PR routes to Section Head. If a PIR or Outline Agreement exists, a PO is created directly. Otherwise, a Sourcing Event is initiated.',
+  // ⚠️ §69 — WAS 'After submission this PR routes to Section Head.' That named
+  //   ONE rung of a three-rung authored vocabulary, named it unconditionally,
+  //   and named it on the form whose verb writes `approvalLevel: ''` — so the
+  //   promise was refuted by the fixture (pr-003 carries 'VP Procurement') AND
+  //   by the create path in the same sentence. Procurement IS derivable-true:
+  //   `pr:approve` lives in exactly one bundle (`businessRoles.ts`).
+  'requisitions.new.info': 'After submission this PR goes to Procurement for a decision. If a PIR or Outline Agreement exists, a PO is created directly. Otherwise, a Sourcing Event is initiated.',
 };
 
 export const requisitionsId: Record<string, string> = {
@@ -207,7 +217,7 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.flow.createPr.label': 'Buat PR',
   'requisitions.flow.createPr.sub': 'Pemohon',
   'requisitions.flow.approval.label': 'Persetujuan',
-  'requisitions.flow.approval.sub': 'Kepala Seksi / VP',
+  'requisitions.flow.approval.sub': 'Diputuskan Pengadaan',
   'requisitions.flow.sourceCheck.label': 'Cek Sumber',
   'requisitions.flow.sourceCheck.sub': 'PIR atau OA?',
   'requisitions.flow.createPo.label': 'Buat PO',
@@ -314,6 +324,9 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.panel.field.requestor': 'Pemohon',
   'requisitions.panel.field.costCenter': 'Pusat biaya',
   'requisitions.panel.field.approvalLevel': 'Diarahkan ke',
+  'requisitions.panel.approvalLevel.authored':
+    'Ditulis pada dokumen — bukan hasil perhitungan dari nilai estimasi.',
+  'requisitions.panel.approvalLevel.unassigned': 'Belum ditetapkan',
   'requisitions.panel.field.approvedBy': 'Disetujui oleh',
   'requisitions.panel.field.status': 'Status',
   'requisitions.panel.source.title': 'Sumber pasokan',
@@ -372,5 +385,5 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.new.step3.title': 'Justifikasi bisnis',
   'requisitions.new.step3.desc': 'Mengapa ini dibutuhkan?',
   'requisitions.new.placeholder.justification': 'Alasan bisnis…',
-  'requisitions.new.info': 'Setelah pengajuan, PR ini diarahkan ke Kepala Seksi. Jika PIR atau Outline Agreement tersedia, PO dibuat langsung. Jika tidak, Acara Sourcing dimulai.',
+  'requisitions.new.info': 'Setelah pengajuan, PR ini diteruskan ke tim Pengadaan untuk diputuskan. Jika PIR atau Outline Agreement tersedia, PO dibuat langsung. Jika tidak, Acara Sourcing dimulai.',
 };

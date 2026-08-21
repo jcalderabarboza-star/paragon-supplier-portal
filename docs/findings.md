@@ -17214,3 +17214,276 @@ that requires checking the instrument.
 - `disputeReason` on the invoice lane is still dropped at `applyTransition` —
   the third instance of the chain-terminating-in-nothing shape, and the only one
   left.
+
+---
+
+## §69 — THE THRESHOLD LADDER: MEASURED UNBUILDABLE, AND THE DISPLAY STOPS IMPLYING OTHERWISE
+
+**Dispatch:** item 4 of Arc 2's open list. Investigate first, report before building. The
+operator ruled **option C** on the report: *fix the display, file the rest* — and the filing is
+the batch's real output.
+
+**Shipped:** the band SAYS it is authored. Nothing else about approval changed.
+
+---
+
+### 69a · WHAT THE BAND IS
+
+`PurchaseRequisition.approvalLevel` carries `'Section Head'` · `'Procurement Head'` ×3 ·
+`'VP Procurement'` on six fixture rows whose `estimatedValue` rises with them — 43M → Section
+Head, 67M/79M/105M → Procurement Head, 210M → VP Procurement. **It reads as a computed band.**
+
+Derived, not assumed:
+
+- **Zero** relational or arithmetic uses of `estimatedValue` exist anywhere in the tree. All 40
+  occurrences are a `formatIDR` render, a parse, a copy into a payload, or an `=== undefined`
+  presence check for rendering. It is a number nothing has ever done arithmetic on.
+- **No threshold number exists** in `src/` or `docs/`. The only occurrences of "threshold bands"
+  are C10 §3.4/§3.5/§5.4 and two files quoting them.
+- The six rows constrain only **≤43M**, **[67M, 105M]** and **≥210M**. The intervals **(43, 67)**
+  and **(105, 210)** are unassigned by any evidence in the tree.
+
+---
+
+### 69b · ⚠️ BOTH READINGS OF "WHAT A BAND DECIDES" ARE UNBUILDABLE, ON TWO INDEPENDENT GROUNDS
+
+Not *deferred* — **measured unbuildable**, and either ground alone is sufficient, so closing one
+does not unblock it.
+
+| Reading | What it needs | State |
+|---|---|---|
+| **WHO MAY APPROVE** | seniority roles | **Do not exist, and C10 §3.4 forbids minting them.** The eight shipped roles are LANES (`procurement`, `finance`, …), not altitudes. §3.4: *"approval authority comes from the policy ledger's THRESHOLD BANDS, never from a role that says 'can approve anything' … without minting a new role per band."* `businessRoles.ts:103` already cites this clause as the reason `pr:approve` lives in `procurement` |
+| **HOW MANY APPROVALS** | `ApprovalPolicyAct` × `ApprovalAct` | **C10 §3.5 explicitly defers both.** Nothing can count to two |
+
+**A THRESHOLD LADDER TODAY WOULD BE A POLICY OVER NOTHING.** A threshold is a comparison, and
+this platform has built one side of it. The left-hand side (`estimatedValue`) is readable. The
+right-hand side is empty in every direction:
+
+- `scope.actor` — always `UNATTRIBUTED: NO_PERSON_IN_SESSION`. No person, so no limit.
+- `scope.businessRoles` — lane roles. `pr:approve` lives in **exactly one** bundle, so **every
+  seat that can approve at all can approve everything**.
+- prior approvals on the document — no ledger.
+- the requirement itself — no ledger.
+
+The only comparison expressible today is `estimatedValue` against **a constant written in code**,
+which is **C10 §4.1's second cost committed deliberately**: *"'Above 500 million IDR now needs a
+fourth approver' is an operational decision made on a Tuesday."* §4.1 refuses that shape for the
+STATE machine; putting it in a hook is the same defect one layer down, wearing the mechanism §4
+recommends.
+
+---
+
+### 69c · ⚠️ THE HOOK CAN REACH THE DOCUMENT — AND THE CONTRARY WAS THE RULING'S STATED GROUND
+
+The dispatch stopped the batch on *"THE HOOK CANNOT SEE THE DOCUMENT. PolicyHook RECEIVES
+(payload, ctx) WHERE ctx IS { actorRoles } … A THRESHOLD HOOK WOULD HAVE TO READ THE STORE FROM
+INSIDE A POLICY CHECK, WHICH NOTHING IN THE TREE DOES."* Measured, all three clauses invert:
+
+- **`actorRoles` does not exist.** `grep -rn "actorRoles" src/ gate/` → nothing.
+- **`PolicyHookFn` takes ONE argument**, not `(payload, ctx)`:
+  `(ctx: { entityId, currentState, toState, payload, target, scope }) => PolicyDecision`.
+- **`CommandTarget.readEntity(entityId)` is documented *"Full entity for policy hooks to
+  inspect"***, the PR target implements it (`MockCommandService.ts:612`), and **four shipped
+  hooks already read a document through it** — a `PurchaseOrder` (`policies.ts:64`), a
+  `GoodsReceipt` (`:87`), an `Invoice` (`:104`), the enforcement ledger (`:263`).
+- **No policy imports a store.** `policies.ts`'s import list contains none; the document arrives
+  through the dispatcher-injected adapter, which is *why* "read the store from inside a policy
+  check" is not what a threshold hook would do.
+
+**THE RULING SURVIVES; ITS STATED GROUND DOES NOT.** Option C is right and §69b is what makes it
+right. And the distinction is not pedantry: **filing "the hook cannot reach the document" would
+have put a FALSE BLOCKER in front of every value-based policy this platform ever wants** — the
+seam is green, has four working consumers, and would have been rebuilt by somebody who believed
+the register.
+
+⚠️ **`ENF-EVENT-ACTOR-IS-A-PERSONA-01` HAS A SIBLING SHAPE HERE, AND IT IS THE §64a ONE:** a
+**misdescribed mechanism attached to a correct conclusion**. The conclusion (*the bands are not
+where the work is*) was right. The mechanism named to support it was wrong, and a mechanism is
+what the next batch builds on. **Grep the artifact; keep the property.**
+
+**`actorRoles` joins the register** of identifiers named as existing code and measured absent:
+`getInvoiceAction` · the FX-page `<span lang="en">` (§45) · `SurfaceExpectation` (§51) ·
+`blockingReasons` (§63b) · `roleMatches` · `buyer:planner` · `t_asn_confirm` · `t_asn_dispatch`
+(§64a). **THE LIST IS THE COUNT.**
+
+---
+
+### 69d · ⚠️ IS THERE A THIRD READING — ONE THAT NEEDS NEITHER PERSONS NOR A LEDGER?
+
+The operator asked directly: *"if a band could gate on a ROLE rather than a person, say so;
+roles exist and eight of them shipped this week."*
+
+**YES — one exists, it is buildable today with zero new objects, and IT ANSWERS A DIFFERENT
+QUESTION THAN THE ONE THE FIXTURE ASKS.**
+
+**The shape.** A policy hook on `t_pr_approve` reading `ctx.target.readEntity()` for the value
+and `ctx.scope.businessRoles` for the lane, refusing when the value exceeds X and the session
+lacks the required lane. Both halves are already on the ctx (§69c). It needs **no person** — a
+lane is not a person — and **no ledger** — it is one approval whose *required role varies by
+value*, not a quorum. That is genuinely more than `requiredRole` can express, because
+`requiredRole` is a static field on the edge and cannot vary by document.
+
+**Why it is not the ladder, stated plainly rather than sold:**
+
+1. **It discriminates LANES; the fixture's rungs are ALTITUDES.** Section Head, Procurement Head
+   and VP Procurement are *the same lane at three heights*. A lane gate can express *"above
+   500M, Finance must also be satisfied"*; it cannot express *"above 500M, a more senior member
+   of Procurement."* The bands ask the second question.
+2. **Only one shipped bundle holds `pr:approve`**, so today it has nothing to discriminate
+   between. Making it real means moving or adding the atom to a second bundle — cheap and legal
+   (C10 §3.4: bundles are DATA), but it is a governance decision, not a wiring task.
+3. **The threshold number still has to live somewhere**, and in a hook it is code — 69b's cost
+   again. Unless it comes from an `ApprovalPolicyAct`, which is ground 2 returning.
+
+**So: a role-gated value policy is buildable and a role-gated APPROVAL LADDER is not.** Worth
+recording because it is the one value-based policy shape this platform could enforce today, and
+because the next seat will otherwise re-derive it.
+
+---
+
+### 69e · THE DISPLAY FIX, AND WHY *AUTHORED* RATHER THAN *DERIVED*
+
+The operator gave two options and asked for an argument. **Chosen: state plainly that it is
+authored.** Four reasons, in order of weight:
+
+1. **A derivation would have to INVENT its boundaries.** The data constrains three intervals and
+   leaves two gaps (§69a). Any rule picking 50M or 150M is picking a number no evidence in the
+   tree supports — **a computed-LOOKING band with invented numbers is a worse half-truth than an
+   authored one honestly labelled**, because the first claims a provenance it does not have.
+2. **It would make the numbers CODE.** C10 §4.1 cost 2, taken deliberately, in the batch whose
+   finding is that §4.1 forbids exactly this.
+3. **It would MINT a false affordance in the batch that removes one.** `t_pr_create` writes
+   `approvalLevel: ''`. Derive, and every created PR instantly acquires a routing destination
+   that routes nowhere — because no policy consumes it. §68 removed one such promise; this would
+   add it back, computed.
+4. **The honest label is cheaper to RETIRE.** When an `ApprovalPolicyAct` lands, the label flips
+   to derived and the note comes out. A derivation would have to be un-invented first.
+
+**What shipped:**
+
+- **The panel says so.** `pr-approval-level-provenance` renders *"Authored on the document — not
+  derived from the estimated value."* beneath the value, **on every row including the unassigned
+  one** — the claim is about the FIELD's provenance, and a note appearing only beside a populated
+  band would read as a caveat on that band.
+- **"Not assigned" has ONE representation.** `pr-005` stored a literal `'—'` and the renderer
+  fell back to `'—'`, so *no band assigned*, *field empty* and *nothing to show* were **one
+  character**. After §68 wrote `''` on every creation, the collision became the common case
+  rather than a fixture quirk. The fixture now stores `''` and the surface renders *"Not
+  assigned"*.
+- **⚠️ TWO MORE STATEMENTS OF THE LADDER, BOTH WRONG, BOTH RETIRED.** The investigation derived
+  the band vocabulary from its registration sites rather than from the field, which found what a
+  field-scan could not:
+  - `requisitions.flow.approval.sub` read **'Section Head / VP'** — two rungs of a three-rung
+    vocabulary, omitting `Procurement Head`, **the most populous** (3 of 6 rows). Now
+    *'Procurement decides'*, which is derivable-true: `pr:approve` lives in exactly one bundle.
+  - `requisitions.new.info` read **'After submission this PR routes to Section Head'** — one
+    rung, **unconditional**, on the form whose verb writes `approvalLevel: ''`. It was refuted by
+    the fixture (`pr-003` carries `'VP Procurement'`) **and** by the create path, in the same
+    sentence.
+
+⚠️ **THE SECOND ONE IS A FALSE AFFORDANCE IN COPY, AND IT IS A FORWARD PROMISE — A SHAPE THE
+REGISTER DID NOT YET HAVE.** `label-names-wrong-verb` has catalogued a mislabelled button, a
+mislabelled DTO field and a mislabelled toast. This is none of those: it is a **promise about
+what will happen next**, made by a form, and nothing that runs afterwards keeps it. A
+handler-based census cannot see it, a label census cannot see it, and the DTO census cannot see
+it — it is only visible by asking *what does the verb this form dispatches actually write?*
+
+---
+
+### 69f · THE GATE — `approvalBandAuthored.guard.test.ts`
+
+The honest label is only honest while it is TRUE, and **no type can defend it**: the field is
+`string`, and a derived string is a string.
+
+**Two matchers, and the first is the one the claim requires (§42).** *"Is the band derived?"* is
+a question about the **WRITE** site. A scan finding `estimatedValue` being read has found a
+call; only an assignment to `approvalLevel` can make the band computed.
+
+1. **Write site (primary).** Every `approvalLevel:` assignment must have a **quoted string
+   literal** on the right. A call, a variable, a ternary or a template literal all mean something
+   decided it. The DTO's own `approvalLevel: string;` is the one allowlisted non-literal, and the
+   allowlist is **bilateral** — asserted still present, so it cannot rot into a vacuous exemption
+   (§68 deleted one of those from the stored-field gate).
+2. **Read site (secondary, weaker, and labelled so).** No relational or arithmetic use of
+   `estimatedValue`. `===`/`!==` are NOT threshold shapes and `=>` is excluded explicitly — rule
+   2: a widened matcher manufactures false accusations exactly as readily as a narrow one hides
+   truths. It cannot see a staged derivation, and the failure message says which assertion to
+   trust.
+
+**Rule 4 — both matchers probed in BOTH directions on the same instrument**, plus a non-empty
+population assertion by MEMBERSHIP (`EMPTY-INPUT-REPORTS-CLEAN-01`), plus an assertion that
+`'Section Head'` is actually among the found writes — without which both zero-offender assertions
+could pass over a tree that had renamed the field away.
+
+**Mutation-probed, 8 probes, zero survivors, each kill confirmed BY NAME** (§51f: a counter that
+under-reports kills sounds like modesty and gets believed).
+
+⚠️ **AND PROBE 1 FIRED §50e ON THE FIRST RUN.** Replacing the fixture band with
+`bandFor(43_000_000)` made the module fail to load, so the whole suite died — a kill, but **not
+the write-site gate's kill**, and a counter watching `Tests N failed` would have credited the
+gate for a compile error. Re-probed with `String('Section Head')`, which compiles: the write-site
+assertion killed by name, suite loaded. **A probe that breaks the program has not tested the
+guard; it has tested the compiler.**
+
+---
+
+### 69g · WHAT WAS MEASURED AND NOT BUILT (items 5–7 remain open)
+
+- **The VP rung has no reachable document.** `pr-003` (210M, `'VP Procurement'`) sits in
+  `Sourcing Event`; its sole outbound edge is `t_pr_convert`, `trigger: 'cascade'`, with **no
+  cascade link authored**. Nothing returns it to `Draft` or `Pending Approval`. **The single
+  highest-value requisition in the tree can never be approved by anything, and it already carries
+  an approval band.** The top rung is reachable only through the intake lane (four PLANNED lines
+  at 534M / 990M / 256M / 81M, which do carry `estimatedValue`).
+- **⚠️ EVERY PR A PERSON CAN CREATE HAS `estimatedValue: 0`.** `t_pr_create.requiredFields` is
+  `['material', 'quantity']`, `create` defaults through `num()` → **0**, and the New-PR form
+  sends no budget field at all (confirmed by rendering — there is no budget input on the form).
+  **Zero is a legal number in the lowest band, so the failure direction is toward FEWER
+  approvals** — the wrong direction for a threshold ladder, and silent because a rendered `Rp 0`
+  looks like an answer.
+
+  **The sibling lane already ruled this exact defect and fixed it.** `rfqCreateModel` (2e-b-4a,
+  a CORRECTED spec): *"The title called the `|| 0` honest; it was the defect. A budget of Rp 0 is
+  a STATEMENT, and the buyer made none."* The RFQ path omits the key for an absence and carries a
+  typed zero through, both directions pinned. **The PR create path never got that repair** —
+  `num()` mints exactly the fabricated zero that ruling forbade, on a DTO where the field is
+  non-optional so omission is not even available without a type change. **Registered, not fixed:
+  it is items 5–7 territory and was not swept in.**
+- **`estimatedValue` is IDR by ASSUMPTION, and C7 registers the assumption rather than settling
+  it.** C7 §2.3 — *"Undeclared assumptions the code relies on (conformance-critical) … None of
+  these is declared anywhere in the type, the fixture, or the prior contract"* — lists
+  **`estimatedValue` is IDR** as its FIRST row, risk *"a non-IDR emitter is silently
+  mis-rendered"*, and the field table flags it `⚠️ IDR assumed, nowhere declared`. `PurchaseRequisition`
+  has no currency field while `PurchaseOrder`, `Invoice`, `BuyerInvoice` and `CatalogItem` all
+  do. **No currency field was added** — correctly, per the ruling — but the seam is OPEN in C7
+  and named against SOMO, not settled.
+
+---
+
+### 69h · THE DERIVATION LESSON, AND IT IS ABOUT THE *FIELD* VS THE *VOCABULARY*
+
+The operator's own correction: *"the fixture strings AND `approvalLevel` ARE THE SAME FIELD, ONE
+SOURCE."* Correct — and it is exactly why the two i18n statements were invisible until the
+population was derived from **registration sites of the band VOCABULARY** rather than from the
+FIELD.
+
+**A field census finds one source. A vocabulary census finds three, and two of them were wrong.**
+Neither i18n string touches `approvalLevel`; both state the ladder; both disagreed with the
+fixture and with each other. This is `CENSUS-MUST-DERIVE-01` in the shape §42 named — *the scan
+matched a call site, the derivation matched a registration site* — with **the field standing in
+for the call site**. Ask what the CLAIM requires, not where the DATA lives.
+
+---
+
+### 69i · GATES
+
+Four green. **3337 tests / 243 files / 7 gate** (from 3321/241/7); `scripts/floor.json` bumped.
+Browser QA on the freshly built bundle, both locales, cache-bust verified twice — the hash the
+preview served and the hash in the live DOM both match the build output (`index-DvGB5pnQ.js`).
+EN: *Routes to / Section Head* + the provenance line; *Not assigned* on the 84M Draft; flow strip
+*Procurement decides*. ID: *Diarahkan ke* / *Belum ditetapkan* / *Ditulis pada dokumen …* /
+*Diputuskan Pengadaan*.
+
+⚠️ **THE 43M ROW SAYS "Section Head" AND THE 84M ROW SAYS "Not assigned", ON ONE SCREEN.** The
+ladder refutes itself in the rendered list, and the provenance line is what explains why rather
+than leaving a reader to invent a rule.
