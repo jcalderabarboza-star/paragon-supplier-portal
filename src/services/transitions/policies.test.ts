@@ -45,6 +45,9 @@ const run = (confirmedQuantities: unknown) =>
     toState: 'Confirmed',
     payload: { confirmedQuantities },
     target,
+    // §68 — the hook context gained `scope` (the session's actor seam);
+    // this hook reads neither, so a bare buyer scope is the honest stand-in.
+    scope: { personaType: 'buyer', supplierId: null },
   });
 
 describe('poConfirmQtyWithinOrdered — the law the 2f-c parse gate is built in front of', () => {

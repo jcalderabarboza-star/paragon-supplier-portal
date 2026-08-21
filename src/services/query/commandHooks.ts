@@ -832,3 +832,69 @@ export function useRequisitionReject() {
     },
   });
 }
+
+// ── §68 · THE REQUESTER'S SIDE — submit / revise ────────────────────────────
+//
+// ⚠️ **THESE TWO ARE WHY THE APPROVAL QUEUE CAN FILL AT ALL.** §67 made
+// approve/reject reachable, but `t_pr_create` lands a requisition at `Draft`,
+// `t_pr_submit` is the only edge out of `Draft`, and nothing dispatched it —
+// so the queue emptied and nothing filled it, and the approval surface had only
+// ever acted on a seeded fixture. Both verbs were authored, registered and
+// dispatchable since F0.4 with zero call sites; the connection was the gap,
+// exactly as it was for approve/reject one batch ago.
+//
+// `t_pr_submit` IS NOT A CREATION VERB. It acts on a document that already
+// exists, so surfacing it adds no second producer beside the ratified C7 seam.
+
+/** Send a Draft requisition to the approval queue (`pr:submit`). */
+export function useRequisitionSubmit() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { prId: string }>({
+    mutationFn: ({ prId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_pr_submit',
+        entity: 'purchaseRequisition',
+        entityId: prId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Return a rejected requisition to Draft, WITH THE NOTE THE VERB REQUIRES
+ * (`pr:revise`).
+ *
+ * `revisionNote` is non-optional in this signature for the same reason
+ * `rejectionReason` is on `useRequisitionReject`: the type carries the
+ * requirement to the call site, so the only way to reach the dispatcher's
+ * refusal is to pass something blank — which `PR_REVISION_NOTE_AUTHORED` then
+ * refuses by name.
+ *
+ * A DISTINCT ATOM from submit (`pr:revise`), because revising a declined
+ * requisition and drafting a new one are different acts; and the two-step
+ * (revise → Draft → submit) IS the revision — nothing reaches an approver again
+ * without somebody deliberately re-submitting it.
+ */
+export function useRequisitionRevise() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { prId: string; revisionNote: string }>({
+    mutationFn: ({ prId, revisionNote }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_pr_revise',
+        entity: 'purchaseRequisition',
+        entityId: prId,
+        payload: { revisionNote },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}

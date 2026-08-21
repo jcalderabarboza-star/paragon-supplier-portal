@@ -728,7 +728,25 @@ export interface PurchaseRequisition {
   costCenter: string;
   status: PRStatus;
   createdDate: string;
-  approver: string;
+  /**
+   * ⚠️ **RENAMED FROM `approver` AT §68, AND THE OLD NAME WAS THE DEFECT.**
+   * Nothing ever wrote it: `create` sets `''`, `applyTransition` touched only
+   * `status`, and the fixture's values are ROLE BANDS — `'VP Procurement'`,
+   * `'Procurement Head'`, `'Section Head'` — that correlate with
+   * `estimatedValue` and are populated on **`Draft` and `Pending Approval` rows
+   * nobody has approved** (`pr-004` is `Pending Approval` and carries
+   * `'Section Head'`; `pr-005` is `Draft` and carries `'—'`). A field
+   * populated before the act it names cannot be a record of that act.
+   *
+   * So it is the DESTINATION the value routes to, not the person who decided —
+   * the same class as a button whose label names a verb it does not dispatch,
+   * one layer down in a DTO. Who actually decided is `approvedBy`, below.
+   *
+   * The band→level rule itself is NOT modelled: nothing reads `estimatedValue`
+   * to derive this, and `t_pr_approve`'s `policyHooks` is where it would live
+   * (open, deliberately out of §68's scope).
+   */
+  approvalLevel: string;
   sourceOfSupply: string;
   linkedDoc: string;
   priority: PRPriority;
@@ -748,6 +766,39 @@ export interface PurchaseRequisition {
    * `PR_REJECT_REASON_AUTHORED`), which is the only place it can be enforced.
    */
   rejectionReason?: string;
+  /**
+   * What changed, written by `t_pr_revise` and by nothing else.
+   *
+   * ⚠️ **THE FIELD DID NOT EXIST UNTIL §68, WHILE THE VERB HAD REQUIRED IT
+   * SINCE PF-1a.** `requiredFields: ['revisionNote']` refused the dispatch
+   * without it and `applyTransition` then dropped the text on the floor — a
+   * FULL ENFORCEMENT CHAIN TERMINATING IN NOTHING, and sharper than the
+   * `rejectionReason` case one edge over, because there was no field to
+   * disappoint. Same repair, same four parts: optional on the DTO, required on
+   * the verb, non-blank by policy hook, and PERSISTED.
+   *
+   * Optional for the same reason `rejectionReason` is: a requisition that has
+   * never been revised has no note, and a non-optional field would force every
+   * intake-created row to carry an empty string that reads like an answer.
+   */
+  revisionNote?: string;
+  /**
+   * ⚠️ **WHO APPROVED IT — the field `approver` was never able to be.**
+   * Written by `t_pr_approve` from the SESSION (`QueryScope.actor`), never from
+   * the payload: C10 §6.2 half one, *"a caller that could set it could backdate
+   * its own audit entry"*, which applies with more force to WHO than to WHEN.
+   * That is why `t_pr_approve` gained a policy hook and NOT a required payload
+   * field — a payload field would have been a second instance of `setBy`'s
+   * attribution-by-assertion, the very seam §6 exists to close.
+   *
+   * Today it is ALWAYS `UNATTRIBUTED: NO_PERSON_IN_SESSION`, because nothing in
+   * shipped code constructs a `RESOLVED` actor (§2.3) and
+   * `PR_APPROVAL_ATTRIBUTED` refuses one supplied by a caller. **That is an
+   * honest absence and it is the point** — it names a failure somebody can go
+   * and fix, where the old surface named 'Procurement Head' and nobody could
+   * tell it had not happened.
+   */
+  approvedBy?: import('../../lib/enforcement').ActorAttribution;
 }
 
 // ─── PR-intake line (C7 §2 — one shape, two producers) ──────────────────────

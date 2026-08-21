@@ -216,6 +216,25 @@ export const POLICY_HOOKS = {
    * reach that bar — `isEmpty('   ')` is false.
    */
   PR_REJECT_REASON_AUTHORED: 'pr_reject_reason_authored',
+
+  /**
+   * §68 — the revision note is SUBSTANCE, not presence. The exact twin of
+   * `PR_REJECT_REASON_AUTHORED` one edge over, and a THIRD deliberate instance
+   * of the same two-line guard rather than a shared "non-blank text" hook: the
+   * three read different payload fields, and a shared hook would have to branch
+   * on `toState` to know which — a conditional inside a guard, so that reading
+   * the guard no longer tells you what it guards.
+   */
+  PR_REVISION_NOTE_AUTHORED: 'pr_revision_note_authored',
+
+  /**
+   * §68 — an approval NAMES ITS DECIDER, from the session and never from the
+   * payload (C10 §6.2). Two obligations in one hook because they are two halves
+   * of one rule: the session must carry an actor, and a caller must not be able
+   * to supply one. The second half is §6.2's *"REFUSED BY NAME ON WRITE"*,
+   * which had no implementation anywhere in the tree before this.
+   */
+  PR_APPROVAL_ATTRIBUTED: 'pr_approval_attributed',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);
