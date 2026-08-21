@@ -17487,3 +17487,196 @@ EN: *Routes to / Section Head* + the provenance line; *Not assigned* on the 84M 
 ⚠️ **THE 43M ROW SAYS "Section Head" AND THE 84M ROW SAYS "Not assigned", ON ONE SCREEN.** The
 ladder refutes itself in the rendered list, and the provenance line is what explains why rather
 than leaving a reader to invent a rule.
+
+---
+
+## §70 — TWO FILINGS GIVEN HANDLES, AND THE ONE MODULE THAT SET ITS OWN WIDTH
+
+**Dispatch:** both filings ruled in (§69's closing note), plus the Roles width. One PR.
+
+---
+
+### 70a · `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` — the filing rule, as a rule
+
+§69c recorded that refusing to file *"the hook cannot reach the document"* was right **in that
+instance**. The general form, filed here and mirrored into the derivation doctrine beside §64a:
+
+> ⚠️ **A FINDING WHOSE MECHANISM IS FALSE MUST NOT BE FILED, EVEN WHEN ITS CONCLUSION IS RIGHT.**
+> **THE REGISTER IS WHAT THE NEXT BATCH BUILDS ON, AND A FALSE BLOCKER COSTS MORE THAN THE BATCH
+> IT STOPPED.**
+
+**Why it is a rule and not an instance.** §64a already names the shape — *a misdescribed
+mechanism attached to a correct conclusion* — and stops at detection: *grep the artifact, keep
+the property*. It says nothing about what to do with the finding afterwards, and the default is
+to file it, because the conclusion survived and filing is what this project does with survivors.
+**That default is wrong, and it is wrong asymmetrically:**
+
+- A finding filed with a **correct** mechanism costs one batch to act on.
+- A finding filed with a **false** mechanism costs every batch that reads it, because it names a
+  seam as broken that is not, and the natural response to "X cannot do Y" is to build a Y-shaped
+  replacement for X. **Nobody re-measures a blocker; a blocker is why you stopped.**
+
+At §69 the finding was *"the policy hook cannot reach the document"*. Filed, it would have sat in
+front of **every value-based policy this platform will ever want** — thresholds, category rules,
+plant rules, value-varying role requirements — while `readEntity` was documented for exactly that
+purpose and four shipped hooks were already using it. The conclusion it was attached to (*the
+bands are not where the work is*) was **right**, which is precisely what would have carried it
+past review.
+
+**The disposal:** re-measure, then file the TRUE finding. §69's true finding was the opposite
+shape and sharper — the hook reaches the document fine; **what is missing is the right-hand side
+of the comparison, not the left.** One is a dead end; the other names what to build.
+
+**What this does NOT license.** It is not "suppress findings you cannot fully verify." An
+UNVERIFIED mechanism is filed WITH its uncertainty stated. A mechanism MEASURED FALSE is not
+filed at all. The distinction is whether the measurement was taken.
+
+---
+
+### 70b · `FORWARD-PROMISE-HAS-NO-HANDLER-01` — the fifth home gets an ID
+
+Every other member of the false-affordance family has a handle; this one had prose in two places
+and none. The class:
+
+> ⚠️ **A FORWARD PROMISE — copy that names a destination, an outcome or a next step, ATTACHED TO
+> NO VERB, NO BUTTON, NO TOAST AND NO FIELD. NO AFFORDANCE CENSUS THIS PROJECT RUNS CAN SEE IT BY
+> CONSTRUCTION, BECAUSE EVERY ONE OF THEM KEYS ON A HANDLER.**
+
+**Instance (§69):** the New-PR form's info panel read *"After submission this PR routes to Section
+Head."* `t_pr_create` writes `approvalLevel: ''`, and the fixture's own `pr-003` carries
+`'VP Procurement'` — so the sentence was refuted by the create path AND by the data, in one line.
+
+**Where it sits in the family.** The other four homes each attach to something a census can walk:
+
+| Home | Attaches to | Census that could see it |
+|---|---|---|
+| the handler (does nothing) | `onClick` | handler census |
+| the shape (looks like a commit, isn't) | a button | affordance census |
+| the label (names the wrong verb) | a button + its `transitionId` | label-vs-verb read |
+| the confirmation (reports what did not happen) | a toast + `variant` | toast census |
+| ⚠️ **the promise** | **nothing** | **none — see below** |
+
+**⚠️ WHAT A CENSUS WOULD HAVE TO KEY ON — AND THE HONEST ANSWER IS THAT THE GENERAL CLASS HAS NO
+GATE (§37's shape).** To catch it mechanically you would need three things, and the middle one
+does not exist in the tree:
+
+1. **Identify copy that asserts a future act.** Natural-language semantics. A keyword list
+   ("routes to", "will be", "after submission") is an INHERITED LIST wearing a derivation's
+   clothes — rule 1, and the thing GL-1 was filed for.
+2. **Bind the claim to the verb the surface dispatches.** ⚠️ **There is no such edge.** The
+   promise is a `<p>` in an info panel; the verb is a `mutateAsync` in a handler forty lines
+   away. Their only relationship is *same component*, which on these pages means dozens of
+   strings and several verbs. **This is the step that makes the class ungateable**, and it is
+   structural, not a tooling gap.
+3. **Decide whether the claim is true.** Half derivable (what `create()` writes is readable);
+   half not (what the sentence asserts).
+
+**A PROXY EXISTS FOR ONE SUB-CASE, IT IS MEASURED, AND IT IS NAMED AS A PROXY.** When a promise
+quotes a **governed vocabulary verbatim**, step 1 becomes derivable: take the distinct values of a
+DTO field from its fixture (`approvalLevel` → `Section Head` · `Procurement Head` ·
+`VP Procurement`) and look for them inside i18n copy strings.
+
+- **Measured noise across the whole i18n layer today: ZERO hits.**
+- **It would have fired on BOTH §69 strings** — `flow.approval.sub` (*'Section Head / VP'*) and
+  `new.info` (*'…routes to Section Head.'*).
+
+**Not built, and the reason is the reason it is a proxy, not the reason it is hard.** It has
+blind spots in *both* directions, which is rule 2's pairing: a promise phrased without the
+literal (*"routes to the section head"*, *"a PO is created directly"*) is invisible to it, and a
+page that legitimately EXPLAINS the vocabulary — a help surface listing the three bands — is
+falsely accused. **A gate that fires on legitimate explanatory copy trains people to add
+exemptions**, and an exemption list on a proxy is worse than no proxy. Its zero-noise reading
+today is also `EMPTY-INPUT-REPORTS-CLEAN-01`-adjacent: it measures zero because §69 removed both
+instances an hour earlier, so "clean" here is a fact about the repair, not about the instrument.
+
+**The instrument that DOES work is a review discipline, and it is one question:** for any surface
+that dispatches a **creation** verb, read the surrounding explanatory copy against what that
+verb's `create()` actually writes. That is what found this one.
+
+---
+
+### 70c · THE ROLES MODULE WAS THE ONLY THING IN THE PLATFORM SETTING ITS OWN WIDTH
+
+**Derived from `AppRouter`, not sampled** — route → component → the first element inside
+`AppShellV2`, with a known-good/known-bad control on the route derivation itself:
+
+- **42 mounted routes.**
+- **40 render their content DIRECTLY inside the shell with no wrapper.**
+- **2 did not, and they were both Roles** — and **they did not agree with each other.**
+
+| | container | rendered width @1920 | available |
+|---|---|---|---|
+| control (`/buyer/process-flows`) | none | **1610px** | 1610px |
+| `/buyer/roles` | `p-6 max-w-6xl` | **1152px** | 1610px |
+| `/buyer/roles/:roleId` | `p-6 max-w-4xl` | **896px** | 1610px |
+
+**It is not a missing layout component and not a wrapper that needed a width — it is a deviation
+that needed deleting.** `AppShellV2` renders `<main className="flex-1 overflow-auto bg-bg-page
+p-8">`: the shell **already owns the padding and constrains nothing**. So Roles was carrying `p-6`
+**on top of** the shell's `p-8` (double padding) *and* a max-width nothing else has. `PageHeader`
+— what the other 40 routes open with — sets no width and no padding either.
+
+The fix removes both classes from both wrapper divs; the divs survive only to carry their
+testids. **No shared component was touched, and no other surface moves.** Re-derived after:
+**42 of 42 routes now carry no container width.**
+
+⚠️ **AND `max-w-*` IS NOT BANNED — IT MOVED TO WHERE IT BELONGS.** A `max-w` on PROSE is a
+MEASURE constraint (how long a line may run) and is a different thing from a page width:
+`PageHeader`'s subtitle is `max-w-prose`, and Glossary / ProcessFlows put `max-w-4xl` on a `<p>`.
+Those are correct and untouched. The gate matches a large `max-w-*` **on a `<div>`** for exactly
+this reason.
+
+⚠️ **THE EXCLUSION IN THE GATE IS PRINCIPLED, NOT AN ALLOWLIST — AND CHECKING IT CAUGHT AN ALIAS
+THAT WOULD HAVE PRODUCED A FALSE ACCUSATION.** `/login` and `/register` render **no**
+`AppShellV2`; they are full-bleed flows owning their own chrome, and `SupplierRegistration`'s
+`max-w-3xl mx-auto` is a **centred form**, which is a legitimate width for a page with no shell
+around it. They are out of scope because they are not shell pages. **And `SupplierRegistration.tsx`
+is routed under a DIFFERENT NAME** — `SupplierRegistrationV2`, an aliased import. A first reading
+took it for an unrouted file; the router said otherwise. **A name-based exclusion would have been
+wrong about it in both directions at once** — excluded as "unrouted" for the wrong reason, and
+accused the moment somebody noticed it was routed. The gate follows the router's own imports and
+asserts the alias resolves.
+
+---
+
+### 70d · THE GATE — `src/router/pageWidth.guard.test.ts`
+
+Derives routes from the **router source** (§65a: the smoke guard that asserted its own table's
+length and never read `AppRouter` could not detect the defect its comment named). Matcher probed
+**both ways** — fires on a `<div>` container width, silent on a `<p>` measure, on `max-w-prose`,
+and on the **comment that records the removal**, which names the very classes it removed
+(`withoutProse`, and the §68 lesson that a rule stated in the file it governs is always readable
+as a violation of itself — earned again here, since the note added to `RolesCatalogue` quotes
+`p-6 max-w-6xl`).
+
+Population asserted by **membership**, never a count, including that the ALIASED import resolves —
+without which every per-file assertion would be vacuously true over an unreadable set. Bilateral
+second half: `max-w-prose` must still exist in `PageHeader`, or *"put it on the text instead"*
+becomes advice with no example left in the tree.
+
+---
+
+### 70e · GATES
+
+Four green. **3342 tests / 244 files / 7 gate** (from 3337/243/7); `scripts/floor.json` bumped.
+
+Browser QA on the rebuilt bundle, **both locales, both Roles surfaces**. Before/after measured on
+the same instrument at the same viewport (1920):
+
+| | before | after |
+|---|---|---|
+| `/buyer/roles` container | 1152px | **1610px** |
+| `/buyer/roles/:roleId` container | 896px | **1616px** |
+| control (`/buyer/process-flows`) | 1610px | 1610px (unchanged) |
+
+**The control is what proves the delta is the change and not the measurement.** The 1610/1616
+spread across readings is the vertical scrollbar, not a layout difference. No page scrolls
+horizontally in either locale; the catalogue table already sits in its own `overflow-x-auto` card
+with `w-full`, so narrow widths were unaffected by removing the cap.
+
+⚠️ **AND THE STALE-HASH TRAP FIRED, IN THE ONE PLACE THE HABIT SAYS TO CHECK.** After the
+rebuild the preview server served `index-DMyKU0SE.js` and the running page was still
+`index-DvGB5pnQ.js` — a cached `index.html`. **The server response and the live DOM disagreed**,
+and reading only the server would have shown a fresh hash over a stale render, i.e. the fix
+reported as FAILED. The hash is now asserted from `document.querySelectorAll('script[src]')`
+inside the page on every reading, not from `curl`.
