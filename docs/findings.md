@@ -16966,6 +16966,12 @@ its result was believed, and each kill confirmed BY TEST NAME:
 | N6 `retainedFromParent` returns nothing (D1's exception deleted) | **KILLED** |
 | N7 the compliance gate always renders the affordance | **KILLED** |
 | N8 the marker reverts to "cannot be created yet" | **KILLED** |
+| N9 a corrupt store reports as an empty one | **KILLED** |
+| N10 stored rows are not re-validated on read | **KILLED** |
+| N11 a grant is not written to storage | **KILLED** |
+| N12 the gate states why but not how | **KILLED** |
+| N13 the point-of-creation line drops where it persists | **KILLED** |
+| N14 a stored row may shadow a system role | **KILLED** |
 
 ---
 
@@ -17013,3 +17019,123 @@ thing the assignment batch must fix.
 Also absent, and named rather than implied: **narrowing** (a separate deliberate
 act, per the ruling), **revoking** a grant (an append-only ledger has no update
 path by design), and any surface for the retained-atom set (66b).
+
+---
+
+### 66l · ⚠️ THE SESSION-SCOPE RULING WAS SUPERSEDED MID-BATCH — CUSTOM ROLES PERSIST
+
+The operator reversed D2 while the batch was in flight. The reason is the demo's
+rather than the architecture's, and it is worth recording in the operator's own
+words because it is a general principle this project had not yet written down:
+
+> A REVIEWER WILL CREATE A ROLE, REFRESH, AND SEE IT GONE — AND THAT READS AS
+> BROKEN EVEN WHEN THE PAGE SAID IT WOULD HAPPEN. **An honest statement does not
+> repair an experience that looks like a defect.**
+
+That is a real limit on this project's central habit. Honest marking answers
+*"is this true?"*; it does not answer *"does this work?"* — and a reviewer
+answers the second question first. The two are not substitutes.
+
+**IT IS NOT A SECOND SOURCE OF TRUTH, BECAUSE THERE IS NO FIRST ONE.** No backend
+holds a role and `SYSTEM_ROLES` is a frozen constant. Only custom roles are
+written; the seeded roles are never stored and never read from storage, so there
+is nothing for a stored row to disagree with.
+
+**AND DURABILITY DID NOT ANSWER ATTRIBUTION.** §66d recorded that a grant is
+recorded against `UNATTRIBUTED: NO_PERSON_IN_SESSION` and that session scope was
+what paid for accepting an anonymous grant. That payment is now gone, and the
+honest position is narrower than before: **a durable, anonymous privilege grant
+is what ships, and the page says so at the point of creation rather than only in
+its header.** The `isAttributed` guard's landing site is unchanged
+(`policies.ts`), and the case for it is stronger, not weaker.
+
+---
+
+### 66m · THE READ IS THE INTERESTING HALF — FOUR GUARANTEES, EACH WITH ITS OWN FAILURE
+
+1. **SYSTEM ROLES ARE NEVER WRITTEN.** The store holds only custom definitions,
+   and a stored row claiming a system id is refused **on read** by name. Refusing
+   at the point of effect rather than the point of write is deliberate: the
+   caller this guard is for is somebody editing the JSON by hand, and that caller
+   never passes through the write path. Browser-verified — a hand-planted
+   `finance` row leaves the real `finance` badged **System role** and names the
+   intruder in a notice.
+
+2. **THE READ FAILS HONESTLY, AND THAT IS TWO FACTS, NOT ONE.**
+   `EMPTY-INPUT-REPORTS-CLEAN-01` is a storage read's exact shape: a parse
+   failure that returns an empty list is indistinguishable from an empty store,
+   **and the empty list is the reading that gets believed.** `readState()`
+   reports `unreadable` separately from `roles: []`, and the catalogue renders
+   *"Saved roles could not be read"* rather than a silently ordinary page. Absent
+   storage, disabled storage, bad JSON, a wrong envelope version and a
+   non-array `roles` are all covered, and none of them throws.
+
+3. **THE TENANCY GATE STILL LIVES AT THE VERB.** Every row is re-validated on
+   read through **the same functions `role_grant_governed` calls** — not a second
+   copy that agrees until the day it does not. A hand-edited cross-tenancy row is
+   refused with the same words the verb would have used: *"'po:confirm' is a
+   supplier-side permission and 'receiving' is buyer-side — a custom role may not
+   span tenancies."* Persistence changes where a role is kept, not who may grant
+   one.
+
+4. ⚠️ **AN UNSEEDED REGISTRY MUST NOT READ AS A CORRUPT STORE.** Validation needs
+   the atom catalog, which is empty until the shipped flows self-register.
+   Validating against an empty catalog would refuse EVERY row and look exactly
+   like corruption — **a mass rejection produced by the instrument rather than by
+   the data**, which is §42b wearing a storage read's clothes. An empty catalog
+   SUSPENDS hydration rather than failing it, and a suspended read is never
+   latched. This is why hydration is LAZY: a store that hydrates at module load,
+   before the registry is seeded, is the empty-input bug with a different name.
+
+**ONE BAD ROW DOES NOT DISCARD THE GOOD ONES.** A store that threw everything
+away on one bad row would turn a typo into a total loss, and its notice would be
+accurate about the wrong scope.
+
+---
+
+### 66n · ⚠️ THE PROSE-CARDINALITY GATE CAUGHT THE NEW COPY, IMMEDIATELY
+
+The rewritten marker said *"the **eight** system roles are not saved anywhere."*
+`FLOOR-IN-PROSE-01`, in the marker whose own §65 gate exists to forbid exactly
+that, written by the seat that had just re-read the rule. It went red on the
+first full run and the number is gone.
+
+The lesson is not that the number was wrong — it was right. It is that **a
+cardinality is most tempting in the sentence where it reads as helpful context**,
+and the gate is what makes the temptation cost nothing.
+
+---
+
+### 66o · ⚠️ THE DISPATCH'S PREMISES, MEASURED — INCLUDING TWO IT GOT RIGHT
+
+Across the two dispatches that closed this batch, four premises inverted on
+measurement and one named an artifact that does not exist:
+
+| premise | measured |
+|---|---|
+| *"merge #255 at `7e34f30`"* | **neither exists.** Highest PR ever opened here is 251. **Refused**, per the doctrine's seat-side half. |
+| *"the compliance role holds `role:grant` and cannot reach it"* | it reaches it. `/buyer/roles` → `CreateRolePanel` → `useRoleGrant` → `t_role_grant`, all shipped. |
+| *"D5's exemption is accepted"* | none was claimed. The gate was built and shipped in the same batch. |
+| *"`compliance` cannot be assigned"* | it is in `PERSONA_SYSTEM_ROLES.buyer` and the identity panel offers it. **`admin`** is the unassignable one. |
+| *"`PersonaToggle` already reads it"* | **`PersonaToggle` does not exist in the tree.** The switcher is `IdentityPanel`. |
+
+⚠️ **AND THE LAST ONE IS THE §64a SHAPE AGAIN — A MISDESCRIBED MECHANISM
+ATTACHED TO A CORRECT CONCLUSION.** The conclusion was right and decisive:
+`useCurrentIdentity` does expose the seat's roles, a shipped component does read
+them to decide what renders, and **role-gating a surface was therefore not a
+pattern that needed inventing.** A hunt for the named consumer finds nothing and
+would have concluded the pattern was missing. **Grep the artifact; keep the
+property.**
+
+Two premises were right and load-bearing, and both corrected the seat:
+
+- **The tenancy invariant belongs on the VERB, not the roster.** *"No role spans
+  tenancies"* would have gone red on `admin` immediately. `admin` is seeded, not
+  granted, so the rule holds where acts happen and the exception exists where it
+  was ruled. That is what `copyableParentRefusal` enforces.
+- **The three tenancies are disjoint.** Measured at this batch's head: **buyer 37
+  · supplier 16 · machine-only 12**, catalog 65, `admin` 53, all disjoint, `admin`
+  holding zero machine-only atoms. The operator's 36/52 was true at `1a7cb3d` and
+  moved by exactly the one atom this batch added — `role:grant` into `compliance`.
+  **The figure was stale by the length of the batch that quoted it**, which is the
+  argument for deriving a count at read time in one line.

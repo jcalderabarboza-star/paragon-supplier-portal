@@ -220,3 +220,69 @@ describe('⚠️ THE NAME IS USER TEXT AND IS NOT TRANSLATED — identically in 
     expect(i18n.t(view.descriptionKey)).toBe('The dock, after hours.');
   });
 });
+
+describe('⚠️ A PERSISTED CUSTOM ROLE IS PICKED UP WITH NO PAGE EDIT', () => {
+  it('survives a reload and renders from storage alone', async () => {
+    await grantOne();
+    // What a reload is: the in-memory copy is dropped, storage is not.
+    customRoleStore.rehydrate();
+    expect(customRoleStore.byId(ID)).toBeDefined();
+
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    await screen.findByTestId('roles-table');
+    expect(screen.getByTestId(`role-row-${ID}`)).toBeInTheDocument();
+    expect(screen.getByTestId(`role-badge-${ID}`)).toHaveTextContent(/Custom role/i);
+    expect(screen.getByTestId('kpi-roles')).toHaveTextContent(
+      String(Object.keys(SYSTEM_ROLES).length + 1),
+    );
+    // No notice: nothing was refused and the store parsed.
+    expect(screen.queryByTestId('roles-store-notice')).not.toBeInTheDocument();
+  });
+
+  it('⚠️ AN UNREADABLE STORE SAYS SO — it does not render as "no custom roles"', async () => {
+    customRoleStore.reset();
+    window.localStorage.setItem('paragon.customRoles', '{not json');
+    customRoleStore.rehydrate();
+
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    await screen.findByTestId('roles-table');
+    // The list is the system roster — which is ALSO what an empty store shows.
+    expect(screen.queryByTestId(`role-row-${ID}`)).not.toBeInTheDocument();
+    // ...and the difference between the two is stated rather than left to be
+    // inferred from an absence. EMPTY-INPUT-REPORTS-CLEAN-01.
+    const notice = screen.getByTestId('roles-store-notice');
+    expect(notice).toHaveTextContent(/could not be read/i);
+    expect(screen.queryByTestId('roles-store-rejected')).not.toBeInTheDocument();
+  });
+
+  it('a refused stored role is NAMED on the page, with the reason', async () => {
+    customRoleStore.reset();
+    window.localStorage.setItem(
+      'paragon.customRoles',
+      JSON.stringify({
+        v: 1,
+        roles: [
+          {
+            id: ID,
+            parent: 'receiving',
+            displayName: NAME,
+            description: 'Hand-edited.',
+            adds: ['po:confirm'], // supplier-side: the tenancy rule
+            parentAtomsAtGrant: [],
+            grantedBy: NOBODY,
+            grantedAt: '2026-08-21T00:00:00.000Z',
+          },
+        ],
+      }),
+    );
+    customRoleStore.rehydrate();
+
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    await screen.findByTestId('roles-table');
+    expect(screen.queryByTestId(`role-row-${ID}`)).not.toBeInTheDocument();
+    const rejected = screen.getByTestId('roles-store-rejected');
+    expect(rejected).toHaveTextContent(ID);
+    expect(rejected).toHaveTextContent(/po:confirm/);
+    expect(rejected).toHaveTextContent(/may not span tenancies/i);
+  });
+});

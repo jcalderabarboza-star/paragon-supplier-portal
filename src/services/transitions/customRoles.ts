@@ -32,32 +32,39 @@
 // movement instead of to the child's.
 //
 // ⚠️ **THE RETAINED SET IS UNREACHABLE TODAY AND HAS NO SURFACE, DELIBERATELY.**
-// `LANE_BUNDLES` is a frozen module constant and a grant lives for one session
-// (D2), so a parent CANNOT lose an atom while a child exists — the state is
-// impossible at runtime, not merely rare. Building a notice for it would invent
+// `LANE_BUNDLES` is a frozen module constant, so a parent cannot lose an atom
+// WITHIN a session. It CAN now lose one ACROSS a deploy, because a grant
+// outlives the browser session — which is exactly the case `parentAtomsAtGrant`
+// was recorded for, and the reason it was recorded before it could ever fire. Building a notice for it would invent
 // a surface for a fact that cannot occur, which is the class this project
 // spends its time removing. The RULE is built and pinned by tests; the notice
 // becomes owed the day a grant outlives a deploy.
 //
-// ── ⚠️ SESSION-SCOPED, AND THAT IS A RULING RATHER THAN A LIMITATION (D2) ───
-// `rows` is a module-level array — the shape every store in `data/mock/stores/`
-// already has, and it does NOT survive a reload. Nothing is written to
-// `localStorage`, and the reason is not that it would be hard: **this platform
-// cannot name the person who granted a role.** `CurrentIdentity.actor` is
-// always `UNATTRIBUTED: NO_PERSON_IN_SESSION`, so every grant is recorded
-// against an explicit absence. A privilege grant nobody can be named for is
-// exactly the record that must not outlive the act, and `paragon.identity` —
-// the one durable key in the tree — holds a SEAT PREFERENCE, not a governed
-// record. The counter-precedent is on the record too: `paragon_gr_posted` was a
-// localStorage overlay for domain state and was DELETED as dishonest
-// (INV-SEED-01 → INV-GR-OVERLAY-01).
+// ── ⚠️ IT SURVIVES A RELOAD, AND THE RULING THAT SAID OTHERWISE IS SUPERSEDED
+// A custom role PERSISTS via `localStorage`. The session-scoped ruling this file
+// originally carried was reversed by the operator, on the demo's grounds rather
+// than the architecture's: *a reviewer will create a role, refresh, and see it
+// gone — and that reads as broken even when the page said it would happen.* An
+// honest statement does not repair an experience that looks like a defect.
 //
-// The page states this precisely rather than omitting it — see
-// `roles.page.readOnlyBody`.
+// The precedent is the operator's own reference platform, which states the same
+// thing on the page: role changes persist via browser storage; backend
+// integration ships post-handover. What the page must therefore say is not
+// *"this vanishes"* but WHERE it lives — local to this browser, not shared with
+// anybody, not a backend. See `roles.page.readOnlyBody`.
+//
+// The attribution problem does NOT go away and is not pretended away: a grant is
+// still recorded against `UNATTRIBUTED: NO_PERSON_IN_SESSION`, and the surface
+// still says so at the point of creation. Durability and accountability are
+// separate questions, and only one of them has been answered.
+//
+// The store's own guarantees live beside the store, below.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { TransitionRole } from './schema';
 import type { ActorAttribution } from '../../lib/enforcement';
+import { asActorAttribution } from '../../lib/enforcement';
+import { getKnownFlows } from './registry';
 import {
   SYSTEM_ROLES,
   PERSONA_SYSTEM_ROLES,
@@ -95,30 +102,286 @@ export interface CustomRoleDefinition {
   readonly grantedAt: string;
 }
 
-// ── THE SESSION STORE ───────────────────────────────────────────────────────
+// ── THE STORE — PERSISTED, AND VALIDATED ON THE WAY BACK IN ─────────────────
+//
+// ⚠️ **A CUSTOM ROLE SURVIVES A RELOAD (operator ruling, superseding the
+// session-scoped one).** The reason is the demo's rather than the
+// architecture's: *a reviewer will create a role, refresh, and see it gone — and
+// that reads as broken even when the page said it would happen.* An honest
+// statement does not repair an experience that looks like a defect.
+//
+// **THIS IS NOT A SECOND SOURCE OF TRUTH, BECAUSE THERE IS NO FIRST ONE.** No
+// backend holds a role and `SYSTEM_ROLES` is a frozen constant. The seeded roles
+// are NEVER written here and never read from here — only custom ones persist, so
+// there is nothing for a stored row to disagree with.
+//
+// ── THE FOUR THINGS THAT MUST BE TRUE, AND WHERE EACH ONE LIVES ─────────────
+//
+// 1. **SYSTEM ROLES ARE NEVER WRITTEN.** The store only ever holds custom
+//    definitions, and a stored row claiming a system id is REFUSED BY NAME on
+//    read (`grantableIdRefusal`). A write that could shadow `finance` is the
+//    shape being refused, and it is refused at the point it would take effect
+//    rather than at the point it was written — a file somebody edits by hand is
+//    exactly the caller this guard is for.
+//
+// 2. **THE READ FAILS HONESTLY.** Absent, corrupt or unparseable storage yields
+//    NO custom roles. It does not throw, and — the half that matters — it does
+//    not return a silent empty success that hides a parse failure.
+//    `EMPTY-INPUT-REPORTS-CLEAN-01` has repeated instances in this project and a
+//    storage read is precisely its shape: *"zero custom roles"* and *"the store
+//    is unreadable"* are different facts, so `readState()` reports which.
+//
+// 3. **THE TENANCY GATE STILL LIVES AT THE VERB.** Persistence changes where a
+//    role is kept, not who may grant one. Every row is re-validated on read
+//    through the SAME predicates `role_grant_governed` calls — literally the
+//    same functions, not a second copy — so a row that `t_role_grant` would have
+//    refused is refused here too, with the same words, and named rather than
+//    dropped quietly. Hand-editing the JSON is not a way around the tenancy rule.
+//
+// 4. **AN UNSEEDED REGISTRY MUST NOT READ AS A CORRUPT STORE.** Validation needs
+//    the atom catalog, which is empty until the shipped flows self-register.
+//    Validating against an empty catalog would refuse EVERY row and look exactly
+//    like corruption — a mass rejection produced by the instrument rather than by
+//    the data. So an empty catalog SUSPENDS hydration instead of failing it, and
+//    says so.
+//
+// Hydration is LAZY — on first read, never at module load — for reason 4: at
+// import time the registry may not be seeded yet, and a store that hydrates
+// before the catalog exists is the empty-input bug with a different name.
 
-const SEED: readonly CustomRoleDefinition[] = Object.freeze([]);
+/** The one key. Namespaced beside `paragon.identity`, and deliberately NOT in it:
+ *  the seat key holds a PREFERENCE; a role definition is a governed record. */
+export const CUSTOM_ROLES_KEY = 'paragon.customRoles';
 
-let rows: CustomRoleDefinition[] = [...SEED];
+/** Storage envelope. Versioned so a future shape change is a migration, not a
+ *  silent misread of an older one. */
+const STORE_VERSION = 1;
+
+/**
+ * Why a persisted row was refused, or why the whole store could not be read.
+ * A surface renders these; nothing swallows them.
+ */
+export interface CustomRoleReadState {
+  /** The rows that validated and are in force. */
+  readonly roles: readonly CustomRoleDefinition[];
+  /** Rows refused on read, each with the refusal's own words. */
+  readonly rejected: readonly { readonly id: string; readonly reason: string }[];
+  /** The store exists but could not be parsed — DISTINCT from "no store". */
+  readonly unreadable: boolean;
+  /** The catalog was empty, so validation was suspended (reason 4 above). */
+  readonly suspended: boolean;
+}
+
+const EMPTY_READ: CustomRoleReadState = Object.freeze({
+  roles: Object.freeze([]),
+  rejected: Object.freeze([]),
+  unreadable: false,
+  suspended: false,
+});
+
+let rows: CustomRoleDefinition[] = [];
+let readState: CustomRoleReadState = EMPTY_READ;
+let hydrated = false;
+
+/** The atoms any registered transition requires. Local, to avoid importing
+ *  `./roles` (which imports this module) — the cycle, not a preference. */
+function catalogAtoms(): readonly string[] {
+  const atoms = new Set<string>();
+  for (const flow of getKnownFlows()) {
+    for (const t of flow.transitions) atoms.add(t.requiredRole);
+  }
+  return [...atoms];
+}
+
+/** Is this the shape a definition has? Structural only — the RULES are below. */
+function isDefinitionShaped(v: unknown): v is CustomRoleDefinition {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.id === 'string' &&
+    typeof o.parent === 'string' &&
+    typeof o.displayName === 'string' &&
+    typeof o.description === 'string' &&
+    Array.isArray(o.adds) &&
+    o.adds.every((a) => typeof a === 'string') &&
+    Array.isArray(o.parentAtomsAtGrant) &&
+    o.parentAtomsAtGrant.every((a) => typeof a === 'string') &&
+    typeof o.grantedAt === 'string'
+  );
+  // `grantedBy` is DELIBERATELY not shape-checked here. Checking it would refuse
+  // the row as "not a role definition" — true, but named by POSITION, because a
+  // row rejected at this stage has no id anybody trusts yet. Letting it through
+  // to `asActorAttribution` gets the same refusal with the role's own name on it
+  // and the actual reason, which is what somebody fixing the store needs.
+}
+
+/**
+ * ⚠️ **THE SAME RULES THE VERB APPLIES, CALLED AS THE SAME FUNCTIONS.** Not a
+ * re-implementation: `role_grant_governed` calls exactly these, so "a row
+ * `role:grant` would have accepted" is a statement this code can actually make.
+ * A second copy of the tenancy rule would be a second vocabulary that agrees
+ * until the day it does not.
+ */
+function refusalFor(
+  def: CustomRoleDefinition,
+  catalog: readonly string[],
+  seenIds: ReadonlySet<string>,
+): string | null {
+  if (seenIds.has(def.id)) return `'${def.id}' appears twice in the store`;
+  if (isSystemRole(def.id)) return `'${def.id}' is already a system role`;
+  if (def.id === AUTOMATION_ROLE) {
+    return `'${def.id}' is the machine grant and is never assignable`;
+  }
+  if (!CUSTOM_ROLE_ID.test(def.id)) {
+    return `'${def.id}' is not a role id (lowercase letters, digits and hyphens, 2–48 characters)`;
+  }
+  const parent = copyableParentRefusal(def.parent);
+  if (parent) return parent;
+  for (const field of ['displayName', 'description'] as const) {
+    const value = def[field];
+    if (!CUSTOM_ROLE_TEXT.test(value.trim())) {
+      return `${field} must be 2-80 characters of text`;
+    }
+    if (I18N_NAMESPACE_PREFIX.test(value.trim())) {
+      return `${field} may not begin with a translation namespace`;
+    }
+  }
+  for (const atom of def.adds) {
+    const refusal = addableAtomRefusal(def.parent as SystemRoleId, atom, catalog);
+    if (refusal) return refusal;
+  }
+  return null;
+}
+
+/** Read + validate the store. Never throws; reports which failure it hit. */
+function readFromStorage(): CustomRoleReadState {
+  let raw: string | null = null;
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return EMPTY_READ;
+    raw = window.localStorage.getItem(CUSTOM_ROLES_KEY);
+  } catch {
+    // Private browsing / disabled storage. Nothing stored is a legitimate
+    // answer; an inaccessible store is not a corrupt one.
+    return EMPTY_READ;
+  }
+  if (raw === null) return EMPTY_READ;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return { ...EMPTY_READ, unreadable: true };
+  }
+  const env = parsed as { v?: unknown; roles?: unknown } | null;
+  if (!env || typeof env !== 'object' || env.v !== STORE_VERSION || !Array.isArray(env.roles)) {
+    return { ...EMPTY_READ, unreadable: true };
+  }
+
+  const catalog = catalogAtoms();
+  if (catalog.length === 0) {
+    // Reason 4. Refusing every row here would be the instrument reporting on
+    // itself, and it would look identical to a corrupt store.
+    return { ...EMPTY_READ, suspended: true };
+  }
+
+  const kept: CustomRoleDefinition[] = [];
+  const rejected: { id: string; reason: string }[] = [];
+  const seen = new Set<string>();
+  for (const [i, row] of (env.roles as readonly unknown[]).entries()) {
+    if (!isDefinitionShaped(row)) {
+      rejected.push({ id: `row ${i}`, reason: 'not a role definition' });
+      continue;
+    }
+    const actor = asActorAttribution((row as { grantedBy: unknown }).grantedBy);
+    if (!actor) {
+      rejected.push({ id: row.id, reason: 'grantedBy is not a recorded attribution' });
+      continue;
+    }
+    const refusal = refusalFor(row, catalog, seen);
+    if (refusal) {
+      rejected.push({ id: row.id, reason: refusal });
+      continue;
+    }
+    seen.add(row.id);
+    kept.push({ ...row, grantedBy: actor });
+  }
+  return { roles: kept, rejected, unreadable: false, suspended: false };
+}
+
+function hydrate(): void {
+  if (hydrated) return;
+  readState = readFromStorage();
+  // A SUSPENDED read is not a completed one — do not latch it, or a store read
+  // before the flows registered would look empty for the rest of the session.
+  if (readState.suspended) {
+    rows = [];
+    return;
+  }
+  hydrated = true;
+  rows = [...readState.roles];
+}
+
+function persist(): void {
+  try {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    window.localStorage.setItem(
+      CUSTOM_ROLES_KEY,
+      JSON.stringify({ v: STORE_VERSION, roles: rows }),
+    );
+  } catch {
+    // Quota / private browsing. The in-session grant still stands; what is lost
+    // is durability, and losing it silently is better than refusing an act the
+    // dispatcher already accepted and recorded in the audit trail.
+  }
+}
 
 export const customRoleStore = {
   /** Every granted role, oldest first. */
   all(): readonly CustomRoleDefinition[] {
+    hydrate();
     return rows;
   },
   /** One granted role, or undefined. */
   byId(id: string): CustomRoleDefinition | undefined {
+    hydrate();
     return rows.find((r) => r.id === id);
+  },
+  /**
+   * What the last read of the store found — including what it REFUSED and
+   * whether it could be parsed at all. A surface reads this so a rejection is
+   * stated rather than absorbed.
+   */
+  readState(): CustomRoleReadState {
+    hydrate();
+    return readState;
   },
   /** APPEND ONLY — there is no update path, so there is none to guard. A new
    *  array reference so a memoised read genuinely recomputes. */
   append(def: CustomRoleDefinition): void {
+    hydrate();
     rows = [...rows, def];
+    persist();
   },
-  /** Restore the (empty) seed — test isolation, and the reload story in one
-   *  function: a session ends and the grants are gone. */
+  /** Forget everything, in memory AND on disk — test isolation, and the one
+   *  honest way to undo a grant on an append-only ledger with no revoke verb. */
   reset(): void {
-    rows = [...SEED];
+    rows = [];
+    readState = EMPTY_READ;
+    hydrated = false;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(CUSTOM_ROLES_KEY);
+      }
+    } catch {
+      // nothing to do; the in-memory state is already clear
+    }
+  },
+  /** Drop the in-memory copy WITHOUT touching storage — what a reload does. */
+  rehydrate(): void {
+    rows = [];
+    readState = EMPTY_READ;
+    hydrated = false;
+    hydrate();
   },
 };
 

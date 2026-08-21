@@ -19,6 +19,7 @@ import {
 } from './businessRoles';
 import { catalogRoles } from './roles';
 import {
+  CUSTOM_ROLES_KEY,
   addableAtomRefusal,
   atomsForSeat,
   atomsOfCustomRole,
@@ -252,30 +253,129 @@ describe('⚠️ SEAT RESOLUTION — `atomsForSeat`, and the silent zero it prev
   });
 });
 
-describe('⚠️ THE SESSION IS THE LIFETIME (D2)', () => {
-  it('a reset — which is what a reload is — takes every grant with it', () => {
+describe('⚠️ IT SURVIVES A RELOAD — and the ruling that said otherwise is superseded', () => {
+  it('a granted role is written to this browser and read back', () => {
     customRoleStore.append(def());
+    expect(window.localStorage.getItem(CUSTOM_ROLES_KEY)).toContain('jakarta-night-shift');
+    customRoleStore.rehydrate(); // what a reload does
     expect(customRoleStore.byId('jakarta-night-shift')).toBeDefined();
-    customRoleStore.reset();
-    expect(customRoleStore.byId('jakarta-night-shift')).toBeUndefined();
-    expect(atomsForSeat(['jakarta-night-shift'])).toEqual([]);
+    expect(atomsForSeat(['jakarta-night-shift'])).toContain('invoice:dispute');
   });
 
-  it('⚠️ NOTHING IS WRITTEN TO PERSISTENT STORAGE — the page says so, and it is true', () => {
-    // The marker claims a grant is "never written to disk". This is that claim,
-    // asserted against the only durable channel in the tree.
-    const writes: string[] = [];
-    const real = window.localStorage.setItem.bind(window.localStorage);
-    window.localStorage.setItem = (k: string, v: string) => {
-      writes.push(k);
-      real(k, v);
-    };
-    try {
-      customRoleStore.append(def());
-      atomsForSeat(['jakarta-night-shift']);
-    } finally {
-      window.localStorage.setItem = real;
+  it('⚠️ SYSTEM ROLES ARE NEVER WRITTEN — only custom ones are stored', () => {
+    customRoleStore.append(def());
+    const written = JSON.parse(window.localStorage.getItem(CUSTOM_ROLES_KEY)!);
+    expect(written.roles.map((r: { id: string }) => r.id)).toEqual(['jakarta-night-shift']);
+    for (const id of Object.keys(SYSTEM_ROLES)) {
+      expect(written.roles.map((r: { id: string }) => r.id)).not.toContain(id);
     }
-    expect(writes).toEqual([]);
+  });
+
+  it('reset clears BOTH the memory and the store — the only honest undo', () => {
+    customRoleStore.append(def());
+    customRoleStore.reset();
+    expect(window.localStorage.getItem(CUSTOM_ROLES_KEY)).toBeNull();
+    expect(customRoleStore.all()).toEqual([]);
+  });
+});
+
+describe('⚠️ THE READ FAILS HONESTLY — EMPTY-INPUT-REPORTS-CLEAN-01 in a storage read', () => {
+  const write = (raw: string) => {
+    customRoleStore.reset();
+    window.localStorage.setItem(CUSTOM_ROLES_KEY, raw);
+    customRoleStore.rehydrate();
+  };
+
+  it('NO STORE and A CORRUPT STORE are different answers', () => {
+    // The known-GOOD half first: an absent store is not an error.
+    customRoleStore.reset();
+    expect(customRoleStore.readState()).toMatchObject({ unreadable: false, rejected: [] });
+    expect(customRoleStore.all()).toEqual([]);
+
+    // ...and a corrupt one yields the SAME empty list with a DIFFERENT report.
+    write('{not json');
+    expect(customRoleStore.all()).toEqual([]);
+    expect(customRoleStore.readState().unreadable).toBe(true);
+  });
+
+  it('a wrong envelope version is unreadable rather than silently ignored', () => {
+    write(JSON.stringify({ v: 99, roles: [def()] }));
+    expect(customRoleStore.readState().unreadable).toBe(true);
+    expect(customRoleStore.all()).toEqual([]);
+  });
+
+  it('does not throw on any of it', () => {
+    for (const raw of ['', 'null', '[]', '{}', '{"v":1}', '{"v":1,"roles":"nope"}']) {
+      expect(() => write(raw)).not.toThrow();
+      expect(customRoleStore.all()).toEqual([]);
+    }
+  });
+});
+
+describe('⚠️ THE TENANCY GATE STILL LIVES AT THE VERB — a stored row is re-checked', () => {
+  const store = (...roles: unknown[]) => {
+    customRoleStore.reset();
+    window.localStorage.setItem(CUSTOM_ROLES_KEY, JSON.stringify({ v: 1, roles }));
+    customRoleStore.rehydrate();
+  };
+
+  it('a hand-edited cross-tenancy row is REFUSED ON READ, and named', () => {
+    // Persistence changes where a role is kept, not who may grant one. This row
+    // never went through `t_role_grant`; it is refused by the same predicate.
+    store(def({ adds: ['po:confirm'] }));
+    expect(customRoleStore.all()).toEqual([]);
+    const [rejected] = customRoleStore.readState().rejected;
+    expect(rejected.id).toBe('jakarta-night-shift');
+    expect(rejected.reason).toContain('po:confirm');
+    expect(rejected.reason).toContain('may not span tenancies');
+  });
+
+  it('⚠️ AND A LEGITIMATE ROW LOADS — the known-GOOD half of the read gate', () => {
+    // Without this, a reader that refused EVERY row would pass the test above
+    // and would look exactly like a working validator. §39.
+    store(def());
+    expect(customRoleStore.all().map((r) => r.id)).toEqual(['jakarta-night-shift']);
+    expect(customRoleStore.readState().rejected).toEqual([]);
+  });
+
+  it('a row shadowing a SYSTEM role is refused by name', () => {
+    store(def({ id: 'finance' }));
+    expect(customRoleStore.all()).toEqual([]);
+    expect(customRoleStore.readState().rejected[0].reason).toContain('already a system role');
+  });
+
+  it('a row copying `admin` is refused — the cross-tenancy exception stays seeded-only', () => {
+    store(def({ parent: 'admin' as never }));
+    expect(customRoleStore.readState().rejected[0].reason).toContain('spans both tenancies');
+  });
+
+  it('a machine-only atom is refused', () => {
+    store(def({ adds: ['po:issue'] }));
+    expect(customRoleStore.readState().rejected[0].reason).toContain('no human owner');
+  });
+
+  it('a malformed attribution is refused — provenance is not optional', () => {
+    store(def({ grantedBy: 'Rina' as never }));
+    expect(customRoleStore.readState().rejected[0].reason).toContain('attribution');
+  });
+
+  it('a duplicate id in the store is refused rather than silently last-wins', () => {
+    store(def(), def({ displayName: 'Second' }));
+    expect(customRoleStore.all().length).toBe(1);
+    expect(customRoleStore.readState().rejected[0].reason).toContain('twice');
+  });
+
+  it('a non-object row is refused by position — it has no id to name', () => {
+    store(def(), 42);
+    expect(customRoleStore.all().length).toBe(1);
+    expect(customRoleStore.readState().rejected[0].id).toBe('row 1');
+  });
+
+  it('⚠️ ONE BAD ROW DOES NOT DISCARD THE GOOD ONES', () => {
+    // A store that threw away everything on one bad row would turn a typo into
+    // a total loss, and the notice would be right about the wrong scope.
+    store(def(), def({ id: 'surabaya-dock', adds: ['po:confirm'] }));
+    expect(customRoleStore.all().map((r) => r.id)).toEqual(['jakarta-night-shift']);
+    expect(customRoleStore.readState().rejected.map((r) => r.id)).toEqual(['surabaya-dock']);
   });
 });

@@ -109,6 +109,19 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
           <p className="text-xs text-text-secondary leading-relaxed mt-1">
             {t('roles.page.createGateBody')}
           </p>
+          {/* ⚠️ HOW, NOT ONLY WHY — AND FENCED AS A DEMO CONTROL. A reader who
+              cannot see the affordance can learn from the surface what would
+              change it. The fence is load-bearing: "you can take this role
+              yourself" is true only because the switcher is a demo control, and
+              the sentence that omitted that would describe a self-service
+              privilege grant as though it were the design. The switcher is what
+              a real IdP replaces, so this line is written to die with it. */}
+          <p
+            className="text-xs text-text-tertiary leading-relaxed mt-2"
+            data-testid="roles-create-gate-demo"
+          >
+            {t('roles.page.createGateDemo')}
+          </p>
         </div>
       </section>
     );
