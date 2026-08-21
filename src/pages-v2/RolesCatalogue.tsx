@@ -104,7 +104,21 @@ const RolesCatalogue: React.FC = () => {
 
   return (
     <AppShellV2>
-      <div className="p-6 max-w-6xl" data-testid="roles-catalogue">
+      {/* ⚠️ §70 — NO WIDTH AND NO PADDING HERE, AND THE ABSENCE IS THE
+          PATTERN RATHER THAN AN OMISSION. Derived from `AppRouter`: of the 42
+          mounted routes, 40 render their content DIRECTLY inside `AppShellV2`
+          with no wrapper — the shell's own `<main class="flex-1 overflow-auto
+          bg-bg-page p-8">` supplies the padding and constrains nothing. The two
+          Roles routes were the only exceptions, they carried `p-6` ON TOP of
+          that `p-8`, and they did not even agree with each other (`max-w-6xl`
+          here, `max-w-4xl` on the detail).
+
+          A `max-w-*` in this tree belongs on PROSE, never on a container —
+          `PageHeader`'s subtitle uses `max-w-prose`, and Glossary / ProcessFlows
+          put `max-w-4xl` on a `<p>`. That is a MEASURE constraint (line length),
+          which is a different thing from a page width. The div survives only to
+          carry its testid. */}
+      <div data-testid="roles-catalogue">
         <header className="mb-4">
           <div className="text-label text-text-tertiary uppercase font-mono">SET-RL · ROLES</div>
           <h1 className="text-xl font-semibold text-text-primary">{t('roles.page.title')}</h1>

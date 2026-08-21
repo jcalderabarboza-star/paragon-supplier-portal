@@ -34,7 +34,11 @@ const RoleDetail: React.FC = () => {
 
   return (
     <AppShellV2>
-      <div className="p-6 max-w-4xl" data-testid={`role-detail-${role.id}`}>
+      {/* §70 — see the note on `RolesCatalogue`: the shell owns padding and
+          nothing constrains page width. This one was `max-w-4xl` while the
+          catalogue it links from was `max-w-6xl`, so the two halves of one
+          module disagreed. The div survives only to carry its testid. */}
+      <div data-testid={`role-detail-${role.id}`}>
         <button
           type="button"
           onClick={() => navigate('/buyer/roles')}

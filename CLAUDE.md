@@ -534,6 +534,28 @@ written down. Before building on a named artifact, `grep` for it —
 absence is a one-line measurement and a wrong premise with a specific name is the
 most believable kind.
 
+⚠️ **§70 · AND WHAT TO DO WITH ONE, WHICH §64a DOES NOT SAY —
+`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`. A FINDING WHOSE MECHANISM IS FALSE MUST
+NOT BE FILED, EVEN WHEN ITS CONCLUSION IS RIGHT: THE REGISTER IS WHAT THE NEXT
+BATCH BUILDS ON, AND A FALSE BLOCKER COSTS MORE THAN THE BATCH IT STOPPED.**
+§64a stops at detection (*grep the artifact, keep the property*), so the default
+survives — the conclusion held, and filing is what this project does with
+survivors. **That default is wrong, and asymmetrically:** a finding filed with a
+correct mechanism costs ONE batch to act on; one filed with a false mechanism
+costs EVERY batch that reads it, because "X cannot do Y" invites a Y-shaped
+replacement for X, and **nobody re-measures a blocker — a blocker is why you
+stopped.** At §69 the finding was *"the policy hook cannot reach the document"*,
+attached to a conclusion that was RIGHT (*the bands are not where the work is*),
+which is exactly what would have carried it past review; filed, it would have sat
+in front of every value-based policy this platform will ever want, while
+`readEntity` was documented for that purpose and four shipped hooks already used
+it. **The disposal is re-measure, then file the TRUE finding** — which was the
+opposite shape and sharper: the hook reaches the document, and what is missing is
+the RIGHT-HAND SIDE of the comparison. One is a dead end; the other names what to
+build. ⚠️ **This does NOT license suppressing what you could not verify:** an
+UNVERIFIED mechanism is filed WITH its uncertainty stated; a mechanism MEASURED
+FALSE is not filed at all. The distinction is whether the measurement was taken.
+
 The gate itself is `src/lib/storedFieldGate/` — every stored field on a
 glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
 its reason stated. It is deliberately TEST-level, not type-level, precisely so
