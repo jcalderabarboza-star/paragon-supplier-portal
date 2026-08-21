@@ -1079,13 +1079,22 @@ const BuyerRequisitions: React.FC = () => {
                     {selectedPR.costCenter}
                   </dd>
                 </div>
-                {/* ⚠️ §68 — THIS ROW USED TO BE LABELLED "Approver" AND IT
-                    NAMED NOBODY. The values are role BANDS that track
-                    `estimatedValue`, they are populated on Draft and Pending
-                    Approval rows nobody has approved, and no verb has ever
-                    written one — so a real approval landed and left the panel
-                    naming somebody else. It is the DESTINATION, and it now says
-                    so. What the band→level rule is remains unmodelled (open). */}
+                {/* ⚠️ §68 LABELLED IT A DESTINATION; §69 SAYS WHERE THE
+                    DESTINATION CAME FROM, BECAUSE THE ROW STILL LOOKED
+                    COMPUTED. The values track `estimatedValue` closely enough
+                    to read as a derived band — 43M → Section Head, 79M/105M →
+                    Procurement Head, 210M → VP Procurement — and NOTHING
+                    DERIVES THEM. Measured at §69: zero relational or arithmetic
+                    reads of `estimatedValue` exist anywhere in the tree, and no
+                    threshold number is written anywhere in `src/` or `docs/`.
+
+                    Deriving one here was the alternative and was REFUSED: the
+                    fixture constrains only ≤43M, [67M,105M] and ≥210M, so the
+                    intervals (43,67) and (105,210) would have to be INVENTED —
+                    a computed-looking band with invented numbers is strictly
+                    worse than an authored one, and putting the numbers in code
+                    is C10 §4.1's second cost (a Tuesday decision becomes a
+                    deploy) taken in a hook instead of in a state. */}
                 <div>
                   <dt className="text-text-tertiary">
                     {t('requisitions.panel.field.approvalLevel')}
@@ -1094,7 +1103,18 @@ const BuyerRequisitions: React.FC = () => {
                     className="text-text-primary font-medium"
                     data-testid="pr-approval-level"
                   >
-                    {selectedPR.approvalLevel || '—'}
+                    {selectedPR.approvalLevel ||
+                      t('requisitions.panel.approvalLevel.unassigned')}
+                  </dd>
+                  {/* On EVERY row, including the unassigned one: the claim is
+                      about the FIELD's provenance, not about the value it
+                      happens to hold. A note that appeared only when a band was
+                      present would read as a caveat on that band. */}
+                  <dd
+                    className="mt-1 text-[11px] text-text-tertiary"
+                    data-testid="pr-approval-level-provenance"
+                  >
+                    {t('requisitions.panel.approvalLevel.authored')}
                   </dd>
                 </div>
                 {/* And WHO decided, present only once somebody has. Absent

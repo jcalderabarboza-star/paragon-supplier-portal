@@ -68,6 +68,28 @@ Direct pushes to `main` are not used.
 > `AppRouter` is a flat `<Routes>` with no layout route, so a page that forgets
 > `AppShellV2` renders with no sidebar and no way back, and
 > `renderWithProviders` will never say so.
+>
+> ⚠️ **THE APPROVAL BAND IS AUTHORED, AND THE LADDER IS UNBUILDABLE — NOT DEFERRED
+> (§69).** `approvalLevel` ('Section Head' / 'Procurement Head' / 'VP Procurement')
+> tracks `estimatedValue` closely enough to read as computed and **nothing computes
+> it**: zero relational or arithmetic reads of `estimatedValue` exist in the tree and
+> no threshold number exists in `src/` or `docs/`. The surface now SAYS it is
+> authored; `approvalBandAuthored.guard.test.ts` re-derives it every run (write-site
+> assertion primary, read-site secondary and labelled weaker).
+> **Both readings of what a band decides fail independently:** WHO MAY APPROVE needs
+> seniority roles that do not exist and C10 §3.4 forbids minting (*"a new role per
+> band"*); HOW MANY APPROVALS needs the `ApprovalPolicyAct` × `ApprovalAct` ledgers
+> C10 §3.5 defers. Either ground alone is sufficient.
+>
+> ⚠️ **AND DO NOT INHERIT "THE POLICY HOOK CANNOT SEE THE DOCUMENT" — IT IS FALSE AND
+> IT HAS ALREADY STOPPED ONE BATCH.** `PolicyHookFn` takes ONE ctx
+> (`{ entityId, currentState, toState, payload, target, scope }`), `CommandTarget.
+> readEntity` is *"Full entity for policy hooks to inspect"*, and FOUR shipped hooks
+> read a document through it (`policies.ts:64/87/104/263`) — none by importing a
+> store. What a threshold lacks is the RIGHT-HAND SIDE of the comparison, not the
+> left. A role-gated VALUE policy (value from `readEntity` × lane from
+> `scope.businessRoles`) is buildable today and is **not** the ladder: it
+> discriminates lanes, and the rungs are altitudes.
 Re-baselined by the **Canon True-Up** (2026-07-14). The prior "main @ #53" pointer
 was stale by ~12 commits; F0 (contract-freeze) and the I3 compliance phase are DONE,
 and the Stage G planning canon + World-Class Build Plan are now on main.

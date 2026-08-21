@@ -735,16 +735,38 @@ export interface PurchaseRequisition {
    * `'Procurement Head'`, `'Section Head'` — that correlate with
    * `estimatedValue` and are populated on **`Draft` and `Pending Approval` rows
    * nobody has approved** (`pr-004` is `Pending Approval` and carries
-   * `'Section Head'`; `pr-005` is `Draft` and carries `'—'`). A field
+   * `'Section Head'`). A field
    * populated before the act it names cannot be a record of that act.
    *
    * So it is the DESTINATION the value routes to, not the person who decided —
    * the same class as a button whose label names a verb it does not dispatch,
    * one layer down in a DTO. Who actually decided is `approvedBy`, below.
    *
-   * The band→level rule itself is NOT modelled: nothing reads `estimatedValue`
-   * to derive this, and `t_pr_approve`'s `policyHooks` is where it would live
-   * (open, deliberately out of §68's scope).
+   * ⚠️ **AUTHORED, NEVER DERIVED — AND §69 MEASURED IT RATHER THAN ASSUMING
+   * IT.** The values track `estimatedValue` closely enough to read as a
+   * computed band, and nothing computes them: there is **not one relational or
+   * arithmetic read of `estimatedValue` anywhere in the tree**, and no
+   * threshold number exists in `src/` or `docs/`. Re-derived every run by
+   * `approvalBandAuthored.guard.test.ts`; the surface now SAYS it is authored.
+   *
+   * ⚠️ **AND THE BAND RULE IS NOT MERELY UNBUILT — IT IS UNBUILDABLE TODAY, ON
+   * TWO INDEPENDENT GROUNDS (§69).** A band decides either WHO MAY APPROVE,
+   * which needs seniority roles the platform does not have and C10 §3.4 forbids
+   * minting (*"a new role per band"*), or HOW MANY APPROVALS ARE REQUIRED,
+   * which needs the `ApprovalPolicyAct` × `ApprovalAct` ledgers C10 §3.5
+   * defers. Either ground alone is sufficient, so closing one does not unblock
+   * it.
+   *
+   * ⚠️ **THE POLICY HOOK IS NOT THE BLOCKER, AND THE CONTRARY IS THE PREMISE
+   * THAT MUST NOT BE INHERITED.** A hook on `t_pr_approve` can ALREADY read
+   * this document (`ctx.target.readEntity` — four shipped hooks do) and the
+   * session's roles (`ctx.scope.businessRoles`). What is missing is the
+   * RIGHT-HAND SIDE of the comparison, not the left.
+   *
+   * `''` is the ONE representation of "not assigned" — `t_pr_create` writes it
+   * and `pr-005` carries it. `pr-005` used to carry a literal `'—'`, which is
+   * the render fallback written into the data, so an unassigned band and an
+   * empty field displayed as the same glyph.
    */
   approvalLevel: string;
   sourceOfSupply: string;
