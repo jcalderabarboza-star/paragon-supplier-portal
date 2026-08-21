@@ -40,6 +40,8 @@ import {
   usePurchaseRequisitionCreate,
   useRequisitionApprove,
   useRequisitionReject,
+  useRequisitionSubmit,
+  useRequisitionRevise,
 } from '../services/query/commandHooks';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { availabilityOfAtom } from '../services/transitions/handoff';
@@ -48,6 +50,7 @@ import { DataError } from '../services/data/types';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
 import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
+import type { ActorAttribution, UnattributedReason } from '../lib/enforcement';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 
@@ -89,6 +92,21 @@ const STATUS_VARIANT: Record<
 };
 
 type GroupTab = 'all' | 'Draft' | 'Pending Approval' | 'Approved' | 'Sourcing Event' | 'PO Created';
+
+// ⚠️ §68 — HOW AN ATTRIBUTION READS, AND WHY IT IS A TOTAL RECORD OVER THE
+// CLOSED UNION. `UNATTRIBUTED_REASONS` has exactly two members and no `SYSTEM`
+// one, deliberately — *"'the system did it' is the comfortable label that makes
+// an unattributed act look answered"* (C10 §6.4). Keying the copy off a
+// `Record<UnattributedReason, string>` means the day a third reason is added
+// the BUILD says so, rather than a surface quietly rendering a raw enum token.
+//
+// The two are NOT interchangeable and the copy must not merge them:
+// NO_PERSON_IN_SESSION is a MISSING capability, IDENTITY_PROVIDER_UNAVAILABLE
+// is a FAILING one, and collapsing them would hide the day the first was fixed.
+const UNATTRIBUTED_KEY: Record<UnattributedReason, string> = {
+  NO_PERSON_IN_SESSION: 'requisitions.panel.unattributed.noPerson',
+  IDENTITY_PROVIDER_UNAVAILABLE: 'requisitions.panel.unattributed.idpDown',
+};
 
 const inputClass =
   'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
@@ -186,8 +204,9 @@ const BuyerRequisitions: React.FC = () => {
   const [selectedRow, setSelectedRow] = useState<PurchaseRequisition | null>(null);
   // The detail panel's mode. `rejecting` swaps the footer for the reason
   // capture — the BuyerInvoices dispute precedent, one lane over.
-  const [panelMode, setPanelMode] = useState<'view' | 'rejecting'>('view');
+  const [panelMode, setPanelMode] = useState<'view' | 'rejecting' | 'revising'>('view');
   const [rejectReason, setRejectReason] = useState('');
+  const [reviseNote, setReviseNote] = useState('');
   const [newOpen, setNewOpen] = useState(false);
   const [form, setForm] = useState<NewPRForm>(emptyForm);
 
@@ -196,6 +215,8 @@ const BuyerRequisitions: React.FC = () => {
   const createPr = usePurchaseRequisitionCreate();
   const approvePr = useRequisitionApprove();
   const rejectPr = useRequisitionReject();
+  const submitPr = useRequisitionSubmit();
+  const revisePr = useRequisitionRevise();
   const { identity } = useCurrentIdentity();
 
   // ⚠️ **THE SELECTED ROW IS DERIVED FROM THE LIST, NOT HELD AS A SNAPSHOT.**
@@ -216,6 +237,13 @@ const BuyerRequisitions: React.FC = () => {
   // Procurement" rather than seeing nothing at all.
   const approveAvailability = availabilityOfAtom('pr:approve', identity.businessRoles);
   const rejectAvailability = availabilityOfAtom('pr:reject', identity.businessRoles);
+  // §68 — the REQUESTER's two, derived the same way. `pr:submit` / `pr:revise`
+  // live in `requisitioner`, disjoint from the pair above, so a procurement
+  // seat opening a Draft reads "Awaiting Requisitioner" rather than an empty
+  // footer — and the segregation is now visible from BOTH sides of the machine
+  // instead of being a property of the bundles that nothing exercised.
+  const submitAvailability = availabilityOfAtom('pr:submit', identity.businessRoles);
+  const reviseAvailability = availabilityOfAtom('pr:revise', identity.businessRoles);
 
   const counts = useMemo(() => {
     const by = (s: PRStatus) => prs.filter((p) => p.status === s).length;
@@ -302,23 +330,23 @@ const BuyerRequisitions: React.FC = () => {
       if (result.status === 'failed') {
         toast({
           variant: 'error',
-          title: t('requisitions.toast.submitFailed.title'),
-          description: result.reason ?? t('requisitions.toast.submitFailed.desc'),
+          title: t('requisitions.toast.createFailed.title'),
+          description: result.reason ?? t('requisitions.toast.createFailed.desc'),
         });
         return;
       }
       toast({
         variant: 'success',
-        title: t('requisitions.toast.submitted.title', { prNumber: result.entityId }),
-        description: t('requisitions.toast.submitted.desc'),
+        title: t('requisitions.toast.created.title', { prNumber: result.entityId }),
+        description: t('requisitions.toast.created.desc'),
       });
       setForm(emptyForm);
       setNewOpen(false);
     } catch (e) {
       toast({
         variant: 'error',
-        title: t('requisitions.toast.submitFailed.title'),
-        description: e instanceof DataError ? e.message : t('requisitions.toast.submitFailed.desc'),
+        title: t('requisitions.toast.createFailed.title'),
+        description: e instanceof DataError ? e.message : t('requisitions.toast.createFailed.desc'),
       });
     }
   };
@@ -331,6 +359,7 @@ const BuyerRequisitions: React.FC = () => {
     setSelectedRow(null);
     setPanelMode('view');
     setRejectReason('');
+    setReviseNote('');
   };
 
   const approveSelected = async () => {
@@ -367,6 +396,79 @@ const BuyerRequisitions: React.FC = () => {
   // `PR_REJECT_REASON_AUTHORED` stands behind it for anything that never sees
   // this surface — the disable is the courtesy, the hook is the guarantee.
   const canReject = rejectReason.trim().length > 0;
+
+  const submitSelected = async () => {
+    if (!selectedPR || submitPr.isPending) return;
+    try {
+      const result = await submitPr.mutateAsync({ prId: selectedPR.id });
+      if (result.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('requisitions.toast.submitFailed.title', { prNumber: selectedPR.prNumber }),
+          description: result.reason ?? t('requisitions.toast.actionFailed.desc'),
+        });
+        return;
+      }
+      toast({
+        variant: 'success',
+        title: t('requisitions.toast.submitted.title', { prNumber: selectedPR.prNumber }),
+        description: t('requisitions.toast.submitted.desc'),
+      });
+      closePanel();
+    } catch (e) {
+      toast({
+        variant: 'error',
+        title: t('requisitions.toast.submitFailed.title', { prNumber: selectedPR.prNumber }),
+        description: e instanceof DataError ? e.message : t('requisitions.toast.actionFailed.desc'),
+      });
+    }
+  };
+
+  // The same disable-until-non-empty rule the rejection reason carries, for the
+  // same stated reason: a dismissible capture beside a required field is how a
+  // required thing becomes a suggestion. `PR_REVISION_NOTE_AUTHORED` stands
+  // behind it for any caller that never renders this box.
+  const canRevise = reviseNote.trim().length > 0;
+
+  // RESOLVED renders the person; UNATTRIBUTED renders WHICH failure, never a
+  // bare "unknown" — the reason is the part somebody can act on. No `RESOLVED`
+  // value can exist in this tree yet (C10 §2.3); the arm is here because the
+  // union has two, and a surface that handles one arm is a surface that will
+  // render `[object Object]` on the day the other appears.
+  const renderAttribution = (actor: ActorAttribution): string =>
+    actor.kind === 'RESOLVED'
+      ? actor.person.displayName
+      : t(UNATTRIBUTED_KEY[actor.reason]);
+
+  const reviseSelected = async () => {
+    if (!selectedPR || !canRevise || revisePr.isPending) return;
+    try {
+      const result = await revisePr.mutateAsync({
+        prId: selectedPR.id,
+        revisionNote: reviseNote.trim(),
+      });
+      if (result.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('requisitions.toast.reviseFailed.title', { prNumber: selectedPR.prNumber }),
+          description: result.reason ?? t('requisitions.toast.actionFailed.desc'),
+        });
+        return;
+      }
+      toast({
+        variant: 'success',
+        title: t('requisitions.toast.revised.title', { prNumber: selectedPR.prNumber }),
+        description: t('requisitions.toast.revised.desc'),
+      });
+      closePanel();
+    } catch (e) {
+      toast({
+        variant: 'error',
+        title: t('requisitions.toast.reviseFailed.title', { prNumber: selectedPR.prNumber }),
+        description: e instanceof DataError ? e.message : t('requisitions.toast.actionFailed.desc'),
+      });
+    }
+  };
 
   const rejectSelected = async () => {
     if (!selectedPR || !canReject || rejectPr.isPending) return;
@@ -623,6 +725,84 @@ const BuyerRequisitions: React.FC = () => {
                 {t('requisitions.panel.close')}
               </Button>
 
+              {/* ⚠️ §68 — THE REQUESTER'S EDGE OUT OF DRAFT, AND IT CLOSES A
+                  DEAD END THIS SURFACE CREATED. §67 stated here that a Draft
+                  had one edge out and this surface did not offer it, on the
+                  ground that a submit affordance would be a second creation
+                  path beside the ratified C7 seam. THAT REASON WAS WRONG:
+                  `t_pr_submit` does not create anything — it acts on a document
+                  `t_pr_create` has already minted — so it adds no producer at
+                  all. The consequence of the old reading was that the approval
+                  queue emptied and nothing filled it. */}
+              {selectedPR.status === 'Draft' && panelMode === 'view' && (
+                <>
+                  {submitAvailability.kind === 'held' ? (
+                    <Button
+                      variant="outline"
+                      onClick={submitSelected}
+                      disabled={submitPr.isPending}
+                      data-testid="pr-submit"
+                    >
+                      {submitPr.isPending
+                        ? t('requisitions.panel.submitting')
+                        : t('requisitions.panel.submit')}
+                    </Button>
+                  ) : (
+                    <HandoffNotice availability={submitAvailability} testId="handoff-pr-submit" />
+                  )}
+                </>
+              )}
+
+              {/* The recourse edge. A rejected requisition returns to the
+                  REQUESTER (Rejected → Draft), never straight back to the
+                  queue: an approver seeing the same document they already
+                  declined learns nothing, and the two-step IS the revision. */}
+              {selectedPR.status === 'Rejected' && panelMode === 'view' && (
+                <>
+                  {reviseAvailability.kind === 'held' ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => setPanelMode('revising')}
+                      data-testid="pr-revise-open"
+                    >
+                      {t('requisitions.panel.revise')}
+                    </Button>
+                  ) : (
+                    <HandoffNotice availability={reviseAvailability} testId="handoff-pr-revise" />
+                  )}
+                </>
+              )}
+
+              {selectedPR.status === 'Rejected' && panelMode === 'revising' && (
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setPanelMode('view');
+                      setReviseNote('');
+                    }}
+                  >
+                    {t('requisitions.panel.reviseCancel')}
+                  </Button>
+                  {/* DP2-BUTTON-01 — OUTLINE, and the contrast with the reject
+                      commit below is the rule working. Solid is reserved for
+                      the irreversible commit; a revision returns a declined
+                      document to its own author's hands and is undone by
+                      declining it again. Reject is named in the reserved list;
+                      revise is not, and neither is submit. */}
+                  <Button
+                    variant="outline"
+                    onClick={reviseSelected}
+                    disabled={!canRevise || revisePr.isPending}
+                    data-testid="pr-revise-confirm"
+                  >
+                    {revisePr.isPending
+                      ? t('requisitions.panel.revising')
+                      : t('requisitions.panel.reviseConfirm')}
+                  </Button>
+                </>
+              )}
+
               {selectedPR.status === 'Pending Approval' && panelMode === 'view' && (
                 <>
                   {/* The wait, not a gap: a seat without the atom reads the
@@ -674,7 +854,7 @@ const BuyerRequisitions: React.FC = () => {
                       it is the only solid on the surface (the approve button is
                       not rendered in `rejecting` mode). */}
                   <Button
-                    variant="primary"
+                    variant="outline"
                     onClick={rejectSelected}
                     disabled={!canReject || rejectPr.isPending}
                     data-testid="pr-reject-confirm"
@@ -719,6 +899,35 @@ const BuyerRequisitions: React.FC = () => {
               </section>
             )}
 
+            {/* The revision note capture. Same shape and same rule as the
+                rejection reason above — and this one closes the sharper of the
+                two defects: `revisionNote` had been REQUIRED by the verb since
+                PF-1a with no field on the document, no capture anywhere, and no
+                caller. The dispatcher refused without it and the text was
+                dropped before the document was written. */}
+            {panelMode === 'revising' && selectedPR.status === 'Rejected' && (
+              <section>
+                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                  {t('requisitions.panel.reviseSection')}
+                </h3>
+                <label htmlFor="pr-revise-note" className="sr-only">
+                  {t('requisitions.panel.reviseSrLabel', { number: selectedPR.prNumber })}
+                </label>
+                <textarea
+                  id="pr-revise-note"
+                  data-testid="pr-revise-note"
+                  className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
+                  rows={3}
+                  placeholder={t('requisitions.panel.revisePlaceholder')}
+                  value={reviseNote}
+                  onChange={(e) => setReviseNote(e.target.value)}
+                />
+                <div className="mt-2 text-xs text-text-tertiary">
+                  {t('requisitions.panel.reviseNote')}
+                </div>
+              </section>
+            )}
+
             {/* ⚠️ **THE SEAT SAYS WHAT IT CANNOT RECORD, BEFORE THE ACT** — the
                 §66 precedent, verbatim: a grant is recorded against
                 `UNATTRIBUTED: NO_PERSON_IN_SESSION` and the surface says so
@@ -757,6 +966,23 @@ const BuyerRequisitions: React.FC = () => {
               </section>
             )}
 
+            {/* What changed, read back on the document it belongs to — the
+                other half of the same conversation. Both survive the edges
+                deliberately: the reason says why it came back, the note says
+                what was done about it, and an approver looking at a
+                re-submitted requisition needs to read them together. */}
+            {selectedPR.revisionNote && (
+              <section
+                data-testid="pr-revision-note"
+                className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
+              >
+                <h3 className="text-label text-text-tertiary uppercase mb-1">
+                  {t('requisitions.panel.revisedBecause')}
+                </h3>
+                <p className="text-sm text-text-primary">{selectedPR.revisionNote}</p>
+              </section>
+            )}
+
             {/* ⚠️ APPROVED IS A DEAD END TODAY AND THE SURFACE SAYS SO.
                 `t_pr_source` and `t_pr_convert` are `trigger: 'cascade'` and
                 NO SOURCE NAMES EITHER in `cascades.ts` — both are
@@ -779,13 +1005,13 @@ const BuyerRequisitions: React.FC = () => {
               </section>
             )}
 
-            {/* A Draft has exactly one edge out and this surface does not offer
-                it. `t_pr_create` mints at Draft (C7 :131) and `t_pr_submit`
-                carries it to the queue — but a submit affordance here would be
-                a REQUESTER act for a document this platform does not originate
-                (operator ruling, §67), which would put a second creation path
-                beside the ratified C7 seam. So the state is stated, not acted
-                on. */}
+            {/* ⚠️ §68 — THIS NOTE USED TO EXPLAIN WHY NOTHING HERE SUBMITTED
+                THE REQUISITION. Something does now, so what it explains has
+                changed: a Draft is not yet in front of an approver, and the
+                requester is the one who decides when it should be. The section
+                stays because a state with an affordance still owes the reader
+                an account of where the document IS — retiring it would leave a
+                lone button and no context. */}
             {selectedPR.status === 'Draft' && (
               <section
                 data-testid="pr-draft-note"
@@ -853,12 +1079,37 @@ const BuyerRequisitions: React.FC = () => {
                     {selectedPR.costCenter}
                   </dd>
                 </div>
+                {/* ⚠️ §68 — THIS ROW USED TO BE LABELLED "Approver" AND IT
+                    NAMED NOBODY. The values are role BANDS that track
+                    `estimatedValue`, they are populated on Draft and Pending
+                    Approval rows nobody has approved, and no verb has ever
+                    written one — so a real approval landed and left the panel
+                    naming somebody else. It is the DESTINATION, and it now says
+                    so. What the band→level rule is remains unmodelled (open). */}
                 <div>
-                  <dt className="text-text-tertiary">{t('requisitions.panel.field.approver')}</dt>
-                  <dd className="text-text-primary font-medium">
-                    {selectedPR.approver}
+                  <dt className="text-text-tertiary">
+                    {t('requisitions.panel.field.approvalLevel')}
+                  </dt>
+                  <dd
+                    className="text-text-primary font-medium"
+                    data-testid="pr-approval-level"
+                  >
+                    {selectedPR.approvalLevel || '—'}
                   </dd>
                 </div>
+                {/* And WHO decided, present only once somebody has. Absent
+                    before the act rather than pre-filled — which is the whole
+                    difference between this row and the one above it. */}
+                {selectedPR.approvedBy && (
+                  <div>
+                    <dt className="text-text-tertiary">
+                      {t('requisitions.panel.field.approvedBy')}
+                    </dt>
+                    <dd className="text-text-primary font-medium" data-testid="pr-approved-by">
+                      {renderAttribution(selectedPR.approvedBy)}
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-text-tertiary">{t('requisitions.panel.field.status')}</dt>
                   <dd>

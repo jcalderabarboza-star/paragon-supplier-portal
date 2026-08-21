@@ -562,13 +562,17 @@ export const FOOTER_LABEL = (r: RFQ, t: TFunction): string => {
   return t('sourcing.footer.continueDraft');
 };
 
-// DP2-BUTTON-01: solid action-blue is the single reserved irreversible-commit
-// signal — at most one per surface. The footer button is polymorphic (see
-// FOOTER_LABEL); ONLY the Award state (an Open RFQ whose invitees have all
-// responded) is that commit. Every other state — Send reminder / View award /
-// View report / Continue draft — is a calm action-blue OUTLINE CTA.
-export const FOOTER_VARIANT = (r: RFQ): 'primary' | 'outline' =>
-  r.status === 'Open' && isAllResponded(r) ? 'primary' : 'outline';
+// ⚠️ §68 — THIS USED TO RETURN `'primary'` FOR THE AWARD STATE. DP2-BUTTON-01
+// reserved solid action-blue for the irreversible commit and Award was the one
+// verb on this surface that qualified. The reserved-solid register is retired
+// portal-wide (operator ruling), so every state — Award included — is the calm
+// action-blue OUTLINE CTA.
+//
+// The FUNCTION survives rather than being inlined, and deliberately: it is the
+// single place this surface's footer register is decided, so a future state
+// that wants a different one has an obvious seat, and the spec that used to
+// pin "Award is solid" now pins "nothing is" against the same seam.
+export const FOOTER_VARIANT = (_r: RFQ): 'outline' => 'outline';
 
 const ReviewSection: React.FC<{
   label: string;
@@ -2852,7 +2856,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   </p>
                   <div className="flex flex-wrap gap-2">
                     <Button
-                      variant="primary"
+                      variant="outline"
                       icon={Trophy}
                       disabled={!selectedQuoteId || awardMutation.isPending}
                       onClick={handleAward}
@@ -3035,7 +3039,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                   and this is one — an appended pin cannot be taken back, only
                   superseded. */}
               <Button
-                variant="primary"
+                variant="outline"
                 onClick={handlePinConfirm}
                 disabled={
                   !readFxRate(pinDraft.rate).ok ||

@@ -220,7 +220,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     () => invoices.find((i) => i.id === selectedId) ?? null,
     [invoices, selectedId],
   );
-  // The ONE reserved-solid commit for the selected invoice, DERIVED from the
+  // The ONE reserved commit for the selected invoice, DERIVED from the
   // machine with the canonical state. `null` whenever no transition is legal —
   // which is what makes the primary slot fall back to an outline informational
   // footer instead of asserting an action that does not exist.
@@ -370,7 +370,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   const handleFooterAction = () => {
     if (!selected) return;
     const actions = invoiceActionsFor(selected.lifecycleState);
-    if (actions.some((a) => a.solid)) {
+    if (actions.some((a) => a.reservedCommit)) {
       setPanelMode('confirming');
       return;
     }
@@ -1006,7 +1006,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     // classified fault says a second ask can answer differently.
                     settleWatch[selected.id]?.fault ? (
                       SETTLE_FAULT_RETRYABLE[settleWatch[selected.id].fault!] ? (
-                        <Button variant="primary" onClick={() => retrySettle(selected.id)}>
+                        <Button variant="outline" onClick={() => retrySettle(selected.id)}>
                           {t('buyerInvoices.action.retrySettle')}
                         </Button>
                       ) : (
@@ -1020,14 +1020,16 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                       </span>
                     )
                   ) : footerVerbId && commitAvailability.kind !== 'held' ? (
-                    // ⚠️ THE RESERVED SOLID IS FINANCE'S. A procurement seat gets
-                    // the WAIT in the primary slot — not a disabled button, and
-                    // never an empty footer: the machine says a release is legal
-                    // from this state, so the surface must say whose it is.
+                    // ⚠️ THE RESERVED COMMIT IS FINANCE'S. A procurement seat
+                    // gets the WAIT in the primary slot — not a disabled button,
+                    // and never an empty footer: the machine says a release is
+                    // legal from this state, so the surface must say whose it is.
+                    // (It used to render SOLID; §68 retired that register, and
+                    // the ownership statement is untouched by the change.)
                     <HandoffNotice availability={commitAvailability} testId="handoff-commit" />
                   ) : (
                     <Button
-                      variant={commitAction ? 'primary' : 'outline'}
+                      variant="outline"
                       disabled={releaseMutation.isPending}
                       onClick={handleFooterAction}
                     >
@@ -1045,7 +1047,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     {t('buyerInvoices.action.cancel')}
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="outline"
                     disabled={releaseMutation.isPending}
                     onClick={handleReleasePayment}
                   >
@@ -1065,7 +1067,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     {t('buyerInvoices.action.cancel')}
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="outline"
                     disabled={disputeMutation.isPending}
                     onClick={confirmDispute}
                   >

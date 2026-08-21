@@ -217,15 +217,28 @@ nav groups under one neutral key, `nav.glossary`.
   affordance or a primary action. Navy (`#0D1B2A`) is text/headings only — never
   a decorative fill. Mid (`#354A5F`) is secondary text. Surfaces stay white /
   light-neutral with subtle borders.
-- BUTTON HIERARCHY (DP2-BUTTON-01): primary action = action-blue **OUTLINE** by
-  default (`Button variant="outline"`) — the calm portal-wide register. **SOLID**
-  action-blue (`variant="primary"`) is RESERVED for consequential / irreversible
-  commits — Award (RFQ), Release payment, Post-to-SAP, Reject / Dispute,
-  Override-hold. Principle: **solid = the irreversible-commit signal**; at most
-  ONE meaningful solid per surface. Export / Cancel / Close / secondary paths stay
-  outline / `variant="secondary"`; an Export never occupies the primary slot. The
-  `BulkActionsBar` primary slot renders outline by default — set `primary.solid`
-  only for a reserved commit verb. WhatsApp / messenger chrome is exempt (D-2).
+- ⚠️ BUTTON HIERARCHY (DP2-BUTTON-01, **AMENDED §68 — THE RESERVED-SOLID
+  REGISTER IS RETIRED**): primary action = action-blue **OUTLINE**
+  (`Button variant="outline"`), and it is now the ONLY primary register.
+  Export / Cancel / Close / secondary paths stay `variant="secondary"`; an
+  Export never occupies the primary slot.
+
+  **SOLID action-blue no longer exists in this portal.** The prior rule reserved
+  it for consequential / irreversible commits — Award (RFQ), Release payment,
+  Post-to-SAP, Reject / Dispute, Override-hold, at most one per surface — and
+  exempted WhatsApp / messenger chrome from DP-2 (D-2). **All of that is
+  retired, messenger chrome included** (operator ruling, §68).
+
+  **THE RULE IS ENFORCED BY A TYPE, NOT BY THIS PARAGRAPH.** `Button`'s
+  `Variant` union has no `'primary'` member, so every route back is a `tsc`
+  failure; `src/pages-v2/solidButtonRetired.guard.test.ts` covers what a type
+  cannot. **Do not restate the site count here** — the literal scan that opened
+  the sweep was incomplete four ways (a `BulkActionsBar` prop, an
+  `invoiceActionModel` flag that also drove a confirm step, two typed
+  `'primary' | 'outline'` helpers, and `Button`'s own DEFAULT), and the last two
+  were found by the type after the union member was removed, not by any scan.
+  If solid is ever wanted again, amend this paragraph AND the type AND the gate
+  together — changing one of the three is how the register comes back.
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.

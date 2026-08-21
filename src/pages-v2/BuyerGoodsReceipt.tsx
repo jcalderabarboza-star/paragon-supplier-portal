@@ -388,7 +388,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 unattributed override unable to complete. It waits for identity,
                 and the wait is the honest state. */}
             <Button
-              variant="primary"
+              variant="outline"
               onClick={() =>
                 toast({
                   variant: 'warning',
@@ -405,7 +405,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
       case 'Partially Approved':
         return (
           <Button
-            variant="primary"
+            variant="outline"
             disabled={postMutation.isPending}
             onClick={() => handlePostToSap(g)}
           >

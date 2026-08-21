@@ -211,7 +211,7 @@ const ResolvePanel: React.FC<{
             {t('sdc.resolve.cancel')}
           </Button>
           <Button
-            variant="primary"
+            variant="outline"
             data-testid="sdc-resolve-commit"
             disabled={pending || blank}
             onClick={onCommit}

@@ -23,31 +23,41 @@ import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import type { QueryScope } from '../types';
 import { PERSONA_SYSTEM_ROLES, SYSTEM_ROLES } from '../../transitions/businessRoles';
 import { getTransition } from '../../transitions';
+import { NO_PERSON } from '../../../context/noPerson';
 
 const svc = new MockCommandService();
 
+// ⚠️ §68 — EVERY COMMANDING SCOPE NOW CARRIES `actor`, AND THAT IS NOT
+// BOILERPLATE. `t_pr_approve` refuses a scope that cannot say who decided
+// (`PR_APPROVAL_ATTRIBUTED`), so a scope literal without one is not a
+// convenience omission — it is the refused case, asserted on purpose further
+// down. `useScope()` sets it on every real command (`commandHooks.ts:44`).
 /** The whole buyer seat — today's default (every buyer lane bundle). */
 const buyer: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  actor: NO_PERSON,
 };
 /** A NARROWED seat: raises requisitions, cannot decide them. */
 const requisitioner: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['requisitioner'],
+  actor: NO_PERSON,
 };
 /** A narrowed seat that decides them and cannot raise them. */
 const procurement: QueryScope = {
   personaType: 'buyer',
   supplierId: null,
   businessRoles: ['procurement'],
+  actor: NO_PERSON,
 };
 const supplier: QueryScope = {
   personaType: 'supplier',
   supplierId: 'sup-007',
   businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+  actor: NO_PERSON,
 };
 
 /** The seeded fixture that is already in the approval queue. */

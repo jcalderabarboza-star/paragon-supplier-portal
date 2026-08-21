@@ -16956,3 +16956,261 @@ true of Draft; what changed is that the queue now empties.
   `rejectionReason`, one edge over.
 - **The default buyer seat still holds both sides of the segregation.** Pinned
   by test so the day it narrows, something notices.
+
+---
+
+## §68 — The requester's side exists, the enforcement chains reach the document, and solid blue is retired portal-wide
+
+**Branch** `feat/pr-requester-lane` · off `main` @ `4f14d80` · floor in 3275/238, out 3321/241.
+
+### 68a · The dead end was created by a ruling, and the ruling's REASON was the wrong half
+
+§67 left `Draft` without an exit and stated why on the surface: *"a submit
+affordance here would be a REQUESTER act for a document this platform does not
+originate, which would put a second creation path beside the ratified C7 seam."*
+
+The operator retired that at the head of this dispatch, and the retraction is
+sharper than "I was wrong": **`t_pr_submit` is not creation.** It acts on a
+document `t_pr_create` has already minted (C7 :131 → Draft; C7 :132 → Pending
+Approval). Surfacing it adds no producer at all, so the C7 argument never
+applied to it. C7 stays untouched and option (a) — amend the intake to land at
+`Pending Approval` — was refused.
+
+**The consequence that had shipped:** the approval surface built at §67 could
+empty a queue and nothing could fill it. Every approval it had ever performed
+was against `pr-004`, a seeded fixture. Derived: `t_pr_submit` had **zero call
+sites in shipped code** — only i18n purpose keys and `annotations.ts` catalogue
+rows, which are surface *descriptions* of the verb, not callers. Same for
+`t_pr_revise`.
+
+⚠️ **AND IT IS THE VERB THAT MAKES THE SEGREGATION REAL RATHER THAN NOTIONAL.**
+`pr:submit` lives in `requisitioner`, `pr:approve` in `procurement`, disjoint
+since §64. Until something dispatched the requester side, that disjointness was
+a property of the bundles that **no test and no surface ever exercised** — the
+machine only ever ran one side. `prRequesterLaneCommand.test.ts` now walks
+create → submit → reject → revise → submit → approve, and **neither narrow seat
+can complete it alone**, which is the first time that has been true.
+
+### 68b · `revisionNote` — a full enforcement chain terminating in nothing
+
+`t_pr_revise` has required it since PF-1a. The dispatcher refuses without it
+(`MISSING_FIELDS`, green in the suite). `applyTransition` then dropped the text
+before the document was written. Whole-tree derivation before building: the
+identifier appeared **only** in specs, in the flow's `requiredFields`, and in
+two `docs/findings.md` lines — **no DTO field, no store write, no reader.**
+
+Sharper than `rejectionReason` (§67) for the reason the operator gave: that one
+had no field to disappoint. This one had an enforcement chain with nothing at
+the end of it, which is strictly more misleading — a caller who supplies the
+note is *told* it was required and never learns it was discarded.
+
+Repaired with the four-part template three lines away: optional DTO field ·
+required on the verb · `PR_REVISION_NOTE_AUTHORED` (non-blank; `isEmpty('   ')`
+is FALSE, so `requiredFields` alone admits the space bar) · **persisted**, and
+read back on the panel beside the rejection reason. Both survive the edges
+deliberately: the reason says why it came back, the note says what was done
+about it, and an approver reading a re-submitted requisition needs them together.
+
+### 68c · Attribution — and TWO operator premises inverted on measurement, one of them ratified in the contract against him
+
+The dispatch said: *"Third instance of a pattern already shipping twice — setBy
+and grantedBy"*, and *"an approval writes `actor: 'buyer:all'`, WHICH IS NOT AN
+HONEST ABSENCE, IT IS A STALE STRING."*
+
+**Measured — first inversion.** `grantedBy` **does not exist on `main`**; it is
+on the unmerged §66 branch (#251). On main the pattern ships **once** (`setBy`).
+Cheap, and recorded only because a premise about how established a pattern is
+changes how freely it gets copied.
+
+⚠️ **SECOND INVERSION, AND IT IS THE LOAD-BEARING ONE: `actor: 'buyer:all'` IS
+NOT A STALE STRING, IT IS DERIVED AT EMIT TIME, AND C10 §6.4 EXPLICITLY RULES
+THAT IT STAYS.** It is `actorKey(scope)` — `${personaType}:${supplierId ?? 'all'}`
+— a true fact about WHICH SEAT. The contract's own words: *"The event actor
+field (`actor: 'buyer:all'`) is NOT what this replaces. The persona actor is a
+true fact about the scope and stays. Attribution is a second, orthogonal
+field — one answers which seat, the other which human — and collapsing them is
+`ENF-EVENT-ACTOR-IS-A-PERSONA-01` with extra steps."*
+
+**Had the instruction been executed as written, this batch would have committed
+the named anti-pattern by replacing a correct field.** This is §64a's shape
+again — *a misdescribed mechanism attached to a correct conclusion* — and the
+conclusion was right for the third time in three batches: the ledger could not
+name a human, and now it can.
+
+⚠️ **AND A THIRD THING THE MEASUREMENT CHANGED — THE OBVIOUS BUILD WAS THE ONE
+THE CONTRACT FORBIDS.** The natural move was `requiredFields: ['approvedBy']`
+behind a hook, mirroring `t_enforcement_set`'s `['mode', 'setBy']`. C10 §6.2
+names that shape **ATTRIBUTION BY ASSERTION** — the caller states who acted and
+the platform records the statement — and permits it on `setBy` for exactly one
+reason: nothing can construct a `RESOLVED` actor yet. **Copying it onto a second
+verb would have doubled the seam that must be closed before the first resolved
+record exists, in the batch whose whole purpose was to close it.**
+
+What shipped instead:
+
+- The actor comes from the **SESSION** (`QueryScope.actor`, already carried by
+  `useScope()` on every command). `applyTransition` gained a fourth parameter,
+  `scope`, because attribution may not travel in a payload; every existing
+  target ignores it.
+- `PR_APPROVAL_ATTRIBUTED` **refuses a payload-supplied `approvedBy` by name** —
+  **C10 §6.2's second half, and this is its first implementation anywhere in the
+  tree.** §6.2: *"not ignored, not overwritten, not silently replaced by the
+  session's. Refused, loudly."* The overwrite is the tempting build and the one
+  ruled out: a silent correction of an attribution is a caller that believes it
+  attributed an act and a record that says somebody else did.
+- ⚠️ **REFUSED BY KEY, NOT BY VALUE-SHAPE.** Refusing only a well-formed
+  `RESOLVED` actor would let a malformed one through to be dropped silently —
+  the same silent correction wearing a type error. Anything under `approvedBy`
+  is refused; the payload is not where attribution lives.
+- `TransitionEvent` gained an optional `attribution` (C10 §6.4), set **only when
+  `transition.trigger === 'user'`**. A cascade re-dispatches under the same
+  scope, so forwarding `scope.actor` unconditionally would stamp every machine
+  act with an `UNATTRIBUTED` claim — and `UNATTRIBUTED` is a claim that a HUMAN
+  acted and could not be resolved, every member naming a failure somebody can go
+  and fix. Flooding it makes the count meaningless, and the count is the only
+  pressure that ever gets one fixed. **Free now, unfixable once the sink is
+  durable: DR-10 has no retrofit.**
+
+### 68d · `approver` — the answer was neither "written" nor "not rendered"
+
+The operator's item 3: *"Either it is written or it is not rendered; argue
+which."* **Both readings assume the field is an approver. It is not.** Derived
+from the fixture:
+
+| row | status | `approver` | est. value |
+|---|---|---|---|
+| pr-004 | **Pending Approval** | `'Section Head'` | 43M |
+| pr-005 | **Draft** | `'—'` | 84M |
+| pr-002 | Approved | `'Procurement Head'` | 105M |
+| pr-003 | Sourcing Event | `'VP Procurement'` | 210M |
+
+**It is populated on rows nobody has approved**, its values are role BANDS not
+names, and they track `estimatedValue`. A field populated before the act it
+names cannot be a record of that act. It is the **routing destination**, and it
+was misnamed — the same class as a button whose label names a verb it does not
+dispatch (§67's fourth false affordance), **one layer down, in a DTO.**
+
+So: renamed `approver` → `approvalLevel`, relabelled *"Routes to"* (ID:
+*"Diarahkan ke"*), and the ACTOR became a separate `approvedBy` that
+`t_pr_approve` writes and the panel reads back — **absent until somebody
+approves**, which is precisely what the old field never was. The band→level rule
+stays unmodelled (item 4, open); nothing reads `estimatedValue` for it.
+
+⚠️ **A RENAME EXECUTED FIRST-OCCURRENCE-WINS HIT THE WRONG DTO.** `approver: ''`
+appears in both the invoice `create` and the PR `create` in the same file;
+the replace took the invoice's. Caught by reading the resulting line numbers
+against the target's known range, not by any test — `Invoice.approver` is a
+different field on a different DTO and the suite had no reason to object.
+
+### 68e · The stored-field gate went red on its own, unprompted, and it was right
+
+`ActorAttribution.person` carried an allowlist exemption reading *"unreachable
+by construction: nothing can produce a RESOLVED arm and nothing reads one."*
+Rendering an approval's attribution made the **second half** false, and the
+bilateral assertion failed with *"AN EXEMPTION OUTLIVED ITS SUBJECT"*, naming
+the file and the line.
+
+The row is deleted. The **first** half is still true and stays true: nothing
+constructs a `RESOLVED` actor (C10 §2.3, pinned by the `simUsrNamespace`
+tripwire). The surface handles both arms anyway, because **a surface that
+handles one arm of a union renders `[object Object]` the day the other appears**
+— an arm ready before its value is, which is the opposite failure from the one
+the list exists to catch.
+
+### 68f · A FIFTH false affordance, in the toast this time — and §67's own sweep walked past it
+
+Adding a real submit needed the key `requisitions.toast.submitted.*`, which was
+**already taken by the CREATE flow**, reading:
+
+> `'requisitions.toast.submitted.desc': 'Routed to Section Head for approval.'`
+
+fired by `t_pr_create`, which mints a **Draft** and routes to nobody. §67 found
+and fixed the BUTTON that fires it (*"Submit for approval"* → *"Create
+requisition"*) **and left the toast the button fires**, because the sweep that
+found it was looking at labels.
+
+Repointed to `created.*` / `createFailed.*` with honest copy, and `submitted.*`
+now belongs to `t_pr_submit`, where it is literally true.
+
+⚠️ **THE CLASS, RESTATED AND EXTENDED.** A false affordance can live in the
+handler (does nothing), the shape (looks like a commit, isn't), the label (names
+the wrong verb) — and now **the confirmation** (reports a thing that did not
+happen). A census keyed on any one of the four reports clean on the other three.
+`label-names-wrong-verb` in the durable memory is updated.
+
+### 68g · The solid-blue retirement, and how a literal scan was incomplete four ways
+
+Mid-batch operator ruling with a screenshot: retire solid action-blue
+**everywhere**, WhatsApp messenger chrome included, folded into this PR. This
+**reverses** DP2-BUTTON-01, which reserved solid for irreversible commits and
+named Reject/Dispute in that list — the rule under which §67 had deliberately
+made *Confirm rejection* solid one batch earlier. Said so before executing;
+CLAUDE.md is amended, because a doctrine reversed only in code comes back.
+
+⚠️ **`grep 'variant="primary"'` RETURNED 14 SITES AND WAS WRONG FOUR WAYS.** The
+producers it could not see:
+
+1. **A PROP** — `BulkActionsBar`'s `primary.solid` opt-in. Nothing passed it, so
+   it was dead; the flag that fed it was one seam further in.
+2. **A MODEL FLAG** — `invoiceActionModel`'s `solid: true`. ⚠️ **And it was not
+   only a style: `BuyerInvoices.handleFooterAction` reads it to route the
+   release through a SECOND CONFIRMATION STEP.** Deleting it with the styling
+   would have deleted a confirm gate. It kept its meaning and lost its style
+   name → `reservedCommit`.
+3. **TWO TYPED HELPERS** returning `'primary' | 'outline'` — `FOOTER_VARIANT`
+   and an inline `variant={commitAction ? 'primary' : 'outline'}`. No literal
+   search of any width finds these.
+4. **THE DEFAULT** — `Button`'s own `variant = 'primary'`, which made **solid
+   the shape of forgetting to choose.** Unreachable only by luck: all 181
+   `<Button>` sites pass an explicit variant. A latent trap, not a live defect.
+
+⚠️ **AND THE LAST TWO WERE FOUND BY THE TYPE, NOT BY ANY SCAN.** Removing
+`'primary'` from `Button`'s `Variant` union turned them into two `tsc` errors
+instantly. The rule is now enforced by a type — every route back is a build
+failure — with `solidButtonRetired.guard.test.ts` covering what a type cannot.
+
+⚠️ **THE GATE FALSELY ACCUSED TWO FILES ON ITS FIRST TWO RUNS, AND BOTH TIMES
+THE OFFENDING TEXT WAS ITS OWN EXPLANATION.** `BulkActionsBar.tsx` was condemned
+for a comment saying the scan had been incomplete; then its sibling assertion
+was condemned for a comment recording that `solid?: boolean` had been removed.
+`withoutProse` (the `simUsrNamespace` precedent) fixes both. **Twice in one gate
+is not coincidence: a rule stated in the file it governs is always readable as a
+violation of itself**, and a gate that punishes documenting it is a gate that
+trains people to stop.
+
+Browser-verified on the rebuilt bundle (`index-DyJkBBVl.js`, cache-busted): 295
+buttons across 7 surfaces, **zero** solid — and a synthetic `#0070F2` button
+injected into the same scan **was** caught, because zero is exactly the answer
+that requires checking the instrument.
+
+### 68h · What shipped
+
+- `t_pr_submit` and `t_pr_revise` surfaced on `BuyerRequisitions`, both gated on
+  the atom and both rendering the WAIT (`handoff-pr-submit` /
+  `handoff-pr-revise`) — **the first handoffs on this surface to name
+  Requisitioner**, since Procurement previously held every surfaced verb.
+- `revisionNote` + `approvedBy` on the DTO, written by their verbs and read back.
+- `approver` → `approvalLevel`, relabelled as the destination it is.
+- `PR_REVISION_NOTE_AUTHORED` · `PR_APPROVAL_ATTRIBUTED` (C10 §6.2 half two).
+- `TransitionEvent.attribution` (C10 §6.4) — user-trigger only.
+- `applyTransition` and `PolicyHookFn` gained `scope`.
+- Solid action-blue retired portal-wide, at the type.
+- EN + ID from birth. 7 mutation probes, each killing a named test on a green
+  baseline. 46 new specs; floor 3275/238 → 3321/241.
+
+### 68i · Open after this batch
+
+- ⚠️ **`t_pr_reject` RECORDS NO DECIDER ON THE DOCUMENT.** The ruling named
+  `t_pr_approve`; the rejection's *reason* is stored and the *ledger* carries
+  attribution via §6.4, but nothing on the document says who declined it. Pinned
+  by test so the asymmetry is a fact in the tree rather than a line in a report.
+  It is the same four-line repair as approve.
+- `setBy` is still attribution-by-assertion on `t_enforcement_set` — §6.2's
+  refusal now exists, on one verb, and that verb is not it.
+- Items **4, 5, 7** untouched by ruling: the threshold ladder still lives in
+  fixture prose with `t_pr_approve`'s `policyHooks` as its seat; `Approved` is
+  still terminal (`t_pr_source` / `t_pr_convert` unauthored cascades); the
+  default buyer seat still holds both sides of the segregation.
+- `disputeReason` on the invoice lane is still dropped at `applyTransition` —
+  the third instance of the chain-terminating-in-nothing shape, and the only one
+  left.
