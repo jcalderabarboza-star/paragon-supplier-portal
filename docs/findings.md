@@ -17504,6 +17504,17 @@ instance**. The general form, filed here and mirrored into the derivation doctri
 > ⚠️ **A FINDING WHOSE MECHANISM IS FALSE MUST NOT BE FILED, EVEN WHEN ITS CONCLUSION IS RIGHT.**
 > **THE REGISTER IS WHAT THE NEXT BATCH BUILDS ON, AND A FALSE BLOCKER COSTS MORE THAN THE BATCH
 > IT STOPPED.**
+>
+> ⚠️ **AND THE BOUND IS PART OF THE RULE, NOT A FOOTNOTE TO IT: AN UNVERIFIED MECHANISM IS
+> STILL FILED, WITH ITS UNCERTAINTY STATED — ONLY A MECHANISM *MEASURED FALSE* IS WITHHELD. THE
+> DISTINCTION IS WHETHER THE MEASUREMENT WAS TAKEN.**
+
+**The bound is load-bearing, and it is stated first for that reason** (§71). Unbounded, the rule
+licenses withholding anything a seat has not proven, **which would empty the register of exactly
+the findings that most need checking** — the uncertain ones are the whole reason a register
+exists. A limit that trails behind a warning symbol at the end of a paragraph reads as *the rule,
+plus a footnote*, and **the footnote is the half that stops the rule inverting into the harm it
+was written to prevent.** So it leads.
 
 **Why it is a rule and not an instance.** §64a already names the shape — *a misdescribed
 mechanism attached to a correct conclusion* — and stops at detection: *grep the artifact, keep
@@ -17527,9 +17538,8 @@ past review.
 shape and sharper — the hook reaches the document fine; **what is missing is the right-hand side
 of the comparison, not the left.** One is a dead end; the other names what to build.
 
-**What this does NOT license.** It is not "suppress findings you cannot fully verify." An
-UNVERIFIED mechanism is filed WITH its uncertainty stated. A mechanism MEASURED FALSE is not
-filed at all. The distinction is whether the measurement was taken.
+**What this does NOT license** is stated above rather than here, which is the point of §71's
+second placement: it is not *"suppress findings you cannot fully verify."*
 
 ---
 
@@ -17680,3 +17690,87 @@ rebuild the preview server served `index-DMyKU0SE.js` and the running page was s
 and reading only the server would have shown a fresh hash over a stale render, i.e. the fix
 reported as FAILED. The hash is now asserted from `document.querySelectorAll('script[src]')`
 inside the page on every reading, not from `curl`.
+
+
+---
+
+## §71 — TWO PLACEMENTS, AND A THIRD WAY A CLEAN READING LIES
+
+**Dispatch:** docs only. Both items are placements of things §70 already established — which is
+the batch's whole content, and the reason it is worth doing separately: **a rule filed in the
+wrong place is read in the wrong order, and order is what a rule's limit depends on.**
+
+---
+
+### 71a · `CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01` — the third member of the clean-reading family
+
+Filed in the derivation doctrine as its own class rather than as a note on either neighbour,
+**because it fails for a reason neither of them covers**:
+
+| | What the instrument examined | Why the clean reading is worthless |
+|---|---|---|
+| `EMPTY-INPUT-REPORTS-CLEAN-01` (§42b) | **nothing** | there was no population |
+| **rule 1** | a population, through a broken matcher | the result reports on the matcher |
+| **this** | **everything, correctly** | **the defect was removed an hour earlier** |
+
+> **THE OPERATIVE FORM: A CLEAN RESULT TAKEN RIGHT AFTER THE FIX IS A REPORT ABOUT THE FIX.**
+
+**It is the hardest of the three to distrust, because nothing is wrong with it.** The population
+is real and complete, the matcher is correct, the zero is honest. Rules 1 and 3 both train a seat
+to ask *"is my instrument broken?"* — and here the answer is **no**, which is exactly what makes
+the reading survive scrutiny it has not earned.
+
+**The instance, and it is this arc's own.** At §70b a candidate gate for
+`FORWARD-PROMISE-HAS-NO-HANDLER-01` — look for a governed vocabulary quoted verbatim inside i18n
+copy — measured **zero false positives across the entire i18n layer**. A genuinely clean reading
+over a genuinely complete population. **It was clean because §69 had deleted both instances that
+morning.** Read as evidence of a well-behaved instrument, it was evidence of a completed repair.
+
+⚠️ **AND THE CONSEQUENCE IS RULE 4's, ARRIVING THROUGH A DIFFERENT DOOR: AN INSTRUMENT
+VALIDATED ONLY AGAINST A REPAIRED TREE HAS NEVER BEEN SHOWN TO FIRE.** Rule 4 says probe the
+guard both ways, and the failure here is not skipping that — it is **believing it is already
+done**, because the real-tree run came back green and green is what a working guard looks like.
+**The zero proves the repair landed; it proves nothing about the next instance.**
+
+**The disposal is a second measurement against different input:** fire the instrument at the
+defect the fix removed. §70b did exactly that, and reported it as a **separate** figure for that
+reason — *it would have fired on both §69 strings* is a different claim from *it returns zero
+today*, taken against a different tree. Reporting only the zero would have been the honest half of
+a two-part measurement, presented as the whole.
+
+**Why it is not folded into rule 4.** Rule 4 governs the PROBE. This governs **what a seat
+concludes from a green run on the real tree**, which is the step before anyone thinks about
+probing — and it is the step where the probe gets skipped as unnecessary.
+
+---
+
+### 71b · THE BOUND ON `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` NOW LEADS THE RULE
+
+§70 recorded the bound in both places and put it in the wrong position in both: under a heading
+reading *"What this does NOT license"* in §70a, and trailing behind a ⚠️ at the end of the
+CLAUDE.md block. Moved to sit immediately under the rule in both.
+
+> **AN UNVERIFIED MECHANISM IS STILL FILED, WITH ITS UNCERTAINTY STATED. ONLY A MECHANISM
+> *MEASURED FALSE* IS WITHHELD.**
+
+**This is a placement change and it is not cosmetic.** A rule whose limit trails behind a warning
+symbol **gets read as the rule plus a footnote** — and here the footnote is the half that keeps
+the rule from inverting: unbounded, *"do not file a finding whose mechanism is false"* licenses
+withholding anything a seat has not proven, **which empties the register of exactly the findings
+that most need checking.** The uncertain findings are the reason a register exists; a rule that
+quietly excludes them has not made the register cleaner, it has made it agree with whoever wrote
+it last.
+
+⚠️ **AND THE FAILURE MODE IS SPECIFIC TO HOW THIS FILE IS READ.** `CLAUDE.md` is long and is
+skimmed for the bolded claim; §27's `FLOOR-IN-PROSE-01` is the same observation about a NUMBER
+in prose — a fact stated where nothing checks it drifts, and a limit stated where nobody reads
+it is dropped. **Both halves of a rule have to survive the skim, so both halves are bolded and
+the limit comes first.**
+
+---
+
+### 71c · GATES
+
+Docs only — no code, no fixtures, no i18n. Four green, **floor unchanged at 3342 / 244 / 7**. No
+browser QA: nothing rendered changed, and running one would have produced a green reading that
+said nothing about this batch — which is 71a, on the batch that files 71a.

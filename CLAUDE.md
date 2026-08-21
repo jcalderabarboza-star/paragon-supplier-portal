@@ -483,6 +483,36 @@ counts the opposite half of the asymmetry, and one event under two classes
 inflates both. The population guard is now the FIRST test in the shipped gate and
 asserts MEMBERSHIP, never a count. §42b.
 
+⚠️ **§71 · AND A THIRD WAY A CLEAN READING LIES, WHICH IS NEITHER OF THE OTHER
+TWO — `CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01`. THE OPERATIVE FORM: A CLEAN
+RESULT TAKEN RIGHT AFTER THE FIX IS A REPORT ABOUT THE FIX.** The family now has
+three members and they fail for three different reasons, so a note on either of
+the first two would have been filed in the wrong place:
+
+| | What the instrument examined | Why the clean reading is worthless |
+|---|---|---|
+| `EMPTY-INPUT-REPORTS-CLEAN-01` | **nothing** | there was no population |
+| **rule 1** | a population, through a broken matcher | the result reports on the matcher |
+| **this** | **everything, correctly** | **the defect was removed an hour earlier** |
+
+The third is the hardest to distrust, because *nothing is wrong with it*: real
+population, correct matcher, honest zero. At §70b a candidate gate for
+`FORWARD-PROMISE-HAS-NO-HANDLER-01` measured **zero false positives across the
+whole i18n layer** — a genuinely clean reading over a genuinely complete
+population — and it was clean **because §69 had deleted both instances that
+morning.**
+
+⚠️ **AND THE CONSEQUENCE IS RULE 4's, ARRIVING THROUGH A DIFFERENT DOOR: AN
+INSTRUMENT VALIDATED ONLY AGAINST A REPAIRED TREE HAS NEVER BEEN SHOWN TO FIRE.**
+Rule 4 says probe the guard both ways; this is the case where a seat believes it
+already has, because the real-tree run came back green and green is what a
+working guard looks like. **The zero proves the repair landed. It proves nothing
+about whether the instrument can catch the next instance** — for that, fire it at
+the defect the fix removed (§70b did: the proxy would have caught both §69
+strings, which is a different measurement from the zero, taken against different
+input). **A gate whose only evidence is a clean run on a just-repaired tree is
+unprobed, whatever its output says.**
+
 ⚠️ **§51 · AND ONE LAYER ABOVE THE PROBE: THE INSTRUMENT THAT COUNTS THE PROBE.
 RULE 4 COVERS THE PROBE. THIS COVERS THE THING THAT READS THE PROBE'S OUTPUT, AND
 ITS FAILURE MODE IS FLATTERINGLY HUMBLE.** A mutation probe is trusted through a
@@ -538,6 +568,13 @@ most believable kind.
 `FALSE-MECHANISM-MUST-NOT-BE-FILED-01`. A FINDING WHOSE MECHANISM IS FALSE MUST
 NOT BE FILED, EVEN WHEN ITS CONCLUSION IS RIGHT: THE REGISTER IS WHAT THE NEXT
 BATCH BUILDS ON, AND A FALSE BLOCKER COSTS MORE THAN THE BATCH IT STOPPED.**
+**AND THE BOUND IS PART OF THE RULE, NOT A FOOTNOTE TO IT: AN UNVERIFIED
+MECHANISM IS STILL FILED, WITH ITS UNCERTAINTY STATED — ONLY A MECHANISM
+*MEASURED FALSE* IS WITHHELD. THE DISTINCTION IS WHETHER THE MEASUREMENT WAS
+TAKEN.** Unbounded, the rule licenses withholding anything a seat has not proven,
+**which would empty the register of exactly the findings that most need
+checking** — so the limit is what keeps the rule from inverting into the harm it
+exists to prevent, and it is stated before the argument rather than after it.
 §64a stops at detection (*grep the artifact, keep the property*), so the default
 survives — the conclusion held, and filing is what this project does with
 survivors. **That default is wrong, and asymmetrically:** a finding filed with a
@@ -552,9 +589,7 @@ in front of every value-based policy this platform will ever want, while
 it. **The disposal is re-measure, then file the TRUE finding** — which was the
 opposite shape and sharper: the hook reaches the document, and what is missing is
 the RIGHT-HAND SIDE of the comparison. One is a dead end; the other names what to
-build. ⚠️ **This does NOT license suppressing what you could not verify:** an
-UNVERIFIED mechanism is filed WITH its uncertainty stated; a mechanism MEASURED
-FALSE is not filed at all. The distinction is whether the measurement was taken.
+build.
 
 The gate itself is `src/lib/storedFieldGate/` — every stored field on a
 glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
