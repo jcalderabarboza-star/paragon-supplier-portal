@@ -77,9 +77,29 @@ export const requisitionsEn: Record<string, string> = {
   // — Detail side panel —
   'requisitions.panel.title': 'PR {{number}}',
   'requisitions.panel.close': 'Close',
-  'requisitions.panel.createPoDirectly': 'Create PO directly',
-  'requisitions.panel.createSourcingEvent': 'Create Sourcing Event',
-  'requisitions.panel.submitForApproval': 'Submit for approval',
+  // — §67 · the approval lane (the three retired affordance labels are gone:
+  //   createPoDirectly / createSourcingEvent / submitForApproval named acts
+  //   this surface cannot perform) —
+  'requisitions.panel.approve': 'Approve',
+  'requisitions.panel.approving': 'Approving…',
+  'requisitions.panel.reject': 'Reject',
+  'requisitions.panel.rejecting': 'Rejecting…',
+  'requisitions.panel.rejectConfirm': 'Confirm rejection',
+  'requisitions.panel.rejectCancel': 'Cancel',
+  'requisitions.panel.rejectSection': 'Reason for rejection',
+  'requisitions.panel.rejectSrLabel': 'Reason for rejecting requisition {{number}}',
+  'requisitions.panel.rejectPlaceholder': 'Required — what the requester needs to change',
+  'requisitions.panel.rejectNote':
+    'Recorded on the requisition and shown to the requester. A rejection cannot be saved without it.',
+  'requisitions.panel.rejectedBecause': 'Rejected because',
+  'requisitions.panel.attributionNote':
+    'This portal holds no person identity yet, so the decision is recorded as unattributed. The act proceeds and the record says who could not be named.',
+  'requisitions.panel.terminal.title': 'Approved — this is where it stops today',
+  'requisitions.panel.terminal.body':
+    'Sourcing and PO conversion are declared as automatic consequences of approval, and no producer is wired for either yet. Nothing on this screen advances an approved requisition further.',
+  'requisitions.panel.draftNote.title': 'Draft — not yet in the approval queue',
+  'requisitions.panel.draftNote.body':
+    'Requisitions reach the approval queue from the system that raised them. This screen does not submit them.',
   'requisitions.panel.keyFacts': 'Key facts',
   'requisitions.panel.field.material': 'Material',
   'requisitions.panel.field.category': 'Category',
@@ -103,13 +123,23 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.toast.submitted.desc': 'Routed to Section Head for approval.',
   'requisitions.toast.submitFailed.title': 'Requisition could not be created',
   'requisitions.toast.submitFailed.desc': 'The requisition was rejected — nothing was created.',
-  'requisitions.toast.poInitiated.title': 'PO creation not available yet — nothing was created for {{prNumber}}.',
-  'requisitions.toast.sourcingInitiated.title': 'Sourcing event not available yet — nothing was created for {{prNumber}}.',
-  'requisitions.toast.submittedApproval.title': 'Approval submission not available yet — {{prNumber}} was not submitted.',
+  'requisitions.toast.approved.title': '{{prNumber}} approved',
+  'requisitions.toast.approved.desc': 'Recorded against this requisition as unattributed.',
+  'requisitions.toast.approveFailed.title': '{{prNumber}} was not approved',
+  'requisitions.toast.rejected.title': '{{prNumber}} rejected',
+  'requisitions.toast.rejected.desc': 'The reason is recorded on the requisition.',
+  'requisitions.toast.rejectFailed.title': '{{prNumber}} was not rejected',
+  'requisitions.toast.actionFailed.desc': 'The command was refused — nothing changed.',
   // — New PR form —
   'requisitions.new.title': 'New Purchase Requisition',
   'requisitions.new.cancel': 'Cancel',
-  'requisitions.new.submit': 'Submit for approval',
+  // ⚠️ §67 — WAS 'Submit for approval', WHICH NAMED THE WRONG VERB. This
+  //   button dispatches `t_pr_create`, and `t_pr_create` mints a DRAFT
+  //   (C7 :131). Nothing here reaches the approval queue — `t_pr_submit`
+  //   does that, and no surface offers it. The label promised the queue
+  //   while the verb produced a draft, which is the false-affordance class
+  //   living in a string rather than in a handler.
+  'requisitions.new.submit': 'Create requisition',
   'requisitions.new.step1.eyebrow': 'Step 1',
   'requisitions.new.step1.title': 'Material & quantity',
   'requisitions.new.step1.desc': "What's being requested?",
@@ -210,9 +240,27 @@ export const requisitionsId: Record<string, string> = {
   // — Detail side panel —
   'requisitions.panel.title': 'PR {{number}}',
   'requisitions.panel.close': 'Tutup',
-  'requisitions.panel.createPoDirectly': 'Buat PO langsung',
-  'requisitions.panel.createSourcingEvent': 'Buat Acara Sourcing',
-  'requisitions.panel.submitForApproval': 'Ajukan untuk persetujuan',
+  // — §67 · jalur persetujuan —
+  'requisitions.panel.approve': 'Setujui',
+  'requisitions.panel.approving': 'Menyetujui…',
+  'requisitions.panel.reject': 'Tolak',
+  'requisitions.panel.rejecting': 'Menolak…',
+  'requisitions.panel.rejectConfirm': 'Konfirmasi penolakan',
+  'requisitions.panel.rejectCancel': 'Batal',
+  'requisitions.panel.rejectSection': 'Alasan penolakan',
+  'requisitions.panel.rejectSrLabel': 'Alasan penolakan permintaan {{number}}',
+  'requisitions.panel.rejectPlaceholder': 'Wajib — apa yang perlu diubah pemohon',
+  'requisitions.panel.rejectNote':
+    'Dicatat pada permintaan dan ditampilkan kepada pemohon. Penolakan tidak dapat disimpan tanpa alasan ini.',
+  'requisitions.panel.rejectedBecause': 'Ditolak karena',
+  'requisitions.panel.attributionNote':
+    'Portal ini belum memiliki identitas orang, sehingga keputusan dicatat tanpa atribusi. Tindakan tetap berjalan dan catatannya menyatakan siapa yang tidak dapat disebutkan.',
+  'requisitions.panel.terminal.title': 'Disetujui — sampai di sini untuk saat ini',
+  'requisitions.panel.terminal.body':
+    'Sourcing dan konversi PO dideklarasikan sebagai konsekuensi otomatis dari persetujuan, dan belum ada produsen yang terhubung untuk keduanya. Tidak ada yang di layar ini yang memajukan permintaan yang sudah disetujui.',
+  'requisitions.panel.draftNote.title': 'Draf — belum masuk antrean persetujuan',
+  'requisitions.panel.draftNote.body':
+    'Permintaan masuk ke antrean persetujuan dari sistem yang menerbitkannya. Layar ini tidak mengajukannya.',
   'requisitions.panel.keyFacts': 'Fakta utama',
   'requisitions.panel.field.material': 'Material',
   'requisitions.panel.field.category': 'Kategori',
@@ -236,13 +284,17 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.toast.submitted.desc': 'Diarahkan ke Kepala Seksi untuk persetujuan.',
   'requisitions.toast.submitFailed.title': 'Permintaan tidak dapat dibuat',
   'requisitions.toast.submitFailed.desc': 'Permintaan ditolak — tidak ada yang dibuat.',
-  'requisitions.toast.poInitiated.title': 'Pembuatan PO belum tersedia — tidak ada yang dibuat untuk {{prNumber}}.',
-  'requisitions.toast.sourcingInitiated.title': 'Acara pengadaan belum tersedia — tidak ada yang dibuat untuk {{prNumber}}.',
-  'requisitions.toast.submittedApproval.title': 'Pengiriman persetujuan belum tersedia — {{prNumber}} tidak dikirim.',
+  'requisitions.toast.approved.title': '{{prNumber}} disetujui',
+  'requisitions.toast.approved.desc': 'Dicatat pada permintaan ini tanpa atribusi.',
+  'requisitions.toast.approveFailed.title': '{{prNumber}} tidak disetujui',
+  'requisitions.toast.rejected.title': '{{prNumber}} ditolak',
+  'requisitions.toast.rejected.desc': 'Alasannya dicatat pada permintaan.',
+  'requisitions.toast.rejectFailed.title': '{{prNumber}} tidak ditolak',
+  'requisitions.toast.actionFailed.desc': 'Perintah ditolak — tidak ada yang berubah.',
   // — New PR form —
   'requisitions.new.title': 'Permintaan Pembelian Baru',
   'requisitions.new.cancel': 'Batal',
-  'requisitions.new.submit': 'Ajukan untuk persetujuan',
+  'requisitions.new.submit': 'Buat permintaan',
   'requisitions.new.step1.eyebrow': 'Langkah 1',
   'requisitions.new.step1.title': 'Material & kuantitas',
   'requisitions.new.step1.desc': 'Apa yang diminta?',

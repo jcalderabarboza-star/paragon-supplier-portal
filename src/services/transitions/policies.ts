@@ -273,3 +273,32 @@ const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target }) => 
 };
 
 bindPolicyHook(POLICY_HOOKS.ENFORCEMENT_SET_GOVERNED, enforcementSetGoverned);
+
+// ── §67 · PR REJECT — THE REASON IS SUBSTANCE, NOT PRESENCE ──────────────────
+//
+// `requiredFields: ['rejectionReason']` proves the key is there. This proves
+// somebody wrote something in it. Both are needed and the split is the point:
+// the dispatcher's rule 5 is `isEmpty`, and `isEmpty('   ')` is FALSE — so a
+// "required" reason without this hook admits the space bar, and A REQUIRED
+// FIELD THAT ADMITS THE SPACE BAR IS A SUGGESTION WITH A VALIDATION MESSAGE.
+//
+// ⚠️ THE LIMIT, STATED: it proves a non-blank string. It cannot prove the text
+// is TRUE, relevant, or responsive to the requisition — no value-level guard
+// can, exactly as `RR_SUBMIT_QTY_FLOOR` cannot tell 2400 from 2.4. The surface
+// disables its own submit until the box is non-empty; this is what stands
+// behind a hand-crafted dispatch that never sees the surface.
+bindPolicyHook(POLICY_HOOKS.PR_REJECT_REASON_AUTHORED, ({ payload }) => {
+  const value = payload.rejectionReason;
+  if (typeof value !== 'string') {
+    return { ok: false, reason: `rejectionReason must be text, got ${typeof value}` };
+  }
+  if (value.trim() === '') {
+    return {
+      ok: false,
+      reason:
+        'rejectionReason is blank — a rejected requisition must say something ' +
+        'the requester can read and revise against',
+    };
+  }
+  return { ok: true };
+});

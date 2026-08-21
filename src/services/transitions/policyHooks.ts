@@ -199,6 +199,23 @@ export const POLICY_HOOKS = {
    *  date on anything below BLOCK, and A NAMED ACTOR ON ANY LOOSENING.
    *  Tightening is always legal, so the safest act needs no permission. */
   ENFORCEMENT_SET_GOVERNED: 'enforcement_set_governed',
+  /**
+   * PR reject (§67): the rejection reason must be SUBSTANCE, not presence.
+   *
+   * ⚠️ **THE SAME GUARD AS `RR_DISPUTE_TEXT_AUTHORED`, ON THE SAME GROUND, AND
+   * IT IS A DELIBERATE SECOND INSTANCE RATHER THAN A SHARED HOOK.** The two
+   * verbs read DIFFERENT payload fields (`rejectionReason` / `disputeReason`)
+   * and refuse in different words, so a shared implementation would have to
+   * branch on `toState` to know which field it was proving — which is exactly
+   * the fragility `RR_DISPUTE_TEXT_AUTHORED`'s own header warns about, where
+   * `t_requirementresponse_review` ALSO lands on `UnderReview` and `toState`
+   * alone cannot separate a resolution from a review.
+   *
+   * It proves a NON-BLANK STRING. It cannot prove the text is true, relevant or
+   * responsive; no value-level guard can. `requiredFields` alone would not even
+   * reach that bar — `isEmpty('   ')` is false.
+   */
+  PR_REJECT_REASON_AUTHORED: 'pr_reject_reason_authored',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);

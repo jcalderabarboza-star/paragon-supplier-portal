@@ -36,7 +36,14 @@ import { useToast } from '../hooks/useToast';
 import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../hooks/useEnumLabel';
 import { useRequisitions } from '../services/query/hooks';
-import { usePurchaseRequisitionCreate } from '../services/query/commandHooks';
+import {
+  usePurchaseRequisitionCreate,
+  useRequisitionApprove,
+  useRequisitionReject,
+} from '../services/query/commandHooks';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
+import { availabilityOfAtom } from '../services/transitions/handoff';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { DataError } from '../services/data/types';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
 import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
@@ -176,13 +183,39 @@ const BuyerRequisitions: React.FC = () => {
   ];
   const [group, setGroup] = useState<GroupTab>('all');
   const [search, setSearch] = useState('');
-  const [selectedPR, setSelectedPR] = useState<PurchaseRequisition | null>(null);
+  const [selectedRow, setSelectedRow] = useState<PurchaseRequisition | null>(null);
+  // The detail panel's mode. `rejecting` swaps the footer for the reason
+  // capture — the BuyerInvoices dispute precedent, one lane over.
+  const [panelMode, setPanelMode] = useState<'view' | 'rejecting'>('view');
+  const [rejectReason, setRejectReason] = useState('');
   const [newOpen, setNewOpen] = useState(false);
   const [form, setForm] = useState<NewPRForm>(emptyForm);
 
   const reqQuery = useRequisitions();
   const prs = reqQuery.data?.items ?? [];
   const createPr = usePurchaseRequisitionCreate();
+  const approvePr = useRequisitionApprove();
+  const rejectPr = useRequisitionReject();
+  const { identity } = useCurrentIdentity();
+
+  // ⚠️ **THE SELECTED ROW IS DERIVED FROM THE LIST, NOT HELD AS A SNAPSHOT.**
+  // The row captured on click is the PRE-transition record; after an approve
+  // invalidates and the list re-derives, a held snapshot would keep rendering
+  // 'Pending Approval' with its Approve button intact over a document that is
+  // already Approved — an affordance for an act the dispatcher would now refuse
+  // as ILLEGAL_TRANSITION. Re-finding by id makes the panel a view of the store
+  // rather than a copy of it. The fallback keeps the panel open for a row that
+  // has genuinely left the list.
+  const selectedPR = selectedRow
+    ? (prs.find((p) => p.id === selectedRow.id) ?? selectedRow)
+    : null;
+
+  // The seat's authority over the two approval verbs, DERIVED per verb — never
+  // authored as a status→owner map. `pr:approve` / `pr:reject` both live in
+  // `procurement` (businessRoles.ts), so a seat without it reads "Awaiting
+  // Procurement" rather than seeing nothing at all.
+  const approveAvailability = availabilityOfAtom('pr:approve', identity.businessRoles);
+  const rejectAvailability = availabilityOfAtom('pr:reject', identity.businessRoles);
 
   const counts = useMemo(() => {
     const by = (s: PRStatus) => prs.filter((p) => p.status === s).length;
@@ -286,6 +319,81 @@ const BuyerRequisitions: React.FC = () => {
         variant: 'error',
         title: t('requisitions.toast.submitFailed.title'),
         description: e instanceof DataError ? e.message : t('requisitions.toast.submitFailed.desc'),
+      });
+    }
+  };
+
+  // ── §67 · THE APPROVAL ACTS ────────────────────────────────────────────────
+  // Both mirror `submitNewPR` above: dispatch, read the refusal channel, toast
+  // honestly, and let the invalidation re-derive the panel. Neither absorbs a
+  // refusal — `result.reason` is what the dispatcher said, rendered verbatim.
+  const closePanel = () => {
+    setSelectedRow(null);
+    setPanelMode('view');
+    setRejectReason('');
+  };
+
+  const approveSelected = async () => {
+    if (!selectedPR || approvePr.isPending) return;
+    try {
+      const result = await approvePr.mutateAsync({ prId: selectedPR.id });
+      if (result.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('requisitions.toast.approveFailed.title', { prNumber: selectedPR.prNumber }),
+          description: result.reason ?? t('requisitions.toast.actionFailed.desc'),
+        });
+        return;
+      }
+      toast({
+        variant: 'success',
+        title: t('requisitions.toast.approved.title', { prNumber: selectedPR.prNumber }),
+        description: t('requisitions.toast.approved.desc'),
+      });
+      closePanel();
+    } catch (e) {
+      toast({
+        variant: 'error',
+        title: t('requisitions.toast.approveFailed.title', { prNumber: selectedPR.prNumber }),
+        description: e instanceof DataError ? e.message : t('requisitions.toast.actionFailed.desc'),
+      });
+    }
+  };
+
+  // ⚠️ THE REASON IS NOT OPTIONAL AND THE BUTTON IS WHAT SAYS SO. A DISMISSIBLE
+  // capture beside a required field is how a required thing becomes a
+  // suggestion (operator ruling, §67), so the commit stays DISABLED until the
+  // box is non-empty rather than firing and surfacing a refusal afterwards.
+  // `PR_REJECT_REASON_AUTHORED` stands behind it for anything that never sees
+  // this surface — the disable is the courtesy, the hook is the guarantee.
+  const canReject = rejectReason.trim().length > 0;
+
+  const rejectSelected = async () => {
+    if (!selectedPR || !canReject || rejectPr.isPending) return;
+    try {
+      const result = await rejectPr.mutateAsync({
+        prId: selectedPR.id,
+        rejectionReason: rejectReason.trim(),
+      });
+      if (result.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('requisitions.toast.rejectFailed.title', { prNumber: selectedPR.prNumber }),
+          description: result.reason ?? t('requisitions.toast.actionFailed.desc'),
+        });
+        return;
+      }
+      toast({
+        variant: 'success',
+        title: t('requisitions.toast.rejected.title', { prNumber: selectedPR.prNumber }),
+        description: t('requisitions.toast.rejected.desc'),
+      });
+      closePanel();
+    } catch (e) {
+      toast({
+        variant: 'error',
+        title: t('requisitions.toast.rejectFailed.title', { prNumber: selectedPR.prNumber }),
+        description: e instanceof DataError ? e.message : t('requisitions.toast.actionFailed.desc'),
       });
     }
   };
@@ -404,7 +512,7 @@ const BuyerRequisitions: React.FC = () => {
                 <TableRow
                   key={pr.id}
                   className="cursor-pointer"
-                  onClick={() => setSelectedPR(pr)}
+                  onClick={() => setSelectedRow(pr)}
                 >
                   <TableCell>
                     <Data as="div" className="text-xs font-semibold text-text-primary">
@@ -487,49 +595,95 @@ const BuyerRequisitions: React.FC = () => {
 
       <SidePanel
         open={selectedPR !== null}
-        onClose={() => setSelectedPR(null)}
+        onClose={closePanel}
         title={selectedPR ? t('requisitions.panel.title', { number: selectedPR.prNumber }) : ''}
         footerActions={
           selectedPR && (
             <>
-              <Button
-                variant="secondary"
-                onClick={() => setSelectedPR(null)}
-              >
+              {/* ⚠️ §67 — THREE AFFORDANCES RETIRED HERE, AND THE DEFECT IS
+                  PRECISELY LOCATED. "Submit for approval" on a Draft, and
+                  "Create PO directly" / "Create Sourcing Event" on an Approved,
+                  dispatched NOTHING — no store write, no event, no state
+                  change.
+
+                  **Their COPY was already honest** ("PO creation not available
+                  yet — nothing was created"), which is why this is worth
+                  stating carefully rather than as a flat accusation. What lied
+                  was the SHAPE: a live button in the commit slot, labelled with
+                  the verb, firing a GREEN SUCCESS toast to report that nothing
+                  happened. A reader decides from the affordance, not from the
+                  notification they get after pressing it — and an honest
+                  sentence delivered in a success variant reads as confirmation.
+
+                  Nothing in the suite covered any of the three, which is how
+                  they survived. What stands in their place is either a REAL
+                  dispatch or a stated reason there is no act — never a button
+                  for neither. */}
+              <Button variant="secondary" onClick={closePanel}>
                 {t('requisitions.panel.close')}
               </Button>
-              {selectedPR.status === 'Approved' && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    const hasPIR = selectedPR.sourceOfSupply === 'PIR exists';
-                    toast({
-                      variant: hasPIR ? 'success' : 'info',
-                      title: hasPIR
-                        ? t('requisitions.toast.poInitiated.title', { prNumber: selectedPR.prNumber })
-                        : t('requisitions.toast.sourcingInitiated.title', { prNumber: selectedPR.prNumber }),
-                    });
-                    setSelectedPR(null);
-                  }}
-                >
-                  {selectedPR.sourceOfSupply === 'PIR exists'
-                    ? t('requisitions.panel.createPoDirectly')
-                    : t('requisitions.panel.createSourcingEvent')}
-                </Button>
+
+              {selectedPR.status === 'Pending Approval' && panelMode === 'view' && (
+                <>
+                  {/* The wait, not a gap: a seat without the atom reads the
+                      OWNER of the act rather than an empty footer. Derived per
+                      verb from `rolesHolding`, so moving `pr:approve` to another
+                      bundle tomorrow changes this line with it. */}
+                  {rejectAvailability.kind === 'held' ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => setPanelMode('rejecting')}
+                      data-testid="pr-reject-open"
+                    >
+                      {t('requisitions.panel.reject')}
+                    </Button>
+                  ) : (
+                    <HandoffNotice availability={rejectAvailability} testId="handoff-pr-reject" />
+                  )}
+                  {approveAvailability.kind === 'held' ? (
+                    <Button
+                      variant="outline"
+                      onClick={approveSelected}
+                      disabled={approvePr.isPending}
+                      data-testid="pr-approve"
+                    >
+                      {approvePr.isPending
+                        ? t('requisitions.panel.approving')
+                        : t('requisitions.panel.approve')}
+                    </Button>
+                  ) : (
+                    <HandoffNotice availability={approveAvailability} testId="handoff-pr-approve" />
+                  )}
+                </>
               )}
-              {selectedPR.status === 'Draft' && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    toast({
-                      variant: 'success',
-                      title: t('requisitions.toast.submittedApproval.title', { prNumber: selectedPR.prNumber }),
-                    });
-                    setSelectedPR(null);
-                  }}
-                >
-                  {t('requisitions.panel.submitForApproval')}
-                </Button>
+
+              {selectedPR.status === 'Pending Approval' && panelMode === 'rejecting' && (
+                <>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setPanelMode('view');
+                      setRejectReason('');
+                    }}
+                  >
+                    {t('requisitions.panel.rejectCancel')}
+                  </Button>
+                  {/* DP2-BUTTON-01 — SOLID, and Reject is named in the reserved
+                      list. The opener above stays outline because it only
+                      switches panel mode; THIS is the irreversible commit, and
+                      it is the only solid on the surface (the approve button is
+                      not rendered in `rejecting` mode). */}
+                  <Button
+                    variant="primary"
+                    onClick={rejectSelected}
+                    disabled={!canReject || rejectPr.isPending}
+                    data-testid="pr-reject-confirm"
+                  >
+                    {rejectPr.isPending
+                      ? t('requisitions.panel.rejecting')
+                      : t('requisitions.panel.rejectConfirm')}
+                  </Button>
+                </>
               )}
             </>
           )
@@ -537,6 +691,115 @@ const BuyerRequisitions: React.FC = () => {
       >
         {selectedPR && (
           <div className="space-y-6">
+            {/* ⚠️ THE REASON CAPTURE, AND IT IS NOT DISMISSIBLE-BESIDE-REQUIRED.
+                The commit button is disabled until this is non-empty, so there
+                is no path from here to a blank rejection — and no path around
+                it either: `PR_REJECT_REASON_AUTHORED` refuses a blank string at
+                the verb for any caller that never renders this box. */}
+            {panelMode === 'rejecting' && selectedPR.status === 'Pending Approval' && (
+              <section>
+                <h3 className="text-label text-text-tertiary uppercase mb-3">
+                  {t('requisitions.panel.rejectSection')}
+                </h3>
+                <label htmlFor="pr-reject-reason" className="sr-only">
+                  {t('requisitions.panel.rejectSrLabel', { number: selectedPR.prNumber })}
+                </label>
+                <textarea
+                  id="pr-reject-reason"
+                  data-testid="pr-reject-reason"
+                  className="w-full text-sm border border-border-subtle rounded-md px-3 py-2 bg-bg-surface text-text-primary"
+                  rows={3}
+                  placeholder={t('requisitions.panel.rejectPlaceholder')}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                />
+                <div className="mt-2 text-xs text-text-tertiary">
+                  {t('requisitions.panel.rejectNote')}
+                </div>
+              </section>
+            )}
+
+            {/* ⚠️ **THE SEAT SAYS WHAT IT CANNOT RECORD, BEFORE THE ACT** — the
+                §66 precedent, verbatim: a grant is recorded against
+                `UNATTRIBUTED: NO_PERSON_IN_SESSION` and the surface says so
+                first. The ceiling here is UNIFORM, not specific to approval:
+                `overrideCompletes` is literally `isAttributed(overriddenBy)`,
+                so the enforcement override STRUCTURALLY cannot complete without
+                a resolved actor. Approval carries no such predicate — C10's
+                ledger-plus-policy ruling is precisely what keeps the person out
+                of the machine — so it records UNATTRIBUTED like every other
+                governed act and proceeds. That is why this is a NOTICE and not
+                a refusal. */}
+            {selectedPR.status === 'Pending Approval' &&
+              (approveAvailability.kind === 'held' || rejectAvailability.kind === 'held') && (
+                <section
+                  data-testid="pr-attribution-note"
+                  className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
+                >
+                  <p className="text-xs text-text-secondary">
+                    {t('requisitions.panel.attributionNote')}
+                  </p>
+                </section>
+              )}
+
+            {/* The recorded rejection, read back on the document it belongs to.
+                This is the half the invoice lane never built — there the
+                required text reaches the store seam and is discarded. */}
+            {selectedPR.rejectionReason && (
+              <section
+                data-testid="pr-rejection-reason"
+                className="rounded-md border border-danger/30 bg-danger-soft/40 px-3 py-2"
+              >
+                <h3 className="text-label text-text-tertiary uppercase mb-1">
+                  {t('requisitions.panel.rejectedBecause')}
+                </h3>
+                <p className="text-sm text-text-primary">{selectedPR.rejectionReason}</p>
+              </section>
+            )}
+
+            {/* ⚠️ APPROVED IS A DEAD END TODAY AND THE SURFACE SAYS SO.
+                `t_pr_source` and `t_pr_convert` are `trigger: 'cascade'` and
+                NO SOURCE NAMES EITHER in `cascades.ts` — both are
+                `unauthored-cascade` rows in the loose-end census. The two
+                buttons that used to sit here implied a next step the platform
+                cannot produce, which is the false-affordance class exactly. An
+                approved requisition that LOOKS like it is going somewhere is
+                worse than one that plainly is not. */}
+            {selectedPR.status === 'Approved' && (
+              <section
+                data-testid="pr-approved-terminal"
+                className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
+              >
+                <h3 className="text-label text-text-tertiary uppercase mb-1">
+                  {t('requisitions.panel.terminal.title')}
+                </h3>
+                <p className="text-sm text-text-secondary">
+                  {t('requisitions.panel.terminal.body')}
+                </p>
+              </section>
+            )}
+
+            {/* A Draft has exactly one edge out and this surface does not offer
+                it. `t_pr_create` mints at Draft (C7 :131) and `t_pr_submit`
+                carries it to the queue — but a submit affordance here would be
+                a REQUESTER act for a document this platform does not originate
+                (operator ruling, §67), which would put a second creation path
+                beside the ratified C7 seam. So the state is stated, not acted
+                on. */}
+            {selectedPR.status === 'Draft' && (
+              <section
+                data-testid="pr-draft-note"
+                className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
+              >
+                <h3 className="text-label text-text-tertiary uppercase mb-1">
+                  {t('requisitions.panel.draftNote.title')}
+                </h3>
+                <p className="text-sm text-text-secondary">
+                  {t('requisitions.panel.draftNote.body')}
+                </p>
+              </section>
+            )}
+
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
                 {t('requisitions.panel.keyFacts')}

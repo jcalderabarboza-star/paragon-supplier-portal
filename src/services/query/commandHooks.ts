@@ -769,3 +769,66 @@ export function usePurchaseRequisitionCreate() {
     },
   });
 }
+
+// ── §67 · THE APPROVAL LANE — approve / reject, the two verbs procurement holds ─
+//
+// ⚠️ **THE GAP THIS CLOSES WAS NEVER A SURFACE.** `BuyerRequisitions` already
+// rendered the list, the detail, the status and the line facts; C7's intake
+// already dispatches `t_pr_create`. `t_pr_approve` and `t_pr_reject` have been
+// authored, registered, dispatchable and green-tested since F0.4 with **zero
+// call sites in the tree — not even a consumerless hook**, which is strictly
+// less than `t_invoice_approve` ever had. These two functions are the whole
+// missing connection.
+//
+// Both are near-clones of `useInvoiceDispute` and deliberately so: same
+// `useMutation<CommandResult, Error, Vars>` shape, same `invalidate` on a
+// non-failed outcome, no local state, no interpretation of the refusal. A
+// refusal is returned to the caller as a `CommandResult`, never absorbed —
+// the surface renders `result.reason`.
+
+/** Approve a requisition sitting in `Pending Approval` (`pr:approve`). */
+export function useRequisitionApprove() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { prId: string }>({
+    mutationFn: ({ prId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_pr_approve',
+        entity: 'purchaseRequisition',
+        entityId: prId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Reject a requisition, WITH THE REASON THE VERB REQUIRES (`pr:reject`).
+ *
+ * `rejectionReason` is not optional in this signature and that is the point:
+ * a caller cannot forget it, so the only way to reach the dispatcher's refusal
+ * is to pass something blank — which `PR_REJECT_REASON_AUTHORED` then refuses
+ * by name. The type carries the requirement to the call site; the hook carries
+ * it to the verb; the verb carries it to the store.
+ */
+export function useRequisitionReject() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { prId: string; rejectionReason: string }>({
+    mutationFn: ({ prId, rejectionReason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_pr_reject',
+        entity: 'purchaseRequisition',
+        entityId: prId,
+        payload: { rejectionReason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
