@@ -25,6 +25,8 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
@@ -809,6 +811,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // act, so it is confirm-before-commit like every other one on this surface.
   const [pinDraft, setPinDraft] = useState<PinDraft | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  // §73 — the seat's authority over `t_rfq_create` (atom `rfq:create`,
+  // held by `procurement`). One verb, one notice, one placement.
+  const rfqCreateAvailability = useVerbAvailability('rfq:create');
   const [wizardStep, setWizardStep] = useState(0);
   const [draft, setDraft] = useState<DraftRfq>(EMPTY_DRAFT);
   const [supplierSearch, setSupplierSearch] = useState('');
@@ -1896,17 +1902,28 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         title={t('sourcing.header.title')}
         subtitle={t('sourcing.header.subtitle')}
         actions={
-          <BulkActionsBar
-            actions={[
-              { label: t('sourcing.action.export'), icon: FileSpreadsheet },
-              { label: t('sourcing.action.templates'), icon: FileText },
-            ]}
-            primary={{
-              label: t('sourcing.action.newRfq'),
-              icon: Plus,
-              onClick: openWizard,
-            }}
-          />
+          // §73 — the page-level create, WITHHELD rather than disabled. A seat
+          // without `rfq:create` reads whose act it is instead of pressing a
+          // button that opens a wizard the dispatcher will refuse at the end.
+          // Export and Templates are reads holding no atom; they are not gated.
+          <div className="flex items-center gap-3">
+            <HandoffNotice availability={rfqCreateAvailability} testId="handoff-rfq-create" />
+            <BulkActionsBar
+              actions={[
+                { label: t('sourcing.action.export'), icon: FileSpreadsheet },
+                { label: t('sourcing.action.templates'), icon: FileText },
+              ]}
+              {...(rfqCreateAvailability.kind === 'held'
+                ? {
+                    primary: {
+                      label: t('sourcing.action.newRfq'),
+                      icon: Plus,
+                      onClick: openWizard,
+                    },
+                  }
+                : {})}
+            />
+          </div>
         }
       />
 
