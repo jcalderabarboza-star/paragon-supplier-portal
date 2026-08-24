@@ -43,8 +43,7 @@ import {
   useRequisitionSubmit,
   useRequisitionRevise,
 } from '../services/query/commandHooks';
-import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { availabilityOfAtom } from '../services/transitions/handoff';
+import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { DataError } from '../services/data/types';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
@@ -217,7 +216,6 @@ const BuyerRequisitions: React.FC = () => {
   const rejectPr = useRequisitionReject();
   const submitPr = useRequisitionSubmit();
   const revisePr = useRequisitionRevise();
-  const { identity } = useCurrentIdentity();
 
   // ⚠️ **THE SELECTED ROW IS DERIVED FROM THE LIST, NOT HELD AS A SNAPSHOT.**
   // The row captured on click is the PRE-transition record; after an approve
@@ -231,19 +229,34 @@ const BuyerRequisitions: React.FC = () => {
     ? (prs.find((p) => p.id === selectedRow.id) ?? selectedRow)
     : null;
 
-  // The seat's authority over the two approval verbs, DERIVED per verb — never
-  // authored as a status→owner map. `pr:approve` / `pr:reject` both live in
-  // `procurement` (businessRoles.ts), so a seat without it reads "Awaiting
-  // Procurement" rather than seeing nothing at all.
-  const approveAvailability = availabilityOfAtom('pr:approve', identity.businessRoles);
-  const rejectAvailability = availabilityOfAtom('pr:reject', identity.businessRoles);
-  // §68 — the REQUESTER's two, derived the same way. `pr:submit` / `pr:revise`
-  // live in `requisitioner`, disjoint from the pair above, so a procurement
-  // seat opening a Draft reads "Awaiting Requisitioner" rather than an empty
-  // footer — and the segregation is now visible from BOTH sides of the machine
-  // instead of being a property of the bundles that nothing exercised.
-  const submitAvailability = availabilityOfAtom('pr:submit', identity.businessRoles);
-  const reviseAvailability = availabilityOfAtom('pr:revise', identity.businessRoles);
+  // The seat's authority over this page's five verbs, DERIVED per verb — never
+  // authored as a status→owner map. `pr:approve` / `pr:reject` live in
+  // `procurement` and `pr:create` / `pr:submit` / `pr:revise` in
+  // `requisitioner` (businessRoles.ts), two disjoint bundles, so each side
+  // reads "Awaiting <the other>" rather than seeing nothing at all — and the
+  // segregation is visible from BOTH sides of the machine instead of being a
+  // property of the bundles that nothing exercised.
+  //
+  // ⚠️ **`create` IS NEW HERE AND IT IS THE ONE THIS PAGE WAS MISSING.** §67/§68
+  // guarded the four verbs that act on a document ALREADY SELECTED, and left
+  // the one that makes a document unguarded — so a procurement seat, which
+  // holds no `pr:create`, saw a live "New PR" button, filled three steps, and
+  // was refused at the dispatcher with nothing on screen naming the requester.
+  // A page can be covered for every verb it has a row for and still ship a
+  // false affordance in its header.
+  const {
+    create: createAvailability,
+    submit: submitAvailability,
+    revise: reviseAvailability,
+    approve: approveAvailability,
+    reject: rejectAvailability,
+  } = useVerbAvailabilities({
+    create: 'pr:create',
+    submit: 'pr:submit',
+    revise: 'pr:revise',
+    approve: 'pr:approve',
+    reject: 'pr:reject',
+  } as const);
 
   const counts = useMemo(() => {
     const by = (s: PRStatus) => prs.filter((p) => p.status === s).length;
@@ -507,17 +520,33 @@ const BuyerRequisitions: React.FC = () => {
         title={t('requisitions.header.title')}
         subtitle={t('requisitions.header.subtitle')}
         actions={
-          <BulkActionsBar
-            actions={[
-              { label: t('requisitions.action.export'), icon: FileSpreadsheet },
-              { label: t('requisitions.action.bulkDownload'), icon: Download },
-            ]}
-            primary={{
-              label: t('requisitions.action.newPr'),
-              icon: Plus,
-              onClick: () => setNewOpen(true),
-            }}
-          />
+          // ⚠️ THE CREATE AFFORDANCE IS WITHHELD, NOT DISABLED, AND THE WAIT IS
+          // NAMED BESIDE IT. Omitting `primary` is what removes the false
+          // affordance; the notice is what stops the removal from reading as a
+          // gap. A disabled button would say "you may not" without saying who
+          // may — the distinction `HandoffNotice`'s header sets out.
+          //
+          // Export / bulk-download stay: they are reads, they hold no atom, and
+          // gating them on a verb the seat does not hold would be inventing an
+          // authority the machine never asserted.
+          <div className="flex items-center gap-3">
+            <HandoffNotice availability={createAvailability} testId="handoff-pr-create" />
+            <BulkActionsBar
+              actions={[
+                { label: t('requisitions.action.export'), icon: FileSpreadsheet },
+                { label: t('requisitions.action.bulkDownload'), icon: Download },
+              ]}
+              {...(createAvailability.kind === 'held'
+                ? {
+                    primary: {
+                      label: t('requisitions.action.newPr'),
+                      icon: Plus,
+                      onClick: () => setNewOpen(true),
+                    },
+                  }
+                : {})}
+            />
+          </div>
         }
       />
 

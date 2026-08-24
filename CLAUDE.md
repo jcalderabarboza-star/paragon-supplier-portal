@@ -40,10 +40,9 @@ Direct pushes to `main` are not used.
 > `businessRoles.test.ts` is what keeps them honest.
 >
 > **The cross-role handoff renders the wait, not a gap** (`handoff.ts` +
-> `HandoffNotice`) — and it is wired on **BuyerInvoices only**. Every other
-> governed surface still renders its affordances unconditionally, so a narrowed
-> seat gets a dispatcher refusal with no rendered owner. Derive the exposure from
-> `HandoffNotice`'s importers before claiming otherwise (§64j).
+> `HandoffNotice`) — and it is wired on **BuyerInvoices and BuyerRequisitions** (§67/§68 added the second; the "BuyerInvoices only" line here was stale and is corrected at §72). Thirteen further surfaces render their affordances unconditionally, so a narrowed seat gets a dispatcher refusal with no rendered owner.
+> 
+> ⚠️ **AND IMPORTER PRESENCE IS NOT VERB COVERAGE (`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01`, §72a).** `BuyerRequisitions` imported the guard, rendered four of them, and still shipped a live **New PR** button to a seat holding no `pr:create` — because all four guarded verbs act on a document already selected and the CREATE verb lives in the page header. Derive the exposure as **(surface × verb) → guarded?**, never as **surface → imports the guard?**, and derive the surfaces from BOTH dispatch families (`commandHooks` AND the `sdc*Hooks` that call `svc.commands.dispatch` directly — a `commandHooks`-only matcher misses seven verbs).
 >
 > The resolved actor is a SEAM, not a person: `CurrentIdentity.actor` is always
 > `UNATTRIBUTED: NO_PERSON_IN_SESSION`. **C10 §6.2's payload-refusal half is NOT
