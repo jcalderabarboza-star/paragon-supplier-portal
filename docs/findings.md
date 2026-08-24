@@ -18067,3 +18067,113 @@ from inside the page on every pass** (`document.querySelectorAll('script[src]')`
 no body overflow. **The held-seat control is the half a one-sided probe would have skipped** — a
 guard that removes a button correctly and removes it always is not a guard, and only the last row
 proves it does not.
+
+---
+
+## §74 — THE ROW-LEVEL GROUP, AND THE PROBE THAT CAUGHT AN ASSERTION LOOKING AT NOTHING
+
+### 74a · WHAT SHIPPED — NINE VERBS, FIVE SURFACES, ONE PATTERN, NO WIDENING
+
+| surface | verb(s) | atom(s) → owner | placement |
+|---|---|---|---|
+| `BuyerChannelTriage` | `t_inventorydeclaration_record` | `inventorydeclaration:record` → **planning** | at the confirm control |
+| `BuyerCollaboration` | `t_requirementresponse_resolve` | `requirementresponse:dispute` → **planning** | once on the disputes section |
+| `IntakeReview` | `t_pr_create` | `pr:create` → **requisitioner** | once in the page header |
+| `IntakeAdjustDrawer` | `t_pr_create` | `pr:create` → **requisitioner** | at the push button |
+| `BuyerSourcing` | publish · reopen · cancel · review · award · fx-pin | all → **procurement** | three group notices |
+
+The hook needed no change. **Nothing revealed a shape it could not express**, and the report says
+so plainly rather than claiming a save.
+
+⚠️ **ONE NOTICE PER ADJACENT ACTION GROUP, NOT PER VERB — AND THE RULE IS ABOUT THE READER, NOT
+ABOUT THE MACHINE.** `IntakeReview`'s Accept is per line over an unbounded table, and
+`BuyerCollaboration`'s resolve CTA is per dispute; the atom does not vary by row, so a notice on
+every row is the same string repeated down a column, which teaches nothing after the first. The
+notice is stated once where it governs, and the per-row control is simply absent. `BuyerSourcing`
+groups publish/reopen/cancel (one action row, publish and reopen state-exclusive) and review/award
+(the comparison drawer) — different panels, different acts, so they keep distinct notices.
+
+⚠️ **EVERY BUTTON IS STILL GATED ON ITS OWN ATOM, NEVER ON THE GROUP'S.** The grouping is a
+rendering decision about repeated strings; the authority is per verb. So the day a bundle splits
+`rfq:award` from `rfq:cancel`, every button is already right and only the grouping needs re-taking
+— and `the six sourcing verbs share ONE owner today` fails to say so. The same future-proofing as
+the §73 GR-chain pin, applied to a wider set.
+
+**`Dismiss` (IntakeReview) and the reads everywhere are NOT gated.** Dismiss is local view state
+holding no atom; gating it would invent an authority the machine never asserted.
+
+### 74b · `ABSENCE-ASSERTED-OVER-AN-UNLOADED-LIST-01` — AND ONLY THE MUTATION PROBE FOUND IT
+
+**THE GENERAL FORM: AN ASSERTION THAT A THING IS ABSENT, TAKEN BEFORE THE THING COULD HAVE
+APPEARED, PASSES FOR THE WRONG REASON AND IS INDISTINGUISHABLE FROM A GUARD THAT WORKS.**
+
+`BuyerCollaboration`'s withheld case asserted *"no resolve CTA"* after awaiting only the page
+HEADING. The notice renders synchronously; the dispute ROWS arrive from an async read. So the
+assertion ran over an empty list and passed **while looking at nothing.**
+
+**It went green, and it stayed green when the guard was turned off.** The four-guard mutation probe
+killed three cases by name and left this one alive — and *that silence is the whole finding*. A
+green suite says nothing about a test that examines an empty collection; only asking the guard to
+misbehave reveals which assertions were watching.
+
+⚠️ **THIS IS `EMPTY-INPUT-REPORTS-CLEAN-01` (§42b) RELOCATED FROM THE DERIVATION TO THE
+ASSERTION.** There an instrument examined an empty population and reported clean. Here a test
+examined an empty list and reported pass. Same mechanism, different layer — and the detector is
+different too: §42b was caught by a known-good control, this by a kill that did not happen.
+**A missing kill is evidence, not an absence of evidence.**
+
+Repaired by waiting for the section to hold at least one `listitem` before asserting the CTA is
+gone. The probe then killed all four.
+
+⚠️ **AND A SECOND INSTANCE IN THE SAME BATCH, CAUGHT ONE STEP EARLIER.**
+`BuyerChannelTriage`'s confirm control **is not on the page until a message is parsed**, so *"the
+withheld seat has no confirm button"* passed for every seat, including the holding one. Caught by
+rule 4's reflex — asking whether the KNOWN-GOOD seat could reach the control at all. It could not.
+Both cases now drive the parse first, and the held case asserts the control IS there before the
+withheld case is believed. **Two assertions in one batch that were true of nothing.**
+
+### 74c · THE THIRD GROUP WAS A CATEGORY BUILT ON THREE SHAPES THE TREE DOES NOT HOLD
+
+The split was ruled as row-level → page-level create → **special shapes**. Recorded at operator
+instruction: **there is no special-shape group, and there never was one.** All three anticipated
+shapes were measured absent at §72e:
+
+- **a verb held by two roles** — `MULTI-HOLDER` is empty across all 64 atoms;
+- **a verb held by none** — 12 such atoms exist, all machine or cascade, **none reachable from any
+  surface**;
+- **`t_supplierdoc_upload`** — the identifier does not exist; the four `supplierdoc` verbs are all
+  held and none is dispatched.
+
+What the third group actually contained was **row-level work misclassified**, which is why it
+merged into this batch without residue. **A category can be built out of anticipated shapes and
+survive planning intact, because nothing in a plan measures its own population** — the standing
+heuristic's rule 1 applied to a TAXONOMY rather than to a census.
+
+### 74d · GATES
+
+Four green. **3365 → 3377 tests / 247 → 248 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — no new key; `roles.handoff.*` and `roles.owner.*` shipped complete at §64.
+
+**Guards probed, four kills confirmed BY NAME**, suite loaded all 12 (not a compile break, §50e):
+triage · collaboration · intake-review · sourcing, each `WITHHELD:` case.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash `index-hCS5OyqQ.js` asserted
+from inside the page on every pass:**
+
+| seat | locale | surface | affordance | notice |
+|---|---|---|---|---|
+| `['finance']` | en | intake-review | **0 Accept**, 4 Dismiss kept | *Awaiting Requisitioner* ×1 |
+| `['finance']` | en | collaboration | **0 CTA** over **1 dispute row** | *Awaiting Planning* ×1 |
+| `['finance']` | en | sourcing | **no Cancel / Publish / New RFQ** | *Awaiting Procurement* ×1 per group |
+| `['finance']` | id | collaboration | — | *Menunggu Perencanaan* |
+| `['finance']` | id | sourcing | — | *Menunggu Pengadaan* (both groups) |
+| **held control** | en | sourcing | **Cancel + New RFQ present** | **absent** |
+| **held control** | en | collaboration | **1 CTA present** | **absent** |
+| **held control** | en | intake-review | **4 Accept present** | **absent** |
+
+⚠️ **THE COLLABORATION ROW IS THE ONE TO READ TWICE: `0 CTA over 1 dispute row`.** The count of
+rows is in the measurement deliberately — it is the browser-side answer to §74b, and without it
+the zero would be the same zero the broken test was reporting. **A zero is only a finding when the
+population beside it is non-empty.**
+
+No English leak in ID, no raw i18n keys, no body overflow on any pass.
