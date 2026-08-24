@@ -163,25 +163,13 @@ describe('§74 · the grouping premise, pinned', () => {
   });
 });
 
-describe('§74 · BuyerSourcing — the six non-create verbs, grouped', () => {
-  it('HELD: a procurement seat keeps the RFQ detail actions, no group notice', async () => {
-    renderWithProviders(<BuyerSourcing />, { identity: PROCUREMENT });
-    fireEvent.click(await screen.findByText('RFQ-2026-001'));
-    expect(await screen.findByRole('button', { name: /Cancel RFQ/i })).toBeInTheDocument();
-    expect(screen.queryByTestId('handoff-rfq-actions')).not.toBeInTheDocument();
-  });
-
-  it('WITHHELD: a receiving seat loses them and reads ONE owner for the group', async () => {
-    renderWithProviders(<BuyerSourcing />, { identity: RECEIVING });
-    fireEvent.click(await screen.findByText('RFQ-2026-001'));
-    const notice = await screen.findByTestId('handoff-rfq-actions');
-    expect(notice).toHaveTextContent('Awaiting Procurement');
-    expect(screen.queryByRole('button', { name: /Cancel RFQ/i })).not.toBeInTheDocument();
-    // ONE notice for the adjacent group, not one per verb — publish/reopen are
-    // state-exclusive with cancel and all three name the same owner.
-    expect(screen.getAllByTestId('handoff-rfq-actions')).toHaveLength(1);
-  });
-});
+// ⚠️ §74's `BuyerSourcing` BLOCK IS RETIRED AT §76, NOT DELETED FOR CONVENIENCE.
+// It asserted `handoff-rfq-actions` present and `toHaveLength(1)` — "ONE notice
+// for the adjacent group, not one per verb" — which is the exact claim the
+// operator's workspace ruling reverses. Its replacement is
+// `handoffDrawerPerVerb.test.tsx`, which pins BOTH group ids ABSENT so the
+// collapse cannot return quietly. The atom-owner pins above are unaffected and
+// stay here: they are about the bundles, not about the placement.
 
 describe('§75 · BuyerGoodsReceipt — the ROW-LEVEL verbs the entry guard did not cover', () => {
   // ⚠️ §73 GUARDED THE "New GR" ENTRY AND LEFT THREE ROW CONTROLS LIVE.
