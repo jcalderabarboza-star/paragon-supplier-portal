@@ -18392,6 +18392,24 @@ document, to the same seat.** Arc 2 made the requester/approver split real in th
    evaluated PER TRANSITION. **A per-act gate cannot see a sequence**, and segregation of duties is
    a property of the sequence.
 
+⚠️ **AND IT IS WITNESSED, NOT ARGUED — WALKED ON THE BUILT BUNDLE, ONE SEAT, ONE DRAWER, NO
+NAVIGATION.** The default buyer seat (localStorage cleared, so the identity re-seeds to
+`PERSONA_SYSTEM_ROLES.buyer`) opened `PR-2026-00344` and walked it end to end:
+
+| step | act | atom's bundle | what the drawer offered next |
+|---|---|---|---|
+| 0 | opened at `Pending Approval` | — | `pr-reject-open` · `pr-approve` |
+| 1 | **Reject** | `procurement` | → `Rejected`, offering `pr-revise-open` |
+| 2 | **Revise** — *the adjust* | `requisitioner` | → `Draft`, offering `pr-submit` |
+| 3 | **Submit** | `requisitioner` | → `Pending Approval`, offering `pr-approve` |
+| 4 | **Approve** — *the document it just adjusted* | `procurement` | → **`Approved`** |
+
+Final row: `PR-2026-00344 … Approved`. **Zero handoff notices on the page at any step** — nothing
+was withheld, because nothing could be: the seat holds every bundle. The two lanes alternate four
+times inside one panel and the machine records four legal transitions, because each one IS legal.
+**A per-transition gate cannot see a sequence, and this is what that sentence looks like from the
+UI.**
+
 **Why it is filed and not fixed:** the fix is a governance ruling, not a placement. It is also not
 cheap — every candidate below changes what the machine records, not just what the surface renders.
 
