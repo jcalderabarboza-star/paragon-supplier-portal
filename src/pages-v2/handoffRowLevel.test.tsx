@@ -6,6 +6,7 @@ import { rolesHolding } from '../services/transitions/businessRoles';
 import BuyerChannelTriage from './BuyerChannelTriage';
 import BuyerCollaboration from './BuyerCollaboration';
 import BuyerSourcing from './BuyerSourcing';
+import BuyerGoodsReceipt from './BuyerGoodsReceipt';
 import IntakeReview from './IntakeReview';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -24,6 +25,7 @@ const REQUISITIONER: CurrentIdentity = { ...BUYER, businessRoles: ['requisitione
 const FINANCE: CurrentIdentity = { ...BUYER, businessRoles: ['finance'] };
 const PROCUREMENT: CurrentIdentity = { ...BUYER, businessRoles: ['procurement'] };
 const RECEIVING: CurrentIdentity = { ...BUYER, businessRoles: ['receiving'] };
+const RECEIVING_ONLY: CurrentIdentity = { ...BUYER, businessRoles: ['receiving'] };
 
 // ⚠️ THE CONFIRM CONTROL IS NOT ON THE PAGE UNTIL A MESSAGE IS PARSED, SO A
 // BARE "it is absent" ASSERTION PASSES FOR EVERY SEAT AND PROVES NOTHING. The
@@ -178,5 +180,65 @@ describe('§74 · BuyerSourcing — the six non-create verbs, grouped', () => {
     // ONE notice for the adjacent group, not one per verb — publish/reopen are
     // state-exclusive with cancel and all three name the same owner.
     expect(screen.getAllByTestId('handoff-rfq-actions')).toHaveLength(1);
+  });
+});
+
+describe('§75 · BuyerGoodsReceipt — the ROW-LEVEL verbs the entry guard did not cover', () => {
+  // ⚠️ §73 GUARDED THE "New GR" ENTRY AND LEFT THREE ROW CONTROLS LIVE.
+  // `Start inspection` opens the SAME wizard (so §73b's "no reachable second
+  // route" was false), `Request retest` fires t_gr_request_retest, and
+  // `Post to SAP` fires t_gr_post. A page can carry a notice and still ship
+  // false affordances one panel down — IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01
+  // for the second time, on the surface that had just been "covered".
+  // ⚠️ THE ROW IS CHOSEN BY ITS STATUS, NOT BY BEING FIRST. `footerForStatus`
+  // is a switch: GR-2026-001 is `Under Inspection`, whose control is a
+  // DELIBERATE TOAST holding no atom, so a guard assertion there measures
+  // nothing. The first cut of this block used it and failed for exactly that
+  // reason — the same shape as §74b, caught here by the test going red rather
+  // than green.
+  const openRow = async (grNumber: string) => {
+    fireEvent.click(await screen.findByText(grNumber));
+    await new Promise((r) => setTimeout(r, 0));
+  };
+  const PENDING_INSPECTION = 'GR-2026-002'; // -> Start inspection (the chain)
+  const APPROVED = 'GR-2026-003'; // -> Post to SAP (gr:post)
+
+  it('HELD: a receiving seat gets Start inspection, and no notice', async () => {
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: RECEIVING_ONLY });
+    await openRow(PENDING_INSPECTION);
+    expect(await screen.findByRole('button', { name: /Start inspection/i })).toBeInTheDocument();
+    expect(screen.queryByTestId('handoff-gr-start')).not.toBeInTheDocument();
+  });
+
+  it('WITHHELD: a finance seat reads the owner where Start inspection was', async () => {
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: FINANCE });
+    await openRow(PENDING_INSPECTION);
+    const n = await screen.findByTestId('handoff-gr-start');
+    expect(n).toHaveTextContent('Awaiting Receiving');
+    expect(screen.queryByRole('button', { name: /Start inspection/i })).not.toBeInTheDocument();
+  });
+
+  it('HELD: a receiving seat gets Post to SAP, and no notice', async () => {
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: RECEIVING_ONLY });
+    await openRow(APPROVED);
+    expect(await screen.findByRole('button', { name: /Post to SAP/i })).toBeInTheDocument();
+    expect(screen.queryByTestId('handoff-gr-post')).not.toBeInTheDocument();
+  });
+
+  it('WITHHELD: a finance seat reads the owner where Post to SAP was', async () => {
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: FINANCE });
+    await openRow(APPROVED);
+    const n = await screen.findByTestId('handoff-gr-post');
+    expect(n).toHaveTextContent('Awaiting Receiving');
+    expect(screen.queryByRole('button', { name: /Post to SAP/i })).not.toBeInTheDocument();
+  });
+
+  it('⚠️ the UNGOVERNED control is untouched — Under Inspection holds no atom', async () => {
+    // `Submit inspection results` is a deliberate toast (DEAD-AFFORDANCE-01).
+    // It dispatches nothing, so it is not withheld from anybody; gating it
+    // would invent an authority the machine never asserted.
+    renderWithProviders(<BuyerGoodsReceipt />, { identity: FINANCE });
+    await openRow('GR-2026-001');
+    expect(await screen.findByRole('button', { name: /Submit inspection results/i })).toBeInTheDocument();
   });
 });
