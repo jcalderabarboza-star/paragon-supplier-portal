@@ -17774,3 +17774,169 @@ the limit comes first.**
 Docs only — no code, no fixtures, no i18n. Four green, **floor unchanged at 3342 / 244 / 7**. No
 browser QA: nothing rendered changed, and running one would have produced a green reading that
 said nothing about this batch — which is 71a, on the batch that files 71a.
+
+---
+
+## §72 — THE HANDOFF POPULATION, DERIVED — AND THE COVERED PAGE THAT SHIPPED A FALSE AFFORDANCE
+
+### 72a · `IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` — the new class, and it fired on the page that invented the pattern
+
+**THE GENERAL FORM: A COVERAGE CENSUS THAT COUNTS IMPORTERS COUNTS FILES, AND THE DEFECT LIVES IN
+VERBS.** A page can import the guard, use it correctly four times, and still ship the exact
+affordance the guard exists to remove.
+
+`BuyerRequisitions` was on the covered side of every count taken of this arc. It imports
+`HandoffNotice`, renders four of them, and has three spec files pinning them. It also rendered a
+live **"New PR"** button to a `procurement` seat that holds no `pr:create` — a button that opens a
+three-step wizard and is refused at the dispatcher on submit, with nothing on screen naming the
+requester.
+
+**Why the four were guarded and the fifth was not is structural, not careless.** §67/§68 built the
+guards while wiring the APPROVAL LOOP, and every verb in that loop acts on a document **already
+selected**: submit, revise, approve and reject all live in the detail panel, behind a row click.
+`t_pr_create` makes the document. It lives in the page header, it is reachable before any row
+exists, and a sweep that walks the panel finds nothing to fix there. **The verb that creates is
+the one a document-shaped census cannot see, and every governed surface in this portal has one.**
+
+⚠️ **AND THE CLASS IS THE READING, NOT THE MISS.** The instrument said *"2 surfaces import
+`HandoffNotice`"* and that number was correct — `CLAUDE.md`'s *"wired on BuyerInvoices only"* was
+the stale one, corrected here. What the correct number could not say is that one of the two was
+itself uncovered. **A membership test over files answers a question about files.** The next sweep
+must derive *(surface × verb) → guarded?*, not *surface → imports the guard?*.
+
+### 72b · THE POPULATION, RE-DERIVED — AND THE FIRST MATCHER MISSED A WHOLE DISPATCH FAMILY
+
+The inherited figure was *"11 pages import `commandHooks`, 2 import `HandoffNotice`, so nine
+render unconditionally."* Re-derived against `main`:
+
+- **`HandoffNotice` importers = 2.** CONFIRMED (`BuyerInvoices`, `BuyerRequisitions`).
+- **`commandHooks` importers = 12 files, 9 of them routed pages.** Neither is 11. Not reconciled
+  — §40k: re-run, do not explain a gap.
+- ⚠️ **AND `commandHooks` IS THE WRONG INSTRUMENT.** A SECOND dispatch family writes through
+  `svc.commands.dispatch` directly, in `sdcBuyerHooks.ts` and `sdcSupplierHooks.ts` — **seven
+  governed verbs the import-matcher cannot see**, on `BulkStockEntryGrid`, `BuyerChannelTriage`,
+  `BuyerCollaboration`, `CommHubInbound` and `SupplierForecasts`. Rule 1, on the nose: a
+  suspiciously round population reporting on its own matcher.
+
+Re-derived from *hook → `transitionId`* across all five hook modules, then *file → hooks called*,
+probed both ways (known-good `BuyerInvoices` present; known-bad `BuyerContractDetail` absent):
+
+> **17 surfaces dispatch 32 governed verbs. 2 are covered. 15 are not — and 7 of those 15 are
+> buyer-side, which is where the constraint can bite.**
+
+### 72c · WHAT A NARROWED SEAT ACTUALLY SEES — MEASURED, AND IT IS THE WORST OF THE THREE
+
+Rendered `BuyerGoodsReceipt` and `BuyerSourcing` under a **finance-only** buyer seat and dumped
+every button with its disabled state:
+
+```
+GR   (GR-2026-001 open) >>> "New GR [EN]", "Submit inspection results [EN]"   HANDOFF NODES: 0
+SRC  (RFQ-2026-001 open) >>> "New RFQ [EN]", "Cancel RFQ [EN]"                HANDOFF NODES: 0
+```
+
+Every one **ENABLED**, over atoms the seat does not hold. Of the three possible defects — an
+enabled button that refuses, a disabled one, nothing at all — **it is uniformly the first.** The
+other two do not occur anywhere, and the reason is structural: a grep for
+`businessRoles | atomsFor | availabilityOf | rolesHolding` across every page and component returns
+`BuyerInvoices`, `BuyerRequisitions`, `IdentityPanel`, `SidebarV2` and nothing else. **Thirteen
+surfaces cannot be role-conditional, because none of them reads the seat.**
+
+### 72d · THE SUPPLIER SEAT CANNOT BE NARROWED, SO EIGHT OF THE FIFTEEN ARE INERT
+
+`PERSONA_SYSTEM_ROLES.supplier` is **`['supplier']`** — one role — and `rolesFromStorage`
+(`identitySources.ts:53-60`) falls back to the full set when a filter empties it, on the stated
+ground that *"a seat that can do nothing is indistinguishable from a broken portal."* A supplier
+seat therefore has **no proper subset to narrow to**, and every verb on all eight supplier-side
+surfaces is held by `supplier`.
+
+`availabilityOfAtom` returns `held`, `HandoffNotice` returns `null`, on every render, for every
+user. **Building there ships eight surfaces of unreachable branch.** Filed, not built — and the
+finding is not *"handoff is missing on supplier pages"* but ***"the supplier side has one role, so
+no cross-role handoff exists there to render."*** It becomes buildable the day a second supplier
+role does.
+
+### 72e · THREE PREMISES IN THE DISPATCH, MEASURED — TWO INVERTED, ONE ALREADY TRUE
+
+Per §64a, grepped before being built on; per §70a, recorded with the mechanism corrected rather
+than filed as stated.
+
+| Named | Measured |
+|---|---|
+| **`t_supplierdoc_upload` is held by nobody** | **The identifier does not exist.** `supplierDocument.flow.ts` has `_request` / `_submit` / `_verify` / `_reject`, and **all four atoms are held** — `compliance` ×3, `supplier` ×1. None is dispatched by any surface. |
+| **Two supplier-lane verbs name a persona, not a role — `rolesHolding` would have to be widened** | **Nothing needs widening.** `supplier` IS a `SystemRoleId`, `rolesHolding` already returns it, and `roles.owner.supplier` already reads *Supplier* / *Pemasok*. "Awaiting the supplier" renders today through the mechanism as built. |
+| **A narrowed seat exists only through the demo switcher, so the defect is unreachable** | **It is reachable by any user of the current build.** `IdentityPanel` is mounted in `TopBarV2` on every shell page, `toggleRole` calls `setIdentity`, and that persists to `localStorage`. The persona toggle does reset to all six roles (`SidebarV2:183,203`) — true, and it is a reset, not the only path. |
+
+⚠️ **THE THIRD ONE MATTERS MOST AND IT STRENGTHENS THE RULING IT CONTRADICTS.** The ruling said
+build anyway *because the fixture frontend is the SE team's executable specification, and a team
+wiring a real IdP inherits the false affordances* — which stands. But the defect is **not** waiting
+on identity: it is reachable through the avatar, in this bundle, today. **A reason to build that
+understates the defect is still a reason to build; it just books the finding in the wrong tense.**
+
+⚠️ **AND THE `unowned` ARM IS REAL, JUST NOT HERE.** Derived across all 64 atoms in every
+registered flow: **12 are held by no assignable role** — `po:issue`, `po:fulfil`, `po:close`,
+`asn:carry`, `invoice:match`, `rfq:close`, `quotation:award`, `quotation:reject`,
+`shipment:create`, `shipment:advance`, `pr:source`, `pr:convert` — all machine or cascade acts,
+and **none dispatched from any of the 17 surfaces.** `MULTI-HOLDER` came back **empty**: no atom
+in the tree is held by two roles. So of the three shapes the component was feared unable to
+express, one is unreachable from a surface, one does not exist, and one needs nothing.
+
+### 72f · WHAT WAS BUILT — THE HOOK, AND THE CREATE PLACEMENT PROVEN ON ONE SURFACE
+
+`src/hooks/useVerbAvailability.ts` — `useVerbAvailability(atom)` and `useVerbAvailabilities({...})`.
+
+⚠️ **IT IS ERGONOMICS, NOT A CAPABILITY GAP, AND THE ENTRY SAYS SO BECAUSE THE DISPATCH DID NOT.**
+The pattern was said not to transfer — *"both existing uses are row-level with a document in
+scope."* Measured, **`availabilityOfAtom(atom, seatRoles)` takes no document at all**, and
+`BuyerRequisitions` already computed all four of its availabilities at component top level from
+`identity.businessRoles` alone. What is document-dependent is knowing **which verbs are on offer**
+(`invoiceActionsForSeat` reads a lifecycle state) — a legality question, not an availability one.
+**Conflating them is how a display layer starts answering a machine question**, and keeping them
+apart is why the create case turned out to be the EASY one: the verb is fixed and known statically.
+
+So the hook earns its place on a narrower argument: `identity.businessRoles` is the ONE legal
+input, and **a surface that reaches for it by hand can reach for something else by hand** — a
+persona, a `supplierId`, a status — and produce an availability the dispatcher will not agree
+with. A hook that accepts an atom and nothing else cannot be handed the wrong input.
+
+`useVerbAvailabilities` returns a record **keyed by the caller's own names**, never a positional
+array: two lists lined up by index is the defect `RfqDraftRefusal` avoided by discriminating on a
+field rather than on an order. Both directions are pinned — the transposition test asserts the
+opposite seat inverts BOTH keys, which a positional builder would pass by accident on one seat.
+
+**Proven on `BuyerRequisitions`:** four availabilities moved onto the hook (behaviour identical,
+existing specs untouched and green), `create` added, and the header action **withheld rather than
+disabled** — `primary` is omitted and the notice sits beside the bar. A disabled button says *"you
+may not"* without saying *who may*, which is the distinction `HandoffNotice`'s own header sets out.
+**`Export` and bulk-download are NOT gated**: they hold no atom, and gating a read on a verb would
+invent an authority the machine never asserted.
+
+### 72g · THE GUARD WAS PROBED, AND THE KILL CONFIRMED BY NAME
+
+Rule 4, and §50e's trap avoided. Mutating the guard to always-true (`{...(true ? {primary...`)
+killed **`WITHHELD: a procurement seat gets NO button and reads WHOSE act it is`** — by name — while
+the other three cases stayed green. **The suite loaded and ran four tests**, so this was the gate's
+kill and not a compile error being credited to it.
+
+### 72h · GATES
+
+Four green. **3342 → 3356 tests / 244 → 246 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — the notice needed **no new key**, since `roles.handoff.*` and
+`roles.owner.*` shipped complete in both locales at §64.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash asserted from inside the page**
+(`index-Cvj81MYM.js`, matching the build output, read from `document.querySelectorAll('script[src]')`
+on every pass):
+
+| seat | locale | New PR | handoff | Export |
+|---|---|---|---|---|
+| full buyer (6 roles) | en | **present** | absent | present |
+| `['procurement']` | en | **ABSENT** | *Awaiting Requisitioner* (`data-handoff="withheld"`) | present |
+| `['procurement']` | id | **ABSENT** | *Menunggu Pemohon* | present |
+
+No English leak in ID, no raw i18n keys, no body overflow (`scrollWidth <= innerWidth`, 1554px).
+
+⚠️ **THE BASELINE IN THE DISPATCH WAS A PHANTOM, FOR THE SECOND CONSECUTIVE BATCH.** It named
+`main 90bce8d` / floor `3364/245`; `git cat-file -t 90bce8d` → *not a valid object name*, and the
+floor stood at `3342/244`. That figure is what the unbuilt `estimatedValue` batch would have
+produced. §43, in the same shape as the PR #257 merge refused one turn earlier: **a plan read as a
+result.** Recorded because two in a row is a pattern, not a slip.
