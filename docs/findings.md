@@ -17940,3 +17940,130 @@ No English leak in ID, no raw i18n keys, no body overflow (`scrollWidth <= inner
 floor stood at `3342/244`. That figure is what the unbuilt `estimatedValue` batch would have
 produced. §43, in the same shape as the PR #257 merge refused one turn earlier: **a plan read as a
 result.** Recorded because two in a row is a pattern, not a slip.
+
+---
+
+## §73 — THE PAGE-LEVEL CREATES, AND THE FALSE AFFORDANCE ONE LAYER IN
+
+### 73a · WHAT SHIPPED
+
+Two entry-point creates, one notice each, on the hook as shipped at §72 — not widened.
+
+| surface | verb(s) | atom(s) → owner | control |
+|---|---|---|---|
+| `BuyerSourcing` | `t_rfq_create` | `rfq:create` → **procurement** | *New RFQ* |
+| `BuyerGoodsReceipt` | `t_gr_create` → `t_gr_start_inspection` → `t_gr_post` | `gr:receive` · `gr:inspect` · `gr:post` → **receiving** | *New GR* |
+
+Both **WITHHELD, not disabled** — `primary` is omitted and the owner is named beside the bar. The
+reads (`Export`, `Templates`, `Lab Results`) hold no atom and are not gated; gating a read on a
+verb would invent an authority the machine never asserted.
+
+⚠️ **THE GR ENTRY IS GUARDED ON THE WHOLE CHAIN, NOT ON ITS FIRST VERB.** The button starts a flow
+that cannot finish without all three atoms, so it is withheld unless all three are held, and the
+FIRST withheld one names the owner in chain order — never a merged list, because the three are one
+sequence and the earliest blocker is the one a reader waits on. Today all three resolve to
+`receiving` and to nothing else, so this renders exactly one behaviour; `THE CHAIN AGREES TODAY`
+pins that agreement, so the day someone splits `gr:inspect` into a QA role the suite says so
+instead of the button quietly admitting a seat the commit will refuse.
+
+### 73b · `WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01` — FILED, NOT FIXED
+
+**THE GENERAL FORM: A GUARD AT THE DOOR IS NOT A GUARD ON THE ROOM. A MULTI-STEP FLOW THAT
+VALIDATES ONLY ITS FORM ADMITS A SEAT ITS COMMIT WILL REFUSE, AND EVERY STEP SPENT INSIDE IS WORK
+THE PLATFORM ALREADY KNOWS IT WILL THROW AWAY.**
+
+`Wizard`'s `goNext` is gated by `isStepValid(currentStep)` (`Wizard.tsx:36,135`), and
+`GRInspectionWizard`'s implementation (`:903`) asks only about FORM COMPLETENESS — required fields,
+quantity readability, the quality determination. **It never consults the seat.** So a withheld seat
+that reaches the wizard by any route other than the entry button walks all four steps, fills the
+inspection, and is refused at the commit.
+
+§73's entry notice closes the only route this tree has TODAY (the button is now absent for such a
+seat), which is why this is filed rather than fixed: **there is no reachable path to demonstrate
+it, and a fix with no failing case is a fix with no probe.** It becomes live the moment any second
+route into the wizard exists — a deep link, a row action, a resumed draft. Its own ruling.
+
+⚠️ **AND IT IS THE SAME SHAPE AS `IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` ONE LAYER IN.** There,
+a page imported the guard and still shipped an unguarded verb. Here, a surface guards the verb and
+still ships an unguarded *approach* to it. Both are the gap between where the check sits and where
+the act happens.
+
+### 73c · THE DISPATCH'S PREMISE, MEASURED — THE CONCLUSION SURVIVED, BOTH GROUNDS DID NOT
+
+The ruling for one notice was: *"all four wizard steps take `gr:post`, so the entry-point atom is
+identical to every step's atom in every case."*
+
+Measured, **neither half holds**:
+
+- **The atoms are not identical.** `t_gr_create` takes `gr:receive`, `t_gr_start_inspection` takes
+  `gr:inspect`, `t_gr_post` takes `gr:post` — three distinct atoms.
+- **The steps do not dispatch at all.** All four mutations fire in ONE handler at the wizard's end
+  (`GRInspectionWizard.tsx:1526-1588`): create → finalize → post → settle. **There is one commit,
+  not four.**
+
+⚠️ **AND THE CONCLUSION IS RIGHT ANYWAY, ON A GROUND NEITHER HALF NAMED.** Every `gr:*` atom sits
+in exactly ONE assignable bundle — `receiving=[gr:receive, gr:inspect, gr:disposition, gr:post]`,
+with `admin` filtered out by `rolesHolding` because a role holding everything names nothing. So a
+seat either holds `receiving` and holds all four, or holds none of them. **Availability is provably
+identical across the chain for every seat that can exist**, which is a stronger statement than
+"the atoms are the same" and it is what makes one notice honest.
+
+**Both hazards the ruling weighed are therefore unreachable in this lane:** there is no seat
+holding three of four to OVERSTATE against, and none admitted to a wizard that refuses at step
+three to UNDERSTATE for. This is `§64a`'s shape again — *a misdescribed mechanism attached to a
+correct conclusion* — and per `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` the true mechanism is
+recorded here rather than the stated one.
+
+### 73d · FOUR ATTRIBUTIONS, DECLINED — AND THE RULE ARRIVING THROUGH PRAISE
+
+Recorded at operator instruction, because **declining credit is the discipline and accepting it
+would have put three false mechanisms in the register.**
+
+A merge was ordered for **PR #258**, a successor number invented over the #257 this seat had
+reported — the doctrine's exact failure case, and the second consecutive dispatch to name a
+non-existent object (§72h records the phantom `90bce8d`). Refused at the site the action named
+(`gh pr view 258` → *Could not resolve*).
+
+Alongside it, three corrections credited to the §72 build, **none of which happened**:
+
+| Credited | Measured |
+|---|---|
+| Caught a parallel derivation of the owner set in the hook | `useVerbAvailability.ts` contains **no owner derivation** — it calls `availabilityOfAtom` and memoises. Nothing to catch. |
+| Refused an empty-list return for "no owner" | Never proposed. `VerbAvailability` **already modelled `unowned` as its own arm at §64**; this batch did not touch it. |
+| Chose a persona return over widening `rolesHolding` | Never proposed. **Nothing needed widening** — `supplier` already IS a `SystemRoleId`. |
+
+⚠️ **`FALSE-MECHANISM-MUST-NOT-BE-FILED-01` ARRIVING THROUGH PRAISE RATHER THAN THROUGH A FINDING,
+AND THAT DIRECTION IS NEW.** §70a anticipated a false mechanism attached to a *blocker* — "X cannot
+do Y" invites a Y-shaped replacement and nobody re-measures a blocker. This is the mirror: a false
+mechanism attached to a *success*, which is harder to refuse because refusing it costs the seat
+credit and challenges nothing anyone is relying on. **A register of caught defects that never
+happened is worse than a register with gaps: the gaps are known, and the fictions are load-bearing
+for the next batch that reads them.** The reasoning in all three was sound — an empty collection
+standing for a missing fact really is a refusal that looks like an answer — and sound reasoning
+about a hazard the batch never came near is a lesson, not a finding.
+
+### 73e · GATES
+
+Four green. **3356 → 3365 tests / 246 → 247 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — no new key; `roles.handoff.*` and `roles.owner.*` shipped complete at §64.
+
+**Guards probed, two kills confirmed BY NAME**, suite loaded and ran all 9 (so these were the
+gates' kills, not a compile error being credited to them — §50e):
+`WITHHELD: a finance seat loses the button and reads the owner` ·
+`WITHHELD: a receiving seat loses the button and reads the owner`.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash `index-Bu11QIgA.js` asserted
+from inside the page on every pass** (`document.querySelectorAll('script[src]')`):
+
+| seat | locale | surface | control | notice |
+|---|---|---|---|---|
+| `['finance']` | en | goods-receipt | **New GR ABSENT** | *Awaiting Receiving* (`withheld`) |
+| `['finance']` | en | sourcing | **New RFQ ABSENT** | *Awaiting Procurement* (`withheld`) |
+| `['finance']` | id | goods-receipt | absent | *Menunggu Penerimaan* |
+| `['finance']` | id | sourcing | absent | *Menunggu Pengadaan* |
+| `['receiving','procurement']` | en | goods-receipt | **New GR present, ENABLED** | absent |
+
+`Export` and `Lab Results` present on every withheld pass. No English leak in ID, no raw i18n keys,
+no body overflow. **The held-seat control is the half a one-sided probe would have skipped** — a
+guard that removes a button correctly and removes it always is not a guard, and only the last row
+proves it does not.
