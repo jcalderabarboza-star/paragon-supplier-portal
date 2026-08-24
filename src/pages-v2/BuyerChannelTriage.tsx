@@ -7,6 +7,8 @@ import StatusPill from '../components/ui-v2/StatusPill';
 import { useToast } from '../hooks/useToast';
 import { useSuppliers } from '../services/query/hooks';
 import { useInventoryRecord } from '../services/query/sdcBuyerHooks';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { parseChannelReply, type ChannelParseResult, type QtyRefusalReason } from '../services/channel/replyParser';
 import { makeProvenanceRef, type Channel, type ChannelMessage } from '../services/channel/types';
 import { channelProvenanceStore } from '../services/channel/provenanceStore';
@@ -111,6 +113,11 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
   const suppliersQuery = useSuppliers();
   const suppliers = useMemo(() => suppliersQuery.data?.items ?? [], [suppliersQuery.data]);
   const recordMutation = useInventoryRecord();
+
+  // §74 — the seat's authority over `t_inventorydeclaration_record`
+  // (atom `inventorydeclaration:record`, held by `planning`). The triage
+  // confirm is the ONE act on this surface; a seat without it reads whose.
+  const recordAvailability = useVerbAvailability('inventorydeclaration:record');
 
   // THE BINDING, FIRST: the subject supplier is chosen at capture. Everything
   // downstream (the ChannelMessage, the material picker, the dispatch) derives
@@ -554,15 +561,19 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
 
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-xs text-text-tertiary">{t('buyerCommHub.triage.confirmHint')}</p>
-                      <Button
-                        variant="outline"
-                        icon={Send}
-                        disabled={!canConfirm}
-                        onClick={confirm}
-                        data-testid="triage-confirm"
-                      >
-                        {recordMutation.isPending ? t('buyerCommHub.triage.confirming') : t('buyerCommHub.triage.confirm')}
-                      </Button>
+                      {recordAvailability.kind === 'held' ? (
+                        <Button
+                          variant="outline"
+                          icon={Send}
+                          disabled={!canConfirm}
+                          onClick={confirm}
+                          data-testid="triage-confirm"
+                        >
+                          {recordMutation.isPending ? t('buyerCommHub.triage.confirming') : t('buyerCommHub.triage.confirm')}
+                        </Button>
+                      ) : (
+                        <HandoffNotice availability={recordAvailability} testId="handoff-triage-record" />
+                      )}
                     </div>
                   </div>
                 )}

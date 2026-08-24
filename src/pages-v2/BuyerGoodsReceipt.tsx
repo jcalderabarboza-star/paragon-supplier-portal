@@ -352,7 +352,12 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const footerForStatus = (g: GoodsReceipt): React.ReactNode => {
     switch (g.status) {
       case 'Pending Inspection':
-        return (
+        // §75 — THE SECOND ROUTE INTO THE WIZARD, AND IT MAKES §73b's "no
+        // reachable path" FALSE. This opens the same four-step wizard whose one
+        // commit fires t_gr_create -> t_gr_start_inspection -> t_gr_post, so it
+        // carries the same whole-chain guard as the "New GR" entry. Guarding
+        // only the entry left this door open.
+        return grChainAvailability.kind === 'held' ? (
           <Button
             variant="outline"
             onClick={() => {
@@ -363,6 +368,8 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           >
             {t('goodsReceipt.footer.startInspection')}
           </Button>
+        ) : (
+          <HandoffNotice availability={grChainAvailability} testId="handoff-gr-start" />
         );
       case 'Under Inspection':
         return (
@@ -388,15 +395,19 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 to a gap. It now dispatches `t_gr_request_retest` (Quality Hold →
                 Under Inspection) through the same governed path as every other
                 verb on this page. */}
-            <Button
-              variant="secondary"
-              disabled={retestMutation.isPending}
-              onClick={() => handleRequestRetest(g)}
-            >
-              {retestMutation.isPending
-                ? t('goodsReceipt.retest.submitting')
-                : t('goodsReceipt.footer.requestRetest')}
-            </Button>
+            {grChain.inspect.kind === 'held' ? (
+              <Button
+                variant="secondary"
+                disabled={retestMutation.isPending}
+                onClick={() => handleRequestRetest(g)}
+              >
+                {retestMutation.isPending
+                  ? t('goodsReceipt.retest.submitting')
+                  : t('goodsReceipt.footer.requestRetest')}
+              </Button>
+            ) : (
+              <HandoffNotice availability={grChain.inspect} testId="handoff-gr-retest" />
+            )}
             {/* ⚠️ STILL A TOAST, AND DELIBERATELY SO — `DEAD-AFFORDANCE-01`,
                 reported not fixed. Overriding a quality hold is a GOVERNANCE ACT
                 whose entire value is accountability: this named person accepted
@@ -422,7 +433,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         );
       case 'Approved':
       case 'Partially Approved':
-        return (
+        return grChain.post.kind === 'held' ? (
           <Button
             variant="outline"
             disabled={postMutation.isPending}
@@ -430,6 +441,8 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           >
             {t('gr.post.action')}
           </Button>
+        ) : (
+          <HandoffNotice availability={grChain.post} testId="handoff-gr-post" />
         );
       case 'Posted to SAP':
         return (

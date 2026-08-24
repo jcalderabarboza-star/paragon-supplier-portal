@@ -18067,3 +18067,230 @@ from inside the page on every pass** (`document.querySelectorAll('script[src]')`
 no body overflow. **The held-seat control is the half a one-sided probe would have skipped** — a
 guard that removes a button correctly and removes it always is not a guard, and only the last row
 proves it does not.
+
+---
+
+## §74 — THE ROW-LEVEL GROUP, AND THE PROBE THAT CAUGHT AN ASSERTION LOOKING AT NOTHING
+
+### 74a · WHAT SHIPPED — NINE VERBS, FIVE SURFACES, ONE PATTERN, NO WIDENING
+
+| surface | verb(s) | atom(s) → owner | placement |
+|---|---|---|---|
+| `BuyerChannelTriage` | `t_inventorydeclaration_record` | `inventorydeclaration:record` → **planning** | at the confirm control |
+| `BuyerCollaboration` | `t_requirementresponse_resolve` | `requirementresponse:dispute` → **planning** | once on the disputes section |
+| `IntakeReview` | `t_pr_create` | `pr:create` → **requisitioner** | once in the page header |
+| `IntakeAdjustDrawer` | `t_pr_create` | `pr:create` → **requisitioner** | at the push button |
+| `BuyerSourcing` | publish · reopen · cancel · review · award · fx-pin | all → **procurement** | three group notices |
+
+The hook needed no change. **Nothing revealed a shape it could not express**, and the report says
+so plainly rather than claiming a save.
+
+⚠️ **ONE NOTICE PER ADJACENT ACTION GROUP, NOT PER VERB — AND THE RULE IS ABOUT THE READER, NOT
+ABOUT THE MACHINE.** `IntakeReview`'s Accept is per line over an unbounded table, and
+`BuyerCollaboration`'s resolve CTA is per dispute; the atom does not vary by row, so a notice on
+every row is the same string repeated down a column, which teaches nothing after the first. The
+notice is stated once where it governs, and the per-row control is simply absent. `BuyerSourcing`
+groups publish/reopen/cancel (one action row, publish and reopen state-exclusive) and review/award
+(the comparison drawer) — different panels, different acts, so they keep distinct notices.
+
+⚠️ **EVERY BUTTON IS STILL GATED ON ITS OWN ATOM, NEVER ON THE GROUP'S.** The grouping is a
+rendering decision about repeated strings; the authority is per verb. So the day a bundle splits
+`rfq:award` from `rfq:cancel`, every button is already right and only the grouping needs re-taking
+— and `the six sourcing verbs share ONE owner today` fails to say so. The same future-proofing as
+the §73 GR-chain pin, applied to a wider set.
+
+**`Dismiss` (IntakeReview) and the reads everywhere are NOT gated.** Dismiss is local view state
+holding no atom; gating it would invent an authority the machine never asserted.
+
+### 74b · `ABSENCE-ASSERTED-OVER-AN-UNLOADED-LIST-01` — AND ONLY THE MUTATION PROBE FOUND IT
+
+**THE GENERAL FORM: AN ASSERTION THAT A THING IS ABSENT, TAKEN BEFORE THE THING COULD HAVE
+APPEARED, PASSES FOR THE WRONG REASON AND IS INDISTINGUISHABLE FROM A GUARD THAT WORKS.**
+
+`BuyerCollaboration`'s withheld case asserted *"no resolve CTA"* after awaiting only the page
+HEADING. The notice renders synchronously; the dispute ROWS arrive from an async read. So the
+assertion ran over an empty list and passed **while looking at nothing.**
+
+**It went green, and it stayed green when the guard was turned off.** The four-guard mutation probe
+killed three cases by name and left this one alive — and *that silence is the whole finding*. A
+green suite says nothing about a test that examines an empty collection; only asking the guard to
+misbehave reveals which assertions were watching.
+
+⚠️ **THIS IS `EMPTY-INPUT-REPORTS-CLEAN-01` (§42b) RELOCATED FROM THE DERIVATION TO THE
+ASSERTION.** There an instrument examined an empty population and reported clean. Here a test
+examined an empty list and reported pass. Same mechanism, different layer — and the detector is
+different too: §42b was caught by a known-good control, this by a kill that did not happen.
+**A missing kill is evidence, not an absence of evidence.**
+
+Repaired by waiting for the section to hold at least one `listitem` before asserting the CTA is
+gone. The probe then killed all four.
+
+⚠️ **AND A SECOND INSTANCE IN THE SAME BATCH, CAUGHT ONE STEP EARLIER.**
+`BuyerChannelTriage`'s confirm control **is not on the page until a message is parsed**, so *"the
+withheld seat has no confirm button"* passed for every seat, including the holding one. Caught by
+rule 4's reflex — asking whether the KNOWN-GOOD seat could reach the control at all. It could not.
+Both cases now drive the parse first, and the held case asserts the control IS there before the
+withheld case is believed. **Two assertions in one batch that were true of nothing.**
+
+### 74c · THE THIRD GROUP WAS A CATEGORY BUILT ON THREE SHAPES THE TREE DOES NOT HOLD
+
+The split was ruled as row-level → page-level create → **special shapes**. Recorded at operator
+instruction: **there is no special-shape group, and there never was one.** All three anticipated
+shapes were measured absent at §72e:
+
+- **a verb held by two roles** — `MULTI-HOLDER` is empty across all 64 atoms;
+- **a verb held by none** — 12 such atoms exist, all machine or cascade, **none reachable from any
+  surface**;
+- **`t_supplierdoc_upload`** — the identifier does not exist; the four `supplierdoc` verbs are all
+  held and none is dispatched.
+
+What the third group actually contained was **row-level work misclassified**, which is why it
+merged into this batch without residue. **A category can be built out of anticipated shapes and
+survive planning intact, because nothing in a plan measures its own population** — the standing
+heuristic's rule 1 applied to a TAXONOMY rather than to a census.
+
+### 74d · GATES
+
+Four green. **3365 → 3377 tests / 247 → 248 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — no new key; `roles.handoff.*` and `roles.owner.*` shipped complete at §64.
+
+**Guards probed, four kills confirmed BY NAME**, suite loaded all 12 (not a compile break, §50e):
+triage · collaboration · intake-review · sourcing, each `WITHHELD:` case.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash `index-hCS5OyqQ.js` asserted
+from inside the page on every pass:**
+
+| seat | locale | surface | affordance | notice |
+|---|---|---|---|---|
+| `['finance']` | en | intake-review | **0 Accept**, 4 Dismiss kept | *Awaiting Requisitioner* ×1 |
+| `['finance']` | en | collaboration | **0 CTA** over **1 dispute row** | *Awaiting Planning* ×1 |
+| `['finance']` | en | sourcing | **no Cancel / Publish / New RFQ** | *Awaiting Procurement* ×1 per group |
+| `['finance']` | id | collaboration | — | *Menunggu Perencanaan* |
+| `['finance']` | id | sourcing | — | *Menunggu Pengadaan* (both groups) |
+| **held control** | en | sourcing | **Cancel + New RFQ present** | **absent** |
+| **held control** | en | collaboration | **1 CTA present** | **absent** |
+| **held control** | en | intake-review | **4 Accept present** | **absent** |
+
+⚠️ **THE COLLABORATION ROW IS THE ONE TO READ TWICE: `0 CTA over 1 dispute row`.** The count of
+rows is in the measurement deliberately — it is the browser-side answer to §74b, and without it
+the zero would be the same zero the broken test was reporting. **A zero is only a finding when the
+population beside it is non-empty.**
+
+No English leak in ID, no raw i18n keys, no body overflow on any pass.
+
+---
+
+## §75 — THE COVERAGE DERIVATION RUN AS `(SURFACE × VERB)`, AND WHAT IT FOUND ON THE SURFACE JUST COVERED
+
+### 75a · THE RE-DERIVATION, AND THE SET DID NOT MOVE
+
+Re-derived before building, as instructed, comparing **sets and not counts**: hook → `transitionId`
+across both dispatch families, then file → hooks called, then — new here — file → the atoms it asks
+availability for.
+
+**17 surfaces, 32 governed verbs. Identical membership to §72b. Nothing moved, nothing appeared,
+nothing was retired.** The list in the dispatch was accurate.
+
+⚠️ **BUT RUNNING IT AS `(SURFACE × VERB)` INSTEAD OF `SURFACE → IMPORTS THE GUARD?` CHANGED THE
+ANSWER** — which is exactly what §72a said the next sweep must do, and this is the first sweep to
+do it.
+
+### 75b · `BuyerGoodsReceipt` HAD THREE UNGUARDED ROW CONTROLS — ON THE PAGE §73 HAD JUST COVERED
+
+§73 guarded the **New GR** entry and stopped there. `footerForStatus` is a switch over the row's
+status, and three of its arms dispatch:
+
+| status | control | verb → atom |
+|---|---|---|
+| `Pending Inspection` | **Start inspection** | opens the wizard → the whole `gr:receive → gr:inspect → gr:post` chain |
+| `Quality Hold` | **Request retest** | `t_gr_request_retest` → `gr:inspect` |
+| `Approved` / `Partially Approved` | **Post to SAP** | `t_gr_post` → `gr:post` |
+
+All three were gated on `isPending` alone. A withheld seat opening a row met a live control that
+dispatches and refuses.
+
+⚠️ **`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` FIRING A SECOND TIME, ON THE SURFACE THE PREVIOUS
+BATCH HAD JUST "COVERED".** §72a filed this class against `BuyerRequisitions`: a page that imports
+the guard, renders it, and still ships a false affordance. §73 covered `BuyerGoodsReceipt`'s
+header — and left its detail panel exactly as `BuyerRequisitions`'s header had been left. **The
+class does not care which end of the page you started from; it fires wherever the census counted
+files.**
+
+**And the scope that missed it was MINE, not the dispatch's.** The §72 report tabled
+`BuyerGoodsReceipt — gr_post, gr_request_retest` correctly, then the three-way split proposed
+"Batch B — the GR lane", §73 executed only the entry, and Batch 3's scope list — which I wrote —
+did not carry the remainder forward. **A correct derivation can still lose a row when the plan
+that consumes it is written by hand.**
+
+### 75c · AND IT MAKES §73b's OWN CLAIM FALSE — `WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01` IS LIVE
+
+§73b filed the wizard's ungated `isStepValid` and wrote: *"the entry notice closes the only route
+this tree has TODAY, so there is no reachable path to demonstrate it, and a fix with no failing
+case is a fix with no probe."*
+
+**There were two routes, and the second is in the same file.** `Start inspection` opens the same
+wizard from a row. So the finding was never dormant: a withheld seat could reach the wizard, walk
+all four steps, and be refused at the commit — from the moment §73 shipped.
+
+⚠️ **THE MECHANISM WAS RIGHT AND THE REACHABILITY CLAIM WAS WRONG, AND ONLY THE SECOND WAS
+LOAD-BEARING.** *"No reachable path"* is what turned a live defect into a parked one, and it was
+asserted from the surface the batch had just edited rather than derived from the wizard's callers.
+**The cheapest possible check — who opens this component? — was not run, because the batch had
+just finished looking at the only opener it knew about.** Guarding `Start inspection` closes the
+second door; `isStepValid` still never consults the seat, so the finding stays open on its
+merits, with its status corrected from *unreachable* to **closed at both known entrances,
+unprobed within**.
+
+### 75d · `BuyerInvoices` READS AS UNGUARDED AND IS NOT — A MATCHER LIMIT, REPORTED AS ONE
+
+The coverage derivation reports `BuyerInvoices` with `guardedAtoms: (none)` beside three governed
+verbs. **It is fully guarded.** It predates the hook and asks the question through
+`invoiceActionsForSeat(state, seatRoles)` + `availabilityOfVerb` (§64): `t_invoice_dispute` has its
+own guard, and `commitAvailability` covers whichever verb the footer dispatches — including the
+`t_invoice_resolve` case the first cut of that guard missed.
+
+Recorded because rule 2 cuts both ways: **a matcher keyed on the newest mechanism accuses every
+surface that predates it.** The instrument was narrowed to the hook and would have condemned a
+correct page. No change made.
+
+### 75e · WHAT WAS DELIBERATELY LEFT ALONE
+
+- **`Under Inspection` → Submit inspection results** — a deliberate toast (`DEAD-AFFORDANCE-01`).
+  It dispatches nothing, holds no atom, and is **not withheld from anybody**. Pinned by a test, so
+  a future seat cannot "complete the sweep" by gating a control that has no verb behind it.
+- **`Quality Hold` → Override hold** — also a toast, and deliberately so: overriding is a
+  governance act whose value is accountability, and the platform cannot name a person (C10 §2).
+  No atom, no notice.
+- **Every read** — Export, Lab Results, Templates, Dismiss. A control that holds no atom is not
+  withheld; it is ungoverned.
+- **The eight supplier-side surfaces** — a supplier seat is always exactly `['supplier']` and has
+  no proper subset to narrow to, so every notice would be dead branch.
+
+### 75f · GATES
+
+Four green. **3377 → 3382 tests / 248 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — no new key.
+
+**Guards probed, two kills BY NAME**, suite loaded all 17 (§50e):
+`WITHHELD: a finance seat reads the owner where Start inspection was` ·
+`WITHHELD: a finance seat reads the owner where Post to SAP was`.
+
+⚠️ **AND THE SPEC'S FIRST CUT WENT RED FOR THE §74b REASON, ONE LAYER OVER.** It opened
+`GR-2026-001` — whose status is `Under Inspection`, the toast arm — so it asserted a guard over a
+control that has no verb. **`footerForStatus` is a switch, so "the first row" is not a sample of
+the surface; it is a sample of one arm.** Rows are now chosen by the status whose verb is under
+test.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash `index-CO3L7Uo6.js` asserted
+from inside the page on every pass:**
+
+| seat | locale | row | control | notice |
+|---|---|---|---|---|
+| `['finance']` | en | GR-2026-002 `Pending Inspection` | **Start inspection ABSENT** | *Awaiting Receiving* |
+| `['finance']` | en | GR-2026-003 `Approved` | **Post to SAP ABSENT** | *Awaiting Receiving* |
+| `['finance']` | id | GR-2026-002 | absent | *Menunggu Penerimaan* |
+| **held `['receiving']`** | en | GR-2026-002 | **Start inspection PRESENT** | **absent** |
+| **held `['receiving']`** | en | GR-2026-003 | **Post to SAP PRESENT** | **absent** |
+| **held `['receiving']`** | en | header | **New GR PRESENT** | **absent** |
+
+No English leak in ID, no raw i18n keys, no body overflow on any pass.
