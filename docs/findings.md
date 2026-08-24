@@ -18294,3 +18294,199 @@ from inside the page on every pass:**
 | **held `['receiving']`** | en | header | **New GR PRESENT** | **absent** |
 
 No English leak in ID, no raw i18n keys, no body overflow on any pass.
+
+---
+
+## §76 — THE DRAWER IS A WORKSPACE: ONE NOTICE PER ACT, AND THE SEGREGATION THE SURFACE LETS ONE SEAT CROSS
+
+### 76a · THE RULING, AND WHAT MOVED
+
+§74 collapsed `BuyerSourcing`'s six non-create verbs into **two GROUP notices** — one per
+*adjacent action group*, carrying the FIRST WITHHELD atom's owner — on the reading that the RFQ
+side panel is a control a seat is admitted to or not.
+
+**The operator's ruling reverses it: the panel is a WORKSPACE, not a control.** Four separable
+acts on the selected document, four dispatches, four confirmations, each with its own from-state.
+A notice spanning them answers about a group nobody performs.
+
+| slot | verb → atom | notice |
+|---|---|---|
+| lifecycle row, `Draft` only | `t_rfq_publish` → `rfq:publish` | `handoff-rfq-publish` |
+| lifecycle row, `Closed` only | `t_rfq_reopen` → `rfq:reopen` | `handoff-rfq-reopen` |
+| lifecycle row, all three states | `t_rfq_cancel` → `rfq:cancel` | `handoff-rfq-cancel` |
+| comparison cell, **per quote** | `t_quotation_review` → `quotation:review` | `handoff-rfq-review` |
+| award section | `t_rfq_award` → `rfq:award` | `handoff-rfq-award` |
+
+`handoff-rfq-actions` and `handoff-rfq-drawer` are **retired**, and both ids are pinned ABSENT by
+the new spec — without that pin, re-collapsing tomorrow would keep the suite green, because every
+per-verb assertion is about the STRING a withheld seat reads and a group notice reads the same
+string. **The absence of the group ids is what makes the split itself the thing under test.**
+
+⚠️ **AND THE HOOK NEEDED NO CHANGE — WHICH IS THE ANSWER TO "IS THERE A THIRD SHAPE?".**
+`useVerbAvailabilities` is already one independent resolution per atom; the group was imposed on
+top of it by `firstWithheld`, a four-line helper in the page. There was never a component-shaped
+question to answer, only a placement.
+
+### 76b · THE TWO VERBS THE GROUP NOTICE SPANNED ARE **NOT CO-REACHABLE ON ANY RFQ** — MEASURED
+
+`handoff-rfq-drawer` took its availability from `firstWithheld(review, award)` and rendered in the
+**award section**. Derived over the fixtures:
+
+| requirement | RFQs that satisfy it |
+|---|---|
+| award slot — `Open` ∧ `isAllResponded` ∧ quotes > 0 | RFQ-2026-**003 · 009 · 012 · 013** |
+| move-to-review — a `Submitted` quotation exists | RFQ-2026-**011** (1 of 2 responded, so it never shows the award slot) |
+
+**The intersection is EMPTY.** So on every RFQ where the award slot actually rendered, the group
+notice was naming the owner of `quotation:review` — an act that was **not on the screen** — and on
+the one RFQ where the review act exists, the notice that spoke for it was in a section that does
+not render. The strings coincided (both atoms are `procurement`), so nothing looked wrong.
+
+⚠️ **THIS IS THE ARGUMENT AGAINST GROUPING THAT THE ABSTRACT VERSION COULD NOT MAKE.** "One notice
+for adjacent acts" sounds economical while the acts are assumed to co-occur. **Nobody checked
+whether they ever do**, and the check is one derivation over the fixtures. The spec now asserts
+each notice on the document that affords its act, on two different RFQs, *because the tree affords
+them on two different documents* — the split is not a preference, the group was structurally
+unable to be right for both.
+
+### 76c · THE PARTIALLY-HELD SEAT IS **NOT CONSTRUCTIBLE ON THIS SURFACE TODAY**, AND SAYING SO IS PART OF SHIPPING THE SPLIT
+
+The dispatch's case for per-verb notices is *"a partially-held seat sees what it can do and who
+owns the rest."* **No such seat exists here.** A seat holds ROLES, not atoms; all five drawer
+atoms sit in `procurement` and in no other bundle; so every constructible seat holds all five or
+none — asserted bilaterally in the spec (each atom → `['procurement']`, plus *no other assignable
+role contains any of them*, plus a known-different control atom so the pin cannot pass over a
+`rolesHolding` that returned `procurement` for everything).
+
+**What the split buys TODAY is not a partial seat.** It is that each line sits in the slot of the
+act it is about — a withheld seat on a `Closed` RFQ now reads TWO lines (reopen · cancel) where it
+read one, and on a `Draft` reads publish · cancel — so the reader can tell WHICH act each line
+answers for by where it is. **What it buys TOMORROW** is that a bundle split needs no re-grouping.
+The all-or-none pin is the tripwire on "today": the day one of these atoms moves, it goes red and
+the partial case becomes writable.
+
+### 76d · ⚠️ `SEGREGATION-CROSSED-IN-ONE-DRAWER-01` — FILED AT FULL WEIGHT, NOT FIXED
+
+**The instance, and it is sharper than the abstract question:** `BuyerRequisitions`' detail drawer
+offers `pr:revise` (the adjust textarea, `Rejected → Draft`), `pr:submit` (`Draft → Pending
+Approval`) and `pr:approve` (`Pending Approval → Approved`) **in the same panel, on the same
+document, to the same seat.** Arc 2 made the requester/approver split real in the bundles —
+`pr:create` / `pr:submit` / `pr:revise` ∈ `requisitioner`, `pr:approve` / `pr:reject` ∈
+`procurement`, **disjoint** — and the comment in `businessRoles.ts` says so in as many words:
+*"Raising and revising a requisition — split from approving one, which is the segregation
+`pr:approve` living in `procurement` expresses."*
+
+**THE ATOMS ARE DISJOINT AND THE SURFACE IS NOT.**
+
+**Mechanism, measured — every step, at the site the claim requires:**
+
+1. `IdentityPanel.toggleRole` is a **multi-select**: it adds or removes one role and refuses only
+   the empty set. Nothing forbids holding `requisitioner` and `procurement` together.
+2. **The default buyer seat holds BOTH** — `identityForPersona('buyer')` seeds
+   `PERSONA_SYSTEM_ROLES.buyer`, which is all six lanes. So the crossing is not an exotic
+   configuration a careless admin could reach; **it is the out-of-box state.**
+3. The transitions chain without the document changing hands:
+   `t_pr_revise (Rejected→Draft)` → `t_pr_submit (Draft→Pending Approval)` →
+   `t_pr_approve (Pending Approval→Approved)`, all three dispatched from the same open drawer.
+4. Nothing in the dispatcher can catch it: legality, role, fields, `QueryScope` and policy are all
+   evaluated PER TRANSITION. **A per-act gate cannot see a sequence**, and segregation of duties is
+   a property of the sequence.
+
+**Why it is filed and not fixed:** the fix is a governance ruling, not a placement. It is also not
+cheap — every candidate below changes what the machine records, not just what the surface renders.
+
+**What would settle it — the two readings, and they are not the same question:**
+
+| | the ruling | what it would take to build |
+|---|---|---|
+| **(a) `pr:approve` does not belong in this drawer at all** | approval is a QUEUE act, not a document-detail act: the approver works a list of documents awaiting them, and the drawer that adjusts is not the surface that approves | a separate approval surface (or panel mode) keyed on `Pending Approval`; **cheap, and it does not stop the same PERSON approving** — a seat holding both bundles just walks to the other screen. **It relocates the gesture; it does not forbid it.** |
+| **(b) an adjusted requisition must leave the planner's hands before anyone approves it** | the real constraint is on the ACTOR, not the surface: whoever last wrote the document may not be the one who approves it | a **recorded prior actor** on the document and a policy hook comparing it to the approving actor. ⚠️ **AND THIS IS BLOCKED ON A NAMED PRECONDITION, MEASURED:** `CurrentIdentity.actor` is always `UNATTRIBUTED: NO_PERSON_IN_SESSION` (C10 §2 / `ENF-NO-PERSON-IN-IDENTITY-01`), so *"not the same person"* is a comparison **between two values the platform cannot produce**. (b) is unbuildable until an IdP answers — Stage F1. |
+
+⚠️ **AND THE TWO READINGS DISAGREE ABOUT WHAT SEGREGATION IS FOR, WHICH IS WHY THE RULING CANNOT
+BE SPLIT THE DIFFERENCE.** (a) treats it as a WORKFLOW property — the acts belong to different
+stations — and is satisfiable today with roles alone. (b) treats it as an ACCOUNTABILITY property
+— one human may not both write and bless — and is **structurally unreachable** in a portal with no
+persons. Shipping (a) while calling it segregation would be the more dangerous outcome of the two:
+it would look like the control exists, and the seat that holds both bundles would still cross it
+in two clicks on a different screen. **If (a) is ruled, the honest form is to say it is a
+station separation and that the actor-level control is deferred to F1 with (b) named.**
+
+**NOT filed as a false mechanism (`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`, §70):** every clause
+above was measured before writing — the multi-select toggle, the default seat's six roles, the
+three transitions' from/to states, and the `actor` constant. The one thing NOT measured is whether
+any real Paragon process wants (a) or (b); that is the operator's ruling and it is stated as open,
+not guessed at.
+
+### 76e · WHAT WAS LEFT ALONE, WITH THE REASON — AND ONE NEW OBSERVATION
+
+- ⚠️ **`Reject all & resource` (award section) IS A BUTTON WITH NO `onClick` AT ALL.** Measured:
+  `<Button variant="secondary">{t('sourcing.award.rejectAll')}</Button>`, no handler, no atom, no
+  dispatch, no toast. It is **not** the `DEAD-AFFORDANCE-01` shape §75e recorded on the GR lane —
+  those toasts at least SAY nothing happened. This one is inert: a labelled commit control that
+  does not respond to a click. **Left alone deliberately** — it holds no atom, so it is not a
+  handoff question, and removing a control is a design act this batch was not asked for. Recorded
+  here so the next sweep does not "cover" it with a notice, which would be the wrong repair for a
+  control that has no verb.
+- **`rfq:fx-pin`** — already per-verb (`handoff-rfq-fxpin`) since §74 and untouched. Its opener
+  (`FxBasisPanel` → the record-basis link) is ungated, so a withheld seat can open the dialog and
+  meets the notice where the commit button would be. That is the `WIZARD-ADMITS-A-SEAT-IT-WILL-
+  REFUSE-01` shape **one degree milder**: the dialog names the owner at the commit, so the seat is
+  told rather than refused. Not changed, recorded.
+- **Everything outside the drawer.** The dispatch scoped this batch to one component.
+
+### 76f · GATES, PROBES, QA
+
+Four green. **3382 → 3397 tests / 248 → 249 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — **no new i18n key**: `HandoffNotice` renders `roles.handoff.*`, which both
+locales already carry.
+
+**FIVE mutation probes, all KILLED BY NAME**, with the mutation asserted to have changed bytes
+before each run (the CRLF trap: a probe that silently never mutates reports a green suite as a
+weak gate):
+
+| mutation | test killed |
+|---|---|
+| cancel guard → always live | `WITHHELD: … reads the owner where Cancel RFQ was` |
+| cancel guard → never live | `HELD: a procurement seat keeps Cancel RFQ …` |
+| per-quote review guard → always live | `WITHHELD: the owner is read in the QUOTE CELL …` |
+| award guard → always live | `WITHHELD: … reads the owner where the award button was` |
+| publish guard → always live | `WITHHELD: … reads the owner where Publish RFQ was` |
+
+**Both directions on `cancel`** — §39's rule: a guard probed only for "does it catch the bad
+thing?" ships fine while being wrong about what it should ACCEPT.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash `index-CG3SS_2T.js` asserted
+from inside the page on every pass** (and checked against `dist/index.html`'s entry):
+
+| seat | locale | RFQ (state) | controls | notices |
+|---|---|---|---|---|
+| `['receiving']` | en | 008 `Draft` | none | publish · cancel |
+| `['receiving']` | en | 004 `Closed` | none | reopen · cancel |
+| `['receiving']` | en | 001 `Open` | none | cancel |
+| `['receiving']` | en | 011 `Open`+Submitted quote | none | cancel · **review** |
+| `['receiving']` | en | 009 `Open`+all responded | none | cancel · **award** |
+| **held `['procurement']`** | en | 008 | **Publish · Cancel** | **none** |
+| **held `['procurement']`** | en | 004 | **Reopen · Cancel** | **none** |
+| **held `['procurement']`** | en | 001 | **Cancel** | **none** |
+| **held `['procurement']`** | en | 011 | **Cancel · Move to review** | **none** |
+| **held `['procurement']`** | en | 009 | **Cancel · Award to selected** | **none** |
+| `['receiving']` | id | 008 / 004 / 011 / 009 | none | *Menunggu Pengadaan* ×3 each |
+
+No English leak in ID, no raw i18n keys, no body overflow on any pass. **The held-seat control is
+five controls live and ZERO notices across all five documents** — a guard that removes a control
+always is a deletion, and only this half can tell the difference.
+
+### 76g · TWO PREMISES CORRECTED BEFORE THE BATCH RAN
+
+- **"Main at the #260 merge SHA."** `#260` does not exist (`gh pr view 260` → *Could not resolve to
+  a PullRequest*); `gh pr list --state all` topped out at **#259, OPEN**, and `main` was at
+  `f51127a` = the **#258** merge. The §43a reflex — assert the object exists **at the site the
+  action names** before acting on it — is what caught it; a plan read as a result, one batch later
+  than §43's. #259 was then merged on the operator's direction (`8f84c1b`) and this batch branched
+  from it, which is what made the dispatch's premise true rather than assumed.
+- **"The drawer"** resolved to two candidate components. `BuyerRequisitions`' detail drawer already
+  carries four per-verb notices (§72, #257) — zero delta — while `BuyerSourcing`'s RFQ panel held
+  the tree's only notices spanning more than one act, one of them literally named
+  `handoff-rfq-drawer`. Asked rather than guessed: **the target is `BuyerSourcing`**, and the
+  segregation instance is `BuyerRequisitions` (76d) — one batch, two components, and they are not
+  the same component.
