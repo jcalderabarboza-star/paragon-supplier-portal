@@ -18327,6 +18327,17 @@ string. **The absence of the group ids is what makes the split itself the thing 
 top of it by `firstWithheld`, a four-line helper in the page. There was never a component-shaped
 question to answer, only a placement.
 
+⚠️ **AND THE OPERATOR ASKED FOR THIS TO BE RECORDED, SO IT IS RECORDED AS THEY PUT IT:** *"I
+stopped a batch for a shape that was not there, and stopping was still right, because the report is
+what showed it."* The halt was called on a suspected THIRD shape — a control spanning two lanes,
+needing something the hook could not express. There was no such shape: `useVerbAvailabilities`
+already answers per atom, and the collapse was four lines of page-local helper. **The general
+form, and it is the reason this is worth a paragraph rather than a footnote: a halt called on a
+misread is not a wasted halt if the thing that resolves it is a measurement.** The alternative —
+building through the doubt — would have shipped whichever shape the doubt suggested, and nothing
+downstream re-measures a design decision. The cost of the stop was one report; the cost of
+guessing would have been a component.
+
 ### 76b · THE TWO VERBS THE GROUP NOTICE SPANNED ARE **NOT CO-REACHABLE ON ANY RFQ** — MEASURED
 
 `handoff-rfq-drawer` took its availability from `firstWithheld(review, award)` and rendered in the
