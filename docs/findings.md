@@ -19362,3 +19362,332 @@ always is a deletion, and only this half can tell the difference.
   `handoff-rfq-drawer`. Asked rather than guessed: **the target is `BuyerSourcing`**, and the
   segregation instance is `BuyerRequisitions` (76d) — one batch, two components, and they are not
   the same component.
+
+---
+
+## §77 — THE RECONCILIATION. Three PRs recovered, and the class that put them there: A CLAIM ABOUT THE TREE, MADE FROM MEMORY OF A TREE THAT DID NOT EXIST
+
+**Batch:** the 2026-08-26 reconciliation. `main` `86bcae1` → `7298e3c`.
+Floor `3397 / 249 / 7` → **`3482 / 252 / 7`**. Three PRs merged: #243 (§59), #245
+(§61), #251 (§66). **Register only for this section; the code it records is in
+those three.**
+
+### 77a · WHAT WAS RECOVERED, AND WHY IT WAS RECOVERABLE
+
+Three PRs sat open from 20–21 August while nine to fourteen commits landed past
+them. All three were measured MERGEABLE, none superseded, none of their content
+on `main`. The register had four holes — **§44, §59, §61, §66** — and three of
+them were these PRs. Two were load-bearing while absent:
+
+- `main`'s §60 cited **`§59d` twice** for measurements that were not in the
+  repository.
+- **The ratified merge doctrine existed nowhere on `main`.** It had governed
+  every dispatch since 2026-08-14 from inside PR #227, which was closed unmerged
+  on 2026-08-20. It is now at `CLAUDE.md`, carried by #243.
+
+§44 remains the only hole and it is still #227's.
+
+### 77b · ⚠️ `INVENTED-SYMBOL-FROM-A-REMEMBERED-TREE-01` — THE INVERSIONS OF ONE RECONCILIATION, AND WHAT THEY SHARE IS NOT CARELESSNESS
+
+Dispatched premises that named an artifact and measured absent. **The list below IS the count — it is not restated as a number anywhere, because it was still growing when the paragraph beneath it was written.** The operator recorded every one against their own dispatches, which is why they are here rather than in a correction log:
+operator recorded all three against their own dispatches**, which is why they are
+here rather than in a correction log:
+
+| # | claimed | measured |
+|---|---|---|
+| 1 | a **nav conflict** — both sides adding a Roles block to the same group | #251 touches **no nav and no routing file**; `SidebarV2` · `AppRouter` · `AppShellV2` · `lib/i18n` are **byte-identical to `main`** on the merged tree |
+| 2 | #251 **predates the six-role split** and seeds `roles: ['compliance']` on a changed `CurrentIdentity` | #248's merge commit `de20ef6` **is an ancestor** of #251's base `1a7cb3d`; `CurrentIdentityContext.tsx` is blob `77553791` on **both**; bare `roles: [...]` seat seeds tree-wide: **zero** |
+| 3 | #251 extends **`RolesPage`** while `main` renders `RolesCatalogue` | **`RolesPage` has never existed in any commit on any ref** (`git log --all -S`). #251 extends `RolesCatalogue` — the same component, same file, same route |
+| 4 | a broad role **`buyer_all`**, *ruled in, named and SEEDED*, absent only from the enumeration that makes a role holdable | **`buyer_all` has never existed in any commit on any ref.** `buyer:all` is the DR-10 audit ACTOR string — §64a’s inversion, one arc later, on the same token. What was seeded at #250 is `admin` |
+| 5 | a **build-time correction** from the `buyer_all` batch, with a merge instruction for **#266 at `3d20ffe`** | the seat had reported *“Nothing built. Tree untouched”* in the immediately prior turn. **The correction is the seat’s own INVESTIGATION finding (`IdentityPanel.tsx:88`) read back as a result.** `#266` → no such PR (highest ever: `#261`); `3d20ffe` → `Not a valid object name`. See 77f-iii |
+
+⚠️ **THE COMMON MECHANISM, AND IT IS THE ONE THING THAT MAKES THEM ONE CLASS
+RATHER THAN THREE MISTAKES: ALL THREE WERE CLAIMS ABOUT WHAT THE TREE CONTAINS,
+MADE FROM MEMORY OF SESSIONS THAT DESCRIBED A TREE THAT DID NOT EXIST.** Not
+guesses, not sloppiness — recollections of prior sessions in which this machinery
+was discussed as shipped. #251 was **discussed as merged for four days and never
+landed**, so every later description of `main` inherited a component, a nav
+change and an identity refactor that were only ever on a branch. **A remembered
+tree is internally consistent, which is exactly what makes it unfalsifiable
+without a grep.**
+
+This is `§64a`'s family — *a misdescribed mechanism attached to a correct
+conclusion* — with the SOURCE named: not invention, **decay**. And the direction
+matters, because it is the opposite of `SHRINKING-CORRECTION-IS-UNCHECKED-01`
+(§60c): each of these three inverted **toward the branch**, making the work
+smaller and safer, and #2 and #3 were **retractions the operator issued against
+themself**. A retraction that is also wrong is the shape §60c says gets believed.
+
+**The disposal is `§64a`'s and it costs one line:** `grep` the artifact before
+building on it. Each of the three took a single command, and the negative control
+mattered as much as the search — `RolesPage` returning nothing is only evidence
+once `RolesCatalogue` returning seven files proves the matcher can see.
+
+### 77c · ⚠️ `A GREEN BRANCH IS NOT A GREEN REBASE` — FIRED ON ITS FIRST USE, ON A DEFECT NO GATE HERE CAN SEE
+
+The operator required #251's gates be run **against the merged base, not the
+branch**, and report before merge. It fired.
+
+`CommandTarget.applyTransition` gained a **fourth parameter** on `main` at §68
+(`dispatcher.ts`), `scope: QueryScope`, so a target that must record WHO acted
+reads the SESSION rather than a payload field. #251's `roleTarget` was authored
+against the three-parameter contract and still is (`MockCommandService.ts`).
+
+⚠️ **`tsc` CANNOT SEE THIS. A THREE-PARAMETER FUNCTION IS ASSIGNABLE TO A
+FOUR-PARAMETER TYPE.** Both typechecks exit 0, all 3,482 tests pass, CI is green,
+and the arity is still wrong. **Every instrument this project owns reports
+clean.** The check that caught it is not a gate and cannot become one; it is the
+question *did the base move under this diff*, asked before merging and answered
+by reading the contract rather than by running it.
+
+**A DIFF THAT APPLIES IS NOT A DIFF THAT AGREES**, and the gap between those two
+is exactly the size of what a compiler is willing to widen.
+
+### 77d · OPEN — CARRIED BY #251, NOT INTRODUCED BY IT
+
+- **`t_role_grant` transports attribution in the PAYLOAD** (`grantedBy`), the
+  shape §68's `PR_APPROVAL_ATTRIBUTED` refuses **by name** one verb over, and
+  which `dispatcher.ts`'s own header says it declined to reproduce on a second
+  verb. The verb is `trigger: 'user'`, so the dispatcher **already** attributes
+  it from `scope.actor` — **two attribution paths for one act.** Measured scope
+  of the reconciliation: **4 source files, ~8 behavioural lines**, plus 4 test
+  files. A resolution, not a rewrite. **OPEN — operator's ruling.**
+- **Nothing can hold a custom role.** `rolesFromStorage` filters on
+  `isSystemRole`, and `IdentityPanel`'s `toggleRole` is typed `SystemRoleId`, so
+  a custom id cannot reach a seat by any shipped path. `atomsForSeat` is
+  therefore a **strict no-op today** — correct, pinned by tests, and inert until
+  assignment exists. #251 states this itself (§66k). **OPEN — the assignment
+  batch.**
+- **Two stale lines merged unchanged inside the recovered entries**, because
+  editing another seat's ruled content is not a merge: §59d and §60f both carry
+  `OPEN — #227's disposition` (closed 2026-08-20), and §59 · §60 · §61 each state
+  `Floor 3123 / 228 / 7`. **Corrections owed, not taken.**
+
+### 77e · DISPOSITION
+
+- **MERGED:** #243 `492d643` · #245 `0e439b8` · #251 `7298e3c`. Every SHA
+  `git cat-file`-verified with a negative control, per the doctrine's half two,
+- **FILED:** `INVENTED-SYMBOL-FROM-A-REMEMBERED-TREE-01` (77b, OPEN — closes when a reconciliation runs with zero absent artifacts). ⚠️ **Two further members landed AFTER this line was first written (77f-iii), which is why the class is carried as a list and never as a figure.**
+- **RECOVERED:** the merge doctrine, both halves, to `CLAUDE.md` (#243).
+- **CONFIRMED (operator, credited):** every inversion was recorded by the operator against their own dispatches, several as retractions.
+  a reconciliation runs with zero absent artifacts).
+- **CONFIRMED (operator, credited):** all three inversions were recorded by the
+  operator against their own dispatches, two of them as retractions.
+- **UNTOUCHED:** no verb authored, no surface built, no flow, DTO or test changed
+  by THIS section. C9 `2b4f38d` and C10 `8cab8a1` byte-identical by index blob id
+  across all three merges — LF, stated because a working-tree hash is not
+  portable on this checkout (`core.autocrlf=true`).
+
+### 77f · ⚠️ `buyer_all` — A JUSTIFICATION MEASURED IMPOSSIBLE, AND A ROLE THAT SURVIVED IT ON A DIFFERENT ONE
+
+**Ruled 2026-08-26, after the merges above, on an investigation dispatched
+`REPORT, DO NOT BUILD`.** The subject is a broad buyer role — every buyer act a
+lane performs, held as one grant — dispatched as *already seeded and merely
+absent from the enumeration that makes a role holdable*, i.e. a one-line fix.
+
+**IT WAS NEVER SEEDED.** `buyer_all` has **zero occurrences** in `src/`, `docs/`,
+any `.md`, or any commit on any ref. `buyer:all` exists and is the **DR-10 audit
+actor string** — the §64a inversion, one arc later, on the same token. What was
+seeded (at #250) is `admin`, which is deliberately wider and deliberately not on
+a side.
+
+#### The measurement that ended the batch, and it is arithmetic rather than effort
+
+⚠️ **THE ROLE'S STATED PURPOSE — *the duplicate-and-narrow parent* — IS
+IMPOSSIBLE FOR THE WIDEST ROLE ON A SIDE, NOT MERELY UNBUILT.** Three facts from
+shipped source, and the third is the one that closes it:
+
+1. `CustomRoleDefinition` is `{ parent, adds }`, and `adds` is documented
+   **"Always a widening (additive-only)"**. No subtractive field exists anywhere
+   in the model — no `removes`, no `omits`, no `excludes`.
+2. `CreateRolePanel`'s offer is `atomsOfSide(persona)` less `SYSTEM_ROLES[parent]`.
+   For a parent holding **every** atom on its side that set is **empty** — the
+   *Permissions to add* list renders with nothing in it.
+3. `adds` is a `requiredField` and the dispatcher's `isEmpty` treats `[]` as
+   absent, so the grant is refused **`MISSING_FIELDS:adds`** — deliberately:
+   *"a child identical to its parent is a second name for the parent with a
+   grant record attached"* (`role.flow.ts:77`).
+
+**So a customiser cannot copy a role that holds everything — holdable or not.**
+The dispatched gap (*"a customiser cannot copy a role nobody can hold"*) named
+holdability as the blocker; **holdability is not the blocker.** The widest role
+on a side is the ONE parent from which no child can ever be minted, and making
+it holdable moves nothing. *Duplicate-and-narrow* is the WORKFLOW's name; the
+MECHANISM is duplicate-and-**widen**.
+
+⚠️ **AND THAT IS WHY THE ROLE WAS NOT BUILT: ITS JUSTIFICATION WAS THE
+MECHANISM, AND THE MECHANISM CANNOT WORK.** The operator's ruling, in its own
+words — *"the role I ruled in was justified by a mechanism that cannot work. DO
+NOT BUILD IT."* This is `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` applied one layer
+up: not a finding withheld, **a BUILD withheld**, because the artifact would have
+outlived the reason for it and every later census would have found a holdable,
+uncopyable, unheld role and re-proposed a fix for it.
+
+#### The two decisions taken anyway, so a re-proposal cannot re-litigate them
+
+Both were ruled BEFORE the role was ruled out, and both stand as decisions about
+any future broad role rather than as dead branches:
+
+- **A BROAD ROLE DOES NOT HOLD `role:grant`.** 36 atoms, not 37: *every buyer act
+  a lane performs*, **not** every buyer atom. `role:grant` is authority over the
+  role system itself and is `compliance`'s by the §66 ruling. **A broad operating
+  seat that can also rewrite the role catalogue is `admin`** — which already
+  exists and is deliberately ungrantable, so minting a second one is the wildcard
+  arriving through the door marked *operating convenience*.
+- **`rolesHolding` WOULD EXEMPT IT**, on `admin`'s exact reasoning. Unexempted,
+  two green assertions go red and every withheld buyer verb reads *"Awaiting
+  Finance / Buyer All"*. ⚠️ **A ROLE THAT HOLDS EVERYTHING IS NOT AN OWNER, IT IS
+  A SUPERSET** — naming it tells a withheld seat nothing about WHOSE ACT IT IS.
+
+#### 36 vs 37 — the same number from two instruments, and neither was restated
+
+The dispatch said 36; the derivation returns **37**. Both are right about
+different populations: 37 is *every buyer atom* (union of the six lane bundles,
+population-guarded, supplier intersection **empty**); 36 is *every buyer atom a
+lane performs*, i.e. 37 less `role:grant`, which #251 added to `compliance` five
+hours earlier. **The figure was re-derived rather than reconciled** — §40k's
+rule — and the reconciliation that would have "explained" the gap of one is
+exactly the believable-explanation failure that rule exists for.
+
+⚠️ **AND THE SHIPPED PROSE IS NOW STALE BY THAT ONE.** `businessRoles.ts:188`,
+`:195` and `:301` say **36 buyer-side / 52 total**; derived, it is **37 / 53**.
+Nothing went red because every ASSERTION in `businessRoles.test.ts` is derived
+(`expect(new Set(SYSTEM_ROLES.admin)).toEqual(union)`) and only the COMMENTS
+carry numbers — `FLOOR-IN-PROSE-01`, in the file that defines the vocabulary,
+introduced by the batch that added the atom. *(`:204`'s "48 atoms / 36
+assignable" describes the RETIRED persona grant as measured at the time and is
+history, not drift: `role:grant` did not exist then. Verified NOT stale in the
+same pass: "12 machine-only atoms" — 18 automation atoms less the 6 shared with a
+human bundle.)*
+
+#### 77f-i · `supplier` IS A CENSUS ARTEFACT, NOT A GAP
+
+The unreachable-role census returned three, and one of them is an instrument
+artefact. **`supplier` is the supplier seat's actual role**, seeded at four
+sites and reachable in every practical sense; it is absent only from
+`PERSONA_SYSTEM_ROLES.`**`buyer`**. **The census read a buyer-keyed enumeration
+and reported a supplier role missing from it** — rule 1's shape with the
+population correct and the KEY wrong. Filed as an artefact so the next census
+does not re-report it, and so the instrument's bug is on the record beside its
+output.
+
+#### 77f-ii · `admin` IS UNGRANTABLE BY DECISION — FILED AS A DECISION, NOT AN OMISSION
+
+⚠️ **THIS ROW EXISTS SO THE NEXT CENSUS DOES NOT REPORT `admin` AS THE SAME
+DEFECT AS `buyer_all` AND SOMEBODY FIXES IT.** The two are unreachable for
+OPPOSITE reasons, which is why a single fix would have been wrong: `buyer_all`
+was never authored at all; **`admin` was authored, named on the catalogue, and
+withheld on purpose.**
+
+The reason, on the record rather than in a comment: **it spans tenancies, it is
+exempt BY NAME from the invariant every other role obeys, and making it a toggle
+would put the platform's widest authority behind a checkbox.** A super admin
+reachable by clicking is the wildcard again wearing a name. The mechanism is
+already pinned — listing `admin` under a persona makes `PERSONA_ROLES.buyer` span
+supplier atoms and `personaCan('buyer','po:confirm')` turn true, collapsing the
+tenancy answer `nextActorFrom`, `catalogView` and the per-persona `surfaceable`
+invariant all read (`businessRoles.ts:272`, four assertions at
+`businessRoles.test.ts:181-249`).
+
+**What IS owed, and it is a surface gap rather than an authorisation one:**
+`/buyer/roles` shows eight roles with no column, badge or sentence distinguishing
+*the six a buyer can hold* from *the one on the other side* from *the one nobody
+can hold*. Both kinds read `System role`. A reader learns `admin`'s reach in full
+and learns nothing about its reachability. **OPEN — operator.**
+
+#### 77f-iii · THE FOURTH AND FIFTH INVERSIONS, AND THE FIFTH IS THE ONE WITH TEETH
+
+Both are rows 4 and 5 of 77b's table. The fifth is recorded here because it is
+qualitatively worse than the four before it, and the operator named it so.
+
+⚠️ **A PLAN WAS READ AS A RESULT — ONE TURN AFTER THE SEAT DECLINED TO PRODUCE
+THE PLAN.** The investigation reported *"Nothing built. Tree untouched"* and
+named, among the reasons to stop, a constraint found while reading
+`IdentityPanel.tsx:88` — `toggleRole`'s `if (next.length === 0) return` guard,
+which is PER-GESTURE, so reaching `['buyer_all']` alone would require emptying
+the seat in the same gesture that fills it. **That report came back as a
+BUILD-TIME CORRECTION from a batch that never happened**, attached to a merge
+instruction for `#266` at `3d20ffe` — a PR number above the highest this
+repository has ever held (`#261`) and a SHA that does not resolve.
+
+**THE CONSTRAINT IS REAL AND THE READING OF IT IS RIGHT** — a grant reachable
+only alongside the six is not a grant of the broad role, it is an addition to a
+seat that already has everything; and *warn, do not block* is the correct
+resolution, on the enforcement notice's discipline: **say whose act it is; do not
+take the act.** That is precisely what makes this the dangerous shape rather than
+a clerical slip: the reasoning is sound, so nothing about it invites a check.
+§43's seventh premise cost nothing because it was refused; **this one cost
+nothing for the same reason and no other.**
+
+And the compounding half, filed because it is 77b's class committed IN a ruling
+that cites 77b: *"`buyer_all` is now holdable and unheld"* — **a state predicated
+of a subject absent from the tree.** Holdable-and-unheld is a real and smaller
+gap than unholdable, and it is unaskable until the role exists.
+
+**THE DISPOSAL IS UNCHANGED AND IT IS STILL ONE COMMAND**, but the surface it
+must cover is now wider than an identifier: `grep` the artifact — **and before an
+outward step, assert the object at the site the action names** (`gh pr view`,
+`git cat-file`, `git branch`), never from the conversation that described it.
+Five inversions, five absent objects, and **the two that named an irreversible
+act are the only two that could not have been corrected by measuring again.**
+
+#### 77f-iv · DISPOSITION
+
+- **BUILT:** nothing. No role authored, no enumeration changed, no test written.
+  `src/` and `scripts/` byte-identical to `main` throughout the investigation.
+- **RULED, THEN SUPERSEDED WITHIN THE HOUR — SEE 77f-v.** The role was ruled OUT on the measurement above, and ruled back IN on a justification the measurement does not touch. **The subtractive mechanism is NOT built either way** — how custom roles narrow is a design decision to be taken on its own merits, never to rescue a role that was named before it was measured.
+  built as a consequence of this ruling either** — how custom roles narrow is a
+  design decision that must be taken on its own merits, not to rescue a role that
+  was named before it was measured.
+- **OPEN — operator, and it is the question this arc actually surfaced:** the
+  standing direction is **FEWER ROLES, BY COPYING AND CUSTOMISING**, and the
+  additive mechanism **cannot deliver that from a broad parent** — copying a
+  ceiling yields the ceiling. Whether custom roles gain a subtractive half, or
+  whether *fewer roles* is served some other way, is the question to take up.
+  **It is not answered by adding a role.**
+- **OPEN — 77f-ii:** the catalogue does not state which roles are holdable.
+- **STALE, MEASURED:** `businessRoles.ts:188` · `:195` · `:301` — 36/52 where the
+  tree derives 37/53.
+
+#### 77f-v · ⚠️ THE RULING REVERSED ITSELF, AND THE REVERSAL IS RECORDED AS ONE
+
+**Ruled 2026-08-26, within the hour of 77f above, and it is filed as a reversal
+rather than an edit** — the same discipline the Track-R re-prioritisation was
+given. `buyer_all` **IS BUILT**, and the reason it survives is that the argument
+changed rather than the measurement.
+
+⚠️ **THE DUPLICATE-AND-NARROW JUSTIFICATION STAYS RETIRED.** It was not
+overruled, deferred, or softened: it is **arithmetically impossible**, for the
+reasons derived above, and nothing in the new ruling revives it. That matters
+because a justification that merely *loses* can come back; one that is measured
+impossible cannot, and the register should not let the difference blur.
+
+**THE NEW ARGUMENT IS A SEPARATION OF JOBS, NOT A CAPABILITY CLAIM** — which is
+why the measurement has no purchase on it:
+
+| | `admin` | `buyer_all` |
+|---|---|---|
+| tenancy | **both sides** | **buyer only** |
+| authority over the role system (`role:grant`) | **yes** | **no** |
+| atoms | 53 — every assignable atom | 36 — every buyer act a lane performs |
+| the seat it describes | **the IT seat** | **the manager's seat** |
+
+**A department head who can do everything their team does is not an IT
+administrator who can do everything anyone does.** Collapsing them would hand a
+manager reach into the supplier side and into the role catalogue — two grants
+nobody asked for and neither of which a manager's job needs. The role is not
+justified by what a customiser could copy from it; **it is justified by being
+the seat a real person occupies.**
+
+**Both earlier rulings survive the change of argument unaltered**, which is a
+point in the new justification's favour rather than a coincidence: no
+`role:grant` (a manager OPERATES the lane; IT ADMINISTERS the platform), and
+exempt from `rolesHolding` (a role that holds everything is not an owner, it is
+a superset — naming it tells a withheld seat nothing about whose act it is).
+
+**AND IT IS NOT SEEDED.** The seat stays six. **`buyer_all` is holdable and
+unheld** — which was the *smaller and different* gap the operator ruled
+separately for, and it is now the CORRECT state rather than a gap at all: a
+manager's seat exists to be granted to a manager, not to be everyone's default.
+The distinction that was unaskable in 77f-iii — because the subject was absent —
+becomes both askable and answered the moment the role exists.
