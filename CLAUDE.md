@@ -5,6 +5,71 @@
 - Open a pull request to `main`; never push directly to `main`
 - The CLI merges via the GitHub UI (Squash + delete branch); the operator directs and approves
 
+### ⚠️ MERGE DOCTRINE — BOTH DIRECTIONS. RECOVERED AND EXTENDED (§59c, 2026-08-26)
+
+⚠️ **PROVENANCE FIRST, BECAUSE IT IS THE WHOLE ARGUMENT FOR THIS SECTION
+EXISTING.** The first half below was ratified 2026-08-14 and has governed every
+dispatch since — and it lived **only on `qa/chaos-ambience-pin` (PR #227), which
+was closed unmerged on 2026-08-20.** `grep -in "merge doctrine"` over every `.md`
+on `main` returned nothing; `main`'s sole trace of it was one sentence in
+`docs/findings.md` recording that it was *absent*. **A doctrine whose only copy
+is in a pull request is enforced by memory, and memory is the instrument this
+register exists because it does not trust.** It is restated here verbatim, not
+re-derived. That is `FLOOR-IN-PROSE-01`'s shape applied to a rule instead of a
+number.
+
+**HALF ONE — A MERGE INSTRUCTION NAMING A PR THE SEAT HAS NOT ITSELF REPORTED IS
+A REQUEST TO VERIFY, NOT TO MERGE (ratified 2026-08-14).**
+
+**The seat MUST refuse it, and refusing is doctrine rather than judgement.**
+Two merge instructions were issued in one arc for PRs that had never existed —
+`#226` before it was opened, and `#228` which was never opened at all. Both were
+refused, and the refusal is the only reason neither cost anything.
+
+The mechanism, named by the strategist against themself: **A PLAN WAS READ AS A
+RESULT.** The seat reports what it *would* build; that report is read as a build
+report; artifacts that exist only in a description get ruled on. **The
+strategist will not issue a merge instruction without a SHA and a PR number
+reported by the seat in the turn immediately prior.** Absent both, the
+instruction is a request to verify.
+
+⚠️ **AND THIS IS THE CLASS THE DISCIPLINE WAS NOT PROTECTING AGAINST, BECAUSE
+THE DISCIPLINE RUNS ON THE CODE SIDE AND THE DISPATCH SIDE HAD NO GATE.** Every
+code-side inverted premise costs a report, which is recoverable by measuring
+again. A merge is not. So before ANY outward or irreversible step — merge, push,
+publish, delete — assert the object exists **at the site the action names**
+(`gh pr view <n>`, `git branch`, the file itself), never from the conversation
+that described it. See `docs/findings.md` §43a.
+
+**HALF TWO — A REPORTED SHA IS A CLAIM, NOT A FACT (ratified 2026-08-26).**
+
+**Before the strategist rules on any merge report, THE SEAT VERIFIES ITS OWN
+REPORTED SHA WITH `git cat-file` AND STATES THE RESULT.** State the negative
+control too: a report that says only *"verified"* is indistinguishable from a
+report that ran nothing (`EMPTY-INPUT-REPORTS-CLEAN-01`), so name at least one
+object the check was expected to REJECT and show that it did.
+
+⚠️ **THIS CLOSES THE DIRECTION HALF ONE CANNOT SEE, AND IT IS THE DIRECTION THAT
+ACTUALLY FAILED.** Half one stops the strategist naming a PR the seat did not
+report. **It has nothing to say when a report NAMES one and the strategist
+ACCEPTS it** — which is the same object arriving through the one door the rule
+holds open, wearing the credential the rule asks for. An unknown number of
+rulings were made against merge reports citing PRs and SHAs this repository has
+never held (`9c31c7f` · `#226` · `#228` are the ones recovered; the register
+under-counts the class by construction, because a claim refused in conversation
+leaves no trace). **The tree was sound throughout. The account of it was not**,
+and no gate in this project reads an account.
+
+⚠️ **THE COST ASYMMETRY IS WHY THIS IS DOCTRINE AND NOT A HABIT.** The check is
+one command and cannot fail slowly. A merge performed on a SHA that does not
+exist fails loudly; a merge performed on the WRONG object that does exist does
+not fail at all. Half one guards the cheap direction. This guards the expensive
+one. Filed as `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`
+(`docs/findings.md` §59c), whose subject is the same object one step earlier —
+a SHA in a dispatch HEADER, arriving in the position that reads as context
+rather than as claim, which is exactly what makes it the cheaper place to put a
+wrong object.
+
 ## Session startup — run these commands every time
 git checkout main && git pull origin main
 
