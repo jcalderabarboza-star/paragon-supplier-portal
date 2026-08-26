@@ -360,6 +360,35 @@ export const mockShipments: Shipment[] = [
     customsStatus: 'Cleared',
     lineItems: [
       { materialCode: 'PK-PETB-8802', description: 'PET Bottle 100ml Clear — Emina Series', qty: 95000, uom: 'PCS' },
+      // ⚠️ **ADDED AT H4 — TO MAKE THE BPJPH MANDATE DEMONSTRABLE AT A DOCK,
+      // WHICH IT WAS NOT.** `AI-NIAC-6612` is backed by a MUI-legacy
+      // certificate whose own dates run to 2027 and whose SCHEME retires on
+      // 2026-10-17 (GR 42/2024) — the one row in the registry that flips
+      // `SATISFIED → SCHEME_INVALID` on the mandate date rather than on an
+      // expiry. It already shipped on `ASN-2025-00201`, and that ASN is
+      // `Discrepancy` (a 720-of-800 short-ship, which is WHY it is), so it is
+      // outside `RECEIVABLE_ASN_STATUSES` and no goods receipt could ever reach
+      // it. The arc's headline was pinned in a spec and unreachable in the
+      // product.
+      //
+      // ⚠️ ADDED HERE RATHER THAN BY RE-STATUSING `ASN-2025-00201`, and the
+      // choice is not cosmetic: that ASN is the tree's ONLY `Discrepancy`
+      // exemplar (`buyerDerivations.ts` KPI, `SupplierShipments.tsx`, the
+      // `t_asn_*` repair verb's `from: ['Discrepancy']`, and
+      // `looseEndRepairCommands.test.ts`'s HELD fixture), and its status is
+      // entailed by its own quantities. Re-statusing it would have deleted an
+      // exemplar and contradicted the row to demonstrate a notice.
+      //
+      // The `uom` is the master's `canonicalUom`; the description is the
+      // master's `label`, verbatim. This lot is AT DOCK, which is the most
+      // literal reading of "what the clerk sees".
+      //
+      // ⚠️ AND ON `shp-013` RATHER THAN `shp-012`, WHICH IS NOT ARBITRARY:
+      // `GRInspectionWizard.test.tsx`'s `RECEIVABLE` is the FIRST eligible
+      // shipment carrying a line, so `shp-012` is the default subject of two
+      // dozen specs that index lines by position. Widening it would have
+      // rewritten them all to demonstrate something none of them is about.
+      { materialCode: 'AI-NIAC-6612', description: 'Active Emulsion — Niacinamide 5%', qty: 800, uom: 'KG' },
     ],
   },
   {

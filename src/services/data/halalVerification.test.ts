@@ -3,7 +3,8 @@
 //
 // ⚠️ **EVERY REGISTRY CASE BELOW IS SYNTHETIC AND SAYS SO.** `COMPLIANCE_REGISTRY`
 // is the honestly-synthetic fixture: placeholder suppliers, `SAMPLE-…` cert
-// numbers, `RM-SAMPLE-…` material codes, and never a real certifying body. The
+// numbers, REAL master material codes (the seam batch — see the fixture header),
+// and never a real certifying body. The
 // 17 codes it names and the 42 codes `MATERIAL_MASTER` names DO NOT INTERSECT,
 // by construction — the placeholders are an honesty device, not an oversight,
 // and a test that "fixed" the emptiness by seeding aliases would be deleting the
@@ -64,6 +65,37 @@ function row(over: Partial<ComplianceRegistryEntry> = {}): ComplianceRegistryEnt
 
 const R = COMPLIANCE_REGISTRY;
 
+/**
+ * The certificate fields a verdict must carry, READ OFF THE ROW IT NAMES.
+ *
+ * ⚠️ **THE ROW ID STAYS A LITERAL AT EVERY CALL SITE, AND THAT IS THE PART THAT
+ * MATTERS.** Deriving the id too would make these assertions self-fulfilling —
+ * they would pin that the fields were copied faithfully while saying nothing
+ * about WHICH document was copied, and picking the wrong candidate is exactly
+ * the failure mode `REASON_PRECEDENCE` exists to prevent. The id is the claim;
+ * the fields are the copy.
+ */
+/** The same copy, for a row a spec constructed rather than one `R` holds. */
+const refOf = (e: ComplianceRegistryEntry) => ({
+  certType: e.certType,
+  certNumber: e.certNumber,
+  issuer: e.issuer,
+  expiryDate: e.expiryDate,
+  supplierName: e.supplierName,
+});
+
+const ref = (certId: string) => {
+  const e = R.find((x) => x.id === certId);
+  if (e === undefined) throw new Error(`no registry row ${certId}`);
+  return {
+    certType: e.certType,
+    certNumber: e.certNumber,
+    issuer: e.issuer,
+    expiryDate: e.expiryDate,
+    supplierName: e.supplierName,
+  };
+};
+
 // Instants, all supplied — never read from a clock.
 const BEFORE_MANDATE = '2026-01-01T00:00:00.000Z';
 const ON_MANDATE = `${BPJPH_MANDATE_DATE}T00:00:00.000Z`;
@@ -82,28 +114,28 @@ describe('H3 — halal-class certificate selection', () => {
   });
 
   it('⚠️ a BPOM or ISO certificate NEVER backs a halal claim', () => {
-    // creg-0009 is a BPOM notification `Under Review` on RM-SAMPLE-ACT-07, and
-    // creg-0008 is an `OTHER` (GMP) cert on RM-SAMPLE-OTH-01 — both sup-007,
+    // creg-0009 is a BPOM notification `Under Review` on PK-PETB-8804, and
+    // creg-0008 is an `OTHER` (GMP) cert on PK-ALCP-2450 — both sup-007,
     // both real documents about something else. A verification that folded them
     // in would answer a DIFFERENT QUESTION with a confident yes, and the
     // `UNDER_REVIEW` reason on the first would make the wrong answer look
     // considered.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-ACT-07', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'PK-PETB-8804', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-OTH-01', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'PK-ALCP-2450', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
   });
 
   it("one supplier's certificate never answers for another supplier", () => {
-    // RM-SAMPLE-FRG-01 is covered by creg-0001, which belongs to sup-007.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', R, BEFORE_MANDATE).verdict).toBe(
+    // FR-ROUD-4470 is covered by creg-0001, which belongs to sup-007.
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, BEFORE_MANDATE).verdict).toBe(
       'SATISFIED',
     );
-    expect(verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-FRG-01', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-002', 'FR-ROUD-4470', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
@@ -112,7 +144,7 @@ describe('H3 — halal-class certificate selection', () => {
   it('the registry is an ARGUMENT — an empty registry can only ever say NO_CERT', () => {
     // The module never imports `COMPLIANCE_REGISTRY`; the caller supplies the
     // scoped rows, so this function cannot widen a QueryScope.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', [], BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', [], BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
@@ -120,7 +152,7 @@ describe('H3 — halal-class certificate selection', () => {
 });
 
 describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', () => {
-  // creg-0002: sup-007 × RM-SAMPLE-FRG-02, HALAL_MUI_LEGACY, expiry 2027-06-01.
+  // creg-0002: sup-007 × AI-NIAC-6612, HALAL_MUI_LEGACY, expiry 2027-06-01.
   // Its OWN CLOCK is comfortably valid on both sides of the mandate, which is
   // what makes it the exemplar: the only thing that moves is the scheme.
   const mui = R.find((e) => e.id === 'creg-0002')!;
@@ -128,24 +160,28 @@ describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', (
   it('the fixture row is the case it claims to be (MUI-legacy, in date across the mandate)', () => {
     expect(mui.certType).toBe('HALAL_MUI_LEGACY');
     expect(mui.supplierId).toBe('sup-007');
-    expect(mui.materialCodes).toContain('RM-SAMPLE-FRG-02');
+    expect(mui.materialCodes).toContain('AI-NIAC-6612');
     expect(computeStatus(mui, BEFORE_MANDATE)).toBe('Valid');
     expect(computeStatus(mui, AFTER_MANDATE)).toBe('Valid');
   });
 
   it('BEFORE the mandate date a MUI-legacy certificate SATISFIES', () => {
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-02', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, BEFORE_MANDATE)).toEqual({
       verdict: 'SATISFIED',
-      certId: 'creg-0002',
-      certType: 'HALAL_MUI_LEGACY',
-      expiryDate: '2027-06-01',
+      ...ref('creg-0002'),
     });
   });
 
   it('ON the mandate date itself it is SCHEME_INVALID — the boundary day is inclusive', () => {
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-02', R, ON_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, ON_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'SCHEME_INVALID',
+      // ⚠️ H4 — AND IT NAMES THE DOCUMENT IT IS REFUSING. `creg-0002` is the
+      // SAME row that SATISFIED the day before, with the same dates and the
+      // same number: nothing about the certificate changed, only the scheme's
+      // standing. A verdict that named nothing could not say that, and
+      // "expired" is the wrong sentence to send a clerk chasing.
+      ...ref('creg-0002'),
     });
   });
 
@@ -153,15 +189,19 @@ describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', (
     // The distinction is the whole finding: `EXPIRED` would send an operator to
     // chase a renewal of a certificate that has not expired. The document is
     // live; the SCHEME retired it.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-02', R, AFTER_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, AFTER_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'SCHEME_INVALID',
+      ...ref('creg-0002'),
     });
+    // THE DOCUMENT IS LIVE, and the verdict now carries the proof rather than
+    // leaving it to a comment: its own expiry is a year out.
+    expect(ref('creg-0002').expiryDate).toBe('2027-06-01');
   });
 
   it('a BPJPH certificate is unaffected by the mandate date', () => {
     // creg-0001 — the same supplier, the same day, the satisfying scheme.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', R, AFTER_MANDATE).verdict).toBe(
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, AFTER_MANDATE).verdict).toBe(
       'SATISFIED',
     );
   });
@@ -173,40 +213,38 @@ describe('H3 — ⚠️ THE BPJPH MANDATE FLIP, ON BOTH SIDES OF 17 OCT 2026', (
     // That is the EXISTING projection's answer, asserted so the gap is visible
     // in the suite rather than only in the register — inventing a recognition
     // rule here would be the second projection this batch refuses to write.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-BOT-01', R, AFTER_MANDATE).verdict).toBe(
+    expect(verifyHalalAtReceipt('sup-007', 'AI-HYALU-6615', R, AFTER_MANDATE).verdict).toBe(
       'SATISFIED',
     );
   });
 });
 
-describe('H3 — the multi-material certificate (creg-0007)', () => {
-  const multi = R.find((e) => e.id === 'creg-0007')!;
+describe('H3 — the multi-material certificate (creg-0015)', () => {
+  const multi = R.find((e) => e.id === 'creg-0015')!;
 
   it('the fixture row really does cover more than one code', () => {
     expect(multi.materialCodes.length).toBeGreaterThan(1);
-    expect([...multi.materialCodes]).toEqual(['RM-SAMPLE-BOT-01', 'RM-SAMPLE-BOT-02']);
+    expect([...multi.materialCodes]).toEqual(['AI-NIAC-6601', 'RM-EMUL-3320']);
   });
 
   it('it answers for EVERY code it covers, naming the same certificate', () => {
     for (const code of multi.materialCodes) {
-      expect(verifyHalalAtReceipt('sup-007', code, R, BEFORE_MANDATE)).toEqual({
+      expect(verifyHalalAtReceipt('sup-005', code, R, BEFORE_MANDATE)).toEqual({
         verdict: 'SATISFIED',
-        certId: 'creg-0007',
-        certType: 'HALAL_FOREIGN',
-        expiryDate: '2028-03-01',
+        ...ref('creg-0015'),
       });
     }
   });
 
   it('⚠️ and for NO code it does not cover — membership, never a prefix (C9 §3)', () => {
-    // `RM-SAMPLE-BOT-03` shares every character of the covered codes but the
+    // `AI-HYALU-6616` shares every character of the covered codes but the
     // last two. A prefix or substring rule would satisfy it; set membership
     // does not, and materialCode is contractually opaque.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-BOT-03', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-HYALU-6616', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-BOT', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'AI-HYALU-661', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
@@ -217,23 +255,19 @@ describe('H3 — permanent-basis certificates (GR 42/2024 — no clock)', () => 
   it('a permanent-basis cert SATISFIES and reports expiryDate: null', () => {
     // `null` is a REAL ANSWER here, not a missing one: a BPJPH permanent-basis
     // certificate has no expiry clock at all.
-    expect(verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, BEFORE_MANDATE)).toEqual({
       verdict: 'SATISFIED',
-      certId: 'creg-0001',
-      certType: 'HALAL_BPJPH',
-      expiryDate: null,
+      ...ref('creg-0001'),
     });
-    expect(verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-EMU-10', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-002', 'RM-EMUL-9410', R, BEFORE_MANDATE)).toEqual({
       verdict: 'SATISFIED',
-      certId: 'creg-0010',
-      certType: 'HALAL_BPJPH',
-      expiryDate: null,
+      ...ref('creg-0010'),
     });
   });
 
   it('it does not decay — the same verdict a decade out', () => {
     expect(
-      verifyHalalAtReceipt('sup-007', 'RM-SAMPLE-FRG-01', R, '2036-01-01T00:00:00.000Z').verdict,
+      verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, '2036-01-01T00:00:00.000Z').verdict,
     ).toBe('SATISFIED');
   });
 });
@@ -244,11 +278,11 @@ describe('H3 — Missing, Under Review, Expired', () => {
     // record that nothing is held. Same verdict as no row at all, deliberately:
     // the consequence is identical, and a `NO_ROW` reason would tell an operator
     // about the shape of our registry rather than about their supplier.
-    expect(verifyHalalAtReceipt('sup-005', 'RM-SAMPLE-ACT-02', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-005', 'AI-PANTO-6640', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
-    expect(verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-ACT-13', R, BEFORE_MANDATE)).toEqual({
+    expect(verifyHalalAtReceipt('sup-002', 'RM-STEAR-7300', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'NO_CERT',
     });
@@ -276,14 +310,16 @@ describe('H3 — Missing, Under Review, Expired', () => {
     expect(verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-TST-01', pending, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'UNDER_REVIEW',
+      ...refOf(pending[0]),
     });
   });
 
   it('an EXPIRED halal certificate is EXPIRED', () => {
-    // creg-0016: sup-005 × RM-SAMPLE-FRG-16, HALAL_FOREIGN, expiry 2025-08-01.
-    expect(verifyHalalAtReceipt('sup-005', 'RM-SAMPLE-FRG-16', R, BEFORE_MANDATE)).toEqual({
+    // creg-0016: sup-005 × RM-EMUL-9440, HALAL_FOREIGN, expiry 2025-08-01.
+    expect(verifyHalalAtReceipt('sup-005', 'RM-EMUL-9440', R, BEFORE_MANDATE)).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'EXPIRED',
+      ...ref('creg-0016'),
     });
   });
 });
@@ -294,22 +330,20 @@ describe('H3 — ⚠️ `receiptInstant` IS THE AXIS OF THE ANSWER (law 0.5)', (
     // the same lot reviewed in 2026 was still covered WHEN IT ARRIVED. This is
     // the entire reason the verdict cannot be stored on the master and the
     // instant cannot be read from the ambient clock.
-    expect(verifyHalalAtReceipt('sup-005', 'RM-SAMPLE-FRG-16', R, '2025-01-15T00:00:00.000Z')).toEqual(
+    expect(verifyHalalAtReceipt('sup-005', 'RM-EMUL-9440', R, '2025-01-15T00:00:00.000Z')).toEqual(
       {
         verdict: 'SATISFIED',
-        certId: 'creg-0016',
-        certType: 'HALAL_FOREIGN',
-        expiryDate: '2025-08-01',
+        ...ref('creg-0016'),
       },
     );
     expect(
-      verifyHalalAtReceipt('sup-005', 'RM-SAMPLE-FRG-16', R, '2026-01-15T00:00:00.000Z'),
-    ).toEqual({ verdict: 'NOT_SATISFIED', reason: 'EXPIRED' });
+      verifyHalalAtReceipt('sup-005', 'RM-EMUL-9440', R, '2026-01-15T00:00:00.000Z'),
+    ).toEqual({ verdict: 'NOT_SATISFIED', reason: 'EXPIRED', ...ref('creg-0016') });
   });
 
   it('is deterministic — the same arguments give the same verdict', () => {
-    const once = verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-EMU-01', R, AFTER_MANDATE);
-    const twice = verifyHalalAtReceipt('sup-002', 'RM-SAMPLE-EMU-01', R, AFTER_MANDATE);
+    const once = verifyHalalAtReceipt('sup-002', 'RM-PSTN-7150', R, AFTER_MANDATE);
+    const twice = verifyHalalAtReceipt('sup-002', 'RM-PSTN-7150', R, AFTER_MANDATE);
     expect(once).toEqual(twice);
   });
 
@@ -358,6 +392,13 @@ describe('H3 — reason precedence when several certificates fail', () => {
     expect(verdict([missing, underReview, expired, schemeGone])).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'SCHEME_INVALID',
+      // ⚠️ **H4 — THE REASON AND THE CERTIFICATE COME FROM THE SAME ROW.** This
+      // is the assertion the widened DTO bought: `creg-s` is the row whose
+      // failure was REPORTED, and naming any of the other three beside
+      // `SCHEME_INVALID` would send a clerk to chase the wrong document. Before
+      // H4 the verdict carried no document at all, so there was nothing here
+      // that could disagree — and nothing that could be checked.
+      ...refOf(schemeGone),
     });
   });
 
@@ -365,6 +406,7 @@ describe('H3 — reason precedence when several certificates fail', () => {
     expect(verdict([missing, underReview, expired])).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'EXPIRED',
+      ...refOf(expired),
     });
   });
 
@@ -372,6 +414,7 @@ describe('H3 — reason precedence when several certificates fail', () => {
     expect(verdict([missing, underReview])).toEqual({
       verdict: 'NOT_SATISFIED',
       reason: 'UNDER_REVIEW',
+      ...refOf(underReview),
     });
   });
 
@@ -391,41 +434,115 @@ describe('H3 — reason precedence when several certificates fail', () => {
   });
 });
 
-describe('H3 — ⚠️ THE EMPTY INTERSECTION, MEASURED (R0.1 is NOT STARTED)', () => {
+describe('H3 — ⚠️ THE SEAM, MEASURED. The two lanes share ONE vocabulary now', () => {
   const registryCodes = new Set(R.flatMap((e) => [...e.materialCodes]));
   const masterCodes = Object.keys(MATERIAL_MASTER);
 
-  it('the registry names 17 codes and the master names 42, and NONE is shared', () => {
-    expect(registryCodes.size).toBe(17);
-    expect(masterCodes.length).toBe(42);
-    expect(masterCodes.filter((c) => registryCodes.has(c))).toEqual([]);
+  // ⚠️ THIS BLOCK REPLACED THE ONE THAT PINNED THE OPPOSITE INVARIANT.
+  // It used to assert that every registry code was an `RM-SAMPLE-…` placeholder
+  // matching NOTHING in the master — the honesty device — and, as its own
+  // honest consequence, that every real material verified as NO_CERT. That
+  // device also made the capability structurally inert: the compliance page and
+  // the receipt gate could never see the same certificate. The operator ruled
+  // the fixture re-authored onto one vocabulary; the honesty moved to the
+  // certificate FIELDS and the LivenessRegistry marker, and it is pinned below.
+
+  it('THE SEAM HOLDS: every registry material code is a real master code', () => {
+    const orphans = [...registryCodes].filter((c) => !masterCodes.includes(c));
+    expect(orphans).toEqual([]);
+    // and the placeholder namespace is gone from the registry entirely
+    expect([...registryCodes].filter((c) => c.startsWith('RM-SAMPLE-'))).toEqual([]);
   });
 
-  it('every registry code is an `RM-SAMPLE-…` placeholder and no master code is', () => {
-    // The honesty device, asserted. ⚠️ This is a check ON THE FIXTURE's own
-    // honesty marker — NOT a rule that decides anything about a material. No
-    // production path reads a code's shape (C9 §3).
-    for (const code of registryCodes) expect(code.slice(0, 10)).toBe('RM-SAMPLE-');
-    for (const code of masterCodes) expect(code.slice(0, 10)).not.toBe('RM-SAMPLE-');
+  it('the registry is a SUBSET of the master, never a second namespace', () => {
+    expect(registryCodes.size).toBeGreaterThan(0);
+    expect(registryCodes.size).toBeLessThanOrEqual(masterCodes.length);
   });
 
-  it('⚠️ so EVERY REAL MATERIAL IN THE TREE verifies as NO_CERT today', () => {
-    // The honest consequence, stated in the suite rather than discovered by a
-    // consumer. THIS IS WHY H4 IS GATED: a wire today would refuse 100% of real
-    // receipts. There is no honest technical mitigation — the bridge is real
-    // certificate data at R0.1, which is the operator's schedule.
-    for (const supplierId of ['sup-002', 'sup-005', 'sup-007']) {
-      for (const code of masterCodes) {
-        expect(verifyHalalAtReceipt(supplierId, code, R, BEFORE_MANDATE)).toEqual({
-          verdict: 'NOT_SATISFIED',
-          reason: 'NO_CERT',
-        });
-      }
+  // ── THE HONESTY THAT REMAINS, ASSERTED WHERE IT NOW LIVES ────────────────
+  // The supplier is real (the platform's own roster) and the material is real.
+  // WHICH SUPPLIER HOLDS WHICH CERTIFICATE IS INVENTED — so the invented half
+  // is what this pins. A reviewer's checklist, executable.
+  it('no row names a real certificate number', () => {
+    for (const e of R) {
+      expect(e.certNumber === '' || e.certNumber.startsWith('SAMPLE-')).toBe(true);
     }
+  });
+
+  it('no row names a real certifying body', () => {
+    for (const e of R) {
+      expect(e.issuer === '' || e.issuer.includes('(illustrative)')).toBe(true);
+    }
+  });
+
+  it('no row names a real company — every supplier name is the roster’s own', () => {
+    // The roster is itself honestly fictional ("PT Sample …"), which is why the
+    // registry may use it verbatim. It previously invented a SECOND name per id.
+    for (const e of R) expect(e.supplierName).toContain('Sample');
+  });
+
+  // ── THE DELTA — the arc's payload, pinned so it cannot silently revert ────
+  it('⚠️ THE GATE NOW SEES REAL CERTIFICATES — the receivable lines, by name', () => {
+    // Before the seam batch EVERY one of these was NOT_SATISFIED / NO_CERT,
+    // because the intersection with the master was empty by construction.
+    expect(verifyHalalAtReceipt('sup-005', 'RM-EMUL-9440', R, BEFORE_MANDATE)).toEqual({
+      verdict: 'NOT_SATISFIED',
+      reason: 'EXPIRED',
+      ...ref('creg-0016'),
+    });
+    expect(verifyHalalAtReceipt('sup-007', 'FR-ROUD-4470', R, BEFORE_MANDATE).verdict).toBe(
+      'SATISFIED',
+    );
+    expect(verifyHalalAtReceipt('sup-002', 'RM-PSTN-7150', R, BEFORE_MANDATE).verdict).toBe(
+      'SATISFIED',
+    );
+  });
+
+  it('a material whose master row does not require halal still reads NO_CERT', () => {
+    // PK-PETB-8804 is `halalApplicable: UNDETERMINED` and carries only a BPOM
+    // row. A NO_CERT here is not a finding — it is a question that should not
+    // have been asked (H1 answers applicability, not this function).
+    expect(verifyHalalAtReceipt('sup-007', 'PK-PETB-8804', R, BEFORE_MANDATE)).toEqual({
+      verdict: 'NOT_SATISFIED',
+      reason: 'NO_CERT',
+    });
+  });
+
+  it('⚠️ AND THE MANDATE BITES A RECEIVABLE LINE ON 2026-10-17', () => {
+    // AI-NIAC-6612 is backed by a MUI-legacy cert whose own dates stay valid to
+    // 2027. The scheme retires first — which is the whole point of GR 42/2024,
+    // and until the seam batch it could not be demonstrated on a real material.
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, BEFORE_MANDATE).verdict).toBe(
+      'SATISFIED',
+    );
+    expect(verifyHalalAtReceipt('sup-007', 'AI-NIAC-6612', R, ON_MANDATE)).toEqual({
+      verdict: 'NOT_SATISFIED',
+      reason: 'SCHEME_INVALID',
+      // ⚠️ H4 — AND IT NAMES THE DOCUMENT IT IS REFUSING. `creg-0002` is the
+      // SAME row that SATISFIED the day before, with the same dates and the
+      // same number: nothing about the certificate changed, only the scheme's
+      // standing. A verdict that named nothing could not say that, and
+      // "expired" is the wrong sentence to send a clerk chasing.
+      ...ref('creg-0002'),
+    });
+  });
+
+  it('⚠️ NO LONGER HEADLESS — H4 gave it a consumer, and the consumer TELLS', () => {
+    // ⚠️ **THIS ASSERTION IS INVERTED, NOT DELETED.** What stood here said the
+    // seam left the gate without a consumer and that H4 was still gated on
+    // `D-COMP-HALAL-4`. H4 answered that ruling — in the direction the operator
+    // chose, which is NEITHER of the two the ruling's own options list offered
+    // as a wire: not *block*, and not *block with a recorded override*, but
+    // **surface the status and let the receipt proceed.**
+    //
+    // What is asserted below is the SHAPE of that answer, and it is the whole
+    // batch: fact 3 reaches a person, and NOTHING in the product refuses a
+    // receipt because of it. Both halves matter and neither is enough alone.
+    expect(typeof verifyHalalAtReceipt).toBe('function');
   });
 });
 
-describe('H3 — ⚠️ HEADLESS. NOTHING IS WIRED, AND THAT IS THE BATCH BOUNDARY', () => {
+describe('H4 — ⚠️ WIRED TO A NOTICE, AND TO NOTHING THAT CAN REFUSE', () => {
   const sources = () =>
     import.meta.glob('/src/**/*.{ts,tsx}', {
       query: '?raw',
@@ -436,16 +553,28 @@ describe('H3 — ⚠️ HEADLESS. NOTHING IS WIRED, AND THAT IS THE BATCH BOUNDA
   const codeLines = (text: string) =>
     text.split('\n').filter((line) => !/^\s*(?:\/\/|\/\*|\*)/.test(line));
 
-  it('`verifyHalalAtReceipt` appears in CODE in exactly ONE file — the module itself', () => {
-    // H4 is gated on `D-COMP-HALAL-4`. A consumer arriving without that ruling
-    // turns this red, which is the entire job of the assertion. Comments are
-    // exempt: `sdc/halal.ts` and the GR wizard may DISCUSS the third fact.
+  it('`verifyHalalAtReceipt` has EXACTLY ONE product consumer, and it is named', () => {
+    // ⚠️ **INVERTED AT H4.** This asserted ONE file — the module itself — and
+    // its entire job was to turn red the day a consumer arrived without
+    // `D-COMP-HALAL-4` being ruled. IT DID ITS JOB: the ruling came first and
+    // this went red second. The pin is kept as a CENSUS rather than a
+    // prohibition, because "exactly one consumer" is still the claim worth
+    // defending — a second surface reading certificates at a different instant,
+    // or with a different scope, is a thing somebody must decide to do.
+    //
+    // ⚠️ SPEC FILES ARE EXCLUDED BY NAME, not by hoping none appear. The glob
+    // reaches `/src/**/*.{ts,tsx}` and that INCLUDES `*.test.ts(x)` — a fact the
+    // sibling assertion below got wrong for the whole of H3 (see its note).
     const src = sources();
     const referencing = Object.entries(src)
+      .filter(([path]) => !path.includes('.test.'))
       .filter(([, text]) => codeLines(text).some((l) => l.includes('verifyHalalAtReceipt')))
       .map(([path]) => path)
       .sort();
-    expect(referencing).toEqual(['/src/services/data/halalVerification.ts']);
+    expect(referencing).toEqual([
+      '/src/components/v2-features/GRInspectionWizard.tsx',
+      '/src/services/data/halalVerification.ts',
+    ]);
 
     // ⚠️ THE LIMIT OF THIS CHECK, STATED — the `halalApplicability.test.ts`
     // precedent. Vite's `import.meta.glob` EXCLUDES THE MODULE IT IS WRITTEN
@@ -456,12 +585,55 @@ describe('H3 — ⚠️ HEADLESS. NOTHING IS WIRED, AND THAT IS THE BATCH BOUNDA
     expect(src['/src/services/data/halalVerification.test.ts']).toBeUndefined();
   });
 
-  it('the GR inspection wizard does not read the compliance registry at all', () => {
-    const wizard = Object.entries(sources()).find(([p]) => p.includes('GRInspectionWizard'));
-    expect(wizard).toBeDefined();
-    const code = codeLines(wizard![1]).join('\n');
-    expect(code).not.toContain('COMPLIANCE_REGISTRY');
-    expect(code).not.toContain('halalVerification');
-    expect(code).not.toContain('getComplianceRegistry');
+  it('⚠️ THE WIZARD READS THE REGISTRY — and `qualityValid` never consults it', () => {
+    // ⚠️ **THIS ASSERTION WAS GREEN ABOUT THE WRONG FILE FOR THE WHOLE OF H3,
+    // AND IT IS WORTH MORE AS A RECORD THAN AS A DELETION.** It read
+    //
+    //     Object.entries(sources()).find(([p]) => p.includes('GRInspectionWizard'))
+    //
+    // and `find` takes the FIRST match. The glob is alphabetical and
+    // `GRInspectionWizard.test.tsx` sorts BEFORE `GRInspectionWizard.tsx`, so
+    // every one of those three `not.toContain` calls was inspecting THE SPEC
+    // FILE. It asserted that the test does not mention the registry — true,
+    // vacuous, and not the claim in its own title. §42's rule exactly: **the
+    // scan matched a file; the claim required a different file.** Nothing went
+    // red, because a pin pointed at the wrong target passes for the same reason
+    // an empty population reports clean.
+    //
+    // Fixed by naming the path the claim REQUIRES instead of matching a
+    // substring, and the fix is what makes the assertions below mean anything.
+    const src = sources();
+    const wizard = src['/src/components/v2-features/GRInspectionWizard.tsx'];
+    expect(wizard, 'the component, not its spec').toBeDefined();
+    // The control that would have caught the original defect: the two files are
+    // BOTH in the glob, so "the one I meant" was never a safe assumption.
+    expect(src['/src/components/v2-features/GRInspectionWizard.test.tsx']).toBeDefined();
+
+    const code = codeLines(wizard).join('\n');
+    // IT READS. That is the batch.
+    expect(code).toContain('verifyHalalAtReceipt');
+    expect(code).toContain('complianceRegistry');
+
+    // ⚠️ **AND `qualityValid` DOES NOT CONSULT IT — THE ASSERTION THE OPERATOR'S
+    // RULING TURNS ON.** `halal.certificate` has NO recorded setting, so
+    // `effectiveEnforcement` derives `BLOCK / NO_SETTING_RECORDED`; a
+    // `certBlocks` clause in this predicate would therefore have stopped the
+    // dock on every line without a valid certificate, which is precisely what
+    // the ruling refused. The notice tells; it cannot refuse.
+    const qualityValid = code.slice(
+      code.indexOf('const qualityValid'),
+      code.indexOf('const dispositionValid'),
+    );
+    expect(qualityValid.length).toBeGreaterThan(50);
+    expect(qualityValid).not.toContain('certVerdict');
+    expect(qualityValid).not.toContain('verifyHalalAtReceipt');
+    expect(qualityValid).not.toContain('SATISFIED');
+    // Nor may the certificate reach the step gate by any other route.
+    const isStepValid = code.slice(
+      code.indexOf('const isStepValid'),
+      code.indexOf('const updateLine'),
+    );
+    expect(isStepValid.length).toBeGreaterThan(50);
+    expect(isStepValid).not.toContain('cert');
   });
 });

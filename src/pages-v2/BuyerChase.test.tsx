@@ -9,7 +9,16 @@ import BuyerChase from './BuyerChase';
 // SIMULATED marker + push framing, and the buyer gate (a supplier sees nothing).
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BUYER = { personaType: 'buyer', supplierId: null, supplierName: null } as const;
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { NO_PERSON } from '../context/noPerson';
+
+const BUYER = {
+  personaType: 'buyer',
+  supplierId: null,
+  supplierName: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  actor: NO_PERSON,
+} as const;
 
 describe('BuyerChase — the unified chase surface', () => {
   it('renders a worst-first list of chase cards over the real fixtures', async () => {

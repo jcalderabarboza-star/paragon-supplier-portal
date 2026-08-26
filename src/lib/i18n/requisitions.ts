@@ -16,7 +16,7 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.flow.createPr.label': 'Create PR',
   'requisitions.flow.createPr.sub': 'Requestor',
   'requisitions.flow.approval.label': 'Approval',
-  'requisitions.flow.approval.sub': 'Section Head / VP',
+  'requisitions.flow.approval.sub': 'Procurement decides',
   'requisitions.flow.sourceCheck.label': 'Source Check',
   'requisitions.flow.sourceCheck.sub': 'PIR or OA?',
   'requisitions.flow.createPo.label': 'Create PO',
@@ -77,9 +77,44 @@ export const requisitionsEn: Record<string, string> = {
   // — Detail side panel —
   'requisitions.panel.title': 'PR {{number}}',
   'requisitions.panel.close': 'Close',
-  'requisitions.panel.createPoDirectly': 'Create PO directly',
-  'requisitions.panel.createSourcingEvent': 'Create Sourcing Event',
-  'requisitions.panel.submitForApproval': 'Submit for approval',
+  // — §67 · the approval lane (the three retired affordance labels are gone:
+  //   createPoDirectly / createSourcingEvent / submitForApproval named acts
+  //   this surface cannot perform) —
+  'requisitions.panel.approve': 'Approve',
+  'requisitions.panel.approving': 'Approving…',
+  'requisitions.panel.reject': 'Reject',
+  'requisitions.panel.rejecting': 'Rejecting…',
+  'requisitions.panel.rejectConfirm': 'Confirm rejection',
+  'requisitions.panel.rejectCancel': 'Cancel',
+  'requisitions.panel.rejectSection': 'Reason for rejection',
+  'requisitions.panel.rejectSrLabel': 'Reason for rejecting requisition {{number}}',
+  'requisitions.panel.rejectPlaceholder': 'Required — what the requester needs to change',
+  'requisitions.panel.rejectNote':
+    'Recorded on the requisition and shown to the requester. A rejection cannot be saved without it.',
+  'requisitions.panel.rejectedBecause': 'Rejected because',
+  // — §68 · the requester's side —
+  'requisitions.panel.submit': 'Submit for approval',
+  'requisitions.panel.submitting': 'Submitting…',
+  'requisitions.panel.revise': 'Revise and return to draft',
+  'requisitions.panel.revising': 'Revising…',
+  'requisitions.panel.reviseConfirm': 'Save revision',
+  'requisitions.panel.reviseCancel': 'Cancel',
+  'requisitions.panel.reviseSection': 'What changed',
+  'requisitions.panel.reviseSrLabel': 'What changed on requisition {{number}}',
+  'requisitions.panel.revisePlaceholder': 'Required — what you changed in response to the rejection',
+  'requisitions.panel.reviseNote':
+    'Recorded on the requisition and shown to the approver when it returns. A revision cannot be saved without it.',
+  'requisitions.panel.revisedBecause': 'Revised — what changed',
+  'requisitions.panel.unattributed.noPerson': 'Unattributed — no person in session',
+  'requisitions.panel.unattributed.idpDown': 'Unattributed — identity provider unavailable',
+  'requisitions.panel.attributionNote':
+    'This portal holds no person identity yet, so the decision is recorded as unattributed. The act proceeds and the record says who could not be named.',
+  'requisitions.panel.terminal.title': 'Approved — this is where it stops today',
+  'requisitions.panel.terminal.body':
+    'Sourcing and PO conversion are declared as automatic consequences of approval, and no producer is wired for either yet. Nothing on this screen advances an approved requisition further.',
+  'requisitions.panel.draftNote.title': 'Draft — not yet in the approval queue',
+  'requisitions.panel.draftNote.body':
+    'Nobody is waiting on this yet. It reaches an approver when the requester submits it.',
   'requisitions.panel.keyFacts': 'Key facts',
   'requisitions.panel.field.material': 'Material',
   'requisitions.panel.field.category': 'Category',
@@ -89,7 +124,12 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.panel.field.priority': 'Priority',
   'requisitions.panel.field.requestor': 'Requestor',
   'requisitions.panel.field.costCenter': 'Cost center',
-  'requisitions.panel.field.approver': 'Approver',
+  'requisitions.panel.field.approvalLevel': 'Routes to',
+  // §69 — the band SAYS it is authored, because it looks computed and is not.
+  'requisitions.panel.approvalLevel.authored':
+    'Authored on the document — not derived from the estimated value.',
+  'requisitions.panel.approvalLevel.unassigned': 'Not assigned',
+  'requisitions.panel.field.approvedBy': 'Approved by',
   'requisitions.panel.field.status': 'Status',
   'requisitions.panel.source.title': 'Source of supply',
   'requisitions.panel.source.found': 'Source found',
@@ -99,17 +139,39 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.panel.linkedDocument': 'Linked document:',
   'requisitions.panel.justification': 'Justification',
   // — Toasts —
-  'requisitions.toast.submitted.title': '{{prNumber}} submitted',
-  'requisitions.toast.submitted.desc': 'Routed to Section Head for approval.',
-  'requisitions.toast.submitFailed.title': 'Requisition could not be created',
-  'requisitions.toast.submitFailed.desc': 'The requisition was rejected — nothing was created.',
-  'requisitions.toast.poInitiated.title': 'PO creation not available yet — nothing was created for {{prNumber}}.',
-  'requisitions.toast.sourcingInitiated.title': 'Sourcing event not available yet — nothing was created for {{prNumber}}.',
-  'requisitions.toast.submittedApproval.title': 'Approval submission not available yet — {{prNumber}} was not submitted.',
+  // ⚠️ §68 — THE CREATE TOASTS ARE NOW NAMED FOR CREATION, AND THE OLD BODY
+  //   WAS THE §67 MISLABEL'S TWIN ONE LINE DOWN. It read 'Routed to Section
+  //   Head for approval.' on a `t_pr_create` that mints a DRAFT and routes to
+  //   nobody. §67 corrected the BUTTON and left the toast the button fires,
+  //   because the sweep that found it was looking at labels.
+  'requisitions.toast.created.title': '{{prNumber}} created',
+  'requisitions.toast.created.desc': 'Saved as a draft. Submit it when it is ready for approval.',
+  'requisitions.toast.createFailed.title': 'Requisition could not be created',
+  'requisitions.toast.createFailed.desc': 'The requisition was refused — nothing was created.',
+  // And these now belong to `t_pr_submit`, where they are literally true.
+  'requisitions.toast.submitted.title': '{{prNumber}} submitted for approval',
+  'requisitions.toast.submitted.desc': 'It is now in the approval queue and waiting on Procurement.',
+  'requisitions.toast.submitFailed.title': '{{prNumber}} was not submitted',
+  'requisitions.toast.revised.title': '{{prNumber}} returned to draft',
+  'requisitions.toast.revised.desc': 'The note is recorded on the requisition. Submit it again when it is ready.',
+  'requisitions.toast.reviseFailed.title': '{{prNumber}} was not revised',
+  'requisitions.toast.approved.title': '{{prNumber}} approved',
+  'requisitions.toast.approved.desc': 'Recorded against this requisition as unattributed.',
+  'requisitions.toast.approveFailed.title': '{{prNumber}} was not approved',
+  'requisitions.toast.rejected.title': '{{prNumber}} rejected',
+  'requisitions.toast.rejected.desc': 'The reason is recorded on the requisition.',
+  'requisitions.toast.rejectFailed.title': '{{prNumber}} was not rejected',
+  'requisitions.toast.actionFailed.desc': 'The command was refused — nothing changed.',
   // — New PR form —
   'requisitions.new.title': 'New Purchase Requisition',
   'requisitions.new.cancel': 'Cancel',
-  'requisitions.new.submit': 'Submit for approval',
+  // ⚠️ §67 — WAS 'Submit for approval', WHICH NAMED THE WRONG VERB. This
+  //   button dispatches `t_pr_create`, and `t_pr_create` mints a DRAFT
+  //   (C7 :131). Nothing here reaches the approval queue — `t_pr_submit`
+  //   does that, and no surface offers it. The label promised the queue
+  //   while the verb produced a draft, which is the false-affordance class
+  //   living in a string rather than in a handler.
+  'requisitions.new.submit': 'Create requisition',
   'requisitions.new.step1.eyebrow': 'Step 1',
   'requisitions.new.step1.title': 'Material & quantity',
   'requisitions.new.step1.desc': "What's being requested?",
@@ -137,7 +199,13 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.new.step3.title': 'Business justification',
   'requisitions.new.step3.desc': 'Why is this needed?',
   'requisitions.new.placeholder.justification': 'Business reason…',
-  'requisitions.new.info': 'After submission this PR routes to Section Head. If a PIR or Outline Agreement exists, a PO is created directly. Otherwise, a Sourcing Event is initiated.',
+  // ⚠️ §69 — WAS 'After submission this PR routes to Section Head.' That named
+  //   ONE rung of a three-rung authored vocabulary, named it unconditionally,
+  //   and named it on the form whose verb writes `approvalLevel: ''` — so the
+  //   promise was refuted by the fixture (pr-003 carries 'VP Procurement') AND
+  //   by the create path in the same sentence. Procurement IS derivable-true:
+  //   `pr:approve` lives in exactly one bundle (`businessRoles.ts`).
+  'requisitions.new.info': 'After submission this PR goes to Procurement for a decision. If a PIR or Outline Agreement exists, a PO is created directly. Otherwise, a Sourcing Event is initiated.',
 };
 
 export const requisitionsId: Record<string, string> = {
@@ -149,7 +217,7 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.flow.createPr.label': 'Buat PR',
   'requisitions.flow.createPr.sub': 'Pemohon',
   'requisitions.flow.approval.label': 'Persetujuan',
-  'requisitions.flow.approval.sub': 'Kepala Seksi / VP',
+  'requisitions.flow.approval.sub': 'Diputuskan Pengadaan',
   'requisitions.flow.sourceCheck.label': 'Cek Sumber',
   'requisitions.flow.sourceCheck.sub': 'PIR atau OA?',
   'requisitions.flow.createPo.label': 'Buat PO',
@@ -210,9 +278,42 @@ export const requisitionsId: Record<string, string> = {
   // — Detail side panel —
   'requisitions.panel.title': 'PR {{number}}',
   'requisitions.panel.close': 'Tutup',
-  'requisitions.panel.createPoDirectly': 'Buat PO langsung',
-  'requisitions.panel.createSourcingEvent': 'Buat Acara Sourcing',
-  'requisitions.panel.submitForApproval': 'Ajukan untuk persetujuan',
+  // — §67 · jalur persetujuan —
+  'requisitions.panel.approve': 'Setujui',
+  'requisitions.panel.approving': 'Menyetujui…',
+  'requisitions.panel.reject': 'Tolak',
+  'requisitions.panel.rejecting': 'Menolak…',
+  'requisitions.panel.rejectConfirm': 'Konfirmasi penolakan',
+  'requisitions.panel.rejectCancel': 'Batal',
+  'requisitions.panel.rejectSection': 'Alasan penolakan',
+  'requisitions.panel.rejectSrLabel': 'Alasan penolakan permintaan {{number}}',
+  'requisitions.panel.rejectPlaceholder': 'Wajib — apa yang perlu diubah pemohon',
+  'requisitions.panel.rejectNote':
+    'Dicatat pada permintaan dan ditampilkan kepada pemohon. Penolakan tidak dapat disimpan tanpa alasan ini.',
+  'requisitions.panel.rejectedBecause': 'Ditolak karena',
+  // — §68 · sisi pemohon —
+  'requisitions.panel.submit': 'Ajukan untuk persetujuan',
+  'requisitions.panel.submitting': 'Mengajukan…',
+  'requisitions.panel.revise': 'Revisi dan kembalikan ke draf',
+  'requisitions.panel.revising': 'Merevisi…',
+  'requisitions.panel.reviseConfirm': 'Simpan revisi',
+  'requisitions.panel.reviseCancel': 'Batal',
+  'requisitions.panel.reviseSection': 'Apa yang berubah',
+  'requisitions.panel.reviseSrLabel': 'Apa yang berubah pada permintaan {{number}}',
+  'requisitions.panel.revisePlaceholder': 'Wajib — apa yang Anda ubah menanggapi penolakan',
+  'requisitions.panel.reviseNote':
+    'Dicatat pada permintaan dan ditampilkan kepada penyetuju saat kembali. Revisi tidak dapat disimpan tanpa ini.',
+  'requisitions.panel.revisedBecause': 'Direvisi — apa yang berubah',
+  'requisitions.panel.unattributed.noPerson': 'Tanpa atribusi — tidak ada orang dalam sesi',
+  'requisitions.panel.unattributed.idpDown': 'Tanpa atribusi — penyedia identitas tidak tersedia',
+  'requisitions.panel.attributionNote':
+    'Portal ini belum memiliki identitas orang, sehingga keputusan dicatat tanpa atribusi. Tindakan tetap berjalan dan catatannya menyatakan siapa yang tidak dapat disebutkan.',
+  'requisitions.panel.terminal.title': 'Disetujui — sampai di sini untuk saat ini',
+  'requisitions.panel.terminal.body':
+    'Sourcing dan konversi PO dideklarasikan sebagai konsekuensi otomatis dari persetujuan, dan belum ada produsen yang terhubung untuk keduanya. Tidak ada yang di layar ini yang memajukan permintaan yang sudah disetujui.',
+  'requisitions.panel.draftNote.title': 'Draf — belum masuk antrean persetujuan',
+  'requisitions.panel.draftNote.body':
+    'Belum ada yang menunggu ini. Permintaan sampai ke penyetuju ketika pemohon mengajukannya.',
   'requisitions.panel.keyFacts': 'Fakta utama',
   'requisitions.panel.field.material': 'Material',
   'requisitions.panel.field.category': 'Kategori',
@@ -222,7 +323,11 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.panel.field.priority': 'Prioritas',
   'requisitions.panel.field.requestor': 'Pemohon',
   'requisitions.panel.field.costCenter': 'Pusat biaya',
-  'requisitions.panel.field.approver': 'Penyetuju',
+  'requisitions.panel.field.approvalLevel': 'Diarahkan ke',
+  'requisitions.panel.approvalLevel.authored':
+    'Ditulis pada dokumen — bukan hasil perhitungan dari nilai estimasi.',
+  'requisitions.panel.approvalLevel.unassigned': 'Belum ditetapkan',
+  'requisitions.panel.field.approvedBy': 'Disetujui oleh',
   'requisitions.panel.field.status': 'Status',
   'requisitions.panel.source.title': 'Sumber pasokan',
   'requisitions.panel.source.found': 'Sumber ditemukan',
@@ -232,17 +337,27 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.panel.linkedDocument': 'Dokumen tertaut:',
   'requisitions.panel.justification': 'Justifikasi',
   // — Toasts —
-  'requisitions.toast.submitted.title': '{{prNumber}} diajukan',
-  'requisitions.toast.submitted.desc': 'Diarahkan ke Kepala Seksi untuk persetujuan.',
-  'requisitions.toast.submitFailed.title': 'Permintaan tidak dapat dibuat',
-  'requisitions.toast.submitFailed.desc': 'Permintaan ditolak — tidak ada yang dibuat.',
-  'requisitions.toast.poInitiated.title': 'Pembuatan PO belum tersedia — tidak ada yang dibuat untuk {{prNumber}}.',
-  'requisitions.toast.sourcingInitiated.title': 'Acara pengadaan belum tersedia — tidak ada yang dibuat untuk {{prNumber}}.',
-  'requisitions.toast.submittedApproval.title': 'Pengiriman persetujuan belum tersedia — {{prNumber}} tidak dikirim.',
+  'requisitions.toast.created.title': '{{prNumber}} dibuat',
+  'requisitions.toast.created.desc': 'Disimpan sebagai draf. Ajukan bila sudah siap untuk persetujuan.',
+  'requisitions.toast.createFailed.title': 'Permintaan tidak dapat dibuat',
+  'requisitions.toast.createFailed.desc': 'Permintaan ditolak — tidak ada yang dibuat.',
+  'requisitions.toast.submitted.title': '{{prNumber}} diajukan untuk persetujuan',
+  'requisitions.toast.submitted.desc': 'Sekarang berada di antrean persetujuan dan menunggu Pengadaan.',
+  'requisitions.toast.submitFailed.title': '{{prNumber}} tidak diajukan',
+  'requisitions.toast.revised.title': '{{prNumber}} dikembalikan ke draf',
+  'requisitions.toast.revised.desc': 'Catatan tersimpan pada permintaan. Ajukan kembali bila sudah siap.',
+  'requisitions.toast.reviseFailed.title': '{{prNumber}} tidak direvisi',
+  'requisitions.toast.approved.title': '{{prNumber}} disetujui',
+  'requisitions.toast.approved.desc': 'Dicatat pada permintaan ini tanpa atribusi.',
+  'requisitions.toast.approveFailed.title': '{{prNumber}} tidak disetujui',
+  'requisitions.toast.rejected.title': '{{prNumber}} ditolak',
+  'requisitions.toast.rejected.desc': 'Alasannya dicatat pada permintaan.',
+  'requisitions.toast.rejectFailed.title': '{{prNumber}} tidak ditolak',
+  'requisitions.toast.actionFailed.desc': 'Perintah ditolak — tidak ada yang berubah.',
   // — New PR form —
   'requisitions.new.title': 'Permintaan Pembelian Baru',
   'requisitions.new.cancel': 'Batal',
-  'requisitions.new.submit': 'Ajukan untuk persetujuan',
+  'requisitions.new.submit': 'Buat permintaan',
   'requisitions.new.step1.eyebrow': 'Langkah 1',
   'requisitions.new.step1.title': 'Material & kuantitas',
   'requisitions.new.step1.desc': 'Apa yang diminta?',
@@ -270,5 +385,5 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.new.step3.title': 'Justifikasi bisnis',
   'requisitions.new.step3.desc': 'Mengapa ini dibutuhkan?',
   'requisitions.new.placeholder.justification': 'Alasan bisnis…',
-  'requisitions.new.info': 'Setelah pengajuan, PR ini diarahkan ke Kepala Seksi. Jika PIR atau Outline Agreement tersedia, PO dibuat langsung. Jika tidak, Acara Sourcing dimulai.',
+  'requisitions.new.info': 'Setelah pengajuan, PR ini diteruskan ke tim Pengadaan untuk diputuskan. Jika PIR atau Outline Agreement tersedia, PO dibuat langsung. Jika tidak, Acara Sourcing dimulai.',
 };

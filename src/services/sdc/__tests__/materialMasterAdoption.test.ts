@@ -128,6 +128,18 @@ const laneUnits = (code: string) => [
  * So the subject is stated by its defining property rather than by subtraction:
  * an adoption is a master row whose meaning the document lane already carried.
  */
+
+// ── ⚠️ 26 / 6, NOT 25 / 7 — H4 MOVED ONE CODE BETWEEN ROUTES ────────────────
+//   `AI-NIAC-6612` was `AUTHORED_ASN`: its defining property is being sourced by
+//   `supplierShipments.ts` AND NOTHING ELSE. H4 added it to `mockShipments.ts`
+//   so the BPJPH mandate flip would be reachable from a dock, and a code with a
+//   second lane is BY DEFINITION no longer in that set — it is ADOPTED, because
+//   a declared document lane now states a meaning for it.
+//
+//   ⚠️ **THE TOTAL IS UNCHANGED AT 33 AND THAT IS THE ASSERTION THAT MATTERS.**
+//   Nothing was authored, nothing retired; one code changed which route it
+//   arrived by. The counts below move in equal and opposite directions, and a
+//   census whose halves moved the SAME way would be reporting something else.
 const ADOPTED = Object.keys(MATERIAL_MASTER)
   .filter((c) => !(SEED as readonly string[]).includes(c) && laneMeanings(c).length > 0)
   .sort();
@@ -167,13 +179,15 @@ describe('2B-2 — the adoption is exactly 25 codes, and they are the ones that 
     // The 2B-3 lesson, applied here too: guard the population the assertions
     // ITERATE, not just the walk that feeds it. An empty `ADOPTED` would pass
     // every `filter(...).toEqual([])` below without asserting anything.
-    expect(ADOPTED.length).toBe(25);
+    expect(ADOPTED.length).toBe(26);
   });
 
-  it('adopted 25 — on top of 5 seed, 5 authored at 2B-3 and 7 authored at 2B-5b-ii', () => {
-    expect(ADOPTED).toHaveLength(25);
+  it('adopted 26 — on top of 5 seed, 5 authored at 2B-3 and 6 authored at 2B-5b-ii', () => {
+    expect(ADOPTED).toHaveLength(26);
     expect(AUTHORED).toHaveLength(5);
-    expect(AUTHORED_ASN).toHaveLength(7);
+    // SIX, not seven — `AI-NIAC-6612` gained a second lane at H4. See the note
+    // above `ADOPTED`; the sum is what stayed still.
+    expect(AUTHORED_ASN).toHaveLength(6);
     expect(Object.keys(MATERIAL_MASTER)).toHaveLength(42);
     // 5 + 25 + 5 + 7 = 42, stated as arithmetic so a row cannot go missing
     // between two counts that each look right.
@@ -206,9 +220,11 @@ describe('2B-2 — the adoption is exactly 25 codes, and they are the ones that 
     // …and the buckets do not overlap: a row cannot both ratify and author.
     expect(ADOPTED.filter((c) => AUTHORED.includes(c))).toEqual([]);
     expect(AUTHORED_ASN.filter((c) => ADOPTED.includes(c) || AUTHORED.includes(c))).toEqual([]);
+    // ⚠️ `AI-NIAC-6612` LEFT THIS LIST AT H4 — it gained a second lane
+    // (`mockShipments.ts`) so the mandate flip would be reachable from a dock,
+    // and single-lane is this set's defining property. It is in ADOPTED now.
     expect(AUTHORED_ASN).toEqual([
       'AI-HYALU-6615',
-      'AI-NIAC-6612',
       'FR-ROUD-4470',
       'PK-ALCP-2450',
       'PK-PETB-8804',
@@ -255,9 +271,12 @@ describe('2B-2 — the unit is MEASURED (zero collisions, per the dispatch)', ()
     expect(wrong).toEqual([]);
   });
 
-  it('the split is 21 KG / 4 PCS, and it follows the material, not the prefix', () => {
+  it('the split is 22 KG / 4 PCS, and it follows the material, not the prefix', () => {
     const byUnit = (u: string) => ADOPTED.filter((c) => MATERIAL_MASTER[c].canonicalUom === u);
-    expect(byUnit('KG')).toHaveLength(21);
+    // 22, not 21: `AI-NIAC-6612` joined ADOPTED at H4 and its canonical unit is
+    // KG. The PCS half is untouched, which is the check that the arrival did not
+    // quietly re-unit anything — a code changing ROUTE must not change UNIT.
+    expect(byUnit('KG')).toHaveLength(22);
     expect(byUnit('PCS')).toHaveLength(4);
     expect(byUnit('L')).toHaveLength(0);
     expect(byUnit('ROLL')).toHaveLength(0);

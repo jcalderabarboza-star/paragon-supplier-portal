@@ -46,7 +46,7 @@ from CP-1 onward.
 | **HALAL-CLOCK-STATE-01** | Status-vs-expiry contradiction (stored clock-state). `buyerCompliance.ts` stores BOTH `status` and `daysRemaining` as literals (e.g. `c-001` status `'Expired'`/`daysRemaining -346`; `c-002` `'Expiring'`/`70`) instead of COMPUTING Expired/Expiring/daysRemaining from `expiryDate` vs. the read-time clock — status drifts out of sync with expiry as the clock advances. Direct violation of law 0.5 (DR-8, computed-never-stored). | **Track R — R2.2.** On the DTO-v2 projection, `status`/`daysRemaining` become COMPUTED-at-read-time (never stored). **→ I3.1: CLOSED (mechanism).** `complianceProjection.ts` computes `computeStatus`/`daysRemaining` from `expiryDate` vs an injected `now` (pure, deterministic; `complianceProjection.test.ts`); the `ComplianceRegistryEntry` fixture stores ONLY `lifecycleState` + `expiryDate` — no clock literal exists. The legacy `COMPLIANCE_ITEMS` literals are retired when the page re-points at I3.2. |
 | **HALAL-DEADLINE-DRIFT-01** | Deadline drift. Code + copy carried **01 Oct 2026** (`BuyerCompliance.tsx:111`, `:174-175`; fixture action copy "before October 2026") vs. the canonical BPJPH mandatory deadline **17 Oct 2026** (GR 42/2024 — D-DATE RESOLVED). | **Code anchors corrected in v2.2 Step 1.7 (this PR).** Scheme-aware BPJPH-KPI semantics ride R2.2 (Step 5.6). |
 | **HALAL-UNDERREVIEW-01** [F2-23] | Under-Review is second-class. `'Under Review'` status exists (`ComplianceItem` type; fixture `c-012` BPOM) but has NO KPI tile (only Expired/Expiring surfaced — `BuyerCompliance.tsx:204`,`:210`) and no defined remind-eligibility. | **Track R — R2.2.** Under-Review gets explicit semantics: own KPI slot + remind-eligibility=false (v2.2 Step 5.6). **→ I3.1: CLOSED (mechanism).** `Under Review` is a first-class lifecycle state on the canonical machine; `complianceProjection.remindEligible` returns `false` for it (and for `Missing`) — Under-Review is no longer a silent second-class state (`complianceProjection.test.ts`). Its own KPI *tile* is a surface concern that renders at I3.2. |
-| **HALAL-REMIND-01** [F2-24] | Remind: no-audit / no-throttle / false-delivery. The Remind action (`BuyerCompliance.tsx:332-350`) toasts "Delivered via WhatsApp" with no audit trail, no throttle, and no real channel — a false-delivery claim (violates law 0.6, honest-by-construction). | **Toast copy made honest in v2.2 Step 1.7 (this PR).** Real audited/throttled dispatch through the R1.2 reminder ladder rides R2.2 (Step 5.6). |
+| **HALAL-REMIND-01** [F2-24] | Remind: no-audit / no-throttle / false-delivery. The Remind action (`BuyerCompliance.tsx:332-350`) toasts "Delivered via WhatsApp" with no audit trail, no throttle, and no real channel — a false-delivery claim (violates law 0.6, honest-by-construction). | **Toast copy made honest in v2.2 Step 1.7.** Real audited/throttled dispatch through the R1.2 reminder ladder rides R2.2 (Step 5.6). ⚠️ **AMENDED IN PLACE AT THE SEAM BATCH (§62j) — RAISED TO FULL WEIGHT, AND WITH ONE CORRECTION THAT CHANGES WHO THE FINDING IS AGAINST.** A dispatch proposed filing *"the mitigation is a toast"* as a new finding named `HALAL-CERT-EXPIRY-01`. **No such id exists in this register, and `SendReminder` does not exist in the tree** — but more importantly the framing inverts the history: **THE TOAST IS NOT THE DEFECT, IT IS THE PREVIOUS FIX.** The action used to claim *"Delivered via WhatsApp"* over no channel; Step 1.7 replaced that with *"Simulated — delivery pending live channel."* at `variant: 'info'`. Filing the toast as the defect would have filed a finding against the remedy, and re-filing under a new id would have double-counted an open row. **THE OPEN HALF IS REAL AND IS THE POINT: the 17-Oct-2026 exposure has NO WORKING REMINDER.** The compliance surface's only two actions are both inert (`BuyerCompliance.tsx:171` Export, `:398` Remind — two, not three), the audited/throttled ladder is unbuilt, and R0.1 (the harvest it needs) is NOT STARTED. **Ruled at the seam batch: build it next, after the seam.** |
 | **HALAL-ISSUER-BLIND-01** [F2-21] | Issuer-blind validity. Halal validity is computed from `status === 'Valid'` IGNORING the certifying scheme (`issuedBy`: MUI vs BPJPH) — `BuyerCompliance.tsx:105-107` counts any Halal `'Valid'` regardless of issuer. Post-17-Oct-2026 only BPJPH satisfies the mandate, so a MUI-only `'Valid'` cert is actually NON-compliant. | **Track R — R2.2.** BPJPH KPI derives from scheme-aware validity (Valid+MUI post-deadline = NON-compliant); DTO-v2 carries the issuer/scheme validity dimension (v2.2 Steps 5.5/5.6). **→ I3.1: DOWNGRADED — surface-ready, SIMULATED (NOT closed).** The mechanism is built: `ComplianceRegistryEntry` carries the `certType`/`issuer` dimension and `complianceProjection.schemeValid` computes MUI-legacy-post-`BPJPH_MANDATE_DATE` = NON-compliant even while the cert's own dates say Valid (`complianceProjection.test.ts`). But scheme-aware validity is a real-world-correctness rule — stamping it CLOSED against honestly-synthetic certs would be the honesty violation this lane guards. **Closes only when REAL issuer data (Track-R harvest) backs it.** |
 | **GR-FABRICATION-01** | `GRInspectionWizard` fabricates SAP artifacts client-side. `src/components/v2-features/GRInspectionWizard.tsx:556` mints `MAT-DOC-${500000+seq}` in-browser; `:711` sets status `'Posted to SAP'`; `:714` persists the fabricated `sapMaterialDoc`; `:719-724` toasts "Posted to SAP as {doc}" — fabricated system artifact + false delivery claim (violates law 0.6). *(Anchor corrected vs. plan's assumed `pages-v2/…:677-726`: file is `src/components/v2-features/…`; fabrication spans `:556`+`:711`/`:714`/`:719-724`.)* | **CLOSED (v2.2 Step 4 batch ii — PR #37 merged `a1bff8f`).** The wizard no longer mints a MAT-DOC, sets `'Posted to SAP'` locally, or toasts a false delivery claim. It dispatches through the command seam: `t_gr_create` (store assigns the number; lines recorded at receipt) → the rolled-up header verb (the dispatcher re-derives the disposition from the stored lines) → `t_gr_post` (`sapBoundary` → `submitted`, interim `'Posting to SAP'` with **no** document) → `settle` assigns the REAL material document (Option B; minted only on settlement). Honest, requiredFields-aware toasts (`gr.*`). |
 | **GR-LEGACY-READ-01** | `GRInspectionWizard` reads fixtures directly. `src/components/v2-features/GRInspectionWizard.tsx:6` imports `mockShipments`; `:118-125` reads it (`.filter`/`.find`) instead of `useDataService()`/`useShipments`. *(Anchor verified vs. plan's assumed `pages-v2/…`: file is `src/components/v2-features/…`; lines `:6`,`:118-125` confirmed.)* | **CLOSED (v2.2 Step 4 batch ii — PR #37 merged `a1bff8f`).** The wizard no longer imports `mockShipments`; `BuyerGoodsReceipt` resolves shipments through `useShipments()` and passes them down as a prop, and the `Shipment` type comes from the service contract. Additionally `getGoodsReceipts` now reads the mutable `goodsReceiptStore` (mirrors `getASNs`), so GR commands are reflected in the scoped reads and the page holds no local seeded copy. |
@@ -3918,7 +3918,7 @@ CP-2. Items 1–3 and 5 are ruled below; **4 is the only one still open.**
 | **D-COMP-HALAL-1** | **APPLICABILITY CONTENT** — which material groups require a halal check at receipt. ⚠️ **It will NOT mirror BPOM.** BPOM rules packaging `NOT_APPLICABLE` by registry axis (`bpom.ts:100-101`); `doc-001` links a halal certificate to PET bottles and `AdaptiveContext:89` puts `packaging` inside `isHalal`. **Packaging is where the two regimes visibly disagree in-tree — and it is 4 of the 9 receivable lines.** |
 | **D-COMP-HALAL-2** | **GRAIN** — material (master field) or supplier × material (registry). Decides whether the BPOM template is reusable at all. |
 | **D-COMP-HALAL-3** | **WHAT IS BEING ATTESTED** — "Halal Seal Check" names a physical seal on a drum. Seal verification, certificate confirmation, or both as separate checks? One Pass/Fail currently conflates them. |
-| **D-COMP-HALAL-4** | ⚠️ **THE DEAD-END RULING — THE ONLY ITEM STILL OPEN.** If applicability lands before the harvest, a required check has no certificate to verify against. Block · block with a recorded override · or stay unwired until R0.1. **Must be answered BEFORE any wire, not discovered during one.** **H4 is gated on this.** |
+| **D-COMP-HALAL-4** | ⚠️ **ANSWERED AT H4 (§63), AND BY NEITHER WIRE ON ITS OWN LIST.** The operator ruled the certificate status SURFACED and the receipt ALLOWED TO PROCEED — a third answer this row did not contain, and the one that needed no enforcement setting at all (which is what let it ship, since §63a measured every mode below `BLOCK` to be unrecordable). The notice names the supplier, the certificate, the scheme, the issuer and the expiry, and disables nothing. Original text: ⚠️ **THE DEAD-END RULING — THE ONLY ITEM STILL OPEN.** If applicability lands before the harvest, a required check has no certificate to verify against. Block · block with a recorded override · or stay unwired until R0.1. **Must be answered BEFORE any wire, not discovered during one.** **H4 is gated on this.** |
 | **D-COMP-HALAL-5** | **SOURCE OF TRUTH** — which of the seven halal vocabularies governs a receiving decision. **RULED below.** |
 | **D-OPS-PENDINGCAST** | The `'Pending' as OptionalCheck` cast (`mockGoodsReceipts.ts:79,293`) — legitimate fourth stored state (the display already renders it, `BuyerGoodsReceipt.tsx:90`) or fixture error? Mine to fix once ruled; not a compliance question. |
 
@@ -15313,6 +15313,318 @@ change and a ruling, not a batch.
   recorded. C9 `af7f0b4` and C10 `dc8e774` byte-identical, verified by blob id
   before and after. Floor unchanged — this batch adds no test.
 
+---
+
+## 59 · TWO RULINGS, A DISPATCH-SIDE CORRECTION, AND PR #227 DERIVED (`main` `3fdcd16`)
+
+**Register only. No code changed.** §44 is still reserved for PR #227 (see 59d),
+so this is §59 and not §44 — the same reservation §45 and §46 recorded.
+
+### 59a · RULING 1 (OPERATOR) — `t_requirementresponse_correct` SHALL NOT EXIST
+
+**Recorded as a DECISION, not a null result, so that the next reader does not
+re-propose it as an obvious gap.** §58 settled that the verb was never authored.
+This settles that it should not be.
+
+**The act it names is already covered, end to end, by verbs that exist:** the
+buyer disputes with a required, proven, stored reason
+(`t_requirementresponse_dispute`), and the supplier supersedes the disputed
+response by resubmitting — measured `done`, recorded at #239 as *"the dispute has
+no lock"*. Two actors, two verbs, and the commitment stays authored by the party
+that owes it.
+
+⚠️ **AND THE STRONGER HALF IS THE ONE THE OPERATOR NAMED, BECAUSE IT IS THE
+GUARD THIS ARC JUST BUILT REFUSING A VERB THAT WOULD DEFEAT IT.** A
+buyer-authored quantity would leave `confirmedQtyRaw` — the token *as the
+supplier typed it* — describing a number nobody typed. The hoist (§57) exists
+precisely so the stored number and its evidence cannot disagree:
+`RR_SUBMIT_QTY_AGREES` re-parses the token and refuses when the two diverge. A
+`correct` verb writing a buyer's number onto a record whose raw evidence is the
+supplier's would manufacture that divergence **as its normal operation**, and no
+guard could refuse it without refusing the verb itself. **The parse guard and
+this verb cannot both exist honestly, and the guard is the one that is true.**
+
+The costing, recorded so a future proposer does not re-derive it: if the ruling
+is ever reversed, the guard is free — `RR_SUBMIT_QTY_AGREES` reads
+`confirmedQtyRaw` + `numberConvention` + `confirmedQty` and generalises
+unchanged, **one parse with two callers, no `GridParseSpec` widening**
+(`normalizeQty` lives in `lib/`; `parseGrid` is not on that path). What is NOT
+free is the honesty problem above, and it is not a wiring cost.
+
+### 59b · RULING 2 (OPERATOR) — R1c IS CLOSED, NOT BLOCKED
+
+R1c was a surface for an act that should not exist. **It is not waiting on
+anything, and its row is corrected here rather than left in a blocked state that
+implies a future batch.**
+
+⚠️ **THE BLOCKER RECORDED IN THE NOTES WAS NEVER THE REAL ONE, AND BOTH HALVES
+OF IT MEASURED FALSE.** `.remember` recorded R1c as blocked because *"parsing
+blocks qty override"*, and a dispatch restated it as *"a modal would bypass the
+only guard that catches a locale conflict"*. Derived:
+
+- **`normalizeQty(raw, hint?)` has arity 2** and no channel by which a sibling
+  row could reach it. `AMBIGUOUS_QTY` is a **per-token** verdict, stated at
+  `ingest.ts:119` (*"ambiguous cell REFUSES per row rather than being resolved by
+  a hint"*) and `:178` (*"deliberately hint-free, so ambiguity refuses per row"*).
+- **`hasAnyComma` has zero occurrences tree-wide**, all file types.
+- Measured: `'1.234'` alone → `AMBIGUOUS_QTY`; under `'id'` → 1234; under `'en'`
+  → 1.234 — **identical inside a grid and out of one**, with known-good and
+  known-bad controls both asserted.
+
+The real constraint was never the parse: **no buyer verb accepts a quantity at
+all** (`review` and `accept` declare `requiredFields: []`, `dispute` declares
+`['disputeReason']`, `resolve` declares `['resolutionReason']`), and Ruling 1
+says none should. **A blocker that dissolves when measured and a blocker that is
+removed by a ruling are different endings, and this row got both.**
+
+### 59c · ⚠️ THE DISPATCH SIDE CORRECTED — A CITED SHA THE REPO DOES NOT HOLD IS THE MERGE DOCTRINE'S FAILURE ONE STEP EARLIER
+
+**Recorded at the operator's own instruction and against their own dispatches.**
+Two figures were carried in dispatch headers from 2026-08-19 into 2026-08-20 and
+both are false of this repository:
+
+| cited in dispatch | measured |
+|---|---|
+| `main 9c31c7f` | **not a valid object name** — `git cat-file -t` after `fetch --prune`; not a commit, not a branch tip, not an ancestor. Actual main was `5c9eeae`. |
+| `floor 3105/227` | **`scripts/floor.json` holds `3123 / 228 / 7`** and `npm run gates` observed exactly that |
+
+⚠️ **THE CLASS, AND IT IS WHY THIS SITS BESIDE THE MERGE DOCTRINE RATHER THAN IN
+A TYPO LIST.** §43a made the seat assert an object exists **at the site the action
+names** before any outward step. That rule guards the moment of the merge. **A SHA
+CITED IN A DISPATCH HEADER IS THE SAME OBJECT ONE STEP EARLIER** — it is the
+premise a merge instruction would later rest on, arriving before anyone is
+looking for it, in the position that reads as context rather than as claim. A
+header is not scrutinised the way an instruction is; that is exactly what makes
+it the cheaper place to put a wrong object. Filed as
+`DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`.
+
+**The mitigation is the one already standing and it costs one command per
+session:** the seat re-derives HEAD and the floor at orientation and reports any
+disagreement without reconciling it. That is what happened here on 2026-08-20 —
+the disagreement was reported three turns running, un-actioned, and is only now
+recorded because the operator ruled it should be. **A disagreement reported and
+not written down decays back into the next dispatch header**, which is how this
+one survived a full day.
+
+### 59d · ⚠️ PR #227 DERIVED — IT IS *NOT* SUPERSEDED, AND WHAT IT CARRIES IS THE MERGE DOCTRINE ITSELF
+
+The operator recorded #227 as *"closed as superseded"*. **Derived at the site
+rather than inherited — and the earlier reading was itself corrected once, which
+is why it was re-derived — the ruling is inverted: nothing in it has landed.**
+
+`qa/chaos-ambience-pin` @ `d620826`, opened 2026-08-14, **3 ahead / 15 behind**
+`main`. Six files, +551 / −2. What survives on `main` today:
+
+| what it carries | on `main` today |
+|---|---|
+| `src/services/data/mock/chaosAmbience.test.ts` (+144, new) | **ABSENT** |
+| `src/services/sdc/__tests__/clockRestore.test.ts` (+93, new) | **ABSENT** |
+| `docs/findings.md` §44 (+268) | **ABSENT — and the slot is reserved** |
+| `CLAUDE.md` merge-doctrine section (+23) | **ABSENT** |
+| `src/services/query/settleFailureSurface.test.tsx` (+21, the asymmetry warning) | file exists; the 21 lines **ABSENT** |
+| `scripts/floor.json` | **would REGRESS 3123/228 → 2969/216** |
+
+Marker check, with a known-good control asserted first (rule 4): `chaosAmbience`,
+`clockRestore`, `CLOCK-RESTORE` — **zero hits in `src/` and zero in the register**.
+The only `ambience` hit on `main` is §45's note reserving the number.
+
+⚠️ **AND THE HEADLINE IS THE ONE NOBODY WAS LOOKING FOR: THE MERGE DOCTRINE THIS
+SESSION HAS BEEN GOVERNED BY IS NOT IN THE REPOSITORY.** `grep -rn -i "merge
+doctrine"` over every `.md` on `main` returns **nothing** — control confirmed by
+a known-good `CLAUDE.md` section that the same grep does find. The section
+*"A MERGE INSTRUCTION NAMING A PR THE SEAT HAS NOT ITSELF REPORTED IS A REQUEST
+TO VERIFY, NOT TO MERGE (ratified 2026-08-14)"* exists **only on this unmerged
+branch.** It has been quoted in every dispatch of this session, both halves have
+fired, and it governed the refusal in §58 that kept four correct rows correct —
+**while living nowhere a fresh session could read it.**
+
+That is `FLOOR-IN-PROSE-01`'s shape applied to a rule instead of a number: **a
+doctrine whose only copy is in a pull request is enforced by memory, and memory
+is the instrument this register exists because it does not trust.**
+
+**Closing #227 would therefore lose:** two test files with no equivalent coverage,
+a §44 the register reserves a hole for in two places, a maintainer warning at the
+asymmetric settle-path site, and the ratified merge doctrine.
+
+**It also cannot be merged as it stands** — its `floor.json` is 154 tests and 12
+files behind `main`, and merging it would regress a floor that never regresses.
+**The disposition is neither close nor merge: it is merge-forward** — bring
+`main` into the branch, reconcile `floor.json` to `main`'s current figure, re-run
+the four gates, and land §44 in its reserved slot. **No such action taken here;
+this entry reports and the operator rules.**
+
+### 59e · DISPOSITION
+
+- **RULED (operator):** `t_requirementresponse_correct` shall not exist — the act
+  is covered by dispute → supplier resubmit, and a buyer-authored quantity would
+  put `confirmedQtyRaw` in permanent disagreement with the number it evidences.
+  Recorded as a decision so it is not re-proposed as a gap.
+- **RULED (operator):** R1c is CLOSED, not blocked. Its recorded blocker measured
+  false in both halves; its real constraint is removed by Ruling 1.
+- **CORRECTED (dispatch side):** `9c31c7f` is not an object in this repository ·
+  the floor is `3123 / 228 / 7`, not `3105 / 227`. Filed as
+  `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`.
+- **REFUTED:** #227 is superseded. **Nothing in it has landed**, including the
+  merge doctrine itself, which is absent from every `.md` on `main`.
+- **OPEN — OPERATOR'S RULING:** #227's disposition. Merge-forward is the only
+  option that loses nothing; closing loses four distinct things; merging as-is
+  regresses the floor and is refused on that ground alone.
+- **UNTOUCHED:** no verb authored, no surface built, no flow, DTO or test
+  changed; #227 neither closed nor merged. C9 `af7f0b4` and C10 `dc8e774`
+  byte-identical by blob id. Floor unchanged at `3123 / 228 / 7` — this batch
+  adds no test.
+
+---
+
+## 60 · THE TWO SURVIVING CLAUSES, MEASURED — AND THE CORRECTION THAT SHRINKS THE BATCH IS THE ONE NOBODY CHECKS (`main` `3fdcd16`)
+
+**Register only. No code changed. #227 NOT closed, and 60d says why.**
+
+Option A was ruled: absorb two surviving clauses of PR #227 into SEC-GATE-01,
+then close #227 as superseded. **Both clauses were measured against the gate
+before either was built, and neither has a subject.** The batch is recorded here
+instead of built, and the operator's two self-corrections are recorded with it —
+including the one that was itself describing something absent.
+
+### 60a · SEC-GATE-01 DOES NOT SCAN SCRIPTS, DOES NOT BUILD A MANIFEST, AND DOES NOT READ THE BUNDLE
+
+Derived from the gate's own surface — `gate/` (`handler.js` · `render.js` ·
+`session.js` · `session.test.js`) plus `middleware.js`, which is the whole of
+SEC-GATE-01:
+
+| clause as ruled | measured |
+|---|---|
+| *"SEC-GATE-01 scans inline scripts only, and a fixture loaded via `src` would pass unseen"* | **it scans NO scripts.** No inline scan, no `src` scan, no scanner of any kind |
+| *"the empty-manifest guard — `EMPTY-INPUT-REPORTS-CLEAN-01` in the gate that enforces the claim"* | **there is no manifest**, and none has existed in `gate/` or `scripts/` in any commit (`git log --all -S`) |
+| *"SEC-GATE-01 already derives the real thing from the actual bundle"* | **it never touches the bundle** |
+
+`grep -rnE "manifest|<script|script src|dist/|readFile|readdir|fixture"` over
+`gate/` and `middleware.js` returns **nothing**, with the control asserted first:
+the same matcher finds `readdir` in `scripts/gates.mjs`, so it can see these
+tokens where they exist. SEC-GATE-01's seven tests are, by name, entirely
+session/HMAC: sign · expire · wrong-secret · tampered payload · tampered
+signature · garbage input · `timingSafeEqual`.
+
+**Widened once and re-derived (rule 2):** the only `<script` in the repository is
+`app/index.html:16`, the shell's own module entry. There is no script scanner
+anywhere to add a clause to.
+
+⚠️ **AND THE CLAIM THE CLAUSES WOULD ENFORCE IS FALSE OF THIS PRODUCT, WHICH IS
+THE LOAD-BEARING HALF.** §59d's measurement stands: `sup-002`, `sup-005`,
+`sup-007`, `rr-0003` and `MAT-DOC` all appear in the shipped bundle, control
+confirmed. **They must** — the app is fixtures-only with no backend, so the
+fixtures ARE the data layer. A gate asserting fixture paths do not reach the
+bundle would go red on a correct build, permanently. **Building it would not have
+been an over-cost; it would have been a gate that is wrong.**
+
+### 60b · THE OPERATOR'S TWO SELF-CORRECTIONS, ONE OF WHICH IS ALSO ABSENT
+
+Both were issued against the operator's own prior ruling and both moved in the
+right direction — there was nothing to re-cut. Recorded because one of them
+describes an artifact that is not there either:
+
+- ✅ *"the vacuous-pass flaw is not in the branch — no `dist/` read, no filesystem
+  access"* — **correct, and confirmed independently.** `chaosAmbience.test.ts`
+  reads `import.meta.glob('/src/**/*.{ts,tsx}')`, a build-time source scan that
+  cannot be absent. No `node:fs`, no `dist`, no `cwd`.
+- ❌ *"the path list is a hand-authored allow-list, fifteen module specifiers
+  typed out, checked against a mock manifest the same file builds"* — **measured:
+  zero `manifest` occurrences and zero quoted `/src` specifier-list entries in
+  EITHER branch file.** No allow-list, no manifest, no fifteen of anything. The
+  file's population comes from the glob, and its **first test is the population
+  guard** — `>100` modules, three known-true members, plus an assertion that the
+  self-exclusion it claims is real, citing §42b and §39b/§40e by name.
+
+### 60c · ⚠️ THE NEW CLASS — A CORRECTION THAT SHRINKS THE BATCH IS THE ONE LEAST LIKELY TO BE CHECKED
+
+This is the fourth consecutive dispatch in this arc whose named artifact was
+measured absent (`t_requirementresponse_correct` · `getVerbCatalog` ·
+`plannerResponse` · now the script scanner and the manifest). **What is new is
+the direction, and it is the opposite of the one the register has been guarding.**
+
+`COUNT-RESTATED-ACROSS-INSTRUMENTS-01` named the mechanism as *a bare wrong
+number gets checked; a wrong number with an explanation gets believed.* This arc
+adds its mirror:
+
+> ⚠️ **A CORRECTION THAT MAKES THE BATCH BIGGER IS INTERROGATED. A CORRECTION
+> THAT MAKES IT SMALLER IS THANKED.** Every premise corrected in this arc arrived
+> as *"good news — there is less to build"*, and each was accepted on that
+> ground rather than on its accuracy. The fifteen-specifier allow-list is the
+> proof: it was a **retraction**, it pointed at the right conclusion, and it
+> described an artifact that does not exist. **A wrong premise inside a
+> correction inherits the correction's credibility.**
+
+Filed as `SHRINKING-CORRECTION-IS-UNCHECKED-01`. It is the same asymmetry §51
+found in the mutation counter — *"both mechanisms fail toward 'your gate is
+weak', and that is the reading that gets believed, because it sounds like the
+humble answer"* — moved from an instrument to a dispatch. **The mitigation is
+unchanged and it is the only one that has ever worked here: measure the artifact
+named, including when the sentence naming it is retracting something.**
+
+### 60d · #227 NOT CLOSED, AND THE STATED REASON WOULD HAVE BEEN FALSE
+
+The order was to close it *"superseded by SEC-GATE-01, and its two surviving
+clauses absorbed"*. **SEC-GATE-01 absorbs nothing — 60a — so the stated reason
+would have been false at the moment it was written**, in a close performed
+specifically *"so the next reader does not reconstruct it from the branch."* A
+false closing reason is the one thing worse than an open PR for that purpose.
+
+Re-derived at the site, third time, unchanged: closing loses **two test files
+with no equivalent coverage** (`chaosAmbience` · `clockRestore` — zero marker
+hits in `src/`), **§44 in a slot `main` reserves in two places** (§45 and §46
+both cite PR #227 as its holder), the `settleFailureSurface` asymmetry warning,
+and **the ratified merge doctrine, absent from every `.md` on `main`** — control
+confirmed with a known-good `CLAUDE.md` section the same grep does find.
+
+**Disposition unchanged and still the only one that loses nothing:
+MERGE-FORWARD** — `main` into the branch, `floor.json` reconciled from
+`2969/216` to `3123/228`, four gates re-run, §44 lands in its reserved slot. The
+one thing genuinely wrong with the branch is its stale floor, and that is a
+reconcile, not a re-cut and not a close.
+
+### 60e · ⚠️ WHAT MADE THE BRANCH WORTH READING RATHER THAN CLOSING ON THE WORD — THE SPLIT, NOW MEASURED THREE WAYS
+
+The operator named the lesson as *"the content was superseded and the derivation
+was not, and only measuring both separately showed which."* **Measured, the split
+lands somewhere neither reading predicted, and it moved every time it was
+measured:**
+
+| reading | claimed | measured |
+|---|---|---|
+| 1st — "superseded by #191" | content dead | **content never landed** |
+| 2nd — "the derivation is the survivor, 96 lines nothing reproduces" | derivation unique | **no such derivation exists; the file is 144 lines about injection ambience** |
+| 3rd — "two clauses nobody had named" | clauses survive into SEC-GATE-01 | **neither clause has a subject; SEC-GATE-01 scans nothing** |
+
+**What actually survives is what was there the first time anybody opened the
+file: two working, bilateral, population-guarded pins, and a ratified doctrine
+that exists nowhere else.** Every richer story about *why* the branch mattered
+was wrong; the branch mattered because its contents are simply not on `main`.
+
+> **THE GENERAL FORM, AND IT IS WHY THIS ENTRY EXISTS RATHER THAN A CLOSE:
+> AN ARTIFACT DESCRIBED THREE TIMES AND READ ZERO TIMES ACQUIRES A HISTORY
+> INSTEAD OF A CONTENT.** Each description was a correction of the last, each
+> was more specific, and specificity read as convergence. **Reading the file took
+> one command and settled all three at once.**
+
+### 60f · DISPOSITION
+
+- **NOT BUILT:** both SEC-GATE-01 clauses. Neither has a subject; the claim they
+  would enforce is false of a fixtures-only product with no backend.
+- **NOT CLOSED:** #227. The ordered closing reason would have been false, and
+  closing still loses four things §59d and 60d enumerate.
+- **CORRECTED (dispatch side):** SEC-GATE-01 scans no scripts, holds no manifest,
+  never reads the bundle · the fifteen-specifier allow-list and mock manifest do
+  not exist in either branch file · the branch's first test is already the
+  population guard the order said it lacked.
+- **CONFIRMED (operator, credited):** the branch performs no filesystem access
+  and reads no built artifact — correct, and independently verified.
+- **FILED:** `SHRINKING-CORRECTION-IS-UNCHECKED-01` — a correction that reduces
+  the batch inherits credibility its premises have not earned. Mirror of
+  `COUNT-RESTATED-ACROSS-INSTRUMENTS-01`; sixth relative of §51's asymmetry.
+- **OPEN — OPERATOR'S RULING:** #227, merge-forward.
+- **UNTOUCHED:** no gate file, no test, no verb, no surface. C9 `af7f0b4` and
+  C10 `dc8e774` byte-identical by blob id. Floor unchanged at `3123 / 228 / 7`.
+
 
 ---
 
@@ -15575,3 +15887,3059 @@ Confirmed exactly as dispatched, with nothing to correct.
   (`findings.md:14727`) and is defined nowhere. Parked as a token, not a scope.
 - **UNTOUCHED:** no code, no test, no fixture, no flow, no DTO. Floor 3123 / 228 /
   7 unchanged. C9 `af7f0b4` and C10 `dc8e774` byte-identical.
+
+
+---
+
+## §62 — THE SEAM. The two lanes share one vocabulary, the gate sees a certificate for the first time — and the honesty moved rather than left
+
+**Batch:** arc 1 · the compliance seam (Option A, operator-ruled). **Main `76aa197`.**
+**Floor 3123 → 3129 / 228 / 7**, bumped as the gate's note asked. ⚠️ **A COINCIDENCE
+WORTH NAMING SO IT IS NEVER READ AS CONFIRMATION: 3129 is the figure four
+dispatches asserted the floor already was.** It was 3123 every time they said so,
+and it is 3129 now because THIS batch added six tests — not because the earlier
+claim was right. A number that becomes true later was still false when it was
+stated. Four files: `complianceRegistry.ts`, `halalVerification.test.ts`,
+`materialIdentity.test.ts`, `scripts/floor.json`.
+
+### 62a · WHAT WAS WRONG, IN ONE SENTENCE
+
+`COMPLIANCE_REGISTRY` keyed its rows on `RM-SAMPLE-…` codes that matched nothing
+in `MATERIAL_MASTER`, so **the compliance page and the receipt gate looked at the
+same certificates through two vocabularies that could never intersect** — a
+certificate expiring on the compliance page was invisible to the receipt gate for
+that material. Measured before the change: the intersection between the registry's
+17 codes and the **7 receivable ASN lines** was **EMPTY**, so
+`verifyHalalAtReceipt` returned `NO_CERT` for every real material in the tree.
+
+⚠️ **THE UNMATCHABLE NAMESPACE WAS A DELIBERATE HONESTY DEVICE, AND THAT IS WHY
+THIS TOOK A RULING RATHER THAN A FIX.** It existed so nothing could read as real
+certificate tracking. It also made the capability **structurally inert**, and
+`halalVerification.ts`'s own header disqualified every route out by name —
+including the one eventually taken. **A surface that cannot be wrong because it
+cannot be reached is not honest; it is unfalsifiable.** The operator ruled the
+fixture re-authored (Option A) on the reasoning that **fabrication is unavoidable
+either way, so it should happen where a reviewer reads it** — and that a mapping
+table would be the same invention wearing the costume of a derivation, plus a
+third vocabulary, which is the shape C9 exists to forbid.
+
+### 62b · THE INSTRUCTION THAT COULD NOT BE FOLLOWED, AND THE STOP THAT FOLLOWED IT
+
+The dispatch said **"DERIVE THE MAPPING. Do not hand-author it."** It cannot be
+derived, and the batch stopped and said so before building:
+
+- **Nothing in the tree relates the two spaces.** `RM-SAMPLE-*` occurs in exactly
+  four files — the registry, its two specs, and one comment. No crosswalk module,
+  no shared vocabulary (`materialCategory` is `actives/botanicals/…`;
+  `materialGroup` is `MG-02/03/04…`, with no declared join).
+- **The only mechanical route is a prefix parse** (`FRG` ↔ `FR`), which **C9 §3
+  forbids** — `materialCode` is contractually opaque — and which this register has
+  retired twice by name (`inferBpom`, `inferHalal`).
+- **And it would still not decide.** `RM-SAMPLE-FRG-01` maps to which of five
+  fragrance masters? Nothing answers. **Which materials a certificate covers is
+  the ISSUER'S regulatory scope**, and deriving it from names would fabricate
+  regulatory coverage on the most sensitive fixture in the build, 58 days before
+  the mandate.
+
+The operator's own adjudication is the entry's best summary of the class and is
+recorded verbatim in substance: *deriving the mapping is impossible without
+inventing a fact, and picking one of four equally defensible answers authors a
+certificate claim about a real supplier.*
+
+⚠️ **A PRIOR BATCH HAD ALREADY REFUSED THIS EXACT MOVE ON A SIBLING MAP, AND THE
+REFUSAL WAS SITTING IN THE TREE UNREAD.** `commodityMaterialMap.ts:20`: *"Re-keying
+it onto master codes is DELIBERATELY NOT DONE HERE… re-keying now would settle B2b
+by implication."* Filed as `REFUSAL-IN-A-COMMENT-IS-NOT-A-GUARD-01`: **a ruling
+recorded only as a comment on the file it governs is invisible to every dispatch
+that does not happen to open that file.** Both refusals were correct, both were
+prose, and neither could stop anything. (This one, at least, is now a test.)
+
+### 62c · WHAT WAS BUILT — the identity fields only
+
+The re-key changes **only** `supplierName`, `materialCodes`, `materialCategory`
+and `scopeText`. It does **not** touch `issueDate`, `expiryDate`, `lifecycleState`,
+`certType`, `certNumber` or `issuer`.
+
+- **Supplier names are now DERIVED from the roster** (`mockSuppliers.ts`), not
+  authored. ⚠️ **AND THE RE-KEY SURFACED A DEFECT NOBODY HAD LOOKED FOR: THE
+  REGISTRY WAS INVENTING A SECOND NAME FOR A SUPPLIER THE ROSTER ALREADY NAMES.**
+  `sup-007` was `Sample Fragrance House (illustrative)` here and `PT Sample
+  Packaging Indonesia` in the roster — same id, two names, no marker. That was
+  never an honesty device; it was drift.
+- **Material codes are real master codes that THAT SUPPLIER ACTUALLY TRANSACTS**,
+  derived from the PO / ASN / shipment fixtures (sup-002 → 4 materials, sup-005 →
+  5, sup-007 → 8; both probe controls passed). Halal-class certs sit only on
+  materials whose master row says `halalApplicable: 'REQUIRED'`.
+- ⚠️ **AN EARLIER, WIDER SUPPLIER→MATERIAL MATCHER WAS DISCARDED MID-BATCH**: a
+  ±40-line proximity window returned 28 halal-required codes "near sup-007",
+  sweeping in sup-002's and sup-005's rows. Rule 2, on this batch's own
+  instrument. The tight scan-order derivation (with controls) is what shipped.
+
+**THE STATUS DISTRIBUTION IS PRESERVED BIT-FOR-BIT** — Valid 5 · Expiring 4 ·
+Under Review 2 · Expired 3 · Missing 2, identical before and after, because no
+date and no `lifecycleState` was touched.
+
+### 62d · THE FORCED CHOICE, REPORTED RATHER THAN PAPERED OVER
+
+The dispatch asked for exactly this if it arose. It arose once, and it is
+arithmetic, not preference: preserving *"one cert covering >1 material"* on
+**sup-007** requires **4** halal-required materials for its **3** halal certs
+(2+1+1). sup-007 transacts **3**. The three constraints — one multi-material cert ·
+halal certs only on `REQUIRED` materials · unchanged per-tenant row counts — cannot
+all hold there.
+
+**Resolution: the multi-material property moved to a supplier with headroom** —
+`creg-0015` (sup-005, HALAL_BPJPH) now covers `AI-NIAC-6601` + `RM-EMUL-3320`,
+neither of which carries another halal row. `creg-0007` drops to one code. Nothing
+was dropped: the design property, the bucket counts and the per-tenant row counts
+all survive. **The alternative — leaving `creg-0007` overlapping `creg-0001`'s
+material — would have silently broken the property while the fixture header still
+claimed it**, which is the failure mode the instruction was written against.
+
+### 62e · THE DELTA — THE ARC'S PAYLOAD
+
+`verifyHalalAtReceipt(supplier, material, R, instant)` over the **7 receivable ASN
+lines** (the same seven as `BPOM-OFF-BY-SPACE-01`'s radius — used as the control):
+
+| supplier | material | BEFORE (main) | AFTER | AFTER @ 2026-10-17 |
+|---|---|---|---|---|
+| sup-007 | `FR-ROUD-4470` | NO_CERT | **SATISFIED** (creg-0001, BPJPH) | SATISFIED |
+| sup-007 | `AI-NIAC-6612` | NO_CERT | **SATISFIED** (creg-0002, MUI legacy) | **SCHEME_INVALID** |
+| sup-007 | `AI-HYALU-6615` | NO_CERT | **SATISFIED** (creg-0007, FOREIGN) | SATISFIED |
+| sup-007 | `PK-ALCP-2450` | NO_CERT | NO_CERT | NO_CERT |
+| sup-007 | `PK-PETB-8804` | NO_CERT | NO_CERT | NO_CERT |
+| sup-002 | `RM-PSTN-7150` | NO_CERT | **SATISFIED** (creg-0003, BPJPH) | **EXPIRED** |
+| sup-005 | `RM-EMUL-9440` | NO_CERT | **EXPIRED** | EXPIRED |
+
+**Four of seven lines move off `NO_CERT`, and `RM-EMUL-9440` is the headline: the
+first time in this project's history that the receipt gate has looked at a
+certificate and found one — lapsed.** The two that stay `NO_CERT` are correct and
+deliberately so: both are `halalApplicable: 'UNDETERMINED'` packaging, and the
+module's own doc names that case — *a `NO_CERT` on a material that never needed a
+certificate is not a finding; it is a question that should not have been asked.*
+
+⚠️ **AND THE MANDATE IS NOW DEMONSTRABLE ON A REAL MATERIAL.** `AI-NIAC-6612` is
+backed by a MUI-legacy certificate whose **own dates stay valid until 2027** and
+whose **scheme retires on 2026-10-17**. That is the entire point of GR 42/2024, and
+before this batch there was no material in the tree on which it could be shown.
+
+### 62e-bis · ⚠️ THE TREE'S OWN CENSUS CAUGHT THE SEAM BEFORE THE AUTHOR DID, AND ITS COMMENT HAD PREDICTED IT IN ADVANCE
+
+Two tests in `materialIdentity.test.ts` went red on the first full gate run, and
+**both were the instrument working, not collateral damage.**
+
+- **`CODE_FIELDS` widened from three keys to four.** That derivation finds every
+  code-bearing key in the tree, and its own comment — written long before this
+  batch — reads: *"Adding a fourth code-bearing key anywhere in the tree widens
+  this set without anybody editing it."* It did. `materialCodes` is the compliance
+  registry's key; it held placeholders that matched no master code, so the census
+  could not see it, and **the moment the registry spoke the master's vocabulary
+  the census admitted it the same day, unaided.** That is the seam, observed from
+  outside the batch that built it: **the registry is now a material-identity site.**
+- **`RM-EMUL-9440` acquired a third referencing lane.** The assertion was that
+  every lane quoting that code quotes the same meaning — *the strings are equal
+  because something declared which one is the meaning, not because a comparison
+  was loosened.* The registry references it through a bare `materialCodes:
+  string[]`, and by this module's own standing rule **an array states no meaning,
+  so it arrives `null` and can never contradict one.**
+
+Both assertions were re-authored rather than relaxed, and the second one
+deliberately asserts the silent reference (`some(meaning === null)`) instead of
+filtering it away — **an unexplained `.filter()` is exactly how a real
+disagreement would be hidden later.** Recorded because it is the rarer direction:
+this register mostly logs instruments that failed to notice things. **Here a
+derivation written for another purpose detected a vocabulary change nobody
+told it about, and its author had left a note saying it would.**
+
+### 62f · ⚠️ THE STOP FLAG — HALAL DOES NOT WARN TODAY; IT DERIVES `BLOCK`
+
+The dispatch said to stop if any line refuses rather than warns. **No line
+refuses**, and the seam changes nothing about that: `verifyHalalAtReceipt` returns
+a verdict, has **zero production callers**, and this batch gave it none. H4 stays
+gated on `D-COMP-HALAL-4`.
+
+**But the ruling's premise — *"the mode machinery already supports observe/warn,
+this is a setting not a rebuild"* — is half true, and the half that is false is
+the operative one.** Measured: `ENFORCEMENT_MODES` is `OBSERVE | BLOCK_OVERRIDABLE
+| BLOCK` — **there is no `WARN` member** — and `halal.certificate` is
+**deliberately not seeded**, so its empty entry derives **`BLOCK /
+NO_SETTING_RECORDED`**: maximum rigour, honestly sourced as *undecided* rather than
+dressed as chosen (E2/E4 ruled it, and refused to record a decision nobody took).
+
+**So the default is BLOCK-by-absence, and "halal warns" becomes true only when an
+operator decision is RECORDED — which is precisely the act E4 declined to
+fabricate.** It is a setting, but it is a setting nobody has set, and wiring H4
+before setting it would block receipts rather than warn about them. Filed as
+`HALAL-WARNS-IS-NOT-YET-A-SETTING-01`, **OPEN — operator**, and it is a
+prerequisite of H4, not of this seam. The choice is real: `OBSERVE` (record it,
+never stop it — the literal reading of the ruling) vs `BLOCK_OVERRIDABLE` (the
+receiver must see it and override — closer to what "warn" usually means to a
+receiving clerk). **Both are defensible and the batch did not pick.**
+
+> ⚠️ **AMENDED AT H4 (§63a) — THE OPERATOR PICKED BOTH, IN TURN, AND NEITHER CAN
+> BE RECORDED.** `BLOCK_OVERRIDABLE` was ruled first and withdrawn on the finding
+> that an override cannot COMPLETE without a named person; `OBSERVE` was ruled in
+> its place as "one line". Measured through the shipped verb, **`OBSERVE` is
+> refused by the same clause, with the same sentence, for the same reason** — the
+> direction rule baselines an unset check at `MAXIMUM_RIGOUR`, so EVERY mode below
+> `BLOCK` is a loosening and needs an actor the portal cannot produce.
+>
+> **This row's framing was one notch too low and is corrected rather than closed:
+> the blocker is not "nobody has set it", it is that NOBODY CAN.** The finding it
+> becomes is `HALAL-ENFORCEMENT-CEILING-IS-IDENTITY-01` (§63a) — filed at full
+> weight, **OPEN — operator**, because the October mandate arrives before the
+> identity spine does on current sequencing. This row stays open beneath it and is
+> discharged by the same act.
+>
+> **H4 shipped WITHOUT a setting and without wiring the check**, which is why it
+> did not need one: the certificate notice is not the governed check. It reads the
+> registry and renders; `qualityValid` never consults it, pinned at both the source
+> and render levels. `halal.certificate` remains at `BLOCK / NO_SETTING_RECORDED`
+> — honest, and consulted by nothing.
+
+### 62g · WHERE THE HONESTY WENT, AND THE GATE THAT NOW HOLDS IT
+
+The old device was one unfalsifiable fact (nothing can join). The replacement is
+three checkable ones, and **they are assertions in the suite, not sentences in a
+header** — which is the real upgrade, given 62b:
+
+1. **The seam holds** — every registry code is a real master code; no
+   `RM-SAMPLE-` survives in the registry.
+2. **No row names a real certificate number** (`SAMPLE-…` or empty), **a real
+   certifying body** (`(illustrative)`), **or a real company** (the roster's own
+   honestly-fictional names).
+3. **The delta is pinned by name**, so a silent revert reddens the suite.
+
+The `describe` block that asserted *the opposite invariant* — *"every registry code
+is an `RM-SAMPLE-…` placeholder"* and *"EVERY REAL MATERIAL verifies as NO_CERT"* —
+was replaced, not deleted quietly, and the replacement says in its own comment what
+it replaced and why.
+
+**What remains fabricated, stated plainly: WHICH SUPPLIER HOLDS WHICH CERTIFICATE.
+The supplier is real and the material is real; the certificate is invented.** The
+structural marker is unchanged and unmoved — `compliance` has no `CommandTarget`
+and stays SIMULATED behind the harvest gate, so every surface reading this still
+renders amber "Sample — awaiting Track-R harvest".
+
+### 62h · THE MANDATE-DATE DECAY, RE-RECORDED (unchanged by this batch)
+
+The fixture's I3.3 design property — *"≥2 exemplars of every computed display
+status, so KPIs/filters read plural"* — **holds today and is void on 2026-10-17**:
+all four `Expiring` rows expire before then, so that bucket goes to **ZERO** on the
+mandate date, and `Expired` goes 3 → 7. **No test asserts the property.** The
+projection is correct throughout — it is the frozen substrate that ages. Now
+written into the fixture header where the next editor will see it.
+
+### 62i · DISPATCH PREMISES MEASURED THIS ARC
+
+| Dispatched | Measured |
+|---|---|
+| *"the dates are relative… daysUntil computes against a real clock… nothing is a stored literal"* | **Every date is a hardcoded literal** — 21 literals + 11 nulls, no `Date` call, no arithmetic. `daysUntil` does not exist in the compliance lane; `daysUntilExpiry` exists in `mockContracts.ts` **as a stored literal** (`590`, `-81`) — the very defect this lane fixed. |
+| *"seventeen rows"* | **16 rows.** 17 is the material-CODE count. |
+| *"thirteen of seventeen rows are offsets from today"* | No row is an offset from anything. |
+| *"`SendReminder` is `HALAL-CERT-EXPIRY-01`'s named mitigation"* | **Neither identifier exists.** The finding is `HALAL-REMIND-01` [F2-24]. |
+| *"three surface actions are toasts"* | **Two** (`BuyerCompliance.tsx:171`, `:398`); the widget has none. |
+| *"re-author onto the roster, not `SAMPLE_SUPPLIERS`"* | **`SAMPLE_SUPPLIERS` does not exist.** The instruction was right anyway — see 62c. |
+| *"`sup-004`… the registry already claims certificates for it"* | **The registry has zero `sup-004` rows** (sup-002 ×6, sup-005 ×5, sup-007 ×5). `sup-004` IS a real roster entity — that half is true. |
+| *"floor 3129"* | **3123 / 228 / 7**, and has been throughout. |
+
+⚠️ **THE PATTERN IS NOW STABLE ENOUGH TO STATE AS A PROPERTY OF THE LANE, NOT OF A
+DISPATCH:** across this arc, **every premise naming a NUMBER, an IDENTIFIER or a
+SHA inverted, and every premise naming a MECHANISM held.** *"The two lanes cannot
+see each other"* — right, and it was the sharpest finding available. *"The data is
+fine and the key is wrong"* — exactly right. This is §49a's line with a larger
+sample: **an operator reading the tree from the outside can be wrong about every
+particular and still be pointing at something real.** The honest response remains
+neither acceptance nor dismissal but derivation — and the correction that reframed
+this arc from *"the data is hardcoded"* to *"the key is wrong"* was the operator's,
+made against their own dispatch, and it was worth more than the arc it replaced.
+
+### 62j · `HALAL-REMIND-01` — AMENDED IN PLACE, NOT RE-FILED
+
+The dispatch asked for the toast-as-mitigation finding at full weight. It exists,
+and re-filing it under a new id would have double-counted it. Amended in place
+instead, with the correction that matters: **the toast is not the defect — it is a
+PREVIOUS FIX.** The Remind action used to toast *"Delivered via WhatsApp"* — a
+false-delivery claim — and v2.2 Step 1.7 replaced it with *"Simulated — delivery
+pending live channel."* at `variant: 'info'`. Filing that as the defect would have
+filed a finding against the remedy.
+
+**The open half is real and now says so at full weight:** the October exposure has
+no working reminder. The real mitigation — audited, throttled dispatch through the
+R1.2 ladder — is booked to R2.2 and unbuilt, and R0.1 (the harvest it depends on)
+is NOT STARTED. **Ruled: build it next, after the seam.**
+
+### 62k · WHAT IS EXPLICITLY NOT IN THIS ARC (so the parked list stays honest)
+
+Operator-stated and recorded verbatim in substance: **there is no expiry-driven
+chase, no evidence upload, and no BPJPH scheme flag** in this batch. All three are
+real and none is this arc's first move, **because everything else is false until
+the two lanes share a vocabulary.** (`schemeValid` already computes the BPJPH rule;
+what is absent is a scheme FLAG on the surface. `HALAL-ISSUER-BLIND-01` stays OPEN
+and still closes only on real issuer data.)
+
+### 62l · DISPOSITION
+
+- **FIXED:** the seam. One vocabulary across both lanes; the gate sees
+  certificates; 4 of 7 receivable lines move off `NO_CERT`; the BPJPH mandate is
+  demonstrable on a real material.
+- **NEW:** `HALAL-WARNS-IS-NOT-YET-A-SETTING-01` (62f, OPEN — operator; H4
+  prerequisite) · `REFUSAL-IN-A-COMMENT-IS-NOT-A-GUARD-01` (62b).
+- **AMENDED IN PLACE:** `HALAL-REMIND-01` (62j).
+- **CORRECTED:** eight dispatch premises (62i), plus the registry's second-name
+  drift found by the re-key (62c).
+- **REPORTED, NOT SILENTLY RESOLVED:** the sup-007 multi-material arithmetic
+  (62d).
+- **UNTOUCHED:** no verb wired, no `CommandTarget` added, no enforcement setting
+  changed, no honesty marker moved, no page edited. `verifyHalalAtReceipt` remains
+  headless and H4 remains gated. Dates, `lifecycleState`, `certType`, `certNumber`
+  and `issuer` are byte-identical. C9 `af7f0b4` and C10 `dc8e774` byte-identical.
+
+---
+
+## §63 — H4. The clerk is told, the receipt proceeds — and the mode that was supposed to make it so cannot be recorded at all
+
+**Branch `feat/halal-certificate-notice`. Floor 3129/228 → 3141/228; gate 7.**
+
+### ⚠️ THE HEAD OF THE ENTRY — THE OCTOBER DEADLINE IS ON A RECEIVING SURFACE
+
+**On 16 October a clerk at Dock B-3 reads *Halal certificate (Halal (MUI,
+legacy)) · `SAMPLE-HALAL-0007B` · valid to 1 Jun 2027*. On 17 October the same
+lot, the same document, every date on it unchanged, reads *"the halal certificate
+is in date, but its scheme no longer satisfies the BPJPH mandate (GR 42/2024) as
+of this receipt"* — and the receipt still goes through.**
+
+That is the arc's payload and it is why it leads. **It is the first time the
+17-Oct-2026 deadline is visible on a RECEIVING SURFACE rather than in a
+document** — not in a plan, not in a register row, not on a compliance page a
+dock clerk never opens, but on the line they are inspecting, at the moment the
+goods are in front of them, with the date in the notice. Until this batch it was
+demonstrable only in a spec, against a material no goods receipt could reach
+(63d).
+
+---
+
+The dispatch ruled `halal.certificate = BLOCK_OVERRIDABLE`, then — on the H4
+investigation's finding that an override cannot COMPLETE without a named person —
+re-ruled it to `OBSERVE`, "one line, and it reaches the clerk today", with
+`BLOCK_OVERRIDABLE` as the declared successor when identity lands.
+
+**Measured: `OBSERVE` is refused by the same clause, with the same sentence, for
+the same reason.** What shipped is the half of the ruling that never needed a
+mode — and it is the half the operator said was the requirement.
+
+---
+
+### 63a · ⚠️ `HALAL-ENFORCEMENT-CEILING-IS-IDENTITY-01` — FILED AT FULL WEIGHT
+
+`enforcement_set_governed` baselines an unset check at `MAXIMUM_RIGOUR` and
+refuses a LOOSENING by an unattributed actor. `rigour('OBSERVE') = 0 <
+rigour('BLOCK') = 2`, so the first setting below full rigour is a loosening **for
+every mode on the ramp** — the rule is about the DIRECTION, and the direction is
+the same whichever relaxed mode you pick.
+
+Probed both ways through the shipped verb, not read off the policy:
+
+| act | actor | result |
+|---|---|---|
+| `BLOCK` | UNATTRIBUTED | **`done`** — the known-good control |
+| `OBSERVE` | UNATTRIBUTED | `failed POLICY_REJECTED … loosening halal.certificate from BLOCK to OBSERVE requires a NAMED actor (setBy.kind is UNATTRIBUTED: NO_PERSON_IN_SESSION)` |
+| `BLOCK_OVERRIDABLE` | UNATTRIBUTED | the same refusal, differing only in the mode it names |
+| `OBSERVE` | RESOLVED | **`done`** — the gap is identity and nothing else |
+
+The control is not decoration. Without it, *"the dispatch failed"* is equally
+consistent with a broken harness, an unregistered flow or a role gate; §39's
+reflex, and it is the run that makes the other three mean something.
+
+> ⚠️ **THE CEILING IS NOT A PROPERTY OF THE OVERRIDE LANE. IT IS A PROPERTY OF
+> THE LEDGER, AND IT COVERS THE WHOLE RAMP AT ONCE.** The investigation reported
+> it one notch too low — *"BLOCK_OVERRIDABLE is unreachable"* — and the re-ruling
+> to `OBSERVE` was a rational move against that report. It was one notch short:
+> **the strongest recordable mode is `BLOCK`, and the only settings this platform
+> can take are the ones that tighten.**
+
+**AND THE OCTOBER MANDATE ARRIVES BEFORE THE IDENTITY SPINE DOES ON CURRENT
+SEQUENCING** (identity is F1; the mandate is 2026-10-17). That is an operator
+decision, not a code change, and it is on the record now rather than after.
+
+There is also no way to record WHY. `EnforcementSetting` is
+`{ checkId, setBy, setAt, mode, reviewBy }`, and `applyTransition`
+(`MockCommandService.ts`) constructs the row field by field, so a rationale in
+the payload is DROPPED rather than stored. Reported before writing one, as
+dispatched — and now asserted in `enforcementSetCommand.test.ts` so the absence
+is a fact in the suite instead of a claim in a report. `CommandDecision.reason`
+is free text but numerically shaped (`from: number` / `to: number`) and lands
+only in the in-memory DR-10 sink.
+
+**Nothing was seeded.** `halal.certificate` stays exactly as E4 left it: unseeded,
+unwired, deriving `BLOCK / NO_SETTING_RECORDED` — the honest ceiling for a check
+nobody has ruled on. Wiring it to `qualityValid` would have stopped the dock on
+six of ten receivable lines, which is what the operator ruled against.
+
+---
+
+### 63b · ⚠️ `blockingReasons` DOES NOT EXIST — AN ARTIFACT NAMED IN A DISPATCH, MEASURED ABSENT
+
+The ruling rested on it: *"your own finding shows how: `qualityValid` ALREADY
+WRITES INTO `blockingReasons`"*. Zero matches in the tree, for that identifier and
+for every near-name (`blockingReason`, `blockReasons`, `blockedReasons`,
+`blockReason`). `qualityValid` is `lines.every(l => { … return true; })` returning
+a bare boolean, and the investigation had reported the opposite two turns
+earlier: an enforcement block renders as `<Button disabled>Next</Button>` and
+nothing else.
+
+This is the class the register keeps naming — an artifact named as existing code
+and measured absent. **NO ORDINAL IS ATTACHED TO IT HERE, DELIBERATELY**: the
+class under-counts itself by construction (an invented artifact REFUSED in
+conversation leaves no trace), so the only honest count is the list in CLAUDE.md,
+which this batch extends rather than restates. That list now names four. (The
+operator's own running tally of inverted premises makes this **their
+sixteenth**; that count is theirs, kept by them, and is recorded here as an
+attribution rather than re-derived — it is a different instrument from the
+artifact list and the two must not be added together.)
+
+#### ⚠️ AND THE CORRECTION CARRIES THE PART THAT MATTERS — THE NAMED SAFE PATH WAS THE BLOCKING ONE
+
+The operator's acceptance is the finding, not the admission:
+
+> **WIRING THE NOTICE THROUGH IT WOULD HAVE DISABLED THE NEXT BUTTON UNDER AN
+> OBSERVE RULING — THE BLOCK, ARRIVING THROUGH THE CHANNEL I NAMED AS THE SAFE
+> PATH.**
+
+**AND THAT COUNTERFACTUAL IS NOT SPECULATION — IT IS MEASURED, BY MUTANTS 5 AND
+6 (63h).** Any accumulator that feeds `qualityValid` is a BLOCKING channel by
+construction: `qualityValid` → `isStepValid(2)` → `<Button disabled={!nextValid}>`.
+There is no advisory position on that path. Adding a single certificate clause to
+`qualityValid` disabled `Next` and killed *AND THE RECEIPT PROCEEDS — an EXPIRED
+certificate does not disable Next*, by name, at both the source and render
+levels. **The imaginary channel and the real one would have had the same effect,
+because the effect comes from the consumer, not the collection.**
+
+So the notice is a PARALLEL ADVISORY CHANNEL and the operator's ruling on its
+shape is recorded as law:
+
+> **THE SEPARATION IS STRUCTURAL, NOT COSMETIC — AN ADVISORY THAT SHARES A
+> CHANNEL WITH A BLOCKER IS ONE REFACTOR AWAY FROM BECOMING ONE.**
+
+`certVerdicts` is its own `useMemo`, read only by the render. Nothing merges it
+into the step gate, and two instruments — a source-level pin over `qualityValid`'s
+text and a render-level pin that clicks through — refuse the merge from opposite
+directions. A shared list would have made "advisory" a property of how carefully
+somebody reads the consumer, which is not a property at all.
+
+⚠️ **ONE HALF OF THE CORRECTION'S EVIDENCE COULD NOT BE REPRODUCED, AND IT IS
+RECORDED RATHER THAN QUIETLY ACCEPTED.** The correction cites *"NINE CALL SITES,
+ALL `[]`, `useMemo` READS `[]`"*. Re-measured: `blockingReasons` has **ZERO**
+occurrences in `src/` in any casing, and zero on `main`; the only two in the tree
+are the two sentences above saying so. The wizard has **one** `useMemo` with `[]`
+deps and **no** `= []` binding at all. **The CONCLUSION is correct and matches the
+measurement; the nine call sites describe something else.** Filed because a right
+answer resting on evidence that is not there is the shape §40k warns about — *a
+bare wrong number gets checked; a wrong number with an explanation gets believed*
+— and it does not stop being that shape when the answer happens to be right. **It cost nothing
+because it was grepped before it was built on**, which is the whole of the rule:
+absence is a one-line measurement and a wrong premise with a specific name is the
+most believable kind. The requirement it was offered in support of was real and
+is built; only the mechanism was imaginary, and the notice is a new render path
+rather than a hook into an accumulator.
+
+---
+
+### 63c · ⚠️ A PIN THAT WAS GREEN ABOUT THE WRONG FILE FOR THE WHOLE OF H3
+
+`halalVerification.test.ts` carried *"the GR inspection wizard does not read the
+compliance registry at all"*:
+
+```ts
+const wizard = Object.entries(sources()).find(([p]) => p.includes('GRInspectionWizard'));
+```
+
+`find` takes the FIRST match; the glob is alphabetical; **`GRInspectionWizard.test.tsx`
+sorts before `GRInspectionWizard.tsx`.** All three of its `not.toContain` calls
+were inspecting THE SPEC FILE. It asserted that the test does not mention the
+registry — true, vacuous, and not the claim in its own title.
+
+Found only because H4 added a registry import to the *spec*, so it failed for the
+wrong reason too. §42's rule verbatim: **the scan matched a file; the claim
+required a different file.** A pin aimed at the wrong target passes for exactly
+the reason an empty population reports clean, and nothing goes red to say so.
+Re-authored to name the path the claim requires, with a control asserting BOTH
+files are in the glob so "the one I meant" can never be assumed again.
+
+---
+
+### 63d · ⚠️ THE MANDATE FLIP WAS NOT DEMONSTRABLE, AND §62 COUNTED THE WRONG POPULATION
+
+§62e measured its delta over *"the 7 receivable ASN lines"*. That population is
+`asnRefIntegrity.test.ts`'s — **every `MOCK_ASNS` line**, not every receivable
+line. It therefore INCLUDED `AI-NIAC-6612` and `AI-HYALU-6615` (ASN-2025-00201,
+status `Discrepancy`, outside `RECEIVABLE_ASN_STATUSES`) and EXCLUDED the four
+shipment-sourced lines that a goods receipt actually reaches.
+
+Derived through the wizard's own filters, the receivable population was **NINE**
+— the control being the tree's own comments, *"of the nine receivable lines …
+FIVE gain a question"* and *"four of the nine … are exactly that shape"*, both of
+which the derivation reproduces exactly. My own first attempt returned FIVE and
+was discarded: it swept `incomingShipmentStore`, a different entity with no
+`lineItems` and no `status`. Rule 1 fired on a suspiciously small number.
+
+**Consequences, both of which the dispatch inherited from §62:** three lines moved
+off `NO_CERT` at the seam, not four; and — measured across
+`2026-08-20 / 09-14 / 09-16 / 10-16 / 10-17 / 10-18` — **no receivable line
+changed verdict across the mandate boundary at all.** The only movement in the
+window was `RM-PSTN-7150` at 2026-09-15, its own expiry, a month early and by
+`EXPIRED` rather than `SCHEME_INVALID`. The arc's headline was pinned in a spec
+and unreachable in the product.
+
+**Fixed by making it reachable**, not by re-describing it: `AI-NIAC-6612` was
+added to `shp-013` (`ASN-2026-013`, sup-007, **At Dock**). Not by re-statusing
+`ASN-2025-00201` — that is the tree's only `Discrepancy` exemplar (the KPI
+derivation, `SupplierShipments.tsx`, the repair verb's `from: ['Discrepancy']`,
+`looseEndRepairCommands.test.ts`'s HELD fixture) and its status is entailed by
+its own 720-of-800 short-ship; re-statusing it would have deleted an exemplar and
+contradicted the row to demonstrate a notice. Not on `shp-012` either, which is
+the spec's `RECEIVABLE` default and the subject of two dozen position-indexed
+tests.
+
+---
+
+### 63e · WHAT THE CLERK SEES — THE TEN RECEIVABLE LINES, TODAY AND ON 2026-10-17
+
+| ASN | material | applicability | today (2026-08-20) | 2026-10-17 |
+|---|---|---|---|---|
+| ASN-2026-012 | `PK-PETB-8801` | REFUSAL | **no notice** | **no notice** |
+| ASN-2026-013 | `PK-PETB-8802` | REFUSAL | **no notice** | **no notice** |
+| **ASN-2026-013** | **`AI-NIAC-6612`** | REQUIRED | **valid** · `SAMPLE-HALAL-0007B` | ⚠️ **notice · SCHEME_INVALID** |
+| ASN-2026-014 | `RM-COCO-8200` | REQUIRED | notice · NO_CERT | notice · NO_CERT |
+| ASN-2026-015 | `FR-WARD-4410` | REQUIRED | notice · NO_CERT | notice · NO_CERT |
+| ASN-2025-00211 | `FR-ROUD-4470` | REQUIRED | valid · `SAMPLE-HALAL-0007A` | valid (BPJPH — no clock) |
+| ASN-2025-00211 | `PK-PETB-8804` | REFUSAL | **no notice** | **no notice** |
+| ASN-2025-00198 | `PK-ALCP-2450` | REFUSAL | **no notice** | **no notice** |
+| ASN-2025-00301 | `RM-PSTN-7150` | REQUIRED | valid · `SAMPLE-HALAL-0002A` | notice · EXPIRED |
+| ASN-2025-00302 | `RM-EMUL-9440` | REQUIRED | notice · EXPIRED | notice · EXPIRED |
+
+**`AI-NIAC-6612` is the row the arc is about.** On 16 October a clerk at Dock
+sees *Halal certificate (Halal (MUI, legacy)) · SAMPLE-HALAL-0007B · valid to
+1 Jun 2027*. On 17 October the same lot, the same document, every date unchanged,
+reads *"the halal certificate is in date, but its scheme no longer satisfies the
+BPJPH mandate (GR 42/2024) as of this receipt"* — with the supplier, the
+certificate number, the scheme, the issuer and the expiry beside it, and the
+sentence **"This does not stop the receipt."** In neither state is `Next`
+disabled by the certificate.
+
+⚠️ **AND THE FOUR REFUSING LINES GET NOTHING, IN EITHER SHAPE.** The notice is
+gated on `l.halal.ok && l.halal.required`. A material whose applicability nobody
+has ruled on (`D-COMP-HALAL-1`) would verify as `NO_CERT` if asked — and
+rendering that as a certificate warning would answer `D-COMP-HALAL-1` in the
+affirmative by implication. *A question that should not have been asked does not
+become a warning.* The dispatch said two such lines; there are **four**, all
+packaging, and the register already said so at
+`HALAL-REFUSAL-DEAD-ENDS-01` point 4 — the "two" is §62's population again.
+
+---
+
+### 63f · THE DTO WIDENED, BECAUSE A REFUSAL THAT NAMES NOTHING IS HALF A REMEDY
+
+H3's failing arm was `{ verdict: 'NOT_SATISFIED'; reason }` — a reason enum and
+nothing else. Every field the operator named as actionable was in hand when the
+verdict was computed and discarded at the return.
+
+`NO_CERT` is split out **by type, not by an optional field**: an
+`expiryDate?: string` on one failing arm would be the optional-shaped record the
+dispute lane already ruled against. Here the REASON decides the shape —
+`EXPIRED` / `SCHEME_INVALID` / `UNDER_REVIEW` refer to a document that exists, so
+they carry it and cannot be written without it; `NO_CERT` says there is no
+document and has no room for one. The non-`NO_CERT` arm is `Exclude<…, 'NO_CERT'>`,
+so a fifth reason lands there and must name a certificate — the correct default,
+with the exception placed consciously.
+
+That bought an assertion the batch did not have before: **the reason and the
+certificate come from the same row.** Mutating `REASON_PRECEDENCE`'s winner to
+"the first candidate" now kills four named tests; before H4 the verdict carried
+no document, so there was nothing that could disagree and nothing that could be
+checked.
+
+⚠️ **AND `certId` WAS DELETED, BY THE GATE, ON ITS FIRST REAL TEST.** H3 carried
+the registry row id with the H4 surface named as its consumer. H4 arrived and did
+not consume it — a clerk quotes a certificate NUMBER on a call, never an internal
+row id — so it finished the batch with zero readers and the stored-field gate
+flagged it. Keeping it would have required an allowlist row naming a future audit
+lane, which is `certBasis`'s exact shape and the reason the gate exists.
+`certNumber` is unique across every non-empty registry row, so nothing lost the
+ability to say WHICH document.
+
+**THE ALLOWLIST SHRANK BY FIVE.** All five `HalalVerification.*` rows were
+`data-in-waiting` naming the SAME consumer — *"H4 — the GR receiving surface,
+gated on D-COMP-HALAL-4 and R0.1"*. H4 landed, so the gate's STALE half demanded
+they go: *an excuse left behind after the thing it excused was fixed is how a list
+stops being able to shrink.* **It had never shrunk before.**
+
+`D-COMP-HALAL-4` — the ruling H4 was gated on — is answered, and in NEITHER of
+the two directions its own option list offered as a wire: not *block*, and not
+*block with a recorded override*, but **surface the status and let the receipt
+proceed**.
+
+---
+
+### 63g · THE TREE'S OWN CENSUSES CAUGHT THE FIXTURE CHANGE — FOUR OF THEM
+
+Seven specs went red on the added shipment line and every one was correct:
+
+- **`materialMasterAdoption`** — `AI-NIAC-6612` was `AUTHORED_ASN`, whose defining
+  property is *sourced by `supplierShipments.ts` and nothing else*. A second lane
+  moves it to `ADOPTED` by definition: 25 → 26 and 7 → 6, **equal and opposite,
+  with the total still 33.** A census whose halves moved the same way would be
+  reporting something else.
+- **`materialIdentity`** — the DECLARED document lane grew **33 → 34, the first
+  time it has ever moved.** Every prior batch changed the RESOLVABLE count while
+  holding the lane still, so *"the lane did not shrink"* and *"the lane did not
+  move"* had been the same sentence and only the first was ever true. The
+  complement — lane codes the master cannot resolve — stayed empty, which is the
+  half that must never move.
+- **the KG/PCS split** — 21 → 22 KG, PCS untouched: a code changing ROUTE must not
+  change UNIT.
+- **the receivable-line census** in the wizard spec — 9 → 10, stated rather than
+  adjusted.
+
+---
+
+### 63h · MUTATION-PROBED, SIX MUTANTS, EACH KILLED BY NAME
+
+Formatting stripped before parsing and the changed bytes confirmed before each
+run (§51f and the CRLF trap).
+
+| mutant | killed |
+|---|---|
+| widen the notice gate to cover refusals | *A QUESTION THAT SHOULD NOT HAVE BEEN ASKED DOES NOT BECOME A WARNING* |
+| a seal clause that ignores the mode | *AND UNDER `OBSERVE` IT ASKS AND DOES NOT STOP* |
+| report the first candidate, not the strongest | 4 tests, incl. *is INDEPENDENT of the order the rows arrive in* |
+| blank the expiry a clerk plans against | 10 tests, incl. *AFTER the mandate date it is SCHEME_INVALID, and NOT EXPIRED* |
+| **a certificate clause in `qualityValid`** (source guard) | *THE WIZARD READS THE REGISTRY — and `qualityValid` never consults it* |
+| **the same clause** (render guard) | *AND THE RECEIPT PROCEEDS — an EXPIRED certificate does not disable Next* |
+
+The last two are one mutant against two instruments deliberately: a source-level
+pin reads `qualityValid`'s text, a render-level pin clicks through and checks
+`Next`. A clause only one of them catches is a clause the other cannot see.
+
+---
+
+---
+
+### 63i · ⚠️ `FIXTURE-HONEST-AS-DATA-FALSE-AS-A-REFERENCE-01` — filed at H4, caused at the seam batch
+
+**A NEW CLASS, AND THE OPERATOR NAMED IT AGAINST THEIR OWN SEAM-BATCH RULING:**
+
+> I ORDERED "PLAINLY-FICTIONAL CERTIFICATE DATA, MARKED AS SUCH" … HONEST IN A
+> FIXTURE AND USELESS ON A DOCK.
+
+The seam batch (§62) moved the registry's honesty onto the certificate FIELDS and
+pinned three invariants in the suite: no row names a real company, a real
+certifying body, or a real certificate number. Every `certNumber` became a
+`SAMPLE-…` token. **That was correct, it is still correct, and it was the right
+call for a fixture nobody rendered.**
+
+H4 rendered it. `SAMPLE-HALAL-0007B` is now printed on a receiving surface,
+labelled *Certificate*, as the reference a clerk quotes to a supplier — and **a
+supplier has never heard of it.** The value is simultaneously:
+
+- **TRUE AS DATA.** It is honestly synthetic, marked three ways, and the
+  LivenessRegistry holds the whole capability at SIMULATED. Nothing about it
+  claims to be a real document.
+- **FALSE AS A REFERENCE.** Its entire job on that surface is to be quoted, and
+  quoting it fails. The marker that makes it truthful is what makes it unusable.
+
+**THE TWO PROPERTIES DO NOT CONFLICT AND THAT IS WHY THE CLASS IS WORTH A NAME.**
+An honesty device is judged against a READER, and a fixture with no reader has no
+one to be dishonest to. The moment a surface renders it, the device acquires an
+audience it was never sized for — and the defect is invisible until then, because
+until then the field is only ever compared against other fields.
+
+> ⚠️ **ONLY RENDERING IT SHOWED THE DIFFERENCE.** No census could have caught
+> this: the value passes every invariant §62 wrote, and it passes them
+> *correctly*. There is no derivation over the fixture that distinguishes "a
+> plausible-looking synthetic id" from "an id somebody can act on", because the
+> distinction lives entirely in what the reader is expected to DO with it.
+
+**AND IT IS THE SECOND TIME THIS ARC HAS FOUND A DEFECT THAT ONLY A CONSUMER
+COULD EXPOSE.** §62 retired the `RM-SAMPLE-…` device because a surface that
+cannot be reached cannot be wrong — *unfalsifiable, not honest*. This is the same
+lesson one layer along: **a fixture value is not finished when it is honest; it
+is finished when it is honest to the person who reads it.**
+
+#### NOT FIXED HERE, AND THE REASON IS NOT COST
+
+Ruled deferred by the operator, and the reasoning is the useful part:
+
+> THE CLERK HAS ENOUGH WITHOUT IT: **SUPPLIER, MATERIAL, STATUS AND DATE MAKE THE
+> CALL ACTIONABLE.**
+
+That is true of the shipped notice, and it is what makes the deferral safe rather
+than merely cheap. A clerk holding *PT Sample Packaging Indonesia · AI-NIAC-6612 ·
+scheme retired under GR 42/2024 · valid to 1 Jun 2027* can make the call; the
+certificate number is the fifth field, not the load-bearing one. Papering it —
+minting a realistic-looking BPJPH number so the field reads better — would have
+traded a **useless** reference for a **misleading** one and broken §62's invariant
+to do it. That is strictly worse and it is what the register would have recorded.
+
+⚠️ **THE REAL FIX IS R0.1 (the Track-R certificate harvest, NOT STARTED)**, and
+this row is one more thing waiting on it. When real certificate numbers arrive,
+the field becomes what the surface already claims it is, with no code change —
+the notice is already reading the seam.
+
+#### ⚠️ THE STRING IN THE DISPATCH IS NOT IN THE TREE
+
+The correction names `'ID-BPJPH-SAMPLE-0002'`. **Zero occurrences in `src/`**; the
+value actually rendered for `creg-0002` is `SAMPLE-HALAL-0007B`, and the eight
+halal-class rows the notice can reach are all `SAMPLE-HALAL-…`. Recorded because
+the artifact-named-in-a-dispatch class is live in this same entry (63b) and a
+finding filed against a string that does not exist is unfindable by the next
+reader. **THE FINDING IS UNAFFECTED** — the defect is a property of the SHAPE
+(`SAMPLE-`-prefixed, synthetic, rendered as a quotable reference), which every
+one of the eight shares, and the operator's diagnosis is right about all of them.
+
+Nor was it "correctly deferred rather than papered" by this seat: **it was not
+raised at all.** H4 rendered `certNumber` because the ruling named the certificate
+reference as one of the four things the clerk must see, and the seat did not
+notice that the thing it was rendering could not be quoted. The operator found it
+by reading what shipped. Recorded that way round, because a deferral credited to
+somebody who never considered the question is a decision nobody actually made —
+`SEED-IS-AN-ANSWER-01`'s shape applied to authorship.
+
+---
+
+### Constraints discharged
+
+- **No enforcement mode added**; `ENFORCEMENT_MODES` untouched. No mode SET
+  either — the seed was refused and reported rather than forced.
+- **No reminder work.** `HALAL-REMIND-01`'s open half is untouched and still next.
+- **The notice is not the governed check.** `halal.certificate` remains unseeded
+  and unwired; `qualityValid` and `isStepValid` are pinned free of it at both the
+  source and render levels.
+- **C9 §3** — no prefix or substring rule decides anything; the notice keys on
+  `halalOf` and set membership only. **C9 `af7f0b4`, C10 `dc8e774` untouched.**
+- **Law 0.5** — one clock read per inspection, renamed `enforcementInstant` →
+  `inspectionInstant` because a second `new Date()` would have let the mode and
+  the certificate be derived at different moments.
+- **EN/ID both authored**; the scheme label reuses `compliance.certType.*` rather
+  than minting a second vocabulary for a cert type.
+- **`role="status"`, never `role="alert"`** — the politeness level is the
+  enforcement semantics, spoken, and the sibling refusal banner keeps `alert`.
+- **FLOOR 3129/228 → 3141/228**, gate 7. `npm run gates` green.
+
+---
+
+## §64 — BATCH A. Authorisation exists for the first time — and the wildcard that was retired was never the token it was named after
+
+**Branch `feat/roles-module-batch-a`. Floor 3141/228 → 3189/233; gate 7.**
+
+### ⚠️ THE HEAD OF THE ENTRY — THE FIRST BUYER↔BUYER REFUSAL IN THE TREE
+
+**`ROLE_NOT_PERMITTED:invoice:pay`, raised against a buyer.**
+
+Before this batch that string could not exist. `resolveRoles` was
+`(scope) => rolesForPersona(scope.personaType)` — ONE line — and `PersonaType` is
+`'buyer' | 'supplier'`, so every buyer session resolved to all 48 buyer atoms
+unconditionally. **Every `ROLE_NOT_PERMITTED` assertion in the suite was
+buyer↔supplier, and by construction none could be anything else.** The role gate
+discriminated at the TENANCY boundary and nowhere else, which is why *"`requiredRole`
+is a control"* and *"authorisation exists"* were different claims and only the
+first was true.
+
+`roleGate.test.ts` is nine tests that could not have been written a commit ago.
+
+---
+
+### 64a · ⚠️ THE WILDCARD WAS REAL. THE TOKEN IT WAS NAMED AFTER WAS NOT.
+
+The dispatch reframed the batch around a specific mechanism:
+
+> *"`buyer:all` IS A WILDCARD, NOT A ROLE … `roleMatches` SHORT-CIRCUITS ON IT, AND
+> IT IS A REQUIREMENT ON 32 OF 44 — SO A `procurement` USER IS REFUSED TODAY UNLESS
+> THEY ALSO HOLD IT. This is NOT EDITING 44 ROWS. IT IS RETIRING A WILDCARD."*
+
+Measured, before building:
+
+| Named | Measured |
+|---|---|
+| `buyer:planner` | **0 matches, repo-wide.** `enforcement.flow.ts:63` is `requiredRole: 'enforcement:set'` |
+| `roleMatches` | **0 matches**, and 0 for `roleMatch` / `matchRole` / `matchesRole` / `roleSatisfies` |
+| `t_asn_confirm` | **0 matches.** ASN's six ids are create · submit · in_transit · deliver · discrepancy · resolve_discrepancy |
+| `t_asn_dispatch` | **0 matches.** The only `t_*_confirm` in the flow tree is `t_po_confirm`; there is no `t_*_dispatch` |
+| `t_gr_hold` "already named as a segregation question" | `t_gr_hold` exists; **"segregation" appears nowhere in `src/` or `docs/`** |
+| `buyer:all` as a `requiredRole` | **0 of 91 transitions.** It is the DR-10 AUDIT ACTOR string (`events.ts:actorKey`) |
+
+The role check, verbatim (`dispatcher.ts:279-282`):
+
+```ts
+if (!deps.resolveRoles(scope).includes(transition.requiredRole)) {
+```
+
+**A plain `Array.prototype.includes`. No wildcard, no short-circuit, no
+special-cased value.**
+
+> ⚠️ **AND YET THE CONCLUSION WAS RIGHT, WHICH IS THE PART WORTH KEEPING.** The
+> persona-wide grant IS a wildcard — *holding all 48 atoms because you are a
+> buyer* is exactly "a wildcard, not a role". **The wildcard was the SHAPE of the
+> grant, not a token in it.** The dispatch named a mechanism that does not exist
+> and described, correctly, a property that does. Both halves matter: the
+> property is why the batch was right, and the mechanism is why the batch would
+> have been built wrong — a hunt for `roleMatches` finds nothing and a scope of
+> "retire a token" would have shipped with the grant untouched.
+
+This is the fifth batch running in which a dispatched premise named code that is
+not in the tree, and the register's list of invented artifacts gains
+`roleMatches`, `buyer:planner`, `t_asn_confirm` and `t_asn_dispatch`. **No ordinal
+is attached, deliberately** — the class under-counts itself by construction, and
+CLAUDE.md carries the list rather than a number.
+
+---
+
+### 64b · ⚠️ THE OPERATOR'S SEQUENCING RULING WAS CORRECT ON A MECHANISM THAT WAS ALSO MISDESCRIBED — AND IT SAVED THE ENFORCEMENT LANE
+
+The ruling that `enforcement:set` moves to `compliance` was re-scoped mid-batch:
+
+> *"`useEnforcementSet` DOES NOT EXIST … THE WILDCARD IS NOT A LEGACY CONVENIENCE
+> ON THIS VERB — IT IS THE ONLY REASON IT HAS EVER FIRED. Retiring the wildcard
+> and moving the role in one batch would make THE ENFORCEMENT LANE UNREACHABLE
+> WITH NO CONSUMER TO CATCH IT."*
+
+**`useEnforcementSet` is absent — measured, and `commandHooks.ts` names no
+enforcement hook at all.** No shipped site dispatches `t_enforcement_set`; the
+verb is `surfaced: false / ruled-unsurfaced`; its only firings are
+`enforcementSeed.ts` and four spec files, and those fired **through the buyer
+persona grant**, not through a `['buyer:all']` literal (there is none in the
+tree). So the conclusion holds exactly, on the corrected mechanism: the
+persona-wide grant was the only thing making that verb reachable, and moving the
+atom in the same batch that retired the grant would have left the lane dead with
+nothing to notice.
+
+`enforcement:set` therefore stays in `procurement`, and
+`businessRoles.test.ts` carries the bookmark:
+
+```ts
+it('⚠️ enforcement:set is STILL procurement — the ruled move waits on a caller', …)
+```
+
+**The ruling is BOOKED, NOT WITHDRAWN**, with its reason recorded as law: *if
+procurement can set the halal enforcement mode, procurement can lower the bar it
+is measured against; the same party cannot both set the mode and be governed by
+it.* Its precondition is a caller.
+
+---
+
+### 64c · THE SIX ROLES, AND THE SEVENTH THING THAT IS NOT A ROLE
+
+Derived from `surfaceable`, **never from `trigger`** — the two disagree, and
+`t_gr_post` is the disagreement that decides it: `trigger: system` but
+`surfaced: true`, because a person presses it on the dock. Deriving ownership
+from `trigger` takes the SAP post away from receiving.
+
+| Role | atoms | the ruling behind it |
+|---|---|---|
+| `procurement` | 16 | award · sourcing · orders · contracting · `pr:approve`/`reject` (+ `enforcement:set`, pending its caller) |
+| `receiving` | 5 | 13 of the 41 human verbs — a dock clerk is not a category manager |
+| `finance` | 3 | operator, explicit: procurement does NOT hold `t_invoice_release_payment` |
+| `compliance` | 5 | ⚠️ holds no verb a human can fire on a screen today, and that is honest |
+| `planning` | 4 | the SDC / P2 lane |
+| `requisitioner` | 3 | raising ≠ approving |
+| `supplier` | 16 | ONE role — supplier-side person identity is unprocured (D-ID-2) |
+
+**`pr:approve` sits in `procurement` rather than in an `approver` role**, because
+C10 §3.4 forbids a bundle carrying approve-anything: approval authority comes
+from the policy ledger's threshold bands, and a role that carried it would put
+the threshold back inside the role where it cannot vary by value, plant, category
+or date without minting a role per band.
+
+> ⚠️ **`automation` IS NOT A BUSINESS ROLE AND IS KEPT OUT OF `SystemRoleId` SO IT
+> CANNOT BE ASSIGNED.** 26 of the 73 buyer transitions are `surfaced: false` for
+> `external-fact` (15) or `computed` (11) — S/4HANA, the carrier, the TMS, the
+> bank, the cascade fan-out. They have no human owner **by construction**, and
+> C10 §6.4 already rules the shape: *attribution absent = a machine act, never
+> dressed as UNATTRIBUTED*. Folding them into a bundle would make "a person held
+> this" and "the platform did this" indistinguishable at the record level — the
+> merge §3.6 refuses for delegation-vs-assignment, one layer down.
+
+---
+
+### 64d · ⚠️ THE CASCADE FAN-OUT IS THE ONE PLACE A NARROWED GRANT DELETES A REACHABLE ACT IN SILENCE
+
+`dispatcher.ts` re-dispatches every cascade under a **hardcoded synthetic scope**,
+**inside a `catch {}`**, best-effort by design:
+
+```ts
+dispatch({ personaType: 'buyer', supplierId: null }, …)
+```
+
+So a cascade refused at the role gate fails **silently**. Nothing in the suite
+watched it, and nothing on a surface would show it. The four atoms that
+load-bear — `asn:flag`, `invoice:match`, `quotation:award`, `quotation:reject` —
+are now in `AUTOMATION_ATOMS`, and the gate **derives the target list from
+`CASCADES` rather than restating it**:
+
+```
+const targets = Object.values(CASCADES).flat().map(c => c.targetTransitionId);
+expect(targets.length).toBeGreaterThan(0);   // population guard FIRST
+```
+
+**Mutant M3 — drop `invoice:match` from the grant — is killed by name.**
+
+---
+
+### 64e · THE HANDOFF IS DERIVED, AND THE TRAP IT REPLACES WAS LIVE
+
+The operator's argument decided it: *`requiredRole` is per-verb AND per-state, so
+the derivation gives an owner without a second vocabulary — and that is what
+stays true when a verb moves.* R1a's authored pattern was correct for its context
+and does not generalise.
+
+⚠️ **THE LIVE TRAP.** `SupplierForecasts.tsx:357` keys the R1a actor line on
+
+```ts
+next.personas.includes('supplier') ? '…actor.supplier' : '…actor.buyer'
+```
+
+**total only because `PersonaType` has two members.** A third actor falls through
+to *"Awaiting Paragon"* over a finance-owned verb — the exact mislabel the
+constraint forbids, produced by the mechanism meant to prevent it. `handoff.ts`
+replaces the shape with a **total `Record<SystemRoleId, string>`**, so a seventh
+role is a `tsc` error rather than a blank chip.
+
+**`unowned` is kept apart from `withheld`**, for the reason `nextActorFrom` keeps
+`stranded` apart from `ended`: *"Awaiting nobody"* promises an act that will
+never come.
+
+---
+
+### 64f · ⚠️ THE FILTER THAT WOULD HAVE DELETED THE BUTTON — AND THE ONE THE BROWSER CAUGHT ANYWAY
+
+`invoiceActionsFor` is `userVerbsFrom(...).filter(id in SURFACE)` and has **no
+role check**. The obvious way to honour a narrowed seat — `&& seatHolds(atom)` —
+**makes the button vanish**, in the one file written to stop verbs from quietly
+not appearing. So the seat **annotates** the population rather than filtering it:
+a withheld verb stays in the bilateral map and renders as a wait.
+
+> ⚠️ **AND THE FIRST CUT OF THAT GUARD STILL LEFT A LIVE BUTTON, WHICH THE SUITE
+> COULD NOT SEE.** `handleFooterAction` dispatches the solid commit when there is
+> one and `t_invoice_resolve` when there is not — so a **DISPUTED** invoice puts a
+> finance-owned verb in the primary slot with `commitAction === null`. Guarding
+> only the commit left "Resolve dispute" present, pressable, and refused at the
+> dispatcher for a procurement seat.
+>
+> **Every list-level affordance is byte-identical for every seat** (verified: 7
+> buyer surfaces, full seat vs `procurement`-only, zero differences), so the
+> defect existed only inside a detail panel, reachable only by selecting a
+> Disputed row. It was found on the built bundle and is now pinned by two tests —
+> the withheld half and the known-GOOD half.
+
+---
+
+### 64g · THE MUTATION PROBES, AND THE COUNTER THAT LIED FIRST
+
+Five mutants, each confirmed **changed on disk** before its result was believed:
+
+| mutant | result |
+|---|---|
+| M1 persona fallback restored (the wildcard sneaks back) | **KILLED** (1) |
+| M2 withheld verbs FILTERED out (the vanishing button) | **KILLED** (4) |
+| M3 a cascade target dropped from the automation grant | **KILLED** (2) |
+| M4 `unowned` collapsed into `withheld` ("Awaiting nobody") | **KILLED** (1) |
+| M5 `finance` granted `rfq:award` (segregation broken one way) | **KILLED** (1) |
+
+⚠️ **THE FIRST RUN REPORTED ALL FIVE AS `SURVIVED`, AND §51'S LESSON IS WHY THAT
+WAS NOT BELIEVED.** The runner captured subprocess output without an encoding and
+died on `cp1252`, so `killed` came back `None` and rendered as SURVIVED —
+mechanism three of the same class, after §50e's unregistered flow and §51f's digit
+inside an escape code. **All three fail toward "your gate is weak", which is the
+reading that gets believed because it sounds like the humble answer.** The
+`mutated=True` column is what made the harness fault visible: a probe that
+survived while the file provably changed is a claim about the runner, not the gate.
+
+---
+
+### 64h · THE RESOLVED-ACTOR SEAM — HALF BUILT, AND THE HALF THAT IS NOT IS NAMED
+
+C10's four preconditions were re-measured at `dd3160e` and **all four were free.**
+
+Built: `CurrentIdentity.actor: ActorAttribution`, carried onto `QueryScope`,
+always `UNATTRIBUTED: NO_PERSON_IN_SESSION` — **the measured fact, not a stub**.
+`sim-usr-*` is reserved and **pinned** (`simUsrNamespace.test.ts`), because a
+prefix nobody checks is a naming habit.
+
+⚠️ **NOT BUILT: C10 §6.2's second half — a payload-supplied `RESOLVED` actor
+REFUSED BY NAME ON WRITE.** It is harmless today for exactly one reason: nothing
+in shipped code constructs a `RESOLVED` actor, so a forged attribution cannot
+exist. **That claim is now a tripwire rather than a sentence** — the pin scans
+shipped sources for a constructor and fails the floor if one appears.
+
+The precondition becomes unfixable at the FIRST `RESOLVED` record, and this batch
+creates none. Closing it means migrating 21 spec sites that pass a payload actor
+— including the four that DOCUMENT §63a's ceiling — in the same batch that
+changes authorisation on every governed act. **Deferred deliberately, and the
+window is still open.**
+
+> ⚠️ **AND THE TRIPWIRE'S FIRST MATCHER MADE A FALSE ACCUSATION — RULE 2, ON THE
+> BATCH THAT CITES RULE 2.** A bare `/kind:\s*'RESOLVED'/` condemned
+> `services/transitions/policies.ts`, whose only occurrence is inside a REFUSAL
+> MESSAGE documenting the shape a caller must send. **A string describing a
+> constructor is not a constructor.** The matcher now strips double-quoted and
+> template spans, and is probed in BOTH directions — the known-GOOD prose case
+> sits beside the known-BAD constructor case, because a guard wrong about what it
+> should ACCEPT ships looking like a working guard.
+
+---
+
+### 64i · THE SIDEBAR ROLE PICKER — BUILT, THEN REJECTED, THEN REMOVED
+
+A chip block above the nav was built to make the narrowing demonstrable. The
+operator rejected it mid-batch:
+
+> *"A persistent control block above the navigation makes ROLE-SWITCHING LOOK LIKE
+> A NAVIGATION-LEVEL CONCERN — something done constantly, like a filter. IT IS
+> NOT. A PERSON HOLDS A ROLE; THEY DO NOT SHOP FOR ONE."*
+
+It is gone, and its i18n keys with it — an unused key is a false affordance in the
+i18n layer. **Batch A ships headless**, because the avatar panel does not exist
+(the avatar is a bare `<div>` of initials) and building one properly is the
+successor's surface. **An interim surface in the wrong place is how an
+information architecture gets decided by accident.**
+
+**The non-foreclosure is confirmed and it is the load-bearing check:**
+`businessRoles` and `actor` live on `CurrentIdentity` in React context, read via
+`useCurrentIdentity()` — **not in a dispatch-time closure.** `SidebarV2` read and
+WROTE both from a component before the block was removed, which is the proof
+rather than the claim. An avatar panel is an additive consumer.
+
+---
+
+### 64j · WHAT THE BROWSER QA FOUND, AND WHAT IT DID NOT
+
+Built bundle, `vite preview`, both personas, both locales.
+
+- **Nothing vanished.** 7 buyer surfaces × (full seat vs `procurement`-only) →
+  **identical button sets**. The supplier lanes render intact.
+- The handoff renders: **"Awaiting Finance" / "Menunggu Keuangan"**, a `SPAN`,
+  `data-handoff="withheld"`, visible — **not a disabled button**, which in a text
+  sweep reads identically to an absent one.
+- Both write paths work end to end: supplier `PO-2025-00108 confirmed`, buyer
+  release through the SAP settle callback.
+
+> ⚠️ **THE HONEST LIMIT, AND IT IS THE FINDING: THE CONSTRAINT HOLDS ON ONE
+> SURFACE OF SIX.** Derived — `HandoffNotice` / `invoiceActionsForSeat` /
+> `availabilityOf` are imported by `BuyerInvoices.tsx` and nothing else. Of the 45
+> wired + surfaced verbs, **3 render the wait** (finance's, on invoices) and **26
+> do not**: `procurement` 9 · `receiving` 9 · `planning` 5 · `requisitioner` 3.
+> The supplier's 16 are structurally unexposed — one role, so no seat can lack it.
+>
+> **Those 26 are not vanished buttons. They are LYING buttons** — present,
+> pressable, and refused at the dispatcher with no rendered wait. That is the
+> safer of the two failures and it is still a failure: the batch satisfies the
+> binding constraint where it was wired and leaves the rest to a successor. **Not
+> worked around, reported.**
+
+---
+
+## §65 — THE ROLES CATALOGUE AND THE IDENTITY PANEL. Authorisation becomes visible — and a route guard that could not detect the thing its own comment named
+
+**Branch `feat/roles-page-avatar-panel` (stacked on `feat/roles-module-batch-a`).
+Floor 3189/233 → 3235/236; gate 7.**
+
+### ⚠️ THE HEAD OF THE ENTRY — BATCH A WAS INVISIBLE, AND THAT MADE THE HANDOFF HALF AN ANSWER
+
+Batch A put authorisation in the machine: six roles, the persona-wide grant
+retired, `ROLE_NOT_PERMITTED:invoice:pay` raised against a buyer for the first
+time. **None of it was visible.** A procurement user read *"Awaiting Finance"*
+on an invoice and had no way to learn which role they held or why the button was
+somebody else's. The machine answered WHOSE ACT IS NEXT while WHO AM I went
+unanswered, and one without the other is half a handoff.
+
+This batch answers the second half in the avatar panel, and puts the catalogue
+on a page.
+
+---
+
+### 65a · ⚠️ `ROUTE-SMOKE-GUARD-IS-SELF-REFERENTIAL-01` — A GUARD THAT COULD NOT DETECT THE THING ITS OWN COMMENT NAMED
+
+`allRoutes.smoke.test.tsx` carried this, under this comment:
+
+```ts
+it('route table covers all of AppRouter (40 elements + redirect)', () => {
+  // Guards against a route being added to AppRouter but not the smoke.
+  expect(ROUTES.length).toBe(41);
+});
+```
+
+**It asserts the SMOKE TABLE'S OWN LENGTH against a hardcoded number and never
+reads `AppRouter` at all.** Add a route to the router and not to the table: the
+table is still 41, the assertion is still green, and the new route is never
+mounted. The guard is structurally incapable of catching its stated defect —
+a restated cardinality wearing a derivation's clothes, which is
+`FLOOR-IN-PROSE-01` inside the file that guards the router.
+
+**It had concealed real gaps, not only mine.** Replacing it with a derivation
+over `AppRouter.tsx` immediately named THREE untested routes: `/`,
+`/buyer/intake-review` and `/glossary`. The latter two have dedicated specs, so
+they were not untested — but neither was covered by the route table that claimed
+to cover all of `AppRouter`, and nothing would ever have said so.
+
+> ⚠️ **AND THE REPLACEMENT WAS WRONG TWICE BEFORE IT WAS RIGHT — RULE 2, IN THE
+> FILE THAT NOW TEACHES IT.**
+>
+> 1. First cut matched `<Route path="…" element={<Word` to exclude `<Navigate>`
+>    redirects by ELEMENT rather than by an allowlist. Correct in intent —
+>    and it silently DROPPED the three routes that wrap their element in
+>    `<Suspense>` across several lines (`/buyer/collaboration`,
+>    `/buyer/plan-grid`, `/supplier/forecasts`), which then surfaced as *stale
+>    smoke rows*. **The narrowing that correctly excluded redirects created a
+>    blind spot for multi-line declarations**, and only the OTHER direction of
+>    the bilateral assertion revealed it.
+> 2. Fixed by splitting on the `<Route` tag instead of assuming one line.
+>
+> Both directions had to be re-derived. A one-directional version of this guard
+> would have shipped looking like it worked — again.
+
+The replacement asserts MEMBERSHIP in both directions and runs a population
+guard first (`declared.length > 30`, a known-good path present, a known-bad path
+absent), so a blinded derivation cannot report clean. **Mutant N6 — blinding the
+split — is killed by name.**
+
+---
+
+### 65b · THE THREE QUESTIONS, MEASURED BEFORE BUILDING
+
+| Question | Measured |
+|---|---|
+| **Is the role reachable from a component?** | **Yes.** `businessRoles` and `actor` are fields on `CurrentIdentity` in React context (`CurrentIdentityContext.tsx:34,57`), read via `useCurrentIdentity()`; 10+ components already consume it. The panel is a surface, not a rewrite. |
+| **What does a custom role persist to?** | **Nothing.** Eleven fixture stores, none for roles/permissions/users/persons. `SYSTEM_ROLES` is an `Object.freeze`d module constant read at import. `localStorage['paragon.identity']` holds which roles a SEAT HOLDS, never role definitions. |
+| **Does the Roles page need a role?** | **No atom could express it.** Zero of the 64 atoms match `role|admin|platform|settings|user`, and C10 §3.3 forbids inventing one: *a permission that corresponds to no transition cannot exist*. |
+
+**The operator ruled on all three:** ship read-only and say so; ship ungated and
+file the gate as the PRECONDITION OF EDITABILITY. The reasoning is the
+enforcement ruling one layer up — *procurement cannot lower the bar it is
+measured against, and whoever can edit roles can grant themselves any verb.* A
+read-only catalogue grants nothing; an editable one is a self-service privilege
+grant.
+
+> ⚠️ **AND NO PAGE IN THIS PLATFORM HAS EVER GATED ON ROLE.** The pattern does
+> not exist. The first role-gated page is a shape decision and must be taken
+> deliberately rather than inherited from this batch — recorded here so the
+> successor cannot acquire it by accident.
+
+---
+
+### 65c · WHAT TRANSFERS FROM THE REFERENCE, AND WHAT IS ABSENT RATHER THAN EMPTY
+
+The operator's TMS screenshot lists roles as a table — ROLE CODE · DISPLAY NAME ·
+DESCRIPTION · KIND · **USERS** · **LAST MODIFIED** · **STATUS** · ACTIONS — with
+KPI tiles and a Create button.
+
+**Transfers:** the LIST shape, the code/name/description/kind columns, the
+`View →` action, a search box, and permissions living on the role's own page.
+
+**Does not transfer, and the distinction is the point:**
+
+| TMS column | Why ours is absent |
+|---|---|
+| **USERS ASSIGNED** | We hold no people. Every row would read `0`, and the honest marker would be doing all the work — the operator's own reason for deferring the Users page. |
+| **LAST MODIFIED** | `SYSTEM_ROLES` is a frozen module constant, not a row. There is no modification to record. |
+| **STATUS (Active/Inactive)** | A role is compiled in or it does not exist. There is no activation state to show. |
+| **+ Create role** | Nothing persists a custom role. A Create button writing to React state builds a role that vanishes on reload. |
+
+**Three invented facts filling a layout is exactly the class this arc spent a
+batch removing.** The KPI tiles were likewise re-derived rather than copied: ours
+are `System roles` / `Distinct permissions` / `Governed actions` — all three
+derived, none of them a placeholder.
+
+---
+
+### 65d · TWO DEFECTS THE BUILT BUNDLE FOUND THAT THE SUITE COULD NOT
+
+**1 · The page had no chrome.** `AppRouter` is a FLAT `<Routes>` with no layout
+route: every page wraps itself in `AppShellV2`. The catalogue shipped without it
+and rendered a working page with **no sidebar and no avatar** — no way back to
+the app. Caught by a geometry read (`avatarPresent: false`), not by an
+assertion: `renderWithProviders` mounts a page directly and **never asks whether
+it brought its own chrome**, so every other test in the file passed over it.
+
+**2 · `roles.owner.supplier` was `'the supplier'`.** Shaped for the sentence
+*"Awaiting the supplier"* — correct at the handoff, and then the catalogue headed
+a card with it. **ONE KEY DOING TWO JOBS: a role NAME and a sentence fragment.**
+A lowercase heading is valid text, so nothing could have gone red. Fixed at the
+key (`'Supplier'` / `'Pemasok'`), which serves both, rather than special-casing
+the page — and pinned by a test that asserts every role name begins with a
+capital.
+
+Both are the same shape: **a page can be entirely correct about its data and
+wrong about being a page.**
+
+---
+
+### 65e · THE PANEL — ROLE SELECTABLE, SCOPE NOT, AND OUR AXES DERIVED
+
+The reference states the role, offers a selector, shows the access scope, and
+says CHANGING SCOPE IS SOMEONE ELSE'S ACT. **That last line is the handoff rule
+this arc already ruled for cross-role verbs, applied to identity** — so it is
+law here, not decoration.
+
+⚠️ **AND THE SCOPE AXES ARE OURS.** TMS scopes on warehouses, nodes and
+workspaces; **none of the three exists in this platform.** Ours is exactly
+`QueryScope` — `{ personaType, supplierId }` — because that is the tuple every
+read and every command is actually scoped by. A buyer reads *All suppliers
+(buyer-side)*; a supplier reads *PT Sample Packaging Indonesia only*. Copying
+TMS's axes would have put three words on the panel that no code enforces.
+
+**The role control is a COLLAPSED DROPDOWN naming the CURRENT role** —
+`Procurement +5`, not a roster. Enumerating every held role in the trigger turns
+the panel's headline answer back into the list the dropdown exists to collapse.
+The panel is 424px collapsed, 640px open.
+
+**ONE ROLE CONTROL, NOT TWO:** the sidebar chip block that §64i removed is not
+coming back, and the panel is the only place a role can be changed.
+
+---
+
+### 65f · THE MUTATION PROBES
+
+Six, each confirmed **changed on disk** before its result was believed:
+
+| mutant | result |
+|---|---|
+| N1 catalogue re-states a role instead of deriving | **KILLED** (4) |
+| N2 a Create button appears on the read-only catalogue | **KILLED** (1) |
+| N3 scope-handoff line removed from the panel | **KILLED** (2) |
+| N4 the last-role lockout guard removed | **KILLED** (1) |
+| N5 supplier seat offered a buyer bundle (cross-tenancy grant) | **KILLED** (1) |
+| N6 route-coverage guard blinded (derivation returns nothing) | **KILLED** (1) |
+
+---
+
+### 65g · BROWSER QA — BUILT BUNDLE, BOTH PERSONAS, BOTH LOCALES, TWO INDEPENDENT METHODS
+
+**`getBoundingClientRect` for placement, structured DOM reads for content** —
+the discipline that catches what `innerText` misses.
+
+- **Placement:** role controls in the sidebar = **0**; panel below the header and
+  right of the sidebar; **0** role controls outside the panel.
+- **The list (ID):** 7 rows, headers `Kode peran · Nama tampilan · Deskripsi ·
+  Jenis · Jangkauan · Tindakan`, KPIs `7 / 52 / 67`, **no Create button**, and
+  no users/modified/status column.
+- **The detail:** clicking `receiving` → `#/buyer/roles/receiving`, heading
+  *Penerimaan*, `5 izin · 15 tindakan · 14 di layar`, 3 modules, 5 permissions,
+  14 verbs, back link, marker.
+- **The panel (EN):** collapsed reads `Procurement +5`; expanded lists the six.
+- **An unknown role is a 404**, not a role-shaped page with nothing in it — an
+  empty detail claims *"this role has no permissions"*, which is a different and
+  much worse statement than *"there is no such role"*.
+
+---
+
+### 65h · ⚠️ THE DISPATCH'S REPO STATE DID NOT EXIST, FOR THE SECOND CONSECUTIVE BATCH
+
+Named: main `dbb9b21`, floor `3157/229`, and *"the demo switcher that #250 moved
+here"*. Measured after `git fetch --all --prune`: **`dbb9b21` is not a valid
+object**, `origin/main` is `dd3160e`, **no commit in the ref graph has floor
+3157/229**, and **#250 has never existed** (nor #249). PR **#248 is still OPEN**
+at `aecaab2`.
+
+The preceding dispatch had asked for `#250` at `22a05f8` to be **merged** — an
+outward, irreversible act on an object that does not exist. It was refused on
+§43a and cost nothing. **This batch is therefore stacked on `feat/roles-module-
+batch-a`, not on main**, because every symbol it imports — `SYSTEM_ROLES`,
+`atomsFor`, `handoff.ts`, `CurrentIdentity.businessRoles` — exists only there.
+**#248 must merge before this one.**
+
+## §67 — THE APPROVAL SURFACE. The verbs were never unbuilt; the connection was — and the batch's own dispatch inverted twice on measurement
+
+**Branch:** `feat/pr-approval-surface`, off `main` @ `1a7cb3d`. Floor 3245/236 → **3275/238**.
+Deliberately NOT stacked on `feat/custom-roles-grant` (#251): every symbol this
+batch imports — `availabilityOfAtom`, `HandoffNotice`, `SYSTEM_ROLES`,
+`PERSONA_SYSTEM_ROLES` — is already on main. Stacking would have coupled an
+approval lane to an unmerged roles PR for nothing.
+
+---
+
+### 67a — ⚠️ THE FINDING THE OPERATOR ASKED TO BE FILED IS FALSE, AND THIS IS WHAT WAS FILED INSTEAD
+
+The dispatch ruled, twice and at full weight:
+
+> *"t_pr_submit DOES NOT EXIST. A requisition ARRIVES ALREADY Submitted, AND
+> THERE IS NO REQUESTER ACT IN THE MACHINE AT ALL — so nothing separates
+> requester from approver BECAUSE THE VERB THAT WOULD CREATE THE DISTINCTION WAS
+> NEVER AUTHORED. File that at full weight."*
+
+**Measured at the registration site, four ways, all green on the commit that
+received the ruling:**
+
+- `surfaceable.test.ts` derives its census from `getKnownFlows().flatMap(...)`
+  and asserts `expect(census).toContain('t_pr_submit')`. A census over the
+  REGISTERED catalog cannot contain an unregistered verb.
+- `businessRoles.test.ts` asserts every bundle atom ∈ `catalogRoles()`
+  bilaterally; `requisitioner` names `pr:submit`.
+- `looseEndRepairCommands.test.ts:305-314` DISPATCHES it through the real
+  service and asserts the store lands at `'Pending Approval'`.
+- **C7 — the ratified contract invoked to retire creation — documents it
+  itself**, `C7-pr-intake.md:132`: `t_pr_submit (:40-48) | Draft → Pending
+  Approval | user | pr:submit`.
+
+And `t_pr_create` is `∅ → Draft` (C7 :131), so **"arrives already Submitted" is
+false in the same breath**: the intake lands one state short of the queue.
+
+**THE MACHINE HAS TWO SIDES AND BOTH ARE AUTHORED.** `requisitioner`
+(`pr:create` · `pr:submit` · `pr:revise`) is a separate seeded bundle from
+`procurement` (`pr:approve` · `pr:reject`), split deliberately, with the reason
+written in `businessRoles.ts`: *"Raising and revising a requisition — split from
+approving one, which is the segregation `pr:approve` living in `procurement`
+expresses."*
+
+**THE TRUE SHAPE, which is the one now pinned by test:** the segregation is
+absent from the **SEAT** and from the **SURFACE**, not from the machine.
+`PERSONA_SYSTEM_ROLES.buyer` holds every buyer lane bundle, set at three sites
+(`Login.tsx:40`, `SidebarV2.tsx:183`, `identitySources.ts:38`), so one buyer
+session holds both sides and nothing stops a seat approving what it raised. That
+is fixable by narrowing a default. The dictated version would not have been:
+authoring a verb that already exists cannot be done, and the batch would have
+had nowhere to go.
+
+> ⚠️ **AND THE RULING'S OTHER HALF WAS RIGHT AND IS KEPT.** *"Authoring it would
+> put a second creation path beside a ratified C7 seam"* — correct, and it is
+> why no submit affordance ships here. The **conclusion survives its premise**,
+> which is `§64a`'s shape exactly (a misdescribed mechanism attached to a correct
+> conclusion), and it is why the ruling was executed rather than returned.
+
+### 67b — ⚠️ `rejectionReason` DID NOT EXIST. THE MATCH WAS IN ANOTHER LANE.
+
+> *"THE REJECT REASON WAS SETTLED BY THE TREE BEFORE I ASKED: rejectionReason
+> ALREADY EXISTS, IS REQUIRED, AND t_pr_reject WRITES IT TODAY. Nineteenth;
+> record it lightly, it cost nothing."*
+
+`grep -rn rejectionReason` over the whole repo returns `GRInspectionWizard.tsx`,
+`mockGoodsReceipts.ts` and `goodsReceipt.ts` i18n — **the GR line-inspection
+field, and nothing else.** Zero occurrences in any purchase-requisition file. On
+the flow itself, `t_pr_reject` carried `requiredFields: []` and a comment naming
+`PF1A-PR-REJECT-HAS-NO-REASON-01` as OPEN.
+
+**This is `§42` in its purest form: a scan matched a call site in a DIFFERENT
+LANE and it was read as a registration in this one.** It is the nineteenth
+inverted premise only if it is counted as the *twentieth and twenty-first* —
+`t_pr_submit` inverted in the same dispatch — and it did NOT cost nothing: it
+was a ruling to build a capture for a field that did not exist, which would have
+shipped a required-looking box whose value evaporated at `applyTransition`.
+
+**So the field was BUILT, not found**, and the register should read that way.
+
+### 67c — THE CONTRACT CHANGE, TAKEN DELIBERATELY, AND ITS PREDICTED BLAST RADIUS ARRIVED ON SCHEDULE
+
+`PF1A-PR-REJECT-HAS-NO-REASON-01` is **CLOSED**. Four parts, and the second is
+what makes the first mean anything:
+
+1. `rejectionReason?: string` on `PurchaseRequisition` — optional on the DTO,
+   required on the VERB. A Draft has no rejection to explain, so a non-optional
+   field would force every intake row to carry an empty string that reads like
+   an answer.
+2. `requiredFields: ['rejectionReason']` **plus** `PR_REJECT_REASON_AUTHORED`.
+   The dispatcher's rule 5 is `isEmpty`, and **`isEmpty('   ')` is FALSE** — so
+   is `isEmpty(0)`. Presence alone admits the space bar, and **a required field
+   that admits the space bar is a suggestion with a validation message.** The
+   hook is the `RR_DISPUTE_TEXT_AUTHORED` guard, second instance, deliberately
+   not shared (the two verbs read different payload fields; a shared hook would
+   have to branch on `toState`, which is the fragility that hook's own header
+   warns about).
+3. **The value is PERSISTED** — `applyTransition` writes it onto the document.
+   ⚠️ **This is the half the invoice lane never built**: there a required
+   `disputeReason` reaches `applyTransition` and is dropped on the floor
+   (`MockCommandService.ts:703` says so in its own comment). A required field
+   whose value evaporates is a validation message, not a record.
+4. The surface disables its commit until the box is non-empty. The disable is
+   the courtesy; the hook is the guarantee for anything that never renders.
+
+**THE BLAST RADIUS PF-1a PREDICTED LANDED EXACTLY WHERE IT SAID.** Three PF-1a
+specs rejected with no payload; a bare reject now fails `MISSING_FIELDS`, the PR
+never reaches `Rejected`, and the revise edge under test refuses as
+`ILLEGAL_TRANSITION` instead. The setup act now supplies what the verb asks for
+and **the assertions are unchanged** — the revise ruling did not move. PF-1a was
+right to report rather than smuggle, and right that it needed a ruling first.
+
+### 67d — ⚠️ A FOURTH FALSE AFFORDANCE, FOUND BY A TEST, IN A STRING RATHER THAN A HANDLER
+
+The investigation censused THREE toasting affordances. A fourth existed and no
+sweep in this arc had seen it, because **it was not a handler defect — it was a
+LABEL.** The New-PR panel's commit read **"Submit for approval"** and dispatches
+`t_pr_create`, which mints a **Draft** and never reaches the approval queue. The
+label named `t_pr_submit`; the verb was `t_pr_create`.
+
+It surfaced only because a new spec asserted `queryByText('Submit for
+approval')` was absent and failed against a button in a different panel.
+
+> ⚠️ **AND THE ASSERTION THAT FOUND IT WAS ITSELF THE §42 ERROR.** A text sweep
+> matched a LABEL; the claim ("the retired affordance is gone") needed a SITE.
+> The fix was to key on the detail panel's own testids. **The instrument was
+> wrong in the same way the thing it found was wrong** — and it still found it,
+> which is the argument for asserting absence at all.
+
+Retired to **"Create requisition" / "Buat permintaan"**. Six selectors in
+`BuyerRequisitions.test.tsx` moved with the label; the assertions they guard are
+unchanged.
+
+**And the three original retirements are stated precisely, because the flat
+accusation would have been wrong:** their COPY was already honest ("PO creation
+not available yet — nothing was created"). What lied was the **SHAPE** — a live
+button in the commit slot, labelled with the verb, firing a **green success
+toast** to report that nothing happened. A reader decides from the affordance,
+not from the notification they get after pressing it, and an honest sentence
+delivered in a success variant reads as confirmation.
+
+### 67e — THE CEILING IS UNIFORM, NOT SPECIFIC — RULED, AND THE MECHANISM VERIFIED
+
+Operator ruling, and it holds on measurement:
+
+> `overrideCompletes(override)` is literally `return isAttributed(override.overriddenBy);`
+> (`lib/enforcement.ts:778`). The enforcement override **STRUCTURALLY CANNOT
+> COMPLETE** without a resolved actor. **Approval carries no such predicate**, so
+> it records `UNATTRIBUTED` like every other governed act and proceeds.
+
+**C10's ledger-plus-policy ruling is what makes that true**, and this is the
+entry worth keeping: §4.1 refused a state-per-approver machine, so the person
+never entered the machine, so there is no structural place for a person to be
+required. The doctrine that was argued on alphabet-size and clock-triggers turns
+out to have bought identity-independence as a side effect.
+
+`t_pr_approve` fits §4's shape exactly — one edge, no approver-named states, no
+threshold in the machine, `trigger: 'user'`, and **`policyHooks: []`**, the
+socket §4 point 3 names, still empty and now the obvious seat for threshold
+bands.
+
+**The surface states it before the act** (§66 precedent, verbatim): a seat that
+can decide reads *"the decision is recorded as unattributed"* first. A seat that
+cannot decide is not told — the notice belongs to the act, not to the page.
+
+⚠️ **WHAT REMAINS UNTRUE AND IS NOT FIXED HERE:** the DR-10 event records
+`actor: 'buyer:all'` and `TransitionEvent` has **no attribution field at all**
+(C10 §6.4 requires it gain one before the sink is durable; not built). So the
+notice is honest and the LEDGER is not yet — the record says `buyer:all`, which
+does not read as an honest absence. Filed, not closed.
+
+### 67f — WHAT SHIPPED
+
+`useRequisitionApprove` / `useRequisitionReject` — the whole missing
+connection. Approve and reject reachable in `BuyerRequisitions`' existing detail
+panel, gated on `availabilityOfAtom('pr:approve' | 'pr:reject', seat)`; a seat
+without the atom reads **"Awaiting Procurement"** via `HandoffNotice`, derived
+from `rolesHolding` and never authored as a status→owner map. **BuyerRequisitions
+is the second `HandoffNotice` importer**, taking this lane out of §64j's
+exposure list.
+
+⚠️ **THE SELECTED ROW IS NOW DERIVED FROM THE LIST, NOT HELD AS A SNAPSHOT.** A
+held snapshot would keep rendering `Pending Approval` with its Approve button
+intact over a document already Approved — an affordance for an act the
+dispatcher would refuse as `ILLEGAL_TRANSITION`. The panel is a view of the
+store, not a copy of it.
+
+**Approved states its terminality**, because `t_pr_source` / `t_pr_convert` are
+`unauthored-cascade` census rows and an approved requisition that looks like it
+is going somewhere is the false-affordance class. **Draft states why nothing
+here submits it** — C7's seam, not ours.
+
+**Five mutation probes, each killing a named test** (formatting stripped before
+parsing, §51f; every probe asserted the file changed on disk, and restore moved
+into a `finally` after the first run threw between mutate and restore):
+requiredFields dropped → 1 · policy hook neutered → 2 · persistence removed → 3 ·
+`canReject` forced true → 1 · role gate bypassed → 2.
+
+Browser QA on the built bundle, **EN and ID**, cache-busted after the first run
+served a stale hash (`index-BnKQ21Fs` while dist held `index-CtxWr4UL` — the
+result would have been a lie). End-to-end: whitespace stays disabled, a real
+reason enables, dispatch lands `Rejected`, the reason reads back on the
+document. ID renders the reason capture, the attribution note, the terminality
+and draft statements with no overflow.
+
+### 67g — RETIRED, AGAINST THE DISPATCH *AND* AGAINST THE RECALIBRATION
+
+> **"Procurement's own entry point has no page"** is retired. The intake is
+> built, ratified in C7, and dispatches: `t_pr_create` is reachable from THREE
+> surfaces (`BuyerRequisitions` New-PR, `IntakeReview` accept-push, `PlanGrid`
+> `IntakeAdjustDrawer`). The architectural recalibration that ranked this arc
+> second carried the same premise and is corrected with it.
+
+**The gap was approval, and beneath it something narrower:** the entry point
+worked and the exit did not exist. Until this batch, every requisition the
+platform created was created into a dead end — `t_pr_create` lands at `Draft`,
+the only edge out is `t_pr_submit`, and no shipped code called it. That is still
+true of Draft; what changed is that the queue now empties.
+
+### 67h — OPEN, AND STATED
+
+- **`approver` is rendered and no verb writes it.** `create` sets `''`,
+  `applyTransition` touches only `status`, and the panel displays fixture prose
+  (`'VP Procurement'`, `'Section Head'`). Worse now than before the batch, since
+  a real approval leaves it untouched. Not ruled; not fixed.
+- **The threshold ladder still lives in that fixture prose** — 210M → VP, 105/79/67M
+  → Head, 43M → Section Head. Nothing anywhere reads `estimatedValue` for a
+  comparison. `FLOOR-IN-PROSE-01` wearing an approval policy's clothes, and the
+  empty `policyHooks: []` on `t_pr_approve` is where it belongs.
+- **`revisionNote` is still dropped on the floor** — required by `t_pr_revise`,
+  enforced, and persisted nowhere. The same defect this batch closed for
+  `rejectionReason`, one edge over.
+- **The default buyer seat still holds both sides of the segregation.** Pinned
+  by test so the day it narrows, something notices.
+
+---
+
+## §68 — The requester's side exists, the enforcement chains reach the document, and solid blue is retired portal-wide
+
+**Branch** `feat/pr-requester-lane` · off `main` @ `4f14d80` · floor in 3275/238, out 3321/241.
+
+### 68a · The dead end was created by a ruling, and the ruling's REASON was the wrong half
+
+§67 left `Draft` without an exit and stated why on the surface: *"a submit
+affordance here would be a REQUESTER act for a document this platform does not
+originate, which would put a second creation path beside the ratified C7 seam."*
+
+The operator retired that at the head of this dispatch, and the retraction is
+sharper than "I was wrong": **`t_pr_submit` is not creation.** It acts on a
+document `t_pr_create` has already minted (C7 :131 → Draft; C7 :132 → Pending
+Approval). Surfacing it adds no producer at all, so the C7 argument never
+applied to it. C7 stays untouched and option (a) — amend the intake to land at
+`Pending Approval` — was refused.
+
+**The consequence that had shipped:** the approval surface built at §67 could
+empty a queue and nothing could fill it. Every approval it had ever performed
+was against `pr-004`, a seeded fixture. Derived: `t_pr_submit` had **zero call
+sites in shipped code** — only i18n purpose keys and `annotations.ts` catalogue
+rows, which are surface *descriptions* of the verb, not callers. Same for
+`t_pr_revise`.
+
+⚠️ **AND IT IS THE VERB THAT MAKES THE SEGREGATION REAL RATHER THAN NOTIONAL.**
+`pr:submit` lives in `requisitioner`, `pr:approve` in `procurement`, disjoint
+since §64. Until something dispatched the requester side, that disjointness was
+a property of the bundles that **no test and no surface ever exercised** — the
+machine only ever ran one side. `prRequesterLaneCommand.test.ts` now walks
+create → submit → reject → revise → submit → approve, and **neither narrow seat
+can complete it alone**, which is the first time that has been true.
+
+### 68b · `revisionNote` — a full enforcement chain terminating in nothing
+
+`t_pr_revise` has required it since PF-1a. The dispatcher refuses without it
+(`MISSING_FIELDS`, green in the suite). `applyTransition` then dropped the text
+before the document was written. Whole-tree derivation before building: the
+identifier appeared **only** in specs, in the flow's `requiredFields`, and in
+two `docs/findings.md` lines — **no DTO field, no store write, no reader.**
+
+Sharper than `rejectionReason` (§67) for the reason the operator gave: that one
+had no field to disappoint. This one had an enforcement chain with nothing at
+the end of it, which is strictly more misleading — a caller who supplies the
+note is *told* it was required and never learns it was discarded.
+
+Repaired with the four-part template three lines away: optional DTO field ·
+required on the verb · `PR_REVISION_NOTE_AUTHORED` (non-blank; `isEmpty('   ')`
+is FALSE, so `requiredFields` alone admits the space bar) · **persisted**, and
+read back on the panel beside the rejection reason. Both survive the edges
+deliberately: the reason says why it came back, the note says what was done
+about it, and an approver reading a re-submitted requisition needs them together.
+
+### 68c · Attribution — and TWO operator premises inverted on measurement, one of them ratified in the contract against him
+
+The dispatch said: *"Third instance of a pattern already shipping twice — setBy
+and grantedBy"*, and *"an approval writes `actor: 'buyer:all'`, WHICH IS NOT AN
+HONEST ABSENCE, IT IS A STALE STRING."*
+
+**Measured — first inversion.** `grantedBy` **does not exist on `main`**; it is
+on the unmerged §66 branch (#251). On main the pattern ships **once** (`setBy`).
+Cheap, and recorded only because a premise about how established a pattern is
+changes how freely it gets copied.
+
+⚠️ **SECOND INVERSION, AND IT IS THE LOAD-BEARING ONE: `actor: 'buyer:all'` IS
+NOT A STALE STRING, IT IS DERIVED AT EMIT TIME, AND C10 §6.4 EXPLICITLY RULES
+THAT IT STAYS.** It is `actorKey(scope)` — `${personaType}:${supplierId ?? 'all'}`
+— a true fact about WHICH SEAT. The contract's own words: *"The event actor
+field (`actor: 'buyer:all'`) is NOT what this replaces. The persona actor is a
+true fact about the scope and stays. Attribution is a second, orthogonal
+field — one answers which seat, the other which human — and collapsing them is
+`ENF-EVENT-ACTOR-IS-A-PERSONA-01` with extra steps."*
+
+**Had the instruction been executed as written, this batch would have committed
+the named anti-pattern by replacing a correct field.** This is §64a's shape
+again — *a misdescribed mechanism attached to a correct conclusion* — and the
+conclusion was right for the third time in three batches: the ledger could not
+name a human, and now it can.
+
+⚠️ **AND A THIRD THING THE MEASUREMENT CHANGED — THE OBVIOUS BUILD WAS THE ONE
+THE CONTRACT FORBIDS.** The natural move was `requiredFields: ['approvedBy']`
+behind a hook, mirroring `t_enforcement_set`'s `['mode', 'setBy']`. C10 §6.2
+names that shape **ATTRIBUTION BY ASSERTION** — the caller states who acted and
+the platform records the statement — and permits it on `setBy` for exactly one
+reason: nothing can construct a `RESOLVED` actor yet. **Copying it onto a second
+verb would have doubled the seam that must be closed before the first resolved
+record exists, in the batch whose whole purpose was to close it.**
+
+What shipped instead:
+
+- The actor comes from the **SESSION** (`QueryScope.actor`, already carried by
+  `useScope()` on every command). `applyTransition` gained a fourth parameter,
+  `scope`, because attribution may not travel in a payload; every existing
+  target ignores it.
+- `PR_APPROVAL_ATTRIBUTED` **refuses a payload-supplied `approvedBy` by name** —
+  **C10 §6.2's second half, and this is its first implementation anywhere in the
+  tree.** §6.2: *"not ignored, not overwritten, not silently replaced by the
+  session's. Refused, loudly."* The overwrite is the tempting build and the one
+  ruled out: a silent correction of an attribution is a caller that believes it
+  attributed an act and a record that says somebody else did.
+- ⚠️ **REFUSED BY KEY, NOT BY VALUE-SHAPE.** Refusing only a well-formed
+  `RESOLVED` actor would let a malformed one through to be dropped silently —
+  the same silent correction wearing a type error. Anything under `approvedBy`
+  is refused; the payload is not where attribution lives.
+- `TransitionEvent` gained an optional `attribution` (C10 §6.4), set **only when
+  `transition.trigger === 'user'`**. A cascade re-dispatches under the same
+  scope, so forwarding `scope.actor` unconditionally would stamp every machine
+  act with an `UNATTRIBUTED` claim — and `UNATTRIBUTED` is a claim that a HUMAN
+  acted and could not be resolved, every member naming a failure somebody can go
+  and fix. Flooding it makes the count meaningless, and the count is the only
+  pressure that ever gets one fixed. **Free now, unfixable once the sink is
+  durable: DR-10 has no retrofit.**
+
+### 68d · `approver` — the answer was neither "written" nor "not rendered"
+
+The operator's item 3: *"Either it is written or it is not rendered; argue
+which."* **Both readings assume the field is an approver. It is not.** Derived
+from the fixture:
+
+| row | status | `approver` | est. value |
+|---|---|---|---|
+| pr-004 | **Pending Approval** | `'Section Head'` | 43M |
+| pr-005 | **Draft** | `'—'` | 84M |
+| pr-002 | Approved | `'Procurement Head'` | 105M |
+| pr-003 | Sourcing Event | `'VP Procurement'` | 210M |
+
+**It is populated on rows nobody has approved**, its values are role BANDS not
+names, and they track `estimatedValue`. A field populated before the act it
+names cannot be a record of that act. It is the **routing destination**, and it
+was misnamed — the same class as a button whose label names a verb it does not
+dispatch (§67's fourth false affordance), **one layer down, in a DTO.**
+
+So: renamed `approver` → `approvalLevel`, relabelled *"Routes to"* (ID:
+*"Diarahkan ke"*), and the ACTOR became a separate `approvedBy` that
+`t_pr_approve` writes and the panel reads back — **absent until somebody
+approves**, which is precisely what the old field never was. The band→level rule
+stays unmodelled (item 4, open); nothing reads `estimatedValue` for it.
+
+⚠️ **A RENAME EXECUTED FIRST-OCCURRENCE-WINS HIT THE WRONG DTO.** `approver: ''`
+appears in both the invoice `create` and the PR `create` in the same file;
+the replace took the invoice's. Caught by reading the resulting line numbers
+against the target's known range, not by any test — `Invoice.approver` is a
+different field on a different DTO and the suite had no reason to object.
+
+### 68e · The stored-field gate went red on its own, unprompted, and it was right
+
+`ActorAttribution.person` carried an allowlist exemption reading *"unreachable
+by construction: nothing can produce a RESOLVED arm and nothing reads one."*
+Rendering an approval's attribution made the **second half** false, and the
+bilateral assertion failed with *"AN EXEMPTION OUTLIVED ITS SUBJECT"*, naming
+the file and the line.
+
+The row is deleted. The **first** half is still true and stays true: nothing
+constructs a `RESOLVED` actor (C10 §2.3, pinned by the `simUsrNamespace`
+tripwire). The surface handles both arms anyway, because **a surface that
+handles one arm of a union renders `[object Object]` the day the other appears**
+— an arm ready before its value is, which is the opposite failure from the one
+the list exists to catch.
+
+### 68f · A FIFTH false affordance, in the toast this time — and §67's own sweep walked past it
+
+Adding a real submit needed the key `requisitions.toast.submitted.*`, which was
+**already taken by the CREATE flow**, reading:
+
+> `'requisitions.toast.submitted.desc': 'Routed to Section Head for approval.'`
+
+fired by `t_pr_create`, which mints a **Draft** and routes to nobody. §67 found
+and fixed the BUTTON that fires it (*"Submit for approval"* → *"Create
+requisition"*) **and left the toast the button fires**, because the sweep that
+found it was looking at labels.
+
+Repointed to `created.*` / `createFailed.*` with honest copy, and `submitted.*`
+now belongs to `t_pr_submit`, where it is literally true.
+
+⚠️ **THE CLASS, RESTATED AND EXTENDED.** A false affordance can live in the
+handler (does nothing), the shape (looks like a commit, isn't), the label (names
+the wrong verb) — and now **the confirmation** (reports a thing that did not
+happen). A census keyed on any one of the four reports clean on the other three.
+`label-names-wrong-verb` in the durable memory is updated.
+
+### 68g · The solid-blue retirement, and how a literal scan was incomplete four ways
+
+Mid-batch operator ruling with a screenshot: retire solid action-blue
+**everywhere**, WhatsApp messenger chrome included, folded into this PR. This
+**reverses** DP2-BUTTON-01, which reserved solid for irreversible commits and
+named Reject/Dispute in that list — the rule under which §67 had deliberately
+made *Confirm rejection* solid one batch earlier. Said so before executing;
+CLAUDE.md is amended, because a doctrine reversed only in code comes back.
+
+⚠️ **`grep 'variant="primary"'` RETURNED 14 SITES AND WAS WRONG FOUR WAYS.** The
+producers it could not see:
+
+1. **A PROP** — `BulkActionsBar`'s `primary.solid` opt-in. Nothing passed it, so
+   it was dead; the flag that fed it was one seam further in.
+2. **A MODEL FLAG** — `invoiceActionModel`'s `solid: true`. ⚠️ **And it was not
+   only a style: `BuyerInvoices.handleFooterAction` reads it to route the
+   release through a SECOND CONFIRMATION STEP.** Deleting it with the styling
+   would have deleted a confirm gate. It kept its meaning and lost its style
+   name → `reservedCommit`.
+3. **TWO TYPED HELPERS** returning `'primary' | 'outline'` — `FOOTER_VARIANT`
+   and an inline `variant={commitAction ? 'primary' : 'outline'}`. No literal
+   search of any width finds these.
+4. **THE DEFAULT** — `Button`'s own `variant = 'primary'`, which made **solid
+   the shape of forgetting to choose.** Unreachable only by luck: all 181
+   `<Button>` sites pass an explicit variant. A latent trap, not a live defect.
+
+⚠️ **AND THE LAST TWO WERE FOUND BY THE TYPE, NOT BY ANY SCAN.** Removing
+`'primary'` from `Button`'s `Variant` union turned them into two `tsc` errors
+instantly. The rule is now enforced by a type — every route back is a build
+failure — with `solidButtonRetired.guard.test.ts` covering what a type cannot.
+
+⚠️ **THE GATE FALSELY ACCUSED TWO FILES ON ITS FIRST TWO RUNS, AND BOTH TIMES
+THE OFFENDING TEXT WAS ITS OWN EXPLANATION.** `BulkActionsBar.tsx` was condemned
+for a comment saying the scan had been incomplete; then its sibling assertion
+was condemned for a comment recording that `solid?: boolean` had been removed.
+`withoutProse` (the `simUsrNamespace` precedent) fixes both. **Twice in one gate
+is not coincidence: a rule stated in the file it governs is always readable as a
+violation of itself**, and a gate that punishes documenting it is a gate that
+trains people to stop.
+
+Browser-verified on the rebuilt bundle (`index-DyJkBBVl.js`, cache-busted): 295
+buttons across 7 surfaces, **zero** solid — and a synthetic `#0070F2` button
+injected into the same scan **was** caught, because zero is exactly the answer
+that requires checking the instrument.
+
+### 68h · What shipped
+
+- `t_pr_submit` and `t_pr_revise` surfaced on `BuyerRequisitions`, both gated on
+  the atom and both rendering the WAIT (`handoff-pr-submit` /
+  `handoff-pr-revise`) — **the first handoffs on this surface to name
+  Requisitioner**, since Procurement previously held every surfaced verb.
+- `revisionNote` + `approvedBy` on the DTO, written by their verbs and read back.
+- `approver` → `approvalLevel`, relabelled as the destination it is.
+- `PR_REVISION_NOTE_AUTHORED` · `PR_APPROVAL_ATTRIBUTED` (C10 §6.2 half two).
+- `TransitionEvent.attribution` (C10 §6.4) — user-trigger only.
+- `applyTransition` and `PolicyHookFn` gained `scope`.
+- Solid action-blue retired portal-wide, at the type.
+- EN + ID from birth. 7 mutation probes, each killing a named test on a green
+  baseline. 46 new specs; floor 3275/238 → 3321/241.
+
+### 68i · Open after this batch
+
+- ⚠️ **`t_pr_reject` RECORDS NO DECIDER ON THE DOCUMENT.** The ruling named
+  `t_pr_approve`; the rejection's *reason* is stored and the *ledger* carries
+  attribution via §6.4, but nothing on the document says who declined it. Pinned
+  by test so the asymmetry is a fact in the tree rather than a line in a report.
+  It is the same four-line repair as approve.
+- `setBy` is still attribution-by-assertion on `t_enforcement_set` — §6.2's
+  refusal now exists, on one verb, and that verb is not it.
+- Items **4, 5, 7** untouched by ruling: the threshold ladder still lives in
+  fixture prose with `t_pr_approve`'s `policyHooks` as its seat; `Approved` is
+  still terminal (`t_pr_source` / `t_pr_convert` unauthored cascades); the
+  default buyer seat still holds both sides of the segregation.
+- `disputeReason` on the invoice lane is still dropped at `applyTransition` —
+  the third instance of the chain-terminating-in-nothing shape, and the only one
+  left.
+
+---
+
+## §69 — THE THRESHOLD LADDER: MEASURED UNBUILDABLE, AND THE DISPLAY STOPS IMPLYING OTHERWISE
+
+**Dispatch:** item 4 of Arc 2's open list. Investigate first, report before building. The
+operator ruled **option C** on the report: *fix the display, file the rest* — and the filing is
+the batch's real output.
+
+**Shipped:** the band SAYS it is authored. Nothing else about approval changed.
+
+---
+
+### 69a · WHAT THE BAND IS
+
+`PurchaseRequisition.approvalLevel` carries `'Section Head'` · `'Procurement Head'` ×3 ·
+`'VP Procurement'` on six fixture rows whose `estimatedValue` rises with them — 43M → Section
+Head, 67M/79M/105M → Procurement Head, 210M → VP Procurement. **It reads as a computed band.**
+
+Derived, not assumed:
+
+- **Zero** relational or arithmetic uses of `estimatedValue` exist anywhere in the tree. All 40
+  occurrences are a `formatIDR` render, a parse, a copy into a payload, or an `=== undefined`
+  presence check for rendering. It is a number nothing has ever done arithmetic on.
+- **No threshold number exists** in `src/` or `docs/`. The only occurrences of "threshold bands"
+  are C10 §3.4/§3.5/§5.4 and two files quoting them.
+- The six rows constrain only **≤43M**, **[67M, 105M]** and **≥210M**. The intervals **(43, 67)**
+  and **(105, 210)** are unassigned by any evidence in the tree.
+
+---
+
+### 69b · ⚠️ BOTH READINGS OF "WHAT A BAND DECIDES" ARE UNBUILDABLE, ON TWO INDEPENDENT GROUNDS
+
+Not *deferred* — **measured unbuildable**, and either ground alone is sufficient, so closing one
+does not unblock it.
+
+| Reading | What it needs | State |
+|---|---|---|
+| **WHO MAY APPROVE** | seniority roles | **Do not exist, and C10 §3.4 forbids minting them.** The eight shipped roles are LANES (`procurement`, `finance`, …), not altitudes. §3.4: *"approval authority comes from the policy ledger's THRESHOLD BANDS, never from a role that says 'can approve anything' … without minting a new role per band."* `businessRoles.ts:103` already cites this clause as the reason `pr:approve` lives in `procurement` |
+| **HOW MANY APPROVALS** | `ApprovalPolicyAct` × `ApprovalAct` | **C10 §3.5 explicitly defers both.** Nothing can count to two |
+
+**A THRESHOLD LADDER TODAY WOULD BE A POLICY OVER NOTHING.** A threshold is a comparison, and
+this platform has built one side of it. The left-hand side (`estimatedValue`) is readable. The
+right-hand side is empty in every direction:
+
+- `scope.actor` — always `UNATTRIBUTED: NO_PERSON_IN_SESSION`. No person, so no limit.
+- `scope.businessRoles` — lane roles. `pr:approve` lives in **exactly one** bundle, so **every
+  seat that can approve at all can approve everything**.
+- prior approvals on the document — no ledger.
+- the requirement itself — no ledger.
+
+The only comparison expressible today is `estimatedValue` against **a constant written in code**,
+which is **C10 §4.1's second cost committed deliberately**: *"'Above 500 million IDR now needs a
+fourth approver' is an operational decision made on a Tuesday."* §4.1 refuses that shape for the
+STATE machine; putting it in a hook is the same defect one layer down, wearing the mechanism §4
+recommends.
+
+---
+
+### 69c · ⚠️ THE HOOK CAN REACH THE DOCUMENT — AND THE CONTRARY WAS THE RULING'S STATED GROUND
+
+The dispatch stopped the batch on *"THE HOOK CANNOT SEE THE DOCUMENT. PolicyHook RECEIVES
+(payload, ctx) WHERE ctx IS { actorRoles } … A THRESHOLD HOOK WOULD HAVE TO READ THE STORE FROM
+INSIDE A POLICY CHECK, WHICH NOTHING IN THE TREE DOES."* Measured, all three clauses invert:
+
+- **`actorRoles` does not exist.** `grep -rn "actorRoles" src/ gate/` → nothing.
+- **`PolicyHookFn` takes ONE argument**, not `(payload, ctx)`:
+  `(ctx: { entityId, currentState, toState, payload, target, scope }) => PolicyDecision`.
+- **`CommandTarget.readEntity(entityId)` is documented *"Full entity for policy hooks to
+  inspect"***, the PR target implements it (`MockCommandService.ts:612`), and **four shipped
+  hooks already read a document through it** — a `PurchaseOrder` (`policies.ts:64`), a
+  `GoodsReceipt` (`:87`), an `Invoice` (`:104`), the enforcement ledger (`:263`).
+- **No policy imports a store.** `policies.ts`'s import list contains none; the document arrives
+  through the dispatcher-injected adapter, which is *why* "read the store from inside a policy
+  check" is not what a threshold hook would do.
+
+**THE RULING SURVIVES; ITS STATED GROUND DOES NOT.** Option C is right and §69b is what makes it
+right. And the distinction is not pedantry: **filing "the hook cannot reach the document" would
+have put a FALSE BLOCKER in front of every value-based policy this platform ever wants** — the
+seam is green, has four working consumers, and would have been rebuilt by somebody who believed
+the register.
+
+⚠️ **`ENF-EVENT-ACTOR-IS-A-PERSONA-01` HAS A SIBLING SHAPE HERE, AND IT IS THE §64a ONE:** a
+**misdescribed mechanism attached to a correct conclusion**. The conclusion (*the bands are not
+where the work is*) was right. The mechanism named to support it was wrong, and a mechanism is
+what the next batch builds on. **Grep the artifact; keep the property.**
+
+**`actorRoles` joins the register** of identifiers named as existing code and measured absent:
+`getInvoiceAction` · the FX-page `<span lang="en">` (§45) · `SurfaceExpectation` (§51) ·
+`blockingReasons` (§63b) · `roleMatches` · `buyer:planner` · `t_asn_confirm` · `t_asn_dispatch`
+(§64a). **THE LIST IS THE COUNT.**
+
+---
+
+### 69d · ⚠️ IS THERE A THIRD READING — ONE THAT NEEDS NEITHER PERSONS NOR A LEDGER?
+
+The operator asked directly: *"if a band could gate on a ROLE rather than a person, say so;
+roles exist and eight of them shipped this week."*
+
+**YES — one exists, it is buildable today with zero new objects, and IT ANSWERS A DIFFERENT
+QUESTION THAN THE ONE THE FIXTURE ASKS.**
+
+**The shape.** A policy hook on `t_pr_approve` reading `ctx.target.readEntity()` for the value
+and `ctx.scope.businessRoles` for the lane, refusing when the value exceeds X and the session
+lacks the required lane. Both halves are already on the ctx (§69c). It needs **no person** — a
+lane is not a person — and **no ledger** — it is one approval whose *required role varies by
+value*, not a quorum. That is genuinely more than `requiredRole` can express, because
+`requiredRole` is a static field on the edge and cannot vary by document.
+
+**Why it is not the ladder, stated plainly rather than sold:**
+
+1. **It discriminates LANES; the fixture's rungs are ALTITUDES.** Section Head, Procurement Head
+   and VP Procurement are *the same lane at three heights*. A lane gate can express *"above
+   500M, Finance must also be satisfied"*; it cannot express *"above 500M, a more senior member
+   of Procurement."* The bands ask the second question.
+2. **Only one shipped bundle holds `pr:approve`**, so today it has nothing to discriminate
+   between. Making it real means moving or adding the atom to a second bundle — cheap and legal
+   (C10 §3.4: bundles are DATA), but it is a governance decision, not a wiring task.
+3. **The threshold number still has to live somewhere**, and in a hook it is code — 69b's cost
+   again. Unless it comes from an `ApprovalPolicyAct`, which is ground 2 returning.
+
+**So: a role-gated value policy is buildable and a role-gated APPROVAL LADDER is not.** Worth
+recording because it is the one value-based policy shape this platform could enforce today, and
+because the next seat will otherwise re-derive it.
+
+---
+
+### 69e · THE DISPLAY FIX, AND WHY *AUTHORED* RATHER THAN *DERIVED*
+
+The operator gave two options and asked for an argument. **Chosen: state plainly that it is
+authored.** Four reasons, in order of weight:
+
+1. **A derivation would have to INVENT its boundaries.** The data constrains three intervals and
+   leaves two gaps (§69a). Any rule picking 50M or 150M is picking a number no evidence in the
+   tree supports — **a computed-LOOKING band with invented numbers is a worse half-truth than an
+   authored one honestly labelled**, because the first claims a provenance it does not have.
+2. **It would make the numbers CODE.** C10 §4.1 cost 2, taken deliberately, in the batch whose
+   finding is that §4.1 forbids exactly this.
+3. **It would MINT a false affordance in the batch that removes one.** `t_pr_create` writes
+   `approvalLevel: ''`. Derive, and every created PR instantly acquires a routing destination
+   that routes nowhere — because no policy consumes it. §68 removed one such promise; this would
+   add it back, computed.
+4. **The honest label is cheaper to RETIRE.** When an `ApprovalPolicyAct` lands, the label flips
+   to derived and the note comes out. A derivation would have to be un-invented first.
+
+**What shipped:**
+
+- **The panel says so.** `pr-approval-level-provenance` renders *"Authored on the document — not
+  derived from the estimated value."* beneath the value, **on every row including the unassigned
+  one** — the claim is about the FIELD's provenance, and a note appearing only beside a populated
+  band would read as a caveat on that band.
+- **"Not assigned" has ONE representation.** `pr-005` stored a literal `'—'` and the renderer
+  fell back to `'—'`, so *no band assigned*, *field empty* and *nothing to show* were **one
+  character**. After §68 wrote `''` on every creation, the collision became the common case
+  rather than a fixture quirk. The fixture now stores `''` and the surface renders *"Not
+  assigned"*.
+- **⚠️ TWO MORE STATEMENTS OF THE LADDER, BOTH WRONG, BOTH RETIRED.** The investigation derived
+  the band vocabulary from its registration sites rather than from the field, which found what a
+  field-scan could not:
+  - `requisitions.flow.approval.sub` read **'Section Head / VP'** — two rungs of a three-rung
+    vocabulary, omitting `Procurement Head`, **the most populous** (3 of 6 rows). Now
+    *'Procurement decides'*, which is derivable-true: `pr:approve` lives in exactly one bundle.
+  - `requisitions.new.info` read **'After submission this PR routes to Section Head'** — one
+    rung, **unconditional**, on the form whose verb writes `approvalLevel: ''`. It was refuted by
+    the fixture (`pr-003` carries `'VP Procurement'`) **and** by the create path, in the same
+    sentence.
+
+⚠️ **THE SECOND ONE IS A FALSE AFFORDANCE IN COPY, AND IT IS A FORWARD PROMISE — A SHAPE THE
+REGISTER DID NOT YET HAVE.** `label-names-wrong-verb` has catalogued a mislabelled button, a
+mislabelled DTO field and a mislabelled toast. This is none of those: it is a **promise about
+what will happen next**, made by a form, and nothing that runs afterwards keeps it. A
+handler-based census cannot see it, a label census cannot see it, and the DTO census cannot see
+it — it is only visible by asking *what does the verb this form dispatches actually write?*
+
+---
+
+### 69f · THE GATE — `approvalBandAuthored.guard.test.ts`
+
+The honest label is only honest while it is TRUE, and **no type can defend it**: the field is
+`string`, and a derived string is a string.
+
+**Two matchers, and the first is the one the claim requires (§42).** *"Is the band derived?"* is
+a question about the **WRITE** site. A scan finding `estimatedValue` being read has found a
+call; only an assignment to `approvalLevel` can make the band computed.
+
+1. **Write site (primary).** Every `approvalLevel:` assignment must have a **quoted string
+   literal** on the right. A call, a variable, a ternary or a template literal all mean something
+   decided it. The DTO's own `approvalLevel: string;` is the one allowlisted non-literal, and the
+   allowlist is **bilateral** — asserted still present, so it cannot rot into a vacuous exemption
+   (§68 deleted one of those from the stored-field gate).
+2. **Read site (secondary, weaker, and labelled so).** No relational or arithmetic use of
+   `estimatedValue`. `===`/`!==` are NOT threshold shapes and `=>` is excluded explicitly — rule
+   2: a widened matcher manufactures false accusations exactly as readily as a narrow one hides
+   truths. It cannot see a staged derivation, and the failure message says which assertion to
+   trust.
+
+**Rule 4 — both matchers probed in BOTH directions on the same instrument**, plus a non-empty
+population assertion by MEMBERSHIP (`EMPTY-INPUT-REPORTS-CLEAN-01`), plus an assertion that
+`'Section Head'` is actually among the found writes — without which both zero-offender assertions
+could pass over a tree that had renamed the field away.
+
+**Mutation-probed, 8 probes, zero survivors, each kill confirmed BY NAME** (§51f: a counter that
+under-reports kills sounds like modesty and gets believed).
+
+⚠️ **AND PROBE 1 FIRED §50e ON THE FIRST RUN.** Replacing the fixture band with
+`bandFor(43_000_000)` made the module fail to load, so the whole suite died — a kill, but **not
+the write-site gate's kill**, and a counter watching `Tests N failed` would have credited the
+gate for a compile error. Re-probed with `String('Section Head')`, which compiles: the write-site
+assertion killed by name, suite loaded. **A probe that breaks the program has not tested the
+guard; it has tested the compiler.**
+
+---
+
+### 69g · WHAT WAS MEASURED AND NOT BUILT (items 5–7 remain open)
+
+- **The VP rung has no reachable document.** `pr-003` (210M, `'VP Procurement'`) sits in
+  `Sourcing Event`; its sole outbound edge is `t_pr_convert`, `trigger: 'cascade'`, with **no
+  cascade link authored**. Nothing returns it to `Draft` or `Pending Approval`. **The single
+  highest-value requisition in the tree can never be approved by anything, and it already carries
+  an approval band.** The top rung is reachable only through the intake lane (four PLANNED lines
+  at 534M / 990M / 256M / 81M, which do carry `estimatedValue`).
+- **⚠️ EVERY PR A PERSON CAN CREATE HAS `estimatedValue: 0`.** `t_pr_create.requiredFields` is
+  `['material', 'quantity']`, `create` defaults through `num()` → **0**, and the New-PR form
+  sends no budget field at all (confirmed by rendering — there is no budget input on the form).
+  **Zero is a legal number in the lowest band, so the failure direction is toward FEWER
+  approvals** — the wrong direction for a threshold ladder, and silent because a rendered `Rp 0`
+  looks like an answer.
+
+  **The sibling lane already ruled this exact defect and fixed it.** `rfqCreateModel` (2e-b-4a,
+  a CORRECTED spec): *"The title called the `|| 0` honest; it was the defect. A budget of Rp 0 is
+  a STATEMENT, and the buyer made none."* The RFQ path omits the key for an absence and carries a
+  typed zero through, both directions pinned. **The PR create path never got that repair** —
+  `num()` mints exactly the fabricated zero that ruling forbade, on a DTO where the field is
+  non-optional so omission is not even available without a type change. **Registered, not fixed:
+  it is items 5–7 territory and was not swept in.**
+- **`estimatedValue` is IDR by ASSUMPTION, and C7 registers the assumption rather than settling
+  it.** C7 §2.3 — *"Undeclared assumptions the code relies on (conformance-critical) … None of
+  these is declared anywhere in the type, the fixture, or the prior contract"* — lists
+  **`estimatedValue` is IDR** as its FIRST row, risk *"a non-IDR emitter is silently
+  mis-rendered"*, and the field table flags it `⚠️ IDR assumed, nowhere declared`. `PurchaseRequisition`
+  has no currency field while `PurchaseOrder`, `Invoice`, `BuyerInvoice` and `CatalogItem` all
+  do. **No currency field was added** — correctly, per the ruling — but the seam is OPEN in C7
+  and named against SOMO, not settled.
+
+---
+
+### 69h · THE DERIVATION LESSON, AND IT IS ABOUT THE *FIELD* VS THE *VOCABULARY*
+
+The operator's own correction: *"the fixture strings AND `approvalLevel` ARE THE SAME FIELD, ONE
+SOURCE."* Correct — and it is exactly why the two i18n statements were invisible until the
+population was derived from **registration sites of the band VOCABULARY** rather than from the
+FIELD.
+
+**A field census finds one source. A vocabulary census finds three, and two of them were wrong.**
+Neither i18n string touches `approvalLevel`; both state the ladder; both disagreed with the
+fixture and with each other. This is `CENSUS-MUST-DERIVE-01` in the shape §42 named — *the scan
+matched a call site, the derivation matched a registration site* — with **the field standing in
+for the call site**. Ask what the CLAIM requires, not where the DATA lives.
+
+---
+
+### 69i · GATES
+
+Four green. **3337 tests / 243 files / 7 gate** (from 3321/241/7); `scripts/floor.json` bumped.
+Browser QA on the freshly built bundle, both locales, cache-bust verified twice — the hash the
+preview served and the hash in the live DOM both match the build output (`index-DvGB5pnQ.js`).
+EN: *Routes to / Section Head* + the provenance line; *Not assigned* on the 84M Draft; flow strip
+*Procurement decides*. ID: *Diarahkan ke* / *Belum ditetapkan* / *Ditulis pada dokumen …* /
+*Diputuskan Pengadaan*.
+
+⚠️ **THE 43M ROW SAYS "Section Head" AND THE 84M ROW SAYS "Not assigned", ON ONE SCREEN.** The
+ladder refutes itself in the rendered list, and the provenance line is what explains why rather
+than leaving a reader to invent a rule.
+
+---
+
+## §70 — TWO FILINGS GIVEN HANDLES, AND THE ONE MODULE THAT SET ITS OWN WIDTH
+
+**Dispatch:** both filings ruled in (§69's closing note), plus the Roles width. One PR.
+
+---
+
+### 70a · `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` — the filing rule, as a rule
+
+§69c recorded that refusing to file *"the hook cannot reach the document"* was right **in that
+instance**. The general form, filed here and mirrored into the derivation doctrine beside §64a:
+
+> ⚠️ **A FINDING WHOSE MECHANISM IS FALSE MUST NOT BE FILED, EVEN WHEN ITS CONCLUSION IS RIGHT.**
+> **THE REGISTER IS WHAT THE NEXT BATCH BUILDS ON, AND A FALSE BLOCKER COSTS MORE THAN THE BATCH
+> IT STOPPED.**
+>
+> ⚠️ **AND THE BOUND IS PART OF THE RULE, NOT A FOOTNOTE TO IT: AN UNVERIFIED MECHANISM IS
+> STILL FILED, WITH ITS UNCERTAINTY STATED — ONLY A MECHANISM *MEASURED FALSE* IS WITHHELD. THE
+> DISTINCTION IS WHETHER THE MEASUREMENT WAS TAKEN.**
+
+**The bound is load-bearing, and it is stated first for that reason** (§71). Unbounded, the rule
+licenses withholding anything a seat has not proven, **which would empty the register of exactly
+the findings that most need checking** — the uncertain ones are the whole reason a register
+exists. A limit that trails behind a warning symbol at the end of a paragraph reads as *the rule,
+plus a footnote*, and **the footnote is the half that stops the rule inverting into the harm it
+was written to prevent.** So it leads.
+
+**Why it is a rule and not an instance.** §64a already names the shape — *a misdescribed
+mechanism attached to a correct conclusion* — and stops at detection: *grep the artifact, keep
+the property*. It says nothing about what to do with the finding afterwards, and the default is
+to file it, because the conclusion survived and filing is what this project does with survivors.
+**That default is wrong, and it is wrong asymmetrically:**
+
+- A finding filed with a **correct** mechanism costs one batch to act on.
+- A finding filed with a **false** mechanism costs every batch that reads it, because it names a
+  seam as broken that is not, and the natural response to "X cannot do Y" is to build a Y-shaped
+  replacement for X. **Nobody re-measures a blocker; a blocker is why you stopped.**
+
+At §69 the finding was *"the policy hook cannot reach the document"*. Filed, it would have sat in
+front of **every value-based policy this platform will ever want** — thresholds, category rules,
+plant rules, value-varying role requirements — while `readEntity` was documented for exactly that
+purpose and four shipped hooks were already using it. The conclusion it was attached to (*the
+bands are not where the work is*) was **right**, which is precisely what would have carried it
+past review.
+
+**The disposal:** re-measure, then file the TRUE finding. §69's true finding was the opposite
+shape and sharper — the hook reaches the document fine; **what is missing is the right-hand side
+of the comparison, not the left.** One is a dead end; the other names what to build.
+
+**What this does NOT license** is stated above rather than here, which is the point of §71's
+second placement: it is not *"suppress findings you cannot fully verify."*
+
+---
+
+### 70b · `FORWARD-PROMISE-HAS-NO-HANDLER-01` — the fifth home gets an ID
+
+Every other member of the false-affordance family has a handle; this one had prose in two places
+and none. The class:
+
+> ⚠️ **A FORWARD PROMISE — copy that names a destination, an outcome or a next step, ATTACHED TO
+> NO VERB, NO BUTTON, NO TOAST AND NO FIELD. NO AFFORDANCE CENSUS THIS PROJECT RUNS CAN SEE IT BY
+> CONSTRUCTION, BECAUSE EVERY ONE OF THEM KEYS ON A HANDLER.**
+
+**Instance (§69):** the New-PR form's info panel read *"After submission this PR routes to Section
+Head."* `t_pr_create` writes `approvalLevel: ''`, and the fixture's own `pr-003` carries
+`'VP Procurement'` — so the sentence was refuted by the create path AND by the data, in one line.
+
+**Where it sits in the family.** The other four homes each attach to something a census can walk:
+
+| Home | Attaches to | Census that could see it |
+|---|---|---|
+| the handler (does nothing) | `onClick` | handler census |
+| the shape (looks like a commit, isn't) | a button | affordance census |
+| the label (names the wrong verb) | a button + its `transitionId` | label-vs-verb read |
+| the confirmation (reports what did not happen) | a toast + `variant` | toast census |
+| ⚠️ **the promise** | **nothing** | **none — see below** |
+
+**⚠️ WHAT A CENSUS WOULD HAVE TO KEY ON — AND THE HONEST ANSWER IS THAT THE GENERAL CLASS HAS NO
+GATE (§37's shape).** To catch it mechanically you would need three things, and the middle one
+does not exist in the tree:
+
+1. **Identify copy that asserts a future act.** Natural-language semantics. A keyword list
+   ("routes to", "will be", "after submission") is an INHERITED LIST wearing a derivation's
+   clothes — rule 1, and the thing GL-1 was filed for.
+2. **Bind the claim to the verb the surface dispatches.** ⚠️ **There is no such edge.** The
+   promise is a `<p>` in an info panel; the verb is a `mutateAsync` in a handler forty lines
+   away. Their only relationship is *same component*, which on these pages means dozens of
+   strings and several verbs. **This is the step that makes the class ungateable**, and it is
+   structural, not a tooling gap.
+3. **Decide whether the claim is true.** Half derivable (what `create()` writes is readable);
+   half not (what the sentence asserts).
+
+**A PROXY EXISTS FOR ONE SUB-CASE, IT IS MEASURED, AND IT IS NAMED AS A PROXY.** When a promise
+quotes a **governed vocabulary verbatim**, step 1 becomes derivable: take the distinct values of a
+DTO field from its fixture (`approvalLevel` → `Section Head` · `Procurement Head` ·
+`VP Procurement`) and look for them inside i18n copy strings.
+
+- **Measured noise across the whole i18n layer today: ZERO hits.**
+- **It would have fired on BOTH §69 strings** — `flow.approval.sub` (*'Section Head / VP'*) and
+  `new.info` (*'…routes to Section Head.'*).
+
+**Not built, and the reason is the reason it is a proxy, not the reason it is hard.** It has
+blind spots in *both* directions, which is rule 2's pairing: a promise phrased without the
+literal (*"routes to the section head"*, *"a PO is created directly"*) is invisible to it, and a
+page that legitimately EXPLAINS the vocabulary — a help surface listing the three bands — is
+falsely accused. **A gate that fires on legitimate explanatory copy trains people to add
+exemptions**, and an exemption list on a proxy is worse than no proxy. Its zero-noise reading
+today is also `EMPTY-INPUT-REPORTS-CLEAN-01`-adjacent: it measures zero because §69 removed both
+instances an hour earlier, so "clean" here is a fact about the repair, not about the instrument.
+
+**The instrument that DOES work is a review discipline, and it is one question:** for any surface
+that dispatches a **creation** verb, read the surrounding explanatory copy against what that
+verb's `create()` actually writes. That is what found this one.
+
+---
+
+### 70c · THE ROLES MODULE WAS THE ONLY THING IN THE PLATFORM SETTING ITS OWN WIDTH
+
+**Derived from `AppRouter`, not sampled** — route → component → the first element inside
+`AppShellV2`, with a known-good/known-bad control on the route derivation itself:
+
+- **42 mounted routes.**
+- **40 render their content DIRECTLY inside the shell with no wrapper.**
+- **2 did not, and they were both Roles** — and **they did not agree with each other.**
+
+| | container | rendered width @1920 | available |
+|---|---|---|---|
+| control (`/buyer/process-flows`) | none | **1610px** | 1610px |
+| `/buyer/roles` | `p-6 max-w-6xl` | **1152px** | 1610px |
+| `/buyer/roles/:roleId` | `p-6 max-w-4xl` | **896px** | 1610px |
+
+**It is not a missing layout component and not a wrapper that needed a width — it is a deviation
+that needed deleting.** `AppShellV2` renders `<main className="flex-1 overflow-auto bg-bg-page
+p-8">`: the shell **already owns the padding and constrains nothing**. So Roles was carrying `p-6`
+**on top of** the shell's `p-8` (double padding) *and* a max-width nothing else has. `PageHeader`
+— what the other 40 routes open with — sets no width and no padding either.
+
+The fix removes both classes from both wrapper divs; the divs survive only to carry their
+testids. **No shared component was touched, and no other surface moves.** Re-derived after:
+**42 of 42 routes now carry no container width.**
+
+⚠️ **AND `max-w-*` IS NOT BANNED — IT MOVED TO WHERE IT BELONGS.** A `max-w` on PROSE is a
+MEASURE constraint (how long a line may run) and is a different thing from a page width:
+`PageHeader`'s subtitle is `max-w-prose`, and Glossary / ProcessFlows put `max-w-4xl` on a `<p>`.
+Those are correct and untouched. The gate matches a large `max-w-*` **on a `<div>`** for exactly
+this reason.
+
+⚠️ **THE EXCLUSION IN THE GATE IS PRINCIPLED, NOT AN ALLOWLIST — AND CHECKING IT CAUGHT AN ALIAS
+THAT WOULD HAVE PRODUCED A FALSE ACCUSATION.** `/login` and `/register` render **no**
+`AppShellV2`; they are full-bleed flows owning their own chrome, and `SupplierRegistration`'s
+`max-w-3xl mx-auto` is a **centred form**, which is a legitimate width for a page with no shell
+around it. They are out of scope because they are not shell pages. **And `SupplierRegistration.tsx`
+is routed under a DIFFERENT NAME** — `SupplierRegistrationV2`, an aliased import. A first reading
+took it for an unrouted file; the router said otherwise. **A name-based exclusion would have been
+wrong about it in both directions at once** — excluded as "unrouted" for the wrong reason, and
+accused the moment somebody noticed it was routed. The gate follows the router's own imports and
+asserts the alias resolves.
+
+---
+
+### 70d · THE GATE — `src/router/pageWidth.guard.test.ts`
+
+Derives routes from the **router source** (§65a: the smoke guard that asserted its own table's
+length and never read `AppRouter` could not detect the defect its comment named). Matcher probed
+**both ways** — fires on a `<div>` container width, silent on a `<p>` measure, on `max-w-prose`,
+and on the **comment that records the removal**, which names the very classes it removed
+(`withoutProse`, and the §68 lesson that a rule stated in the file it governs is always readable
+as a violation of itself — earned again here, since the note added to `RolesCatalogue` quotes
+`p-6 max-w-6xl`).
+
+Population asserted by **membership**, never a count, including that the ALIASED import resolves —
+without which every per-file assertion would be vacuously true over an unreadable set. Bilateral
+second half: `max-w-prose` must still exist in `PageHeader`, or *"put it on the text instead"*
+becomes advice with no example left in the tree.
+
+---
+
+### 70e · GATES
+
+Four green. **3342 tests / 244 files / 7 gate** (from 3337/243/7); `scripts/floor.json` bumped.
+
+Browser QA on the rebuilt bundle, **both locales, both Roles surfaces**. Before/after measured on
+the same instrument at the same viewport (1920):
+
+| | before | after |
+|---|---|---|
+| `/buyer/roles` container | 1152px | **1610px** |
+| `/buyer/roles/:roleId` container | 896px | **1616px** |
+| control (`/buyer/process-flows`) | 1610px | 1610px (unchanged) |
+
+**The control is what proves the delta is the change and not the measurement.** The 1610/1616
+spread across readings is the vertical scrollbar, not a layout difference. No page scrolls
+horizontally in either locale; the catalogue table already sits in its own `overflow-x-auto` card
+with `w-full`, so narrow widths were unaffected by removing the cap.
+
+⚠️ **AND THE STALE-HASH TRAP FIRED, IN THE ONE PLACE THE HABIT SAYS TO CHECK.** After the
+rebuild the preview server served `index-DMyKU0SE.js` and the running page was still
+`index-DvGB5pnQ.js` — a cached `index.html`. **The server response and the live DOM disagreed**,
+and reading only the server would have shown a fresh hash over a stale render, i.e. the fix
+reported as FAILED. The hash is now asserted from `document.querySelectorAll('script[src]')`
+inside the page on every reading, not from `curl`.
+
+
+---
+
+## §71 — TWO PLACEMENTS, AND A THIRD WAY A CLEAN READING LIES
+
+**Dispatch:** docs only. Both items are placements of things §70 already established — which is
+the batch's whole content, and the reason it is worth doing separately: **a rule filed in the
+wrong place is read in the wrong order, and order is what a rule's limit depends on.**
+
+---
+
+### 71a · `CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01` — the third member of the clean-reading family
+
+Filed in the derivation doctrine as its own class rather than as a note on either neighbour,
+**because it fails for a reason neither of them covers**:
+
+| | What the instrument examined | Why the clean reading is worthless |
+|---|---|---|
+| `EMPTY-INPUT-REPORTS-CLEAN-01` (§42b) | **nothing** | there was no population |
+| **rule 1** | a population, through a broken matcher | the result reports on the matcher |
+| **this** | **everything, correctly** | **the defect was removed an hour earlier** |
+
+> **THE OPERATIVE FORM: A CLEAN RESULT TAKEN RIGHT AFTER THE FIX IS A REPORT ABOUT THE FIX.**
+
+**It is the hardest of the three to distrust, because nothing is wrong with it.** The population
+is real and complete, the matcher is correct, the zero is honest. Rules 1 and 3 both train a seat
+to ask *"is my instrument broken?"* — and here the answer is **no**, which is exactly what makes
+the reading survive scrutiny it has not earned.
+
+**The instance, and it is this arc's own.** At §70b a candidate gate for
+`FORWARD-PROMISE-HAS-NO-HANDLER-01` — look for a governed vocabulary quoted verbatim inside i18n
+copy — measured **zero false positives across the entire i18n layer**. A genuinely clean reading
+over a genuinely complete population. **It was clean because §69 had deleted both instances that
+morning.** Read as evidence of a well-behaved instrument, it was evidence of a completed repair.
+
+⚠️ **AND THE CONSEQUENCE IS RULE 4's, ARRIVING THROUGH A DIFFERENT DOOR: AN INSTRUMENT
+VALIDATED ONLY AGAINST A REPAIRED TREE HAS NEVER BEEN SHOWN TO FIRE.** Rule 4 says probe the
+guard both ways, and the failure here is not skipping that — it is **believing it is already
+done**, because the real-tree run came back green and green is what a working guard looks like.
+**The zero proves the repair landed; it proves nothing about the next instance.**
+
+**The disposal is a second measurement against different input:** fire the instrument at the
+defect the fix removed. §70b did exactly that, and reported it as a **separate** figure for that
+reason — *it would have fired on both §69 strings* is a different claim from *it returns zero
+today*, taken against a different tree. Reporting only the zero would have been the honest half of
+a two-part measurement, presented as the whole.
+
+**Why it is not folded into rule 4.** Rule 4 governs the PROBE. This governs **what a seat
+concludes from a green run on the real tree**, which is the step before anyone thinks about
+probing — and it is the step where the probe gets skipped as unnecessary.
+
+---
+
+### 71b · THE BOUND ON `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` NOW LEADS THE RULE
+
+§70 recorded the bound in both places and put it in the wrong position in both: under a heading
+reading *"What this does NOT license"* in §70a, and trailing behind a ⚠️ at the end of the
+CLAUDE.md block. Moved to sit immediately under the rule in both.
+
+> **AN UNVERIFIED MECHANISM IS STILL FILED, WITH ITS UNCERTAINTY STATED. ONLY A MECHANISM
+> *MEASURED FALSE* IS WITHHELD.**
+
+**This is a placement change and it is not cosmetic.** A rule whose limit trails behind a warning
+symbol **gets read as the rule plus a footnote** — and here the footnote is the half that keeps
+the rule from inverting: unbounded, *"do not file a finding whose mechanism is false"* licenses
+withholding anything a seat has not proven, **which empties the register of exactly the findings
+that most need checking.** The uncertain findings are the reason a register exists; a rule that
+quietly excludes them has not made the register cleaner, it has made it agree with whoever wrote
+it last.
+
+⚠️ **AND THE FAILURE MODE IS SPECIFIC TO HOW THIS FILE IS READ.** `CLAUDE.md` is long and is
+skimmed for the bolded claim; §27's `FLOOR-IN-PROSE-01` is the same observation about a NUMBER
+in prose — a fact stated where nothing checks it drifts, and a limit stated where nobody reads
+it is dropped. **Both halves of a rule have to survive the skim, so both halves are bolded and
+the limit comes first.**
+
+---
+
+### 71c · GATES
+
+Docs only — no code, no fixtures, no i18n. Four green, **floor unchanged at 3342 / 244 / 7**. No
+browser QA: nothing rendered changed, and running one would have produced a green reading that
+said nothing about this batch — which is 71a, on the batch that files 71a.
+
+---
+
+## §72 — THE HANDOFF POPULATION, DERIVED — AND THE COVERED PAGE THAT SHIPPED A FALSE AFFORDANCE
+
+### 72a · `IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` — the new class, and it fired on the page that invented the pattern
+
+**THE GENERAL FORM: A COVERAGE CENSUS THAT COUNTS IMPORTERS COUNTS FILES, AND THE DEFECT LIVES IN
+VERBS.** A page can import the guard, use it correctly four times, and still ship the exact
+affordance the guard exists to remove.
+
+`BuyerRequisitions` was on the covered side of every count taken of this arc. It imports
+`HandoffNotice`, renders four of them, and has three spec files pinning them. It also rendered a
+live **"New PR"** button to a `procurement` seat that holds no `pr:create` — a button that opens a
+three-step wizard and is refused at the dispatcher on submit, with nothing on screen naming the
+requester.
+
+**Why the four were guarded and the fifth was not is structural, not careless.** §67/§68 built the
+guards while wiring the APPROVAL LOOP, and every verb in that loop acts on a document **already
+selected**: submit, revise, approve and reject all live in the detail panel, behind a row click.
+`t_pr_create` makes the document. It lives in the page header, it is reachable before any row
+exists, and a sweep that walks the panel finds nothing to fix there. **The verb that creates is
+the one a document-shaped census cannot see, and every governed surface in this portal has one.**
+
+⚠️ **AND THE CLASS IS THE READING, NOT THE MISS.** The instrument said *"2 surfaces import
+`HandoffNotice`"* and that number was correct — `CLAUDE.md`'s *"wired on BuyerInvoices only"* was
+the stale one, corrected here. What the correct number could not say is that one of the two was
+itself uncovered. **A membership test over files answers a question about files.** The next sweep
+must derive *(surface × verb) → guarded?*, not *surface → imports the guard?*.
+
+### 72b · THE POPULATION, RE-DERIVED — AND THE FIRST MATCHER MISSED A WHOLE DISPATCH FAMILY
+
+The inherited figure was *"11 pages import `commandHooks`, 2 import `HandoffNotice`, so nine
+render unconditionally."* Re-derived against `main`:
+
+- **`HandoffNotice` importers = 2.** CONFIRMED (`BuyerInvoices`, `BuyerRequisitions`).
+- **`commandHooks` importers = 12 files, 9 of them routed pages.** Neither is 11. Not reconciled
+  — §40k: re-run, do not explain a gap.
+- ⚠️ **AND `commandHooks` IS THE WRONG INSTRUMENT.** A SECOND dispatch family writes through
+  `svc.commands.dispatch` directly, in `sdcBuyerHooks.ts` and `sdcSupplierHooks.ts` — **seven
+  governed verbs the import-matcher cannot see**, on `BulkStockEntryGrid`, `BuyerChannelTriage`,
+  `BuyerCollaboration`, `CommHubInbound` and `SupplierForecasts`. Rule 1, on the nose: a
+  suspiciously round population reporting on its own matcher.
+
+Re-derived from *hook → `transitionId`* across all five hook modules, then *file → hooks called*,
+probed both ways (known-good `BuyerInvoices` present; known-bad `BuyerContractDetail` absent):
+
+> **17 surfaces dispatch 32 governed verbs. 2 are covered. 15 are not — and 7 of those 15 are
+> buyer-side, which is where the constraint can bite.**
+
+### 72c · WHAT A NARROWED SEAT ACTUALLY SEES — MEASURED, AND IT IS THE WORST OF THE THREE
+
+Rendered `BuyerGoodsReceipt` and `BuyerSourcing` under a **finance-only** buyer seat and dumped
+every button with its disabled state:
+
+```
+GR   (GR-2026-001 open) >>> "New GR [EN]", "Submit inspection results [EN]"   HANDOFF NODES: 0
+SRC  (RFQ-2026-001 open) >>> "New RFQ [EN]", "Cancel RFQ [EN]"                HANDOFF NODES: 0
+```
+
+Every one **ENABLED**, over atoms the seat does not hold. Of the three possible defects — an
+enabled button that refuses, a disabled one, nothing at all — **it is uniformly the first.** The
+other two do not occur anywhere, and the reason is structural: a grep for
+`businessRoles | atomsFor | availabilityOf | rolesHolding` across every page and component returns
+`BuyerInvoices`, `BuyerRequisitions`, `IdentityPanel`, `SidebarV2` and nothing else. **Thirteen
+surfaces cannot be role-conditional, because none of them reads the seat.**
+
+### 72d · THE SUPPLIER SEAT CANNOT BE NARROWED, SO EIGHT OF THE FIFTEEN ARE INERT
+
+`PERSONA_SYSTEM_ROLES.supplier` is **`['supplier']`** — one role — and `rolesFromStorage`
+(`identitySources.ts:53-60`) falls back to the full set when a filter empties it, on the stated
+ground that *"a seat that can do nothing is indistinguishable from a broken portal."* A supplier
+seat therefore has **no proper subset to narrow to**, and every verb on all eight supplier-side
+surfaces is held by `supplier`.
+
+`availabilityOfAtom` returns `held`, `HandoffNotice` returns `null`, on every render, for every
+user. **Building there ships eight surfaces of unreachable branch.** Filed, not built — and the
+finding is not *"handoff is missing on supplier pages"* but ***"the supplier side has one role, so
+no cross-role handoff exists there to render."*** It becomes buildable the day a second supplier
+role does.
+
+### 72e · THREE PREMISES IN THE DISPATCH, MEASURED — TWO INVERTED, ONE ALREADY TRUE
+
+Per §64a, grepped before being built on; per §70a, recorded with the mechanism corrected rather
+than filed as stated.
+
+| Named | Measured |
+|---|---|
+| **`t_supplierdoc_upload` is held by nobody** | **The identifier does not exist.** `supplierDocument.flow.ts` has `_request` / `_submit` / `_verify` / `_reject`, and **all four atoms are held** — `compliance` ×3, `supplier` ×1. None is dispatched by any surface. |
+| **Two supplier-lane verbs name a persona, not a role — `rolesHolding` would have to be widened** | **Nothing needs widening.** `supplier` IS a `SystemRoleId`, `rolesHolding` already returns it, and `roles.owner.supplier` already reads *Supplier* / *Pemasok*. "Awaiting the supplier" renders today through the mechanism as built. |
+| **A narrowed seat exists only through the demo switcher, so the defect is unreachable** | **It is reachable by any user of the current build.** `IdentityPanel` is mounted in `TopBarV2` on every shell page, `toggleRole` calls `setIdentity`, and that persists to `localStorage`. The persona toggle does reset to all six roles (`SidebarV2:183,203`) — true, and it is a reset, not the only path. |
+
+⚠️ **THE THIRD ONE MATTERS MOST AND IT STRENGTHENS THE RULING IT CONTRADICTS.** The ruling said
+build anyway *because the fixture frontend is the SE team's executable specification, and a team
+wiring a real IdP inherits the false affordances* — which stands. But the defect is **not** waiting
+on identity: it is reachable through the avatar, in this bundle, today. **A reason to build that
+understates the defect is still a reason to build; it just books the finding in the wrong tense.**
+
+⚠️ **AND THE `unowned` ARM IS REAL, JUST NOT HERE.** Derived across all 64 atoms in every
+registered flow: **12 are held by no assignable role** — `po:issue`, `po:fulfil`, `po:close`,
+`asn:carry`, `invoice:match`, `rfq:close`, `quotation:award`, `quotation:reject`,
+`shipment:create`, `shipment:advance`, `pr:source`, `pr:convert` — all machine or cascade acts,
+and **none dispatched from any of the 17 surfaces.** `MULTI-HOLDER` came back **empty**: no atom
+in the tree is held by two roles. So of the three shapes the component was feared unable to
+express, one is unreachable from a surface, one does not exist, and one needs nothing.
+
+### 72f · WHAT WAS BUILT — THE HOOK, AND THE CREATE PLACEMENT PROVEN ON ONE SURFACE
+
+`src/hooks/useVerbAvailability.ts` — `useVerbAvailability(atom)` and `useVerbAvailabilities({...})`.
+
+⚠️ **IT IS ERGONOMICS, NOT A CAPABILITY GAP, AND THE ENTRY SAYS SO BECAUSE THE DISPATCH DID NOT.**
+The pattern was said not to transfer — *"both existing uses are row-level with a document in
+scope."* Measured, **`availabilityOfAtom(atom, seatRoles)` takes no document at all**, and
+`BuyerRequisitions` already computed all four of its availabilities at component top level from
+`identity.businessRoles` alone. What is document-dependent is knowing **which verbs are on offer**
+(`invoiceActionsForSeat` reads a lifecycle state) — a legality question, not an availability one.
+**Conflating them is how a display layer starts answering a machine question**, and keeping them
+apart is why the create case turned out to be the EASY one: the verb is fixed and known statically.
+
+So the hook earns its place on a narrower argument: `identity.businessRoles` is the ONE legal
+input, and **a surface that reaches for it by hand can reach for something else by hand** — a
+persona, a `supplierId`, a status — and produce an availability the dispatcher will not agree
+with. A hook that accepts an atom and nothing else cannot be handed the wrong input.
+
+`useVerbAvailabilities` returns a record **keyed by the caller's own names**, never a positional
+array: two lists lined up by index is the defect `RfqDraftRefusal` avoided by discriminating on a
+field rather than on an order. Both directions are pinned — the transposition test asserts the
+opposite seat inverts BOTH keys, which a positional builder would pass by accident on one seat.
+
+**Proven on `BuyerRequisitions`:** four availabilities moved onto the hook (behaviour identical,
+existing specs untouched and green), `create` added, and the header action **withheld rather than
+disabled** — `primary` is omitted and the notice sits beside the bar. A disabled button says *"you
+may not"* without saying *who may*, which is the distinction `HandoffNotice`'s own header sets out.
+**`Export` and bulk-download are NOT gated**: they hold no atom, and gating a read on a verb would
+invent an authority the machine never asserted.
+
+### 72g · THE GUARD WAS PROBED, AND THE KILL CONFIRMED BY NAME
+
+Rule 4, and §50e's trap avoided. Mutating the guard to always-true (`{...(true ? {primary...`)
+killed **`WITHHELD: a procurement seat gets NO button and reads WHOSE act it is`** — by name — while
+the other three cases stayed green. **The suite loaded and ran four tests**, so this was the gate's
+kill and not a compile error being credited to it.
+
+### 72h · GATES
+
+Four green. **3342 → 3356 tests / 244 → 246 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — the notice needed **no new key**, since `roles.handoff.*` and
+`roles.owner.*` shipped complete in both locales at §64.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash asserted from inside the page**
+(`index-Cvj81MYM.js`, matching the build output, read from `document.querySelectorAll('script[src]')`
+on every pass):
+
+| seat | locale | New PR | handoff | Export |
+|---|---|---|---|---|
+| full buyer (6 roles) | en | **present** | absent | present |
+| `['procurement']` | en | **ABSENT** | *Awaiting Requisitioner* (`data-handoff="withheld"`) | present |
+| `['procurement']` | id | **ABSENT** | *Menunggu Pemohon* | present |
+
+No English leak in ID, no raw i18n keys, no body overflow (`scrollWidth <= innerWidth`, 1554px).
+
+⚠️ **THE BASELINE IN THE DISPATCH WAS A PHANTOM, FOR THE SECOND CONSECUTIVE BATCH.** It named
+`main 90bce8d` / floor `3364/245`; `git cat-file -t 90bce8d` → *not a valid object name*, and the
+floor stood at `3342/244`. That figure is what the unbuilt `estimatedValue` batch would have
+produced. §43, in the same shape as the PR #257 merge refused one turn earlier: **a plan read as a
+result.** Recorded because two in a row is a pattern, not a slip.
+
+---
+
+## §73 — THE PAGE-LEVEL CREATES, AND THE FALSE AFFORDANCE ONE LAYER IN
+
+### 73a · WHAT SHIPPED
+
+Two entry-point creates, one notice each, on the hook as shipped at §72 — not widened.
+
+| surface | verb(s) | atom(s) → owner | control |
+|---|---|---|---|
+| `BuyerSourcing` | `t_rfq_create` | `rfq:create` → **procurement** | *New RFQ* |
+| `BuyerGoodsReceipt` | `t_gr_create` → `t_gr_start_inspection` → `t_gr_post` | `gr:receive` · `gr:inspect` · `gr:post` → **receiving** | *New GR* |
+
+Both **WITHHELD, not disabled** — `primary` is omitted and the owner is named beside the bar. The
+reads (`Export`, `Templates`, `Lab Results`) hold no atom and are not gated; gating a read on a
+verb would invent an authority the machine never asserted.
+
+⚠️ **THE GR ENTRY IS GUARDED ON THE WHOLE CHAIN, NOT ON ITS FIRST VERB.** The button starts a flow
+that cannot finish without all three atoms, so it is withheld unless all three are held, and the
+FIRST withheld one names the owner in chain order — never a merged list, because the three are one
+sequence and the earliest blocker is the one a reader waits on. Today all three resolve to
+`receiving` and to nothing else, so this renders exactly one behaviour; `THE CHAIN AGREES TODAY`
+pins that agreement, so the day someone splits `gr:inspect` into a QA role the suite says so
+instead of the button quietly admitting a seat the commit will refuse.
+
+### 73b · `WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01` — FILED, NOT FIXED
+
+**THE GENERAL FORM: A GUARD AT THE DOOR IS NOT A GUARD ON THE ROOM. A MULTI-STEP FLOW THAT
+VALIDATES ONLY ITS FORM ADMITS A SEAT ITS COMMIT WILL REFUSE, AND EVERY STEP SPENT INSIDE IS WORK
+THE PLATFORM ALREADY KNOWS IT WILL THROW AWAY.**
+
+`Wizard`'s `goNext` is gated by `isStepValid(currentStep)` (`Wizard.tsx:36,135`), and
+`GRInspectionWizard`'s implementation (`:903`) asks only about FORM COMPLETENESS — required fields,
+quantity readability, the quality determination. **It never consults the seat.** So a withheld seat
+that reaches the wizard by any route other than the entry button walks all four steps, fills the
+inspection, and is refused at the commit.
+
+§73's entry notice closes the only route this tree has TODAY (the button is now absent for such a
+seat), which is why this is filed rather than fixed: **there is no reachable path to demonstrate
+it, and a fix with no failing case is a fix with no probe.** It becomes live the moment any second
+route into the wizard exists — a deep link, a row action, a resumed draft. Its own ruling.
+
+⚠️ **AND IT IS THE SAME SHAPE AS `IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` ONE LAYER IN.** There,
+a page imported the guard and still shipped an unguarded verb. Here, a surface guards the verb and
+still ships an unguarded *approach* to it. Both are the gap between where the check sits and where
+the act happens.
+
+### 73c · THE DISPATCH'S PREMISE, MEASURED — THE CONCLUSION SURVIVED, BOTH GROUNDS DID NOT
+
+The ruling for one notice was: *"all four wizard steps take `gr:post`, so the entry-point atom is
+identical to every step's atom in every case."*
+
+Measured, **neither half holds**:
+
+- **The atoms are not identical.** `t_gr_create` takes `gr:receive`, `t_gr_start_inspection` takes
+  `gr:inspect`, `t_gr_post` takes `gr:post` — three distinct atoms.
+- **The steps do not dispatch at all.** All four mutations fire in ONE handler at the wizard's end
+  (`GRInspectionWizard.tsx:1526-1588`): create → finalize → post → settle. **There is one commit,
+  not four.**
+
+⚠️ **AND THE CONCLUSION IS RIGHT ANYWAY, ON A GROUND NEITHER HALF NAMED.** Every `gr:*` atom sits
+in exactly ONE assignable bundle — `receiving=[gr:receive, gr:inspect, gr:disposition, gr:post]`,
+with `admin` filtered out by `rolesHolding` because a role holding everything names nothing. So a
+seat either holds `receiving` and holds all four, or holds none of them. **Availability is provably
+identical across the chain for every seat that can exist**, which is a stronger statement than
+"the atoms are the same" and it is what makes one notice honest.
+
+**Both hazards the ruling weighed are therefore unreachable in this lane:** there is no seat
+holding three of four to OVERSTATE against, and none admitted to a wizard that refuses at step
+three to UNDERSTATE for. This is `§64a`'s shape again — *a misdescribed mechanism attached to a
+correct conclusion* — and per `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` the true mechanism is
+recorded here rather than the stated one.
+
+### 73d · FOUR ATTRIBUTIONS, DECLINED — AND THE RULE ARRIVING THROUGH PRAISE
+
+Recorded at operator instruction, because **declining credit is the discipline and accepting it
+would have put three false mechanisms in the register.**
+
+A merge was ordered for **PR #258**, a successor number invented over the #257 this seat had
+reported — the doctrine's exact failure case, and the second consecutive dispatch to name a
+non-existent object (§72h records the phantom `90bce8d`). Refused at the site the action named
+(`gh pr view 258` → *Could not resolve*).
+
+Alongside it, three corrections credited to the §72 build, **none of which happened**:
+
+| Credited | Measured |
+|---|---|
+| Caught a parallel derivation of the owner set in the hook | `useVerbAvailability.ts` contains **no owner derivation** — it calls `availabilityOfAtom` and memoises. Nothing to catch. |
+| Refused an empty-list return for "no owner" | Never proposed. `VerbAvailability` **already modelled `unowned` as its own arm at §64**; this batch did not touch it. |
+| Chose a persona return over widening `rolesHolding` | Never proposed. **Nothing needed widening** — `supplier` already IS a `SystemRoleId`. |
+
+⚠️ **`FALSE-MECHANISM-MUST-NOT-BE-FILED-01` ARRIVING THROUGH PRAISE RATHER THAN THROUGH A FINDING,
+AND THAT DIRECTION IS NEW.** §70a anticipated a false mechanism attached to a *blocker* — "X cannot
+do Y" invites a Y-shaped replacement and nobody re-measures a blocker. This is the mirror: a false
+mechanism attached to a *success*, which is harder to refuse because refusing it costs the seat
+credit and challenges nothing anyone is relying on. **A register of caught defects that never
+happened is worse than a register with gaps: the gaps are known, and the fictions are load-bearing
+for the next batch that reads them.** The reasoning in all three was sound — an empty collection
+standing for a missing fact really is a refusal that looks like an answer — and sound reasoning
+about a hazard the batch never came near is a lesson, not a finding.
+
+### 73e · GATES
+
+Four green. **3356 → 3365 tests / 246 → 247 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — no new key; `roles.handoff.*` and `roles.owner.*` shipped complete at §64.
+
+**Guards probed, two kills confirmed BY NAME**, suite loaded and ran all 9 (so these were the
+gates' kills, not a compile error being credited to them — §50e):
+`WITHHELD: a finance seat loses the button and reads the owner` ·
+`WITHHELD: a receiving seat loses the button and reads the owner`.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash `index-Bu11QIgA.js` asserted
+from inside the page on every pass** (`document.querySelectorAll('script[src]')`):
+
+| seat | locale | surface | control | notice |
+|---|---|---|---|---|
+| `['finance']` | en | goods-receipt | **New GR ABSENT** | *Awaiting Receiving* (`withheld`) |
+| `['finance']` | en | sourcing | **New RFQ ABSENT** | *Awaiting Procurement* (`withheld`) |
+| `['finance']` | id | goods-receipt | absent | *Menunggu Penerimaan* |
+| `['finance']` | id | sourcing | absent | *Menunggu Pengadaan* |
+| `['receiving','procurement']` | en | goods-receipt | **New GR present, ENABLED** | absent |
+
+`Export` and `Lab Results` present on every withheld pass. No English leak in ID, no raw i18n keys,
+no body overflow. **The held-seat control is the half a one-sided probe would have skipped** — a
+guard that removes a button correctly and removes it always is not a guard, and only the last row
+proves it does not.
+
+---
+
+## §74 — THE ROW-LEVEL GROUP, AND THE PROBE THAT CAUGHT AN ASSERTION LOOKING AT NOTHING
+
+### 74a · WHAT SHIPPED — NINE VERBS, FIVE SURFACES, ONE PATTERN, NO WIDENING
+
+| surface | verb(s) | atom(s) → owner | placement |
+|---|---|---|---|
+| `BuyerChannelTriage` | `t_inventorydeclaration_record` | `inventorydeclaration:record` → **planning** | at the confirm control |
+| `BuyerCollaboration` | `t_requirementresponse_resolve` | `requirementresponse:dispute` → **planning** | once on the disputes section |
+| `IntakeReview` | `t_pr_create` | `pr:create` → **requisitioner** | once in the page header |
+| `IntakeAdjustDrawer` | `t_pr_create` | `pr:create` → **requisitioner** | at the push button |
+| `BuyerSourcing` | publish · reopen · cancel · review · award · fx-pin | all → **procurement** | three group notices |
+
+The hook needed no change. **Nothing revealed a shape it could not express**, and the report says
+so plainly rather than claiming a save.
+
+⚠️ **ONE NOTICE PER ADJACENT ACTION GROUP, NOT PER VERB — AND THE RULE IS ABOUT THE READER, NOT
+ABOUT THE MACHINE.** `IntakeReview`'s Accept is per line over an unbounded table, and
+`BuyerCollaboration`'s resolve CTA is per dispute; the atom does not vary by row, so a notice on
+every row is the same string repeated down a column, which teaches nothing after the first. The
+notice is stated once where it governs, and the per-row control is simply absent. `BuyerSourcing`
+groups publish/reopen/cancel (one action row, publish and reopen state-exclusive) and review/award
+(the comparison drawer) — different panels, different acts, so they keep distinct notices.
+
+⚠️ **EVERY BUTTON IS STILL GATED ON ITS OWN ATOM, NEVER ON THE GROUP'S.** The grouping is a
+rendering decision about repeated strings; the authority is per verb. So the day a bundle splits
+`rfq:award` from `rfq:cancel`, every button is already right and only the grouping needs re-taking
+— and `the six sourcing verbs share ONE owner today` fails to say so. The same future-proofing as
+the §73 GR-chain pin, applied to a wider set.
+
+**`Dismiss` (IntakeReview) and the reads everywhere are NOT gated.** Dismiss is local view state
+holding no atom; gating it would invent an authority the machine never asserted.
+
+### 74b · `ABSENCE-ASSERTED-OVER-AN-UNLOADED-LIST-01` — AND ONLY THE MUTATION PROBE FOUND IT
+
+**THE GENERAL FORM: AN ASSERTION THAT A THING IS ABSENT, TAKEN BEFORE THE THING COULD HAVE
+APPEARED, PASSES FOR THE WRONG REASON AND IS INDISTINGUISHABLE FROM A GUARD THAT WORKS.**
+
+`BuyerCollaboration`'s withheld case asserted *"no resolve CTA"* after awaiting only the page
+HEADING. The notice renders synchronously; the dispute ROWS arrive from an async read. So the
+assertion ran over an empty list and passed **while looking at nothing.**
+
+**It went green, and it stayed green when the guard was turned off.** The four-guard mutation probe
+killed three cases by name and left this one alive — and *that silence is the whole finding*. A
+green suite says nothing about a test that examines an empty collection; only asking the guard to
+misbehave reveals which assertions were watching.
+
+⚠️ **THIS IS `EMPTY-INPUT-REPORTS-CLEAN-01` (§42b) RELOCATED FROM THE DERIVATION TO THE
+ASSERTION.** There an instrument examined an empty population and reported clean. Here a test
+examined an empty list and reported pass. Same mechanism, different layer — and the detector is
+different too: §42b was caught by a known-good control, this by a kill that did not happen.
+**A missing kill is evidence, not an absence of evidence.**
+
+Repaired by waiting for the section to hold at least one `listitem` before asserting the CTA is
+gone. The probe then killed all four.
+
+⚠️ **AND A SECOND INSTANCE IN THE SAME BATCH, CAUGHT ONE STEP EARLIER.**
+`BuyerChannelTriage`'s confirm control **is not on the page until a message is parsed**, so *"the
+withheld seat has no confirm button"* passed for every seat, including the holding one. Caught by
+rule 4's reflex — asking whether the KNOWN-GOOD seat could reach the control at all. It could not.
+Both cases now drive the parse first, and the held case asserts the control IS there before the
+withheld case is believed. **Two assertions in one batch that were true of nothing.**
+
+### 74c · THE THIRD GROUP WAS A CATEGORY BUILT ON THREE SHAPES THE TREE DOES NOT HOLD
+
+The split was ruled as row-level → page-level create → **special shapes**. Recorded at operator
+instruction: **there is no special-shape group, and there never was one.** All three anticipated
+shapes were measured absent at §72e:
+
+- **a verb held by two roles** — `MULTI-HOLDER` is empty across all 64 atoms;
+- **a verb held by none** — 12 such atoms exist, all machine or cascade, **none reachable from any
+  surface**;
+- **`t_supplierdoc_upload`** — the identifier does not exist; the four `supplierdoc` verbs are all
+  held and none is dispatched.
+
+What the third group actually contained was **row-level work misclassified**, which is why it
+merged into this batch without residue. **A category can be built out of anticipated shapes and
+survive planning intact, because nothing in a plan measures its own population** — the standing
+heuristic's rule 1 applied to a TAXONOMY rather than to a census.
+
+### 74d · GATES
+
+Four green. **3365 → 3377 tests / 247 → 248 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — no new key; `roles.handoff.*` and `roles.owner.*` shipped complete at §64.
+
+**Guards probed, four kills confirmed BY NAME**, suite loaded all 12 (not a compile break, §50e):
+triage · collaboration · intake-review · sourcing, each `WITHHELD:` case.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash `index-hCS5OyqQ.js` asserted
+from inside the page on every pass:**
+
+| seat | locale | surface | affordance | notice |
+|---|---|---|---|---|
+| `['finance']` | en | intake-review | **0 Accept**, 4 Dismiss kept | *Awaiting Requisitioner* ×1 |
+| `['finance']` | en | collaboration | **0 CTA** over **1 dispute row** | *Awaiting Planning* ×1 |
+| `['finance']` | en | sourcing | **no Cancel / Publish / New RFQ** | *Awaiting Procurement* ×1 per group |
+| `['finance']` | id | collaboration | — | *Menunggu Perencanaan* |
+| `['finance']` | id | sourcing | — | *Menunggu Pengadaan* (both groups) |
+| **held control** | en | sourcing | **Cancel + New RFQ present** | **absent** |
+| **held control** | en | collaboration | **1 CTA present** | **absent** |
+| **held control** | en | intake-review | **4 Accept present** | **absent** |
+
+⚠️ **THE COLLABORATION ROW IS THE ONE TO READ TWICE: `0 CTA over 1 dispute row`.** The count of
+rows is in the measurement deliberately — it is the browser-side answer to §74b, and without it
+the zero would be the same zero the broken test was reporting. **A zero is only a finding when the
+population beside it is non-empty.**
+
+No English leak in ID, no raw i18n keys, no body overflow on any pass.
+
+---
+
+## §75 — THE COVERAGE DERIVATION RUN AS `(SURFACE × VERB)`, AND WHAT IT FOUND ON THE SURFACE JUST COVERED
+
+### 75a · THE RE-DERIVATION, AND THE SET DID NOT MOVE
+
+Re-derived before building, as instructed, comparing **sets and not counts**: hook → `transitionId`
+across both dispatch families, then file → hooks called, then — new here — file → the atoms it asks
+availability for.
+
+**17 surfaces, 32 governed verbs. Identical membership to §72b. Nothing moved, nothing appeared,
+nothing was retired.** The list in the dispatch was accurate.
+
+⚠️ **BUT RUNNING IT AS `(SURFACE × VERB)` INSTEAD OF `SURFACE → IMPORTS THE GUARD?` CHANGED THE
+ANSWER** — which is exactly what §72a said the next sweep must do, and this is the first sweep to
+do it.
+
+### 75b · `BuyerGoodsReceipt` HAD THREE UNGUARDED ROW CONTROLS — ON THE PAGE §73 HAD JUST COVERED
+
+§73 guarded the **New GR** entry and stopped there. `footerForStatus` is a switch over the row's
+status, and three of its arms dispatch:
+
+| status | control | verb → atom |
+|---|---|---|
+| `Pending Inspection` | **Start inspection** | opens the wizard → the whole `gr:receive → gr:inspect → gr:post` chain |
+| `Quality Hold` | **Request retest** | `t_gr_request_retest` → `gr:inspect` |
+| `Approved` / `Partially Approved` | **Post to SAP** | `t_gr_post` → `gr:post` |
+
+All three were gated on `isPending` alone. A withheld seat opening a row met a live control that
+dispatches and refuses.
+
+⚠️ **`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` FIRING A SECOND TIME, ON THE SURFACE THE PREVIOUS
+BATCH HAD JUST "COVERED".** §72a filed this class against `BuyerRequisitions`: a page that imports
+the guard, renders it, and still ships a false affordance. §73 covered `BuyerGoodsReceipt`'s
+header — and left its detail panel exactly as `BuyerRequisitions`'s header had been left. **The
+class does not care which end of the page you started from; it fires wherever the census counted
+files.**
+
+**And the scope that missed it was MINE, not the dispatch's.** The §72 report tabled
+`BuyerGoodsReceipt — gr_post, gr_request_retest` correctly, then the three-way split proposed
+"Batch B — the GR lane", §73 executed only the entry, and Batch 3's scope list — which I wrote —
+did not carry the remainder forward. **A correct derivation can still lose a row when the plan
+that consumes it is written by hand.**
+
+### 75c · AND IT MAKES §73b's OWN CLAIM FALSE — `WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01` IS LIVE
+
+§73b filed the wizard's ungated `isStepValid` and wrote: *"the entry notice closes the only route
+this tree has TODAY, so there is no reachable path to demonstrate it, and a fix with no failing
+case is a fix with no probe."*
+
+**There were two routes, and the second is in the same file.** `Start inspection` opens the same
+wizard from a row. So the finding was never dormant: a withheld seat could reach the wizard, walk
+all four steps, and be refused at the commit — from the moment §73 shipped.
+
+⚠️ **THE MECHANISM WAS RIGHT AND THE REACHABILITY CLAIM WAS WRONG, AND ONLY THE SECOND WAS
+LOAD-BEARING.** *"No reachable path"* is what turned a live defect into a parked one, and it was
+asserted from the surface the batch had just edited rather than derived from the wizard's callers.
+**The cheapest possible check — who opens this component? — was not run, because the batch had
+just finished looking at the only opener it knew about.** Guarding `Start inspection` closes the
+second door; `isStepValid` still never consults the seat, so the finding stays open on its
+merits, with its status corrected from *unreachable* to **closed at both known entrances,
+unprobed within**.
+
+### 75d · `BuyerInvoices` READS AS UNGUARDED AND IS NOT — A MATCHER LIMIT, REPORTED AS ONE
+
+The coverage derivation reports `BuyerInvoices` with `guardedAtoms: (none)` beside three governed
+verbs. **It is fully guarded.** It predates the hook and asks the question through
+`invoiceActionsForSeat(state, seatRoles)` + `availabilityOfVerb` (§64): `t_invoice_dispute` has its
+own guard, and `commitAvailability` covers whichever verb the footer dispatches — including the
+`t_invoice_resolve` case the first cut of that guard missed.
+
+Recorded because rule 2 cuts both ways: **a matcher keyed on the newest mechanism accuses every
+surface that predates it.** The instrument was narrowed to the hook and would have condemned a
+correct page. No change made.
+
+### 75e · WHAT WAS DELIBERATELY LEFT ALONE
+
+- **`Under Inspection` → Submit inspection results** — a deliberate toast (`DEAD-AFFORDANCE-01`).
+  It dispatches nothing, holds no atom, and is **not withheld from anybody**. Pinned by a test, so
+  a future seat cannot "complete the sweep" by gating a control that has no verb behind it.
+- **`Quality Hold` → Override hold** — also a toast, and deliberately so: overriding is a
+  governance act whose value is accountability, and the platform cannot name a person (C10 §2).
+  No atom, no notice.
+- **Every read** — Export, Lab Results, Templates, Dismiss. A control that holds no atom is not
+  withheld; it is ungoverned.
+- **The eight supplier-side surfaces** — a supplier seat is always exactly `['supplier']` and has
+  no proper subset to narrow to, so every notice would be dead branch.
+
+### 75f · GATES
+
+Four green. **3377 → 3382 tests / 248 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — no new key.
+
+**Guards probed, two kills BY NAME**, suite loaded all 17 (§50e):
+`WITHHELD: a finance seat reads the owner where Start inspection was` ·
+`WITHHELD: a finance seat reads the owner where Post to SAP was`.
+
+⚠️ **AND THE SPEC'S FIRST CUT WENT RED FOR THE §74b REASON, ONE LAYER OVER.** It opened
+`GR-2026-001` — whose status is `Under Inspection`, the toast arm — so it asserted a guard over a
+control that has no verb. **`footerForStatus` is a switch, so "the first row" is not a sample of
+the surface; it is a sample of one arm.** Rows are now chosen by the status whose verb is under
+test.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash `index-CO3L7Uo6.js` asserted
+from inside the page on every pass:**
+
+| seat | locale | row | control | notice |
+|---|---|---|---|---|
+| `['finance']` | en | GR-2026-002 `Pending Inspection` | **Start inspection ABSENT** | *Awaiting Receiving* |
+| `['finance']` | en | GR-2026-003 `Approved` | **Post to SAP ABSENT** | *Awaiting Receiving* |
+| `['finance']` | id | GR-2026-002 | absent | *Menunggu Penerimaan* |
+| **held `['receiving']`** | en | GR-2026-002 | **Start inspection PRESENT** | **absent** |
+| **held `['receiving']`** | en | GR-2026-003 | **Post to SAP PRESENT** | **absent** |
+| **held `['receiving']`** | en | header | **New GR PRESENT** | **absent** |
+
+No English leak in ID, no raw i18n keys, no body overflow on any pass.
+
+---
+
+## §76 — THE DRAWER IS A WORKSPACE: ONE NOTICE PER ACT, AND THE SEGREGATION THE SURFACE LETS ONE SEAT CROSS
+
+### 76a · THE RULING, AND WHAT MOVED
+
+§74 collapsed `BuyerSourcing`'s six non-create verbs into **two GROUP notices** — one per
+*adjacent action group*, carrying the FIRST WITHHELD atom's owner — on the reading that the RFQ
+side panel is a control a seat is admitted to or not.
+
+**The operator's ruling reverses it: the panel is a WORKSPACE, not a control.** Four separable
+acts on the selected document, four dispatches, four confirmations, each with its own from-state.
+A notice spanning them answers about a group nobody performs.
+
+| slot | verb → atom | notice |
+|---|---|---|
+| lifecycle row, `Draft` only | `t_rfq_publish` → `rfq:publish` | `handoff-rfq-publish` |
+| lifecycle row, `Closed` only | `t_rfq_reopen` → `rfq:reopen` | `handoff-rfq-reopen` |
+| lifecycle row, all three states | `t_rfq_cancel` → `rfq:cancel` | `handoff-rfq-cancel` |
+| comparison cell, **per quote** | `t_quotation_review` → `quotation:review` | `handoff-rfq-review` |
+| award section | `t_rfq_award` → `rfq:award` | `handoff-rfq-award` |
+
+`handoff-rfq-actions` and `handoff-rfq-drawer` are **retired**, and both ids are pinned ABSENT by
+the new spec — without that pin, re-collapsing tomorrow would keep the suite green, because every
+per-verb assertion is about the STRING a withheld seat reads and a group notice reads the same
+string. **The absence of the group ids is what makes the split itself the thing under test.**
+
+⚠️ **AND THE HOOK NEEDED NO CHANGE — WHICH IS THE ANSWER TO "IS THERE A THIRD SHAPE?".**
+`useVerbAvailabilities` is already one independent resolution per atom; the group was imposed on
+top of it by `firstWithheld`, a four-line helper in the page. There was never a component-shaped
+question to answer, only a placement.
+
+⚠️ **AND THE OPERATOR ASKED FOR THIS TO BE RECORDED, SO IT IS RECORDED AS THEY PUT IT:** *"I
+stopped a batch for a shape that was not there, and stopping was still right, because the report is
+what showed it."* The halt was called on a suspected THIRD shape — a control spanning two lanes,
+needing something the hook could not express. There was no such shape: `useVerbAvailabilities`
+already answers per atom, and the collapse was four lines of page-local helper. **The general
+form, and it is the reason this is worth a paragraph rather than a footnote: a halt called on a
+misread is not a wasted halt if the thing that resolves it is a measurement.** The alternative —
+building through the doubt — would have shipped whichever shape the doubt suggested, and nothing
+downstream re-measures a design decision. The cost of the stop was one report; the cost of
+guessing would have been a component.
+
+### 76b · THE TWO VERBS THE GROUP NOTICE SPANNED ARE **NOT CO-REACHABLE ON ANY RFQ** — MEASURED
+
+`handoff-rfq-drawer` took its availability from `firstWithheld(review, award)` and rendered in the
+**award section**. Derived over the fixtures:
+
+| requirement | RFQs that satisfy it |
+|---|---|
+| award slot — `Open` ∧ `isAllResponded` ∧ quotes > 0 | RFQ-2026-**003 · 009 · 012 · 013** |
+| move-to-review — a `Submitted` quotation exists | RFQ-2026-**011** (1 of 2 responded, so it never shows the award slot) |
+
+**The intersection is EMPTY.** So on every RFQ where the award slot actually rendered, the group
+notice was naming the owner of `quotation:review` — an act that was **not on the screen** — and on
+the one RFQ where the review act exists, the notice that spoke for it was in a section that does
+not render. The strings coincided (both atoms are `procurement`), so nothing looked wrong.
+
+⚠️ **THIS IS THE ARGUMENT AGAINST GROUPING THAT THE ABSTRACT VERSION COULD NOT MAKE.** "One notice
+for adjacent acts" sounds economical while the acts are assumed to co-occur. **Nobody checked
+whether they ever do**, and the check is one derivation over the fixtures. The spec now asserts
+each notice on the document that affords its act, on two different RFQs, *because the tree affords
+them on two different documents* — the split is not a preference, the group was structurally
+unable to be right for both.
+
+### 76c · THE PARTIALLY-HELD SEAT IS **NOT CONSTRUCTIBLE ON THIS SURFACE TODAY**, AND SAYING SO IS PART OF SHIPPING THE SPLIT
+
+The dispatch's case for per-verb notices is *"a partially-held seat sees what it can do and who
+owns the rest."* **No such seat exists here.** A seat holds ROLES, not atoms; all five drawer
+atoms sit in `procurement` and in no other bundle; so every constructible seat holds all five or
+none — asserted bilaterally in the spec (each atom → `['procurement']`, plus *no other assignable
+role contains any of them*, plus a known-different control atom so the pin cannot pass over a
+`rolesHolding` that returned `procurement` for everything).
+
+**What the split buys TODAY is not a partial seat.** It is that each line sits in the slot of the
+act it is about — a withheld seat on a `Closed` RFQ now reads TWO lines (reopen · cancel) where it
+read one, and on a `Draft` reads publish · cancel — so the reader can tell WHICH act each line
+answers for by where it is. **What it buys TOMORROW** is that a bundle split needs no re-grouping.
+The all-or-none pin is the tripwire on "today": the day one of these atoms moves, it goes red and
+the partial case becomes writable.
+
+### 76d · ⚠️ `SEGREGATION-CROSSED-IN-ONE-DRAWER-01` — FILED AT FULL WEIGHT, NOT FIXED
+
+**The instance, and it is sharper than the abstract question:** `BuyerRequisitions`' detail drawer
+offers `pr:revise` (the adjust textarea, `Rejected → Draft`), `pr:submit` (`Draft → Pending
+Approval`) and `pr:approve` (`Pending Approval → Approved`) **in the same panel, on the same
+document, to the same seat.** Arc 2 made the requester/approver split real in the bundles —
+`pr:create` / `pr:submit` / `pr:revise` ∈ `requisitioner`, `pr:approve` / `pr:reject` ∈
+`procurement`, **disjoint** — and the comment in `businessRoles.ts` says so in as many words:
+*"Raising and revising a requisition — split from approving one, which is the segregation
+`pr:approve` living in `procurement` expresses."*
+
+**THE ATOMS ARE DISJOINT AND THE SURFACE IS NOT.**
+
+**Mechanism, measured — every step, at the site the claim requires:**
+
+1. `IdentityPanel.toggleRole` is a **multi-select**: it adds or removes one role and refuses only
+   the empty set. Nothing forbids holding `requisitioner` and `procurement` together.
+2. **The default buyer seat holds BOTH** — `identityForPersona('buyer')` seeds
+   `PERSONA_SYSTEM_ROLES.buyer`, which is all six lanes. So the crossing is not an exotic
+   configuration a careless admin could reach; **it is the out-of-box state.**
+3. The transitions chain without the document changing hands:
+   `t_pr_revise (Rejected→Draft)` → `t_pr_submit (Draft→Pending Approval)` →
+   `t_pr_approve (Pending Approval→Approved)`, all three dispatched from the same open drawer.
+4. Nothing in the dispatcher can catch it: legality, role, fields, `QueryScope` and policy are all
+   evaluated PER TRANSITION. **A per-act gate cannot see a sequence**, and segregation of duties is
+   a property of the sequence.
+
+⚠️ **AND IT IS WITNESSED, NOT ARGUED — WALKED ON THE BUILT BUNDLE, ONE SEAT, ONE DRAWER, NO
+NAVIGATION.** The default buyer seat (localStorage cleared, so the identity re-seeds to
+`PERSONA_SYSTEM_ROLES.buyer`) opened `PR-2026-00344` and walked it end to end:
+
+| step | act | atom's bundle | what the drawer offered next |
+|---|---|---|---|
+| 0 | opened at `Pending Approval` | — | `pr-reject-open` · `pr-approve` |
+| 1 | **Reject** | `procurement` | → `Rejected`, offering `pr-revise-open` |
+| 2 | **Revise** — *the adjust* | `requisitioner` | → `Draft`, offering `pr-submit` |
+| 3 | **Submit** | `requisitioner` | → `Pending Approval`, offering `pr-approve` |
+| 4 | **Approve** — *the document it just adjusted* | `procurement` | → **`Approved`** |
+
+Final row: `PR-2026-00344 … Approved`. **Zero handoff notices on the page at any step** — nothing
+was withheld, because nothing could be: the seat holds every bundle. The two lanes alternate four
+times inside one panel and the machine records four legal transitions, because each one IS legal.
+**A per-transition gate cannot see a sequence, and this is what that sentence looks like from the
+UI.**
+
+**Why it is filed and not fixed:** the fix is a governance ruling, not a placement. It is also not
+cheap — every candidate below changes what the machine records, not just what the surface renders.
+
+**What would settle it — the two readings, and they are not the same question:**
+
+| | the ruling | what it would take to build |
+|---|---|---|
+| **(a) `pr:approve` does not belong in this drawer at all** | approval is a QUEUE act, not a document-detail act: the approver works a list of documents awaiting them, and the drawer that adjusts is not the surface that approves | a separate approval surface (or panel mode) keyed on `Pending Approval`; **cheap, and it does not stop the same PERSON approving** — a seat holding both bundles just walks to the other screen. **It relocates the gesture; it does not forbid it.** |
+| **(b) an adjusted requisition must leave the planner's hands before anyone approves it** | the real constraint is on the ACTOR, not the surface: whoever last wrote the document may not be the one who approves it | a **recorded prior actor** on the document and a policy hook comparing it to the approving actor. ⚠️ **AND THIS IS BLOCKED ON A NAMED PRECONDITION, MEASURED:** `CurrentIdentity.actor` is always `UNATTRIBUTED: NO_PERSON_IN_SESSION` (C10 §2 / `ENF-NO-PERSON-IN-IDENTITY-01`), so *"not the same person"* is a comparison **between two values the platform cannot produce**. (b) is unbuildable until an IdP answers — Stage F1. |
+
+⚠️ **AND THE TWO READINGS DISAGREE ABOUT WHAT SEGREGATION IS FOR, WHICH IS WHY THE RULING CANNOT
+BE SPLIT THE DIFFERENCE.** (a) treats it as a WORKFLOW property — the acts belong to different
+stations — and is satisfiable today with roles alone. (b) treats it as an ACCOUNTABILITY property
+— one human may not both write and bless — and is **structurally unreachable** in a portal with no
+persons. Shipping (a) while calling it segregation would be the more dangerous outcome of the two:
+it would look like the control exists, and the seat that holds both bundles would still cross it
+in two clicks on a different screen. **If (a) is ruled, the honest form is to say it is a
+station separation and that the actor-level control is deferred to F1 with (b) named.**
+
+**NOT filed as a false mechanism (`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`, §70):** every clause
+above was measured before writing — the multi-select toggle, the default seat's six roles, the
+three transitions' from/to states, and the `actor` constant. The one thing NOT measured is whether
+any real Paragon process wants (a) or (b); that is the operator's ruling and it is stated as open,
+not guessed at.
+
+### 76e · WHAT WAS LEFT ALONE, WITH THE REASON — AND ONE NEW OBSERVATION
+
+- ⚠️ **`Reject all & resource` (award section) IS A BUTTON WITH NO `onClick` AT ALL.** Measured:
+  `<Button variant="secondary">{t('sourcing.award.rejectAll')}</Button>`, no handler, no atom, no
+  dispatch, no toast. It is **not** the `DEAD-AFFORDANCE-01` shape §75e recorded on the GR lane —
+  those toasts at least SAY nothing happened. This one is inert: a labelled commit control that
+  does not respond to a click. **Left alone deliberately** — it holds no atom, so it is not a
+  handoff question, and removing a control is a design act this batch was not asked for. Recorded
+  here so the next sweep does not "cover" it with a notice, which would be the wrong repair for a
+  control that has no verb.
+- **`rfq:fx-pin`** — already per-verb (`handoff-rfq-fxpin`) since §74 and untouched. Its opener
+  (`FxBasisPanel` → the record-basis link) is ungated, so a withheld seat can open the dialog and
+  meets the notice where the commit button would be. That is the `WIZARD-ADMITS-A-SEAT-IT-WILL-
+  REFUSE-01` shape **one degree milder**: the dialog names the owner at the commit, so the seat is
+  told rather than refused. Not changed, recorded.
+- **Everything outside the drawer.** The dispatch scoped this batch to one component.
+
+### 76f · GATES, PROBES, QA
+
+Four green. **3382 → 3397 tests / 248 → 249 files / 7 gate**; `scripts/floor.json` bumped.
+EN and ID from birth — **no new i18n key**: `HandoffNotice` renders `roles.handoff.*`, which both
+locales already carry.
+
+**FIVE mutation probes, all KILLED BY NAME**, with the mutation asserted to have changed bytes
+before each run (the CRLF trap: a probe that silently never mutates reports a green suite as a
+weak gate):
+
+| mutation | test killed |
+|---|---|
+| cancel guard → always live | `WITHHELD: … reads the owner where Cancel RFQ was` |
+| cancel guard → never live | `HELD: a procurement seat keeps Cancel RFQ …` |
+| per-quote review guard → always live | `WITHHELD: the owner is read in the QUOTE CELL …` |
+| award guard → always live | `WITHHELD: … reads the owner where the award button was` |
+| publish guard → always live | `WITHHELD: … reads the owner where Publish RFQ was` |
+
+**Both directions on `cancel`** — §39's rule: a guard probed only for "does it catch the bad
+thing?" ships fine while being wrong about what it should ACCEPT.
+
+**Browser QA on the built bundle, both locales, cache-busted, hash `index-CG3SS_2T.js` asserted
+from inside the page on every pass** (and checked against `dist/index.html`'s entry):
+
+| seat | locale | RFQ (state) | controls | notices |
+|---|---|---|---|---|
+| `['receiving']` | en | 008 `Draft` | none | publish · cancel |
+| `['receiving']` | en | 004 `Closed` | none | reopen · cancel |
+| `['receiving']` | en | 001 `Open` | none | cancel |
+| `['receiving']` | en | 011 `Open`+Submitted quote | none | cancel · **review** |
+| `['receiving']` | en | 009 `Open`+all responded | none | cancel · **award** |
+| **held `['procurement']`** | en | 008 | **Publish · Cancel** | **none** |
+| **held `['procurement']`** | en | 004 | **Reopen · Cancel** | **none** |
+| **held `['procurement']`** | en | 001 | **Cancel** | **none** |
+| **held `['procurement']`** | en | 011 | **Cancel · Move to review** | **none** |
+| **held `['procurement']`** | en | 009 | **Cancel · Award to selected** | **none** |
+| `['receiving']` | id | 008 / 004 / 011 / 009 | none | *Menunggu Pengadaan* ×3 each |
+
+No English leak in ID, no raw i18n keys, no body overflow on any pass. **The held-seat control is
+five controls live and ZERO notices across all five documents** — a guard that removes a control
+always is a deletion, and only this half can tell the difference.
+
+### 76g · TWO PREMISES CORRECTED BEFORE THE BATCH RAN
+
+- **"Main at the #260 merge SHA."** `#260` does not exist (`gh pr view 260` → *Could not resolve to
+  a PullRequest*); `gh pr list --state all` topped out at **#259, OPEN**, and `main` was at
+  `f51127a` = the **#258** merge. The §43a reflex — assert the object exists **at the site the
+  action names** before acting on it — is what caught it; a plan read as a result, one batch later
+  than §43's. #259 was then merged on the operator's direction (`8f84c1b`) and this batch branched
+  from it, which is what made the dispatch's premise true rather than assumed.
+- **"The drawer"** resolved to two candidate components. `BuyerRequisitions`' detail drawer already
+  carries four per-verb notices (§72, #257) — zero delta — while `BuyerSourcing`'s RFQ panel held
+  the tree's only notices spanning more than one act, one of them literally named
+  `handoff-rfq-drawer`. Asked rather than guessed: **the target is `BuyerSourcing`**, and the
+  segregation instance is `BuyerRequisitions` (76d) — one batch, two components, and they are not
+  the same component.

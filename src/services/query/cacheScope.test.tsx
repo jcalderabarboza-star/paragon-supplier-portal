@@ -4,6 +4,8 @@ import { renderWithProviders, SUPPLIER } from '../../test/test-utils';
 import type { CurrentIdentity } from '../../context/CurrentIdentityContext';
 import type { BuyerInvoice, Page } from '../data/types';
 import { useBuyerInvoices } from './hooks';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
+import { NO_PERSON } from '../../context/noPerson';
 
 // supplier-A is the seeded sup-007; supplier-B is a different supplier.
 const SUPPLIER_A = SUPPLIER; // sup-007
@@ -11,6 +13,8 @@ const SUPPLIER_B: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-002',
   supplierName: 'Supplier B',
+  businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+  actor: NO_PERSON,
 };
 
 const Probe: React.FC = () => {

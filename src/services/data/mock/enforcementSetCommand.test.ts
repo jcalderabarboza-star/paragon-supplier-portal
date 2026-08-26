@@ -27,9 +27,10 @@ import {
   settingHistory,
   settingInForce,
 } from '../../../lib/enforcement';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
-const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-005' };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 const CHECK = 'halal.certificate';
@@ -354,5 +355,114 @@ describe('t_enforcement_set — ⚠️ EVERY CHANGE EMITS A DR-10 EVENT', () => 
     expect(event.actor).toBe('buyer:all');
     expect(event.actor).not.toContain('usr-014');
     expect(enforcementSettingStore.all()[0].setBy).toEqual(NAMED);
+  });
+});
+
+
+describe('⚠️ H4 — THE CEILING IS IDENTITY, AND IT IS NOT ONLY `BLOCK_OVERRIDABLE`', () => {
+  // ── THE FINDING THIS BATCH MEASURED, PINNED SO IT CANNOT BE RE-DISCOVERED ──
+  //
+  // The operator ruled `halal.certificate = BLOCK_OVERRIDABLE`, then — on the
+  // finding that an override cannot COMPLETE without a named person and would
+  // therefore degrade to `BLOCK` — re-ruled it to `OBSERVE`, "one line, and it
+  // reaches the clerk today".
+  //
+  // ⚠️ **MEASURED: `OBSERVE` IS REFUSED BY THE SAME CLAUSE, WITH THE SAME
+  // MESSAGE, FOR THE SAME REASON.** The direction rule baselines an unset check
+  // at `MAXIMUM_RIGOUR`, so EVERY mode below `BLOCK` is a loosening, and a
+  // loosening needs an actor the portal cannot produce
+  // (`ENF-NO-PERSON-IN-IDENTITY-01`). The ceiling is not a property of the
+  // override lane; it is a property of the LEDGER, and it applies to the whole
+  // ramp at once.
+  //
+  // Filed at full weight as `HALAL-ENFORCEMENT-CEILING-IS-IDENTITY-01`
+  // (`docs/findings.md` §63). NOTHING BELOW IS A COMPLAINT ABOUT THE RULE — the
+  // rule is correct and the operator wrote it. What is recorded is that the
+  // October mandate arrives before the identity spine does on current
+  // sequencing, and that is an operator decision, not a code change.
+
+  it('⚠️ PROBED BOTH WAYS — the TIGHTENING is accepted, so the refusal is about the DIRECTION', async () => {
+    // THE KNOWN-GOOD HALF FIRST. Without it, "the dispatch failed" is not
+    // evidence that the direction rule fired — it is equally consistent with a
+    // broken harness, an unregistered flow, or a role gate. §39's reflex.
+    const ok = await svc.dispatch(buyer, set({ mode: 'BLOCK', setBy: NOBODY }));
+    expect(ok.status).toBe('done');
+    expect(enforcementSettingStore.forCheck(CHECK)).toHaveLength(1);
+  });
+
+  it('⚠️ `OBSERVE` — THE OPERATOR\'S H4 RULING — CANNOT BE RECORDED TODAY', async () => {
+    const res = await svc.dispatch(
+      buyer,
+      set({ mode: 'OBSERVE', reviewBy: '2027-06-30', setBy: NOBODY }),
+    );
+    expect(res.status).toBe('failed');
+    expect(res.reason).toContain('requires a NAMED actor');
+    expect(res.reason).toContain('NO_PERSON_IN_SESSION');
+    // AND THE LEDGER IS UNTOUCHED — the un-governed state is the safe state, so
+    // a refused relaxation costs provenance and never enforcement.
+    expect(enforcementSettingStore.forCheck(CHECK)).toHaveLength(0);
+  });
+
+  it('⚠️ AND SO DOES `BLOCK_OVERRIDABLE` — the same clause, the same sentence', async () => {
+    // The two modes the operator considered are refused IDENTICALLY. That is
+    // the whole finding: choosing between them was never the decision that
+    // mattered, because neither is reachable.
+    const observe = await svc.dispatch(
+      buyer,
+      set({ mode: 'OBSERVE', reviewBy: '2027-06-30', setBy: NOBODY }),
+    );
+    const overridable = await svc.dispatch(
+      buyer,
+      set({ mode: 'BLOCK_OVERRIDABLE', reviewBy: '2027-06-30', setBy: NOBODY }),
+    );
+    expect(observe.status).toBe('failed');
+    expect(overridable.status).toBe('failed');
+    // Same shape, differing only in the mode each names.
+    expect(observe.reason!.replace('OBSERVE', 'X')).toBe(
+      overridable.reason!.replace('BLOCK_OVERRIDABLE', 'X'),
+    );
+  });
+
+  it('⚠️ A NAMED ACTOR RECORDS IT INSTANTLY — the gap is identity, nothing else', async () => {
+    // The proof that the refusal is not about the mode, the check, the payload
+    // or the verb. Hand it a person and the operator's ruling lands. This is
+    // what "the ceiling is identity" means, stated as an experiment rather than
+    // as an opinion.
+    const res = await svc.dispatch(
+      buyer,
+      set({ mode: 'OBSERVE', reviewBy: '2027-06-30', setBy: NAMED }),
+    );
+    expect(res.status).toBe('done');
+    expect(enforcementSettingStore.forCheck(CHECK)[0].mode).toBe('OBSERVE');
+  });
+
+  it('⚠️ AND THE LEDGER CANNOT CARRY THE RULING\'S REASON — reported, not written', async () => {
+    // The operator asked for the seed to be recorded "AS A DECISION WITH ITS
+    // AUTHOR AND ITS REASON", and to be told before one was written if the
+    // ledger could not hold it. IT CANNOT: an `EnforcementSetting` is
+    // `{ checkId, setBy, setAt, mode, reviewBy }` and `applyTransition`
+    // constructs it field by field, so a rationale in the payload is DROPPED
+    // rather than stored. Asserted here so the absence is a fact in the suite
+    // and not a claim in a report.
+    const res = await svc.dispatch(
+      buyer,
+      set({
+        mode: 'OBSERVE',
+        reviewBy: '2027-06-30',
+        setBy: NAMED,
+        // A rationale, offered the only way a caller could offer one.
+        rationale: 'the clerk must be told so the renewal can be chased',
+      }),
+    );
+    expect(res.status).toBe('done');
+    const row = enforcementSettingStore.forCheck(CHECK)[0] as Record<string, unknown>;
+    expect(Object.keys(row).sort()).toEqual([
+      'checkId',
+      'mode',
+      'reviewBy',
+      'setAt',
+      'setBy',
+    ]);
+    expect(row.rationale).toBeUndefined();
   });
 });

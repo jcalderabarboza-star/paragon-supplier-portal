@@ -5,6 +5,71 @@
 - Open a pull request to `main`; never push directly to `main`
 - The CLI merges via the GitHub UI (Squash + delete branch); the operator directs and approves
 
+### ⚠️ MERGE DOCTRINE — BOTH DIRECTIONS. RECOVERED AND EXTENDED (§59c, 2026-08-26)
+
+⚠️ **PROVENANCE FIRST, BECAUSE IT IS THE WHOLE ARGUMENT FOR THIS SECTION
+EXISTING.** The first half below was ratified 2026-08-14 and has governed every
+dispatch since — and it lived **only on `qa/chaos-ambience-pin` (PR #227), which
+was closed unmerged on 2026-08-20.** `grep -in "merge doctrine"` over every `.md`
+on `main` returned nothing; `main`'s sole trace of it was one sentence in
+`docs/findings.md` recording that it was *absent*. **A doctrine whose only copy
+is in a pull request is enforced by memory, and memory is the instrument this
+register exists because it does not trust.** It is restated here verbatim, not
+re-derived. That is `FLOOR-IN-PROSE-01`'s shape applied to a rule instead of a
+number.
+
+**HALF ONE — A MERGE INSTRUCTION NAMING A PR THE SEAT HAS NOT ITSELF REPORTED IS
+A REQUEST TO VERIFY, NOT TO MERGE (ratified 2026-08-14).**
+
+**The seat MUST refuse it, and refusing is doctrine rather than judgement.**
+Two merge instructions were issued in one arc for PRs that had never existed —
+`#226` before it was opened, and `#228` which was never opened at all. Both were
+refused, and the refusal is the only reason neither cost anything.
+
+The mechanism, named by the strategist against themself: **A PLAN WAS READ AS A
+RESULT.** The seat reports what it *would* build; that report is read as a build
+report; artifacts that exist only in a description get ruled on. **The
+strategist will not issue a merge instruction without a SHA and a PR number
+reported by the seat in the turn immediately prior.** Absent both, the
+instruction is a request to verify.
+
+⚠️ **AND THIS IS THE CLASS THE DISCIPLINE WAS NOT PROTECTING AGAINST, BECAUSE
+THE DISCIPLINE RUNS ON THE CODE SIDE AND THE DISPATCH SIDE HAD NO GATE.** Every
+code-side inverted premise costs a report, which is recoverable by measuring
+again. A merge is not. So before ANY outward or irreversible step — merge, push,
+publish, delete — assert the object exists **at the site the action names**
+(`gh pr view <n>`, `git branch`, the file itself), never from the conversation
+that described it. See `docs/findings.md` §43a.
+
+**HALF TWO — A REPORTED SHA IS A CLAIM, NOT A FACT (ratified 2026-08-26).**
+
+**Before the strategist rules on any merge report, THE SEAT VERIFIES ITS OWN
+REPORTED SHA WITH `git cat-file` AND STATES THE RESULT.** State the negative
+control too: a report that says only *"verified"* is indistinguishable from a
+report that ran nothing (`EMPTY-INPUT-REPORTS-CLEAN-01`), so name at least one
+object the check was expected to REJECT and show that it did.
+
+⚠️ **THIS CLOSES THE DIRECTION HALF ONE CANNOT SEE, AND IT IS THE DIRECTION THAT
+ACTUALLY FAILED.** Half one stops the strategist naming a PR the seat did not
+report. **It has nothing to say when a report NAMES one and the strategist
+ACCEPTS it** — which is the same object arriving through the one door the rule
+holds open, wearing the credential the rule asks for. An unknown number of
+rulings were made against merge reports citing PRs and SHAs this repository has
+never held (`9c31c7f` · `#226` · `#228` are the ones recovered; the register
+under-counts the class by construction, because a claim refused in conversation
+leaves no trace). **The tree was sound throughout. The account of it was not**,
+and no gate in this project reads an account.
+
+⚠️ **THE COST ASYMMETRY IS WHY THIS IS DOCTRINE AND NOT A HABIT.** The check is
+one command and cannot fail slowly. A merge performed on a SHA that does not
+exist fails loudly; a merge performed on the WRONG object that does exist does
+not fail at all. Half one guards the cheap direction. This guards the expensive
+one. Filed as `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`
+(`docs/findings.md` §59c), whose subject is the same object one step earlier —
+a SHA in a dispatch HEADER, arriving in the position that reads as context
+rather than as claim, which is exactly what makes it the cheaper place to put a
+wrong object.
+
 ## Session startup — run these commands every time
 git checkout main && git pull origin main
 
@@ -25,6 +90,72 @@ and approves, and the CLI merges via the GitHub UI (Squash + delete branch).
 Direct pushes to `main` are not used.
 
 ## Current state (as-built: main @ #65 — F0 + I3 complete; Stage G planning canon on main)
+
+> ⚠️ **AUTHORISATION NOW EXISTS (Batch A, §64).** `resolveRoles` no longer widens
+> a persona to its whole atom set: it resolves the SEAT's business roles
+> (`services/transitions/businessRoles.ts` — six system roles + a supplier role,
+> plus an `automation` grant that is deliberately NOT assignable to a person).
+> **There is no persona fallback**; a command scope without `businessRoles` is
+> refused, because a fallback is the wildcard with better manners. The cascade
+> fan-out runs under the automation grant — it re-dispatches inside a `catch {}`,
+> so it is the one path where a narrowed grant deletes a reachable act in
+> silence. `PERSONA_ROLES` survives as a DERIVED tenancy view and is no longer an
+> authorisation source. **Do not restate the atom or role counts here** — derive
+> them from `SYSTEM_ROLES` × `catalogRoles()`; the bilateral gate in
+> `businessRoles.test.ts` is what keeps them honest.
+>
+> **The cross-role handoff renders the wait, not a gap** (`handoff.ts` +
+> `HandoffNotice` + `useVerbAvailability`) — wired across the BUYER surfaces at §72–§76, and it is **ONE NOTICE PER VERB, IN THAT VERB'S OWN SLOT** (§76 retired §74's per-group collapse: the RFQ side panel is a WORKSPACE, not a control, and the two verbs one group notice spoke for are not co-reachable on any RFQ in the tree).
+> ⚠️ **DO NOT RESTATE HOW MANY SURFACES CARRY IT** — the sentence that stood here was a prose count and it was wrong TWICE, once per batch, which is `FLOOR-IN-PROSE-01` in the paragraph about handoffs. Derive it as **(surface × verb)** from the `testId="handoff-…"` sites against BOTH dispatch families. What is deliberately NOT covered, with the reason on record: **every supplier-side surface** (a supplier seat is exactly `['supplier']` — no proper subset to narrow to, so every notice is dead branch), every control that holds **no atom** (toasts and reads are ungoverned, not withheld — §75e), and **`GRInspectionWizard`'s interior** (`WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01`, OPEN — closed at both known entrances, unprobed within).
+> ⚠️ **AND THE SEGREGATION THE BUNDLES EXPRESS IS CROSSED BY ONE SURFACE (`SEGREGATION-CROSSED-IN-ONE-DRAWER-01`, §76d, OPEN).** `BuyerRequisitions`' drawer offers `pr:revise` → `pr:submit` → `pr:approve` on the same document to the same seat, and the DEFAULT buyer seat holds all six role bundles — so adjust-then-approve-what-you-adjusted is the out-of-box state, not a misconfiguration. A per-transition dispatcher cannot catch it: segregation is a property of the SEQUENCE. **Do not "fix" it with a notice or a role gate without the ruling** — §76d names the two candidate readings and measures that the actor-level one is unbuildable until an IdP answers (`actor` is always `UNATTRIBUTED: NO_PERSON_IN_SESSION`).
+> 
+> ⚠️ **AND IMPORTER PRESENCE IS NOT VERB COVERAGE (`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01`, §72a).** `BuyerRequisitions` imported the guard, rendered four of them, and still shipped a live **New PR** button to a seat holding no `pr:create` — because all four guarded verbs act on a document already selected and the CREATE verb lives in the page header. Derive the exposure as **(surface × verb) → guarded?**, never as **surface → imports the guard?**, and derive the surfaces from BOTH dispatch families (`commandHooks` AND the `sdc*Hooks` that call `svc.commands.dispatch` directly — a `commandHooks`-only matcher misses seven verbs).
+>
+> The resolved actor is a SEAM, not a person: `CurrentIdentity.actor` is always
+> `UNATTRIBUTED: NO_PERSON_IN_SESSION`. **C10 §6.2's payload-refusal half is NOT
+> built** and is guarded by a tripwire in `simUsrNamespace.test.ts` — the moment
+> shipped code constructs a `RESOLVED` actor, the refusal must land first.
+>
+> **AUTHORISATION IS NOW VISIBLE (§65).** The identity panel (`IdentityPanel`,
+> in the avatar) states the seat's role and the scope it grants, and is the ONE
+> role control — a sidebar chip block was built and rejected, and must not come
+> back. `/buyer/roles` is a READ-ONLY catalogue (list → detail), derived from
+> `SYSTEM_ROLES` × `getKnownFlows()`. It is UNGATED deliberately: **no page in
+> this platform has ever gated on role**, no atom could express it (C10 §3.3),
+> and the gate is filed as the precondition of EDITABILITY, not of reading.
+> Nothing persists a custom role — no store, no target — so duplicate-and-narrow
+> is a store, a verb and a merge rule, not a page feature.
+>
+> ⚠️ **`ROUTE-SMOKE-GUARD-IS-SELF-REFERENTIAL-01` (§65a).** `allRoutes.smoke`'s
+> coverage guard asserted its OWN table's length against a hardcoded number and
+> never read `AppRouter` — it could not detect the defect its comment named, and
+> was hiding three untested routes. It now DERIVES from the router source and
+> asserts membership both ways. **A page also has to bring its own chrome:**
+> `AppRouter` is a flat `<Routes>` with no layout route, so a page that forgets
+> `AppShellV2` renders with no sidebar and no way back, and
+> `renderWithProviders` will never say so.
+>
+> ⚠️ **THE APPROVAL BAND IS AUTHORED, AND THE LADDER IS UNBUILDABLE — NOT DEFERRED
+> (§69).** `approvalLevel` ('Section Head' / 'Procurement Head' / 'VP Procurement')
+> tracks `estimatedValue` closely enough to read as computed and **nothing computes
+> it**: zero relational or arithmetic reads of `estimatedValue` exist in the tree and
+> no threshold number exists in `src/` or `docs/`. The surface now SAYS it is
+> authored; `approvalBandAuthored.guard.test.ts` re-derives it every run (write-site
+> assertion primary, read-site secondary and labelled weaker).
+> **Both readings of what a band decides fail independently:** WHO MAY APPROVE needs
+> seniority roles that do not exist and C10 §3.4 forbids minting (*"a new role per
+> band"*); HOW MANY APPROVALS needs the `ApprovalPolicyAct` × `ApprovalAct` ledgers
+> C10 §3.5 defers. Either ground alone is sufficient.
+>
+> ⚠️ **AND DO NOT INHERIT "THE POLICY HOOK CANNOT SEE THE DOCUMENT" — IT IS FALSE AND
+> IT HAS ALREADY STOPPED ONE BATCH.** `PolicyHookFn` takes ONE ctx
+> (`{ entityId, currentState, toState, payload, target, scope }`), `CommandTarget.
+> readEntity` is *"Full entity for policy hooks to inspect"*, and FOUR shipped hooks
+> read a document through it (`policies.ts:64/87/104/263`) — none by importing a
+> store. What a threshold lacks is the RIGHT-HAND SIDE of the comparison, not the
+> left. A role-gated VALUE policy (value from `readEntity` × lane from
+> `scope.businessRoles`) is buildable today and is **not** the ladder: it
+> discriminates lanes, and the rungs are altitudes.
 Re-baselined by the **Canon True-Up** (2026-07-14). The prior "main @ #53" pointer
 was stale by ~12 commits; F0 (contract-freeze) and the I3 compliance phase are DONE,
 and the Stage G planning canon + World-Class Build Plan are now on main.
@@ -277,15 +408,28 @@ nav groups under one neutral key, `nav.glossary`.
   affordance or a primary action. Navy (`#0D1B2A`) is text/headings only — never
   a decorative fill. Mid (`#354A5F`) is secondary text. Surfaces stay white /
   light-neutral with subtle borders.
-- BUTTON HIERARCHY (DP2-BUTTON-01): primary action = action-blue **OUTLINE** by
-  default (`Button variant="outline"`) — the calm portal-wide register. **SOLID**
-  action-blue (`variant="primary"`) is RESERVED for consequential / irreversible
-  commits — Award (RFQ), Release payment, Post-to-SAP, Reject / Dispute,
-  Override-hold. Principle: **solid = the irreversible-commit signal**; at most
-  ONE meaningful solid per surface. Export / Cancel / Close / secondary paths stay
-  outline / `variant="secondary"`; an Export never occupies the primary slot. The
-  `BulkActionsBar` primary slot renders outline by default — set `primary.solid`
-  only for a reserved commit verb. WhatsApp / messenger chrome is exempt (D-2).
+- ⚠️ BUTTON HIERARCHY (DP2-BUTTON-01, **AMENDED §68 — THE RESERVED-SOLID
+  REGISTER IS RETIRED**): primary action = action-blue **OUTLINE**
+  (`Button variant="outline"`), and it is now the ONLY primary register.
+  Export / Cancel / Close / secondary paths stay `variant="secondary"`; an
+  Export never occupies the primary slot.
+
+  **SOLID action-blue no longer exists in this portal.** The prior rule reserved
+  it for consequential / irreversible commits — Award (RFQ), Release payment,
+  Post-to-SAP, Reject / Dispute, Override-hold, at most one per surface — and
+  exempted WhatsApp / messenger chrome from DP-2 (D-2). **All of that is
+  retired, messenger chrome included** (operator ruling, §68).
+
+  **THE RULE IS ENFORCED BY A TYPE, NOT BY THIS PARAGRAPH.** `Button`'s
+  `Variant` union has no `'primary'` member, so every route back is a `tsc`
+  failure; `src/pages-v2/solidButtonRetired.guard.test.ts` covers what a type
+  cannot. **Do not restate the site count here** — the literal scan that opened
+  the sweep was incomplete four ways (a `BulkActionsBar` prop, an
+  `invoiceActionModel` flag that also drove a confirm step, two typed
+  `'primary' | 'outline'` helpers, and `Button`'s own DEFAULT), and the last two
+  were found by the type after the union member was removed, not by any scan.
+  If solid is ever wanted again, amend this paragraph AND the type AND the gate
+  together — changing one of the three is how the register comes back.
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.
@@ -508,6 +652,36 @@ counts the opposite half of the asymmetry, and one event under two classes
 inflates both. The population guard is now the FIRST test in the shipped gate and
 asserts MEMBERSHIP, never a count. §42b.
 
+⚠️ **§71 · AND A THIRD WAY A CLEAN READING LIES, WHICH IS NEITHER OF THE OTHER
+TWO — `CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01`. THE OPERATIVE FORM: A CLEAN
+RESULT TAKEN RIGHT AFTER THE FIX IS A REPORT ABOUT THE FIX.** The family now has
+three members and they fail for three different reasons, so a note on either of
+the first two would have been filed in the wrong place:
+
+| | What the instrument examined | Why the clean reading is worthless |
+|---|---|---|
+| `EMPTY-INPUT-REPORTS-CLEAN-01` | **nothing** | there was no population |
+| **rule 1** | a population, through a broken matcher | the result reports on the matcher |
+| **this** | **everything, correctly** | **the defect was removed an hour earlier** |
+
+The third is the hardest to distrust, because *nothing is wrong with it*: real
+population, correct matcher, honest zero. At §70b a candidate gate for
+`FORWARD-PROMISE-HAS-NO-HANDLER-01` measured **zero false positives across the
+whole i18n layer** — a genuinely clean reading over a genuinely complete
+population — and it was clean **because §69 had deleted both instances that
+morning.**
+
+⚠️ **AND THE CONSEQUENCE IS RULE 4's, ARRIVING THROUGH A DIFFERENT DOOR: AN
+INSTRUMENT VALIDATED ONLY AGAINST A REPAIRED TREE HAS NEVER BEEN SHOWN TO FIRE.**
+Rule 4 says probe the guard both ways; this is the case where a seat believes it
+already has, because the real-tree run came back green and green is what a
+working guard looks like. **The zero proves the repair landed. It proves nothing
+about whether the instrument can catch the next instance** — for that, fire it at
+the defect the fix removed (§70b did: the proxy would have caught both §69
+strings, which is a different measurement from the zero, taken against different
+input). **A gate whose only evidence is a clean run on a just-repaired tree is
+unprobed, whatever its output says.**
+
 ⚠️ **§51 · AND ONE LAYER ABOVE THE PROBE: THE INSTRUMENT THAT COUNTS THE PROBE.
 RULE 4 COVERS THE PROBE. THIS COVERS THE THING THAT READS THE PROBE'S OUTPUT, AND
 ITS FAILURE MODE IS FLATTERINGLY HUMBLE.** A mutation probe is trusted through a
@@ -531,15 +705,60 @@ that under-reports them is accepted as modesty and the gate gets rewritten to fi
 a hole it does not have. **STRIP THE FORMATTING BEFORE PARSING AN INSTRUMENT'S
 OUTPUT, AND CONFIRM ONE KILL BY NAME BEFORE TRUSTING A COUNT.**
 
-⚠️ **AND THE SAME REFLEX APPLIES TO AN ARTIFACT NAMED IN A DISPATCH.** Three
-identifiers have now been named as existing code and measured absent —
-`getInvoiceAction`, the FX-page `<span lang="en">` (§45), and `SurfaceExpectation`
-(§51) — beside a SHA (`c95e8ce`) and a PR number the tree never held. **The
-register under-counts this class by construction:** an invented artifact that is
-REFUSED in conversation leaves no trace, so only the ones that reached a batch
-were ever written down. Before building on a named artifact, `grep` for it —
+⚠️ **AND THE SAME REFLEX APPLIES TO AN ARTIFACT NAMED IN A DISPATCH.** The
+identifiers named as existing code and measured absent are
+`getInvoiceAction`, the FX-page `<span lang="en">` (§45), `SurfaceExpectation`
+(§51), **`blockingReasons` (§63b)**, and — all four in ONE dispatch (§64a) —
+**`roleMatches`**, **`buyer:planner`**, **`t_asn_confirm`** and
+**`t_asn_dispatch`** — beside a SHA (`c95e8ce`) and a PR number the tree never
+held.
+
+⚠️ **§64a ADDS THE VARIANT THAT IS HARDEST TO CATCH: A MISDESCRIBED MECHANISM
+ATTACHED TO A CORRECT CONCLUSION.** The dispatch said `buyer:all` was a wildcard
+that `roleMatches` short-circuits, on 32 of 44. `buyer:all` is a `requiredRole`
+on **0 of 91** transitions (it is the DR-10 audit ACTOR string) and `roleMatches`
+does not exist — the gate is a bare `Array.includes`. **And the conclusion was
+right anyway**: the persona-wide grant WAS a wildcard, because holding all 48
+atoms by virtue of being a buyer is exactly that. The wildcard was the SHAPE of
+the grant, not a token in it. **A hunt for the named token finds nothing and
+concludes there is no wildcard** — so grep the artifact, keep the property. **THE LIST IS THE COUNT; do not restate it as a number** —
+the sentence that stood here opened with *"Three"* while it was already time to
+write a fourth, which is `FLOOR-IN-PROSE-01` in the paragraph that teaches the
+reflex. `blockingReasons` was the load-bearing mechanism of a ruling — *"your own
+finding shows how: `qualityValid` ALREADY WRITES INTO `blockingReasons`"* — and it
+cost nothing only because it was grepped before it was built on. **The register
+under-counts this class by construction:** an invented artifact that is REFUSED in
+conversation leaves no trace, so only the ones that reached a batch were ever
+written down. Before building on a named artifact, `grep` for it —
 absence is a one-line measurement and a wrong premise with a specific name is the
 most believable kind.
+
+⚠️ **§70 · AND WHAT TO DO WITH ONE, WHICH §64a DOES NOT SAY —
+`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`. A FINDING WHOSE MECHANISM IS FALSE MUST
+NOT BE FILED, EVEN WHEN ITS CONCLUSION IS RIGHT: THE REGISTER IS WHAT THE NEXT
+BATCH BUILDS ON, AND A FALSE BLOCKER COSTS MORE THAN THE BATCH IT STOPPED.**
+**AND THE BOUND IS PART OF THE RULE, NOT A FOOTNOTE TO IT: AN UNVERIFIED
+MECHANISM IS STILL FILED, WITH ITS UNCERTAINTY STATED — ONLY A MECHANISM
+*MEASURED FALSE* IS WITHHELD. THE DISTINCTION IS WHETHER THE MEASUREMENT WAS
+TAKEN.** Unbounded, the rule licenses withholding anything a seat has not proven,
+**which would empty the register of exactly the findings that most need
+checking** — so the limit is what keeps the rule from inverting into the harm it
+exists to prevent, and it is stated before the argument rather than after it.
+§64a stops at detection (*grep the artifact, keep the property*), so the default
+survives — the conclusion held, and filing is what this project does with
+survivors. **That default is wrong, and asymmetrically:** a finding filed with a
+correct mechanism costs ONE batch to act on; one filed with a false mechanism
+costs EVERY batch that reads it, because "X cannot do Y" invites a Y-shaped
+replacement for X, and **nobody re-measures a blocker — a blocker is why you
+stopped.** At §69 the finding was *"the policy hook cannot reach the document"*,
+attached to a conclusion that was RIGHT (*the bands are not where the work is*),
+which is exactly what would have carried it past review; filed, it would have sat
+in front of every value-based policy this platform will ever want, while
+`readEntity` was documented for that purpose and four shipped hooks already used
+it. **The disposal is re-measure, then file the TRUE finding** — which was the
+opposite shape and sharper: the hook reaches the document, and what is missing is
+the RIGHT-HAND SIDE of the comparison. One is a dead end; the other names what to
+build.
 
 The gate itself is `src/lib/storedFieldGate/` — every stored field on a
 glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with

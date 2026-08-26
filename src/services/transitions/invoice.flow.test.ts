@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import { getFlow, getTransition } from './index';
 import { rolesForPersona, personaCan } from './roles';
+import { SYSTEM_ROLES } from './businessRoles';
 import { isMatched } from './invoiceRollup';
 import type { Invoice } from '../data/types';
 
@@ -65,9 +66,19 @@ describe('Invoice flows — registration + shape (Step 4 batch iii, DR-7)', () =
   it('personas map to their verbs: supplier submits, buyer approves/pays', () => {
     expect(personaCan('supplier', 'invoice:submit')).toBe(true);
     expect(personaCan('supplier', 'invoice:pay')).toBe(false);
+    // ⚠️ `invoice:match` LEFT THE PERSONA AT THE ROLE SPLIT. The three-way match
+    // is `system` + `surfaced: false / computed` — the platform derives the
+    // verdict, nobody clicks it — so it belongs to the automation grant, not to
+    // finance. The three a person actually holds stay, and they are FINANCE's:
+    // procurement does not release payment (operator ruling).
     expect(rolesForPersona('buyer')).toEqual(
-      expect.arrayContaining(['invoice:match', 'invoice:approve', 'invoice:pay', 'invoice:dispute']),
+      expect.arrayContaining(['invoice:approve', 'invoice:pay', 'invoice:dispute']),
     );
+    expect(rolesForPersona('buyer')).not.toContain('invoice:match');
+    expect(SYSTEM_ROLES.finance).toEqual(
+      expect.arrayContaining(['invoice:pay', 'invoice:approve', 'invoice:dispute']),
+    );
+    expect(SYSTEM_ROLES.procurement).not.toContain('invoice:pay');
   });
 
   it('the match rollup predicate gates on a clean Matched', () => {

@@ -39,12 +39,15 @@ import {
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
 import {
   useGoodsReceipts,
   useSuppliers,
   useShipments,
   useASNs,
   useEnforcementSettings,
+  useComplianceRegistry,
 } from '../services/query/hooks';
 import type { EnforcementSetting } from '../lib/enforcement';
 import type {
@@ -54,6 +57,7 @@ import type {
   Supplier,
   Shipment,
   ASN,
+  ComplianceRegistryEntry,
 } from '../services/data/types';
 
 const TODAY = '2026-05-20';
@@ -156,6 +160,13 @@ interface GoodsReceiptWorkspaceProps {
    *  rather than in the wizard so the read shares the page's four honest states:
    *  the wizard never mounts against a pending or failed ledger. */
   enforcementSettings: readonly EnforcementSetting[];
+  /** The compliance registry (I3.1) — the certificate side of the halal
+   *  three-fact split, passed to the wizard for the H4 NOTICE. Read here for the
+   *  same reason as the ledger above: the wizard never mounts against a pending
+   *  or failed read, so a notice can never be absent because a fetch was in
+   *  flight. **A NOTICE THAT SOMETIMES DOES NOT RENDER IS WORSE THAN NONE** —
+   *  it teaches a clerk that no banner means no problem. */
+  complianceRegistry: readonly ComplianceRegistryEntry[];
 }
 
 const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
@@ -164,6 +175,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   shipments,
   asns,
   enforcementSettings,
+  complianceRegistry,
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -181,6 +193,23 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardAsnId, setWizardAsnId] = useState<string | undefined>(undefined);
+
+  // §73 — THE SEAT'S AUTHORITY OVER THE WHOLE GR CHAIN, NOT OVER ITS FIRST
+  // VERB. One click at the wizard's end fires `t_gr_create` ->
+  // `t_gr_start_inspection` -> `t_gr_post`; a seat missing ANY of the three
+  // cannot complete what the button starts, so the button is withheld unless
+  // all three are held. The first WITHHELD one names the owner, in chain
+  // order — never a merged list, because the three are one sequence and the
+  // earliest blocker is the one a reader is waiting on.
+  const grChain = useVerbAvailabilities({
+    receive: 'gr:receive',
+    inspect: 'gr:inspect',
+    post: 'gr:post',
+  } as const);
+  const grChainAvailability =
+    [grChain.receive, grChain.inspect, grChain.post].find((a) => a.kind !== 'held') ??
+    ({ kind: 'held' } as const);
+
 
   // No local seeded copy — the list re-derives from the invalidated query after
   // each command (the standardized mutation pattern).
@@ -323,7 +352,12 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const footerForStatus = (g: GoodsReceipt): React.ReactNode => {
     switch (g.status) {
       case 'Pending Inspection':
-        return (
+        // §75 — THE SECOND ROUTE INTO THE WIZARD, AND IT MAKES §73b's "no
+        // reachable path" FALSE. This opens the same four-step wizard whose one
+        // commit fires t_gr_create -> t_gr_start_inspection -> t_gr_post, so it
+        // carries the same whole-chain guard as the "New GR" entry. Guarding
+        // only the entry left this door open.
+        return grChainAvailability.kind === 'held' ? (
           <Button
             variant="outline"
             onClick={() => {
@@ -334,6 +368,8 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           >
             {t('goodsReceipt.footer.startInspection')}
           </Button>
+        ) : (
+          <HandoffNotice availability={grChainAvailability} testId="handoff-gr-start" />
         );
       case 'Under Inspection':
         return (
@@ -359,15 +395,19 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 to a gap. It now dispatches `t_gr_request_retest` (Quality Hold →
                 Under Inspection) through the same governed path as every other
                 verb on this page. */}
-            <Button
-              variant="secondary"
-              disabled={retestMutation.isPending}
-              onClick={() => handleRequestRetest(g)}
-            >
-              {retestMutation.isPending
-                ? t('goodsReceipt.retest.submitting')
-                : t('goodsReceipt.footer.requestRetest')}
-            </Button>
+            {grChain.inspect.kind === 'held' ? (
+              <Button
+                variant="secondary"
+                disabled={retestMutation.isPending}
+                onClick={() => handleRequestRetest(g)}
+              >
+                {retestMutation.isPending
+                  ? t('goodsReceipt.retest.submitting')
+                  : t('goodsReceipt.footer.requestRetest')}
+              </Button>
+            ) : (
+              <HandoffNotice availability={grChain.inspect} testId="handoff-gr-retest" />
+            )}
             {/* ⚠️ STILL A TOAST, AND DELIBERATELY SO — `DEAD-AFFORDANCE-01`,
                 reported not fixed. Overriding a quality hold is a GOVERNANCE ACT
                 whose entire value is accountability: this named person accepted
@@ -378,7 +418,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 unattributed override unable to complete. It waits for identity,
                 and the wait is the honest state. */}
             <Button
-              variant="primary"
+              variant="outline"
               onClick={() =>
                 toast({
                   variant: 'warning',
@@ -393,14 +433,16 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         );
       case 'Approved':
       case 'Partially Approved':
-        return (
+        return grChain.post.kind === 'held' ? (
           <Button
-            variant="primary"
+            variant="outline"
             disabled={postMutation.isPending}
             onClick={() => handlePostToSap(g)}
           >
             {t('gr.post.action')}
           </Button>
+        ) : (
+          <HandoffNotice availability={grChain.post} testId="handoff-gr-post" />
         );
       case 'Posted to SAP':
         return (
@@ -523,21 +565,46 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         title={t('goodsReceipt.header.title')}
         subtitle={t('goodsReceipt.header.subtitle')}
         actions={
-          <BulkActionsBar
-            actions={[
-              {
-                label: t('goodsReceipt.action.export'),
-                icon: FileSpreadsheet,
-                onClick: handleExport,
-              },
-              {
-                label: t('goodsReceipt.action.labResults'),
-                icon: FlaskConical,
-                onClick: handleLabResults,
-              },
-            ]}
-            primary={{ label: t('gr.create.action'), icon: Plus, onClick: handleNewGR }}
-          />
+          // §73 — ONE NOTICE, AT THE ENTRY, AND THE MEASUREMENT IS WHY.
+          // "New GR" opens a four-step wizard whose LAST step fires the whole
+          // chain in one handler: t_gr_create -> t_gr_start_inspection ->
+          // t_gr_post -> settle. There is ONE commit, not four, so there is one
+          // place a handoff can honestly sit. Repeating the same string at each
+          // step would teach nothing after the first.
+          //
+          // Guarded on ALL THREE atoms, not on the first: the button starts a
+          // flow that cannot finish without every one of them. Today they agree
+          // in every case (all three sit in `receiving` and nowhere else), so
+          // this renders exactly one behaviour — and `grChainAgrees` in the spec
+          // pins that agreement, so the day a bundle splits `gr:inspect` into a
+          // QA role the suite says so instead of the button silently admitting
+          // a seat the commit will refuse.
+          <div className="flex items-center gap-3">
+            <HandoffNotice availability={grChainAvailability} testId="handoff-gr-create" />
+            <BulkActionsBar
+              actions={[
+                {
+                  label: t('goodsReceipt.action.export'),
+                  icon: FileSpreadsheet,
+                  onClick: handleExport,
+                },
+                {
+                  label: t('goodsReceipt.action.labResults'),
+                  icon: FlaskConical,
+                  onClick: handleLabResults,
+                },
+              ]}
+              {...(grChainAvailability.kind === 'held'
+                ? {
+                    primary: {
+                      label: t('gr.create.action'),
+                      icon: Plus,
+                      onClick: handleNewGR,
+                    },
+                  }
+                : {})}
+            />
+          </div>
         }
       />
 
@@ -916,6 +983,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           shipments={shipments}
           asns={asns}
           enforcementSettings={enforcementSettings}
+          complianceRegistry={complianceRegistry}
         />
       )}
     </AppShellV2>
@@ -936,13 +1004,17 @@ const BuyerGoodsReceipt: React.FC = () => {
   // fetched inside the wizard. A gate whose governing record is still loading
   // has no honest answer to give, and the page already owns the four states.
   const enforcementQuery = useEnforcementSettings();
+  // CP-3 · H4 — the certificate side joins the same read set. Buyer scope reads
+  // the superset; the service applies the scoping contract, not this page.
+  const registryQuery = useComplianceRegistry();
 
   if (
     grQuery.isPending ||
     suppliersQuery.isPending ||
     shipmentsQuery.isPending ||
     asnsQuery.isPending ||
-    enforcementQuery.isPending
+    enforcementQuery.isPending ||
+    registryQuery.isPending
   )
     return <LoadingState breadcrumb={GR_CRUMB} />;
   if (
@@ -950,7 +1022,8 @@ const BuyerGoodsReceipt: React.FC = () => {
     suppliersQuery.isError ||
     shipmentsQuery.isError ||
     asnsQuery.isError ||
-    enforcementQuery.isError
+    enforcementQuery.isError ||
+    registryQuery.isError
   )
     return (
       <ErrorState
@@ -960,7 +1033,8 @@ const BuyerGoodsReceipt: React.FC = () => {
           suppliersQuery.error ??
           shipmentsQuery.error ??
           asnsQuery.error ??
-          enforcementQuery.error
+          enforcementQuery.error ??
+          registryQuery.error
         }
         onRetry={() => {
           grQuery.refetch();
@@ -968,6 +1042,7 @@ const BuyerGoodsReceipt: React.FC = () => {
           shipmentsQuery.refetch();
           asnsQuery.refetch();
           enforcementQuery.refetch();
+          registryQuery.refetch();
         }}
       />
     );
@@ -990,6 +1065,7 @@ const BuyerGoodsReceipt: React.FC = () => {
       shipments={shipmentsQuery.data?.items ?? []}
       asns={asnsQuery.data?.items ?? []}
       enforcementSettings={enforcementQuery.data?.items ?? []}
+      complianceRegistry={registryQuery.data?.items ?? []}
     />
   );
 };

@@ -48,7 +48,7 @@ import {
 import {
   createDispatcher,
   InMemoryAuditSink,
-  rolesForPersona,
+  atomsFor,
   resolvePolicyHook,
   bindPolicyHook,
   POLICY_HOOKS,
@@ -610,8 +610,53 @@ const purchaseRequisitionTarget: CommandTarget = {
   readState: (id) => purchaseRequisitionStore.get(id)?.status ?? null,
   readScopeOwner: () => null,
   readEntity: (id) => purchaseRequisitionStore.get(id) ?? null,
-  applyTransition: (id, toState) => {
-    purchaseRequisitionStore.update(id, (pr) => ({ ...pr, status: toState as PRStatus }));
+  // ⚠️ **`toState` IS THE ONLY DISCRIMINATOR AVAILABLE HERE — `applyTransition`
+  // receives no transitionId — AND ON THIS FLOW IT IS SUFFICIENT, WHICH IS A
+  // FACT ABOUT THE MACHINE AND NOT A CONVENTION.** Each of the three states
+  // written below has exactly ONE inbound edge (`Rejected` ← t_pr_reject,
+  // `Draft` ← t_pr_revise, `Approved` ← t_pr_approve), and `t_pr_create` also
+  // lands at `Draft` but arrives through `create`, never through here. Derive
+  // it from `purchaseRequisition.flow.ts` before adding a fourth: a state that
+  // gains a second inbound edge makes one of these writes fire on the wrong
+  // verb, silently.
+  applyTransition: (id, toState, payload, scope) => {
+    purchaseRequisitionStore.update(id, (pr) => ({
+      ...pr,
+      status: toState as PRStatus,
+      // ⚠️ §67 — THE REJECTION REASON IS PERSISTED, AND THIS IS THE HALF THE
+      // INVOICE LANE NEVER BUILT. There, a required `disputeReason` reaches
+      // `applyTransition` and is dropped on the floor (`:703`); here the text
+      // the verb refused to proceed without is written onto the document the
+      // requester reads. A required field whose value evaporates is a
+      // validation message, not a record.
+      //
+      // Proven a non-blank string by `PR_REJECT_REASON_AUTHORED` before this
+      // runs, so no re-check and no fallback: a fallback here would be the
+      // guard admitting it does not trust itself.
+      //
+      // NOT cleared on any other edge — `t_pr_revise` carries the PR back to
+      // Draft and the reason stays, because "why this came back" is precisely
+      // what a requester needs while revising. Only a fresh rejection replaces
+      // it.
+      ...(toState === 'Rejected' ? { rejectionReason: String(payload.rejectionReason) } : {}),
+      // §68 — the SAME repair, on the note the verb had refused to proceed
+      // without since PF-1a and then dropped. Proven a non-blank string by
+      // `PR_REVISION_NOTE_AUTHORED` before this runs, so no re-check: a
+      // fallback here would be the guard admitting it does not trust itself.
+      //
+      // Each revision REPLACES the last. A note describes the change that
+      // produced THIS draft, so keeping an older one would attach the wrong
+      // explanation to the document an approver is about to read.
+      ...(toState === 'Draft' ? { revisionNote: String(payload.revisionNote) } : {}),
+      // ⚠️ §68 — WHO APPROVED IT, FROM THE SESSION AND NOT FROM `payload`.
+      // C10 §6.2: `PR_APPROVAL_ATTRIBUTED` has already refused a caller-supplied
+      // `approvedBy` and confirmed the scope carries an actor, so this reads the
+      // one source the caller cannot write. Today it is always
+      // `UNATTRIBUTED: NO_PERSON_IN_SESSION` — which is the honest absence the
+      // `approvalLevel` field could never be, because that one said
+      // 'Procurement Head' whether or not anybody had approved anything.
+      ...(toState === 'Approved' ? { approvedBy: scope.actor } : {}),
+    }));
   },
   creationOwner: () => null,
   create: (payload, toState) => {
@@ -642,7 +687,7 @@ const purchaseRequisitionTarget: CommandTarget = {
       costCenter: str('costCenter'),
       status: toState as PRStatus,
       createdDate: new Date().toISOString().slice(0, 10),
-      approver: '',
+      approvalLevel: '',
       sourceOfSupply: '',
       linkedDoc: '',
       priority,
@@ -1420,7 +1465,25 @@ export const commandAuditSink = new InMemoryAuditSink();
 let seq = 0;
 
 const dispatcher = createDispatcher({
-  resolveRoles: (scope) => rolesForPersona(scope.personaType),
+  // ── ⚠️ THE WILDCARD RETIREMENT, AND IT IS THIS ONE LINE ────────────────────
+  //
+  // WAS: `(scope) => rolesForPersona(scope.personaType)`. `PersonaType` is
+  // `'buyer' | 'supplier'`, so EVERY buyer session resolved to all 48 buyer
+  // atoms unconditionally — award, post-to-SAP, release-payment and
+  // enforcement-mode-setting held by one undifferentiated seat. That
+  // persona-wide grant WAS the wildcard: there is no literal `buyer:all` in the
+  // role path (it is the DR-10 audit ACTOR string, `events.ts:actorKey`, and a
+  // `requiredRole` on 0 of 91 transitions) and the gate is a plain
+  // `Array.includes` with no short-circuit. The wildcard was the SHAPE of the
+  // grant, not a token in it.
+  //
+  // ⚠️ **AND THERE IS DELIBERATELY NO PERSONA FALLBACK.** A scope without roles
+  // resolves to NOTHING and is refused `ROLE_NOT_PERMITTED`. Falling back to
+  // the persona span would re-grant all 48 atoms to every caller that had not
+  // been migrated yet — the wildcard surviving as a default, which is a
+  // wildcard with better manners. A refusal is loud, attributable to a named
+  // atom, and impossible to mistake for a working narrow grant.
+  resolveRoles: (scope) => atomsFor(scope.businessRoles ?? []),
   target: (entity) => TARGETS[entity],
   resolvePolicyHook,
   sink: commandAuditSink,

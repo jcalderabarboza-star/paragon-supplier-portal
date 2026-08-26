@@ -4,6 +4,8 @@ import Data from '../../components/ui-v2/Data';
 import Button from '../../components/ui-v2/Button';
 import PlanCellMarker from './PlanCellMarker';
 import { usePurchaseRequisitionCreate } from '../../services/query/commandHooks';
+import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
+import { useVerbAvailability } from '../../hooks/useVerbAvailability';
 import { DataError } from '../../services/data/types';
 import { formatNumber } from '../../lib/format';
 import { normalizeQty, type QtyRefusalReason } from '../../lib/localeNumber';
@@ -73,6 +75,11 @@ const QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
 const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) => {
   const { t } = useTranslation();
   const createPr = usePurchaseRequisitionCreate();
+
+  // §74 — `t_pr_create` (atom `pr:create`, held by `requisitioner`). The
+  // push is the ONLY exit from PLANNED (C6 §3), so a seat without the atom
+  // must read whose act it is rather than meet a button that refuses.
+  const pushAvailability = useVerbAvailability('pr:create');
 
   // Per-line editable state keyed by id, so switching the selected line keeps
   // each line's in-progress edit (accepted qty + reason + push outcome). The
@@ -256,13 +263,17 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
             </span>
           )}
         </div>
-        <Button
-          variant="outline"
-          disabled={blocked || committed || createPr.isPending}
-          onClick={push}
-        >
-          {createPr.isPending ? t('planGrid.push.pushing') : t('planGrid.push.button')}
-        </Button>
+        {pushAvailability.kind === 'held' ? (
+          <Button
+            variant="outline"
+            disabled={blocked || committed || createPr.isPending}
+            onClick={push}
+          >
+            {createPr.isPending ? t('planGrid.push.pushing') : t('planGrid.push.button')}
+          </Button>
+        ) : (
+          <HandoffNotice availability={pushAvailability} testId="handoff-plangrid-push" />
+        )}
       </div>
     </div>
   );

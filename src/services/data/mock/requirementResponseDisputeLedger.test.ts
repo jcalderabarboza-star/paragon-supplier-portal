@@ -31,8 +31,9 @@ import { MockCommandService } from './MockCommandService';
 import { requirementResponseStore } from './stores/requirementResponseStore';
 import { getTransition } from '../../transitions';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const svc = new MockCommandService();
 
 /** The fixture in 'Submitted' — the one state a review is legal from. */

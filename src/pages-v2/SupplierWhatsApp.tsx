@@ -696,7 +696,7 @@ const EmailBody: React.FC<{
         </div>
         <div className="flex gap-2 mt-4">
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() =>
               onAction('Order confirmed — SAP updated automatically')
             }
@@ -744,7 +744,7 @@ const EmailBody: React.FC<{
         </div>
         <div className="mt-4">
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() =>
               onAction('ASN-2026-001 created — Dock 1 @ 09:00 reserved')
             }
@@ -774,7 +774,7 @@ const EmailBody: React.FC<{
         </div>
         <div className="mt-4">
           <Button
-            variant="primary"
+            variant="outline"
             onClick={() =>
               onAction('Stock confirmed at 2,400 KG — IBP refreshed')
             }
@@ -844,7 +844,7 @@ const EmailBody: React.FC<{
       </div>
       <div className="mt-4">
         <Button
-          variant="primary"
+          variant="outline"
           onClick={() =>
             onAction('Payment confirmation requested — finance team notified')
           }

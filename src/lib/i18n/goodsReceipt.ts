@@ -214,6 +214,44 @@ export const goodsReceiptEn: Record<string, string> = {
     'The material master does not name {{code}}, so whether this lot needs a halal check is unknown. This line cannot be inspected until the material is registered.',
   'goodsReceipt.wizard.halal.refused.undetermined':
     'The material master names {{code}} but records no halal determination for it. This line cannot be inspected until someone rules on it.',
+  // ── ⚠️ CP-3 · H4 — THE CERTIFICATE NOTICE. IT TELLS; IT DOES NOT STOP. ────
+  //
+  // ⚠️ **EVERY STRING BELOW NAMES SOMETHING THE READER CAN ACT ON**, which is
+  // the whole of `HALAL-REFUSAL-DEAD-ENDS-01`: *a refusal that ends the
+  // conversation is half a remedy.* The refusal copy above says which regulator
+  // has not ruled and stops there, because the destination does not exist yet
+  // (`D-COMP-HALAL-1`). These do not have that excuse — the supplier, the
+  // document and its date are all in hand, so the copy hands them over.
+  //
+  // ⚠️ AND THE COPY NEVER SAYS THE RECEIPT IS BLOCKED, because it is not. The
+  // operator's ruling is that **the receipt proceeds and the person now knows
+  // they have a call to make.** Copy that said "cannot be received" would be the
+  // block the ruling refused, written in the one place nobody diffs.
+  'goodsReceipt.wizard.cert.valid.label': 'Halal certificate',
+  'goodsReceipt.wizard.cert.valid.expires': 'valid to {{date}}',
+  // GR 42/2024: a BPJPH certificate has no clock. `null` is a REAL answer here
+  // and must never render as a blank or a guess.
+  'goodsReceipt.wizard.cert.valid.noExpiry': 'no expiry (BPJPH, permanent basis)',
+  'goodsReceipt.wizard.cert.notice.title': 'Halal certificate — action needed.',
+  'goodsReceipt.wizard.cert.notice.proceeds':
+    'This does not stop the receipt. Record it and raise the renewal with the supplier and the compliance team.',
+  // The four reasons, and they are FOUR DIFFERENT NEXT ACTIONS — chase the
+  // renewal / chase the scheme migration / wait on the certifier / chase the
+  // document itself. A single "certificate not valid" would delete the
+  // difference an operator acts on.
+  'goodsReceipt.wizard.cert.reason.EXPIRED':
+    'The halal certificate for {{material}} expired on {{expiry}}.',
+  'goodsReceipt.wizard.cert.reason.SCHEME_INVALID':
+    'The halal certificate for {{material}} is in date, but its scheme no longer satisfies the BPJPH mandate (GR 42/2024) as of this receipt.',
+  'goodsReceipt.wizard.cert.reason.UNDER_REVIEW':
+    'A halal certificate for {{material}} is with the certifier and has not been granted.',
+  'goodsReceipt.wizard.cert.reason.NO_CERT':
+    'No halal certificate is on record for {{supplier}} covering {{material}}.',
+  'goodsReceipt.wizard.cert.field.supplier': 'Supplier',
+  'goodsReceipt.wizard.cert.field.certNumber': 'Certificate',
+  'goodsReceipt.wizard.cert.field.scheme': 'Scheme',
+  'goodsReceipt.wizard.cert.field.issuer': 'Issuer',
+  'goodsReceipt.wizard.cert.field.expiry': 'Expiry',
   'goodsReceipt.wizard.labSampleRequired': 'Lab sample required',
   'goodsReceipt.wizard.labRequestId': 'Lab Request ID:',
   // — Wizard: disposition & submit (step 4) —
@@ -411,6 +449,26 @@ export const goodsReceiptId: Record<string, string> = {
     'Master material tidak memuat {{code}}, sehingga tidak diketahui apakah lot ini memerlukan pemeriksaan halal. Baris ini tidak dapat diinspeksi sampai material tersebut terdaftar.',
   'goodsReceipt.wizard.halal.refused.undetermined':
     'Master material memuat {{code}} tetapi tidak mencatat penetapan halal untuknya. Baris ini tidak dapat diinspeksi sampai ada yang memutuskan.',
+  // CP-3 · H4 — lihat catatan pada blok EN di atas.
+  'goodsReceipt.wizard.cert.valid.label': 'Sertifikat halal',
+  'goodsReceipt.wizard.cert.valid.expires': 'berlaku sampai {{date}}',
+  'goodsReceipt.wizard.cert.valid.noExpiry': 'tanpa masa berlaku (BPJPH, dasar permanen)',
+  'goodsReceipt.wizard.cert.notice.title': 'Sertifikat halal — perlu tindakan.',
+  'goodsReceipt.wizard.cert.notice.proceeds':
+    'Hal ini tidak menghentikan penerimaan. Catat dan sampaikan perpanjangannya kepada pemasok dan tim kepatuhan.',
+  'goodsReceipt.wizard.cert.reason.EXPIRED':
+    'Sertifikat halal untuk {{material}} kedaluwarsa pada {{expiry}}.',
+  'goodsReceipt.wizard.cert.reason.SCHEME_INVALID':
+    'Sertifikat halal untuk {{material}} masih berlaku, tetapi skemanya tidak lagi memenuhi mandat BPJPH (PP 42/2024) pada saat penerimaan ini.',
+  'goodsReceipt.wizard.cert.reason.UNDER_REVIEW':
+    'Sertifikat halal untuk {{material}} sedang diproses lembaga sertifikasi dan belum diterbitkan.',
+  'goodsReceipt.wizard.cert.reason.NO_CERT':
+    'Tidak ada sertifikat halal yang tercatat untuk {{supplier}} yang mencakup {{material}}.',
+  'goodsReceipt.wizard.cert.field.supplier': 'Pemasok',
+  'goodsReceipt.wizard.cert.field.certNumber': 'Sertifikat',
+  'goodsReceipt.wizard.cert.field.scheme': 'Skema',
+  'goodsReceipt.wizard.cert.field.issuer': 'Penerbit',
+  'goodsReceipt.wizard.cert.field.expiry': 'Kedaluwarsa',
   'goodsReceipt.wizard.labSampleRequired': 'Sampel lab diperlukan',
   'goodsReceipt.wizard.labRequestId': 'ID Permintaan Lab:',
   // — Wizard: disposition & submit (step 4) —

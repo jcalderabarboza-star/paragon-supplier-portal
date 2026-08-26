@@ -392,7 +392,7 @@ const ItemBlock: React.FC<{
             ))}
           </select>
           <Button
-            variant="primary"
+            variant="outline"
             icon={Send}
             disabled={pending !== null || !effectiveHorizon}
             onClick={() => doRelease({ horizonDate: effectiveHorizon }, 'horizon')}

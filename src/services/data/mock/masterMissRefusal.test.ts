@@ -33,14 +33,15 @@ import type { ASN, QueryScope } from '../types';
 // what the wizard is actually fed rather than from three codes typed by hand.
 import { MOCK_ASNS } from './fixtures/supplierShipments';
 import type { InspectionResult } from '../../../data/mockGoodsReceipts';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
 const svc = new MockCommandService();
 // `supplierId` was MISSING — a scope shape production never builds. It survived
 // on `undefined == null` being true, so every null-check passed by accident.
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 // sup-002 collaborates on RM-EMUL-3310 (a relationship row) — so creation scope
 // PASSES for it, and the master gate is what the bogus cases actually hit.
-const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
+const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const BOGUS = 'RM-GHOST-0000';
 
@@ -198,6 +199,9 @@ describe('SDC_MATERIAL_KNOWN — the INNER gate, and the gap it actually closes'
       toState: 'Declared',
       payload: { materialCode } as Record<string, unknown>,
       target: {} as never,
+      // §68 — the hook context gained `scope`; this hook reads neither it nor
+      // the target, so both are honest stand-ins for what it never touches.
+      scope: { personaType: 'buyer', supplierId: null },
     });
 
   it('is bound', () => expect(hook).toBeDefined());

@@ -25,6 +25,8 @@ import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import { useVerbAvailability, useVerbAvailabilities } from '../hooks/useVerbAvailability';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
@@ -562,13 +564,17 @@ export const FOOTER_LABEL = (r: RFQ, t: TFunction): string => {
   return t('sourcing.footer.continueDraft');
 };
 
-// DP2-BUTTON-01: solid action-blue is the single reserved irreversible-commit
-// signal — at most one per surface. The footer button is polymorphic (see
-// FOOTER_LABEL); ONLY the Award state (an Open RFQ whose invitees have all
-// responded) is that commit. Every other state — Send reminder / View award /
-// View report / Continue draft — is a calm action-blue OUTLINE CTA.
-export const FOOTER_VARIANT = (r: RFQ): 'primary' | 'outline' =>
-  r.status === 'Open' && isAllResponded(r) ? 'primary' : 'outline';
+// ⚠️ §68 — THIS USED TO RETURN `'primary'` FOR THE AWARD STATE. DP2-BUTTON-01
+// reserved solid action-blue for the irreversible commit and Award was the one
+// verb on this surface that qualified. The reserved-solid register is retired
+// portal-wide (operator ruling), so every state — Award included — is the calm
+// action-blue OUTLINE CTA.
+//
+// The FUNCTION survives rather than being inlined, and deliberately: it is the
+// single place this surface's footer register is decided, so a future state
+// that wants a different one has an obvious seat, and the spec that used to
+// pin "Award is solid" now pins "nothing is" against the same seam.
+export const FOOTER_VARIANT = (_r: RFQ): 'outline' => 'outline';
 
 const ReviewSection: React.FC<{
   label: string;
@@ -805,6 +811,42 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // act, so it is confirm-before-commit like every other one on this surface.
   const [pinDraft, setPinDraft] = useState<PinDraft | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
+
+  // §73 — the seat's authority over `t_rfq_create` (atom `rfq:create`,
+  // held by `procurement`). One verb, one notice, one placement.
+  const rfqCreateAvailability = useVerbAvailability('rfq:create');
+
+  // §76 — THE SIX NON-CREATE VERBS, ONE NOTICE PER ACT. THE GROUPING IS GONE.
+  //
+  // §74 collapsed these into two group notices — one per ADJACENT action
+  // group, naming the first withheld atom — on the reading that the RFQ side
+  // panel is a CONTROL, so a seat withheld from the group should read the
+  // owner once. **The panel is not a control; it is a WORKSPACE** (operator
+  // ruling, §76): four separable acts on the selected RFQ, four dispatches,
+  // four confirmations, each with its own from-state. A notice that spans them
+  // answers about a group nobody performs.
+  //
+  // ⚠️ **AND THE COLLAPSE COST INFORMATION THAT THE HOOK ALREADY HAD.**
+  // `firstWithheld(publish, reopen, cancel)` renders ONE line for a seat that
+  // may hold one of the three and not the others: the notice names the first
+  // withheld owner and the held verb's button renders beside it, so the reader
+  // cannot tell WHICH act the line is about. Per-verb, a partially-held seat
+  // reads its own controls and the owner of each act it lacks — which is the
+  // constraint working, not an exception to it. Today every one of the six is
+  // held by `procurement` and by nothing else, so the strings coincide; the
+  // day a bundle splits, the surface is already right and no grouping has to
+  // be re-taken.
+  //
+  // `useVerbAvailabilities` needed no change to carry this: it is already one
+  // independent resolution per atom, and the group was imposed on top of it.
+  const rfqVerbs = useVerbAvailabilities({
+    publish: 'rfq:publish',
+    reopen: 'rfq:reopen',
+    cancel: 'rfq:cancel',
+    award: 'rfq:award',
+    review: 'quotation:review',
+    fxPin: 'rfq:fx-pin',
+  } as const);
   const [wizardStep, setWizardStep] = useState(0);
   const [draft, setDraft] = useState<DraftRfq>(EMPTY_DRAFT);
   const [supplierSearch, setSupplierSearch] = useState('');
@@ -1892,17 +1934,28 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
         title={t('sourcing.header.title')}
         subtitle={t('sourcing.header.subtitle')}
         actions={
-          <BulkActionsBar
-            actions={[
-              { label: t('sourcing.action.export'), icon: FileSpreadsheet },
-              { label: t('sourcing.action.templates'), icon: FileText },
-            ]}
-            primary={{
-              label: t('sourcing.action.newRfq'),
-              icon: Plus,
-              onClick: openWizard,
-            }}
-          />
+          // §73 — the page-level create, WITHHELD rather than disabled. A seat
+          // without `rfq:create` reads whose act it is instead of pressing a
+          // button that opens a wizard the dispatcher will refuse at the end.
+          // Export and Templates are reads holding no atom; they are not gated.
+          <div className="flex items-center gap-3">
+            <HandoffNotice availability={rfqCreateAvailability} testId="handoff-rfq-create" />
+            <BulkActionsBar
+              actions={[
+                { label: t('sourcing.action.export'), icon: FileSpreadsheet },
+                { label: t('sourcing.action.templates'), icon: FileText },
+              ]}
+              {...(rfqCreateAvailability.kind === 'held'
+                ? {
+                    primary: {
+                      label: t('sourcing.action.newRfq'),
+                      icon: Plus,
+                      onClick: openWizard,
+                    },
+                  }
+                : {})}
+            />
+          </div>
         }
       />
 
@@ -2416,41 +2469,68 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                       Award, Release payment, Post-to-SAP, Reject/Dispute,
                       Override-hold — and publish is not on it. Award already
                       holds the one solid on this surface. */}
-                  {selectedRfq.status === 'Draft' && (
+                  {/* PUBLISH — Draft only. The notice takes the button's OWN
+                      slot, inside the same state condition: a seat withheld
+                      from publishing reads that on a Draft, where the act
+                      exists, and reads nothing on an Open RFQ, where it does
+                      not. A notice outside the from-state would advertise a
+                      wait for an act the machine would refuse anyway. */}
+                  {selectedRfq.status === 'Draft' &&
+                    (rfqVerbs.publish.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={Send}
+                        disabled={publishMutation.isPending}
+                        onClick={handlePublish}
+                      >
+                        {publishMutation.isPending
+                          ? t('sourcing.publish.submitting')
+                          : t('sourcing.publish.submit')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={rfqVerbs.publish}
+                        testId="handoff-rfq-publish"
+                      />
+                    ))}
+                  {/* REOPEN — Closed only, state-exclusive with publish. Two
+                      acts, two notices, and never both on one RFQ. */}
+                  {selectedRfq.status === 'Closed' &&
+                    (rfqVerbs.reopen.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={RotateCcw}
+                        disabled={reopenMutation.isPending}
+                        onClick={handleReopen}
+                      >
+                        {reopenMutation.isPending
+                          ? t('sourcing.reopen.submitting')
+                          : t('sourcing.reopen.submit')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={rfqVerbs.reopen}
+                        testId="handoff-rfq-reopen"
+                      />
+                    ))}
+                  {/* CANCEL — legal from all three of this section's states,
+                      so its notice is the one a withheld seat always reads
+                      here, beside whichever of publish/reopen applies. */}
+                  {rfqVerbs.cancel.kind === 'held' ? (
                     <Button
-                      variant="outline"
-                      icon={Send}
-                      disabled={publishMutation.isPending}
-                      onClick={handlePublish}
+                      variant="secondary"
+                      icon={Ban}
+                      className="text-danger"
+                      disabled={cancelMutation.isPending}
+                      onClick={handleCancel}
                     >
-                      {publishMutation.isPending
-                        ? t('sourcing.publish.submitting')
-                        : t('sourcing.publish.submit')}
+                      {cancelMutation.isPending
+                        ? t('sourcing.cancel.submitting')
+                        : t('sourcing.cancel.submit')}
                     </Button>
+                  ) : (
+                    <HandoffNotice availability={rfqVerbs.cancel} testId="handoff-rfq-cancel" />
                   )}
-                  {selectedRfq.status === 'Closed' && (
-                    <Button
-                      variant="outline"
-                      icon={RotateCcw}
-                      disabled={reopenMutation.isPending}
-                      onClick={handleReopen}
-                    >
-                      {reopenMutation.isPending
-                        ? t('sourcing.reopen.submitting')
-                        : t('sourcing.reopen.submit')}
-                    </Button>
-                  )}
-                  <Button
-                    variant="secondary"
-                    icon={Ban}
-                    className="text-danger"
-                    disabled={cancelMutation.isPending}
-                    onClick={handleCancel}
-                  >
-                    {cancelMutation.isPending
-                      ? t('sourcing.cancel.submitting')
-                      : t('sourcing.cancel.submit')}
-                  </Button>
                 </div>
               </section>
             )}
@@ -2790,16 +2870,28 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                                 >
                                   {q.status}
                                 </StatusPill>
-                                {q.status === 'Submitted' && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleReview(q.id)}
-                                    disabled={reviewMutation.isPending}
-                                    className="text-xs font-semibold text-action hover:text-action-hover disabled:opacity-50"
-                                  >
-                                    {t('sourcing.cmp.moveToReview')}
-                                  </button>
-                                )}
+                                {/* MOVE TO REVIEW — one act PER QUOTE, so one
+                                    notice per quote. The cell either offers
+                                    the move or names its owner; a single
+                                    notice for the column would answer about a
+                                    quote the reader did not pick. Only a
+                                    `Submitted` quote has the act at all. */}
+                                {q.status === 'Submitted' &&
+                                  (rfqVerbs.review.kind === 'held' ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleReview(q.id)}
+                                      disabled={reviewMutation.isPending}
+                                      className="text-xs font-semibold text-action hover:text-action-hover disabled:opacity-50"
+                                    >
+                                      {t('sourcing.cmp.moveToReview')}
+                                    </button>
+                                  ) : (
+                                    <HandoffNotice
+                                      availability={rfqVerbs.review}
+                                      testId="handoff-rfq-review"
+                                    />
+                                  ))}
                               </div>
                             </ComparisonCell>
                           ))}
@@ -2850,17 +2942,25 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         })
                       : t('sourcing.award.selectPrompt')}
                   </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="primary"
-                      icon={Trophy}
-                      disabled={!selectedQuoteId || awardMutation.isPending}
-                      onClick={handleAward}
-                    >
-                      {awardMutation.isPending
-                        ? t('sourcing.award.submitting')
-                        : t('sourcing.award.submit')}
-                    </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* AWARD — the drawer's own act, and the last one. Its
+                        notice replaces its button in place; it no longer
+                        speaks for `quotation:review`, which now answers for
+                        itself in the comparison cells above. */}
+                    {rfqVerbs.award.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={Trophy}
+                        disabled={!selectedQuoteId || awardMutation.isPending}
+                        onClick={handleAward}
+                      >
+                        {awardMutation.isPending
+                          ? t('sourcing.award.submitting')
+                          : t('sourcing.award.submit')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice availability={rfqVerbs.award} testId="handoff-rfq-award" />
+                    )}
                     <Button variant="secondary">
                       {t('sourcing.award.rejectAll')}
                     </Button>
@@ -3034,8 +3134,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               {/* DP2-BUTTON-01: SOLID is reserved for the irreversible commit,
                   and this is one — an appended pin cannot be taken back, only
                   superseded. */}
+              <HandoffNotice availability={rfqVerbs.fxPin} testId="handoff-rfq-fxpin" />
+              {rfqVerbs.fxPin.kind === 'held' && (
               <Button
-                variant="primary"
+                variant="outline"
                 onClick={handlePinConfirm}
                 disabled={
                   !readFxRate(pinDraft.rate).ok ||
@@ -3051,6 +3153,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                         : 'sourcing.fx.dialog.confirm.record',
                     )}
               </Button>
+              )}
             </div>
           </div>
         </div>

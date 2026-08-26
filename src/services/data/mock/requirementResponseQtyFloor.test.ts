@@ -54,8 +54,9 @@ import { MockCommandService } from './MockCommandService';
 import { requirementResponseStore } from './stores/requirementResponseStore';
 import { getTransition } from '../../transitions';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
+const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 

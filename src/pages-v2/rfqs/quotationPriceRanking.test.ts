@@ -43,12 +43,13 @@ const scoredSet = (quotes: readonly ScorableQuote[]) => {
 import type { QueryScope } from '../../services/data/types';
 import { readBidPrice } from './quotationPrice';
 import { buildQuotationSubmitPayload } from './quotationSubmitModel';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 // rfq-002 — PET bottles. Real fixture bids: sup-007 @ 1,280 and sup-008 @ 1,220.
 // A supplier typing the ordinary Indonesian "1.500" means Rp 1.500 — mid-market,
 // and it should LOSE on price to the 1,220 incumbent.
 const RFQ_ID = 'rfq-002';
-const invited: QueryScope = { personaType: 'supplier', supplierId: 'sup-012' };
+const invited: QueryScope = { personaType: 'supplier', supplierId: 'sup-012', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 

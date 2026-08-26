@@ -29,6 +29,14 @@ export function useServiceQuery<T>(
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    // Carried on the READ scope too, so `getCapabilities` answers for the SEAT
+    // rather than the persona. `scopeKey` deliberately ignores it (see
+    // `QueryScope.businessRoles`): two seats with different roles read the same
+    // tenant's rows, so keying on roles would shard the cache on a dimension the
+    // reads do not vary by. Any query that varies by ROLE must put the roles in
+    // its OWN key — no such query exists today.
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   return useQuery<T, Error>({
     queryKey: [...key, scopeKey(scope)],

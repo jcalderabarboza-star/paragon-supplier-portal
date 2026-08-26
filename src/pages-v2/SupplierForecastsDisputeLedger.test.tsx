@@ -23,13 +23,17 @@ import { MockCommandService } from '../services/data/mock/MockCommandService';
 import i18n from '../lib/i18n';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import type { QueryScope } from '../services/data/types';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { NO_PERSON } from '../context/noPerson';
 
 const SUP002: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-002',
   supplierName: 'PT Lautan Luas Tbk',
+  businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+  actor: NO_PERSON,
 };
-const BUYER: QueryScope = { personaType: 'buyer', supplierId: null };
+const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 
 const DISPUTE_TEXT = 'Confirmed 6,000 KG against a 9,000 KG firm line — short by 3,000.';
 const RESOLUTION_TEXT = 'Shortfall accepted; the gap is covered from the Q4 buffer.';

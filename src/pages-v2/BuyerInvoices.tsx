@@ -59,7 +59,14 @@ import {
   useInvoiceResolve,
 } from '../services/query/commandHooks';
 import { formatIDR, formatDate } from '../lib/format';
-import { invoiceActionsFor, invoiceCommitAction } from './invoices/invoiceActionModel';
+import {
+  invoiceActionsFor,
+  invoiceCommitAction,
+  invoiceActionsForSeat,
+} from './invoices/invoiceActionModel';
+import { useCurrentIdentity } from '../context/CurrentIdentityContext';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import type { VerbAvailability } from '../services/transitions/handoff';
 import { classifySettleFault, SETTLE_FAULT_RETRYABLE, type SettleFault } from '../services/transitions';
 
 const STATUS_VARIANT: Record<InvStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
@@ -213,7 +220,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     () => invoices.find((i) => i.id === selectedId) ?? null,
     [invoices, selectedId],
   );
-  // The ONE reserved-solid commit for the selected invoice, DERIVED from the
+  // The ONE reserved commit for the selected invoice, DERIVED from the
   // machine with the canonical state. `null` whenever no transition is legal —
   // which is what makes the primary slot fall back to an outline informational
   // footer instead of asserting an action that does not exist.
@@ -221,6 +228,37 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     () => (selected ? invoiceCommitAction(selected.lifecycleState) : null),
     [selected],
   );
+  // ── ⚠️ THE SEAT, AND WHY IT ANNOTATES RATHER THAN FILTERS ─────────────────
+  // `invoice:pay` / `invoice:approve` / `invoice:dispute` belong to FINANCE
+  // (operator ruling: procurement does not release payment). A procurement seat
+  // opening this page must still SEE that a release is due and whose act it is
+  // — filtering the verb out would delete the affordance silently, which is the
+  // one outcome this batch must not produce. So the population is unchanged and
+  // each verb carries its availability.
+  const { identity } = useCurrentIdentity();
+  const seatActions = useMemo(
+    () =>
+      selected ? invoiceActionsForSeat(selected.lifecycleState, identity.businessRoles) : [],
+    [selected, identity.businessRoles],
+  );
+  const availabilityOfVerb = (transitionId: string): VerbAvailability =>
+    seatActions.find((a) => a.transitionId === transitionId)?.availability ?? { kind: 'held' };
+  // ⚠️ **THE FOOTER'S VERB IS NOT ALWAYS THE SOLID COMMIT, AND THE FIRST CUT OF
+  // THIS GUARD MISSED THE OTHER ONE.** `handleFooterAction` dispatches the solid
+  // commit when there is one and `t_invoice_resolve` when there is not — so a
+  // DISPUTED invoice puts a finance-owned verb in the primary slot with
+  // `commitAction === null`. Guarding only the commit left that button live for
+  // a procurement seat: present, pressable, and refused at the dispatcher. Found
+  // in the browser, not by the suite — the list-level sweep is identical for
+  // every seat, and only opening a Disputed invoice shows it.
+  const footerVerbId: string | null =
+    commitAction?.transitionId ??
+    (seatActions.some((a) => a.transitionId === 't_invoice_resolve')
+      ? 't_invoice_resolve'
+      : null);
+  const commitAvailability: VerbAvailability = footerVerbId
+    ? availabilityOfVerb(footerVerbId)
+    : { kind: 'held' };
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
   // ── THE SETTLE WATCH ──────────────────────────────────────────────────────
   // A settle that fails leaves the command `submitted` and the invoice parked in
@@ -332,7 +370,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
   const handleFooterAction = () => {
     if (!selected) return;
     const actions = invoiceActionsFor(selected.lifecycleState);
-    if (actions.some((a) => a.solid)) {
+    if (actions.some((a) => a.reservedCommit)) {
       setPanelMode('confirming');
       return;
     }
@@ -950,11 +988,17 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                       happened to list it. A past-due Approved invoice keeps it. */}
                   {invoiceActionsFor(selected.lifecycleState).some(
                     (a) => a.transitionId === 't_invoice_dispute',
-                  ) && (
-                    <Button variant="secondary" onClick={() => setPanelMode('disputing')}>
-                      {t('buyerInvoices.action.dispute')}
-                    </Button>
-                  )}
+                  ) &&
+                    (availabilityOfVerb('t_invoice_dispute').kind === 'held' ? (
+                      <Button variant="secondary" onClick={() => setPanelMode('disputing')}>
+                        {t('buyerInvoices.action.dispute')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={availabilityOfVerb('t_invoice_dispute')}
+                        testId="handoff-dispute"
+                      />
+                    ))}
                   {selected.lifecycleState === 'Releasing Payment' ? (
                     // AT THE SAP BOUNDARY. No verb is legal from the interim
                     // state; the footer accounts for the wait, or for the failure
@@ -962,7 +1006,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     // classified fault says a second ask can answer differently.
                     settleWatch[selected.id]?.fault ? (
                       SETTLE_FAULT_RETRYABLE[settleWatch[selected.id].fault!] ? (
-                        <Button variant="primary" onClick={() => retrySettle(selected.id)}>
+                        <Button variant="outline" onClick={() => retrySettle(selected.id)}>
                           {t('buyerInvoices.action.retrySettle')}
                         </Button>
                       ) : (
@@ -975,9 +1019,17 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                         {t('buyerInvoices.settle.inFlight')}
                       </span>
                     )
+                  ) : footerVerbId && commitAvailability.kind !== 'held' ? (
+                    // ⚠️ THE RESERVED COMMIT IS FINANCE'S. A procurement seat
+                    // gets the WAIT in the primary slot — not a disabled button,
+                    // and never an empty footer: the machine says a release is
+                    // legal from this state, so the surface must say whose it is.
+                    // (It used to render SOLID; §68 retired that register, and
+                    // the ownership statement is untouched by the change.)
+                    <HandoffNotice availability={commitAvailability} testId="handoff-commit" />
                   ) : (
                     <Button
-                      variant={commitAction ? 'primary' : 'outline'}
+                      variant="outline"
                       disabled={releaseMutation.isPending}
                       onClick={handleFooterAction}
                     >
@@ -995,7 +1047,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     {t('buyerInvoices.action.cancel')}
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="outline"
                     disabled={releaseMutation.isPending}
                     onClick={handleReleasePayment}
                   >
@@ -1015,7 +1067,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     {t('buyerInvoices.action.cancel')}
                   </Button>
                   <Button
-                    variant="primary"
+                    variant="outline"
                     disabled={disputeMutation.isPending}
                     onClick={confirmDispute}
                   >

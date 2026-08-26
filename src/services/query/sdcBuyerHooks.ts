@@ -128,6 +128,8 @@ export function useInventoryRecord() {
   const scope: QueryScope = {
     personaType: identity.personaType,
     supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
   };
   const qc = useQueryClient();
 
@@ -196,7 +198,12 @@ export function useResolveRequirementDispute() {
   return useMutation<CommandResult, Error, ResolveDisputeVars>({
     mutationFn: ({ responseId, resolutionReason }) =>
       svc.commands.dispatch(
-        { personaType: identity.personaType, supplierId: identity.supplierId },
+        {
+          personaType: identity.personaType,
+          supplierId: identity.supplierId,
+          businessRoles: identity.businessRoles,
+          actor: identity.actor,
+        },
         {
           transitionId: 't_requirementresponse_resolve',
           entity: 'requirementResponse',

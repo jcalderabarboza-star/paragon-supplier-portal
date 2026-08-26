@@ -2,13 +2,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { MockDeliveryService } from './MockDeliveryService';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
 // The delivery lane's SECOND write, at the service seam. Fixtures: the at-scale
 // demo fleet (deriveAgreementView over SCALE_DEMO_SHIPMENTS @ the shared SDC clock
 // 2026-08-25). sa-1002 (ctr-004 / sup-005, AI-NIAC-6601, FRC) has TWO inferred
 // matches — seq1 delivered late, seq2 on time — the perfect honesty-lock case.
-const BUYER: QueryScope = { personaType: 'buyer', supplierId: null };
-const SUPPLIER_005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005' };
+const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const SUPPLIER_005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockDeliveryService();
 
 /** The item-10 view for one contract's single agreement. */

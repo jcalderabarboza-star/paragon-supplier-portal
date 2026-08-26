@@ -1,103 +1,47 @@
 // ────────────────────────────────────────────────────────────────────────────
-// Role vocabulary + persona→transition-role mapping AS DATA (v2.2 Step 3.7).
+// Persona → transition-role mapping (v2.2 Step 3.7), now DERIVED.
 //
 // Transition metadata names a `requiredRole` (namespaced, e.g. `po:confirm`).
-// This module maps each PERSONA to the set of transition-roles it may initiate.
-// The mapping is DATA: Phase 4′ OIDC swaps this table for a real IdP claim set,
-// never the transition metadata. System/cascade transitions (Paragon-side
-// automation) map to `buyer`.
+// This module answers "which atoms does a PERSONA span?" — a TENANCY question,
+// kept because `nextActorFrom`, `catalogView` and ~14 specs ask it.
 //
-// Capabilities (Step 3.9) derive from this table × the flow catalog.
+// ⚠️ **`PERSONA_ROLES` IS NO LONGER THE AUTHORISATION SOURCE, AND IS NO LONGER
+// AUTHORED.** It is now DERIVED from `SYSTEM_ROLES` × `PERSONA_SYSTEM_ROLES`
+// (`businessRoles.ts`), so it cannot drift from the bundles a session actually
+// holds — the `FLOOR-IN-PROSE-01` shape, avoided by construction rather than by
+// a second gate. The values it produces are BIT-IDENTICAL to the hand-authored
+// table it replaced (asserted in `businessRoles.test.ts` against the catalog),
+// which is why every existing membership assertion stays green.
+//
+// **What changed is who reads it for a permission decision: nobody.** The
+// dispatcher's `resolveRoles` now resolves through the SESSION's business roles
+// (`session.ts`), not through a persona. A persona spanning 48 atoms was the
+// wildcard this arc retired; it survives here only as the question "could
+// anybody on this side ever fire this verb?", which is what a persona badge and
+// a next-actor line legitimately need.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { PersonaType } from '../../context/CurrentIdentityContext';
 import type { QueryScope, CapabilitySet } from '../data/types';
 import { getKnownFlows } from './registry';
+import { SYSTEM_ROLES, PERSONA_SYSTEM_ROLES, atomsFor } from './businessRoles';
 
-/** Persona → the transition-roles that persona may initiate. */
+/**
+ * Persona → the transition-roles anybody on that side may hold. DERIVED: the
+ * union of that persona's system-role bundles. Not an authorisation grant —
+ * see the header.
+ */
 export const PERSONA_ROLES: Record<PersonaType, readonly string[]> = {
-  // Paragon side: PO issuance + system-driven fulfilment/close; ASN logistics
-  // (carry) + discrepancy flag (cascade ← GR); goods-receipt receiving,
-  // inspection, disposition, and the SAP post (GR is a buyer/warehouse document);
-  // invoice match (system rollup), approve, pay (SAP release), and dispute.
-  buyer: [
-    'po:issue', 'po:fulfil', 'po:close',
-    'asn:carry', 'asn:flag',
-    'gr:receive', 'gr:inspect', 'gr:disposition', 'gr:post',
-    'invoice:match', 'invoice:approve', 'invoice:pay', 'invoice:dispute',
-    // Sourcing: create (Phase A/2 — retires extraRfqs), publish/close/cancel/
-    // reopen an RFQ, award it (cascade source), move a quote into review, and
-    // the cascade targets award/reject a quote.
-    'rfq:create', 'rfq:publish', 'rfq:close', 'rfq:award', 'rfq:cancel', 'rfq:reopen',
-    // 2e-c-3 — recording the FX basis is a DISTINCT authority from awarding on
-    // it: comparing and choosing the winner are different acts.
-    'rfq:fx-pin',
-    'quotation:review', 'quotation:award', 'quotation:reject',
-    // F0.4 — the 5 remaining lifecycle machines (author-unwired, no surface yet;
-    // mapped so the catalog-coverage invariant holds — a contract-level
-    // permission surface, DNA-SEED-01; no UI consumer, no CommandTarget).
-    'contract:draft', 'contract:activate', 'contract:renew', 'contract:terminate',
-    'obligation:track', 'obligation:complete',
-    'pr:create', 'pr:submit', 'pr:approve', 'pr:reject', 'pr:source', 'pr:convert',
-    // PF-1a — revising a REJECTED requisition is a distinct authority from
-    // drafting a new one (`t_pr_revise`, Rejected → Draft). Buyer-side: a
-    // purchase requisition is a Paragon-internal document end to end.
-    'pr:revise',
-    'shipment:create', 'shipment:advance', // system/cascade (TMS-owned, INT-TMS-01)
-    'supplierdoc:request', 'supplierdoc:verify', 'supplierdoc:reject', // verify/reject = system
-    // I3.1 — canonical compliance machine (census #11–15). verify/reject = system
-    // (verification pipeline). Author-unwired; catalog-coverage only.
-    'compliance:verify', 'compliance:reject',
-    // SDC-2a — RequirementResponse buyer lifecycle (authored-unwired; the P2
-    // planner's evaluation lane, mapped for catalog-coverage).
-    'requirementresponse:review', 'requirementresponse:accept', 'requirementresponse:dispute',
-    // C4c — the buyer RECORDING verb (ruled option (d)): a planner records an SOH
-    // assertion a supplier made over an ungoverned channel. A DISTINCT buyer role,
-    // NOT the supplier's ':declare' (the b1 trap — widening ':declare' onto the
-    // buyer would make recorded-vs-self-submitted unrecoverable from the role
-    // layer). The target sets requireCreationOwner (C4b) so the subject supplier ×
-    // material is relationship-anchored even under a buyer scope.
-    'inventorydeclaration:record',
-    // CP-3 · E2 — recording how hard a governed check bites is a BUYER-side
-    // governance act, and it is granted to the buyer ALONE. A supplier setting
-    // the enforcement mode on its own compliance check would invert the whole
-    // thesis; the refusal lands at the role gate, since an enforcement setting
-    // has no supplier owner for scope to deny.
-    'enforcement:set',
-  ],
-  // Supplier side: view / acknowledge / confirm an incoming PO; create + submit
-  // an advance ship notice; draft + submit an invoice against its own PO; submit
-  // a quotation against an invited RFQ (authored-unwired until the quote batch);
-  // upload a requested compliance document (F0.4, author-unwired).
-  supplier: [
-    'po:view', 'po:acknowledge', 'po:confirm',
-    'asn:create', 'asn:submit',
-    'invoice:submit',
-    'quotation:submit',
-    'supplierdoc:submit',
-    'compliance:submit', // I3.1 — supplier submits a cert for a required cell
-    // SDC-2a — confirm a published forecast line fanned to THIS supplier (the
-    // wired creation verb; also names the authored-unwired draft promotion).
-    'requirementresponse:submit',
-    // SDC-2b-EXT — acknowledge a visibility-only line (the no-commitment
-    // response verb; class-guarded 1:1 with the visibility class).
-    'requirementresponse:acknowledge',
-    // SDC-3a — the two additional supplier-submission objects on the session.
-    // declare + report are WIRED creation verbs; the shipment advance verbs
-    // (ship/arrive/cancel) are authored-unwired, mapped for catalog coverage
-    // (a supplier updates its OWN report — supplier-owned when they wire).
-    'inventorydeclaration:declare',
-    'incomingshipment:report',
-    'incomingshipment:ship', 'incomingshipment:arrive', 'incomingshipment:cancel',
-  ],
+  buyer: atomsFor(PERSONA_SYSTEM_ROLES.buyer),
+  supplier: atomsFor(PERSONA_SYSTEM_ROLES.supplier),
 };
 
-/** The transition-roles a persona may initiate. */
+/** The transition-roles a persona spans. */
 export function rolesForPersona(persona: PersonaType): readonly string[] {
   return PERSONA_ROLES[persona];
 }
 
-/** True if `persona` is permitted to initiate a transition requiring `role`. */
+/** True if `persona` spans a transition requiring `role` (tenancy, not authority). */
 export function personaCan(persona: PersonaType, role: string): boolean {
   return PERSONA_ROLES[persona].includes(role);
 }
@@ -113,10 +57,17 @@ export function catalogRoles(): readonly string[] {
 
 /**
  * The capability set for a scope (Step 3.9): the roles it holds and the
- * transition ids it may initiate, derived from the persona mapping × catalog.
+ * transition ids it may initiate.
+ *
+ * ⚠️ **NOW HONOURS THE SCOPE'S BUSINESS ROLES WHEN IT CARRIES THEM.** A scope
+ * with `businessRoles` reports the capabilities of THOSE bundles; a scope
+ * without them falls back to the persona span, which is what every read-only
+ * caller wants and is exactly the pre-batch answer.
  */
 export function capabilitiesFor(scope: QueryScope): CapabilitySet {
-  const roles = rolesForPersona(scope.personaType);
+  const roles = scope.businessRoles
+    ? atomsFor(scope.businessRoles)
+    : rolesForPersona(scope.personaType);
   const transitions: string[] = [];
   for (const flow of getKnownFlows()) {
     for (const t of flow.transitions) {

@@ -13,10 +13,11 @@ import { describe, it, expect } from 'vitest';
 
 import { MockProcurementService } from './MockProcurementService';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
 const reads = new MockProcurementService();
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
-const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 describe('getPrIntake — buyer-only PR-intake read (C7 §2, two producers)', () => {
   it('returns the intake lines for a buyer, from both producers', async () => {

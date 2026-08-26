@@ -20,9 +20,15 @@ const rfq = (
 const echo = ((k: string) => k) as unknown as TFunction;
 const AWARD_KEY = 'sourcing.footer.awardRfq';
 
-describe('FOOTER_VARIANT — DP2-BUTTON-01: solid is the single reserved commit signal', () => {
-  it('an Open RFQ with every invitee responded is the Award commit → solid primary', () => {
-    expect(FOOTER_VARIANT(rfq('Open', ['a', 'b'], ['a', 'b']))).toBe('primary');
+// ⚠️ **§68 TURNED THIS SUITE AROUND RATHER THAN DELETING IT.** It used to pin
+// "Award is the one solid on this surface, and solid tracks the Award label
+// exactly". DP2-BUTTON-01's reserved-solid register is retired portal-wide
+// (operator ruling), so the claim inverts: EVERY state is outline, Award
+// included. A control that stops holding is turned around, not dropped — this
+// file is now the only thing that fails if a solid footer comes back here.
+describe('FOOTER_VARIANT — §68: outline is the only register, Award included', () => {
+  it('⚠️ THE AWARD STATE — the one that USED to be solid — is outline like the rest', () => {
+    expect(FOOTER_VARIANT(rfq('Open', ['a', 'b'], ['a', 'b']))).toBe('outline');
   });
 
   it('an Open RFQ still awaiting responses is Send-reminder → calm outline', () => {
@@ -40,19 +46,23 @@ describe('FOOTER_VARIANT — DP2-BUTTON-01: solid is the single reserved commit 
     expect(FOOTER_VARIANT(rfq('Draft', [], []))).toBe('outline');
   });
 
-  it('solid appears iff the label is the Award CTA (the two helpers never drift)', () => {
+  it('⚠️ NO state produces anything but outline — and the Award label still exists', () => {
     const states: RFQ[] = [
-      rfq('Open', ['a', 'b'], ['a', 'b']), // Award  → primary
-      rfq('Open', ['a', 'b'], ['a']), // Send reminder → outline
+      rfq('Open', ['a', 'b'], ['a', 'b']), // Award
+      rfq('Open', ['a', 'b'], ['a']), // Send reminder
       rfq('Awarded', ['a'], ['a']),
       rfq('Closed', ['a'], ['a']),
       rfq('Cancelled', ['a'], ['a']),
       rfq('Draft', [], []),
     ];
     for (const r of states) {
-      const isSolid = FOOTER_VARIANT(r) === 'primary';
-      const isAwardLabel = FOOTER_LABEL(r, echo) === AWARD_KEY;
-      expect(isSolid).toBe(isAwardLabel);
+      expect(FOOTER_VARIANT(r)).toBe('outline');
     }
+    // ⚠️ PAIRED, so the loop above is not vacuously true of a broken helper:
+    // the Award STATE is still reachable and still labelled as the Award CTA.
+    // What changed is only how it is painted — the polymorphic footer still
+    // knows which verb it is offering.
+    expect(FOOTER_LABEL(rfq('Open', ['a', 'b'], ['a', 'b']), echo)).toBe(AWARD_KEY);
+    expect(FOOTER_LABEL(rfq('Open', ['a', 'b'], ['a']), echo)).not.toBe(AWARD_KEY);
   });
 });

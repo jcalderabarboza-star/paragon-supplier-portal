@@ -2,13 +2,14 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { MockDeliveryService } from './MockDeliveryService';
 import { schedulingAgreementStore } from '../../delivery/stores/schedulingAgreementStore';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
 // The delivery lane's THIRD write (the governance write), at the service seam.
 // Fixtures: the at-scale demo fleet. sa-1002 (ctr-004 / sup-005, FRC) is Case B
 // {0.10, flag}; sa-1004 (ctr-008 / sup-009, FRC) is Case C {null, ignore} with
 // seqs 1–3 released (75,000 of an agreed 100,000) — the clean enforced-flip case.
-const BUYER: QueryScope = { personaType: 'buyer', supplierId: null };
-const SUPPLIER_005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005' };
+const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const SUPPLIER_005: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockDeliveryService();
 
 /** The item-10 view for one contract's single agreement. */
