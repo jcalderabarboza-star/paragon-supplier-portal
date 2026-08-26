@@ -37,11 +37,20 @@ export interface InvoiceVerbSurface {
   /** i18n key for the footer button label. */
   readonly labelKey: string;
   /**
-   * DP2-BUTTON-01 — solid action-blue is RESERVED for the irreversible commit.
-   * Exactly one verb on this surface qualifies: releasing payment crosses the
-   * SAP boundary and mints an FI document.
+   * ⚠️ **RENAMED FROM `solid` AT §68, AND THE RENAME IS THE POINT.** It was
+   * named for a RENDERING — solid action-blue, DP2-BUTTON-01's reserved
+   * irreversible-commit signal — and that register is now retired portal-wide.
+   * But the field was never only a style: `BuyerInvoices.handleFooterAction`
+   * reads it to route this verb through a SECOND CONFIRMATION STEP, which is
+   * BEHAVIOUR. Deleting it with the styling would have deleted a confirm gate;
+   * keeping a field called `solid` that no longer controls solidity is the
+   * label-names-the-wrong-thing defect one layer down in a model.
+   *
+   * So the value survives under the name of what it actually means: this is the
+   * ONE irreversible commit on this surface. Releasing payment crosses the SAP
+   * boundary and mints an FI document.
    */
-  readonly solid: boolean;
+  readonly reservedCommit: boolean;
   /** True when the verb takes a second, explicit confirmation step. */
   readonly confirm: boolean;
 }
@@ -59,18 +68,18 @@ export interface InvoiceVerbDeferral {
 export const INVOICE_VERB_SURFACE: Readonly<Record<string, InvoiceVerbSurface>> = Object.freeze({
   t_invoice_release_payment: {
     labelKey: 'buyerInvoices.footer.releasePayment',
-    // The ONE reserved solid on this page: Option-B commit, mints an FI document.
-    solid: true,
+    // The ONE reserved commit on this page: Option-B, mints an FI document.
+    reservedCommit: true,
     confirm: true,
   },
   t_invoice_dispute: {
     labelKey: 'buyerInvoices.action.dispute',
-    solid: false,
+    reservedCommit: false,
     confirm: true,
   },
   t_invoice_resolve: {
     labelKey: 'buyerInvoices.footer.resolveDispute',
-    solid: false,
+    reservedCommit: false,
     confirm: false,
   },
 });
@@ -118,10 +127,11 @@ export function invoiceActionsFor(state: InvoiceStatus): readonly InvoiceAction[
 /**
  * The single COMMIT action for a state, if there is one — the verb that gets the
  * footer's primary slot. Derived, not listed: it is the offerable verb marked
- * `solid`, and DP2-BUTTON-01 allows at most one meaningful solid per surface.
+ * `reservedCommit`, and there is at most one per surface. (It used to be marked
+ * `solid` and to render as one; §68 retired the rendering and kept the rule.)
  */
 export function invoiceCommitAction(state: InvoiceStatus): InvoiceAction | null {
-  return invoiceActionsFor(state).find((a) => a.solid) ?? null;
+  return invoiceActionsFor(state).find((a) => a.reservedCommit) ?? null;
 }
 
 // ── ⚠️ THE THIRD ARM: ROLE-WITHHELD IS NEITHER A SURFACE ROW NOR A DEFERRAL ──

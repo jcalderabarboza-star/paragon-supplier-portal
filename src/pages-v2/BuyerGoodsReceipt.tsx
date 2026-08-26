@@ -39,6 +39,8 @@ import {
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
 import {
   useGoodsReceipts,
   useSuppliers,
@@ -192,6 +194,23 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardAsnId, setWizardAsnId] = useState<string | undefined>(undefined);
 
+  // §73 — THE SEAT'S AUTHORITY OVER THE WHOLE GR CHAIN, NOT OVER ITS FIRST
+  // VERB. One click at the wizard's end fires `t_gr_create` ->
+  // `t_gr_start_inspection` -> `t_gr_post`; a seat missing ANY of the three
+  // cannot complete what the button starts, so the button is withheld unless
+  // all three are held. The first WITHHELD one names the owner, in chain
+  // order — never a merged list, because the three are one sequence and the
+  // earliest blocker is the one a reader is waiting on.
+  const grChain = useVerbAvailabilities({
+    receive: 'gr:receive',
+    inspect: 'gr:inspect',
+    post: 'gr:post',
+  } as const);
+  const grChainAvailability =
+    [grChain.receive, grChain.inspect, grChain.post].find((a) => a.kind !== 'held') ??
+    ({ kind: 'held' } as const);
+
+
   // No local seeded copy — the list re-derives from the invalidated query after
   // each command (the standardized mutation pattern).
   const allGRs = goodsReceipts;
@@ -333,7 +352,12 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const footerForStatus = (g: GoodsReceipt): React.ReactNode => {
     switch (g.status) {
       case 'Pending Inspection':
-        return (
+        // §75 — THE SECOND ROUTE INTO THE WIZARD, AND IT MAKES §73b's "no
+        // reachable path" FALSE. This opens the same four-step wizard whose one
+        // commit fires t_gr_create -> t_gr_start_inspection -> t_gr_post, so it
+        // carries the same whole-chain guard as the "New GR" entry. Guarding
+        // only the entry left this door open.
+        return grChainAvailability.kind === 'held' ? (
           <Button
             variant="outline"
             onClick={() => {
@@ -344,6 +368,8 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           >
             {t('goodsReceipt.footer.startInspection')}
           </Button>
+        ) : (
+          <HandoffNotice availability={grChainAvailability} testId="handoff-gr-start" />
         );
       case 'Under Inspection':
         return (
@@ -369,15 +395,19 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 to a gap. It now dispatches `t_gr_request_retest` (Quality Hold →
                 Under Inspection) through the same governed path as every other
                 verb on this page. */}
-            <Button
-              variant="secondary"
-              disabled={retestMutation.isPending}
-              onClick={() => handleRequestRetest(g)}
-            >
-              {retestMutation.isPending
-                ? t('goodsReceipt.retest.submitting')
-                : t('goodsReceipt.footer.requestRetest')}
-            </Button>
+            {grChain.inspect.kind === 'held' ? (
+              <Button
+                variant="secondary"
+                disabled={retestMutation.isPending}
+                onClick={() => handleRequestRetest(g)}
+              >
+                {retestMutation.isPending
+                  ? t('goodsReceipt.retest.submitting')
+                  : t('goodsReceipt.footer.requestRetest')}
+              </Button>
+            ) : (
+              <HandoffNotice availability={grChain.inspect} testId="handoff-gr-retest" />
+            )}
             {/* ⚠️ STILL A TOAST, AND DELIBERATELY SO — `DEAD-AFFORDANCE-01`,
                 reported not fixed. Overriding a quality hold is a GOVERNANCE ACT
                 whose entire value is accountability: this named person accepted
@@ -388,7 +418,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                 unattributed override unable to complete. It waits for identity,
                 and the wait is the honest state. */}
             <Button
-              variant="primary"
+              variant="outline"
               onClick={() =>
                 toast({
                   variant: 'warning',
@@ -403,14 +433,16 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         );
       case 'Approved':
       case 'Partially Approved':
-        return (
+        return grChain.post.kind === 'held' ? (
           <Button
-            variant="primary"
+            variant="outline"
             disabled={postMutation.isPending}
             onClick={() => handlePostToSap(g)}
           >
             {t('gr.post.action')}
           </Button>
+        ) : (
+          <HandoffNotice availability={grChain.post} testId="handoff-gr-post" />
         );
       case 'Posted to SAP':
         return (
@@ -533,21 +565,46 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         title={t('goodsReceipt.header.title')}
         subtitle={t('goodsReceipt.header.subtitle')}
         actions={
-          <BulkActionsBar
-            actions={[
-              {
-                label: t('goodsReceipt.action.export'),
-                icon: FileSpreadsheet,
-                onClick: handleExport,
-              },
-              {
-                label: t('goodsReceipt.action.labResults'),
-                icon: FlaskConical,
-                onClick: handleLabResults,
-              },
-            ]}
-            primary={{ label: t('gr.create.action'), icon: Plus, onClick: handleNewGR }}
-          />
+          // §73 — ONE NOTICE, AT THE ENTRY, AND THE MEASUREMENT IS WHY.
+          // "New GR" opens a four-step wizard whose LAST step fires the whole
+          // chain in one handler: t_gr_create -> t_gr_start_inspection ->
+          // t_gr_post -> settle. There is ONE commit, not four, so there is one
+          // place a handoff can honestly sit. Repeating the same string at each
+          // step would teach nothing after the first.
+          //
+          // Guarded on ALL THREE atoms, not on the first: the button starts a
+          // flow that cannot finish without every one of them. Today they agree
+          // in every case (all three sit in `receiving` and nowhere else), so
+          // this renders exactly one behaviour — and `grChainAgrees` in the spec
+          // pins that agreement, so the day a bundle splits `gr:inspect` into a
+          // QA role the suite says so instead of the button silently admitting
+          // a seat the commit will refuse.
+          <div className="flex items-center gap-3">
+            <HandoffNotice availability={grChainAvailability} testId="handoff-gr-create" />
+            <BulkActionsBar
+              actions={[
+                {
+                  label: t('goodsReceipt.action.export'),
+                  icon: FileSpreadsheet,
+                  onClick: handleExport,
+                },
+                {
+                  label: t('goodsReceipt.action.labResults'),
+                  icon: FlaskConical,
+                  onClick: handleLabResults,
+                },
+              ]}
+              {...(grChainAvailability.kind === 'held'
+                ? {
+                    primary: {
+                      label: t('gr.create.action'),
+                      icon: Plus,
+                      onClick: handleNewGR,
+                    },
+                  }
+                : {})}
+            />
+          </div>
         }
       />
 

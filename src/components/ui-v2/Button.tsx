@@ -1,7 +1,25 @@
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
-type Variant = 'primary' | 'secondary' | 'outline';
+// ⚠️ **§68 — `'primary'` (SOLID ACTION-BLUE) IS GONE FROM THIS UNION, AND ITS
+// ABSENCE IS THE MECHANISM.** DP2-BUTTON-01 used to reserve solid for the
+// irreversible commit — Award, Release payment, Post-to-SAP, Reject,
+// Override-hold — at most one per surface, with the WhatsApp messenger chrome
+// exempt from DP-2 entirely (D-2). The operator retired the whole register:
+// OUTLINE IS THE ONLY PRIMARY WEIGHT, messenger chrome included.
+//
+// This is a TYPE and not a lint rule or a comment because a comment does not
+// survive the next page. Fourteen call sites carried the literal, and two more
+// producers could render solid without it — a PROP (`BulkActionsBar`'s
+// `primary.solid`) and a MODEL FLAG (`invoiceActionModel`'s `solid`), neither
+// visible to a matcher keyed on `variant="primary"`. Removing the member makes
+// every route back a `tsc` failure rather than a thing somebody has to notice.
+//
+// ⚠️ AND THE DEFAULT WAS `'primary'`, WHICH MADE SOLID THE SHAPE OF FORGETTING.
+// It was unreachable only by luck: all 181 `<Button>` sites in the tree pass an
+// explicit variant, so nothing rendered through it — a latent trap, not a live
+// defect, and it closes here with the rest.
+type Variant = 'secondary' | 'outline';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -9,19 +27,17 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASS: Record<Variant, string> = {
-  primary:
-    'bg-action text-white border border-action hover:bg-action-hover hover:border-action-hover',
   secondary:
     'bg-bg-surface text-text-primary border border-border-input hover:bg-bg-hover',
-  // DP2-BUTTON-01: action-blue OUTLINE — transparent fill, blue border + text.
-  // The calm triage CTA weight; solid-fill primary stays reserved for one hero
-  // action per view.
+  // DP2-BUTTON-01 (as amended, §68): action-blue OUTLINE — transparent fill,
+  // blue border + text. It is no longer the CALM weight beside a louder one;
+  // it is the ONLY primary weight, and therefore the default below.
   outline:
     'bg-transparent text-action border border-action hover:bg-action-soft',
 };
 
 const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
+  variant = 'outline',
   icon: Icon,
   children,
   className = '',

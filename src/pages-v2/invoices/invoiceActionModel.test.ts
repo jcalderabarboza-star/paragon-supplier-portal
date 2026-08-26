@@ -89,18 +89,22 @@ describe('BILATERAL — every declared user verb is surfaced or deferred, never 
 });
 
 describe('invoiceActionsFor — derived from the canonical state', () => {
-  it('THE REGRESSION: Approved offers the release commit, and it is the reserved solid', () => {
+  it('THE REGRESSION: Approved offers the release commit, and it is the reserved commit', () => {
     const commit = invoiceCommitAction('Approved');
     expect(commit).not.toBeNull();
     expect(commit!.transitionId).toBe('t_invoice_release_payment');
-    expect(commit!.solid).toBe(true);
+    expect(commit!.reservedCommit).toBe(true);
     expect(commit!.confirm).toBe(true);
   });
 
-  it('⚠️ DP2-BUTTON-01 — AT MOST ONE solid across every state the machine has', () => {
+  // ⚠️ §68 — THE FLAG KEPT ITS MEANING AND LOST ITS STYLE NAME. It was `solid`
+  // and it drove BOTH the rendering and a second confirmation step; the
+  // rendering is retired portal-wide and the confirm gate is not, so deleting
+  // it with the styling would have deleted behaviour.
+  it('⚠️ AT MOST ONE reserved commit across every state the machine has', () => {
     for (const s of getFlow('invoice')!.states) {
-      const solids = invoiceActionsFor(s as InvoiceStatus).filter((a) => a.solid);
-      expect(solids.length, `${s} offers ${solids.length} solid commits`).toBeLessThanOrEqual(1);
+      const commits = invoiceActionsFor(s as InvoiceStatus).filter((a) => a.reservedCommit);
+      expect(commits.length, `${s} offers ${commits.length} reserved commits`).toBeLessThanOrEqual(1);
     }
     // Paired: at least one state DOES have one, so the loop is not vacuous.
     expect(invoiceCommitAction('Approved')).not.toBeNull();
@@ -114,7 +118,7 @@ describe('invoiceActionsFor — derived from the canonical state', () => {
     expect(invoiceActionsFor('Disputed').length).toBeGreaterThan(0);
   });
 
-  it('Disputed offers resolve, and it is NOT a solid commit', () => {
+  it('Disputed offers resolve, and it is NOT the reserved commit', () => {
     const actions = invoiceActionsFor('Disputed');
     expect(actions.map((a) => a.transitionId)).toEqual(['t_invoice_resolve']);
     expect(invoiceCommitAction('Disputed')).toBeNull();

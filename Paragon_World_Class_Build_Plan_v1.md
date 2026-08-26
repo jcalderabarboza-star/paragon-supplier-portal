@@ -1,8 +1,15 @@
 # Paragon World-Class Build Plan v1
 ## The Executable Plan — from the Strategic Spine to independently-green batches
 
-**Status: DRAFT — operator review pending. Lives at repo root deliberately; it earns its place
-in `docs/` only after operator review + adjudication.**
+**Status: ADOPTED (merged #65, 2026-07-14) — and RECALIBRATED 2026-08-20 — see §9 and §9′.**
+
+> ⚠️ **THE LINE THAT STOOD HERE WAS STALE IN BOTH HALVES.** It read *"DRAFT —
+> operator review pending. Lives at repo root deliberately; it earns its place in
+> `docs/` only after operator review + adjudication."* This document was reviewed,
+> adjudicated and merged as PR #65 on 2026-07-14, and `CLAUDE.md` has named it
+> **the canonical forward plan** ever since. It has stayed at repo root, which is
+> fine; what was not fine is a plan of record introducing itself as a draft
+> awaiting the review it had already passed.
 
 **Authority chain.** This plan executes `docs/Paragon_Platform_Strategic_Spine_v1.md` (the
 authoritative brief; when in doubt, the Spine wins), evidenced by the 2026 competitive-frontier
@@ -444,15 +451,69 @@ yields whenever it lands — the phase is not scheduled against an external date
 
 ---
 
-## 9. IMMEDIATE NEXT ACTIONS (on plan approval)
+## 9. IMMEDIATE NEXT ACTIONS — DISCHARGED 2026-07-14, SUPERSEDED 2026-08-20
 
-1. Operator reviews this document; adjudication (Claude/Opus) follows; on acceptance it moves
-   to `docs/` and becomes the canonical forward plan (v2.2 remains the Phase 0–2′ record).
-2. Operator rules on FORK-1/-2 (the two that gate F0 batch content) and opens the Track-R
-   weekly checkpoint (§7) — independent of code.
-3. Frontend seat executes F0.1 → F0.6 as sequenced batches (one PR each, floor-green,
-   operator-merged per the ratified workflow).
-4. F0.5 contract package hand-off meeting with the SE Team = the Stage-1 kickoff.
+⚠️ **EVERY ITEM THIS SECTION LISTED AS "NEXT" CLOSED FIVE WEEKS BEFORE THIS
+CORRECTION, AND THE SECTION WAS STILL THE PLAN OF RECORD'S LAST WORD.** What it
+said, and what is derivably true:
+
+| §9 said | Derived state (2026-08-20) |
+|---|---|
+| 1. Operator reviews; on acceptance it becomes the canonical forward plan | **DONE** — merged PR #65, 2026-07-14; named canonical in `CLAUDE.md` |
+| 2. Operator rules on FORK-1 / FORK-2 | **DONE** — FORK-1 = (c), FORK-2 = hybrid, both recorded in `CLAUDE.md` |
+| 3. Frontend seat executes F0.1 → F0.6 as sequenced batches | **DONE** — all six merged 2026-07-13, F0 closed by PR #60 (`db625d5`) |
+| 4. F0.5 contract-package hand-off = the Stage-1 kickoff | **F0.5 SHIPPED** (PR #59, `docs/contracts/`); the hand-off MEETING is operator-side and unrecorded here |
+
+Re-runnable: `git log --format='%ad %s' --date=short | grep -oE '^[0-9-]+
+F0\.[0-9]' | sort -u`. Stage I ran on past it too — I3.1 → I3.4 merged
+2026-07-13/14 (PRs #61–#64) — and so did all of Stage G (G0.1 → G1.3, PRs #67–#73,
+2026-07-14/15).
+
+**THE INSTRUCTIVE PART IS NOT THAT IT WENT STALE. IT IS THAT NOTHING COULD
+NOTICE.** `npm run gates` typechecks the tree, collects the suite and asserts the
+floor; **no gate reads a plan.** A build number that drifts reddens CI within a
+day; a plan that drifts is corrected only when a human happens to re-read it, and
+this one was not re-read for five weeks while five arcs ran past it. That is the
+same mechanism as `FLOOR-IN-PROSE-01` — a fact restated in prose, with no build
+step failing when it stopped being true — and it is why the recalibrated path
+below lives in `CLAUDE.md`, which every seat loads, rather than only here.
+
+---
+
+## 9′. THE RECALIBRATED PATH (ruled 2026-08-20)
+
+The canonical statement is `CLAUDE.md` → **THE RECALIBRATED PATH**; it is
+summarized here so this document does not again become the stale copy. Three
+arcs, in order, and **nothing else is queued**:
+
+1. **ARC 1 · TRACK R** — the operator-editable halal certificate registry
+   (`COMPLIANCE_REGISTRY` is 16 frozen synthetic rows and `compliance` has no
+   `CommandTarget`, so nobody can edit a certificate), the expiry projection
+   running on dates a person entered, and `verifyHalalAtReceipt` — authored,
+   tested, and headless by ruling — finally acquiring its consumer at H4.
+   **This reverses, for sequencing only, the 2026-07-15 de-pressurization
+   (PR #75).** Track R remains a capability the platform models honestly; what
+   changed is that it is now first. The 17 Oct 2026 BPJPH date (GR 42/2024) is
+   58 days out from this ruling. No honesty marker moves: `compliance` stays
+   SIMULATED behind its two-gate guard until the harvest is real.
+2. **ARC 2 · THE REQUISITION LANE** — the approval half. `t_pr_submit` /
+   `_approve` / `_reject` are dispatchable (the `CommandTarget` IS wired) and
+   have no caller; the `Draft` panel's **"Submit for approval"** button fires a
+   success toast over no state change, and `Pending Approval` has no affordance
+   at all.
+3. **ARC 3 · SUPPLIER ONBOARDING** — `/register` is 1,551 lines of `useState`
+   with zero service calls. A supplier completes onboarding and nothing records
+   that they did.
+
+**PARKED, NOT QUEUED** (machine hygiene, not mandate work — full statement and
+derived populations in `CLAUDE.md`): the dead-end-state census (**37**, not
+eight), GL-0b's **125** unregistered unions, the **29** stored-field allowlist
+rows, and R1d — which is parked as a token because the register names it once and
+defines it nowhere.
+
+**And one rule now governs what may be dispatched at all:** *no batch may be
+dispatched whose deliverable is a register entry, unless that entry is a
+contract* (`CLAUDE.md`; measured in `docs/findings.md` §61).
 
 ---
 

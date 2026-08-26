@@ -236,13 +236,29 @@ describe('THE CENSUS — acts a screen is meant to offer that no screen offers',
   it('⚠️ RULE 4 — the census FLAGS a verb that is surfaceable and unsurfaced', () => {
     // Believing anything the census EXCLUDES requires proving it includes what
     // it must. A census that flags nothing looks exactly like a clean tree, and
-    // this one has a known-true member: PF-1a declared `t_pr_revise` and no
-    // surface ever offered it (§49e), and `t_pr_submit` has a button that
-    // toasts instead of dispatching.
-    expect(census).toContain('t_pr_revise');
-    expect(census).toContain('t_pr_submit');
+    // this one has a known-true member: `t_asn_resolve_discrepancy` is
+    // `surfaced: true` and no screen fires it.
+    //
+    // ⚠️ **`t_pr_revise` AND `t_pr_submit` WERE THE ORIGINAL KNOWN-TRUE PAIR
+    // AND §68 SURFACED BOTH, WHICH IS WHY THEY MOVED TO THE ASSERTION BELOW
+    // RATHER THAN BEING DELETED.** A control that stops holding is not removed
+    // quietly — it is turned around. Their ABSENCE is now the claim, and it is
+    // the only thing in the suite that fails if a future batch retires either
+    // affordance without retiring the verb's `surfaced` flag with it.
     expect(census).toContain('t_asn_resolve_discrepancy');
     expect(census.length).toBeGreaterThan(5);
+  });
+
+  it('⚠️ §68 — and the pair this census was built on has LEFT it: submit and revise are fired', () => {
+    // The other direction of the same guard. `t_pr_submit` had a button that
+    // toasted instead of dispatching and `t_pr_revise` had no surface at all
+    // (§49e); both now reach the dispatcher from `BuyerRequisitions`, so a
+    // census that still flagged them would be reporting on a stale matcher
+    // rather than on the tree.
+    expect(firable.has('t_pr_submit')).toBe(true);
+    expect(firable.has('t_pr_revise')).toBe(true);
+    expect(census).not.toContain('t_pr_submit');
+    expect(census).not.toContain('t_pr_revise');
   });
 
   it('and only THEN: the two verbs RULED unsurfaced are absent — they are decisions, not gaps', () => {

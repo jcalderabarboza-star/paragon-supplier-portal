@@ -174,16 +174,20 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
       'this field is not.',
     since: D_F,
   },
-  {
-    key: 'ActorAttribution.person',
-    reason: 'unadjudicated',
-    why:
-      'The RESOLVED arm of the accountability attribution. Unreachable by construction today: ' +
-      'ENF-NO-PERSON-IN-IDENTITY-01 records that CurrentIdentity has no person in it, so nothing can ' +
-      'produce a RESOLVED arm and nothing reads one. Whether that is data-in-waiting on F1 identity or ' +
-      'a shape authored too early is E3\'s ruling.',
-    since: D_F,
-  },
+  // ⚠️ §68 — `ActorAttribution.person` WAS HERE AND ITS EXEMPTION OUTLIVED ITS
+  // SUBJECT, WHICH IS THE GATE DOING THE ONE THING A ONE-DIRECTIONAL LIST
+  // CANNOT. The row read: unreachable by construction, nothing can produce a
+  // RESOLVED arm and nothing reads one. The second half stopped being true the
+  // moment `BuyerRequisitions` rendered an approval's attribution — the surface
+  // handles BOTH arms of the union, because one that handles a single arm is
+  // one that renders `[object Object]` the day the other appears. The bilateral
+  // assertion went red on its own, unprompted, and named the file and the line.
+  //
+  // The FIRST half is still true and stays true: nothing CONSTRUCTS a RESOLVED
+  // actor (C10 §2.3, pinned by the `simUsrNamespace` tripwire). A reader for a
+  // value that cannot exist yet is not a contradiction — it is the arm being
+  // ready before the value is, which is the opposite failure from the one this
+  // list exists to catch.
   {
     key: 'EnforcementOverride.reason',
     reason: 'unadjudicated',

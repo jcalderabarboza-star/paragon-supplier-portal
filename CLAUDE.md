@@ -5,6 +5,71 @@
 - Open a pull request to `main`; never push directly to `main`
 - The CLI merges via the GitHub UI (Squash + delete branch); the operator directs and approves
 
+### ⚠️ MERGE DOCTRINE — BOTH DIRECTIONS. RECOVERED AND EXTENDED (§59c, 2026-08-26)
+
+⚠️ **PROVENANCE FIRST, BECAUSE IT IS THE WHOLE ARGUMENT FOR THIS SECTION
+EXISTING.** The first half below was ratified 2026-08-14 and has governed every
+dispatch since — and it lived **only on `qa/chaos-ambience-pin` (PR #227), which
+was closed unmerged on 2026-08-20.** `grep -in "merge doctrine"` over every `.md`
+on `main` returned nothing; `main`'s sole trace of it was one sentence in
+`docs/findings.md` recording that it was *absent*. **A doctrine whose only copy
+is in a pull request is enforced by memory, and memory is the instrument this
+register exists because it does not trust.** It is restated here verbatim, not
+re-derived. That is `FLOOR-IN-PROSE-01`'s shape applied to a rule instead of a
+number.
+
+**HALF ONE — A MERGE INSTRUCTION NAMING A PR THE SEAT HAS NOT ITSELF REPORTED IS
+A REQUEST TO VERIFY, NOT TO MERGE (ratified 2026-08-14).**
+
+**The seat MUST refuse it, and refusing is doctrine rather than judgement.**
+Two merge instructions were issued in one arc for PRs that had never existed —
+`#226` before it was opened, and `#228` which was never opened at all. Both were
+refused, and the refusal is the only reason neither cost anything.
+
+The mechanism, named by the strategist against themself: **A PLAN WAS READ AS A
+RESULT.** The seat reports what it *would* build; that report is read as a build
+report; artifacts that exist only in a description get ruled on. **The
+strategist will not issue a merge instruction without a SHA and a PR number
+reported by the seat in the turn immediately prior.** Absent both, the
+instruction is a request to verify.
+
+⚠️ **AND THIS IS THE CLASS THE DISCIPLINE WAS NOT PROTECTING AGAINST, BECAUSE
+THE DISCIPLINE RUNS ON THE CODE SIDE AND THE DISPATCH SIDE HAD NO GATE.** Every
+code-side inverted premise costs a report, which is recoverable by measuring
+again. A merge is not. So before ANY outward or irreversible step — merge, push,
+publish, delete — assert the object exists **at the site the action names**
+(`gh pr view <n>`, `git branch`, the file itself), never from the conversation
+that described it. See `docs/findings.md` §43a.
+
+**HALF TWO — A REPORTED SHA IS A CLAIM, NOT A FACT (ratified 2026-08-26).**
+
+**Before the strategist rules on any merge report, THE SEAT VERIFIES ITS OWN
+REPORTED SHA WITH `git cat-file` AND STATES THE RESULT.** State the negative
+control too: a report that says only *"verified"* is indistinguishable from a
+report that ran nothing (`EMPTY-INPUT-REPORTS-CLEAN-01`), so name at least one
+object the check was expected to REJECT and show that it did.
+
+⚠️ **THIS CLOSES THE DIRECTION HALF ONE CANNOT SEE, AND IT IS THE DIRECTION THAT
+ACTUALLY FAILED.** Half one stops the strategist naming a PR the seat did not
+report. **It has nothing to say when a report NAMES one and the strategist
+ACCEPTS it** — which is the same object arriving through the one door the rule
+holds open, wearing the credential the rule asks for. An unknown number of
+rulings were made against merge reports citing PRs and SHAs this repository has
+never held (`9c31c7f` · `#226` · `#228` are the ones recovered; the register
+under-counts the class by construction, because a claim refused in conversation
+leaves no trace). **The tree was sound throughout. The account of it was not**,
+and no gate in this project reads an account.
+
+⚠️ **THE COST ASYMMETRY IS WHY THIS IS DOCTRINE AND NOT A HABIT.** The check is
+one command and cannot fail slowly. A merge performed on a SHA that does not
+exist fails loudly; a merge performed on the WRONG object that does exist does
+not fail at all. Half one guards the cheap direction. This guards the expensive
+one. Filed as `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`
+(`docs/findings.md` §59c), whose subject is the same object one step earlier —
+a SHA in a dispatch HEADER, arriving in the position that reads as context
+rather than as claim, which is exactly what makes it the cheaper place to put a
+wrong object.
+
 ## Session startup — run these commands every time
 git checkout main && git pull origin main
 
@@ -40,10 +105,11 @@ Direct pushes to `main` are not used.
 > `businessRoles.test.ts` is what keeps them honest.
 >
 > **The cross-role handoff renders the wait, not a gap** (`handoff.ts` +
-> `HandoffNotice`) — and it is wired on **BuyerInvoices only**. Every other
-> governed surface still renders its affordances unconditionally, so a narrowed
-> seat gets a dispatcher refusal with no rendered owner. Derive the exposure from
-> `HandoffNotice`'s importers before claiming otherwise (§64j).
+> `HandoffNotice` + `useVerbAvailability`) — wired across the BUYER surfaces at §72–§76, and it is **ONE NOTICE PER VERB, IN THAT VERB'S OWN SLOT** (§76 retired §74's per-group collapse: the RFQ side panel is a WORKSPACE, not a control, and the two verbs one group notice spoke for are not co-reachable on any RFQ in the tree).
+> ⚠️ **DO NOT RESTATE HOW MANY SURFACES CARRY IT** — the sentence that stood here was a prose count and it was wrong TWICE, once per batch, which is `FLOOR-IN-PROSE-01` in the paragraph about handoffs. Derive it as **(surface × verb)** from the `testId="handoff-…"` sites against BOTH dispatch families. What is deliberately NOT covered, with the reason on record: **every supplier-side surface** (a supplier seat is exactly `['supplier']` — no proper subset to narrow to, so every notice is dead branch), every control that holds **no atom** (toasts and reads are ungoverned, not withheld — §75e), and **`GRInspectionWizard`'s interior** (`WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01`, OPEN — closed at both known entrances, unprobed within).
+> ⚠️ **AND THE SEGREGATION THE BUNDLES EXPRESS IS CROSSED BY ONE SURFACE (`SEGREGATION-CROSSED-IN-ONE-DRAWER-01`, §76d, OPEN).** `BuyerRequisitions`' drawer offers `pr:revise` → `pr:submit` → `pr:approve` on the same document to the same seat, and the DEFAULT buyer seat holds all six role bundles — so adjust-then-approve-what-you-adjusted is the out-of-box state, not a misconfiguration. A per-transition dispatcher cannot catch it: segregation is a property of the SEQUENCE. **Do not "fix" it with a notice or a role gate without the ruling** — §76d names the two candidate readings and measures that the actor-level one is unbuildable until an IdP answers (`actor` is always `UNATTRIBUTED: NO_PERSON_IN_SESSION`).
+> 
+> ⚠️ **AND IMPORTER PRESENCE IS NOT VERB COVERAGE (`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01`, §72a).** `BuyerRequisitions` imported the guard, rendered four of them, and still shipped a live **New PR** button to a seat holding no `pr:create` — because all four guarded verbs act on a document already selected and the CREATE verb lives in the page header. Derive the exposure as **(surface × verb) → guarded?**, never as **surface → imports the guard?**, and derive the surfaces from BOTH dispatch families (`commandHooks` AND the `sdc*Hooks` that call `svc.commands.dispatch` directly — a `commandHooks`-only matcher misses seven verbs).
 >
 > The resolved actor is a SEAM, not a person: `CurrentIdentity.actor` is always
 > `UNATTRIBUTED: NO_PERSON_IN_SESSION`. **C10 §6.2's payload-refusal half is NOT
@@ -92,6 +158,28 @@ Direct pushes to `main` are not used.
 > `AppRouter` is a flat `<Routes>` with no layout route, so a page that forgets
 > `AppShellV2` renders with no sidebar and no way back, and
 > `renderWithProviders` will never say so.
+>
+> ⚠️ **THE APPROVAL BAND IS AUTHORED, AND THE LADDER IS UNBUILDABLE — NOT DEFERRED
+> (§69).** `approvalLevel` ('Section Head' / 'Procurement Head' / 'VP Procurement')
+> tracks `estimatedValue` closely enough to read as computed and **nothing computes
+> it**: zero relational or arithmetic reads of `estimatedValue` exist in the tree and
+> no threshold number exists in `src/` or `docs/`. The surface now SAYS it is
+> authored; `approvalBandAuthored.guard.test.ts` re-derives it every run (write-site
+> assertion primary, read-site secondary and labelled weaker).
+> **Both readings of what a band decides fail independently:** WHO MAY APPROVE needs
+> seniority roles that do not exist and C10 §3.4 forbids minting (*"a new role per
+> band"*); HOW MANY APPROVALS needs the `ApprovalPolicyAct` × `ApprovalAct` ledgers
+> C10 §3.5 defers. Either ground alone is sufficient.
+>
+> ⚠️ **AND DO NOT INHERIT "THE POLICY HOOK CANNOT SEE THE DOCUMENT" — IT IS FALSE AND
+> IT HAS ALREADY STOPPED ONE BATCH.** `PolicyHookFn` takes ONE ctx
+> (`{ entityId, currentState, toState, payload, target, scope }`), `CommandTarget.
+> readEntity` is *"Full entity for policy hooks to inspect"*, and FOUR shipped hooks
+> read a document through it (`policies.ts:64/87/104/263`) — none by importing a
+> store. What a threshold lacks is the RIGHT-HAND SIDE of the comparison, not the
+> left. A role-gated VALUE policy (value from `readEntity` × lane from
+> `scope.businessRoles`) is buildable today and is **not** the ladder: it
+> discriminates lanes, and the rungs are altitudes.
 Re-baselined by the **Canon True-Up** (2026-07-14). The prior "main @ #53" pointer
 was stale by ~12 commits; F0 (contract-freeze) and the I3 compliance phase are DONE,
 and the Stage G planning canon + World-Class Build Plan are now on main.
@@ -180,8 +268,22 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   register (DR-6/7/9/10, DP).
 - **Stage G planning canon is on main:** `docs/Stage_G_Grid_Planning_Layer_Plan_v1.md`
   + `docs/Grid_Planning_Layer_Investigation_2026-07-14.md` (ratified; PLANNED-as-axis
-  doctrine, I6 anchor). G0.1 (the C6 planning-doctrine contract) is the next Stage-G
-  batch, gated on G-PRECOND (this true-up is the last precondition item).
+  doctrine, I6 anchor).
+
+  ⚠️ **CORRECTED 2026-08-20 — THIS POINTER NAMED AS "NEXT" A BATCH THAT MERGED
+  FIVE WEEKS EARLIER, AND FOUR BATCHES HAVE LANDED PAST IT SINCE.** The sentence
+  read *"G0.1 (the C6 planning-doctrine contract) is the next Stage-G batch, gated
+  on G-PRECOND (this true-up is the last precondition item)."* Derived: **G0.1
+  merged 2026-07-14 as PR #67** (`dc059fc`, and `docs/contracts/C6-planning.md`
+  has read `Status: CONTRACT · authored G0.1` ever since), and Stage G ran on
+  through **G0.2 · G1.1 · G1.2a · G1.2b · G1.3**, the last of them on
+  2026-07-15. **G-PRECOND was satisfied the day before G0.1 opened** — the Build
+  Plan merged at #65 on 2026-07-14 — and `Stage_G_Grid_Planning_Layer_Plan_v1.md`
+  still carried it as `OPEN — operator` until this true-up.
+
+  Derivation, re-runnable: `git log --format='%ad %s' --date=short | grep -oE
+  '^[0-9-]+ G[0-9]\.[0-9][a-z]?' | sort -u`. **Stage G is DORMANT, not next** —
+  it stands where G1.3 left it and is not on the recalibrated path below.
 - **Stage F — Foundation** (governed data + integration backbone): **F0**
   contract-freeze & ledger truth (F0.1–F0.6 COMPLETE; F0.6 = LivenessRegistry,
   PR #60 closed F0) → **F1** real backend
@@ -196,15 +298,104 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   when its Stage-F prerequisite lands.
 - **Stage A — Agentic** (disciplined/bounded): A1 copilot · A2 document
   intelligence · A3 bounded task agents · A4 advanced levers (buy-vs-build).
-- **Track R** (halal) is a NORMAL operator-lane capability — on equal footing
-  with every other lane, NOT a deadline-driven track. The platform models the
-  full compliance flow; no external deadline gates the build, and certification
-  is handled manually by the compliance team. Switch-on timing is operational,
-  not a build gate. It feeds the Stage-2 I3 compliance primitive. Four operator
-  inputs remain OPEN (informational, non-blocking): D-CAL / D-STAFF / D-SAP / D-DPO.
-- Adjudicated forks: **FORK-1 = (c)** (minimal scripted halal-renewal walkthrough
-  at I3; full Learn absorbed into the A1 copilot). **FORK-2 = hybrid** (author all
-  remaining flows; wire opportunistically per Stage-2 surface).
+- **Track R** (halal). ⚠️ **RE-PRIORITIZED 2026-08-20 — THIS IS THE OPERATOR
+  REVERSING THE OPERATOR, AND IT IS RECORDED AS A REVERSAL RATHER THAN AN EDIT.**
+  The de-pressurization ruled on 2026-07-15 (PR #75) said Track R is a normal
+  capability on equal footing with every other lane and that no external deadline
+  gates the build. That ruling is **SUPERSEDED FOR SEQUENCING ONLY**: Track R is
+  now **arc 1**, the first arc on the recalibrated path below. What is NOT
+  reversed: certification is still handled manually by the compliance team, the
+  four operator inputs (D-CAL / D-STAFF / D-SAP / D-DPO) are still non-blocking,
+  and **no honesty marker moves** — `compliance` stays SIMULATED behind its
+  two-gate guard until the real harvest lands (LIVENESS-DATASOURCE-01).
+
+  The regulatory date is real and derivable in-tree: **17 October 2026**, GR
+  42/2024, BPJPH — carried at `docs/Paragon_Platform_Strategic_Spine_v1.md:102`,
+  `docs/Halal_Compliance_Control_Design_v1.md:9`, and as the `BPJPH_MANDATE_DATE`
+  constant behind `complianceProjection.schemeValid`. **58 days from 2026-08-20.**
+  What changed is not the date — it was always there — but which lane the seat
+  spends its next batches on. It feeds the Stage-2 I3 compliance primitive.
+
+### THE RECALIBRATED PATH (ruled 2026-08-20; supersedes the Stage-G "next" pointer)
+
+Three arcs, in order. Nothing else is queued.
+
+- **ARC 1 · TRACK R — the halal lane made operable.** Three deliverables, and
+  every one of them is a SURFACE or a WRITE PATH, never a register entry:
+  1. **An operator-editable certificate registry.** Today `COMPLIANCE_REGISTRY`
+     (`src/services/data/mock/fixtures/complianceRegistry.ts`) is **16 frozen
+     rows** — `readonly … = [ … ]`, every supplier `"Sample … (illustrative)"`,
+     every cert number a `SAMPLE-…` token, every material `RM-SAMPLE-…`. Derived:
+     `compliance` is one of the **seven flows with no `CommandTarget`**
+     (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`), so `t_compliance_submit` /
+     `_verify` / `_reject` **cannot fire**. There is no write path of any kind:
+     nobody — operator, buyer or supplier — can add, edit or expire a
+     certificate. **That is arc 1's first deliverable.**
+  2. **The expiry projection on real dates.** `complianceProjection.ts` already
+     computes display status and scheme validity from `expiryDate` + issuer
+     (clock-states never stored, law 0.5). It has never once run against a date a
+     person entered.
+  3. **The receipt gate reading it.** `verifyHalalAtReceipt`
+     (`src/services/data/halalVerification.ts`) is authored, tested, and
+     **HEADLESS BY RULING** — its own header forbids acquiring a consumer there,
+     because `COMPLIANCE_REGISTRY`'s codes are `RM-SAMPLE-…` and
+     `MATERIAL_MASTER`'s are not, so **the intersection is empty by construction**
+     and a wire today would refuse 100% of real receipts. **(1) is what makes (3)
+     safe to wire** — that is the whole reason the arc is ordered this way, and
+     H4 / `D-COMP-HALAL-4` is the gate it opens.
+
+- **ARC 2 · THE REQUISITION LANE.** ⚠️ **The dispatched premise inverted twice,
+  and the lane is in WORSE shape than "unreachable", not better.** Derived:
+  `purchaseRequisition` **IS** a wired `CommandTarget`
+  (`MockCommandService.ts:1292`), so `t_pr_submit` / `t_pr_approve` /
+  `t_pr_reject` are dispatch**able**; and procurement's entry point **DOES** have
+  a page — `/buyer/purchase-requisition` → `BuyerRequisitions`
+  (`AppRouter.tsx:111`), alongside `IntakeReview` and
+  `plan-grid/IntakeAdjustDrawer`. What is true is sharper: **only `t_pr_create`
+  has a hook and a caller.** The panel ships a `Draft` → **"Submit for approval"**
+  button that fires a **`variant: 'success'` toast and closes the drawer** — no
+  dispatch, no state change (`BuyerRequisitions.tsx:520-532`); the `Approved` →
+  "Create PO directly" / "Create sourcing event" button does the same
+  (`:501-519`); and `Pending Approval` carries **no approve or reject affordance
+  at all**. An unreachable verb is silent. **This one tells the buyer it
+  succeeded.** Arc 2 is the approval half of the lane, and the two false
+  affordances are its first fix.
+
+- **ARC 3 · SUPPLIER ONBOARDING.** Confirmed exactly as dispatched.
+  `src/pages-v2/SupplierRegistration.tsx` is **1,551 lines** behind `/register`
+  and contains **zero** service calls — no `useDataService`, no dispatch, no
+  mutation. The whole form lives in `useState`, and submitting sets a
+  `const [submitted, setSubmitted] = useState(false)` boolean. **A supplier
+  completes onboarding and nothing anywhere records that they did.**
+
+**PARKED, NOT QUEUED — and the reason is one sentence: THESE ARE MACHINE HYGIENE,
+NOT MANDATE WORK.** Every one of them makes the tree more consistent with itself;
+not one of them puts a capability in front of a person. They stay open, they stay
+derivable, and they are picked up when an arc's own surface work touches them —
+never as a standalone batch:
+
+  - **The dead-end states.** The derived population is **37 non-terminal states no
+    surface can leave, across 12 of 18 flows** (`docs/findings.md` §48g — derived
+    with cascade targets and `settlesTo` edges folded in; without those two
+    corrections the same derivation returns 43 and condemns both working SAP
+    boundaries). ⚠️ The dispatch called this *"the eight fixture-only states"*;
+    **no derivation in this tree returns eight**, and the two nearest real figures
+    are that 37 and §49a's 18.
+  - **GL-0b's unregistered unions.** GL-0 derived **143 closed string-literal
+    unions / 580 members** across `src/` and registered 18 of them / 66 terms;
+    **125 remain** as GL-0b's worklist. The figure is GL-0's derivation, named
+    here rather than restated as if freshly measured (§27).
+  - **The 29 stored-field allowlist rows** (`src/lib/storedFieldGate/allowlist.ts`
+    — 29 `key:` entries, derived at read time). Each is a stored field carrying a
+    stated reason instead of a reader; the list can only ever shrink truthfully.
+  - **R1d.** ⚠️ Parked as named, with a caveat that belongs in the parking
+    notice: **`R1d` occurs exactly ONCE in the register** (`docs/findings.md:14727`,
+    inside an UNTOUCHED list) and **is defined nowhere in the tree**. It is parked
+    as a token, not as a scope. Whoever un-parks it defines it first.
+
+- **Adjudicated forks:** **FORK-1 = (c)** (minimal scripted halal-renewal
+  walkthrough at I3; full Learn absorbed into the A1 copilot). **FORK-2 = hybrid**
+  (author all remaining flows; wire opportunistically per Stage-2 surface).
 
 ## Routing
 Routing is HashRouter (`src/router/AppRouter.tsx`) — not BrowserRouter. The `/`
@@ -241,15 +432,28 @@ nav groups under one neutral key, `nav.glossary`.
   affordance or a primary action. Navy (`#0D1B2A`) is text/headings only — never
   a decorative fill. Mid (`#354A5F`) is secondary text. Surfaces stay white /
   light-neutral with subtle borders.
-- BUTTON HIERARCHY (DP2-BUTTON-01): primary action = action-blue **OUTLINE** by
-  default (`Button variant="outline"`) — the calm portal-wide register. **SOLID**
-  action-blue (`variant="primary"`) is RESERVED for consequential / irreversible
-  commits — Award (RFQ), Release payment, Post-to-SAP, Reject / Dispute,
-  Override-hold. Principle: **solid = the irreversible-commit signal**; at most
-  ONE meaningful solid per surface. Export / Cancel / Close / secondary paths stay
-  outline / `variant="secondary"`; an Export never occupies the primary slot. The
-  `BulkActionsBar` primary slot renders outline by default — set `primary.solid`
-  only for a reserved commit verb. WhatsApp / messenger chrome is exempt (D-2).
+- ⚠️ BUTTON HIERARCHY (DP2-BUTTON-01, **AMENDED §68 — THE RESERVED-SOLID
+  REGISTER IS RETIRED**): primary action = action-blue **OUTLINE**
+  (`Button variant="outline"`), and it is now the ONLY primary register.
+  Export / Cancel / Close / secondary paths stay `variant="secondary"`; an
+  Export never occupies the primary slot.
+
+  **SOLID action-blue no longer exists in this portal.** The prior rule reserved
+  it for consequential / irreversible commits — Award (RFQ), Release payment,
+  Post-to-SAP, Reject / Dispute, Override-hold, at most one per surface — and
+  exempted WhatsApp / messenger chrome from DP-2 (D-2). **All of that is
+  retired, messenger chrome included** (operator ruling, §68).
+
+  **THE RULE IS ENFORCED BY A TYPE, NOT BY THIS PARAGRAPH.** `Button`'s
+  `Variant` union has no `'primary'` member, so every route back is a `tsc`
+  failure; `src/pages-v2/solidButtonRetired.guard.test.ts` covers what a type
+  cannot. **Do not restate the site count here** — the literal scan that opened
+  the sweep was incomplete four ways (a `BulkActionsBar` prop, an
+  `invoiceActionModel` flag that also drove a confirm step, two typed
+  `'primary' | 'outline'` helpers, and `Button`'s own DEFAULT), and the last two
+  were found by the type after the union member was removed, not by any scan.
+  If solid is ever wanted again, amend this paragraph AND the type AND the gate
+  together — changing one of the three is how the register comes back.
 - Semantic color (green/amber/red) is ONLY for true state, in soft/muted
   variants — never saturated decoration. If a chip's color doesn't inform a
   decision, it goes neutral.
@@ -472,6 +676,36 @@ counts the opposite half of the asymmetry, and one event under two classes
 inflates both. The population guard is now the FIRST test in the shipped gate and
 asserts MEMBERSHIP, never a count. §42b.
 
+⚠️ **§71 · AND A THIRD WAY A CLEAN READING LIES, WHICH IS NEITHER OF THE OTHER
+TWO — `CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01`. THE OPERATIVE FORM: A CLEAN
+RESULT TAKEN RIGHT AFTER THE FIX IS A REPORT ABOUT THE FIX.** The family now has
+three members and they fail for three different reasons, so a note on either of
+the first two would have been filed in the wrong place:
+
+| | What the instrument examined | Why the clean reading is worthless |
+|---|---|---|
+| `EMPTY-INPUT-REPORTS-CLEAN-01` | **nothing** | there was no population |
+| **rule 1** | a population, through a broken matcher | the result reports on the matcher |
+| **this** | **everything, correctly** | **the defect was removed an hour earlier** |
+
+The third is the hardest to distrust, because *nothing is wrong with it*: real
+population, correct matcher, honest zero. At §70b a candidate gate for
+`FORWARD-PROMISE-HAS-NO-HANDLER-01` measured **zero false positives across the
+whole i18n layer** — a genuinely clean reading over a genuinely complete
+population — and it was clean **because §69 had deleted both instances that
+morning.**
+
+⚠️ **AND THE CONSEQUENCE IS RULE 4's, ARRIVING THROUGH A DIFFERENT DOOR: AN
+INSTRUMENT VALIDATED ONLY AGAINST A REPAIRED TREE HAS NEVER BEEN SHOWN TO FIRE.**
+Rule 4 says probe the guard both ways; this is the case where a seat believes it
+already has, because the real-tree run came back green and green is what a
+working guard looks like. **The zero proves the repair landed. It proves nothing
+about whether the instrument can catch the next instance** — for that, fire it at
+the defect the fix removed (§70b did: the proxy would have caught both §69
+strings, which is a different measurement from the zero, taken against different
+input). **A gate whose only evidence is a clean run on a just-repaired tree is
+unprobed, whatever its output says.**
+
 ⚠️ **§51 · AND ONE LAYER ABOVE THE PROBE: THE INSTRUMENT THAT COUNTS THE PROBE.
 RULE 4 COVERS THE PROBE. THIS COVERS THE THING THAT READS THE PROBE'S OUTPUT, AND
 ITS FAILURE MODE IS FLATTERINGLY HUMBLE.** A mutation probe is trusted through a
@@ -523,11 +757,84 @@ written down. Before building on a named artifact, `grep` for it —
 absence is a one-line measurement and a wrong premise with a specific name is the
 most believable kind.
 
+⚠️ **§70 · AND WHAT TO DO WITH ONE, WHICH §64a DOES NOT SAY —
+`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`. A FINDING WHOSE MECHANISM IS FALSE MUST
+NOT BE FILED, EVEN WHEN ITS CONCLUSION IS RIGHT: THE REGISTER IS WHAT THE NEXT
+BATCH BUILDS ON, AND A FALSE BLOCKER COSTS MORE THAN THE BATCH IT STOPPED.**
+**AND THE BOUND IS PART OF THE RULE, NOT A FOOTNOTE TO IT: AN UNVERIFIED
+MECHANISM IS STILL FILED, WITH ITS UNCERTAINTY STATED — ONLY A MECHANISM
+*MEASURED FALSE* IS WITHHELD. THE DISTINCTION IS WHETHER THE MEASUREMENT WAS
+TAKEN.** Unbounded, the rule licenses withholding anything a seat has not proven,
+**which would empty the register of exactly the findings that most need
+checking** — so the limit is what keeps the rule from inverting into the harm it
+exists to prevent, and it is stated before the argument rather than after it.
+§64a stops at detection (*grep the artifact, keep the property*), so the default
+survives — the conclusion held, and filing is what this project does with
+survivors. **That default is wrong, and asymmetrically:** a finding filed with a
+correct mechanism costs ONE batch to act on; one filed with a false mechanism
+costs EVERY batch that reads it, because "X cannot do Y" invites a Y-shaped
+replacement for X, and **nobody re-measures a blocker — a blocker is why you
+stopped.** At §69 the finding was *"the policy hook cannot reach the document"*,
+attached to a conclusion that was RIGHT (*the bands are not where the work is*),
+which is exactly what would have carried it past review; filed, it would have sat
+in front of every value-based policy this platform will ever want, while
+`readEntity` was documented for that purpose and four shipped hooks already used
+it. **The disposal is re-measure, then file the TRUE finding** — which was the
+opposite shape and sharper: the hook reaches the document, and what is missing is
+the RIGHT-HAND SIDE of the comparison. One is a dead end; the other names what to
+build.
+
 The gate itself is `src/lib/storedFieldGate/` — every stored field on a
 glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
 its reason stated. It is deliberately TEST-level, not type-level, precisely so
 #179's mutation practice CAN reach it; both directions of the bilateral
 assertion are mutation-probed.
+
+### And the rule beside all of them: A REGISTER ENTRY IS NOT A DELIVERABLE
+
+⚠️ **NO BATCH MAY BE DISPATCHED WHOSE DELIVERABLE IS A REGISTER ENTRY, UNLESS
+THAT ENTRY IS A CONTRACT.** Ruled 2026-08-20. Binding on the dispatching seat,
+not only on the executing one — it is a rule about what may be ASKED FOR.
+
+**A contract is the exemption because a contract is a commitment somebody else
+builds against**: `docs/contracts/C1…C10`, a frozen DTO, an invariant a gate
+enforces. A finding is a commitment to nobody. The test is not the file the text
+lands in — a finding written into `docs/contracts/` is still a finding. The test
+is: **does anything outside this repository change if it is true?**
+
+**THE REMEDY IS STRUCTURAL BECAUSE THE FAILURE IS STRUCTURAL, AND THE FAILURE IS
+NOT LAZINESS.** The strategist seat produces findings faster than surfaces, and
+findings READ AS PROGRESS: they are dated, numbered, cross-linked, derived, and
+often genuinely excellent work. Nothing in the review loop distinguishes a
+register that grew because the tree was examined from a register that grew
+because examining is cheaper than building. **A finding costs one seat one
+session and passes every gate this project has by construction — `npm run gates`
+cannot fail on prose.** A surface costs a design, a write path, a locale pass, a
+mutation probe, and a floor that must not regress. Between two things that both
+read as progress, the cheaper one wins every time it is allowed to compete, and
+until this rule it was allowed to compete.
+
+**Measured, not asserted** — the numbers and their instruments are in
+`docs/findings.md` §61 (`REGISTER-OUTGREW-THE-SURFACES-01`), re-runnable there.
+The register is now the largest thing in the docs corpus by a factor of three
+over everything else combined, and it grew that way in six weeks.
+
+**How to apply it, concretely:**
+- A batch whose PR touches only `docs/findings.md` needs a stated reason that is
+  not *"the census produced findings."* Recording what a BUILDING batch measured
+  is not this rule's target — that is the register doing its job. **Dispatching a
+  batch TO produce findings is.**
+- Findings that arrive as a by-product of surface work are unaffected and always
+  were: §56's own line is that three of its four findings came from instruments
+  running *after* the code was written. **Keep that. This rule is about what the
+  batch was FOR.**
+- When a census genuinely must run first, dispatch it with **the surface it
+  unblocks named in the same dispatch**, and merge them as one arc. A census with
+  no named consumer is the shape this rule refuses.
+- ⚠️ **AND THE RULE APPLIES TO ITSELF.** This entry is a register entry about
+  register entries. It earns its place only if the next three arcs ship surfaces;
+  if the recalibrated path above produces another six weeks of prose, this
+  paragraph is evidence for the diagnosis and not a remedy for it.
 
 ## Gates — THIS PROJECT HAS NO LINT SCRIPT
 There is no `lint` script and no ESLint config. Do not invent one, and do not

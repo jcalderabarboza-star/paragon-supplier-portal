@@ -296,8 +296,17 @@ describe('PF-1a · purchase requisition — REVISE-AND-RESUBMIT, not a bare reop
       ...(payload ? { payload } : {}),
     });
 
+  // ⚠️ §67 — `t_pr_reject` NOW REQUIRES A NON-BLANK `rejectionReason`, and these
+  // three specs are the blast radius PF-1a predicted when it declined to make
+  // the change unruled. Each used to reject with no payload; a bare reject now
+  // fails MISSING_FIELDS, the PR never reaches `Rejected`, and the revise edge
+  // under test refuses as ILLEGAL_TRANSITION instead. **The assertions below are
+  // unchanged** — only the setup act now supplies what the verb asks for, which
+  // is what a reader needs to see: the revise ruling did not move.
+  const rejectWithReason = () => dispatch('t_pr_reject', { rejectionReason: 'Over budget.' });
+
   it('⚠️ a rejected requisition returns to DRAFT — the requester’s hands, not the queue', async () => {
-    expect((await dispatch('t_pr_reject')).status).toBe('done');
+    expect((await rejectWithReason()).status).toBe('done');
     expect(purchaseRequisitionStore.get(PR)!.status).toBe('Rejected');
 
     const revised = await dispatch('t_pr_revise', { revisionNote: 'Split into two smaller lots.' });
@@ -308,14 +317,14 @@ describe('PF-1a · purchase requisition — REVISE-AND-RESUBMIT, not a bare reop
   });
 
   it('and the existing submit verb is what returns it to the queue — the two-step IS the revision', async () => {
-    await dispatch('t_pr_reject');
+    await rejectWithReason();
     await dispatch('t_pr_revise', { revisionNote: 'Split into two smaller lots.' });
     expect((await dispatch('t_pr_submit')).status).toBe('done');
     expect(purchaseRequisitionStore.get(PR)!.status).toBe('Pending Approval');
   });
 
   it('⚠️ revising WITHOUT a note is refused — the note is the only thing an approver could not otherwise see', async () => {
-    await dispatch('t_pr_reject');
+    await rejectWithReason();
     const res = await dispatch('t_pr_revise');
     expect(res.status).toBe('failed');
     expect(res.reason).toContain('MISSING_FIELDS');

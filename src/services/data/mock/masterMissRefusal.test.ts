@@ -199,6 +199,9 @@ describe('SDC_MATERIAL_KNOWN — the INNER gate, and the gap it actually closes'
       toState: 'Declared',
       payload: { materialCode } as Record<string, unknown>,
       target: {} as never,
+      // §68 — the hook context gained `scope`; this hook reads neither it nor
+      // the target, so both are honest stand-ins for what it never touches.
+      scope: { personaType: 'buyer', supplierId: null },
     });
 
   it('is bound', () => expect(hook).toBeDefined());
