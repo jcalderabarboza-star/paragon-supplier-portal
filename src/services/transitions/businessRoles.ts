@@ -62,6 +62,7 @@ export type SystemRoleId =
   | 'planning'
   | 'requisitioner'
   | 'supplier'
+  | 'buyer_all'
   | 'admin';
 
 /**
@@ -183,16 +184,64 @@ const LANE_BUNDLES = Object.freeze({
   });
 
 /**
+ * The six buyer lane bundles, named once so both derived roles below compose
+ * from the SAME list. Two literals would be two things to keep in step, and the
+ * second one is always the one that drifts.
+ */
+const BUYER_LANE_IDS = Object.freeze([
+  'procurement',
+  'receiving',
+  'finance',
+  'compliance',
+  'planning',
+  'requisitioner',
+] as const satisfies readonly (keyof typeof LANE_BUNDLES)[]);
+
+/**
+ * ⚠️ **THE MANAGER'S SEAT — EVERY BUYER ACT A LANE PERFORMS, AND NOTHING ELSE.**
+ *
+ * Derived, never hand-listed, for `admin`'s reason: a lane that gains an atom
+ * tomorrow gives it to the manager in the same commit.
+ *
+ * ⚠️ **IT IS NOT A SMALLER `admin`, AND THE TWO EXCLUSIONS ARE THE WHOLE
+ * DISTINCTION** (operator ruling). `admin` is **the IT seat** — both tenancies,
+ * plus authority over the role system itself. `buyer_all` is **the manager's
+ * seat** — one side, no authority over roles. *A department head who can do
+ * everything their team does is not an IT administrator who can do everything
+ * anyone does*, and collapsing them would hand a manager reach into the supplier
+ * side and into the role catalogue, neither of which the job needs.
+ *
+ * ⚠️ **`role:grant` IS SUBTRACTED BY NAME, AND IT IS THE ONE SUBTRACTION.** It
+ * is authority OVER the role system rather than an act within a lane, and §66
+ * put it in `compliance` alone precisely because whoever can edit roles can
+ * grant themselves any verb. A broad OPERATING seat that could also rewrite the
+ * catalogue is `admin` — which already exists — so minting a second one here
+ * would be the wildcard arriving through the door marked *operating
+ * convenience*. **A manager operates the lane; IT administers the platform.**
+ *
+ * The subtraction is asserted BOTH ways in `buyerAll.test.ts`: `role:grant` is
+ * absent, AND every other atom the six lanes hold is present. A one-sided
+ * assertion would pass on an empty bundle (§39).
+ */
+const BUYER_ALL_ATOMS: readonly TransitionRole[] = Object.freeze(
+  [...new Set(BUYER_LANE_IDS.flatMap((id) => LANE_BUNDLES[id]))].filter(
+    (a) => a !== 'role:grant',
+  ),
+);
+
+/**
  * ⚠️ **THE SUPER ADMIN, AND IT IS DERIVED — THE UNION OF EVERY LANE BUNDLE.**
  *
- * Hand-listing these 52 atoms would put a copy of every other bundle in a place
+ * Hand-listing them would put a copy of every other bundle in a place
  * nothing checks, and it would go stale the first time a lane gains an atom.
  * Composing it means **`admin` cannot drift by construction**: add `rfq:cancel`
  * to `procurement` tomorrow and `admin` holds it in the same commit, with no
  * edit here and none on the page.
  *
  * ⚠️ **AND THE EXCLUSION IS WHAT MAKES THE BUNDLE RIGHT.** It is the union of
- * what PEOPLE hold — 36 buyer-side atoms plus 16 supplier atoms, disjoint — and
+ * what PEOPLE hold — the buyer side plus the supplier side, disjoint, derived at
+ * read rather than restated here (the figures that stood in this sentence were
+ * measured stale by one the day `role:grant` landed, §77f) — and
  * it deliberately does NOT include the 12 machine-only atoms in
  * `AUTOMATION_ATOMS`. **A super admin cannot fire S/4HANA's or the TMS's acts,
  * because those have no human owner by construction** (operator ruling), and
@@ -213,11 +262,13 @@ const ADMIN_ATOMS: readonly TransitionRole[] = Object.freeze([
 ]);
 
 /**
- * THE SEEDED BUNDLES, `admin` included. Ordered with `admin` last so the
- * catalogue reads lanes first and the universal role at the end.
+ * THE SEEDED BUNDLES, the two supersets included. Ordered with the lanes first,
+ * then the manager's seat, then the IT seat — so the catalogue reads narrow to
+ * wide and a reader meets the two wide roles adjacently, which is where the
+ * distinction between them is easiest to see.
  */
 export const SYSTEM_ROLES: Readonly<Record<SystemRoleId, readonly TransitionRole[]>> =
-  Object.freeze({ ...LANE_BUNDLES, admin: ADMIN_ATOMS });
+  Object.freeze({ ...LANE_BUNDLES, buyer_all: BUYER_ALL_ATOMS, admin: ADMIN_ATOMS });
 
 /**
  * The machine grant. Every atom required by a buyer transition that is
@@ -268,6 +319,16 @@ export function atomsFor(roles: readonly BusinessRoleId[]): readonly TransitionR
 
 /**
  * The system roles that belong to a persona — the ONE place the sides split.
+ * **This is what a persona MAY HOLD**: the identity panel's enumeration, the
+ * storage allowlist, and the tenancy boundary `sideOfSystemRole` reads.
+ *
+ * ⚠️ **IT IS NOT THE SEED. SEE `SEEDED_SEAT_ROLES` BELOW, AND THE SPLIT IS THE
+ * POINT.** One constant answered both questions until `buyer_all` landed, and
+ * they are different questions: *what may this seat hold* and *what does it hold
+ * on the day it opens*. Left merged, adding a role to the panel would have
+ * GRANTED it to every seat in the portal — the ruling's own instruction was
+ * **make it holdable, do not seed it**, and a single constant cannot express
+ * both halves of that sentence.
  *
  * ⚠️ **`admin` IS ABSENT HERE ON PURPOSE, AND IT IS NOT AN OVERSIGHT.** It spans
  * BOTH tenancies, so listing it under `buyer` would make `PERSONA_ROLES.buyer`
@@ -275,40 +336,78 @@ export function atomsFor(roles: readonly BusinessRoleId[]): readonly TransitionR
  * true, collapsing the tenancy answer that `nextActorFrom`, `catalogView` and
  * the `surfaceable` per-persona invariant all read. A persona is a SIDE; admin
  * is not on a side. It is a catalogue role, not a seat-picker option.
+ *
+ * ⚠️ **`buyer_all` IS PRESENT FOR THE MIRROR-IMAGE REASON.** It is on a side —
+ * one side, by construction — so it collapses nothing: its atoms are a SUBSET of
+ * what the six lanes already contribute, and `PERSONA_ROLES.buyer` is unchanged
+ * by its presence (asserted in `buyerAll.test.ts`). Holdable, and inert to every
+ * tenancy answer.
  */
 export const PERSONA_SYSTEM_ROLES: Readonly<
   Record<'buyer' | 'supplier', readonly SystemRoleId[]>
 > = Object.freeze({
-  buyer: Object.freeze([
-    'procurement',
-    'receiving',
-    'finance',
-    'compliance',
-    'planning',
-    'requisitioner',
-  ] as readonly SystemRoleId[]),
+  buyer: Object.freeze([...BUYER_LANE_IDS, 'buyer_all'] as readonly SystemRoleId[]),
+  supplier: Object.freeze(['supplier'] as readonly SystemRoleId[]),
+});
+
+/**
+ * ⚠️ **WHAT A SEAT HOLDS WHEN IT OPENS — AND `buyer_all` IS DELIBERATELY NOT IN
+ * IT** (operator ruling). *A role is holdable and unheld until somebody grants
+ * it, and that is the correct state for a manager's seat*: it exists to be
+ * given to a manager, not to be everybody's default.
+ *
+ * The demo seat still opens holding every LANE on its side, which is the
+ * pre-existing ruling and is unchanged — seeding narrower would delete
+ * affordances from a portal nobody asked to change. What changed is only that
+ * the seed is now stated separately from the offer, so the two can differ.
+ *
+ * ⚠️ **A NARROWING GATE GUARDS THIS PAIR**: `buyerAll.test.ts` asserts the seed
+ * is a PROPER SUBSET of what the persona may hold, in both directions — every
+ * seeded role is offerable (a seat cannot open holding something the panel would
+ * refuse to give back), and at least one offerable role is unseeded (otherwise
+ * the split is decorative and the next edit quietly re-merges it).
+ */
+export const SEEDED_SEAT_ROLES: Readonly<
+  Record<'buyer' | 'supplier', readonly SystemRoleId[]>
+> = Object.freeze({
+  buyer: Object.freeze([...BUYER_LANE_IDS] as readonly SystemRoleId[]),
   supplier: Object.freeze(['supplier'] as readonly SystemRoleId[]),
 });
 
 /**
  * Which system roles grant `atom`. Empty ⇒ nobody assignable holds it.
  *
- * ⚠️ **`admin` IS DELIBERATELY EXCLUDED, AND THIS IS THE UNIVERSALITY PROBLEM
- * IN ITS SECOND FORM.** The operator filed the first: *a derivation keyed on
- * usage cannot see a member defined by universality.* This is its inverse — **a
- * member defined by universality POLLUTES every usage-keyed answer.** `admin`
- * holds every assignable atom, so an unfiltered `rolesHolding` names it on all
- * 52, and the cross-role handoff would read *"Awaiting Finance / Admin"* on
- * every withheld verb in the portal.
+ * ⚠️ **THE SUPERSET ROLES ARE DELIBERATELY EXCLUDED, AND THIS IS THE
+ * UNIVERSALITY PROBLEM IN ITS SECOND FORM.** The operator filed the first: *a
+ * derivation keyed on usage cannot see a member defined by universality.* This
+ * is its inverse — **a member defined by universality POLLUTES every usage-keyed
+ * answer.** Each of them holds every assignable atom on its reach, so an
+ * unfiltered `rolesHolding` would name them on all of it and the cross-role
+ * handoff would read *"Awaiting Finance / Super Admin"* — or *"/ Buyer
+ * Operations"* — on every withheld verb in the portal.
  *
- * The two statements are different and only one is an OWNER: **finance owns
- * `invoice:pay`; admin can also do it.** A handoff names the owner, so it must
- * name finance. `SYSTEM_ROLES.admin` is where admin's reach is stated — plainly,
- * in full, on its own catalogue row — which is the operator's requirement that a
- * super admin be named rather than hidden.
+ * ⚠️ **A ROLE THAT HOLDS EVERYTHING IS NOT AN OWNER, IT IS A SUPERSET**
+ * (operator ruling). The two statements are different and only one is an OWNER:
+ * **finance owns `invoice:pay`; admin and buyer_all can also do it.** A handoff
+ * answers *whose act is next*, so naming a superset tells a withheld seat
+ * nothing it can act on. `SYSTEM_ROLES[…]` is where each superset's reach is
+ * stated — plainly, in full, on its own catalogue row — which is the operator's
+ * requirement that a wide role be named rather than hidden.
+ *
+ * ⚠️ **IT IS A SET RATHER THAN A SPECIAL CASE, ON PURPOSE.** The single
+ * `!== 'admin'` this replaces was correct while there was one such role and
+ * silently wrong the moment there were two — the shape that ships looking like a
+ * working filter. `SUPERSET_ROLES` is asserted in `buyerAll.test.ts` to be
+ * exactly the roles whose atoms are a superset of another role's, DERIVED, so a
+ * third one cannot be added without either joining the set or failing the gate.
  */
+export const SUPERSET_ROLES: ReadonlySet<SystemRoleId> = new Set<SystemRoleId>([
+  'admin',
+  'buyer_all',
+]);
+
 export function rolesHolding(atom: TransitionRole): readonly SystemRoleId[] {
   return (Object.keys(SYSTEM_ROLES) as SystemRoleId[])
-    .filter((r) => r !== 'admin')
+    .filter((r) => !SUPERSET_ROLES.has(r))
     .filter((r) => SYSTEM_ROLES[r].includes(atom));
 }

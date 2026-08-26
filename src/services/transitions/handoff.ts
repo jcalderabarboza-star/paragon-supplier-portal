@@ -95,6 +95,7 @@ export const ROLE_LABEL_KEY: Readonly<Record<SystemRoleId, string>> = Object.fre
   planning: 'roles.owner.planning',
   requisitioner: 'roles.owner.requisitioner',
   supplier: 'roles.owner.supplier',
+  buyer_all: 'roles.owner.buyer_all',
   admin: 'roles.owner.admin',
 });
 
@@ -106,7 +107,10 @@ export const ROLE_LABEL_KEY: Readonly<Record<SystemRoleId, string>> = Object.fre
  * today and is not a contract; sorting here on a declared order means the line
  * cannot re-order itself under a refactor of the bundle literal.
  */
-const ROLE_ORDER: readonly SystemRoleId[] = [
+// Exported so `buyerAll.test.ts` can assert it stays TOTAL over `SystemRoleId`
+// in both directions. A role missing here does not fail — it silently vanishes
+// from an owner line, which is the quiet half of the same defect.
+export const ROLE_ORDER: readonly SystemRoleId[] = [
   'procurement',
   'receiving',
   'finance',
@@ -114,9 +118,12 @@ const ROLE_ORDER: readonly SystemRoleId[] = [
   'planning',
   'requisitioner',
   'supplier',
-  // Last, and in practice never reached: `rolesHolding` filters `admin` out
-  // before an owner list is built, because a role that holds everything names
-  // nothing. Present here so the record stays total over the union.
+  // Last, and in practice never reached: `rolesHolding` filters the SUPERSET
+  // roles out before an owner list is built, because a role that holds
+  // everything names nothing. Present here so the record stays total over the
+  // union — and `ROLE_LABEL_KEY` is an exhaustive `Record<SystemRoleId, …>`, so
+  // a role added tomorrow is a `tsc` failure rather than a silent omission.
+  'buyer_all',
   'admin',
 ];
 

@@ -14,7 +14,7 @@ import type {
   CurrentIdentity,
   IdentitySource,
 } from '../context/CurrentIdentityContext';
-import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { SEEDED_SEAT_ROLES } from '../services/transitions/businessRoles';
 import { NO_PERSON } from '../context/noPerson';
 
 // Default persona for page tests that don't care about identity.
@@ -29,10 +29,16 @@ export const BUYER: CurrentIdentity = {
   personaType: 'buyer',
   supplierId: null,
   supplierName: null,
-  // The full buyer seat — every system role on that side. Specs that want a
-  // NARROWED seat pass their own identity; this default keeps the ~200 specs
-  // that predate the role split asserting exactly what they asserted before.
-  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  // THE SEEDED buyer seat — every LANE on that side, which is what a real seat
+  // opens holding. Specs that want a NARROWED seat pass their own identity;
+  // this default keeps the ~200 specs that predate the role split asserting
+  // exactly what they asserted before.
+  //
+  // ⚠️ **IT READS THE SEED, NOT THE OFFER, AND THAT IS LOAD-BEARING.** They
+  // were one constant until `buyer_all` landed; pointing this at the OFFER
+  // would hand every default test seat the manager's role — silently widening
+  // ~200 specs into asserting against a seat no user ever has.
+  businessRoles: SEEDED_SEAT_ROLES.buyer,
   // The portal has no persons; UNATTRIBUTED is the measured fact, not a stub.
   actor: NO_PERSON,
 };
@@ -43,7 +49,7 @@ export const SUPPLIER: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-007',
   supplierName: 'PT Sample Packaging Indonesia',
-  businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+  businessRoles: SEEDED_SEAT_ROLES.supplier,
   actor: NO_PERSON,
 };
 

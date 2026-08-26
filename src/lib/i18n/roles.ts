@@ -28,6 +28,7 @@ export const rolesEn: Record<string, string> = {
   // of a sentence. Caught on the built bundle, not by the suite, because a
   // lowercase heading is valid text. Naming it as a noun serves both.
   'roles.owner.supplier': 'Supplier',
+  'roles.owner.buyer_all': 'Buyer Operations Lead',
   'roles.owner.admin': 'Super Admin',
 
   // — THE HANDOFF LINE. "Awaiting Finance", never a missing button. —
@@ -51,6 +52,13 @@ export const rolesEn: Record<string, string> = {
   'identity.panel.scopeHandoff': 'Contact your administrator to change your access scope.',
   'identity.panel.roles': 'Roles',
   'identity.panel.rolesSummary': '{{roles}} role(s) · {{permissions}} permissions',
+  // ⚠️ DESCRIPTIVE, NOT PRESCRIPTIVE. The panel states that a role adds
+  // nothing on top of a wider one it is held with, and stops. Choosing the set
+  // is the reader's act; prescribing one would be the panel deciding policy.
+  'identity.panel.rolesRedundant':
+    'A wider role you hold already covers {{roles}} — removing it changes nothing you can do.',
+  'identity.panel.rolesLast':
+    'Your last role cannot be removed — a seat with none reads as a broken portal. To swap it, add the new role first, then remove this one.',
   // D-CENSUS-8 — what is real, what is not, precisely.
   'identity.panel.demoMarker':
     'Demonstration seat. The roles and permissions shown are real — the portal enforces them on every governed action. Switching roles here is a demo control and is saved only in this browser; there is no user directory yet, so no act can name the person who took it.',
@@ -102,6 +110,17 @@ export const rolesEn: Record<string, string> = {
   'roles.desc.planning': 'Demand and supply planning. Reviews supplier responses and records stock declarations.',
   'roles.desc.requisitioner': 'Raises and revises purchase requisitions. Deliberately cannot approve one.',
   'roles.desc.supplier': 'The supplier seat. Confirms orders, ships, invoices, quotes and uploads compliance documents.',
+  // ⚠️ **THE DESCRIPTION STATES WHAT IT IS NOT, AND THE SEGREGATION IT
+  // DISSOLVES** (operator ruling). Two roles on this page are wide, and a reader
+  // choosing between them must be able to tell them apart ON THE PAGE: `admin`
+  // is the IT seat (both tenancies + the role system), `buyer_all` is the
+  // manager's seat (one side, no role authority). And §76d's crossing is
+  // LEGITIMATE for a manager and must therefore be READABLE RATHER THAN
+  // IMPLIED: a seat holding `pr:revise` AND `pr:approve` can revise a
+  // requisition and approve the one it just revised. Naming it is the whole
+  // difference between a dissolved control and an undetected one.
+  'roles.desc.buyer_all':
+    'Every buyer act a lane performs, held as one role — the manager’s seat. It grants nothing on the supplier side, and no authority over roles: creating or changing a role stays with Compliance, because whoever can edit roles can grant themselves any permission. For the seat that spans both sides AND the role catalogue, see Super Admin. ⚠️ It dissolves a separation of duties: this seat can revise a requisition and approve the one it just revised.',
   // ⚠️ THE EXCLUSION IS STATED IN THE ROLE'S OWN DESCRIPTION (operator ruling).
   // A super admin bounded by what a human can legitimately do is a role; one
   // bounded by nothing is the wildcard with a name.
@@ -198,6 +217,7 @@ export const rolesId: Record<string, string> = {
   'roles.owner.planning': 'Perencanaan',
   'roles.owner.requisitioner': 'Pemohon',
   'roles.owner.supplier': 'Pemasok',
+  'roles.owner.buyer_all': 'Kepala Operasi Pembelian',
   'roles.owner.admin': 'Super Admin',
 
   'roles.handoff.awaiting': 'Menunggu {{owner}}',
@@ -213,6 +233,10 @@ export const rolesId: Record<string, string> = {
   'identity.panel.scopeHandoff': 'Hubungi administrator Anda untuk mengubah cakupan akses.',
   'identity.panel.roles': 'Peran',
   'identity.panel.rolesSummary': '{{roles}} peran · {{permissions}} izin',
+  'identity.panel.rolesRedundant':
+    'Peran yang lebih luas yang Anda pegang sudah mencakup {{roles}} — menghapusnya tidak mengubah apa pun yang dapat Anda lakukan.',
+  'identity.panel.rolesLast':
+    'Peran terakhir Anda tidak dapat dihapus — kursi tanpa peran terbaca seperti portal yang rusak. Untuk menggantinya, tambahkan peran baru dahulu, lalu hapus yang ini.',
   'identity.panel.demoMarker':
     'Kursi demonstrasi. Peran dan izin yang ditampilkan nyata — portal menegakkannya pada setiap tindakan yang diatur. Mengganti peran di sini adalah kontrol demo dan hanya disimpan di peramban ini; belum ada direktori pengguna, sehingga tidak ada tindakan yang dapat menyebut orang yang melakukannya.',
 
@@ -246,6 +270,8 @@ export const rolesId: Record<string, string> = {
   'roles.desc.planning': 'Perencanaan permintaan dan pasokan. Meninjau respons pemasok dan mencatat deklarasi stok.',
   'roles.desc.requisitioner': 'Mengajukan dan merevisi permintaan pembelian. Sengaja tidak dapat menyetujuinya.',
   'roles.desc.supplier': 'Kursi pemasok. Mengonfirmasi pesanan, mengirim, menagih, menawar dan mengunggah dokumen kepatuhan.',
+  'roles.desc.buyer_all':
+    'Setiap tindakan pembeli yang dilakukan sebuah jalur, dipegang sebagai satu peran — kursi manajer. Tidak memberi apa pun di sisi pemasok, dan tidak ada wewenang atas peran: membuat atau mengubah peran tetap milik Kepatuhan, karena siapa pun yang dapat menyunting peran dapat memberikan izin apa pun kepada dirinya sendiri. Untuk kursi yang mencakup kedua sisi DAN katalog peran, lihat Super Admin. ⚠️ Peran ini meniadakan pemisahan tugas: kursi ini dapat merevisi permintaan pembelian lalu menyetujui permintaan yang baru saja direvisinya.',
   'roles.desc.admin':
     'Setiap izin yang dapat dipegang seseorang, di kedua sisi — gabungan dari semua peran lain. Tidak dapat menjalankan tindakan platform itu sendiri: pergerakan barang dari S/4HANA, pembaruan pengangkut dan TMS, serta kaskade pencocokan tidak memiliki pemilik manusia, dan super admin pun tidak boleh menimpanya secara tidak terlihat.',
 

@@ -5,6 +5,7 @@ import {
 } from './CurrentIdentityContext';
 import {
   PERSONA_SYSTEM_ROLES,
+  SEEDED_SEAT_ROLES,
   isSystemRole,
 } from '../services/transitions/businessRoles';
 import { NO_PERSON } from './noPerson';
@@ -15,27 +16,33 @@ const LEGACY_PERSONA_KEY = 'paragon.persona';
 const SEEDED_SUPPLIER_ID = 'sup-007';
 const SEEDED_SUPPLIER_NAME = 'PT Sample Packaging Indonesia';
 
-// ⚠️ **THE DEMO SEAT OPENS HOLDING EVERY ROLE ON ITS SIDE, AND THAT IS A
+// ⚠️ **THE DEMO SEAT OPENS HOLDING EVERY LANE ON ITS SIDE, AND THAT IS A
 // DELIBERATE DEFAULT RATHER THAN A LEFTOVER WILDCARD.** The difference is where
 // the breadth lives: it is now DATA ON A SEAT that a person can narrow, not a
 // property of being a buyer. Seeding a narrower demo default would delete
-// affordances from a portal nobody asked to change; seeding all six keeps every
-// currently-reachable act reachable on the day this lands, and the role picker
-// is what makes the narrowing demonstrable.
+// affordances from a portal nobody asked to change; seeding every lane keeps
+// every currently-reachable act reachable, and the role picker is what makes the
+// narrowing demonstrable.
+//
+// ⚠️ **IT OPENS HOLDING THE LANES, NOT THE OFFER.** `SEEDED_SEAT_ROLES` is
+// deliberately a PROPER SUBSET of `PERSONA_SYSTEM_ROLES`: `buyer_all` is
+// offerable and unseeded, because *a role is holdable and unheld until somebody
+// grants it, and that is the correct state for a manager's seat* (operator
+// ruling). Reading the offer here would seed it to everyone.
 const identityForPersona = (persona: PersonaType): CurrentIdentity =>
   persona === 'supplier'
     ? {
         personaType: 'supplier',
         supplierId: SEEDED_SUPPLIER_ID,
         supplierName: SEEDED_SUPPLIER_NAME,
-        businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+        businessRoles: SEEDED_SEAT_ROLES.supplier,
         actor: NO_PERSON,
       }
     : {
         personaType: 'buyer',
         supplierId: null,
         supplierName: null,
-        businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+        businessRoles: SEEDED_SEAT_ROLES.buyer,
         actor: NO_PERSON,
       };
 
@@ -43,20 +50,30 @@ const identityForPersona = (persona: PersonaType): CurrentIdentity =>
  * Roles read back from storage, filtered to ones this persona can actually
  * hold. **A stored role is not trusted** — localStorage is caller-supplied, and
  * an unrecognised or cross-persona id would otherwise grant atoms silently.
- * An empty result falls back to the persona's full set rather than to nothing:
- * a seat that can do nothing is indistinguishable from a broken portal.
+ * An empty result falls back rather than to nothing: a seat that can do nothing
+ * is indistinguishable from a broken portal.
+ *
+ * ⚠️ **THE FILTER AND THE FALLBACK READ DIFFERENT CONSTANTS, AND CONFLATING
+ * THEM WOULD SEED `buyer_all` THROUGH THE BACK DOOR.** What a stored row is
+ * ALLOWED to say is `PERSONA_SYSTEM_ROLES` — the full offer, or a legitimately
+ * granted `buyer_all` would be stripped on reload. What an ABSENT or empty row
+ * falls back to is `SEEDED_SEAT_ROLES` — the seed — because "nothing stored"
+ * must mean "the seat as it opens", never "everything on offer". Returning
+ * `allowed` here, as this did while the two were one constant, would have handed
+ * every cold-start seat the manager's role the moment it was made offerable.
  */
 const rolesFromStorage = (
   persona: PersonaType,
   value: unknown,
 ): readonly string[] => {
   const allowed = PERSONA_SYSTEM_ROLES[persona];
-  if (!Array.isArray(value)) return allowed;
+  const seeded = SEEDED_SEAT_ROLES[persona];
+  if (!Array.isArray(value)) return seeded;
   const kept = value.filter(
     (r): r is string =>
       typeof r === 'string' && isSystemRole(r) && (allowed as readonly string[]).includes(r),
   );
-  return kept.length > 0 ? kept : allowed;
+  return kept.length > 0 ? kept : seeded;
 };
 
 const personaFromHash = (): PersonaType | null => {
