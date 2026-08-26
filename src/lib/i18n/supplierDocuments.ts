@@ -99,6 +99,19 @@ export const supplierDocumentsEn: Record<string, string> = {
   'supplierDocuments.toast.uploaded.desc': 'Pending Paragon review.',
   'supplierDocuments.toast.downloading': 'Download not available yet — {{name}} was not downloaded.',
   'supplierDocuments.toast.renewStarted': 'Renewal workflow started for {{name}}',
+  // — Refusal (the one Rejected row) —
+  // ⚠️ THE UNATTRIBUTED LINE IS NOT DECORATION AND MUST NOT BE TRIMMED. The
+  // refusal is recorded against `UNATTRIBUTED: NO_PERSON_IN_SESSION`, so the
+  // surface states that in the supplier's own language rather than leaving a
+  // blank where a name would go. Copy follows the shipped precedent at
+  // `roles.ts:207` — the platform says what it cannot know, in plain words.
+  'supplierDocuments.refusal.label': 'Refused',
+  'supplierDocuments.refusal.on': 'Refused on {{date}}',
+  'supplierDocuments.refusal.reasonLabel': 'Reason',
+  'supplierDocuments.refusal.unattributed':
+    'Recorded without a named person — the portal has no user directory yet.',
+  'supplierDocuments.alert.refused.one': '{{count}} document was refused:',
+  'supplierDocuments.alert.refused.other': '{{count}} documents were refused:',
   // — Empty state (all-empty early return) —
   'supplierDocuments.empty.title': 'No documents yet',
   'supplierDocuments.empty.subtitle': 'No documents on file for {{name}}.',
@@ -192,6 +205,14 @@ export const supplierDocumentsId: Record<string, string> = {
   'supplierDocuments.toast.downloading': 'Unduhan belum tersedia — {{name}} tidak diunduh.',
   'supplierDocuments.toast.renewStarted': 'Alur pembaruan dimulai untuk {{name}}',
   // — Empty state (all-empty early return) —
+  // — Penolakan (satu baris Rejected) —
+  'supplierDocuments.refusal.label': 'Ditolak',
+  'supplierDocuments.refusal.on': 'Ditolak pada {{date}}',
+  'supplierDocuments.refusal.reasonLabel': 'Alasan',
+  'supplierDocuments.refusal.unattributed':
+    'Dicatat tanpa nama orang — portal ini belum memiliki direktori pengguna.',
+  'supplierDocuments.alert.refused.one': '{{count}} dokumen ditolak:',
+  'supplierDocuments.alert.refused.other': '{{count}} dokumen ditolak:',
   'supplierDocuments.empty.title': 'Belum ada dokumen',
   'supplierDocuments.empty.subtitle': 'Tidak ada dokumen tercatat untuk {{name}}.',
   'supplierDocuments.empty.supplierFallback': 'pemasok ini',

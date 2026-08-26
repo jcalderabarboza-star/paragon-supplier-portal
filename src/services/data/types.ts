@@ -26,7 +26,7 @@ import type {
 
 // CP-3 · E2 — the enforcement read seam's row type. TYPE-ONLY: naming the
 // vocabulary is not acquiring a consumer, and nothing in this file calls it.
-import type { EnforcementSetting } from '../../lib/enforcement';
+import type { EnforcementSetting, ActorAttribution } from '../../lib/enforcement';
 
 // SDC-4b — the collaboration read seam's row types (type-only; the SDC layer
 // already imports IntakePlanState from here, so this reverse reference is a
@@ -293,12 +293,35 @@ export interface POSummary {
 // Mirrored from inline page declarations; gain `supplierId` so the data layer
 // can enforce scoping structurally once fixtures are relocated (Batch 2).
 
+/**
+ * ⚠️ **THIS IS THE READ VOCABULARY, NOT THE FLOW'S `states`, AND THE GAP IS
+ * DELIBERATE AND PRE-EXISTING.** `supplierDocument.flow.ts` declares three
+ * states (`Awaiting Upload` / `Under Review` / `Valid`); `Expiring Soon` and
+ * `Expired` have always lived HERE ONLY, because they are clock projections and
+ * law 0.5 keeps them out of every transition table.
+ *
+ * ⚠️ **`Rejected` JOINS THEM, AND FOR A DIFFERENT REASON THAT MUST NOT BE
+ * CONFLATED WITH THEIRS.** They are absent from the flow because they are
+ * derived. **This one is absent because the flow has nowhere to put it:**
+ * `t_supplierdoc_reject` runs `Under Review` → **`Awaiting Upload`**, so a
+ * refused document lands on the state it held before the supplier ever sent it
+ * and *a refusal is indistinguishable from a document that was never
+ * uploaded*. That is the dead-end shape this page exists to close, and closing
+ * it in the READ layer is the honest half — the FLOW half is a contract change
+ * and is not this batch's (`SUPPLIERDOC-REJECT-LANDS-ON-AWAITING-UPLOAD-01`).
+ *
+ * The consequence, stated so no later batch reads more into this than is here:
+ * **nothing PRODUCES `Rejected`.** No transition targets it and no verb writes
+ * it. It is reachable in this tree only as seeded fixture data, and the surface
+ * says so through the page's `ProvenanceMarker`.
+ */
 export type SupplierDocumentStatus =
   | 'Valid'
   | 'Expiring Soon'
   | 'Expired'
   | 'Awaiting Upload'
-  | 'Under Review';
+  | 'Under Review'
+  | 'Rejected';
 
 export type SupplierDocumentCategory =
   | 'Halal Compliance'
@@ -322,6 +345,29 @@ export interface SupplierDocument {
   version: string;
   linkedTo: string;
   notes?: string;
+  /**
+   * ⚠️ **THE THREE REFUSAL FIELDS TRAVEL TOGETHER OR NOT AT ALL** — a reason
+   * with no timestamp is an accusation with no date, and a timestamp with no
+   * reason is the dead end restated. `supplierDocumentRefusal.test.ts` asserts
+   * the co-presence in both directions, so a later fixture cannot seed half of
+   * one.
+   *
+   * The authored refusal text. Free prose, shown to the SUPPLIER verbatim — the
+   * standard `DisputeEntry.text` set one tenancy over, where the buyer's reason
+   * renders beside the supplier's own words.
+   */
+  rejectionReason?: string;
+  /** When the refusal was recorded. Rendered beside the reason, never alone. */
+  rejectedAt?: string;
+  /**
+   * ⚠️ **ALWAYS `UNATTRIBUTED` IN THIS TREE, AND THE TYPE IS WHAT KEEPS THAT
+   * HONEST.** `CurrentIdentity.actor` is `UNATTRIBUTED: NO_PERSON_IN_SESSION`
+   * everywhere, so a refusal cannot name a person; typing this as
+   * `ActorAttribution` rather than `string` means the surface must RENDER the
+   * unattributed reason instead of printing a name it does not have. C10 §5.2 /
+   * D-ID-3 — no typed-name attribution until session-resolved identity exists.
+   */
+  rejectedBy?: ActorAttribution;
 }
 
 // ─── Invoice — DR-7: ONE canonical machine + persona projections ──────────────

@@ -20221,3 +20221,122 @@ run, not a silent hole. Recorded because the reflex it teaches is cheap:
 **`git status --porcelain` before trusting a count, not only before committing.**
 
 Corrected to **3559/257**, re-measured on the committed tree.
+
+## §80 — The refusal a supplier can read (`feat/supplier-document-refusal`)
+
+**The batch:** `/supplier/documents` now renders a refused document with its
+reason, its date and the line saying nobody can be named. One row is seeded to
+carry the state; no verb was authored and none can fire.
+
+### §80a · `SUPPLIERDOC-REJECT-LANDS-ON-AWAITING-UPLOAD-01` — OPEN
+
+`t_supplierdoc_reject` runs **`Under Review` → `Awaiting Upload`**. There is no
+`Rejected` state in `supplierDocument.flow.ts` (`states` is three long) and
+there was none in `SupplierDocumentStatus`.
+
+⚠️ **THE CONSEQUENCE IS SHARPER THAN "THE SUPPLIER CANNOT SEE THE REFUSAL": A
+REFUSAL LEAVES NO TRACE TO SEE.** A refused document lands on the state it held
+*before the supplier ever uploaded*, so the refusal is indistinguishable from a
+document that was never sent — and the state it lands on is a legitimate one, so
+nothing about the states list looks wrong. This is the dead-end shape at its
+least visible.
+
+**Closed in the READ layer only.** `'Rejected'` joins `SupplierDocumentStatus`
+beside `'Expiring Soon'` / `'Expired'`, which have always lived there and not in
+the flow. ⚠️ **The two absences must not be conflated:** those are absent because
+they are *derived* (law 0.5); this one is absent because *the flow has nowhere to
+put it*. The FLOW half is a contract change and is not this batch's.
+
+**Nothing produces `Rejected`.** No transition targets it; `supplierDocument`
+holds no `CommandTarget` (derived: `getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`,
+12 targets). It exists as seeded fixture data and the page's `ProvenanceMarker`
+(SIMULATED) is where the surface says so.
+
+### §80b · The lifecycle question is a THREE-store question, not two — OPEN, operator
+
+Filed as a correction to the two-store framing, because the count changes what
+an answer has to reconcile. Three stores hold certificate-shaped rows and
+**nothing joins them**:
+
+| store | fixture | who reads it | grain |
+|---|---|---|---|
+| `SupplierDocument` | `DOCUMENTS` (16) | `/supplier/documents`, `SupplierDashboard` | a **file** |
+| `ProfileCert` | `INITIAL_CERTS` | `SupplierMyStorefront`, **`BuyerSupplierProfile`'s compliance tab** | a **claim** |
+| `ComplianceRegistryEntry` | `COMPLIANCE_REGISTRY` (16) | `BuyerCompliance`, `BuyerGoodsReceipt`, the widget | a **scope** |
+
+⚠️ **AND THE GATE READS THE THIRD, WHICH NO SUPPLIER SURFACE RENDERS.**
+`verifyHalalAtReceipt` joins on `supplierId` × `materialCodes.includes(materialCode)`
+× `isHalalCertType(certType)`, then `schemeValid`. `getComplianceRegistry` **is**
+supplier-scoped and would return a supplier its own rows — and its only three
+consumers are buyer surfaces. **A supplier can now read why a FILE was refused
+and still cannot see the SCOPE row that decides whether a receipt passes.** A
+surface built over this boundary inherits it; that is recorded here rather than
+resolved.
+
+### §80c · `SUPPLIER-SEAT-HAS-NO-TENANT-SWITCHER-01` — measured, not a defect
+
+`mockIdentitySource.load()` takes only `personaType` and `businessRoles` from
+`localStorage`; **`supplierId` always comes from `identityForPersona()`**, the
+frozen seed. Writing another `supplierId` into `paragon.identity` changes
+nothing.
+
+⚠️ **FILED BECAUSE IT ALMOST PRODUCED A FALSE LEAK REPORT.** A QA step set
+`supplierId: 'sup-002'` and read back twelve sup-007 documents — which reads
+exactly like a tenancy leak and was briefly taken as one. The instrument was
+wrong, not the app (rule 1). **The bundle cannot be made to hold a second
+tenant's seat**, so cross-tenant isolation is not demonstrable in the browser by
+seat-switching, and any claim that it was is false. What IS demonstrable, and was
+demonstrated bilaterally: sup-007's page renders exactly its 12 fixture rows,
+every sup-007 token present, every distinctive sup-002 / sup-005 token absent.
+The read-level proof is `supplierDocumentRefusal.test.ts` across three tenants,
+mutation-probed.
+
+### §80d · `COMMERCIAL-SEAT-SEES-LIVE-UPLOAD-CONTROLS-01` — OPEN
+
+A `['supplier','commercial']` seat — which does **not** hold
+`supplierdoc:submit` — renders **two live Upload controls** ("Upload document",
+"Upload") on the built bundle. Pre-existing: the controls dispatch nothing (they
+fire a toast), so they were never guarded. **The lanes batch is what made it
+measurable** — before three lanes existed every supplier seat held every atom, so
+there was no seat to be wrong about.
+
+**Deliberately not fixed here.** A `HandoffNotice` on `supplierdoc:submit` would
+withhold a control that does nothing for any seat, which trades a false
+affordance for a false refusal. The fix is the verb, not the guard.
+
+### §80e · Upload's home is settled, so the next batch is not a redesign
+
+**`/supplier/documents` is `supplierdoc:upload`'s natural home** and needs no
+restructuring. Evidence, not preference: the row action already renders
+`doc.status === 'Awaiting Upload' ? Upload : View`, and `t_supplierdoc_submit`'s
+only `from` **is** `Awaiting Upload` — the page independently arrived at the
+transition's own guard. The panel, dropzone, the buyer's `notes` instruction and
+the linked-PO line are all in place.
+
+Two entrances exist and **only one has a modelled act behind it**: the row-level
+Upload maps onto `t_supplierdoc_submit`; the header's "Upload document" maps onto
+nothing, because no transition lets a supplier volunteer a document —
+`Awaiting Upload` is reachable only through the buyer's `t_supplierdoc_request`.
+
+**The verb stays unauthored and the atom stays `back_office`'s by ruling**
+(`SUPPLIERDOC-UPLOAD-OWNED-BUT-UNAUTHORED-01`).
+
+### §80f · Four dispatched premises inverted
+
+- **`5df3fd7`** — not a valid object; 0 matches over `git rev-list --all`.
+  Floor was **3559/257**, not 3532/257.
+- **"every seeded document is Verified"** — `'Verified'` is not a member of
+  `SupplierDocumentStatus` and occurs nowhere in the fixture; the split was
+  Valid 10 / Under Review 2 / Expiring Soon 2 / Awaiting Upload 1.
+- **"`verifyHalalAtReceipt` never reads `documentStatus`; the projection filters
+  on `certificateProvenance`"** — the CONCLUSION is right and **both named
+  identifiers have 0 occurrences in the tree** (control: `verifyHalalAtReceipt`
+  = 4 hits, so the matcher works). The true mechanism is §80b's. Recorded under
+  `FALSE-MECHANISM-MUST-NOT-BE-FILED-01`: re-measured, then filed as the true
+  finding rather than the plausible one.
+- **"`SupplierProfile` renders a compliance tab for the buyer and the page is
+  `#/supplier/profile` — buyer-only content on a supplier route"** — there is no
+  `/supplier/profile` route and no `SupplierProfile` page. The tab is real and it
+  is on **`BuyerSupplierProfile` at `/buyer/suppliers/:id`** — a buyer surface on
+  a buyer route, correctly placed. **The misdirected-surface reading does not
+  survive**; the useful half does, and is §80b's second row.

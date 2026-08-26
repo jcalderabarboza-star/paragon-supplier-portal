@@ -56,6 +56,60 @@ const STATUS_VARIANT: Record<DocStatus, 'success' | 'warning' | 'danger' | 'neut
   Expired: 'danger',
   'Awaiting Upload': 'neutral',
   'Under Review': 'neutral',
+  Rejected: 'danger',
+};
+
+/**
+ * ⚠️ **THE REFUSAL BLOCK — REASON, TIMESTAMP, AND THE LINE THAT SAYS NOBODY CAN
+ * BE NAMED.** It renders the SAME grammar the dispute lane set one tenancy over
+ * (`DisputeLedger`, `SupplierForecasts.tsx`): a coloured left rule, an uppercase
+ * label, a `Data` timestamp, then the buyer's authored text — read by the party
+ * the text is about.
+ *
+ * ⚠️ **THREE THINGS IT DELIBERATELY DOES NOT DO.**
+ * 1. **It does not name a person.** `rejectedBy` is `ActorAttribution`, always
+ *    `UNATTRIBUTED` in this tree, so the component renders the REASON rather
+ *    than a name — and says so in words instead of leaving the slot blank.
+ * 2. **It offers no remedy affordance.** A "resubmit" button here would be a
+ *    forward promise with no handler: `supplierdoc:upload` is unauthored, and
+ *    the atom belongs to the back-office lane by ruling. The refusal text
+ *    carries the instruction; the platform makes no claim about what happens
+ *    next (`FORWARD-PROMISE-HAS-NO-HANDLER-01`).
+ * 3. **It does not fabricate a time of day.** `rejectedAt` is a full instant,
+ *    but `formatDate` is date-only and no shared datetime formatter exists in
+ *    this tree — so the surface shows the DATE and claims nothing finer.
+ */
+const RefusalBlock: React.FC<{ doc: SupplierDocument }> = ({ doc }) => {
+  const { t } = useTranslation();
+  // ⚠️ CO-PRESENCE IS CHECKED HERE TOO, NOT ONLY IN THE FIXTURE GATE. A reason
+  // with no timestamp is an accusation with no date; rendering half of one is
+  // worse than rendering none, so the block is all-or-nothing.
+  if (!doc.rejectionReason || !doc.rejectedAt) return null;
+  return (
+    <div
+      className="mt-1.5 border-l-2 border-l-danger pl-3 py-1 max-w-[22rem]"
+      data-testid={`doc-refusal-${doc.id}`}
+    >
+      <div className="text-label uppercase mb-0.5">
+        <span className="text-danger">{t('supplierDocuments.refusal.label')}</span>{' '}
+        <Data className="text-text-tertiary normal-case">
+          {formatDate(doc.rejectedAt)}
+        </Data>
+      </div>
+      {/* i18n-defer: mock/sample data (fixture refusal text) */}
+      <div className="text-xs text-text-secondary">
+        <span className="font-semibold text-text-primary">
+          {t('supplierDocuments.refusal.reasonLabel')}:
+        </span>{' '}
+        {doc.rejectionReason}
+      </div>
+      {doc.rejectedBy?.kind === 'UNATTRIBUTED' && (
+        <div className="text-xs text-text-tertiary mt-0.5 italic">
+          {t('supplierDocuments.refusal.unattributed')}
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Filter chip ids are the CANONICAL EN category values matched against
@@ -148,6 +202,9 @@ const SupplierDocuments: React.FC = () => {
     () => docs.filter((d) => d.status === 'Awaiting Upload'),
     [docs],
   );
+  // The stored state, not a projection — a refusal is an act that was recorded,
+  // so unlike expiry it is never derived from the clock.
+  const refused = useMemo(() => docs.filter((d) => d.status === 'Rejected'), [docs]);
   const validCount = useMemo(
     () => docs.filter((d) => d.status === 'Valid').length,
     [docs],
@@ -242,6 +299,23 @@ const SupplierDocuments: React.FC = () => {
         <ProvenanceMarker capability="supplierDocuments" className="ml-3 align-middle" />
       </PageMetaLine>
 
+      {refused.length > 0 && (
+        <div
+          className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 mb-3 text-sm text-danger flex items-start gap-2"
+          data-testid="doc-refused-banner"
+        >
+          <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+          <div>
+            <strong>
+              {refused.length === 1
+                ? t('supplierDocuments.alert.refused.one', { count: refused.length })
+                : t('supplierDocuments.alert.refused.other', { count: refused.length })}{' '}
+            </strong>
+            {/* i18n-defer: mock/sample data (fixture document names) */}
+            {refused.map((d) => d.name.split('—')[0].trim()).join(' · ')}
+          </div>
+        </div>
+      )}
       {expired.length > 0 && (
         <div className="bg-danger-soft border-l-2 border-danger rounded px-4 py-3 mb-3 text-sm text-danger flex items-start gap-2">
           <AlertTriangle size={14} className="shrink-0 mt-0.5" />
@@ -383,6 +457,7 @@ const SupplierDocuments: React.FC = () => {
                         ⚠ {doc.notes}
                       </div>
                     )}
+                    <RefusalBlock doc={doc} />
                     <div className="text-xs text-text-tertiary mt-0.5">
                       {t('supplierDocuments.row.linked', { value: doc.linkedTo })}
                     </div>
