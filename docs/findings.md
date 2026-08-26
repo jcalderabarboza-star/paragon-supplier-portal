@@ -19362,3 +19362,116 @@ always is a deletion, and only this half can tell the difference.
   `handoff-rfq-drawer`. Asked rather than guessed: **the target is `BuyerSourcing`**, and the
   segregation instance is `BuyerRequisitions` (76d) — one batch, two components, and they are not
   the same component.
+
+---
+
+## §77 — THE RECONCILIATION. Three PRs recovered, and the class that put them there: A CLAIM ABOUT THE TREE, MADE FROM MEMORY OF A TREE THAT DID NOT EXIST
+
+**Batch:** the 2026-08-26 reconciliation. `main` `86bcae1` → `7298e3c`.
+Floor `3397 / 249 / 7` → **`3482 / 252 / 7`**. Three PRs merged: #243 (§59), #245
+(§61), #251 (§66). **Register only for this section; the code it records is in
+those three.**
+
+### 77a · WHAT WAS RECOVERED, AND WHY IT WAS RECOVERABLE
+
+Three PRs sat open from 20–21 August while nine to fourteen commits landed past
+them. All three were measured MERGEABLE, none superseded, none of their content
+on `main`. The register had four holes — **§44, §59, §61, §66** — and three of
+them were these PRs. Two were load-bearing while absent:
+
+- `main`'s §60 cited **`§59d` twice** for measurements that were not in the
+  repository.
+- **The ratified merge doctrine existed nowhere on `main`.** It had governed
+  every dispatch since 2026-08-14 from inside PR #227, which was closed unmerged
+  on 2026-08-20. It is now at `CLAUDE.md`, carried by #243.
+
+§44 remains the only hole and it is still #227's.
+
+### 77b · ⚠️ `INVENTED-SYMBOL-FROM-A-REMEMBERED-TREE-01` — THREE INVERSIONS IN ONE RECONCILIATION, AND WHAT THEY SHARE IS NOT CARELESSNESS
+
+Three dispatched premises named artifacts and each measured absent. **The
+operator recorded all three against their own dispatches**, which is why they are
+here rather than in a correction log:
+
+| # | claimed | measured |
+|---|---|---|
+| 1 | a **nav conflict** — both sides adding a Roles block to the same group | #251 touches **no nav and no routing file**; `SidebarV2` · `AppRouter` · `AppShellV2` · `lib/i18n` are **byte-identical to `main`** on the merged tree |
+| 2 | #251 **predates the six-role split** and seeds `roles: ['compliance']` on a changed `CurrentIdentity` | #248's merge commit `de20ef6` **is an ancestor** of #251's base `1a7cb3d`; `CurrentIdentityContext.tsx` is blob `77553791` on **both**; bare `roles: [...]` seat seeds tree-wide: **zero** |
+| 3 | #251 extends **`RolesPage`** while `main` renders `RolesCatalogue` | **`RolesPage` has never existed in any commit on any ref** (`git log --all -S`). #251 extends `RolesCatalogue` — the same component, same file, same route |
+
+⚠️ **THE COMMON MECHANISM, AND IT IS THE ONE THING THAT MAKES THEM ONE CLASS
+RATHER THAN THREE MISTAKES: ALL THREE WERE CLAIMS ABOUT WHAT THE TREE CONTAINS,
+MADE FROM MEMORY OF SESSIONS THAT DESCRIBED A TREE THAT DID NOT EXIST.** Not
+guesses, not sloppiness — recollections of prior sessions in which this machinery
+was discussed as shipped. #251 was **discussed as merged for four days and never
+landed**, so every later description of `main` inherited a component, a nav
+change and an identity refactor that were only ever on a branch. **A remembered
+tree is internally consistent, which is exactly what makes it unfalsifiable
+without a grep.**
+
+This is `§64a`'s family — *a misdescribed mechanism attached to a correct
+conclusion* — with the SOURCE named: not invention, **decay**. And the direction
+matters, because it is the opposite of `SHRINKING-CORRECTION-IS-UNCHECKED-01`
+(§60c): each of these three inverted **toward the branch**, making the work
+smaller and safer, and #2 and #3 were **retractions the operator issued against
+themself**. A retraction that is also wrong is the shape §60c says gets believed.
+
+**The disposal is `§64a`'s and it costs one line:** `grep` the artifact before
+building on it. Each of the three took a single command, and the negative control
+mattered as much as the search — `RolesPage` returning nothing is only evidence
+once `RolesCatalogue` returning seven files proves the matcher can see.
+
+### 77c · ⚠️ `A GREEN BRANCH IS NOT A GREEN REBASE` — FIRED ON ITS FIRST USE, ON A DEFECT NO GATE HERE CAN SEE
+
+The operator required #251's gates be run **against the merged base, not the
+branch**, and report before merge. It fired.
+
+`CommandTarget.applyTransition` gained a **fourth parameter** on `main` at §68
+(`dispatcher.ts`), `scope: QueryScope`, so a target that must record WHO acted
+reads the SESSION rather than a payload field. #251's `roleTarget` was authored
+against the three-parameter contract and still is (`MockCommandService.ts`).
+
+⚠️ **`tsc` CANNOT SEE THIS. A THREE-PARAMETER FUNCTION IS ASSIGNABLE TO A
+FOUR-PARAMETER TYPE.** Both typechecks exit 0, all 3,482 tests pass, CI is green,
+and the arity is still wrong. **Every instrument this project owns reports
+clean.** The check that caught it is not a gate and cannot become one; it is the
+question *did the base move under this diff*, asked before merging and answered
+by reading the contract rather than by running it.
+
+**A DIFF THAT APPLIES IS NOT A DIFF THAT AGREES**, and the gap between those two
+is exactly the size of what a compiler is willing to widen.
+
+### 77d · OPEN — CARRIED BY #251, NOT INTRODUCED BY IT
+
+- **`t_role_grant` transports attribution in the PAYLOAD** (`grantedBy`), the
+  shape §68's `PR_APPROVAL_ATTRIBUTED` refuses **by name** one verb over, and
+  which `dispatcher.ts`'s own header says it declined to reproduce on a second
+  verb. The verb is `trigger: 'user'`, so the dispatcher **already** attributes
+  it from `scope.actor` — **two attribution paths for one act.** Measured scope
+  of the reconciliation: **4 source files, ~8 behavioural lines**, plus 4 test
+  files. A resolution, not a rewrite. **OPEN — operator's ruling.**
+- **Nothing can hold a custom role.** `rolesFromStorage` filters on
+  `isSystemRole`, and `IdentityPanel`'s `toggleRole` is typed `SystemRoleId`, so
+  a custom id cannot reach a seat by any shipped path. `atomsForSeat` is
+  therefore a **strict no-op today** — correct, pinned by tests, and inert until
+  assignment exists. #251 states this itself (§66k). **OPEN — the assignment
+  batch.**
+- **Two stale lines merged unchanged inside the recovered entries**, because
+  editing another seat's ruled content is not a merge: §59d and §60f both carry
+  `OPEN — #227's disposition` (closed 2026-08-20), and §59 · §60 · §61 each state
+  `Floor 3123 / 228 / 7`. **Corrections owed, not taken.**
+
+### 77e · DISPOSITION
+
+- **MERGED:** #243 `492d643` · #245 `0e439b8` · #251 `7298e3c`. Every SHA
+  `git cat-file`-verified with a negative control, per the doctrine's half two,
+  which was ratified and first exercised in the same session.
+- **RECOVERED:** the merge doctrine, both halves, to `CLAUDE.md` (#243).
+- **FILED:** `INVENTED-SYMBOL-FROM-A-REMEMBERED-TREE-01` (77b, OPEN — closes when
+  a reconciliation runs with zero absent artifacts).
+- **CONFIRMED (operator, credited):** all three inversions were recorded by the
+  operator against their own dispatches, two of them as retractions.
+- **UNTOUCHED:** no verb authored, no surface built, no flow, DTO or test changed
+  by THIS section. C9 `2b4f38d` and C10 `8cab8a1` byte-identical by index blob id
+  across all three merges — LF, stated because a working-tree hash is not
+  portable on this checkout (`core.autocrlf=true`).
