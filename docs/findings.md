@@ -19478,7 +19478,7 @@ is exactly the size of what a compiler is willing to widen.
   across all three merges — LF, stated because a working-tree hash is not
   portable on this checkout (`core.autocrlf=true`).
 
-### 77f · ⚠️ `buyer_all` — A ROLE RULED IN, MEASURED IMPOSSIBLE, AND RULED OUT WITHOUT BEING BUILT
+### 77f · ⚠️ `buyer_all` — A JUSTIFICATION MEASURED IMPOSSIBLE, AND A ROLE THAT SURVIVED IT ON A DIFFERENT ONE
 
 **Ruled 2026-08-26, after the merges above, on an investigation dispatched
 `REPORT, DO NOT BUILD`.** The subject is a broad buyer role — every buyer act a
@@ -19635,7 +19635,7 @@ act are the only two that could not have been corrected by measuring again.**
 
 - **BUILT:** nothing. No role authored, no enumeration changed, no test written.
   `src/` and `scripts/` byte-identical to `main` throughout the investigation.
-- **RULED:** `buyer_all` is NOT built, and **the subtractive mechanism is NOT
+- **RULED, THEN SUPERSEDED WITHIN THE HOUR — SEE 77f-v.** The role was ruled OUT on the measurement above, and ruled back IN on a justification the measurement does not touch. **The subtractive mechanism is NOT built either way** — how custom roles narrow is a design decision to be taken on its own merits, never to rescue a role that was named before it was measured.
   built as a consequence of this ruling either** — how custom roles narrow is a
   design decision that must be taken on its own merits, not to rescue a role that
   was named before it was measured.
@@ -19648,3 +19648,46 @@ act are the only two that could not have been corrected by measuring again.**
 - **OPEN — 77f-ii:** the catalogue does not state which roles are holdable.
 - **STALE, MEASURED:** `businessRoles.ts:188` · `:195` · `:301` — 36/52 where the
   tree derives 37/53.
+
+#### 77f-v · ⚠️ THE RULING REVERSED ITSELF, AND THE REVERSAL IS RECORDED AS ONE
+
+**Ruled 2026-08-26, within the hour of 77f above, and it is filed as a reversal
+rather than an edit** — the same discipline the Track-R re-prioritisation was
+given. `buyer_all` **IS BUILT**, and the reason it survives is that the argument
+changed rather than the measurement.
+
+⚠️ **THE DUPLICATE-AND-NARROW JUSTIFICATION STAYS RETIRED.** It was not
+overruled, deferred, or softened: it is **arithmetically impossible**, for the
+reasons derived above, and nothing in the new ruling revives it. That matters
+because a justification that merely *loses* can come back; one that is measured
+impossible cannot, and the register should not let the difference blur.
+
+**THE NEW ARGUMENT IS A SEPARATION OF JOBS, NOT A CAPABILITY CLAIM** — which is
+why the measurement has no purchase on it:
+
+| | `admin` | `buyer_all` |
+|---|---|---|
+| tenancy | **both sides** | **buyer only** |
+| authority over the role system (`role:grant`) | **yes** | **no** |
+| atoms | 53 — every assignable atom | 36 — every buyer act a lane performs |
+| the seat it describes | **the IT seat** | **the manager's seat** |
+
+**A department head who can do everything their team does is not an IT
+administrator who can do everything anyone does.** Collapsing them would hand a
+manager reach into the supplier side and into the role catalogue — two grants
+nobody asked for and neither of which a manager's job needs. The role is not
+justified by what a customiser could copy from it; **it is justified by being
+the seat a real person occupies.**
+
+**Both earlier rulings survive the change of argument unaltered**, which is a
+point in the new justification's favour rather than a coincidence: no
+`role:grant` (a manager OPERATES the lane; IT ADMINISTERS the platform), and
+exempt from `rolesHolding` (a role that holds everything is not an owner, it is
+a superset — naming it tells a withheld seat nothing about whose act it is).
+
+**AND IT IS NOT SEEDED.** The seat stays six. **`buyer_all` is holdable and
+unheld** — which was the *smaller and different* gap the operator ruled
+separately for, and it is now the CORRECT state rather than a gap at all: a
+manager's seat exists to be granted to a manager, not to be everyone's default.
+The distinction that was unaskable in 77f-iii — because the subject was absent —
+becomes both askable and answered the moment the role exists.
