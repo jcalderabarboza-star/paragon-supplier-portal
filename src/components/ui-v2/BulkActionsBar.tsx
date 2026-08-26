@@ -13,11 +13,18 @@ export interface PrimaryAction {
   icon?: LucideIcon;
   onClick?: () => void;
   /**
-   * DP2-BUTTON-01: the slot renders OUTLINE by default (the calm register). Set
-   * `solid` only when the action is a consequential/irreversible commit (Award,
-   * Release payment, Post-to-SAP, Reject) — solid is now that signal.
+   * ⚠️ §68 — `solid?: boolean` WAS HERE AND IS GONE. DP2-BUTTON-01 used to
+   * reserve solid action-blue for the irreversible commit and this prop was the
+   * opt-in. The reserved-solid register is retired portal-wide (operator
+   * ruling): outline is the only primary register, so the prop promised a
+   * rendering that no longer exists.
+   *
+   * ⚠️ **AND IT WAS ALREADY DEAD WHEN IT WAS REMOVED — no caller passed it.**
+   * That is why the `variant="primary"` scan came back complete and was not:
+   * this slot could render solid from a PROP, and a matcher keyed on the
+   * literal could never have seen it. It was the model layer
+   * (`invoiceActionModel`) that still carried the flag, one seam further in.
    */
-  solid?: boolean;
 }
 
 interface BulkActionsBarProps {
@@ -45,7 +52,7 @@ const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
       ))}
       {primary && (
         <Button
-          variant={primary.solid ? 'primary' : 'outline'}
+          variant="outline"
           icon={primary.icon}
           onClick={primary.onClick}
         >

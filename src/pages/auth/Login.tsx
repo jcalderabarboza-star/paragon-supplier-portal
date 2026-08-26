@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { mockSuppliers } from '../../data/mockSuppliers';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
+import { NO_PERSON } from '../../context/noPerson';
 
 const NAVY = '#0D1B2A';
 const TEAL = '#0097A7';
@@ -35,6 +37,8 @@ const Login: React.FC = () => {
       personaType: 'buyer',
       supplierId: null,
       supplierName: null,
+      businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+      actor: NO_PERSON,
     });
     navigate('/buyer/dashboard');
   };
@@ -44,6 +48,8 @@ const Login: React.FC = () => {
       personaType: 'supplier',
       supplierId: SEED_SUPPLIER_ID,
       supplierName: SEED_SUPPLIER_NAME,
+      businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+      actor: NO_PERSON,
     });
     navigate('/supplier/dashboard');
   };

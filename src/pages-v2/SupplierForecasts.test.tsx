@@ -12,6 +12,8 @@ import {
 import { isLive } from '../services/liveness';
 import i18n from '../lib/i18n';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { NO_PERSON } from '../context/noPerson';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SupplierForecasts (SDC-2b) — the P1 supplier surface, honest-render +
@@ -28,6 +30,8 @@ const SUP002: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-002',
   supplierName: 'PT Lautan Luas Tbk',
+  businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+  actor: NO_PERSON,
 };
 
 beforeEach(() => {

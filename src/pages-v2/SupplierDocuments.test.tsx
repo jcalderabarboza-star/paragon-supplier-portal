@@ -4,6 +4,8 @@ import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
 import SupplierDocuments from './SupplierDocuments';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { NO_PERSON } from '../context/noPerson';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
@@ -13,6 +15,8 @@ const SUPPLIER_NO_DOCS: CurrentIdentity = {
   personaType: 'supplier',
   supplierId: 'sup-999',
   supplierName: 'PT Empty Supplier',
+  businessRoles: PERSONA_SYSTEM_ROLES.supplier,
+  actor: NO_PERSON,
 };
 
 describe('SupplierDocuments — four honest states', () => {

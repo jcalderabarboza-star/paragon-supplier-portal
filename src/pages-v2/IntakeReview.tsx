@@ -15,6 +15,8 @@ import TableCell from '../components/ui-v2/TableCell';
 import PlanCellMarker from './plan-grid/PlanCellMarker';
 import { useIntakeReview } from '../services/query/hooks';
 import { usePurchaseRequisitionCreate } from '../services/query/commandHooks';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { DataError, type PrIntakeLine } from '../services/data/types';
 import { formatIDR, formatNumber } from '../lib/format';
 import { applyPushResult, type PushRowState } from './plan-grid/planGridModel';
@@ -47,6 +49,16 @@ const IntakeReview: React.FC = () => {
   const { t } = useTranslation();
   const intakeQuery = useIntakeReview();
   const createPr = usePurchaseRequisitionCreate();
+
+  // §74 — `t_pr_create` (atom `pr:create`, held by `requisitioner`).
+  //
+  // ⚠️ ONE NOTICE AT THE HEADER, NOT ONE PER ROW. Accept is a per-line
+  // button and this table can hold any number of lines; the same string
+  // repeated down a column teaches nothing after the first and would turn a
+  // handoff into visual noise. The act is identical on every row — one atom,
+  // one owner — so it is stated once, where it governs the whole surface.
+  // DISMISS is untouched: it is local view state holding no atom.
+  const acceptAvailability = useVerbAvailability('pr:create');
   const lines = intakeQuery.data?.items ?? [];
 
   // Triage client state: push outcomes per line + the ephemeral dismissed set.
@@ -90,7 +102,12 @@ const IntakeReview: React.FC = () => {
         breadcrumb={CRUMB}
         title={t('intakeReview.header.title')}
         subtitle={t('intakeReview.header.subtitle')}
-        actions={<LivenessPill capability="purchaseRequisitions" />}
+        actions={
+          <div className="flex items-center gap-3">
+            <HandoffNotice availability={acceptAvailability} testId="handoff-intake-accept" />
+            <LivenessPill capability="purchaseRequisitions" />
+          </div>
+        }
       />
 
       <PageMetaLine className="-mt-6 mb-6">
@@ -207,17 +224,19 @@ const IntakeReview: React.FC = () => {
                     {status === 'pending' && (
                       <div className="flex flex-col items-start gap-1.5">
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            className="!px-2.5 !py-1 text-xs"
-                            disabled={pushing}
-                            aria-label={t('intakeReview.accept.aria', { material: line.material })}
-                            onClick={() => accept(line)}
-                          >
-                            {pushing
-                              ? t('intakeReview.action.accepting')
-                              : t('intakeReview.action.accept')}
-                          </Button>
+                          {acceptAvailability.kind === 'held' && (
+                            <Button
+                              variant="outline"
+                              className="!px-2.5 !py-1 text-xs"
+                              disabled={pushing}
+                              aria-label={t('intakeReview.accept.aria', { material: line.material })}
+                              onClick={() => accept(line)}
+                            >
+                              {pushing
+                                ? t('intakeReview.action.accepting')
+                                : t('intakeReview.action.accept')}
+                            </Button>
+                          )}
                           <Button
                             variant="secondary"
                             className="!px-2.5 !py-1 text-xs"

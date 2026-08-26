@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 // ─────────────────────────────────────────────────────────────────────────────
 // sp-001 — all-routes render smoke.
 //
@@ -43,6 +45,10 @@ import BuyerRisk from '../pages-v2/BuyerRisk';
 import BuyerCommHub from '../pages-v2/BuyerCommHub';
 import BuyerCompliance from '../pages-v2/BuyerCompliance';
 import ProcessFlows from '../pages-v2/ProcessFlows';
+import RolesCatalogue from '../pages-v2/RolesCatalogue';
+import RoleDetail from '../pages-v2/RoleDetail';
+import Glossary from '../pages-v2/Glossary';
+import IntakeReview from '../pages-v2/IntakeReview';
 import SupplierDashboardV2 from '../pages-v2/SupplierDashboard';
 import SupplierMyStorefront from '../pages-v2/SupplierMyStorefront';
 import SupplierDocumentsV2 from '../pages-v2/SupplierDocuments';
@@ -58,8 +64,16 @@ import SupplierRegistrationV2 from '../pages-v2/SupplierRegistration';
 import SupplierDeliveryAgreements from '../pages-v2/SupplierDeliveryAgreements';
 import SupplierPerformance from '../pages-v2/SupplierPerformance';
 import NotFound from '../pages-v2/NotFound';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { NO_PERSON } from '../context/noPerson';
 
-const BUYER: CurrentIdentity = { personaType: 'buyer', supplierId: null, supplierName: null };
+const BUYER: CurrentIdentity = {
+  personaType: 'buyer',
+  supplierId: null,
+  supplierName: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+  actor: NO_PERSON,
+};
 
 // pattern = the <Route path>; at = the concrete URL mounted (resolves :params).
 interface RouteCase {
@@ -98,6 +112,14 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/comm-hub', pattern: '/buyer/comm-hub', at: '/buyer/comm-hub', element: <BuyerCommHub />, identity: BUYER },
   { name: 'buyer/compliance', pattern: '/buyer/compliance', at: '/buyer/compliance', element: <BuyerCompliance />, identity: BUYER },
   { name: 'buyer/process-flows', pattern: '/buyer/process-flows', at: '/buyer/process-flows', element: <ProcessFlows />, identity: BUYER },
+  { name: 'buyer/roles', pattern: '/buyer/roles', at: '/buyer/roles', element: <RolesCatalogue />, identity: BUYER },
+  { name: 'buyer/roles/:roleId', pattern: '/buyer/roles/:roleId', at: '/buyer/roles/finance', element: <RoleDetail />, identity: BUYER },
+  // ⚠️ THESE TWO WERE NEVER IN THE SMOKE, AND THE OLD SELF-REFERENTIAL GUARD
+  // COULD NOT SAY SO. Both have dedicated specs, so they were not untested —
+  // but neither was covered by the route table that claimed to cover all of
+  // AppRouter, and nothing would have reported that until a route was deleted.
+  { name: 'buyer/intake-review', pattern: '/buyer/intake-review', at: '/buyer/intake-review', element: <IntakeReview />, identity: BUYER },
+  { name: 'glossary', pattern: '/glossary', at: '/glossary', element: <Glossary />, identity: BUYER },
   { name: 'supplier/dashboard', pattern: '/supplier/dashboard', at: '/supplier/dashboard', element: <SupplierDashboardV2 />, identity: SUPPLIER },
   { name: 'supplier/storefront', pattern: '/supplier/storefront', at: '/supplier/storefront', element: <SupplierMyStorefront />, identity: SUPPLIER },
   { name: 'supplier/documents', pattern: '/supplier/documents', at: '/supplier/documents', element: <SupplierDocumentsV2 />, identity: SUPPLIER },
@@ -115,9 +137,71 @@ const ROUTES: RouteCase[] = [
 ];
 
 describe('sp-001 — every route mounts without crashing', () => {
-  it('route table covers all of AppRouter (40 elements + redirect)', () => {
-    // Guards against a route being added to AppRouter but not the smoke.
-    expect(ROUTES.length).toBe(41);
+  it('⚠️ route table covers all of AppRouter — DERIVED from the source, not counted', () => {
+    // ⚠️ **WHAT THIS REPLACED, AND WHY IT COULD NEVER HAVE WORKED.** The guard
+    // was `expect(ROUTES.length).toBe(41)` under a comment saying it *"guards
+    // against a route being added to AppRouter but not the smoke"*. It asserted
+    // THE SMOKE TABLE'S OWN LENGTH against a hardcoded number and never read
+    // `AppRouter` at all — so adding a route to the router and not to this table
+    // left the table at 41 and the assertion green. **The guard could not detect
+    // the one thing its comment claimed it detected**, and it was the first
+    // route added since that made it visible.
+    //
+    // A restated cardinality wearing a derivation's clothes — `FLOOR-IN-PROSE-01`
+    // exactly. The replacement DERIVES the population from the router source and
+    // asserts MEMBERSHIP in both directions, never a count (§42b).
+    const src = fs.readFileSync(
+      path.resolve(__dirname, 'AppRouter.tsx'),
+      'utf8',
+    );
+    // ⚠️ REDIRECTS ARE EXCLUDED BY THE MATCHER, NOT BY AN ALLOWLIST. `<Route
+    // path="/" element={<Navigate …/>}` paints no page, so demanding a smoke row
+    // for it would demand a content assertion on a redirect. Keying on the
+    // ELEMENT rather than exempting the path means the next redirect is handled
+    // without anybody remembering to add it.
+    //
+    // ⚠️ **AND IT SPLITS ON THE TAG RATHER THAN ASSUMING ONE LINE — RULE 2, IN
+    // THIS FILE.** The first cut was `/<Route\s+path="…"\s+element=\{<(\w+)/`,
+    // which requires `element=` to follow `path=` directly. Three routes wrap
+    // their element in `<Suspense>` across several lines
+    // (`/buyer/collaboration`, `/buyer/plan-grid`, `/supplier/forecasts`), so the
+    // narrowing that correctly excluded redirects silently DROPPED them from the
+    // derived population — and they then read as stale smoke rows. Narrowing a
+    // matcher creates blind spots as readily as widening one creates false
+    // accusations, and both directions had to be re-derived here.
+    const declared = src
+      .split('<Route')
+      .slice(1)
+      .map((chunk) => {
+        const m = /path="([^"]+)"/.exec(chunk);
+        if (!m) return null;
+        // The element belongs to THIS Route: everything before the next tag.
+        const body = chunk.split('<Route')[0];
+        return /<Navigate\b/.test(body) ? null : m[1];
+      })
+      .filter((p): p is string => p !== null);
+
+    // Population guard FIRST: a derivation that returns nothing reports clean.
+    expect(declared.length).toBeGreaterThan(30);
+    expect(declared).toContain('/buyer/process-flows');
+    expect(declared).not.toContain('/buyer/not-a-real-route');
+
+    const covered = new Set(ROUTES.map((r) => r.pattern));
+    const missing = declared.filter((p) => p !== '*' && !covered.has(p)).sort();
+    expect(
+      missing,
+      'A ROUTE IS DECLARED IN AppRouter AND NOT SMOKE-TESTED HERE:\n' +
+        missing.join('\n'),
+    ).toEqual([]);
+
+    // The other direction — a smoke row for a route the router no longer serves
+    // would pass forever while testing nothing.
+    const declaredSet = new Set(declared);
+    const stale = ROUTES.map((r) => r.pattern).filter((p) => !declaredSet.has(p)).sort();
+    expect(
+      stale,
+      'A SMOKE ROW NAMES A ROUTE AppRouter DOES NOT DECLARE:\n' + stale.join('\n'),
+    ).toEqual([]);
   });
 
   it.each(ROUTES)('$name renders and paints content', async ({ pattern, at, element, identity }) => {

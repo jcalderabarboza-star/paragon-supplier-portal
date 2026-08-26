@@ -5,6 +5,11 @@ import { withChaos } from '../services/data/mock/withChaos';
 import { purchaseRequisitionStore } from '../services/data/mock/stores/purchaseRequisitionStore';
 import BuyerRequisitions from './BuyerRequisitions';
 
+// ⚠️ §67 — THE NEW-PR COMMIT IS NOW 'Create requisition', NOT 'Submit for
+// approval'. The old label named `t_pr_submit`; the button fires `t_pr_create`,
+// which mints a DRAFT (C7 :131) and never reaches the approval queue. These six
+// selectors moved with the label — the assertions they guard are unchanged.
+
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
 
@@ -54,7 +59,7 @@ describe('BuyerRequisitions — the fabricated-number toast stub is retired (G1.
     const selects = screen.getAllByRole('combobox');
     fireEvent.change(selects[1], { target: { value: 'CC-RD-001 — R&D' } });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Submit for approval' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create requisition' }));
 
     // The dispatch really minted a Draft (store-assigned PR-2026-9xx) and the
     // invalidation makes it LIST-VISIBLE — the material appears in the table.
@@ -105,7 +110,7 @@ describe('BuyerRequisitions — an AMBIGUOUS quantity never becomes a PR (CP-0 �
     expect(refusal.textContent?.trim()).not.toBe(''); // a reason is never blank
 
     // THE LOAD-BEARING ASSERTION: nothing reached the spine.
-    const submit = screen.getByRole('button', { name: 'Submit for approval' });
+    const submit = screen.getByRole('button', { name: 'Create requisition' });
     expect(submit).toBeDisabled();
     fireEvent.click(submit); // even forced, the click short-circuits
     await waitFor(() => expect(purchaseRequisitionStore.all()).toHaveLength(before));
@@ -118,7 +123,7 @@ describe('BuyerRequisitions — an AMBIGUOUS quantity never becomes a PR (CP-0 �
     purchaseRequisitionStore.reset();
     await openNewPrForm('4500');
     expect(screen.queryByTestId('new-pr-qty-refusal')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Submit for approval' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create requisition' }));
 
     await waitFor(() => {
       const created = purchaseRequisitionStore
@@ -136,8 +141,8 @@ describe('BuyerRequisitions — an AMBIGUOUS quantity never becomes a PR (CP-0 �
     // An untouched blank does not nag, but it is never submittable either: a
     // zero on a requisition must be TYPED, never defaulted out of an empty box.
     expect(screen.queryByTestId('new-pr-qty-refusal')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Submit for approval' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Submit for approval' }));
+    expect(screen.getByRole('button', { name: 'Create requisition' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Create requisition' }));
     await waitFor(() => expect(purchaseRequisitionStore.all()).toHaveLength(before));
   });
 
@@ -149,7 +154,7 @@ describe('BuyerRequisitions — an AMBIGUOUS quantity never becomes a PR (CP-0 �
     // the command target's `typeof === 'number'` test, and renders as a tidy "—".
     await openNewPrForm('4,500');
     expect(screen.getByTestId('new-pr-qty-refusal')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Submit for approval' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Create requisition' }));
     await waitFor(() => expect(purchaseRequisitionStore.all()).toHaveLength(before));
     expect(purchaseRequisitionStore.all().some((p) => Number.isNaN(p.quantity))).toBe(false);
   });

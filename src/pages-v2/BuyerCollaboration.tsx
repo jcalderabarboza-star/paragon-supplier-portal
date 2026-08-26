@@ -36,6 +36,8 @@ import {
 import { userVerbsFrom } from '../services/transitions';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Button from '../components/ui-v2/Button';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { useToast } from '../hooks/useToast';
 import type { RequirementResponse, DisputeEntry } from '../services/sdc';
 
@@ -211,7 +213,7 @@ const ResolvePanel: React.FC<{
             {t('sdc.resolve.cancel')}
           </Button>
           <Button
-            variant="primary"
+            variant="outline"
             data-testid="sdc-resolve-commit"
             disabled={pending || blank}
             onClick={onCommit}
@@ -288,6 +290,17 @@ const BuyerCollaboration: React.FC = () => {
   const [resolving, setResolving] = useState<CoverageRow | null>(null);
   const [answer, setAnswer] = useState('');
   const resolveMutation = useResolveRequirementDispute();
+
+  // §74 — `t_requirementresponse_resolve` (atom
+  // `requirementresponse:dispute`, held by `planning`).
+  //
+  // ⚠️ THE NOTICE SITS ON THE SECTION, NOT ON EACH ROW. The CTA is per
+  // dispute and the list is unbounded; the same owner repeated down it is
+  // noise, and the atom does not vary by row. `offersResolve` still decides
+  // whether a row's STATE offers the verb at all — legality, asked of the
+  // machine — and this decides whether the SEAT may fire it. Two different
+  // questions; neither substitutes for the other.
+  const resolveAvailability = useVerbAvailability('requirementresponse:dispute');
   const { toast } = useToast();
 
   const closeResolve = () => {
@@ -762,6 +775,9 @@ const BuyerCollaboration: React.FC = () => {
           {t('sdc.disputes.title')}
         </h2>
         <p className="mb-3 text-sm text-text-secondary">{t('sdc.disputes.subtitle')}</p>
+        <div className="mb-3">
+          <HandoffNotice availability={resolveAvailability} testId="handoff-sdc-resolve" />
+        </div>
         {disputedRows.length === 0 ? (
           <p className="text-sm text-text-tertiary">{t('sdc.disputes.none')}</p>
         ) : (
@@ -780,6 +796,7 @@ const BuyerCollaboration: React.FC = () => {
                   <Data className="text-xs">{row.line.materialCode}</Data>
                   <Data className="text-xs">{row.line.periodBucket}</Data>
                   <Data className="text-xs text-text-tertiary">{response.id}</Data>
+                  {resolveAvailability.kind === 'held' && (
                   <button
                     type="button"
                     data-testid="sdc-resolve-cta"
@@ -795,6 +812,7 @@ const BuyerCollaboration: React.FC = () => {
                   >
                     {t('sdc.resolve.cta')}
                   </button>
+                  )}
                 </li>
               );
             })}

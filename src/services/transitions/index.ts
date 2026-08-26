@@ -13,6 +13,7 @@ export * from './registry';
 export * from './legality';
 export * from './policyHooks';
 export * from './roles';
+export * from './businessRoles';
 export * from './events';
 export * from './dispatcher';
 export * from './settleFaults';

@@ -8,6 +8,7 @@ import {
   type CommandTarget,
   type CascadeCommand,
 } from './index';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 // Two synthetic flows: a source that flags, and a target that alerts via a
 // `cascade` trigger. Registered on THIS file's isolated registry (vitest
@@ -64,7 +65,7 @@ describe('dispatcher — cross-entity cascade fan-out (census G4)', () => {
   it('a successful source transition fans out onto the linked target', () => {
     const { d, sink, src, dst } = wire('Live');
     const res = d.dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       { transitionId: 't_srcx_flag', entity: 'srcx', entityId: 's-1' },
     );
     expect(res.status).toBe('done');
@@ -76,7 +77,7 @@ describe('dispatcher — cross-entity cascade fan-out (census G4)', () => {
   it('a cascaded transition carries causationId = the source correlationId, keeping its own (DR-10, Option A)', () => {
     const { d, sink } = wire('Live');
     const res = d.dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       { transitionId: 't_srcx_flag', entity: 'srcx', entityId: 's-1' },
     );
     const srcEvent = sink.byEvent('t_srcx_flag')[0];
@@ -91,7 +92,7 @@ describe('dispatcher — cross-entity cascade fan-out (census G4)', () => {
   it('an illegal cascade is best-effort — the source still succeeds', () => {
     const { d, src, dst } = wire('Alerted'); // already alerted → cascade illegal
     const res = d.dispatch(
-      { personaType: 'buyer', supplierId: null },
+      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
       { transitionId: 't_srcx_flag', entity: 'srcx', entityId: 's-1' },
     );
     expect(res.status).toBe('done'); // source unaffected

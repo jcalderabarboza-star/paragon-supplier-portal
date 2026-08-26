@@ -591,7 +591,14 @@ describe('2B-4a — the FIELD SET derives too (the third level)', () => {
     // of its five values are already in the `MAT-*` space `materialCode`
     // reaches. Adding a fourth code-bearing key anywhere in the tree widens
     // this set without anybody editing it.
-    expect(CODE_FIELDS).toEqual(['materialCode', 'materialIds', 'sapCode']);
+    // ⚠️ THE FOURTH KEY ARRIVED, AND THE DERIVATION FOUND IT UNAIDED — which
+    // is the sentence above, executed. `materialCodes` is the compliance
+    // registry's key. It held `RM-SAMPLE-…` placeholders that matched no master
+    // code, so it was invisible to this census; the seam batch re-keyed the
+    // registry onto real master codes and the derivation admitted it the same
+    // day, with nobody editing this list. THE REGISTRY IS NOW A MATERIAL-IDENTITY
+    // SITE, which is precisely what the seam was for.
+    expect(CODE_FIELDS).toEqual(['materialCode', 'materialCodes', 'materialIds', 'sapCode']);
   });
 
   it('⚠️ FIELD-SET-CLOSURE-OVERRUNS-01 — the disqualifier, and what it stops', () => {
@@ -639,13 +646,22 @@ describe('CP-2 · B2a — the identity property, now over the WHOLE tree', () =>
 describe('CP-2 · B2a — the document lane no longer CONTRADICTS the master', () => {
   const shared = DOCUMENT_LANE.filter((c) => c in MATERIAL_MASTER);
 
-  it('the overlap is now TOTAL — 3 codes → 28 → all 33', () => {
+  it('the overlap is now TOTAL — 3 codes → 28 → 33 → all 34', () => {
     // CORRECTED at 2B-0 (the B2a version listed two — its scope excluded the RFQ
     // lane where `RM-EMUL-3310` lives), WIDENED at 2B-2 by the adoptions, and
     // COMPLETED at 2B-3 by the five authored rows. Derived, not listed: what is
     // pinned is the count and its complement, so the complement going empty is
     // a measured result rather than an edited literal.
-    expect(shared.length).toBe(33);
+    //
+    // ⚠️ **34 AT H4, AND THE COMPLEMENT IS WHAT MATTERS.** `AI-NIAC-6612` was
+    // already a master row, reached only through `supplierShipments.ts` — which
+    // is NOT in the declared lane. H4 put it on `mockShipments.ts`, which is, so
+    // the LANE grew by one and the MASTER did not grow at all. The lane growing
+    // while the complement stays empty is the good direction: a document code
+    // arrived and the master could already resolve it. A lane code the master
+    // could NOT resolve is what the second assertion has always been for, and it
+    // is the one that must never move.
+    expect(shared.length).toBe(34);
     expect(DOCUMENT_LANE.filter((c) => !(c in MATERIAL_MASTER))).toEqual([]);
   });
 
@@ -742,12 +758,19 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     }
   });
 
-  it('the DECLARED document lane still holds 33 codes — and now ZERO are master-absent', () => {
+  it('the DECLARED document lane holds 34 codes — and ZERO are master-absent', () => {
     // The figure `C8-MASTER-DECL` and C9 §6.4 are about. THE LANE DID NOT SHRINK
     // — neither adoption nor authoring deletes a document-lane code, they make
-    // the master able to RESOLVE it. Same 33 codes across all three batches;
-    // 3 resolved, then 28, now all of them.
-    expect(DOCUMENT_LANE.length).toBe(33);
+    // the master able to RESOLVE it. 33 codes across three batches; 3 resolved,
+    // then 28, then all of them.
+    //
+    // ⚠️ **AND AT H4 THE LANE GREW FOR THE FIRST TIME — 33 → 34.** Every prior
+    // batch moved the RESOLVABLE count while holding the lane still; this one
+    // added a document line (`AI-NIAC-6612` on `mockShipments.ts`, so the BPJPH
+    // mandate flip is reachable from a dock). Recorded as a growth rather than
+    // absorbed into the figure, because "the lane did not shrink" and "the lane
+    // did not move" are different claims and only the first was ever true.
+    expect(DOCUMENT_LANE.length).toBe(34);
     expect(DOCUMENT_LANE.filter((c) => !(c in MATERIAL_MASTER))).toEqual([]);
   });
 
@@ -959,8 +982,18 @@ describe('MAT-SPACE-UNDECLARED-01 — the third space, and the real 2B input', (
     // WHICH ONE IS THE MEANING — NOT BECAUSE A COMPARISON WAS LOOSENED.** The
     // difference is invisible in the diff and total in the reasoning, which is
     // why it is asserted rather than described.
-    expect(new Set(REFS_DERIVED.filter((r) => r.code === 'RM-EMUL-9440').map((r) => r.meaning)))
+    const refs9440 = REFS_DERIVED.filter((r) => r.code === 'RM-EMUL-9440');
+    // ⚠️ A THIRD LANE REFERENCES THIS CODE SINCE THE SEAM BATCH — the compliance
+    // registry, through a bare `materialCodes: string[]`. Per the rule at the top
+    // of this module, AN ARRAY STATES NO MEANING OF ITS OWN, so that reference
+    // arrives with `meaning: null` and CANNOT CONTRADICT ONE. The claim under
+    // test is about contradiction, so it is asserted over the meaning-BEARING
+    // refs; the silent reference is asserted separately rather than filtered away
+    // silently, because an unexplained `.filter()` is how a real disagreement
+    // would later be hidden.
+    expect(new Set(refs9440.map((r) => r.meaning).filter((m) => m !== null)))
       .toEqual(new Set(['Sample Blend PF-20 Emulsifier']));
+    expect(refs9440.some((r) => r.meaning === null)).toBe(true);
     expect(MATERIAL_MASTER['RM-EMUL-9440'].label).toBe('Sample Blend PF-20 Emulsifier');
   });
 

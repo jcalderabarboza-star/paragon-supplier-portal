@@ -16,6 +16,7 @@ import {
   validateFlow,
   rolesForPersona,
   personaCan,
+  AUTOMATION_ATOMS,
   CASCADES,
   cascadesFor,
   shipmentFlow,
@@ -27,6 +28,7 @@ import {
 import type { FlowDefinition } from './schema';
 import { MockCommandService } from '../data/mock/MockCommandService';
 import type { QueryScope } from '../data/types';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 const FLOWS: { flow: FlowDefinition; entity: string; initial: string; states: string[] }[] = [
   {
@@ -92,8 +94,19 @@ describe('F0.4 remaining flows — registration + structure', () => {
 });
 
 describe('F0.4 remaining flows — roles are catalog-covered', () => {
-  it('every requiredRole across the 5 flows is initiable by some persona', () => {
-    const assigned = new Set([...rolesForPersona('buyer'), ...rolesForPersona('supplier')]);
+  // ⚠️ **RESTATED AT THE ROLE SPLIT, AND THE OLD FORM WAS TRUE ONLY BECAUSE
+  // THE BUYER HELD EVERYTHING.** `initiable by some PERSONA` passed for 91
+  // transitions because one persona spanned all 48 buyer atoms — including the
+  // 26 nobody can fire, which S/4HANA, the carrier, the TMS, the bank and the
+  // cascade fan-out perform. Those atoms now live in the automation grant,
+  // which is deliberately NOT a persona and NOT assignable to a person.
+  // The honest invariant is coverage by SOMETHING that can fire it.
+  it('every requiredRole across the 5 flows is held by a role or the automation grant', () => {
+    const assigned = new Set([
+      ...rolesForPersona('buyer'),
+      ...rolesForPersona('supplier'),
+      ...AUTOMATION_ATOMS,
+    ]);
     for (const { flow } of FLOWS) {
       for (const t of flow.transitions) expect(assigned.has(t.requiredRole)).toBe(true);
     }
@@ -104,7 +117,13 @@ describe('F0.4 remaining flows — roles are catalog-covered', () => {
     expect(personaCan('buyer', 'supplierdoc:submit')).toBe(false);
     expect(personaCan('buyer', 'contract:activate')).toBe(true);
     expect(personaCan('buyer', 'pr:approve')).toBe(true);
-    expect(personaCan('buyer', 'shipment:advance')).toBe(true);
+    // ⚠️ NO LONGER A PERSONA'S. `shipment:advance` is required by 7 transitions
+    // that are every one `surfaced: false / external-fact` — the TMS moves a
+    // shipment, not a buyer. It sits in the automation grant, so the persona
+    // does not span it and NOBODY assignable holds it. That is the correction,
+    // not a regression: the old `true` was the wildcard answering.
+    expect(personaCan('buyer', 'shipment:advance')).toBe(false);
+    expect(AUTOMATION_ATOMS).toContain('shipment:advance');
     expect(personaCan('supplier', 'contract:activate')).toBe(false);
   });
 });
@@ -132,7 +151,7 @@ describe('F0.4 remaining flows — adjudicated trigger shapes', () => {
 
 describe('F0.4 remaining flows — inert (author-unwired, no CommandTarget)', () => {
   const svc = new MockCommandService();
-  const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+  const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 
   // A representative user verb per flow; each must fail at target-resolution
   // because no CommandTarget is registered for the entity (nothing is wired).

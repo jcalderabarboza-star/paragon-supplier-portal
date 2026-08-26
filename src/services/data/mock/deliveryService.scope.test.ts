@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { MockDeliveryService } from './MockDeliveryService';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const BUYER: QueryScope = { personaType: 'buyer', supplierId: null };
+const BUYER: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 const svc = new MockDeliveryService();
 
 describe('MockDeliveryService — per-contract scoping (contractId query)', () => {
@@ -29,7 +30,7 @@ describe('MockDeliveryService — per-contract scoping (contractId query)', () =
   it('a supplier persona never widens past its own via contractId', async () => {
     // sup-002 asking for ctr-013 (a sup-007 contract) sees nothing — supplier
     // scope is applied BEFORE the contractId narrow.
-    const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
+    const supplier: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
     const page = await svc.getAgreements(supplier, { contractId: 'ctr-013' });
     expect(page.items).toEqual([]);
   });

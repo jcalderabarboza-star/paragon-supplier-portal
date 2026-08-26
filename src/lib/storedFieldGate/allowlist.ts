@@ -97,67 +97,24 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
       'already names issueDate as its input (added by D-A, PR #219)',
     since: D_F,
   },
-  {
-    key: 'HalalVerification.verdict',
-    reason: 'data-in-waiting',
-    why:
-      'CP-3 H3 authored certificate verification as a pure function and its own header rules it ' +
-      'HEADLESS — "this module has no consumer and MUST NOT acquire one here". Wiring is H4, gated on ' +
-      'D-COMP-HALAL-4, and blocked behind R0.1 (the Track-R certificate harvest, NOT STARTED). The ' +
-      'unwiredness is an invariant with its own census, not an oversight.',
-    consumer: 'H4 — the GR receiving surface, gated on D-COMP-HALAL-4 and R0.1',
-    pinnedBy: 'src/services/data/halalVerification.test.ts',
-    since: D_F,
-  },
-  {
-    key: 'HalalVerification.reason',
-    reason: 'data-in-waiting',
-    why:
-      'Same headless-by-ruling module as HalalVerification.verdict: the refusal vocabulary the H4 ' +
-      'surface will render when a receipt cannot be backed by a certificate. Authoring the reason ' +
-      'alongside the verdict is what stops H4 from inventing a second vocabulary when it lands.',
-    consumer: 'H4 — the GR receiving surface, gated on D-COMP-HALAL-4 and R0.1',
-    pinnedBy: 'src/services/data/halalVerification.test.ts',
-    since: D_F,
-  },
-  // The unread entry point is `verifyHalalAtReceipt`. It is named HERE, in a
-  // comment, and not in the row's prose below: H3's headlessness census asserts
-  // that identifier appears in CODE in exactly one file, and exempts comments
-  // for precisely this — a file may DISCUSS the third fact. A string literal is
-  // a code line, so the discussion goes here and the row stays generic.
-  {
-    key: 'HalalVerification.certId',
-    reason: 'data-in-waiting',
-    why:
-      'Same headless module. The certificate the verdict rests on, so an H4 refusal or clearance can ' +
-      'be traced to the document that produced it rather than asserted. Unread because nothing calls ' +
-      'the module entry point yet.',
-    consumer: 'H4 — the GR receiving surface, gated on D-COMP-HALAL-4 and R0.1',
-    pinnedBy: 'src/services/data/halalVerification.test.ts',
-    since: D_F,
-  },
-  {
-    key: 'HalalVerification.certType',
-    reason: 'data-in-waiting',
-    why:
-      'Same headless module. The scheme axis (BPJPH vs MUI-legacy vs foreign) that HALAL-ISSUER-BLIND-01 ' +
-      'records the old status==="Valid" check was blind to. It is carried on the verification result so ' +
-      'H4 can explain WHICH scheme backed a receipt, not merely that one did.',
-    consumer: 'H4 — the GR receiving surface, gated on D-COMP-HALAL-4 and R0.1',
-    pinnedBy: 'src/services/data/halalVerification.test.ts',
-    since: D_F,
-  },
-  {
-    key: 'HalalVerification.expiryDate',
-    reason: 'data-in-waiting',
-    why:
-      'Same headless module. The in-force-at-receipt clock the verification projects against, carried ' +
-      'on the result so the H4 surface can show the date it judged against instead of recomputing it ' +
-      'against a different clock.',
-    consumer: 'H4 — the GR receiving surface, gated on D-COMP-HALAL-4 and R0.1',
-    pinnedBy: 'src/services/data/halalVerification.test.ts',
-    since: D_F,
-  },
+  // ── ⚠️ THE FIVE `HalalVerification.*` ROWS ARE GONE — H4 LANDED ───────────
+  //   Every one of them was `data-in-waiting` naming the SAME consumer: *"H4 —
+  //   the GR receiving surface, gated on D-COMP-HALAL-4 and R0.1"*. H4 shipped
+  //   the certificate notice at the GR quality step, so `verdict`, `reason`,
+  //   `certType`, `certNumber`, `issuer`, `expiryDate` and `supplierName` all
+  //   have non-fixture readers and the gate's STALE half now demands the rows
+  //   go: *an excuse left behind after the thing it excused was fixed is how a
+  //   list stops being able to shrink.*
+  //
+  //   ⚠️ `certId` IS NOT AMONG THEM AND WAS NOT ALLOWLISTED AGAIN — **it was
+  //   DELETED.** H4 was its named consumer and H4 did not consume it; a clerk
+  //   quotes a certificate number, never a registry row id. Re-listing it would
+  //   have meant inventing a second future consumer for a field whose first one
+  //   had just declined it, which is the `certBasis` shape this gate exists to
+  //   catch. See `halalVerification.ts`.
+  //
+  //   THE LIST SHRANK BY FIVE. That is the only direction this list is supposed
+  //   to move, and it had never moved in it before.
 
   // ── unadjudicated — counted debt, one ruling each, none of them this seat's ─
   {
@@ -217,16 +174,20 @@ export const STORED_FIELD_ALLOWLIST: readonly Exemption[] = Object.freeze([
       'this field is not.',
     since: D_F,
   },
-  {
-    key: 'ActorAttribution.person',
-    reason: 'unadjudicated',
-    why:
-      'The RESOLVED arm of the accountability attribution. Unreachable by construction today: ' +
-      'ENF-NO-PERSON-IN-IDENTITY-01 records that CurrentIdentity has no person in it, so nothing can ' +
-      'produce a RESOLVED arm and nothing reads one. Whether that is data-in-waiting on F1 identity or ' +
-      'a shape authored too early is E3\'s ruling.',
-    since: D_F,
-  },
+  // ⚠️ §68 — `ActorAttribution.person` WAS HERE AND ITS EXEMPTION OUTLIVED ITS
+  // SUBJECT, WHICH IS THE GATE DOING THE ONE THING A ONE-DIRECTIONAL LIST
+  // CANNOT. The row read: unreachable by construction, nothing can produce a
+  // RESOLVED arm and nothing reads one. The second half stopped being true the
+  // moment `BuyerRequisitions` rendered an approval's attribution — the surface
+  // handles BOTH arms of the union, because one that handles a single arm is
+  // one that renders `[object Object]` the day the other appears. The bilateral
+  // assertion went red on its own, unprompted, and named the file and the line.
+  //
+  // The FIRST half is still true and stays true: nothing CONSTRUCTS a RESOLVED
+  // actor (C10 §2.3, pinned by the `simUsrNamespace` tripwire). A reader for a
+  // value that cannot exist yet is not a contradiction — it is the arm being
+  // ready before the value is, which is the opposite failure from the one this
+  // list exists to catch.
   {
     key: 'EnforcementOverride.reason',
     reason: 'unadjudicated',

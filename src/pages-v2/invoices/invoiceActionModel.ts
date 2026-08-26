@@ -27,18 +27,30 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { InvoiceStatus } from '../../services/data/types';
-import { userVerbsFrom } from '../../services/transitions';
+import { userVerbsFrom, getTransition } from '../../services/transitions';
+import type { BusinessRoleId } from '../../services/transitions/businessRoles';
+import type { VerbAvailability } from '../../services/transitions/handoff';
+import { availabilityOfAtom } from '../../services/transitions/handoff';
 
 /** How the buyer surface presents one derived verb. */
 export interface InvoiceVerbSurface {
   /** i18n key for the footer button label. */
   readonly labelKey: string;
   /**
-   * DP2-BUTTON-01 — solid action-blue is RESERVED for the irreversible commit.
-   * Exactly one verb on this surface qualifies: releasing payment crosses the
-   * SAP boundary and mints an FI document.
+   * ⚠️ **RENAMED FROM `solid` AT §68, AND THE RENAME IS THE POINT.** It was
+   * named for a RENDERING — solid action-blue, DP2-BUTTON-01's reserved
+   * irreversible-commit signal — and that register is now retired portal-wide.
+   * But the field was never only a style: `BuyerInvoices.handleFooterAction`
+   * reads it to route this verb through a SECOND CONFIRMATION STEP, which is
+   * BEHAVIOUR. Deleting it with the styling would have deleted a confirm gate;
+   * keeping a field called `solid` that no longer controls solidity is the
+   * label-names-the-wrong-thing defect one layer down in a model.
+   *
+   * So the value survives under the name of what it actually means: this is the
+   * ONE irreversible commit on this surface. Releasing payment crosses the SAP
+   * boundary and mints an FI document.
    */
-  readonly solid: boolean;
+  readonly reservedCommit: boolean;
   /** True when the verb takes a second, explicit confirmation step. */
   readonly confirm: boolean;
 }
@@ -56,18 +68,18 @@ export interface InvoiceVerbDeferral {
 export const INVOICE_VERB_SURFACE: Readonly<Record<string, InvoiceVerbSurface>> = Object.freeze({
   t_invoice_release_payment: {
     labelKey: 'buyerInvoices.footer.releasePayment',
-    // The ONE reserved solid on this page: Option-B commit, mints an FI document.
-    solid: true,
+    // The ONE reserved commit on this page: Option-B, mints an FI document.
+    reservedCommit: true,
     confirm: true,
   },
   t_invoice_dispute: {
     labelKey: 'buyerInvoices.action.dispute',
-    solid: false,
+    reservedCommit: false,
     confirm: true,
   },
   t_invoice_resolve: {
     labelKey: 'buyerInvoices.footer.resolveDispute',
-    solid: false,
+    reservedCommit: false,
     confirm: false,
   },
 });
@@ -115,8 +127,65 @@ export function invoiceActionsFor(state: InvoiceStatus): readonly InvoiceAction[
 /**
  * The single COMMIT action for a state, if there is one — the verb that gets the
  * footer's primary slot. Derived, not listed: it is the offerable verb marked
- * `solid`, and DP2-BUTTON-01 allows at most one meaningful solid per surface.
+ * `reservedCommit`, and there is at most one per surface. (It used to be marked
+ * `solid` and to render as one; §68 retired the rendering and kept the rule.)
  */
 export function invoiceCommitAction(state: InvoiceStatus): InvoiceAction | null {
-  return invoiceActionsFor(state).find((a) => a.solid) ?? null;
+  return invoiceActionsFor(state).find((a) => a.reservedCommit) ?? null;
+}
+
+// ── ⚠️ THE THIRD ARM: ROLE-WITHHELD IS NEITHER A SURFACE ROW NOR A DEFERRAL ──
+//
+// This file was BILATERAL — every declared user verb has a surface row or a
+// deferral with its reason stated — and that bilateral is what stops a verb
+// from quietly not appearing. **The role split introduces a third state that
+// belongs to NEITHER side of it**, and getting this wrong is the failure mode
+// the whole batch must not ship:
+//
+//   `invoiceActionsFor` is `userVerbsFrom(...).filter(id in SURFACE)`. There is
+//   no role check in it. The obvious way to honour a narrowed seat — add
+//   `&& seatHolds(t.requiredRole)` to that filter — MAKES THE BUTTON VANISH.
+//   That is precisely what the operator's binding constraint forbids, and it
+//   would land in the one file written to prevent verbs from silently not
+//   appearing.
+//
+// So the seat does not FILTER the population; it ANNOTATES it. A withheld verb
+// is still in the list, still bilateral, still gate-checked — it just renders
+// as a wait with an owner instead of as a button. `invoiceActionsFor` keeps its
+// role-agnostic signature so the bilateral gate keeps asking the machine the
+// same question it always asked.
+
+/** One offerable action, plus whether THIS seat may fire it. */
+export interface SeatInvoiceAction extends InvoiceAction {
+  readonly availability: VerbAvailability;
+}
+
+/**
+ * The actions for a state, annotated for a seat. Same population as
+ * `invoiceActionsFor` — never a subset. A caller that renders only the `held`
+ * ones has reintroduced the vanishing button; the surface must render the
+ * `withheld` ones as pending, naming the owner.
+ */
+export function invoiceActionsForSeat(
+  state: InvoiceStatus,
+  seatRoles: readonly BusinessRoleId[],
+): readonly SeatInvoiceAction[] {
+  return invoiceActionsFor(state).map((a) => ({
+    ...a,
+    availability: availabilityOfAtom(atomOf(a.transitionId), seatRoles),
+  }));
+}
+
+/**
+ * The atom a surfaced invoice verb requires — read from the REGISTRY by id.
+ *
+ * ⚠️ **THE REGISTRATION SITE, NOT A CALL SITE (§42).** A local
+ * `Record<transitionId, atom>` here would be the second permission vocabulary
+ * C10 §3.3 refuses, and it would drift silently the day a verb's role moves —
+ * which is the exact day this line has to change. Enumerating states to find
+ * the verb would be a call-site scan answering a registration-site question:
+ * right most of the time, and wrong in a way no test would name.
+ */
+function atomOf(transitionId: string): string {
+  return getTransition(transitionId)?.requiredRole ?? '';
 }

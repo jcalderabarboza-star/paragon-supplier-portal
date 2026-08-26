@@ -146,6 +146,39 @@ export type {
 export interface QueryScope {
   personaType: 'buyer' | 'supplier';
   supplierId: string | null;
+  /**
+   * THE BUSINESS ROLES THE ACTING SESSION HOLDS — the authorisation half, and
+   * a READ scope never needs it (tenancy is `personaType` × `supplierId`).
+   *
+   * ⚠️ **OPTIONAL ON THE TYPE, REQUIRED ON THE COMMAND PATH, AND THE
+   * DIFFERENCE IS ENFORCED IN THE DISPATCHER RATHER THAN HERE.** Making it
+   * required would put an authorisation field on `list()` / `getById()`, which
+   * conflates two questions and would force ~60 read specs to answer one they
+   * do not ask. Absent on a COMMAND, the dispatcher refuses with
+   * `ROLE_NOT_PERMITTED` — it does NOT fall back to the persona span, because
+   * that fallback IS the wildcard this arc retired: a persona spanning 48
+   * atoms unconditionally.
+   *
+   * `scopeKey` deliberately ignores it — two sessions with different roles read
+   * the same tenant's data, so folding roles into the cache key would shard the
+   * query cache on a dimension the reads do not vary by.
+   */
+  businessRoles?: readonly string[];
+  /**
+   * WHO IS ACTING, carried from the SESSION — never from a command payload
+   * (C10 §6.2). The `setAt` / `pinnedAt` discipline this tree has ratified
+   * twice applies with more force to WHO than to WHEN: *a caller that could
+   * set it could backdate its own audit entry*.
+   *
+   * ⚠️ **THE OTHER HALF OF §6.2 IS NOT BUILT AND IS STILL FREE.** A
+   * payload-supplied `RESOLVED` actor is not yet REFUSED BY NAME on write; it
+   * is harmless today for one reason only — nothing in shipped code constructs
+   * a `RESOLVED` actor, so no forged attribution can exist. That precondition
+   * becomes unfixable at the FIRST `RESOLVED` record, and this batch creates
+   * none. Stated here so the absence is a fact in the tree rather than a claim
+   * in a report.
+   */
+  actor?: import('../../lib/enforcement').ActorAttribution;
 }
 
 // ─── Error contract (DR-4) — the single failure channel for the data layer ──
@@ -695,12 +728,99 @@ export interface PurchaseRequisition {
   costCenter: string;
   status: PRStatus;
   createdDate: string;
-  approver: string;
+  /**
+   * ⚠️ **RENAMED FROM `approver` AT §68, AND THE OLD NAME WAS THE DEFECT.**
+   * Nothing ever wrote it: `create` sets `''`, `applyTransition` touched only
+   * `status`, and the fixture's values are ROLE BANDS — `'VP Procurement'`,
+   * `'Procurement Head'`, `'Section Head'` — that correlate with
+   * `estimatedValue` and are populated on **`Draft` and `Pending Approval` rows
+   * nobody has approved** (`pr-004` is `Pending Approval` and carries
+   * `'Section Head'`). A field
+   * populated before the act it names cannot be a record of that act.
+   *
+   * So it is the DESTINATION the value routes to, not the person who decided —
+   * the same class as a button whose label names a verb it does not dispatch,
+   * one layer down in a DTO. Who actually decided is `approvedBy`, below.
+   *
+   * ⚠️ **AUTHORED, NEVER DERIVED — AND §69 MEASURED IT RATHER THAN ASSUMING
+   * IT.** The values track `estimatedValue` closely enough to read as a
+   * computed band, and nothing computes them: there is **not one relational or
+   * arithmetic read of `estimatedValue` anywhere in the tree**, and no
+   * threshold number exists in `src/` or `docs/`. Re-derived every run by
+   * `approvalBandAuthored.guard.test.ts`; the surface now SAYS it is authored.
+   *
+   * ⚠️ **AND THE BAND RULE IS NOT MERELY UNBUILT — IT IS UNBUILDABLE TODAY, ON
+   * TWO INDEPENDENT GROUNDS (§69).** A band decides either WHO MAY APPROVE,
+   * which needs seniority roles the platform does not have and C10 §3.4 forbids
+   * minting (*"a new role per band"*), or HOW MANY APPROVALS ARE REQUIRED,
+   * which needs the `ApprovalPolicyAct` × `ApprovalAct` ledgers C10 §3.5
+   * defers. Either ground alone is sufficient, so closing one does not unblock
+   * it.
+   *
+   * ⚠️ **THE POLICY HOOK IS NOT THE BLOCKER, AND THE CONTRARY IS THE PREMISE
+   * THAT MUST NOT BE INHERITED.** A hook on `t_pr_approve` can ALREADY read
+   * this document (`ctx.target.readEntity` — four shipped hooks do) and the
+   * session's roles (`ctx.scope.businessRoles`). What is missing is the
+   * RIGHT-HAND SIDE of the comparison, not the left.
+   *
+   * `''` is the ONE representation of "not assigned" — `t_pr_create` writes it
+   * and `pr-005` carries it. `pr-005` used to carry a literal `'—'`, which is
+   * the render fallback written into the data, so an unassigned band and an
+   * empty field displayed as the same glyph.
+   */
+  approvalLevel: string;
   sourceOfSupply: string;
   linkedDoc: string;
   priority: PRPriority;
   justification: string;
   source?: PrSource;
+  /**
+   * Why the requisition was rejected — written by `t_pr_reject` and by nothing
+   * else. Absent until a rejection happens; it is NOT cleared by `t_pr_revise`,
+   * because "why this came back" is the one thing a requester needs while they
+   * are revising it, and clearing it on the way to Draft would delete the
+   * explanation at exactly the moment it becomes useful.
+   *
+   * ⚠️ OPTIONAL ON THE DTO, REQUIRED ON THE VERB — and the split is deliberate.
+   * A `Draft` PR has no rejection to explain, so a non-optional field would
+   * force every intake-created row to carry an empty string that reads like an
+   * answer. The REQUIREMENT lives where the act is (`requiredFields` +
+   * `PR_REJECT_REASON_AUTHORED`), which is the only place it can be enforced.
+   */
+  rejectionReason?: string;
+  /**
+   * What changed, written by `t_pr_revise` and by nothing else.
+   *
+   * ⚠️ **THE FIELD DID NOT EXIST UNTIL §68, WHILE THE VERB HAD REQUIRED IT
+   * SINCE PF-1a.** `requiredFields: ['revisionNote']` refused the dispatch
+   * without it and `applyTransition` then dropped the text on the floor — a
+   * FULL ENFORCEMENT CHAIN TERMINATING IN NOTHING, and sharper than the
+   * `rejectionReason` case one edge over, because there was no field to
+   * disappoint. Same repair, same four parts: optional on the DTO, required on
+   * the verb, non-blank by policy hook, and PERSISTED.
+   *
+   * Optional for the same reason `rejectionReason` is: a requisition that has
+   * never been revised has no note, and a non-optional field would force every
+   * intake-created row to carry an empty string that reads like an answer.
+   */
+  revisionNote?: string;
+  /**
+   * ⚠️ **WHO APPROVED IT — the field `approver` was never able to be.**
+   * Written by `t_pr_approve` from the SESSION (`QueryScope.actor`), never from
+   * the payload: C10 §6.2 half one, *"a caller that could set it could backdate
+   * its own audit entry"*, which applies with more force to WHO than to WHEN.
+   * That is why `t_pr_approve` gained a policy hook and NOT a required payload
+   * field — a payload field would have been a second instance of `setBy`'s
+   * attribution-by-assertion, the very seam §6 exists to close.
+   *
+   * Today it is ALWAYS `UNATTRIBUTED: NO_PERSON_IN_SESSION`, because nothing in
+   * shipped code constructs a `RESOLVED` actor (§2.3) and
+   * `PR_APPROVAL_ATTRIBUTED` refuses one supplied by a caller. **That is an
+   * honest absence and it is the point** — it names a failure somebody can go
+   * and fix, where the old surface named 'Procurement Head' and nobody could
+   * tell it had not happened.
+   */
+  approvedBy?: import('../../lib/enforcement').ActorAttribution;
 }
 
 // ─── PR-intake line (C7 §2 — one shape, two producers) ──────────────────────

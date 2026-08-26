@@ -43,11 +43,12 @@ const scoredSet = (quotes: readonly ScorableQuote[]) => {
 import type { QueryScope } from '../../services/data/types';
 import { readLeadTimeDays } from './quotationLeadTime';
 import { buildQuotationSubmitPayload } from './quotationSubmitModel';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 const RFQ_ID = 'rfq-011';
 /** The incumbent: an HONEST 4-day promise. The supplier who should win. */
 const INCUMBENT = 'qt-011a';
-const challenger: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
+const challenger: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 

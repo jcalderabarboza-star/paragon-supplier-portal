@@ -6,6 +6,7 @@ import type { ChaseEntry } from '../../sdc';
 import { deriveAgreementView } from '../../delivery/views';
 import { SCHEDULING_AGREEMENT_DEMO, DELIVERY_DEMO_SHIPMENTS } from '../../delivery/demoFixtures';
 import { SDC_SIMULATED_NOW } from '../../sdc';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SDC-5d — the unified chase SERVICE (the composition point). Composes the two
@@ -13,8 +14,8 @@ import { SDC_SIMULATED_NOW } from '../../sdc';
 // commitment chase) via the pure 5c reducer, buyer-gated.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null };
-const supplierScope: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
+const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const supplierScope: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 /** A collaboration stub returning a fixed data-chase list (only getChase is used). */
 function collabStub(entries: ChaseEntry[]): ICollaborationService {

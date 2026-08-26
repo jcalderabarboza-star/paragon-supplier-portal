@@ -24,11 +24,12 @@ import { rfqStore } from './stores/rfqStore';
 import { scoreQuotations } from '../../../lib/quoteScore';
 import { DataError } from '../types';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES } from '../../../services/transitions/businessRoles';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
 // rfq-001 invited sup-005/006/009/011; sup-001 is invited to rfq-003, NOT rfq-001.
-const invited: QueryScope = { personaType: 'supplier', supplierId: 'sup-005' };
-const notInvited: QueryScope = { personaType: 'supplier', supplierId: 'sup-001' };
+const invited: QueryScope = { personaType: 'supplier', supplierId: 'sup-005', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+const notInvited: QueryScope = { personaType: 'supplier', supplierId: 'sup-001', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 const svc = new MockCommandService();
 

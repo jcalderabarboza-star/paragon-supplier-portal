@@ -13,14 +13,15 @@ import { DataError } from './types';
 import type { QueryScope } from './types';
 import { deriveDeliveryChase } from '../chase';
 import { SDC_SIMULATED_NOW } from '../sdc';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 const A = 'sup-007';
 const B = 'sup-002';
 const C = 'sup-005';
-const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null };
-const aScope: QueryScope = { personaType: 'supplier', supplierId: A };
-const bScope: QueryScope = { personaType: 'supplier', supplierId: B };
-const cScope: QueryScope = { personaType: 'supplier', supplierId: C };
+const buyerScope: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const aScope: QueryScope = { personaType: 'supplier', supplierId: A, businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+const bScope: QueryScope = { personaType: 'supplier', supplierId: B, businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+const cScope: QueryScope = { personaType: 'supplier', supplierId: C, businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 type Scoped = (s: QueryScope) => Promise<{ items: { supplierId: string }[] }>;
 

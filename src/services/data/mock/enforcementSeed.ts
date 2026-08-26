@@ -96,7 +96,15 @@ const SEED_ACTOR = Object.freeze({
 } as const);
 
 /** Enforcement settings are a buyer governance record; the verb is buyer-only. */
-const BUYER_SCOPE: QueryScope = { personaType: 'buyer', supplierId: null };
+// The seeder dispatches `t_enforcement_set`, whose atom lives in `procurement`
+// this batch (the ruled move to `compliance` waits on its caller — see
+// `businessRoles.ts`). Naming the role here rather than the persona is what the
+// retirement requires of every command caller.
+const BUYER_SCOPE: QueryScope = {
+  personaType: 'buyer',
+  supplierId: null,
+  businessRoles: ['procurement'],
+};
 
 /** What the seed did to ONE check — reported rather than assumed. */
 export interface EnforcementSeedOutcome {

@@ -9,6 +9,7 @@ import {
 } from './index';
 import { DataError } from '../data/types';
 import type { QueryScope } from '../data/types';
+import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 // A synthetic creation flow on this file's isolated registry singleton.
 flowRegistry.register({
@@ -23,8 +24,8 @@ flowRegistry.register({
   ],
 });
 
-const supA: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
-const supB: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
+const supA: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+const supB: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
 // A creation-capable target: `creationOwner` derives the owner from the parent
 // ref in the payload; `create` mints an id.

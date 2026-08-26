@@ -9,6 +9,7 @@ import { commandAuditSink } from '../services/data/mock/MockCommandService';
 import type { IDataService, QueryScope } from '../services/data/types';
 import i18n from '../lib/i18n';
 import SupplierShipments from './SupplierShipments';
+import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 
 beforeEach(() => {
   purchaseOrderStore.reset();
@@ -71,7 +72,7 @@ describe('SupplierShipments — four honest states', () => {
 });
 
 describe('SupplierShipments — ASN verbs (Step 4 batch i)', () => {
-  const supScope: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
+  const supScope: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 
   it('chain: confirm PO → create ASN (creation-shape) → submit (Draft→Submitted)', async () => {
     // Confirm PO-2025-00108 so it is a Confirmed PO awaiting an ASN.

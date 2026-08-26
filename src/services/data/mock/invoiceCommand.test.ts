@@ -14,10 +14,12 @@ import { invoiceStore } from './stores/invoiceStore';
 import { isOverdue, daysOutstanding } from '../invoiceProjection';
 import { DataError } from '../types';
 import type { QueryScope } from '../types';
+import { PERSONA_SYSTEM_ROLES, AUTOMATION_ROLE } from '../../../services/transitions/businessRoles';
+import { NO_PERSON } from '../../../context/noPerson';
 
-const buyer: QueryScope = { personaType: 'buyer', supplierId: null };
-const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007' };
-const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002' };
+const buyer: QueryScope = { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer };
+const sup007: QueryScope = { personaType: 'supplier', supplierId: 'sup-007', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
+const sup002: QueryScope = { personaType: 'supplier', supplierId: 'sup-002', businessRoles: PERSONA_SYSTEM_ROLES.supplier };
 const svc = new MockCommandService();
 
 // PO-2025-00107 is Confirmed and owned by sup-007 (see mockPurchaseOrders).
@@ -92,10 +94,25 @@ describe('Invoice command integration — supplier creation-shape', () => {
   });
 });
 
+// ⚠️ **THE MATCH IS A MACHINE ACT, AND IT DISPATCHES UNDER THE AUTOMATION
+// GRANT.** `t_invoice_match` is `system` + `surfaced: false / computed`: the
+// platform derives the verdict from PO × GR × invoice and fires this header
+// verb; in production it arrives ONLY as a cascade from `t_gr_post`. Before the
+// role split these two probes rode the buyer persona, because the persona held
+// every atom including the ones no person can fire. Naming `automation` here is
+// what makes the probe honest about which actor it is standing in for — and it
+// is the same grant the dispatcher's fan-out uses.
+const machine: QueryScope = {
+  personaType: 'buyer',
+  supplierId: null,
+  businessRoles: [AUTOMATION_ROLE],
+  actor: NO_PERSON,
+};
+
 describe('Invoice match rollup — header is derived, never asserted', () => {
   it('rejects t_invoice_match when the match axis is not Matched', async () => {
     // inv-mus-0214 is Submitted with matchStatus 'Pending GR'.
-    const res = await fire(buyer, 't_invoice_match', 'inv-mus-0214');
+    const res = await fire(machine, 't_invoice_match', 'inv-mus-0214');
     expect(res.status).toBe('failed');
     expect(res.reason).toMatch(/POLICY_REJECTED:invoice_rollup_matched/);
     expect(invoiceStore.get('inv-mus-0214')!.status).toBe('Submitted');
@@ -104,7 +121,7 @@ describe('Invoice match rollup — header is derived, never asserted', () => {
   it('advances to Matched when the axis has rolled up Matched', async () => {
     // Seed a Submitted invoice whose match axis is clean.
     invoiceStore.update('inv-mus-0214', (i) => ({ ...i, matchStatus: 'Matched' }));
-    const res = await fire(buyer, 't_invoice_match', 'inv-mus-0214');
+    const res = await fire(machine, 't_invoice_match', 'inv-mus-0214');
     expect(res.status).toBe('done');
     expect(invoiceStore.get('inv-mus-0214')!.status).toBe('Matched');
   });

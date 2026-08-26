@@ -30,8 +30,10 @@ import type {
   CommandOutcome,
 } from '../data/types';
 import type { CommandDecision } from '../data/types';
+import type { ActorAttribution } from '../../lib/enforcement';
 import type { AuditSink } from './events';
 import { actorKey } from './events';
+import { AUTOMATION_ROLE } from './businessRoles';
 import { getTransition } from './registry';
 import { refusal } from './refusals';
 import { classifySettleFault, settleFault, settleFaultDetail } from './settleFaults';
@@ -52,8 +54,24 @@ export interface CommandTarget {
   readScopeOwner(entityId: string): string | null;
   /** Full entity for policy hooks to inspect, or null. */
   readEntity(entityId: string): unknown;
-  /** Apply the target state + any payload effects (store mutation). */
-  applyTransition(entityId: string, toState: string, payload: Record<string, unknown>): void;
+  /**
+   * Apply the target state + any payload effects (store mutation).
+   *
+   * ⚠️ **`scope` IS THE FOURTH PARAMETER BECAUSE ATTRIBUTION MAY NOT TRAVEL IN
+   * THE PAYLOAD (C10 §6.2).** A target that must record WHO acted — the PR
+   * approval is the first — needs the SESSION's actor, and the only alternative
+   * was a caller-supplied payload field. That is `setBy`'s shape, which §6.2
+   * names as ATTRIBUTION BY ASSERTION and permits only because nothing can
+   * construct a `RESOLVED` actor yet. Reproducing it on a second verb would
+   * have doubled the seam that has to be closed before the first resolved
+   * record exists. Every existing target ignores the parameter.
+   */
+  applyTransition(
+    entityId: string,
+    toState: string,
+    payload: Record<string, unknown>,
+    scope: QueryScope,
+  ): void;
   /**
    * Creation scope: the intended owner derived from the payload's parent
    * (e.g. `poReference` → the PO's supplierId). A supplier may create only when
@@ -88,6 +106,12 @@ export type PolicyHookFn = (ctx: {
   toState: string;
   payload: Record<string, unknown>;
   target: CommandTarget;
+  /**
+   * The commanding scope — carried so a hook can read the SESSION's actor
+   * (`scope.actor`) rather than a payload field. See `applyTransition` above:
+   * a hook that policed `payload.approvedBy` would be policing an assertion.
+   */
+  scope: QueryScope;
 }) => PolicyDecision;
 
 /** A command the dispatcher should fan out after a source transition (G4). */
@@ -186,6 +210,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     reason?: string,
     causationId?: string,
     decision?: CommandDecision,
+    attribution?: ActorAttribution,
   ): void {
     deps.sink.emit({
       event: transitionId,
@@ -203,6 +228,9 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       // Governed-decision provenance (C6-LOCK) — forwarded VERBATIM from the
       // caller's input; the dispatcher neither reads nor validates it.
       ...(decision ? { decision } : {}),
+      // ⚠️ C10 §6.4 — WHICH HUMAN, beside the existing `actor` (WHICH SEAT).
+      // Present ONLY on a `user`-trigger transition; see `attributionFor`.
+      ...(attribution ? { attribution } : {}),
     });
   }
 
@@ -214,10 +242,11 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     entityId?: string,
     causationId?: string,
     decision?: CommandDecision,
+    attribution?: ActorAttribution,
   ): CommandResult {
     const correlationId = deps.nextCorrelationId();
     const ts = deps.now();
-    emit(scope, transitionId, outcome, correlationId, ts, reason, causationId, decision);
+    emit(scope, transitionId, outcome, correlationId, ts, reason, causationId, decision, attribution);
     statuses.set(correlationId, { correlationId, transitionId, status: outcome, ts });
     return { correlationId, transitionId, status: outcome, reason, entityId };
   }
@@ -227,13 +256,31 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
   function dispatch(scope: QueryScope, input: CommandInput, causationId?: string): CommandResult {
     // Tag every event this dispatch emits with the causationId (undefined for a
     // directly-initiated command; the source correlationId for a cascaded one).
+    // ⚠️ **C10 §6.4 — ATTRIBUTION ABSENT MEANS A MACHINE ACT, AND THAT IS WHY
+    // THIS READS THE TRIGGER RATHER THAN JUST FORWARDING `scope.actor`.**
+    // A cascade fan-out re-dispatches under the SAME scope, so forwarding the
+    // session actor unconditionally would stamp every cascaded and creation
+    // event with an `UNATTRIBUTED` claim — and `UNATTRIBUTED` is a claim that a
+    // HUMAN acted and could not be resolved, every member of the vocabulary
+    // naming a failure somebody can go and fix. Flooding it with machine acts
+    // makes the count meaningless, which is the only reason anybody would ever
+    // fix one. The four triggers already carry the distinction (C1), so the
+    // field is derived from `trigger`, never from the caller.
+    //
+    // It is also NOT a replacement for `actor` (`buyer:all`): that is a true
+    // fact about WHICH SEAT and stays. This answers WHICH HUMAN. Collapsing
+    // them is `ENF-EVENT-ACTOR-IS-A-PERSONA-01` with extra steps (C10 §6.4).
+    const attributionFor = (): ActorAttribution | undefined =>
+      getTransition(input.transitionId)?.trigger === 'user' ? scope.actor : undefined;
+
     const fin = (
       s: QueryScope,
       tid: string,
       outcome: CommandOutcome,
       reason?: string,
       entityId?: string,
-    ): CommandResult => finish(s, tid, outcome, reason, entityId, causationId, input.decision);
+    ): CommandResult =>
+      finish(s, tid, outcome, reason, entityId, causationId, input.decision, attributionFor());
 
     const transition = getTransition(input.transitionId);
     if (!transition) return fin(scope, input.transitionId, 'failed', refusal('UNKNOWN_TRANSITION'));
@@ -304,6 +351,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         toState: transition.statePreserving ? (currentState ?? '') : transition.to,
         payload,
         target,
+        scope,
       });
       if (!decision.ok) {
         return fin(scope, transition.id, 'failed', refusal('POLICY_REJECTED', `${name}:${decision.reason ?? ''}`));
@@ -327,6 +375,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
         input.entityId!,
         transition.statePreserving ? currentState! : transition.to,
         payload,
+        scope,
       );
       result = fin(scope, transition.id, outcome, undefined, input.entityId);
     }
@@ -360,8 +409,24 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
           // Cascaded command carries the source's correlationId as causationId,
           // so its events group with the source WITHOUT sharing correlationId
           // (each cascaded transition keeps its own 1:1 status — DR-10, Option A).
+          // ⚠️ **THE CASCADE RUNS UNDER THE AUTOMATION GRANT, NOT A PERSONA.**
+          // This re-dispatch sits inside a `catch {}` and is best-effort by
+          // design, so a cascade refused at the role gate fails SILENTLY — it
+          // is the one path in the system where narrowing a grant can delete a
+          // reachable act with nothing to report it. The four atoms this
+          // actually needs (`asn:flag`, `invoice:match`, `quotation:award`,
+          // `quotation:reject`) are in `AUTOMATION_ATOMS`, which is asserted
+          // against the cascade map by `businessRoles.test.ts`.
+          //
+          // `automation` is NOT a `SystemRoleId` and cannot be assigned to a
+          // person (C10 §6.4 — attribution absent = a machine act). This is the
+          // only site that names it.
           dispatch(
-            { personaType: 'buyer', supplierId: null },
+            {
+              personaType: 'buyer',
+              supplierId: null,
+              businessRoles: [AUTOMATION_ROLE],
+            },
             { transitionId: c.transitionId, entity: c.entity, entityId: c.entityId, payload: c.payload },
             result.correlationId,
           );
