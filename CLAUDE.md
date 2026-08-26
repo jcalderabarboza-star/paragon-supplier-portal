@@ -244,8 +244,22 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   register (DR-6/7/9/10, DP).
 - **Stage G planning canon is on main:** `docs/Stage_G_Grid_Planning_Layer_Plan_v1.md`
   + `docs/Grid_Planning_Layer_Investigation_2026-07-14.md` (ratified; PLANNED-as-axis
-  doctrine, I6 anchor). G0.1 (the C6 planning-doctrine contract) is the next Stage-G
-  batch, gated on G-PRECOND (this true-up is the last precondition item).
+  doctrine, I6 anchor).
+
+  ⚠️ **CORRECTED 2026-08-20 — THIS POINTER NAMED AS "NEXT" A BATCH THAT MERGED
+  FIVE WEEKS EARLIER, AND FOUR BATCHES HAVE LANDED PAST IT SINCE.** The sentence
+  read *"G0.1 (the C6 planning-doctrine contract) is the next Stage-G batch, gated
+  on G-PRECOND (this true-up is the last precondition item)."* Derived: **G0.1
+  merged 2026-07-14 as PR #67** (`dc059fc`, and `docs/contracts/C6-planning.md`
+  has read `Status: CONTRACT · authored G0.1` ever since), and Stage G ran on
+  through **G0.2 · G1.1 · G1.2a · G1.2b · G1.3**, the last of them on
+  2026-07-15. **G-PRECOND was satisfied the day before G0.1 opened** — the Build
+  Plan merged at #65 on 2026-07-14 — and `Stage_G_Grid_Planning_Layer_Plan_v1.md`
+  still carried it as `OPEN — operator` until this true-up.
+
+  Derivation, re-runnable: `git log --format='%ad %s' --date=short | grep -oE
+  '^[0-9-]+ G[0-9]\.[0-9][a-z]?' | sort -u`. **Stage G is DORMANT, not next** —
+  it stands where G1.3 left it and is not on the recalibrated path below.
 - **Stage F — Foundation** (governed data + integration backbone): **F0**
   contract-freeze & ledger truth (F0.1–F0.6 COMPLETE; F0.6 = LivenessRegistry,
   PR #60 closed F0) → **F1** real backend
@@ -260,15 +274,104 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   when its Stage-F prerequisite lands.
 - **Stage A — Agentic** (disciplined/bounded): A1 copilot · A2 document
   intelligence · A3 bounded task agents · A4 advanced levers (buy-vs-build).
-- **Track R** (halal) is a NORMAL operator-lane capability — on equal footing
-  with every other lane, NOT a deadline-driven track. The platform models the
-  full compliance flow; no external deadline gates the build, and certification
-  is handled manually by the compliance team. Switch-on timing is operational,
-  not a build gate. It feeds the Stage-2 I3 compliance primitive. Four operator
-  inputs remain OPEN (informational, non-blocking): D-CAL / D-STAFF / D-SAP / D-DPO.
-- Adjudicated forks: **FORK-1 = (c)** (minimal scripted halal-renewal walkthrough
-  at I3; full Learn absorbed into the A1 copilot). **FORK-2 = hybrid** (author all
-  remaining flows; wire opportunistically per Stage-2 surface).
+- **Track R** (halal). ⚠️ **RE-PRIORITIZED 2026-08-20 — THIS IS THE OPERATOR
+  REVERSING THE OPERATOR, AND IT IS RECORDED AS A REVERSAL RATHER THAN AN EDIT.**
+  The de-pressurization ruled on 2026-07-15 (PR #75) said Track R is a normal
+  capability on equal footing with every other lane and that no external deadline
+  gates the build. That ruling is **SUPERSEDED FOR SEQUENCING ONLY**: Track R is
+  now **arc 1**, the first arc on the recalibrated path below. What is NOT
+  reversed: certification is still handled manually by the compliance team, the
+  four operator inputs (D-CAL / D-STAFF / D-SAP / D-DPO) are still non-blocking,
+  and **no honesty marker moves** — `compliance` stays SIMULATED behind its
+  two-gate guard until the real harvest lands (LIVENESS-DATASOURCE-01).
+
+  The regulatory date is real and derivable in-tree: **17 October 2026**, GR
+  42/2024, BPJPH — carried at `docs/Paragon_Platform_Strategic_Spine_v1.md:102`,
+  `docs/Halal_Compliance_Control_Design_v1.md:9`, and as the `BPJPH_MANDATE_DATE`
+  constant behind `complianceProjection.schemeValid`. **58 days from 2026-08-20.**
+  What changed is not the date — it was always there — but which lane the seat
+  spends its next batches on. It feeds the Stage-2 I3 compliance primitive.
+
+### THE RECALIBRATED PATH (ruled 2026-08-20; supersedes the Stage-G "next" pointer)
+
+Three arcs, in order. Nothing else is queued.
+
+- **ARC 1 · TRACK R — the halal lane made operable.** Three deliverables, and
+  every one of them is a SURFACE or a WRITE PATH, never a register entry:
+  1. **An operator-editable certificate registry.** Today `COMPLIANCE_REGISTRY`
+     (`src/services/data/mock/fixtures/complianceRegistry.ts`) is **16 frozen
+     rows** — `readonly … = [ … ]`, every supplier `"Sample … (illustrative)"`,
+     every cert number a `SAMPLE-…` token, every material `RM-SAMPLE-…`. Derived:
+     `compliance` is one of the **seven flows with no `CommandTarget`**
+     (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`), so `t_compliance_submit` /
+     `_verify` / `_reject` **cannot fire**. There is no write path of any kind:
+     nobody — operator, buyer or supplier — can add, edit or expire a
+     certificate. **That is arc 1's first deliverable.**
+  2. **The expiry projection on real dates.** `complianceProjection.ts` already
+     computes display status and scheme validity from `expiryDate` + issuer
+     (clock-states never stored, law 0.5). It has never once run against a date a
+     person entered.
+  3. **The receipt gate reading it.** `verifyHalalAtReceipt`
+     (`src/services/data/halalVerification.ts`) is authored, tested, and
+     **HEADLESS BY RULING** — its own header forbids acquiring a consumer there,
+     because `COMPLIANCE_REGISTRY`'s codes are `RM-SAMPLE-…` and
+     `MATERIAL_MASTER`'s are not, so **the intersection is empty by construction**
+     and a wire today would refuse 100% of real receipts. **(1) is what makes (3)
+     safe to wire** — that is the whole reason the arc is ordered this way, and
+     H4 / `D-COMP-HALAL-4` is the gate it opens.
+
+- **ARC 2 · THE REQUISITION LANE.** ⚠️ **The dispatched premise inverted twice,
+  and the lane is in WORSE shape than "unreachable", not better.** Derived:
+  `purchaseRequisition` **IS** a wired `CommandTarget`
+  (`MockCommandService.ts:1292`), so `t_pr_submit` / `t_pr_approve` /
+  `t_pr_reject` are dispatch**able**; and procurement's entry point **DOES** have
+  a page — `/buyer/purchase-requisition` → `BuyerRequisitions`
+  (`AppRouter.tsx:111`), alongside `IntakeReview` and
+  `plan-grid/IntakeAdjustDrawer`. What is true is sharper: **only `t_pr_create`
+  has a hook and a caller.** The panel ships a `Draft` → **"Submit for approval"**
+  button that fires a **`variant: 'success'` toast and closes the drawer** — no
+  dispatch, no state change (`BuyerRequisitions.tsx:520-532`); the `Approved` →
+  "Create PO directly" / "Create sourcing event" button does the same
+  (`:501-519`); and `Pending Approval` carries **no approve or reject affordance
+  at all**. An unreachable verb is silent. **This one tells the buyer it
+  succeeded.** Arc 2 is the approval half of the lane, and the two false
+  affordances are its first fix.
+
+- **ARC 3 · SUPPLIER ONBOARDING.** Confirmed exactly as dispatched.
+  `src/pages-v2/SupplierRegistration.tsx` is **1,551 lines** behind `/register`
+  and contains **zero** service calls — no `useDataService`, no dispatch, no
+  mutation. The whole form lives in `useState`, and submitting sets a
+  `const [submitted, setSubmitted] = useState(false)` boolean. **A supplier
+  completes onboarding and nothing anywhere records that they did.**
+
+**PARKED, NOT QUEUED — and the reason is one sentence: THESE ARE MACHINE HYGIENE,
+NOT MANDATE WORK.** Every one of them makes the tree more consistent with itself;
+not one of them puts a capability in front of a person. They stay open, they stay
+derivable, and they are picked up when an arc's own surface work touches them —
+never as a standalone batch:
+
+  - **The dead-end states.** The derived population is **37 non-terminal states no
+    surface can leave, across 12 of 18 flows** (`docs/findings.md` §48g — derived
+    with cascade targets and `settlesTo` edges folded in; without those two
+    corrections the same derivation returns 43 and condemns both working SAP
+    boundaries). ⚠️ The dispatch called this *"the eight fixture-only states"*;
+    **no derivation in this tree returns eight**, and the two nearest real figures
+    are that 37 and §49a's 18.
+  - **GL-0b's unregistered unions.** GL-0 derived **143 closed string-literal
+    unions / 580 members** across `src/` and registered 18 of them / 66 terms;
+    **125 remain** as GL-0b's worklist. The figure is GL-0's derivation, named
+    here rather than restated as if freshly measured (§27).
+  - **The 29 stored-field allowlist rows** (`src/lib/storedFieldGate/allowlist.ts`
+    — 29 `key:` entries, derived at read time). Each is a stored field carrying a
+    stated reason instead of a reader; the list can only ever shrink truthfully.
+  - **R1d.** ⚠️ Parked as named, with a caveat that belongs in the parking
+    notice: **`R1d` occurs exactly ONCE in the register** (`docs/findings.md:14727`,
+    inside an UNTOUCHED list) and **is defined nowhere in the tree**. It is parked
+    as a token, not as a scope. Whoever un-parks it defines it first.
+
+- **Adjudicated forks:** **FORK-1 = (c)** (minimal scripted halal-renewal
+  walkthrough at I3; full Learn absorbed into the A1 copilot). **FORK-2 = hybrid**
+  (author all remaining flows; wire opportunistically per Stage-2 surface).
 
 ## Routing
 Routing is HashRouter (`src/router/AppRouter.tsx`) — not BrowserRouter. The `/`
@@ -662,6 +765,52 @@ glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
 its reason stated. It is deliberately TEST-level, not type-level, precisely so
 #179's mutation practice CAN reach it; both directions of the bilateral
 assertion are mutation-probed.
+
+### And the rule beside all of them: A REGISTER ENTRY IS NOT A DELIVERABLE
+
+⚠️ **NO BATCH MAY BE DISPATCHED WHOSE DELIVERABLE IS A REGISTER ENTRY, UNLESS
+THAT ENTRY IS A CONTRACT.** Ruled 2026-08-20. Binding on the dispatching seat,
+not only on the executing one — it is a rule about what may be ASKED FOR.
+
+**A contract is the exemption because a contract is a commitment somebody else
+builds against**: `docs/contracts/C1…C10`, a frozen DTO, an invariant a gate
+enforces. A finding is a commitment to nobody. The test is not the file the text
+lands in — a finding written into `docs/contracts/` is still a finding. The test
+is: **does anything outside this repository change if it is true?**
+
+**THE REMEDY IS STRUCTURAL BECAUSE THE FAILURE IS STRUCTURAL, AND THE FAILURE IS
+NOT LAZINESS.** The strategist seat produces findings faster than surfaces, and
+findings READ AS PROGRESS: they are dated, numbered, cross-linked, derived, and
+often genuinely excellent work. Nothing in the review loop distinguishes a
+register that grew because the tree was examined from a register that grew
+because examining is cheaper than building. **A finding costs one seat one
+session and passes every gate this project has by construction — `npm run gates`
+cannot fail on prose.** A surface costs a design, a write path, a locale pass, a
+mutation probe, and a floor that must not regress. Between two things that both
+read as progress, the cheaper one wins every time it is allowed to compete, and
+until this rule it was allowed to compete.
+
+**Measured, not asserted** — the numbers and their instruments are in
+`docs/findings.md` §61 (`REGISTER-OUTGREW-THE-SURFACES-01`), re-runnable there.
+The register is now the largest thing in the docs corpus by a factor of three
+over everything else combined, and it grew that way in six weeks.
+
+**How to apply it, concretely:**
+- A batch whose PR touches only `docs/findings.md` needs a stated reason that is
+  not *"the census produced findings."* Recording what a BUILDING batch measured
+  is not this rule's target — that is the register doing its job. **Dispatching a
+  batch TO produce findings is.**
+- Findings that arrive as a by-product of surface work are unaffected and always
+  were: §56's own line is that three of its four findings came from instruments
+  running *after* the code was written. **Keep that. This rule is about what the
+  batch was FOR.**
+- When a census genuinely must run first, dispatch it with **the surface it
+  unblocks named in the same dispatch**, and merge them as one arc. A census with
+  no named consumer is the shape this rule refuses.
+- ⚠️ **AND THE RULE APPLIES TO ITSELF.** This entry is a register entry about
+  register entries. It earns its place only if the next three arcs ship surfaces;
+  if the recalibrated path above produces another six weeks of prose, this
+  paragraph is evidence for the diagnosis and not a remedy for it.
 
 ## Gates — THIS PROJECT HAS NO LINT SCRIPT
 There is no `lint` script and no ESLint config. Do not invent one, and do not

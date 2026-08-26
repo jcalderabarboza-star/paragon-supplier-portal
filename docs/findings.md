@@ -15628,6 +15628,269 @@ was wrong; the branch mattered because its contents are simply not on `main`.
 
 ---
 
+## §61 — THE REGISTER OUTGREW THE SURFACES, AND THE REVIEW THAT SAID SO UNDERSTATED IT ON BOTH FIGURES. The plan of record recalibrated; a rule about what may be dispatched at all
+
+**Batch:** the plan-of-record recalibration (docs only). **Main `3fdcd16`.**
+**Floor 3123 / 228 / 7, unchanged — this batch adds no test and touches no code.**
+(§59 and §60 are on open PRs #243 and #244; this entry takes §61 so it cannot
+collide with either.)
+
+### 61a · THE DISPATCH'S SIX PREMISES, MEASURED
+
+Three inverted, three confirmed — and **every one of the three that inverted was
+right about the shape and wrong about the particular**, which is §49a's line
+repeating itself a fifth time.
+
+| Dispatched | Measured |
+|---|---|
+| *"Main `61c47bd`"* | **Not a valid object in this repository.** Main is `3fdcd16`. `git cat-file -t 61c47bd` → `fatal: Not a valid object name`. |
+| *"floor 3129/228"* | **3123 / 228 / 7** (`scripts/floor.json`, on main and on every open branch). |
+| *"the critical path document names an arc that closed weeks ago"* | **CONFIRMED, and it is two documents, not one.** §61b. |
+| *"the register has grown 6.5× faster than surfaces and is now 39% of the docs corpus"* | **CONFIRMED IN DIRECTION, UNDERSTATED IN BOTH FIGURES.** Not 39% — **62.0%**. Not 6.5× — **21.8× to 57.4×** depending on the surface instrument, and no instrument returns 6.5. §61c. |
+| *"the certificate registry is a sample fixture nobody can edit"* | **CONFIRMED, exactly.** 16 frozen rows; `compliance` has no `CommandTarget`; its three verbs cannot fire. §61d. |
+| *"`t_pr_submit` / `_approve` / `_reject` are authored and unreachable, and procurement's own entry point has no page"* | **BOTH HALVES FALSE, AND THE TRUTH IS WORSE.** The `CommandTarget` IS wired; the page DOES exist; and the page ships a **"Submit for approval" button that fires a success toast over no state change.** §61e. |
+
+> The dispatch predicted thirteen prior inversions and asked for measurement
+> before writing. **That instruction is the reason this entry exists in the shape
+> it does**, and it is worth recording that the instruction worked: two of the
+> three inversions (`61c47bd`, floor 3129) would have been copied forward into
+> the plan of record as fact, where nothing would have failed on them —
+> `FLOOR-IN-PROSE-01`'s exact mechanism, in the document that governs the build.
+
+### 61b · THE CRITICAL PATH DOCUMENT NAMED AN ARC THAT CLOSED FIVE WEEKS EARLIER — AND SO DID CLAUDE.md, ABOUT A DIFFERENT ARC
+
+Derived, not taken from the dispatch. Two stale "next" pointers, in the two
+documents a seat actually reads:
+
+| Document | Said | Derived |
+|---|---|---|
+| `Paragon_World_Class_Build_Plan_v1.md` §9 "IMMEDIATE NEXT ACTIONS" | *"Frontend seat executes F0.1 → F0.6 as sequenced batches"*; *"on acceptance it moves to `docs/` and becomes the canonical forward plan"* | **F0.1–F0.6 all merged 2026-07-13**; F0 closed by PR #60 (`db625d5`). The plan itself was adjudicated and merged as **PR #65 on 2026-07-14**, and has been named canonical in `CLAUDE.md` ever since — while its own header still read **`Status: DRAFT — operator review pending`**. |
+| `CLAUDE.md` → Forward plan vocabulary | *"G0.1 (the C6 planning-doctrine contract) is the next Stage-G batch, gated on G-PRECOND"* | **G0.1 merged 2026-07-14 as PR #67** (`dc059fc`); `docs/contracts/C6-planning.md` has read `Status: CONTRACT · authored G0.1` since. Stage G then ran **G0.2 · G1.1 · G1.2a · G1.2b · G1.3**, finishing 2026-07-15. |
+| `docs/Stage_G_Grid_Planning_Layer_Plan_v1.md` | `G-PRECOND … OPEN — operator` | **Satisfied 2026-07-14** — the gate is *"Build Plan branch merged to main before G0 opens"*, and it merged the day before G0.1 opened. |
+
+Re-runnable, and it is one command:
+
+```
+git log --format='%ad %s' --date=short \
+  | grep -oE '^[0-9-]+ (G[0-9]\.[0-9][a-z]?|F[0-9]\.[0-9]|I[0-9]\.[0-9])' | sort -u
+```
+
+⚠️ **THE MECHANISM, WHICH IS THE PART WORTH KEEPING.** Not one of these was a
+careless edit. Each was TRUE WHEN WRITTEN and nothing in this project can notice
+when a plan stops being true. `npm run gates` typechecks the tree, collects the
+suite, asserts the floor and asserts that CLAUDE.md still points at
+`scripts/floor.json` — **it reads no plan and it cannot.** A drifted build number
+reddens CI within a day; a drifted plan is caught only when a human re-reads it,
+and these went five weeks and five arcs without that happening. **This is
+`FLOOR-IN-PROSE-01` at the altitude of sequencing rather than of a count**, and
+the mitigation is the same one that finding earned: *do not restate; point at the
+thing that is derived.* The corrected pointers name the derivation that produces
+them.
+
+### 61c · `REGISTER-OUTGREW-THE-SURFACES-01` — THE MEASUREMENT, ITS INSTRUMENTS, AND WHY BOTH DISPATCHED FIGURES WERE TOO SMALL
+
+**Share of the docs corpus.** Corpus = the 42 `.md` files tracked in the
+repository (`git ls-files '*.md'`); working-tree bytes, which on this checkout are
+CRLF — stated because a bare byte count is not portable across platforms here:
+
+| | lines | bytes (working tree, CRLF) |
+|---|---|---|
+| `docs/findings.md` | **15,314** | **1,225,263** |
+| all 42 tracked `.md` | 25,394 | 1,977,385 |
+| **register's share** | **60.3%** | **62.0%** |
+
+**Not 39%.** The register is larger than the other forty-one markdown files in
+this repository **combined**, and by a factor of about 1.6. Narrowing the corpus
+to `docs/` alone only raises the share, since `CLAUDE.md` and the Build Plan leave
+it.
+
+⚠️ **39% WAS TRUE, AND IT WAS TRUE ABOUT TWO WEEKS BEFORE THE REVIEW REPORTED
+IT.** Sampled with `git ls-tree -r -l` (blob bytes, LF — a *different* instrument
+from the table above, and deliberately not mixed with it,
+`COUNT-RESTATED-ACROSS-INSTRUMENTS-01`), the share crossed 39% between 2026-08-05
+(33.5%) and 2026-08-07 (49.4%). **A figure about a fast-growing quantity decays
+faster than the report that carries it** — which is this section's own subject
+arriving in the measurement of itself.
+
+**Growth against surfaces.** Same instrument throughout (git blob bytes / a `grep
+-c` of `<Route `), from the first commit that carried `docs/findings.md`
+(2026-07-05, `282fd66`) to main today:
+
+| | 2026-07-05 | 2026-08-20 | growth | register ÷ this |
+|---|---|---|---|---|
+| `docs/findings.md` | 16,971 B | 1,209,949 B | **71.30×** | — |
+| `src/**` non-test `.ts`/`.tsx` | 1,260,033 B | 4,122,662 B | 3.27× | **21.8×** |
+| `src/pages-v2` non-test | 852,568 B | 1,613,330 B | 1.89× | **37.7×** |
+| routed `<Route ` entries | 33 | 41 | 1.24× | **57.4×** |
+
+**No instrument returns 6.5×. The narrowest defensible reading is 21.8× and the
+plainest — routed surfaces, the thing a person can actually reach — is 57.4×.**
+Per the standing rule, the figure that goes into the plan of record is the derived
+one, and the dispatched one is reported here rather than written forward.
+
+⚠️ **ONE INSTRUMENT REJECTED, AND SAYING WHY IS THE POINT.** Counting *lines*
+gives the register a growth of **464×** (33 → 15,314). That number is not
+wrong so much as meaningless: the register's early rows were single-line table
+cells thousands of characters long, so a line count measures reformatting, not
+content. It is excluded — but it is named, because an unexplained absence of the
+most flattering figure is how a measurement starts arguing for a conclusion.
+
+**THE DIAGNOSIS, and it is the operator's, confirmed rather than discovered:**
+
+> **A FINDING IS CHEAPER TO PRODUCE THAN A SURFACE AND READS AS PROGRESS.**
+
+Both halves are structural, and neither is about effort or care:
+
+- **Cheaper.** A finding costs one seat one session. A surface costs a design, a
+  write path, an EN/ID pass, a mutation probe, a browser check, and a floor that
+  must not regress. This register's own §56 needed three separate instruments
+  running *after* the code was written just to be trusted.
+- **Reads as progress.** Findings are dated, numbered, cross-linked and derived.
+  They look exactly like the artifacts of a rigorous build **because they are** —
+  the register's quality is not in question and is not the problem. The problem is
+  that **nothing in the loop distinguishes a register that grew because the tree
+  was examined from one that grew because examining is cheaper than building.**
+- **And the gate is silent by construction.** `npm run gates` **cannot fail on
+  prose.** Every one of the 1.2 MB above passed every gate this project has, by
+  passing through a file no gate reads. A batch that ships prose is
+  indistinguishable from a batch that ships nothing, *to every instrument we own*.
+
+Between two things that both read as progress, the cheaper one wins every time it
+is allowed to compete — and until 2026-08-20 it was allowed to compete.
+
+**Disposition: OPEN, and it closes on evidence, not on assertion.** The remedy is
+the standing rule recorded in `CLAUDE.md`: **no batch may be dispatched whose
+deliverable is a register entry, unless that entry is a contract** — a contract
+being something outside this repository builds against (a frozen DTO, a
+`docs/contracts/C*` commitment, an invariant a gate enforces), and the test being
+*does anything outside this repository change if it is true?* Findings arriving as
+a **by-product** of surface work are untouched and always were; §56 is the model,
+not the target. What the rule refuses is a census with no named consumer.
+**This finding closes when the three recalibrated arcs have shipped surfaces and
+this ratio has moved — not when someone agrees with it.**
+
+⚠️ **AND THE ENTRY IS AWARE OF ITS OWN SHAPE.** This is a register entry about
+register entries, filed in the register, by the seat the diagnosis is about. It is
+exempt only under its own rule — it is the measurement a ruling required, and the
+ruling it carries is binding on dispatch. **If the next six weeks produce another
+megabyte of this file and three unshipped arcs, this section is evidence for the
+diagnosis and not a remedy for it**, and whoever reads it then should say so here.
+
+### 61d · ARC 1 · THE CERTIFICATE REGISTRY, CONFIRMED EXACTLY AS DISPATCHED
+
+`src/services/data/mock/fixtures/complianceRegistry.ts` — **16 rows**, declared
+`readonly ComplianceRegistryEntry[]`, every supplier `"Sample … (illustrative)"`,
+every certificate a `SAMPLE-…` token, every material `RM-SAMPLE-…`, every issuer
+`"(illustrative)"`. The fixture's own header calls itself *the single most
+sensitive fixture in the build* and is honestly synthetic on purpose.
+
+The half the dispatch got exactly right is **"nobody can edit"**, and it is
+structural rather than incidental. Derived from `getKnownFlows()` ∖
+`WIRED_COMMAND_TARGETS` (18 flows, 11 wired targets, 91 verbs): **`compliance` is
+one of the seven flows with no `CommandTarget`**, so `t_compliance_submit` /
+`_verify` / `_reject` cannot fire from anywhere. There is no write path at all —
+not for an operator, not for a buyer, not for a supplier. The read path is
+complete and honest (I3.2 retired `COMPLIANCE-CARVEOUT-01`; `BuyerCompliance`
+reads through the seam); **the write path does not exist.** That asymmetry was
+already recorded in `CLAUDE.md` as a correction and is now the first deliverable
+of arc 1 rather than a note.
+
+The sequencing follows from `halalVerification.ts`'s own header, which is why arc
+1 is ordered registry → projection → gate: `verifyHalalAtReceipt` is **HEADLESS BY
+RULING**, because `COMPLIANCE_REGISTRY`'s codes are `RM-SAMPLE-…` and
+`MATERIAL_MASTER`'s are not, so **the intersection is empty by construction** and
+wiring it today would refuse 100% of real receipts — *the outage wearing
+compliance clothes*, in its own words. **The editable registry is what makes the
+gate safe to wire.** Nothing here changes an honesty marker: `compliance` stays
+SIMULATED behind the two-gate guard until R0.1 makes gate 2 real
+([[LIVENESS-DATASOURCE-01]]).
+
+**On the deadline.** 17 October 2026 (GR 42/2024, BPJPH) is real and in-tree at
+`Paragon_Platform_Strategic_Spine_v1.md:102`,
+`Halal_Compliance_Control_Design_v1.md:9`, and as `BPJPH_MANDATE_DATE` behind
+`complianceProjection.schemeValid` — **58 days from this entry.** What the
+2026-07-15 de-pressurization (PR #75) ruled was not that the date is unreal but
+that it does not GATE THE BUILD. **That ruling is now reversed for sequencing
+only, by the operator who made it**, and it is recorded as a reversal in
+`docs/track-r-status.md` with the earlier ruling left standing above it, so both
+are readable and the current one is marked.
+
+### 61e · ARC 2 · THE FALSE AFFORDANCE. An unreachable verb is silent; this one reports success
+
+The dispatch's two claims about the requisition lane both invert:
+
+- **"procurement's own entry point has no page"** — `/buyer/purchase-requisition`
+  → `BuyerRequisitions` (`AppRouter.tsx:111`), 812 lines, with a spec. Two further
+  creation surfaces exist: `IntakeReview.tsx` and
+  `plan-grid/IntakeAdjustDrawer.tsx`.
+- **"`t_pr_submit` / `_approve` / `_reject` are authored and unreachable"** —
+  `purchaseRequisition` **is** a wired `CommandTarget`
+  (`MockCommandService.ts:1292`), so all three are dispatch**able**. All three
+  are `trigger: user`, `surfaceable: { surfaced: true }`.
+
+What is true, and it is a sharper defect than the one dispatched: **of the PR
+flow's seven verbs, only `t_pr_create` has a hook and a caller** (`grep -o "'t_[a-z_]*'"`
+over `src/services/query/commandHooks.ts` returns 22 ids and `t_pr_create` is the
+only `t_pr_*` among them). And the panel does not merely omit the rest:
+
+- `BuyerRequisitions.tsx:520-532` — on `Draft`, a **"Submit for approval"** button
+  whose entire handler fires `toast({ variant: 'success', … })` and calls
+  `setSelectedPR(null)`. **No dispatch. No state change. The requisition is still
+  `Draft` and the buyer has been told it was submitted.**
+- `:501-519` — on `Approved`, "Create PO directly" / "Create sourcing event",
+  same shape, same success toast. (These two verbs are `trigger: cascade` and
+  ruled unsurfaceable, so the button is doubly wrong: it offers a verb the machine
+  says no person chooses.)
+- On `Pending Approval` — **no affordance at all.** `t_pr_approve` and
+  `t_pr_reject` have no button anywhere in the tree.
+
+⚠️ **THE CLASS, AND IT IS WHY THIS OUTRANKS THE DISPATCHED VERSION.** R1's
+false-affordance sweep looked for buttons that do nothing. **These do worse than
+nothing: they report success.** An unreachable verb is a silence a user can
+notice — they look for the button and it is not there. A verb whose button fires
+a green toast is a surface **actively asserting a state change that did not
+happen**, and every honesty instrument this project owns is pointed at the
+markers and the data, not at the toast. Filed as
+`SUCCESS-TOAST-OVER-NO-DISPATCH-01`; arc 2's first fix, ahead of the approval
+verbs themselves.
+
+### 61f · ARC 3 · ONBOARDING, CONFIRMED
+
+`src/pages-v2/SupplierRegistration.tsx`, **1,551 lines** behind `/register`
+(`AppRouter.tsx:74`), contains **zero** service calls — no `useDataService`, no
+`dispatch`, no mutation, no `commandHooks` import. The form is eight `useState`
+hooks; submitting sets `const [submitted, setSubmitted] = useState(false)` to
+`true` and renders a confirmation with a locally-generated application number.
+**A supplier completes onboarding and nothing anywhere records that they did.**
+Confirmed exactly as dispatched, with nothing to correct.
+
+### 61g · DISPOSITION
+
+- **RECALIBRATED:** `CLAUDE.md` (Stage-G "next" pointer corrected; Track R
+  re-prioritized as a recorded reversal; the three-arc path and the parked list
+  written in) · `Paragon_World_Class_Build_Plan_v1.md` (§9 marked discharged with
+  a derived table, §9′ added, the DRAFT header retired) ·
+  `docs/Stage_G_Grid_Planning_Layer_Plan_v1.md` (G-PRECOND satisfied) ·
+  `docs/track-r-status.md` (the reversal logged, earlier ruling left standing).
+- **RULED:** *no batch may be dispatched whose deliverable is a register entry,
+  unless that entry is a contract* — in `CLAUDE.md`, beside the standing
+  derivation rules, binding on the dispatching seat.
+- **NEW FINDINGS:** `REGISTER-OUTGREW-THE-SURFACES-01` (61c, OPEN — closes on
+  shipped surfaces, not on agreement) · `SUCCESS-TOAST-OVER-NO-DISPATCH-01` (61e,
+  OPEN — arc 2's first fix).
+- **CORRECTED:** main is `3fdcd16`, not `61c47bd` (not a valid object) · the floor
+  is 3123/228/7, not 3129/228 · the register's share is 62.0%, not 39% · its
+  growth against surfaces is 21.8×–57.4×, not 6.5× · the PR `CommandTarget` IS
+  wired · the requisition page DOES exist · the parked dead-end-state population
+  is **37** (§48g), not eight — no derivation in this tree returns eight.
+- **PARKED, WITH A CAVEAT:** `R1d` occurs exactly once in this file
+  (`findings.md:14727`) and is defined nowhere. Parked as a token, not a scope.
+- **UNTOUCHED:** no code, no test, no fixture, no flow, no DTO. Floor 3123 / 228 /
+  7 unchanged. C9 `af7f0b4` and C10 `dc8e774` byte-identical.
+
+
+---
+
 ## §62 — THE SEAM. The two lanes share one vocabulary, the gate sees a certificate for the first time — and the honesty moved rather than left
 
 **Batch:** arc 1 · the compliance seam (Option A, operator-ruled). **Main `76aa197`.**
