@@ -48,7 +48,10 @@ import {
 import {
   createDispatcher,
   InMemoryAuditSink,
-  atomsFor,
+  atomsForSeat,
+  customRoleStore,
+  isSystemRole,
+  SYSTEM_ROLES,
   resolvePolicyHook,
   bindPolicyHook,
   POLICY_HOOKS,
@@ -58,6 +61,7 @@ import {
   type CascadeCommand,
   type CascadeContext,
   type SettleContext,
+  type SystemRoleId,
 } from '../../transitions';
 import { purchaseOrderStore } from './stores/purchaseOrderStore';
 import { asnStore } from './stores/asnStore';
@@ -1327,6 +1331,43 @@ const enforcementTarget: CommandTarget = {
   },
 };
 
+// — Role target (duplicate-and-narrow) — the parent system role, and its ledger.
+//
+// THE ENTITY IS THE PARENT. `entityId` IS the `SystemRoleId` being copied, so
+// the entity commanded and the parent recorded cannot disagree — there is no
+// `parent` payload field to disagree with it. `readState` answers the single
+// state for a known role and `null` for anything else, which makes an unknown
+// parent `NOT_FOUND` rather than a silently-minted one, and `create` is absent
+// entirely. This is `enforcementTarget`, verb for verb (D3).
+//
+// `readScopeOwner` is null: a role definition is a BUYER governance record with
+// no supplier owner. A supplier is stopped at the ROLE gate (`role:grant` ∉
+// supplier), which is where it belongs.
+//
+// `applyTransition` APPENDS and writes no state (statePreserving). `grantedAt`
+// and `parentAtomsAtGrant` are minted HERE — the `pinnedAt` discipline. The
+// baseline especially: a caller that could supply it could fake the drift check
+// into silence, and drift-detection is the entire reason it is recorded.
+const roleTarget: CommandTarget = {
+  readState: (id) => (isSystemRole(id) ? 'Defined' : null),
+  readScopeOwner: () => null,
+  readEntity: (id) => (isSystemRole(id) ? SYSTEM_ROLES[id] : null),
+  applyTransition: (id, _toState, payload) => {
+    const parent = id as SystemRoleId;
+    customRoleStore.append({
+      id: payload.roleId as string,
+      parent,
+      displayName: (payload.displayName as string).trim(),
+      description: (payload.description as string).trim(),
+      adds: [...(payload.adds as readonly string[])],
+      // THE DRIFT BASELINE, never the resolution source (D1).
+      parentAtomsAtGrant: [...SYSTEM_ROLES[parent]],
+      grantedBy: asActorAttribution(payload.grantedBy)!,
+      grantedAt: new Date().toISOString(),
+    });
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -1341,6 +1382,10 @@ const TARGETS: Record<string, CommandTarget> = {
   // CP-3 · E2 — the enforcement-setting recording verb. Wired so every recorded
   // relaxation lands in the DR-10 trail; NO GATE READS THE SETTING YET (E3).
   enforcement: enforcementTarget,
+  // Duplicate-and-narrow — the privilege-grant recording verb. Wired so every
+  // grant lands in the DR-10 trail: a role edit outside the dispatcher would be
+  // the only privilege-granting act in the platform with no TransitionEvent.
+  role: roleTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1
@@ -1483,7 +1528,15 @@ const dispatcher = createDispatcher({
   // been migrated yet — the wildcard surviving as a default, which is a
   // wildcard with better manners. A refusal is loud, attributable to a named
   // atom, and impossible to mistake for a working narrow grant.
-  resolveRoles: (scope) => atomsFor(scope.businessRoles ?? []),
+  //
+  // ⚠️ **`atomsForSeat`, NOT `atomsFor` — AND THE DIFFERENCE IS A SILENT ZERO.**
+  // `atomsFor` knows the SYSTEM vocabulary and contributes NOTHING for an id it
+  // does not recognise. A seat holding a custom role would therefore resolve to
+  // an EMPTY atom set and be refused `ROLE_NOT_PERMITTED` on every act, with
+  // nothing anywhere to say the role existed. `atomsForSeat` composes the
+  // session's granted roles on top; `businessRoles.test.ts` pins that no other
+  // seat-resolution site still reads the narrower function.
+  resolveRoles: (scope) => atomsForSeat(scope.businessRoles ?? []),
   target: (entity) => TARGETS[entity],
   resolvePolicyHook,
   sink: commandAuditSink,

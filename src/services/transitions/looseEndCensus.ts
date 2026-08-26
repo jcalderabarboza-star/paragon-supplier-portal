@@ -210,4 +210,22 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
       'enrolled a document that imports nothing as a CONSUMER of that module. `DESCRIBE-DONT-RENDER-01` ' +
       '— name the mechanism, never render it.',
   },
+
+  // ── role ───────────────────────────────────────────────────────
+  {
+    entity: 'role',
+    kind: 'initial-integrity',
+    subject: 'Defined',
+    reason: 'substrate-only',
+    note:
+      'THE SAME DEGENERATE SINGLE-STATE LEDGER SHAPE AS THE ENFORCEMENT MACHINE, and for the same ' +
+      'reason: the entity IS the system bundle being copied, and the system bundles are a frozen ' +
+      'closed vocabulary compiled into the tree — not rows anybody creates. The grant verb is ' +
+      'statePreserving, so it is neither an entry nor an exit, and the state is correctly declared ' +
+      'terminal. ' +
+      '⚠️ WHAT IS CREATED BY THE VERB IS NOT AN INSTANCE OF THIS MACHINE. A grant appends a ' +
+      'derived bundle to a ledger; the thing commanded stays exactly as it was. Modelling the child ' +
+      'as a born entity would have made the parent its creator, which is the one relationship the ' +
+      'copy deliberately does not have — a child follows its parent, it is not owned by it.',
+  },
 ]);

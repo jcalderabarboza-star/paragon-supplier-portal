@@ -102,11 +102,14 @@ describe('THE DETAIL CARRIES THE CHROME AND THE MARKER', () => {
     expect(container.querySelector('aside')).toBeTruthy();
   });
 
-  it('repeats the read-only reason — a reader may land here first', async () => {
-    renderRole('finance');
-    expect(await screen.findByTestId('role-detail-marker')).toHaveTextContent(
-      /cannot be created yet/i,
-    );
+  it('repeats the catalogue marker — a reader may land here first', async () => {
+    // The detail repeats the LIST's marker, so it repeats whatever the list now
+    // says. The superseded text explained why there was no create; the successor
+    // explains what a grant is and how long it lasts.
+    const marker = await (renderRole('finance'), screen.findByTestId('role-detail-marker'));
+    expect(marker).toHaveTextContent(/saved in this browser/i);
+    expect(marker).not.toHaveTextContent(/cannot be created yet/i);
+    expect(marker).not.toHaveTextContent(/browser session only/i);
   });
 
   it('offers a way back to the list', async () => {

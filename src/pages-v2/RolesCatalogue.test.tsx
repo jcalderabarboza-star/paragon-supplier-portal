@@ -1,5 +1,7 @@
 import { screen, within, fireEvent } from '@testing-library/react';
 import { renderWithProviders, BUYER } from '../test/test-utils';
+import { NO_PERSON } from '../context/noPerson';
+import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { SYSTEM_ROLES, type SystemRoleId } from '../services/transitions/businessRoles';
 import { deriveRoleViews, roleTotals } from './roles/roleModel';
 import i18n from '../lib/i18n';
@@ -11,6 +13,15 @@ import RolesCatalogue from './RolesCatalogue';
 // identical to one that derives them until the day they disagree, and on that
 // day nothing goes red.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/** A NARROWED buyer seat — everything except the role editor's lane. */
+const PROCUREMENT_ONLY: CurrentIdentity = {
+  personaType: 'buyer',
+  supplierId: null,
+  supplierName: null,
+  businessRoles: ['procurement', 'receiving', 'finance'],
+  actor: NO_PERSON,
+};
 
 describe('POPULATION GUARD', () => {
   it('the derivation returns the roles the module declares', () => {
@@ -102,23 +113,84 @@ describe('⚠️ THE LIST IS DERIVED — one row per system role, no more, no fe
   });
 });
 
-describe('⚠️ READ-ONLY IS A RULING, AND THE PAGE SAYS WHY', () => {
-  it('offers NO create, edit, duplicate or delete affordance', async () => {
-    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+// ⚠️ **THE READ-ONLY RULING IS SUPERSEDED, AND THESE ARE ITS SUCCESSORS.**
+// The three assertions that stood here required the ABSENCE of a create
+// affordance and a marker explaining why. The page can now edit, so the rules
+// that replace them are stronger, not weaker: the affordance must be GATED, and
+// the marker must state what survives a reload rather than omitting the subject.
+describe('⚠️ EDITING IS COMPLIANCE-GATED — THE FIRST ROLE-GATED SURFACE', () => {
+  it('a seat WITHOUT role:grant gets the wait, not a gap', async () => {
+    // The ruled shape: a withheld verb renders PENDING WITH AN OWNER. A route
+    // guard would have rendered a gap AND hidden the catalogue, which §65 ruled
+    // must stay readable by anyone.
+    renderWithProviders(<RolesCatalogue />, { identity: PROCUREMENT_ONLY });
     await screen.findByTestId('roles-catalogue');
-    for (const label of [/create/i, /duplicate/i, /^edit$/i, /delete/i, /new role/i, /^save$/i]) {
-      expect(
-        screen.queryByRole('button', { name: label }),
-        `an editing affordance matching ${label} is on a read-only catalogue`,
-      ).not.toBeInTheDocument();
-    }
+    expect(screen.queryByTestId('roles-create')).not.toBeInTheDocument();
+    const gate = screen.getByTestId('roles-create-gate');
+    expect(gate).toHaveTextContent(/compliance action/i);
+    // The owner, named — not merely a missing button.
+    expect(screen.getByTestId('roles-create-handoff')).toHaveTextContent(/Compliance/i);
+    // ⚠️ WHY *AND* HOW. A reader who cannot see the affordance must be able to
+    // learn from the surface what would change it — and the demo fence must be
+    // in the same breath, or the sentence reads as a self-service privilege
+    // grant rather than as a demo control that a real directory replaces.
+    const demo = screen.getByTestId('roles-create-gate-demo');
+    expect(demo).toHaveTextContent(/Demonstration seat/i);
+    expect(demo).toHaveTextContent(/select Compliance/i);
+    expect(demo).toHaveTextContent(/user directory is connected/i);
+    // AND THE CATALOGUE IS STILL FULLY READABLE. Reading which roles exist is
+    // not editing one; the gate must not have taken the page with it.
+    expect(screen.getByTestId('role-row-finance')).toBeInTheDocument();
   });
 
-  it('states what is real and what is not (D-CENSUS-8), including WHY there is no create', async () => {
+  it('a compliance seat gets the affordance — the KNOWN-GOOD half of the gate', async () => {
+    // ⚠️ WITHOUT THIS, THE TEST ABOVE PROVES ONLY THAT SOMETHING IS ABSENT, and
+    // a panel that never renders for anyone would pass it. Probe both ways.
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    expect(await screen.findByTestId('roles-create')).toBeInTheDocument();
+    expect(screen.queryByTestId('roles-create-gate')).not.toBeInTheDocument();
+    expect(screen.getByTestId('role-create-submit')).toBeInTheDocument();
+  });
+
+  it('states EXACTLY where a custom role persists, and what that means', async () => {
+    // ⚠️ THIS ASSERTION HAS NOW BEEN REWRITTEN TWICE, BY TWO RULINGS, AND THAT
+    // IS THE POINT OF IT. §65 said custom roles could not be created and would
+    // vanish on reload. §66 made them creatable and session-scoped. The
+    // persistence ruling makes them durable. Each time, the standard held: the
+    // superseded sentence must become FALSE, never merely absent — so this test
+    // asserts the OLD claims are gone AND the new one is precise about WHERE.
     renderWithProviders(<RolesCatalogue />, { identity: BUYER });
     const marker = await screen.findByTestId('roles-readonly-marker');
-    expect(marker).toHaveTextContent(/cannot be created yet/i);
-    expect(marker).toHaveTextContent(/vanished on reload|nothing in the platform stores/i);
+    expect(marker).not.toHaveTextContent(/cannot be created yet/i);
+    expect(marker).not.toHaveTextContent(/nothing in the platform stores/i);
+    expect(marker).not.toHaveTextContent(/browser session only/i);
+    expect(marker).not.toHaveTextContent(/never written to disk/i);
+    // Persists — and WHERE, which is the half a reader can be misled about.
+    expect(marker).toHaveTextContent(/saved in this browser/i);
+    expect(marker).toHaveTextContent(/survives a reload/i);
+    expect(marker).toHaveTextContent(/not shared with anyone/i);
+    expect(marker).toHaveTextContent(/not stored on a server/i);
+    expect(marker).toHaveTextContent(/clear site data/i);
+    // The system roles are NOT written, said where somebody would wonder.
+    expect(marker).toHaveTextContent(/system roles are not saved/i);
+    // Additive-only, and the attribution gap, both still stated.
+    expect(marker).toHaveTextContent(/never subtract|can never subtract/i);
+    expect(marker).toHaveTextContent(/name the person/i);
+  });
+
+  it('⚠️ AND THE POINT-OF-CREATION LINE SAYS IT BEFORE THE ACT, NOT AFTER IT', async () => {
+    // A user who creates a role must have been told where it goes BEFORE they
+    // create it. The header is not enough — nobody reads a header on the way to
+    // a submit button.
+    renderWithProviders(<RolesCatalogue />, { identity: BUYER });
+    const line = await screen.findByTestId('role-create-actor');
+    expect(line).toHaveTextContent(/saved in this browser/i);
+    expect(line).toHaveTextContent(/survive a reload/i);
+    expect(line).toHaveTextContent(/not stored on a server/i);
+    expect(line).toHaveTextContent(/nobody the platform can name/i);
+    // And it sits ABOVE the submit, not below it.
+    const submit = screen.getByTestId('role-create-submit');
+    expect(line.compareDocumentPosition(submit) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('says there is no user list, and why', async () => {
@@ -227,8 +299,10 @@ describe('EN AND ID FROM BIRTH (MARKER-I18N-HOLE-01)', () => {
     await i18n.changeLanguage('id');
     renderWithProviders(<RolesCatalogue />, { identity: BUYER });
     const marker = await screen.findByTestId('roles-readonly-marker');
-    expect(marker).toHaveTextContent(/Katalog hanya-baca/i);
-    expect(marker).not.toHaveTextContent(/Read-only catalogue/i);
+    expect(marker).toHaveTextContent(/Katalog peran/i);
+    expect(marker).toHaveTextContent(/disimpan di peramban ini/i);
+    expect(marker).toHaveTextContent(/tidak disimpan di server/i);
+    expect(marker).not.toHaveTextContent(/The role catalogue/i);
     const table = screen.getByTestId('roles-table');
     expect(within(table).getByText(/Kode peran/i)).toBeInTheDocument();
   });

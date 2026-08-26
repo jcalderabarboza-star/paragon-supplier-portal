@@ -134,13 +134,23 @@ const LANE_BUNDLES = Object.freeze({
     finance: Object.freeze([
       'invoice:pay', 'invoice:approve', 'invoice:dispute',
     ]),
-    // ⚠️ HOLDS NO VERB A HUMAN CAN FIRE ON A SCREEN TODAY, and that is honest
-    // rather than empty: all five atoms sit on `ruled-unsurfaced` or system
-    // verbs, in flows with no CommandTarget. It is the contract surface the
-    // enforcement atom lands on when its caller exists.
+    // ⚠️ **IT NOW HOLDS EXACTLY ONE VERB A HUMAN CAN FIRE ON A SCREEN, AND IT IS
+    // THE ONE THAT EDITS ROLES.** The other five atoms still sit on
+    // `ruled-unsurfaced` or system verbs in flows with no CommandTarget — that
+    // half of the comment that stood here is unchanged and still honest.
+    //
+    // `role:grant` is here rather than in `procurement` because WHOEVER CAN EDIT
+    // ROLES CAN GRANT THEMSELVES ANY VERB (operator ruling, D5). Procurement
+    // cannot lower the bar it is measured against, and a role editor in the
+    // procurement bundle is that bar-lowering with one extra step: `rfq:award`
+    // and `invoice:pay` are one grant away from anybody who can mint a role
+    // holding them. This is the same ruling booked-and-deferred for
+    // `enforcement:set` below — executed here rather than deferred, because
+    // `role:grant` has no pre-existing caller whose lane would go dark.
     compliance: Object.freeze([
       'supplierdoc:request', 'supplierdoc:verify', 'supplierdoc:reject',
       'compliance:verify', 'compliance:reject',
+      'role:grant',
     ]),
     // The SDC / P2 planning lane. `inventorydeclaration:record` is the C4c
     // buyer RECORDING verb — a distinct authority from the supplier's

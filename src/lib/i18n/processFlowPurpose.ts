@@ -287,6 +287,15 @@ export const processFlowPurposeEn: Record<string, string> = {
     'How hard each rule bites — blocking, warning, or merely watching — recorded as a decision somebody made rather than a setting nobody owns.',
   'processFlows.purpose.t_enforcement_set':
     'Somebody decides how strictly one rule is applied, and is named for it. Loosening a rule is exactly the act an audit asks about a year later.',
+
+  // ── the permission bundles ─────────────────────────────────────
+  // ⚠️ NEITHER SENTENCE CONTAINS THE WORD THIS MACHINE IS NAMED AFTER, and that
+  // is the PF-2 rule rather than an evasion: a purpose that restates a machine
+  // token tells a reader what the page already shows beside it.
+  'processFlows.purpose.entity.role':
+    'A copy of one permission bundle with extra permissions on top of it, kept as a record of what was copied and by whom — so a seat somebody invented last Tuesday reads differently from a standard one.',
+  'processFlows.purpose.t_role_grant':
+    'Somebody copies an existing set of permissions and widens it. Widening never removes anything, so nobody quietly loses an authority they were relied on to have, and the act is recorded like every other governed act.',
 };
 
 export const processFlowPurposeId: Record<string, string> = {
@@ -543,4 +552,9 @@ export const processFlowPurposeId: Record<string, string> = {
     'Seberapa keras tiap aturan menggigit — menghalangi, memperingatkan, atau sekadar mengamati — dicatat sebagai keputusan yang dibuat seseorang, bukan pengaturan tanpa pemilik.',
   'processFlows.purpose.t_enforcement_set':
     'Seseorang memutuskan seberapa ketat satu aturan diterapkan, dan namanya tercatat untuk itu. Melonggarkan sebuah aturan justru tindakan yang ditanyakan audit setahun kemudian.',
+
+  'processFlows.purpose.entity.role':
+    'Salinan satu paket izin dengan izin tambahan di atasnya, disimpan sebagai catatan tentang apa yang disalin dan oleh siapa — sehingga kursi yang dibuat seseorang Selasa lalu terbaca berbeda dari kursi standar.',
+  'processFlows.purpose.t_role_grant':
+    'Seseorang menyalin satu kumpulan izin lalu memperluasnya. Memperluas tidak pernah menghapus apa pun, sehingga tidak ada yang diam-diam kehilangan wewenang yang diandalkan darinya, dan tindakan itu dicatat seperti setiap tindakan diatur lainnya.',
 };

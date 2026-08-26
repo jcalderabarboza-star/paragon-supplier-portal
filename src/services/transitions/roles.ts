@@ -25,6 +25,7 @@ import type { PersonaType } from '../../context/CurrentIdentityContext';
 import type { QueryScope, CapabilitySet } from '../data/types';
 import { getKnownFlows } from './registry';
 import { SYSTEM_ROLES, PERSONA_SYSTEM_ROLES, atomsFor } from './businessRoles';
+import { atomsForSeat } from './customRoles';
 
 /**
  * Persona → the transition-roles anybody on that side may hold. DERIVED: the
@@ -65,8 +66,11 @@ export function catalogRoles(): readonly string[] {
  * caller wants and is exactly the pre-batch answer.
  */
 export function capabilitiesFor(scope: QueryScope): CapabilitySet {
+  // `atomsForSeat` on the scope arm — a scope carries a SEAT's roles, which may
+  // include a granted custom role. The persona arm stays `rolesForPersona`:
+  // that is a TENANCY span, and a custom role is not a property of a side.
   const roles = scope.businessRoles
-    ? atomsFor(scope.businessRoles)
+    ? atomsForSeat(scope.businessRoles)
     : rolesForPersona(scope.personaType);
   const transitions: string[] = [];
   for (const flow of getKnownFlows()) {

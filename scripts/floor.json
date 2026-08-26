@@ -1,8 +1,8 @@
 {
   "//": "THE ASSERTED FLOOR — a floor, not an equality (operator ruling, CP-3a). `npm run gates` FAILS when a count falls below one of these, and PASSES with a loud note when it rises above. Exact matching was rejected: it would redden every legitimate test-adding PR until somebody edited a number, which trains people to edit the number, and a floor that gets edited routinely is not a floor. THE TRADE, RECORDED: a suite that SHRINKS but still exceeds the recorded floor is invisible here — the skipped/todo refusal covers the common shape of that (a spec disabled rather than deleted), a spec file genuinely deleted while others grow past it does not. Bump these when the note tells you to, so the floor keeps defending the current suite and not an older, smaller one. `vitest.files` is the collected test-FILE count: a whole file dropped from collection does not change nothing, it changes this.",
   "vitest": {
-    "tests": 3397,
-    "files": 249
+    "tests": 3482,
+    "files": 252
   },
   "gate": {
     "tests": 7

@@ -28,6 +28,16 @@ import {
   type EnforcementSetting,
 } from '../../lib/enforcement';
 
+import {
+  CUSTOM_ROLE_TEXT,
+  I18N_NAMESPACE_PREFIX,
+  addableAtomRefusal,
+  copyableParentRefusal,
+  grantableIdRefusal,
+} from './customRoles';
+import { SYSTEM_ROLES, type SystemRoleId } from './businessRoles';
+import { catalogRoles } from './roles';
+
 const BINDINGS = new Map<string, PolicyHookFn>();
 
 export function bindPolicyHook(name: string, fn: PolicyHookFn): void {
@@ -273,6 +283,88 @@ const enforcementSetGoverned: PolicyHookFn = ({ entityId, payload, target }) => 
 };
 
 bindPolicyHook(POLICY_HOOKS.ENFORCEMENT_SET_GOVERNED, enforcementSetGoverned);
+
+// ── THE PRIVILEGE GRANT (duplicate-and-narrow) ──────────────────────────────
+//
+// ⚠️ **EVERY REFUSAL HERE NAMES THE THING IT REFUSED.** The tenancy arm names
+// the ATOM and both SIDES, because "invalid role" would send somebody to read
+// the form when the answer is that the boundary held.
+//
+// ⚠️ **AND THE TENANCY CHECK IS DELIBERATELY NOT THE FORM'S.** The surface
+// offers only same-side atoms, so a well-behaved caller never reaches this
+// branch — which is exactly why it must exist. A boundary that has held by
+// construction since the beginning must not become a boundary that holds
+// because a dropdown was populated correctly.
+//
+// ⚠️ **`grantedBy` IS VALIDATED, NEVER REQUIRED TO BE *NAMED*, AND THE
+// DIFFERENCE IS THE D2 RULING.** `enforcementSetGoverned` refuses a LOOSENING by
+// an unattributed actor — and a custom role is additive, so every grant is a
+// loosening, 100% of the time. Applying that rule verbatim would refuse every
+// grant this platform can currently make, because `CurrentIdentity.actor` is
+// always `UNATTRIBUTED: NO_PERSON_IN_SESSION`. What pays for the difference is
+// that a grant DOES NOT SURVIVE THE SESSION (`customRoles.ts`): an anonymous
+// privilege grant that cannot outlive the browser tab is a demonstrable act,
+// not a durable ungoverned one. **The day an IdP answers, this is where the
+// `isAttributed` guard lands and where durability becomes arguable.**
+const roleGrantGoverned: PolicyHookFn = ({ entityId, payload }) => {
+  const parentRefusal = copyableParentRefusal(entityId);
+  if (parentRefusal) return { ok: false, reason: parentRefusal };
+  const parent = entityId as SystemRoleId;
+
+  const roleId = payload.roleId;
+  if (typeof roleId !== 'string') {
+    return { ok: false, reason: `roleId must be a string, got ${typeof roleId}` };
+  }
+  const idRefusal = grantableIdRefusal(roleId);
+  if (idRefusal) return { ok: false, reason: idRefusal };
+
+  // ⚠️ `displayName` AND `description` ARE RENDERED BY PASSING THEM TO `t()`
+  // AS THEIR OWN KEY (`roleModel.ts`), so user text comes back verbatim in both
+  // locales. The only string that would resolve to something else is one
+  // prefixed with this app's loaded namespace — refused by name. Punctuation is
+  // NOT refused: it was probed and does not truncate.
+  for (const field of ['displayName', 'description'] as const) {
+    const value = payload[field];
+    if (typeof value !== 'string' || !CUSTOM_ROLE_TEXT.test(value.trim())) {
+      return { ok: false, reason: `${field} must be 2-80 characters of text` };
+    }
+    if (I18N_NAMESPACE_PREFIX.test(value.trim())) {
+      return {
+        ok: false,
+        reason: `${field} may not begin with a translation namespace - it would render truncated`,
+      };
+    }
+  }
+
+  const adds = payload.adds;
+  if (!Array.isArray(adds) || adds.some((a) => typeof a !== 'string')) {
+    return { ok: false, reason: 'adds must be an array of permission strings' };
+  }
+  const catalog = catalogRoles();
+  const held = new Set<string>(SYSTEM_ROLES[parent]);
+  for (const atom of adds as readonly string[]) {
+    if (held.has(atom)) {
+      return {
+        ok: false,
+        reason: `'${atom}' is already held by '${parent}' - an addition must add something`,
+      };
+    }
+    const refusal = addableAtomRefusal(parent, atom, catalog);
+    if (refusal) return { ok: false, reason: refusal };
+  }
+
+  if (!asActorAttribution(payload.grantedBy)) {
+    return {
+      ok: false,
+      reason:
+        "grantedBy must be { kind: 'RESOLVED', person: { personId, displayName } } or " +
+        `{ kind: 'UNATTRIBUTED', reason } (${UNATTRIBUTED_REASONS.join(', ')})`,
+    };
+  }
+  return { ok: true };
+};
+
+bindPolicyHook(POLICY_HOOKS.ROLE_GRANT_GOVERNED, roleGrantGoverned);
 
 // ── §67 · PR REJECT — THE REASON IS SUBSTANCE, NOT PRESENCE ──────────────────
 //

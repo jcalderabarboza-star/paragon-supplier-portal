@@ -126,6 +126,30 @@ Direct pushes to `main` are not used.
 > Nothing persists a custom role — no store, no target — so duplicate-and-narrow
 > is a store, a verb and a merge rule, not a page feature.
 >
+> **CUSTOM ROLES EXIST, FOR THE SESSION (§66).** A custom role is
+> `{ parent, adds }` — a PARENT REFERENCE resolved at read, never a snapshot of
+> atoms, because a snapshot silently keeps yesterday's truth the moment the
+> parent gains one. It is granted by `t_role_grant` (`flows/role.flow.ts`),
+> which follows `t_enforcement_set` verb for verb: single state `Defined`,
+> `statePreserving`, append-only ledger, CommandTarget, policy hook, and
+> `entityId` IS the parent `SystemRoleId`. **`role:grant` is a `compliance`
+> atom** — whoever can edit roles can grant themselves any verb, so procurement
+> cannot hold it. **A CUSTOM ROLE MAY NOT SPAN TENANCIES**, refused at the verb
+> by name, per atom. The store (`services/transitions/customRoles.ts`) is
+> **PERSISTED in `localStorage` under `paragon.customRoles`** (operator ruling,
+> superseding session scope: an honest statement does not repair an experience
+> that looks like a defect). **Only CUSTOM roles are written** — the seeded ones
+> stay derived from the frozen constant, and a stored row claiming a system id is
+> refused ON READ by name. **The read fails honestly:** absent, corrupt and
+> unparseable are distinguished from empty (`readState().unreadable`), every row
+> is re-validated through the SAME predicates the verb calls, and refusals are
+> rendered rather than absorbed. A grant is still recorded against
+> `UNATTRIBUTED: NO_PERSON_IN_SESSION`, and the surface says so before the act. **Every SEAT resolves through `atomsForSeat`, never
+> `atomsFor`** — the call sites are derived from source and allowlisted
+> bilaterally in `businessRoles.test.ts`. **ASSIGNING a custom role to a seat is
+> NOT built** (§66k): `rolesFromStorage` would silently re-widen such a seat to
+> its whole persona on reload, and that line is the assignment batch's first fix.
+>
 > ⚠️ **`ROUTE-SMOKE-GUARD-IS-SELF-REFERENTIAL-01` (§65a).** `allRoutes.smoke`'s
 > coverage guard asserted its OWN table's length against a hardcoded number and
 > never read `AppRouter` — it could not detect the defect its comment named, and

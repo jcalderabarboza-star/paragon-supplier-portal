@@ -40,6 +40,8 @@ export { requirementResponseFlow } from './flows/requirementResponse.flow';
 export { inventoryDeclarationFlow } from './flows/inventoryDeclaration.flow';
 export { incomingShipmentFlow } from './flows/incomingShipment.flow';
 export { enforcementFlow } from './flows/enforcement.flow';
+export { roleFlow } from './flows/role.flow';
+export * from './customRoles';
 
 import { flowRegistry } from './registry';
 import { purchaseOrderFlow } from './flows/purchaseOrder.flow';
@@ -60,6 +62,7 @@ import { requirementResponseFlow } from './flows/requirementResponse.flow';
 import { inventoryDeclarationFlow } from './flows/inventoryDeclaration.flow';
 import { incomingShipmentFlow } from './flows/incomingShipment.flow';
 import { enforcementFlow } from './flows/enforcement.flow';
+import { roleFlow } from './flows/role.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -97,3 +100,9 @@ flowRegistry.register(incomingShipmentFlow); // SDC-3a — IncomingShipment
 // never states, because a ratchet that fired on a lapsed review date would be a
 // clock trigger (law 0.5). WIRED — but no gate reads the setting yet (E3).
 flowRegistry.register(enforcementFlow); // CP-3 · E2 — Enforcement
+// DUPLICATE-AND-NARROW — the privilege-grant recording verb. The SAME degenerate
+// single-state shape as enforcement, for the same reason: a system role has no
+// lifecycle, it has a ledger of what has been copied from it. WIRED, because a
+// grant that left no TransitionEvent would be the only privilege-granting act in
+// the platform with no audit record (D3).
+flowRegistry.register(roleFlow); // Duplicate-and-narrow — Role

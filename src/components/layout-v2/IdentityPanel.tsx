@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import {
   PERSONA_SYSTEM_ROLES,
-  atomsFor,
   type SystemRoleId,
 } from '../../services/transitions/businessRoles';
+import { atomsForSeat } from '../../services/transitions/customRoles';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // THE IDENTITY PANEL — the current role and the scope it grants.
@@ -98,7 +98,13 @@ const IdentityPanel: React.FC = () => {
   // The seat's atoms — DERIVED, so the count cannot drift from what the
   // dispatcher will actually resolve. A restated number here would be
   // `FLOOR-IN-PROSE-01` on an identity panel.
-  const atomCount = atomsFor(held).length;
+  //
+  // ⚠️ **`atomsForSeat`, AND THE CALL SITE DERIVATION IS WHAT FOUND IT.** This
+  // read `atomsFor(held)` — the SYSTEM vocabulary — so a seat holding a granted
+  // custom role would have been told it holds FEWER permissions than the
+  // dispatcher will grant it. A panel whose whole job is stating a seat's reach,
+  // under-reporting that reach, in the direction that reads as reassuring.
+  const atomCount = atomsForSeat(held).length;
 
   const initials = persona === 'supplier' ? 'PS' : 'JJ';
 

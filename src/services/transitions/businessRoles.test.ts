@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, it, expect } from 'vitest';
 // ⚠️ THE BARREL, NOT `./registry` (§42b). Importing the bare registry module
 // means no shipped flow has self-registered, `getKnownFlows()` returns `[]`, and
@@ -282,5 +284,115 @@ describe('rolesHolding', () => {
     // `unowned` arm of the handoff distinguishable from `withheld`.
     expect(rolesHolding('shipment:advance')).toEqual([]);
     expect(rolesHolding('po:issue')).toEqual([]);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// ⚠️ THE SEAT-RESOLUTION CALL-SITE PIN — DERIVED FROM SOURCE, BOTH DIRECTIONS.
+//
+// `atomsFor` answers a question about the SYSTEM vocabulary and, by contract,
+// contributes NOTHING for an id it does not recognise. `atomsForSeat` composes
+// the session's granted custom roles on top. **The two differ silently and in
+// the reassuring direction** — a seat resolved through the narrower function is
+// told it holds fewer permissions than the dispatcher will actually grant it,
+// or is refused every act with nothing to say the role existed.
+//
+// So which call sites may use the narrow one is a RULE, and this derives it
+// from the tree rather than trusting a comment. **IT PAID FOR ITSELF ON ITS
+// FIRST RUN:** `IdentityPanel.tsx` read `atomsFor(held)` where `held` is the
+// SEAT's roles — the panel whose entire job is stating a seat's reach,
+// under-reporting that reach. Nothing else could have found it; the count was
+// derived, correct-looking, and wrong.
+//
+// The allowlist is BILATERAL: an unlisted site is a failure, and a listed site
+// that no longer exists is a failure too, so a repair forces its exemption out
+// (the `looseEndCensus` discipline).
+// ────────────────────────────────────────────────────────────────────────────
+describe('⚠️ WHO MAY RESOLVE THROUGH THE SYSTEM-ONLY `atomsFor`', () => {
+  /** Sites permitted to call `atomsFor`, each with the reason it is not a seat. */
+  const ALLOWED: Readonly<Record<string, string>> = {
+    'src/services/transitions/businessRoles.ts':
+      'the definition itself',
+    'src/services/transitions/roles.ts':
+      'PERSONA_ROLES — a TENANCY span over system bundles; a custom role is a ' +
+      'property of a session, never of a side',
+    'src/services/transitions/customRoles.ts':
+      'atomsOfSide (the tenancy boundary) and atomsForSeat itself, which layers ' +
+      'the granted roles on top of exactly this call',
+  };
+
+  const SRC = path.resolve(__dirname, '../..');
+
+  /** Every `.ts`/`.tsx` under src/, excluding specs. */
+  function sourceFiles(dir: string, out: string[] = []): string[] {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) sourceFiles(full, out);
+      else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name)) out.push(full);
+    }
+    return out;
+  }
+
+  /**
+   * ⚠️ **COMMENTS ARE STRIPPED FIRST, AND THAT IS RULE 2 FIRING ON THIS FILE'S
+   * OWN INSTRUMENT.** The first version matched raw source and accused
+   * `IdentityPanel.tsx` — which had just been REPAIRED, and whose repair note
+   * says the words the defect used while the code says `atomsForSeat`. A matcher
+   * that reads prose condemns the fix for describing the defect.
+   * `atomsForSeat(` is masked before matching for the same family of reason: it
+   * shares the prefix, so an unmasked match would name every seat call site.
+   */
+  const code = (file: string): string =>
+    fs
+      .readFileSync(file, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/^[ \t]*\/\/.*$/gm, ' ')
+      .replace(/atomsForSeat\s*\(/g, 'X(');
+
+  /** Files that call `atomsFor(` — NOT `atomsForSeat(`, which shares the prefix. */
+  function callers(): string[] {
+    return sourceFiles(SRC)
+      .filter((f) => /\batomsFor\s*\(/.test(code(f)))
+      .map((f) => path.relative(path.resolve(SRC, '..'), f).split(path.sep).join('/'))
+      .sort();
+  }
+
+  it('the derivation sees the tree — a known caller and a known non-caller', () => {
+    // §42b / rule 1: an empty population answers every question cleanly. A
+    // matcher that could not cross this file's own newline would report zero.
+    const found = callers();
+    expect(found).toContain('src/services/transitions/roles.ts');
+    expect(found).not.toContain('src/pages-v2/BuyerOrders.tsx');
+    expect(found.length).toBeGreaterThan(0);
+  });
+
+  it('every caller of the system-only resolver is allowlisted with a reason', () => {
+    const unlisted = callers().filter((f) => !(f in ALLOWED));
+    expect(
+      unlisted,
+      'a site resolves roles through `atomsFor`. If it resolves a SEAT it must ' +
+        'use `atomsForSeat` — a custom role would silently contribute nothing. ' +
+        'If it genuinely asks about the system vocabulary, add it above WITH ITS ' +
+        'REASON.',
+    ).toEqual([]);
+  });
+
+  it('every allowlisted site still calls it — a repair forces its exemption out', () => {
+    const found = new Set(callers());
+    const stale = Object.keys(ALLOWED).filter((f) => !found.has(f));
+    expect(stale, 'these no longer call `atomsFor`; delete the rows').toEqual([]);
+  });
+
+  it('⚠️ THE SEAT SURFACES USE THE COMPOSING RESOLVER — the known-GOOD half', () => {
+    // Asserting only that nothing unlisted calls the narrow one would pass in a
+    // tree where NOTHING resolved a seat at all. These three are the seat paths.
+    for (const rel of [
+      'src/services/data/mock/MockCommandService.ts', // the dispatcher
+      'src/services/transitions/handoff.ts', // the cross-role handoff
+      'src/components/layout-v2/IdentityPanel.tsx', // the seat's own panel
+    ]) {
+      const text = fs.readFileSync(path.resolve(SRC, '..', rel), 'utf8');
+      expect(text, `${rel} does not resolve through atomsForSeat`).toMatch(/atomsForSeat\s*\(/);
+    }
   });
 });
