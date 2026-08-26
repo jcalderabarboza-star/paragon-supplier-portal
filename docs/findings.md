@@ -20193,3 +20193,31 @@ had already cost one spec rewrite (79i).
   Pemasok* in the panel. Nothing fails and the honest answer arrives one click in,
   but the label is optimistic. It is the `LABEL-NAMES-WRONG-VERB` shape: **a
   handler-based census is blind to a false promise that lives in the COPY.**
+
+### 79m · ⚠️ `GATED-TREE-WAS-NOT-THE-COMMITTED-TREE-01` — the floor was measured on a tree that included an untracked file
+
+**CI went red on a batch whose local `npm run gates` was green, and nothing was
+failing in either run.** Local collected **3565/258**; CI collected
+**3559/257** — six tests and one file short, zero failures on both sides.
+
+The cause: the working tree still held `src/services/data/adminCrossTenancyReach.
+test.ts`, the **UNTRACKED** admin cross-tenancy probe from the previous arc. It
+contributed 6 tests across 1 file to the local run, and it was removed in the
+same command as the commit — so the number written into `scripts/floor.json` was
+true of the tree that was measured and false of the tree that was pushed.
+
+⚠️ **THIS IS THE CLASS THE OPERATOR NAMED AT #261, ARRIVING FROM THE ONE
+DIRECTION THAT ARGUMENT DID NOT COVER.** That ruling was about a reported SHA:
+*"A GATED TREE THAT IS NOT THE REPORTED TREE IS A GREEN READING OF SOMETHING
+ELSE."* The SHA here is correct and verified. **What differed was not the commit
+but the WORKING TREE the gate ran against** — and `git status` showing one
+untracked file is not something a green gate has any way to mention.
+
+**The asymmetry that makes it worth a row:** an untracked file can only ever make
+the local count HIGHER than the committed one, so this failure mode is always a
+*floor set too high*, which CI catches loudly on the very next run. The dangerous
+inverse — a floor set too LOW — cannot arise this way. So the cost is one red CI
+run, not a silent hole. Recorded because the reflex it teaches is cheap:
+**`git status --porcelain` before trusting a count, not only before committing.**
+
+Corrected to **3559/257**, re-measured on the committed tree.
