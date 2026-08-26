@@ -95,6 +95,9 @@ export const ROLE_LABEL_KEY: Readonly<Record<SystemRoleId, string>> = Object.fre
   planning: 'roles.owner.planning',
   requisitioner: 'roles.owner.requisitioner',
   supplier: 'roles.owner.supplier',
+  commercial: 'roles.owner.commercial',
+  fulfilment: 'roles.owner.fulfilment',
+  back_office: 'roles.owner.back_office',
   buyer_all: 'roles.owner.buyer_all',
   admin: 'roles.owner.admin',
 });
@@ -117,7 +120,15 @@ export const ROLE_ORDER: readonly SystemRoleId[] = [
   'compliance',
   'planning',
   'requisitioner',
+  // ⚠️ **THE ANCHOR SITS WITH THE SUPERSETS AND FOR THE SAME REASON, ONE STEP
+  // FURTHER.** `supplier` holds no atom, so `rolesHolding` can never return it
+  // — a superset names nothing because it holds everything; the anchor names
+  // nothing because it holds nothing. Both are unreachable owner lines, and
+  // both are listed so the record stays total over the union.
   'supplier',
+  'commercial',
+  'fulfilment',
+  'back_office',
   // Last, and in practice never reached: `rolesHolding` filters the SUPERSET
   // roles out before an owner list is built, because a role that holds
   // everything names nothing. Present here so the record stays total over the

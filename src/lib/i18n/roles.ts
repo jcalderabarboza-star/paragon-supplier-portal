@@ -28,6 +28,9 @@ export const rolesEn: Record<string, string> = {
   // of a sentence. Caught on the built bundle, not by the suite, because a
   // lowercase heading is valid text. Naming it as a noun serves both.
   'roles.owner.supplier': 'Supplier',
+  'roles.owner.commercial': 'Supplier Commercial',
+  'roles.owner.fulfilment': 'Supplier Fulfilment',
+  'roles.owner.back_office': 'Supplier Back Office',
   'roles.owner.buyer_all': 'Buyer Operations Lead',
   'roles.owner.admin': 'Super Admin',
 
@@ -109,7 +112,21 @@ export const rolesEn: Record<string, string> = {
   'roles.desc.compliance': 'Supplier documents and governed-check enforcement. Verification is a pipeline, not a screen.',
   'roles.desc.planning': 'Demand and supply planning. Reviews supplier responses and records stock declarations.',
   'roles.desc.requisitioner': 'Raises and revises purchase requisitions. Deliberately cannot approve one.',
-  'roles.desc.supplier': 'The supplier seat. Confirms orders, ships, invoices, quotes and uploads compliance documents.',
+  // ⚠️ **THE ANCHOR'S ROW MUST NOT CLAIM TO BE A GATE.** It holds no permission,
+  //   and nothing in the dispatch path reads it: tenancy is enforced on
+  //   `personaType`, in the SCOPE gate, two gates before roles are consulted.
+  //   A row saying "this is what makes a seat a supplier seat" would be a false
+  //   statement on the one page whose subject is what a role can do — the exact
+  //   thing `adminCrossTenancyReach.test.ts` was written to prevent one role
+  //   over. So it says what it IS: the side, named, and where the acts went.
+  'roles.desc.supplier':
+    'Names the supplier side and grants nothing on its own. The supplier’s acts now live in three lanes — Commercial, Fulfilment and Back Office — and a seat holds this alongside whichever lanes it works in. Held by itself it is a supplier seat with no lane assigned: it can read, and it can act on nothing. Tenancy is not enforced by this role; a supplier seat only ever reaches its own documents, whichever lanes it holds.',
+  'roles.desc.commercial':
+    'The person procurement talks to. Submits quotations against an RFQ and commits to a forecast — the acts a buyer reviews, accepts or disputes. It does not confirm orders, ship goods or file invoices.',
+  'roles.desc.fulfilment':
+    'Everything downstream of a placed order. Views, acknowledges and confirms purchase orders, raises and submits shipping notices, tracks incoming shipments and declares stock on hand. It cannot quote a price or commit to a forecast — that is Commercial.',
+  'roles.desc.back_office':
+    'The paperwork. Submits invoices, uploads supplier documents and files compliance certificates, and acknowledges a visibility request that asks for no commitment. It cannot quote, confirm an order or ship.',
   // ⚠️ **THE DESCRIPTION STATES WHAT IT IS NOT, AND THE SEGREGATION IT
   // DISSOLVES** (operator ruling). Two roles on this page are wide, and a reader
   // choosing between them must be able to tell them apart ON THE PAGE: `admin`
@@ -217,6 +234,9 @@ export const rolesId: Record<string, string> = {
   'roles.owner.planning': 'Perencanaan',
   'roles.owner.requisitioner': 'Pemohon',
   'roles.owner.supplier': 'Pemasok',
+  'roles.owner.commercial': 'Komersial Pemasok',
+  'roles.owner.fulfilment': 'Pemenuhan Pemasok',
+  'roles.owner.back_office': 'Administrasi Pemasok',
   'roles.owner.buyer_all': 'Kepala Operasi Pembelian',
   'roles.owner.admin': 'Super Admin',
 
@@ -269,7 +289,14 @@ export const rolesId: Record<string, string> = {
   'roles.desc.compliance': 'Dokumen pemasok dan penegakan pemeriksaan yang diatur. Verifikasi adalah alur, bukan layar.',
   'roles.desc.planning': 'Perencanaan permintaan dan pasokan. Meninjau respons pemasok dan mencatat deklarasi stok.',
   'roles.desc.requisitioner': 'Mengajukan dan merevisi permintaan pembelian. Sengaja tidak dapat menyetujuinya.',
-  'roles.desc.supplier': 'Kursi pemasok. Mengonfirmasi pesanan, mengirim, menagih, menawar dan mengunggah dokumen kepatuhan.',
+  'roles.desc.supplier':
+    'Menandai sisi pemasok dan tidak memberikan izin apa pun dengan sendirinya. Tindakan pemasok kini berada di tiga jalur — Komersial, Pemenuhan dan Administrasi — dan sebuah kursi memegang peran ini bersama jalur tempat ia bekerja. Bila dipegang sendiri, kursi tersebut adalah kursi pemasok tanpa jalur: bisa membaca, tidak bisa bertindak. Batas tenansi tidak ditegakkan oleh peran ini; kursi pemasok selalu hanya menjangkau dokumennya sendiri, jalur apa pun yang dipegangnya.',
+  'roles.desc.commercial':
+    'Orang yang diajak bicara oleh tim pengadaan. Mengirim penawaran atas RFQ dan menyatakan komitmen atas perkiraan permintaan — tindakan yang ditinjau, diterima atau disanggah oleh pembeli. Peran ini tidak mengonfirmasi pesanan, tidak mengirim barang dan tidak mengajukan faktur.',
+  'roles.desc.fulfilment':
+    'Semua yang terjadi setelah pesanan diterbitkan. Melihat, mengakui dan mengonfirmasi pesanan pembelian, membuat serta mengirim pemberitahuan pengiriman, melacak kiriman masuk dan mendeklarasikan stok tersedia. Peran ini tidak bisa menawar harga atau menyatakan komitmen perkiraan — itu tugas Komersial.',
+  'roles.desc.back_office':
+    'Bagian administrasi. Mengajukan faktur, mengunggah dokumen pemasok dan mengarsipkan sertifikat kepatuhan, serta mengakui permintaan visibilitas yang tidak meminta komitmen. Peran ini tidak bisa menawar, mengonfirmasi pesanan atau mengirim barang.',
   'roles.desc.buyer_all':
     'Setiap tindakan pembeli yang dilakukan sebuah jalur, dipegang sebagai satu peran — kursi manajer. Tidak memberi apa pun di sisi pemasok, dan tidak ada wewenang atas peran: membuat atau mengubah peran tetap milik Kepatuhan, karena siapa pun yang dapat menyunting peran dapat memberikan izin apa pun kepada dirinya sendiri. Untuk kursi yang mencakup kedua sisi DAN katalog peran, lihat Super Admin. ⚠️ Peran ini meniadakan pemisahan tugas: kursi ini dapat merevisi permintaan pembelian lalu menyetujui permintaan yang baru saja direvisinya.',
   'roles.desc.admin':

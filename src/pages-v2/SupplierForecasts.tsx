@@ -23,6 +23,8 @@ import Button from '../components/ui-v2/Button';
 import SidePanel from '../components/ui-v2/SidePanel';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
+import { useVerbAvailability, useVerbAvailabilities } from '../hooks/useVerbAvailability';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import LivenessPill from '../components/ui-v2/LivenessPill';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -270,6 +272,17 @@ const LineCard: React.FC<{
   onConfirm: (line: ForecastLine) => void;
   onAcknowledge: (line: ForecastLine) => void;
 }> = ({ line, latest, onConfirm, onAcknowledge }) => {
+  // ⚠️ **THE SHARPEST PAIR IN THE SPLIT, AND IT IS ONE ENTITY.** A commitment
+  // line is COMMERCIAL's; a visibility-only line's acknowledgment is BACK
+  // OFFICE's — the flow header is explicit that the latter "carries NO
+  // commitment ask … no quantity, no date, no capacity claim". So the same
+  // card can name two different owners depending on which kind of line it is,
+  // which is why the split had to be argued per ATOM and not per flow. They are
+  // mutually exclusive on any one line, so each answers alone in its own slot.
+  const lineVerbs = useVerbAvailabilities({
+    commit: 'requirementresponse:submit',
+    acknowledge: 'requirementresponse:acknowledge',
+  } as const);
   const { t } = useTranslation();
   const confirmable = line.commitmentClass !== 'visibility-only';
   return (
@@ -289,16 +302,27 @@ const LineCard: React.FC<{
         </div>
         {confirmable ? (
           // Outline opener — the SOLID commit lives on the panel's Submit (F-3).
-          <Button variant="outline" onClick={() => onConfirm(line)}>
-            {t('sdcSup.line.confirm')}
-          </Button>
+          lineVerbs.commit.kind === 'held' ? (
+            <Button variant="outline" onClick={() => onConfirm(line)}>
+              {t('sdcSup.line.confirm')}
+            </Button>
+          ) : (
+            <HandoffNotice availability={lineVerbs.commit} testId="handoff-rr-commit" />
+          )
         ) : (
           // SDC-2b-EXT: a visibility-only line takes a RESPONSE (acknowledge +
           // optional signal), never a commitment — quieter affordance by design.
           <div className="flex flex-col items-end gap-1.5 max-w-[14rem]">
-            <Button variant="outline" onClick={() => onAcknowledge(line)}>
-              {t('sdcSup.line.acknowledge')}
-            </Button>
+            {lineVerbs.acknowledge.kind === 'held' ? (
+              <Button variant="outline" onClick={() => onAcknowledge(line)}>
+                {t('sdcSup.line.acknowledge')}
+              </Button>
+            ) : (
+              <HandoffNotice
+                availability={lineVerbs.acknowledge}
+                testId="handoff-rr-acknowledge"
+              />
+            )}
             <span className="text-xs italic text-text-tertiary text-right">
               {t('sdcSup.line.visibilityHint')}
             </span>
@@ -432,6 +456,11 @@ const ResponsesTab: React.FC<{
   submittingId: string | null;
 }> = ({ responses, onSubmitDraft, submittingId }) => {
   const { t } = useTranslation();
+  // ⚠️ PROMOTE SHARES `requirementresponse:submit` WITH THE DRAFT CREATION —
+  // one atom guards both drafting and sending, so this lane cannot express a
+  // draft-then-send segregation between two people. Recorded, not worked
+  // around: splitting it is a FLOW change (§76d's shape, one tenancy over).
+  const promoteAvailability = useVerbAvailability('requirementresponse:submit');
   if (responses.length === 0) {
     return (
       <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
@@ -472,18 +501,24 @@ const ResponsesTab: React.FC<{
                   "reserved for these". A per-surface judgement about what feels
                   consequential is exactly how a calm register fills up with
                   solid buttons, one defensible argument at a time. */}
-              {r.status === 'Draft' && (
-                <Button
-                  variant="outline"
-                  icon={Send}
-                  disabled={submittingId === r.id}
-                  onClick={() => onSubmitDraft(r.id)}
-                >
-                  {submittingId === r.id
-                    ? t('sdcSup.responses.submitting')
-                    : t('sdcSup.responses.submitDraft')}
-                </Button>
-              )}
+              {r.status === 'Draft' &&
+                (promoteAvailability.kind === 'held' ? (
+                  <Button
+                    variant="outline"
+                    icon={Send}
+                    disabled={submittingId === r.id}
+                    onClick={() => onSubmitDraft(r.id)}
+                  >
+                    {submittingId === r.id
+                      ? t('sdcSup.responses.submitting')
+                      : t('sdcSup.responses.submitDraft')}
+                  </Button>
+                ) : (
+                  <HandoffNotice
+                    availability={promoteAvailability}
+                    testId="handoff-rr-promote"
+                  />
+                ))}
             </div>
           </div>
           {/* R1a — WHOSE ACT IS NEXT. Derived from the machine
@@ -561,6 +596,11 @@ const DeclarationsTab: React.FC<{
   onDeclare: () => void;
   onBulkEntry: () => void;
 }> = ({ declarations, onDeclare, onBulkEntry }) => {
+  // ⚠️ ONE VERB REACHED TWO WAYS — the single-declaration form and the bulk
+  // grid both dispatch `inventorydeclaration:declare`, so ONE notice replaces
+  // BOTH buttons. That is not §76's retired per-GROUP collapse: a group notice
+  // spoke for two DIFFERENT verbs, and this speaks for two doors into one.
+  const declareAvailability = useVerbAvailability('inventorydeclaration:declare');
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4" data-testid="sdcsup-declarations">
@@ -570,12 +610,21 @@ const DeclarationsTab: React.FC<{
             page's ONE commitment (that stays the solid forecast confirm). The
             bulk grid is the batch-grain path (DEC-MAGIC-LINK-GRID). */}
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" icon={Table2} onClick={onBulkEntry}>
-            {t('sdcSup.bulk.entry')}
-          </Button>
-          <Button variant="outline" icon={Plus} onClick={onDeclare}>
-            {t('sdcSup.stock.declare')}
-          </Button>
+          {declareAvailability.kind === 'held' ? (
+            <>
+              <Button variant="outline" icon={Table2} onClick={onBulkEntry}>
+                {t('sdcSup.bulk.entry')}
+              </Button>
+              <Button variant="outline" icon={Plus} onClick={onDeclare}>
+                {t('sdcSup.stock.declare')}
+              </Button>
+            </>
+          ) : (
+            <HandoffNotice
+              availability={declareAvailability}
+              testId="handoff-inventory-declare"
+            />
+          )}
         </div>
       </div>
       {declarations.length === 0 ? (
@@ -671,13 +720,21 @@ const ShipmentsTab: React.FC<{
   onReport: () => void;
 }> = ({ shipments, onReport }) => {
   const { t } = useTranslation();
+  const reportAvailability = useVerbAvailability('incomingshipment:report');
   return (
     <div className="flex flex-col gap-4" data-testid="sdcsup-shipments">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-text-secondary">{t('sdcSup.ship.subtitle')}</p>
-        <Button variant="outline" icon={Plus} onClick={onReport}>
-          {t('sdcSup.ship.report')}
-        </Button>
+        {reportAvailability.kind === 'held' ? (
+          <Button variant="outline" icon={Plus} onClick={onReport}>
+            {t('sdcSup.ship.report')}
+          </Button>
+        ) : (
+          <HandoffNotice
+            availability={reportAvailability}
+            testId="handoff-incomingshipment-report"
+          />
+        )}
       </div>
       {shipments.length === 0 ? (
         <div className="bg-bg-surface border border-border-subtle rounded-lg py-12 px-6 text-center">
@@ -796,6 +853,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   const [promotingId, setPromotingId] = useState<string | null>(null);
   const declareMutation = useInventoryDeclare();
   const reportMutation = useIncomingShipmentReport();
+
   const [activeTab, setActiveTab] = useState<TabKey>('lines');
   const [panelLine, setPanelLine] = useState<ForecastLine | null>(null);
   const [form, setForm] = useState<ConfirmForm>(emptyForm);

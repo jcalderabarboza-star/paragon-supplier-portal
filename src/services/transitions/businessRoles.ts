@@ -62,6 +62,9 @@ export type SystemRoleId =
   | 'planning'
   | 'requisitioner'
   | 'supplier'
+  | 'commercial'
+  | 'fulfilment'
+  | 'back_office'
   | 'buyer_all'
   | 'admin';
 
@@ -166,20 +169,89 @@ const LANE_BUNDLES = Object.freeze({
     requisitioner: Object.freeze([
       'pr:create', 'pr:submit', 'pr:revise',
     ]),
-    // The supplier side is ONE role. Splitting it would model a tenant we do
-    // not administer: supplier-side person identity is UNPROCURED (D-ID-2,
-    // OPEN), so there is nobody to assign a narrower bundle to.
-    supplier: Object.freeze([
+    // ── ⚠️ THE TENANCY ANCHOR, AND IT DELIBERATELY HOLDS NOTHING ────────────
+    //
+    // **`supplier` STOPPED BEING AN OPERATING ROLE** (operator ruling). It was
+    // ONE bundle holding all 16 supplier atoms, which made every supplier act
+    // authorised by being a supplier — the same undifferentiated shape the
+    // persona-wide buyer grant was retired for, one tenancy over. The three
+    // lanes below carry the atoms; this names the SIDE.
+    //
+    // ⚠️ **AND WHAT ENFORCES TENANCY IS `personaType`, NOT THIS ROLE — THE ROW
+    // ON THE CATALOGUE MUST NOT SAY OTHERWISE.** The ruling that created this
+    // anchor described it as *what makes a seat a supplier seat*; measured, the
+    // dispatcher's only tenancy branches are `scope.personaType === 'supplier'`
+    // (`dispatcher.ts:299`, `:315`, both in the SCOPE gate, both tightening),
+    // and **no code anywhere tests membership of `businessRoles` to decide a
+    // side** (derived: zero non-spec `businessRoles.includes(…)` sites). So this
+    // role does not gate anything. What it IS: the id `sideOfSystemRole` reads,
+    // the row a catalogue reader meets first, and a holdable seat that says
+    // *supplier, no lane assigned* rather than leaving that state nameless.
+    // **An honest anchor beats a false gate**, and the description says which.
+    supplier: Object.freeze([] as readonly TransitionRole[]),
+    // ── COMMERCIAL — what a procurement person negotiates against ───────────
+    // `quotation:submit` is the bid; its neighbour `t_quotation_review` is
+    // procurement's, and the RFQ award reads it. `requirementresponse:submit`
+    // is the same act one lane over: the flow header calls it a COMMITMENT,
+    // `RR_SUBMIT_QTY_AGREES` gates the quantity, and the buyer's `planning`
+    // lane reviews, accepts or **disputes** it. An act a buyer can dispute is a
+    // negotiation, and the person who answers for it is the one procurement
+    // talks to.
+    commercial: Object.freeze([
+      'quotation:submit',
+      'requirementresponse:submit',
+    ]),
+    // ── FULFILMENT — everything downstream of a placed order ────────────────
+    // The PO arrives as an `external-fact`: *"raised in S/4HANA … the portal is
+    // where a supplier RECEIVES a PO, never where Paragon issues one"*. So the
+    // order is already placed before `po:view` / `:acknowledge` / `:confirm` can
+    // fire — the operator's line lands exactly on this boundary. The ASN ships
+    // against that order; `incomingshipment:*` is a linear Booked → Shipped →
+    // Arrived tracker whose `:cancel` cancels a SHIPMENT, never an order.
+    //
+    // ⚠️ **`inventorydeclaration:declare` IS PLACED HERE AS A JUDGEMENT, AND IT
+    // IS ONE OF THE TWO THE OPERATOR LEFT OPEN.** Argued from the flow: it is a
+    // single-state SNAPSHOT of stock on hand, its own channel note describes it
+    // as answering *"current stock of Glycerin?"* with one number, and its
+    // surface is a bulk stock-entry grid. That is warehouse knowledge, not a
+    // negotiated position — the people who count the stock are the people who
+    // ship it. The rival reading (a capacity signal, hence commercial) is real
+    // and is recorded rather than argued away.
+    fulfilment: Object.freeze([
       'po:view', 'po:acknowledge', 'po:confirm',
       'asn:create', 'asn:submit',
-      'invoice:submit',
-      'quotation:submit',
-      'supplierdoc:submit',
-      'compliance:submit',
-      'requirementresponse:submit', 'requirementresponse:acknowledge',
-      'inventorydeclaration:declare',
       'incomingshipment:report', 'incomingshipment:ship',
       'incomingshipment:arrive', 'incomingshipment:cancel',
+      'inventorydeclaration:declare',
+    ]),
+    // ── BACK OFFICE — the paperwork ─────────────────────────────────────────
+    // *"The admin people are the ones who upload the certificates"* (operator).
+    // `invoice:submit` bills; its buyer counterpart is `finance`, not
+    // procurement. `supplierdoc:submit` and `compliance:submit` answer the
+    // buyer's `compliance` lane — documents and certificates, mirrored.
+    //
+    // ⚠️ **`requirementresponse:acknowledge` IS THE SECOND JUDGEMENT, AND THE
+    // FLOW SPLITS ITS OWN ENTITY FOR ME.** Its header: a visibility-only line
+    // *"carries NO commitment ask … no quantity, no date, no capacity claim"*,
+    // and *"THE DRAFT LANE EXISTS FOR THE RESPONSE THAT COMMITS SOMETHING"*.
+    // So the same entity holds one act that negotiates and one that does not,
+    // and only the first is commercial. An act with no commercial content and
+    // no fulfilment content is administrative correspondence. **The split does
+    // not run along flow lines**, which is precisely why it had to be argued
+    // per atom.
+    //
+    // ⚠️ **`supplierdoc:upload` IS RULED TO BELONG HERE AND IS DELIBERATELY
+    // ABSENT.** The operator ruled the OWNER; the VERB is unauthored, and this
+    // file cannot express the first without the second — `businessRoles.test.ts`
+    // refuses a bundle naming an atom no transition requires (C10 §3.4). The
+    // ruling is recorded in `docs/findings.md`
+    // (`SUPPLIERDOC-UPLOAD-OWNED-BUT-UNAUTHORED-01`), where a ruling can be held
+    // without being asserted as a fact about the catalog.
+    back_office: Object.freeze([
+      'invoice:submit',
+      'supplierdoc:submit',
+      'compliance:submit',
+      'requirementresponse:acknowledge',
     ]),
   });
 
@@ -195,6 +267,22 @@ const BUYER_LANE_IDS = Object.freeze([
   'compliance',
   'planning',
   'requisitioner',
+] as const satisfies readonly (keyof typeof LANE_BUNDLES)[]);
+
+/**
+ * The three supplier lanes, named once for the same reason the buyer six are:
+ * the offer and the seed both compose from THIS list, so they cannot drift
+ * apart by one edit.
+ *
+ * ⚠️ **THE ANCHOR IS NOT A LANE AND IS NOT IN HERE.** `supplier` carries no
+ * atom, so folding it in would make every "which lane owns this act?" answer
+ * include a role that owns nothing. It joins the OFFER and the SEED explicitly
+ * below, where its purpose (naming the side) is what is being expressed.
+ */
+const SUPPLIER_LANE_IDS = Object.freeze([
+  'commercial',
+  'fulfilment',
+  'back_office',
 ] as const satisfies readonly (keyof typeof LANE_BUNDLES)[]);
 
 /**
@@ -347,7 +435,7 @@ export const PERSONA_SYSTEM_ROLES: Readonly<
   Record<'buyer' | 'supplier', readonly SystemRoleId[]>
 > = Object.freeze({
   buyer: Object.freeze([...BUYER_LANE_IDS, 'buyer_all'] as readonly SystemRoleId[]),
-  supplier: Object.freeze(['supplier'] as readonly SystemRoleId[]),
+  supplier: Object.freeze(['supplier', ...SUPPLIER_LANE_IDS] as readonly SystemRoleId[]),
 });
 
 /**
@@ -371,7 +459,13 @@ export const SEEDED_SEAT_ROLES: Readonly<
   Record<'buyer' | 'supplier', readonly SystemRoleId[]>
 > = Object.freeze({
   buyer: Object.freeze([...BUYER_LANE_IDS] as readonly SystemRoleId[]),
-  supplier: Object.freeze(['supplier'] as readonly SystemRoleId[]),
+  // ⚠️ **ALL FOUR, AND THE ANCHOR IS ONE OF THEM** (operator ruling). The buyer
+  // seat opens holding every lane on its side; the supplier seat now does the
+  // same, plus the anchor that names the side. **A NARROWED SUPPLIER SEAT IS
+  // REACHED BY REMOVAL**, exactly as the buyer panel works, and the
+  // last-role-un-removable constraint applies identically — which is also what
+  // retires the always-on last-role notice a one-role seat could never dismiss.
+  supplier: Object.freeze(['supplier', ...SUPPLIER_LANE_IDS] as readonly SystemRoleId[]),
 });
 
 /**

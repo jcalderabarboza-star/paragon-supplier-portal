@@ -26,6 +26,8 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { usePurchaseOrderConfirm } from '../services/query/commandHooks';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { POStatus } from '../services/data/types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import LoadingState from '../components/ui-v2/LoadingState';
@@ -100,6 +102,7 @@ const SupplierOrders: React.FC = () => {
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
   const confirmMutation = usePurchaseOrderConfirm();
+  const confirmAvailability = useVerbAvailability('po:confirm');
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [selected, setSelected] = useState<PurchaseOrder | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
@@ -506,9 +509,24 @@ const SupplierOrders: React.FC = () => {
                     {t('supplierOrders.action.close')}
                   </Button>
                   {ACTION_STATUSES.includes((selectedLive ?? selected).status) ? (
-                    <Button variant="outline" onClick={startEditing}>
-                      {t('po.confirm.action')}
-                    </Button>
+                    // ⚠️ GATED AT THE ENTRY, AND ONLY HERE. `po:confirm` is
+                    // FULFILMENT's since the supplier split, so a commercial or
+                    // back-office seat reads the WAIT with the lane named
+                    // instead of an affordance that would refuse at dispatch.
+                    // The commit button inside `panelMode === 'editing'` is
+                    // deliberately NOT gated a second time: it is unreachable
+                    // behind this one, and a second notice for the same verb on
+                    // the same surface is what §76 retired.
+                    confirmAvailability.kind === 'held' ? (
+                      <Button variant="outline" onClick={startEditing}>
+                        {t('po.confirm.action')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={confirmAvailability}
+                        testId="handoff-po-confirm"
+                      />
+                    )
                   ) : (selectedLive ?? selected).status === POStatus.CONFIRMED ? (
                     <Button variant="outline" onClick={goToASN}>
                       {t('supplierOrders.action.createAsn')}

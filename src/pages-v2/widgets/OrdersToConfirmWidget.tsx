@@ -15,6 +15,8 @@ import { statusTone } from '../../lib/statusTone';
 import { formatIDR, formatDate } from '../../lib/format';
 import { usePurchaseOrders } from '../../services/query/hooks';
 import { usePurchaseOrderConfirm } from '../../services/query/commandHooks';
+import { useVerbAvailability } from '../../hooks/useVerbAvailability';
+import { HandoffNotice } from '../../components/ui-v2/HandoffNotice';
 import { POStatus } from '../../services/data/types';
 import type { PurchaseOrder } from '../../services/data/types';
 
@@ -41,6 +43,11 @@ const OrdersToConfirmWidget: React.FC = () => {
   const { t } = useTranslation();
   const posQuery = usePurchaseOrders();
   const confirmMutation = usePurchaseOrderConfirm();
+  // ⚠️ THE DASHBOARD COPY OF `po:confirm`, AND IT IS THE §72a SHAPE EXACTLY:
+  // gating `SupplierOrders` and leaving this live would ship the same withheld
+  // verb as a working button one route away. Derive coverage as
+  // (surface × verb) — a widget is a surface.
+  const confirmAvailability = useVerbAvailability('po:confirm');
 
   const confirmable = useMemo(
     () => (posQuery.data?.items ?? []).filter(isConfirmable),
@@ -92,13 +99,20 @@ const OrdersToConfirmWidget: React.FC = () => {
                 </StatusPill>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="outline"
-                  onClick={() => confirm(po)}
-                  disabled={confirmMutation.isPending}
-                >
-                  Confirm
-                </Button>
+                {confirmAvailability.kind === 'held' ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => confirm(po)}
+                    disabled={confirmMutation.isPending}
+                  >
+                    Confirm
+                  </Button>
+                ) : (
+                  <HandoffNotice
+                    availability={confirmAvailability}
+                    testId="handoff-widget-po-confirm"
+                  />
+                )}
               </TableCell>
             </TableRow>
           ))}

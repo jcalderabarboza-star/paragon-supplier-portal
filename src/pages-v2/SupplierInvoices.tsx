@@ -48,6 +48,8 @@ import {
   usePurchaseOrders,
 } from '../services/query/hooks';
 import { useInvoiceCreate, useInvoiceSubmit } from '../services/query/commandHooks';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 import { readInvoiceAmount } from './invoices/invoiceAmountModel';
 // GL-1 - the glossary destination for this surface's refusals.
@@ -176,6 +178,12 @@ const SupplierInvoices: React.FC = () => {
   const posQuery = usePurchaseOrders();
   const createMutation = useInvoiceCreate();
   const submitMutation = useInvoiceSubmit();
+  // ⚠️ ONE ATOM, TWO VERBS. `t_invoice_create` and `t_invoice_submit` both
+  // require `invoice:submit`, so one availability answers for the page-level
+  // create AND the row-level submit — and BOTH need a slot, because
+  // `IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` is exactly the page that
+  // guarded its rows and shipped a live create in its header.
+  const invoiceAvailability = useVerbAvailability('invoice:submit');
   const invCrumb = [
     t('supplierInvoices.crumb.settle'),
     t('supplierInvoices.crumb.invoices'),
@@ -367,24 +375,37 @@ const SupplierInvoices: React.FC = () => {
           supplier: mySupplier?.name ?? identity.supplierName ?? '',
         })}
         actions={
-          <BulkActionsBar
-            actions={[
-              {
-                label: t('supplierInvoices.action.export'),
-                icon: Download,
-                onClick: () =>
-                  toast({
-                    variant: 'info',
-                    title: t('supplierInvoices.toast.export.title'),
-                  }),
-              },
-            ]}
-            primary={{
-              label: t('invoice.create.action'),
-              icon: Plus,
-              onClick: () => setNewOpen(true),
-            }}
-          />
+          // The page-level create is WITHHELD rather than disabled (§73's
+          // pattern). Export holds no atom and is not gated — a read is
+          // ungoverned, not withheld (§75e).
+          <div className="flex items-center gap-3">
+            <HandoffNotice
+              availability={invoiceAvailability}
+              testId="handoff-invoice-create"
+            />
+            <BulkActionsBar
+              actions={[
+                {
+                  label: t('supplierInvoices.action.export'),
+                  icon: Download,
+                  onClick: () =>
+                    toast({
+                      variant: 'info',
+                      title: t('supplierInvoices.toast.export.title'),
+                    }),
+                },
+              ]}
+              {...(invoiceAvailability.kind === 'held'
+                ? {
+                    primary: {
+                      label: t('invoice.create.action'),
+                      icon: Plus,
+                      onClick: () => setNewOpen(true),
+                    },
+                  }
+                : {})}
+            />
+          </div>
         }
       />
 
@@ -534,13 +555,20 @@ const SupplierInvoices: React.FC = () => {
                         {t('supplierInvoices.action.remittance')}
                       </Button>
                     ) : inv.status === 'Draft' ? (
-                      <Button
-                        variant="outline"
-                        disabled={submitMutation.isPending}
-                        onClick={() => submitDraft(inv)}
-                      >
-                        {t('invoice.submit.action')}
-                      </Button>
+                      invoiceAvailability.kind === 'held' ? (
+                        <Button
+                          variant="outline"
+                          disabled={submitMutation.isPending}
+                          onClick={() => submitDraft(inv)}
+                        >
+                          {t('invoice.submit.action')}
+                        </Button>
+                      ) : (
+                        <HandoffNotice
+                          availability={invoiceAvailability}
+                          testId="handoff-invoice-submit"
+                        />
+                      )
                     ) : inv.status === 'Disputed' ? (
                       <Button
                         variant="outline"

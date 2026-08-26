@@ -32,6 +32,8 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
 import Data from '../components/ui-v2/Data';
+import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useTranslation } from 'react-i18next';
 import { statusLabelKey } from '../lib/statusLabel';
 import { useToast } from '../hooks/useToast';
@@ -222,6 +224,16 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
   confirmedPOs,
 }) => {
   const { t } = useTranslation();
+  // ⚠️ TWO VERBS, TWO SLOTS — never one notice speaking for both (§76). They
+  // are co-reachable on this page: a supplier with a confirmed PO and a draft
+  // ASN sees the create row and the submit cell at the same time, so a single
+  // collapsed notice would name an owner for an act the reader was not looking
+  // at. Both atoms belong to FULFILMENT, and they are asked separately anyway
+  // so the answer stays right if the lanes ever diverge.
+  const asnVerbs = useVerbAvailabilities({
+    create: 'asn:create',
+    submit: 'asn:submit',
+  } as const);
   const filtered = useMemo(
     () =>
       statusFilter === 'All'
@@ -269,13 +281,20 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                     <Data>{fmtDate(po.requestedDeliveryDate)}</Data>
                   </span>
                   <div className="justify-self-end">
-                    <Button
-                      variant="outline"
-                      icon={Plus}
-                      onClick={() => onCreateAsnForPO(po.id)}
-                    >
-                      {t('asn.create.action')}
-                    </Button>
+                    {asnVerbs.create.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={Plus}
+                        onClick={() => onCreateAsnForPO(po.id)}
+                      >
+                        {t('asn.create.action')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={asnVerbs.create}
+                        testId="handoff-asn-create"
+                      />
+                    )}
                   </div>
                 </div>
               );
@@ -360,14 +379,20 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                       <Data>{asn.eta ? fmtDate(asn.eta) : '—'}</Data>
                     </TableCell>
                     <TableCell className="text-right whitespace-nowrap">
-                      {asn.status === 'Draft' && (
-                        <Button
-                          variant="outline"
-                          onClick={() => onSubmitAsn(asn.asnNumber)}
-                        >
-                          {t('asn.submit.action')}
-                        </Button>
-                      )}
+                      {asn.status === 'Draft' &&
+                        (asnVerbs.submit.kind === 'held' ? (
+                          <Button
+                            variant="outline"
+                            onClick={() => onSubmitAsn(asn.asnNumber)}
+                          >
+                            {t('asn.submit.action')}
+                          </Button>
+                        ) : (
+                          <HandoffNotice
+                            availability={asnVerbs.submit}
+                            testId="handoff-asn-submit"
+                          />
+                        ))}
                       {asn.status === 'Discrepancy' && (
                         <Button
                           variant="secondary"
@@ -535,6 +560,23 @@ const SupplierShipments: React.FC = () => {
   const { supplierId } = identity;
   const createAsnMutation = useAdvanceShipNoticeCreate();
   const submitAsnMutation = useAdvanceShipNoticeSubmit();
+  // ⚠️ **THE WIZARD TAB IS A SECOND ENTRY TO THE SAME VERBS, AND THE FIRST PASS
+  // OF THIS BATCH MISSED IT** — `IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` for
+  // the third time, on the seat that was applying the rule. The row-level create
+  // inside `ShipmentsList` was gated; this tab opens a three-step wizard that
+  // dispatches `t_asn_create` AND `t_asn_submit` at `onComplete`, and it stayed
+  // live for a seat holding neither. **The unit suite could not see it** — no
+  // spec drove the tab — and it was found by walking a narrowed seat across the
+  // built bundle, which is exactly what that QA bar exists for.
+  //
+  // BOTH atoms, because the wizard fires both: offering it on a seat that can
+  // create but not submit would strand a draft at the last click.
+  const wizardVerbs = useVerbAvailabilities({
+    create: 'asn:create',
+    submit: 'asn:submit',
+  } as const);
+  const wizardHeld =
+    wizardVerbs.create.kind === 'held' && wizardVerbs.submit.kind === 'held';
   const [tab, setTab] = useState<TabKey>('shipments');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -1152,7 +1194,11 @@ const SupplierShipments: React.FC = () => {
       <SubTabs<TabKey>
         options={[
           { id: 'shipments', label: t('supplierShipments.tab.myShipments'), count: asns.length },
-          { id: 'create', label: t('supplierShipments.tab.createAsn') },
+          // Withheld rather than disabled — §73's rule, applied to a tab: a seat
+          // that cannot finish the wizard is not offered its first step.
+          ...(wizardHeld
+            ? [{ id: 'create' as TabKey, label: t('supplierShipments.tab.createAsn') }]
+            : []),
           { id: 'dock', label: t('supplierShipments.tab.dock'), count: 1 },
         ]}
         value={tab}
@@ -1173,7 +1219,21 @@ const SupplierShipments: React.FC = () => {
         />
       )}
 
-      {tab === 'create' && (
+      {tab === 'create' && !wizardHeld && (
+        // Belt AND braces here, unlike the dead-branch cases elsewhere: `tab` is
+        // component STATE, so a seat narrowed WHILE the wizard is open lands
+        // here with the tab already selected. That is reachable, so it is not a
+        // dead branch — it is the one place on this page where the notice has to
+        // answer in the body rather than in the tab row.
+        <HandoffNotice
+          availability={
+            wizardVerbs.create.kind === 'held' ? wizardVerbs.submit : wizardVerbs.create
+          }
+          testId="handoff-asn-wizard"
+        />
+      )}
+
+      {tab === 'create' && wizardHeld && (
         <Wizard
           steps={wizardSteps}
           currentStep={step}
