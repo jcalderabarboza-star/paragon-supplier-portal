@@ -15315,6 +15315,167 @@ change and a ruling, not a batch.
 
 ---
 
+## 59 · TWO RULINGS, A DISPATCH-SIDE CORRECTION, AND PR #227 DERIVED (`main` `3fdcd16`)
+
+**Register only. No code changed.** §44 is still reserved for PR #227 (see 59d),
+so this is §59 and not §44 — the same reservation §45 and §46 recorded.
+
+### 59a · RULING 1 (OPERATOR) — `t_requirementresponse_correct` SHALL NOT EXIST
+
+**Recorded as a DECISION, not a null result, so that the next reader does not
+re-propose it as an obvious gap.** §58 settled that the verb was never authored.
+This settles that it should not be.
+
+**The act it names is already covered, end to end, by verbs that exist:** the
+buyer disputes with a required, proven, stored reason
+(`t_requirementresponse_dispute`), and the supplier supersedes the disputed
+response by resubmitting — measured `done`, recorded at #239 as *"the dispute has
+no lock"*. Two actors, two verbs, and the commitment stays authored by the party
+that owes it.
+
+⚠️ **AND THE STRONGER HALF IS THE ONE THE OPERATOR NAMED, BECAUSE IT IS THE
+GUARD THIS ARC JUST BUILT REFUSING A VERB THAT WOULD DEFEAT IT.** A
+buyer-authored quantity would leave `confirmedQtyRaw` — the token *as the
+supplier typed it* — describing a number nobody typed. The hoist (§57) exists
+precisely so the stored number and its evidence cannot disagree:
+`RR_SUBMIT_QTY_AGREES` re-parses the token and refuses when the two diverge. A
+`correct` verb writing a buyer's number onto a record whose raw evidence is the
+supplier's would manufacture that divergence **as its normal operation**, and no
+guard could refuse it without refusing the verb itself. **The parse guard and
+this verb cannot both exist honestly, and the guard is the one that is true.**
+
+The costing, recorded so a future proposer does not re-derive it: if the ruling
+is ever reversed, the guard is free — `RR_SUBMIT_QTY_AGREES` reads
+`confirmedQtyRaw` + `numberConvention` + `confirmedQty` and generalises
+unchanged, **one parse with two callers, no `GridParseSpec` widening**
+(`normalizeQty` lives in `lib/`; `parseGrid` is not on that path). What is NOT
+free is the honesty problem above, and it is not a wiring cost.
+
+### 59b · RULING 2 (OPERATOR) — R1c IS CLOSED, NOT BLOCKED
+
+R1c was a surface for an act that should not exist. **It is not waiting on
+anything, and its row is corrected here rather than left in a blocked state that
+implies a future batch.**
+
+⚠️ **THE BLOCKER RECORDED IN THE NOTES WAS NEVER THE REAL ONE, AND BOTH HALVES
+OF IT MEASURED FALSE.** `.remember` recorded R1c as blocked because *"parsing
+blocks qty override"*, and a dispatch restated it as *"a modal would bypass the
+only guard that catches a locale conflict"*. Derived:
+
+- **`normalizeQty(raw, hint?)` has arity 2** and no channel by which a sibling
+  row could reach it. `AMBIGUOUS_QTY` is a **per-token** verdict, stated at
+  `ingest.ts:119` (*"ambiguous cell REFUSES per row rather than being resolved by
+  a hint"*) and `:178` (*"deliberately hint-free, so ambiguity refuses per row"*).
+- **`hasAnyComma` has zero occurrences tree-wide**, all file types.
+- Measured: `'1.234'` alone → `AMBIGUOUS_QTY`; under `'id'` → 1234; under `'en'`
+  → 1.234 — **identical inside a grid and out of one**, with known-good and
+  known-bad controls both asserted.
+
+The real constraint was never the parse: **no buyer verb accepts a quantity at
+all** (`review` and `accept` declare `requiredFields: []`, `dispute` declares
+`['disputeReason']`, `resolve` declares `['resolutionReason']`), and Ruling 1
+says none should. **A blocker that dissolves when measured and a blocker that is
+removed by a ruling are different endings, and this row got both.**
+
+### 59c · ⚠️ THE DISPATCH SIDE CORRECTED — A CITED SHA THE REPO DOES NOT HOLD IS THE MERGE DOCTRINE'S FAILURE ONE STEP EARLIER
+
+**Recorded at the operator's own instruction and against their own dispatches.**
+Two figures were carried in dispatch headers from 2026-08-19 into 2026-08-20 and
+both are false of this repository:
+
+| cited in dispatch | measured |
+|---|---|
+| `main 9c31c7f` | **not a valid object name** — `git cat-file -t` after `fetch --prune`; not a commit, not a branch tip, not an ancestor. Actual main was `5c9eeae`. |
+| `floor 3105/227` | **`scripts/floor.json` holds `3123 / 228 / 7`** and `npm run gates` observed exactly that |
+
+⚠️ **THE CLASS, AND IT IS WHY THIS SITS BESIDE THE MERGE DOCTRINE RATHER THAN IN
+A TYPO LIST.** §43a made the seat assert an object exists **at the site the action
+names** before any outward step. That rule guards the moment of the merge. **A SHA
+CITED IN A DISPATCH HEADER IS THE SAME OBJECT ONE STEP EARLIER** — it is the
+premise a merge instruction would later rest on, arriving before anyone is
+looking for it, in the position that reads as context rather than as claim. A
+header is not scrutinised the way an instruction is; that is exactly what makes
+it the cheaper place to put a wrong object. Filed as
+`DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`.
+
+**The mitigation is the one already standing and it costs one command per
+session:** the seat re-derives HEAD and the floor at orientation and reports any
+disagreement without reconciling it. That is what happened here on 2026-08-20 —
+the disagreement was reported three turns running, un-actioned, and is only now
+recorded because the operator ruled it should be. **A disagreement reported and
+not written down decays back into the next dispatch header**, which is how this
+one survived a full day.
+
+### 59d · ⚠️ PR #227 DERIVED — IT IS *NOT* SUPERSEDED, AND WHAT IT CARRIES IS THE MERGE DOCTRINE ITSELF
+
+The operator recorded #227 as *"closed as superseded"*. **Derived at the site
+rather than inherited — and the earlier reading was itself corrected once, which
+is why it was re-derived — the ruling is inverted: nothing in it has landed.**
+
+`qa/chaos-ambience-pin` @ `d620826`, opened 2026-08-14, **3 ahead / 15 behind**
+`main`. Six files, +551 / −2. What survives on `main` today:
+
+| what it carries | on `main` today |
+|---|---|
+| `src/services/data/mock/chaosAmbience.test.ts` (+144, new) | **ABSENT** |
+| `src/services/sdc/__tests__/clockRestore.test.ts` (+93, new) | **ABSENT** |
+| `docs/findings.md` §44 (+268) | **ABSENT — and the slot is reserved** |
+| `CLAUDE.md` merge-doctrine section (+23) | **ABSENT** |
+| `src/services/query/settleFailureSurface.test.tsx` (+21, the asymmetry warning) | file exists; the 21 lines **ABSENT** |
+| `scripts/floor.json` | **would REGRESS 3123/228 → 2969/216** |
+
+Marker check, with a known-good control asserted first (rule 4): `chaosAmbience`,
+`clockRestore`, `CLOCK-RESTORE` — **zero hits in `src/` and zero in the register**.
+The only `ambience` hit on `main` is §45's note reserving the number.
+
+⚠️ **AND THE HEADLINE IS THE ONE NOBODY WAS LOOKING FOR: THE MERGE DOCTRINE THIS
+SESSION HAS BEEN GOVERNED BY IS NOT IN THE REPOSITORY.** `grep -rn -i "merge
+doctrine"` over every `.md` on `main` returns **nothing** — control confirmed by
+a known-good `CLAUDE.md` section that the same grep does find. The section
+*"A MERGE INSTRUCTION NAMING A PR THE SEAT HAS NOT ITSELF REPORTED IS A REQUEST
+TO VERIFY, NOT TO MERGE (ratified 2026-08-14)"* exists **only on this unmerged
+branch.** It has been quoted in every dispatch of this session, both halves have
+fired, and it governed the refusal in §58 that kept four correct rows correct —
+**while living nowhere a fresh session could read it.**
+
+That is `FLOOR-IN-PROSE-01`'s shape applied to a rule instead of a number: **a
+doctrine whose only copy is in a pull request is enforced by memory, and memory
+is the instrument this register exists because it does not trust.**
+
+**Closing #227 would therefore lose:** two test files with no equivalent coverage,
+a §44 the register reserves a hole for in two places, a maintainer warning at the
+asymmetric settle-path site, and the ratified merge doctrine.
+
+**It also cannot be merged as it stands** — its `floor.json` is 154 tests and 12
+files behind `main`, and merging it would regress a floor that never regresses.
+**The disposition is neither close nor merge: it is merge-forward** — bring
+`main` into the branch, reconcile `floor.json` to `main`'s current figure, re-run
+the four gates, and land §44 in its reserved slot. **No such action taken here;
+this entry reports and the operator rules.**
+
+### 59e · DISPOSITION
+
+- **RULED (operator):** `t_requirementresponse_correct` shall not exist — the act
+  is covered by dispute → supplier resubmit, and a buyer-authored quantity would
+  put `confirmedQtyRaw` in permanent disagreement with the number it evidences.
+  Recorded as a decision so it is not re-proposed as a gap.
+- **RULED (operator):** R1c is CLOSED, not blocked. Its recorded blocker measured
+  false in both halves; its real constraint is removed by Ruling 1.
+- **CORRECTED (dispatch side):** `9c31c7f` is not an object in this repository ·
+  the floor is `3123 / 228 / 7`, not `3105 / 227`. Filed as
+  `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`.
+- **REFUTED:** #227 is superseded. **Nothing in it has landed**, including the
+  merge doctrine itself, which is absent from every `.md` on `main`.
+- **OPEN — OPERATOR'S RULING:** #227's disposition. Merge-forward is the only
+  option that loses nothing; closing loses four distinct things; merging as-is
+  regresses the floor and is refused on that ground alone.
+- **UNTOUCHED:** no verb authored, no surface built, no flow, DTO or test
+  changed; #227 neither closed nor merged. C9 `af7f0b4` and C10 `dc8e774`
+  byte-identical by blob id. Floor unchanged at `3123 / 228 / 7` — this batch
+  adds no test.
+
+---
+
 ## 60 · THE TWO SURVIVING CLAUSES, MEASURED — AND THE CORRECTION THAT SHRINKS THE BATCH IS THE ONE NOBODY CHECKS (`main` `3fdcd16`)
 
 **Register only. No code changed. #227 NOT closed, and 60d says why.**
