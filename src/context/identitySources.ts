@@ -9,6 +9,7 @@ import {
   isSystemRole,
 } from '../services/transitions/businessRoles';
 import { NO_PERSON } from './noPerson';
+import { mockSuppliers } from '../data/mockSuppliers';
 
 const IDENTITY_KEY = 'paragon.identity';
 const LEGACY_PERSONA_KEY = 'paragon.persona';
@@ -76,6 +77,43 @@ const rolesFromStorage = (
   return kept.length > 0 ? kept : seeded;
 };
 
+/**
+ * ⚠️ **THE TENANT READ BACK FROM STORAGE — AND THE NAME IS RESOLVED, NEVER
+ * TRUSTED.** `supplierId` was the one field `isCurrentIdentity` VALIDATED and
+ * `load` then DISCARDED: the return re-seeded it from `identityForPersona`, so
+ * a persisted tenant sat on disk being ignored while the seat silently stayed
+ * `sup-007`.
+ *
+ * ⚠️ **THIS FIELD IS NOT DISPLAY. It is the tenancy gate AND the cache key** —
+ * `scope.supplierId` is what `dispatcher.ts` refuses on (`SCOPE_DENIED`) and
+ * what `scopeKey` shards every query cache by. That is why the name is
+ * re-derived from the supplier master instead of read from the stored row:
+ * localStorage is caller-supplied, and a row claiming
+ * `{ supplierId: 'sup-002', supplierName: 'PT Sample Packaging' }` would render
+ * ANOTHER TENANT'S NAME over sup-002's rows — a lie the scoping gate cannot
+ * catch, because the id it enforces on is correct.
+ *
+ * Three outcomes, deliberately distinct — an unknown tenant must NOT collapse
+ * into the seed, because "nothing stored" and "stored something that is not a
+ * supplier" are different facts and only one of them is safe to guess at:
+ *   · **absent / null** → `null`, and the caller seeds. The portal opens with
+ *     data, which is what a cold start must do.
+ *   · **names a real supplier** → that tenant, with the MASTER's name.
+ *   · **names no supplier** → `{ supplierId: null }`, refused downstream by
+ *     guards that already ship: 13 surfaces gate on `!supplierId`, and five
+ *     gate again on `!mySupplier` (`getCurrentSupplier` returns null for an
+ *     unknown id). Nothing new is rendered and nothing falls back to `sup-007`.
+ */
+const tenantFromStorage = (
+  value: unknown,
+): { supplierId: string | null; supplierName: string | null } | null => {
+  if (typeof value !== 'string' || value === '') return null;
+  const row = mockSuppliers.find((s) => s.id === value);
+  return row
+    ? { supplierId: row.id, supplierName: row.name }
+    : { supplierId: null, supplierName: null };
+};
+
 const personaFromHash = (): PersonaType | null => {
   if (typeof window === 'undefined') return null;
   const hash = window.location.hash;
@@ -106,6 +144,7 @@ export const mockIdentitySource: IdentitySource = {
     // Resolve effective persona: hash override > stored new key > legacy key > 'buyer'
     let storedPersona: PersonaType | null = null;
     let storedRoles: unknown = undefined;
+    let storedSupplierId: unknown = undefined;
 
     try {
       const raw = window.localStorage.getItem(IDENTITY_KEY);
@@ -114,6 +153,7 @@ export const mockIdentitySource: IdentitySource = {
         if (isCurrentIdentity(parsed)) {
           storedPersona = parsed.personaType;
           storedRoles = (parsed as { businessRoles?: unknown }).businessRoles;
+          storedSupplierId = parsed.supplierId;
         }
       }
     } catch {
@@ -133,9 +173,18 @@ export const mockIdentitySource: IdentitySource = {
     const base = identityForPersona(effective);
     // Stored roles survive a reload ONLY for the persona they were stored
     // under — switching sides re-seeds, because a role bundle is per-side.
-    return effective === storedPersona
-      ? { ...base, businessRoles: rolesFromStorage(effective, storedRoles) }
-      : base;
+    if (effective !== storedPersona) return base;
+
+    // ⚠️ THE TENANT IS CARRIED ONLY ON THE SUPPLIER SIDE, for the same reason
+    // the roles are: a buyer seat's `supplierId` is `null` BY CONSTRUCTION (it
+    // reads the cross-supplier superset), so honouring a stored one there would
+    // narrow a buyer to a single tenant — the opposite of the scoping contract.
+    const tenant = effective === 'supplier' ? tenantFromStorage(storedSupplierId) : null;
+    return {
+      ...base,
+      businessRoles: rolesFromStorage(effective, storedRoles),
+      ...(tenant ?? {}),
+    };
   },
 
   save(next: CurrentIdentity): void {
