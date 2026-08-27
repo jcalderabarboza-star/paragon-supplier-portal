@@ -102,9 +102,9 @@ export const complianceEn: Record<string, string> = {
   // the buyer side exactly the claim §82 removed from the supplier side.
   'compliance.queue.title': 'Declared certificates awaiting review',
   'compliance.queue.subtitle.one':
-    '{{count}} supplier has stated a certificate. Nothing was uploaded — check the details against the certificate itself before confirming.',
+    '{{count}} certificate has been stated. Nothing was uploaded — check the details against the certificate itself before confirming.',
   'compliance.queue.subtitle.other':
-    '{{count}} suppliers have stated certificates. Nothing was uploaded — check the details against the certificates themselves before confirming.',
+    '{{count}} certificates have been stated. Nothing was uploaded — check the details against the certificates themselves before confirming.',
   'compliance.queue.field.issuer': 'Granted by',
   'compliance.queue.field.dates': 'Valid',
   'compliance.queue.field.scope': 'Covers',
@@ -226,9 +226,9 @@ export const complianceId: Record<string, string> = {
   // — §82 —
   'compliance.queue.title': 'Sertifikat yang dinyatakan, menunggu tinjauan',
   'compliance.queue.subtitle.one':
-    '{{count}} pemasok telah menyatakan sertifikat. Tidak ada berkas yang diunggah — cocokkan rinciannya dengan sertifikat aslinya sebelum mengonfirmasi.',
+    '{{count}} sertifikat telah dinyatakan. Tidak ada berkas yang diunggah — cocokkan rinciannya dengan sertifikat aslinya sebelum mengonfirmasi.',
   'compliance.queue.subtitle.other':
-    '{{count}} pemasok telah menyatakan sertifikat. Tidak ada berkas yang diunggah — cocokkan rinciannya dengan sertifikat aslinya sebelum mengonfirmasi.',
+    '{{count}} sertifikat telah dinyatakan. Tidak ada berkas yang diunggah — cocokkan rinciannya dengan sertifikat aslinya sebelum mengonfirmasi.',
   'compliance.queue.field.issuer': 'Diterbitkan oleh',
   'compliance.queue.field.dates': 'Berlaku',
   'compliance.queue.field.scope': 'Mencakup',

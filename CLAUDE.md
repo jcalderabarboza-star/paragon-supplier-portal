@@ -128,8 +128,9 @@ Direct pushes to `main` are not used.
 
 > ⚠️ **AUTHORISATION NOW EXISTS (Batch A, §64).** `resolveRoles` no longer widens
 > a persona to its whole atom set: it resolves the SEAT's business roles
-> (`services/transitions/businessRoles.ts` — six system roles + a supplier role,
-> plus an `automation` grant that is deliberately NOT assignable to a person).
+> (`services/transitions/businessRoles.ts` — **derive the roles from the
+> `SystemRoleId` union and `LANE_BUNDLES`; no figure is written here** — plus an
+> `automation` grant that is deliberately NOT assignable to a person).
 > **There is no persona fallback**; a command scope without `businessRoles` is
 > refused, because a fallback is the wildcard with better manners. The cascade
 > fan-out runs under the automation grant — it re-dispatches inside a `catch {}`,
@@ -141,7 +142,9 @@ Direct pushes to `main` are not used.
 >
 > **The cross-role handoff renders the wait, not a gap** (`handoff.ts` +
 > `HandoffNotice` + `useVerbAvailability`) — wired across the BUYER surfaces at §72–§76, and it is **ONE NOTICE PER VERB, IN THAT VERB'S OWN SLOT** (§76 retired §74's per-group collapse: the RFQ side panel is a WORKSPACE, not a control, and the two verbs one group notice spoke for are not co-reachable on any RFQ in the tree).
-> ⚠️ **DO NOT RESTATE HOW MANY SURFACES CARRY IT** — the sentence that stood here was a prose count and it was wrong TWICE, once per batch, which is `FLOOR-IN-PROSE-01` in the paragraph about handoffs. Derive it as **(surface × verb)** from the `testId="handoff-…"` sites against BOTH dispatch families. What is deliberately NOT covered, with the reason on record: **every supplier-side surface** (a supplier seat is exactly `['supplier']` — no proper subset to narrow to, so every notice is dead branch), every control that holds **no atom** (toasts and reads are ungoverned, not withheld — §75e), and **`GRInspectionWizard`'s interior** (`WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01`, OPEN — closed at both known entrances, unprobed within).
+> ⚠️ **DO NOT RESTATE HOW MANY SURFACES CARRY IT** — the sentence that stood here was a prose count and it was wrong TWICE, once per batch, which is `FLOOR-IN-PROSE-01` in the paragraph about handoffs. Derive it as **(surface × verb)** from the `testId="handoff-…"` sites against BOTH dispatch families. **THE SUPPLIER SIDE IS COVERED TOO, AND THE SENTENCE THAT SAID OTHERWISE IS DELETED RATHER THAN CORRECTED.** It read *"every supplier-side surface (a supplier seat is exactly `['supplier']` — no proper subset to narrow to, so every notice is dead branch)"*. That reason died at #263, which seeded `commercial` · `fulfilment` · `back_office`; **six supplier surfaces already carried notices while it still stood**, so it was describing the tree it was filed against, not the tree. Derived today: **no supplier atom is held by all three lanes** — the intersection is EMPTY — so "every lane holds it" is never the reason on this side. What is deliberately NOT covered: every control that holds **no atom** (toasts and reads are ungoverned, not withheld — §75e), and **`GRInspectionWizard`'s interior** (`WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01`, OPEN — closed at both known entrances, unprobed within).
+>
+> ⚠️ **AND A NOTICE ON THE SURFACE IS NOT COVERAGE OF THE VERB — THE ENTRANCE IS THE UNIT (§84).** `SupplierOrders` imported the guard, rendered it, and still shipped a live commit: `po:confirm`'s notice gated the `detail` footer, while `handleRowAction` opened the panel *directly* in `editing` mode, where the commit sat ungated behind a comment asserting it was "unreachable behind this one." **That comment was the only thing holding the claim up, and it was false.** Derive coverage as **(surface × verb × ENTRANCE)**, never (surface × verb): a mode reached three ways is guarded when the MODE is gated, not when one door is. And gate the mode rather than the door for a second reason — **component state outlives the seat**: a seat narrowed WHILE a panel or tab stands open is reachable, not a dead branch (`SupplierShipments` says so in its own comment and is the precedent to copy).
 > ⚠️ **AND THE SEGREGATION THE BUNDLES EXPRESS IS CROSSED BY ONE SURFACE (`SEGREGATION-CROSSED-IN-ONE-DRAWER-01`, §76d, OPEN).** `BuyerRequisitions`' drawer offers `pr:revise` → `pr:submit` → `pr:approve` on the same document to the same seat, and the DEFAULT buyer seat holds all six role bundles — so adjust-then-approve-what-you-adjusted is the out-of-box state, not a misconfiguration. A per-transition dispatcher cannot catch it: segregation is a property of the SEQUENCE. **Do not "fix" it with a notice or a role gate without the ruling** — §76d names the two candidate readings and measures that the actor-level one is unbuildable until an IdP answers (`actor` is always `UNATTRIBUTED: NO_PERSON_IN_SESSION`).
 > 
 > ⚠️ **AND IMPORTER PRESENCE IS NOT VERB COVERAGE (`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01`, §72a).** `BuyerRequisitions` imported the guard, rendered four of them, and still shipped a live **New PR** button to a seat holding no `pr:create` — because all four guarded verbs act on a document already selected and the CREATE verb lives in the page header. Derive the exposure as **(surface × verb) → guarded?**, never as **surface → imports the guard?**, and derive the surfaces from BOTH dispatch families (`commandHooks` AND the `sdc*Hooks` that call `svc.commands.dispatch` directly — a `commandHooks`-only matcher misses seven verbs).
@@ -699,6 +702,31 @@ keep their affordances. Full list: `docs/findings.md` §19.
 produces it** (§27). Do not restate a cardinality in prose — the "four unwired
 flows / 10 wired targets" sentence was wrong twice, in one sentence, for exactly
 that reason.
+
+⚠️ **THE REMEDY IS DELETION IN FAVOUR OF A DERIVATION, NEVER CORRECTION TO A
+NEWER NUMBER — AND THE REASON IS THAT A CORRECTED NUMBER IS THE SAME DEFECT WITH
+A FRESHER DATE.** This class has now failed in THIS FILE at every sentence
+carrying a `FLOOR-IN-PROSE-01` marker; **run `grep -c 'FLOOR-IN-PROSE-01'
+CLAUDE.md` — the markers ARE the count, and it is deliberately not written
+here**, because a tally of stale-count incidents is itself a count in prose. The
+recovered members, each measured against its own instrument: the test floor
+(drifted past 1400 tests behind the suite); the wired-`CommandTarget` figure
+(*"6"* → *"10"* → *"11"*, all three right the day they were typed); *"10
+lifecycle machines … across 13 flow files"*; the target-less flow LIST (*"four"*
+corrected to seven, then silently wrong again the day `supplierDocument` was
+wired); the BPJPH countdown (*"58 days"*, the one variant that decays with
+nobody touching the file); *"Two rules"* above three numbered rules; *"Three"*
+identifiers above a list that wanted a fourth; the handoff surface count (wrong
+TWICE, once per batch); and — added by the batch that wrote this paragraph —
+*"six system roles + a supplier role"* against a `SystemRoleId` union holding
+twelve members, sitting **three lines above the instruction not to restate role
+counts.**
+
+⚠️ **AND THE DISPATCH THAT ORDERED THIS PARAGRAPH SAID THE CLASS HAD FAILED
+"FOUR TIMES". THAT WAS ITSELF AN UNDERCOUNT, DERIVED AGAINST.** Which is the
+whole argument in one line: **the tally of a self-reported failure class is the
+number least likely to be re-measured, because everyone assumes the register
+already did it.** Do not accept one — including from this paragraph. Derive it.
 
 ⚠️ **AND A COUNT IS COMPARABLE ONLY TO A COUNT FROM THE SAME INSTRUMENT**
 (`COUNT-RESTATED-ACROSS-INSTRUMENTS-01`, §40k). A prototype and the thing it

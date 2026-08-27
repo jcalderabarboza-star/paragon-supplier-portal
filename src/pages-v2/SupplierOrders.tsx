@@ -106,6 +106,28 @@ const SupplierOrders: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [selected, setSelected] = useState<PurchaseOrder | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
+  // ⚠️ **THE MODE IS DERIVED, NOT READ, AND THAT IS WHAT MAKES THE GUARD COVER
+  // EVERY ENTRANCE INSTEAD OF ONE.** `po:confirm` is FULFILMENT's. The commit
+  // lives in `panelMode === 'editing'`, and that mode is component STATE reached
+  // THREE ways, only one of which passed the notice below:
+  //   · `startEditing` — behind the `detail`-footer notice (the guarded door);
+  //   · `openOrderPanel(po, 'editing')` from the table's row action — the
+  //     PRIMARY path, and it walked straight past it;
+  //   · the change-request footer's back-button, re-entering from inside.
+  // A seat can also be NARROWED while the panel already stands open, which is
+  // reachable rather than a dead branch — `SupplierShipments` states the same
+  // reason for gating its wizard TAB rather than the button that opens it.
+  //
+  // Collapsing 'editing' to 'detail' when the verb is not held answers all four
+  // in ONE statement, and it keeps §76's one-notice-per-verb intact: an unheld
+  // seat lands on the notice that is ALREADY THERE rather than meeting a second
+  // one. `change-request` needs no arm — it holds no atom (its submit is a toast,
+  // ungoverned per §75e) and is only reachable THROUGH 'editing'; `confirmed` is
+  // only reachable after a successful dispatch, which requires the verb held.
+  const effectivePanelMode: PanelMode =
+    panelMode === 'editing' && confirmAvailability.kind !== 'held'
+      ? 'detail'
+      : panelMode;
   // CP-0 · W1 · 2f-c — RAW-BACKED (string[]), the 2f-a state-shape lesson:
   // `number[]` had no representation for a cleared cell, so `Number('')`
   // fabricated a 0 into state and left the policy to bounce it after the fact.
@@ -503,20 +525,27 @@ const SupplierOrders: React.FC = () => {
         footerActions={
           selected && (
             <>
-              {panelMode === 'detail' && (
+              {effectivePanelMode === 'detail' && (
                 <>
                   <Button variant="secondary" onClick={closePanel}>
                     {t('supplierOrders.action.close')}
                   </Button>
                   {ACTION_STATUSES.includes((selectedLive ?? selected).status) ? (
-                    // ⚠️ GATED AT THE ENTRY, AND ONLY HERE. `po:confirm` is
-                    // FULFILMENT's since the supplier split, so a commercial or
-                    // back-office seat reads the WAIT with the lane named
-                    // instead of an affordance that would refuse at dispatch.
-                    // The commit button inside `panelMode === 'editing'` is
-                    // deliberately NOT gated a second time: it is unreachable
-                    // behind this one, and a second notice for the same verb on
-                    // the same surface is what §76 retired.
+                    // ⚠️ THE ONE NOTICE FOR `po:confirm` ON THIS SURFACE.
+                    // `po:confirm` is FULFILMENT's since the supplier split, so
+                    // a commercial or back-office seat reads the WAIT with the
+                    // lane named instead of an affordance that would refuse at
+                    // dispatch.
+                    //
+                    // ⚠️ **THE COMMENT THAT STOOD HERE CLAIMED THE `editing`
+                    // COMMIT WAS "UNREACHABLE BEHIND THIS ONE". IT WAS MEASURED
+                    // FALSE** — `handleRowAction` opened the panel straight in
+                    // `editing` mode, so the row button that every actionable PO
+                    // renders bypassed this notice entirely. A comment asserting
+                    // a property the code does not have is the same class as a
+                    // label naming an act it does not perform. What makes the
+                    // claim TRUE now is `effectivePanelMode` (see its note): the
+                    // mode itself is gated, so this stays the single notice.
                     confirmAvailability.kind === 'held' ? (
                       <Button variant="outline" onClick={startEditing}>
                         {t('po.confirm.action')}
@@ -534,7 +563,7 @@ const SupplierOrders: React.FC = () => {
                   ) : null}
                 </>
               )}
-              {panelMode === 'editing' && (
+              {effectivePanelMode === 'editing' && (
                 <>
                   <Button
                     variant="secondary"
@@ -557,7 +586,7 @@ const SupplierOrders: React.FC = () => {
                   </Button>
                 </>
               )}
-              {panelMode === 'change-request' && (
+              {effectivePanelMode === 'change-request' && (
                 <>
                   <Button
                     variant="secondary"
@@ -570,7 +599,7 @@ const SupplierOrders: React.FC = () => {
                   </Button>
                 </>
               )}
-              {panelMode === 'confirmed' && (
+              {effectivePanelMode === 'confirmed' && (
                 <>
                   <Button variant="secondary" onClick={closePanel}>
                     {t('supplierOrders.action.close')}
@@ -635,7 +664,7 @@ const SupplierOrders: React.FC = () => {
 
             <section>
               <h3 className="text-label text-text-tertiary uppercase mb-3">
-                {panelMode === 'editing'
+                {effectivePanelMode === 'editing'
                   ? t('supplierOrders.panel.lineItemsConfirm')
                   : t('supplierOrders.panel.lineItems')}
               </h3>
@@ -649,7 +678,7 @@ const SupplierOrders: React.FC = () => {
                       <th className="text-right px-3 py-2 font-semibold">
                         {t('supplierOrders.panel.col.ordered')}
                       </th>
-                      {panelMode === 'editing' && (
+                      {effectivePanelMode === 'editing' && (
                         <th className="text-right px-3 py-2 font-semibold">
                           {t('supplierOrders.panel.col.confirmed')}
                         </th>
@@ -674,7 +703,7 @@ const SupplierOrders: React.FC = () => {
                         <td className="px-3 py-2 text-right text-text-secondary whitespace-nowrap">
                           <Data>{li.quantity.toLocaleString()} {li.uom}</Data>
                         </td>
-                        {panelMode === 'editing' && (
+                        {effectivePanelMode === 'editing' && (
                           <td className="px-3 py-2 text-right">
                             {/* Ruling 6.2: text + inputMode, never type="number" —
                                 the browser must not adjudicate the separators
@@ -750,7 +779,7 @@ const SupplierOrders: React.FC = () => {
               </div>
             </section>
 
-            {panelMode === 'editing' && (
+            {effectivePanelMode === 'editing' && (
               <section>
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
                   {t('supplierOrders.panel.deliveryNotes')}
@@ -786,7 +815,7 @@ const SupplierOrders: React.FC = () => {
               </section>
             )}
 
-            {panelMode === 'change-request' && (
+            {effectivePanelMode === 'change-request' && (
               <section>
                 <h3 className="text-label text-text-tertiary uppercase mb-3">
                   {t('supplierOrders.panel.changeRequest')}
@@ -803,7 +832,7 @@ const SupplierOrders: React.FC = () => {
               </section>
             )}
 
-            {panelMode === 'confirmed' && (
+            {effectivePanelMode === 'confirmed' && (
               <section className="bg-success-soft border-l-2 border-success rounded px-4 py-3">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle2 size={16} className="text-success" />
