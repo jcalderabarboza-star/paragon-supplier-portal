@@ -30,7 +30,15 @@ import { MockCommandService } from '../data/mock/MockCommandService';
 import type { QueryScope } from '../data/types';
 import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
-const FLOWS: { flow: FlowDefinition; entity: string; initial: string; states: string[] }[] = [
+const FLOWS: {
+  flow: FlowDefinition;
+  entity: string;
+  initial: string;
+  states: string[];
+  /** How many creation transitions this flow declares. Omitted = 1 (the common
+   *  shape); pinned so a silently-added second birth still reddens. */
+  creations?: number;
+}[] = [
   {
     flow: shipmentFlow,
     entity: 'shipment',
@@ -45,7 +53,19 @@ const FLOWS: { flow: FlowDefinition; entity: string; initial: string; states: st
     initial: 'Draft',
     states: ['Draft', 'Pending Approval', 'Approved', 'Sourcing Event', 'PO Created', 'Rejected'],
   },
-  { flow: supplierDocumentFlow, entity: 'supplierDocument', initial: 'Awaiting Upload', states: ['Awaiting Upload', 'Under Review', 'Valid'] },
+  {
+    flow: supplierDocumentFlow,
+    entity: 'supplierDocument',
+    initial: 'Awaiting Upload',
+    // §82 — `Rejected` joined the machine. It had been a `SupplierDocumentStatus`
+    // member and a §80 surface for longer than this flow has existed, while
+    // `t_supplierdoc_reject` pointed at `Awaiting Upload`; nothing compared them
+    // because the flow had no CommandTarget and no reject could fire.
+    states: ['Awaiting Upload', 'Under Review', 'Valid', 'Rejected'],
+    // Two births: the buyer REQUESTS one (→ initial), the supplier DECLARES one
+    // it was never asked for (→ Under Review). See the creation-shape test.
+    creations: 2,
+  },
 ];
 
 // Clock-derived values that MUST NOT be transition-states (law 0.5 / census G1).
@@ -58,7 +78,7 @@ const PROJECTIONS_EXCLUDED: Record<string, string[]> = {
 };
 
 describe('F0.4 remaining flows — registration + structure', () => {
-  for (const { flow, entity, initial, states } of FLOWS) {
+  for (const { flow, entity, initial, states, creations: creations_ } of FLOWS) {
     it(`${entity}: registered, valid, correct initial + states`, () => {
       expect(getFlow(entity)).toBe(flow);
       expect(validateFlow(flow)).toEqual({ ok: true, errors: [] });
@@ -73,11 +93,22 @@ describe('F0.4 remaining flows — registration + structure', () => {
       }
     });
 
-    it(`${entity}: honest creation shape (exactly one creation → initial)`, () => {
+    it(`${entity}: honest creation shape (every creation empty-from; one reaches initial)`, () => {
+      // ⚠️ **THIS ASSERTED "EXACTLY ONE CREATION → INITIAL" UNTIL §82, AND THAT
+      // WAS A PROPERTY OF THIS TABLE'S FIVE FLOWS RATHER THAN OF THE SCHEMA.**
+      // Derived across every registered flow: `requirementResponse` and
+      // `inventoryDeclaration` BOTH ship two creations, and
+      // `requirementResponse`'s land on `Draft` AND `Submitted` — a creation
+      // that does not reach `initial`, governed and wired since SDC-2b. So a
+      // second entry point is precedent, not novelty, and the honest invariant
+      // is the one that survives it: a creation is empty-`from` (the schema
+      // binds those two), the flow's declared `initial` is genuinely reachable
+      // at birth, and the COUNT is pinned per flow so a silently-added creation
+      // still reddens.
       const creations = flow.transitions.filter((t) => t.trigger === 'creation');
-      expect(creations).toHaveLength(1);
-      expect(creations[0].from).toEqual([]);
-      expect(creations[0].to).toBe(initial);
+      expect(creations).toHaveLength(creations_ ?? 1);
+      for (const c of creations) expect(c.from).toEqual([]);
+      expect(creations.map((c) => c.to)).toContain(initial);
       // Every non-creation transition names ≥1 declared from-state.
       for (const t of flow.transitions.filter((t) => t.trigger !== 'creation')) {
         expect(t.from.length).toBeGreaterThan(0);
@@ -129,10 +160,22 @@ describe('F0.4 remaining flows — roles are catalog-covered', () => {
 });
 
 describe('F0.4 remaining flows — adjudicated trigger shapes', () => {
-  it('SupplierDocument verify + reject are system-triggered (single primary trigger)', () => {
-    expect(getTransition('t_supplierdoc_verify')!.trigger).toBe('system');
-    expect(getTransition('t_supplierdoc_reject')!.trigger).toBe('system');
-    expect(getTransition('t_supplierdoc_submit')!.trigger).toBe('user');
+  // ⚠️ **THIS PIN INVERTED AT §82, AND THE FLOW HAD ALREADY NAMED THE RULING
+  // THAT WOULD INVERT IT.** `t_supplierdoc_verify` carried
+  // `because: 'ruled-unsurfaced'` with the note that this was *"the least
+  // settled value in the batch"* and that **Track R's operator lane is the
+  // ruling most likely to flip it**. It did. A submitted document nobody can
+  // see is the dead-end shape in the other direction — unread by the person
+  // whose act it awaits — so compliance reviews on a screen, as a `user`.
+  it('SupplierDocument supply + review verbs are all user acts, and surfaced', () => {
+    for (const id of ['t_supplierdoc_submit', 't_supplierdoc_verify', 't_supplierdoc_reject']) {
+      expect(getTransition(id)!.trigger, id).toBe('user');
+      expect(getTransition(id)!.surfaceable.surfaced, id).toBe(true);
+    }
+    // The declaration is a CREATION (empty `from` binds the trigger), and it is
+    // the verb `supplierdoc:upload` was ruled to permit at §79e.
+    expect(getTransition('t_supplierdoc_declare')!.trigger).toBe('creation');
+    expect(getTransition('t_supplierdoc_declare')!.requiredRole).toBe('supplierdoc:upload');
   });
 
   it('PR source/convert carry cascade metadata but NO cascade link (declaration, not emission)', () => {
@@ -157,12 +200,13 @@ describe('F0.4 remaining flows — inert (author-unwired, no CommandTarget)', ()
   // because no CommandTarget is registered for the entity (nothing is wired).
   // NOTE: purchaseRequisition GRADUATED out of this inert set at G1.1 — its PR
   // intake CommandTarget is now wired (C7-FIND-01), covered by
-  // purchaseRequisitionCommand.test.ts. The other four stay author-unwired.
+  // purchaseRequisitionCommand.test.ts. **supplierDocument GRADUATED at §82**
+  // for the same reason — its target is wired and its verbs fire, covered by
+  // `supplierDocumentCommand.test.ts`. Three stay author-unwired.
   const probes: { entity: string; transitionId: string }[] = [
     { entity: 'contract', transitionId: 't_contract_activate' },
     { entity: 'obligation', transitionId: 't_obligation_complete' },
     { entity: 'shipment', transitionId: 't_shipment_asn_received' },
-    { entity: 'supplierDocument', transitionId: 't_supplierdoc_verify' },
   ];
 
   for (const { entity, transitionId } of probes) {

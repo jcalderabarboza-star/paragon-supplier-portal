@@ -28,6 +28,17 @@ export function getRegisteredPolicyHooks(): readonly string[] {
 // Named business rules; the dispatcher binds each name to its implementation at
 // Step 3.4. Registered eagerly on import so a flow that references one validates.
 export const POLICY_HOOKS = {
+  /**
+   * §82 · supplierdoc reject: `rejectionReason` must be text with substance.
+   *
+   * ⚠️ **`requiredFields` IS NOT ENOUGH AND THIS IS THE THIRD VERB TO LEARN IT.**
+   * The dispatcher's emptiness check admits a string of spaces, so a required
+   * field can be satisfied by the space bar. That matters more here than
+   * anywhere: §80 built a supplier-facing surface that renders this text
+   * verbatim, so a blank reason is a refusal notice with an empty accusation in
+   * it. Twin of `PR_REJECT_REASON_AUTHORED` / `PR_REVISION_NOTE_AUTHORED`.
+   */
+  SUPPLIERDOC_REFUSAL_AUTHORED: 'supplierdoc_refusal_authored',
   /** PO confirm: each confirmed line qty must be > 0 and ≤ the ordered qty. */
   PO_CONFIRM_QTY_WITHIN_ORDERED: 'po_confirm_qty_within_ordered',
   /** ASN create: the parent PO (payload.poReference) must be Confirmed. */

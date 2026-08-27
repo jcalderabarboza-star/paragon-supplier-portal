@@ -227,8 +227,10 @@ export const processFlowPurposeEn: Record<string, string> = {
     'The paperwork Paragon must hold on a supplier — certificates, licences, bank details — and where each one stands.',
   'processFlows.purpose.t_supplierdoc_request':
     'Paragon asks a supplier for one specific piece of paperwork, so the gap sits on somebody’s list rather than being discovered at an audit.',
+  'processFlows.purpose.t_supplierdoc_declare':
+    'The supplier states the details of a certificate nobody asked for — which scheme, which number, who granted it, when it runs out — so a certificate Paragon did not know to ask for can still reach the people who check it. No file is transmitted; what is recorded is what the supplier says.',
   'processFlows.purpose.t_supplierdoc_submit':
-    'The supplier hands over what was asked for. From here the delay is Paragon’s, not theirs.',
+    'The supplier states the details of what was asked for. From here the delay is Paragon’s, not theirs.',
   'processFlows.purpose.t_supplierdoc_verify':
     'Somebody has confirmed the paper is genuine and current. Only now does it count for anything.',
   'processFlows.purpose.t_supplierdoc_reject':
@@ -492,8 +494,10 @@ export const processFlowPurposeId: Record<string, string> = {
     'Dokumen yang wajib dipegang Paragon atas seorang pemasok — sertifikat, izin, rincian bank — dan posisi masing-masing.',
   'processFlows.purpose.t_supplierdoc_request':
     'Paragon meminta satu berkas tertentu dari pemasok, agar celahnya ada di daftar seseorang, bukan baru ketahuan saat audit.',
+  'processFlows.purpose.t_supplierdoc_declare':
+    'Pemasok menyatakan rincian sertifikat yang tidak diminta siapa pun — skema, nomor, penerbit, tanggal — sehingga sertifikat yang tidak Paragon ketahui pun tetap sampai ke pihak yang memeriksanya. Tidak ada berkas yang dikirim; yang dicatat adalah rinciannya.',
   'processFlows.purpose.t_supplierdoc_submit':
-    'Pemasok menyerahkan apa yang diminta. Sejak titik ini keterlambatan ada di pihak Paragon, bukan pada mereka.',
+    'Pemasok menyatakan rincian atas apa yang diminta. Sejak titik ini keterlambatan ada di pihak Paragon, bukan pada mereka.',
   'processFlows.purpose.t_supplierdoc_verify':
     'Ada yang sudah memastikan berkasnya asli dan masih berlaku. Baru sekaranglah ia berarti sesuatu.',
   'processFlows.purpose.t_supplierdoc_reject':

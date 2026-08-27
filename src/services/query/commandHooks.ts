@@ -22,6 +22,7 @@ import type {
   QueryScope,
   InspectionResult,
   CommandDecision,
+  CertificateDeclaration,
 } from '../data/types';
 
 /**
@@ -939,6 +940,139 @@ export function useRequisitionRevise() {
         entity: 'purchaseRequisition',
         entityId: prId,
         payload: { revisionNote },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+// ── §82 · SUPPLIER DOCUMENTS — the declaration and compliance's review ───────
+//
+// ⚠️ **THE VARS TYPES CARRY THE VERB'S `requiredFields`, DELIBERATELY.** The
+// dispatcher refuses a blank one by name, but a caller that never had to think
+// about `certNumber` learns that at runtime; a required property teaches it at
+// the call site. Same argument as `useRequisitionRevise`'s non-optional
+// `revisionNote` — the only way to reach the dispatcher's refusal is to pass
+// something deliberately empty.
+//
+// ⚠️ **AND `declaredBy` / `declaredAt` ARE ABSENT FROM EVERY SHAPE HERE, WHICH
+// IS THE POINT.** They are minted in the target from `scope.actor` and the
+// clock. A form field for either would be attribution by assertion (C10 §6.2)
+// and a caller that could set `declaredAt` could backdate its own declaration
+// against an expiry.
+
+/**
+ * What a supplier states about a certificate.
+ *
+ * SUBTRACTED FROM THE STORED SHAPE BY NAME, rather than re-declared beside it.
+ * `declaredAt` and `declaredBy` are minted in the target from the clock and
+ * `scope.actor`; naming them here in an `Omit` is C10 6.2 written as a type
+ * rather than as a comment, and it means a caller CANNOT supply either. A
+ * parallel interface would have been a second copy of the same six fields,
+ * free to drift, and the stored-field gate flagged exactly that when it was one
+ * (eight fields declared and never read).
+ *
+ * `expiresOn` keeps the stored shape, `string | null`, rather than being widened
+ * to optional. It is the one field the verb does not require, and `null` already
+ * says so precisely: a permanent-validity certificate HAS no expiry, which is an
+ * answer rather than a missing one. Re-declaring it as `expiresOn?: string`
+ * would have added a ninth field to the intersection with no reader, which is
+ * how the stored-field gate found the parallel interface in the first place.
+ */
+export type CertificateDeclarationVars = Omit<
+  CertificateDeclaration,
+  'declaredAt' | 'declaredBy'
+>;
+
+/**
+ * Declare a certificate nobody asked for (fires the `creation` verb
+ * `t_supplierdoc_declare`, atom `supplierdoc:upload`).
+ *
+ * `supplierId` travels in the payload because `creationOwner` reads it there and
+ * the dispatcher checks it against `scope.supplierId` — a supplier may declare
+ * only for itself, QueryScope on a creation exactly as on a read.
+ */
+export function useSupplierDocumentDeclare() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, CertificateDeclarationVars & { supplierId: string }>({
+    mutationFn: (vars) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_supplierdoc_declare',
+        entity: 'supplierDocument',
+        payload: { ...vars },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Declare against a slot the buyer opened, or re-declare after a refusal
+ *  (fires `t_supplierdoc_submit`, atom `supplierdoc:submit`). */
+export function useSupplierDocumentSubmit() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, CertificateDeclarationVars & { docId: string }>({
+    mutationFn: ({ docId, ...vars }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_supplierdoc_submit',
+        entity: 'supplierDocument',
+        entityId: docId,
+        payload: { ...vars },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** Compliance accepts the declaration (`t_supplierdoc_verify`). */
+export function useSupplierDocumentVerify() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { docId: string }>({
+    mutationFn: ({ docId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_supplierdoc_verify',
+        entity: 'supplierDocument',
+        entityId: docId,
+        payload: {},
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Compliance refuses the declaration, WITH THE REASON THE VERB REQUIRES
+ * (`t_supplierdoc_reject`).
+ *
+ * `rejectionReason` is non-optional here for `useRequisitionReject`'s reason,
+ * and it matters more: §80 built the supplier's refusal surface on the promise
+ * that a reason always travels with the refusal, and a refusal with no reason is
+ * the dead end restated in the supplier's own language.
+ */
+export function useSupplierDocumentReject() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { docId: string; rejectionReason: string }>({
+    mutationFn: ({ docId, rejectionReason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_supplierdoc_reject',
+        entity: 'supplierDocument',
+        entityId: docId,
+        payload: { rejectionReason },
       }),
     onSuccess: (result) => {
       if (result.status !== 'failed') invalidate(scope);

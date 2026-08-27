@@ -193,6 +193,25 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
     readinessNoteKey: 'widget.honesty.awaitingProducer',
     source: 'SOMO / Grid',
   },
+  // ⚠️ **§82 — WIRING THE DOCUMENT VERBS FLIPPED GATE-1, AND GATE-2 IS WHY THAT
+  // DID NOT TURN THE PILL GREEN.** `supplierDocument` gained a CommandTarget, so
+  // the wiring census now derives LIVE for this capability — and the DATA has not
+  // changed at all: the twelve seeded rows are authored samples on
+  // "Sample …(illustrative)" tenants with `SAMPLE-` certificate numbers, and a
+  // declaration made in this session is a demo submission against a demo
+  // identity, because F1 real supplier identities have not landed. **A supplier
+  // typing into a form is not a data source.**
+  //
+  // This is the LIVENESS-DATASOURCE-01 model doing the exact job it was built
+  // for, in the LIVE registry rather than in its harness: the batch that wires a
+  // lane is precisely the batch tempted to call it live, and the second gate is
+  // what makes that impossible to do by accident. The entry comes out when real
+  // supplier identities land — the same F1 prerequisite `inventory` waits on,
+  // named identically so the two cannot drift apart.
+  supplierDocuments: {
+    readinessNoteKey: 'widget.honesty.awaitingSupplierIdentities',
+    source: 'F1 identities',
+  },
   // SDC-1 — the forecast publications the planner consolidates are SIMULATED
   // fixtures on the C8 grain; the real producer is the SOMO C8 feed (deferred
   // sibling seam, F-timeline). Named so the pill reads the SPECIFIC waiting

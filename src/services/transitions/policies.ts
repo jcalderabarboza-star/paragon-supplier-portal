@@ -418,6 +418,30 @@ bindPolicyHook(POLICY_HOOKS.PR_REVISION_NOTE_AUTHORED, ({ payload }) => {
   return { ok: true };
 });
 
+// ── §82 · SUPPLIERDOC REJECT — THE REASON THE SUPPLIER WILL READ ────────────
+//
+// The third instance of the same lesson, and the one with a reader on the other
+// end: §80's `RefusalBlock` renders this text word for word to the supplier the
+// refusal is about. A blank reason there is not a validation gap, it is a
+// refusal notice with nothing written in it — the dead end §80 existed to end,
+// restored by the space bar.
+bindPolicyHook(POLICY_HOOKS.SUPPLIERDOC_REFUSAL_AUTHORED, ({ payload }) => {
+  const value = payload.rejectionReason;
+  if (typeof value !== 'string') {
+    return { ok: false, reason: `rejectionReason must be text, got ${typeof value}` };
+  }
+  if (value.trim() === '') {
+    return {
+      ok: false,
+      reason:
+        'rejectionReason is blank — the supplier reads this text verbatim on their own ' +
+        'documents page, so a refusal with nothing written in it tells them only that ' +
+        'they failed',
+    };
+  }
+  return { ok: true };
+});
+
 // ── §68 · PR APPROVE — THE DECIDER IS NAMED, AND NOT BY THE CALLER ──────────
 //
 // ⚠️ **THIS IS C10 §6.2's SECOND HALF, AND IT IS THE FIRST IMPLEMENTATION OF

@@ -10,6 +10,8 @@ import {
   RefreshCw,
   Bell,
   Database,
+  Inbox,
+  XCircle,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -28,7 +30,13 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
-import { useComplianceRegistry } from '../services/query/hooks';
+import { useComplianceRegistry, useDocuments } from '../services/query/hooks';
+import {
+  useSupplierDocumentVerify,
+  useSupplierDocumentReject,
+} from '../services/query/commandHooks';
+import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import {
   computeStatus,
   daysRemaining,
@@ -99,6 +107,79 @@ const BuyerCompliance: React.FC = () => {
   // clock read inside pure code); rows recompute only if the read changes.
   const now = useMemo(() => new Date().toISOString(), []);
   const query = useComplianceRegistry();
+  // §82 — the review queue. A BUYER scope gets the cross-supplier superset from
+  // `applySupplierScope`, which is what makes a compliance officer able to see
+  // every supplier's pending declaration from one page.
+  const docsQuery = useDocuments();
+  const reviewQueue = useMemo(
+    () => (docsQuery.data?.items ?? []).filter((d) => d.status === 'Under Review'),
+    [docsQuery.data],
+  );
+  // ⚠️ ONE NOTICE PER VERB, IN THAT VERB'S OWN SLOT (§76). Verify and reject are
+  // separate atoms and are co-reachable on the same row, so each carries its own.
+  const review = useVerbAvailabilities({
+    verify: 'supplierdoc:verify',
+    reject: 'supplierdoc:reject',
+  } as const);
+  const verifyDoc = useSupplierDocumentVerify();
+  const rejectDoc = useSupplierDocumentReject();
+  const [rejecting, setRejecting] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  /**
+   * ⚠️ **THE OUTCOME IS READ FROM THE RESULT, NEVER ASSUMED FROM THE CALL.**
+   * `CommandResult.status` can be `failed` — a refusal rendered as a success is
+   * the defect this whole batch exists to remove, and reproducing it in the
+   * review half would be the same lie facing the other way.
+   */
+  const runVerify = async (docId: string) => {
+    setBusyId(docId);
+    try {
+      const result = await verifyDoc.mutateAsync({ docId });
+      if (result.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('compliance.queue.toast.failed'),
+          description: result.reason,
+        });
+        return;
+      }
+      toast({ variant: 'success', title: t('compliance.queue.toast.verified') });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const runReject = async (docId: string) => {
+    setBusyId(docId);
+    try {
+      const result = await rejectDoc.mutateAsync({
+        docId,
+        rejectionReason: rejectReason.trim(),
+      });
+      if (result.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('compliance.queue.toast.failed'),
+          description: result.reason,
+        });
+        return;
+      }
+      setRejecting(null);
+      setRejectReason('');
+      // The supplier sees the reason and the timestamp on their own documents
+      // page (§80) — this toast says the refusal was recorded, and says where it
+      // went, rather than implying it vanished into a queue.
+      toast({
+        variant: 'success',
+        title: t('compliance.queue.toast.rejected'),
+        description: t('compliance.queue.toast.rejectedDesc'),
+      });
+    } finally {
+      setBusyId(null);
+    }
+  };
   const items = query.data?.items ?? [];
 
   const rows: Row[] = useMemo(
@@ -199,6 +280,226 @@ const BuyerCompliance: React.FC = () => {
               {t('compliance.readiness.title')}
             </strong>{' '}
             {t('compliance.readiness.body')}
+          </div>
+        </div>
+      )}
+
+      {/* ── §82 · COMPLIANCE'S REVIEW QUEUE ────────────────────────────────
+          ⚠️ **THIS SECTION EXISTS BECAUSE ITS ABSENCE WAS THE FINDING.** The
+          supplier-document verbs were authored at F0.4 and `ruled-unsurfaced` as
+          *"a verification pipeline rather than a screen"* — so a declared
+          document landed in `Under Review` and **no buyer surface in the tree
+          read a `SupplierDocument` at all** (derived: the three readers were
+          `SupplierDocuments`, `SupplierDashboard`, `SupplierCertsExpiringWidget`,
+          every one supplier-side). Building the supplier's way in without this
+          would ship the dead-end shape in the other direction: not unread by the
+          gate, but unread by the person whose act it awaits.
+
+          ⚠️ **IT SITS ABOVE THE REGISTRY, NOT INSIDE IT, AND THE TWO ARE
+          DIFFERENT OBJECTS.** The table below is the certificate REGISTRY — what
+          Paragon believes it holds. This is a QUEUE — what somebody has to
+          decide about. Folding them into one list would make a supplier's
+          unverified claim look like a registry fact, which is exactly what
+          `lifecycleState` exists to keep apart. */}
+      {reviewQueue.length > 0 && (
+        <div
+          className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm mb-6 overflow-hidden"
+          data-testid="doc-review-queue"
+        >
+          <div className="px-5 py-4 border-b border-border-subtle flex items-center gap-2">
+            <Inbox size={16} className="text-action shrink-0" aria-hidden="true" />
+            <div>
+              <div className="text-sm font-bold text-text-primary">
+                {t('compliance.queue.title')}
+              </div>
+              <div className="text-xs text-text-tertiary mt-0.5">
+                {reviewQueue.length === 1
+                  ? t('compliance.queue.subtitle.one', { count: reviewQueue.length })
+                  : t('compliance.queue.subtitle.other', { count: reviewQueue.length })}
+              </div>
+            </div>
+          </div>
+
+          <div className="divide-y divide-border-subtle">
+            {reviewQueue.map((doc) => (
+              <div key={doc.id} className="px-5 py-4" data-testid={`doc-review-${doc.id}`}>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-text-primary">
+                      {doc.declaration
+                        ? t(certTypeLabelKey(doc.declaration.certType))
+                        : /* i18n-defer: mock/sample data (fixture document name) */
+                          doc.name}
+                    </div>
+                    <div className="text-xs text-text-tertiary mt-0.5">
+                      {/* i18n-defer: mock/sample data (supplier id) */}
+                      <Data>{doc.supplierId}</Data>
+                      {doc.declaration && (
+                        <>
+                          {' · '}
+                          <Data>{doc.declaration.certNumber}</Data>
+                        </>
+                      )}
+                    </div>
+                    {doc.declaration ? (
+                      <dl className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs">
+                        <div>
+                          <dt className="inline text-text-tertiary">
+                            {t('compliance.queue.field.issuer')}{' '}
+                          </dt>
+                          {/* i18n-defer: supplier-authored free text */}
+                          <dd className="inline text-text-secondary">
+                            {doc.declaration.issuer}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="inline text-text-tertiary">
+                            {t('compliance.queue.field.dates')}{' '}
+                          </dt>
+                          <dd className="inline text-text-secondary">
+                            <Data>{formatDate(doc.declaration.issuedOn)}</Data>
+                            {' → '}
+                            {doc.declaration.expiresOn === null ? (
+                              t('compliance.queue.noExpiry')
+                            ) : (
+                              <Data>{formatDate(doc.declaration.expiresOn)}</Data>
+                            )}
+                          </dd>
+                        </div>
+                        <div className="sm:col-span-2">
+                          {/* ⚠️ **`declaredAt` AND `declaredBy` ARE RENDERED HERE
+                              BECAUSE THE STORED-FIELD GATE SAID THEY WERE NOT.**
+                              It flagged both as stored-and-never-read — the
+                              `certBasis` shape — and the honest disposal is a
+                              reader, not an allowlist row. They also earn their
+                              place: a reviewer needs to know how old a claim is,
+                              and the attribution says out loud that this platform
+                              cannot name the person who made it. */}
+                          <dt className="inline text-text-tertiary">
+                            {t('compliance.queue.field.declared')}{' '}
+                          </dt>
+                          <dd className="inline text-text-secondary">
+                            <Data>{formatDate(doc.declaration.declaredAt)}</Data>
+                            {' · '}
+                            {doc.declaration.declaredBy.kind === 'UNATTRIBUTED'
+                              ? t('compliance.queue.declaredBy.unattributed')
+                              : doc.declaration.declaredBy.person.displayName}
+                          </dd>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <dt className="inline text-text-tertiary">
+                            {t('compliance.queue.field.scope')}{' '}
+                          </dt>
+                          {/* ⚠️ THE SUPPLIER'S OWN WORDS, RENDERED AS SUCH. This
+                              is NOT a material-code list and must never be shown
+                              as one — compliance reads it and assigns the codes.
+                              i18n-defer: supplier-authored free text. */}
+                          <dd className="inline text-text-secondary">
+                            {doc.declaration.scopeText}
+                          </dd>
+                        </div>
+                      </dl>
+                    ) : (
+                      /* A seeded row that predates the verb: it reached `Under
+                         Review` before declarations existed, so there is nothing
+                         to show and the surface says so rather than rendering
+                         empty labels over blanks. */
+                      <p className="mt-2 text-xs text-text-tertiary">
+                        {t('compliance.queue.noDeclaration')}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {review.verify.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={CheckCircle2}
+                        disabled={busyId === doc.id}
+                        onClick={() => {
+                          void runVerify(doc.id);
+                        }}
+                      >
+                        {t('compliance.queue.action.verify')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={review.verify}
+                        testId="handoff-supplierdoc-verify"
+                      />
+                    )}
+                    {review.reject.kind === 'held' ? (
+                      <Button
+                        variant="secondary"
+                        icon={XCircle}
+                        disabled={busyId === doc.id}
+                        onClick={() =>
+                          setRejecting((r) => (r === doc.id ? null : doc.id))
+                        }
+                      >
+                        {t('compliance.queue.action.reject')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={review.reject}
+                        testId="handoff-supplierdoc-reject"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* ⚠️ THE REASON IS REQUIRED AT THE VERB, SO IT IS REQUIRED HERE.
+                    `t_supplierdoc_reject` declares `requiredFields:
+                    ['rejectionReason']` and the dispatcher refuses a blank one —
+                    this input is not the guard, it is the surface honouring a
+                    guard that already exists. §80 built the supplier-facing
+                    refusal screen on the promise that a reason always travels
+                    with the refusal; this is the end of the wire that keeps it. */}
+                {rejecting === doc.id && review.reject.kind === 'held' && (
+                  <div
+                    className="mt-3 bg-bg-hover rounded px-3 py-3"
+                    data-testid={`doc-reject-form-${doc.id}`}
+                  >
+                    <label className="block">
+                      <span className="block text-label text-text-tertiary uppercase mb-1">
+                        {t('compliance.queue.reject.label')}
+                      </span>
+                      <textarea
+                        rows={2}
+                        data-testid="doc-reject-reason"
+                        className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary"
+                        placeholder={t('compliance.queue.reject.placeholder')}
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                      />
+                    </label>
+                    <p className="text-xs text-text-tertiary mt-1">
+                      {t('compliance.queue.reject.hint')}
+                    </p>
+                    <div className="flex justify-end gap-2 mt-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setRejecting(null);
+                          setRejectReason('');
+                        }}
+                      >
+                        {t('compliance.queue.action.cancel')}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={rejectReason.trim() === '' || busyId === doc.id}
+                        onClick={() => {
+                          void runReject(doc.id);
+                        }}
+                      >
+                        {t('compliance.queue.action.confirmReject')}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       )}

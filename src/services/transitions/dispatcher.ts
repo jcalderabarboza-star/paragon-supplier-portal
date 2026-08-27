@@ -91,8 +91,23 @@ export interface CommandTarget {
    * unaffected either way (it already requires a non-null owner).
    */
   requireCreationOwner?: boolean;
-  /** Creation apply: mint the entity in `toState`; return its assigned id. */
-  create?(payload: Record<string, unknown>, toState: string): { entityId: string };
+  /**
+   * Creation apply: mint the entity in `toState`; return its assigned id.
+   *
+   * ⚠️ **`scope` IS THE THIRD PARAMETER FOR `applyTransition`'S REASON, AND IT
+   * ARRIVED ONE VERB LATER (§82).** A creation that must record WHO acted needs
+   * the SESSION's actor, and the only alternative is a caller-supplied payload
+   * field — `setBy`'s shape, which C10 §6.2 names ATTRIBUTION BY ASSERTION and
+   * permits only because nothing can construct a `RESOLVED` actor yet. The
+   * update path was given this seam at the PR approval; a creation had no way to
+   * reach it at all, so `t_supplierdoc_declare` would have had to take its
+   * declarer from the form. Every pre-§82 target ignores the parameter.
+   */
+  create?(
+    payload: Record<string, unknown>,
+    toState: string,
+    scope: QueryScope,
+  ): { entityId: string };
 }
 
 export interface PolicyDecision {
@@ -364,7 +379,7 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     let result: CommandResult;
     if (isCreation) {
       if (!target.create) return fin(scope, transition.id, 'failed', refusal('UNSUPPORTED_CREATION', input.entity));
-      const { entityId } = target.create(payload, transition.to);
+      const { entityId } = target.create(payload, transition.to, scope);
       result = fin(scope, transition.id, outcome, undefined, entityId);
     } else {
       // 2e-c-3 — a state-preserving verb applies with the CURRENT state, so a

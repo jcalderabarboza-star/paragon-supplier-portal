@@ -240,15 +240,19 @@ const LANE_BUNDLES = Object.freeze({
     // not run along flow lines**, which is precisely why it had to be argued
     // per atom.
     //
-    // ⚠️ **`supplierdoc:upload` IS RULED TO BELONG HERE AND IS DELIBERATELY
-    // ABSENT.** The operator ruled the OWNER; the VERB is unauthored, and this
-    // file cannot express the first without the second — `businessRoles.test.ts`
-    // refuses a bundle naming an atom no transition requires (C10 §3.4). The
-    // ruling is recorded in `docs/findings.md`
-    // (`SUPPLIERDOC-UPLOAD-OWNED-BUT-UNAUTHORED-01`), where a ruling can be held
-    // without being asserted as a fact about the catalog.
+    // ⚠️ **`supplierdoc:upload` IS NOW ASSIGNED, AND §79e's HALF ONE CLOSES.**
+    // It was ruled to this lane and held in prose — *"the admin people are the
+    // ones who upload the certificates"* — while `businessRoles.test.ts` refused
+    // to let it be written down, because the bilateral gate rejects a bundle
+    // naming an atom no transition requires (*"there is nothing for it to
+    // permit"*, C10 §3.4). **The gate was right and the fix was never to weaken
+    // it:** §82 authored `t_supplierdoc_declare`, so there is now something for
+    // it to permit, and the assignment is a fact about the catalog rather than a
+    // ruling held beside it. `supplierLanes.test.ts` asserts the presence in the
+    // same two directions it used to assert the absence.
     back_office: Object.freeze([
       'invoice:submit',
+      'supplierdoc:upload',
       'supplierdoc:submit',
       'compliance:submit',
       'requirementresponse:acknowledge',
@@ -383,7 +387,17 @@ export const AUTOMATION_ATOMS: readonly TransitionRole[] = Object.freeze([
   'quotation:award', 'quotation:reject',
   'pr:source', 'pr:convert',
   'shipment:create', 'shipment:advance',
-  'supplierdoc:verify', 'supplierdoc:reject',
+  // ⚠️ **`supplierdoc:verify` / `:reject` LEFT THIS LIST AT §82, BECAUSE THEIR
+  // TRIGGER CHANGED.** They were here as machine acts of the "verification
+  // pipeline" the flow no longer claims to be: both are now `user`-triggered and
+  // surfaced, fired by a compliance officer on `/buyer/compliance`. An atom in
+  // this list is granted to the CASCADE fan-out, which re-dispatches inside a
+  // `catch {}` — so leaving a human review verb here would mean a future cascade
+  // could verify a certificate on nobody's authority and fail silently if it
+  // could not. No cascade targets them today (asserted in `businessRoles.test.ts`
+  // from `CASCADES`), so this removal changes no reachable act; it stops the list
+  // from describing a machine that no longer exists. Their `compliance:*` twins
+  // STAY — that flow is untouched and its verbs are still `system`.
   'compliance:verify', 'compliance:reject',
 ]);
 

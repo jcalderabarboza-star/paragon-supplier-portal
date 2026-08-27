@@ -96,6 +96,37 @@ export const complianceEn: Record<string, string> = {
   'compliance.table.remind': 'Remind',
   'compliance.table.empty': 'No certificates match the current filters.',
   // — Certificate scheme labels (derived from certType) —
+  // — §82 · COMPLIANCE'S REVIEW QUEUE —
+  // The copy never says "uploaded" or "document received": nothing was
+  // transmitted, and a queue that implies a file arrived would reintroduce on
+  // the buyer side exactly the claim §82 removed from the supplier side.
+  'compliance.queue.title': 'Declared certificates awaiting review',
+  'compliance.queue.subtitle.one':
+    '{{count}} supplier has stated a certificate. Nothing was uploaded — check the details against the certificate itself before confirming.',
+  'compliance.queue.subtitle.other':
+    '{{count}} suppliers have stated certificates. Nothing was uploaded — check the details against the certificates themselves before confirming.',
+  'compliance.queue.field.issuer': 'Granted by',
+  'compliance.queue.field.dates': 'Valid',
+  'compliance.queue.field.scope': 'Covers',
+  'compliance.queue.field.declared': 'Stated',
+  'compliance.queue.declaredBy.unattributed': 'by the supplier (no named person)',
+  'compliance.queue.noExpiry': 'no expiry',
+  'compliance.queue.noDeclaration':
+    'Seeded sample row — it reached review before declarations existed, so it carries no stated details.',
+  'compliance.queue.action.verify': 'Confirm',
+  'compliance.queue.action.reject': 'Refuse',
+  'compliance.queue.action.cancel': 'Cancel',
+  'compliance.queue.action.confirmReject': 'Record refusal',
+  'compliance.queue.reject.label': 'Why it is being refused',
+  'compliance.queue.reject.placeholder':
+    'e.g. the scope does not cover the materials we buy from this supplier',
+  'compliance.queue.reject.hint':
+    'The supplier reads this text word for word on their own documents page, so write it to them.',
+  'compliance.queue.toast.verified': 'Certificate confirmed',
+  'compliance.queue.toast.rejected': 'Refusal recorded',
+  'compliance.queue.toast.rejectedDesc':
+    'The supplier sees the reason and the date on their documents page, and can declare again.',
+  'compliance.queue.toast.failed': 'Not recorded',
   'compliance.certType.HALAL_BPJPH': 'Halal (BPJPH)',
   'compliance.certType.HALAL_MUI_LEGACY': 'Halal (MUI, legacy)',
   'compliance.certType.HALAL_FOREIGN': 'Halal (foreign scheme)',
@@ -192,6 +223,34 @@ export const complianceId: Record<string, string> = {
   'compliance.table.remind': 'Ingatkan',
   'compliance.table.empty': 'Tidak ada sertifikat yang cocok dengan filter saat ini.',
   // — Certificate scheme labels (derived from certType) —
+  // — §82 —
+  'compliance.queue.title': 'Sertifikat yang dinyatakan, menunggu tinjauan',
+  'compliance.queue.subtitle.one':
+    '{{count}} pemasok telah menyatakan sertifikat. Tidak ada berkas yang diunggah — cocokkan rinciannya dengan sertifikat aslinya sebelum mengonfirmasi.',
+  'compliance.queue.subtitle.other':
+    '{{count}} pemasok telah menyatakan sertifikat. Tidak ada berkas yang diunggah — cocokkan rinciannya dengan sertifikat aslinya sebelum mengonfirmasi.',
+  'compliance.queue.field.issuer': 'Diterbitkan oleh',
+  'compliance.queue.field.dates': 'Berlaku',
+  'compliance.queue.field.scope': 'Mencakup',
+  'compliance.queue.field.declared': 'Dinyatakan',
+  'compliance.queue.declaredBy.unattributed': 'oleh pemasok (tanpa nama perorangan)',
+  'compliance.queue.noExpiry': 'tanpa masa berlaku',
+  'compliance.queue.noDeclaration':
+    'Baris contoh bawaan — sudah masuk tinjauan sebelum pernyataan ada, jadi tidak membawa rincian yang dinyatakan.',
+  'compliance.queue.action.verify': 'Konfirmasi',
+  'compliance.queue.action.reject': 'Tolak',
+  'compliance.queue.action.cancel': 'Batal',
+  'compliance.queue.action.confirmReject': 'Catat penolakan',
+  'compliance.queue.reject.label': 'Alasan penolakan',
+  'compliance.queue.reject.placeholder':
+    'mis. cakupannya tidak meliputi material yang kami beli dari pemasok ini',
+  'compliance.queue.reject.hint':
+    'Pemasok membaca teks ini kata demi kata di halaman dokumen mereka, jadi tulislah untuk mereka.',
+  'compliance.queue.toast.verified': 'Sertifikat dikonfirmasi',
+  'compliance.queue.toast.rejected': 'Penolakan tercatat',
+  'compliance.queue.toast.rejectedDesc':
+    'Pemasok melihat alasan dan tanggalnya di halaman dokumen mereka, dan dapat menyatakan ulang.',
+  'compliance.queue.toast.failed': 'Tidak tercatat',
   'compliance.certType.HALAL_BPJPH': 'Halal (BPJPH)',
   'compliance.certType.HALAL_MUI_LEGACY': 'Halal (MUI, warisan)',
   'compliance.certType.HALAL_FOREIGN': 'Halal (skema asing)',

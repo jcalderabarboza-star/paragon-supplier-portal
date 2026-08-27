@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, fireEvent, within } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import { mockDataService } from '../services/data/mock/mockDataService';
@@ -81,16 +81,35 @@ describe('SupplierDocuments — the refused document', () => {
     );
   });
 
-  it('offers NO remedy affordance on the refused row', async () => {
-    // `supplierdoc:upload` is unauthored and the atom is the back-office lane's
-    // by ruling, so a resubmit control here would name a verb that does not
-    // exist. The refusal text carries the instruction; the platform promises
-    // nothing (`FORWARD-PROMISE-HAS-NO-HANDLER-01`).
+  // WARN **THIS PIN INVERTED AT S82, AND S80's OWN REASON IS WHY IT COULD.**
+  // It read: *"`supplierdoc:upload` is unauthored and the atom is the
+  // back-office lane's by ruling, so a resubmit control here would name a verb
+  // that does not exist"* - `FORWARD-PROMISE-HAS-NO-HANDLER-01`, correctly
+  // applied. The verb exists now, so the promise has a handler and withholding
+  // the control would be the dead end this page was built to end.
+  //
+  // The old assertion is KEPT, inverted, rather than deleted: if a later batch
+  // un-wires the verb, the control must go with it.
+  it('offers the remedy the refused row now has a verb for', async () => {
     renderWithProviders(<SupplierDocuments />, { identity: SUPPLIER });
     const block = await screen.findByTestId('doc-refusal-doc-012');
     const row = block.closest('tr')!;
-    expect(within(row).queryByRole('button', { name: /upload/i })).toBeNull();
-    expect(within(row).getByRole('button', { name: /view/i })).toBeInTheDocument();
+    const remedy = within(row).getByRole('button', { name: /declare again/i });
+    expect(remedy).toBeInTheDocument();
+  });
+
+  it('the remedy opens the declaration panel, and says no file is sent', async () => {
+    renderWithProviders(<SupplierDocuments />, { identity: SUPPLIER });
+    const block = await screen.findByTestId('doc-refusal-doc-012');
+    const row = block.closest('tr')!;
+    fireEvent.click(within(row).getByRole('button', { name: /declare again/i }));
+    // The honest sentence is present BEFORE the act, not after it.
+    expect(await screen.findByTestId('declaration-nofile-notice')).toHaveTextContent(
+      /does not receive, store or forward/i,
+    );
+    // And the panel carries no file control of any kind - the claim above would
+    // be false the moment one appeared.
+    expect(document.querySelector('input[type="file"]')).toBeNull();
   });
 
   it('another supplier sees neither the refusal nor its banner', async () => {
