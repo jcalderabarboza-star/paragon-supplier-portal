@@ -186,17 +186,28 @@ describe('§81 — the marker is READ, which is what makes it a marker', () => {
 
 describe('§81 — the receipt gate does NOT read sync state, and that is a ruling', () => {
   // ── ⚠️ THE ARGUMENT, KEPT WHERE THE ASSERTION IS ──────────────────────────
-  //   `verifyHalalAtReceipt` answers ONE question: was there a certificate that
-  //   actually backed the halal claim for this supplier × material at the instant
-  //   the lot was received? That is a fact about the CERTIFICATE and about BPJPH.
-  //   **Whether Paragon's own ERP holds a copy has no bearing on whether the
-  //   material is halal-certified**, so a certificate compliance has confirmed
-  //   and SAP has not yet seen is still confirmed, and the gate must not narrow
-  //   on it. Letting it would conflate two independent axes: `lifecycleState`
-  //   already carries "has compliance confirmed this" (Missing / Under Review /
-  //   Valid), and reading `sapSync` beside it would let an ERP bookkeeping fact
-  //   masquerade as a certification fact — refusing lots for a reason no
-  //   regulator recognises.
+  //   ⚠️ **STATE IT AFFIRMATIVELY, BECAUSE THE AFFIRMATIVE FORM IS THE
+  //   PRINCIPLE AND THE NEGATIVE FORM IS ONLY THE OUTCOME** (operator, on
+  //   reading the first draft of this note, which had only the negative form):
+  //
+  //       THE GATE IGNORES SYNC STATE BECAUSE COMPLIANCE CONFIRMED IT, NOT
+  //       BECAUSE SAP IS SLOW — AND THE REVERSE WOULD LET AN INTEGRATION DELAY
+  //       WITHHOLD A VERDICT A HUMAN ALREADY MADE.
+  //
+  //   That sentence generalises past this field and past this gate: it is the
+  //   rule for every future check tempted to read a transport state. A human
+  //   determination does not become provisional because a pipe is slow.
+  //
+  //   The mechanics underneath it: `verifyHalalAtReceipt` answers ONE question —
+  //   was there a certificate that actually backed the halal claim for this
+  //   supplier × material at the instant the lot was received? That is a fact
+  //   about the CERTIFICATE and about BPJPH. **Whether Paragon's own ERP holds a
+  //   copy has no bearing on whether the material is halal-certified**, so a
+  //   certificate compliance has confirmed and SAP has not yet seen is still
+  //   confirmed. `lifecycleState` already carries "has compliance confirmed
+  //   this" (Missing / Under Review / Valid); reading `sapSync` beside it would
+  //   let an ERP bookkeeping fact masquerade as a certification fact — refusing
+  //   lots for a reason no regulator recognises.
   //
   //   ⚠️ **THE ONE PLACE THE DISTINCTION WOULD MATTER IS NOT THIS GATE.**
   //   `docs/Halal_Compliance_Control_Design_v1.md` §67–75 puts the *block* at

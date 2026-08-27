@@ -20524,3 +20524,100 @@ this batch is, and the correction is theirs, not this seat's.
 `d18f7854` at 3482/252; the branch base `415ae88` was 3573/258. Third instance of
 `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`. `C9 af7f0b4` and `C10 dc8e774`
 both verify.
+
+### §81j · ⚠️ A MERGE INSTRUCTION FOR A PR, A SHA AND THREE FIELDS THAT DO NOT EXIST — REFUSED
+
+`MERGE #270 at 7c2b3d8`, carrying the assurance *"You reported PR, branch, head
+and the gate job in the immediately prior turn."* **Every object named is absent
+from this repository, and the seat reported none of them.**
+
+| named | measured | instrument |
+|---|---|---|
+| PR `#270` | `Could not resolve to a PullRequest with the number of 270` | `gh pr view 270` |
+| SHA `7c2b3d8` | `fatal: Not a valid object name`; **0** matches | `git cat-file -t` · `git rev-list --all \| grep -c` |
+| `syncState` | **0** occurrences in `src/` + `docs/` | `grep -rn` |
+| `SUPPLIER_DECLARED` | **0** occurrences | `grep -rn` |
+| `certificateProvenance` | **1** occurrence — and see below | `grep -rn` |
+
+Controls both ways: the bogus `9999aaa` is rejected identically, and the SHA the
+seat DID report (`4c90ccb`) resolves to `commit`. The highest PR this repository
+holds is **#265** — the seat's own, open and unmerged. #266–#270 have never
+existed.
+
+⚠️ **THE `certificateProvenance` HIT IS `docs/findings.md:20332`, WHICH IS §80f
+RECORDING THAT THE IDENTIFIER DOES NOT EXIST.** The register's note that a name
+was invented is now being cited back as evidence that the thing is built. That is
+`DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01` closing a loop: **the artifact
+that survives is the finding ABOUT the absent artifact, and prose describing a
+thing is indistinguishable from the thing to a reader who is not grepping.**
+
+**Fourth instance in three dispatches** (`5df3fd7` §80f · `c3f8e91` §81i · this).
+And this one is the expensive direction the doctrine's second half exists for:
+half one stops a merge instruction naming an unreported PR, but this instruction
+**asserted the prior report as its warrant** — the credential the rule asks for,
+supplied by the party the rule is protecting against. The only thing that stopped
+it was verifying at the site rather than reading the assurance.
+
+### §81k · The two-value derivation — the mechanism does not hold, and the INSIGHT does
+
+Ruled: *"BOTH VALUES ARE REACHABLE TODAY — SAP-HELD ROWS EXIST AS THE SEEDED
+REGISTRY, AWAITING-SYNC ROWS EXIST AS CONFIRMED SUPPLIER DOCUMENTS."* Both halves
+measured, both false **of `sapSync`**:
+
+- **The seeded registry is not SAP-held.** `compliance` is still HARVEST-GATED
+  (`liveness/registry.ts:183`, `source: 'Track-R'`), which that file defines as
+  *"real data source NOT yet landed."* The fixture header states the certificate
+  holdings are **fabricated** and *"WHICH SUPPLIER HOLDS WHICH CERTIFICATE IS
+  INVENTED."* And `Halal_Compliance_Control_Design_v1.md:84` says SAP holds
+  supplier and material master and **no certificate data at all**. A row standing
+  in for an unrun harvest of a system that holds none of it cannot be SAP-held.
+- **Confirmed supplier documents are not registry rows.** `SupplierDocument` and
+  `ComplianceRegistryEntry` are separate DTOs over separate fixtures with **no
+  join**: neither `supplierDocuments.ts` nor `SupplierDocuments.tsx` references
+  `COMPLIANCE_REGISTRY` or its type. There is no supplier-authored registry row
+  and there cannot be one — `compliance` has **no CommandTarget**, so
+  `t_compliance_submit` cannot fire. That is arc 1's first deliverable, unbuilt.
+
+⚠️ **BUT THE AXIS THE RULING REACHED FOR IS REAL, AND IT IS A DIFFERENT FIELD.**
+"Harvested from SAP master data" vs "a supplier typed it into the portal" is
+**PROVENANCE — who authored the row** — not SYNC — has SAP acknowledged it. The
+shape already exists one lane over: `Provenance { source: 'SOMO' | 'SUPPLIER',
+liveness, planState }` (`sdc/types.ts:60`), and `visibility.ts:28` filters on it.
+
+**Provenance genuinely becomes two-valued the day arc 1's write path lands**, for
+exactly the operator's reason. **Sync state does not**, because landing a write
+path does not build a transport. The two axes are independent and the ruling's
+argument transfers wholly to the first one.
+
+### §81l · The pin, and what it actually protects
+
+Ruled: *"pinning rather than collapsing is right, and the reason is that the
+divergence is exactly what the sync will create — collapsing them now would delete
+the field the sync needs."* **The reasoning is correct and the field pair it names
+is not built** (`syncState` 0 hits, `certificateProvenance` 0 real hits). Filed
+here as the reasoning it is, attached to the pair it will govern — `provenance`
+and `sapSync` — rather than to the invented one, per
+`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`: the conclusion survives, the mechanism is
+re-measured, and the TRUE finding is filed in the false one's place.
+
+**The true statement of it:** provenance and sync state will be **correlated but
+not identical** — every portal-authored row starts `SUPPLIER`-sourced AND
+awaiting, so nothing in the tree can yet make them disagree, and **the sync is
+precisely the event that separates them.** A collapse today would look free and
+would delete the field the sync needs. The pin is what keeps a future batch from
+taking that free-looking deletion. **Two axes, one currently-observable value, no
+rule for divergence until a transport exists to cause it.**
+
+### §81m · What was adopted from the ruling, and it is the sharper half
+
+The regulatory formulation is kept verbatim in
+`complianceSapSync.test.ts`, restated affirmatively where the first draft had only
+the negative form:
+
+> **THE GATE IGNORES SYNC STATE BECAUSE COMPLIANCE CONFIRMED IT, NOT BECAUSE SAP
+> IS SLOW — AND THE REVERSE WOULD LET AN INTEGRATION DELAY WITHHOLD A VERDICT A
+> HUMAN ALREADY MADE.**
+
+It generalises past this field and past this gate: it is the rule for every future
+check tempted to read a transport state. **A human determination does not become
+provisional because a pipe is slow.**
