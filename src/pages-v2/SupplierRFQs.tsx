@@ -41,6 +41,8 @@ import {
   useQuotations,
 } from '../services/query/hooks';
 import { useQuotationSubmit } from '../services/query/commandHooks';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import {
   buildQuotationSubmitPayload,
   isCurrencyRefusal,
@@ -327,6 +329,7 @@ const RFQCard: React.FC<RFQCardProps> = ({
   onAskQuestion,
 }) => {
   const { t } = useTranslation();
+  const quoteAvailability = useVerbAvailability('quotation:submit');
   const [expanded, setExpanded] = useState(false);
   const urgent = rfq.daysRemaining <= 7;
   const Icon = CHANNEL_ICON[rfq.receivedVia] ?? Inbox;
@@ -425,9 +428,22 @@ const RFQCard: React.FC<RFQCardProps> = ({
         </div>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="outline" onClick={() => onSubmitQuote(rfq)}>
-            {t('rfqs.card.submitQuote')}
-          </Button>
+          {/* ⚠️ `quotation:submit` IS COMMERCIAL'S. A fulfilment or back-office
+              seat reads the wait with the lane named, in the slot the button
+              occupied — the ENTRY into the quote panel, so the panel's own
+              commit stays unreachable behind one statement rather than two.
+              Asking a question is UNGOVERNED and stays live beside it: a lane
+              that cannot quote can still talk to procurement. */}
+          {quoteAvailability.kind === 'held' ? (
+            <Button variant="outline" onClick={() => onSubmitQuote(rfq)}>
+              {t('rfqs.card.submitQuote')}
+            </Button>
+          ) : (
+            <HandoffNotice
+              availability={quoteAvailability}
+              testId="handoff-quotation-submit"
+            />
+          )}
           <Button
             variant="secondary"
             icon={MessageSquare}

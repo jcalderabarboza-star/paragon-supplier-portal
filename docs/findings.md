@@ -19859,3 +19859,365 @@ atom, so a tile that moved would have been measuring the roster twice.
   are holdable (§77f-ii). It now shows **two** wide roles, one holdable and one
   not, distinguishable only by reading their descriptions.
 - **FLOOR:** 3482/252 → **3517/254**, as the gate note asks.
+
+## §79 — THE SUPPLIER SIDE GETS LANES: `commercial` · `fulfilment` · `back_office`, BENEATH AN ANCHOR THAT HOLDS NOTHING
+
+**Batch:** 2026-08-26, on the rulings recorded below. Stacked on **PR #262**
+(`buyer_all`), which is still open and unruled — this batch needs its
+offer/seed split (`SEEDED_SEAT_ROLES`) and cannot rebase off it.
+
+**The operator's sentence, which is the whole design:** *the person who talks to
+procurement is not the person who processes the order.* Procurement negotiates
+with a commercial contact; once the order is placed, admin people handle it; and
+*the admin people are the ones who upload the certificates.*
+
+### 79a · WHAT THE SUPPLIER SIDE ACTUALLY WAS — **16 atoms, and one bundle held every one**
+
+Derived from `SYSTEM_ROLES.supplier` ∪ `PERSONA_ROLES.supplier` against
+`getKnownFlows()` (the BARREL, §42b), with membership guards both ways.
+
+**16 atoms across 18 transitions**, and the two instruments agree *exactly* —
+`bundle ∖ persona = []`, `persona ∖ bundle = []` — because `PERSONA_ROLES` is
+DERIVED from `PERSONA_SYSTEM_ROLES`. **They are one instrument wearing two
+names**, which is worth stating because a disagreement between them was the
+premise of a question this batch was asked to answer (79f).
+
+| | atoms |
+|---|---|
+| dispatchable + live caller (9) | `po:confirm` · `asn:create` · `asn:submit` · `invoice:submit` · `quotation:submit` · `requirementresponse:submit` · `requirementresponse:acknowledge` · `inventorydeclaration:declare` · `incomingshipment:report` |
+| dispatchable, no caller (5) | `po:view` · `po:acknowledge` · `incomingshipment:ship` · `:arrive` · `:cancel` |
+| not dispatchable (2) | `supplierdoc:submit` · `compliance:submit` — flows with no `CommandTarget` |
+
+⚠️ **THE DISPATCHED PREMISE INVERTED IN BOTH OF ITS CLAUSES.** It read *"eight
+dispatchable supplier atoms and NO SUPPLIER BUNDLE CONTAINS ONE."* Measured: the
+bundle contained **all sixteen**. The shape was not *bundles holding nothing* —
+it was **one bundle holding everything**, which is the same undifferentiated
+grant the persona-wide buyer wildcard was retired for, one tenancy over.
+(Operator correction, recorded in their own words: *"the earlier census counted
+UNOWNED atoms, and five were already owned by the supplier bundle and invisible
+to that question. A census answers the question it asked."*)
+
+### 79b · ⚠️ THE QUESTION THE OPERATOR MOST NEEDED ANSWERED — **THE SHORT-CIRCUIT DOES NOT EXIST**
+
+The dispatch's fear: *"IF ADDING ATOMS CHANGES NOTHING BECAUSE THE PERSONA CHECK
+FIRES FIRST, THAT IS THE FINDING AND THE BATCH IS THE SHORT-CIRCUIT, NOT THE
+BUNDLES."*
+
+Measured two ways, because this decided the batch.
+
+**Statically:** `roleMatches` → **0 occurrences in `src`**; `personaOf` → **0**
+(controls: `resolveRoles` = 16, `personaCan` = 48). The role gate is
+`dispatcher.ts:327`, a bare `resolveRoles(scope).includes(requiredRole)`. The
+dispatcher's only `personaType` reads are `:299` and `:315` — both in the SCOPE
+gate, both `=== 'supplier'`, both TIGHTENING, and both *before* the role gate
+rather than instead of it.
+
+**Empirically** — same seat, same supplier, same PO, only the bundle differs:
+
+```
+[NARROW] po=po-008 status=failed reason=ROLE_NOT_PERMITTED:po:confirm
+[FULL]   po=po-008 status=done   reason=undefined
+[READS]  full=2  narrowed=2
+```
+
+**The role gate was already live on the supplier side.** It simply had nothing
+to say while one bundle held everything. So the bundles were never ornamental,
+and a lane written today dispatches correctly with no gate change.
+
+⚠️ **AND THE THIRD LINE IS A BOUNDARY, NOT A FOOTNOTE: ROLES GOVERN ACTS; SCOPE
+GOVERNS SIGHT.** A narrowed seat still SEES every document it owns. If narrowing
+a role ever narrowed a read, the split would have moved a boundary no ruling
+touched — pinned in `supplierLaneDispatch.test.ts`.
+
+### 79c · ⚠️ THE ANCHOR IS NOT A TENANCY GATE — the ruling stands, its mechanism does not
+
+The ruling: *"`supplier` STAYS AND STOPS BEING AN OPERATING ROLE. It becomes THE
+TENANCY ANCHOR — what makes a seat a supplier seat"*, resting on
+*"`personaOf('supplier')` is what makes a supplier a supplier … dropping it would
+destroy the tenancy check."*
+
+**Measured: `personaOf` does not exist, and NO code anywhere tests membership of
+`businessRoles` to decide a side** (zero non-spec `businessRoles.includes(…)`
+sites). Tenancy is enforced on `scope.personaType`, in the SCOPE gate, two gates
+before roles are consulted. **Dropping `supplier` from the role list would not
+have touched the tenancy check at all.**
+
+⚠️ **KEEPING IT IS STILL RIGHT, FOR A DIFFERENT AND MEASURABLE REASON**, and this
+is `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` applied in the direction that rule was
+written for — re-measure, then record the TRUE mechanism beside the ruling it
+supports. `PERSONA_ROLES.supplier` is `atomsFor(PERSONA_SYSTEM_ROLES.supplier)`,
+DERIVED; so an atom owned by no offered role leaves the persona's span, and
+`legality.ts:118` `nextActorFrom` then reports its verb **`stranded`** — *nobody
+can do this* — about acts a supplier performs daily.
+
+⚠️ **AND THE DIFFERENCE IS NOT ACADEMIC, BECAUSE THE RULING ALSO SAID THE ROW
+MUST SAY SO.** A catalogue row reading *"this is what makes a seat a supplier
+seat"* would be a **false statement on the one page whose subject is what a role
+can do** — precisely what `adminCrossTenancyReach.test.ts` was written to
+prevent one role over. The shipped copy says the honest thing instead: it names
+the side, grants nothing, points at the three lanes, and states plainly that
+*tenancy is not enforced by this role*. Asserted in `supplierLanes.test.ts`.
+
+### 79d · ⚠️ "AN UNOWNED ATOM STAYS UNOWNED AND SAYS SO" IS STRUCTURALLY UNAVAILABLE HERE
+
+Ruled twice, and it cannot be built — **not by preference, by a gate this
+project already ships.** `businessRoles.test.ts` asserts the bundles bilaterally
+against the catalog, and its second direction reads: *"AN ATOM NO ROLE HOLDS IS
+A VERB NOBODY — PERSON OR MACHINE — CAN FIRE."* Leaving the two orphans unowned
+turns that red, and independently strands two live, wired, SURFACED verbs
+(`t_requirementresponse_acknowledge`, `t_inventorydeclaration_declare`).
+
+**So both were placed, and both are named as judgement calls rather than
+buried:**
+
+- **`inventorydeclaration:declare` → FULFILMENT.** A single-state SNAPSHOT of
+  stock on hand; its own channel note describes it as answering *"current stock
+  of Glycerin?"* with one number; its surface is a bulk stock-entry grid. The
+  people who count the stock are the people who ship it. *Rival reading: a
+  capacity signal, hence commercial. Recorded, not argued away.*
+- **`requirementresponse:acknowledge` → BACK OFFICE**, and **this one splits its
+  own entity, which is why the split had to be argued per ATOM and never per
+  flow.** The flow header draws the line itself: a visibility-only line *"carries
+  NO commitment ask … no quantity, no date, no capacity claim"*, and *"THE DRAFT
+  LANE EXISTS FOR THE RESPONSE THAT COMMITS SOMETHING."* An act with no
+  commercial content and no fulfilment content is administrative correspondence.
+
+⚠️ **AND ONE SEGREGATION THE ATOM LAYER CANNOT EXPRESS:**
+`requirementresponse:submit` guards **both** drafting and sending
+(`t_requirementresponse_submit` and `t_requirementresponse_promote`), so
+draft-then-send cannot be split between two people without a FLOW change. Same
+shape as `SEGREGATION-CROSSED-IN-ONE-DRAWER-01` (§76d), one tenancy over.
+
+### 79e · `SUPPLIERDOC-UPLOAD-OWNED-BUT-UNAUTHORED-01` — **OPEN. Two defects, stated separately, per the operator's ruling**
+
+`supplierdoc:upload` → **0 occurrences in `src`, 0 in `docs`** (control:
+`supplierdoc:submit` = 5). The operator ruled the OWNER — back office, on the
+grounds that *the admin people are the ones who upload the certificates*.
+
+- **HALF ONE — the atom is unowned.** Ruled to back office. **Not assigned**, and
+  it cannot be: the bilateral gate refuses a bundle naming an atom no transition
+  requires (*"there is nothing for it to permit"*, C10 §3.4). The ruling is held
+  here, where a ruling can be held without being asserted as a fact about the
+  catalog. `supplierLanes.test.ts` pins the absence with a known-good control.
+- **HALF TWO — the verb is unauthored**, and the operator's instruction is
+  explicit: **do not author it.** *A ruling on who owns an act is not a ruling
+  that the act should exist*, and authoring a transition to justify an assignment
+  is the shape this project has retired repeatedly.
+
+**WHAT WOULD MAKE IT WORTH AUTHORING, AND WHAT IT WOULD COST.** The platform
+already describes supplier document upload in its own compliance copy; the halal
+lane reads certificates it has **no path to receive** (arc 1's first deliverable
+is exactly that missing write path); and the owner is now named. **The only
+missing piece is the verb.** But it is not a transition-shaped hole:
+`COMPLIANCE_REGISTRY` is ruled to read certificates from SAP, so **a supplier
+upload is a DIFFERENT PATH INTO THE SAME LANE** — two provenances for one fact,
+which is the `t_inventorydeclaration_declare` / `_record` question again
+(self-submitted vs recorded, permanently distinguishable from the event stream).
+**That is a design question, and it needs answering BEFORE a transition is
+written, not by writing one.** It rides arc 1.
+
+### 79f · `quotation:submit` RESOLVES — and the filing it was attributed to does not exist
+
+The dispatch: *"You filed it as the atom whose role answer and persona answer
+disagree."* Measured — `grep -c "quotation:submit" docs/findings.md` → **1**, and
+it is `2e-c-2-FIND-02`, about a toast rendering a dispatcher constant (control:
+`po:confirm` → 3). **No such filing was ever made.**
+
+And no disagreement exists to resolve. Three instruments: bundle → supplier only;
+`personaCan('supplier')` true / `('buyer')` false; flow → submit SUPPLIER, review
+BUYER, award/reject automation-only. **`PERSONA_ROLES.supplier ∩
+PERSONA_ROLES.buyer = []`** — the sides are strictly disjoint; no atom is on
+both. `commercial` holding it changes no answer. **CLOSED, with the resolution
+recorded rather than the entry deleted** (operator instruction).
+
+### 79g · THE COVERAGE, DERIVED AS (SURFACE × VERB)
+
+⚠️ **AND THE RECORDED REASON FOR ZERO SUPPLIER COVERAGE EXPIRES WITH THIS
+BATCH.** `CLAUDE.md` said supplier surfaces carry no handoff guard because *"a
+supplier seat is exactly `['supplier']` — no proper subset to narrow to, so every
+notice is dead branch."* True until now, and false the moment the lanes land.
+
+Nine new notice sites, each in its own verb's slot (§76), each derived as
+(surface × verb) and never as (surface → imports the guard)
+(`IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01`):
+
+| surface | verb | slot |
+|---|---|---|
+| `SupplierOrders` | `po:confirm` | panel entry |
+| `OrdersToConfirmWidget` | `po:confirm` | row — **a widget is a surface** |
+| `SupplierRFQs` | `quotation:submit` | card entry |
+| `SupplierInvoices` | `invoice:submit` | **page header create** + row submit |
+| `SupplierShipments` | `asn:create`, `asn:submit` | row + cell |
+| `SupplierForecasts` | `requirementresponse:submit` | line-card entry + draft promote |
+| `SupplierForecasts` | `requirementresponse:acknowledge` | line-card entry |
+| `SupplierForecasts` | `inventorydeclaration:declare` | tab entry (**one notice for two doors into one verb**) |
+| `SupplierForecasts` | `incomingshipment:report` | tab entry |
+
+**The rule applied, stated once so it is checkable: gate the FIRST REFUSABLE STEP
+THE READER CAN SEE.** For a create that opens a form, that is the header or tab
+button (§73's precedent — *don't open a wizard the dispatcher will refuse at the
+end*). For a per-line act, the entry on the line. Gating both would put two
+notices on one verb, and the second sits behind a gate that cannot open — a dead
+branch, not defence in depth.
+
+**What is deliberately NOT gated, with the reason:** every control holding no
+atom. *Ask a question* on `SupplierRFQs` and *Export* on `SupplierInvoices` stay
+live for a narrowed seat — a read is **ungoverned, not withheld** (§75e), and a
+lane that cannot quote can still talk to procurement. Asserted, not assumed.
+
+### 79h · ⚠️ A DEFECT IN THIS SEAT'S OWN OPEN PR, FOUND BY THIS INVESTIGATION
+
+PR #262 added two identity-panel notices. `lastRoleHeld` is `held.length === 1`
+— and the supplier persona offered exactly ONE role, so **every supplier seat
+rendered the last-role notice permanently**, advising *"to swap it, add the new
+role first, then remove this one"* — **advice no supplier could ever follow,
+because there was nothing to add.** An always-on notice is not a notice.
+
+My browser QA on #262 walked the BUYER seat only. The dispatch that mandated it
+named no persona and I did not derive one. **The standing rule says run browser
+QA on any batch touching a rendered surface; it does not yet say WHICH SEATS —
+and a seat is a surface variable exactly like a locale.** That is the sharper
+form of the rule, and it is what this batch's QA bar (a narrowed supplier seat,
+walked) encodes.
+
+Repaired here by the ruling itself: the seed grants four roles, so the notice is
+rare and true. Both halves asserted — absent on the seeded seat, **present when a
+seat really is down to one** (a notice that never renders and one that renders
+correctly are indistinguishable from the first assertion alone).
+
+### 79i · NOT DONE, AND THE REASON IS THE INTERESTING PART
+
+**50 spec files build a supplier scope from `PERSONA_SYSTEM_ROLES.supplier` — the
+OFFER — across 66 sites; zero use the seed.** Today the two are identical for
+this persona, so nothing is wrong and nothing widened. It is the same trap #262
+fixed for `test-utils`' `BUYER`, and it becomes live the day an
+offerable-but-unseeded supplier role exists.
+
+⚠️ **IT WAS ATTEMPTED AND REVERTED, AND THE ATTEMPT IS THE FINDING.** A blanket
+`sed` over the 50 files rewrote import lists that still needed
+`PERSONA_SYSTEM_ROLES` for the BUYER side, breaking 12 files that had nothing to
+do with the supplier persona — **derivation rule 2 firing live: widening creates
+false accusations as readily as narrowing creates blind spots.** Reverted whole.
+It is filed rather than half-done: no ruling requires it, the value is
+speculative, and burying a role-and-surface review under a 50-file mechanical
+diff is the wrong trade. `SUPPLIER-SPECS-READ-THE-OFFER-01`, OPEN.
+
+### 79j · DISPOSITION
+
+- **BUILT:** three lanes + the anchor emptied; the offer and the seed both at
+  four; EN + ID names and descriptions (each lane states what it CANNOT do); nine
+  handoff sites across six supplier surfaces and one widget; three new spec files.
+- **CARRIED, NOT INTRODUCED:** the five dispatchable supplier atoms with no
+  caller (`po:view`, `po:acknowledge`, `incomingshipment:ship/arrive/cancel`) and
+  the two with no `CommandTarget` — all now owned by a lane, none newly reachable.
+- **BOARD CORRECTIONS.** The dispatch cited main `3fce80e` (**does not exist**;
+  negative control `3fce80ezz` likewise, known-GOOD `d18f785` resolves) and floor
+  `3494/253` (**never existed on any ref**; `git log --all -S'3494'` over
+  `scripts/floor.json` returns nothing). Main is `d18f785`, floor `3482/252/7`.
+  C9/C10 pins are BLOB ids — `2b4f38d` / `8cab8a1` — and the cited `af7f0b4` /
+  `dc8e774` are commits, unchanged.
+
+### 79k · ⚠️ BROWSER QA FOUND A DEFECT THE UNIT SUITE COULD NOT — `ASN-WIZARD-TAB-UNGATED-01`, CLOSED IN THIS BATCH
+
+Built bundle, both locales, cache-busted, entry chunk asserted from inside the
+page and matched to the on-disk build (`index-D2RHaZpc` → `index-DDZCrZ6n` after
+the fix). Served bundle asserted to carry six strings that exist only after this
+batch, with **two negative controls absent** (`supplierdoc:upload`, and an
+invented role name).
+
+⚠️ **THE FIND, AND IT IS `IMPORTER-PRESENCE-IS-NOT-VERB-COVERAGE-01` FOR THE
+THIRD TIME — ON THE SEAT THAT WAS APPLYING THE RULE.** `SupplierShipments` has a
+**second entry to the ASN verbs**: a sub-tab that opens a three-step wizard
+(`Pilih PO · Detail · Tinjau`) whose `onComplete` dispatches `t_asn_create` AND
+`t_asn_submit`. The row-level create was gated; **the tab was not**, and a
+commercial-only seat could walk the whole wizard to its last click.
+
+**Nothing in the unit suite could have seen it** — no spec drives that tab — and
+no source matcher I ran found it either, because the tab's label comes from
+`supplierShipments.tab.createAsn` while the verb's own label is
+`asn.create.action`: **the affordance and the verb do not share a string.** It
+was found by walking a NARROWED SEAT across the BUILT BUNDLE, which is precisely
+what this dispatch's QA bar asked for and why it asked for it.
+
+Fixed by gating the TAB (§73's rule — *do not open a wizard the dispatcher will
+refuse at the end*), on **both** atoms, since offering it to a seat that can
+create but not submit would strand a draft at the final click. The body keeps a
+notice too, and that one is NOT a dead branch: `tab` is component state, so a
+seat narrowed *while the wizard is open* lands there with the tab already
+selected.
+
+**What the walk produced, ID locale, seat = `['commercial']`:**
+
+| surface | result |
+|---|---|
+| identity panel | `4 peran · 16 izin` → narrowed by REMOVAL to `1 peran · 2 izin` |
+| `SupplierInvoices` | create + submit both **Menunggu Administrasi Pemasok**; create button gone; **Export still live** |
+| `SupplierForecasts` (lines) | commitment **Konfirmasi ×2 LIVE**, acknowledge **withheld → Administrasi Pemasok** — *one entity, two lanes, one screen* |
+| `SupplierForecasts` (stock) | **Menunggu Pemenuhan Pemasok**, both declare doors gone |
+| `SupplierForecasts` (shipments) | **Menunggu Pemenuhan Pemasok** |
+| `SupplierShipments` | submit withheld; **wizard tab absent** after the fix |
+| `SupplierOrders` | panel **Menunggu Pemenuhan Pemasok** |
+| `SupplierRFQs` | ⚠️ **HELD CONTROL: `Kirim penawaran` LIVE ×2, zero notices** |
+
+**EN + full seat (the held-seat control):** `4 role(s) · 16 permissions`, all four
+named in English, **zero notices on any surface**, create live. Without this the
+withheld readings prove nothing — a broken notice renders zero too.
+
+**Catalogue, seventh exercise of the tile moving with no page edit:**
+`Roles 12 · 7 buyer · 4 supplier · 1 cross-tenancy` (sums to its own total), and
+**Distinct permissions UNCHANGED at 53** — the correct answer, and a check in
+itself: the split introduces no atom, so a tile that moved would have been
+counting the roster twice.
+
+⚠️ **AND THREE TIMES A DOM TEXT MATCHER NEARLY PRODUCED A FALSE ACCUSATION**, in
+one QA pass: the invoice drawer's TITLE is also *"New invoice"*; the SOH panel's
+retained DOM keeps a *"Deklarasikan stok"* button (`aria-hidden`, off-screen at
+x=2560); and a TAB labelled *"Buat ASN"* read as an action button. Only the third
+was real. **A visibility filter — width, viewport, and `aria-hidden` ancestry —
+is the difference between a QA sweep and a rumour**, and the same over-widening
+had already cost one spec rewrite (79i).
+
+### 79l · TWO FINDINGS THE WALK SURFACED, NEITHER INTRODUCED HERE
+
+- **`SUPPLIER-DASHBOARD-FALSE-AFFORDANCES-01` (OPEN).** `SupplierDashboard`'s
+  *"My recent purchase orders"* table renders buttons labelled **Konfirmasi** and
+  **Buat ASN** that fire a **toast and nothing else** — `SupplierDashboard.tsx`
+  has **zero** command hooks. This is arc 2's `BuyerRequisitions` finding with the
+  personas swapped: *an unreachable verb is silent; this one tells the supplier it
+  worked.* **The handoff guard cannot cover it and should not try** — a control
+  that dispatches nothing holds no atom, and gating it would dress an absent path
+  as a governed one. The fix is a write path or a truthful label, not a notice.
+- **`ROW-LABEL-NAMES-A-WITHHELD-VERB-01` (OPEN, minor).** `SupplierOrders`' row
+  button is labelled by `panelActionLabel(po)` — so a commercial seat reads
+  **"Konfirmasi"** on the row, clicks, and only then meets *Menunggu Pemenuhan
+  Pemasok* in the panel. Nothing fails and the honest answer arrives one click in,
+  but the label is optimistic. It is the `LABEL-NAMES-WRONG-VERB` shape: **a
+  handler-based census is blind to a false promise that lives in the COPY.**
+
+### 79m · ⚠️ `GATED-TREE-WAS-NOT-THE-COMMITTED-TREE-01` — the floor was measured on a tree that included an untracked file
+
+**CI went red on a batch whose local `npm run gates` was green, and nothing was
+failing in either run.** Local collected **3565/258**; CI collected
+**3559/257** — six tests and one file short, zero failures on both sides.
+
+The cause: the working tree still held `src/services/data/adminCrossTenancyReach.
+test.ts`, the **UNTRACKED** admin cross-tenancy probe from the previous arc. It
+contributed 6 tests across 1 file to the local run, and it was removed in the
+same command as the commit — so the number written into `scripts/floor.json` was
+true of the tree that was measured and false of the tree that was pushed.
+
+⚠️ **THIS IS THE CLASS THE OPERATOR NAMED AT #261, ARRIVING FROM THE ONE
+DIRECTION THAT ARGUMENT DID NOT COVER.** That ruling was about a reported SHA:
+*"A GATED TREE THAT IS NOT THE REPORTED TREE IS A GREEN READING OF SOMETHING
+ELSE."* The SHA here is correct and verified. **What differed was not the commit
+but the WORKING TREE the gate ran against** — and `git status` showing one
+untracked file is not something a green gate has any way to mention.
+
+**The asymmetry that makes it worth a row:** an untracked file can only ever make
+the local count HIGHER than the committed one, so this failure mode is always a
+*floor set too high*, which CI catches loudly on the very next run. The dangerous
+inverse — a floor set too LOW — cannot arise this way. So the cost is one red CI
+run, not a silent hole. Recorded because the reflex it teaches is cheap:
+**`git status --porcelain` before trusting a count, not only before committing.**
+
+Corrected to **3559/257**, re-measured on the committed tree.

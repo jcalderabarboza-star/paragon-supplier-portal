@@ -238,7 +238,15 @@ describe('⚠️ THE SUPER ADMIN — DERIVED, BOUNDED, AND NAMED', () => {
     // and only the first is an owner.
     expect(rolesHolding('invoice:pay')).toEqual(['finance']);
     expect(rolesHolding('gr:post')).toEqual(['receiving']);
-    expect(rolesHolding('po:confirm')).toEqual(['supplier']);
+    // ⚠️ **THE SUPPLIER ANSWER IS A LANE NOW, NOT THE TENANCY** — and this
+    // assertion changing is the supplier split landing, not a regression. It
+    // read `['supplier']` while ONE bundle held all 16 supplier atoms, so the
+    // owner of every supplier act was the fact of being a supplier. The anchor
+    // holds nothing, so `rolesHolding` can never return it again.
+    expect(rolesHolding('po:confirm')).toEqual(['fulfilment']);
+    expect(rolesHolding('quotation:submit')).toEqual(['commercial']);
+    expect(rolesHolding('invoice:submit')).toEqual(['back_office']);
+    expect(rolesHolding('po:confirm')).not.toContain('supplier');
     // …and admin's reach is still stated in full, on its own row.
     expect(SYSTEM_ROLES.admin).toContain('invoice:pay');
   });

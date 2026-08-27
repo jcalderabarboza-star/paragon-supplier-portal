@@ -182,7 +182,9 @@ describe('⚠️ IT IS A SUPERSET, NOT AN OWNER — the handoff must not name it
     // clean "no owners" — `EMPTY-INPUT-REPORTS-CLEAN-01` inside a handoff.
     expect(rolesHolding('invoice:pay')).toEqual(['finance']);
     expect(rolesHolding('gr:post')).toEqual(['receiving']);
-    expect(rolesHolding('po:confirm')).toEqual(['supplier']);
+    // The supplier side answers with a LANE since the three-lane split; the
+    // anchor holds no atom, so it is unreturnable rather than filtered.
+    expect(rolesHolding('po:confirm')).toEqual(['fulfilment']);
     expect(rolesHolding('role:grant')).toEqual(['compliance']);
   });
 
