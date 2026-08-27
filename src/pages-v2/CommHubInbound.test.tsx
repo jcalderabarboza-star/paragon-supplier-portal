@@ -272,3 +272,67 @@ describe('CommHubInbound — C5 own obligations section', () => {
     }
   });
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ⚠️ THE LANE GATE ON THE ONE ACT THIS SURFACE PERFORMS.
+//
+// `t_inventorydeclaration_declare` needs `inventorydeclaration:declare`, which is
+// FULFILMENT's since the supplier lanes were seeded at #263. This page shipped
+// with NO guard at all — its buyer twin `BuyerChannelTriage` has gated the
+// identical control on `inventorydeclaration:record` since §74, and the reason
+// recorded for skipping the supplier side ("a supplier seat is exactly
+// ['supplier'], so every notice is a dead branch") stopped being true the day the
+// lanes landed. Derived: NO supplier atom is held by all three lanes, so that
+// reason can never be the right one on this side again.
+//
+// Both directions in the same block: the withheld seat AND the held one.
+// ──────────────────────────────────────────────────────────────────────────────
+describe('⚠️ CommHubInbound — `inventorydeclaration:declare` is FULFILMENT’s', () => {
+  const lane = (roles: readonly string[]) => ({ ...SUPPLIER, businessRoles: roles });
+  const renderAs = (roles: readonly string[]) =>
+    renderWithProviders(<CommHubInbound />, {
+      identity: lane(roles),
+      route: '/supplier/comm-hub',
+    });
+  const parseAReply = async () => {
+    typeMessage('STOK PK-PETB-8810 2400 KG');
+    clickParse();
+    await selectMaterial(MAT);
+  };
+
+  it('⚠️ a COMMERCIAL-only seat reads the WAIT, and the confirm is GONE', async () => {
+    renderAs(['supplier', 'commercial']);
+    await parseAReply();
+    const notice = await screen.findByTestId('handoff-commhub-declare');
+    expect(notice).toHaveTextContent(i18n.t('roles.owner.fulfilment'));
+    expect(notice).toHaveAttribute('data-handoff', 'withheld');
+    expect(screen.queryByTestId('commhub-confirm')).not.toBeInTheDocument();
+  });
+
+  it('…and nothing dispatches for that seat even though the row parsed', async () => {
+    renderAs(['supplier', 'back_office']);
+    const base = countFor(MAT);
+    await parseAReply();
+    // The inference is still shown — reading is ungoverned (§75e). Only the
+    // COMMIT is withheld, and no declaration exists for a seat that cannot make one.
+    expect(screen.getByTestId('commhub-inference')).toBeInTheDocument();
+    // ⚠️ The absence of the CONTROL is the assertion that probes the guard.
+    // Asserting only that the count did not move would pass against a LIVE
+    // confirm button that this test simply never clicks — measured: it survived
+    // the mutation probe until this line was added.
+    expect(screen.queryByTestId('commhub-confirm')).not.toBeInTheDocument();
+    expect(await screen.findByTestId('handoff-commhub-declare')).toHaveTextContent(
+      i18n.t('roles.owner.fulfilment'),
+    );
+    expect(countFor(MAT)).toBe(base);
+  });
+
+  it('…and a FULFILMENT seat still confirms end to end — not an always-off', async () => {
+    renderAs(['supplier', 'fulfilment']);
+    const base = countFor(MAT);
+    await parseAReply();
+    expect(screen.queryByTestId('handoff-commhub-declare')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('commhub-confirm'));
+    await waitFor(() => expect(countFor(MAT)).toBe(base + 1));
+  });
+});

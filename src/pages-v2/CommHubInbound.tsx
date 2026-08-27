@@ -23,6 +23,8 @@ import LivenessPill from '../components/ui-v2/LivenessPill';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useInventoryDeclare, useOwnCollaboratedMaterials } from '../services/query/sdcSupplierHooks';
 import { useDeliveryAgreements } from '../services/query/deliveryHooks';
 import { shapeObligations } from '../services/chase';
@@ -124,6 +126,18 @@ const CommHubInbound: React.FC = () => {
   const materialsQuery = useOwnCollaboratedMaterials();
   const materials = useMemo(() => materialsQuery.data ?? [], [materialsQuery.data]);
   const declareMutation = useInventoryDeclare();
+
+  // ⚠️ THE SEAT'S AUTHORITY OVER THE ONE ACT ON THIS SURFACE. The confirm
+  // dispatches `t_inventorydeclaration_declare`, whose atom
+  // `inventorydeclaration:declare` is FULFILMENT's since the supplier split —
+  // so a COMMERCIAL or BACK_OFFICE seat reads the wait with the lane named
+  // instead of filling a grid that would refuse at dispatch. This is the shape
+  // its buyer twin already carried: `BuyerChannelTriage` gates the identical
+  // control on `inventorydeclaration:record` (`handoff-triage-record`), and
+  // this side was simply never wired — the supplier lanes did not exist when
+  // the handoff sweep ran, and the reason recorded for skipping this side (a
+  // supplier seat has no proper subset to narrow to) stopped being true at #263.
+  const declareAvailability = useVerbAvailability('inventorydeclaration:declare');
 
   // C5 — the supplier's OWN obligations ("what Paragon needs from you"), reusing the
   // shared 5e derivation over the own-scoped delivery views (no ask-store read, no
@@ -607,15 +621,22 @@ const CommHubInbound: React.FC = () => {
 
                   <p className="text-xs text-text-tertiary">{t('commHub.confirm.hint')}</p>
                   <div className="flex justify-end">
-                    <Button
-                      variant="outline"
-                      icon={Send}
-                      disabled={!canConfirm}
-                      onClick={confirm}
-                      data-testid="commhub-confirm"
-                    >
-                      {declareMutation.isPending ? t('commHub.confirm.confirming') : t('commHub.confirm.action')}
-                    </Button>
+                    {declareAvailability.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={Send}
+                        disabled={!canConfirm}
+                        onClick={confirm}
+                        data-testid="commhub-confirm"
+                      >
+                        {declareMutation.isPending ? t('commHub.confirm.confirming') : t('commHub.confirm.action')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={declareAvailability}
+                        testId="handoff-commhub-declare"
+                      />
+                    )}
                   </div>
                 </div>
               )}

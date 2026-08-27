@@ -1,4 +1,4 @@
-import { screen, fireEvent, within } from '@testing-library/react';
+import { screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { beforeEach } from 'vitest';
 import { renderWithProviders, SUPPLIER } from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
@@ -188,5 +188,94 @@ describe('⚠️ THE PANEL CAN NOW EXPRESS THE SPLIT — and the always-on notic
     // …and the last one cannot go, exactly as on the buyer side.
     fireEvent.click(within(panel).getByTestId('identity-role-commercial'));
     expect(heldNow()).toEqual(['commercial']);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ⚠️ §84 — THE ENTRANCE IS THE UNIT, NOT (SURFACE × VERB).
+//
+// The describe above opens the panel by clicking the ROW, which lands in
+// `detail` — the one door the notice guarded. **The row's ACTION BUTTON was a
+// second door and it went straight to `editing`**, where the commit sat ungated
+// behind a comment asserting it was "unreachable behind this one". It was not:
+// every actionable PO renders that button, and it is the PRIMARY path (it is the
+// one carrying the action label). So the surface imported the guard, rendered
+// the guard, and still shipped a live commit to a seat that would be refused.
+//
+// Both directions, always: a guard proved only against the seat it withholds
+// from is indistinguishable from a control that is simply broken.
+// ──────────────────────────────────────────────────────────────────────────────
+describe('⚠️ §84 SupplierOrders — the ROW-ACTION entrance, which bypassed the notice', () => {
+  const clickRowAction = async () => {
+    const cell = await screen.findByText('PO-2025-00108');
+    const row = cell.closest('tr');
+    expect(row).not.toBeNull();
+    fireEvent.click(within(row as HTMLElement).getByText(i18n.t('supplierOrders.action.confirm')));
+  };
+
+  it('⚠️ a COMMERCIAL seat reaches NO commit by the ROW-ACTION door either', async () => {
+    renderWithProviders(<SupplierOrders />, { identity: COMMERCIAL_ONLY });
+    await clickRowAction();
+    // It lands on the SAME single notice — §76's one-notice-per-verb holds.
+    const notice = await screen.findByTestId('handoff-po-confirm');
+    expect(notice).toHaveTextContent(i18n.t('roles.owner.fulfilment'));
+    // The commit is gone, AND so is the form it commits — the mode collapsed,
+    // rather than the button being hidden inside a live editing panel.
+    expect(screen.queryByText(i18n.t('po.confirm.action'))).not.toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('supplierOrders.panel.lineItemsConfirm'))).not.toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('supplierOrders.panel.confirmedDeliveryDate'))).not.toBeInTheDocument();
+  });
+
+  it('…and a BACK_OFFICE seat is refused by the same door, naming the same lane', async () => {
+    renderWithProviders(<SupplierOrders />, { identity: BACK_OFFICE_ONLY });
+    await clickRowAction();
+    expect(await screen.findByTestId('handoff-po-confirm')).toHaveTextContent(
+      i18n.t('roles.owner.fulfilment'),
+    );
+    expect(screen.queryByText(i18n.t('po.confirm.action'))).not.toBeInTheDocument();
+  });
+
+  it('…and a FULFILMENT seat still reaches the commit BY THAT SAME DOOR', async () => {
+    renderWithProviders(<SupplierOrders />, { identity: FULFILMENT_ONLY });
+    await clickRowAction();
+    // The editing mode is intact for the seat that holds the verb — the fix
+    // gated the mode, it did not delete the path.
+    expect(await screen.findByText(i18n.t('supplierOrders.panel.lineItemsConfirm'))).toBeInTheDocument();
+    expect(screen.getByText(i18n.t('po.confirm.action'))).toBeInTheDocument();
+    expect(screen.queryByTestId('handoff-po-confirm')).not.toBeInTheDocument();
+  });
+
+  it('⚠️ …and it DISPATCHES end to end — the held path is proved, not assumed', async () => {
+    renderWithProviders(<SupplierOrders />, { identity: FULFILMENT_ONLY });
+    await clickRowAction();
+    fireEvent.click(await screen.findByText(i18n.t('po.confirm.action')));
+    await waitFor(() => {
+      expect(commandAuditSink.byEvent('t_po_confirm').length).toBeGreaterThan(0);
+    });
+  });
+
+  it('⚠️ a seat NARROWED WHILE THE PANEL STANDS OPEN lands on the notice', async () => {
+    // THE REASON THE MODE IS GATED AND NOT THE BUTTON THAT OPENS IT: `panelMode`
+    // is component state and OUTLIVES THE SEAT. `SupplierShipments` records the
+    // same reason for its wizard tab — reachable, not a dead branch. Narrowed
+    // here through the real control (the identity panel), not by re-rendering
+    // with a different stub, so the path is the one a person can walk.
+    // The shell already carries the identity panel — rendering a second one
+    // here made `identity-avatar` ambiguous, which is the honest signal that the
+    // control under test is the SHELL's, reached the way a person reaches it.
+    renderWithProviders(<SupplierOrders />, { identity: SUPPLIER });
+    await clickRowAction();
+    expect(await screen.findByText(i18n.t('supplierOrders.panel.lineItemsConfirm'))).toBeInTheDocument();
+
+    // Drop `fulfilment` while the editing panel stands open.
+    fireEvent.click(await screen.findByTestId('identity-avatar'));
+    const panel = await screen.findByTestId('identity-panel');
+    fireEvent.click(within(panel).getByTestId('identity-roles-trigger'));
+    await screen.findByTestId('identity-roles-list');
+    fireEvent.click(within(panel).getByTestId('identity-role-fulfilment'));
+
+    expect(await screen.findByTestId('handoff-po-confirm')).toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('po.confirm.action'))).not.toBeInTheDocument();
+    expect(screen.queryByText(i18n.t('supplierOrders.panel.lineItemsConfirm'))).not.toBeInTheDocument();
   });
 });
