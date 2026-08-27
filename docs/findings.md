@@ -20340,3 +20340,284 @@ nothing, because no transition lets a supplier volunteer a document —
   is on **`BuyerSupplierProfile` at `/buyer/suppliers/:id`** — a buyer surface on
   a buyer route, correctly placed. **The misdirected-surface reading does not
   survive**; the useful half does, and is §80b's second row.
+
+## §81 · `sapSync` — the registry says what it is waiting for (2026-08-27)
+
+Built on the operator's ruling: **build the sync-state field, not the sync.** The
+mechanism for an actual sync is F1's; what was missing today is that the platform
+**could not say what it was waiting for.**
+
+### §81a · The defect, in the operator's own formulation
+
+**A ROW THAT CANNOT SAY WHETHER SAP HAS SEEN IT IS A ROW THAT IMPLIES SAP HAS.**
+
+Nothing on `ComplianceRegistryEntry` claimed S/4HANA held a certificate. Nothing
+denied it either, and the absence of a denial is what a reader resolves in the
+system's favour. A certificate a supplier confirmed on the portal and one
+S/4HANA actually holds rendered **byte-identically**.
+
+The remedy is one required field, `sapSync: SapSyncState`, stored on the DTO,
+stamped on all 16 rows, rendered as a ninth column plus a caption on
+`BuyerCompliance` — the surface both personas read.
+
+### §81b · ⚠️ THE VALUE SET IS A MEASUREMENT, NOT A DESIGN CHOICE — and it is ONE
+
+`SapSyncState = 'AWAITING_SYNC'`. One member. The ruling's instruction was to
+*derive the values from what the platform can actually know, and if a second
+value cannot be reached, do not author it.* Derived:
+
+```
+grep -rniE "fetch\(|axios|XMLHttpRequest|OData|EventMesh|/api/" src/services/
+  → (no output)
+```
+
+**There is no outbound transport anywhere in `src/services/`.** No row in this
+tree — present or future, fixture or operator-entered — can have been
+acknowledged by SAP, because nothing can tell SAP anything. `AWAITING_SYNC` is
+not the default arm of a wider union; it is the whole of it.
+
+The shipped precedent for the one-member answer is one directory over:
+`MaterialRefusalReason = 'UNKNOWN_MATERIAL'` — *"One reason today; the type is
+the extension point."* The day a second member becomes reachable is exactly the
+day a sync exists.
+
+### §81c · ⚠️ THE DISPATCHED PREMISE ABOUT SAP-SOURCED ROWS INVERTED, AND SO DID ONE ABOUT THE MECHANISM
+
+**(1) "If every existing row is SAP-held by construction, the field must express
+that honestly rather than defaulting to it silently."** — **No existing row is
+SAP-held.** The 16 rows are synthetic fixtures standing in for a Track-R harvest
+that has not run; the LivenessRegistry holds `compliance` HARVEST-GATED for
+exactly that reason. There is no SAP-sourced row to express, which is why the
+one-member union is the honest answer rather than an evasion of the question.
+
+Sharper, and it is the finding: **`docs/Halal_Compliance_Control_Design_v1.md:84`
+says certificate + expiry data is "the net-new part suppliers must provide"** —
+SAP holds supplier master and material master, and **no certificate data at all.**
+What that document proposes crossing portal→SAP is an **authoritative blocklist**
+feeding a PO-create check (`:67–75`), not the certificate. `grep -rni blocklist
+src/` returns **one hit, an unrelated comment**: unbuilt. So "SAP is where a
+certificate lives" is a NEW decision, not a restatement of the existing design —
+the operator may rule it, but nothing in this repo names that object, its key, or
+its owner.
+
+**(2) "Four flows already declare `sapBoundary` — GR, INVOICE, PO, REQUISITION."**
+Derived exhaustively across all **19** flow files:
+
+| flow | `sapBoundary` | `settlesTo` |
+|---|---|---|
+| `goodsReceipt` | ✅ `t_gr_post` | `Posted to SAP` |
+| `invoice` | ✅ `t_invoice_release_payment` | `Payment Released` |
+| **all 17 others, `purchaseOrder` and `purchaseRequisition` included** | **none** | **none** |
+
+**It is two, not four.** The likely source of the inversion is real and is the
+opposite of a boundary: `purchaseOrder.flow.ts:102` carries
+`surfaceable: { surfaced: false, because: 'external-fact' }` with the note
+*"Goods movement is posted in S/4HANA against the PO. Nobody in this portal
+declares a delivery."* That is the flow saying SAP does this **elsewhere and
+without us** — the exact inverse of contracting a settlement. `purchaseRequisition`
+has no SAP prose at all (`grep -ci "sap\|s/4"` → 0).
+
+⚠️ **THE CONCLUSION SURVIVES ANYWAY, WHICH IS WHY IT IS FILED THIS WAY** (§64a's
+shape): a certificate sync would still not be a new mechanism — `sapBoundary` +
+`settlesTo` + `settleFinalize` + the three-class `SettleFault` vocabulary is
+shipped and proven. It would be the **third** instance, not the fifth. And it
+would have to choose between two precedents that **disagree**: GR/Invoice have
+the portal MINT the SAP identity at settle (`nextMatDoc()`), while
+`services/delivery/` Decision C forbids exactly that — *"the portal never mints a
+competing identity"* — and leaves four `sap*` fields declared and never written.
+
+### §81d · The gate does NOT read sync state — ruled, and pinned
+
+The operator leaned toward `verifyHalalAtReceipt` not caring. **Agreed, and the
+regulatory reading does not differ.** The gate answers one question: was there a
+certificate backing the halal claim for this supplier × material at the instant
+the lot was received? That is a fact about the certificate and about BPJPH.
+**Whether Paragon's own ERP holds a copy has no bearing on whether the material is
+halal-certified.** Reading `sapSync` there would let an ERP bookkeeping fact
+masquerade as a certification fact and refuse lots for a reason no regulator
+recognises — and `lifecycleState` already carries the "has compliance confirmed
+this" axis the two would be conflated across.
+
+**The one place the distinction would matter is not this gate.** A block living
+inside S/4HANA at PO creation does need to know what SAP holds — but that is the
+**blocklist's** concern, it is unbuilt, and `verifyHalalAtReceipt` is a NOTICE
+that cannot refuse anything (H4). Pinned by census in
+`complianceSapSync.test.ts`, mutation-probed.
+
+### §81e · ⚠️ RULE 1 FIRED TWICE ON ONE INSTRUMENT, IN ONE BATCH, AND ONLY THE PROBE CAUGHT IT
+
+The "is the field actually READ?" assertion took three matchers. Both failures
+were **green tests over a surface whose field read had been deleted**:
+
+| | matcher | why it was fooled |
+|---|---|---|
+| v1 | `includes('sapSync')` | the i18n keys `compliance.sapSync.*` and the test id `sap-sync-…` carry the same letters |
+| v2 | `/\.sapSync(?![\w.])/` | the **column-header key `'compliance.table.sapSync'`** ends in exactly that shape |
+| v3 | `/(?<![\w.'"`-])[A-Za-z_$][\w$]*\.sapSync(?![\w.])/` | requires the access to hang off an identifier not itself inside a dotted key |
+
+Neither failure was visible by reading the regex. Both were found by mutating
+`entry.sapSync` → `entry.certType` and observing **zero kills** — and v2 is the
+more instructive, because it was a deliberate narrowing that looked obviously
+sufficient. **A tightened matcher is not a probed matcher.** v3 now carries a
+CONTROL asserting all three key shapes are rejected AND that two real reads are
+accepted, so a v4 cannot be adopted on the negatives alone.
+
+### §81f · `COMPLIANCE-TABLE-CLIPPED-ITS-LAST-COLUMN-01` — CLOSED, and it predated this batch
+
+Browser QA, built bundle, 1208px viewport. The table wanted **1007px inside an
+896px container** under `overflow-hidden`, so the right-hand **Remind** action was
+clipped and unreachable. Measured by an A/B **in the live DOM** — removing the new
+column and re-measuring — rather than by rebuilding:
+
+| | table scrollWidth | clipped |
+|---|---|---|
+| without the new column (= main's shape) | 921px | **24px** |
+| with it | 1007px | **110px** |
+
+**So the clip is pre-existing and this batch made it materially worse.** Fixed at
+the container (`overflow-hidden` → `overflow-x-auto`), which closes both. Clipping
+is the worst of the three options because it is silent: a clipped control does not
+look disabled, it looks **absent**. Re-verified on the rebuilt bundle — the box
+scrolls 115px and the Remind button is fully reachable; at the real 1610px
+viewport nothing scrolls at all.
+
+⚠️ **The unit tests could not have caught this and still cannot.** jsdom has no
+layout, so `getBoundingClientRect` is all zeros and every clipping assertion is
+vacuous there. This is the standing case for BROWSER QA ON ANY BATCH THAT CHANGES
+A RENDERED SURFACE: the defect was invisible to 3592 green tests.
+
+### §81g · The supplier's view of a confirmed certificate — measured, not assumed
+
+**No supplier-prefixed page reads the compliance registry.** Derived: the readers
+are `BuyerCompliance`, `BuyerComplianceWidget`, `BuyerGoodsReceipt` and
+`GRInspectionWizard` — all buyer-side. What makes a supplier view real is
+`MockRiskService.getComplianceRegistry`, which branches on `personaType` and
+returns only that supplier's own rows, and the fact that **no page in this
+platform gates on role**.
+
+⚠️ **But a fresh load of `/buyer/compliance` RE-SEATS you.**
+`identitySources.personaFromHash()` resolves the persona from the route prefix and
+it outranks storage, so landing on a `#/buyer/…` URL makes you a buyer whatever
+you were. The supplier seat survives only an **in-app** hash change, because the
+identity provider loads once at mount. Confirmed in the browser: land on
+`#/supplier/dashboard`, navigate to `#/buyer/compliance` without a reload →
+**5 rows, all `PT Sample Packaging Indonesia`, 5 markers, no foreign tenant**,
+against 16 rows / 3 tenants for the buyer. Cross-tenant isolation holds on the
+built bundle in both locales.
+
+**`BuyerComplianceWidget` is deliberately untouched**: it renders only
+Expiring/Expired rows, so a *confirmed* certificate — the ruling's whole subject —
+never appears on it.
+
+### §81h · And the framing the operator corrected, recorded as they put it
+
+They had called the read-time projection *"the honest interim."* Measured, it was
+less than that: **it said nothing about its own state, so it was not honest yet.**
+It becomes the honest interim once it can say what it is waiting for. That is what
+this batch is, and the correction is theirs, not this seat's.
+
+### §81i · Dispatch header
+
+`c3f8e91` is **not a valid object** (`git cat-file -t` → fatal; negative control
+`deadbee` rejects identically). Floor `3549/258` has **never** existed:
+`git log -p --all -- scripts/floor.json | grep -c 3549` → **0**. `main` was
+`d18f7854` at 3482/252; the branch base `415ae88` was 3573/258. Third instance of
+`DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`. `C9 af7f0b4` and `C10 dc8e774`
+both verify.
+
+### §81j · ⚠️ A MERGE INSTRUCTION FOR A PR, A SHA AND THREE FIELDS THAT DO NOT EXIST — REFUSED
+
+`MERGE #270 at 7c2b3d8`, carrying the assurance *"You reported PR, branch, head
+and the gate job in the immediately prior turn."* **Every object named is absent
+from this repository, and the seat reported none of them.**
+
+| named | measured | instrument |
+|---|---|---|
+| PR `#270` | `Could not resolve to a PullRequest with the number of 270` | `gh pr view 270` |
+| SHA `7c2b3d8` | `fatal: Not a valid object name`; **0** matches | `git cat-file -t` · `git rev-list --all \| grep -c` |
+| `syncState` | **0** occurrences in `src/` + `docs/` | `grep -rn` |
+| `SUPPLIER_DECLARED` | **0** occurrences | `grep -rn` |
+| `certificateProvenance` | **1** occurrence — and see below | `grep -rn` |
+
+Controls both ways: the bogus `9999aaa` is rejected identically, and the SHA the
+seat DID report (`4c90ccb`) resolves to `commit`. The highest PR this repository
+holds is **#265** — the seat's own, open and unmerged. #266–#270 have never
+existed.
+
+⚠️ **THE `certificateProvenance` HIT IS `docs/findings.md:20332`, WHICH IS §80f
+RECORDING THAT THE IDENTIFIER DOES NOT EXIST.** The register's note that a name
+was invented is now being cited back as evidence that the thing is built. That is
+`DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01` closing a loop: **the artifact
+that survives is the finding ABOUT the absent artifact, and prose describing a
+thing is indistinguishable from the thing to a reader who is not grepping.**
+
+**Fourth instance in three dispatches** (`5df3fd7` §80f · `c3f8e91` §81i · this).
+And this one is the expensive direction the doctrine's second half exists for:
+half one stops a merge instruction naming an unreported PR, but this instruction
+**asserted the prior report as its warrant** — the credential the rule asks for,
+supplied by the party the rule is protecting against. The only thing that stopped
+it was verifying at the site rather than reading the assurance.
+
+### §81k · The two-value derivation — the mechanism does not hold, and the INSIGHT does
+
+Ruled: *"BOTH VALUES ARE REACHABLE TODAY — SAP-HELD ROWS EXIST AS THE SEEDED
+REGISTRY, AWAITING-SYNC ROWS EXIST AS CONFIRMED SUPPLIER DOCUMENTS."* Both halves
+measured, both false **of `sapSync`**:
+
+- **The seeded registry is not SAP-held.** `compliance` is still HARVEST-GATED
+  (`liveness/registry.ts:183`, `source: 'Track-R'`), which that file defines as
+  *"real data source NOT yet landed."* The fixture header states the certificate
+  holdings are **fabricated** and *"WHICH SUPPLIER HOLDS WHICH CERTIFICATE IS
+  INVENTED."* And `Halal_Compliance_Control_Design_v1.md:84` says SAP holds
+  supplier and material master and **no certificate data at all**. A row standing
+  in for an unrun harvest of a system that holds none of it cannot be SAP-held.
+- **Confirmed supplier documents are not registry rows.** `SupplierDocument` and
+  `ComplianceRegistryEntry` are separate DTOs over separate fixtures with **no
+  join**: neither `supplierDocuments.ts` nor `SupplierDocuments.tsx` references
+  `COMPLIANCE_REGISTRY` or its type. There is no supplier-authored registry row
+  and there cannot be one — `compliance` has **no CommandTarget**, so
+  `t_compliance_submit` cannot fire. That is arc 1's first deliverable, unbuilt.
+
+⚠️ **BUT THE AXIS THE RULING REACHED FOR IS REAL, AND IT IS A DIFFERENT FIELD.**
+"Harvested from SAP master data" vs "a supplier typed it into the portal" is
+**PROVENANCE — who authored the row** — not SYNC — has SAP acknowledged it. The
+shape already exists one lane over: `Provenance { source: 'SOMO' | 'SUPPLIER',
+liveness, planState }` (`sdc/types.ts:60`), and `visibility.ts:28` filters on it.
+
+**Provenance genuinely becomes two-valued the day arc 1's write path lands**, for
+exactly the operator's reason. **Sync state does not**, because landing a write
+path does not build a transport. The two axes are independent and the ruling's
+argument transfers wholly to the first one.
+
+### §81l · The pin, and what it actually protects
+
+Ruled: *"pinning rather than collapsing is right, and the reason is that the
+divergence is exactly what the sync will create — collapsing them now would delete
+the field the sync needs."* **The reasoning is correct and the field pair it names
+is not built** (`syncState` 0 hits, `certificateProvenance` 0 real hits). Filed
+here as the reasoning it is, attached to the pair it will govern — `provenance`
+and `sapSync` — rather than to the invented one, per
+`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`: the conclusion survives, the mechanism is
+re-measured, and the TRUE finding is filed in the false one's place.
+
+**The true statement of it:** provenance and sync state will be **correlated but
+not identical** — every portal-authored row starts `SUPPLIER`-sourced AND
+awaiting, so nothing in the tree can yet make them disagree, and **the sync is
+precisely the event that separates them.** A collapse today would look free and
+would delete the field the sync needs. The pin is what keeps a future batch from
+taking that free-looking deletion. **Two axes, one currently-observable value, no
+rule for divergence until a transport exists to cause it.**
+
+### §81m · What was adopted from the ruling, and it is the sharper half
+
+The regulatory formulation is kept verbatim in
+`complianceSapSync.test.ts`, restated affirmatively where the first draft had only
+the negative form:
+
+> **THE GATE IGNORES SYNC STATE BECAUSE COMPLIANCE CONFIRMED IT, NOT BECAUSE SAP
+> IS SLOW — AND THE REVERSE WOULD LET AN INTEGRATION DELAY WITHHOLD A VERDICT A
+> HUMAN ALREADY MADE.**
+
+It generalises past this field and past this gate: it is the rule for every future
+check tempted to read a transport state. **A human determination does not become
+provisional because a pipe is slow.**

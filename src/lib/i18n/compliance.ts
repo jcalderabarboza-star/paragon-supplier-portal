@@ -84,6 +84,15 @@ export const complianceEn: Record<string, string> = {
   'compliance.table.expiry': 'Expiry',
   'compliance.table.status': 'Status',
   'compliance.table.actionRequired': 'Action required',
+  // — SAP sync state (per ROW, outbound). Deliberately distinct from the
+  //   readiness banner above, which is INBOUND and per-capability: that one says
+  //   the portal has no real data yet; these say S/4HANA does not hold this row.
+  'compliance.table.sapSync': 'In SAP',
+  'compliance.sapSync.AWAITING_SYNC': 'Not yet',
+  'compliance.sapSync.AWAITING_SYNC.title':
+    'S/4HANA has not acknowledged this certificate. The portal holds it; the sync that would hand it over does not exist yet.',
+  'compliance.sapSync.note':
+    'No certificate here has been handed to S/4HANA — the portal cannot transmit one yet. A row says so rather than leaving you to assume otherwise.',
   'compliance.table.remind': 'Remind',
   'compliance.table.empty': 'No certificates match the current filters.',
   // — Certificate scheme labels (derived from certType) —
@@ -173,6 +182,13 @@ export const complianceId: Record<string, string> = {
   'compliance.table.expiry': 'Kedaluwarsa',
   'compliance.table.status': 'Status',
   'compliance.table.actionRequired': 'Tindakan diperlukan',
+  // — Status sinkronisasi SAP (per BARIS, keluar) —
+  'compliance.table.sapSync': 'Di SAP',
+  'compliance.sapSync.AWAITING_SYNC': 'Belum',
+  'compliance.sapSync.AWAITING_SYNC.title':
+    'S/4HANA belum menerima sertifikat ini. Portal menyimpannya; sinkronisasi yang akan menyerahkannya belum ada.',
+  'compliance.sapSync.note':
+    'Belum ada sertifikat di sini yang diserahkan ke S/4HANA — portal belum dapat mengirimkannya. Setiap baris menyatakannya, alih-alih membiarkan Anda menduga sebaliknya.',
   'compliance.table.remind': 'Ingatkan',
   'compliance.table.empty': 'Tidak ada sertifikat yang cocok dengan filter saat ini.',
   // — Certificate scheme labels (derived from certType) —

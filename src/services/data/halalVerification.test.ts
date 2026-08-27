@@ -57,6 +57,7 @@ function row(over: Partial<ComplianceRegistryEntry> = {}): ComplianceRegistryEnt
     issueDate: '2024-01-01',
     expiryDate: null,
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'synthetic test row',
     notes: 'Synthetic illustrative record — not a real certificate.',
     ...over,

@@ -992,6 +992,41 @@ export type ComplianceDisplayStatus =
   | 'Expiring'
   | 'Expired';
 
+/**
+ * ⚠️ **WHETHER SAP HAS SEEN THIS ROW — AND TODAY IT NEVER HAS.**
+ *
+ * The honest-marker discipline applied to a STORE rather than to a surface:
+ * **a row that cannot say whether SAP has seen it is a row that implies SAP
+ * has.** Every registry row read as SAP-held before this field existed, not
+ * because anything claimed it but because nothing denied it, and a certificate
+ * a supplier confirmed on the portal was indistinguishable from one S/4HANA
+ * actually holds.
+ *
+ * ── ⚠️ ONE MEMBER, AND THAT IS A MEASUREMENT, NOT A PLACEHOLDER ────────────
+ *   The reachable-value set is derived from what this platform can KNOW, and
+ *   the derivation returns exactly one answer. There is **no outbound transport
+ *   anywhere in `src/services/`** — `fetch` / `axios` / OData / Event Mesh all
+ *   return zero — so no row in this tree, present or future, can have been
+ *   acknowledged by SAP. `AWAITING_SYNC` is not the default arm of a wider
+ *   union; it is the whole of it.
+ *
+ *   ⚠️ **A SECOND MEMBER IS DELIBERATELY NOT AUTHORED.** An enum with an
+ *   unreachable member is the class this project has closed repeatedly, and the
+ *   shipped precedent for the one-member answer is one directory over:
+ *   `MaterialRefusalReason = 'UNKNOWN_MATERIAL'` — *"One reason today; the type
+ *   is the extension point."* The day a second value becomes reachable is
+ *   exactly the day a sync exists, which is F1's seam and not this batch's.
+ *
+ * ── ⚠️ AND IT IS NOT THE HARVEST GATE, WHICH POINTS THE OTHER WAY ──────────
+ *   `HARVEST_GATED.compliance` (`services/liveness/registry.ts`) says *the
+ *   portal has no real data yet* — INBOUND, per CAPABILITY. This says *the
+ *   portal holds this row and SAP does not* — OUTBOUND, per ROW. The two are
+ *   independent, and the harvest gate goes quiet on the day the first real
+ *   certificate is entered, which is precisely the day this field starts
+ *   carrying the whole statement.
+ */
+export type SapSyncState = 'AWAITING_SYNC';
+
 /** One row of the compliance registry — grain: supplier × material × certificate.
  *  The DTO-v2 the canonical compliance machine reads. STORED fields only; every
  *  clock/scheme-derived value is computed by `complianceProjection.ts`. */
@@ -1017,6 +1052,15 @@ export interface ComplianceRegistryEntry {
   /** The STORED transition-state (Missing/Under Review/Valid). The display status
    *  is computed from this + the clock, never stored. */
   lifecycleState: ComplianceLifecycleState;
+  /**
+   * Whether S/4HANA has acknowledged this row. **REQUIRED, never optional** —
+   * an optional marker absent on every row is exactly "a row that cannot say",
+   * which is the defect this field exists to close. Contrast the Pattern-B
+   * identity fields (`SchedulingAgreement.sapAgreementNumber` et al), where
+   * absence is honest BECAUSE presence would be a value SAP assigns; this is a
+   * STATE, not an identity, so it must be stated rather than inferred.
+   */
+  sapSync: SapSyncState;
   scopeText: string;
   notes: string;
 }

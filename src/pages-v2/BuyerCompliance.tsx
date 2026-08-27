@@ -304,7 +304,28 @@ const BuyerCompliance: React.FC = () => {
         </span>
       </div>
 
-      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden mb-6">
+      {/* ── THE COLUMN'S ONE-LINE EXPLANATION, AND WHY IT IS NOT A BANNER ──
+          Two banners already sit above (data readiness, and the BPJPH date), and
+          a third would train the eye to skip all three. This is a quiet line
+          attached to the table it describes. It states the NEGATIVE explicitly —
+          "no certificate here has been handed to S/4HANA" — because the column
+          renders one value on every row, and a uniform column with no caption
+          reads as decoration rather than as a fact. */}
+      <div className="flex items-start gap-2 mb-2 text-xs text-text-tertiary">
+        <Database size={12} className="shrink-0 mt-0.5" />
+        <span data-testid="sap-sync-note">{t('compliance.sapSync.note')}</span>
+      </div>
+
+      {/* ⚠️ `overflow-x-auto`, NOT `overflow-hidden` — AND THE OLD VALUE WAS
+          ALREADY LOSING A COLUMN. Measured in the built bundle at a 1208px
+          viewport: the table wants 1007px inside an 896px container, so the
+          right-hand **Remind** action was clipped and UNREACHABLE — 24px of it
+          before this batch, 110px after the ninth column landed. Clipping is the
+          worst of the three options because it is silent: the control does not
+          look disabled, it looks absent. Scrolling the table inside its own box
+          keeps every column reachable at every width and fixes the 24px that
+          predates this change. */}
+      <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-x-auto mb-6">
         <Table>
           <TableHeader>
             <TableHeaderCell>{t('compliance.table.supplier')}</TableHeaderCell>
@@ -313,6 +334,7 @@ const BuyerCompliance: React.FC = () => {
             <TableHeaderCell>{t('compliance.table.issuedBy')}</TableHeaderCell>
             <TableHeaderCell>{t('compliance.table.expiry')}</TableHeaderCell>
             <TableHeaderCell>{t('compliance.table.status')}</TableHeaderCell>
+            <TableHeaderCell>{t('compliance.table.sapSync')}</TableHeaderCell>
             <TableHeaderCell>{t('compliance.table.actionRequired')}</TableHeaderCell>
             <TableHeaderCell className="text-right">{t('compliance.table.remind')}</TableHeaderCell>
           </TableHeader>
@@ -370,6 +392,23 @@ const BuyerCompliance: React.FC = () => {
                     )}
                   </StatusPill>
                 </TableCell>
+                {/* ── THE SYNC STATE, SAID RATHER THAN INFERRED ──────────────
+                    A stored fact, NOT a projection — the one non-derived column
+                    added since I3.1, and it is stored precisely because nothing
+                    can compute it: there is no transport to ask. Every row reads
+                    the same today because `SapSyncState` has exactly one
+                    reachable member; the column is here so a reader learns that
+                    from the row instead of assuming the opposite from silence. */}
+                <TableCell>
+                  <span
+                    data-testid={`sap-sync-${entry.sapSync}`}
+                    title={t(`compliance.sapSync.${entry.sapSync}.title`)}
+                  >
+                    <StatusPill variant="neutral">
+                      {t(`compliance.sapSync.${entry.sapSync}`)}
+                    </StatusPill>
+                  </span>
+                </TableCell>
                 <TableCell>
                   {/* Descriptive of state, never imperative (D4): the label names
                       the state; it does not offer an action the SIMULATED cert
@@ -413,7 +452,7 @@ const BuyerCompliance: React.FC = () => {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={9}
                   className="text-center text-sm text-text-tertiary py-10"
                 >
                   {t('compliance.table.empty')}
