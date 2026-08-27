@@ -4,6 +4,13 @@
 // Relocated from src/pages-v2/SupplierDocuments.tsx in Phase 1B Batch 2.
 // Every row carries supplierId so applySupplierScope can enforce identity
 // boundaries structurally.
+//
+// ⚠️ **EVERY ROW HERE IS AUTHORED SAMPLE DATA.** The suppliers are
+// "Sample …(illustrative)" tenants and the certificate numbers are `SAMPLE-`
+// tokens; nothing in this file was produced by a verb, because `supplierDocument`
+// has no CommandTarget. The surfaces say so through the LivenessRegistry
+// (`ProvenanceMarker capability="supplierDocuments"` → SIMULATED), which is the
+// marker discipline — a comment in a fixture is not a marker to a user.
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { SupplierDocument } from '../../types';
@@ -20,6 +27,44 @@ export const DOCUMENTS: SupplierDocument[] = [
   { id: 'doc-009', supplierId: 'sup-007', name: 'NIB — Nomor Induk Berusaha (SAMPLE-NIB-0007)', category: 'Tax & Legal', status: 'Valid', issuedBy: 'OSS — Online Single Submission', issuedDate: '2018-07-01', expiryDate: null, fileType: 'PDF', fileSize: '220 KB', version: 'v1', linkedTo: 'Supplier Master Data' },
   { id: 'doc-010', supplierId: 'sup-007', name: 'Halal Assurance System (HAS) 23000 Manual', category: 'Halal Compliance', status: 'Under Review', issuedBy: 'MUI LP POM', issuedDate: '2025-03-01', expiryDate: null, fileType: 'PDF', fileSize: '5.2 MB', version: 'v2', linkedTo: 'Halal Certificate renewal', notes: 'Submitted for BPJPH review — 2026 mandatory transition' },
   { id: 'doc-011', supplierId: 'sup-007', name: 'BPJPH Halal Certificate Application — In Progress', category: 'Halal Compliance', status: 'Under Review', issuedBy: 'BPJPH — Badan Penyelenggara Jaminan Produk Halal', issuedDate: '2026-01-10', expiryDate: null, fileType: 'PDF', fileSize: '1.8 MB', version: 'v1', linkedTo: 'Replaces MUI cert doc-001', notes: 'BPJPH application submitted January 2026 — awaiting inspection schedule' },
+
+  // ⚠️ **THE ONE REFUSED ROW, AND IT IS SEEDED RATHER THAN PRODUCED** (operator
+  // ruling). A page built to show a supplier WHY a certificate was refused, on a
+  // tree where nothing is ever refused, is honest and useless — so exactly one
+  // row carries the state that motivates the surface. **One, deliberately: a
+  // second would be furniture**, and the render is proven by the first.
+  //
+  // ⚠️ **NO VERB WROTE THIS AND NO VERB CAN.** `supplierDocument` holds no
+  // CommandTarget (derived: `getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`), so
+  // `t_supplierdoc_reject` cannot fire; and even if it could, it targets
+  // `Awaiting Upload`, not this. The page carries `ProvenanceMarker
+  // capability="supplierDocuments"` — SIMULATED — which is where the surface
+  // says so to a reader rather than this comment saying it to a maintainer.
+  //
+  // The reason is authored to be a REAL one rather than lorem: scope mismatch is
+  // the failure `verifyHalalAtReceipt` actually models, since its join is
+  // `materialCodes.includes(materialCode)` — a certificate that covers the wrong
+  // material is precisely the row that refuses a receipt.
+  {
+    id: 'doc-012',
+    supplierId: 'sup-007',
+    name: 'Halal Scope Annex — SAMPLE-MUI-SCOPE-0007B',
+    category: 'Halal Compliance',
+    status: 'Rejected',
+    issuedBy: 'MUI LP POM',
+    issuedDate: '2026-08-05',
+    expiryDate: null,
+    fileType: 'PDF',
+    fileSize: '740 KB',
+    version: 'v1',
+    linkedTo: 'PK-PETB-8810',
+    rejectionReason:
+      'Certificate scope does not cover PK-PETB-8810. The annex lists ' +
+      'PK-PETB-8801 only, so this material is not carried by the ' +
+      'certificate — resubmit with the amended scope annex from MUI LP POM.',
+    rejectedAt: '2026-08-18T09:24:00+07:00',
+    rejectedBy: { kind: 'UNATTRIBUTED', reason: 'NO_PERSON_IN_SESSION' },
+  },
 
   // sup-002 — PT Sample Specialty Fats
   { id: 'doc-101', supplierId: 'sup-002', name: 'Halal Certificate — MUI No. 02022345671030', category: 'Halal Compliance', status: 'Valid', issuedBy: 'MUI (Majelis Ulama Indonesia)', issuedDate: '2024-02-01', expiryDate: '2027-01-31', fileType: 'PDF', fileSize: '1.1 MB', version: 'v2', linkedTo: 'PO-2025-00120' },

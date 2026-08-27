@@ -136,6 +136,7 @@ const DOC_STATUS_TONE: Record<
   Expired: 'danger',
   'Awaiting Upload': 'danger',
   'Under Review': 'neutral',
+  Rejected: 'danger',
 };
 
 // Per-status document action maps to an i18n key; resolved with t() in render.
@@ -145,6 +146,12 @@ const DOC_STATUS_ACTION_KEY: Record<SupplierDocumentStatus, string> = {
   Expired: 'supplierDashboard.docs.action.renew',
   'Awaiting Upload': 'supplierDashboard.docs.action.upload',
   'Under Review': 'supplierDashboard.docs.action.view',
+  // ⚠️ **`view`, NOT `upload`** — and the widget is exactly where that would
+  // have gone wrong quietly. A refused document obviously *wants* a resubmit
+  // affordance, but `supplierdoc:upload` is unauthored, so an Upload label here
+  // would name a verb the platform does not have. The refusal and its reason
+  // live on `/supplier/documents`; this tile sends the reader there.
+  Rejected: 'supplierDashboard.docs.action.view',
 };
 
 const GradeBadge: React.FC<{ grade: Grade; size?: 'sm' | 'md' }> = ({
