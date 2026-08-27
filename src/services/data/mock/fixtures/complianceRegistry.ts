@@ -80,6 +80,19 @@
 //     (see the mandate-date caveat above).
 // ════════════════════════════════════════════════════════════════════════════
 
+// ── ⚠️ `sapSync` — WHY EVERY ROW CARRIES THE SAME VALUE ─────────────────────
+//   All 16 rows are `AWAITING_SYNC`, and that is NOT a fixture shortcut: it is
+//   the only value the type has, because it is the only value this platform can
+//   reach. Nothing in `src/services/` transmits anything to S/4HANA, so no row
+//   here — and no row a person enters later — has been acknowledged by SAP.
+//
+//   ⚠️ **DO NOT READ IT AS "THESE ARE THE UNSYNCED ONES."** There is no synced
+//   set to contrast against. The field exists so that a row STATES its standing
+//   instead of leaving a reader to infer it, and the inference it replaces ran
+//   the wrong way: before this field, a fabricated row and a row S/4HANA holds
+//   rendered identically. See `SapSyncState` in `services/data/types.ts` for the
+//   reachability derivation and for why a second member is not authored.
+
 import type { ComplianceRegistryEntry } from '../../types';
 
 export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
@@ -97,6 +110,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2025-01-15',
     expiryDate: null, // permanent basis (GR 42/2024) — no clock
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Fragrance Concentrate — Rose Oud (FR-ROUD-4470)',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -114,6 +128,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2024-06-01',
     expiryDate: '2027-06-01',
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Active Emulsion — Niacinamide 5% — legacy MUI scheme, BPJPH migration pending',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -132,6 +147,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2024-03-01',
     expiryDate: '2028-03-01',
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Imported active emulsion — foreign halal scheme (recognition pending)',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -148,6 +164,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2023-08-20',
     expiryDate: '2026-08-20',
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'GMP scope — closure component manufacturing (illustrative)',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -164,6 +181,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: null,
     expiryDate: null,
     lifecycleState: 'Under Review',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Product notification in review (illustrative)',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -182,6 +200,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2022-09-15',
     expiryDate: '2026-09-15',
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'RBD Palm Stearin — specialty fat, cert nearing renewal window',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -198,6 +217,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: null,
     expiryDate: null,
     lifecycleState: 'Under Review',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Emulsifier notification in review',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -214,6 +234,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2025-02-10',
     expiryDate: null,
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Glyceryl Stearate SE — BPJPH permanent basis',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -231,6 +252,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2021-11-30',
     expiryDate: '2024-11-30',
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Toll-manufacturing quality scope (chain-of-custody)',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -248,6 +270,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2022-09-30',
     expiryDate: '2026-09-30',
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Myristic Acid — palm-derived, legacy MUI scheme, BPJPH migration pending',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -264,6 +287,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: null,
     expiryDate: null, // unknown — never guessed
     lifecycleState: 'Missing',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Stearic acid requiring halal certification — none held',
     notes: 'Synthetic illustrative record — required cert not yet supplied.',
   },
@@ -282,6 +306,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2022-04-30',
     expiryDate: '2025-04-30',
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Quality management scope',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -298,6 +323,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: null,
     expiryDate: null, // unknown — never guessed
     lifecycleState: 'Missing',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Active ingredient requiring halal certification — none held',
     notes: 'Synthetic illustrative record — required cert not yet supplied.',
   },
@@ -314,6 +340,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2024-05-01',
     expiryDate: null,
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Active ingredient notification — registered',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -330,6 +357,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2022-08-31',
     expiryDate: '2026-08-31',
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Niacinamide + Cetearyl Alcohol — one cert, two materials; nearing renewal window',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },
@@ -346,6 +374,7 @@ export const COMPLIANCE_REGISTRY: readonly ComplianceRegistryEntry[] = [
     issueDate: '2021-08-01',
     expiryDate: '2025-08-01',
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'Sample Blend PF-20 Emulsifier — imported, foreign scheme lapsed',
     notes: 'Synthetic illustrative record — not a real certificate.',
   },

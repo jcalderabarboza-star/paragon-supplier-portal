@@ -23,6 +23,7 @@ function entry(over: Partial<ComplianceRegistryEntry> = {}): ComplianceRegistryE
     issueDate: '2024-01-01',
     expiryDate: null,
     lifecycleState: 'Valid',
+    sapSync: 'AWAITING_SYNC',
     scopeText: 'test',
     notes: 'synthetic',
     ...over,
