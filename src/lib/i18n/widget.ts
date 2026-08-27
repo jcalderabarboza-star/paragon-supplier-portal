@@ -26,6 +26,7 @@ export const widgetEn: Record<string, string> = {
   // Harvest-gated (SDC-1): the forecast publications the planner consolidates
   // are SIMULATED fixtures on the C8 grain until the real SOMO C8 feed lands.
   'widget.honesty.awaitingC8Feed': 'Sample — awaiting SOMO C8 feed',
+  'widget.honesty.awaitingSupplierIdentities': 'Sample — awaiting real supplier identities',
   // Harvest-gated (SDC-3b): the InventoryDeclaration target is wired, but the SOH
   // shown is SIMULATED until real supplier identities submit over a live portal (F1).
   'widget.honesty.awaitingSupplierFeed': 'Sample — awaiting live supplier feed',
@@ -116,6 +117,7 @@ export const widgetId: Record<string, string> = {
   'widget.honesty.awaitingHarvest': 'Sampel — menunggu panen data Track-R',
   'widget.honesty.awaitingProducer': 'Sampel — menunggu produsen PR live (SOMO / Grid)',
   'widget.honesty.awaitingC8Feed': 'Sampel — menunggu feed data C8 SOMO',
+  'widget.honesty.awaitingSupplierIdentities': 'Sampel — menunggu identitas pemasok sungguhan',
   'widget.honesty.awaitingSupplierFeed': 'Sampel — menunggu feed pemasok live',
   'widget.honesty.awaitingDiscoveryFeed': 'Sampel — menunggu feed penemuan pemasok',
   'widget.honesty.commandsDispatch': 'Perintah dijalankan — buku besar in-memory',

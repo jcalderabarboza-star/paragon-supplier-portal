@@ -20621,3 +20621,306 @@ the negative form:
 It generalises past this field and past this gate: it is the rule for every future
 check tempted to read a transport state. **A human determination does not become
 provisional because a pipe is slow.**
+
+## §82 · The declaration and the queue — the document lane gets both ends (2026-08-27)
+
+Built on the operator's ruling: **build both halves. The declaration and the
+queue.** Half a loop is the dead-end shape facing one way or the other.
+
+### §82a · ⚠️ THE DISPATCHED PREMISE INVERTED, AND THE INVERSION IS THE BATCH
+
+> *"THE ONLY THING MISSING FROM THE LOOP IS THE WAY IN — a supplier can see
+> documents they have no path to send."*
+
+**The way in was not missing. It was there, and it lied.** `SupplierDocuments.tsx`
+shipped THREE upload affordances — a header primary, a per-row button, and a
+drag-and-drop zone — all landing in:
+
+```ts
+const submitUpload = () => {
+  setUploaded(true);
+  toast({ variant: 'success', title: t('…toast.uploaded.title'), … });
+};
+```
+
+A local boolean and a **success** toast. `grep -c dispatch` → **0** on that page
+(control: `SupplierOrders.tsx` → 11). The panel then rendered a green
+*"Document uploaded — pending Paragon review."*
+
+**It was worse than the `BuyerRequisitions` pair CLAUDE.md names as arc 2's first
+fix, in three ways:**
+
+1. **The drop zone accepted a real file and discarded it unread.** `onDrop` called
+   `e.preventDefault()` then `submitUpload()`; `e.dataTransfer` was never touched.
+2. **The copy asserted constraints on a file nothing read** — *"PDF, JPG, PNG ·
+   Max 20 MB"* — and *"Drop file here or click to browse"* over a div with
+   `onDragOver`/`onDrop` and **no `onClick`**. The browse dialog did not exist.
+3. **It was untested and unregistered.** `grep -c submitUpload docs/findings.md` →
+   **0** (control: `BuyerRequisitions` → 22); zero references to the upload in
+   `SupplierDocuments.test.tsx`.
+
+⚠️ **AND §80 WAS SCRUPULOUS ABOUT EXACTLY THIS, ONE SCREEN AWAY.** Its
+`RefusalBlock` header records *"a 'resubmit' button here would be a forward
+promise with no handler"*, `SupplierDashboard.tsx:151` chose `view` over `upload`
+for the same reason, and `SupplierDocuments.test.tsx` PINNED the absence. **The
+discipline was applied to the new code and never turned on the code beside it** —
+a page refusing to promise a resubmit on one row while promising a successful
+upload on every other. `FORWARD-PROMISE-HAS-NO-HANDLER-01` has a blind spot and
+this is its shape: **a new promise gets caught; a standing one is furniture.**
+
+### §82b · The other three dispatched premises, measured
+
+| claim | measured |
+|---|---|
+| *"`SupplierDocument` HAS NO FILE FIELD"* | ✅ **TRUE**, and load-bearing. `fileType`/`fileSize` are display strings; there is no file field of any kind. |
+| *"`fileName` IS A DISPLAY STRING"* | ✅ true of the tree, ❌ not of this DTO — `fileName` has **2 occurrences**, both `SupplierRegistration.tsx`, from `e.target.files[0].name`. It is not on `SupplierDocument` at all. |
+| *"every other upload in the platform is a toast"* | ❌ **FALSE.** `XlsxImportPanel` takes a real `<input type="file">`, **parses the workbook** and renders its rows; `SupplierShipments` and `SupplierRegistration` both read a real file's name into form state. |
+| *"SupplierDocuments FILTERS TO Verified"* | ❌ **FALSE — there is no status filter on that page at all.** The only filter is `CategoryFilter` (All + 6 categories) plus a free-text search, and `filtered` includes every status. **The queue's absence was never caused by a filter**, so the FORK-2B question ("was it a decision or an accident?") has a third answer: *there was nothing there to decide about.* No filter was widened, silently or otherwise. |
+
+⚠️ **THE CONCLUSION SURVIVES THE FALSE MECHANISM, AND THE CORRECTION SHARPENS THE
+COPY** (§64a's shape, disposed per `FALSE-MECHANISM-MUST-NOT-BE-FILED-01`). This
+IS a declaration rather than an upload — but the honest claim is narrower than
+the dispatched one. **The platform CAN read a file; it cannot KEEP or FORWARD
+one.** The wider claim would have been disprovable by a supplier in thirty
+seconds one lane over, and a surface caught overstating its own limitation loses
+the credibility that makes the true statement worth printing.
+
+### §82c · What the verb carries — and the field the supplier cannot give
+
+The five join fields are DERIVED, not accepted: `verifyHalalAtReceipt`
+(`halalVerification.ts:303`) filters on `supplierId` × `materialCodes` ×
+`certType`, then `schemeValid` reads `lifecycleState` + `expiryDate`. Five.
+
+| field | capturable at declaration? |
+|---|---|
+| `supplierId` | ✅ from the session, never typed — cannot be guessed because it is never asked |
+| `lifecycleState` | ✅ constant, set by the verb |
+| `certType` | ✅ **declared** (option C). The gate reads `lifecycleState`, so a claim sits in `Under Review` and `schemeValid` refuses it — **the claim cannot reach the gate as fact** |
+| `expiryDate` | ⚠️ typed, **and the platform is documented not to trust it** |
+| `materialCodes` | ❌ **the finding** |
+
+**`expiryDate`:** `complianceProjection.ts:38`, in capitals — *"A LEGACY (GR-39 /
+MUI) CERT'S TERM IS ISSUANCE PLUS FOUR YEARS BY STATUTE, REGARDLESS OF WHAT THE
+DOCUMENT PRINTS."* A supplier reading its certificate types the printed date.
+Which is precisely why it lands as a DECLARED value under review, not as a
+registry fact.
+
+**`materialCodes`** is Paragon's SAP vocabulary at raw-material grain. Derived,
+with both controls passing:
+
+```
+sup-007 REGISTRY codes (5): AI-HYALU-6615 AI-NIAC-6612 FR-ROUD-4470 PK-ALCP-2450 PK-PETB-8804
+sup-007 DOCUMENT codes (3): PK-PETB-8801 PK-PETB-8802 PK-PETB-8810
+INTERSECTION:              (empty)
+```
+
+**The two fixture families do not agree about the same supplier.** So the
+declaration carries **`scopeText` — the supplier's own words** — and compliance
+assigns codes at verify. **A sentence cannot be silently mistaken for a join key;
+a guessed code can.** Pinned: the target refuses a caller-supplied
+`materialCodes`, mutation-probed.
+
+### §82d · What was built
+
+- **`t_supplierdoc_declare`** — a creation verb requiring `supplierdoc:upload`.
+  **This closes §79e half one.** The atom was ruled to back office and was
+  *unassignable*, because the bilateral gate refuses a bundle naming an atom no
+  transition requires (*"there is nothing for it to permit"*, C10 §3.4). **The
+  gate was right and the fix was never to weaken it** — authoring the verb gave
+  it something to permit, and the ownership stopped being prose.
+- **`Rejected` joined the flow's states.** It had been a `SupplierDocumentStatus`
+  member and an entire §80 surface for longer than this flow existed, while
+  `t_supplierdoc_reject` pointed at `Awaiting Upload`. Nothing compared them
+  because no reject could fire. **Wiring the verb is exactly what would have made
+  it cost something**: compliance refuses, the store writes `Awaiting Upload`, and
+  §80's reason, timestamp and banner vanish at the moment they are earned.
+  It is **not terminal** — `_submit` accepts it as a `from`, so a refusal is not a
+  dead end.
+- **`_verify` / `_reject` are `user`-triggered and surfaced.** The flow had
+  already named the ruling that would flip them: *"the least settled value in the
+  batch … Track R's operator lane is the ruling most likely to flip it."*
+- **`SUPPLIERDOC_REFUSAL_AUTHORED`** — the third verb to learn that
+  `requiredFields` catches ABSENT and not BLANK. **Found by a test going green
+  when it should have been red:** `rejectionReason: '   '` passed. It matters most
+  here, because §80 renders this text to the supplier verbatim.
+- **`CommandTarget.create` gained `scope`** — `applyTransition`'s reason, one verb
+  later. Without it a creation would have to take its declarer from the form,
+  which is C10 §6.2's attribution-by-assertion.
+- **The queue** on `/buyer/compliance`, above the registry and deliberately not
+  inside it: the table is what Paragon believes it HOLDS; the queue is what
+  somebody must DECIDE. One list would render a supplier's unverified claim as a
+  registry fact.
+
+### §82e · ⚠️ WIRING FLIPPED GATE-1, AND GATE-2 IS WHY THE PILL DID NOT GO GREEN
+
+`supplierDocument` became a wired CommandTarget, so the wiring census derives
+**LIVE** for `supplierDocuments` — **and the data did not change at all.** Twelve
+seeded rows on `"Sample …(illustrative)"` tenants with `SAMPLE-` numbers, and a
+declaration made today is a demo submission against a demo identity because F1
+identities have not landed. **A supplier typing into a form is not a data
+source.** It was added to `HARVEST_GATED` in the same commit as the wiring, which
+is the only safe order.
+
+**This is LIVENESS-DATASOURCE-01 doing its job in the LIVE registry rather than
+in its harness, and the lesson generalises: THE BATCH THAT WIRES A LANE IS
+EXACTLY THE BATCH TEMPTED TO CALL IT LIVE.** Five pins had to invert for this,
+each having named `supplierDocument` as the example of an unwired flow — and one
+of them, *"a registered-but-unwired flow (supplierDocument, F0.4 inert) is
+SIMULATED"*, **was weak in a way that only showed when its example was wired.**
+It now DERIVES the population and leads with a guard that goes RED when the
+population empties, rather than passing silently over nothing
+(`EMPTY-INPUT-REPORTS-CLEAN-01`).
+
+### §82f · The stored-field gate caught two things, and neither was allowlisted
+
+- **`CertificateDeclaration.declaredAt` / `declaredBy` — stored and never read.**
+  The `certBasis` shape exactly. **Disposal: a reader, not an allowlist row.** The
+  queue now shows when a claim was made and states that the platform cannot name
+  who made it — which a reviewer needs anyway.
+- **`CertificateDeclarationVars` — eight fields declared and never read.** A
+  parallel interface beside the stored shape, free to drift. Collapsed to
+  `Omit<CertificateDeclaration, 'declaredAt' | 'declaredBy'>`, which makes C10
+  §6.2 a TYPE rather than a comment: **a caller cannot supply either field
+  because the type does not have them.**
+
+### §82g · `SUPPLIERDOC-STALE-REFUSAL-01` — found by browser QA, invisible to 3630 green tests
+
+On the built bundle: re-declare a refused document, and the row still rendered a
+red **"REFUSED"** block over a document already back in `Under Review` — while
+the page banner, which IS status-gated, had already dropped its count. **Two
+parts of one page disagreeing about one document.**
+
+The cause is a question that had ONE answer until this batch and now has two:
+*does this document carry a refusal reason?* and *is it refused right now?*
+Nothing could leave `Rejected` before §82, so the field check stood in for the
+state check and was **indistinguishable from it**. The store deliberately keeps
+the fields — a refusal was a recorded act and a correction does not un-happen it —
+so only the render is gated.
+
+⚠️ **AND IT IS THE FALSE-AFFORDANCE CLASS FACING BACKWARDS.** Every prior
+instance was a promise about the FUTURE that nothing would honour. This is an
+accusation about the PAST that is no longer true. The registry had no entry for
+that direction, and a handler-based census cannot see it — there is no handler.
+
+### §82h · What is NOT built, stated rather than implied
+
+- **`materialCodes` are still not assigned at verify.** Confirming a declaration
+  moves it to `Valid`; it does not create a `ComplianceRegistryEntry`, so
+  `verifyHalalAtReceipt` cannot yet see a declared certificate. **The two DTOs
+  still have no join** — that is arc 1's remaining work and this batch is its
+  precondition, not its completion.
+- **The handoff's `withheld` branch is browser-unreachable**, and this is
+  measured rather than assumed: there is no role control on any page (§66k —
+  assigning a role to a seat is not built), and the seeded seats hold every lane.
+  Browser QA therefore proves the HELD side only; the withheld side is proven by
+  unit tests passing narrowed identities. **Stated because a QA claim of "both
+  branches verified" would have been false.**
+- **`_submit` does not rewrite `name`.** A buyer-requested document keeps the name
+  the buyer gave it; only a `_declare` mints one, and it mints the certificate
+  NUMBER rather than a composed sentence — composing one would put English inside
+  a store both locales read.
+
+### §82i · Dispatch header
+
+`a4e9f21` is **not a valid object** (`git cat-file -t` → fatal; control `deadbee`
+rejects identically, `HEAD` → `commit`). Floor `3564/259` has **never existed**:
+`git log -p --all -- scripts/floor.json | grep -c 3564` → **0**. `main` is
+`d18f785` (§77). **Fifth instance of
+`DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`**, and the second consecutive
+dispatch whose header names both a non-existent SHA and a floor the file has
+never held. `C9 af7f0b4` and `C10 dc8e774` both verify.
+
+### §82j · ⚠️ A SECOND MERGE INSTRUCTION FOR A PR AND SHA THAT DO NOT EXIST — REFUSED
+
+`MERGE #271 at 8d1c4a7`, again carrying the assurance *"You reported PR, branch,
+head and the gate job in the immediately prior turn."* The seat reported **#266
+at `ff7400c`**.
+
+| named | measured | instrument |
+|---|---|---|
+| PR `#271` | `Could not resolve to a PullRequest with the number of 271` | `gh pr view 271 --json number,title,state` |
+| SHA `8d1c4a7` | `fatal: Not a valid object name`; **0** over `git rev-list --all` | `git cat-file -t` |
+
+Controls both ways: `9999aaa` rejects identically; `ff7400c` resolves to
+`commit`. Highest number the repository holds, in any state, is **266** — and
+there is no ISSUE 271 either, so the number is not a cross-namespace collision.
+
+⚠️ **AND THE FIRST INSTRUMENT REACHED FOR RETURNED A FALSE POSITIVE —
+`GH-PR-VIEW-ECHOES-THE-NUMBER-01`.** `gh pr view 271 --json number` returned
+**`{"number":271}`** for a pull request that does not exist. It echoes the
+identity it was handed without proving anything about it; only asking for a
+SECOND field (`--json number,title,state`) produced the `Could not resolve`
+error. **A verification whose only output is the identity you supplied is an
+echo, not a measurement** — the same shape as `EMPTY-INPUT-REPORTS-CLEAN-01` with
+an argument standing in for an empty population, and it very nearly converted a
+refusal into an approval. **Never verify an object's existence by asking for the
+field you passed in.**
+
+**Sixth instance of `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`, and the
+second consecutive one carrying the "you reported it" warrant.**
+
+### §82k · The four content claims, measured
+
+**1. *"A CONFIRMATION CARRIES IT INTO THE REGISTRY, AND THE GATE READS IT — FIRST
+TIME END TO END IN ONE PASS."* — NOT BUILT, and §82h said so before this
+instruction arrived.** `MockCommandService` holds **0** references to
+`COMPLIANCE_REGISTRY` / `ComplianceRegistryEntry` (control: **7** to
+`supplierDocumentStore`), so `t_supplierdoc_verify` writes nothing to the
+registry. The modules touching BOTH DTOs are three, and none joins them:
+`BuyerCompliance.tsx` (renders each separately), `types.ts` (declares both) and
+`compliance.flow.ts` (a comment). **`verifyHalalAtReceipt` still cannot see a
+declared certificate.** The walk that IS proven ends at `Valid` on the document,
+not in the registry — which is why §82h stated the boundary rather than letting
+the demo imply it.
+
+**2. *"FILTERED TO VERIFIED AT THE SAME COMMIT THAT CREATED IT"* — no such filter
+has ever existed.** `git log --all -S"'Verified'" -- src/pages-v2/
+SupplierDocuments.tsx` returns **nothing**, and `'Verified'` is not a member of
+`SupplierDocumentStatus` at all (the six are `Valid · Expiring Soon · Expired ·
+Awaiting Upload · Under Review · Rejected`). The page's only filter is
+`CategoryFilter` plus a free-text search.
+
+⚠️ **THE CLASS THE RULING NAMES IS REAL AND IS WORTH KEEPING — IT JUST DOES NOT
+DESCRIBE THIS PAGE.** *"A filter that hides a state nothing produces is invisible
+until something produces it"* is a genuine and well-shaped finding class. It is
+recorded here **as a class, with no instance in this batch**, because the honest
+version of the fact is stronger and different: the queue was not hidden by a
+filter, it was unreachable because **no buyer surface in this tree read a
+`SupplierDocument` at all.**
+
+**3. *"EVERY EXISTING CERTIFICATE IS THAT SUPPLIER'S"* — false, and it inverts
+the shape of the real risk.** Derived from `complianceRegistry.ts`: **6 ×
+sup-002, 5 × sup-005, 5 × sup-007.** The registry is three-tenant and always was
+— it is what `BuyerCompliance.sapSync.test.tsx`'s isolation control depends on
+(`OWN.length < COMPLIANCE_REGISTRY.length`). **And no declaration was made
+against a second supplier in this batch**: there is one supplier seat in the
+tree, so the join-is-keyed proof the ruling credits was not performed. What WAS
+performed is the tenancy refusal — a back-office seat declaring for `sup-002` is
+denied at creation scope, asserted with the throw shape rather than a `failed`
+result.
+
+**4. *"`documents.upload.title` WAS A PROMISE THE PLATFORM COULD NOT KEEP … the
+key was left unused rather than repurposed."*** `documents.upload.title` →
+**0 occurrences** in `src/` and `docs/` (control: `supplierDocuments.action.
+uploadDoc` → 3, pre-rename). The named key does not exist.
+
+⚠️ **BUT THE PRINCIPLE LANDS ON THIS BATCH, AND IT LANDS ON THE WRONG SIDE —
+SO IT WAS ACTED ON RATHER THAN RECORDED.** *"A stale key is a finding; a
+repurposed one is a lie with provenance"* is exactly right, and §82 **left no key
+stale and repurposed seven**: `action.uploadDoc`, `action.upload`,
+`panel.uploadTitle`, `panel.uploadFile`, `panel.uploadedMsg`,
+`toast.uploaded.title`, `toast.uploaded.desc` — every one still NAMED for an
+upload while its value had become a declaration, in both locales. The next person
+to grep `uploadDoc` would have found a declaration and had no way to know the
+word had moved. Renamed to `declareCert · declare · declareTitle · certDetails ·
+declaredMsg · declared.title · declared.desc`, with a bilateral check that no old
+name survives anywhere in `src/` and every new name is present — a rename that
+misses one consumer renders a raw key string on screen, which is the same defect
+one layer down. The two dropzone keys were DELETED rather than renamed: they
+described a file, and there is no file.
+
+**This is `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` in its productive direction.**
+The cited artifact was absent, the conclusion drawn from it was wrong in
+direction — and re-measuring against the real tree found a true instance of the
+same class **in the batch being ruled on**, which the ruling would otherwise have
+congratulated.

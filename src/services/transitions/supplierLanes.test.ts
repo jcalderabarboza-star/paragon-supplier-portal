@@ -221,16 +221,44 @@ describe('⚠️ THE COPY — EN AND ID, AND THE ANCHOR MUST NOT CLAIM TO BE A G
   });
 });
 
-describe('⚠️ `supplierdoc:upload` — RULED TO BACK OFFICE, DELIBERATELY NOT ASSIGNED', () => {
-  it('the atom does not exist, so no bundle may name it', () => {
-    // Two defects, stated separately (operator ruling): the atom is UNOWNED and
-    // the VERB is UNAUTHORED. This file can only pin the second half — a bundle
-    // naming an atom no transition requires is refused by the shipped bilateral
-    // gate, so the OWNERSHIP ruling is held in `docs/findings.md` rather than
-    // asserted here as a fact about the catalog.
-    expect(catalogRoles()).not.toContain('supplierdoc:upload');
-    expect(SYSTEM_ROLES.back_office).not.toContain('supplierdoc:upload');
-    // Known-GOOD control: the document verb that DOES exist is back office's.
+describe('⚠️ `supplierdoc:upload` — RULED TO BACK OFFICE, AND NOW ASSIGNED (§82)', () => {
+  // ⚠️ **THIS BLOCK ASSERTED THE ABSENCE UNTIL §82, AND THE INVERSION IS THE
+  // POINT RATHER THAN AN EDIT.** §79e filed two defects: the atom was UNOWNED
+  // (ruled to back office, unassignable) and the VERB was UNAUTHORED. The
+  // ownership could not be written into the bundle because the shipped bilateral
+  // gate refuses an atom no transition requires — *"there is nothing for it to
+  // permit"* (C10 §3.4). **The gate was right, and the resolution was never to
+  // weaken it:** §82 authored `t_supplierdoc_declare`, which gives the atom
+  // something to permit, and the ownership stops being a ruling held in prose
+  // and becomes a fact about the catalog.
+  //
+  // The assertions run in the SAME two directions the absence ran in, so an
+  // accidental un-assignment reddens exactly as an accidental assignment used to.
+  it('the atom exists in the catalog, and back office holds it', () => {
+    expect(catalogRoles()).toContain('supplierdoc:upload');
+    expect(SYSTEM_ROLES.back_office).toContain('supplierdoc:upload');
+  });
+
+  it('it is required by exactly the verb that was authored for it', () => {
+    const requiring = getKnownFlows()
+      .flatMap((f) => f.transitions)
+      .filter((t) => t.requiredRole === 'supplierdoc:upload')
+      .map((t) => t.id);
+    expect(requiring).toEqual(['t_supplierdoc_declare']);
+  });
+
+  it('CONTROL — the sibling supply verb is still a DISTINCT atom, also back office’s', () => {
+    // The two are deliberately not merged: `_submit` fills a slot the BUYER
+    // opened, `_declare` is the supplier volunteering. Same lane, different
+    // authority — and if a later batch collapses them, this control is what says
+    // so out loud instead of the merge passing silently.
     expect(SYSTEM_ROLES.back_office).toContain('supplierdoc:submit');
+    expect('supplierdoc:submit').not.toBe('supplierdoc:upload');
+  });
+
+  it('CONTROL — a genuinely absent atom is still absent (the negative half)', () => {
+    // Without this, every assertion above would pass on a `catalogRoles()` that
+    // returned everything. §39 — a one-sided probe proves nothing.
+    expect(catalogRoles()).not.toContain('supplierdoc:incinerate');
   });
 });

@@ -198,6 +198,7 @@ export const TRANSITION_PURPOSE: FlowAnnotations = Object.freeze({
 
   // ── supplierDocument ───────────────────────────────────────────────────────
   t_supplierdoc_request: { purposeKey: 'processFlows.purpose.t_supplierdoc_request' },
+  t_supplierdoc_declare: { purposeKey: 'processFlows.purpose.t_supplierdoc_declare' },
   t_supplierdoc_submit: { purposeKey: 'processFlows.purpose.t_supplierdoc_submit' },
   t_supplierdoc_verify: { purposeKey: 'processFlows.purpose.t_supplierdoc_verify' },
   t_supplierdoc_reject: { purposeKey: 'processFlows.purpose.t_supplierdoc_reject' },

@@ -24,7 +24,7 @@ export const supplierDocumentsEn: Record<string, string> = {
   'supplierDocuments.header.subtitle':
     'Certifications, compliance documents, COAs, and contracts · Halal & BPOM tracking — {{name}}.',
   'supplierDocuments.common.supplierFallback': 'Supplier',
-  'supplierDocuments.action.uploadDoc': 'Upload document',
+  'supplierDocuments.action.declareCert': 'Declare a certificate',
   // — Meta line —
   'supplierDocuments.meta.summary.one': '{{count}} document · last refreshed {{date}}',
   'supplierDocuments.meta.summary.other': '{{count}} documents · last refreshed {{date}}',
@@ -76,27 +76,49 @@ export const supplierDocumentsEn: Record<string, string> = {
   'supplierDocuments.expiry.none': 'No expiry',
   'supplierDocuments.table.empty': 'No documents match the current filters.',
   // — Row / footer actions —
-  'supplierDocuments.action.upload': 'Upload',
+  'supplierDocuments.action.declare': 'Declare',
   'supplierDocuments.action.view': 'View',
   'supplierDocuments.action.renew': 'Renew',
   'supplierDocuments.action.close': 'Close',
   'supplierDocuments.action.cancel': 'Cancel',
-  'supplierDocuments.action.submit': 'Submit',
+  'supplierDocuments.action.submit': 'Record declaration',
   // — BPJPH mandatory-transition banner —
   'supplierDocuments.bpjph.title': 'BPJPH Halal Mandatory Transition — October 2026:',
   'supplierDocuments.bpjph.body':
     'All cosmetics and personal care products distributed in Indonesia must carry BPJPH-issued halal certification. MUI certificates issued before the transition remain valid until expiry but cannot be renewed — new BPJPH certification must be obtained.',
   // — Upload side panel —
-  'supplierDocuments.panel.newTitle': 'Upload new document',
-  'supplierDocuments.panel.uploadTitle': 'Upload — {{name}}',
+  'supplierDocuments.panel.newTitle': 'Declare a certificate',
+  'supplierDocuments.panel.declareTitle': 'Declare — {{name}}',
   'supplierDocuments.panel.document': 'Document',
-  'supplierDocuments.panel.uploadFile': 'Upload file',
-  'supplierDocuments.panel.dropzone.title': 'Drop file here or click to browse',
-  'supplierDocuments.panel.dropzone.hint': 'PDF, JPG, PNG · Max 20 MB',
-  'supplierDocuments.panel.uploadedMsg': 'Document uploaded — pending Paragon review.',
+  'supplierDocuments.panel.certDetails': 'Certificate details',
+  'supplierDocuments.panel.declaredMsg': 'Declaration recorded — Paragon’s compliance team will review it.',
+  // — §82 · THE DECLARATION, AND THE SENTENCE THAT MAKES IT HONEST —
+  'supplierDocuments.panel.noFile.title': 'No file is sent to Paragon',
+  'supplierDocuments.panel.noFile.body':
+    'This portal records what you state about a certificate — the scheme, the number, who granted it and the dates. It does not receive, store or forward the certificate document itself. Keep the original; Paragon’s compliance team will ask for it through your usual channel if they need to see it.',
+  'supplierDocuments.panel.attribution':
+    'Recorded against your company rather than against a named person — this portal has no individual sign-in yet.',
+  'supplierDocuments.field.certType': 'Certificate scheme',
+  'supplierDocuments.field.certType.hint':
+    'What you state here is a claim until Paragon’s compliance team confirms it.',
+  'supplierDocuments.field.certNumber': 'Certificate number',
+  'supplierDocuments.field.issuer': 'Granted by',
+  'supplierDocuments.field.issuedOn': 'Granted on',
+  'supplierDocuments.field.expiresOn': 'Valid until',
+  'supplierDocuments.field.expiresOn.hint':
+    'Leave blank if it has no expiry — a BPJPH halal certificate does not.',
+  'supplierDocuments.field.scopeText': 'What it covers',
+  'supplierDocuments.field.scopeText.hint':
+    'In your own words — the products, grades or sites. Paragon matches this to its own material codes when it reviews.',
+  'supplierDocuments.field.scopeText.placeholder':
+    'e.g. all PET bottle grades produced at the Tangerang plant',
+  'supplierDocuments.panel.incomplete':
+    'Every field except the expiry date is needed before this can be recorded.',
+  'supplierDocuments.toast.declineFailed.title': 'Declaration not recorded',
+  'supplierDocuments.action.redeclare': 'Declare again',
   // — Toasts —
-  'supplierDocuments.toast.uploaded.title': 'Document uploaded',
-  'supplierDocuments.toast.uploaded.desc': 'Pending Paragon review.',
+  'supplierDocuments.toast.declared.title': 'Declaration recorded',
+  'supplierDocuments.toast.declared.desc': 'Awaiting review by Paragon’s compliance team.',
   'supplierDocuments.toast.downloading': 'Download not available yet — {{name}} was not downloaded.',
   'supplierDocuments.toast.renewStarted': 'Renewal workflow started for {{name}}',
   // — Refusal (the one Rejected row) —
@@ -129,7 +151,7 @@ export const supplierDocumentsId: Record<string, string> = {
   'supplierDocuments.header.subtitle':
     'Sertifikasi, dokumen kepatuhan, COA, dan kontrak · Pelacakan Halal & BPOM — {{name}}.',
   'supplierDocuments.common.supplierFallback': 'Pemasok',
-  'supplierDocuments.action.uploadDoc': 'Unggah dokumen',
+  'supplierDocuments.action.declareCert': 'Nyatakan sertifikat',
   // — Meta line —
   'supplierDocuments.meta.summary.one': '{{count}} dokumen · terakhir disegarkan {{date}}',
   'supplierDocuments.meta.summary.other': '{{count}} dokumen · terakhir disegarkan {{date}}',
@@ -181,27 +203,49 @@ export const supplierDocumentsId: Record<string, string> = {
   'supplierDocuments.expiry.none': 'Tanpa kedaluwarsa',
   'supplierDocuments.table.empty': 'Tidak ada dokumen yang cocok dengan filter saat ini.',
   // — Row / footer actions —
-  'supplierDocuments.action.upload': 'Unggah',
+  'supplierDocuments.action.declare': 'Nyatakan',
   'supplierDocuments.action.view': 'Lihat',
   'supplierDocuments.action.renew': 'Perbarui',
   'supplierDocuments.action.close': 'Tutup',
   'supplierDocuments.action.cancel': 'Batal',
-  'supplierDocuments.action.submit': 'Kirim',
+  'supplierDocuments.action.submit': 'Catat pernyataan',
   // — BPJPH mandatory-transition banner —
   'supplierDocuments.bpjph.title': 'Transisi Wajib Halal BPJPH — Oktober 2026:',
   'supplierDocuments.bpjph.body':
     'Semua produk kosmetik dan perawatan pribadi yang didistribusikan di Indonesia harus memiliki sertifikasi halal terbitan BPJPH. Sertifikat MUI yang diterbitkan sebelum transisi tetap berlaku hingga kedaluwarsa tetapi tidak dapat diperbarui — sertifikasi BPJPH baru harus diperoleh.',
   // — Upload side panel —
-  'supplierDocuments.panel.newTitle': 'Unggah dokumen baru',
-  'supplierDocuments.panel.uploadTitle': 'Unggah — {{name}}',
+  'supplierDocuments.panel.newTitle': 'Nyatakan sertifikat',
+  'supplierDocuments.panel.declareTitle': 'Nyatakan — {{name}}',
   'supplierDocuments.panel.document': 'Dokumen',
-  'supplierDocuments.panel.uploadFile': 'Unggah berkas',
-  'supplierDocuments.panel.dropzone.title': 'Letakkan berkas di sini atau klik untuk menelusuri',
-  'supplierDocuments.panel.dropzone.hint': 'PDF, JPG, PNG · Maks 20 MB',
-  'supplierDocuments.panel.uploadedMsg': 'Dokumen diunggah — menunggu tinjauan Paragon.',
+  'supplierDocuments.panel.certDetails': 'Rincian sertifikat',
+  'supplierDocuments.panel.declaredMsg': 'Pernyataan tercatat — tim kepatuhan Paragon akan meninjaunya.',
+  // — §82 —
+  'supplierDocuments.panel.noFile.title': 'Tidak ada berkas yang dikirim ke Paragon',
+  'supplierDocuments.panel.noFile.body':
+    'Portal ini mencatat apa yang Anda nyatakan tentang sebuah sertifikat — skema, nomor, pihak yang menerbitkan, dan tanggalnya. Portal tidak menerima, menyimpan, atau meneruskan dokumen sertifikatnya sendiri. Simpan aslinya; tim kepatuhan Paragon akan memintanya lewat saluran biasa bila perlu melihatnya.',
+  'supplierDocuments.panel.attribution':
+    'Dicatat atas nama perusahaan Anda, bukan atas nama perorangan — portal ini belum memiliki masuk-akun untuk individu.',
+  'supplierDocuments.field.certType': 'Skema sertifikat',
+  'supplierDocuments.field.certType.hint':
+    'Yang Anda nyatakan di sini adalah klaim sampai tim kepatuhan Paragon mengonfirmasinya.',
+  'supplierDocuments.field.certNumber': 'Nomor sertifikat',
+  'supplierDocuments.field.issuer': 'Diterbitkan oleh',
+  'supplierDocuments.field.issuedOn': 'Tanggal terbit',
+  'supplierDocuments.field.expiresOn': 'Berlaku sampai',
+  'supplierDocuments.field.expiresOn.hint':
+    'Kosongkan bila tidak ada masa berlaku — sertifikat halal BPJPH tidak memilikinya.',
+  'supplierDocuments.field.scopeText': 'Cakupannya',
+  'supplierDocuments.field.scopeText.hint':
+    'Dengan kata-kata Anda sendiri — produk, grade, atau lokasi. Paragon mencocokkannya dengan kode materialnya sendiri saat meninjau.',
+  'supplierDocuments.field.scopeText.placeholder':
+    'mis. semua grade botol PET yang diproduksi di pabrik Tangerang',
+  'supplierDocuments.panel.incomplete':
+    'Semua kolom selain tanggal berakhir wajib diisi sebelum dapat dicatat.',
+  'supplierDocuments.toast.declineFailed.title': 'Pernyataan tidak tercatat',
+  'supplierDocuments.action.redeclare': 'Nyatakan ulang',
   // — Toasts —
-  'supplierDocuments.toast.uploaded.title': 'Dokumen diunggah',
-  'supplierDocuments.toast.uploaded.desc': 'Menunggu tinjauan Paragon.',
+  'supplierDocuments.toast.declared.title': 'Pernyataan tercatat',
+  'supplierDocuments.toast.declared.desc': 'Menunggu tinjauan tim kepatuhan Paragon.',
   'supplierDocuments.toast.downloading': 'Unduhan belum tersedia — {{name}} tidak diunduh.',
   'supplierDocuments.toast.renewStarted': 'Alur pembaruan dimulai untuk {{name}}',
   // — Empty state (all-empty early return) —

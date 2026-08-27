@@ -56,6 +56,12 @@ describe('feed provenance — the second axis', () => {
         'purchaseRequisitions',
         'forecastPublications',
         'inventory',
+        // S82 - supplierDocuments joins the partly-real class and is the
+        // sharpest member of it: a supplier can now DECLARE a certificate
+        // through a wired verb while every row the page shows was authored as a
+        // sample. Verbs real, feed fixture - which is exactly the distinction
+        // this two-axis marker exists to render.
+        'supplierDocuments',
       ]),
     );
   });

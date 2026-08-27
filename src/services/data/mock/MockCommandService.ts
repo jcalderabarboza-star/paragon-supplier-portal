@@ -24,6 +24,10 @@ import type {
   PRStatus,
   PRPriority,
   PrSource,
+  CertType,
+  CertificateDeclaration,
+  SupplierDocumentCategory,
+  SupplierDocumentStatus,
 } from '../types';
 import type {
   GoodsReceipt,
@@ -31,6 +35,8 @@ import type {
   Disposition,
   InspectionResult,
 } from '../../../data/mockGoodsReceipts';
+import { supplierDocumentStore } from './stores/supplierDocumentStore';
+import { NO_PERSON } from '../../../context/noPerson';
 import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
 import { BASE_CURRENCY, type BidCurrency } from '../../../lib/currencyPolicy';
@@ -1368,6 +1374,138 @@ const roleTarget: CommandTarget = {
   },
 };
 
+
+// ── §82 · SUPPLIER DOCUMENTS — the declaration and the review ────────────────
+//
+// ⚠️ **THIS IS THE FIRST WRITE PATH INTO THE DOCUMENT LANE, AND ITS ABSENCE WAS
+// NOT A GAP — IT WAS A LIE.** `SupplierDocuments.tsx` shipped three upload
+// affordances (a header primary, a per-row button, a drop zone) that all landed
+// in a `submitUpload` which set a local boolean and fired a **success** toast:
+// no dispatch, no store, no file. The `BuyerRequisitions` shape one lane over,
+// with a drop zone that accepted a real file and discarded it unread.
+//
+// ⚠️ **`materialCodes` IS NOT WRITTEN HERE, AND THAT IS THE DESIGN.** A declared
+// document carries the supplier's own `scopeText`; compliance assigns SAP
+// material codes at verify. See `CertificateDeclaration.scopeText` for the
+// measurement that decides it.
+const CERT_TYPE_TO_CATEGORY: Record<CertType, SupplierDocumentCategory> = {
+  HALAL_BPJPH: 'Halal Compliance',
+  HALAL_MUI_LEGACY: 'Halal Compliance',
+  HALAL_FOREIGN: 'Halal Compliance',
+  BPOM: 'BPOM Regulatory',
+  ISO: 'Quality',
+  OTHER: 'Other',
+};
+
+/** The declaration assembled from a validated payload. The dispatcher has
+ *  already proven every `DECLARATION_FIELDS` member is present and non-empty
+ *  (`requiredFields`), so these are reads and not rescues — the one exception is
+ *  `expiresOn`, which is legitimately absent for a permanent-validity cert and
+ *  is therefore NOT a required field. */
+function declarationFrom(
+  payload: Record<string, unknown>,
+  scope: QueryScope,
+): CertificateDeclaration {
+  const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string).trim() : '');
+  const expires = str('expiresOn');
+  return {
+    certType: payload.certType as CertType,
+    certNumber: str('certNumber'),
+    issuer: str('issuer'),
+    issuedOn: str('issuedOn'),
+    // '' and absent both mean "this certificate has no expiry" — a BPJPH cert
+    // has permanent validity under GR 42/2024, so `null` is the answer rather
+    // than a missing one. Never guessed, never defaulted to a date.
+    expiresOn: expires === '' ? null : expires,
+    scopeText: str('scopeText'),
+    // STORE-ASSIGNED, never payload-supplied — the `pinnedAt` discipline.
+    declaredAt: new Date().toISOString(),
+    // FROM THE SESSION, never from the form (C10 §6.2). Today always
+    // `UNATTRIBUTED: NO_PERSON_IN_SESSION`, which is a claim the platform is
+    // entitled to make rather than a placeholder.
+    declaredBy: scope.actor ?? NO_PERSON,
+  };
+}
+
+const supplierDocumentTarget: CommandTarget = {
+  readState: (id) => supplierDocumentStore.get(id)?.status ?? null,
+  readScopeOwner: (id) => supplierDocumentStore.get(id)?.supplierId ?? null,
+  readEntity: (id) => supplierDocumentStore.get(id) ?? null,
+  applyTransition: (id, toState, payload, scope) => {
+    supplierDocumentStore.update(id, (d) => ({
+      ...d,
+      status: toState as SupplierDocumentStatus,
+      // A SUPPLY verb (`_submit`) restates the certificate's details; a REVIEW
+      // verb (`_verify` / `_reject`) must not touch them. Branching on the
+      // presence of a validated `certType` in the payload would be brittle, so
+      // this branches on the DESTINATION — only the supply verbs land in
+      // `Under Review`, and they are the only ones carrying a declaration.
+      ...(toState === 'Under Review'
+        ? (() => {
+            const decl = declarationFrom(payload, scope);
+            return {
+              declaration: decl,
+              // The denormalised display fields follow the declaration, so the
+              // row a reader sees and the declaration behind it cannot disagree.
+              issuedBy: decl.issuer,
+              issuedDate: decl.issuedOn,
+              expiryDate: decl.expiresOn,
+              linkedTo: decl.scopeText,
+              category: CERT_TYPE_TO_CATEGORY[decl.certType],
+            };
+          })()
+        : {}),
+      // ⚠️ THE §80 REFUSAL TRIO, WRITTEN TOGETHER OR NOT AT ALL. `rejectionReason`
+      // is a `requiredField` on the verb, so the dispatcher has already refused a
+      // blank one — the surface cannot record an accusation with no reason, and
+      // the timestamp and actor are minted here rather than accepted.
+      ...(toState === 'Rejected'
+        ? {
+            rejectionReason: String(payload.rejectionReason).trim(),
+            rejectedAt: new Date().toISOString(),
+            rejectedBy: scope.actor ?? NO_PERSON,
+          }
+        : {}),
+    }));
+  },
+  // A supplier may declare only for itself. Derived from the payload and checked
+  // against `scope.supplierId` by the dispatcher — QueryScope on a creation
+  // command, exactly as on a read.
+  creationOwner: (payload) => {
+    const sid = typeof payload.supplierId === 'string' ? payload.supplierId : '';
+    return sid === '' ? null : sid;
+  },
+  create: (payload, toState, scope) => {
+    const decl = declarationFrom(payload, scope);
+    const id = supplierDocumentStore.nextNumber();
+    supplierDocumentStore.add({
+      id,
+      supplierId: String(payload.supplierId),
+      // ⚠️ **THE NAME IS THE CERTIFICATE NUMBER, NOT A COMPOSED SENTENCE.** The
+      // seeded rows carry authored prose names ("Halal Certificate — MUI No. …")
+      // and composing one here would mean minting ENGLISH inside a store that
+      // both locales read. The scheme is in `declaration.certType`, which every
+      // surface renders through its own i18n label — so the label is correct in
+      // Indonesian without the store knowing there is such a thing as a locale.
+      name: decl.certNumber,
+      category: CERT_TYPE_TO_CATEGORY[decl.certType],
+      status: toState as SupplierDocumentStatus,
+      issuedBy: decl.issuer,
+      issuedDate: decl.issuedOn,
+      expiryDate: decl.expiresOn,
+      // The fixture convention for "no file" (doc-006 carries the same), and
+      // here it is the literal truth for every declared row: nothing was
+      // transmitted, so there is no type and no size to state.
+      fileType: '—',
+      fileSize: '—',
+      version: 'v1',
+      linkedTo: decl.scopeText,
+      declaration: decl,
+    });
+    return { entityId: id };
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -1386,6 +1524,9 @@ const TARGETS: Record<string, CommandTarget> = {
   // grant lands in the DR-10 trail: a role edit outside the dispatcher would be
   // the only privilege-granting act in the platform with no TransitionEvent.
   role: roleTarget,
+  // §82 — the document lane's first write path: the supplier's declaration and
+  // compliance's review of it.
+  supplierDocument: supplierDocumentTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

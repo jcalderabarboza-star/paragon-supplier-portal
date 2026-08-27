@@ -40,15 +40,75 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import type {
+  CertType,
   SupplierDocument,
   SupplierDocumentStatus as DocStatus,
   SupplierDocumentCategory as DocCategory,
 } from '../services/data/types';
 import { useDocuments } from '../services/query/hooks';
+import {
+  useSupplierDocumentDeclare,
+  useSupplierDocumentSubmit,
+} from '../services/query/commandHooks';
+import { certTypeLabelKey } from '../lib/complianceView';
+import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { formatDate } from '../lib/format';
 import { useTranslation } from 'react-i18next';
 
 type CategoryFilter = 'All' | DocCategory;
+
+// ── §82 · THE DECLARATION FORM ──────────────────────────────────────────────
+//
+// ⚠️ **THE SCHEME LIST IS THE `CertType` UNION, WRITTEN OUT ONCE AND BOUND BY
+// THE TYPE.** `satisfies readonly CertType[]` plus the exhaustive
+// `certTypeLabelKey` switch means adding a seventh scheme is a `tsc` failure in
+// two places rather than a dropdown that silently omits it. A `.map` over an
+// object's keys would have been shorter and would have lost that.
+const CERT_TYPES = [
+  'HALAL_BPJPH',
+  'HALAL_MUI_LEGACY',
+  'HALAL_FOREIGN',
+  'BPOM',
+  'ISO',
+  'OTHER',
+] as const satisfies readonly CertType[];
+
+const FIELD_LABEL = 'block text-label text-text-tertiary uppercase mb-1';
+const FIELD_INPUT =
+  'w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary';
+const FIELD_HINT = 'block text-xs text-text-tertiary mt-1';
+
+/** What the panel is collecting. `expiresOn` is the ONLY optional one — a BPJPH
+ *  cert has permanent validity under GR 42/2024, so blank is an answer. */
+interface DeclarationForm {
+  certType: CertType;
+  certNumber: string;
+  issuer: string;
+  issuedOn: string;
+  expiresOn: string;
+  scopeText: string;
+}
+
+const EMPTY_FORM: DeclarationForm = {
+  certType: 'HALAL_BPJPH',
+  certNumber: '',
+  issuer: '',
+  issuedOn: '',
+  expiresOn: '',
+  scopeText: '',
+};
+
+/** Every field the verb requires is present and non-blank. `expiresOn` is
+ *  deliberately absent from this check — see `DeclarationForm`. */
+function declarationComplete(f: DeclarationForm): boolean {
+  return (
+    f.certNumber.trim() !== '' &&
+    f.issuer.trim() !== '' &&
+    f.issuedOn.trim() !== '' &&
+    f.scopeText.trim() !== ''
+  );
+}
 
 const STATUS_VARIANT: Record<DocStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   Valid: 'success',
@@ -85,6 +145,23 @@ const RefusalBlock: React.FC<{ doc: SupplierDocument }> = ({ doc }) => {
   // with no timestamp is an accusation with no date; rendering half of one is
   // worse than rendering none, so the block is all-or-nothing.
   if (!doc.rejectionReason || !doc.rejectedAt) return null;
+  // ⚠️ **AND THE STATE GATE, ADDED AT §82 BY BROWSER QA — THE PRESENCE OF A
+  // REASON IS NOT THE SAME QUESTION AS WHETHER THE DOCUMENT IS REFUSED NOW.**
+  // Until §82 nothing could leave `Rejected`, so the two questions had the same
+  // answer and the field check stood in for the state check. `t_supplierdoc_
+  // submit` now accepts `Rejected` as a `from` — and the store DELIBERATELY
+  // keeps the refusal fields, because a refusal was a recorded act and a
+  // correction does not un-happen it. The result, caught on the built bundle
+  // and invisible to the suite: a re-declared document sat in `Under Review`
+  // with a red block reading "REFUSED" above it, while the page banner (which
+  // IS status-gated) had already dropped its count. Two parts of one page
+  // disagreeing about the same document.
+  //
+  // The stored fields stay; only this render is gated. Showing a supplier a
+  // present-tense refusal for a document they have already corrected is the
+  // false-affordance class facing backwards — a stale accusation instead of a
+  // false promise.
+  if (doc.status !== 'Rejected') return null;
   return (
     <div
       className="mt-1.5 border-l-2 border-l-danger pl-3 py-1 max-w-[22rem]"
@@ -152,6 +229,18 @@ const SupplierDocuments: React.FC = () => {
   const [panelMode, setPanelMode] = useState<PanelMode>('closed');
   const [activeDoc, setActiveDoc] = useState<SupplierDocument | null>(null);
   const [uploaded, setUploaded] = useState(false);
+  const [form, setForm] = useState<DeclarationForm>(EMPTY_FORM);
+  // §82 — the two supply verbs. `_declare` mints a document nobody asked for;
+  // `_submit` answers a slot the buyer opened, or re-answers after a refusal.
+  const declare = useSupplierDocumentDeclare();
+  const submit = useSupplierDocumentSubmit();
+  // ⚠️ ONE NOTICE PER VERB, IN THAT VERB'S OWN SLOT (§76). The two supply verbs
+  // are never co-reachable on one panel — `activeDoc` decides which is in play —
+  // so the panel footer carries whichever applies and never both.
+  const declareAvailability = useVerbAvailability('supplierdoc:upload');
+  const submitAvailability = useVerbAvailability('supplierdoc:submit');
+  const supplyAvailability = activeDoc ? submitAvailability : declareAvailability;
+  const pending = declare.isPending || submit.isPending;
   // I3.4 (FORK-1=(c)) — the halal-renewal walkthrough. Read-only guidance; a
   // shared SIHALAL path (no per-document branching; the `certBasis` this once
   // named was deleted at D-A). Opened from the
@@ -215,12 +304,28 @@ const SupplierDocuments: React.FC = () => {
   const openUploadFor = (doc: SupplierDocument) => {
     setActiveDoc(doc);
     setUploaded(false);
+    // Pre-fill from what the document already carries. A re-declaration after a
+    // refusal is a CORRECTION, and making the supplier retype five correct
+    // fields to fix one wrong one is how a remedy becomes a deterrent.
+    setForm(
+      doc.declaration
+        ? {
+            certType: doc.declaration.certType,
+            certNumber: doc.declaration.certNumber,
+            issuer: doc.declaration.issuer,
+            issuedOn: doc.declaration.issuedOn,
+            expiresOn: doc.declaration.expiresOn ?? '',
+            scopeText: doc.declaration.scopeText,
+          }
+        : EMPTY_FORM,
+    );
     setPanelMode('upload-existing');
   };
 
   const openNewUpload = () => {
     setActiveDoc(null);
     setUploaded(false);
+    setForm(EMPTY_FORM);
     setPanelMode('new');
   };
 
@@ -228,14 +333,48 @@ const SupplierDocuments: React.FC = () => {
     setPanelMode('closed');
     setActiveDoc(null);
     setUploaded(false);
+    setForm(EMPTY_FORM);
   };
 
-  const submitUpload = () => {
+  /**
+   * ⚠️ **THIS FUNCTION USED TO SET A BOOLEAN AND FIRE A SUCCESS TOAST.** No
+   * dispatch, no store, no file — while the panel it sat behind advertised
+   * "PDF, JPG, PNG · Max 20 MB" and a drop zone whose `onDrop` called it and
+   * never read `e.dataTransfer`. Three entry points reached it, and the toast
+   * said "Document uploaded". §82 · `docs/findings.md`.
+   *
+   * ⚠️ **AND THE OUTCOME IS READ FROM THE RESULT, NOT ASSUMED FROM THE CALL.**
+   * `CommandResult.status` can be `failed`, and a refusal that renders as a
+   * success is the same defect one layer down.
+   */
+  const recordDeclaration = async () => {
+    if (!declarationComplete(form)) return;
+    const vars = {
+      certType: form.certType,
+      certNumber: form.certNumber.trim(),
+      issuer: form.issuer.trim(),
+      issuedOn: form.issuedOn,
+      // Blank means the certificate HAS no expiry (BPJPH, GR 42/2024) — `null`
+      // is the answer, never a guessed date and never today.
+      expiresOn: form.expiresOn === '' ? null : form.expiresOn,
+      scopeText: form.scopeText.trim(),
+    };
+    const result = activeDoc
+      ? await submit.mutateAsync({ ...vars, docId: activeDoc.id })
+      : await declare.mutateAsync({ ...vars, supplierId: supplierId ?? '' });
+    if (result.status === 'failed') {
+      toast({
+        variant: 'error',
+        title: t('supplierDocuments.toast.declineFailed.title'),
+        description: result.reason,
+      });
+      return;
+    }
     setUploaded(true);
     toast({
       variant: 'success',
-      title: t('supplierDocuments.toast.uploaded.title'),
-      description: t('supplierDocuments.toast.uploaded.desc'),
+      title: t('supplierDocuments.toast.declared.title'),
+      description: t('supplierDocuments.toast.declared.desc'),
     });
   };
 
@@ -243,7 +382,7 @@ const SupplierDocuments: React.FC = () => {
     panelMode === 'new'
       ? t('supplierDocuments.panel.newTitle')
       : panelMode === 'upload-existing' && activeDoc
-        ? t('supplierDocuments.panel.uploadTitle', {
+        ? t('supplierDocuments.panel.declareTitle', {
             name: activeDoc.name.split('—')[0].trim(),
           })
         : '';
@@ -281,7 +420,7 @@ const SupplierDocuments: React.FC = () => {
         actions={
           <BulkActionsBar
             primary={{
-              label: t('supplierDocuments.action.uploadDoc'),
+              label: t('supplierDocuments.action.declareCert'),
               icon: Upload,
               onClick: openNewUpload,
             }}
@@ -519,13 +658,23 @@ const SupplierDocuments: React.FC = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1.5">
-                      {doc.status === 'Awaiting Upload' ? (
+                      {/* ⚠️ **THE REFUSED ROW GAINS A REMEDY, AND §80's REASON
+                          FOR WITHHOLDING ONE IS THE REASON IT CAN NOW HAVE IT.**
+                          That batch wrote: *"a resubmit button here would be a
+                          forward promise with no handler: `supplierdoc:upload`
+                          is unauthored"* (`FORWARD-PROMISE-HAS-NO-HANDLER-01`).
+                          The verb exists as of §82, so the promise has a
+                          handler — `t_supplierdoc_submit` accepts `Rejected` as
+                          a `from` precisely so a refusal is not a dead end. */}
+                      {doc.status === 'Awaiting Upload' || doc.status === 'Rejected' ? (
                         <Button
                           variant="outline"
                           icon={Upload}
                           onClick={() => openUploadFor(doc)}
                         >
-                          {t('supplierDocuments.action.upload')}
+                          {doc.status === 'Rejected'
+                            ? t('supplierDocuments.action.redeclare')
+                            : t('supplierDocuments.action.declare')}
                         </Button>
                       ) : (
                         <Button
@@ -637,15 +786,28 @@ const SupplierDocuments: React.FC = () => {
                 ? t('supplierDocuments.action.close')
                 : t('supplierDocuments.action.cancel')}
             </Button>
-            {!uploaded && (
-              <Button
-                variant="outline"
-                icon={Upload}
-                onClick={submitUpload}
-              >
-                {t('supplierDocuments.action.submit')}
-              </Button>
-            )}
+            {!uploaded &&
+              (supplyAvailability.kind === 'held' ? (
+                <Button
+                  variant="outline"
+                  icon={Upload}
+                  disabled={!declarationComplete(form) || pending}
+                  onClick={() => {
+                    void recordDeclaration();
+                  }}
+                >
+                  {t('supplierDocuments.action.submit')}
+                </Button>
+              ) : (
+                // The seat may READ this panel and not hold the verb — a
+                // commercial or fulfilment lane, once a supplier seat is
+                // narrowed. Render the wait with its owner, never an absent
+                // affordance (the handoff constraint).
+                <HandoffNotice
+                  availability={supplyAvailability}
+                  testId="handoff-supplierdoc-supply"
+                />
+              ))}
           </>
         }
       >
@@ -671,35 +833,150 @@ const SupplierDocuments: React.FC = () => {
           )}
 
           {!uploaded ? (
-            <section>
-              <h3 className="text-label text-text-tertiary uppercase mb-2">
-                {t('supplierDocuments.panel.uploadFile')}
-              </h3>
-              <div
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  submitUpload();
-                }}
-                className="border-2 border-dashed border-border-input rounded-md p-8 text-center bg-bg-hover cursor-pointer hover:border-teal transition-colors"
+            <>
+              {/* THE HONEST SENTENCE, BEFORE THE FORM AND NOT AFTER IT. A
+                  supplier must know what this act is while deciding whether to
+                  perform it - a disclaimer under the button is a receipt, not a
+                  notice. The claim is precisely bounded: the platform CAN read a
+                  file (XlsxImportPanel parses a workbook one lane over); what it
+                  has no seam for is KEEPING or FORWARDING one. */}
+              <section
+                className="bg-bg-hover border-l-2 border-action rounded px-4 py-3"
+                data-testid="declaration-nofile-notice"
               >
-                <UploadCloud
-                  size={28}
-                  className="text-teal mx-auto mb-2"
-                  aria-hidden="true"
-                />
-                <div className="text-sm font-semibold text-text-primary">
-                  {t('supplierDocuments.panel.dropzone.title')}
+                <div className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                  <FileText size={14} className="text-action shrink-0" aria-hidden="true" />
+                  {t('supplierDocuments.panel.noFile.title')}
                 </div>
-                <div className="text-xs text-text-tertiary mt-1">
-                  {t('supplierDocuments.panel.dropzone.hint')}
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                  {t('supplierDocuments.panel.noFile.body')}
+                </p>
+              </section>
+
+              <section className="space-y-4">
+                <h3 className="text-label text-text-tertiary uppercase">
+                  {t('supplierDocuments.panel.certDetails')}
+                </h3>
+
+                <label className="block">
+                  <span className={FIELD_LABEL}>
+                    {t('supplierDocuments.field.certType')}
+                  </span>
+                  <select
+                    className={FIELD_INPUT}
+                    data-testid="declare-certType"
+                    value={form.certType}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, certType: e.target.value as CertType }))
+                    }
+                  >
+                    {CERT_TYPES.map((ct) => (
+                      <option key={ct} value={ct}>
+                        {t(certTypeLabelKey(ct))}
+                      </option>
+                    ))}
+                  </select>
+                  <span className={FIELD_HINT}>
+                    {t('supplierDocuments.field.certType.hint')}
+                  </span>
+                </label>
+
+                <label className="block">
+                  <span className={FIELD_LABEL}>
+                    {t('supplierDocuments.field.certNumber')}
+                  </span>
+                  <input
+                    className={FIELD_INPUT}
+                    data-testid="declare-certNumber"
+                    value={form.certNumber}
+                    onChange={(e) => setForm((f) => ({ ...f, certNumber: e.target.value }))}
+                  />
+                </label>
+
+                <label className="block">
+                  <span className={FIELD_LABEL}>
+                    {t('supplierDocuments.field.issuer')}
+                  </span>
+                  <input
+                    className={FIELD_INPUT}
+                    data-testid="declare-issuer"
+                    value={form.issuer}
+                    onChange={(e) => setForm((f) => ({ ...f, issuer: e.target.value }))}
+                  />
+                </label>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className={FIELD_LABEL}>
+                      {t('supplierDocuments.field.issuedOn')}
+                    </span>
+                    <input
+                      type="date"
+                      className={FIELD_INPUT}
+                      data-testid="declare-issuedOn"
+                      value={form.issuedOn}
+                      onChange={(e) => setForm((f) => ({ ...f, issuedOn: e.target.value }))}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className={FIELD_LABEL}>
+                      {t('supplierDocuments.field.expiresOn')}
+                    </span>
+                    <input
+                      type="date"
+                      className={FIELD_INPUT}
+                      data-testid="declare-expiresOn"
+                      value={form.expiresOn}
+                      onChange={(e) => setForm((f) => ({ ...f, expiresOn: e.target.value }))}
+                    />
+                  </label>
                 </div>
-              </div>
-            </section>
+                <span className={FIELD_HINT}>
+                  {t('supplierDocuments.field.expiresOn.hint')}
+                </span>
+
+                <label className="block">
+                  <span className={FIELD_LABEL}>
+                    {t('supplierDocuments.field.scopeText')}
+                  </span>
+                  <textarea
+                    rows={3}
+                    className={FIELD_INPUT}
+                    data-testid="declare-scopeText"
+                    placeholder={t('supplierDocuments.field.scopeText.placeholder')}
+                    value={form.scopeText}
+                    onChange={(e) => setForm((f) => ({ ...f, scopeText: e.target.value }))}
+                  />
+                  <span className={FIELD_HINT}>
+                    {t('supplierDocuments.field.scopeText.hint')}
+                  </span>
+                </label>
+
+                {/* C10 5.2 / D-ID-3 - the surface says WHOSE act this is recorded
+                    as, BEFORE the act, because it cannot name a person. */}
+                <p
+                  className="text-xs text-text-tertiary"
+                  data-testid="declaration-attribution"
+                >
+                  {t('supplierDocuments.panel.attribution')}
+                </p>
+                {!declarationComplete(form) && (
+                  <p
+                    className="text-xs text-text-tertiary"
+                    data-testid="declaration-incomplete"
+                  >
+                    {t('supplierDocuments.panel.incomplete')}
+                  </p>
+                )}
+              </section>
+            </>
           ) : (
-            <section className="bg-success-soft border-l-2 border-success rounded px-4 py-3 text-sm text-success font-semibold flex items-center gap-2">
+            <section
+              className="bg-success-soft border-l-2 border-success rounded px-4 py-3 text-sm text-success font-semibold flex items-center gap-2"
+              data-testid="declaration-recorded"
+            >
               <CheckCircle2 size={16} />
-              {t('supplierDocuments.panel.uploadedMsg')}
+              {t('supplierDocuments.panel.declaredMsg')}
             </section>
           )}
         </div>

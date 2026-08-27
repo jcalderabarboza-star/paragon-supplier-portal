@@ -11,7 +11,7 @@ import { goodsReceiptStore } from './stores/goodsReceiptStore';
 import { invoiceStore } from './stores/invoiceStore';
 import { toBuyerInvoice, toSupplierInvoice } from '../invoiceProjection';
 import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
-import { DOCUMENTS } from './fixtures/supplierDocuments';
+import { supplierDocumentStore } from './stores/supplierDocumentStore';
 import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
 import {
@@ -302,8 +302,13 @@ export class MockProcurementService implements IProcurementService {
 
   // ─── Supplier-side supporting data ────────────────────────────────────────
 
+  // §82 — reads resolve from the STORE, not the frozen fixture module: the
+  // supplier-document verbs are wired now, so a declaration made this session
+  // must be visible to the next read. Scoping is unchanged — a buyer gets the
+  // superset (which is what makes compliance's review queue possible at all),
+  // a supplier gets only its own rows.
   async getDocuments(scope: QueryScope): Promise<Page<SupplierDocument>> {
-    return { items: applySupplierScope(scope, DOCUMENTS) };
+    return { items: applySupplierScope(scope, supplierDocumentStore.all()) };
   }
 
   async getStorefrontCatalog(

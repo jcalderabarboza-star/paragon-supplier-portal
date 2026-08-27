@@ -15,9 +15,12 @@ const renderPill = (node: React.ReactNode) =>
 // Generic SIMULATED caps render the plain "Sample". `compliance` (I3.3) and
 // `inventory` (SDC-3b) are harvest-gated, so they render the SPECIFIC
 // waiting-state text instead — asserted separately.
+// S82 - `supplierDocuments` LEFT this list. Its target is wired (gate-1 LIVE)
+// and it is harvest-gated on F1 identities, so it now renders the SPECIFIC
+// waiting-state exactly as `compliance` and `inventory` do - covered by its own
+// test below rather than by this generic sweep.
 const GENERIC_SIMULATED_CAPS: Capability[] = [
   'risk',
-  'supplierDocuments',
 ];
 
 describe('LivenessPill — honest-render (reads the LivenessRegistry)', () => {
@@ -54,6 +57,21 @@ describe('LivenessPill — honest-render (reads the LivenessRegistry)', () => {
       expect(container.querySelector('.bg-success')).toBeNull();
       unmount();
     }
+  });
+
+  it('supplierDocuments is wired yet harvest-gated (S82) - specific text, never "Live"', () => {
+    // The batch that wires a lane is the batch tempted to call it live. Gate-1 is
+    // LIVE here and the pill still cannot go green, because the twelve seeded
+    // rows are authored samples and a declaration made today is a demo
+    // submission against a demo identity.
+    expect(isLive('supplierDocuments')).toBe(false);
+    const { container } = renderPill(<LivenessPill capability="supplierDocuments" />);
+    expect(
+      screen.getByText('Sample — awaiting real supplier identities'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Live')).not.toBeInTheDocument();
+    expect(container.querySelector('.text-success')).toBeNull();
+    expect(container.querySelector('.bg-success')).toBeNull();
   });
 
   it('a LIVE capability (wired target) renders green "Live"', () => {

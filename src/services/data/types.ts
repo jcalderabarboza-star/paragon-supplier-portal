@@ -331,6 +331,82 @@ export type SupplierDocumentCategory =
   | 'Contract'
   | 'Other';
 
+/**
+ * ⚠️ **WHAT A SUPPLIER STATES ABOUT A CERTIFICATE — AND THE WORD IS *STATES*,
+ * NOT *UPLOADS*.** No file crosses this boundary, and the type says so by
+ * carrying no file. §82 · operator ruling: *a control labelled Upload that
+ * stores no file is the label-names-the-wrong-verb class, and this project has
+ * closed it twice.*
+ *
+ * ⚠️ **AND THE PLATFORM CAN READ A FILE — IT CANNOT KEEP ONE.** The dispatched
+ * premise was *"every other upload in the platform is a toast"*; measured, it is
+ * not: `XlsxImportPanel` takes a real `<input type="file">`, parses the workbook
+ * and renders its rows, and `SupplierShipments` / `SupplierRegistration` both
+ * read `e.target.files[0].name` into form state. **What the tree has no seam for
+ * is STORAGE and TRANSMISSION** — zero server code, no blob target, and
+ * `SupplierDocument` has no file field of any kind (`fileType` / `fileSize` are
+ * display strings; `fileName` does not exist on it at all). That distinction is
+ * the one the surface must state, because the weaker claim — "we cannot read
+ * files" — is false and a supplier could disprove it one screen over.
+ *
+ * ⚠️ **THE WHOLE OBJECT IS OPTIONAL AND ITS FIELDS ARE NOT** — the §80 refusal
+ * trio's discipline, promoted from an asserted co-presence to a structural one.
+ * There, `rejectionReason` / `rejectedAt` / `rejectedBy` travel together because
+ * a test says so; here a nested object means a fixture *cannot* seed half a
+ * declaration. Absence is honest and means one thing only: **nobody declared
+ * this document** — every seeded row predates the verb.
+ */
+export interface CertificateDeclaration {
+  /**
+   * ⚠️ **A CLAIM UNTIL SOMEBODY CONFIRMS IT** (operator ruling, option C). The
+   * supplier declares the scheme; compliance confirms or refuses it. The gate
+   * cannot mistake the claim for a fact because it reads `lifecycleState`, and a
+   * declared document sits in `Under Review` until `t_supplierdoc_verify` fires.
+   */
+  certType: CertType;
+  certNumber: string;
+  /** The body that issued it, in the supplier's words. */
+  issuer: string;
+  issuedOn: string;
+  /**
+   * `null` when the certificate has none — a BPJPH cert has permanent validity
+   * under GR 42/2024, so `null` is the truth rather than a missing answer.
+   *
+   * ⚠️ **AND FOR A LEGACY CERT THIS NUMBER IS NOT AUTHORITY.**
+   * `complianceProjection.ts` records the statute: a GR-39 / MUI cert's term is
+   * **issuance plus four years REGARDLESS OF WHAT THE DOCUMENT PRINTS.** A
+   * supplier reading its own certificate types the printed date, so what lands
+   * here is what the paper says — which is exactly why it lands as a DECLARED
+   * value under review rather than as a registry fact.
+   */
+  expiresOn: string | null;
+  /**
+   * ⚠️ **THE SUPPLIER'S OWN WORDS FOR WHAT THE CERTIFICATE COVERS — AND IT IS
+   * FREE TEXT ON PURPOSE, NOT FOR WANT OF A BETTER FIELD.** The halal gate joins
+   * on `ComplianceRegistryEntry.materialCodes`: **Paragon's SAP material codes,
+   * at raw-material grain, from Paragon's master data.** A supplier does not hold
+   * that vocabulary, and this tree's two fixture families do not even agree about
+   * the same supplier — sup-007's registry rows cover `FR-ROUD-4470` and four
+   * others while its documents link to three `PK-PETB-88xx` codes, **intersection
+   * empty**, both sets non-empty. Asking for codes would be asking for a guess,
+   * and a guessed code joins silently and wrongly. **A sentence cannot be
+   * mistaken for a join key.** Compliance assigns codes at verify.
+   */
+  scopeText: string;
+  /** When the declaration was recorded. Store-assigned, never payload-supplied —
+   *  the `pinnedAt` discipline: a caller that could set it could backdate its own
+   *  submission against an expiry deadline. */
+  declaredAt: string;
+  /**
+   * ⚠️ **ALWAYS `UNATTRIBUTED` IN THIS TREE**, for `rejectedBy`'s reason and by
+   * the same type: `CurrentIdentity.actor` is `UNATTRIBUTED:
+   * NO_PERSON_IN_SESSION` everywhere, and typing this as `ActorAttribution`
+   * rather than `string` means the surface must RENDER the unattributed state
+   * instead of printing a name it does not have (C10 §5.2 / D-ID-3).
+   */
+  declaredBy: ActorAttribution;
+}
+
 export interface SupplierDocument {
   id: string;
   supplierId: string;
@@ -368,6 +444,12 @@ export interface SupplierDocument {
    * D-ID-3 — no typed-name attribution until session-resolved identity exists.
    */
   rejectedBy?: ActorAttribution;
+  /**
+   * The certificate details the supplier stated, present only on a DECLARED
+   * document. See `CertificateDeclaration` — the whole object is optional and
+   * its fields are not, so half a declaration cannot exist.
+   */
+  declaration?: CertificateDeclaration;
 }
 
 // ─── Invoice — DR-7: ONE canonical machine + persona projections ──────────────
