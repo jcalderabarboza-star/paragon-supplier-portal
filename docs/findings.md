@@ -20829,3 +20829,98 @@ rejects identically, `HEAD` → `commit`). Floor `3564/259` has **never existed*
 `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`**, and the second consecutive
 dispatch whose header names both a non-existent SHA and a floor the file has
 never held. `C9 af7f0b4` and `C10 dc8e774` both verify.
+
+### §82j · ⚠️ A SECOND MERGE INSTRUCTION FOR A PR AND SHA THAT DO NOT EXIST — REFUSED
+
+`MERGE #271 at 8d1c4a7`, again carrying the assurance *"You reported PR, branch,
+head and the gate job in the immediately prior turn."* The seat reported **#266
+at `ff7400c`**.
+
+| named | measured | instrument |
+|---|---|---|
+| PR `#271` | `Could not resolve to a PullRequest with the number of 271` | `gh pr view 271 --json number,title,state` |
+| SHA `8d1c4a7` | `fatal: Not a valid object name`; **0** over `git rev-list --all` | `git cat-file -t` |
+
+Controls both ways: `9999aaa` rejects identically; `ff7400c` resolves to
+`commit`. Highest number the repository holds, in any state, is **266** — and
+there is no ISSUE 271 either, so the number is not a cross-namespace collision.
+
+⚠️ **AND THE FIRST INSTRUMENT REACHED FOR RETURNED A FALSE POSITIVE —
+`GH-PR-VIEW-ECHOES-THE-NUMBER-01`.** `gh pr view 271 --json number` returned
+**`{"number":271}`** for a pull request that does not exist. It echoes the
+identity it was handed without proving anything about it; only asking for a
+SECOND field (`--json number,title,state`) produced the `Could not resolve`
+error. **A verification whose only output is the identity you supplied is an
+echo, not a measurement** — the same shape as `EMPTY-INPUT-REPORTS-CLEAN-01` with
+an argument standing in for an empty population, and it very nearly converted a
+refusal into an approval. **Never verify an object's existence by asking for the
+field you passed in.**
+
+**Sixth instance of `DISPATCH-HEADER-CITES-A-NONEXISTENT-OBJECT-01`, and the
+second consecutive one carrying the "you reported it" warrant.**
+
+### §82k · The four content claims, measured
+
+**1. *"A CONFIRMATION CARRIES IT INTO THE REGISTRY, AND THE GATE READS IT — FIRST
+TIME END TO END IN ONE PASS."* — NOT BUILT, and §82h said so before this
+instruction arrived.** `MockCommandService` holds **0** references to
+`COMPLIANCE_REGISTRY` / `ComplianceRegistryEntry` (control: **7** to
+`supplierDocumentStore`), so `t_supplierdoc_verify` writes nothing to the
+registry. The modules touching BOTH DTOs are three, and none joins them:
+`BuyerCompliance.tsx` (renders each separately), `types.ts` (declares both) and
+`compliance.flow.ts` (a comment). **`verifyHalalAtReceipt` still cannot see a
+declared certificate.** The walk that IS proven ends at `Valid` on the document,
+not in the registry — which is why §82h stated the boundary rather than letting
+the demo imply it.
+
+**2. *"FILTERED TO VERIFIED AT THE SAME COMMIT THAT CREATED IT"* — no such filter
+has ever existed.** `git log --all -S"'Verified'" -- src/pages-v2/
+SupplierDocuments.tsx` returns **nothing**, and `'Verified'` is not a member of
+`SupplierDocumentStatus` at all (the six are `Valid · Expiring Soon · Expired ·
+Awaiting Upload · Under Review · Rejected`). The page's only filter is
+`CategoryFilter` plus a free-text search.
+
+⚠️ **THE CLASS THE RULING NAMES IS REAL AND IS WORTH KEEPING — IT JUST DOES NOT
+DESCRIBE THIS PAGE.** *"A filter that hides a state nothing produces is invisible
+until something produces it"* is a genuine and well-shaped finding class. It is
+recorded here **as a class, with no instance in this batch**, because the honest
+version of the fact is stronger and different: the queue was not hidden by a
+filter, it was unreachable because **no buyer surface in this tree read a
+`SupplierDocument` at all.**
+
+**3. *"EVERY EXISTING CERTIFICATE IS THAT SUPPLIER'S"* — false, and it inverts
+the shape of the real risk.** Derived from `complianceRegistry.ts`: **6 ×
+sup-002, 5 × sup-005, 5 × sup-007.** The registry is three-tenant and always was
+— it is what `BuyerCompliance.sapSync.test.tsx`'s isolation control depends on
+(`OWN.length < COMPLIANCE_REGISTRY.length`). **And no declaration was made
+against a second supplier in this batch**: there is one supplier seat in the
+tree, so the join-is-keyed proof the ruling credits was not performed. What WAS
+performed is the tenancy refusal — a back-office seat declaring for `sup-002` is
+denied at creation scope, asserted with the throw shape rather than a `failed`
+result.
+
+**4. *"`documents.upload.title` WAS A PROMISE THE PLATFORM COULD NOT KEEP … the
+key was left unused rather than repurposed."*** `documents.upload.title` →
+**0 occurrences** in `src/` and `docs/` (control: `supplierDocuments.action.
+uploadDoc` → 3, pre-rename). The named key does not exist.
+
+⚠️ **BUT THE PRINCIPLE LANDS ON THIS BATCH, AND IT LANDS ON THE WRONG SIDE —
+SO IT WAS ACTED ON RATHER THAN RECORDED.** *"A stale key is a finding; a
+repurposed one is a lie with provenance"* is exactly right, and §82 **left no key
+stale and repurposed seven**: `action.uploadDoc`, `action.upload`,
+`panel.uploadTitle`, `panel.uploadFile`, `panel.uploadedMsg`,
+`toast.uploaded.title`, `toast.uploaded.desc` — every one still NAMED for an
+upload while its value had become a declaration, in both locales. The next person
+to grep `uploadDoc` would have found a declaration and had no way to know the
+word had moved. Renamed to `declareCert · declare · declareTitle · certDetails ·
+declaredMsg · declared.title · declared.desc`, with a bilateral check that no old
+name survives anywhere in `src/` and every new name is present — a rename that
+misses one consumer renders a raw key string on screen, which is the same defect
+one layer down. The two dropzone keys were DELETED rather than renamed: they
+described a file, and there is no file.
+
+**This is `FALSE-MECHANISM-MUST-NOT-BE-FILED-01` in its productive direction.**
+The cited artifact was absent, the conclusion drawn from it was wrong in
+direction — and re-measuring against the real tree found a true instance of the
+same class **in the batch being ruled on**, which the ruling would otherwise have
+congratulated.

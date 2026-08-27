@@ -373,8 +373,8 @@ const SupplierDocuments: React.FC = () => {
     setUploaded(true);
     toast({
       variant: 'success',
-      title: t('supplierDocuments.toast.uploaded.title'),
-      description: t('supplierDocuments.toast.uploaded.desc'),
+      title: t('supplierDocuments.toast.declared.title'),
+      description: t('supplierDocuments.toast.declared.desc'),
     });
   };
 
@@ -382,7 +382,7 @@ const SupplierDocuments: React.FC = () => {
     panelMode === 'new'
       ? t('supplierDocuments.panel.newTitle')
       : panelMode === 'upload-existing' && activeDoc
-        ? t('supplierDocuments.panel.uploadTitle', {
+        ? t('supplierDocuments.panel.declareTitle', {
             name: activeDoc.name.split('—')[0].trim(),
           })
         : '';
@@ -420,7 +420,7 @@ const SupplierDocuments: React.FC = () => {
         actions={
           <BulkActionsBar
             primary={{
-              label: t('supplierDocuments.action.uploadDoc'),
+              label: t('supplierDocuments.action.declareCert'),
               icon: Upload,
               onClick: openNewUpload,
             }}
@@ -674,7 +674,7 @@ const SupplierDocuments: React.FC = () => {
                         >
                           {doc.status === 'Rejected'
                             ? t('supplierDocuments.action.redeclare')
-                            : t('supplierDocuments.action.upload')}
+                            : t('supplierDocuments.action.declare')}
                         </Button>
                       ) : (
                         <Button
@@ -855,7 +855,7 @@ const SupplierDocuments: React.FC = () => {
 
               <section className="space-y-4">
                 <h3 className="text-label text-text-tertiary uppercase">
-                  {t('supplierDocuments.panel.uploadFile')}
+                  {t('supplierDocuments.panel.certDetails')}
                 </h3>
 
                 <label className="block">
@@ -976,7 +976,7 @@ const SupplierDocuments: React.FC = () => {
               data-testid="declaration-recorded"
             >
               <CheckCircle2 size={16} />
-              {t('supplierDocuments.panel.uploadedMsg')}
+              {t('supplierDocuments.panel.declaredMsg')}
             </section>
           )}
         </div>

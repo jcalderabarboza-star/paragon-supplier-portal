@@ -24,7 +24,7 @@ export const supplierDocumentsEn: Record<string, string> = {
   'supplierDocuments.header.subtitle':
     'Certifications, compliance documents, COAs, and contracts · Halal & BPOM tracking — {{name}}.',
   'supplierDocuments.common.supplierFallback': 'Supplier',
-  'supplierDocuments.action.uploadDoc': 'Declare a certificate',
+  'supplierDocuments.action.declareCert': 'Declare a certificate',
   // — Meta line —
   'supplierDocuments.meta.summary.one': '{{count}} document · last refreshed {{date}}',
   'supplierDocuments.meta.summary.other': '{{count}} documents · last refreshed {{date}}',
@@ -76,7 +76,7 @@ export const supplierDocumentsEn: Record<string, string> = {
   'supplierDocuments.expiry.none': 'No expiry',
   'supplierDocuments.table.empty': 'No documents match the current filters.',
   // — Row / footer actions —
-  'supplierDocuments.action.upload': 'Declare',
+  'supplierDocuments.action.declare': 'Declare',
   'supplierDocuments.action.view': 'View',
   'supplierDocuments.action.renew': 'Renew',
   'supplierDocuments.action.close': 'Close',
@@ -88,10 +88,10 @@ export const supplierDocumentsEn: Record<string, string> = {
     'All cosmetics and personal care products distributed in Indonesia must carry BPJPH-issued halal certification. MUI certificates issued before the transition remain valid until expiry but cannot be renewed — new BPJPH certification must be obtained.',
   // — Upload side panel —
   'supplierDocuments.panel.newTitle': 'Declare a certificate',
-  'supplierDocuments.panel.uploadTitle': 'Declare — {{name}}',
+  'supplierDocuments.panel.declareTitle': 'Declare — {{name}}',
   'supplierDocuments.panel.document': 'Document',
-  'supplierDocuments.panel.uploadFile': 'Certificate details',
-  'supplierDocuments.panel.uploadedMsg': 'Declaration recorded — Paragon’s compliance team will review it.',
+  'supplierDocuments.panel.certDetails': 'Certificate details',
+  'supplierDocuments.panel.declaredMsg': 'Declaration recorded — Paragon’s compliance team will review it.',
   // — §82 · THE DECLARATION, AND THE SENTENCE THAT MAKES IT HONEST —
   'supplierDocuments.panel.noFile.title': 'No file is sent to Paragon',
   'supplierDocuments.panel.noFile.body':
@@ -117,8 +117,8 @@ export const supplierDocumentsEn: Record<string, string> = {
   'supplierDocuments.toast.declineFailed.title': 'Declaration not recorded',
   'supplierDocuments.action.redeclare': 'Declare again',
   // — Toasts —
-  'supplierDocuments.toast.uploaded.title': 'Declaration recorded',
-  'supplierDocuments.toast.uploaded.desc': 'Awaiting review by Paragon’s compliance team.',
+  'supplierDocuments.toast.declared.title': 'Declaration recorded',
+  'supplierDocuments.toast.declared.desc': 'Awaiting review by Paragon’s compliance team.',
   'supplierDocuments.toast.downloading': 'Download not available yet — {{name}} was not downloaded.',
   'supplierDocuments.toast.renewStarted': 'Renewal workflow started for {{name}}',
   // — Refusal (the one Rejected row) —
@@ -151,7 +151,7 @@ export const supplierDocumentsId: Record<string, string> = {
   'supplierDocuments.header.subtitle':
     'Sertifikasi, dokumen kepatuhan, COA, dan kontrak · Pelacakan Halal & BPOM — {{name}}.',
   'supplierDocuments.common.supplierFallback': 'Pemasok',
-  'supplierDocuments.action.uploadDoc': 'Nyatakan sertifikat',
+  'supplierDocuments.action.declareCert': 'Nyatakan sertifikat',
   // — Meta line —
   'supplierDocuments.meta.summary.one': '{{count}} dokumen · terakhir disegarkan {{date}}',
   'supplierDocuments.meta.summary.other': '{{count}} dokumen · terakhir disegarkan {{date}}',
@@ -203,7 +203,7 @@ export const supplierDocumentsId: Record<string, string> = {
   'supplierDocuments.expiry.none': 'Tanpa kedaluwarsa',
   'supplierDocuments.table.empty': 'Tidak ada dokumen yang cocok dengan filter saat ini.',
   // — Row / footer actions —
-  'supplierDocuments.action.upload': 'Nyatakan',
+  'supplierDocuments.action.declare': 'Nyatakan',
   'supplierDocuments.action.view': 'Lihat',
   'supplierDocuments.action.renew': 'Perbarui',
   'supplierDocuments.action.close': 'Tutup',
@@ -215,10 +215,10 @@ export const supplierDocumentsId: Record<string, string> = {
     'Semua produk kosmetik dan perawatan pribadi yang didistribusikan di Indonesia harus memiliki sertifikasi halal terbitan BPJPH. Sertifikat MUI yang diterbitkan sebelum transisi tetap berlaku hingga kedaluwarsa tetapi tidak dapat diperbarui — sertifikasi BPJPH baru harus diperoleh.',
   // — Upload side panel —
   'supplierDocuments.panel.newTitle': 'Nyatakan sertifikat',
-  'supplierDocuments.panel.uploadTitle': 'Nyatakan — {{name}}',
+  'supplierDocuments.panel.declareTitle': 'Nyatakan — {{name}}',
   'supplierDocuments.panel.document': 'Dokumen',
-  'supplierDocuments.panel.uploadFile': 'Rincian sertifikat',
-  'supplierDocuments.panel.uploadedMsg': 'Pernyataan tercatat — tim kepatuhan Paragon akan meninjaunya.',
+  'supplierDocuments.panel.certDetails': 'Rincian sertifikat',
+  'supplierDocuments.panel.declaredMsg': 'Pernyataan tercatat — tim kepatuhan Paragon akan meninjaunya.',
   // — §82 —
   'supplierDocuments.panel.noFile.title': 'Tidak ada berkas yang dikirim ke Paragon',
   'supplierDocuments.panel.noFile.body':
@@ -244,8 +244,8 @@ export const supplierDocumentsId: Record<string, string> = {
   'supplierDocuments.toast.declineFailed.title': 'Pernyataan tidak tercatat',
   'supplierDocuments.action.redeclare': 'Nyatakan ulang',
   // — Toasts —
-  'supplierDocuments.toast.uploaded.title': 'Pernyataan tercatat',
-  'supplierDocuments.toast.uploaded.desc': 'Menunggu tinjauan tim kepatuhan Paragon.',
+  'supplierDocuments.toast.declared.title': 'Pernyataan tercatat',
+  'supplierDocuments.toast.declared.desc': 'Menunggu tinjauan tim kepatuhan Paragon.',
   'supplierDocuments.toast.downloading': 'Unduhan belum tersedia — {{name}} tidak diunduh.',
   'supplierDocuments.toast.renewStarted': 'Alur pembaruan dimulai untuk {{name}}',
   // — Empty state (all-empty early return) —
