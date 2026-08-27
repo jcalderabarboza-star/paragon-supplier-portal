@@ -70,6 +70,41 @@ a SHA in a dispatch HEADER, arriving in the position that reads as context
 rather than as claim, which is exactly what makes it the cheaper place to put a
 wrong object.
 
+### ⚠️ A MECHANISM WHOSE SUCCESS SIGNAL IS SILENT ABOUT THE DAMAGE IT DOES
+
+Ruled 2026-08-27, from **four members measured in one session** — the drain of
+a five-PR stack. Each of the four reported success. Each was doing damage its
+success signal does not mention. They are one rule because the remedy is the
+same in all four: **the signal is not the state; go and measure the state.**
+
+| Mechanism | What it reported | What it was actually doing | The measurement |
+|---|---|---|---|
+| CI on `pull_request: branches: [main]` | `mergeStateStatus: CLEAN` | never ran — a PR based on a feature branch is outside the trigger | three PRs of the stack carried Vercel checks only; `build · floor · test:gate` was **absent** from `gh pr checks` |
+| **squash**-merge on a stacked chain | merged · branch deleted · green | severed ancestry, so the next link's merge-base never advances | `main` tree **==** `pr/262` head tree (`39e955ae8359…`) while `pr/262` was **not an ancestor of main**; the next merge then conflicted in six files, one of them `add/add` |
+| `--delete-branch` on a stacked chain | merged · branch deleted | **closed the next PR**, whose base ref ceased to exist | #263 merged `06:03:10Z`; #264 `base_ref_deleted` **and** `closed` at `06:03:12Z` |
+| retargeting (`gh pr edit --base main`) | `mergeable=MERGEABLE` · `CLEAN` | did not gate — `edited` is not in the default `types` set | two retargeted PRs reached CLEAN with **no gate run**, which would have silently undone the fix for the first row |
+
+⚠️ **`CLEAN` IS NOT EVIDENCE.** It answers *"is anything blocking?"*, and *"no
+check was required"* is one of the ways nothing blocks. **Read the check LIST,
+by name; say plainly when the gate is ABSENT.** Never report an aggregate — an
+aggregate cannot distinguish "everything passed" from "nothing was asked."
+
+**The operational rules that follow. Not advisory:**
+
+- **NEVER squash-merge a stacked chain.** Use `--merge`: ancestry is precisely
+  what the next link's merge-base reads. Squash remains the default for an
+  ordinary single PR — the defect is squash **on a chain**, not squash.
+- **NEVER `--delete-branch` on a stacked chain.** Delete by hand once the whole
+  stack is on main, each branch first asserted to be an ancestor of main.
+- **A retarget requires a gate run.** Retargeting emits `edited`, which is why
+  `types:` is now spelled out in `.github/workflows/gates.yml`. If a retargeted
+  PR still shows no gate, run the four locally on the merged base **and say that
+  the local run is the only gate record there is.**
+- **Repair a severed chain with `git merge -s ours main` on the branch** — never
+  `-X ours` / `-X theirs`, which are a different operation and DO discard
+  content. Assert the branch's tree SHA is the **same object** before and after;
+  if it moved, what ran was not what you meant.
+
 ## Session startup — run these commands every time
 git checkout main && git pull origin main
 
@@ -196,10 +231,14 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   `CommandResult`/`getCommandStatus`/`settle` (Option-B SAP boundary), DR-10 event
   taxonomy (`TransitionEvent` + `AuditSink`, in-memory), cascades (RFQ→quotation,
   GR→ASN). PO/ASN/GR/Invoice/RFQ-award verbs run against in-memory stores.
-- **Phase 2′ exit is STAMPED contract-complete as of F0.4 (PR #58).** All 10
-  lifecycle machines are authored across 13 flow files (`src/services/transitions/
-  flows/`): PO · ASN · GR (+ line) · Invoice (+ match) · RFQ · Quotation · Shipment ·
-  Contract · Obligation · PurchaseRequisition · SupplierDocument. The sole remaining
+- **Phase 2′ exit is STAMPED contract-complete as of F0.4 (PR #58).** The
+  lifecycle machines are authored under `src/services/transitions/flows/`.
+  ⚠️ **DERIVE HOW MANY FROM `getKnownFlows()`, NEVER FROM THIS SENTENCE** — it
+  read *"All 10 lifecycle machines … across 13 flow files"* until 2026-08-27,
+  by which time the registry held neither figure. The F0.4 set was PO · ASN ·
+  GR (+ line) · Invoice (+ match) · RFQ · Quotation · Shipment · Contract ·
+  Obligation · PurchaseRequisition · SupplierDocument; flows have been added
+  since and will be again. The sole remaining
   census machine — the ONE canonical compliance machine that collapses the 5
   fragmented vocabularies (census #11–15) — rides R2.2 DTO-v2. Of the F0.4 five,
   **FOUR remain author-unwired inert registry data**
@@ -209,27 +248,31 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   wired at G1.1 and dispatches (`MockCommandService.ts:547-593`, registered
   `:983`).
 
-  ⚠️ **CORRECTED AT R2 (2026-08-12) — THE TARGET-LESS FLOWS ARE SEVEN, NOT FOUR,
-  AND THE COUNT ABOVE IS THE F0.4 SUBSET, NOT THE POPULATION.** Derived from
-  `getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`, the flows with NO CommandTarget
-  are: **Shipment · Contract · Obligation · SupplierDocument · goodsReceiptLine ·
-  invoiceMatch · compliance** — 30 verbs that cannot fire. The "four" counted
-  only the five F0.4 machines and never included the two rolled-up sub-flows or
-  the compliance machine, so the sentence was true of its own subset and false
-  of the tree. **⚠️ NAME COMPLIANCE SPECIFICALLY: I3 is stamped COMPLETE below
+  ⚠️ **THE TARGET-LESS FLOWS ARE A SET DIFFERENCE, NOT A LIST — RUN
+  `getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`.** This line has been written out
+  as a list twice and gone stale both times, in opposite directions: R2
+  (2026-08-12) had to correct *"four"* to seven because it counted only the
+  F0.4 machines and never the two rolled-up sub-flows or the compliance
+  machine; then on 2026-08-27 **`supplierDocument` was wired and left the set
+  without anyone touching this sentence.** A membership list decays silently
+  every time a flow is wired, which is the whole argument for deriving it.
+  **⚠️ NAME COMPLIANCE SPECIFICALLY: I3 is stamped COMPLETE below
   and `BuyerCompliance` really does read through the seam — but the compliance
   MACHINE IS READ-ONLY. `t_compliance_submit` / `_verify` / `_reject` CAN NEVER
   FIRE.** A complete read path and an inert write path are compatible, and
-  nothing in the I3 stamp said which one it meant. All seven ARE honestly badged
-  `AUTHORED — UNWIRED` on `/buyer/process-flows` (verified by rendering, R1) —
-  the defect was in this file, not on the surface.
+  nothing in the I3 stamp said which one it meant. Every member of that derived
+  set IS honestly badged `AUTHORED — UNWIRED` on `/buyer/process-flows`
+  (verified by rendering, R1) — the defect was in this file, not on the surface.
 
-  **Wired CommandTargets number 11, not 10 and not 6** — `TARGETS`
-  (`MockCommandService.ts:1130`), exported as `WIRED_COMMAND_TARGETS` (`:1155`).
-  The 11th is `enforcement` (CP-3 · E2); the "10" predated it and the line refs
-  cited with it had drifted ~150 lines. **Do not restate this number without
-  re-deriving it** — it has now been wrong twice, in the same sentence, for the
-  same reason. It is
+  ⚠️ **THE WIRED-COMMANDTARGET COUNT IS DELIBERATELY NOT WRITTEN HERE.** Derive
+  it from `WIRED_COMMAND_TARGETS` — the runtime export of `TARGETS` in
+  `MockCommandService.ts`, which is the one place it can be true. The sentence
+  that stood in this spot carried a figure, and it was restated and re-corrected
+  repeatedly (*"6"*, then *"10"*, then *"11"*), each right on the day it was
+  typed and stale within weeks; the line references shipped beside it had
+  drifted ~150 lines as well, so even the pointer rotted. **`FLOOR-IN-PROSE-01`,
+  in the paragraph that exists to warn about it — which is why the remedy is to
+  delete the number rather than to write a newer one.** It is
   deliberately **contract-complete, NOT behavior-complete** — remaining verb
   wiring (and each machine's CommandTarget) rides its Stage-2 surface (FORK-2
   hybrid). Clock-projected states stay out of every transition table (law 0.5);
@@ -312,7 +355,12 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   The regulatory date is real and derivable in-tree: **17 October 2026**, GR
   42/2024, BPJPH — carried at `docs/Paragon_Platform_Strategic_Spine_v1.md:102`,
   `docs/Halal_Compliance_Control_Design_v1.md:9`, and as the `BPJPH_MANDATE_DATE`
-  constant behind `complianceProjection.schemeValid`. **58 days from 2026-08-20.**
+  constant behind `complianceProjection.schemeValid`
+  (`src/services/data/complianceProjection.ts`). ⚠️ **THE DAYS REMAINING ARE NOT
+  WRITTEN HERE.** A countdown in prose is wrong every day after it is typed —
+  `FLOOR-IN-PROSE-01` with a clock attached, and the one variant that decays
+  with nobody touching the file. The line read *"58 days from 2026-08-20"* and
+  was already stale when it was next read. **Subtract today from the constant.**
   What changed is not the date — it was always there — but which lane the seat
   spends its next batches on. It feeds the Stage-2 I3 compliance primitive.
 
@@ -607,6 +655,26 @@ prose, in the section that forbids restating cardinalities in prose. §27 /
    THAT site.** A correct-sounding claim resting on the wrong site is the same
    defect as `COUNT-RESTATED-ACROSS-INSTRUMENTS-01` (§40k) with a location
    standing in for a number.
+
+   ⚠️ **§83 · AND THE SHARPEST INSTANCE OF IT, BECAUSE THE INSTRUMENT RETURNS
+   THE SAME ANSWER FOR A LIVE VERB AND A DEAD ONE.** A census of *"which verbs
+   are dispatched?"* run as `grep "transitionId: '<id>'"` returns **0 for
+   `t_gr_approve`, which fires on every goods receipt the wizard commits, and 0
+   for `t_gr_hold`, which nothing has ever fired.** The literal is real — it
+   lives in a `switch` return (`grRollup.ts`), not at the call site, because the
+   GR header disposition is DERIVED rather than chosen and the call site reads
+   `transitionId: headerVerb`. **A dispatch census must RESOLVE every
+   non-literal id to its concrete returns before it reports anything**; derive
+   the non-literal sources rather than assuming there is one (today: the GR
+   header verb, and the cascade fan-out's `link.targetTransitionId`, which is
+   the dispatcher firing at itself rather than a page firing). Thirteen verbs
+   were reported dead on the literal scan and three of them were live.
+   ⚠️ **AND A VERB WITH A CALLER IS STILL NOT REACHABLE IF NO DISPATCHED VERB
+   PRODUCES ITS FROM-STATE** — that is a third answer, distinct from live and
+   from dead, and it decides whether the remedy is a surface or a machine.
+   Carry rule 4's bilateral control on the instrument itself: a verb known
+   dispatched must be FOUND and one known undispatched must be ABSENT, by the
+   same instrument in the same run.
 
    ⚠️ **§43 · AND THE RULE BINDS THE SEAT THAT DISPATCHES, NOT ONLY THE ONE
    THAT MEASURES. A PLAN READ AS A RESULT IS THE SAME DEFECT CLASS AS A SCAN

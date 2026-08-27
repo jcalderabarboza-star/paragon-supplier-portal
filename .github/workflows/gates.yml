@@ -2,7 +2,8 @@
 # THE GATES, RUN WHERE NOBODY IS LOOKING — CP-3a.
 #
 # Two halves, one job, deliberately:
-#   · PR — every pull request to main runs the full floor before it can merge.
+#   · PR — every pull request runs the full floor before it can merge, WHATEVER
+#     ITS BASE. See the `on:` block for why that last clause is load-bearing.
 #   · SCHEDULE — main is re-run daily with no commit involved. This is the half
 #     that matters. On 2026-08-01 the floor broke with nobody touching a file
 #     (two specs read the real wall clock past a fixture due-date) and was found
@@ -21,8 +22,28 @@
 name: gates
 
 on:
+  # ⚠️ THERE IS NO `branches:` FILTER HERE, AND THE ABSENCE IS THE FIX.
+  # It read `branches: [main]` until 2026-08-27, so a PR targeting a FEATURE
+  # branch never triggered this workflow — and a PR with no required check is
+  # reported by GitHub as `mergeStateStatus: CLEAN`. Three PRs of one stack
+  # reached CLEAN having never been gated. CLEAN meant "no check was
+  # required", not "every check passed", and nothing in the PR view says which.
+  #
+  # ⚠️ AND `types:` IS SPELLED OUT BECAUSE THE DEFAULT OMITS THE ONE CASE THAT
+  # MATTERS. Absent, it defaults to [opened, synchronize, reopened]. GitHub has
+  # no `base_changed` action: RETARGETING a PR emits `edited` (carrying
+  # `changes.base`), which that default does not contain. Measured on the same
+  # drain — two PRs retargeted to main with `gh pr edit --base main` reached
+  # CLEAN with no gate run, i.e. the fix for the first defect would have been
+  # undone by the second.
+  #
+  # `edited` also fires on a title or body edit, so the gates will sometimes
+  # run for a prose change. THAT IS THE DELIBERATE TRADE. The alternative is an
+  # `if:` guard on `github.event.changes.base`, and a guard that is wrong SKIPS
+  # THE GATE IN SILENCE — the exact failure class this trigger exists to close.
+  # A wasted run is loud and cheap; a skipped one is neither.
   pull_request:
-    branches: [main]
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
   schedule:
