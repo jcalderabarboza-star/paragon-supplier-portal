@@ -19691,3 +19691,171 @@ separately for, and it is now the CORRECT state rather than a gap at all: a
 manager's seat exists to be granted to a manager, not to be everyone's default.
 The distinction that was unaskable in 77f-iii — because the subject was absent —
 becomes both askable and answered the moment the role exists.
+
+
+## §78 — `buyer_all` BUILT: THE MANAGER'S SEAT, HOLDABLE AND UNSEEDED
+
+**Batch:** 2026-08-26, on the ruling recorded at §77f-v. `main` `d18f785` → this
+PR. **The role exists now**; §77f measured why the justification it was first
+ruled in on could never work, and §77f-v records the argument it survived on.
+
+### 78a · WHAT IT IS, AND THE TWO EXCLUSIONS THAT ARE THE WHOLE DISTINCTION
+
+Derived, never hand-listed: the union of the six buyer lane bundles **less
+`role:grant`**. A lane that gains an atom tomorrow gives it to the manager in the
+same commit — `admin`'s property, applied one tenancy down.
+
+| | `admin` | `buyer_all` |
+|---|---|---|
+| tenancy | both sides | **buyer only** |
+| authority over the role system | `role:grant` | **none** |
+| the seat it describes | the IT seat | **the manager's seat** |
+
+**`role:grant` is subtracted BY NAME and it is the one subtraction**, asserted
+bilaterally: absent from `buyer_all`, present in `compliance`, and every OTHER
+compliance atom still present — so the subtraction is one atom, not one bundle.
+A broad operating seat that could also rewrite the catalogue is `admin`, which
+already exists, so minting a second one would be the wildcard arriving through
+the door marked *operating convenience*.
+
+### 78b · ⚠️ THE SEED AND THE OFFER WERE ONE CONSTANT, AND THE RULING NEEDED TWO
+
+The instruction was **make it holdable, do not seed it**. `PERSONA_SYSTEM_ROLES`
+answered both *what may this seat hold* and *what does it hold on the day it
+opens*, and **a single constant cannot express both halves of that sentence**:
+adding `buyer_all` to it would have GRANTED the manager's role to every seat in
+the portal, silently, as a side effect of making it offerable.
+
+Split into `PERSONA_SYSTEM_ROLES` (the offer — the panel's enumeration, the
+storage allowlist, the tenancy boundary) and `SEEDED_SEAT_ROLES` (the seed — the
+three seat-creation sites and `test-utils`' default identities).
+
+⚠️ **AND THE FALLBACK WAS THE HALF THAT WOULD HAVE LEAKED.**
+`rolesFromStorage` returns the persona's set when storage is absent or empty; it
+read `allowed`. Left alone, **every cold start would have opened holding
+`buyer_all`** — the seed defeated not by the seed site but by the *default* of a
+validator. The FILTER still reads the offer (or a legitimately granted role would
+be stripped on reload); only the FALLBACK reads the seed.
+
+**A narrowing gate now pins the pair in both directions:** every seeded role is
+offerable (a seat cannot open holding something the panel would refuse to hand
+back), and at least one offerable role is unseeded — asserted as exactly
+`['buyer_all']`, so if the two lists ever coincide again the split is measured
+decorative rather than quietly re-merged.
+
+### 78c · ⚠️ `SUPERSET_ROLES` — A SPECIAL CASE THAT WAS CORRECT UNTIL THERE WERE TWO
+
+`rolesHolding` filtered `r !== 'admin'`, with a comment explaining exactly why. It
+was right while one such role existed and **silently wrong the moment a second
+did** — the shape that ships looking like a working filter. Unexempted,
+`buyer_all` would have been named an owner of all 36 buyer atoms and **every
+withheld verb in the portal would have read *"Awaiting Finance / Buyer
+Operations Lead"***.
+
+**A role that holds everything is not an owner, it is a superset** (operator
+ruling): naming it tells a withheld seat nothing about *whose act is next*.
+
+The replacement is a set, and the set is **asserted derived-true**: every member
+must actually be a superset of some other role and every non-member must not be,
+so a third wide role cannot be added without either joining it or turning the
+gate red. Two existing assertions went red on this change and both were correct
+to — `handoffDrawerPerVerb.test.ts` carried the same hand-kept `!== 'admin'`, and
+`businessRoles.test.ts` carried a `toHaveLength(6)` on the offer, a cardinality
+restated in a test that failed for a role legitimately ADDED. The first now reads
+`SUPERSET_ROLES`; the second dropped the length and kept the structural claim.
+
+### 78d · ⚠️ THE PANEL PREMISE INVERTED, AND THIS SEAT STATED IT TOO
+
+**The claim, made by the operator and repeated by the seat that is now
+correcting it:** a toggle-set of `['buyer_all']` ALONE is UNREACHABLE, because
+removing the six lanes leaves the last role un-removable and `buyer_all`
+un-addable in the same gesture.
+
+**Measured from `toggleRole`:** an ADD can never be blocked — `next.length` is at
+least one by construction — and a REMOVE is blocked only at `held.length === 1`.
+**So ADD-then-remove reaches it in seven gestures and only REMOVE-first stalls.
+The set is reachable; the ORDER is what constrains**, and the constraint is about
+COUNT — it is not about `buyer_all` at all.
+
+Walked on the built bundle, not only in a spec: seeded seat → add `buyer_all`
+(7 roles) → remove all six lanes → **`1 role(s) · 36 permissions`, held
+`['buyer_all']`** → attempt to remove the last role → **refused, and the panel
+says why.**
+
+⚠️ **THE SIGNIFICANCE IS NOT THE FIX, IT IS THE PROVENANCE.** This is the same
+finding that appeared in §77f-iii as a *plan read as a result*: the seat reported
+it while explaining why it was NOT building, and it came back as a build-time
+correction from a batch that never ran. **It was wrong in both directions —
+wrong as a reason to stop, and wrong as a report of having gone.** A premise can
+survive two seats and one round-trip and still be false, and only walking it
+settled it.
+
+### 78e · WARN, DO NOT BLOCK — two notices, both descriptive
+
+*The panel says what the roles do; it does not decide which set a person should
+hold* (operator ruling — the enforcement notice's discipline: **say whose act it
+is; do not take the act**). Neither notice blocks a toggle, reorders the list, or
+auto-narrows a seat.
+
+- **Redundancy** — names the held roles a wider held role already covers.
+  ⚠️ **DERIVED, and that is what makes it TRUE:** `compliance` beside `buyer_all`
+  is **NOT** named, because it carries `role:grant`, which the manager's seat
+  deliberately does not. A hardcoded *"everything beside a superset is
+  redundant"* rule would have been wrong about the one role that matters.
+  Confirmed live: the notice names five lanes and omits compliance, and the
+  permission count reads **37** while compliance is held and **36** once it goes.
+- **The last role** — states that it cannot be removed, and how to swap it.
+
+### 78f · BROWSER QA — BOTH LOCALES, BUILT BUNDLE, HASH ASSERTED FROM THE PAGE
+
+⚠️ **THE DISPATCH OMITTED IT AND IT WAS RUN ANYWAY** — the standing rule ruled
+this session. A separate dispatch supplied it, so it is recorded as an omission
+noticed rather than one caught.
+
+Entry chunk read from inside the page and matched to the on-disk build; the
+served bundle asserted to carry strings that exist only after this batch, with a
+negative control that is absent.
+
+| check | result |
+|---|---|
+| panel offers it, unheld on a cold seat | ✅ `aria-checked=false`, seat opens `6 role(s) · 37 permissions` |
+| EN / ID names | ✅ *Buyer Operations Lead* · *Kepala Operasi Pembelian* |
+| ID notice + summary | ✅ `2 peran · 36 izin`, notice in Indonesian |
+| `['buyer_all']` alone | ✅ reached, `1 role(s) · 36 permissions` |
+| the atoms it lists | ✅ **36**, and `role:grant` absent |
+| supplier reach | ✅ **zero supplier atoms**, on a page listing 36 |
+| held-seat control | ✅ RFQ surface: **no handoff notices**, New RFQ and Cancel RFQ live |
+| ⚠️ **the control's other half** | ✅ same page, `['finance']` seat: **two** notices, both *"Awaiting Procurement"* — **and neither names Buyer Operations Lead** |
+
+**The last row is the one that matters.** Zero notices on a wide seat proves
+nothing on its own — a broken notice renders zero too. The narrow-seat run is
+what makes the wide-seat reading evidence, and it also confirms the
+`SUPERSET_ROLES` exemption on the rendered surface rather than only in a unit.
+
+⚠️ **AND ONE INSTRUMENT ERROR, CAUGHT BY WATCHING THE RENDER RATHER THAN THE
+WRITE.** The locale was first switched by writing `i18nextLng` — a plausible key
+this app does not use. The write succeeded, the page stayed English, and reading
+the DOM is what said so; the real key is `paragon.lang`. **A storage write that
+lands is not a setting that applied.**
+
+### 78g · THE CATALOGUE TILE MOVED WITHOUT A PAGE EDIT — SIXTH EXERCISE
+
+`Roles 9 · 7 buyer · 1 supplier · 1 cross-tenancy`, and the split still sums to
+its own total. *Distinct permissions* and *Governed actions* are **unchanged**,
+which is the correct answer and a check in itself: `buyer_all` introduces no new
+atom, so a tile that moved would have been measuring the roster twice.
+
+### 78h · DISPOSITION
+
+- **BUILT:** the role, both locales, the seed/offer split, the superset exemption,
+  two panel notices, and 35 assertions across two new spec files.
+- **NOT BUILT, AND DELIBERATELY:** the subtractive half of custom roles. §77f-v
+  rules it must be taken on its own merits rather than to rescue a role — and the
+  copy dead end it would fix is now ASSERTED rather than hidden: the addable set
+  for a `buyer_all` parent is exactly `['role:grant']`, the one atom the ruling
+  forbids, so a child of `buyer_all` is either identical to it (refused
+  `MISSING_FIELDS:adds`) or it is `admin` by another name.
+- **OPEN — carried, not introduced:** the catalogue still does not say which roles
+  are holdable (§77f-ii). It now shows **two** wide roles, one holdable and one
+  not, distinguishable only by reading their descriptions.
+- **FLOOR:** 3482/252 → **3517/254**, as the gate note asks.

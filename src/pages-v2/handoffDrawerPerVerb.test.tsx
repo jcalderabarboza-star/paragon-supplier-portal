@@ -2,7 +2,7 @@ import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders, BUYER } from '../test/test-utils';
 import type { CurrentIdentity } from '../context/CurrentIdentityContext';
 import i18n from '../lib/i18n';
-import { rolesHolding, SYSTEM_ROLES } from '../services/transitions/businessRoles';
+import { rolesHolding, SYSTEM_ROLES, SUPERSET_ROLES } from '../services/transitions/businessRoles';
 import BuyerSourcing from './BuyerSourcing';
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -235,10 +235,17 @@ describe('§76 · why a PARTIALLY-held seat cannot be demonstrated today', () =>
     expect(rolesHolding('pr:create')).toEqual(['requisitioner']);
   });
 
-  it('and no other assignable role holds one of them — the seat is all-or-none', () => {
+  it('and no other LANE holds one of them — the seat is all-or-none', () => {
+    // ⚠️ **THE EXCLUSION IS `SUPERSET_ROLES`, NOT A HAND-KEPT `!== 'admin'`.**
+    // This read `r !== 'admin'` and went red the day a SECOND superset landed —
+    // correctly, because a superset holding a lane's atoms is what a superset
+    // IS. The claim being pinned is about LANES: no other lane holds these, so
+    // a partially-held seat cannot be demonstrated by mixing lanes. Reading the
+    // exported set means a third wide role cannot quietly re-red it either.
     const others = (Object.keys(SYSTEM_ROLES) as (keyof typeof SYSTEM_ROLES)[]).filter(
-      (r) => r !== 'procurement' && r !== 'admin',
+      (r) => r !== 'procurement' && !SUPERSET_ROLES.has(r),
     );
+    expect(others.length).toBeGreaterThan(0); // population guard
     for (const role of others) {
       for (const atom of DRAWER_ATOMS) {
         expect(SYSTEM_ROLES[role]).not.toContain(atom);

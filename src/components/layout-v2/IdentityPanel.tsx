@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ShieldCheck, Info, ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import {
   PERSONA_SYSTEM_ROLES,
+  SYSTEM_ROLES,
+  isSystemRole,
   type SystemRoleId,
 } from '../../services/transitions/businessRoles';
 import { atomsForSeat } from '../../services/transitions/customRoles';
@@ -51,6 +53,43 @@ const IdentityPanel: React.FC = () => {
   const persona = identity.personaType;
   const assignable = PERSONA_SYSTEM_ROLES[persona];
   const held = identity.businessRoles;
+
+  // ── ⚠️ THE TWO NOTICES, AND BOTH DESCRIBE RATHER THAN PRESCRIBE ────────────
+  //
+  // **THE PANEL SAYS WHAT THE ROLES DO; IT DOES NOT DECIDE WHICH SET A PERSON
+  // SHOULD HOLD** (operator ruling — the enforcement notice's discipline: *say
+  // whose act it is; do not take the act*). So neither of these blocks a toggle,
+  // reorders the list, or auto-narrows a seat. They state a fact and stop.
+  //
+  // ⚠️ **AND THE PREMISE THAT ASKED FOR THE FIRST ONE INVERTED ON MEASUREMENT —
+  // BOTH THE OPERATOR AND THIS SEAT STATED IT, AND IT IS WRONG.** The claim was
+  // that a seat of `['buyer_all']` ALONE is unreachable, because removing the
+  // six lanes leaves the last role un-removable. Derived from `toggleRole`
+  // below: an ADD is never blocked (`next.length` is at least 1 by
+  // construction), and a REMOVE is blocked only at `held.length === 1`. So
+  // ADD-then-remove reaches `['buyer_all']` in seven gestures and only
+  // REMOVE-first stalls. **The set is reachable; the ORDER is what constrains**,
+  // and `identityPanelBuyerAll.test.tsx` walks both orders rather than asserting
+  // the reachable one twice.
+  const redundant = useMemo(() => {
+    // A held role whose atoms are wholly contained in ANOTHER held role's.
+    // DERIVED, never a list of superset ids: `compliance` beside `buyer_all` is
+    // NOT redundant — it carries `role:grant`, which the manager's seat
+    // deliberately does not — and a hardcoded rule would have said otherwise.
+    const atomsOf = (r: string) =>
+      new Set<string>(isSystemRole(r) ? SYSTEM_ROLES[r] : []);
+    return held.filter((r) =>
+      held.some((other) => {
+        if (other === r) return false;
+        const mine = atomsOf(r);
+        if (mine.size === 0) return false;
+        const theirs = atomsOf(other);
+        return [...mine].every((a) => theirs.has(a));
+      }),
+    );
+  }, [held]);
+
+  const lastRoleHeld = held.length === 1;
 
   // Close on outside click (mousedown so it beats the button's own onClick) —
   // the LanguageMenu precedent, one component over.
@@ -221,6 +260,27 @@ const IdentityPanel: React.FC = () => {
                   );
                 })}
               </ul>
+            )}
+
+            {/* ⚠️ WARN, DO NOT BLOCK — see the derivation above. */}
+            {redundant.length > 0 && (
+              <p
+                className="mt-1.5 text-xs text-text-tertiary leading-relaxed"
+                data-testid="identity-roles-redundant"
+              >
+                {t('identity.panel.rolesRedundant', {
+                  roles: redundant.map((r) => t(`roles.owner.${r}`)).join(', '),
+                })}
+              </p>
+            )}
+
+            {lastRoleHeld && (
+              <p
+                className="mt-1.5 text-xs text-text-tertiary leading-relaxed"
+                data-testid="identity-roles-last"
+              >
+                {t('identity.panel.rolesLast')}
+              </p>
             )}
           </div>
 

@@ -268,11 +268,17 @@ describe('atomsFor — resolution', () => {
     expect(atomsFor(['finance'])).toContain('invoice:pay');
   });
 
-  it('a buyer persona spans exactly the union of its six bundles', () => {
-    const six = PERSONA_SYSTEM_ROLES.buyer;
-    expect(six).toHaveLength(6);
-    const union = new Set(six.flatMap((r) => SYSTEM_ROLES[r as SystemRoleId]));
-    expect(new Set(atomsFor(six))).toEqual(union);
+  it('a buyer persona spans exactly the union of the bundles it may hold', () => {
+    // ⚠️ **THE LENGTH CAME OFF THIS ASSERTION WHEN `buyer_all` LANDED, AND IT IS
+    // NOT A WEAKENING.** `toHaveLength(6)` was a cardinality restated in a test
+    // — it went red for a role legitimately ADDED to the offer, which is not
+    // what this test is about. What it IS about survives intact and is
+    // structural: whatever the persona may hold, `atomsFor` resolves to exactly
+    // the union of those bundles and nothing else.
+    const offer = PERSONA_SYSTEM_ROLES.buyer;
+    expect(offer.length).toBeGreaterThan(0); // population guard
+    const union = new Set(offer.flatMap((r) => SYSTEM_ROLES[r as SystemRoleId]));
+    expect(new Set(atomsFor(offer))).toEqual(union);
   });
 });
 
