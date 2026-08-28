@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FileText,
   Clock,
@@ -55,6 +55,7 @@ import { useToast } from '../hooks/useToast';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useRFQs, useQuotations, useSuppliers, useRequisitions } from '../services/query/hooks';
 import {
   useRfqCreate,
@@ -1258,6 +1259,40 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const closeWizard = () => {
     setWizardOpen(false);
   };
+
+  // ⚠️ **C.3's DEEP LINK — A THIRD CALLER OF `openWizard`, NOT A SECOND ENTRY
+  // SHAPE.** The requisition surface navigates here with a requisition ID in
+  // router state; this resolves it against the SAME `sourceablePrs` the picker
+  // offers and calls the SAME `openWizard(prefill)`. Nothing about the signature
+  // changed to accommodate it, which is the decomposition's constraint: C.3 must
+  // not rewrite C.2.
+  //
+  // ⚠️ **THE ID TRAVELS, NOT THE PREFILL.** Sending the built prefill through
+  // history state would ship a SNAPSHOT taken on another page — stale the moment
+  // the requisition moves, and un-revalidatable here. Sending the id means this
+  // page derives the prefill from its own live read, and an id that no longer
+  // qualifies (already sourced, since withdrawn) simply opens an ordinary
+  // wizard rather than one prefilled from a document that has moved on.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const consumedDeepLink = useRef<string | null>(null);
+  const deepLinkId =
+    typeof (location.state as { sourceRequisitionId?: unknown } | null)?.sourceRequisitionId ===
+    'string'
+      ? (location.state as { sourceRequisitionId: string }).sourceRequisitionId
+      : null;
+
+  useEffect(() => {
+    if (!deepLinkId || consumedDeepLink.current === deepLinkId) return;
+    consumedDeepLink.current = deepLinkId;
+    const pr = sourceablePrs.find((r) => r.id === deepLinkId);
+    openWizard(pr ? prefillFromRequisition(pr) : undefined);
+    // Clear the state so a re-render, a back-navigation, or a refresh does not
+    // re-open a wizard the buyer has already closed. `replace` keeps the history
+    // entry rather than adding one.
+    navigate(location.pathname + location.search, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkId, sourceablePrs]);
 
   const updateDraft = <K extends keyof DraftRfq>(
     key: K,

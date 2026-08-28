@@ -109,9 +109,15 @@ export const requisitionsEn: Record<string, string> = {
   'requisitions.panel.unattributed.idpDown': 'Unattributed — identity provider unavailable',
   'requisitions.panel.attributionNote':
     'This portal holds no person identity yet, so the decision is recorded as unattributed. The act proceeds and the record says who could not be named.',
-  'requisitions.panel.terminal.title': 'Approved — this is where it stops today',
-  'requisitions.panel.terminal.body':
-    'Sourcing and PO conversion are declared as automatic consequences of approval, and no producer is wired for either yet. Nothing on this screen advances an approved requisition further.',
+  // ⚠️ C.3 — REPLACES `terminal.*`, WHICH HAD BECOME FALSE. It said no producer
+  // was wired for sourcing; one was wired at C.2 and this string did not move.
+  // What is still true is named precisely: PO conversion has no producer, and
+  // `t_pr_convert` is unauthored BY RULING until F2's event seam, not by
+  // omission — a PO is raised in S/4 and arrives here as a fact.
+  'requisitions.panel.sourcing.title': 'Approved — ready to source',
+  'requisitions.panel.sourcing.body':
+    'Raising an RFQ from this requisition moves it to Sourcing Event and records the RFQ against it. Direct PO conversion is not available here: a purchase order is raised in S/4 and arrives as a fact.',
+  'requisitions.panel.sourcing.cta': 'Raise sourcing event',
   'requisitions.panel.draftNote.title': 'Draft — not yet in the approval queue',
   'requisitions.panel.draftNote.body':
     'Nobody is waiting on this yet. It reaches an approver when the requester submits it.',
@@ -308,9 +314,10 @@ export const requisitionsId: Record<string, string> = {
   'requisitions.panel.unattributed.idpDown': 'Tanpa atribusi — penyedia identitas tidak tersedia',
   'requisitions.panel.attributionNote':
     'Portal ini belum memiliki identitas orang, sehingga keputusan dicatat tanpa atribusi. Tindakan tetap berjalan dan catatannya menyatakan siapa yang tidak dapat disebutkan.',
-  'requisitions.panel.terminal.title': 'Disetujui — sampai di sini untuk saat ini',
-  'requisitions.panel.terminal.body':
-    'Sourcing dan konversi PO dideklarasikan sebagai konsekuensi otomatis dari persetujuan, dan belum ada produsen yang terhubung untuk keduanya. Tidak ada yang di layar ini yang memajukan permintaan yang sudah disetujui.',
+  'requisitions.panel.sourcing.title': 'Disetujui — siap disourcing',
+  'requisitions.panel.sourcing.body':
+    'Mengajukan RFQ dari permintaan ini memindahkannya ke Acara Sourcing dan mencatat RFQ tersebut padanya. Konversi PO langsung tidak tersedia di sini: pesanan pembelian dibuat di S/4 dan tiba sebagai fakta.',
+  'requisitions.panel.sourcing.cta': 'Ajukan acara sourcing',
   'requisitions.panel.draftNote.title': 'Draf — belum masuk antrean persetujuan',
   'requisitions.panel.draftNote.body':
     'Belum ada yang menunggu ini. Permintaan sampai ke penyetuju ketika pemohon mengajukannya.',
