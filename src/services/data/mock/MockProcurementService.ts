@@ -86,10 +86,76 @@ const SUP_007_KPI_SNAPSHOT: KpiSnapshot = {
   improvementActions: IMPROVEMENT_ACTIONS,
 };
 
-// Today every relocated supplier fixture is tagged sup-007; the snapshot
-// is only meaningful when scope resolves to that supplier (or to a buyer
-// reading sup-007's data through the portfolio view). Fan-out across
-// suppliers is a deferred follow-up.
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ **FAN-OUT IS NOT DEFERRED. IT IS IMPOSSIBLE ON THIS DATA, AND THE SENTENCE
+// THAT STOOD HERE WAS FALSE IN BOTH ITS HALVES.**
+//
+// It read: *"Today every relocated supplier fixture is tagged sup-007; the
+// snapshot is only meaningful when scope resolves to that supplier … Fan-out
+// across suppliers is a deferred follow-up."*
+//
+//   · **"tagged sup-007" is false.** `KPIS` / `RADAR_DATA` / `WEEKLY_TREND` /
+//     `IMPROVEMENT_ACTIONS` carry NO `supplierId` field — nothing in
+//     `KpiPoint`, `RadarPoint` or `PerformancePoint` has one. They are untagged
+//     and merely ASSOCIATED with sup-007 by the two functions below.
+//   · **"deferred follow-up" is false**, and it is the more expensive half:
+//     deferring says the derivation becomes possible once somebody gets to it.
+//     It does not. Nobody should pick this up as ready work.
+//
+// ── WHY IT IS IMPOSSIBLE, MEASURED ───────────────────────────────────────────
+//   1. **The seeded tenant's own figures are AUTHORED, not computed.** `KPIS`
+//      is hand-written strings — `'87%'`, `'1.4 days'`, `'42 hrs'`. Nothing
+//      derives them from a transaction, which is exactly what
+//      `SupplierPerformance` already declares with
+//      `<ProvenanceMarker capability="scorecards" />`. So a fan-out would not
+//      DERIVE eleven scorecards; it would AUTHOR eleven sets of invented
+//      numbers and give them the same marker.
+//   2. **No tenant carries a 12-week series.** `WEEKLY_TREND` is twelve
+//      hand-written points. The richest tenant has purchase orders in **3
+//      distinct months**; sup-002 has **1**. A rolling-12-week trend cannot be
+//      bucketed out of that for anyone — sup-007 included.
+//   3. **8 of the 11 tenants that carry any row have NO ASN**, so ASN Accuracy
+//      has no denominator at all. Only sup-002, sup-005 and sup-007 have one,
+//      and each of the first two has exactly ONE ASN.
+//   4. **An on-time rate would render a fabricated zero.** No tenant has more
+//      than 3 purchase orders. sup-002 has 2 and BOTH are late, so a "derived"
+//      OTIF is 0% — the plausible-wrong-value this platform refuses, reached
+//      through honest-looking arithmetic. A thin real number is worse than a
+//      stated absence.
+//
+//   ⚠️ **THE FIGURES ABOVE ARE A MEASUREMENT, NOT A CLAIM — AND ONE OF THEM WAS
+//   WRONG ON ITS FIRST TELLING** (`FLOOR-IN-PROSE-01`). Item 3 was first
+//   reported as *"5 of 11"* and re-derived to 8; the fix is to name the
+//   derivation, not to write a fresher number. Re-run it over
+//   `purchaseOrderStore.all()` and `asnStore.all()`: tenants = the union of
+//   their `supplierId`s; no-ASN = that union minus the ASN store's; months =
+//   distinct `orderDate.slice(0, 7)` per tenant. Measured 2026-08-28.
+//
+// ── WHAT HAPPENS INSTEAD, AND IT IS ALREADY PINNED ───────────────────────────
+//   A tenant with no authored scorecard reads the empty snapshot, and
+//   `SupplierPerformance` short-circuits to its `EmptyState` on
+//   `kpis.length === 0` — no chart is drawn on nothing, and no zero is
+//   rendered as a performance figure. **Verified on the built bundle**, seat
+//   sup-002: zero `<text>`/`<tspan>` nodes, no `0%`.
+//
+//   ⚠️ **DO NOT ADD A TEST FOR THIS — IT HAS TWO, AND THEY WERE PROBED.**
+//   Returning the seeded snapshot to every tenant is killed by
+//   `scoping.contract.test.ts` *"getKpis: improvement actions are wired into the
+//   snapshot"* AND by `SupplierPerformance.test.tsx` *"empty: shows EmptyState
+//   for a supplier with no published scorecard"*. Leaking ONLY `kpis` — the
+//   shape that slips past the contract test, which asserts `improvementActions`
+//   — is still killed by the surface test, because it renders sup-002 through
+//   the real service and gates on the same field the page does.
+//
+// ── FILED, NOT CHANGED (operator-agreed): THE BUYER BRANCH ───────────────────
+//   The first line of `snapshotForScope` hands sup-007's scorecard to ANY
+//   buyer, unlabelled. It is unreachable today — `useKpis`' only consumer is
+//   `SupplierPerformance`, which returns `<NoSupplierIdentity/>` before it
+//   reads when `supplierId` is null. Its fix is a SEAM SIGNATURE CHANGE:
+//   `getKpis(scope)` takes no supplier id, so a buyer cannot name which
+//   supplier it means, and a shipped contract test asserts today's behaviour.
+//   That is an F1/F2 design decision, not a mock-layer edit.
+// ─────────────────────────────────────────────────────────────────────────────
 function snapshotForScope(scope: QueryScope): KpiSnapshot {
   if (scope.personaType === 'buyer') return SUP_007_KPI_SNAPSHOT;
   if (scope.supplierId === SUP_007_SUPPLIER_ID) return SUP_007_KPI_SNAPSHOT;
