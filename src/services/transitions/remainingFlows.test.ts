@@ -178,12 +178,16 @@ describe('F0.4 remaining flows — adjudicated trigger shapes', () => {
     expect(getTransition('t_supplierdoc_declare')!.requiredRole).toBe('supplierdoc:upload');
   });
 
-  it('PR source/convert carry cascade metadata but NO cascade link (declaration, not emission)', () => {
+  it('t_pr_convert carries cascade metadata but NO cascade link (declaration, not emission)', () => {
     expect(getTransition('t_pr_source')!.trigger).toBe('cascade');
     expect(getTransition('t_pr_convert')!.trigger).toBe('cascade');
-    // No CASCADES entry targets these transitions — nothing fires them.
     const allTargets = Object.values(CASCADES).flat().map((l) => l.targetTransitionId);
-    expect(allTargets).not.toContain('t_pr_source');
+    // ⚠️ C.1 — `t_pr_source` IS NOW EMITTED, and this test's title changed with
+    // it rather than the assertion being quietly loosened: it used to speak for
+    // the pair, and it now speaks for the one that is still a declaration.
+    expect(allTargets).toContain('t_pr_source');
+    // Unauthored BY RULING, not by omission — a PO is raised in S/4 and arrives
+    // as a fact, so its source lands with F2's Event Mesh seam and not before.
     expect(allTargets).not.toContain('t_pr_convert');
     // And the new flows declare no cascade SOURCES either.
     for (const { flow } of FLOWS) {

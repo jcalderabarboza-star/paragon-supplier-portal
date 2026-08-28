@@ -622,13 +622,18 @@ const purchaseRequisitionTarget: CommandTarget = {
   readEntity: (id) => purchaseRequisitionStore.get(id) ?? null,
   // ⚠️ **`toState` IS THE ONLY DISCRIMINATOR AVAILABLE HERE — `applyTransition`
   // receives no transitionId — AND ON THIS FLOW IT IS SUFFICIENT, WHICH IS A
-  // FACT ABOUT THE MACHINE AND NOT A CONVENTION.** Each of the three states
+  // FACT ABOUT THE MACHINE AND NOT A CONVENTION.** Each of the four states
   // written below has exactly ONE inbound edge (`Rejected` ← t_pr_reject,
-  // `Draft` ← t_pr_revise, `Approved` ← t_pr_approve), and `t_pr_create` also
-  // lands at `Draft` but arrives through `create`, never through here. Derive
-  // it from `purchaseRequisition.flow.ts` before adding a fourth: a state that
-  // gains a second inbound edge makes one of these writes fire on the wrong
-  // verb, silently.
+  // `Draft` ← t_pr_revise, `Approved` ← t_pr_approve, `Sourcing Event` ←
+  // t_pr_source), and `t_pr_create` also lands at `Draft` but arrives through
+  // `create`, never through here. Derive it from `purchaseRequisition.flow.ts`
+  // before adding a fifth: a state that gains a second inbound edge makes one of
+  // these writes fire on the wrong verb, silently.
+  //
+  // The fourth was added at C.1 and the derivation was re-run, not inherited:
+  // `Sourcing Event` is reached ONLY by `t_pr_source`. `PO Created` is still
+  // written by no field-write here — `t_pr_convert` remains an authored
+  // declaration with no link (its dispatcher arrives with F2).
   applyTransition: (id, toState, payload, scope) => {
     purchaseRequisitionStore.update(id, (pr) => ({
       ...pr,
@@ -666,6 +671,18 @@ const purchaseRequisitionTarget: CommandTarget = {
       // `approvalLevel` field could never be, because that one said
       // 'Procurement Head' whether or not anybody had approved anything.
       ...(toState === 'Approved' ? { approvedBy: scope.actor } : {}),
+      // ⚠️ C.1 — THE RFQ THAT SOURCED THIS PR, WRITTEN WHERE THE REQUESTER READS
+      // IT. `linkedDoc` is the column `BuyerRequisitions` renders as — when
+      // empty; until now every non-empty value in it was hand-stamped into a
+      // fixture. This is the first one the machine produces, and it produces the
+      // same shape the fixtures already promised (`pr-003` → 'RFQ-2026-004').
+      //
+      // Read from `payload.linkedRfq`, which the cascade resolver sets to the
+      // raising RFQ's number. `String()` with no fallback: the resolver is the
+      // ONLY producer of this state (one inbound edge, asserted above), and it
+      // always sets the key — a fallback here would be the write admitting it
+      // does not trust the one caller it has.
+      ...(toState === 'Sourcing Event' ? { linkedDoc: String(payload.linkedRfq) } : {}),
     }));
   },
   creationOwner: () => null,
@@ -1596,6 +1613,47 @@ const resolveCascades = (ctx: CascadeContext): CascadeCommand[] => {
   // OTHER sibling is rejected. Best-effort: a sibling already terminal simply
   // no-ops (illegal transition), never breaking the source award.
   if (ctx.entity === 'rfq') {
+    // ── C.1 · RFQ raised → the approved PR it came from enters Sourcing Event ──
+    // ⚠️ **THE COMMON PATH IS THE NEGATIVE ONE, AND IT IS HANDLED FIRST FOR THAT
+    // REASON.** Most RFQs are not raised from a requisition, so most raises reach
+    // this branch and return NOTHING. A zero-cascade result here is the ordinary
+    // outcome, not a swallowed failure — nothing was asked, so nothing is
+    // recorded, and there is no silence to explain.
+    //
+    // ⚠️ **THE EXISTENCE CHECK IS LOAD-BEARING AND IS NOT A BELT-AND-BRACES
+    // RE-CHECK.** `dispatch` refuses an absent entity by THROWING
+    // (`DataError('NOT_FOUND')`), and the fan-out re-dispatches inside a
+    // `catch {}` — so an id naming no PR is the ONE cascade failure in this
+    // system that leaves ZERO record: no event, no reason, no correlation.
+    // Measured, not inherited: the role gate and the legality gate both RETURN
+    // `status:'failed'` and DO emit (with `reason` + the source's causationId),
+    // so they are recorded and need nothing here. Only the absent-entity path is
+    // traceless, and returning `[]` means it is never entered. Same shape as the
+    // GR branch above (`if (!gr) return []`) — a resolver hands the dispatcher
+    // an id it has confirmed, or it hands it nothing.
+    if (ctx.transitionId === 't_rfq_create') {
+      const prId =
+        typeof ctx.payload.sourceRequisitionId === 'string'
+          ? ctx.payload.sourceRequisitionId
+          : '';
+      if (!prId || !purchaseRequisitionStore.get(prId)) return [];
+      // The PR's state is NOT checked here. `t_pr_source` is `from: ['Approved']`,
+      // so a PR in any other state is refused by the dispatcher's legality gate —
+      // which RECORDS the refusal with its reason. Pre-filtering on state would
+      // move that decision somewhere nothing writes it down, trading a recorded
+      // refusal for a silent one. The machine owns legality; the resolver owns
+      // identity.
+      return cascadesFor(ctx.transitionId).map((link) => ({
+        entity: link.targetEntity,
+        entityId: prId,
+        transitionId: link.targetTransitionId,
+        // `ctx.entityId` is the newly-minted RFQ number (creation sets
+        // `result.entityId`), and it is the value the PR displays as its linked
+        // document. Passed as payload rather than re-derived in the target,
+        // because the target cannot see which RFQ fired it.
+        payload: { linkedRfq: ctx.entityId },
+      }));
+    }
     const winnerId =
       typeof ctx.payload.awardedQuotationId === 'string' ? ctx.payload.awardedQuotationId : '';
     const siblings = quotationStore.forRfq(ctx.entityId);

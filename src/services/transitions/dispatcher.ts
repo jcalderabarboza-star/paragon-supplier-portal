@@ -425,13 +425,33 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
           // so its events group with the source WITHOUT sharing correlationId
           // (each cascaded transition keeps its own 1:1 status — DR-10, Option A).
           // ⚠️ **THE CASCADE RUNS UNDER THE AUTOMATION GRANT, NOT A PERSONA.**
-          // This re-dispatch sits inside a `catch {}` and is best-effort by
-          // design, so a cascade refused at the role gate fails SILENTLY — it
-          // is the one path in the system where narrowing a grant can delete a
-          // reachable act with nothing to report it. The four atoms this
-          // actually needs (`asn:flag`, `invoice:match`, `quotation:award`,
-          // `quotation:reject`) are in `AUTOMATION_ATOMS`, which is asserted
-          // against the cascade map by `businessRoles.test.ts`.
+          // The atoms this needs are in `AUTOMATION_ATOMS`, asserted against the
+          // cascade map by `businessRoles.test.ts` — derive WHICH from that
+          // assertion, never from a list here.
+          //
+          // ⚠️ **WHAT THIS `catch {}` ACTUALLY SWALLOWS, MEASURED AT C.1 — AND
+          // IT IS NOT THE ROLE GATE.** This comment used to say that a cascade
+          // refused at the role gate "fails SILENTLY" because of this `catch`.
+          // Both halves were false, and the correction is here rather than in a
+          // finding because this is the site that has to be right.
+          //
+          // A role refusal never reaches this `catch`: `ROLE_NOT_PERMITTED`
+          // RETURNS a `CommandResult` (`status: 'failed'`) like 9 of the 11
+          // refusal exits, and `finish` EMITS for every one of them — so the
+          // refusal lands on the sink with its `reason` and the source's
+          // `causationId`. Unsurfaced, but recorded. The same is true of
+          // `ILLEGAL_TRANSITION`, which is the ordinary way a cascade declines
+          // (a sibling already terminal, a PR not `Approved`).
+          //
+          // Only TWO exits throw — `NOT_FOUND` and `SCOPE_DENIED` — and they
+          // throw BEFORE any emit. Those are the genuinely traceless failures:
+          // this `catch` discards them and nothing anywhere records that a
+          // cascade was attempted. **The remedy is at the resolver, not here:** a
+          // resolver hands back an id it has confirmed exists, or hands back
+          // nothing (`if (!gr) return []`, `if (!pr) return []`). Repairing the
+          // `catch` was considered and rejected — best-effort fan-out is the
+          // design, and a resolver that never emits a bad id has nothing to
+          // swallow.
           //
           // `automation` is NOT a `SystemRoleId` and cannot be assigned to a
           // person (C10 §6.4 — attribution absent = a machine act). This is the

@@ -244,7 +244,16 @@ describe('cascade-map coverage gate — the shipped map', () => {
     const targets = [
       ...new Set(Object.values(CASCADES).flatMap((ls) => ls.map((l) => l.targetTransitionId))),
     ];
-    expect(targets.length).toBe(4);
+    // ⚠️ POPULATION GUARD — MEMBERSHIP, NEVER A COUNT (§42b). This read
+    // `expect(targets.length).toBe(4)` and went red at C.1 for the only reason a
+    // count ever does: a fifth link was authored (`t_rfq_create → t_pr_source`)
+    // and NOTHING about the property below changed. The count was not measuring
+    // the residual; it was standing in for "the filter ran over a real
+    // population", which membership states directly and a cardinality only
+    // implies. Corrected to a derivation rather than to a newer number, because
+    // a newer number is the same defect with a fresher date.
+    expect(targets).toContain('t_quotation_award'); // known-true member
+    expect(targets).not.toContain('t_pr_convert'); // known-false: unauthored by ruling (F2)
     const notDeclaredCascade = targets.filter((id) => byId.get(id)!.trigger !== 'cascade');
     expect(notDeclaredCascade).toEqual(['t_invoice_match']);
   });

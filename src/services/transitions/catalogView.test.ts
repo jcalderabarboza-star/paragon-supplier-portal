@@ -329,7 +329,13 @@ describe('PF-1 — cross-entity links come from cascades.ts, in both directions'
       quotation.transitions.find((t) => t.def.id === 't_quotation_award')!.firedBy,
     ).toEqual(['t_rfq_award']);
     const pr = view.flows.find((f) => f.entity === 'purchaseRequisition')!;
-    expect(pr.transitions.find((t) => t.def.id === 't_pr_source')!.firedBy).toEqual([]);
+    // C.1 — `t_pr_source` now NAMES what fires it. The "names nothing" half of
+    // this test moved to `t_pr_convert`, which is unauthored by ruling (F2), so
+    // both halves are still exercised on real members.
+    expect(pr.transitions.find((t) => t.def.id === 't_pr_source')!.firedBy).toEqual([
+      't_rfq_create',
+    ]);
+    expect(pr.transitions.find((t) => t.def.id === 't_pr_convert')!.firedBy).toEqual([]);
   });
 
   it('the links are read from the registry, not listed here', () => {

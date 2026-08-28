@@ -366,12 +366,23 @@ export const SYSTEM_ROLES: Readonly<Record<SystemRoleId, readonly TransitionRole
  * The machine grant. Every atom required by a buyer transition that is
  * `surfaced: false` for `external-fact` or `computed`.
  *
- * ⚠️ **THE FOUR THAT LOAD-BEAR ARE THE CASCADE TARGETS** — `asn:flag`,
- * `invoice:match`, `quotation:award`, `quotation:reject`. The dispatcher's
- * fan-out re-dispatches under a synthetic scope INSIDE A `catch {}`, so a
- * cascade refused at the role gate fails SILENTLY and best-effort. Narrowing
- * the buyer grant without this list is exactly how "a currently-reachable act
- * becomes unreachable" happens with nothing to catch it.
+ * ⚠️ **THE ONES THAT LOAD-BEAR ARE THE CASCADE TARGETS, AND THE SET IS
+ * DERIVED — `businessRoles.test.ts` reads it from `CASCADES` and asserts every
+ * member is granted here.** It is deliberately not listed in this comment: the
+ * sentence that stood here named FOUR and went stale at C.1 the moment
+ * `t_pr_source` gained a source, which is `FLOOR-IN-PROSE-01` in the paragraph
+ * warning that narrowing this grant deletes reachable acts. Narrowing it
+ * without re-running that assertion is exactly how "a currently-reachable act
+ * becomes unreachable" happens.
+ *
+ * ⚠️ **AND THE REASON IT IS HARD TO CATCH IS NARROWER THAN THIS COMMENT USED
+ * TO CLAIM, MEASURED AT C.1.** It said a cascade refused at the role gate
+ * "fails SILENTLY" inside the fan-out's `catch {}`. It does not: a role refusal
+ * RETURNS `status: 'failed'` and IS emitted, with its reason and the source's
+ * causationId — unsurfaced, but recorded, and greppable in the audit sink. The
+ * cost of getting this list wrong is therefore a recorded dead act rather than
+ * an invisible one. See `dispatcher.ts`'s fan-out for what the `catch` really
+ * swallows (absent entity / denied scope, which throw before emitting).
  *
  * ⚠️ **`invoice:pay` APPEARS HERE AND IN `finance`, AND THAT IS AN ATOM
  * COLLISION WORTH ITS OWN ROW** — `t_invoice_release_payment` (human, finance's

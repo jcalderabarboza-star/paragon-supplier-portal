@@ -208,12 +208,21 @@ describe('the analyzer detects each defect class', () => {
   });
 
   it('the authored cascade targets are DERIVED from cascades.ts, not listed', () => {
-    // The shipped registry authors four targets across three sources; what is
-    // pinned is the derivation, so a fifth link needs no edit here.
+    // What is pinned is the DERIVATION, so a new link needs no edit here — the
+    // count that used to open this comment is deliberately gone, having gone
+    // stale at C.1 the way every restated cardinality in this repo has.
     const targets = authoredCascadeTargets();
     expect(targets.has('t_asn_discrepancy')).toBe(true);
     expect(targets.has('t_quotation_award')).toBe(true);
-    expect(targets.has('t_pr_source')).toBe(false);
+    // ⚠️ THE KNOWN-FALSE CONTROL MOVED, AND THAT IS THE POINT OF HAVING ONE.
+    // It was `t_pr_source` until C.1 authored `t_rfq_create → t_pr_source`, at
+    // which point the control became TRUE and this assertion went red — exactly
+    // as a control should when the thing it denies starts existing. `t_pr_convert`
+    // replaces it: unauthored BY RULING (a PO arrives from S/4 as a fact; its
+    // source lands with F2), so it is a control with a stated reason to stay
+    // false rather than one that is merely false today.
+    expect(targets.has('t_pr_source')).toBe(true);
+    expect(targets.has('t_pr_convert')).toBe(false);
   });
 });
 
