@@ -51,6 +51,8 @@ import { processFlowsEn, processFlowsId } from './processFlows';
 import { processFlowPurposeEn, processFlowPurposeId } from './processFlowPurpose';
 // — GL-1 glossary surface (chrome only; the definitions are not i18n keys) —
 import { glossaryEn, glossaryId } from './glossary';
+// — Surface residuals: the seat-identity guard —
+import { identityEn, identityId } from './identity';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -110,6 +112,10 @@ const FRAGMENTS = [
   // NOT here: they live on the glossary entries, EN and ID on the same object,
   // which is what makes a vocabulary correction one edit rather than two.
   { name: 'glossary', en: glossaryEn, id: glossaryId },
+  // The seat-identity guard's two arms. Both must exist in both locales: the
+  // arm that fires is chosen by PERSONA, so a missing ID string would be
+  // invisible until a supplier seat with an unresolvable tenant hit it.
+  { name: 'identity', en: identityEn, id: identityId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {

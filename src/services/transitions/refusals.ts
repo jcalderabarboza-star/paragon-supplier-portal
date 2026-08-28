@@ -81,12 +81,29 @@ export function refusal(kind: CommandRefusal, detail?: string): string {
  * The total function from a wire value back to its kind — `null` when the
  * string was not produced by `refusal()`.
  *
- * ⚠️ **`null` IS A REAL ANSWER AND MUST STAY ONE.** `CommandResult.reason` also
- * carries values this module does not own: `settle()`'s SAP-boundary outcomes
- * and any future producer. Defaulting an unrecognised reason to some member
- * would launder a foreign string into this vocabulary and make the census of
- * refusals silently wrong — the `UNRECOGNISED_MODE` lesson from
- * `ENFORCEMENT_MODE_SOURCES`, one layer over.
+ * ⚠️ **`null` IS A REAL ANSWER AND MUST STAY ONE.** `CommandResult.reason` is
+ * typed free-form `string`, so any future producer may put anything in it, and
+ * defaulting an unrecognised reason to some member would launder a foreign
+ * string into this vocabulary and make the census of refusals silently wrong —
+ * the `UNRECOGNISED_MODE` lesson from `ENFORCEMENT_MODE_SOURCES`, one layer
+ * over.
+ *
+ * ⚠️ **AND THE SHARPEST FOREIGN STRING IS ONE THAT LOOKS EXACTLY LIKE A
+ * REFUSAL.** `SETTLE_FAULTS` is a deliberately SEPARATE vocabulary built by
+ * `settleFault()` in the SAME `PREFIX` / `PREFIX:detail` shape, so a guessing
+ * translator would render one vocabulary's wire value under the other's
+ * definition. Nothing about the FORMAT distinguishes them; only membership
+ * does, which is what this function tests.
+ *
+ * ⚠️ **CORRECTED — THE SENTENCE THAT STOOD HERE WAS MEASURED FALSE.** It read
+ * that `CommandResult.reason` *"also carries … `settle()`'s SAP-boundary
+ * outcomes"*. It does not: `settle()` returns `CommandStatus | null`, and
+ * `CommandStatus` is `{ correlationId, transitionId, status, ts }` — there is no
+ * `reason` field on it to carry them. Settle faults travel on
+ * `TransitionEvent.reason`, a different field on a different object. The
+ * CONCLUSION it supported was right, which is exactly what would have carried it
+ * past a reader (`FALSE-MECHANISM-MUST-NOT-BE-FILED-01`), so it is replaced with
+ * the true mechanism above rather than deleted.
  */
 export function refusalKindOf(reason: string | undefined): CommandRefusal | null {
   if (!reason) return null;

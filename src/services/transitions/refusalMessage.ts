@@ -43,6 +43,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { refusalKindOf } from './refusals';
+import { POLICY_HOOKS } from './policyHooks';
 import { COMMAND_REFUSAL_GLOSSARY } from '../../lib/glossary';
 
 /**
@@ -82,4 +83,40 @@ export function describeRefusal(
   const sentence = indonesian(language) ? entry.id : entry.en;
   const detail = refusalDetailOf(reason);
   return detail ? `${sentence} (${detail})` : sentence;
+}
+
+/** The hook ids `POLICY_HOOKS` declares — the only legal right-hand side below. */
+export type PolicyHookId = (typeof POLICY_HOOKS)[keyof typeof POLICY_HOOKS];
+
+/**
+ * Did this dispatch fail because ONE NAMED policy hook said no?
+ *
+ * ⚠️ **A POLICY-HOOK REASON IS NESTED, AND TESTING IT BY ITS HEAD IS ALWAYS
+ * FALSE.** `dispatcher.ts` builds the wire value as
+ * `POLICY_REJECTED:<hook>:<the hook's own reason>`, so a code the hook itself
+ * emits — `UNDECLARED_MATERIAL`, `UNKNOWN_MATERIAL` — sits behind a prefix
+ * dozens of characters long. Two shipped surfaces tested those codes with
+ * `reason.startsWith('UNDECLARED_MATERIAL')` and
+ * `reason.startsWith('UNKNOWN_MATERIAL')`; **both conditions were structurally
+ * unsatisfiable**, so two remedial sentences with full EN+ID copy had never
+ * once rendered. Neither guard could ever have been noticed failing, because a
+ * guard that never fires and a guard whose case never arises are the same
+ * observation from outside.
+ *
+ * ⚠️ **THE PREFIX IS BUILT FROM THE HOOK CONSTANT, NEVER RETYPED** — the shape
+ * `quotationSubmitModel` already got right, promoted here so there is ONE
+ * construction rather than a third copy. A renamed hook then breaks the type,
+ * not the behaviour: retyping the id is how the surface's message silently
+ * detaches from the refusal it explains.
+ *
+ * This deliberately identifies the HOOK, not the code inside its reason. The
+ * hook is what the dispatcher names and what the type can check; the code is
+ * free text the hook may reword. Where a hook has exactly one refusal — as
+ * both of these do — the two are equivalent and only one of them is checkable.
+ */
+export function refusedByPolicy(
+  reason: string | undefined,
+  hook: PolicyHookId,
+): boolean {
+  return reason?.startsWith(`POLICY_REJECTED:${hook}:`) ?? false;
 }

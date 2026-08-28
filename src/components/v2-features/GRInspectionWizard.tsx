@@ -42,6 +42,8 @@ import type { ComplianceRegistryEntry } from '../../services/data/types';
 import GlossaryTermChip from '../ui-v2/GlossaryTermChip';
 import { formatDate } from '../../lib/format';
 import { useRefusalText } from '../../hooks/useRefusalText';
+import { refusedByPolicy } from '../../services/transitions/refusalMessage';
+import { POLICY_HOOKS } from '../../services/transitions/policyHooks';
 
 interface GRInspectionWizardProps {
   onClose: () => void;
@@ -1539,7 +1541,18 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           // CP-2 · B1 — the UNDECLARED_MATERIAL refusal gets its own sentence
           // (the `MISSING_FIELDS` precedent below): "could not be created
           // (UNDECLARED_MATERIAL: …)" names the code but not what to DO.
-          description: (createRes.reason ?? '').startsWith('UNDECLARED_MATERIAL')
+          //
+          // ⚠️ **THIS CONDITION WAS UNSATISFIABLE AND THE SENTENCE HAD NEVER
+          // RENDERED.** `UNDECLARED_MATERIAL` is what the POLICY HOOK says, so the
+          // wire value is `POLICY_REJECTED:gr_inspection_materials_declared:UNDEC…`
+          // and a head test is false on every real refusal. `MISSING_FIELDS` below
+          // IS genuinely a head, which is why the "precedent" read as though it
+          // transferred. The hook id is the checkable half; the code inside the
+          // hook's reason is free text, and this hook has exactly one refusal.
+          description: refusedByPolicy(
+            createRes.reason,
+            POLICY_HOOKS.GR_INSPECTION_MATERIALS_DECLARED,
+          )
             ? t('gr.create.failed.undeclared', { reason: createRes.reason ?? '' })
             : (refusalText(createRes.reason) ?? t('gr.create.failed.desc', { reason: createRes.reason ?? '' })),
         });
