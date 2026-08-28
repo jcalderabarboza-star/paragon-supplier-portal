@@ -53,6 +53,8 @@ import {
   useASNs,
 } from '../services/query/hooks';
 import type { AsnStatus, ASN, PurchaseOrder } from '../services/data/types';
+import { useRefusalText } from '../hooks/useRefusalText';
+import { refusalDetailOf } from '../services/transitions/refusalMessage';
 
 type TabKey = 'shipments' | 'create' | 'dock';
 type StatusFilter = AsnStatus | 'All';
@@ -551,6 +553,7 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
 
 const SupplierShipments: React.FC = () => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const SHIPMENTS_CRUMB = [
     t('supplierShipments.crumb.transact'),
     t('supplierShipments.crumb.shipments'),
@@ -656,8 +659,8 @@ const SupplierShipments: React.FC = () => {
               variant: 'warning',
               title: t('asn.submit.failed.title', { asnNumber }),
               description: missing
-                ? t('asn.submit.missingFields', { code: res.reason })
-                : t('asn.submit.failed.desc', { reason: res.reason ?? '' }),
+                ? t('asn.submit.missingFields', { code: refusalDetailOf(res.reason) })
+                : (refusalText(res.reason) ?? t('asn.submit.failed.desc', { reason: res.reason ?? '' })),
             });
             return;
           }
@@ -697,7 +700,7 @@ const SupplierShipments: React.FC = () => {
             toast({
               variant: 'error',
               title: t('asn.create.failed.title'),
-              description: t('asn.create.failed.desc', { reason: res.reason ?? '' }),
+              description: refusalText(res.reason) ?? t('asn.create.failed.desc', { reason: res.reason ?? '' }),
             });
             return;
           }
@@ -775,7 +778,7 @@ const SupplierShipments: React.FC = () => {
         toast({
           variant: 'error',
           title: t('asn.create.failed.title'),
-          description: t('asn.create.failed.desc', { reason: createRes.reason ?? '' }),
+          description: refusalText(createRes.reason) ?? t('asn.create.failed.desc', { reason: createRes.reason ?? '' }),
         });
         return;
       }
@@ -787,7 +790,7 @@ const SupplierShipments: React.FC = () => {
         toast({
           variant: 'warning',
           title: t('asn.submit.failed.title', { asnNumber: createRes.entityId }),
-          description: t('asn.submit.failed.desc', { reason: submitRes.reason ?? '' }),
+          description: refusalText(submitRes.reason) ?? t('asn.submit.failed.desc', { reason: submitRes.reason ?? '' }),
         });
       } else {
         toast({

@@ -63,6 +63,7 @@ import { readMoq, type MoqRefusalReason } from './rfqs/quotationMoq';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
 import { formatIDR, formatDate, formatMoney, formatNumber } from '../lib/format';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 interface OpenRFQ {
   id: string;
@@ -753,6 +754,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const crumb = [t('rfqs.crumb.section'), t('rfqs.crumb.page')];
   const submitMutation = useQuotationSubmit();
   const [activeTab, setActiveTab] = useState<TabKey>('open');
@@ -974,7 +976,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
                 currency: form.currency,
                 permitted: BID_CURRENCIES.join(', '),
               })
-            : (res.reason ?? t('rfqs.toast.submitFailed.body')),
+            : (refusalText(res.reason) ?? res.reason ?? t('rfqs.toast.submitFailed.body')),
         });
         return;
       }

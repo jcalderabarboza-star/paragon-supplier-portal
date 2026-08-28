@@ -68,6 +68,7 @@ import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import type { VerbAvailability } from '../services/transitions/handoff';
 import { classifySettleFault, SETTLE_FAULT_RETRYABLE, type SettleFault } from '../services/transitions';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 const STATUS_VARIANT: Record<InvStatus, 'success' | 'warning' | 'danger' | 'info' | 'neutral'> = {
   'Pending Match': 'neutral',
@@ -207,6 +208,7 @@ const STATUS_OPTIONS: StatusFilter[] = [
 const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const crumb = [t('buyerInvoices.crumb.transact'), t('buyerInvoices.crumb.invoices')];
   const releaseMutation = useInvoiceReleasePayment();
   const settleMutation = useInvoiceSettlePayment();
@@ -424,7 +426,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             toast({
               variant: 'warning',
               title: t('invoice.pay.failed.title', { invoiceNumber: inv.invoiceNumber }),
-              description: t('invoice.pay.failed.desc', { reason: res.reason ?? '' }),
+              description: refusalText(res.reason) ?? t('invoice.pay.failed.desc', { reason: res.reason ?? '' }),
             });
             return;
           }
@@ -506,7 +508,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             toast({
               variant: 'warning',
               title: t('invoice.dispute.failed.title', { invoiceNumber: inv.invoiceNumber }),
-              description: t('invoice.dispute.failed.desc', { reason: res.reason ?? '' }),
+              description: refusalText(res.reason) ?? t('invoice.dispute.failed.desc', { reason: res.reason ?? '' }),
             });
             return;
           }
@@ -535,7 +537,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
             toast({
               variant: 'warning',
               title: t('invoice.resolve.failed.title', { invoiceNumber: inv.invoiceNumber }),
-              description: t('invoice.resolve.failed.desc', { reason: res.reason ?? '' }),
+              description: refusalText(res.reason) ?? t('invoice.resolve.failed.desc', { reason: res.reason ?? '' }),
             });
             return;
           }

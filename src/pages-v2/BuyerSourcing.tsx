@@ -110,6 +110,7 @@ import type { Quotation } from '../data/mockQuotations';
 import type { Supplier } from '../services/data/types';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 type GroupTab = 'all' | 'open' | 'pending' | 'awarded' | 'closed';
 
@@ -852,6 +853,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   const [supplierSearch, setSupplierSearch] = useState('');
   const { toast } = useToast();
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const createMutation = useRfqCreate();
   const awardMutation = useRfqAward();
   const cancelMutation = useRfqCancel();
@@ -896,7 +898,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             toast({
               variant: 'error',
               title: t('sourcing.toast.fxPinFailed.title'),
-              description: result.reason ?? t('sourcing.toast.fxPinFailed.default'),
+              description: refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.fxPinFailed.default'),
             });
             return;
           }
@@ -943,7 +945,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               variant: 'error',
               title: t('sourcing.toast.awardFailed.title'),
               description:
-                result.reason ?? t('sourcing.toast.awardFailed.default'),
+                refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.awardFailed.default'),
             });
             return;
           }
@@ -981,7 +983,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               variant: 'error',
               title: t('sourcing.toast.reviewFailed.title'),
               description:
-                result.reason ?? t('sourcing.toast.reviewFailed.default'),
+                refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.reviewFailed.default'),
             });
             return;
           }
@@ -1019,7 +1021,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               variant: 'error',
               title: t('sourcing.toast.publishFailed.title'),
               description:
-                result.reason ?? t('sourcing.toast.publishFailed.default'),
+                refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.publishFailed.default'),
             });
             return;
           }
@@ -1062,7 +1064,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               variant: 'error',
               title: t('sourcing.toast.cancelFailed.title'),
               description:
-                result.reason ?? t('sourcing.toast.cancelFailed.default'),
+                refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.cancelFailed.default'),
             });
             return;
           }
@@ -1096,7 +1098,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               variant: 'error',
               title: t('sourcing.toast.reopenFailed.title'),
               description:
-                result.reason ?? t('sourcing.toast.reopenFailed.default'),
+                refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.reopenFailed.default'),
             });
             return;
           }
@@ -1295,7 +1297,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             toast({
               variant: 'error',
               title: t('sourcing.toast.createFailed.title'),
-              description: result.reason ?? t('sourcing.toast.createFailed.default'),
+              description: refusalText(result.reason) ?? result.reason ?? t('sourcing.toast.createFailed.default'),
             });
             return;
           }

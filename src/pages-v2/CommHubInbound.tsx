@@ -47,6 +47,7 @@ import type { CommandResult } from '../services/data/types';
 import { formatNumber, formatDate } from '../lib/format';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Comm Hub C2 — the INBOUND CONFIRM-BEFORE-COMMIT surface (DEC-COMMS-PRIMARY).
@@ -119,6 +120,7 @@ interface DispatchOutcome {
 
 const CommHubInbound: React.FC = () => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId, supplierName } = identity;
@@ -251,7 +253,7 @@ const CommHubInbound: React.FC = () => {
       try {
         const res = await declareMutation.mutateAsync({ payload: unit.payload, causationId: causationId() });
         if (res.status === 'failed') {
-          results.push({ ok: false, material, reasonText: res.reason ?? t('commHub.toast.failed.body') });
+          results.push({ ok: false, material, reasonText: refusalText(res.reason) ?? res.reason ?? t('commHub.toast.failed.body') });
           continue;
         }
         recordAttempt('InventoryDeclaration', res);

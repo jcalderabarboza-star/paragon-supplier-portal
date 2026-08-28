@@ -55,6 +55,7 @@ import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { formatDate } from '../lib/format';
 import { useTranslation } from 'react-i18next';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 type CategoryFilter = 'All' | DocCategory;
 
@@ -211,6 +212,7 @@ type PanelMode = 'closed' | 'new' | 'upload-existing' | 'view';
 
 const SupplierDocuments: React.FC = () => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const { toast } = useToast();
   const { identity } = useCurrentIdentity();
   const { supplierId, supplierName } = identity;
@@ -366,7 +368,7 @@ const SupplierDocuments: React.FC = () => {
       toast({
         variant: 'error',
         title: t('supplierDocuments.toast.declineFailed.title'),
-        description: result.reason,
+        description: refusalText(result.reason) ?? result.reason,
       });
       return;
     }

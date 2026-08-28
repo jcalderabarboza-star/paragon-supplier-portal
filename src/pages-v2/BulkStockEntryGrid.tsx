@@ -33,6 +33,7 @@ import XlsxImportPanel from './XlsxImportPanel';
 import type { BatchGridRow } from './xlsxImportMap';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SDC-3c-b — the EDITABLE bulk stock-entry grid (DEC-MAGIC-LINK-GRID, visible).
@@ -184,6 +185,7 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
   onDeclared,
 }) => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const { toast } = useToast();
   const declareMutation = useInventoryDeclare();
 
@@ -363,7 +365,7 @@ const BulkStockEntryGrid: React.FC<BulkStockEntryGridProps> = ({
         toast({
           variant: 'error',
           title: t('sdcSup.stock.toast.failed.title'),
-          description: res.reason ?? t('sdcSup.toast.failed.body'),
+          description: refusalText(res.reason) ?? res.reason ?? t('sdcSup.toast.failed.body'),
         });
         return;
       }

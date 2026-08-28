@@ -78,6 +78,7 @@ import { statusLabelKey } from '../lib/statusLabel';
 import BulkStockEntryGrid from './BulkStockEntryGrid';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SupplierForecasts (SDC-2b → SDC-3b) — the P1 supplier SUBMISSION HUB. One
@@ -844,6 +845,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
   asns,
 }) => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const { toast } = useToast();
   const crumb = [t('sdcSup.crumb.section'), t('sdcSup.crumb.page')];
   const submitMutation = useRequirementResponseSubmit();
@@ -981,7 +983,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         toast({
           variant: 'error',
           title: t('sdcSup.toast.failed.title'),
-          description: res.reason ?? t('sdcSup.toast.failed.body'),
+          description: refusalText(res.reason) ?? res.reason ?? t('sdcSup.toast.failed.body'),
         });
         return;
       }
@@ -1016,7 +1018,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         toast({
           variant: 'error',
           title: t('sdcSup.toast.failed.title'),
-          description: res.reason ?? t('sdcSup.toast.failed.body'),
+          description: refusalText(res.reason) ?? res.reason ?? t('sdcSup.toast.failed.body'),
         });
         return;
       }
@@ -1048,7 +1050,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         toast({
           variant: 'error',
           title: t('sdcSup.toast.failed.title'),
-          description: res.reason ?? t('sdcSup.toast.failed.body'),
+          description: refusalText(res.reason) ?? res.reason ?? t('sdcSup.toast.failed.body'),
         });
         return;
       }
@@ -1150,7 +1152,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         toast({
           variant: 'error',
           title: t('sdcSup.stock.toast.failed.title'),
-          description: res.reason ?? t('sdcSup.toast.failed.body'),
+          description: refusalText(res.reason) ?? res.reason ?? t('sdcSup.toast.failed.body'),
         });
         return;
       }
@@ -1257,7 +1259,7 @@ const ForecastWorkspace: React.FC<WorkspaceProps> = ({
         toast({
           variant: 'error',
           title: t('sdcSup.ship.toast.failed.title'),
-          description: res.reason ?? t('sdcSup.toast.failed.body'),
+          description: refusalText(res.reason) ?? res.reason ?? t('sdcSup.toast.failed.body'),
         });
         return;
       }
