@@ -44,6 +44,7 @@ import {
 } from './orders/poConfirmModel';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 type TabKey = 'all' | 'action' | 'progress' | 'completed';
 type PanelMode = 'detail' | 'editing' | 'confirmed' | 'change-request';
@@ -94,6 +95,7 @@ const PO_QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
 
 const SupplierOrders: React.FC = () => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const ORDERS_CRUMB = [
     t('supplierOrders.crumb.transact'),
     t('supplierOrders.crumb.myOrders'),
@@ -270,7 +272,7 @@ const SupplierOrders: React.FC = () => {
             toast({
               variant: 'error',
               title: t('po.confirm.failed.title', { poNumber: po.poNumber }),
-              description: t('po.confirm.failed.desc', { reason: result.reason ?? '' }),
+              description: refusalText(result.reason) ?? t('po.confirm.failed.desc', { reason: result.reason ?? '' }),
             });
             return;
           }

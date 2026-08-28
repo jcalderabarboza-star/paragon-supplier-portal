@@ -34,6 +34,7 @@ import type { CommandResult } from '../services/data/types';
 import { formatNumber } from '../lib/format';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Comm Hub C4d — the buyer IN-PLACE TRIAGE CONFIRM (DEC-COMMS-PRIMARY).
@@ -109,6 +110,7 @@ interface BuyerChannelTriageProps {
 
 const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const { toast } = useToast();
   const suppliersQuery = useSuppliers();
   const suppliers = useMemo(() => suppliersQuery.data?.items ?? [], [suppliersQuery.data]);
@@ -283,7 +285,7 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
           results.push({
             ok: false,
             material,
-            reasonText: named ?? res.reason ?? t('buyerCommHub.triage.toast.failed.body'),
+            reasonText: named ?? refusalText(res.reason) ?? res.reason ?? t('buyerCommHub.triage.toast.failed.body'),
           });
           continue;
         }

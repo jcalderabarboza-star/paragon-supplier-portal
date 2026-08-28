@@ -54,6 +54,7 @@ import type { QtyRefusalReason } from '../lib/localeNumber';
 import { readInvoiceAmount } from './invoices/invoiceAmountModel';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 // CP-0 · W1 · 2f-d — each refusal names what to type instead. Replaces a
 // hard-coded English literal ('PO and a positive amount are required') that
@@ -171,6 +172,7 @@ const buildTimeline = (
 const SupplierInvoices: React.FC = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const { identity } = useCurrentIdentity();
   const { supplierId } = identity;
   const invoicesQuery = useSupplierInvoices();
@@ -219,7 +221,7 @@ const SupplierInvoices: React.FC = () => {
               ? {
                   variant: 'warning',
                   title: t('invoice.submit.failed.title', { invoiceNumber: inv.invoiceNumber }),
-                  description: t('invoice.submit.failed.desc', { reason: res.reason ?? '' }),
+                  description: refusalText(res.reason) ?? t('invoice.submit.failed.desc', { reason: res.reason ?? '' }),
                 }
               : {
                   variant: 'success',
@@ -274,7 +276,7 @@ const SupplierInvoices: React.FC = () => {
             toast({
               variant: 'warning',
               title: t('invoice.create.failed.title'),
-              description: t('invoice.create.failed.desc', { reason: res.reason ?? '' }),
+              description: refusalText(res.reason) ?? t('invoice.create.failed.desc', { reason: res.reason ?? '' }),
             });
             return;
           }

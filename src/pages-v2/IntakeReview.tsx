@@ -27,6 +27,7 @@ import {
   triageStatus,
   triageCounts,
 } from './intake-review/intakeReviewModel';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 // ────────────────────────────────────────────────────────────────────────────
 // IntakeReview (Phase A/1 · sourcing spine) — the recommend-first TRIAGE
@@ -47,6 +48,7 @@ import {
 
 const IntakeReview: React.FC = () => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const intakeQuery = useIntakeReview();
   const createPr = usePurchaseRequisitionCreate();
 
@@ -249,7 +251,7 @@ const IntakeReview: React.FC = () => {
                         </div>
                         {pushState?.failureReason && (
                           <span className="text-[11px] text-danger">
-                            {t('intakeReview.failed.label', { reason: pushState.failureReason })}
+                            {refusalText(pushState.failureReason) ?? t('intakeReview.failed.label', { reason: pushState.failureReason })}
                           </span>
                         )}
                       </div>

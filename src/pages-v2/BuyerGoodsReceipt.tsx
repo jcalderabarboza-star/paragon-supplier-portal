@@ -59,6 +59,7 @@ import type {
   ASN,
   ComplianceRegistryEntry,
 } from '../services/data/types';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 const TODAY = '2026-05-20';
 
@@ -179,6 +180,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const el = useEnumLabel();
   const postMutation = useGoodsReceiptPost();
   const settleMutation = useGoodsReceiptSettle();
@@ -496,7 +498,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
             toast({
               variant: 'warning',
               title: t('gr.post.failed.title', { grNumber: g.grNumber }),
-              description: t('gr.post.failed.desc', { reason: res.reason ?? '' }),
+              description: refusalText(res.reason) ?? t('gr.post.failed.desc', { reason: res.reason ?? '' }),
             });
             return;
           }
@@ -540,7 +542,7 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
             toast({
               variant: 'warning',
               title: t('goodsReceipt.retest.failed.title', { grNumber: g.grNumber }),
-              description: res.reason ?? t('goodsReceipt.retest.failed.desc'),
+              description: refusalText(res.reason) ?? res.reason ?? t('goodsReceipt.retest.failed.desc'),
             });
             return;
           }

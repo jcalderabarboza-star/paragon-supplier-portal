@@ -13,6 +13,7 @@ import {
   type SystemRoleId,
 } from '../../services/transitions/businessRoles';
 import { atomsOfSide } from '../../services/transitions/customRoles';
+import { useRefusalText } from '../../hooks/useRefusalText';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DUPLICATE-AND-NARROW — AND THE FIRST ROLE-GATED SURFACE IN THIS PLATFORM.
@@ -65,6 +66,7 @@ const INPUT_CLASS =
 
 const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const { identity } = useCurrentIdentity();
   const { toast } = useToast();
   const grant = useRoleGrant();
@@ -141,7 +143,7 @@ const CreateRolePanel: React.FC<{ onGranted: () => void }> = ({ onGranted }) => 
       // a remedy — this one names the atom, the side or the field.
       toast({
         variant: 'error',
-        title: t('roles.page.createRefused', { reason: result.reason ?? '' }),
+        title: refusalText(result.reason) ?? t('roles.page.createRefused', { reason: result.reason ?? '' }),
       });
       return;
     }

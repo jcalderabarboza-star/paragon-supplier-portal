@@ -41,6 +41,7 @@ import type { ComplianceRegistryEntry } from '../../services/data/types';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../ui-v2/GlossaryTermChip';
 import { formatDate } from '../../lib/format';
+import { useRefusalText } from '../../hooks/useRefusalText';
 
 interface GRInspectionWizardProps {
   onClose: () => void;
@@ -583,6 +584,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   // Display resolver for the shared inspection tokens (Pass/Fail/N/A). The radio
   // state value stays canonical EN (checked/onChange use `v`); only the visible
   // label localizes — the recorded visualCheck/packagingCheck are never touched.
@@ -1539,7 +1541,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           // (UNDECLARED_MATERIAL: …)" names the code but not what to DO.
           description: (createRes.reason ?? '').startsWith('UNDECLARED_MATERIAL')
             ? t('gr.create.failed.undeclared', { reason: createRes.reason ?? '' })
-            : t('gr.create.failed.desc', { reason: createRes.reason ?? '' }),
+            : (refusalText(createRes.reason) ?? t('gr.create.failed.desc', { reason: createRes.reason ?? '' })),
         });
         return;
       }
@@ -1563,7 +1565,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
             title: t('gr.dispose.failed.title', { grNumber }),
             description: missing
               ? t('gr.dispose.missingReason')
-              : t('gr.dispose.failed.desc', { reason: finalizeRes.reason ?? '' }),
+              : (refusalText(finalizeRes.reason) ?? t('gr.dispose.failed.desc', { reason: finalizeRes.reason ?? '' })),
           });
           onComplete();
           return;
@@ -1600,7 +1602,7 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           toast({
             variant: 'warning',
             title: t('gr.post.failed.title', { grNumber }),
-            description: t('gr.post.failed.desc', { reason: postRes.reason ?? '' }),
+            description: refusalText(postRes.reason) ?? t('gr.post.failed.desc', { reason: postRes.reason ?? '' }),
           });
         }
       } else {

@@ -40,6 +40,7 @@ import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { useToast } from '../hooks/useToast';
 import type { RequirementResponse, DisputeEntry } from '../services/sdc';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 // ────────────────────────────────────────────────────────────────────────────
 // BuyerCollaboration (SDC-1b) — the P2 planner consolidation view: the
@@ -279,6 +280,7 @@ const ResolvePanel: React.FC<{
 
 const BuyerCollaboration: React.FC = () => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
 
   // The period filter — 'all' or one horizon bucket of the current publication.
   const [period, setPeriod] = useState<string>('all');
@@ -862,7 +864,7 @@ const BuyerCollaboration: React.FC = () => {
                     title: t('sdc.resolve.failed.title', {
                       material: row.line.materialCode,
                     }),
-                    description: res.reason,
+                    description: refusalText(res.reason) ?? res.reason,
                   });
                   return;
                 }

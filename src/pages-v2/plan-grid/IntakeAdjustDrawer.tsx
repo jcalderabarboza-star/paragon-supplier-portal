@@ -21,6 +21,7 @@ import {
 } from './planGridModel';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../../components/ui-v2/GlossaryTermChip';
+import { useRefusalText } from '../../hooks/useRefusalText';
 
 // ────────────────────────────────────────────────────────────────────────────
 // IntakeAdjustDrawer (Stage G · G1.3.2) — the working-set override surface, in
@@ -74,6 +75,7 @@ const QTY_REFUSAL_KEY: Record<QtyRefusalReason, string> = {
 
 const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const createPr = usePurchaseRequisitionCreate();
 
   // §74 — `t_pr_create` (atom `pr:create`, held by `requisitioner`). The
@@ -259,7 +261,7 @@ const IntakeAdjustDrawer: React.FC<{ line: PrIntakeLine | null }> = ({ line }) =
           )}
           {state.failureReason && (
             <span className="text-danger">
-              {t('planGrid.push.failed', { reason: state.failureReason })}
+              {refusalText(state.failureReason) ?? t('planGrid.push.failed', { reason: state.failureReason })}
             </span>
           )}
         </div>

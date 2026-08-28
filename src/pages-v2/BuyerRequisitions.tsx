@@ -52,6 +52,7 @@ import type { PurchaseRequisition, PRStatus } from '../services/data/types';
 import type { ActorAttribution, UnattributedReason } from '../lib/enforcement';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 // ── CP-0 · W1 · PR-2b — the New-PR quantity is PARSED, never coerced ─────────
 // `Number(form.qty)` behind a `type="number"` field read "4.500" as 4.5, so a
@@ -193,6 +194,7 @@ const emptyForm: NewPRForm = {
 const BuyerRequisitions: React.FC = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const el = useEnumLabel();
   const REQUISITIONS_CRUMB = [
     t('requisitions.crumb.acquire'),
@@ -344,7 +346,7 @@ const BuyerRequisitions: React.FC = () => {
         toast({
           variant: 'error',
           title: t('requisitions.toast.createFailed.title'),
-          description: result.reason ?? t('requisitions.toast.createFailed.desc'),
+          description: refusalText(result.reason) ?? result.reason ?? t('requisitions.toast.createFailed.desc'),
         });
         return;
       }
@@ -367,7 +369,17 @@ const BuyerRequisitions: React.FC = () => {
   // ── §67 · THE APPROVAL ACTS ────────────────────────────────────────────────
   // Both mirror `submitNewPR` above: dispatch, read the refusal channel, toast
   // honestly, and let the invalidation re-derive the panel. Neither absorbs a
-  // refusal — `result.reason` is what the dispatcher said, rendered verbatim.
+  // refusal — what the dispatcher said still reaches the buyer.
+  //
+  // ⚠️ **THIS USED TO SAY "RENDERED VERBATIM", AND THE WORD IS RETIRED RATHER
+  // THAN KEPT.** The pin's load-bearing claim was NON-ABSORPTION — that a
+  // refusal is never swallowed into a generic "action failed" — and verbatim
+  // was the MEANS, not the end. `refusalText` replaces the wire HEAD with the
+  // glossary's definition of that head and keeps the detail beside it, so the
+  // refusal is neither absorbed nor invented; and when the head is one this
+  // vocabulary does not own it returns `null`, so `result.reason` still lands
+  // here unchanged. Leaving "verbatim" standing would have made the comment
+  // describe a format the line no longer has.
   const closePanel = () => {
     setSelectedRow(null);
     setPanelMode('view');
@@ -383,7 +395,7 @@ const BuyerRequisitions: React.FC = () => {
         toast({
           variant: 'error',
           title: t('requisitions.toast.approveFailed.title', { prNumber: selectedPR.prNumber }),
-          description: result.reason ?? t('requisitions.toast.actionFailed.desc'),
+          description: refusalText(result.reason) ?? result.reason ?? t('requisitions.toast.actionFailed.desc'),
         });
         return;
       }
@@ -418,7 +430,7 @@ const BuyerRequisitions: React.FC = () => {
         toast({
           variant: 'error',
           title: t('requisitions.toast.submitFailed.title', { prNumber: selectedPR.prNumber }),
-          description: result.reason ?? t('requisitions.toast.actionFailed.desc'),
+          description: refusalText(result.reason) ?? result.reason ?? t('requisitions.toast.actionFailed.desc'),
         });
         return;
       }
@@ -464,7 +476,7 @@ const BuyerRequisitions: React.FC = () => {
         toast({
           variant: 'error',
           title: t('requisitions.toast.reviseFailed.title', { prNumber: selectedPR.prNumber }),
-          description: result.reason ?? t('requisitions.toast.actionFailed.desc'),
+          description: refusalText(result.reason) ?? result.reason ?? t('requisitions.toast.actionFailed.desc'),
         });
         return;
       }
@@ -494,7 +506,7 @@ const BuyerRequisitions: React.FC = () => {
         toast({
           variant: 'error',
           title: t('requisitions.toast.rejectFailed.title', { prNumber: selectedPR.prNumber }),
-          description: result.reason ?? t('requisitions.toast.actionFailed.desc'),
+          description: refusalText(result.reason) ?? result.reason ?? t('requisitions.toast.actionFailed.desc'),
         });
         return;
       }

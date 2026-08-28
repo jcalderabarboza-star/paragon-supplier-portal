@@ -54,6 +54,7 @@ import type {
   ComplianceRegistryEntry,
   ComplianceDisplayStatus,
 } from '../services/data/types';
+import { useRefusalText } from '../hooks/useRefusalText';
 
 type CategoryFilter = 'All' | CertCategory;
 type StatusFilter = 'All' | ComplianceDisplayStatus;
@@ -99,6 +100,7 @@ const CATEGORY_OPTIONS: { id: CategoryFilter; labelKey: string }[] = [
 
 const BuyerCompliance: React.FC = () => {
   const { t } = useTranslation();
+  const refusalText = useRefusalText();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('All');
@@ -141,7 +143,7 @@ const BuyerCompliance: React.FC = () => {
         toast({
           variant: 'error',
           title: t('compliance.queue.toast.failed'),
-          description: result.reason,
+          description: refusalText(result.reason) ?? result.reason,
         });
         return;
       }
@@ -162,7 +164,7 @@ const BuyerCompliance: React.FC = () => {
         toast({
           variant: 'error',
           title: t('compliance.queue.toast.failed'),
-          description: result.reason,
+          description: refusalText(result.reason) ?? result.reason,
         });
         return;
       }
