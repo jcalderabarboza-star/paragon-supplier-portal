@@ -48,6 +48,7 @@ import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { DataError } from '../services/data/types';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
 import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
+import { useNavigate } from 'react-router-dom';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
 import type { ActorAttribution, UnattributedReason } from '../lib/enforcement';
 // GL-1 - the glossary destination for this surface's refusals.
@@ -202,6 +203,7 @@ const BuyerRequisitions: React.FC = () => {
   ];
   const [group, setGroup] = useState<GroupTab>('all');
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
   const [selectedRow, setSelectedRow] = useState<PurchaseRequisition | null>(null);
   // The detail panel's mode. `rejecting` swaps the footer for the reason
   // capture — the BuyerInvoices dispute precedent, one lane over.
@@ -252,12 +254,23 @@ const BuyerRequisitions: React.FC = () => {
     revise: reviseAvailability,
     approve: approveAvailability,
     reject: rejectAvailability,
+    sourcing: sourcingAvailability,
   } = useVerbAvailabilities({
     create: 'pr:create',
     submit: 'pr:submit',
     revise: 'pr:revise',
     approve: 'pr:approve',
     reject: 'pr:reject',
+    // ⚠️ **`rfq:create`, NOT `pr:source` — AND THE DIFFERENCE IS THE WHOLE
+    // AUTHORISATION MODEL OF THIS LANE.** Raising a sourcing event IS creating
+    // an RFQ; the requisition's own advance is a CASCADE the dispatcher fires
+    // afterwards under the automation grant. Derived, not assumed: `pr:source`
+    // is held by NO seat (`SYSTEM_ROLES` → zero holders) and lives in
+    // `AUTOMATION_ATOMS`, which is why `/buyer/process-flows` renders it
+    // `NO PERSONA MAPPED`. Gating this control on `pr:source` would therefore
+    // withhold it from EVERY seat that exists, and the handoff notice would name
+    // an owner nobody can be.
+    sourcing: 'rfq:create',
   } as const);
 
   const counts = useMemo(() => {
@@ -493,6 +506,26 @@ const BuyerRequisitions: React.FC = () => {
         description: e instanceof DataError ? e.message : t('requisitions.toast.actionFailed.desc'),
       });
     }
+  };
+
+  /**
+   * ⚠️ **THE DOOR. IT NAVIGATES; IT DOES NOT DISPATCH.**
+   *
+   * The act this control starts is `t_rfq_create`, and that verb belongs to the
+   * sourcing wizard — it needs a title, a category, materials, a quantity, an
+   * invited supplier list and two deadlines, none of which this panel has or
+   * should collect. Dispatching from here would mean a second RFQ-creation path
+   * beside the ratified one, which is the `extraRfqs` anti-pattern (C6 §1) with
+   * a different entry point.
+   *
+   * So it carries the requisition's IDENTITY to the wizard and lets the wizard
+   * do what it already does. The requisition advances afterwards as a CASCADE of
+   * the RFQ actually being raised — so a buyer who opens the wizard and closes
+   * it again has changed nothing, which is the correct outcome and is what
+   * dispatching from here would have got wrong.
+   */
+  const raiseSourcingEvent = (pr: PurchaseRequisition) => {
+    navigate('/buyer/sourcing', { state: { sourceRequisitionId: pr.id } });
   };
 
   const rejectSelected = async () => {
@@ -1032,17 +1065,53 @@ const BuyerRequisitions: React.FC = () => {
                 cannot produce, which is the false-affordance class exactly. An
                 approved requisition that LOOKS like it is going somewhere is
                 worse than one that plainly is not. */}
+            {/* ⚠️ **C.3 — THIS SECTION USED TO SAY THE LANE STOPPED HERE, AND IT
+                HAD ALREADY STOPPED BEING TRUE.** Its body read *"no producer is
+                wired for either yet. Nothing on this screen advances an approved
+                requisition further."* C.2 wired a producer — an RFQ raised from
+                a requisition moves it to `Sourcing Event` — so the first clause
+                became false at that merge, WITH NOBODY EDITING THIS FILE. That
+                is the shape worth naming: a sentence that is true when written
+                and is falsified by a capability shipping NEXT DOOR, on a surface
+                its author never touched. Nothing in the suite could fail for it,
+                because a stale prose claim is not a broken behaviour.
+
+                The section survives rather than being deleted, on §68's
+                precedent one state over: a state WITH an affordance still owes
+                the reader an account of where the document is, and retiring the
+                account would leave a lone button and no context. What changed is
+                that the account is now true, and it says what remains undone
+                (PO conversion) instead of claiming everything is. */}
             {selectedPR.status === 'Approved' && (
               <section
                 data-testid="pr-approved-terminal"
                 className="rounded-md border border-border-subtle bg-bg-muted px-3 py-2"
               >
                 <h3 className="text-label text-text-tertiary uppercase mb-1">
-                  {t('requisitions.panel.terminal.title')}
+                  {t('requisitions.panel.sourcing.title')}
                 </h3>
-                <p className="text-sm text-text-secondary">
-                  {t('requisitions.panel.terminal.body')}
+                <p className="text-sm text-text-secondary mb-2">
+                  {t('requisitions.panel.sourcing.body')}
                 </p>
+                {sourcingAvailability.kind === 'held' ? (
+                  <Button
+                    variant="outline"
+                    data-testid="pr-raise-sourcing"
+                    onClick={() => raiseSourcingEvent(selectedPR)}
+                  >
+                    {t('requisitions.panel.sourcing.cta')}
+                  </Button>
+                ) : (
+                  /* Pending-with-an-owner, in the standing grammar — never an
+                     absent affordance, never a disabled control. A requisitioner
+                     holds `pr:create` and `pr:submit` and no `rfq:create`, so
+                     this is the seat that actually meets this notice: their own
+                     approved requisition, and procurement is who takes it on. */
+                  <HandoffNotice
+                    availability={sourcingAvailability}
+                    testId="handoff-pr-sourcing"
+                  />
+                )}
               </section>
             )}
 

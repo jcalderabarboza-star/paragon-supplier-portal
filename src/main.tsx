@@ -8,6 +8,7 @@ import { AdaptiveProvider } from './context/AdaptiveContext';
 import { DataServiceProvider } from './services/data/DataServiceContext';
 import { mockDataService } from './services/data/mock/mockDataService';
 import { seedEnforcementLedger } from './services/data/mock/enforcementSeed';
+import { seedSourceableRequisition } from './services/data/mock/requisitionSeed';
 import { withChaos, chaosConfigFromEnv } from './services/data/mock/withChaos';
 import { queryClient } from './services/query/queryClient';
 import type { IDataService } from './services/data/types';
@@ -57,5 +58,21 @@ seedEnforcementLedger()
   })
   .catch((err) => {
     console.error('[CP-3 · E4] the enforcement seed threw:', err);
+  })
+  // ⚠️ C.3 — THE DEMONSTRABLE APPROVED REQUISITION, GROWN THROUGH THE MACHINE.
+  // Same contract as the enforcement seed above and for the same reasons: it
+  // dispatches real verbs, it is idempotent, and it REPORTS a refusal rather
+  // than swallowing one. It also renders either way — a seed that does not land
+  // leaves the requisition wherever the machine left it, which is the honest
+  // state; refusing to boot over a demonstration row would trade the whole app
+  // for a walkthrough.
+  .then(() => seedSourceableRequisition())
+  .then((outcome) => {
+    if (outcome.status === 'refused') {
+      console.error('[C.3] the sourceable-requisition seed did not land:', outcome);
+    }
+  })
+  .catch((err) => {
+    console.error('[C.3] the sourceable-requisition seed threw:', err);
   })
   .then(renderApp);
