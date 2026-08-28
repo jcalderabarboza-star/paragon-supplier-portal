@@ -28,7 +28,10 @@ import type {
   SupplierRollup,
   ChaseEntry,
 } from '../sdc';
-import { buildRequirementResolutionPayload } from '../sdc/submitModel';
+import {
+  buildRequirementDisputePayload,
+  buildRequirementResolutionPayload,
+} from '../sdc/submitModel';
 import type { ChannelMessage } from '../channel/types';
 import type { CommandResult, QueryScope } from '../data/types';
 
@@ -162,6 +165,61 @@ export function useInventoryRecord() {
 // the consolidation surface — that page was read-only end to end until now, and
 // its honesty banner is updated in the same batch rather than left saying so.
 
+// ────────────────────────────────────────────────────────────────────────────
+// THE ONE DISPATCH SHAPE FOR EVERY BUYER ACT ON A REQUIREMENT RESPONSE.
+//
+// Four verbs now write to this entity from this seat (`_review`, `_accept`,
+// `_dispute`, `_resolve`). Each needs the SAME three things and gets them
+// wrong in the same three ways if written by hand: the scope must come from the
+// live identity (not a literal), the actor must be the buyer (the dispatcher
+// derives it, so passing one is the mistake), and the invalidation must reach
+// the SUBJECT SUPPLIER and not only the buyer's own reads.
+//
+// ⚠️ **THE THIRD IS WHY THIS IS A FACTORY AND NOT A CONVENTION.** A wrong scope
+// is a refusal and a wrong actor is a red test; a missing supplier-side
+// invalidation is INVISIBLE from the buyer's screen — the write lands, the
+// buyer's toast is green, and the party the write was ABOUT keeps seeing the
+// old state until they reload. Nothing on the writing surface can notice it,
+// which is exactly the kind of thing that must not be re-typed per verb.
+// ────────────────────────────────────────────────────────────────────────────
+
+function useRequirementResponseCommand<V extends RequirementResponseVars>(
+  transitionId: string,
+  payloadOf: (vars: V) => Record<string, unknown>,
+) {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const qc = useQueryClient();
+
+  return useMutation<CommandResult, Error, V>({
+    mutationFn: (vars) =>
+      svc.commands.dispatch(
+        {
+          personaType: identity.personaType,
+          supplierId: identity.supplierId,
+          businessRoles: identity.businessRoles,
+          actor: identity.actor,
+        },
+        {
+          transitionId,
+          entity: 'requirementResponse',
+          entityId: vars.responseId,
+          payload: payloadOf(vars),
+        },
+      ),
+    onSuccess: (result, { supplierId }) => {
+      // ⚠️ `!== 'failed'` rather than `=== 'done'`: an Option-B verb settles
+      // asynchronously and returns `submitted`, and treating that as a failure
+      // would skip the invalidation on precisely the verbs that need it most.
+      if (result.status !== 'failed') {
+        qc.invalidateQueries({
+          predicate: (q) => isRecordedDeclarationInvalidation(q.queryKey, supplierId),
+        });
+      }
+    },
+  });
+}
+
 export interface ResolveDisputeVars {
   /** The disputed response being answered. */
   responseId: string;
@@ -190,36 +248,87 @@ export interface ResolveDisputeVars {
  * C4c carve-out because this is the same shape it was written for: a BUYER write
  * ABOUT a subject supplier. No other supplier is touched.
  */
-export function useResolveRequirementDispute() {
-  const svc = useDataService();
-  const { identity } = useCurrentIdentity();
-  const qc = useQueryClient();
+export const useResolveRequirementDispute = () =>
+  useRequirementResponseCommand<ResolveDisputeVars>('t_requirementresponse_resolve', (v) =>
+    buildRequirementResolutionPayload({ resolutionReason: v.resolutionReason }),
+  );
 
-  return useMutation<CommandResult, Error, ResolveDisputeVars>({
-    mutationFn: ({ responseId, resolutionReason }) =>
-      svc.commands.dispatch(
-        {
-          personaType: identity.personaType,
-          supplierId: identity.supplierId,
-          businessRoles: identity.businessRoles,
-          actor: identity.actor,
-        },
-        {
-          transitionId: 't_requirementresponse_resolve',
-          entity: 'requirementResponse',
-          entityId: responseId,
-          // ⚠️ The payload is built by `buildRequirementResolutionPayload`, not
-          // assembled here — the draft layer is what keeps the key derived from
-          // the verb instead of transcribed at each call site (§55, disputeDrafts).
-          payload: buildRequirementResolutionPayload({ resolutionReason }),
-        },
-      ),
-    onSuccess: (result, { supplierId }) => {
-      if (result.status !== 'failed') {
-        qc.invalidateQueries({
-          predicate: (q) => isRecordedDeclarationInvalidation(q.queryKey, supplierId),
-        });
-      }
-    },
-  });
+// ────────────────────────────────────────────────────────────────────────────
+// WAVE C — THE REVIEW LANE. `t_requirementresponse_review` · `_accept` ·
+// `_dispute`, each of which had a complete machine, a wired CommandTarget, a
+// held atom on the `planning` lane and NO CALLER.
+//
+// ⚠️ **THEY ARE THREE HOOKS OVER ONE FACTORY, AND THE FACTORY IS THE POINT.**
+// The resolve hook above was the proven shape and it is now the factory's first
+// caller rather than its neighbour — a second hand-written dispatch beside a
+// working one is how the two drift, and the drift lands on the INVALIDATION
+// predicate, which is the half no surface test notices until a supplier reloads.
+//
+// ⚠️ **AND EVERY ONE OF THEM INVALIDATES THE SUBJECT SUPPLIER, NOT ONLY THE
+// BUYER.** `_review` moves the supplier's own line from *submitted* to *under
+// review*, `_accept` closes it, `_dispute` writes words onto their ledger. All
+// three are buyer writes ABOUT a supplier — exactly the shape
+// `isRecordedDeclarationInvalidation` was written for — so a supplier watching
+// their own forecast page sees each of them without reloading.
+// ────────────────────────────────────────────────────────────────────────────
+
+/** A payload-free buyer act on one supplier's response. */
+export interface RequirementResponseVars {
+  /** The response being acted on. */
+  responseId: string;
+  /**
+   * The supplier it belongs to — carried for INVALIDATION, never for
+   * authorization (the dispatcher derives the actor from the buyer scope).
+   */
+  supplierId: string;
 }
+
+/** Raising a dispute: the same shape, plus the words the verb requires. */
+export interface DisputeRequirementVars extends RequirementResponseVars {
+  /**
+   * The planner's objection. Required by the verb; blank dies at the machine
+   * (`rr_dispute_text_authored`) even if a caller gets past the form.
+   */
+  disputeReason: string;
+}
+
+/**
+ * Take the response under review (`t_requirementresponse_review`,
+ * `Submitted → UnderReview`) under the BUYER scope.
+ *
+ * ⚠️ **IT IS NOT LOAD-BEARING FOR REACHABILITY AND THE COMMENT SAYS SO, BECAUSE
+ * THE OPPOSITE IS THE EASY THING TO ASSUME.** `UnderReview` has a SECOND
+ * producer — `t_requirementresponse_resolve` (`Disputed → UnderReview`), which
+ * has shipped since R1b — so `_accept` and `_dispute` were already reachable
+ * before this hook existed. Review is the lane's front door, not its only one,
+ * and a future edit that deletes it does not strand the two verbs below.
+ */
+export const useReviewRequirementResponse = () =>
+  useRequirementResponseCommand<RequirementResponseVars>('t_requirementresponse_review', () => ({}));
+
+/**
+ * Accept the reviewed confirmation (`t_requirementresponse_accept`,
+ * `UnderReview → Accepted`).
+ *
+ * ⚠️ **`Accepted` IS TERMINAL — derived, not assumed: no transition in
+ * `requirementResponse.flow.ts` declares it as a `from` state.** The surface
+ * says so before the act rather than discovering it afterwards.
+ */
+export const useAcceptRequirementResponse = () =>
+  useRequirementResponseCommand<RequirementResponseVars>('t_requirementresponse_accept', () => ({}));
+
+/**
+ * Dispute the reviewed confirmation (`t_requirementresponse_dispute`,
+ * `UnderReview → Disputed`), with the words the supplier will read.
+ *
+ * ⚠️ **THE TEXT IS NOT ASSEMBLED HERE.** `buildRequirementDisputePayload` has
+ * existed since #239 with no caller; the draft layer is what keeps the payload
+ * key derived from the verb rather than transcribed at each call site (§55).
+ * It deliberately does NOT trim — `requiredFields` runs `isEmpty`, and
+ * `isEmpty('   ')` is false, so a builder that trimmed would move the real
+ * guard into the one layer a hand-crafted dispatch skips.
+ */
+export const useDisputeRequirementResponse = () =>
+  useRequirementResponseCommand<DisputeRequirementVars>('t_requirementresponse_dispute', (v) =>
+    buildRequirementDisputePayload({ disputeReason: v.disputeReason }),
+  );

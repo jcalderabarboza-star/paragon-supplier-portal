@@ -32,19 +32,26 @@ describe('BuyerCollaboration — honest render (page-level)', () => {
     expect(screen.queryByText(/^Live$/)).not.toBeInTheDocument();
   });
 
-  it('⚠ the honesty banner NAMES the one write — it no longer claims read-only end to end', () => {
-    // R1b CHANGED THIS TEST, and the change is the point rather than upkeep.
-    // Until this batch the page dispatched nothing and the banner said so; the
-    // resolve action makes the old sentence FALSE. A banner still promising
-    // "nothing here edits, dispatches, or publishes" over a surface that
-    // dispatches is an unbacked affordance run backwards — the page under-
-    // claiming what it does, which this project treats as the same defect class
-    // as over-claiming. The assertion below is deliberately POSITIVE about the
-    // exception rather than merely dropping the old string: a banner that named
-    // no write at all would pass a weakened test.
+  it('⚠ the honesty banner NAMES A WRITING LANE AND COUNTS NOTHING — wave C', () => {
+    // ⚠️ THIS TEST HAS NOW BEEN REWRITTEN TWICE BY THE SAME DEFECT, AND THE
+    // SECOND REWRITE IS WHY IT NO LONGER ASSERTS A CARDINALITY.
+    //
+    // R1b wrote the banner as *"read-only except dispute resolution"* /
+    // *"ONE action writes"* and asserted exactly that here. It was TRUE the day
+    // it shipped. Wave C added three more writing verbs to this page and the
+    // sentence went false — and this assertion is the only reason anybody found
+    // out, which is the good half. The bad half: the SAME correction would be
+    // due again on the next wave, forever, because the banner was carrying a
+    // COUNT in prose (`FLOOR-IN-PROSE-01`).
+    //
+    // So the remedy is the one this project rules for that class — DELETION IN
+    // FAVOUR OF A DERIVATION, never correction to a newer number. The banner now
+    // names the KIND of thing that writes and defers to the sections, which are
+    // derived from the machine and cannot go stale. `sdcHonestyNoCardinality.
+    // guard.test.ts` is what stops a number creeping back in, in either locale.
     renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
-    expect(screen.getByText(/read-only except dispute resolution/i)).toBeInTheDocument();
-    expect(screen.getByText(/resolving a supplier dispute/i)).toBeInTheDocument();
+    expect(screen.getByText(/the review lane writes/i)).toBeInTheDocument();
+    expect(screen.getByText(/write to the supplier’s own response/i)).toBeInTheDocument();
     expect(screen.getByText(/nothing else here edits, dispatches, or publishes/i)).toBeInTheDocument();
   });
 
@@ -55,12 +62,19 @@ describe('BuyerCollaboration — honest render (page-level)', () => {
     // over a surface that now dispatches. An honesty marker translated in one
     // locale only is a false claim in the other, and it took a browser pass in
     // ID to see it, because every spec in this file rendered in EN.
-    await i18n.changeLanguage('id');
-    renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
-    expect(screen.getByText(/hanya-baca kecuali penyelesaian sanggahan/i)).toBeInTheDocument();
-    expect(screen.getByText(/menyelesaikan sanggahan pemasok/i)).toBeInTheDocument();
-    expect(screen.queryByText(/^Tampilan konsolidasi — hanya-baca$/)).not.toBeInTheDocument();
-    await i18n.changeLanguage('en');
+    // ⚠️ AND THE RESTORE IS NOW IN A `finally`. It was a bare trailing call, so
+    // when wave C made the assertion above fail, the language STAYED on `id` and
+    // every later EN spec in this file went red too — six cascaded failures from
+    // one real one, which buries the finding it was reporting.
+    try {
+      await i18n.changeLanguage('id');
+      renderWithProviders(<BuyerCollaboration />, { route: '/buyer/collaboration' });
+      expect(screen.getByText(/jalur telaah menulis/i)).toBeInTheDocument();
+      expect(screen.getByText(/menulis ke tanggapan pemasok sendiri/i)).toBeInTheDocument();
+      expect(screen.queryByText(/^Tampilan konsolidasi — hanya-baca$/)).not.toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('⚠ CONTROL — the retired absolute claim is GONE, not merely unasserted', () => {
