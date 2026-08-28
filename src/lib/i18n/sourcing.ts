@@ -248,6 +248,15 @@ export const sourcingEn: Record<string, string> = {
   // PF-1a — the draft is not sent here; publishing is what sends it.
   'sourcing.wizard.step.review.desc': 'Check the details before saving the draft.',
   // — Wizard: scope —
+  // C.2 — the requisition entrance. "Raised from", never "created by": the
+  // requisition is where the requirement came from, the buyer in the wizard is
+  // who is creating this RFQ.
+  'sourcing.wizard.field.sourceRequisition': 'Raise from requisition',
+  'sourcing.wizard.sourceRequisition.placeholder': 'Not from a requisition',
+  'sourcing.wizard.sourceRequisition.help':
+    'Optional. Choosing an approved requisition fills in what it can and moves it to Sourcing Event when this RFQ is raised.',
+  'sourcing.wizard.sourceRequisition.none':
+    'No approved requisition is waiting. A sourcing event can be raised from an approved requisition; you can also raise this RFQ on its own.',
   'sourcing.wizard.field.title': 'RFQ title',
   'sourcing.wizard.placeholder.title': 'e.g. Q3 2026 Fragrance Sourcing — Floral Compounds',
   'sourcing.wizard.field.category': 'Material category',
@@ -296,6 +305,10 @@ export const sourcingEn: Record<string, string> = {
   'sourcing.wizard.review.section.suppliers': 'Suppliers',
   'sourcing.wizard.review.section.terms': 'Terms & Deadlines',
   'sourcing.wizard.review.edit': 'Edit',
+  'sourcing.wizard.review.row.sourceRequisition': 'Raised from',
+  'sourcing.wizard.review.row.notCarried': 'Not carried over',
+  'sourcing.wizard.review.notCarried.category': 'category',
+  'sourcing.wizard.review.notCarried.uom': 'unit',
   'sourcing.wizard.review.row.title': 'Title',
   'sourcing.wizard.review.row.category': 'Category',
   'sourcing.wizard.review.row.materials': 'Materials',
@@ -574,6 +587,12 @@ export const sourcingId: Record<string, string> = {
   'sourcing.wizard.step.review.short': 'Tinjau',
   'sourcing.wizard.step.review.desc': 'Periksa detail sebelum menyimpan draf.',
   // — Wizard: scope —
+  'sourcing.wizard.field.sourceRequisition': 'Ajukan dari permintaan',
+  'sourcing.wizard.sourceRequisition.placeholder': 'Bukan dari permintaan',
+  'sourcing.wizard.sourceRequisition.help':
+    'Opsional. Memilih permintaan yang disetujui akan mengisi data yang bisa dibawa dan memindahkannya ke Acara Sourcing saat RFQ ini diajukan.',
+  'sourcing.wizard.sourceRequisition.none':
+    'Tidak ada permintaan disetujui yang menunggu. Acara sourcing dapat diajukan dari permintaan yang disetujui; Anda juga bisa mengajukan RFQ ini secara mandiri.',
   'sourcing.wizard.field.title': 'Judul RFQ',
   'sourcing.wizard.placeholder.title': 'mis. Sumber Pewangi Q3 2026 — Senyawa Floral',
   'sourcing.wizard.field.category': 'Kategori material',
@@ -620,6 +639,10 @@ export const sourcingId: Record<string, string> = {
   'sourcing.wizard.review.section.suppliers': 'Pemasok',
   'sourcing.wizard.review.section.terms': 'Syarat & Tenggat',
   'sourcing.wizard.review.edit': 'Sunting',
+  'sourcing.wizard.review.row.sourceRequisition': 'Diajukan dari',
+  'sourcing.wizard.review.row.notCarried': 'Tidak dibawa',
+  'sourcing.wizard.review.notCarried.category': 'kategori',
+  'sourcing.wizard.review.notCarried.uom': 'satuan',
   'sourcing.wizard.review.row.title': 'Judul',
   'sourcing.wizard.review.row.category': 'Kategori',
   'sourcing.wizard.review.row.materials': 'Material',
