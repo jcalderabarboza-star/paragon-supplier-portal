@@ -153,22 +153,23 @@ export const LOOSE_END_CENSUS: readonly CensusEntry[] = Object.freeze([
   // one in the census" is the fact a reader of a shrinking list most wants.
 
   // ── purchaseRequisition ────────────────────────────────────────────────────
-  {
-    entity: 'purchaseRequisition',
-    kind: 'unauthored-cascade',
-    subject: 't_pr_source',
-    reason: 'authored-unwired',
-    note:
-      'Declares `trigger: \'cascade\'` — "another transition fans out into me" — and NO SOURCE NAMES ' +
-      'IT in `cascades.ts`. The sentence has no subject: nothing can fire it, and its `from` states ' +
-      'are reachable, so it is not even caught as a dead transition.',
-  },
+  // ⚠️ `t_pr_source`'S ROW IS GONE, AND ITS ABSENCE IS THE RECORD. It read
+  // "the sentence has no subject: nothing can fire it". At C.1 `t_rfq_create`
+  // became its subject, so the row stopped being true and the bilateral gate
+  // ("every CENSUS entry is still a loose end") forced it out in the SAME batch
+  // that authored the link — which is the census working, not a chore. Kept as
+  // a comment rather than silently deleted, because a shrinking list is only
+  // legible if you can see what left it.
   {
     entity: 'purchaseRequisition',
     kind: 'unauthored-cascade',
     subject: 't_pr_convert',
     reason: 'authored-unwired',
-    note: 'The PR→PO conversion cascade, unauthored for the same reason as `t_pr_source`.',
+    note:
+      'The PR→PO conversion cascade: declares `trigger: cascade` and no source in `cascades.ts` names '  +
+      'it, so nothing can fire it. It is now the LAST of the pair — `t_pr_source` left this census at '  +
+      'C.1 — and it is unauthored BY RULING, not by omission: a PO is raised in S/4 and arrives here '  +
+      'as a fact, so minting one would be CTR-FABRICATION-01 a layer down. Its source arrives with F2.',
   },
 
   // ── compliance ─────────────────────────────────────────────────────────────

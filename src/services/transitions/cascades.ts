@@ -40,6 +40,20 @@ export const CASCADES: Record<string, readonly CascadeLink[]> = {
   // every other is rejected. Both target the `quotation` machine; the adapter
   // resolver splits the sibling set (winner ← payload, losers ← the store) across
   // these two links.
+  // A raised RFQ advances the approved PR it was raised FROM (C.1). The link is
+  // authored here; the resolver decides whether it fires at all, and the COMMON
+  // answer is that it does not — an RFQ raised without a `sourceRequisitionId`
+  // in its payload cascades onto nothing. That is not a failure path, it is the
+  // ordinary one: most RFQs are not raised from a requisition.
+  //
+  // ⚠️ **THE SOURCE IS A `creation` VERB, WHICH IS NEW FOR THIS REGISTRY.** The
+  // other three sources mutate an entity in place; this one mints it. The
+  // dispatcher handles both identically — `resolvedId` reads `result.entityId`,
+  // which creation sets to the store-assigned number — so `ctx.entityId` here is
+  // the NEW RFQ's number, and that is exactly what the PR wants written onto it.
+  t_rfq_create: [
+    { targetEntity: 'purchaseRequisition', targetTransitionId: 't_pr_source' },
+  ],
   t_rfq_award: [
     { targetEntity: 'quotation', targetTransitionId: 't_quotation_award' },
     { targetEntity: 'quotation', targetTransitionId: 't_quotation_reject' },
