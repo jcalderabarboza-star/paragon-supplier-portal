@@ -13,7 +13,7 @@ import TableCell from '../components/ui-v2/TableCell';
 import FlowDiagram from './process-flows/FlowDiagram';
 import LifecycleWalk from './process-flows/LifecycleWalk';
 import { looseEndKindKey, reasonKey, ALL_REASONS } from './process-flows/labels';
-import { verbOf } from './process-flows/flowLayout';
+import { verbOf, entityVerbOf } from './process-flows/flowLayout';
 import { STEP_KIND_KEY } from '../lib/i18n/stepKind';
 import { getKnownFlows } from '../services/transitions';
 import { entityPurposeKey, transitionPurposeKey } from '../services/transitions/annotations';
@@ -208,7 +208,16 @@ const TransitionRow: React.FC<{ tv: TransitionView }> = ({ tv }) => {
               className="text-[10px]"
             >
               {tv.firedBy.length > 0
-                ? t('processFlows.flag.firedBy', { sources: tv.firedBy.map(verbOf).join(', ') })
+                ? // ⚠️ ENTITY-QUALIFIED (C.2). A cascade source lives on ANOTHER
+                  // machine, so a bare verb here can collide with a transition
+                  // in THIS table — measured on three of the five rows that
+                  // render this pill. Same form the `fansOut` pill above already
+                  // uses, so both directions of one relationship read alike. The
+                  // i18n key is untouched: only the value in `{{sources}}`
+                  // changed, so EN and ID needed no new string.
+                  t('processFlows.flag.firedBy', {
+                    sources: tv.firedBy.map(entityVerbOf).join(', '),
+                  })
                 : t('processFlows.flag.firedByNothing')}
             </StatusPill>
           )}

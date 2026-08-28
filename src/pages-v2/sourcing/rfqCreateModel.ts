@@ -73,6 +73,13 @@ export interface RfqCreateDraft {
   incoterms: string;
   paymentTerms: string;
   invitedSupplierIds: string[];
+  /**
+   * C.2 — the requisition this RFQ is being raised FROM, when the buyer started
+   * the wizard from one. **Optional, and the ABSENT case is the common one:**
+   * most RFQs are not raised from a requisition, and C.1's cascade resolver
+   * reads exactly this key to decide whether to fan out at all.
+   */
+  sourceRequisitionId?: string;
 }
 
 /**
@@ -235,5 +242,14 @@ export function buildRfqCreatePayload(
       : { estimatedValue: numbers.estimatedValue }),
     incoterms: terms.incoterms,
     paymentTerms: terms.paymentTerms,
+    // ⚠️ C.2 — EMITTED ONLY WHEN PRESENT, the same conditional shape as
+    // `estimatedValue` above and for a sharper reason: C.1's resolver branches on
+    // whether this key is a non-empty string, and an RFQ raised from no
+    // requisition must cascade onto NOTHING. Spreading `undefined` in would put
+    // the key on the payload with no value, which reads as "there is a source"
+    // to anything checking presence rather than type.
+    ...(terms.sourceRequisitionId
+      ? { sourceRequisitionId: terms.sourceRequisitionId }
+      : {}),
   };
 }

@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { getKnownFlows } from '../../services/transitions';
 import { buildCatalogView, buildFlowView } from '../../services/transitions/catalogView';
 import type { FlowDefinition } from '../../services/transitions/schema';
-import { layoutFlow, rankStates, verbOf, NODE_W, NODE_H } from './flowLayout';
+import { layoutFlow, rankStates, verbOf, entityVerbOf, NODE_W, NODE_H } from './flowLayout';
 
 const views = () => buildCatalogView(getKnownFlows()).flows;
 
@@ -217,5 +217,67 @@ describe('PF-1 — routing', () => {
     expect(layout.edges).toHaveLength(0);
     expect(layout.width).toBeGreaterThan(NODE_W);
     expect(layout.height).toBeGreaterThan(NODE_H);
+  });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// C.2 — entityVerbOf: the firedBy pill's ambiguity, closed.
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('C.2 — entityVerbOf qualifies a cascade source with its entity', () => {
+  it('slices the schema id, it does not look anything up', () => {
+    expect(entityVerbOf('t_rfq_create')).toBe('rfq:create');
+    expect(entityVerbOf('t_rfq_award')).toBe('rfq:award');
+    // A compound verb keeps its underscores, exactly as verbOf does.
+    expect(entityVerbOf('t_gr_partial_approve')).toBe('gr:partial_approve');
+  });
+
+  it('degrades to the raw id on a malformed one, never to a wrong half', () => {
+    expect(entityVerbOf('nonsense')).toBe('nonsense');
+  });
+
+  it('⚠️ is what disambiguates a source from a same-named verb in the SAME flow', () => {
+    // The defect in one line: on the purchaseRequisition flow both of these
+    // rendered "create" under the old pill, and only one of them is the source.
+    expect(verbOf('t_rfq_create')).toBe(verbOf('t_pr_create'));
+    expect(entityVerbOf('t_rfq_create')).not.toBe(entityVerbOf('t_pr_create'));
+  });
+
+  it('⚠️ EVERY firedBy row is qualified — DERIVED, and the ambiguous ones named', () => {
+    // The population is derived rather than listed, so a new cascade link is
+    // covered without editing this test. What is pinned is that no row renders a
+    // bare verb, and that the three known-ambiguous rows are among them.
+    const flows = buildCatalogView(getKnownFlows()).flows;
+    const rows = flows.flatMap((f) =>
+      f.transitions
+        .filter((tr) => tr.firedBy.length > 0)
+        .map((tr) => ({
+          key: `${f.entity}.${tr.def.id}`,
+          rendered: tr.firedBy.map(entityVerbOf),
+          // ambiguous = the bare verb collides with another transition here
+          ambiguous: tr.firedBy
+            .map(verbOf)
+            .some((v) => f.transitions.some((o) => verbOf(o.def.id) === v)),
+        })),
+    );
+
+    // Population guard: MEMBERSHIP, never a count (§42b).
+    expect(rows.map((r) => r.key)).toContain('purchaseRequisition.t_pr_source');
+    expect(rows.map((r) => r.key)).toContain('quotation.t_quotation_award');
+
+    // Every rendered source carries its entity — no bare verbs survive.
+    for (const r of rows) {
+      for (const s of r.rendered) {
+        expect(s, `${r.key} rendered a bare verb: ${s}`).toContain(':');
+      }
+    }
+
+    // The three that were ambiguous before the qualification, named so a future
+    // change that reintroduces a bare form has something specific to break.
+    expect(rows.filter((r) => r.ambiguous).map((r) => r.key).sort()).toEqual([
+      'purchaseRequisition.t_pr_source',
+      'quotation.t_quotation_award',
+      'quotation.t_quotation_reject',
+    ]);
   });
 });

@@ -43,11 +43,19 @@ import LivenessPill from '../components/ui-v2/LivenessPill';
 import ModelMarker from '../components/ui-v2/ModelMarker';
 import Button from '../components/ui-v2/Button';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
+import {
+  RFQ_CATEGORY_OPTIONS,
+  RFQ_UOM_OPTIONS,
+  prefillFromRequisition,
+  requisitionSourcingStates,
+  sourceableRequisitions,
+  type RequisitionPrefill,
+} from './sourcing/requisitionPrefill';
 import { useToast } from '../hooks/useToast';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
-import { useRFQs, useQuotations, useSuppliers } from '../services/query/hooks';
+import { useRFQs, useQuotations, useSuppliers, useRequisitions } from '../services/query/hooks';
 import {
   useRfqCreate,
   useRfqAward,
@@ -107,6 +115,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
 import type { Quotation } from '../data/mockQuotations';
+import type { PurchaseRequisition, PRStatus } from '../services/data/types';
 import type { Supplier } from '../services/data/types';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
@@ -128,14 +137,12 @@ const CATEGORY_LABEL_KEY: Record<RFQCategory, string> = {
 const categoryLabel = (t: TFunction, c: RFQCategory): string =>
   t(CATEGORY_LABEL_KEY[c]);
 
-const CATEGORY_OPTIONS: RFQCategory[] = [
-  'Fragrance',
-  'Active Ingredients',
-  'Packaging',
-  'Emulsifiers',
-  'Botanical',
-  'Other',
-];
+// C.2 — the vocabulary moved to `sourcing/requisitionPrefill.ts` so the
+// membership check that decides whether a requisition's category can be carried
+// and the `<select>` a buyer picks from are the SAME list. Two copies would
+// drift, and the drift would show up as a field the prefill refuses to fill for
+// a category the wizard happily offers.
+const CATEGORY_OPTIONS: readonly RFQCategory[] = RFQ_CATEGORY_OPTIONS;
 
 const CATEGORY_TO_SUPPLIER_CATEGORY: Record<RFQCategory, string[]> = {
   Fragrance: ['Fragrance'],
@@ -182,7 +189,7 @@ const MATERIAL_CATALOG: Record<RFQCategory, string[]> = {
   Other: ['Custom material — specify in notes'],
 };
 
-const UOM_OPTIONS = ['KG', 'PCS', 'L', 'MT'] as const;
+const UOM_OPTIONS = RFQ_UOM_OPTIONS; // C.2 — shared with the prefill membership check
 const INCOTERMS_OPTIONS = ['FOB', 'CIF', 'EXW', 'DDP', 'FCA'];
 const PAYMENT_TERMS_OPTIONS = [
   'Net 30',
@@ -756,7 +763,33 @@ interface DraftRfq {
   paymentTerms: string;
   currency: 'IDR' | 'USD';
   invitedSupplierIds: string[];
+  /** C.2 — set ONLY when the buyer started from a requisition. */
+  sourceRequisitionId?: string;
 }
+
+/**
+ * Fold a requisition prefill into a draft.
+ *
+ * ⚠️ **A NON-MEMBER LEAVES THE FIELD ALONE — IT DOES NOT WRITE A DEFAULT.**
+ * `category` becomes `''`, which is the wizard's own "choose one" state and
+ * which `isStepValid(0)` already refuses to advance past. `uom` has NO empty
+ * member and defaults to 'KG', so a non-member unit leaves whatever was there
+ * rather than claiming the requisition said KG — and the review step names the
+ * omission, because inside a prefilled form an untouched default is otherwise
+ * indistinguishable from a carried value.
+ */
+const applyPrefill = (base: DraftRfq, p: RequisitionPrefill): DraftRfq => ({
+  ...base,
+  title: p.title,
+  totalQty: p.totalQty,
+  category: p.category,
+  ...(p.uom ? { uom: p.uom } : {}),
+  // ⚠️ `materials` IS DELIBERATELY NOT CARRIED. The PR's material is a display
+  // string, not an S/4 code (C7 GG-4); `materialIds` are codes the buyer picks
+  // from MATERIAL_CATALOG once a category is chosen. See `requisitionPrefill.ts`.
+  materials: [],
+  sourceRequisitionId: p.sourceRequisitionId,
+});
 
 const EMPTY_DRAFT: DraftRfq = {
   title: '',
@@ -777,12 +810,19 @@ interface SourcingWorkspaceProps {
   baseRfqs: RFQ[];
   quotations: Quotation[];
   suppliers: Supplier[];
+  /**
+   * C.2 — the requisitions a sourcing event may be raised FROM, already
+   * narrowed at the seam to `t_pr_source`'s from-states. May be EMPTY, and the
+   * picker renders that honestly rather than as a blank control.
+   */
+  sourceableRequisitions: PurchaseRequisition[];
 }
 
 const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   baseRfqs,
   quotations,
   suppliers,
+  sourceableRequisitions: sourceablePrs,
 }) => {
   const supplierNameById = useMemo(
     () => new Map(suppliers.map((s) => [s.id, s.name])),
@@ -1188,11 +1228,31 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // peer spread in (the retired `extraRfqs` anti-pattern, C6 §1).
   const rfqs = baseRfqs;
 
-  const openWizard = () => {
-    setDraft(EMPTY_DRAFT);
+  // ⚠️ **THE ONE ENTRY POINT, AND IT TAKES THE PREFILL AS AN ARGUMENT.** The
+  // page's own "New RFQ" button calls it with nothing; the in-wizard requisition
+  // picker calls it with a prefill; C.3's deep link from the requisition surface
+  // will call THIS SAME function with a prefill built by the same
+  // `prefillFromRequisition`. One entry shape, three callers — a second opener
+  // taking a different shape is how C.3 would end up rewriting C.2.
+  const openWizard = (prefill?: RequisitionPrefill) => {
+    setDraft(prefill ? applyPrefill(EMPTY_DRAFT, prefill) : EMPTY_DRAFT);
     setWizardStep(0);
     setSupplierSearch('');
     setWizardOpen(true);
+  };
+
+  // Re-point the OPEN wizard at a requisition, without closing it. The picker
+  // sits in step 0, so it must not reset the step the way `openWizard` does.
+  const applySource = (prefill: RequisitionPrefill | null) => {
+    setDraft((d) =>
+      prefill
+        ? applyPrefill(d, prefill)
+        : // Clearing the source clears ONLY what the prefill owns. Anything the
+          // buyer typed themselves stays — dropping their edits because they
+          // changed their mind about the origin would be the surface deciding
+          // their work was the requisition's rather than theirs.
+          { ...d, sourceRequisitionId: undefined },
+    );
   };
 
   const closeWizard = () => {
@@ -1237,6 +1297,17 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // is sequential and so can only ever name one field at a time. On a fresh
   // wizard the quantity is blank, so without these the budget input could never
   // report its own refusal.
+  // The chosen requisition, re-derived from the draft's key rather than held in
+  // a second state. One source of truth: if `sourceRequisitionId` is set, the
+  // row it names is what the review reports — there is no way for a stale copy
+  // to describe a requisition the payload no longer points at.
+  const sourcePrefill = useMemo(() => {
+    if (!draft.sourceRequisitionId) return null;
+    const pr = sourceablePrs.find((r) => r.id === draft.sourceRequisitionId);
+    if (!pr) return null;
+    return { ...prefillFromRequisition(pr), label: `${pr.prNumber} · ${pr.material}` };
+  }, [draft.sourceRequisitionId, sourceablePrs]);
+
   const qtyRead = useMemo(() => readRfqTotalQty(draft.totalQty), [draft.totalQty]);
   const budgetRead = useMemo(() => readRfqBudget(draft.budget), [draft.budget]);
 
@@ -1355,6 +1426,60 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
       description: t('sourcing.wizard.step.scope.desc'),
       content: (
         <div className="space-y-5">
+          {/* ⚠️ C.2 — THE REQUISITION ENTRANCE, AND IT IS OPTIONAL BY DESIGN.
+              Most RFQs are not raised from a requisition, so this is the FIRST
+              field but never a required one: leaving it alone is the ordinary
+              path and cascades onto nothing. Choosing one fills the fields it
+              can carry and sets `sourceRequisitionId`, which is the payload key
+              the dispatcher's cascade resolver reads. */}
+          <div>
+            <label
+              htmlFor="rfq-source-requisition"
+              className="text-label text-text-tertiary uppercase block mb-1.5"
+            >
+              {t('sourcing.wizard.field.sourceRequisition')}
+            </label>
+            {sourceablePrs.length === 0 ? (
+              /* ⚠️ AN HONEST EMPTY STATE, NOT A BLANK CONTROL. A `<select>` with
+                 only a placeholder looks broken and says nothing; this names WHY
+                 there is nothing to choose — a sourcing event is raised from an
+                 APPROVED requisition, and none is waiting. */
+              <p
+                className="text-sm text-text-tertiary border border-border-subtle rounded-md px-3 py-2 bg-bg-hover"
+                data-testid="rfq-source-empty"
+              >
+                {t('sourcing.wizard.sourceRequisition.none')}
+              </p>
+            ) : (
+              <>
+                <select
+                  id="rfq-source-requisition"
+                  data-testid="rfq-source-select"
+                  value={draft.sourceRequisitionId ?? ''}
+                  onChange={(e) =>
+                    applySource(
+                      sourceablePrs
+                        .filter((pr) => pr.id === e.target.value)
+                        .map(prefillFromRequisition)[0] ?? null,
+                    )
+                  }
+                  className="w-full bg-white border border-border-input rounded-md px-3 h-10 text-sm focus:outline-none focus:border-action"
+                >
+                  <option value="">
+                    {t('sourcing.wizard.sourceRequisition.placeholder')}
+                  </option>
+                  {sourceablePrs.map((pr) => (
+                    <option key={pr.id} value={pr.id}>
+                      {pr.prNumber} · {pr.material}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-text-tertiary mt-1">
+                  {t('sourcing.wizard.sourceRequisition.help')}
+                </p>
+              </>
+            )}
+          </div>
           <div>
             <label className="text-label text-text-tertiary uppercase block mb-1.5">
               {t('sourcing.wizard.field.title')}{' '}
@@ -1773,6 +1898,40 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
             label={t('sourcing.wizard.review.section.scope')}
             onEdit={() => setWizardStep(0)}
             rows={[
+              // ⚠️ C.2 — THE PROVENANCE LINE. Present ONLY when the buyer chose a
+              // requisition, so an ordinary RFQ gains no empty row claiming
+              // there might have been one.
+              //
+              // ⚠️ **IT NAMES THE ORIGIN, IT DOES NOT REASSIGN AUTHORSHIP.** The
+              // wording is "raised from", not "created by": this RFQ is being
+              // created by the buyer standing in this wizard, and the
+              // requisition is where its requirement came from. The distinction
+              // is the same one `attribution` draws — a document's SOURCE is not
+              // its ACTOR — and it matters here because the cascade that follows
+              // will move that requisition on this buyer's authority.
+              ...(sourcePrefill
+                ? ([
+                    [
+                      t('sourcing.wizard.review.row.sourceRequisition'),
+                      sourcePrefill.label,
+                    ],
+                  ] as [string, React.ReactNode][])
+                : []),
+              // What the requisition could NOT carry, named rather than left to
+              // look carried. Inside a prefilled form an untouched default is
+              // indistinguishable from a derived value, so silence here would
+              // let 'KG' read as the requisition's answer when it is only the
+              // wizard's.
+              ...(sourcePrefill && sourcePrefill.uncarried.length > 0
+                ? ([
+                    [
+                      t('sourcing.wizard.review.row.notCarried'),
+                      sourcePrefill.uncarried
+                        .map((f) => t(`sourcing.wizard.review.notCarried.${f}`))
+                        .join(', '),
+                    ],
+                  ] as [string, React.ReactNode][])
+                : []),
               [t('sourcing.wizard.review.row.title'), draft.title || '—'],
               [
                 t('sourcing.wizard.review.row.category'),
@@ -1952,7 +2111,15 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     primary: {
                       label: t('sourcing.action.newRfq'),
                       icon: Plus,
-                      onClick: openWizard,
+                      // ⚠️ WRAPPED, NOT PASSED BARE. `openWizard` now takes an
+                      // optional prefill, and a bare handler reference hands it
+                      // React's click EVENT as that argument — truthy, so every
+                      // "New RFQ" press would prefill the draft from a
+                      // SyntheticEvent and blank the fields the parser reads.
+                      // Caught by the wizard's own numeric specs, which is why
+                      // an optional first parameter on a handler is worth this
+                      // comment rather than a silent arrow.
+                      onClick: () => openWizard(),
                     },
                   }
                 : {})}
@@ -3190,6 +3357,14 @@ const BuyerSourcing: React.FC = () => {
   const rfqsQuery = useRFQs();
   const quotationsQuery = useQuotations();
   const suppliersQuery = useSuppliers();
+  // ⚠️ **THE ELIGIBLE STATES ARE DERIVED FROM THE MACHINE, NOT TYPED HERE.** A
+  // literal `'Approved'` would be a second copy of the flow and would go stale
+  // the day it gains an edge — offering a requisition the dispatcher then
+  // refuses, or withholding one it would have accepted. The filter runs at the
+  // SEAM (`PRFilter`), not over a list in this component.
+  const requisitionsQuery = useRequisitions({
+    status: requisitionSourcingStates() as PRStatus[],
+  });
 
   if (
     rfqsQuery.isPending ||
@@ -3228,6 +3403,14 @@ const BuyerSourcing: React.FC = () => {
       baseRfqs={baseRfqs}
       quotations={quotationsQuery.data?.items ?? []}
       suppliers={suppliersQuery.data?.items ?? []}
+      // ⚠️ NOT part of the page's loading/error gate, deliberately. The
+      // requisition picker is an OPTIONAL entrance; a sourcing board that
+      // refused to render because the requisition read failed would take the
+      // whole page down for a convenience. An unavailable read yields an empty
+      // set, which the picker states honestly as "none available" — the same
+      // rendering as "none qualifies", because from the buyer's side both mean
+      // there is nothing here to start from.
+      sourceableRequisitions={requisitionsQuery.data?.items ?? []}
     />
   );
 };

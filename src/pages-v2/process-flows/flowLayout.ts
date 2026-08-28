@@ -100,6 +100,35 @@ export function verbOf(transitionId: string): string {
 }
 
 /**
+ * THE ENTITY-QUALIFIED verb — `t_rfq_create` → `rfq:create`.
+ *
+ * ⚠️ **`verbOf` ALONE IS AMBIGUOUS WHEREVER THE SOURCE LIVES ON ANOTHER
+ * MACHINE, AND THE `firedBy` PILL IS EXACTLY THAT PLACE.** A cascade names a
+ * transition on a DIFFERENT entity, so "Fired by create" rendered on the
+ * purchaseRequisition flow sits in a table that also lists `t_pr_create` — the
+ * reader has every reason to join them, and would be wrong. Measured across the
+ * shipped registry: FIVE rows render `firedBy`, and THREE of them name a verb
+ * that collides with a different transition visible in the same table
+ * (`t_quotation_award` and `t_quotation_reject` both say "award" beside
+ * `t_quotation_award`; `t_pr_source` says "create" beside `t_pr_create`).
+ *
+ * The form is NOT new: the `fansOut` pill has always rendered
+ * `advanceShipNotice:discrepancy`, and this makes the two directions of the same
+ * relationship read the same way. **All five rows are qualified, including the
+ * two that are not ambiguous today** — a pill that reads `entity:verb` on some
+ * rows and a bare verb on others teaches a reader that the two forms MEAN
+ * something different, which is a worse defect than the one it fixes and it
+ * arrives silently.
+ *
+ * `t_<entity>_<verb>` is format-validated in `validate.ts`, so this is a slice
+ * of the schema's own string — not a second name and not a lookup.
+ */
+export function entityVerbOf(transitionId: string): string {
+  const parts = transitionId.split('_');
+  return parts.length > 2 ? `${parts[1]}:${parts.slice(2).join('_')}` : transitionId;
+}
+
+/**
  * State → layer. BFS depth from the flow's seed states (`seededFrom`, which is
  * the birth set or `[initial]` per the analyzer's ruling 3).
  *
