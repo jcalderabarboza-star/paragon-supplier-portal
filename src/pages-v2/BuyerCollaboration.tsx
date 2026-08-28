@@ -32,15 +32,20 @@ import {
   useChaseEntries,
   useSupplierRollups,
   useResolveRequirementDispute,
+  useReviewRequirementResponse,
+  useAcceptRequirementResponse,
+  useDisputeRequirementResponse,
 } from '../services/query/sdcBuyerHooks';
 import { userVerbsFrom } from '../services/transitions';
 import SidePanel from '../components/ui-v2/SidePanel';
 import Button from '../components/ui-v2/Button';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import type { VerbAvailability } from '../services/transitions/handoff';
 import { useToast } from '../hooks/useToast';
 import type { RequirementResponse, DisputeEntry } from '../services/sdc';
 import { useRefusalText } from '../hooks/useRefusalText';
+import type { CommandResult } from '../services/data/types';
 
 // ────────────────────────────────────────────────────────────────────────────
 // BuyerCollaboration (SDC-1b) — the P2 planner consolidation view: the
@@ -95,9 +100,21 @@ const dsgVar = (h: number) => ({ '--plan-dsg-h': `${h}px` }) as React.CSSPropert
 // offering the button on the day somebody flips `surfaceable` to false - an
 // affordance outliving its own legality.
 const RESOLVE_VERB = 't_requirementresponse_resolve';
+// WAVE C — the three verbs that had a machine, an atom and no caller.
+const REVIEW_VERB = 't_requirementresponse_review';
+const ACCEPT_VERB = 't_requirementresponse_accept';
+const DISPUTE_VERB = 't_requirementresponse_dispute';
 
-const offersResolve = (state: string): boolean =>
-  userVerbsFrom('requirementResponse', state).some((v) => v.id === RESOLVE_VERB);
+/**
+ * Does the machine offer `verbId` from `state`? One helper for all four verbs,
+ * so no section can drift onto a status literal while its neighbours ask the
+ * flow. `userVerbsFrom` reads `surfaceable` (S51), so a verb the flow marks
+ * unsurfaced never reaches a list here even when its from-state matches.
+ */
+const offers = (verbId: string, state: string): boolean =>
+  userVerbsFrom('requirementResponse', state).some((v) => v.id === verbId);
+
+const offersResolve = (state: string): boolean => offers(RESOLVE_VERB, state);
 
 /** The response behind a row's state, when the state carries one. `awaiting`
  *  does not: nobody answered, so there is nothing to dispute or resolve. */
@@ -191,41 +208,85 @@ const DisputeExchange: React.FC<{ entries: readonly DisputeEntry[] }> = ({ entri
   );
 };
 
-const ResolvePanel: React.FC<{
+/**
+ * The words a verb requires, and the exchange they land in.
+ *
+ * ⚠️ **ONE PANEL FOR BOTH REASON-CARRYING VERBS, AND THAT IS THE INSTRUCTED
+ * SHAPE RATHER THAN A TIDINESS PREFERENCE.** `t_requirementresponse_dispute`
+ * and `_resolve` require the same thing of a planner — authored words, proven
+ * non-blank by the SAME policy hook (`rr_dispute_text_authored`), appended to
+ * the SAME ledger. Authoring a second panel beside a proven one is how the two
+ * drift, and the half that drifts is never the visible half: it is the blank
+ * guard, or the availability gate below.
+ *
+ * ⚠️ **THE COMMIT IS GATED ON AVAILABILITY, NOT ONLY THE CTA THAT OPENED IT
+ * (§84).** A panel is component state and component state OUTLIVES THE SEAT: a
+ * seat narrowed while this is open still has a live commit button under the old
+ * render. Gating only the entrance would be guarding one door of a mode reached
+ * more than one way.
+ *
+ * ⚠️ **AND IT IS BELT, NOT A LAYER — SAID PLAINLY RATHER THAN COUNTED AS
+ * COVERAGE.** No spec in this tree reaches it: the CTA gate closes the only
+ * entrance, so a withheld seat cannot open the panel to be asked about the
+ * commit, and the narrowing-while-open case needs an identity change between
+ * two renders that jsdom cannot stage here. A mutation probe therefore does NOT
+ * kill this line, and claiming it as a guarded path would be claiming coverage
+ * that does not exist — the same honesty the resolve commit's own comment keeps
+ * about its blank check. It is kept as what catches a future edit that removes
+ * the CTA gate, which is a real edit somebody will make.
+ */
+interface ReasonPanelCopy {
+  readonly title: string;
+  readonly heading: string;
+  readonly srLabel: string;
+  readonly placeholder: string;
+  readonly note: string;
+  readonly cancel: string;
+  readonly commit: string;
+}
+
+const ReasonPanel: React.FC<{
   row: CoverageRow | null;
   answer: string;
   onAnswer: (v: string) => void;
   pending: boolean;
   onCancel: () => void;
   onCommit: () => void;
-}> = ({ row, answer, onAnswer, pending, onCancel, onCommit }) => {
+  copy: ReasonPanelCopy;
+  availability: VerbAvailability;
+  testIds: { input: string; commit: string };
+}> = ({ row, answer, onAnswer, pending, onCancel, onCommit, copy, availability, testIds }) => {
   const { t } = useTranslation();
   const response = row ? responseOf(row.state) : null;
   const blank = answer.trim() === '';
+  const withheld = availability.kind !== 'held';
 
   return (
     <SidePanel
       open={row !== null}
       onClose={onCancel}
-      title={t('sdc.resolve.panelTitle', { material: row?.line.materialCode ?? '' })}
+      title={copy.title}
       footerActions={
         <>
           <Button variant="secondary" onClick={onCancel}>
-            {t('sdc.resolve.cancel')}
+            {copy.cancel}
           </Button>
           <Button
             variant="outline"
-            data-testid="sdc-resolve-commit"
-            disabled={pending || blank}
+            data-testid={testIds.commit}
+            disabled={pending || blank || withheld}
             onClick={onCommit}
           >
-            {t('sdc.resolve.commit')}
+            {copy.commit}
           </Button>
         </>
       }
     >
       {response && row && (
         <div className="flex flex-col gap-6">
+          {/* The seat, restated where the act is — a notice on the list is not a
+              notice on a panel a narrowing can leave standing open. */}
+          <HandoffNotice availability={availability} testId={`${testIds.commit}-handoff`} />
           <section>
             <h3 className="text-label mb-2 uppercase text-text-tertiary">
               {t('sdc.resolve.section.exchange')}
@@ -252,25 +313,20 @@ const ResolvePanel: React.FC<{
           </section>
 
           <section>
-            <h3 className="text-label mb-2 uppercase text-text-tertiary">
-              {t('sdc.resolve.section.answer')}
-            </h3>
-            <label htmlFor="sdc-resolution-reason" className="sr-only">
-              {t('sdc.resolve.srLabel', {
-                supplier: supplierName(response.supplierId),
-                material: row.line.materialCode,
-              })}
+            <h3 className="text-label mb-2 uppercase text-text-tertiary">{copy.heading}</h3>
+            <label htmlFor={testIds.input} className="sr-only">
+              {copy.srLabel}
             </label>
             <textarea
-              id="sdc-resolution-reason"
-              data-testid="sdc-resolve-input"
+              id={testIds.input}
+              data-testid={testIds.input}
               className="w-full rounded-md border border-border-subtle bg-bg-surface px-3 py-2 text-sm text-text-primary"
               rows={4}
-              placeholder={t('sdc.resolve.placeholder')}
+              placeholder={copy.placeholder}
               value={answer}
               onChange={(e) => onAnswer(e.target.value)}
             />
-            <div className="mt-2 text-xs text-text-tertiary">{t('sdc.resolve.note')}</div>
+            <div className="mt-2 text-xs text-text-tertiary">{copy.note}</div>
           </section>
         </div>
       )}
@@ -303,11 +359,85 @@ const BuyerCollaboration: React.FC = () => {
   // machine — and this decides whether the SEAT may fire it. Two different
   // questions; neither substitutes for the other.
   const resolveAvailability = useVerbAvailability('requirementresponse:dispute');
+
+  // WAVE C — the review lane's capture. Same discipline as `answer` above: a
+  // dispute is AUTHORED, so nothing seeds it.
+  const [disputing, setDisputing] = useState<CoverageRow | null>(null);
+  const [objection, setObjection] = useState('');
+  const reviewMutation = useReviewRequirementResponse();
+  const acceptMutation = useAcceptRequirementResponse();
+  const disputeMutation = useDisputeRequirementResponse();
+
+  // ⚠️ THREE ATOMS, THREE AVAILABILITIES, THREE NOTICES — never one gate over
+  // three controls. `requirementresponse:review`, `:accept` and `:dispute` are
+  // DISTINCT atoms that happen to sit in the same lane today; collapsing them
+  // onto one check would be asserting that co-residence is permanent, and the
+  // day a role catalogue splits the lane the surface would offer an act the
+  // dispatcher refuses. `:dispute` is deliberately resolved a second time here
+  // rather than reusing `resolveAvailability`: same atom, different verb, and
+  // §76 puts one notice in each verb's own slot.
+  const reviewAvailability = useVerbAvailability('requirementresponse:review');
+  const acceptAvailability = useVerbAvailability('requirementresponse:accept');
+  const disputeAvailability = useVerbAvailability('requirementresponse:dispute');
+
+  const closeDispute = () => {
+    setDisputing(null);
+    setObjection('');
+  };
+
+  // The response behind each open panel, resolved once. The panels need it only
+  // for the screen-reader label, and reaching for it inline would mean asking
+  // `responseOf` for a row that may be null in the middle of a props literal.
+  const resolvingResponse = resolving ? responseOf(resolving.state) : null;
+  const disputingResponse = disputing ? responseOf(disputing.state) : null;
   const { toast } = useToast();
 
   const closeResolve = () => {
     setResolving(null);
     setAnswer('');
+  };
+
+  /**
+   * WAVE C — the outcome contract every verb on this lane shares.
+   *
+   * ⚠️ **A REFUSAL STATES ITS REASON RATHER THAN PROCEEDING, AND THAT IS THE
+   * WHOLE REASON THIS IS ONE HELPER.** `dispatch` RESOLVES on a refusal — it
+   * does not throw — so a caller that only handles `onError` reports a refused
+   * command as a success. That mistake is invisible on the happy path and is
+   * exactly what gets re-made when three call sites each write their own
+   * handler. `refusalText` turns the machine's code into the seat's language;
+   * the raw code is the fallback so an untranslated refusal still says
+   * something true rather than nothing.
+   */
+  const outcomeOf = (
+    row: CoverageRow,
+    response: RequirementResponse,
+    prefix: 'review' | 'accept' | 'dispute' | 'resolve',
+    after?: () => void,
+  ) => {
+    const failed = (description?: string) =>
+      toast({
+        variant: 'warning' as const,
+        title: t(`sdc.${prefix}.failed.title`, { material: row.line.materialCode }),
+        ...(description ? { description } : {}),
+      });
+    return {
+      onSuccess: (res: CommandResult) => {
+        if (res.status === 'failed') {
+          failed(refusalText(res.reason) ?? res.reason);
+          return;
+        }
+        toast({
+          variant: 'success' as const,
+          title: t(`sdc.${prefix}.done.title`, { material: row.line.materialCode }),
+          description: t(`sdc.${prefix}.done.body`, {
+            supplier: supplierName(response.supplierId),
+          }),
+        });
+        after?.();
+      },
+      onError: () => failed(),
+    };
   };
 
   // SDC-4d — the live buyer-scoped consolidation reads (over svc.collaboration.*,
@@ -339,6 +469,33 @@ const BuyerCollaboration: React.FC = () => {
       rowsWithCoverage.filter((r) => {
         const response = responseOf(r.state);
         return response !== null && offersResolve(response.status);
+      }),
+    [rowsWithCoverage],
+  );
+
+  // WAVE C — the same derivation, once per verb. Each list is what the MACHINE
+  // offers from the row's own state, so a section empties itself the moment its
+  // verb stops being legal there and no list needs a status literal to say so.
+  const awaitingReviewRows = useMemo(
+    () =>
+      rowsWithCoverage.filter((r) => {
+        const response = responseOf(r.state);
+        return response !== null && offers(REVIEW_VERB, response.status);
+      }),
+    [rowsWithCoverage],
+  );
+
+  // ⚠️ KEYED ON `ACCEPT_VERB`, AND THE TWO CTAs IT CARRIES ARE ASSERTED
+  // CO-REACHABLE RATHER THAN ASSUMED. `_accept` and `_dispute` both declare
+  // `from: ['UnderReview']`, so one derivation genuinely serves both — but the
+  // dispute CTA re-asks the machine per row anyway (`offers(DISPUTE_VERB, …)`),
+  // because a list keyed on one verb that renders a control for another is the
+  // shape that survives a flow edit while quietly becoming a lie.
+  const underReviewRows = useMemo(
+    () =>
+      rowsWithCoverage.filter((r) => {
+        const response = responseOf(r.state);
+        return response !== null && offers(ACCEPT_VERB, response.status);
       }),
     [rowsWithCoverage],
   );
@@ -760,6 +917,145 @@ const BuyerCollaboration: React.FC = () => {
         )}
       </section>
 
+      {/* WAVE C - RESPONSES AWAITING REVIEW (`t_requirementresponse_review`).
+          Plain DOM beside the chase list, deliberately NOT an action cell in the
+          DSG: that grid's body is virtualized and lays out NO ROWS under jsdom's
+          zero-height viewport, so an action placed there ships with browser QA
+          and nothing else behind it. The disputes section below learned that the
+          hard way; this copies the shape rather than rediscovering it. */}
+      <section className="mb-8" data-testid="sdc-awaiting-review">
+        <h2 className="mb-1 text-base font-semibold text-text-primary">
+          {t('sdc.review.title')}
+        </h2>
+        <p className="mb-3 text-sm text-text-secondary">{t('sdc.review.subtitle')}</p>
+        <div className="mb-3">
+          <HandoffNotice availability={reviewAvailability} testId="handoff-sdc-review" />
+        </div>
+        {awaitingReviewRows.length === 0 ? (
+          <p className="text-sm text-text-tertiary">{t('sdc.review.none')}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {awaitingReviewRows.map((row) => {
+              const response = responseOf(row.state)!;
+              return (
+                <li
+                  key={row.id}
+                  className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm"
+                >
+                  <span className={CHIP_INFO}>{t('sdc.review.submitted')}</span>
+                  <span className="font-medium text-text-primary">
+                    {supplierName(row.line.supplierId)}
+                  </span>
+                  <Data className="text-xs">{row.line.materialCode}</Data>
+                  <Data className="text-xs">{row.line.periodBucket}</Data>
+                  <Data className="text-xs text-text-tertiary">{response.id}</Data>
+                  {reviewAvailability.kind === 'held' && (
+                    <button
+                      type="button"
+                      data-testid="sdc-review-cta"
+                      disabled={reviewMutation.isPending}
+                      title={t('sdc.review.ctaTitle', {
+                        material: row.line.materialCode,
+                        period: row.line.periodBucket,
+                      })}
+                      onClick={() =>
+                        reviewMutation.mutate(
+                          { responseId: response.id, supplierId: response.supplierId },
+                          outcomeOf(row, response, 'review'),
+                        )
+                      }
+                      className="ml-auto rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action transition-colors hover:bg-action-soft disabled:opacity-50"
+                    >
+                      {t('sdc.review.cta')}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
+      {/* WAVE C - UNDER REVIEW: accept or dispute. TWO verbs on ONE row, and
+          they are CO-REACHABLE (both declare `from: ['UnderReview']`), which is
+          precisely why each gets its own notice in its own slot rather than one
+          notice for the section. §76 retired the group collapse for verbs that
+          were NOT co-reachable on any one document; these are, and the rule
+          lands the same way from the other side. */}
+      <section className="mb-8" data-testid="sdc-under-review">
+        <h2 className="mb-1 text-base font-semibold text-text-primary">
+          {t('sdc.underReview.title')}
+        </h2>
+        <p className="mb-3 text-sm text-text-secondary">{t('sdc.underReview.subtitle')}</p>
+        <div className="mb-3 flex flex-col gap-2">
+          <HandoffNotice availability={acceptAvailability} testId="handoff-sdc-accept" />
+          <HandoffNotice availability={disputeAvailability} testId="handoff-sdc-dispute" />
+        </div>
+        {underReviewRows.length === 0 ? (
+          <p className="text-sm text-text-tertiary">{t('sdc.underReview.none')}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {underReviewRows.map((row) => {
+              const response = responseOf(row.state)!;
+              return (
+                <li
+                  key={row.id}
+                  className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle bg-bg-surface px-4 py-3 text-sm"
+                >
+                  <span className={CHIP_INFO}>{t('sdc.underReview.chip')}</span>
+                  <span className="font-medium text-text-primary">
+                    {supplierName(row.line.supplierId)}
+                  </span>
+                  <Data className="text-xs">{row.line.materialCode}</Data>
+                  <Data className="text-xs">{row.line.periodBucket}</Data>
+                  <Data className="text-xs text-text-tertiary">{response.id}</Data>
+                  <span className="ml-auto flex items-center gap-2">
+                    {acceptAvailability.kind === 'held' && (
+                      <button
+                        type="button"
+                        data-testid="sdc-accept-cta"
+                        disabled={acceptMutation.isPending}
+                        title={t('sdc.accept.ctaTitle', {
+                          material: row.line.materialCode,
+                          period: row.line.periodBucket,
+                        })}
+                        onClick={() =>
+                          acceptMutation.mutate(
+                            { responseId: response.id, supplierId: response.supplierId },
+                            outcomeOf(row, response, 'accept'),
+                          )
+                        }
+                        className="rounded-md border border-action bg-transparent px-3 py-1.5 text-xs font-medium text-action transition-colors hover:bg-action-soft disabled:opacity-50"
+                      >
+                        {t('sdc.accept.cta')}
+                      </button>
+                    )}
+                    {disputeAvailability.kind === 'held' &&
+                      offers(DISPUTE_VERB, response.status) && (
+                        <button
+                          type="button"
+                          data-testid="sdc-dispute-cta"
+                          title={t('sdc.dispute.ctaTitle', {
+                            material: row.line.materialCode,
+                            period: row.line.periodBucket,
+                          })}
+                          onClick={() => {
+                            setDisputing(row);
+                            setObjection('');
+                          }}
+                          className="rounded-md border border-border-subtle bg-transparent px-3 py-1.5 text-xs font-medium text-text-secondary transition-colors hover:bg-bg-hover"
+                        >
+                          {t('sdc.dispute.cta')}
+                        </button>
+                      )}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       {/* R1b - DISPUTES AWAITING RESOLUTION.
           ⚠️ THIS IS NOT WHERE THE ACTION WAS FIRST BUILT, and the move is a
           finding rather than a preference. It was an action cell in the DSG,
@@ -822,13 +1118,40 @@ const BuyerCollaboration: React.FC = () => {
         )}
       </section>
 
-      {/* R1b - the resolve capture, in the invoice dispute panel's shape. */}
-      <ResolvePanel
+      {/* R1b - the resolve capture, in the invoice dispute panel's shape.
+          WAVE C - and now ONE component, shared with the dispute capture below.
+
+          ⚠️ EACH PANEL IS MOUNTED ONLY WHILE ITS OWN ROW IS OPEN, AND THAT IS A
+          FIX RATHER THAN A STYLE. `SidePanel` renders its DOM unconditionally
+          and merely translates it off-screen, so a second ALWAYS-MOUNTED panel
+          puts a duplicate of every control - two Cancels, two commits, two
+          textareas - permanently in the tree. `aria-hidden` hides them from a
+          screen reader and from nothing else. It surfaced as ten red tests the
+          moment the second panel landed, which is the cheap way to find it.
+          The two differ in their verb, their words and their atom; everything
+          they have in common lives in `ReasonPanel` rather than in two files
+          that agree today. */}
+      {resolving && (
+      <ReasonPanel
         row={resolving}
         answer={answer}
         onAnswer={setAnswer}
         pending={resolveMutation.isPending}
         onCancel={closeResolve}
+        availability={resolveAvailability}
+        testIds={{ input: 'sdc-resolve-input', commit: 'sdc-resolve-commit' }}
+        copy={{
+          title: t('sdc.resolve.panelTitle', { material: resolving?.line.materialCode ?? '' }),
+          heading: t('sdc.resolve.section.answer'),
+          srLabel: t('sdc.resolve.srLabel', {
+            supplier: supplierName(resolvingResponse?.supplierId ?? ''),
+            material: resolving?.line.materialCode ?? '',
+          }),
+          placeholder: t('sdc.resolve.placeholder'),
+          note: t('sdc.resolve.note'),
+          cancel: t('sdc.resolve.cancel'),
+          commit: t('sdc.resolve.commit'),
+        }}
         onCommit={() => {
           const row = resolving;
           const response = row ? responseOf(row.state) : null;
@@ -856,40 +1179,56 @@ const BuyerCollaboration: React.FC = () => {
               supplierId: response.supplierId,
               resolutionReason: answer.trim(),
             },
-            {
-              onSuccess: (res) => {
-                if (res.status === 'failed') {
-                  toast({
-                    variant: 'warning',
-                    title: t('sdc.resolve.failed.title', {
-                      material: row.line.materialCode,
-                    }),
-                    description: refusalText(res.reason) ?? res.reason,
-                  });
-                  return;
-                }
-                toast({
-                  variant: 'success',
-                  title: t('sdc.resolve.done.title', {
-                    material: row.line.materialCode,
-                  }),
-                  description: t('sdc.resolve.done.body', {
-                    supplier: supplierName(response.supplierId),
-                  }),
-                });
-                closeResolve();
-              },
-              onError: () =>
-                toast({
-                  variant: 'warning',
-                  title: t('sdc.resolve.failed.title', {
-                    material: row.line.materialCode,
-                  }),
-                }),
-            },
+            outcomeOf(row, response, 'resolve', closeResolve),
           );
         }}
       />
+      )}
+
+      {/* WAVE C - the dispute capture. The SAME panel, the SAME policy guard,
+          the SAME ledger - only the verb, its atom and its words differ. */}
+      {disputing && (
+      <ReasonPanel
+        row={disputing}
+        answer={objection}
+        onAnswer={setObjection}
+        pending={disputeMutation.isPending}
+        onCancel={closeDispute}
+        availability={disputeAvailability}
+        testIds={{ input: 'sdc-dispute-input', commit: 'sdc-dispute-commit' }}
+        copy={{
+          title: t('sdc.dispute.panelTitle', { material: disputing?.line.materialCode ?? '' }),
+          heading: t('sdc.dispute.section.objection'),
+          srLabel: t('sdc.dispute.srLabel', {
+            supplier: supplierName(disputingResponse?.supplierId ?? ''),
+            material: disputing?.line.materialCode ?? '',
+          }),
+          placeholder: t('sdc.dispute.placeholder'),
+          note: t('sdc.dispute.note'),
+          cancel: t('sdc.dispute.cancel'),
+          commit: t('sdc.dispute.commit'),
+        }}
+        onCommit={() => {
+          const row = disputing;
+          const response = row ? responseOf(row.state) : null;
+          if (!row || !response) return;
+          // Same shape and same honesty as the resolve commit above: unreachable
+          // while `disabled` holds, kept as what catches an edit that removes it.
+          if (!objection.trim()) {
+            toast({ variant: 'warning', title: t('sdc.dispute.missingReason') });
+            return;
+          }
+          disputeMutation.mutate(
+            {
+              responseId: response.id,
+              supplierId: response.supplierId,
+              disputeReason: objection.trim(),
+            },
+            outcomeOf(row, response, 'dispute', closeDispute),
+          );
+        }}
+      />
+      )}
     </AppShellV2>
   );
 };

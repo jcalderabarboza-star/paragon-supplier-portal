@@ -11,10 +11,21 @@ export const sdcConsolidationEn: Record<string, string> = {
   'sdc.meta.summary':
     '{{lines}} published lines · {{suppliers}} suppliers · plan {{planVersion}} — sample clock, as of {{asOf}}',
 
-  // — Honesty banner (SIMULATED feed; read-only end-to-end) —
-  'sdc.honesty.title': 'Consolidation view — read-only except dispute resolution',
+  // ⚠️ — Honesty banner. THE CARDINALITY IS GONE, AND ITS REMOVAL IS THE FIX.
+  // This read *"read-only except dispute resolution"* / *"ONE action writes"*
+  // and was TRUE when R1b wrote it. Wave C added three more writing verbs to
+  // this page and the sentence went false with no file edited and no test able
+  // to fail for it — `FLOOR-IN-PROSE-01` in a locale map. The remedy this
+  // project rules for that class is DELETION IN FAVOUR OF A DERIVATION, never
+  // correction to a newer number: *"four actions write"* is the same defect
+  // with a fresher date, and it would go stale again on the next wave. So the
+  // banner now names the KIND of thing that writes and lets the surface show
+  // which — the sections are derived from the machine, so they cannot lie about
+  // it. `sdcHonestyNoCardinality.guard.test.ts` is what keeps a number from
+  // creeping back in. —
+  'sdc.honesty.title': 'Consolidation view — reads are simulated; the review lane writes',
   'sdc.honesty.body':
-    'Every figure below is simulated sample data. This view consolidates the published forecast against supplier confirmations. ONE action writes: resolving a supplier dispute — nothing else here edits, dispatches, or publishes. The SOMO C8 feed has not landed — the page flips live only when it does.',
+    'Every figure below is simulated sample data. This view consolidates the published forecast against supplier confirmations. The actions offered on this page write to the supplier’s own response — each one is listed in its own section, and a section is empty when the machine offers nothing there. Nothing else here edits, dispatches, or publishes. The SOMO C8 feed has not landed — the page flips live only when it does.',
 
   // — Period filter bar (the PERIOD owns the commitment class; lines echo) —
   'sdc.period.all': 'All periods',
@@ -114,6 +125,49 @@ export const sdcConsolidationEn: Record<string, string> = {
   'sdc.resolve.done.title': 'Dispute resolved — {{material}}',
   'sdc.resolve.done.body': '{{supplier}} can now read your answer on their response.',
   'sdc.resolve.failed.title': 'Could not resolve the dispute on {{material}}',
+
+  // — WAVE C · the review lane: review → accept | dispute —
+  'sdc.review.title': 'Responses awaiting your review',
+  'sdc.review.subtitle':
+    'Every response the machine says you can take under review. Reviewing does not decide it — it moves the line onto your desk and tells the supplier you have it.',
+  'sdc.review.none': 'No response is waiting for review.',
+  'sdc.review.submitted': 'Submitted',
+  'sdc.review.cta': 'Start review',
+  'sdc.review.ctaTitle': 'Take this response under review — {{material}} · {{period}}',
+  'sdc.review.done.title': 'Under review — {{material}}',
+  'sdc.review.done.body': '{{supplier}} can see that you have taken their response up.',
+  'sdc.review.failed.title': 'Could not take {{material}} under review',
+
+  'sdc.underReview.title': 'Under review — accept or dispute',
+  'sdc.underReview.subtitle':
+    'Responses on your desk. Accepting closes the line; disputing sends the supplier words they can answer.',
+  'sdc.underReview.none': 'Nothing is on your desk.',
+  'sdc.underReview.chip': 'Under review',
+
+  // ⚠️ THE TITLE SAYS TERMINAL BECAUSE THE FLOW SAYS TERMINAL — no transition in
+  // `requirementResponse.flow.ts` declares `Accepted` as a `from` state, so this
+  // is the last move the line ever makes. Derived, not asserted in prose.
+  'sdc.accept.cta': 'Accept',
+  'sdc.accept.ctaTitle': 'Accept this confirmation and close the line — {{material}} · {{period}}',
+  'sdc.accept.done.title': 'Confirmation accepted — {{material}}',
+  'sdc.accept.done.body': '{{supplier}} is committed on this line; it makes no further move.',
+  'sdc.accept.failed.title': 'Could not accept {{material}}',
+
+  'sdc.dispute.cta': 'Dispute',
+  'sdc.dispute.ctaTitle': 'Dispute this confirmation — {{material}} · {{period}}',
+  'sdc.dispute.panelTitle': 'Dispute confirmation — {{material}}',
+  'sdc.dispute.section.objection': 'Your objection',
+  'sdc.dispute.srLabel': 'Your objection to {{supplier}} on {{material}}',
+  'sdc.dispute.placeholder': 'What is wrong with this confirmation, in words the supplier can answer.',
+  'sdc.dispute.note':
+    'This joins the exchange on the supplier’s own line. It is never translated and never edited.',
+  'sdc.dispute.missingReason': 'A dispute needs an objection the supplier can answer.',
+  'sdc.dispute.cancel': 'Cancel',
+  'sdc.dispute.commit': 'Raise dispute',
+  'sdc.dispute.done.title': 'Dispute raised — {{material}}',
+  'sdc.dispute.done.body': '{{supplier}} can now read your objection on their response.',
+  'sdc.dispute.failed.title': 'Could not dispute {{material}}',
+
 };
 
 export const sdcConsolidationId: Record<string, string> = {
@@ -125,10 +179,10 @@ export const sdcConsolidationId: Record<string, string> = {
   'sdc.meta.summary':
     '{{lines}} baris terbit · {{suppliers}} pemasok · rencana {{planVersion}} — jam sampel, per {{asOf}}',
 
-  // — Spanduk kejujuran —
-  'sdc.honesty.title': 'Tampilan konsolidasi — hanya-baca kecuali penyelesaian sanggahan',
+  // — Spanduk kejujuran. Kardinalitas dihapus, bukan diperbarui (lihat EN). —
+  'sdc.honesty.title': 'Tampilan konsolidasi — bacaan disimulasikan; jalur telaah menulis',
   'sdc.honesty.body':
-    'Semua angka di bawah adalah data sampel simulasi. Tampilan ini mengonsolidasikan prakiraan terbit terhadap konfirmasi pemasok. SATU tindakan menulis: menyelesaikan sanggahan pemasok — selain itu tidak ada yang mengubah, mengirim, atau menerbitkan. Feed SOMO C8 belum tersedia — halaman ini beralih live hanya setelah feed itu ada.',
+    'Semua angka di bawah adalah data sampel simulasi. Tampilan ini mengonsolidasikan prakiraan terbit terhadap konfirmasi pemasok. Tindakan yang ditawarkan di halaman ini menulis ke tanggapan pemasok sendiri — masing-masing tercantum di bagiannya sendiri, dan sebuah bagian kosong ketika mesin tidak menawarkan apa pun di sana. Selain itu tidak ada yang mengubah, mengirim, atau menerbitkan. Feed SOMO C8 belum tersedia — halaman ini beralih live hanya setelah feed itu ada.',
 
   // — Bilah saring periode —
   'sdc.period.all': 'Semua periode',
@@ -199,7 +253,7 @@ export const sdcConsolidationId: Record<string, string> = {
   // — Kosong / pengganti —
   'sdc.empty.dash': '—',
 
-  // — R1b · SATU-SATUNYA TULISAN DI HALAMAN INI: menyelesaikan sanggahan —
+  // — R1b · penyelesaian sanggahan (bukan lagi satu-satunya tulisan: lihat Wave C) —
   'sdc.disputes.title': 'Sanggahan menunggu penyelesaian Anda',
   'sdc.disputes.subtitle':
     'Setiap tanggapan yang menurut mesin dapat Anda selesaikan. Menjawabnya memerlukan kata-kata yang akan dibaca pemasok pada baris mereka sendiri.',
@@ -223,4 +277,45 @@ export const sdcConsolidationId: Record<string, string> = {
   'sdc.resolve.done.title': 'Sanggahan diselesaikan — {{material}}',
   'sdc.resolve.done.body': '{{supplier}} kini dapat membaca jawaban Anda pada tanggapan mereka.',
   'sdc.resolve.failed.title': 'Tidak dapat menyelesaikan sanggahan pada {{material}}',
+
+  // — WAVE C · jalur telaah: telaah → terima | sanggah —
+  'sdc.review.title': 'Tanggapan menunggu telaah Anda',
+  'sdc.review.subtitle':
+    'Setiap tanggapan yang menurut mesin dapat Anda telaah. Menelaah belum memutuskan apa pun — ia memindahkan baris ini ke meja Anda dan memberi tahu pemasok bahwa Anda sudah menerimanya.',
+  'sdc.review.none': 'Tidak ada tanggapan yang menunggu telaah.',
+  'sdc.review.submitted': 'Terkirim',
+  'sdc.review.cta': 'Mulai telaah',
+  'sdc.review.ctaTitle': 'Ambil tanggapan ini untuk ditelaah — {{material}} · {{period}}',
+  'sdc.review.done.title': 'Sedang ditelaah — {{material}}',
+  'sdc.review.done.body': '{{supplier}} dapat melihat bahwa Anda sudah menerima tanggapan mereka.',
+  'sdc.review.failed.title': 'Tidak dapat menelaah {{material}}',
+
+  'sdc.underReview.title': 'Sedang ditelaah — terima atau sanggah',
+  'sdc.underReview.subtitle':
+    'Tanggapan di meja Anda. Menerima menutup baris ini; menyanggah mengirimkan kata-kata yang dapat dijawab pemasok.',
+  'sdc.underReview.none': 'Tidak ada apa pun di meja Anda.',
+  'sdc.underReview.chip': 'Sedang ditelaah',
+
+  'sdc.accept.cta': 'Terima',
+  'sdc.accept.ctaTitle': 'Terima konfirmasi ini dan tutup baris — {{material}} · {{period}}',
+  'sdc.accept.done.title': 'Konfirmasi diterima — {{material}}',
+  'sdc.accept.done.body': '{{supplier}} terikat pada baris ini; baris ini tidak bergerak lagi.',
+  'sdc.accept.failed.title': 'Tidak dapat menerima {{material}}',
+
+  'sdc.dispute.cta': 'Sanggah',
+  'sdc.dispute.ctaTitle': 'Sanggah konfirmasi ini — {{material}} · {{period}}',
+  'sdc.dispute.panelTitle': 'Sanggah konfirmasi — {{material}}',
+  'sdc.dispute.section.objection': 'Keberatan Anda',
+  'sdc.dispute.srLabel': 'Keberatan Anda kepada {{supplier}} atas {{material}}',
+  'sdc.dispute.placeholder':
+    'Apa yang keliru pada konfirmasi ini, dalam kata-kata yang dapat dijawab pemasok.',
+  'sdc.dispute.note':
+    'Ini bergabung dengan percakapan pada baris pemasok sendiri. Tidak pernah diterjemahkan dan tidak pernah diubah.',
+  'sdc.dispute.missingReason': 'Sanggahan memerlukan keberatan yang dapat dijawab pemasok.',
+  'sdc.dispute.cancel': 'Batal',
+  'sdc.dispute.commit': 'Ajukan sanggahan',
+  'sdc.dispute.done.title': 'Sanggahan diajukan — {{material}}',
+  'sdc.dispute.done.body': '{{supplier}} kini dapat membaca keberatan Anda pada tanggapan mereka.',
+  'sdc.dispute.failed.title': 'Tidak dapat menyanggah {{material}}',
+
 };
