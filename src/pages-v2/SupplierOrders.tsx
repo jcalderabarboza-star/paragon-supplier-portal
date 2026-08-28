@@ -355,8 +355,30 @@ const SupplierOrders: React.FC = () => {
     selected !== null && deliveryDate !== selected.requestedDeliveryDate;
 
   const panelTitle = selected ? t('supplierOrders.panel.title', { poNumber: selected.poNumber }) : '';
+  // ⚠️ **THE LABEL IS SEAT-DERIVED, BECAUSE THE ACT BEHIND IT ALREADY WAS.**
+  // §84 made the ACT honest — `effectivePanelMode` collapses `editing` to
+  // `detail` for a seat that does not hold `po:confirm`, so pressing this on an
+  // actionable PO opens the order and renders the handoff notice. It did NOT
+  // make the LABEL honest: the button still read "Confirm" / "Konfirmasi" and
+  // still wore `outline`, DP-2's primary-action register. A control that says
+  // Confirm and cannot confirm is the label-names-the-wrong-verb class, and a
+  // handler-based census is blind to it — the handler is correct.
+  //
+  // ⚠️ **NO SECOND CONTROL AND NO SECOND NOTICE (§76 INTACT).** The unheld seat
+  // falls back to `view`, a label this page already ships in both locales, which
+  // names exactly what pressing it now does. The notice it lands on is the one
+  // ALREADY THERE in the detail footer. `confirmAvailability` is seat-level, not
+  // per-row, so this costs no per-row derivation.
+  //
+  // `createAsn` is untouched: it holds no atom (its handler is a toast —
+  // ungoverned per §75e), so there is nothing to narrow it against.
+  const canConfirmHere = confirmAvailability.kind === 'held';
+
   const panelActionLabel = (po: PurchaseOrder): string => {
-    if (ACTION_STATUSES.includes(po.status)) return t('supplierOrders.action.confirm');
+    if (ACTION_STATUSES.includes(po.status))
+      return canConfirmHere
+        ? t('supplierOrders.action.confirm')
+        : t('supplierOrders.action.view');
     if (po.status === POStatus.CONFIRMED) return t('supplierOrders.action.createAsn');
     return t('supplierOrders.action.view');
   };
@@ -495,7 +517,7 @@ const SupplierOrders: React.FC = () => {
                 <TableCell className="text-right">
                   <Button
                     variant={
-                      ACTION_STATUSES.includes(po.status)
+                      ACTION_STATUSES.includes(po.status) && canConfirmHere
                         ? 'outline'
                         : 'secondary'
                     }

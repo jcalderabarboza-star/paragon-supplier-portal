@@ -758,7 +758,27 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   const crumb = [t('rfqs.crumb.section'), t('rfqs.crumb.page')];
   const submitMutation = useQuotationSubmit();
   const [activeTab, setActiveTab] = useState<TabKey>('open');
+  const quoteAvailability = useVerbAvailability('quotation:submit');
   const [quotePanelRFQ, setQuotePanelRFQ] = useState<OpenRFQ | null>(null);
+  // ⚠️ **THE PANEL IS DERIVED, NOT READ — `SupplierOrders.effectivePanelMode`'s
+  // CONSTRUCTION, NOT A SECOND ONE.** `quotation:submit` is COMMERCIAL's, and
+  // the entrance is correctly guarded: `RFQCard` renders the handoff notice in
+  // the button's own slot for a seat that does not hold it. But the OPEN panel
+  // is component state in THIS component, and component state outlives the
+  // seat — a seat narrowed WHILE the panel stands open kept a live `submitQuote`
+  // behind a door that was already shut. Reachable, not a dead branch, and
+  // `SupplierShipments` states the same reason for gating its wizard TAB rather
+  // than the button that opens it.
+  //
+  // Collapsing to `null` answers every entrance in ONE statement and keeps §76
+  // intact: the seat lands back on the card, where the notice for this verb
+  // ALREADY IS, rather than meeting a second one inside the panel. `open=`, the
+  // title, the body and `submitQuote`'s own early return all read the derived
+  // value, so there is no door left that reads the raw one. The raw state is
+  // left alone rather than cleared: a seat that is widened again finds its
+  // panel where it left it, which is `effectivePanelMode`'s behaviour too.
+  const effectiveQuotePanelRFQ =
+    quoteAvailability.kind === 'held' ? quotePanelRFQ : null;
   const [form, setForm] = useState<QuoteForm>(emptyQuoteForm);
 
   // The supplier's OWN submitted quotations (real read) drive My-Quotes AND prune
@@ -863,8 +883,8 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // same currency-aware formatter as the stored quote and the buyer's
   // comparison — one rendering of a bid, from preview to award.
   const totalPrice =
-    quotePanelRFQ && bidPrice.ok
-      ? formatMoney(bidPrice.value * quotePanelRFQ.totalQty, form.currency)
+    effectiveQuotePanelRFQ && bidPrice.ok
+      ? formatMoney(bidPrice.value * effectiveQuotePanelRFQ.totalQty, form.currency)
       : '—';
 
   // REAL submit — dispatches t_quotation_submit through the command spine (the
@@ -873,7 +893,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
   // quotations re-read, the quote lands in My-Quotes, and its RFQ leaves the open
   // list. Replaces the retired local-state masquerade.
   const submitQuote = async () => {
-    if (!quotePanelRFQ) return;
+    if (!effectiveQuotePanelRFQ) return;
     // The price gate fires FIRST and alone, and it BLOCKS: a price that cannot be
     // read — or a zero, which reads fine but is not a bid — must never become a
     // submitted quotation, because a submitted quotation is immediately a
@@ -935,7 +955,7 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       return;
     }
     const payload = buildQuotationSubmitPayload({
-      rfqId: quotePanelRFQ.id,
+      rfqId: effectiveQuotePanelRFQ.id,
       supplierId,
       // The SAME parsed value the gate above judged — the builder can no longer
       // re-read the string and reach a different number (CP-0 §4).
@@ -982,8 +1002,8 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       }
       toast({
         variant: 'success',
-        title: t('rfqs.toast.submitted.title', { rfq: quotePanelRFQ.rfqNumber }),
-        description: t('rfqs.toast.submitted.body', { date: quotePanelRFQ.deadline }),
+        title: t('rfqs.toast.submitted.title', { rfq: effectiveQuotePanelRFQ.rfqNumber }),
+        description: t('rfqs.toast.submitted.body', { date: effectiveQuotePanelRFQ.deadline }),
       });
       setQuotePanelRFQ(null);
       setForm(emptyQuoteForm);
@@ -1062,56 +1082,68 @@ const RfqWorkspace: React.FC<RfqWorkspaceProps> = ({
       {activeTab === 'history' && <AwardsTab rows={awardRows} />}
 
       <SidePanel
-        open={quotePanelRFQ !== null}
+        open={effectiveQuotePanelRFQ !== null}
         onClose={() => setQuotePanelRFQ(null)}
         title={
-          quotePanelRFQ ? t('rfqs.panel.title', { rfq: quotePanelRFQ.rfqNumber }) : ''
+          effectiveQuotePanelRFQ
+            ? t('rfqs.panel.title', { rfq: effectiveQuotePanelRFQ.rfqNumber })
+            : ''
         }
+        // ⚠️ **THE FOOTER IS MOUNTED BY THE DERIVED VALUE, NOT BY `open`, BECAUSE
+        //    `SidePanel` KEEPS ITS SUBTREE IN THE DOM WHEN CLOSED.** Closing is a
+        //    `translate-x-full` plus `aria-hidden` — the overlay takes
+        //    `pointer-events-none`, the `aside` does not — so a "closed" panel
+        //    still holds a live, clickable submit button. Deriving `open=` alone
+        //    would have moved the commit off-screen and called it gated, which is
+        //    the same shape as gating one door out of three. The BODY below was
+        //    already conditional; the footer now matches it.
         footerActions={
-          <>
-            <Button
-              variant="secondary"
-              onClick={() => setQuotePanelRFQ(null)}
-            >
-              {t('rfqs.panel.cancel')}
-            </Button>
-            <Button
-              variant="outline"
-              icon={Send}
-              // 2e-b-1 — disabled while an unreadable lead time stands, and
-              // while a same-day acknowledgement is owed. `submitQuote` re-checks
-              // both; this is the visible half of the same gate.
-              disabled={submitMutation.isPending || submitBlocked}
-              onClick={submitQuote}
-            >
-              {submitMutation.isPending ? t('rfqs.panel.submitting') : t('rfqs.panel.submit')}
-            </Button>
-          </>
+          effectiveQuotePanelRFQ ? (
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => setQuotePanelRFQ(null)}
+              >
+                {t('rfqs.panel.cancel')}
+              </Button>
+              <Button
+                variant="outline"
+                icon={Send}
+                // 2e-b-1 — disabled while an unreadable lead time stands, and
+                // while a same-day acknowledgement is owed. `submitQuote` re-checks
+                // both; this is the visible half of the same gate.
+                disabled={submitMutation.isPending || submitBlocked}
+                onClick={submitQuote}
+              >
+                {submitMutation.isPending ? t('rfqs.panel.submitting') : t('rfqs.panel.submit')}
+              </Button>
+            </>
+          ) : undefined
         }
       >
-        {quotePanelRFQ && (
+        {effectiveQuotePanelRFQ && (
           <div className="space-y-5">
             <section className="bg-bg-hover border border-border-subtle rounded-md px-4 py-3">
               <div className="text-sm font-semibold text-text-primary">
-                {quotePanelRFQ.material}
+                {effectiveQuotePanelRFQ.material}
               </div>
               <div className="flex flex-wrap gap-4 mt-2 text-xs text-text-tertiary">
                 <span>
                   {t('rfqs.card.qty')}{' '}
                   <strong className="text-text-primary">
-                    {quotePanelRFQ.qty}
+                    {effectiveQuotePanelRFQ.qty}
                   </strong>
                 </span>
                 <span>
                   {t('rfqs.card.deadline')}{' '}
                   <strong
                     className={
-                      quotePanelRFQ.daysRemaining <= 7
+                      effectiveQuotePanelRFQ.daysRemaining <= 7
                         ? 'text-danger'
                         : 'text-text-primary'
                     }
                   >
-                    {quotePanelRFQ.deadline}
+                    {effectiveQuotePanelRFQ.deadline}
                   </strong>
                 </span>
               </div>

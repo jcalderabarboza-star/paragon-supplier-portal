@@ -35,6 +35,8 @@ import { formatNumber } from '../lib/format';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
 import { useRefusalText } from '../hooks/useRefusalText';
+import { refusedByPolicy } from '../services/transitions/refusalMessage';
+import { POLICY_HOOKS } from '../services/transitions/policyHooks';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Comm Hub C4d — the buyer IN-PLACE TRIAGE CONFIRM (DEC-COMMS-PRIMARY).
@@ -279,7 +281,13 @@ const BuyerChannelTriage: React.FC<BuyerChannelTriageProps> = ({ onRecorded }) =
         if (res.status === 'failed') {
           // CP-2 · B1 — a NAMED dispatch refusal gets its own sentence rather
           // than leaking the server string; anything else falls back as before.
-          const named = (res.reason ?? '').startsWith('UNKNOWN_MATERIAL')
+          //
+          // ⚠️ **SAME UNSATISFIABLE SHAPE AS THE GR WIZARD'S.**
+          // `UNKNOWN_MATERIAL` is the `sdc_material_known` hook's OWN reason, so
+          // it arrives behind `POLICY_REJECTED:sdc_material_known:` and a head
+          // test never matched. The buyer has been reading the raw hook string
+          // while a full EN+ID remedy sat unused one line away.
+          const named = refusedByPolicy(res.reason, POLICY_HOOKS.SDC_MATERIAL_KNOWN)
             ? t('commHub.refusal.UNKNOWN_MATERIAL')
             : undefined;
           results.push({

@@ -17,16 +17,16 @@
 
 import type { BidCurrency } from '../../lib/currencyPolicy';
 import { POLICY_HOOKS } from '../../services/transitions/policyHooks';
-
-/**
- * The dispatcher's rejection string for the currency policy (2e-c-2). Built FROM
- * the hook-name constant, never retyped: a renamed hook must not be able to
- * silently detach the supplier's message from the refusal it explains.
- */
-const CURRENCY_REFUSAL = `POLICY_REJECTED:${POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED}:`;
+import { refusedByPolicy } from '../../services/transitions/refusalMessage';
 
 /**
  * Did this dispatch fail because the bid currency is not permitted?
+ *
+ * The local `POLICY_REJECTED:<hook>:` construction that stood above this is
+ * retired in favour of `refusedByPolicy`, which is the same construction shared
+ * with the two surfaces that were building it WRONG (by the code inside the
+ * hook's reason rather than by the hook). This site was the one that had it
+ * right, so it becomes the shared version rather than a third copy of it.
  *
  * `CommandResult.reason` is documented as MACHINE-readable, and the submit toast
  * has always shown it verbatim — so an off-list currency would greet the
@@ -38,7 +38,7 @@ const CURRENCY_REFUSAL = `POLICY_REJECTED:${POLICY_HOOKS.QUOTATION_SUBMIT_CURREN
  * message.
  */
 export function isCurrencyRefusal(reason?: string): boolean {
-  return reason?.startsWith(CURRENCY_REFUSAL) ?? false;
+  return refusedByPolicy(reason, POLICY_HOOKS.QUOTATION_SUBMIT_CURRENCY_PERMITTED);
 }
 
 /** The quote-form fields the submit payload is derived from. `rfqId` +

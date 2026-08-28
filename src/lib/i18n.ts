@@ -77,6 +77,8 @@ import {
 //   vocabulary correction is one edit in one place rather than a hunt through
 //   two locale maps.
 import { glossaryEn, glossaryId } from './i18n/glossary';
+// — Surface residuals: the seat-identity guard (was hardcoded English) —
+import { identityEn, identityId } from './i18n/identity';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -147,6 +149,7 @@ export const resources = {
       ...processFlowPurposeEn,
       // — GL-1 glossary (chrome only) —
       ...glossaryEn,
+      ...identityEn,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
@@ -568,6 +571,7 @@ export const resources = {
       ...processFlowPurposeId,
       // — GL-1 glossary (chrome only) —
       ...glossaryId,
+      ...identityId,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',

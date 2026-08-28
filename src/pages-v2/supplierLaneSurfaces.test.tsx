@@ -206,16 +206,27 @@ describe('⚠️ THE PANEL CAN NOW EXPRESS THE SPLIT — and the always-on notic
 // from is indistinguishable from a control that is simply broken.
 // ──────────────────────────────────────────────────────────────────────────────
 describe('⚠️ §84 SupplierOrders — the ROW-ACTION entrance, which bypassed the notice', () => {
-  const clickRowAction = async () => {
+  // ⚠️ **THE DOOR IS THE SAME BUTTON; ITS LABEL IS NOT.** The row action now
+  // NAMES what pressing it does — a seat that cannot confirm reads "View", not
+  // "Confirm". So the caller states the label it expects that seat to see, and
+  // this helper is a second assertion of the label fix rather than a lookup that
+  // has to be kept in step with it. Passing 'Confirm' for a narrowed seat fails
+  // here, which is what should happen.
+  const clickRowAction = async (label: string) => {
     const cell = await screen.findByText('PO-2025-00108');
     const row = cell.closest('tr');
     expect(row).not.toBeNull();
-    fireEvent.click(within(row as HTMLElement).getByText(i18n.t('supplierOrders.action.confirm')));
+    fireEvent.click(within(row as HTMLElement).getByText(label));
   };
+  const CONFIRM_LABEL = () => i18n.t('supplierOrders.action.confirm');
+  const VIEW_LABEL = () => i18n.t('supplierOrders.action.view');
 
   it('⚠️ a COMMERCIAL seat reaches NO commit by the ROW-ACTION door either', async () => {
     renderWithProviders(<SupplierOrders />, { identity: COMMERCIAL_ONLY });
-    await clickRowAction();
+    await clickRowAction(VIEW_LABEL());
+    // and the label it did NOT get, asserted here too — the button that opens
+    // this panel must not still be claiming the verb behind it.
+    expect(screen.queryByText(CONFIRM_LABEL())).not.toBeInTheDocument();
     // It lands on the SAME single notice — §76's one-notice-per-verb holds.
     const notice = await screen.findByTestId('handoff-po-confirm');
     expect(notice).toHaveTextContent(i18n.t('roles.owner.fulfilment'));
@@ -228,7 +239,8 @@ describe('⚠️ §84 SupplierOrders — the ROW-ACTION entrance, which bypassed
 
   it('…and a BACK_OFFICE seat is refused by the same door, naming the same lane', async () => {
     renderWithProviders(<SupplierOrders />, { identity: BACK_OFFICE_ONLY });
-    await clickRowAction();
+    await clickRowAction(VIEW_LABEL());
+    expect(screen.queryByText(CONFIRM_LABEL())).not.toBeInTheDocument();
     expect(await screen.findByTestId('handoff-po-confirm')).toHaveTextContent(
       i18n.t('roles.owner.fulfilment'),
     );
@@ -237,7 +249,7 @@ describe('⚠️ §84 SupplierOrders — the ROW-ACTION entrance, which bypassed
 
   it('…and a FULFILMENT seat still reaches the commit BY THAT SAME DOOR', async () => {
     renderWithProviders(<SupplierOrders />, { identity: FULFILMENT_ONLY });
-    await clickRowAction();
+    await clickRowAction(CONFIRM_LABEL());
     // The editing mode is intact for the seat that holds the verb — the fix
     // gated the mode, it did not delete the path.
     expect(await screen.findByText(i18n.t('supplierOrders.panel.lineItemsConfirm'))).toBeInTheDocument();
@@ -247,7 +259,7 @@ describe('⚠️ §84 SupplierOrders — the ROW-ACTION entrance, which bypassed
 
   it('⚠️ …and it DISPATCHES end to end — the held path is proved, not assumed', async () => {
     renderWithProviders(<SupplierOrders />, { identity: FULFILMENT_ONLY });
-    await clickRowAction();
+    await clickRowAction(CONFIRM_LABEL());
     fireEvent.click(await screen.findByText(i18n.t('po.confirm.action')));
     await waitFor(() => {
       expect(commandAuditSink.byEvent('t_po_confirm').length).toBeGreaterThan(0);
@@ -264,7 +276,7 @@ describe('⚠️ §84 SupplierOrders — the ROW-ACTION entrance, which bypassed
     // here made `identity-avatar` ambiguous, which is the honest signal that the
     // control under test is the SHELL's, reached the way a person reaches it.
     renderWithProviders(<SupplierOrders />, { identity: SUPPLIER });
-    await clickRowAction();
+    await clickRowAction(CONFIRM_LABEL());
     expect(await screen.findByText(i18n.t('supplierOrders.panel.lineItemsConfirm'))).toBeInTheDocument();
 
     // Drop `fulfilment` while the editing panel stands open.
