@@ -90,6 +90,26 @@ export default {
         'sm': '0 1px 2px rgba(13, 27, 42, 0.04)',
         'md': '0 4px 12px rgba(13, 27, 42, 0.08)',
       },
+      // SidePanel's slide-over. These are ANIMATIONS rather than transitions
+      // deliberately: a transition needs the element to persist so a class
+      // change has a previous frame to interpolate from, and the panel now
+      // UNMOUNTS when closed (see `SidePanel.tsx`'s contract note). A keyframe
+      // plays on mount and needs no previous frame, so the enter survives the
+      // contract change. There is no exit pair — the panel is gone by then.
+      keyframes: {
+        'panel-in': {
+          from: { transform: 'translateX(100%)' },
+          to: { transform: 'translateX(0)' },
+        },
+        'overlay-in': {
+          from: { opacity: '0' },
+          to: { opacity: '1' },
+        },
+      },
+      animation: {
+        'panel-in': 'panel-in 300ms cubic-bezier(0, 0, 0.2, 1)',
+        'overlay-in': 'overlay-in 300ms cubic-bezier(0, 0, 0.2, 1)',
+      },
     },
   },
   plugins: [],
