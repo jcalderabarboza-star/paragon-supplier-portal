@@ -53,7 +53,7 @@ import type { PurchaseRequisition, PRStatus } from '../services/data/types';
 import type { ActorAttribution, UnattributedReason } from '../lib/enforcement';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
-import { useRefusalText } from '../hooks/useRefusalText';
+import { useRefusalText, useDataErrorText } from '../hooks/useRefusalText';
 
 // ── CP-0 · W1 · PR-2b — the New-PR quantity is PARSED, never coerced ─────────
 // `Number(form.qty)` behind a `type="number"` field read "4.500" as 4.5, so a
@@ -196,6 +196,29 @@ const BuyerRequisitions: React.FC = () => {
   const { toast } = useToast();
   const { t } = useTranslation();
   const refusalText = useRefusalText();
+  const dataErrorText = useDataErrorText();
+
+  /**
+   * A refusal the dispatcher THREW, in the reader's language.
+   *
+   * ⚠️ **THE TWO VOCABULARIES ARE NOT INTERCHANGEABLE, AND THAT IS WHY THIS
+   * EXISTS BESIDE `refusalText` RATHER THAN INSIDE IT.** A RETURNED refusal is
+   * `CommandResult.reason`, shaped `KIND:detail`, which `refusalKindOf` splits
+   * — `useRefusalText`'s job. A THROWN one is a `DataError` whose message is
+   * PROSE, so that split matches nothing and the caller fell through to the raw
+   * string: an Indonesian buyer read *"purchaseRequisition 'pr-014' denied for
+   * scope"* in English. The CODE is what the glossary is keyed on.
+   *
+   * ⚠️ **`fallback` IS THE EXPRESSION THIS SITE ALREADY EVALUATED**, passed in
+   * rather than chosen here, so the `??` reproduces today's behaviour exactly:
+   * a `DataError` whose code the glossary does not own still renders its
+   * `message`, and a non-`DataError` still renders the site's own copy.
+   * `dataErrorText` returns `null` for anything it does not own — that is the
+   * whole reason this could be applied to five sites at once.
+   */
+  const describeThrown = (e: unknown, fallback: string): string =>
+    dataErrorText(e instanceof DataError ? e.code : undefined) ??
+    (e instanceof DataError ? e.message : fallback);
   const el = useEnumLabel();
   const REQUISITIONS_CRUMB = [
     t('requisitions.crumb.acquire'),
@@ -374,7 +397,7 @@ const BuyerRequisitions: React.FC = () => {
       toast({
         variant: 'error',
         title: t('requisitions.toast.createFailed.title'),
-        description: e instanceof DataError ? e.message : t('requisitions.toast.createFailed.desc'),
+        description: describeThrown(e, t('requisitions.toast.createFailed.desc')),
       });
     }
   };
@@ -422,7 +445,7 @@ const BuyerRequisitions: React.FC = () => {
       toast({
         variant: 'error',
         title: t('requisitions.toast.approveFailed.title', { prNumber: selectedPR.prNumber }),
-        description: e instanceof DataError ? e.message : t('requisitions.toast.actionFailed.desc'),
+        description: describeThrown(e, t('requisitions.toast.actionFailed.desc')),
       });
     }
   };
@@ -457,7 +480,7 @@ const BuyerRequisitions: React.FC = () => {
       toast({
         variant: 'error',
         title: t('requisitions.toast.submitFailed.title', { prNumber: selectedPR.prNumber }),
-        description: e instanceof DataError ? e.message : t('requisitions.toast.actionFailed.desc'),
+        description: describeThrown(e, t('requisitions.toast.actionFailed.desc')),
       });
     }
   };
@@ -503,7 +526,7 @@ const BuyerRequisitions: React.FC = () => {
       toast({
         variant: 'error',
         title: t('requisitions.toast.reviseFailed.title', { prNumber: selectedPR.prNumber }),
-        description: e instanceof DataError ? e.message : t('requisitions.toast.actionFailed.desc'),
+        description: describeThrown(e, t('requisitions.toast.actionFailed.desc')),
       });
     }
   };
@@ -553,7 +576,7 @@ const BuyerRequisitions: React.FC = () => {
       toast({
         variant: 'error',
         title: t('requisitions.toast.rejectFailed.title', { prNumber: selectedPR.prNumber }),
-        description: e instanceof DataError ? e.message : t('requisitions.toast.actionFailed.desc'),
+        description: describeThrown(e, t('requisitions.toast.actionFailed.desc')),
       });
     }
   };

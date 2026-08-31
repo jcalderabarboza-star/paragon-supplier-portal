@@ -76,6 +76,7 @@ import {
   type SubmissionSessionRecorder,
 } from '../services/sdc';
 import type { ASN, CommandResult } from '../services/data/types';
+import { DataError } from '../services/data/types';
 import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
@@ -83,7 +84,7 @@ import { statusTone } from '../lib/statusTone';
 import BulkStockEntryGrid from './BulkStockEntryGrid';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
-import { useRefusalText } from '../hooks/useRefusalText';
+import { useRefusalText, useDataErrorText } from '../hooks/useRefusalText';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SupplierForecasts (SDC-2b → SDC-3b) — the P1 supplier SUBMISSION HUB. One
@@ -830,6 +831,7 @@ const ShipmentsTab: React.FC<{
 }> = ({ shipments, onReport }) => {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const dataErrorText = useDataErrorText();
   const reportAvailability = useVerbAvailability('incomingshipment:report');
   // Three DISTINCT atoms → three availabilities → three notices in their own
   // slots. They are separate grants in `fulfilment`, and a seat can be narrowed
@@ -868,10 +870,24 @@ const ShipmentsTab: React.FC<{
       // A refusal the dispatcher THROWS (SCOPE_DENIED) rather than returns.
       // Absorbing it would leave the supplier pressing a button that reports
       // nothing at all.
+      //
+      // ⚠️ **THIS SITE TESTS `Error`, NOT `DataError`, AND THE DIFFERENCE IS WHY
+      // IT WAS ALMOST MISSED.** The five sibling sites on the buyer side test
+      // `instanceof DataError`, so a `grep` for that — the natural way to find
+      // this class — returns this file NOT AT ALL. It was found by matching the
+      // SHAPE (a caught value whose `.message` reaches a toast) rather than the
+      // type name, and it is the only site of the class on the supplier side.
+      //
+      // The supertype test is KEPT rather than narrowed to match the others: a
+      // plain `Error` that is not a `DataError` must still render its message,
+      // and `String(e)` must still catch a thrown non-`Error`. Only the
+      // recognised-code branch is new.
       toast({
         variant: 'error',
         title: t('sdcSup.ship.advance.failed.title'),
-        description: e instanceof Error ? e.message : String(e),
+        description:
+          dataErrorText(e instanceof DataError ? e.code : undefined) ??
+          (e instanceof Error ? e.message : String(e)),
       });
     } finally {
       setPendingId(null);
