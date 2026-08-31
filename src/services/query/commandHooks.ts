@@ -177,6 +177,48 @@ export function useAdvanceShipNoticeSubmit() {
   });
 }
 
+export interface AsnResolveDiscrepancyVars {
+  asnNumber: string;
+}
+
+/**
+ * Resolve a discrepancy on an ASN (fires `t_asn_resolve_discrepancy`,
+ * Discrepancy → Delivered).
+ *
+ * ⚠️ **THE ATOM IS `asn:flag`, WHICH IS A `receiving` ATOM — SO THIS IS THE
+ * DOCK'S ACT, NOT THE SUPPLIER'S**, and that is the whole reason the control
+ * lives on `/buyer/goods-receipt`. The same atom carries `t_asn_discrepancy`,
+ * which the GR mismatch cascade fires under the automation grant: **the
+ * authority that raised the problem state is the authority that clears it**
+ * (the `t_invoice_resolve` shape the flow header points at). A supplier holds
+ * `asn:create` / `asn:submit` in `fulfilment` and NO supplier lane holds
+ * `asn:flag`, so a supplier-side resolve control can never be anything but a
+ * wait — which is what `SupplierShipments` now renders.
+ *
+ * PAYLOAD-FREE ON PURPOSE, and it is derived rather than chosen:
+ * `t_asn_resolve_discrepancy` declares `requiredFields: []` and
+ * `policyHooks: []`. Inventing a reason field here would put a value in the
+ * command that no machine reads and no gate checks — a field with a writer and
+ * no reader, which is the stored-field gate's whole subject one layer down.
+ */
+export function useAdvanceShipNoticeResolveDiscrepancy() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, AsnResolveDiscrepancyVars>({
+    mutationFn: ({ asnNumber }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_asn_resolve_discrepancy',
+        entity: 'advanceShipNotice',
+        entityId: asnNumber,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 // ─── RFQ create (Phase A/2 — retires extraRfqs) ──────────────────────────────
 // Buyer raises a sourcing event through the SAME dispatcher creation mechanism as
 // t_pr_create / t_asn_create (a creation-shape verb, near-clone of

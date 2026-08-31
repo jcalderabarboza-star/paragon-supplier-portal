@@ -274,6 +274,25 @@ export const goodsReceiptEn: Record<string, string> = {
   'goodsReceipt.wizard.summary.sapDoc': 'SAP Doc',
   'goodsReceipt.wizard.summary.assignedBySap': 'Assigned by SAP on posting',
   'goodsReceipt.wizard.summary.notPosted': 'Not posted',
+
+  // — ASN discrepancy reconciliation (t_asn_resolve_discrepancy) —
+  // The dock's act, on the dock's page: a rejected or partially-approved
+  // receipt cascades its ASN into Discrepancy, and `asn:flag` (a `receiving`
+  // atom) is what clears it. The heading says WHY the row is here rather than
+  // just naming the state.
+  'goodsReceipt.discrepancy.heading': 'Shipment discrepancies',
+  'goodsReceipt.discrepancy.subtitle':
+    'A receipt disposition flagged these advance ship notices. Reconcile each one to return it to Delivered.',
+  'goodsReceipt.discrepancy.col.asn': 'ASN #',
+  'goodsReceipt.discrepancy.col.po': 'PO ref',
+  'goodsReceipt.discrepancy.col.carrier': 'Carrier',
+  'goodsReceipt.discrepancy.col.status': 'Status',
+  'goodsReceipt.discrepancy.action': 'Reconcile',
+  'goodsReceipt.discrepancy.resolving': 'Reconciling…',
+  'goodsReceipt.discrepancy.done.title': '{{asnNumber}} reconciled',
+  'goodsReceipt.discrepancy.done.desc': 'The shipment is back at Delivered.',
+  'goodsReceipt.discrepancy.failed.title': 'Could not reconcile {{asnNumber}}',
+  'goodsReceipt.discrepancy.failed.desc': 'The command was refused ({{reason}}).',
 };
 
 export const goodsReceiptId: Record<string, string> = {
@@ -491,4 +510,19 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.wizard.summary.sapDoc': 'Dok SAP',
   'goodsReceipt.wizard.summary.assignedBySap': 'Ditetapkan oleh SAP saat posting',
   'goodsReceipt.wizard.summary.notPosted': 'Belum diposting',
+
+  // — Rekonsiliasi selisih ASN (t_asn_resolve_discrepancy) —
+  'goodsReceipt.discrepancy.heading': 'Selisih pengiriman',
+  'goodsReceipt.discrepancy.subtitle':
+    'Disposisi penerimaan menandai pemberitahuan pengiriman berikut. Rekonsiliasi masing-masing untuk mengembalikannya ke Terkirim.',
+  'goodsReceipt.discrepancy.col.asn': 'No. ASN',
+  'goodsReceipt.discrepancy.col.po': 'Ref. PO',
+  'goodsReceipt.discrepancy.col.carrier': 'Pengangkut',
+  'goodsReceipt.discrepancy.col.status': 'Status',
+  'goodsReceipt.discrepancy.action': 'Rekonsiliasi',
+  'goodsReceipt.discrepancy.resolving': 'Merekonsiliasi…',
+  'goodsReceipt.discrepancy.done.title': '{{asnNumber}} direkonsiliasi',
+  'goodsReceipt.discrepancy.done.desc': 'Pengiriman kembali ke status Terkirim.',
+  'goodsReceipt.discrepancy.failed.title': 'Tidak dapat merekonsiliasi {{asnNumber}}',
+  'goodsReceipt.discrepancy.failed.desc': 'Perintah ditolak ({{reason}}).',
 };

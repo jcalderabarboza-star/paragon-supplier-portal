@@ -235,30 +235,46 @@ describe('THE CENSUS — acts a screen is meant to offer that no screen offers',
 
   it('⚠️ RULE 4 — the census FLAGS a verb that is surfaceable and unsurfaced', () => {
     // Believing anything the census EXCLUDES requires proving it includes what
-    // it must. A census that flags nothing looks exactly like a clean tree, and
-    // this one has a known-true member: `t_asn_resolve_discrepancy` is
-    // `surfaced: true` and no screen fires it.
+    // it must. A census that flags nothing looks exactly like a clean tree, so
+    // it must hold a known-true member.
     //
-    // ⚠️ **`t_pr_revise` AND `t_pr_submit` WERE THE ORIGINAL KNOWN-TRUE PAIR
-    // AND §68 SURFACED BOTH, WHICH IS WHY THEY MOVED TO THE ASSERTION BELOW
-    // RATHER THAN BEING DELETED.** A control that stops holding is not removed
-    // quietly — it is turned around. Their ABSENCE is now the claim, and it is
-    // the only thing in the suite that fails if a future batch retires either
-    // affordance without retiring the verb's `surfaced` flag with it.
-    expect(census).toContain('t_asn_resolve_discrepancy');
+    // ⚠️ **THE MEMBER HAS NOW BEEN REPLACED TWICE, AND THAT IS THE CONTROL
+    // WORKING RATHER THAN ROTTING.** `t_pr_revise` / `t_pr_submit` were the
+    // original pair and §68 surfaced both; `t_asn_resolve_discrepancy` replaced
+    // them and has now been surfaced in its turn. Each time, the retired member
+    // moves to the ABSENCE assertion below rather than being deleted — a
+    // control that stops holding is turned around, never removed quietly,
+    // because its absence is the only thing that fails if a future batch
+    // retires the affordance without retiring the verb's `surfaced` flag.
+    //
+    // The current member is `t_gr_hold`: `surfaced: true`, `from: ['Under
+    // Inspection']`, and **nothing in the tree has ever fired it** — it is
+    // parked by ruling, not by accident, which is exactly what makes it a
+    // stable known-true rather than a defect waiting to be fixed out from under
+    // this assertion.
+    expect(census).toContain('t_gr_hold');
     expect(census.length).toBeGreaterThan(5);
   });
 
-  it('⚠️ §68 — and the pair this census was built on has LEFT it: submit and revise are fired', () => {
-    // The other direction of the same guard. `t_pr_submit` had a button that
-    // toasted instead of dispatching and `t_pr_revise` had no surface at all
-    // (§49e); both now reach the dispatcher from `BuyerRequisitions`, so a
-    // census that still flagged them would be reporting on a stale matcher
-    // rather than on the tree.
+  it('⚠️ §68 / ASN — and the members this census was built on have LEFT it', () => {
+    // The other direction of the same guard, one row longer each time a member
+    // graduates. `t_pr_submit` had a button that toasted instead of dispatching
+    // and `t_pr_revise` had no surface at all (§49e); both now reach the
+    // dispatcher from `BuyerRequisitions`.
     expect(firable.has('t_pr_submit')).toBe(true);
     expect(firable.has('t_pr_revise')).toBe(true);
     expect(census).not.toContain('t_pr_submit');
     expect(census).not.toContain('t_pr_revise');
+
+    // ⚠️ **AND `t_asn_resolve_discrepancy` JOINS THEM.** Its `Discrepancy` state
+    // is the only problem state in this portal a LIVE dispatched verb produces
+    // (the GR mismatch cascade, from `t_gr_reject` AND `t_gr_partial_approve`),
+    // and until this batch nothing could leave it from a screen: the buyer had
+    // no ASN surface at all on `/buyer/goods-receipt`, and the supplier had a
+    // "Resolve" button that fired an info toast on an atom no supplier lane
+    // holds. It is now fired from the GR page's discrepancy section.
+    expect(firable.has('t_asn_resolve_discrepancy')).toBe(true);
+    expect(census).not.toContain('t_asn_resolve_discrepancy');
   });
 
   it('and only THEN: the two verbs RULED unsurfaced are absent — they are decisions, not gaps', () => {

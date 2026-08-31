@@ -35,12 +35,13 @@ import {
   useGoodsReceiptPost,
   useGoodsReceiptRequestRetest,
   useGoodsReceiptSettle,
+  useAdvanceShipNoticeResolveDiscrepancy,
 } from '../services/query/commandHooks';
 import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
-import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
+import { useVerbAvailabilities, useVerbAvailability } from '../hooks/useVerbAvailability';
 import {
   useGoodsReceipts,
   useSuppliers,
@@ -60,6 +61,7 @@ import type {
   ComplianceRegistryEntry,
 } from '../services/data/types';
 import { useRefusalText } from '../hooks/useRefusalText';
+import { statusTone } from '../lib/statusTone';
 
 const TODAY = '2026-05-20';
 
@@ -211,6 +213,55 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const grChainAvailability =
     [grChain.receive, grChain.inspect, grChain.post].find((a) => a.kind !== 'held') ??
     ({ kind: 'held' } as const);
+
+  // ── ASN DISCREPANCY RECONCILIATION (`t_asn_resolve_discrepancy`) ───────────
+  //
+  // ⚠️ **ASKED SEPARATELY FROM `grChain`, NOT FOLDED INTO IT.** `asn:flag` and
+  // the three GR atoms all sit in `receiving` today, so on the seeded seat the
+  // two answers agree — and folding them would make this control's owner line
+  // read off the GR chain's first blocker, which is a different verb. The GR
+  // chain is ONE commit built from three atoms (hence one merged answer); this
+  // is one verb with one atom, so it gets its own.
+  const resolveAvailability = useVerbAvailability('asn:flag');
+  const resolveDiscrepancyMutation = useAdvanceShipNoticeResolveDiscrepancy();
+
+  // ⚠️ **THE ROW SET IS DERIVED FROM THE ASN'S OWN STATE, NEVER FROM THE GR'S.**
+  // A GR that was rejected is not evidence that its ASN is still flagged —
+  // reconciling clears the ASN and leaves the GR Rejected forever, which is
+  // correct (the receipt really was rejected) and would make a GR-status-keyed
+  // list keep offering an act the machine has already refused. `Discrepancy` is
+  // the only legal from-state, so the list IS the legality.
+  const discrepancyAsns = useMemo(
+    () => asns.filter((a) => a.status === 'Discrepancy'),
+    [asns],
+  );
+
+  const handleResolveDiscrepancy = (asnNumber: string) => {
+    resolveDiscrepancyMutation.mutate(
+      { asnNumber },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('goodsReceipt.discrepancy.failed.title', { asnNumber }),
+              description:
+                refusalText(res.reason) ??
+                t('goodsReceipt.discrepancy.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('goodsReceipt.discrepancy.done.title', { asnNumber }),
+            description: t('goodsReceipt.discrepancy.done.desc'),
+          });
+        },
+        onError: () =>
+          toast({ variant: 'error', title: t('gr.denied.title'), description: t('gr.denied.desc') }),
+      },
+    );
+  };
 
 
   // No local seeded copy — the list re-derives from the invalidated query after
@@ -649,6 +700,95 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
           subtitle={t('goodsReceipt.kpi.rejectionRate.subtitle')}
         />
       </div>
+
+      {/* ── SHIPMENT DISCREPANCIES ────────────────────────────────────────────
+          The exit from `Discrepancy`, on the desk that entered it.
+
+          ⚠️ **IT IS ITS OWN SECTION RATHER THAN A CONTROL IN THE GR PANEL, AND
+          THE REASON IS MEASURED, NOT STYLISTIC.** The GR panel already shows
+          `selected.asnNumber`, which makes it the obvious anchor — but the GR
+          fixtures reference `ASN-2026-0xx` and the ASN store holds
+          `ASN-2025-002xx` / `ASN-2025-003xx`: **the intersection is EMPTY (14
+          refs × 6 ASNs × 0 shared)**. A control hung off `selected.asnNumber`
+          would therefore be reachable ONLY from a wizard-created GR and never
+          from a seeded row — the seeded `ASN-2025-00201` would carry a
+          discrepancy nobody could open. Keyed on the ASN instead, both the
+          seeded row and the cascade's output are reachable on the same surface.
+
+          ⚠️ **ABSENT WHEN EMPTY IS NOT THE WITHHELD-AS-ABSENT DEFECT.** Nothing
+          is being hidden from a narrow seat here: with no flagged ASN there is
+          no act for anyone, held or not. When a row EXISTS, a seat without
+          `asn:flag` gets the notice in the same cell the button would occupy —
+          which is the rule the grammar actually states. */}
+      {discrepancyAsns.length > 0 && (
+        <section
+          className="mb-6 border border-border-subtle rounded-lg bg-white overflow-hidden"
+          data-testid="gr-asn-discrepancies"
+        >
+          <div className="px-6 py-4 border-b border-border-subtle">
+            <h2 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <AlertTriangle size={16} className="text-warning" aria-hidden="true" />
+              {t('goodsReceipt.discrepancy.heading')}
+            </h2>
+            <p className="mt-1 text-xs text-text-secondary">
+              {t('goodsReceipt.discrepancy.subtitle')}
+            </p>
+          </div>
+          <Table>
+            <TableHeader>
+              <TableHeaderCell>{t('goodsReceipt.discrepancy.col.asn')}</TableHeaderCell>
+              <TableHeaderCell>{t('goodsReceipt.discrepancy.col.po')}</TableHeaderCell>
+              <TableHeaderCell>{t('goodsReceipt.discrepancy.col.carrier')}</TableHeaderCell>
+              <TableHeaderCell>{t('goodsReceipt.discrepancy.col.status')}</TableHeaderCell>
+              <TableHeaderCell> </TableHeaderCell>
+            </TableHeader>
+            <tbody>
+              {discrepancyAsns.map((asn) => (
+                <TableRow key={asn.asnNumber}>
+                  <TableCell>
+                    <Data className="text-xs font-bold text-text-primary">
+                      {asn.asnNumber}
+                    </Data>
+                  </TableCell>
+                  <TableCell>
+                    <Data className="text-text-secondary">{asn.poReference}</Data>
+                  </TableCell>
+                  <TableCell className="text-text-secondary">{asn.carrier}</TableCell>
+                  <TableCell>
+                    {/* Tone from the `statusTone` SSoT and the LABEL from
+                        `StatusPill`'s own `statusLabelKey` lookup — the raw
+                        canonical token is passed deliberately. Wrapping it in
+                        `el()` first would hand the pill an already-localized
+                        string, which in ID resolves to nothing and falls
+                        through to the Indonesian text as a literal. */}
+                    <StatusPill variant={statusTone(asn.status)}>
+                      {asn.status}
+                    </StatusPill>
+                  </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {resolveAvailability.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        disabled={resolveDiscrepancyMutation.isPending}
+                        onClick={() => handleResolveDiscrepancy(asn.asnNumber)}
+                      >
+                        {resolveDiscrepancyMutation.isPending
+                          ? t('goodsReceipt.discrepancy.resolving')
+                          : t('goodsReceipt.discrepancy.action')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={resolveAvailability}
+                        testId="handoff-asn-resolve"
+                      />
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </tbody>
+          </Table>
+        </section>
+      )}
 
       <SubTabs<GroupTab>
         options={[

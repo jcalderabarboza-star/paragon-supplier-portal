@@ -27,10 +27,23 @@ export const advanceShipNoticeFlow: FlowDefinition = {
   version: 1,
   states: ['Draft', 'Submitted', 'In Transit', 'Delivered', 'Discrepancy'],
   initial: 'Draft',
-  /** PF-0 · D-2 — ⚠️ THIS MACHINE DECLARES NO ENDING, and that is the truthful
-   *  answer rather than an omission: `Delivered` is left by `t_asn_discrepancy`,
-   *  so it cannot be an ending, and `Discrepancy` has no resolution edge (it is
-   *  censused, not declared). An empty array says so out loud. */
+  /** PF-0 · D-2 — ⚠️ THIS MACHINE DECLARES NO ENDING, and that is still the
+   *  truthful answer rather than an omission — but the REASON changed and the
+   *  old one is deleted rather than kept beside the new.
+   *
+   *  It read: *"`Discrepancy` has no resolution edge (it is censused, not
+   *  declared)"*. **That went false at PF-1a**, when
+   *  `t_asn_resolve_discrepancy` was authored ten lines below this comment, and
+   *  it stayed on the page afterwards because nothing in this repository can
+   *  fail on a stale sentence. `terminals: []` was RIGHT throughout, which is
+   *  precisely what let the wrong justification survive: the value it explains
+   *  never moved.
+   *
+   *  The current derivation, both states named: `Delivered` is left by
+   *  `t_asn_discrepancy`, and `Discrepancy` is left by
+   *  `t_asn_resolve_discrepancy`. Neither is an ending, so the array is empty
+   *  because EVERY non-Draft state has an exit — not because one of them was
+   *  stranded. */
   terminals: [],
   transitions: [
     {

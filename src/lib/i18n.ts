@@ -435,8 +435,6 @@ export const resources = {
       'asn.submit.form.eta': 'Estimated arrival',
       'asn.denied.title': 'Not authorized',
       'asn.denied.desc': 'You are not authorized to act on this shipment.',
-      'asn.discrepancy.deferred.title': 'Discrepancy handling pending',
-      'asn.discrepancy.deferred.desc': 'Opens with goods-receipt reconciliation (pending live channel).',
       // — Goods receipt verbs (Step 4 batch ii) —
       'gr.create.action': 'New GR',
       'gr.create.success.title': '{{grNumber}} received',
@@ -844,8 +842,6 @@ export const resources = {
       'asn.submit.form.eta': 'Perkiraan tiba',
       'asn.denied.title': 'Tidak berwenang',
       'asn.denied.desc': 'Anda tidak berwenang menindaklanjuti pengiriman ini.',
-      'asn.discrepancy.deferred.title': 'Penanganan selisih tertunda',
-      'asn.discrepancy.deferred.desc': 'Terbuka saat rekonsiliasi penerimaan barang (menunggu kanal langsung).',
       // — Goods receipt verbs (ID stub — refined in the Phase 3′ ID-first sweep) —
       'gr.create.action': 'GR Baru',
       'gr.create.success.title': '{{grNumber}} diterima',
