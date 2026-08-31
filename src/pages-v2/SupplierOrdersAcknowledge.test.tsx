@@ -52,14 +52,22 @@ const openPanelOn = async (poNumber: string, identity = SUPPLIER) => {
 };
 
 /**
- * ⚠️ **SCOPED TO THE PANEL, AND THAT IS LOAD-BEARING RATHER THAN TIDY.**
- * `SidePanel` renders its `<aside>` unconditionally — `open` only toggles
- * `aria-hidden` and a transform — so a page-level `screen.getBy*` cannot
- * distinguish "the control is in the open panel" from "the control is in the
- * always-mounted subtree of a closed one". Every assertion here reads through
- * this. (The always-mounted contract is filed as its own batch; this page
- * already guards the footer's CONTENT on `selected`, which is the
- * `BuyerGoodsReceipt` pattern, so nothing renders into a closed panel.)
+ * Scoped to the panel, to disambiguate from the table row behind it.
+ *
+ * ⚠️ **THE WORKAROUND THIS COMMENT USED TO DESCRIBE IS RETIRED, AND THE OLD
+ * TEXT IS DELETED RATHER THAN LEFT BESIDE THE NEW.** It read that `SidePanel`
+ * renders its `<aside>` unconditionally, so a page-level query "cannot
+ * distinguish the open panel from the always-mounted subtree of a closed one".
+ * That was true when it was written and is now FALSE: a closed panel renders
+ * nothing (`SidePanel.contract.test.tsx`), so `aside[role="dialog"]` exists
+ * only while one is open. **A comment asserting a property the code no longer
+ * has is the defect this session has now corrected three times** — and leaving
+ * a retired workaround in place is how the next reader concludes the underlying
+ * problem is still there.
+ *
+ * The scoping STAYS, for a reason that survives the fix: the PO number appears
+ * in the table row behind the panel as well as in the panel heading, so an
+ * unscoped matcher finds two nodes. That is disambiguation, not a guard.
  */
 const panel = () => within(document.querySelector('aside[role="dialog"]') as HTMLElement);
 const footer = panel;

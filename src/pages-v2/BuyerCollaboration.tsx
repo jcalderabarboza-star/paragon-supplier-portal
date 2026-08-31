@@ -1121,16 +1121,26 @@ const BuyerCollaboration: React.FC = () => {
       {/* R1b - the resolve capture, in the invoice dispute panel's shape.
           WAVE C - and now ONE component, shared with the dispute capture below.
 
-          ⚠️ EACH PANEL IS MOUNTED ONLY WHILE ITS OWN ROW IS OPEN, AND THAT IS A
-          FIX RATHER THAN A STYLE. `SidePanel` renders its DOM unconditionally
-          and merely translates it off-screen, so a second ALWAYS-MOUNTED panel
-          puts a duplicate of every control - two Cancels, two commits, two
-          textareas - permanently in the tree. `aria-hidden` hides them from a
-          screen reader and from nothing else. It surfaced as ten red tests the
-          moment the second panel landed, which is the cheap way to find it.
-          The two differ in their verb, their words and their atom; everything
-          they have in common lives in `ReasonPanel` rather than in two files
-          that agree today. */}
+          ⚠️ EACH PANEL IS MOUNTED ONLY WHILE ITS OWN ROW IS OPEN. The reason
+          RECORDED here has been superseded and is restated rather than left to
+          rot: it said `SidePanel` "renders its DOM unconditionally and merely
+          translates it off-screen", so a second always-mounted panel put a
+          duplicate of every control - two Cancels, two commits, two textareas -
+          permanently in the tree, and `aria-hidden` hid them from a screen
+          reader and from nothing else. **That was true, it cost ten red tests
+          the day the second panel landed, and it is now FIXED AT THE COMPONENT**
+          (`SidePanel` returns null when closed; see its contract note). So this
+          guard is no longer what stands between the page and a duplicated
+          control.
+
+          It stays anyway, and not from inertia: the guard means the panel's
+          props - titles, translated copy, the row lookups behind them - are not
+          computed for a row nobody opened. That is a smaller reason than the one
+          it replaces, and it is the honest one.
+
+          The two panels differ in their verb, their words and their atom;
+          everything they have in common lives in `ReasonPanel` rather than in
+          two files that agree today. */}
       {resolving && (
       <ReasonPanel
         row={resolving}
