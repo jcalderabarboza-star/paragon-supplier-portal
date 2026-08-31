@@ -62,7 +62,6 @@ export const supplierShipmentsEn: Record<string, string> = {
   'supplierShipments.aria.expand': 'Expand',
   'supplierShipments.aria.collapse': 'Collapse',
   // — Actions / CTAs —
-  'supplierShipments.action.resolve': 'Resolve',
   'supplierShipments.action.cancel': 'Cancel',
   'supplierShipments.action.exportEdi': 'Export EDI 856',
   // — Expanded row: shipment details —
@@ -220,7 +219,6 @@ export const supplierShipmentsId: Record<string, string> = {
   'supplierShipments.aria.expand': 'Perluas',
   'supplierShipments.aria.collapse': 'Ciutkan',
   // — Actions / CTAs —
-  'supplierShipments.action.resolve': 'Selesaikan',
   'supplierShipments.action.cancel': 'Batal',
   'supplierShipments.action.exportEdi': 'Ekspor EDI 856',
   // — Expanded row: shipment details —

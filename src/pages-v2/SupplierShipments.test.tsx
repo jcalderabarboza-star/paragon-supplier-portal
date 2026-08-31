@@ -161,3 +161,63 @@ describe('SupplierShipments — ASN verbs (Step 4 batch i)', () => {
     expect(desc).toContain('MISSING_FIELDS:eta');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DISCREPANCY CELL — a button that lied, replaced by the wait.
+//
+// It rendered "Resolve", fired an info toast reading "Discrepancy handling
+// pending", and changed nothing. Both halves were false: the verb has been
+// dispatchable since it was authored, and its atom `asn:flag` sits in the
+// buyer's `receiving` lane, which NO supplier lane holds — so the act was never
+// the supplier's to take however well it had been wired.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('a flagged ASN shows the supplier a wait, not a false commit', () => {
+  it('⚠️ IT REACHES THE ROW FIRST — the seeded ASN really is in Discrepancy here', async () => {
+    renderWithProviders(<SupplierShipments />, { identity: SUPPLIER });
+    expect(await screen.findByText('ASN-2025-00201')).toBeInTheDocument();
+    expect(asnStore.get('ASN-2025-00201')?.status).toBe('Discrepancy');
+  });
+
+  it('the notice stands where the button stood, and names the dock', async () => {
+    renderWithProviders(<SupplierShipments />, { identity: SUPPLIER });
+    await screen.findByText('ASN-2025-00201');
+    const notice = screen.getByTestId('handoff-asn-resolve');
+    expect(notice).toHaveAttribute('data-handoff', 'withheld');
+    expect(notice).toHaveTextContent('Awaiting Receiving');
+  });
+
+  it('no Resolve button survives on this side', async () => {
+    renderWithProviders(<SupplierShipments />, { identity: SUPPLIER });
+    await screen.findByText('ASN-2025-00201');
+    expect(screen.queryByRole('button', { name: 'Resolve' })).not.toBeInTheDocument();
+  });
+
+  it('⚠️ THE FALSE STRINGS ARE GONE FROM BOTH LOCALES, NOT REPURPOSED', () => {
+    // §82's lesson: a stale key is a finding, a repurposed one is a lie with
+    // provenance. These described a state that no longer exists, so they are
+    // DELETED. i18next returns the key itself when nothing resolves.
+    for (const lng of ['en', 'id']) {
+      for (const key of [
+        'asn.discrepancy.deferred.title',
+        'asn.discrepancy.deferred.desc',
+      ]) {
+        expect(i18n.getFixedT(lng)(key)).toBe(key);
+      }
+    }
+    // The control (§39): a key that DOES exist must not report as missing by
+    // this same instrument, or the assertion above proves nothing. It is a key
+    // with a REAL consumer on this page (the discrepancy KPI tile) — using the
+    // now-orphaned `action.resolve` as the control would have kept a dead
+    // string alive purely to serve the test that proves another string is gone.
+    expect(i18n.getFixedT('en')('supplierShipments.kpi.discrepancy.eyebrow')).toBe('Discrepancy');
+    expect(i18n.getFixedT('id')('supplierShipments.kpi.discrepancy.eyebrow')).toBe('Selisih');
+    // And the button's own label is gone too — the affordance and its word left
+    // together, so no future reader finds a "Resolve" string looking for a home.
+    for (const lng of ['en', 'id']) {
+      expect(i18n.getFixedT(lng)('supplierShipments.action.resolve')).toBe(
+        'supplierShipments.action.resolve',
+      );
+    }
+  });
+});

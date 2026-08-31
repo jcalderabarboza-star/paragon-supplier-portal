@@ -210,7 +210,6 @@ interface ShipmentsListProps {
   expanded: Set<string>;
   onToggleExpand: (asnNumber: string) => void;
   onSubmitAsn: (asnNumber: string) => void;
-  onResolveDiscrepancy: (asnNumber: string) => void;
   onCreateAsnForPO: (poId: string) => void;
   confirmedPOs: PurchaseOrder[];
 }
@@ -221,7 +220,6 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
   expanded,
   onToggleExpand,
   onSubmitAsn,
-  onResolveDiscrepancy,
   onCreateAsnForPO,
   confirmedPOs,
 }) => {
@@ -235,6 +233,12 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
   const asnVerbs = useVerbAvailabilities({
     create: 'asn:create',
     submit: 'asn:submit',
+    // `asn:flag` is a `receiving` atom and this is the supplier side, so this
+    // answer is `withheld` for every seat that can reach this page. It is asked
+    // through the SAME resolver as the other two rather than hardcoded to a
+    // notice: the day a supplier lane is granted the atom, the surface follows
+    // the bundles instead of contradicting them.
+    resolve: 'asn:flag',
   } as const);
   const filtered = useMemo(
     () =>
@@ -395,13 +399,24 @@ const ShipmentsList: React.FC<ShipmentsListProps> = ({
                             testId="handoff-asn-submit"
                           />
                         ))}
+                      {/* ⚠️ **THIS WAS A BUTTON THAT LIED, AND IT IS NOW THE
+                          WAIT.** It rendered "Resolve", fired an info toast
+                          ("Discrepancy handling pending"), and changed nothing.
+                          Both halves of that were wrong by the time it was read:
+                          `t_asn_resolve_discrepancy` has been dispatchable since
+                          it was authored, and its atom `asn:flag` lives in
+                          `receiving` — a BUYER lane. **No supplier lane holds
+                          it** (`commercial` / `fulfilment` / `back_office`
+                          carry `asn:create` and `asn:submit`, never `:flag`),
+                          so this control could never have been the supplier's
+                          act however well it was wired. `availabilityOfAtom`
+                          therefore returns `withheld` here on every supplier
+                          seat that exists, and the notice names the dock. */}
                       {asn.status === 'Discrepancy' && (
-                        <Button
-                          variant="secondary"
-                          onClick={() => onResolveDiscrepancy(asn.asnNumber)}
-                        >
-                          {t('supplierShipments.action.resolve')}
-                        </Button>
+                        <HandoffNotice
+                          availability={asnVerbs.resolve}
+                          testId="handoff-asn-resolve"
+                        />
                       )}
                       {asn.status !== 'Draft' &&
                         asn.status !== 'Discrepancy' && (
@@ -675,16 +690,6 @@ const SupplierShipments: React.FC = () => {
           toast({ variant: 'error', title: t('asn.denied.title'), description: t('asn.denied.desc') }),
       },
     );
-  };
-
-  // Discrepancy resolution is not a wired verb yet — the Discrepancy state
-  // arrives via the GR cascade (batch ii). Honest deferred notice, no false claim.
-  const resolveDiscrepancy = () => {
-    toast({
-      variant: 'info',
-      title: t('asn.discrepancy.deferred.title'),
-      description: t('asn.discrepancy.deferred.desc'),
-    });
   };
 
   // t_asn_create (creation) from a confirmed PO. Store assigns the number; the
@@ -1216,7 +1221,6 @@ const SupplierShipments: React.FC = () => {
           expanded={expanded}
           onToggleExpand={toggleExpand}
           onSubmitAsn={openSubmitForm}
-          onResolveDiscrepancy={resolveDiscrepancy}
           onCreateAsnForPO={createAsnForPO}
           confirmedPOs={CONFIRMED_POS}
         />
