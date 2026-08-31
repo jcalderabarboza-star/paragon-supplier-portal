@@ -25,7 +25,11 @@ import Data from '../components/ui-v2/Data';
 import { useTranslation } from 'react-i18next';
 import { useToast } from '../hooks/useToast';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
-import { usePurchaseOrderConfirm } from '../services/query/commandHooks';
+import {
+  usePurchaseOrderConfirm,
+  usePurchaseOrderAcknowledge,
+} from '../services/query/commandHooks';
+import { userVerbsFrom } from '../services/transitions';
 import { useVerbAvailability } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { POStatus } from '../services/data/types';
@@ -105,6 +109,17 @@ const SupplierOrders: React.FC = () => {
   const { supplierId } = identity;
   const confirmMutation = usePurchaseOrderConfirm();
   const confirmAvailability = useVerbAvailability('po:confirm');
+  const acknowledgeMutation = usePurchaseOrderAcknowledge();
+  // ⚠️ **ASKED SEPARATELY FROM `po:confirm`, AND §76 REQUIRES IT RATHER THAN
+  // MERELY PERMITTING IT.** The two verbs are CO-REACHABLE on the same document:
+  // `t_po_acknowledge` is legal from `Sent | Viewed` and `t_po_confirm` from
+  // `Sent | Viewed | Acknowledged`, so a `Sent` PO offers both at once, in two
+  // slots, in the same footer. One collapsed notice would name an owner for an
+  // act the reader was not looking at — which is exactly the case §76 retired
+  // the group notice for. Both atoms sit in `fulfilment` today, so the two
+  // answers agree on every seat that exists; they are asked apart so the answer
+  // stays right if the lanes ever split.
+  const acknowledgeAvailability = useVerbAvailability('po:acknowledge');
   const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [selected, setSelected] = useState<PurchaseOrder | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
@@ -374,6 +389,62 @@ const SupplierOrders: React.FC = () => {
   // ungoverned per §75e), so there is nothing to narrow it against.
   const canConfirmHere = confirmAvailability.kind === 'held';
 
+  // ── ACKNOWLEDGE (`t_po_acknowledge`) ───────────────────────────────────────
+  //
+  // ⚠️ **LEGALITY IS ASKED OF THE MACHINE, NOT RESTATED HERE.** `userVerbsFrom`
+  // reads the registered flow, so this offers the verb exactly where the
+  // transition table says it is legal (`Sent | Viewed`) and nowhere else. The
+  // page's own `ACTION_STATUSES` is the WRONG list for this: it is
+  // `[Sent, Acknowledged]` — a TAB grouping, not a legality one — so keying on
+  // it would offer acknowledge on an already-Acknowledged PO (illegal, refused
+  // at dispatch) and withhold it from a `Viewed` one (legal). Deriving also
+  // means a future edit to the flow reaches this control without anybody
+  // remembering to edit a literal here.
+  //
+  // ⚠️ **AND `Viewed` IS FIXTURE-ONLY, WHICH THIS DELIBERATELY DOES NOT HIDE.**
+  // Derived: `t_po_view` is the sole producer of `Viewed` and it has no hook, no
+  // caller and no dispatch site anywhere in the tree, so nothing a person can do
+  // moves a PO into that state. The two `Viewed` fixture rows (sup-006, sup-011)
+  // are therefore stranded. Rendering the control on them is still correct —
+  // acknowledge IS legal from `Viewed`, and the surface reports the machine
+  // rather than the fixture population. What would be dishonest is the opposite:
+  // suppressing a legal verb because today's data cannot reach its from-state.
+  const acknowledgeIsLegalOn = (po: PurchaseOrder): boolean =>
+    userVerbsFrom('purchaseOrder', po.status).some(
+      (v) => v.id === 't_po_acknowledge',
+    );
+
+  const acknowledgeOrder = (po: PurchaseOrder) => {
+    acknowledgeMutation.mutate(
+      { poId: po.id },
+      {
+        onSuccess: (res) => {
+          if (res.status === 'failed') {
+            toast({
+              variant: 'warning',
+              title: t('supplierOrders.ack.failed.title', { poNumber: po.poNumber }),
+              description:
+                refusalText(res.reason) ??
+                t('supplierOrders.ack.failed.desc', { reason: res.reason ?? '' }),
+            });
+            return;
+          }
+          toast({
+            variant: 'success',
+            title: t('supplierOrders.ack.success.title', { poNumber: po.poNumber }),
+            description: t('supplierOrders.ack.success.desc'),
+          });
+        },
+        onError: () =>
+          toast({
+            variant: 'error',
+            title: t('supplierOrders.ack.denied.title'),
+            description: t('supplierOrders.ack.denied.desc'),
+          }),
+      },
+    );
+  };
+
   const panelActionLabel = (po: PurchaseOrder): string => {
     if (ACTION_STATUSES.includes(po.status))
       return canConfirmHere
@@ -554,6 +625,35 @@ const SupplierOrders: React.FC = () => {
                   <Button variant="secondary" onClick={closePanel}>
                     {t('supplierOrders.action.close')}
                   </Button>
+                  {/* ── ACKNOWLEDGE, IN ITS OWN SLOT ─────────────────────────
+                      Rendered on the LIVE row, so the control disappears the
+                      moment the dispatch lands and the PO leaves `Sent`. Its
+                      condition is `acknowledgeIsLegalOn` — the machine's answer,
+                      not `ACTION_STATUSES` (see that helper's note: the tab
+                      grouping and the transition table disagree in BOTH
+                      directions).
+
+                      ⚠️ **SEPARATE FROM `po:confirm`'s NOTICE, NOT FOLDED INTO
+                      IT.** On a `Sent` PO both verbs are legal at once, so a
+                      seat holding neither reads two waits in two slots — which
+                      is §76's rule, not an exception to it. */}
+                  {acknowledgeIsLegalOn(selectedLive ?? selected) &&
+                    (acknowledgeAvailability.kind === 'held' ? (
+                      <Button
+                        variant="secondary"
+                        disabled={acknowledgeMutation.isPending}
+                        onClick={() => acknowledgeOrder(selectedLive ?? selected)}
+                      >
+                        {acknowledgeMutation.isPending
+                          ? t('supplierOrders.action.acknowledging')
+                          : t('supplierOrders.action.acknowledge')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={acknowledgeAvailability}
+                        testId="handoff-po-acknowledge"
+                      />
+                    ))}
                   {ACTION_STATUSES.includes((selectedLive ?? selected).status) ? (
                     // ⚠️ THE ONE NOTICE FOR `po:confirm` ON THIS SURFACE.
                     // `po:confirm` is FULFILMENT's since the supplier split, so

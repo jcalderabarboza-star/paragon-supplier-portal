@@ -275,6 +275,24 @@ describe('THE CENSUS — acts a screen is meant to offer that no screen offers',
     // holds. It is now fired from the GR page's discrepancy section.
     expect(firable.has('t_asn_resolve_discrepancy')).toBe(true);
     expect(census).not.toContain('t_asn_resolve_discrepancy');
+
+    // ⚠️ **AND `t_po_acknowledge` JOINS THEM.** Surfaced in the panel footer on
+    // `/supplier/orders`, in its own slot beside `po:confirm`'s.
+    expect(firable.has('t_po_acknowledge')).toBe(true);
+    expect(census).not.toContain('t_po_acknowledge');
+  });
+
+  it('⚠️ AND ITS SIBLING STAYS FLAGGED — `t_po_view` is the control on the control', () => {
+    // `t_po_acknowledge` and `t_po_view` are adjacent verbs on the same flow,
+    // both `surfaced: true`, and only ONE of them was surfaced. If the census
+    // had lost both, the instrument would be reporting on the batch rather than
+    // on the tree — the shape rule 1 warns about, one flow down.
+    //
+    // It is also the reason `Viewed` is a stranded state: `t_po_view` is its
+    // sole producer, so nothing a person does can reach it. That is a FLOW
+    // question and is deliberately not answered by a surface batch.
+    expect(firable.has('t_po_view')).toBe(false);
+    expect(census).toContain('t_po_view');
   });
 
   it('and only THEN: the two verbs RULED unsurfaced are absent — they are decisions, not gaps', () => {
