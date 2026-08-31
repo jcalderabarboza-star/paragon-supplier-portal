@@ -12,6 +12,7 @@ import {
   Database,
   Inbox,
   XCircle,
+  FilePlus2,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
@@ -19,6 +20,7 @@ import Data from '../components/ui-v2/Data';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
+import SidePanel from '../components/ui-v2/SidePanel';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import StatusPill from '../components/ui-v2/StatusPill';
 import LivenessPill from '../components/ui-v2/LivenessPill';
@@ -30,12 +32,13 @@ import TableRow from '../components/ui-v2/TableRow';
 import TableCell from '../components/ui-v2/TableCell';
 import Button from '../components/ui-v2/Button';
 import { useToast } from '../hooks/useToast';
-import { useComplianceRegistry, useDocuments } from '../services/query/hooks';
+import { useComplianceRegistry, useDocuments, useSuppliers } from '../services/query/hooks';
 import {
   useSupplierDocumentVerify,
   useSupplierDocumentReject,
+  useSupplierDocumentRequest,
 } from '../services/query/commandHooks';
-import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
+import { useVerbAvailabilities, useVerbAvailability } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import {
   computeStatus,
@@ -53,8 +56,10 @@ import { statusTone } from '../lib/statusTone';
 import type {
   ComplianceRegistryEntry,
   ComplianceDisplayStatus,
+  SupplierDocumentCategory,
 } from '../services/data/types';
-import { useRefusalText } from '../hooks/useRefusalText';
+import { DataError } from '../services/data/types';
+import { useRefusalText, useDataErrorText } from '../hooks/useRefusalText';
 
 type CategoryFilter = 'All' | CertCategory;
 type StatusFilter = 'All' | ComplianceDisplayStatus;
@@ -82,6 +87,26 @@ const STATUS_OPTIONS: { id: StatusFilter; labelKey: string }[] = [
   { id: 'Valid', labelKey: 'compliance.filter.status.valid' },
 ];
 
+// ⚠️ **ALL SIX MEMBERS OF `SupplierDocumentCategory`, AND THE TWO THAT LOOK
+// REDUNDANT ARE THE REASON THE VERB CARRIES A CATEGORY AT ALL.**
+// `CERT_TYPE_TO_CATEGORY` (the declare path) reaches only four of them —
+// `Halal Compliance` · `BPOM Regulatory` · `Quality` · `Other`. **`Tax & Legal`
+// and `Contract` have NO declare path**: outside the seeded fixtures, a
+// requested document is the only way a row in either category can ever exist.
+// Dropping them from this list would make two of the platform's six document
+// kinds unreachable by anybody.
+//
+// The `id` is the canonical EN union member — it is what the payload carries
+// and what the store holds. Only `labelKey` localizes.
+const REQUEST_CATEGORIES: { id: SupplierDocumentCategory; labelKey: string }[] = [
+  { id: 'Halal Compliance', labelKey: 'compliance.request.category.halal' },
+  { id: 'BPOM Regulatory', labelKey: 'compliance.request.category.bpom' },
+  { id: 'Quality', labelKey: 'compliance.request.category.quality' },
+  { id: 'Tax & Legal', labelKey: 'compliance.request.category.taxLegal' },
+  { id: 'Contract', labelKey: 'compliance.request.category.contract' },
+  { id: 'Other', labelKey: 'compliance.request.category.other' },
+];
+
 const CATEGORY_OPTIONS: { id: CategoryFilter; labelKey: string }[] = [
   { id: 'All', labelKey: 'compliance.filter.category.all' },
   { id: 'Halal', labelKey: 'compliance.filter.category.halal' },
@@ -101,6 +126,7 @@ const CATEGORY_OPTIONS: { id: CategoryFilter; labelKey: string }[] = [
 const BuyerCompliance: React.FC = () => {
   const { t } = useTranslation();
   const refusalText = useRefusalText();
+  const dataErrorText = useDataErrorText();
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('All');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('All');
@@ -182,6 +208,97 @@ const BuyerCompliance: React.FC = () => {
       setBusyId(null);
     }
   };
+  // ── §WAVE E · THE BUYER'S ASK ──────────────────────────────────────────
+  //
+  // ⚠️ **ITS OWN SLOT, ITS OWN NOTICE (§76).** `supplierdoc:request` is a
+  // separate atom from verify/reject and lives in the page HEADER, not on a
+  // row — it acts on no document, it creates one. `IMPORTER-PRESENCE-IS-NOT-
+  // VERB-COVERAGE-01` is exactly this shape one lane over: `BuyerRequisitions`
+  // rendered four notices and still shipped an ungated CREATE verb in its
+  // header, because every guarded verb there acted on a selected document.
+  const request = useVerbAvailability('supplierdoc:request');
+  const requestDoc = useSupplierDocumentRequest();
+  const suppliersQuery = useSuppliers();
+  const [requestOpen, setRequestOpen] = useState(false);
+  const [reqSupplier, setReqSupplier] = useState('');
+  const [reqCategory, setReqCategory] = useState<SupplierDocumentCategory | ''>('');
+  const [reqNote, setReqNote] = useState('');
+  const [reqConfirming, setReqConfirming] = useState(false);
+  const [reqBusy, setReqBusy] = useState(false);
+
+  const supplierOptions = suppliersQuery.data?.items ?? [];
+  const reqSupplierName =
+    supplierOptions.find((sup) => sup.id === reqSupplier)?.name ?? reqSupplier;
+  // Every field the act commits must be stated before it commits, so all three
+  // gate the confirm step — `note` included. It is OPTIONAL AT THE VERB (the
+  // machine requires `supplierId` + `category`) and REQUIRED HERE: a demand
+  // with no stated reason is the thing the supplier cannot act on.
+  const reqComplete =
+    reqSupplier !== '' && reqCategory !== '' && reqNote.trim() !== '';
+
+  const closeRequest = () => {
+    setRequestOpen(false);
+    setReqConfirming(false);
+    setReqSupplier('');
+    setReqCategory('');
+    setReqNote('');
+  };
+
+  /**
+   * ⚠️ **THE OUTCOME IS READ FROM THE RESULT, NEVER ASSUMED FROM THE CALL** —
+   * the same rule the review half above runs on, and it matters more here
+   * because this act has a refusal the operator can actually trigger:
+   * `SCOPE_DENIED` when the named supplier does not resolve on the roster
+   * (`requireCreationOwner`, C4b). A `DataError` is THROWN rather than returned
+   * for that class, so it is caught and rendered instead of escaping as an
+   * unhandled rejection that would leave the panel claiming nothing happened.
+   */
+  const runRequest = async () => {
+    if (reqCategory === '') return;
+    setReqBusy(true);
+    try {
+      const result = await requestDoc.mutateAsync({
+        supplierId: reqSupplier,
+        category: reqCategory,
+        note: reqNote.trim(),
+      });
+      if (result.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('compliance.request.toast.failed'),
+          description: refusalText(result.reason) ?? result.reason,
+        });
+        return;
+      }
+      toast({
+        variant: 'success',
+        title: t('compliance.request.toast.sent'),
+        description: t('compliance.request.toast.sentDesc', {
+          supplier: reqSupplierName,
+        }),
+      });
+      closeRequest();
+    } catch (err) {
+      // ⚠️ **THE THROWN HALF, AND IT IS A DIFFERENT VOCABULARY FROM THE
+      // RETURNED ONE.** `SCOPE_DENIED` arrives as a `DataError` whose message is
+      // prose, so `refusalText` cannot read it — browser QA had an Indonesian
+      // operator reading *"creation of supplierDocument denied: unresolved
+      // owner"* in English. The CODE is what the glossary is keyed on.
+      const code = err instanceof DataError ? err.code : undefined;
+      toast({
+        variant: 'error',
+        title: t('compliance.request.toast.failed'),
+        description:
+          dataErrorText(code) ??
+          (err instanceof Error
+            ? (refusalText(err.message) ?? err.message)
+            : t('compliance.request.toast.failed')),
+      });
+    } finally {
+      setReqBusy(false);
+    }
+  };
+
   const items = query.data?.items ?? [];
 
   const rows: Row[] = useMemo(
@@ -246,17 +363,44 @@ const BuyerCompliance: React.FC = () => {
         title={t('compliance.header.title')}
         subtitle={t('compliance.header.subtitle')}
         actions={
-          <BulkActionsBar
-            primary={{
-              label: t('compliance.action.exportReport'),
-              icon: Download,
-              onClick: () =>
-                toast({
-                  variant: 'info',
-                  title: t('compliance.toast.exporting'),
-                }),
-            }}
-          />
+          /* ⚠️ **EXPORT LEFT THE PRIMARY SLOT, AND DP2-BUTTON-01 SAYS WHY:
+             *an Export never occupies the primary slot*. It sat there because
+             it was the only action this page had. The primary act on a
+             compliance tracker is asking a supplier for the certificate the
+             tracker says is missing — so the slot now holds the act, and
+             Export takes the secondary register it always belonged in. */
+          <div className="flex items-center gap-2">
+            <BulkActionsBar
+              actions={[
+                {
+                  label: t('compliance.action.exportReport'),
+                  icon: Download,
+                  onClick: () =>
+                    toast({
+                      variant: 'info',
+                      title: t('compliance.toast.exporting'),
+                    }),
+                },
+              ]}
+              primary={
+                request.kind === 'held'
+                  ? {
+                      label: t('compliance.request.action'),
+                      icon: FilePlus2,
+                      onClick: () => setRequestOpen(true),
+                    }
+                  : undefined
+              }
+            />
+            {/* Withheld renders as pending-with-an-owner, in the verb's own
+                slot — never as a disabled control and never as silence. */}
+            {request.kind !== 'held' && (
+              <HandoffNotice
+                availability={request}
+                testId="handoff-supplierdoc-request"
+              />
+            )}
+          </div>
         }
       />
 
@@ -773,6 +917,185 @@ const BuyerCompliance: React.FC = () => {
           {t('compliance.phase2.body')}
         </span>
       </div>
+      {/* ── §WAVE E · THE REQUEST PANEL ────────────────────────────────────
+          ⚠️ **THE PANEL IS MOUNTED ONLY WHEN THE SEAT HOLDS THE ATOM, AND THAT
+          IS THE MODE BEING GATED RATHER THAN THE DOOR (§84).** `SupplierOrders`
+          shipped a live commit because a notice guarded ONE entrance to a mode
+          three ways reachable, and a comment asserting the other doors were
+          unreachable was the only thing holding it up — it was false. Here the
+          MODE itself is conditional, so there is no second door to miss, and a
+          seat NARROWED WHILE THE PANEL STANDS OPEN loses the panel rather than
+          just the button (`SupplierShipments` is the precedent to copy).
+
+          `SidePanel`'s own contract (#280) makes a closed panel ABSENT rather
+          than hidden, so this guard is about AUTHORITY, not about leakage. */}
+      {request.kind === 'held' && (
+        <SidePanel
+          open={requestOpen}
+          onClose={closeRequest}
+          title={t('compliance.request.panel.title')}
+          footerActions={
+            reqConfirming ? (
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => setReqConfirming(false)}
+                  disabled={reqBusy}
+                >
+                  {t('compliance.request.action.back')}
+                </Button>
+                <Button
+                  variant="outline"
+                  data-testid="doc-request-commit"
+                  disabled={!reqComplete || reqBusy}
+                  onClick={() => {
+                    void runRequest();
+                  }}
+                >
+                  {t('compliance.request.action.send')}
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                data-testid="doc-request-review"
+                disabled={!reqComplete}
+                onClick={() => setReqConfirming(true)}
+              >
+                {t('compliance.request.action.review')}
+              </Button>
+            )
+          }
+        >
+          {/* ⚠️ **CONFIRM-BEFORE-COMMIT, AND WHAT IT IS FOR IS THE SUPPLIER
+              CHOICE, NOT THE CLICK.** This act writes across the tenancy
+              boundary — a row minted here lands in ANOTHER company's queue and
+              names them as owing Paragon a document. The roster resolution
+              (`requireCreationOwner`) refuses an id that is not a tenant; it
+              cannot refuse the WRONG tenant, because the wrong tenant is a
+              perfectly valid one. Only a reader can catch that, so the reader
+              is shown the resolved NAME — not the id they picked from — beside
+              every other field, before anything commits. */}
+          {reqConfirming ? (
+            <div className="space-y-4" data-testid="doc-request-confirm">
+              <p className="text-sm text-text-secondary">
+                {t('compliance.request.confirm.lead')}
+              </p>
+              <dl className="bg-bg-hover rounded px-4 py-3 space-y-3 text-sm">
+                <div>
+                  <dt className="text-label text-text-tertiary uppercase">
+                    {t('compliance.request.field.supplier')}
+                  </dt>
+                  <dd className="text-text-primary font-semibold">
+                    {/* i18n-defer: mock/sample data (supplier name) */}
+                    {reqSupplierName}{' '}
+                    <Data className="text-xs text-text-tertiary">
+                      {reqSupplier}
+                    </Data>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-label text-text-tertiary uppercase">
+                    {t('compliance.request.field.category')}
+                  </dt>
+                  <dd className="text-text-primary">
+                    {t(
+                      REQUEST_CATEGORIES.find((c) => c.id === reqCategory)
+                        ?.labelKey ?? 'compliance.request.category.other',
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-label text-text-tertiary uppercase">
+                    {t('compliance.request.field.note')}
+                  </dt>
+                  {/* i18n-defer: buyer-authored free text, shown to the
+                      supplier word for word. */}
+                  <dd className="text-text-secondary">{reqNote.trim()}</dd>
+                </div>
+              </dl>
+              <p className="text-xs text-text-tertiary">
+                {t('compliance.request.confirm.unattributed')}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <p className="text-sm text-text-secondary">
+                {t('compliance.request.panel.lead')}
+              </p>
+
+              <label className="block">
+                <span className="block text-label text-text-tertiary uppercase mb-1">
+                  {t('compliance.request.field.supplier')}
+                </span>
+                <select
+                  data-testid="doc-request-supplier"
+                  className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action"
+                  value={reqSupplier}
+                  onChange={(e) => setReqSupplier(e.target.value)}
+                >
+                  <option value="">
+                    {t('compliance.request.field.supplierPlaceholder')}
+                  </option>
+                  {/* ⚠️ THE ROSTER THROUGH THE SEAM, NOT THE FIXTURE MODULE.
+                      The dispatcher resolves the chosen id against the SAME
+                      roster, so every value this control can produce is a value
+                      the gate accepts — the refusal exists for a payload this
+                      control cannot construct, which is precisely why the
+                      refusal is not decorative. */}
+                  {supplierOptions.map((sup) => (
+                    <option key={sup.id} value={sup.id}>
+                      {/* i18n-defer: mock/sample data (supplier name) */}
+                      {sup.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="block text-label text-text-tertiary uppercase mb-1">
+                  {t('compliance.request.field.category')}
+                </span>
+                <select
+                  data-testid="doc-request-category"
+                  className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action"
+                  value={reqCategory}
+                  onChange={(e) =>
+                    setReqCategory(e.target.value as SupplierDocumentCategory | '')
+                  }
+                >
+                  <option value="">
+                    {t('compliance.request.field.categoryPlaceholder')}
+                  </option>
+                  {REQUEST_CATEGORIES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {t(c.labelKey)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="block text-label text-text-tertiary uppercase mb-1">
+                  {t('compliance.request.field.note')}
+                </span>
+                <textarea
+                  rows={3}
+                  data-testid="doc-request-note"
+                  className="w-full px-3 py-2 text-sm text-text-primary bg-white border border-border-input rounded-md focus:outline-none focus:border-action placeholder:text-text-tertiary"
+                  placeholder={t('compliance.request.field.notePlaceholder')}
+                  value={reqNote}
+                  onChange={(e) => setReqNote(e.target.value)}
+                />
+                <span className="block text-xs text-text-tertiary mt-1">
+                  {t('compliance.request.field.noteHint')}
+                </span>
+              </label>
+            </div>
+          )}
+        </SidePanel>
+      )}
+
     </AppShellV2>
   );
 };

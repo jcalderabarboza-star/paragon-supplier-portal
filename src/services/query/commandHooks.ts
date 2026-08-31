@@ -23,6 +23,7 @@ import type {
   InspectionResult,
   CommandDecision,
   CertificateDeclaration,
+  SupplierDocumentCategory,
 } from '../data/types';
 
 /**
@@ -1085,6 +1086,45 @@ export function useSupplierDocumentDeclare() {
     mutationFn: (vars) =>
       svc.commands.dispatch(scope, {
         transitionId: 't_supplierdoc_declare',
+        entity: 'supplierDocument',
+        payload: { ...vars },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Ask a supplier for a document (fires the `creation` verb
+ * `t_supplierdoc_request`, atom `supplierdoc:request` — the `compliance` lane).
+ *
+ * ⚠️ **THE BUYER NAMES THE SUPPLIER, AND THAT IS THE ONE DIRECTION THIS
+ * PLATFORM ALLOWS A `supplierId` TO COME FROM SOMEWHERE OTHER THAN THE SESSION.**
+ * Everywhere else the id is the seat's own (`scope.supplierId`); here it is the
+ * subject of the act, because a request with no addressee is not a request. What
+ * keeps that from being a spoofable field is `supplierDocumentTarget`'s
+ * `creationOwner` + `requireCreationOwner` (C4b): the dispatcher refuses
+ * `SCOPE_DENIED` unless the id resolves to a real tenant on the roster, so the
+ * payload carries a validated SELECTION rather than a free string.
+ *
+ * `note` is the buyer's own words and is OPTIONAL AT THE VERB — the machine
+ * requires `supplierId` + `category`. The surface requires it; see
+ * `BuyerCompliance`'s confirm step.
+ */
+export function useSupplierDocumentRequest() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<
+    CommandResult,
+    Error,
+    { supplierId: string; category: SupplierDocumentCategory; note?: string }
+  >({
+    mutationFn: (vars) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_supplierdoc_request',
         entity: 'supplierDocument',
         payload: { ...vars },
       }),

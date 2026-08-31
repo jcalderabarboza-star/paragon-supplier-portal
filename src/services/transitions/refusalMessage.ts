@@ -44,7 +44,7 @@
 
 import { refusalKindOf } from './refusals';
 import { POLICY_HOOKS } from './policyHooks';
-import { COMMAND_REFUSAL_GLOSSARY } from '../../lib/glossary';
+import { COMMAND_REFUSAL_GLOSSARY, DATA_ERROR_GLOSSARY } from '../../lib/glossary';
 
 /**
  * The locale split used by the glossary page (`pages-v2/Glossary.tsx`), copied
@@ -60,6 +60,37 @@ function indonesian(language: string | undefined): boolean {
  * the field list, the hook name and its reason. Empty for the two bare members
  * and for any reason that is not a refusal at all.
  */
+/**
+ * The OTHER half of the same problem, and it is a different vocabulary rather
+ * than a tenth member of the one above.
+ *
+ * ⚠️ **A DISPATCHER REFUSAL IS RETURNED; A SCOPE REFUSAL IS THROWN.** The nine
+ * `COMMAND_REFUSALS` arrive as `CommandResult.reason` and read
+ * `KIND:detail` — which is what `refusalKindOf` splits on. A `DataError` does
+ * not: `dispatcher.ts` throws `SCOPE_DENIED` with the message *"creation of
+ * supplierDocument denied: unresolved owner"*, whose head is a sentence and
+ * matches no member, so `describeRefusal` correctly returns `null` and the
+ * caller falls back to the raw string.
+ *
+ * **Measured in browser QA (Wave E), not predicted:** an Indonesian operator
+ * whose request was refused read an English sentence assembled out of a
+ * dispatcher constant — the `ROLE_NOT_PERMITTED:po:confirm` defect that
+ * created this module, reappearing through the door it does not cover. The
+ * code is already on the error and `DATA_ERROR_GLOSSARY` already defines every
+ * member in EN and ID; as with `describeRefusal`, **this adds no vocabulary of
+ * its own** and returns `null` for anything it does not own, so every caller's
+ * existing fallback survives byte-for-byte.
+ */
+export function describeDataError(
+  code: string | undefined,
+  language: string | undefined,
+): string | null {
+  if (!code) return null;
+  const entry = (DATA_ERROR_GLOSSARY as Record<string, { en: string; id: string }>)[code];
+  if (!entry) return null;
+  return indonesian(language) ? entry.id : entry.en;
+}
+
 export function refusalDetailOf(reason: string | undefined): string {
   const kind = refusalKindOf(reason);
   if (!kind || !reason || reason.length <= kind.length + 1) return '';

@@ -81,6 +81,7 @@ import { inventoryDeclarationStore } from './stores/inventoryDeclarationStore';
 import { incomingShipmentStore } from './stores/incomingShipmentStore';
 import { enforcementSettingStore } from './stores/enforcementSettingStore';
 import { mockShipments } from '../../../data/mockShipments';
+import { mockSuppliers } from '../../../data/mockSuppliers';
 import {
   FORECAST_PUBLICATIONS,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
@@ -1405,6 +1406,15 @@ const roleTarget: CommandTarget = {
 // document carries the supplier's own `scopeText`; compliance assigns SAP
 // material codes at verify. See `CertificateDeclaration.scopeText` for the
 // measurement that decides it.
+/**
+ * The fixture convention for a field with nothing to state — `doc-006` carries
+ * it on `fileType` / `fileSize` / `version`, and it is a different claim from
+ * the empty string: '' reads as a value that was lost, this reads as a value
+ * that does not exist yet. Named once so the two creation branches below cannot
+ * drift onto different characters.
+ */
+const NOT_STATED = '—';
+
 const CERT_TYPE_TO_CATEGORY: Record<CertType, SupplierDocumentCategory> = {
   HALAL_BPJPH: 'Halal Compliance',
   HALAL_MUI_LEGACY: 'Halal Compliance',
@@ -1464,6 +1474,18 @@ const supplierDocumentTarget: CommandTarget = {
               declaration: decl,
               // The denormalised display fields follow the declaration, so the
               // row a reader sees and the declaration behind it cannot disagree.
+              //
+              // ⚠️ **`name` JOINED THIS LIST IN WAVE E, AND ITS ABSENCE WAS
+              // ALREADY A DEFECT ON THE SHIPPED PATH.** Every other display
+              // field was replaced from the declaration and this one was not, so
+              // a document that reached `Under Review` through `_submit` kept a
+              // name describing whatever it used to be — the exact disagreement
+              // the comment above says these lines exist to prevent. Wave E only
+              // made it VISIBLE: a REQUESTED row is minted `NOT_STATED`, so
+              // without this the certificate would still be called — after the
+              // supplier had named it. `create` writes `decl.certNumber` for the
+              // volunteered path; this is the same rule for the requested one.
+              name: decl.certNumber,
               issuedBy: decl.issuer,
               issuedDate: decl.issuedOn,
               expiryDate: decl.expiresOn,
@@ -1485,19 +1507,103 @@ const supplierDocumentTarget: CommandTarget = {
         : {}),
     }));
   },
-  // A supplier may declare only for itself. Derived from the payload and checked
-  // against `scope.supplierId` by the dispatcher — QueryScope on a creation
-  // command, exactly as on a read.
+  // ⚠️ **`requireCreationOwner` IS THE HALF THE DECLARE PATH NEVER NEEDED, AND
+  // THE REQUEST PATH CANNOT SHIP WITHOUT.** Until `t_supplierdoc_request` this
+  // target served ONE creation, `_declare`, whose caller is always a SUPPLIER —
+  // and the dispatcher's supplier branch already refuses any owner that is not
+  // `scope.supplierId`, so an owner function that merely ECHOED the payload was
+  // sufficient: the equality check did the resolving. A BUYER creation walks the
+  // other branch (`dispatcher.ts:318`), where the ONLY thing standing between a
+  // payload string and a minted row is this flag. Without it, `supplierId:
+  // 'sup-999'` mints a document owned by a tenant that does not exist —
+  // permanently in `Awaiting Upload`, permanently invisible to every seat,
+  // counted in no queue anybody can reach. `requiredFields` refuses only ''.
+  //
+  // **A PAYLOAD ECHO IS NOT A RESOLUTION** (operator ruling, Wave E). The owner
+  // is now resolved against the platform roster, which is what turns a payload
+  // FIELD into a validated SELECTION — the C4b shape, `inventoryDeclarationTarget`
+  // one target up, argued the same way and for the same reason.
+  //
+  // ⚠️ **AND IT IS INERT FOR `_declare`, WHICH IS PROVED RATHER THAN ASSERTED.**
+  // A supplier scope never reaches the `requireCreationOwner` branch, and every
+  // seat id is a roster id, so the resolution cannot narrow a supplier declaring
+  // for itself. `supplierDocumentCreationOwner.test.ts` holds both directions;
+  // the M3 mutation (restore the echo) is what shows the guard is not vacuous.
+  requireCreationOwner: true,
   creationOwner: (payload) => {
     const sid = typeof payload.supplierId === 'string' ? payload.supplierId : '';
-    return sid === '' ? null : sid;
+    return mockSuppliers.some((s) => s.id === sid) ? sid : null;
   },
+  // ⚠️ **THE BRANCH IS ON `toState`, THE WAY `applyTransition` ABOVE BRANCHES,
+  // AND FOR THE SAME REASON: TWO CREATION VERBS LAND HERE AND ONLY ONE OF THEM
+  // CARRIES A DECLARATION.** `t_supplierdoc_declare` → `Under Review` with all
+  // five `DECLARATION_FIELDS`; `t_supplierdoc_request` → `Awaiting Upload` with
+  // `supplierId` + `category` and nothing else. Running `declarationFrom`
+  // unconditionally — the shape this replaced — would have done three things,
+  // each independently a defect:
+  //
+  //   1. minted `declaration: { certType: undefined, certNumber: '', … }` on a
+  //      document NOBODY DECLARED. `BuyerCompliance`'s review queue and §80's
+  //      `RefusalBlock` both branch on `doc.declaration` being present, so a
+  //      requested row would take the has-a-declaration path and render labelled
+  //      blanks — and `compliance.queue.noDeclaration`, the honest fallback
+  //      written for exactly this case, could never fire.
+  //   2. DISCARDED THE BUYER'S CHOSEN CATEGORY, overwriting it with
+  //      `CERT_TYPE_TO_CATEGORY[undefined]`. The one field the buyer states
+  //      would be the one field the store loses.
+  //   3. written `name`/`issuedBy`/`linkedTo` as empty strings, which is not the
+  //      same claim as — (this file's convention for "nothing to state").
+  //
+  // Operator ruling, Wave E. `supplierDocumentRequest.test.ts` asserts (1)
+  // directly: the fallback FIRES on a requested row.
   create: (payload, toState, scope) => {
-    const decl = declarationFrom(payload, scope);
     const id = supplierDocumentStore.nextNumber();
+    const supplierId = String(payload.supplierId);
+
+    // ── THE BUYER'S ASK ──────────────────────────────────────────────────
+    if (toState === 'Awaiting Upload') {
+      // The buyer's own words for what is wanted and why, rendered to the
+      // supplier VERBATIM — the `scopeText` shape facing the other way, and
+      // `i18n-defer` for the same reason. Optional at the verb (the machine
+      // requires `supplierId` + `category`); the SURFACE requires it, because a
+      // demand with no stated reason fails the state-the-reason rule.
+      const note = typeof payload.note === 'string' ? payload.note.trim() : '';
+      supplierDocumentStore.add({
+        id,
+        supplierId,
+        // ⚠️ NOTHING HAS BEEN NAMED YET, AND THE ROW SAYS SO. A request opens a
+        // SLOT; the supplier names the certificate when it declares, at which
+        // point `applyTransition` writes the number in. Composing a name here
+        // would mint English into a store both locales read (§82) and would be
+        // a claim about a document that does not exist.
+        name: NOT_STATED,
+        // THE ONE FIELD THE BUYER STATES, KEPT. The dispatcher has already
+        // proven it non-empty (`requiredFields`); the union keeps it honest.
+        category: payload.category as SupplierDocumentCategory,
+        status: toState as SupplierDocumentStatus,
+        issuedBy: NOT_STATED,
+        issuedDate: '',
+        expiryDate: null,
+        fileType: NOT_STATED,
+        fileSize: NOT_STATED,
+        version: NOT_STATED,
+        // The ask's scope IS its category — the only scope that exists before
+        // the supplier answers. `SupplierDocuments`' awaiting-upload banner
+        // joins this field across rows, so — there would render as noise where
+        // a true statement fits.
+        linkedTo: payload.category as SupplierDocumentCategory,
+        // Absent rather than blank: `notes` is optional and the surface renders
+        // it conditionally, so an empty string would draw an empty warning line.
+        ...(note === '' ? {} : { notes: note }),
+      });
+      return { entityId: id };
+    }
+
+    // ── THE SUPPLIER'S VOLUNTEERED DECLARATION (§82, unchanged) ───────────
+    const decl = declarationFrom(payload, scope);
     supplierDocumentStore.add({
       id,
-      supplierId: String(payload.supplierId),
+      supplierId,
       // ⚠️ **THE NAME IS THE CERTIFICATE NUMBER, NOT A COMPOSED SENTENCE.** The
       // seeded rows carry authored prose names ("Halal Certificate — MUI No. …")
       // and composing one here would mean minting ENGLISH inside a store that
@@ -1513,8 +1619,8 @@ const supplierDocumentTarget: CommandTarget = {
       // The fixture convention for "no file" (doc-006 carries the same), and
       // here it is the literal truth for every declared row: nothing was
       // transmitted, so there is no type and no size to state.
-      fileType: '—',
-      fileSize: '—',
+      fileType: NOT_STATED,
+      fileSize: NOT_STATED,
       version: 'v1',
       linkedTo: decl.scopeText,
       declaration: decl,
