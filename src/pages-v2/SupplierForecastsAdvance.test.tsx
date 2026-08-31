@@ -21,8 +21,7 @@ import SupplierForecasts from './SupplierForecasts';
 import { incomingShipmentStore } from '../services/data/mock/stores/incomingShipmentStore';
 import { MockCommandService } from '../services/data/mock/MockCommandService';
 import {
-  shipmentDisplayLifecycle,
-  asnStatusToLifecycle,
+  asnTrackingFor,
   INCOMING_SHIPMENTS,
   SUPPLIER_MATERIAL_RELATIONSHIPS,
 } from '../services/sdc';
@@ -130,16 +129,13 @@ describe('WAVE D premises — derived from the tree, not inherited', () => {
     expect(narrowed).toContain('invoice:submit');
   });
 
-  it('⚠️ THE DECIDING MEASUREMENT — on a to-paragon leg the STORED lifecycle is never displayed', async () => {
-    // Every ASN status maps, so the derived value ALWAYS wins for to-paragon.
-    const statuses = [...new Set(MOCK_ASNS.map((a) => a.status))];
-    expect(statuses.length).toBeGreaterThan(3);
-    for (const st of statuses) {
-      expect(asnStatusToLifecycle(st), `${st} must map`).not.toBeNull();
-    }
-
-    // …and walked with the REAL dispatcher: the store advances through three
-    // states while the card's value does not move at all.
+  it('⚠️ THE MEASUREMENT THAT DECIDED WAVE D, NOW INVERTED BY THE FIX', async () => {
+    // ⚠️ **THIS TEST USED TO ASSERT THE DEFECT.** It read: the store advances
+    // Booked → Shipped → Arrived while the card reads Booked at every step, and
+    // that was Wave D's whole reason for withholding these verbs on a to-paragon
+    // leg. The shadowed-lifecycle batch separated the axes, so the same walk now
+    // shows the leg's own state moving — and the assertion is turned around
+    // rather than deleted, because the inversion is the evidence the fix landed.
     const svc = new MockCommandService();
     const scope = scopeFor('sup-007');
     const created = await svc.dispatch(scope, {
@@ -150,20 +146,23 @@ describe('WAVE D premises — derived from the tree, not inherited', () => {
         materialCode: 'PK-PETB-8810',
         direction: 'to-paragon',
         qty: 1000,
-        asnRef: 'ASN-2025-00215', // Draft → displays Booked
+        asnRef: 'ASN-2025-00215',
       },
     });
     expect(created.status).not.toBe('failed');
     const id = created.entityId!;
-    const seen: string[] = [];
-    const stored: string[] = [];
+    const declared: string[] = [];
+    const asnAxis: (string | null)[] = [];
     const observe = () => {
       const row = incomingShipmentStore.get(id)!;
-      stored.push(row.lifecycle);
-      seen.push(shipmentDisplayLifecycle(row, 'Draft').lifecycle);
+      declared.push(row.lifecycle);
+      asnAxis.push(asnTrackingFor(row, 'Draft')?.asnStatus ?? null);
     };
     observe();
-    for (const v of ['t_incomingshipment_ship', 't_incomingshipment_arrive']) {
+    for (const v of [
+      't_incomingshipment_ship',
+      't_incomingshipment_arrive',
+    ]) {
       const r = await svc.dispatch(scope, {
         transitionId: v,
         entity: 'incomingShipment',
@@ -172,22 +171,54 @@ describe('WAVE D premises — derived from the tree, not inherited', () => {
       expect(r.status, `${v} dispatches successfully`).not.toBe('failed');
       observe();
     }
-    expect(stored).toEqual(['Booked', 'Shipped', 'Arrived']);
+
+    // AXIS 1 moves with every act. The old assertion here was the same walk on
+    // the same instrument and read ['Booked', 'Booked', 'Booked'].
     expect(
-      seen,
-      'THE STORE MOVED THREE STATES AND THE CARD NEVER CHANGED. That is why the\n' +
-        'advance verbs are offered on principal-to-distributor legs only.',
-    ).toEqual(['Booked', 'Booked', 'Booked']);
+      declared,
+      'THE DECLARED AXIS STOPPED MOVING. The two axes have been collapsed back\n' +
+        'into one and a supplier act is invisible again.',
+    ).toEqual(['Booked', 'Shipped', 'Arrived']);
+
+    // AXIS 2 is unchanged throughout — correctly, because nothing the supplier
+    // did touched the ASN. That is what makes them two facts rather than one.
+    expect(asnAxis).toEqual(['Draft', 'Draft', 'Draft']);
+
+    // ⚠️ **ship → arrive → cancel CANNOT RUN ON ONE LEG, and the machine is
+    // right.** `Arrived` is terminal, so cancel is reachable only from `Booked`
+    // or `Shipped`. It gets its own leg rather than being tacked onto this one —
+    // a walk that dispatches an illegal verb and swallows the refusal would
+    // prove nothing about either axis.
+    expect(userVerbsFrom('incomingShipment', 'Arrived')).toEqual([]);
+    const second = await svc.dispatch(scope, {
+      transitionId: 't_incomingshipment_report',
+      entity: 'incomingShipment',
+      payload: {
+        supplierId: 'sup-007',
+        materialCode: 'PK-PETB-8810',
+        direction: 'to-paragon',
+        qty: 500,
+        asnRef: 'ASN-2025-00215',
+      },
+    });
+    const cancelled = await svc.dispatch(scope, {
+      transitionId: 't_incomingshipment_cancel',
+      entity: 'incomingShipment',
+      entityId: second.entityId!,
+    });
+    expect(cancelled.status).not.toBe('failed');
+    const row = incomingShipmentStore.get(second.entityId!)!;
+    expect(row.lifecycle).toBe('Cancelled');
+    expect(asnTrackingFor(row, 'Draft')?.asnStatus).toBe('Draft');
   });
 
-  it("⚠️ …and `Cancelled` is not even in the display map's range", () => {
-    const range = new Set(
-      [...new Set(MOCK_ASNS.map((a) => a.status))].map((s) => asnStatusToLifecycle(s)),
-    );
-    expect(range.has('Cancelled' as never)).toBe(false);
-    // Paired membership so the negative is not vacuous.
-    expect(range.has('Booked')).toBe(true);
-    expect(range.has('Arrived')).toBe(true);
+  it('⚠️ `Cancelled` is renderable on a to-paragon leg — the state the old map dropped', () => {
+    // The old range was Booked | Shipped | Arrived, so a cancelled to-paragon leg
+    // could never render as cancelled. The ASN axis no longer speaks in leg
+    // words, so there is no range for a leg state to fall outside of.
+    const cancelled = { ...INCOMING_SHIPMENTS[0], lifecycle: 'Cancelled' as const };
+    expect(cancelled.lifecycle).toBe('Cancelled');
+    expect(asnTrackingFor(cancelled, 'Delivered')?.asnStatus).toBe('Delivered');
   });
 
   it('⚠️ sup-007 — the DEFAULT SEAT — cannot produce an advanceable leg at all', async () => {
@@ -424,6 +455,75 @@ describe('a to-paragon leg offers no advance control, and says why', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. TENANCY — proved against a population that can violate it.
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 6. THE RENDER GUARD — the card shows the DECLARED axis, not the ASN's.
+//
+// ⚠️ **NO SPEC ASSERTED THIS BEFORE THE SHADOWED-LIFECYCLE BATCH, WHICH IS THE
+// COMPLETE EXPLANATION FOR HOW THE DEFECT SURVIVED.** Wave D's walks asserted
+// the STORE moved and which BUTTONS appeared; the old selector's own tests
+// asserted the ASN won. Nothing asserted what the card actually said, so the one
+// question that mattered was the one nothing asked.
+//
+// It needs a leg where the two axes DISAGREE. The fixtures agree by luck
+// (ish-0001 stores 'Shipped' and its ASN is 'In Transit', which the old map
+// translated to 'Shipped'), so the disagreement is GROWN with a real dispatch
+// rather than stamped.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('the card renders the DECLARED axis even when the ASN disagrees', () => {
+  it('⚠️ a CANCELLED to-paragon leg reads Cancelled, beside an In Transit ASN', async () => {
+    // Grow the disagreement: ish-0001 is sup-002's, stored 'Shipped', linked to
+    // ASN-2025-00301 which is 'In Transit'. Cancelling it is legal from Shipped
+    // and puts the stored axis somewhere the old map could not express AT ALL.
+    const res = await new MockCommandService().dispatch(scopeFor('sup-002'), {
+      transitionId: 't_incomingshipment_cancel',
+      entity: 'incomingShipment',
+      entityId: 'ish-0001',
+    });
+    expect(res.status).not.toBe('failed');
+    expect(incomingShipmentStore.get('ish-0001')!.lifecycle).toBe('Cancelled');
+
+    renderWithProviders(<SupplierForecasts />, {
+      identity: identityFor('sup-002'),
+      route: '/supplier/forecasts',
+    });
+    const tab = await openShipments();
+
+    // AXIS 1 — the leg's own state, on the card. Under the old shape this read
+    // 'Shipped' (In Transit, translated) and the cancellation was invisible.
+    await waitFor(() =>
+      expect(
+        tab.textContent,
+        'THE CARD IS NOT SHOWING THE DECLARED STATE. The ASN axis has been let\n' +
+          'back in front of the stored one — the shadowed-lifecycle defect.',
+      ).toMatch(/Cancelled|Dibatalkan/),
+    );
+
+    // AXIS 2 — present, beside it, naming the ASN and carrying the ASN's OWN
+    // word rather than a leg word.
+    const axis = within(tab).getByTestId('ship-asn-tracking');
+    expect(axis.textContent).toContain('ASN-2025-00301');
+    expect(axis.textContent).toMatch(/In Transit|Dalam Perjalanan/);
+
+    // …and the two are DIFFERENT text, which is the whole point: one card, two
+    // facts, neither standing in for the other.
+    expect(axis.textContent).not.toMatch(/Cancelled|Dibatalkan/);
+  }, 20000);
+
+  it('THE KNOWN-GOOD CONTROL — a p2d leg renders its state and NO ASN axis', async () => {
+    // §44 / §39: the assertions above would pass on a page that rendered the ASN
+    // axis unconditionally. A p2d leg has no ASN by construction, so its absence
+    // proves the axis is conditional on real linkage rather than always drawn.
+    renderWithProviders(<SupplierForecasts />, {
+      identity: SUP005,
+      route: '/supplier/forecasts',
+    });
+    const tab = await openShipments();
+    await waitFor(() => expect(tab.textContent).toMatch(/Booked|Dipesan/));
+    expect(within(tab).queryByTestId('ship-asn-tracking')).toBeNull();
+  }, 20000);
+});
 
 describe('tenancy — the legs are isolated per supplier', () => {
   it('the default seat sees NEITHER fixture leg; each owner sees exactly its own', async () => {

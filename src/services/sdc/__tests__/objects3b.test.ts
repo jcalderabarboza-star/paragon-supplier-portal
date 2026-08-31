@@ -4,8 +4,7 @@ import {
   normalizeInventoryDeclarationDraft,
   buildIncomingShipmentPayload,
   ownCollaboratedMaterials,
-  shipmentDisplayLifecycle,
-  asnStatusToLifecycle,
+  asnTrackingFor,
 } from '../index';
 import type {
   ForecastPublication,
@@ -17,8 +16,8 @@ import type {
 // SDC-3b — the pure surface layer for the two additional supplier objects. These
 // tests lock the SURFACE contracts that mirror the server rules: uom is never in
 // a payload; asnRef rides ONLY a to-paragon leg; the material set equals the
-// command's (i)∪(ii) membership; and a to-paragon leg's displayed lifecycle is
-// DERIVED from its linked ASN (never the stored value).
+// command's (i)∪(ii) membership; and a to-paragon leg carries an ASN axis
+// BESIDE its stored lifecycle, never instead of it.
 
 // CP-0 · PR-2a — the builder no longer parses. Coercion moved into
 // `normalizeInventoryDeclarationDraft` (the ONE parse, routing through
@@ -283,7 +282,14 @@ describe('ownCollaboratedMaterials (the (i)∪(ii) membership mirror)', () => {
   });
 });
 
-describe('shipmentDisplayLifecycle (drift-honesty)', () => {
+describe('asnTrackingFor — the SECOND axis, beside the stored one', () => {
+  // ⚠️ **THIS BLOCK REPLACES FOUR TESTS THAT PINNED THE DEFECT AS THE CONTRACT.**
+  // They are worth recording rather than quietly deleting. One was named *"a
+  // to-paragon leg DERIVES its lifecycle from the linked ASN (not the stored
+  // value)"* and its fixture carried `lifecycle: 'Booked', // stored —
+  // deliberately stale`. The suite was not silent about the shadow; it asserted
+  // the shadow was correct, which is why walking the verbs was the only way it
+  // could be found.
   const base: Omit<IncomingShipment, 'direction' | 'lifecycle' | 'asnRef'> = {
     id: 'ish-x',
     supplierId: 'sup-002',
@@ -293,52 +299,53 @@ describe('shipmentDisplayLifecycle (drift-honesty)', () => {
     provenance: { source: 'SUPPLIER', liveness: 'SIMULATED', planState: 'committed' },
   };
 
-  it('maps ASN statuses onto the shipment lifecycle vocabulary', () => {
-    expect(asnStatusToLifecycle('Draft')).toBe('Booked');
-    expect(asnStatusToLifecycle('Submitted')).toBe('Booked');
-    expect(asnStatusToLifecycle('In Transit')).toBe('Shipped');
-    expect(asnStatusToLifecycle('Delivered')).toBe('Arrived');
-    expect(asnStatusToLifecycle('Discrepancy')).toBe('Arrived');
-    expect(asnStatusToLifecycle('Nonsense')).toBeNull();
-  });
-
-  it('a to-paragon leg DERIVES its lifecycle from the linked ASN (not the stored value)', () => {
+  it('⚠️ a to-paragon leg keeps its STORED lifecycle and gains an ASN axis beside it', () => {
     const s: IncomingShipment = {
       ...base,
       direction: 'to-paragon',
-      lifecycle: 'Booked', // stored — deliberately stale
+      lifecycle: 'Booked',
       asnRef: 'ASN-1',
     };
-    // The linked ASN is In Transit → the leg DISPLAYS Shipped, marked derived.
-    expect(shipmentDisplayLifecycle(s, 'In Transit')).toEqual({
-      lifecycle: 'Shipped',
-      derivedFromAsn: true,
+    // The old contract returned 'Shipped' here and the stored 'Booked' vanished.
+    expect(s.lifecycle).toBe('Booked');
+    expect(asnTrackingFor(s, 'In Transit')).toEqual({
+      asnRef: 'ASN-1',
+      asnStatus: 'In Transit',
     });
   });
 
-  it('a principal-to-distributor leg keeps its STORED lifecycle (no ASN)', () => {
+  it('the ASN axis reports the ASN OWN word verbatim — no translation into leg words', () => {
+    const s: IncomingShipment = {
+      ...base,
+      direction: 'to-paragon',
+      lifecycle: 'Booked',
+      asnRef: 'ASN-1',
+    };
+    for (const st of ['Draft', 'Submitted', 'In Transit', 'Delivered', 'Discrepancy'] as const) {
+      expect(asnTrackingFor(s, st)?.asnStatus).toBe(st);
+    }
+  });
+
+  it('a principal-to-distributor leg has NO ASN axis (Paragon is not the consignee)', () => {
     const s: IncomingShipment = {
       ...base,
       direction: 'principal-to-distributor',
       lifecycle: 'Booked',
     };
-    expect(shipmentDisplayLifecycle(s, null)).toEqual({
-      lifecycle: 'Booked',
-      derivedFromAsn: false,
-    });
+    expect(asnTrackingFor(s, null)).toBeNull();
+    expect(s.lifecycle).toBe('Booked');
   });
 
-  it('a to-paragon leg whose ASN cannot be resolved falls back to the stored value', () => {
+  it('a to-paragon leg whose ASN cannot be resolved gets no axis — and keeps its own state', () => {
     const s: IncomingShipment = {
       ...base,
       direction: 'to-paragon',
       lifecycle: 'Shipped',
       asnRef: 'ASN-GONE',
     };
-    // null status ⇒ no derivation invented.
-    expect(shipmentDisplayLifecycle(s, null)).toEqual({
-      lifecycle: 'Shipped',
-      derivedFromAsn: false,
-    });
+    // The old code returned the stored value DRESSED AS a derived one here,
+    // conflating "Paragon has nothing to say" with "the leg has not moved".
+    expect(asnTrackingFor(s, null)).toBeNull();
+    expect(s.lifecycle).toBe('Shipped');
   });
 });

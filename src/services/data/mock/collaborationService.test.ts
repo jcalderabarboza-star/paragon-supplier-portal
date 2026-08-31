@@ -80,8 +80,16 @@ describe('collaboration — P1 own-reads are per-supplier isolated (buyer = supe
     ]);
     expect(b.items.every((v) => v.shipment.supplierId === B)).toBe(true);
     expect(buyer.items.filter((v) => v.shipment.supplierId === B).length).toBe(b.items.length);
-    // The view carries its display lifecycle (derived, not a bare leg).
-    expect(b.items.every((v) => typeof v.display.lifecycle === 'string')).toBe(true);
+    // The view carries the leg's OWN stored lifecycle, plus an ASN axis that is
+    // present only where Paragon has something to say. The two never merge —
+    // before the shadowed-lifecycle fix this asserted a single `display.lifecycle`
+    // that the ASN always won.
+    expect(b.items.every((v) => typeof v.shipment.lifecycle === 'string')).toBe(true);
+    expect(
+      b.items.every((v) => v.asnTracking === null || typeof v.asnTracking.asnStatus === 'string'),
+    ).toBe(true);
+    // No view may carry a field meaning "the lifecycle to display".
+    expect(b.items.every((v) => !('display' in v))).toBe(true);
   });
 
   it('own-responses are STATUS-ONLY — raw submissions, never a consolidation row', async () => {
