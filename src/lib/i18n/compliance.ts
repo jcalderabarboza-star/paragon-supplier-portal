@@ -146,6 +146,42 @@ export const complianceEn: Record<string, string> = {
   'compliance.action.remind': 'Remind',
   'compliance.toast.reminderQueued': 'Reminder queued for {{supplier}}',
   'compliance.toast.reminderDesc': 'Simulated — delivery pending live channel.',
+  // — §WAVE E · THE BUYER'S REQUEST —
+  // The copy never says "upload" and never says "send": the platform
+  // transmits nothing to anybody. A request OPENS A SLOT the supplier can
+  // see on its own documents page — that is the whole of what happens, and
+  // the confirm step says so in as many words rather than implying a
+  // message went out. The same rule §82 applied to the declaration.
+  'compliance.request.action': 'Ask for a document',
+  'compliance.request.panel.title': 'Ask a supplier for a document',
+  'compliance.request.panel.lead':
+    'This opens a slot on that supplier’s documents page. Nothing is sent and no file is transferred — the supplier sees what you asked for the next time they look.',
+  'compliance.request.field.supplier': 'Supplier',
+  'compliance.request.field.supplierPlaceholder': 'Choose a supplier…',
+  'compliance.request.field.category': 'Kind of document',
+  'compliance.request.field.categoryPlaceholder': 'Choose a kind…',
+  'compliance.request.field.note': 'What you need, and why',
+  'compliance.request.field.notePlaceholder':
+    'e.g. the BPJPH certificate covering the PET bottle line, before the next receipt is posted',
+  'compliance.request.field.noteHint':
+    'The supplier reads this word for word, so write it to them. A request with no reason is one they cannot act on.',
+  'compliance.request.category.halal': 'Halal compliance',
+  'compliance.request.category.bpom': 'BPOM regulatory',
+  'compliance.request.category.quality': 'Quality',
+  'compliance.request.category.taxLegal': 'Tax & legal',
+  'compliance.request.category.contract': 'Contract',
+  'compliance.request.category.other': 'Other',
+  'compliance.request.action.review': 'Check it over',
+  'compliance.request.action.back': 'Change it',
+  'compliance.request.action.send': 'Open the request',
+  'compliance.request.confirm.lead':
+    'This lands in that supplier’s queue and records that Paragon is asking them for it. Check the company before you open it — the platform can tell a supplier that does not exist from one that does, but not the wrong supplier from the right one.',
+  'compliance.request.confirm.unattributed':
+    'Recorded against this seat, not against a named person — nobody is signed in to this platform.',
+  'compliance.request.toast.sent': 'Request opened',
+  'compliance.request.toast.sentDesc':
+    '{{supplier}} sees it on their documents page, awaiting their declaration.',
+  'compliance.request.toast.failed': 'Not opened',
   // — Phase 2 integration banner —
   'compliance.phase2.title': 'Phase 2 — Live Integration:',
   'compliance.phase2.body':
@@ -270,6 +306,37 @@ export const complianceId: Record<string, string> = {
   'compliance.action.remind': 'Ingatkan',
   'compliance.toast.reminderQueued': 'Pengingat diantrikan untuk {{supplier}}',
   'compliance.toast.reminderDesc': 'Simulasi — pengiriman menunggu kanal langsung.',
+  // — §WAVE E · PERMINTAAN PEMBELI —
+  'compliance.request.action': 'Minta dokumen',
+  'compliance.request.panel.title': 'Minta dokumen dari pemasok',
+  'compliance.request.panel.lead':
+    'Ini membuka slot pada halaman dokumen pemasok tersebut. Tidak ada yang dikirim dan tidak ada berkas yang dipindahkan — pemasok melihat apa yang Anda minta saat mereka membukanya.',
+  'compliance.request.field.supplier': 'Pemasok',
+  'compliance.request.field.supplierPlaceholder': 'Pilih pemasok…',
+  'compliance.request.field.category': 'Jenis dokumen',
+  'compliance.request.field.categoryPlaceholder': 'Pilih jenis…',
+  'compliance.request.field.note': 'Apa yang Anda perlukan, dan alasannya',
+  'compliance.request.field.notePlaceholder':
+    'mis. sertifikat BPJPH yang mencakup lini botol PET, sebelum penerimaan berikutnya diposkan',
+  'compliance.request.field.noteHint':
+    'Pemasok membacanya kata demi kata, jadi tulislah untuk mereka. Permintaan tanpa alasan tidak dapat mereka tindak lanjuti.',
+  'compliance.request.category.halal': 'Kepatuhan halal',
+  'compliance.request.category.bpom': 'Regulasi BPOM',
+  'compliance.request.category.quality': 'Kualitas',
+  'compliance.request.category.taxLegal': 'Pajak & hukum',
+  'compliance.request.category.contract': 'Kontrak',
+  'compliance.request.category.other': 'Lainnya',
+  'compliance.request.action.review': 'Periksa kembali',
+  'compliance.request.action.back': 'Ubah',
+  'compliance.request.action.send': 'Buka permintaan',
+  'compliance.request.confirm.lead':
+    'Ini masuk ke antrean pemasok tersebut dan mencatat bahwa Paragon memintanya. Periksa nama perusahaannya sebelum Anda membukanya — platform dapat membedakan pemasok yang tidak ada dari yang ada, tetapi tidak pemasok yang keliru dari yang tepat.',
+  'compliance.request.confirm.unattributed':
+    'Dicatat atas kursi ini, bukan atas nama orang tertentu — tidak ada yang masuk ke platform ini.',
+  'compliance.request.toast.sent': 'Permintaan dibuka',
+  'compliance.request.toast.sentDesc':
+    '{{supplier}} melihatnya di halaman dokumen mereka, menunggu pernyataan mereka.',
+  'compliance.request.toast.failed': 'Tidak dibuka',
   // — Phase 2 integration banner —
   'compliance.phase2.title': 'Fase 2 — Integrasi Langsung:',
   'compliance.phase2.body':

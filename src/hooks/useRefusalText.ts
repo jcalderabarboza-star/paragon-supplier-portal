@@ -1,5 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { describeRefusal } from '../services/transitions/refusalMessage';
+import {
+  describeRefusal,
+  describeDataError,
+} from '../services/transitions/refusalMessage';
 
 /**
  * Localize a dispatcher refusal for DISPLAY — the `useModeLabel` shape, with the
@@ -15,4 +18,16 @@ import { describeRefusal } from '../services/transitions/refusalMessage';
 export function useRefusalText(): (reason: string | undefined) => string | null {
   const { i18n } = useTranslation();
   return (reason: string | undefined) => describeRefusal(reason, i18n.language);
+}
+
+
+/**
+ * The same service for a THROWN `DataError` — `SCOPE_DENIED` and its five
+ * siblings, which `useRefusalText` cannot read because their message is prose
+ * rather than `KIND:detail`. Same contract: `null` for a code this vocabulary
+ * does not own, so every call site keeps the fallback it already had.
+ */
+export function useDataErrorText(): (code: string | undefined) => string | null {
+  const { i18n } = useTranslation();
+  return (code: string | undefined) => describeDataError(code, i18n.language);
 }
