@@ -275,7 +275,11 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.ship.state.shipped': 'Shipped',
   'sdcSup.ship.state.arrived': 'Arrived',
   'sdcSup.ship.state.cancelled': 'Cancelled',
-  'sdcSup.ship.trackedViaAsn': 'tracked via ASN {{asn}}',
+  // ── THE SECOND AXIS (the shadowed-lifecycle batch) ──────────────────────────
+  // Replaces `trackedViaAsn`, which described a leg whose state WAS the ASN's.
+  // It no longer is: the pill shows the supplier's declared state and this
+  // labels Paragon's own inbound observation sitting beside it.
+  'sdcSup.ship.asnAxis': 'Paragon inbound · {{asn}}',
 
   // ── WAVE D — the three advance verbs (ship / arrive / cancel) ───────────────
   // `viaAsn` is a REASON, not a handoff: nothing is withheld from this seat by
@@ -608,7 +612,7 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.ship.state.shipped': 'Dikirim',
   'sdcSup.ship.state.arrived': 'Tiba',
   'sdcSup.ship.state.cancelled': 'Dibatalkan',
-  'sdcSup.ship.trackedViaAsn': 'dilacak via ASN {{asn}}',
+  'sdcSup.ship.asnAxis': 'Masuk Paragon · {{asn}}',
 
   // ── WAVE D — verba lanjutan (kirim / tiba / batal) ──────────────────────────
   'sdcSup.ship.advance.ship': 'Tandai dikirim',

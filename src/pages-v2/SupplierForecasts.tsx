@@ -79,6 +79,7 @@ import type { ASN, CommandResult } from '../services/data/types';
 import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
 import { formatDate, formatNumber } from '../lib/format';
 import { statusLabelKey } from '../lib/statusLabel';
+import { statusTone } from '../lib/statusTone';
 import BulkStockEntryGrid from './BulkStockEntryGrid';
 // GL-1 - the glossary destination for this surface's refusals.
 import GlossaryTermChip from '../components/ui-v2/GlossaryTermChip';
@@ -722,26 +723,30 @@ const DIRECTION_LABEL_KEY: Record<ShipmentDirection, string> = {
 
 // ── WAVE D — WHERE THE THREE ADVANCE VERBS MAY BE OFFERED ────────────────────
 //
-// ⚠️ **ON A principal-to-distributor LEG ONLY, AND THIS IS A MEASUREMENT RATHER
-// THAN A PREFERENCE.** A to-paragon leg's DISPLAYED lifecycle is derived from
-// its linked ASN (`shipmentDisplayLifecycle`), and the derivation covers ALL
-// FIVE ASN statuses — so on such a leg the stored `lifecycle` is never what the
-// card shows. Measured end to end: dispatching ship, then arrive, then cancel
-// against a grown to-paragon leg walks the store Booked → Shipped → Arrived →
-// Cancelled while the card reads **Booked at every step**. `Cancelled` is not
-// even in the derivation's range (Booked | Shipped | Arrived), so a cancelled
-// to-paragon leg can never be rendered as cancelled at all.
+// ⚠️ **ON A principal-to-distributor LEG ONLY — AND WAVE D's PRIMARY REASON
+// FOR THIS GATE HAS SINCE BEEN RETIRED, WHICH IS RECORDED HERE RATHER THAN LEFT
+// STANDING.** Wave D withheld the three verbs because a to-paragon leg's card
+// showed its linked ASN's state, so ship / arrive / cancel moved a stored value
+// nothing rendered: the store walked Booked → Shipped → Arrived → Cancelled
+// while the card read Booked throughout. **The shadowed-lifecycle batch fixed
+// that.** The card now renders the leg's OWN declared state on every leg in both
+// directions, and the ASN axis sits beside it. So the invisibility argument is
+// gone, and a comment that still made it would be a false mechanism sitting in
+// front of the next batch.
 //
-// Three shipped statements already say why, and this only obeys them: design
-// §2.3 (*"LINKS to an ASN … never duplicating the tracker"*), `shipment.ts`
-// (*"the stored value is authoritative ONLY for a principal-to-distributor
-// leg"*), and `t_incomingshipment_arrive`'s own flow note (*"for a to-paragon
-// leg the linked ASN machine is the tracker of record"*). Offering the verbs
-// there would ship three controls whose entire effect is invisible on the
-// surface offering them — with a real side effect on the BUYER's coverage
-// projection, which counts a leg as incoming only while it is Booked or Shipped
-// (`consolidation.ts`). Invisible to the actor and visible to the counterparty
-// is worse than inert, not better.
+// ⚠️ **WHAT THE GATE STILL RESTS ON IS THE DUPLICATION ARGUMENT, WHICH IS
+// INDEPENDENT AND WAS ALWAYS THE STRONGER HALF.** Design §2.3, quoted in the
+// flow header: a to-paragon line *"LINKS to an ASN … never duplicating the
+// tracker"*; and `t_incomingshipment_arrive`'s own note: *"for a to-paragon leg
+// the linked ASN machine is the tracker of record"*. A supplier advancing such a
+// leg here AND advancing its ASN there is maintaining two trackers of one
+// movement — which is what the design forbids, whether or not the card moves.
+//
+// ⚠️ **WHETHER TO RE-OPEN THE VERBS ON to-paragon IS AN OPERATOR RULING AND
+// IS DELIBERATELY NOT TAKEN HERE.** It is now a live question that it was not
+// before, because one of its two objections has been answered. Filed, not acted
+// on — widening a fix batch into a scope change is how a ruling gets made by
+// accident.
 //
 // ⚠️ **SO THE to-paragon CASE RENDERS A REASON, NEVER A BLANK.** It is NOT a
 // `HandoffNotice`: nothing is being withheld from this seat by role, and
@@ -751,9 +756,11 @@ const advanceableHere = (s: IncomingShipment): boolean =>
   s.direction === 'principal-to-distributor';
 
 /** Machine-derived legality for one verb on one leg, read from the STORED
- *  lifecycle — the same field `readState` resolves, never `display.lifecycle`.
- *  Keying this on the displayed value would offer `arrive` on a leg the
- *  dispatcher would refuse as ILLEGAL_TRANSITION. */
+ *  lifecycle — the same field `readState` resolves. There is no longer a
+ *  `display.lifecycle` to read by mistake: the ASN axis is an object carrying
+ *  the ASN's own vocabulary, so it cannot be passed where a lifecycle is
+ *  wanted. Before that fix, keying this on the displayed value would have
+ *  offered `arrive` on a leg the dispatcher refuses as ILLEGAL_TRANSITION. */
 const legalOn = (s: IncomingShipment, transitionId: string): boolean =>
   userVerbsFrom('incomingShipment', s.lifecycle).some((v) => v.id === transitionId);
 
@@ -835,7 +842,7 @@ const ShipmentsTab: React.FC<{
           <div className="text-sm text-text-tertiary">{t('sdcSup.ship.emptyBody')}</div>
         </div>
       ) : (
-        shipments.map(({ shipment: s, display }) => (
+        shipments.map(({ shipment: s, asnTracking }) => (
           <div
             key={s.id}
             className="bg-bg-surface border border-border-subtle rounded-lg shadow-sm border-l-2 border-l-teal p-5"
@@ -851,15 +858,29 @@ const ShipmentsTab: React.FC<{
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1">
+                {/* AXIS 1 — the supplier's DECLARED state. Always rendered, on
+                    every leg, in both directions. This is what `_ship`,
+                    `_arrive` and `_cancel` move, and until this batch a
+                    to-paragon leg never showed it. */}
                 <StatusPill variant="neutral">
-                  {t(LIFECYCLE_LABEL_KEY[display.lifecycle] ?? 'sdcSup.ship.state.booked')}
+                  {t(LIFECYCLE_LABEL_KEY[s.lifecycle] ?? 'sdcSup.ship.state.booked')}
                 </StatusPill>
-                {display.derivedFromAsn && (
-                  // Drift-honesty: a to-paragon leg's state is the LINKED ASN's,
-                  // not a stored supplier claim — labelled so it can't be mistaken.
-                  <span className="text-[10px] italic text-text-tertiary">
-                    {t('sdcSup.ship.trackedViaAsn', { asn: s.asnRef })}
-                  </span>
+                {/* AXIS 2 — Paragon's inbound observation, BESIDE the declared
+                    state rather than instead of it. Present only where an ASN
+                    exists. The raw `AsnStatus` token is handed to StatusPill,
+                    which localises its own children. */}
+                {asnTracking && (
+                  <div
+                    className="flex items-center gap-1.5"
+                    data-testid="ship-asn-tracking"
+                  >
+                    <span className="text-[10px] uppercase tracking-wide text-text-tertiary">
+                      {t('sdcSup.ship.asnAxis', { asn: asnTracking.asnRef })}
+                    </span>
+                    <StatusPill variant={statusTone(asnTracking.asnStatus)}>
+                      {asnTracking.asnStatus}
+                    </StatusPill>
+                  </div>
                 )}
               </div>
             </div>

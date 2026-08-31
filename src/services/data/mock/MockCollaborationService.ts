@@ -32,7 +32,7 @@ import {
   supplierCoverageEntries,
   supplierRollups,
   chaseList,
-  shipmentDisplayLifecycle,
+  asnTrackingFor,
   sdcClock,
 } from '../../sdc';
 import type {
@@ -87,11 +87,14 @@ export class MockCollaborationService implements ICollaborationService {
     const own = applySupplierScope(scope, incomingShipmentStore.all());
     const items = own
       .map((shipment) => {
+        // THE TWO AXES. `shipment` carries the supplier's DECLARED lifecycle
+        // untouched; `asnTracking` carries Paragon's inbound observation. The
+        // second never overwrites the first — see `sdc/shipment.ts`.
         const asnStatus =
           shipment.direction === 'to-paragon' && shipment.asnRef
             ? (asnStore.get(shipment.asnRef)?.status ?? null)
             : null;
-        return { shipment, display: shipmentDisplayLifecycle(shipment, asnStatus) };
+        return { shipment, asnTracking: asnTrackingFor(shipment, asnStatus) };
       })
       .sort((a, b) => b.shipment.id.localeCompare(a.shipment.id));
     return { items };
