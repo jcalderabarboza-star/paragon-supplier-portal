@@ -276,6 +276,21 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.ship.state.arrived': 'Arrived',
   'sdcSup.ship.state.cancelled': 'Cancelled',
   'sdcSup.ship.trackedViaAsn': 'tracked via ASN {{asn}}',
+
+  // ── WAVE D — the three advance verbs (ship / arrive / cancel) ───────────────
+  // `viaAsn` is a REASON, not a handoff: nothing is withheld from this seat by
+  // role — the leg is tracked by its ASN, so advancing it here would move a
+  // value this card never shows.
+  'sdcSup.ship.advance.ship': 'Mark shipped',
+  'sdcSup.ship.advance.arrive': 'Mark arrived',
+  'sdcSup.ship.advance.cancel': 'Cancel shipment',
+  'sdcSup.ship.advance.viaAsn':
+    'This leg advances through ASN {{asn}} — update it on your shipments page.',
+  'sdcSup.ship.advance.terminal': 'This leg has finished — no further updates.',
+  'sdcSup.ship.advance.shipped.title': 'Shipment {{id}} marked shipped',
+  'sdcSup.ship.advance.arrived.title': 'Shipment {{id}} marked arrived',
+  'sdcSup.ship.advance.cancelled.title': 'Shipment {{id}} cancelled',
+  'sdcSup.ship.advance.failed.title': 'That update was refused',
   'sdcSup.ship.col.qty': 'Quantity',
   'sdcSup.ship.col.eta': 'ETA',
   'sdcSup.ship.col.etd': 'ETD',
@@ -594,6 +609,18 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.ship.state.arrived': 'Tiba',
   'sdcSup.ship.state.cancelled': 'Dibatalkan',
   'sdcSup.ship.trackedViaAsn': 'dilacak via ASN {{asn}}',
+
+  // ── WAVE D — verba lanjutan (kirim / tiba / batal) ──────────────────────────
+  'sdcSup.ship.advance.ship': 'Tandai dikirim',
+  'sdcSup.ship.advance.arrive': 'Tandai tiba',
+  'sdcSup.ship.advance.cancel': 'Batalkan pengiriman',
+  'sdcSup.ship.advance.viaAsn':
+    'Rute ini berjalan melalui ASN {{asn}} — perbarui di halaman pengiriman Anda.',
+  'sdcSup.ship.advance.terminal': 'Rute ini telah selesai — tidak ada pembaruan lagi.',
+  'sdcSup.ship.advance.shipped.title': 'Pengiriman {{id}} ditandai dikirim',
+  'sdcSup.ship.advance.arrived.title': 'Pengiriman {{id}} ditandai tiba',
+  'sdcSup.ship.advance.cancelled.title': 'Pengiriman {{id}} dibatalkan',
+  'sdcSup.ship.advance.failed.title': 'Pembaruan itu ditolak',
   'sdcSup.ship.col.qty': 'Kuantitas',
   'sdcSup.ship.col.eta': 'ETA',
   'sdcSup.ship.col.etd': 'ETD',

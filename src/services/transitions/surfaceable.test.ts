@@ -280,6 +280,33 @@ describe('THE CENSUS — acts a screen is meant to offer that no screen offers',
     // `/supplier/orders`, in its own slot beside `po:confirm`'s.
     expect(firable.has('t_po_acknowledge')).toBe(true);
     expect(census).not.toContain('t_po_acknowledge');
+
+    // ⚠️ **AND ALL THREE INCOMING-SHIPMENT ADVANCE VERBS JOIN THEM (Wave D).**
+    // Surfaced on `/supplier/forecasts`, Shipments tab, each in its own slot on
+    // the leg's action row.
+    //
+    // ⚠️ **THE CENSUS CANNOT SEE THE HALF THAT MATTERS, AND SAYING SO HERE IS
+    // THE POINT.** It asks "does any source dispatch this id?" — so it reads
+    // GREEN the moment a call site exists, on a leg of EITHER direction. What
+    // this batch actually ruled is that the verbs are offered on a
+    // `principal-to-distributor` leg ONLY, because a to-paragon leg's card
+    // renders its linked ASN's state and the stored `lifecycle` these verbs move
+    // is never displayed there. A dispatch census is blind to that distinction
+    // by construction; `SupplierForecastsAdvance.test.tsx` is what holds it.
+    for (const id of [
+      't_incomingshipment_ship',
+      't_incomingshipment_arrive',
+      't_incomingshipment_cancel',
+    ]) {
+      expect(firable.has(id), `${id} should now be dispatched from a surface`).toBe(true);
+      expect(census).not.toContain(id);
+    }
+
+    // The paired membership control on the SAME instrument, so the four
+    // assertions above cannot pass by the census having collapsed: the leg's
+    // own creation verb was surfaced long before this batch and must still read
+    // as firable, and `t_gr_hold` (below) must still read as flagged.
+    expect(firable.has('t_incomingshipment_report')).toBe(true);
   });
 
   it('⚠️ AND ITS SIBLING STAYS FLAGGED — `t_po_view` is the control on the control', () => {

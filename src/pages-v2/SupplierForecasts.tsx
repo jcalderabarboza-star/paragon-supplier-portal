@@ -13,7 +13,7 @@ import {
   Trash2,
   Truck,
 } from 'lucide-react';
-import { nextActorFrom } from '../services/transitions';
+import { nextActorFrom, userVerbsFrom } from '../services/transitions';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
@@ -45,6 +45,9 @@ import {
   useOwnSupplierAsns,
   useInventoryDeclare,
   useIncomingShipmentReport,
+  useIncomingShipmentShip,
+  useIncomingShipmentArrive,
+  useIncomingShipmentCancel,
   type CollaboratedMaterialView,
   type IncomingShipmentView,
 } from '../services/query/sdcSupplierHooks';
@@ -65,6 +68,7 @@ import {
   type DisputeEntry,
   type ForecastLine,
   type ForecastPublication,
+  type IncomingShipment,
   type InventoryDeclaration,
   type RequirementResponse,
   type SdcObjectKind,
@@ -716,12 +720,95 @@ const DIRECTION_LABEL_KEY: Record<ShipmentDirection, string> = {
   'principal-to-distributor': 'sdcSup.ship.dir.p2d',
 };
 
+// ── WAVE D — WHERE THE THREE ADVANCE VERBS MAY BE OFFERED ────────────────────
+//
+// ⚠️ **ON A principal-to-distributor LEG ONLY, AND THIS IS A MEASUREMENT RATHER
+// THAN A PREFERENCE.** A to-paragon leg's DISPLAYED lifecycle is derived from
+// its linked ASN (`shipmentDisplayLifecycle`), and the derivation covers ALL
+// FIVE ASN statuses — so on such a leg the stored `lifecycle` is never what the
+// card shows. Measured end to end: dispatching ship, then arrive, then cancel
+// against a grown to-paragon leg walks the store Booked → Shipped → Arrived →
+// Cancelled while the card reads **Booked at every step**. `Cancelled` is not
+// even in the derivation's range (Booked | Shipped | Arrived), so a cancelled
+// to-paragon leg can never be rendered as cancelled at all.
+//
+// Three shipped statements already say why, and this only obeys them: design
+// §2.3 (*"LINKS to an ASN … never duplicating the tracker"*), `shipment.ts`
+// (*"the stored value is authoritative ONLY for a principal-to-distributor
+// leg"*), and `t_incomingshipment_arrive`'s own flow note (*"for a to-paragon
+// leg the linked ASN machine is the tracker of record"*). Offering the verbs
+// there would ship three controls whose entire effect is invisible on the
+// surface offering them — with a real side effect on the BUYER's coverage
+// projection, which counts a leg as incoming only while it is Booked or Shipped
+// (`consolidation.ts`). Invisible to the actor and visible to the counterparty
+// is worse than inert, not better.
+//
+// ⚠️ **SO THE to-paragon CASE RENDERS A REASON, NEVER A BLANK.** It is NOT a
+// `HandoffNotice`: nothing is being withheld from this seat by role, and
+// "Awaiting <owner>" would name a person who is not the obstacle. The act
+// belongs to another MACHINE, and the line says so.
+const advanceableHere = (s: IncomingShipment): boolean =>
+  s.direction === 'principal-to-distributor';
+
+/** Machine-derived legality for one verb on one leg, read from the STORED
+ *  lifecycle — the same field `readState` resolves, never `display.lifecycle`.
+ *  Keying this on the displayed value would offer `arrive` on a leg the
+ *  dispatcher would refuse as ILLEGAL_TRANSITION. */
+const legalOn = (s: IncomingShipment, transitionId: string): boolean =>
+  userVerbsFrom('incomingShipment', s.lifecycle).some((v) => v.id === transitionId);
+
 const ShipmentsTab: React.FC<{
   shipments: readonly IncomingShipmentView[];
   onReport: () => void;
 }> = ({ shipments, onReport }) => {
   const { t } = useTranslation();
+  const { toast } = useToast();
   const reportAvailability = useVerbAvailability('incomingshipment:report');
+  // Three DISTINCT atoms → three availabilities → three notices in their own
+  // slots. They are separate grants in `fulfilment`, and a seat can be narrowed
+  // to hold one and not another; gating all three on one atom would invent an
+  // authority statement the bundles do not make.
+  const advance = useVerbAvailabilities({
+    ship: 'incomingshipment:ship',
+    arrive: 'incomingshipment:arrive',
+    cancel: 'incomingshipment:cancel',
+  } as const);
+  const shipMutation = useIncomingShipmentShip();
+  const arriveMutation = useIncomingShipmentArrive();
+  const cancelMutation = useIncomingShipmentCancel();
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const runAdvance = async (
+    s: IncomingShipment,
+    mutation: { mutateAsync: (v: { shipmentId: string }) => Promise<CommandResult> },
+    okTitleKey: string,
+  ) => {
+    setPendingId(s.id);
+    try {
+      const res = await mutation.mutateAsync({ shipmentId: s.id });
+      if (res.status === 'failed') {
+        toast({
+          variant: 'error',
+          title: t('sdcSup.ship.advance.failed.title'),
+          description: res.reason ?? t('sdcSup.toast.failed.body'),
+        });
+        return;
+      }
+      toast({ variant: 'success', title: t(okTitleKey, { id: s.id }) });
+    } catch (e) {
+      // A refusal the dispatcher THROWS (SCOPE_DENIED) rather than returns.
+      // Absorbing it would leave the supplier pressing a button that reports
+      // nothing at all.
+      toast({
+        variant: 'error',
+        title: t('sdcSup.ship.advance.failed.title'),
+        description: e instanceof Error ? e.message : String(e),
+      });
+    } finally {
+      setPendingId(null);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4" data-testid="sdcsup-shipments">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -812,6 +899,88 @@ const ShipmentsTab: React.FC<{
                 </Data>
               </div>
             </dl>
+            {/* ── WAVE D — the three advance verbs, each in its OWN slot ─────── */}
+            <div className="flex items-center justify-end gap-2 flex-wrap mt-4 pt-4 border-t border-border-subtle">
+              {!advanceableHere(s) ? (
+                // The reason, not a blank. See `advanceableHere` above: this leg
+                // is tracked by its ASN, so advancing it here would move a value
+                // this card never shows.
+                <span
+                  className="text-xs text-text-tertiary"
+                  data-testid="ship-advance-via-asn"
+                >
+                  {t('sdcSup.ship.advance.viaAsn', { asn: s.asnRef ?? '—' })}
+                </span>
+              ) : (
+                <>
+                  {legalOn(s, 't_incomingshipment_ship') &&
+                    (advance.ship.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={Ship}
+                        disabled={pendingId === s.id}
+                        onClick={() =>
+                          runAdvance(s, shipMutation, 'sdcSup.ship.advance.shipped.title')
+                        }
+                      >
+                        {t('sdcSup.ship.advance.ship')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={advance.ship}
+                        testId="handoff-incomingshipment-ship"
+                      />
+                    ))}
+                  {legalOn(s, 't_incomingshipment_arrive') &&
+                    (advance.arrive.kind === 'held' ? (
+                      <Button
+                        variant="outline"
+                        icon={Truck}
+                        disabled={pendingId === s.id}
+                        onClick={() =>
+                          runAdvance(s, arriveMutation, 'sdcSup.ship.advance.arrived.title')
+                        }
+                      >
+                        {t('sdcSup.ship.advance.arrive')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={advance.arrive}
+                        testId="handoff-incomingshipment-arrive"
+                      />
+                    ))}
+                  {legalOn(s, 't_incomingshipment_cancel') &&
+                    (advance.cancel.kind === 'held' ? (
+                      <Button
+                        variant="secondary"
+                        disabled={pendingId === s.id}
+                        onClick={() =>
+                          runAdvance(s, cancelMutation, 'sdcSup.ship.advance.cancelled.title')
+                        }
+                      >
+                        {t('sdcSup.ship.advance.cancel')}
+                      </Button>
+                    ) : (
+                      <HandoffNotice
+                        availability={advance.cancel}
+                        testId="handoff-incomingshipment-cancel"
+                      />
+                    ))}
+                  {/* A terminal leg has no verbs left. Say so rather than
+                      rendering an empty bar that reads as a loading state. */}
+                  {!legalOn(s, 't_incomingshipment_ship') &&
+                    !legalOn(s, 't_incomingshipment_arrive') &&
+                    !legalOn(s, 't_incomingshipment_cancel') && (
+                      <span
+                        className="text-xs text-text-tertiary"
+                        data-testid="ship-advance-terminal"
+                      >
+                        {t('sdcSup.ship.advance.terminal')}
+                      </span>
+                    )}
+                </>
+              )}
+            </div>
           </div>
         ))
       )}
