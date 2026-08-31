@@ -53,6 +53,8 @@ import { processFlowPurposeEn, processFlowPurposeId } from './processFlowPurpose
 import { glossaryEn, glossaryId } from './glossary';
 // — Surface residuals: the seat-identity guard —
 import { identityEn, identityId } from './identity';
+// — The read path's failure surface (31 consumer pages, both personas) —
+import { errorStateEn, errorStateId } from './errorState';
 
 // Page i18n fragments must keep EN/ID key sets in lockstep — a key present in EN
 // but missing in ID silently falls back to English at runtime (an invisible
@@ -116,6 +118,7 @@ const FRAGMENTS = [
   // arm that fires is chosen by PERSONA, so a missing ID string would be
   // invisible until a supplier seat with an unresolvable tenant hit it.
   { name: 'identity', en: identityEn, id: identityId },
+  { name: 'errorState', en: errorStateEn, id: errorStateId },
 ];
 
 describe('page i18n fragments — EN/ID parity (SEAT2-I18N-BATCH)', () => {
