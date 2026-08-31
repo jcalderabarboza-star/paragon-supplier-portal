@@ -421,24 +421,40 @@ describe('the narrowed seat — each verb renders its OWN pending-with-an-owner 
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 4. THE to-paragon LEG — a reason, never a blank, and never a control.
+// 4. THE to-paragon LEG — THE GATE IS PER-VERB.
+//
+// ⚠️ **THIS BLOCK ASSERTED "no button, no handoff notice" FOR ALL THREE VERBS.**
+// That was the per-DIRECTION form of the rule and it is now wrong for one of the
+// three: `_cancel` is offered on a to-paragon leg, because no `AsnStatus` means
+// cancelled, so there is no second tracker to duplicate — and cancellation is
+// the one act only the supplier can perform.
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('a to-paragon leg offers no advance control, and says why', () => {
-  it('⚠️ no button, no handoff notice — the reason line instead', async () => {
+describe('a to-paragon leg — ship and arrive defer to the ASN, cancel does not', () => {
+  it('⚠️ SHIP defers with its OWN reason, and CANCEL is a live control on the same leg', async () => {
     renderWithProviders(<SupplierForecasts />, {
       identity: identityFor('sup-002'),
       route: '/supplier/forecasts',
     });
     const tab = await openShipments();
-    const reason = await within(tab).findByTestId('ship-advance-via-asn');
-    expect(reason.textContent).toContain('ASN-2025-00301');
 
-    for (const name of [/Mark shipped/i, /Mark arrived/i, /Cancel shipment/i]) {
-      expect(within(tab).queryByRole('button', { name })).toBeNull();
-    }
-    // ⚠️ AND NOT A HANDOFF NOTICE. This seat HOLDS all three atoms — naming an
-    // owner would say a role is the obstacle when the obstacle is the ASN.
+    // ish-0001 is Shipped, so ARRIVE is the legal advance and it defers…
+    const reason = await within(tab).findByTestId('ship-advance-via-asn-arrive');
+    expect(reason.textContent).toContain('ASN-2025-00301');
+    expect(within(tab).queryByRole('button', { name: /Mark arrived/i })).toBeNull();
+
+    // …while CANCEL, legal from Shipped too, is a real button on the SAME leg.
+    // One leg, two answers — which is what "per-verb" means and what the old
+    // per-direction shape could not express.
+    expect(
+      within(tab).getByRole('button', { name: /Cancel shipment/i }),
+      'CANCEL IS NOT OFFERED ON A to-paragon LEG. The gate has collapsed back to\n' +
+        'a per-DIRECTION rule, which withholds the only act the ASN cannot record.',
+    ).toBeInTheDocument();
+
+    // ⚠️ AND THE DEFERRAL IS NOT A HANDOFF NOTICE. This seat HOLDS all three
+    // atoms — naming an owner would say a role is the obstacle when the obstacle
+    // is another machine. That distinction was correct in Wave D and survives.
     for (const id of [
       'handoff-incomingshipment-ship',
       'handoff-incomingshipment-arrive',
@@ -446,10 +462,83 @@ describe('a to-paragon leg offers no advance control, and says why', () => {
     ]) {
       expect(within(tab).queryByTestId(id)).toBeNull();
     }
-    // The leg IS in a state with legal exits — so the absence above is the
-    // direction rule, not an already-terminal leg.
-    expect(userVerbsFrom('incomingShipment', 'Shipped').length).toBeGreaterThan(0);
   }, 20000);
+
+  it('⚠️ SHIP defers on a BOOKED to-paragon leg — the other reason string, in its own slot', async () => {
+    // Reach Booked on a to-paragon leg the only way a person can: report one.
+    const res = await new MockCommandService().dispatch(scopeFor('sup-002'), {
+      transitionId: 't_incomingshipment_report',
+      entity: 'incomingShipment',
+      payload: {
+        supplierId: 'sup-002',
+        materialCode: 'RM-EMUL-3310',
+        direction: 'to-paragon',
+        qty: 100,
+        asnRef: 'ASN-2025-00301',
+      },
+    });
+    expect(res.status).not.toBe('failed');
+
+    renderWithProviders(<SupplierForecasts />, {
+      identity: identityFor('sup-002'),
+      route: '/supplier/forecasts',
+    });
+    const tab = await openShipments();
+    // The SHIP reason exists and is a DIFFERENT string from the arrive one —
+    // the split, asserted rather than assumed.
+    const shipReason = await within(tab).findByTestId('ship-advance-via-asn-ship');
+    const arriveReason = within(tab).getByTestId('ship-advance-via-asn-arrive');
+    expect(shipReason.textContent).not.toEqual(arriveReason.textContent);
+    expect(within(tab).queryByRole('button', { name: /Mark shipped/i })).toBeNull();
+    // …and cancel is live on the grown Booked leg as well.
+    expect(within(tab).getAllByRole('button', { name: /Cancel shipment/i }).length).toBeGreaterThan(0);
+  }, 20000);
+
+  it('⚠️ CANCELLING a to-paragon leg moves the card — the act is visible to its actor', async () => {
+    renderWithProviders(<SupplierForecasts />, {
+      identity: identityFor('sup-002'),
+      route: '/supplier/forecasts',
+    });
+    const tab = await openShipments();
+    expect(incomingShipmentStore.get('ish-0001')!.lifecycle).toBe('Shipped');
+    fireEvent.click(within(tab).getByRole('button', { name: /Cancel shipment/i }));
+    await waitFor(() =>
+      expect(incomingShipmentStore.get('ish-0001')!.lifecycle).toBe('Cancelled'),
+    );
+    const after = await screen.findByTestId('sdcsup-shipments');
+    // The DECLARED axis on the card — the half #282 made possible and the half
+    // that made this batch's ruling askable.
+    await waitFor(() => expect(after.textContent).toMatch(/Cancelled|Dibatalkan/));
+    expect(within(after).getByTestId('ship-advance-terminal')).toBeInTheDocument();
+  }, 20000);
+
+  it('⚠️ THE BILATERAL GATE — every advance verb is classified, and exactly one is not ASN-tracked', () => {
+    // A new advance verb must not land unclassified. Derived from the FLOW, not
+    // from a list in this file.
+    const flow = getKnownFlows().find((f) => f.entity === 'incomingShipment')!;
+    const advanceVerbs = flow.transitions
+      .filter((t) => t.trigger === 'user')
+      .map((t) => t.id)
+      .sort();
+    expect(advanceVerbs).toEqual([
+      't_incomingshipment_arrive',
+      't_incomingshipment_cancel',
+      't_incomingshipment_ship',
+    ]);
+
+    // The surface's own set, read back through the rendered outcome rather than
+    // imported: on a to-paragon leg, an ASN-tracked verb renders a reason and a
+    // non-tracked one renders a control. Asserted in both directions by the two
+    // tests above, and pinned here as a statement of the RULE.
+    //
+    // The justification, measured: `Cancelled` is not an `AsnStatus`, so the ASN
+    // can never report a cancellation. `sdc/shipmentAxes.test.ts` holds the
+    // empty-intersection assertion this rests on.
+    const ASN_STATUSES = ['Draft', 'Submitted', 'In Transit', 'Delivered', 'Discrepancy'];
+    expect(ASN_STATUSES).not.toContain('Cancelled');
+    // Paired membership so the negative is not vacuous.
+    expect(ASN_STATUSES).toContain('In Transit');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────

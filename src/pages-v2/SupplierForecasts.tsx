@@ -723,44 +723,104 @@ const DIRECTION_LABEL_KEY: Record<ShipmentDirection, string> = {
 
 // ── WAVE D — WHERE THE THREE ADVANCE VERBS MAY BE OFFERED ────────────────────
 //
-// ⚠️ **ON A principal-to-distributor LEG ONLY — AND WAVE D's PRIMARY REASON
-// FOR THIS GATE HAS SINCE BEEN RETIRED, WHICH IS RECORDED HERE RATHER THAN LEFT
-// STANDING.** Wave D withheld the three verbs because a to-paragon leg's card
-// showed its linked ASN's state, so ship / arrive / cancel moved a stored value
-// nothing rendered: the store walked Booked → Shipped → Arrived → Cancelled
-// while the card read Booked throughout. **The shadowed-lifecycle batch fixed
-// that.** The card now renders the leg's OWN declared state on every leg in both
-// directions, and the ASN axis sits beside it. So the invisibility argument is
-// gone, and a comment that still made it would be a false mechanism sitting in
-// front of the next batch.
+// ── THE GATE IS PER-VERB, NOT PER-DIRECTION ───────────────────────────
 //
-// ⚠️ **WHAT THE GATE STILL RESTS ON IS THE DUPLICATION ARGUMENT, WHICH IS
-// INDEPENDENT AND WAS ALWAYS THE STRONGER HALF.** Design §2.3, quoted in the
-// flow header: a to-paragon line *"LINKS to an ASN … never duplicating the
-// tracker"*; and `t_incomingshipment_arrive`'s own note: *"for a to-paragon leg
-// the linked ASN machine is the tracker of record"*. A supplier advancing such a
-// leg here AND advancing its ASN there is maintaining two trackers of one
-// movement — which is what the design forbids, whether or not the card moves.
+// ⚠️ **THIS RULE HAS BEEN RESTATED TWICE AND BOTH EARLIER FORMS WERE WRONG IN
+// THE SAME WAY — THEY GENERALISED FROM ONE VERB TO THE DIRECTION.** Wave D
+// withheld all three advance verbs on a to-paragon leg because the card showed
+// the linked ASN's state, so nothing the supplier did was visible. The
+// shadowed-lifecycle batch removed that, and the comment was rewritten to rest
+// on the DUPLICATION argument alone — still applied to the whole direction.
+// Neither form asked the question one verb at a time.
 //
-// ⚠️ **WHETHER TO RE-OPEN THE VERBS ON to-paragon IS AN OPERATOR RULING AND
-// IS DELIBERATELY NOT TAKEN HERE.** It is now a live question that it was not
-// before, because one of its two objections has been answered. Filed, not acted
-// on — widening a fix batch into a scope change is how a ruling gets made by
-// accident.
+// ⚠️ **ASKED PER VERB, THE ANSWER SPLITS, AND THE MEASUREMENT IS THE EMPTY
+// INTERSECTION.** `AsnStatus` is `Draft | Submitted | In Transit | Delivered |
+// Discrepancy`; `ShipmentLifecycle` is `Booked | Shipped | Arrived | Cancelled`.
+// They share NO member (asserted in `sdc/shipmentAxes.test.ts`), but the ASN
+// vocabulary does report the same PHYSICAL MOVEMENT that `_ship` and `_arrive`
+// record — departure and arrival — and it reports NOTHING that means a leg was
+// called off. So:
 //
-// ⚠️ **SO THE to-paragon CASE RENDERS A REASON, NEVER A BLANK.** It is NOT a
-// `HandoffNotice`: nothing is being withheld from this seat by role, and
-// "Awaiting <owner>" would name a person who is not the obstacle. The act
-// belongs to another MACHINE, and the line says so.
-const advanceableHere = (s: IncomingShipment): boolean =>
-  s.direction === 'principal-to-distributor';
+//   · `_ship` / `_arrive` on a to-paragon leg DUPLICATE the tracker. Design
+//     §2.3: a to-paragon line *"LINKS to an ASN … never duplicating the
+//     tracker"*; `t_incomingshipment_arrive`'s own note: *"the linked ASN
+//     machine is the tracker of record"*. The supplier advances that movement
+//     on `SupplierShipments`, where the ASN lives.
+//   · `_cancel` DUPLICATES NOTHING. No ASN status means cancelled, so there is
+//     no second tracker to disagree with — and cancellation is the one act only
+//     the supplier can perform. Withholding it left a to-paragon leg with no way
+//     to be called off from ANY surface.
+//
+// ⚠️ **AND §2.3 GOVERNS THE DATA MODEL, WHICH IS WHY IT CANNOT CARRY THE WHOLE
+// GATE ON ITS OWN.** Its enforcement is the symmetric CREATION pair
+// (`ISH_TOPARAGON_ASN_LINKED` / `ISH_P2D_NO_ASN`), which makes direction ⇔
+// linkage 1:1 at birth. Neither guard says a supplier may not update a linked
+// leg's own state, and the leg HAS a stored lifecycle the machine writes and the
+// buyer's coverage reads.
+//
+// ⚠️ **IT IS A DECLARATION, NOT A DERIVATION, AND THAT IS DELIBERATE.** The
+// discriminator is semantic — "does the ASN report this movement?" — and the
+// one function that mapped between the two vocabularies was DELETED by the
+// shadowed-lifecycle batch precisely so nothing could substitute one for the
+// other. Re-deriving it here to compute this set would rebuild that bridge. A
+// bilateral gate in `SupplierForecastsAdvance.test.tsx` pins the set against the
+// flow's own verb list instead, so a new advance verb cannot land unclassified.
+const ASN_TRACKED_VERBS: ReadonlySet<string> = new Set([
+  't_incomingshipment_ship',
+  't_incomingshipment_arrive',
+]);
 
-/** Machine-derived legality for one verb on one leg, read from the STORED
- *  lifecycle — the same field `readState` resolves. There is no longer a
- *  `display.lifecycle` to read by mistake: the ASN axis is an object carrying
- *  the ASN's own vocabulary, so it cannot be passed where a lifecycle is
- *  wanted. Before that fix, keying this on the displayed value would have
- *  offered `arrive` on a leg the dispatcher refuses as ILLEGAL_TRANSITION. */
+/**
+ * Would offering this verb on this leg duplicate the ASN tracker? Only a
+ * to-paragon leg has an ASN at all, so a p2d leg is never duplicative — but the
+ * direction is the second condition here, not the first.
+ */
+const duplicatesAsnTracker = (s: IncomingShipment, transitionId: string): boolean =>
+  s.direction === 'to-paragon' && ASN_TRACKED_VERBS.has(transitionId);
+
+/** The reason copy is PER VERB, never shared. It used to be one string rendered
+ *  once for the whole leg, which is only expressible while the answer is the
+ *  same for all three — and it no longer is. Splitting it beats rewording it
+ *  into something vague enough to cover both answers.
+ *
+ *  ⚠️ It is NOT a `HandoffNotice`: the seat HOLDS the atom. Nothing is
+ *  withheld by role, so naming an owner would blame a person for a boundary
+ *  between two machines. That distinction was correct in Wave D and survives. */
+const VIA_ASN_KEY: Readonly<Record<string, string>> = {
+  t_incomingshipment_ship: 'sdcSup.ship.advance.viaAsn.ship',
+  t_incomingshipment_arrive: 'sdcSup.ship.advance.viaAsn.arrive',
+};
+
+/** The three advance verbs as DATA, so the gate above is applied to each of them
+ *  by one code path. `key` is the availability key (three DISTINCT atoms — a
+ *  seat may hold one and not another). */
+const ADVANCE_VERBS = [
+  {
+    transitionId: 't_incomingshipment_ship',
+    key: 'ship',
+    labelKey: 'sdcSup.ship.advance.ship',
+    okTitleKey: 'sdcSup.ship.advance.shipped.title',
+    icon: Ship,
+    variant: 'outline',
+  },
+  {
+    transitionId: 't_incomingshipment_arrive',
+    key: 'arrive',
+    labelKey: 'sdcSup.ship.advance.arrive',
+    okTitleKey: 'sdcSup.ship.advance.arrived.title',
+    icon: Truck,
+    variant: 'outline',
+  },
+  {
+    transitionId: 't_incomingshipment_cancel',
+    key: 'cancel',
+    labelKey: 'sdcSup.ship.advance.cancel',
+    okTitleKey: 'sdcSup.ship.advance.cancelled.title',
+    icon: undefined,
+    variant: 'secondary',
+  },
+] as const;
+
 const legalOn = (s: IncomingShipment, transitionId: string): boolean =>
   userVerbsFrom('incomingShipment', s.lifecycle).some((v) => v.id === transitionId);
 
@@ -783,6 +843,8 @@ const ShipmentsTab: React.FC<{
   const shipMutation = useIncomingShipmentShip();
   const arriveMutation = useIncomingShipmentArrive();
   const cancelMutation = useIncomingShipmentCancel();
+  /** Keyed by the SAME key as `advance`, so the verb table can reach both. */
+  const mutationFor = { ship: shipMutation, arrive: arriveMutation, cancel: cancelMutation };
   const [pendingId, setPendingId] = useState<string | null>(null);
 
   const runAdvance = async (
@@ -920,86 +982,63 @@ const ShipmentsTab: React.FC<{
                 </Data>
               </div>
             </dl>
-            {/* ── WAVE D — the three advance verbs, each in its OWN slot ─────── */}
+            {/* the three advance verbs, each in its OWN slot */}
             <div className="flex items-center justify-end gap-2 flex-wrap mt-4 pt-4 border-t border-border-subtle">
-              {!advanceableHere(s) ? (
-                // The reason, not a blank. See `advanceableHere` above: this leg
-                // is tracked by its ASN, so advancing it here would move a value
-                // this card never shows.
-                <span
-                  className="text-xs text-text-tertiary"
-                  data-testid="ship-advance-via-asn"
-                >
-                  {t('sdcSup.ship.advance.viaAsn', { asn: s.asnRef ?? '—' })}
+              {/* ONE renderer, not three copies. The per-verb gate is applied in
+                  a SINGLE place so it cannot be applied inconsistently. The
+                  previous shape repeated four near-identical lines per verb
+                  around a gate that sat OUTSIDE all three — which is exactly
+                  what made a per-direction answer the only expressible one. */}
+              {ADVANCE_VERBS.map(({ transitionId, key, labelKey, okTitleKey, icon, variant }) => {
+                if (!legalOn(s, transitionId)) return null;
+                const suffix = transitionId.replace('t_incomingshipment_', '');
+
+                // 1. Does the linked ASN already track this movement? Then the
+                //    act belongs to the ASN machine, and the line names it.
+                if (duplicatesAsnTracker(s, transitionId)) {
+                  return (
+                    <span
+                      key={transitionId}
+                      className="text-xs text-text-tertiary"
+                      data-testid={`ship-advance-via-asn-${suffix}`}
+                    >
+                      {t(VIA_ASN_KEY[transitionId], { asn: s.asnRef ?? '—' })}
+                    </span>
+                  );
+                }
+
+                // 2. Does the seat hold the atom? A different question, asked
+                //    SECOND: a role cannot grant an act the leg does not support,
+                //    so "Awaiting <owner>" must never stand in for (1).
+                const availability = advance[key];
+                if (availability.kind !== 'held') {
+                  return (
+                    <HandoffNotice
+                      key={transitionId}
+                      availability={availability}
+                      testId={`handoff-incomingshipment-${suffix}`}
+                    />
+                  );
+                }
+
+                return (
+                  <Button
+                    key={transitionId}
+                    variant={variant}
+                    icon={icon}
+                    disabled={pendingId === s.id}
+                    onClick={() => runAdvance(s, mutationFor[key], okTitleKey)}
+                  >
+                    {t(labelKey)}
+                  </Button>
+                );
+              })}
+              {/* A terminal leg has no verbs left. Say so rather than rendering
+                  an empty bar that reads as a loading state. */}
+              {ADVANCE_VERBS.every(({ transitionId }) => !legalOn(s, transitionId)) && (
+                <span className="text-xs text-text-tertiary" data-testid="ship-advance-terminal">
+                  {t('sdcSup.ship.advance.terminal')}
                 </span>
-              ) : (
-                <>
-                  {legalOn(s, 't_incomingshipment_ship') &&
-                    (advance.ship.kind === 'held' ? (
-                      <Button
-                        variant="outline"
-                        icon={Ship}
-                        disabled={pendingId === s.id}
-                        onClick={() =>
-                          runAdvance(s, shipMutation, 'sdcSup.ship.advance.shipped.title')
-                        }
-                      >
-                        {t('sdcSup.ship.advance.ship')}
-                      </Button>
-                    ) : (
-                      <HandoffNotice
-                        availability={advance.ship}
-                        testId="handoff-incomingshipment-ship"
-                      />
-                    ))}
-                  {legalOn(s, 't_incomingshipment_arrive') &&
-                    (advance.arrive.kind === 'held' ? (
-                      <Button
-                        variant="outline"
-                        icon={Truck}
-                        disabled={pendingId === s.id}
-                        onClick={() =>
-                          runAdvance(s, arriveMutation, 'sdcSup.ship.advance.arrived.title')
-                        }
-                      >
-                        {t('sdcSup.ship.advance.arrive')}
-                      </Button>
-                    ) : (
-                      <HandoffNotice
-                        availability={advance.arrive}
-                        testId="handoff-incomingshipment-arrive"
-                      />
-                    ))}
-                  {legalOn(s, 't_incomingshipment_cancel') &&
-                    (advance.cancel.kind === 'held' ? (
-                      <Button
-                        variant="secondary"
-                        disabled={pendingId === s.id}
-                        onClick={() =>
-                          runAdvance(s, cancelMutation, 'sdcSup.ship.advance.cancelled.title')
-                        }
-                      >
-                        {t('sdcSup.ship.advance.cancel')}
-                      </Button>
-                    ) : (
-                      <HandoffNotice
-                        availability={advance.cancel}
-                        testId="handoff-incomingshipment-cancel"
-                      />
-                    ))}
-                  {/* A terminal leg has no verbs left. Say so rather than
-                      rendering an empty bar that reads as a loading state. */}
-                  {!legalOn(s, 't_incomingshipment_ship') &&
-                    !legalOn(s, 't_incomingshipment_arrive') &&
-                    !legalOn(s, 't_incomingshipment_cancel') && (
-                      <span
-                        className="text-xs text-text-tertiary"
-                        data-testid="ship-advance-terminal"
-                      >
-                        {t('sdcSup.ship.advance.terminal')}
-                      </span>
-                    )}
-                </>
               )}
             </div>
           </div>
