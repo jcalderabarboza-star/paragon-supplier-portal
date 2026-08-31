@@ -120,6 +120,47 @@ export function usePurchaseOrderConfirm() {
   });
 }
 
+export interface PoAcknowledgeVars {
+  poId: string;
+}
+
+/**
+ * Acknowledge a purchase order (fires `t_po_acknowledge`, Sent | Viewed →
+ * Acknowledged).
+ *
+ * ⚠️ **`poId`, NOT `poNumber`, AND THE TWO KEY SPACES DO NOT OVERLAP.**
+ * `purchaseOrderTarget` reads through `purchaseOrderStore.get(id)`, which
+ * matches on `p.id` (`po-008`); `findPoByNumber` is a SEPARATE lookup on
+ * `p.poNumber` (`PO-2025-00108`). Derived: the two sets intersect in ZERO
+ * members, so passing a PO number here does not fail loudly — it resolves no
+ * entity and the dispatcher throws `NOT_FOUND`. `usePurchaseOrderConfirm` takes
+ * `poId` for the same reason and this mirrors it exactly.
+ *
+ * PAYLOAD-FREE, derived not chosen: the transition declares
+ * `requiredFields: []` and `policyHooks: []`. It also shares
+ * `applyTransition` with `t_po_confirm`, which writes `lineItems` from
+ * `payload.confirmedQuantities` — with no payload that branch is skipped and
+ * the ordered quantities are left untouched, which is the correct behaviour for
+ * an act that commits to nothing.
+ */
+export function usePurchaseOrderAcknowledge() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, PoAcknowledgeVars>({
+    mutationFn: ({ poId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_po_acknowledge',
+        entity: 'purchaseOrder',
+        entityId: poId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
 export interface AsnCreateVars {
   poReference: string;
   carrier?: string;

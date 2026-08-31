@@ -62,6 +62,21 @@ export const supplierOrdersEn: Record<string, string> = {
   'supplierOrders.action.backToConfirm': 'Back to confirm',
   'supplierOrders.action.submitChange': 'Submit change request',
   'supplierOrders.action.createAsnNow': 'Create ASN now',
+  // — Acknowledge (t_po_acknowledge) —
+  // ⚠️ THE WORD IS NOT "CONFIRM", AND THE DISTINCTION IS THE MACHINE'S, NOT A
+  // STYLE CHOICE. `t_po_confirm` carries `confirmedQuantities` and a policy hook
+  // that bounds them; `t_po_acknowledge` carries NOTHING. One commits to a
+  // quantity, the other says the order was received. The copy has to keep them
+  // apart or the cheaper button reads as the expensive one.
+  'supplierOrders.action.acknowledge': 'Acknowledge receipt',
+  'supplierOrders.action.acknowledging': 'Acknowledging…',
+  'supplierOrders.ack.success.title': '{{poNumber}} acknowledged',
+  'supplierOrders.ack.success.desc':
+    'Paragon can see you have the order. Confirming quantities is still open.',
+  'supplierOrders.ack.failed.title': 'Could not acknowledge {{poNumber}}',
+  'supplierOrders.ack.failed.desc': 'The command was refused ({{reason}}).',
+  'supplierOrders.ack.denied.title': 'Not authorized',
+  'supplierOrders.ack.denied.desc': 'Your role cannot acknowledge this order.',
   // — Side panel: key facts —
   'supplierOrders.panel.keyFacts': 'Key facts',
   'supplierOrders.panel.lineItems': 'Line items',
@@ -172,6 +187,16 @@ export const supplierOrdersId: Record<string, string> = {
   'supplierOrders.action.backToConfirm': 'Kembali ke konfirmasi',
   'supplierOrders.action.submitChange': 'Kirim permintaan perubahan',
   'supplierOrders.action.createAsnNow': 'Buat ASN sekarang',
+  // — Terima (t_po_acknowledge) —
+  'supplierOrders.action.acknowledge': 'Akui penerimaan',
+  'supplierOrders.action.acknowledging': 'Mengakui…',
+  'supplierOrders.ack.success.title': '{{poNumber}} diakui',
+  'supplierOrders.ack.success.desc':
+    'Paragon dapat melihat Anda telah menerima pesanan. Konfirmasi kuantitas masih terbuka.',
+  'supplierOrders.ack.failed.title': 'Tidak dapat mengakui {{poNumber}}',
+  'supplierOrders.ack.failed.desc': 'Perintah ditolak ({{reason}}).',
+  'supplierOrders.ack.denied.title': 'Tidak berwenang',
+  'supplierOrders.ack.denied.desc': 'Peran Anda tidak dapat mengakui pesanan ini.',
   // — Side panel: key facts —
   'supplierOrders.panel.keyFacts': 'Fakta utama',
   'supplierOrders.panel.lineItems': 'Item baris',
