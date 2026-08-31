@@ -288,8 +288,16 @@ export const sdcSupplierEn: Record<string, string> = {
   'sdcSup.ship.advance.ship': 'Mark shipped',
   'sdcSup.ship.advance.arrive': 'Mark arrived',
   'sdcSup.ship.advance.cancel': 'Cancel shipment',
-  'sdcSup.ship.advance.viaAsn':
-    'This leg advances through ASN {{asn}} — update it on your shipments page.',
+  // ⚠️ SPLIT PER VERB. This was ONE string covering all three advance verbs,
+  // which is only expressible while the answer is the same for all three — and
+  // it no longer is. `_cancel` is offered on a to-paragon leg (no ASN status
+  // means cancelled, so there is nothing to duplicate), while departure and
+  // arrival stay with the ASN. Rewording one string to cover both answers
+  // would have made it vague enough to say nothing.
+  'sdcSup.ship.advance.viaAsn.ship':
+    'Departure is tracked by ASN {{asn}} — mark it shipped there.',
+  'sdcSup.ship.advance.viaAsn.arrive':
+    'Arrival is tracked by ASN {{asn}} — mark it arrived there.',
   'sdcSup.ship.advance.terminal': 'This leg has finished — no further updates.',
   'sdcSup.ship.advance.shipped.title': 'Shipment {{id}} marked shipped',
   'sdcSup.ship.advance.arrived.title': 'Shipment {{id}} marked arrived',
@@ -618,8 +626,10 @@ export const sdcSupplierId: Record<string, string> = {
   'sdcSup.ship.advance.ship': 'Tandai dikirim',
   'sdcSup.ship.advance.arrive': 'Tandai tiba',
   'sdcSup.ship.advance.cancel': 'Batalkan pengiriman',
-  'sdcSup.ship.advance.viaAsn':
-    'Rute ini berjalan melalui ASN {{asn}} — perbarui di halaman pengiriman Anda.',
+  'sdcSup.ship.advance.viaAsn.ship':
+    'Keberangkatan dilacak oleh ASN {{asn}} — tandai dikirim di sana.',
+  'sdcSup.ship.advance.viaAsn.arrive':
+    'Kedatangan dilacak oleh ASN {{asn}} — tandai tiba di sana.',
   'sdcSup.ship.advance.terminal': 'Rute ini telah selesai — tidak ada pembaruan lagi.',
   'sdcSup.ship.advance.shipped.title': 'Pengiriman {{id}} ditandai dikirim',
   'sdcSup.ship.advance.arrived.title': 'Pengiriman {{id}} ditandai tiba',
