@@ -373,3 +373,72 @@ export function useIncomingShipmentReport() {
     },
   });
 }
+
+// ── WAVE D — the incoming-shipment ADVANCE verbs (ship / arrive / cancel) ─────
+//
+// ⚠️ **THEY TAKE AN `entityId`, NOT A PAYLOAD, AND THAT IS DERIVED RATHER THAN
+// ASSUMED.** All three declare `requiredFields: []` and `policyHooks: []`. In
+// particular `t_incomingshipment_cancel` carries NO reason field — a
+// cancellation reason would be a value NO MACHINE READS, invented by the
+// surface. Wave C's `ReasonPanel` is therefore deliberately NOT reused here;
+// reusing it would put a required-looking box in front of an act whose schema
+// asks for nothing.
+//
+// ⚠️ **AND THEY DELIBERATELY DO NOT RIDE THE SubmissionSession ENVELOPE.** That
+// envelope correlates the CREATION commands of one supplier visit (addendum §5
+// — three declarable object KINDS). An advance is not a declared object; it
+// mutates one that already exists. Recording it as a session attempt would put
+// a state change in a register whose whole shape is "what did this visit
+// submit". DR-10 still audits every one of them through the dispatcher.
+
+/** One advance against a leg already in the store — the id is the store id
+ *  (`ish-…`), NEVER an `asnRef`. The two key spaces are disjoint (measured:
+ *  ish ids ∩ asnNumbers = 0), so a wrong key here resolves nothing and returns
+ *  SCOPE_DENIED rather than failing loudly at the field. */
+export interface IncomingShipmentAdvanceVars {
+  /** `IncomingShipment.id` — the store key `readState` resolves. */
+  shipmentId: string;
+}
+
+/** The three advance verbs share one dispatch shape; only the transition id
+ *  differs. Built from a factory so the three cannot drift apart — and so the
+ *  entity, the scope and the invalidation are written once. */
+function useIncomingShipmentAdvance(transitionId: string) {
+  const svc = useDataService();
+  const { identity } = useCurrentIdentity();
+  const scope: QueryScope = {
+    personaType: identity.personaType,
+    supplierId: identity.supplierId,
+    businessRoles: identity.businessRoles,
+    actor: identity.actor,
+  };
+  const invalidate = useInvalidateSdc();
+
+  return useMutation<CommandResult, Error, IncomingShipmentAdvanceVars>({
+    mutationFn: ({ shipmentId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId,
+        entity: 'incomingShipment',
+        entityId: shipmentId,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/** The leg departs: Booked → Shipped (`incomingshipment:ship`). */
+export function useIncomingShipmentShip() {
+  return useIncomingShipmentAdvance('t_incomingshipment_ship');
+}
+
+/** The leg arrives: Shipped → Arrived (`incomingshipment:arrive`). */
+export function useIncomingShipmentArrive() {
+  return useIncomingShipmentAdvance('t_incomingshipment_arrive');
+}
+
+/** An in-flight leg is called off: Booked | Shipped → Cancelled
+ *  (`incomingshipment:cancel`). */
+export function useIncomingShipmentCancel() {
+  return useIncomingShipmentAdvance('t_incomingshipment_cancel');
+}
