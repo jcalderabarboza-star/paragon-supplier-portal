@@ -172,7 +172,14 @@ interface ChartTooltipProps {
   suffix?: string;
 }
 
-const ChartTooltip: React.FC<ChartTooltipProps> = ({ active, payload, label, suffix = 'jT' }) => {
+const ChartTooltip: React.FC<ChartTooltipProps> = ({
+  active,
+  payload,
+  label,
+  // i18n-defer: an IDR magnitude unit (`juta`, millions) that renders after
+  // `Rp` — already Indonesian, and identical in both locales.
+  suffix = 'jT',
+}) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-md shadow-sm px-3 py-2 text-xs">
