@@ -113,6 +113,24 @@ const LANE_BUNDLES = Object.freeze({
       'contract:draft', 'contract:activate', 'contract:renew', 'contract:terminate',
       'obligation:track', 'obligation:complete',
       'pr:approve', 'pr:reject',
+      // ── B1 · RAISING A SUPPLIER APPLICATION, AND ONLY RAISING ONE ─────────
+      // Establishing or extending a commercial relationship with a vendor is
+      // this lane's subject matter — it sits upstream of the sourcing, orders
+      // and contracting already here, on the same relationship.
+      //
+      // ⚠️ **IT IS DELIBERATELY NOT IN `requisitioner`, WHICH IS THE NEARER-
+      // LOOKING HOME.** That lane exists to express ONE segregation — raising a
+      // requisition is split from approving one — and reusing it for a second
+      // document would blur the only distinction it makes.
+      //
+      // ⚠️ **AND THE DECIDING HALF IS DELIBERATELY ELSEWHERE.** `:review` and
+      // `:decide` are `compliance`'s, so no lane holds both the raising and the
+      // deciding of the same application. That is `pr:create`/`pr:approve`'s
+      // shape one document over, and it is authored rather than inherited:
+      // `SEGREGATION-CROSSED-IN-ONE-DRAWER-01` is an OPEN finding about a
+      // sequence a single seat can walk end to end, and this batch does not add
+      // a second instance of it.
+      'application:submit',
       // ⚠️ RULED TO MOVE TO `compliance`, AND DELIBERATELY NOT MOVED IN THIS
       // BATCH. The operator's ruling stands and is booked: if procurement can
       // set the halal enforcement mode, procurement can lower the bar it is
@@ -155,6 +173,19 @@ const LANE_BUNDLES = Object.freeze({
       'supplierdoc:request', 'supplierdoc:verify', 'supplierdoc:reject',
       'compliance:verify', 'compliance:reject',
       'role:grant',
+      // ── B1 · VETTING AN APPLICANT, WHICH IS WHAT THIS LANE ALREADY DOES ───
+      // The lane that requests, verifies and refuses a supplier's paperwork is
+      // the lane that decides whether an applicant becomes a supplier at all;
+      // the four documents an application declares (npwp · nib · halal · iso)
+      // are this lane's subject matter under `supplierdoc:*`.
+      //
+      // ⚠️ **`:review` AND `:decide` TOGETHER, AND THAT IS NOT THE SEGREGATION
+      // PROBLEM `:submit` AVOIDS.** Picking a file up and ruling on it are one
+      // authority split across two states so a queue can answer "has anybody
+      // started?"; raising the request and ruling on it are two authorities.
+      // `supplierdoc:verify` and `:reject` sit together here for the same
+      // reason and on the same argument.
+      'application:review', 'application:decide',
     ]),
     // The SDC / P2 planning lane. `inventorydeclaration:record` is the C4c
     // buyer RECORDING verb — a distinct authority from the supplier's

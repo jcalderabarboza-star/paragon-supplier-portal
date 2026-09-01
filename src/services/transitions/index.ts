@@ -41,6 +41,7 @@ export { inventoryDeclarationFlow } from './flows/inventoryDeclaration.flow';
 export { incomingShipmentFlow } from './flows/incomingShipment.flow';
 export { enforcementFlow } from './flows/enforcement.flow';
 export { roleFlow } from './flows/role.flow';
+export { supplierApplicationFlow } from './flows/supplierApplication.flow';
 export * from './customRoles';
 
 import { flowRegistry } from './registry';
@@ -63,6 +64,7 @@ import { inventoryDeclarationFlow } from './flows/inventoryDeclaration.flow';
 import { incomingShipmentFlow } from './flows/incomingShipment.flow';
 import { enforcementFlow } from './flows/enforcement.flow';
 import { roleFlow } from './flows/role.flow';
+import { supplierApplicationFlow } from './flows/supplierApplication.flow';
 
 // Seed the shipped flows onto the singleton.
 flowRegistry.register(purchaseOrderFlow); // Step 3.1 — PO
@@ -106,3 +108,4 @@ flowRegistry.register(enforcementFlow); // CP-3 · E2 — Enforcement
 // grant that left no TransitionEvent would be the only privilege-granting act in
 // the platform with no audit record (D3).
 flowRegistry.register(roleFlow); // Duplicate-and-narrow — Role
+flowRegistry.register(supplierApplicationFlow); // B1 — Supplier onboarding

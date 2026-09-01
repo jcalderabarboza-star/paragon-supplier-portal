@@ -298,6 +298,18 @@ export const processFlowPurposeEn: Record<string, string> = {
     'A copy of one permission bundle with extra permissions on top of it, kept as a record of what was copied and by whom — so a seat somebody invented last Tuesday reads differently from a standard one.',
   'processFlows.purpose.t_role_grant':
     'Somebody copies an existing set of permissions and widens it. Widening never removes anything, so nobody quietly loses an authority they were relied on to have, and the act is recorded like every other governed act.',
+
+  // ── supplierApplication ──────────────────────────────────────────────
+  'processFlows.purpose.entity.supplierApplication':
+    'The record that a company has asked to supply Paragon, who is handling it, and what was decided. Without it a company could finish the sign-up form and be handed a reference number that nothing anywhere stood behind.',
+  'processFlows.purpose.t_application_submit':
+    'Paragon writes down that a company has asked to supply it — who they are, which kind of request this is, and which papers they say they hold. From here the reference the applicant is given names a real row, which is the whole reason this step exists.',
+  'processFlows.purpose.t_application_start_review':
+    'Somebody takes the file off the pile and puts their name to it, so the queue can tell the applications nobody has opened yet from the ones already being worked.',
+  'processFlows.purpose.t_application_approve':
+    'Paragon accepts the applicant. What this records is the decision and nothing else — the vendor master record is raised in S/4HANA, which owns supplier identity.',
+  'processFlows.purpose.t_application_reject':
+    'Paragon declines, and must say why in words somebody can repeat to the applicant. The applicant holds no seat here, so that text is the only account of the decision that will ever exist.',
 };
 
 export const processFlowPurposeId: Record<string, string> = {
@@ -561,4 +573,16 @@ export const processFlowPurposeId: Record<string, string> = {
     'Salinan satu paket izin dengan izin tambahan di atasnya, disimpan sebagai catatan tentang apa yang disalin dan oleh siapa — sehingga kursi yang dibuat seseorang Selasa lalu terbaca berbeda dari kursi standar.',
   'processFlows.purpose.t_role_grant':
     'Seseorang menyalin satu kumpulan izin lalu memperluasnya. Memperluas tidak pernah menghapus apa pun, sehingga tidak ada yang diam-diam kehilangan wewenang yang diandalkan darinya, dan tindakan itu dicatat seperti setiap tindakan diatur lainnya.',
+
+  // ── supplierApplication ──────────────────────────────────────────────
+  'processFlows.purpose.entity.supplierApplication':
+    'Catatan bahwa sebuah perusahaan meminta menjadi pemasok Paragon, siapa yang menanganinya, dan apa keputusannya. Tanpa itu, sebuah perusahaan bisa menyelesaikan formulir pendaftaran lalu diberi nomor rujukan yang tidak berpijak pada catatan apa pun.',
+  'processFlows.purpose.t_application_submit':
+    'Paragon mencatat bahwa sebuah perusahaan meminta menjadi pemasok — siapa mereka, jenis permintaannya, dan dokumen apa saja yang mereka nyatakan dimiliki. Sejak saat itu nomor rujukan yang diberikan kepada pemohon menunjuk baris yang benar-benar ada, dan itulah seluruh alasan langkah ini ada.',
+  'processFlows.purpose.t_application_start_review':
+    'Seseorang mengambil berkas dari tumpukan dan mencantumkan namanya, sehingga antrean dapat membedakan permohonan yang belum dibuka siapa pun dari yang sudah dikerjakan.',
+  'processFlows.purpose.t_application_approve':
+    'Paragon menerima pemohon. Yang dicatat hanyalah keputusannya — catatan induk vendor diterbitkan di S/4HANA, tempat identitas pemasok berada.',
+  'processFlows.purpose.t_application_reject':
+    'Paragon menolak, dan wajib menyatakan alasannya dengan kata-kata yang bisa diteruskan kepada pemohon. Pemohon tidak punya kursi di sini, sehingga teks itulah satu-satunya keterangan atas keputusan tersebut yang akan pernah ada.',
 };
