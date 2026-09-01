@@ -1202,3 +1202,90 @@ export function useSupplierDocumentReject() {
     },
   });
 }
+
+// ── B2 · THE SUPPLIER-APPLICATION REVIEW LANE ───────────────────────────────
+//
+// Three verbs, three hooks, one per act — the `useRequisition*` shape, because
+// the review lane is the same shape one document over: a buyer-side collection
+// whose acts are gated per atom and whose refusals reach the operator through
+// the dispatcher's own channel rather than an invented message.
+//
+// ⚠️ **`t_application_submit` IS DELIBERATELY ABSENT.** That verb is B3's door,
+// and B3 is blocked on the s4Vendor roster reconciliation. A `useApplicationSubmit`
+// with no consumer would be exactly the shape `surfaceable.test.ts` calls out —
+// a hook that names an id nobody can fire — and it would read as progress.
+
+/** Pick an application off the queue (`application:review`). */
+export function useApplicationStartReview() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { applicationId: string }>({
+    mutationFn: ({ applicationId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_application_start_review',
+        entity: 'supplierApplication',
+        entityId: applicationId,
+        payload: {},
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Accept the applicant (`application:decide`).
+ *
+ * No payload. The decision's attribution comes from the SESSION inside the
+ * target (C10 §6.2) — a caller-supplied decider would be attribution by
+ * assertion, which is the seam `PR_APPROVAL_ATTRIBUTED` exists to refuse one
+ * lane over.
+ */
+export function useApplicationApprove() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { applicationId: string }>({
+    mutationFn: ({ applicationId }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_application_approve',
+        entity: 'supplierApplication',
+        entityId: applicationId,
+        payload: {},
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
+
+/**
+ * Refuse the applicant (`application:decide`), with the reason that refusal
+ * will one day be delivered on.
+ *
+ * ⚠️ **`rejectionReason` IS NON-OPTIONAL IN THE TYPE**, for
+ * `useRequisitionReject`'s reason: the verb requires it, the policy hook proves
+ * it non-blank, and a caller that could omit it here would be refused at the
+ * dispatcher with a type that had promised otherwise.
+ */
+export function useApplicationReject() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, { applicationId: string; rejectionReason: string }>({
+    mutationFn: ({ applicationId, rejectionReason }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_application_reject',
+        entity: 'supplierApplication',
+        entityId: applicationId,
+        payload: { rejectionReason },
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}

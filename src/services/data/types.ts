@@ -1559,6 +1559,17 @@ export interface IProcurementService {
   // — PR-intake review (buyer-only; C7 §2 — one shape, two producers) —
   getPrIntake(scope: QueryScope): Promise<Page<PrIntakeLine>>;
 
+  // — Supplier applications (B2, buyer-only ACQUIRE stage) —
+  //
+  // ⚠️ **BUYER-ONLY, AND NOT BY THE MECHANISM EVERY OTHER READ USES.** Every
+  // other scoped read narrows by `supplierId`; an application HAS no
+  // `supplierId` (the row's field is typed `null`), because an applicant is not
+  // a tenant. So there is nothing to narrow BY, and the honest boundary is the
+  // persona: the whole collection is buyer-side or it is nothing. A supplier
+  // scope reads an empty page — the `getRequisitions` / `getPrIntake` shape,
+  // reused deliberately rather than invented.
+  getSupplierApplications(scope: QueryScope): Promise<Page<SupplierApplication>>;
+
   // — Buyer command-center aggregates (buyer-only) —
   getProductionLines(scope: QueryScope): Promise<Page<ProductionLineRow>>;
   getSupplierHealth(scope: QueryScope): Promise<Page<SupplierHealthRow>>;

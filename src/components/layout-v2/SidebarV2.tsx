@@ -25,6 +25,7 @@ import {
   BookOpen,
   Handshake,
   LucideIcon,
+  UserPlus,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
@@ -55,6 +56,7 @@ const BUYER_NAV: NavGroup[] = [
       { labelKey: 'nav.buyer.discovery', icon: Search, path: '/buyer/discovery' },
       { labelKey: 'nav.buyer.marketplace', icon: Store, path: '/marketplace' },
       { labelKey: 'nav.buyer.suppliers', icon: Users, path: '/buyer/suppliers' },
+      { labelKey: 'nav.buyer.supplierApplications', icon: UserPlus, path: '/buyer/supplier-applications' },
       { labelKey: 'nav.buyer.sourcing', icon: FileText, path: '/buyer/sourcing' },
       // Phase A/1 — review precedes the plan-grid push in the sourcing flow.
       { labelKey: 'nav.buyer.intakeReview', icon: Inbox, path: '/buyer/intake-review' },

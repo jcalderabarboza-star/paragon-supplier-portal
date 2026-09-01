@@ -14,6 +14,7 @@ import { PRODUCTION_LINES, SUPPLIER_HEALTH } from './fixtures/buyerDashboard';
 import { supplierDocumentStore } from './stores/supplierDocumentStore';
 import { SUPPLIER_SCORECARDS } from './fixtures/buyerScorecard';
 import { purchaseRequisitionStore } from './stores/purchaseRequisitionStore';
+import { supplierApplicationStore } from './stores/supplierApplicationStore';
 import {
   INITIAL_CATALOG,
   INITIAL_CERTS,
@@ -64,6 +65,7 @@ import type {
   PurchaseRequisition,
   PRFilter,
   PrIntakeLine,
+  SupplierApplication,
 } from '../types';
 import { PR_INTAKE_LINES } from './fixtures/prIntake';
 
@@ -451,6 +453,23 @@ export class MockProcurementService implements IProcurementService {
   async getPrIntake(scope: QueryScope): Promise<Page<PrIntakeLine>> {
     if (scope.personaType !== 'buyer') return { items: [] };
     return { items: [...PR_INTAKE_LINES] };
+  }
+
+  // ─── Supplier applications (B2, buyer-only) ───────────────────────────────
+  //
+  // Reads the mutable store, so a row grown through `t_application_submit` is
+  // list-visible exactly as a dispatched PR is. The store SEEDS EMPTY by ruling
+  // — nobody has ever applied — so an empty page here is the truth and not a
+  // failure, and the surface says which.
+  //
+  // ⚠️ **THE PERSONA GATE IS THE WHOLE TENANCY ANSWER ON THIS COLLECTION.**
+  // There is no `supplierId` to narrow by; see the seam declaration. A supplier
+  // scope gets `[]` — not a refusal, because a refusal would tell a supplier
+  // that a collection it may not read EXISTS, which is the same existence
+  // signal the filed dispatcher leak is about. Empty is the quieter answer.
+  async getSupplierApplications(scope: QueryScope): Promise<Page<SupplierApplication>> {
+    if (scope.personaType !== 'buyer') return { items: [] };
+    return { items: [...supplierApplicationStore.all()] };
   }
 
   // ─── Buyer command-center aggregates (buyer-only) ─────────────────────────

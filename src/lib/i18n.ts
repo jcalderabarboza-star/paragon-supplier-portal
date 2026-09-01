@@ -24,6 +24,7 @@ import { supplierWhatsAppEn, supplierWhatsAppId } from './i18n/supplierWhatsApp'
 import { sourcingEn, sourcingId } from './i18n/sourcing';
 import { rfqsEn, rfqsId } from './i18n/rfqs';
 import { requisitionsEn, requisitionsId } from './i18n/requisitions';
+import { supplierApplicationsEn, supplierApplicationsId } from './i18n/supplierApplications';
 import { buyerOrdersEn, buyerOrdersId } from './i18n/buyerOrders';
 import { goodsReceiptEn, goodsReceiptId } from './i18n/goodsReceipt';
 import { discoveryEn, discoveryId } from './i18n/discovery';
@@ -109,6 +110,7 @@ export const resources = {
       ...sourcingEn,
       ...rfqsEn,
       ...requisitionsEn,
+      ...supplierApplicationsEn,
       ...buyerOrdersEn,
       ...goodsReceiptEn,
       ...discoveryEn,
@@ -177,6 +179,7 @@ export const resources = {
       'nav.buyer.discovery': 'Discovery',
       'nav.buyer.marketplace': 'Marketplace',
       'nav.buyer.suppliers': 'Suppliers',
+      'nav.buyer.supplierApplications': 'Applications',
       'nav.buyer.sourcing': 'Sourcing & RFQ',
       'nav.buyer.intakeReview': 'Intake Review',
       'nav.buyer.planGrid': 'Plan Grid',
@@ -530,6 +533,7 @@ export const resources = {
       ...sourcingId,
       ...rfqsId,
       ...requisitionsId,
+      ...supplierApplicationsId,
       ...buyerOrdersId,
       ...goodsReceiptId,
       ...discoveryId,
@@ -592,6 +596,7 @@ export const resources = {
       'nav.buyer.discovery': 'Penemuan',
       'nav.buyer.marketplace': 'Pasar',
       'nav.buyer.suppliers': 'Pemasok',
+      'nav.buyer.supplierApplications': 'Aplikasi',
       'nav.buyer.sourcing': 'Sumber & RFQ',
       'nav.buyer.intakeReview': 'Tinjauan Asupan',
       'nav.buyer.planGrid': 'Grid Perencanaan',
