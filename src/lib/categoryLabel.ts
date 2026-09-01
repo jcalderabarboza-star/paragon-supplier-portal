@@ -22,10 +22,43 @@
 // residue present in some sample fixtures (Semiconductors, PCB Assemblies, Steel
 // Components, Rare Earth Metals, Machined Parts, Plastics / Resin) is intentionally
 // NOT mapped — it is out-of-scope sample data and renders verbatim (the resolver
-// returns null → caller shows the raw token). The compound "Natural Botanical" /
-// "Natural/Botanical" spelling variants are likewise unmapped (the base
-// `Botanical` → `Botani` carries the concept) to keep every canonical token's slug
-// distinct — no two tokens may collapse to the same `category.*` key.
+// returns null → caller shows the raw token).
+//
+// ── ⚠️ THE MARKETPLACE / STOREFRONT VOCABULARY (S2a) ────────────────────────
+// Ten tokens were added here, and NOT ONE PAGE WAS EDITED TO GET THEM. Both
+// consumers — `Marketplace`'s filter chips and `SupplierMyStorefront`'s
+// add-material form — already called `useCategoryLabel()`; the resolver returned
+// null and they fell back to the raw EN token, so **10 of 12 Marketplace chips
+// and 2 of 4 storefront options rendered English to an Indonesian reader while
+// the pages were, by inspection, doing everything right.** The batch that found
+// this predicted the remedy was "route the page through the map" and was wrong:
+// the map's VOCABULARY was what was incomplete. Derive the fall-through set
+// (`categoryLabelKey` over each surface's tokens) before believing any claim
+// about which surface is at fault.
+//
+// ── ⚠️ AND THE ONE FAMILY THAT NEEDED AN ALIAS RATHER THAN A ROW ────────────
+// THREE spellings of one concept live in this tree — `Natural & Botanical` (the
+// Marketplace chip), `Natural Botanical` and `Natural/Botanical` (both stored in
+// fixtures) — and ALL THREE slug to `category.natural_botanical`. They cannot
+// all be canonical: the resource spread would collapse them and the slug-uniqueness
+// guard would fail. So one is registered and the other two resolve through
+// `SPELLING_ALIAS`, exactly the shape `statusLabel.ts` uses for `UnderReview`.
+// **This normalizes EN as well as ID** — the two fixture spellings now display as
+// `Natural & Botanical` WHEREVER THEY RESOLVE, which browser QA measured as
+// BuyerAnalytics' top-supplier pill (via the `StatusPill` resolver chain) and
+// BuyerScorecard. That is the point of a canonical vocabulary, but it IS a visible
+// EN change and is recorded rather than discovered.
+//
+// ⚠️ AND `Natural/Botanical` STILL RENDERS RAW ON THE SPEND DONUT — measured, not
+// assumed. That surface passes the category straight to a chart label and never
+// calls a resolver, so no row or alias here can reach it. **An alias fixes a
+// vocabulary, not a surface that never asks.** Do not read the donut as evidence
+// that this alias is broken; it is evidence that the donut is a separate finding.
+//
+// The alias is DISPLAY-ONLY and must stay that way: `requisitionPrefill.ts`
+// separately relies on `Natural Botanical` ≠ `Botanical` for MATCHING, and does
+// not import this module. Never feed a resolved label back into a filter id, a
+// stored value, or a match.
 //
 // Slugs are namespaced `category.*` so they never collide with
 // `status.*` / `enum.*` / `mode.*` / `channel.*`.
@@ -54,6 +87,21 @@ const CATEGORY_ID: Record<string, string> = {
   'Packaging Primary': 'Kemasan Primer',
   'Packaging Secondary': 'Kemasan Sekunder',
   'Packaging (PET)': 'Kemasan (PET)',
+  // — Marketplace / storefront supply categories (S2a) —
+  // `Primary Packaging` and `Secondary Packaging` are the OTHER WORD ORDER of
+  // `Packaging Primary` / `Packaging Secondary` above and deliberately carry the
+  // SAME ID string: two EN spellings, one Indonesian label, distinct slugs. That
+  // is the pattern this map already uses for Emulsifier(s) and Active Ingredient(s).
+  'Natural & Botanical': 'Alami & Botani',
+  'Surfactants & Emulsifiers': 'Surfaktan & Pengemulsi',
+  'Fragrance & Aroma': 'Pewangi & Aroma',
+  Preservatives: 'Pengawet',
+  'Primary Packaging': 'Kemasan Primer',
+  'Secondary Packaging': 'Kemasan Sekunder',
+  'Labels & Print': 'Label & Cetak',
+  'Sustainable Packaging': 'Kemasan Berkelanjutan',
+  'Testing & Certification': 'Pengujian & Sertifikasi',
+  'Contract Manufacturing': 'Manufaktur Kontrak',
   // — Compliance / document taxonomy (closes the BuyerCompliance / SupplierDocuments split) —
   Halal: 'Halal',
   'Halal Compliance': 'Kepatuhan Halal',
@@ -92,12 +140,35 @@ function slug(category: string): string {
 }
 
 /**
+ * SPELLING VARIANT → CANONICAL CATEGORY.
+ *
+ * ⚠️ AN ALIAS, NOT AN ENTRY, AND THE DISTINCTION IS FORCED BY THE SLUG.
+ * `Natural Botanical`, `Natural/Botanical` and `Natural & Botanical` all slug to
+ * `category.natural_botanical`. Registering more than one collapses the resource
+ * spread and fails the slug-uniqueness guard — so one spelling is canonical and
+ * the rest resolve to it. Same mechanism, same reason, as `statusLabel.ts`'s
+ * `MACHINE_STATE_ALIAS`: an alias resolves to a label that already exists and
+ * already localizes, rather than minting a second key for one concept.
+ *
+ * Keys are pre-normalized (trimmed, lowercased) because that is what the resolver
+ * looks them up with.
+ */
+const SPELLING_ALIAS: Record<string, string> = {
+  'natural botanical': 'Natural & Botanical',
+  'natural/botanical': 'Natural & Botanical',
+};
+
+/**
  * The i18n key for a category label, or null if the token is not part of the
  * mapped vocabulary (the caller then renders it verbatim — see SCOPE note above).
  * Trimmed and case-insensitive.
+ *
+ * A REGISTERED token always wins over an alias, so registering an aliased
+ * spelling later changes behaviour at the map rather than silently here.
  */
 export function categoryLabelKey(category: string): string | null {
-  const canon = BY_NORM.get(category.trim().toLowerCase());
+  const norm = category.trim().toLowerCase();
+  const canon = BY_NORM.get(norm) ?? SPELLING_ALIAS[norm];
   return canon ? slug(canon) : null;
 }
 
@@ -110,4 +181,4 @@ export const categoryResourcesId: Record<string, string> = Object.fromEntries(
 );
 
 // Re-exported for the guard test (coverage + slug-collision checks).
-export const __categoryInternals = { CATEGORY_ID, slug };
+export const __categoryInternals = { CATEGORY_ID, slug, SPELLING_ALIAS };
