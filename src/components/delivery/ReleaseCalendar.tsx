@@ -60,7 +60,14 @@ const ReleaseCalendar: React.FC<{
   actionsHeader?: string;
   renderLineAction?: (line: ScheduleLine, fv?: ReleaseFulfillmentView) => React.ReactNode;
   proposedCaptionKey?: string;
-}> = ({ iv, actionsHeader, renderLineAction, proposedCaptionKey = 'delivery.match.proposed' }) => {
+}> = ({
+  iv,
+  actionsHeader,
+  renderLineAction,
+  // i18n-defer: an i18n KEY, not copy — it is the argument to `t()` below, so
+  // translating it would look up a key named after a translation.
+  proposedCaptionKey = 'delivery.match.proposed',
+}) => {
   const { t } = useTranslation();
   const { item } = iv;
   const uom = item.uom;

@@ -24,6 +24,8 @@ export function dataCell<T>(get: (r: T) => React.ReactNode): CellComponent<T> {
 /** A read-only sans text cell (names/prose stay `text-primary` black). */
 export function textCell<T>(
   get: (r: T) => React.ReactNode,
+  // i18n-defer: a Tailwind class name, not copy (DP2-DATA-NAVY-01's sans/black
+  // half — the cell's TEXT is `get(rowData)`, which this never touches).
   className = 'text-text-primary',
 ): CellComponent<T> {
   return ({ rowData }) => (

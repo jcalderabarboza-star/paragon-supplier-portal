@@ -26,6 +26,7 @@ const TargetBar: React.FC<TargetBarProps> = ({
   target,
   nearBand = 10,
   status,
+  // i18n-defer: a Tailwind class name, not copy — it reaches `className`, never a reader.
   trackClass = 'bg-bg-hover',
   className = '',
 }) => {

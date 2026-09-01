@@ -412,12 +412,31 @@ Three arcs, in order. Nothing else is queued.
   succeeded.** Arc 2 is the approval half of the lane, and the two false
   affordances are its first fix.
 
-- **ARC 3 · SUPPLIER ONBOARDING.** Confirmed exactly as dispatched.
-  `src/pages-v2/SupplierRegistration.tsx` is **1,551 lines** behind `/register`
-  and contains **zero** service calls — no `useDataService`, no dispatch, no
-  mutation. The whole form lives in `useState`, and submitting sets a
-  `const [submitted, setSubmitted] = useState(false)` boolean. **A supplier
-  completes onboarding and nothing anywhere records that they did.**
+- **ARC 3 · SUPPLIER ONBOARDING.** ⚠️ **AMENDED 2026-09-01 — THE MECHANISM
+  SURVIVES MEASUREMENT, THE CONCLUSION DOES NOT.** Re-derived today, and the
+  hard half still holds exactly: `src/pages-v2/SupplierRegistration.tsx` behind
+  `/register` contains **zero** service calls — `grep -c 'useDataService'` and
+  `grep -c 'dispatch'` both return 0 — the whole form lives in `useState`, and
+  submitting still sets a `const [submitted, setSubmitted] = useState(false)`
+  boolean. **The supplier-side WRITE PATH is unbuilt, and that is arc 3.**
+
+  ⚠️ **THE LINE COUNT IS DELETED RATHER THAN CORRECTED.** It read *"1,551
+  lines"* and measured 1,554 today — `FLOOR-IN-PROSE-01` again, in the
+  paragraph that scopes an arc, and the ratified remedy is deletion in favour
+  of the derivation (`wc -l`), never a fresher number.
+
+  ⚠️ **AND THE CLOSING SENTENCE IS RETIRED, BECAUSE ARC B FALSIFIED IT WITHOUT
+  TOUCHING THIS PARAGRAPH.** It read *"A supplier completes onboarding and
+  nothing anywhere records that they did."* Arc B built the
+  `supplierApplication` machine, its store, its `CommandTarget`, and the buyer
+  review lane (#287–#289), so an application IS recorded — **a BUYER raises
+  it.** What no surface does is let the SUPPLIER raise their own, and `/register`
+  no longer pretends otherwise: it stopped minting a fabricated
+  `APP-2026-{random}` under the label "Application number", and
+  `registrationHonesty.guard.test.ts` holds that closed bilaterally. **The gap
+  is now one-sided, not total** — which is a materially different arc from the
+  one this bullet used to describe, and the difference decides whether arc 3
+  builds a machine or only a door onto one that exists.
 
 **PARKED, NOT QUEUED — and the reason is one sentence: THESE ARE MACHINE HYGIENE,
 NOT MANDATE WORK.** Every one of them makes the tree more consistent with itself;
@@ -825,6 +844,31 @@ that under-reports them is accepted as modesty and the gate gets rewritten to fi
 a hole it does not have. **STRIP THE FORMATTING BEFORE PARSING AN INSTRUMENT'S
 OUTPUT, AND CONFIRM ONE KILL BY NAME BEFORE TRUSTING A COUNT.**
 
+⚠️ **§85 · AND IT FAILED A THIRD TIME TODAY, ON A THIRD MECHANISM, IN THE SAME
+DIRECTION — WHICH IS THE POINT OF FILING IT RATHER THAN FIXING IT QUIETLY.** The
+module-scope-literal probe captured vitest's output with Python's
+`subprocess(text=True)`, which decodes using the CONSOLE CODEPAGE (`cp1252`
+here) and **throws** on the UTF-8 the suite emits. Every mutant came back
+`named=False` — *"the gate went red but could not name the string"* — on a probe
+where all three mutants were in fact named. **Three mechanisms now, all reporting
+"your gate is weak":** a kill that never registers (§50e), a digit captured out
+of an escape code (§51f), and now a decode that throws before the match runs.
+The direction is not a coincidence — **every parsing failure loses matches, and
+losing matches always reads as the humble answer.** Decode instrument output as
+BYTES with an explicit encoding, never through the ambient codepage.
+
+⚠️ **AND THE RESTORE HALF OF A MUTATION PROBE NEEDS ITS OWN AUTHORITY, NAMED
+BEFORE THE RUN.** A probe that mutates shipped source is only honest if the
+restore is provably byte-identical, and **`sha256` of the file bytes is that
+authority** — it decides, full stop. But it is not sufficient EVIDENCE on its
+own here: `core.autocrlf` is on in this repo (git says so on every write —
+*"LF will be replaced by CRLF"*), so a bare sha256 computed on a working-copy
+file is not reproducible by a reader on another platform, and a reader who
+recomputes it and gets a different digest cannot tell a line-ending policy from
+a failed restore. **So report BOTH: sha256 as the authority, and `git
+hash-object` beside it** — the blob id is what a reviewer on any platform can
+recompute and compare, because it is normalized. State which bytes were hashed.
+
 ⚠️ **AND THE SAME REFLEX APPLIES TO AN ARTIFACT NAMED IN A DISPATCH.** The
 identifiers named as existing code and measured absent are
 `getInvoiceAction`, the FX-page `<span lang="en">` (§45), `SurfaceExpectation`
@@ -885,6 +929,21 @@ glossary-covered DTO has a non-fixture reader or a bilateral allowlist row with
 its reason stated. It is deliberately TEST-level, not type-level, precisely so
 #179's mutation practice CAN reach it; both directions of the bilateral
 assertion are mutation-probed.
+
+`src/lib/moduleScopeLiteralGate/` is the second gate on that pattern: no
+reader-visible literal may sit where `t()` cannot reach it — a parameter
+default that renders, or a module-scope const consumed by `.map()`. ⚠️ **Its
+discriminator is DERIVED, and that is the part worth copying: a default is a
+defect iff some JSX call site OMITS the prop.** No allowlist, no
+"looks-like-a-sentence" heuristic, and — the property a marker cannot have — it
+RE-DECIDES ITSELF: the day a new call site omits `title`, that literal becomes a
+defect with nobody editing the gate. Content is never inspected. Where
+reachability cannot answer (a mapped const always renders) the reason is stated
+AT THE SITE via the tree's existing `i18n-defer:` convention, which cannot go
+stale because it is the same bytes as the code it acquits — **and which is
+UNVERIFIED, buying a stated reason and a visible diff, never enforcement.**
+`grandfathered.ts` carries the consts that predate the gate as a bilateral set
+that can only shrink; it is the S2 worklist, not an exemption.
 
 ### And the rule beside all of them: A REGISTER ENTRY IS NOT A DELIVERABLE
 
