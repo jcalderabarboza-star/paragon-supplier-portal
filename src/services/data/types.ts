@@ -1757,3 +1757,94 @@ export interface IDataService {
   /** What the current scope may do (Step 3.9 DNA seed; mock-backed today). */
   getCapabilities(scope: QueryScope): Promise<CapabilitySet>;
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// B1 · SUPPLIER APPLICATION — the record behind becoming a supplier.
+//
+// ⚠️ **AN APPLICANT IS DATA, NOT A SEAT.** Every other entity in this file is
+// scoped by `supplierId`, because every other entity belongs to a tenant. An
+// applicant has no tenancy — that is the whole content of the word — so this
+// row's owner field is typed `null` rather than `string | null`. A LITERAL type
+// makes the ruling checkable: assigning a supplier id here is a `tsc` failure,
+// not a review comment, and `readScopeOwner` cannot be quietly widened later
+// without the type going red first.
+// ────────────────────────────────────────────────────────────────────────────
+
+/** The four states an application can be in. Clock-free (law 0.5). */
+export type SupplierApplicationStatus =
+  | 'Submitted'
+  | 'Under Review'
+  | 'Approved'
+  | 'Rejected';
+
+/**
+ * ONE document the applicant SAYS it holds.
+ *
+ * ⚠️ **THERE IS NO STATUS FIELD HERE, AND THERE MUST NOT BE.** Verifying a
+ * certificate is `supplierDocument`'s job and that lane is wired
+ * (`supplierdoc:request` / `:verify` / `:reject`, held by `compliance`). A
+ * `verified` flag on this row would be a sixth compliance vocabulary on a tree
+ * that spent I3.1 collapsing five into one — and a second place for the answer
+ * to be different. What is recorded is a CLAIM and its reference, nothing more.
+ */
+export interface SupplierApplicationDeclaration {
+  /** Which of the four the applicant is claiming. */
+  readonly kind: 'npwp' | 'nib' | 'halal' | 'iso';
+  /** The number the applicant states. Their words, unverified, never a join key. */
+  readonly reference: string;
+}
+
+export interface SupplierApplication {
+  /** Store-assigned. The store mints identity, never the caller. */
+  readonly id: string;
+  /**
+   * The human-readable reference, store-assigned and sequential.
+   *
+   * ⚠️ **THIS IS THE HONEST OPPOSITE OF THE THING B1 EXISTS FOR.**
+   * `SupplierRegistration.tsx:1289` mints a RANDOM number and renders it at
+   * `:1203` beside a next-steps list, with no row anywhere behind it. This one
+   * is assigned by the store at the moment a row is written, so the number an
+   * applicant is told and the record Paragon holds are the same fact. **The
+   * wizard is NOT repointed here** — that is filed as B3.
+   */
+  readonly applicationNumber: string;
+  readonly requestType: string;
+  readonly status: SupplierApplicationStatus;
+  readonly companyName: string;
+  /**
+   * ⚠️ **ALWAYS `null`, AND THE LITERAL TYPE IS THE ENFORCEMENT.** See the
+   * header: an applicant is not a tenant. `resolvedSupplierId` below is a
+   * different question and is NOT this.
+   */
+  readonly supplierId: null;
+  /**
+   * The existing vendor an extension request names, resolved against the
+   * platform roster at birth — never the payload's word for it.
+   *
+   * ⚠️ **NOT A TENANCY FIELD.** It says which supplier the application is
+   * ABOUT; `supplierId` above says which tenant owns the row, and the answer to
+   * that is nobody. Conflating them is precisely how an application would
+   * become visible to the supplier it names, which is not a thing this models.
+   * `null` for the two request types that name no existing vendor.
+   */
+  readonly resolvedSupplierId: string | null;
+  /** The vendor number as the caller stated it, kept for the record. */
+  readonly s4Vendor: string | null;
+  /** What the applicant claims to hold. Claims, not verifications — see above. */
+  readonly declarations: readonly SupplierApplicationDeclaration[];
+  readonly submittedAt: string;
+  /**
+   * ⚠️ **ALWAYS `UNATTRIBUTED` IN THIS TREE, AND THE TYPE KEEPS IT HONEST.**
+   * `CurrentIdentity.actor` is `UNATTRIBUTED: NO_PERSON_IN_SESSION` everywhere,
+   * so typing this as `ActorAttribution` rather than `string` means a surface
+   * must RENDER the unattributed state instead of printing a name it does not
+   * have (C10 §5.2 / D-ID-3).
+   */
+  readonly submittedBy: ActorAttribution;
+  /** When somebody picked it up. `null` until they did — never a guessed date. */
+  readonly reviewStartedAt: string | null;
+  readonly decidedAt: string | null;
+  readonly decidedBy: ActorAttribution | null;
+  /** Present only on a refusal, proven non-blank by the verb before it is written. */
+  readonly rejectionReason: string | null;
+}

@@ -28,6 +28,8 @@ import type {
   CertificateDeclaration,
   SupplierDocumentCategory,
   SupplierDocumentStatus,
+  SupplierApplicationStatus,
+  SupplierApplicationDeclaration,
 } from '../types';
 import type {
   GoodsReceipt,
@@ -36,6 +38,8 @@ import type {
   InspectionResult,
 } from '../../../data/mockGoodsReceipts';
 import { supplierDocumentStore } from './stores/supplierDocumentStore';
+import { supplierApplicationStore } from './stores/supplierApplicationStore';
+import { VENDOR_BEARING_REQUEST_TYPE } from '../../transitions/flows/supplierApplication.flow';
 import { NO_PERSON } from '../../../context/noPerson';
 import type { RFQ, RFQStatus, RFQCategory } from '../../../data/mockRfqs';
 import type { Quotation, QuotationStatus } from '../../../data/mockQuotations';
@@ -1629,6 +1633,154 @@ const supplierDocumentTarget: CommandTarget = {
   },
 };
 
+/**
+ * The applicant's declared documents, read from a payload the verb has already
+ * proven well-formed (`APPLICATION_DECLARATIONS_WELL_FORMED`).
+ *
+ * ⚠️ **NO FILTER AND NO FALLBACK, DELIBERATELY.** The guard runs first and
+ * refuses the whole command on any malformed entry, so a filter here would be
+ * this function admitting it does not trust the guard standing in front of it —
+ * and a filter is exactly how a silent subtraction gets in. An ABSENT key is a
+ * different thing from a malformed one and yields the honest empty list.
+ */
+function readDeclarations(
+  payload: Record<string, unknown>,
+): readonly SupplierApplicationDeclaration[] {
+  const raw = payload.declarations;
+  if (!Array.isArray(raw)) return [];
+  return raw.map((d) => {
+    const { kind, reference } = d as SupplierApplicationDeclaration;
+    return { kind, reference: reference.trim() };
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// B1 · SUPPLIER APPLICATION — the record behind becoming a supplier.
+//
+// ⚠️ **THIS TARGET SHIPS IN THE SAME COMMIT AS ITS FLOW, BY RULING.** The
+// target-less set (`getKnownFlows()` ∖ `WIRED_COMMAND_TARGETS`) is a real
+// population with six members today, and every one of them is a machine whose
+// verbs cannot fire. A seventh — even for one merge — would be a lane that
+// LOOKS built on `/buyer/process-flows` and refuses everything.
+// ────────────────────────────────────────────────────────────────────────────
+const supplierApplicationTarget: CommandTarget = {
+  readState: (id) => supplierApplicationStore.get(id)?.status ?? null,
+  // ⚠️ **NULL ALWAYS — AN APPLICANT IS NOT A TENANT.** This is the
+  // `purchaseRequisitionTarget` shape (`readScopeOwner: () => null`): a
+  // buyer-side collection every buyer seat reads as one queue. An application
+  // has no `supplierId` to scope by — the type says `null` literally — and an
+  // Internal SR's `resolvedSupplierId` is deliberately NOT read here: it says
+  // which supplier the application is ABOUT, and returning it would make the
+  // application visible to the supplier it names, which is not a thing this
+  // models.
+  readScopeOwner: () => null,
+  readEntity: (id) => supplierApplicationStore.get(id) ?? null,
+  // ⚠️ **`toState` IS THE ONLY DISCRIMINATOR AVAILABLE — `applyTransition`
+  // RECEIVES NO transitionId — AND ON THIS FLOW IT IS SUFFICIENT, WHICH IS A
+  // FACT ABOUT THE MACHINE AND NOT A CONVENTION.** Each of the three states
+  // written below has exactly ONE inbound edge (`Under Review` ←
+  // t_application_start_review, `Approved` ← t_application_approve, `Rejected`
+  // ← t_application_reject); `Submitted` is reached only through `create`.
+  // Derive it from `supplierApplication.flow.ts` before adding a fourth: a
+  // state that gains a second inbound edge makes one of these writes fire on
+  // the wrong verb, silently.
+  applyTransition: (id, toState, payload, scope) => {
+    supplierApplicationStore.update(id, (a) => ({
+      ...a,
+      status: toState as SupplierApplicationStatus,
+      // Picking it up is a fact with a time. `null` until then, never a
+      // guessed date — the queue's whole question is who has not started.
+      ...(toState === 'Under Review' ? { reviewStartedAt: new Date().toISOString() } : {}),
+      // ⚠️ **WHO DECIDED, FROM THE SESSION AND NEVER FROM `payload`** (C10
+      // §6.2, the shape `PR_APPROVAL_ATTRIBUTED` established). Today it is
+      // always `UNATTRIBUTED: NO_PERSON_IN_SESSION`, which is the honest
+      // absence a name-shaped payload field could never be.
+      ...(toState === 'Approved'
+        ? { decidedAt: new Date().toISOString(), decidedBy: scope.actor ?? NO_PERSON }
+        : {}),
+      // The refusal trio, written together or not at all. `rejectionReason` is
+      // a `requiredField` AND is proven non-blank by
+      // `APPLICATION_REFUSAL_AUTHORED` before this runs — so no re-check and no
+      // fallback: a fallback here would be the write admitting it does not
+      // trust the guard standing in front of it.
+      ...(toState === 'Rejected'
+        ? {
+            decidedAt: new Date().toISOString(),
+            decidedBy: scope.actor ?? NO_PERSON,
+            rejectionReason: String(payload.rejectionReason).trim(),
+          }
+        : {}),
+    }));
+  },
+  // ── ⚠️ THE VENDOR RESOLUTION. A PAYLOAD ECHO IS NOT A RESOLUTION ──────────
+  //
+  // The #284 shape: `s4Vendor` is matched against the platform roster, and an
+  // unknown one resolves to `null`. This is the ONE resolver — the policy hook
+  // `APPLICATION_INTERNAL_VENDOR_RESOLVED` calls THIS function through
+  // `ctx.target` rather than re-implementing the lookup, so there is no second
+  // copy to drift and the roster stays in the layer that owns it.
+  //
+  // ⚠️ **`requireCreationOwner` IS DELIBERATELY NOT SET, AND THAT IS MEASURED
+  // RATHER THAN PREFERRED.** The flag is per-TARGET and all-or-nothing: the
+  // dispatcher refuses ANY buyer creation whose owner is null. Two of the three
+  // request types name no existing vendor BY DEFINITION, so their owner is
+  // legitimately null — the flag would refuse every External SR and every KOL,
+  // which is the majority of the population and the entire point of the lane.
+  // What the flag exists to prevent is preserved at the hook instead, where a
+  // conditional obligation can be expressed; what would be LOST by setting it
+  // is the lane.
+  //
+  // ⚠️ **AND IT IS WHY A SUPPLIER SEAT'S REFUSAL IS THE ROLE GATE'S, NOT
+  // SCOPE'S, ON ONE PATH.** The dispatcher's supplier branch admits a creation
+  // whose owner equals the caller's own id — so a supplier seat naming ITSELF
+  // in an extension request clears creation-scope and is then refused at the
+  // role gate, because no supplier lane holds `application:submit`. Every other
+  // path refuses at scope. Both refusals are real, both are asserted by name,
+  // and the ATOM is the guarantee — a comment would not be.
+  creationOwner: (payload) => {
+    if (payload.requestType !== VENDOR_BEARING_REQUEST_TYPE) return null;
+    const stated = typeof payload.s4Vendor === 'string' ? payload.s4Vendor.trim() : '';
+    if (stated === '') return null;
+    const match = mockSuppliers.find(
+      (s) => s.sapBpNumber === stated || s.id === stated,
+    );
+    return match ? match.id : null;
+  },
+  create: (payload, toState, scope) => {
+    const id = supplierApplicationStore.nextId();
+    const str = (k: string) => (typeof payload[k] === 'string' ? (payload[k] as string) : '');
+    // Proven a permitted member by `APPLICATION_REQUEST_TYPE_KNOWN` before this
+    // runs, so it is read rather than re-validated.
+    const requestType = str('requestType');
+    const s4Vendor = str('s4Vendor').trim();
+    supplierApplicationStore.add({
+      id,
+      applicationNumber: supplierApplicationStore.numberFor(id),
+      requestType,
+      status: toState as SupplierApplicationStatus,
+      companyName: str('companyName'),
+      // The literal `null` the type demands. See `types.ts`: an applicant is
+      // not a tenant, and this field can never hold anything else.
+      supplierId: null,
+      // Resolved, never echoed — the same function the hook proved non-null for
+      // a vendor-bearing request, so the two cannot disagree.
+      resolvedSupplierId: supplierApplicationTarget.creationOwner?.(payload) ?? null,
+      // What the caller SAID, kept beside what it resolved to. `null` rather
+      // than `''` when absent: an empty string reads as "they typed nothing",
+      // and for the two vendor-free request types nobody was ever asked.
+      s4Vendor: s4Vendor === '' ? null : s4Vendor,
+      declarations: readDeclarations(payload),
+      submittedAt: new Date().toISOString(),
+      submittedBy: scope.actor ?? NO_PERSON,
+      reviewStartedAt: null,
+      decidedAt: null,
+      decidedBy: null,
+      rejectionReason: null,
+    });
+    return { entityId: id };
+  },
+};
+
 const TARGETS: Record<string, CommandTarget> = {
   purchaseOrder: purchaseOrderTarget,
   advanceShipNotice: advanceShipNoticeTarget,
@@ -1650,6 +1802,9 @@ const TARGETS: Record<string, CommandTarget> = {
   // §82 — the document lane's first write path: the supplier's declaration and
   // compliance's review of it.
   supplierDocument: supplierDocumentTarget,
+  // B1 — the onboarding lane's write path. Ships in the same commit as its
+  // flow so the entity never joins the target-less set, not even for one merge.
+  supplierApplication: supplierApplicationTarget,
 };
 
 // The behavior-wiring census (was the contract package's "6"; 7 with the G1.1

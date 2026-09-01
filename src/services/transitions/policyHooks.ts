@@ -250,6 +250,59 @@ export const POLICY_HOOKS = {
    * which had no implementation anywhere in the tree before this.
    */
   PR_APPROVAL_ATTRIBUTED: 'pr_approval_attributed',
+
+  // ── B1 · SUPPLIER APPLICATION — the three guards on the birth and the
+  //    refusal of an application ───────────────────────────────────────────
+  /**
+   * Application submit: `requestType` must be one of the three the platform
+   * recognises. `requiredFields` proves PRESENCE, so without this an off-list
+   * token reaches `create` and is stored as a request type nothing can read —
+   * the `QUOTATION_SUBMIT_CURRENCY_PERMITTED` shape, and the same remedy:
+   * refuse an unknown token BY NAME rather than coerce it to a default.
+   */
+  APPLICATION_REQUEST_TYPE_KNOWN: 'application_request_type_known',
+  /**
+   * Application submit: an application naming an EXISTING vendor must name one
+   * the governed roster actually holds.
+   *
+   * ⚠️ **THIS IS THE C4b RESOLUTION, AND IT IS A HOOK BECAUSE THE C4b *FLAG*
+   * CANNOT CARRY IT — MEASURED, NOT ASSUMED.** `requireCreationOwner` is
+   * per-TARGET and all-or-nothing: the dispatcher refuses any buyer creation
+   * whose `creationOwner` returns null (`dispatcher.ts`, the buyer branch). Two
+   * of the three request types have NO existing vendor by definition, so their
+   * owner is legitimately null — setting the flag would refuse every External
+   * SR and every KOL, which is the majority of the population and the whole
+   * point of the lane.
+   *
+   * **What is preserved is the thing the flag exists for: A PAYLOAD ECHO IS NOT
+   * A RESOLUTION** (operator ruling, Wave E / #284). The resolution still runs
+   * in `creationOwner` — against the roster, in the data layer that owns it —
+   * and this hook is what makes it BINDING for the one request type it applies
+   * to. The hook reads it through `ctx.target`, so no roster knowledge crosses
+   * into the transitions layer and there is exactly one resolver.
+   */
+  APPLICATION_INTERNAL_VENDOR_RESOLVED: 'application_internal_vendor_resolved',
+  /**
+   * Application reject: the reason must be SUBSTANCE, not presence — the fourth
+   * deliberate instance of this two-line guard rather than a shared "non-blank
+   * text" hook, for the reason `PR_REJECT_REASON_AUTHORED` states: the four read
+   * different payload fields, and a shared hook would have to branch on
+   * `toState` to know which, so that reading the guard no longer tells you what
+   * it guards.
+   */
+  APPLICATION_REFUSAL_AUTHORED: 'application_refusal_authored',
+  /**
+   * Application submit: if the payload carries declarations, every one of them
+   * must name a known subject and carry a reference with something in it.
+   *
+   * ⚠️ **REFUSED, NOT FILTERED.** The tempting build reads the well-formed
+   * entries and drops the rest, which leaves the applicant believing they
+   * declared four documents and the record holding three — a silent
+   * subtraction from data somebody actually supplied. Declarations are
+   * OPTIONAL (an application carrying none is legal and common); a
+   * declarations key that is present and malformed is not.
+   */
+  APPLICATION_DECLARATIONS_WELL_FORMED: 'application_declarations_well_formed',
 } as const;
 
 for (const name of Object.values(POLICY_HOOKS)) registerPolicyHook(name);
