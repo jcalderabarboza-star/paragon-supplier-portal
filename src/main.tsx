@@ -9,6 +9,7 @@ import { DataServiceProvider } from './services/data/DataServiceContext';
 import { mockDataService } from './services/data/mock/mockDataService';
 import { seedEnforcementLedger } from './services/data/mock/enforcementSeed';
 import { seedSourceableRequisition } from './services/data/mock/requisitionSeed';
+import { seedSupplierApplications } from './services/data/mock/applicationSeed';
 import { withChaos, chaosConfigFromEnv } from './services/data/mock/withChaos';
 import { queryClient } from './services/query/queryClient';
 import type { IDataService } from './services/data/types';
@@ -74,5 +75,19 @@ seedEnforcementLedger()
   })
   .catch((err) => {
     console.error('[C.3] the sourceable-requisition seed threw:', err);
+  })
+  // ⚠️ B2 — THE REVIEW QUEUE, GROWN THROUGH THE MACHINE. Same contract as the
+  // two seeds above: real dispatched verbs, idempotent, and a refusal is
+  // REPORTED rather than swallowed. The rows stop at `Submitted` on purpose —
+  // the reviewing is the operator's act on the surface, and a seed that did it
+  // for them would remove the thing the lane exists to show.
+  .then(() => seedSupplierApplications())
+  .then((outcome) => {
+    if (outcome.status === 'refused') {
+      console.error('[B2] the supplier-application seed did not land:', outcome);
+    }
+  })
+  .catch((err) => {
+    console.error('[B2] the supplier-application seed threw:', err);
   })
   .then(renderApp);

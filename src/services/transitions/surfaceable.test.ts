@@ -281,6 +281,28 @@ describe('THE CENSUS — acts a screen is meant to offer that no screen offers',
     expect(firable.has('t_po_acknowledge')).toBe(true);
     expect(census).not.toContain('t_po_acknowledge');
 
+    // ⚠️ **AND THE THREE SUPPLIER-APPLICATION REVIEW VERBS JOIN THEM (B2).**
+    // B1 shipped this machine WIRED AND HEADLESS — three verbs that dispatched
+    // and that no screen offered — which is the census doing exactly its job:
+    // it held all three for one batch, and this is the batch that empties them
+    // out of it. They are now fired from `/buyer/supplier-applications`, each in
+    // its own slot, each gated on its own atom.
+    //
+    // ⚠️ **`t_application_submit` IS DELIBERATELY NOT ASSERTED HERE, AND ITS
+    // ABSENCE IS NOT AN OVERSIGHT.** It is a `creation` (`from: []`), so the
+    // census excludes it by construction (`t.from.length > 0`) and an assertion
+    // about it would be vacuously true whatever the tree did. Its real gate is
+    // that B3 has not built its door — and the thing that would catch a false
+    // affordance there is a surface test, not this census.
+    for (const id of [
+      't_application_start_review',
+      't_application_approve',
+      't_application_reject',
+    ]) {
+      expect(firable.has(id), id).toBe(true);
+      expect(census, id).not.toContain(id);
+    }
+
     // ⚠️ **AND ALL THREE INCOMING-SHIPMENT ADVANCE VERBS JOIN THEM (Wave D).**
     // Surfaced on `/supplier/forecasts`, Shipments tab, each in its own slot on
     // the leg's action row.

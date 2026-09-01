@@ -38,6 +38,7 @@ import BuyerShipments from '../pages-v2/BuyerShipments';
 import BuyerGoodsReceipt from '../pages-v2/BuyerGoodsReceipt';
 import BuyerDiscovery from '../pages-v2/BuyerDiscovery';
 import BuyerRequisitions from '../pages-v2/BuyerRequisitions';
+import BuyerSupplierApplications from '../pages-v2/BuyerSupplierApplications';
 import BuyerInvoices from '../pages-v2/BuyerInvoices';
 import BuyerScorecard from '../pages-v2/BuyerScorecard';
 import BuyerAnalytics from '../pages-v2/BuyerAnalytics';
@@ -105,6 +106,7 @@ const ROUTES: RouteCase[] = [
   { name: 'buyer/goods-receipt', pattern: '/buyer/goods-receipt', at: '/buyer/goods-receipt', element: <BuyerGoodsReceipt />, identity: BUYER },
   { name: 'buyer/discovery', pattern: '/buyer/discovery', at: '/buyer/discovery', element: <BuyerDiscovery />, identity: BUYER },
   { name: 'buyer/purchase-requisition', pattern: '/buyer/purchase-requisition', at: '/buyer/purchase-requisition', element: <BuyerRequisitions />, identity: BUYER },
+  { name: 'buyer/supplier-applications', pattern: '/buyer/supplier-applications', at: '/buyer/supplier-applications', element: <BuyerSupplierApplications />, identity: BUYER },
   { name: 'buyer/invoices', pattern: '/buyer/invoices', at: '/buyer/invoices', element: <BuyerInvoices />, identity: BUYER },
   { name: 'buyer/scorecard', pattern: '/buyer/scorecard', at: '/buyer/scorecard', element: <BuyerScorecard />, identity: BUYER },
   { name: 'buyer/analytics', pattern: '/buyer/analytics', at: '/buyer/analytics', element: <BuyerAnalytics />, identity: BUYER },

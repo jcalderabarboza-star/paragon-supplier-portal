@@ -139,6 +139,17 @@ export const useRequisitions = (filter?: PRFilter) =>
     svc.procurement.getRequisitions(scope, filter),
   );
 
+/**
+ * The supplier applications a buyer reviews (B2).
+ *
+ * Buyer-only at the seam; a supplier scope resolves an empty page rather than a
+ * refusal — see `getSupplierApplications` for why empty is the quieter answer.
+ */
+export const useSupplierApplications = () =>
+  useServiceQuery(['procurement', 'supplierApplications'], (svc, scope) =>
+    svc.procurement.getSupplierApplications(scope),
+  );
+
 export const useIntakeReview = () =>
   useServiceQuery(['procurement', 'prIntake'], (svc, scope) =>
     svc.procurement.getPrIntake(scope),

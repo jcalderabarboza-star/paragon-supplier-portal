@@ -56,6 +56,12 @@ describe('feed provenance — the second axis', () => {
         'purchaseRequisitions',
         'forecastPublications',
         'inventory',
+      // B2 — the supplierApplication target was wired at B1 and its READ SURFACE
+      // lands here, so the lane now dispatches over a fixture-provenance feed.
+      // It is the partly-real class exactly: a compliance officer really does
+      // move an application through the machine, and every row on the page was
+      // grown by a seed rather than submitted by anybody outside.
+      'supplierApplications',
         // S82 - supplierDocuments joins the partly-real class and is the
         // sharpest member of it: a supplier can now DECLARE a certificate
         // through a wired verb while every row the page shows was authored as a

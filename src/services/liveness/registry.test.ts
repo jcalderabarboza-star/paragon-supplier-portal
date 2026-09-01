@@ -48,6 +48,11 @@ describe('LivenessRegistry — derived from the wiring census (cannot drift)', (
         // SDC-3b — the InventoryDeclaration target is wired (gate-1 LIVE); gate-2
         // still holds isLive() false (see the harvest-gate suite).
         'inventory',
+        // B2 — the supplierApplication target was wired at B1, so gate-1 was
+        // ALREADY LIVE before this capability existed; adding the capability is
+        // what made that visible. Its gate-2 entry lands in the SAME commit,
+        // which is the only safe order — see the note below.
+        'supplierApplications',
         // §82 — the supplierDocument target is wired (gate-1 LIVE) and gate-2
         // holds it SIMULATED on F1 supplier identities. It joins this list in
         // the same commit that adds its harvest gate, which is the ONLY safe
@@ -175,6 +180,12 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
       // pill honest. Added in the same commit as the wiring, which is the point
       // of this census test existing.
       'supplierDocuments',
+      // B2 - the same shape, one lane over, and the temptation was sharper:
+      // this lane's rows really are produced by dispatched verbs, so "live"
+      // reads plausible. It is still false. Nobody outside has applied, because
+      // /register does not reach this queue (B3, blocked on the s4Vendor roster
+      // reconciliation). Wiring plus a seed must never render green.
+      'supplierApplications',
     ]);
     for (const cap of ALL_CAPABILITIES) {
       if (gated.has(cap)) continue;

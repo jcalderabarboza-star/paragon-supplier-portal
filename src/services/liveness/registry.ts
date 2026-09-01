@@ -61,6 +61,10 @@ export type Capability =
   | 'risk'
   | 'compliance'
   | 'supplierDocuments'
+  // B2 — the onboarding review lane. Backed by the WIRED supplierApplication
+  // target (gate-1 LIVE) and harvest-gated below, for the reason every other
+  // demo-submission lane is: a form nobody real has filled in is not a source.
+  | 'supplierApplications'
   | 'commodityIntel'
   | 'forecastPublications'
   | 'deliveryAgreements'
@@ -123,6 +127,14 @@ const CAPABILITY_BACKING: Record<Capability, string | null> = {
   // A registered F0.4 flow, but NOT a wired CommandTarget → derives SIMULATED,
   // the same honest result as a pure fixture. (Demonstrates the inert-flow path.)
   supplierDocuments: 'supplierDocument',
+  // B2 — the supplierApplication CommandTarget is WIRED (B1 shipped flow and
+  // target in one commit), so gate-1 derives LIVE and a review genuinely
+  // dispatches. Gate-2 below stays SHUT: every row is grown by a seed or by a
+  // demo submission, and B3's real door is not built — so the pill keeps reading
+  // Sample and green stays structurally unreachable. Same two-edit flip shape as
+  // supplierDocuments, and named against the same F1 prerequisite so the two
+  // cannot drift apart.
+  supplierApplications: 'supplierApplication',
   // CI-0 — the Market Intelligence tab reads invented category trend stats with NO
   // lifecycle entity behind them. Null backing → derives SIMULATED → the shared
   // LivenessPill renders amber "Sample"; green is structurally unreachable. When a
@@ -209,6 +221,15 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
   // supplier identities land — the same F1 prerequisite `inventory` waits on,
   // named identically so the two cannot drift apart.
   supplierDocuments: {
+    readinessNoteKey: 'widget.honesty.awaitingSupplierIdentities',
+    source: 'F1 identities',
+  },
+  // B2 — the applications on screen were grown by `applicationSeed.ts` through
+  // the real verbs. That makes them HONEST, not REAL: no external party has
+  // applied, because the wizard at `/register` still does not dispatch (B3, and
+  // B3 waits on the s4Vendor roster reconciliation). Wiring plus a seed must
+  // never read as a live intake.
+  supplierApplications: {
     readinessNoteKey: 'widget.honesty.awaitingSupplierIdentities',
     source: 'F1 identities',
   },
