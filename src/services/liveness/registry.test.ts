@@ -180,11 +180,13 @@ describe('LivenessRegistry — harvest gate (LIVENESS-DATASOURCE-01, gate-2)', (
       // pill honest. Added in the same commit as the wiring, which is the point
       // of this census test existing.
       'supplierDocuments',
-      // B2 - the same shape, one lane over, and the temptation was sharper:
-      // this lane's rows really are produced by dispatched verbs, so "live"
-      // reads plausible. It is still false. Nobody outside has applied, because
-      // /register does not reach this queue (B3, blocked on the s4Vendor roster
-      // reconciliation). Wiring plus a seed must never render green.
+      // B2/B3 - the same shape, one lane over, and the temptation got SHARPER
+      // rather than weaker: this lane's rows are produced by dispatched verbs
+      // AND a buyer can now raise them on the surface, so "live" reads more
+      // plausible than it did at B2. It is still false. Nobody OUTSIDE has
+      // applied, because /register is a walkthrough and reaches no queue - by
+      // ruling, not by a missing wire. Wiring, a seed and a working door must
+      // never render green.
       'supplierApplications',
     ]);
     for (const cap of ALL_CAPABILITIES) {

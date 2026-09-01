@@ -1210,10 +1210,54 @@ export function useSupplierDocumentReject() {
 // whose acts are gated per atom and whose refusals reach the operator through
 // the dispatcher's own channel rather than an invented message.
 //
-// ⚠️ **`t_application_submit` IS DELIBERATELY ABSENT.** That verb is B3's door,
-// and B3 is blocked on the s4Vendor roster reconciliation. A `useApplicationSubmit`
-// with no consumer would be exactly the shape `surfaceable.test.ts` calls out —
-// a hook that names an id nobody can fire — and it would read as progress.
+// ⚠️ **`t_application_submit` IS HERE AS OF B3, AND IT IS A BUYER'S VERB.**
+// It stood deliberately absent while B2 shipped, on the ground that B3 was
+// blocked. It was not: the block was named as an identifier-space mismatch and
+// measured to be a copy defect — the `1000456` space this tree writes into
+// `/register`'s placeholder holds ZERO rows, so there were never two populated
+// spaces to reconcile. The roster is the one space, and the door resolves
+// against it rather than teaching a format.
+
+export interface ApplicationSubmitVars {
+  /**
+   * The `t_application_submit` payload: `requestType` + `companyName` always,
+   * `s4Vendor` for the vendor-bearing type, `declarations` optional.
+   *
+   * `Record<string, unknown>` matches `useRfqCreate`/`useQuotationSubmit` and is
+   * deliberate rather than lazy: a narrower type here would be a SECOND
+   * statement of what the verb requires, sitting one layer above
+   * `APPLICATION_BIRTH_FIELDS` and the three policy hooks, free to drift from
+   * them and impossible to falsify from either side.
+   */
+  payload: Record<string, unknown>;
+}
+
+/**
+ * Raise an application on an applicant's behalf (`application:submit`).
+ *
+ * ⚠️ **THE APPLICANT DOES NOT FIRE THIS AND CANNOT.** Every atom on this
+ * machine is buyer-side, and `/register` sits behind the SEC-GATE-01 edge
+ * matcher (`'/(.*)'`) — so nobody without Paragon's shared credential ever
+ * reaches it, and there is no anonymous applicant to hold a seat. A Paragon
+ * buyer records that somebody applied; that is what this verb means.
+ */
+export function useApplicationSubmit() {
+  const svc = useDataService();
+  const scope = useScope();
+  const invalidate = useInvalidateProcurement();
+
+  return useMutation<CommandResult, Error, ApplicationSubmitVars>({
+    mutationFn: ({ payload }) =>
+      svc.commands.dispatch(scope, {
+        transitionId: 't_application_submit',
+        entity: 'supplierApplication',
+        payload,
+      }),
+    onSuccess: (result) => {
+      if (result.status !== 'failed') invalidate(scope);
+    },
+  });
+}
 
 /** Pick an application off the queue (`application:review`). */
 export function useApplicationStartReview() {

@@ -8,6 +8,7 @@ import {
   Upload,
   CheckCircle2,
   ChevronLeft,
+  Info,
   MessageCircle,
   Globe,
   Send,
@@ -18,7 +19,6 @@ import { useTranslation, Trans } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import Wizard, { WizardStep } from '../components/ui-v2/Wizard';
 import FormSection from '../components/ui-v2/FormSection';
-import Data from '../components/ui-v2/Data';
 import StatusPill from '../components/ui-v2/StatusPill';
 import Button from '../components/ui-v2/Button';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
@@ -353,7 +353,16 @@ interface FormState {
   accountHolder: string;
 
   // Internal SR
-  s4Vendor: string;
+  //
+  // ⚠️ **`s4Vendor` IS GONE, AND IT IS THE ONE FIELD OPTION C DELETES RATHER
+  // THAN KEEPS.** The wizard keeps collecting everything else, because
+  // collecting is what a walkthrough of the applicant experience is FOR. This
+  // field was different in kind: its label and placeholder taught a format
+  // (`e.g. 1000456`) for an identifier space that holds ZERO rows anywhere in
+  // this tree — so it was not showing what registration asks for, it was
+  // asserting the existence of a register. The vendor is now RESOLVED against
+  // the roster on the buyer door (`BuyerSupplierApplications`), where a real
+  // roster exists to resolve against.
   expansionReason: string;
 
   // Step 5 Agreements
@@ -382,7 +391,6 @@ const emptyForm = (): FormState => ({
   bankName: '',
   accountNumber: '',
   accountHolder: '',
-  s4Vendor: '',
   expansionReason: '',
   agreed1: false,
   agreed2: false,
@@ -974,14 +982,6 @@ const InternalSRCategoryStep: React.FC<StepProps & { catError: string }> = ({
         </div>
         {catError && <div className={`${errorClass} mt-2`}>{catError}</div>}
       </div>
-      <Field label={t('registration.step.expansion.field.s4Vendor.label')} required>
-        <input
-          className={inputClass}
-          value={form.s4Vendor}
-          onChange={(e) => setForm((f) => ({ ...f, s4Vendor: e.target.value }))}
-          placeholder={t('registration.step.expansion.field.s4Vendor.placeholder')}
-        />
-      </Field>
       <Field label={t('registration.step.expansion.field.reason.label')}>
         <textarea
           className={`${inputClass} min-h-[80px] resize-y`}
@@ -1103,7 +1103,6 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
             eyebrow={t('registration.review.stepEyebrow', { number: 1 })}
             title={t('registration.step.expansion.title')}
           >
-            <Row label={t('registration.review.field.s4Vendor')} value={form.s4Vendor} />
             <Row
               label={t('registration.review.field.additionalCategories')}
               value={categoriesValue}
@@ -1172,64 +1171,59 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ form, setForm, errors, requestT
   );
 };
 
+/**
+ * ⚠️ **THE END OF THE WALKTHROUGH. ONE TRUE SENTENCE, WHERE THERE WERE SEVEN
+ * CLAIMS AND ONE OF THEM WAS TRUE.**
+ *
+ * What stood here, measured: a green success tick; the heading *Registration
+ * submitted*; the subtitle *received and is under review*; a fabricated
+ * `APP-2026-{random}` under the label "Application number"; then a numbered
+ * list whose FIRST item said *"your application has not been submitted to
+ * anyone, and no review will take place"* — and whose items 2, 3 and 4
+ * promised an email with the outcome, onboarding credentials on approval, and
+ * a support address to contact *quoting your application number*.
+ *
+ * The one honest line was buried at position 1 of a list, under a green tick,
+ * beside a document number that named nothing. Everything except that line is
+ * deleted; that line is now the heading, reworded to say what the page IS
+ * rather than what it did not do.
+ *
+ * ⚠️ **AND THERE IS NO PERSONA GUARD, DELIBERATELY.** `NoSupplierIdentity` is
+ * this tree's refusal precedent and its principle transfers — refuse in full,
+ * name the arm, never suggest an act that changes nothing. Its SHAPE does not:
+ * a refusal must name the party it refuses, and there is no applicant here to
+ * name. `middleware.js` matches `'/(.*)'`, so every visitor to `/register`
+ * already holds Paragon's shared credential; the page has always been a
+ * walkthrough shown to credentialed visitors. It now says so instead of
+ * refusing somebody who does not exist.
+ *
+ * ⚠️ **THE RESTART IS NOT DECORATION.** Deleting the copy left the last step of
+ * a five-step wizard with nothing after it — a dead end, which is the shape
+ * this batch exists to remove, not to relocate. `Start again` is the only act
+ * this page can honestly perform, and it performs it: it resets the wizard.
+ */
 interface SuccessScreenProps {
-  appNumber: string;
+  onRestart: () => void;
 }
 
-const SuccessScreen: React.FC<SuccessScreenProps> = ({ appNumber }) => {
+const SuccessScreen: React.FC<SuccessScreenProps> = ({ onRestart }) => {
   const { t } = useTranslation();
-  const nextSteps = [
-    'registration.success.next.1',
-    'registration.success.next.2',
-    'registration.success.next.3',
-    'registration.success.next.4',
-  ];
   return (
     <div className="bg-bg-surface border border-border-subtle rounded-lg shadow-md p-6 sm:p-10 text-center">
-      <div className="inline-flex w-14 h-14 rounded-full bg-success-soft items-center justify-center mb-4">
-        <CheckCircle2 size={32} className="text-success" />
+      {/* Neutral, not a success tick. A green check IS a claim — it says the
+          thing you did worked — and nothing here was submitted. */}
+      <div className="inline-flex w-14 h-14 rounded-full bg-bg-hover border border-border-subtle items-center justify-center mb-4">
+        <Info size={32} className="text-text-tertiary" />
       </div>
-      <h1 className="text-title text-text-primary mb-1">
-        {t('registration.success.title')}
+      <h1 className="text-title text-text-primary mb-3 max-w-xl mx-auto">
+        {t('registration.success.headline')}
       </h1>
-      <p className="text-sm text-text-tertiary mb-6">
-        {t('registration.success.subtitle')}
+      <p className="text-sm text-text-secondary mb-8 max-w-xl mx-auto">
+        {t('registration.success.body')}
       </p>
-      <div className="inline-block bg-teal-soft border border-teal/40 rounded-md px-6 py-3 mb-8">
-        <div className="text-xs text-text-tertiary font-medium">
-          {t('registration.success.appNumberLabel')}
-        </div>
-        <Data as="div" className="text-kpi text-text-primary mt-1">
-          APP-2026-{appNumber}
-        </Data>
-      </div>
-      <div className="bg-bg-hover border border-border-subtle rounded-md p-5 text-left mb-6 max-w-xl mx-auto">
-        <div className="text-sm font-bold text-text-primary mb-3">
-          {t('registration.success.nextTitle')}
-        </div>
-        {nextSteps.map((key, i) => (
-          <div
-            key={key}
-            className="flex gap-3 mb-2 last:mb-0 text-sm text-text-secondary"
-          >
-            <span className="text-teal font-bold shrink-0">{i + 1}.</span>
-            <span>{t(key)}</span>
-          </div>
-        ))}
-      </div>
-      <div className="text-xs text-text-tertiary">
-        <Trans
-          i18nKey="registration.success.questions"
-          components={{
-            email: (
-              <a
-                href="mailto:supplier-support@paragon.id"
-                className="text-teal font-semibold hover:text-teal-hover"
-              />
-            ),
-          }}
-        />
-      </div>
+      <Button variant="secondary" onClick={onRestart}>
+        {t('registration.success.restart')}
+      </Button>
     </div>
   );
 };
@@ -1285,9 +1279,13 @@ const SupplierRegistrationV2: React.FC = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [catError, setCatError] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [appNumber] = useState(
-    () => String(10000 + Math.floor(Math.random() * 90000)),
-  );
+  // ⚠️ **THE MINT IS DELETED.** It read
+  // `String(10000 + Math.floor(Math.random() * 90000))` and was rendered as
+  // `APP-2026-{n}` to an external party, beside four next-steps promising an
+  // email and onboarding credentials. Nothing anywhere held that number. A
+  // `ProvenanceMarker` cannot un-tell a forged document number, and this one
+  // faced OUTWARD. Real application numbers are minted by
+  // `supplierApplicationStore` and named on the row they belong to.
 
   const resetWizardState = () => {
     setCurrentStep(0);
@@ -1323,7 +1321,7 @@ const SupplierRegistrationV2: React.FC = () => {
       if (step === 4) return Object.keys(validateAgreements(form, t)).length === 0;
     }
     if (requestType === 'Internal SR') {
-      if (step === 0) return form.s4Vendor.trim() !== '' && form.selCats.length > 0;
+      if (step === 0) return form.selCats.length > 0;
       if (step === 1) return Object.keys(validateStep2(form, t)).length === 0;
       if (step === 2) return Object.keys(validateAgreements(form, t)).length === 0;
     }
@@ -1349,8 +1347,6 @@ const SupplierRegistrationV2: React.FC = () => {
         if (currentStep === 0) {
           if (form.selCats.length === 0)
             ce = t('registration.validation.category.required');
-          if (!form.s4Vendor.trim())
-            stepErrors.s4Vendor = t('registration.validation.s4Vendor.required');
         } else if (currentStep === 1) stepErrors = validateStep2(form, t);
       } else if (requestType === 'KOL') {
         if (currentStep === 0) stepErrors = validateStep1(form, t);
@@ -1506,7 +1502,14 @@ const SupplierRegistrationV2: React.FC = () => {
             <ProvenanceMarker capability="supplierRegistration" />
           </div>
           {submitted ? (
-            <SuccessScreen appNumber={appNumber} />
+            <SuccessScreen
+              onRestart={() => {
+                setSubmitted(false);
+                setRequestType(null);
+                setPendingRequestType(null);
+                resetWizardState();
+              }}
+            />
           ) : requestType === null ? (
             <RequestTypeSelector
               value={pendingRequestType}
