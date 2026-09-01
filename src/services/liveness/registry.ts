@@ -224,11 +224,14 @@ const HARVEST_GATED: Partial<Record<Capability, HarvestGate>> = {
     readinessNoteKey: 'widget.honesty.awaitingSupplierIdentities',
     source: 'F1 identities',
   },
-  // B2 — the applications on screen were grown by `applicationSeed.ts` through
-  // the real verbs. That makes them HONEST, not REAL: no external party has
-  // applied, because the wizard at `/register` still does not dispatch (B3, and
-  // B3 waits on the s4Vendor roster reconciliation). Wiring plus a seed must
-  // never read as a live intake.
+  // B2/B3 — the applications on screen were grown through the real verbs, and
+  // as of B3 a buyer can raise more of them from the review lane. That makes
+  // them HONEST, not REAL, and the gate stays for a reason that has now been
+  // RULED rather than deferred: `/register` is a WALKTHROUGH (Option C), not an
+  // intake, so no external party can put a row in this queue by any route. A
+  // wired target, a seed, and a live buyer door still add up to zero external
+  // applicants — which is exactly what this entry exists to keep the pill from
+  // claiming.
   supplierApplications: {
     readinessNoteKey: 'widget.honesty.awaitingSupplierIdentities',
     source: 'F1 identities',

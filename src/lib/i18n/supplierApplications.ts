@@ -16,7 +16,7 @@ export const supplierApplicationsEn: Record<string, string> = {
 
   // — The honest note. This lane dispatches, and it is still not a live intake. —
   'applications.meta.note':
-    'Every application here was raised through the platform’s own verbs. None arrived from outside: the registration form does not yet reach this queue.',
+    'Every application here was raised through the platform’s own verbs, by a Paragon seat. None arrived from outside: the walkthrough at /register records nothing and reaches no queue.',
 
   // — KPI tiles —
   'applications.kpi.waiting': 'Waiting to be picked up',
@@ -51,7 +51,7 @@ export const supplierApplicationsEn: Record<string, string> = {
   'applications.empty.title': 'No applications',
   'applications.empty.subtitle': 'The review queue is empty.',
   'applications.empty.body':
-    'Nobody has applied. When the registration form reaches this queue, applications will appear here.',
+    'Nobody has applied yet. A Paragon seat records an application here when a company asks to supply.',
   'applications.empty.filtered.title': 'Nothing matches',
   'applications.empty.filtered.subtitle': 'Every application is filtered out of this view.',
   'applications.empty.filtered.body': 'No application matches this filter.',
@@ -113,6 +113,46 @@ export const supplierApplicationsEn: Record<string, string> = {
   'applications.toast.rejected.desc': 'The decision and its reason are recorded.',
   'applications.toast.rejectFailed.title': 'Could not refuse {{number}}',
   'applications.toast.actionFailed.desc': 'The command was refused. Nothing changed.',
+
+  // B3 . THE DOOR — A BUYER RAISES AN APPLICATION ON AN APPLICANT'S BEHALF.
+  //
+  // ⚠️ **THE VENDOR IS RESOLVED, NEVER TYPED** (the #284 shape). Every value
+  // the picker can produce is one the dispatcher's `creationOwner` accepts, so
+  // `APPLICATION_INTERNAL_VENDOR_RESOLVED` guards a payload this control cannot
+  // construct — which is why the refusal is mutation-probed rather than
+  // trusted: an availability probe can never reach it.
+  'applications.raise.action': 'Raise an application',
+  'applications.raise.panel.title': 'Raise an application',
+  'applications.raise.panel.lead':
+    'Record that a company has asked to supply Paragon. You are recording their request — the applicant holds no seat here and cannot do this themselves.',
+  'applications.raise.field.type': 'Request type',
+  'applications.raise.field.typePlaceholder': 'Choose a request type…',
+  'applications.raise.type.External SR': 'External SR — a company Paragon does not buy from yet',
+  'applications.raise.type.Internal SR': 'Internal SR — extend a vendor already on the roster',
+  'applications.raise.type.KOL': 'KOL — a creator or individual',
+  'applications.raise.field.company': 'Company',
+  'applications.raise.field.companyPlaceholder': 'Legal name, as the applicant states it',
+  'applications.raise.field.vendor': 'Existing vendor',
+  'applications.raise.field.vendorPlaceholder': 'Choose a vendor from the roster…',
+  'applications.raise.field.vendorHint':
+    'Chosen from the governed roster, never typed — so the application names a vendor the platform can find. The company name comes from the vendor you pick.',
+  'applications.raise.field.declarations': 'Declared documents',
+  'applications.raise.field.declarationsOptional': 'Optional',
+  'applications.raise.field.declarationsHint':
+    'What the applicant SAYS it holds. Nothing here is checked; leave a reference blank and it is not recorded at all.',
+  'applications.raise.declaration.placeholder': 'Reference number',
+  'applications.raise.next': 'Review before raising',
+  'applications.raise.confirm.title': 'Raise this application?',
+  'applications.raise.confirm.lead':
+    'This creates a numbered application in the queue below. Check it against what the applicant actually sent — nothing here can be edited afterwards.',
+  'applications.raise.confirm.commit': 'Yes, raise it',
+  'applications.raise.confirm.back': 'Back',
+  'applications.raise.confirm.declaredNone': 'None',
+  'applications.raise.confirm.unattributed':
+    'This will be recorded against no person. The portal has no identity provider yet, so the record will say a Paragon seat raised it and nothing more.',
+  'applications.toast.raised.title': '{{number}} raised',
+  'applications.toast.raised.desc': 'It is in the queue, waiting to be picked up.',
+  'applications.toast.raiseFailed.title': 'Could not raise the application',
 };
 
 export const supplierApplicationsId: Record<string, string> = {
@@ -123,7 +163,7 @@ export const supplierApplicationsId: Record<string, string> = {
     'Perusahaan yang meminta menjadi pemasok Paragon, dan posisi masing-masing.',
 
   'applications.meta.note':
-    'Setiap aplikasi di sini diajukan melalui tindakan platform sendiri. Tidak ada yang datang dari luar: formulir pendaftaran belum sampai ke antrean ini.',
+    'Setiap aplikasi di sini diajukan melalui tindakan platform sendiri, oleh kursi Paragon. Tidak ada yang datang dari luar: panduan di /register tidak mencatat apa pun dan tidak sampai ke antrean mana pun.',
 
   'applications.kpi.waiting': 'Menunggu diambil',
   'applications.kpi.inReview': 'Sedang ditinjau',
@@ -148,7 +188,7 @@ export const supplierApplicationsId: Record<string, string> = {
   'applications.empty.title': 'Belum ada aplikasi',
   'applications.empty.subtitle': 'Antrean tinjauan kosong.',
   'applications.empty.body':
-    'Belum ada yang mengajukan. Ketika formulir pendaftaran sampai ke antrean ini, aplikasi akan muncul di sini.',
+    'Belum ada yang mengajukan. Kursi Paragon mencatat aplikasi di sini ketika sebuah perusahaan meminta menjadi pemasok.',
   'applications.empty.filtered.title': 'Tidak ada yang cocok',
   'applications.empty.filtered.subtitle': 'Semua aplikasi tersaring keluar dari tampilan ini.',
   'applications.empty.filtered.body': 'Tidak ada aplikasi yang cocok dengan filter ini.',
@@ -204,4 +244,38 @@ export const supplierApplicationsId: Record<string, string> = {
   'applications.toast.rejected.desc': 'Keputusan dan alasannya tercatat.',
   'applications.toast.rejectFailed.title': 'Tidak dapat menolak {{number}}',
   'applications.toast.actionFailed.desc': 'Perintah ditolak. Tidak ada yang berubah.',
+
+  // B3 . pintu masuk — kursi Paragon mencatat aplikasi atas nama pemohon.
+  'applications.raise.action': 'Ajukan aplikasi',
+  'applications.raise.panel.title': 'Ajukan aplikasi',
+  'applications.raise.panel.lead':
+    'Catat bahwa sebuah perusahaan meminta menjadi pemasok Paragon. Anda mencatat permintaan mereka — pemohon tidak punya kursi di sini dan tidak dapat melakukannya sendiri.',
+  'applications.raise.field.type': 'Jenis permintaan',
+  'applications.raise.field.typePlaceholder': 'Pilih jenis permintaan…',
+  'applications.raise.type.External SR': 'External SR — perusahaan yang belum menjadi pemasok Paragon',
+  'applications.raise.type.Internal SR': 'Internal SR — perluasan vendor yang sudah ada di daftar',
+  'applications.raise.type.KOL': 'KOL — kreator atau perorangan',
+  'applications.raise.field.company': 'Perusahaan',
+  'applications.raise.field.companyPlaceholder': 'Nama badan hukum, sesuai pernyataan pemohon',
+  'applications.raise.field.vendor': 'Vendor yang sudah ada',
+  'applications.raise.field.vendorPlaceholder': 'Pilih vendor dari daftar…',
+  'applications.raise.field.vendorHint':
+    'Dipilih dari daftar resmi, tidak pernah diketik — sehingga aplikasi menyebut vendor yang dapat ditemukan platform. Nama perusahaan diambil dari vendor yang Anda pilih.',
+  'applications.raise.field.declarations': 'Dokumen yang dinyatakan',
+  'applications.raise.field.declarationsOptional': 'Opsional',
+  'applications.raise.field.declarationsHint':
+    'Apa yang DIKATAKAN pemohon dimilikinya. Tidak ada yang diperiksa di sini; biarkan nomor rujukan kosong dan itu tidak akan dicatat sama sekali.',
+  'applications.raise.declaration.placeholder': 'Nomor rujukan',
+  'applications.raise.next': 'Periksa sebelum diajukan',
+  'applications.raise.confirm.title': 'Ajukan aplikasi ini?',
+  'applications.raise.confirm.lead':
+    'Ini membuat aplikasi bernomor di antrean di bawah. Periksa terhadap apa yang benar-benar dikirim pemohon — tidak ada yang dapat diubah setelahnya.',
+  'applications.raise.confirm.commit': 'Ya, ajukan',
+  'applications.raise.confirm.back': 'Kembali',
+  'applications.raise.confirm.declaredNone': 'Tidak ada',
+  'applications.raise.confirm.unattributed':
+    'Ini akan dicatat tanpa nama orang. Portal belum memiliki penyedia identitas, jadi catatannya hanya menyebut bahwa sebuah kursi Paragon mengajukannya.',
+  'applications.toast.raised.title': '{{number}} diajukan',
+  'applications.toast.raised.desc': 'Sudah masuk antrean, menunggu untuk diambil.',
+  'applications.toast.raiseFailed.title': 'Tidak dapat mengajukan aplikasi',
 };

@@ -155,8 +155,6 @@ export const registrationEn: Record<string, string> = {
   'registration.step.expansion.description':
     'Select the new categories or commodities for this existing vendor.',
   'registration.step.expansion.field.categories.label': 'Additional supply categories',
-  'registration.step.expansion.field.s4Vendor.label': 'Existing S/4HANA vendor number',
-  'registration.step.expansion.field.s4Vendor.placeholder': 'e.g. 1000456',
   'registration.step.expansion.field.reason.label': 'Reason for category expansion',
   'registration.step.expansion.field.reason.placeholder':
     'Explain why this vendor is being expanded to new categories…',
@@ -185,7 +183,6 @@ export const registrationEn: Record<string, string> = {
   'registration.review.field.bank': 'Bank',
   'registration.review.field.accountNumber': 'Account number',
   'registration.review.field.accountHolder': 'Account holder',
-  'registration.review.field.s4Vendor': 'S/4HANA vendor',
   'registration.review.field.additionalCategories': 'Additional categories',
   'registration.review.field.reason': 'Reason',
   'registration.review.notUploaded': 'Not uploaded',
@@ -197,23 +194,31 @@ export const registrationEn: Record<string, string> = {
   'registration.review.agreement2':
     'I confirm that all information provided is accurate and complete. I understand that providing false information may result in rejection.',
 
-  // — Success screen —
-  'registration.success.title': 'Registration submitted',
-  'registration.success.subtitle': 'Your application has been received and is under review.',
-  'registration.success.appNumberLabel': 'Application number',
-  'registration.success.nextTitle': 'What happens next?',
-  // D-CENSUS-8 — was a 3–5 business-day review promise. NOTHING performs a review:
-  // the wizard validates the form and discards it; no application is persisted or
-  // routed. Promising a turnaround for work no one receives is the plainest kind
-  // of false claim on the portal, and it is made to an external party.
-  'registration.success.next.1': 'This is a demonstration portal — your application has not been submitted to anyone, and no review will take place.',
-  'registration.success.next.2': 'You will receive an email at your registered address with the outcome.',
-  'registration.success.next.3':
-    'If approved, you will receive onboarding instructions and portal access credentials.',
-  'registration.success.next.4':
-    'For urgent queries, contact supplier-support@paragon.id quoting your application number.',
-  'registration.success.questions':
-    'Questions? Email <email>supplier-support@paragon.id</email> with your application number.',
+  // — End of the walkthrough —
+  //
+  // ⚠️ **NINE KEYS BECAME THREE, AND THE ONE THAT SURVIVED IS THE ONE THAT WAS
+  // TRUE.** D-CENSUS-8 had already retracted a 3–5 business-day review promise
+  // here and replaced it with `next.1` — an honest sentence, placed FIRST in a
+  // numbered list whose items 2, 3 and 4 promised an email, onboarding
+  // credentials and a support line to quote an application number at, under a
+  // green tick, beside a randomly generated `APP-2026-…`.
+  //
+  // ⚠️ **THAT IS WHY A HONEST SENTENCE ADDED TO FALSE ONES IS NOT A FIX.** The
+  // reader is not summing the claims; they are reading the heading and the
+  // tick. `title`, `subtitle`, `appNumberLabel`, `nextTitle`, `next.1`–`next.4`
+  // and `questions` are all deleted. `next.1`'s content is now the heading —
+  // reworded from what did NOT happen into what this page IS, because a page
+  // that only denies is still a page you have to read to the end to trust.
+  //
+  // `registration.success.next.2` and `.next.3` were
+  // `FORWARD-PROMISE-HAS-NO-HANDLER-01` under EVERY option, not just this one:
+  // approving an application mints nothing and sends nothing (B4 parked,
+  // C10 §1). Nothing in this platform can send that email.
+  'registration.success.headline':
+    'That is the end of the walkthrough — nothing was submitted.',
+  'registration.success.body':
+    'This page shows what Paragon’s supplier registration asks for. What you entered was not recorded, no application exists, and nobody has been notified. Real applications are raised inside the portal by a Paragon buyer.',
+  'registration.success.restart': 'Start again',
 
   // — Wizard chrome —
   'registration.changeType': 'Change registration type',
@@ -235,7 +240,6 @@ export const registrationEn: Record<string, string> = {
   'registration.validation.agreed1.required': 'You must accept the Terms & Conditions',
   'registration.validation.agreed2.required': 'You must confirm the accuracy of the information',
   'registration.validation.category.required': 'Select at least one supply category',
-  'registration.validation.s4Vendor.required': 'S/4HANA vendor number is required',
 };
 
 export const registrationId: Record<string, string> = {
@@ -394,8 +398,6 @@ export const registrationId: Record<string, string> = {
   'registration.step.expansion.description':
     'Pilih kategori atau komoditas baru untuk vendor yang sudah ada ini.',
   'registration.step.expansion.field.categories.label': 'Kategori pasokan tambahan',
-  'registration.step.expansion.field.s4Vendor.label': 'Nomor vendor S/4HANA yang ada',
-  'registration.step.expansion.field.s4Vendor.placeholder': 'mis. 1000456',
   'registration.step.expansion.field.reason.label': 'Alasan perluasan kategori',
   'registration.step.expansion.field.reason.placeholder':
     'Jelaskan mengapa vendor ini diperluas ke kategori baru…',
@@ -424,7 +426,6 @@ export const registrationId: Record<string, string> = {
   'registration.review.field.bank': 'Bank',
   'registration.review.field.accountNumber': 'Nomor rekening',
   'registration.review.field.accountHolder': 'Pemilik rekening',
-  'registration.review.field.s4Vendor': 'Vendor S/4HANA',
   'registration.review.field.additionalCategories': 'Kategori tambahan',
   'registration.review.field.reason': 'Alasan',
   'registration.review.notUploaded': 'Belum diunggah',
@@ -436,19 +437,12 @@ export const registrationId: Record<string, string> = {
   'registration.review.agreement2':
     'Saya mengonfirmasi bahwa semua informasi yang diberikan akurat dan lengkap. Saya memahami bahwa memberikan informasi palsu dapat mengakibatkan penolakan.',
 
-  // — Success screen —
-  'registration.success.title': 'Pendaftaran terkirim',
-  'registration.success.subtitle': 'Aplikasi Anda telah diterima dan sedang ditinjau.',
-  'registration.success.appNumberLabel': 'Nomor aplikasi',
-  'registration.success.nextTitle': 'Apa yang terjadi selanjutnya?',
-  'registration.success.next.1': 'Ini adalah portal demonstrasi — aplikasi Anda tidak dikirim ke siapa pun, dan tidak akan ada peninjauan.',
-  'registration.success.next.2': 'Anda akan menerima email di alamat terdaftar Anda dengan hasilnya.',
-  'registration.success.next.3':
-    'Jika disetujui, Anda akan menerima instruksi onboarding dan kredensial akses portal.',
-  'registration.success.next.4':
-    'Untuk pertanyaan mendesak, hubungi supplier-support@paragon.id dengan menyebutkan nomor aplikasi Anda.',
-  'registration.success.questions':
-    'Ada pertanyaan? Email <email>supplier-support@paragon.id</email> dengan nomor aplikasi Anda.',
+  // — Akhir panduan —
+  'registration.success.headline':
+    'Panduan ini selesai — tidak ada yang dikirim.',
+  'registration.success.body':
+    'Halaman ini memperlihatkan apa yang ditanyakan pendaftaran pemasok Paragon. Apa yang Anda isi tidak dicatat, tidak ada aplikasi yang terbentuk, dan tidak ada seorang pun yang diberi tahu. Aplikasi yang sebenarnya diajukan di dalam portal oleh pembeli Paragon.',
+  'registration.success.restart': 'Mulai lagi',
 
   // — Wizard chrome —
   'registration.changeType': 'Ubah jenis pendaftaran',
@@ -470,5 +464,4 @@ export const registrationId: Record<string, string> = {
   'registration.validation.agreed1.required': 'Anda harus menyetujui Syarat & Ketentuan',
   'registration.validation.agreed2.required': 'Anda harus mengonfirmasi keakuratan informasi',
   'registration.validation.category.required': 'Pilih setidaknya satu kategori pasokan',
-  'registration.validation.s4Vendor.required': 'Nomor vendor S/4HANA wajib diisi',
 };

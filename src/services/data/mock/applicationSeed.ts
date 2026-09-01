@@ -33,16 +33,22 @@
 // application and deciding it — the segregation defect already filed at §76d.
 // A seed is a worked example of the system's own rules.
 //
-// ── ⚠️ NO `Internal SR` ROW, AND THE REASON IS A MEASURED BLOCKER ───────────
+// ── ⚠️ STILL NO `Internal SR` ROW — AND THE REASON WAS REPLACED, NOT KEPT ───
 //
-// An extension request must name an existing vendor that resolves against the
-// platform roster, and the roster's identifiers are `sapBpNumber`
-// (`BP-100012xx`) while `/register`'s field asks for a `1000456`-shaped S/4HANA
-// vendor number that exists nowhere in this tree. That mismatch is B3's
-// precondition, filed. Seeding an Internal SR here would mean choosing one side
-// of an unreconciled identifier space and baking it into the demonstration data
-// — so the seed uses the two request types that touch no roster at all, and
-// says so rather than quietly picking.
+// The original reason was a measured blocker: `/register` taught a
+// `1000456`-shaped vendor number while the roster keys on `sapBpNumber`, so
+// seeding an extension would have baked one side of an unreconciled identifier
+// space into the demonstration data. **THAT BLOCKER IS RETIRED.** Measured at
+// B3: the `1000456` space holds ZERO rows anywhere in this tree, so there were
+// never two populated spaces to reconcile — one space, and a copy defect. The
+// field is deleted and the buyer door RESOLVES against the roster.
+//
+// The row still is not seeded, for a reason that survives the correction: an
+// extension names a specific vendor, and **choosing which one is a person's
+// act, not a fixture's.** The door exists now, so a reader who wants an
+// Internal SR raises one and watches it resolve — which demonstrates more than
+// a row that arrived already resolved. The seed's job is to make the queue
+// non-empty, and two rows do that.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { MockCommandService } from './MockCommandService';

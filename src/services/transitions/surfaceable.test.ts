@@ -288,12 +288,16 @@ describe('THE CENSUS — acts a screen is meant to offer that no screen offers',
     // out of it. They are now fired from `/buyer/supplier-applications`, each in
     // its own slot, each gated on its own atom.
     //
-    // ⚠️ **`t_application_submit` IS DELIBERATELY NOT ASSERTED HERE, AND ITS
-    // ABSENCE IS NOT AN OVERSIGHT.** It is a `creation` (`from: []`), so the
-    // census excludes it by construction (`t.from.length > 0`) and an assertion
-    // about it would be vacuously true whatever the tree did. Its real gate is
-    // that B3 has not built its door — and the thing that would catch a false
-    // affordance there is a surface test, not this census.
+    // ⚠️ **`t_application_submit` IS STILL NOT ASSERTED HERE, AND B3 SHIPPING
+    // ITS DOOR CHANGES NOTHING ABOUT THAT.** It is a `creation` (`from: []`),
+    // so this census excludes it BY CONSTRUCTION (`t.from.length > 0`) — an
+    // assertion about it here would be vacuously true whatever the tree did,
+    // which is the `EMPTY-INPUT-REPORTS-CLEAN-01` shape written into a passing
+    // test. Its door is real as of B3 and its coverage lives where coverage of
+    // a create verb has to live: on the surface, in
+    // `BuyerSupplierApplications.test.tsx`, gated on `application:submit` and
+    // probed in both directions against the seat that holds only the review
+    // atoms.
     for (const id of [
       't_application_start_review',
       't_application_approve',

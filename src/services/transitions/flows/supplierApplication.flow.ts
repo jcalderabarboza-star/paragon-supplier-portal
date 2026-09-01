@@ -6,16 +6,20 @@
 //
 // ── ⚠️ WHY THIS MACHINE EXISTS, AND IT IS NOT "THE WIZARD NEEDED A BACKEND" ──
 //
-// `SupplierRegistration.tsx` mints `String(10000 + Math.floor(Math.random() *
-// 90000))` at `:1289` and renders it as `APP-2026-{n}` at `:1203`, beside a
-// next-steps list. **An external party is told a numbered application exists.**
-// Nothing anywhere records that it does. A `ProvenanceMarker` cannot un-tell a
-// forged document number, and this one faces OUTWARD — at a party with no seat,
-// no login and no way to check.
+// `SupplierRegistration.tsx` minted `String(10000 + Math.floor(Math.random() *
+// 90000))` and rendered it as `APP-2026-{n}`, beside a next-steps list.
+// **An external party was told a numbered application exists.** Nothing
+// anywhere recorded that it did. A `ProvenanceMarker` cannot un-tell a forged
+// document number, and that one faced OUTWARD — at a party with no seat, no
+// login and no way to check.
 //
-// This file is the record that makes the number true. **The surface is NOT
-// changed here** (filed, B3): a machine with no caller is honest and inert,
-// while a caller with no machine is what the tree ships today.
+// This file is the record that makes a number true, and **B3 closed the loop
+// from both ends**: `/buyer/supplier-applications` raises real applications
+// through `t_application_submit`, and `/register`'s mint is deleted rather than
+// re-pointed. It was never the door — `middleware.js` matches `'/(.*)'`, so
+// that page has only ever been shown to holders of Paragon's own credential.
+// Line references are deliberately NOT restated here: the two this paragraph
+// carried (`:1289`, `:1203`) both moved within one batch of being written.
 //
 // ── ⚠️ NO `Draft` STATE, AND THAT IS A RULING RATHER THAN AN OMISSION ────────
 //

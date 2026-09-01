@@ -56,11 +56,17 @@ describe('the seed grows rows through the real verb', () => {
   });
 
   it('⚠️ IT TOUCHES NO ROSTER — every seeded request type is vendor-free', async () => {
-    // The s4Vendor roster mismatch is B3's precondition (`BP-10001234` on the
-    // roster against a `1000456`-shaped field). Seeding an extension request
-    // would bake one side of an unreconciled identifier space into the
-    // demonstration data, so the seed uses only the two types that resolve
-    // against nothing.
+    // ⚠️ **THE ASSERTION SURVIVED B3; ITS REASON DID NOT**, and the two are
+    // recorded separately on purpose — a test kept for a reason that has been
+    // measured false is a test nobody can safely change.
+    //
+    // It was written against a blocker (a `1000456`-shaped field against a
+    // `sapBpNumber` roster) that B3 measured out of existence: the `1000456`
+    // space holds zero rows, so it was a copy defect, not an unreconciled
+    // space. What holds the assertion up now is different — naming WHICH
+    // vendor an extension is about is a person's act on the door, and a seeded
+    // Internal SR would be a resolution nobody performed, sitting in the queue
+    // beside rows somebody did.
     await seedSupplierApplications(commands);
     for (const r of supplierApplicationStore.all()) {
       expect(APPLICATION_REQUEST_TYPES as readonly string[]).toContain(r.requestType);
