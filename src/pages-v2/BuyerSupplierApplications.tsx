@@ -388,12 +388,16 @@ const BuyerSupplierApplications: React.FC = () => {
 
           {applications.length === 0 ? (
             <EmptyState
+              breadcrumb={APPLICATIONS_CRUMB}
               title={t('applications.empty.title')}
+              subtitle={t('applications.empty.subtitle')}
               message={t('applications.empty.body')}
             />
           ) : filtered.length === 0 ? (
             <EmptyState
+              breadcrumb={APPLICATIONS_CRUMB}
               title={t('applications.empty.filtered.title')}
+              subtitle={t('applications.empty.filtered.subtitle')}
               message={t('applications.empty.filtered.body')}
             />
           ) : (

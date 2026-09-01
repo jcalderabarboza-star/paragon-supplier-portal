@@ -42,10 +42,18 @@ export const supplierApplicationsEn: Record<string, string> = {
   'applications.declared.count.other': '{{count}} documents',
 
   // — Four honest states —
+  // ⚠️ `breadcrumb`, `subtitle` AND `message` are all passed EXPLICITLY at both
+  // call sites. `EmptyState` carries ENGLISH defaults for each, and a default a
+  // caller omits renders in English in BOTH locales — `t()` cannot be reached
+  // from a default parameter, so an EN-only suite is blind to it by
+  // construction. Measured: these were the only two call sites in the tree
+  // omitting `breadcrumb` or `subtitle` (2 of 29).
   'applications.empty.title': 'No applications',
+  'applications.empty.subtitle': 'The review queue is empty.',
   'applications.empty.body':
     'Nobody has applied. When the registration form reaches this queue, applications will appear here.',
   'applications.empty.filtered.title': 'Nothing matches',
+  'applications.empty.filtered.subtitle': 'Every application is filtered out of this view.',
   'applications.empty.filtered.body': 'No application matches this filter.',
   'applications.error.title': 'Applications did not load',
 
@@ -138,9 +146,11 @@ export const supplierApplicationsId: Record<string, string> = {
   'applications.declared.count.other': '{{count}} dokumen',
 
   'applications.empty.title': 'Belum ada aplikasi',
+  'applications.empty.subtitle': 'Antrean tinjauan kosong.',
   'applications.empty.body':
     'Belum ada yang mengajukan. Ketika formulir pendaftaran sampai ke antrean ini, aplikasi akan muncul di sini.',
   'applications.empty.filtered.title': 'Tidak ada yang cocok',
+  'applications.empty.filtered.subtitle': 'Semua aplikasi tersaring keluar dari tampilan ini.',
   'applications.empty.filtered.body': 'Tidak ada aplikasi yang cocok dengan filter ini.',
   'applications.error.title': 'Aplikasi gagal dimuat',
 
