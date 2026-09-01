@@ -46,6 +46,20 @@ export const registrationEn: Record<string, string> = {
   'registration.step.company.field.npwp.label': 'NPWP number',
   'registration.step.company.field.nib.label': 'NIB (Business registration)',
   'registration.step.company.field.country.label': 'Country',
+  // ⚠️ COUNTRY NAMES ARE DISPLAY COPY; THE `<option value>` IS NOT (S2b).
+  // `form.country === 'Indonesia'` gates whether the province field renders, so
+  // the STORED value stays canonical EN and only these labels localize — the
+  // same value/label split `BANKS` already ships a few lines below, and the
+  // contract every central label map in this tree states in its own header.
+  // Four of the six are identical in both arms (endonyms that do not change);
+  // that is deliberate, and the guard asserts the ID arm holds its own row for
+  // each rather than inferring it from output no fallback could be told apart from.
+  'registration.country.indonesia': 'Indonesia',
+  'registration.country.malaysia': 'Malaysia',
+  'registration.country.singapore': 'Singapore',
+  'registration.country.thailand': 'Thailand',
+  'registration.country.vietnam': 'Vietnam',
+  'registration.country.philippines': 'Philippines',
   'registration.step.company.field.province.label': 'Province',
   'registration.step.company.field.province.placeholder': '— Select province —',
   'registration.step.company.field.city.label': 'City',
@@ -289,6 +303,14 @@ export const registrationId: Record<string, string> = {
   'registration.step.company.field.npwp.label': 'Nomor NPWP',
   'registration.step.company.field.nib.label': 'NIB (Pendaftaran usaha)',
   'registration.step.company.field.country.label': 'Negara',
+  // Singapore → Singapura and Philippines → Filipina are the two that actually
+  // change; the other four are the same word in Bahasa Indonesia.
+  'registration.country.indonesia': 'Indonesia',
+  'registration.country.malaysia': 'Malaysia',
+  'registration.country.singapore': 'Singapura',
+  'registration.country.thailand': 'Thailand',
+  'registration.country.vietnam': 'Vietnam',
+  'registration.country.philippines': 'Filipina',
   'registration.step.company.field.province.label': 'Provinsi',
   'registration.step.company.field.province.placeholder': '— Pilih provinsi —',
   'registration.step.company.field.city.label': 'Kota',

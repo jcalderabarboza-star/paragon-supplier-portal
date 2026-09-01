@@ -140,8 +140,41 @@ const INDONESIAN_PROVINCES = [
   'Sumatera Selatan', 'Sumatera Utara',
 ];
 
-const COUNTRIES = [
-  'Indonesia', 'Malaysia', 'Singapore', 'Thailand', 'Vietnam', 'Philippines', 'Other',
+// ⚠️ **THE `value` IS LOGIC, THE `key` IS DISPLAY.** The value stays the
+// canonical English literal — it is what `form.country` carries into the review
+// step and into whatever write path eventually lands — and only the label
+// resolves. Same contract as `RoleOption` / `CategoryOption` above and as `BANKS`
+// below; no fourth shape is introduced here.
+//
+// ⚠️ **AND THE OBVIOUS ARGUMENT FOR THE SPLIT IS FALSE HERE — SAID PLAINLY,
+// BECAUSE IT IS THE ONE A LATER READER WILL RE-DERIVE AND DISBELIEVE.** It is
+// tempting to write that a localized value would ungate the province field, since
+// `form.country === 'Indonesia'` (below, and again in `validateStep1`) decides
+// whether province renders and whether it is required. It would NOT: `Indonesia`
+// is spelled identically in both arms, so that comparison survives the mistake.
+// **The gate is correct today by coincidence of spelling, not by construction.**
+// `Singapore` → `Singapura` and `Philippines` → `Filipina` are the tokens where
+// the split is actually observable, which is why the guard probes THOSE and not
+// the gated one — a probe aimed at `Indonesia` passes whether or not the split
+// exists, which is a test that proves nothing while looking like it proves the
+// most important thing.
+//
+// `Other` reuses the shared `registration.option.other` key rather than minting a
+// seventh: it is the same word in the same list, and a second key for it would be
+// two homes for one string.
+interface CountryOption {
+  value: string;
+  key: string;
+}
+
+const COUNTRIES: CountryOption[] = [
+  { value: 'Indonesia', key: 'registration.country.indonesia' },
+  { value: 'Malaysia', key: 'registration.country.malaysia' },
+  { value: 'Singapore', key: 'registration.country.singapore' },
+  { value: 'Thailand', key: 'registration.country.thailand' },
+  { value: 'Vietnam', key: 'registration.country.vietnam' },
+  { value: 'Philippines', key: 'registration.country.philippines' },
+  { value: 'Other', key: 'registration.option.other' },
 ];
 
 // Value → i18n-key lookups for the multi-select fields, so the stored form
@@ -450,8 +483,8 @@ const CompanyInfoStep: React.FC<StepProps> = ({ form, setForm, errors }) => {
             }
           >
             {COUNTRIES.map((c) => (
-              <option key={c} value={c}>
-                {c === 'Other' ? t('registration.option.other') : c}
+              <option key={c.value} value={c.value}>
+                {t(c.key)}
               </option>
             ))}
           </select>
