@@ -21211,3 +21211,165 @@ every supplier surface as using all sixteen, because `commandHooks.ts` is ONE
 module where all sixteen are DEFINED and every page pulls it in. The known-FALSE
 control (`SupplierRFQs` must NOT reach `useRfqAward`) caught it. §42 again: **the
 scan matched a definition site and the claim needed a call site.**
+
+
+## §87 · 1c — the state precondition, and the hole it does NOT close (2026-09-02)
+
+`feat/state-precondition-1c`, off `main @ 4b0a0aa`. First batch of the
+conformance arc.
+
+**THE DEFECT.** `CommandInput` carried no expected state, no version, no etag.
+Nothing in this platform is concurrent — the stores are module singletons and
+"two personas" is one tab flipping a panel — so **the executable specification
+was silent on the exact case its goal names.** A backend built to it would have
+two buyers approve the same requisition and the second would overwrite, or throw
+whatever the integration team improvised. Filed and closed here as
+`COMMAND-INPUT-HAS-NO-STATE-PRECONDITION-01`.
+
+**WHAT SHIPPED.** `CommandInput.expectedState?: string` (optional — zero callers
+change), ONE comparison in the dispatcher between the role gate and legality, a
+tenth refusal kind `STALE_STATE` in precedence position, and its glossary entry
+in both locales. Stores untouched, `applyTransition` untouched.
+
+### §87a · ⚠️ THE DISPATCH'S OWN MECHANISM CLAIM INVERTED ON MEASUREMENT, AND IT INVERTED TOWARD "MORE IS COVERED"
+
+The ruling said 1c catches the verb-pairs where a concurrent move stays inside
+the from-set *"plus the `statePreserving` verbs where repeat-apply is legal from
+the same state."*
+
+**Measured: those are precisely what it is BLIND to.** A `statePreserving` verb
+leaves the entity where it was, so `expectedState` still equals the current
+state, the gate passes, and the second caller lands. A state comparison cannot
+see a verb that moves no state — the blindness is definitional, not a bug.
+
+| | distinct verb-pairs | (pair × state) triples |
+|---|---|---|
+| **CAUGHT** — state moved, act still legal | **24** | **25** |
+| **BLIND** — `statePreserving`, state did not move | **7** | **10** |
+
+⚠️ **AND THE UNIT MATTERS, WHICH IS WHY BOTH COLUMNS ARE HERE.** The dispatch's
+*"~24"* is right for PAIRS and wrong for TRIPLES; the first derivation returned
+25 and would have read as a contradiction of it. `t_po_acknowledge` →
+`t_po_confirm` is ONE pair racing at TWO states (`Sent` and `Viewed`), and that
+single row is the whole difference. A count restated without its unit is the
+`COUNT-RESTATED-ACROSS-INSTRUMENTS-01` shape with the instrument held constant
+and the noun changed.
+
+The blind set is not exotic: it includes `t_rfq_fx_pin` before an award — the FX
+basis a bid is judged on, changed under the awarder while the RFQ stays `Open` —
+and `t_enforcement_set` twice, where two recordings both declare `Governed` and
+both append.
+
+**Recorded against the ruling rather than filed as a finding**, because
+`staleState.test.ts` asserts it: a finding is read once and a failing test is
+read every run. The blind rows are pinned with an assertion that every one of
+them is a `statePreserving` verb — so if that ever stops being the reason, the
+header's argument goes red rather than quietly stopping being true.
+
+### §87b · The second hole, and it already has a precedent nobody wired
+
+CONTENT staleness — approving a requisition whose payload was revised under you
+*while the state held* — is invisible to a state comparison by construction. It
+needs an entity REVISION, and the probe for one is the interesting part.
+
+⚠️ **THE ANCHORED MATCHER RETURNED A TIDY EMPTY SET AND WAS WRONG.** `^version$`
+over every wired target's `readEntity` found nothing, which reads like a clean
+answer. Widened to a substring match it found **three**, and each had to be
+ADJUDICATED rather than excluded:
+
+| field | verdict |
+|---|---|
+| `supplierDocument.version` | write-once display label (`v1`), no transition touches it, only consumer is a table cell. A token that does not change when the entity changes cannot detect that it changed. |
+| `requirementResponse.submissionVersion` | genuinely monotonic (`prior.reduce(max) + 1`) — but it versions a **thread**, not a row: each submission MINTS A NEW ENTITY. A compare-and-set on `entityId` still has nothing to compare, because the id it was handed is already a specific version. |
+| `requirementResponse.planVersion` | a snapshot binding to ANOTHER entity — the publication's own version, stamped at submit and pinned by a policy hook so it cannot be falsified. Says what this response answered, not what state it is in. |
+
+⚠️ **AND THE THIRD ONE CARRIES THE ARC'S MOST USEFUL SINGLE FACT.**
+`services/sdc/consolidation.ts` already derives *"stale-against-current — the
+response answered a SUPERSEDED planVersion."* **That is content staleness,
+detected, today** — on the READ side, as a projection, gating nothing. So the
+revision precondition is not a greenfield: the hard half (what "superseded"
+means for a lane) is answered for one lane, and only the write-side gate is
+missing. Whoever builds `COMMAND-INPUT-HAS-NO-REVISION-PRECONDITION-01` starts
+there, not from scratch.
+
+The three sit in a BILATERAL allowlist inside the test — every hit adjudicated,
+every adjudication a real hit — so it can only shrink truthfully, and a fourth
+revision-shaped field arriving turns it red with the message *"decide whether it
+is an entity revision."*
+
+### §87c · The array said it was precedence and nothing checked that
+
+`COMMAND_REFUSALS`' own doc comment: *"the array doubles as the refusal
+PRECEDENCE … a fact about the machine, not a formatting choice — do not sort
+this array."* `refusals.test.ts` pinned MEMBERSHIP in both directions and pinned
+**the order not at all.**
+
+So a tenth kind could have been appended to the end while the dispatcher
+evaluated it fourth, and every test would have passed — which is exactly what
+this batch was about to do. The order is now derived from the dispatcher's
+CONSTRUCTION ORDER and pinned position for position, with its own known-good /
+known-bad control (`STALE_STATE` must sit after `ROLE_NOT_PERMITTED` and before
+`ILLEGAL_TRANSITION`; `SCOPE_DENIED` must be absent).
+
+⚠️ **The proxy is stated at the site: this compares SOURCE order, not EXECUTED
+order.** They coincide because every construction sits in one straight-line
+sequence. A dispatcher that hoisted one into a helper would need the test
+re-derived rather than re-sorted.
+
+⚠️ **And the gap the exercise exposed: `SCOPE_DENIED` and `NOT_FOUND` are
+evaluated BEFORE every member of this array and are in none of it**, because
+they are thrown `DataError`s rather than returned reasons. The array is the
+precedence of the RETURNED refusals only. Written into `refusals.ts` rather than
+left for the next reader to discover.
+
+### §87d · The copy, checked against the mechanism before it shipped
+
+§86c's lesson applied ahead of the fact instead of after it. The obvious
+sentence for this refusal is *"someone else changed this document"* — **and the
+dispatcher does not know that.** It knows one thing: the state the caller
+declared is not the state the entity is in. The caller may have declared it
+wrongly, read it long ago, or never read it at all. So the copy asserts the
+COMPARISON and never a second actor, in both locales.
+
+**The disclosure comparison, since a new refusal is a new channel.**
+`STALE_STATE`'s detail is `expected→actual`; `ILLEGAL_TRANSITION`'s is
+`actual→target`. Both are constructed AFTER the scope gate and AFTER the role
+gate, so the reachable caller population is identical, and the disclosed datum is
+identical: the entity's actual state. The one difference is in the SAFE
+direction — `STALE_STATE` discloses it **without performing the write**, where
+today the same caller would have learned it by succeeding.
+
+### §87e · Both mutants
+
+Both applied by exact byte replacement with the file confirmed changed
+(sha256 before ≠ after) before any suite ran.
+
+- **MUTANT A — the comparison removed.** Killed three named specs, including
+  `✅ THE FIX — the same race, with the state B actually read, is REFUSED`. **All
+  population controls stayed green** — the §86d lesson applied: the derivation
+  reads the registry and each target's own contract, never the predicate under
+  test, so a mutation cannot collapse the population and fake a kill.
+- **MUTANT B — refuse whenever `expectedState` is ABSENT.** Killed
+  `ZERO CALLERS CHANGE > a non-creation command with NO expectedState behaves
+  exactly as before` with the diagnostic `STALE_STATE:undefined->Draft`, and
+  `> and the refusals that already existed still fire unchanged`. B closes the
+  race exactly as hard as the shipped code and refuses **every caller in the
+  tree**, all 77 non-test construction sites of which omit the field.
+
+Restore byte-identical: sha256
+`1478fb40b45d33929d9162e3ef18c4f51a14f4b0501d6b754f399f87ec618315` over the
+working-copy bytes (the authority), `git hash-object`
+`871fe19869357122ba6af9e56b7e0adb5eabb280` beside it (normalized, a weaker
+question).
+
+### §87f · What the specification now says, and what it still does not
+
+The point of the arc is that a backend team can be handed something. After 1c
+the spec states a compare-and-set precondition, its refusal kind, its precedence
+relative to authorisation and legality, and — in the same breath — the two
+classes it does not cover. Before 1c it stated none of that, and its silence was
+indistinguishable from a claim that concurrency was handled.
+
+**Still true and still unaddressed:** C1/C3/C5/C10 are referenced by zero tests.
+1c does not change that; it is the first of the four ordered steps, and the C1
+pinning is the next.

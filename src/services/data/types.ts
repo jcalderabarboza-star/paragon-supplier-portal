@@ -1438,6 +1438,32 @@ export interface CommandInput {
   /** requiredFields live here; validated by the dispatcher. */
   payload?: Record<string, unknown>;
   /**
+   * THE STATE THIS COMMAND WAS PREPARED AGAINST — the caller's compare-and-set
+   * precondition (1c).
+   *
+   * When present, the dispatcher refuses `STALE_STATE` unless the entity's
+   * CURRENT transition-state equals this string. When absent the command is
+   * evaluated exactly as before, which is why the field is OPTIONAL: every
+   * existing caller omits it and none changes behaviour.
+   *
+   * ⚠️ **THIS IS A STATE PRECONDITION, NOT A REVISION PRECONDITION, AND THE
+   * DIFFERENCE IS THE WHOLE OF WHAT IT DOES NOT COVER.** It catches a
+   * concurrent move that leaves the act STILL LEGAL — where the from-set
+   * contains the state the other actor landed on, so `ILLEGAL_TRANSITION`
+   * stays silent and the second caller writes over a document that moved.
+   * It catches NOTHING about content: a requisition whose payload was revised
+   * under you while the state held is invisible here, because the state is
+   * identical and this compares states. It is equally blind to a concurrent
+   * `statePreserving` verb, which by construction leaves the state where it
+   * was. Both need an entity REVISION, which no store carries; see
+   * `staleState.test.ts`, which derives all three populations every run.
+   *
+   * The optionality is load-bearing in the other direction too: a REQUIRED
+   * precondition would refuse every caller that has not been migrated, and
+   * today that is all of them.
+   */
+  expectedState?: string;
+  /**
    * The governed-decision provenance (C6-LOCK). Present only when this dispatch
    * carries a human override — the dispatcher forwards it verbatim to the audit
    * event; it participates in NO validation (opaque).

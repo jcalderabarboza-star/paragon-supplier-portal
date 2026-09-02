@@ -29,7 +29,10 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * THE NINE. Derived from `dispatcher.ts` and pinned by `refusals.test.ts` in
+ * THE CLOSED SET. **Deliberately not counted here** — the sentence that stood
+ * in this spot opened *"THE NINE"* and there are ten as of 1c
+ * (`FLOOR-IN-PROSE-01`: a cardinality in prose above the array that is the
+ * cardinality). Derived from `dispatcher.ts` and pinned by `refusals.test.ts` in
  * BOTH directions: a prefix constructed there and missing here is red, and a
  * member here that the dispatcher never constructs is red. **The list cannot
  * drift from the code that emits it**, which is the whole reason it is worth
@@ -40,6 +43,20 @@
  * PRECEDENCE: an input can fail several of these at once and the caller sees
  * the first. That ordering is a fact about the machine, not a formatting
  * choice — do not sort this array.
+ *
+ * ⚠️ **AND AS OF 1c THE ORDER IS GATED RATHER THAN ASSERTED IN THIS COMMENT.**
+ * `refusals.test.ts` now derives the dispatcher's CONSTRUCTION ORDER from
+ * source and pins it to this array position for position. Before that, both
+ * directions of the membership check were gated and the ORDER — the half the
+ * comment calls "a fact about the machine" — was enforced by nothing, so a
+ * tenth kind could have been appended to the end while being evaluated fourth
+ * and no test would have noticed.
+ *
+ * ⚠️ **THE SCOPE REFUSALS ARE NOT MEMBERS, AND THAT IS A REAL GAP IN THIS
+ * PRECEDENCE.** `SCOPE_DENIED` and `NOT_FOUND` are THROWN `DataError`s, not
+ * returned reasons, so they are absent here while being evaluated BEFORE
+ * `ROLE_NOT_PERMITTED`. Read this array as the precedence of the RETURNED
+ * refusals; the thrown pair sits ahead of all of them.
  */
 export const COMMAND_REFUSALS = [
   /** No transition in the registry carries this id. */
@@ -50,6 +67,17 @@ export const COMMAND_REFUSALS = [
   'MISSING_ENTITY_ID',
   /** The scope's roles do not include the transition's `requiredRole`. */
   'ROLE_NOT_PERMITTED',
+  /**
+   * The caller supplied `expectedState` and the entity is in a different one.
+   *
+   * ⚠️ **POSITION IS SEMANTIC.** It sits AFTER `ROLE_NOT_PERMITTED` so a caller
+   * without the atom learns nothing about the document's state, and BEFORE
+   * `ILLEGAL_TRANSITION` so a caller whose premise is stale is told THAT rather
+   * than merely that the act is illegal — the two answers point at different
+   * remedies, and folding this into `ILLEGAL_TRANSITION`'s detail string would
+   * be the stringly-reason class GL-0 retired, reintroduced one layer down.
+   */
+  'STALE_STATE',
   /** The entity's current state is not in the transition's `from` set. */
   'ILLEGAL_TRANSITION',
   /** One or more `requiredFields` were absent or empty in the payload. */
