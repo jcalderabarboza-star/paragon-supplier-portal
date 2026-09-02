@@ -22,7 +22,12 @@ import type { HalalRefusalReason } from '../../services/sdc/halal';
 import type { BpomRefusalReason } from '../../services/sdc/bpom';
 import type { DataErrorCode } from '../../services/data/types';
 
-/** The dispatcher's nine. A command was refused before anything changed. */
+/**
+ * The dispatcher's refusal set. A command was refused before anything changed.
+ * **The count is deliberately not written here** — it read *"nine"* until 1c
+ * added a tenth, and `satisfies GlossaryOf<CommandRefusal>` is what actually
+ * keeps this exhaustive.
+ */
 export const COMMAND_REFUSAL_GLOSSARY = {
   UNKNOWN_TRANSITION: {
     en: 'The action requested does not exist in the system. No document was changed. This is a wiring fault, not something you did — report it.',
@@ -39,6 +44,20 @@ export const COMMAND_REFUSAL_GLOSSARY = {
   ROLE_NOT_PERMITTED: {
     en: 'Your role is not allowed to perform this action. Nothing was changed. Someone holding the named role must do it.',
     id: 'Peran Anda tidak diizinkan melakukan tindakan ini. Tidak ada yang diubah. Tindakan harus dilakukan oleh pemegang peran yang disebutkan.',
+  },
+  // ⚠️ **THE COPY IS WRITTEN AGAINST THE MECHANISM, NOT AGAINST THE INTENT —
+  // THE `SCOPE_DENIED` LESSON APPLIED BEFORE THE FACT.** That entry opened with
+  // *"The record exists"* inside the refusal designed to conceal existence, and
+  // no dispatcher probe could have caught it, because a mechanism and its prose
+  // agree only semantically. The trap HERE is the same shape: the obvious
+  // sentence is *"someone else changed this document"* — and the dispatcher
+  // does not know that. It knows one thing: the state the caller declared is
+  // not the state the entity is in. The caller may have declared it wrongly,
+  // read it long ago, or never read it at all. So the copy below asserts the
+  // COMPARISON and never a second actor.
+  STALE_STATE: {
+    en: 'This action was prepared against a different state than the document is in now. Nothing was changed — it was refused rather than applied to a version you may not have seen. The refusal names the state expected and the state found; re-open the document and decide again.',
+    id: 'Tindakan ini disiapkan untuk status yang berbeda dari status dokumen saat ini. Tidak ada yang diubah — tindakan ditolak alih-alih diterapkan pada versi yang mungkin belum Anda lihat. Penolakan menyebut status yang diharapkan dan status yang ditemukan; buka kembali dokumen dan putuskan lagi.',
   },
   ILLEGAL_TRANSITION: {
     en: 'The document is not in a state this action can be taken from. Nothing was changed. The refusal names the state it is actually in.',

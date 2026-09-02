@@ -242,6 +242,22 @@ and the Stage G planning canon + World-Class Build Plan are now on main.
   (3.1–3.11) BUILT** (PR #35). **Phase 2.2′ verb batches BUILT** — ASN (#36),
   GR (#37), Invoice/DR-7 (#38), RFQ-award cascade (#41). Design polish (#39–#43)
   + full EN/ID i18n Batches 0–6 + coverage sweep (#44–#53).
+- ⚠️ **THE COMMAND SPINE NOW STATES A CONCURRENCY PRECONDITION, AND STATES WHAT
+  IT DOES NOT COVER (1c, §87).** `CommandInput.expectedState?: string` is an
+  OPTIONAL compare-and-set: supplied, the dispatcher refuses `STALE_STATE`
+  unless the entity's current state equals it; omitted, nothing changes, which
+  is why every existing caller is untouched. The comparison sits AFTER the role
+  gate (a caller without the atom learns nothing about the document) and BEFORE
+  legality (a stale caller is told WHY, not merely that the act is illegal), and
+  `COMMAND_REFUSALS` is now ORDER-pinned to the dispatcher's construction
+  sequence — the array's "this is precedence" claim was a comment that nothing
+  checked. **Do not restate which verb-pairs it covers**: it was dispatched as
+  catching the `statePreserving` cases and MEASURED to be blind to exactly
+  those, and `staleState.test.ts` re-derives both populations every run.
+  ⚠️ **It is NOT the revision precondition** — content staleness (a payload
+  revised under you while the state held) is invisible to a state comparison,
+  no addressable entity carries a revision, and the three revision-shaped fields
+  in the tree are adjudicated as not-revisions at the site.
 - **Command spine is complete and wired end-to-end:** canonical state-machine
   schema + dispatcher (legality + role + fields + `QueryScope` + policy),
   `CommandResult`/`getCommandStatus`/`settle` (Option-B SAP boundary), DR-10 event

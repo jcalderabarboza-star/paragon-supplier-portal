@@ -681,6 +681,14 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
       // day the vocabulary changed — which is the trade this list exists to
       // refuse. Authorised by the owner-less existence-oracle batch.
       '/src/services/transitions/ownerlessScope.test.ts',
+      // ⚠️ 1c · THE STATE PRECONDITION. It consumes `GOVERNED_CHECK_IDS` as a
+      // VALUE for one reason worth stating: `t_enforcement_set` is a
+      // `statePreserving` verb, which makes it the clearest demonstration of the
+      // hole a STATE precondition cannot close — two recordings race, both
+      // declare the state they read, both land. Pinning that needs a check id
+      // `readState` will recognise, and a literal would have kept this census
+      // green while rotting. Authorised by the 1c batch.
+      '/src/services/transitions/staleState.test.ts',
     ]);
     expect(referencing.filter((p) => !suites.includes(p))).toEqual([
       '/src/components/v2-features/GRInspectionWizard.tsx', // ⚠️ E4 — THE FIRST GATE

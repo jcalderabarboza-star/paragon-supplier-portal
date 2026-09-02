@@ -388,18 +388,89 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       return fin(scope, transition.id, 'failed', refusal('ROLE_NOT_PERMITTED', transition.requiredRole));
     }
 
-    // (4) transition legality (creation has no from-state to check).
+    // ── (4) THE STATE PRECONDITION (1c) — compare-and-set, opt-in ────────────
+    //
+    // ⚠️ **THIS IS A STATE PRECONDITION AND NOT A REVISION PRECONDITION. READ
+    // THE NEXT PARAGRAPH BEFORE TREATING CONCURRENCY AS HANDLED.** Nothing in
+    // this platform is concurrent today — the stores are module singletons and
+    // "two personas" is one tab flipping a panel — so this exists for the
+    // backend that will be built against this specification, where it will not
+    // be true.
+    //
+    // WHAT IT CATCHES: a concurrent move that leaves the act STILL LEGAL. Two
+    // callers read state S; one fires a verb landing on S' ; S' is still in the
+    // second verb's `from` set, so legality (5) stays silent and the second
+    // caller writes over a document that moved under it. Derived at 1c:
+    // **24 distinct verb-pairs / 25 (pair × state) triples** across the
+    // registry. Do not read those figures as current — `staleState.test.ts`
+    // re-derives all of it every run.
+    //
+    // ⚠️ **WHAT IT DOES NOT CATCH, AND BOTH HOLES ARE REAL:**
+    //  · **CONTENT staleness.** Approving a requisition whose payload was
+    //    revised under you while the STATE held is invisible here, because the
+    //    state is identical and this compares states. That needs an entity
+    //    REVISION, and no entity a command can address carries one.
+    //
+    //    ⚠️ **THIS SENTENCE READ "the only `version` on any DTO is
+    //    `SupplierDocument.version`" UNTIL THE MATCHER WAS WIDENED, AND THAT
+    //    WAS AN ARTEFACT OF AN ANCHORED `^version$` GREP.** There are THREE
+    //    revision-shaped fields, each adjudicated in `staleState.test.ts` as
+    //    not-a-revision and pinned bilaterally: `supplierDocument.version` (a
+    //    write-once display label), `requirementResponse.submissionVersion`
+    //    (monotonic, but it versions a THREAD — each submission mints a NEW
+    //    row rather than bumping the addressed one), and
+    //    `requirementResponse.planVersion` (a snapshot binding to ANOTHER
+    //    entity, the publication). The corrected count matters in the useful
+    //    direction: the old sentence would have told whoever builds the second
+    //    precondition that there is nothing to start from.
+    //
+    //    ⚠️ **AND THERE IS SOMETHING TO START FROM.**
+    //    `services/sdc/consolidation.ts` already derives *"stale-against-
+    //    current — the response answered a SUPERSEDED planVersion"*. Content
+    //    staleness is DETECTED today, on the READ side, as a projection,
+    //    gating nothing. The audit sink has no per-entity read and cannot
+    //    stand in, but that projection can. A SECOND, LATER precondition.
+    //  · **`statePreserving` verbs.** A state-preserving verb leaves the entity
+    //    where it was, so `expectedState` still matches and this gate passes.
+    //    Derived at 1c: **7 distinct verb-pairs / 10 triples**, including
+    //    `t_rfq_fx_pin` before an award and `t_enforcement_set` twice.
+    //
+    // ⚠️ **THE SECOND BULLET CONTRADICTS THE DISPATCH THAT ORDERED THIS GATE**,
+    // which described the statePreserving repeat-apply cases as part of what 1c
+    // CATCHES. Measured, they are precisely what it is blind to — a state
+    // comparison cannot see a verb that moves no state. Written here rather than
+    // filed as a finding because this is the site that has to be right: without
+    // it, 1c packages a hole that now looks closed.
+    //
+    // Absent `expectedState`, the command is evaluated exactly as before. The
+    // field is optional for a reason that cuts both ways: a REQUIRED
+    // precondition would refuse every caller that has not been migrated, and at
+    // 1c that is all of them.
+    if (
+      !isCreation &&
+      input.expectedState !== undefined &&
+      input.expectedState !== currentState
+    ) {
+      return fin(
+        scope,
+        transition.id,
+        'failed',
+        refusal('STALE_STATE', `${input.expectedState}->${currentState}`),
+      );
+    }
+
+    // (5) transition legality (creation has no from-state to check).
     if (!isCreation && !transition.from.includes(currentState!)) {
       return fin(scope, transition.id, 'failed', refusal('ILLEGAL_TRANSITION', `${currentState}->${transition.to}`));
     }
 
-    // (5) requiredFields.
+    // (6) requiredFields.
     const missing = transition.requiredFields.filter((f) => isEmpty(payload[f]));
     if (missing.length > 0) {
       return fin(scope, transition.id, 'failed', refusal('MISSING_FIELDS', missing.join(',')));
     }
 
-    // (6) policy hooks (by registered name).
+    // (7) policy hooks (by registered name).
     for (const name of transition.policyHooks) {
       const hook = deps.resolvePolicyHook(name);
       if (!hook) return fin(scope, transition.id, 'failed', refusal('UNBOUND_HOOK', name));
