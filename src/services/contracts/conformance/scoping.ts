@@ -205,28 +205,49 @@ export function describeScopingConformance(
       expect(all.length).toBeGreaterThanOrEqual(a.length);
     });
 
-    // ⚠️ **THIS ASSERTION IS SELF-RELATIVE AND CANNOT DETECT A UNIFORM LEAK.**
-    // Measured, not suspected: driving this factory with an implementation that
-    // ignores `scope.supplierId` entirely killed 25 of its 30 tests — and this
-    // was one of the five survivors. Both sides of the comparison widen together
-    // under a leak, so "every obligation belongs to a contract I can see" stays
-    // true when I can suddenly see every contract.
+    // ⚠️ **THE RELATIVE HALF OF THIS ASSERTION CANNOT DETECT A UNIFORM LEAK, SO
+    // IT NOW CARRIES AN ABSOLUTE HALF BESIDE IT (1b).** Measured at 1a: driving
+    // this factory with an implementation that ignores `scope.supplierId`
+    // entirely killed 25 of its 30 tests, and this was one of five survivors.
+    // Both sides of the containment check widen together under a leak, so
+    // "every obligation belongs to a contract I can see" stays true the moment
+    // I can suddenly see every contract.
     //
-    // It is carried UNCHANGED anyway, because 1a's ruling is that a partition
-    // may not alter what an assertion asserts — strengthening it here would be
-    // the weakening rule running in reverse, silently. Recorded as the known
-    // hole for the dispatcher-level contract to close, since the fix needs an
-    // absolute expectation (obligations of a contract this tenant does NOT own
-    // must be absent) and that needs a second tenant's contract id, which is
-    // fixture identity. Of the other four survivors, three are buyer-path
-    // assertions and one is a non-vacuity check — all correctly insensitive to
-    // a supplier-side leak.
+    // The fix is an ABSOLUTE expectation: an obligation belonging to a contract
+    // ANOTHER tenant owns must be ABSENT. **The original assertion is untouched
+    // — the absolute one is added beside it**, because 1a's ruling is that a
+    // partition may not alter what an assertion asserts, and a later batch
+    // rewriting it would be that rule running in reverse.
+    //
+    // ⚠️ **AND IT NEEDED NO FIXTURE IDENTITY, WHICH IS THE CORRECTION WORTH
+    // RECORDING.** The 1b dispatch expected this to need a seeded contract id.
+    // It does not: tenant B's contract ids come from `getContracts(bScope)` —
+    // the interface this factory already has, and the second tenant the target
+    // already supplies. A cross-tenant absolute expectation is derivable from
+    // the read half alone.
     it('getObligations: a supplier only sees obligations of its own contracts', async () => {
       const contractIds = new Set(
         (await svc.procurement.getContracts(aScope)).items.map((c) => c.id),
       );
       const obligations = (await svc.procurement.getObligations(aScope)).items;
       expect(obligations.every((o) => contractIds.has(o.contractId))).toBe(true);
+
+      // THE ABSOLUTE HALF. Under a uniform leak `bContractIds` and `obligations`
+      // both widen, so the intersection becomes non-empty and this fires where
+      // the containment check above stays silent.
+      const bContractIds = new Set(
+        (await svc.procurement.getContracts(bScope)).items.map((c) => c.id),
+      );
+      // Control: the two tenants really do own different contracts, or the
+      // assertion below is vacuous rather than passing.
+      const overlap = [...contractIds].filter((id) => bContractIds.has(id));
+      expect(overlap, 'the two tenants share a contract id — the cross-tenant check is vacuous')
+        .toEqual([]);
+      const foreign = obligations.filter((o) => bContractIds.has(o.contractId));
+      expect(
+        foreign.map((o) => o.id),
+        'a supplier can see obligations belonging to another tenant’s contracts',
+      ).toEqual([]);
     });
 
     it('suppliers.list: buyer sees all suppliers, a supplier sees none', async () => {
