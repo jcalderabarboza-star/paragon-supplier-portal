@@ -68,9 +68,18 @@ export const DATA_ERROR_GLOSSARY = {
     en: 'The record asked for does not exist. It may have been removed, or the link that led here is stale.',
     id: 'Data yang diminta tidak ada. Mungkin sudah dihapus, atau tautan yang membawa Anda ke sini sudah usang.',
   },
+  // ⚠️ **THIS ENTRY USED TO OPEN WITH "The record exists" — WHICH IS THE ONE
+  // THING THIS REFUSAL EXISTS NOT TO SAY.** The rest of the sentence then said
+  // the answer is the same whether the record is foreign or absent, so the copy
+  // contradicted itself inside one line, and its first three words leaked
+  // exactly what the mechanism was built to hide. A refusal is prose the reader
+  // BELIEVES; a mechanism that hides existence behind copy asserting existence
+  // is not hiding it. Both locales carried it. Rewritten so the sentence is true
+  // of BOTH inputs — which is the same property the dispatcher now enforces
+  // (`ownerlessScope.test.ts`), stated in the words the reader actually gets.
   SCOPE_DENIED: {
-    en: 'The record exists but is outside what your account may see. A supplier can only see its own records; this answer is deliberately the same whether the record is foreign or absent, so that nothing leaks.',
-    id: 'Data ada tetapi di luar jangkauan akun Anda. Pemasok hanya dapat melihat datanya sendiri; jawaban ini sengaja sama baik data milik pihak lain maupun tidak ada, agar tidak ada kebocoran.',
+    en: 'This is outside what your account may see — or there is no such record. The answer is deliberately the same either way, so that asking cannot reveal which. A supplier sees only its own records.',
+    id: 'Ini di luar jangkauan akun Anda — atau memang tidak ada datanya. Jawabannya sengaja sama untuk keduanya, sehingga bertanya tidak dapat mengungkapkan yang mana. Pemasok hanya melihat datanya sendiri.',
   },
   UPSTREAM: {
     en: 'A system this page depends on did not answer. The data is not wrong — it is absent. Retrying later is the normal response.',

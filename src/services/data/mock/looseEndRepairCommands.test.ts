@@ -95,13 +95,18 @@ describe('PF-1a · RFQ — creation births at Draft and publish comes alive', ()
   });
 
   it('a supplier cannot publish — it is a buyer verb', async () => {
+    // Refused at SCOPE now, not at the role gate: an RFQ is owner-less
+    // (`rfqTarget.readScopeOwner` is null), and a supplier that fell through to
+    // the role gate learned from the refusal KIND that the RFQ existed. The
+    // document is still untouched, which is the half that matters here.
     const created = await rfqCreate();
-    const res = await svc.dispatch(sup002, {
-      transitionId: 't_rfq_publish',
-      entity: 'rfq',
-      entityId: created.entityId!,
-    });
-    expect(res.status).toBe('failed');
+    await expect(
+      svc.dispatch(sup002, {
+        transitionId: 't_rfq_publish',
+        entity: 'rfq',
+        entityId: created.entityId!,
+      }),
+    ).rejects.toThrow(/denied for scope/);
     expect(rfqStore.get(created.entityId!)!.status).toBe('Draft');
   });
 

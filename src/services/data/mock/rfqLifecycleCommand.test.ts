@@ -63,10 +63,11 @@ describe('RFQ cancel — Draft/Open/Closed → Cancelled', () => {
     expect(rfqStore.get('rfq-006')!.status).toBe('Awarded');
   });
 
-  it('a supplier cannot cancel — ROLE_NOT_PERMITTED, nothing mutates', async () => {
-    const res = await cancel(supplier, 'rfq-001');
-    expect(res.status).toBe('failed');
-    expect(res.reason).toMatch(/ROLE_NOT_PERMITTED:rfq:cancel/);
+  it('a supplier cannot cancel — refused at SCOPE, nothing mutates', async () => {
+    // Was a role refusal. An RFQ is owner-less, so a supplier used to clear the
+    // scope gate on one that exists — and the difference between that and the
+    // `SCOPE_DENIED` a fabricated id got was an existence oracle.
+    await expect(cancel(supplier, 'rfq-001')).rejects.toThrow(/denied for scope/);
     expect(rfqStore.get('rfq-001')!.status).toBe('Open');
   });
 });
@@ -85,10 +86,9 @@ describe('RFQ reopen — Closed → Open (Closed only)', () => {
     expect(rfqStore.get('rfq-002')!.status).toBe('Open');
   });
 
-  it('a supplier cannot reopen — ROLE_NOT_PERMITTED, nothing mutates', async () => {
-    const res = await reopen(supplier, 'rfq-005');
-    expect(res.status).toBe('failed');
-    expect(res.reason).toMatch(/ROLE_NOT_PERMITTED:rfq:reopen/);
+  it('a supplier cannot reopen — refused at SCOPE, nothing mutates', async () => {
+    // Same change, same reason as cancel above.
+    await expect(reopen(supplier, 'rfq-005')).rejects.toThrow(/denied for scope/);
     expect(rfqStore.get('rfq-005')!.status).toBe('Closed');
   });
 });

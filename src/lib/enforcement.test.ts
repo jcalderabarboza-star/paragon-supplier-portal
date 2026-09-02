@@ -673,6 +673,14 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
       '/src/services/data/mock/enforcementSeam.test.ts',
       '/src/services/data/mock/enforcementSeed.test.ts',
       '/src/services/data/mock/enforcementSetCommand.test.ts',
+      // ⚠️ THE OWNER-LESS SCOPE GATE, and it is here for a reason worth stating:
+      // it consumes `GOVERNED_CHECK_IDS` as a VALUE because `enforcement` turned
+      // out to be one of the five OWNER-LESS command targets, and probing its
+      // scope gate needs an entityId that `readState` will recognise. A literal
+      // `'halal.certificate'` would have kept this census green and rotted the
+      // day the vocabulary changed — which is the trade this list exists to
+      // refuse. Authorised by the owner-less existence-oracle batch.
+      '/src/services/transitions/ownerlessScope.test.ts',
     ]);
     expect(referencing.filter((p) => !suites.includes(p))).toEqual([
       '/src/components/v2-features/GRInspectionWizard.tsx', // ⚠️ E4 — THE FIRST GATE

@@ -110,8 +110,15 @@ describe('§67 · approve — the act that had no caller', () => {
   });
 
   it('a supplier never reaches the role gate — PRs are buyer-internal', async () => {
-    const res = await dispatch(supplier, 't_pr_approve', PENDING);
-    expect(res.status).toBe('failed');
+    // ⚠️ **THE TITLE WAS ASPIRATIONAL AND IS NOW TRUE.** Until the owner-less
+    // scope fix a supplier DID reach the role gate here — `purchaseRequisition`
+    // is owner-less, so a null owner failed to deny and `ROLE_NOT_PERMITTED` came
+    // back for a PR that exists while `SCOPE_DENIED` came back for one that does
+    // not. Scope denies it now, and the two answers are the same answer.
+    await expect(dispatch(supplier, 't_pr_approve', PENDING)).rejects.toThrow(
+      /denied for scope/,
+    );
+    expect(purchaseRequisitionStore.get(PENDING)!.status).toBe('Pending Approval');
   });
 
   it('approving twice is refused — the second finds a state the verb does not leave from', async () => {
