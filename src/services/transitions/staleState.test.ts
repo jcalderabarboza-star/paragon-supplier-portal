@@ -17,6 +17,20 @@
 // second verb's `from` set, so `ILLEGAL_TRANSITION` stays silent and the second
 // caller writes over a document that moved under it.
 //
+// ⚠️ **BOTH POPULATIONS ARE NAMED, BECAUSE NAMING ONLY THE CAUGHT ONE IS HOW A
+// HOLE GETS PACKAGED AS CLOSED.** Measured at 1c against this registry:
+//
+//     CAUGHT  24 distinct verb-pairs · 25 (pair × state) triples
+//     BLIND    7 distinct verb-pairs · 10 (pair × state) triples
+//
+// ⚠️ **AND THE UNIT IS PART OF EACH FIGURE.** The pair and triple counts differ
+// because `t_po_acknowledge` → `t_po_confirm` is ONE pair racing at TWO states
+// (`Sent` and `Viewed`); a count published without its unit here would read as
+// contradicting the other one. **Do not read either figure as current** —
+// `partition()` below re-derives both every run, and the assertions are on
+// MEMBERSHIP, never on a count, so the numbers in this comment can go stale
+// without the gate going quiet.
+//
 // ⚠️ **WHAT IT DOES NOT CATCH — TWO HOLES, BOTH DERIVED BELOW RATHER THAN
 // PROMISED:**
 //

@@ -409,11 +409,27 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     //  · **CONTENT staleness.** Approving a requisition whose payload was
     //    revised under you while the STATE held is invisible here, because the
     //    state is identical and this compares states. That needs an entity
-    //    revision; no store carries one (verified by grep at 1c — the only
-    //    `version` on any DTO is `SupplierDocument.version`, a human-facing
-    //    certificate label like `v5`, and the stores' `seq` counters mint ids
-    //    rather than version rows). The audit sink has no per-entity read, so
-    //    it cannot stand in. That is a SECOND, LATER precondition.
+    //    REVISION, and no entity a command can address carries one.
+    //
+    //    ⚠️ **THIS SENTENCE READ "the only `version` on any DTO is
+    //    `SupplierDocument.version`" UNTIL THE MATCHER WAS WIDENED, AND THAT
+    //    WAS AN ARTEFACT OF AN ANCHORED `^version$` GREP.** There are THREE
+    //    revision-shaped fields, each adjudicated in `staleState.test.ts` as
+    //    not-a-revision and pinned bilaterally: `supplierDocument.version` (a
+    //    write-once display label), `requirementResponse.submissionVersion`
+    //    (monotonic, but it versions a THREAD — each submission mints a NEW
+    //    row rather than bumping the addressed one), and
+    //    `requirementResponse.planVersion` (a snapshot binding to ANOTHER
+    //    entity, the publication). The corrected count matters in the useful
+    //    direction: the old sentence would have told whoever builds the second
+    //    precondition that there is nothing to start from.
+    //
+    //    ⚠️ **AND THERE IS SOMETHING TO START FROM.**
+    //    `services/sdc/consolidation.ts` already derives *"stale-against-
+    //    current — the response answered a SUPERSEDED planVersion"*. Content
+    //    staleness is DETECTED today, on the READ side, as a projection,
+    //    gating nothing. The audit sink has no per-entity read and cannot
+    //    stand in, but that projection can. A SECOND, LATER precondition.
     //  · **`statePreserving` verbs.** A state-preserving verb leaves the entity
     //    where it was, so `expectedState` still matches and this gate passes.
     //    Derived at 1c: **7 distinct verb-pairs / 10 triples**, including
