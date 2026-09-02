@@ -1,13 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { MockCommandService } from './MockCommandService';
 import { invoiceStore } from './stores/invoiceStore';
 import { rfqStore } from './stores/rfqStore';
-import type { QueryScope } from '../types';
 import {
   PERSONA_SYSTEM_ROLES,
   AUTOMATION_ROLE,
 } from '../../transitions/businessRoles';
-import { NO_PERSON } from '../../../context/noPerson';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ THE FIRST BUYER↔BUYER AUTHORISATION TESTS IN THIS TREE.
@@ -19,26 +16,31 @@ import { NO_PERSON } from '../../../context/noPerson';
 // boundary and nowhere else — which is why "requiredRole is a control" and
 // "authorisation exists" were different claims, and only the first was true.
 //
-// These are the tests that could not have been written a commit ago.
+// ── ⚠️ SEVEN OF THIS FILE'S NINE TESTS MOVED AT 1b, AND TWO DID NOT ─────────
+//   The segregation-of-duties assertions, the no-persona-fallback pair and the
+//   full-seat controls are now
+//   `services/contracts/conformance/dispatch.ts`, stated once and runnable
+//   against any `IDataService`. They moved because every one of them is a claim
+//   about an IMPLEMENTATION's wiring, observable entirely through
+//   `commands.dispatch` — which is what a conformance factory can reach.
+//
+//   **These two stayed, and the reason is mechanical rather than editorial:**
+//
+//     · the POPULATION GUARD reads `invoiceStore` / `rfqStore` DIRECTLY. That is
+//       the point of it — it asks whether the seeded fixtures still contain what
+//       the probes need, which is a question about the mock and has no meaning
+//       for another implementation. Routed through a read it would become a
+//       different assertion.
+//     · the AUTOMATION check dispatches nothing at all. It is a statement about
+//       a frozen constant — `PERSONA_SYSTEM_ROLES` — so there is no service to
+//       parameterise over, and a factory wrapping it would be green against a
+//       stub implementing nothing. Same shape as `dataError.contract.test.ts`,
+//       and left behind for the same reason.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const seat = (roles: readonly string[], supplierId: string | null = null): QueryScope => ({
-  personaType: supplierId ? 'supplier' : 'buyer',
-  supplierId,
-  businessRoles: roles,
-  actor: NO_PERSON,
-});
-
-const procurement = seat(['procurement']);
-const finance = seat(['finance']);
-const fullBuyer = seat(PERSONA_SYSTEM_ROLES.buyer);
-
-let svc: MockCommandService;
 
 beforeEach(() => {
   invoiceStore.reset();
   rfqStore.reset();
-  svc = new MockCommandService();
 });
 
 /** An invoice parked where a release is legal. */
@@ -56,118 +58,8 @@ describe('POPULATION GUARD — the fixtures still contain what these probe', () 
   });
 });
 
-describe('⚠️ SEGREGATION OF DUTIES, AT THE DISPATCHER', () => {
-  it('PROCUREMENT is refused the payment release, by NAME', () => {
-    const id = releasableInvoiceId();
-    return svc
-      .dispatch(procurement, {
-        transitionId: 't_invoice_release_payment',
-        entity: 'invoice',
-        entityId: id,
-        payload: {},
-      })
-      .then((res) => {
-        expect(res.status).toBe('failed');
-        // The refusal names the ATOM, not the role — so a reader learns which
-        // permission was missing rather than merely that something was.
-        expect(res.reason).toBe('ROLE_NOT_PERMITTED:invoice:pay');
-        // …and the refusal is REAL: the invoice did not move.
-        expect(invoiceStore.get(id)!.status).toBe('Approved');
-      });
-  });
-
-  it('FINANCE is permitted it — the known-GOOD control (§39)', async () => {
-    // Without this, the refusal above is equally consistent with a broken
-    // harness, an unregistered flow, or a fixture in the wrong state. A guard
-    // probed in one direction only ships looking like a working guard.
-    const id = releasableInvoiceId();
-    const res = await svc.dispatch(finance, {
-      transitionId: 't_invoice_release_payment',
-      entity: 'invoice',
-      entityId: id,
-      payload: {},
-    });
-    expect(res.status).not.toBe('failed');
-    expect(res.reason).toBeUndefined();
-  });
-
-  it('and the segregation is MUTUAL — finance cannot award an RFQ', async () => {
-    // A split that only narrows one side is not segregation, it is a demotion.
-    const rfq = rfqStore.all()[0];
-    const res = await svc.dispatch(finance, {
-      transitionId: 't_rfq_publish',
-      entity: 'rfq',
-      entityId: rfq.id,
-      payload: {},
-    });
-    expect(res.status).toBe('failed');
-    expect(res.reason).toBe('ROLE_NOT_PERMITTED:rfq:publish');
-  });
-});
-
 describe('⚠️ THERE IS NO PERSONA FALLBACK — the wildcard is gone', () => {
-  it('a scope with NO businessRoles is refused, not silently widened', async () => {
-    // THE REGRESSION THIS PINS: falling back to `rolesForPersona(personaType)`
-    // when roles are absent would re-grant all 48 buyer atoms to any caller
-    // that had not been migrated — the wildcard surviving as a default, which
-    // is a wildcard with better manners. A refusal is loud and attributable.
-    const id = releasableInvoiceId();
-    const res = await svc.dispatch(
-      { personaType: 'buyer', supplierId: null } as QueryScope,
-      {
-        transitionId: 't_invoice_release_payment',
-        entity: 'invoice',
-        entityId: id,
-        payload: {},
-      },
-    );
-    expect(res.status).toBe('failed');
-    expect(res.reason).toBe('ROLE_NOT_PERMITTED:invoice:pay');
-  });
-
-  it('an unknown role grants nothing rather than everything', async () => {
-    const id = releasableInvoiceId();
-    const res = await svc.dispatch(seat(['not-a-real-role']), {
-      transitionId: 't_invoice_release_payment',
-      entity: 'invoice',
-      entityId: id,
-      payload: {},
-    });
-    expect(res.status).toBe('failed');
-    expect(res.reason).toBe('ROLE_NOT_PERMITTED:invoice:pay');
-  });
-
   it('a person cannot hold the automation grant through a persona', () => {
     expect(PERSONA_SYSTEM_ROLES.buyer as readonly string[]).not.toContain(AUTOMATION_ROLE);
-  });
-});
-
-describe('NOTHING REACHABLE BECAME UNREACHABLE FOR A FULL SEAT', () => {
-  it('the full buyer seat still releases payment', async () => {
-    // The demo seat opens holding all six roles, so the portal behaves exactly
-    // as it did before this batch. The narrowing is a CHOICE a person makes,
-    // not something the batch imposed on every existing user.
-    const id = releasableInvoiceId();
-    const res = await svc.dispatch(fullBuyer, {
-      transitionId: 't_invoice_release_payment',
-      entity: 'invoice',
-      entityId: id,
-      payload: {},
-    });
-    expect(res.status).not.toBe('failed');
-  });
-
-  it('the full buyer seat still publishes an RFQ', async () => {
-    const rfq = rfqStore.all()[0];
-    const res = await svc.dispatch(fullBuyer, {
-      transitionId: 't_rfq_publish',
-      entity: 'rfq',
-      entityId: rfq.id,
-      payload: {},
-    });
-    // Publishing may be illegal from this fixture's state — what must NOT
-    // happen is a ROLE refusal. Legality is a different gate and a different
-    // question, and conflating them is how a role bug hides behind a state one.
-    expect(res.reason ?? '').not.toMatch(/ROLE_NOT_PERMITTED/);
   });
 });
