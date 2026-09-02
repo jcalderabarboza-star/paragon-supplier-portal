@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import Button from './Button';
 
@@ -17,7 +18,10 @@ interface WizardProps {
   onCancel: () => void;
   onComplete: () => void;
   isStepValid?: (step: number) => boolean;
-  completeLabel?: string;
+  /** Required, not defaulted: the default was dead at 5 of 5 call sites, and
+   *  a default nothing omits is a literal that cannot render. Required makes
+   *  that state unrepresentable instead of merely unreached. */
+  completeLabel: string;
   className?: string;
 }
 
@@ -28,9 +32,10 @@ const Wizard: React.FC<WizardProps> = ({
   onCancel,
   onComplete,
   isStepValid,
-  completeLabel = 'Submit',
+  completeLabel,
   className = '',
 }) => {
+  const { t } = useTranslation();
   const current = steps[currentStep];
   const isLast = currentStep === steps.length - 1;
   const nextValid = isStepValid ? isStepValid(currentStep) : true;
@@ -122,7 +127,7 @@ const Wizard: React.FC<WizardProps> = ({
           onClick={onCancel}
           className="text-sm text-text-tertiary hover:text-text-secondary font-medium"
         >
-          Cancel
+          {t('wizard.cancel')}
         </button>
         <div className="flex items-center gap-2">
           <Button
@@ -130,10 +135,10 @@ const Wizard: React.FC<WizardProps> = ({
             onClick={goBack}
             disabled={currentStep === 0}
           >
-            Back
+            {t('wizard.back')}
           </Button>
           <Button variant="outline" onClick={goNext} disabled={!nextValid}>
-            {isLast ? completeLabel : 'Next'}
+            {isLast ? completeLabel : t('wizard.next')}
           </Button>
         </div>
       </div>
