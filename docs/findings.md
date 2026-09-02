@@ -21142,6 +21142,92 @@ printing something that looks like what it prints on success. Use `git ls-tree` 
 `git cat-file -e` and read the exit code — and truncate a derivation's output
 only after the classification has been made, never before.
 
+
+#### §86g-i · RIDER TO THE RIDER — ⚠️ THE CLASS'S MEMBERSHIP WAS RESTATED FORWARD, AND HALF OF THE RESTATEMENT NAMES OBJECTS THAT DO NOT EXIST
+
+Measured 2026-09-02, by the batch that was dispatched to build a helper against
+this class and stopped instead.
+
+**§86g's own five rows are UNAFFECTED and stand as filed.** Establishing that is
+the first measurement, not an afterthought: `grep -cE '§71a|§74b|§82e|§82g'`
+over §86g's own span (lines 21106–21144) returns **0**, while `cp1252`,
+`autocrlf` and `rev-parse` are all found in the same run — the bilateral control
+on the claim. **The defect is in a RESTATEMENT of the class, one step downstream
+of the section, which is exactly the position `DISPATCH-HEADER-CITES-A-
+NONEXISTENT-OBJECT-01` describes: the citation that reads as context rather than
+as claim.**
+
+The restatement, quoted rather than paraphrased:
+
+> The under-reporting class (§86g, now with instances from §71a, §74b ×2, §81e
+> ×2, §82e, §82g, the moduleScopeLiteralGate parse, and this session's rev-parse
+> echo): absence of a match reads as absence of a defect.
+
+Eight members cited. **Four are wrong, and they are wrong in three different
+ways** — which is why a single correction sentence would have understated it:
+
+| cited | measured | disposition |
+|---|---|---|
+| `§71a` | **0 occurrences** anywhere in the register | never filed, never cited — invented outright |
+| `§74b` ×2 | **2 occurrences, both in PROSE** (lines 19018, 19121); `^### §74` returns 0 | **cited twice, filed never** — the ×2 is the citation count read as a membership count |
+| `§81e` ×2 | real, and **IS** this class | stands (the `sapSync` matcher fooled twice; caught by mutation, not by controls) |
+| `§82e` | real section — *wiring flipped gate-1, gate-2 held the pill* | **not this class.** A liveness ruling, not an instrument that under-reported |
+| `§82g` | real section — `SUPPLIERDOC-STALE-REFUSAL-01`, found by browser QA | **not this class.** A render defect invisible to 3630 green tests is the OPPOSITE shape: the instrument never ran, it did not mis-report |
+| moduleScopeLiteralGate parse | real, and **IS** this class | stands |
+| rev-parse echo | real, and **IS** this class | stands — it is §86g row 5 |
+
+⚠️ **AND `§74b` IS THE INSTRUCTIVE ONE, BECAUSE IT LOOKS LIKE EVIDENCE.** A bare
+`grep -c '§74b'` returns **2**, which reads as *"filed, and load-bearing enough
+to be cited twice."* Both hits are prose references to a section that was never
+written. **The count is real and the object is not** — `SILENT-PESSIMISM-
+TERMINATES-THE-INVESTIGATION-01` inverted: an instrument whose output
+MANUFACTURES the impression of a filed object, in the same shape §86g row 5
+manufactures a plausible SHA. The discriminating instrument is `grep -c
+'^### §74'`, which returns 0. **Match the SITE the claim requires (§42), not the
+token.**
+
+## ⚠️ THE TWO STRUCTURAL FACTS, which are what the class is actually made of
+
+Recorded because a batch was dispatched to build `deriveWithControls()` — a
+vitest helper wrapping *derive a population, assert a known member present,
+assert a known non-member absent* — against this class, and **it would have
+caught 0 of the 7 real members.** Both facts are the reason, and neither is
+visible from the class's name:
+
+1. **FOUR OF THE SEVEN ARE NOT TYPESCRIPT.** The `cp1252` decode, the malformed
+   41-char `git cat-file` control, the `$`-anchored probe under `core.autocrlf`,
+   and the `rev-parse` echo all live in **ad-hoc shell/Python probes that are
+   rewritten from scratch each batch and committed nowhere.** No helper in the
+   vitest suite can reach them by construction, and no gate in this project runs
+   over them.
+
+2. **THE OTHER THREE ARE FAILURES OF THE DERIVATION OR OF THE PROBE'S INPUT
+   CHOICE, WHICH NO HELPER CAN REACH EITHER.** §81e's population was non-empty
+   *and* contained the expected members — they were **false positives**, so every
+   control a helper could enforce was green while the matcher was wrong twice.
+   The moduleScopeLiteralGate parse missed a syntactic shape, and **a control is
+   chosen by the same seat, from the same mental model as the blind spot** — so
+   the control it picks is by construction one the matcher already finds.
+
+⚠️ **THE TRANSFERABLE FORM, AND IT IS THE OPPOSITE OF THE PROPOSAL IT KILLED: A
+HELPER CAN FORCE YOU TO *STATE* A CONTROL. IT CANNOT CHOOSE ONE THAT EXERCISES
+THE PATH YOUR MATCHER CANNOT SEE.** Controls reliably catch the case that is
+model-INDEPENDENT — an empty population (`EMPTY-INPUT-REPORTS-CLEAN-01`, §42b) —
+and that is a DIFFERENT class, which `CLAUDE.md` already says must not be merged
+into this one. What killed §81e and the BindingElement parse was **mutation**,
+and what would reach the four shell instances is a **committed probe harness**,
+not a test helper. Filed as the direction the evidence points; not built, and
+not a licence to build it without a named surface.
+
+⚠️ **ONE MEASUREMENT AGAINST THIS BATCH'S OWN INSTRUMENT, RECORDED BECAUSE IT IS
+THE CLASS FIRING ON THE SEAT MEASURING IT.** The first matcher used to census
+these instruments keyed on the literal `POPULATION-GUARD` and **missed
+`ownerlessScope.test.ts`** — a known-true member that spells the same idiom
+`describe('POPULATION —` / `CONTROL —`. Absence of the token read as absence of
+the control, which is this class's one-sentence definition. Caught only by
+running a known-true member as a control on the census itself.
+
+
 ### §86h · REPORT ONLY — the READ path carries no equivalent oracle
 
 Derived, not assumed. `IDataService` exposes exactly three id-addressed reads —

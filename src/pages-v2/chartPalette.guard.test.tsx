@@ -3,83 +3,267 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
-// DP2-PALETTE-01 guard (Ops #11 SEAT 2, Commit 1): chart colour must come from
-// the centralized palette (src/lib/chartPalette.ts), never a raw hex literal in
-// a Recharts fill/stroke prop. This locks the de-rainbow + de-stray-hex fix so
-// ad-hoc chart colour can't re-enter these files. Matches both JSX props
-// (fill="#.." / stroke={'#..'}) and style-object keys (fill: '#..').
+// ─────────────────────────────────────────────────────────────────────────────
+// DP2-PALETTE-01 — chart colour comes from the centralized palette
+// (`src/lib/chartPalette.ts`), never a raw hex literal in a paint position.
+//
+// ── ⚠️ WHY THIS FILE WAS REWRITTEN (2026-09-02) ─────────────────────────────
+//   It was the OLDEST honesty instrument in the tree (2026-07-09) and the only
+//   one with NO controls at all, while the same file already derived its third
+//   population via `readdirSync` — so the hand lists were an omission, not a
+//   limitation.
+//
+//   The claim that stood here, quoted rather than deleted:
+//
+//     > // Files whose charts were migrated onto chartPalette in Commit 1.
+//     > const GUARDED = ['BuyerDashboard.tsx', 'BuyerInventory.tsx', 'BuyerAnalytics.tsx'];
+//
+//   That is PROVENANCE — *which files a batch touched* — standing in for a
+//   PROPERTY. Measured, it was wrong in BOTH directions:
+//     · `BuyerInventory.tsx` imports no chart library and contains no paint
+//       position at all, so guarding it asserted nothing;
+//     · FOUR pages render charts and were not guarded — `BuyerInvoices`,
+//       `BuyerRisk`, `BuyerScorecard`, `SupplierPerformance` — between them
+//       holding TEN distinct raw-hex paint values the gate could not see.
+//
+//   The same defect sat six lines below it: `PALETTE_SOURCED` listed
+//   `SupplierWhatsApp.tsx`, which declares no `TOKEN_*` const, so that row
+//   asserted nothing either.
+//
+// ── THE SHAPE NOW ───────────────────────────────────────────────────────────
+//   Both populations DERIVE, so each RE-DECIDES ITSELF: the day a page starts
+//   rendering a chart it is guarded, with nobody editing this file. The residue
+//   the widening exposed is not fixed here (each is its own ruling) — it is
+//   PINNED, bilaterally, on the `storedFieldGate/allowlist.ts` precedent.
+//
+//   ⚠️ **BILATERAL MEANS SET EQUALITY, NOT CONTAINMENT.** Two failures, not one:
+//     · an UNLISTED violation      → a new raw hex entered a chart;
+//     · a LISTED key that is GONE  → **the exemption outlived its subject.**
+//   So this list can only ever shrink truthfully: nobody can fix a colour and
+//   leave its excuse behind, because leaving the excuse behind is a red build.
+//
+//   THE TRADE, RECORDED: a key is `file::match`, DEDUPED. Two CartesianGrids in
+//   one file painting the same hex are one key, so fixing one of the two is
+//   invisible here. Keying on a count instead would redden on any legitimate
+//   refactor that merges or splits a chart, which is the worse failure — the
+//   `scripts/floor.json` trade, in a different instrument.
+// ─────────────────────────────────────────────────────────────────────────────
+
 const here = dirname(fileURLToPath(import.meta.url));
 
-// Files whose charts were migrated onto chartPalette in Commit 1.
-const GUARDED = ['BuyerDashboard.tsx', 'BuyerInventory.tsx', 'BuyerAnalytics.tsx'];
+const pageFiles = (): string[] =>
+  readdirSync(here).filter((f) => f.endsWith('.tsx') && !f.endsWith('.test.tsx'));
 
-// A raw 3/6-digit hex assigned to a fill/stroke prop or style key.
+const read = (file: string): string => readFileSync(join(here, file), 'utf8');
+
+/** A page RENDERS A CHART iff it imports the chart library. */
+const IMPORTS_RECHARTS = /from\s*['"]recharts['"]/;
+
+/** A raw 3/6-digit hex assigned to a fill/stroke prop or style key. */
 const RAW_HEX_IN_PAINT = /\b(fill|stroke)\s*[=:]\s*['"{`]*\s*#[0-9A-Fa-f]{3,6}\b/g;
 
-describe('DP2-PALETTE-01 — no raw hex in chart paint props', () => {
-  for (const file of GUARDED) {
-    it(`${file} sources chart fill/stroke from tokens, not raw hex`, () => {
-      const src = readFileSync(join(here, file), 'utf8');
-      const hits = src.match(RAW_HEX_IN_PAINT) ?? [];
-      expect(hits).toEqual([]);
-    });
-  }
-});
-
-// DP2-PALETTE-01 (Commit 2, full-palette-sourcing): files that carried the
-// page-local TOKEN_* mirror consts now source them from chartPalette. This is
-// the stronger invariant Commit 1 couldn't enforce — a TOKEN_* colour const
-// must derive from the central palette, never a raw hex literal. Messenger
-// chrome (WHATSAPP_*/WECHAT_*, D-2 exemption) is deliberately NOT matched: the
-// pattern is anchored to the TOKEN_ prefix only.
-const PALETTE_SOURCED = [
-  'BuyerInvoices.tsx',
-  'SupplierPerformance.tsx',
-  'BuyerScorecard.tsx',
-  'BuyerAnalytics.tsx',
-  'SupplierWhatsApp.tsx',
-  'BuyerRisk.tsx',
-];
-
-// A TOKEN_* const declared as a raw hex literal (what Commit 2 eliminated).
+/** A `TOKEN_*` const declared as a raw hex literal (what Commit 2 eliminated). */
 const RAW_HEX_TOKEN_CONST = /const\s+TOKEN_[A-Z_]+\s*=\s*['"]#[0-9A-Fa-f]{3,6}/g;
 
+/** Files whose charts this gate governs — DERIVED, never listed. */
+const chartPages = (): string[] => pageFiles().filter((f) => IMPORTS_RECHARTS.test(read(f))).sort();
+
+/** Files that declare a `TOKEN_*` colour const — DERIVED, never listed. */
+const tokenConstPages = (): string[] =>
+  pageFiles()
+    .filter((f) => /const\s+TOKEN_[A-Z_]+/.test(read(f)))
+    .sort();
+
+/** Every distinct raw-hex paint value across the chart pages, as `file::match`. */
+const paintViolations = (): string[] => {
+  const out = new Set<string>();
+  for (const file of chartPages()) {
+    for (const m of read(file).match(RAW_HEX_IN_PAINT) ?? []) {
+      out.add(`${file}::${m.replace(/\s+/g, ' ')}`);
+    }
+  }
+  return [...out].sort();
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE RESIDUE — bilateral, set-equality, each key carrying a MECHANICAL reason.
+//
+//   `grade-ramp`     ruled a SEPARATE AXIS, verbatim in `CLAUDE.md` DP-2:
+//                    *"Grade A–D ramps are a separate axis, not yet unified
+//                    here."* Not this gate's ruling to make.
+//   `unadjudicated`  ⚠️ **NOT AN EXEMPTION. COUNTED DEBT** — the `storedFieldGate`
+//                    token, reused deliberately. Real raw hex in chart paint,
+//                    exposed by this widening, ruled on by nobody yet. Fixing it
+//                    changes RENDERED OUTPUT, so it is its own batch with its own
+//                    browser QA. `unadjudicatedCount()` publishes it so it cannot
+//                    quietly become permanent.
+// ─────────────────────────────────────────────────────────────────────────────
+type Reason = 'grade-ramp' | 'unadjudicated';
+
+const RESIDUE: Readonly<Record<string, Reason>> = {
+  "BuyerScorecard.tsx::stroke: '#107E3E": 'grade-ramp',
+  "BuyerScorecard.tsx::stroke: '#1E5BAE": 'grade-ramp',
+  "BuyerScorecard.tsx::stroke: '#B45309": 'grade-ramp',
+  "BuyerScorecard.tsx::stroke: '#BB0000": 'grade-ramp',
+  "SupplierPerformance.tsx::stroke: '#107E3E": 'grade-ramp',
+  "SupplierPerformance.tsx::stroke: '#1E5BAE": 'grade-ramp',
+  "SupplierPerformance.tsx::stroke: '#B45309": 'grade-ramp',
+  "SupplierPerformance.tsx::stroke: '#BB0000": 'grade-ramp',
+  'BuyerInvoices.tsx::stroke="#E5E9EE': 'unadjudicated',
+  'BuyerRisk.tsx::fill="#FAFBFC': 'unadjudicated',
+};
+
+const unadjudicatedCount = (): number =>
+  Object.values(RESIDUE).filter((r) => r === 'unadjudicated').length;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ THE MATCHERS AND THE POPULATIONS, BEFORE ANY CLAIM ABOUT THE TREE.
+// Nothing below this block means anything without it: a matcher that fires on
+// everything and one that fires on nothing both produce a green gate here, and
+// an empty population produces the greenest gate of all.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('⚠️ DP2-PALETTE-01 · THE INSTRUMENT ITSELF', () => {
+  it('✅ FIRES on raw hex in a paint position — the known-GOOD probe', () => {
+    const bad = `
+      <Area fill="#FF00AA" stroke={'#123'} />
+      <Bar style={{ fill: '#abcdef' }} />
+    `;
+    expect(bad.match(RAW_HEX_IN_PAINT) ?? []).toHaveLength(3);
+    expect(`const TOKEN_GRID = '#E5E9EE'`.match(RAW_HEX_TOKEN_CONST) ?? []).toHaveLength(1);
+  });
+
+  it('does NOT fire on palette-sourced paint — the acquittal half', () => {
+    const good = `
+      import { CHART_SERIES, TARGET_STATUS } from '../lib/chartPalette';
+      const TOKEN_GRID = CHART_SERIES[4];
+      <Area fill={CHART_SERIES[0]} stroke={TOKEN_GRID} />
+      <Bar style={{ fill: TARGET_STATUS.meeting.fill }} />
+    `;
+    expect(good.match(RAW_HEX_IN_PAINT) ?? []).toEqual([]);
+    expect(good.match(RAW_HEX_TOKEN_CONST) ?? []).toEqual([]);
+  });
+
+  it('does NOT fire on a hex that is not in a paint position', () => {
+    // A colour token defined for something other than fill/stroke, and a hex in
+    // prose, must both be acquitted — otherwise the gate condemns the palette.
+    const notPaint = `const brand = '#0070F2'; // action-blue\nbackground: '#FAFBFC'`;
+    expect(notPaint.match(RAW_HEX_IN_PAINT) ?? []).toEqual([]);
+  });
+
+  it('⚠️ AND BOTH POPULATIONS ARE NON-EMPTY — by membership, never by count', () => {
+    const charts = chartPages();
+    // known-present: a page that has rendered charts since the gate was written.
+    expect(charts).toContain('BuyerAnalytics.tsx');
+    expect(charts).toContain('BuyerDashboard.tsx');
+    // known-ABSENT: a fabricated member, and the stale hand-list row this
+    // rewrite removed — `BuyerInventory.tsx` holds no chart and no paint.
+    expect(charts).not.toContain('BuyerNotAChartPage.tsx');
+    expect(charts).not.toContain('BuyerInventory.tsx');
+
+    const tokens = tokenConstPages();
+    expect(tokens).toContain('BuyerScorecard.tsx');
+    // the stale row on the second hand list: it declares no TOKEN_* const.
+    expect(tokens).not.toContain('SupplierWhatsApp.tsx');
+    expect(tokens).not.toContain('BuyerNotAChartPage.tsx');
+  });
+
+  it('⚠️ AND THE DERIVATION READS THE TREE, not a cached list', () => {
+    // If `pageFiles()` ever returns nothing — a moved directory, a changed
+    // extension — every gate below passes over an empty set. Membership, again.
+    expect(pageFiles().length).toBeGreaterThan(20);
+    expect(pageFiles()).toContain('BuyerAnalytics.tsx');
+  });
+});
+
+describe('DP2-PALETTE-01 — no raw hex in chart paint props', () => {
+  it('every chart page is governed, and the population is derived from source', () => {
+    // The gate's subject is "pages that render charts", not "pages a 2026-07-09
+    // batch happened to touch". This is the assertion that keeps it that way.
+    for (const file of chartPages()) {
+      expect(read(file)).toMatch(IMPORTS_RECHARTS);
+    }
+  });
+
+  it('⚠️ no UNLISTED raw hex — a new one entering a chart is red', () => {
+    const unlisted = paintViolations().filter((k) => !(k in RESIDUE));
+    expect(
+      unlisted,
+      'raw hex entered a chart paint position with no ruling behind it:\n  ' +
+        unlisted.join('\n  '),
+    ).toEqual([]);
+  });
+
+  it('⚠️ AND NO LISTED KEY OUTLIVED ITS SUBJECT — the half containment never has', () => {
+    const live = new Set(paintViolations());
+    const dead = Object.keys(RESIDUE).filter((k) => !live.has(k));
+    expect(
+      dead,
+      'these were fixed but their excuse was left behind — delete the rows:\n  ' +
+        dead.join('\n  '),
+    ).toEqual([]);
+  });
+
+  it('publishes the counted debt, so it cannot quietly become permanent', () => {
+    // Not an equality on the number — that would redden the batch that FIXES
+    // one. A ceiling: the debt may shrink freely and may never grow silently.
+    expect(unadjudicatedCount()).toBeLessThanOrEqual(2);
+    expect(unadjudicatedCount()).toBeGreaterThan(0);
+  });
+});
+
 describe('DP2-PALETTE-01 — TOKEN_* consts derive from the central palette', () => {
-  for (const file of PALETTE_SOURCED) {
+  it('every TOKEN_*-declaring page is governed, derived from source', () => {
+    const pages = tokenConstPages();
+    expect(pages.length).toBeGreaterThan(0);
+    for (const file of pages) expect(read(file)).toMatch(/const\s+TOKEN_[A-Z_]+/);
+  });
+
+  for (const file of tokenConstPages()) {
     it(`${file} declares no raw-hex TOKEN_* const (sourced from chartPalette)`, () => {
-      const src = readFileSync(join(here, file), 'utf8');
-      const hits = src.match(RAW_HEX_TOKEN_CONST) ?? [];
-      expect(hits).toEqual([]);
+      expect(read(file).match(RAW_HEX_TOKEN_CONST) ?? []).toEqual([]);
     });
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
 // DP2-BUTTON-01 (Ops #11 SEAT 2): an Export is a secondary / alternative action
 // per DP-2 — it must never occupy the BulkActionsBar `primary` slot, which is the
 // surface's main call-to-action (Sync / Save / Submit / Create / New). Under the
-// portal-wide button restyle the primary slot now renders action-blue OUTLINE by
-// default (solid is reserved for consequential commits via `primary.solid`), but
-// the convention stands: an Export belongs in `actions[]`, not the primary slot.
-// Scans every page automatically so new pages are covered without a maintenance list.
+// portal-wide button restyle the primary slot renders action-blue OUTLINE, and
+// solid is retired entirely (§68), but the convention stands: an Export belongs
+// in `actions[]`, not the primary slot.
+//
+// This population always derived. What it lacked was a control — see below.
 //
 // CARVE-OUT: BuyerCompliance.tsx is the registered fixture carve-out
 // (COMPLIANCE-CARVEOUT-01, docs/findings.md) landing at R2.2; its Export-in-primary
 // header is knowingly deferred out of Commit 5 and excluded here until that lands.
+// ─────────────────────────────────────────────────────────────────────────────
 const EXPORT_CARVE_OUT = new Set(['BuyerCompliance.tsx']);
-const PAGE_FILES = readdirSync(here).filter(
-  (f) => f.endsWith('.tsx') && !f.endsWith('.test.tsx') && !EXPORT_CARVE_OUT.has(f),
-);
+const exportScanned = (): string[] => pageFiles().filter((f) => !EXPORT_CARVE_OUT.has(f)).sort();
 
-// A BulkActionsBar `primary` slot whose label is an Export action (label is the
-// first key of the primary object across the codebase).
+/** A BulkActionsBar `primary` slot whose label is an Export action. */
 const EXPORT_IN_PRIMARY = /primary=\{\{\s*label:\s*['"][^'"]*Export/gi;
 
 describe('DP2-BUTTON-01 — Export never occupies the primary (action-blue) slot', () => {
-  for (const file of PAGE_FILES) {
+  it('⚠️ THE MATCHER AND THE POPULATION, before the claim', () => {
+    expect(`primary={{ label: 'Export report'`.match(EXPORT_IN_PRIMARY) ?? []).toHaveLength(1);
+    // acquitted: an Export in `actions[]` is exactly where it belongs.
+    expect(`actions={[{ label: 'Export report' }]}`.match(EXPORT_IN_PRIMARY) ?? []).toEqual([]);
+    // acquitted: a primary slot that is not an Export.
+    expect(`primary={{ label: 'Sync to SAP'`.match(EXPORT_IN_PRIMARY) ?? []).toEqual([]);
+
+    const scanned = exportScanned();
+    expect(scanned.length).toBeGreaterThan(20);
+    expect(scanned).toContain('BuyerAnalytics.tsx');
+    // the carve-out really is carved out, and a fabrication really is absent.
+    expect(scanned).not.toContain('BuyerCompliance.tsx');
+    expect(scanned).not.toContain('BuyerNotAChartPage.tsx');
+  });
+
+  for (const file of exportScanned()) {
     it(`${file} places no Export action in a BulkActionsBar primary slot`, () => {
-      const src = readFileSync(join(here, file), 'utf8');
-      const hits = src.match(EXPORT_IN_PRIMARY) ?? [];
-      expect(hits).toEqual([]);
+      expect(read(file).match(EXPORT_IN_PRIMARY) ?? []).toEqual([]);
     });
   }
 });
