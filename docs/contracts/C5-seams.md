@@ -52,7 +52,7 @@ independent `COMPLIANCE_ITEMS` read as a deliberate name-vs-id guard — not a p
 ## `httpDataService` — the Phase-F1 swap · **RESERVED**
 
 The designed real adapter. **No file exists** (glob-confirmed). It implements the **same**
-`IDataService` (all 55 methods, C1) against the real backend core (NestJS/SAP per the Stage-F1
+`IDataService` (all 63 methods, C1) against the real backend core (NestJS/SAP per the Stage-F1
 plan: `httpDataService`, OIDC, durable audit). Named as the intended swap in
 `DataServiceContext.tsx:5`. Because the interface is frozen, landing it is additive.
 
