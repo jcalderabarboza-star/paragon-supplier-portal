@@ -14,6 +14,32 @@
 // `JSON.stringify` includes it, so a populated cause would reach every log line,
 // telemetry payload and audit record with nobody having chosen. A test that only
 // asserted absence would go green the day somebody re-adds it the same wrong way.
+//
+// ── ⚠️ **THIS IS NOT A CONFORMANCE FACTORY, AND MUST NOT BECOME ONE** ─────────
+//   1a lifted the SCOPING contract into
+//   `services/contracts/conformance/scoping.ts`, a describe factory an SE team
+//   runs against `httpDataService`. This file was deliberately LEFT BEHIND
+//   (operator ruling), and the reason is mechanical rather than a matter of
+//   taste:
+//
+//   **IT NEVER TOUCHES AN IMPLEMENTATION.** `grep -c` for any service symbol
+//   returns 0; its only imports are `vitest` and the `DataError` class. Every
+//   assertion below is about a CLASS — its prototype chain, its own-property
+//   descriptors, its `JSON.stringify` shape, its constructor arity. There is no
+//   `svc` to parameterise over.
+//
+//   So wrapping it as `describeDataErrorConformance(make)` would produce a suite
+//   whose `make` is never called — **green against every implementation,
+//   including a stub that implements nothing at all.** That is precisely the
+//   failure the conformance kit is probed against with a broken stub, and it
+//   would arrive here disguised as consistency. A factory that cannot fail
+//   certifies nothing, and a factory that cannot fail is what this file would
+//   become.
+//
+//   The contract it states is real and is inherited by F1 unchanged: whatever
+//   implements `IDataService` must throw THIS class, with these properties. It
+//   is simply not a per-implementation contract, so it is not per-implementation
+//   shaped. **Do not "finish the job" by lifting it.**
 // ─────────────────────────────────────────────────────────────────────────────
 import { describe, it, expect } from 'vitest';
 import { DataError } from './types';
