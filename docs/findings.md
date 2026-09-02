@@ -20924,3 +20924,290 @@ The cited artifact was absent, the conclusion drawn from it was wrong in
 direction — and re-measuring against the real tree found a true instance of the
 same class **in the batch being ruled on**, which the ruling would otherwise have
 congratulated.
+
+
+## §86 · The owner-less existence oracle — the refusal KIND was the leak (2026-09-02)
+
+`fix/ownerless-existence-oracle`, off `main @ 6dda21a`.
+
+**THE DEFECT.** `dispatcher.ts`, the supplier arm of the scope gate, read
+
+```ts
+if (!scope.supplierId || currentState === null || (owner !== null && owner !== scope.supplierId))
+```
+
+On a target whose `readScopeOwner` returns `null` BY CONSTRUCTION — a
+buyer-governance collection with no supplier owner — the last clause can never
+be true. So a supplier scope **fell through the scope gate to the role gate** on
+a row that EXISTS and came back `ROLE_NOT_PERMITTED` (a RETURNED
+`CommandResult`), while the same probe at an id that does not exist was stopped
+at scope and came back `SCOPE_DENIED` (a THROWN `DataError`). **Probe an id,
+read the refusal kind, learn whether the row exists** — across a tenancy
+boundary, on the write path, for a caller entitled to neither answer.
+
+Filed at B1 against `supplierApplication`, naming `purchaseRequisition` as the
+inherited precedent, and explicitly deferred: *"closing it is a DISPATCHER
+change touching `purchaseRequisition` too — filed, not fixed here."* Fixed here.
+
+**THE FIX IS ONE DELETION:** `owner !== null &&`. No signature change, no
+`CommandTarget` contract change — the batch's stop-condition was checked first
+and did not fire. `null` now means *no supplier may act on this*, not *nothing to
+compare*, and the `readScopeOwner` doc comment says so.
+
+### §86a · The population was FIVE, not the two that were filed
+
+Derived through the real dispatcher over `WIRED_COMMAND_TARGETS`, then
+re-derived from each target's own `readState` / `readScopeOwner`:
+
+| entity | owner-less | why |
+|---|---|---|
+| `rfq` | ✅ | a buyer document suppliers are INVITED to |
+| `purchaseRequisition` | ✅ | buyer-internal |
+| `enforcement` | ✅ | buyer governance record |
+| `role` | ✅ | buyer governance record |
+| `supplierApplication` | ✅ | an applicant is not a tenant |
+
+The other nine wired targets are owner-ful; `inventoryDeclaration` declares no
+non-creation transition at all, so it has no verb the leak could ride, and it is
+classified `unprobeable` rather than quietly omitted.
+
+⚠️ **`rfq` IS THE MEMBER A LIST WOULD NEVER HAVE REACHED FOR, AND THAT IS THE
+WHOLE ARGUMENT FOR DERIVING.** It is the one owner-less document a supplier
+genuinely interacts with, so "a supplier has no business acting on an RFQ" reads
+false and is true: the supplier acts through its own `quotation`, which HAS an
+owner. `enforcement` and `role` are the same shape one step further out — their
+`readState` answers a VOCABULARY (`GOVERNED_CHECK_IDS`, `SystemRoleId`), so the
+refusal kind was a membership test on a closed union rather than on a row.
+
+⚠️ **AND THE SUITE CONFIRMED THE POPULATION BY AN INDEPENDENT INSTRUMENT.**
+Applying the one-line fix reddened **exactly nine specs across eight files**, and
+every one of them sat on one of those five entities — `rfq` ×5,
+`purchaseRequisition` ×1, `enforcement` ×1, `role` ×1, `supplierApplication` ×1.
+Two derivations and a regression census agreeing is the only reason the figure
+is written down at all.
+
+### §86b · The half that decided the fix was safe — and it is a measurement
+
+**No supplier lane holds ANY atom on ANY verb of ANY owner-less entity.** Zero of
+seventeen, with the set-membership control run both ways in the same assertion
+(`asn:submit` ∈ supplier atoms = true; `rfq:award` = false), so the zero is not a
+report about an empty set. Every fall-through the fix removes ended at the role
+gate anyway: **the refusal moves one gate earlier and changes kind; it deletes no
+reachable act.** The cascade fan-out cannot be affected either — it re-dispatches
+with a hardcoded `personaType: 'buyer'` under the automation grant, and the fix
+touches only the supplier arm.
+
+The gate re-derives that every run, so the day a supplier lane gains such an atom
+it goes red — which is the moment the fix would BECOME a deleted capability, and
+the moment somebody has to be told rather than the moment an act quietly stops
+working.
+
+### §86c · The refusal COPY was leaking the thing the mechanism hides
+
+`DATA_ERROR_GLOSSARY.SCOPE_DENIED` opened, in both locales, with:
+
+> *"**The record exists** but is outside what your account may see. … this answer
+> is deliberately the same whether the record is foreign or absent, so that
+> nothing leaks."*
+
+**The sentence contradicts itself inside one line, and its first three words
+assert precisely what the refusal exists not to say.** A mechanism that hides
+existence behind prose asserting existence is not hiding it — the reader believes
+the prose. Rewritten so the sentence is true of BOTH inputs, EN and ID.
+
+⚠️ Worth naming as a class: **a security property implemented in code and
+contradicted in copy is not implemented.** Nothing in this tree checks that a
+refusal's prose agrees with the refusal's mechanism, and no gate here can — the
+agreement is semantic. It survived because the copy was written to EXPLAIN the
+property, which is the state in which nobody re-reads it.
+
+### §86d · ⚠️ THE GATE'S FIRST DERIVATION WAS COUPLED TO THE PREDICATE IT WAS TESTING, AND THE MUTATION PROBE IS THE ONLY THING THAT SAW IT
+
+`EMPTY-INPUT-REPORTS-CLEAN-01` arriving through the POPULATION rather than
+through the input, and it is the sharpest instance in the register because the
+gate was, by every visible measure, working.
+
+The first `ownerlessScope.test.ts` derived its population **behaviourally**: *which
+supplier ids clear the dispatcher's scope gate?* That is correct against the
+shipped tree, has a bilateral control, and passes. Then mutant A restored the
+defect — and the derived population **collapsed to empty**, because under the
+leak every owner-less target clears the gate and is therefore classified
+owner-ful. The suite went red on its own population control (`expected 0 to be
+greater than 0`) while **the assertion the file exists to make never executed**,
+and four specs "passed" vacuously over zero rows.
+
+⚠️ **A COUNTER WATCHING PASS/FAIL WOULD HAVE SCORED THAT A KILL.** It was red, on
+the mutant, on the right file. It was only visible because the probe's output was
+read ROW BY ROW instead of as a count — which is §51's rule arriving from the
+opposite direction: §51 is about a counter that under-reports kills, and this is
+a counter that would have over-reported one.
+
+The remedy: derive the population from each target's own `readState` /
+`readScopeOwner`, which sit UPSTREAM of every dispatcher predicate, so the
+population is identical under the shipped code and under both mutants. That
+required exporting `commandTargetFor` from `MockCommandService`, whose doc
+comment carries this reason rather than a description.
+
+**The general rule, and it is new:** ⚠️ **A GATE MUST NOT DERIVE ITS POPULATION
+THROUGH THE CODE IT IS PROBING.** Rules 1–3 govern whether a matcher sees the
+tree correctly; rule 4 governs whether a guard is probed both ways. This is
+neither: the matcher was correct, the guard was probed both ways, and the probe
+still proved nothing, because the mutation moved the POPULATION and the
+ASSERTION together. Derive the population from something the mutation cannot
+reach.
+
+### §86e · The two mutants, and why the second one is the whole point
+
+Both applied by exact byte replacement, both confirmed to have changed the file
+(sha256 before ≠ after) before any suite was run — a `$`-anchored probe that
+silently never mutates is this repo's known trap.
+
+- **MUTANT A — the defect restored** (main @ `6dda21a`'s exact expression).
+  Killed: `THE ORACLE IS CLOSED > every owner-less verb: the supplier refusal is
+  IDENTICAL at a real id and an absent one`, naming `rfq/t_rfq_publish` and
+  showing `'failed/ROLE_NOT_PERMITTED'` against `'throw/SCOPE_DENIED'`. **All five
+  population controls stayed green**, which is what distinguishes this kill from
+  the §86d one.
+- **MUTANT B — the plausible OVER-fix**: *a null owner denies*, applied to EVERY
+  persona. Killed `THE LEGITIMATE PATHS > a BUYER seat still clears the scope
+  gate on every owner-less verb` and `> each owner-less entity still has a verb a
+  HOLDER seat can LAND` (`rfq 'rfq-008' not found`).
+
+⚠️ **AND MUTANT B WAS MEASURED, NOT ASSUMED, TO SATISFY THE SUPPLIER HALF.** With
+B applied, a supplier probe at `rfq-001` and at a fabricated id BOTH return
+`throw/SCOPE_DENIED` — recorded by a throwaway spec run under the mutant. So a
+gate consisting only of *"the supplier cannot tell the two ids apart"* passes an
+over-fix that deletes the entire buyer requisition, sourcing, governance and
+onboarding lane. **Closing a leak by deleting the capability is indistinguishable
+from closing it, in the direction everyone probes.**
+
+Restore verified byte-identical: sha256 `d1c6ca9443d43092c299eba27ca095ca03ee94a46421e516ecb1b6897e8d553f`
+(working-copy bytes), `git hash-object` `514a0eec661f6ab79bad7027603cbbd362dfc839`.
+
+### §86f · RIDER — sha256 is the AUTHORITY for a restore claim; the blob id answers a different question
+
+Both are reported for a byte-identical restore, and they are not
+interchangeable:
+
+- **`sha256` of the working-copy bytes DECIDES.** It is the only digest over the
+  bytes that were actually mutated and actually written back. If it matches, the
+  restore is byte-identical; if it does not, nothing else matters.
+- **`git hash-object` is CORROBORATION FOR A READER, and it deliberately answers
+  a weaker question.** `core.autocrlf` is on in this repo — git says so on every
+  write — so the blob id is computed over LINE-ENDING-NORMALIZED content. It is
+  what a reviewer on another platform can recompute and compare; it is also what
+  would still match if a restore had silently changed every line ending in the
+  file.
+
+**So the blob id can agree while the restore is wrong, and that is exactly the
+case it must not be trusted in.** Report both, say which bytes were hashed, and
+state that sha256 is the one that rules.
+
+### §86g · RIDER — ⚠️ AN INSTRUMENT WHOSE FAILURE MODE IS SILENT PESSIMISM IS MORE DANGEROUS THAN ONE THAT ERRS LOUD
+
+The generalisation the §85 note in `CLAUDE.md` was reaching for, stated as the
+rule rather than as a third anecdote.
+
+**A weak-looking gate gets strengthened. A strong-looking one gets trusted.** So
+an instrument that errs toward *"your gate did not catch it"* costs a batch of
+wasted repair and is self-correcting — somebody goes and looks. An instrument
+that errs toward *"your gate is fine"*, or toward producing a plausible object
+where there was none, is absorbed and never revisited. **The dangerous direction
+is not pessimism or optimism as such — it is whichever direction terminates the
+investigation.**
+
+Five measured instances in this project, and the fifth is the one that breaks the
+pattern the first four suggested:
+
+| # | Instrument | Failed toward | Why it survived |
+|---|---|---|---|
+| 1 | vitest output decoded through the console codepage (`cp1252`) | every mutant `named=False` | "the gate went red but could not name the string" reads as modesty |
+| 2 | 41-char / malformed hex "controls" on `git cat-file` | control rejected as malformed, read as absent | a rejection is a rejection unless you check WHY |
+| 3 | a `$`-anchored mutation probe under `core.autocrlf` | the file was never mutated; suite green | green on an unmutated file reads as "the mutant was killed"… by nothing |
+| 4 | an i18n probe aimed at a token spelled identically in both locales | assertion that cannot fail | a passing locale assertion reads as a passing locale |
+| 5 | **`git rev-parse <sha>:<path>` on a missing path** | **printed a plausible SHA prefix** | **it echoes its argument to stdout AND exits 128, so a `\|\| echo MISSING` wrapper captures BOTH — and a 12-char truncation shows only the first** |
+
+⚠️ **INSTANCE 5 FAILED IN THE OPPOSITE DIRECTION FROM THE OTHER FOUR, AND IS THE
+MOST DANGEROUS OF THE FIVE.** One through four all lose information and read as
+humility. Five **manufactures a plausible object** — a 12-hex string in the exact
+shape of the blob id the reader is looking for, in a comparator whose whole job
+is to decide whether two objects are the same. Nothing about the output says
+"absent". It was caught here only because the verdict (`DIFFERENT`) happened to
+be correct and the marker's absence was noticed on re-reading, which is luck, not
+method.
+
+**Operationally, and this is the transferable part: never let an instrument's
+FALLBACK OUTPUT and its SUCCESS OUTPUT share a shape.** `git rev-parse` fails by
+printing something that looks like what it prints on success. Use `git ls-tree` /
+`git cat-file -e` and read the exit code — and truncate a derivation's output
+only after the classification has been made, never before.
+
+### §86h · REPORT ONLY — the READ path carries no equivalent oracle
+
+Derived, not assumed. `IDataService` exposes exactly three id-addressed reads —
+`SupplierService.getById`, `getPurchaseOrder`, and `getCommandStatus` / `settle`
+by `correlationId`. **None is on an owner-less collection.** Owner-less
+collections are read LIST-shaped and answer a supplier with `{ items: [] }`
+(`getSupplierApplications` refuses on persona and returns empty deliberately —
+its own comment says a refusal would itself signal that the collection exists;
+`getRFQs` filters to `invitedSupplierIds` and excludes `Draft`). So a supplier
+cannot obtain an owner-less entity id through any read, which is also why the
+write-path oracle needed a crafted dispatch.
+
+⚠️ **ONE ADJACENT THING THE CENSUS TURNED UP, FILED AND NOT FIXED:**
+`MockCommandService.getCommandStatus(_scope, correlationId)` and `settle` IGNORE
+their scope — the parameter is underscore-prefixed at the definition — and
+correlation ids are sequential and guessable (`cmd_0001`, `cmd_0002`, …). That is
+a cross-tenancy read of command status, a DIFFERENT defect from this one, on a
+different path. Named here because this census is where it surfaced; **not
+touched, and it wants its own batch** rather than a rider on this one.
+
+### §86i · ⚠️ `CLAUDE.md` CITES THREE REGISTER SECTIONS THAT WERE NEVER FILED
+
+Derived while looking for §85 to extend it. **`docs/findings.md` ends at §82.
+There is no §83, no §84 and no §85 — zero occurrences of any of the three in the
+register**, while `§82` is findable by the same `grep` in the same run (the
+bilateral control).
+
+They are cited as though they exist: `§83` and `§85` in `CLAUDE.md`'s derivation
+rules, `§84` in `CLAUDE.md`'s current-state block **and in twelve source files**
+(`BuyerCollaboration.tsx`, `BuyerCompliance.tsx`, `BuyerSupplierApplications.tsx`
+and its suite, `SupplierOrders.tsx`, `supplierLaneSurfaces.test.tsx`,
+`surfaceResiduals.test.tsx`, …), where `§84` carries a real and load-bearing
+rule: *the entrance is the unit, not (surface × verb)*.
+
+**The substance is not lost — all three are written out in full in `CLAUDE.md`
+itself.** What is wrong is the POINTER: a reader sent to the register for the
+derivation behind a rule finds nothing there, and `DISPATCH-HEADER-CITES-A-
+NONEXISTENT-OBJECT-01` is precisely about a citation that reads as context
+rather than as claim. This entry is filed as **§86 rather than §83** on purpose:
+back-filling three sections now would be writing history to match a citation,
+which is the opposite remedy. Recorded so the next batch that touches the
+register can decide — renumber the citations, or file the three retrospectively
+and say that is what they are.
+
+### §86j · What shipped
+
+- `dispatcher.ts` — `owner !== null &&` deleted; the supplier arm and the
+  `readScopeOwner` contract comment both restated in terms of what `null` MEANS.
+- `MockCommandService.ts` — `commandTargetFor` exported (for §86d's reason);
+  three target comments corrected, each of which had described the leak as the
+  design (`rfq`, `enforcement`, `role`).
+- `refusals.glossary.ts` — the `SCOPE_DENIED` copy, EN + ID (§86c).
+- `ownerlessScope.test.ts` — the gate: derived population, both bilateral
+  controls, every probe walked to a from-state, buyer-can-tell / supplier-cannot,
+  and the legitimate-path half.
+- Nine specs across eight files updated from `ROLE_NOT_PERMITTED` to the scope
+  refusal, each carrying WHY at the site.
+- `enforcement.test.ts` — the exact-consumer census authorised the new file's
+  `GOVERNED_CHECK_IDS` import, with the reason a literal was rejected.
+- Floor 4056/291 → 4066/292.
+
+**Reachability, derived with a bilateral control that FIRST FAILED:** no
+component on any `/supplier` or `/register` route calls any of the sixteen
+owner-less dispatch hooks — 0 of 13 components, over a 257-file transitive import
+closure. ⚠️ The first matcher tested `\buseX\b` over that closure and reported
+every supplier surface as using all sixteen, because `commandHooks.ts` is ONE
+module where all sixteen are DEFINED and every page pulls it in. The known-FALSE
+control (`SupplierRFQs` must NOT reach `useRfqAward`) caught it. §42 again: **the
+scan matched a definition site and the claim needed a call site.**

@@ -140,6 +140,19 @@ Direct pushes to `main` are not used.
 > them from `SYSTEM_ROLES` × `catalogRoles()`; the bilateral gate in
 > `businessRoles.test.ts` is what keeps them honest.
 >
+> ⚠️ **AND `readScopeOwner: () => null` DENIES EVERY SUPPLIER — IT DOES NOT MEAN
+> "NOTHING TO COMPARE" (§86).** The dispatcher's supplier arm compares
+> `owner !== scope.supplierId` UNCONDITIONALLY. It used to guard that clause with
+> `owner !== null &&`, which on an owner-less target could never be true — so a
+> supplier fell through scope to the ROLE gate on a row that EXISTS and was denied
+> at SCOPE on one that does not. **The refusal KIND was an existence oracle**,
+> across a tenancy boundary, on the write path. **Do not restate which targets are
+> owner-less** — it was filed as two and derived as five, and
+> `ownerlessScope.test.ts` re-derives the set every run from each target's own
+> `readState` / `readScopeOwner`. A target that wants a supplier to reach a verb
+> must NAME that supplier; returning `null` because the owner is merely UNKNOWN
+> now silently denies a legitimate act instead of admitting one.
+>
 > **The cross-role handoff renders the wait, not a gap** (`handoff.ts` +
 > `HandoffNotice` + `useVerbAvailability`) — wired across the BUYER surfaces at §72–§76, and it is **ONE NOTICE PER VERB, IN THAT VERB'S OWN SLOT** (§76 retired §74's per-group collapse: the RFQ side panel is a WORKSPACE, not a control, and the two verbs one group notice spoke for are not co-reachable on any RFQ in the tree).
 > ⚠️ **DO NOT RESTATE HOW MANY SURFACES CARRY IT** — the sentence that stood here was a prose count and it was wrong TWICE, once per batch, which is `FLOOR-IN-PROSE-01` in the paragraph about handoffs. Derive it as **(surface × verb)** from the `testId="handoff-…"` sites against BOTH dispatch families. **THE SUPPLIER SIDE IS COVERED TOO, AND THE SENTENCE THAT SAID OTHERWISE IS DELETED RATHER THAN CORRECTED.** It read *"every supplier-side surface (a supplier seat is exactly `['supplier']` — no proper subset to narrow to, so every notice is dead branch)"*. That reason died at #263, which seeded `commercial` · `fulfilment` · `back_office`; **six supplier surfaces already carried notices while it still stood**, so it was describing the tree it was filed against, not the tree. Derived today: **no supplier atom is held by all three lanes** — the intersection is EMPTY — so "every lane holds it" is never the reason on this side. What is deliberately NOT covered: every control that holds **no atom** (toasts and reads are ungoverned, not withheld — §75e), and **`GRInspectionWizard`'s interior** (`WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01`, OPEN — closed at both known entrances, unprobed within).
@@ -820,6 +833,44 @@ the defect the fix removed (§70b did: the proxy would have caught both §69
 strings, which is a different measurement from the zero, taken against different
 input). **A gate whose only evidence is a clean run on a just-repaired tree is
 unprobed, whatever its output says.**
+
+⚠️ **§86 · AND THE FOURTH WAY, WHICH IS NEITHER A BAD MATCHER NOR A ONE-SIDED
+PROBE: A GATE MUST NOT DERIVE ITS POPULATION THROUGH THE CODE IT IS PROBING.**
+Rules 1–3 ask whether a matcher sees the tree correctly. Rule 4 asks whether a
+guard was probed both ways. This asks a question neither reaches, because the
+matcher was correct AND the guard was probed both ways AND the probe still proved
+nothing. `ownerlessScope.test.ts` first derived "which targets are owner-less?"
+by asking the dispatcher — the very predicate under test. Mutate that predicate
+and the POPULATION collapses to empty: the suite goes red on its own population
+control while **the assertion it exists to make never executes**, and the
+remaining specs pass vacuously over zero rows.
+
+⚠️ **A COUNTER WATCHING PASS/FAIL SCORES THAT AS A KILL.** It is red, on the
+mutant, in the right file — the mutation moved the assertion and the population
+together, so the gate cannot tell "I caught it" from "I have nothing to look at."
+It was visible only because the probe's output was read ROW BY ROW rather than as
+a count, which is §51 arriving from the other side (§51 is a counter that
+UNDER-reports kills; this is one that would OVER-report one). **Derive the
+population from something upstream that the mutation cannot reach** — here, the
+target's own `readState` / `readScopeOwner`, which sit above every dispatcher
+predicate, so the population is identical under the shipped code and under both
+mutants.
+
+⚠️ **AND ONE LAYER OUT, THE RULE THAT ORDERS ALL OF THESE — `SILENT-PESSIMISM-
+TERMINATES-THE-INVESTIGATION-01` (§86g).** §85's note said an instrument that
+errs toward pessimism is the dangerous one. Measured across five instances, that
+is not quite the axis. **The dangerous direction is whichever one TERMINATES THE
+INVESTIGATION.** A weak-looking gate gets strengthened; a strong-looking one gets
+trusted. Four of the five instances lose information and read as modesty — a
+`cp1252` decode that throws, a malformed 41-char control, a `$`-anchored probe
+that never mutates under `core.autocrlf`, an i18n probe aimed at a token spelled
+identically in both locales. **The fifth failed the OTHER way and is the worst of
+them:** `git rev-parse <sha>:<path>` on a missing path echoes its argument to
+stdout AND exits 128, so a `|| echo MISSING` wrapper captures both and a
+truncated view shows a **plausible SHA prefix** where the marker should be — an
+instrument manufacturing an object of exactly the shape the reader is hunting
+for, inside a comparator. **Never let an instrument's fallback output share a
+shape with its success output**, and classify before you truncate.
 
 ⚠️ **§51 · AND ONE LAYER ABOVE THE PROBE: THE INSTRUMENT THAT COUNTS THE PROBE.
 RULE 4 COVERS THE PROBE. THIS COVERS THE THING THAT READS THE PROBE'S OUTPUT, AND

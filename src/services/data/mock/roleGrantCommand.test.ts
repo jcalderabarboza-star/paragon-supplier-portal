@@ -135,9 +135,13 @@ describe('⚠️ THE ROLE GATE — procurement cannot lower the bar it is measur
   });
 
   it('a supplier seat is refused — role editing is a buyer governance act', async () => {
-    const result = await svc.dispatch(supplier, grant());
-    expect(result.status).toBe('failed');
-    expect(result.reason).toContain('ROLE_NOT_PERMITTED');
+    // ⚠️ **REFUSED AT SCOPE, NOT AT THE ROLE GATE — AND THE CHANGE IS THE FIX
+    // FOR THE OWNER-LESS EXISTENCE ORACLE.** `roleTarget.readScopeOwner` is null
+    // by construction, so this seat used to fall THROUGH scope to the role gate
+    // and come back `ROLE_NOT_PERMITTED` — while the same probe at an id that is
+    // not a `SystemRoleId` came back `SCOPE_DENIED`. The refusal KIND answered
+    // "is this a real role?". It no longer does; see `ownerlessScope.test.ts`.
+    await expect(svc.dispatch(supplier, grant())).rejects.toThrow(/denied for scope/);
   });
 
   it('a scope with NO businessRoles is refused — there is no persona fallback', async () => {

@@ -137,11 +137,16 @@ describe('t_enforcement_set — the recorded act', () => {
   });
 
   it('is a BUYER verb — a supplier cannot decide how hard its own check bites', async () => {
-    // Refused at the ROLE gate, not at scope: an enforcement setting has no
-    // supplier owner (`readScopeOwner` is null), so the role is what decides.
-    const res = await svc.dispatch(supplier, set({ mode: 'BLOCK', setBy: NAMED }));
-    expect(res.status).toBe('failed');
-    expect(res.reason).toBe('ROLE_NOT_PERMITTED:enforcement:set');
+    // ⚠️ **REFUSED AT SCOPE NOW, AND THE OLD COMMENT NAMED THE DEFECT WHILE
+    // DESCRIBING IT AS THE DESIGN.** An enforcement setting has no supplier owner
+    // (`readScopeOwner` is null) — and the dispatcher used to read that as
+    // *nothing to deny*, so a supplier reached the role gate on a GOVERNED check
+    // and was denied at scope on an unrecognised one. The refusal kind answered
+    // "is this check id in the vocabulary?" to a caller entitled to neither
+    // answer. Scope denies both identically now.
+    await expect(
+      svc.dispatch(supplier, set({ mode: 'BLOCK', setBy: NAMED })),
+    ).rejects.toThrow(/denied for scope/);
     expect(enforcementSettingStore.all()).toEqual([]);
   });
 

@@ -50,7 +50,22 @@ import { classifySettleFault, settleFault, settleFaultDetail } from './settleFau
 export interface CommandTarget {
   /** Current transition-state, or null if the entity does not exist. */
   readState(entityId: string): string | null;
-  /** Owning supplierId for scope enforcement, or null (buyer-only entity). */
+  /**
+   * Owning supplierId for scope enforcement, or `null`.
+   *
+   * ⚠️ **`null` MEANS "NO SUPPLIER MAY ACT ON THIS", NOT "NOTHING TO COMPARE".**
+   * The dispatcher compares `owner !== scope.supplierId` unconditionally, so a
+   * null owner DENIES every supplier scope — including on an entity that exists.
+   * It used to mean the weaker thing, and the difference was an existence
+   * oracle: a supplier fell through to the role gate on a row that existed and
+   * was denied at scope on one that did not, so the refusal KIND reported
+   * existence across a tenancy boundary (`ownerlessScope.test.ts`).
+   *
+   * A target that wants a supplier to reach a verb must NAME that supplier here.
+   * Returning `null` to mean "buyer-only" is correct and is what the
+   * buyer-governance targets do; returning it because the owner is merely
+   * unknown would silently deny a legitimate act instead.
+   */
   readScopeOwner(entityId: string): string | null;
   /** Full entity for policy hooks to inspect, or null. */
   readEntity(entityId: string): unknown;
@@ -328,9 +343,39 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
       currentState = target.readState(input.entityId);
       const owner = target.readScopeOwner(input.entityId);
       if (scope.personaType === 'supplier') {
-        // A supplier learns nothing about entities not provably its own:
-        // non-existent OR foreign both resolve to SCOPE_DENIED (no existence leak).
-        if (!scope.supplierId || currentState === null || (owner !== null && owner !== scope.supplierId)) {
+        // ⚠️ **A SUPPLIER PASSES THIS GATE ONLY BY BEING NAMED AS THE OWNER —
+        // `owner === scope.supplierId` AND NOTHING ELSE.** Non-existent, foreign
+        // and OWNER-LESS all resolve to the one SCOPE_DENIED, so no refusal
+        // distinguishes them.
+        //
+        // ⚠️ **THE `owner !== null &&` THAT USED TO GUARD THE LAST CLAUSE WAS AN
+        // EXISTENCE ORACLE, AND IT LEAKED PRECISELY WHERE IT LOOKED HARMLESS.**
+        // With it, an OWNER-LESS entity (`readScopeOwner` → null by construction)
+        // could not fail the owner comparison, so a supplier scope fell through
+        // to the ROLE gate — which returns `ROLE_NOT_PERMITTED` — while the SAME
+        // probe at an id that does not exist was stopped here with
+        // `SCOPE_DENIED`. Two different answers to two different questions the
+        // caller is not entitled to ask either of: **probe an id, read the
+        // refusal KIND, learn whether the row exists.** Derived population at the
+        // time of the fix: five owner-less targets (`rfq` · `purchaseRequisition`
+        // · `enforcement` · `role` · `supplierApplication`) — derive it again
+        // rather than reading that list, which is what `ownerlessScope.test.ts`
+        // does on every run.
+        //
+        // ⚠️ **AND THE REASON THIS COSTS NO LEGITIMATE PATH IS A MEASUREMENT, NOT
+        // A HOPE:** no supplier lane holds ANY atom on ANY owner-less entity, so
+        // every one of those fall-throughs ended at the role gate anyway. The fix
+        // moves the refusal one gate EARLIER (step 2 rather than step 3) and
+        // changes its kind; it removes no reachable act. The gate re-derives that
+        // both ways, so the day a supplier lane gains such an atom the gate goes
+        // red rather than the act going missing.
+        //
+        // `currentState === null` is NOT redundant beside the owner comparison,
+        // and the redundancy is deliberate: it is a SECOND invariant — a supplier
+        // may not act on an entity that does not exist — resting on `readState`
+        // rather than on `readScopeOwner`. A future target whose owner lookup
+        // reads a different source than its state lookup would need it.
+        if (!scope.supplierId || currentState === null || owner !== scope.supplierId) {
           throw new DataError('SCOPE_DENIED', `command on ${input.entity} '${input.entityId}' denied for scope`);
         }
       } else if (currentState === null) {

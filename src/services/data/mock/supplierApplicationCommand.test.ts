@@ -429,34 +429,37 @@ describe('⚠️ AUTHORISATION — raising and deciding are different seats', ()
     expect(supplierApplicationStore.all()).toEqual([]);
   });
 
-  // ⚠️ **THIS SPEC ASSERTED A SCOPE REFUSAL AND THE TREE GAVE A ROLE REFUSAL.
-  // THE TREE WAS RIGHT, AND THE DIFFERENCE IS WORTH PINNING RATHER THAN
-  // SMOOTHING OVER.** On an owner-less collection `readScopeOwner` returns
-  // `null`, and the dispatcher's supplier branch refuses only when
-  // `owner !== null && owner !== scope.supplierId` — so a supplier clears the
-  // scope gate on a row that EXISTS and is stopped by the role gate instead.
+  // ⚠️ **THE LEAK THIS PAIR WAS FILED TO PIN IS CLOSED, AND THE PAIR NOW PINS
+  // THE CLOSURE.** It used to read: *a supplier clears the scope gate on a row
+  // that EXISTS and is stopped by the role gate instead* — because
+  // `readScopeOwner` returns `null` on an owner-less collection and the
+  // dispatcher refused only when `owner !== null && owner !== scope.supplierId`.
+  // So the refusal KIND answered a question the caller may not ask: `SCOPE_DENIED`
+  // for an id that does not exist, `ROLE_NOT_PERMITTED` for one that does.
   //
-  // **MEASURED AS INHERITED, NOT INTRODUCED.** `purchaseRequisition` — the
-  // buyer-collection precedent this target copies — behaves identically today:
-  // a supplier seat firing `t_pr_approve` at `pr-001` gets
-  // `ROLE_NOT_PERMITTED:pr:approve`, and at an absent id gets a thrown
-  // `SCOPE_DENIED`. So the refusal KIND distinguishes "exists" from "does not
-  // exist" for a caller that may read neither. That is a real (small) existence
-  // leak, it belongs to every owner-less target, and closing it is a DISPATCHER
-  // change touching `purchaseRequisition` too — filed, not fixed here.
+  // The filing was right about the mechanism AND about the scope of it —
+  // *"it belongs to every owner-less target"*. Derived at the fix: FIVE targets,
+  // not the two that were named (`rfq` · `purchaseRequisition` · `enforcement` ·
+  // `role` · `supplierApplication`). The dispatcher's supplier branch now
+  // compares `owner !== scope.supplierId` unconditionally, so a null owner means
+  // *not yours* rather than *nothing to compare*.
   //
-  // Both directions are pinned so the leak cannot widen silently.
-  it('a supplier seat is refused on an application that exists — by the ROLE gate', async () => {
+  // ⚠️ **THE TWO SPECS BELOW ARE DELIBERATELY NOT MERGED INTO ONE.** They probe
+  // the two inputs a leak would distinguish, and a single spec asserting one of
+  // them would pass just as happily with the leak restored. `ownerlessScope.test.ts`
+  // asserts the equality across the whole DERIVED population; these two are the
+  // local, readable form of it on the collection where the population grew.
+  it('a supplier seat is refused on an application that EXISTS — at scope', async () => {
     const id = await raise();
-    const res = await act(supplierSeat(onRoster.id), 't_application_start_review', id);
-    expect(res.status).toBe('failed');
-    expect(res.reason).toMatch(/ROLE_NOT_PERMITTED/);
+    await expect(
+      act(supplierSeat(onRoster.id), 't_application_start_review', id),
+    ).rejects.toThrow(/denied for scope/);
     expect(supplierApplicationStore.get(id)!.status).toBe('Submitted');
   });
 
-  it('a supplier seat is refused on an application that does NOT exist — at scope', async () => {
+  it('a supplier seat is refused on an application that does NOT exist — identically', async () => {
     await expect(
       act(supplierSeat(onRoster.id), 't_application_start_review', 'app-9999'),
-    ).rejects.toThrow(/SCOPE_DENIED|denied/i);
+    ).rejects.toThrow(/denied for scope/);
   });
 });

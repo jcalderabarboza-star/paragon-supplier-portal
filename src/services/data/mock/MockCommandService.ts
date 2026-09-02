@@ -414,7 +414,12 @@ bindPolicyHook(POLICY_HOOKS.INVOICE_CREATE_PO_CONFIRMED, ({ payload }) => {
 //   CASCADE SOURCE: it flips the RFQ to Awarded and records the award metadata
 //   (awardedSupplierId / awardedQuotationId) — NO PO, NO contract minted
 //   (honest-by-construction). The buyer owns the RFQ, so readScopeOwner is null
-//   (buyer passes; a supplier is blocked at requiredRole — rfq:award ∉ supplier).
+//   — which DENIES every supplier scope at the dispatcher's step 2, on an RFQ
+//   that exists exactly as on one that does not. It used to mean only that scope
+//   had nothing to compare, so a supplier reached the role gate on a real RFQ and
+//   was denied at scope on a fabricated id: the refusal kind answered "does this
+//   RFQ exist?" to the one persona that may not ask. A supplier's business with
+//   an RFQ runs through its own `quotation`, which HAS an owner.
 const RFQ_CATEGORIES: readonly RFQCategory[] = [
   'Fragrance', 'Active Ingredients', 'Packaging', 'Emulsifiers', 'Botanical', 'Other',
 ];
@@ -1324,10 +1329,15 @@ bindPolicyHook(POLICY_HOOKS.ISH_P2D_DISTRIBUTOR_ONLY, ({ payload }) => {
 // entirely.
 //
 // `readScopeOwner` is null: an enforcement setting is a BUYER governance record
-// with no supplier owner. A supplier is stopped at the ROLE gate
-// (`enforcement:set` ∉ supplier), which is where it belongs — a supplier
-// deciding how hard its own compliance check bites would be the whole thesis
-// inverted.
+// with no supplier owner, so a supplier scope is denied at SCOPE — before the
+// role gate, and identically whether the check id is governed or invented.
+//
+// ⚠️ **THIS COMMENT USED TO SAY "stopped at the ROLE gate … which is where it
+// belongs", AND THAT WAS THE LEAK DESCRIBED AS THE DESIGN.** Reaching the role
+// gate meant the check id was in `GOVERNED_CHECK_IDS`; being denied at scope
+// meant it was not. `enforcement:set` ∉ supplier remains true and still refuses
+// — it is simply no longer the FIRST thing to refuse. A supplier deciding how
+// hard its own compliance check bites would be the whole thesis inverted.
 //
 // `readEntity` hands the policy hook THE LEDGER FOR THIS CHECK, which is what
 // the direction rule needs: "is this a loosening?" is a question about the last
@@ -1369,8 +1379,11 @@ const enforcementTarget: CommandTarget = {
 // entirely. This is `enforcementTarget`, verb for verb (D3).
 //
 // `readScopeOwner` is null: a role definition is a BUYER governance record with
-// no supplier owner. A supplier is stopped at the ROLE gate (`role:grant` ∉
-// supplier), which is where it belongs.
+// no supplier owner, so a supplier scope is denied at SCOPE — identically for a
+// real `SystemRoleId` and for a string that is not one. It used to be stopped at
+// the ROLE gate instead, which made the refusal kind a membership test on the
+// role vocabulary. `role:grant` ∉ supplier is still true and still refuses; it
+// is no longer what refuses FIRST.
 //
 // `applyTransition` APPENDS and writes no state (statePreserving). `grantedAt`
 // and `parentAtomsAtGrant` are minted HERE — the `pinnedAt` discipline. The
@@ -1819,6 +1832,30 @@ const TARGETS: Record<string, CommandTarget> = {
 export const WIRED_COMMAND_TARGETS: readonly string[] = Object.freeze(
   Object.keys(TARGETS),
 );
+
+/**
+ * One wired `CommandTarget` by entity key — the objects `WIRED_COMMAND_TARGETS`
+ * names.
+ *
+ * ⚠️ **EXPORTED SO A GATE CAN DERIVE A POPULATION FROM THE TARGET'S OWN
+ * CONTRACT RATHER THAN FROM THE DISPATCHER PREDICATE THAT CONSUMES IT, AND THE
+ * REASON IS A MEASURED FAILURE.** `ownerlessScope.test.ts` first derived
+ * "which targets are owner-less?" behaviourally — by asking which supplier ids
+ * clear the dispatcher's scope gate. That reads correctly against the shipped
+ * tree and is USELESS AS A GATE: mutate the predicate under test and the
+ * derived population collapses to empty, so the suite goes red on its own
+ * population control while **the assertion it exists to make never runs**. The
+ * mutant is "killed", the kill proves nothing, and the counter says the gate
+ * works. `EMPTY-INPUT-REPORTS-CLEAN-01` arriving through the population instead
+ * of through the input.
+ *
+ * A target's `readScopeOwner` is upstream of every dispatcher predicate, so a
+ * population derived from it survives any mutation of the code being probed.
+ * That is the whole point of the export; it is not a general-purpose handle on
+ * the store layer.
+ */
+export const commandTargetFor = (entity: string): CommandTarget | undefined =>
+  TARGETS[entity];
 
 // Cross-entity cascade (census G4): a GR mismatch disposition (reject / partial
 // approve) raises a discrepancy on the linked ASN. The registry (cascades.ts)

@@ -87,13 +87,16 @@ describe('t_rfq_fx_pin — recording the basis', () => {
   });
 
   it('is a BUYER verb — a supplier cannot set the basis their own bid is judged on', async () => {
-    // Refused at the ROLE gate, not the scope gate: an RFQ has no supplier owner
+    // ⚠️ **THIS COMMENT USED TO SAY "scope has nothing to deny", AND THAT WAS
+    // EXACTLY THE DEFECT.** An RFQ has no supplier owner
     // (`rfqTarget.readScopeOwner` is null — it is a buyer document invited
-    // suppliers respond to), so scope has nothing to deny and the role is what
-    // decides. `rfq:fx-pin` is granted to `buyer` alone.
-    const res = await svc.dispatch(supplier, pin());
-    expect(res.status).toBe('failed');
-    expect(res.reason).toBe('ROLE_NOT_PERMITTED:rfq:fx-pin');
+    // suppliers respond to), and the dispatcher read a null owner as *nothing to
+    // compare* rather than as *not yours*. So a supplier reached the role gate on
+    // an RFQ that EXISTS and was stopped at scope on one that does not — the
+    // refusal kind was an existence oracle. Scope denies it now, before the role
+    // is ever consulted. `rfq:fx-pin` is still granted to `buyer` alone; that
+    // remains true and is asserted by the distinct-authority spec below.
+    await expect(svc.dispatch(supplier, pin())).rejects.toThrow(/denied for scope/);
     expect(rfqStore.get(RFQ)!.fxPins ?? []).toHaveLength(0);
   });
 

@@ -89,10 +89,13 @@ describe('RFQ award — cascade fan-out (1 winner + N losers)', () => {
     }
   });
 
-  it('a supplier cannot award — ROLE_NOT_PERMITTED, nothing mutates', async () => {
-    const res = await award(supplier);
-    expect(res.status).toBe('failed');
-    expect(res.reason).toMatch(/ROLE_NOT_PERMITTED:rfq:award/);
+  it('a supplier cannot award — refused at SCOPE, nothing mutates', async () => {
+    // Was `ROLE_NOT_PERMITTED:rfq:award`. An RFQ is owner-less, so the supplier
+    // used to clear scope and be stopped one gate later — which made the refusal
+    // kind report whether the RFQ existed. The refusal is now indistinguishable
+    // from the one a fabricated id gets; the no-mutation half is unchanged and is
+    // what this spec is really for.
+    await expect(award(supplier)).rejects.toThrow(/denied for scope/);
     // The RFQ and its quotations are untouched.
     expect(rfqStore.get(RFQ)!.status).toBe('Open');
     expect(quotationStore.get(WINNER)!.status).toBe('Under Review');
