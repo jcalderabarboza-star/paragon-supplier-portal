@@ -84,6 +84,7 @@ import { identityEn, identityId } from './i18n/identity';
 import { errorStateEn, errorStateId } from './i18n/errorState';
 import { loadingStateEn, loadingStateId } from './i18n/loadingState';
 import { emptyStateEn, emptyStateId } from './i18n/emptyState';
+import { wizardEn, wizardId } from './i18n/wizard';
 
 // Persisted language choice (Batch 0). Non-VITE key; plain localStorage.
 export const LANG_STORAGE_KEY = 'paragon.lang';
@@ -159,6 +160,7 @@ export const resources = {
       ...errorStateEn,
       ...loadingStateEn,
       ...emptyStateEn,
+      ...wizardEn,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnEn,
       'app.title': 'Paragon Supplier Portal',
@@ -584,6 +586,7 @@ export const resources = {
       ...errorStateId,
       ...loadingStateId,
       ...emptyStateId,
+      ...wizardId,
       // — I3.4 halal-renewal walkthrough (FORK-1=(c)) —
       ...learnId,
       'app.title': 'Portal Pemasok Paragon',

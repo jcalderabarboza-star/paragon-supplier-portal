@@ -39,10 +39,19 @@
 //
 //       **is this default REACHABLE — does any call site omit the prop?**
 //
-//   `Wizard.completeLabel` is passed at 5 of 5 sites and `SearchBar.placeholder`
-//   at 16 of 16: those literals cannot render, and keying them would add
-//   resource keys with no reader — the stored-field shape this project already
-//   refuses. `LoadingState.title` is omitted at 37 of 37: it renders on every
+//   `SearchBar.placeholder` is passed at 16 of 16 sites: that literal cannot
+//   render, and keying it would add a resource key with no reader — the
+//   stored-field shape this project already refuses.
+//
+//   ⚠️ `Wizard.completeLabel` stood beside it here as the second 5-of-5
+//   example until 2026-09-02, when the batch that translated the Wizard footer
+//   DELETED the default and made the prop REQUIRED — so the dead state is now
+//   unrepresentable rather than merely unreached, and this gate has one fewer
+//   thing to acquit. The example is RETIRED rather than restated, because a
+//   worked example whose subject no longer exists is the stale pointer this
+//   project keeps deleting. The 16-of-16 above was re-derived that day.
+//
+//   `LoadingState.title` is omitted at 37 of 37: it renders on every
 //   loading screen in the portal. Reachability separates the two with no
 //   judgement at all, and — the property a marker can never have — **it
 //   re-decides itself.** The day someone adds a call site that omits `title`,
