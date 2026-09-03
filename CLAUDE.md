@@ -120,6 +120,17 @@ aggregate cannot distinguish "everything passed" from "nothing was asked."
   has to decide will one day decide wrong; a seat with one form cannot.
   (It ALSO protects a chain's ancestry, which is what the next link's
   merge-base reads. That is a consequence of the rule, never its ground.)
+- ⚠️ **AND C10 §9 STILL SAYS THE OLD THING — FILED, NOT EDITED**
+  (`C10-DIVERGENCE-PREMISE-NO-LONGER-MET-01`, `docs/findings.md` §88).
+  `docs/contracts/C10-identity.md:683` reads *"Squash-and-delete makes a branch
+  SHA unreachable by construction, so it is cited after merge or not at all."*
+  **That sentence is ACCURATE and is NOT being amended.** Squash really does
+  make a branch SHA unreachable; what changed is that we no longer squash, so
+  its conclusion no longer binds us — **a contract describing a mechanism
+  correctly is not falsified by our choosing a different one.** C10 is
+  byte-identical to `dc8e774` and an amendment is a new SHA and a new
+  ratification with SOMO, so the divergence lives in the register and this
+  pointer, never in the contract.
 - ⚠️ **NEVER `--delete-branch`. ON ANY PR.** It closed **#264** two seconds
   after **#263** merged — `base_ref_deleted` and `closed` at `06:03:12Z`
   against a merge at `06:03:10Z` — and its success signal said *merged · branch

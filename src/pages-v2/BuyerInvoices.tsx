@@ -24,7 +24,7 @@ import {
   LucideIcon,
 } from 'lucide-react';
 import AppShellV2 from '../components/layout-v2/AppShellV2';
-import { CHART_SERIES, CHART_SEMANTIC } from '../lib/chartPalette';
+import { CHART_SERIES, CHART_SEMANTIC, CHART_GRID } from '../lib/chartPalette';
 import PageHeader from '../components/ui-v2/PageHeader';
 import PageMetaLine from '../components/ui-v2/PageMetaLine';
 import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
@@ -837,7 +837,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 data={MONTHLY_SPEND}
                 margin={{ top: 10, right: 10, bottom: 0, left: -10 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E9EE" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: TOKEN_MUTED }} />
                 <YAxis tick={{ fontSize: 11, fill: TOKEN_MUTED }} />
                 <Tooltip content={<ChartTooltip />} />
@@ -900,7 +900,7 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                 data={AGING_DATA}
                 margin={{ top: 10, right: 20, bottom: 0, left: -10 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E9EE" />
+                <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
                 <XAxis
                   dataKey="bucket"
                   tickFormatter={agingBucketLabel}
