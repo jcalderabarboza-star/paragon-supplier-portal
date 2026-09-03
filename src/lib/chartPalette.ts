@@ -84,6 +84,37 @@ export const MAP_BASE = {
   highlightStroke: '#B45309', // emphasised landmass hairline
 } as const;
 
+/**
+ * EDGE-PROVENANCE ink (EDGE-INK-AXIS-01) — what CAUSES a transition edge,
+ * deliberately distinct from CHART_SEMANTIC (state), SEMANTIC_STATE (grade) and
+ * MAP_BASE (substrate).
+ *
+ * ⚠️ **A FOURTH AXIS, AND IT ANSWERS A DIFFERENT QUESTION FROM THE OTHER THREE.**
+ * State says how a thing IS; grade says how WELL; substrate says what it is drawn
+ * ON. This says WHO OR WHAT MOVED IT — a person, the platform, a cascade across
+ * documents, or the act that brought the entity into existence. A process diagram
+ * needs that distinction and none of the other three can carry it.
+ *
+ * ⚠️ **COLOUR ONLY REINFORCES IT — THE DASH PATTERN CARRIES IT.** That is
+ * `FlowDiagram`'s own rule, stated at `inkFor()`, and it is the same
+ * colourblind-safe discipline as DP2-TARGET-01's bars (position vs tick, never
+ * colour alone). Naming these does not promote colour to load-bearing; it stops
+ * four values that already travel together from living as page-local hex.
+ *
+ * BYTE-PRESERVING: every value is what `FlowDiagram` already rendered.
+ *
+ * Each mirrors an existing token rather than inventing a hue — `operator` is the
+ * brand mid, `system` the neutral/axis grey, `cross` the teal brand accent,
+ * `birth` the DP2-DATA-NAVY-01 data hue. They are named here because the AXIS
+ * has no home, not because the VALUES lacked one.
+ */
+export const EDGE_INK = {
+  operator: '#354A5F', // a person acts (mirrors CHART_MID / the `mid` token)
+  system: '#6B7785', // the platform acts (mirrors CHART_AXIS / text-tertiary)
+  cross: '#0097A7', // cascade or settlement, crossing documents (teal accent)
+  birth: '#1E3A5F', // a creation edge (mirrors the data-navy token)
+} as const;
+
 // ────────────────────────────────────────────────────────────────────────────
 // TARGET-STATUS system (DP2-TARGET-01) — the ONE standard for "meeting / near /
 // missing target" on KPI/target bars, pass-warn-fail cells and progress meters.

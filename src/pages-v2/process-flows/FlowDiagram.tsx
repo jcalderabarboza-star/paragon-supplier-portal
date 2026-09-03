@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { STEP_KIND_KEY } from '../../lib/i18n/stepKind';
 import type { FlowView, StepKind } from '../../services/transitions/catalogView';
 import { layoutFlow, verbOf, NODE_W, NODE_H, type LaidOutEdge } from './flowLayout';
+import { EDGE_INK } from '../../lib/chartPalette';
 
 // ────────────────────────────────────────────────────────────────────────────
 // PF-1 · THE FLOW DIAGRAM. Every mark on it is a fact the schema declares.
@@ -31,10 +32,15 @@ interface EdgeInk {
   readonly marker: string;
 }
 
-const OPERATOR = '#354A5F';
-const SYSTEM = '#6B7785';
-const CROSS = '#0097A7';
-const BIRTH = '#1E3A5F';
+// EDGE-INK-AXIS-01 — bound from the palette in the #303 pattern. These four
+// travel together as ONE axis (edge provenance: who or what moved the entity),
+// which is why they are named there rather than here. Byte-identical to what
+// this diagram rendered before the axis existed; the dash pattern below still
+// carries the distinction, colour only reinforces it.
+const OPERATOR = EDGE_INK.operator;
+const SYSTEM = EDGE_INK.system;
+const CROSS = EDGE_INK.cross;
+const BIRTH = EDGE_INK.birth;
 
 function inkFor(edge: LaidOutEdge['edge']): EdgeInk {
   if (edge.settlement) return { stroke: CROSS, dash: '10 4 2 4', marker: 'cross' };
