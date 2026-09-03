@@ -21459,3 +21459,59 @@ indistinguishable from a claim that concurrency was handled.
 **Still true and still unaddressed:** C1/C3/C5/C10 are referenced by zero tests.
 1c does not change that; it is the first of the four ordered steps, and the C1
 pinning is the next.
+
+## §88 · `C10-DIVERGENCE-PREMISE-NO-LONGER-MET-01` — a ratified contract whose conclusion stopped binding, without the contract becoming wrong (2026-09-03)
+
+**Filed rather than fixed, and the distinction is the whole entry.**
+
+`docs/contracts/C10-identity.md:683`, in §9 *"How this contract ships"*, states:
+
+> - **The pinned SHA on `main`** — never a branch SHA. Squash-and-delete makes a branch SHA
+>   unreachable by construction, so it is cited **after** merge or not at all.
+
+At **#300** (`773f98c4872d289624b6b0ffb4937a669cec5daa`, merged as
+`a19a016d83fadecd62a8e71ca7cd0236bacd63bb`) the merge doctrine was corrected to
+make `gh pr merge --merge` the **standing form for every PR**, unconditionally,
+with `--delete-branch` forbidden outright. A merge commit keeps the branch head
+reachable **as parent 2**, so a branch SHA survives its branch.
+
+**THE CONTRACT IS NOT WRONG AND MUST NOT BE AMENDED.** Two reasons, and the
+first is the one that matters:
+
+1. ⚠️ **THE SENTENCE IS ACCURATE ABOUT THE MECHANISM IT NAMES.** Squash-and-delete
+   really does make a branch SHA unreachable by construction — a squashed
+   branch head is never an ancestor of anything, so deleting the branch destroys
+   the only ref to it. What changed is that **we no longer squash**, so the
+   sentence's *conclusion* no longer applies to us. **A contract describing a
+   mechanism correctly is not falsified by our choosing a different mechanism.**
+   The distinction is between a contract that has gone STALE and one that has
+   become INAPPLICABLE, and only the first would justify an amendment.
+2. C10 is **byte-identical to `dc8e774`** (verified this batch: blob
+   `8cab8a1effa1e40766733099276a9a24ebaa37da` at the pin and at `main`), and its
+   own citation block makes any amendment **a new SHA and a new ratification**
+   with SOMO — *including one that changes no schema, since what is ratified is
+   the text*. Editing it is an outward-facing act with a counterparty, taken to
+   fix a sentence that is not wrong.
+
+⚠️ **WHY THIS IS FILED AT ALL, RATHER THAN LEFT UNSAID.** The next seat to read
+C10 §9 will read a live instruction — *cite after merge or not at all* — and
+follow it, which is now a workaround for a problem this repository no longer
+has. That is `CLAUDE.md`'s three merge-mode sites one boundary out: **an
+instruction that is locally true and globally superseded**, with nothing at the
+site to say so. The register is the honest home because the contract cannot
+carry the note.
+
+**The practical effect, stated so a reader does not have to derive it:** citing
+a post-merge `main` SHA is still *correct*, and is still what C10 requires of a
+C10 issue. It is simply no longer *necessary* for citability in general — and
+this project now routinely cites branch SHAs in merge reports and verifies them
+with `cat-file` after the branch is deleted. Demonstrated at #299, #300 and
+#301: each branch head still resolves with its branch gone.
+
+**`C3` and `C10` remain referenced by zero tests** (§87f), so nothing mechanical
+would notice either way. That is the pins finding, and it stays its own batch —
+coupled to an external ratification process, and complicated by the fact that
+neither pin SHA is written in the contract it pins (C9 names `2dd7f7f` as its
+code-truth, C10 names `df585c5`, while the commits that landed them are
+`af7f0b4` and `dc8e774` — two commits answering two different questions, and a
+gate must pick one).

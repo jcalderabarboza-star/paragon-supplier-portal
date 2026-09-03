@@ -189,7 +189,7 @@ const WorldMap: React.FC = () => {
         {t('risk.map.title')}
       </div>
       <svg viewBox="0 0 900 440" className="w-full h-auto max-h-80">
-        <rect width="900" height="440" fill="#FAFBFC" rx="6" />
+        <rect width="900" height="440" className="fill-bg-page" rx="6" />
         <path
           d="M80 80 L280 80 L310 140 L290 200 L260 240 L200 260 L160 250 L120 230 L80 200 L60 160 Z"
           fill={continent}

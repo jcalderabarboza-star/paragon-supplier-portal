@@ -11,6 +11,8 @@
 ## 0 · EXECUTION PROTOCOL (read first, binding)
 
 1. Four-actor model: Chat (strategist) plans and adjudicates; CLI seat implements; the operator approves and merges via GitHub UI (Squash + delete branch); investigation ALWAYS precedes build.
+
+> ⚠️ **SUPERSEDED FOR THE MERGE MODE ONLY (2026-09-03, PR #300).** `--merge` is now the standing form for every PR — never squash, never `--delete-branch`, branch deleted by hand after asserting ancestry at the site. The sentence above is left as the dated record of what was ratified at the time; the live rule is `CLAUDE.md` > Branch policy + MERGE DOCTRINE. Nothing else in this line is superseded.
 2. Gates on every commit: `tsc --noEmit` green · `npm run build` green · full `npx vitest run` green · floor ≥203 (ratcheted at Phase 1′ close; never regresses) · identity-clean (no attribution lines in commits/PR bodies).
 3. Atomic commits; one concern per commit; one batch per PR unless this plan says otherwise.
 4. Findings flip to CLOSED only in a docs commit that follows merge evidence (F2-07 rule — now law).

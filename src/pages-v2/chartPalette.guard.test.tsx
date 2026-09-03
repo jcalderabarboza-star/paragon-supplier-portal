@@ -90,15 +90,34 @@ const paintViolations = (): string[] => {
 //
 //   `grade-ramp`     ruled a SEPARATE AXIS, verbatim in `CLAUDE.md` DP-2:
 //                    *"Grade A–D ramps are a separate axis, not yet unified
-//                    here."* Not this gate's ruling to make.
-//   `unadjudicated`  ⚠️ **NOT AN EXEMPTION. COUNTED DEBT** — the `storedFieldGate`
-//                    token, reused deliberately. Real raw hex in chart paint,
-//                    exposed by this widening, ruled on by nobody yet. Fixing it
-//                    changes RENDERED OUTPUT, so it is its own batch with its own
-//                    browser QA. `unadjudicatedCount()` publishes it so it cannot
-//                    quietly become permanent.
+//                    here."* Not this gate's ruling to make — and the ruling is
+//                    REAL, not a label: both files declare
+//                    `GRADE_TONE: Record<Grade, …>` mapping A/B/C/D to these
+//                    exact strokes. `SEMANTIC_STATE` in `chartPalette.ts` is the
+//                    unified ramp and DISAGREES on grade B (#5B9D6B vs #1E5BAE);
+//                    unifying them changes rendered colour, which is why DP-2
+//                    says "not yet".
+//
+// ⚠️ **THE `unadjudicated` REASON IS RETIRED — THE DEBT REACHED ZERO.** It read:
+//
+//   > `unadjudicated`  **NOT AN EXEMPTION. COUNTED DEBT** … `unadjudicatedCount()`
+//   >                  publishes it so it cannot quietly become permanent.
+//
+// It held two rows, and both were adjudicated onto tokens that carry the SAME
+// byte value, so nothing rendered moved: `BuyerInvoices`'s grid stroke was
+// `#E5E9EE`, which IS `CHART_GRID`; `BuyerRisk`'s map canvas was `#FAFBFC`,
+// which IS tailwind's `bg-page`, now painted by `fill-bg-page` so the value
+// lives in ONE place.
+//
+// ⚠️ **THE COUNTER WENT WITH IT, DELIBERATELY.** `unadjudicatedCount()` asserted
+// `> 0`, so taking the debt to zero would have reddened this gate — and keeping
+// it as an assert-zero would leave **a counter that can only ever read zero,
+// which is a counter nobody would notice breaking.** What actually protects the
+// tree is the UNLISTED assertion below: a new raw hex in chart paint is red on
+// arrival. Parking one again should cost a ruling and a new reason in this
+// union, not a quiet increment.
 // ─────────────────────────────────────────────────────────────────────────────
-type Reason = 'grade-ramp' | 'unadjudicated';
+type Reason = 'grade-ramp';
 
 const RESIDUE: Readonly<Record<string, Reason>> = {
   "BuyerScorecard.tsx::stroke: '#107E3E": 'grade-ramp',
@@ -109,12 +128,7 @@ const RESIDUE: Readonly<Record<string, Reason>> = {
   "SupplierPerformance.tsx::stroke: '#1E5BAE": 'grade-ramp',
   "SupplierPerformance.tsx::stroke: '#B45309": 'grade-ramp',
   "SupplierPerformance.tsx::stroke: '#BB0000": 'grade-ramp',
-  'BuyerInvoices.tsx::stroke="#E5E9EE': 'unadjudicated',
-  'BuyerRisk.tsx::fill="#FAFBFC': 'unadjudicated',
 };
-
-const unadjudicatedCount = (): number =>
-  Object.values(RESIDUE).filter((r) => r === 'unadjudicated').length;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ THE MATCHERS AND THE POPULATIONS, BEFORE ANY CLAIM ABOUT THE TREE.
@@ -203,11 +217,36 @@ describe('DP2-PALETTE-01 — no raw hex in chart paint props', () => {
     ).toEqual([]);
   });
 
-  it('publishes the counted debt, so it cannot quietly become permanent', () => {
-    // Not an equality on the number — that would redden the batch that FIXES
-    // one. A ceiling: the debt may shrink freely and may never grow silently.
-    expect(unadjudicatedCount()).toBeLessThanOrEqual(2);
-    expect(unadjudicatedCount()).toBeGreaterThan(0);
+  it('⚠️ EVERY RESIDUE ROW CARRIES A REASON WITH A RULING BEHIND IT', () => {
+    // Replaces the counted-debt assertion (see the header). That one published a
+    // number; this one publishes the VOCABULARY, which is the thing that must
+    // not grow quietly. Adding a row with a new reason is a `tsc` failure until
+    // somebody widens `Reason`, and widening `Reason` is where a ruling belongs.
+    const RULED: readonly Reason[] = ['grade-ramp'];
+    expect(RULED.length).toBeGreaterThan(0); // population guard
+    for (const [key, reason] of Object.entries(RESIDUE)) {
+      expect(RULED, `'${key}' carries an unruled reason`).toContain(reason);
+    }
+  });
+
+  it('⚠️ THE `grade-ramp` REASON IS CHECKED, NOT MERELY STATED', () => {
+    // The stepKind property, as close as this subject allows: the excuse must
+    // still be TRUE of the file, not just written down next to it. A grade-ramp
+    // exemption is only honest while the file actually declares an A–D ramp —
+    // delete `GRADE_TONE` and keep the stroke, and this fires even though the
+    // hex never moved.
+    const ramped = Object.entries(RESIDUE)
+      .filter(([, r]) => r === 'grade-ramp')
+      .map(([k]) => k.split('::')[0]);
+    expect(ramped.length, 'no grade-ramp rows — the probe is vacuous').toBeGreaterThan(0);
+    for (const file of new Set(ramped)) {
+      expect(read(file), `${file} claims grade-ramp but declares no A–D ramp`).toMatch(
+        /GRADE_TONE\s*:\s*Record<\s*Grade\s*,/,
+      );
+    }
+    // Known-BAD control, same instrument, same run: a chart page with no ramp
+    // must NOT satisfy the predicate, or the sweep above proves nothing.
+    expect(read('BuyerInvoices.tsx')).not.toMatch(/GRADE_TONE\s*:\s*Record<\s*Grade\s*,/);
   });
 });
 

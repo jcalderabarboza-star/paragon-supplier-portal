@@ -146,6 +146,8 @@ Opportunities surfaced by the harvest and the build-over-buy thesis that strengt
 
 Supervised-batch via CC CLI (local Windows, open egress) as the build engine. Chat drafts mega-batch dispatches (multiple commits, one investigation phase); JJ approves the batch, smoke-tests at the Preview boundary (≤5 min), merges via GitHub UI (Squash + delete branch). The QA harness audits behaviorally post-deploy; structural audit pre-PR. Four actors, clean lanes: Chat = strategist/brain, CC CLI = implementer/auditor, JJ = operator/merge-authority, CC Web excluded (egress).
 
+> ⚠️ **SUPERSEDED FOR THE MERGE MODE ONLY (2026-09-03, PR #300).** `--merge` is now the standing form for every PR — never squash, never `--delete-branch`, branch deleted by hand after asserting ancestry at the site. The sentence above is left as the dated record of what was ratified at the time; the live rule is `CLAUDE.md` > Branch policy + MERGE DOCTRINE. Nothing else in this line is superseded.
+
 ### E.2 The build loop (every increment)
 
 Investigate → Plan → Develop → Structural audit (pre-PR) → Fix → Merge (JJ) → Deploy → Behavioral audit (post-deploy) → Fix → continue.
