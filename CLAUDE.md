@@ -3,7 +3,13 @@
 ## Branch policy
 - Branch off `main` for every task (e.g. `chore/...`, `qa/...`, `feat/...`)
 - Open a pull request to `main`; never push directly to `main`
-- The CLI merges via the GitHub UI (Squash + delete branch); the operator directs and approves
+- The CLI merges with `gh pr merge <n> --merge` — **never squash, never
+  `--delete-branch`** — with an identity-clean merge commit (explicit subject,
+  empty body); the operator directs and approves. The branch is deleted BY HAND
+  afterwards, and only after asserting AT THE SITE that its tip is an ancestor
+  of `main`. **`--merge` is the standing form, not a mode chosen per PR** — the
+  reason is in the merge doctrine below, and it is worth reading before merging
+  anything, because a rule without its reason gets re-derived wrongly
 
 ### ⚠️ MERGE DOCTRINE — BOTH DIRECTIONS. RECOVERED AND EXTENDED (§59c, 2026-08-26)
 
@@ -91,11 +97,39 @@ aggregate cannot distinguish "everything passed" from "nothing was asked."
 
 **The operational rules that follow. Not advisory:**
 
-- **NEVER squash-merge a stacked chain.** Use `--merge`: ancestry is precisely
-  what the next link's merge-base reads. Squash remains the default for an
-  ordinary single PR — the defect is squash **on a chain**, not squash.
-- **NEVER `--delete-branch` on a stacked chain.** Delete by hand once the whole
-  stack is on main, each branch first asserted to be an ancestor of main.
+- ⚠️ **`--merge` IS THE STANDING FORM FOR EVERY PR. NEVER SQUASH. THIS IS
+  UNCONDITIONAL AND THE UNCONDITIONALITY IS THE POINT.**
+
+  **The reason, which must travel with the rule: a merge commit keeps the
+  branch head reachable as a parent after the branch is deleted.** Every merge
+  report in this register cites a branch SHA, and squash makes that SHA
+  unreachable *by construction* — the branch head is never an ancestor of
+  anything, so deleting the branch destroys the only ref to it. `--merge`
+  removes the problem at the source, which is what makes the *"cite only
+  post-merge `main` SHAs"* workaround unnecessary rather than merely
+  inconvenient. **Demonstrated, not asserted:** at #299,
+  `f2feefb467f9555572b717a3e0f7d8384ec64a44` still resolves under `git cat-file
+  -e` with its branch deleted, because it is parent 2 of the merge commit.
+
+  ⚠️ **DO NOT RE-DERIVE THIS RULE FROM THE STACKED-CHAIN CASE.** The sentence
+  that stood here read *"Squash remains the default for an ordinary single PR
+  — the defect is squash **on a chain**, not squash."* That is what this
+  paragraph exists to retract. Reasoning from the exception reinstates a
+  **per-PR judgement about which mode applies, and that judgement is where the
+  five-PR stack went wrong** — the table above is what it costs. A seat that
+  has to decide will one day decide wrong; a seat with one form cannot.
+  (It ALSO protects a chain's ancestry, which is what the next link's
+  merge-base reads. That is a consequence of the rule, never its ground.)
+- ⚠️ **NEVER `--delete-branch`. ON ANY PR.** It closed **#264** two seconds
+  after **#263** merged — `base_ref_deleted` and `closed` at `06:03:12Z`
+  against a merge at `06:03:10Z` — and its success signal said *merged · branch
+  deleted* throughout. Delete BY HAND afterwards, and **assert at the site of
+  the action first**: read the remote's own refs (`git ls-remote origin
+  refs/heads/<branch>` and `refs/heads/main`), assert by EXIT CODE that the
+  remote branch tip IS an ancestor of remote `main` and that `main` is NOT an
+  ancestor of the branch, then `git push origin --delete <branch>`. Reading the
+  local cache is not reading the site. Same unconditional shape and the same
+  reason: a flag that fires automatically cannot be told to wait for a check.
 - **A retarget requires a gate run.** Retargeting emits `edited`, which is why
   `types:` is now spelled out in `.github/workflows/gates.yml`. If a retargeted
   PR still shows no gate, run the four locally on the merged base **and say that
@@ -116,13 +150,24 @@ git checkout main && git pull origin main
 5. git add .
 6. git commit -m "description"
 7. git push -u origin <branch>
-8. Open a PR to main; the operator directs and approves, then the CLI merges via the GitHub UI (Squash + delete branch)
+8. Open a PR to main; the operator directs and approves, then the CLI merges
+   with `gh pr merge <n> --merge` (never squash, never `--delete-branch`,
+   identity-clean merge commit)
+9. Delete the branch by hand, after asserting at the site that its tip is an
+   ancestor of `main`
 
 ## Why
 This project uses a branch + PR + CLI-merge workflow (the ratified four-actor
 model). Changes reach `main` only through a reviewed PR: the operator directs
-and approves, and the CLI merges via the GitHub UI (Squash + delete branch).
-Direct pushes to `main` are not used.
+and approves, and the CLI merges with `gh pr merge <n> --merge`. Direct pushes
+to `main` are not used.
+
+⚠️ **THE MERGE MODE IS PART OF THE WHY, NOT A DETAIL OF THE HOW.** A squash
+would satisfy every sentence above and still break the register, because what
+this project cites in a merge report is a BRANCH SHA and squash makes one
+unreachable by construction. **The mode is unconditional so that no seat has to
+decide it** — see the merge doctrine for the full argument and for the four
+mechanisms whose success signals said nothing about the damage they did.
 
 ## Current state (as-built: main @ #65 — F0 + I3 complete; Stage G planning canon on main)
 
