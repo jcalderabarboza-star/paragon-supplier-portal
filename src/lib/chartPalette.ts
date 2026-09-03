@@ -54,6 +54,36 @@ export const SEMANTIC_STATE = {
   poor: '#BB0000', // danger — grade D (at-risk)
 } as const;
 
+/**
+ * BASE-MAP SUBSTRATE ramp (MAP-BASE-AXIS-01) — the geography a map is DRAWN ON,
+ * deliberately distinct from CHART_SEMANTIC and SEMANTIC_STATE above.
+ *
+ * ⚠️ **THIS IS A SECOND AXIS, AND NAMING IT IS THE WHOLE POINT.** A risk map runs
+ * two encodings at once: the STATE axis (dots + legend — critical / high / low /
+ * hub, from CHART_SEMANTIC) and this SUBSTRATE axis (the landmasses under them).
+ * They are not the same kind of thing: state informs a decision, substrate is
+ * what the decision is plotted on.
+ *
+ * ⚠️ **PAINTING SUBSTRATE IN STATE COLOURS IS THE COLLISION THIS RAMP EXISTS TO
+ * END.** Before this ramp, `BuyerRisk`'s highlighted landmass carried the stroke
+ * `#B45309` — byte-identical to `CHART_SEMANTIC.warning`, which that same map's
+ * legend labels "high risk", on the landmass drawn UNDER the high-risk dot. The
+ * substrate was wearing the legend's own vocabulary, so a reader could not tell
+ * emphasis from encoding. Same bytes, different axis, and only a name can say so.
+ *
+ * BYTE-PRESERVING: every value here is what the page already rendered. This ramp
+ * renames, it does not restyle — no rendered colour moved when it landed.
+ *
+ * Distinct from CHART_CURSOR, which carries the same bytes as `land` but means
+ * the hover band behind bars/points — an INTERACTION colour, not geography.
+ */
+export const MAP_BASE = {
+  land: '#F4F6F8', // landmass fill — the neutral surface a map sits on
+  landStroke: '#D1D8E0', // landmass hairline (mirrors the border-input token)
+  highlight: '#FEF3D6', // emphasised landmass fill — attention, NOT a state
+  highlightStroke: '#B45309', // emphasised landmass hairline
+} as const;
+
 // ────────────────────────────────────────────────────────────────────────────
 // TARGET-STATUS system (DP2-TARGET-01) — the ONE standard for "meeting / near /
 // missing target" on KPI/target bars, pass-warn-fail cells and progress meters.
