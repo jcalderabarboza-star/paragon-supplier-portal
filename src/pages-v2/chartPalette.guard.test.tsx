@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
+import ts from 'typescript';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, relative } from 'node:path';
+import { buildRepoProgram } from '../lib/storedFieldGate/derive';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DP2-PALETTE-01 — chart colour comes from the centralized palette
@@ -208,6 +210,175 @@ const indirectViolations = (): string[] =>
     .sort();
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ THE MEMBER-EXPRESSION HALF (M5, closed here) — the TypeScript CHECKER,
+// because no regex can do this.
+//
+//   #304 narrowed the `:` alternative and named what that cost: a hex sitting in
+//   an OBJECT LITERAL and reached through a MEMBER EXPRESSION into a paint
+//   position is invisible to both regex halves. `ScoreBadge.tsx` was exactly
+//   that shape, and it was found by the BROAD matcher #304 retired.
+//
+// ⚠️ **AND THE OBVIOUS CHECKER MOVE DOES NOT WORK — MEASURED, NOT ASSUMED.**
+//   Asking the checker for the SYMBOL behind `t.stroke` returns the DECLARED
+//   TYPE's property. For `const TONE: ToneStyle = { stroke: '#0097A7' }` that is
+//   `ToneStyle`'s `stroke: string` — a `PropertySignature` whose type is
+//   `string`, with no literal anywhere near it. Fired at ScoreBadge's own
+//   historical defect, symbol resolution flags it **zero** times: annotating an
+//   object hides its value from the symbol, and ScoreBadge was annotated.
+//
+//   So this walks the VALUE instead — identifier → its `const` declaration →
+//   through alias hops → the object literal it holds → the named property → its
+//   string literal. That reaches the annotated case, which is the case that
+//   mattered.
+//
+// ⚠️ **WHERE THE WALK STOPS — STATED, BECAUSE A GATE THAT HIDES ITS BLIND SPOTS
+//   IS WORSE THAN NO GATE** (the `storedFieldGate` house rule). Each of these is
+//   asserted CLEAN below, so the limit is a measurement rather than a claim:
+//     · a value that only exists at RUNTIME — `fill={row.color}` from props
+//     · a COMPUTED key — `stroke={MAP[k]}` where `k` is a variable
+//     · a NESTED member — `T.a.b` (one property hop, by construction)
+//     · a SPREAD — `{ ...BASE }` does not carry BASE's properties here
+//     · a FUNCTION RETURN — `const t = f()` is not a literal
+//   Closing any of those is a different instrument, not a wider regex.
+//
+//   REUSED from `storedFieldGate/derive.ts`: `buildRepoProgram` verbatim — the
+//   same program, the same tsconfig. DECIDED here: the value-flow walk (that
+//   module resolves symbols, which is the half that does not work for this),
+//   and the synthetic builder below, because the precedent's
+//   `buildProgramFromSources` does not enable JSX and every case here is JSX.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const REPO_ROOT = join(here, '..', '..');
+const PAINT_ATTR_NAMES = new Set(['fill', 'stroke', 'stopColor']);
+const HEX_LITERAL = /^#[0-9A-Fa-f]{3,8}$/;
+
+/** Follow an identifier through `const` aliases to the object literal it holds. */
+const objectLiteralBehind = (
+  checker: ts.TypeChecker,
+  expr: ts.Expression,
+  hops = 6,
+): ts.ObjectLiteralExpression | null => {
+  let cur: ts.Expression = expr;
+  for (let i = 0; i < hops; i++) {
+    let sym = checker.getSymbolAtLocation(cur);
+    if (sym && sym.flags & ts.SymbolFlags.Alias) sym = checker.getAliasedSymbol(sym);
+    const decl = sym?.getDeclarations()?.[0];
+    if (!decl || !ts.isVariableDeclaration(decl) || !decl.initializer) return null;
+    const init = decl.initializer;
+    if (ts.isObjectLiteralExpression(init)) return init;
+    if (ts.isAsExpression(init) && ts.isObjectLiteralExpression(init.expression)) {
+      return init.expression;
+    }
+    if (ts.isIdentifier(init)) {
+      cur = init;
+      continue;
+    }
+    return null;
+  }
+  return null;
+};
+
+/**
+ * ⚠️ ONE WALK, USED BY BOTH THE REPO GATE AND THE SYNTHETIC PROBES.
+ *
+ * **This was two functions and a mutation probe caught it.** Dropping the
+ * property-NAME guard from the repo copy killed nothing, because every
+ * bilateral probe below ran against a SEPARATE copy of the same logic — the
+ * probes were proving things about code that was not the code under test
+ * (§86). A gate must not validate a duplicate of itself; `label` is the only
+ * thing that differs between the two callers, so it is the only thing
+ * parameterised.
+ */
+const memberHexPaints = (
+  program: ts.Program,
+  label: (sf: ts.SourceFile, line: number) => string | null,
+): string[] => {
+  const checker = program.getTypeChecker();
+  const out: string[] = [];
+  for (const sf of program.getSourceFiles()) {
+    if (sf.isDeclarationFile) continue;
+    const visit = (node: ts.Node): void => {
+      if (
+        ts.isJsxAttribute(node) &&
+        ts.isIdentifier(node.name) &&
+        PAINT_ATTR_NAMES.has(node.name.text)
+      ) {
+        const init = node.initializer;
+        if (init && ts.isJsxExpression(init) && init.expression) {
+          const e = init.expression;
+          if (ts.isPropertyAccessExpression(e)) {
+            const obj = objectLiteralBehind(checker, e.expression);
+            for (const p of obj?.properties ?? []) {
+              if (
+                ts.isPropertyAssignment(p) &&
+                p.name &&
+                ts.isIdentifier(p.name) &&
+                p.name.text === e.name.text &&
+                p.initializer &&
+                ts.isStringLiteral(p.initializer) &&
+                HEX_LITERAL.test(p.initializer.text)
+              ) {
+                const line = sf.getLineAndCharacterOfPosition(e.getStart()).line + 1;
+                const where = label(sf, line);
+                if (where !== null) {
+                  out.push(`${where}${e.getText()} -> '${p.initializer.text}'`);
+                }
+              }
+            }
+          }
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sf);
+  }
+  return out.sort();
+};
+
+/** Every `paint={obj.prop}` in the REPO whose prop is a raw hex, as `file:line`. */
+const memberExpressionViolations = (program: ts.Program): string[] =>
+  memberHexPaints(program, (sf, line) => {
+    const rel = relative(REPO_ROOT, sf.fileName).replace(/\\/g, '/');
+    return rel.startsWith('src/') ? `${rel}:${line}  ` : null;
+  });
+
+/** A synthetic JSX program — the only way to supply a known-BAD input. */
+const synthProgram = (files: Readonly<Record<string, string>>): ts.Program => {
+  const options: ts.CompilerOptions = {
+    noLib: true,
+    strict: true,
+    noEmit: true,
+    target: ts.ScriptTarget.ES2020,
+    jsx: ts.JsxEmit.React,
+  };
+  const sources = new Map<string, ts.SourceFile>();
+  for (const [name, text] of Object.entries(files)) {
+    sources.set(name, ts.createSourceFile(name, text, ts.ScriptTarget.ES2020, true));
+  }
+  const host: ts.CompilerHost = {
+    getSourceFile: (name) => sources.get(name),
+    getDefaultLibFileName: () => 'lib.d.ts',
+    writeFile: () => undefined,
+    getCurrentDirectory: () => '/',
+    getCanonicalFileName: (x) => x,
+    useCaseSensitiveFileNames: () => true,
+    getNewLine: () => '\n',
+    fileExists: (name) => sources.has(name),
+    readFile: (name) => files[name],
+  };
+  return ts.createProgram([...sources.keys()], options, host);
+};
+
+/**
+ * The SAME walk over a synthetic program — the only way to supply a known-BAD
+ * input without planting a defect in `src/`. It differs from the repo caller in
+ * the LABEL and nothing else, which is what makes the probes below evidence
+ * about the shipped derivation rather than about a copy of it.
+ */
+const synthViolations = (src: string): string[] =>
+  memberHexPaints(synthProgram({ '/probe.tsx': src }), () => '');
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ⚠️ THE MATCHERS AND THE POPULATIONS, BEFORE ANY CLAIM ABOUT THE TREE.
 // A matcher that fires on everything and one that fires on nothing both produce
 // a green gate here, and an empty population produces the greenest gate of all.
@@ -241,20 +412,27 @@ describe('⚠️ DP2-PALETTE-01 · THE INSTRUMENT ITSELF', () => {
     expect(paintHexHits(`<circle stroke="#107E3E" />`)).toEqual(['stroke="#107E3E"']);
   });
 
-  it('⚠️ THE MEMBER-EXPRESSION BLIND SPOT IS REAL — pinned, not hidden', () => {
-    // This asserts the gate's OWN LIMIT. It is green while the limit stands and
-    // RED the day someone closes it — at which point delete this test and the
-    // note above, rather than "fixing" it. Reported as a known gap in #304.
-    const blind = `
-      const TONE = { stroke: '#0097A7' };
-      <circle stroke={t.stroke} />
-    `;
-    expect(paintHexHits(blind), 'literal matcher reaches into object literals now').toEqual([]);
-    expect(consumedHexBindings(blind), 'structural matcher resolves members now').toEqual([]);
-    // the control: the SAME value in a form the gate DOES see must still fire,
-    // or this test would pass on a matcher that had simply died.
-    expect(paintHexHits(`<circle stroke="#0097A7" />`)).toEqual(['stroke="#0097A7"']);
-  });
+  // ⚠️ **THE M5 BLIND-SPOT PROBE IS RETIRED — IT DID EXACTLY WHAT IT PROMISED.**
+  // It was written at #304 to be green while the limit stood and RED the day
+  // someone closed it, so that the limit would announce its own closure rather
+  // than be forgotten. The limit is closed below, so the probe is deleted rather
+  // than adapted: a probe that survives the thing it guarded is guarding
+  // nothing. Quoted rather than removed silently, on the #302 precedent:
+  //
+  //   > it('⚠️ THE MEMBER-EXPRESSION BLIND SPOT IS REAL — pinned, not hidden', () => {
+  //   >   const blind = `
+  //   >     const TONE = { stroke: '#0097A7' };
+  //   >     <circle stroke={t.stroke} />
+  //   >   `;
+  //   >   expect(paintHexHits(blind), 'literal matcher reaches into object literals now').toEqual([]);
+  //   >   expect(consumedHexBindings(blind), 'structural matcher resolves members now').toEqual([]);
+  //   >   expect(paintHexHits(`<circle stroke="#0097A7" />`)).toEqual(['stroke="#0097A7"']);
+  //   > });
+  //
+  // Its two `.toEqual([])` lines are now FALSE of the tree — the regex halves
+  // still cannot see that shape, but the checker half can, so the SHAPE is no
+  // longer a blind spot. Keeping the probe would have asserted a gap that is
+  // gone.
 
   it('does NOT fire on palette-sourced paint', () => {
     const good = `
@@ -391,6 +569,166 @@ describe('DP2-PALETTE-01 — no raw hex in any paint position, tree-wide', () =>
       expect(consumedHexBindings(readSrc(file))).toEqual([]);
     });
   }
+});
+
+describe('⚠️ DP2-PALETTE-01 · A HEX REACHED THROUGH A MEMBER EXPRESSION (M5)', () => {
+  // One program, built once — `buildRepoProgram` parses the whole tree.
+  const program = buildRepoProgram(REPO_ROOT);
+
+  it('⚠️ THE WALK IS ALIVE ON THE REAL PROGRAM — the anchor the zero rests on', () => {
+    // §71 · CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01. The tree-wide result below
+    // is ZERO, and a zero is worthless without evidence the instrument can move.
+    // `ScoreBadge`'s `TONE` is the object this class was named for; the walk must
+    // REACH it, and find its `stroke` sourced from the palette rather than a hex.
+    const checker = program.getTypeChecker();
+    const badge = program
+      .getSourceFiles()
+      .find((f) => f.fileName.endsWith('/components/ui-v2/ScoreBadge.tsx'));
+    expect(badge, 'ScoreBadge is gone — this anchor is vacuous').toBeTruthy();
+
+    let reached: ts.ObjectLiteralExpression | null = null;
+    const visit = (node: ts.Node): void => {
+      if (ts.isJsxAttribute(node) && ts.isIdentifier(node.name) && node.name.text === 'stroke') {
+        const init = node.initializer;
+        if (init && ts.isJsxExpression(init) && init.expression) {
+          const e = init.expression;
+          if (ts.isPropertyAccessExpression(e)) {
+            reached = reached ?? objectLiteralBehind(checker, e.expression);
+          }
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    if (badge) visit(badge);
+    expect(reached, 'the walk no longer reaches TONE — the zero below is the instrument').toBeTruthy();
+  });
+
+  it('⚠️ NO PAINT REACHES A RAW HEX THROUGH A MEMBER EXPRESSION — tree-wide', () => {
+    const found = memberExpressionViolations(program);
+    expect(
+      found,
+      'a raw hex reaches a paint position through an object property:\n  ' + found.join('\n  '),
+    ).toEqual([]);
+  });
+
+  it('✅ FIRES on the shape #304 could not see — a TYPE-ANNOTATED object', () => {
+    // This is `ScoreBadge.tsx` as `main` held it before #304, reduced to its
+    // essentials. The annotation is the whole difficulty: symbol resolution
+    // returns `ToneStyle.stroke: string` and sees no literal at all.
+    expect(
+      synthViolations(`
+        interface ToneStyle { text: string; stroke: string; bg: string; }
+        const TONE: ToneStyle = { text: 'text-teal', stroke: '#0097A7', bg: 'bg-teal-soft' };
+        export const C = () => { const t = TONE; return <circle stroke={t.stroke} />; };
+      `),
+    ).toEqual(["t.stroke -> '#0097A7'"]);
+  });
+
+  it('✅ AND on the un-annotated, aliased and cross-module forms', () => {
+    expect(
+      synthViolations(`
+        const TONE = { stroke: '#0097A7' };
+        export const C = () => <circle stroke={TONE.stroke} />;
+      `),
+    ).toEqual(["TONE.stroke -> '#0097A7'"]);
+    expect(
+      synthViolations(`
+        const A = { stroke: '#0097A7' }; const B = A; const D = B;
+        export const C = () => <circle stroke={D.stroke} />;
+      `),
+    ).toEqual(["D.stroke -> '#0097A7'"]);
+    expect(
+      synthViolations(`
+        const TONE = { stroke: '#0097A7' } as const;
+        export const C = () => <circle stroke={TONE.stroke} />;
+      `),
+    ).toEqual(["TONE.stroke -> '#0097A7'"]);
+  });
+
+  it('⚠️ AND IT RE-DECIDES ITSELF — the same object, with and without a paint use', () => {
+    const decl = `const TONE = { stroke: '#0097A7' };`;
+    expect(
+      synthViolations(`${decl} export const C = () => <div title={TONE.stroke} />;`),
+      'a non-paint use must be acquitted',
+    ).toEqual([]);
+    expect(
+      synthViolations(`${decl} export const C = () => <circle stroke={TONE.stroke} />;`),
+      'the same object, now painted, must be a defect',
+    ).toEqual(["TONE.stroke -> '#0097A7'"]);
+  });
+
+  it('⚠️ ONLY THE ACCESSED PROPERTY COUNTS — a sibling hex is not this paint', () => {
+    // Discriminates the property-NAME guard, which nothing else here does: a
+    // mutation probe dropped that guard and killed no test, because every other
+    // case has exactly one hex property. Without the guard this object would be
+    // reported for `legacy` while the paint reads `stroke` — a false accusation
+    // naming a value the element never renders.
+    expect(
+      synthViolations(`
+        const PALETTE = ['#0097A7'] as const;
+        const TONE = { stroke: PALETTE[0], legacy: '#B45309' };
+        export const C = () => <circle stroke={TONE.stroke} />;
+      `),
+      'a sibling property must not be attributed to this paint',
+    ).toEqual([]);
+    // and the twin that makes it non-vacuous: paint the OTHER property and it
+    // is a defect, so the acquittal above is about the NAME, not about failure.
+    expect(
+      synthViolations(`
+        const PALETTE = ['#0097A7'] as const;
+        const TONE = { stroke: PALETTE[0], legacy: '#B45309' };
+        export const C = () => <circle stroke={TONE.legacy} />;
+      `),
+    ).toEqual(["TONE.legacy -> '#B45309'"]);
+  });
+
+  it('does NOT fire when the property is palette-sourced', () => {
+    expect(
+      synthViolations(`
+        const CHART_SERIES = ['#0097A7'] as const;
+        const TONE = { stroke: CHART_SERIES[0] };
+        export const C = () => <circle stroke={TONE.stroke} />;
+      `),
+    ).toEqual([]);
+  });
+
+  it('⚠️ THE STATED LIMITS ARE MEASURED, NOT CLAIMED — each is CLEAN by design', () => {
+    // A gate that hides its blind spots is worse than no gate. Every one of
+    // these is a shape the walk cannot follow; if one ever starts firing, this
+    // test goes red and the limit note above is what needs editing.
+    expect(
+      synthViolations(`export const C = ({ r }: { r: { color: string } }) => <circle fill={r.color} />;`),
+      'runtime value from props',
+    ).toEqual([]);
+    expect(
+      synthViolations(`
+        const M: Record<string, string> = { a: '#0097A7' };
+        export const C = ({ k }: { k: string }) => <circle stroke={M[k]} />;
+      `),
+      'computed key lookup',
+    ).toEqual([]);
+    expect(
+      synthViolations(`
+        const T = { a: { b: '#0097A7' } };
+        export const C = () => <circle stroke={T.a.b} />;
+      `),
+      'nested member — one property hop by construction',
+    ).toEqual([]);
+    expect(
+      synthViolations(`
+        const BASE = { stroke: '#0097A7' }; const TONE = { ...BASE };
+        export const C = () => <circle stroke={TONE.stroke} />;
+      `),
+      'spread',
+    ).toEqual([]);
+    expect(
+      synthViolations(`
+        const f = () => ({ stroke: '#0097A7' });
+        export const C = () => { const t = f(); return <circle stroke={t.stroke} />; };
+      `),
+      'function return',
+    ).toEqual([]);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
