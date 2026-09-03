@@ -1,4 +1,5 @@
 import React from 'react';
+import { CHART_GRID, CHART_SERIES } from '../../lib/chartPalette';
 
 type Size = 'sm' | 'md' | 'lg';
 type Variant = 'circular' | 'bar';
@@ -23,7 +24,7 @@ interface ToneStyle {
 // reserved for true state elsewhere, not for decorating a 0–100 score.
 const TONE: ToneStyle = {
   text: 'text-teal',
-  stroke: '#0097A7',
+  stroke: CHART_SERIES[0], // teal brand accent — byte-identical, now sourced
   bg: 'bg-teal-soft',
 };
 
@@ -82,7 +83,7 @@ const ScoreBadge: React.FC<ScoreBadgeProps> = ({
             cy={px / 2}
             r={radius}
             fill="none"
-            stroke="#E5E9EE"
+            stroke={CHART_GRID}
             strokeWidth={stroke}
           />
           <circle
