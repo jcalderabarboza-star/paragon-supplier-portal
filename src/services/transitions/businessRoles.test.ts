@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { getKnownFlows, catalogRoles } from './index';
 import {
   SYSTEM_ROLES,
+  TENANCY_ANCHORS,
   AUTOMATION_ATOMS,
   AUTOMATION_ROLE,
   PERSONA_SYSTEM_ROLES,
@@ -56,6 +57,45 @@ describe('THE BUNDLES ARE BILATERAL AGAINST THE CATALOG', () => {
         'to permit; a surface that wants one is asking for a transition (C10 §3.3).\n' +
         invented.join('\n'),
     ).toEqual([]);
+  });
+
+  // ⚠️ **THE UNION IS BLIND TO AN EMPTY BUNDLE, IN BOTH DIRECTIONS, AND THAT IS
+  // A VACUITY RATHER THAN A GAP IN COVERAGE.** Neither assertion above can see a
+  // zero-atom bundle: it contributes no member to `held`, so "nothing invented"
+  // has nothing extra to reject, and it removes no member, so "nothing unheld"
+  // is unaffected. The gate is therefore green whether a bundle holds nothing
+  // BY DESIGN (a tenancy anchor) or holds nothing BY ACCIDENT (a lane emptied by
+  // a bad edit) — two facts one of which is a catastrophe, and the union
+  // literally cannot distinguish them because neither changes the union.
+  //
+  // ⚠️ **AND IT IS NOT HYPOTHETICAL — THERE HAVE BEEN ZERO-ATOM BUNDLES IN THIS
+  // RECORD SINCE THE SUPPLIER ANCHOR LANDED**, unasserted here the whole time.
+  // Adding the buyer anchor doubles the population the union cannot see, which
+  // is what made this worth closing in the batch that created the second one
+  // rather than filing it.
+  //
+  // The close is POSITIVE and bilateral: the empty set must EQUAL the declared
+  // anchors. A lane emptied by accident JOINS that set and turns this red; an
+  // anchor that quietly gains an atom LEAVES it and turns this red. `toEqual` on
+  // two sorted arrays is both directions in one assertion — a `toContain` sweep
+  // would pass on a bundle that emptied itself into the set.
+  it('⚠️ THE ZERO-ATOM BUNDLES ARE EXACTLY THE TENANCY ANCHORS — the union cannot see this', () => {
+    const ids = Object.keys(SYSTEM_ROLES) as SystemRoleId[];
+    const empty = ids.filter((id) => SYSTEM_ROLES[id].length === 0).sort();
+    expect(
+      empty,
+      'A BUNDLE HOLDS NO ATOM AND IS NOT A DECLARED ANCHOR — or a declared\n' +
+        'anchor has gained one. The bilateral union assertions above are BLIND to\n' +
+        'both: an empty bundle changes neither direction. If a LANE is in this\n' +
+        'list, every seat holding it has silently lost its authority.',
+    ).toEqual([...TENANCY_ANCHORS].sort());
+    // Population guard: an anchor set that emptied itself would make the
+    // assertion above `[] === []` — true, and about nothing (§42b).
+    expect(TENANCY_ANCHORS.size, 'the anchor set is empty — nothing was compared').toBeGreaterThan(0);
+    // Known-GOOD control on the same predicate, in the same run: a lane that
+    // genuinely holds atoms must NOT be counted empty (§39).
+    expect(SYSTEM_ROLES.finance.length).toBeGreaterThan(0);
+    expect(empty).not.toContain('finance');
   });
 
   it('every atom in the catalog is held by a bundle or the automation grant', () => {

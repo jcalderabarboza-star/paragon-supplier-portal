@@ -201,6 +201,34 @@ Direct pushes to `main` are not used.
 > NOT built** (§66k): `rolesFromStorage` would silently re-widen such a seat to
 > its whole persona on reload, and that line is the assignment batch's first fix.
 >
+> ⚠️ **THE BUYER SIDE NOW HAS A ⊥, AND THE WALL IT REMOVES WAS NEITHER
+> SUBTRACTION NOR LANE GRANULARITY.** `atomsOfCustomRole` is the UNION and is
+> additive-only by ruling, so the NARROWEST child of a parent is the parent —
+> which means what a side can express bottoms out at its smallest bundle.
+> Measured: the supplier side's smallest was the zero-atom `supplier` anchor, so
+> every supplier atom-set was already exactly constructible; the buyer side's
+> smallest were `finance` and `requisitioner`, so every buyer custom seat carried
+> unrelated authority it could never shed. The remedy is the mirror — one
+> zero-atom `buyer` anchor — and it required **no change to
+> `copyableParentRefusal`, to the additive-only merge rule, or to any lane's
+> membership** (asserted in `buyerAnchor.test.ts`, because an unasserted "it
+> needed none of those" is prose). **Do not restate the lane sizes or the role
+> count here** — derive them from `SYSTEM_ROLES`; the figures above are named as
+> the measurement that motivated the batch, not as a standing tally. It is
+> **OFFERED AND NOT SEEDED**, exactly as `buyer_all` is: §76d's seed collapse is
+> the operator's ruling and this did not pre-empt it.
+>
+> ⚠️ **AND THE BILATERAL CATALOGUE GATE WAS BLIND TO EVERY ZERO-ATOM BUNDLE,
+> WHICH IS A VACUITY RATHER THAN A GAP.** Both directions assert over the UNION
+> of the bundles, and an empty bundle contributes no member to reject and removes
+> none — so the gate read green whether a bundle held nothing BY DESIGN (an
+> anchor) or BY ACCIDENT (a lane emptied by a bad edit). It had been blind since
+> the supplier anchor landed. Closed positively: `TENANCY_ANCHORS` is pinned
+> EQUAL to the derived set of zero-atom bundles, so a lane that empties JOINS it
+> and an anchor that gains an atom LEAVES it, and either is red. Mutation-probed
+> with the union assertion deliberately made trivially true — the anchors
+> assertion is what fires.
+>
 > ⚠️ **`ROUTE-SMOKE-GUARD-IS-SELF-REFERENTIAL-01` (§65a).** `allRoutes.smoke`'s
 > coverage guard asserted its OWN table's length against a hardcoded number and
 > never read `AppRouter` — it could not detect the defect its comment named, and

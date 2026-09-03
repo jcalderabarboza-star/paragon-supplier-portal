@@ -94,6 +94,7 @@ export const ROLE_LABEL_KEY: Readonly<Record<SystemRoleId, string>> = Object.fre
   compliance: 'roles.owner.compliance',
   planning: 'roles.owner.planning',
   requisitioner: 'roles.owner.requisitioner',
+  buyer: 'roles.owner.buyer',
   supplier: 'roles.owner.supplier',
   commercial: 'roles.owner.commercial',
   fulfilment: 'roles.owner.fulfilment',
@@ -120,11 +121,14 @@ export const ROLE_ORDER: readonly SystemRoleId[] = [
   'compliance',
   'planning',
   'requisitioner',
-  // ⚠️ **THE ANCHOR SITS WITH THE SUPERSETS AND FOR THE SAME REASON, ONE STEP
-  // FURTHER.** `supplier` holds no atom, so `rolesHolding` can never return it
-  // — a superset names nothing because it holds everything; the anchor names
+  // ⚠️ **THE ANCHORS SIT WITH THE SUPERSETS AND FOR THE SAME REASON, ONE STEP
+  // FURTHER.** Neither holds an atom, so `rolesHolding` can never return either
+  // — a superset names nothing because it holds everything; an anchor names
   // nothing because it holds nothing. Both are unreachable owner lines, and
-  // both are listed so the record stays total over the union.
+  // both are listed so the record stays total over the union. **`buyer` joins
+  // `supplier` here rather than being special-cased**: the two sides now have
+  // the same shape, and a reader who learns the rule on one side has learned it.
+  'buyer',
   'supplier',
   'commercial',
   'fulfilment',
