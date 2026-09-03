@@ -15,7 +15,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const rolesEn: Record<string, string> = {
-  // — The six system roles, plus the supplier seat —
+  // — The six buyer lanes, the two tenancy anchors, the three supplier lanes
+  //   and the two wide seats. —
+  // ⚠️ A CAPITALISED NOUN for the same reason `roles.owner.supplier` is one:
+  //   this key heads a catalogue card AND fills "Awaiting {{owner}}". The
+  //   anchor can never actually reach the handoff line — `rolesHolding`
+  //   cannot return a role that holds nothing — but the key is shaped like
+  //   its neighbours so the next reader is not told two rules.
+  'roles.owner.buyer': 'Buyer',
   'roles.owner.procurement': 'Procurement',
   'roles.owner.receiving': 'Receiving',
   'roles.owner.finance': 'Finance',
@@ -106,6 +113,14 @@ export const rolesEn: Record<string, string> = {
   'roles.page.noMatch': 'No role matches that search.',
   // — Descriptions. Prose, authored: the permissions stay derived, and a list
   //   with no description is a list nobody can scan. —
+  // ⚠️ **THE BUYER ANCHOR'S ROW, HELD TO THE SAME HONESTY AS THE SUPPLIER
+  //   ONE BELOW.** It grants nothing and gates nothing, and it must say so:
+  //   tenancy is enforced on `personaType` in the SCOPE gate, two gates
+  //   before roles are read. What it adds is the one thing this side did
+  //   not have — a parent a narrow custom role can be built UP from, rather
+  //   than a lane it has to be widened OUT of.
+  'roles.desc.buyer':
+    'Names the buyer side and grants nothing on its own. The buyer’s acts live in six lanes — Procurement, Receiving, Finance, Compliance, Planning and Requisitioner — and a seat holds this alongside whichever lanes it works in. Held by itself it is a buyer seat with no lane assigned: it can read, and it can act on nothing. Tenancy is not enforced by this role; a buyer seat reaches every supplier’s documents whichever lanes it holds. Its use is as a starting point: a custom role copied from it holds exactly the permissions added to it, and nothing else.',
   'roles.desc.procurement': 'Sourcing, awards, orders and contracts. Runs RFQs end to end and approves requisitions.',
   'roles.desc.receiving': 'The dock. Receives goods, runs inspection and disposition, and posts the receipt to SAP.',
   'roles.desc.finance': 'Accounts payable. Releases payment, disputes an invoice and resolves the dispute.',
@@ -227,6 +242,7 @@ export const rolesEn: Record<string, string> = {
 };
 
 export const rolesId: Record<string, string> = {
+  'roles.owner.buyer': 'Pembeli',
   'roles.owner.procurement': 'Pengadaan',
   'roles.owner.receiving': 'Penerimaan',
   'roles.owner.finance': 'Keuangan',
@@ -283,6 +299,8 @@ export const rolesId: Record<string, string> = {
   'roles.page.kpi.actions': 'Tindakan yang diatur',
   'roles.page.search': 'Cari peran berdasarkan nama atau kode…',
   'roles.page.noMatch': 'Tidak ada peran yang cocok dengan pencarian itu.',
+  'roles.desc.buyer':
+    'Menandai sisi pembeli dan tidak memberikan izin apa pun dengan sendirinya. Tindakan pembeli berada di enam jalur — Pengadaan, Penerimaan, Keuangan, Kepatuhan, Perencanaan dan Pemohon — dan sebuah kursi memegang peran ini bersama jalur tempat ia bekerja. Bila dipegang sendiri, kursi tersebut adalah kursi pembeli tanpa jalur: bisa membaca, tidak bisa bertindak. Batas tenansi tidak ditegakkan oleh peran ini; kursi pembeli menjangkau dokumen setiap pemasok, jalur apa pun yang dipegangnya. Gunanya sebagai titik awal: peran khusus yang disalin darinya memegang tepat izin yang ditambahkan kepadanya, dan tidak lebih.',
   'roles.desc.procurement': 'Pengadaan, pemenangan, pesanan dan kontrak. Menjalankan RFQ dari awal hingga akhir dan menyetujui permintaan pembelian.',
   'roles.desc.receiving': 'Dermaga. Menerima barang, menjalankan inspeksi dan disposisi, serta memposting penerimaan ke SAP.',
   'roles.desc.finance': 'Utang usaha. Merilis pembayaran, menyengketakan faktur dan menyelesaikan sengketa.',

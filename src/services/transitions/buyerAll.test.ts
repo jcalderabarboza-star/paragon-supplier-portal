@@ -144,10 +144,18 @@ describe('⚠️ HOLDABLE, AND NOT SEEDED — the split the ruling required', ()
     // Direction 2: at least one offerable role is UNSEEDED — otherwise the two
     // constants are the same list wearing two names, and the next edit quietly
     // re-merges them.
+    // ⚠️ **TWO ROLES ARE OFFERED-AND-UNSEEDED NOW, AND THE SECOND ARRIVED HERE
+    // BEFORE ANYBODY EDITED THIS LINE** — the buyer tenancy anchor. That is this
+    // assertion working: it is pinned to the exact SET rather than to "at least
+    // one", so widening the offer cannot happen silently. Sorted on both sides
+    // because the offer's declaration order is a display decision (`buyer`
+    // leads, mirroring the supplier row) and this assertion is about MEMBERSHIP;
+    // pinning it to the literal order would redden on a re-order that changes
+    // nothing about what a seat may hold.
     const unseeded = (PERSONA_SYSTEM_ROLES.buyer as readonly string[]).filter(
       (r) => !(SEEDED_SEAT_ROLES.buyer as readonly string[]).includes(r),
     );
-    expect(unseeded).toEqual(['buyer_all']);
+    expect([...unseeded].sort()).toEqual(['buyer', 'buyer_all']);
   });
 
   it('it is on the BUYER side, so it collapses no tenancy answer', () => {

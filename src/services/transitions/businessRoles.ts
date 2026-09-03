@@ -61,6 +61,7 @@ export type SystemRoleId =
   | 'compliance'
   | 'planning'
   | 'requisitioner'
+  | 'buyer'
   | 'supplier'
   | 'commercial'
   | 'fulfilment'
@@ -101,6 +102,38 @@ export type BusinessRoleId = string;
  * one-sided one would ship looking like a working gate (§39).
  */
 const LANE_BUNDLES = Object.freeze({
+    // ── ⚠️ THE BUYER TENANCY ANCHOR, AND IT DELIBERATELY HOLDS NOTHING ──────
+    //
+    // **THE MIRROR OF `supplier` BELOW, FOR THE REASON THAT SIDE ALREADY HAS
+    // ONE**, and it is the ⊥ of the buyer half of the lattice rather than a new
+    // idea. A custom role is `{ parent, adds }` and the merge rule is the UNION
+    // (`atomsOfCustomRole`) — additive only, by ruling, with no subtraction
+    // anywhere. So the NARROWEST expressible child of a parent is the parent
+    // itself, and what a side can express bottoms out at its smallest bundle.
+    //
+    // ⚠️ **MEASURED, WHICH IS WHY THIS EXISTS:** the supplier side's smallest
+    // parent holds ZERO atoms (this anchor's twin), so every supplier atom-set
+    // is exactly constructible as `anchor + adds`. The buyer side's smallest
+    // parents were `finance` and `requisitioner` at THREE each, so every buyer
+    // custom seat carried at least three atoms of unrelated authority —
+    // *"review an application"* was only reachable as a widening of an invoice
+    // or requisition lane. **The wall was not subtraction and not lane
+    // granularity; it was that this side had no bottom.** Re-cutting the lanes
+    // finer would have been role-per-distinction, which C10 §4.1 refuses.
+    //
+    // ⚠️ **AND IT NAMES THE SIDE WITHOUT GATING IT — the same honesty the
+    // supplier row is held to.** `personaType` is what the dispatcher's tenancy
+    // branches read; no code tests `businessRoles` membership to decide a side.
+    // So this is the id `sideOfSystemRole` reads, the copy parent a narrow seat
+    // starts from, and a holdable seat that says *buyer, no lane assigned*
+    // rather than leaving that state nameless. **An honest anchor beats a false
+    // gate**, and the description on `/buyer/roles` says which.
+    //
+    // ⚠️ **IT IS OFFERED BUT NOT SEEDED**, exactly as `buyer_all` is: the demo
+    // buyer seat still opens holding all six lanes. Seeding this would change
+    // what a seat opens with, and §76d's seed collapse is the operator's
+    // ruling, not this batch's.
+    buyer: Object.freeze([] as readonly TransitionRole[]),
     // Sourcing, orders and contracting — operator ruling: "award, sourcing,
     // orders stay procurement". Holds `pr:approve`/`pr:reject` because C10 §3.4
     // FORBIDS an `approver` role that carries approve-anything: approval
@@ -490,9 +523,33 @@ export function atomsFor(roles: readonly BusinessRoleId[]): readonly TransitionR
 export const PERSONA_SYSTEM_ROLES: Readonly<
   Record<'buyer' | 'supplier', readonly SystemRoleId[]>
 > = Object.freeze({
-  buyer: Object.freeze([...BUYER_LANE_IDS, 'buyer_all'] as readonly SystemRoleId[]),
+  // ⚠️ **THE ANCHOR LEADS, MIRRORING THE SUPPLIER ROW** — narrowest first, so a
+  // catalogue reader meets the role that grants nothing before the ones that
+  // grant something, and the two sides read the same way round.
+  buyer: Object.freeze(['buyer', ...BUYER_LANE_IDS, 'buyer_all'] as readonly SystemRoleId[]),
   supplier: Object.freeze(['supplier', ...SUPPLIER_LANE_IDS] as readonly SystemRoleId[]),
 });
+
+/**
+ * ⚠️ **THE ZERO-ATOM ROLES, NAMED — AND THIS CONSTANT EXISTS TO CLOSE A
+ * VACUITY, NOT TO DOCUMENT ONE.**
+ *
+ * The bilateral catalogue gate in `businessRoles.test.ts` asserts over the UNION
+ * of every bundle: nothing invented, nothing unheld. **A zero-atom bundle is
+ * invisible to both directions** — it contributes no member to be checked and
+ * removes none, so the gate is green whether an anchor holds nothing (intended)
+ * or a LANE has been emptied to nothing (a silent catastrophe). The union
+ * direction cannot tell those apart, because neither changes the union.
+ *
+ * So the emptiness is pinned POSITIVELY and bilaterally instead: the set of
+ * zero-atom bundles must EQUAL this set. A lane emptied by accident joins it and
+ * turns the gate red; an anchor that quietly gains an atom leaves it and turns
+ * the gate red. Neither failure is expressible as "nothing is wrong".
+ */
+export const TENANCY_ANCHORS: ReadonlySet<SystemRoleId> = new Set<SystemRoleId>([
+  'buyer',
+  'supplier',
+]);
 
 /**
  * ⚠️ **WHAT A SEAT HOLDS WHEN IT OPENS — AND `buyer_all` IS DELIBERATELY NOT IN
