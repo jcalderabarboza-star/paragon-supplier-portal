@@ -30,11 +30,38 @@ import { dirname, join } from 'node:path';
 //   `SupplierWhatsApp.tsx`, which declares no `TOKEN_*` const, so that row
 //   asserted nothing either.
 //
+// ── ⚠️ AND REWRITTEN AGAIN (2026-09-03) — THE THIRD POPULATION ──────────────
+//   The 2026-09-02 rewrite derived two populations and left a THIRD asking how
+//   a const was SPELLED. Its sentence, quoted rather than deleted:
+//
+//     > //   Both populations DERIVE, so each RE-DECIDES ITSELF: the day a page
+//     > //   starts rendering a chart it is guarded, with nobody editing this file.
+//
+//   True of both populations it names, and blind to the matcher between them:
+//   `RAW_HEX_TOKEN_CONST` required `TOKEN_[A-Z_]+`, so `BuyerRisk.tsx`'s four
+//   page-local hex consts — `continent` · `continentStroke` · `accent` ·
+//   `accentStroke`, feeding SIXTEEN paint positions — were invisible, and this
+//   gate was green. **A matcher narrower than its own subject**, in the file
+//   rewritten to stop exactly that.
+//
+//   ⚠️ **AND THE SECOND POPULATION WAS THE SAME CONVENTION IN A HAT.**
+//   `tokenConstPages()` selected "files declaring a `const TOKEN_[A-Z_]+`", so
+//   widening only the MATCHER would still not have reached a page whose colour
+//   const is spelled `continent`. Both halves are retired together; what
+//   replaces them keys on REACHABILITY (see the structural rule below).
+//
+//   ⚠️ **WIDENING THE SPELLING WOULD HAVE BEEN THE WRONG FIX** — `any-name + hex`
+//   accuses six messenger-chrome consts that never touch paint. Narrowing and
+//   widening are the two ways one matcher is wrong; the exit is to stop asking
+//   about names.
+//
 // ── THE SHAPE NOW ───────────────────────────────────────────────────────────
-//   Both populations DERIVE, so each RE-DECIDES ITSELF: the day a page starts
-//   rendering a chart it is guarded, with nobody editing this file. The residue
-//   the widening exposed is not fixed here (each is its own ruling) — it is
-//   PINNED, bilaterally, on the `storedFieldGate/allowlist.ts` precedent.
+//   ONE derived population (pages that render charts) and ONE structural rule
+//   over it, so the gate RE-DECIDES ITSELF in both directions: a page that
+//   starts rendering a chart is guarded, and a hex const becomes a defect the
+//   day a paint position consumes it — with nobody editing this file. The
+//   residue is not fixed here (each is its own ruling) — it is PINNED,
+//   bilaterally, on the `storedFieldGate/allowlist.ts` precedent.
 //
 //   ⚠️ **BILATERAL MEANS SET EQUALITY, NOT CONTAINMENT.** Two failures, not one:
 //     · an UNLISTED violation      → a new raw hex entered a chart;
@@ -62,16 +89,38 @@ const IMPORTS_RECHARTS = /from\s*['"]recharts['"]/;
 /** A raw 3/6-digit hex assigned to a fill/stroke prop or style key. */
 const RAW_HEX_IN_PAINT = /\b(fill|stroke)\s*[=:]\s*['"{`]*\s*#[0-9A-Fa-f]{3,6}\b/g;
 
-/** A `TOKEN_*` const declared as a raw hex literal (what Commit 2 eliminated). */
-const RAW_HEX_TOKEN_CONST = /const\s+TOKEN_[A-Z_]+\s*=\s*['"]#[0-9A-Fa-f]{3,6}/g;
-
 /** Files whose charts this gate governs — DERIVED, never listed. */
 const chartPages = (): string[] => pageFiles().filter((f) => IMPORTS_RECHARTS.test(read(f))).sort();
 
-/** Files that declare a `TOKEN_*` colour const — DERIVED, never listed. */
-const tokenConstPages = (): string[] =>
-  pageFiles()
-    .filter((f) => /const\s+TOKEN_[A-Z_]+/.test(read(f)))
+/** A hex-valued binding — ANY identifier, ANY case, any scope. */
+const HEX_BINDING = /(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*['"](#[0-9A-Fa-f]{3,8})['"]/g;
+
+/** A paint position CONSUMING an identifier: `fill={X}` / `stroke={X}` / `stopColor={X}`. */
+const PAINT_CONSUMES = /\b(?:fill|stroke|stopColor)\s*=\s*\{\s*([A-Za-z_$][\w$]*)\s*\}/g;
+
+/**
+ * ⚠️ THE STRUCTURAL RULE, and the reason it replaced a naming convention:
+ * **a hex-valued binding is a defect IFF some paint position consumes it.**
+ *
+ * Reachability, not spelling — the `moduleScopeLiteralGate` discriminator applied
+ * to colour. It RE-DECIDES ITSELF: the day someone writes `fill={WHATSAPP_BG}`,
+ * that const becomes a defect with nobody editing this file; the day the last
+ * paint use goes, it stops being one. That is the property a marker or an
+ * allowlist cannot have.
+ */
+const consumedHexBindings = (src: string): { name: string; hex: string }[] => {
+  const bound = new Map<string, string>();
+  for (const m of src.matchAll(HEX_BINDING)) bound.set(m[1], m[2]);
+  const consumed = new Set([...src.matchAll(PAINT_CONSUMES)].map((m) => m[1]));
+  return [...bound]
+    .filter(([name]) => consumed.has(name))
+    .map(([name, hex]) => ({ name, hex }));
+};
+
+/** Every hex binding that reaches paint across the governed pages, as `file::name`. */
+const indirectViolations = (): string[] =>
+  chartPages()
+    .flatMap((f) => consumedHexBindings(read(f)).map((v) => `${f}::${v.name} = '${v.hex}'`))
     .sort();
 
 /** Every distinct raw-hex paint value across the chart pages, as `file::match`. */
@@ -143,7 +192,6 @@ describe('⚠️ DP2-PALETTE-01 · THE INSTRUMENT ITSELF', () => {
       <Bar style={{ fill: '#abcdef' }} />
     `;
     expect(bad.match(RAW_HEX_IN_PAINT) ?? []).toHaveLength(3);
-    expect(`const TOKEN_GRID = '#E5E9EE'`.match(RAW_HEX_TOKEN_CONST) ?? []).toHaveLength(1);
   });
 
   it('does NOT fire on palette-sourced paint — the acquittal half', () => {
@@ -154,7 +202,7 @@ describe('⚠️ DP2-PALETTE-01 · THE INSTRUMENT ITSELF', () => {
       <Bar style={{ fill: TARGET_STATUS.meeting.fill }} />
     `;
     expect(good.match(RAW_HEX_IN_PAINT) ?? []).toEqual([]);
-    expect(good.match(RAW_HEX_TOKEN_CONST) ?? []).toEqual([]);
+    expect(consumedHexBindings(good)).toEqual([]);
   });
 
   it('does NOT fire on a hex that is not in a paint position', () => {
@@ -174,11 +222,13 @@ describe('⚠️ DP2-PALETTE-01 · THE INSTRUMENT ITSELF', () => {
     expect(charts).not.toContain('BuyerNotAChartPage.tsx');
     expect(charts).not.toContain('BuyerInventory.tsx');
 
-    const tokens = tokenConstPages();
-    expect(tokens).toContain('BuyerScorecard.tsx');
-    // the stale row on the second hand list: it declares no TOKEN_* const.
-    expect(tokens).not.toContain('SupplierWhatsApp.tsx');
-    expect(tokens).not.toContain('BuyerNotAChartPage.tsx');
+    // ⚠️ THE SECOND POPULATION IS GONE, NOT WIDENED. It was `tokenConstPages()`
+    // — "files declaring a `const TOKEN_[A-Z_]+`" — which is the SAME naming
+    // convention as the retired matcher, wearing a different hat: a page whose
+    // colour const is spelled `continent` was never even in the population, so
+    // widening only the matcher would still not have reached it. The structural
+    // rule runs over the CHART population, which is derived from behaviour.
+    expect(charts).toContain('BuyerRisk.tsx');
   });
 
   it('⚠️ AND THE DERIVATION READS THE TREE, not a cached list', () => {
@@ -250,16 +300,68 @@ describe('DP2-PALETTE-01 — no raw hex in chart paint props', () => {
   });
 });
 
-describe('DP2-PALETTE-01 — TOKEN_* consts derive from the central palette', () => {
-  it('every TOKEN_*-declaring page is governed, derived from source', () => {
-    const pages = tokenConstPages();
-    expect(pages.length).toBeGreaterThan(0);
-    for (const file of pages) expect(read(file)).toMatch(/const\s+TOKEN_[A-Z_]+/);
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ THE INDIRECT HALF — a hex that reaches paint through an IDENTIFIER.
+//
+//   The matcher this replaced was `/const\s+TOKEN_[A-Z_]+\s*=\s*['"]#…/` — a
+//   NAMING CONVENTION, and therefore silent by construction about anything that
+//   does not follow it. Measured before the replacement: `BuyerRisk.tsx` held
+//   FOUR page-local hex consts (`continent` · `continentStroke` · `accent` ·
+//   `accentStroke`) feeding SIXTEEN paint positions, and the gate was green.
+//
+//   ⚠️ **A MATCHER NARROWER THAN ITS OWN SUBJECT.** The file already derived its
+//   other two populations; this one asked how a const was SPELLED.
+//
+//   ⚠️ **AND WIDENING THE SPELLING WOULD HAVE BEEN THE WRONG FIX.** `any-name +
+//   hex` accuses `SupplierWhatsApp.tsx`'s six messenger-chrome consts, which are
+//   CSS chrome and never touch a paint position — false accusations, which is
+//   what widening buys when narrowing was the diagnosis. They are acquitted here
+//   BY CONSTRUCTION, not by an exemption row: nothing paints with them.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('⚠️ DP2-PALETTE-01 · A HEX BINDING THAT REACHES PAINT', () => {
+  it('✅ FIRES on a lowercase const consumed by a paint position', () => {
+    const bad = `const continent = '#F4F6F8';\n<path fill={continent} />`;
+    expect(consumedHexBindings(bad)).toEqual([{ name: 'continent', hex: '#F4F6F8' }]);
   });
 
-  for (const file of tokenConstPages()) {
-    it(`${file} declares no raw-hex TOKEN_* const (sourced from chartPalette)`, () => {
-      expect(read(file).match(RAW_HEX_TOKEN_CONST) ?? []).toEqual([]);
+  it('⚠️ AND IT RE-DECIDES ITSELF — the same const, with and without a paint use', () => {
+    // The property an allowlist cannot have, proven on ONE binding by removing
+    // ONLY its paint use. Nothing about the declaration changes.
+    const decl = `const chrome = '#075E54';`;
+    expect(consumedHexBindings(`${decl}\n<div style={{ background: chrome }} />`)).toEqual([]);
+    expect(consumedHexBindings(`${decl}\n<path stroke={chrome} />`)).toEqual([
+      { name: 'chrome', hex: '#075E54' },
+    ]);
+  });
+
+  it('does NOT fire on a palette-sourced binding, however it is spelled', () => {
+    const good = `const MAP_LAND = MAP_BASE.land;\n<path fill={MAP_LAND} />`;
+    expect(consumedHexBindings(good)).toEqual([]);
+  });
+
+  it("⚠️ SupplierWhatsApp's chrome consts are ACQUITTED BY CONSTRUCTION", () => {
+    // Not an exemption — a measurement. They are hex, they are page-local, and
+    // no paint position consumes them. If one ever does, this file says so with
+    // nobody editing it. Asserted on the real file, not a synthetic string.
+    const chrome = read('SupplierWhatsApp.tsx');
+    expect(chrome, 'the control is vacuous if the consts have gone').toMatch(
+      /const WHATSAPP_BG = '#/,
+    );
+    expect(consumedHexBindings(chrome)).toEqual([]);
+  });
+
+  it('⚠️ NO HEX BINDING REACHES PAINT IN ANY GOVERNED PAGE', () => {
+    const found = indirectViolations();
+    expect(
+      found,
+      'a raw hex reaches a chart paint position through an identifier:\n  ' +
+        found.join('\n  '),
+    ).toEqual([]);
+  });
+
+  for (const file of chartPages()) {
+    it(`${file} routes every paint identifier through the palette`, () => {
+      expect(consumedHexBindings(read(file))).toEqual([]);
     });
   }
 });
