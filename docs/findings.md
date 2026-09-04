@@ -21754,17 +21754,32 @@ dispatched moments earlier, so `mayReach` returns true and **nothing a user sees
 moves**. Proved by bundle A/B rather than asserted — every asset pair resolved,
 in the batch report.
 
-⚠️ **ONE BEHAVIOURAL DELTA EXISTS AND IT IS RECORDED RATHER THAN FIXED:**
-`BuyerInvoices`' settle RETRY reads `watch.correlationId` from component state,
-and **component state outlives the seat** (§84's rule, arriving from a new
-direction). A user who switches persona in the identity panel with the retry
-still pending would, after this batch, get `null` where they previously got a
-settlement — and the mutation resolves through `onSuccess`, not `onError`, so
-**no toast fires and the retry silently no-ops.** That is the gate working
-correctly (a supplier must not release a buyer's payment) presenting as a dead
-end, which is the `HALAL-REFUSAL-DEAD-ENDS-01` shape one layer out. It is filed,
-not built: the honest surface for it is a refusal the user can read, and that is
-a surface batch with a locale pass, not a rider on a gate.
+⚠️ **CORRECTED 2026-09-04 AT §90 — THE PARAGRAPH THAT STOOD HERE WAS WRONG IN
+BOTH HALVES, AND IT IS RETIRED RATHER THAN EDITED.** It read:
+
+> *"`BuyerInvoices`' settle RETRY reads `watch.correlationId` from component
+> state, and **component state outlives the seat** … A user who switches persona
+> in the identity panel with the retry still pending would, after this batch, get
+> `null` where they previously got a settlement — and the mutation resolves
+> through `onSuccess`, not `onError`, so **no toast fires and the retry silently
+> no-ops.**"*
+
+Measured: the **mechanism is false** — `IdentityPanel` changes ROLES, which the
+gate deliberately ignores; the real persona toggle lives in `SidebarV2` and
+`navigate()`s away, unmounting the page and the state with it; and with the
+navigation removed in a harness the scoped read drops the invoice anyway, so the
+affordance that spends the correlationId is gated by the same tenancy the gate
+checks. The **consequence is false too, and in the opposite direction** — a
+`null` is not silent, it fires a SUCCESS toast naming an FI document that does
+not exist.
+
+⚠️ **THIS IS WHY §70 SAYS A MECHANISM MEASURED FALSE MUST NOT STAND: the wrong
+mechanism named the wrong control, so a batch acting on it would have gone
+looking at `IdentityPanel` and found nothing to fix.** The true finding is the
+opposite shape and sharper — the refusal is not unheard, it is *congratulated* —
+and it is `SETTLE-NULL-RENDERS-AS-SUCCESS-01`, §90, now CLOSED. What survives
+from the paragraph above is only its instinct that something here needed a
+surface; it was right about that and wrong about everything it said next.
 
 ### §89i · What shipped
 
@@ -21785,3 +21800,174 @@ a surface batch with a locale pass, not a rider on a gate.
 - **`ICommandService`, `IDataService` and C1's method table are byte-identical.**
   The scope parameter was never missing from the contract; it was missing from
   the interface underneath, which is why an SE team's reading does not change.
+
+---
+
+## §90 · `SETTLE-NULL-RENDERS-AS-SUCCESS-01` — the refusal the surface congratulated the user for (2026-09-04)
+
+**CLOSED.** One PR. `commandHooks.ts` converts a `null` settle into a classified
+refusal; `settleNullIsNotSuccess.test.tsx` holds it both ways.
+
+### §90a · The dispatch's premise, and both halves of it inverting
+
+The batch was dispatched from §89h: *"switch persona with a retry pending and the
+gate correctly returns null … no toast, silent no-op … the surface has no way to
+say so."* Measured today, **the mechanism is false and the consequence is worse
+than filed** — two independent errors in one paragraph, and they fail in opposite
+directions, which is why neither covered for the other.
+
+| §89h claimed | Measured |
+|---|---|
+| the seat changes *"in the identity panel"* | ⚠️ **FALSE.** `IdentityPanel` sets `businessRoles` only (`:132`), and `mayReach` deliberately ignores roles. It **cannot** produce a refusal. |
+| component state outlives the seat, so the retry survives | ⚠️ **FALSE, TWICE OVER AND INDEPENDENTLY.** The real control is `SidebarV2`'s persona toggle, which calls `setIdentity` and then `navigate('/supplier/dashboard')` — the page UNMOUNTS and `settleWatch` dies with it. And with the navigation removed in a harness, the flip *still* kills the affordance, because the scoped read drops the invoice from the list: the button that spends the correlationId is gated by the same tenancy the gate checks. |
+| the 1200 ms timer path is exposed | ⚠️ **FALSE.** The `setTimeout` closure outlives unmount, but `mutationFn` captured the ISSUING scope, so it settles. Walked in the browser: released, switched persona at +250 ms, returned — `Pembayaran Dirilis`, `FI-5100011001`. |
+| *"no toast fires and the retry silently no-ops"* | ⚠️ **NOT SILENT — THE OPPOSITE.** See §90b. |
+
+**So `null` is unreachable at all four call sites today.** Its only producer is a
+tenancy mismatch (`owners` is permanent, so idempotent re-settles keep their
+owner, and no surface lets a caller supply an id it did not receive — measured at
+§89c and unchanged).
+
+⚠️ **AND THAT IS WHY THE BATCH SHIPPED ANYWAY, WHICH IS THE PART WORTH KEEPING.**
+The trigger being unreachable says nothing about what the surface does when the
+answer arrives — and `settle` is documented on `ICommandService` as the Phase-3
+settlement **webhook**, where `null` for "no such command" is routine rather than
+exotic. The defect below is latent today and live the moment that adapter lands.
+
+### §90b · What the surfaces actually did with `null`, measured
+
+`settle` resolves to `CommandStatus | null`. `null` is a **resolution**, not a
+rejection — so TanStack ran `onSuccess`, and every call site toasts its success
+string there. Forced `settle → null`, nothing else changed:
+
+| Surface | Store after | What the user was told |
+|---|---|---|
+| `BuyerInvoices` | `Releasing Payment`, `paymentRef: null` | *"INV-2025-GIV-0892 — payment released · SAP assigned the FI document on settlement."* |
+| `BuyerGoodsReceipt` | `Posting to SAP`, `sapMaterialDoc: undefined` | *"GR-2026-003 posted to SAP · SAP assigned the material document on settlement."* |
+
+⚠️ **A FALSE SUCCESS NAMING A DOCUMENT SAP NEVER ASSIGNED — the exact law-0.6
+claim the whole Option-B boundary exists to prevent**, arriving through the one
+door that boundary does not watch. And on the retry path it is worse again:
+`onSuccess` also runs `clearSettle(invoiceId)`, so the remedy is REMOVED at the
+same moment the false claim is made.
+
+⚠️ **THE GENERAL FORM, AND IT IS THE FINDING:
+`A-NULLABLE-RETURN-IS-A-REFUSAL-THE-SUCCESS-PATH-CANNOT-SEE-01`.** Every guard in
+this tree that refuses by THROWING is surfaced, because a throw has somewhere to
+go. #307 deliberately chose to refuse by RETURNING `null` (ruling 1: "not yours"
+and "does not exist" must be the same answer), and that decision is still right —
+but it routed a refusal into the success path, where the only handler is a
+congratulation. **Choosing a quiet refusal kind at the seam obliges you to name
+its consumer at the surface**; #307 did the first half.
+
+### §90c · The fix is at the hook, and the argument was already in the file
+
+`useSettleErrorToast`'s own comment says it lives on the mutation *"so a fourth
+settle call site cannot be silent by omission."* A `null` each site had to
+remember to check reinstates precisely the shape that comment retired — so the
+conversion goes in the same place. One change reaches all four sites
+(`BuyerInvoices` ×2, `BuyerGoodsReceipt`, `GRInspectionWizard`).
+
+⚠️ **`ICommandService` IS BYTE-IDENTICAL. AGAIN.** The seam still returns
+`CommandStatus | null`; what changed is that the HOOK stops treating `null` as an
+outcome worth congratulating. The permission-to-stop on the mutation's return
+contract was measured and does not fire.
+
+⚠️ **THE CODE IS `NOT_FOUND`, AND `SCOPE_DENIED` WOULD HAVE UNDONE #307.** Both
+classify `REFUSED` (`DISPATCHER_THROWN_CODES`), so the rendered outcome is
+identical either way — but the wire value would then CLAIM a distinction this
+boundary cannot make and must not appear to make. Ruling 1's collision is
+preserved on purpose, and `M3` below is what keeps it that way.
+
+### §90d · The copy already existed, in both locales — derived, not written
+
+The dispatch asked for new EN/ID copy naming what happened, and proposed *"the
+command was issued under a different seat and this one cannot settle it."*
+
+⚠️ **THAT SENTENCE IS REFUSED, AND THE REASON IS RULING 1.** It asserts the
+command EXISTS and belongs to someone else — the existence oracle #307 closed,
+moved out of the refusal KIND and into the refusal TEXT. A quiet `null` beside a
+loud explanation is the same disclosure with better manners.
+
+What shipped instead is nothing: `settle.failed.REFUSED` has existed since §43 and
+already does the job in both locales —
+
+> *"A governing rule refused the settlement. The document is unchanged and still
+> awaiting settlement — asking again gives the same refusal."*
+> *"Sebuah aturan yang mengatur menolak penyelesaian. Dokumen tidak berubah dan
+> masih menunggu penyelesaian — meminta lagi menghasilkan penolakan yang sama."*
+
+It names the cause, the document's state and the futility of asking again, and
+discloses nothing. `REFUSED` is not retryable, so no retry button is offered —
+the honest disposition, and it falls out of the existing table rather than being
+decided again. **Checkable in the bundle:** both locales' strings occur 2× in
+`main` and 2× in the branch, so the claim "no new copy" is measured, not asserted.
+
+### §90e · Probe — three mutants, both directions, all killed and named
+
+| Mutant | Result | Named kill |
+|---|---|---|
+| **M1** conversion deleted (pre-fix behaviour) | RED | *invoice: the surface does NOT claim payment released…* (+3) |
+| **M2** refuse EVERY settle | RED | *invoice: release → settle mints a REAL payment reference…* (+2) |
+| **M3** `NOT_FOUND` → `SCOPE_DENIED` | RED | *mutateAsync REJECTS with NOT_FOUND on a null settle* |
+
+**M2 is the whole point.** A fix that refused every settle satisfies every
+refusal assertion in the file; only the known-good suite separates it from the
+real one, which is why that suite asserts the POSITIVE artifact — a real
+`PAY-…` / `MAT-DOC-…` — and never the absence of an error.
+
+`commandHooks.ts` restored byte-identical: sha256
+`2dbba74b03ee69acac5653f21a2f0ad94e12a7c31444e2beb643b3d08b0d5a81`, git blob
+`d13e00bf5cf69ab649d52301188a71dc599198f8` (working-copy bytes, 1390 CRLF / 0
+bare LF; the blob id is what a reader on another platform can recompute).
+
+⚠️ **The CRLF trap fired again and the abort caught it again.** Anchors are built
+from the file's MEASURED line ending; #307's LF-joined anchors matched zero times
+and the probe ABORTED rather than reporting three survivors. That abort-on-
+non-unique-anchor rule has now paid for itself twice.
+
+### §90f · The population guard is derived from the CALL SITES, not from the fix
+
+§86's rule, applied without being asked: the fix lives in `commandHooks.ts`, so a
+population derived by asking that file's behaviour would collapse together with
+the assertions under a mutation — red on its own control, with the real assertion
+never executing. The spec reads the three call-site files' own SOURCE instead,
+which no change to the hook can reach, and carries a known-false control
+(`BuyerRequisitions.tsx` must NOT match) in the same run.
+
+⚠️ **AND NO CARDINALITY IS PINNED.** An earlier draft asserted `toHaveLength(4)`.
+That reddens the day a legitimate FIFTH settle site is added *through the hook* —
+an improving tree failing its own guard, which is how a floor becomes a number
+people edit. The invariant asserted is the one that matters: **every settle mutate
+site routes through the hook, and none reaches `commands.settle(` directly.**
+
+### §90g · Browser QA — both locales, and the sequence that could not be staged
+
+`vite preview`, innerWidth 2415 @ dpr 0.667, **zero console errors**.
+
+| Walk | Locale | Result |
+|---|---|---|
+| release → settle | **EN** (`htmlLang=en`) | `INV-2025-GIV-0892` → **Payment Released**, `FI-5100011001`, Released 5→6, Overdue 5→4 |
+| release → settle | **ID** (`htmlLang=id`, *Faktur & Pembayaran*) | `INV-2025-EVO-0188` → **Pembayaran Dirilis**, `FI-5100011002`, Dirilis 6→7, Jatuh Tempo 4→3 |
+| release → **switch persona at +250 ms** → return | ID | page unmounted to `#/supplier/dashboard`; invoice **settled anyway** — `FI-5100011001` |
+
+⚠️ **THE REFUSAL ITSELF CANNOT BE STAGED IN A BROWSER, AND THAT IS STATED RATHER
+THAN WORKED AROUND** — for the same reason `GRInspectionWizard`'s settle cannot
+(pre-existing halal/BPOM block, proved pre-existing at #307). `null` has no
+reachable producer, so the refusal render is covered BY SPEC and named here. What
+the browser proves is the direction that carries this batch's real regression
+risk: **a normal settle still completes, in both locales.**
+
+**Bundle A/B** — 13 assets each, paired by normalised CONTENT hash (name-keying
+collapses the two `index-` chunks). **12 of 13 identical**, including every page
+chunk and both stylesheets. One app chunk differs: **+171 bytes** on 2.54 MB.
+Delta measured bilaterally by runtime signature: `NOT_FOUND` 3→4, the new throw's
+message 0→1; controls unmoved — `Payment Released` 29→29, `Posted to SAP` 16→16,
+`toLocaleString` 27→27, and both locales' REFUSED strings 2→2.
+
+### §90h · What is NOT built, and is not a rider
+
+The wizard's `catch` sets `settled = false` and then shows **nothing** — a settle
+fault there is silent at the surface even now, because the hook's toast is the
+only thing that speaks. That was true before this batch and is unchanged by it;
+what changed is that the branch is now reachable at all. Filed, not built.
