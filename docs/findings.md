@@ -21248,6 +21248,47 @@ a cross-tenancy read of command status, a DIFFERENT defect from this one, on a
 different path. Named here because this census is where it surfaced; **not
 touched, and it wants its own batch** rather than a rider on this one.
 
+⚠️ **CORRECTED 2026-09-04 BY THE BATCH THAT TOOK IT (§89). THE TWO FACTS HELD;
+THE CONSEQUENCE DID NOT, AND IT WAS WRONG IN BOTH DIRECTIONS AT ONCE.** The
+sentence retired is quoted rather than deleted, because what it got wrong is the
+useful part:
+
+> *"That is a cross-tenancy read of command status, a DIFFERENT defect from this
+> one, on a different path."*
+
+- **"cross-tenancy" is not supported.** `CommandStatus` is four fields —
+  `correlationId`, `transitionId`, `status`, `ts` — deliberately narrower than
+  the `CommandResult` declared immediately above it, which *does* carry
+  `entityId` and `reason`. **Nothing in the response names a tenant.** Two
+  suppliers' invoice releases are byte-identical in it. What a guessed id
+  discloses is existence, verb, outcome and timestamp; §86's oracle answered
+  *"does row X exist for supplier Y"*, and there is no Y here. The entry
+  borrowed the severity of the finding it was filed beside.
+- **"a read" understated the other half, and that half is the batch.**
+  `settle` is not a read. It runs `settleFinalize`, which advances an invoice to
+  `Payment Released` and mints an FI document, a payment reference and a payment
+  date; it emits its DR-10 event under `ctx.scope`, the ORIGINATING scope, so an
+  ungated settle records a stranger's act **against the issuer's name**; and its
+  fall-through `return current ?? null` is a strict SUPERSET of the read oracle.
+  It was the only state-advancing path in this tree behind no gate of any kind.
+- **And the reachability was never measured, in either direction.**
+  `getCommandStatus` has **zero callers** outside its own declaration —
+  derived with a control at 66 on `commands.dispatch(` — so the read oracle is
+  theoretical rather than merely hard to reach. `settle` has four, all passing
+  an id the same session just received; no route param, storage read or input
+  feeds either method (probe empty, control 12).
+
+**The general shape, and it is why this correction is worth its space:
+A FINDING FILED AS A RIDER INHERITS THE SEVERITY OF ITS HOST.** §86h was
+written in the closing minutes of a batch about a cross-tenancy existence
+oracle, so the adjacent thing was written up as one — the phrase arrived from
+the paragraph above it, not from a measurement. The two hard facts were checked;
+the sentence that classified them was not. `FALSE-MECHANISM-MUST-NOT-BE-FILED-01`
+(§70) governs a mechanism measured false; this is its neighbour — **a mechanism
+never measured, filed with a classification borrowed from context** — and the
+disposal is the same: re-measure, then state the true finding, which was the
+opposite shape and sharper. Filed as `RIDER-INHERITS-ITS-HOSTS-SEVERITY-01`.
+
 ### §86i · ⚠️ `CLAUDE.md` CITES THREE REGISTER SECTIONS THAT WERE NEVER FILED
 
 Derived while looking for §85 to extend it. **`docs/findings.md` ends at §82.
@@ -21515,3 +21556,232 @@ neither pin SHA is written in the contract it pins (C9 names `2dd7f7f` as its
 code-truth, C10 names `df585c5`, while the commits that landed them are
 `af7f0b4` and `dc8e774` — two commits answering two different questions, and a
 gate must pick one).
+
+## §89 · `settle` GETS A GATE, AND THE READ RETURNS `null` — the finding that was filed as the wrong half of itself (2026-09-04)
+
+**Dispatched from §86h.** The hypothesis carried into this batch, stated by the
+strategist and **refused on measurement before a line was written**: a supplier
+could read the status of a command it did not issue, because `getCommandStatus`
+ignores its scope and correlation ids are sequential. Both facts are true. The
+conclusion is not, and the thing standing next to it is bigger.
+
+### §89a · The hypothesis, measured — and it fails in both directions
+
+| Claim as dispatched | Measured |
+|---|---|
+| the two methods ignore their scope | **CONFIRMED**, and structurally: `MockCommandService` named the parameter `_scope` because the `Dispatcher` interface beneath it **took no scope at all**. Nothing could have been forwarded. |
+| correlation ids are sequential | **CONFIRMED and denser than filed.** `let seq = 0` at module scope; `` `cmd_${(++seq).toString(36).padStart(4,'0')}` ``; no reset anywhere; a module singleton, so one counter and one `statuses` map serve every tenancy for the life of the realm. |
+| "a cross-tenancy read of command status" | ⚠️ **NOT SUPPORTED.** `CommandStatus` is four fields and **names no tenant** — see §86h's correction. |
+| — | ⚠️ **NOT FILED AT ALL: `settle` is a WRITE.** |
+
+⚠️ **AND THE THIRD ANSWER, WHICH THE DISPATCH DID NOT ASK FOR AND WHICH DECIDES
+THE SEVERITY: THE IDS ARE NOT MERELY GUESSABLE, THEY ARE PRINTED.** Nine i18n
+strings interpolate `{{correlationId}}` into a success toast, in EN and ID —
+`po.confirm.success.desc`, `asn.create/submit`, `gr.create/dispose`,
+`invoice.create/submit/dispute/resolve`, plus `settle.failed.ref`. A supplier who
+confirms one PO reads the counter's current position off their own screen. **No
+search is involved**, which is a different and worse property than "guessable by
+counting" — and it is the reason a stated limit was rejected as the remedy: no
+honest limit statement could have said the disclosure channel was closed.
+
+### §89b · What was actually there
+
+`settle(correlationId)`, ungated by anything:
+
+- **It mutates stores.** `settleFinalize` advances a goods receipt to
+  `Posted to SAP` with a minted material document, and an invoice to
+  `Payment Released` with a minted FI document, payment reference and **today's
+  date** — the exact claim law 0.6 exists to stop being made before it is true.
+- **It records under a third party's name.** `emit(ctx.scope, …)` carries the
+  ORIGINATING scope, by design (§43 chose that over inventing a `system:sap`
+  actor). Correct for a settlement; catastrophic without a gate, because a
+  stranger's act is then attributable to the issuer.
+- **It is a strict superset of the read oracle.** Its last line is
+  `return current ?? null`, which discloses a `CommandStatus` for any id whose
+  command is not `submitted`. Gating only the mutation would have left the WRITE
+  door telling callers what the READ door had just stopped telling them.
+
+Every other state-advancing path in this tree passes role, scope and legality.
+**This one passed nothing.** Three gates upstream of `dispatch`, zero upstream of
+`settle`.
+
+### §89c · Reachability, measured in both directions — and it is theoretical
+
+Stated plainly rather than dressed up, because the remedy's justification is the
+contract and not an incident:
+
+- `getCommandStatus` has **zero callers**. The only non-test occurrences are its
+  own declaration, its own delegation, and the closure's return statement.
+  Control: `commands.dispatch(` → **66**.
+- `settle` has **four**, all on buyer surfaces, every one passing an id the same
+  session received from its own `CommandResult`: `GRInspectionWizard` (from
+  `postRes`), `BuyerGoodsReceipt` and `BuyerInvoices` (from `res`), and
+  `BuyerInvoices`' retry (from component state written from that same `res`).
+- **No door exists for a caller-supplied id.** Probe over `useParams`,
+  `useSearchParams`, `localStorage`, `sessionStorage`, `.value`, `input`,
+  `prompt(` against every `correlationId` site → **empty**; control
+  `res.correlationId` → **12**.
+- **And no read can harvest one** — the #296 question, asked because that is how
+  the conformance factory acquires its entities. `correlationId` appears on no
+  read DTO; `commandAuditSink` is a module export with zero non-test consumers
+  and is not on `IDataService`. Unlike #296's invoices, where `lifecycleState`
+  on a list read handed the factory an entity, **there is no read half here to
+  harvest.** The only disclosure channel is the toast on your own act.
+
+**So the gate is built for the seam, not for an incident.** The mock is the
+reference implementation an SE team reads before writing `httpDataService`,
+where `settle` becomes a network-reachable endpoint and the correlation id
+becomes a request parameter. Shipping a reference implementation that discards
+the scope teaches the adapter to do the same.
+
+### §89d · Ruling 1 — the refusal is `null`, and the reason inverts §86
+
+A foreign scope gets `null`, never `SCOPE_DENIED`. **`CommandStatus | null`
+already returns `null` for "no such command", and that collision IS the
+remedy.** A loud refusal would rebuild on the read path precisely what §86 closed
+on the write path — an existence oracle by refusal KIND, answering a question
+the caller was not entitled to ask, while wearing a security control's clothes.
+
+It is made checkable rather than asserted. `#not-a-refusal` in
+`settleScopeGate.test.ts` asserts that nothing throws **and** that a real foreign
+id is `toEqual` an id that was never minted — an EQUALITY, not two separate
+`toBeNull()`s, because the point is that the two questions have one answer. A
+third test asserts an unminted id is `null` for the ISSUER too, so the equality
+is not doing zero work.
+
+### §89e · Ruling 2 — the machine grant expresses it WITHOUT being widened
+
+The precondition the operator attached to ruling 2 (*if `AUTOMATION_ROLE` cannot
+express this without being widened, stop and report*) was measured first. It does
+not fire, and the measurement is the interesting part:
+
+- `AUTOMATION_ROLE = 'automation'` is a bare string constant, **kept out of
+  `SystemRoleId` on purpose** so it can never be assigned to a person: no
+  `SYSTEM_ROLES` entry, no catalogue row, no assignment. `businessRoles.test.ts`
+  pins all three, and `customRoles.ts` refuses it by name.
+- ⚠️ **`AUTOMATION_ATOMS` holds NEITHER `gr:post` NOR `invoice:pay`** — derived,
+  and those are the requiredRoles of the only two `sapBoundary` verbs in the
+  tree. **So this arm grants nothing `atomsFor` would grant.** The gate reads
+  `AUTOMATION_ROLE` as a **caller-identity marker**, exactly as
+  `dispatcher.ts`'s cascade fan-out already reads it, and not as an atom grant.
+  Nothing about the role vocabulary moves; a second site reads the same marker.
+
+⚠️ **AND THE HONEST FORM IS A DISJUNCTION, NOT THE SINGLE ARM THE RULING NAMED
+— WHICH THE RULING'S OWN PROBE SPEC ALREADY REQUIRED.** Ruling 2 says *gates on
+a machine grant, not the issuer*; the mutation probe it ordered says *make the
+gate refuse the LEGITIMATE issuer and confirm the four real call sites' tests
+fire*. Both cannot hold under a machine-grant-only gate: the four shipped call
+sites are UI mutations under a human buyer scope, and a machine-only gate refuses
+every one of them. The two sentences are consistent under exactly one reading —
+**machine grant OR issuing tenancy** — and that is what shipped:
+
+1. **The machine grant.** `ICommandService` documents `settle` as the SAP
+   callback: *"Phase-3 implements it as the integration webhook."* A webhook does
+   not run under the issuing user's scope, so an issuer-only gate would make the
+   contract's own stated implementation impossible.
+2. **The issuing tenancy.** `personaType` + `supplierId` — **the boundary this
+   dispatcher already enforces**, not a new notion of identity. Deliberately NOT
+   `businessRoles` equality: a seat's roles change mid-session by design, so a
+   role-sensitive comparison would refuse a caller its own command after a
+   narrowing.
+
+### §89f · The side map, and why reusing `pending` would have looked like it worked
+
+`statuses.set` records no scope. `pending` records one — **but only for
+`outcome === 'submitted'`, and it is `delete`d on a successful settle.** Reading
+the owner off `pending` fails twice, silently:
+
+- every `done` and every `failed` command has no entry, so the gate would have
+  had no owner for the overwhelming majority of commands, and *"no owner ⇒
+  allow"* is the gate not existing;
+- the entry evaporates at exactly the moment a settled command becomes
+  interesting to read back, so a command would flip from scoped to unscoped.
+
+So: a third map, `owners`, written in `finish()` — the single mint point, since
+`deps.nextCorrelationId()` is called nowhere else — which is what makes *every*
+outcome recorded. Two maps, two jobs: `pending` is WHAT TO FINALIZE and is
+consumed; `owners` is WHO MAY LOOK and is permanent.
+
+### §89g · The probe — four mutants, both directions, and two instrument failures on the way
+
+`dispatcher.ts` · baseline `sha256 b285f369f7bb7d6584640a62bcb23bdbbeefb452017128f7d199b7e8b6460523` ·
+`git hash-object d1f218decc2c279d1315d650b43cd4b2a15be645` (working-copy bytes,
+CRLF; the blob id is the normalized figure a reader on another platform can
+recompute). Every mutant restored to a byte-identical sha256.
+
+| Mutant | Direction | Result | Named kill (never a parsed count, §51) |
+|---|---|---|---|
+| **M1** gate deleted from `settle` | the door opens | **RED** | *a FOREIGN settle does not advance the entity and does not mint a ref* (+4) |
+| **M2** gate refuses EVERYONE | the door shuts on everyone | **RED** | *release → Releasing Payment (no ref) → settle → Payment Released (real ref)*, *post holds submitted at Posting to SAP … settle assigns the real MAT-DOC*, *mixed quantities → derived Partially Approved → posted → ASN discrepancy cascade* (+11) |
+| **M3** gate deleted from the read | the read door opens | **RED** | *a FOREIGN read returns null* (+2) |
+| **M4** `supplierId` dropped from the comparison | tenancy blind | **RED** | *one supplier cannot reach another supplier's command* |
+
+⚠️ **M2 IS THE ONE THAT MATTERS AND IT IS THE ONE A ONE-DIRECTIONAL PROBE WOULD
+NOT HAVE RUN.** A gate that closes the door on everyone passes every "foreign
+caller is refused" assertion. What kills it is the shipped call sites' own
+tests — which is why the KNOWN-GOOD arms are the first three tests in the file
+and every refusal below is counted against them.
+
+⚠️ **AND THE INSTRUMENT FAILED TWICE BEFORE IT MEASURED ANYTHING, BOTH IN THE
+DOCUMENTED FAMILY, BOTH TOWARD "YOUR GATE IS WEAK".**
+
+- **The CRLF trap (§85 / the standing note), caught by an abort rather than by a
+  green run.** The first probe's multi-line anchors were joined with `\n`; the
+  working copy is **758 CRLF, 0 bare LF**, so all three anchors matched **zero**
+  times. The probe printed `anchor occurrences = 0 → ABORT` instead of mutating
+  nothing and reporting a survivor. **That abort is the load-bearing design
+  detail**: a probe that treats a non-unique or absent anchor as fatal cannot
+  produce the silent-no-mutation reading this repo is prone to. The line ending
+  was then MEASURED and the anchors rebuilt from it, never assumed.
+- **`cp1252`, on the ENCODE side this time — a new member of §85's family.**
+  §85 records that decoding vitest's UTF-8 through the console codepage *throws*
+  and every kill reads as *"not named"*. The fix (bytes + explicit `utf-8`) was
+  in place from the first run. The failure came from the **other end**: Python's
+  `stdout` is `cp1252` here, so **printing** a test name containing an em-dash
+  threw, and the traceback landed **inside the kill list**, rendering as a
+  finding. Both halves of a subprocess boundary need the explicit encoding, and
+  a probe that only fixes the read half is half-fixed.
+- **And §51f fired as predicted.** The first kill-name matcher found nothing on
+  a mutant that had killed five tests, because vitest's `×` sits inside an ANSI
+  sequence. Stripping the formatting before parsing is what recovered the names.
+  **All three failures point the same way — "the gate is weak" — which is the
+  reading that gets believed because it sounds like the humble one.**
+
+### §89h · What the browser sees, and the one delta that is real
+
+The four settle call sites all pass `useScope()`, which is the identity that
+dispatched moments earlier, so `mayReach` returns true and **nothing a user sees
+moves**. Proved by bundle A/B rather than asserted — every asset pair resolved,
+in the batch report.
+
+⚠️ **ONE BEHAVIOURAL DELTA EXISTS AND IT IS RECORDED RATHER THAN FIXED:**
+`BuyerInvoices`' settle RETRY reads `watch.correlationId` from component state,
+and **component state outlives the seat** (§84's rule, arriving from a new
+direction). A user who switches persona in the identity panel with the retry
+still pending would, after this batch, get `null` where they previously got a
+settlement — and the mutation resolves through `onSuccess`, not `onError`, so
+**no toast fires and the retry silently no-ops.** That is the gate working
+correctly (a supplier must not release a buyer's payment) presenting as a dead
+end, which is the `HALAL-REFUSAL-DEAD-ENDS-01` shape one layer out. It is filed,
+not built: the honest surface for it is a refusal the user can read, and that is
+a surface batch with a locale pass, not a rider on a gate.
+
+### §89i · What shipped
+
+- `dispatcher.ts` — `Dispatcher.getCommandStatus` / `settle` take a `QueryScope`;
+  `owners` map written in `finish()`; `mayReach` with both arms; the gate placed
+  ABOVE `settle`'s fall-through, not around its mutation.
+- `MockCommandService.ts` — both underscores deleted, the scope forwarded;
+  `settleCommand` noted as the zero-consumer export it is.
+- `settleScopeGate.test.ts` — 13 tests: an upstream-derived population control,
+  three KNOWN-GOOD arms first, the write door, the fall-through, cross-supplier,
+  and `#not-a-refusal`.
+- 17 call sites across three dispatcher specs updated to pass the issuer's scope
+  — **enumerated by `tsc`, not by a grep**, which is the derivation that cannot
+  miss one.
+- `C3-events.md` — the arity line, plus what the gate answers and why it is
+  `null`. C3 stays unpinned; the divergence stays in the register (§88).
+- `findings.md` §86h — corrected in place, retired sentence quoted.
+- **`ICommandService`, `IDataService` and C1's method table are byte-identical.**
+  The scope parameter was never missing from the contract; it was missing from
+  the interface underneath, which is why an SE team's reading does not change.

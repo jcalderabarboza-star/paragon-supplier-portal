@@ -72,7 +72,7 @@ describe('dispatcher — legality, role, fields, scope, policy (Step 3.4)', () =
     expect(events).toHaveLength(1);
     expect(events[0]).toMatchObject({ outcome: 'done', actor: 'supplier:sup-007', correlationId: res.correlationId });
     // Command status is readable back.
-    expect(d.getCommandStatus(res.correlationId)?.status).toBe('done');
+    expect(d.getCommandStatus(supA, res.correlationId)?.status).toBe('done');
   });
 
   it('rejects an illegal transition (wrong from-state)', () => {

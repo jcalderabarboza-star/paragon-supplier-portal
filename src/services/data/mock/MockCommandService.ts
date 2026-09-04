@@ -2043,7 +2043,14 @@ const dispatcher = createDispatcher({
   settleFinalize,
 });
 
-/** Settle a `submitted` command to `done` (Step 3.5 SAP settlement hook). */
+/**
+ * Settle a `submitted` command to `done` (Step 3.5 SAP settlement hook).
+ * Now `(scope, correlationId)` — it is `dispatcher.settle` by reference, so it
+ * carries the gate. **Derived: it has zero consumers** (`grep settleCommand`
+ * returns only this line), so the arity change costs nothing; it is kept
+ * because deleting an unused export is a different batch's call, not this
+ * batch's rider.
+ */
 export const settleCommand = dispatcher.settle;
 
 export class MockCommandService implements ICommandService {
@@ -2059,17 +2066,21 @@ export class MockCommandService implements ICommandService {
     return dispatcher.dispatch(scope, input, causationId);
   }
 
+  // ── THE TWO UNDERSCORES ARE GONE, AND THEY WERE THE HONEST MARKER OF THE
+  //    DEFECT RATHER THAN THE DEFECT ITSELF ────────────────────────────────
+  // `_scope` said truthfully "this implementation drops the scope". It dropped
+  // it because `Dispatcher` had nowhere to put it — the interface beneath took
+  // no scope at all, so nothing could have been forwarded. `ICommandService`
+  // has always handed both methods a `QueryScope`; the seam an SE team reads
+  // was right the whole time and is untouched by this batch.
   async getCommandStatus(
-    _scope: QueryScope,
+    scope: QueryScope,
     correlationId: string,
   ): Promise<CommandStatus | null> {
-    return dispatcher.getCommandStatus(correlationId);
+    return dispatcher.getCommandStatus(scope, correlationId);
   }
 
-  async settle(
-    _scope: QueryScope,
-    correlationId: string,
-  ): Promise<CommandStatus | null> {
-    return dispatcher.settle(correlationId);
+  async settle(scope: QueryScope, correlationId: string): Promise<CommandStatus | null> {
+    return dispatcher.settle(scope, correlationId);
   }
 }

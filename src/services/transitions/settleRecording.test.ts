@@ -85,7 +85,7 @@ describe('§43 — the settlement is a recorded event', () => {
     // One event so far — the submission.
     expect(sink.byEvent('t_sbox_post')).toHaveLength(1);
 
-    d.settle(res.correlationId);
+    d.settle(SCOPE, res.correlationId);
 
     const events = sink.byEvent('t_sbox_post');
     expect(events.map((e) => e.outcome)).toEqual(['submitted', 'done']);
@@ -101,16 +101,16 @@ describe('§43 — the settlement is a recorded event', () => {
   it('records even with NO settleFinalize registered — the act happened either way', () => {
     const { d, sink } = wire();
     const res = post(d);
-    d.settle(res.correlationId);
+    d.settle(SCOPE, res.correlationId);
     expect(sink.byEvent('t_sbox_post').map((e) => e.outcome)).toEqual(['submitted', 'done']);
   });
 
   it('is idempotent and does NOT double-record', () => {
     const { d, sink } = wire();
     const res = post(d);
-    d.settle(res.correlationId);
-    d.settle(res.correlationId);
-    d.settle(res.correlationId);
+    d.settle(SCOPE, res.correlationId);
+    d.settle(SCOPE, res.correlationId);
+    d.settle(SCOPE, res.correlationId);
     expect(sink.byEvent('t_sbox_post')).toHaveLength(2);
   });
 
@@ -124,7 +124,7 @@ describe('§43 — the settlement is a recorded event', () => {
       ran += 1;
     });
     const res = post(d);
-    d.settle(res.correlationId);
+    d.settle(SCOPE, res.correlationId);
     expect(ran).toBe(1);
   });
 
@@ -136,7 +136,7 @@ describe('§43 — the settlement is a recorded event', () => {
       });
       const res = post(d);
 
-      expect(() => d.settle(res.correlationId)).toThrow(boom);
+      expect(() => d.settle(SCOPE, res.correlationId)).toThrow(boom);
 
       const events = sink.byEvent('t_sbox_post');
       expect(events.map((e) => e.outcome)).toEqual(['submitted', 'failed']);
@@ -150,7 +150,7 @@ describe('§43 — the settlement is a recorded event', () => {
         throw new Error("flow 'sbox' is already registered");
       });
       const res = post(d);
-      expect(() => d.settle(res.correlationId)).toThrow(/already registered/);
+      expect(() => d.settle(SCOPE, res.correlationId)).toThrow(/already registered/);
       expect(sink.byEvent('t_sbox_post')[1].reason).toBe('UNGOVERNED:Error');
     });
 
@@ -159,7 +159,7 @@ describe('§43 — the settlement is a recorded event', () => {
         throw new DataError('NOT_FOUND', 'gone');
       });
       const res = post(d);
-      expect(() => d.settle(res.correlationId)).toThrow();
+      expect(() => d.settle(SCOPE, res.correlationId)).toThrow();
       expect(sink.byEvent('t_sbox_post')[1].reason).toBe('REFUSED:NOT_FOUND');
     });
 
@@ -181,12 +181,12 @@ describe('§43 — the settlement is a recorded event', () => {
       });
       const res = post(d);
 
-      expect(() => d.settle(res.correlationId)).toThrow();
-      expect(d.getCommandStatus(res.correlationId)?.status).toBe('submitted');
+      expect(() => d.settle(SCOPE, res.correlationId)).toThrow();
+      expect(d.getCommandStatus(SCOPE, res.correlationId)?.status).toBe('submitted');
       expect(rows.get('s-1')!.status).toBe('Posting');
 
       // The remedy, exercised.
-      const settled = d.settle(res.correlationId);
+      const settled = d.settle(SCOPE, res.correlationId);
       expect(settled?.status).toBe('done');
       expect(rows.get('s-1')!.status).toBe('Posted');
       expect(rows.get('s-1')!.ref).toBe('REF-1');
