@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { useDataService } from '../data/DataServiceContext';
 import { useToast } from '../../hooks/useToast';
 import { classifySettleFault } from '../transitions/settleFaults';
+import { DataError } from '../data/types';
 import { useCurrentIdentity } from '../../context/CurrentIdentityContext';
 import { scopeKey } from './useServiceQuery';
 import type { BidCurrency } from '../../lib/currencyPolicy';
@@ -45,6 +46,58 @@ function useScope(): QueryScope {
     businessRoles: identity.businessRoles,
     actor: identity.actor,
   };
+}
+
+// ── §90 · A `null` SETTLE IS A REFUSAL THAT TRAVELLED BY RETURN ─────────────
+//
+// ⚠️ **AND EVERY SURFACE READ IT AS SUCCESS.** `settle` resolves to
+// `CommandStatus | null`, and `null` is a legitimate RESOLUTION rather than a
+// rejection — so TanStack ran `onSuccess`, and all four call sites toast their
+// success string there. MEASURED, with `settle` forced to `null` and nothing
+// else changed:
+//
+//   · BuyerInvoices     → store `Releasing Payment`, `paymentRef: null`, toast
+//     *"INV-2025-GIV-0892 — payment released · SAP assigned the FI document on
+//     settlement."*
+//   · BuyerGoodsReceipt → store `Posting to SAP`, `sapMaterialDoc: undefined`,
+//     toast *"GR-2026-003 posted to SAP · SAP assigned the material document on
+//     settlement."*
+//
+// **That is the law-0.6 claim the whole Option-B boundary exists to prevent** —
+// the surface names a document SAP never assigned. It is NOT a silent no-op;
+// silence would have been the milder defect.
+//
+// ⚠️ **THE FIX IS HERE AND NOT AT THE CALL SITES, FOR THE REASON THE HANDLER
+// BELOW ALREADY GIVES.** `useSettleErrorToast` was put on the mutation precisely
+// so *"a fourth settle call site cannot be silent by omission"*; a `null` that
+// each site had to remember to check reinstates exactly the shape that comment
+// retired. One conversion here reaches all four.
+//
+// ⚠️ **THE CODE IS `NOT_FOUND`, AND `SCOPE_DENIED` WOULD HAVE UNDONE #307.** The
+// dispatcher answers `null` for *"no such command"* AND for *"not yours"*
+// deliberately — that collision IS the remedy, because a distinguishing refusal
+// is an existence oracle by refusal KIND. This boundary cannot tell the two
+// apart and **must not appear to**, so it raises the code naming the only thing
+// it actually knows: nothing reachable came back. Both codes classify `REFUSED`
+// (`DISPATCHER_THROWN_CODES`), so the rendered outcome is identical either way —
+// the choice is about what the wire value CLAIMS, not about what the user sees.
+//
+// `REFUSED` is not retryable, which is the honest disposition: a governed answer
+// does not change on a second ask. No new copy: `settle.failed.REFUSED` already
+// names the rule, the document's unchanged state and the futility of asking
+// again, in EN and ID both.
+async function settleOrRefuse(
+  settle: (scope: QueryScope, correlationId: string) => Promise<CommandStatus | null>,
+  scope: QueryScope,
+  correlationId: string,
+): Promise<CommandStatus> {
+  const status = await settle(scope, correlationId);
+  if (status === null) {
+    // Diagnostic only — the surface renders `settle.failed.REFUSED`, and
+    // `settleFaultDetail` reads the CODE, never this string.
+    throw new DataError('NOT_FOUND', 'settle returned no reachable command status');
+  }
+  return status;
 }
 
 // ── §43 · THE SETTLE FAILURE SURFACE ────────────────────────────────────────
@@ -655,8 +708,9 @@ export function useGoodsReceiptSettle() {
   const invalidate = useInvalidateProcurement();
   const onSettleError = useSettleErrorToast();
 
-  return useMutation<CommandStatus | null, Error, { correlationId: string }>({
-    mutationFn: ({ correlationId }) => svc.commands.settle(scope, correlationId),
+  return useMutation<CommandStatus, Error, { correlationId: string }>({
+    mutationFn: ({ correlationId }) =>
+      settleOrRefuse((sc, cid) => svc.commands.settle(sc, cid), scope, correlationId),
     onSuccess: () => invalidate(scope),
     onError: onSettleError,
   });
@@ -810,8 +864,9 @@ export function useInvoiceSettlePayment() {
   const invalidate = useInvalidateProcurement();
   const onSettleError = useSettleErrorToast();
 
-  return useMutation<CommandStatus | null, Error, { correlationId: string }>({
-    mutationFn: ({ correlationId }) => svc.commands.settle(scope, correlationId),
+  return useMutation<CommandStatus, Error, { correlationId: string }>({
+    mutationFn: ({ correlationId }) =>
+      settleOrRefuse((sc, cid) => svc.commands.settle(sc, cid), scope, correlationId),
     onSuccess: () => invalidate(scope),
     onError: onSettleError,
   });
