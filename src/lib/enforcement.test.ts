@@ -659,6 +659,14 @@ describe('E1 — ⚠️ HEADLESS. NO STORE, NO CONSUMER, NO CLOCK', () => {
     const suites = referencing.filter((p) => /\.test\.tsx?$/.test(p));
     expect(suites).toEqual([
       '/src/components/v2-features/GRInspectionWizard.test.tsx',
+      // ⚠️ §91 — the wizard's COMPLETION path, which had no spec at all until
+      // this batch: `GRInspectionWizard.test.tsx` stops at the quality step. It
+      // consumes `EnforcementSetting` as a TYPE, for the empty ledger the wizard
+      // requires as a prop — the same `EMPTY_LEDGER` the suite above renders
+      // under, so the two agree on what an un-seeded gate does. Typing it
+      // `never[]` would have kept this census green while consuming the surface
+      // in spirit, which is the trade this list refuses. Authorised by §91.
+      '/src/components/v2-features/wizardSettleSpeaks.test.tsx',
       // ⚠️ Matches on `getEnforcementSettings` — the E4 end-to-end spec that
       // proves the ledger reaches the gate through the real read rather than a
       // prop. That spec exists because the wizard's own suite could not tell a

@@ -21965,9 +21965,243 @@ Delta measured bilaterally by runtime signature: `NOT_FOUND` 3→4, the new thro
 message 0→1; controls unmoved — `Payment Released` 29→29, `Posted to SAP` 16→16,
 `toLocaleString` 27→27, and both locales' REFUSED strings 2→2.
 
-### §90h · What is NOT built, and is not a rider
+### §90h · ⚠️ RETRACTED AT §91 — MEASURED FALSE, AND THE PARAGRAPH IS KEPT
 
-The wizard's `catch` sets `settled = false` and then shows **nothing** — a settle
-fault there is silent at the surface even now, because the hook's toast is the
-only thing that speaks. That was true before this batch and is unchanged by it;
-what changed is that the branch is now reachable at all. Filed, not built.
+**The text below stood here from 2026-09-04 until §91 measured it the same day.
+It is quoted rather than deleted, per `FALSE-MECHANISM-MUST-NOT-BE-FILED-01`
+(§70): a retracted blocker has to stay legible, because the next batch needs to
+see what it was told and why the telling was wrong.**
+
+> *"The wizard's `catch` sets `settled = false` and then shows **nothing** — a
+> settle fault there is silent at the surface even now, because the hook's toast
+> is the only thing that speaks. That was true before this batch and is unchanged
+> by it; what changed is that the branch is now reachable at all. Filed, not
+> built."*
+
+⚠️ **THE LOAD-BEARING HALF IS FALSE. THE WIZARD SPEAKS**, and it says the right
+thing. Driven end to end through the real component with `settle` forced to
+`null`, the surface renders *"Settlement did not complete — A governing rule
+refused the settlement. The document is unchanged and still awaiting settlement —
+asking again gives the same refusal. Reference cmd_0008."* The measurement, the
+mechanism and the one finding that survives it are in §91.
+
+⚠️ **AND THE SENTENCE CONTRADICTED ITSELF IN ITS OWN SECOND CLAUSE** — *"shows
+nothing … because the hook's toast is the only thing that speaks"* asserts a
+speaker and a silence in one breath. It was written from the SHAPE of a bare
+`catch {}` without reading the four comment lines directly above it, which name
+the consumer exactly: *"the settle's OWN failure is surfaced (classified, with
+its remedy) by the mutation's onError."* That comment was true, and checkable in
+one command.
+
+---
+
+## §91 · `WIZARD-SETTLE-CATCH-IS-NOT-A-SWALLOW-01` — the filed defect measured false, and the one that was really there (2026-09-04)
+
+**CLOSED as filed.** One PR. No behavioural change ships: the deliverable is the
+GATE (`wizardSettleSpeaks.test.tsx`, 11 specs) plus one corrected comment. The
+bundle is **byte-identical to `main`, 13 of 13 assets, +0 bytes** — proved, not
+asserted, and it is the cleanest possible statement that this batch cannot
+regress a surface.
+
+⚠️ **THIS IS THE SECOND CONSECUTIVE BATCH DISPATCHED FROM A FINDING THIS SEAT
+WROTE, AND THE SECOND IN WHICH THE FINDING INVERTED ON MEASUREMENT.** §89h at
+§90, §90h here. The register's rule about not inheriting a list now has a twin
+that is sharper and more uncomfortable: **do not inherit your own finding
+either.** A finding written by the seat that will execute it is the one least
+likely to be re-measured, because the seat remembers writing it and remembers
+being careful.
+
+### §91a · (a) What the `catch` catches, what `settled = false` does, and what the user sees
+
+Measured, not read. The wizard driven to completion on a real dock source with
+`settle` forced to `null`, nothing else changed:
+
+| | Measured |
+|---|---|
+| the toast the user gets | *"Settlement did not complete — A governing rule refused the settlement. The document is unchanged and still awaiting settlement — asking again gives the same refusal. Reference cmd_0008."* |
+| the false success | **absent** — no *"posted to SAP"*, no *"assigned the material document"* |
+| the outer handler's sentence | **absent** — no *"Not authorized"* |
+| the store | no GR in `Posted to SAP` without a material document |
+
+**The mechanism, and it is the whole answer:** TanStack runs the mutation-level
+`onError` BEFORE `mutateAsync`'s promise rejects. `useSettleErrorToast` is on the
+mutation, so the classified refusal is already on screen by the time the `catch`
+body executes. All `settled = false` does is **suppress the success toast** —
+which is the correct thing to do, since the material document does not exist.
+
+⚠️ **AND THE `catch` IS DOING A SECOND JOB THAT NOTHING ELSE CAN DO.** Without
+it the rejection reaches the wizard's OUTER handler, whose sentence is
+*"Not authorized"* — a confidently WRONG cause attached to a settlement fault.
+Probed directly (`M2`): delete the `try/catch` and the user is told they lack
+permission for a command that was accepted. **So the `catch` is not a swallow;
+it is a fault-domain boundary**, and the register accused it of the opposite.
+
+**The defect as filed is narrower than filed. It is empty.**
+
+### §91b · (b) Reachability — the sentence is half right, and the half it gets wrong is the operative one
+
+`settleOrRefuse` (§90/#308) converts a `null` settle into a thrown
+`DataError('NOT_FOUND')`. Before that, `null` RESOLVED, so:
+
+| | Producer that reaches the wizard's `catch` |
+|---|---|
+| **pre-#308** | only a THROW out of `svc.commands.settle` — i.e. `deps.settleFinalize` throwing, which `dispatcher.ts` documents as unreachable in this tree (*"every store `update` is a `rows.map` no-op on a missing id"*). **No reachable producer at all.** |
+| **post-#308** | the above, PLUS `null` — from `mayReach` refusing, or an unknown correlation id. |
+
+⚠️ **SO A PRODUCER PATH GENUINELY APPEARED WHERE THERE WAS NONE — AND IT IS
+STILL NOT REACHABLE IN THE RUNNING APP**, because §90 measured that `null` itself
+has no producer at any of the four call sites today. The filed sentence
+(*"now REACHABLE in a way it was not before #308"*) is true STRUCTURALLY and
+false OPERATIONALLY, and it stated only the half that sounds urgent. The honest
+form: **the branch is now constructible, and goes live the day the Phase-3
+settlement webhook lands** — which is exactly the same latency §90 shipped under,
+and the reason both batches were worth doing before the adapter arrives.
+
+⚠️ **AND #308's OWN FIX WAS NEVER MEASURED AT THIS SITE.** §90's spec covered
+`BuyerInvoices` and `BuyerGoodsReceipt` behaviourally and the wizard only through
+a bespoke driver component. Mutant `M3` (delete the conversion) now fires three
+named wizard specs — so the third call site's claim to be covered by the
+hook-level fix is finally a measurement rather than an inference.
+
+### §91c · (c) The population — site-local, and structurally so
+
+Derived over the whole settle path, not just the call sites:
+
+| File | `catch` in the settle path |
+|---|---|
+| `GRInspectionWizard.tsx` | **2** — the settle `catch` (:1604) and the outer one (:1629) |
+| `BuyerGoodsReceipt.tsx` | **0** |
+| `BuyerInvoices.tsx` | **0** |
+| `commandHooks.ts` | **0** |
+
+⚠️ **THE ASYMMETRY IS STRUCTURAL AND THE REASON IS ONE SENTENCE: `.mutate()`
+CANNOT REJECT.** The two pages fire and forget, so they have nothing to catch and
+no way to swallow. The wizard `await`s because it SEQUENCES create → finalize →
+post → settle, and a sequencer must decide what to do when a step fails. **Only a
+site that awaits can swallow**, and exactly one site awaits.
+
+**So #308's argument does NOT transfer, and that is worth stating rather than
+assuming.** #308's shape was *"a null each site must remember to check"* — an
+obligation duplicated per site. This `catch` duplicates nothing: it does not
+replace the hook's toast, it coexists with it, and it does the one job the hook
+cannot do (keep the fault out of the outer handler). A hook-level equivalent
+cannot exist, because the hook has no idea what the caller's outer handler says.
+**The permission-to-stop does not fire.**
+
+### §91d · (d) ⚠️ THE BROWSER-UNREACHABILITY CLAIM IS FALSE, AND IT IS THIS SEAT'S OWN
+
+The dispatch carried it as settled fact — *"blocked in the browser by a
+pre-existing halal/BPOM `UNDETERMINED_APPLICABILITY` refusal upstream of any
+dispatch … it has now cost two batches their walk."* Filed at #307 on the
+strength of serving the `main` build beside the branch build.
+
+**Derived today over the eligible dock sources, per line, both regimes:**
+
+| Source | Lines | Answerable? |
+|---|---|---|
+| `ASN-2026-012` | `PK-PETB-8801` halal REFUSE(`UNDETERMINED_APPLICABILITY`) | ❌ |
+| `ASN-2026-013` | `PK-PETB-8802` halal REFUSE · `AI-NIAC-6612` ok | ❌ |
+| `ASN-2026-014` | `RM-COCO-8200` BPOM REFUSE(`UNDETERMINED_APPLICABILITY`) | ❌ |
+| **`ASN-2026-015`** | **`FR-WARD-4410` halal REQUIRED · BPOM APPLICABLE** | ✅ |
+
+⚠️ **THE BLOCK IS PER-SOURCE. #307 OPENED THE FIRST DOCK SOURCE, FOUND IT
+BLOCKED, AND GENERALISED TO ALL FOUR** — rule 1's shape with a sample standing in
+for a population, and rule 3's *"never conclude absence from a truncated view"*
+where the truncation was **the first row of a list**. It cost two batches their
+browser walk and would have cost a third.
+
+**Walked, in the real browser, both locales, through the app's own menu:**
+
+| Locale | Walk | Result |
+|---|---|---|
+| **ID** (`htmlLang=id`, *Penerimaan Barang & Kontrol Kualitas*) | New GR → `ASN-2026-015` → answer *Pemeriksaan Segel Halal* + *Pelacakan Lot BPOM* → Buat GR | **`GR-2026-901` · Terkirim ke SAP · `MAT-DOC-600001`**; count 14 → 15 |
+| **EN** (`htmlLang=en`, *Goods Receipt & Quality Control*) | same source, *Halal Seal Check* + *BPOM Lot Tracking* → Create GR | **`GR-2026-902` posted to SAP · `MAT-DOC-600002`**; count 15 → 16 |
+
+`vite preview`, innerWidth 2415 @ dpr 0.667, **zero console messages of any
+level**. Entry chunk read from inside the page: `index-XqaTNgLX.js` — which is
+one of the 13 assets the A/B proves identical to `main`, so the browser loaded
+bytes indistinguishable from the merge base.
+
+⚠️ **THIS IS NOT A STAGED SCENARIO.** `ASN-2026-015` is offered in the wizard's
+own source list beside the three blocked ones; a clerk reaches it by clicking it.
+What remains genuinely unstageable is the REFUSAL — `null` has no producer — and
+that is covered by spec and said plainly, exactly as §90 said it.
+
+### §91e · ⚠️ The finding that IS real, and it is a false remedy promise
+
+Found by asking (a)'s second question — *what does `settled = false` do
+downstream* — rather than by looking for it.
+
+`GRInspectionWizard.tsx` carried this sentence, shipped and unchecked:
+
+> *"On a failed settle the command stays `submitted` and the GR stays 'Posting to
+> SAP', so the post action genuinely re-attempts it."*
+
+**Measured, bilaterally, through the same driving:**
+
+| | Measured |
+|---|---|
+| `t_gr_post.from` | `['Approved', 'Partially Approved']` — **excludes** `Posting to SAP`, so the verb is illegal there |
+| footer on a GR in `Posting to SAP` | `default: return null` — **no action of any kind** |
+| **CONTROL**, same driving, GR in `Approved` | **"Post to SAP" present** — so the absence is real, not a panel that never opened |
+
+And the copy makes the same promise: `settle.failed.TRANSPORT` reads *"run the
+same action again; settling twice is safe."* **In the GR lane there is no same
+action to run.** A remedy named in copy with nothing behind it is
+`HALAL-REFUSAL-DEAD-ENDS-01`, and the false claim survived because **a comment
+was the only thing asserting it** — §84's lesson arriving in a different file.
+
+⚠️ **FILED, NOT FIXED, AND THE REASON IS THAT FIXING IT HONESTLY IS A SURFACE
+BATCH.** `REFUSED` — the only class #307 can raise — is correctly NOT retryable,
+so the promise is only wrong for `TRANSPORT`, which has no producer today. The
+remedy is a re-settle affordance on the interim state (the GR page holds the
+correlation id only in a `setTimeout` closure, so there is nothing to re-spend),
+and that is a design, a verb reachability question and a locale pass. **The
+comment is corrected in place instead**, stating what is true and naming this
+section — which costs nothing and stops the next reader inheriting it.
+
+**The invariant is gated without pinning the defect:** the spec asserts the
+surface and the machine AGREE — the post action is offered on the interim state
+**iff** `t_gr_post.from` allows it. Building the re-attempt turns that GREEN
+rather than red, so an improving tree cannot fail its own guard.
+
+### §91f · Probe — four mutants, both directions, all killed and named
+
+| Mutant | File | Result | Named kill |
+|---|---|---|---|
+| **M1** `onError` removed from the GR settle hook — **§90h made real** | `commandHooks.ts` | RED (3) | *the classified refusal reaches the surface, naming the rule and the reference* |
+| **M2** the wizard's `try/catch` deleted | `GRInspectionWizard.tsx` | RED (2) | *THE INNER CATCH EARNS ITS KEEP — the fault is not relabelled `Not authorized`* |
+| **M3** #308's `null`→throw conversion deleted | `commandHooks.ts` | RED (3) | *and it does NOT claim the material document SAP never assigned* |
+| **M4** EVERY settle refused | `commandHooks.ts` | RED (1) | *the wizard mints a REAL material document and toasts posted to SAP* |
+
+⚠️ **M1 IS THE ONE THAT MATTERS, AND IT IS THE PROBE §90h ITSELF NEEDED.** It
+manufactures precisely the defect that was filed — a hook that stops speaking —
+and the gate names it. So the claim *"this gate would catch it if it were true"*
+is a measurement here, not a hope. **M4 is the other direction**, and without it
+a wizard that refused every settle would satisfy every refusal assertion above.
+
+⚠️ **AND THE LINE ENDING IS MEASURED PER FILE, WHICH THIS PROBE NEEDED.**
+`commandHooks.ts` is 1390 CRLF / 0 bare LF; `GRInspectionWizard.tsx` is 1664 CRLF
+/ 0 bare LF. A probe that joins anchors with one hardcoded newline for both files
+is one edit away from #307's silent no-op. Restores proved byte-identical:
+
+- `commandHooks.ts` — sha256 `2dbba74b03ee69acac5653f21a2f0ad94e12a7c31444e2beb643b3d08b0d5a81`, git blob `d13e00bf5cf69ab649d52301188a71dc599198f8`
+- `GRInspectionWizard.tsx` — sha256 `5d593d8ba9444aee604461a1725f7c889fef61af1e6ecdcf3509eae15b039cca`, git blob `5108949bbdc7e4b86f93c06805990e6b913c5dd1`
+
+(sha256 over working-copy bytes is the authority; the blob id is what a reader on
+another platform can recompute under `core.autocrlf`.)
+
+### §91g · The consumer census caught the new spec, and that is the census working
+
+`enforcement.test.ts`'s EXACT consumer list went red on 9-vs-8 the moment the new
+spec imported `EnforcementSetting` for the wizard's required ledger prop. **It was
+authorised with its reason rather than dodged** — typing the empty ledger
+`never[]` would have kept the census green while consuming the surface in spirit,
+which is the trade that list exists to refuse.
+
+### §91h · What is NOT built
+
+- **The re-settle affordance on `Posting to SAP`** (§91e). The honest remedy for
+  the TRANSPORT promise; a surface batch, not a rider.
+- **`WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01`** stays OPEN and untouched — this
+  batch drove the wizard's completion path, not its authorisation.
