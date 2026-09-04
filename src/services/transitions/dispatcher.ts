@@ -209,9 +209,20 @@ export interface Dispatcher {
    * command. Long the internal contract (cascades pass it); now on the type.
    */
   dispatch(scope: QueryScope, input: CommandInput, causationId?: string): CommandResult;
-  getCommandStatus(correlationId: string): CommandStatus | null;
-  /** Settle a `submitted` command to `done` (Step 3.5 SAP settlement). */
-  settle(correlationId: string): CommandStatus | null;
+  /**
+   * Read a command's recorded status. **Scoped** — see `mayReach` below.
+   *
+   * ⚠️ **THE SCOPE PARAMETER IS NEW HERE AND IS *NOT* NEW ON THE CONTRACT.**
+   * `ICommandService.getCommandStatus(scope, correlationId)` has taken a scope
+   * since it was written; `MockCommandService` named it `_scope` and dropped it,
+   * because THIS interface had nowhere to put it. The defect was always that the
+   * implementation discarded a parameter the seam already handed it. **Nothing
+   * an adapter author reads changes** — `IDataService`, `ICommandService` and
+   * C1's method table are byte-identical after this batch.
+   */
+  getCommandStatus(scope: QueryScope, correlationId: string): CommandStatus | null;
+  /** Settle a `submitted` command to `done` (Step 3.5 SAP settlement). Scoped. */
+  settle(scope: QueryScope, correlationId: string): CommandStatus | null;
 }
 
 function isEmpty(value: unknown): boolean {
@@ -224,6 +235,74 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
   const statuses = new Map<string, CommandStatus>();
   // Submitted commands awaiting settlement: correlationId → what to finalize.
   const pending = new Map<string, SettleContext>();
+  // ── THE ISSUING SCOPE, PER COMMAND ─────────────────────────────────────────
+  // correlationId → the scope that DISPATCHED it. Written in `finish`, which is
+  // the single mint point (`deps.nextCorrelationId()` is called nowhere else),
+  // so EVERY command is recorded — `failed` and `submitted` included.
+  //
+  // ⚠️ **THIS IS NOT `pending`, AND REUSING `pending` WOULD HAVE LOOKED LIKE IT
+  // WORKED.** `SettleContext` already carries a `scope`, so the obvious move is
+  // to read the owner off it. Two things make that wrong, and both are silent:
+  //   · `pending` is written ONLY for `outcome === 'submitted'`. Every `done`
+  //     and every `failed` command has no entry, so `getCommandStatus` would
+  //     have had no owner to compare against for the overwhelming majority of
+  //     commands — and "no owner" resolving to "allow" is the gate not existing.
+  //   · `pending.delete(correlationId)` runs on a successful settle. The owner
+  //     would evaporate at exactly the moment the command becomes interesting to
+  //     read back, so a settled command would flip from scoped to unscoped.
+  // Two maps, two jobs: `pending` is WHAT TO FINALIZE and is consumed; `owners`
+  // is WHO MAY LOOK and is permanent. Its lifetime matches `statuses` (both grow
+  // for the life of the dispatcher, which is a module singleton in the mock).
+  const owners = new Map<string, QueryScope>();
+
+  /**
+   * May `scope` reach the command recorded under `correlationId`?
+   *
+   * ⚠️ **A `false` HERE BECOMES `null`, NEVER A REFUSAL** (operator ruling).
+   * `CommandStatus | null` already returns `null` for "no such command", and
+   * that collision IS the remedy: "not yours" and "does not exist" must be the
+   * same answer. Throwing `SCOPE_DENIED` instead would rebuild, on the read
+   * path, precisely the existence oracle §86 closed on the write path — a
+   * refusal KIND that answers a question the caller was not entitled to ask.
+   * `settleScopeGate.test.ts` asserts the null AND asserts that nothing throws,
+   * which is what makes that ruling checkable rather than a comment.
+   *
+   * TWO ARMS, and each is load-bearing for a different caller:
+   *
+   *  1. **THE MACHINE GRANT.** `settle` is documented on `ICommandService` as
+   *     the SAP settlement callback — *"Phase-3 implements it as the integration
+   *     webhook"* — and a webhook does not run under the issuing user's scope.
+   *     Gating on the issuer ALONE would make the contract's own stated Phase-3
+   *     implementation impossible. `AUTOMATION_ROLE` is the vocabulary the tree
+   *     already has for exactly this: not a `SystemRoleId`, no `SYSTEM_ROLES`
+   *     entry, no catalogue row, never assignable to a person, and already read
+   *     this way by the cascade fan-out's synthetic scope. **It is used here as
+   *     a CALLER-IDENTITY MARKER, not as an atom grant, and that is the whole
+   *     reason no widening is needed** — measured: `AUTOMATION_ATOMS` holds
+   *     neither `gr:post` nor `invoice:pay`, the two `sapBoundary` verbs, so
+   *     this arm grants nothing `atomsFor` would grant. Nothing about the role
+   *     vocabulary moves; a second site reads the same marker.
+   *  2. **THE ISSUING TENANCY.** The four shipped settle call sites are UI
+   *     mutations under a human buyer scope, simulating the callback that does
+   *     not exist yet. Refusing them would break every one, which is why the
+   *     mutation probe drives THIS arm too: a gate that closed the door on
+   *     everyone would pass a one-directional probe.
+   *
+   * The comparison is `personaType` + `supplierId` — **the tenancy boundary the
+   * dispatcher already enforces**, not a new notion of identity. Deliberately
+   * NOT `businessRoles` equality: a seat's roles change mid-session by design
+   * (the identity panel switches them while a panel stands open), so a
+   * role-sensitive comparison would refuse a caller its own command after a
+   * narrowing. Buyer is one tenancy here because it is one tenancy everywhere
+   * else in this dispatcher; suppliers are separated by `supplierId` exactly as
+   * the scope gate separates them.
+   */
+  function mayReach(scope: QueryScope, correlationId: string): boolean {
+    const owner = owners.get(correlationId);
+    if (!owner) return false; // no such command — the same answer as "not yours"
+    if (scope.businessRoles?.includes(AUTOMATION_ROLE)) return true;
+    return scope.personaType === owner.personaType && scope.supplierId === owner.supplierId;
+  }
 
   /**
    * The ONE emit. Takes the correlationId rather than minting it, because the
@@ -278,6 +357,10 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     const ts = deps.now();
     emit(scope, transitionId, outcome, correlationId, ts, reason, causationId, decision, attribution);
     statuses.set(correlationId, { correlationId, transitionId, status: outcome, ts });
+    // WHO MAY LOOK. Recorded here rather than at the `submitted` branch because
+    // this is the single mint point: every outcome gets an owner, or the gate
+    // has nothing to compare against for the command shapes it never sees.
+    owners.set(correlationId, scope);
     return { correlationId, transitionId, status: outcome, reason, entityId };
   }
 
@@ -590,7 +673,8 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
     return result;
   }
 
-  function getCommandStatus(correlationId: string): CommandStatus | null {
+  function getCommandStatus(scope: QueryScope, correlationId: string): CommandStatus | null {
+    if (!mayReach(scope, correlationId)) return null;
     return statuses.get(correlationId) ?? null;
   }
 
@@ -601,7 +685,20 @@ export function createDispatcher(deps: DispatcherDeps): Dispatcher {
   // ("under the SAME correlationId") and what `getCommandStatus` staying 1:1
   // requires: one command, one correlationId, two recorded acts distinguished by
   // outcome.
-  function settle(correlationId: string): CommandStatus | null {
+  function settle(scope: QueryScope, correlationId: string): CommandStatus | null {
+    // ⚠️ **THE GATE SITS ABOVE EVERYTHING, AND THE FALL-THROUGH IS WHY.**
+    // `settle` is not a read with a side effect; it is a state-advancing WRITE
+    // that mutates a store, mints a real SAP reference, and emits a DR-10 event
+    // under `ctx.scope` — the ORIGINATING scope, so an ungated settle records a
+    // stranger's act against the issuer's name. It was the only state-advancing
+    // path in this tree behind no gate of any kind.
+    //
+    // It is also a strict SUPERSET of the read oracle: the last line of this
+    // function is `return current ?? null`, which discloses a `CommandStatus`
+    // for ANY id whose command is not `submitted`. Gating only the mutation
+    // would have left the write door telling callers what the read door had
+    // just stopped telling them. One gate, above both, is the whole point.
+    if (!mayReach(scope, correlationId)) return null;
     const current = statuses.get(correlationId);
     if (current && current.status === 'submitted') {
       const ts = deps.now();

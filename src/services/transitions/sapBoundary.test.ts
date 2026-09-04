@@ -7,6 +7,7 @@ import {
   flowRegistry,
   type CommandTarget,
 } from './index';
+import type { QueryScope } from '../data/types';
 import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
 
 // A synthetic flow with a sapBoundary transition — no shipped verb is one yet
@@ -42,6 +43,14 @@ flowRegistry.register({
   ],
 });
 
+// The ONE scope this file dispatches under. Named so the settle and the read
+// back can pass the ISSUER'S scope, which is the arm the gate must ACCEPT.
+const SCOPE: QueryScope = {
+  personaType: 'buyer',
+  supplierId: null,
+  businessRoles: PERSONA_SYSTEM_ROLES.buyer,
+};
+
 describe('dispatcher — SAP-boundary submitted→settle (Step 3.5)', () => {
   it('a sapBoundary command holds submitted, then settles to done', () => {
     const rows = new Map([['w-1', { status: 'New' }]]);
@@ -63,16 +72,16 @@ describe('dispatcher — SAP-boundary submitted→settle (Step 3.5)', () => {
     });
 
     const res = d.dispatch(
-      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
+      SCOPE,
       { transitionId: 't_widget_post', entity: 'widget', entityId: 'w-1' },
     );
     expect(res.status).toBe('submitted');
-    expect(d.getCommandStatus(res.correlationId)?.status).toBe('submitted');
+    expect(d.getCommandStatus(SCOPE, res.correlationId)?.status).toBe('submitted');
     expect(rows.get('w-1')!.status).toBe('Posting'); // interim — SAP ref pending
 
-    const settled = d.settle(res.correlationId);
+    const settled = d.settle(SCOPE, res.correlationId);
     expect(settled?.status).toBe('done');
-    expect(d.getCommandStatus(res.correlationId)?.status).toBe('done');
+    expect(d.getCommandStatus(SCOPE, res.correlationId)?.status).toBe('done');
     // ⚠️ PF-0 · D-2 — `settlesTo: 'Posted'` is DECLARED and NOTHING READS IT.
     // No `settleFinalize` is configured here, so the entity stays in the interim
     // state while the command reads `done`. Pinned deliberately: the declaration
@@ -106,14 +115,14 @@ describe('dispatcher — SAP-boundary submitted→settle (Step 3.5)', () => {
     });
 
     const res = d.dispatch(
-      { personaType: 'buyer', supplierId: null, businessRoles: PERSONA_SYSTEM_ROLES.buyer },
+      SCOPE,
       { transitionId: 't_gadget_post', entity: 'gadget', entityId: 'g-1' },
     );
     expect(res.status).toBe('submitted');
     expect(rows.get('g-1')!.status).toBe('Posting'); // interim — not yet Posted
     expect(rows.get('g-1')!.ref).toBeNull(); // ref pending
 
-    d.settle(res.correlationId);
+    d.settle(SCOPE, res.correlationId);
     expect(rows.get('g-1')!.status).toBe('Posted'); // finalize advanced it
     expect(rows.get('g-1')!.ref).toBe('REF-1'); // real ref assigned on settle
   });

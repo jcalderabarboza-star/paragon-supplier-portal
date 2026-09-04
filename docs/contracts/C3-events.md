@@ -56,9 +56,15 @@ Two ids, two jobs. This is what lets a **1→N cascade** be reassembled as one c
 **without** collapsing the per-transition status.
 
 - **`correlationId`** — minted per command (`nextCorrelationId()`; the mock uses a monotonic
-  `cmd_0001`… so tests are deterministic). `getCommandStatus(correlationId)` and
-  `settle(correlationId)` are **1:1** with it. Every cascaded transition keeps **its own**
-  correlationId, so each remains individually queryable and settleable.
+  `cmd_0001`… so tests are deterministic). `getCommandStatus(scope, correlationId)` and
+  `settle(scope, correlationId)` are **1:1** with it. Every cascaded transition keeps **its own**
+  correlationId, so each remains individually queryable and settleable — **by a scope entitled
+  to it.** The dense monotonic id is guessable by construction and is printed to the user in
+  every success toast, so both methods gate on the issuing tenancy (or the `automation` machine
+  grant, which is what the Phase-3 settlement webhook presents) and answer everyone else with
+  `null` — never a refusal, which would be an existence oracle by refusal kind. The scope
+  parameter is NOT new on `ICommandService`; it is new on the internal `Dispatcher`, which had
+  nowhere to put the one the seam already handed it.
 - **`causationId`** — present **only** on a cascaded (fanned-out) transition; it carries the
   **source command's** correlationId. Absent on a directly-initiated command.
 
