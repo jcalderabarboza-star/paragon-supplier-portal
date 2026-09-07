@@ -51,6 +51,25 @@ export const rolesEn: Record<string, string> = {
   // <nobody>" would be worse than silence, and this is a FINDING, not a wait.
   'roles.handoff.unowned': 'No role holds this action',
 
+  // — WHO ACTS NEXT (`nextActFor`) — ONE KEY PER ARM, NEVER PER STATUS. —
+  //   The arms are the axes; keying on status would be the `BuyerInvoices`
+  //   footer-verb defect (a display label answering a machine question), and
+  //   these strings would then have to be re-authored every time a verb moved.
+  //   ⚠️ THE `why` ON THE TRANSITION IS NOT USED AS COPY, AND THAT IS MEASURED,
+  //   NOT ASSUMED: the 34 `why` strings run to a 123-char median and 245 max,
+  //   18 are over 120 chars, 12 name an internal token (`t_…`, `INT-TMS-01`,
+  //   `law 0.5`), and none has an Indonesian half. They are a register for
+  //   authors. What IS read from the data is the ARM and its OWNER.
+  'nextAct.mine': 'Your move',
+  'nextAct.external': 'Awaiting {{owner}}',
+  // ⚠️ NOT `external`. Paragon ORIGINATED this act and is waiting on the
+  // callback — naming an owner here would credit S/4HANA with our own act,
+  // which inverts what the owner union means. The landing state is named
+  // untranslated: it is a schema identifier, not prose.
+  'nextAct.settling': 'Awaiting SAP settlement → {{settlesTo}}',
+  'nextAct.computed': 'The platform derives the next step',
+  'nextAct.label': 'Next',
+
   // ── THE IDENTITY PANEL (avatar) ────────────────────────────────────────────
   'identity.panel.title': 'Your identity and access',
   'identity.panel.signedInAs': 'Signed in as',
@@ -259,6 +278,13 @@ export const rolesId: Record<string, string> = {
   'roles.handoff.awaiting': 'Menunggu {{owner}}',
   'roles.handoff.awaitingHint': 'Peran Anda tidak dapat melakukan tindakan ini.',
   'roles.handoff.unowned': 'Tidak ada peran yang memegang tindakan ini',
+
+  // — SIAPA YANG BERTINDAK BERIKUTNYA (`nextActFor`) — SATU KUNCI PER ARM —
+  'nextAct.mine': 'Giliran Anda',
+  'nextAct.external': 'Menunggu {{owner}}',
+  'nextAct.settling': 'Menunggu penyelesaian SAP → {{settlesTo}}',
+  'nextAct.computed': 'Platform menentukan langkah berikutnya',
+  'nextAct.label': 'Berikutnya',
 
   // ── PANEL IDENTITAS (avatar) ───────────────────────────────────────────────
   'identity.panel.title': 'Identitas dan akses Anda',

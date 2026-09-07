@@ -33,6 +33,7 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import NextActLine from '../components/ui-v2/NextActLine';
 import { statusTone } from '../lib/statusTone';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
@@ -46,6 +47,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import Data from '../components/ui-v2/Data';
 import { usePurchaseOrders, useSuppliers } from '../services/query/hooks';
+import { useNextAct } from '../hooks/useVerbAvailability';
 import { formatIDR, formatNumber, formatDate } from '../lib/format';
 // POStatus / ChannelType are runtime enums (used as values) — they stay sourced
 // from the enum module; the canonical drift-resolved PurchaseOrder type comes
@@ -234,6 +236,11 @@ const BuyerOrders: React.FC = () => {
   const [range, setRange] = useState<RangeFilter>('all');
   const [search, setSearch] = useState('');
   const [selectedPO, setSelectedPO] = useState<PurchaseOrder | null>(null);
+
+  // WHO ACTS NEXT on the selected PO. Unconditional — the hook takes a nullable
+  // state and answers `null` when nothing is selected; a conditional hook would
+  // be a render-order bug the first time the drawer closes.
+  const nextAct = useNextAct('purchaseOrder', selectedPO?.status);
   const [commsOpen, setCommsOpen] = useState(false);
 
   const ordersQuery = usePurchaseOrders();
@@ -616,6 +623,15 @@ const BuyerOrders: React.FC = () => {
                     <StatusPill variant={statusTone(selectedPO.status)}>
                       {selectedPO.status}
                     </StatusPill>
+                    {/* The buyer's half of the same silence. `Confirmed`,
+                        `Partially Delivered` and `Delivered` are all stranded
+                        on this machine — every exit is an S/4HANA goods
+                        movement — so the buyer watching a PO had a status word
+                        and no indication that the wait is SAP's, not the
+                        supplier's. Derived from the canonical state. */}
+                    <span className="mt-1 block">
+                      <NextActLine act={nextAct} testId="next-act-buyer-po" />
+                    </span>
                   </dd>
                 </div>
                 <div>

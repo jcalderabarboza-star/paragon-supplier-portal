@@ -159,7 +159,7 @@ describe('POPULATION GUARD — the fragments were actually derived', () => {
     // fragment with a typo'd export silently leave the population it belongs to.
     // `externalFactOwner.ts` joined at the boundary batch and had to be added by
     // hand — that edit IS the review step working.
-    const KEY_MAPS = ['./externalFactOwner.ts', './stepKind.ts'];
+    const KEY_MAPS = ['./externalFactOwner.ts', './nextAct.ts', './stepKind.ts'];
     for (const m of KEY_MAPS) {
       expect(Object.keys(MODULES), m).toContain(m);
       expect(FRAGMENTS.map((f) => f.name), m).not.toContain(m.replace('./', '').replace('.ts', ''));
