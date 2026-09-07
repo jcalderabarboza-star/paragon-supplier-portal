@@ -148,6 +148,7 @@ describe('PF-1 — step kind is DERIVED from TWO fields, never authored', () => 
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why: 'a feed reports it',
       },
     } as const;

@@ -82,6 +82,7 @@ export const advanceShipNoticeFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'A carrier feed reports departure (INT-TMS-01). No person here ' +
           'initiates it — and this verb is exactly why `trigger: system` ' +
@@ -100,6 +101,7 @@ export const advanceShipNoticeFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'A carrier feed reports delivery (INT-TMS-01); the supplier who ' +
           'physically delivered it does not press this.',

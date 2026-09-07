@@ -141,6 +141,7 @@ export const invoiceFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'bank',
         why:
           'Remittance is confirmed by the bank/SAP settlement feed. The buyer ' +
           'released the payment; the money arriving is not their act.',

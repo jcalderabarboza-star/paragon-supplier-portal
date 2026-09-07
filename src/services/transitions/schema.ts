@@ -90,6 +90,41 @@ export type PolicyHookName = string;
 export type NotSurfacedReason = 'external-fact' | 'computed' | 'ruled-unsurfaced';
 
 /**
+ * WHICH SYSTEM OUTSIDE PARAGON OWNS AN `external-fact` ACT. A CLOSED union, and
+ * REQUIRED on that arm — an external fact whose owner is unnamed is the same
+ * omission `why` already refuses, one field along.
+ *
+ * ⚠️ **THE DISCRIMINATOR, SO THE NEXT AUTHOR DECIDES IT THE SAME WAY: THE OWNER
+ * IS THE EXTERNAL SYSTEM THE `why` NAMES AS REPORTING THE FACT.** It is read off
+ * the reason already written, never chosen freshly — which is what keeps this
+ * from becoming a second vocabulary for a fact the `why` already states. On the
+ * 15 external facts this arrived with, 14 name exactly one system: S/4HANA (4)
+ * or the TMS (10, every one of them citing `INT-TMS-01`).
+ *
+ * ⚠️ **AND THE FIFTEENTH IS AN AMBIGUITY THE DATA DOES NOT RESOLVE — RECORDED
+ * HERE RATHER THAN SMOOTHED OVER.** `t_invoice_remit` says *"Remittance is
+ * confirmed by the bank/SAP settlement feed"*: ONE feed, named by both ends, so
+ * the two candidate discriminators disagree on it and on nothing else. Read as
+ * *where the fact ORIGINATES* it is `bank` (the money moves at the bank; SAP
+ * relays); read as *which seam Paragon would read it FROM* it is `s4hana`. It is
+ * declared `bank` on the operator's ruling. **Changing it is one line and no
+ * other verb moves** — that is the whole reason the ambiguity is written down
+ * here instead of being argued again from the `why`.
+ *
+ * ⚠️ **THE RELAY IS NOT THE OWNER, AND THE SHIPMENT LEGS ARE WHY THAT MATTERS.**
+ * Four of the ten TMS facts name a party as well as a system — a forwarder, a
+ * carrier, a warehouse — and every one of them says that party reports *through
+ * the TMS*. Promoting the party would mint `warehouse` / `forwarder` / `carrier`
+ * as owners of a seam this platform does not have, which is the wildcard shape:
+ * a union that grows a member per sentence stops constraining anything.
+ *
+ * Adding a member is deliberately expensive — the union, the runtime set in
+ * `validate.ts`, and two locale strings, all asserted bilaterally by
+ * `externalFactOwner.test.ts`.
+ */
+export type ExternalFactOwner = 's4hana' | 'tms' | 'bank';
+
+/**
  * DOES THE PLATFORM INTEND A SCREEN FOR THIS ACT AT ALL — a DESIGN-TIME
  * question, and the axis nothing in this schema modelled before §50.
  *
@@ -114,11 +149,29 @@ export type NotSurfacedReason = 'external-fact' | 'computed' | 'ruled-unsurfaced
  * verbs today, NOTHING IN THIS SCHEMA ENFORCES IT, and the gate therefore
  * ASSERTS it rather than assuming it.
  */
+/**
+ * ⚠️ **THE `false` HALF IS SPLIT BY `because`, AND THE SPLIT IS THE ENFORCEMENT.**
+ * A single arm carrying `owner?:` would make the field optional on the one
+ * reason that requires it and legal on the two that must never carry it — the
+ * type would permit exactly the two states the gate exists to refuse. Split, the
+ * discriminant does the work: an `external-fact` without an `owner` does not
+ * compile, and a `computed` WITH one does not either (excess-property check).
+ * `validate.ts` re-asserts both at import for untyped callers, the way it
+ * already re-asserts `why`.
+ */
 export type Surfaceability =
   | { readonly surfaced: true }
   | {
       readonly surfaced: false;
-      readonly because: NotSurfacedReason;
+      readonly because: 'external-fact';
+      /** WHICH SYSTEM REPORTS IT. Required — see `ExternalFactOwner`. */
+      readonly owner: ExternalFactOwner;
+      /** The reason, stated. An empty one is an omission wearing a row's clothes. */
+      readonly why: string;
+    }
+  | {
+      readonly surfaced: false;
+      readonly because: Exclude<NotSurfacedReason, 'external-fact'>;
       /** The reason, stated. An empty one is an omission wearing a row's clothes. */
       readonly why: string;
     };

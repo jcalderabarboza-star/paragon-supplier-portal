@@ -15,6 +15,7 @@ import LifecycleWalk from './process-flows/LifecycleWalk';
 import { looseEndKindKey, reasonKey, ALL_REASONS } from './process-flows/labels';
 import { verbOf, entityVerbOf } from './process-flows/flowLayout';
 import { STEP_KIND_KEY } from '../lib/i18n/stepKind';
+import { EXTERNAL_FACT_OWNER_KEY } from '../lib/i18n/externalFactOwner';
 import { getKnownFlows } from '../services/transitions';
 import { entityPurposeKey, transitionPurposeKey } from '../services/transitions/annotations';
 import {
@@ -159,6 +160,33 @@ const TransitionRow: React.FC<{ tv: TransitionView }> = ({ tv }) => {
             rather than letting one stand in for the other. Raw and
             untranslated by design — it is the schema token, not prose. */}
         <span className="ml-1 text-text-tertiary">({def.trigger})</span>
+        {/* ── THE BOUNDARY, NAMED ────────────────────────────────────────────
+            "System-driven" answers WHETHER a person here acts. It does not say
+            WHO does, and for the two reasons that share that badge the answer
+            is not the same KIND of answer: `external-fact` means a system
+            outside Paragon owns the act, `computed` means this platform derives
+            it from what it already holds. Collapsed, an S/4HANA goods movement
+            and a match verdict read identically — one is a seam, the other is
+            our own arithmetic, and a reader planning an integration cannot tell
+            them apart.
+
+            DERIVED, NEVER AUTHORED, and this line is where that is cheapest to
+            get wrong: the owner is read off `surfaceable`, so moving a verb
+            between owners moves this text with it. A `Record<Status, Owner>`
+            beside the badge would be the `BuyerInvoices` footer-verb defect
+            (`invoiceActionModel.ts` header) one surface along. */}
+        {!def.surfaceable.surfaced && def.surfaceable.because === 'external-fact' ? (
+          <span className="mt-0.5 block text-[10px] text-text-tertiary" data-testid="owner-external">
+            {t('processFlows.owner.ownedBy', {
+              owner: t(EXTERNAL_FACT_OWNER_KEY[def.surfaceable.owner]),
+            })}
+          </span>
+        ) : null}
+        {!def.surfaceable.surfaced && def.surfaceable.because === 'computed' ? (
+          <span className="mt-0.5 block text-[10px] text-text-tertiary" data-testid="owner-computed">
+            {t('processFlows.owner.computedHere')}
+          </span>
+        ) : null}
       </TableCell>
       <TableCell className="py-3">
         <Data className="text-[11px]">{def.requiredRole}</Data>
