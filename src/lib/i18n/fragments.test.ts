@@ -145,16 +145,26 @@ describe('POPULATION GUARD — the fragments were actually derived', () => {
     expect(names).not.toContain('i18n');
   });
 
-  it('⚠️ `stepKind` is NOT a fragment, and the reason is structural rather than an exemption', () => {
-    // It exports `STEP_KIND_KEY` — a key map, with no `En`/`Id` pair, so there
-    // is nothing to compare between locales. This is asserted BOTH ways: the
-    // module is in the glob (so it was seen and judged, not merely missed), and
-    // it is not in the fragment set. Give it an `En`/`Id` pair tomorrow and it
-    // joins the population with nobody editing this file — which is why there
+  it('⚠️ the KEY MAPS are NOT fragments, and the reason is structural rather than an exemption', () => {
+    // They export a `Record<Union, string>` of i18n KEYS — no `En`/`Id` pair, so
+    // there is nothing to compare between locales. Asserted BOTH ways for each:
+    // the module is in the glob (so it was SEEN and judged, not merely missed),
+    // and it is not in the fragment set. Give one an `En`/`Id` pair tomorrow and
+    // it joins the population with nobody editing this file — which is why there
     // is no allowlist row here to outlive its subject.
-    expect(Object.keys(MODULES)).toContain('./stepKind.ts');
-    expect(FRAGMENTS.map((f) => f.name)).not.toContain('stepKind');
-    expect(NON_FRAGMENTS).toEqual(['./stepKind.ts']);
+    //
+    // ⚠️ **THIS LIST IS PINNED EQUAL, AND THAT IS DELIBERATELY INCONVENIENT.**
+    // A new key map turns this red until it is named here, which is the point:
+    // the alternative is a `!name.endsWith('Key')`-shaped rule that would let a
+    // fragment with a typo'd export silently leave the population it belongs to.
+    // `externalFactOwner.ts` joined at the boundary batch and had to be added by
+    // hand — that edit IS the review step working.
+    const KEY_MAPS = ['./externalFactOwner.ts', './stepKind.ts'];
+    for (const m of KEY_MAPS) {
+      expect(Object.keys(MODULES), m).toContain(m);
+      expect(FRAGMENTS.map((f) => f.name), m).not.toContain(m.replace('./', '').replace('.ts', ''));
+    }
+    expect([...NON_FRAGMENTS].sort()).toEqual([...KEY_MAPS].sort());
   });
 
   it('the glob did not eagerly import the sibling suites', () => {

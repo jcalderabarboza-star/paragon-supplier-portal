@@ -44,6 +44,7 @@ export const purchaseOrderFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 's4hana',
         why:
           'A purchase order is raised in S/4HANA and arrives here as a fact. ' +
           'The portal is where a supplier RECEIVES a PO, never where Paragon ' +
@@ -98,6 +99,7 @@ export const purchaseOrderFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 's4hana',
         why:
           'Goods movement is posted in S/4HANA against the PO. Nobody in this ' +
           'portal declares a delivery.',
@@ -115,6 +117,7 @@ export const purchaseOrderFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 's4hana',
         why:
           'Goods movement is posted in S/4HANA against the PO. Nobody in this ' +
           'portal declares a delivery.',
@@ -132,6 +135,7 @@ export const purchaseOrderFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 's4hana',
         why:
           'A PO closes in S/4HANA once delivery and invoicing reconcile; the ' +
           'portal reads the outcome.',

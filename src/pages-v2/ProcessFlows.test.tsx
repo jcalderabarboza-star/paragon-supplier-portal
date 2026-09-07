@@ -247,6 +247,51 @@ describe('ProcessFlows — honesty markers', () => {
     expect(screen.getByText(/Not real: the lifecycle walk/)).toBeInTheDocument();
   });
 
+  // ── THE BOUNDARY, ON THE SURFACE ──────────────────────────────────────────
+  // "System-driven" is one badge over two different answers: a system OUTSIDE
+  // Paragon owns the act, or this platform derives it. The reader planning an
+  // integration needs to tell those apart, so the row names the owner.
+  //
+  // ⚠️ **BOTH DIRECTIONS ON THE SAME RENDER, AND THAT IS THE POINT.** Asserting
+  // only that S/4HANA appears would pass on a page that printed it under every
+  // system-driven row — including the computed ones, which is the seam claimed
+  // where none exists. So the same flow is checked for a row that must NOT
+  // carry an owner.
+  it('an external fact names its owner; a computed act says it is computed here', async () => {
+    renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
+    await title();
+    pick('purchaseOrder');
+    // Every PO external fact is S/4HANA's — the goods movements and the close.
+    expect(screen.getAllByTestId('owner-external').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Owned by S/4HANA').length).toBeGreaterThan(0);
+    // …and the PO flow declares no `computed` act, so nothing here claims one.
+    expect(screen.queryByTestId('owner-computed')).toBeNull();
+
+    // The other arm, on a machine that has both: shipment is entirely TMS.
+    pick('shipment');
+    expect(screen.getAllByText('Owned by TMS').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Owned by S/4HANA')).toBeNull();
+
+    // And the computed side, where naming an owner would be the inversion.
+    pick('invoiceMatch');
+    expect(screen.getAllByTestId('owner-computed').length).toBeGreaterThan(0);
+    expect(screen.queryByTestId('owner-external')).toBeNull();
+  });
+
+  it('the owner line renders in Indonesian too — the framing translates, the product name does not', async () => {
+    await setLang('id');
+    renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
+    await screen.findByRole('heading', { level: 1, name: 'Alur Proses' });
+    pick('purchaseOrder');
+    // `Dimiliki` is the divergent token: it shares no spelling with "Owned by".
+    // `S/4HANA` is a product name and is deliberately identical in both locales
+    // (`channelLabel.ts` keys protocol names the same way), so asserting on it
+    // alone would be an assertion that cannot fail.
+    expect(screen.getAllByText('Dimiliki S/4HANA').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Owned by S/4HANA')).toBeNull();
+    await setLang('en');
+  });
+
   it('⚠️ never renders a green live claim — no flow feed is real', async () => {
     renderWithProviders(<ProcessFlows />, { route: '/buyer/process-flows' });
     await title();

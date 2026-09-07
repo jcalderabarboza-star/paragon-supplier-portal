@@ -277,6 +277,60 @@ group('floor provenance · CLAUDE.md points at the file, not at a number');
 }
 endGroup();
 
+// ── The boundary is declared as data, and the README must keep pointing at it ─
+// Same shape as the floor pointer above, and for the same reason: the README is
+// where an SE engineer starts, and it used to claim WhatsApp/API/EDI channel
+// support COMPLETE and Ariba e-invoicing planned while `CHANNEL_CONFIG` had
+// already withdrawn every one of them. A paragraph is not enforceable, so what
+// is gated is the narrow, checkable part — that the pointer at the DATA survives
+// (the type path and the page route), and that the retired claims have not
+// grown back.
+//
+// ⚠️ **THE README'S CLAIMS ARE DELIBERATELY NOT ASSERTED.** Prose stays prose. A
+// gate that tried to check what the paragraph MEANS would fire on the block
+// quoting the retired lines — the same trap the floor pointer above avoids by
+// refusing to hunt for stray digits in an English document.
+group('boundary provenance · README points at the data, and the retired claims stay retired');
+{
+  const readme = join(ROOT, 'README.md');
+  if (!existsSync(readme)) {
+    fail('boundary provenance', 'README.md is missing');
+  } else {
+    const text = readFileSync(readme, 'utf8');
+    const pointers = ['src/services/transitions/schema.ts', '/buyer/process-flows'];
+    const missing = pointers.filter((p) => !text.includes(p));
+    if (missing.length > 0) {
+      fail(
+        'boundary provenance',
+        `README.md no longer points at ${missing.join(' and ')} — restore the pointer. ` +
+          'The owner of every act this portal will not originate is DATA on the verb; ' +
+          'a README that stops naming where it lives is how prose starts contradicting it again',
+      );
+    } else {
+      ok('README points at the ExternalFactOwner type and the process-flows route');
+    }
+
+    // The retired claims, by the exact shape that made them misleading: a
+    // CHECKLIST line (- …) asserting the integration, not the quoted block that
+    // records the retirement.
+    const regrown = text
+      .split(/\r?\n/)
+      .filter((l) => /^\s*[-*]\s/.test(l))
+      .filter((l) => /EDI 856|SAP Ariba|API \/ EDI/i.test(l));
+    if (regrown.length > 0) {
+      fail(
+        'boundary provenance',
+        `a retired integration claim is back on the README roadmap: ${regrown
+          .map((l) => l.trim())
+          .join(' | ')} — the code says these are designed and not connected`,
+      );
+    } else {
+      ok('the retired EDI / Ariba roadmap claims have not grown back');
+    }
+  }
+}
+endGroup();
+
 // ── Verdict ─────────────────────────────────────────────────────────────────
 console.log('');
 if (failures.length > 0) {

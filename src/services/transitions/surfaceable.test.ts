@@ -401,6 +401,9 @@ describe('the runtime validator — probed BOTH ways on the same synthetic flow'
         flow({
           surfaced: false,
           because: 'external-fact',
+          // The owner is REQUIRED on this arm since the boundary batch — a
+          // known-good external fact names the system that reports it.
+          owner: 'tms',
           why: 'A carrier feed reports this milestone; nobody in Paragon initiates it.',
         }),
       ).ok,

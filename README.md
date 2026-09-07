@@ -127,6 +127,22 @@ npm run build
 
 ---
 
+## What this system is, and what it is not
+
+The Supplier Portal is a **collaboration and orchestration layer over SAP S/4HANA**,
+not a system of record. It owns the collaboration record — the conversation, the
+confirmation, the document a supplier uploads, the trail of who was asked what and
+when — and it never owns the S/4 document itself. Every act the portal refuses to
+originate is declared as data on the verb rather than left to prose: the
+`surfaceable` field on each transition carries the reason and, for an external
+fact, the system that owns it (`ExternalFactOwner` in
+`src/services/transitions/schema.ts`), and every one of them is rendered with its
+owner at `/buyer/process-flows`. The SE team implements against the contracts
+package in `src/services/contracts/` and proves conformance with the two
+factories in `src/services/contracts/conformance/`.
+
+---
+
 ## Roadmap
 
 ### Phase 1 — MVP (Complete ✅)
@@ -135,14 +151,28 @@ npm run build
 - Supplier Directory with OTIF scorecards and compliance tracking
 - Inventory Visibility with stock status heatmap
 - Supplier self-registration 5-step wizard
-- WhatsApp / Web Portal / API / EDI channel support
+- Web Portal (the other channels are designed, not connected — see below)
 
 ### Phase 2 — Intelligence (Planned)
 - **ARIA** (Adaptive Replenishment & Intelligence Agent) — AI-driven demand forecasting and procurement recommendations
 - Spend Analytics with drill-down by category, supplier, and time period
-- ASN (Advance Ship Notice) creation with EDI 856 integration
-- E-invoicing with SAP Ariba integration
 - Supplier Risk Map with geographic visualisation
+
+
+> **Retired from this roadmap (and why).** Three lines above claimed integrations
+> this repository does not have, and an engineer reading only them would conclude
+> this is an EDI-capable system of record:
+>
+> - *"WhatsApp / Web Portal / API / EDI channel support"* — listed under **Complete**.
+> - *"ASN (Advance Ship Notice) creation with EDI 856 integration"*
+> - *"E-invoicing with SAP Ariba integration"*
+>
+> They are quoted rather than deleted because the code had already withdrawn them
+> and only this file still said otherwise: `CHANNEL_CONFIG`
+> (`src/data/communicationProfiles.ts`) marks every non-portal channel
+> `Designed: … (not connected)`, EDI explicitly as *"X12 / EDIFACT over AS2/SFTP
+> (no integration provider selected)"*. The portal channel is real; the rest are
+> design intent. No Ariba integration exists or is scheduled here.
 
 ### Phase 3 — Ecosystem (Future)
 - Mobile app for supplier field operations (WhatsApp-first)

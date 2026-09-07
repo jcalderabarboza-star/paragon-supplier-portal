@@ -54,6 +54,16 @@ export const processFlowsEn: Record<string, string> = {
   'processFlows.provenance.dispatches': 'Commands dispatch',
   'processFlows.provenance.unwired': 'Authored — unwired',
 
+  // — WHO OWNS AN ACT THIS PORTAL WILL NOT ORIGINATE (`surfaceable.owner`) —
+  // The framing translates; the owner NAMES do not — S/4HANA and TMS are product
+  // and protocol names, the class `channelLabel.ts` already keys identically in
+  // both locales. `bank` is a common noun and does translate.
+  'processFlows.owner.ownedBy': 'Owned by {{owner}}',
+  'processFlows.owner.computedHere': 'Computed here',
+  'processFlows.owner.s4hana': 'S/4HANA',
+  'processFlows.owner.tms': 'TMS',
+  'processFlows.owner.bank': 'the bank',
+
   // — Step kinds (derived from `trigger` + `surfaceable`, never authored) —
   'processFlows.step.operator': 'Operator action',
   'processFlows.step.system': 'System-driven',
@@ -174,6 +184,13 @@ export const processFlowsId: Record<string, string> = {
   'processFlows.provenance.fixtureFeed': 'Data contoh · {{capability}}',
   'processFlows.provenance.dispatches': 'Perintah terkirim',
   'processFlows.provenance.unwired': 'Ditulis — belum tersambung',
+
+  // — WHO OWNS AN ACT THIS PORTAL WILL NOT ORIGINATE (`surfaceable.owner`) —
+  'processFlows.owner.ownedBy': 'Dimiliki {{owner}}',
+  'processFlows.owner.computedHere': 'Dihitung di sini',
+  'processFlows.owner.s4hana': 'S/4HANA',
+  'processFlows.owner.tms': 'TMS',
+  'processFlows.owner.bank': 'bank',
 
   // — Step kinds (derived from `trigger` + `surfaceable`, never authored) —
   'processFlows.step.operator': 'Tindakan operator',

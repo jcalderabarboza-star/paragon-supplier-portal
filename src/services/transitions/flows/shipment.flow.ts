@@ -46,6 +46,7 @@ export const shipmentFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'A shipment record originates in the TMS (INT-TMS-01); Paragon ' +
           'receives it.',
@@ -63,6 +64,7 @@ export const shipmentFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'The TMS records that the supplier lodged an ASN against this ' +
           'shipment (INT-TMS-01). Paragon learns of it; nobody here declares ' +
@@ -81,6 +83,7 @@ export const shipmentFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'Departure is a carrier scan reported through the TMS (INT-TMS-01). ' +
           'The buyer watching the shipment has nothing to press.',
@@ -98,6 +101,7 @@ export const shipmentFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'Port arrival is a carrier/terminal event reported through the TMS ' +
           '(INT-TMS-01), not a fact anybody in this portal asserts.',
@@ -115,6 +119,7 @@ export const shipmentFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'Customs clearance is an authority outcome relayed by the forwarder ' +
           'through the TMS (INT-TMS-01).',
@@ -132,6 +137,7 @@ export const shipmentFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'Dock assignment is a warehouse/TMS scheduling event (INT-TMS-01). ' +
           'The buyer page offers a dock-schedule toast at this state; it is ' +
@@ -150,6 +156,7 @@ export const shipmentFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'Unloading is recorded by the warehouse through the TMS ' +
           '(INT-TMS-01). The Paragon act that follows it is the goods ' +
@@ -168,6 +175,7 @@ export const shipmentFlow: FlowDefinition = {
       surfaceable: {
         surfaced: false,
         because: 'external-fact',
+        owner: 'tms',
         why:
           'TMS milestone (INT-TMS-01). The buyer page renders a button on ' +
           'several of these states; every one of them is navigation or a ' +

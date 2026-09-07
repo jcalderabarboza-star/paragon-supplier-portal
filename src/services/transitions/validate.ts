@@ -19,6 +19,11 @@ const ROLE_RE = /^[a-z][a-z0-9]*(?:\.[a-z0-9]+)*:[a-z][a-z0-9-]*$/;
  *  this set is the runtime half, so an untyped caller cannot invent a fourth. */
 const NOT_SURFACED_REASONS = new Set(['external-fact', 'computed', 'ruled-unsurfaced']);
 
+// The closed owner set, as data. Kept beside the reasons because it is the same
+// kind of check one field along — and asserted EQUAL to the `ExternalFactOwner`
+// union by `externalFactOwner.test.ts`, so the two cannot drift apart silently.
+const EXTERNAL_FACT_OWNERS = new Set(['s4hana', 'tms', 'bank']);
+
 export interface FlowValidationResult {
   readonly ok: boolean;
   readonly errors: readonly string[];
@@ -93,6 +98,28 @@ export function validateFlow(flow: FlowDefinition): FlowValidationResult {
         errors.push(
           `${at}: a NOT-surfaced act must state WHY in its own words — ` +
             `the three reasons have different futures and a placeholder erases the difference`,
+        );
+      }
+
+      // THE OWNER, BOTH DIRECTIONS. An external fact must name the system that
+      // reports it; the other two reasons must NOT name one. The second half is
+      // not symmetry for its own sake: a `computed` act carrying an owner would
+      // render "Owned by S/4HANA" over something this platform derives itself,
+      // which is the boundary claim inverted — worse than an unowned row,
+      // because it reads as a seam we do not have and would never build.
+      const owner = (s as { owner?: unknown }).owner;
+      if (s.because === 'external-fact') {
+        if (typeof owner !== 'string' || !EXTERNAL_FACT_OWNERS.has(owner)) {
+          errors.push(
+            `${at}: an 'external-fact' act must name its owner, one of ` +
+              `${[...EXTERNAL_FACT_OWNERS].join(' | ')} — an unowned external fact is the ` +
+              `same omission 'why' already refuses, one field along`,
+          );
+        }
+      } else if (owner !== undefined) {
+        errors.push(
+          `${at}: only 'external-fact' may carry an 'owner' — '${s.because}' names no ` +
+            `system outside Paragon, and an owner here would claim a seam that does not exist`,
         );
       }
     }
