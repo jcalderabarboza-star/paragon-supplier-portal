@@ -87,7 +87,6 @@ export const widgetEn: Record<string, string> = {
   // — Certificates / expiring (Supplier) —
   'widget.certsExpiring.title': 'Certificates — expiring',
   'widget.certsExpiring.action': 'View documents',
-  'widget.certsExpiring.flag.withExpired': '{{count}} flagged · {{expired}} expired',
   'widget.certsExpiring.flag.expiring': '{{count}} expiring',
   // — Invoice payment (Supplier) —
   'widget.invoicePayment.title': 'Invoice payment',
@@ -171,7 +170,6 @@ export const widgetId: Record<string, string> = {
   // — Certificates / expiring (Supplier) —
   'widget.certsExpiring.title': 'Sertifikat — akan kedaluwarsa',
   'widget.certsExpiring.action': 'Lihat dokumen',
-  'widget.certsExpiring.flag.withExpired': '{{count}} ditandai · {{expired}} kedaluwarsa',
   'widget.certsExpiring.flag.expiring': '{{count}} akan kedaluwarsa',
   // — Invoice payment (Supplier) —
   'widget.invoicePayment.title': 'Pembayaran faktur',

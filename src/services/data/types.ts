@@ -295,30 +295,60 @@ export interface POSummary {
 
 /**
  * ⚠️ **THIS IS THE READ VOCABULARY, NOT THE FLOW'S `states`, AND THE GAP IS
- * DELIBERATE AND PRE-EXISTING.** `supplierDocument.flow.ts` declares three
- * states (`Awaiting Upload` / `Under Review` / `Valid`); `Expiring Soon` and
- * `Expired` have always lived HERE ONLY, because they are clock projections and
- * law 0.5 keeps them out of every transition table.
+ * DELIBERATE AND PRE-EXISTING.** `Expiring Soon` lives HERE ONLY, because it is
+ * a clock projection and law 0.5 keeps it out of every transition table.
  *
- * ⚠️ **`Rejected` JOINS THEM, AND FOR A DIFFERENT REASON THAT MUST NOT BE
- * CONFLATED WITH THEIRS.** They are absent from the flow because they are
- * derived. **This one is absent because the flow has nowhere to put it:**
- * `t_supplierdoc_reject` runs `Under Review` → **`Awaiting Upload`**, so a
- * refused document lands on the state it held before the supplier ever sent it
- * and *a refusal is indistinguishable from a document that was never
- * uploaded*. That is the dead-end shape this page exists to close, and closing
- * it in the READ layer is the honest half — the FLOW half is a contract change
- * and is not this batch's (`SUPPLIERDOC-REJECT-LANDS-ON-AWAITING-UPLOAD-01`).
+ * ── ⚠️ `'Expired'` IS RETIRED FROM THIS UNION (operator ruling) ─────────────
+ *   The paragraph above used to name `Expiring Soon` **and `Expired`** together
+ *   as the two projections. They were not a pair. Derived: `Expiring Soon` is
+ *   written by the fixtures; **`'Expired'` was written by NOTHING** — no
+ *   fixture row held it (0 of 16, tallied at runtime, not grepped), no function
+ *   returned it, no transition reached it. It was renderable by the type and
+ *   unreachable in fact: **the fabrication shape.**
  *
- * The consequence, stated so no later batch reads more into this than is here:
- * **nothing PRODUCES `Rejected`.** No transition targets it and no verb writes
- * it. It is reachable in this tree only as seeded fixture data, and the surface
- * says so through the page's `ProvenanceMarker`.
+ *   The ruling, recorded because nothing in the tree recorded the intent:
+ *   *"Expiring Soon is a warning window, Expired a terminal fact, and if the
+ *   lane wanted both computed then Expiring Soon would have a producer too. It
+ *   has none either."* Retiring costs one line to reverse if a compute path
+ *   later wants it.
+ *
+ *   ⚠️ **AND THE PAGE ALREADY COMPUTES EXPIRY WITHOUT THIS MEMBER, WHICH IS
+ *   WHY THE RETIREMENT IS BEHAVIOUR-PRESERVING RATHER THAN MERELY HARMLESS.**
+ *   `SupplierDocuments.tsx` derives its expired KPI, its alert banner and its
+ *   per-row "expired N days ago" from `daysUntil(expiryDate)` — never from
+ *   `status`. The status member was not the source of the expiry story on the
+ *   one surface that tells it. (`SupplierCertsExpiringWidget` reads `status`
+ *   instead, so the widget and the page disagree about what "expiring" means —
+ *   filed, not this batch's.)
+ *
+ * ⚠️ **`Rejected` IS HERE FOR A THIRD REASON, WHICH MUST NOT BE CONFLATED WITH
+ * EITHER.** `Expiring Soon` is absent from the flow because it is derived;
+ * `Expired` is gone because nothing made it. **`Rejected` is a real machine
+ * state:** §82 put it in `supplierDocument.flow.ts` and
+ * `t_supplierdoc_reject` targets it.
+ *
+ *   ⚠️ **THE SENTENCE THAT STOOD HERE SAID THE OPPOSITE, AND IS QUOTED RATHER
+ *   THAN DELETED:** *"the flow declares three states (`Awaiting Upload` /
+ *   `Under Review` / `Valid`)"* … *"**nothing PRODUCES `Rejected`.** No
+ *   transition targets it and no verb writes it."* Both halves were true when
+ *   written and were falsified by §82 without anyone editing this comment.
+ *   Derive the states from `getFlow('supplierDocument')`, never from here —
+ *   measured today it holds four, and `t_supplierdoc_reject` runs
+ *   `Under Review` → **`Rejected`**, with `t_supplierdoc_submit` accepting
+ *   `from: ['Awaiting Upload', 'Rejected']` so a refusal has an exit.
+ *
+ *   ⚠️ **THE DEAD END THIS COMMENT DESCRIBED IS GONE FROM THE CODE AND STILL
+ *   OPEN IN THE REGISTER, AND THAT DIVERGENCE IS REPORTED RATHER THAN
+ *   RESOLVED HERE.** `docs/findings.md` §80a still carries
+ *   `SUPPLIERDOC-REJECT-LANDS-ON-AWAITING-UPLOAD-01` as **OPEN**, describing a
+ *   `t_supplierdoc_reject` that lands on `Awaiting Upload`. The transition
+ *   above does not do that any more. Closing a finding is the operator's
+ *   ruling, so this states the measurement and names the conflict; it does not
+ *   stamp the finding closed from a type declaration.
  */
 export type SupplierDocumentStatus =
   | 'Valid'
   | 'Expiring Soon'
-  | 'Expired'
   | 'Awaiting Upload'
   | 'Under Review'
   | 'Rejected';

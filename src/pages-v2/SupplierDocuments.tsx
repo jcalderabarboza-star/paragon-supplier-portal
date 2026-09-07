@@ -114,7 +114,6 @@ function declarationComplete(f: DeclarationForm): boolean {
 const STATUS_VARIANT: Record<DocStatus, 'success' | 'warning' | 'danger' | 'neutral'> = {
   Valid: 'success',
   'Expiring Soon': 'warning',
-  Expired: 'danger',
   'Awaiting Upload': 'neutral',
   'Under Review': 'neutral',
   Rejected: 'danger',
