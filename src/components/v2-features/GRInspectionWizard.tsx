@@ -1596,8 +1596,21 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           // reach the outer catch, which would relabel a settlement fault as
           // 'Not authorized' — a confidently WRONG cause, and the only thing
           // worse than no message. On a failed settle the command stays
-          // `submitted` and the GR stays 'Posting to SAP', so the post action
-          // genuinely re-attempts it.
+          // `submitted` and the GR stays 'Posting to SAP'.
+          //
+          // ⚠️ **AND THE SENTENCE THAT USED TO END HERE WAS FALSE, MEASURED
+          // AT §91: "so the post action genuinely re-attempts it."** It does not.
+          // `t_gr_post.from` is `['Approved', 'Partially Approved']`, which
+          // EXCLUDES the interim state, and `BuyerGoodsReceipt`'s footer falls
+          // to `default: return null` there — measured bilaterally, against an
+          // `Approved` GR that DOES offer the action through the same driving.
+          // So the GR is parked with no affordance of any kind, while
+          // `settle.failed.TRANSPORT` tells the reader to *"run the same action
+          // again"*. A remedy named in copy with nothing behind it is
+          // `HALAL-REFUSAL-DEAD-ENDS-01`, and it is filed rather than fixed:
+          // TRANSPORT has no producer in this tree today, and REFUSED — the one
+          // class #307 can raise — is correctly NOT retryable, so the honest
+          // remedy is a re-settle affordance and that is a surface batch.
           let settled = true;
           try {
             await settleGR.mutateAsync({ correlationId: postRes.correlationId });
