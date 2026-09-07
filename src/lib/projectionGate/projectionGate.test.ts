@@ -139,9 +139,44 @@ describe('POPULATION + MATCHER CONTROLS — before any row is believed', () => {
       expect(lf).toHaveLength(1);
     });
 
-    it('the tree this gate actually reads is CRLF — so the pair above is not hypothetical', () => {
-      const crlf = FILES.filter((f) => readFileSync(f, 'utf8').includes('\r\n'));
-      expect(crlf.length, 'no CRLF file in src/ — this whole describe is vacuous here').toBeGreaterThan(0);
+    // ⚠️ **A GUARD MUST NOT ASSERT A PROPERTY OF THE CHECKOUT. THE ASSERTION
+    // THAT STOOD HERE DID, AND IT FAILED IN THE INVERTED DIRECTION.**
+    //
+    // It read:
+    //
+    //     it('the tree this gate actually reads is CRLF — so the pair above is
+    //        not hypothetical', () => {
+    //       const crlf = FILES.filter((f) => readFileSync(f, 'utf8').includes('\r\n'));
+    //       expect(crlf.length, 'no CRLF file in src/ …').toBeGreaterThan(0);
+    //     });
+    //
+    // `core.autocrlf` is on for the author and off on Linux CI, so that was
+    // GREEN on the platform where the defect exists and **RED on the platform
+    // where it cannot** — a guard pointing exactly backwards, and it turned a
+    // correct fix into a failing gate. Line endings are a property of the
+    // WORKING COPY, never of the code, and no gate may require one.
+    //
+    // What replaces it asserts the same thing without asking the checkout
+    // anything: the strip is exercised against a REAL tree file that really
+    // does quote a write pattern inside a comment. It is the case the broken
+    // strip was acquitting by luck rather than by design, and it holds under
+    // either line ending — which is the property the pair above proves, using
+    // files it writes itself precisely so no platform can decide the outcome.
+    it('the real tree file that quotes a write in a comment is acquitted', () => {
+      const F = 'src/services/data/halalVerification.ts';
+      const raw = readFileSync(F, 'utf8');
+      // KNOWN-GOOD FIRST: the file really does contain the quoted write, or the
+      // acquittal below is a report about a string that is not there.
+      expect(raw, `${F} no longer quotes the state — pick a new witness`).toContain(
+        "status: 'Expiring Soon'",
+      );
+      // …and it is inside a COMMENT, which is the whole reason it is acquitted.
+      const line = raw.split(/\r?\n/).find((l) => l.includes("status: 'Expiring Soon'"));
+      expect(line?.trimStart().startsWith('//'), `the witness line is not a comment: ${line}`).toBe(true);
+      expect(
+        writeSites('Expiring Soon', [F]),
+        'a comment quoting a write was counted as a producer',
+      ).toHaveLength(0);
     });
   });
 });
