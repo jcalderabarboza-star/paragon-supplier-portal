@@ -43,8 +43,9 @@ import {
   useRequisitionSubmit,
   useRequisitionRevise,
 } from '../services/query/commandHooks';
-import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
+import { useVerbAvailabilities, useNextAct } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import NextActLine from '../components/ui-v2/NextActLine';
 import { DataError } from '../services/data/types';
 import { formatNumber, formatIDR, formatDate } from '../lib/format';
 import { normalizeQty, type QtyRefusalReason } from '../lib/localeNumber';
@@ -255,6 +256,11 @@ const BuyerRequisitions: React.FC = () => {
   const selectedPR = selectedRow
     ? (prs.find((p) => p.id === selectedRow.id) ?? selectedRow)
     : null;
+
+  // WHO ACTS NEXT (S2a). Read off the LIVE row above, never off `selectedRow`'s
+  // snapshot — the same reason that fallback exists. `useNextAct` answers `null`
+  // for a closed panel, so the call stays unconditional and above every return.
+  const nextAct = useNextAct('purchaseRequisition', selectedPR?.status);
 
   // The seat's authority over this page's five verbs, DERIVED per verb — never
   // authored as a status→owner map. `pr:approve` / `pr:reject` live in
@@ -1269,6 +1275,9 @@ const BuyerRequisitions: React.FC = () => {
                     <StatusPill variant={STATUS_VARIANT[selectedPR.status]}>
                       {selectedPR.status}
                     </StatusPill>
+                    <span className="mt-1 block">
+                      <NextActLine act={nextAct} testId="next-act-buyer-pr" />
+                    </span>
                   </dd>
                 </div>
               </dl>

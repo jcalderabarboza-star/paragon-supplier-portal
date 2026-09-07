@@ -155,6 +155,29 @@ describe('⚠️ RULING 2 — a state we cannot name honestly stays UNNAMED', ()
     expect(NEXT_ACT_KEY.silent).toBeNull();
     expect(NEXT_ACT_KEY.ended).toBeNull();
   });
+
+  it('⚠️ S2a — `settling` defers to the surface, and the SURFACES still cover it', () => {
+    // The arm resolves (asserted in the ruling-1 block above) and renders
+    // NOTHING, because both settling states sit on surfaces that already say
+    // it better. Pinned HERE rather than left implicit: the guard that this
+    // loses no information is that every settling state has a surface owning
+    // an in-flight account — `grSettleRemedy.test.tsx` and
+    // `BuyerInvoices.test.tsx` assert exactly ONE such sentence each, and
+    // would go red the day two of them speak again.
+    expect(NEXT_ACT_KEY.settling).toBeNull();
+    // …and the settling POPULATION is still exactly the SAP boundaries, so
+    // "both surfaces cover it" remains a claim about all of them, not most.
+    const settling = getKnownFlows().flatMap((f) =>
+      f.transitions
+        .filter((t) => (t as { sapBoundary?: boolean }).sapBoundary)
+        .map((t) => `${f.entity}/${t.to}`),
+    );
+    expect(settling.length, 'no settling state — the claim above is vacuous').toBeGreaterThan(0);
+    expect([...new Set(settling)].sort()).toEqual([
+      'goodsReceipt/Posting to SAP',
+      'invoice/Releasing Payment',
+    ]);
+  });
 });
 
 describe('an ENDED document has nobody acting next', () => {

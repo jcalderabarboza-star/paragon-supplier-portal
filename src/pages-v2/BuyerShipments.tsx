@@ -25,6 +25,8 @@ import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
 import StatusPill from '../components/ui-v2/StatusPill';
+import NextActLine from '../components/ui-v2/NextActLine';
+import { useNextAct } from '../hooks/useVerbAvailability';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
 import TableRow from '../components/ui-v2/TableRow';
@@ -205,6 +207,13 @@ const BuyerShipments: React.FC = () => {
   const selectedSupplier = selected
     ? supplierById.get(selected.supplierId)
     : undefined;
+
+  // WHO ACTS NEXT (S2a). ⚠️ `ShipmentStatus` carries ONE clock projection
+  // (`Delayed`, law 0.5) that no transition names, so a delayed shipment
+  // resolves `silent` and this line renders nothing for it. That silence is
+  // honest — the machine has no edge to report — and its LEGIBILITY is the
+  // measurement this batch reports rather than repairs.
+  const nextAct = useNextAct('shipment', selected?.status);
 
   const buildTimeline = (s: Shipment): TimelineEvent[] => {
     const completed = (statusOrder: number): 'completed' | 'current' | 'pending' => {
@@ -761,6 +770,7 @@ const BuyerShipments: React.FC = () => {
       >
         {selected && (
           <div className="flex flex-col gap-6">
+            <NextActLine act={nextAct} testId="next-act-buyer-shipment" />
             <section>
               <div className="text-label text-text-tertiary uppercase mb-2">
                 {t('shipments.panel.keyFacts')}

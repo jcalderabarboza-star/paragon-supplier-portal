@@ -26,7 +26,8 @@ import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import BulkActionsBar from '../components/ui-v2/BulkActionsBar';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
-import { useVerbAvailability, useVerbAvailabilities } from '../hooks/useVerbAvailability';
+import { useVerbAvailability, useVerbAvailabilities, useNextAct } from '../hooks/useVerbAvailability';
+import NextActLine from '../components/ui-v2/NextActLine';
 import SubTabs from '../components/ui-v2/SubTabs';
 import FilterChipsBar from '../components/ui-v2/FilterChipsBar';
 import SearchBar from '../components/ui-v2/SearchBar';
@@ -848,6 +849,10 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     () => (selectedRfqId ? (baseRfqs.find((r) => r.id === selectedRfqId) ?? null) : null),
     [baseRfqs, selectedRfqId],
   );
+
+  // WHO ACTS NEXT (S2a). `RFQStatus` matches the machine exactly — no
+  // projection member — so `status` is the canonical state on this surface.
+  const nextAct = useNextAct('rfq', selectedRfq?.status);
   // 2e-c-4 — the pin draft a buyer confirms before a rate is recorded. Null =
   // no dialog. Recording the basis a contract will be awarded on is a governed
   // act, so it is confirm-before-commit like every other one on this surface.
@@ -2581,6 +2586,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <StatusPill variant={STATUS_VARIANT[selectedRfq.status]}>
                       {selectedRfq.status}
                     </StatusPill>
+                    <span className="mt-1 block">
+                      <NextActLine act={nextAct} testId="next-act-buyer-rfq" />
+                    </span>
                   </dd>
                 </div>
                 <div>

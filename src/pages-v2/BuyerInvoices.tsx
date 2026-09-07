@@ -66,6 +66,8 @@ import {
 } from './invoices/invoiceActionModel';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import NextActLine from '../components/ui-v2/NextActLine';
+import { useNextAct } from '../hooks/useVerbAvailability';
 import type { VerbAvailability } from '../services/transitions/handoff';
 import { classifySettleFault, SETTLE_FAULT_RETRYABLE, type SettleFault } from '../services/transitions';
 import { useRefusalText } from '../hooks/useRefusalText';
@@ -237,6 +239,13 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
     () => (selected ? invoiceCommitAction(selected.lifecycleState) : null),
     [selected],
   );
+  // WHO ACTS NEXT (S2a). ⚠️ **READS `lifecycleState`, NOT `status`** — the split
+  // this DTO already declares at its own field (`types.ts`: *"Display reads
+  // `status`; legality reads `lifecycleState`"*). `status` is the buyer
+  // PROJECTION and carries `Pending Match` / `Overdue`, which no transition
+  // names; asking the machine about those returns silence on a document the
+  // machine can in fact answer for.
+  const nextAct = useNextAct('invoice', selected?.lifecycleState);
   // ── ⚠️ THE SEAT, AND WHY IT ANNOTATES RATHER THAN FILTERS ─────────────────
   // `invoice:pay` / `invoice:approve` / `invoice:dispute` belong to FINANCE
   // (operator ruling: procurement does not release payment). A procurement seat
@@ -1157,6 +1166,9 @@ const BuyerInvoicesView: React.FC<{ invoices: BuyerInvoice[] }> = ({ invoices })
                     <StatusPill variant={STATUS_VARIANT[selected.status]}>
                       {selected.status}
                     </StatusPill>
+                    <span className="mt-1 block">
+                      <NextActLine act={nextAct} testId="next-act-buyer-invoice" />
+                    </span>
                   </dd>
                 </div>
                 <div>

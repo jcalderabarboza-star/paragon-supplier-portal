@@ -46,7 +46,8 @@ import {
   SETTLE_FAULT_RETRYABLE,
   type SettleFault,
 } from '../services/transitions/settleFaults';
-import { useVerbAvailabilities, useVerbAvailability } from '../hooks/useVerbAvailability';
+import { useVerbAvailabilities, useVerbAvailability, useNextAct } from '../hooks/useVerbAvailability';
+import NextActLine from '../components/ui-v2/NextActLine';
 import {
   useGoodsReceipts,
   useSuppliers,
@@ -382,6 +383,10 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const selectedSupplier = selected
     ? supplierById.get(selected.supplierId)
     : undefined;
+
+  // WHO ACTS NEXT (S2a). `GRStatus` matches the machine's states exactly, so
+  // `status` IS the canonical state here — no projection member to fall through.
+  const nextAct = useNextAct('goodsReceipt', selected?.status);
 
   const buildTimeline = (g: GoodsReceipt): TimelineEvent[] => {
     const order = (s: GRStatus): number => {
@@ -1105,6 +1110,9 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
                   <StatusPill variant={STATUS_VARIANT[selected.status]}>
                     {selected.status}
                   </StatusPill>
+                  <span className="mt-1 block">
+                    <NextActLine act={nextAct} testId="next-act-buyer-gr" />
+                  </span>
                 </div>
                 <div>
                   <div className="text-xs text-text-tertiary">{t('goodsReceipt.panel.field.disposition')}</div>

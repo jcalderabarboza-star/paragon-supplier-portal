@@ -64,15 +64,15 @@ export const NextActLine: React.FC<{
     );
   }
 
-  // `ended` · `silent` — nothing, by decision. See the header.
+  // `ended` · `silent` · `settling` — nothing, by decision. See `NEXT_ACT_KEY`'s
+  // header; `settling` joined them at S2a, where it turned out to restate a
+  // sentence both of its surfaces already render more specifically.
   if (key === null) return null;
 
   const text =
     act.kind === 'external'
       ? t(key, { owner: act.owners.map((o) => t(EXTERNAL_FACT_OWNER_KEY[o])).join(' / ') })
-      : act.kind === 'settling'
-        ? t(key, { settlesTo: act.settlesTo })
-        : t(key);
+      : t(key);
 
   return (
     <span
