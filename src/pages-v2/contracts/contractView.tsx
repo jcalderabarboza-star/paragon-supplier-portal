@@ -23,6 +23,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import StatusPill from '../../components/ui-v2/StatusPill';
+import NextActLine from '../../components/ui-v2/NextActLine';
+import { useNextAct } from '../../hooks/useVerbAvailability';
 import ScoreBadge from '../../components/ui-v2/ScoreBadge';
 import Data from '../../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../../components/ui-v2/Timeline';
@@ -246,6 +248,12 @@ export const ContractDetailBody: React.FC<{
   suppliers: Supplier[];
 }> = ({ contract, obligations, suppliers }) => {
   const { t } = useTranslation();
+  // WHO ACTS NEXT (S2a). ⚠️ **THIS IS THE FIRST SURFACE WHERE #311 REACHES A
+  // READER.** All four contract verbs became `external-fact` owned by S/4HANA
+  // at #311, so every machine state here is stranded and the line is the only
+  // thing on the page that says the wait is SAP's. `Expiring` / `Expired` are
+  // clock projections (law 0.5) and resolve `silent` — see the batch report.
+  const nextAct = useNextAct('contract', contract.status);
   const supplierById = useMemo(
     () => new Map(suppliers.map((s) => [s.id, s])),
     [suppliers],
@@ -281,6 +289,9 @@ export const ContractDetailBody: React.FC<{
               <StatusPill variant={STATUS_VARIANT[contract.status]}>
                 {contract.status}
               </StatusPill>
+              <span className="mt-1 block">
+                <NextActLine act={nextAct} testId="next-act-buyer-contract" />
+              </span>
             </dd>
           </div>
           <div>

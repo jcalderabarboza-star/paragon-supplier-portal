@@ -21,6 +21,23 @@
 //                the handoff copy that already exists (`roles.handoff.awaiting`
 //                × `ROLE_LABEL_KEY`), and duplicating it would be a second
 //                vocabulary for a fact one map already states.
+//   · `settling` — ⚠️ **THE SAME REASON AS `theirs`, DISCOVERED AT S2a WHEN THE
+//                ARM FIRST REACHED A SCREEN.** S1 gave this arm copy and shipped
+//                it on two PO surfaces where `purchaseOrder` has no SAP-boundary
+//                state, so it never rendered — it was proved by spec and by the
+//                M3 mutant, exactly as the operator recorded. S2a put it in
+//                front of a reader for the first time, and it landed ON TOP OF a
+//                sentence each of those surfaces already renders:
+//                `goodsReceipt.settle.inFlight` (*"…no material document yet"*)
+//                and `buyerInvoices.settle.inFlight` (*"…no FI document yet"*).
+//                Both name the MISSING DOCUMENT, so both say strictly more than
+//                a generic line could, and the interim footer ALWAYS speaks —
+//                retry, not-retryable, or in-flight — so nothing is lost by
+//                deferring to it. **Derived, not assumed: the settling states
+//                are exactly the two SAP boundaries, and both carry that
+//                footer.** If a settling state ever appears on a surface with no
+//                in-flight account of its own, this decision must be revisited —
+//                `nextActSurfaces.test.ts` is where that would show up.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { NextAct } from '../../services/transitions/nextAct';
@@ -32,10 +49,10 @@ import type { NextAct } from '../../services/transitions/nextAct';
 export const NEXT_ACT_KEY: Record<NextAct['kind'], string | null> = {
   mine: 'nextAct.mine',
   external: 'nextAct.external',
-  settling: 'nextAct.settling',
   computed: 'nextAct.computed',
-  // Renders through the existing handoff copy — see the header.
+  // Render through copy the surface already owns — see the header.
   theirs: null,
+  settling: null,
   // Render nothing, deliberately — see the header.
   ended: null,
   silent: null,

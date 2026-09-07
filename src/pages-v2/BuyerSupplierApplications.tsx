@@ -90,7 +90,8 @@ import {
   useApplicationApprove,
   useApplicationReject,
 } from '../services/query/commandHooks';
-import { useVerbAvailabilities } from '../hooks/useVerbAvailability';
+import { useVerbAvailabilities, useNextAct } from '../hooks/useVerbAvailability';
+import NextActLine from '../components/ui-v2/NextActLine';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { useRefusalText, useDataErrorText } from '../hooks/useRefusalText';
 import { formatDate } from '../lib/format';
@@ -317,6 +318,10 @@ const BuyerSupplierApplications: React.FC = () => {
     () => applications.find((a) => a.id === selectedId) ?? null,
     [applications, selectedId],
   );
+
+  // WHO ACTS NEXT (S2a). `SupplierApplicationStatus` matches the machine
+  // exactly, so `status` is the canonical state on this surface.
+  const nextAct = useNextAct('supplierApplication', selected?.status);
 
   const counts = useMemo(() => {
     const by = (s: SupplierApplicationStatus) =>
@@ -833,6 +838,7 @@ const BuyerSupplierApplications: React.FC = () => {
       >
         {selected && (
           <div className="space-y-6">
+            <NextActLine act={nextAct} testId="next-act-buyer-application" />
             <FormSection title={t('applications.panel.section.applicant')}>
               <dl className="space-y-2 text-sm">
                 <Field label={t('applications.panel.field.company')}>

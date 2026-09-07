@@ -66,7 +66,6 @@ export const rolesEn: Record<string, string> = {
   // callback — naming an owner here would credit S/4HANA with our own act,
   // which inverts what the owner union means. The landing state is named
   // untranslated: it is a schema identifier, not prose.
-  'nextAct.settling': 'Awaiting SAP settlement → {{settlesTo}}',
   'nextAct.computed': 'The platform derives the next step',
   'nextAct.label': 'Next',
 
@@ -282,7 +281,6 @@ export const rolesId: Record<string, string> = {
   // — SIAPA YANG BERTINDAK BERIKUTNYA (`nextActFor`) — SATU KUNCI PER ARM —
   'nextAct.mine': 'Giliran Anda',
   'nextAct.external': 'Menunggu {{owner}}',
-  'nextAct.settling': 'Menunggu penyelesaian SAP → {{settlesTo}}',
   'nextAct.computed': 'Platform menentukan langkah berikutnya',
   'nextAct.label': 'Berikutnya',
 
