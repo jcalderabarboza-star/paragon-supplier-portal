@@ -29,6 +29,7 @@ import type { FlowDefinition } from './schema';
 import { MockCommandService } from '../data/mock/MockCommandService';
 import type { QueryScope } from '../data/types';
 import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
+import { displayStatesOf } from '../../lib/projectionGate/displayStates';
 
 const FLOWS: {
   flow: FlowDefinition;
@@ -68,14 +69,19 @@ const FLOWS: {
   },
 ];
 
-// Clock-derived values that MUST NOT be transition-states (law 0.5 / census G1).
-const PROJECTIONS_EXCLUDED: Record<string, string[]> = {
-  shipment: ['Delayed'],
-  contract: ['Expiring', 'Expired'],
-  obligation: ['Upcoming', 'Overdue'],
-  supplierDocument: ['Expiring Soon', 'Expired'],
-  purchaseRequisition: [], // no clock projection — all 6 states are real
-};
+// ⚠️ **THIS WAS `PROJECTIONS_EXCLUDED`, AND ITS LABEL WAS THE DEFECT.** The
+// constant read *"Clock-derived values that MUST NOT be transition-states"* and
+// listed ten states. The ASSERTION below is unchanged and was always true of all
+// ten — none is a declared state, none is any transition's target. The NAME was
+// true of three: the rest are hand-stamped into fixtures, and one is written by
+// nothing at all. A true assertion under a false label is the shape that hides
+// defects, because the test goes green and the label is what the reader believes.
+//
+// The grouping now lives in `lib/projectionGate/`, where each member states what
+// produces it and the gate CHECKS that against the tree — so a state that gains
+// a producer changes group by derivation rather than by someone remembering.
+// `purchaseRequisition`'s old `[]` (all six of its states are real) is preserved
+// as the ABSENCE of a row, and asserted there.
 
 describe('F0.4 remaining flows — registration + structure', () => {
   for (const { flow, entity, initial, states, creations: creations_ } of FLOWS) {
@@ -87,7 +93,7 @@ describe('F0.4 remaining flows — registration + structure', () => {
     });
 
     it(`${entity}: excludes clock projections from the transition table (law 0.5)`, () => {
-      for (const projected of PROJECTIONS_EXCLUDED[entity]) {
+      for (const projected of displayStatesOf(entity)) {
         expect(flow.states).not.toContain(projected);
         for (const t of flow.transitions) expect(t.to).not.toBe(projected);
       }
