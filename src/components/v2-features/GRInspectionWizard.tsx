@@ -26,6 +26,10 @@ import {
   headerVerbFor,
   type GrHeaderDisposition,
 } from '../../services/transitions';
+import {
+  classifySettleFault,
+  type SettleFault,
+} from '../../services/transitions/settleFaults';
 import { bpomOf } from '../../services/sdc/bpom';
 import type { BpomOutcome, BpomRefusalReason } from '../../services/sdc/bpom';
 import { halalOf } from '../../services/sdc/halal';
@@ -45,11 +49,27 @@ import { useRefusalText } from '../../hooks/useRefusalText';
 import { refusedByPolicy } from '../../services/transitions/refusalMessage';
 import { POLICY_HOOKS } from '../../services/transitions/policyHooks';
 
+/**
+ * §91e — what the wizard hands up when a settle it AWAITED came back a fault.
+ * The correlationId is the whole point: the dispatcher leaves a failed settle
+ * `submitted`, so this id is genuinely re-settleable, and it exists nowhere but
+ * in this component's closure. Without handing it up, the GR lands on the page
+ * parked in the interim with the remedy unreachable.
+ */
+export interface FailedSettle {
+  /** The GR's store id — `createRes.entityId`, which IS the store key. */
+  grId: string;
+  correlationId: string;
+  fault: SettleFault;
+}
+
 interface GRInspectionWizardProps {
   onClose: () => void;
   /** Called after the create/dispose/post commands resolve — the list re-derives
-   *  from the invalidated query, so no GR object is handed back. */
-  onComplete: () => void;
+   *  from the invalidated query, so no GR object is handed back. §91e: it now
+   *  carries the ONE thing the list cannot re-derive — a failed settle's
+   *  correlationId — and only when there was one. */
+  onComplete: (failed?: FailedSettle) => void;
   initialAsnId?: string;
   /** Shipments resolved through the service seam (GR-LEGACY-READ-01) — the
    *  wizard no longer reads the raw fixture. */
@@ -1598,32 +1618,53 @@ const GRInspectionWizard: React.FC<GRInspectionWizardProps> = ({
           // worse than no message. On a failed settle the command stays
           // `submitted` and the GR stays 'Posting to SAP'.
           //
-          // ⚠️ **AND THE SENTENCE THAT USED TO END HERE WAS FALSE, MEASURED
-          // AT §91: "so the post action genuinely re-attempts it."** It does not.
-          // `t_gr_post.from` is `['Approved', 'Partially Approved']`, which
-          // EXCLUDES the interim state, and `BuyerGoodsReceipt`'s footer falls
-          // to `default: return null` there — measured bilaterally, against an
-          // `Approved` GR that DOES offer the action through the same driving.
-          // So the GR is parked with no affordance of any kind, while
-          // `settle.failed.TRANSPORT` tells the reader to *"run the same action
-          // again"*. A remedy named in copy with nothing behind it is
-          // `HALAL-REFUSAL-DEAD-ENDS-01`, and it is filed rather than fixed:
-          // TRANSPORT has no producer in this tree today, and REFUSED — the one
-          // class #307 can raise — is correctly NOT retryable, so the honest
-          // remedy is a re-settle affordance and that is a surface batch.
-          let settled = true;
+          // ⚠️ **§91 FILED THIS AS A REMEDY WITH NO HANDLER, AND §91e MEASURED
+          // THE REMEDY TO BE THE OTHER ONE.** The sentence that stood here read
+          // *"so the post action genuinely re-attempts it"*, was corrected to
+          // *"a remedy named in copy with nothing behind it … the honest remedy
+          // is a re-settle affordance"*, and BOTH readings of the mechanism were
+          // wrong in the same place:
+          //
+          //   · `t_gr_post.from` really does exclude the interim state — but
+          //     widening it was never the fix. A re-post mints a SECOND
+          //     correlationId and orphans the first, whose `pending` entry then
+          //     never clears. The interim's only exit is `settlesTo`, so the
+          //     re-attempt is the SETTLE, on the SAME correlationId, and it
+          //     needs no machine change at all.
+          //   · *"TRANSPORT has no producer in this tree today"* is FALSE.
+          //     `withChaos` proxies `commands` — `settle` included — and throws
+          //     `DataError('CHAOS')`, which classifies TRANSPORT. It is
+          //     DEV-gated (`import.meta.env.DEV && VITE_CHAOS === 'on'`), so it
+          //     is tree-shaken from the production bundle, but a producer that
+          //     runs only in dev is a producer.
+          //
+          // So the copy's promise is TRUE about the machine and was unkept only
+          // by the surface. The catch below no longer swallows: it classifies
+          // and hands the fault UP, and `BuyerGoodsReceipt`'s interim footer
+          // offers the re-settle. The catch is still required, and for the
+          // reason it always was — a settle fault reaching the outer handler
+          // would be relabelled 'Not authorized', a confidently WRONG cause.
+          let failed: FailedSettle | undefined;
           try {
             await settleGR.mutateAsync({ correlationId: postRes.correlationId });
-          } catch {
-            settled = false;
+          } catch (err) {
+            failed = {
+              grId: grNumber,
+              correlationId: postRes.correlationId,
+              fault: classifySettleFault(err),
+            };
           }
-          if (settled) {
-            toast({
-              variant: 'success',
-              title: t('gr.post.posted.title', { grNumber }),
-              description: t('gr.post.posted.desc'),
-            });
+          if (failed) {
+            // The hook's `onError` already toasted the classified fault and its
+            // remedy; this hands the correlationId up so the remedy EXISTS.
+            onComplete(failed);
+            return;
           }
+          toast({
+            variant: 'success',
+            title: t('gr.post.posted.title', { grNumber }),
+            description: t('gr.post.posted.desc'),
+          });
         } else {
           toast({
             variant: 'warning',

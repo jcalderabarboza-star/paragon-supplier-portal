@@ -73,6 +73,17 @@ export const goodsReceiptEn: Record<string, string> = {
   'goodsReceipt.footer.requestRetest': 'Request lab retest',
   'goodsReceipt.footer.overrideHold': 'Override hold',
   'goodsReceipt.footer.viewInSap': 'View in SAP',
+  // — §91e · THE SAP-BOUNDARY INTERIM: waiting, failed, retried —
+  //   `Posting to SAP` is not a dead end and never was: it has ONE exit, the
+  //   `settlesTo` settlement edge. What it had no account of was the FAILED
+  //   settle, while `settle.failed.TRANSPORT` told the reader to run the same
+  //   action again. These three strings are what the footer says instead, and
+  //   they mirror `buyerInvoices.settle.*` verb for verb — one boundary, two
+  //   surfaces, one vocabulary.
+  'goodsReceipt.action.retrySettle': 'Retry settlement',
+  'goodsReceipt.settle.inFlight': 'Awaiting SAP settlement — no material document yet',
+  'goodsReceipt.settle.notRetryable':
+    'Settlement was refused. Asking again will not change the answer — the receipt stays here until the refusal is resolved.',
   // — Placeholder ("future release") toasts —
   'goodsReceipt.toast.submitResults.title': 'Inspection results',
   'goodsReceipt.toast.submitResults.desc': 'Submit form will open in a future release.',
@@ -351,6 +362,11 @@ export const goodsReceiptId: Record<string, string> = {
   'goodsReceipt.footer.requestRetest': 'Minta uji ulang lab',
   'goodsReceipt.footer.overrideHold': 'Timpa penahanan',
   'goodsReceipt.footer.viewInSap': 'Lihat di SAP',
+  // — §91e · Interim batas SAP: menunggu, gagal, dicoba ulang —
+  'goodsReceipt.action.retrySettle': 'Coba selesaikan lagi',
+  'goodsReceipt.settle.inFlight': 'Menunggu penyelesaian SAP — dokumen material belum ada',
+  'goodsReceipt.settle.notRetryable':
+    'Penyelesaian ditolak. Mengulang permintaan tidak akan mengubah jawabannya — penerimaan barang tetap di sini sampai penolakan itu diselesaikan.',
   // — Placeholder ("future release") toasts —
   'goodsReceipt.toast.submitResults.title': 'Hasil inspeksi',
   'goodsReceipt.toast.submitResults.desc': 'Formulir pengiriman akan tersedia pada rilis mendatang.',

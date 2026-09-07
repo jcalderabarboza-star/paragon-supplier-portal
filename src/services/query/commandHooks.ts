@@ -113,9 +113,23 @@ async function settleOrRefuse(
 // The string is chosen by the classified fault, so a permanent misconfiguration
 // does not read as a retryable blip, and every branch names the document's state
 // and whether asking again helps (`HALAL-REFUSAL-DEAD-ENDS-01` — a refusal that
-// only reports failure is half a remedy). The remedy for TRANSPORT is REAL: the
-// dispatcher leaves a failed settle `submitted`, so the same action genuinely
-// re-attempts (see `dispatcher.ts` settle).
+// only reports failure is half a remedy).
+//
+// ⚠️ **THE REMEDY FOR TRANSPORT IS REAL, AND §91e HAD TO NAME *WHICH* ACTION
+// BEFORE THAT SENTENCE WAS TRUE.** The line here read *"the same action
+// genuinely re-attempts"*, which is right about the machine and was read at §91
+// as a claim about `t_gr_post` — whose `from` excludes the interim state, making
+// the whole remedy look like a machine change. It is not. The action that
+// re-attempts is the SETTLE, on the SAME correlationId: `dispatcher.ts` leaves a
+// failed settle `submitted` with its `pending` context undeleted precisely so a
+// second `settle()` completes. A re-POST would mint a SECOND correlationId and
+// orphan the first, so widening `from` would have broken the thing it was meant
+// to fix.
+//
+// ⚠️ **AND A TOAST IS NOT A REMEDY.** This handler names the remedy; the SURFACE
+// has to offer it. Both consumers now hold the correlationId of the settles they
+// started and render a retry on the interim state, gated on
+// `SETTLE_FAULT_RETRYABLE` (`BuyerInvoices`, then `BuyerGoodsReceipt` at §91e).
 function useSettleErrorToast(): (err: unknown, vars: { correlationId: string }) => void {
   const { toast } = useToast();
   const { t } = useTranslation();

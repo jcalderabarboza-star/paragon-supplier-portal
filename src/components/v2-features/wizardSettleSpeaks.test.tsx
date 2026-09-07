@@ -237,7 +237,15 @@ describe('§91 POPULATION — only a site that AWAITS a settle can swallow one',
   it('and the awaiting site catches, so a settle fault cannot reach the outer handler', () => {
     // The behavioural proof is above; this is the structural one, and it is what
     // fails first if the `try` is ever removed in a refactor.
-    expect(SITES.wizard).toMatch(/await settleGR\.mutateAsync\([\s\S]{0,120}?\}\s*catch\s*\{/);
+    //
+    // ⚠️ §91e WIDENED THE BINDING, NOT THE CLAIM. This read `catch\s*\{`, which
+    // required a BARE catch — so it went red the moment the wizard started
+    // classifying the fault it caught (`catch (err)`), an improvement rather
+    // than the regression this guard exists to catch. The binding is now
+    // optional and the assertion is unchanged: a catch must be there.
+    expect(SITES.wizard).toMatch(
+      /await settleGR\.mutateAsync\([\s\S]{0,120}?\}\s*catch\s*(?:\([^)]{0,40}\)\s*)?\{/,
+    );
   });
 });
 

@@ -27,7 +27,7 @@ import SidePanel from '../components/ui-v2/SidePanel';
 import Data from '../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../components/ui-v2/Timeline';
 import Button from '../components/ui-v2/Button';
-import GRInspectionWizard from '../components/v2-features/GRInspectionWizard';
+import GRInspectionWizard, { type FailedSettle } from '../components/v2-features/GRInspectionWizard';
 import { useToast } from '../hooks/useToast';
 import { useTranslation } from 'react-i18next';
 import { useEnumLabel } from '../hooks/useEnumLabel';
@@ -41,6 +41,11 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
+import {
+  classifySettleFault,
+  SETTLE_FAULT_RETRYABLE,
+  type SettleFault,
+} from '../services/transitions/settleFaults';
 import { useVerbAvailabilities, useVerbAvailability } from '../hooks/useVerbAvailability';
 import {
   useGoodsReceipts,
@@ -197,6 +202,41 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [wizardAsnId, setWizardAsnId] = useState<string | undefined>(undefined);
+
+  // ── §91e · THE SETTLE WATCH ────────────────────────────────────────────────
+  // Mirrors `BuyerInvoices`' watch verb for verb — one SAP boundary, two
+  // surfaces, one account of it.
+  //
+  // ⚠️ **WHAT WAS WRONG WAS THE SURFACE, NOT THE MACHINE.** A settle that fails
+  // leaves the command `submitted` and `pending` undeleted — `dispatcher.ts`
+  // does that DELIBERATELY, so the SAME correlationId is genuinely re-settleable
+  // ("Leaving the command `submitted` is what makes the named remedy TRUE").
+  // Nothing on this page held the correlationId, so the only trace of a failure
+  // was a toast the reader dismisses and cannot get back, and the GR then sat in
+  // 'Posting to SAP' with no account of itself — while `settle.failed.TRANSPORT`
+  // told them to run the same action again. The remedy named in copy now exists.
+  //
+  // ⚠️ **AND IT IS THE SETTLE THAT RE-ATTEMPTS, NOT `t_gr_post`.** §91 read the
+  // remedy as a re-POST and therefore as a machine change (`t_gr_post.from` does
+  // not contain the interim state, and must not: re-posting would mint a SECOND
+  // correlationId and orphan the first, whose `pending` entry never clears).
+  // Re-settling is the exit the flow already declares — `settlesTo` — reached
+  // through the same command that was already issued.
+  //
+  // Only settles THIS session started are watched. A GR parked by an earlier
+  // session shows the wait and offers nothing, because that is the truth: this
+  // page cannot know that correlationId, and fabricating one would be an
+  // affordance promising what it cannot do.
+  const [settleWatch, setSettleWatch] = useState<
+    Record<string, { correlationId: string; fault: SettleFault | null }>
+  >({});
+  const watchSettle = (id: string, correlationId: string, fault: SettleFault | null) =>
+    setSettleWatch((w) => ({ ...w, [id]: { correlationId, fault } }));
+  const clearSettle = (id: string) =>
+    setSettleWatch((w) => {
+      const { [id]: _done, ...rest } = w;
+      return rest;
+    });
 
   // §73 — THE SEAT'S AUTHORITY OVER THE WHOLE GR CHAIN, NOT OVER ITS FIRST
   // VERB. One click at the wizard's end fires `t_gr_create` ->
@@ -497,6 +537,32 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
         ) : (
           <HandoffNotice availability={grChain.post} testId="handoff-gr-post" />
         );
+      case 'Posting to SAP':
+        // ⚠️ §91e — AT THE SAP BOUNDARY, AND THIS CASE USED TO NOT EXIST: the
+        // state fell to `default: return null`, so the GR was parked with no
+        // affordance and no account of itself while `settle.failed.TRANSPORT`
+        // told the reader to *"run the same action again"*.
+        //
+        // NO TRANSITION IS LEGAL FROM HERE and that is correct — the interim's
+        // only exit is the `settlesTo` settlement edge, which is why the remedy
+        // is a re-SETTLE and not a re-post. The footer accounts for the wait, or
+        // for the failure if this session saw one, and offers the retry ONLY
+        // when the classified fault says a second ask can answer differently.
+        return settleWatch[g.id]?.fault ? (
+          SETTLE_FAULT_RETRYABLE[settleWatch[g.id].fault!] ? (
+            <Button variant="outline" onClick={() => retrySettle(g.id)}>
+              {t('goodsReceipt.action.retrySettle')}
+            </Button>
+          ) : (
+            <span className="text-xs text-danger self-center">
+              {t('goodsReceipt.settle.notRetryable')}
+            </span>
+          )
+        ) : (
+          <span className="text-xs text-text-tertiary self-center">
+            {t('goodsReceipt.settle.inFlight')}
+          </span>
+        );
       case 'Posted to SAP':
         return (
           <Button
@@ -559,22 +625,59 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
             description: t('gr.post.posting.desc'),
           });
           const { correlationId } = res;
+          // §91e — watched from the moment the boundary is crossed, so the
+          // interim state can account for the wait as well as for a failure.
+          watchSettle(g.id, correlationId, null);
           window.setTimeout(() => {
             settleMutation.mutate(
               { correlationId },
               {
-                onSuccess: () =>
+                onSuccess: () => {
+                  clearSettle(g.id);
                   toast({
                     variant: 'success',
                     title: t('gr.post.posted.title', { grNumber: g.grNumber }),
                     description: t('gr.post.posted.desc'),
-                  }),
+                  });
+                },
+                // ⚠️ THE HOOK'S `onError` STILL FIRES — this does not replace
+                // it. `useGoodsReceiptSettle` carries `useSettleErrorToast`,
+                // which classifies the fault and names its remedy (§43); this
+                // records the fault ON THE ROW so the account outlives the
+                // toast. TanStack runs the mutation-level callback first.
+                onError: (err) => watchSettle(g.id, correlationId, classifySettleFault(err)),
               },
             );
           }, 1200);
         },
         onError: () =>
           toast({ variant: 'error', title: t('gr.denied.title'), description: t('gr.denied.desc') }),
+      },
+    );
+  };
+
+  // §91e — re-attempt a settle THIS session started and saw fail. Honest because
+  // the dispatcher leaves a failed settle `submitted` and its `pending` context
+  // undeleted: the same correlationId is genuinely re-settleable, and
+  // `SETTLE_FAULT_RETRYABLE` decides which faults can legitimately answer
+  // differently on a second ask. A REFUSED or UNGOVERNED fault gets no button —
+  // a governed answer does not change, and offering the retry anyway would be
+  // the `PF-1a` shape: an affordance promising what it cannot do.
+  const retrySettle = (grId: string) => {
+    const watch = settleWatch[grId];
+    if (!watch) return;
+    settleMutation.mutate(
+      { correlationId: watch.correlationId },
+      {
+        onSuccess: () => {
+          clearSettle(grId);
+          toast({
+            variant: 'success',
+            title: t('gr.settle.retried.title'),
+            description: t('gr.settle.retried.desc'),
+          });
+        },
+        onError: (err) => watchSettle(grId, watch.correlationId, classifySettleFault(err)),
       },
     );
   };
@@ -609,7 +712,15 @@ const GoodsReceiptWorkspace: React.FC<GoodsReceiptWorkspaceProps> = ({
     );
   };
 
-  const handleWizardComplete = () => setWizardOpen(false);
+  // §91e — the wizard sequences create → dispose → post → settle and then
+  // CLOSES, so a settle it saw fail would take the correlationId with it and the
+  // GR would land on this page parked, with the retry unreachable for the one
+  // path most likely to produce it. The wizard hands the failure up; the page
+  // watches it exactly as if it had issued the settle itself.
+  const handleWizardComplete = (failed?: FailedSettle) => {
+    setWizardOpen(false);
+    if (failed) watchSettle(failed.grId, failed.correlationId, failed.fault);
+  };
 
   return (
     <AppShellV2>
