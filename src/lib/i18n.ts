@@ -483,6 +483,12 @@ export const resources = {
       'settle.failed.UNGOVERNED':
         'The settlement stopped on an unclassified fault. The document is unchanged and still awaiting settlement — retrying will not clear it. Report the reference below.',
       'settle.failed.ref': 'Reference {{correlationId}}.',
+      // §91e — the GR mirror of `invoice.settle.retried.*`. A retried settle is
+      // a DIFFERENT event from a first-time one and says so: the reader already
+      // saw a failure toast, and "posted to SAP" alone would not tell them the
+      // second ask is what answered.
+      'gr.settle.retried.title': 'Settlement completed on retry',
+      'gr.settle.retried.desc': 'SAP assigned the material document. The receipt is now posted.',
       'gr.denied.title': 'Not authorized',
       'gr.denied.desc': 'You are not authorized to act on this goods receipt.',
       // — Invoice verbs (Step 4 batch iii, DR-7) —
@@ -889,6 +895,9 @@ export const resources = {
       'settle.failed.UNGOVERNED':
         'Penyelesaian berhenti karena kesalahan yang tidak terklasifikasi. Dokumen tidak berubah dan masih menunggu penyelesaian — mengulang tidak akan menuntaskannya. Laporkan referensi di bawah.',
       'settle.failed.ref': 'Referensi {{correlationId}}.',
+      // §91e — cermin ID dari `invoice.settle.retried.*`.
+      'gr.settle.retried.title': 'Penyelesaian tuntas saat dicoba ulang',
+      'gr.settle.retried.desc': 'SAP menetapkan dokumen material. Penerimaan barang kini terkirim.',
       'gr.denied.title': 'Tidak berwenang',
       'gr.denied.desc': 'Anda tidak berwenang menindaklanjuti penerimaan barang ini.',
       // — Invoice verbs (ID stub — refined in the Phase 3′ ID-first sweep) —

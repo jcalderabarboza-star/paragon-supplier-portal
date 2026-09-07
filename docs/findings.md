@@ -22205,3 +22205,165 @@ which is the trade that list exists to refuse.
   the TRANSPORT promise; a surface batch, not a rider.
 - **`WIZARD-ADMITS-A-SEAT-IT-WILL-REFUSE-01`** stays OPEN and untouched — this
   batch drove the wizard's completion path, not its authorisation.
+
+
+## §91e — THE FALSE REMEDY PROMISE, AND BOTH HALVES OF MY OWN FILING WERE WRONG
+
+**Dispatched to fix a remedy named in copy with no handler. The defect was real.
+The MECHANISM I filed for it at §91 was false in both halves, and the correct
+mechanism makes this a surface batch rather than the machine change §91 implied.**
+
+`SURFACE-NAMES-A-REMEDY-THE-MACHINE-ALREADY-SUPPORTS-01`. Closed.
+
+### (a) The promise, and what the machine actually permits
+
+`settle.failed.TRANSPORT`, both locales, verbatim:
+
+- EN — *"The settling system did not answer. The document is unchanged and still
+  awaiting settlement — **run the same action again; settling twice is safe.**"*
+- ID — *"Sistem penyelesai tidak menjawab. Dokumen tidak berubah dan masih
+  menunggu penyelesaian — **jalankan tindakan yang sama sekali lagi; menyelesaikan
+  dua kali tetap aman.**"*
+
+`t_gr_post.from = ['Approved','Partially Approved']` — it excludes `Posting to
+SAP`, and `BuyerGoodsReceipt`'s footer fell to `default: return null` there.
+Both confirmed at `18f6178a`.
+
+⚠️ **BUT THE INTERIM STATE IS NOT EXIT-LESS, AND THAT IS THE WHOLE FINDING.** It
+has exactly ONE exit and the flow declares it: `settlesTo: 'Posted to SAP'` on
+`t_gr_post`. That is a materially different object from `Quality Hold` pre-PF-1a,
+which had NO exit at all — and the difference decides the remedy. **A state with
+an unsurfaced exit needs a surface; a state with no exit needs a machine.**
+
+### (b) TRANSPORT HAS A PRODUCER, AND MY §91 FILING SAID IT DOES NOT
+
+The sentence I shipped in `GRInspectionWizard.tsx` read *"TRANSPORT has no
+producer in this tree today"*. **Measured false.** `withChaos` proxies EVERY
+sub-service including `commands`, and `chaosProxy` throws
+`DataError('CHAOS', …)` **before** delegating — so `commands.settle` is a
+producer. `CHAOS` is not in `DISPATCHER_THROWN_CODES`, so `classifySettleFault`
+returns `TRANSPORT`.
+
+It is DEV-gated (`import.meta.env.DEV && VITE_CHAOS === 'on'`, `main.tsx:21`).
+Measured in the shipped bundle, with a known-true control in the same run:
+
+| grep over `dist/assets/` | hits |
+|---|---|
+| `Injected chaos failure` | **0** |
+| `Awaiting SAP settlement` / `Menunggu penyelesaian SAP` | 2 / 2 |
+| `Retry settlement` / `Coba selesaikan lagi` | 2 / 2 |
+
+So: **a producer that runs only in dev is still a producer** — "no producer" was
+the wrong claim, and it was the load-bearing reason §91 gave for filing rather
+than fixing. The F1 `httpDataService` throwing `DataError('UPSTREAM')` is the
+designed second producer and is not built.
+
+⚠️ **AND THE THROW-BEFORE-DELEGATE ORDER IS WHY THE COPY IS HONEST.** Chaos
+rejects without the dispatcher's `settle` ever running, so the command stays
+`submitted` and `pending` is untouched — the second ask genuinely can differ.
+
+### (c) REFUSED and UNGOVERNED are correctly non-retryable — confirmed, not assumed
+
+`SETTLE_FAULT_RETRYABLE` = `{REFUSED: false, TRANSPORT: true, UNGOVERNED: false}`.
+The copy agrees in both locales: REFUSED says *"asking again gives the same
+refusal"* / *"meminta lagi menghasilkan penolakan yang sama"*; UNGOVERNED says
+*"retrying will not clear it"*. **Only TRANSPORT promises a retry, so the batch
+is NOT wider than filed.**
+
+### (d) ⚠️ THE RE-ATTEMPT IS THE SETTLE, NOT THE POST — SO NO MACHINE CHANGE
+
+§91 read *"the same action"* as `t_gr_post` and therefore as a widened `from`.
+**Widening `from` would have broken the thing it was meant to fix:** a re-post
+mints a SECOND correlationId and orphans the first, whose `pending` entry then
+never clears. `dispatcher.ts` already anticipated the real remedy and says so at
+the site — on a `settleFinalize` throw it deliberately does **not** flip the
+status, because *"the retry the UI is about to offer would find a `done` status
+and silently no-op. … Leaving the command `submitted` is what makes the named
+remedy TRUE."*
+
+**The machine has supported the remedy since §43. Only the surface did not offer
+it — and the sibling surface already did.** `BuyerInvoices` has shipped
+`settleWatch` + `retrySettle` + a `SETTLE_FAULT_RETRYABLE` gate on `Releasing
+Payment` for two batches. The GR side is the mirror, and it is now built.
+
+⚠️ **THE SECOND FALSE SENTENCE, IN A DIFFERENT FILE, UNCORRECTED BY #309.**
+`commandHooks.ts` read *"the same action genuinely re-attempts (see
+`dispatcher.ts` settle)"* — right about the machine, and the sentence §91 read as
+a claim about `t_gr_post`. #309 corrected only the wizard's copy of the error and
+left the hook's. Both now name WHICH action.
+
+### (e) The agreement spec did NOT encode the defect — it goes GREEN
+
+`wizardSettleSpeaks.test.tsx`'s IFF is derived from `t_gr_post.from` and keys on
+the label `/Post to SAP/i`. The remedy is labelled *Retry settlement* and `from`
+is untouched, so `false === false` still holds. **Green on the fix, as its own
+comment promised.** One sibling assertion needed widening and it was a BINDING,
+not a claim: `/…\}\s*catch\s*\{/` required a BARE catch, so it reddened the
+moment the wizard started classifying what it caught (`catch (err)`) — an
+improvement, not the regression the guard exists to catch.
+
+### The mutation probe — both directions, and one survivor that was a real hole
+
+`BuyerGoodsReceipt.tsx`, five mutants, spec `grSettleRemedy.test.tsx`:
+
+| mutant | exit | killed, by name |
+|---|---|---|
+| M1 retry offered on EVERY fault | 1 | 3 (both non-retryable classes + wizard) |
+| M2 retry never offered | 1 | 4 |
+| M3 retry handler inert | 1 | 2 |
+| M4 restore the defect (`return null`) | 1 | 7 |
+| M5 wizard hand-up dropped | 1 | 2 |
+
+⚠️ **M5 SURVIVED ON THE FIRST RUN, AND A SURVIVOR IS A HOLE IN THE GATE RATHER
+THAN A NOTE FOR LATER.** Every spec then drove the PAGE's own `Post to SAP`,
+where the page keeps its own correlationId. The WIZARD is the other producer —
+it sequences create → dispose → post → settle and then CLOSES, so a settle it saw
+fail took the correlationId out of the tree and the GR landed parked with the
+remedy unreachable **on the path most likely to produce it.** Three specs driving
+the wizard through the real page now close it.
+
+⚠️ **AND THE PROBE'S FIRST RUN REPORTED ALL FIVE AS SURVIVORS — §85's HUMBLE
+DIRECTION, FOR THE FOURTH TIME AND ON A FIFTH MECHANISM.** vitest's verbose
+reporter prints `× <file> > <describe> > <test>`; the parser anchored the
+describe immediately after the marker and matched nothing. Every kill read as
+*"your gate is weak"*, which is the reading that gets believed. It was caught
+only because five survivors on a suite just watched go green is implausible —
+and the exit code (1, not 0) was the evidence, sitting beside a parse that said
+nothing failed. **`cp1252` also bit twice in one batch: once on DECODE (already
+guarded) and once on PRINT** — `sys.stdout` needed the same explicit encoding the
+subprocess read already had.
+
+Restore verified byte-identical. `sha256` (working-copy bytes of
+`BuyerGoodsReceipt.tsx`) `ab25475a6e1ea16e460e98f1eec2d06bc2f64d40028824f43c6f4b6f85ec0e3c`;
+`git hash-object` (normalized, recomputable anywhere)
+`a936a053c96a36211942e823312a1973543c2dde`.
+
+### Browser QA — both locales, through the app's own menu
+
+`vite preview`, production build, `htmlLang` + a divergent token each way.
+
+| | EN | ID |
+|---|---|---|
+| before | `Post to SAP` | `Kirim ke SAP` |
+| **interim (was `null`)** | **Awaiting SAP settlement — no material document yet** | **Menunggu penyelesaian SAP — dokumen material belum ada** |
+| after settle | `View in SAP` | `Lihat di SAP` |
+
+`htmlLang` `en` → `id`; `h1` *"Goods Receipt & Quality Control"* → *"Penerimaan
+Barang & Kontrol Kualitas"*; the EN string is ABSENT in the ID run. Zero console
+errors. The wizard was walked end to end in ID against **ASN-2026-015** →
+**GR-2026-901 · Terkirim ke SAP**, confirming no regression on the file this
+batch changed most.
+
+⚠️ **THE FAILURE BRANCH CANNOT BE PRODUCED IN THE BROWSER AND IS COVERED BY SPEC
+RATHER THAN STAGED.** TRANSPORT's only producer today is chaos, chaos is
+DEV-gated, and the marker is measured absent from the bundle (table in (b)). The
+retry affordance is therefore unreachable in a production preview by
+construction — not hidden, not broken. Ten specs cover it, both directions,
+mutation-probed.
+
+### Not touched, deliberately
+
+`buildTimeline`'s `order()` has no `case 'Posting to SAP'`, so the interim falls
+to `default: return 0` and the timeline marks nothing current while a GR is at
+the boundary. Cosmetic, on a different instrument from this batch's subject, and
+outside the dispatch — recorded, not fixed.
