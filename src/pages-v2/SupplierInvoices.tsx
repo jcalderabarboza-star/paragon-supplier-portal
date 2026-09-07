@@ -48,7 +48,8 @@ import {
   usePurchaseOrders,
 } from '../services/query/hooks';
 import { useInvoiceCreate, useInvoiceSubmit } from '../services/query/commandHooks';
-import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import { useVerbAvailability, useNextAct } from '../hooks/useVerbAvailability';
+import NextActLine from '../components/ui-v2/NextActLine';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 import { readInvoiceAmount } from './invoices/invoiceAmountModel';
@@ -194,6 +195,20 @@ const SupplierInvoices: React.FC = () => {
   const mySupplier = supplierQuery.data ?? null;
   const [selected, setSelected] = useState<SupplierInvoice | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('detail');
+
+  // WHO ACTS NEXT (S2b). ⚠️ **READS THE SAME `selected.status` THE PILL READS,
+  // AND THAT IS DELIBERATE EVEN THOUGH THE BUYER SIDE READS `lifecycleState`.**
+  // `SupplierInvoice` HAS no `lifecycleState` — the supplier DTO carries only
+  // the projection — so there is no canonical state to prefer here. Reading a
+  // different source than the pill beside it would let the line and the status
+  // disagree on one row, which is worse than the silence.
+  //
+  // ⚠️ **AND THE SILENCE IS LARGE ON THIS SURFACE: `Overdue` is a computed
+  // projection no transition names, so those rows say nothing** — measured at 5
+  // of 13 fixtures, whose canonical states are `Submitted` and `Approved` and
+  // would have answered. That is the projection arm's case, reported not
+  // repaired; it is not repairable here without a DTO change.
+  const nextAct = useNextAct('invoice', selected?.status);
   // New-invoice draft form (creation-shape against one of the supplier's own
   // confirmed POs — the store assigns the invoice number).
   const [newOpen, setNewOpen] = useState(false);
@@ -685,6 +700,9 @@ const SupplierInvoices: React.FC = () => {
                     <StatusPill variant={STATUS_VARIANT[selected.status]}>
                       {selected.status}
                     </StatusPill>
+                    <span className="mt-1 block">
+                      <NextActLine act={nextAct} testId="next-act-supplier-invoice" />
+                    </span>
                   </dd>
                 </div>
                 <div>

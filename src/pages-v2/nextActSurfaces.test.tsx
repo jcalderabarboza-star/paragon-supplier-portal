@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// S2a — WHO ACTS NEXT, ON THE FLOW-BACKED BUYER SURFACES.
+// WHO ACTS NEXT, ON THE FLOW-BACKED SURFACES. S2a (buyer) + S2b (supplier).
 //
 // ⚠️ **ONE NAMED TEST PER SURFACE, AND THAT IS THE WHOLE DESIGN OF THIS FILE.**
 // `nextAct.test.ts` already proves the FUNCTION: every arm, both seats, the
@@ -26,7 +26,8 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Routes, Route } from 'react-router-dom';
 import { screen, fireEvent } from '@testing-library/react';
 
-import { renderWithProviders } from '../test/test-utils';
+import { renderWithProviders, SUPPLIER } from '../test/test-utils';
+import SupplierInvoices from './SupplierInvoices';
 import BuyerRequisitions from './BuyerRequisitions';
 import BuyerInvoices from './BuyerInvoices';
 import BuyerGoodsReceipt from './BuyerGoodsReceipt';
@@ -82,6 +83,32 @@ describe('S2a · BuyerInvoices — the line reads lifecycleState, never the proj
     renderWithProviders(<BuyerInvoices />);
     fireEvent.click(await screen.findByText('INV-2026-BRL-0051'));
     await expectLine('next-act-buyer-invoice', 'mine', /Your move/);
+  });
+});
+
+describe('S2b · SupplierInvoices — the supplier side, where the projection costs the most', () => {
+  it('an invoice in Payment Released names THE BANK to the supplier too', async () => {
+    renderWithProviders(<SupplierInvoices />, { identity: SUPPLIER });
+    fireEvent.click(await screen.findByText('INV-2025-BRL-0042'));
+    await expectLine('next-act-supplier-invoice', 'external', /Awaiting the bank/i);
+  });
+
+  it('⚠️ an OVERDUE invoice says NOTHING — and its canonical state would have answered', async () => {
+    // `Overdue` is a COMPUTED projection (`invoiceProjection.isOverdue`, dueDate
+    // vs now) that no transition names, so the machine has no edge to report.
+    // INV-2026-BRL-0051 is canonically `Submitted`; the buyer surface, which
+    // reads `lifecycleState`, says "Your move" on this very document. The
+    // supplier DTO carries no `lifecycleState`, so nothing here can recover it.
+    // Measured at 5 of 13 fixtures — the projection arm's case, recorded as a
+    // test rather than as prose so it cannot quietly stop being true.
+    renderWithProviders(<SupplierInvoices />, { identity: SUPPLIER });
+    fireEvent.click(await screen.findByText('INV-2026-BRL-0051'));
+    // POSITIVE CONTROL — a panel-ONLY label proves the walk happened, so the
+    // absence below is about the line and not about a panel that never opened.
+    // (The status word itself is not usable as the control: it renders in the
+    // row AND the panel, so it is ambiguous by construction.)
+    expect(await screen.findByText('Buyer contact')).toBeInTheDocument();
+    expect(screen.queryByTestId('next-act-supplier-invoice')).toBeNull();
   });
 });
 
