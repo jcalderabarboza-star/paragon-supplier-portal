@@ -33,13 +33,46 @@
 //   answers the question next to the one asked is the same class as a piped
 //   exit code, and it is checked rather than remembered.
 //
+// ── ⚠️ A CLAIM THIS HEADER MADE AND THE TREE DID NOT SUPPORT — RETIRED, AND
+//    QUOTED RATHER THAN DELETED ─────────────────────────────────────────────
+//   The paragraph above read, in the version that merged at #315:
+//
+//       "Comment-only lines are dropped before matching: a comment quoting a
+//        state is not a write, and `halalVerification.ts` contains exactly
+//        that."
+//
+//   **The first clause was false on this repo's line endings and the second
+//   was the case it was failing on.** `core.autocrlf` is on here, the strip
+//   split on a bare `'\n'`, and a `$` without `m` means end of STRING — so on
+//   every `…\r`-terminated line the strip did not fire. Nothing was dropped:
+//   **every commented line in `sourceFiles()` was scanned as code** — derive
+//   the figure as lines matching `/^\s*\/\//` across that walk, which is how
+//   the batch measured it, rather than reading one here. (The first draft of
+//   this paragraph carried the number and it was wrong by 29 on the next run
+//   — `FLOOR-IN-PROSE-01`, inside the correction to a different defect.) The
+//   one comment in the tree that matches a write pattern —
+//   `halalVerification.ts:58`, quoting `status: 'Expiring Soon'` — was
+//   acquitted only because it sits outside `supplierDocument`'s file scope.
+//   **Luck, in the exact place the header claimed design.**
+//
+//   ⚠️ **AND THE SHAPE IS WORTH MORE THAN THE BUG: THE COMMENT NAMED THE ONE
+//   CASE THAT WOULD HAVE FALSIFIED IT.** A header that cites its hardest
+//   example reads as unusually well-evidenced, which is what stopped anyone
+//   checking whether the example passes. Cite the case AND assert it — the
+//   equivalence pair in `projectionGate.test.ts` is that assertion, and it
+//   feeds the same bytes in both line endings so neither can be believed alone.
+//
 // ── THE LIMITS, STATED BECAUSE A CENSUS THAT HIDES ITS BLIND SPOTS IS WORSE
 //    THAN NO CENSUS ────────────────────────────────────────────────────────
 //   Writes this cannot see, and would therefore misclassify as absent:
 //     1. a value reached through a variable (`status: someVar`) or spread;
 //     2. a value built by concatenation or a template literal;
 //     3. a write in a `.test.` file — deliberately excluded, because a spec
-//        stamping a state is not the product producing it.
+//        stamping a state is not the product producing it;
+//     4. a write on a line that ALSO contains `//` inside a string literal —
+//        `const u = 'https://x'` truncates at the `//`. Named because the
+//        strip now genuinely runs, so this limit is real where it used to be
+//        theoretical; measured to change no verdict in this tree.
 //   Each would make a state look LESS produced than it is, which biases toward
 //   `stored`/`produced-by-nothing` — the pessimistic direction, and therefore
 //   the one that terminates an investigation (§86g). So the gate asserts the
@@ -113,6 +146,22 @@ export function filesForEntity(entity: string, files: string[]): string[] {
  * one of `= ! < >` (which would make it a comparison). Comment-only lines are
  * dropped before matching: a comment quoting a state is not a write, and
  * `halalVerification.ts` contains exactly that.
+ *
+ * ⚠️ **THE SPLIT IS `/\r?\n/`, AND THAT IS THE FIX, NOT A TIDY-UP.** This
+ * function shipped splitting on a bare `'\n'`, which leaves a `\r` on every
+ * line of a CRLF working copy — and `core.autocrlf` is on in this repo, so
+ * that is every line of every file. The comment strip below is
+ * `$`-anchored WITHOUT `m`, so `$` means END OF STRING; `.` does not match
+ * `\r`, so `.*` stops one character short and **the strip never fired.** Every
+ * comment in the tree was scanned as code.
+ *
+ * The repair is made at the SPLIT rather than at the regex on purpose: it
+ * removes the `\r` for every per-line matcher this function will ever hold,
+ * where an `m` flag would have repaired exactly one of them. The coupling is
+ * therefore load-bearing — **the strip below is correct only because no line
+ * reaching it can carry a `\r`** — and it is checked rather than trusted, by a
+ * CRLF/LF equivalence pair in `projectionGate.test.ts` that feeds the same
+ * bytes in both line endings and demands identical output.
  */
 export function writeSites(state: string, files: string[]): WriteSite[] {
   const q = escape(state);
@@ -121,7 +170,7 @@ export function writeSites(state: string, files: string[]): WriteSite[] {
   const hits: WriteSite[] = [];
   for (const f of files) {
     readFileSync(f, 'utf8')
-      .split('\n')
+      .split(/\r?\n/)
       .forEach((raw, i) => {
         const code = raw.replace(/\/\/.*$/, '').trim();
         if (!code || compare.test(code) || !write.test(code)) return;

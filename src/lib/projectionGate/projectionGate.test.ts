@@ -16,7 +16,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import {
   sourceFiles,
   filesForEntity,
@@ -73,6 +75,75 @@ describe('POPULATION + MATCHER CONTROLS — before any row is believed', () => {
   it('a nonexistent state matches nothing', () => {
     expect(writeSites('__no_such_state__', FILES)).toHaveLength(0);
   });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // ⚠️ CRLF: THE LINE ENDING IS AN INPUT TO THIS INSTRUMENT, SO IT IS TESTED
+  // LIKE ONE.
+  //
+  // The strip shipped as `raw.replace(/\/\/.*$/, '')` over a bare `'\n'` split.
+  // `core.autocrlf` is on in this repo, `.` does not match `\r`, and `$`
+  // without `m` means END OF STRING — so `.*` stopped one character short and
+  // **the strip never fired on any file in this tree.** Every comment was
+  // scanned as code. It changed no verdict, because the only comment in the
+  // tree quoting a write pattern (`halalVerification.ts:58`) happens to sit
+  // outside the scope of the entity whose state it names — LUCK, and the
+  // header claimed design.
+  //
+  // ⚠️ **THE PAIR IS THE POINT: SAME BYTES, BOTH ENDINGS, IDENTICAL OUTPUT.**
+  // A single-ending test cannot see this class at all — the broken instrument
+  // passes an LF-only test perfectly. And the FIRST version of this batch's own
+  // control was a synthetic string ending in a bare `\r` with no `\n`, which
+  // `/\r?\n/` cannot split, so the "fixed" arm silently ran the broken
+  // behaviour and both arms agreed. Hence: real files, real `\r\n`.
+  // ───────────────────────────────────────────────────────────────────────────
+  describe('CRLF is an input, not an accident of the checkout', () => {
+    const write = (body: string, nl: string): string => {
+      const p = join(mkdtempSync(join(tmpdir(), 'pgate-')), 'sample.ts');
+      writeFileSync(p, body.split('\n').join(nl), 'utf8');
+      return p;
+    };
+
+    // A comment quoting a write, then a REAL write, then a comparison.
+    const BODY = [
+      "// status: 'Ctl' — quoted in a comment, and a comment is not a write",
+      "const real = { status: 'Ctl' };",
+      "const cmp = real.status === 'Ctl';",
+      '',
+    ].join('\n');
+
+    it('⚠️ KNOWN-GOOD FIRST: the real write IS found under BOTH line endings', () => {
+      // Rule 4 in the order it demands. If the acquittal below were checked
+      // first, a strip that ate the whole line would look like a working strip.
+      for (const [name, nl] of [['LF', '\n'], ['CRLF', '\r\n']] as const) {
+        const sites = writeSites('Ctl', [write(BODY, nl)]);
+        expect(sites.map((s) => s.line), `${name}: the real write went missing`).toEqual([2]);
+      }
+    });
+
+    it('⚠️ THE CASE LUCK COVERED: a comment quoting `status: X` IN SCOPE is acquitted, under both endings', () => {
+      for (const [name, nl] of [['LF', '\n'], ['CRLF', '\r\n']] as const) {
+        const sites = writeSites('Ctl', [write(BODY, nl)]);
+        expect(
+          sites.map((s) => s.line),
+          `${name}: line 1 is a COMMENT and was counted as a producer`,
+        ).not.toContain(1);
+      }
+    });
+
+    it('the two endings agree exactly — the property, not two coincidences', () => {
+      const lf = writeSites('Ctl', [write(BODY, '\n')]).map((s) => `${s.line}:${s.text}`);
+      const crlf = writeSites('Ctl', [write(BODY, '\r\n')]).map((s) => `${s.line}:${s.text}`);
+      expect(crlf).toEqual(lf);
+      // …and the comparison on line 3 is excluded under both, so the equality
+      // above is not two identically-broken runs agreeing with each other.
+      expect(lf).toHaveLength(1);
+    });
+
+    it('the tree this gate actually reads is CRLF — so the pair above is not hypothetical', () => {
+      const crlf = FILES.filter((f) => readFileSync(f, 'utf8').includes('\r\n'));
+      expect(crlf.length, 'no CRLF file in src/ — this whole describe is vacuous here').toBeGreaterThan(0);
+    });
+  });
 });
 
 describe('THE GROUPING IS DERIVED — declared == derived, both directions', () => {
@@ -86,15 +157,55 @@ describe('THE GROUPING IS DERIVED — declared == derived, both directions', () 
     }
   });
 
-  it('⚠️ AND NO GROUP IS EMPTY — a partition with a vacant arm is not a partition', () => {
-    // Without this, deleting every `stored-in-fixtures` row would leave the
-    // assertion above trivially true over the rows that remain.
+  it('⚠️ NO DECLARED GROUP IS UNKNOWN, AND THE POPULATED ONES ARE NOT VACUOUS', () => {
+    // Without something here, deleting every `stored-in-fixtures` row would
+    // leave the assertion above trivially true over the rows that remain.
+    //
+    // ⚠️ **THIS ASSERTED SET EQUALITY UNTIL `supplierDocument/Expired` WAS
+    // RETIRED, AND THAT IS WHY IT NO LONGER DOES.** It demanded all three arms
+    // hold a member — so removing a state that NOTHING PRODUCED, which is the
+    // tree getting more honest, turned this file red. **A guard that reddens
+    // when its subject improves is anchored on the defect it is watching**, and
+    // the remedy is to check the property (every declared group is a real
+    // `ProducedBy`; the classifier can still reach all three) rather than the
+    // census (all three appear in today's rows).
     const groups = new Set(DISPLAY_STATES.map((r) => r.group));
-    expect([...groups].sort()).toEqual([
-      'computed-at-read',
-      'produced-by-nothing',
-      'stored-in-fixtures',
-    ]);
+    const KNOWN = ['computed-at-read', 'produced-by-nothing', 'stored-in-fixtures'];
+    for (const g of groups) expect(KNOWN, `'${g}' is not a ProducedBy value`).toContain(g);
+    // …and the arms that DO carry rows carry more than zero, which is the half
+    // that keeps the derivation assertion above non-vacuous.
+    expect(groups.size, 'every row landed in one group — the partition is doing no work').toBeGreaterThan(1);
+  });
+
+  it('⚠️ THE CLASSIFIER CAN STILL REACH ALL THREE ARMS — proven synthetically, not by census', () => {
+    // The reachability the test above used to prove by demanding a member. A
+    // synthetic input cannot go stale when the tree is repaired, which is the
+    // whole point: `produced-by-nothing` must stay PROVABLE after its last real
+    // member is retired, or the gate quietly stops defending the arm.
+    const dir = mkdtempSync(join(tmpdir(), 'pgate-arms-'));
+    mkdirSync(join(dir, 'data'));
+    // `isFixture` is PATH-shaped (`/data/mock[A-Z]` or `/mock/fixtures/`), so
+    // the synthetic files have to sit where a fixture really sits. The first
+    // version of this test put them in the bare temp dir and the control below
+    // caught it — without that control both rows would have classified the same
+    // way and the "three arms" proof would silently have been a two-arm proof.
+    const fixture = join(dir, 'data', 'mockSynthetic.ts').replace(/\\/g, '/');
+    const module = join(dir, 'syntheticProjection.ts').replace(/\\/g, '/');
+    writeFileSync(fixture, "const a = { status: 'SynthStored' };\r\n", 'utf8');
+    writeFileSync(module, "const b = { status: 'SynthComputed' };\r\n", 'utf8');
+    const files = [fixture, module];
+
+    expect(isFixture(fixture), 'the synthetic fixture is not classified as one').toBe(true);
+    expect(isFixture(module), 'the synthetic module was classified as a fixture').toBe(false);
+
+    const verdict = (state: string): string => {
+      const sites = writeSites(state, files);
+      if (sites.some((s) => !isFixture(s.file))) return 'computed-at-read';
+      return sites.length > 0 ? 'stored-in-fixtures' : 'produced-by-nothing';
+    };
+    expect(verdict('SynthComputed')).toBe('computed-at-read');
+    expect(verdict('SynthStored')).toBe('stored-in-fixtures');
+    expect(verdict('SynthNobodyWrites')).toBe('produced-by-nothing');
   });
 });
 
@@ -133,8 +244,14 @@ describe('THE REASON TOKENS CARRY MECHANICAL OBLIGATIONS', () => {
   });
 
   it('⚠️ `produced-by-nothing` means ZERO writes — and it fires the moment one appears', () => {
+    // ⚠️ NO `toBeGreaterThan(0)` HERE, DELIBERATELY. It used to demand a member,
+    // which made retiring the tree's one fabricated union member turn this red.
+    // The arm's REACHABILITY is proved synthetically above; this loop is the
+    // obligation on any member the group acquires, and an empty group has no
+    // obligation to fail. (The `computed-at-read` and `stored-in-fixtures`
+    // checks keep their non-empty assertions — those arms describe states that
+    // exist, so an empty one really would mean the population collapsed.)
     const rows = DISPLAY_STATES.filter((r) => r.group === 'produced-by-nothing');
-    expect(rows.length, 'no such row — the group would be undefended').toBeGreaterThan(0);
     for (const row of rows) {
       const sites = writeSites(row.state, filesForEntity(row.entity, FILES));
       expect(

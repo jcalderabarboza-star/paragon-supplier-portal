@@ -20,8 +20,18 @@ import type { SupplierDocument } from '../../services/data/types';
 // registered but author-unwired (F0.4 inert — no CommandTarget) → the
 // LivenessRegistry derives SIMULATED → amber "Sample" pill. The expiry flag still
 // derives honestly from the fixture's real document status.
-const isExpiring = (d: SupplierDocument): boolean =>
-  d.status === 'Expiring Soon' || d.status === 'Expired';
+// ⚠️ `|| d.status === 'Expired'` IS GONE BECAUSE THE UNION MEMBER IS.
+// `'Expired'` was produced by nothing — 0 of 16 fixture rows, no function
+// returning it, no transition reaching it — so this arm never once selected a
+// document, and the `critical` severity and `withExpired` flag it fed were
+// dead by construction rather than merely unused. Behaviour is unchanged:
+// what was unreachable is now also unwritable.
+//
+// ⚠️ **AND THE DIVERGENCE THIS EXPOSES IS FILED, NOT FIXED HERE.** This widget
+// asks the STATUS field what "expiring" means; `SupplierDocuments.tsx` asks
+// the CLOCK (`daysUntil(expiryDate) <= 180`). They can disagree on the same
+// document, and after this change only the page can ever say "expired" at all.
+const isExpiring = (d: SupplierDocument): boolean => d.status === 'Expiring Soon';
 
 const SupplierCertsExpiringWidget: React.FC = () => {
   const { t } = useTranslation();
@@ -33,17 +43,15 @@ const SupplierCertsExpiringWidget: React.FC = () => {
     [query.data],
   );
   const count = expiring.length;
-  const expired = useMemo(
-    () => expiring.filter((d) => d.status === 'Expired').length,
-    [expiring],
-  );
-  const severity: FlagSeverity =
-    expired > 0 ? 'critical' : count > 0 ? 'warning' : 'none';
+  // `critical` was reachable only through an `expired` count that could never
+  // be non-zero. Removed with its cause rather than left as a branch nothing
+  // can enter — an unreachable severity is a claim the widget cannot honour.
+  const severity: FlagSeverity = count > 0 ? 'warning' : 'none';
 
   const expandedRows =
     count === 0 ? (
       <div className="text-sm text-text-tertiary">
-        No certificates expiring or expired.
+        No certificates expiring.
       </div>
     ) : (
       <Table>
@@ -79,13 +87,7 @@ const SupplierCertsExpiringWidget: React.FC = () => {
       count={count}
       capability="supplierDocuments"
       flagSeverity={severity}
-      flagLabel={
-        count > 0
-          ? expired > 0
-            ? t('widget.certsExpiring.flag.withExpired', { count, expired })
-            : t('widget.certsExpiring.flag.expiring', { count })
-          : undefined
-      }
+      flagLabel={count > 0 ? t('widget.certsExpiring.flag.expiring', { count }) : undefined}
       actionLabel={count > 0 ? t('widget.certsExpiring.action') : undefined}
       onAction={count > 0 ? () => navigate('/supplier/documents') : undefined}
       expandedRows={expandedRows}

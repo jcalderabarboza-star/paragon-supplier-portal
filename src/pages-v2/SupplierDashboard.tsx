@@ -133,7 +133,6 @@ const DOC_STATUS_TONE: Record<
 > = {
   Valid: 'success',
   'Expiring Soon': 'warning',
-  Expired: 'danger',
   'Awaiting Upload': 'danger',
   'Under Review': 'neutral',
   Rejected: 'danger',
@@ -143,7 +142,6 @@ const DOC_STATUS_TONE: Record<
 const DOC_STATUS_ACTION_KEY: Record<SupplierDocumentStatus, string> = {
   Valid: 'supplierDashboard.docs.action.view',
   'Expiring Soon': 'supplierDashboard.docs.action.renew',
-  Expired: 'supplierDashboard.docs.action.renew',
   'Awaiting Upload': 'supplierDashboard.docs.action.upload',
   'Under Review': 'supplierDashboard.docs.action.view',
   // ⚠️ **`view`, NOT `upload`** — and the widget is exactly where that would

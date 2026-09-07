@@ -122,11 +122,28 @@ export const DISPLAY_STATES: readonly DisplayStateRow[] = [
   { entity: 'supplierDocument', state: 'Expiring Soon', group: 'stored-in-fixtures' },
 
   // ── produced by nothing ─────────────────────────────────────────────────
-  // A `SupplierDocumentStatus` member with ZERO write sites: no fixture holds
-  // it, no function returns it, no verb reaches it. It is renderable by the
-  // type and unreachable in fact — which also means the danger-colour collision
-  // with `Rejected` is latent rather than live.
-  { entity: 'supplierDocument', state: 'Expired', group: 'produced-by-nothing' },
+  // ⚠️ **THIS GROUP IS DELIBERATELY EMPTY, AND THE EMPTINESS IS THE RESULT
+  // RATHER THAN AN OVERSIGHT.**
+  //
+  // Its one member was `supplierDocument/Expired`, described here as *"a
+  // `SupplierDocumentStatus` member with ZERO write sites: no fixture holds it,
+  // no function returns it, no verb reaches it … renderable by the type and
+  // unreachable in fact"*. **That description was accurate, and it is why the
+  // member is gone rather than why it stayed** — the operator ruled it RETIRED:
+  // a union member no code produces is the fabrication shape, and `Expiring
+  // Soon` (a warning window) and `Expired` (a terminal fact) were never a pair
+  // to compute together. Re-derived at runtime before the cut, because
+  // `writeSites` is a grep and its own limit 1 is "a value reached through a
+  // variable": 0 of 16 fixture rows carry it, and no transition in
+  // `getFlow('supplierDocument')` targets it.
+  //
+  // ⚠️ **THE GROUP STAYS DECLARED, AND NO GATE MAY REQUIRE IT TO HOLD A
+  // MEMBER.** `producedBy` still returns it and the next state to lose its
+  // producer belongs here. A guard anchored on the current population would go
+  // RED because the tree IMPROVED — the wrong direction for a guard to point —
+  // so `projectionGate.test.ts` proves this arm reachable by firing
+  // `producedBy` at a SYNTHETIC state with no writes, and pins the declared
+  // groups as a SUBSET of the three rather than equal to them.
 ];
 
 /** The entities this grouping speaks for — derived, never listed. */
