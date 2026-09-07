@@ -219,3 +219,38 @@ describe('SupplierOrders — the confirm cells are text, so the parser is load-b
     ).not.toBeInTheDocument();
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHO ACTS NEXT — the silence this batch exists to answer.
+//
+// `Confirmed` carries no footer verb and no handoff notice: every exit is an
+// S/4HANA goods movement, so `userVerbsFrom` returns [] and there is no atom to
+// ask about. Before this line the supplier saw a status word while both parties
+// waited on SAP.
+// ─────────────────────────────────────────────────────────────────────────────
+describe('SupplierOrders — who acts next on a stranded PO', () => {
+  it('a PO in Confirmed names S/4HANA, on the supplier side', async () => {
+    renderWithProviders(<SupplierOrders />, { identity: SUPPLIER });
+    // PO-2025-00107 is sup-007's and sits in `Confirmed`.
+    fireEvent.click(await screen.findByText('PO-2025-00107'));
+    const line = await screen.findByTestId('next-act-supplier-po');
+    expect(line).toHaveAttribute('data-next-act', 'external');
+    expect(line).toHaveTextContent('Awaiting S/4HANA');
+  });
+
+  it('…and in Indonesian, where the FRAMING translates and the product name does not', async () => {
+    // `Menunggu` is the divergent token: it shares no spelling with "Awaiting".
+    // `S/4HANA` is identical in both locales by decision, so asserting on it
+    // alone would be an assertion that cannot fail.
+    await i18n.changeLanguage('id');
+    try {
+      renderWithProviders(<SupplierOrders />, { identity: SUPPLIER });
+      fireEvent.click(await screen.findByText('PO-2025-00107'));
+      const line = await screen.findByTestId('next-act-supplier-po');
+      expect(line).toHaveTextContent('Menunggu S/4HANA');
+      expect(line).not.toHaveTextContent('Awaiting');
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+});

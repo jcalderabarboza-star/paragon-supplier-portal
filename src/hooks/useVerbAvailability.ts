@@ -25,6 +25,7 @@
 import { useMemo } from 'react';
 import { useCurrentIdentity } from '../context/CurrentIdentityContext';
 import { availabilityOfAtom, type VerbAvailability } from '../services/transitions/handoff';
+import { nextActFor, type NextAct } from '../services/transitions/nextAct';
 import type { TransitionRole } from '../services/transitions/schema';
 
 /**
@@ -37,6 +38,34 @@ export function useVerbAvailability(atom: TransitionRole): VerbAvailability {
   const { identity } = useCurrentIdentity();
   const roles = identity.businessRoles;
   return useMemo(() => availabilityOfAtom(atom, roles), [atom, roles]);
+}
+
+/**
+ * WHO ACTS NEXT on one document, for THIS seat — the composition, as a hook.
+ *
+ * ⚠️ **IT READS THE SEAT FROM THE SAME PLACE `useVerbAvailability` DOES, AND
+ * THAT IS THE POINT.** Two readers of "what may this seat do?" that disagree
+ * about what the seat IS would put a line on screen that contradicts the button
+ * beside it. One source (`identity.businessRoles`), one answer.
+ *
+ * ⚠️ **PASS THE CANONICAL STATE, NEVER A DISPLAY LABEL.** `legality.ts` states
+ * the rule at length: a projection collapses states on purpose (`toBuyerLabel`
+ * turns `Approved` into `Overdue` past its due date), so a label asked a machine
+ * question returns a confident wrong answer. Callers hold the canonical state —
+ * `po.status` IS the flow's state string — and pass that.
+ */
+export function useNextAct(
+  entity: string,
+  state: string | null | undefined,
+): NextAct | null {
+  const { identity } = useCurrentIdentity();
+  const roles = identity.businessRoles;
+  return useMemo(
+    // No document selected is not a state the machine can answer about, and
+    // `null` is how a caller renders nothing rather than guessing.
+    () => (state ? nextActFor(entity, state, roles) : null),
+    [entity, state, roles],
+  );
 }
 
 /**

@@ -14,6 +14,7 @@ import ProvenanceMarker from '../components/ui-v2/ProvenanceMarker';
 import KpiCard from '../components/ui-v2/KpiCard';
 import SubTabs from '../components/ui-v2/SubTabs';
 import StatusPill from '../components/ui-v2/StatusPill';
+import NextActLine from '../components/ui-v2/NextActLine';
 import { statusTone } from '../lib/statusTone';
 import Table from '../components/ui-v2/Table';
 import TableHeader, { TableHeaderCell } from '../components/ui-v2/TableHeader';
@@ -30,7 +31,7 @@ import {
   usePurchaseOrderAcknowledge,
 } from '../services/query/commandHooks';
 import { userVerbsFrom } from '../services/transitions';
-import { useVerbAvailability } from '../hooks/useVerbAvailability';
+import { useVerbAvailability, useNextAct } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import { POStatus } from '../services/data/types';
 import NoSupplierIdentity from '../components/ui-v2/NoSupplierIdentity';
@@ -196,6 +197,21 @@ const SupplierOrders: React.FC = () => {
     () => MY_POS.reduce((a, p) => (p.orderDate > a ? p.orderDate : a), MY_POS[0]?.orderDate ?? ''),
     [MY_POS],
   );
+
+  // WHO ACTS NEXT — read from the LIVE row for the same reason Key Facts is: a
+  // line derived from the open-time snapshot would keep naming yesterday's
+  // waiter after a confirm lands.
+  //
+  // ⚠️ **ABOVE EVERY EARLY RETURN, AND THAT PLACEMENT IS THE WHOLE OF IT.** This
+  // component returns early five times (no identity, pending, error, no
+  // supplier, empty), so a hook below them runs on some renders and not others —
+  // "Rendered more hooks than during the previous render", which is how this was
+  // caught. `selectedLive` is computed after those returns and cannot move; the
+  // STATE STRING is all the hook needs, so it is derived here instead.
+  const liveStatus = selected
+    ? (MY_POS.find((p) => p.id === selected.id) ?? selected).status
+    : undefined;
+  const nextAct = useNextAct('purchaseOrder', liveStatus);
 
   if (!supplierId) return <NoSupplierIdentity />;
   if (supplierQuery.isPending || posQuery.isPending)
@@ -774,6 +790,15 @@ const SupplierOrders: React.FC = () => {
                     <StatusPill variant={statusTone((selectedLive ?? selected).status)}>
                       {(selectedLive ?? selected).status}
                     </StatusPill>
+                    {/* WHO ACTS NEXT — the answer the pill cannot give. A PO in
+                        `Confirmed` carries no footer verb and no handoff notice
+                        (there is no surfaceable atom to ask about), so before
+                        this line the supplier saw a status word and nothing
+                        else while both parties waited on S/4HANA. Derived from
+                        the CANONICAL state, never the pill's label. */}
+                    <span className="mt-1 block">
+                      <NextActLine act={nextAct} testId="next-act-supplier-po" />
+                    </span>
                   </dd>
                 </div>
                 <div>
