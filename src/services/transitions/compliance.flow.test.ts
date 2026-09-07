@@ -22,10 +22,17 @@ import {
 import { MockCommandService } from '../data/mock/MockCommandService';
 import type { QueryScope } from '../data/types';
 import { PERSONA_SYSTEM_ROLES } from '../../services/transitions/businessRoles';
+import { displayStatesOf } from '../../lib/projectionGate/displayStates';
 
-// Clock-derived display states (law 0.5 / census G1) — MUST NOT be transition-
-// states; they are computed in `complianceProjection.ts`.
-const PROJECTIONS_EXCLUDED = ['Expiring', 'Expired'];
+// ⚠️ **THE SECOND COPY OF `PROJECTIONS_EXCLUDED`, AND THE ONLY ONE WHOSE LABEL
+// WAS TRUE.** Compliance's two display states really ARE computed —
+// `complianceProjection.computeStatus(entry, nowIso)` derives them at read from
+// an injected clock and stores nothing. That made this file the reason the name
+// looked defensible everywhere else: a reader meeting the constant here, where
+// it is accurate, carries the claim to the copy where it is not.
+//
+// Both copies now read from one grouping, so "computed" is a claim each member
+// has to earn against the tree rather than inherit from a neighbour.
 
 describe('compliance flow — registration + structure', () => {
   it('registered, valid, correct initial + states (transition-states only)', () => {
@@ -36,7 +43,7 @@ describe('compliance flow — registration + structure', () => {
   });
 
   it('excludes clock projections from the transition table (law 0.5)', () => {
-    for (const projected of PROJECTIONS_EXCLUDED) {
+    for (const projected of displayStatesOf('compliance')) {
       expect(complianceFlow.states).not.toContain(projected);
       for (const t of complianceFlow.transitions) expect(t.to).not.toBe(projected);
     }
