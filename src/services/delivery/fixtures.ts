@@ -30,11 +30,22 @@ import { requireUom } from '../sdc/materialMaster';
 import { generateSchedule } from './generator';
 import { DRAWDOWN_PRESET_CASE_B, DRAWDOWN_PRESET_CASE_C } from './ledger';
 import type { SchedulingAgreement, SchedulingAgreementItem } from './types';
+import { mockContracts } from '../../data/mockContracts';
 
 const CONTRACT_ID = 'ctr-003';
 const AGREEMENT_ID = 'sa-0001';
-/** The negotiated calendar starts at the contract start (in-window by construction). */
-const START_DATE = '2025-10-01';
+/**
+ * The negotiated calendar starts at the contract start (in-window by construction).
+ *
+ * ⚠️ **THIS BELONGS TO THE `contract` FAMILY, NOT THE DELIVERY LANE — MEMBERSHIP
+ * FOLLOWS THE COUPLING, NOT THE DIRECTORY.** It is not an independent date: it
+ * is `ctr-003.startDate`, and `fixtures.integrity.test.ts` is the only thing
+ * that has ever held the two equal. It used to be a hand-maintained DUPLICATE of
+ * that literal, which meant anchoring the contract family silently moved the
+ * contract out from under this calendar. It now READS the contract, so the two
+ * cannot diverge at all and the guard asserts a property rather than a copy.
+ */
+const START_DATE = mockContracts.find((c) => c.id === CONTRACT_ID)!.startDate;
 
 // Item 10 — PET bottles: 2,000,000 PCS, monthly × 180,000 → 12 releases, the LAST
 // carrying the 20,000 remainder (exercises the remainder path). FRC → semi-firm.

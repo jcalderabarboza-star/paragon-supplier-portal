@@ -13,15 +13,46 @@ import { SCHEDULING_AGREEMENT_CTR003 } from '../fixtures';
 import { deriveDrawdownLedger } from '../ledger';
 import { releaseScheduleLines } from '../release';
 import { DELIVERY_GRACE_DAYS, MATCH_WINDOW_DAYS, deriveFulfillment } from '../fulfillment';
+import { SDC_SIMULATED_NOW } from '../../sdc/clock';
 import type { SchedulingAgreementItem } from '../types';
 
-/** The shared SIMULATED clock's timeline (past most ctr-003 releases). */
-const NOW = '2026-08-25T12:00:00.000Z';
-const RELEASE_STAMP = '2026-08-25T00:00:00.000Z';
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ EVERY DATE IN THIS FILE IS DERIVED FROM THE LINE IT IS ABOUT. NONE IS PINNED.
+//
+// This spec used to hardcode ten shipment `eta` literals tuned to ITEM 10's
+// calendar (`'2025-11-28'`, `'2025-12-01'`, `'2026-03-15'`…) — and one comment
+// spelled the coupling out: *"eta 2026-03-15 > releaseDate 2025-12-01"*. That
+// made the file a hidden dependent of `ctr-003.startDate`: anchoring the
+// `contract` family moved the calendar and ten assertions went red, none of
+// which was about contracts.
+//
+// **The literals were never what the tests meant.** Each one encoded an OFFSET —
+// "3 days early", "4 days late", "1 day away", "outside the match window" — and
+// the offset is the actual claim. `day()` and `instant()` below say it directly,
+// so these specs are now invariant under ANY anchor: re-anchor the contract
+// family again and nothing here needs touching. That is the difference between
+// repairing a spec and re-pinning it to a fresher literal.
+// ─────────────────────────────────────────────────────────────────────────────
 
-/** ITEM 10 — PK-PETB-8810, monthly from 2025-10-01, all-draft. seq k → release
- *  date 2025-10-01 +(k−1) months; plannedQty 180_000 (seq 1–11), 20_000 (seq 12). */
+/** The shared SIMULATED clock — read, never duplicated (it derives from `DECLARED_PRESENT`). */
+const NOW = SDC_SIMULATED_NOW;
+const RELEASE_STAMP = `${SDC_SIMULATED_NOW.slice(0, 10)}T00:00:00.000Z`;
+
+/** ITEM 10 — PK-PETB-8810, monthly from the ctr-003 start, all-draft.
+ *  plannedQty 180_000 (seq 1–11), 20_000 (seq 12). */
 const ITEM10 = SCHEDULING_AGREEMENT_CTR003.items[0];
+
+/** The release date of one of ITEM 10's lines, offset by whole days. */
+const day = (seq: number, offsetDays = 0): string => {
+  const line = ITEM10.scheduleLines.find((l) => l.releaseSeq === seq);
+  if (!line) throw new Error(`no schedule line seq ${seq}`);
+  return new Date(Date.parse(`${line.releaseDate.slice(0, 10)}T00:00:00.000Z`) + offsetDays * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+};
+
+/** The same, as a UTC-midnight instant — for an injected `now`. */
+const instant = (seq: number, offsetDays = 0): string => `${day(seq, offsetDays)}T00:00:00.000Z`;
 
 function ship(
   p: Partial<IncomingShipment> & Pick<IncomingShipment, 'id' | 'materialCode' | 'qty'>,
@@ -61,10 +92,10 @@ function patchLine(
 describe('deriveFulfillment — status thresholds', () => {
   const item = release([2, 3, 4, 12]);
   const shipments = [
-    // seq3 (2025-12-01): arrival 3 days early → fulfilled, exact qty.
-    ship({ id: 'shp-f', materialCode: 'PK-PETB-8810', qty: 180_000, eta: '2025-11-28', asnRef: 'ASN-F' }),
-    // seq4 (2026-01-01): arrival 4 days late → late, short by 10k.
-    ship({ id: 'shp-l', materialCode: 'PK-PETB-8810', qty: 170_000, eta: '2026-01-05' }),
+    // seq3: arrival 3 days EARLY → fulfilled, exact qty.
+    ship({ id: 'shp-f', materialCode: 'PK-PETB-8810', qty: 180_000, eta: day(3, -3), asnRef: 'ASN-F' }),
+    // seq4: arrival 4 days LATE → late, short by 10k.
+    ship({ id: 'shp-l', materialCode: 'PK-PETB-8810', qty: 170_000, eta: day(4, 4) }),
   ];
   const views = deriveFulfillment(item, shipments, NOW);
   const v = (seq: number) => views.find((x) => x.releaseSeq === seq)!;
@@ -89,13 +120,13 @@ describe('deriveFulfillment — status thresholds', () => {
   });
 
   it('missed: a past release, beyond grace, with no match', () => {
-    expect(v(2).fulfillment).toBe('missed'); // 2025-11-01, no candidate in window
+    expect(v(2).fulfillment).toBe('missed'); // a past release, no candidate in window
     expect(v(2).matchedRef).toBeUndefined();
     expect(v(2).inferred).toBe(false);
   });
 
   it('pending: a future release, no match — the honest default, NOT missed', () => {
-    expect(v(12).fulfillment).toBe('pending'); // 2026-09-01 > now
+    expect(v(12).fulfillment).toBe('pending'); // the last release is still ahead of now
     expect(v(12).matchedRef).toBeUndefined();
   });
 });
@@ -106,23 +137,23 @@ describe('deriveFulfillment — explicit binding wins', () => {
   it('a stored fulfilledBy binds its shipment (inferred:false), even OUT of window, and beats a nearer proximity candidate', () => {
     const item = patchLine(release([3]), 3, { fulfilledBy: 'ASN-BOUND' });
     const shipments = [
-      // the bound shipment — far from the release date (would NOT infer), over by 5k.
-      ship({ id: 'shp-bound', materialCode: 'PK-PETB-8810', qty: 185_000, eta: '2026-03-15', asnRef: 'ASN-BOUND' }),
+      // the bound shipment — well OUTSIDE the match window (would NOT infer), over by 5k.
+      ship({ id: 'shp-bound', materialCode: 'PK-PETB-8810', qty: 185_000, eta: day(3, MATCH_WINDOW_DAYS + 30), asnRef: 'ASN-BOUND' }),
       // a nearer candidate inference WOULD pick — must be ignored, its shipment untouched.
-      ship({ id: 'shp-near', materialCode: 'PK-PETB-8810', qty: 180_000, eta: '2025-12-02', asnRef: 'ASN-NEAR' }),
+      ship({ id: 'shp-near', materialCode: 'PK-PETB-8810', qty: 180_000, eta: day(3, 1), asnRef: 'ASN-NEAR' }),
     ];
     const [v] = deriveFulfillment(item, shipments, NOW);
     expect(v.matchedRef).toBe('ASN-BOUND');
     expect(v.inferred).toBe(false); // binding, not proximity
     expect(v.qtyVariance).toBe(5_000); // over-delivery surfaced
-    expect(v.fulfillment).toBe('late'); // eta 2026-03-15 > releaseDate 2025-12-01
+    expect(v.fulfillment).toBe('late'); // the bound arrival is after seq3's release date
   });
 
   it('a binding that names an unseen shipment falls through to the honest unmatched status', () => {
     const item = patchLine(release([2]), 2, { fulfilledBy: 'ASN-GHOST' });
     const [v] = deriveFulfillment(item, [], NOW);
     expect(v.matchedRef).toBeUndefined();
-    expect(v.fulfillment).toBe('missed'); // 2025-11-01, past grace
+    expect(v.fulfillment).toBe('missed'); // a past release, beyond grace
   });
 });
 
@@ -130,8 +161,8 @@ describe('deriveFulfillment — explicit binding wins', () => {
 
 describe('deriveFulfillment — quantity is surfaced, never a gate', () => {
   it('a wildly-over delivery still matches and surfaces a positive variance', () => {
-    const item = release([5]); // 2026-02-01, planned 180k
-    const shipments = [ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 500_000, eta: '2026-02-01' })];
+    const item = release([5]); // planned 180k
+    const shipments = [ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 500_000, eta: day(5) })];
     const [v] = deriveFulfillment(item, shipments, NOW);
     expect(v.fulfillment).toBe('fulfilled');
     expect(v.qtyVariance).toBe(320_000);
@@ -142,12 +173,12 @@ describe('deriveFulfillment — quantity is surfaced, never a gate', () => {
 
 describe('deriveFulfillment — ambiguity', () => {
   it('>1 in-window candidate → ambiguous:true with a deterministic pick, never silent', () => {
-    const item = release([3]); // 2025-12-01, planned 180k
+    const item = release([3]); // planned 180k
     const shipments = [
       // 1 day away, |variance| 5k.
-      ship({ id: 'shp-b', materialCode: 'PK-PETB-8810', qty: 175_000, eta: '2025-11-30', asnRef: 'ASN-B' }),
+      ship({ id: 'shp-b', materialCode: 'PK-PETB-8810', qty: 175_000, eta: day(3, -1), asnRef: 'ASN-B' }),
       // 1 day away, |variance| 0 → wins the tie-break.
-      ship({ id: 'shp-a', materialCode: 'PK-PETB-8810', qty: 180_000, eta: '2025-12-02', asnRef: 'ASN-A' }),
+      ship({ id: 'shp-a', materialCode: 'PK-PETB-8810', qty: 180_000, eta: day(3, 1), asnRef: 'ASN-A' }),
     ];
     const [v] = deriveFulfillment(item, shipments, NOW);
     expect(v.ambiguous).toBe(true);
@@ -157,7 +188,7 @@ describe('deriveFulfillment — ambiguity', () => {
 
   it('a single candidate is not flagged ambiguous', () => {
     const item = release([3]);
-    const shipments = [ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 180_000, eta: '2025-12-01' })];
+    const shipments = [ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 180_000, eta: day(3) })];
     const [v] = deriveFulfillment(item, shipments, NOW);
     expect(v.ambiguous).toBeUndefined();
   });
@@ -166,11 +197,11 @@ describe('deriveFulfillment — ambiguity', () => {
 // ─── Drawdown eligibility guards ──────────────────────────────────────────────
 
 describe('deriveFulfillment — eligibility guards', () => {
-  const item = release([3]); // 2025-12-01
+  const item = release([3]);
 
   it('a principal-to-distributor shipment never draws down a Paragon release', () => {
     const shipments = [
-      ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 180_000, eta: '2025-12-01', direction: 'principal-to-distributor' }),
+      ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 180_000, eta: day(3), direction: 'principal-to-distributor' }),
     ];
     const [v] = deriveFulfillment(item, shipments, NOW);
     expect(v.matchedRef).toBeUndefined();
@@ -179,14 +210,14 @@ describe('deriveFulfillment — eligibility guards', () => {
 
   it('a non-Arrived (in-transit) shipment never matches', () => {
     const shipments = [
-      ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 180_000, eta: '2025-12-01', lifecycle: 'Shipped' }),
+      ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 180_000, eta: day(3), lifecycle: 'Shipped' }),
     ];
     const [v] = deriveFulfillment(item, shipments, NOW);
     expect(v.matchedRef).toBeUndefined();
   });
 
   it('a different material never matches', () => {
-    const shipments = [ship({ id: 's', materialCode: 'PK-CAPF-8820', qty: 180_000, eta: '2025-12-01' })];
+    const shipments = [ship({ id: 's', materialCode: 'PK-CAPF-8820', qty: 180_000, eta: day(3) })];
     const [v] = deriveFulfillment(item, shipments, NOW);
     expect(v.matchedRef).toBeUndefined();
   });
@@ -195,15 +226,15 @@ describe('deriveFulfillment — eligibility guards', () => {
 // ─── Grace boundary — pending is never premature-missed ───────────────────────
 
 describe('deriveFulfillment — grace boundary', () => {
-  const item = release([11]); // 2026-08-01; grace deadline 2026-08-04
+  const item = release([11]); // grace deadline = its release date + DELIVERY_GRACE_DAYS
 
   it('within grace: pending', () => {
-    const [v] = deriveFulfillment(item, [], '2026-08-03T00:00:00.000Z');
+    const [v] = deriveFulfillment(item, [], instant(11, DELIVERY_GRACE_DAYS - 1));
     expect(v.fulfillment).toBe('pending');
   });
 
   it('past grace: missed', () => {
-    const [v] = deriveFulfillment(item, [], '2026-08-05T00:00:00.000Z');
+    const [v] = deriveFulfillment(item, [], instant(11, DELIVERY_GRACE_DAYS + 1));
     expect(v.fulfillment).toBe('missed');
   });
 });
@@ -213,7 +244,7 @@ describe('deriveFulfillment — grace boundary', () => {
 describe('deliveredQty honesty lock (ledger.ts UNTOUCHED, reacts to the LINE)', () => {
   it('an inferred-only match does NOT move deliveredQty', () => {
     const item = release([3]);
-    const shipments = [ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 180_000, eta: '2025-11-30' })];
+    const shipments = [ship({ id: 's', materialCode: 'PK-PETB-8810', qty: 180_000, eta: day(3, -1) })];
     const [v] = deriveFulfillment(item, shipments, NOW);
     expect(v.inferred).toBe(true); // a match IS proposed in the view
     expect(v.actualQty).toBe(180_000); // its qty is observed in the view
@@ -225,7 +256,7 @@ describe('deliveredQty honesty lock (ledger.ts UNTOUCHED, reacts to the LINE)', 
     const confirmed = patchLine(release([3]), 3, {
       actualQty: 180_000,
       fulfilledBy: 'ASN-C',
-      fulfilledDate: '2025-11-30',
+      fulfilledDate: day(3, -1),
     });
     expect(deriveDrawdownLedger(confirmed).deliveredQty).toBe(180_000);
   });
@@ -259,14 +290,14 @@ describe('deriveFulfillment — constants & pristine ctr-003 seed', () => {
 // as it was, and the misparse is shown to change it.
 
 describe('fulfillment is unperturbed by the corrected shipment quantity (CP-0 · 2d)', () => {
-  // seq 3 → release date 2025-12-01, plannedQty 180 000.
+  // seq 3 — plannedQty 180 000; every arrival below is 3 days early.
   const item = release([3]);
   const view = (shipments: IncomingShipment[]) =>
     deriveFulfillment(item, shipments, NOW).find((v) => v.releaseSeq === 3)!;
 
   it('the READ quantity posts a true variance against the released line', () => {
     const v = view([
-      ship({ id: 'shp-ok', materialCode: 'PK-PETB-8810', qty: 180_000, eta: '2025-11-28', asnRef: 'ASN-OK' }),
+      ship({ id: 'shp-ok', materialCode: 'PK-PETB-8810', qty: 180_000, eta: day(3, -3), asnRef: 'ASN-OK' }),
     ]);
     expect(v.actualQty).toBe(180_000);
     expect(v.qtyVariance).toBe(0); // delivered in full
@@ -278,7 +309,7 @@ describe('fulfillment is unperturbed by the corrected shipment quantity (CP-0 ·
     // shipment of nothing, and the schedule line records minus the ENTIRE
     // planned quantity as the supplier's variance.
     const v = view([
-      ship({ id: 'shp-zero', materialCode: 'PK-PETB-8810', qty: 0, eta: '2025-11-28', asnRef: 'ASN-Z' }),
+      ship({ id: 'shp-zero', materialCode: 'PK-PETB-8810', qty: 0, eta: day(3, -3), asnRef: 'ASN-Z' }),
     ]);
     expect(v.qtyVariance).toBe(-180_000);
   });
@@ -286,8 +317,8 @@ describe('fulfillment is unperturbed by the corrected shipment quantity (CP-0 ·
   it('MIS-MATCH: on an equal-arrival tie the quantity decides which shipment binds', () => {
     // Two candidates, identical eta ⇒ the date test ties and `pickOrder` falls
     // through to the smallest |variance|.
-    const exact = { id: 'shp-a', materialCode: 'PK-PETB-8810', eta: '2025-11-28', asnRef: 'ASN-A' };
-    const other = { id: 'shp-b', materialCode: 'PK-PETB-8810', eta: '2025-11-28', asnRef: 'ASN-B' };
+    const exact = { id: 'shp-a', materialCode: 'PK-PETB-8810', eta: day(3, -3), asnRef: 'ASN-A' };
+    const other = { id: 'shp-b', materialCode: 'PK-PETB-8810', eta: day(3, -3), asnRef: 'ASN-B' };
 
     // READ correctly: A is exact (variance 0) and wins the tie.
     const right = view([ship({ ...exact, qty: 180_000 }), ship({ ...other, qty: 170_000 })]);

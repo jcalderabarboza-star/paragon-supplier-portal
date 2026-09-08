@@ -24,14 +24,35 @@
 // keep their own clocks — this is the SDC loop's clock alone.
 // ────────────────────────────────────────────────────────────────────────────
 
+import { DECLARED_PRESENT } from '../data/fixturePresent';
+
 /**
  * The simulated "now" (ISO). Sits PAST the latest seed fixture (2026-08-18) and
  * PAST the R2 response deadline (publishedAt 2026-08-15 + RESPONSE_DUE_DAYS 7 =
  * 2026-08-22), so the chase list resolves its overdue state deterministically
- * (BuyerCollaboration pins exactly this as-of). Held identical to the value the
- * P2 surface used inline before 4a, so the repoint changes nothing observable.
+ * (BuyerCollaboration pins exactly this as-of).
+ *
+ * ⚠️ **IT IS NO LONGER ITS OWN PRESENT — IT DERIVES FROM `DECLARED_PRESENT`.**
+ * This module used to declare `'2026-08-25T12:00:00.000Z'` as a literal, which
+ * made it the SECOND declared present in shipped code: the fixture families read
+ * 2026-09-07 while this lane read 2026-08-25, thirteen days apart, and four
+ * surfaces rendered that gap honestly with nothing anywhere explaining it. Two
+ * clocks that disagree by RULING are defensible; two that disagree by ACCIDENT
+ * are not, and nothing in the tree recorded a ruling.
+ *
+ * **The reconciliation moved `P`, not this lane's fixtures.** `MANDATE_LEAD_DAYS`
+ * is 47 so that `DECLARED_PRESENT` lands inside this lane's own coherent window
+ * (2026-08-25..2026-09-01, both edges set by `sa-0002` seq 6 against
+ * `ANTICIPATION_DAYS`) — so not one SDC fixture had to move and not one
+ * assertion had to be re-tuned. `fixturePresent.guard.test.ts` pins the present
+ * inside `SDC_WINDOW`, so a re-authored `sa-0002` fires the gate by name instead
+ * of silently falsifying this lane.
+ *
+ * The TIME-OF-DAY is retained and is load-bearing: `deliveryChase.test.ts`
+ * documents that a 12:00Z instant is 19:00 Jakarta, which is what keeps the
+ * day-granular window boundaries crisp on both sides of the offset.
  */
-export const SDC_SIMULATED_NOW = '2026-08-25T12:00:00.000Z';
+export const SDC_SIMULATED_NOW = `${DECLARED_PRESENT}T12:00:00.000Z`;
 
 let current = SDC_SIMULATED_NOW;
 

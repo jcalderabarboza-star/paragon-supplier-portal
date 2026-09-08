@@ -43,10 +43,10 @@
 //       no date on the document changing; `P` is what puts the demo before or
 //       after that.
 //   (2) Any CROSS-FAMILY date comparison. Families that reference each other
-//       must therefore SHARE an anchor, and a family whose partner is NOT
-//       anchored yet cannot move at all — which is why `contract` and
-//       `obligation` are measured but deferred below. That is not caution:
-//       shifting contracts alone reddened `fulfillment.test.ts` ten times.
+//       must therefore SHARE an anchor — which is exactly what `contract` and
+//       `obligation` now do, because obligations name contract ids. A pair that
+//       shares an anchor is only as free as the INTERSECTION of their windows,
+//       never as free as either alone.
 //
 // ── ⚠️ THE PRESENT IS FROZEN, AND THE BUMP IS A RULING ──────────────────────
 //   `DECLARED_PRESENT` never reads a clock. It moves when the operator rules it
@@ -55,33 +55,71 @@
 //   its own is option (b) wearing this module's name.
 //
 //   Between bumps the wall clock drifts away from `P`, and each family tolerates
-//   that drift only as far as its own window is wide. The tolerances are stated
-//   per family below. Of the ANCHORED families `supplierDocument` is the
-//   binding one at ±41 days; the deferred `obligation` is tighter still at ±8,
-//   which is worth knowing before it is anchored — it is the family that will
-//   ask for a bump first, and the one whose stored states may deserve retiring
-//   rather than anchoring.
+//   that drift only as far as its own window allows. **NO TOLERANCE FIGURE IS
+//   RESTATED HERE** (`FLOOR-IN-PROSE-01`): the sentence that stood in this spot
+//   named two, and BOTH were wrong within one batch — one because the rounding
+//   rule overstated it, the other because the family it called "deferred" is
+//   anchored two paragraphs below. Read `toleranceDays` off `FAMILY_ANCHORS`;
+//   the gate re-derives every one of them from the windows each run.
+//
+//   The family that will ask for a re-anchor FIRST is whichever carries the
+//   smallest `toleranceDays` — derive it, do not remember it.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ⚠️ `sdcClock` — DISPOSITION: **STAYS SEPARATE IN THIS BATCH.** Stated, not
-// folded in silently.
+// ⚠️ `sdcClock` — DISPOSITION: **RETIRED ONTO THIS PRESENT.** There is now ONE
+// declared present in shipped code.
 //
-// `SDC_SIMULATED_NOW` (`services/sdc/clock.ts`, 2026-08-25) is ALREADY this
-// shape for one lane — a frozen declared present with a test seam, rendered
-// honestly by three surfaces as "sample clock, as of …". It is the precedent
-// this module generalises, and the right end state is that it READS the origin:
-// `sdc` becomes a family anchored on 2026-08-25 and `SDC_SIMULATED_NOW` becomes
+// `SDC_SIMULATED_NOW` (`services/sdc/clock.ts`) was a second frozen present at
+// 2026-08-25 — the precedent this module generalises. It now READS
 // `DECLARED_PRESENT`, exactly as the five `TODAY` pins were retired here.
 //
-// **It is NOT done here, and the reason is a measurement rather than scope.**
-// Repointing the clock WITHOUT shifting the SDC fixtures with it would move the
-// loop's "now" 13 days away from data that did not move — and that loop's whole
-// point is that its overdue state resolves DETERMINISTICALLY (`publishedAt`
-// 2026-08-15 + `RESPONSE_DUE_DAYS` 7 = 2026-08-22, which `BuyerCollaboration`
-// pins). A clock retired onto this present before its family is anchored is the
-// SDC-4 collision reintroduced, which is the defect `sdcClock` was built to fix.
-// The two must move in one batch; they are not in this one.
+// ── ⚠️ AND IT WAS DONE BY MOVING `P`, NOT BY MOVING THE SDC FIXTURES ────────
+//   The SDC family's COHERENT WINDOW was derived by sweeping the clock day by
+//   day across the lane's own 52 spec files: **2026-08-25 .. 2026-09-01**. Both
+//   bounds are set by ONE line — `sa-0002` item A **seq 6**, release 2026-09-01
+//   — from opposite sides of `ANTICIPATION_DAYS` (7): the nudge needs
+//   `0 <= daysBetween(now, releaseDate) <= 7`.
+//
+//   `MANDATE_LEAD_DAYS` is 47 rather than 40 because `BPJPH − 47 = 2026-08-31`
+//   sits INSIDE that window, so the clock retires with **no SDC fixture moved
+//   and no assertion re-tuned**. Moving the family instead cost 8 assertions
+//   across 4 files and shifted 58 literals; moving `P` cost one tautology.
+//
+// ── ⚠️ WHAT THIS BUYS AND WHAT IT COSTS — SAY IT PLAINLY ────────────────────
+//   **`P` IS CURRENTLY PINNED BY A DEMO FIXTURE.** Re-author `sa-0002`'s seq 6
+//   and the SDC window moves; `P` must move with it or the lane goes false.
+//   That hostage is deliberate and it is VISIBLE: `fixturePresent.guard.test.ts`
+//   asserts `DECLARED_PRESENT` sits inside `SDC_WINDOW`, so the day the fixture
+//   is re-authored the gate fires BY NAME rather than the demo quietly drifting.
+//
+//   **OPTION 1 IS FILED, NOT DISMISSED — and here is how to stop being hostage.**
+//   Make `sdc` a real anchored family: give it `anchor: '2026-08-25'`, route
+//   `sdc/fixtures.ts` · `delivery/demoFixtures.ts` · `delivery/demoFixturesScale.ts`
+//   · `channel/outboundFixtures.ts` through `shiftFields`, and **`P` cancels out
+//   entirely** (`daysUntil(date + (P − A), P) = date − A`), after which
+//   `MANDATE_LEAD_DAYS` is free again and `SDC_WINDOW` stops constraining it.
+//   It is hygiene, not a blocker, and it rides a later surface batch in that
+//   lane. The cost when it comes: ~20 hardcoded `'2026-08-25'` literals across
+//   14 spec files, which must be DERIVED rather than re-pinned.
+//
+// ── ⚠️ RETRACTED, QUOTED RATHER THAN DELETED (it was wrong, and it shipped) ──
+//   This block previously read, and `fixturePresent.guard.test.ts` repeated it:
+//
+//       "the calendar is read by the DELIVERY lane, which runs on
+//        `SDC_SIMULATED_NOW`, and that clock is not anchored in this batch.
+//        Moving the schedule while its clock stands still is the SDC-4
+//        collision the `sdcClock` module exists to prevent."
+//
+//   **MEASURED FALSE.** `services/delivery` imports nothing from `mockContracts`
+//   and no clock at all. Shifting contract + obligation + `START_DATE` with the
+//   clock standing still broke 2 files / 11 tests, and `fixtures.integrity.test.ts`
+//   stayed GREEN — not one failure was a clock-vs-schedule collision. The real
+//   coupling was `START_DATE` being a hand-maintained DUPLICATE of
+//   `ctr-003.startDate`, plus ten hardcoded `eta` literals inside
+//   `fulfillment.test.ts`. The two families were then shifted together and the
+//   damage was exactly additive (19 = 11 + 8, 6 files = 2 + 4): **zero
+//   interaction.** The deferral was real; its stated reason was not.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { BPJPH_MANDATE_DATE } from './complianceProjection';
@@ -127,14 +165,34 @@ export const ABSOLUTE_DATES: Readonly<Record<string, string>> = {
  * to show, rather than the aftermath, where the decision has already been taken
  * out of the buyer's hands.
  *
- * It also lands one day before this batch's ratification (2026-09-08), so no
- * family is stale on the day it ships.
- *
  * **To move the demo across the mandate, change this number and nothing else.**
  * A negative value puts the present after the mandate; that is the intended way
  * to demonstrate the scheme retirement, and it is a one-line ruling.
+ *
+ * ⚠️ **47, NOT 40 — AND THE SEVEN DAYS ARE LOAD-BEARING.** `BPJPH − 47` is
+ * 2026-08-31, which sits inside `SDC_WINDOW` below. That is what let the SDC
+ * loop's separate present retire onto this one without moving a single SDC
+ * fixture. **This number is NOT free while `sdc` remains unanchored** — the
+ * guard pins `DECLARED_PRESENT` inside `SDC_WINDOW`, so raising or lowering it
+ * past that boundary goes red by name rather than quietly falsifying the lane.
+ * Anchoring `sdc` (see the disposition note above) is what makes it free again.
  */
-export const MANDATE_LEAD_DAYS = 40;
+export const MANDATE_LEAD_DAYS = 47;
+
+/**
+ * ⚠️ **THE SDC LOOP'S COHERENT WINDOW — the constraint on `MANDATE_LEAD_DAYS`.**
+ *
+ * `sdc` is the one family that is coherent WITHOUT being shifted, because `P`
+ * was moved to meet it instead. It therefore has a window and no anchor, which
+ * is the exact inverse of every family below.
+ *
+ * Derived empirically, not from a predicate anyone invented: `SDC_SIMULATED_NOW`
+ * was swept day by day over the lane's own 52 spec files and the green band was
+ * 2026-08-25..2026-09-01. Both edges are `sa-0002` item A seq 6 (release
+ * 2026-09-01) against `ANTICIPATION_DAYS` — 7 days before it, and the day
+ * itself. `chase/deliveryChase.ts` is where that rule lives.
+ */
+export const SDC_WINDOW: readonly [string, string] = ['2026-08-25', '2026-09-01'];
 
 /** The declared present (`YYYY-MM-DD`). Frozen. Never reads a clock. */
 export const DECLARED_PRESENT: string = new Date(
@@ -152,34 +210,63 @@ export type FixtureFamily =
   | 'supplierDocument'
   | 'shipment'
   | 'goodsReceipt'
-  | 'inventory';
+  | 'inventory'
+  | 'contract'
+  | 'obligation';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ⚠️ `contract` AND `obligation` ARE MEASURED, WINDOWED, AND DELIBERATELY NOT
-// ANCHORED HERE — and the reason is a coupling, not scope.
+// ⚠️ `contract` AND `obligation` ARE NOW ANCHORED, AND THEY SHARE ONE ANCHOR.
 //
-// Their coherent windows are known and are asserted from the raw literals by
-// `fixturePresent.guard.test.ts`, which does not need them shifted to do it:
+// **They must share it: obligations name contract ids**, so a due date and the
+// contract it hangs off are a CROSS-FAMILY comparison, and those are exactly the
+// comparisons `P` does not cancel for. Two anchors would silently re-time every
+// obligation against its own contract.
 //
-//     contract     2026-05-17 .. 2026-06-05   (9 rows, the 5 authored bands)
-//     obligation   2026-05-17 .. 2026-06-01   (17 rows; ±8d — the TIGHT family)
-//     ⇒ they intersect at 2026-05-17 .. 2026-06-01, so they would SHARE an
-//       anchor of 2026-05-24. Obligations name contract ids, so they must.
+// The shared anchor is the MIDPOINT OF THE INTERSECTION of the two windows,
+// re-derived from the raw literals rather than inherited:
 //
-// **WHAT STOPS THEM IS `ctr-003`.** `services/delivery/fixtures.ts` negotiates a
-// scheduling agreement over that contract, starting at the contract's own start
-// date, and `fixtures.integrity.test.ts` asserts every release date falls inside
-// the contract's validity window. Shift contracts and that calendar must shift
-// with them — but the calendar is read by the DELIVERY lane, which runs on
-// `SDC_SIMULATED_NOW`, and that clock is not anchored in this batch (see the
-// disposition note at the top). Moving the schedule while its clock stands still
-// is the SDC-4 collision the `sdcClock` module exists to prevent.
+//     contract     2026-03-17 .. 2026-06-05   (bound early by ctr-007, late by ctr-008)
+//     obligation   2026-05-17 .. 2026-06-01   (bound early by obl-007a, late by
+//                                              obl-003a / obl-004a / obl-010c)
+//     ∩            2026-05-17 .. 2026-06-01   → midpoint 2026-05-24, ±7 days
 //
-// Measured, not predicted: shifting contracts reddened `fulfillment.test.ts` in
-// ten places, every one of them a release-date-versus-arrival comparison.
+// ⚠️ **THE PREVIOUSLY-DECLARED CONTRACT WINDOW WAS WRONG AT ITS EARLY EDGE** —
+// it read `2026-05-17`, derived at #319 from authored "bands" that no shipped
+// code implements. Re-derived from the two predicates that DO read `endDate`
+// against a clock (`matchesGroup`'s 0..90 band in `BuyerContracts.tsx` and
+// `expiryTone` in `contracts/contractView.tsx`), the early bound is 2026-03-17.
+// The intersection is unaffected because obligation binds both of its edges, so
+// the anchor is the same number for a better reason.
 //
-// **They move in the batch that anchors the SDC lane, and not before.**
+// **Corroboration from a second, independent instrument:** the retired
+// `daysUntilExpiry` field back-solved 12 of 13 contract rows to 2026-05-20 —
+// four days from the midpoint and comfortably inside the intersection. Two
+// instruments, one neighbourhood.
 // ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * ⚠️ **ONE ANCHOR HELD BY TWO FAMILIES.** Named once so the two entries below
+ * cannot drift apart in a later edit — obligations reference contract ids, and
+ * two literals that must be equal are two literals that will one day differ.
+ * The midpoint of `2026-05-17 .. 2026-06-01`.
+ */
+export const SHARED_CONTRACT_ANCHOR = '2026-05-24';
+
+/**
+ * The families that share `SHARED_CONTRACT_ANCHOR`, declared as data so the gate
+ * can assert the sharing rather than trusting the two literals to match.
+ */
+export const SHARED_ANCHOR_FAMILIES = ['contract', 'obligation'] as const;
+
+/**
+ * The intersection those two are anchored on. `toleranceDays` for BOTH is half
+ * of THIS, never half of either family's own window — the pair is only as free
+ * as the narrower constraint they jointly satisfy.
+ */
+export const SHARED_ANCHOR_INTERSECTION: readonly [string, string] = [
+  '2026-05-17',
+  '2026-06-01',
+];
 
 export interface FamilyAnchor {
   /** The instant this family's rows were authored for. */
@@ -190,7 +277,17 @@ export interface FamilyAnchor {
    * in which case the anchor is derived some other way and `why` says how.
    */
   readonly window: readonly [string, string] | null;
-  /** How far the wall clock may drift from `DECLARED_PRESENT` before a stored state goes false. */
+  /**
+   * How far the wall clock may drift from `DECLARED_PRESENT` before a stored
+   * state goes false.
+   *
+   * ⚠️ **THE DISTANCE TO THE NEARER EDGE, NOT HALF THE WINDOW.** An anchor is
+   * rarely exactly centred (a window of even width has no integer midpoint), so
+   * `round(span / 2)` promises drift the family does not have —
+   * `supplierDocument` declared 41 while its early edge sits 40 days away. The
+   * edge that breaks FIRST is the only honest number, and for a SHARED anchor
+   * it is measured against the INTERSECTION rather than either own window.
+   */
   readonly toleranceDays: number | null;
   /** How the anchor was derived. Re-derived by the guard, never trusted from here. */
   readonly why: string;
@@ -211,7 +308,7 @@ export const FAMILY_ANCHORS: Readonly<Record<FixtureFamily, FamilyAnchor>> = {
   supplierDocument: {
     anchor: '2026-04-01',
     window: ['2026-02-20', '2026-05-12'],
-    toleranceDays: 41,
+    toleranceDays: 40,
     why: 'midpoint of the window on which all 8 dated documents agree with documentExpiry',
   },
 
@@ -244,6 +341,22 @@ export const FAMILY_ANCHORS: Readonly<Record<FixtureFamily, FamilyAnchor>> = {
     toleranceDays: null,
     why: 'max(lastUpdated) — the family declares its own as-of date and nothing else does',
   },
+
+  // ⚠️ ONE ANCHOR, TWO FAMILIES — obligations name contract ids, so the pair is
+  // a cross-family comparison and `P` does not cancel across it. The value is
+  // the midpoint of the INTERSECTION of the two windows, not of either alone.
+  contract: {
+    anchor: SHARED_CONTRACT_ANCHOR,
+    window: ['2026-03-17', '2026-06-05'],
+    toleranceDays: 7,
+    why: 'midpoint of the contract ∩ obligation intersection; own window bound by ctr-007 / ctr-008',
+  },
+  obligation: {
+    anchor: SHARED_CONTRACT_ANCHOR,
+    window: ['2026-05-17', '2026-06-01'],
+    toleranceDays: 7,
+    why: 'the same shared anchor; this family BINDS both edges of the intersection',
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -251,17 +364,26 @@ export const FAMILY_ANCHORS: Readonly<Record<FixtureFamily, FamilyAnchor>> = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * The coherent windows of the families that are MEASURED but NOT anchored yet.
- * Kept here as data rather than prose so the gate can hold them against the raw
- * literals every run — a deferred family's window decays exactly as fast as an
- * anchored one's, and nothing else would notice.
+ * ⚠️ **`DEFERRED_WINDOWS` IS RETIRED — THERE ARE NO DEFERRED FAMILIES LEFT.**
+ *
+ * It held `contract` and `obligation` as measured-but-unanchored. Both are
+ * anchored above now, so their windows live in `FAMILY_ANCHORS[…].window` beside
+ * every other family's and the gate holds them by the same code path. Keeping an
+ * empty "deferred" register would be a second place for a window to be declared,
+ * which is how the two copies of the contract window disagreed in the first
+ * place.
+ *
+ * ⚠️ **`ctr-013` IS THE ONE CONTRACT ROW THAT DOES NOT MOVE, AND THAT IS A
+ * MEMBERSHIP RULING, NOT AN EXCEPTION.** It exists solely to host `sa-0002`
+ * (its own comment says so), whose calendar is authored against the SDC clock.
+ * So for date purposes `ctr-013` belongs to the SDC family, exactly as
+ * `delivery/fixtures.ts`'s `START_DATE` belongs to the CONTRACT family despite
+ * its directory: **membership follows the coupling, not the file it sits in.**
+ * Shifting it with its neighbours moves its start to 2026-06-08 and strands
+ * `sa-0002`'s first two releases outside their own contract —
+ * `agreementContractWindow.guard.test.ts` is what holds that closed.
  */
-export const DEFERRED_WINDOWS: Readonly<
-  Record<'contract' | 'obligation', readonly [string, string]>
-> = {
-  contract: ['2026-05-17', '2026-06-05'],
-  obligation: ['2026-05-17', '2026-06-01'],
-};
+export const SDC_FAMILY_CONTRACT_IDS: readonly string[] = ['ctr-013'];
 
 /** Whole days a family's dates move: `DECLARED_PRESENT − anchor`. */
 export function shiftDays(family: FixtureFamily): number {

@@ -1,3 +1,5 @@
+import { shiftFields, SDC_FAMILY_CONTRACT_IDS } from '../services/data/fixturePresent';
+
 export type ContractType =
   | 'Supply'
   | 'Service'
@@ -43,7 +45,7 @@ export interface Contract {
   performanceScore: number;
 }
 
-export const mockContracts: Contract[] = [
+const contractRows: Contract[] = [
   // ── Active stable (> 180d) ───────────────────────────────────────────────
   {
     id: 'ctr-001',
@@ -380,3 +382,27 @@ export const mockContracts: Contract[] = [
     performanceScore: 88,
   },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DECLARED PRESENT — FIXTURE-PRESENT-01 (d), `contract` family.
+//
+// Anchored on `SHARED_CONTRACT_ANCHOR` (2026-05-24), which this family SHARES
+// with `obligation` because obligations name contract ids — a cross-family
+// comparison, and those are the ones `P` does not cancel for.
+//
+// ⚠️ **`ctr-013` IS DELIBERATELY EXCLUDED, AND IT IS A MEMBERSHIP RULING RATHER
+// THAN AN EXEMPTION.** It exists only to host the SIMULATED scheduling agreement
+// `sa-0002`, whose calendar is authored against the SDC clock — so for date
+// purposes it belongs to the SDC family, which is coherent WITHOUT being shifted
+// (the declared present was moved to meet it instead). Shifting it with its
+// neighbours would move its start to 2026-06-08 and strand `sa-0002`'s first two
+// releases outside their own contract. `agreementContractWindow.guard.test.ts`
+// asserts the containment for EVERY agreement, so this ruling is checked rather
+// than trusted. The exclusion is derived from `SDC_FAMILY_CONTRACT_IDS`, never
+// re-listed here.
+// ─────────────────────────────────────────────────────────────────────────────
+export const mockContracts: Contract[] = contractRows.map((c) =>
+  SDC_FAMILY_CONTRACT_IDS.includes(c.id)
+    ? c
+    : shiftFields([c], 'contract', ['startDate', 'endDate', 'signedDate'])[0],
+);
