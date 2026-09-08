@@ -27,6 +27,11 @@ import NextActLine from '../../components/ui-v2/NextActLine';
 import { useNextAct } from '../../hooks/useVerbAvailability';
 import ScoreBadge from '../../components/ui-v2/ScoreBadge';
 import { daysUntil } from '../../services/data/dayProjection';
+import {
+  contractDisplayStatus,
+  CONTRACT_EXPIRY_TONE,
+  type ContractDisplayStatus,
+} from '../../services/data/contractExpiry';
 import Data from '../../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../../components/ui-v2/Timeline';
 import type {
@@ -119,12 +124,9 @@ const formatDate = (iso: string): string => {
   });
 };
 
-export const expiryTone = (days: number): string => {
-  if (days < 0) return 'text-danger font-semibold';
-  if (days < 30) return 'text-danger font-semibold';
-  if (days < 90) return 'text-warning-hover font-semibold';
-  return 'text-success';
-};
+// ⚠️ `expiryTone(days)` IS DELETED HERE TOO — it was exported from this file and
+// copied verbatim into `BuyerContracts.tsx`, which is the shape a page-local
+// width produces. Both are replaced by `CONTRACT_EXPIRY_TONE[displayStatus]`.
 
 const shiftDays = (iso: string, days: number): string => {
   if (!iso) return iso;
@@ -133,13 +135,24 @@ const shiftDays = (iso: string, days: number): string => {
   return d.toISOString().slice(0, 10);
 };
 
-const buildContractTimeline = (c: Contract, t: TFunction): TimelineEvent[] => {
-  const isDraft = c.status === 'Draft';
-  const isActive = c.status === 'Active';
-  const isExpiring = c.status === 'Expiring';
-  const isExpired = c.status === 'Expired';
-  const isRenewed = c.status === 'Renewed';
-  const isTerminated = c.status === 'Terminated';
+// ⚠️ **THE TIMELINE TAKES THE DISPLAY STATUS, AND THAT IS WHAT MAKES THE PILL
+// AND THE "NOTICE BY" STEP AGREE BY CONSTRUCTION.** It read `c.status` — the
+// stored literal — so the renewal-decision step went `current` exactly when a
+// fixture said `Expiring`, while the step's own timestamp was computed as
+// `endDate − noticeRequiredDays`. The step could therefore show a notice date
+// months in the past and still render `pending`. Passing the computed status
+// makes "the notice deadline has arrived" one fact rather than two.
+const buildContractTimeline = (
+  c: Contract,
+  t: TFunction,
+  display: ContractDisplayStatus,
+): TimelineEvent[] => {
+  const isDraft = display === 'Draft';
+  const isActive = display === 'Active';
+  const isExpiring = display === 'Expiring';
+  const isExpired = display === 'Expired';
+  const isRenewed = display === 'Renewed';
+  const isTerminated = display === 'Terminated';
 
   const finalLabel = isExpired
     ? t('contracts.timeline.expired')
@@ -252,12 +265,15 @@ export const ContractDetailBody: React.FC<{
   // the drawer opened from it cannot disagree about the same contract.
   const nowIso = useMemo(() => new Date().toISOString(), []);
   const daysToExpiry = daysUntil(contract.endDate, nowIso);
+  // ONE evaluation, read by the pill, the expiry figure's tone, the timeline
+  // and `useNextAct` below — the same shape the list page uses.
+  const display = contractDisplayStatus(contract, nowIso);
   // WHO ACTS NEXT (S2a). ⚠️ **THIS IS THE FIRST SURFACE WHERE #311 REACHES A
   // READER.** All four contract verbs became `external-fact` owned by S/4HANA
   // at #311, so every machine state here is stranded and the line is the only
   // thing on the page that says the wait is SAP's. `Expiring` / `Expired` are
   // clock projections (law 0.5) and resolve `silent` — see the batch report.
-  const nextAct = useNextAct('contract', contract.status);
+  const nextAct = useNextAct('contract', display);
   const supplierById = useMemo(
     () => new Map(suppliers.map((s) => [s.id, s])),
     [suppliers],
@@ -292,8 +308,8 @@ export const ContractDetailBody: React.FC<{
           <div>
             <dt className="text-text-tertiary">{t('contracts.panel.field.status')}</dt>
             <dd>
-              <StatusPill variant={STATUS_VARIANT[contract.status]}>
-                {contract.status}
+              <StatusPill variant={STATUS_VARIANT[display]}>
+                {display}
               </StatusPill>
               <span className="mt-1 block">
                 <NextActLine act={nextAct} testId="next-act-buyer-contract" />
@@ -335,7 +351,7 @@ export const ContractDetailBody: React.FC<{
               className={
                 daysToExpiry === null
                   ? 'text-text-tertiary'
-                  : `font-semibold ${expiryTone(daysToExpiry)}`
+                  : `font-semibold ${CONTRACT_EXPIRY_TONE[display]}`
               }
             >
               {daysToExpiry === null
@@ -479,7 +495,7 @@ export const ContractDetailBody: React.FC<{
         <h3 className="text-label text-text-tertiary uppercase mb-3">
           {t('contracts.panel.lifecycle')}
         </h3>
-        <Timeline events={buildContractTimeline(contract, t)} />
+        <Timeline events={buildContractTimeline(contract, t, display)} />
       </section>
     </div>
   );

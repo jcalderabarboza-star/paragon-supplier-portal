@@ -230,13 +230,25 @@ export type FixtureFamily =
 //                                              obl-003a / obl-004a / obl-010c)
 //     ∩            2026-05-17 .. 2026-06-01   → midpoint 2026-05-24, ±7 days
 //
-// ⚠️ **THE PREVIOUSLY-DECLARED CONTRACT WINDOW WAS WRONG AT ITS EARLY EDGE** —
-// it read `2026-05-17`, derived at #319 from authored "bands" that no shipped
-// code implements. Re-derived from the two predicates that DO read `endDate`
-// against a clock (`matchesGroup`'s 0..90 band in `BuyerContracts.tsx` and
-// `expiryTone` in `contracts/contractView.tsx`), the early bound is 2026-03-17.
-// The intersection is unaffected because obligation binds both of its edges, so
-// the anchor is the same number for a better reason.
+// ⚠️ **THE CONTRACT WINDOW HAS BEEN RE-DERIVED TWICE, AND THE SECOND TIME IT
+// GOT NARROWER BECAUSE THE TREE GOT A REAL CLASSIFIER.**
+//   · #319 declared `2026-05-17 .. 2026-06-05`, from five authored "bands" that
+//     no shipped code implemented.
+//   · #320 corrected the early edge to `2026-03-17` by deriving from the two
+//     predicates that actually read `endDate` against a clock — `matchesGroup`'s
+//     0..90 band and `expiryTone`. Both were page-local, and the rule they made
+//     falsifiable was the WEAKEST one they jointly implied.
+//   · TODAY it is `2026-05-16 .. 2026-06-04`, and it is derived from the SHIPPED
+//     rule: `contractDisplayStatus` (`services/data/contractExpiry.ts`) checked
+//     against the fixture's own section ladder. That is the `documentExpiry`
+//     treatment finally available to contracts, and it is TIGHTER (20 days, not
+//     81) because a real classifier makes a stronger claim than the weakest rule
+//     two page-local predicates imply. Bound at the early edge by ctr-007
+//     (reads Active one day sooner) and at the late edge by ctr-008 (reads
+//     Expired one day later).
+// **The intersection is unaffected in all three cases** — obligation binds both
+// of its edges — so `SHARED_CONTRACT_ANCHOR` is the same number for a third and
+// better reason, and `toleranceDays` is still 7.
 //
 // **Corroboration from a second, independent instrument:** the retired
 // `daysUntilExpiry` field back-solved 12 of 13 contract rows to 2026-05-20 —
@@ -347,9 +359,15 @@ export const FAMILY_ANCHORS: Readonly<Record<FixtureFamily, FamilyAnchor>> = {
   // the midpoint of the INTERSECTION of the two windows, not of either alone.
   contract: {
     anchor: SHARED_CONTRACT_ANCHOR,
-    window: ['2026-03-17', '2026-06-05'],
+    // ⚠️ Contract's display states are COMPUTED as of 2026-09-08
+    // (`contractExpiry.ts`), so `clockDrift` reports this family `computed` and
+    // never reads this window — it survives for the SAME reason obligation's
+    // does: it is the range of presents over which the AUTHORED literals still
+    // tell a coherent story, which is what the anchor is derived from. Bound by
+    // ctr-007 early and ctr-008 late, against the shipped classifier.
+    window: ['2026-05-16', '2026-06-04'],
     toleranceDays: 7,
-    why: 'midpoint of the contract ∩ obligation intersection; own window bound by ctr-007 / ctr-008',
+    why: 'midpoint of the contract ∩ obligation intersection; own window bound by ctr-007 / ctr-008 against contractDisplayStatus',
   },
   obligation: {
     anchor: SHARED_CONTRACT_ANCHOR,

@@ -197,13 +197,27 @@ const contractRows: Contract[] = [
   },
 
   // ── Expiring (within 30d) ────────────────────────────────────────────────
+  // ⚠️ **THE SECTION NAME STANDS; THE STORED STATUS DOES NOT.** Both rows read
+  // `status: 'Expiring'` until 2026-09-08 — a clock state authored as a
+  // literal, which is exactly what law 0.5 forbids. They now carry `Active`,
+  // their real machine state (`contractFlow.states` is
+  // `Draft · Active · Renewed · Terminated`; `Expiring` was never one of them),
+  // and the display status is computed by `services/data/contractExpiry.ts`
+  // from `endDate` against `noticeRequiredDays`.
+  //
+  // The COMMENT is kept because it is still a true statement about the DATA —
+  // both rows sit inside 30 days of their end at the family anchor — and
+  // because it is the fixture author's own record of the ladder these sections
+  // encode (30 / 90 / 180), which is the evidence the notice rule was ruled
+  // against. `contractExpiry.test.ts` re-derives every row from this file and
+  // requires the classifier to reproduce the ladder with zero misses.
   {
     id: 'ctr-007',
     contractNumber: 'CTR-2025-044',
     supplierId: 'sup-006',
     title: 'Sample Specialty Chemicals NDA — Q2 2025',
     type: 'NDA',
-    status: 'Expiring',
+    status: 'Active',
     startDate: '2025-06-15',
     endDate: '2026-06-15',
     autoRenewal: false,
@@ -227,7 +241,7 @@ const contractRows: Contract[] = [
     supplierId: 'sup-009',
     title: 'Sample Vitamins Service Contract',
     type: 'Service',
-    status: 'Expiring',
+    status: 'Active',
     startDate: '2025-06-05',
     endDate: '2026-06-05',
     autoRenewal: true,
@@ -247,13 +261,24 @@ const contractRows: Contract[] = [
   },
 
   // ── Expired ──────────────────────────────────────────────────────────────
+  // ⚠️ **THIS ROW RETIRES TOO, AND IT IS A CONSEQUENCE OF THE RULING RATHER
+  // THAN AN EXTENSION OF IT.** The ruling defines
+  // `Expired := status ∈ LIVE AND isPast(daysUntil(endDate, now))`. A row
+  // stored `Expired` is NOT live, so that rule can never fire on it — the
+  // literal would simply pass through, leaving the computed arm with no row in
+  // the fixture exercising it while `displayStates.ts` claimed the state was
+  // computed. That claim would be false, and the tab would still be populated
+  // by an authored literal. `Expired` was never a machine state either
+  // (`contractFlow.states` is `Draft · Active · Renewed · Terminated`), so the
+  // stored value becomes `Active` and the clock does the rest: −85 days at the
+  // family anchor, −93 today.
   {
     id: 'ctr-009',
     contractNumber: 'CTR-2024-117',
     supplierId: 'sup-002',
     title: 'Sample Specialty Fats Pricing 2024-2025',
     type: 'Pricing',
-    status: 'Expired',
+    status: 'Active',
     startDate: '2024-03-01',
     endDate: '2026-02-28',
     autoRenewal: false,

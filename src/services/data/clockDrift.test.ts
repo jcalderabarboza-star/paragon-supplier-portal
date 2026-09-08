@@ -16,6 +16,7 @@ import {
   driftReport,
   falsifiedFamilies,
   formatDriftReport,
+  driftVerdict,
 } from './clockDrift';
 import { DECLARED_PRESENT, FAMILY_ANCHORS, type FixtureFamily } from './fixturePresent';
 import { DISPLAY_STATES } from '../../lib/projectionGate/displayStates';
@@ -132,23 +133,69 @@ describe('a BOUND family — ok, warn and FALSE, each shown at its own instant',
     );
   });
 
-  it('⚠️ WARN IS REACHABLE, and only on a SHARED anchor — `contract` shows it', () => {
-    // `contract` declares 7 (measured against the contract ∩ obligation
-    // intersection, because the pair holds one anchor) while its own window
-    // leaves 12. Those five days are the warn band: past the allowance the pair
-    // jointly promised, not yet past what this family alone can survive.
-    const C: FixtureFamily = 'contract';
-    const cTol = FAMILY_ANCHORS[C].toleranceDays!;
-    const own = familyDrift(C, DECLARED_PRESENT).headroomDays!;
-    expect(own).toBeGreaterThan(cTol); // the shared anchor is the conservative one
-    expect(familyDrift(C, plus(DECLARED_PRESENT, cTol)).verdict).toBe('ok');
-    expect(familyDrift(C, plus(DECLARED_PRESENT, cTol + 1)).verdict).toBe('warn');
-    expect(familyDrift(C, plus(DECLARED_PRESENT, own)).verdict).toBe('warn');
-    expect(familyDrift(C, plus(DECLARED_PRESENT, own + 1)).verdict).toBe('FALSE');
-    // the mirror: drifting backwards warns too, and the early edge is far away
-    expect(familyDrift(C, plus(DECLARED_PRESENT, -(cTol + 1))).verdict).toBe('warn');
-  });
+  it('⚠️ WHO CAN WARN IS DERIVED — `contract` left the set, `supplierDocument` holds it', () => {
+    // This test used to read *"WARN IS REACHABLE, and only on a SHARED anchor
+    // — `contract` shows it"*, and probed `contract` directly: it declared 7
+    // (measured against the contract ∩ obligation intersection, because the
+    // pair holds one anchor) while its own window left 12, and those five days
+    // were the warn band. `contract` became `computed` on 2026-09-08 and left
+    // the bound population — `clockDrift`'s design working, not a regression:
+    // bound-ness is derived upstream from `DISPLAY_STATES`, so a family that
+    // gains a projection leaves with nobody editing this file.
+    //
+    // ⚠️ **AND THE REPLACEMENT I FIRST WROTE CLAIMED `warn` HAD BECOME
+    // UNREACHABLE. THE SWEEP SAID OTHERWISE AND IT IS RECORDED AS MEASURED
+    // RATHER THAN SMOOTHED.** `supplierDocument` still warns, for the other
+    // reason entirely: its anchor is OFF-CENTRE (40 days from the early edge,
+    // 41 from the late one), so there is exactly one forward day past its
+    // declared tolerance and still inside its window. Two different mechanisms
+    // produce a warn band — a shared anchor and an off-centre one — and losing
+    // the first did not remove the second.
+    //
+    // So the membership is SWEPT rather than listed: every family across its
+    // own full window, both directions.
+    const warners: string[] = [];
+    for (const family of Object.keys(FAMILY_ANCHORS) as FixtureFamily[]) {
+      const a = FAMILY_ANCHORS[family];
+      if (a.window === null || a.toleranceDays === null) continue;
+      const span = (dayMs(a.window[1]) - dayMs(a.window[0])) / MS;
+      for (let k = -span - 2; k <= span + 2; k += 1) {
+        if (familyDrift(family, plus(DECLARED_PRESENT, k)).verdict === 'warn') {
+          warners.push(`${family} @ ${k}d`);
+        }
+      }
+    }
+    // Exactly one day, on exactly one family — the late edge of the off-centre
+    // anchor. `contract` is absent, and its absence is the ruling landing.
+    expect(warners).toEqual(['supplierDocument @ 41d']);
+    expect(warners.some((w) => w.startsWith('contract'))).toBe(false);
+    expect(familyDrift('contract', DECLARED_PRESENT).verdict).toBe('computed');
 
+    // CONTROL, both ways — the sweep is a real instrument: over the same range
+    // it also finds `ok` and `FALSE`, so neither the single hit nor the
+    // `contract` absence is a loop that never ran.
+    const seen = new Set<string>();
+    for (const family of Object.keys(FAMILY_ANCHORS) as FixtureFamily[]) {
+      const a = FAMILY_ANCHORS[family];
+      if (a.window === null) continue;
+      const span = (dayMs(a.window[1]) - dayMs(a.window[0])) / MS;
+      for (let k = -span - 2; k <= span + 2; k += 1) {
+        seen.add(familyDrift(family, plus(DECLARED_PRESENT, k)).verdict);
+      }
+    }
+    expect([...seen].sort()).toEqual(['FALSE', 'computed', 'ok', 'warn']);
+  });
+  it('⚠️ the verdict RULE still has a warn arm, probed directly', () => {
+    // The branch no family can currently reach, measured at the rule instead
+    // of through data that cannot exercise it — `EMPTY-INPUT-REPORTS-CLEAN-01`
+    // is what an assertion over an unreachable population would be worth.
+    expect(driftVerdict(5, 3, 7)).toBe('ok'); //  inside tolerance
+    expect(driftVerdict(5, 7, 7)).toBe('ok'); //  exactly at it
+    expect(driftVerdict(5, 8, 7)).toBe('warn'); // past tolerance, inside window
+    expect(driftVerdict(5, -8, 7)).toBe('warn'); // signed, not a magnitude
+    expect(driftVerdict(-1, 8, 7)).toBe('FALSE'); // past the window wins
+    expect(driftVerdict(5, 999, null)).toBe('ok'); // no declared tolerance
+  });
   it('⚠️ past its OWN window it is FALSE — a reader is seeing a wrong state', () => {
     // The late edge: the origin `anchor + drift` leaves the window.
     const overLate = plus(DECLARED_PRESENT, (dayMs(HI) - dayMs(A)) / MS + 1);

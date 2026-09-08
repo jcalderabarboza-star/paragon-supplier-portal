@@ -102,6 +102,31 @@ function readerVisibleStoredStates(family: FixtureFamily): string[] {
   ).map((r) => r.state);
 }
 
+/**
+ * The verdict rule, EXTRACTED so it can be probed without a family that
+ * exercises it.
+ *
+ * ⚠️ **`warn` IS CURRENTLY UNREACHABLE FROM ANY FAMILY, AND THAT IS WHY THIS
+ * IS A FUNCTION RATHER THAN AN INLINE TERNARY.** `warn` needs a family whose
+ * DECLARED tolerance is stricter than its own window allows, which only happens
+ * on a SHARED anchor — and `contract`, the one family that had it, became
+ * `computed` on 2026-09-08 and left the bound population. An unreachable branch
+ * asserted through data that cannot reach it is
+ * `EMPTY-INPUT-REPORTS-CLEAN-01`: the assertion passes over nothing. Probing
+ * the rule directly is what keeps the branch measured while no data exercises
+ * it, and `clockDrift.test.ts` ALSO derives the unreachability rather than
+ * asserting it, so the day a shared anchor comes back the claim goes red.
+ */
+export function driftVerdict(
+  headroomDays: number,
+  driftDays: number,
+  toleranceDays: number | null,
+): DriftVerdict {
+  if (headroomDays < 0) return 'FALSE';
+  if (toleranceDays !== null && Math.abs(driftDays) > toleranceDays) return 'warn';
+  return 'ok';
+}
+
 /** One family's exposure to the wall clock at `todayIso` (`YYYY-MM-DD`). */
 export function familyDrift(
   family: FixtureFamily,
@@ -155,12 +180,7 @@ export function familyDrift(
     diffDays(hi, origin), // room before the LATE edge (drift going forwards)
   );
 
-  const verdict: DriftVerdict =
-    headroomDays < 0
-      ? 'FALSE'
-      : a.toleranceDays !== null && Math.abs(driftDays) > a.toleranceDays
-        ? 'warn'
-        : 'ok';
+  const verdict = driftVerdict(headroomDays, driftDays, a.toleranceDays);
 
   return {
     family,

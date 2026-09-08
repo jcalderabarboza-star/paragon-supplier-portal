@@ -22,7 +22,14 @@ export const contractsEn: Record<string, string> = {
   'contracts.kpi.active.eyebrow': 'Active Contracts',
   'contracts.kpi.active.subtitle': 'Currently in force',
   'contracts.kpi.expiring.eyebrow': 'Expiring Soon',
-  'contracts.kpi.expiring.subtitle': 'Within next 90 days',
+  // ⚠️ **THE NUMBER IS GONE, BY RULING.** It read 'Within next 90 days' — the
+  // only expiry KPI subtitle in the tree that named a width, and therefore the
+  // only one a band ruling could falsify. `supplierDocuments` and `compliance`
+  // both chose numberless wording ('Renewal window open'); this follows them,
+  // and says what the rule now MEANS rather than how wide it is — the width is
+  // the contract's own `noticeRequiredDays` and differs per row, so no single
+  // number could have been true here anyway.
+  'contracts.kpi.expiring.subtitle': 'Renewal notice due',
   'contracts.kpi.overdue.eyebrow': 'Overdue Obligations',
   'contracts.kpi.overdue.subtitle': 'Across all contracts',
   'contracts.kpi.value.eyebrow': 'Total Active Value',
@@ -75,6 +82,11 @@ export const contractsEn: Record<string, string> = {
   // — Renewal pipeline —
   'contracts.pipeline.eyebrow': 'Intelligence',
   'contracts.pipeline.title': 'Renewal Pipeline',
+  // ⚠️ THIS ONE KEEPS ITS HORIZON, because the horizon survived as a named
+  // constant (`CONTRACT_RENEWAL_HORIZON_DAYS`, 180) rather than as a literal on
+  // a page — and the coupling is ASSERTED: `contractExpiry.test.ts` pins the
+  // constant inside the range a reader would call six months, naming this key,
+  // so moving it goes red here instead of quietly making this sentence false.
   'contracts.pipeline.subtitle': 'Contracts expiring in the next 6 months, grouped by month.',
   'contracts.pipeline.empty': 'No renewals due in the next 6 months.',
   'contracts.pipeline.count.one': '· {{count}} contract',
@@ -272,7 +284,7 @@ export const contractsId: Record<string, string> = {
   'contracts.kpi.active.eyebrow': 'Kontrak Aktif',
   'contracts.kpi.active.subtitle': 'Sedang berlaku',
   'contracts.kpi.expiring.eyebrow': 'Segera Kedaluwarsa',
-  'contracts.kpi.expiring.subtitle': 'Dalam 90 hari ke depan',
+  'contracts.kpi.expiring.subtitle': 'Pemberitahuan perpanjangan jatuh tempo',
   'contracts.kpi.overdue.eyebrow': 'Kewajiban Jatuh Tempo',
   'contracts.kpi.overdue.subtitle': 'Di semua kontrak',
   'contracts.kpi.value.eyebrow': 'Total Nilai Aktif',
