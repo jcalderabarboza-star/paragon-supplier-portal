@@ -22370,7 +22370,7 @@ outside the dispatch — recorded, not fixed.
 
 ---
 
-## §89 — ONE DECLARED PRESENT (#320): the SDC clock retires, `contract` + `obligation` anchor, and a deferral's stated mechanism is retracted
+## §92 — ONE DECLARED PRESENT (#320): the SDC clock retires, `contract` + `obligation` anchor, and a deferral's stated mechanism is retracted
 
 **Ruled and built 2026-09-08.** `FIXTURE-PRESENT-01` closed at #319 with **two**
 declared presents still standing in shipped code: the fixture families read
@@ -22379,7 +22379,7 @@ declared presents still standing in shipped code: the fixture families read
 that gap honestly, and **nothing anywhere recording a ruling for it.** Two clocks
 that disagree by ruling are defensible; two that disagree by accident are not.
 
-### §89a — THE OPTION NOBODY DISPATCHED: MOVE `P` TO MEET THE FAMILY
+### §92a — THE OPTION NOBODY DISPATCHED: MOVE `P` TO MEET THE FAMILY
 
 The dispatch named three options — anchor the SDC family under `P`; keep two
 declared presents, gated; or retire `sdcClock` with the delivery lane. Measurement
@@ -22414,7 +22414,7 @@ and no assertion re-tuned**:
 |---|---|---|
 | anchor the SDC family under `P` | 4 files, 58 literals | **8 / 4 files** |
 | keep two presents, gated | none | ~0, but four surfaces disagree with their neighbours |
-| retire `sdcClock` with the delivery lane | — | **not buildable as specified** (see §89b) |
+| retire `sdcClock` with the delivery lane | — | **not buildable as specified** (see §92b) |
 | **move `P` to meet the family** | **none** | **1, and it is a tautology** |
 
 **The hostage is real and is made checkable rather than argued away.** `P` is now
@@ -22425,7 +22425,7 @@ the lane quietly going false. **Option 1 is filed at the site with its route out
 again; the cost when it comes is ~20 hardcoded `'2026-08-25'` literals across 14
 spec files, which must be DERIVED, not re-pinned.
 
-### §89b — `sdcClock` IS NOT THE DELIVERY LANE'S CLOCK, WHICH IS WHY ONE OPTION WAS UNBUILDABLE
+### §92b — `sdcClock` IS NOT THE DELIVERY LANE'S CLOCK, WHICH IS WHY ONE OPTION WAS UNBUILDABLE
 
 It serves five consumer areas, and `deriveDeliveryChase` reads
 `DeliveryAgreementView` — so delivery views and the chase list sit on **one
@@ -22439,7 +22439,7 @@ SURVIVING IT.** `sdcClock.now()` is read by the write stamps and some selectors;
 the first and not the second, so a test that injects a clock leaves five surfaces
 on the frozen constant.
 
-### §89c — THE DEFERRAL'S STATED MECHANISM WAS FALSE, AND THE RETRACTION IS QUOTED
+### §92c — THE DEFERRAL'S STATED MECHANISM WAS FALSE, AND THE RETRACTION IS QUOTED
 
 `FIXTURE-PRESENT-01`'s closing note, and `fixturePresent.ts`, and
 `fixturePresent.guard.test.ts:157`, all said the same thing:
@@ -22466,7 +22466,7 @@ nobody re-measures a blocker; a blocker is why you stopped.* It was filed anyway
 one turn before the rule could catch it, and it shipped into two source files
 plus this register. **Quoted rather than deleted at all three sites.**
 
-### §89d — `contract` + `obligation`: ONE ANCHOR, RE-DERIVED
+### §92d — `contract` + `obligation`: ONE ANCHOR, RE-DERIVED
 
 Anchored **together** at **2026-05-24**, because obligations name contract ids.
 Windows re-derived from the raw literals:
@@ -22509,7 +22509,7 @@ the FLOOR midpoint over the ceiling bought the extra day in the direction the wa
 clock actually travels. The remedies are a lead bump or retiring the stored
 obligation states; neither is taken here.
 
-### §89e — THE LATENT COUPLING WAS NOT LATENT
+### §92e — THE LATENT COUPLING WAS NOT LATENT
 
 The dispatch asked for a guard on "nothing asserts sa-0002's calendar sits inside
 ctr-013's validity window", on the reasoning that *a latent coupling found before
@@ -22543,7 +22543,7 @@ mirror of `START_DATE` belonging to the CONTRACT family despite living under
 are stated at their sites, and the guard is what keeps the second honest — the
 mutation that stops excluding `ctr-013` kills three tests by name.
 
-### §89f — MUTATION PROBE
+### §92f — MUTATION PROBE
 
 Six mutants, all **KILLED BY NAME**; every target restored byte-identical
 (sha256 as authority, `git hash-object` beside it — `core.autocrlf` is on).
@@ -22569,8 +22569,238 @@ that reports on itself.
 - **`DEMO_NOW` is a THIRD declared present** (`src/test/demoClock.ts`,
   2026-07-06), test-scope, disagreeing with both. Named so it is not
   rediscovered as a surprise.
-- **`sdcClock`'s one-sided seam** (§89b) — survives option 4 untouched.
+- **`sdcClock`'s one-sided seam** (§92b) — survives option 4 untouched.
 - **`BuyerChase` names a simulated instant with NO honesty marker**, in either
   locale — `chase.meta.summary` is *"· as of {{date}}"* while its three peers say
   "sample clock" or "sample data". The only one of the four without. Same class as
   `BuyerCompliance`'s hardcoded regulatory date that #319 retired.
+
+---
+
+## §93 — OBLIGATION'S DISPLAY STATES ARE COMPUTED, AND `toleranceDays` GETS A READER (2026-09-08)
+
+**Built the day the family tipped.** `obligation/Upcoming` and `obligation/Overdue`
+were `stored-in-fixtures` — a fixture literal asserting a clock state, zero
+non-fixture writes — and on 2026-09-08 they went FALSE against the wall clock
+while all 4471 tests were green. They are now `computed-at-read` from
+`obligationProjection.ts`, and the instrument that could have said so exists.
+
+### §93a — ⚠️ THE PREMISE THE RULING WAS GIVEN WAS MINE, AND IT WAS WRONG
+
+The dispatch ruled *"`days <= 0` IS PAST. The only convention the tree ships, in
+`dayProjection`'s classifier — **the only one that discriminates zero**."* The
+parenthetical was my report's sentence, and it is **false**.
+
+The first census matched `days?\s*[<>]=?\s*-?\d` — the IDENTIFIER `days`
+followed by a comparison. That is a NAME-shaped matcher, which is rules 1 and 2
+in one instrument, and **two of the three shipped classifiers never spell that
+name**:
+
+| classifier | the comparison | a date that is TODAY |
+|---|---|---|
+| `documentExpiry` · `dayProjection.ts` | `days <= 0` | **PAST** |
+| `computeStatus` · `complianceProjection.ts` | `remaining < 0` | **NOT past** |
+| `isOverdue` · `invoiceProjection.ts` | `dueDate < day(now)` | **NOT past** |
+
+Re-derived from the **SIGNATURE** instead — every exported function taking an
+injected `now`, 23 across 12 files — with a known-true control
+(`documentExpiry` found) and a known-false one (`shiftIso` absent).
+**`days <= 0` is the MINORITY convention, 1 of 3.**
+
+⚠️ **AND A FOURTH SITE ANSWERS IT AGAIN, IN THE PLACE THAT DECIDES CONTRACT'S
+WINDOW.** `matchesGroup`'s expiring arm is `daysToExpiry <= 90 && daysToExpiry
+>= 0` — zero is still *Expiring* — and that arm is one of the two predicates
+`FAMILY_ANCHORS.contract.window`'s late bound was derived from at #320. So
+contract's declared headroom is **one day longer** than the newly-ruled boundary
+would give it. Recorded at the site in `clockDrift.ts` rather than silently
+re-derived: the contract band is deferred by ruling, and moving its edge under a
+different convention is exactly the re-labelling that deferral exists to prevent.
+
+**The ruling stands on its own reasoning** — a second convention is a second
+present wearing different clothes — but the reason GIVEN for it does not, and
+the correction is written into `dayProjection.ts` beside the constant rather
+than left in a report. A wrong premise with a specific name is the most
+believable kind.
+
+### §93b — WHY ONLY ONE OF THE THREE WAS CONVERTED
+
+`isPast` is stated once in `dayProjection.ts` and `documentExpiry` now READS it
+(same convention, zero behaviour change — the refactor that makes "stated once"
+true rather than aspirational). The other two are **filed, with the blast radius
+measured rather than assumed**:
+
+- **`complianceProjection`** — `SAMPLE-HALAL-0005B` (sup-005, `HALAL_BPJPH`)
+  carries `expiryDate: '2026-08-31'`, which **is `DECLARED_PRESENT` exactly**.
+  Converting flips it `Expiring → Expired` at the demo's own instant, on the
+  halal lane. 1 of 9 dated registry rows.
+- **`invoiceProjection`** — 0 of 13 invoices are due at `P`, so the conversion
+  is behaviour-neutral *today* and still a semantic change the day a fixture
+  moves.
+
+Each is a ruling about a lane, not a refactor.
+
+### §93c — `Upcoming` IS NOT A WINDOW, AND THAT IS MEASURED
+
+The dispatch was right to withhold the width. There is none to find:
+
+| | offsets from the shared anchor |
+|---|---|
+| `Upcoming` (12) | 8 8 8 37 38 38 52 52 69 83 98 100 |
+| `In Progress` (7) | 1 7 7 22 22 **37** 42 |
+
+They **overlap on [8..42]** and share the offset 37. The best single threshold
+over every width and both directions misclassifies **4 of 19**. Every other
+stored field was then tested as a discriminator — `category`, `owner`,
+`recurrence`, `contractId`, `completedDate` — and **every one holds values
+present under both labels**. The only thing separating an `Upcoming` row from an
+`In Progress` row is the literal.
+
+So the classifier needs no window constant: `Overdue` is `not-completed AND
+isPast(daysUntil(dueDate, now))` — **0 misclassified of 24** — and `Upcoming` is
+its complement — **0 of 12**. `Completed` is decided by `completedDate` alone
+and reads no clock (16/16 completed rows carry one, 0 of 24 non-completed do).
+
+**The ruled cost, asserted rather than absorbed:** the seven `In Progress` rows
+re-label to `Upcoming`. `In Progress` is the flow's `initial` MACHINE state;
+preserving it needs a stored field recording that work began, and none exists.
+**The route back is named at the site:** it returns when `obligation` gets a
+`CommandTarget` and `t_obligation_track` can fire — which is why obligation is
+not `contract` or `shipment`, whose verbs are `external-fact` (s4hana, tms) and
+will never be ours to write.
+
+### §93d — WHAT A READER WAS BEING SHOWN
+
+- `/buyer/contracts/ctr-003` Overview rendered `Monthly capacity report ·
+  08 Sept 2026 · Upcoming` — **due today** — three inches under `Days until
+  expiry 121d`, which is computed from the same wall clock. A computed
+  day-count and a stored pill disagreeing about one instant on one card.
+- The `OVERDUE OBLIGATIONS` KPI read **5** — the authored count, exactly right
+  at `DECLARED_PRESENT` and unable to move — while the correct answer against
+  the wall clock was **11**. Six obligations past due that the buyer was not
+  being shown.
+
+### §93e — `toleranceDays` HAS A READER: `clockDrift.ts`
+
+The declared allowance had no consumer anywhere. `fixturePresent.guard.test.ts`
+holds every family against its own ANCHOR, which is clock-independent **by
+construction** — green on the day a family goes false, which is what happened.
+
+`clockDrift.ts` compares `DECLARED_PRESENT` to a real clock and reports, per
+family, drift · declared tolerance · own-window headroom · verdict.
+
+⚠️ **BOUND-NESS IS DERIVED UPSTREAM, FROM `DISPLAY_STATES`.** A family is
+drift-bound iff a reader can still SEE one of its stored clock-states — which
+`projectionGate/displayStates.ts` already declares bilaterally and
+mutation-probed. So **obligation left the drift population the moment its rows
+became `computed-at-read`, with nobody editing `clockDrift.ts`**, and a family
+whose projection is deleted rejoins the same way (§86: derive the population
+from something the change cannot reach).
+
+Measured today:
+
+```
+  family            drift   tol  headroom  verdict
+  supplierDocument      8    40        33  ok
+  shipment              8     —         —  no-stored-clock-state   Delayed
+  goodsReceipt          8     —         —  no-stored-clock-state
+  inventory             8     —         —  no-stored-clock-state
+  contract              8     7         4  warn    Expiring, Expired
+  obligation            8     7         —  computed
+```
+
+⚠️ **WHY IT IS NOT IN THE PR GATE, STATED PLAINLY RATHER THAN AS TIMIDITY.** It
+goes red on a CALENDAR DAY with nobody touching a file, and its remedy — moving
+`MANDATE_LEAD_DAYS`, which re-times every fixture — is an operator RULING no PR
+author can take. CP-3a already ruled on this shape for the floor: *a threshold
+people must routinely edit to go green is not a threshold.* So the pure module
+is asserted at PINNED instants inside the normal suite (where it can never
+decay) and the real-clock spec is **excluded** from the default run, executed by
+`npm run drift` and by CI **on the `schedule` trigger only** — the half of
+`gates.yml` that exists for a break with no commit involved, and which files an
+issue rather than blocking anyone.
+
+⚠️ **AND `warn` IS REACHABLE ONLY ON A SHARED ANCHOR — a derived property, not a
+gap.** For a family that owns its anchor, `toleranceDays` IS the distance to the
+nearer edge, so it goes from `ok` straight to `FALSE`. The band exists only
+where the declared tolerance is measured against the INTERSECTION (contract:
+declares 7, own window leaves 12 — five days of warning). `supplierDocument`
+turned out to have a **one-sided** band — one day forwards, zero backwards,
+because its anchor is 40 from the early edge and 41 from the late one. **I
+expected to write "the warn band is empty" and the probe said otherwise; it is
+recorded as measured.**
+
+### §93f — ⚠️ THE DRIFT CONFIG RAN THE ENTIRE SUITE WHILE CLAIMING TO RUN ONE FILE
+
+`vitest.drift.config.ts` was first written with `mergeConfig`, whose comment said
+it *"inverts the include — live specs only"*. **`mergeConfig` CONCATENATES
+arrays.** It collected **316 files / 4496 tests** — everything — and because the
+live spec ran inside that, the exit code was **0** and the run "passed".
+
+An instrument that examines *everything* while reporting that it examined one
+thing is the same defect as `EMPTY-INPUT-REPORTS-CLEAN-01` with the sign
+flipped, and **only reading the output told them apart** — the exit code could
+not. Fixed by spreading and replacing explicitly; the scar is recorded in the
+config so the next person does not reach for `mergeConfig` again.
+
+### §93g — SECTION-NUMBER COLLISION, FIXED IN PASSING
+
+**`§89` existed twice in this register**: the `settle` batch's (2026-09-04) and
+#320's (2026-09-08), each with its own `§89a`–`§89f`. Line 21829's *"§89c and
+unchanged"* was already ambiguous. #320's section is renumbered **§92**
+throughout (9 tokens), verified bilaterally: one `## §89`, one `## §92`, six
+`### §89[a-f]`, six `### §92[a-f]`.
+
+### Filed from this batch, not built
+
+- **obligation's `CommandTarget`** and the `In Progress → Completed` wiring —
+  both verbs are `surfaced: true` and both atoms are already in a lane bundle
+  (`businessRoles.ts:147`), so a seat can hold the authorisation today and the
+  verb still cannot fire.
+- **The contract band ruling** — shipped 90 vs authored `[22..61]`, plus the
+  `expired` arm having no computed half, plus the zero-boundary disagreement
+  above.
+- **`shipment/Delayed`** — exactly reconstructable (`no actualArrival AND
+  daysUntil(estimatedArrival, now) < 0` selects exactly `shp-018`), with
+  `shp-017` as its acquittal control: arrived a day late, stored `Delivered`,
+  which a naive `actual > estimated` rule convicts and the data does not.
+- **`supplierDocument/Expiring Soon`** — a DELETION, not a build.
+- **`Contract.obligationCount` / `obligationsMet`** — stored, written by the
+  wizard, **read by nothing**; `obligationsMet` disagrees with the obligation
+  fixture on **8 of 13** contracts and `obligationCount` on 1 (`ctr-013` claims
+  3, has 0). They fall between all three gates: `displayStates` derives from
+  closed string unions (these are numbers), `dayCounts` matches `*[Dd]ays*`,
+  and `storedFieldGate` derives its population from glossary registries, which
+  `: number` never names.
+- **`projectionGate`'s write-site matcher counts `= 'X'` as a write**, so a
+  ONE-LINE type alias registers as a producer. Worked around at the site
+  (`ObligationDisplayState` is written vertically, with the reason) rather than
+  by widening a matcher — rule 2.
+- **The surface clock convention** — see §93h.
+
+### §93h — ⚠️ THE SURFACE-CONVENTION HALF WAS STOPPED, AND THE STOP IS THE FINDING
+
+The dispatch gave permission to stop *"if the surface-convention half turns out
+to touch more than the seven."* **It touches far more than seven, and my "seven"
+was itself a list wearing a derivation's clothes** — it came from
+`nowIso\s*=\s*useMemo\(\(\)\s*=>\s*new Date\(\)`, a BINDING-NAME matcher on one
+page layer. The wide derivation returns **64 real-clock reads across 32 files**
+(which is the figure already filed as *the 64 wall-clock reads*), and the
+projection-feeding ones the narrow matcher missed include `BuyerCompliance:137`,
+`BuyerComplianceWidget:30`, `BuyerAlertsBar:48`, `BuyerOpenPoWidget:28`,
+`BuyerRfqAwaitingAwardWidget:31`, `SupplierRfqToRespondWidget:41`,
+`SupplierDashboard:241/332`, `BuyerOrders:297`, `SupplierStorefront:143`, and
+three default parameters (`fxPin` ×2, `quoteScore`, `fxRateInput`).
+
+**And obligation's projection did not need it.** Both sides of the contract card
+now read the SAME `nowIso`, whichever clock that is, so the contradiction is
+gone without ruling on the convention at all. That separability is why the half
+could be stopped cleanly rather than half-built.
+
+**What still wants the ruling:** three surfaces pin `DECLARED_PRESENT`
+(`BuyerGoodsReceipt`, `BuyerShipments`, `BuyerInventory`) and the rest read the
+wall clock, **nothing declares which is right**, and no gate sees the split. The
+honest convention is almost certainly *every fixture-backed surface reads `P`* —
+but "almost certainly" is not a derivation, and the population has to be
+classified read-by-read (an event stamp legitimately reads the real clock; a
+projection over fixture dates does not). That classification is the next batch,
+not a paragraph in this one.

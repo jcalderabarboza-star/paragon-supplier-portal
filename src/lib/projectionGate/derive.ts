@@ -128,7 +128,13 @@ const OWNED_BY: Record<string, RegExp> = {
   contract: /mockContracts|contractStore|\/contracts\//,
   supplierDocument: /supplierDocuments|supplierDocumentStore|SupplierDocuments/,
   shipment: /mockShipments|shipmentStore|Shipments/,
-  obligation: /mockObligations|obligationStore/,
+  // `obligationProjection` joins for the same reason `complianceProjection` and
+  // `invoiceProjection` are in their entities' patterns: the producer must be in
+  // the scanned scope or the gate reads a computed state as a stored one. The
+  // name is precise rather than a directory glob — `dayProjection` would have
+  // been the alternative home and it also returns `'expired'`/`'expiring'` for
+  // documents, so scoping to it would import a second entity's vocabulary.
+  obligation: /mockObligations|obligationStore|obligationProjection/,
   compliance: /complianceRegistry|complianceProjection|Compliance/,
   invoice: /fixtures\/invoices|invoiceStore|invoiceProjection|Invoices/,
 };

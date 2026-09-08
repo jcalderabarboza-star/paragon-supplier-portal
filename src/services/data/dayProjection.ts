@@ -66,6 +66,57 @@ export function daysUntil(
   return Math.round((target - Date.parse(day(nowIso))) / MS_PER_DAY);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ⚠️ THE ZERO BOUNDARY — STATED ONCE, HERE, AND READ RATHER THAN RESTATED.
+//
+// **A date that is TODAY is PAST.** `days <= 0`, not `days < 0`. Ruled by the
+// operator; the ground is that a second convention is a second present wearing
+// different clothes — the same argument that retired `SDC_SIMULATED_NOW`.
+//
+// ── ⚠️ AND THE PREMISE THE RULING WAS GIVEN WAS MINE, AND IT WAS WRONG ──────
+//   It was reported as *"the only convention the tree ships — the only one that
+//   discriminates zero."* **Measured false, by a better instrument.** The first
+//   census matched on the IDENTIFIER `days` followed by a comparison, which is
+//   a NAME-shaped matcher (rules 1 and 2 in one pass), and TWO of the three
+//   shipped classifiers never spell that name:
+//
+//     documentExpiry        (below)                  days <= 0     TODAY IS PAST
+//     computeStatus         complianceProjection.ts  remaining < 0 TODAY IS NOT PAST
+//     isOverdue             invoiceProjection.ts     dueDate < day(now)  ditto
+//
+//   Re-derived from the SIGNATURE instead — every exported function taking an
+//   injected `now` — with a known-true control (`documentExpiry` found) and a
+//   known-false one (`shiftIso` absent). **`days <= 0` is the MINORITY
+//   convention, 1 of 3.** The ruling stands on its own reasoning; the reason
+//   GIVEN for it does not, and it is corrected here rather than left standing
+//   because a wrong premise with a specific name is the most believable kind.
+//
+// ── ⚠️ WHY THE OTHER TWO ARE NOT CONVERTED IN THIS BATCH ────────────────────
+//   Not oversight and not scope-timidity — each conversion CHANGES WHAT A LIVE
+//   SURFACE SAYS, and the blast radius is measured rather than assumed:
+//     · `complianceProjection` — `SAMPLE-HALAL-0005B` (sup-005, HALAL_BPJPH)
+//       carries `expiryDate: '2026-08-31'`, which is `DECLARED_PRESENT`
+//       EXACTLY. Converting flips it `Expiring → Expired` at the demo's own
+//       instant, on the halal lane. 1 of 9 dated registry rows.
+//     · `invoiceProjection` — 0 of 13 invoices are due at `P` today, so the
+//       conversion is behaviour-neutral NOW and still a semantic change the
+//       day a fixture moves.
+//   Both are filed. Converting them is a ruling about two lanes, not a
+//   refactor, and this batch was scoped `for obligation only`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Is a day-count PAST? The one place the zero boundary is decided.
+ *
+ * `null` (no date, or an unparseable one — `daysUntil` conflates them
+ * deliberately, see above) is **not past**: an absent date must not manufacture
+ * an alarm, which is the same answer `documentExpiry` already gives it by
+ * returning `'no-expiry'` rather than `'expired'`.
+ */
+export function isPast(days: number | null): boolean {
+  return days !== null && days <= 0;
+}
+
 /** The window (days) before expiry within which a supplier document reads as
  *  expiring. Deliberately NOT `complianceProjection`'s 90: that governs the
  *  halal cert registry, this governs the document shelf, and collapsing two
@@ -96,7 +147,11 @@ export function documentExpiry(
 ): DocumentExpiry {
   const days = daysUntil(doc.expiryDate, nowIso);
   if (days === null) return 'no-expiry';
-  if (days <= 0) return 'expired';
+  // ⚠️ READS `isPast` rather than restating `days <= 0`. The literal that stood
+  // here was the tree's ONLY statement of the boundary, which is exactly how a
+  // convention becomes a per-site opinion. Behaviour is unchanged — this is the
+  // refactor that makes "stated once" true rather than aspirational.
+  if (isPast(days)) return 'expired';
   if (days <= DOCUMENT_EXPIRING_WINDOW_DAYS) return 'expiring';
   return 'current';
 }

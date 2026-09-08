@@ -37,6 +37,7 @@ import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useContracts, useObligations, useSuppliers } from '../services/query/hooks';
 import type { ContractObligation } from '../data/mockObligations';
+import { obligationDisplay } from '../services/data/obligationProjection';
 import type {
   Contract,
   ContractStatus,
@@ -1167,9 +1168,16 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     return { active, expiringSoon, totalValue };
   }, [contracts, counts.active]);
 
+  // ⚠️ COMPUTED, not counted off the stored literal. Measured on 2026-09-08,
+  // the day this changed: the tile read 5 (the authored `Overdue` count, exactly
+  // right at `DECLARED_PRESENT`) while the correct answer against the wall clock
+  // was 11 — six obligations past due that the buyer was not being shown. The
+  // tile could never have moved, because a stored literal does not.
   const overdueObligations = useMemo(
-    () => obligations.filter((o) => o.status === 'Overdue').length,
-    [obligations],
+    () =>
+      obligations.filter((o) => obligationDisplay(o, nowIso) === 'Overdue')
+        .length,
+    [obligations, nowIso],
   );
 
   const filtered = useMemo(() => {
