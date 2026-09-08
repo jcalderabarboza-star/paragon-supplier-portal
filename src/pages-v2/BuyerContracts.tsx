@@ -43,6 +43,7 @@ import type {
   ContractType,
 } from '../data/mockContracts';
 import type { Supplier } from '../services/data/types';
+import { daysUntil } from '../services/data/dayProjection';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 import {
   normalizeContractNumbers,
@@ -312,11 +313,35 @@ const contractRefusalKey = (
     ? CONTRACT_VALUE_REFUSAL_KEY[reason]
     : CONTRACT_NOTICE_REFUSAL_KEY[reason];
 
-const matchesGroup = (c: Contract, g: GroupTab): boolean => {
+/** The expiry figure a row shows, derived from the contract's own `endDate`.
+ *  Returns `null` when there is no readable end date — rendered as an em dash
+ *  rather than as a zero, because "no end date" is not "expires today". */
+const ExpiryCell: React.FC<{ days: number | null }> = ({ days }) => {
+  const { t } = useTranslation();
+  if (days === null)
+    return <div className="text-sm whitespace-nowrap text-text-tertiary">—</div>;
+  return (
+    <div className={`text-sm whitespace-nowrap ${expiryTone(days)}`}>
+      {days < 0
+        ? t('contracts.expiry.daysAgo', { count: Math.abs(days) })
+        : days === 0
+          ? t('contracts.expiry.today')
+          : t('contracts.expiry.daysLeft', { count: days })}
+    </div>
+  );
+};
+
+// ⚠️ `daysUntilExpiry` is no longer a field — it is COMPUTED and passed in, so
+// this helper stays pure and the clock stays injected. It used to read a stored
+// number that was 111 days stale, which is why "expiring" meant nothing here.
+const matchesGroup = (c: Contract, g: GroupTab, daysToExpiry: number | null): boolean => {
   if (g === 'all') return true;
   if (g === 'active') return c.status === 'Active';
   if (g === 'expiring')
-    return c.status === 'Expiring' || (c.status === 'Active' && c.daysUntilExpiry <= 90 && c.daysUntilExpiry >= 0);
+    return (
+      c.status === 'Expiring' ||
+      (c.status === 'Active' && daysToExpiry !== null && daysToExpiry <= 90 && daysToExpiry >= 0)
+    );
   if (g === 'expired') return c.status === 'Expired';
   if (g === 'renewed') return c.status === 'Renewed';
   if (g === 'draft') return c.status === 'Draft';
@@ -335,6 +360,14 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   obligations,
   suppliers,
 }) => {
+  // ONE clock read for the workspace, captured once so every expiry figure on
+  // screen is answered against the SAME instant. ⚠️ It sits at the TOP of the
+  // body on purpose: this component has no early return today, but a hook below
+  // one is a conditional hook, and that is what took 44 specs down in #317.
+  const nowIso = useMemo(() => new Date().toISOString(), []);
+  /** This contract's days-to-expiry at that instant. `-Infinity`-free: a row
+   *  with no readable end date sorts as "no expiry" rather than as overdue. */
+  const expiryDays = (c: Contract): number => daysUntil(c.endDate, nowIso) ?? 0;
   const supplierById = useMemo(
     () => new Map(suppliers.map((s) => [s.id, s])),
     [suppliers],
@@ -501,12 +534,10 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     const numbers = contractNumbers.value;
     const yr = new Date().getFullYear();
     const nextNum = baseContracts.length + extraContracts.length + 1;
-    const todayIso = new Date().toISOString().slice(0, 10);
-    const end = new Date(draft.endDate);
-    const today = new Date(todayIso);
-    const daysUntilExpiry = Math.round(
-      (end.getTime() - today.getTime()) / (24 * 60 * 60 * 1000),
-    );
+    // ⚠️ THE MINT IS GONE WITH THE FIELD. This computed `daysUntilExpiry` from
+    // `new Date()` and wrote it onto the new contract, so every contract a buyer
+    // created was born correct for exactly one day. `endDate` is stored; the
+    // difference is derived at read.
     const newContract: Contract = {
       id: `ctr-new-${Date.now()}`,
       contractNumber: `CTR-${yr}-${String(nextNum).padStart(3, '0')}`,
@@ -535,7 +566,6 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       signedDate: '',
       obligationCount: draft.obligations.length,
       obligationsMet: 0,
-      daysUntilExpiry,
       category: draft.category,
       brands: draft.brands,
       performanceScore: 0,
@@ -1124,11 +1154,13 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
 
   const kpis = useMemo(() => {
     const active = counts.active;
-    const expiringSoon = contracts.filter(
-      (c) =>
+    const expiringSoon = contracts.filter((c) => {
+      const d = daysUntil(c.endDate, nowIso);
+      return (
         c.status === 'Expiring' ||
-        (c.status === 'Active' && c.daysUntilExpiry <= 90 && c.daysUntilExpiry >= 0),
-    ).length;
+        (c.status === 'Active' && d !== null && d <= 90 && d >= 0)
+      );
+    }).length;
     const totalValue = contracts
       .filter((c) => c.status === 'Active')
       .reduce((sum, c) => sum + c.value, 0);
@@ -1142,7 +1174,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
 
   const filtered = useMemo(() => {
     return contracts
-      .filter((c) => matchesGroup(c, group))
+      .filter((c) => matchesGroup(c, group, daysUntil(c.endDate, nowIso)))
       .filter((c) =>
         selectedTypes.length === 0 ? true : selectedTypes.includes(c.type),
       )
@@ -1160,12 +1192,15 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
   }, [contracts, group, selectedTypes, search]);
 
   const renewalPipeline = useMemo(() => {
-    const upcoming = contracts.filter(
-      (c) =>
+    const upcoming = contracts.filter((c) => {
+      const d = daysUntil(c.endDate, nowIso);
+      return (
         (c.status === 'Active' || c.status === 'Expiring') &&
-        c.daysUntilExpiry >= 0 &&
-        c.daysUntilExpiry <= 180,
-    );
+        d !== null &&
+        d >= 0 &&
+        d <= 180
+      );
+    });
     const groups = new Map<string, Contract[]>();
     for (const c of upcoming) {
       const key = formatMonth(c.endDate);
@@ -1336,17 +1371,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    <div className={`text-sm whitespace-nowrap ${expiryTone(c.daysUntilExpiry)}`}>
-                      {c.daysUntilExpiry < 0
-                        ? t('contracts.expiry.daysAgo', {
-                            count: Math.abs(c.daysUntilExpiry),
-                          })
-                        : c.daysUntilExpiry === 0
-                          ? t('contracts.expiry.today')
-                          : t('contracts.expiry.daysLeft', {
-                              count: c.daysUntilExpiry,
-                            })}
-                    </div>
+                    <ExpiryCell days={daysUntil(c.endDate, nowIso)} />
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
                     <Data>{c.value > 0 ? formatIDR(c.value) : '—'}</Data>
@@ -1439,14 +1464,14 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                       >
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            c.daysUntilExpiry < 30
+                            expiryDays(c) < 30
                               ? 'bg-danger-soft text-danger'
-                              : c.daysUntilExpiry < 90
+                              : expiryDays(c) < 90
                                 ? 'bg-warning-soft text-warning-hover'
                                 : 'bg-info-soft text-info'
                           }`}
                         >
-                          {c.daysUntilExpiry}d
+                          {expiryDays(c)}d
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-text-primary truncate">

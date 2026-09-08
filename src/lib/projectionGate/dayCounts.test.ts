@@ -42,9 +42,15 @@ describe('POPULATION + MATCHER CONTROLS — before any row is believed', () => {
     expect(SCOPE_FILES).toContain('src/types/supplier.types.ts');
   });
 
-  it('the derivation is NON-EMPTY and finds a known-true member', () => {
+  it('the derivation is NON-EMPTY, finds a known-true member and NOT a retired one', () => {
     expect(DERIVED.length).toBeGreaterThan(0);
-    expect(derivedFields).toContain('daysUntilExpiry');
+    // Known-TRUE: still declared on `PurchaseOrder`.
+    expect(derivedFields).toContain('daysOverdue');
+    // Known-FALSE, and it is the interesting half: `daysUntilExpiry` was the
+    // anchor here until it was RETIRED. Asserting its absence is what proves
+    // the derivation reads the tree rather than a memory of it.
+    expect(derivedFields).not.toContain('daysUntilExpiry');
+    expect(derivedFields).not.toContain('daysLeft');
   });
 
   it('the matcher does NOT re-commit the four false accusations of the widened scan', () => {
@@ -154,17 +160,45 @@ describe('EVERY ROW STATES A CHECKABLE CLAIM', () => {
 
 describe('⚠️ mintedAtWrite — the clock value COMPUTED AND THEN STORED', () => {
   it('every marker names a file that really writes the field', () => {
-    const minted = DAY_COUNTS.filter((r) => r.mintedAtWrite);
-    // Population control. If this ever legitimately reaches zero, the assertion
-    // below is vacuous and this line is what says so.
-    expect(minted.length).toBeGreaterThan(0);
-    for (const row of minted) {
+    // ⚠️ VACUOUS TODAY, AND SAID SO RATHER THAN HIDDEN. The tree's only marker
+    // was `Contract.daysUntilExpiry`, minted by the contract wizard, and the
+    // field is retired — so this loop has nothing to iterate. The assertion
+    // BELOW is what keeps that honest: it derives the marker set from the tree
+    // instead of trusting this one, over a population it proves is non-empty.
+    for (const row of DAY_COUNTS.filter((r) => r.mintedAtWrite)) {
       expect(existsSync(row.mintedAtWrite!)).toBe(true);
       expect(
         writesField(row.mintedAtWrite!, row.field),
         `${row.mintedAtWrite} no longer writes ${row.field} — remove the marker with the write`,
       ).toBe(true);
     }
+  });
+
+  it('⚠️ DERIVED both ways — no NON-FIXTURE file writes a stored day-count undeclared', () => {
+    // The half that cannot go vacuous. It scans every non-fixture source file
+    // for a write of any `stored-in-fixtures` day-count, and pins the result
+    // EQUAL to the declared `mintedAtWrite` set. A new mint anywhere in the tree
+    // turns this red with nobody editing the table.
+    const stored = DAY_COUNTS.filter((r) => r.group === 'stored-in-fixtures');
+    const nonFixture = sourceFiles().filter(
+      (f) => !/\/data\/mock[A-Z]|\/mock\/fixtures\//.test(f) && !/projectionGate/.test(f),
+    );
+    // POPULATION CONTROLS — both must be non-empty or the empty result below
+    // reports on the scan rather than on the tree.
+    expect(stored.length).toBeGreaterThan(0);
+    expect(nonFixture.length).toBeGreaterThan(50);
+    expect(nonFixture).toContain('src/pages-v2/BuyerContracts.tsx');
+
+    const found: string[] = [];
+    for (const row of stored) {
+      for (const f of nonFixture) {
+        if (writesField(f, row.field)) found.push(`${f}:${row.field}`);
+      }
+    }
+    const declared = DAY_COUNTS.filter((r) => r.mintedAtWrite).map(
+      (r) => `${r.mintedAtWrite}:${r.field}`,
+    );
+    expect(found.sort()).toEqual(declared.sort());
   });
 
   it('the shorthand half of the write matcher works — it is what finds the one real site', () => {

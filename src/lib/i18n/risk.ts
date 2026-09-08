@@ -109,6 +109,12 @@ export const riskEn: Record<string, string> = {
   'risk.compliance.actionRequired': 'Action required: ',
   'risk.compliance.certWarnPrefix': "{{supplier}}'s {{type}} expires in ",
   'risk.compliance.certWarnDays': '{{days}} days',
+  // ⚠️ THE EXPIRED VOICE. With `daysLeft` retired the count is computed from
+  // `expires`, so it goes NEGATIVE the moment a certificate lapses — and the
+  // warning sentence read "expires in -146 days", which is not an honest
+  // rendering, it is a broken one. A lapsed certificate gets its own sentence.
+  'risk.compliance.certExpiredPrefix': "{{supplier}}'s {{type}} EXPIRED ",
+  'risk.compliance.certExpiredDays': '{{days}} days ago',
   'risk.compliance.certWarnSuffix':
     ' ({{expires}}). Renew immediately to maintain export compliance to GCC markets.',
   'risk.compliance.col.supplier': 'Supplier',
@@ -240,6 +246,8 @@ export const riskId: Record<string, string> = {
   'risk.compliance.actionRequired': 'Tindakan diperlukan: ',
   'risk.compliance.certWarnPrefix': '{{type}} milik {{supplier}} kedaluwarsa dalam ',
   'risk.compliance.certWarnDays': '{{days}} hari',
+  'risk.compliance.certExpiredPrefix': '{{type}} milik {{supplier}} TELAH KEDALUWARSA ',
+  'risk.compliance.certExpiredDays': '{{days}} hari lalu',
   'risk.compliance.certWarnSuffix':
     ' ({{expires}}). Perbarui segera untuk menjaga kepatuhan ekspor ke pasar GCC.',
   'risk.compliance.col.supplier': 'Pemasok',

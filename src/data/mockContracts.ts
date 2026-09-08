@@ -34,7 +34,10 @@ export interface Contract {
   signedDate: string;
   obligationCount: number;
   obligationsMet: number;
-  daysUntilExpiry: number;
+  // ⚠️ `daysUntilExpiry` IS RETIRED (law 0.5). It was a difference against
+  // NOW stored beside `endDate`, so it was wrong the day after it was typed:
+  // all 13 rows back-solved to an authoring date and 12 of them to 2026-05-20.
+  // The surfaces compute it from `endDate` at read via `dayProjection`.
   category: string;
   brands: string[];
   performanceScore: number;
@@ -62,7 +65,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2025-12-15',
     obligationCount: 5,
     obligationsMet: 3,
-    daysUntilExpiry: 590,
     category: 'Raw Material',
     brands: ['Wardah', 'Emina', 'Make Over'],
     performanceScore: 92,
@@ -87,7 +89,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2026-01-08',
     obligationCount: 4,
     obligationsMet: 2,
-    daysUntilExpiry: 315,
     category: 'Fragrance',
     brands: ['Wardah', 'Make Over'],
     performanceScore: 95,
@@ -114,7 +115,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2025-09-22',
     obligationCount: 3,
     obligationsMet: 2,
-    daysUntilExpiry: 133,
     category: 'Packaging',
     brands: ['Wardah'],
     performanceScore: 88,
@@ -139,7 +139,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2025-10-18',
     obligationCount: 4,
     obligationsMet: 3,
-    daysUntilExpiry: 164,
     category: 'Active Ingredient',
     brands: ['Wardah', 'Kahf'],
     performanceScore: 90,
@@ -166,7 +165,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2025-08-01',
     obligationCount: 5,
     obligationsMet: 3,
-    daysUntilExpiry: 87,
     category: 'Fragrance',
     brands: ['Wardah', 'Emina'],
     performanceScore: 86,
@@ -191,7 +189,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2025-07-10',
     obligationCount: 3,
     obligationsMet: 2,
-    daysUntilExpiry: 66,
     category: 'Packaging',
     brands: ['Emina', 'Instaperfect'],
     performanceScore: 80,
@@ -218,7 +215,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2025-06-05',
     obligationCount: 2,
     obligationsMet: 1,
-    daysUntilExpiry: 26,
     category: 'Active Ingredient',
     brands: ['Wardah'],
     performanceScore: 78,
@@ -243,7 +239,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2025-05-25',
     obligationCount: 4,
     obligationsMet: 4,
-    daysUntilExpiry: 16,
     category: 'Active Ingredient',
     brands: ['Wardah', 'Kahf'],
     performanceScore: 84,
@@ -270,7 +265,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2024-02-15',
     obligationCount: 3,
     obligationsMet: 3,
-    daysUntilExpiry: -81,
     category: 'Raw Material',
     brands: ['Wardah', 'Emina'],
     performanceScore: 89,
@@ -297,7 +291,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2025-12-01',
     obligationCount: 4,
     obligationsMet: 2,
-    daysUntilExpiry: 225,
     category: 'Raw Material',
     brands: ['Wardah'],
     performanceScore: 91,
@@ -324,7 +317,6 @@ export const mockContracts: Contract[] = [
     signedDate: '',
     obligationCount: 0,
     obligationsMet: 0,
-    daysUntilExpiry: 590,
     category: 'Active Ingredient',
     brands: ['Wardah', 'Kahf'],
     performanceScore: 0,
@@ -351,7 +343,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2024-04-20',
     obligationCount: 3,
     obligationsMet: 1,
-    daysUntilExpiry: -35,
     category: 'Packaging',
     brands: ['Wardah'],
     performanceScore: 52,
@@ -384,7 +375,6 @@ export const mockContracts: Contract[] = [
     signedDate: '2026-02-18',
     obligationCount: 3,
     obligationsMet: 2,
-    daysUntilExpiry: 344,
     category: 'Packaging',
     brands: ['Wardah', 'Emina'],
     performanceScore: 88,

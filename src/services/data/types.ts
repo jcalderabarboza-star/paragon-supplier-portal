@@ -1057,7 +1057,6 @@ export interface ComplianceRow {
   supplier: string;
   type: string;
   expires: string;
-  daysLeft: number;
   status: ComplianceState;
 }
 
