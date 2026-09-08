@@ -125,7 +125,12 @@ export function isFixture(file: string): boolean {
  * an unscoped scan returns one entity's write sites under the other's name.
  */
 const OWNED_BY: Record<string, RegExp> = {
-  contract: /mockContracts|contractStore|\/contracts\//,
+  // `contractExpiry` joins for the reason spelled out on `obligation` below —
+  // a producer outside the scanned scope reads as no producer at all. It is
+  // named precisely rather than folded into a directory glob: `dayProjection`
+  // also returns `'expired'`/`'expiring'`, for DOCUMENTS, and scoping to it
+  // would import a second entity's vocabulary under contract's name.
+  contract: /mockContracts|contractStore|contractExpiry|\/contracts\//,
   supplierDocument: /supplierDocuments|supplierDocumentStore|SupplierDocuments/,
   shipment: /mockShipments|shipmentStore|Shipments/,
   // `obligationProjection` joins for the same reason `complianceProjection` and

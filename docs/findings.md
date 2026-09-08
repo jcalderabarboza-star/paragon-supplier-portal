@@ -22804,3 +22804,220 @@ but "almost certainly" is not a derivation, and the population has to be
 classified read-by-read (an event stamp legitimately reads the real clock; a
 projection over fixture dates does not). That classification is the next batch,
 not a paragraph in this one.
+
+---
+
+## §94 — CONTRACT EXPIRY IS COMPUTED, BY THE CONTRACT'S OWN NOTICE TERM (2026-09-08)
+
+**Batch:** `feat/contract-expiry-by-notice`. Baseline `main db26726c` · floor
+4496/316 → **4518/317** · SEC-GATE 7/7.
+
+Ruled by the operator after the §93-follow-up investigation: **`Expiring` is not
+a width, it is a meaning — the renewal-notice deadline has arrived.**
+
+```
+Expiring := status ∈ LIVE  AND  daysUntil(endDate, now) <= noticeRequiredDays
+Expired  := status ∈ LIVE  AND  isPast(daysUntil(endDate, now))
+LIVE      = Active | Expiring | Renewed
+```
+
+`services/data/contractExpiry.ts` is the fourth entity projection, beside
+`complianceProjection`, `invoiceProjection` and `obligationProjection`.
+
+### §94a — WHAT THE PAGE WAS ACTUALLY DOING, MEASURED ON THE RENDERED DOM
+
+Not five predicates at one width. **Five clock predicates at THREE widths, plus
+one predicate with no clock at all**, all answering "is this contract expiring?":
+
+| site | rule | width |
+|---|---|---|
+| `matchesGroup` | `status==='Expiring' \|\| (Active && 0<=d<=90)` | 90, `>=0` |
+| `kpis.expiringSoon` | **the same predicate written out again inline** | 90 |
+| `expiryTone` (2 copies — exported from `contractView`, pasted into `BuyerContracts`) | `<0` · `<30` · `<90` | 30 / 90 |
+| pipeline chip | `<30` · `<90` | 30 / 90 |
+| `renewalPipeline` | `(Active\|Expiring) && 0<=d<=180` | 180 |
+| **`counts.expiring`** | **`status === 'Expiring'`** | **none** |
+
+Rendered, both locales, chunk `index-CdTPlSZS.js`: **tile 4 · badge 2 · list 4**,
+and two of the four listed rows carried a green `Active` pill inside the tab
+labelled Expiring. That has shipped since the page's first commit (2026-05-20),
+because `counts.expiring` was stored-only from day one.
+
+### §94b — THE SHIPPED 90 WAS DISQUALIFIED BY PROVENANCE, NOT BY PREFERENCE
+
+`git log -S` puts `daysToExpiry <= 90`, the subtitle *"Within next 90 days"* and
+the fixture's own `Active expiring within 90d` section comment all at
+`ffc086f` / `dfb09f3`, **2026-05-20**. At that commit the predicate read
+`c.daysUntilExpiry <= 90` against the STORED `daysUntilExpiry` field since
+retired for being 111 days stale. **It was never derived from anything.**
+
+⚠️ **AND IT IS INDISTINGUISHABLE FROM A FLAT 30 ON THIS FIXTURE — STATED,
+BECAUSE THAT IS WHY IT IS A RULING AND NOT A DERIVATION.** Both score 0/13.
+They diverge only on a row whose notice ≠ 30 while `30 < d <= notice`, and no
+such row exists at `DECLARED_PRESENT`. Dated: `ctr-003` (notice 60) becomes
+Expiring 2026-11-08 under the ruled rule and 2026-12-08 under a flat 30;
+`ctr-004` (notice 90) 2026-11-09 vs 2027-01-08.
+
+The evidence that decided it was the fixture author's own **section ladder** —
+`── Expiring (within 30d) ──`, `── Active expiring within 90d ──`,
+`── Active expiring within 180d ──`, `── Active stable (> 180d) ──` — read as
+predicates rather than as prose and **exactly true at the anchor, eight for
+eight.** It is now the test ORACLE, and it sits upstream of every predicate
+under test (§86).
+
+### §94c — `noticeRequiredDays` WAS ALREADY EVERYTHING THE RULE NEEDED
+
+Authored per row ({30, 60, 90}); collected by the create wizard behind an honest
+refusal; classified in `projectionGate/dayCounts.ts` as `not-a-clock-difference`
+where it serves as one of that gate's **acquittal controls**; and **already
+rendered** — `contractView`'s renewal-decision step shows
+`endDate − noticeRequiredDays` as the *"notice by"* date. The pill and that step
+now agree by construction. Confirmed on the page: `ctr-008` — pill `Expiring`,
+*Notice by 13 Aug 2026*, step `current`; `ctr-005` — pill `Active`, *Notice by
+23 Oct 2026*, step `pending`.
+
+### §94d — ⚠️ `ctr-009`'s STORED `Expired` HAD TO RETIRE TOO, AND IT IS A CONSEQUENCE OF THE RULING RATHER THAN AN EXTENSION OF IT
+
+The ruling retires the stored `Expiring` literal. It says nothing about
+`Expired` — and a row stored `Expired` is **not LIVE**, so the ruled `Expired`
+rule can never fire on it. The literal would simply pass through, leaving the
+computed arm with **no row in the fixture exercising it** while
+`displayStates.ts` claimed the state was computed. That claim would have been
+false and the Expired tab would still have been populated by an authored
+literal. `Expired` was never a machine state either. So `ctr-009` carries
+`Active` and the clock does the rest: −85 at the anchor, −93 today.
+
+### §94e — THE 180 ARM SURVIVES, AND ITS PROSE IS BOUND TO IT BY AN ASSERTION
+
+Derived, because the ruling asked either way: routed through the classifier the
+renewal pipeline would show exactly the rows already in the Expiring tab (two),
+collapsing a two-quarter planning view grouped by month into a duplicate of the
+tab beside it. So it survives as `CONTRACT_RENEWAL_HORIZON_DAYS = 180` — named,
+local, and answering a different question.
+
+`contracts.pipeline.subtitle` says *"next 6 months"* / *"6 bulan ke depan"* and
+cannot see that number, so `contractExpiry.test.ts` pins the constant inside the
+range a reader would call six months **naming the key**. The KPI subtitle got the
+opposite treatment and **lost its number outright** in both locales
+(*"Renewal notice due"* / *"Pemberitahuan perpanjangan jatuh tempo"*): it was the
+only expiry KPI subtitle in the tree carrying a width, and therefore the only one
+a rule change could falsify. `supplierDocuments` and `compliance` had already
+chosen numberless wording.
+
+### §94f — ⚠️ THE TIP IS REMOVED, AND THE FAMILY LEFT THE DRIFT POPULATION WITH NOBODY EDITING `clockDrift.ts`
+
+`contract` was `warn` with **headroom 4** — it would have gone `FALSE` on
+**2026-09-13**, five days out. It now reports `computed`, because bound-ness is
+derived upstream from `DISPLAY_STATES` and contract's rows moved to
+`computed-at-read`. That is the §93 design paying off on the first family that
+used it.
+
+⚠️ **AND IT KILLED A TEST, WHICH IS THE DESIGN WORKING AND NOT A REGRESSION.**
+`clockDrift.test.ts`'s warn probe used `contract` — the one family whose declared
+tolerance (7, from the shared contract ∩ obligation intersection) was stricter
+than its own window allowed (12). Two things were done rather than one:
+
+- the verdict rule was **extracted** as `driftVerdict(headroom, drift, tolerance)`
+  and is probed directly, so the branch stays measured whatever the data does —
+  an unreachable branch asserted through data that cannot reach it is
+  `EMPTY-INPUT-REPORTS-CLEAN-01`;
+- membership is now **SWEPT** rather than listed: every family across its own
+  full window, both directions.
+
+⚠️ **AND THE SWEEP IMMEDIATELY CORRECTED ME.** I wrote the replacement asserting
+*"`warn` has become unreachable"* — reasoning from the contract case. The sweep
+returned **`supplierDocument @ 41d`**. Its anchor is OFF-CENTRE (40 days from the
+early edge, 41 from the late), so there is exactly one forward day past its
+declared tolerance and still inside its window. **Two different mechanisms
+produce a warn band — a shared anchor and an off-centre one — and losing the
+first did not remove the second.** Recorded as measured rather than smoothed; the
+assertion now pins the swept set to `['supplierDocument @ 41d']` with `contract`
+asserted absent, and a both-ways control that the same sweep does find `ok`,
+`FALSE` and `computed`.
+
+### §94g — THE CONTRACT WINDOW WAS RE-DERIVED FOR THE THIRD TIME, AND IT GOT NARROWER
+
+| | window | derived from |
+|---|---|---|
+| #319 | `2026-05-17 .. 2026-06-05` | five authored "bands" no shipped code implemented |
+| #320 | `2026-03-17 .. 2026-06-05` | the weakest rule `matchesGroup` + `expiryTone` jointly implied |
+| **§94** | **`2026-05-16 .. 2026-06-04`** | **the SHIPPED classifier against the section ladder** |
+
+81 days → **20**. A real classifier makes a stronger claim than the weakest rule
+two page-local predicates imply. Bound at the early edge by `ctr-007` (reads
+Active one day sooner) and at the late edge by `ctr-008` (reads Expired one day
+later). **The intersection is unaffected in all three cases** — obligation binds
+both of its edges — so `SHARED_CONTRACT_ANCHOR` is `2026-05-24` for a third and
+better reason and `toleranceDays` is still 7.
+
+`fixturePresent.guard.test.ts`'s note opened *"THERE IS NO SHIPPED CONTRACT
+CLASSIFIER … this predicate cannot BE the shipped one."* That is retired rather
+than edited around: it now reads `contractDisplayStatus` directly, which is the
+`documentExpiry` treatment the old note named as unavailable.
+
+### §94h — WHAT A READER SEES, BEFORE AND AFTER
+
+`main` → `index-CdTPlSZS.js` · branch → `index-C5RTfK1A.js`.
+
+| | before | after |
+|---|---|---|
+| KPI tile | **4** · *Within next 90 days* | **2** · *Renewal notice due* |
+| same, ID | 4 · *Dalam 90 hari ke depan* | **2** · *Pemberitahuan perpanjangan jatuh tempo* |
+| tab badge `Expiring` | 2 | 2 |
+| **rows in that tab** | **4** | **2** — badge, list and tile finally one number |
+| `Active` tab | 7 | 7 |
+| `Expired` tab | 1 (a stored literal) | 1 (**computed**, `ctr-009` at −93d) |
+| `ctr-005` 75d / `ctr-006` 54d | `Active` pill, **amber** figure | `Active` pill, **green** figure |
+| `ctr-007` 14d / `ctr-008` 4d | `Expiring` pill, **red** figure | `Expiring` pill, **amber** figure |
+| `ctr-012` Terminated, 47d ago | **red** figure | **tertiary** — nobody can act on it |
+| `ctr-011` Draft, 578d | green figure | tertiary |
+| renewal pipeline | 6 rows, chips `<30` red | 6 rows, chips from the classifier |
+
+The four tone changes are the cost of deleting `expiryTone`'s page-local `< 30`
+cut, and they are named rather than absorbed: keeping it would have reinstated a
+width under a different name, which is the thing the ruling deletes.
+
+### §94i — MUTATION PROBE, 5/5 KILLED BY NAME
+
+| mutant | killed |
+|---|---|
+| `ctr-003` notice 60 → 200 | 3 in the classifier spec (incl. *"the notice term DECIDES"*) + 2 in the guard |
+| drop the `isLiveContract` short-circuit | 2, incl. *"ctr-012 is Terminated and 39 days past its end, and is NOT convicted"* |
+| restore `ctr-008` stored `Expiring` | 1, *"no contract row stores `Expiring` or `Expired`"* |
+| `isPast(days)` → `days < 0` | 3, the whole zero-boundary describe |
+| `CONTRACT_RENEWAL_HORIZON_DAYS` 180 → 90 | 2, incl. the prose coupling naming the subtitle |
+
+⚠️ **Probe 3 killed nothing in the guard test, and that is correct rather than a
+gap.** The guard's oracle is the section ladder, which a restored `status`
+literal does not touch. Only the dedicated duplicate-source assertion catches it
+— which is the assertion built for exactly that, and it is a TEST rather than a
+narrowed type on purpose: **a `tsc` failure cannot be probed, because a probe
+that will not compile is a probe that never ran.**
+
+All restored byte-identical; sha256 as the restore authority with the
+`git hash-object` blob id beside it (`core.autocrlf` is on):
+
+```
+src/services/data/contractExpiry.ts  blob be09ac6539e34cd434c48823060dc0d9d06a729c
+src/data/mockContracts.ts            blob 105ae68f4b0bd19a60fe6cfdf15f821415dd485e
+```
+
+### §94j — TWO INSTRUMENT NOTES FROM THIS BATCH
+
+⚠️ **A multi-line replacement written with `\n` silently matched nothing on a
+CRLF working copy — again, and this time on the EDIT side rather than the probe
+side.** `core.autocrlf` is on, so single-line patterns matched while every
+multi-line one failed. Worse: **the Bash tool collapsed `\\` to `\` inside a
+heredoc**, so a script that looked correct wrote a literal CR into a TypeScript
+source and produced *"Unterminated regular expression literal"*. Both were caught
+by reading the file, not by an exit code. **Edit scripts that contain
+backslashes go through the Write tool, never through a heredoc**, and every
+multi-line pattern derives its newline from the file it is editing.
+
+⚠️ **§93g's collision class was re-derived and is CLEAN — with one false
+positive worth naming.** `grep -c '^## §N'` over `docs/findings.md` reports §25
+twice; the second is `## §25 amendment`, a deliberate continuation, not a
+collision. §89 remains the only real one and it was renumbered at #321. **Nothing
+still derives the next section number** — §94 was derived here
+(`max(sections) + 1`) rather than assumed, but the derivation lives in a
+scratchpad and not in a gate. Filed, not built, per the dispatch.

@@ -45,6 +45,13 @@ import type {
 } from '../data/mockContracts';
 import type { Supplier } from '../services/data/types';
 import { daysUntil } from '../services/data/dayProjection';
+import {
+  contractDisplayStatus,
+  inRenewalHorizon,
+  CONTRACT_EXPIRY_TONE,
+  CONTRACT_EXPIRY_CHIP,
+  type ContractDisplayStatus,
+} from '../services/data/contractExpiry';
 import type { QtyRefusalReason } from '../lib/localeNumber';
 import {
   normalizeContractNumbers,
@@ -150,12 +157,12 @@ const formatMonth = (iso: string): string => {
   return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 };
 
-const expiryTone = (days: number): string => {
-  if (days < 0) return 'text-danger font-semibold';
-  if (days < 30) return 'text-danger font-semibold';
-  if (days < 90) return 'text-warning-hover font-semibold';
-  return 'text-success';
-};
+// ⚠️ `expiryTone(days)` IS DELETED, not moved. Its three cuts were `< 0` (a
+// restatement of the zero boundary `isPast` now owns), `< 30` (a page-local
+// width) and `< 90` (a copy of the band this batch removes). The tone is now
+// `CONTRACT_EXPIRY_TONE[displayStatus]` — one map, keyed on the same classifier
+// the pill and the tab read, so the figure's colour and the pill beside it
+// cannot disagree.
 
 const ReviewSection: React.FC<{
   label: string;
@@ -317,12 +324,19 @@ const contractRefusalKey = (
 /** The expiry figure a row shows, derived from the contract's own `endDate`.
  *  Returns `null` when there is no readable end date — rendered as an em dash
  *  rather than as a zero, because "no end date" is not "expires today". */
-const ExpiryCell: React.FC<{ days: number | null }> = ({ days }) => {
+const ExpiryCell: React.FC<{
+  days: number | null;
+  display: ContractDisplayStatus;
+}> = ({ days, display }) => {
   const { t } = useTranslation();
   if (days === null)
     return <div className="text-sm whitespace-nowrap text-text-tertiary">—</div>;
   return (
-    <div className={`text-sm whitespace-nowrap ${expiryTone(days)}`}>
+    <div className={`text-sm whitespace-nowrap ${CONTRACT_EXPIRY_TONE[display]}`}>
+      {/* The FIGURE keeps its three renderings — `today` is a legible way to
+          say zero and is not a state claim. The ruled boundary makes zero PAST,
+          which the tone above now says (danger, via `Expired`), so the cell
+          reads "Today" in red rather than "Today" in amber. */}
       {days < 0
         ? t('contracts.expiry.daysAgo', { count: Math.abs(days) })
         : days === 0
@@ -332,21 +346,21 @@ const ExpiryCell: React.FC<{ days: number | null }> = ({ days }) => {
   );
 };
 
-// ⚠️ `daysUntilExpiry` is no longer a field — it is COMPUTED and passed in, so
-// this helper stays pure and the clock stays injected. It used to read a stored
-// number that was 111 days stale, which is why "expiring" meant nothing here.
-const matchesGroup = (c: Contract, g: GroupTab, daysToExpiry: number | null): boolean => {
+// ⚠️ **EVERY ARM NOW READS THE SAME COMPUTED STATUS, AND THAT IS THE POINT.**
+// This used to take `daysToExpiry` and run its own `0..90` band on the
+// `expiring` arm while every other arm read the stored literal — so one tab
+// answered a clock question and six answered a data question, and the tab BADGE
+// (`counts`, below) answered a third. Taking the display status instead means
+// the tab, the badge, the tile, the pill and the expiry tone are one predicate
+// evaluated once per row.
+const matchesGroup = (display: ContractDisplayStatus, g: GroupTab): boolean => {
   if (g === 'all') return true;
-  if (g === 'active') return c.status === 'Active';
-  if (g === 'expiring')
-    return (
-      c.status === 'Expiring' ||
-      (c.status === 'Active' && daysToExpiry !== null && daysToExpiry <= 90 && daysToExpiry >= 0)
-    );
-  if (g === 'expired') return c.status === 'Expired';
-  if (g === 'renewed') return c.status === 'Renewed';
-  if (g === 'draft') return c.status === 'Draft';
-  if (g === 'terminated') return c.status === 'Terminated';
+  if (g === 'active') return display === 'Active';
+  if (g === 'expiring') return display === 'Expiring';
+  if (g === 'expired') return display === 'Expired';
+  if (g === 'renewed') return display === 'Renewed';
+  if (g === 'draft') return display === 'Draft';
+  if (g === 'terminated') return display === 'Terminated';
   return true;
 };
 
@@ -1141,32 +1155,50 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
     );
   }, [contracts]);
 
+  // ⚠️ **ONE EVALUATION PER ROW, AND EVERYTHING BELOW READS IT.** The badge,
+  // the tab list, the tile, the pill and the expiry tone were five separate
+  // reads of three different rules; they are now five reads of this map. A
+  // contract cannot appear under a tab whose badge disagrees, because the badge
+  // and the tab are `.filter`s over the same values.
+  const displayById = useMemo(
+    () =>
+      new Map<string, ContractDisplayStatus>(
+        contracts.map((c) => [c.id, contractDisplayStatus(c, nowIso)]),
+      ),
+    [contracts, nowIso],
+  );
+  const displayOf = (c: Contract): ContractDisplayStatus =>
+    displayById.get(c.id) ?? c.status;
+
   const counts = useMemo(() => {
+    const by = (s: ContractDisplayStatus) =>
+      contracts.filter((c) => displayOf(c) === s).length;
     return {
       all: contracts.length,
-      active: contracts.filter((c) => c.status === 'Active').length,
-      expiring: contracts.filter((c) => c.status === 'Expiring').length,
-      expired: contracts.filter((c) => c.status === 'Expired').length,
-      renewed: contracts.filter((c) => c.status === 'Renewed').length,
-      draft: contracts.filter((c) => c.status === 'Draft').length,
-      terminated: contracts.filter((c) => c.status === 'Terminated').length,
+      active: by('Active'),
+      // ⚠️ THIS LINE IS THE DEFECT THIS BATCH EXISTS FOR. It read
+      // `c.status === 'Expiring'` — the one predicate on this page with no
+      // clock in it — so the badge counted authored literals while the tab
+      // beside it ran a 90-day band. Badge 2, list 4, tile 4, since 2026-05-20.
+      expiring: by('Expiring'),
+      expired: by('Expired'),
+      renewed: by('Renewed'),
+      draft: by('Draft'),
+      terminated: by('Terminated'),
     };
-  }, [contracts]);
+  }, [contracts, displayById]);
 
   const kpis = useMemo(() => {
     const active = counts.active;
-    const expiringSoon = contracts.filter((c) => {
-      const d = daysUntil(c.endDate, nowIso);
-      return (
-        c.status === 'Expiring' ||
-        (c.status === 'Active' && d !== null && d <= 90 && d >= 0)
-      );
-    }).length;
+    // The tile and the tab badge are now literally the same number rather than
+    // two predicates that happened to be written twice — the inline copy of
+    // `matchesGroup`'s band that used to live here is gone.
+    const expiringSoon = counts.expiring;
     const totalValue = contracts
-      .filter((c) => c.status === 'Active')
+      .filter((c) => displayOf(c) === 'Active')
       .reduce((sum, c) => sum + c.value, 0);
     return { active, expiringSoon, totalValue };
-  }, [contracts, counts.active]);
+  }, [contracts, displayById, counts.active, counts.expiring]);
 
   // ⚠️ COMPUTED, not counted off the stored literal. Measured on 2026-09-08,
   // the day this changed: the tile read 5 (the authored `Overdue` count, exactly
@@ -1182,7 +1214,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
 
   const filtered = useMemo(() => {
     return contracts
-      .filter((c) => matchesGroup(c, group, daysUntil(c.endDate, nowIso)))
+      .filter((c) => matchesGroup(displayOf(c), group))
       .filter((c) =>
         selectedTypes.length === 0 ? true : selectedTypes.includes(c.type),
       )
@@ -1197,18 +1229,15 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
             .includes(q)
         );
       });
-  }, [contracts, group, selectedTypes, search]);
+  }, [contracts, group, selectedTypes, search, displayById]);
 
   const renewalPipeline = useMemo(() => {
-    const upcoming = contracts.filter((c) => {
-      const d = daysUntil(c.endDate, nowIso);
-      return (
-        (c.status === 'Active' || c.status === 'Expiring') &&
-        d !== null &&
-        d >= 0 &&
-        d <= 180
-      );
-    });
+    // The 180 arm SURVIVES and is now `CONTRACT_RENEWAL_HORIZON_DAYS`, named in
+    // `contractExpiry.ts` beside the reason: this is a PLANNING horizon grouped
+    // by month, and routing it through the classifier would collapse a
+    // two-quarter view into a duplicate of the Expiring tab. It is the one
+    // window left on this axis, and it is no longer a literal on a page.
+    const upcoming = contracts.filter((c) => inRenewalHorizon(c, nowIso));
     const groups = new Map<string, Contract[]>();
     for (const c of upcoming) {
       const key = formatMonth(c.endDate);
@@ -1221,7 +1250,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
       const bd = new Date(b[1][0].endDate).getTime();
       return ad - bd;
     });
-  }, [contracts]);
+  }, [contracts, nowIso]);
 
   const toggleType = (t: ContractType) =>
     setSelectedTypes((prev) =>
@@ -1379,7 +1408,10 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    <ExpiryCell days={daysUntil(c.endDate, nowIso)} />
+                    <ExpiryCell
+                      days={daysUntil(c.endDate, nowIso)}
+                      display={displayOf(c)}
+                    />
                   </TableCell>
                   <TableCell className="text-right font-semibold text-text-primary whitespace-nowrap">
                     <Data>{c.value > 0 ? formatIDR(c.value) : '—'}</Data>
@@ -1398,8 +1430,8 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    <StatusPill variant={STATUS_VARIANT[c.status]}>
-                      {c.status}
+                    <StatusPill variant={STATUS_VARIANT[displayOf(c)]}>
+                      {displayOf(c)}
                     </StatusPill>
                   </TableCell>
                   <TableCell className="text-right">
@@ -1472,11 +1504,7 @@ const ContractsWorkspace: React.FC<ContractsWorkspaceProps> = ({
                       >
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            expiryDays(c) < 30
-                              ? 'bg-danger-soft text-danger'
-                              : expiryDays(c) < 90
-                                ? 'bg-warning-soft text-warning-hover'
-                                : 'bg-info-soft text-info'
+                            CONTRACT_EXPIRY_CHIP[displayOf(c)]
                           }`}
                         >
                           {expiryDays(c)}d

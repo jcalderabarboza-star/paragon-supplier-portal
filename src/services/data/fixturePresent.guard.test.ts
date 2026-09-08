@@ -18,6 +18,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { contractDisplayStatus } from './contractExpiry';
+import type { ContractStatus } from '../../data/mockContracts';
 import {
   DECLARED_PRESENT,
   MANDATE_LEAD_DAYS,
@@ -80,14 +82,38 @@ const rawObls = rawPairs('src/data/mockObligations.ts', 'dueDate', 'obl-')
  */
 const rawCtrs = (() => {
   const src = readFileSync('src/data/mockContracts.ts', 'utf8');
-  const parts = src.split(/id:\s*'(?=ctr-)/);
+  // ⚠️ COMMENT LINES ARE STRIPPED FIRST, and that is a measurement rather than
+  // tidiness: the fixture's own notes now quote retired literals (`status:
+  // 'Expiring'`) while explaining why they were retired, and a chunk-based
+  // parser that reads the FIRST `status:` in a chunk would one day read a
+  // quotation as data. The section markers survive the strip because they are
+  // captured before it.
+  const lines = src.replace(/\r/g, '').split('\n');
+  const sectionOf = new Map<string, string>();
+  let section = '';
+  for (const line of lines) {
+    const m = /^\s*\/\/ ── (.+?) ─+/.exec(line);
+    if (m) section = m[1].trim();
+    const idm = /id: '(ctr-[^']+)'/.exec(line);
+    if (idm && !line.trim().startsWith('//')) sectionOf.set(idm[1], section);
+  }
+  const code = lines.filter((l) => !l.trim().startsWith('//')).join('\n');
+  const parts = code.split(/id:\s*'(?=ctr-)/);
   parts.shift();
-  return parts.map((p) => ({
-    id: /^([^']+)'/.exec(p)?.[1] ?? '',
-    status: /status:\s*'([^']*)'/.exec(p)?.[1] ?? '',
-    startDate: /startDate:\s*'(\d{4}-\d{2}-\d{2})'/.exec(p)?.[1] ?? '',
-    endDate: /endDate:\s*'(\d{4}-\d{2}-\d{2})'/.exec(p)?.[1] ?? '',
-  }));
+  return parts.map((p) => {
+    const id = /^([^']+)'/.exec(p)?.[1] ?? '';
+    return {
+      id,
+      section: sectionOf.get(id) ?? '',
+      status: /status:\s*'([^']*)'/.exec(p)?.[1] ?? '',
+      startDate: /startDate:\s*'(\d{4}-\d{2}-\d{2})'/.exec(p)?.[1] ?? '',
+      endDate: /endDate:\s*'(\d{4}-\d{2}-\d{2})'/.exec(p)?.[1] ?? '',
+      // Contracts already had their own parser (two dates per row); the notice
+      // term joins it here rather than widening the shared `rawPairs`, on the
+      // same rule-2 reasoning the original note gives.
+      noticeRequiredDays: Number(/noticeRequiredDays:\s*(\d+)/.exec(p)?.[1] ?? NaN),
+    };
+  });
 })();
 
 /** `documentExpiry`'s own classification, applied to a RAW date at a candidate anchor. */
@@ -101,32 +127,49 @@ const oblsCoherentAt = (anchor: string) =>
   rawObls.every((r) => (dU(r.date!, anchor) >= 0 ? 'Upcoming' : 'Overdue') === r.status);
 
 /**
- * ⚠️ **THERE IS NO SHIPPED CONTRACT CLASSIFIER, AND THE RULE BELOW SAYS SO
- * RATHER THAN PRETENDING OTHERWISE.** `displayStates.ts` groups `contract`
- * `Expiring` / `Expired` as `stored-in-fixtures` with ZERO non-fixture writes —
- * nothing computes them. So unlike `documentExpiry` (which the document window
- * calls directly) this predicate cannot BE the shipped one.
+ * ⚠️ **THE PARAGRAPH THAT STOOD HERE OPENED *"THERE IS NO SHIPPED CONTRACT
+ * CLASSIFIER"*, AND AS OF 2026-09-08 THERE IS ONE.** It went on to say that this
+ * rule *"cannot BE the shipped one"* and was instead the weakest rule the two
+ * page-local predicates (`matchesGroup`'s 0..90 band and `expiryTone`) jointly
+ * made falsifiable. Both of those predicates are now deleted, and this reads
+ * `contractDisplayStatus` directly — the `documentExpiry` treatment the old note
+ * named as unavailable. The window narrowed from 81 days to 20 as a result,
+ * which is what a stronger claim looks like.
  *
- * It is instead the weakest rule the two SHIPPED clock-reading predicates make
- * falsifiable, and both are named so a reader can check the provenance:
- *   · `matchesGroup` (`BuyerContracts.tsx`) — the 'expiring' band is 0..90 days
- *   · `expiryTone`   (`contracts/contractView.tsx`) — <0 is danger, <90 warning
- * Only TENSE-BEARING statuses constrain the origin; `Draft` / `Renewed` /
- * `Terminated` make no claim about now and are deliberately unconstrained.
- *
- * ⚠️ This SUPERSEDES the #319 window, which was derived from five authored
- * "bands" that no shipped code implements and put the early bound at 2026-05-17.
- * The corrected bound is 2026-03-17 (ctr-007). The shared anchor is unchanged
- * because `obligation` binds both edges of the intersection either way.
+ * ⚠️ **THE ORACLE IS THE FIXTURE'S SECTION LADDER, NOT ITS `status` FIELD, AND
+ * THE SWAP IS FORCED RATHER THAN STYLISTIC.** The clock literals retired: no
+ * contract row stores `Expiring` or `Expired` any more, so `status` is a MACHINE
+ * state and comparing the classifier to it would assert that the classifier
+ * never overrides anything. What the fixture still records is the author's own
+ * ladder — `── Expiring (within 30d) ──`, `── Active expiring within 90d ──`
+ * and the rest — which sits UPSTREAM of every predicate under test (§86: a gate
+ * must not derive its subject through the code it is probing) and is exactly the
+ * evidence the notice rule was ruled against.
  */
+const CTR_SECTION_EXPECTATION: Record<string, string> = {
+  'Expiring (within 30d)': 'Expiring',
+  Expired: 'Expired',
+  Renewed: 'Renewed',
+  Draft: 'Draft',
+  Terminated: 'Terminated',
+};
+/** Every `Active …` section means the row must still read Active. */
+const ctrExpected = (r: (typeof rawCtrs)[number]): string =>
+  CTR_SECTION_EXPECTATION[r.section] ??
+  (r.section.startsWith('Active') ? 'Active' : `UNMAPPED SECTION: ${r.section}`);
+
 const ctrsCoherentAt = (anchor: string) =>
-  rawCtrs.every((r) => {
-    const n = dU(r.endDate, anchor);
-    if (r.status === 'Expired') return n < 0;
-    if (r.status === 'Expiring') return n >= 0 && n <= 90;
-    if (r.status === 'Active') return n >= 0 && dU(r.startDate, anchor) <= 0;
-    return true;
-  });
+  rawCtrs.every(
+    (r) =>
+      contractDisplayStatus(
+        {
+          status: r.status as ContractStatus,
+          endDate: r.endDate,
+          noticeRequiredDays: r.noticeRequiredDays,
+        },
+        `${anchor}T00:00:00.000Z`,
+      ) === ctrExpected(r),
+  );
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -244,7 +287,7 @@ describe('⚠️ EVERY ANCHOR SITS INSIDE ITS OWN FAMILY’S COHERENT WINDOW', (
     expect(oblsCoherentAt(iso(dayMs(hi) + MS))).toBe(false);
   });
 
-  it('contract — ANCHORED, window re-derived from the two shipped predicates', () => {
+  it('contract — ANCHORED, window re-derived from the SHIPPED CLASSIFIER', () => {
     const [lo, hi] = FAMILY_ANCHORS.contract.window!;
     expect(ctrsCoherentAt(lo)).toBe(true);
     expect(ctrsCoherentAt(hi)).toBe(true);

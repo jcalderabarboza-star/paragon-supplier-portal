@@ -132,20 +132,52 @@ export const DISPLAY_STATES: readonly DisplayStateRow[] = [
     noCommandTarget: true,
   },
 
+  // ⚠️ **CONTRACT LEFT `stored-in-fixtures` BY BEING COMPUTED, AND `Expiring`
+  // IS NOW A MEANING RATHER THAN A WIDTH.** The block below used to name this
+  // pair as BLOCKED ON A BAND RULING — `matchesGroup` ran an 0..90 band while
+  // the fixtures were separable only on [22..61], so building on the shipped
+  // band would have re-labelled ctr-005 and ctr-006. The ruling resolved it by
+  // rejecting a band ENTIRELY: the rule is the contract's own
+  // `noticeRequiredDays`, per row, so `Expiring` means the renewal-notice
+  // deadline has arrived. `noCommandTarget` STAYS — all four contract verbs are
+  // `surfaced: false · external-fact · owner: s4hana`, so a projection was
+  // always the only disposal available here, and being computed does not give
+  // this portal a write path it will never own.
+  {
+    entity: 'contract',
+    state: 'Expiring',
+    group: 'computed-at-read',
+    producer: 'src/services/data/contractExpiry.ts',
+    noCommandTarget: true,
+  },
+  {
+    entity: 'contract',
+    state: 'Expired',
+    group: 'computed-at-read',
+    producer: 'src/services/data/contractExpiry.ts',
+    noCommandTarget: true,
+  },
+
   // ── stored in fixtures — a data defect, held honestly until it is ruled ──
-  // ⚠️ **THE THREE THAT REMAIN DO NOT SHARE ONE DISPOSAL, AND THE DIFFERENCES
-  // ARE DERIVED FROM THEIR FLOWS RATHER THAN ASSUMED FROM THE GROUP.** Obligation
-  // left this group by being computed; these three cannot follow it for three
-  // different reasons, each filed separately:
+  // ⚠️ **DO NOT RESTATE HOW MANY REMAIN — DERIVE THEM.** The sentence that
+  // stood here opened *"THE THREE THAT REMAIN"* and named contract as the first
+  // of them; contract left the group the same week, which is `FLOOR-IN-PROSE-01`
+  // in the paragraph that exists to explain the group. Filter `DISPLAY_STATES`
+  // on `group === 'stored-in-fixtures'` — that IS the membership, and it
+  // re-decides itself every run.
   //
-  //   `contract`  a projection is the ONLY disposal available — all four verbs
-  //               are `surfaced: false · external-fact · owner: s4hana`, so this
-  //               portal will never own the write. BLOCKED ON A BAND RULING:
-  //               `matchesGroup` runs an 0..90 day band while the fixtures are
-  //               separable only on [22..61], so building on the shipped band
-  //               would re-label ctr-005 (83d) and ctr-006 (62d) from Active to
-  //               Expiring. `matchesGroup`'s `expired` arm has no computed half
-  //               at all. Deferred by ruling, not by cost.
+  // **WHAT THE REMAINING MEMBERS DO SHARE IS NOTHING, AND THAT IS THE POINT:
+  // THE DISPOSALS ARE DERIVED FROM THEIR FLOWS, NOT ASSUMED FROM THE GROUP.**
+  // Obligation left by being computed and contract followed it, each on its own
+  // reasoning:
+  //
+  //   `contract`  ⚠️ **LEFT, 2026-09-08 — see the rows above.** It is recorded
+  //               here rather than deleted because the shape of the block was
+  //               that it was BLOCKED ON A BAND RULING, and the ruling did not
+  //               pick a band: it rejected the idea. `Expiring` became the
+  //               contract's own `noticeRequiredDays`, per row. A member of this
+  //               group waiting on a width should read that before assuming a
+  //               width is what it needs.
   //   `shipment`  exactly reconstructable and NOT blocked: `no actualArrival AND
   //               daysUntil(estimatedArrival, now) < 0` selects exactly shp-018,
   //               the one row stored `Delayed`. Its acquittal control is shp-017
@@ -157,11 +189,9 @@ export const DISPLAY_STATES: readonly DisplayStateRow[] = [
   //               consumer already reads it. The literal is the last thing left.
   //
   // §69's `approvalLevel` remedy — admission as authored data — is NOT the
-  // remedy for any of the three: that one was ruled because the value was
+  // remedy for any of them: that one was ruled because the value was
   // UNCOMPUTABLE, and all three of these are computable. "Nothing writes it" and
   // "nothing can compute it" are different findings.
-  { entity: 'contract', state: 'Expiring', group: 'stored-in-fixtures', noCommandTarget: true },
-  { entity: 'contract', state: 'Expired', group: 'stored-in-fixtures', noCommandTarget: true },
   { entity: 'shipment', state: 'Delayed', group: 'stored-in-fixtures', noCommandTarget: true },
   // ⚠️ `supplierDocument` IS a wired CommandTarget and still nothing produces
   // this — so the absence of a writer is not explained by the absence of a
