@@ -60,6 +60,7 @@ import {
   type LeadTimeUnit,
 } from './rfqs/quotationLeadTime';
 import { readMoq, type MoqRefusalReason } from './rfqs/quotationMoq';
+import { daysUntil } from '../services/data/dayProjection';
 import type { RFQ, Quotation, Supplier } from '../services/data/types';
 import { CHART_SERIES } from '../lib/chartPalette';
 import { formatIDR, formatDate, formatMoney, formatNumber } from '../lib/format';
@@ -698,15 +699,19 @@ const SAMPLE_EVAL: OpenRFQ['evaluationCriteria'] = {
 // the supplier-facing detail the RFQ entity does NOT carry — evaluation weights,
 // special requirements, delivery location, received-via — is illustrative
 // sample, flagged with a "Sample detail" pill per card (partial migration).
-const RFQ_TODAY_MS = new Date('2026-04-25').getTime();
-
-const toOpenRfq = (r: RFQ): OpenRFQ => {
-  const daysRemaining = Math.max(
-    0,
-    Math.ceil(
-      (new Date(r.responseDeadline).getTime() - RFQ_TODAY_MS) / 86_400_000,
-    ),
-  );
+// ⚠️ `RFQ_TODAY_MS = new Date('2026-04-25')` IS DELETED. It was the SECOND pin
+// in this app and it disagreed with `BuyerSourcing`'s by 23 days, so the same
+// RFQ deadline produced two different day-counts depending on which persona was
+// looking. `now` is injected from the component and the arithmetic lives in
+// `services/data/dayProjection`.
+//
+// ⚠️ **THE `Math.max(0, …)` CLAMP IS PRESERVED VERBATIM AND IS NOT DEFENDED.**
+// It is behaviour this batch did not rule on, and changing it here would hide a
+// second defect inside a clock fix. With the pin gone the clamp is now visible
+// for what it is: a deadline 111 days past renders "0 days remaining", which
+// reads as *due today*. Filed, not fixed.
+const toOpenRfq = (r: RFQ, nowIso: string): OpenRFQ => {
+  const daysRemaining = Math.max(0, daysUntil(r.responseDeadline, nowIso) ?? 0);
   return {
     id: r.id,
     rfqNumber: r.rfqNumber,
@@ -1489,6 +1494,12 @@ const SupplierRFQs: React.FC = () => {
   const supplierQuery = useCurrentSupplier();
   const rfqsQuery = useRFQs();
   const quotationsQuery = useQuotations();
+  // ONE clock read, captured once — the replacement for the deleted
+  // `RFQ_TODAY_MS` pin. ⚠️ It sits ABOVE every early return deliberately: this
+  // component returns early four ways, and a hook below them is a CONDITIONAL
+  // hook ("Rendered more hooks than during the previous render"), which is how
+  // the first draft of this change took 44 specs down.
+  const nowIso = useMemo(() => new Date().toISOString(), []);
 
   if (!supplierId) return <NoSupplierIdentity />;
   if (
@@ -1530,7 +1541,7 @@ const SupplierRFQs: React.FC = () => {
 
   const initialRfqs = rfqs
     .filter((r) => r.status === 'Open')
-    .map(toOpenRfq);
+    .map((r) => toOpenRfq(r, nowIso));
 
   // Award outcome is a real read: the supplier's terminal quotations joined to
   // their RFQ. Awarding an RFQ (buyer) flips this supplier's quote to Awarded /

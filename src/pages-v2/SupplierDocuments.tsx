@@ -46,6 +46,7 @@ import type {
   SupplierDocumentCategory as DocCategory,
 } from '../services/data/types';
 import { useDocuments } from '../services/query/hooks';
+import { daysUntil, documentExpiry } from '../services/data/dayProjection';
 import {
   useSupplierDocumentDeclare,
   useSupplierDocumentSubmit,
@@ -201,10 +202,12 @@ const CATEGORY_FILTERS: { id: CategoryFilter; labelKey: string }[] = [
   { id: 'Contract', labelKey: 'supplierDocuments.category.contract' },
 ];
 
-const daysUntil = (dateStr: string | null): number | null => {
-  if (!dateStr) return null;
-  return Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
-};
+// ⚠️ The page-local `daysUntil` is GONE. It read `Date.now()` inside a pure-
+// looking helper, which made this page's expiry story untestable and — more to
+// the point — made it ONE OF THREE different answers to "what day is it?".
+// `services/data/dayProjection` is now the only one; `now` is captured once
+// below and injected, so this page and `SupplierCertsExpiringWidget` cannot
+// drift apart again.
 
 
 type PanelMode = 'closed' | 'new' | 'upload-existing' | 'view';
@@ -225,6 +228,11 @@ const SupplierDocuments: React.FC = () => {
   }));
   const docsQuery = useDocuments();
   const docs = docsQuery.data?.items ?? [];
+  // ONE clock read for the whole page, captured once so every expiry figure on
+  // screen is answered against the SAME instant. Deps are empty deliberately:
+  // a re-render must not silently move the day under a rendered count.
+  // (`BuyerCompliance` is the precedent.)
+  const nowIso = useMemo(() => new Date().toISOString(), []);
   const [filterCat, setFilterCat] = useState<CategoryFilter>('All');
   const [search, setSearch] = useState('');
   const [panelMode, setPanelMode] = useState<PanelMode>('closed');
@@ -273,20 +281,12 @@ const SupplierDocuments: React.FC = () => {
   );
 
   const expiringSoon = useMemo(
-    () =>
-      docs.filter((d) => {
-        const days = daysUntil(d.expiryDate);
-        return days !== null && days > 0 && days <= 180;
-      }),
-    [docs],
+    () => docs.filter((d) => documentExpiry(d, nowIso) === 'expiring'),
+    [docs, nowIso],
   );
   const expired = useMemo(
-    () =>
-      docs.filter((d) => {
-        const days = daysUntil(d.expiryDate);
-        return days !== null && days <= 0;
-      }),
-    [docs],
+    () => docs.filter((d) => documentExpiry(d, nowIso) === 'expired'),
+    [docs, nowIso],
   );
   const awaitingUpload = useMemo(
     () => docs.filter((d) => d.status === 'Awaiting Upload'),
@@ -300,7 +300,9 @@ const SupplierDocuments: React.FC = () => {
     [docs],
   );
 
-  const today = formatDate(new Date());
+  // Same instant as every expiry figure above — a page that says "as of <date>"
+  // must mean the date it actually reckoned against, not a second clock read.
+  const today = formatDate(nowIso);
 
   const openUploadFor = (doc: SupplierDocument) => {
     setActiveDoc(doc);
@@ -577,7 +579,7 @@ const SupplierDocuments: React.FC = () => {
           </TableHeader>
           <tbody>
             {filtered.map((doc) => {
-              const days = daysUntil(doc.expiryDate);
+              const days = daysUntil(doc.expiryDate, nowIso);
               const expiryColor =
                 days === null
                   ? 'text-text-tertiary'
