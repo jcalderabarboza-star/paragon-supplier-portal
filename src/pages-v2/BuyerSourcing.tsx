@@ -117,6 +117,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import type { RFQ, RFQCategory, RFQStatus } from '../data/mockRfqs';
 import type { Quotation } from '../data/mockQuotations';
+import { daysUntil } from '../services/data/dayProjection';
 import type { PurchaseRequisition, PRStatus } from '../services/data/types';
 import type { Supplier } from '../services/data/types';
 // GL-1 - the glossary destination for this surface's refusals.
@@ -212,17 +213,16 @@ const STATUS_VARIANT: Record<
   Cancelled: 'danger',
 };
 
-const REFERENCE_TODAY = new Date('2026-05-18');
-const DAY_MS = 24 * 60 * 60 * 1000;
-
+// ⚠️ `REFERENCE_TODAY = new Date('2026-05-18')` AND this page's private
+// `daysUntil` ARE DELETED. The pin made every deadline on this board
+// deterministic by making it wrong on a schedule nobody was watching, and
+// `SupplierRFQs` carried a SECOND pin 23 days adrift — so one RFQ's deadline
+// rendered two different day-counts on two surfaces of one app. The clock is
+// now injected from the component and the arithmetic lives in
+// `services/data/dayProjection`.
 const isAllResponded = (r: RFQ): boolean =>
   r.invitedSupplierIds.length > 0 &&
   r.respondedSupplierIds.length === r.invitedSupplierIds.length;
-
-const daysUntil = (iso: string): number => {
-  const d = new Date(iso);
-  return Math.round((d.getTime() - REFERENCE_TODAY.getTime()) / DAY_MS);
-};
 
 // ── 2e-b-3 (COS-04) — the shadowing locals are retired ───────────────────────
 //
@@ -1233,6 +1233,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
   // getRFQs after the create dispatch invalidates — never a client-fabricated
   // peer spread in (the retired `extraRfqs` anti-pattern, C6 §1).
   const rfqs = baseRfqs;
+  // ONE clock read for the board, captured once and injected into every
+  // day-count below — the replacement for the deleted `REFERENCE_TODAY` pin.
+  const nowIso = useMemo(() => new Date().toISOString(), []);
 
   // ⚠️ **THE ONE ENTRY POINT, AND IT TAKES THE PREFILL AS AN ARGUMENT.** The
   // page's own "New RFQ" button calls it with nothing; the in-wizard requisition
@@ -2084,7 +2087,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     const active = rfqs.filter((r) => r.status === 'Open').length;
     const awaiting = rfqs.filter((r) => {
       if (r.status !== 'Open') return false;
-      const d = daysUntil(r.responseDeadline);
+      const d = daysUntil(r.responseDeadline, nowIso);
+      // An unreadable deadline is not evidence a response is due this week.
+      if (d === null) return false;
       return d <= 7 && d >= 0;
     }).length;
     const readyToAward = rfqs.filter(
@@ -2092,11 +2097,12 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
     ).length;
     const awardedQuarter = rfqs.filter((r) => {
       if (r.status !== 'Awarded') return false;
-      const age = -daysUntil(r.createdAt);
-      return age <= 90;
+      const d = daysUntil(r.createdAt, nowIso);
+      if (d === null) return false;
+      return -d <= 90;
     }).length;
     return { active, awaiting, readyToAward, awardedQuarter };
-  }, [rfqs]);
+  }, [rfqs, nowIso]);
 
   const activeFiltered = useMemo(() => {
     return rfqs
@@ -2288,9 +2294,9 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
               const responded = r.respondedSupplierIds.length;
               const invited = r.invitedSupplierIds.length;
               const pct = invited === 0 ? 0 : (responded / invited) * 100;
-              const days = daysUntil(r.responseDeadline);
+              const days = daysUntil(r.responseDeadline, nowIso);
               const deadlineTone =
-                r.status !== 'Open'
+                r.status !== 'Open' || days === null
                   ? 'text-text-secondary'
                   : days < 3
                     ? 'text-danger font-semibold'
@@ -2335,7 +2341,7 @@ const SourcingWorkspace: React.FC<SourcingWorkspaceProps> = ({
                     <Data as="div" className={`text-sm whitespace-nowrap ${deadlineTone}`}>
                       {formatDate(r.responseDeadline)}
                     </Data>
-                    {r.status === 'Open' && (
+                    {r.status === 'Open' && days !== null && (
                       <div
                         className={`text-xs mt-0.5 ${
                           days < 0

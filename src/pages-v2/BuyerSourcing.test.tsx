@@ -1,4 +1,4 @@
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { renderWithProviders } from '../test/test-utils';
 import { mockDataService } from '../services/data/mock/mockDataService';
 import { withChaos } from '../services/data/mock/withChaos';
@@ -462,9 +462,18 @@ describe('BuyerSourcing — a comparison with no FX basis withholds the ranking'
     // value on each bar, for quotes the engine explicitly declined to rank.
     makeMixed();
     await openComparison();
-    expect(screen.queryByText('0')).not.toBeInTheDocument();
+    // ⚠️ SCOPED TO THE COMPARISON PANEL, and the scope is the point rather than
+    // a tidy-up. This read `screen.queryByText('0')` over the WHOLE document
+    // while the page's own KPI tiles happened to show no zero. Retiring
+    // `REFERENCE_TODAY` moved "awaiting response" from 7 to 0 — the honest
+    // count, since every Open RFQ in the fixture is now past its deadline — and
+    // a page-wide query for '0' started matching a KPI tile that this test was
+    // never about. The assertion is unchanged in meaning: NO SCORE CELL reads 0.
+    const panel = document.querySelector('aside[role="dialog"]') as HTMLElement;
+    expect(panel, 'the comparison panel must be open').not.toBeNull();
+    expect(within(panel).queryByText('0')).not.toBeInTheDocument();
     // Em dashes where the bars were.
-    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+    expect(within(panel).getAllByText('—').length).toBeGreaterThan(0);
   });
 
   it('still shows the BIDS — what is withheld is the ranking, not the facts', async () => {
