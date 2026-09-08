@@ -46,8 +46,13 @@ import LoadingState from '../components/ui-v2/LoadingState';
 import ErrorState from '../components/ui-v2/ErrorState';
 import EmptyState from '../components/ui-v2/EmptyState';
 import { useShipments, useSuppliers } from '../services/query/hooks';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 
-const TODAY = '2026-05-20';
+// ⚠️ THE FOURTH PIN, RETIRED — see BuyerGoodsReceipt for the full note. All
+// three surviving pins read 2026-05-20, which is what evidences the `shipment`
+// and `goodsReceipt` anchors. Behaviour-preserving: the pin and the family it
+// reads shift by the same delta.
+const TODAY = DECLARED_PRESENT;
 
 type GroupTab =
   | 'all'

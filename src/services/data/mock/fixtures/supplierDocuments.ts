@@ -14,8 +14,9 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 import type { SupplierDocument } from '../../types';
+import { shiftFields } from '../../fixturePresent';
 
-export const DOCUMENTS: SupplierDocument[] = [
+const DOCUMENTS_RAW: SupplierDocument[] = [
   { id: 'doc-001', supplierId: 'sup-007', name: 'Halal Certificate — MUI No. 01011234561020', category: 'Halal Compliance', status: 'Expiring Soon', issuedBy: 'MUI (Majelis Ulama Indonesia)', issuedDate: '2023-09-01', expiryDate: '2026-05-15', fileType: 'PDF', fileSize: '1.2 MB', version: 'v3', linkedTo: 'PK-PETB-8801, PK-PETB-8810', notes: 'BPJPH mandatory renewal required by October 2026' },
   { id: 'doc-002', supplierId: 'sup-007', name: 'BPOM Notification — SAMPLE-BPOM-0007A', category: 'BPOM Regulatory', status: 'Valid', issuedBy: 'BPOM (Badan Pengawas Obat dan Makanan)', issuedDate: '2022-09-15', expiryDate: '2027-09-14', fileType: 'PDF', fileSize: '860 KB', version: 'v1', linkedTo: 'PK-PETB-8801' },
   { id: 'doc-003', supplierId: 'sup-007', name: 'NPWP Certificate — SAMPLE-NPWP-0007', category: 'Tax & Legal', status: 'Valid', issuedBy: 'Dirjen Pajak — DJP Indonesia', issuedDate: '2010-03-12', expiryDate: null, fileType: 'PDF', fileSize: '420 KB', version: 'v1', linkedTo: 'All POs' },
@@ -74,3 +75,19 @@ export const DOCUMENTS: SupplierDocument[] = [
   { id: 'doc-201', supplierId: 'sup-005', name: 'BPOM Notification — SAMPLE-BPOM-0005A', category: 'BPOM Regulatory', status: 'Valid', issuedBy: 'BPOM (Badan Pengawas Obat dan Makanan)', issuedDate: '2023-10-05', expiryDate: '2028-10-04', fileType: 'PDF', fileSize: '910 KB', version: 'v1', linkedTo: 'PO-2025-00131' },
   { id: 'doc-202', supplierId: 'sup-005', name: 'REACH Compliance / Safety Data Sheet — Sample Blend PF-20', category: 'Quality', status: 'Expiring Soon', issuedBy: 'Sample Personal Care Regulatory Affairs', issuedDate: '2023-08-20', expiryDate: '2026-08-19', fileType: 'PDF', fileSize: '3.4 MB', version: 'v5', linkedTo: 'All emulsifier grades' },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DECLARED PRESENT — FIXTURE-PRESENT-01 (d).
+//
+// The literals above are the AUTHORED set, left exactly as written so the
+// authoring intent stays readable. They are shifted to the declared present at
+// module load by this family's own anchor (supplierDocument); the shift is
+// `DECLARED_PRESENT - anchor` and it moves every row by the same whole number of
+// days, so the set's internal spacing — which is the part that was never wrong —
+// is preserved exactly.
+// ─────────────────────────────────────────────────────────────────────────────
+export const DOCUMENTS: SupplierDocument[] = shiftFields(
+  DOCUMENTS_RAW,
+  'supplierDocument',
+  ['issuedDate', 'expiryDate', 'rejectedAt'],
+);

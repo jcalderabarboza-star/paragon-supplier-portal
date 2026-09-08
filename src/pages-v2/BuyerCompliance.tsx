@@ -41,6 +41,7 @@ import {
 import { useVerbAvailabilities, useVerbAvailability } from '../hooks/useVerbAvailability';
 import { HandoffNotice } from '../components/ui-v2/HandoffNotice';
 import {
+  BPJPH_MANDATE_DATE,
   computeStatus,
   daysRemaining,
   schemeValid,
@@ -347,7 +348,11 @@ const BuyerCompliance: React.FC = () => {
   }, [rows]);
 
   const deadline = useMemo(() => {
-    const target = new Date('2026-10-17');
+    // ⚠️ THE ABSOLUTE CLASS, READ RATHER THAN RESTATED. This was a hardcoded
+    // `new Date('2026-10-17')` — a duplicate of the regulatory constant that
+    // would NOT have moved with it. A date that must not move is as much a
+    // declaration as one that must, and it belongs to its owner.
+    const target = new Date(BPJPH_MANDATE_DATE);
     const today = new Date();
     const daysLeft = Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
     const pct = Math.max(0, Math.min(100, (daysLeft / 365) * 100));

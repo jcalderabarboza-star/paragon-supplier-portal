@@ -1,4 +1,5 @@
 import { InventoryRecord, StockStatus } from '../types/supplier.types';
+import { shiftFields } from '../services/data/fixturePresent';
 
 // daysOfSupply thresholds: Critical <7, Low 7–14, Normal 14–30, Excess >30
 function calcStockStatus(days: number): StockStatus {
@@ -266,7 +267,22 @@ const items: Omit<InventoryRecord, 'stockStatus'>[] = [
   },
 ];
 
-export const mockInventory: InventoryRecord[] = items.map((item) => ({
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DECLARED PRESENT — FIXTURE-PRESENT-01 (d).
+//
+// ⚠️ **THIS FAMILY MOVES FURTHEST, AND THAT IS THE MEASUREMENT THAT KILLED THE
+// FIXTURE REFRESH.** Its own rows declare its as-of date — `lastUpdated` runs
+// 2025-04-02..2025-04-06, a full YEAR behind every other family in the tree. A
+// uniform "refresh everything to one date" would have left this set a year
+// adrift from the cluster instead of the four months it was; anchoring it on its
+// own declared date is what lets it land beside the others without inventing a
+// past it never had.
+// ─────────────────────────────────────────────────────────────────────────────
+export const mockInventory: InventoryRecord[] = shiftFields(
+  items,
+  'inventory',
+  ['lastUpdated'],
+).map((item) => ({
   ...item,
   stockStatus: calcStockStatus(item.daysOfSupply),
 }));

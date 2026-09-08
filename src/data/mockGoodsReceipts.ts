@@ -1,3 +1,5 @@
+import { shiftFields } from '../services/data/fixturePresent';
+
 export type GRStatus =
   | 'Pending Inspection'
   | 'Under Inspection'
@@ -54,7 +56,7 @@ export interface GoodsReceipt {
   notes?: string;
 }
 
-export const mockGoodsReceipts: GoodsReceipt[] = [
+const mockGoodsReceiptsRaw: GoodsReceipt[] = [
   {
     id: 'gr-001',
     grNumber: 'GR-2026-001',
@@ -440,3 +442,19 @@ export const mockGoodsReceipts: GoodsReceipt[] = [
     sapMaterialDoc: 'MAT-DOC-501205',
   },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DECLARED PRESENT — FIXTURE-PRESENT-01 (d).
+//
+// The literals above are the AUTHORED set, left exactly as written so the
+// authoring intent stays readable. They are shifted to the declared present at
+// module load by this family's own anchor (goodsReceipt); the shift is
+// `DECLARED_PRESENT - anchor` and it moves every row by the same whole number of
+// days, so the set's internal spacing — which is the part that was never wrong —
+// is preserved exactly.
+// ─────────────────────────────────────────────────────────────────────────────
+export const mockGoodsReceipts: GoodsReceipt[] = shiftFields(
+  mockGoodsReceiptsRaw,
+  'goodsReceipt',
+  ['receivedDate'],
+);
