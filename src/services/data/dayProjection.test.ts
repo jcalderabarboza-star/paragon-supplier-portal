@@ -16,6 +16,7 @@ import {
 } from './dayProjection';
 import { DOCUMENTS } from './mock/fixtures/supplierDocuments';
 import type { SupplierDocument } from './types';
+import { DECLARED_PRESENT, shiftDays } from './fixturePresent';
 
 const EARLY = '2026-09-08T00:00:00.000Z';
 const LATER = '2027-03-08T00:00:00.000Z';
@@ -96,10 +97,22 @@ const byId = (id: string): SupplierDocument => {
   return d;
 };
 
-describe('⚠️ THE STORED `status` LITERAL CONTRADICTS THE CLOCK — measured, by name', () => {
-  // The instant the divergence was measured at. Pinned so this test states a
-  // FACT ABOUT THE FIXTURE rather than about the day the suite happens to run.
-  const NOW = '2026-09-08T00:00:00.000Z';
+describe('⚠️ THE STORED `status` LITERAL vs THE CLOCK — the divergence, and its closure', () => {
+  // ⚠️ **THIS BLOCK USED TO ASSERT THAT FIVE DOCUMENTS DIVERGED. THEY NO LONGER
+  // DO, AND THE BLOCK IS REWRITTEN RATHER THAN RE-PINNED.** `FIXTURE-PRESENT-01`
+  // (d) anchored `supplierDocument` on 2026-04-01 — the midpoint of the window on
+  // which all eight dated documents agree with `documentExpiry` — so the stored
+  // literals are TRUE at the declared present.
+  //
+  // ⚠️ **AND A CLEAN READING TAKEN RIGHT AFTER THE FIX IS A REPORT ABOUT THE FIX
+  // (`CLEAN-AFTER-THE-FIX-REPORTS-THE-FIX-01`, §71).** An `expect(diverging)
+  // .toEqual([])` alone would be exactly that: a real population, a correct
+  // matcher, an honest zero — and no evidence the instrument can still fire. So
+  // the SECOND test below re-creates the original divergence by reading the same
+  // shifted fixture at the instant that reproduces the pre-anchor geometry, and
+  // asserts the same five names. The zero proves the repair; that one proves the
+  // instrument.
+  const PRESENT = `${DECLARED_PRESENT}T00:00:00.000Z`;
 
   it('the fixture population is present — no assertion below is vacuous', () => {
     expect(DOCUMENTS.length).toBeGreaterThan(10);
@@ -107,37 +120,42 @@ describe('⚠️ THE STORED `status` LITERAL CONTRADICTS THE CLOCK — measured,
     expect(DOCUMENTS.some((d) => d.id === 'doc-999')).toBe(false);
   });
 
-  it('doc-001 — the MUI halal certificate — stores "Expiring Soon" and is EXPIRED', () => {
+  it('⚠️ NO document diverges at the declared present — the divergence is CLOSED', () => {
+    const diverging = DOCUMENTS.filter(
+      (d) => (d.status === 'Expiring Soon') !== (documentExpiry(d, PRESENT) === 'expiring'),
+    ).map((d) => d.id);
+    expect(diverging).toEqual([]);
+  });
+
+  it('⚠️ THE INSTRUMENT STILL FIRES — the same five names, at the pre-anchor geometry', () => {
+    // Reading the SHIFTED fixture `shiftDays` later than the old measuring instant
+    // is arithmetically identical to reading the RAW fixture at that instant:
+    //   documentExpiry(raw + shift, T + shift) === documentExpiry(raw, T)
+    // so this reproduces the exact defect the anchor removed, from live data.
+    const MS = 86_400_000;
+    const preAnchor = new Date(
+      Date.parse('2026-09-08T00:00:00.000Z') + shiftDays('supplierDocument') * MS,
+    ).toISOString();
+    const diverging = DOCUMENTS.filter(
+      (d) => (d.status === 'Expiring Soon') !== (documentExpiry(d, preAnchor) === 'expiring'),
+    )
+      .map((d) => d.id)
+      .sort();
+    expect(diverging).toEqual(['doc-001', 'doc-005', 'doc-008', 'doc-101', 'doc-202']);
+  });
+
+  it('doc-001 — the MUI halal certificate — stores "Expiring Soon" and now IS expiring', () => {
     const doc = byId('doc-001');
     expect(doc.status).toBe('Expiring Soon');
-    expect(documentExpiry(doc, NOW)).toBe('expired');
-    expect(daysUntil(doc.expiryDate, NOW)).toBeLessThan(0);
+    expect(documentExpiry(doc, PRESENT)).toBe('expiring');
+    expect(daysUntil(doc.expiryDate, PRESENT)).toBeGreaterThan(0);
   });
 
-  it('doc-202 — same shape, second instance', () => {
-    const doc = byId('doc-202');
-    expect(doc.status).toBe('Expiring Soon');
-    expect(documentExpiry(doc, NOW)).toBe('expired');
-  });
-
-  it('doc-005 / doc-008 / doc-101 store "Valid" while genuinely EXPIRING', () => {
+  it('doc-005 / doc-008 / doc-101 store "Valid" and are genuinely current', () => {
     for (const id of ['doc-005', 'doc-008', 'doc-101']) {
       const doc = byId(id);
       expect(doc.status, id).toBe('Valid');
-      expect(documentExpiry(doc, NOW), id).toBe('expiring');
+      expect(documentExpiry(doc, PRESENT), id).toBe('current');
     }
-  });
-
-  it('the two readings disagree on exactly five documents at that instant', () => {
-    const diverging = DOCUMENTS.filter(
-      (d) => (d.status === 'Expiring Soon') !== (documentExpiry(d, NOW) === 'expiring'),
-    ).map((d) => d.id);
-    expect(diverging.sort()).toEqual([
-      'doc-001',
-      'doc-005',
-      'doc-008',
-      'doc-101',
-      'doc-202',
-    ]);
   });
 });

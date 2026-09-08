@@ -6,6 +6,8 @@ import { withChaos } from '../services/data/mock/withChaos';
 import SupplierDocuments from './SupplierDocuments';
 import { PERSONA_SYSTEM_ROLES } from '../services/transitions/businessRoles';
 import { NO_PERSON } from '../context/noPerson';
+import { DOCUMENTS } from '../services/data/mock/fixtures/supplierDocuments';
+import { formatDate } from '../lib/format';
 
 const alwaysFails = withChaos(mockDataService, { minMs: 0, maxMs: 0, failureRate: 1 });
 const alwaysPending = withChaos(mockDataService, { minMs: 1e7, maxMs: 1e7, failureRate: 0 });
@@ -67,7 +69,15 @@ describe('SupplierDocuments — the refused document', () => {
     renderWithProviders(<SupplierDocuments />, { identity: SUPPLIER });
     const block = await screen.findByTestId('doc-refusal-doc-012');
     expect(block).toHaveTextContent('Refused');
-    expect(block).toHaveTextContent('18 Aug 2026');
+    // ⚠️ DERIVED, NOT RE-PINNED. This used to read `'18 Aug 2026'`, which was
+    // doc-012's `rejectedAt` at the instant the spec was written. Under
+    // FIXTURE-PRESENT-01 that date moves with the `supplierDocument` anchor,
+    // and a spec re-pinned to the NEW literal would have learned nothing and
+    // broken again at the next bump. The CLAIM is "the block renders doc-012's
+    // refusal date" — so assert that, against the fixture the page reads.
+    const doc012 = DOCUMENTS.find((d) => d.id === 'doc-012');
+    expect(doc012?.rejectedAt, 'doc-012 is this assertion’s subject').toBeTruthy();
+    expect(block).toHaveTextContent(formatDate(doc012!.rejectedAt!));
     expect(block).toHaveTextContent(/Certificate scope does not cover PK-PETB-8810/);
     expect(block).toHaveTextContent(
       'Recorded without a named person — the portal has no user directory yet.',

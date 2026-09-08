@@ -48,6 +48,7 @@ import { formatNumber } from '../lib/format';
 import { useCategoryLabel } from '../hooks/useCategoryLabel';
 import { InventoryRecord } from '../types/supplier.types';
 import { POStatus } from '../services/data/types';
+import { DECLARED_PRESENT } from '../services/data/fixturePresent';
 
 type GroupTab = 'all' | 'critical' | 'warning' | 'healthy' | 'excess';
 
@@ -83,7 +84,11 @@ const inferBrand = (item: InventoryRecord): BrandKey[] => {
 
 const formatRelativeTime = (iso: string): string => {
   if (!iso) return '—';
-  const now = new Date('2026-05-20').getTime();
+  // ⚠️ THE FIFTH PIN, RETIRED. `inventory` anchors on its OWN declared as-of
+  // (max `lastUpdated` = 2025-04-06, a year behind the cluster), so this page
+  // is where the largest shift in the tree becomes visible: rows that read as
+  // a formatted 2025 date now read as recent relative time.
+  const now = new Date(DECLARED_PRESENT).getTime();
   const then = new Date(iso).getTime();
   const diff = now - then;
   const day = 24 * 60 * 60 * 1000;

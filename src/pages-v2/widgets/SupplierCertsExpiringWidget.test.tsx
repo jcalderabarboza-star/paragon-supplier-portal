@@ -6,12 +6,20 @@
 // that matters to a supplier, because the projection could be perfectly correct
 // while the widget kept reading `status`. That was the shipped state.
 //
-// The seat is `sup-007`, which owns three of the five diverging documents:
-//   · doc-001  Halal Certificate (MUI)  stored 'Expiring Soon'  →  EXPIRED
-//   · doc-005  ISO 9001                 stored 'Valid'          →  expiring
-//   · doc-008  Framework Supply Agmt    stored 'Valid'          →  expiring
-// Before this batch the widget listed ONE row (doc-001, labelled "Expiring
-// Soon") and omitted the two that genuinely needed renewing.
+// ⚠️ **THE DIVERGENCE THIS FILE WAS WRITTEN AGAINST IS CLOSED**, and the specs
+// are rewritten rather than re-pinned. `FIXTURE-PRESENT-01` (d) anchored
+// `supplierDocument` on its own coherent window, so every stored status is TRUE
+// at the declared present: doc-001 stores 'Expiring Soon' and IS expiring;
+// doc-005 and doc-008 store 'Valid' and ARE current.
+//
+// ⚠️ **AND THAT COSTS THIS FILE ITS DISCRIMINATING POWER, WHICH IS STATED RATHER
+// THAN QUIETLY ACCEPTED.** The old specs could tell "reads the projection" from
+// "reads `status`" only BECAUSE the two disagreed. They now agree on every row,
+// so no rendered assertion can separate them any more — a test that passes
+// either way is not evidence. The claim is therefore held STRUCTURALLY below:
+// the widget's source must not read `doc.status` at all. That is weaker than a
+// behavioural probe and is labelled as such; it is what remains provable once
+// the data stops contradicting itself.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from 'vitest';
@@ -19,6 +27,9 @@ import { screen, within, fireEvent } from '@testing-library/react';
 import { renderWithProviders, SUPPLIER } from '../../test/test-utils';
 import SupplierCertsExpiringWidget from './SupplierCertsExpiringWidget';
 import { DOCUMENTS } from '../../services/data/mock/fixtures/supplierDocuments';
+import { readFileSync } from 'node:fs';
+import { documentExpiry } from '../../services/data/dayProjection';
+import { DECLARED_PRESENT } from '../../services/data/fixturePresent';
 
 const HALAL = 'Halal Certificate — MUI No. 01011234561020';
 
@@ -37,36 +48,65 @@ describe('SupplierCertsExpiringWidget — the clock is the source, not `status`'
     expect(mine.some((d) => d.id === 'doc-008')).toBe(true);
   });
 
-  it('⚠️ doc-001 is labelled EXPIRED — the widget used to call it "Expiring soon"', async () => {
+  it('doc-001 is listed, labelled from the PROJECTION, which now agrees with the fixture', async () => {
     renderWithProviders(<SupplierCertsExpiringWidget />, { identity: SUPPLIER });
     const title = await screen.findByText('Certificates — expiring');
-    // The rows live behind `ExpandableWidget`'s expand affordance. Opening it is
-    // part of what a reader does, so the test does it rather than reaching past
-    // the component into its props.
     await openWidget();
     const row = (await screen.findByText(HALAL)).closest('tr');
     expect(row, 'the halal certificate must be listed').not.toBeNull();
-    expect(within(row!).getByText('Expired')).toBeInTheDocument();
-    // The stale stored literal must NOT be what the reader sees on this row.
-    expect(within(row!).queryByText('Expiring Soon')).toBeNull();
+    expect(within(row!).queryByText('Expired')).toBeNull();
     expect(title).toBeInTheDocument();
   });
 
-  it('⚠️ the two documents the widget used to OMIT are now listed', async () => {
+  it('⚠️ STRUCTURAL, AND WEAKER THAN A BEHAVIOURAL PROBE: the widget never reads `doc.status`', () => {
+    // With the fixture coherent, no rendered assertion can distinguish the
+    // projection from the stored literal. This one can, and it is why the
+    // regression the widget once shipped cannot come back silently.
+    const src = readFileSync(
+      'src/pages-v2/widgets/SupplierCertsExpiringWidget.tsx',
+      'utf8',
+    );
+    // ⚠️ COMMENTS ARE STRIPPED PROPERLY, NOT BY LINE PREFIX. The first version
+    // of this filter dropped lines starting `//`, `*` or `/*` and therefore
+    // MISSED A JSX COMMENT (`{/* … never `doc.status` … */}`) — which made the
+    // gate accuse the widget of exactly the thing the comment says it does not
+    // do. A widened matcher creates false accusations as readily as a narrow
+    // one creates blind spots, so both directions are controlled below.
+    const code = src
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\/\/[^\n]*/g, ' ');
+    expect(code).not.toMatch(/\b(d|doc)\.status\b/);
+    // CONTROL, the other direction: the stripper must not have eaten the file.
+    expect(code).toContain('SupplierCertsExpiringWidget');
+    // CONTROL: the projection IS what it reads, so the assertion above is not
+    // passing because the file is empty or the matcher is broken.
+    expect(code).toContain('documentExpiry');
+  });
+
+  it('the two CURRENT documents are correctly absent — they are not expiring any more', async () => {
+    // They were listed only because the widget's clock had run past the fixture's
+    // present. Anchored, they are what their stored status always said: current.
     renderWithProviders(<SupplierCertsExpiringWidget />, { identity: SUPPLIER });
     await openWidget();
     expect(
-      await screen.findByText('ISO 9001:2015 Quality Management Certificate'),
-    ).toBeInTheDocument();
+      screen.queryByText('ISO 9001:2015 Quality Management Certificate'),
+    ).toBeNull();
     expect(
-      screen.getByText('Framework Supply Agreement — Paragon Corp 2025–2027'),
-    ).toBeInTheDocument();
+      screen.queryByText('Framework Supply Agreement — Paragon Corp 2025–2027'),
+    ).toBeNull();
   });
 
-  it('the flag reports the EXPIRED count and the severity is critical, not warning', async () => {
-    renderWithProviders(<SupplierCertsExpiringWidget />, { identity: SUPPLIER });
-    // `critical` was unreachable before this batch — the union member that fed
-    // it was retired at #316 because nothing could produce it. A COUNT can.
-    expect(await screen.findByText('1 expired')).toBeInTheDocument();
+  it('⚠️ NOTHING is expired at the declared present — and the zero is a measurement', () => {
+    // The widget's `critical` severity is driven by an EXPIRED count. There is no
+    // expired certificate for this seat any more, so the reader is not warned
+    // about a dead certificate that is not dead — the anchor, seen from the
+    // surface.
+    const mine = DOCUMENTS.filter((d) => d.supplierId === 'sup-007' && d.expiryDate);
+    const expired = mine.filter(
+      (d) => documentExpiry(d, DECLARED_PRESENT + 'T00:00:00.000Z') === 'expired',
+    );
+    expect(expired).toEqual([]);
+    // CONTROL: the population is non-empty, so the zero is a measurement.
+    expect(mine.length).toBeGreaterThan(2);
   });
 });

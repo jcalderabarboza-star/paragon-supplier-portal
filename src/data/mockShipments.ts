@@ -1,3 +1,5 @@
+import { shiftFields } from '../services/data/fixturePresent';
+
 export interface ShipmentLineItem {
   materialCode: string;
   description: string;
@@ -47,7 +49,7 @@ export interface Shipment {
 
 const NDC = 'NDC J6, Jakarta';
 
-export const mockShipments: Shipment[] = [
+const mockShipmentsRaw: Shipment[] = [
   // --- 3 Pending ASN ---
   {
     id: 'shp-001',
@@ -527,3 +529,19 @@ export const mockShipments: Shipment[] = [
     ],
   },
 ];
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE DECLARED PRESENT — FIXTURE-PRESENT-01 (d).
+//
+// The literals above are the AUTHORED set, left exactly as written so the
+// authoring intent stays readable. They are shifted to the declared present at
+// module load by this family's own anchor (shipment); the shift is
+// `DECLARED_PRESENT - anchor` and it moves every row by the same whole number of
+// days, so the set's internal spacing — which is the part that was never wrong —
+// is preserved exactly.
+// ─────────────────────────────────────────────────────────────────────────────
+export const mockShipments: Shipment[] = shiftFields(
+  mockShipmentsRaw,
+  'shipment',
+  ['shipDate', 'estimatedArrival', 'actualArrival'],
+);
