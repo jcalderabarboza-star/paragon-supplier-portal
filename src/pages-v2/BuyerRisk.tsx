@@ -687,14 +687,19 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
             </span>
             {/* Interpolated supplier/type/expires/days stay canonical (fixture data) */}
             <span className="text-sm text-text-secondary">
-              {t('risk.compliance.certWarnPrefix', {
-                supplier: halalItem.supplier,
-                type: halalItem.type,
-              })}
+              {t(
+                (daysLeftOf(halalItem) ?? 0) < 0
+                  ? 'risk.compliance.certExpiredPrefix'
+                  : 'risk.compliance.certWarnPrefix',
+                { supplier: halalItem.supplier, type: halalItem.type },
+              )}
               <strong className="text-warning-hover">
-                {t('risk.compliance.certWarnDays', {
-                  days: daysLeftOf(halalItem) ?? 0,
-                })}
+                {t(
+                  (daysLeftOf(halalItem) ?? 0) < 0
+                    ? 'risk.compliance.certExpiredDays'
+                    : 'risk.compliance.certWarnDays',
+                  { days: Math.abs(daysLeftOf(halalItem) ?? 0) },
+                )}
               </strong>
               {t('risk.compliance.certWarnSuffix', { expires: halalItem.expires })}
             </span>
