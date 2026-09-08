@@ -26,6 +26,7 @@ import StatusPill from '../../components/ui-v2/StatusPill';
 import NextActLine from '../../components/ui-v2/NextActLine';
 import { useNextAct } from '../../hooks/useVerbAvailability';
 import ScoreBadge from '../../components/ui-v2/ScoreBadge';
+import { daysUntil } from '../../services/data/dayProjection';
 import Data from '../../components/ui-v2/Data';
 import Timeline, { TimelineEvent } from '../../components/ui-v2/Timeline';
 import type {
@@ -248,6 +249,10 @@ export const ContractDetailBody: React.FC<{
   suppliers: Supplier[];
 }> = ({ contract, obligations, suppliers }) => {
   const { t } = useTranslation();
+  // One clock read for the panel — the same shape the list uses, so a row and
+  // the drawer opened from it cannot disagree about the same contract.
+  const nowIso = useMemo(() => new Date().toISOString(), []);
+  const daysToExpiry = daysUntil(contract.endDate, nowIso);
   // WHO ACTS NEXT (S2a). ⚠️ **THIS IS THE FIRST SURFACE WHERE #311 REACHES A
   // READER.** All four contract verbs became `external-fact` owned by S/4HANA
   // at #311, so every machine state here is stranded and the line is the only
@@ -325,12 +330,18 @@ export const ContractDetailBody: React.FC<{
           </div>
           <div>
             <dt className="text-text-tertiary">{t('contracts.panel.field.daysUntilExpiry')}</dt>
-            <dd className={`font-semibold ${expiryTone(contract.daysUntilExpiry)}`}>
-              {contract.daysUntilExpiry < 0
-                ? t('contracts.expiry.daysAgo', {
-                    count: Math.abs(contract.daysUntilExpiry),
-                  })
-                : t('contracts.expiry.days', { count: contract.daysUntilExpiry })}
+            <dd
+              className={
+                daysToExpiry === null
+                  ? 'text-text-tertiary'
+                  : `font-semibold ${expiryTone(daysToExpiry)}`
+              }
+            >
+              {daysToExpiry === null
+                ? '—'
+                : daysToExpiry < 0
+                  ? t('contracts.expiry.daysAgo', { count: Math.abs(daysToExpiry) })
+                  : t('contracts.expiry.days', { count: daysToExpiry })}
             </dd>
           </div>
           <div>

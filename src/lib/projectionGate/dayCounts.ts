@@ -90,16 +90,21 @@ export const DAY_COUNTS: readonly DayCountRow[] = [
     producer: 'src/services/data/invoiceProjection.ts',
   },
 
+  // ── ⚠️ TWO ROWS LEFT THIS TABLE BY BEING RETIRED, NOT BY BEING EXCUSED ────
+  //   `Contract.daysUntilExpiry` and `ComplianceRow.daysLeft` were both here as
+  //   `stored-in-fixtures`, and `daysUntilExpiry` carried the only
+  //   `mintedAtWrite` marker in the tree. Both fields no longer EXIST, so they
+  //   leave the population entirely — that is the bilateral assertion doing its
+  //   job, not a gap. Re-declare either as `…: number` on a DTO and this gate
+  //   goes red until somebody classifies it again.
+  //
   // ── stored clock differences — the convicted class ────────────────────────
-  {
-    owner: 'Contract',
-    field: 'daysUntilExpiry',
-    group: 'stored-in-fixtures',
-    against: 'endDate',
-    // The wizard computes this from `new Date()` and writes it into the new
-    // Contract, so every contract a buyer creates is born correct for one day.
-    mintedAtWrite: 'src/pages-v2/BuyerContracts.tsx',
-  },
+  //   ⚠️ THE FOUR THAT REMAIN ARE DELIBERATE. Each back-solves to the SAME
+  //   authoring date as the fixture around it (shipments 2026-05-20, POs their
+  //   own), so computing them at read would publish FIXTURE AGE as operational
+  //   lateness — a shipment "in transit 116 days", a PO "496 days late". The
+  //   disposal is the DATA, and the fixture refresh is its own batch; retiring
+  //   the field first would ship a true number about a false world.
   {
     owner: 'Shipment',
     field: 'daysInTransit',
@@ -127,12 +132,6 @@ export const DAY_COUNTS: readonly DayCountRow[] = [
     group: 'stored-in-fixtures',
     against: 'requestedDeliveryDate',
     factWhenPresent: 'confirmedDeliveryDate',
-  },
-  {
-    owner: 'ComplianceRow',
-    field: 'daysLeft',
-    group: 'stored-in-fixtures',
-    against: 'expires',
   },
 
   // ── acquitted — NOT differences against `now` ─────────────────────────────

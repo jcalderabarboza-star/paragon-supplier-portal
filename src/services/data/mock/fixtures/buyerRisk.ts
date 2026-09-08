@@ -138,14 +138,14 @@ export const SCENARIO_ME: Scenario = {
 };
 
 export const COMPLIANCE_DATA: ComplianceRow[] = [
-  { supplier: 'NanoFab Ltd', type: 'ISO 9001', expires: '2026-03-15', daysLeft: -24, status: 'expired' },
-  { supplier: 'PrecisionTech Asia', type: 'REACH / RoHS', expires: '2026-04-30', daysLeft: 22, status: 'expiring' },
-  { supplier: 'Gulf Logistics', type: 'C-TPAT', expires: '2026-09-01', daysLeft: 146, status: 'ok' },
-  { supplier: 'UkrSteel Inc', type: 'Conflict Minerals (3TG)', expires: '2026-05-31', daysLeft: 53, status: 'ok' },
-  { supplier: 'SinoMinerals', type: 'Halal Cert', expires: '2026-04-15', daysLeft: 7, status: 'expiring' },
-  { supplier: 'PetroChemCo', type: 'ISO 14001', expires: '2026-07-20', daysLeft: 103, status: 'ok' },
-  { supplier: 'PackagePro EU', type: 'EU CSRD', expires: '2026-12-31', daysLeft: 267, status: 'ok' },
-  { supplier: 'PrecisionMex SA', type: 'USMCA Certificate', expires: '2026-06-30', daysLeft: 83, status: 'ok' },
+  { supplier: 'NanoFab Ltd', type: 'ISO 9001', expires: '2026-03-15', status: 'expired' },
+  { supplier: 'PrecisionTech Asia', type: 'REACH / RoHS', expires: '2026-04-30', status: 'expiring' },
+  { supplier: 'Gulf Logistics', type: 'C-TPAT', expires: '2026-09-01', status: 'ok' },
+  { supplier: 'UkrSteel Inc', type: 'Conflict Minerals (3TG)', expires: '2026-05-31', status: 'ok' },
+  { supplier: 'SinoMinerals', type: 'Halal Cert', expires: '2026-04-15', status: 'expiring' },
+  { supplier: 'PetroChemCo', type: 'ISO 14001', expires: '2026-07-20', status: 'ok' },
+  { supplier: 'PackagePro EU', type: 'EU CSRD', expires: '2026-12-31', status: 'ok' },
+  { supplier: 'PrecisionMex SA', type: 'USMCA Certificate', expires: '2026-06-30', status: 'ok' },
 ];
 
 const mkSparkData = (base: number, volatility: number, n = 20) =>

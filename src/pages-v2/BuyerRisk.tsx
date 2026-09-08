@@ -64,6 +64,7 @@ import type {
   ScenarioAlt,
   ScenarioFeasibility as Feasibility,
 } from '../services/data/types';
+import { daysUntil } from '../services/data/dayProjection';
 
 // ────────────────────────────────────────────────────────────────────────────
 // SEAM NOTE — /buyer/risk is a REAL-LATER capability (source of record).
@@ -665,6 +666,14 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
   const { toast } = useToast();
   const { t } = useTranslation();
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  // ⚠️ ONE clock read for the tab, at the TOP of the body. Derived before
+  // writing: this component has no early return, so the hook is unconditional —
+  // the check that #317 skipped and paid 44 specs for.
+  const nowIso = useMemo(() => new Date().toISOString(), []);
+  /** Days to expiry for a compliance row, from its own `expires` date.
+   *  `daysLeft` was a STORED difference against now and every row of it was
+   *  153 days stale — it back-solved to a single authoring date, 2026-04-08. */
+  const daysLeftOf = (r: ComplianceRow): number | null => daysUntil(r.expires, nowIso);
   const halalItem = compliance.find((r) => r.type === 'Halal Cert');
 
   return (
@@ -683,7 +692,9 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
                 type: halalItem.type,
               })}
               <strong className="text-warning-hover">
-                {t('risk.compliance.certWarnDays', { days: halalItem.daysLeft })}
+                {t('risk.compliance.certWarnDays', {
+                  days: daysLeftOf(halalItem) ?? 0,
+                })}
               </strong>
               {t('risk.compliance.certWarnSuffix', { expires: halalItem.expires })}
             </span>
@@ -740,9 +751,13 @@ const ComplianceRisksTab: React.FC<{ compliance: ComplianceRow[] }> = ({
                             : 'text-success'
                       }`}
                     >
-                      {row.daysLeft < 0
-                        ? t('risk.compliance.overdue', { days: Math.abs(row.daysLeft) })
-                        : `${row.daysLeft}d`}
+                      {(() => {
+                        const d = daysLeftOf(row);
+                        if (d === null) return '—';
+                        return d < 0
+                          ? t('risk.compliance.overdue', { days: Math.abs(d) })
+                          : `${d}d`;
+                      })()}
                     </Data>
                   </TableCell>
                   <TableCell>
